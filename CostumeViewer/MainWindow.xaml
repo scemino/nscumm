@@ -1,0 +1,23 @@
+﻿<Window x:Class="CostumeViewer.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="MainWindow" Height="446" Width="594">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition />
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Slider Name="sliderCost" SmallChange="1" IsSnapToTickEnabled="True" ValueChanged="sliderCost_ValueChanged" />
+        <Image Grid.Row="1" Name="image1" Stretch="Uniform" />
+        <Label Grid.Row="2" Content="{Binding ElementName=slider1, Path=Value, StringFormat=Anim \{0:X2\}}" Name="label1" />
+        <Slider Grid.Row="3" Name="slider1" ValueChanged="slider1_ValueChanged" SmallChange="1" IsSnapToTickEnabled="True" />
+        <Label Grid.Row="4" Content="{Binding ElementName=slider2, Path=Value, StringFormat=Frame \{0:X2\}}" Name="label2" />
+        <Slider Grid.Row="5" Name="slider2" ValueChanged="slider2_ValueChanged" SmallChange="1" IsSnapToTickEnabled="True" />
+        <Label Grid.Row="6" Content="{Binding ElementName=slider1, Path=Maximum, StringFormat=Anim \{0:X2\}}" Name="label3" />
+    </Grid>
+</Window>

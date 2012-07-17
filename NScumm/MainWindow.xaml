@@ -1,0 +1,6 @@
+﻿<Window x:Class="CostumeViewer.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="MainWindow" Height="446" Width="594">
+    <Image Cursor="None" Name="_screen" RenderOptions.EdgeMode="Aliased" RenderOptions.BitmapScalingMode="LowQuality" Stretch="Uniform" />
+</Window>

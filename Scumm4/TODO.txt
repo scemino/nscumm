@@ -1,0 +1,10 @@
+﻿music
+sound
+scaling actors
+draw actor entirely
+bug in local script with 0-size
+text position
+text speed
+room effects
+color cycle
+clean code

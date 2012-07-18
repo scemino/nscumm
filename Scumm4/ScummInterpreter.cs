@@ -406,6 +406,7 @@ namespace Scumm4
             _opCodes[0x0B] = GetVerbEntrypoint;
             /* 0C */
             _opCodes[0x0C] = ResourceRoutines;
+            _opCodes[0x0D] = WalkActorToActor;
             _opCodes[0x0E] = PutActorAtObject;
             _opCodes[0x0F] = IfState;
             /* 10 */
@@ -480,6 +481,7 @@ namespace Scumm4
             _opCodes[0x4A] = StartScript;
             _opCodes[0x4B] = GetVerbEntrypoint;
             /* 4C */
+            _opCodes[0x4D] = WalkActorToActor;
             _opCodes[0x4E] = PutActorAtObject;
             _opCodes[0x4F] = IfState;
             /* 50 */
@@ -548,6 +550,7 @@ namespace Scumm4
             _opCodes[0x8B] = GetVerbEntrypoint;
             /* 8C */
             _opCodes[0x8C] = ResourceRoutines;
+            _opCodes[0x8D] = WalkActorToActor;
             _opCodes[0x8E] = PutActorAtObject;
             _opCodes[0x8F] = IfState;
             /* 90 */
@@ -622,6 +625,7 @@ namespace Scumm4
             _opCodes[0xCB] = GetVerbEntrypoint;
             /* CC */
             _opCodes[0xCC] = PseudoRoom;
+            _opCodes[0xCD] = WalkActorToActor;
             _opCodes[0xCE] = PutActorAtObject;
             _opCodes[0xCF] = IfState;
             /* D0 */
@@ -698,6 +702,36 @@ namespace Scumm4
                 y = 120;
             }
             a.PutActor((short)x, (short)y);
+        }
+
+        private void WalkActorToActor()
+        {
+            int x, y;
+            int nr = GetVarOrDirectByte(OpCodeParameter.Param1);
+            int nr2 = GetVarOrDirectByte(OpCodeParameter.Param2);
+            int dist = ReadByte();
+
+            var a = _actors[nr];
+            if (!a.IsInCurrentRoom())
+                return;
+
+            var a2 = _actors[nr2];
+            if (!a2.IsInCurrentRoom())
+                return;
+
+            if (dist == 0xFF)
+            {
+                dist = (int)(a._scalex * a._width / 0xFF);
+                dist += (int)(a2._scalex * a2._width / 0xFF) / 2;
+            }
+            x = a2.GetPos().x;
+            y = a2.GetPos().y;
+            if (x < a.GetPos().x)
+                x += dist;
+            else
+                x -= dist;
+
+            a.StartWalkActor(x, y, -1);
         }
 
         private void PanCameraTo()
@@ -3144,6 +3178,26 @@ namespace Scumm4
 
         private void StartScene(byte room)
         {
+            if (_currentScript != 0xFF)
+            {
+                if (slots[_currentScript].where == WhereIsObject.Room || slots[_currentScript].where == WhereIsObject.FLObject)
+                {
+                    //if (slots[_currentScript].cutsceneOverride && _game.version >= 5)
+                    //    error("Object %d stopped with active cutscene/override in exit", slots[_currentScript].number);
+
+                    //nukeArrays(_currentScript);
+                    _currentScript = 0xFF;
+                }
+                else if (slots[_currentScript].where == WhereIsObject.Local)
+                {
+                    //if (slots[_currentScript].cutsceneOverride && _game.version >= 5)
+                    //    error("Script %d stopped with active cutscene/override in exit", slots[_currentScript].number);
+
+                    //nukeArrays(_currentScript);
+                    _currentScript = 0xFF;
+                }
+            }
+
             RunExitScript();
 
             KillScriptsAndResources();

@@ -73,6 +73,11 @@ namespace CostumeViewer
                 ProcessInputs();
 
                 var watch = System.Diagnostics.Stopwatch.StartNew();
+
+                _interpreter.Variables[ScummInterpreter.VariableTimer1] += delta;
+                _interpreter.Variables[ScummInterpreter.VariableTimer2] += delta;
+                _interpreter.Variables[ScummInterpreter.VariableTimer3] += delta;
+
                 if (delta > 15)
                     delta = 15;
                 _interpreter.DecreaseScriptDelay(delta);

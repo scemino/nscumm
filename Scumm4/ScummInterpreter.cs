@@ -9,7 +9,7 @@ namespace Scumm4
 {
     public class Cursor
     {
-        public byte State { get; set; }
+        public sbyte State { get; set; }
 
         public bool animate { get; set; }
 
@@ -42,6 +42,9 @@ namespace Scumm4
         private const int VariableRoom = 0x04;
         private const int VariableOverride = 0x05;
         private const int VariableCurrentLights = 0x09;
+        public const int VariableTimer1 = 0x0B;
+        public const int VariableTimer2 = 0x0C;
+        public const int VariableTimer3 = 0x0D;
         private const int VariableCameraMinX = 0x11;
         private const int VariableCameraMaxX = 0x12;
         public const int VariableTimerNext = 0x13;
@@ -73,8 +76,6 @@ namespace Scumm4
         private const int VariableUserPut = 0x35;
         #endregion
 
-
-
         #region Fields
         private ScummIndex _scumm;
         private string _directory;
@@ -97,14 +98,13 @@ namespace Scumm4
 
 
 
-        private byte _userPut;
+        private sbyte _userPut;
         private IList<char> _msg;
         private byte _roomResource;
         private bool _egoPositioned;
 
         private Cursor _cursor = new Cursor();
-        private bool _userInput;
-        private ushort _resultVarIndex;
+        private int _resultVarIndex;
         private byte _opCode;
         private Stack<int> _stack = new Stack<int>();
         private byte _currentScript;
@@ -301,16 +301,16 @@ namespace Scumm4
             _resultVarIndex = ReadWord();
             if ((_resultVarIndex & 0x2000) != 0)
             {
-                ushort a = ReadWord();
+                int a = (int)ReadWord();
                 if ((a & 0x2000) != 0)
                 {
-                    _resultVarIndex += (ushort)ReadVariable(a & 0xDFFF);
+                    _resultVarIndex += ReadVariable(a & ~0x2000);
                 }
                 else
                 {
-                    _resultVarIndex += (ushort)(a & 0xFFF);
+                    _resultVarIndex += (a & 0xFFF);
                 }
-                _resultVarIndex &= 0xDFFF;
+                _resultVarIndex &= ~0x2000;
             }
         }
 
@@ -371,9 +371,9 @@ namespace Scumm4
                 _resultVarIndex &= 0x7FFF;
 
                 if (value != 0)
-                    _bitVars[_resultVarIndex >> 3] |= (byte)(1 << (value & 7));
+                    _bitVars[_resultVarIndex >> 3] |= (byte)(1 << (_resultVarIndex & 7));
                 else
-                    _bitVars[_resultVarIndex >> 3] &= (byte)~(1 << (value & 7));
+                    _bitVars[_resultVarIndex >> 3] &= (byte)(~(1 << (_resultVarIndex & 7)));
                 return;
             }
 
@@ -1987,8 +1987,13 @@ namespace Scumm4
             if (obj == 0)
                 return;
 
-            _debugWriter.WriteLine("RunObjectScript obj={0:X4}, entry={1:X4}", obj, entry);
-
+            _debugWriter.Write("RunObjectScript obj={0:X4}, entry={1:X4}", obj, entry);
+            _debugWriter.Write(", Args=[ ");
+            foreach (var item in vars)
+            {
+                _debugWriter.Write("{0} ", item);
+            }
+            _debugWriter.WriteLine("]");
             if (!recursive)
                 StopObjectScript((ushort)obj);
 
@@ -2353,8 +2358,10 @@ namespace Scumm4
 
         private void IsLessEqual()
         {
-            var a = ReadVariable(ReadWord());
+            var varNum = ReadWord();
+            var a = ReadVariable(varNum);
             var b = GetVarOrDirectWord(OpCodeParameter.Param1);
+            _debugWriter.WriteLine("IsLessEqual {0}({1:X4})<={2} ?", a, varNum, b);
             JumpRelative(b <= a);
         }
 
@@ -2576,11 +2583,11 @@ namespace Scumm4
                     break;
                 case 3:
                     // User Input on
-                    _userInput = true;
+                    _userPut = 1;
                     break;
                 case 4:
                     // User Input off
-                    _userInput = false;
+                    _userPut = 0;
                     break;
                 case 5:
                     // SO_CURSOR_SOFT_ON
@@ -2655,7 +2662,7 @@ namespace Scumm4
         {
             _stack.Clear();
             GetResult();
-            ushort dst = _resultVarIndex;
+            int dst = _resultVarIndex;
             while ((_opCode = ReadByte()) != 0xFF)
             {
                 switch (_opCode & 0x1F)
@@ -3178,6 +3185,8 @@ namespace Scumm4
 
         private void StartScene(byte room)
         {
+            StopTalk();
+
             if (_currentScript != 0xFF)
             {
                 if (slots[_currentScript].where == WhereIsObject.Room || slots[_currentScript].where == WhereIsObject.FLObject)
@@ -3976,10 +3985,7 @@ namespace Scumm4
 
         public void CheckExecVerbs()
         {
-            //if (_userPut <= 0 || MouseAndKeyboardStat == 0)
-            //    return;
-
-            if (MouseAndKeyboardStat == 0)
+            if (_userPut <= 0 || MouseAndKeyboardStat == 0)
                 return;
 
             if ((ScummMouseButtonState)MouseAndKeyboardStat < ScummMouseButtonState.MBS_MAX_KEY)

@@ -12,14 +12,17 @@ namespace Scumm4
     {
         private XorReader _reader;
 
+        #region Chunk Class
         private sealed class Chunk
         {
             public uint Size { get; set; }
             public ushort Tag { get; set; }
             public long Offset { get; set; }
         }
+        #endregion
 
-        private class ChunkIterator : IEnumerator<Chunk>
+        #region ChunkIterator Class
+        private sealed class ChunkIterator : IEnumerator<Chunk>
         {
             private readonly XorReader _reader;
             private readonly long _position;
@@ -38,13 +41,13 @@ namespace Scumm4
                 private set;
             }
 
-            public void Dispose()
-            {
-            }
-
             object System.Collections.IEnumerator.Current
             {
                 get { return Current; }
+            }
+
+            public void Dispose()
+            {
             }
 
             public bool MoveNext()
@@ -70,6 +73,7 @@ namespace Scumm4
                 this.Current = null;
             }
         }
+        #endregion
 
         public DiskFile(string path, byte encByte)
         {
@@ -351,6 +355,194 @@ namespace Scumm4
             return room;
         }
 
+        public Costume ReadCostume(byte room, int costOffset)
+        {
+            _reader.BaseStream.Seek(costOffset + 8, SeekOrigin.Begin);
+            var size = _reader.ReadInt32();
+            var tag = _reader.ReadInt16();
+            if (tag != 0x4F43) throw new NotSupportedException("Invalid costume.");
+            var numAnim = _reader.ReadByte();
+            if (size > 0) { numAnim++; }
+            var format = _reader.ReadByte();
+            var numColors = (format & 0x01) == 0x01 ? 32 : 16;
+            var palette = _reader.ReadBytes(numColors);
+            var animCmdsOffset = _reader.ReadUInt16();
+            ushort[] frameOffsets = new ushort[16];
+            for (int i = 0; i < 16; i++)
+            {
+                frameOffsets[i] = _reader.ReadUInt16();
+            }
+
+            // read anim offsets
+            ushort[] animOffsets = new ushort[numAnim];
+            for (int i = 0; i < numAnim; i++)
+            {
+                animOffsets[i] = _reader.ReadUInt16();
+            }
+
+            ushort[] anims = new ushort[numAnim];
+            // read anims
+            CostumeAnimation[] cAnims = new CostumeAnimation[numAnim];
+            for (int i = 0; i < numAnim; i++)
+            {
+                uint usemask = 0xFFFFFFFF;
+                if (animOffsets[i] == 0) continue;
+                _reader.BaseStream.Seek(costOffset + 8 + animOffsets[i], SeekOrigin.Begin);
+                var mask = _reader.ReadUInt16();
+                anims[i] = mask;
+                ushort num = 0;
+                ushort stopped = 0;
+                CostumeAnimationLimb[] frames = new CostumeAnimationLimb[16];
+                do
+                {
+                    if ((mask & 0x8000) != 0)
+                    {
+                        CostumeAnimationLimb frame = new CostumeAnimationLimb();
+                        frame.Start = _reader.ReadUInt16();
+                        if (frame.Start != 0xFFFF)
+                        {
+                            frames[num] = frame;
+                            if ((usemask & 0x8000) != 0)
+                            {
+                                var pos = _reader.BaseStream.Position;
+                                // read the command
+                                _reader.BaseStream.Seek(costOffset + 8 + animCmdsOffset + frame.Start, SeekOrigin.Begin);
+                                var cmd = _reader.ReadByte();
+                                _reader.BaseStream.Seek(pos, SeekOrigin.Begin);
+                                // read the length
+                                var length = _reader.ReadByte();
+                                // start ?
+                                if (cmd == 0x7A)
+                                {
+                                    frames[num] = null;
+                                    stopped &= (ushort)~(1 << num);
+                                } // stop ?
+                                else if (cmd == 0x79)
+                                {
+                                    frames[num] = null;
+                                    stopped |= (ushort)(1 << num);
+                                }
+                                else
+                                {
+                                    frame.NoLoop = (length & 0x80) == 0x80;
+                                    frame.End = (ushort)(frame.Start + (byte)(length & 0x7F));
+                                }
+                            }
+                        }
+                    }
+                    mask <<= 1;
+                    usemask <<= 1;
+                    num++;
+                } while ((mask & 0xFFFF) != 0);
+                cAnims[i] = new CostumeAnimation(frames, stopped);
+            }
+
+            // read anim pictures
+            for (int i = 0; i < numAnim; i++)
+            {
+                byte numLimbs = 0;
+                var cAnim = cAnims[i];
+                if (cAnim == null) continue;
+                for (ushort limb = 0; limb < 16; limb++)
+                {
+                    var frame = cAnim.Limbs[limb];
+                    if (frame == null || (cAnim.Stopped & (1 << limb)) != 0) continue;
+                    numLimbs++;
+
+                    for (int f = frame.Start; f <= frame.End; f++)
+                    {
+                        var pos = _reader.BaseStream.Position;
+                        _reader.BaseStream.Seek(costOffset + 8 + animCmdsOffset + f, SeekOrigin.Begin);
+                        var cmd = _reader.ReadByte();
+                        _reader.BaseStream.Seek(pos, SeekOrigin.Begin);
+                        int code = cmd & 0x7F;
+                        _reader.BaseStream.Seek(costOffset + 8 + frameOffsets[limb], SeekOrigin.Begin);
+                        if (code != 0x7B && code != 0x78)
+                        {
+                            _reader.BaseStream.Seek(code * 2, SeekOrigin.Current);
+                            var offset = _reader.ReadUInt16();
+                            _reader.BaseStream.Seek(costOffset + 8 + offset, SeekOrigin.Begin);
+                            AnimPict pict = new AnimPict(_reader.ReadUInt16(), _reader.ReadUInt16());
+                            pict.Mirror = (format & 0x80) == 0;
+                            pict.Limb = limb;
+                            pict.RelX = _reader.ReadInt16();
+                            pict.RelY = _reader.ReadInt16();
+                            pict.MoveX = _reader.ReadInt16();
+                            pict.MoveY = _reader.ReadInt16();
+                            if ((format & 0x7E) == 0x60)
+                            {
+                                var redir_limb = _reader.ReadByte();
+                                var redir_pict = _reader.ReadByte();
+                                throw new NotImplementedException();
+                            }
+                            ReadPicture(palette, pict);
+                            cAnim.Limbs[limb].Pictures.Add(pict);
+                        }
+                    }
+                }
+            }
+            Costume costume = new Costume(room, palette, cAnims);
+            return costume;
+        }
+
+        public byte[] ReadScript(int roomOffset)
+        {
+            _reader.BaseStream.Seek(roomOffset + 8, SeekOrigin.Begin);
+            var size = _reader.ReadInt32();
+            var tag = _reader.ReadInt16();
+            if (tag != 0x4353) throw new NotSupportedException("Expected SC block.");
+            var data = _reader.ReadBytes(size - 6);
+            return data;
+        }
+
+        public Charset ReadCharset()
+        {
+            var size = _reader.ReadUInt32() + 11;
+
+            // read charset info
+            var unk = _reader.ReadUInt16();
+            byte[] colorMap = _reader.ReadBytes(15);
+            var pos = _reader.BaseStream.Position;
+            byte bpp = _reader.ReadByte();
+            byte height = _reader.ReadByte();
+            ushort numChars = _reader.ReadUInt16();
+            uint[] charOffsets = new uint[256];
+            for (int i = 0; i < 256; i++)
+            {
+                charOffsets[i] = _reader.ReadUInt32();
+            }
+
+            // create charset
+            var charset = new Charset();
+            charset.Height = height;
+            charset.Bpp = bpp;
+            Array.Copy(colorMap, 0, charset.ColorMap, 1, colorMap.Length);
+
+            for (int i = 0; i < numChars; i++)
+            {
+                var offset = charOffsets[i];
+                if (offset == 0) continue;
+
+                // read character info
+                _reader.BaseStream.Seek(4 + 17 + offset, SeekOrigin.Begin);
+                var info = new CharInfo(_reader.ReadByte(), _reader.ReadByte());
+                info.X = (sbyte)_reader.ReadByte();
+                info.Y = (sbyte)_reader.ReadByte();
+                GetPixels(bpp, info);
+                charset.Characters[(byte)i] = info;
+
+                // save bitmap
+                //var ptr = System.Runtime.InteropServices.Marshal.AllocHGlobal(info.Pixels.Length);
+                //System.Runtime.InteropServices.Marshal.Copy(info.Pixels, 0, ptr, info.Pixels.Length);
+                //int stride = ((info.Width + 7) / 8) * 8;
+                //var bmp = new System.Drawing.Bitmap((int)info.Width, (int)info.Height, (int)stride,
+                //    System.Drawing.Imaging.PixelFormat.Format8bppIndexed, ptr);
+                //bmp.Save("c:\\temp\\char" + i + ".bmp");
+                //System.Runtime.InteropServices.Marshal.FreeHGlobal(ptr);
+            }
+            return charset;
+        }
+
         private StringBuilder ReadObjectName(ChunkIterator it, byte nameOffset)
         {
             _reader.BaseStream.Seek(it.Current.Offset + nameOffset - 6, SeekOrigin.Begin);
@@ -385,7 +577,8 @@ namespace Scumm4
                 for (int i = 0; i < offsets.Count - 1; i++)
                 {
                     _reader.BaseStream.Seek(it.Current.Offset + offsets[i].Item2 - 6, SeekOrigin.Begin);
-                    var size = offsets[i + 1].Item2 - offsets[i].Item2;
+                    //var size = offsets[i + 1].Item2 - offsets[i].Item2;
+                    var size = (int)(it.Current.Offset + it.Current.Size - 6 - _reader.BaseStream.Position);
                     var script = new ScriptData { Data = _reader.ReadBytes(size) };
                     data.Scripts.Add(offsets[i].Item1, script);
                 }
@@ -407,7 +600,7 @@ namespace Scumm4
                 MemoryStream ms = new MemoryStream(stripData);
                 var br = new BinaryReader(ms);
                 var size = br.ReadUInt32();
-                int numStrips = obj.width/8;
+                int numStrips = obj.width / 8;
                 Strip[] strips = new Strip[numStrips];
                 for (int i = 0; i < strips.Length; i++)
                 {
@@ -513,136 +706,6 @@ namespace Scumm4
             }
         }
 
-        public Costume ReadCostume(byte room, int costOffset)
-        {
-            _reader.BaseStream.Seek(costOffset + 8, SeekOrigin.Begin);
-            var size = _reader.ReadInt32();
-            var tag = _reader.ReadInt16();
-            if (tag != 0x4F43) throw new NotSupportedException("Invalid costume.");
-            var numAnim = _reader.ReadByte();
-            if (size > 0) { numAnim++; }
-            var format = _reader.ReadByte();
-            var numColors = (format & 0x01) == 0x01 ? 32 : 16;
-            var palette = _reader.ReadBytes(numColors);
-            var animCmdsOffset = _reader.ReadUInt16();
-            ushort[] frameOffsets = new ushort[16];
-            for (int i = 0; i < 16; i++)
-            {
-                frameOffsets[i] = _reader.ReadUInt16();
-            }
-
-            // read anim offsets
-            ushort[] animOffsets = new ushort[numAnim];
-            for (int i = 0; i < numAnim; i++)
-            {
-                animOffsets[i] = _reader.ReadUInt16();
-            }
-
-            ushort[] anims = new ushort[numAnim];
-            // read anims
-            CostumeAnimation[] cAnims = new CostumeAnimation[numAnim];
-            for (int i = 0; i < numAnim; i++)
-            {
-                uint usemask = 0xFFFFFFFF;
-                if (animOffsets[i] == 0) continue;
-                _reader.BaseStream.Seek(costOffset + 8 + animOffsets[i], SeekOrigin.Begin);
-                var mask = _reader.ReadUInt16();
-                anims[i] = mask;
-                ushort num = 0;
-                ushort stopped = 0;
-                CostumeAnimationLimb[] frames = new CostumeAnimationLimb[16];
-                do
-                {
-                    if ((mask & 0x8000) != 0)
-                    {
-                        CostumeAnimationLimb frame = new CostumeAnimationLimb();
-                        frame.Start = _reader.ReadUInt16();
-                        if (frame.Start != 0xFFFF)
-                        {
-                            frames[num] = frame;
-                            if ((usemask & 0x8000) != 0)
-                            {
-                                var pos = _reader.BaseStream.Position;
-                                // read the command
-                                _reader.BaseStream.Seek(costOffset + 8 + animCmdsOffset + frame.Start, SeekOrigin.Begin);
-                                var cmd = _reader.ReadByte();
-                                _reader.BaseStream.Seek(pos, SeekOrigin.Begin);
-                                // read the length
-                                var length = _reader.ReadByte();
-                                // start ?
-                                if (cmd == 0x7A)
-                                {
-                                    frames[num] = null;
-                                    stopped &= (ushort)~(1 << num);
-                                } // stop ?
-                                else if (cmd == 0x79)
-                                {
-                                    frames[num] = null;
-                                    stopped |= (ushort)(1 << num);
-                                }
-                                else
-                                {
-                                    frame.NoLoop = (length & 0x80) == 0x80;
-                                    frame.End = (ushort)(frame.Start + (byte)(length & 0x7F));
-                                }
-                            }
-                        }
-                    }
-                    mask <<= 1;
-                    usemask <<= 1;
-                    num++;
-                } while ((mask & 0xFFFF) != 0);
-                cAnims[i] = new CostumeAnimation(frames, stopped);
-            }
-
-            // read anim pictures
-            for (int i = 0; i < numAnim; i++)
-            {
-                byte numLimbs = 0;
-                var cAnim = cAnims[i];
-                if (cAnim == null) continue;
-                for (ushort limb = 0; limb < 16; limb++)
-                {
-                    var frame = cAnim.Limbs[limb];
-                    if (frame == null || (cAnim.Stopped & (1 << limb)) != 0) continue;
-                    numLimbs++;
-
-                    for (int f = frame.Start; f <= frame.End; f++)
-                    {
-                        var pos = _reader.BaseStream.Position;
-                        _reader.BaseStream.Seek(costOffset + 8 + animCmdsOffset + f, SeekOrigin.Begin);
-                        var cmd = _reader.ReadByte();
-                        _reader.BaseStream.Seek(pos, SeekOrigin.Begin);
-                        int code = cmd & 0x7F;
-                        _reader.BaseStream.Seek(costOffset + 8 + frameOffsets[limb], SeekOrigin.Begin);
-                        if (code != 0x7B)
-                        {
-                            _reader.BaseStream.Seek(code * 2, SeekOrigin.Current);
-                            var offset = _reader.ReadUInt16();
-                            _reader.BaseStream.Seek(costOffset + 8 + offset, SeekOrigin.Begin);
-                            AnimPict pict = new AnimPict(_reader.ReadUInt16(), _reader.ReadUInt16());
-                            pict.Mirror = (format & 0x80) == 0;
-                            pict.Limb = limb;
-                            pict.RelX = _reader.ReadInt16();
-                            pict.RelY = _reader.ReadInt16();
-                            pict.MoveX = _reader.ReadInt16();
-                            pict.MoveY = _reader.ReadInt16();
-                            if ((format & 0x7E) == 0x60)
-                            {
-                                var redir_limb = _reader.ReadByte();
-                                var redir_pict = _reader.ReadByte();
-                                throw new NotImplementedException();
-                            }
-                            ReadPicture(palette, pict);
-                            cAnim.Limbs[limb].Pictures.Add(pict);
-                        }
-                    }
-                }
-            }
-            Costume costume = new Costume(room, palette, cAnims);
-            return costume;
-        }
-
         private void ReadPicture(byte[] palette, AnimPict pict)
         {
             int shift;
@@ -682,16 +745,6 @@ namespace Scumm4
                     }
                 }
             }
-        }
-
-        public byte[] ReadScript(int roomOffset)
-        {
-            _reader.BaseStream.Seek(roomOffset + 8, SeekOrigin.Begin);
-            var size = _reader.ReadInt32();
-            var tag = _reader.ReadInt16();
-            if (tag != 0x4353) throw new NotSupportedException("Expected SC block.");
-            var data = _reader.ReadBytes(size - 6);
-            return data;
         }
 
         private RoomHeader ReadRMHD()
@@ -738,54 +791,6 @@ namespace Scumm4
                 colors[i] = Color.FromArgb(255, _reader.ReadByte(), _reader.ReadByte(), _reader.ReadByte());
             }
             return colors;
-        }
-
-        public Charset ReadCharset()
-        {
-            var size = _reader.ReadUInt32() + 11;
-
-            // read charset info
-            var unk = _reader.ReadUInt16();
-            byte[] colorMap = _reader.ReadBytes(15);
-            var pos = _reader.BaseStream.Position;
-            byte bpp = _reader.ReadByte();
-            byte height = _reader.ReadByte();
-            ushort numChars = _reader.ReadUInt16();
-            uint[] charOffsets = new uint[256];
-            for (int i = 0; i < 256; i++)
-            {
-                charOffsets[i] = _reader.ReadUInt32();
-            }
-
-            // create charset
-            var charset = new Charset();
-            charset.Height = height;
-            charset.Bpp = bpp;
-            Array.Copy(colorMap, 0, charset.ColorMap, 1, colorMap.Length);
-
-            for (int i = 0; i < numChars; i++)
-            {
-                var offset = charOffsets[i];
-                if (offset == 0) continue;
-
-                // read character info
-                _reader.BaseStream.Seek(4 + 17 + offset, SeekOrigin.Begin);
-                var info = new CharInfo(_reader.ReadByte(), _reader.ReadByte());
-                info.X = (sbyte)_reader.ReadByte();
-                info.Y = (sbyte)_reader.ReadByte();
-                GetPixels(bpp, info);
-                charset.Characters[(byte)i] = info;
-
-                // save bitmap
-                //var ptr = System.Runtime.InteropServices.Marshal.AllocHGlobal(info.Pixels.Length);
-                //System.Runtime.InteropServices.Marshal.Copy(info.Pixels, 0, ptr, info.Pixels.Length);
-                //int stride = ((info.Width + 7) / 8) * 8;
-                //var bmp = new System.Drawing.Bitmap((int)info.Width, (int)info.Height, (int)stride,
-                //    System.Drawing.Imaging.PixelFormat.Format8bppIndexed, ptr);
-                //bmp.Save("c:\\temp\\char" + i + ".bmp");
-                //System.Runtime.InteropServices.Marshal.FreeHGlobal(ptr);
-            }
-            return charset;
         }
 
         private void GetPixels(byte bpp, CharInfo info)

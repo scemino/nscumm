@@ -4166,7 +4166,7 @@ namespace Scumm4
                 a = _actors[_camera._follows];
 
                 int actorx = a.GetPos().x;
-                t = actorx / 8 - /*_screenStartStrip 20?*/ 20;
+                t = actorx / 8 - _screenStartStrip;
 
                 if (t < _camera._leftTrigger || t > _camera._rightTrigger)
                 {
@@ -4229,7 +4229,7 @@ namespace Scumm4
             {
                 _camera._cur.x = (short)(_screenWidth / 2);
             }
-            else if (_camera._cur.x > CurrentRoomData.Header.Width - (_screenWidth / 2))
+            else if (_camera._cur.x > (CurrentRoomData.Header.Width - (_screenWidth / 2)))
             {
                 _camera._cur.x = (short)(CurrentRoomData.Header.Width - (_screenWidth / 2));
             }

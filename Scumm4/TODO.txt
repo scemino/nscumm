@@ -1,6 +1,5 @@
 ﻿lose object inventory when we change the room
 fix object name
-fix scrolling, when we scroll to the right
 scaling actors
 draw actor entirely
 bug in local script with 0-size

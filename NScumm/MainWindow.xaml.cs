@@ -259,18 +259,9 @@ namespace CostumeViewer
             Array.Clear(_pixels, 0, _pixels.Length);
             if (_interpreter.CurrentRoomData != null)
             {
-                var diff = _interpreter.Camera._cur.x - _interpreter.Camera._last.x;
-                int start;
-                if (diff == 8)
-                {
-                    start = _interpreter.ScreenStartStrip + 1;
-                }
-                else
-                {
-                    start = _interpreter.ScreenStartStrip;
-                }
-                _imgDecoder.Decode(_interpreter.CurrentRoomData.Strips, _interpreter.CurrentRoomData.Palette, new Scumm4.Point(), start, 320, _interpreter.CurrentRoomData.Header.Height, _interpreter.CurrentRoomData.Header.Height);
-
+                _imgDecoder.Decode(_interpreter.CurrentRoomData.Strips, 
+                    _interpreter.CurrentRoomData.Palette, new Scumm4.Point(), _interpreter.ScreenStartStrip,
+                    320, _interpreter.CurrentRoomData.Header.Height, _interpreter.CurrentRoomData.Header.Height);
             }
         }
 
@@ -287,7 +278,7 @@ namespace CostumeViewer
                 {
                     DrawObject(_interpreter.Objects[i]);
                 }
-            }            
+            }
         }
 
         private void DrawObject(ObjectData obj)

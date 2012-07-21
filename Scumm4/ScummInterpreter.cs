@@ -338,7 +338,7 @@ namespace Scumm4
                 return ((_bitVars[var >> 3] & (1 << (var & 7))) != 0) ? 1 : 0;
             }
 
-            if ((var & 0x4000) == 0x4000)
+            if ((var & 0x4000) == 0x4000 && _currentScript != 0xFF)
             {
                 var &= 0xFFF;
 
@@ -490,6 +490,7 @@ namespace Scumm4
             _opCodes[0x52] = ActorFollowCamera;
             _opCodes[0x53] = ActorOps;
             /* 54 */
+            _opCodes[0x54] = SetObjectName;
             _opCodes[0x55] = ActorFromPosition;
             _opCodes[0x56] = GetActorMoving;
             _opCodes[0x57] = Or;
@@ -634,6 +635,7 @@ namespace Scumm4
             _opCodes[0xD2] = ActorFollowCamera;
             _opCodes[0xD3] = ActorOps;
             /* D4 */
+            _opCodes[0xD4] = SetObjectName;
             _opCodes[0xD5] = ActorFromPosition;
             _opCodes[0xD6] = GetActorMoving;
             _opCodes[0xD7] = Or;
@@ -679,6 +681,12 @@ namespace Scumm4
             _opCodes[0xFD] = FindInventory;
             _opCodes[0xFE] = WalkActorTo;
             _opCodes[0xFF] = DrawBox;
+        }
+
+        private void SetObjectName()
+        {
+            int obj = GetVarOrDirectWord(OpCodeParameter.Param1);
+            SetObjectName(obj);
         }
 
         private void GetActorMoving()
@@ -795,20 +803,10 @@ namespace Scumm4
 
         private void SetBoxFlags(int box, int val)
         {
-            /* SCUMM7+ stuff */
-            if ((val & 0xC000) != 0)
-            {
-                // TODO:
-                throw new NotImplementedException("SetBoxFlags");
-                //_extraBoxFlags[box] = val;
-            }
-            else
-            {
-                Box b = GetBoxBase(box);
-                if (b == null)
-                    return;
-                b.flags = (BoxFlags)val;
-            }
+            Box b = GetBoxBase(box);
+            if (b == null)
+                return;
+            b.flags = (BoxFlags)val;
         }
 
         private void DelayVariable()
@@ -3010,6 +3008,20 @@ namespace Scumm4
         #endregion
 
         #region Misc Methods
+        private Dictionary<int, string> _newNames = new Dictionary<int, string>();
+
+        private void SetObjectName(int obj)
+        {
+            if (obj < _actors.Length)
+            {
+                string msg = string.Format("Can't set actor {0} name with new name.", obj);
+                throw new NotSupportedException(msg);
+            }
+
+            _newNames[obj] = new string(ReadCharacters().ToArray());
+            RunInventoryScript(0);
+        }
+
         private void PanCameraTo(int x)
         {
             _camera._dest.x = (short)x;
@@ -4061,12 +4073,6 @@ namespace Scumm4
             SetResult(GetOwner(GetVarOrDirectWord(OpCodeParameter.Param1)));
         }
 
-        //private void SetObjectName()
-        //{
-        //    int obj = GetVarOrDirectWord(OpCodeParameter.Param1);
-        //    setObjectName(obj);
-        //}
-
         public bool GetObjectOrActorXY(int obj, out int x, out int y)
         {
             Actor act;
@@ -4296,7 +4302,7 @@ namespace Scumm4
                                 return;
                             case 5:
                                 {
-                                    ushort val = (ushort)(msg[i + 1] | msg[i + 2] << 16);
+                                    ushort val = (ushort)(msg[i + 1] | msg[i + 2] << 8);
                                     var num = ReadVariable((int)val);
                                     if (num > 0)
                                     {
@@ -4319,7 +4325,7 @@ namespace Scumm4
                                 break;
                             case 6:
                                 {
-                                    ushort val = (ushort)(msg[i + 1] | msg[i + 2] << 16);
+                                    ushort val = (ushort)(msg[i + 1] | msg[i + 2] << 8);
                                     var num = ReadVariable((int)val);
                                     if (num > 0)
                                     {
@@ -4386,14 +4392,20 @@ namespace Scumm4
             string name;
             if (num < _actors.Length)
             {
+                // TODO
                 throw new NotImplementedException();
+            }
+            else if (_newNames.ContainsKey(num))
+            {
+                name = _newNames[num];
             }
             else
             {
                 var obj = (from o in Objects
                            where o.obj_nr == num
                            select o).FirstOrDefault();
-                name = obj.Name;
+                // TODO: fix this
+                name = obj == null ? string.Empty : obj.Name;
             }
             return name;
         }

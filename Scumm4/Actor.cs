@@ -566,24 +566,6 @@ namespace Scumm4
 
             if (!_ignoreBoxes)
             {
-                // TODO:
-                //specdir = _vm->_extraBoxFlags[_walkbox];
-                //if (specdir)
-                //{
-                //    if (specdir & 0x8000)
-                //    {
-                //        dir = specdir & 0x3FFF;
-                //    }
-                //    else
-                //    {
-                //        specdir = specdir & 0x3FFF;
-                //        if (specdir - 90 < dir && dir < specdir + 90)
-                //            dir = specdir;
-                //        else
-                //            dir = specdir + 180;
-                //    }
-                //}
-
                 flags = _scumm.GetBoxFlags(_walkbox);
 
                 flipX = (_walkdata.deltaXFactor > 0);

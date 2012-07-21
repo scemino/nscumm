@@ -55,7 +55,7 @@ namespace Scumm4
                     _reader.BaseStream.Seek(offset, SeekOrigin.Begin);
                 }
                 this.Current = null;
-                if (_reader.BaseStream.Position < (_position + _size) && _reader.BaseStream.Position < _reader.BaseStream.Length)
+                if (_reader.BaseStream.Position < (_position + _size - 6) && _reader.BaseStream.Position < _reader.BaseStream.Length)
                 {
                     var size = _reader.ReadUInt32();
                     var tag = _reader.ReadUInt16();
@@ -244,7 +244,7 @@ namespace Scumm4
                                 }
                                 else
                                 {
-                                    int tmp;
+                                    throw new NotSupportedException("Entry script has already been defined.");
                                 }
                             }
                             break;
@@ -252,7 +252,14 @@ namespace Scumm4
                             {
                                 // Exit script
                                 byte[] exitScript = _reader.ReadBytes((int)(it.Current.Size - 6));
-                                room.ExitScript.Data = exitScript;
+                                if (room.ExitScript.Data == null)
+                                {
+                                    room.ExitScript.Data = exitScript;
+                                }
+                                else
+                                {
+                                    throw new NotSupportedException("Exit script has already been defined.");
+                                }
                             }
                             break;
                         case 0x4C53:

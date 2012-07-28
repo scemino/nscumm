@@ -1113,10 +1113,10 @@ namespace Scumm4
                     if (ss.number < NumInventory && _inventory[ss.number] == obj)
                     {
                         throw new NotSupportedException("Odd setOwnerOf case #1: Please report to Fingolfin where you encountered this");
-                        PutOwner(obj, 0);
-                        RunInventoryScript(arg);
-                        StopObjectCode();
-                        return;
+                        //PutOwner(obj, 0);
+                        //RunInventoryScript(arg);
+                        //StopObjectCode();
+                        //return;
                     }
                     if (ss.number == obj)
                         throw new NotSupportedException("Odd setOwnerOf case #2: Please report to Fingolfin where you encountered this");
@@ -1949,6 +1949,16 @@ namespace Scumm4
                         var a = GetVarOrDirectWord(OpCodeParameter.Param1);
                         var b = GetVarOrDirectWord(OpCodeParameter.Param2);
                         // TODO: initScreens(a, b);
+                    }
+                    break;
+                case 4:		// SO_ROOM_PALETTE
+                    {
+                        var a = GetVarOrDirectWord(OpCodeParameter.Param1);
+                        var b = GetVarOrDirectWord(OpCodeParameter.Param2);
+
+                        // TODO: _shadowPalette
+                        //_shadowPalette[b] = a;
+                        //setDirtyColors(b, b);
                     }
                     break;
                 case 7:		// SO_ROOM_SCALE
@@ -2878,10 +2888,17 @@ namespace Scumm4
         {
             int obj = GetVarOrDirectWord(OpCodeParameter.Param1);
 
+            if (obj < 1)
+            {
+                string msg = string.Format("pickupObjectOld received invalid index %d (script %d)", obj, slots[_currentScript].number);
+                throw new NotSupportedException(msg);
+            }
+
             if (GetObjectIndex(obj) == -1)
                 return;
 
-            if (GetWhereIsObject(obj) == WhereIsObject.Inventory)	// Don't take an object twice
+            // Don't take an object twice
+            if (GetWhereIsObject(obj) == WhereIsObject.Inventory)
                 return;
 
             // debug(0, "adding %d from %d to inventoryOld", obj, _currentRoom);
@@ -4405,7 +4422,7 @@ namespace Scumm4
                            where o.obj_nr == num
                            select o).FirstOrDefault();
                 // TODO: fix this
-                name = obj == null ? string.Empty : obj.Name;
+                name = obj == null ? "Toto" : obj.Name;
             }
             return name;
         }
@@ -4638,6 +4655,7 @@ namespace Scumm4
         }
         #endregion
 
+        #region Scale Members
         public int GetBoxScale(byte boxNum)
         {
             var box = this.GetBoxBase(boxNum);
@@ -4713,6 +4731,7 @@ namespace Scumm4
                 scale = 255;
 
             return scale;
-        }
+        } 
+        #endregion
     }
 }

@@ -8,7 +8,7 @@
     <ProjectGuid>{BDB23D9C-ACB1-4BAA-BFF7-31AB66AF321F}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>CostumeViewer</RootNamespace>
+    <RootNamespace>NScumm</RootNamespace>
     <AssemblyName>NScumm</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <TargetFrameworkProfile>Client</TargetFrameworkProfile>

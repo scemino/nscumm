@@ -1,12 +1,9 @@
-﻿lose object inventory when we change the room
-fix object name
+﻿lose object inventory when we change the room (actually we don't lose them but we lose their name, the conversion must be done before changing the room)
+fix object name (see previous bug)
 scaling actors
-draw actor entirely
-bug in local script with 0-size
+draw actor entirely (don't draw the entire scene, manage dirty objetcs and so on)
 text position
 text speed
-game detection
-remove hard-coded game directory
 room effects
 color cycle
 clean code

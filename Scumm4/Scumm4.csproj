@@ -61,6 +61,7 @@
     <Compile Include="CostumeAnimation.cs" />
     <Compile Include="DiskFile.cs" />
     <Compile Include="FlashLight.cs" />
+    <Compile Include="GameManager.cs" />
     <Compile Include="ImageDecoder.cs" />
     <Compile Include="KeyCode.cs" />
     <Compile Include="Limb.cs" />
@@ -82,6 +83,12 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="TODO.txt" />
+    <EmbeddedResource Include="Nscumm.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Nscumm.xsd">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xs:schema id="Nscumm"
+    targetNamespace="http://schemas.scemino.com/nscumm/2012/"
+    elementFormDefault="qualified"
+    xmlns="http://schemas.scemino.com/nscumm/2012/"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+>
+  <xs:element name="NScumm" type="NScumm" />
+
+  <xs:complexType name="NScumm">
+    <xs:sequence>
+      <xs:element name="MD5" type="MD5" maxOccurs="unbounded" />
+      <xs:element name="Game" type="Game" maxOccurs="unbounded" />
+      <xs:element name="Description" type="Description" maxOccurs="unbounded" />
+    </xs:sequence>
+  </xs:complexType>
+  
+  <xs:complexType name="MD5">
+    <xs:attribute name="signature" type="xs:string" />
+    <xs:attribute name="gameId" type="xs:string" />
+    <xs:attribute name="variant" type="xs:string" />
+    <xs:attribute name="language" type="xs:language" />
+  </xs:complexType>
+
+  <xs:complexType name="Game">
+    <xs:attribute name="id" type="xs:string" />
+    <xs:attribute name="variant" type="xs:string" />
+    <xs:attribute name="version" type="xs:nonNegativeInteger" />
+  </xs:complexType>
+
+  <xs:complexType name="Description">
+    <xs:attribute name="gameId" type="xs:string" />
+    <xs:attribute name="text" type="xs:string" />
+  </xs:complexType>
+  
+</xs:schema>

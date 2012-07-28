@@ -29,11 +29,14 @@ namespace CostumeViewer
         {
             InitializeComponent();
 
+            var info = ((CostumeViewer.App)App.Current).Info;
+            this.Title = string.Format("{0} - {1}", info.Description, info.Culture.NativeName);
+
             _index = new ScummIndex();
-            _index.LoadIndex(@"E:\Program Files (x86)\ScummVM\Games\monkey1vga\000.lfl");
+            _index.LoadIndex(info.Path);
             sliderCost.Minimum = 0;
             sliderCost.Maximum = 0x7D;
-            sliderCost.Value = 1;
+            sliderCost.Value = 0x23;
         }
 
         private void slider1_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)

@@ -14,7 +14,7 @@ using System.Windows.Shapes;
 using Scumm4;
 using System.Threading;
 
-namespace CostumeViewer
+namespace NScumm
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
@@ -34,18 +34,15 @@ namespace CostumeViewer
         {
             InitializeComponent();
 
-            //this.Width = 200;
-            //this.Height = 100;
-            //this.WindowStartupLocation = System.Windows.WindowStartupLocation.Manual;
-            this.Top += 800;
-
             _pixels = new byte[320 * 200 * 3];
             bmp = new WriteableBitmap(320, 200, 96, 96, PixelFormats.Rgb24, null);
             _screen.Source = bmp;
 
+            var info = ((NScumm.App)App.Current).Info;
+            this.Title = string.Format("{0} - {1}", info.Description, info.Culture.NativeName);
+
             _index = new ScummIndex();
-            //_index.LoadIndex(@"C:\Users\vsab\Documents\Visual Studio 2010\Projects\NScumm\monkey1vga\000.lfl");
-            _index.LoadIndex(@"E:\Program Files (x86)\ScummVM\Games\monkey1vga\000.lfl");
+            _index.LoadIndex(info.Path);
             _index.GetCharset(4);
 
             _interpreter = new ScummInterpreter(_index, _pixels);
@@ -259,7 +256,7 @@ namespace CostumeViewer
             Array.Clear(_pixels, 0, _pixels.Length);
             if (_interpreter.CurrentRoomData != null)
             {
-                _imgDecoder.Decode(_interpreter.CurrentRoomData.Strips, 
+                _imgDecoder.Decode(_interpreter.CurrentRoomData.Strips,
                     _interpreter.CurrentRoomData.Palette, new Scumm4.Point(), _interpreter.ScreenStartStrip,
                     320, _interpreter.CurrentRoomData.Header.Height, _interpreter.CurrentRoomData.Header.Height);
             }

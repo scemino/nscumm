@@ -46,6 +46,8 @@ namespace CostumeViewer
         {
             InitializeComponent();
 
+            m_timer = CreateTimer();
+
             var info = ((CostumeViewer.App)App.Current).Info;
             this.Title = string.Format("{0} - {1}", info.Description, info.Culture.NativeName);
 
@@ -53,7 +55,6 @@ namespace CostumeViewer
             _index.LoadIndex(info.Path);
             sliderCost.Minimum = 0;
             sliderCost.Maximum = 0x7D;
-            //sliderCost.Value = 0x23;
             sliderCost.Value = 0x1;
         }
 
@@ -99,7 +100,7 @@ namespace CostumeViewer
                 if (limb != null && limb.Start != 0xFFFF && (limb.Start + num) <= limb.End && limb.Pictures.Count > num)
                 {
                     var pict = limb.Pictures[num];
-                    _bmp.WritePixels(new Int32Rect(160 + pict.RelX, 100 + pict.RelY, pict.Width, pict.Height), pict.Data, pict.Width, 0);
+                    _bmp.WritePixels(new Int32Rect(160 + pict.RelX, 120 + pict.RelY, pict.Width, pict.Height), pict.Data, pict.Width, 0);
                     image1.Source = _bmp;
                 }
             }
@@ -149,6 +150,32 @@ namespace CostumeViewer
                 l_colors[i] = room.Palette.Colors[_cost.Palette[i]];
             }
             return l_colors;
+        }
+
+        System.Windows.Threading.DispatcherTimer m_timer;
+
+        private System.Windows.Threading.DispatcherTimer CreateTimer()
+        {
+            var timer = new System.Windows.Threading.DispatcherTimer();
+            timer.IsEnabled = false;
+            timer.Interval = TimeSpan.FromMilliseconds(100);
+            timer.Tick += m_timer_Tick;
+            return timer;
+        }
+
+        private void CheckBox_Checked_1(object sender, RoutedEventArgs e)
+        {
+            m_timer.IsEnabled = !m_timer.IsEnabled;
+        }
+
+        void m_timer_Tick(object sender, EventArgs e)
+        {
+            var value = sliderFrames.Value + 1;
+            if (value > sliderFrames.Maximum)
+            {
+                value = sliderFrames.Minimum;
+            }
+            sliderFrames.Value = value;
         }
     }
 }

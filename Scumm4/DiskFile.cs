@@ -213,46 +213,15 @@ namespace Scumm4
                             // SCAL
                             if (it.Current.Size > 6)
                             {
-                                ReadSCAL();
+                                room.Scales = ReadSCAL();
                             }
                             break;
                         case 0x4D42:
                             // BM (IM00)
                             if (it.Current.Size > 8)
                             {
-                                var size = _reader.ReadUInt32();
-                                int numStrips = (int)(room.Header.Width / 8);
-                                Strip[] strips = new Strip[numStrips];
-                                for (int i = 0; i < numStrips; i++)
-                                {
-                                    strips[i].Offset = _reader.ReadUInt32();
-                                }
-                                for (int i = 0; i < numStrips - 1; i++)
-                                {
-                                    strips[i].CodecId = _reader.ReadByte();
-                                    int count = (int)(strips[i + 1].Offset - strips[i].Offset - 1);
-                                    strips[i].Data = _reader.ReadBytes(count);
-                                }
-                                if (numStrips > 0)
-                                {
-                                    int count = (int)(size - strips[numStrips - 1].Offset - 1);
-                                    strips[numStrips - 1].CodecId = _reader.ReadByte();
-                                    strips[numStrips - 1].Data = _reader.ReadBytes(count);
-                                }
-                                room.Strips.AddRange(strips);
-                                {
-                                    int size2 = room.Header.Width;
-                                    size2 *= (int)room.Header.Height;
-                                    var pixels = new byte[size2 * 3];
-                                    var imgDecoder = new ImageDecoder(pixels);
-                                    imgDecoder.Decode(strips, room.Palette, new Point(), 0, room.Header.Width, room.Header.Height, room.Header.Height);
-                                    var ptr = System.Runtime.InteropServices.Marshal.AllocHGlobal(pixels.Length);
-                                    System.Runtime.InteropServices.Marshal.Copy(pixels, 0, ptr, pixels.Length);
-                                    System.Drawing.Bitmap bmp2 = new System.Drawing.Bitmap(room.Header.Width, room.Header.Height, room.Header.Width * 3, System.Drawing.Imaging.PixelFormat.Format24bppRgb, ptr);
-                                    bmp2.Save("c:\\temp\\room_" + roomOffset + ".bmp");
-                                    System.Runtime.InteropServices.Marshal.FreeHGlobal(ptr);
-                                }
-                                ReadZPlanes(room, numStrips);
+                                room.Data = _reader.ReadBytes((int)(it.Current.Size - 6));
+                                //ReadZPlanes(room, numStrips);
                             }
                             break;
                         case 0x4E45:
@@ -372,6 +341,15 @@ namespace Scumm4
             return room;
         }
 
+        public XorReader ReadCostume2(byte room, int costOffset)
+        {
+            _reader.BaseStream.Seek(costOffset + 8, SeekOrigin.Begin);
+            var size = _reader.ReadInt32();
+            var tag = _reader.ReadInt16();
+            if (tag != 0x4F43) throw new NotSupportedException("Invalid costume.");
+            return _reader;
+        }
+
         public Costume ReadCostume(byte room, int costOffset)
         {
             _reader.BaseStream.Seek(costOffset + 8, SeekOrigin.Begin);
@@ -418,7 +396,6 @@ namespace Scumm4
                         frame.Start = _reader.ReadUInt16();
                         if (frame.Start != 0xFFFF)
                         {
-                            frames[num] = frame;
                             if ((usemask & 0x8000) != 0)
                             {
                                 var pos = _reader.BaseStream.Position;
@@ -431,16 +408,15 @@ namespace Scumm4
                                 // start ?
                                 if (cmd == 0x7A)
                                 {
-                                    frames[num] = null;
                                     stopped &= (ushort)~(1 << num);
                                 } // stop ?
                                 else if (cmd == 0x79)
                                 {
-                                    frames[num] = null;
                                     stopped |= (ushort)(1 << num);
                                 }
                                 else
                                 {
+                                    frames[num] = frame;
                                     frame.NoLoop = (length & 0x80) == 0x80;
                                     frame.End = (ushort)(frame.Start + (byte)(length & 0x7F));
                                 }
@@ -650,47 +626,6 @@ namespace Scumm4
             }
         }
 
-        private void ReadZPlanes(Room room, int numStrips)
-        {
-            // read Z-planes
-            var offset = _reader.BaseStream.Position;
-            var size = _reader.ReadUInt16();
-
-            while (size != 0)
-            {
-                ushort[] offsets = new ushort[numStrips];
-                // first read offset
-                for (int i = 0; i < numStrips; i++)
-                {
-                    offsets[i] = _reader.ReadUInt16();
-                }
-                var mask = new byte[numStrips * room.Header.Height];
-                for (int i = 0; i < numStrips; i++)
-                {
-                    _reader.BaseStream.Seek(offset + offsets[i], SeekOrigin.Begin);
-                    DecodeMask(mask, i, numStrips, room.Header.Height);
-                }
-                room.ZPlanes.Add(mask);
-                byte[] tmp = new byte[room.Header.Width * room.Header.Height];
-                for (int y = 0; y < room.Header.Height; y++)
-                {
-                    for (int x = 0; x < room.Header.Width; x++)
-                    {
-                        int m = x % 8;
-                        tmp[y * room.Header.Width + x] = (byte)(((mask[y * numStrips + (x / 8)] & (0x80 >> m)) != 0) ? 0xFF : 0x00);
-                    }
-                }
-                var ptr = System.Runtime.InteropServices.Marshal.AllocHGlobal(tmp.Length);
-                System.Runtime.InteropServices.Marshal.Copy(tmp, 0, ptr, tmp.Length);
-                System.Drawing.Bitmap bmp = new System.Drawing.Bitmap(room.Header.Width, room.Header.Height, room.Header.Width, System.Drawing.Imaging.PixelFormat.Format8bppIndexed, ptr);
-                bmp.Save(@"c:\temp\room_mask.bmp");
-                System.Runtime.InteropServices.Marshal.FreeHGlobal(ptr);
-                _reader.BaseStream.Seek(offset + size, SeekOrigin.Begin);
-                offset = _reader.BaseStream.Position;
-                size = _reader.ReadUInt16();
-            }
-        }
-
         private void DecodeMask(byte[] mask, int offset, int width, int height)
         {
             int dstIndex = offset;
@@ -783,15 +718,18 @@ namespace Scumm4
             }
         }
 
-        private void ReadSCAL()
+        private Scale[] ReadSCAL()
         {
+            Scale[] scales = new Scale[4];
             for (int i = 0; i < 4; i++)
             {
                 var scale1 = _reader.ReadUInt16();
                 var y1 = _reader.ReadUInt16();
                 var scale2 = _reader.ReadUInt16();
                 var y2 = _reader.ReadUInt16();
+                scales[i] = new Scale { scale1 = scale1, y1 = y1, y2 = y2, scale2 = scale2 };
             }
+            return scales;
         }
 
         private byte[] ReadEPAL()
@@ -842,6 +780,14 @@ namespace Scumm4
                 offsetDst += pitch;
             }
         }
+    }
+
+    public class Scale
+    {
+        public ushort scale1;
+        public ushort scale2;
+        public ushort y1;
+        public ushort y2;
     }
 
     public struct Strip

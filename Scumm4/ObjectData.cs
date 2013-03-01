@@ -37,7 +37,7 @@ namespace Scumm4
         public byte parentstate;
         public byte state;
         public byte fl_object_index;
-        public byte flags;
+        public DrawBitmapFlags flags;
 
         public Dictionary<byte, ushort> ScriptOffsets { get; private set; }
         public Dictionary<byte, ScriptData> Scripts { get; private set; }

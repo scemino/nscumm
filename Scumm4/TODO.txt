@@ -1,11 +1,11 @@
-﻿lose object inventory when we change the room (actually we don't lose them but we lose their name, the conversion must be done before changing the room)
-fix object name (see previous bug)
-scaling actors
-draw actor entirely (don't draw the entire scene, manage dirty objetcs and so on)
-text position
-text speed
+﻿scaling actors
+text
+object drawing
+cursor
+actions
 room effects
 color cycle
 clean code
 music
 sound
+MonoGame library support ?

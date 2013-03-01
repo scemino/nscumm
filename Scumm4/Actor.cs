@@ -45,7 +45,7 @@ namespace Scumm4
             frame = new ushort[16];
         }
 
-        public void reset()
+        public void Reset()
         {
             current = 0;
             stopped = 0;
@@ -131,13 +131,6 @@ namespace Scumm4
         public bool _drawToBackBuf;
         public ushort[] _sound = new ushort[32];
         public CostumeData _cost;
-
-        /* HE specific */
-        public int _heOffsX, _heOffsY;
-        public bool _heSkipLimbs;
-        public uint _heCondMask;
-        public uint _hePaletteNum;
-        public uint _heXmapNum;
 
         protected struct ActorWalkData
         {
@@ -232,7 +225,7 @@ namespace Scumm4
                 _sound = new ushort[32];
                 _cost = new CostumeData();
                 _walkdata = new ActorWalkData();
-                _walkdata.point3.x = 32000;
+                _walkdata.point3.X = 32000;
                 _walkScript = 0;
             }
 
@@ -240,8 +233,8 @@ namespace Scumm4
             {
                 _costume = 0;
                 _room = 0;
-                _pos.x = 0;
-                _pos.y = 0;
+                _pos.X = 0;
+                _pos.Y = 0;
                 _facing = 180;
             }
             else if (mode == 2)
@@ -288,12 +281,12 @@ namespace Scumm4
 
         public void PutActor()
         {
-            PutActor(_pos.x, _pos.y, _room);
+            PutActor(_pos.X, _pos.Y, _room);
         }
 
         public void PutActor(byte room)
         {
-            PutActor(_pos.x, _pos.y, room);
+            PutActor(_pos.X, _pos.Y, room);
         }
 
         public void PutActor(short x, short y)
@@ -308,8 +301,8 @@ namespace Scumm4
                 _scumm.StopTalk();
             }
 
-            _pos.x = dstX;
-            _pos.y = dstY;
+            _pos.X = dstX;
+            _pos.Y = dstY;
             _room = newRoom;
             _needRedraw = true;
 
@@ -348,14 +341,14 @@ namespace Scumm4
             if (_visible)
             {
                 HideActor();
-                _cost.reset();
+                _cost.Reset();
                 _costume = c;
                 ShowActor();
             }
             else
             {
                 _costume = c;
-                _cost.reset();
+                _cost.Reset();
             }
 
             for (int i = 0; i < 32; i++)
@@ -384,8 +377,8 @@ namespace Scumm4
             if (_pos == next)
                 return 0;
 
-            diffX = next.x - _pos.x;
-            diffY = next.y - _pos.y;
+            diffX = next.X - _pos.X;
+            diffY = next.Y - _pos.Y;
             deltaYFactor = (int)_speedy << 16;
 
             if (diffY < 0)
@@ -524,36 +517,36 @@ namespace Scumm4
                 _moving |= MoveFlags.InLeg;
             }
 
-            if (_walkbox != _walkdata.curbox && _scumm.CheckXYInBoxBounds(_walkdata.curbox, _pos.x, _pos.y))
+            if (_walkbox != _walkdata.curbox && _scumm.CheckXYInBoxBounds(_walkdata.curbox, _pos.X, _pos.Y))
             {
                 SetBox(_walkdata.curbox);
             }
 
-            distX = Math.Abs(_walkdata.next.x - _walkdata.cur.x);
-            distY = Math.Abs(_walkdata.next.y - _walkdata.cur.y);
+            distX = Math.Abs(_walkdata.next.X - _walkdata.cur.X);
+            distY = Math.Abs(_walkdata.next.Y - _walkdata.cur.Y);
 
-            if (Math.Abs(_pos.x - _walkdata.cur.x) >= distX && Math.Abs(_pos.y - _walkdata.cur.y) >= distY)
+            if (Math.Abs(_pos.X - _walkdata.cur.X) >= distX && Math.Abs(_pos.Y - _walkdata.cur.Y) >= distY)
             {
                 _moving &= ~MoveFlags.InLeg;
                 return 0;
             }
 
-            tmpX = (_pos.x << 16) + _walkdata.xfrac + (_walkdata.deltaXFactor >> 8) * _scalex;
+            tmpX = (_pos.X << 16) + _walkdata.xfrac + (_walkdata.deltaXFactor >> 8) * _scalex;
             _walkdata.xfrac = (ushort)tmpX;
-            _pos.x = (short)(tmpX >> 16);
+            _pos.X = (short)(tmpX >> 16);
 
-            tmpY = (_pos.y << 16) + _walkdata.yfrac + (_walkdata.deltaYFactor >> 8) * _scaley;
+            tmpY = (_pos.Y << 16) + _walkdata.yfrac + (_walkdata.deltaYFactor >> 8) * _scaley;
             _walkdata.yfrac = (ushort)tmpY;
-            _pos.y = (short)(tmpY >> 16);
+            _pos.Y = (short)(tmpY >> 16);
 
-            if (Math.Abs(_pos.x - _walkdata.cur.x) > distX)
+            if (Math.Abs(_pos.X - _walkdata.cur.X) > distX)
             {
-                _pos.x = _walkdata.next.x;
+                _pos.X = _walkdata.next.X;
             }
 
-            if (Math.Abs(_pos.y - _walkdata.cur.y) > distY)
+            if (Math.Abs(_pos.Y - _walkdata.cur.Y) > distY)
             {
-                _pos.y = _walkdata.next.y;
+                _pos.Y = _walkdata.next.Y;
             }
 
             if (_pos == _walkdata.next)
@@ -636,12 +629,11 @@ namespace Scumm4
             if (_ignoreBoxes)
                 return;
 
-            // TODO
-            //_boxscale = (ushort)_scumm.GetBoxScale(_walkbox);
+            _boxscale = (ushort)_scumm.GetBoxScale(_walkbox);
 
-            //var scale = _scumm.GetScale(_walkbox, _pos.x, _pos.y);
+            var scale = _scumm.GetScale(_walkbox, _pos.X, _pos.Y);
 
-            //_scalex = _scaley = (byte)scale;
+            _scalex = _scaley = (byte)scale;
         }
 
         protected void SetBox(byte box)
@@ -650,7 +642,7 @@ namespace Scumm4
             SetupActorScale();
         }
 
-        protected int UpdateActorDirection(bool is_walking)
+        protected int UpdateActorDirection(bool isWalking)
         {
             int from;
             bool dirType = false;
@@ -658,7 +650,7 @@ namespace Scumm4
             bool shouldInterpolate;
 
             from = ToSimpleDir(dirType, _facing);
-            dir = RemapDirection(_targetFacing, is_walking);
+            dir = RemapDirection(_targetFacing, isWalking);
 
             shouldInterpolate = (dir & 1024) != 0 ? true : false;
             dir &= 1023;
@@ -706,15 +698,15 @@ namespace Scumm4
         {
             AdjustBoxResult abr;
 
-            abr = AdjustXYToBeInBox(_pos.x, _pos.y);
+            abr = AdjustXYToBeInBox(_pos.X, _pos.Y);
 
-            _pos.x = abr.x;
-            _pos.y = abr.y;
+            _pos.X = abr.x;
+            _pos.Y = abr.y;
             _walkdata.destbox = abr.box;
 
             SetBox(abr.box);
 
-            _walkdata.dest.x = -1;
+            _walkdata.dest.X = -1;
 
             StopActorMoving();
             _cost.soundCounter = 0;
@@ -830,8 +822,8 @@ namespace Scumm4
             if (dist < bestdist)
             {
                 bestdist = dist;
-                outX = tmp.x;
-                outY = tmp.y;
+                outX = tmp.X;
+                outY = tmp.Y;
             }
 
             tmp = ClosestPtOnLine(box.ur, box.lr, p);
@@ -839,8 +831,8 @@ namespace Scumm4
             if (dist < bestdist)
             {
                 bestdist = dist;
-                outX = tmp.x;
-                outY = tmp.y;
+                outX = tmp.X;
+                outY = tmp.Y;
             }
 
             tmp = ClosestPtOnLine(box.lr, box.ll, p);
@@ -848,8 +840,8 @@ namespace Scumm4
             if (dist < bestdist)
             {
                 bestdist = dist;
-                outX = tmp.x;
-                outY = tmp.y;
+                outX = tmp.X;
+                outY = tmp.Y;
             }
 
             tmp = ClosestPtOnLine(box.ll, box.ul, p);
@@ -857,8 +849,8 @@ namespace Scumm4
             if (dist < bestdist)
             {
                 bestdist = dist;
-                outX = tmp.x;
-                outY = tmp.y;
+                outX = tmp.X;
+                outY = tmp.Y;
             }
 
             return bestdist;
@@ -868,18 +860,18 @@ namespace Scumm4
         {
             Point result;
 
-            int lxdiff = lineEnd.x - lineStart.x;
-            int lydiff = lineEnd.y - lineStart.y;
+            int lxdiff = lineEnd.X - lineStart.X;
+            int lydiff = lineEnd.Y - lineStart.Y;
 
-            if (lineEnd.x == lineStart.x)
+            if (lineEnd.X == lineStart.X)
             {	// Vertical line?
-                result.x = lineStart.x;
-                result.y = p.y;
+                result.X = lineStart.X;
+                result.Y = p.Y;
             }
-            else if (lineEnd.y == lineStart.y)
+            else if (lineEnd.Y == lineStart.Y)
             {	// Horizontal line?
-                result.x = p.x;
-                result.y = lineStart.y;
+                result.X = p.X;
+                result.Y = lineStart.Y;
             }
             else
             {
@@ -887,23 +879,23 @@ namespace Scumm4
                 int a, b, c;
                 if (Math.Abs(lxdiff) > Math.Abs(lydiff))
                 {
-                    a = lineStart.x * lydiff / lxdiff;
-                    b = p.x * lxdiff / lydiff;
+                    a = lineStart.X * lydiff / lxdiff;
+                    b = p.X * lxdiff / lydiff;
 
-                    c = (a + b - lineStart.y + p.y) * lydiff * lxdiff / dist;
+                    c = (a + b - lineStart.Y + p.Y) * lydiff * lxdiff / dist;
 
-                    result.x = (short)c;
-                    result.y = (short)(c * lydiff / lxdiff - a + lineStart.y);
+                    result.X = (short)c;
+                    result.Y = (short)(c * lydiff / lxdiff - a + lineStart.Y);
                 }
                 else
                 {
-                    a = lineStart.y * lxdiff / lydiff;
-                    b = p.y * lydiff / lxdiff;
+                    a = lineStart.Y * lxdiff / lydiff;
+                    b = p.Y * lydiff / lxdiff;
 
-                    c = (a + b - lineStart.x + p.x) * lydiff * lxdiff / dist;
+                    c = (a + b - lineStart.X + p.X) * lydiff * lxdiff / dist;
 
-                    result.x = (short)(c * lxdiff / lydiff - a + lineStart.x);
-                    result.y = (short)c;
+                    result.X = (short)(c * lxdiff / lydiff - a + lineStart.X);
+                    result.Y = (short)c;
                 }
             }
 
@@ -911,16 +903,16 @@ namespace Scumm4
             {
                 if (lxdiff > 0)
                 {
-                    if (result.x < lineStart.x)
+                    if (result.X < lineStart.X)
                         result = lineStart;
-                    else if (result.x > lineEnd.x)
+                    else if (result.X > lineEnd.X)
                         result = lineEnd;
                 }
                 else
                 {
-                    if (result.x > lineStart.x)
+                    if (result.X > lineStart.X)
                         result = lineStart;
-                    else if (result.x < lineEnd.x)
+                    else if (result.X < lineEnd.X)
                         result = lineEnd;
                 }
             }
@@ -928,16 +920,16 @@ namespace Scumm4
             {
                 if (lydiff > 0)
                 {
-                    if (result.y < lineStart.y)
+                    if (result.Y < lineStart.Y)
                         result = lineStart;
-                    else if (result.y > lineEnd.y)
+                    else if (result.Y > lineEnd.Y)
                         result = lineEnd;
                 }
                 else
                 {
-                    if (result.y > lineStart.y)
+                    if (result.Y > lineStart.Y)
                         result = lineStart;
-                    else if (result.y < lineEnd.y)
+                    else if (result.Y < lineEnd.Y)
                         result = lineEnd;
                 }
             }
@@ -969,8 +961,7 @@ namespace Scumm4
                 vald = _cost.frame[i];
                 if (vald == 0xFFFF)
                     continue;
-                // TODO
-                //_vm->_costumeLoader->costumeDecodeData(this, vald, (_vm->_game.version <= 2) ? 0xFFFF : aMask);
+                _scumm.CostumeLoader.CostumeDecodeData(this, vald, aMask);
             }
 
             _needRedraw = true;
@@ -986,7 +977,7 @@ namespace Scumm4
             if (_scumm.GetObjectOrActorXY(obj, out x2, out y2) == false)
                 return;
 
-            dir = (x2 > _pos.x) ? 90 : 270;
+            dir = (x2 > _pos.X) ? 90 : 270;
             TurnToDirection(dir);
         }
 
@@ -1072,46 +1063,76 @@ namespace Scumm4
             CalcMovementFactor(_walkdata.dest);
         }
 
-        //public void DrawActorCostume(bool hitTestMode = false)
-        //{
-        //    if (_costume == 0)
-        //        return;
+        public void DrawActorCostume(bool hitTestMode = false)
+        {
+            if (_costume == 0)
+                return;
 
-        //    if (!hitTestMode)
-        //    {
-        //        if (!_needRedraw)
-        //            return;
+            if (!hitTestMode)
+            {
+                if (!_needRedraw)
+                    return;
 
-        //        _needRedraw = false;
-        //    }
+                _needRedraw = false;
+            }
 
-        //    SetupActorScale();
+            SetupActorScale();
 
-        //    //BaseCostumeRenderer* bcr = _vm->_costumeRenderer;
-        //    //prepareDrawActorCostume(bcr);
+            ICostumeRenderer bcr = _scumm.CostumeRenderer;
+            PrepareDrawActorCostume(bcr);
 
-        //    //// If the actor is partially hidden, redraw it next frame.
-        //    //if (bcr->drawCostume(_vm->_virtscr[kMainVirtScreen], _vm->_gdi->_numStrips, this, _drawToBackBuf) & 1)
-        //    //{
-        //    //    _needRedraw = (_vm->_game.version <= 6);
-        //    //}
+            // If the actor is partially hidden, redraw it next frame.
+            if ((bcr.DrawCostume(_scumm.MainVirtScreen, 40, this, _drawToBackBuf) & 1) > 0)
+            {
+                _needRedraw = true;
+            }
 
-        //    //if (!hitTestMode)
-        //    //{
-        //    //    // Record the vertical extent of the drawn actor
-        //    //    _top = bcr->_draw_top;
-        //    //    _bottom = bcr->_draw_bottom;
-        //    //}
-        //}
-        //public virtual void prepareDrawActorCostume(BaseCostumeRenderer bcr);
-        //public void animateCostume();
-        //public virtual void setActorCostume(int c);
+            if (!hitTestMode)
+            {
+                // Record the vertical extent of the drawn actor
+                _top = bcr.DrawTop;
+                _bottom = bcr.DrawBottom;
+            }
+        }
 
-        //public void animateLimb(int limb, int f);
+        public virtual void PrepareDrawActorCostume(ICostumeRenderer bcr)
+        {
+            bcr.ActorID = _number;
+            bcr.ActorX = _pos.X - _scumm.MainVirtScreen.XStart;
+            bcr.ActorY = _pos.Y - _elevation;
 
-        //public bool actorHitTest(int x, int y);
+            if ((_boxscale & 0x8000) > 0)
+            {
+                bcr.ScaleX = bcr.ScaleY = (byte)_scumm.GetScaleFromSlot((_boxscale & 0x7fff) + 1, _pos.X, _pos.Y);
+            }
+            else
+            {
+                bcr.ScaleX = _scalex;
+                bcr.ScaleY = _scaley;
+            }
 
-        //public string getActorName();
+            bcr.ShadowMode = _shadowMode;
+
+            bcr.SetCostume(_costume, 0);
+            bcr.SetPalette(_palette);
+            bcr.SetFacing(this);
+
+
+            if (_forceClip > 0)
+                bcr.ZBuffer = (byte)_forceClip;
+            else if (IsInClass(ObjectClass.NeverClip))
+                bcr.ZBuffer = 0;
+            else
+            {
+                bcr.ZBuffer = _scumm.GetBoxMask(_walkbox);
+                if (bcr.ZBuffer > _scumm._gdi._numZBuffer - 1)
+                    bcr.ZBuffer = (byte)(_scumm._gdi._numZBuffer - 1);
+            }
+
+            bcr.DrawTop = 0x7fffffff;
+            bcr.DrawBottom = 0;
+        }
+
         public void StartWalkActor(int destX, int destY, int dir)
         {
             AdjustBoxResult abr;
@@ -1121,8 +1142,8 @@ namespace Scumm4
 
             if (!IsInCurrentRoom())
             {
-                _pos.x = abr.x;
-                _pos.y = abr.y;
+                _pos.X = abr.x;
+                _pos.Y = abr.y;
                 if (!_ignoreTurns && dir != -1)
                     _facing = (ushort)dir;
                 return;
@@ -1144,23 +1165,23 @@ namespace Scumm4
                 {
                     abr = AdjustXYToBeInBox(abr.x, abr.y);
                 }
-                if (_moving != 0 && _walkdata.destdir == dir && _walkdata.dest.x == abr.x && _walkdata.dest.y == abr.y)
+                if (_moving != 0 && _walkdata.destdir == dir && _walkdata.dest.X == abr.x && _walkdata.dest.Y == abr.y)
                     return;
             }
 
-            if (_pos.x == abr.x && _pos.y == abr.y)
+            if (_pos.X == abr.x && _pos.Y == abr.y)
             {
                 if (dir != _facing)
                     TurnToDirection(dir);
                 return;
             }
 
-            _walkdata.dest.x = abr.x;
-            _walkdata.dest.y = abr.y;
+            _walkdata.dest.X = abr.x;
+            _walkdata.dest.Y = abr.y;
             _walkdata.destbox = abr.box;
             _walkdata.destdir = (short)dir;
             _moving = (_moving & MoveFlags.InLeg) | MoveFlags.NewLeg;
-            _walkdata.point3.x = 32000;
+            _walkdata.point3.X = 32000;
 
             _walkdata.curbox = _walkbox;
         }
@@ -1225,7 +1246,6 @@ namespace Scumm4
             }
         }
 
-
         public void StartAnimActor(byte frame)
         {
             switch (frame)
@@ -1256,10 +1276,9 @@ namespace Scumm4
                 // Causes Zak to lose his body in several scenes, see bug #771508
                 if (frame == _initFrame)
                 {
-                    _cost.reset();
+                    _cost.Reset();
                 }
-                // TODO
-                //_vm->_costumeLoader->costumeDecodeData(this, frame, (uint)-1);
+                _scumm.CostumeLoader.CostumeDecodeData(this, frame, uint.MaxValue);
                 _frame = frame;
             }
         }
@@ -1269,30 +1288,26 @@ namespace Scumm4
             int t;
 
             t = x - threshold;
-            if (t > box.ul.x && t > box.ur.x && t > box.lr.x && t > box.ll.x)
+            if (t > box.ul.X && t > box.ur.X && t > box.lr.X && t > box.ll.X)
                 return true;
 
             t = x + threshold;
-            if (t < box.ul.x && t < box.ur.x && t < box.lr.x && t < box.ll.x)
+            if (t < box.ul.X && t < box.ur.X && t < box.lr.X && t < box.ll.X)
                 return true;
 
             t = y - threshold;
-            if (t > box.ul.y && t > box.ur.y && t > box.lr.y && t > box.ll.y)
+            if (t > box.ul.Y && t > box.ur.Y && t > box.lr.Y && t > box.ll.Y)
                 return true;
 
             t = y + threshold;
-            if (t < box.ul.y && t < box.ur.y && t < box.lr.y && t < box.ll.y)
+            if (t < box.ul.Y && t < box.ur.Y && t < box.lr.Y && t < box.ll.Y)
                 return true;
 
             return false;
         }
 
-        //public void remapActorPalette(int r_fact, int g_fact, int b_fact, int threshold);
-        //public void remapActorPaletteColor(int slot, int color);
-
-        //public void animateActor(int anim);
-
         private ScummInterpreter _scumm;
+
         public bool IsInCurrentRoom()
         {
             return _room == _scumm.CurrentRoom;
@@ -1372,8 +1387,6 @@ namespace Scumm4
             _needRedraw = true;
         }
 
-        //public void classChanged(int cls, bool value);
-
         public bool IsInClass(ObjectClass cls)
         {
             return _scumm.GetClass(_number, cls);
@@ -1405,38 +1418,38 @@ namespace Scumm4
             {
                 for (j = 0; j < 4; j++)
                 {
-                    if (box1.ul.x == box1.ur.x && box1.ul.x == box2.ul.x && box1.ul.x == box2.ur.x)
+                    if (box1.ul.X == box1.ur.X && box1.ul.X == box2.ul.X && box1.ul.X == box2.ur.X)
                     {
                         flag = 0;
-                        if (box1.ul.y > box1.ur.y)
+                        if (box1.ul.Y > box1.ur.Y)
                         {
-                            SWAP(ref box1.ul.y, ref box1.ur.y);
+                            SWAP(ref box1.ul.Y, ref box1.ur.Y);
                             flag |= 1;
                         }
 
-                        if (box2.ul.y > box2.ur.y)
+                        if (box2.ul.Y > box2.ur.Y)
                         {
-                            SWAP(ref box2.ul.y, ref box2.ur.y);
+                            SWAP(ref box2.ul.Y, ref box2.ur.Y);
                             flag |= 2;
                         }
 
-                        if (box1.ul.y > box2.ur.y || box2.ul.y > box1.ur.y ||
-                                ((box1.ur.y == box2.ul.y || box2.ur.y == box1.ul.y) &&
-                                box1.ul.y != box1.ur.y && box2.ul.y != box2.ur.y))
+                        if (box1.ul.Y > box2.ur.Y || box2.ul.Y > box1.ur.Y ||
+                                ((box1.ur.Y == box2.ul.Y || box2.ur.Y == box1.ul.Y) &&
+                                box1.ul.Y != box1.ur.Y && box2.ul.Y != box2.ur.Y))
                         {
                             if ((flag & 1) != 0)
-                                SWAP(ref box1.ul.y, ref box1.ur.y);
+                                SWAP(ref box1.ul.Y, ref box1.ur.Y);
                             if ((flag & 2) != 0)
-                                SWAP(ref box2.ul.y, ref box2.ur.y);
+                                SWAP(ref box2.ul.Y, ref box2.ur.Y);
                         }
                         else
                         {
-                            pos = _pos.y;
+                            pos = _pos.Y;
                             if (box2nr == box3nr)
                             {
-                                int diffX = _walkdata.dest.x - _pos.x;
-                                int diffY = _walkdata.dest.y - _pos.y;
-                                int boxDiffX = box1.ul.x - _pos.x;
+                                int diffX = _walkdata.dest.X - _pos.X;
+                                int diffY = _walkdata.dest.Y - _pos.Y;
+                                int boxDiffX = box1.ul.X - _pos.X;
 
                                 if (diffX != 0)
                                 {
@@ -1447,61 +1460,61 @@ namespace Scumm4
                                     if (t == 0 && (diffY <= 0 || diffX <= 0)
                                             && (diffY >= 0 || diffX >= 0))
                                         t = -1;
-                                    pos = _pos.y + t;
+                                    pos = _pos.Y + t;
                                 }
                             }
 
                             q = pos;
-                            if (q < box2.ul.y)
-                                q = box2.ul.y;
-                            if (q > box2.ur.y)
-                                q = box2.ur.y;
-                            if (q < box1.ul.y)
-                                q = box1.ul.y;
-                            if (q > box1.ur.y)
-                                q = box1.ur.y;
+                            if (q < box2.ul.Y)
+                                q = box2.ul.Y;
+                            if (q > box2.ur.Y)
+                                q = box2.ur.Y;
+                            if (q < box1.ul.Y)
+                                q = box1.ul.Y;
+                            if (q > box1.ur.Y)
+                                q = box1.ur.Y;
                             if (q == pos && box2nr == box3nr)
                                 return true;
-                            foundPath.y = (short)q;
-                            foundPath.x = box1.ul.x;
+                            foundPath.Y = (short)q;
+                            foundPath.X = box1.ul.X;
                             return false;
                         }
                     }
 
-                    if (box1.ul.y == box1.ur.y && box1.ul.y == box2.ul.y && box1.ul.y == box2.ur.y)
+                    if (box1.ul.Y == box1.ur.Y && box1.ul.Y == box2.ul.Y && box1.ul.Y == box2.ur.Y)
                     {
                         flag = 0;
-                        if (box1.ul.x > box1.ur.x)
+                        if (box1.ul.X > box1.ur.X)
                         {
-                            SWAP(ref box1.ul.x, ref box1.ur.x);
+                            SWAP(ref box1.ul.X, ref box1.ur.X);
                             flag |= 1;
                         }
 
-                        if (box2.ul.x > box2.ur.x)
+                        if (box2.ul.X > box2.ur.X)
                         {
-                            SWAP(ref box2.ul.x, ref box2.ur.x);
+                            SWAP(ref box2.ul.X, ref box2.ur.X);
                             flag |= 2;
                         }
 
-                        if (box1.ul.x > box2.ur.x || box2.ul.x > box1.ur.x ||
-                                ((box1.ur.x == box2.ul.x || box2.ur.x == box1.ul.x) &&
-                                box1.ul.x != box1.ur.x && box2.ul.x != box2.ur.x))
+                        if (box1.ul.X > box2.ur.X || box2.ul.X > box1.ur.X ||
+                                ((box1.ur.X == box2.ul.X || box2.ur.X == box1.ul.X) &&
+                                box1.ul.X != box1.ur.X && box2.ul.X != box2.ur.X))
                         {
                             if ((flag & 1) != 0)
-                                SWAP(ref box1.ul.x, ref box1.ur.x);
+                                SWAP(ref box1.ul.X, ref box1.ur.X);
                             if ((flag & 2) != 0)
-                                SWAP(ref box2.ul.x, ref box2.ur.x);
+                                SWAP(ref box2.ul.X, ref box2.ur.X);
                         }
                         else
                         {
 
                             if (box2nr == box3nr)
                             {
-                                int diffX = _walkdata.dest.x - _pos.x;
-                                int diffY = _walkdata.dest.y - _pos.y;
-                                int boxDiffY = box1.ul.y - _pos.y;
+                                int diffX = _walkdata.dest.X - _pos.X;
+                                int diffY = _walkdata.dest.Y - _pos.Y;
+                                int boxDiffY = box1.ul.Y - _pos.Y;
 
-                                pos = _pos.x;
+                                pos = _pos.X;
                                 if (diffY != 0)
                                 {
                                     pos += diffX * boxDiffY / diffY;
@@ -1509,22 +1522,22 @@ namespace Scumm4
                             }
                             else
                             {
-                                pos = _pos.x;
+                                pos = _pos.X;
                             }
 
                             q = pos;
-                            if (q < box2.ul.x)
-                                q = box2.ul.x;
-                            if (q > box2.ur.x)
-                                q = box2.ur.x;
-                            if (q < box1.ul.x)
-                                q = box1.ul.x;
-                            if (q > box1.ur.x)
-                                q = box1.ur.x;
+                            if (q < box2.ul.X)
+                                q = box2.ul.X;
+                            if (q > box2.ur.X)
+                                q = box2.ur.X;
+                            if (q < box1.ul.X)
+                                q = box1.ul.X;
+                            if (q > box1.ur.X)
+                                q = box1.ur.X;
                             if (q == pos && box2nr == box3nr)
                                 return true;
-                            foundPath.x = (short)q;
-                            foundPath.y = box1.ul.y;
+                            foundPath.X = (short)q;
+                            foundPath.Y = box1.ul.Y;
                             return false;
                         }
                     }
@@ -1547,7 +1560,7 @@ namespace Scumm4
         {
             int cmd, dir;
             cmd = anim / 4;
-            dir = oldDirToNewDir(anim % 4);
+            dir = OldDirToNewDir(anim % 4);
 
             // Convert into old cmd code
             cmd = 0x3F - cmd + 2;
@@ -1572,7 +1585,25 @@ namespace Scumm4
             }
         }
 
-        private static int oldDirToNewDir(int dir)
+        public void AnimateCostume()
+        {
+            if (_costume == 0)
+                return;
+
+            _animProgress++;
+            if (_animProgress >= _animSpeed)
+            {
+                _animProgress = 0;
+
+                _scumm.CostumeLoader.LoadCostume(_costume);
+                if (_scumm.CostumeLoader.IncreaseAnims(this) > 0)
+                {
+                    _needRedraw = true;
+                }
+            }
+        }
+
+        private static int OldDirToNewDir(int dir)
         {
             if (dir < 0 && dir > 3) throw new ArgumentOutOfRangeException("dir", dir, "Invalid direction");
             int[] new_dir_table = new int[4] { 270, 90, 180, 0 };

@@ -27,27 +27,27 @@ namespace Scumm4
         /// <summary>
         /// The horizontal part of the point.
         /// </summary>
-        public short x;
+        public short X;
         /// <summary>
         /// The vertical part of the point
         /// </summary>
-        public short y;
+        public short Y;
 
         public Point(short x, short y)
         {
-            this.x = x;
-            this.y = y;
+            this.X = x;
+            this.Y = y;
         }
 
         public Point(Point pos)
         {
-            this.x = pos.x;
-            this.y = pos.y;
+            this.X = pos.X;
+            this.Y = pos.Y;
         }
 
         public static bool operator ==(Point pos1, Point pos2)
         {
-            return pos1.x == pos2.x && pos1.y == pos2.y;
+            return pos1.X == pos2.X && pos1.Y == pos2.Y;
         }
 
         public static bool operator !=(Point pos1, Point pos2)
@@ -57,7 +57,7 @@ namespace Scumm4
 
         public override int GetHashCode()
         {
-            return x ^ y;
+            return X ^ Y;
         }
 
         public override bool Equals(object obj)
@@ -65,7 +65,7 @@ namespace Scumm4
             if (obj is Point)
             {
                 var pos = ((Point)obj);
-                return pos.x == this.x && pos.y == this.y;
+                return pos.X == this.X && pos.Y == this.Y;
             }
             return false;
         }
@@ -77,11 +77,11 @@ namespace Scumm4
         /// <returns>The distance between this and p.</returns>
         public uint SquareDistance(Point p)
         {
-            int diffx = Math.Abs(p.x - x);
+            int diffx = Math.Abs(p.X - X);
             if (diffx >= 0x1000)
                 return 0xFFFFFF;
 
-            int diffy = Math.Abs(p.y - y);
+            int diffy = Math.Abs(p.Y - Y);
             if (diffy >= 0x1000)
                 return 0xFFFFFF;
 

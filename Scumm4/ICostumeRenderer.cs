@@ -15,14 +15,27 @@
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
 namespace Scumm4
 {
-    public class BaseCostumeRenderer
+    public interface ICostumeRenderer
     {
+        int DrawTop { get; set; }
+        int DrawBottom { get; set; }
+
+        byte ActorID { get; set; }
+
+        byte ShadowMode { get; set; }
+
+        int ActorX { get; set; }
+        int ActorY { get; set; }
+        byte ZBuffer { get; set; }
+        byte ScaleX { get; set; }
+        byte ScaleY { get; set; }
+
+        void SetPalette(ushort[] palette);
+        void SetFacing(Actor a);
+        void SetCostume(int costume, int shadow);
+
+        int DrawCostume(VirtScreen vs, int numStrips, Actor actor, bool drawToBackBuf);
     }
 }

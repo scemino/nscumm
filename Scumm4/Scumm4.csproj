@@ -21,7 +21,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -48,13 +48,14 @@
     <Compile Include="Actor.cs" />
     <Compile Include="AdjustBoxResult.cs" />
     <Compile Include="AnimPict.cs" />
-    <Compile Include="BaseCostumeRenderer.cs" />
     <Compile Include="BitStreamManager.cs" />
     <Compile Include="Box.cs" />
     <Compile Include="BoxCoords.cs" />
     <Compile Include="Camera.cs" />
     <Compile Include="CharInfo.cs" />
     <Compile Include="Charset.cs" />
+    <Compile Include="ClassicCostumeLoader.cs" />
+    <Compile Include="ClassicCostumeRenderer.cs" />
     <Compile Include="ClickArea.cs" />
     <Compile Include="ConversionException.cs" />
     <Compile Include="Costume.cs" />
@@ -62,28 +63,37 @@
     <Compile Include="DiskFile.cs" />
     <Compile Include="FlashLight.cs" />
     <Compile Include="GameManager.cs" />
-    <Compile Include="ImageDecoder.cs" />
+    <Compile Include="Graphics\Gdi.cs" />
+    <Compile Include="Graphics\PixelNavigator.cs" />
+    <Compile Include="Graphics\Surface.cs" />
+    <Compile Include="ICostumeLoader.cs" />
+    <Compile Include="ICostumeRenderer.cs" />
     <Compile Include="KeyCode.cs" />
     <Compile Include="Limb.cs" />
     <Compile Include="NestedScript.cs" />
     <Compile Include="ObjectData.cs" />
     <Compile Include="Point.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Rect.cs" />
     <Compile Include="Resource.cs" />
     <Compile Include="ResourceManager.cs" />
     <Compile Include="Room.cs" />
     <Compile Include="ScriptSlot.cs" />
+    <Compile Include="ScummHelper.cs" />
     <Compile Include="ScummIndex.cs" />
     <Compile Include="ScummInterpreter.cs" />
     <Compile Include="ScummMouseButtonState.cs" />
     <Compile Include="Sentence.cs" />
     <Compile Include="TextSlot.cs" />
     <Compile Include="VerbSlot.cs" />
+    <Compile Include="VirtScreen.cs" />
     <Compile Include="XorReader.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="TODO.txt" />
-    <EmbeddedResource Include="Nscumm.xml" />
+    <EmbeddedResource Include="Nscumm.xml">
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <None Include="Nscumm.xsd">

@@ -32,12 +32,10 @@ namespace Scumm4
     public class Room
     {
         public RoomHeader Header { get; set; }
-        public List<Strip> Strips { get; private set; }
         public Palette Palette { get; private set; }
         public ScriptData[] LocalScripts { get; private set; }
         public ScriptData EntryScript { get; private set; }
         public ScriptData ExitScript { get; private set; }
-        public List<byte[]> ZPlanes { get; private set; }
         public List<ObjectData> Objects { get; private set; }
         public List<Box> Boxes { get; private set; }
         public List<byte> BoxMatrix { get; private set; }
@@ -45,8 +43,6 @@ namespace Scumm4
 
         public Room()
         {
-            this.Strips = new List<Strip>();
-            this.ZPlanes = new List<byte[]>();
             this.Boxes = new List<Box>();
             this.Objects = new List<ObjectData>();
             this.BoxMatrix = new List<byte>();
@@ -55,5 +51,8 @@ namespace Scumm4
             this.ExitScript = new ScriptData();
             this.LocalScripts = new ScriptData[1024];
         }
+
+        public byte[] Data { get; set; }
+        public Scale[] Scales { get; set; }
     }
 }

@@ -116,14 +116,27 @@ namespace Scumm4
         public Costume GetCostume(byte scriptNum)
         {
             Costume data = null;
-            var offset = _costumes[scriptNum].offset;
             var disk = OpenRoom(_costumes[scriptNum].roomNum);
             if (disk != null)
             {
                 var rOffsets = disk.ReadRoomOffsets();
+                var offset = _costumes[scriptNum].offset;
                 data = disk.ReadCostume(_costumes[scriptNum].roomNum, rOffsets[_costumes[scriptNum].roomNum] + offset);
             }
             return data;
+        }
+
+        public XorReader GetCostumeReader(byte scriptNum)
+        {
+            XorReader reader = null;
+            var disk = OpenRoom(_costumes[scriptNum].roomNum);
+            if (disk != null)
+            {
+                var rOffsets = disk.ReadRoomOffsets();
+                var offset = _costumes[scriptNum].offset;
+                reader = disk.ReadCostume2(_costumes[scriptNum].roomNum, rOffsets[_costumes[scriptNum].roomNum] + offset);
+            }
+            return reader;
         }
 
         Dictionary<byte, Charset> _charsets = new Dictionary<byte, Charset>();

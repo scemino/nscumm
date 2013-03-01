@@ -13,17 +13,21 @@
         <Grid.ColumnDefinitions>
             <ColumnDefinition />
             <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
         <Slider Name="sliderCost" SmallChange="1" IsSnapToTickEnabled="True" ValueChanged="sliderCost_ValueChanged" />
-        <Label Grid.Column="1" Content="{Binding ElementName=sliderCost, Path=Value, StringFormat=0x\{0:X2\}}" />
-        
-        <Image Grid.Row="1" Name="image1" Stretch="Uniform" Grid.ColumnSpan="2"/>
+        <Label Grid.Column="1" Content="{Binding ElementName=sliderCost, Path=Value, StringFormat=Costume 0x\{0:X2\}}" />
 
-        <Label Grid.Column="1" Grid.Row="2" Content="{Binding ElementName=slider1, Path=Value, StringFormat=Anim 0x\{0:X2\}}" Name="label1" />
-        <Slider Grid.Row="2" Name="slider1" ValueChanged="slider1_ValueChanged" SmallChange="1" IsSnapToTickEnabled="True" />
+        <Border Grid.Row="1" Grid.ColumnSpan="2" Background="Black">
+            <Image Name="image1" Stretch="Uniform" />
+        </Border>
 
-        <Label Grid.Column="1" Grid.Row="3" Content="{Binding ElementName=slider2, Path=Value, StringFormat=Frame 0x\{0:X2\}}" Name="label2" />
-        <Slider Grid.Row="3" Name="slider2" ValueChanged="slider2_ValueChanged" SmallChange="1" IsSnapToTickEnabled="True" />
+        <Label Grid.Column="1" Grid.Row="2" Content="{Binding ElementName=sliderAnim, Path=Value, StringFormat=Anim 0x\{0:X2\}}" Name="label1" />
+        <Slider Grid.Row="2" Name="sliderAnim" ValueChanged="sliderAnim_ValueChanged" SmallChange="1" IsSnapToTickEnabled="True" />
+
+        <Label Grid.Column="1" Grid.Row="3" Content="{Binding ElementName=sliderFrames, Path=Value, StringFormat=Frame 0x\{0:X2\}}" Name="label2" />
+        <Slider Grid.Row="3" Name="sliderFrames" ValueChanged="sliderFrame_ValueChanged" SmallChange="1" IsSnapToTickEnabled="True" />
+        <CheckBox Grid.Row="3" Grid.Column="2" Content="Anim" VerticalAlignment="Center" Checked="CheckBox_Checked_1" />
 
         <Label Grid.Row="4" Content="{Binding ElementName=slider1, Path=Maximum, StringFormat=Anim 0x\{0:X2\}}" Name="label3" />
     </Grid>

@@ -30,8 +30,8 @@ namespace Scumm4
 
     public class VerbSlot
     {
-        public System.Windows.Rect curRect;
-        public System.Windows.Rect oldRect;
+        public Rect curRect;
+        public Rect oldRect;
         public ushort verbid;
         public byte color, hicolor, dimcolor, bkcolor;
         public VerbType type;
@@ -42,7 +42,7 @@ namespace Scumm4
         public byte prep;
         public ushort imgindex;
 
-        public string Text { get; set; }
+        public byte[] Text { get; set; }
     }
 
     

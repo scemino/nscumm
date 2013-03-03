@@ -156,6 +156,17 @@ namespace Scumm4
             return charset;
         }
 
+        public byte[] GetCharsetData(byte id)
+        {
+            byte[] charset = null;
+            var disk = OpenCharset(id);
+            if (disk != null)
+            {
+                charset = disk.ReadCharsetData();
+            }
+            return charset;
+        }
+
         public Room GetRoom(byte roomNum)
         {
             Room room = null;

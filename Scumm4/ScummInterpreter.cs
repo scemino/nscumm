@@ -26,19 +26,6 @@ using System.Windows.Input;
 
 namespace Scumm4
 {
-    public interface IGraphicsManager
-    {
-        double Width { get; }
-        double Height { get; }
-
-        Point GetMousePosition();
-
-        void UpdateScreen();
-        void CopyRectToScreen(Array buf, int sourceStride, int x, int y, int width, int height);
-
-        void SetPalette(System.Windows.Media.Color[] color);
-    }
-
     public class Cursor
     {
         public sbyte State { get; set; }
@@ -150,6 +137,7 @@ namespace Scumm4
         private const int VariableFixedDisk = 0x33;
         private const int VariableCursorState = 0x34;
         private const int VariableUserPut = 0x35;
+        private const int VariableTalkStringY = 0x36;
         #endregion
 
         #region Fields
@@ -173,7 +161,6 @@ namespace Scumm4
         private HashSet<ObjectData> _drawingObjects = new HashSet<ObjectData>();
 
         private sbyte _userPut;
-        private IList<char> _msg;
         private byte _roomResource;
         private bool _egoPositioned;
 
@@ -191,11 +178,12 @@ namespace Scumm4
         private int _sentenceNum;
         private int cutSceneStackPointer;
         private TextSlot[] _string = new TextSlot[6];
+        private byte[] _charsetBuffer = new byte[512];
 
         private byte[] _resourceMapper = new byte[128];
-        private char[][] _strings;
+        private byte[][] _strings;
         private byte[][] _charsets;
-        private byte[] _charsetColorMap = new byte[16];
+        public byte[] _charsetColorMap = new byte[16];
 
         private int _cutSceneScriptIndex;
         private FlashLight _flashlight = new FlashLight();
@@ -213,7 +201,7 @@ namespace Scumm4
         private int _charsetBufPos;
         private int _screenStartStrip;
         private int _screenEndStrip;
-        private int _screenTop;
+        public int _screenTop;
         private VerbSlot[] _verbs = InitializeVerbs();
         private byte cursor_color;
         private int _currentCursor;
@@ -223,6 +211,11 @@ namespace Scumm4
         private bool _bgNeedsRedraw;
         private bool _fullRedraw;
         public Gdi _gdi;
+
+        // Somewhat hackish stuff for 2 byte support (Chinese/Japanese/Korean)
+        public byte _newLineCharacter;
+        public bool _useCJKMode;
+        public int _2byteWidth;
 
         static ushort[][] default_cursor_images = new ushort[4][] {
 		/* cross-hair */
@@ -305,7 +298,7 @@ namespace Scumm4
             _pixels = pixels;
             _debugWriter = new StreamWriter(_debugFile);
             _directory = _scumm.Directory;
-            _strings = new char[NumArray][];
+            _strings = new byte[NumArray][];
             _charsets = new byte[NumArray][];
             _currentScript = 0xFF;
             _gfxUsageBits = new uint[410 * 3];
@@ -317,6 +310,14 @@ namespace Scumm4
             _gdi = new Gdi(this);
             _costumeLoader = new ClassicCostumeLoader(index);
             _costumeRenderer = new ClassicCostumeRenderer(this);
+
+            // Create the charset renderer
+            _charset = new CharsetRendererClassic(this);
+
+            // Create the text surface
+            _textSurface = new Surface(_screenWidth * _textSurfaceMultiplier, _screenHeight * _textSurfaceMultiplier, PixelFormat.Indexed8, false);
+            ClearTextSurface();
+
             InitScreens(16, 144);
             InitActors();
             InitOpCodes();
@@ -1847,9 +1848,9 @@ namespace Scumm4
                 RunScript((byte)_variables[VariableScrollScript], false, false, new int[] { });
             }
 
-            //// If the camera moved and text is visible, remove it
-            //if (_camera._cur.x != _camera._last.x && _charset->_hasMask && _game.version > 3)
-            //    stopTalk();
+            // If the camera moved and text is visible, remove it
+            if (_camera._cur.X != _camera._last.X && _charset._hasMask)
+                StopTalk();
         }
 
         private void Lights()
@@ -2547,8 +2548,7 @@ namespace Scumm4
                     {
                         // loadstring
                         var id = GetVarOrDirectByte(OpCodeParameter.Param1);
-                        List<char> sb = ReadCharacters();
-                        _strings[id] = sb.ToArray();
+                        _strings[id] = ReadCharacters();
                     }
                     break;
                 case 2:
@@ -2565,7 +2565,7 @@ namespace Scumm4
                         var id = GetVarOrDirectByte(OpCodeParameter.Param1);
                         var index = GetVarOrDirectByte(OpCodeParameter.Param2);
                         var character = GetVarOrDirectByte(OpCodeParameter.Param3);
-                        _strings[id][index] = (char)character;
+                        _strings[id][index] = (byte)character;
                     }
                     break;
                 case 4:
@@ -2583,7 +2583,7 @@ namespace Scumm4
                         // New String
                         var id = GetVarOrDirectByte(OpCodeParameter.Param1);
                         var size = GetVarOrDirectByte(OpCodeParameter.Param2);
-                        _strings[id] = new char[size];
+                        _strings[id] = new byte[size];
                     }
                     break;
                 default:
@@ -2591,29 +2591,29 @@ namespace Scumm4
             }
         }
 
-        private List<char> ReadCharacters()
+        private byte[] ReadCharacters()
         {
             byte character;
-            List<char> sb = new List<char>();
+            List<byte> sb = new List<byte>();
             character = ReadByte();
             while (character != 0)
             {
-                sb.Add((char)character);
+                sb.Add(character);
                 if (character == 0xFF)
                 {
                     character = ReadByte();
-                    sb.Add((char)character);
+                    sb.Add(character);
                     if (character != 1 && character != 2 && character != 3 && character != 8)
                     {
                         character = ReadByte();
-                        sb.Add((char)character);
+                        sb.Add(character);
                         character = ReadByte();
-                        sb.Add((char)character);
+                        sb.Add(character);
                     }
                 }
                 character = ReadByte();
             }
-            return sb;
+            return sb.ToArray();
         }
 
         private void ResourceRoutines()
@@ -2766,10 +2766,10 @@ namespace Scumm4
             _string[0].Default.charset = (byte)charsetNum;
             _string[1].Default.charset = (byte)charsetNum;
 
-            if (_charsets[charsetNum] != null)
-            {
-                Array.Copy(_charsets[charsetNum], _charsetColorMap, 16);
-            }
+            //if (_charsets[charsetNum] != null)
+            //{
+            //    Array.Copy(_charsets[charsetNum], _charsetColorMap, 16);
+            //}
         }
 
         private void Expression()
@@ -2891,8 +2891,7 @@ namespace Scumm4
                         }
                         break;
                     case 2:		// SO_VERB_NAME
-                        List<char> sb = ReadCharacters();
-                        _verbs[slot].Text = new string(sb.ToArray());
+                        _verbs[slot].Text = ReadCharacters();
                         //loadPtrToResource(rtVerb, slot, NULL);
                         //if (slot == 0)
                         //    _res->nukeResource(rtVerb, slot);
@@ -2908,7 +2907,8 @@ namespace Scumm4
                     case 5:		// SO_VERB_AT
                         var left = GetVarOrDirectWord(OpCodeParameter.Param1);
                         var top = GetVarOrDirectWord(OpCodeParameter.Param2);
-                        vs.curRect = new System.Windows.Rect(left, top, vs.curRect.Width, vs.curRect.Height);
+                        vs.curRect.left = left;
+                        vs.curRect.top = top;
                         break;
                     case 6:
                         // SO_VERB_ON
@@ -2961,6 +2961,10 @@ namespace Scumm4
                         throw new NotImplementedException();
                 }
             }
+
+            // Force redraw of the modified verb slot
+            DrawVerb(slot, 0);
+            //verbMouseOver(0);
         }
 
         private void GetRandomNumber()
@@ -3163,7 +3167,7 @@ namespace Scumm4
         #endregion
 
         #region Misc Methods
-        private Dictionary<int, string> _newNames = new Dictionary<int, string>();
+        private Dictionary<int, byte[]> _newNames = new Dictionary<int, byte[]>();
 
         private void SetObjectName(int obj)
         {
@@ -3173,7 +3177,7 @@ namespace Scumm4
                 throw new NotSupportedException(msg);
             }
 
-            _newNames[obj] = new string(ReadCharacters().ToArray());
+            _newNames[obj] = ReadCharacters();
             RunInventoryScript(0);
         }
 
@@ -3545,7 +3549,7 @@ namespace Scumm4
                     case 15:
                         {	// SO_TEXTSTRING
                             var tmp = ReadCharacters();
-                            PrintText(textSlot, tmp);
+                            PrintString(textSlot, tmp);
                         }
                         return;
                     default:
@@ -3556,7 +3560,7 @@ namespace Scumm4
             _string[textSlot].SaveDefault();
         }
 
-        private void PrintText(int textSlot, IList<char> msg)
+        private void PrintString(int textSlot, byte[] msg)
         {
             switch (textSlot)
             {
@@ -3577,12 +3581,11 @@ namespace Scumm4
             }
         }
 
-        private void ActorTalk(IList<char> msg)
+        private void ActorTalk(byte[] msg)
         {
             Actor a;
 
-            // TODO:
-            //convertMessageToString(msg, _charsetBuffer, sizeof(_charsetBuffer));
+            ConvertMessageToString(msg, _charsetBuffer, 0);
 
             if (_actorToPrintStrFor == 0xFF)
             {
@@ -3636,12 +3639,7 @@ namespace Scumm4
             _variables[VariableHaveMessage] = 0xFF;
 
             _haveActorSpeechMsg = true;
-
-            _msg = msg;
-
-            //update charset color
-            var tmp = this.TextSlot[0].charset;
-            this._scumm.GetCharset(tmp).ColorMap[1] = _charsetColor;
+            CHARSET_1();
         }
 
         public int GetTalkingActor()
@@ -4169,14 +4167,8 @@ namespace Scumm4
             }
         }
 
-        public IList<char> GetMessage()
-        {
-            return _msg;
-        }
-
         public void StopTalk()
         {
-
             //_sound->stopTalkSound();
 
             _haveMsg = 0;
@@ -4195,6 +4187,7 @@ namespace Scumm4
             }
 
             _keepText = false;
+            RestoreCharsetBg();
         }
 
         public bool GetClass(int obj, ObjectClass cls)
@@ -4482,141 +4475,9 @@ namespace Scumm4
             return verbs;
         }
 
-        public void DrawCharset()
+        private byte[] GetObjectOrActorName(int num)
         {
-            if (this.TalkDelay <= 0 && this.HaveMsg == 1)
-            {
-                this.StopTalk();
-                return;
-            }
-            if (this.HaveMsg == 0) return;
-            var msg = this.GetMessage();
-            DrawCharset(0, msg);
-        }
-
-        private void DrawCharset(int index, IList<char> msg)
-        {
-            if (msg == null || this.CurrentRoomData == null) return;
-            var palette = this.CurrentRoomData.Palette;
-            var tmp = this.TextSlot[index].charset;
-            var charset = this._scumm.GetCharset(tmp);
-            int lx = index == 0 ? this.TextSlot[index].xpos - this.Camera._cur.X : this.TextSlot[index].xpos;
-            int ly = this.TextSlot[index].ypos;
-            for (int i = this.CharsetBufPos; i < msg.Count; i++)
-            {
-                if (msg[i] == 0xFF)
-                {
-                    i++;
-                    if (i < msg.Count)
-                    {
-                        switch ((byte)msg[i])
-                        {
-                            case 1:
-                                ly += charset.Height;
-                                lx = 0;
-                                break;
-                            case 2:
-                                if (this.TalkDelay <= 0)
-                                {
-                                    this.HaveMsg = 0;
-                                    this.CharsetBufPos = i + 1;
-                                }
-                                return;
-                            case 3:
-                                if (this.TalkDelay <= 0)
-                                {
-                                    this.HaveMsg = 0xFF;
-                                    this.TalkDelay = 60;
-                                    this.CharsetBufPos = i + 1;
-                                }
-                                return;
-                            case 5:
-                                {
-                                    ushort val = (ushort)(msg[i + 1] | msg[i + 2] << 8);
-                                    var num = ReadVariable((int)val);
-                                    if (num > 0)
-                                    {
-                                        var verbSlot = GetVerb(num);
-                                        if (verbSlot != null)
-                                        {
-                                            msg = ConvertMessage(msg, i, verbSlot.Text);
-                                        }
-                                        else
-                                        {
-                                            msg = ConvertMessage(msg, i, string.Empty);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        msg = ConvertMessage(msg, i, string.Empty);
-                                    }
-                                    i = i - 2;
-                                }
-                                break;
-                            case 6:
-                                {
-                                    ushort val = (ushort)(msg[i + 1] | msg[i + 2] << 8);
-                                    var num = ReadVariable((int)val);
-                                    if (num > 0)
-                                    {
-                                        var name = GetObjectOrActorName(num);
-                                        msg = ConvertMessage(msg, i, name);
-                                    }
-                                    else
-                                    {
-                                        msg = ConvertMessage(msg, i, string.Empty);
-                                    }
-                                    i = i - 2;
-                                }
-                                break;
-                            default:
-                                break;
-                        }
-                    }
-                }
-                else if (msg[i] == 13)
-                {
-                    ly += charset.Height;
-                    lx = 0;
-                }
-                else
-                {
-                    //this.TalkDelay += (int)this.Variables[ScummInterpreter.VariableCharIncrement];
-                    if (charset.Characters.ContainsKey((byte)msg[i]) == false) continue;
-                    var info = charset.Characters[(byte)msg[i]];
-                    lx += info.X;
-                    for (int y = 0; y < info.Height; y++)
-                    {
-                        if ((ly + info.Y + y) < 200)
-                        {
-                            for (int x = 0; x < info.Width; x++)
-                            {
-                                if ((lx + x) < 320)
-                                {
-                                    var colIndex = info.Pixels[x + y * info.Stride];
-                                    if (colIndex != 0)
-                                    {
-                                        colIndex = charset.ColorMap[colIndex];
-                                        var offset = (lx + x) + (320 * (ly + info.Y + y));
-                                        _pixels[offset] = colIndex;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    lx += info.Width;
-                }
-            }
-
-            if (this.TalkDelay <= 0)
-            {
-                this.HaveMsg = 1;
-            }
-        }
-
-        private string GetObjectOrActorName(int num)
-        {
-            string name;
+            byte[] name;
             if (num < _actors.Length)
             {
                 // TODO
@@ -4632,7 +4493,7 @@ namespace Scumm4
                            where o.obj_nr == num
                            select o).FirstOrDefault();
                 // TODO: fix this
-                name = obj == null ? "Toto" : obj.Name;
+                name = obj.Name;
             }
             return name;
         }
@@ -4659,6 +4520,7 @@ namespace Scumm4
         private void DrawVerb(int verb, int mode)
         {
             VerbSlot vs;
+            bool tmp;
 
             if (verb == 0)
                 return;
@@ -4669,15 +4531,15 @@ namespace Scumm4
             {
                 if (vs.type == VerbType.Image)
                 {
-                    DrawVerbBitmap(verb, vs.curRect.Left, vs.curRect.Top);
+                    DrawVerbBitmap(verb, vs.curRect.left, vs.curRect.top);
                     return;
                 }
 
-                //restoreVerbBG(verb);
+                RestoreVerbBG(verb);
 
                 _string[4].charset = vs.charset_nr;
-                _string[4].xpos = (short)vs.curRect.Left;
-                _string[4].ypos = (short)vs.curRect.Top;
+                _string[4].xpos = (short)vs.curRect.left;
+                _string[4].ypos = (short)vs.curRect.top;
                 _string[4].right = (short)(_screenWidth - 1);
                 _string[4].center = vs.center;
 
@@ -4693,31 +4555,328 @@ namespace Scumm4
                    if (verb >= 31 && verb <= 36)
                    verb += _inventoryOffset;
                  */
-
-                var msg = vs.Text;
-                if (string.IsNullOrEmpty(msg))
+                byte[] msg = _verbs[verb].Text;
+                if (msg.Length == 0)
                     return;
 
-                //tmp = _charset._center;
+                tmp = _charset._center;
                 DrawString(4, msg);
+                _charset._center = tmp;
 
-                // TODO ?
-                //_charset._center = tmp;
-
-                vs.curRect = new System.Windows.Rect(vs.curRect.Location, new System.Windows.Size(msg.Length * 8, 8));
-                //vs.oldRect = _charset._str;
-                //_charset._str.left = _charset._str.right;
+                vs.curRect.right = _charset._str.right;
+                vs.oldRect.bottom = _charset._str.bottom;
+                _charset._str.left = _charset._str.right;
             }
             else
             {
-                //restoreVerbBG(verb);
+                RestoreVerbBG(verb);
             }
         }
 
-        private void DrawString(int index, string msg)
+        private void RestoreVerbBG(int verb)
         {
-            this._scumm.GetCharset(_string[4].charset).ColorMap[1] = _string[4].color;
-            DrawCharset(index, msg.ToArray());
+            VerbSlot vs = _verbs[verb];
+            byte col = vs.bkcolor;
+
+            if (vs.oldRect.left != -1)
+            {
+                RestoreBackground(vs.oldRect, col);
+                vs.oldRect.left = -1;
+            }
+        }
+
+        private void RestoreBackground(Rect rect, byte backColor)
+        {
+            VirtScreen vs;
+
+            if (rect.top < 0)
+                rect.top = 0;
+            if (rect.left >= rect.right || rect.top >= rect.bottom)
+                return;
+
+            if ((vs = FindVirtScreen(rect.top)) == null)
+                return;
+
+            if (rect.left > vs.Surfaces[0].Width)
+                return;
+
+            // Convert 'rect' to local (virtual screen) coordinates
+            rect.top -= vs.TopLine;
+            rect.bottom -= vs.TopLine;
+
+            rect.Clip(vs.Width, vs.Height);
+
+            int height = rect.height();
+            int width = rect.width();
+
+            MarkRectAsDirty(vs, rect.left, rect.right, rect.top, rect.bottom, UsageBitRestored);
+
+            PixelNavigator screenBuf = new PixelNavigator(vs.Surfaces[0]);
+            screenBuf.GoTo(rect.left, rect.top);
+
+            if (height == 0)
+                return;
+
+            if (vs.HasTwoBuffers && _currentRoom != 0 && IsLightOn())
+            {
+                var back = new PixelNavigator(vs.Surfaces[1]);
+                back.GoTo(rect.left, rect.top);
+                Blit(screenBuf, vs.Pitch, back, vs.Pitch, width, height, vs.BytesPerPixel);
+                if (vs == MainVirtScreen && _charset._hasMask)
+                {
+                    {
+                        var mask = new PixelNavigator(_textSurface);
+                        mask.GoTo(rect.left, rect.top - _screenTop);
+                        Fill(mask, _textSurface.Pitch, CharsetMaskTransparency, width * _textSurfaceMultiplier, height * _textSurfaceMultiplier);
+                    }
+                }
+            }
+            else
+            {
+                Fill(screenBuf, vs.Pitch, backColor, width, height);
+            }
+        }
+
+        private void DrawString(int a, byte[] msg)
+        {
+            byte[] buf = new byte[270];
+            //byte *space;
+            int i, c;
+            int fontHeight = 0;
+            uint color;
+
+            ConvertMessageToString(msg, buf, 0);
+
+            _charset._top = _string[a].ypos + _screenTop;
+            _charset._startLeft = _charset._left = _string[a].xpos;
+            _charset._right = _string[a].right;
+            _charset._center = _string[a].center;
+            _charset.SetColor(_string[a].color);
+            _charset._disableOffsX = _charset._firstChar = true;
+            _charset.SetCurID(_string[a].charset);
+
+            fontHeight = _charset.GetFontHeight();
+
+
+            // trim from the right
+            int tmpPos = 0;
+            int spacePos = 0;
+            while (buf[tmpPos] != 0)
+            {
+                if (buf[tmpPos] == ' ')
+                {
+                    if (spacePos == 0)
+                        spacePos = tmpPos;
+                }
+                else
+                {
+                    spacePos = 0;
+                }
+                tmpPos++;
+            }
+            if (spacePos != 0)
+            {
+                buf[spacePos] = 0;
+            }
+
+            if (_charset._center)
+            {
+                _charset._left -= _charset.GetStringWidth(a, buf, 0) / 2;
+            }
+
+            if (buf[0] == 0)
+            {
+                _charset._str.left = _charset._left;
+                _charset._str.top = _charset._top;
+                _charset._str.right = _charset._left;
+                _charset._str.bottom = _charset._top;
+            }
+
+            for (i = 0; (c = buf[i++]) != 0; )
+            {
+                if (c == 0xFF || (c == 0xFE))
+                {
+                    c = buf[i++];
+                    switch (c)
+                    {
+                        case 9:
+                        case 10:
+                        case 13:
+                        case 14:
+                            i += 2;
+                            break;
+                        case 1:
+                        case 8:
+                            if (_charset._center)
+                            {
+                                _charset._left = _charset._startLeft - _charset.GetStringWidth(a, buf, i);
+                            }
+                            else
+                            {
+                                _charset._left = _charset._startLeft;
+                            }
+                            if (_string[0].height != 0)
+                            {
+                                _nextTop += _string[0].height;
+                            }
+                            else
+                            {
+                                _charset._top += fontHeight;
+                            }
+                            break;
+                        case 12:
+                            color = (uint)(buf[i] + (buf[i + 1] << 8));
+                            i += 2;
+                            if (color == 0xFF)
+                                _charset.SetColor(_string[a].color);
+                            else
+                                _charset.SetColor((byte)color);
+                            break;
+                    }
+                }
+                else
+                {
+                    //if ((c & 0x80) != 0 && _useCJKMode)
+                    //{
+                    //    if (checkSJISCode(c))
+                    //        c += buf[i++] * 256;
+                    //}
+                    _charset.PrintChar(c, true);
+                    _charset._blitAlso = false;
+                }
+            }
+
+            if (a == 0)
+            {
+                _nextLeft = _charset._left;
+                _nextTop = _charset._top;
+            }
+
+            _string[a].xpos = (short)_charset._str.right;
+        }
+
+        private int ConvertMessageToString(byte[] src, byte[] dst, int dstPos)
+        {
+            uint num = 0;
+            int val;
+            byte chr;
+            byte lastChr = 0;
+            int dstPosBegin = dstPos;
+
+            while (num < src.Length)
+            {
+                chr = src[num++];
+                if (chr == 0)
+                    break;
+
+                if (chr == 0xFF)
+                {
+                    chr = src[num++];
+
+                    if (chr == 1 || chr == 2 || chr == 3 || chr == 8)
+                    {
+                        // Simply copy these special codes
+                        dst[dstPos++] = 0xFF;
+                        dst[dstPos++] = chr;
+                    }
+                    else
+                    {
+                        val = src[num] | ((int)src[num + 1] << 8);
+                        switch (chr)
+                        {
+                            case 4:
+                                dstPos += ConvertIntMessage(dst, dstPos, val);
+                                break;
+                            case 5:
+                                dstPos += ConvertVerbMessage(dst, dstPos, val);
+                                break;
+                            case 6:
+                                dstPos += ConvertNameMessage(dst, dstPos, val);
+                                break;
+                            case 7:
+                                dstPos += ConvertStringMessage(dst, dstPos, val);
+                                break;
+                            case 9:
+                            case 10:
+                            case 12:
+                            case 13:
+                            case 14:
+                                // Simply copy these special codes
+                                dst[dstPos++] = 0xFF;
+                                dst[dstPos++] = chr;
+                                dst[dstPos++] = src[num + 0];
+                                dst[dstPos++] = src[num + 1];
+                                break;
+                            default:
+                                throw new NotSupportedException(string.Format("convertMessageToString(): string escape sequence %d unknown", chr));
+                        }
+                        num += 2;
+                    }
+                }
+                else
+                {
+                    if (chr != '@')
+                    {
+                        dst[dstPos++] = chr;
+                    }
+                    lastChr = chr;
+                }
+            }
+
+            dst[dstPos] = 0;
+
+            return dstPos - dstPosBegin;
+        }
+
+        private int ConvertNameMessage(byte[] dst, int dstPos, int var)
+        {
+            var num = ReadVariable(var);
+            if (num != 0)
+            {
+                var ptr = GetObjectOrActorName(num);
+                if (ptr != null)
+                {
+                    return ConvertMessageToString(ptr, dst, dstPos);
+                }
+            }
+            return 0;
+        }
+
+        private int ConvertVerbMessage(byte[] dst, int dstPos, int var)
+        {
+            var num = ReadVariable(var);
+            if (num != 0)
+            {
+                for (int k = 1; k < _verbs.Length; k++)
+                {
+                    if (num == _verbs[k].verbid && _verbs[k].type == VerbType.Text && (_verbs[k].saveid == 0))
+                    {
+                        return ConvertMessageToString(_verbs[k].Text, dst, dstPos);
+                    }
+                }
+            }
+            return 0;
+        }
+
+        private int ConvertIntMessage(byte[] dst, int dstPos, int var)
+        {
+            var num = ReadVariable(var);
+            var src = Encoding.ASCII.GetBytes(num.ToString());
+            Array.Copy(src, 0, dst, dstPos, src.Length);
+            return src.Length;
+        }
+
+        private int ConvertStringMessage(byte[] dst, int dstPos, int var)
+        {
+            if (var != 0)
+            {
+                var ptr = _strings[var];
+                if (ptr != null)
+                {
+                    return ConvertMessageToString(ptr, dst, dstPos);
+                }
+            }
+            return 0;
         }
 
         private void DrawVerbBitmap(int verb, double p, double p_2)
@@ -4730,16 +4889,16 @@ namespace Scumm4
             for (int i = _verbs.Length - 1; i > 0; i--)
             {
                 var vs = _verbs[i];
-                if (vs.curmode != 1 || vs.verbid == 0 || vs.saveid != 0 || y < vs.curRect.Top || y >= vs.curRect.Bottom)
+                if (vs.curmode != 1 || vs.verbid == 0 || vs.saveid != 0 || y < vs.curRect.top || y >= vs.curRect.bottom)
                     continue;
                 if (vs.center)
                 {
-                    if (x < -(vs.curRect.Right - 2 * vs.curRect.Left) || x >= vs.curRect.Right)
+                    if (x < -(vs.curRect.right - 2 * vs.curRect.left) || x >= vs.curRect.right)
                         continue;
                 }
                 else
                 {
-                    if (x < vs.curRect.Left || x >= vs.curRect.Right)
+                    if (x < vs.curRect.left || x >= vs.curRect.right)
                         continue;
                 }
 
@@ -5288,9 +5447,304 @@ namespace Scumm4
             }
         }
 
+        private CharsetRenderer _charset;
         private void CHARSET_1()
         {
-            //throw new NotImplementedException();
+            if (_haveMsg == 0)
+                return;
+
+            // Do nothing while the camera is moving
+            if ((this.Camera._dest.X / 8) != (this.Camera._cur.X / 8) || this.Camera._cur.X != this.Camera._last.X)
+                return;
+
+            Actor a = null;
+            if (GetTalkingActor() != 0xFF)
+                a = this.Actors[GetTalkingActor()];
+
+            if (a != null && _string[0].overhead)
+            {
+                int s;
+
+                _string[0].xpos = (short)(a.GetPos().X - this.MainVirtScreen.XStart);
+                _string[0].ypos = (short)(a.GetPos().Y - a.GetElevation() - _screenTop);
+
+                if (_variables[VariableTalkStringY] < 0)
+                {
+                    s = (a._scaley * (int)_variables[VariableTalkStringY]) / 0xFF;
+                    _string[0].ypos += (short)(((_variables[VariableTalkStringY] - s) / 2) + s);
+                }
+                else
+                {
+                    _string[0].ypos = (short)_variables[VariableTalkStringY];
+                }
+
+
+                if (_string[0].ypos < 1)
+                    _string[0].ypos = 1;
+
+                if (_string[0].xpos < 80)
+                    _string[0].xpos = 80;
+                if (_string[0].xpos > _screenWidth - 80)
+                    _string[0].xpos = (short)(_screenWidth - 80);
+            }
+
+            _charset._top = _string[0].ypos + _screenTop;
+            _charset._startLeft = _charset._left = _string[0].xpos;
+            _charset._right = _string[0].right;
+            _charset._center = _string[0].center;
+            _charset.SetColor(_charsetColor);
+
+            if (a != null && a._charset != 0)
+                _charset.SetCurID(a._charset);
+            else
+                _charset.SetCurID(_string[0].charset);
+
+            if (_talkDelay != 0)
+                return;
+
+            if (_haveMsg == 1)
+            {
+                // TODO:
+                //if ((_sound->_sfxMode & 2) == 0)
+                StopTalk();
+                return;
+            }
+
+            if (a != null && !_string[0].no_talk_anim)
+            {
+                a.RunActorTalkScript(a._talkStartFrame);
+                _useTalkAnims = true;
+            }
+
+            _talkDelay = 60;
+
+            if (!_keepText)
+            {
+                RestoreCharsetBg();
+            }
+
+
+            int maxwidth = _charset._right - _string[0].xpos - 1;
+            if (_charset._center)
+            {
+                if (maxwidth > _nextLeft)
+                    maxwidth = _nextLeft;
+                maxwidth *= 2;
+            }
+
+            _charset.AddLinebreaks(0, _charsetBuffer, _charsetBufPos, maxwidth);
+
+            if (_charset._center)
+            {
+                _nextLeft -= _charset.GetStringWidth(0, _charsetBuffer, _charsetBufPos) / 2;
+                if (_nextLeft < 0)
+                    _nextLeft = 0;
+            }
+
+            _charset._disableOffsX = _charset._firstChar = !_keepText;
+
+            int c = 0;
+            while (HandleNextCharsetCode(a, ref c))
+            {
+                if (c == 0)
+                {
+                    // End of text reached, set _haveMsg accordingly
+                    _haveMsg = 1;
+                    _keepText = false;
+                    break;
+                }
+
+                if (c == 13)
+                {
+                    if (!NewLine())
+                        break;
+                    continue;
+                }
+
+                // Handle line overflow for V3. See also bug #1306269.
+                //if (_game.version == 3 && _nextLeft >= _screenWidth)
+                //{
+                //    _nextLeft = _screenWidth;
+                //}
+                // Handle line breaks for V1-V2
+                //if (_game.version <= 2 && _nextLeft >= _screenWidth)
+                //{
+                //    if (!newLine())
+                //        break;	// FIXME: Is this necessary? Only would be relevant for v0 games
+                //}
+
+                _charset._left = _nextLeft;
+                _charset._top = _nextTop;
+
+                _charset.PrintChar(c, false);
+                _nextLeft = _charset._left;
+                _nextTop = _charset._top;
+
+                _talkDelay += (int)_variables[VariableCharIncrement];
+            }
+
+        }
+
+        private bool NewLine()
+        {
+            _nextLeft = _string[0].xpos;
+            if (_charset._center)
+            {
+                _nextLeft -= _charset.GetStringWidth(0, _charsetBuffer, _charsetBufPos) / 2;
+                if (_nextLeft < 0)
+                    _nextLeft = 0;
+            }
+
+            if (_string[0].height != 0)
+            {
+                _nextTop += _string[0].height;
+            }
+            else
+            {
+                bool useCJK = _useCJKMode;
+                _nextTop += _charset.GetFontHeight();
+                _useCJKMode = useCJK;
+            }
+
+            // FIXME: is this really needed?
+            _charset._disableOffsX = true;
+
+            return true;
+        }
+
+        private bool HandleNextCharsetCode(Actor a, ref int code)
+        {
+            uint talk_sound_a = 0;
+            uint talk_sound_b = 0;
+            int color, frme, c = 0, oldy;
+            bool endLoop = false;
+            //byte* buffer = _charsetBuffer + _charsetBufPos;
+            int bufferPos = _charsetBufPos;
+            while (!endLoop)
+            {
+                c = _charsetBuffer[bufferPos++];
+                if (!(c == 0xFF || (c == 0xFE)))
+                {
+                    break;
+                }
+                c = _charsetBuffer[bufferPos++];
+
+                if (_newLineCharacter != 0 && c == _newLineCharacter)
+                {
+                    c = 13;
+                    break;
+                }
+
+                switch (c)
+                {
+                    case 1:
+                        c = 13; // new line
+                        endLoop = true;
+                        break;
+                    case 2:
+                        _haveMsg = 0;
+                        _keepText = true;
+                        endLoop = true;
+                        break;
+                    case 3:
+                        _haveMsg = 0xFF;
+                        _keepText = false;
+                        endLoop = true;
+                        break;
+                    case 8:
+                        // Ignore this code here. Occurs e.g. in MI2 when you
+                        // talk to the carpenter on scabb island. It works like
+                        // code 1 (=newline) in verb texts, but is ignored in
+                        // spoken text (i.e. here). Used for very long verb
+                        // sentences.
+                        break;
+                    case 9:
+                        frme = _charsetBuffer[bufferPos] | (_charsetBuffer[bufferPos + 1] << 8);
+                        bufferPos += 2;
+                        if (a != null)
+                            a.StartAnimActor((byte)frme);
+                        break;
+                    case 10:
+                        // Note the similarity to the code in debugMessage()
+                        talk_sound_a = (uint)(_charsetBuffer[bufferPos] | (_charsetBuffer[bufferPos + 1] << 8) | (_charsetBuffer[bufferPos + 4] << 16) | (_charsetBuffer[bufferPos + 5] << 24));
+                        talk_sound_b = (uint)(_charsetBuffer[bufferPos + 8] | (_charsetBuffer[bufferPos + 9] << 8) | (_charsetBuffer[bufferPos + 12] << 16) | (_charsetBuffer[bufferPos + 13] << 24));
+                        bufferPos += 14;
+                        //_sound->talkSound(talk_sound_a, talk_sound_b, 2);                        
+                        _haveActorSpeechMsg = false;
+                        break;
+                    case 12:
+                        color = _charsetBuffer[bufferPos] | (_charsetBuffer[bufferPos + 1] << 8);
+                        bufferPos += 2;
+                        if (color == 0xFF)
+                            _charset.SetColor(_charsetColor);
+                        else
+                            _charset.SetColor((byte)color);
+                        break;
+                    case 13:
+                        //debug(0, "handleNextCharsetCode: Unknown opcode 13 %d", READ_LE_UINT16(buffer));
+                        bufferPos += 2;
+                        break;
+                    case 14:
+                        oldy = _charset.GetFontHeight();
+                        _charset.SetCurID(_charsetBuffer[bufferPos++]);
+                        bufferPos += 2;
+                        // TODO:
+                        //memcpy(_charsetColorMap, _charsetData[_charset.getCurID()], 4);
+                        _nextTop -= _charset.GetFontHeight() - oldy;
+                        break;
+                    default:
+                        throw new NotSupportedException(string.Format("handleNextCharsetCode: invalid code {0}", c));
+                }
+            }
+            _charsetBufPos = bufferPos;
+            code = c;
+            return (c != 2 && c != 3);
+        }
+
+        private void RestoreCharsetBg()
+        {
+            _nextLeft = _string[0].xpos;
+            _nextTop = _string[0].ypos + _screenTop;
+
+            if (_charset._hasMask)
+            {
+                _charset._hasMask = false;
+                _charset._str.left = -1;
+                _charset._left = -1;
+
+                // Restore background on the whole text area. This code is based on
+                // restoreBackground(), but was changed to only restore those parts which are
+                // currently covered by the charset mask.
+
+                VirtScreen vs = _charset._textScreen;
+                if (vs.Surfaces[0].Height == 0)
+                    return;
+
+                MarkRectAsDirty(vs, 0, vs.Surfaces[0].Width, 0, vs.Surfaces[0].Height, UsageBitRestored);
+
+                byte[] screenBuf = vs.Surfaces[0].Pixels;
+
+                if (vs.Surfaces.Count == 2 && _currentRoom != 0 && IsLightOn())
+                {
+                    if (vs != MainVirtScreen)
+                    {
+                        // Restore from back buffer
+                        byte[] backBuf = vs.Surfaces[1].Pixels;
+                        Blit(screenBuf, vs.Surfaces[0].Pitch, backBuf, vs.Surfaces[0].Pitch, vs.Surfaces[0].Width, vs.Surfaces[0].Height, vs.Surfaces[0].BytesPerPixel);
+                    }
+                }
+                else
+                {
+                    // Clear area
+                    Array.Clear(screenBuf, 0, screenBuf.Length);
+                }
+
+                if (vs.Surfaces.Count == 2)
+                {
+                    // Clean out the charset mask
+                    ClearTextSurface();
+                }
+            }
         }
 
         private void HandleMouseOver(bool p)
@@ -5301,6 +5755,86 @@ namespace Scumm4
         private void ClearCharsetMask()
         {
             throw new NotImplementedException();
+        }
+
+        private const byte CharsetMaskTransparency = 0xFD;
+        private void ClearTextSurface()
+        {
+            Fill(_textSurface.Pixels, _textSurface.Pitch, CharsetMaskTransparency, _textSurface.Width, _textSurface.Height);
+        }
+
+        private static void Fill(PixelNavigator dst, int dstPitch, byte color, int width, int height)
+        {
+            {
+                for (int h = 0; h < height; h++)
+                {
+                    for (int w = 0; w < width; w++)
+                    {
+                        dst.Write(color);
+                        dst.OffsetX(1);
+                    }
+                    dst.Offset(-width, 1);
+                }
+            }
+
+        }
+
+        private static void Fill(byte[] dst, int dstPitch, byte color, int w, int h)
+        {
+
+            if (w == dstPitch)
+            {
+                for (int i = 0; i < dst.Length; i++)
+                {
+                    dst[i] = color;
+                }
+            }
+            else
+            {
+                int offset = 0;
+                do
+                {
+                    for (int i = 0; i < w; i++)
+                    {
+                        dst[offset + i] = color;
+                    }
+                    offset += dstPitch;
+                } while ((--h) != 0);
+            }
+        }
+
+        private static void Blit(byte[] dst, int dstPitch, byte[] src, int srcPitch, int w, int h, int bitDepth)
+        {
+            if ((w * bitDepth == srcPitch) && (w * bitDepth == dstPitch))
+            {
+                Array.Copy(src, dst, w * h * bitDepth);
+            }
+            else
+            {
+                int srcPos = 0;
+                int dstPos = 0;
+                do
+                {
+                    Array.Copy(src, srcPos, dst, dstPos, w * bitDepth);
+                    dstPos += dstPitch;
+                    srcPos += srcPitch;
+                } while ((--h) != 0);
+            }
+        }
+
+        private static void Blit(PixelNavigator dst, int dstPitch, PixelNavigator src, int srcPitch, int width, int height, int bitDepth)
+        {
+            for (int h = 0; h < height; h++)
+            {
+                for (int w = 0; w < width; w++)
+                {
+                    dst.Write(src.Read());
+                    src.OffsetX(1);
+                    dst.OffsetX(1);
+                }
+                src.Offset(-width, 1);
+                dst.Offset(-width, 1);
+            }
         }
 
         private void HandleDrawing()
@@ -5423,6 +5957,9 @@ namespace Scumm4
             if (_skipDrawObject)
                 return;
 
+            // TODO: remove this
+            return;
+
             ObjectData od = this.Objects[obj];
             int height, width;
 
@@ -5450,7 +5987,7 @@ namespace Scumm4
             // TODO:
             //var ptr = GetOBIMFromObjectData(od);
             //if (ptr == null)
-                return;
+            return;
 
             x = 0xFFFF;
 
@@ -5496,11 +6033,11 @@ namespace Scumm4
 
         private void DrawDirtyScreenParts()
         {
-            // TODO: Update verbs
-            //updateDirtyScreen(kVerbVirtScreen);
+            // Update verbs
+            //UpdateDirtyScreen(_verbVirtScreen);
 
-            // TODO: Update the conversation area (at the top of the screen)
-            //updateDirtyScreen(kTextVirtScreen);
+            // Update the conversation area (at the top of the screen)
+            UpdateDirtyScreen(_textVirtScreen);
 
             // Update game area ("stage")
             if (_camera._last.X != _camera._cur.X)
@@ -5593,13 +6130,45 @@ namespace Scumm4
                 return;
 
             // TODO: a lot of stuffs
-            var src = vs.Surfaces[0].Pixels;
+            var composite = new Surface(vs.Width, vs.Height, vs.PixelFormat, false);
+            var compNav = new PixelNavigator(composite);
+            compNav.GoTo(x, top);
+            var vsNav = new PixelNavigator(vs.Surfaces[0]);
+            vsNav.GoTo(x, top);
+            var txtNav = new PixelNavigator(_textSurface);
+            int m = _textSurfaceMultiplier;
+            txtNav.GoTo(x * m, y * m);
+            for (int h = 0; h < height; h++)
+            {
+                for (int w = 0; w < width; w++)
+                {
+                    var txtPixel = txtNav.Read();
+                    byte pixel;
+                    if (txtPixel != 0xFD)
+                    {
+                        pixel = txtPixel;
+                    }
+                    else
+                    {
+                        pixel = vsNav.Read();
+                    }
+                    compNav.Write(pixel);
+                    compNav.OffsetX(1);
+                    txtNav.OffsetX(1);
+                    vsNav.OffsetX(1);
+                }
+                compNav.Offset(-width, 1);
+                txtNav.Offset(-width, 1);
+                vsNav.Offset(-width, 1);
+            }
+
+            var src = composite.Pixels;
 
             // Finally blit the whole thing to the screen
-            _gfxManager.CopyRectToScreen(src, vs.Surfaces[0].Pitch, x, y, width, height);
+            _gfxManager.CopyRectToScreen(src, vs.Pitch, x, y, width, height);
         }
 
-        public void MarkRectAsDirty(VirtScreen vs, int left, int right, int top, int bottom, int dirtybit)
+        public void MarkRectAsDirty(VirtScreen vs, int left, int right, int top, int bottom, int dirtybit = 0)
         {
             int lp, rp;
 
@@ -5672,6 +6241,9 @@ namespace Scumm4
         private int _fastMode;
         private IGraphicsManager _gfxManager;
         private int _palDirtyMin, _palDirtyMax;
+        private int _nextLeft, _nextTop;
+        private int _textSurfaceMultiplier = 1;
+        private Surface _textSurface;
 
         private void SetGfxUsageBit(int strip, int bit)
         {
@@ -5734,5 +6306,21 @@ namespace Scumm4
         {
             return _gdi.GetMaskBuffer((x + _mainVirtScreen.XStart) / 8, y, z);
         }
+
+        public VirtScreen FindVirtScreen(int y)
+        {
+            if (VirtScreenContains(_mainVirtScreen, y)) return _mainVirtScreen;
+            if (VirtScreenContains(_textVirtScreen, y)) return _textVirtScreen;
+            if (VirtScreenContains(_verbVirtScreen, y)) return _verbVirtScreen;
+
+            return null;
+        }
+
+        private bool VirtScreenContains(VirtScreen vs, int y)
+        {
+            return (y >= vs.TopLine && y < vs.TopLine + vs.Surfaces[0].Height);
+        }
+
+        public Surface TextSurface { get { return _textSurface; } }
     }
 }

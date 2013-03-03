@@ -317,8 +317,7 @@ namespace Scumm4
 
                                 // read scripts
                                 ReadObjectScripts(it, data);
-                                StringBuilder name = ReadObjectName(it, nameOffset);
-                                data.Name = name.ToString();
+                                data.Name = ReadObjectName(it, nameOffset);
                                 ReadObjectImage(stripsDic, data);
                             }
                             break;
@@ -488,6 +487,12 @@ namespace Scumm4
             return data;
         }
 
+        public byte[] ReadCharsetData()
+        {
+            var size = _reader.ReadInt32() + 11;
+            return _reader.ReadBytes(size);
+        }
+
         public Charset ReadCharset()
         {
             var size = _reader.ReadUInt32() + 11;
@@ -536,17 +541,17 @@ namespace Scumm4
             return charset;
         }
 
-        private StringBuilder ReadObjectName(ChunkIterator it, byte nameOffset)
+        private byte[] ReadObjectName(ChunkIterator it, byte nameOffset)
         {
             _reader.BaseStream.Seek(it.Current.Offset + nameOffset - 6, SeekOrigin.Begin);
-            StringBuilder name = new StringBuilder();
-            char c = (char)_reader.ReadByte();
+            List<byte> name = new List<byte>();
+            var c = _reader.ReadByte();
             while (c != 0)
             {
-                name.Append(c);
-                c = (char)_reader.ReadByte();
+                name.Add(c);
+                c = _reader.ReadByte();
             }
-            return name;
+            return name.ToArray();
         }
 
         private void ReadObjectScripts(ChunkIterator it, ObjectData data)

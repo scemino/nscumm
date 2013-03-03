@@ -16,6 +16,7 @@
  */
 
 using Scumm4;
+using Scumm4.Graphics;
 using System;
 using System.Threading;
 using System.Windows;

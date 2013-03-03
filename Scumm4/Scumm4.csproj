@@ -63,7 +63,10 @@
     <Compile Include="DiskFile.cs" />
     <Compile Include="FlashLight.cs" />
     <Compile Include="GameManager.cs" />
+    <Compile Include="Graphics\CharsetRenderer.cs" />
+    <Compile Include="Graphics\CharsetRendererClassic.cs" />
     <Compile Include="Graphics\Gdi.cs" />
+    <Compile Include="Graphics\IGraphicsManager.cs" />
     <Compile Include="Graphics\PixelNavigator.cs" />
     <Compile Include="Graphics\Surface.cs" />
     <Compile Include="ICostumeLoader.cs" />

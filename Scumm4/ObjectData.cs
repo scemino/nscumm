@@ -41,7 +41,7 @@ namespace Scumm4
 
         public Dictionary<byte, ushort> ScriptOffsets { get; private set; }
         public Dictionary<byte, ScriptData> Scripts { get; private set; }
-        public string Name { get; set; }
+        public byte[] Name { get; set; }
         public List<Strip> Strips { get; private set; }
 
         public ObjectData()

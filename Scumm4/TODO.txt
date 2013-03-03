@@ -1,5 +1,5 @@
 ﻿scaling actors
-text
+text position is sometimes incorrect
 object drawing
 cursor
 actions

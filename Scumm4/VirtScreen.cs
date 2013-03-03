@@ -97,5 +97,12 @@ namespace Scumm4
             }
         }
         #endregion
+
+        public bool HasTwoBuffers { get { return this.Surfaces.Count == 2; } }
+        public int Pitch { get { return this.Surfaces[0].Pitch; } }
+        public PixelFormat PixelFormat { get { return this.Surfaces[0].PixelFormat; } }
+        public int BytesPerPixel { get { return this.Surfaces[0].BytesPerPixel; } }
+        public int Width { get { return this.Surfaces[0].Width; } }
+        public int Height { get { return this.Surfaces[0].Height; } }
     }
 }

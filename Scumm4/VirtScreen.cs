@@ -62,7 +62,7 @@ namespace Scumm4
             get { return bdirty; }
         }
 
-        public int XStart { get; set; }
+        public ushort XStart { get; set; }
 
         /// <summary>
         /// Vertical position of the virtual screen. Tells how much the virtual

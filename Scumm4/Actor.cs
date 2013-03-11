@@ -120,7 +120,15 @@ namespace Scumm4
         public byte _talkStartFrame;
         public byte _talkStopFrame;
 
-        public bool _needRedraw, _needBgReset, _visible;
+        private bool _needRedraw;
+
+        public bool NeedRedraw
+        {
+            get { return _needRedraw; }
+            set { _needRedraw = value; }
+        }
+
+        public bool _needBgReset, _visible;
         public byte _shadowMode;
         public bool _flip;
         public byte _frame;
@@ -128,9 +136,10 @@ namespace Scumm4
         public short _talkPosX, _talkPosY;
         public ushort _talkScript, _walkScript;
         public bool _ignoreTurns;
-        public bool _drawToBackBuf;
         public ushort[] _sound = new ushort[32];
         public CostumeData _cost;
+
+        public byte[] Name { get; set; }
 
         protected struct ActorWalkData
         {
@@ -170,6 +179,8 @@ namespace Scumm4
             if (!_visible)
                 return;
 
+            Console.WriteLine("HideActor: {0}", _costume);
+
             if (_moving != 0)
             {
                 StopActorMoving();
@@ -179,7 +190,7 @@ namespace Scumm4
             _visible = false;
             _cost.soundCounter = 0;
             _cost.soundPos = 0;
-            _needRedraw = false;
+            NeedRedraw = false;
             _needBgReset = true;
         }
 
@@ -187,6 +198,8 @@ namespace Scumm4
         {
             if (_scumm.CurrentRoom == 0 || _visible)
                 return;
+
+            Console.WriteLine("ShowActor: {0}", _costume);
 
             AdjustActorPos();
 
@@ -201,7 +214,7 @@ namespace Scumm4
 
             StopActorMoving();
             _visible = true;
-            _needRedraw = true;
+            NeedRedraw = true;
         }
 
         public virtual void InitActor(int mode)
@@ -209,7 +222,7 @@ namespace Scumm4
             if (mode == -1)
             {
                 _top = _bottom = 0;
-                _needRedraw = false;
+                NeedRedraw = false;
                 _needBgReset = false;
                 _costumeNeedsInit = false;
                 _visible = false;
@@ -219,7 +232,6 @@ namespace Scumm4
                 _frame = 0;
                 _walkbox = 0;
                 _animProgress = 0;
-                _drawToBackBuf = false;
                 _animVariable = new short[27];
                 _palette = new ushort[256];
                 _sound = new ushort[32];
@@ -304,7 +316,7 @@ namespace Scumm4
             _pos.X = dstX;
             _pos.Y = dstY;
             _room = newRoom;
-            _needRedraw = true;
+            NeedRedraw = true;
 
             if (_scumm.Variables[ScummInterpreter.VariableEgo] == _number)
             {
@@ -394,9 +406,9 @@ namespace Scumm4
                 deltaYFactor = 0;
             }
 
-            if ((uint)Math.Abs((int)(deltaXFactor >> 16)) > _speedx)
+            if ((uint)Math.Abs(deltaXFactor) > (_speedx << 16))
             {
-                deltaXFactor = (int)_speedx << 16;
+                deltaXFactor = (int)(_speedx << 16);
                 if (diffX < 0)
                     deltaXFactor = -deltaXFactor;
 
@@ -505,7 +517,7 @@ namespace Scumm4
             int distX, distY;
             int nextFacing;
 
-            _needRedraw = true;
+            NeedRedraw = true;
 
             nextFacing = UpdateActorDirection(true);
             if (!_moving.HasFlag(MoveFlags.InLeg) || _facing != nextFacing)
@@ -964,7 +976,7 @@ namespace Scumm4
                 _scumm.CostumeLoader.CostumeDecodeData(this, vald, aMask);
             }
 
-            _needRedraw = true;
+            NeedRedraw = true;
         }
 
         public void FaceToObject(int obj)
@@ -1070,10 +1082,10 @@ namespace Scumm4
 
             if (!hitTestMode)
             {
-                if (!_needRedraw)
+                if (!NeedRedraw)
                     return;
 
-                _needRedraw = false;
+                NeedRedraw = false;
             }
 
             SetupActorScale();
@@ -1082,9 +1094,9 @@ namespace Scumm4
             PrepareDrawActorCostume(bcr);
 
             // If the actor is partially hidden, redraw it next frame.
-            if ((bcr.DrawCostume(_scumm.MainVirtScreen, 40, this, _drawToBackBuf) & 1) > 0)
+            if ((bcr.DrawCostume(_scumm.MainVirtScreen, this._scumm._gdi._numStrips, this) & 1) != 0)
             {
-                _needRedraw = true;
+                NeedRedraw = true;
             }
 
             if (!hitTestMode)
@@ -1101,7 +1113,7 @@ namespace Scumm4
             bcr.ActorX = _pos.X - _scumm.MainVirtScreen.XStart;
             bcr.ActorY = _pos.Y - _elevation;
 
-            if ((_boxscale & 0x8000) > 0)
+            if ((_boxscale & 0x8000) != 0)
             {
                 bcr.ScaleX = bcr.ScaleY = (byte)_scumm.GetScaleFromSlot((_boxscale & 0x7fff) + 1, _pos.X, _pos.Y);
             }
@@ -1148,7 +1160,6 @@ namespace Scumm4
                     _facing = (ushort)dir;
                 return;
             }
-
 
             if (_ignoreBoxes)
             {
@@ -1270,7 +1281,7 @@ namespace Scumm4
             if (IsInCurrentRoom() && _costume != 0)
             {
                 _animProgress = 0;
-                _needRedraw = true;
+                NeedRedraw = true;
                 _cost.animCounter = 0;
                 // V1 - V2 games don't seem to need a _cost.reset() at this point.
                 // Causes Zak to lose his body in several scenes, see bug #771508
@@ -1339,9 +1350,6 @@ namespace Scumm4
             _facing = newFacing;
         }
 
-        //public int GetAnimVar(byte var);
-        //public void SetAnimVar(byte var, int value);
-
         public void SetAnimSpeed(byte newAnimSpeed)
         {
             _animSpeed = newAnimSpeed;
@@ -1368,23 +1376,23 @@ namespace Scumm4
             if (_elevation != newElevation)
             {
                 _elevation = newElevation;
-                _needRedraw = true;
+                NeedRedraw = true;
             }
         }
 
         public void SetPalette(int idx, ushort val)
         {
             _palette[idx] = val;
-            _needRedraw = true;
+            NeedRedraw = true;
         }
 
-        public void SetScale(byte sx, byte sy)
+        public void SetScale(int sx, int sy)
         {
-            if (sx != 255)
-                _scalex = sx;
-            if (sy != 255)
-                _scaley = sy;
-            _needRedraw = true;
+            if (sx != -1)
+                _scalex = (byte)sx;
+            if (sy != -1)
+                _scaley = (byte)sy;
+            NeedRedraw = true;
         }
 
         public bool IsInClass(ObjectClass cls)
@@ -1596,9 +1604,9 @@ namespace Scumm4
                 _animProgress = 0;
 
                 _scumm.CostumeLoader.LoadCostume(_costume);
-                if (_scumm.CostumeLoader.IncreaseAnims(this) > 0)
+                if (_scumm.CostumeLoader.IncreaseAnims(this) != 0)
                 {
-                    _needRedraw = true;
+                    NeedRedraw = true;
                 }
             }
         }

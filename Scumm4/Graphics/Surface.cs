@@ -97,7 +97,7 @@ namespace Scumm4.Graphics
             this.Pitch = width * BytesPerPixel;
             if (trick)
             {
-                this._buffer = new byte[this.Pitch * height + 40 * this.Pitch];
+                this._buffer = new byte[this.Pitch * height + 4 * this.Pitch];
             }
             else
             {

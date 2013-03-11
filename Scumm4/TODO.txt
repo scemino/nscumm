@@ -1,8 +1,8 @@
-﻿scaling actors
-text position is sometimes incorrect
+﻿text position is sometimes incorrect
+fix actor drawing
 object drawing
 cursor
-actions
+inventory
 room effects
 color cycle
 clean code

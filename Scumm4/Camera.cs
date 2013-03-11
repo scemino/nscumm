@@ -36,7 +36,7 @@ namespace Scumm4
         public Point _dest;
         public Point _accel;
         public Point _last;
-        public int _leftTrigger, _rightTrigger;
+        public int _leftTrigger=10, _rightTrigger=30;
         public byte _follows;
         public CameraMode _mode;
         public bool _movingToActor;

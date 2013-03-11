@@ -108,13 +108,12 @@ namespace Scumm4
 
         private long _srcptr;
 
-        IntPtr _shadow_table;
-
         // width and height of cel to decode
         int _width, _height;
 
         // _out
         private PixelNavigator _pixelsNavigator;
+        private PixelNavigator startNav;
         private int _w;
         private int _h;
         private int _numStrips;
@@ -166,24 +165,22 @@ namespace Scumm4
             _loaded.LoadCostume(costume);
         }
 
-        public int DrawCostume(VirtScreen vs, int numStrips, Actor actor, bool drawToBackBuf)
+        public int DrawCostume(VirtScreen vs, int numStrips, Actor actor)
         {
-            int result = 0;
+            var pixelsNavigator = new PixelNavigator(vs.Surfaces[0]);
+            pixelsNavigator.OffsetX(vs.XStart);
 
-            if (drawToBackBuf)
-                _pixelsNavigator = new PixelNavigator(vs.Surfaces[1]);
-            else
-                _pixelsNavigator = new PixelNavigator(vs.Surfaces[0]);
-
-            ActorX += vs.XStart & 7;
-            _w = vs.Surfaces[0].Width;
-            _h = vs.Surfaces[0].Height;
-            _pixelsNavigator.OffsetX(-(vs.XStart & 7));
+            ActorX += (vs.XStart & 7);
+            _w = vs.Width;
+            _h = vs.Height;
+            pixelsNavigator.OffsetX(-(vs.XStart & 7));
+            startNav = new PixelNavigator(pixelsNavigator);
 
             _numStrips = numStrips;
 
             _xmove = _ymove = 0;
 
+            int result = 0;
             for (int i = 0; i < 16; i++)
                 result |= DrawLimb(actor, i);
             return result;
@@ -510,8 +507,9 @@ namespace Scumm4
                 return 2;
             }
 
-            _pixelsNavigator.GoTo(v1.x, v1.y);
-            v1.destptr = _pixelsNavigator;
+            _pixelsNavigator = new PixelNavigator(startNav);
+            _pixelsNavigator.Offset(v1.x, v1.y);
+            v1.destptr = new PixelNavigator(_pixelsNavigator);
 
             v1.mask_ptr = _vm.GetMaskBuffer(0, v1.y, ZBuffer);
 
@@ -537,7 +535,6 @@ namespace Scumm4
                 {
                     if ((--num) == 0)
                     {
-                        _srcptr = _loaded._costumeReader.BaseStream.Position;
                         return;
                     }
                 } while ((--v1.replen) != 0);
@@ -555,7 +552,7 @@ namespace Scumm4
             byte len, maskbit;
             int y;
             uint color, height, pcolor;
-            int scaleIndexY;
+            byte scaleIndexY;
             bool masked;
 
             y = v1.y;
@@ -589,10 +586,10 @@ namespace Scumm4
                 {
                     if (!ehmerde)
                     {
-                        if (ScaleY == 255 || ((scaleIndexY < 255) && (v1.scaletable[scaleIndexY++] < ScaleY)))
+                        if (ScaleY == 255 || v1.scaletable[scaleIndexY++] < ScaleY)
                         {
-                            //masked = (y < 0 || y >= _h) || (v1.x < 0 || v1.x >= _w) || (v1.mask_ptr != null && ((mask[0] & maskbit) != 0));
-                            masked = false;
+                            masked = (y < 0 || y >= _h) || (v1.x < 0 || v1.x >= _w);
+                            //masked = false;
 
                             if (color != 0 && !masked)
                             {
@@ -629,7 +626,7 @@ namespace Scumm4
                                 maskbit = (byte)RevBitMask(v1.x & 7);
                                 v1.destptr.OffsetX(v1.scaleXstep);
                             }
-                            _scaleIndexX += (byte)v1.scaleXstep;
+                            _scaleIndexX = (byte)(_scaleIndexX + v1.scaleXstep);
                             dst = new PixelNavigator(v1.destptr);
                             //mask = v1.mask_ptr + v1.x / 8;
                         }

@@ -188,7 +188,7 @@ namespace Scumm4.Graphics
             {
                 dstSurface = vs.Surfaces[0];
                 dstPtr = new PixelNavigator(vs.Surfaces[0]);
-                dstPtr.GoTo(_left, drawTop);
+                dstPtr.GoTo(vs.XStart + _left, drawTop);
             }
             else
             {
@@ -203,7 +203,7 @@ namespace Scumm4.Graphics
                 back = dstPtr;
                 dstSurface = vs.Surfaces[0];
                 dstPtr = new PixelNavigator(dstSurface);
-                dstPtr.GoTo(_left, drawTop);
+                dstPtr.GoTo(vs.XStart + _left, drawTop);
             }
 
             if (!ignoreCharsetMask && vs.HasTwoBuffers)

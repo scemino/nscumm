@@ -36,6 +36,6 @@ namespace Scumm4
         void SetFacing(Actor a);
         void SetCostume(int costume, int shadow);
 
-        int DrawCostume(VirtScreen vs, int numStrips, Actor actor, bool drawToBackBuf);
+        int DrawCostume(VirtScreen vs, int numStrips, Actor actor);
     }
 }

@@ -25,14 +25,11 @@ namespace Scumm4.Graphics
 {
     public class Gdi
     {
+        public int _numZBuffer = 2;
+        public int _numStrips = 40;
+
         private ScummInterpreter _vm;
         private bool _zbufferDisabled;
-        public int _numZBuffer = 2;
-        private int _vertStripNextInc;
-        private int _vertStripNextIncX;
-        private int _vertStripNextIncY;
-        private bool _objectMode;
-        private int _numStrips = 40;
         private int _paletteMod;
         private int _decomp_shr;
         private int _decomp_mask;
@@ -55,18 +52,14 @@ namespace Scumm4.Graphics
             _vm = vm;
         }
 
+        /// <summary>
+        /// Draw a bitmap onto a virtual screen. This is main drawing method for room backgrounds
+        /// and objects, used throughout all SCUMM versions.
+        /// </summary>
         public void DrawBitmap(byte[] ptr, VirtScreen vs, int x, int y, int width, int height, int stripnr, int numstrip, DrawBitmapFlags flags)
         {
             // Check whether lights are turned on or not
             var lightsOn = _vm.IsLightOn();
-
-            var zplanes = GetZPlanes(ptr);
-
-            _vertStripNextInc = height * vs.Surfaces[0].Pitch - 1 * vs.Surfaces[0].BytesPerPixel;
-            _vertStripNextIncX = -1;
-            _vertStripNextIncY = height;
-
-            _objectMode = flags.HasFlag(DrawBitmapFlags.ObjectMode);
 
             int sx = x - vs.XStart / 8;
             if (sx < 0)
@@ -82,7 +75,7 @@ namespace Scumm4.Graphics
             // It was added as a kind of hack to fix some corner cases, but it compares
             // the room width to the virtual screen width; but the former should always
             // be bigger than the latter (except for MM NES, maybe)... strange
-            int limit = Math.Max(_vm.CurrentRoomData.Header.Width, (int)vs.Surfaces[0].Width) / 8 - x;
+            int limit = Math.Max(_vm.CurrentRoomData.Header.Width, vs.Width) / 8 - x;
             if (limit > numstrip)
                 limit = numstrip;
             if (limit > _numStrips - sx)
@@ -99,65 +92,62 @@ namespace Scumm4.Graphics
                 // In the case of a double buffered virtual screen, we draw to
                 // the backbuffer, otherwise to the primary surface memory.
                 PixelNavigator navDst;
-                if (vs.Surfaces.Count == 2)
+                if (vs.HasTwoBuffers)
                 {
                     navDst = new PixelNavigator(vs.Surfaces[1]);
-                    navDst.Offset(x * 8, y);
+                    navDst.GoTo(x * 8, y);
                 }
                 else
                 {
                     navDst = new PixelNavigator(vs.Surfaces[0]);
-                    navDst.Offset(x * 8, y);
+                    navDst.GoTo(x * 8, y);
                 }
 
                 var smapReader = new BinaryReader(new MemoryStream(ptr));
-                bool transpStrip = DrawStrip(navDst, vs, x, y, width, height, stripnr, smapReader);
+                bool transpStrip = DrawStrip(navDst, height, stripnr, smapReader);
 
-                // COMI and HE games only uses flag value
-                //if (_vm->_game.version == 8 || _vm->_game.heversion >= 60)
-                //    transpStrip = true;
-
-                if (vs.Surfaces.Count == 2)
+                if (vs.HasTwoBuffers)
                 {
                     var navFrontBuf = new PixelNavigator(vs.Surfaces[0]);
-                    navFrontBuf.Offset(x * 8, y);
+                    navFrontBuf.GoTo(x * 8, y);
                     if (lightsOn)
-                        Copy8ColSafe(navFrontBuf, navDst, height, vs.Surfaces[0].BytesPerPixel);
+                        Copy8Col(navFrontBuf, navDst, height);
                     else
-                        Clear8ColSafe(navFrontBuf, height, vs.Surfaces[0].BytesPerPixel);
+                        Clear8Col(navFrontBuf, height);
                 }
 
                 // TODO: mask
+                var zplanes = GetZPlanes(ptr);
                 //DecodeMask(x, y, width, height, stripnr, zplanes, transpStrip, flags);
 
             }
         }
 
-        private void Clear8ColSafe(PixelNavigator nav, int height, int bitDepth)
+        private void Clear8Col(PixelNavigator nav, int height)
         {
             do
             {
-                for (int i = 0; i < 8 * bitDepth; i++)
+                for (int i = 0; i < 8; i++)
                 {
                     nav.Write(0);
                     nav.OffsetX(1);
                 }
-                nav.Offset(-8 * bitDepth, 1);
+                nav.Offset(-8, 1);
             } while ((--height) != 0);
         }
 
-        private void Copy8ColSafe(PixelNavigator navDst, PixelNavigator navSource, int height, int bitDepth)
+        private void Copy8Col(PixelNavigator navDst, PixelNavigator navSource, int height)
         {
             do
             {
-                for (int i = 0; i < 8 * bitDepth; i++)
+                for (int i = 0; i < 8; i++)
                 {
                     navDst.Write(navSource.Read());
                     navDst.OffsetX(1);
                     navSource.OffsetX(1);
                 }
-                navDst.Offset(-8 * bitDepth, 1);
-                navSource.Offset(-8 * bitDepth, 1);
+                navDst.Offset(-8, 1);
+                navSource.Offset(-8, 1);
             } while ((--height) != 0);
         }
 
@@ -165,7 +155,7 @@ namespace Scumm4.Graphics
         {
             int i;
             PixelNavigator mask_ptr;
-            
+
             if (flags.HasFlag(DrawBitmapFlags.DrawMaskOnAll))
             {
                 // Sam & Max uses dbDrawMaskOnAll for things like the inventory
@@ -213,7 +203,7 @@ namespace Scumm4.Graphics
                     if (offs != 0)
                     {
                         zplanes[i].Seek(beginPtr + offs, SeekOrigin.Current);
-                        
+
                         if (transpStrip && flags.HasFlag(DrawBitmapFlags.AllowMaskOr))
                         {
                             DecompressMaskImgOr(mask_ptr, zplanes[i], height);
@@ -311,7 +301,7 @@ namespace Scumm4.Graphics
 
         private byte[] _maskBuffer = new byte[320 * 200 * 2];
 
-        private bool DrawStrip(PixelNavigator navDst, VirtScreen vs, int x, int y, int width, int height, int stripnr, BinaryReader smapReader)
+        private bool DrawStrip(PixelNavigator navDst, int height, int stripnr, BinaryReader smapReader)
         {
             // Do some input verification and make sure the strip/strip offset
             // are actually valid. Normally, this should never be a problem,
@@ -326,12 +316,11 @@ namespace Scumm4.Graphics
             }
             smapReader.BaseStream.Seek(offset, SeekOrigin.Begin);
 
-            return DecompressBitmap(navDst, vs.Surfaces[0].Pitch, smapReader, height);
+            return DecompressBitmap(navDst, smapReader, height);
         }
 
-        private bool DecompressBitmap(PixelNavigator navDst, int dstPitch, BinaryReader src, int numLinesToProcess)
+        private bool DecompressBitmap(PixelNavigator navDst, BinaryReader src, int numLinesToProcess)
         {
-            //assert(numLinesToProcess);
             _paletteMod = 0;
 
             byte code = src.ReadByte();
@@ -389,7 +378,7 @@ namespace Scumm4.Graphics
                 case 16:
                 case 17:
                 case 18:
-                    DrawStripBasicV(navDst, dstPitch, src, numLinesToProcess, false);
+                    DrawStripBasicV(navDst, src, numLinesToProcess, false);
                     break;
 
                 case 24:
@@ -397,7 +386,7 @@ namespace Scumm4.Graphics
                 case 26:
                 case 27:
                 case 28:
-                    DrawStripBasicH(navDst, dstPitch, src, numLinesToProcess, false);
+                    DrawStripBasicH(navDst, src, numLinesToProcess, false);
                     break;
 
                 case 34:
@@ -406,7 +395,7 @@ namespace Scumm4.Graphics
                 case 37:
                 case 38:
                     transpStrip = true;
-                    DrawStripBasicV(navDst, dstPitch, src, numLinesToProcess, true);
+                    DrawStripBasicV(navDst, src, numLinesToProcess, true);
                     break;
 
                 case 44:
@@ -415,7 +404,7 @@ namespace Scumm4.Graphics
                 case 47:
                 case 48:
                     transpStrip = true;
-                    DrawStripBasicH(navDst, dstPitch, src, numLinesToProcess, true);
+                    DrawStripBasicH(navDst, src, numLinesToProcess, true);
                     break;
 
                 case 64:
@@ -480,12 +469,7 @@ namespace Scumm4.Graphics
             return transpStrip;
         }
 
-        //private void DrawStripComplex(byte* dst, int dstPitch, byte* src, int numLinesToProcess, bool p)
-        //{
-        //    throw new NotImplementedException();
-        //}
-
-        private void DrawStripBasicH(PixelNavigator navDst, int dstPitch, BinaryReader src, int height, bool transpCheck)
+        private void DrawStripBasicH(PixelNavigator navDst, BinaryReader src, int height, bool transpCheck)
         {
             int color = src.ReadByte();
             int bits = src.ReadByte();
@@ -500,7 +484,7 @@ namespace Scumm4.Graphics
                     FILL_BITS(ref cl, ref bits, src);
                     if (!transpCheck || color != _transparentColor)
                         WriteRoomColor(navDst, color);
-                    navDst.Offset(1, 0);
+                    navDst.OffsetX(1);
                     if (!READ_BIT(ref cl, ref bits))
                     {
                     }
@@ -526,7 +510,7 @@ namespace Scumm4.Graphics
             } while (--height != 0);
         }
 
-        private void DrawStripBasicV(PixelNavigator navDst, int dstPitch, BinaryReader src, int height, bool transpCheck)
+        private void DrawStripBasicV(PixelNavigator navDst, BinaryReader src, int height, bool transpCheck)
         {
             int color = src.ReadByte();
             int bits = src.ReadByte();
@@ -566,8 +550,7 @@ namespace Scumm4.Graphics
                         color += inc;
                     }
                 } while ((--h) != 0);
-                navDst.Offset(-_vertStripNextIncX, -_vertStripNextIncY);
-                //dst -= _vertStripNextInc;
+                navDst.Offset(1, -height);
             } while ((--x) != 0);
         }
 
@@ -638,8 +621,8 @@ namespace Scumm4.Graphics
             if (top < 0)
                 top = 0;
 
-            if (bottom > vs.Surfaces[0].Height)
-                bottom = vs.Surfaces[0].Height;
+            if (bottom > vs.Height)
+                bottom = vs.Height;
 
             if (top >= bottom)
                 return;
@@ -652,23 +635,27 @@ namespace Scumm4.Graphics
             if (bottom > vs.BDirty[strip])
                 vs.BDirty[strip] = bottom;
 
-            PixelNavigator navDest = new PixelNavigator(vs.Surfaces[0]);
-            navDest.GoTo((strip + vs.XStart / 8) * 8, top);
-            PixelNavigator navSource = new PixelNavigator(vs.Surfaces[1]);
-            navSource.GoTo((strip + vs.XStart / 8) * 8, top);
-
             numLinesToProcess = bottom - top;
             if (numLinesToProcess > 0)
             {
+                PixelNavigator navDest = new PixelNavigator(vs.Surfaces[0]);
+                navDest.GoTo(strip * 8 + vs.XStart, top);
                 if (_vm.IsLightOn())
                 {
-                    Copy8ColSafe(navDest, navSource, numLinesToProcess, vs.Surfaces[0].BytesPerPixel);
+                    PixelNavigator bgBakNav = new PixelNavigator(vs.Surfaces[1]);
+                    bgBakNav.GoTo(strip * 8 + vs.XStart, top); 
+                    Copy8Col(navDest, bgBakNav, numLinesToProcess);
                 }
                 else
                 {
-                    Clear8ColSafe(navDest, numLinesToProcess, vs.Surfaces[0].BytesPerPixel);
+                    Clear8Col(navDest, numLinesToProcess);
                 }
             }
+        }
+
+        public void Init()
+        {
+            _numStrips = _vm._screenWidth / 8;
         }
     }
 }

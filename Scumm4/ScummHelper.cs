@@ -17,5 +17,10 @@ namespace Scumm4
                 return 0;
             return 3;
         }
+
+        public static int RevBitMask(int x)
+        {
+            return (0x80 >> (x));
+        }
     }
 }

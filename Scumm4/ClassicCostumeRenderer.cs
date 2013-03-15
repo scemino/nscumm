@@ -509,7 +509,7 @@ namespace Scumm4
 
             _pixelsNavigator = new PixelNavigator(startNav);
             _pixelsNavigator.Offset(v1.x, v1.y);
-            v1.destptr = new PixelNavigator(_pixelsNavigator);
+            v1.destptr = _pixelsNavigator;
 
             v1.mask_ptr = _vm.GetMaskBuffer(0, v1.y, ZBuffer);
 
@@ -541,11 +541,6 @@ namespace Scumm4
             } while (true);
         }
 
-        private static int RevBitMask(int x)
-        {
-            return (0x80 >> (x));
-        }
-
         private void Proc3(Codec1 v1)
         {
             PixelNavigator dst;
@@ -563,7 +558,7 @@ namespace Scumm4
             height = (uint)_height;
 
             scaleIndexY = _scaleIndexY;
-            maskbit = (byte)RevBitMask(v1.x & 7);
+            maskbit = (byte)ScummHelper.RevBitMask(v1.x & 7);
 
             bool ehmerde = false;
             if (len != 0)
@@ -623,7 +618,7 @@ namespace Scumm4
                                 v1.x += v1.scaleXstep;
                                 if (v1.x < 0 || v1.x >= _w)
                                     return;
-                                maskbit = (byte)RevBitMask(v1.x & 7);
+                                maskbit = (byte)ScummHelper.RevBitMask(v1.x & 7);
                                 v1.destptr.OffsetX(v1.scaleXstep);
                             }
                             _scaleIndexX = (byte)(_scaleIndexX + v1.scaleXstep);

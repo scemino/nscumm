@@ -50,5 +50,7 @@ namespace Scumm4
             this.Scripts = new Dictionary<byte, ScriptData>();
             this.Strips = new List<Strip>();
         }
+
+        public byte[] Image { get; set; }
     }
 }

@@ -1,8 +1,9 @@
 ﻿text position is sometimes incorrect
+mask
 fix actor drawing
-object drawing
 cursor
 inventory
+load and save games
 room effects
 color cycle
 clean code

@@ -1284,7 +1284,6 @@ namespace Scumm4
                     if (Objects[i].obj_nr == obj && Objects[i].fl_object_index != 0)
                     {
                         // Removing an flObject from a room means we can nuke it
-                        //TODO: _res->nukeResource(rtFlObject, _objs[i].fl_object_index);
                         Objects[i].obj_nr = 0;
                         Objects[i].fl_object_index = 0;
                     }
@@ -1299,7 +1298,6 @@ namespace Scumm4
                     if (_inventory[i] == obj)
                     {
                         // Found the object! Nuke it from the inventory.
-                        //TODO: _res->nukeResource(rtInventory, i);
                         _inventory[i] = 0;
 
                         // Now fill up the gap removing the object from the inventory created.
@@ -1531,7 +1529,6 @@ namespace Scumm4
                 SetCameraAt(_camera._cur.X, 0);
             }
 
-            //var screenStartStrip = _camera._cur.X / 8 - 20;
             t = actor.GetPos().X / 8 - _screenStartStrip;
 
             if (t < _camera._leftTrigger || t > _camera._rightTrigger || setCamera == true)
@@ -2503,7 +2500,7 @@ namespace Scumm4
         {
             GetResult();
             var a = GetVarOrDirectWord(OpCodeParameter.Param1);
-            var b = ReadVariable(ReadWord());
+            var b = ReadVariable(_resultVarIndex);
             SetResult(a * b);
         }
 
@@ -2511,7 +2508,7 @@ namespace Scumm4
         {
             GetResult();
             var a = GetVarOrDirectWord(OpCodeParameter.Param1);
-            var b = ReadVariable(ReadWord());
+            var b = ReadVariable(_resultVarIndex);
             SetResult(a | b);
         }
 
@@ -2519,7 +2516,7 @@ namespace Scumm4
         {
             GetResult();
             var a = GetVarOrDirectWord(OpCodeParameter.Param1);
-            var b = ReadVariable(ReadWord());
+            var b = ReadVariable(_resultVarIndex);
             SetResult(a & b);
         }
 
@@ -3049,7 +3046,6 @@ namespace Scumm4
                 var objFound = (from o in objs
                                 where o.obj_nr == obj
                                 select o).FirstOrDefault();
-                // TODO:
                 _invData[slot] = objFound;
             }
             _inventory[slot] = (ushort)obj;
@@ -3433,6 +3429,7 @@ namespace Scumm4
                 _objs[i].Strips.Clear();
                 _objs[i].Strips.AddRange(roomData.Objects[i].Strips);
                 _objs[i].Scripts.Clear();
+                _objs[i].Image = roomData.Objects[i].Image;
                 foreach (var script in roomData.Objects[i].Scripts)
                 {
                     _objs[i].Scripts.Add(script.Key, script.Value);
@@ -4492,8 +4489,14 @@ namespace Scumm4
                 var obj = (from o in Objects
                            where o.obj_nr == num
                            select o).FirstOrDefault();
-                // TODO: fix this
-                name = new byte[] { (byte)'f', (byte)'o', (byte)'o' };
+                if (obj != null)
+                {
+                    name = obj.Name;
+                }
+                else
+                {
+                    name = new byte[0];
+                }
             }
             return name;
         }
@@ -5705,7 +5708,8 @@ namespace Scumm4
         {
             foreach (var obj in this.DrawingObjects)
             {
-                DrawObject(obj.obj_nr, 0);
+                var index = this.Objects.IndexOf(obj);
+                DrawObject(index, 0);
             }
             ClearDrawObjectQueue();
         }
@@ -5764,7 +5768,7 @@ namespace Scumm4
         private void DrawRoomObjects(int argument)
         {
             const int mask = 0xF;
-            for (int i = (this.Objects.Count - 1); i > 0; i--)
+            for (int i = (_numLocalObjects - 1); i > 0; i--)
             {
                 if (this.Objects[i].obj_nr > 0 && ((this.Objects[i].state & mask) != 0))
                 {
@@ -5809,9 +5813,6 @@ namespace Scumm4
             if (_skipDrawObject)
                 return;
 
-            // TODO: remove this
-            return;
-
             ObjectData od = this.Objects[obj];
             int height, width;
 
@@ -5821,10 +5822,10 @@ namespace Scumm4
             if (_bgNeedsRedraw)
                 arg = 0;
 
-            if (od.obj_nr == 0)
+            if (od == null || od.obj_nr == 0)
                 return;
 
-            //AssertRange(0, od.obj_nr, this.Objects.Count - 1, "object");
+            AssertRange(0, od.obj_nr, _numGlobalObjects - 1, "object");
 
             int xpos = (int)(od.x_pos / 8);
             int ypos = (int)od.y_pos;
@@ -5836,10 +5837,11 @@ namespace Scumm4
             if (width == 0 || xpos > _screenEndStrip || xpos + width < _screenStartStrip)
                 return;
 
-            // TODO:
-            //var ptr = GetOBIMFromObjectData(od);
-            //if (ptr == null)
-            return;
+            var ptr = (from o in roomData.Objects
+                       where o.obj_nr == od.obj_nr
+                       select o).First().Image;
+            if (ptr == null || ptr.Length == 0)
+                return;
 
             x = 0xFFFF;
 
@@ -5862,13 +5864,7 @@ namespace Scumm4
             {
                 DrawBitmapFlags flags = od.flags | DrawBitmapFlags.ObjectMode;
 
-                // Sam & Max needs this to fix object-layering problems with
-                // the inventory and conversation icons.
-                //if ((_game.id == GID_SAMNMAX && getClass(od.obj_nr, kObjectClassIgnoreBoxes)) ||
-                //    (_game.id == GID_FT && getClass(od.obj_nr, kObjectClassPlayer)))
-                //    flags |= Gdi::dbDrawMaskOnAll;
-
-                //_gdi.DrawBitmap(ptr, this._mainVirtScreen, x, ypos, width * 8, height, x - xpos, numstrip, flags);
+                _gdi.DrawBitmap(ptr, this._mainVirtScreen, x, ypos, width * 8, height, x - xpos, numstrip, flags);
             }
         }
 
@@ -6183,6 +6179,8 @@ namespace Scumm4
         #region Verb Members
         int _verbMouseOver;
         private Surface _composite;
+        private int _numGlobalObjects = 1000;
+        private int _numLocalObjects = 200;
         private void VerbMouseOver(int verb)
         {
             if (_verbMouseOver != verb)

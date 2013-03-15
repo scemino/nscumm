@@ -595,28 +595,30 @@ namespace Scumm4
             if (stripsDic.ContainsKey(obj.obj_nr))
             {
                 var stripData = stripsDic[obj.obj_nr];
-                MemoryStream ms = new MemoryStream(stripData);
-                var br = new BinaryReader(ms);
-                var size = br.ReadUInt32();
-                int numStrips = obj.width / 8;
-                Strip[] strips = new Strip[numStrips];
-                for (int i = 0; i < strips.Length; i++)
-                {
-                    strips[i].Offset = br.ReadUInt32();
-                }
-                for (int i = 0; i < strips.Length - 1; i++)
-                {
-                    strips[i].CodecId = br.ReadByte();
-                    uint count = (uint)(strips[i + 1].Offset - strips[i].Offset - 1);
-                    strips[i].Data = br.ReadBytes((int)count);
-                }
-                if (strips.Length > 0)
-                {
-                    int count = (int)(size - strips[strips.Length - 1].Offset - 1);
-                    strips[strips.Length - 1].CodecId = br.ReadByte();
-                    strips[strips.Length - 1].Data = br.ReadBytes(count);
-                }
-                obj.Strips.AddRange(strips);
+                //MemoryStream ms = new MemoryStream(stripData);
+                //var br = new BinaryReader(ms);
+                //var size = br.ReadInt32();
+                //int numStrips = obj.width / 8;
+                //Strip[] strips = new Strip[numStrips];
+                //for (int i = 0; i < strips.Length; i++)
+                //{
+                //    strips[i].Offset = br.ReadUInt32();
+                //}
+                //var count = (int)(strips.Last().Offset - strips.First().Offset);
+                obj.Image = stripData;
+                //for (int i = 0; i < strips.Length - 1; i++)
+                //{
+                //    strips[i].CodecId = br.ReadByte();
+                //    uint count = (uint)(strips[i + 1].Offset - strips[i].Offset - 1);
+                //    strips[i].Data = br.ReadBytes((int)count);
+                //}
+                //if (strips.Length > 0)
+                //{
+                //    int count = (int)(size - strips[strips.Length - 1].Offset - 1);
+                //    strips[strips.Length - 1].CodecId = br.ReadByte();
+                //    strips[strips.Length - 1].Data = br.ReadBytes(count);
+                //}
+                //obj.Strips.AddRange(strips);
 
                 //{
                 //    byte[] pixels = new byte[width * 8 * height * 3];
@@ -628,6 +630,10 @@ namespace Scumm4
                 //    bmp2.Save("c:\\temp\\obj" + objId + ".bmp");
                 //    System.Runtime.InteropServices.Marshal.FreeHGlobal(ptr);
                 //}
+            }
+            else
+            {
+                obj.Image = new byte[0];
             }
         }
 

@@ -16,5 +16,7 @@ namespace Scumm4.Graphics
         void CopyRectToScreen(Array buf, int sourceStride, int x, int y, int width, int height);
 
         void SetPalette(System.Windows.Media.Color[] color);
+
+        void SetCursor(byte[] pixels, int width, int height, int hotspotX, int hotspotY);
     }
 }

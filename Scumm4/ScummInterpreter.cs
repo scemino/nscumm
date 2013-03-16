@@ -26,20 +26,6 @@ using System.Windows.Input;
 
 namespace Scumm4
 {
-    public class Cursor
-    {
-        public sbyte State { get; set; }
-
-        public bool animate { get; set; }
-
-        public int animateIndex { get; set; }
-
-        public Cursor()
-        {
-            animate = true;
-        }
-    }
-
     [Flags]
     public enum LightModes
     {
@@ -201,7 +187,6 @@ namespace Scumm4
         private bool _keepText;
         private bool _useTalkAnims;
         private byte _charsetColor;
-        private bool _haveActorSpeechMsg;
         private int _talkDelay;
         private int _haveMsg;
         private int _charsetBufPos;
@@ -222,25 +207,6 @@ namespace Scumm4
         public byte _newLineCharacter;
         public bool _useCJKMode;
         public int _2byteWidth;
-
-        static ushort[][] default_cursor_images = new ushort[4][] {
-		/* cross-hair */
-		new ushort[16]{
-			0x0080, 0x0080, 0x0080, 0x0080, 0x0080, 0x0080, 0x0000, 0x7e3f,
-			0x0000, 0x0080, 0x0080, 0x0080, 0x0080, 0x0080, 0x0080, 0x0000 },
-		/* hourglass */
-		new ushort[16]{
-			0x0000, 0x7ffe, 0x6006, 0x300c, 0x1818, 0x0c30, 0x0660, 0x03c0,
-			0x0660, 0x0c30, 0x1998, 0x33cc, 0x67e6, 0x7ffe, 0x0000, 0x0000 },
-		/* arrow */
-		new ushort[16]{ 
-			0x0000, 0x4000, 0x6000, 0x7000, 0x7800, 0x7c00, 0x7e00, 0x7f00,
-			0x7f80, 0x78c0, 0x7c00, 0x4600, 0x0600, 0x0300, 0x0300, 0x0180 },
-		/* hand */
-		new ushort[16]{ 
-			0x1e00, 0x1200, 0x1200, 0x1200, 0x1200, 0x13ff, 0x1249, 0x1249,
-			0xf249, 0x9001, 0x9001, 0x9001, 0x8001, 0x8001, 0x8001, 0xffff }
-		};
 
         static byte[] default_cursor_colors = new byte[] { 15, 15, 7, 8 };
 
@@ -322,6 +288,8 @@ namespace Scumm4
 
             // Create the charset renderer
             _charset = new CharsetRendererClassic(this);
+
+            ResetCursors();
 
             // Create the text surface
             _textSurface = new Surface(_screenWidth * _textSurfaceMultiplier, _screenHeight * _textSurfaceMultiplier, PixelFormat.Indexed8, false);
@@ -1733,7 +1701,9 @@ namespace Scumm4
 
         private void PutClass(int obj, int cls, bool set)
         {
+            ScummHelper.AssertRange(0, obj, _numGlobalObjects - 1, "object");
             ObjectClass cls2 = (ObjectClass)(cls & 0x7F);
+            ScummHelper.AssertRange(1, (int)cls2, 32, "class");
 
             // Translate the new (V5) object classes to the old classes
             // (for those which differ).
@@ -1754,9 +1724,9 @@ namespace Scumm4
             }
 
             if (set)
-                this.ClassData[obj] |= (uint)(1 << (cls - 1));
+                this.ClassData[obj] |= (uint)(1 << ((int)cls2 - 1));
             else
-                this.ClassData[obj] &= (uint)~(1 << (cls - 1));
+                this.ClassData[obj] &= (uint)~(1 << ((int)cls2 - 1));
 
             if (obj >= 1 && obj < NumActors)
             {
@@ -2416,13 +2386,6 @@ namespace Scumm4
         private void PutState(int obj, byte state)
         {
             _scumm.ObjectStateTable[obj] = state;
-            var foundObj = (from o in this.Objects
-                            where o.obj_nr == obj
-                            select o).FirstOrDefault();
-            if (foundObj != null)
-            {
-                foundObj.state = state;
-            }
         }
 
         private int GetObjectIndex(int obj)
@@ -2982,7 +2945,7 @@ namespace Scumm4
         {
             int i, strip;
 
-            for (i = 1; i < this.Objects.Count; i++)
+            for (i = 1; i < this._numLocalObjects; i++)
             {
                 if (this.Objects[i].obj_nr == (ushort)obj)
                 {
@@ -3175,13 +3138,13 @@ namespace Scumm4
         {
             int i;
 
-            if (obj >= _scumm.ObjectOwnerTable.Length)
+            if (obj >= _numGlobalObjects)
                 return WhereIsObject.NotFound;
 
             if (obj < 1)
                 return WhereIsObject.NotFound;
 
-            if ((_scumm.ObjectOwnerTable[obj] != OF_OWNER_ROOM))
+            if (_scumm.ObjectOwnerTable[obj] != OF_OWNER_ROOM)
             {
                 for (i = 0; i < NumInventory; i++)
                     if (_inventory[i] == obj)
@@ -3445,7 +3408,7 @@ namespace Scumm4
 
         private void ClearRoomObjects()
         {
-            for (int i = 0; i < this.Objects.Count; i++)
+            for (int i = 0; i < _numLocalObjects; i++)
             {
                 this.Objects[i].obj_nr = 0;
             }
@@ -3641,7 +3604,7 @@ namespace Scumm4
             }
 
             _charsetBufPos = 0;
-            _talkDelay = 60;
+            _talkDelay = 0;
             _haveMsg = 0xFF;
             _variables[VariableHaveMessage] = 0xFF;
 
@@ -4280,15 +4243,12 @@ namespace Scumm4
             }
         }
 
-        public void UpdateObjectStates()
+        private void UpdateObjectStates()
         {
-            int i;
-            int obIndex = 0;
-            ObjectData od = Objects.FirstOrDefault();
-            for (i = 0; i < Objects.Count; i++, obIndex++)
+            for (int i = 1; i < _numLocalObjects; i++)
             {
-                if (Objects[obIndex].obj_nr > 0)
-                    od.state = GetState(od.obj_nr);
+                if (Objects[i].obj_nr > 0)
+                    Objects[i].state = GetState(Objects[i].obj_nr);
             }
         }
 
@@ -4859,51 +4819,85 @@ namespace Scumm4
         }
         #endregion
 
-        #region Cursor Methods
-        public void AnimateCursor()
+        #region Cursor Members
+        ushort[][] _cursorImages = new ushort[4][];
+        byte[] _cursorHotspots = new byte[2 * 4];
+        private static readonly ushort[][] default_cursor_images = new ushort[4][] {
+		/* cross-hair */
+		new ushort[16]{
+			0x0080, 0x0080, 0x0080, 0x0080, 0x0080, 0x0080, 0x0000, 0x7e3f,
+			0x0000, 0x0080, 0x0080, 0x0080, 0x0080, 0x0080, 0x0080, 0x0000 },
+		/* hourglass */
+		new ushort[16]{
+			0x0000, 0x7ffe, 0x6006, 0x300c, 0x1818, 0x0c30, 0x0660, 0x03c0,
+			0x0660, 0x0c30, 0x1998, 0x33cc, 0x67e6, 0x7ffe, 0x0000, 0x0000 },
+		/* arrow */
+		new ushort[16]{ 
+			0x0000, 0x4000, 0x6000, 0x7000, 0x7800, 0x7c00, 0x7e00, 0x7f00,
+			0x7f80, 0x78c0, 0x7c00, 0x4600, 0x0600, 0x0300, 0x0300, 0x0180 },
+		/* hand */
+		new ushort[16]{ 
+			0x1e00, 0x1200, 0x1200, 0x1200, 0x1200, 0x13ff, 0x1249, 0x1249,
+			0xf249, 0x9001, 0x9001, 0x9001, 0x8001, 0x8001, 0x8001, 0xffff }
+		};
+
+        private static readonly byte[] default_cursor_hotspots = new byte[] {
+            8, 7,   
+            8, 7,   
+            1, 1,  
+            5, 0,
+            8, 7, //zak256
+        };
+
+        private void AnimateCursor()
         {
-            if (_cursor.animate)
+            if (_cursor.Animate)
             {
-                if ((_cursor.animateIndex & 0x1) == 0)
+                if ((_cursor.AnimateIndex & 0x1) == 0)
                 {
-                    SetBuiltinCursor((_cursor.animateIndex >> 1) & 3);
+                    SetBuiltinCursor((_cursor.AnimateIndex >> 1) & 3);
                 }
-                _cursor.animateIndex++;
+                _cursor.AnimateIndex++;
             }
         }
 
         private void SetBuiltinCursor(int idx)
         {
+            var src = _cursorImages[_currentCursor];
             cursor_color = default_cursor_colors[idx];
+
+            _cursor.HotspotX = _cursorHotspots[2 * _currentCursor] * _textSurfaceMultiplier;
+            _cursor.HotspotY = _cursorHotspots[2 * _currentCursor + 1] * _textSurfaceMultiplier;
+            _cursor.Width = 16 * _textSurfaceMultiplier;
+            _cursor.Height = 16 * _textSurfaceMultiplier;
+
+            byte[] pixels = new byte[_cursor.Width * _cursor.Height];
+
+            int offset = 0;
+            var color = (byte)(16 * cursor_color);
+            for (int w = 0; w < 16; w++)
+            {
+                for (int h = 0; h < 16; h++)
+                {
+                    if ((src[w] & (1 << h)) != 0)
+                    {
+                        pixels[offset] = color;
+                    }
+                    offset++;
+                }
+            }
+
+            _gfxManager.SetCursor(pixels, _cursor.Width, _cursor.Height, _cursor.HotspotX, _cursor.HotspotY);
         }
 
-        public void DrawCursor()
+        private void ResetCursors()
         {
-            //if (_cursor.State <= 0) return;
-
-            //var x = Variables[ScummInterpreter.VariableMouseX];
-            //var y = Variables[ScummInterpreter.VariableMouseY];
-            //x = x - 8;
-            //y = y - 8;
-            //var data = default_cursor_images[_currentCursor];
-            //var color = (byte)(16 * cursor_color);
-            //for (int w = 0; w < 16; w++)
-            //{
-            //    for (int h = 0; h < 16; h++)
-            //    {
-            //        if (((x + w) >= 0 && (x + w) < 320) && ((y + h) >= 0 && (y + h) < 200))
-            //        {
-            //            if ((data[w] & (1 << h)) != 0)
-            //            {
-            //                var offset = (x + w) * 3 + (320 * 3 * (h + y));
-            //                _pixels[offset++] = color;
-            //                _pixels[offset++] = color;
-            //                _pixels[offset] = color;
-            //            }
-            //        }
-            //    }
-
-            //}
+            for (int i = 0; i < 4; i++)
+            {
+                _cursorImages[i] = new ushort[16];
+                Array.Copy(default_cursor_images[i], _cursorImages[i], 16);
+            }
+            Array.Copy(default_cursor_hotspots, _cursorHotspots, 8);
         }
         #endregion
 
@@ -5121,9 +5115,11 @@ namespace Scumm4
             }
         }
 
+        public bool HastToQuit { get; set; }
+
         private bool ShouldQuit()
         {
-            return false;
+            return HastToQuit;
         }
 
         private void Loop(int delta)
@@ -5800,14 +5796,6 @@ namespace Scumm4
             } while ((od.state & mask) == a);
         }
 
-        private void AssertRange(int min, int value, int max, string desc)
-        {
-            if (value < min || value > max)
-            {
-                throw new ArgumentOutOfRangeException("value", string.Format("{0} {1} is out of bounds ({2},{3})", desc, value, min, max));
-            }
-        }
-
         private void DrawObject(int obj, int arg)
         {
             if (_skipDrawObject)
@@ -5825,7 +5813,7 @@ namespace Scumm4
             if (od == null || od.obj_nr == 0)
                 return;
 
-            AssertRange(0, od.obj_nr, _numGlobalObjects - 1, "object");
+            ScummHelper.AssertRange(0, od.obj_nr, _numGlobalObjects - 1, "object");
 
             int xpos = (int)(od.x_pos / 8);
             int ypos = (int)od.y_pos;
@@ -6181,6 +6169,7 @@ namespace Scumm4
         private Surface _composite;
         private int _numGlobalObjects = 1000;
         private int _numLocalObjects = 200;
+        private bool _haveActorSpeechMsg;
         private void VerbMouseOver(int verb)
         {
             if (_verbMouseOver != verb)

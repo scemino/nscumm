@@ -1,6 +1,4 @@
-﻿text position is sometimes incorrect
-mask
-fix actor drawing
+﻿fix actor drawing
 cursor
 inventory
 load and save games

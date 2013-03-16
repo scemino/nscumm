@@ -1621,7 +1621,7 @@ namespace Scumm4
         public void ClassChanged(ObjectClass cls, bool value)
         {
             if (cls == ObjectClass.AlwaysClip)
-                _forceClip = 0;
+                _forceClip = value ? 1 : 0;
             if (cls == ObjectClass.IgnoreBoxes)
                 _ignoreBoxes = value;
         }

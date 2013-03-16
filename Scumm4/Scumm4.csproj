@@ -60,6 +60,7 @@
     <Compile Include="ConversionException.cs" />
     <Compile Include="Costume.cs" />
     <Compile Include="CostumeAnimation.cs" />
+    <Compile Include="Cursor.cs" />
     <Compile Include="DiskFile.cs" />
     <Compile Include="FlashLight.cs" />
     <Compile Include="GameManager.cs" />

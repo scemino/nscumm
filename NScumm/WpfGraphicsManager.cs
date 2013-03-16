@@ -30,11 +30,12 @@ namespace NScumm
     {
         private Image _elt;
         private WriteableBitmap _bmp;
+        private Color[] _colors;
 
         public WpfGraphicsManager(Image elt)
         {
-            var colors = new Color[256];
-            _bmp = new WriteableBitmap(320, 200, 96, 96, PixelFormats.Indexed8, new BitmapPalette(colors));
+            _colors = new Color[256];
+            _bmp = new WriteableBitmap(320, 200, 96, 96, PixelFormats.Indexed8, new BitmapPalette(_colors));
             _elt = elt;
             this.Width = _elt.ActualWidth;
             this.Height = _elt.ActualHeight;
@@ -61,6 +62,7 @@ namespace NScumm
 
         public void SetPalette(Color[] colors)
         {
+            _colors = colors;
             this.Dispatcher.Invoke(new Action(() =>
             {
                 _bmp = new WriteableBitmap(320, 200, 96, 96, PixelFormats.Indexed8, new BitmapPalette(colors));
@@ -70,6 +72,7 @@ namespace NScumm
 
         public Scumm4.Point GetMousePosition()
         {
+            if (this.Dispatcher.HasShutdownStarted) return new Scumm4.Point();
             return (Scumm4.Point)this.Dispatcher.Invoke(new Func<Scumm4.Point>(() =>
             {
                 var pos = Mouse.GetPosition(_elt);
@@ -79,7 +82,7 @@ namespace NScumm
 
         public void UpdateScreen()
         {
-            
+
         }
 
         public void CopyRectToScreen(Array buf, int sourceStride, int x, int y, int width, int height)
@@ -99,6 +102,30 @@ namespace NScumm
         private void CopyRectToScreenCore(Array buf, int sourceStride, int x, int y, int width, int height)
         {
             _bmp.WritePixels(new Int32Rect(x, y, width, height), buf, sourceStride, x, y);
+        }
+
+        public void SetCursor(byte[] pixels, int width, int height, int hotspotX, int hotspotY)
+        {
+            //Action l_setCursor = new Action(() =>
+            //{
+            //    var mousePos = Mouse.GetPosition(_elt);
+            //    var mouseX = (mousePos.X * 320.0) / Width;
+            //    var mouseY = mousePos.Y * 200.0 / Height;
+
+            //    if (mouseX >= 0 && mouseY >= 0 && (mouseX + width) < 320 && (mouseY + height) < 200)
+            //    {
+            //        _bmp.WritePixels(new Int32Rect(0, 0, width, height), pixels, width, (int)mouseX - width / 2, (int)mouseY - height / 2);
+            //    }
+            //});
+
+            //if (this.Dispatcher.CheckAccess())
+            //{
+            //    l_setCursor();
+            //}
+            //else
+            //{
+            //    this.Dispatcher.Invoke(l_setCursor);
+            //}
         }
     }
 }

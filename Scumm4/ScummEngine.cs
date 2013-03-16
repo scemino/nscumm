@@ -75,7 +75,7 @@ namespace Scumm4
         Param3 = 0x20,
     }
 
-    public class ScummInterpreter : System.Windows.Threading.DispatcherObject
+    public class ScummEngine : System.Windows.Threading.DispatcherObject
     {
         #region Constants
         const int OF_OWNER_ROOM = 0x0F;
@@ -263,7 +263,7 @@ namespace Scumm4
         #endregion
 
         #region Constructor
-        public ScummInterpreter(ScummIndex index, IGraphicsManager gfxManager)
+        public ScummEngine(ScummIndex index, IGraphicsManager gfxManager)
         {
             _scumm = index;
             _gfxManager = gfxManager;
@@ -4998,7 +4998,7 @@ namespace Scumm4
             {
                 if (Keyboard.IsKeyDown(Key.Escape))
                 {
-                    MouseAndKeyboardStat = (KeyCode)Variables[ScummInterpreter.VariableCutSceneExitKey];
+                    MouseAndKeyboardStat = (KeyCode)Variables[ScummEngine.VariableCutSceneExitKey];
                     AbortCutscene();
                 }
                 for (Key i = Key.A; i <= Key.Z; i++)
@@ -5028,10 +5028,10 @@ namespace Scumm4
                     var mouseX1 = (pos.X * 320.0) / w;
                     var mouseX = (ScreenStartStrip * 8) + mouseX1;
                     var mouseY = pos.Y * 200.0 / h;
-                    Variables[ScummInterpreter.VariableMouseX] = (int)mouseX1;
-                    Variables[ScummInterpreter.VariableMouseY] = (int)mouseY;
-                    Variables[ScummInterpreter.VariableVirtualMouseX] = (int)mouseX;
-                    Variables[ScummInterpreter.VariableVirtualMouseY] = (int)mouseY;
+                    Variables[ScummEngine.VariableMouseX] = (int)mouseX1;
+                    Variables[ScummEngine.VariableMouseY] = (int)mouseY;
+                    Variables[ScummEngine.VariableVirtualMouseX] = (int)mouseX;
+                    Variables[ScummEngine.VariableVirtualMouseY] = (int)mouseY;
                 }
             }));
         }

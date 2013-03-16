@@ -93,7 +93,7 @@ namespace Scumm4
 
         private ushort[] _palette;
         private ClassicCostumeLoader _loaded;
-        private ScummInterpreter _vm;
+        private ScummEngine _vm;
 
         /// <summary>
         /// Indicates whether to draw the actor mirrored.
@@ -118,7 +118,7 @@ namespace Scumm4
         private int _h;
         private int _numStrips;
 
-        public ClassicCostumeRenderer(ScummInterpreter vm)
+        public ClassicCostumeRenderer(ScummEngine vm)
         {
             _vm = vm;
             _loaded = new ClassicCostumeLoader(vm.Index);
@@ -520,6 +520,7 @@ namespace Scumm4
 
         private void Codec1IgnorePakCols(Codec1 v1, int num)
         {
+            _loaded._costumeReader.BaseStream.Seek(_srcptr, System.IO.SeekOrigin.Begin);
             num *= _height;
 
             do
@@ -535,6 +536,7 @@ namespace Scumm4
                 {
                     if ((--num) == 0)
                     {
+                        _srcptr = _loaded._costumeReader.BaseStream.Position;
                         return;
                     }
                 } while ((--v1.replen) != 0);

@@ -559,6 +559,8 @@ namespace Scumm4
 
             scaleIndexY = _scaleIndexY;
             maskbit = (byte)ScummHelper.RevBitMask(v1.x & 7);
+            var mask = new PixelNavigator(v1.mask_ptr);
+            mask.OffsetX(v1.x / 8);
 
             bool ehmerde = false;
             if (len != 0)
@@ -583,25 +585,15 @@ namespace Scumm4
                     {
                         if (ScaleY == 255 || v1.scaletable[scaleIndexY++] < ScaleY)
                         {
-                            masked = (y < 0 || y >= _h) || (v1.x < 0 || v1.x >= _w);
-                            //masked = false;
+                            masked = (y < 0 || y >= _h) || (v1.x < 0 || v1.x >= _w) || ((mask.Read() & maskbit) != 0);
 
                             if (color != 0 && !masked)
                             {
-                                //if ((ShadowMode & 0x20) != 0)
-                                //{
-                                //    pcolor = _shadow_table[*dst];
-                                //}
-                                //else
-                                //{
                                 pcolor = _palette[color];
-                                //    if (pcolor == 13 && _shadow_table != null)
-                                //        pcolor = _shadow_table[*dst];
-                                //}
                                 dst.Write((byte)pcolor);
                             }
                             dst.OffsetY(1);
-                            //mask += 40;
+                            mask.OffsetY(1);
                             y++;
                         }
                         if ((--height) == 0)
@@ -623,7 +615,8 @@ namespace Scumm4
                             }
                             _scaleIndexX = (byte)(_scaleIndexX + v1.scaleXstep);
                             dst = new PixelNavigator(v1.destptr);
-                            //mask = v1.mask_ptr + v1.x / 8;
+                            mask = new PixelNavigator(v1.mask_ptr);
+                            mask.OffsetX(v1.x / 8);
                         }
                     }
                     ehmerde = false;

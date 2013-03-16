@@ -50,6 +50,10 @@ namespace Scumm4.Graphics
         public Gdi(ScummInterpreter vm)
         {
             _vm = vm;
+            for (int i = 0; i < 2; i++)
+            {
+                _maskBuffer[i] = new byte[40 * (200 + 4)];
+            }
         }
 
         /// <summary>
@@ -116,10 +120,41 @@ namespace Scumm4.Graphics
                         Clear8Col(navFrontBuf, height);
                 }
 
-                // TODO: mask
                 var zplanes = GetZPlanes(ptr);
-                //DecodeMask(x, y, width, height, stripnr, zplanes, transpStrip, flags);
+                DecodeMask(x, y, width, height, stripnr, zplanes, transpStrip, flags);
 
+            }
+        }
+
+        private void DecodeMask(BinaryReader reader, byte[] mask, int offset, int width, int height)
+        {
+            int dstIndex = offset;
+            byte c, b;
+            while (height != 0)
+            {
+                b = reader.ReadByte();
+
+                if ((b & 0x80) != 0)
+                {
+                    b &= 0x7F;
+                    c = reader.ReadByte();
+
+                    do
+                    {
+                        mask[dstIndex] = c;
+                        dstIndex += width;
+                        --height;
+                    } while ((--b != 0) && (height != 0));
+                }
+                else
+                {
+                    do
+                    {
+                        mask[dstIndex] = reader.ReadByte();
+                        dstIndex += width;
+                        --height;
+                    } while ((--b != 0) && (height != 0));
+                }
             }
         }
 
@@ -151,7 +186,7 @@ namespace Scumm4.Graphics
             } while ((--height) != 0);
         }
 
-        private void DecodeMask(int x, int y, int width, int height, int stripnr, List<Stream> zplanes, bool transpStrip, DrawBitmapFlags flags)
+        private void DecodeMask(int x, int y, int width, int height, int stripnr, List<byte[]> zplanes, bool transpStrip, DrawBitmapFlags flags)
         {
             int i;
             PixelNavigator mask_ptr;
@@ -175,14 +210,18 @@ namespace Scumm4.Graphics
                 // are still too unstable for me to investigate.
 
                 //z_plane_ptr = (byte*)zplanes[1] + *(ushort*)(zplanes[1] + stripnr * 2 + 8);
-                //for (i = 0; i < zplanes.Count; i++)
-                //{
-                //    mask_ptr = GetMaskBuffer(x, y, i);
-                //    if (transpStrip && flags.HasFlag(DrawBitmapFlags.AllowMaskOr))
-                //        DecompressMaskImgOr(mask_ptr, z_plane_ptr, height);
-                //    else
-                //        DecompressMaskImg(mask_ptr, z_plane_ptr, height);
-                //}
+                var zplaneStream = new MemoryStream(zplanes[1]);
+                BinaryReader binZplane = new BinaryReader(zplaneStream);
+                binZplane.BaseStream.Seek(stripnr * 2 + 8, SeekOrigin.Begin);
+                zplaneStream.Seek(binZplane.ReadUInt16(), SeekOrigin.Begin);
+                for (i = 0; i < zplanes.Count; i++)
+                {
+                    mask_ptr = GetMaskBuffer(x, y, i);
+                    if (transpStrip && flags.HasFlag(DrawBitmapFlags.AllowMaskOr))
+                        DecompressMaskImgOr(mask_ptr, zplaneStream, height);
+                    else
+                        DecompressMaskImg(mask_ptr, zplaneStream, height);
+                }
             }
             else
             {
@@ -193,33 +232,32 @@ namespace Scumm4.Graphics
                     if (zplanes[i] == null)
                         continue;
 
-                    var beginPtr = zplanes[i].Position;
-                    zplanes[i].Seek(stripnr * 2 + 2, SeekOrigin.Current);
-                    var br = new BinaryReader(zplanes[i]);
+                    var zplanePtr = new MemoryStream(zplanes[i]);
+                    zplanePtr.Seek(stripnr * 2 + 2, SeekOrigin.Begin);
+                    var br = new BinaryReader(zplanePtr);
                     offs = br.ReadUInt16();
 
                     mask_ptr = GetMaskBuffer(x, y, i);
 
                     if (offs != 0)
                     {
-                        zplanes[i].Seek(beginPtr + offs, SeekOrigin.Current);
-
+                        zplanePtr.Seek(offs, SeekOrigin.Begin);
                         if (transpStrip && flags.HasFlag(DrawBitmapFlags.AllowMaskOr))
                         {
-                            DecompressMaskImgOr(mask_ptr, zplanes[i], height);
+                            DecompressMaskImgOr(mask_ptr, zplanePtr, height);
                         }
                         else
                         {
-                            DecompressMaskImg(mask_ptr, zplanes[i], height);
+                            DecompressMaskImg(mask_ptr, zplanePtr, height);
                         }
-
                     }
                     else
                     {
                         if (!(transpStrip && flags.HasFlag(DrawBitmapFlags.AllowMaskOr)))
                             for (int h = 0; h < height; h++)
                             {
-                                //mask_ptr[h * _numStrips] = 0;
+                                mask_ptr.OffsetY(1);
+                                mask_ptr.Write(0);
                             }
                     }
                 }
@@ -293,13 +331,12 @@ namespace Scumm4.Graphics
         public PixelNavigator GetMaskBuffer(int x, int y, int i)
         {
             PixelNavigator nav;
-            nav = new PixelNavigator(_maskBuffer, 320, 1);
-            nav.GoTo(320 * i, 200 * i);
-            nav.Offset(x, y);
+            nav = new PixelNavigator(_maskBuffer[i], 40, 1);
+            nav.GoTo(x, y);
             return nav;
         }
 
-        private byte[] _maskBuffer = new byte[320 * 200 * 2];
+        private byte[][] _maskBuffer = new byte[2][];
 
         private bool DrawStrip(PixelNavigator navDst, int height, int stripnr, BinaryReader smapReader)
         {
@@ -580,35 +617,21 @@ namespace Scumm4.Graphics
             navDst.Write(_vm._roomPalette[(color + _paletteMod) & 0xFF]);
         }
 
-        private List<Stream> GetZPlanes(byte[] ptr)
+        private List<byte[]> GetZPlanes(byte[] ptr)
         {
-            List<Stream> zplanes = new List<Stream>();
-            int numzbuf;
+            List<byte[]> zplanes = new List<byte[]>();
 
-            zplanes.Add(new MemoryStream(ptr));
-
-            if (_zbufferDisabled)
-                numzbuf = 0;
-            else if (_numZBuffer <= 1)
-                numzbuf = _numZBuffer;
-            else
+            var zplane = new MemoryStream(ptr);
+            var zplaneReader = new BinaryReader(zplane);
+            var uPtr = zplaneReader.ReadInt32();
+            var ptr1 = zplaneReader.ReadBytes(uPtr - 4);
+            zplanes.Add(ptr1);
+            byte[] ptr2 = null;
+            if (ptr.Length - uPtr > 2)
             {
-                numzbuf = _numZBuffer;
-                //assert(numzbuf <= 9);
-
-                //uint* uPtr = (uint*)ptr;
-                //zplanes.Add((IntPtr)(ptr + (*uPtr)));
-                var zplane = new MemoryStream(ptr);
-                var zplaneReader = new BinaryReader(zplane);
-                var uPtr = zplaneReader.ReadInt32();
-                zplaneReader.BaseStream.Seek(uPtr, SeekOrigin.Begin);
-                zplanes.Add(new MemoryStream(ptr));
-
-                //for (i = 2; i < numzbuf; i++)
-                //{
-                //    zplane_list[i] = zplane_list[i - 1] + READ_LE_UINT16(zplane_list[i - 1]);
-                //}
+                ptr2 = zplaneReader.ReadBytes(ptr.Length - uPtr);
             }
+            zplanes.Add(ptr2);
 
             return zplanes;
         }
@@ -643,7 +666,7 @@ namespace Scumm4.Graphics
                 if (_vm.IsLightOn())
                 {
                     PixelNavigator bgBakNav = new PixelNavigator(vs.Surfaces[1]);
-                    bgBakNav.GoTo(strip * 8 + vs.XStart, top); 
+                    bgBakNav.GoTo(strip * 8 + vs.XStart, top);
                     Copy8Col(navDest, bgBakNav, numLinesToProcess);
                 }
                 else

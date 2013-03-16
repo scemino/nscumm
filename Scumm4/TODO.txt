@@ -1,5 +1,4 @@
-﻿fix actor drawing
-cursor
+﻿cursor
 inventory
 load and save games
 room effects

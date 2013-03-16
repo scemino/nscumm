@@ -28,7 +28,7 @@ namespace Scumm4.Graphics
         public int _numZBuffer = 2;
         public int _numStrips = 40;
 
-        private ScummInterpreter _vm;
+        private ScummEngine _vm;
         private bool _zbufferDisabled;
         private int _paletteMod;
         private int _decomp_shr;
@@ -47,7 +47,7 @@ namespace Scumm4.Graphics
             set { _zbufferDisabled = !value; }
         }
 
-        public Gdi(ScummInterpreter vm)
+        public Gdi(ScummEngine vm)
         {
             _vm = vm;
             for (int i = 0; i < 2; i++)

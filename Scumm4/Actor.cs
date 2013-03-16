@@ -167,7 +167,7 @@ namespace Scumm4
         protected ActorWalkData _walkdata;
         protected short[] _animVariable = new short[27];
 
-        public Actor(ScummInterpreter scumm, byte id)
+        public Actor(ScummEngine scumm, byte id)
         {
             _scumm = scumm;
             _number = id;
@@ -318,7 +318,7 @@ namespace Scumm4
             _room = newRoom;
             NeedRedraw = true;
 
-            if (_scumm.Variables[ScummInterpreter.VariableEgo] == _number)
+            if (_scumm.Variables[ScummEngine.VariableEgo] == _number)
             {
                 _scumm.EgoPositioned = true;
             }
@@ -1317,7 +1317,7 @@ namespace Scumm4
             return false;
         }
 
-        private ScummInterpreter _scumm;
+        private ScummEngine _scumm;
 
         public bool IsInCurrentRoom()
         {

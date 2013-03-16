@@ -32,7 +32,7 @@ namespace NScumm
     {
         #region Fields
         private ScummIndex _index;
-        private ScummInterpreter _interpreter;
+        private ScummEngine _interpreter;
         private Thread _thread;
         #endregion
 
@@ -48,7 +48,7 @@ namespace NScumm
             _index.GetCharset(4);
 
             var gfx = new WpfGraphicsManager(_screen);
-            _interpreter = new ScummInterpreter(_index, gfx);
+            _interpreter = new ScummEngine(_index, gfx);
 
             _thread = new Thread(new ThreadStart(() =>
             {

@@ -18,7 +18,7 @@ namespace Scumm4.Graphics
         private byte _bytesPerPixel;
         public uint _numChars;
 
-        public CharsetRendererClassic(ScummInterpreter vm)
+        public CharsetRendererClassic(ScummEngine vm)
             : base(vm)
         {
         }

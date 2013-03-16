@@ -85,7 +85,7 @@
     <Compile Include="ScriptSlot.cs" />
     <Compile Include="ScummHelper.cs" />
     <Compile Include="ScummIndex.cs" />
-    <Compile Include="ScummInterpreter.cs" />
+    <Compile Include="ScummEngine.cs" />
     <Compile Include="ScummMouseButtonState.cs" />
     <Compile Include="Sentence.cs" />
     <Compile Include="TextSlot.cs" />

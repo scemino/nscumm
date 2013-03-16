@@ -40,11 +40,11 @@ namespace Scumm4.Graphics
         public bool _disableOffsX;
 
         protected byte _color;
-        protected ScummInterpreter _vm;
+        protected ScummEngine _vm;
 
         protected int _curId;
 
-        protected CharsetRenderer(ScummInterpreter vm)
+        protected CharsetRenderer(ScummEngine vm)
         {
             _top = 0;
             _left = 0;

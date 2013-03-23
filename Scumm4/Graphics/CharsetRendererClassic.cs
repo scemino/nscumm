@@ -28,7 +28,7 @@ namespace Scumm4.Graphics
             VirtScreen vs;
             bool is2byte = (chr >= 256 && _vm._useCJKMode);
 
-            //assertRange(1, _curId, _vm->_numCharsets - 1, "charset");
+            //ScummHelper.AssertRange(1, _curId, _vm._numCharsets - 1, "charset");
 
             if ((vs = _vm.FindVirtScreen(_top)) == null && (vs = _vm.FindVirtScreen(_top + GetFontHeight())) == null)
                 return;

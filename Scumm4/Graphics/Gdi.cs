@@ -31,9 +31,9 @@ namespace Scumm4.Graphics
         private ScummEngine _vm;
         private bool _zbufferDisabled;
         private int _paletteMod;
-        private int _decomp_shr;
-        private int _decomp_mask;
-        private byte _transparentColor;
+        private byte _decomp_shr;
+        private byte _decomp_mask;
+        private byte _transparentColor = 255;
 
         public byte TransparentColor
         {
@@ -351,6 +351,7 @@ namespace Scumm4.Graphics
                 smapReader.BaseStream.Seek(stripnr * 4, SeekOrigin.Current);
                 offset = smapReader.ReadInt32();
             }
+            ScummHelper.AssertRange(0, offset, smapLen - 1, "screen strip");
             smapReader.BaseStream.Seek(offset, SeekOrigin.Begin);
 
             return DecompressBitmap(navDst, smapReader, height);
@@ -362,8 +363,8 @@ namespace Scumm4.Graphics
 
             byte code = src.ReadByte();
             bool transpStrip = false;
-            _decomp_shr = code % 10;
-            _decomp_mask = 0xFF >> (8 - _decomp_shr);
+            _decomp_shr = (byte)(code % 10);
+            _decomp_mask = (byte)(0xFF >> (8 - _decomp_shr));
 
             switch (code)
             {
@@ -508,9 +509,9 @@ namespace Scumm4.Graphics
 
         private void DrawStripBasicH(PixelNavigator navDst, BinaryReader src, int height, bool transpCheck)
         {
-            int color = src.ReadByte();
-            int bits = src.ReadByte();
-            int cl = 8;
+            byte color = src.ReadByte();
+            uint bits = src.ReadByte();
+            byte cl = 8;
             int inc = -1;
 
             do
@@ -528,19 +529,19 @@ namespace Scumm4.Graphics
                     else if (!READ_BIT(ref cl, ref bits))
                     {
                         FILL_BITS(ref cl, ref bits, src);
-                        color = bits & _decomp_mask;
+                        color = (byte)(bits & _decomp_mask);
                         bits >>= _decomp_shr;
                         cl -= _decomp_shr;
                         inc = -1;
                     }
                     else if (!READ_BIT(ref cl, ref bits))
                     {
-                        color += inc;
+                        color = (byte)(color + inc);
                     }
                     else
                     {
                         inc = -inc;
-                        color += inc;
+                        color = (byte)(color + inc);
                     }
                 } while (--x != 0);
                 navDst.Offset(-8, 1);
@@ -549,9 +550,9 @@ namespace Scumm4.Graphics
 
         private void DrawStripBasicV(PixelNavigator navDst, BinaryReader src, int height, bool transpCheck)
         {
-            int color = src.ReadByte();
-            int bits = src.ReadByte();
-            int cl = 8;
+            byte color = src.ReadByte();
+            uint bits = src.ReadByte();
+            byte cl = 8;
             int inc = -1;
 
             int x = 8;
@@ -572,35 +573,36 @@ namespace Scumm4.Graphics
                     else if (!READ_BIT(ref cl, ref bits))
                     {
                         FILL_BITS(ref cl, ref bits, src);
-                        color = bits & _decomp_mask;
+                        color = (byte)(bits & _decomp_mask);
                         bits >>= _decomp_shr;
                         cl -= _decomp_shr;
                         inc = -1;
                     }
                     else if (!READ_BIT(ref cl, ref bits))
                     {
-                        color += inc;
+                        color = (byte)(color + inc);
                     }
                     else
                     {
                         inc = -inc;
-                        color += inc;
+                        color = (byte)(color + inc);
                     }
                 } while ((--h) != 0);
                 navDst.Offset(1, -height);
             } while ((--x) != 0);
         }
 
-        private void FILL_BITS(ref int cl, ref int bits, BinaryReader src)
+        private void FILL_BITS(ref byte cl, ref uint bits, BinaryReader src)
         {
             if (cl <= 8)
             {
-                bits |= (src.ReadByte() << cl);
+                var srcBits = (uint)src.ReadByte();
+                bits |= (srcBits << cl);
                 cl += 8;
             }
         }
 
-        private bool READ_BIT(ref int cl, ref int bits)
+        private bool READ_BIT(ref byte cl, ref uint bits)
         {
             cl--;
             var bit = bits & 1;

@@ -50,9 +50,12 @@ namespace Scumm4
             this.EntryScript = new ScriptData();
             this.ExitScript = new ScriptData();
             this.LocalScripts = new ScriptData[1024];
+            this.TransparentColor = 255;
         }
 
         public byte[] Data { get; set; }
         public Scale[] Scales { get; set; }
+
+        public byte TransparentColor { get; set; }
     }
 }

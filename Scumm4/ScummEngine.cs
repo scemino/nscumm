@@ -211,6 +211,13 @@ namespace Scumm4
         static byte[] default_cursor_colors = new byte[] { 15, 15, 7, 8 };
 
         public byte[] _roomPalette = new byte[256];
+
+        private byte _newEffect = 129, _switchRoomEffect2, _switchRoomEffect;
+        private bool _disableFadeInEffect;
+        private bool _doEffect;
+        private bool _screenEffectFlag;
+
+        private ObjectData[] _objs = new ObjectData[200];
         #endregion
 
         #region Properties
@@ -498,6 +505,7 @@ namespace Scumm4
             /* 04 */
             _opCodes[0x04] = IsGreaterEqual;
             _opCodes[0x05] = DrawObject;
+            _opCodes[0x06] = GetActorElevation;
             _opCodes[0x07] = SetState;
             /* 08 */
             _opCodes[0x08] = IsNotEqual;
@@ -607,6 +615,7 @@ namespace Scumm4
             _opCodes[0x60] = FreezeScripts;
             _opCodes[0x61] = PutActor;
             _opCodes[0x62] = StopScript;
+            _opCodes[0x63] = GetActorFacing;
             /* 64 */
             _opCodes[0x64] = LoadRoomWithEgo;
             _opCodes[0x65] = DrawObject;
@@ -643,6 +652,7 @@ namespace Scumm4
             /* 84 */
             _opCodes[0x84] = IsGreaterEqual;
             _opCodes[0x85] = DrawObject;
+            _opCodes[0x86] = GetActorElevation;
             _opCodes[0x87] = SetState;
             /* 88 */
             _opCodes[0x88] = IsNotEqual;
@@ -752,6 +762,7 @@ namespace Scumm4
             _opCodes[0xE0] = FreezeScripts;
             _opCodes[0xE1] = PutActor;
             _opCodes[0xE2] = StopScript;
+            _opCodes[0xE3] = GetActorFacing;
             /* E4 */
             _opCodes[0xE4] = LoadRoomWithEgo;
             _opCodes[0xE5] = DrawObject;
@@ -1156,7 +1167,7 @@ namespace Scumm4
             byte a;
             int mask = 0xF;
 
-            for (i = 0; i < Objects.Count; i++)
+            for (i = 1; i < _numLocalObjects; i++)
             {
                 if ((Objects[i].obj_nr < 1) || GetClass(Objects[i].obj_nr, ObjectClass.Untouchable))
                     continue;
@@ -1212,11 +1223,11 @@ namespace Scumm4
                 {
                     if (ss.number < NumInventory && _inventory[ss.number] == obj)
                     {
-                        throw new NotSupportedException("Odd setOwnerOf case #1: Please report to Fingolfin where you encountered this");
-                        //PutOwner(obj, 0);
-                        //RunInventoryScript(arg);
-                        //StopObjectCode();
-                        //return;
+                        //throw new NotSupportedException("Odd setOwnerOf case #1: Please report to Fingolfin where you encountered this");
+                        PutOwner(obj, 0);
+                        RunInventoryScript(arg);
+                        StopObjectCode();
+                        return;
                     }
                     if (ss.number == obj)
                         throw new NotSupportedException("Odd setOwnerOf case #2: Please report to Fingolfin where you encountered this");
@@ -1225,15 +1236,6 @@ namespace Scumm4
 
             PutOwner(obj, (byte)owner);
             RunInventoryScript(arg);
-        }
-
-        private ObjectData[] _objs = new ObjectData[200];
-        public IList<ObjectData> Objects
-        {
-            get
-            {
-                return _objs;
-            }
         }
 
         private void ClearOwnerOf(int obj)
@@ -1247,7 +1249,7 @@ namespace Scumm4
             // object list and (only if it's a floating object) nuke it.
             if (GetOwner(obj) == OF_OWNER_ROOM)
             {
-                for (i = 0; i < NumLocalObjects; i++)
+                for (i = 0; i < _numLocalObjects; i++)
                 {
                     if (Objects[i].obj_nr == obj && Objects[i].fl_object_index != 0)
                     {
@@ -1668,6 +1670,22 @@ namespace Scumm4
             }
         }
 
+        private void GetActorFacing()
+        {
+            GetResult();
+            int act = GetVarOrDirectByte(OpCodeParameter.Param1);
+            var a = this.Actors[act];
+            SetResult(ScummHelper.NewDirToOldDir(a.GetFacing()));
+        }
+
+        private void GetActorElevation()
+        {
+            GetResult();
+            int act = GetVarOrDirectByte(OpCodeParameter.Param1);
+            Actor a = this.Actors[act];
+            SetResult(a.GetElevation());
+        }
+
         private void SetClass()
         {
             int obj = GetVarOrDirectWord(OpCodeParameter.Param1);
@@ -1839,7 +1857,7 @@ namespace Scumm4
                 _flashlight.xStrips = (ushort)a;
                 _flashlight.yStrips = (ushort)b;
             }
-            //_fullRedraw = true;
+            _fullRedraw = true;
         }
 
         private void FreezeScripts()
@@ -2052,6 +2070,20 @@ namespace Scumm4
                         SetScaleSlot(e - 1, 0, b, a, 0, d, c);
                     }
                     break;
+                case 10:	// SO_ROOM_FADE
+                    {
+                        var a = GetVarOrDirectWord(OpCodeParameter.Param1);
+                        if (a != 0)
+                        {
+                            _switchRoomEffect = (byte)(a & 0xFF);
+                            _switchRoomEffect2 = (byte)(a >> 8);
+                        }
+                        else
+                        {
+                            FadeIn(_newEffect);
+                        }
+                    }
+                    break;
                 default:
                     throw new NotImplementedException();
             }
@@ -2109,9 +2141,22 @@ namespace Scumm4
                         select o.Scripts.ContainsKey(e) ? o.Scripts[e].Data : o.Scripts[0xFF].Data).FirstOrDefault();
 
             if (data == null)
+            {
+                data = (from o in _invData
+                        where o != null
+                        where o.obj_nr == obj
+                        where o.Scripts.ContainsKey(e) || o.Scripts.ContainsKey(0xFF)
+                        select o.Scripts.ContainsKey(e) ? o.Scripts[e].Data : o.Scripts[0xFF].Data).FirstOrDefault();
+            }
+
+            if (data == null)
                 return;
 
             var count = (from o in roomData.Objects
+                         where o.obj_nr == obj
+                         select o.Scripts.Count).Concat(
+                         from o in _invData
+                         where o != null
                          where o.obj_nr == obj
                          select o.Scripts.Count).First();
             if (count == 0)
@@ -2204,6 +2249,8 @@ namespace Scumm4
             var data = GetWordVarArgs();
 
             _debugWriter.WriteLine("StartScript({0:X2})", script);
+            // Copy protection was disabled in KIXX XL release (Amiga Disk) and
+            // in LucasArts Classic Adventures (PC Disk)
             if (script != 0x98)
             {
                 RunScript((byte)script, (op & 0x20) != 0, (op & 0x40) != 0, data);
@@ -2268,15 +2315,127 @@ namespace Scumm4
                 var a = GetVarOrDirectWord(OpCodeParameter.Param1);
                 if (a != 0)
                 {
-                    var switchRoomEffect = (byte)(a & 0xFF);
-                    var switchRoomEffect2 = (byte)(a >> 8);
+                    _switchRoomEffect = (byte)(a & 0xFF);
+                    _switchRoomEffect2 = (byte)(a >> 8);
                 }
                 else
                 {
-                    // TODO:
-                    //fadeIn(_newEffect);
+                    FadeIn(_newEffect);
                 }
             }
+        }
+
+        private void FadeIn(byte effect)
+        {
+            if (_disableFadeInEffect)
+            {
+                // fadeIn() calls can be disabled in TheDig after a SMUSH movie
+                // has been played. Like the original interpreter, we introduce
+                // an extra flag to handle this.
+                _disableFadeInEffect = false;
+                _doEffect = false;
+                _screenEffectFlag = true;
+                return;
+            }
+
+            UpdatePalette();
+
+            switch (effect)
+            {
+                case 0:
+                    // seems to do nothing
+                    break;
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                case 5:
+                case 6:
+                    // Some of the transition effects won't work properly unless
+                    // the screen is marked as clean first. At first I thought I
+                    // could safely do this every time fadeIn() was called, but
+                    // that broke the FOA intro. Probably other things as well.
+                    //
+                    // Hopefully it's safe to do it at this point, at least.
+                    MainVirtScreen.SetDirtyRange(0, 0);
+                    //TransitionEffect(effect - 1);
+                    throw new NotImplementedException();
+                    break;
+                case 128:
+                    //unkScreenEffect6();
+                    throw new NotImplementedException();
+                    break;
+                case 129:
+                    break;
+                case 130:
+                case 131:
+                case 132:
+                case 133:
+                    //scrollEffect(133 - effect);
+                    throw new NotImplementedException();
+                    break;
+                case 134:
+                    //dissolveEffect(1, 1);
+                    throw new NotImplementedException();
+                    break;
+                case 135:
+                    //dissolveEffect(1, _virtscr[kMainVirtScreen].h);
+                    throw new NotImplementedException();
+                    break;
+                default:
+                    throw new NotImplementedException(string.Format("Unknown screen effect {0}", effect));
+            }
+            _screenEffectFlag = true;
+        }
+
+        private void FadeOut(int effect)
+        {
+            _mainVirtScreen.SetDirtyRange(0, 0);
+
+            Camera._last.X = Camera._cur.X;
+
+            if (_screenEffectFlag && effect != 0)
+            {
+                // Fill screen 0 with black
+                var l_pixNav = new PixelNavigator(_mainVirtScreen.Surfaces[0]);
+                l_pixNav.OffsetX(_mainVirtScreen.XStart);
+                Fill(l_pixNav, _mainVirtScreen.Pitch, 0, _mainVirtScreen.Width, _mainVirtScreen.Height);
+
+                // Fade to black with the specified effect, if any.
+                switch (effect)
+                {
+                    case 1:
+                    case 2:
+                    case 3:
+                    case 4:
+                    case 5:
+                    //case 6:
+                    //    transitionEffect(effect - 1);
+                    //    break;
+                    //case 128:
+                    //    unkScreenEffect6();
+                    //    break;
+                    case 129:
+                        // Just blit screen 0 to the display (i.e. display will be black)
+                        _mainVirtScreen.SetDirtyRange(0, _mainVirtScreen.Height);
+                        UpdateDirtyScreen(_mainVirtScreen);
+                        break;
+                    //case 134:
+                    //    dissolveEffect(1, 1);
+                    //    break;
+                    //case 135:
+                    //    dissolveEffect(1, _virtscr[kMainVirtScreen].h);
+                    //    break;
+                    default:
+                        throw new NotImplementedException(string.Format("fadeOut: case {0}", effect));
+                }
+            }
+
+            // Update the palette at the end (once we faded to black) to avoid
+            // some nasty effects when the palette is changed
+            UpdatePalette();
+
+            _screenEffectFlag = false;
         }
 
         private void PseudoRoom()
@@ -2373,7 +2532,7 @@ namespace Scumm4
             w = Objects[idx].width;
             h = Objects[idx].height;
 
-            i = Objects.Count - 1;
+            i = _numLocalObjects - 1;
             do
             {
                 if (Objects[i].obj_nr != 0 && Objects[i].x_pos == x && Objects[i].y_pos == y && Objects[i].width == w && Objects[i].height == h)
@@ -2385,6 +2544,8 @@ namespace Scumm4
 
         private void PutState(int obj, byte state)
         {
+            ScummHelper.AssertRange(0, obj, _numGlobalObjects - 1, "object");
+            ScummHelper.AssertRange(0, state, 0xFF, "state");
             _scumm.ObjectStateTable[obj] = state;
         }
 
@@ -2395,7 +2556,7 @@ namespace Scumm4
             if (obj < 1)
                 return -1;
 
-            for (i = (Objects.Count - 1); i >= 0; i--)
+            for (i = (_numLocalObjects - 1); i > 0; i--)
             {
                 if (Objects[i].obj_nr == obj)
                     return i;
@@ -2824,8 +2985,9 @@ namespace Scumm4
 
         private void VerbOps()
         {
-            var verb = (int)GetVarOrDirectByte(OpCodeParameter.Param1);
+            var verb = GetVarOrDirectByte(OpCodeParameter.Param1);
             var slot = GetVerbSlot(verb, 0);
+            ScummHelper.AssertRange(0, slot, _verbs.Length - 1, "new verb slot");
             var vs = _verbs[slot];
             vs.verbid = (ushort)verb;
 
@@ -3037,6 +3199,14 @@ namespace Scumm4
         #endregion
 
         #region Properties
+        public IList<ObjectData> Objects
+        {
+            get
+            {
+                return _objs;
+            }
+        }
+
         public int ScreenStartStrip
         {
             get { return _screenStartStrip; }
@@ -3152,7 +3322,7 @@ namespace Scumm4
                 return WhereIsObject.NotFound;
             }
 
-            for (i = (Objects.Count - 1); i >= 0; i--)
+            for (i = (_numLocalObjects - 1); i > 0; i--)
                 if (Objects[i].obj_nr == obj)
                 {
                     if (Objects[i].fl_object_index != 0)
@@ -3285,6 +3455,9 @@ namespace Scumm4
         {
             StopTalk();
 
+            FadeOut(_switchRoomEffect2);
+            _newEffect = _switchRoomEffect;
+
             if (_currentScript != 0xFF)
             {
                 if (slots[_currentScript].where == WhereIsObject.Room || slots[_currentScript].where == WhereIsObject.FLObject)
@@ -3348,6 +3521,7 @@ namespace Scumm4
                 return;
             }
 
+            _gdi.TransparentColor = roomData.TransparentColor;
             ResetRoomSubBlocks();
             ResetRoomObjects();
             this.DrawingObjects.Clear();
@@ -3369,6 +3543,8 @@ namespace Scumm4
             _egoPositioned = false;
 
             RunEntryScript();
+
+            _doEffect = true;
         }
 
         private void ResetRoomObjects()
@@ -3376,33 +3552,39 @@ namespace Scumm4
             if (roomData == null) return;
             for (int i = 0; i < roomData.Objects.Count; i++)
             {
-                _objs[i].x_pos = roomData.Objects[i].x_pos;
-                _objs[i].y_pos = roomData.Objects[i].y_pos;
-                _objs[i].width = roomData.Objects[i].width;
-                _objs[i].walk_x = roomData.Objects[i].walk_x;
-                _objs[i].walk_y = roomData.Objects[i].walk_y;
-                _objs[i].state = roomData.Objects[i].state;
-                _objs[i].parent = roomData.Objects[i].parent;
-                _objs[i].parentstate = roomData.Objects[i].parentstate;
-                _objs[i].obj_nr = roomData.Objects[i].obj_nr;
-                _objs[i].height = roomData.Objects[i].height;
-                _objs[i].flags = roomData.Objects[i].flags;
-                _objs[i].fl_object_index = roomData.Objects[i].fl_object_index;
-                _objs[i].actordir = roomData.Objects[i].actordir;
-                _objs[i].Strips.Clear();
-                _objs[i].Strips.AddRange(roomData.Objects[i].Strips);
-                _objs[i].Scripts.Clear();
-                _objs[i].Image = roomData.Objects[i].Image;
+                _objs[i + 1].x_pos = roomData.Objects[i].x_pos;
+                _objs[i + 1].y_pos = roomData.Objects[i].y_pos;
+                _objs[i + 1].width = roomData.Objects[i].width;
+                _objs[i + 1].walk_x = roomData.Objects[i].walk_x;
+                _objs[i + 1].walk_y = roomData.Objects[i].walk_y;
+                _objs[i + 1].state = roomData.Objects[i].state;
+                _objs[i + 1].parent = roomData.Objects[i].parent;
+                _objs[i + 1].parentstate = roomData.Objects[i].parentstate;
+                _objs[i + 1].obj_nr = roomData.Objects[i].obj_nr;
+                _objs[i + 1].height = roomData.Objects[i].height;
+                _objs[i + 1].flags = roomData.Objects[i].flags;
+                _objs[i + 1].fl_object_index = roomData.Objects[i].fl_object_index;
+                _objs[i + 1].actordir = roomData.Objects[i].actordir;
+                _objs[i + 1].Strips.Clear();
+                _objs[i + 1].Strips.AddRange(roomData.Objects[i].Strips);
+                _objs[i + 1].Scripts.Clear();
+                _objs[i + 1].Image = roomData.Objects[i].Image;
                 foreach (var script in roomData.Objects[i].Scripts)
                 {
-                    _objs[i].Scripts.Add(script.Key, script.Value);
+                    _objs[i + 1].Scripts.Add(script.Key, script.Value);
                 }
-                _objs[i].ScriptOffsets.Clear();
+                _objs[i + 1].ScriptOffsets.Clear();
                 foreach (var scriptOffset in roomData.Objects[i].ScriptOffsets)
                 {
-                    _objs[i].ScriptOffsets.Add(scriptOffset.Key, scriptOffset.Value);
+                    _objs[i + 1].ScriptOffsets.Add(scriptOffset.Key, scriptOffset.Value);
                 }
-                _objs[i].Name = roomData.Objects[i].Name;
+                _objs[i + 1].Name = roomData.Objects[i].Name;
+            }
+            for (int i = roomData.Objects.Count + 1; i < _objs.Length; i++)
+            {
+                _objs[i].obj_nr = 0;
+                _objs[i].Scripts.Clear();
+                _objs[i].Strips.Clear();
             }
         }
 
@@ -3774,7 +3956,7 @@ namespace Scumm4
             var scriptNum = slots[slotIndex].number;
             if (roomData != null && (slots[slotIndex].where == WhereIsObject.Inventory))
             {
-                var data = (from o in roomData.Objects
+                var data = (from o in roomData.Objects.Concat(_invData)
                             where o.obj_nr == scriptNum
                             select o.Scripts.ContainsKey((byte)slots[slotIndex].InventoryEntry) ?
                             o.Scripts[(byte)slots[slotIndex].InventoryEntry].Data : o.Scripts[0xFF].Data).FirstOrDefault();
@@ -4254,6 +4436,7 @@ namespace Scumm4
 
         private byte GetState(int obj)
         {
+            ScummHelper.AssertRange(0, obj, _numGlobalObjects - 1, "object");
             return _scumm.ObjectStateTable[obj];
         }
 
@@ -4446,16 +4629,23 @@ namespace Scumm4
             }
             else
             {
-                var obj = (from o in Objects
+                var obj = (from o in _invData
+                           where o != null && o.obj_nr == num
+                           select o).FirstOrDefault();
+
+                if (obj == null)
+                {
+                    obj = (from o in Objects
                            where o.obj_nr == num
                            select o).FirstOrDefault();
+                }
                 if (obj != null)
                 {
                     name = obj.Name;
                 }
                 else
                 {
-                    name = new byte[0];
+                    name = new byte[] { (byte)'F', (byte)'o', (byte)'o' };
                 }
             }
             return name;
@@ -5149,7 +5339,6 @@ namespace Scumm4
 
             if (_completeScreenRedraw)
             {
-                ClearCharsetMask();
                 _charset._hasMask = false;
 
                 for (int i = 0; i < _verbs.Length; i++)
@@ -5167,8 +5356,8 @@ namespace Scumm4
             CheckExecVerbs();
             CheckAndRunSentenceScript();
 
-            //if (shouldQuit())
-            //    return;
+            if (ShouldQuit())
+                return;
 
             // HACK: If a load was requested, immediately perform it. This avoids
             // drawing the current room right after the load is request but before
@@ -5238,7 +5427,15 @@ namespace Scumm4
 
         private void HandleEffects()
         {
-            //throw new NotImplementedException();
+            // TODO:
+            //CyclePalette();
+            //PalManipulate();
+            if (_doEffect)
+            {
+                _doEffect = false;
+                FadeIn(_newEffect);
+                //clearClickedStatus();
+            }
         }
 
         private void SetActorRedrawFlags()
@@ -5625,11 +5822,6 @@ namespace Scumm4
             }
         }
 
-        private void ClearCharsetMask()
-        {
-            throw new NotImplementedException();
-        }
-
         private const byte CharsetMaskTransparency = 0xFD;
         private void ClearTextSurface()
         {
@@ -5789,7 +5981,8 @@ namespace Scumm4
                 a = od.parentstate;
                 if (od.parent == 0)
                 {
-                    DrawObject(i, argument);
+                    if (od.fl_object_index == 0)
+                        DrawObject(i, argument);
                     break;
                 }
                 od = this.Objects[od.parent];
@@ -5810,7 +6003,7 @@ namespace Scumm4
             if (_bgNeedsRedraw)
                 arg = 0;
 
-            if (od == null || od.obj_nr == 0)
+            if (od.obj_nr == 0)
                 return;
 
             ScummHelper.AssertRange(0, od.obj_nr, _numGlobalObjects - 1, "object");
@@ -6164,12 +6357,14 @@ namespace Scumm4
 
         public Surface TextSurface { get { return _textSurface; } }
 
-        #region Verb Members
-        int _verbMouseOver;
-        private Surface _composite;
         private int _numGlobalObjects = 1000;
         private int _numLocalObjects = 200;
         private bool _haveActorSpeechMsg;
+        private Surface _composite;
+
+        #region Verb Members
+        int _verbMouseOver;
+
         private void VerbMouseOver(int verb)
         {
             if (_verbMouseOver != verb)
@@ -6314,8 +6509,7 @@ namespace Scumm4
             VerbSlot vs = _verbs[slot];
             vs.verbid = 0;
             vs.curmode = 0;
-
-            //_res->nukeResource(rtVerb, slot);
+            vs.Text = null;
 
             if (vs.saveid == 0)
             {
@@ -6327,7 +6521,7 @@ namespace Scumm4
 
         private int FindVerbAtPos(int x, int y)
         {
-            for (int i = _verbs.Length - 1; i > 0; i--)
+            for (int i = _verbs.Length - 1; i >= 0; i--)
             {
                 var vs = _verbs[i];
                 if (vs.curmode != 1 || vs.verbid == 0 || vs.saveid != 0 || y < vs.curRect.top || y >= vs.curRect.bottom)
@@ -6352,7 +6546,7 @@ namespace Scumm4
         private int GetVerbSlot(int id, int mode)
         {
             int i;
-            for (i = 1; i < 100; i++)
+            for (i = 1; i < _verbs.Length; i++)
             {
                 if (_verbs[i].verbid == id && _verbs[i].saveid == mode)
                 {

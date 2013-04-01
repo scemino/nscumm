@@ -100,6 +100,11 @@ namespace Scumm4
             }
         }
 
+        public int GetGlobalScriptOffset(byte scriptNum)
+        {
+            return 6;
+        }
+
         public byte[] GetScript(byte scriptNum)
         {
             byte[] data = null;

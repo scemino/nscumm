@@ -1,11 +1,9 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NScumm", "NScumm\NScumm.csproj", "{BDB23D9C-ACB1-4BAA-BFF7-31AB66AF321F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Scumm4", "Scumm4\Scumm4.csproj", "{B33E2D2E-E360-4F10-A82F-AA98500497FD}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CostumeViewer", "CostumeViewer\CostumeViewer.csproj", "{92DB99E4-D876-4A54-90F1-C8CAFA2D92A3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -37,16 +35,6 @@ Global
 		{B33E2D2E-E360-4F10-A82F-AA98500497FD}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{B33E2D2E-E360-4F10-A82F-AA98500497FD}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{B33E2D2E-E360-4F10-A82F-AA98500497FD}.Release|x86.ActiveCfg = Release|Any CPU
-		{92DB99E4-D876-4A54-90F1-C8CAFA2D92A3}.Debug|Any CPU.ActiveCfg = Debug|x86
-		{92DB99E4-D876-4A54-90F1-C8CAFA2D92A3}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
-		{92DB99E4-D876-4A54-90F1-C8CAFA2D92A3}.Debug|Mixed Platforms.Build.0 = Debug|x86
-		{92DB99E4-D876-4A54-90F1-C8CAFA2D92A3}.Debug|x86.ActiveCfg = Debug|x86
-		{92DB99E4-D876-4A54-90F1-C8CAFA2D92A3}.Debug|x86.Build.0 = Debug|x86
-		{92DB99E4-D876-4A54-90F1-C8CAFA2D92A3}.Release|Any CPU.ActiveCfg = Release|x86
-		{92DB99E4-D876-4A54-90F1-C8CAFA2D92A3}.Release|Mixed Platforms.ActiveCfg = Release|x86
-		{92DB99E4-D876-4A54-90F1-C8CAFA2D92A3}.Release|Mixed Platforms.Build.0 = Release|x86
-		{92DB99E4-D876-4A54-90F1-C8CAFA2D92A3}.Release|x86.ActiveCfg = Release|x86
-		{92DB99E4-D876-4A54-90F1-C8CAFA2D92A3}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

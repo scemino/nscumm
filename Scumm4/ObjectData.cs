@@ -17,6 +17,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -52,5 +53,27 @@ namespace Scumm4
         }
 
         public byte[] Image { get; set; }
+
+        public void Load(BinaryReader reader, uint version)
+        {
+            var objectEntries = new[]{
+                LoadAndSaveEntry.Create(()=> OBIMoffset = reader.ReadUInt32(),8),
+                LoadAndSaveEntry.Create(()=> OBCDoffset = reader.ReadUInt32(),8),
+                LoadAndSaveEntry.Create(()=> walk_x = reader.ReadInt16(),8),
+                LoadAndSaveEntry.Create(()=> walk_y = reader.ReadInt16(),8),
+                LoadAndSaveEntry.Create(()=> obj_nr = reader.ReadUInt16(),8),
+                LoadAndSaveEntry.Create(()=> x_pos = reader.ReadInt16(),8),
+                LoadAndSaveEntry.Create(()=> y_pos = reader.ReadInt16(),8),
+                LoadAndSaveEntry.Create(()=> width = reader.ReadUInt16(),8),
+                LoadAndSaveEntry.Create(()=> height = reader.ReadUInt16(),8),
+                LoadAndSaveEntry.Create(()=> actordir = reader.ReadByte(),8),
+                LoadAndSaveEntry.Create(()=> parentstate = reader.ReadByte(),8),
+                LoadAndSaveEntry.Create(()=> parent = reader.ReadByte(),8),
+                LoadAndSaveEntry.Create(()=> state = reader.ReadByte(),8),
+                LoadAndSaveEntry.Create(()=> fl_object_index = reader.ReadByte(),8),
+                LoadAndSaveEntry.Create(()=> flags = (DrawBitmapFlags)reader.ReadByte(),46),
+            };
+            Array.ForEach(objectEntries, e => e.Execute(version));
+        }
     }
 }

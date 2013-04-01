@@ -22,10 +22,20 @@ using System.Text;
 
 namespace Scumm4
 {
-    public struct NestedScript
+    public class NestedScript
     {
         public ushort number;
         public WhereIsObject where;
         public byte slot;
+
+        public void Load(System.IO.BinaryReader reader, uint version)
+        {
+            var nestedScriptEntries = new[]{
+                LoadAndSaveEntry.Create(()=> number = reader.ReadUInt16(),8),
+                LoadAndSaveEntry.Create(()=> where = (WhereIsObject)reader.ReadByte(),8),
+                LoadAndSaveEntry.Create(()=> slot = reader.ReadByte(),8),
+            };
+            Array.ForEach(nestedScriptEntries, e => e.Execute(version));
+        }
     }
 }

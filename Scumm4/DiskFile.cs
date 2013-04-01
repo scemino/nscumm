@@ -268,16 +268,16 @@ namespace Scumm4
                                 // local scripts
                                 var index = _reader.ReadByte();
                                 var pos = _reader.BaseStream.Position;
-                                room.LocalScripts[index - 0xC8] = new ScriptData { Data = _reader.ReadBytes((int)(it.Current.Size - 7)) };
+                                room.LocalScripts[index - 0xC8] = new ScriptData { Offset = pos - roomOffset - 8, Data = _reader.ReadBytes((int)(it.Current.Size - 7)) };
                             }
                             break;
                         case 0x494F:
                             {
                                 // Object Image
                                 var objId = _reader.ReadUInt16();
-                                if (it.Current.Size > 8)
+                                if (it.Current.Size > 6)
                                 {
-                                    stripsDic.Add(objId, _reader.ReadBytes((int)(it.Current.Size - 8)));
+                                    stripsDic.Add(objId, _reader.ReadBytes((int)(it.Current.Size - 6)));
                                 }
                             }
                             break;
@@ -786,5 +786,7 @@ namespace Scumm4
     public class ScriptData
     {
         public byte[] Data { get; set; }
+
+        public long Offset { get; set; }
     }
 }

@@ -69,6 +69,18 @@ namespace Scumm4
         /// screen is shifted along the y axis relative to the real screen.
         /// </summary>
         public int TopLine { get; set; }
+
+        public bool HasTwoBuffers { get { return this.Surfaces.Count == 2; } }
+
+        public int Pitch { get { return this.Surfaces[0].Pitch; } }
+
+        public PixelFormat PixelFormat { get { return this.Surfaces[0].PixelFormat; } }
+
+        public int BytesPerPixel { get { return this.Surfaces[0].BytesPerPixel; } }
+
+        public int Width { get { return this.Surfaces[0].Width; } }
+
+        public int Height { get { return this.Surfaces[0].Height; } }
         #endregion
 
         #region Constructor
@@ -96,13 +108,6 @@ namespace Scumm4
                 bdirty[i] = bottom;
             }
         }
-        #endregion
-
-        public bool HasTwoBuffers { get { return this.Surfaces.Count == 2; } }
-        public int Pitch { get { return this.Surfaces[0].Pitch; } }
-        public PixelFormat PixelFormat { get { return this.Surfaces[0].PixelFormat; } }
-        public int BytesPerPixel { get { return this.Surfaces[0].BytesPerPixel; } }
-        public int Width { get { return this.Surfaces[0].Width; } }
-        public int Height { get { return this.Surfaces[0].Height; } }
+        #endregion        
     }
 }

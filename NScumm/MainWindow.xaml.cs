@@ -19,9 +19,6 @@ using Scumm4;
 using System;
 using System.Threading;
 using System.Windows;
-using System.Windows.Data;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
 
 namespace NScumm
 {
@@ -45,8 +42,7 @@ namespace NScumm
 
             _index = new ScummIndex();
             _index.LoadIndex(info.Path);
-            _index.GetCharset(4);
-
+            
             var gfx = new WpfGraphicsManager(_screen);
             _engine = new ScummEngine(_index, gfx);
             _engine.ShowMenuDialogRequested += OnShowMenuDialogRequested;

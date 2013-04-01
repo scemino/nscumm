@@ -15,17 +15,11 @@
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-using Scumm4.Graphics;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace Scumm4
+namespace Scumm4.Graphics
 {
     public class ClassicCostumeRenderer : ICostumeRenderer
     {
-        byte[] SmallCostumeScaleTable = new byte[256] {
+        static byte[] SmallCostumeScaleTable = new byte[256] {
 	        0xFF, 0xFD, 0x7D, 0xBD, 0x3D, 0xDD, 0x5D, 0x9D,
 	        0x1D, 0xED, 0x6D, 0xAD, 0x2D, 0xCD, 0x4D, 0x8D,
 	        0x0D, 0xF5, 0x75, 0xB5, 0x35, 0xD5, 0x55, 0x95,
@@ -118,13 +112,16 @@ namespace Scumm4
         private int _h;
         private int _numStrips;
 
+        #region Constructor
         public ClassicCostumeRenderer(ScummEngine vm)
         {
             _vm = vm;
             _loaded = new ClassicCostumeLoader(vm.Index);
             _palette = new ushort[32];
-        }
+        } 
+        #endregion
 
+        #region Public Methods
         public void SetPalette(ushort[] palette)
         {
             if (_loaded._format == 0x57)
@@ -184,8 +181,10 @@ namespace Scumm4
             for (int i = 0; i < 16; i++)
                 result |= DrawLimb(actor, i);
             return result;
-        }
+        } 
+        #endregion
 
+        #region Private Methods
         private int DrawLimb(Actor a, int limb)
         {
             int i;
@@ -624,6 +623,7 @@ namespace Scumm4
                     ehmerde = false;
                 } while ((--len) != 0);
             } while (true);
-        }
+        } 
+        #endregion
     }
 }

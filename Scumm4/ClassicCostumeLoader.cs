@@ -34,8 +34,9 @@ namespace Scumm4
         public byte _numAnim;
         public byte _format;
         public bool _mirror;
-        protected ScummIndex _vm;
         public XorReader _costumeReader;
+
+        private ScummIndex _vm;
 
         public ClassicCostumeLoader(ScummIndex vm)
         {

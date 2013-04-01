@@ -1,6 +1,7 @@
 ﻿cursor
 save games
 room effects: DissolveEffect, ScrollEffect
+shake
 color cycle
 clean code
 music

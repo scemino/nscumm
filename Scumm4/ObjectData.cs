@@ -18,8 +18,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 
 namespace Scumm4
 {
@@ -43,13 +41,11 @@ namespace Scumm4
         public Dictionary<byte, ushort> ScriptOffsets { get; private set; }
         public Dictionary<byte, ScriptData> Scripts { get; private set; }
         public byte[] Name { get; set; }
-        public List<Strip> Strips { get; private set; }
 
         public ObjectData()
         {
             this.ScriptOffsets = new Dictionary<byte, ushort>();
             this.Scripts = new Dictionary<byte, ScriptData>();
-            this.Strips = new List<Strip>();
         }
 
         public byte[] Image { get; set; }

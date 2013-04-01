@@ -25,6 +25,7 @@ namespace Scumm4.Graphics
 {
     public class Gdi
     {
+        #region Fields
         public int _numZBuffer = 2;
         public int _numStrips = 40;
 
@@ -34,7 +35,10 @@ namespace Scumm4.Graphics
         private byte _decomp_shr;
         private byte _decomp_mask;
         private byte _transparentColor = 255;
+        private byte[][] _maskBuffer = new byte[2][]; 
+        #endregion
 
+        #region Properties
         public byte TransparentColor
         {
             get { return _transparentColor; }
@@ -45,8 +49,10 @@ namespace Scumm4.Graphics
         {
             get { return !_zbufferDisabled; }
             set { _zbufferDisabled = !value; }
-        }
+        } 
+        #endregion
 
+        #region Constructor
         public Gdi(ScummEngine vm)
         {
             _vm = vm;
@@ -54,6 +60,13 @@ namespace Scumm4.Graphics
             {
                 _maskBuffer[i] = new byte[40 * (200 + 4)];
             }
+        } 
+        #endregion
+
+        #region Public Methods
+        public void Init()
+        {
+            _numStrips = _vm._screenWidth / 8;
         }
 
         /// <summary>
@@ -126,6 +139,56 @@ namespace Scumm4.Graphics
             }
         }
 
+        public PixelNavigator GetMaskBuffer(int x, int y, int i)
+        {
+            PixelNavigator nav;
+            nav = new PixelNavigator(_maskBuffer[i], 40, 1);
+            nav.GoTo(x, y);
+            return nav;
+        }
+
+        public void ResetBackground(int top, int bottom, int strip)
+        {
+            VirtScreen vs = _vm.MainVirtScreen;
+            int numLinesToProcess;
+
+            if (top < 0)
+                top = 0;
+
+            if (bottom > vs.Height)
+                bottom = vs.Height;
+
+            if (top >= bottom)
+                return;
+
+            System.Diagnostics.Debug.Assert(0 <= strip && strip < _numStrips);
+
+            if (top < vs.TDirty[strip])
+                vs.TDirty[strip] = top;
+
+            if (bottom > vs.BDirty[strip])
+                vs.BDirty[strip] = bottom;
+
+            numLinesToProcess = bottom - top;
+            if (numLinesToProcess > 0)
+            {
+                PixelNavigator navDest = new PixelNavigator(vs.Surfaces[0]);
+                navDest.GoTo(strip * 8 + vs.XStart, top);
+                if (_vm.IsLightOn())
+                {
+                    PixelNavigator bgBakNav = new PixelNavigator(vs.Surfaces[1]);
+                    bgBakNav.GoTo(strip * 8 + vs.XStart, top);
+                    Copy8Col(navDest, bgBakNav, numLinesToProcess);
+                }
+                else
+                {
+                    Clear8Col(navDest, numLinesToProcess);
+                }
+            }
+        } 
+        #endregion
+
+        #region Private Methods
         private void DecodeMask(BinaryReader reader, byte[] mask, int offset, int width, int height)
         {
             int dstIndex = offset;
@@ -327,16 +390,6 @@ namespace Scumm4.Graphics
                 }
             }
         }
-
-        public PixelNavigator GetMaskBuffer(int x, int y, int i)
-        {
-            PixelNavigator nav;
-            nav = new PixelNavigator(_maskBuffer[i], 40, 1);
-            nav.GoTo(x, y);
-            return nav;
-        }
-
-        private byte[][] _maskBuffer = new byte[2][];
 
         private bool DrawStrip(PixelNavigator navDst, int height, int stripnr, BinaryReader smapReader)
         {
@@ -636,51 +689,7 @@ namespace Scumm4.Graphics
             zplanes.Add(ptr2);
 
             return zplanes;
-        }
-
-        public void ResetBackground(int top, int bottom, int strip)
-        {
-            VirtScreen vs = _vm.MainVirtScreen;
-            int numLinesToProcess;
-
-            if (top < 0)
-                top = 0;
-
-            if (bottom > vs.Height)
-                bottom = vs.Height;
-
-            if (top >= bottom)
-                return;
-
-            System.Diagnostics.Debug.Assert(0 <= strip && strip < _numStrips);
-
-            if (top < vs.TDirty[strip])
-                vs.TDirty[strip] = top;
-
-            if (bottom > vs.BDirty[strip])
-                vs.BDirty[strip] = bottom;
-
-            numLinesToProcess = bottom - top;
-            if (numLinesToProcess > 0)
-            {
-                PixelNavigator navDest = new PixelNavigator(vs.Surfaces[0]);
-                navDest.GoTo(strip * 8 + vs.XStart, top);
-                if (_vm.IsLightOn())
-                {
-                    PixelNavigator bgBakNav = new PixelNavigator(vs.Surfaces[1]);
-                    bgBakNav.GoTo(strip * 8 + vs.XStart, top);
-                    Copy8Col(navDest, bgBakNav, numLinesToProcess);
-                }
-                else
-                {
-                    Clear8Col(navDest, numLinesToProcess);
-                }
-            }
-        }
-
-        public void Init()
-        {
-            _numStrips = _vm._screenWidth / 8;
-        }
+        }         
+        #endregion
     }
 }

@@ -15,22 +15,27 @@
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace Scumm4
+namespace Scumm4.Graphics
 {
-    [Serializable]
-    public class ConversionException : Exception
+    public interface ICostumeRenderer
     {
-        public ConversionException() { }
-        public ConversionException(string message) : base(message) { }
-        public ConversionException(string message, Exception inner) : base(message, inner) { }
-        protected ConversionException(
-          System.Runtime.Serialization.SerializationInfo info,
-          System.Runtime.Serialization.StreamingContext context)
-            : base(info, context) { }
+        int DrawTop { get; set; }
+        int DrawBottom { get; set; }
+
+        byte ActorID { get; set; }
+
+        byte ShadowMode { get; set; }
+
+        int ActorX { get; set; }
+        int ActorY { get; set; }
+        byte ZBuffer { get; set; }
+        byte ScaleX { get; set; }
+        byte ScaleY { get; set; }
+
+        void SetPalette(ushort[] palette);
+        void SetFacing(Actor a);
+        void SetCostume(int costume, int shadow);
+
+        int DrawCostume(VirtScreen vs, int numStrips, Actor actor);
     }
 }

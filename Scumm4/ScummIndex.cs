@@ -17,20 +17,20 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Scumm4;
 using System.IO;
+using System.Text;
 
 namespace Scumm4
 {
     public class ScummIndex
     {
+        #region Resource Structure
         private struct Resource
         {
             public byte roomNum;
             public int offset;
-        }
+        } 
+        #endregion
 
         #region Fields
         private Resource[] _rooms;
@@ -39,18 +39,25 @@ namespace Scumm4
         private Resource[] _costumes;
         private Dictionary<byte, string> _roomNames;
         private Dictionary<byte, Room> _roomsData = new Dictionary<byte, Room>();
-        private string m_directory;
+        private string _directory;
         #endregion
 
+        #region Properties
         public string Directory
         {
-            get { return m_directory; }
+            get { return _directory; }
         }
 
+        public byte[] ObjectOwnerTable { get; private set; }
+        public byte[] ObjectStateTable { get; private set; }
+        public uint[] ClassData { get; private set; } 
+        #endregion
+
+        #region Public Methods
         public void LoadIndex(string path)
         {
             this._roomNames = new Dictionary<byte, string>();
-            this.m_directory = System.IO.Path.GetDirectoryName(path);
+            this._directory = System.IO.Path.GetDirectoryName(path);
             using (var file = File.Open(path, FileMode.Open))
             {
                 BinaryReader br1 = new BinaryReader(file);
@@ -118,19 +125,6 @@ namespace Scumm4
             return data;
         }
 
-        public Costume GetCostume(byte scriptNum)
-        {
-            Costume data = null;
-            var disk = OpenRoom(_costumes[scriptNum].roomNum);
-            if (disk != null)
-            {
-                var rOffsets = disk.ReadRoomOffsets();
-                var offset = _costumes[scriptNum].offset;
-                data = disk.ReadCostume(_costumes[scriptNum].roomNum, rOffsets[_costumes[scriptNum].roomNum] + offset);
-            }
-            return data;
-        }
-
         public XorReader GetCostumeReader(byte scriptNum)
         {
             XorReader reader = null;
@@ -139,26 +133,9 @@ namespace Scumm4
             {
                 var rOffsets = disk.ReadRoomOffsets();
                 var offset = _costumes[scriptNum].offset;
-                reader = disk.ReadCostume2(_costumes[scriptNum].roomNum, rOffsets[_costumes[scriptNum].roomNum] + offset);
+                reader = disk.ReadCostume(_costumes[scriptNum].roomNum, rOffsets[_costumes[scriptNum].roomNum] + offset);
             }
             return reader;
-        }
-
-        Dictionary<byte, Charset> _charsets = new Dictionary<byte, Charset>();
-        public Charset GetCharset(byte id)
-        {
-            Charset charset = null;
-            if (_charsets.ContainsKey(id) == false)
-            {
-                var disk = OpenCharset(id);
-                if (disk != null)
-                {
-                    charset = disk.ReadCharset();
-                    _charsets.Add(id, charset);
-                }
-            }
-            else { charset = _charsets[id]; }
-            return charset;
         }
 
         public byte[] GetCharsetData(byte id)
@@ -192,13 +169,14 @@ namespace Scumm4
             }
 
             return room;
-        }
+        } 
+        #endregion
 
         #region Private Methods
         private DiskFile OpenCharset(byte id)
         {
             var diskName = string.Format("{0}.lfl", 900 + id);
-            var game1Path = System.IO.Path.Combine(m_directory, diskName);
+            var game1Path = System.IO.Path.Combine(_directory, diskName);
             DiskFile file = new DiskFile(game1Path, 0x0);
             return file;
         }
@@ -207,7 +185,7 @@ namespace Scumm4
         {
             var diskNum = _rooms[roomNum].roomNum;
             var diskName = string.Format("disk{0:00}.lec", diskNum);
-            var game1Path = System.IO.Path.Combine(m_directory, diskName);
+            var game1Path = System.IO.Path.Combine(_directory, diskName);
 
             DiskFile file = diskNum != 0 ? new DiskFile(game1Path, 0x69) : null;
             return file;
@@ -245,9 +223,5 @@ namespace Scumm4
             }
         }
         #endregion
-
-        public byte[] ObjectOwnerTable { get; private set; }
-        public byte[] ObjectStateTable { get; private set; }
-        public uint[] ClassData { get; private set; }
     }
 }

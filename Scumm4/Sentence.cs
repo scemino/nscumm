@@ -16,13 +16,10 @@
  */
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace Scumm4
 {
-    class Sentence
+    internal class Sentence
     {
         public byte verb;
         public byte preposition;
@@ -32,14 +29,14 @@ namespace Scumm4
 
         public void Load(System.IO.BinaryReader reader, uint version)
         {
-             var actorEntries = new[]{
+             var sentenceEntries = new[]{
                     LoadAndSaveEntry.Create(()=> verb = reader.ReadByte(),8),
                     LoadAndSaveEntry.Create(()=> preposition = reader.ReadByte(),8),
                     LoadAndSaveEntry.Create(()=> objectA = reader.ReadUInt16(),8),
                     LoadAndSaveEntry.Create(()=> objectB = reader.ReadUInt16(),8),
                     LoadAndSaveEntry.Create(()=> freezeCount = reader.ReadByte(),8),
              };
-             Array.ForEach(actorEntries, e => e.Execute(version));
+             Array.ForEach(sentenceEntries, e => e.Execute(version));
         }
     }
 }

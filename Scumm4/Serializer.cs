@@ -16,10 +16,6 @@
  */
 
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
 
 namespace Scumm4
 {
@@ -43,7 +39,7 @@ namespace Scumm4
         }
     }
 
-    class SaveGameHeader
+    internal class SaveGameHeader
     {
         public uint type;
         public uint size;
@@ -51,14 +47,14 @@ namespace Scumm4
         public string name;
     }
 
-    class SaveStateMetaInfos
+    internal class SaveStateMetaInfos
     {
         public uint date;
         public ushort time;
         public uint playtime;
     }
 
-    class ThumbnailHeader
+    internal class ThumbnailHeader
     {
         public uint type;
         public uint size;
@@ -67,7 +63,7 @@ namespace Scumm4
         public byte bpp;
     }
 
-    class SaveInfoSection
+    internal class SaveInfoSection
     {
         public uint type;
         public uint version;

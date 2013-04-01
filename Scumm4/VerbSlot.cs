@@ -16,10 +16,7 @@
  */
 
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 
 namespace Scumm4
 {
@@ -76,6 +73,4 @@ namespace Scumm4
             Array.ForEach(verbEntries, e => e.Execute(version));
         }
     }
-
-
 }

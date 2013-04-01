@@ -15,23 +15,12 @@
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
 namespace Scumm4
 {
-    public class Limb
+    public class ScriptData
     {
-        public ushort Offset;
-        public ushort Size;
+        public byte[] Data { get; set; }
 
-        public List<ushort> ImageOffsets { get; private set; }
-
-        public Limb()
-        {
-            this.ImageOffsets = new List<ushort>();
-        }
+        public long Offset { get; set; }
     }
 }

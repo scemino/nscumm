@@ -17,25 +17,11 @@
 
 namespace Scumm4
 {
-    public interface ICostumeRenderer
+    public class Scale
     {
-        int DrawTop { get; set; }
-        int DrawBottom { get; set; }
-
-        byte ActorID { get; set; }
-
-        byte ShadowMode { get; set; }
-
-        int ActorX { get; set; }
-        int ActorY { get; set; }
-        byte ZBuffer { get; set; }
-        byte ScaleX { get; set; }
-        byte ScaleY { get; set; }
-
-        void SetPalette(ushort[] palette);
-        void SetFacing(Actor a);
-        void SetCostume(int costume, int shadow);
-
-        int DrawCostume(VirtScreen vs, int numStrips, Actor actor);
+        public ushort scale1;
+        public ushort scale2;
+        public ushort y1;
+        public ushort y2;
     }
 }

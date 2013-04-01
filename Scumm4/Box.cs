@@ -16,12 +16,20 @@
  */
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace Scumm4
 {
+    [Flags]
+    public enum BoxFlags
+    {
+        XFlip = 0x08,
+        YFlip = 0x10,
+        IgnoreScale = 0x20,
+        PlayerOnly = 0x20,
+        Locked = 0x40,
+        Invisible = 0x80
+    }
+
     public class Box
     {
         public short ulx, uly;

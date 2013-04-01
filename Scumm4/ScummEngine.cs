@@ -135,12 +135,13 @@ namespace Scumm4
         private const int VariableTalkStringY = 0x36;
         #endregion
 
+        #region Events
         public event EventHandler ShowMenuDialogRequested;
+        #endregion
 
         #region Fields
         private ScummIndex _scumm;
         private string _directory;
-        private ResourceManager _res = new ResourceManager();
         private Actor[] _actors = new Actor[NumActors];
         private byte _currentRoom;
         private int _actorToPrintStrFor;
@@ -288,7 +289,6 @@ namespace Scumm4
         {
             _scumm = index;
             _gfxManager = gfxManager;
-            _debugWriter = new StreamWriter(_debugFile);
             _directory = _scumm.Directory;
             _strings = new byte[NumArray][];
             _charsets = new byte[NumArray][];
@@ -411,14 +411,10 @@ namespace Scumm4
             ExecuteOpCode(opCode);
         }
 
-        FileStream _debugFile = File.OpenWrite(@"c:\temp\scumm2.txt");
-        StreamWriter _debugWriter;
         private void ExecuteOpCode(byte opCode)
         {
             _opCode = opCode;
             _slots[_currentScript].didexec = true;
-            _debugWriter.WriteLine("{0:X2}", _opCode);
-            _debugWriter.Flush();
             //Console.WriteLine("OpCode: {0:X2}, Name = {1}", _opCode, _opCodes.ContainsKey(_opCode) ? _opCodes[opCode].Method.Name : "Unknown");
             _opCodes[opCode]();
         }
@@ -1407,20 +1403,13 @@ namespace Scumm4
             x = od.walk_x;
             y = od.walk_y;
 
-            dir = OldDirToNewDir(od.actordir & 3);
+            dir = ScummHelper.OldDirToNewDir(od.actordir & 3);
         }
 
         private void GetObjectXYPos(int obj, out int x, out int y)
         {
             int dir;
             GetObjectXYPos(obj, out x, out y, out dir);
-        }
-
-        private static int OldDirToNewDir(int dir)
-        {
-            //assert(0 <= dir && dir <= 3);
-            int[] new_dir_table = new int[4] { 270, 90, 180, 0 };
-            return new_dir_table[dir];
         }
 
         private void GetInventoryCount()
@@ -1568,7 +1557,6 @@ namespace Scumm4
         {
             if (_variables[VariableInventoryScript] != 0)
             {
-                _debugWriter.WriteLine("RunInventoryScript {0:X2}", _variables[VariableInventoryScript]);
                 RunScript((byte)_variables[VariableInventoryScript], false, false, new int[] { i });
             }
         }
@@ -2104,12 +2092,14 @@ namespace Scumm4
                         //setDirtyColors(b, b);
                     }
                     break;
-                //case 5:		// SO_ROOM_SHAKE_ON
-                //    setShake(1);
-                //    break;
-                //case 6:		// SO_ROOM_SHAKE_OFF
-                //    setShake(0);
-                //    break;
+                case 5:		// SO_ROOM_SHAKE_ON
+                    // TODO:
+                    //setShake(1);
+                    break;
+                case 6:		// SO_ROOM_SHAKE_OFF
+                    // TODO:
+                    //    setShake(0);
+                    break;
                 case 7:		// SO_ROOM_SCALE
                     {
                         var a = GetVarOrDirectByte(OpCodeParameter.Param1);
@@ -2165,13 +2155,6 @@ namespace Scumm4
             if (obj == 0)
                 return;
 
-            _debugWriter.Write("RunObjectScript obj={0:X4}, entry={1:X4}", obj, entry);
-            _debugWriter.Write(", Args=[ ");
-            foreach (var item in vars)
-            {
-                _debugWriter.Write("{0} ", item);
-            }
-            _debugWriter.WriteLine("]");
             if (!recursive)
                 StopObjectScript((ushort)obj);
 
@@ -2244,7 +2227,6 @@ namespace Scumm4
             }
             else
             {
-                _debugWriter.WriteLine("StopObjectCode {0:X4}", _currentScript);
                 _slots[_currentScript].number = 0;
                 _slots[_currentScript].status = ScriptStatus.Dead;
             }
@@ -2257,8 +2239,6 @@ namespace Scumm4
 
             if (script == 0)
                 return;
-
-            _debugWriter.WriteLine("StopObjectScript {0:X4}", script);
 
             for (i = 0; i < NumScriptSlot; i++)
             {
@@ -2300,7 +2280,6 @@ namespace Scumm4
             var script = GetVarOrDirectByte(OpCodeParameter.Param1);
             var data = GetWordVarArgs();
 
-            _debugWriter.WriteLine("StartScript({0:X2})", script);
             // Copy protection was disabled in KIXX XL release (Amiga Disk) and
             // in LucasArts Classic Adventures (PC Disk)
             if (script != 0x98)
@@ -2313,7 +2292,6 @@ namespace Scumm4
         {
             GetResult();
             var result = GetVarOrDirectWord(OpCodeParameter.Param1);
-            _debugWriter.WriteLine("Move [{1:X4}]={0:X4}", result, _resultVarIndex);
             SetResult(result);
         }
 
@@ -2331,7 +2309,6 @@ namespace Scumm4
             var varNum = ReadWord();
             var a = ReadVariable(varNum);
             var b = GetVarOrDirectWord(OpCodeParameter.Param1);
-            _debugWriter.WriteLine("IsEqual {0}({1:X4})=={2} ?", a, varNum, b);
             JumpRelative(a == b);
         }
 
@@ -2340,7 +2317,6 @@ namespace Scumm4
             var varNum = ReadWord();
             var a = ReadVariable(varNum);
             var b = GetVarOrDirectWord(OpCodeParameter.Param1);
-            _debugWriter.WriteLine("IsNotEqual {0}({1:X4})!={2} ?", a, varNum, b);
             JumpRelative(a != b);
         }
 
@@ -2652,7 +2628,6 @@ namespace Scumm4
             var varNum = ReadWord();
             short a = (short)ReadVariable(varNum);
             short b = (short)GetVarOrDirectWord(OpCodeParameter.Param1);
-            _debugWriter.WriteLine("IsLess {0}({1:X4})<{2} ?", a, varNum, b);
             JumpRelative(b < a);
         }
 
@@ -2661,7 +2636,6 @@ namespace Scumm4
             var varNum = ReadWord();
             var a = ReadVariable(varNum);
             var b = GetVarOrDirectWord(OpCodeParameter.Param1);
-            _debugWriter.WriteLine("IsLessEqual {0}({1:X4})<={2} ?", a, varNum, b);
             JumpRelative(b <= a);
         }
 
@@ -2707,7 +2681,6 @@ namespace Scumm4
         {
             var var = ReadWord();
             var a = ReadVariable(var);
-            _debugWriter.WriteLine("NotEqualZero {0}({1:X4})!=0 ?", a, var);
             JumpRelative(a != 0);
         }
 
@@ -2715,7 +2688,6 @@ namespace Scumm4
         {
             var var = ReadWord();
             var a = ReadVariable(var);
-            _debugWriter.WriteLine("EqualZero {0}({1:X4})==0 ?", a, var);
             JumpRelative(a == 0);
         }
 
@@ -2825,14 +2797,14 @@ namespace Scumm4
                 case 9:			// SO_LOCK_SCRIPT
                     if (resId < NumGlobalScripts)
                     {
-                        _res.Sounds[resId].Lock = true;
+                        //_res.Sounds[resId].Lock = true;
                     }
                     break;
                 case 10:
                     // TODO: lock Sound
                     break;
                 case 11:		// SO_LOCK_COSTUME
-                    _res.Costumes[resId].Lock = true;
+                    //_res.Costumes[resId].Lock = true;
                     break;
                 case 13:		// SO_UNLOCK_SCRIPT
                     break;
@@ -3633,8 +3605,6 @@ namespace Scumm4
                 _objs[i + 1].flags = roomData.Objects[i].flags;
                 _objs[i + 1].fl_object_index = roomData.Objects[i].fl_object_index;
                 _objs[i + 1].actordir = roomData.Objects[i].actordir;
-                _objs[i + 1].Strips.Clear();
-                _objs[i + 1].Strips.AddRange(roomData.Objects[i].Strips);
                 _objs[i + 1].Scripts.Clear();
                 _objs[i + 1].Image = roomData.Objects[i].Image;
                 foreach (var script in roomData.Objects[i].Scripts)
@@ -3652,7 +3622,6 @@ namespace Scumm4
             {
                 _objs[i].obj_nr = 0;
                 _objs[i].Scripts.Clear();
-                _objs[i].Strips.Clear();
             }
         }
 
@@ -3942,8 +3911,6 @@ namespace Scumm4
         {
             int i;
 
-            _debugWriter.WriteLine("StopScript {0:X4}", script);
-
             if (script == 0)
                 return;
 
@@ -4105,7 +4072,6 @@ namespace Scumm4
         private void ResetScriptPointer()
         {
             _currentPos = (int)_slots[_currentScript].offs;
-            _debugWriter.WriteLine("resetScriptPointer, #{0:X2}, script = {1:X}", _slots[_currentScript].number, _currentScript/*, _currentPos*/);
         }
 
         private byte GetScriptSlotIndex()
@@ -4369,8 +4335,6 @@ namespace Scumm4
 
         public void AbortCutscene()
         {
-            _debugWriter.WriteLine("AbortCutscene");
-
             int idx = cutSceneStackPointer;
 
             var offs = cutScenePtr[idx];
@@ -4443,7 +4407,7 @@ namespace Scumm4
             if (_userPut <= 0 || MouseAndKeyboardStat == 0)
                 return;
 
-            if ((ScummMouseButtonState)MouseAndKeyboardStat < ScummMouseButtonState.MBS_MAX_KEY)
+            if ((ScummMouseButtonState)MouseAndKeyboardStat < ScummMouseButtonState.MaxKey)
             {
                 // Check keypresses
                 var vs = (from verb in _verbs.Skip(1)
@@ -4460,9 +4424,9 @@ namespace Scumm4
                 // Generic keyboard input
                 RunInputScript(ClickArea.Key, MouseAndKeyboardStat, 1);
             }
-            else if ((((ScummMouseButtonState)MouseAndKeyboardStat) & ScummMouseButtonState.MBS_MOUSE_MASK) != 0)
+            else if ((((ScummMouseButtonState)MouseAndKeyboardStat) & ScummMouseButtonState.MouseMask) != 0)
             {
-                byte code = ((((ScummMouseButtonState)MouseAndKeyboardStat) & ScummMouseButtonState.MBS_LEFT_CLICK) != 0) ? (byte)1 : (byte)2;
+                byte code = ((((ScummMouseButtonState)MouseAndKeyboardStat) & ScummMouseButtonState.LeftClick) != 0) ? (byte)1 : (byte)2;
 
                 int mouseX = _variables[VariableMouseX];
                 int mouseY = _variables[VariableMouseY];
@@ -5063,7 +5027,6 @@ namespace Scumm4
             _currentScript = 0xFF;
             if (sentenceScript != 0)
             {
-                _debugWriter.WriteLine("RunSentenceScript: {0:X2}", sentenceScript);
                 RunScript((byte)sentenceScript, false, false, data);
             }
         }
@@ -5273,12 +5236,12 @@ namespace Scumm4
 
                 if (Mouse.LeftButton == MouseButtonState.Pressed)
                 {
-                    MouseAndKeyboardStat = (KeyCode)ScummMouseButtonState.MBS_LEFT_CLICK;
+                    MouseAndKeyboardStat = (KeyCode)ScummMouseButtonState.LeftClick;
                 }
 
                 if (Mouse.RightButton == MouseButtonState.Pressed)
                 {
-                    MouseAndKeyboardStat = (KeyCode)ScummMouseButtonState.MBS_RIGHT_CLICK;
+                    MouseAndKeyboardStat = (KeyCode)ScummMouseButtonState.RightClick;
                 }
 
                 var w = this._gfxManager.Width;
@@ -5350,15 +5313,6 @@ namespace Scumm4
         {
             var delay = TimeSpan.FromMilliseconds(msec_delay);
             DateTime start_time;
-
-            if ((_fastMode & 2) != 0)
-            {
-                msec_delay = 0;
-            }
-            else if ((_fastMode & 1) != 0)
-            {
-                msec_delay = 10;
-            }
 
             start_time = DateTime.Now;
 
@@ -6587,9 +6541,6 @@ namespace Scumm4
 
         private void DrawObject(int obj, int arg)
         {
-            if (_skipDrawObject)
-                return;
-
             ObjectData od = this.Objects[obj];
             int height, width;
 
@@ -7325,9 +7276,7 @@ namespace Scumm4
         /// restoreBackground(), but I'm not yet sure why.
         /// </summary>
         private uint[] _gfxUsageBits;
-        private bool _skipDrawObject;
         private bool _completeScreenRedraw;
-        private int _fastMode;
         private IGraphicsManager _gfxManager;
         private int _palDirtyMin, _palDirtyMax;
         private int _nextLeft, _nextTop;

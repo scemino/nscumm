@@ -24,12 +24,26 @@ namespace Scumm4
             return (0x80 >> (x));
         }
 
+        public static void Swap<T>(ref T a, ref T b)
+        {
+            T tmp = a;
+            a = b;
+            b = tmp;
+        }
+
         public static void AssertRange(int min, int value, int max, string desc)
         {
             if (value < min || value > max)
             {
                 throw new ArgumentOutOfRangeException("value", string.Format("{0} {1} is out of bounds ({2},{3})", desc, value, min, max));
             }
+        }
+
+        public static int OldDirToNewDir(int dir)
+        {
+            if (dir < 0 && dir > 3) throw new ArgumentOutOfRangeException("dir", dir, "Invalid direction");
+            int[] new_dir_table = new int[4] { 270, 90, 180, 0 };
+            return new_dir_table[dir];
         }
 
         public static uint[] ReadUInt32s(this BinaryReader reader, int count)

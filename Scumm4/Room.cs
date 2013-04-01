@@ -15,10 +15,8 @@
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-using System;
+using Scumm4.Graphics;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace Scumm4
 {
@@ -40,6 +38,9 @@ namespace Scumm4
         public List<Box> Boxes { get; private set; }
         public List<byte> BoxMatrix { get; private set; }
         public string Name { get; set; }
+        public byte[] Data { get; set; }
+        public Scale[] Scales { get; set; }
+        public byte TransparentColor { get; set; }
 
         public Room()
         {
@@ -52,10 +53,5 @@ namespace Scumm4
             this.LocalScripts = new ScriptData[1024];
             this.TransparentColor = 255;
         }
-
-        public byte[] Data { get; set; }
-        public Scale[] Scales { get; set; }
-
-        public byte TransparentColor { get; set; }
     }
 }

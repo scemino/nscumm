@@ -15,13 +15,11 @@
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-using System;
-using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text;
-using System.IO;
 using System.Xml.Linq;
-using System.Globalization;
 
 namespace Scumm4
 {
@@ -83,8 +81,8 @@ namespace Scumm4
             using (var md5 = System.Security.Cryptography.MD5.Create())
             {
                 using (var file = File.OpenRead(path))
-                using (var br = new BinaryReader(file))
                 {
+                    var br = new BinaryReader(file);
                     var data = br.ReadBytes(1024 * 1024);
                     var md5Key = md5.ComputeHash(data, 0, data.Length);
                     var md5Text = new StringBuilder();

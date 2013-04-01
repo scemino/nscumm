@@ -62,12 +62,15 @@ namespace NScumm
 
         public void SetPalette(Color[] colors)
         {
-            _colors = colors;
-            this.Dispatcher.Invoke(new Action(() =>
+            if (colors.Length > 0)
             {
-                _bmp = new WriteableBitmap(320, 200, 96, 96, PixelFormats.Indexed8, new BitmapPalette(colors));
-                _elt.Source = _bmp;
-            }));
+                _colors = colors;
+                this.Dispatcher.Invoke(new Action(() =>
+                {
+                    _bmp = new WriteableBitmap(320, 200, 96, 96, PixelFormats.Indexed8, new BitmapPalette(colors));
+                    _elt.Source = _bmp;
+                }));
+            }
         }
 
         public Scumm4.Point GetMousePosition()

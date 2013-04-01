@@ -32,7 +32,7 @@ namespace NScumm
     {
         #region Fields
         private ScummIndex _index;
-        private ScummEngine _interpreter;
+        private ScummEngine _engine;
         private Thread _thread;
         #endregion
 
@@ -48,22 +48,30 @@ namespace NScumm
             _index.GetCharset(4);
 
             var gfx = new WpfGraphicsManager(_screen);
-            _interpreter = new ScummEngine(_index, gfx);
+            _engine = new ScummEngine(_index, gfx);
+            _engine.ShowMenuDialogRequested += OnShowMenuDialogRequested;
 
             _thread = new Thread(new ThreadStart(() =>
             {
-                _interpreter.Go();
+                _engine.Go();
             }));
             _thread.IsBackground = true;
             _thread.Start();
         }
 
+        private void OnShowMenuDialogRequested(object sender, EventArgs e)
+        {
+            MenuDialog dlg = new MenuDialog();
+            dlg.Engine = _engine;
+            dlg.Owner = this;
+            dlg.ShowDialog();
+        }
+
         protected override void OnClosed(EventArgs e)
         {
-            _interpreter.HastToQuit = true;
+            _engine.HastToQuit = true;
             base.OnClosed(e);
         }
-    }   
-
+    }
 }
 

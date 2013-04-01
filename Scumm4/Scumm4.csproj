@@ -57,6 +57,7 @@
     <Compile Include="ClassicCostumeLoader.cs" />
     <Compile Include="ClassicCostumeRenderer.cs" />
     <Compile Include="ClickArea.cs" />
+    <Compile Include="ColorCycle.cs" />
     <Compile Include="ConversionException.cs" />
     <Compile Include="Costume.cs" />
     <Compile Include="CostumeAnimation.cs" />
@@ -82,12 +83,14 @@
     <Compile Include="Resource.cs" />
     <Compile Include="ResourceManager.cs" />
     <Compile Include="Room.cs" />
+    <Compile Include="ScaleSlot.cs" />
     <Compile Include="ScriptSlot.cs" />
     <Compile Include="ScummHelper.cs" />
     <Compile Include="ScummIndex.cs" />
     <Compile Include="ScummEngine.cs" />
     <Compile Include="ScummMouseButtonState.cs" />
     <Compile Include="Sentence.cs" />
+    <Compile Include="Serializer.cs" />
     <Compile Include="TextSlot.cs" />
     <Compile Include="VerbSlot.cs" />
     <Compile Include="VirtScreen.cs" />

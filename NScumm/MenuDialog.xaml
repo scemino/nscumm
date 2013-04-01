@@ -1,0 +1,15 @@
+﻿<Window x:Class="NScumm.MenuDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        WindowStartupLocation="CenterOwner"
+        Title="Menu" Height="129" Width="205" ResizeMode="NoResize">
+    <Window.Resources>
+        <Style TargetType="Button">
+            <Setter Property="Margin" Value="10" />
+        </Style>
+    </Window.Resources>
+    <StackPanel Margin="10">
+        <Button Content="Load" Click="OnLoadClick" />
+        <Button Content="Quit" Click="OnQuitClick" />
+    </StackPanel>
+</Window>

@@ -67,5 +67,30 @@ namespace Scumm4
         {
             CopyFrom(_default);
         }
+
+        public void Load(System.IO.BinaryReader reader, uint version)
+        {
+            var stringTabEntries = new[]{
+                    LoadAndSaveEntry.Create(()=> xpos = reader.ReadInt16(),8),
+                    LoadAndSaveEntry.Create(()=> _default.xpos = reader.ReadInt16(),8),
+                    LoadAndSaveEntry.Create(()=> ypos = reader.ReadInt16(),8),
+                    LoadAndSaveEntry.Create(()=> _default.ypos = reader.ReadInt16(),8),
+                    LoadAndSaveEntry.Create(()=> right= reader.ReadInt16(),8),
+                    LoadAndSaveEntry.Create(()=> _default.right= reader.ReadInt16(),8),
+                    LoadAndSaveEntry.Create(()=> color= reader.ReadByte(),8),
+                    LoadAndSaveEntry.Create(()=> _default.color= reader.ReadByte(),8),
+                    LoadAndSaveEntry.Create(()=> charset= reader.ReadByte(),8),
+                    LoadAndSaveEntry.Create(()=> _default.charset= reader.ReadByte(),8),
+                    LoadAndSaveEntry.Create(()=> center = reader.ReadBoolean(),8),
+                    LoadAndSaveEntry.Create(()=> _default.center = reader.ReadBoolean(),8),
+                    LoadAndSaveEntry.Create(()=> overhead = reader.ReadBoolean(),8),
+                    LoadAndSaveEntry.Create(()=> _default.overhead = reader.ReadBoolean(),8),
+                    LoadAndSaveEntry.Create(()=> no_talk_anim = reader.ReadBoolean(),8),
+                    LoadAndSaveEntry.Create(()=> _default.no_talk_anim = reader.ReadBoolean(),8),
+                    LoadAndSaveEntry.Create(()=> wrapping = reader.ReadBoolean(),71),
+                    LoadAndSaveEntry.Create(()=> _default.wrapping = reader.ReadBoolean(),71)
+             };
+            Array.ForEach(stringTabEntries, e => e.Execute(version));
+        }
     }
 }

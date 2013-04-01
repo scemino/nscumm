@@ -219,6 +219,7 @@ namespace Scumm4
 
         public virtual void InitActor(int mode)
         {
+            this.Name = null;
             if (mode == -1)
             {
                 _top = _bottom = 0;
@@ -1624,6 +1625,133 @@ namespace Scumm4
                 _forceClip = value ? 1 : 0;
             if (cls == ObjectClass.IgnoreBoxes)
                 _ignoreBoxes = value;
+        }
+
+        public void Load(System.IO.BinaryReader reader, uint version)
+        {
+            short heOffsX, heOffsY;
+            ushort[] sound;
+            byte drawToBackBuf;
+            byte heSkipLimbs;
+            byte mask;
+            uint heCondMask, hePaletteNum, heXmapNum;
+            int layer;
+            ushort[] heJumpOffsetTable, heJumpCountTable;
+            uint[] heCondMaskTable;
+
+            var actorEntries = new[]{
+                    LoadAndSaveEntry.Create(()=> _pos.X = reader.ReadInt16(),8),
+                    LoadAndSaveEntry.Create(()=> _pos.Y = reader.ReadInt16(),8),
+
+                    LoadAndSaveEntry.Create(()=> heOffsX = reader.ReadInt16(),32),
+                    LoadAndSaveEntry.Create(()=> heOffsY = reader.ReadInt16(),32),
+                    LoadAndSaveEntry.Create(()=> _top = reader.ReadInt16(),8),
+                    LoadAndSaveEntry.Create(()=> _bottom = reader.ReadInt16(),8),
+                    LoadAndSaveEntry.Create(()=> _elevation = reader.ReadInt16(),8),
+                    LoadAndSaveEntry.Create(()=> _width = reader.ReadUInt16(),8),
+                    LoadAndSaveEntry.Create(()=> _facing = reader.ReadUInt16(),8),
+                    LoadAndSaveEntry.Create(()=> _costume = reader.ReadUInt16(),8),
+                    LoadAndSaveEntry.Create(()=> _room = reader.ReadByte(),8),
+                    LoadAndSaveEntry.Create(()=> _talkColor = reader.ReadByte(),8),
+                    LoadAndSaveEntry.Create(()=> _talkFrequency = reader.ReadInt16(),16),
+                    LoadAndSaveEntry.Create(()=> _talkPan = (byte)reader.ReadInt16(),24),
+                    LoadAndSaveEntry.Create(()=> _talkVolume = (byte)reader.ReadInt16(),29),
+                    LoadAndSaveEntry.Create(()=> _boxscale = reader.ReadUInt16(),34),
+                    LoadAndSaveEntry.Create(()=> _scalex = reader.ReadByte(),8),
+                    LoadAndSaveEntry.Create(()=> _scaley = reader.ReadByte(),8),
+                    LoadAndSaveEntry.Create(()=> _charset = reader.ReadByte(),8),
+		            
+                    // Actor sound grew from 8 to 32 bytes and switched to uint16 in HE games
+                    LoadAndSaveEntry.Create(()=> sound = reader.ReadBytes(8).Cast<ushort>().ToArray(),8,36),
+                    LoadAndSaveEntry.Create(()=> sound = reader.ReadBytes(32).Cast<ushort>().ToArray(),37,61),
+                    LoadAndSaveEntry.Create(()=> sound = reader.ReadUInt16s(32),62),
+                    
+                    // Actor animVariable grew from 8 to 27
+                    LoadAndSaveEntry.Create(()=> _animVariable = reader.ReadInt16s(8),8,40),
+                    LoadAndSaveEntry.Create(()=> _animVariable = reader.ReadInt16s(27),41),
+
+                    LoadAndSaveEntry.Create(()=> _targetFacing = reader.ReadUInt16(),8),
+                    LoadAndSaveEntry.Create(()=> _moving = (MoveFlags)reader.ReadByte(),8),
+                    LoadAndSaveEntry.Create(()=> _ignoreBoxes = reader.ReadByte()!=0,8),
+                    LoadAndSaveEntry.Create(()=> _forceClip = reader.ReadByte(),8),
+                    LoadAndSaveEntry.Create(()=> _initFrame = reader.ReadByte(),8),
+                    LoadAndSaveEntry.Create(()=> _walkFrame = reader.ReadByte(),8),
+                    LoadAndSaveEntry.Create(()=> _standFrame = reader.ReadByte(),8),
+                    LoadAndSaveEntry.Create(()=> _talkStartFrame = reader.ReadByte(),8),
+                    LoadAndSaveEntry.Create(()=> _talkStopFrame = reader.ReadByte(),8),
+                    LoadAndSaveEntry.Create(()=> _speedx = reader.ReadUInt16(),8),
+                    LoadAndSaveEntry.Create(()=> _speedy = reader.ReadUInt16(),8),
+                    LoadAndSaveEntry.Create(()=> _cost.animCounter = reader.ReadUInt16(),8),
+                    LoadAndSaveEntry.Create(()=> _cost.soundCounter = reader.ReadByte(),8),
+                    LoadAndSaveEntry.Create(()=> drawToBackBuf = reader.ReadByte(),32),
+                    LoadAndSaveEntry.Create(()=> _flip = reader.ReadByte()!=0,32),
+                    LoadAndSaveEntry.Create(()=> heSkipLimbs = reader.ReadByte(),32),
+
+		            // Actor palette grew from 64 to 256 bytes and switched to uint16 in HE games
+                    LoadAndSaveEntry.Create(()=> _palette = reader.ReadBytes(64).Cast<ushort>().ToArray(),8,9),
+                    LoadAndSaveEntry.Create(()=> _palette = reader.ReadBytes(256).Cast<ushort>().ToArray(),10,79),
+                    LoadAndSaveEntry.Create(()=> _palette = reader.ReadUInt16s(256),80),
+
+                    LoadAndSaveEntry.Create(()=> mask = reader.ReadByte(),8,9),
+                    LoadAndSaveEntry.Create(()=> _shadowMode = reader.ReadByte(),8),
+                    LoadAndSaveEntry.Create(()=> _visible = reader.ReadByte()!=0,8),
+                    LoadAndSaveEntry.Create(()=> _frame = reader.ReadByte(),8),
+                    LoadAndSaveEntry.Create(()=> _animSpeed = reader.ReadByte(),8),
+                    LoadAndSaveEntry.Create(()=> _animProgress = reader.ReadByte(),8),
+                    LoadAndSaveEntry.Create(()=> _walkbox = reader.ReadByte(),8),
+                    LoadAndSaveEntry.Create(()=> _needRedraw = reader.ReadByte()!=0,8),
+                    LoadAndSaveEntry.Create(()=> _needBgReset = reader.ReadByte()!=0,8),
+                    LoadAndSaveEntry.Create(()=> _costumeNeedsInit = reader.ReadByte()!=0,8),
+                    LoadAndSaveEntry.Create(()=> heCondMask = reader.ReadUInt32(),38),
+                    LoadAndSaveEntry.Create(()=> hePaletteNum = reader.ReadUInt32(),59),
+                    LoadAndSaveEntry.Create(()=> heXmapNum = reader.ReadUInt32(),59),
+
+                    LoadAndSaveEntry.Create(()=> _talkPosX = reader.ReadInt16(),8),
+                    LoadAndSaveEntry.Create(()=> _talkPosY = reader.ReadInt16(),8),
+                    LoadAndSaveEntry.Create(()=> _ignoreTurns = reader.ReadByte()!=0,8),
+
+                    // Actor layer switched to int32 in HE games
+                    LoadAndSaveEntry.Create(()=> layer = reader.ReadByte(),8,57),
+                    LoadAndSaveEntry.Create(()=> layer = reader.ReadInt32(),58),
+
+                    LoadAndSaveEntry.Create(()=> _talkScript = reader.ReadUInt16(),8),
+                    LoadAndSaveEntry.Create(()=> _walkScript = reader.ReadUInt16(),8),
+
+                    LoadAndSaveEntry.Create(()=> _walkdata.dest.X = reader.ReadInt16(),8),
+                    LoadAndSaveEntry.Create(()=> _walkdata.dest.Y = reader.ReadInt16(),8),
+                    LoadAndSaveEntry.Create(()=> _walkdata.destbox = reader.ReadByte(),8),
+                    LoadAndSaveEntry.Create(()=> _walkdata.destdir = reader.ReadInt16(),8),
+                    LoadAndSaveEntry.Create(()=> _walkdata.curbox = reader.ReadByte(),8),
+                    LoadAndSaveEntry.Create(()=> _walkdata.cur.X = reader.ReadInt16(),8),
+                    LoadAndSaveEntry.Create(()=> _walkdata.cur.Y = reader.ReadInt16(),8),
+                    LoadAndSaveEntry.Create(()=> _walkdata.next.X = reader.ReadInt16(),8),
+                    LoadAndSaveEntry.Create(()=> _walkdata.next.Y = reader.ReadInt16(),8),
+                    LoadAndSaveEntry.Create(()=> _walkdata.deltaXFactor = reader.ReadInt32(),8),
+                    LoadAndSaveEntry.Create(()=> _walkdata.deltaYFactor = reader.ReadInt32(),8),
+                    LoadAndSaveEntry.Create(()=> _walkdata.xfrac = reader.ReadUInt16(),8),
+                    LoadAndSaveEntry.Create(()=> _walkdata.yfrac = reader.ReadUInt16(),8),
+
+                    LoadAndSaveEntry.Create(()=> _walkdata.point3.X = reader.ReadInt16(),42),
+                    LoadAndSaveEntry.Create(()=> _walkdata.point3.Y = reader.ReadInt16(),42),
+
+                    LoadAndSaveEntry.Create(()=> _cost.active = reader.ReadBytes(16),8),
+                    LoadAndSaveEntry.Create(()=> _cost.stopped = reader.ReadUInt16(),8),
+                    LoadAndSaveEntry.Create(()=> _cost.curpos = reader.ReadUInt16s(16),8),
+                    LoadAndSaveEntry.Create(()=> _cost.start = reader.ReadUInt16s(16),8),
+                    LoadAndSaveEntry.Create(()=> _cost.end = reader.ReadUInt16s(16),8),
+                    LoadAndSaveEntry.Create(()=> _cost.frame = reader.ReadUInt16s(16),8),
+
+                    LoadAndSaveEntry.Create(()=> heJumpOffsetTable = reader.ReadUInt16s(16),65),
+                    LoadAndSaveEntry.Create(()=> heJumpCountTable = reader.ReadUInt16s(16),65),
+                    LoadAndSaveEntry.Create(()=> heCondMaskTable = reader.ReadUInt32s(16),65),
+            };
+
+            // Not all actor data is saved; so when loading, we first reset
+            // the actor, to ensure completely reproducible behavior (else,
+            // some not saved value in the actor class can cause odd things)
+            InitActor(-1);
+
+            Array.ForEach(actorEntries, e => e.Execute(version));
         }
     }
 }

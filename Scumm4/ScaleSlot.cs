@@ -17,29 +17,28 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 
 namespace Scumm4
 {
-    class Sentence
+    public class ScaleSlot
     {
-        public byte verb;
-        public byte preposition;
-        public ushort objectA;
-        public ushort objectB;
-        public byte freezeCount;
+        public int x1, y1, scale1;
+        public int x2, y2, scale2;
 
-        public void Load(System.IO.BinaryReader reader, uint version)
+        public void Load(BinaryReader reader, uint version)
         {
-             var actorEntries = new[]{
-                    LoadAndSaveEntry.Create(()=> verb = reader.ReadByte(),8),
-                    LoadAndSaveEntry.Create(()=> preposition = reader.ReadByte(),8),
-                    LoadAndSaveEntry.Create(()=> objectA = reader.ReadUInt16(),8),
-                    LoadAndSaveEntry.Create(()=> objectB = reader.ReadUInt16(),8),
-                    LoadAndSaveEntry.Create(()=> freezeCount = reader.ReadByte(),8),
+            var scaleSlotsEntries = new[]{
+                    LoadAndSaveEntry.Create(()=> x1 = reader.ReadInt16(),13),
+                    LoadAndSaveEntry.Create(()=> y1 = reader.ReadInt16(),13),
+                    LoadAndSaveEntry.Create(()=> scale1 = reader.ReadInt16(),13),
+                    LoadAndSaveEntry.Create(()=> x2 = reader.ReadInt16(),13),
+                    LoadAndSaveEntry.Create(()=> y2 = reader.ReadInt16(),13),
+                    LoadAndSaveEntry.Create(()=> scale2 = reader.ReadInt16(),13),
              };
-             Array.ForEach(actorEntries, e => e.Execute(version));
+            Array.ForEach(scaleSlotsEntries, e => e.Execute(version));
         }
     }
 }

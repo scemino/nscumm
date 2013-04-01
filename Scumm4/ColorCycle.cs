@@ -22,24 +22,24 @@ using System.Text;
 
 namespace Scumm4
 {
-    class Sentence
+    class ColorCycle
     {
-        public byte verb;
-        public byte preposition;
-        public ushort objectA;
-        public ushort objectB;
-        public byte freezeCount;
+        public ushort delay;
+        public ushort counter;
+        public ushort flags;
+        public byte start;
+        public byte end;
 
         public void Load(System.IO.BinaryReader reader, uint version)
         {
-             var actorEntries = new[]{
-                    LoadAndSaveEntry.Create(()=> verb = reader.ReadByte(),8),
-                    LoadAndSaveEntry.Create(()=> preposition = reader.ReadByte(),8),
-                    LoadAndSaveEntry.Create(()=> objectA = reader.ReadUInt16(),8),
-                    LoadAndSaveEntry.Create(()=> objectB = reader.ReadUInt16(),8),
-                    LoadAndSaveEntry.Create(()=> freezeCount = reader.ReadByte(),8),
+            var colorCycleEntries = new[]{
+                    LoadAndSaveEntry.Create(()=> delay = reader.ReadUInt16(),8),
+                    LoadAndSaveEntry.Create(()=> counter = reader.ReadUInt16(),8),
+                    LoadAndSaveEntry.Create(()=> flags = reader.ReadUInt16(),8),
+                    LoadAndSaveEntry.Create(()=> start = reader.ReadByte(),8),
+                    LoadAndSaveEntry.Create(()=> end = reader.ReadByte(),8),
              };
-             Array.ForEach(actorEntries, e => e.Execute(version));
+            Array.ForEach(colorCycleEntries, e => e.Execute(version));
         }
     }
 }

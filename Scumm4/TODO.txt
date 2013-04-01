@@ -1,7 +1,6 @@
 ﻿cursor
-inventory
-load and save games
-room effects
+save games
+room effects: DissolveEffect, ScrollEffect
 color cycle
 clean code
 music

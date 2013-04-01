@@ -17,6 +17,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -39,7 +40,7 @@ namespace Scumm4
         FLObject = 4
     }
 
-    public struct ScriptSlot
+    public class ScriptSlot
     {
         public uint offs;
         public int delay;
@@ -53,5 +54,27 @@ namespace Scumm4
         public byte cutsceneOverride;
         public int InventoryEntry { get; set; }
         public bool Frozen { get; set; }
+
+        public void Load(BinaryReader reader, uint version)
+        {
+            byte cycle;
+            byte unk5;
+            var scriptSlotEntries = new[]{
+                LoadAndSaveEntry.Create(()=> offs = reader.ReadUInt32(),8),
+                LoadAndSaveEntry.Create(()=> delay = reader.ReadInt32(),8),
+                LoadAndSaveEntry.Create(()=> number = reader.ReadUInt16(),8),
+                LoadAndSaveEntry.Create(()=> delayFrameCount = reader.ReadUInt16(),8),
+                LoadAndSaveEntry.Create(()=> status = (ScriptStatus)reader.ReadByte(),8),
+                LoadAndSaveEntry.Create(()=> where = (WhereIsObject)reader.ReadByte(),8),
+                LoadAndSaveEntry.Create(()=> freezeResistant = reader.ReadBoolean(),8),
+                LoadAndSaveEntry.Create(()=> recursive = reader.ReadBoolean(),8),
+                LoadAndSaveEntry.Create(()=> freezeCount = reader.ReadByte(),8),
+                LoadAndSaveEntry.Create(()=> didexec = reader.ReadBoolean(),8),
+                LoadAndSaveEntry.Create(()=> cutsceneOverride = reader.ReadByte(),8),
+                LoadAndSaveEntry.Create(()=> cycle = reader.ReadByte(),46),
+                LoadAndSaveEntry.Create(()=> unk5 = reader.ReadByte(),8,10),
+            };
+            Array.ForEach(scriptSlotEntries, e => e.Execute(version));
+        }
     }
 }

@@ -233,6 +233,7 @@ namespace Scumm4
 
         private CharsetRenderer _charset;
         private const byte CharsetMaskTransparency = 0xFD;
+        private GameInfo _game;
         #endregion
 
         #region Properties
@@ -282,12 +283,18 @@ namespace Scumm4
         {
             get { return _mainVirtScreen; }
         }
+
+        public GameInfo Game
+        {
+            get { return _game; }
+        }
         #endregion
 
         #region Constructor
-        public ScummEngine(ScummIndex index, IGraphicsManager gfxManager)
+        public ScummEngine(ScummIndex index, GameInfo game, IGraphicsManager gfxManager)
         {
             _scumm = index;
+            _game = game;
             _gfxManager = gfxManager;
             _directory = _scumm.Directory;
             _strings = new byte[NumArray][];
@@ -340,11 +347,28 @@ namespace Scumm4
             _composite = new Surface(_screenWidth, _screenHeight, PixelFormat.Indexed8, false);
             InitActors();
             InitOpCodes();
+
+            if (_game.Features.HasFlag(GameFeatures.SixteenColors))
+            {
+                for (int i = 0; i < 16; i++)
+                {
+                    _currentPalette.Colors[i] = Color.FromRgb(tableEGAPalette[i * 3], tableEGAPalette[i * 3 + 1], tableEGAPalette[i * 3 + 2]);
+                }
+            }
+
             for (int i = 0; i < 256; i++)
                 _roomPalette[i] = (byte)i;
+
             InitializeVerbs();
             InitVariables();
         }
+
+        static byte[] tableEGAPalette = new byte[]{
+		    0x00, 0x00, 0x00, 	0x00, 0x00, 0xAA, 	0x00, 0xAA, 0x00, 	0x00, 0xAA, 0xAA,
+		    0xAA, 0x00, 0x00, 	0xAA, 0x00, 0xAA, 	0xAA, 0x55, 0x00, 	0xAA, 0xAA, 0xAA,
+		    0x55, 0x55, 0x55, 	0x55, 0x55, 0xFF, 	0x55, 0xFF, 0x55, 	0x55, 0xFF, 0xFF,
+		    0xFF, 0x55, 0x55, 	0xFF, 0x55, 0xFF, 	0xFF, 0xFF, 0x55, 	0xFF, 0xFF, 0xFF
+        };
 
         private void InitializeVerbs()
         {
@@ -398,7 +422,10 @@ namespace Scumm4
             // Setup light
             _variables[VariableCurrentLights] = (int)(LightModes.ActorUseBasePalette | LightModes.ActorUseColors | LightModes.RoomLightsOn);
 
-            _variables[74] = 1225;
+            if (_game.Id == "monkey")
+            {
+                _variables[74] = 1225;
+            }
         }
 
         #endregion
@@ -2133,9 +2160,10 @@ namespace Scumm4
 
         private void InitScreens(int b, int h)
         {
-            _mainVirtScreen = new VirtScreen(b, _screenWidth, h - b, PixelFormat.Indexed8, 2, true) { TopLine = b };
-            _textVirtScreen = new VirtScreen(0, _screenWidth, b, PixelFormat.Indexed8, 1) { TopLine = 0 };
-            _verbVirtScreen = new VirtScreen(h, _screenWidth, _screenHeight - h, PixelFormat.Indexed8, 1) { TopLine = h };
+            var format = PixelFormat.Indexed8;
+            _mainVirtScreen = new VirtScreen(b, _screenWidth, h - b, format, 2, true) { TopLine = b };
+            _textVirtScreen = new VirtScreen(0, _screenWidth, b, format, 1) { TopLine = 0 };
+            _verbVirtScreen = new VirtScreen(h, _screenWidth, _screenHeight - h, format, 1) { TopLine = h };
             _gdi.Init();
         }
 
@@ -2282,10 +2310,12 @@ namespace Scumm4
 
             // Copy protection was disabled in KIXX XL release (Amiga Disk) and
             // in LucasArts Classic Adventures (PC Disk)
-            if (script != 0x98)
+            if (_game.Id == "monkey" && script == 0x98)
             {
-                RunScript((byte)script, (op & 0x20) != 0, (op & 0x40) != 0, data);
+                return;
             }
+
+            RunScript((byte)script, (op & 0x20) != 0, (op & 0x40) != 0, data);
         }
 
         private void Move()
@@ -2387,7 +2417,7 @@ namespace Scumm4
                     // Hopefully it's safe to do it at this point, at least.
                     MainVirtScreen.SetDirtyRange(0, 0);
                     //TransitionEffect(effect - 1);
-                    throw new NotImplementedException();
+                    //throw new NotImplementedException();
                     break;
                 case 128:
                     UnkScreenEffect6();
@@ -2447,9 +2477,9 @@ namespace Scumm4
                     //case 6:
                     //    transitionEffect(effect - 1);
                     //    break;
-                    //case 128:
-                    //    unkScreenEffect6();
-                    //    break;
+                    case 128:
+                        // TODO:unkScreenEffect6();
+                        break;
                     case 129:
                         // Just blit screen 0 to the display (i.e. display will be black)
                         _mainVirtScreen.SetDirtyRange(0, _mainVirtScreen.Height);
@@ -2794,6 +2824,11 @@ namespace Scumm4
                 case 4: // load room
                     // TODO:
                     break;
+                case 5:			// SO_NUKE_SCRIPT
+                case 6:			// SO_NUKE_SOUND
+                case 7:			// SO_NUKE_COSTUME
+                case 8:			// SO_NUKE_ROOM
+                    break;
                 case 9:			// SO_LOCK_SCRIPT
                     if (resId < NumGlobalScripts)
                     {
@@ -2805,6 +2840,12 @@ namespace Scumm4
                     break;
                 case 11:		// SO_LOCK_COSTUME
                     //_res.Costumes[resId].Lock = true;
+                    break;
+                case 12:		// SO_LOCK_ROOM
+                    // TODO:
+                    // if (resid > 0x7F)
+                    //    resid = _resourceMapper[resid & 0x7F];
+                    //_res->lock(rtRoom, resid);
                     break;
                 case 13:		// SO_UNLOCK_SCRIPT
                     break;
@@ -3064,6 +3105,9 @@ namespace Scumm4
                     case 7:
                         // SO_VERB_OFF
                         vs.curmode = 0;
+                        break;
+                    case 8:		// SO_VERB_DELETE
+                        KillVerb(slot);
                         break;
                     case 9:
                         {
@@ -3551,9 +3595,9 @@ namespace Scumm4
             ClearRoomObjects();
 
             roomData = _scumm.GetRoom(_roomResource);
-            if (roomData != null)
+            if (roomData != null && roomData.HasPalette)
             {
-                _gfxManager.SetPalette(roomData.Palette.Colors.ToArray());
+                Array.Copy(roomData.Palette.Colors, _currentPalette.Colors, roomData.Palette.Colors.Length);
             }
 
             if (_currentRoom == 0)
@@ -5440,6 +5484,7 @@ namespace Scumm4
 
             /* show or hide mouse */
             //CursorMan.showMouse(_cursor.state > 0);
+            _gfxManager.ShowCursor(_cursor.State > 0);
         }
 
         #region Save & Load
@@ -6083,10 +6128,10 @@ namespace Scumm4
                 MainVirtScreen.SetDirtyRange(0, MainVirtScreen.Height);
                 UpdateDirtyScreen(MainVirtScreen);
                 //UpdatePalette();
-                var colors = new System.Windows.Media.Color[256];
+                var colors = new Color[256];
                 for (int i = 0; i < 256; i++)
                 {
-                    colors[i] = System.Windows.Media.Color.FromRgb(currentPalette[i * 3], currentPalette[i * 3 + 1], currentPalette[i * 3 + 2]);
+                    colors[i] = Color.FromRgb(currentPalette[i * 3], currentPalette[i * 3 + 1], currentPalette[i * 3 + 2]);
                 }
                 this._gfxManager.SetPalette(colors);
                 InitScreens(sb, sh);
@@ -6899,9 +6944,19 @@ namespace Scumm4
         }
         #endregion
 
+        Palette _currentPalette = new Palette();
         private void UpdatePalette()
         {
-            //throw new NotImplementedException();
+            if (_palDirtyMax == -1)
+                return;
+
+            int first = _palDirtyMin;
+            int num = _palDirtyMax - first + 1;
+
+            _palDirtyMax = -1;
+            _palDirtyMin = 256;
+
+            _gfxManager.SetPalette(_currentPalette.Colors, first, num);
         }
 
         private void HandleEffects()
@@ -7010,14 +7065,17 @@ namespace Scumm4
         /// </summary>
         private void RedrawBGAreas()
         {
-            // Starting with V4 games (with the exception of the PASS demo), text
-            // is drawn over the game graphics (as  opposed to be drawn in a
-            // separate region of the screen). So, when scrolling in one of these
-            // games (pre-new camera system), if actor text is visible (as indicated
-            // by the _hasMask flag), we first remove it before proceeding.
-            if (_camera._cur.X != _camera._last.X && _charset._hasMask)
+            if (_game.Id != "pass" && _game.Version >= 4 && _game.Version <= 6)
             {
-                StopTalk();
+                // Starting with V4 games (with the exception of the PASS demo), text
+                // is drawn over the game graphics (as  opposed to be drawn in a
+                // separate region of the screen). So, when scrolling in one of these
+                // games (pre-new camera system), if actor text is visible (as indicated
+                // by the _hasMask flag), we first remove it before proceeding.
+                if (_camera._cur.X != _camera._last.X && _charset._hasMask)
+                {
+                    StopTalk();
+                }
             }
 
             // Redraw parts of the background which are marked as dirty.
@@ -7178,28 +7236,58 @@ namespace Scumm4
             var txtNav = new PixelNavigator(_textSurface);
             int m = _textSurfaceMultiplier;
             txtNav.GoTo(x * m, y * m);
-            for (int h = 0; h < height; h++)
+
+            if (vs.BytesPerPixel == 2)
             {
-                for (int w = 0; w < width; w++)
+                for (int h = 0; h < height; h++)
                 {
-                    var txtPixel = txtNav.Read();
-                    byte pixel;
-                    if (txtPixel != 0xFD)
+                    for (int w = 0; w < width; w++)
                     {
-                        pixel = txtPixel;
+                        var txtPixel = txtNav.ReadUInt16();
+                        ushort pixel;
+                        if (txtPixel != 0xFDFD)
+                        {
+                            pixel = txtPixel;
+                        }
+                        else
+                        {
+                            pixel = vsNav.ReadUInt16();
+                        }
+                        compNav.WriteUInt16(pixel);
+                        compNav.OffsetX(1);
+                        txtNav.OffsetX(1);
+                        vsNav.OffsetX(1);
                     }
-                    else
-                    {
-                        pixel = vsNav.Read();
-                    }
-                    compNav.Write(pixel);
-                    compNav.OffsetX(1);
-                    txtNav.OffsetX(1);
-                    vsNav.OffsetX(1);
+                    compNav.Offset(-width, 1);
+                    txtNav.Offset(-width, 1);
+                    vsNav.Offset(-width, 1);
                 }
-                compNav.Offset(-width, 1);
-                txtNav.Offset(-width, 1);
-                vsNav.Offset(-width, 1);
+            }
+            else
+            {
+                for (int h = 0; h < height; h++)
+                {
+                    for (int w = 0; w < width; w++)
+                    {
+                        var txtPixel = txtNav.Read();
+                        byte pixel;
+                        if (txtPixel != 0xFD)
+                        {
+                            pixel = txtPixel;
+                        }
+                        else
+                        {
+                            pixel = vsNav.Read();
+                        }
+                        compNav.Write(pixel);
+                        compNav.OffsetX(1);
+                        txtNav.OffsetX(1);
+                        vsNav.OffsetX(1);
+                    }
+                    compNav.Offset(-width, 1);
+                    txtNav.Offset(-width, 1);
+                    vsNav.Offset(-width, 1);
+                }
             }
 
             var src = _composite.Pixels;

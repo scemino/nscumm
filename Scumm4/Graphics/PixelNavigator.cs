@@ -53,6 +53,11 @@ namespace Scumm4.Graphics
             _offset = _startOffset + y * _pitch + x * _bytesByPixel;
         }
 
+        public void GoToIgnoreBytesByPixel(int x, int y)
+        {
+            _offset = _startOffset + y * _pitch + x;
+        }
+
         public void OffsetX(int x)
         {
             _offset += x * _bytesByPixel;
@@ -73,9 +78,22 @@ namespace Scumm4.Graphics
             _pixels[_offset] = data;
         }
 
+        public void WriteUInt16(ushort data)
+        {
+            _pixels[_offset] = (byte)(data >> 8);
+            _pixels[_offset + 1] = (byte)(data & 0x00FF);
+        }
+
         public byte Read()
         {
             return _pixels[_offset];
+        }
+
+        public ushort ReadUInt16()
+        {
+            ushort data = _pixels[_offset];
+            data = (ushort)(data << 8 | _pixels[_offset + 1]);
+            return data;
         }
     }
 }

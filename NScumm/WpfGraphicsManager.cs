@@ -26,28 +26,34 @@ using System.Windows.Threading;
 
 namespace NScumm
 {
-    public class WpfGraphicsManager : DispatcherObject, IGraphicsManager
+    internal sealed class WpfGraphicsManager : DispatcherObject, IGraphicsManager
     {
+        #region Fields
         private Image _elt;
         private WriteableBitmap _bmp;
-        private Color[] _colors;
+        private Scumm4.Graphics.PixelFormat _format;
+        private byte[] _pixels;
+        private System.Windows.Media.Color[] _colors;
+        private bool _showCursor;
+        private bool _updatePalette;
+        #endregion
 
-        public WpfGraphicsManager(Image elt)
+        #region Constructor
+        public WpfGraphicsManager(Image elt, Scumm4.Graphics.PixelFormat format)
         {
-            _colors = new Color[256];
-            _bmp = new WriteableBitmap(320, 200, 96, 96, PixelFormats.Indexed8, new BitmapPalette(_colors));
+            _format = format;
+            _colors = new System.Windows.Media.Color[256];
+            _pixels = new byte[320 * 200];
+            _updatePalette = true;
             _elt = elt;
             this.Width = _elt.ActualWidth;
             this.Height = _elt.ActualHeight;
+
             _elt.SizeChanged += OnSizeChanged;
         }
+        #endregion
 
-        private void OnSizeChanged(object sender, SizeChangedEventArgs e)
-        {
-            this.Width = _elt.ActualWidth;
-            this.Height = _elt.ActualHeight;
-        }
-
+        #region Properties
         public double Width
         {
             get;
@@ -59,20 +65,30 @@ namespace NScumm
             get;
             private set;
         }
+        #endregion
 
-        public void SetPalette(Color[] colors)
+        #region Palette Methods
+        public void SetPalette(Scumm4.Graphics.Color[] colors)
         {
             if (colors.Length > 0)
             {
-                _colors = colors;
-                this.Dispatcher.Invoke(new Action(() =>
-                {
-                    _bmp = new WriteableBitmap(320, 200, 96, 96, PixelFormats.Indexed8, new BitmapPalette(colors));
-                    _elt.Source = _bmp;
-                }));
+                SetPalette(colors, 0, colors.Length);
             }
         }
 
+        public void SetPalette(Scumm4.Graphics.Color[] colors, int first, int num)
+        {
+            for (int i = 0; i < num; i++)
+            {
+                var color = colors[i + first];
+                _colors[i + first] = System.Windows.Media.Color.FromRgb(color.R, color.G, color.B);
+            }
+            _updatePalette = true;
+        }
+        #endregion
+
+        #region Input Methods
+        // TODO: move this elsewhere
         public Scumm4.Point GetMousePosition()
         {
             if (this.Dispatcher.HasShutdownStarted) return new Scumm4.Point();
@@ -82,53 +98,103 @@ namespace NScumm
                 return new Scumm4.Point((short)pos.X, (short)pos.Y);
             }));
         }
+        #endregion
 
+        #region Screen Methods
         public void UpdateScreen()
         {
-
-        }
-
-        public void CopyRectToScreen(Array buf, int sourceStride, int x, int y, int width, int height)
-        {
-            if (height == 0) return;
             if (this.Dispatcher.CheckAccess())
             {
-                CopyRectToScreenCore(buf, sourceStride, x, y, width, height);
+                UpdateScreenCore();
             }
             else
             {
-                this.Dispatcher.Invoke(new Action<Array, int, int, int, int, int>(CopyRectToScreenCore),
-                    buf, sourceStride, x, y, width, height);
+                this.Dispatcher.Invoke(new Action(() => UpdateScreenCore()));
             }
         }
 
-        private void CopyRectToScreenCore(Array buf, int sourceStride, int x, int y, int width, int height)
+        public void CopyRectToScreen(byte[] buffer, int sourceStride, int x, int y, int width, int height)
         {
-            _bmp.WritePixels(new Int32Rect(x, y, width, height), buf, sourceStride, x, y);
+            for (int h = 0; h < height; h++)
+            {
+                for (int w = 0; w < width; w++)
+                {
+                    _pixels[x + w + (y + h) * 320] = buffer[x + w + (y + h) * sourceStride];
+                }
+            }
         }
+        #endregion
 
+        #region Cursor Methods
         public void SetCursor(byte[] pixels, int width, int height, int hotspotX, int hotspotY)
         {
-            //Action l_setCursor = new Action(() =>
-            //{
-            //    var mousePos = Mouse.GetPosition(_elt);
-            //    var mouseX = (mousePos.X * 320.0) / Width;
-            //    var mouseY = mousePos.Y * 200.0 / Height;
+            Action setCursor = new Action(() =>
+            {
+                if (_showCursor)
+                {
+                    // create real-size cursor
+                    _colors[0] = Colors.Transparent;
+                    var cursorBmp = new WriteableBitmap(16, 16, 96, 96, PixelFormats.Indexed8, new BitmapPalette(_colors));
+                    cursorBmp.WritePixels(new Int32Rect(0, 0, width, height), pixels, width, 0);
 
-            //    if (mouseX >= 0 && mouseY >= 0 && (mouseX + width) < 320 && (mouseY + height) < 200)
-            //    {
-            //        _bmp.WritePixels(new Int32Rect(0, 0, width, height), pixels, width, (int)mouseX - width / 2, (int)mouseY - height / 2);
-            //    }
-            //});
+                    // scale it
+                    double scaleX = this.Width / 320.0;
+                    double scaleY = this.Height / 200.0;
+                    var cursorBmpScaled = new TransformedBitmap(cursorBmp, new ScaleTransform(scaleX, scaleY, 0, 0));
 
-            //if (this.Dispatcher.CheckAccess())
-            //{
-            //    l_setCursor();
-            //}
-            //else
-            //{
-            //    this.Dispatcher.Invoke(l_setCursor);
-            //}
+                    _elt.Cursor = CursorHelper.CreateCursor(cursorBmpScaled, hotspotX, hotspotY);
+                }
+                else
+                {
+                    _elt.Cursor = Cursors.None;
+                }
+            });
+
+            if (this.Dispatcher.CheckAccess())
+            {
+                setCursor();
+            }
+            else
+            {
+                this.Dispatcher.Invoke(setCursor);
+            }
         }
+
+        public void ShowCursor(bool show)
+        {
+            _showCursor = show;
+        }
+        #endregion
+
+        #region Private Methods
+        private void UpdateScreenCore()
+        {
+            CreateBitmap();
+            _bmp.WritePixels(new Int32Rect(0, 0, 320, 200), _pixels, 320, 0, 0);
+
+            _elt.Source = _bmp;
+        }
+
+        private void CreateBitmap()
+        {
+            if (_updatePalette)
+            {
+                if (_format == Scumm4.Graphics.PixelFormat.Indexed8)
+                {
+                    _bmp = new WriteableBitmap(320, 200, 96, 96, PixelFormats.Indexed8, new BitmapPalette(_colors));
+                }
+                else
+                {
+                    _bmp = new WriteableBitmap(320, 200, 96, 96, PixelFormats.Bgr555, null);
+                }
+            }
+        }
+
+        private void OnSizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            this.Width = _elt.ActualWidth;
+            this.Height = _elt.ActualHeight;
+        }
+        #endregion
     }
 }

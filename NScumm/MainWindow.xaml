@@ -4,5 +4,5 @@
         xmlns:local="clr-namespace:NScumm"
         Title="MainWindow" Height="446" Width="594"
         Background="Black">
-    <Image Name="_screen" RenderOptions.EdgeMode="Aliased" RenderOptions.BitmapScalingMode="NearestNeighbor" Stretch="Uniform" />
+    <Image Name="_screen" RenderOptions.EdgeMode="Aliased" RenderOptions.BitmapScalingMode="Linear" Cursor="None" Stretch="Uniform" />
 </Window>

@@ -20,7 +20,14 @@
     <xs:attribute name="gameId" type="xs:string" />
     <xs:attribute name="variant" type="xs:string" />
     <xs:attribute name="language" type="xs:language" />
+    <xs:attribute name="features" type="Features" use="optional" />
   </xs:complexType>
+
+  <xs:simpleType name="Features">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="SixteenColors"/>
+    </xs:restriction>
+  </xs:simpleType>
 
   <xs:complexType name="Game">
     <xs:attribute name="id" type="xs:string" />

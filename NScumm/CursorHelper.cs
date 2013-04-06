@@ -47,16 +47,24 @@ namespace NScumm
 
         public static System.Windows.Input.Cursor CreateCursor(BitmapSource bmp, int xHotSpot, int yHotSpot)
         {
+            using (var bmp2 = Convert(bmp))
+            {
+                return InternalCreateCursor(bmp2, xHotSpot, yHotSpot);
+            }
+        }
+
+        private static System.Drawing.Bitmap Convert(BitmapSource bmp)
+        {
             PngBitmapEncoder encoder = new PngBitmapEncoder();
             encoder.Frames.Add(BitmapFrame.Create(bmp));
 
+            System.Drawing.Bitmap bmp2;
             using (MemoryStream ms = new MemoryStream())
             {
                 encoder.Save(ms);
-                //System.Drawing.Bitmap bmp2 = new System.Drawing.Bitmap(ms);
-                //return InternalCreateCursor(bmp2, xHotSpot, yHotSpot);
-                return new System.Windows.Input.Cursor(ms);
+                bmp2 = new System.Drawing.Bitmap(ms);
             }
+            return bmp2;
         }
 
         private static System.Windows.Input.Cursor InternalCreateCursor(System.Drawing.Bitmap bmp, int xHotSpot, int yHotSpot)
@@ -68,8 +76,8 @@ namespace NScumm
             tmp.fIcon = false;
 
             var ptr = CreateIconIndirect(ref tmp);
-            var handle = new SafeFileHandle(ptr, true);
+            var handle = new SafeIconHandle(ptr);
             return System.Windows.Interop.CursorInteropHelper.Create(handle);
         }
-    }
+    }    
 }

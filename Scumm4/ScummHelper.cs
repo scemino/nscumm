@@ -88,12 +88,12 @@ namespace Scumm4
 
         public static int[][] ReadMatrixUInt16(this BinaryReader reader, int count1, int count2)
         {
-            int[][] values = new int[count1][];
+            int[][] values = new int[count2][];
 
-            for (int i = 0; i < count1; i++)
+            for (int i = 0; i < count2; i++)
             {
-                values[i] = new int[count2];
-                for (int j = 0; j < count2; j++)
+                values[i] = new int[count1];
+                for (int j = 0; j < count1; j++)
                 {
                     values[i][j] = reader.ReadUInt16();
                 }
@@ -101,14 +101,14 @@ namespace Scumm4
             return values;
         }
 
-        internal static int[][] ReadMatrixInt32(this BinaryReader reader, int count1, int count2)
+        public static int[][] ReadMatrixInt32(this BinaryReader reader, int count1, int count2)
         {
-            int[][] values = new int[count1][];
+            int[][] values = new int[count2][];
 
-            for (int i = 0; i < count1; i++)
+            for (int i = 0; i < count2; i++)
             {
-                values[i] = new int[count2];
-                for (int j = 0; j < count2; j++)
+                values[i] = new int[count1];
+                for (int j = 0; j < count1; j++)
                 {
                     values[i][j] = reader.ReadInt32();
                 }
@@ -116,14 +116,14 @@ namespace Scumm4
             return values;
         }
 
-        internal static byte[][] ReadMatrixBytes(this BinaryReader reader, int count1, int count2)
+        public static byte[][] ReadMatrixBytes(this BinaryReader reader, int count1, int count2)
         {
-            byte[][] values = new byte[count1][];
+            byte[][] values = new byte[count2][];
 
-            for (int i = 0; i < count1; i++)
+            for (int i = 0; i < count2; i++)
             {
-                values[i] = new byte[count2];
-                for (int j = 0; j < count2; j++)
+                values[i] = new byte[count1];
+                for (int j = 0; j < count1; j++)
                 {
                     values[i][j] = reader.ReadByte();
                 }

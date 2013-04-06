@@ -42,9 +42,10 @@ namespace NScumm
 
             _index = new ScummIndex();
             _index.LoadIndex(info.Path);
-            
-            var gfx = new WpfGraphicsManager(_screen);
-            _engine = new ScummEngine(_index, gfx);
+
+            var format = Scumm4.Graphics.PixelFormat.Indexed8;
+            var gfx = new WpfGraphicsManager(_screen,format);
+            _engine = new ScummEngine(_index, info, gfx);
             _engine.ShowMenuDialogRequested += OnShowMenuDialogRequested;
 
             _thread = new Thread(new ThreadStart(() =>

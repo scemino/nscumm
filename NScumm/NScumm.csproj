@@ -25,6 +25,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <UseVSHostingProcess>true</UseVSHostingProcess>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <PlatformTarget>x86</PlatformTarget>
@@ -60,6 +61,7 @@
     <Compile Include="MenuDialog.xaml.cs">
       <DependentUpon>MenuDialog.xaml</DependentUpon>
     </Compile>
+    <Compile Include="SafeIconHandle.cs" />
     <Compile Include="WpfGraphicsManager.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>

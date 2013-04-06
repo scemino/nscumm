@@ -28,10 +28,13 @@ namespace Scumm4.Graphics
 
         void UpdateScreen();
 
-        void CopyRectToScreen(Array buf, int sourceStride, int x, int y, int width, int height);
+        void CopyRectToScreen(byte[] buffer, int sourceStride, int x, int y, int width, int height);
 
-        void SetPalette(System.Windows.Media.Color[] color);
+        void SetPalette(Color[] color);
+        void SetPalette(Color[] color, int first, int num);
 
         void SetCursor(byte[] pixels, int width, int height, int hotspotX, int hotspotY);
+
+        void ShowCursor(bool show);
     }
 }

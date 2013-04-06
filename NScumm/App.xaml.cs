@@ -39,9 +39,14 @@ namespace NScumm
             {
                 // check game
                 Info = GameManager.GetInfo(filename);
-                if (Info == null || Info.Version != 4)
+                if (Info == null)
                 {
-                    MessageBox.Show("Sorry, this game is not supported.");
+                    MessageBox.Show("Sorry, this game is not supported.", string.Empty, MessageBoxButton.OK, MessageBoxImage.Warning);
+                    Shutdown();
+                }
+                else if (Info.Version != 4)
+                {
+                    MessageBox.Show(string.Format("Sorry, the game '{0}' is not supported.", Info.Description), string.Empty, MessageBoxButton.OK, MessageBoxImage.Warning);
                     Shutdown();
                 }
                 else

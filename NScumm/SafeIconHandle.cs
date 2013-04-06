@@ -15,18 +15,32 @@
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-using System.Collections.Generic;
-using System.Windows.Media;
+using Microsoft.Win32.SafeHandles;
+using System;
+using System.Runtime.InteropServices;
 
-namespace Scumm4.Graphics
+namespace NScumm
 {
-    public class Palette
+    internal sealed class SafeIconHandle : SafeHandleZeroOrMinusOneIsInvalid
     {
-        public Color[] Colors { get; private set; }
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool DestroyIcon([In] IntPtr hIcon);
 
-        public Palette()
+        private SafeIconHandle()
+            : base(true)
         {
-            this.Colors = new Color[256];
+        }
+
+        public SafeIconHandle(IntPtr hIcon)
+            : base(true)
+        {
+            this.SetHandle(hIcon);
+        }
+
+        protected override bool ReleaseHandle()
+        {
+            return DestroyIcon(this.handle);
         }
     }
 }

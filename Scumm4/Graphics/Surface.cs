@@ -22,6 +22,7 @@ namespace Scumm4.Graphics
     public enum PixelFormat
     {
         Indexed8,
+        Rgb16,
         Rgb24
     }
 
@@ -86,6 +87,9 @@ namespace Scumm4.Graphics
             {
                 case PixelFormat.Indexed8:
                     this.BytesPerPixel = 1;
+                    break;
+                case PixelFormat.Rgb16:
+                    this.BytesPerPixel = 2;
                     break;
                 case PixelFormat.Rgb24:
                     this.BytesPerPixel = 3;

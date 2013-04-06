@@ -15,6 +15,7 @@
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+using System;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -23,6 +24,13 @@ using System.Xml.Linq;
 
 namespace Scumm4
 {
+    [Flags]
+    public enum GameFeatures
+    {
+        None,
+        SixteenColors
+    }
+
     public class GameInfo
     {
         public string Path { get; set; }
@@ -31,6 +39,7 @@ namespace Scumm4
         public string Description { get; set; }
         public int Version { get; set; }
         public CultureInfo Culture { get; set; }
+        public GameFeatures Features { get; set; }
     }
 
     public static class GameManager
@@ -62,6 +71,12 @@ namespace Scumm4
                 var desc = (from d in _doc.Element(Namespace + "NScumm").Elements(Namespace + "Description")
                             where (string)d.Attribute("gameId") == (string)gameMd5.Attribute("gameId")
                             select (string)d.Attribute("text")).FirstOrDefault();
+                var attFeatures = gameMd5.Attribute("features");
+                GameFeatures features;
+                if (attFeatures == null || Enum.TryParse(attFeatures.Value, out features) == false)
+                {
+                    features = GameFeatures.None;
+                }
                 info = new GameInfo
                 {
                     Path = path,
@@ -69,7 +84,8 @@ namespace Scumm4
                     Variant = (string)game.Attribute("variant"),
                     Description = desc,
                     Version = (int)game.Attribute("version"),
-                    Culture = CultureInfo.GetCultureInfo((string)gameMd5.Attribute("language"))
+                    Culture = CultureInfo.GetCultureInfo((string)gameMd5.Attribute("language")),
+                    Features = features
                 };
             }
             return info;

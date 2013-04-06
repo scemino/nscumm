@@ -35,7 +35,7 @@ namespace Scumm4.Graphics
         private byte _decomp_shr;
         private byte _decomp_mask;
         private byte _transparentColor = 255;
-        private byte[][] _maskBuffer = new byte[2][]; 
+        private byte[][] _maskBuffer = new byte[2][];
         #endregion
 
         #region Properties
@@ -49,7 +49,7 @@ namespace Scumm4.Graphics
         {
             get { return !_zbufferDisabled; }
             set { _zbufferDisabled = !value; }
-        } 
+        }
         #endregion
 
         #region Constructor
@@ -60,7 +60,7 @@ namespace Scumm4.Graphics
             {
                 _maskBuffer[i] = new byte[40 * (200 + 4)];
             }
-        } 
+        }
         #endregion
 
         #region Public Methods
@@ -185,7 +185,7 @@ namespace Scumm4.Graphics
                     Clear8Col(navDest, numLinesToProcess);
                 }
             }
-        } 
+        }
         #endregion
 
         #region Private Methods
@@ -398,12 +398,26 @@ namespace Scumm4.Graphics
             // but if e.g. a savegame gets corrupted, we can easily get into
             // trouble here. See also bug #795214.
             int offset = -1;
-            int smapLen = smapReader.ReadInt32();
-            if (stripnr * 4 + 4 < smapLen)
+            int smapLen;
+            if (_vm.Game.Features.HasFlag(GameFeatures.SixteenColors))
             {
-                smapReader.BaseStream.Seek(stripnr * 4, SeekOrigin.Current);
-                offset = smapReader.ReadInt32();
+                smapLen = smapReader.ReadInt16();
+                if (stripnr * 2 + 2 < smapLen)
+                {
+                    smapReader.BaseStream.Seek(stripnr * 2, SeekOrigin.Current);
+                    offset = smapReader.ReadInt16();
+                }
             }
+            else
+            {
+                smapLen = smapReader.ReadInt32();
+                if (stripnr * 4 + 4 < smapLen)
+                {
+                    smapReader.BaseStream.Seek(stripnr * 4, SeekOrigin.Current);
+                    offset = smapReader.ReadInt32();
+                }
+            }
+
             ScummHelper.AssertRange(0, offset, smapLen - 1, "screen strip");
             smapReader.BaseStream.Seek(offset, SeekOrigin.Begin);
 
@@ -412,6 +426,12 @@ namespace Scumm4.Graphics
 
         private bool DecompressBitmap(PixelNavigator navDst, BinaryReader src, int numLinesToProcess)
         {
+            if (_vm.Game.Features.HasFlag(GameFeatures.SixteenColors))
+            {
+                DrawStripEGA(navDst, src, numLinesToProcess);
+                return false;
+            }
+
             _paletteMod = 0;
 
             byte code = src.ReadByte();
@@ -560,6 +580,89 @@ namespace Scumm4.Graphics
             return transpStrip;
         }
 
+        private void DrawStripEGA(PixelNavigator navDst, BinaryReader src, int height)
+        {
+            byte color = 0;
+            int run = 0, x = 0, y = 0, z;
+
+            navDst = new PixelNavigator(navDst);
+
+            while (x < 8)
+            {
+                color = src.ReadByte();
+
+                if ((color & 0x80) != 0)
+                {
+                    run = color & 0x3f;
+
+                    if ((color & 0x40) != 0)
+                    {
+                        color = src.ReadByte();
+
+                        if (run == 0)
+                        {
+                            run = src.ReadByte();
+                        }
+                        for (z = 0; z < run; z++)
+                        {
+                            navDst.GoTo(x, y);
+                            navDst.Write((z & 1) != 0 ? _vm._roomPalette[(color & 0xf) + _paletteMod] : _vm._roomPalette[(color >> 4) + _paletteMod]);
+
+                            y++;
+                            if (y >= height)
+                            {
+                                y = 0;
+                                x++;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (run == 0)
+                        {
+                            run = src.ReadByte();
+                        }
+
+                        for (z = 0; z < run; z++)
+                        {
+                            navDst.GoTo(x - 1, y);
+                            var col = navDst.Read();
+                            navDst.GoTo(x, y);
+                            navDst.Write(col);
+
+                            y++;
+                            if (y >= height)
+                            {
+                                y = 0;
+                                x++;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    run = color >> 4;
+                    if (run == 0)
+                    {
+                        run = src.ReadByte();
+                    }
+
+                    for (z = 0; z < run; z++)
+                    {
+                        navDst.GoTo(x, y);
+                        navDst.Write(_vm._roomPalette[(color & 0xf) + _paletteMod]);
+
+                        y++;
+                        if (y >= height)
+                        {
+                            y = 0;
+                            x++;
+                        }
+                    }
+                }
+            }
+        }
+
         private void DrawStripBasicH(PixelNavigator navDst, BinaryReader src, int height, bool transpCheck)
         {
             byte color = src.ReadByte();
@@ -678,18 +781,33 @@ namespace Scumm4.Graphics
 
             var zplane = new MemoryStream(ptr);
             var zplaneReader = new BinaryReader(zplane);
-            var uPtr = zplaneReader.ReadInt32();
-            var ptr1 = zplaneReader.ReadBytes(uPtr - 4);
-            zplanes.Add(ptr1);
-            byte[] ptr2 = null;
-            if (ptr.Length - uPtr > 2)
+            int uPtr;
+            byte[] ptr1;
+            if (_vm.Game.Features.HasFlag(GameFeatures.SixteenColors))
             {
-                ptr2 = zplaneReader.ReadBytes(ptr.Length - uPtr);
+                uPtr = zplaneReader.ReadInt16();
+                ptr1 = zplaneReader.ReadBytes(uPtr - 2);
+                uPtr = zplaneReader.ReadInt16();
+                zplaneReader.BaseStream.Seek(-2, SeekOrigin.Current);
             }
-            zplanes.Add(ptr2);
+            else
+            {
+                uPtr = zplaneReader.ReadInt32();
+                ptr1 = zplaneReader.ReadBytes(uPtr - 4);
+            }
+            zplanes.Add(ptr1);
+            if (uPtr != 0)
+            {
+                byte[] ptr2 = null;
+                if (ptr.Length - uPtr > 2)
+                {
+                    ptr2 = zplaneReader.ReadBytes(ptr.Length - uPtr);
+                }
+                zplanes.Add(ptr2);
+            }
 
             return zplanes;
-        }         
+        }
         #endregion
     }
 }

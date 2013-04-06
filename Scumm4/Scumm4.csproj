@@ -22,6 +22,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <UseVSHostingProcess>true</UseVSHostingProcess>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -58,6 +59,7 @@
     <Compile Include="GameManager.cs" />
     <Compile Include="Graphics\CharsetRenderer.cs" />
     <Compile Include="Graphics\CharsetRendererClassic.cs" />
+    <Compile Include="Graphics\Color.cs" />
     <Compile Include="Graphics\Gdi.cs" />
     <Compile Include="Graphics\IGraphicsManager.cs" />
     <Compile Include="Graphics\Palette.cs" />

@@ -209,7 +209,8 @@ namespace Scumm4
                             {
                                 // CLUT
                                 var colors = ReadCLUT();
-                                room.Palette.Colors.AddRange(colors);
+                                room.HasPalette = true;
+                                Array.Copy(colors, room.Palette.Colors, colors.Length);
                             }
                             break;
                         case 0x4153:
@@ -469,13 +470,13 @@ namespace Scumm4
             return _reader.ReadBytes(256);
         }
 
-        private Color[] ReadCLUT()
+        private Scumm4.Graphics.Color[] ReadCLUT()
         {
             var numColors = _reader.ReadUInt16() / 3;
-            var colors = new Color[numColors];
+            var colors = new Scumm4.Graphics.Color[numColors];
             for (int i = 0; i < numColors; i++)
             {
-                colors[i] = Color.FromArgb(255, _reader.ReadByte(), _reader.ReadByte(), _reader.ReadByte());
+                colors[i] = Scumm4.Graphics.Color.FromRgb(_reader.ReadByte(), _reader.ReadByte(), _reader.ReadByte());
             }
             return colors;
         }         

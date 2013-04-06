@@ -41,6 +41,7 @@ namespace Scumm4
         public byte[] Data { get; set; }
         public Scale[] Scales { get; set; }
         public byte TransparentColor { get; set; }
+        public bool HasPalette { get; set; }
 
         public Room()
         {

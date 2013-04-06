@@ -15,18 +15,33 @@
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-using System.Collections.Generic;
-using System.Windows.Media;
-
 namespace Scumm4.Graphics
 {
-    public class Palette
+    public struct Color
     {
-        public Color[] Colors { get; private set; }
+        public byte R { get; set; }
+        public byte G { get; set; }
+        public byte B { get; set; }
 
-        public Palette()
+        public static Color FromRgb(byte r, byte g, byte b)
         {
-            this.Colors = new Color[256];
+            return new Color { R = r, G = g, B = b };
+        }
+
+        public override int GetHashCode()
+        {
+            return R ^ G ^ B;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj == null || GetType() != obj.GetType())
+            {
+                return false;
+            }
+
+            Color color = (Color)obj;
+            return R == color.R && G == color.G && B == color.B;
         }
     }
 }

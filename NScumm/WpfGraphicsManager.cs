@@ -31,7 +31,6 @@ namespace NScumm
         #region Fields
         private Image _elt;
         private WriteableBitmap _bmp;
-        private Scumm4.Graphics.PixelFormat _format;
         private byte[] _pixels;
         private System.Windows.Media.Color[] _colors;
         private bool _showCursor;
@@ -39,9 +38,8 @@ namespace NScumm
         #endregion
 
         #region Constructor
-        public WpfGraphicsManager(Image elt, Scumm4.Graphics.PixelFormat format)
+        public WpfGraphicsManager(Image elt)
         {
-            _format = format;
             _colors = new System.Windows.Media.Color[256];
             _pixels = new byte[320 * 200];
             _updatePalette = true;
@@ -84,19 +82,6 @@ namespace NScumm
                 _colors[i + first] = System.Windows.Media.Color.FromRgb(color.R, color.G, color.B);
             }
             _updatePalette = true;
-        }
-        #endregion
-
-        #region Input Methods
-        // TODO: move this elsewhere
-        public Scumm4.Point GetMousePosition()
-        {
-            if (this.Dispatcher.HasShutdownStarted) return new Scumm4.Point();
-            return (Scumm4.Point)this.Dispatcher.Invoke(new Func<Scumm4.Point>(() =>
-            {
-                var pos = Mouse.GetPosition(_elt);
-                return new Scumm4.Point((short)pos.X, (short)pos.Y);
-            }));
         }
         #endregion
 
@@ -179,14 +164,7 @@ namespace NScumm
         {
             if (_updatePalette)
             {
-                if (_format == Scumm4.Graphics.PixelFormat.Indexed8)
-                {
-                    _bmp = new WriteableBitmap(320, 200, 96, 96, PixelFormats.Indexed8, new BitmapPalette(_colors));
-                }
-                else
-                {
-                    _bmp = new WriteableBitmap(320, 200, 96, 96, PixelFormats.Bgr555, null);
-                }
+                _bmp = new WriteableBitmap(320, 200, 96, 96, PixelFormats.Indexed8, new BitmapPalette(_colors));
             }
         }
 
@@ -197,4 +175,5 @@ namespace NScumm
         }
         #endregion
     }
+
 }

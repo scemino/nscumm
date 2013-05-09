@@ -37,6 +37,7 @@ namespace Scumm4
         public string Id { get; set; }
         public string Variant { get; set; }
         public string Description { get; set; }
+        public string MD5 { get; set; }
         public int Version { get; set; }
         public CultureInfo Culture { get; set; }
         public GameFeatures Features { get; set; }
@@ -79,6 +80,7 @@ namespace Scumm4
                 }
                 info = new GameInfo
                 {
+                    MD5 = signature,
                     Path = path,
                     Id = (string)game.Attribute("id"),
                     Variant = (string)game.Attribute("variant"),

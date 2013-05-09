@@ -15,11 +15,10 @@
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-using Scumm4.Graphics;
 using System;
 using System.Collections.ObjectModel;
 
-namespace Scumm4
+namespace Scumm4.Graphics
 {
     public class VirtScreen
     {

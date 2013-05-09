@@ -15,6 +15,7 @@
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+using Scumm4.IO;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,14 +29,14 @@ namespace Scumm4
         public WhereIsObject where;
         public byte slot;
 
-        public void Load(System.IO.BinaryReader reader, uint version)
+        public void SaveOrLoad(Serializer serializer)
         {
             var nestedScriptEntries = new[]{
-                LoadAndSaveEntry.Create(()=> number = reader.ReadUInt16(),8),
-                LoadAndSaveEntry.Create(()=> where = (WhereIsObject)reader.ReadByte(),8),
-                LoadAndSaveEntry.Create(()=> slot = reader.ReadByte(),8),
+                LoadAndSaveEntry.Create(reader => number = reader.ReadUInt16(), writer => writer.Write(number),8),
+                LoadAndSaveEntry.Create(reader => where = (WhereIsObject)reader.ReadByte(), writer => writer.Write((byte)where),8),
+                LoadAndSaveEntry.Create(reader => slot = reader.ReadByte(), writer => writer.Write(slot),8),
             };
-            Array.ForEach(nestedScriptEntries, e => e.Execute(version));
+            Array.ForEach(nestedScriptEntries, e => e.Execute(serializer));
         }
     }
 }

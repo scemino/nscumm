@@ -15,6 +15,7 @@
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+using Scumm4.IO;
 using System;
 
 namespace Scumm4
@@ -65,29 +66,29 @@ namespace Scumm4
             CopyFrom(_default);
         }
 
-        public void Load(System.IO.BinaryReader reader, uint version)
+        public void SaveOrLoad(Serializer serializer)
         {
             var stringTabEntries = new[]{
-                    LoadAndSaveEntry.Create(()=> xpos = reader.ReadInt16(),8),
-                    LoadAndSaveEntry.Create(()=> _default.xpos = reader.ReadInt16(),8),
-                    LoadAndSaveEntry.Create(()=> ypos = reader.ReadInt16(),8),
-                    LoadAndSaveEntry.Create(()=> _default.ypos = reader.ReadInt16(),8),
-                    LoadAndSaveEntry.Create(()=> right= reader.ReadInt16(),8),
-                    LoadAndSaveEntry.Create(()=> _default.right= reader.ReadInt16(),8),
-                    LoadAndSaveEntry.Create(()=> color= reader.ReadByte(),8),
-                    LoadAndSaveEntry.Create(()=> _default.color= reader.ReadByte(),8),
-                    LoadAndSaveEntry.Create(()=> charset= reader.ReadByte(),8),
-                    LoadAndSaveEntry.Create(()=> _default.charset= reader.ReadByte(),8),
-                    LoadAndSaveEntry.Create(()=> center = reader.ReadBoolean(),8),
-                    LoadAndSaveEntry.Create(()=> _default.center = reader.ReadBoolean(),8),
-                    LoadAndSaveEntry.Create(()=> overhead = reader.ReadBoolean(),8),
-                    LoadAndSaveEntry.Create(()=> _default.overhead = reader.ReadBoolean(),8),
-                    LoadAndSaveEntry.Create(()=> no_talk_anim = reader.ReadBoolean(),8),
-                    LoadAndSaveEntry.Create(()=> _default.no_talk_anim = reader.ReadBoolean(),8),
-                    LoadAndSaveEntry.Create(()=> wrapping = reader.ReadBoolean(),71),
-                    LoadAndSaveEntry.Create(()=> _default.wrapping = reader.ReadBoolean(),71)
+                    LoadAndSaveEntry.Create(reader => xpos = reader.ReadInt16(), writer => writer.Write(xpos), 8),
+                    LoadAndSaveEntry.Create(reader => _default.xpos = reader.ReadInt16(), writer => writer.Write(_default.xpos),8),
+                    LoadAndSaveEntry.Create(reader => ypos = reader.ReadInt16(), writer => writer.Write(ypos),8),
+                    LoadAndSaveEntry.Create(reader => _default.ypos = reader.ReadInt16(), writer => writer.Write(_default.ypos),8),
+                    LoadAndSaveEntry.Create(reader => right= reader.ReadInt16(), writer => writer.Write(right),8),
+                    LoadAndSaveEntry.Create(reader => _default.right= reader.ReadInt16(), writer => writer.Write(_default.right),8),
+                    LoadAndSaveEntry.Create(reader => color= reader.ReadByte(), writer => writer.Write(color),8),
+                    LoadAndSaveEntry.Create(reader => _default.color= reader.ReadByte(), writer => writer.Write(_default.color),8),
+                    LoadAndSaveEntry.Create(reader => charset= reader.ReadByte(), writer => writer.Write(charset),8),
+                    LoadAndSaveEntry.Create(reader => _default.charset= reader.ReadByte(), writer => writer.Write(_default.charset),8),
+                    LoadAndSaveEntry.Create(reader => center = reader.ReadBoolean(), writer => writer.Write(center),8),
+                    LoadAndSaveEntry.Create(reader => _default.center = reader.ReadBoolean(), writer => writer.Write(_default.center),8),
+                    LoadAndSaveEntry.Create(reader => overhead = reader.ReadBoolean(), writer => writer.Write(overhead),8),
+                    LoadAndSaveEntry.Create(reader => _default.overhead = reader.ReadBoolean(), writer => writer.Write(_default.overhead),8),
+                    LoadAndSaveEntry.Create(reader => no_talk_anim = reader.ReadBoolean(), writer => writer.Write(no_talk_anim),8),
+                    LoadAndSaveEntry.Create(reader => _default.no_talk_anim = reader.ReadBoolean(), writer => writer.Write(_default.no_talk_anim),8),
+                    LoadAndSaveEntry.Create(reader => wrapping = reader.ReadBoolean(), writer => writer.Write(wrapping),71),
+                    LoadAndSaveEntry.Create(reader => _default.wrapping = reader.ReadBoolean(), writer => writer.Write(_default.wrapping),71)
              };
-            Array.ForEach(stringTabEntries, e => e.Execute(version));
+            Array.ForEach(stringTabEntries, e => e.Execute(serializer));
         }
     }
 }

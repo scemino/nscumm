@@ -49,9 +49,25 @@ namespace NScumm
             }
         }
 
+        private void OnSaveClick(object sender, RoutedEventArgs e)
+        {
+            SaveFileDialog dlg = new SaveFileDialog();
+            dlg.Filter = "Scumm savegames|*.s*|All Files|*.*";
+            var path = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            path = System.IO.Path.Combine(path, @"ScummVM\Saved games");
+            dlg.InitialDirectory = path;
+            if (dlg.ShowDialog(this) == true)
+            {
+                this.Engine.Save(dlg.FileName);
+                this.Close();
+            }
+        }
+
         private void OnQuitClick(object sender, RoutedEventArgs e)
         {
             Application.Current.Shutdown();
         }
+
+        
     }
 }

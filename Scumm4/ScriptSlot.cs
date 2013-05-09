@@ -15,6 +15,7 @@
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+using Scumm4.IO;
 using System;
 using System.IO;
 
@@ -52,26 +53,50 @@ namespace Scumm4
         public int InventoryEntry { get; set; }
         public bool Frozen { get; set; }
 
-        public void Load(BinaryReader reader, uint version)
+        public void SaveOrLoad(Serializer serializer, ScriptData[] localScripts)
         {
             byte cycle;
             byte unk5;
             var scriptSlotEntries = new[]{
-                LoadAndSaveEntry.Create(()=> offs = reader.ReadUInt32(),8),
-                LoadAndSaveEntry.Create(()=> delay = reader.ReadInt32(),8),
-                LoadAndSaveEntry.Create(()=> number = reader.ReadUInt16(),8),
-                LoadAndSaveEntry.Create(()=> delayFrameCount = reader.ReadUInt16(),8),
-                LoadAndSaveEntry.Create(()=> status = (ScriptStatus)reader.ReadByte(),8),
-                LoadAndSaveEntry.Create(()=> where = (WhereIsObject)reader.ReadByte(),8),
-                LoadAndSaveEntry.Create(()=> freezeResistant = reader.ReadBoolean(),8),
-                LoadAndSaveEntry.Create(()=> recursive = reader.ReadBoolean(),8),
-                LoadAndSaveEntry.Create(()=> freezeCount = reader.ReadByte(),8),
-                LoadAndSaveEntry.Create(()=> didexec = reader.ReadBoolean(),8),
-                LoadAndSaveEntry.Create(()=> cutsceneOverride = reader.ReadByte(),8),
-                LoadAndSaveEntry.Create(()=> cycle = reader.ReadByte(),46),
-                LoadAndSaveEntry.Create(()=> unk5 = reader.ReadByte(),8,10),
+                LoadAndSaveEntry.Create(
+                    reader => offs = reader.ReadUInt32(),
+                    writer=>
+                    {
+                        var offsetToSave = offs;
+                        if (where == WhereIsObject.Global)
+                        {
+                            offsetToSave += 6;
+                        }
+                        writer.WriteUInt32(offsetToSave);
+                    },8),
+
+                LoadAndSaveEntry.Create(reader => delay = reader.ReadInt32(),writer=> writer.WriteInt32(delay),8),
+                LoadAndSaveEntry.Create(reader => number = reader.ReadUInt16(),writer=> writer.WriteUInt16(number),8),
+                LoadAndSaveEntry.Create(reader => delayFrameCount = reader.ReadUInt16(),writer=> writer.WriteUInt16(delayFrameCount),8),
+                LoadAndSaveEntry.Create(reader => status = (ScriptStatus)reader.ReadByte(),writer=> writer.WriteByte((byte)status),8),
+                LoadAndSaveEntry.Create(reader => where = (WhereIsObject)reader.ReadByte(),writer=> writer.WriteByte((byte)where),8),
+                LoadAndSaveEntry.Create(reader => freezeResistant = reader.ReadBoolean(),writer=> writer.WriteByte(freezeResistant),8),
+                LoadAndSaveEntry.Create(reader => recursive = reader.ReadBoolean(),writer=> writer.WriteByte(recursive),8),
+                LoadAndSaveEntry.Create(reader => freezeCount = reader.ReadByte(),writer=> writer.WriteByte(freezeCount),8),
+                LoadAndSaveEntry.Create(reader => didexec = reader.ReadBoolean(),writer=> writer.WriteByte(didexec),8),
+                LoadAndSaveEntry.Create(reader => cutsceneOverride = reader.ReadByte(),writer=> writer.WriteByte(cutsceneOverride),8),
+                LoadAndSaveEntry.Create(reader => cycle = reader.ReadByte(),writer=> writer.WriteByte((byte)0),46),
+                LoadAndSaveEntry.Create(reader => unk5 = reader.ReadByte(),writer=> writer.WriteByte((byte)0),8,10),
             };
-            Array.ForEach(scriptSlotEntries, e => e.Execute(version));
+
+            //if (serializer.IsLoading)
+            //{
+            //    if (where == WhereIsObject.Global)
+            //    {
+            //        offs -= 6;
+            //    }
+            //    else if (where == WhereIsObject.Local && number >= 0xC8)
+            //    {
+            //        offs = (uint)(offs - localScripts[number - 0xC8].Offset);
+            //    }
+            //}
+
+            Array.ForEach(scriptSlotEntries, e => e.Execute(serializer));
         }
     }
 }

@@ -15,21 +15,15 @@
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-using System;
-
-namespace Scumm4.Graphics
+namespace Scumm4.Input
 {
-    public interface IGraphicsManager
+    public interface IInputManager
     {
-        void UpdateScreen();
+        Scumm4.Graphics.Point GetMousePosition();
 
-        void CopyRectToScreen(byte[] buffer, int sourceStride, int x, int y, int width, int height);
+        bool IsKeyDown(KeyCode code);
 
-        void SetPalette(Color[] color);
-        void SetPalette(Color[] color, int first, int num);
-
-        void SetCursor(byte[] pixels, int width, int height, int hotspotX, int hotspotY);
-
-        void ShowCursor(bool show);
+        bool IsMouseLeftPressed();
+        bool IsMouseRightPressed();
     }
 }

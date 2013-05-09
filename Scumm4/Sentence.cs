@@ -15,6 +15,7 @@
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+using Scumm4.IO;
 using System;
 
 namespace Scumm4
@@ -27,16 +28,16 @@ namespace Scumm4
         public ushort objectB;
         public byte freezeCount;
 
-        public void Load(System.IO.BinaryReader reader, uint version)
+        public void SaveOrLoad(Serializer serializer)
         {
-             var sentenceEntries = new[]{
-                    LoadAndSaveEntry.Create(()=> verb = reader.ReadByte(),8),
-                    LoadAndSaveEntry.Create(()=> preposition = reader.ReadByte(),8),
-                    LoadAndSaveEntry.Create(()=> objectA = reader.ReadUInt16(),8),
-                    LoadAndSaveEntry.Create(()=> objectB = reader.ReadUInt16(),8),
-                    LoadAndSaveEntry.Create(()=> freezeCount = reader.ReadByte(),8),
+            var sentenceEntries = new[]{
+                    LoadAndSaveEntry.Create(reader => verb = reader.ReadByte(), writer => writer.Write(verb), 8),
+                    LoadAndSaveEntry.Create(reader => preposition = reader.ReadByte(), writer => writer.Write(preposition),8),
+                    LoadAndSaveEntry.Create(reader => objectA = reader.ReadUInt16(), writer => writer.Write(objectA),8),
+                    LoadAndSaveEntry.Create(reader => objectB = reader.ReadUInt16(), writer => writer.Write(objectB),8),
+                    LoadAndSaveEntry.Create(reader => freezeCount = reader.ReadByte(), writer => writer.Write(freezeCount),8),
              };
-             Array.ForEach(sentenceEntries, e => e.Execute(version));
+            Array.ForEach(sentenceEntries, e => e.Execute(serializer));
         }
     }
 }

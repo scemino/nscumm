@@ -1,28 +1,28 @@
 ﻿/*
  * This file is part of NScumm.
- * 
+ *
  * NScumm is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * NScumm is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+using Scumm4.Graphics;
+using Scumm4.Input;
+using Scumm4.IO;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
-using System.IO;
-using Scumm4;
-using Scumm4.Graphics;
-using System.Windows.Input;
 
 namespace Scumm4
 {
@@ -75,11 +75,12 @@ namespace Scumm4
         Param3 = 0x20,
     }
 
-    public class ScummEngine : System.Windows.Threading.DispatcherObject
+    public class ScummEngine
     {
         #region Constants
+
         private const uint CurrentVersion = 94;
-        const int OF_OWNER_ROOM = 0x0F;
+        private const int OF_OWNER_ROOM = 0x0F;
 
         private const int NumVariables = 800;
         private const int NumActors = 13;
@@ -133,13 +134,24 @@ namespace Scumm4
         private const int VariableCursorState = 0x34;
         private const int VariableUserPut = 0x35;
         private const int VariableTalkStringY = 0x36;
-        #endregion
+
+        private static byte[] tableEGAPalette = new byte[]{
+		    0x00, 0x00, 0x00, 	0x00, 0x00, 0xAA, 	0x00, 0xAA, 0x00, 	0x00, 0xAA, 0xAA,
+		    0xAA, 0x00, 0x00, 	0xAA, 0x00, 0xAA, 	0xAA, 0x55, 0x00, 	0xAA, 0xAA, 0xAA,
+		    0x55, 0x55, 0x55, 	0x55, 0x55, 0xFF, 	0x55, 0xFF, 0x55, 	0x55, 0xFF, 0xFF,
+		    0xFF, 0x55, 0x55, 	0xFF, 0x55, 0xFF, 	0xFF, 0xFF, 0x55, 	0xFF, 0xFF, 0xFF
+        };
+
+        #endregion Constants
 
         #region Events
+
         public event EventHandler ShowMenuDialogRequested;
-        #endregion
+
+        #endregion Events
 
         #region Fields
+
         private ScummIndex _scumm;
         private string _directory;
         private Actor[] _actors = new Actor[NumActors];
@@ -169,9 +181,9 @@ namespace Scumm4
         private byte _currentScript;
         private int _numNestedScripts;
         private NestedScript[] _nest;
-        private uint[] cutScenePtr = new uint[MaxCutsceneNum];
-        private byte[] cutSceneScript = new byte[MaxCutsceneNum];
-        private int[] cutSceneData = new int[MaxCutsceneNum];
+        private uint[] _cutScenePtr = new uint[MaxCutsceneNum];
+        private byte[] _cutSceneScript = new byte[MaxCutsceneNum];
+        private int[] _cutSceneData = new int[MaxCutsceneNum];
         private Room roomData;
         private int _sentenceNum;
         private int cutSceneStackPointer;
@@ -210,10 +222,11 @@ namespace Scumm4
 
         // Somewhat hackish stuff for 2 byte support (Chinese/Japanese/Korean)
         public byte _newLineCharacter;
+
         public bool _useCJKMode;
         public int _2byteWidth;
 
-        static byte[] default_cursor_colors = new byte[] { 15, 15, 7, 8 };
+        private static byte[] default_cursor_colors = new byte[] { 15, 15, 7, 8 };
 
         public byte[] _roomPalette = new byte[256];
 
@@ -234,9 +247,12 @@ namespace Scumm4
         private CharsetRenderer _charset;
         private const byte CharsetMaskTransparency = 0xFD;
         private GameInfo _game;
-        #endregion
+        private Box[] _boxes;
+
+        #endregion Fields
 
         #region Properties
+
         public Camera Camera
         {
             get { return _camera; }
@@ -288,14 +304,18 @@ namespace Scumm4
         {
             get { return _game; }
         }
-        #endregion
+
+        #endregion Properties
 
         #region Constructor
-        public ScummEngine(ScummIndex index, GameInfo game, IGraphicsManager gfxManager)
+
+        public ScummEngine(ScummIndex index, GameInfo game, IGraphicsManager gfxManager, IInputManager inputManager)
         {
             _scumm = index;
             _game = game;
+            _gameMD5 = System.Text.Encoding.Default.GetBytes(game.MD5);
             _gfxManager = gfxManager;
+            _inputManager = inputManager;
             _directory = _scumm.Directory;
             _strings = new byte[NumArray][];
             _charsets = new byte[NumArray][];
@@ -363,13 +383,6 @@ namespace Scumm4
             InitVariables();
         }
 
-        static byte[] tableEGAPalette = new byte[]{
-		    0x00, 0x00, 0x00, 	0x00, 0x00, 0xAA, 	0x00, 0xAA, 0x00, 	0x00, 0xAA, 0xAA,
-		    0xAA, 0x00, 0x00, 	0xAA, 0x00, 0xAA, 	0xAA, 0x55, 0x00, 	0xAA, 0xAA, 0xAA,
-		    0x55, 0x55, 0x55, 	0x55, 0x55, 0xFF, 	0x55, 0xFF, 0x55, 	0x55, 0xFF, 0xFF,
-		    0xFF, 0x55, 0x55, 	0xFF, 0x55, 0xFF, 	0xFF, 0xFF, 0x55, 	0xFF, 0xFF, 0xFF
-        };
-
         private void InitializeVerbs()
         {
             _verbs = new VerbSlot[100];
@@ -428,9 +441,10 @@ namespace Scumm4
             }
         }
 
-        #endregion
+        #endregion Constructor
 
         #region Execution
+
         public void Step()
         {
             var opCode = _currentScriptData[_currentPos++];
@@ -453,9 +467,11 @@ namespace Scumm4
                 this.Step();
             }
         }
-        #endregion
+
+        #endregion Execution
 
         #region Variable Manipulation
+
         private byte ReadByte()
         {
             return _currentScriptData[_currentPos++];
@@ -555,7 +571,8 @@ namespace Scumm4
                 return;
             }
         }
-        #endregion
+
+        #endregion Variable Manipulation
 
         #region OpCodes
 
@@ -689,6 +706,7 @@ namespace Scumm4
             _opCodes[0x6A] = StartScript;
             /* 6C */
             _opCodes[0x6D] = PutActorInRoom;
+            _opCodes[0x6E] = StopObjectScript;
             _opCodes[0x6F] = IfNotState;
             /* 70 */
             _opCodes[0x70] = Lights;
@@ -958,16 +976,19 @@ namespace Scumm4
                     b = GetVarOrDirectByte(OpCodeParameter.Param2);
                     SetBoxFlags(a, b);
                     break;
+
                 case 2:
                     a = GetVarOrDirectByte(OpCodeParameter.Param1);
                     b = GetVarOrDirectByte(OpCodeParameter.Param2);
                     SetBoxScale(a, b);
                     break;
+
                 case 3:
                     a = GetVarOrDirectByte(OpCodeParameter.Param1);
                     b = GetVarOrDirectByte(OpCodeParameter.Param2);
                     SetBoxScale(a, (b - 1) | 0x8000);
                     break;
+
                 case 4:
                     CreateBoxMatrix();
                     break;
@@ -1091,7 +1112,6 @@ namespace Scumm4
                 y2 = r.y;
             }
 
-
             // Now compute the distance between the two points
             return GetDistance(x, y, x2, y2);
         }
@@ -1122,7 +1142,6 @@ namespace Scumm4
                 bool b = GetClass(obj, (ObjectClass)cls);
                 if ((((cls & 0x80) != 0) && !b) || ((0 == (cls & 0x80)) && b))
                     cond = false;
-
             }
             JumpRelative(cond);
         }
@@ -1169,10 +1188,12 @@ namespace Scumm4
                     if (_variables[VariableHaveMessage] != 0)
                         break;
                     return;
+
                 case 3:		// SO_WAIT_FOR_CAMERA
                     if (_camera._cur.X / 8 != _camera._dest.X / 8)
                         break;
                     return;
+
                 case 4:		// SO_WAIT_FOR_SENTENCE
                     if (_sentenceNum != 0)
                     {
@@ -1182,6 +1203,7 @@ namespace Scumm4
                     else if (!IsScriptInUse(_variables[VariableSentenceScript]))
                         return;
                     break;
+
                 default:
                     throw new NotImplementedException("Wait: unknown subopcode" + (_opCode & 0x1F));
             }
@@ -1282,7 +1304,6 @@ namespace Scumm4
             // from the Lost and Found tent after riding the Cone of Tragedy. But
             // it probably applies to all V6+ games. See bugs #493153 and #907113.
             // FT disassembly is checked, behavior is correct. [sev]
-
             int arg = 0;
 
             // WORKAROUND for bug #1917981: Game crash when finishing Indy3 demo.
@@ -1335,7 +1356,6 @@ namespace Scumm4
             }
             else
             {
-
                 // Alternatively, scan the inventory to see if the object is in there...
                 for (i = 0; i < NumInventory; i++)
                 {
@@ -1395,7 +1415,6 @@ namespace Scumm4
             short y = ReadWordSigned();
 
             _variables[VariableWalkToObject] = obj;
-
             StartScene(a._room);
             _variables[VariableWalkToObject] = 0;
 
@@ -1408,7 +1427,6 @@ namespace Scumm4
                     a.SetDirection(dir + 180);
             }
             a._moving = 0;
-
 
             // This is based on disassembly
             _camera._cur.X = _camera._dest.X = a.GetPos().X;
@@ -1503,6 +1521,7 @@ namespace Scumm4
                         a++;
                     }
                     break;
+
                 case 2:		// SO_RESTORE_VERBS
                     while (a <= b)
                     {
@@ -1520,6 +1539,7 @@ namespace Scumm4
                         a++;
                     }
                     break;
+
                 case 3:		// SO_DELETE_VERBS
                     while (a <= b)
                     {
@@ -1529,6 +1549,7 @@ namespace Scumm4
                         a++;
                     }
                     break;
+
                 default:
                     throw new NotImplementedException();
             }
@@ -1593,15 +1614,15 @@ namespace Scumm4
             if (_slots[_currentScript].cutsceneOverride > 0)	// Only terminate if active
                 _slots[_currentScript].cutsceneOverride--;
 
-            var args = new int[] { cutSceneData[cutSceneStackPointer] };
+            var args = new int[] { _cutSceneData[cutSceneStackPointer] };
 
             _variables[VariableOverride] = 0;
 
-            if (cutScenePtr[cutSceneStackPointer] != 0 && (_slots[_currentScript].cutsceneOverride > 0))	// Only terminate if active
+            if (_cutScenePtr[cutSceneStackPointer] != 0 && (_slots[_currentScript].cutsceneOverride > 0))	// Only terminate if active
                 _slots[_currentScript].cutsceneOverride--;
 
-            cutSceneScript[cutSceneStackPointer] = 0;
-            cutScenePtr[cutSceneStackPointer] = 0;
+            _cutSceneScript[cutSceneStackPointer] = 0;
+            _cutScenePtr[cutSceneStackPointer] = 0;
 
             cutSceneStackPointer--;
 
@@ -1648,38 +1669,48 @@ namespace Scumm4
                     case 0:										/* dummy case */
                         GetVarOrDirectByte(OpCodeParameter.Param1);
                         break;
+
                     case 1:			// SO_COSTUME
                         a.SetActorCostume((ushort)GetVarOrDirectByte(OpCodeParameter.Param1));
                         break;
+
                     case 2:			// SO_STEP_DIST
                         i = GetVarOrDirectByte(OpCodeParameter.Param1);
                         j = GetVarOrDirectByte(OpCodeParameter.Param2);
                         a.SetActorWalkSpeed((uint)i, (uint)j);
                         break;
+
                     case 3:			// SO_SOUND
                         a._sound[0] = (byte)GetVarOrDirectByte(OpCodeParameter.Param1);
                         break;
+
                     case 4:			// SO_WALK_ANIMATION
                         a._walkFrame = (byte)GetVarOrDirectByte(OpCodeParameter.Param1);
                         break;
+
                     case 5:			// SO_TALK_ANIMATION
                         a._talkStartFrame = (byte)GetVarOrDirectByte(OpCodeParameter.Param1);
                         a._talkStopFrame = (byte)GetVarOrDirectByte(OpCodeParameter.Param2);
                         break;
+
                     case 6:			// SO_STAND_ANIMATION
                         a._standFrame = (byte)GetVarOrDirectByte(OpCodeParameter.Param1);
                         break;
+
                     case 7:			// SO_ANIMATION
                         GetVarOrDirectByte(OpCodeParameter.Param1);
                         GetVarOrDirectByte(OpCodeParameter.Param2);
                         GetVarOrDirectByte(OpCodeParameter.Param3);
                         break;
+
                     case 8:			// SO_DEFAULT
                         a.InitActor(0);
                         break;
+
                     case 9:			// SO_ELEVATION
                         a.SetElevation(GetVarOrDirectWord(OpCodeParameter.Param1));
                         break;
+
                     case 10:		// SO_ANIMATION_DEFAULT
                         a._initFrame = 1;
                         a._walkFrame = 2;
@@ -1687,36 +1718,45 @@ namespace Scumm4
                         a._talkStartFrame = 4;
                         a._talkStopFrame = 5;
                         break;
+
                     case 11:		// SO_PALETTE
                         i = GetVarOrDirectByte(OpCodeParameter.Param1);
                         j = GetVarOrDirectByte(OpCodeParameter.Param2);
                         //assertRange(0, i, 31, "o5_actorOps: palette slot");
                         a.SetPalette(i, (ushort)j);
                         break;
+
                     case 12:		// SO_TALK_COLOR
                         a._talkColor = (byte)GetVarOrDirectByte(OpCodeParameter.Param1);
                         break;
+
                     case 13:		// SO_ACTOR_NAME
                         var name = ReadCharacters();
                         a.Name = name;
                         break;
+
                     case 14:		// SO_INIT_ANIMATION
                         a._initFrame = (byte)GetVarOrDirectByte(OpCodeParameter.Param1);
                         break;
+
                     case 16:		// SO_ACTOR_WIDTH
                         a._width = (uint)GetVarOrDirectByte(OpCodeParameter.Param1);
                         break;
+
                     case 17:		// SO_ACTOR_SCALE
                         i = j = GetVarOrDirectByte(OpCodeParameter.Param1);
                         a._boxscale = (ushort)i;
                         a.SetScale(i, j);
                         break;
+
                     case 18:		// SO_NEVER_ZCLIP
                         a._forceClip = 0;
                         break;
+
                     case 19:		// SO_ALWAYS_ZCLIP
                         a._forceClip = GetVarOrDirectByte(OpCodeParameter.Param1);
                         break;
+
                     case 20:		// SO_IGNORE_BOXES
                     case 21:		// SO_FOLLOW_BOXES
                         a._ignoreBoxes = (_opCode & 1) == 0;
@@ -1724,12 +1764,15 @@ namespace Scumm4
                         if (a.IsInCurrentRoom())
                             a.PutActor();
                         break;
+
                     case 22:		// SO_ANIMATION_SPEED
                         a.SetAnimSpeed((byte)GetVarOrDirectByte(OpCodeParameter.Param1));
                         break;
+
                     case 23:		// SO_SHADOW
                         a._shadowMode = (byte)GetVarOrDirectByte(OpCodeParameter.Param1);
                         break;
+
                     default:
                         throw new NotImplementedException();
                     //error("o5_actorOps: default case %d", _opCode & 0x1F);
@@ -1797,12 +1840,15 @@ namespace Scumm4
                 case ObjectClass.Untouchable:
                     cls2 = (ObjectClass)24;
                     break;
+
                 case ObjectClass.Player:
                     cls2 = (ObjectClass)23;
                     break;
+
                 case ObjectClass.XFlip:
                     cls2 = (ObjectClass)19;
                     break;
+
                 case ObjectClass.YFlip:
                     cls2 = (ObjectClass)18;
                     break;
@@ -1855,8 +1901,8 @@ namespace Scumm4
         private void EndOverrideCore()
         {
             var idx = cutSceneStackPointer;
-            cutScenePtr[idx] = 0;
-            cutSceneScript[idx] = 0;
+            _cutScenePtr[idx] = 0;
+            _cutSceneScript[idx] = 0;
 
             _variables[VariableOverride] = 0;
         }
@@ -1865,8 +1911,8 @@ namespace Scumm4
         {
             int idx = cutSceneStackPointer;
 
-            cutScenePtr[idx] = (uint)_currentPos;
-            cutSceneScript[idx] = _currentScript;
+            _cutScenePtr[idx] = (uint)_currentPos;
+            _cutSceneScript[idx] = _currentScript;
 
             // Skip the jump instruction following the override instruction
             // (the jump is responsible for "skipping" cutscenes, and the reason
@@ -2030,9 +2076,9 @@ namespace Scumm4
             if (cutSceneStackPointer >= MaxCutsceneNum)
                 throw new NotSupportedException("Cutscene stack overflow");
 
-            cutSceneData[cutSceneStackPointer] = args.Count > 0 ? args[0] : 0;
-            cutSceneScript[cutSceneStackPointer] = 0;
-            cutScenePtr[cutSceneStackPointer] = 0;
+            _cutSceneData[cutSceneStackPointer] = args.Count > 0 ? args[0] : 0;
+            _cutSceneScript[cutSceneStackPointer] = 0;
+            _cutScenePtr[cutSceneStackPointer] = 0;
 
             _cutSceneScriptIndex = scr;
             if (_variables[VariableCutSceneStartScript] != 0)
@@ -2094,6 +2140,7 @@ namespace Scumm4
                         _variables[VariableCameraMaxX] = b;
                     }
                     break;
+
                 case 2:		// SO_ROOM_COLOR
                     {
                         var a = GetVarOrDirectWord(OpCodeParameter.Param1);
@@ -2102,6 +2149,7 @@ namespace Scumm4
                         _fullRedraw = true;
                     }
                     break;
+
                 case 3:     // SO_ROOM_SCREEN
                     {
                         var a = GetVarOrDirectWord(OpCodeParameter.Param1);
@@ -2109,6 +2157,7 @@ namespace Scumm4
                         InitScreens(a, b);
                     }
                     break;
+
                 case 4:		// SO_ROOM_PALETTE
                     {
                         var a = GetVarOrDirectWord(OpCodeParameter.Param1);
@@ -2119,14 +2168,17 @@ namespace Scumm4
                         //setDirtyColors(b, b);
                     }
                     break;
+
                 case 5:		// SO_ROOM_SHAKE_ON
                     // TODO:
                     //setShake(1);
                     break;
+
                 case 6:		// SO_ROOM_SHAKE_OFF
                     // TODO:
                     //    setShake(0);
                     break;
+
                 case 7:		// SO_ROOM_SCALE
                     {
                         var a = GetVarOrDirectByte(OpCodeParameter.Param1);
@@ -2139,6 +2191,7 @@ namespace Scumm4
                         SetScaleSlot(e - 1, 0, b, a, 0, d, c);
                     }
                     break;
+
                 case 10:	// SO_ROOM_FADE
                     {
                         var a = GetVarOrDirectWord(OpCodeParameter.Param1);
@@ -2153,6 +2206,7 @@ namespace Scumm4
                         }
                     }
                     break;
+
                 default:
                     throw new NotImplementedException();
             }
@@ -2164,6 +2218,10 @@ namespace Scumm4
             _mainVirtScreen = new VirtScreen(b, _screenWidth, h - b, format, 2, true) { TopLine = b };
             _textVirtScreen = new VirtScreen(0, _screenWidth, b, format, 1) { TopLine = 0 };
             _verbVirtScreen = new VirtScreen(h, _screenWidth, _screenHeight - h, format, 1) { TopLine = h };
+
+            _screenB = b;
+            _screenH = h;
+
             _gdi.Init();
         }
 
@@ -2198,39 +2256,22 @@ namespace Scumm4
             byte slot = GetScriptSlotIndex();
 
             var e = (byte)entry;
-            var data = (from o in roomData.Objects
-                        where o.obj_nr == obj
-                        where o.Scripts.ContainsKey(e) || o.Scripts.ContainsKey(0xFF)
-                        select o.Scripts.ContainsKey(e) ? o.Scripts[e].Data : o.Scripts[0xFF].Data).FirstOrDefault();
+            var objFound = (from o in roomData.Objects.Concat(_invData)
+                            where o != null
+                            where o.obj_nr == obj
+                            where o.ScriptOffsets.ContainsKey(e) || o.ScriptOffsets.ContainsKey(0xFF)
+                            select o).FirstOrDefault();
 
-            if (data == null)
-            {
-                data = (from o in _invData
-                        where o != null
-                        where o.obj_nr == obj
-                        where o.Scripts.ContainsKey(e) || o.Scripts.ContainsKey(0xFF)
-                        select o.Scripts.ContainsKey(e) ? o.Scripts[e].Data : o.Scripts[0xFF].Data).FirstOrDefault();
-            }
-
-            if (data == null)
+            if (objFound == null)
                 return;
 
-            var count = (from o in roomData.Objects
-                         where o.obj_nr == obj
-                         select o.Scripts.Count).Concat(
-                         from o in _invData
-                         where o != null
-                         where o.obj_nr == obj
-                         select o.Scripts.Count).First();
-            if (count == 0)
-                return;
 
             //if (cycle == 0)
             //    cycle = (_game.heversion >= 90) ? VAR(VAR_SCRIPT_CYCLE) : 1;
 
             _slots[slot].number = (ushort)obj;
             _slots[slot].InventoryEntry = entry;
-            _slots[slot].offs = 0;
+            _slots[slot].offs = (uint)((objFound.ScriptOffsets.ContainsKey(e) ? objFound.ScriptOffsets[e] : objFound.ScriptOffsets[0xFF]) - objFound.Script.Offset);
             _slots[slot].status = ScriptStatus.Running;
             _slots[slot].where = where;
             _slots[slot].freezeResistant = freezeResistant;
@@ -2259,6 +2300,11 @@ namespace Scumm4
                 _slots[_currentScript].status = ScriptStatus.Dead;
             }
             _currentScript = 0xFF;
+        }
+
+        private void StopObjectScript()
+        {
+            StopObjectScript((ushort)GetVarOrDirectWord(OpCodeParameter.Param1));
         }
 
         private void StopObjectScript(ushort script)
@@ -2403,6 +2449,7 @@ namespace Scumm4
                 case 0:
                     // seems to do nothing
                     break;
+
                 case 1:
                 case 2:
                 case 3:
@@ -2419,11 +2466,14 @@ namespace Scumm4
                     //TransitionEffect(effect - 1);
                     //throw new NotImplementedException();
                     break;
+
                 case 128:
                     UnkScreenEffect6();
                     break;
+
                 case 129:
                     break;
+
                 case 130:
                 case 131:
                 case 132:
@@ -2431,12 +2481,15 @@ namespace Scumm4
                     //scrollEffect(133 - effect);
                     throw new NotImplementedException();
                     break;
+
                 case 134:
                     DissolveEffect(1, 1);
                     break;
+
                 case 135:
                     DissolveEffect(1, MainVirtScreen.Height);
                     break;
+
                 default:
                     throw new NotImplementedException(string.Format("Unknown screen effect {0}", effect));
             }
@@ -2480,6 +2533,7 @@ namespace Scumm4
                     case 128:
                         // TODO:unkScreenEffect6();
                         break;
+
                     case 129:
                         // Just blit screen 0 to the display (i.e. display will be black)
                         _mainVirtScreen.SetDirtyRange(0, _mainVirtScreen.Height);
@@ -2738,6 +2792,7 @@ namespace Scumm4
                         _strings[id] = ReadCharacters();
                     }
                     break;
+
                 case 2:
                     {
                         // copy string
@@ -2746,6 +2801,7 @@ namespace Scumm4
                         _strings[idA] = _strings[idB].ToArray();
                     }
                     break;
+
                 case 3:
                     {
                         // Write Character
@@ -2755,6 +2811,7 @@ namespace Scumm4
                         _strings[id][index] = (byte)character;
                     }
                     break;
+
                 case 4:
                     {
                         // Get string char
@@ -2765,6 +2822,7 @@ namespace Scumm4
                         SetResult(result);
                     }
                     break;
+
                 case 5:
                     {
                         // New String
@@ -2773,6 +2831,7 @@ namespace Scumm4
                         _strings[id] = new byte[size];
                     }
                     break;
+
                 default:
                     throw new NotImplementedException();
             }
@@ -2821,53 +2880,66 @@ namespace Scumm4
                 case 3: // load costume
                     // TODO:
                     break;
+
                 case 4: // load room
                     // TODO:
                     break;
+
                 case 5:			// SO_NUKE_SCRIPT
                 case 6:			// SO_NUKE_SOUND
                 case 7:			// SO_NUKE_COSTUME
                 case 8:			// SO_NUKE_ROOM
                     break;
+
                 case 9:			// SO_LOCK_SCRIPT
                     if (resId < NumGlobalScripts)
                     {
                         //_res.Sounds[resId].Lock = true;
                     }
                     break;
+
                 case 10:
                     // TODO: lock Sound
                     break;
+
                 case 11:		// SO_LOCK_COSTUME
                     //_res.Costumes[resId].Lock = true;
                     break;
+
                 case 12:		// SO_LOCK_ROOM
                     // TODO:
                     // if (resid > 0x7F)
                     //    resid = _resourceMapper[resid & 0x7F];
                     //_res->lock(rtRoom, resid);
                     break;
+
                 case 13:		// SO_UNLOCK_SCRIPT
                     break;
+
                 case 14:		// SO_UNLOCK_SOUND
                     break;
+
                 case 15:		// SO_UNLOCK_COSTUME
                     // TODO:
                     break;
+
                 case 16:		// SO_UNLOCK_ROOM
                     if (resId > 0x7F)
                         resId = _resourceMapper[resId & 0x7F];
                     // TODO:
                     //_res->unlock(rtRoom, resId);
                     break;
+
                 case 17:
                     // SO_CLEAR_HEAP
                     //heapClear(0);
                     //unkHeapProc2(0, 0);
                     break;
+
                 case 18:
                     LoadCharset(resId);
                     break;
+
                 default:
                     throw new NotImplementedException();
             }
@@ -2894,35 +2966,43 @@ namespace Scumm4
                     _cursor.State = 1;
                     VerbMouseOver(0);
                     break;
+
                 case 2:
                     // Cursor Off
                     _cursor.State = 0;
                     VerbMouseOver(0);
                     break;
+
                 case 3:
                     // User Input on
                     _userPut = 1;
                     break;
+
                 case 4:
                     // User Input off
                     _userPut = 0;
                     break;
+
                 case 5:
                     // SO_CURSOR_SOFT_ON
                     _cursor.State++;
                     VerbMouseOver(0);
                     break;
+
                 case 6:
                     // SO_CURSOR_SOFT_OFF
                     _cursor.State--;
                     VerbMouseOver(0);
                     break;
+
                 case 7:			// SO_USERPUT_SOFT_ON
                     _userPut++;
                     break;
+
                 case 8:			// SO_USERPUT_SOFT_OFF
                     _userPut--;
                     break;
+
                 case 10:
                     {
                         // SO_CURSOR_IMAGE
@@ -2932,6 +3012,7 @@ namespace Scumm4
                         //redefineBuiltinCursorFromChar(i, j);
                     }
                     break;
+
                 case 11:		// SO_CURSOR_HOTSPOT
                     {
                         var i = GetVarOrDirectByte(OpCodeParameter.Param1);
@@ -2941,6 +3022,7 @@ namespace Scumm4
                         //redefineBuiltinCursorHotspot(i, j, k);
                     }
                     break;
+
                 case 12:
                     {
                         // SO_CURSOR_SET
@@ -2956,6 +3038,7 @@ namespace Scumm4
                         InitCharset(GetVarOrDirectByte(OpCodeParameter.Param1));
                     }
                     break;
+
                 default:
                     throw new NotImplementedException();
             }
@@ -2988,6 +3071,7 @@ namespace Scumm4
                         // var
                         _stack.Push(GetVarOrDirectWord(OpCodeParameter.Param1));
                         break;
+
                     case 2:
                         // add
                         {
@@ -2995,6 +3079,7 @@ namespace Scumm4
                             _stack.Push(i + _stack.Pop());
                         }
                         break;
+
                     case 3:
                         // sub
                         {
@@ -3002,6 +3087,7 @@ namespace Scumm4
                             _stack.Push(_stack.Pop() - i);
                         }
                         break;
+
                     case 4:
                         // mul
                         {
@@ -3009,6 +3095,7 @@ namespace Scumm4
                             _stack.Push(i * _stack.Pop());
                         }
                         break;
+
                     case 5:
                         // div
                         {
@@ -3016,6 +3103,7 @@ namespace Scumm4
                             _stack.Push(_stack.Pop() / i);
                         }
                         break;
+
                     case 6:
                         // normal opcode
                         {
@@ -3024,6 +3112,7 @@ namespace Scumm4
                             _stack.Push(_variables[0]);
                         }
                         break;
+
                     default:
                         throw new NotImplementedException();
                 }
@@ -3081,34 +3170,42 @@ namespace Scumm4
                             vs.type = VerbType.Image;
                         }
                         break;
+
                     case 2:		// SO_VERB_NAME
                         vs.Text = ReadCharacters();
                         vs.type = VerbType.Text;
                         vs.imgindex = 0;
                         break;
+
                     case 3:		// SO_VERB_COLOR
                         vs.color = (byte)GetVarOrDirectByte(OpCodeParameter.Param1);
                         break;
+
                     case 4:		// SO_VERB_HICOLOR
                         vs.hicolor = (byte)GetVarOrDirectByte(OpCodeParameter.Param1);
                         break;
+
                     case 5:		// SO_VERB_AT
                         var left = GetVarOrDirectWord(OpCodeParameter.Param1);
                         var top = GetVarOrDirectWord(OpCodeParameter.Param2);
                         vs.curRect.left = left;
                         vs.curRect.top = top;
                         break;
+
                     case 6:
                         // SO_VERB_ON
                         vs.curmode = 1;
                         break;
+
                     case 7:
                         // SO_VERB_OFF
                         vs.curmode = 0;
                         break;
+
                     case 8:		// SO_VERB_DELETE
                         KillVerb(slot);
                         break;
+
                     case 9:
                         {
                             // SO_VERB_NEW
@@ -3139,15 +3236,19 @@ namespace Scumm4
                     case 16:	// SO_VERB_DIMCOLOR
                         vs.dimcolor = (byte)GetVarOrDirectByte(OpCodeParameter.Param1);
                         break;
+
                     case 17:	// SO_VERB_DIM
                         vs.curmode = 2;
                         break;
+
                     case 18:	// SO_VERB_KEY
                         vs.key = (byte)GetVarOrDirectByte(OpCodeParameter.Param1);
                         break;
+
                     case 19:	// SO_VERB_CENTER
                         vs.center = true;
                         break;
+
                     default:
                         throw new NotImplementedException();
                 }
@@ -3256,7 +3357,6 @@ namespace Scumm4
                 _invData[slot] = objFound;
             }
             _inventory[slot] = (ushort)obj;
-
         }
 
         private int GetInventorySlot()
@@ -3275,12 +3375,12 @@ namespace Scumm4
             _scumm.ObjectOwnerTable[obj] = owner;
         }
 
-        ObjectData[] _invData = new ObjectData[NumInventory];
+        private ObjectData[] _invData = new ObjectData[NumInventory];
 
-
-        #endregion
+        #endregion OpCodes
 
         #region Properties
+
         public IList<ObjectData> Objects
         {
             get
@@ -3326,9 +3426,11 @@ namespace Scumm4
         public ICostumeRenderer CostumeRenderer { get { return _costumeRenderer; } }
 
         public Surface TextSurface { get { return _textSurface; } }
-        #endregion
+
+        #endregion Properties
 
         #region Misc Methods
+
         private Dictionary<int, byte[]> _newNames = new Dictionary<int, byte[]>();
 
         private void SetObjectName(int obj)
@@ -3649,12 +3751,9 @@ namespace Scumm4
                 _objs[i + 1].flags = roomData.Objects[i].flags;
                 _objs[i + 1].fl_object_index = roomData.Objects[i].fl_object_index;
                 _objs[i + 1].actordir = roomData.Objects[i].actordir;
-                _objs[i + 1].Scripts.Clear();
                 _objs[i + 1].Image = roomData.Objects[i].Image;
-                foreach (var script in roomData.Objects[i].Scripts)
-                {
-                    _objs[i + 1].Scripts.Add(script.Key, script.Value);
-                }
+                _objs[i + 1].Script.Offset = roomData.Objects[i].Script.Offset;
+                _objs[i + 1].Script.Data = roomData.Objects[i].Script.Data;
                 _objs[i + 1].ScriptOffsets.Clear();
                 foreach (var scriptOffset in roomData.Objects[i].ScriptOffsets)
                 {
@@ -3665,7 +3764,9 @@ namespace Scumm4
             for (int i = roomData.Objects.Count + 1; i < _objs.Length; i++)
             {
                 _objs[i].obj_nr = 0;
-                _objs[i].Scripts.Clear();
+                _objs[i].Script.Offset = 0;
+                _objs[i].ScriptOffsets.Clear();
+                _objs[i].Script.Data = new byte[0];
             }
         }
 
@@ -3739,12 +3840,15 @@ namespace Scumm4
                 case 252:
                     textSlot = 3;
                     break;
+
                 case 253:
                     textSlot = 2;
                     break;
+
                 case 254:
                     textSlot = 1;
                     break;
+
                 default:
                     textSlot = 0;
                     break;
@@ -3760,31 +3864,38 @@ namespace Scumm4
                         _string[textSlot].ypos = (short)GetVarOrDirectWord(OpCodeParameter.Param2);
                         _string[textSlot].overhead = false;
                         break;
+
                     case 1:		// SO_COLOR
                         _string[textSlot].color = (byte)GetVarOrDirectByte(OpCodeParameter.Param1);
                         break;
+
                     case 2:		// SO_CLIPPED
                         _string[textSlot].right = (short)GetVarOrDirectWord(OpCodeParameter.Param1);
                         break;
+
                     case 4:		// SO_CENTER
                         _string[textSlot].center = true;
                         _string[textSlot].overhead = false;
                         break;
+
                     case 6:		// SO_LEFT
                         {
                             _string[textSlot].center = false;
                             _string[textSlot].overhead = false;
                         }
                         break;
+
                     case 7:		// SO_OVERHEAD
                         _string[textSlot].overhead = true;
                         break;
+
                     case 15:
                         {	// SO_TEXTSTRING
                             var tmp = ReadCharacters();
                             PrintString(textSlot, tmp);
                         }
                         return;
+
                     default:
                         throw new NotImplementedException();
                 }
@@ -3800,6 +3911,7 @@ namespace Scumm4
                 case 0:
                     ActorTalk(msg);
                     break;
+
                 case 1:
                     DrawString(1, msg);
                     break;
@@ -4033,12 +4145,11 @@ namespace Scumm4
         private void UpdateScriptData(ushort slotIndex)
         {
             var scriptNum = _slots[slotIndex].number;
-            if (roomData != null && (_slots[slotIndex].where == WhereIsObject.Inventory))
+            if (_slots[slotIndex].where == WhereIsObject.Inventory)
             {
-                var data = (from o in roomData.Objects.Concat(_invData)
+                var data = (from o in _invData
                             where o.obj_nr == scriptNum
-                            select o.Scripts.ContainsKey((byte)_slots[slotIndex].InventoryEntry) ?
-                            o.Scripts[(byte)_slots[slotIndex].InventoryEntry].Data : o.Scripts[0xFF].Data).FirstOrDefault();
+                            select o.Script.Data).FirstOrDefault();
                 _currentScriptData = data;
             }
             else if (scriptNum < NumGlobalScripts)
@@ -4063,8 +4174,8 @@ namespace Scumm4
                 var data = (from o in roomData.Objects
                             where o.obj_nr == scriptNum
                             let entry = (byte)_slots[slotIndex].InventoryEntry
-                            where o.Scripts.ContainsKey(entry) || o.Scripts.ContainsKey(0xFF)
-                            select o.Scripts.ContainsKey(entry) ? o.Scripts[entry].Data : o.Scripts[0xFF].Data).FirstOrDefault();
+                            where o.ScriptOffsets.ContainsKey(entry) || o.ScriptOffsets.ContainsKey(0xFF)
+                            select o.Script.Data).FirstOrDefault();
                 _currentScriptData = data;
             }
         }
@@ -4163,7 +4274,6 @@ namespace Scumm4
             return box.mask;
         }
 
-        Box[] _boxes;
         private Box GetBoxBase(byte boxNum)
         {
             Box box = null;
@@ -4245,7 +4355,6 @@ namespace Scumm4
             if ((box.ul == box.ur && box.lr == box.ll) ||
                 (box.ul == box.ll && box.ur == box.lr))
             {
-
                 Point tmp;
                 tmp = ClosestPtOnLine(box.ul, box.lr, p);
                 if (p.SquareDistance(tmp) <= 4)
@@ -4381,18 +4490,18 @@ namespace Scumm4
         {
             int idx = cutSceneStackPointer;
 
-            var offs = cutScenePtr[idx];
+            var offs = _cutScenePtr[idx];
             if (offs != 0)
             {
-                _slots[cutSceneScript[idx]].offs = offs;
-                _slots[cutSceneScript[idx]].status = ScriptStatus.Running;
-                _slots[cutSceneScript[idx]].freezeCount = 0;
+                _slots[_cutSceneScript[idx]].offs = offs;
+                _slots[_cutSceneScript[idx]].status = ScriptStatus.Running;
+                _slots[_cutSceneScript[idx]].freezeCount = 0;
 
-                if (_slots[cutSceneScript[idx]].cutsceneOverride > 0)
-                    _slots[cutSceneScript[idx]].cutsceneOverride--;
+                if (_slots[_cutSceneScript[idx]].cutsceneOverride > 0)
+                    _slots[_cutSceneScript[idx]].cutsceneOverride--;
 
                 _variables[VariableOverride] = 1;
-                cutScenePtr[idx] = 0;
+                _cutScenePtr[idx] = 0;
             }
         }
 
@@ -4430,12 +4539,15 @@ namespace Scumm4
                 case ObjectClass.Untouchable:
                     cls = (ObjectClass)24;
                     break;
+
                 case ObjectClass.Player:
                     cls = (ObjectClass)23;
                     break;
+
                 case ObjectClass.XFlip:
                     cls = (ObjectClass)19;
                     break;
+
                 case ObjectClass.YFlip:
                     cls = (ObjectClass)18;
                     break;
@@ -4488,7 +4600,6 @@ namespace Scumm4
                     RunInputScript(area, 0, code);
                 }
             }
-
         }
 
         private void RunInputScript(ClickArea clickArea, KeyCode code, int mode)
@@ -4759,8 +4870,8 @@ namespace Scumm4
 
             rect.Clip(vs.Width, vs.Height);
 
-            int height = rect.height();
-            int width = rect.width();
+            int height = rect.Height;
+            int width = rect.Width;
 
             MarkRectAsDirty(vs, rect.left, rect.right, rect.top, rect.bottom, UsageBitRestored);
 
@@ -4807,7 +4918,6 @@ namespace Scumm4
             _charset.SetCurID(_string[a].charset);
 
             fontHeight = _charset.GetFontHeight();
-
 
             // trim from the right
             int tmpPos = 0;
@@ -4856,6 +4966,7 @@ namespace Scumm4
                         case 14:
                             i += 2;
                             break;
+
                         case 1:
                         case 8:
                             if (_charset._center)
@@ -4875,6 +4986,7 @@ namespace Scumm4
                                 _charset._top += fontHeight;
                             }
                             break;
+
                         case 12:
                             color = (uint)(buf[i] + (buf[i + 1] << 8));
                             i += 2;
@@ -4938,15 +5050,19 @@ namespace Scumm4
                             case 4:
                                 dstPos += ConvertIntMessage(dst, dstPos, val);
                                 break;
+
                             case 5:
                                 dstPos += ConvertVerbMessage(dst, dstPos, val);
                                 break;
+
                             case 6:
                                 dstPos += ConvertNameMessage(dst, dstPos, val);
                                 break;
+
                             case 7:
                                 dstPos += ConvertStringMessage(dst, dstPos, val);
                                 break;
+
                             case 9:
                             case 10:
                             case 12:
@@ -4958,6 +5074,7 @@ namespace Scumm4
                                 dst[dstPos++] = src[num + 0];
                                 dst[dstPos++] = src[num + 1];
                                 break;
+
                             default:
                                 throw new NotSupportedException(string.Format("convertMessageToString(): string escape sequence %d unknown", chr));
                         }
@@ -5082,11 +5199,14 @@ namespace Scumm4
             //else
             return (LightModes)_variables[VariableCurrentLights];
         }
-        #endregion
+
+        #endregion Misc Methods
 
         #region Cursor Members
-        ushort[][] _cursorImages = new ushort[4][];
-        byte[] _cursorHotspots = new byte[2 * 4];
+
+        private ushort[][] _cursorImages = new ushort[4][];
+        private byte[] _cursorHotspots = new byte[2 * 4];
+
         private static readonly ushort[][] default_cursor_images = new ushort[4][] {
 		/* cross-hair */
 		new ushort[16]{
@@ -5097,19 +5217,19 @@ namespace Scumm4
 			0x0000, 0x7ffe, 0x6006, 0x300c, 0x1818, 0x0c30, 0x0660, 0x03c0,
 			0x0660, 0x0c30, 0x1998, 0x33cc, 0x67e6, 0x7ffe, 0x0000, 0x0000 },
 		/* arrow */
-		new ushort[16]{ 
+		new ushort[16]{
 			0x0000, 0x4000, 0x6000, 0x7000, 0x7800, 0x7c00, 0x7e00, 0x7f00,
 			0x7f80, 0x78c0, 0x7c00, 0x4600, 0x0600, 0x0300, 0x0300, 0x0180 },
 		/* hand */
-		new ushort[16]{ 
+		new ushort[16]{
 			0x1e00, 0x1200, 0x1200, 0x1200, 0x1200, 0x13ff, 0x1249, 0x1249,
 			0xf249, 0x9001, 0x9001, 0x9001, 0x8001, 0x8001, 0x8001, 0xffff }
 		};
 
         private static readonly byte[] default_cursor_hotspots = new byte[] {
-            8, 7,   
-            8, 7,   
-            1, 1,  
+            8, 7,
+            8, 7,
+            1, 1,
             5, 0,
             8, 7, //zak256
         };
@@ -5139,14 +5259,13 @@ namespace Scumm4
             byte[] pixels = new byte[_cursor.Width * _cursor.Height];
 
             int offset = 0;
-            var color = (byte)(16 * cursor_color);
-            for (int w = 0; w < 16; w++)
+            for (int w = 0; w < _cursor.Width; w++)
             {
-                for (int h = 0; h < 16; h++)
+                for (int h = 0; h < _cursor.Height; h++)
                 {
                     if ((src[w] & (1 << h)) != 0)
                     {
-                        pixels[offset] = color;
+                        pixels[offset] = cursor_color;
                     }
                     offset++;
                 }
@@ -5164,9 +5283,11 @@ namespace Scumm4
             }
             Array.Copy(default_cursor_hotspots, _cursorHotspots, 8);
         }
-        #endregion
+
+        #endregion Cursor Members
 
         #region Scale Members
+
         public int GetBoxScale(byte boxNum)
         {
             var box = this.GetBoxBase(boxNum);
@@ -5241,7 +5362,8 @@ namespace Scumm4
             if (slot > _scaleSlots.Length) throw new ArgumentOutOfRangeException("slot", slot, "Invalid scale slot");
             _scaleSlots[slot - 1] = new ScaleSlot { x1 = x1, y1 = y1, y2 = y2, scale1 = scale1, scale2 = scale2 };
         }
-        #endregion
+
+        #endregion Scale Members
 
         public bool IsLightOn()
         {
@@ -5251,57 +5373,48 @@ namespace Scumm4
         private void ProcessInput()
         {
             MouseAndKeyboardStat = 0;
-            this.Dispatcher.Invoke(new Action(() =>
+
+            bool mainmenuKeyEnabled = _variables[VariableMainMenu] != 0;
+
+            if (_inputManager.IsKeyDown(KeyCode.Escape))
             {
-                bool mainmenuKeyEnabled = _variables[VariableMainMenu] != 0;
+                MouseAndKeyboardStat = (KeyCode)Variables[ScummEngine.VariableCutSceneExitKey];
+                AbortCutscene();
+            }
 
-                if (Keyboard.IsKeyDown(Key.Escape))
+            if (mainmenuKeyEnabled && _inputManager.IsKeyDown(KeyCode.F5))
+            {
+                var eh = ShowMenuDialogRequested;
+                if (eh != null)
                 {
-                    MouseAndKeyboardStat = (KeyCode)Variables[ScummEngine.VariableCutSceneExitKey];
-                    AbortCutscene();
+                    eh(this, EventArgs.Empty);
                 }
+            }
 
-                if (mainmenuKeyEnabled && Keyboard.IsKeyDown(Key.F5))
+            for (KeyCode i = KeyCode.A; i <= KeyCode.Z; i++)
+            {
+                if (_inputManager.IsKeyDown(i))
                 {
-                    var eh = ShowMenuDialogRequested;
-                    if (eh != null)
-                    {
-                        eh(this, EventArgs.Empty);
-                    }
+                    MouseAndKeyboardStat = i;
                 }
+            }
 
-                for (Key i = Key.A; i <= Key.Z; i++)
-                {
-                    if (Keyboard.IsKeyDown(i))
-                    {
-                        MouseAndKeyboardStat = (KeyCode)(i - Key.A + KeyCode.A);
-                    }
-                }
+            if (_inputManager.IsMouseLeftPressed())
+            {
+                MouseAndKeyboardStat = (KeyCode)ScummMouseButtonState.LeftClick;
+            }
 
-                if (Mouse.LeftButton == MouseButtonState.Pressed)
-                {
-                    MouseAndKeyboardStat = (KeyCode)ScummMouseButtonState.LeftClick;
-                }
+            if (_inputManager.IsMouseRightPressed())
+            {
+                MouseAndKeyboardStat = (KeyCode)ScummMouseButtonState.RightClick;
+            }
 
-                if (Mouse.RightButton == MouseButtonState.Pressed)
-                {
-                    MouseAndKeyboardStat = (KeyCode)ScummMouseButtonState.RightClick;
-                }
-
-                var w = this._gfxManager.Width;
-                var h = this._gfxManager.Height;
-                var pos = this._gfxManager.GetMousePosition();
-                if (pos.X > 0 && pos.Y > 0)
-                {
-                    var mouseX1 = (pos.X * 320.0) / w;
-                    var mouseX = (ScreenStartStrip * 8) + mouseX1;
-                    var mouseY = pos.Y * 200.0 / h;
-                    Variables[ScummEngine.VariableMouseX] = (int)mouseX1;
-                    Variables[ScummEngine.VariableMouseY] = (int)mouseY;
-                    Variables[ScummEngine.VariableVirtualMouseX] = (int)mouseX;
-                    Variables[ScummEngine.VariableVirtualMouseY] = (int)mouseY;
-                }
-            }));
+            var pos = this._inputManager.GetMousePosition();
+            var mouseX = (ScreenStartStrip * 8) + pos.X;
+            Variables[ScummEngine.VariableMouseX] = (int)pos.X;
+            Variables[ScummEngine.VariableMouseY] = (int)pos.Y;
+            Variables[ScummEngine.VariableVirtualMouseX] = (int)mouseX;
+            Variables[ScummEngine.VariableVirtualMouseY] = (int)pos.Y;
         }
 
         public bool Go()
@@ -5316,33 +5429,23 @@ namespace Scumm4
             //    _saveLoadFlag = 0;
             //}
 
-            int diff = 0;	// Duration of one loop iteration
+            TimeSpan diff = TimeSpan.Zero;	// Duration of one loop iteration
 
             while (!ShouldQuit())
             {
-
                 //_debugger->onFrame();
 
-                // Notify the script about how much time has passed, in ticks (60 ticks per second)
-                _variables[VariableTimer] = diff * 60 / 1000;
-                _variables[VariableTimerTotal] += diff * 60 / 1000;
+                Update(diff);
 
                 // Determine how long to wait before the next loop iteration should start
-                int delta = _variables[VariableTimerNext];
-                if (delta < 1)	// Ensure we don't get into an endless loop
-                    delta = 1;  // by not decreasing sleepers.
+                var tsDelta = GetTimeToWait();
 
                 // Wait...
-                WaitForTimer(delta * 1000 / 60 - diff);
+                WaitForTimer(tsDelta - diff);
 
-                // Start the stop watch!
                 var dt = DateTime.Now;
-
-                // Run the main loop
-                Loop(delta);
-
-                // Halt the stop watch and compute how much time this iteration took.
-                diff = (int)((DateTime.Now - dt).TotalMilliseconds);
+                Loop(diff);
+                diff = DateTime.Now - dt;
 
                 if (ShouldQuit())
                 {
@@ -5353,9 +5456,23 @@ namespace Scumm4
             return true;
         }
 
-        private void WaitForTimer(int msec_delay)
+        public TimeSpan GetTimeToWait()
         {
-            var delay = TimeSpan.FromMilliseconds(msec_delay);
+            int delta = _variables[VariableTimerNext];
+            if (delta < 0)	// Ensure we don't get into an endless loop
+                delta = 0;  // by not decreasing sleepers.
+            var tsDelta = TimeSpan.FromSeconds(delta / 60.0);
+            return tsDelta;
+        }
+
+        public void Update(TimeSpan diff)
+        {
+            _variables[VariableTimer] = (int)diff.TotalSeconds * 60;
+            _variables[VariableTimerTotal] += (int)diff.TotalSeconds * 60;
+        }
+
+        private void WaitForTimer(TimeSpan delay)
+        {
             DateTime start_time;
 
             start_time = DateTime.Now;
@@ -5381,8 +5498,10 @@ namespace Scumm4
             return HastToQuit;
         }
 
-        private void Loop(int delta)
+        public void Loop(TimeSpan tsDelta)
         {
+            var delta = (int)tsDelta.TotalMilliseconds;
+            if (delta == 0) delta = 4;
             _variables[VariableTimer1] += delta;
             _variables[VariableTimer2] += delta;
             _variables[VariableTimer2] += delta;
@@ -5488,11 +5607,13 @@ namespace Scumm4
         }
 
         #region Save & Load
-        List<LoadAndSaveEntry> _loadAndSaveActions = new List<LoadAndSaveEntry>();
 
-        private const uint InfosectionVersion = 2;
+        private List<LoadAndSaveEntry> _loadAndSaveActions = new List<LoadAndSaveEntry>();
+
+        private const uint InfoSectionVersion = 2;
         private const uint SaveInfoSectionSize = (4 + 4 + 4 + 4 + 4 + 4 + 2);
         private bool _hasToLoad = false;
+        private bool _hasToSave = false;
         private string _savegame;
 
         public void Load(string savegame)
@@ -5504,13 +5625,38 @@ namespace Scumm4
         private void SaveLoad()
         {
             // TODO: improve this
-            if (_variables[VariableMainMenu] != 0 && _hasToLoad)
+            if (_variables[VariableMainMenu] != 0)
             {
-                _hasToLoad = false;
-                if (File.Exists(_savegame))
+                if (_hasToLoad)
                 {
-                    LoadState(_savegame);
+                    _hasToLoad = false;
+                    if (File.Exists(_savegame))
+                    {
+                        LoadState(_savegame);
+                    }
                 }
+                else if (_hasToSave)
+                {
+                    _hasToSave = false;
+                    SaveState(_savegame, _savegame);
+                }
+            }
+        }
+
+        private const uint SaveCurrentVersion = 94;
+
+
+        private void SaveState(string path, string name)
+        {
+            using (var file = File.OpenWrite(path))
+            {
+                var bw = new BinaryWriter(file);
+                SaveHeader(name, bw);
+
+                SaveInfos(bw);
+
+                var serializer = Serializer.CreateWriter(bw, CurrentVersion);
+                SaveOrLoad(serializer);
             }
         }
 
@@ -5518,14 +5664,15 @@ namespace Scumm4
         {
             using (var file = File.OpenRead(path))
             {
-                var reader = new BinaryReader(file);
-                var hdr = LoadSaveGameHeader(reader);
+                var br = new BinaryReader(file);
+                var hdr = LoadSaveGameHeader(br);
+                var serializer = Serializer.CreateReader(br, hdr.ver);
 
                 // Since version 56 we save additional information about the creation of
                 // the save game and the save time.
                 if (hdr.ver >= 56)
                 {
-                    SaveStateMetaInfos infos = LoadInfos(reader);
+                    SaveStateMetaInfos infos = LoadInfos(br);
                     if (infos == null)
                     {
                         //warning("Info section could not be found");
@@ -5590,535 +5737,10 @@ namespace Scumm4
                 //if (_game.features & GF_OLD_BUNDLE)
                 //    loadCharset(0); // FIXME - HACK ?
 
-                ushort roomWidth;
-                ushort roomHeight;
-                uint ENCD_offs;
-                uint EXCD_offs;
-                uint IM00_offs;
-                uint CLUT_offs;
-                uint EPAL_offs;
-                uint PALS_offs;
-                byte curPalIndex;
-                byte numObjectsInRoom;
-                uint[] localScriptOffsets;
-                byte[][] charsetData;
-                ushort curExecScript;
-                short defaultTalkDelay;
-                short numInMsgStack;
-                ushort userState;
-                byte gdiCursorActive;
-                byte[] grabbedCursor;
-                short mouseX, mouseY;
-                byte[] colorUsedByCycle;
-                byte palManipStart, palManipEnd;
-                ushort palManipCounter = 0;
-                byte[] currentPalette = null;
-                byte[] darkenPalette = null;
-                ushort[] gdiImgBufOffs;
-                byte[] proc_special_palette;
-                byte randSeed1;
-                byte randSeed2;
-                short shakeEnabled;
-                uint shakeFrame;
-                ushort screenB = 0;
-                ushort screenH = 0;
-                ushort NESCostumeSet;
-                short cd_track, cd_loops, cd_frame, cd_end;
+                SaveOrLoad(serializer);
 
-                #region MainEntries
-                var mainEntries = new[]{
-                    LoadAndSaveEntry.Create(()=> _gameMD5 = reader.ReadBytes(16),39),
-                    LoadAndSaveEntry.Create(()=>roomWidth = reader.ReadUInt16(),8,50),
-                    LoadAndSaveEntry.Create(()=>roomHeight = reader.ReadUInt16(),8,50),
-                    LoadAndSaveEntry.Create(()=>ENCD_offs = reader.ReadUInt32(),8,50),
-                    LoadAndSaveEntry.Create(()=>EXCD_offs = reader.ReadUInt32(),8,50),
-                    LoadAndSaveEntry.Create(()=>IM00_offs = reader.ReadUInt32(),8,50),
-                    LoadAndSaveEntry.Create(()=>CLUT_offs = reader.ReadUInt32(),8,50),
-                    LoadAndSaveEntry.Create(()=>EPAL_offs = reader.ReadUInt32(),8,9),
-                    LoadAndSaveEntry.Create(()=>PALS_offs = reader.ReadUInt32(),8,50),
-                    LoadAndSaveEntry.Create(()=>curPalIndex = reader.ReadByte(),8),
-                    LoadAndSaveEntry.Create(()=>_currentRoom = reader.ReadByte(),8),
-                    LoadAndSaveEntry.Create(()=>_roomResource = reader.ReadByte(),8),
-                    LoadAndSaveEntry.Create(()=>numObjectsInRoom = reader.ReadByte(),8),
-                    LoadAndSaveEntry.Create(()=>_currentScript = reader.ReadByte(),8),
-                    LoadAndSaveEntry.Create(()=> localScriptOffsets = reader.ReadUInt32s(_numLocalScripts),8,50),
-                    // vm.localvar grew from 25 to 40 script entries and then from
-		            // 16 to 32 bit variables (but that wasn't reflect here)... and
-		            // THEN from 16 to 25 variables.
-                    LoadAndSaveEntry.Create(()=> _localVariables = reader.ReadMatrixUInt16(17,25),8,8),
-                    LoadAndSaveEntry.Create(()=> _localVariables = reader.ReadMatrixUInt16(17,40),9,14),
-                    // We used to save 25 * 40 = 1000 blocks; but actually, each 'row consisted of 26 entry,
-		            // i.e. 26 * 40 = 1040. Thus the last 40 blocks of localvar where not saved at all. To be
-		            // able to load this screwed format, we use a trick: We load 26 * 38 = 988 blocks.
-		            // Then, we mark the followin 12 blocks (24 bytes) as obsolete.
-                    LoadAndSaveEntry.Create(()=> _localVariables = reader.ReadMatrixUInt16(26,38),15,17),
-                    // TODO
-                    //MK_OBSOLETE_ARRAY(ScummEngine, vm.localvar[39][0], sleUint16, 12, VER(15), VER(17)),
-                    // This was the first proper multi dimensional version of the localvars, with 32 bit values
-                    LoadAndSaveEntry.Create(()=> _localVariables = reader.ReadMatrixInt32(26,40),18,19),
-
-                    // Then we doubled the script slots again, from 40 to 80
-		            LoadAndSaveEntry.Create(()=> _localVariables = reader.ReadMatrixInt32(26,NumScriptSlot),20),
-
-		            LoadAndSaveEntry.Create(()=> _resourceMapper = reader.ReadBytes(128), 8),
-		            LoadAndSaveEntry.Create(()=> _charsetColorMap = reader.ReadBytes(16), 8),
-
-                    // _charsetData grew from 10*16, to 15*16, to 23*16 bytes
-                    LoadAndSaveEntry.Create(()=> charsetData = reader.ReadMatrixBytes(10,16),8,9),
-                    LoadAndSaveEntry.Create(()=> charsetData = reader.ReadMatrixBytes(15,16),10,66),
-                    LoadAndSaveEntry.Create(()=> charsetData = reader.ReadMatrixBytes(23,16),67),
-
-                    LoadAndSaveEntry.Create(()=> curExecScript = reader.ReadUInt16(), 8,62),
-
-                    LoadAndSaveEntry.Create(()=> Camera._dest.X = reader.ReadInt16(), 8),
-                    LoadAndSaveEntry.Create(()=> Camera._dest.Y = reader.ReadInt16(), 8),
-                    LoadAndSaveEntry.Create(()=> Camera._cur.X = reader.ReadInt16(), 8),
-                    LoadAndSaveEntry.Create(()=> Camera._cur.Y = reader.ReadInt16(), 8),
-                    LoadAndSaveEntry.Create(()=> Camera._last.X = reader.ReadInt16(), 8),
-                    LoadAndSaveEntry.Create(()=> Camera._last.Y = reader.ReadInt16(), 8),
-                    LoadAndSaveEntry.Create(()=> Camera._accel.X = reader.ReadInt16(), 8),
-                    LoadAndSaveEntry.Create(()=> Camera._accel.Y = reader.ReadInt16(), 8),
-                    LoadAndSaveEntry.Create(()=> _screenStartStrip = reader.ReadInt16(), 8),
-                    LoadAndSaveEntry.Create(()=> _screenEndStrip = reader.ReadInt16(), 8),
-                    LoadAndSaveEntry.Create(()=> Camera._mode = (CameraMode)reader.ReadByte(), 8),
-                    LoadAndSaveEntry.Create(()=> Camera._follows = reader.ReadByte(), 8),
-                    LoadAndSaveEntry.Create(()=> Camera._leftTrigger = reader.ReadInt16(), 8),
-                    LoadAndSaveEntry.Create(()=> Camera._rightTrigger = reader.ReadInt16(), 8),
-                    LoadAndSaveEntry.Create(()=> Camera._movingToActor = reader.ReadUInt16()!=0, 8),
-
-                    LoadAndSaveEntry.Create(()=> _actorToPrintStrFor = reader.ReadByte(), 8),
-                    LoadAndSaveEntry.Create(()=> _charsetColor = reader.ReadByte(), 8),
-
-                    // _charsetBufPos was changed from byte to int
-                    LoadAndSaveEntry.Create(()=> _charsetBufPos = reader.ReadByte(), 8,9),
-                    LoadAndSaveEntry.Create(()=> _charsetBufPos = reader.ReadInt16(), 10),
-
-                    LoadAndSaveEntry.Create(()=> _haveMsg = reader.ReadByte(), 8),
-                    LoadAndSaveEntry.Create(()=> _haveActorSpeechMsg = reader.ReadByte()!=0, 61),
-                    LoadAndSaveEntry.Create(()=> _useTalkAnims = reader.ReadByte()!=0, 8),
-
-                    LoadAndSaveEntry.Create(()=> _talkDelay = reader.ReadInt16(), 8),
-                    LoadAndSaveEntry.Create(()=> defaultTalkDelay = reader.ReadInt16(), 8),
-                    LoadAndSaveEntry.Create(()=> numInMsgStack = reader.ReadInt16(), 8,27),
-                    LoadAndSaveEntry.Create(()=> _sentenceNum = reader.ReadByte(), 8),
-
-                    LoadAndSaveEntry.Create(()=> cutSceneStackPointer = reader.ReadByte(), 8),
-                    LoadAndSaveEntry.Create(()=> cutScenePtr = reader.ReadUInt32s(5), 8),
-                    LoadAndSaveEntry.Create(()=> cutSceneScript = reader.ReadBytes(5), 8),
-                    LoadAndSaveEntry.Create(()=> cutSceneData = Array.ConvertAll(reader.ReadInt16s(5), n => (int)n), 8),
-                    LoadAndSaveEntry.Create(()=> _cutSceneScriptIndex = reader.ReadInt16(), 8),
-
-                    LoadAndSaveEntry.Create(()=> _numNestedScripts = reader.ReadByte(), 8),
-                    LoadAndSaveEntry.Create(()=> _userPut = (sbyte)reader.ReadByte(), 8),
-                    LoadAndSaveEntry.Create(()=> userState = reader.ReadUInt16(), 17),
-                    LoadAndSaveEntry.Create(()=> _cursor.State = (sbyte)reader.ReadByte(), 8),
-                    LoadAndSaveEntry.Create(()=> gdiCursorActive = reader.ReadByte(), 8,20),
-                    LoadAndSaveEntry.Create(()=> _currentCursor = reader.ReadByte(), 8),
-                    LoadAndSaveEntry.Create(()=> grabbedCursor = reader.ReadBytes(8192), 20),
-                    LoadAndSaveEntry.Create(()=> _cursor.Width = reader.ReadInt16(), 20),
-                    LoadAndSaveEntry.Create(()=> _cursor.Height = reader.ReadInt16(), 20),
-                    LoadAndSaveEntry.Create(()=> _cursor.HotspotX = reader.ReadInt16(), 20),
-                    LoadAndSaveEntry.Create(()=> _cursor.HotspotY = reader.ReadInt16(), 20),
-                    LoadAndSaveEntry.Create(()=> _cursor.Animate = reader.ReadByte()!=0, 20),
-                    LoadAndSaveEntry.Create(()=> _cursor.AnimateIndex = reader.ReadByte(), 20),
-                    LoadAndSaveEntry.Create(()=> mouseX = reader.ReadInt16(), 20),
-                    LoadAndSaveEntry.Create(()=> mouseY = reader.ReadInt16(), 20),
-
-                    LoadAndSaveEntry.Create(()=> colorUsedByCycle = reader.ReadBytes(256), 60),
-                    LoadAndSaveEntry.Create(()=> _doEffect = reader.ReadByte()!=0, 8),
-                    LoadAndSaveEntry.Create(()=> _switchRoomEffect = reader.ReadByte(), 8),
-                    LoadAndSaveEntry.Create(()=> _newEffect = reader.ReadByte(), 8),
-                    LoadAndSaveEntry.Create(()=> _switchRoomEffect2 = reader.ReadByte(), 8),
-                    LoadAndSaveEntry.Create(()=> _bgNeedsRedraw = reader.ReadByte()!=0, 8),
-
-                    // The state of palManipulate is stored only since V10
-                    LoadAndSaveEntry.Create(()=> palManipStart = reader.ReadByte(), 10),
-                    LoadAndSaveEntry.Create(()=> palManipEnd = reader.ReadByte(), 10),
-                    LoadAndSaveEntry.Create(()=> palManipCounter = reader.ReadUInt16(), 10),
-
-                    // gfxUsageBits grew from 200 to 410 entries. Then 3 * 410 entries:
-                    LoadAndSaveEntry.Create(()=> _gfxUsageBits = reader.ReadUInt32s(200), 8,9),
-                    LoadAndSaveEntry.Create(()=> _gfxUsageBits = reader.ReadUInt32s(410), 10,13),
-                    LoadAndSaveEntry.Create(()=> _gfxUsageBits = reader.ReadUInt32s(3*410), 14),
-
-                    LoadAndSaveEntry.Create(()=> _gdi.TransparentColor = reader.ReadByte(), 8,50),
-                    LoadAndSaveEntry.Create(()=> currentPalette = reader.ReadBytes(768), 8),
-                    LoadAndSaveEntry.Create(()=> darkenPalette = reader.ReadBytes(768), 53),
-
-                    // Sam & Max specific palette replaced by _shadowPalette now.
-                    LoadAndSaveEntry.Create(()=> proc_special_palette = reader.ReadBytes(256), 8,33),
-                    
-                    LoadAndSaveEntry.Create(()=> _charsetBuffer = reader.ReadBytes(256), 8),
-
-                    LoadAndSaveEntry.Create(()=> _egoPositioned = reader.ReadByte()!=0, 8),
-
-                    // _gdi->_imgBufOffs grew from 4 to 5 entries. Then one day we realized
-                    // that we don't have to store it since initBGBuffers() recomputes it.
-                    LoadAndSaveEntry.Create(()=> gdiImgBufOffs = reader.ReadUInt16s(4), 8,9),
-                    LoadAndSaveEntry.Create(()=> gdiImgBufOffs = reader.ReadUInt16s(5), 10,26),
-
-                    // See _imgBufOffs: _numZBuffer is recomputed by initBGBuffers().
-                    LoadAndSaveEntry.Create(()=> _gdi._numZBuffer = reader.ReadByte(), 8,26),
-
-                    LoadAndSaveEntry.Create(()=> _screenEffectFlag = reader.ReadByte()!=0, 8),
-
-                    LoadAndSaveEntry.Create(()=> randSeed1 = reader.ReadByte(), 8,9),
-                    LoadAndSaveEntry.Create(()=> randSeed2 = reader.ReadByte(), 8,9),
-
-                    // Converted _shakeEnabled to boolean and added a _shakeFrame field.
-                    LoadAndSaveEntry.Create(()=> shakeEnabled = reader.ReadInt16(), 8,9),
-                    LoadAndSaveEntry.Create(()=> shakeEnabled = reader.ReadByte(), 10),
-                    LoadAndSaveEntry.Create(()=> shakeFrame = reader.ReadUInt32(), 10),
-
-                    LoadAndSaveEntry.Create(()=> _keepText = reader.ReadByte()!=0, 8),
-
-                    LoadAndSaveEntry.Create(()=> screenB = reader.ReadUInt16(), 8),
-                    LoadAndSaveEntry.Create(()=> screenH = reader.ReadUInt16(), 8),
-
-                    LoadAndSaveEntry.Create(()=> NESCostumeSet = reader.ReadUInt16(), 47),
-
-                    LoadAndSaveEntry.Create(()=> cd_track = reader.ReadInt16(), 9,9),
-                    LoadAndSaveEntry.Create(()=> cd_loops = reader.ReadInt16(), 9,9),
-                    LoadAndSaveEntry.Create(()=> cd_frame = reader.ReadInt16(), 9,9),
-                    LoadAndSaveEntry.Create(()=> cd_end = reader.ReadInt16(), 9,9)
-                };
-                #endregion
-
-                //var md5Backup = new byte[16];
-                //Array.Copy(_gameMD5, md5Backup, 16);
-
-                Array.ForEach(mainEntries, e => e.Execute(hdr.ver));
-                roomData = _scumm.GetRoom(_currentRoom);
-
-                //if (!Array.Equals(md5Backup, _gameMD5))
-                //{
-                //    //warning("Game was saved with different gamedata - you may encounter problems");
-                //    //debug(1, "You have %s and save is %s.", md5str2, md5str1);
-                //    return false;
-                //}
-
-                // Starting V14, we extended the usage bits, to be able to cope with games
-                // that have more than 30 actors (up to 94 are supported now, in theory).
-                // Since the format of the usage bits was changed by this, we have to
-                // convert them when loading an older savegame.
-                //if (hdr.ver < 14)
-                //    UpgradeGfxUsageBits();
-
-                // When loading, move the mouse to the saved mouse position.
-                if (hdr.ver >= 20)
-                {
-                    //UpdateCursor();
-                    //_system->warpMouse(_mouse.x, _mouse.y);
-                }
-
-                // Before V61, we re-used the _haveMsg flag to handle "alternative" speech
-                // sound files (see charset code 10).
-                if (hdr.ver < 61)
-                {
-                    if (_haveMsg == 0xFE)
-                    {
-                        _haveActorSpeechMsg = false;
-                        _haveMsg = 0xFF;
-                    }
-                    else
-                    {
-                        _haveActorSpeechMsg = true;
-                    }
-                }
-
-                //
-                // Save/load actors
-                //
-                for (int i = 0; i < this.Actors.Length; i++)
-                {
-                    _actors[i].Load(reader, hdr.ver);
-                }
-
-                //
-                // Save/load sound data
-                //
-                short currentCDSound;
-                short currentMusic;
-                var soundEntries = new[]{
-                    LoadAndSaveEntry.Create(()=> currentCDSound = reader.ReadInt16(),35),
-                    LoadAndSaveEntry.Create(()=> currentMusic = reader.ReadInt16(),35),
-                };
-                Array.ForEach(soundEntries, e => e.Execute(hdr.ver));
-
-                //
-                // Save/load script data
-                //
-                if (hdr.ver < 9)
-                {
-                    for (int i = 0; i < 25; i++)
-                    {
-                        _slots[i].Load(reader, hdr.ver);
-                    }
-                }
-                else if (hdr.ver < 20)
-                {
-                    for (int i = 0; i < 40; i++)
-                    {
-                        _slots[i].Load(reader, hdr.ver);
-                    }
-                }
-                else
-                {
-                    for (int i = 0; i < NumScriptSlot; i++)
-                    {
-                        _slots[i].Load(reader, hdr.ver);
-                    }
-                }
-                Array.ForEach(_slots, slot =>
-                {
-                    if (slot.where == WhereIsObject.Global)
-                    {
-                        slot.offs -= (uint)_scumm.GetGlobalScriptOffset((byte)slot.number);
-                    }
-                    else if (slot.where == WhereIsObject.Local && slot.number >= 0xC8)
-                    {
-                        slot.offs = (uint)(slot.offs - roomData.LocalScripts[slot.number - 0xC8].Offset);
-                    }
-                });
-
-                ResetRoomObjects();
-                //
-                // Save/load local objects
-                //
-                for (int i = 0; i < _numLocalObjects; i++)
-                {
-                    _objs[i].Load(reader, hdr.ver);
-                }
-                if (hdr.ver < 13)
-                {
-                    // Since roughly v13 of the save games, the objs storage has changed a bit
-                    for (int i = _objs.Length; i < _numLocalObjects; i++)
-                    {
-                        _objs[i].obj_nr = 0;
-                    }
-                }
-
-                //
-                // Save/load misc stuff
-                //
-                for (int i = 0; i < _verbs.Length; i++)
-                {
-                    _verbs[i].Load(reader, hdr.ver);
-                }
-                for (int i = 0; i < 16; i++)
-                {
-                    _nest[i].Load(reader, hdr.ver);
-                }
-                for (int i = 0; i < 6; i++)
-                {
-                    _sentence[i].Load(reader, hdr.ver);
-                }
-                for (int i = 0; i < 6; i++)
-                {
-                    _string[i].Load(reader, hdr.ver);
-                }
-                for (int i = 0; i < 16; i++)
-                {
-                    _colorCycle[i].Load(reader, hdr.ver);
-                }
-                if (hdr.ver >= 13)
-                {
-                    for (int i = 0; i < 20; i++)
-                    {
-                        _scaleSlots[i] = new ScaleSlot();
-                        _scaleSlots[i].Load(reader, hdr.ver);
-                    }
-                }
-
-                //
-                // Save/load resources
-                //
-                ResType type;
-                ushort idx;
-                while ((type = (ResType)reader.ReadUInt16()) != (ResType)0xFFFF)
-                {
-                    while ((idx = reader.ReadUInt16()) != 0xFFFF)
-                    {
-                        LoadResource(reader, type, idx);
-                    }
-                }
-
-                //
-                // Save/load global object state
-                //
-                var objectOwnerTable = reader.ReadBytes(_numGlobalObjects);
-                Array.Copy(objectOwnerTable, this._scumm.ObjectOwnerTable, _numGlobalObjects);
-                var objectStateTable = reader.ReadBytes(_numGlobalObjects);
-                Array.Copy(objectStateTable, this._scumm.ObjectStateTable, _numGlobalObjects);
-
-                //if (_objectRoomTable)
-                //    s->saveLoadArrayOf(_objectRoomTable, _numGlobalObjects, sizeof(_objectRoomTable[0]), sleByte);
-
-                //
-                // Save/load palette data
-                // Don't save 16 bit palette in FM-Towns and PCE games, since it gets regenerated afterwards anyway.
-                //if (_16BitPalette && !(_game.platform == Common::kPlatformFMTowns && s->getVersion() < VER(82)) && !((_game.platform == Common::kPlatformFMTowns || _game.platform == Common::kPlatformPCEngine) && s->getVersion() > VER(87))) {
-                //    s->saveLoadArrayOf(_16BitPalette, 512, sizeof(_16BitPalette[0]), sleUint16);
-                //}
-
-                if (_shadowPaletteSize != 0)
-                {
-                    _shadowPalette = reader.ReadBytes(_shadowPaletteSize);
-                    // _roomPalette didn't show up until V21 save games
-                    // Note that we also save the room palette for Indy4 Amiga, since it
-                    // is used as palette map there too, but we do so slightly a bit
-                    // further down to group it with the other special palettes needed.
-                    if (hdr.ver >= 21)
-                    {
-                        _roomPalette = reader.ReadBytes(256);
-                    }
-                }
-
-                // PalManip data was not saved before V10 save games
-                if (hdr.ver < 10)
-                {
-                    palManipCounter = 0;
-                }
-                if (palManipCounter != 0)
-                {
-                    _palManipPalette = reader.ReadBytes(0x300);
-                    _palManipIntermediatePal = reader.ReadBytes(0x600);
-                }
-
-                // darkenPalette was not saved before V53
-                if (hdr.ver < 53)
-                {
-                    Array.Copy(currentPalette, darkenPalette, 768);
-                }
-
-                // _colorUsedByCycle was not saved before V60
-                if (hdr.ver < 60)
-                {
-                    //memset(_colorUsedByCycle, 0, sizeof(_colorUsedByCycle));
-                    Array.Clear(_colorUsedByCycle, 0, _colorUsedByCycle.Length);
-                }
-
-                // Indy4 Amiga specific palette tables were not saved before V85
-                //if (_game.platform == Common::kPlatformAmiga && _game.id == GID_INDY4) {
-                //    if (s->getVersion() >= 85) {
-                //        s->saveLoadArrayOf(_roomPalette, 256, 1, sleByte);
-                //        s->saveLoadArrayOf(_verbPalette, 256, 1, sleByte);
-                //        s->saveLoadArrayOf(_amigaPalette, 3 * 64, 1, sleByte);
-
-                //        // Starting from version 86 we also save the first used color in
-                //        // the palette beyond the verb palette. For old versions we just
-                //        // look for it again, which hopefully won't cause any troubles.
-                //        if (s->getVersion() >= 86) {
-                //            s->saveLoadArrayOf(&_amigaFirstUsedColor, 1, 2, sleUint16);
-                //        } else {
-                //            amigaPaletteFindFirstUsedColor();
-                //        }
-                //    } else {
-                //        warning("Save with old Indiana Jones 4 Amiga palette handling detected");
-                //        // We need to restore the internal state of the Amiga palette for Indy4
-                //        // Amiga. This might lead to graphics glitches!
-                //        setAmigaPaletteFromPtr(_currentPalette);
-                //    }
-                //}
-
-                //
-                // Save/load more global object state
-                //
-                Array.Copy(reader.ReadUInt32s(_numGlobalObjects), this._scumm.ClassData, _numGlobalObjects);
-
-                //
-                // Save/load script variables
-                //
-                //var120Backup = _scummVars[120];
-                //var98Backup = _scummVars[98];
-
-                if (hdr.ver > 37)
-                {
-                    //s->saveLoadArrayOf(_roomVars, _numRoomVariables, sizeof(_roomVars[0]), sleInt32);
-                }
-
-                // The variables grew from 16 to 32 bit.
-                if (hdr.ver < 15)
-                {
-                    _variables = Array.ConvertAll(reader.ReadInt16s(_variables.Length), s => (int)s);
-                }
-                else
-                {
-                    _variables = Array.ConvertAll(reader.ReadInt32s(_variables.Length), s => (int)s);
-                }
-
-                //if (_game.id == GID_TENTACLE)	// Maybe misplaced, but that's the main idea
-                //    _scummVars[120] = var120Backup;
-                //if (_game.id == GID_INDY4)
-                //    _scummVars[98] = var98Backup;
-
-                _bitVars = reader.ReadBytes(_bitVars.Length);
-
-                //
-                // Save/load a list of the locked objects
-                //
-                while ((type = (ResType)reader.ReadByte()) != (ResType)0xFF)
-                {
-                    idx = reader.ReadUInt16();
-                    //_res->lock(type, idx);
-                }
-
-                //
-                // Save/load the Audio CD status
-                //
-                if (hdr.ver >= 24)
-                {
-                    //AudioCDManager::Status info;
-                    //if (s->isSaving())
-                    //    info = _system->getAudioCDManager()->getStatus();
-                    //s->saveLoadArrayOf(&info, 1, sizeof(info), audioCDEntries);
-                    // If we are loading, and the music being loaded was supposed to loop
-                    // forever, then resume playing it. This helps a lot when the audio CD
-                    // is used to provide ambient music (see bug #788195).
-                    //if (s->isLoading() && info.playing && info.numLoops < 0)
-                    //  _system->getAudioCDManager()->play(info.track, info.numLoops, info.start, info.duration);
-                }
-
-                //
-                // Save/load the iMuse status
-                //
-                //if (_imuse && (_saveSound || !_saveTemporaryState))
-                //{
-                //    _imuse->save_or_load(s, this);
-                //}
-
-                //
-                // Save/load music engine status
-                //
-                //if (_musicEngine)
-                //{
-                //    _musicEngine->saveLoadWithSerializer(s);
-                //}
-
-                //
-                // Save/load the charset renderer state
-                //
-                //if (s->getVersion() >= VER(73))
-                //{
-                //    _charset->saveLoadWithSerializer(s);
-                //}
-                //else if (s->isLoading())
-                //{
-                //    if (s->getVersion() == VER(72))
-                //    {
-                //        _charset->setCurID(s->loadByte());
-                //    }
-                //    else
-                //    {
-                //        // Before V72, the charset id wasn't saved. This used to cause issues such
-                //        // as the one described in the bug report #1722153. For these savegames,
-                //        // we reinitialize the id using a, hopefully, sane value.
-                //        _charset->setCurID(_string[0]._default.charset);
-                //    }
-                //}
-
-                var sb = screenB;
-                var sh = screenH;
+                var sb = _screenB;
+                var sh = _screenH;
                 Camera._last.X = Camera._cur.X;
 
                 // Restore the virtual screens and force a fade to black.
@@ -6128,12 +5750,7 @@ namespace Scumm4
                 MainVirtScreen.SetDirtyRange(0, MainVirtScreen.Height);
                 UpdateDirtyScreen(MainVirtScreen);
                 //UpdatePalette();
-                var colors = new Color[256];
-                for (int i = 0; i < 256; i++)
-                {
-                    colors[i] = Color.FromRgb(currentPalette[i * 3], currentPalette[i * 3 + 1], currentPalette[i * 3 + 2]);
-                }
-                this._gfxManager.SetPalette(colors);
+                this._gfxManager.SetPalette(_currentPalette.Colors);
                 InitScreens(sb, sh);
 
                 _completeScreenRedraw = true;
@@ -6150,10 +5767,772 @@ namespace Scumm4
             return true;
         }
 
-        int _shadowPaletteSize = 256;
-        byte[] _shadowPalette;
-        byte[] _palManipPalette, _palManipIntermediatePal;
-        byte[] _colorUsedByCycle = new byte[256];
+        private void SaveOrLoad(Serializer serializer)
+        {
+            ushort roomWidth;
+            ushort roomHeight;
+            uint ENCD_offs = 0;
+            uint EXCD_offs = 0;
+            uint IM00_offs = 0;
+            uint CLUT_offs = 0;
+            uint EPAL_offs = 0;
+            uint PALS_offs = 0;
+            byte curPalIndex = 0;
+            byte numObjectsInRoom = (byte)this._objs.Length;
+            uint[] localScriptOffsets;
+            byte[][] charsetData;
+            ushort curExecScript;
+            short defaultTalkDelay;
+            short numInMsgStack;
+            ushort userState;
+            byte gdiCursorActive;
+            byte[] grabbedCursor;
+            short mouseX, mouseY;
+            byte[] colorUsedByCycle;
+            byte palManipStart, palManipEnd;
+            ushort palManipCounter = 0;
+            byte[] darkenPalette = null;
+            ushort[] gdiImgBufOffs;
+            byte[] proc_special_palette;
+            byte randSeed1;
+            byte randSeed2;
+            short shakeEnabled;
+            uint shakeFrame;
+            ushort NESCostumeSet;
+            short cd_track, cd_loops, cd_frame, cd_end;
+
+            #region MainEntries
+
+            var mainEntries = new[]{
+                    LoadAndSaveEntry.Create(reader => _gameMD5 = reader.ReadBytes(16), writer =>writer.Write(_gameMD5), 39),
+                    LoadAndSaveEntry.Create(reader => roomWidth = reader.ReadUInt16(), writer => writer.Write(roomData.Header.Width), 8,50),
+                    LoadAndSaveEntry.Create(reader => roomHeight = reader.ReadUInt16(), writer => writer.Write(roomData.Header.Height),8,50),
+                    LoadAndSaveEntry.Create(reader => ENCD_offs = reader.ReadUInt32(), writer => writer.Write(ENCD_offs),8,50),
+                    LoadAndSaveEntry.Create(reader => EXCD_offs = reader.ReadUInt32(), writer => writer.Write(EXCD_offs),8,50),
+                    LoadAndSaveEntry.Create(reader => IM00_offs = reader.ReadUInt32(), writer => writer.Write(IM00_offs),8,50),
+                    LoadAndSaveEntry.Create(reader => CLUT_offs = reader.ReadUInt32(), writer => writer.Write(CLUT_offs),8,50),
+                    LoadAndSaveEntry.Create(reader => EPAL_offs = reader.ReadUInt32(), writer => writer.Write(EPAL_offs),8,9),
+                    LoadAndSaveEntry.Create(reader => PALS_offs = reader.ReadUInt32(), writer => writer.Write(PALS_offs),8,50),
+                    LoadAndSaveEntry.Create(reader => curPalIndex = reader.ReadByte(), writer => writer.Write(curPalIndex),8),
+                    LoadAndSaveEntry.Create(reader => _currentRoom = reader.ReadByte(), (writer)=> writer.Write(_currentRoom),8),
+                    LoadAndSaveEntry.Create(reader => _roomResource = reader.ReadByte(), (writer)=> writer.Write(_roomResource),8),
+                    LoadAndSaveEntry.Create(reader => numObjectsInRoom = reader.ReadByte(), (writer)=> writer.Write(numObjectsInRoom),8),
+                    LoadAndSaveEntry.Create(reader => _currentScript = reader.ReadByte(), (writer)=> writer.Write(_currentScript),8),
+                    LoadAndSaveEntry.Create(reader =>  localScriptOffsets = reader.ReadUInt32s(_numLocalScripts), (writer)=> writer.Write(new uint[_numLocalScripts],_numLocalScripts),8,50),
+                    // vm.localvar grew from 25 to 40 script entries and then from
+		            // 16 to 32 bit variables (but that wasn't reflect here)... and
+		            // THEN from 16 to 25 variables.
+                    LoadAndSaveEntry.Create(reader => _localVariables = reader.ReadMatrixUInt16(17,25),writer => writer.WriteMatrixUInt16(_localVariables,17,25),8,8),
+                    LoadAndSaveEntry.Create(reader => _localVariables = reader.ReadMatrixUInt16(17,40),writer => writer.WriteMatrixUInt16(_localVariables,17,40),9,14),
+                    // We used to save 25 * 40 = 1000 blocks; but actually, each 'row consisted of 26 entry,
+		            // i.e. 26 * 40 = 1040. Thus the last 40 blocks of localvar where not saved at all. To be
+		            // able to load this screwed format, we use a trick: We load 26 * 38 = 988 blocks.
+		            // Then, we mark the followin 12 blocks (24 bytes) as obsolete.
+                    LoadAndSaveEntry.Create((reader)=> _localVariables = reader.ReadMatrixUInt16(26,38),writer => writer.WriteMatrixUInt16(_localVariables,26,38),15,17),
+                    // TODO
+                    //MK_OBSOLETE_ARRAY(ScummEngine, vm.localvar[39][0], sleUint16, 12, VER(15), VER(17)),
+                    // This was the first proper multi dimensional version of the localvars, with 32 bit values
+                    LoadAndSaveEntry.Create((reader)=> _localVariables = reader.ReadMatrixInt32(26,40),writer => writer.WriteMatrixInt32(_localVariables,26,40),18,19),
+
+                    // Then we doubled the script slots again, from 40 to 80
+		            LoadAndSaveEntry.Create((reader)=> _localVariables = reader.ReadMatrixInt32(26,NumScriptSlot),writer => writer.WriteMatrixInt32(_localVariables,26,NumScriptSlot),20),
+
+		            LoadAndSaveEntry.Create((reader)=> _resourceMapper = reader.ReadBytes(128),writer => writer.Write(_resourceMapper), 8),
+		            LoadAndSaveEntry.Create((reader)=> _charsetColorMap = reader.ReadBytes(16),writer => writer.Write(_charsetColorMap), 8),
+
+                    // _charsetData grew from 10*16, to 15*16, to 23*16 bytes
+                    LoadAndSaveEntry.Create(reader => charsetData = reader.ReadMatrixBytes(10,16), writer => writer.WriteMatrixBytes(new byte[16,10],10,16), 8,9),
+                    LoadAndSaveEntry.Create(reader => charsetData = reader.ReadMatrixBytes(15,16), writer => writer.WriteMatrixBytes(new byte[16,15],15,16), 10,66),
+                    LoadAndSaveEntry.Create(reader => charsetData = reader.ReadMatrixBytes(23,16), writer => writer.WriteMatrixBytes(new byte[16,23],23,16), 67),
+                                                   
+                    LoadAndSaveEntry.Create(reader => curExecScript = reader.ReadUInt16(), writer => writer.WriteUInt16(0), 8,62),
+                                                   
+                    LoadAndSaveEntry.Create(reader => Camera._dest.X = reader.ReadInt16(), writer => writer.WriteInt16(Camera._dest.X), 8),
+                    LoadAndSaveEntry.Create(reader => Camera._dest.Y = reader.ReadInt16(), writer => writer.WriteInt16(Camera._dest.Y), 8),
+                    LoadAndSaveEntry.Create(reader => Camera._cur.X = reader.ReadInt16(), writer => writer.WriteInt16(Camera._cur.X), 8),
+                    LoadAndSaveEntry.Create(reader => Camera._cur.Y = reader.ReadInt16(), writer => writer.WriteInt16(Camera._cur.Y), 8),
+                    LoadAndSaveEntry.Create(reader => Camera._last.X = reader.ReadInt16(), writer => writer.WriteInt16(Camera._last.X), 8),
+                    LoadAndSaveEntry.Create(reader => Camera._last.Y = reader.ReadInt16(), writer => writer.WriteInt16(Camera._last.Y), 8),
+                    LoadAndSaveEntry.Create(reader => Camera._accel.X = reader.ReadInt16(), writer => writer.WriteInt16(Camera._accel.X), 8),
+                    LoadAndSaveEntry.Create(reader => Camera._accel.Y = reader.ReadInt16(), writer => writer.WriteInt16(Camera._accel.Y), 8),
+                    LoadAndSaveEntry.Create(reader => _screenStartStrip = reader.ReadInt16(), writer => writer.WriteInt16(_screenStartStrip), 8),
+                    LoadAndSaveEntry.Create(reader => _screenEndStrip = reader.ReadInt16(), writer => writer.WriteInt16(_screenEndStrip), 8),
+                    LoadAndSaveEntry.Create(reader => Camera._mode = (CameraMode)reader.ReadByte(), writer => writer.Write((byte)Camera._mode), 8),
+                    LoadAndSaveEntry.Create(reader => Camera._follows = reader.ReadByte(), writer => writer.Write(Camera._follows), 8),
+                    LoadAndSaveEntry.Create(reader => Camera._leftTrigger = reader.ReadInt16(), writer => writer.WriteInt16(Camera._leftTrigger), 8),
+                    LoadAndSaveEntry.Create(reader => Camera._rightTrigger = reader.ReadInt16(), writer => writer.WriteInt16(Camera._rightTrigger), 8),
+                    LoadAndSaveEntry.Create(reader => Camera._movingToActor = reader.ReadUInt16()!=0, writer => writer.WriteUInt16(Camera._movingToActor), 8),
+
+                    LoadAndSaveEntry.Create(reader => _actorToPrintStrFor = reader.ReadByte(), writer => writer.WriteByte(_actorToPrintStrFor), 8),
+                    LoadAndSaveEntry.Create(reader => _charsetColor = reader.ReadByte(), writer => writer.WriteByte(_charsetColor), 8),
+
+                    // _charsetBufPos was changed from byte to int
+                    LoadAndSaveEntry.Create(reader => _charsetBufPos = reader.ReadByte(), writer => writer.WriteByte(_charsetBufPos), 8,9),
+                    LoadAndSaveEntry.Create(reader => _charsetBufPos = reader.ReadInt16(), writer => writer.WriteInt16(_charsetBufPos), 10),
+                                                   
+                    LoadAndSaveEntry.Create(reader => _haveMsg = reader.ReadByte(), writer => writer.WriteByte(_haveMsg), 8),
+                    LoadAndSaveEntry.Create(reader => _haveActorSpeechMsg = reader.ReadByte()!=0, writer => writer.WriteByte(_haveActorSpeechMsg), 61),
+                    LoadAndSaveEntry.Create(reader => _useTalkAnims = reader.ReadByte()!=0, writer => writer.WriteByte(_useTalkAnims), 8),
+                                                   
+                    LoadAndSaveEntry.Create(reader => _talkDelay = reader.ReadInt16(), writer => writer.WriteInt16(_talkDelay), 8),
+                    LoadAndSaveEntry.Create(reader => defaultTalkDelay = reader.ReadInt16(), writer => writer.WriteInt16(0), 8),
+                    LoadAndSaveEntry.Create(reader => numInMsgStack = reader.ReadInt16(), writer => writer.WriteInt16(0), 8,27),
+                    LoadAndSaveEntry.Create(reader => _sentenceNum = reader.ReadByte(), writer => writer.WriteByte(_sentenceNum), 8),
+                                                   
+                    LoadAndSaveEntry.Create(reader => cutSceneStackPointer = reader.ReadByte(), writer => writer.WriteByte(cutSceneStackPointer), 8),
+                    LoadAndSaveEntry.Create(reader => _cutScenePtr = reader.ReadUInt32s(5), writer => writer.WriteUInt32s(_cutScenePtr,5), 8),
+                    LoadAndSaveEntry.Create(reader => _cutSceneScript = reader.ReadBytes(5), writer => writer.WriteBytes(_cutSceneScript,5), 8),
+                    LoadAndSaveEntry.Create(reader => _cutSceneData = Array.ConvertAll(reader.ReadInt16s(5), n => (int)n), writer => writer.WriteInt16s(_cutSceneData,5), 8),
+                    LoadAndSaveEntry.Create(reader => _cutSceneScriptIndex = reader.ReadInt16(), writer => writer.WriteInt16(_cutSceneScriptIndex), 8),
+                                                   
+                    LoadAndSaveEntry.Create(reader => _numNestedScripts = reader.ReadByte(), writer => writer.WriteByte(_numNestedScripts), 8),
+                    LoadAndSaveEntry.Create(reader => _userPut = (sbyte)reader.ReadByte(), writer => writer.WriteByte(_userPut), 8),
+                    LoadAndSaveEntry.Create(reader => userState = reader.ReadUInt16(), writer => writer.WriteUInt16(0), 17),
+                    LoadAndSaveEntry.Create(reader => _cursor.State = (sbyte)reader.ReadByte(), writer => writer.WriteByte(_cursor.State), 8),
+                    LoadAndSaveEntry.Create(reader => gdiCursorActive = reader.ReadByte(), writer => writer.WriteByte(0), 8,20),
+                    LoadAndSaveEntry.Create(reader => _currentCursor = reader.ReadByte(), writer => writer.WriteByte(_currentCursor), 8),
+                    LoadAndSaveEntry.Create(reader => grabbedCursor = reader.ReadBytes(8192), writer => writer.Write(new byte[8192]), 20),
+                    LoadAndSaveEntry.Create(reader => _cursor.Width = reader.ReadInt16(), writer => writer.WriteInt16(_cursor.Width), 20),
+                    LoadAndSaveEntry.Create(reader => _cursor.Height = reader.ReadInt16(), writer => writer.WriteInt16(_cursor.Height), 20),
+                    LoadAndSaveEntry.Create(reader => _cursor.HotspotX = reader.ReadInt16(), writer => writer.WriteInt16(_cursor.HotspotX), 20),
+                    LoadAndSaveEntry.Create(reader => _cursor.HotspotY = reader.ReadInt16(), writer => writer.WriteInt16(_cursor.HotspotY), 20),
+                    LoadAndSaveEntry.Create(reader => _cursor.Animate = reader.ReadByte()!=0, writer => writer.WriteByte(_cursor.Animate), 20),
+                    LoadAndSaveEntry.Create(reader => _cursor.AnimateIndex = reader.ReadByte(), writer => writer.WriteByte(_cursor.AnimateIndex), 20),
+                    LoadAndSaveEntry.Create(reader => mouseX = reader.ReadInt16(), writer => writer.WriteInt16(0), 20),
+                    LoadAndSaveEntry.Create(reader => mouseY = reader.ReadInt16(), writer => writer.WriteInt16(0), 20),
+                                                   
+                    LoadAndSaveEntry.Create(reader => colorUsedByCycle = reader.ReadBytes(256), writer => writer.Write(new byte[256]), 60),
+                    LoadAndSaveEntry.Create(reader => _doEffect = reader.ReadByte()!=0, writer => writer.WriteByte(_doEffect), 8),
+                    LoadAndSaveEntry.Create(reader => _switchRoomEffect = reader.ReadByte(), writer => writer.WriteByte(_switchRoomEffect), 8),
+                    LoadAndSaveEntry.Create(reader => _newEffect = reader.ReadByte(), writer => writer.WriteByte(_newEffect), 8),
+                    LoadAndSaveEntry.Create(reader => _switchRoomEffect2 = reader.ReadByte(), writer => writer.WriteByte(_switchRoomEffect2), 8),
+                    LoadAndSaveEntry.Create(reader => _bgNeedsRedraw = reader.ReadByte()!=0, writer => writer.WriteByte(_bgNeedsRedraw), 8),
+
+                    // The state of palManipulate is stored only since V10
+                    LoadAndSaveEntry.Create((reader)=> palManipStart = reader.ReadByte(), writer => writer.WriteByte(0), 10),
+                    LoadAndSaveEntry.Create((reader)=> palManipEnd = reader.ReadByte(), writer => writer.WriteByte(0), 10),
+                    LoadAndSaveEntry.Create((reader)=> palManipCounter = reader.ReadUInt16(), writer => writer.WriteUInt16(palManipCounter), 10),
+
+                    // gfxUsageBits grew from 200 to 410 entries. Then 3 * 410 entries:
+                    LoadAndSaveEntry.Create((reader)=> _gfxUsageBits = reader.ReadUInt32s(200), writer => writer.WriteUInt32s(_gfxUsageBits,200), 8,9),
+                    LoadAndSaveEntry.Create((reader)=> _gfxUsageBits = reader.ReadUInt32s(410), writer => writer.WriteUInt32s(_gfxUsageBits,410), 10,13),
+                    LoadAndSaveEntry.Create((reader)=> _gfxUsageBits = reader.ReadUInt32s(3*410), writer => writer.WriteUInt32s(_gfxUsageBits,3*410), 14),
+
+                    LoadAndSaveEntry.Create((reader)=> _gdi.TransparentColor = reader.ReadByte(), writer => writer.WriteByte(_gdi.TransparentColor), 8,50),
+                    LoadAndSaveEntry.Create((reader)=> {
+                        for (int i = 0; i < 256; i++)
+                        {
+                            _currentPalette.Colors[i] = Color.FromRgb(reader.ReadByte(), reader.ReadByte(), reader.ReadByte());
+                        }
+                    }, writer => {
+                        for (int i = 0; i < 256; i++)
+                        {
+                            var l_color = _currentPalette.Colors[i];
+                            writer.Write(l_color.R);
+                            writer.Write(l_color.G);
+                            writer.Write(l_color.B);
+                        }
+                    }, 8),
+                    LoadAndSaveEntry.Create((reader)=> darkenPalette = reader.ReadBytes(768), writer => writer.Write(new byte[768]), 53),
+
+                    // Sam & Max specific palette replaced by _shadowPalette now.
+                    LoadAndSaveEntry.Create((reader)=> proc_special_palette = reader.ReadBytes(256), writer => writer.Write(new byte[256]), 8,33),
+
+                    LoadAndSaveEntry.Create((reader)=> _charsetBuffer = reader.ReadBytes(256), writer => writer.WriteBytes(_charsetBuffer,256), 8),
+
+                    LoadAndSaveEntry.Create((reader)=> _egoPositioned = reader.ReadByte()!=0, writer => writer.WriteByte(_egoPositioned), 8),
+
+                    // _gdi->_imgBufOffs grew from 4 to 5 entries. Then one day we realized
+                    // that we don't have to store it since initBGBuffers() recomputes it.
+                    LoadAndSaveEntry.Create((reader)=> gdiImgBufOffs = reader.ReadUInt16s(4), writer => writer.WriteUInt16s(new ushort[4],4), 8,9),
+                    LoadAndSaveEntry.Create((reader)=> gdiImgBufOffs = reader.ReadUInt16s(5), writer => writer.WriteUInt16s(new ushort[5],5), 10,26),
+
+                    // See _imgBufOffs: _numZBuffer is recomputed by initBGBuffers().
+                    LoadAndSaveEntry.Create((reader)=> _gdi._numZBuffer = reader.ReadByte(), writer => writer.WriteByte(_gdi._numZBuffer), 8,26),
+
+                    LoadAndSaveEntry.Create((reader)=> _screenEffectFlag = reader.ReadByte()!=0, writer => writer.WriteByte(_screenEffectFlag), 8),
+
+                    LoadAndSaveEntry.Create((reader)=> randSeed1 = reader.ReadByte(), writer => writer.WriteByte(0), 8,9),
+                    LoadAndSaveEntry.Create((reader)=> randSeed2 = reader.ReadByte(), writer => writer.WriteByte(0), 8,9),
+
+                    // Converted _shakeEnabled to boolean and added a _shakeFrame field.
+                    LoadAndSaveEntry.Create((reader)=> shakeEnabled = reader.ReadInt16(), writer => writer.WriteInt16(0), 8,9),
+                    LoadAndSaveEntry.Create((reader)=> shakeEnabled = reader.ReadByte(), writer => writer.WriteByte(0), 10),
+                    LoadAndSaveEntry.Create((reader)=> shakeFrame = reader.ReadUInt32(), writer => writer.WriteUInt32(0), 10),
+
+                    LoadAndSaveEntry.Create((reader)=> _keepText = reader.ReadByte()!=0, writer => writer.WriteByte(_keepText), 8),
+
+                    LoadAndSaveEntry.Create((reader)=> _screenB = reader.ReadUInt16(), writer => writer.WriteUInt16(_screenB), 8),
+                    LoadAndSaveEntry.Create((reader)=> _screenH = reader.ReadUInt16(), writer => writer.WriteUInt16(_screenH), 8),
+
+                    LoadAndSaveEntry.Create((reader)=> NESCostumeSet = reader.ReadUInt16(), writer => writer.WriteUInt16(0), 47),
+
+                    LoadAndSaveEntry.Create((reader)=> cd_track = reader.ReadInt16(), writer => writer.WriteInt16(0), 9,9),
+                    LoadAndSaveEntry.Create((reader)=> cd_loops = reader.ReadInt16(), writer => writer.WriteInt16(0), 9,9),
+                    LoadAndSaveEntry.Create((reader)=> cd_frame = reader.ReadInt16(), writer => writer.WriteInt16(0), 9,9),
+                    LoadAndSaveEntry.Create((reader)=> cd_end = reader.ReadInt16(), writer => writer.WriteInt16(0), 9,9)
+                };
+
+            #endregion MainEntries
+
+            var md5Backup = new byte[16];
+            Array.Copy(_gameMD5, md5Backup, 16);
+
+            //Array.ForEach(mainEntries, e => e.Execute(serializer));
+            for (int i = 0; i < mainEntries.Length; i++)
+            {
+                mainEntries[i].Execute(serializer);
+            }
+
+            if (serializer.IsLoading)
+            {
+                roomData = _scumm.GetRoom(_currentRoom);
+            }
+            //if (!Array.Equals(md5Backup, _gameMD5))
+            //{
+            //    //warning("Game was saved with different gamedata - you may encounter problems");
+            //    //debug(1, "You have %s and save is %s.", md5str2, md5str1);
+            //    return false;
+            //}
+
+            // Starting V14, we extended the usage bits, to be able to cope with games
+            // that have more than 30 actors (up to 94 are supported now, in theory).
+            // Since the format of the usage bits was changed by this, we have to
+            // convert them when loading an older savegame.
+            //if (hdr.ver < 14)
+            //    UpgradeGfxUsageBits();
+
+            // When loading, move the mouse to the saved mouse position.
+            //if (serializer.Version >= 20)
+            //{
+            //    UpdateCursor();
+            //    _system->warpMouse(_mouse.x, _mouse.y);
+            //}
+
+            // Before V61, we re-used the _haveMsg flag to handle "alternative" speech
+            // sound files (see charset code 10).
+            if (serializer.IsLoading && serializer.Version < 61)
+            {
+                if (_haveMsg == 0xFE)
+                {
+                    _haveActorSpeechMsg = false;
+                    _haveMsg = 0xFF;
+                }
+                else
+                {
+                    _haveActorSpeechMsg = true;
+                }
+            }
+
+            //
+            // Save/load actors
+            //
+            for (int i = 0; i < this.Actors.Length; i++)
+            {
+                _actors[i].SaveOrLoad(serializer);
+            }
+
+            //
+            // Save/load sound data
+            //
+            short currentCDSound;
+            short currentMusic;
+            var soundEntries = new[]{
+                    LoadAndSaveEntry.Create(reader => currentCDSound = reader.ReadInt16(),writer => writer.WriteInt16(0),35),
+                    LoadAndSaveEntry.Create(reader => currentMusic = reader.ReadInt16(),writer => writer.WriteInt16(0),35),
+                };
+            Array.ForEach(soundEntries, e => e.Execute(serializer));
+
+            //
+            // Save/load script data
+            //
+            if (serializer.Version < 9)
+            {
+                for (int i = 0; i < 25; i++)
+                {
+                    _slots[i].SaveOrLoad(serializer, roomData.LocalScripts);
+                }
+            }
+            else if (serializer.Version < 20)
+            {
+                for (int i = 0; i < 40; i++)
+                {
+                    _slots[i].SaveOrLoad(serializer, roomData.LocalScripts);
+                }
+            }
+            else
+            {
+                for (int i = 0; i < NumScriptSlot; i++)
+                {
+                    _slots[i].SaveOrLoad(serializer, roomData.LocalScripts);
+                }
+            }
+            if (serializer.IsLoading)
+            {
+                Array.ForEach(_slots, slot =>
+                {
+                    if (slot.where == WhereIsObject.Global)
+                    {
+                        slot.offs -= (uint)_scumm.GetGlobalScriptOffset((byte)slot.number);
+                    }
+                    //else if (slot.where == WhereIsObject.Local && slot.number >= 0xC8 && roomData.LocalScripts[slot.number - 0xC8]!=null)
+                    //{
+                    //    slot.offs = (uint)(slot.offs - roomData.LocalScripts[slot.number - 0xC8].Offset);
+                    //}
+                });
+
+                ResetRoomObjects();
+            }
+
+            //
+            // Save/load local objects
+            //
+            for (int i = 0; i < _numLocalObjects; i++)
+            {
+                _objs[i].SaveOrLoad(serializer);
+            }
+
+            if (serializer.IsLoading)
+            {
+                if (serializer.Version < 13)
+                {
+                    // Since roughly v13 of the save games, the objs storage has changed a bit
+                    for (int i = _objs.Length; i < _numLocalObjects; i++)
+                    {
+                        _objs[i].obj_nr = 0;
+                    }
+                }
+            }
+
+            //
+            // Save/load misc stuff
+            //
+            for (int i = 0; i < _verbs.Length; i++)
+            {
+                _verbs[i].SaveOrLoad(serializer);
+            }
+            for (int i = 0; i < 16; i++)
+            {
+                _nest[i].SaveOrLoad(serializer);
+            }
+            for (int i = 0; i < 6; i++)
+            {
+                _sentence[i].SaveOrLoad(serializer);
+            }
+            for (int i = 0; i < 6; i++)
+            {
+                _string[i].SaveOrLoad(serializer);
+            }
+            for (int i = 0; i < 16; i++)
+            {
+                _colorCycle[i].SaveOrLoad(serializer);
+            }
+            if (serializer.Version >= 13)
+            {
+                for (int i = 0; i < 20; i++)
+                {
+                    if (serializer.IsLoading)
+                    {
+                        _scaleSlots[i] = new ScaleSlot();
+                    }
+                    _scaleSlots[i].SaveOrLoad(serializer);
+                }
+            }
+
+            //
+            // Save/load resources
+            //
+            SaveOrLoadResources(serializer);
+
+            //
+            // Save/load global object state
+            //
+            var l_objStatesEntries = new[]{
+                LoadAndSaveEntry.Create(reader =>
+                {
+                    var objectOwnerTable = reader.ReadBytes(_numGlobalObjects);
+                    Array.Copy(objectOwnerTable, this._scumm.ObjectOwnerTable, _numGlobalObjects);
+                },
+                writer =>
+                {
+                    writer.WriteBytes(this._scumm.ObjectOwnerTable,_numGlobalObjects);
+                }),
+                LoadAndSaveEntry.Create(reader =>
+                {
+                    var objectStateTable = reader.ReadBytes(_numGlobalObjects);
+                    Array.Copy(objectStateTable, this._scumm.ObjectStateTable, _numGlobalObjects);
+                },
+                writer =>
+                {
+                    writer.WriteBytes(this._scumm.ObjectStateTable, _numGlobalObjects);
+                })
+            };
+            Array.ForEach(l_objStatesEntries, e => e.Execute(serializer));
+
+            //if (_objectRoomTable)
+            //    s->saveLoadArrayOf(_objectRoomTable, _numGlobalObjects, sizeof(_objectRoomTable[0]), sleByte);
+
+            //
+            // Save/load palette data
+            // Don't save 16 bit palette in FM-Towns and PCE games, since it gets regenerated afterwards anyway.
+            //if (_16BitPalette && !(_game.platform == Common::kPlatformFMTowns && s->getVersion() < VER(82)) && !((_game.platform == Common::kPlatformFMTowns || _game.platform == Common::kPlatformPCEngine) && s->getVersion() > VER(87))) {
+            //    s->saveLoadArrayOf(_16BitPalette, 512, sizeof(_16BitPalette[0]), sleUint16);
+            //}
+
+            var l_paletteEntries = new[]{
+                LoadAndSaveEntry.Create(reader => {
+                    _shadowPalette = reader.ReadBytes(_shadowPaletteSize);
+                },
+                writer => {
+                    writer.WriteBytes(_shadowPalette, _shadowPaletteSize);
+                }),
+                // _roomPalette didn't show up until V21 save games
+                // Note that we also save the room palette for Indy4 Amiga, since it
+                // is used as palette map there too, but we do so slightly a bit
+                // further down to group it with the other special palettes needed.
+                LoadAndSaveEntry.Create(reader => {
+                    _roomPalette = reader.ReadBytes(256);
+                },
+                writer => {
+                    writer.WriteBytes(_roomPalette,256);
+                },21),
+                // PalManip data was not saved before V10 save games
+                LoadAndSaveEntry.Create(reader => {
+                    if (palManipCounter != 0)
+                    {
+                        _palManipPalette = reader.ReadBytes(0x300);
+                        _palManipIntermediatePal = reader.ReadBytes(0x600);
+                    }
+                },
+                writer => {
+                    if (palManipCounter != 0)
+                    {
+                        writer.WriteBytes(_palManipPalette, 0x300);
+                        writer.WriteBytes(_palManipIntermediatePal, 0x600);
+                    }
+                },10),
+                // darkenPalette was not saved before V53
+                LoadAndSaveEntry.Create(reader => {
+                    // TODO?
+                    //Array.Copy(currentPalette, darkenPalette, 768);
+                },0, 53),
+                // darkenPalette was not saved before V53
+                LoadAndSaveEntry.Create(reader => {
+                    if (palManipCounter != 0)
+                    {
+                        _palManipPalette = reader.ReadBytes(0x300);
+                        _palManipIntermediatePal = reader.ReadBytes(0x600);
+                    }
+                },
+                writer => {
+                    if (palManipCounter != 0)
+                    {
+                        writer.WriteBytes(_palManipPalette,0x300);
+                        writer.WriteBytes(_palManipIntermediatePal,0x600);
+                    }
+                },53)
+            };
+            Array.ForEach(l_paletteEntries, entry => entry.Execute(serializer));
+
+            // _colorUsedByCycle was not saved before V60
+            if (serializer.IsLoading)
+            {
+                if (serializer.Version < 60)
+                {
+                    Array.Clear(_colorUsedByCycle, 0, _colorUsedByCycle.Length);
+                }
+            }
+
+            // Indy4 Amiga specific palette tables were not saved before V85
+            //if (_game.platform == Common::kPlatformAmiga && _game.id == GID_INDY4) {
+            //    if (s->getVersion() >= 85) {
+            //        s->saveLoadArrayOf(_roomPalette, 256, 1, sleByte);
+            //        s->saveLoadArrayOf(_verbPalette, 256, 1, sleByte);
+            //        s->saveLoadArrayOf(_amigaPalette, 3 * 64, 1, sleByte);
+
+            //        // Starting from version 86 we also save the first used color in
+            //        // the palette beyond the verb palette. For old versions we just
+            //        // look for it again, which hopefully won't cause any troubles.
+            //        if (s->getVersion() >= 86) {
+            //            s->saveLoadArrayOf(&_amigaFirstUsedColor, 1, 2, sleUint16);
+            //        } else {
+            //            amigaPaletteFindFirstUsedColor();
+            //        }
+            //    } else {
+            //        warning("Save with old Indiana Jones 4 Amiga palette handling detected");
+            //        // We need to restore the internal state of the Amiga palette for Indy4
+            //        // Amiga. This might lead to graphics glitches!
+            //        setAmigaPaletteFromPtr(_currentPalette);
+            //    }
+            //}
+
+            //
+            // Save/load more global object state
+            //
+            var l_globalObjStatesEntries = new[]{
+                LoadAndSaveEntry.Create(reader => {
+                    Array.Copy(reader.ReadUInt32s(_numGlobalObjects), this._scumm.ClassData, _numGlobalObjects);
+                },
+                writer => {
+                    writer.WriteUInt32s(this._scumm.ClassData, _numGlobalObjects);
+                }),
+            };
+            Array.ForEach(l_globalObjStatesEntries, entry => entry.Execute(serializer));
+
+            //
+            // Save/load script variables
+            //
+            //var120Backup = _scummVars[120];
+            //var98Backup = _scummVars[98];
+
+            //if (serializer.Version > 37)
+            //{
+            //    s->saveLoadArrayOf(_roomVars, _numRoomVariables, sizeof(_roomVars[0]), sleInt32);
+            //}
+
+            // The variables grew from 16 to 32 bit.
+            var l_variablesEntries = new[]{
+                LoadAndSaveEntry.Create(reader => {
+                    _variables = Array.ConvertAll(reader.ReadInt16s(_variables.Length), s => (int)s);
+                },
+                writer => {
+                    writer.WriteInt16s(_variables, _variables.Length);
+                },0,15),
+                LoadAndSaveEntry.Create(
+                    reader => _variables = reader.ReadInt32s(_variables.Length),
+                    writer => writer.WriteInt32s(_variables, _variables.Length),15),
+                //if (_game.id == GID_TENTACLE)	// Maybe misplaced, but that's the main idea
+                //    _scummVars[120] = var120Backup;
+                //if (_game.id == GID_INDY4)
+                //    _scummVars[98] = var98Backup;
+                LoadAndSaveEntry.Create(
+                    reader => _bitVars = reader.ReadBytes(_bitVars.Length),
+                    writer => writer.Write(_bitVars)
+                ),
+            };
+            Array.ForEach(l_variablesEntries, entry => entry.Execute(serializer));
+
+            //
+            // Save/load a list of the locked objects
+            //
+            var l_lockedObjEntries = new[]{
+                LoadAndSaveEntry.Create(reader => {
+                    ResType type;
+                    while ((type = (ResType)reader.ReadByte()) != (ResType)0xFF)
+                    {
+                        var idx = reader.ReadUInt16();
+                        //_res->lock(type, idx);
+                    }
+                },
+                writer => {
+                    writer.Write((byte)0xFF);
+                })
+            };
+            Array.ForEach(l_lockedObjEntries, entry => entry.Execute(serializer));
+
+            //
+            // Save/load the Audio CD status
+            //
+            //if (serializer.Version >= 24)
+            //{
+            //    AudioCDManager::Status info;
+            //    if (s->isSaving())
+            //        info = _system->getAudioCDManager()->getStatus();
+            //    s->saveLoadArrayOf(&info, 1, sizeof(info), audioCDEntries);
+            //     If we are loading, and the music being loaded was supposed to loop
+            //     forever, then resume playing it. This helps a lot when the audio CD
+            //     is used to provide ambient music (see bug #788195).
+            //    if (s->isLoading() && info.playing && info.numLoops < 0)
+            //      _system->getAudioCDManager()->play(info.track, info.numLoops, info.start, info.duration);
+            //}
+
+            //
+            // Save/load the iMuse status
+            //
+            //if (_imuse && (_saveSound || !_saveTemporaryState))
+            //{
+            //    _imuse->save_or_load(s, this);
+            //}
+
+            //
+            // Save/load music engine status
+            //
+            //if (_musicEngine)
+            //{
+            //    _musicEngine->saveLoadWithSerializer(s);
+            //}
+
+            //
+            // Save/load the charset renderer state
+            //
+            //if (s->getVersion() >= VER(73))
+            //{
+            //    _charset->saveLoadWithSerializer(s);
+            //}
+            //else if (s->isLoading())
+            //{
+            //    if (s->getVersion() == VER(72))
+            //    {
+            //        _charset->setCurID(s->loadByte());
+            //    }
+            //    else
+            //    {
+            //        // Before V72, the charset id wasn't saved. This used to cause issues such
+            //        // as the one described in the bug report #1722153. For these savegames,
+            //        // we reinitialize the id using a, hopefully, sane value.
+            //        _charset->setCurID(_string[0]._default.charset);
+            //    }
+            //}
+        }
+
+        private void SaveOrLoadResources(Serializer serializer)
+        {
+            var l_entry = LoadAndSaveEntry.Create(reader =>
+                {
+                    ResType type;
+                    ushort idx;
+                    while ((type = (ResType)reader.ReadUInt16()) != (ResType)0xFFFF)
+                    {
+                        while ((idx = reader.ReadUInt16()) != 0xFFFF)
+                        {
+                            LoadResource(reader, type, idx);
+                        }
+                    }
+                },
+                writer =>
+                {
+                    // inventory
+                    writer.Write((ushort)ResType.Inventory);
+                    for (int i = 0; i < _invData.Length; i++)
+                    {
+                        var data = _invData[i];
+                        if (data == null) break;
+                        // write index
+                        writer.WriteUInt16(i);
+                        // write size
+                        writer.WriteInt32(19 + 3 * data.ScriptOffsets.Count + 1 + (data.Name.Length + 1) + data.Script.Data.Length);
+                        writer.Write(new byte[18]);
+                        // write offset
+                        writer.WriteByte(19 + 3 * data.ScriptOffsets.Count + 1);
+                        // write verb table
+                        foreach (var scriptOffset in data.ScriptOffsets)
+                        {
+                            writer.WriteByte(scriptOffset.Key);
+                            writer.WriteUInt16(scriptOffset.Value);
+                        }
+                        // write end of table
+                        writer.WriteByte(0);
+                        // write name
+                        for (int c = 0; c < data.Name.Length; c++)
+                        {
+                            // TODO: encode name if neccessary
+                            if (data.Name[c] == 255)
+                            {
+                                writer.Write(new byte[] { 35, 35, 35, 35 });
+                                c += 3;
+                            }
+                            else
+                            {
+                                writer.WriteByte(data.Name[c]);
+                            }
+                        }
+                        writer.WriteByte(0);
+                        // write script
+                        writer.Write(data.Script.Data);
+                        // write index
+                        writer.WriteUInt16(_inventory[i]);
+                    }
+                    writer.WriteUInt16(0xFFFF);
+
+                    // actors name
+                    writer.Write((ushort)ResType.ActorName);
+                    for (int i = 0; i < _actors.Length; i++)
+                    {
+                        var actor = _actors[i];
+                        if (actor.Name != null)
+                        {
+                            // write index
+                            writer.WriteUInt16(i);
+                            // write name
+                            writer.WriteInt32(actor.Name.Length);
+                            writer.WriteBytes(actor.Name, actor.Name.Length);
+                        }
+                    }
+                    writer.WriteUInt16(0xFFFF);
+
+                    // objects name
+                    writer.Write((ushort)ResType.ObjectName);
+                    var objs = this.Objects.Concat(_invData).ToArray();
+                    for (int i = 0; i < objs.Length; i++)
+                    {
+                        var obj = objs[i];
+                        if (obj != null && obj.Name != null)
+                        {
+                            // write index
+                            writer.WriteUInt16(i);
+                            // write name
+                            writer.WriteInt32(obj.Name.Length);
+                            writer.WriteBytes(obj.Name, obj.Name.Length);
+                            // writer obj number
+                            writer.WriteUInt16(obj.obj_nr);
+                        }
+                    }
+                    writer.WriteUInt16(0xFFFF);
+
+                    // matrix
+                    writer.Write((ushort)ResType.Matrix);
+                    // write BoxMatrix
+                    writer.WriteUInt16(1);
+                    writer.WriteInt32(roomData.BoxMatrix.Count);
+                    writer.WriteBytes(roomData.BoxMatrix.ToArray(), roomData.BoxMatrix.Count);
+                    // write boxes
+                    writer.WriteUInt16(2);
+                    writer.WriteInt32(20 * _boxes.Length + 1);
+                    writer.WriteByte(_boxes.Length);
+                    for (int i = 0; i < _boxes.Length; i++)
+                    {
+                        Box box = _boxes[i];
+                        writer.WriteInt16(box.ulx);
+                        writer.WriteInt16(box.uly);
+                        writer.WriteInt16(box.urx);
+                        writer.WriteInt16(box.ury);
+                        writer.WriteInt16(box.lrx);
+                        writer.WriteInt16(box.lry);
+                        writer.WriteInt16(box.llx);
+                        writer.WriteInt16(box.lly);
+                        writer.WriteByte(box.mask);
+                        writer.WriteByte((byte)box.flags);
+                        writer.WriteUInt16(box.scale);
+                    }
+                    writer.WriteUInt16(0xFFFF);
+
+                    // verbs
+                    writer.Write((ushort)ResType.Verb);
+                    for (int i = 0; i < _verbs.Length; i++)
+                    {
+                        var verb = _verbs[i];
+                        if (verb.Text != null)
+                        {
+                            // write index
+                            writer.WriteUInt16(i);
+                            // write text
+                            writer.WriteInt32(verb.Text.Length);
+                            writer.WriteBytes(verb.Text, verb.Text.Length);
+                        }
+                    }
+                    writer.WriteUInt16(0xFFFF);
+
+                    // write end of resources
+                    writer.WriteUInt16(0xFFFF);
+
+                });
+            l_entry.Execute(serializer);
+        }
+
+        private int _shadowPaletteSize = 256;
+        private byte[] _shadowPalette;
+        private byte[] _palManipPalette, _palManipIntermediatePal;
+        private byte[] _colorUsedByCycle = new byte[256];
 
         private void LoadResource(BinaryReader reader, ResType type, ushort idx)
         {
@@ -6198,6 +6577,8 @@ namespace Scumm4
                                 c = br.ReadByte();
                             }
                             _invData[idx] = new ObjectData() { obj_nr = index, Name = name.ToArray() };
+                            _invData[idx].Script.Offset = offset + name.Count + 1;
+                            _invData[idx].Script.Data = br.ReadBytes((int)(br.BaseStream.Length - br.BaseStream.Position));
                             br.BaseStream.Seek(19, SeekOrigin.Begin);
                             while (true)
                             {
@@ -6207,19 +6588,16 @@ namespace Scumm4
                                     break;
                                 _invData[idx].ScriptOffsets.Add(id, off);
                             }
-                            foreach (var entry in _invData[idx].ScriptOffsets)
-                            {
-                                br.BaseStream.Seek(entry.Value, SeekOrigin.Begin);
-                                _invData[idx].Scripts.Add(entry.Key, new ScriptData { Data = br.ReadBytes((int)(br.BaseStream.Length - br.BaseStream.Position)) });
-                            }
                         }
                         break;
+
                     case ResType.ActorName:
                         {
                             _newNames[idx] = ptr;
                             _actors[idx].Name = ptr;
                         }
                         break;
+
                     case ResType.ObjectName:
                         {
                             var index = reader.ReadUInt16();
@@ -6229,6 +6607,7 @@ namespace Scumm4
                             obj.Name = ptr;
                         }
                         break;
+
                     case ResType.Matrix:
                         {
                             if (idx == 1)
@@ -6260,15 +6639,16 @@ namespace Scumm4
                                     box.scale = br.ReadUInt16();
                                     _boxes[i] = box;
                                 }
-
                             }
                         }
                         break;
+
                     case ResType.Verb:
                         {
                             _verbs[idx].Text = ptr;
                         }
                         break;
+
                     case ResType.String:
                         {
                             Console.WriteLine("String: {0}", System.Text.Encoding.ASCII.GetString(ptr));
@@ -6282,7 +6662,7 @@ namespace Scumm4
             }
         }
 
-        enum ResType
+        private enum ResType
         {
             Invalid = 0,
             First = 1,
@@ -6310,6 +6690,58 @@ namespace Scumm4
             Last = 21
         }
 
+        public void Save(string filename)
+        {
+            _hasToSave = true;
+            _savegame = filename;
+        }
+
+        private static bool SkipThumbnail(BinaryReader reader)
+        {
+            var position = reader.BaseStream.Position;
+            ThumbnailHeader header = LoadHeader(reader, false);
+
+            if (header == null)
+            {
+                reader.BaseStream.Seek(position, SeekOrigin.Begin);
+                return false;
+            }
+
+            reader.BaseStream.Seek(header.size - (reader.BaseStream.Position - position), SeekOrigin.Current);
+            return true;
+        }
+
+        private static bool CheckThumbnailHeader(BinaryReader reader)
+        {
+            var position = reader.BaseStream.Position;
+            ThumbnailHeader header = LoadHeader(reader, false);
+
+            reader.BaseStream.Seek(position, SeekOrigin.Begin);
+
+            return header != null;
+        }
+
+        private const byte TumbnailVersion = 1;
+
+        private void SaveHeader(string name, BinaryWriter bw)
+        {
+            SaveGameHeader hdr = new SaveGameHeader();
+            hdr.type = ScummHelper.MakeTag('S', 'C', 'V', 'M');
+            hdr.size = 0;
+            hdr.ver = SaveCurrentVersion;
+
+            bw.WriteUInt32BigEndian(hdr.type);
+            bw.Write(hdr.size);
+            bw.Write(hdr.ver);
+
+            var data = System.Text.Encoding.Default.GetBytes(name);
+            byte[] data2 = new byte[32];
+            int length = Math.Min(data.Length, 31);
+            Array.Copy(data, data2, Math.Min(data.Length, 31));
+            data2[length] = 0;
+            bw.Write(data2);
+        }
+
         private SaveStateMetaInfos LoadInfos(BinaryReader reader)
         {
             SaveStateMetaInfos stuff = new SaveStateMetaInfos();
@@ -6325,7 +6757,7 @@ namespace Scumm4
 
             // If we ever extend this we should add a table containing the sizes corresponding to each
             // version, so that we are able to properly verify their correctness.
-            if (section.version == InfosectionVersion && section.size != SaveInfoSectionSize)
+            if (section.version == InfoSectionVersion && section.size != SaveInfoSectionSize)
             {
                 //warning("Info section is corrupt");
                 reader.BaseStream.Seek(section.size, SeekOrigin.Current);
@@ -6362,6 +6794,32 @@ namespace Scumm4
                 reader.BaseStream.Seek(section.size - SaveInfoSectionSize, SeekOrigin.Current);
 
             return stuff;
+        }
+
+        private void SaveInfos(BinaryWriter writer)
+        {
+            SaveInfoSection section = new SaveInfoSection();
+            section.type = ScummHelper.MakeTag('I', 'N', 'F', 'O');
+            section.version = InfoSectionVersion;
+            section.size = SaveInfoSectionSize;
+
+            // TODO: still save old format for older versions
+            section.timeTValue = 0;
+            section.playtime = 0;
+
+            //TimeDate curTime;
+            //_system->getTimeAndDate(curTime);
+
+            //section.date = ((curTime.tm_mday & 0xFF) << 24) | (((curTime.tm_mon + 1) & 0xFF) << 16) | ((curTime.tm_year + 1900) & 0xFFFF);
+            //section.time = ((curTime.tm_hour & 0xFF) << 8) | ((curTime.tm_min) & 0xFF);
+
+            writer.WriteUInt32BigEndian(section.type);
+            writer.WriteUInt32BigEndian(section.version);
+            writer.WriteUInt32BigEndian(section.size);
+            writer.WriteUInt32BigEndian(section.timeTValue);
+            writer.WriteUInt32BigEndian(section.playtime);
+            writer.WriteUInt32BigEndian(section.date);
+            writer.WriteUInt16(section.time);
         }
 
         private static SaveGameHeader LoadSaveGameHeader(BinaryReader reader)
@@ -6406,33 +6864,6 @@ namespace Scumm4
             return hdr;
         }
 
-        private static bool SkipThumbnail(BinaryReader reader)
-        {
-            var position = reader.BaseStream.Position;
-            ThumbnailHeader header = LoadHeader(reader, false);
-
-            if (header == null)
-            {
-                reader.BaseStream.Seek(position, SeekOrigin.Begin);
-                return false;
-            }
-
-            reader.BaseStream.Seek(header.size - (reader.BaseStream.Position - position), SeekOrigin.Current);
-            return true;
-        }
-
-        private static bool CheckThumbnailHeader(BinaryReader reader)
-        {
-            var position = reader.BaseStream.Position;
-            ThumbnailHeader header = LoadHeader(reader, false);
-
-            reader.BaseStream.Seek(position, SeekOrigin.Begin);
-
-            return header != null;
-        }
-
-        private const byte TumbnailVersion = 1;
-
         private static ThumbnailHeader LoadHeader(BinaryReader reader, bool outputWarnings)
         {
             ThumbnailHeader header = new ThumbnailHeader();
@@ -6463,9 +6894,11 @@ namespace Scumm4
 
             return header;
         }
-        #endregion
+
+        #endregion Save & Load
 
         #region Actors
+
         private void PlayActorSounds()
         {
             throw new NotImplementedException();
@@ -6545,9 +6978,11 @@ namespace Scumm4
                 }
             }
         }
-        #endregion
+
+        #endregion Actors
 
         #region Objects
+
         private void DrawRoomObjects(int argument)
         {
             const int mask = 0xF;
@@ -6650,9 +7085,11 @@ namespace Scumm4
             }
             ClearDrawObjectQueue();
         }
-        #endregion
+
+        #endregion Objects
 
         #region Charset
+
         private void CHARSET_1()
         {
             if (_haveMsg == 0)
@@ -6682,7 +7119,6 @@ namespace Scumm4
                 {
                     _string[0].ypos = (short)_variables[VariableTalkStringY];
                 }
-
 
                 if (_string[0].ypos < 1)
                     _string[0].ypos = 1;
@@ -6727,7 +7163,6 @@ namespace Scumm4
             {
                 RestoreCharsetBg();
             }
-
 
             int maxwidth = _charset._right - _string[0].xpos - 1;
             if (_charset._center)
@@ -6775,7 +7210,6 @@ namespace Scumm4
 
                 _talkDelay += (int)_variables[VariableCharIncrement];
             }
-
         }
 
         private bool NewLine()
@@ -6834,16 +7268,19 @@ namespace Scumm4
                         c = 13; // new line
                         endLoop = true;
                         break;
+
                     case 2:
                         _haveMsg = 0;
                         _keepText = true;
                         endLoop = true;
                         break;
+
                     case 3:
                         _haveMsg = 0xFF;
                         _keepText = false;
                         endLoop = true;
                         break;
+
                     case 8:
                         // Ignore this code here. Occurs e.g. in MI2 when you
                         // talk to the carpenter on scabb island. It works like
@@ -6851,20 +7288,23 @@ namespace Scumm4
                         // spoken text (i.e. here). Used for very long verb
                         // sentences.
                         break;
+
                     case 9:
                         frme = _charsetBuffer[bufferPos] | (_charsetBuffer[bufferPos + 1] << 8);
                         bufferPos += 2;
                         if (a != null)
                             a.StartAnimActor((byte)frme);
                         break;
+
                     case 10:
                         // Note the similarity to the code in debugMessage()
                         talk_sound_a = (uint)(_charsetBuffer[bufferPos] | (_charsetBuffer[bufferPos + 1] << 8) | (_charsetBuffer[bufferPos + 4] << 16) | (_charsetBuffer[bufferPos + 5] << 24));
                         talk_sound_b = (uint)(_charsetBuffer[bufferPos + 8] | (_charsetBuffer[bufferPos + 9] << 8) | (_charsetBuffer[bufferPos + 12] << 16) | (_charsetBuffer[bufferPos + 13] << 24));
                         bufferPos += 14;
-                        //_sound->talkSound(talk_sound_a, talk_sound_b, 2);                        
+                        //_sound->talkSound(talk_sound_a, talk_sound_b, 2);
                         _haveActorSpeechMsg = false;
                         break;
+
                     case 12:
                         color = _charsetBuffer[bufferPos] | (_charsetBuffer[bufferPos + 1] << 8);
                         bufferPos += 2;
@@ -6873,10 +7313,12 @@ namespace Scumm4
                         else
                             _charset.SetColor((byte)color);
                         break;
+
                     case 13:
                         //debug(0, "handleNextCharsetCode: Unknown opcode 13 %d", READ_LE_UINT16(buffer));
                         bufferPos += 2;
                         break;
+
                     case 14:
                         oldy = _charset.GetFontHeight();
                         _charset.SetCurID(_charsetBuffer[bufferPos++]);
@@ -6885,6 +7327,7 @@ namespace Scumm4
                         //memcpy(_charsetColorMap, _charsetData[_charset.getCurID()], 4);
                         _nextTop -= _charset.GetFontHeight() - oldy;
                         break;
+
                     default:
                         throw new NotSupportedException(string.Format("handleNextCharsetCode: invalid code {0}", c));
                 }
@@ -6915,7 +7358,6 @@ namespace Scumm4
 
                 MarkRectAsDirty(vs, 0, vs.Width, 0, vs.Height, UsageBitRestored);
 
-
                 if (vs.HasTwoBuffers && _currentRoom != 0 && IsLightOn())
                 {
                     if (vs != MainVirtScreen)
@@ -6942,9 +7384,13 @@ namespace Scumm4
                 }
             }
         }
-        #endregion
 
-        Palette _currentPalette = new Palette();
+        #endregion Charset
+
+        #region Drawing Methods
+
+        private Palette _currentPalette = new Palette();
+
         private void UpdatePalette()
         {
             if (_palDirtyMax == -1)
@@ -6982,10 +7428,8 @@ namespace Scumm4
             {
                 if (_cursor.State > 0)
                 {
-                    var pos = _gfxManager.GetMousePosition();
-                    var mouseX = (pos.X * 320.0) / _gfxManager.Width;
-                    var mouseY = pos.Y * 200.0 / _gfxManager.Height;
-                    VerbMouseOver(FindVerbAtPos((int)mouseX, (int)mouseY));
+                    var pos = _inputManager.GetMousePosition();
+                    VerbMouseOver(FindVerbAtPos((int)pos.X, (int)pos.Y));
                 }
             }
         }
@@ -7010,7 +7454,6 @@ namespace Scumm4
 
         private static void Fill(byte[] dst, int dstPitch, byte color, int w, int h)
         {
-
             if (w == dstPitch)
             {
                 for (int i = 0; i < dst.Length; i++)
@@ -7312,7 +7755,6 @@ namespace Scumm4
 
             if (vs == MainVirtScreen && dirtybit != 0)
             {
-
                 lp = left / 8 + _screenStartStrip;
                 if (lp < 0)
                     lp = 0;
@@ -7348,24 +7790,27 @@ namespace Scumm4
         }
 
         #region GfxUsageBit Members
-        const int UsageBitDirty = 96;
-        const int UsageBitRestored = 95;
+
+        private const int UsageBitDirty = 96;
+        private const int UsageBitRestored = 95;
 
         /// <summary>
         /// For each of the 410 screen strips, gfxUsageBits contains a
         /// bitmask. The lower 80 bits each correspond to one actor and
         /// signify if any part of that actor is currently contained in
         /// that strip.
-        /// 
+        ///
         /// If the leftmost bit is set, the strip (background) is dirty
         /// needs to be redrawn.
-        /// 
+        ///
         /// The second leftmost bit is set by removeBlastObject() and
         /// restoreBackground(), but I'm not yet sure why.
         /// </summary>
         private uint[] _gfxUsageBits;
+
         private bool _completeScreenRedraw;
         private IGraphicsManager _gfxManager;
+        private IInputManager _inputManager;
         private int _palDirtyMin, _palDirtyMax;
         private int _nextLeft, _nextTop;
         private int _textSurfaceMultiplier = 1;
@@ -7426,7 +7871,8 @@ namespace Scumm4
 
             return false;
         }
-        #endregion
+
+        #endregion GfxUsageBit Members
 
         public PixelNavigator GetMaskBuffer(int x, int y, int z)
         {
@@ -7447,11 +7893,16 @@ namespace Scumm4
             return (y >= vs.TopLine && y < vs.TopLine + vs.Height);
         }
 
+        #endregion Drawing Methods
+
         #region Verb Members
-        int _verbMouseOver;
+
+        private int _verbMouseOver;
         private string _saveLoadDescription;
         private byte[] _gameMD5;
         private int _numLocalScripts = 60;
+        private int _screenB;
+        private int _screenH;
 
         private void VerbMouseOver(int verb)
         {
@@ -7668,6 +8119,7 @@ namespace Scumm4
 
         //    _verbMouseOver = verb;
         //}
-        #endregion
+
+        #endregion Verb Members
     }
 }

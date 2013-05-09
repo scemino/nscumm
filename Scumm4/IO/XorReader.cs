@@ -17,7 +17,7 @@
 
 using System.IO;
 
-namespace Scumm4
+namespace Scumm4.IO
 {
     public class XorReader
     {

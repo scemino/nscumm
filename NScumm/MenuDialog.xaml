@@ -10,6 +10,7 @@
     </Window.Resources>
     <StackPanel Margin="10">
         <Button Content="Load" Click="OnLoadClick" />
+        <Button Content="Save" Click="OnSaveClick" />
         <Button Content="Quit" Click="OnQuitClick" />
     </StackPanel>
 </Window>

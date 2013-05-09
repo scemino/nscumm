@@ -131,6 +131,164 @@ namespace Scumm4
             return values;
         }
 
+        public static void Write(this BinaryWriter writer, uint[] values, int count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                writer.Write(values[i]);
+            }
+        }
+
+        public static void WriteMatrixUInt16(this BinaryWriter writer, int[][] values, int count1, int count2)
+        {
+            for (int i = 0; i < count2; i++)
+            {
+                for (int j = 0; j < count1; j++)
+                {
+                    writer.Write((ushort)values[i][j]);
+                }
+            }
+        }
+
+        public static void WriteMatrixInt32(this BinaryWriter writer, int[][] values, int count1, int count2)
+        {
+            for (int i = 0; i < count2; i++)
+            {
+                for (int j = 0; j < count1; j++)
+                {
+                    writer.Write(values[i][j]);
+                }
+            }
+        }
+
+        public static void WriteMatrixBytes(this BinaryWriter writer, byte[][] values, int count1, int count2)
+        {
+            for (int i = 0; i < count2; i++)
+            {
+                for (int j = 0; j < count1; j++)
+                {
+                    writer.Write(values[i][j]);
+                }
+            }
+        }
+
+        public static void WriteMatrixBytes(this BinaryWriter writer, byte[,] values, int count1, int count2)
+        {
+            for (int i = 0; i < count2; i++)
+            {
+                for (int j = 0; j < count1; j++)
+                {
+                    writer.Write(values[i, j]);
+                }
+            }
+        }
+
+        public static void WriteInt32(this BinaryWriter writer, int value)
+        {
+            writer.Write(value);
+        }
+        
+        public static void WriteUInt32(this BinaryWriter writer, uint value)
+        {
+            writer.Write(value);
+        }
+
+        public static void WriteInt16(this BinaryWriter writer, int value)
+        {
+            writer.Write((short)value);
+        }
+
+        public static void WriteUInt16(this BinaryWriter writer, bool value)
+        {
+            ushort value16 = value ? (ushort)1 : (ushort)0;
+            writer.Write(value16);
+        }
+
+        public static void WriteUInt16(this BinaryWriter writer, int value)
+        {
+            ushort value16 = (ushort)value;
+            writer.Write(value16);
+        }
+
+        public static void WriteUInt16(this BinaryWriter writer, uint value)
+        {
+            ushort value16 = (ushort)value;
+            writer.Write(value16);
+        }
+
+        public static void WriteByte(this BinaryWriter writer, bool value)
+        {
+            byte value8 = value ? (byte)1 : (byte)0;
+            writer.Write(value8);
+        }
+
+        public static void WriteByte(this BinaryWriter writer, int value)
+        {
+            byte value8 = (byte)value;
+            writer.Write(value8);
+        }
+
+        public static void WriteBytes(this BinaryWriter writer, byte[] values, int count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                writer.Write(values[i]);
+            }
+        }
+
+        public static void WriteBytes(this BinaryWriter writer, ushort[] values, int count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                writer.Write((byte)values[i]);
+            }
+        }
+
+        public static void WriteUInt16s(this BinaryWriter writer, ushort[] values, int count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                writer.Write(values[i]);
+            }
+        }
+
+        public static void WriteUInt32s(this BinaryWriter writer, uint[] values, int count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                writer.Write(values[i]);
+            }
+        }
+
+        public static void WriteInt16s(this BinaryWriter writer, short[] values, int count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                writer.Write(values[i]);
+            }
+        }
+
+        public static void WriteInt16s(this BinaryWriter writer, int[] values, int count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                writer.Write((short)values[i]);
+            }
+        }
+
+        public static void WriteInt32s(this BinaryWriter writer, int[] values, int count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                writer.Write(values[i]);
+            }
+        }
+
+        public static void WriteUInt32BigEndian(this BinaryWriter writer, uint value)
+        {
+            writer.Write(SwapBytes(value));
+        }
+
         public static ushort SwapBytes(ushort value)
         {
             return (ushort)((value & 0xFFU) << 8 | (value & 0xFF00U) >> 8);

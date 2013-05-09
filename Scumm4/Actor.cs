@@ -16,6 +16,7 @@
  */
 
 using Scumm4.Graphics;
+using Scumm4.IO;
 using System;
 using System.Linq;
 
@@ -46,7 +47,7 @@ namespace Scumm4
     public class Actor
     {
         #region Constants
-        public const int InvalidBox = 0xFF; 
+        public const int InvalidBox = 0xFF;
         #endregion
 
         #region Private Fields
@@ -71,7 +72,7 @@ namespace Scumm4
         private short _talkPosX, _talkPosY;
         private bool _flip;
         private int _talkFrequency;
-        private byte _talkVolume; 
+        private byte _talkVolume;
         #endregion
 
         #region Public Fields
@@ -111,7 +112,7 @@ namespace Scumm4
             set { _needRedraw = value; }
         }
 
-        public byte[] Name { get; set; } 
+        public byte[] Name { get; set; }
         #endregion
 
         #region ActorWalkData Structures
@@ -129,7 +130,7 @@ namespace Scumm4
             public Point point3;
             public int deltaXFactor, deltaYFactor;
             public ushort xfrac, yfrac;
-        } 
+        }
         #endregion
 
         #region Constructor
@@ -137,7 +138,7 @@ namespace Scumm4
         {
             _scumm = scumm;
             _number = id;
-        } 
+        }
         #endregion
 
         #region Public Methods
@@ -852,7 +853,7 @@ namespace Scumm4
                 _ignoreBoxes = value;
         }
 
-        public void Load(System.IO.BinaryReader reader, uint version)
+        public void SaveOrLoad(Serializer serializer)
         {
             short heOffsX, heOffsY;
             ushort[] sound;
@@ -865,118 +866,139 @@ namespace Scumm4
             uint[] heCondMaskTable;
 
             var actorEntries = new[]{
-                    LoadAndSaveEntry.Create(()=> _pos.X = reader.ReadInt16(),8),
-                    LoadAndSaveEntry.Create(()=> _pos.Y = reader.ReadInt16(),8),
-
-                    LoadAndSaveEntry.Create(()=> heOffsX = reader.ReadInt16(),32),
-                    LoadAndSaveEntry.Create(()=> heOffsY = reader.ReadInt16(),32),
-                    LoadAndSaveEntry.Create(()=> _top = reader.ReadInt16(),8),
-                    LoadAndSaveEntry.Create(()=> _bottom = reader.ReadInt16(),8),
-                    LoadAndSaveEntry.Create(()=> _elevation = reader.ReadInt16(),8),
-                    LoadAndSaveEntry.Create(()=> _width = reader.ReadUInt16(),8),
-                    LoadAndSaveEntry.Create(()=> _facing = reader.ReadUInt16(),8),
-                    LoadAndSaveEntry.Create(()=> _costume = reader.ReadUInt16(),8),
-                    LoadAndSaveEntry.Create(()=> _room = reader.ReadByte(),8),
-                    LoadAndSaveEntry.Create(()=> _talkColor = reader.ReadByte(),8),
-                    LoadAndSaveEntry.Create(()=> _talkFrequency = reader.ReadInt16(),16),
-                    LoadAndSaveEntry.Create(()=> _talkPan = (byte)reader.ReadInt16(),24),
-                    LoadAndSaveEntry.Create(()=> _talkVolume = (byte)reader.ReadInt16(),29),
-                    LoadAndSaveEntry.Create(()=> _boxscale = reader.ReadUInt16(),34),
-                    LoadAndSaveEntry.Create(()=> _scalex = reader.ReadByte(),8),
-                    LoadAndSaveEntry.Create(()=> _scaley = reader.ReadByte(),8),
-                    LoadAndSaveEntry.Create(()=> _charset = reader.ReadByte(),8),
+                    LoadAndSaveEntry.Create( reader => _pos.X = reader.ReadInt16(),writer => writer.WriteInt16(_pos.X),8),
+                    LoadAndSaveEntry.Create( reader => _pos.Y = reader.ReadInt16(),writer => writer.WriteInt16(_pos.Y),8),
+                                                    
+                    LoadAndSaveEntry.Create( reader => heOffsX = reader.ReadInt16(),writer => writer.WriteInt16(0xCDCD),32),
+                    LoadAndSaveEntry.Create( reader => heOffsY = reader.ReadInt16(),writer => writer.WriteInt16(0xCDCD),32),
+                    LoadAndSaveEntry.Create( reader => _top = reader.ReadInt16(),writer => writer.WriteInt16(_top),8),
+                    LoadAndSaveEntry.Create( reader => _bottom = reader.ReadInt16(),writer => writer.WriteInt16(_bottom),8),
+                    LoadAndSaveEntry.Create( reader => _elevation = reader.ReadInt16(),writer => writer.WriteInt16(_elevation),8),
+                    LoadAndSaveEntry.Create( reader => _width = reader.ReadUInt16(),writer => writer.WriteUInt16(_width),8),
+                    LoadAndSaveEntry.Create( reader => _facing = reader.ReadUInt16(),writer => writer.WriteUInt16(_facing),8),
+                    LoadAndSaveEntry.Create( reader => _costume = reader.ReadUInt16(),writer => writer.WriteUInt16(_costume),8),
+                    LoadAndSaveEntry.Create( reader => _room = reader.ReadByte(),writer => writer.WriteByte(_room),8),
+                    LoadAndSaveEntry.Create( reader => _talkColor = reader.ReadByte(),writer => writer.WriteByte(_talkColor),8),
+                    LoadAndSaveEntry.Create( reader => _talkFrequency = reader.ReadInt16(),writer => writer.WriteInt16(_talkFrequency),16),
+                    LoadAndSaveEntry.Create( reader => _talkPan = (byte)reader.ReadInt16(),writer => writer.WriteInt16(_talkPan),24),
+                    LoadAndSaveEntry.Create( reader => _talkVolume = (byte)reader.ReadInt16(),writer => writer.WriteInt16(_talkVolume),29),
+                    LoadAndSaveEntry.Create( reader => _boxscale = reader.ReadUInt16(),writer => writer.WriteUInt16(_boxscale),34),
+                    LoadAndSaveEntry.Create( reader => _scalex = reader.ReadByte(),writer => writer.WriteByte(_scalex),8),
+                    LoadAndSaveEntry.Create( reader => _scaley = reader.ReadByte(),writer => writer.WriteByte(_scaley),8),
+                    LoadAndSaveEntry.Create( reader => _charset = reader.ReadByte(),writer => writer.WriteByte(_charset),8),
 		            
                     // Actor sound grew from 8 to 32 bytes and switched to uint16 in HE games
-                    LoadAndSaveEntry.Create(()=> sound = reader.ReadBytes(8).Cast<ushort>().ToArray(),8,36),
-                    LoadAndSaveEntry.Create(()=> sound = reader.ReadBytes(32).Cast<ushort>().ToArray(),37,61),
-                    LoadAndSaveEntry.Create(()=> sound = reader.ReadUInt16s(32),62),
+                    LoadAndSaveEntry.Create(
+                        reader => sound = reader.ReadBytes(8).Cast<ushort>().ToArray(),
+                        writer=> writer.Write(new byte[8]),
+                        8,36),
+                    LoadAndSaveEntry.Create(
+                        reader => sound = reader.ReadBytes(32).Cast<ushort>().ToArray(),
+                        writer=> writer.Write(new byte[32]),
+                        37,61),
+                    LoadAndSaveEntry.Create(
+                        reader => sound = reader.ReadUInt16s(32),
+                        writer=> writer.WriteUInt16s(new ushort[32], 32),
+                        62),
                     
                     // Actor animVariable grew from 8 to 27
-                    LoadAndSaveEntry.Create(()=> _animVariable = reader.ReadInt16s(8),8,40),
-                    LoadAndSaveEntry.Create(()=> _animVariable = reader.ReadInt16s(27),41),
-
-                    LoadAndSaveEntry.Create(()=> _targetFacing = reader.ReadUInt16(),8),
-                    LoadAndSaveEntry.Create(()=> _moving = (MoveFlags)reader.ReadByte(),8),
-                    LoadAndSaveEntry.Create(()=> _ignoreBoxes = reader.ReadByte()!=0,8),
-                    LoadAndSaveEntry.Create(()=> _forceClip = reader.ReadByte(),8),
-                    LoadAndSaveEntry.Create(()=> _initFrame = reader.ReadByte(),8),
-                    LoadAndSaveEntry.Create(()=> _walkFrame = reader.ReadByte(),8),
-                    LoadAndSaveEntry.Create(()=> _standFrame = reader.ReadByte(),8),
-                    LoadAndSaveEntry.Create(()=> _talkStartFrame = reader.ReadByte(),8),
-                    LoadAndSaveEntry.Create(()=> _talkStopFrame = reader.ReadByte(),8),
-                    LoadAndSaveEntry.Create(()=> _speedx = reader.ReadUInt16(),8),
-                    LoadAndSaveEntry.Create(()=> _speedy = reader.ReadUInt16(),8),
-                    LoadAndSaveEntry.Create(()=> _cost.animCounter = reader.ReadUInt16(),8),
-                    LoadAndSaveEntry.Create(()=> _cost.soundCounter = reader.ReadByte(),8),
-                    LoadAndSaveEntry.Create(()=> drawToBackBuf = reader.ReadByte(),32),
-                    LoadAndSaveEntry.Create(()=> _flip = reader.ReadByte()!=0,32),
-                    LoadAndSaveEntry.Create(()=> heSkipLimbs = reader.ReadByte(),32),
+                    LoadAndSaveEntry.Create(reader => _animVariable = reader.ReadInt16s(8), writer=> writer.WriteInt16s(_animVariable,8),8,40),
+                    LoadAndSaveEntry.Create(reader => _animVariable = reader.ReadInt16s(27), writer=> writer.WriteInt16s(_animVariable,27),41),
+                                                   
+                    LoadAndSaveEntry.Create(reader => _targetFacing = reader.ReadUInt16(),writer=> writer.WriteUInt16(_targetFacing),8),
+                    LoadAndSaveEntry.Create(reader => _moving = (MoveFlags)reader.ReadByte(),writer=> writer.WriteByte((byte)_moving),8),
+                    LoadAndSaveEntry.Create(reader => _ignoreBoxes = reader.ReadByte()!=0,writer=> writer.WriteByte(_ignoreBoxes),8),
+                    LoadAndSaveEntry.Create(reader => _forceClip = reader.ReadByte(),writer=> writer.WriteByte(_forceClip),8),
+                    LoadAndSaveEntry.Create(reader => _initFrame = reader.ReadByte(),writer=> writer.WriteByte(_initFrame),8),
+                    LoadAndSaveEntry.Create(reader => _walkFrame = reader.ReadByte(),writer=> writer.WriteByte(_walkFrame),8),
+                    LoadAndSaveEntry.Create(reader => _standFrame = reader.ReadByte(),writer=> writer.WriteByte(_standFrame),8),
+                    LoadAndSaveEntry.Create(reader => _talkStartFrame = reader.ReadByte(),writer=> writer.WriteByte(_talkStartFrame),8),
+                    LoadAndSaveEntry.Create(reader => _talkStopFrame = reader.ReadByte(),writer=> writer.WriteByte(_talkStopFrame),8),
+                    LoadAndSaveEntry.Create(reader => _speedx = reader.ReadUInt16(),writer=> writer.WriteUInt16(_speedx),8),
+                    LoadAndSaveEntry.Create(reader => _speedy = reader.ReadUInt16(),writer=> writer.WriteUInt16(_speedy),8),
+                    LoadAndSaveEntry.Create(reader => _cost.animCounter = reader.ReadUInt16(),writer=> writer.WriteUInt16(_cost.animCounter),8),
+                    LoadAndSaveEntry.Create(reader => _cost.soundCounter = reader.ReadByte(),writer=> writer.WriteByte(_cost.soundCounter),8),
+                    LoadAndSaveEntry.Create(reader => drawToBackBuf = reader.ReadByte(),writer=> writer.WriteByte(0),32),
+                    LoadAndSaveEntry.Create(reader => _flip = reader.ReadByte()!=0, writer=> writer.WriteByte(_flip),32),
+                    LoadAndSaveEntry.Create(reader => heSkipLimbs = reader.ReadByte(), writer=> writer.WriteByte(0xCD),32),
 
 		            // Actor palette grew from 64 to 256 bytes and switched to uint16 in HE games
-                    LoadAndSaveEntry.Create(()=> _palette = reader.ReadBytes(64).Cast<ushort>().ToArray(),8,9),
-                    LoadAndSaveEntry.Create(()=> _palette = reader.ReadBytes(256).Cast<ushort>().ToArray(),10,79),
-                    LoadAndSaveEntry.Create(()=> _palette = reader.ReadUInt16s(256),80),
+                    LoadAndSaveEntry.Create(
+                        reader => _palette = reader.ReadBytes(64).Cast<ushort>().ToArray(),
+                        writer=> writer.WriteBytes(_palette,64),
+                        8,9),
+                    LoadAndSaveEntry.Create(
+                        reader => _palette = reader.ReadBytes(256).Cast<ushort>().ToArray(),
+                        writer=> writer.WriteBytes(_palette, 256),
+                        10,79),
+                    LoadAndSaveEntry.Create(
+                        reader => _palette = reader.ReadUInt16s(256),
+                        writer=> writer.WriteUInt16s(_palette, 256)
+                        ,80),
 
-                    LoadAndSaveEntry.Create(()=> mask = reader.ReadByte(),8,9),
-                    LoadAndSaveEntry.Create(()=> _shadowMode = reader.ReadByte(),8),
-                    LoadAndSaveEntry.Create(()=> _visible = reader.ReadByte()!=0,8),
-                    LoadAndSaveEntry.Create(()=> _frame = reader.ReadByte(),8),
-                    LoadAndSaveEntry.Create(()=> _animSpeed = reader.ReadByte(),8),
-                    LoadAndSaveEntry.Create(()=> _animProgress = reader.ReadByte(),8),
-                    LoadAndSaveEntry.Create(()=> _walkbox = reader.ReadByte(),8),
-                    LoadAndSaveEntry.Create(()=> _needRedraw = reader.ReadByte()!=0,8),
-                    LoadAndSaveEntry.Create(()=> _needBgReset = reader.ReadByte()!=0,8),
-                    LoadAndSaveEntry.Create(()=> _costumeNeedsInit = reader.ReadByte()!=0,8),
-                    LoadAndSaveEntry.Create(()=> heCondMask = reader.ReadUInt32(),38),
-                    LoadAndSaveEntry.Create(()=> hePaletteNum = reader.ReadUInt32(),59),
-                    LoadAndSaveEntry.Create(()=> heXmapNum = reader.ReadUInt32(),59),
+                    LoadAndSaveEntry.Create((reader)=> mask = reader.ReadByte(),writer => writer.WriteByte(0),8,9),
+                    LoadAndSaveEntry.Create((reader)=> _shadowMode = reader.ReadByte(), writer=>writer.WriteByte(_shadowMode),8),
+                    LoadAndSaveEntry.Create((reader)=> _visible = reader.ReadByte()!=0, writer=>writer.WriteByte(_visible),8),
+                    LoadAndSaveEntry.Create((reader)=> _frame = reader.ReadByte(), writer=>writer.WriteByte(_frame),8),
+                    LoadAndSaveEntry.Create((reader)=> _animSpeed = reader.ReadByte(), writer=>writer.WriteByte(_animSpeed),8),
+                    LoadAndSaveEntry.Create((reader)=> _animProgress = reader.ReadByte(), writer=>writer.WriteByte(_animProgress),8),
+                    LoadAndSaveEntry.Create((reader)=> _walkbox = reader.ReadByte(), writer=>writer.WriteByte(_walkbox),8),
+                    LoadAndSaveEntry.Create((reader)=> _needRedraw = reader.ReadByte()!=0, writer=>writer.WriteByte(_needRedraw),8),
+                    LoadAndSaveEntry.Create((reader)=> _needBgReset = reader.ReadByte()!=0, writer=>writer.WriteByte(_needBgReset),8),
+                    LoadAndSaveEntry.Create((reader)=> _costumeNeedsInit = reader.ReadByte()!=0, writer=>writer.WriteByte(_costumeNeedsInit),8),
+                    LoadAndSaveEntry.Create((reader)=> heCondMask = reader.ReadUInt32(),writer=> writer.WriteUInt32(0xCDCDCDCD),38),
+                    LoadAndSaveEntry.Create((reader)=> hePaletteNum = reader.ReadUInt32(),writer=> writer.WriteUInt32(0xCDCDCDCD),59),
+                    LoadAndSaveEntry.Create((reader)=> heXmapNum = reader.ReadUInt32(),writer=> writer.WriteUInt32(0xCDCDCDCD),59),
 
-                    LoadAndSaveEntry.Create(()=> _talkPosX = reader.ReadInt16(),8),
-                    LoadAndSaveEntry.Create(()=> _talkPosY = reader.ReadInt16(),8),
-                    LoadAndSaveEntry.Create(()=> _ignoreTurns = reader.ReadByte()!=0,8),
+                    LoadAndSaveEntry.Create((reader)=> _talkPosX = reader.ReadInt16(), writer=>writer.WriteInt16(_talkPosX),8),
+                    LoadAndSaveEntry.Create((reader)=> _talkPosY = reader.ReadInt16(), writer=>writer.WriteInt16(_talkPosY),8),
+                    LoadAndSaveEntry.Create((reader)=> _ignoreTurns = reader.ReadByte()!=0, writer=>writer.WriteByte(_ignoreTurns),8),
 
                     // Actor layer switched to int32 in HE games
-                    LoadAndSaveEntry.Create(()=> layer = reader.ReadByte(),8,57),
-                    LoadAndSaveEntry.Create(()=> layer = reader.ReadInt32(),58),
+                    LoadAndSaveEntry.Create((reader)=> layer = reader.ReadByte(),writer=>writer.WriteByte(0),8,57),
+                    LoadAndSaveEntry.Create((reader)=> layer = reader.ReadInt32(),writer=>writer.WriteInt32(0),58),
+                                             
+                    LoadAndSaveEntry.Create((reader)=> _talkScript = reader.ReadUInt16(), writer=>writer.WriteUInt16(_talkScript),8),
+                    LoadAndSaveEntry.Create((reader)=> _walkScript = reader.ReadUInt16(), writer=>writer.WriteUInt16(_walkScript),8),
 
-                    LoadAndSaveEntry.Create(()=> _talkScript = reader.ReadUInt16(),8),
-                    LoadAndSaveEntry.Create(()=> _walkScript = reader.ReadUInt16(),8),
+                    LoadAndSaveEntry.Create((reader)=> _walkdata.dest.X = reader.ReadInt16(),writer=>writer.WriteInt16(_walkdata.dest.X),8),
+                    LoadAndSaveEntry.Create((reader)=> _walkdata.dest.Y = reader.ReadInt16(),writer=>writer.WriteInt16(_walkdata.dest.Y),8),
+                    LoadAndSaveEntry.Create((reader)=> _walkdata.destbox = reader.ReadByte(),writer=>writer.WriteByte(_walkdata.destbox),8),
+                    LoadAndSaveEntry.Create((reader)=> _walkdata.destdir = reader.ReadInt16(),writer=>writer.WriteInt16(_walkdata.destdir),8),
+                    LoadAndSaveEntry.Create((reader)=> _walkdata.curbox = reader.ReadByte(),writer=>writer.WriteByte(_walkdata.curbox),8),
+                    LoadAndSaveEntry.Create((reader)=> _walkdata.cur.X = reader.ReadInt16(),writer=>writer.WriteInt16(_walkdata.cur.X),8),
+                    LoadAndSaveEntry.Create((reader)=> _walkdata.cur.Y = reader.ReadInt16(),writer=>writer.WriteInt16(_walkdata.cur.Y),8),
+                    LoadAndSaveEntry.Create((reader)=> _walkdata.next.X = reader.ReadInt16(),writer=>writer.WriteInt16(_walkdata.next.X),8),
+                    LoadAndSaveEntry.Create((reader)=> _walkdata.next.Y = reader.ReadInt16(),writer=>writer.WriteInt16(_walkdata.next.Y),8),
+                    LoadAndSaveEntry.Create((reader)=> _walkdata.deltaXFactor = reader.ReadInt32(),writer=>writer.WriteInt32(_walkdata.deltaXFactor),8),
+                    LoadAndSaveEntry.Create((reader)=> _walkdata.deltaYFactor = reader.ReadInt32(),writer=>writer.WriteInt32(_walkdata.deltaYFactor),8),
+                    LoadAndSaveEntry.Create((reader)=> _walkdata.xfrac = reader.ReadUInt16(),writer=>writer.WriteUInt16(_walkdata.xfrac),8),
+                    LoadAndSaveEntry.Create((reader)=> _walkdata.yfrac = reader.ReadUInt16(),writer=>writer.WriteUInt16(_walkdata.yfrac),8),
 
-                    LoadAndSaveEntry.Create(()=> _walkdata.dest.X = reader.ReadInt16(),8),
-                    LoadAndSaveEntry.Create(()=> _walkdata.dest.Y = reader.ReadInt16(),8),
-                    LoadAndSaveEntry.Create(()=> _walkdata.destbox = reader.ReadByte(),8),
-                    LoadAndSaveEntry.Create(()=> _walkdata.destdir = reader.ReadInt16(),8),
-                    LoadAndSaveEntry.Create(()=> _walkdata.curbox = reader.ReadByte(),8),
-                    LoadAndSaveEntry.Create(()=> _walkdata.cur.X = reader.ReadInt16(),8),
-                    LoadAndSaveEntry.Create(()=> _walkdata.cur.Y = reader.ReadInt16(),8),
-                    LoadAndSaveEntry.Create(()=> _walkdata.next.X = reader.ReadInt16(),8),
-                    LoadAndSaveEntry.Create(()=> _walkdata.next.Y = reader.ReadInt16(),8),
-                    LoadAndSaveEntry.Create(()=> _walkdata.deltaXFactor = reader.ReadInt32(),8),
-                    LoadAndSaveEntry.Create(()=> _walkdata.deltaYFactor = reader.ReadInt32(),8),
-                    LoadAndSaveEntry.Create(()=> _walkdata.xfrac = reader.ReadUInt16(),8),
-                    LoadAndSaveEntry.Create(()=> _walkdata.yfrac = reader.ReadUInt16(),8),
+                    LoadAndSaveEntry.Create((reader)=> _walkdata.point3.X = reader.ReadInt16(),writer=>writer.WriteInt16(_walkdata.point3.X),42),
+                    LoadAndSaveEntry.Create((reader)=> _walkdata.point3.Y = reader.ReadInt16(),writer=>writer.WriteInt16(_walkdata.point3.Y),42),
 
-                    LoadAndSaveEntry.Create(()=> _walkdata.point3.X = reader.ReadInt16(),42),
-                    LoadAndSaveEntry.Create(()=> _walkdata.point3.Y = reader.ReadInt16(),42),
-
-                    LoadAndSaveEntry.Create(()=> _cost.active = reader.ReadBytes(16),8),
-                    LoadAndSaveEntry.Create(()=> _cost.stopped = reader.ReadUInt16(),8),
-                    LoadAndSaveEntry.Create(()=> _cost.curpos = reader.ReadUInt16s(16),8),
-                    LoadAndSaveEntry.Create(()=> _cost.start = reader.ReadUInt16s(16),8),
-                    LoadAndSaveEntry.Create(()=> _cost.end = reader.ReadUInt16s(16),8),
-                    LoadAndSaveEntry.Create(()=> _cost.frame = reader.ReadUInt16s(16),8),
-
-                    LoadAndSaveEntry.Create(()=> heJumpOffsetTable = reader.ReadUInt16s(16),65),
-                    LoadAndSaveEntry.Create(()=> heJumpCountTable = reader.ReadUInt16s(16),65),
-                    LoadAndSaveEntry.Create(()=> heCondMaskTable = reader.ReadUInt32s(16),65),
+                    LoadAndSaveEntry.Create((reader)=> _cost.active = reader.ReadBytes(16),writer=>writer.WriteBytes(_cost.active,16),8),
+                    LoadAndSaveEntry.Create((reader)=> _cost.stopped = reader.ReadUInt16(),writer=>writer.WriteUInt16(_cost.stopped),8),
+                    LoadAndSaveEntry.Create((reader)=> _cost.curpos = reader.ReadUInt16s(16),writer=>writer.WriteUInt16s(_cost.curpos,16),8),
+                    LoadAndSaveEntry.Create((reader)=> _cost.start = reader.ReadUInt16s(16),writer=>writer.WriteUInt16s(_cost.start,16),8),
+                    LoadAndSaveEntry.Create((reader)=> _cost.end = reader.ReadUInt16s(16),writer=>writer.WriteUInt16s(_cost.end,16),8),
+                    LoadAndSaveEntry.Create((reader)=> _cost.frame = reader.ReadUInt16s(16),writer=>writer.WriteUInt16s(_cost.frame,16),8),
+                                             
+                    LoadAndSaveEntry.Create((reader)=> heJumpOffsetTable = reader.ReadUInt16s(16),writer=>writer.WriteUInt16s(new ushort[16],16),65),
+                    LoadAndSaveEntry.Create((reader)=> heJumpCountTable = reader.ReadUInt16s(16),writer=>writer.WriteUInt16s(new ushort[16],16),65),
+                    LoadAndSaveEntry.Create((reader)=> heCondMaskTable = reader.ReadUInt32s(16),writer=>writer.WriteUInt32s(new uint[16],16),65),
             };
 
-            // Not all actor data is saved; so when loading, we first reset
-            // the actor, to ensure completely reproducible behavior (else,
-            // some not saved value in the actor class can cause odd things)
-            InitActor(-1);
+            if (serializer.IsLoading)
+            {
+                // Not all actor data is saved; so when loading, we first reset
+                // the actor, to ensure completely reproducible behavior (else,
+                // some not saved value in the actor class can cause odd things)
+                InitActor(-1);
+            }
 
-            Array.ForEach(actorEntries, e => e.Execute(version));
+            Array.ForEach(actorEntries, e => e.Execute(serializer));
         }
 
         public void RunActorTalkScript(int f)
@@ -1035,7 +1057,7 @@ namespace Scumm4
         public bool IsInCurrentRoom()
         {
             return _room == _scumm.CurrentRoom;
-        } 
+        }
         #endregion
 
         #region Private Methods
@@ -1705,7 +1727,7 @@ namespace Scumm4
                 box2.ll = tmp;
             }
             return false;
-        } 
+        }
         #endregion
     }
 }

@@ -31,42 +31,67 @@ namespace NScumm
         private ScummIndex _index;
         private ScummEngine _engine;
         private Thread _thread;
+        private TimeSpan tsDelta;
+        private TimeSpan delay = TimeSpan.Zero;
+        private ManualResetEvent _evtQuit = new ManualResetEvent(false);
+        private WpfGraphicsManager _gfx;
         #endregion
 
         public MainWindow()
         {
             InitializeComponent();
 
+            // get game
             var info = ((NScumm.App)App.Current).Info;
             this.Title = string.Format("{0} - {1}", info.Description, info.Culture.NativeName);
 
+
+            // load game
             _index = new ScummIndex();
             _index.LoadIndex(info.Path);
 
-            var format = Scumm4.Graphics.PixelFormat.Indexed8;
-            var gfx = new WpfGraphicsManager(_screen,format);
-            _engine = new ScummEngine(_index, info, gfx);
+            // create engine
+            _gfx = new WpfGraphicsManager(_screen);
+            var im = new WpfInputManager(_screen);
+            _engine = new ScummEngine(_index, info, _gfx, im);
             _engine.ShowMenuDialogRequested += OnShowMenuDialogRequested;
 
-            _thread = new Thread(new ThreadStart(() =>
-            {
-                _engine.Go();
-            }));
+            // start the game
+            _engine.RunBootScript();
+            _thread = new Thread(new ThreadStart(Update));
             _thread.IsBackground = true;
             _thread.Start();
         }
 
+        private void Update()
+        {
+            while (!_engine.HastToQuit)
+            {
+                var dt = DateTime.Now;
+                _engine.Loop(delay);
+                var elapsed = DateTime.Now - dt;
+                _engine.Update(elapsed);
+                delay = _engine.GetTimeToWait();
+                _gfx.UpdateScreen();
+                Thread.Sleep(delay);
+                delay = elapsed;
+            }
+        }
+
         private void OnShowMenuDialogRequested(object sender, EventArgs e)
         {
-            MenuDialog dlg = new MenuDialog();
-            dlg.Engine = _engine;
-            dlg.Owner = this;
-            dlg.ShowDialog();
+            this.Dispatcher.Invoke(new Action(() =>
+            {
+                MenuDialog dlg = new MenuDialog();
+                dlg.Engine = _engine;
+                dlg.Owner = this;
+                dlg.ShowDialog();
+            }));
         }
 
         protected override void OnClosed(EventArgs e)
         {
-            _engine.HastToQuit = true;
+            _thread.Abort();
             base.OnClosed(e);
         }
     }

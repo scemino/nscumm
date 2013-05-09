@@ -16,7 +16,6 @@
  */
 
 using System.Collections.Generic;
-using System.Windows.Media;
 
 namespace Scumm4.Graphics
 {

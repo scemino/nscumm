@@ -1,5 +1,4 @@
-﻿fix cursor color
-save games
+﻿fix save games
 room effects: DissolveEffect, ScrollEffect
 shake
 color cycle

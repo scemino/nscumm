@@ -58,6 +58,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="CursorHelper.cs" />
+    <Compile Include="WpfInputManager.cs" />
     <Compile Include="MenuDialog.xaml.cs">
       <DependentUpon>MenuDialog.xaml</DependentUpon>
     </Compile>

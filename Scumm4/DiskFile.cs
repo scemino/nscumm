@@ -15,18 +15,18 @@
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+using Scumm4.IO;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Windows.Media;
 
 namespace Scumm4
 {
     public class DiskFile
     {
         #region Fields
-        private XorReader _reader; 
+        private XorReader _reader;
         #endregion
 
         #region Chunk Class
@@ -98,7 +98,7 @@ namespace Scumm4
             var fs = File.OpenRead(path);
             var br2 = new BinaryReader(fs);
             _reader = new XorReader(br2, encByte);
-        } 
+        }
         #endregion
 
         #region Public Methods
@@ -307,7 +307,6 @@ namespace Scumm4
                                 data.x_pos = (short)(8 * x);
                                 data.y_pos = (short)(8 * y);
                                 data.width = (ushort)(8 * width);
-                                //data.height = (ushort)(8 * height);
                                 data.height = height;
                                 data.parent = parent;
                                 data.parentstate = parentState;
@@ -317,11 +316,15 @@ namespace Scumm4
                                 room.Objects.Add(data);
 
                                 var nameOffset = _reader.ReadByte();
-
-                                // read scripts
-                                ReadObjectScripts(it, data);
+                                var size = nameOffset - 6 - 13;
+                                ReadVerbTable(it, data, size);
                                 data.Name = ReadObjectName(it, nameOffset);
-                                ReadObjectImage(stripsDic, data);
+                                // read script
+                                size = (int)(it.Current.Offset + it.Current.Size - 6 - _reader.BaseStream.Position);
+                                data.Script.Data = _reader.ReadBytes(size);
+                                data.Script.Offset = nameOffset + data.Name.Length+1;
+
+                                SetObjectImage(stripsDic, data);
                             }
                             break;
                         //case 0x4F53:
@@ -366,7 +369,7 @@ namespace Scumm4
         {
             var size = _reader.ReadInt32() + 11;
             return _reader.ReadBytes(size);
-        } 
+        }
         #endregion
 
         #region Private Methods
@@ -383,43 +386,20 @@ namespace Scumm4
             return name.ToArray();
         }
 
-        private void ReadObjectScripts(ChunkIterator it, ObjectData data)
+        private void ReadVerbTable(ChunkIterator it, ObjectData data, int size)
         {
-            var tableLength = (_reader.BaseStream.Position - it.Current.Offset) / 3;
-            List<Tuple<byte, ushort>> offsets = new List<Tuple<byte, ushort>>();
+            var tableLength = (size - 1) / 3;
             for (int i = 0; i < tableLength; i++)
             {
                 var id = _reader.ReadByte();
                 var offset = _reader.ReadUInt16();
-                if (id == 0)
-                    break;
                 data.ScriptOffsets.Add(id, offset);
-                offsets.Add(Tuple.Create(id, offset));
             }
-            offsets = (from offset in offsets
-                       orderby offset.Item2
-                       select offset).ToList();
-            if (offsets.Count > 0)
-            {
-                for (int i = 0; i < offsets.Count - 1; i++)
-                {
-                    _reader.BaseStream.Seek(it.Current.Offset + offsets[i].Item2 - 6, SeekOrigin.Begin);
-                    //var size = offsets[i + 1].Item2 - offsets[i].Item2;
-                    var size = (int)(it.Current.Offset + it.Current.Size - 6 - _reader.BaseStream.Position);
-                    var script = new ScriptData { Data = _reader.ReadBytes(size) };
-                    data.Scripts.Add(offsets[i].Item1, script);
-                }
-                {
-                    int i = offsets.Count - 1;
-                    _reader.BaseStream.Seek(it.Current.Offset + offsets[i].Item2 - 6, SeekOrigin.Begin);
-                    var size = (int)(it.Current.Offset + it.Current.Size - 6 - _reader.BaseStream.Position);
-                    var script = new ScriptData { Data = _reader.ReadBytes(size) };
-                    data.Scripts.Add(offsets[i].Item1, script);
-                }
-            }
+            var end = _reader.ReadByte();
+
         }
 
-        private static void ReadObjectImage(Dictionary<ushort, byte[]> stripsDic, ObjectData obj)
+        private static void SetObjectImage(Dictionary<ushort, byte[]> stripsDic, ObjectData obj)
         {
             if (stripsDic.ContainsKey(obj.obj_nr))
             {
@@ -479,7 +459,7 @@ namespace Scumm4
                 colors[i] = Scumm4.Graphics.Color.FromRgb(_reader.ReadByte(), _reader.ReadByte(), _reader.ReadByte());
             }
             return colors;
-        }         
+        }
         #endregion
     }
 }

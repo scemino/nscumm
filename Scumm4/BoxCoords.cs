@@ -16,6 +16,8 @@
  */
 
 
+using Scumm4.Graphics;
+
 namespace Scumm4
 {
     /// <summary>

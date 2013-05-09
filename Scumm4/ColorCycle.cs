@@ -15,6 +15,7 @@
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+using Scumm4.IO;
 using System;
 
 namespace Scumm4
@@ -27,16 +28,16 @@ namespace Scumm4
         public byte start;
         public byte end;
 
-        public void Load(System.IO.BinaryReader reader, uint version)
+        public void SaveOrLoad(Serializer serializer)
         {
             var colorCycleEntries = new[]{
-                    LoadAndSaveEntry.Create(()=> delay = reader.ReadUInt16(),8),
-                    LoadAndSaveEntry.Create(()=> counter = reader.ReadUInt16(),8),
-                    LoadAndSaveEntry.Create(()=> flags = reader.ReadUInt16(),8),
-                    LoadAndSaveEntry.Create(()=> start = reader.ReadByte(),8),
-                    LoadAndSaveEntry.Create(()=> end = reader.ReadByte(),8),
+                    LoadAndSaveEntry.Create(reader => delay = reader.ReadUInt16(), writer => writer.Write(delay), 8),
+                    LoadAndSaveEntry.Create(reader => counter = reader.ReadUInt16(), writer => writer.Write(counter),8),
+                    LoadAndSaveEntry.Create(reader => flags = reader.ReadUInt16(), writer => writer.Write(flags),8),
+                    LoadAndSaveEntry.Create(reader => start = reader.ReadByte(), writer => writer.Write(start),8),
+                    LoadAndSaveEntry.Create(reader => end = reader.ReadByte(), writer => writer.Write(end),8),
              };
-            Array.ForEach(colorCycleEntries, e => e.Execute(version));
+            Array.ForEach(colorCycleEntries, e => e.Execute(serializer));
         }
     }
 }

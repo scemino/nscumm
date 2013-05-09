@@ -15,6 +15,7 @@
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+using Scumm4.IO;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -39,37 +40,37 @@ namespace Scumm4
         public DrawBitmapFlags flags;
 
         public Dictionary<byte, ushort> ScriptOffsets { get; private set; }
-        public Dictionary<byte, ScriptData> Scripts { get; private set; }
+        public ScriptData Script { get; private set; }
         public byte[] Name { get; set; }
 
         public ObjectData()
         {
             this.ScriptOffsets = new Dictionary<byte, ushort>();
-            this.Scripts = new Dictionary<byte, ScriptData>();
+            this.Script = new ScriptData();
         }
 
         public byte[] Image { get; set; }
 
-        public void Load(BinaryReader reader, uint version)
+        public void SaveOrLoad(Serializer serializer)
         {
             var objectEntries = new[]{
-                LoadAndSaveEntry.Create(()=> OBIMoffset = reader.ReadUInt32(),8),
-                LoadAndSaveEntry.Create(()=> OBCDoffset = reader.ReadUInt32(),8),
-                LoadAndSaveEntry.Create(()=> walk_x = reader.ReadInt16(),8),
-                LoadAndSaveEntry.Create(()=> walk_y = reader.ReadInt16(),8),
-                LoadAndSaveEntry.Create(()=> obj_nr = reader.ReadUInt16(),8),
-                LoadAndSaveEntry.Create(()=> x_pos = reader.ReadInt16(),8),
-                LoadAndSaveEntry.Create(()=> y_pos = reader.ReadInt16(),8),
-                LoadAndSaveEntry.Create(()=> width = reader.ReadUInt16(),8),
-                LoadAndSaveEntry.Create(()=> height = reader.ReadUInt16(),8),
-                LoadAndSaveEntry.Create(()=> actordir = reader.ReadByte(),8),
-                LoadAndSaveEntry.Create(()=> parentstate = reader.ReadByte(),8),
-                LoadAndSaveEntry.Create(()=> parent = reader.ReadByte(),8),
-                LoadAndSaveEntry.Create(()=> state = reader.ReadByte(),8),
-                LoadAndSaveEntry.Create(()=> fl_object_index = reader.ReadByte(),8),
-                LoadAndSaveEntry.Create(()=> flags = (DrawBitmapFlags)reader.ReadByte(),46),
+                LoadAndSaveEntry.Create(reader => OBIMoffset = reader.ReadUInt32(), writer => writer.Write(OBIMoffset), 8),
+                LoadAndSaveEntry.Create(reader => OBCDoffset = reader.ReadUInt32(), writer => writer.Write(OBCDoffset),8),
+                LoadAndSaveEntry.Create(reader => walk_x = reader.ReadInt16(), writer => writer.Write(walk_x),8),
+                LoadAndSaveEntry.Create(reader => walk_y = reader.ReadInt16(), writer => writer.Write(walk_y),8),
+                LoadAndSaveEntry.Create(reader => obj_nr = reader.ReadUInt16(), writer => writer.Write(obj_nr),8),
+                LoadAndSaveEntry.Create(reader => x_pos = reader.ReadInt16(), writer => writer.Write(x_pos),8),
+                LoadAndSaveEntry.Create(reader => y_pos = reader.ReadInt16(), writer => writer.Write(y_pos),8),
+                LoadAndSaveEntry.Create(reader => width = reader.ReadUInt16(), writer => writer.Write(width),8),
+                LoadAndSaveEntry.Create(reader => height = reader.ReadUInt16(), writer => writer.Write(height),8),
+                LoadAndSaveEntry.Create(reader => actordir = reader.ReadByte(), writer => writer.Write(actordir),8),
+                LoadAndSaveEntry.Create(reader => parentstate = reader.ReadByte(), writer => writer.Write(parentstate),8),
+                LoadAndSaveEntry.Create(reader => parent = reader.ReadByte(), writer => writer.Write(parent),8),
+                LoadAndSaveEntry.Create(reader => state = reader.ReadByte(), writer => writer.Write(state),8),
+                LoadAndSaveEntry.Create(reader => fl_object_index = reader.ReadByte(), writer => writer.Write(fl_object_index),8),
+                LoadAndSaveEntry.Create(reader => flags = (DrawBitmapFlags)reader.ReadByte(), writer => writer.Write((byte)flags),46),
             };
-            Array.ForEach(objectEntries, e => e.Execute(version));
+            Array.ForEach(objectEntries, e => e.Execute(serializer));
         }
     }
 }

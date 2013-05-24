@@ -73,7 +73,7 @@ namespace Scumm4.Graphics
         /// Draw a bitmap onto a virtual screen. This is main drawing method for room backgrounds
         /// and objects, used throughout all SCUMM versions.
         /// </summary>
-        public void DrawBitmap(byte[] ptr, VirtScreen vs, int x, int y, int width, int height, int stripnr, int numstrip, DrawBitmapFlags flags)
+        public void DrawBitmap(byte[] ptr, VirtScreen vs, int x, int y, int width, int height, int stripnr, int numstrip, DrawBitmaps flags)
         {
             // Check whether lights are turned on or not
             var lightsOn = _vm.IsLightOn();
@@ -249,12 +249,12 @@ namespace Scumm4.Graphics
             } while ((--height) != 0);
         }
 
-        private void DecodeMask(int x, int y, int width, int height, int stripnr, List<byte[]> zplanes, bool transpStrip, DrawBitmapFlags flags)
+        private void DecodeMask(int x, int y, int width, int height, int stripnr, List<byte[]> zplanes, bool transpStrip, DrawBitmaps flags)
         {
             int i;
             PixelNavigator mask_ptr;
 
-            if (flags.HasFlag(DrawBitmapFlags.DrawMaskOnAll))
+            if (flags.HasFlag(DrawBitmaps.DrawMaskOnAll))
             {
                 // Sam & Max uses dbDrawMaskOnAll for things like the inventory
                 // box and the speech icons. While these objects only have one
@@ -280,7 +280,7 @@ namespace Scumm4.Graphics
                 for (i = 0; i < zplanes.Count; i++)
                 {
                     mask_ptr = GetMaskBuffer(x, y, i);
-                    if (transpStrip && flags.HasFlag(DrawBitmapFlags.AllowMaskOr))
+                    if (transpStrip && flags.HasFlag(DrawBitmaps.AllowMaskOr))
                         DecompressMaskImgOr(mask_ptr, zplaneStream, height);
                     else
                         DecompressMaskImg(mask_ptr, zplaneStream, height);
@@ -305,7 +305,7 @@ namespace Scumm4.Graphics
                     if (offs != 0)
                     {
                         zplanePtr.Seek(offs, SeekOrigin.Begin);
-                        if (transpStrip && flags.HasFlag(DrawBitmapFlags.AllowMaskOr))
+                        if (transpStrip && flags.HasFlag(DrawBitmaps.AllowMaskOr))
                         {
                             DecompressMaskImgOr(mask_ptr, zplanePtr, height);
                         }
@@ -316,7 +316,7 @@ namespace Scumm4.Graphics
                     }
                     else
                     {
-                        if (!(transpStrip && flags.HasFlag(DrawBitmapFlags.AllowMaskOr)))
+                        if (!(transpStrip && flags.HasFlag(DrawBitmaps.AllowMaskOr)))
                             for (int h = 0; h < height; h++)
                             {
                                 mask_ptr.OffsetY(1);

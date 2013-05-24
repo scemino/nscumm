@@ -279,7 +279,7 @@ namespace Scumm4
                             {
                                 // Object Image
                                 var objId = _reader.ReadUInt16();
-                                if (it.Current.Size > 6)
+                                if (it.Current.Size > 8)
                                 {
                                     stripsDic.Add(objId, _reader.ReadBytes((int)(it.Current.Size - 6)));
                                 }
@@ -322,7 +322,7 @@ namespace Scumm4
                                 // read script
                                 size = (int)(it.Current.Offset + it.Current.Size - 6 - _reader.BaseStream.Position);
                                 data.Script.Data = _reader.ReadBytes(size);
-                                data.Script.Offset = nameOffset + data.Name.Length+1;
+                                data.Script.Offset = nameOffset + data.Name.Length + 1;
 
                                 SetObjectImage(stripsDic, data);
                             }

@@ -37,7 +37,7 @@ namespace Scumm4
         public byte parentstate;
         public byte state;
         public byte fl_object_index;
-        public DrawBitmapFlags flags;
+        public DrawBitmaps flags;
 
         public Dictionary<byte, ushort> ScriptOffsets { get; private set; }
         public ScriptData Script { get; private set; }
@@ -68,7 +68,7 @@ namespace Scumm4
                 LoadAndSaveEntry.Create(reader => parent = reader.ReadByte(), writer => writer.Write(parent),8),
                 LoadAndSaveEntry.Create(reader => state = reader.ReadByte(), writer => writer.Write(state),8),
                 LoadAndSaveEntry.Create(reader => fl_object_index = reader.ReadByte(), writer => writer.Write(fl_object_index),8),
-                LoadAndSaveEntry.Create(reader => flags = (DrawBitmapFlags)reader.ReadByte(), writer => writer.Write((byte)flags),46),
+                LoadAndSaveEntry.Create(reader => flags = (DrawBitmaps)reader.ReadByte(), writer => writer.Write((byte)flags),46),
             };
             Array.ForEach(objectEntries, e => e.Execute(serializer));
         }

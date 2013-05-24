@@ -32,7 +32,9 @@ namespace NScumm
         private Image _elt;
         private WriteableBitmap _bmp;
         private byte[] _pixels;
+        private byte[] _cursorPixels;
         private System.Windows.Media.Color[] _colors;
+        private int hotspotX, hotspotY;
         private bool _showCursor;
         private bool _updatePalette;
         #endregion
@@ -113,36 +115,9 @@ namespace NScumm
         #region Cursor Methods
         public void SetCursor(byte[] pixels, int width, int height, int hotspotX, int hotspotY)
         {
-            Action setCursor = new Action(() =>
-            {
-                if (_showCursor)
-                {
-                    // create real-size cursor
-                    _colors[0] = Colors.Transparent;
-                    var cursorBmp = new WriteableBitmap(16, 16, 96, 96, PixelFormats.Indexed8, new BitmapPalette(_colors));
-                    cursorBmp.WritePixels(new Int32Rect(0, 0, width, height), pixels, width, 0);
-
-                    // scale it
-                    double scaleX = this.Width / 320.0;
-                    double scaleY = this.Height / 200.0;
-                    var cursorBmpScaled = new TransformedBitmap(cursorBmp, new ScaleTransform(scaleX, scaleY, 0, 0));
-
-                    _elt.Cursor = CursorHelper.CreateCursor(cursorBmpScaled, hotspotX, hotspotY);
-                }
-                else
-                {
-                    _elt.Cursor = Cursors.None;
-                }
-            });
-
-            if (this.Dispatcher.CheckAccess())
-            {
-                setCursor();
-            }
-            else
-            {
-                this.Dispatcher.Invoke(setCursor);
-            }
+            _cursorPixels = pixels;
+            this.hotspotX = hotspotX;
+            this.hotspotY = hotspotY;
         }
 
         public void ShowCursor(bool show)
@@ -157,6 +132,14 @@ namespace NScumm
             CreateBitmap();
             _bmp.WritePixels(new Int32Rect(0, 0, 320, 200), _pixels, 320, 0, 0);
 
+            var pos = Mouse.GetPosition(this._elt);
+            double x = (pos.X * 320.0 / this.Width) - hotspotX;
+            double y = (pos.Y * 200.0 / this.Height) - hotspotY;
+            if (_showCursor && _cursorPixels != null && x >= 0 && y >= 0 && (x < 304) && (y < 184))
+            {
+                _bmp.WritePixels(new Int32Rect(0, 0, 16, 16), _cursorPixels, 16, (int)x, (int)y);
+            }
+
             _elt.Source = _bmp;
         }
 
@@ -164,6 +147,7 @@ namespace NScumm
         {
             if (_updatePalette)
             {
+                _colors[0] = Colors.Transparent;
                 _bmp = new WriteableBitmap(320, 200, 96, 96, PixelFormats.Indexed8, new BitmapPalette(_colors));
             }
         }

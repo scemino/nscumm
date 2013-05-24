@@ -61,7 +61,7 @@ namespace Scumm4
     }
 
     [Flags]
-    public enum DrawBitmapFlags
+    public enum DrawBitmaps
     {
         AllowMaskOr = 1 << 0,
         DrawMaskOnAll = 1 << 1,
@@ -704,6 +704,7 @@ namespace Scumm4
             _opCodes[0x68] = IsScriptRunning;
             _opCodes[0x69] = SetOwnerOf;
             _opCodes[0x6A] = StartScript;
+            _opCodes[0x6B] = DebugOp;
             /* 6C */
             _opCodes[0x6D] = PutActorInRoom;
             _opCodes[0x6E] = StopObjectScript;
@@ -853,6 +854,7 @@ namespace Scumm4
             _opCodes[0xE8] = IsScriptRunning;
             _opCodes[0xE9] = SetOwnerOf;
             _opCodes[0xEA] = StartScript;
+            _opCodes[0xEB] = DebugOp;
             /* EC */
             _opCodes[0xED] = PutActorInRoom;
             _opCodes[0xEF] = IfNotState;
@@ -876,6 +878,12 @@ namespace Scumm4
             _opCodes[0xFD] = FindInventory;
             _opCodes[0xFE] = WalkActorTo;
             _opCodes[0xFF] = DrawBox;
+        }
+
+        private void DebugOp()
+        {
+            int a = GetVarOrDirectWord(OpCodeParameter.Param1);
+            System.Diagnostics.Debug.WriteLine("Debug: {0}", a);
         }
 
         private void GetActorCostume()
@@ -2798,7 +2806,7 @@ namespace Scumm4
                         // copy string
                         var idA = GetVarOrDirectByte(OpCodeParameter.Param1);
                         var idB = GetVarOrDirectByte(OpCodeParameter.Param2);
-                        _strings[idA] = _strings[idB].ToArray();
+                        Array.Copy(_strings[idB], _strings[idA], _strings[idB].Length);
                     }
                     break;
 
@@ -3795,7 +3803,10 @@ namespace Scumm4
                 }
                 else
                 {
-                    Array.Clear(_scaleSlots, 0, _scaleSlots.Length);
+                    for (int i = 0; i < _scaleSlots.Length; i++)
+                    {
+                        _scaleSlots[i] = new ScaleSlot();
+                    }
                 }
 
                 _boxes = new Box[roomData.Boxes.Count];
@@ -4060,7 +4071,7 @@ namespace Scumm4
 
         public void RunBootScript()
         {
-            RunScript(1, false, false, new int[] { });
+            RunScript(1, false, false, new int[] { 0 });
         }
 
         public void StopScript(int script)
@@ -6075,10 +6086,10 @@ namespace Scumm4
                     {
                         slot.offs -= (uint)_scumm.GetGlobalScriptOffset((byte)slot.number);
                     }
-                    //else if (slot.where == WhereIsObject.Local && slot.number >= 0xC8 && roomData.LocalScripts[slot.number - 0xC8]!=null)
-                    //{
-                    //    slot.offs = (uint)(slot.offs - roomData.LocalScripts[slot.number - 0xC8].Offset);
-                    //}
+                    else if (slot.where == WhereIsObject.Local && slot.number >= 0xC8 && roomData.LocalScripts[slot.number - 0xC8] != null)
+                    {
+                        slot.offs = (uint)(slot.offs - roomData.LocalScripts[slot.number - 0xC8].Offset);
+                    }
                 });
 
                 ResetRoomObjects();
@@ -6388,17 +6399,17 @@ namespace Scumm4
         private void SaveOrLoadResources(Serializer serializer)
         {
             var l_entry = LoadAndSaveEntry.Create(reader =>
+            {
+                ResType type;
+                ushort idx;
+                while ((type = (ResType)reader.ReadUInt16()) != (ResType)0xFFFF)
                 {
-                    ResType type;
-                    ushort idx;
-                    while ((type = (ResType)reader.ReadUInt16()) != (ResType)0xFFFF)
+                    while ((idx = reader.ReadUInt16()) != 0xFFFF)
                     {
-                        while ((idx = reader.ReadUInt16()) != 0xFFFF)
-                        {
-                            LoadResource(reader, type, idx);
-                        }
+                        LoadResource(reader, type, idx);
                     }
-                },
+                }
+            },
                 writer =>
                 {
                     // inventory
@@ -6410,10 +6421,11 @@ namespace Scumm4
                         // write index
                         writer.WriteUInt16(i);
                         // write size
-                        writer.WriteInt32(19 + 3 * data.ScriptOffsets.Count + 1 + (data.Name.Length + 1) + data.Script.Data.Length);
+                        var nameOffset = data.ScriptOffsets.Values.Min() - data.Name.Length - 1;
+                        writer.WriteInt32(nameOffset + data.Name.Length + 1 + data.Script.Data.Length);
                         writer.Write(new byte[18]);
-                        // write offset
-                        writer.WriteByte(19 + 3 * data.ScriptOffsets.Count + 1);
+                        // write name offset
+                        writer.WriteByte(nameOffset);
                         // write verb table
                         foreach (var scriptOffset in data.ScriptOffsets)
                         {
@@ -6422,19 +6434,16 @@ namespace Scumm4
                         }
                         // write end of table
                         writer.WriteByte(0);
-                        // write name
-                        for (int c = 0; c < data.Name.Length; c++)
+                        var diff = nameOffset - (19 + 3 * data.ScriptOffsets.Count + 1);
+                        for (int c = 0; c < diff; c++)
                         {
-                            // TODO: encode name if neccessary
-                            if (data.Name[c] == 255)
-                            {
-                                writer.Write(new byte[] { 35, 35, 35, 35 });
-                                c += 3;
-                            }
-                            else
-                            {
-                                writer.WriteByte(data.Name[c]);
-                            }
+                            writer.WriteByte(0);
+                        }
+                        var name = EncodeName(data.Name);
+                        // write name
+                        for (int c = 0; c < name.Length; c++)
+                        {
+                            writer.WriteByte(name[c]);
                         }
                         writer.WriteByte(0);
                         // write script
@@ -6462,11 +6471,11 @@ namespace Scumm4
 
                     // objects name
                     writer.Write((ushort)ResType.ObjectName);
-                    var objs = this.Objects.Concat(_invData).ToArray();
+                    var objs = _invData.ToArray();
                     for (int i = 0; i < objs.Length; i++)
                     {
                         var obj = objs[i];
-                        if (obj != null && obj.Name != null)
+                        if (obj != null && obj.Name != null && _inventory.Any(inv => inv == obj.obj_nr))
                         {
                             // write index
                             writer.WriteUInt16(i);
@@ -6527,6 +6536,24 @@ namespace Scumm4
 
                 });
             l_entry.Execute(serializer);
+        }
+
+        private static byte[] EncodeName(byte[] name)
+        {
+            List<byte> encodedName = new List<byte>();
+            for (int i = 0; i < name.Length; i++)
+            {
+                if (name[i] == 255 && name[i + 1] == 4)
+                {
+                    encodedName.AddRange(new byte[] { 35, 35, 35, 35 });
+                    i += 3;
+                }
+                else
+                {
+                    encodedName.Add(name[i]);
+                }
+            }
+            return encodedName.ToArray();
         }
 
         private int _shadowPaletteSize = 256;
@@ -6601,7 +6628,7 @@ namespace Scumm4
                     case ResType.ObjectName:
                         {
                             var index = reader.ReadUInt16();
-                            var obj = (from o in this.Objects.Concat(this._invData)
+                            var obj = (from o in this._invData
                                        where o != null && o.obj_nr == index
                                        select o).FirstOrDefault();
                             obj.Name = ptr;
@@ -7070,7 +7097,7 @@ namespace Scumm4
 
             if (numstrip != 0)
             {
-                DrawBitmapFlags flags = od.flags | DrawBitmapFlags.ObjectMode;
+                DrawBitmaps flags = od.flags | DrawBitmaps.ObjectMode;
 
                 _gdi.DrawBitmap(ptr, this._mainVirtScreen, x, ypos, width * 8, height, x - xpos, numstrip, flags);
             }
@@ -7953,13 +7980,13 @@ namespace Scumm4
                           where o.obj_nr == obj
                           select o).FirstOrDefault();
             }
+
+            foreach (var key in result.ScriptOffsets.Keys)
             {
-                foreach (var key in result.ScriptOffsets.Keys)
-                {
-                    if (key == entry || key == 0xFF)
-                        return result.ScriptOffsets[key];
-                }
+                if (key == entry || key == 0xFF)
+                    return result.ScriptOffsets[key];
             }
+
             return 0;
         }
 

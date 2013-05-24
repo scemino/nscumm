@@ -67,6 +67,10 @@ namespace Scumm4
                         {
                             offsetToSave += 6;
                         }
+                        else if (where == WhereIsObject.Local && number >= 0xC8 && localScripts[number - 0xC8]!=null)
+                        {
+                            offsetToSave = (uint)(offs + localScripts[number - 0xC8].Offset);
+                        }
                         writer.WriteUInt32(offsetToSave);
                     },8),
 

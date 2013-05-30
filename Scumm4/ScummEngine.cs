@@ -515,6 +515,7 @@ namespace Scumm4
 
             if ((var & 0xF000) == 0)
             {
+                //Console.WriteLine("ReadVariable({0}) => {1}", var, _variables[var]);
                 return _variables[var];
             }
 
@@ -522,6 +523,7 @@ namespace Scumm4
             {
                 var &= 0x7FFF;
 
+                //Console.WriteLine("ReadVariable({0}) => {1}", var, ((_bitVars[var >> 3] & (1 << (var & 7))) != 0));
                 return ((_bitVars[var >> 3] & (1 << (var & 7))) != 0) ? 1 : 0;
             }
 
@@ -529,7 +531,9 @@ namespace Scumm4
             {
                 var &= 0xFFF;
 
-                //assertRange(0, var, 20, "local variable (reading)");
+                ScummHelper.AssertRange(0, var, 20, "local variable (reading)");
+
+                //Console.WriteLine("ReadVariable({0}) => {1}", var, this._localVariables[_currentScript][var]);
                 return this._localVariables[_currentScript][var];
             }
             return -1;
@@ -549,6 +553,7 @@ namespace Scumm4
         {
             if ((_resultVarIndex & 0xF000) == 0)
             {
+                //Console.WriteLine("SetResult({0},{1})", _resultVarIndex, value);
                 _variables[_resultVarIndex] = value;
                 return;
             }
@@ -557,6 +562,7 @@ namespace Scumm4
             {
                 _resultVarIndex &= 0x7FFF;
 
+                //Console.WriteLine("SetResult({0},{1})", _resultVarIndex, value);
                 if (value != 0)
                     _bitVars[_resultVarIndex >> 3] |= (byte)(1 << (_resultVarIndex & 7));
                 else
@@ -567,6 +573,7 @@ namespace Scumm4
             if ((_resultVarIndex & 0x4000) != 0)
             {
                 _resultVarIndex &= 0xFFF;
+                //Console.WriteLine("SetLocalVariables(script={0},var={1},value={2})", _currentScript, _resultVarIndex, value);
                 _localVariables[_currentScript][_resultVarIndex] = value;
                 return;
             }
@@ -1005,8 +1012,238 @@ namespace Scumm4
 
         private void CreateBoxMatrix()
         {
-            // TODO
-            throw new NotImplementedException("CreateBoxMatrix");
+            int num, i, j;
+
+            // The total number of boxes
+            num = GetNumBoxes();
+
+            byte boxSize = 64;
+
+            // calculate shortest paths
+            byte[,] itineraryMatrix = new byte[boxSize, boxSize];
+            CalcItineraryMatrix(itineraryMatrix, num);
+
+            // "Compress" the distance matrix into the box matrix format used
+            // by the engine. The format is like this:
+            // For each box (from 0 to num) there is first a byte with value 0xFF,
+            // followed by an arbitrary number of byte triples; the end is marked
+            // again by the lead 0xFF for the next "row". The meaning of the
+            // byte triples is as follows: the first two bytes define a range
+            // of box numbers (e.g. 7-11), while the third byte defines an
+            // itineray box. Assuming we are in the 5th "row" and encounter
+            // the triplet 7,11,15: this means to get from box 5 to any of
+            // the boxes 7,8,9,10,11 the shortest way is to go via box 15.
+            // See also getNextBox.
+
+            //byte* matrixStart = _res->createResource(rtMatrix, 1, BOX_MATRIX_SIZE);
+            //const byte* matrixEnd = matrixStart + BOX_MATRIX_SIZE;
+
+            for (i = 0; i < num; i++)
+            {
+                AddToMatrix(0xFF);
+                for (j = 0; j < num; j++)
+                {
+                    byte itinerary = itineraryMatrix[i, j];
+                    if (itinerary != Actor.InvalidBox)
+                    {
+                        AddToMatrix(j);
+                        while (j < num - 1 && itinerary == itineraryMatrix[i, (j + 1)])
+                            j++;
+                        AddToMatrix(j);
+                        AddToMatrix(itinerary);
+                    }
+                }
+            }
+            AddToMatrix(0xFF);
+
+        }
+
+        private void AddToMatrix(int b)
+        {
+            //*matrixStart++ = b;
+            //assert(matrixStart < matrixEnd);
+        }
+
+        private void CalcItineraryMatrix(byte[,] itineraryMatrix, int num)
+        {
+            byte i, j, k;
+
+            const byte boxSize = 64;
+
+            // Allocate the adjacent & itinerary matrices
+            byte[,] adjacentMatrix = new byte[boxSize, boxSize];
+
+            // Initialize the adjacent matrix: each box has distance 0 to itself,
+            // and distance 1 to its direct neighbors. Initially, it has distance
+            // 255 (= infinity) to all other boxes.
+            for (i = 0; i < num; i++)
+            {
+                for (j = 0; j < num; j++)
+                {
+                    if (i == j)
+                    {
+                        adjacentMatrix[i, +j] = 0;
+                        itineraryMatrix[i, j] = j;
+                    }
+                    else if (AreBoxesNeighbors(i, j))
+                    {
+                        adjacentMatrix[i, j] = 1;
+                        itineraryMatrix[i, j] = j;
+                    }
+                    else
+                    {
+                        adjacentMatrix[i, j] = 255;
+                        itineraryMatrix[i, j] = Actor.InvalidBox;
+                    }
+                }
+            }
+
+            // Compute the shortest routes between boxes via Kleene's algorithm.
+            // The original code used some kind of mangled Dijkstra's algorithm;
+            // while that might in theory be slightly faster, it was
+            // a) extremly obfuscated
+            // b) incorrect: it didn't always find the shortest paths
+            // c) not any faster in reality for our sparse & small adjacent matrices
+            for (k = 0; k < num; k++)
+            {
+                for (i = 0; i < num; i++)
+                {
+                    for (j = 0; j < num; j++)
+                    {
+                        if (i == j)
+                            continue;
+                        byte distIK = adjacentMatrix[i, k];
+                        byte distKJ = adjacentMatrix[k, j];
+                        if (adjacentMatrix[i, j] > distIK + distKJ)
+                        {
+                            adjacentMatrix[i, j] = (byte)(distIK + distKJ);
+                            itineraryMatrix[i, j] = itineraryMatrix[i, k];
+                        }
+                    }
+                }
+
+            }
+        }
+
+
+        /// <summary>
+        /// Check if two boxes are neighbors.
+        /// </summary>
+        /// <param name="box1nr"></param>
+        /// <param name="box2nr"></param>
+        /// <returns></returns>
+        private bool AreBoxesNeighbors(byte box1nr, byte box2nr)
+        {
+            Point tmp;
+
+            if (GetBoxFlags(box1nr).HasFlag(BoxFlags.Invisible) || GetBoxFlags(box2nr).HasFlag(BoxFlags.Invisible))
+                return false;
+
+            //System.Diagnostics.Debug.Assert(_game.version >= 3);
+            var box2 = GetBoxCoordinates(box1nr);
+            var box = GetBoxCoordinates(box2nr);
+
+            // Roughly, the idea of this algorithm is to search for sies of the given
+            // boxes that touch each other.
+            // In order to keep te code simple, we only match the upper sides;
+            // then, we "rotate" the box coordinates four times each, for a total
+            // of 16 comparisions.
+            for (int j = 0; j < 4; j++)
+            {
+                for (int k = 0; k < 4; k++)
+                {
+                    // Are the "upper" sides of the boxes on a single vertical line
+                    // (i.e. all share one x value) ?
+                    if (box2.ur.X == box2.ul.X && box.ul.X == box2.ul.X && box.ur.X == box2.ul.X)
+                    {
+                        bool swappedBox2 = false, swappedBox1 = false;
+                        if (box2.ur.Y < box2.ul.Y)
+                        {
+                            swappedBox2 = true;
+                            ScummHelper.Swap(ref box2.ur.Y, ref box2.ul.Y);
+                        }
+                        if (box.ur.Y < box.ul.Y)
+                        {
+                            swappedBox1 = true;
+                            ScummHelper.Swap(ref box.ur.Y, ref box.ul.Y);
+                        }
+                        if (box.ur.Y < box2.ul.Y ||
+                                box.ul.Y > box2.ur.Y ||
+                                ((box.ul.Y == box2.ur.Y ||
+                                 box.ur.Y == box2.ul.Y) && box2.ur.Y != box2.ul.Y && box.ul.Y != box.ur.Y))
+                        {
+                        }
+                        else
+                        {
+                            return true;
+                        }
+
+                        // Swap back if necessary
+                        if (swappedBox2)
+                        {
+                            ScummHelper.Swap(ref box2.ur.Y, ref box2.ul.Y);
+                        }
+                        if (swappedBox1)
+                        {
+                            ScummHelper.Swap(ref box.ur.Y, ref box.ul.Y);
+                        }
+                    }
+
+                    // Are the "upper" sides of the boxes on a single horizontal line
+                    // (i.e. all share one y value) ?
+                    if (box2.ur.Y == box2.ul.Y && box.ul.Y == box2.ul.Y && box.ur.Y == box2.ul.Y)
+                    {
+                        bool swappedBox2 = false, swappedBox1 = false;
+                        if (box2.ur.X < box2.ul.X)
+                        {
+                            swappedBox2 = true;
+                            ScummHelper.Swap(ref box2.ur.X, ref box2.ul.X);
+                        }
+                        if (box.ur.X < box.ul.X)
+                        {
+                            swappedBox1 = true;
+                            ScummHelper.Swap(ref box.ur.X, ref box.ul.X);
+                        }
+                        if (box.ur.X < box2.ul.X ||
+                                box.ul.X > box2.ur.X ||
+                                ((box.ul.X == box2.ur.X ||
+                                 box.ur.X == box2.ul.X) && box2.ur.X != box2.ul.X && box.ul.X != box.ur.X))
+                        {
+
+                        }
+                        else
+                        {
+                            return true;
+                        }
+
+                        // Swap back if necessary
+                        if (swappedBox2)
+                        {
+                            ScummHelper.Swap(ref box2.ur.X, ref box2.ul.X);
+                        }
+                        if (swappedBox1)
+                        {
+                            ScummHelper.Swap(ref box.ur.X, ref box.ul.X);
+                        }
+                    }
+
+                    // "Rotate" the box coordinates
+                    tmp = box2.ul;
+                    box2.ul = box2.ur;
+                    box2.ur = box2.lr;
+                    box2.lr = box2.ll;
+                    box2.ll = tmp;
+                }
+
+                // "Rotate" the box coordinates
+                tmp = box.ul;
+                box.ul = box.ur;
+                box.ur = box.lr;
+                box.lr = box.ll;
+                box.ll = tmp;
+            }
+
+            return false;
         }
 
         private void SetBoxScale(int box, int scale)
@@ -1679,7 +1916,8 @@ namespace Scumm4
                         break;
 
                     case 1:			// SO_COSTUME
-                        a.SetActorCostume((ushort)GetVarOrDirectByte(OpCodeParameter.Param1));
+                        var cost = (ushort)GetVarOrDirectByte(OpCodeParameter.Param1);
+                        a.SetActorCostume(cost);
                         break;
 
                     case 2:			// SO_STEP_DIST
@@ -3255,6 +3493,19 @@ namespace Scumm4
 
                     case 19:	// SO_VERB_CENTER
                         vs.center = true;
+                        break;
+
+                    case 20:	// SO_VERB_NAME_STR
+                        var index = GetVarOrDirectWord(OpCodeParameter.Param1);
+                        var ptr = _strings[index];
+                        if (ptr != null)
+                        {
+                            vs.Text = ptr;
+                        }
+                        //if (slot == 0)
+                        //    _res->nukeResource(rtVerb, slot);
+                        vs.type = VerbType.Text;
+                        vs.imgindex = 0;
                         break;
 
                     default:
@@ -5515,7 +5766,7 @@ namespace Scumm4
             if (delta == 0) delta = 4;
             _variables[VariableTimer1] += delta;
             _variables[VariableTimer2] += delta;
-            _variables[VariableTimer2] += delta;
+            _variables[VariableTimer3] += delta;
 
             if (delta > 15)
                 delta = 15;

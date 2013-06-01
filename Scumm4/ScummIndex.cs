@@ -30,7 +30,7 @@ namespace Scumm4
         {
             public byte roomNum;
             public int offset;
-        } 
+        }
         #endregion
 
         #region Fields
@@ -39,7 +39,6 @@ namespace Scumm4
         private Resource[] _sounds;
         private Resource[] _costumes;
         private Dictionary<byte, string> _roomNames;
-        private Dictionary<byte, Room> _roomsData = new Dictionary<byte, Room>();
         private string _directory;
         #endregion
 
@@ -51,7 +50,7 @@ namespace Scumm4
 
         public byte[] ObjectOwnerTable { get; private set; }
         public byte[] ObjectStateTable { get; private set; }
-        public uint[] ClassData { get; private set; } 
+        public uint[] ClassData { get; private set; }
         #endregion
 
         #region Public Methods
@@ -153,24 +152,16 @@ namespace Scumm4
         public Room GetRoom(byte roomNum)
         {
             Room room = null;
-            if (_roomsData.ContainsKey(roomNum) == false)
+            var disk = OpenRoom(roomNum);
+            if (disk != null)
             {
-                var disk = OpenRoom(roomNum);
-                if (disk != null)
-                {
-                    var rOffsets = disk.ReadRoomOffsets();
-                    room = disk.ReadRoom(rOffsets[roomNum]);
-                    room.Name = _roomNames[roomNum];
-                    _roomsData.Add(roomNum, room);
-                }
-            }
-            else
-            {
-                room = _roomsData[roomNum];
+                var rOffsets = disk.ReadRoomOffsets();
+                room = disk.ReadRoom(rOffsets[roomNum]);
+                room.Name = _roomNames[roomNum];
             }
 
             return room;
-        } 
+        }
         #endregion
 
         #region Private Methods

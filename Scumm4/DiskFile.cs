@@ -201,6 +201,7 @@ namespace Scumm4
 
                                 if (size > 0)
                                 {
+                                    room.BoxMatrix.Clear();
                                     room.BoxMatrix.AddRange(_reader.ReadBytes(size));
                                 }
                             }

@@ -1,0 +1,67 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<stetic-interface>
+  <configuration>
+    <images-root-path>..</images-root-path>
+    <target-gtk-version>2.12</target-gtk-version>
+  </configuration>
+  <import>
+    <widget-library name="../bin/Debug/NScumm.GL.exe" internal="true" />
+  </import>
+  <widget class="Gtk.Window" id="NScumm.GL.MenuWindow" design-size="180 130">
+    <property name="MemberName" />
+    <property name="Title" translatable="yes">Menu</property>
+    <property name="WindowPosition">CenterOnParent</property>
+    <property name="Modal">True</property>
+    <property name="BorderWidth">14</property>
+    <child>
+      <widget class="Gtk.VButtonBox" id="vbuttonbox1">
+        <property name="MemberName" />
+        <property name="Size">3</property>
+        <property name="LayoutStyle">Start</property>
+        <child>
+          <widget class="Gtk.Button" id="btnLoad">
+            <property name="MemberName" />
+            <property name="CanFocus">True</property>
+            <property name="Type">TextOnly</property>
+            <property name="Label" translatable="yes">Load</property>
+            <property name="UseUnderline">True</property>
+          </widget>
+          <packing>
+            <property name="Expand">False</property>
+            <property name="Fill">False</property>
+          </packing>
+        </child>
+        <child>
+          <widget class="Gtk.Button" id="btnSave">
+            <property name="MemberName" />
+            <property name="CanFocus">True</property>
+            <property name="Type">TextOnly</property>
+            <property name="Label" translatable="yes">Save</property>
+            <property name="UseUnderline">True</property>
+          </widget>
+          <packing>
+            <property name="Position">1</property>
+            <property name="Expand">False</property>
+            <property name="Fill">False</property>
+          </packing>
+        </child>
+        <child>
+          <widget class="Gtk.Button" id="btnQuit">
+            <property name="MemberName" />
+            <property name="CanFocus">True</property>
+            <property name="Type">TextOnly</property>
+            <property name="Label" translatable="yes">Quit</property>
+            <property name="UseUnderline">True</property>
+          </widget>
+          <packing>
+            <property name="Secondary">True</property>
+            <property name="Position">2</property>
+            <property name="Expand">False</property>
+            <property name="Fill">False</property>
+            <property name="Padding">10</property>
+          </packing>
+        </child>
+      </widget>
+    </child>
+  </widget>
+</stetic-interface>

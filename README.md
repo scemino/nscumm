@@ -1,7 +1,27 @@
 NSCUMM
 ======
 
-Quick and ugly .NET port of the Scumm engine version 4 of the project scummvm.
+Quick and dirty .NET port of the Scumm engine version 4 of the project scummvm.
+
+Quick start
+-----------
+
+Copy the original files of the game you want to play in a directory.
+
+Start NScumm with the full path of the file named '000.lfl' in argument.
+
+Supported Games
+---------------
+
+The Secret of Monkey Island by LucasArts
+
+Hotkeys
+-------
+
+Alt-Enter              - Toggles full screen/windowed
+
+F5                     - Displays a save/load box
+
 
 Screenshots
 -----------
@@ -11,7 +31,7 @@ Screenshots
 License
 -------
 
-Copyright (C) 2012  Valéry Sablonnière
+Copyright (C) 2013  Valéry Sablonnière
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

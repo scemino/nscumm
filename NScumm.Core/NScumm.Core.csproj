@@ -1,0 +1,106 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{B33E2D2E-E360-4F10-A82F-AA98500497FD}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Scumm4</RootNamespace>
+    <AssemblyName>Scumm4</AssemblyName>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <UseVSHostingProcess>true</UseVSHostingProcess>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Actor.cs" />
+    <Compile Include="AdjustBoxResult.cs" />
+    <Compile Include="AnimPict.cs" />
+    <Compile Include="Box.cs" />
+    <Compile Include="BoxCoords.cs" />
+    <Compile Include="Camera.cs" />
+    <Compile Include="ClassicCostumeLoader.cs" />
+    <Compile Include="Graphics\ClassicCostumeRenderer.cs" />
+    <Compile Include="ClickArea.cs" />
+    <Compile Include="ColorCycle.cs" />
+    <Compile Include="CostumeData.cs" />
+    <Compile Include="Cursor.cs" />
+    <Compile Include="DiskFile.cs" />
+    <Compile Include="FlashLight.cs" />
+    <Compile Include="GameManager.cs" />
+    <Compile Include="Graphics\CharsetRenderer.cs" />
+    <Compile Include="Graphics\CharsetRendererClassic.cs" />
+    <Compile Include="Graphics\Color.cs" />
+    <Compile Include="Graphics\Gdi.cs" />
+    <Compile Include="Graphics\IGraphicsManager.cs" />
+    <Compile Include="Graphics\Palette.cs" />
+    <Compile Include="Graphics\PixelNavigator.cs" />
+    <Compile Include="Graphics\Surface.cs" />
+    <Compile Include="ICostumeLoader.cs" />
+    <Compile Include="Graphics\ICostumeRenderer.cs" />
+    <Compile Include="Input\IInputManager.cs" />
+    <Compile Include="KeyCode.cs" />
+    <Compile Include="NestedScript.cs" />
+    <Compile Include="ObjectData.cs" />
+    <Compile Include="Graphics\Point.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Graphics\Rect.cs" />
+    <Compile Include="Room.cs" />
+    <Compile Include="Scale.cs" />
+    <Compile Include="ScaleSlot.cs" />
+    <Compile Include="ScriptData.cs" />
+    <Compile Include="ScriptSlot.cs" />
+    <Compile Include="ScummHelper.cs" />
+    <Compile Include="ScummIndex.cs" />
+    <Compile Include="ScummEngine.cs" />
+    <Compile Include="Input\ScummMouseButtonState.cs" />
+    <Compile Include="Sentence.cs" />
+    <Compile Include="IO\Serializer.cs" />
+    <Compile Include="TextSlot.cs" />
+    <Compile Include="VerbSlot.cs" />
+    <Compile Include="Graphics\VirtScreen.cs" />
+    <Compile Include="IO\XorReader.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Nscumm.xml">
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Nscumm.xsd">
+      <SubType>Designer</SubType>
+    </None>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

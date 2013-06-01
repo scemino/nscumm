@@ -152,6 +152,7 @@ namespace Scumm4
 
         #region Fields
 
+        private List<byte> _boxMatrix = new List<byte>();
         private ScummIndex _scumm;
         private string _directory;
         private Actor[] _actors = new Actor[NumActors];
@@ -330,7 +331,6 @@ namespace Scumm4
             {
                 _objs[i] = new ObjectData();
             }
-            _scaleSlots = new ScaleSlot[20];
             for (int i = 0; i < 6; i++)
             {
                 _string[i] = new TextSlot();
@@ -1012,16 +1012,11 @@ namespace Scumm4
 
         private void CreateBoxMatrix()
         {
-            int num, i, j;
-
             // The total number of boxes
-            num = GetNumBoxes();
-
-            byte boxSize = 64;
+            int num = GetNumBoxes();
 
             // calculate shortest paths
-            byte[,] itineraryMatrix = new byte[boxSize, boxSize];
-            CalcItineraryMatrix(itineraryMatrix, num);
+            var itineraryMatrix = CalcItineraryMatrix(num);
 
             // "Compress" the distance matrix into the box matrix format used
             // by the engine. The format is like this:
@@ -1035,54 +1030,48 @@ namespace Scumm4
             // the boxes 7,8,9,10,11 the shortest way is to go via box 15.
             // See also getNextBox.
 
-            //byte* matrixStart = _res->createResource(rtMatrix, 1, BOX_MATRIX_SIZE);
-            //const byte* matrixEnd = matrixStart + BOX_MATRIX_SIZE;
+            var boxMatrix = new List<byte>();
 
-            for (i = 0; i < num; i++)
+            for (byte i = 0; i < num; i++)
             {
-                AddToMatrix(0xFF);
-                for (j = 0; j < num; j++)
+                boxMatrix.Add(0xFF);
+                for (byte j = 0; j < num; j++)
                 {
                     byte itinerary = itineraryMatrix[i, j];
                     if (itinerary != Actor.InvalidBox)
                     {
-                        AddToMatrix(j);
+                        boxMatrix.Add(j);
                         while (j < num - 1 && itinerary == itineraryMatrix[i, (j + 1)])
                             j++;
-                        AddToMatrix(j);
-                        AddToMatrix(itinerary);
+                        boxMatrix.Add(j);
+                        boxMatrix.Add(itinerary);
                     }
                 }
             }
-            AddToMatrix(0xFF);
+            boxMatrix.Add(0xFF);
 
+            _boxMatrix.Clear();
+            _boxMatrix.AddRange(boxMatrix);
         }
 
-        private void AddToMatrix(int b)
+        private byte[,] CalcItineraryMatrix(int num)
         {
-            //*matrixStart++ = b;
-            //assert(matrixStart < matrixEnd);
-        }
-
-        private void CalcItineraryMatrix(byte[,] itineraryMatrix, int num)
-        {
-            byte i, j, k;
-
             const byte boxSize = 64;
 
             // Allocate the adjacent & itinerary matrices
+            byte[,] itineraryMatrix = new byte[boxSize, boxSize];
             byte[,] adjacentMatrix = new byte[boxSize, boxSize];
 
             // Initialize the adjacent matrix: each box has distance 0 to itself,
             // and distance 1 to its direct neighbors. Initially, it has distance
             // 255 (= infinity) to all other boxes.
-            for (i = 0; i < num; i++)
+            for (byte i = 0; i < num; i++)
             {
-                for (j = 0; j < num; j++)
+                for (byte j = 0; j < num; j++)
                 {
                     if (i == j)
                     {
-                        adjacentMatrix[i, +j] = 0;
+                        adjacentMatrix[i, j] = 0;
                         itineraryMatrix[i, j] = j;
                     }
                     else if (AreBoxesNeighbors(i, j))
@@ -1104,11 +1093,11 @@ namespace Scumm4
             // a) extremly obfuscated
             // b) incorrect: it didn't always find the shortest paths
             // c) not any faster in reality for our sparse & small adjacent matrices
-            for (k = 0; k < num; k++)
+            for (byte k = 0; k < num; k++)
             {
-                for (i = 0; i < num; i++)
+                for (byte i = 0; i < num; i++)
                 {
-                    for (j = 0; j < num; j++)
+                    for (byte j = 0; j < num; j++)
                     {
                         if (i == j)
                             continue;
@@ -1121,8 +1110,9 @@ namespace Scumm4
                         }
                     }
                 }
-
             }
+
+            return itineraryMatrix;
         }
 
 
@@ -1558,19 +1548,22 @@ namespace Scumm4
             {
                 ClearOwnerOf(obj);
 
-                var ss = _slots[_currentScript];
-                if (ss.where == WhereIsObject.Inventory)
+                if (_currentScript != 0xFF)
                 {
-                    if (ss.number < NumInventory && _inventory[ss.number] == obj)
+                    var ss = _slots[_currentScript];
+                    if (ss.where == WhereIsObject.Inventory)
                     {
-                        //throw new NotSupportedException("Odd setOwnerOf case #1: Please report to Fingolfin where you encountered this");
-                        PutOwner(obj, 0);
-                        RunInventoryScript(arg);
-                        StopObjectCode();
-                        return;
+                        if (ss.number < NumInventory && _inventory[ss.number] == obj)
+                        {
+                            //throw new NotSupportedException("Odd setOwnerOf case #1: Please report to Fingolfin where you encountered this");
+                            PutOwner(obj, 0);
+                            RunInventoryScript(arg);
+                            StopObjectCode();
+                            return;
+                        }
+                        if (ss.number == obj)
+                            throw new NotSupportedException("Odd setOwnerOf case #2: Please report to Fingolfin where you encountered this");
                     }
-                    if (ss.number == obj)
-                        throw new NotSupportedException("Odd setOwnerOf case #2: Please report to Fingolfin where you encountered this");
                 }
             }
 
@@ -2473,16 +2466,14 @@ namespace Scumm4
 
         private void StartObject()
         {
-            int obj, script;
-
-            obj = GetVarOrDirectWord(OpCodeParameter.Param1);
-            script = GetVarOrDirectByte(OpCodeParameter.Param2);
+            var obj = GetVarOrDirectWord(OpCodeParameter.Param1);
+            var script = (byte)GetVarOrDirectByte(OpCodeParameter.Param2);
 
             var data = GetWordVarArgs();
             RunObjectScript(obj, script, false, false, data);
         }
 
-        private void RunObjectScript(int obj, int entry, bool freezeResistant, bool recursive, IList<int> vars)
+        private void RunObjectScript(int obj, byte entry, bool freezeResistant, bool recursive, IList<int> vars)
         {
             if (obj == 0)
                 return;
@@ -2494,19 +2485,22 @@ namespace Scumm4
 
             if (where == WhereIsObject.NotFound)
             {
-                //warning("Code for object %d not in room %d", obj, _roomResource);
+                Console.WriteLine("warning: Code for object {0} not in room {1}", obj, _roomResource);
                 return;
             }
 
             // Find a free object slot, unless one was specified
             byte slot = GetScriptSlotIndex();
 
-            var e = (byte)entry;
-            var objFound = (from o in roomData.Objects.Concat(_invData)
+            ObjectData objFound = null;
+            if (roomData != null)
+            {
+                objFound = (from o in roomData.Objects.Concat(_invData)
                             where o != null
                             where o.obj_nr == obj
-                            where o.ScriptOffsets.ContainsKey(e) || o.ScriptOffsets.ContainsKey(0xFF)
+                            where o.ScriptOffsets.ContainsKey(entry) || o.ScriptOffsets.ContainsKey(0xFF)
                             select o).FirstOrDefault();
+            }
 
             if (objFound == null)
                 return;
@@ -2517,7 +2511,7 @@ namespace Scumm4
 
             _slots[slot].number = (ushort)obj;
             _slots[slot].InventoryEntry = entry;
-            _slots[slot].offs = (uint)((objFound.ScriptOffsets.ContainsKey(e) ? objFound.ScriptOffsets[e] : objFound.ScriptOffsets[0xFF]) - objFound.Script.Offset);
+            _slots[slot].offs = (uint)((objFound.ScriptOffsets.ContainsKey(entry) ? objFound.ScriptOffsets[entry] : objFound.ScriptOffsets[0xFF]) - objFound.Script.Offset);
             _slots[slot].status = ScriptStatus.Running;
             _slots[slot].where = where;
             _slots[slot].freezeResistant = freezeResistant;
@@ -3780,27 +3774,53 @@ namespace Scumm4
 
         private void KillScriptsAndResources()
         {
-            int i;
-
-            for (i = 0; i < NumScriptSlot; i++)
+            for (int i = 0; i < NumScriptSlot; i++)
             {
-                if (_slots[i].where == WhereIsObject.Room || _slots[i].where == WhereIsObject.FLObject)
+                var ss = _slots[i];
+                if (ss.where == WhereIsObject.Room || ss.where == WhereIsObject.FLObject)
                 {
-                    if (_slots[i].cutsceneOverride != 0)
+                    if (ss.cutsceneOverride != 0)
                     {
-                        _slots[i].cutsceneOverride = 0;
+                        //if (_game.version >= 5)
+                        //    warning("Object %d stopped with active cutscene/override in exit", ss->number);
+                        ss.cutsceneOverride = 0;
                     }
                     //nukeArrays(i);
-                    _slots[i].status = ScriptStatus.Dead;
+                    ss.status = ScriptStatus.Dead;
                 }
-                else if (_slots[i].where == WhereIsObject.Local)
+                else if (ss.where == WhereIsObject.Local)
                 {
-                    if (_slots[i].cutsceneOverride != 0)
+                    if (ss.cutsceneOverride != 0)
                     {
-                        _slots[i].cutsceneOverride = 0;
+                        //if (_game.version >= 5)
+                        //    warning("Script %d stopped with active cutscene/override in exit", ss->number);
+                        ss.cutsceneOverride = 0;
                     }
                     //nukeArrays(i);
-                    _slots[i].status = ScriptStatus.Dead;
+                    ss.status = ScriptStatus.Dead;
+                }
+            }
+
+            /* Nuke local object names */
+            if (_newNames != null)
+            {
+                foreach (var obj in _newNames.Keys.ToArray())
+                {
+                    var owner = GetOwner(obj);
+                    // We can delete custom name resources if either the object is
+                    // no longer in use (i.e. not owned by anyone anymore); or if
+                    // it is an object which is owned by a room.
+                    if (owner == 0 || (owner == OF_OWNER_ROOM))
+                    {
+                        // WORKAROUND for a problem mentioned in bug report #941275:
+                        // In FOA in the sentry room, in the chest plate of the statue,
+                        // the pegs may be renamed to mouth: this custom name is lost
+                        // when leaving the room; this hack prevents this).
+                        //if (owner == OF_OWNER_ROOM && _game.id == GID_INDY4 && 336 <= obj && obj <= 340)
+                        //    continue;
+
+                        _newNames[obj] = new byte[0];
+                    }
                 }
             }
         }
@@ -3856,10 +3876,10 @@ namespace Scumm4
             if (from == Actor.InvalidBox)
                 return to;
 
-            //assert(from < numOfBoxes);
-            //assert(to < numOfBoxes);
+            if (from >= numOfBoxes) throw new ArgumentOutOfRangeException("from");
+            if (to >= numOfBoxes) throw new ArgumentOutOfRangeException("to");
 
-            var boxm = CurrentRoomData.BoxMatrix;
+            var boxm = _boxMatrix;
 
             // WORKAROUND #1: It seems that in some cases, the box matrix is corrupt
             // (more precisely, is too short) in the datafiles already. In
@@ -3873,7 +3893,7 @@ namespace Scumm4
             // As a workaround, we add a check for the end of the box matrix
             // resource, and abort the search once we reach the end.
 
-            int boxmIndex = 0;
+            int boxmIndex = _boxMatrix[0] == 0xFF ? 1 : 0;
             // Skip up to the matrix data for box 'from'
             for (i = 0; i < from && boxmIndex < boxm.Count; i++)
             {
@@ -3907,9 +3927,6 @@ namespace Scumm4
             {
                 if (_slots[_currentScript].where == WhereIsObject.Room || _slots[_currentScript].where == WhereIsObject.FLObject)
                 {
-                    //if (slots[_currentScript].cutsceneOverride && _game.version >= 5)
-                    //    error("Object %d stopped with active cutscene/override in exit", slots[_currentScript].number);
-
                     //nukeArrays(_currentScript);
                     _currentScript = 0xFF;
                 }
@@ -3935,8 +3952,8 @@ namespace Scumm4
             for (int i = 0; i < 256; i++)
             {
                 _roomPalette[i] = (byte)i;
-                //if (_shadowPalette)
-                //    _shadowPalette[i] = i;
+                if (_shadowPalette != null)
+                    _shadowPalette[i] = (byte)i;
             }
 
             SetDirtyColors(0, 255);
@@ -3994,7 +4011,6 @@ namespace Scumm4
 
         private void ResetRoomObjects()
         {
-            if (roomData == null) return;
             for (int i = 0; i < roomData.Objects.Count; i++)
             {
                 _objs[i + 1].x_pos = roomData.Objects[i].x_pos;
@@ -4039,33 +4055,31 @@ namespace Scumm4
 
         private void ResetRoomSubBlocks()
         {
-            if (roomData != null)
-            {
-                if (roomData.Scales != null)
-                {
-                    for (int i = 1; i < roomData.Scales.Length; i++)
-                    {
-                        var scale = roomData.Scales[i - 1];
-                        if (scale.scale1 != 0 || scale.y1 != 0 || scale.scale2 != 0 || scale.y2 != 0)
-                        {
-                            SetScaleSlot(i, 0, scale.y1, scale.scale1, 0, scale.y2, scale.scale2);
-                        }
-                    }
-                }
-                else
-                {
-                    for (int i = 0; i < _scaleSlots.Length; i++)
-                    {
-                        _scaleSlots[i] = new ScaleSlot();
-                    }
-                }
+            _boxMatrix.Clear();
+            _boxMatrix.AddRange(roomData.BoxMatrix);
 
-                _boxes = new Box[roomData.Boxes.Count];
-                for (int i = 0; i < roomData.Boxes.Count; i++)
+            for (int i = 0; i < _scaleSlots.Length; i++)
+            {
+                _scaleSlots[i] = new ScaleSlot();
+            }
+
+            if (roomData.Scales != null)
+            {
+                for (int i = 1; i <= roomData.Scales.Length; i++)
                 {
-                    var box = roomData.Boxes[i];
-                    _boxes[i] = new Box { flags = box.flags, llx = box.llx, lly = box.lly, lrx = box.lrx, lry = box.lry, mask = box.mask, scale = box.scale, ulx = box.ulx, uly = box.uly, urx = box.urx, ury = box.ury };
+                    var scale = roomData.Scales[i - 1];
+                    if (scale.scale1 != 0 || scale.y1 != 0 || scale.scale2 != 0 || scale.y2 != 0)
+                    {
+                        SetScaleSlot(i, 0, scale.y1, scale.scale1, 0, scale.y2, scale.scale2);
+                    }
                 }
+            }
+
+            _boxes = new Box[roomData.Boxes.Count];
+            for (int i = 0; i < roomData.Boxes.Count; i++)
+            {
+                var box = roomData.Boxes[i];
+                _boxes[i] = new Box { flags = box.flags, llx = box.llx, lly = box.lly, lrx = box.lrx, lry = box.lry, mask = box.mask, scale = box.scale, ulx = box.ulx, uly = box.uly, urx = box.urx, ury = box.ury };
             }
         }
 
@@ -4320,9 +4334,9 @@ namespace Scumm4
             }
         }
 
-        public void RunBootScript()
+        public void RunBootScript(int bootParam=0)
         {
-            RunScript(1, false, false, new int[] { 0 });
+            RunScript(1, false, false, new int[] { bootParam });
         }
 
         public void StopScript(int script)
@@ -4414,11 +4428,6 @@ namespace Scumm4
                             select o.Script.Data).FirstOrDefault();
                 _currentScriptData = data;
             }
-            else if (scriptNum < NumGlobalScripts)
-            {
-                var data = _scumm.GetScript((byte)scriptNum);
-                _currentScriptData = data;
-            }
             else if (scriptNum == 10002)
             {
                 _currentScriptData = roomData.EntryScript.Data;
@@ -4427,7 +4436,21 @@ namespace Scumm4
             {
                 _currentScriptData = roomData.ExitScript.Data;
             }
-            else if (((scriptNum - NumGlobalScripts) < this.roomData.LocalScripts.Length) && (this.roomData.LocalScripts[scriptNum - NumGlobalScripts] != null))
+            else if (_slots[slotIndex].where == WhereIsObject.Room)
+            {
+                var data = (from o in roomData.Objects
+                            where o.obj_nr == scriptNum
+                            let entry = (byte)_slots[slotIndex].InventoryEntry
+                            where o.ScriptOffsets.ContainsKey(entry) || o.ScriptOffsets.ContainsKey(0xFF)
+                            select o.Script.Data).FirstOrDefault();
+                _currentScriptData = data;
+            }
+            else if (scriptNum < NumGlobalScripts)
+            {
+                var data = _scumm.GetScript((byte)scriptNum);
+                _currentScriptData = data;
+            }
+            else if ((scriptNum - NumGlobalScripts) < this.roomData.LocalScripts.Length)
             {
                 _currentScriptData = this.roomData.LocalScripts[scriptNum - NumGlobalScripts].Data;
             }
@@ -4475,7 +4498,7 @@ namespace Scumm4
                 // stopped in the meantime, and if it did not already move on.
                 var slot = _slots[nest.slot];
                 if (slot.number == nest.number && slot.where == nest.where &&
-                        slot.status != ScriptStatus.Dead && slot.freezeCount == 0)
+                    slot.status != ScriptStatus.Dead && slot.freezeCount == 0)
                 {
                     _currentScript = nest.slot;
                     UpdateScriptData(nest.slot);
@@ -5679,45 +5702,6 @@ namespace Scumm4
             Variables[ScummEngine.VariableVirtualMouseY] = (int)pos.Y;
         }
 
-        public bool Go()
-        {
-            //SetTotalPlayTime();
-
-            // If requested, load a save game instead of running the boot script
-            //if (_saveLoadFlag != 2 || !loadState(_saveLoadSlot, _saveTemporaryState)) {
-            //    _saveLoadFlag = 0;
-            RunBootScript();
-            //} else {
-            //    _saveLoadFlag = 0;
-            //}
-
-            TimeSpan diff = TimeSpan.Zero;	// Duration of one loop iteration
-
-            while (!ShouldQuit())
-            {
-                //_debugger->onFrame();
-
-                Update(diff);
-
-                // Determine how long to wait before the next loop iteration should start
-                var tsDelta = GetTimeToWait();
-
-                // Wait...
-                WaitForTimer(tsDelta - diff);
-
-                var dt = DateTime.Now;
-                Loop(diff);
-                diff = DateTime.Now - dt;
-
-                if (ShouldQuit())
-                {
-                    // TODO: Maybe perform an autosave on exit?
-                }
-            }
-
-            return true;
-        }
-
         public TimeSpan GetTimeToWait()
         {
             int delta = _variables[VariableTimerNext];
@@ -6743,8 +6727,8 @@ namespace Scumm4
                     writer.Write((ushort)ResType.Matrix);
                     // write BoxMatrix
                     writer.WriteUInt16(1);
-                    writer.WriteInt32(roomData.BoxMatrix.Count);
-                    writer.WriteBytes(roomData.BoxMatrix.ToArray(), roomData.BoxMatrix.Count);
+                    writer.WriteInt32(_boxMatrix.Count);
+                    writer.WriteBytes(_boxMatrix.ToArray(), _boxMatrix.Count);
                     // write boxes
                     writer.WriteUInt16(2);
                     writer.WriteInt32(20 * _boxes.Length + 1);
@@ -6891,8 +6875,8 @@ namespace Scumm4
                             if (idx == 1)
                             {
                                 // BOXM
-                                roomData.BoxMatrix.Clear();
-                                roomData.BoxMatrix.AddRange(ptr);
+                                _boxMatrix.Clear();
+                                _boxMatrix.AddRange(ptr);
                             }
                             else if (idx == 2)
                             {

@@ -719,6 +719,7 @@ namespace NScumm.Core
             _opCodes[0x6A] = StartScript;
             _opCodes[0x6B] = DebugOp;
             /* 6C */
+            _opCodes[0x6C] = GetActorWidth;
             _opCodes[0x6D] = PutActorInRoom;
             _opCodes[0x6E] = StopObjectScript;
             _opCodes[0x6F] = IfNotState;
@@ -869,6 +870,7 @@ namespace NScumm.Core
             _opCodes[0xEA] = StartScript;
             _opCodes[0xEB] = DebugOp;
             /* EC */
+            _opCodes[0xEC] = GetActorWidth;
             _opCodes[0xED] = PutActorInRoom;
             _opCodes[0xEF] = IfNotState;
             /* F0 */
@@ -2116,6 +2118,14 @@ namespace NScumm.Core
 
             Actor a = _actors[act];
             SetResult(a._room);
+        }
+
+        private void GetActorWidth()
+        {
+            GetResult();
+            int act = GetVarOrDirectByte(OpCodeParameter.Param1);
+            Actor a = _actors[act];
+            SetResult((int)a._width);
         }
 
         private void PutActorInRoom()
@@ -6219,7 +6229,7 @@ namespace NScumm.Core
 
             if (serializer.IsLoading)
             {
-                roomData = _scumm.GetRoom(_currentRoom);
+                roomData = _scumm.GetRoom(_roomResource);
             }
             //if (!Array.Equals(md5Backup, _gameMD5))
             //{

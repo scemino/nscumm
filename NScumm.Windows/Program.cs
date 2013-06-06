@@ -15,32 +15,38 @@
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-using Microsoft.Win32.SafeHandles;
+#region Using Statements
 using System;
-using System.Runtime.InteropServices;
+using System.Collections.Generic;
+using System.Linq;
+using NScumm.Core;
 
-namespace NScumm
+
+#endregion
+
+namespace NScumm.Windows
 {
-    internal sealed class SafeIconHandle : SafeHandleZeroOrMinusOneIsInvalid
+#if WINDOWS || LINUX
+    /// <summary>
+    /// The main class.
+    /// </summary>
+    public static class Program
     {
-        [DllImport("user32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        internal static extern bool DestroyIcon([In] IntPtr hIcon);
-
-        private SafeIconHandle()
-            : base(true)
+        /// <summary>
+        /// The main entry point for the application.
+        /// </summary>
+        [STAThread]
+        static void Main()
         {
-        }
+			// load game
+			var cmd = Environment.CommandLine.Split(new[] { "\"" }, StringSplitOptions.RemoveEmptyEntries);
+			var filename = cmd[2];
+			var info = GameManager.GetInfo(filename);
 
-        public SafeIconHandle(IntPtr hIcon)
-            : base(true)
-        {
-            this.SetHandle(hIcon);
-        }
-
-        protected override bool ReleaseHandle()
-        {
-            return DestroyIcon(this.handle);
+			using (var game = new ScummGame(info)){
+				game.Run();
+			}
         }
     }
+#endif
 }

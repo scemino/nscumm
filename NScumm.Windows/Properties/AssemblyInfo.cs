@@ -1,33 +1,16 @@
-﻿/*
- * This file is part of NScumm.
- * 
- * NScumm is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- * 
- * NScumm is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
- */
-
-using System.Reflection;
+﻿using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("NScumm.Core")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("NScumm")]
+[assembly: AssemblyProduct("NScumm")]
 [assembly: AssemblyConfiguration("")]
+[assembly: AssemblyDescription("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("NScumm.Core")]
-[assembly: AssemblyCopyright("Copyright ©  2012-2013")]
+[assembly: AssemblyCopyright("Copyright ©  2013")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -37,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("1822f160-0c02-4775-93ef-cd4e124956d3")]
+[assembly: Guid("9990a5b7-6427-4a70-bede-3fa8d2a47838")]
 
 // Version information for an assembly consists of the following four values:
 //

@@ -16,12 +16,12 @@
  */
 
 using Microsoft.Win32;
-using Scumm4;
+using NScumm.Core;
 using System;
 using System.Windows;
 using System.Windows.Shapes;
 
-namespace NScumm
+namespace NScumm.Windows
 {
     /// <summary>
     /// Interaction logic for MenuDialog.xaml

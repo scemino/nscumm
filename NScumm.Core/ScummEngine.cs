@@ -2418,8 +2418,9 @@ namespace NScumm.Core
                         var b = GetVarOrDirectWord(OpCodeParameter.Param2);
 
                         // TODO: _shadowPalette
-                        //_shadowPalette[b] = a;
-                        //setDirtyColors(b, b);
+                        ScummHelper.AssertRange(0, a, 256, "RoomOps: 4: room color slot");
+                        _shadowPalette[b] = (byte)a;
+                        SetDirtyColors(b, b);
                     }
                     break;
 
@@ -3534,7 +3535,8 @@ namespace NScumm.Core
             GetResult();
             var max = GetVarOrDirectByte(OpCodeParameter.Param1);
             Random rnd = new Random();
-            SetResult(rnd.Next(max));
+            var value = rnd.Next(max+1);
+            SetResult(value);
         }
 
         private void BreakHere()
@@ -5623,8 +5625,8 @@ namespace NScumm.Core
             int scaleX = 0, scaleY = 0;
             var s = _scaleSlots[slot - 1];
 
-            if (s.y1 == s.y2 && s.x1 == s.x2)
-                throw new NotSupportedException(string.Format("Invalid scale slot {0}", slot));
+            //if (s.y1 == s.y2 && s.x1 == s.x2)
+            //    throw new NotSupportedException(string.Format("Invalid scale slot {0}", slot));
 
             if (s.y1 != s.y2)
             {
@@ -6999,7 +7001,7 @@ namespace NScumm.Core
             bw.Write(hdr.size);
             bw.Write(hdr.ver);
 
-            var data = System.Text.Encoding.Default.GetBytes(name);
+            var data = System.Text.Encoding.Default.GetBytes(Path.GetFileNameWithoutExtension(name));
             byte[] data2 = new byte[32];
             int length = Math.Min(data.Length, 31);
             Array.Copy(data, data2, Math.Min(data.Length, 31));

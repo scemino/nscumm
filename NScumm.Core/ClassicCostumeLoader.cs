@@ -98,7 +98,7 @@ namespace NScumm.Core
             byte extra, cmd;
             int anim;
 
-            LoadCostume(a._costume);
+            LoadCostume(a.Costume);
 
             anim = ScummHelper.NewDirToOldDir(a.GetFacing()) + frame * 4;
 

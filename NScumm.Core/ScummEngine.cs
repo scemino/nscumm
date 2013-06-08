@@ -910,7 +910,7 @@ namespace NScumm.Core
             GetResult();
             int act = GetVarOrDirectByte(OpCodeParameter.Param1);
             Actor a = this.Actors[act];
-            SetResult(a._costume);
+            SetResult(a.Costume);
         }
 
         private void SetObjectName()
@@ -1665,7 +1665,7 @@ namespace NScumm.Core
             short y = ReadWordSigned();
 
             _variables[VariableWalkToObject] = obj;
-            StartScene(a._room);
+            StartScene(a.Room);
             _variables[VariableWalkToObject] = 0;
 
             if (!_egoPositioned)
@@ -1827,11 +1827,10 @@ namespace NScumm.Core
             int t, i;
 
             _camera._mode = CameraMode.FollowActor;
-            _camera._follows = actor._number;
+            _camera._follows = actor.Number;
 
             if (!actor.IsInCurrentRoom())
             {
-                // TODO: check this
                 StartScene((byte)actor.GetRoom());
                 _camera._mode = CameraMode.FollowActor;
                 _camera._cur.X = actor.GetPos().X;
@@ -1935,16 +1934,16 @@ namespace NScumm.Core
                         break;
 
                     case 4:			// SO_WALK_ANIMATION
-                        a._walkFrame = (byte)GetVarOrDirectByte(OpCodeParameter.Param1);
+                        a.WalkFrame = (byte)GetVarOrDirectByte(OpCodeParameter.Param1);
                         break;
 
                     case 5:			// SO_TALK_ANIMATION
-                        a._talkStartFrame = (byte)GetVarOrDirectByte(OpCodeParameter.Param1);
-                        a._talkStopFrame = (byte)GetVarOrDirectByte(OpCodeParameter.Param2);
+                        a.TalkStartFrame = (byte)GetVarOrDirectByte(OpCodeParameter.Param1);
+                        a.TalkStopFrame = (byte)GetVarOrDirectByte(OpCodeParameter.Param2);
                         break;
 
                     case 6:			// SO_STAND_ANIMATION
-                        a._standFrame = (byte)GetVarOrDirectByte(OpCodeParameter.Param1);
+                        a.StandFrame = (byte)GetVarOrDirectByte(OpCodeParameter.Param1);
                         break;
 
                     case 7:			// SO_ANIMATION
@@ -1962,11 +1961,11 @@ namespace NScumm.Core
                         break;
 
                     case 10:		// SO_ANIMATION_DEFAULT
-                        a._initFrame = 1;
-                        a._walkFrame = 2;
-                        a._standFrame = 3;
-                        a._talkStartFrame = 4;
-                        a._talkStopFrame = 5;
+                        a.InitFrame = 1;
+                        a.WalkFrame = 2;
+                        a.StandFrame = 3;
+                        a.TalkStartFrame = 4;
+                        a.TalkStopFrame = 5;
                         break;
 
                     case 11:		// SO_PALETTE
@@ -1986,7 +1985,7 @@ namespace NScumm.Core
                         break;
 
                     case 14:		// SO_INIT_ANIMATION
-                        a._initFrame = (byte)GetVarOrDirectByte(OpCodeParameter.Param1);
+                        a.InitFrame = (byte)GetVarOrDirectByte(OpCodeParameter.Param1);
                         break;
 
                     case 16:		// SO_ACTOR_WIDTH
@@ -2121,7 +2120,7 @@ namespace NScumm.Core
             int act = GetVarOrDirectByte(OpCodeParameter.Param1);
 
             Actor a = _actors[act];
-            SetResult(a._room);
+            SetResult(a.Room);
         }
 
         private void GetActorWidth()
@@ -2139,11 +2138,11 @@ namespace NScumm.Core
 
             var a = _actors[act];
 
-            if (a._visible && _currentRoom != room && GetTalkingActor() == a._number)
+            if (a.IsVisible && _currentRoom != room && GetTalkingActor() == a.Number)
             {
                 StopTalk();
             }
-            a._room = room;
+            a.Room = room;
             if (room == 0)
                 a.PutActor(0, 0, 0);
         }
@@ -2431,7 +2430,6 @@ namespace NScumm.Core
                         var a = GetVarOrDirectWord(OpCodeParameter.Param1);
                         var b = GetVarOrDirectWord(OpCodeParameter.Param2);
 
-                        // TODO: _shadowPalette
                         ScummHelper.AssertRange(0, a, 256, "RoomOps: 4: room color slot");
                         _shadowPalette[b] = (byte)a;
                         SetDirtyColors(b, b);
@@ -3148,11 +3146,11 @@ namespace NScumm.Core
                 case 1: // load script
                 case 2: // load sound
                 case 3: // load costume
-                    // TODO:
+                    // TODO: load room/sound/script
                     break;
 
                 case 4: // load room
-                    // TODO:
+                    // TODO: load room
                     break;
 
                 case 5:			// SO_NUKE_SCRIPT
@@ -3190,13 +3188,12 @@ namespace NScumm.Core
                     break;
 
                 case 15:		// SO_UNLOCK_COSTUME
-                    // TODO:
                     break;
 
                 case 16:		// SO_UNLOCK_ROOM
                     if (resId > 0x7F)
                         resId = _resourceMapper[resId & 0x7F];
-                    // TODO:
+                    // TODO: unlock room
                     //_res->unlock(rtRoom, resId);
                     break;
 
@@ -3874,7 +3871,7 @@ namespace NScumm.Core
 
             foreach (var actor in actors)
             {
-                if (actor._costume != 0)
+                if (actor.Costume != 0)
                 {
                     actor.DrawActorCostume();
                     actor.AnimateCostume();
@@ -4262,11 +4259,11 @@ namespace NScumm.Core
                     {
                         StopTalk();
                     }
-                    SetTalkingActor(a._number);
+                    SetTalkingActor(a.Number);
 
                     if (!_string[0].no_talk_anim)
                     {
-                        a.RunActorTalkScript(a._talkStartFrame);
+                        a.RunActorTalkScript(a.TalkStartFrame);
                         _useTalkAnims = true;
                     }
                     oldact = GetTalkingActor();
@@ -4836,7 +4833,7 @@ namespace NScumm.Core
                 Actor a = _actors[act];
                 if (a.IsInCurrentRoom() && _useTalkAnims)
                 {
-                    a.RunActorTalkScript(a._talkStopFrame);
+                    a.RunActorTalkScript(a.TalkStopFrame);
                     _useTalkAnims = false;
                 }
                 SetTalkingActor(0xFF);
@@ -7211,7 +7208,7 @@ namespace NScumm.Core
                 for (j = 1; j < Actors.Length; j++)
                 {
                     if (TestGfxUsageBit(strip, j) &&
-                        ((_actors[j]._top != 0x7fffffff && _actors[j].NeedRedraw) || _actors[j]._needBgReset))
+                        ((_actors[j]._top != 0x7fffffff && _actors[j].NeedRedraw) || _actors[j].NeedBackgroundReset))
                     {
                         ClearGfxUsageBit(strip, j);
                         if ((_actors[j]._bottom - _actors[j]._top) >= 0)
@@ -7222,7 +7219,7 @@ namespace NScumm.Core
 
             for (i = 1; i < Actors.Length; i++)
             {
-                _actors[i]._needBgReset = false;
+                _actors[i].NeedBackgroundReset = false;
             }
         }
 
@@ -7432,7 +7429,7 @@ namespace NScumm.Core
 
             if (a != null && !_string[0].no_talk_anim)
             {
-                a.RunActorTalkScript(a._talkStartFrame);
+                a.RunActorTalkScript(a.TalkStartFrame);
                 _useTalkAnims = true;
             }
 
@@ -7826,7 +7823,7 @@ namespace NScumm.Core
             }
             else if (_fullRedraw || diff != 0)
             {
-                // TODO:
+                // TODO: ClearFlashlight
                 //ClearFlashlight();
                 _bgNeedsRedraw = false;
                 RedrawBGStrip(0, _gdi._numStrips);

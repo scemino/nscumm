@@ -68,12 +68,6 @@ namespace NScumm.Core.Graphics
         public virtual void SetColor(byte color)
         {
             _color = color;
-            TranslateColor();
-        }
-
-        protected void TranslateColor()
-        {
-            // TODO ?
         }
 
         public abstract void PrintChar(int chr, bool ignoreCharsetMask);

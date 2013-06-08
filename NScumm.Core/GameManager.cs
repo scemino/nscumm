@@ -50,7 +50,7 @@ namespace NScumm.Core
 
         static GameManager()
         {
-            using (var stream = typeof(GameManager).Assembly.GetManifestResourceStream("Scumm4.Nscumm.xml"))
+            using (var stream = typeof(GameManager).Assembly.GetManifestResourceStream("NScumm.Core.Nscumm.xml"))
             {
                 _doc = System.Xml.Linq.XDocument.Load(stream);
             }

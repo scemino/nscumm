@@ -48,11 +48,11 @@ namespace NScumm.Windows
         public ScummGame(GameInfo info)
             : base()
         {
-			base.IsMouseVisible = false;
+            base.IsMouseVisible = true;
             base.IsFixedTimeStep = false;
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
-			this.info=info;            
+            this.info = info;
         }
 
         /// <summary>
@@ -121,14 +121,14 @@ namespace NScumm.Windows
                 graphics.ApplyChanges();
             }
 
-            // update mouse position
+            // update mouse
             var mouseState = Mouse.GetState();
             cursorPos = new Vector2(mouseState.X, mouseState.Y);
 
             var dt = DateTime.Now;
             tsDelta = engine.Loop(tsDelta);
             System.Threading.Thread.Sleep(tsDelta);
-            
+
             gfx.UpdateScreen();
 
             base.Update(gameTime);

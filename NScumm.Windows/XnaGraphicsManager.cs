@@ -29,35 +29,34 @@ namespace NScumm.Windows
         #region Fields
         private Texture2D _texture;
         private Texture2D _textureCursor;
-        private Microsoft.Xna.Framework.Color[] _pixels;
+        private byte[] _pixels;
         private Microsoft.Xna.Framework.Color[] _colors;
-        private GraphicsDevice _device;
         private bool _cursorVisible;
         private Microsoft.Xna.Framework.Vector2 _hotspot;
-        private byte[] _buffer;
         #endregion
 
+        #region Constructor
         public XnaGraphicsManager(GraphicsDevice device)
         {
-            _device = device;
-            _pixels = new Microsoft.Xna.Framework.Color[320 * 200];
-            _buffer = new byte[320 * 200];
+            _pixels = new byte[320 * 200];
             _texture = new Texture2D(device, 320, 200);
             _textureCursor = new Texture2D(device, 16, 16);
             _colors = new Microsoft.Xna.Framework.Color[256];
-        }
+        } 
+        #endregion
 
         public void UpdateScreen()
         {
+            Microsoft.Xna.Framework.Color[] colors = new Microsoft.Xna.Framework.Color[320 * 200];
             for (int h = 0; h < 200; h++)
             {
                 for (int w = 0; w < 320; w++)
                 {
-                    var color = _colors[_buffer[w + h * 320]];
-                    _pixels[w + h * 320] = color;
+                    var color = _colors[_pixels[w + h * 320]];
+                    colors[w + h * 320] = color;
                 }
             }
-            _texture.SetData(_pixels);
+            _texture.SetData(colors);
         }
 
         public void CopyRectToScreen(byte[] buffer, int sourceStride, int x, int y, int width, int height)
@@ -66,7 +65,7 @@ namespace NScumm.Windows
             {
                 for (int w = 0; w < width; w++)
                 {
-                    _buffer[x + w + (y + h) * 320] = buffer[x + w + (y + h) * sourceStride];
+                    _pixels[x + w + (y + h) * 320] = buffer[x + w + (y + h) * sourceStride];
                 }
             }
         }
@@ -117,15 +116,16 @@ namespace NScumm.Windows
         #region Draw Methods
         public void DrawScreen(SpriteBatch spriteBatch)
         {
-            spriteBatch.Draw(_texture, new Rectangle(0, 0, _device.Viewport.Width, _device.Viewport.Height), null, Microsoft.Xna.Framework.Color.White);
+			var rect = spriteBatch.GraphicsDevice.PresentationParameters.Bounds;
+            spriteBatch.Draw(_texture, rect, null, Microsoft.Xna.Framework.Color.White);
         }
 
         public void DrawCursor(SpriteBatch spriteBatch, Vector2 cursorPos)
         {
             if (_cursorVisible)
             {
-                double scaleX = _device.Viewport.Width / 320.0;
-                double scaleY = _device.Viewport.Height / 200.0;
+                double scaleX = spriteBatch.GraphicsDevice.PresentationParameters.Bounds.Width / 320.0;
+                double scaleY = spriteBatch.GraphicsDevice.PresentationParameters.Bounds.Height / 200.0;
                 var rect = new Rectangle((int)(cursorPos.X - scaleX * _hotspot.X), (int)(cursorPos.Y - scaleY * _hotspot.Y), (int)(scaleX * 16), (int)(scaleY * 16));
                 spriteBatch.Draw(_textureCursor, rect, null, Microsoft.Xna.Framework.Color.White);
             }

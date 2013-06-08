@@ -42,6 +42,7 @@ namespace NScumm.Core
         public Scale[] Scales { get; set; }
         public byte TransparentColor { get; set; }
         public bool HasPalette { get; set; }
+        public ColorCycle[] ColorCycle { get; set; }
 
         public Room()
         {

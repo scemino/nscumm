@@ -79,6 +79,7 @@ namespace NScumm.Core
     public class ScummEngine
     {
         #region Constants
+        private static readonly int[] ShakePositions={0,1*2,2*2,1*2,0*2,2*2,3*2,1*2};
 
         private const uint CurrentVersion = 94;
         private const int OF_OWNER_ROOM = 0x0F;
@@ -152,6 +153,9 @@ namespace NScumm.Core
         #endregion Events
 
         #region Fields
+
+        private bool _shakeEnabled;
+        private int _shakeFrame;
 
         private List<byte> _boxMatrix = new List<byte>();
         private ScummIndex _scumm;
@@ -2373,6 +2377,16 @@ namespace NScumm.Core
             _fullRedraw = true;
         }
 
+        private void SetShake(bool enabled)
+        {
+            if(_shakeEnabled!=enabled)
+                _fullRedraw=true;
+
+            _shakeEnabled=enabled;
+            _shakeFrame=0;
+            _gfxManager.SetShakePos(0);
+        }
+
         private void RoomOps()
         {
             _opCode = ReadByte();
@@ -2425,13 +2439,11 @@ namespace NScumm.Core
                     break;
 
                 case 5:		// SO_ROOM_SHAKE_ON
-                    // TODO:
-                    //setShake(1);
+                    SetShake(true);
                     break;
 
                 case 6:		// SO_ROOM_SHAKE_OFF
-                    // TODO:
-                    //    setShake(0);
+                    SetShake(false);
                     break;
 
                 case 7:		// SO_ROOM_SCALE
@@ -7834,6 +7846,20 @@ namespace NScumm.Core
             _gdi.DrawBitmap(roomData.Data, _mainVirtScreen, s, 0, this.roomData.Header.Width, _mainVirtScreen.Height, s, num, 0);
         }
 
+        private void HandleShaking()
+        {
+            if (_shakeEnabled)
+            {
+                _shakeFrame = (_shakeFrame + 1) % ShakePositions.Length;
+                _gfxManager.SetShakePos(ShakePositions[_shakeFrame]);
+            }
+            else if (!_shakeEnabled && _shakeFrame != 0)
+            {
+                _shakeFrame = 0;
+                _gfxManager.SetShakePos(0);
+            }
+        }
+
         private void DrawDirtyScreenParts()
         {
             // Update verbs
@@ -7854,17 +7880,8 @@ namespace NScumm.Core
                 UpdateDirtyScreen(this._mainVirtScreen);
             }
 
-            // TODO: Handle shaking
-            //if (_shakeEnabled)
-            //{
-            //    _shakeFrame = (_shakeFrame + 1) % NUM_SHAKE_POSITIONS;
-            //    _system->setShakePos(shake_positions[_shakeFrame]);
-            //}
-            //else if (!_shakeEnabled && _shakeFrame != 0)
-            //{
-            //    _shakeFrame = 0;
-            //    _system->setShakePos(0);
-            //}
+            // Handle shaking
+            HandleShaking();
         }
 
         private void UpdateDirtyScreen(VirtScreen vs)

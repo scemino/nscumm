@@ -23,6 +23,7 @@ namespace NScumm.Core.Graphics
     {
         void UpdateScreen();
 
+        void SetShakePos(int i);
         void CopyRectToScreen(byte[] buffer, int sourceStride, int x, int y, int width, int height);
 
         void SetPalette(Color[] color);

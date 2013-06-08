@@ -16,6 +16,7 @@ namespace NScumm.GL
         private Microsoft.Xna.Framework.Color[] _colors;
         private bool _cursorVisible;
         private Microsoft.Xna.Framework.Vector2 _hotspot;
+        private int _shakePos;
         #endregion
 
         public XnaGraphicsManager(GraphicsDevice device)
@@ -90,6 +91,7 @@ namespace NScumm.GL
         public void DrawScreen(SpriteBatch spriteBatch)
         {
 			var rect = spriteBatch.GraphicsDevice.PresentationParameters.Bounds;
+            rect.Offset(0,_shakePos);
             spriteBatch.Draw(_texture, rect, null, Microsoft.Xna.Framework.Color.White);
         }
 
@@ -103,6 +105,13 @@ namespace NScumm.GL
                 spriteBatch.Draw(_textureCursor, rect, null, Microsoft.Xna.Framework.Color.White);
             }
         } 
+        #endregion
+
+        #region Misc
+        public void SetShakePos (int pos)
+        {
+            _shakePos=pos;
+        }
         #endregion
 
         #region Dispose

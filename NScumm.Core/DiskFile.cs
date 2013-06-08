@@ -95,7 +95,11 @@ namespace NScumm.Core
         #region Constructor
         public DiskFile(string path, byte encByte)
         {
-            var fs = File.OpenRead(path);
+            var dir=Path.GetDirectoryName(path);
+            var realPath=(from file in Directory.EnumerateFiles(dir)
+                          where string.Equals(file,path,StringComparison.OrdinalIgnoreCase)
+                          select file).FirstOrDefault();
+            var fs = File.OpenRead(realPath);
             var br2 = new BinaryReader(fs);
             _reader = new XorReader(br2, encByte);
         }

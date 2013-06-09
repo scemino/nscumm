@@ -2024,7 +2024,6 @@ namespace NScumm.Core
 
                     default:
                         throw new NotImplementedException();
-                    //error("o5_actorOps: default case %d", _opCode & 0x1F);
                 }
             }
         }
@@ -2769,9 +2768,125 @@ namespace NScumm.Core
             DissolveEffect(8, 4);
         }
 
+        /// <summary>
+        /// Update width*height areas of the screen, in random order, until the whole
+        /// screen has been updated. For instance:
+        ///
+        /// dissolveEffect(1, 1) produces a pixel-by-pixel dissolve
+        /// dissolveEffect(8, 8) produces a square-by-square dissolve
+        /// dissolveEffect(virtsrc[0].width, 1) produces a line-by-line dissolve
+        /// </summary>
+        /// <param name='width'>
+        /// Width.
+        /// </param>
+        /// <param name='height'>
+        /// Height.
+        /// </param>
         private void DissolveEffect(int width, int height)
         {
-            // TODO:
+            var vs = MainVirtScreen;
+            int[] offsets;
+            int blits_before_refresh, blits;
+            int x, y;
+            int w, h;
+            int i;
+            var rnd = new Random();
+                    
+            // There's probably some less memory-hungry way of doing this. But
+            // since we're only dealing with relatively small images, it shouldn't
+            // be too bad.
+
+            w = vs.Width / width;
+            h = vs.Height / height;
+
+            // When used correctly, vs->width % width and vs->height % height
+            // should both be zero, but just to be safe...
+
+            if ((vs.Width % width)!=0)
+                w++;
+
+            if ((vs.Height % height)!=0)
+                h++;
+
+            offsets = new int[w * h];
+            if (offsets == null)
+                Console.Error.WriteLine("dissolveEffect: out of memory");
+
+            // Create a permutation of offsets into the frame buffer
+
+            if (width == 1 && height == 1)
+            {
+                // Optimized case for pixel-by-pixel dissolve
+
+                for (i = 0; i < vs.Width * vs.Height; i++)
+                    offsets [i] = i;
+
+                for (i = 1; i < w * h; i++)
+                {
+                    int j;
+
+                    j = rnd.Next(i);
+                    offsets [i] = offsets [j];
+                    offsets [j] = i;
+                }
+            } else
+            {
+                int[] offsets2;
+
+                for (i = 0, x = 0; x < vs.Width; x += width)
+                    for (y = 0; y < vs.Height; y += height)
+                        offsets [i++] = y * vs.Pitch + x;
+
+                offsets2 = new int[w * h];
+                if (offsets2 == null)
+                    Console.Error.WriteLine("dissolveEffect: out of memory");
+
+                Array.Copy(offsets,offsets2,offsets.Length);
+
+                for (i = 1; i < w * h; i++)
+                {
+                    int j;
+
+                    j = rnd.Next(i);
+                    offsets [i] = offsets [j];
+                    offsets [j] = offsets2 [i];
+                }
+            }
+
+            // Blit the image piece by piece to the screen. The idea here is that
+            // the whole update should take about a quarter of a second, assuming
+            // most of the time is spent in waitForTimer(). It looks good to me,
+            // but might still need some tuning.
+
+            blits = 0;
+            blits_before_refresh = (3 * w * h) / 25;
+
+            // Speed up the effect for CD Loom since it uses it so often. I don't
+            // think the original had any delay at all, so on modern hardware it
+            // wasn't even noticeable.
+            if (_game.Id=="loom")
+                blits_before_refresh *= 2;
+
+            for (i = 0; i < w * h; i++)
+            {
+                x = offsets [i] % vs.Pitch;
+                y = offsets [i] / vs.Pitch;
+
+                _gfxManager.CopyRectToScreen(vs.Surfaces[0].Pixels, vs.Pitch, 
+                                             x, y + vs.TopLine, width, height);
+
+
+                if (++blits >= blits_before_refresh)
+                {
+                    blits = 0;
+                    System.Threading.Thread.Sleep(30);
+                }
+            }
+
+            if (blits != 0)
+            {
+                System.Threading.Thread.Sleep(30);
+            }
         }
 
         private void FadeOut(int effect)
@@ -2799,7 +2914,7 @@ namespace NScumm.Core
                     //    transitionEffect(effect - 1);
                     //    break;
                     case 128:
-                        // TODO:unkScreenEffect6();
+                        UnkScreenEffect6();
                         break;
 
                     case 129:

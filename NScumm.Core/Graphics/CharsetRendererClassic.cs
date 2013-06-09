@@ -49,8 +49,6 @@ namespace NScumm.Core.Graphics
             if (chr == '@')
                 return;
 
-            TranslateColor();
-
             _vm._charsetColorMap[1] = _color;
 
             if (!PrepareDraw(chr))

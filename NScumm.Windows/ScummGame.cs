@@ -43,6 +43,7 @@ namespace NScumm.Windows
         private XnaGraphicsManager gfx;
         private XnaInputManager inputManager;
         private TimeSpan tsDelta;
+        private TimeSpan tsToWait;
         private Microsoft.Xna.Framework.Vector2 cursorPos;
 
         public ScummGame(GameInfo info)
@@ -50,6 +51,7 @@ namespace NScumm.Windows
         {
             base.IsMouseVisible = true;
             base.IsFixedTimeStep = false;
+            
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
             this.info = info;
@@ -124,12 +126,25 @@ namespace NScumm.Windows
             // update mouse
             var mouseState = Mouse.GetState();
             cursorPos = new Vector2(mouseState.X, mouseState.Y);
-
+            
             var dt = DateTime.Now;
-            tsDelta = engine.Loop(tsDelta);
-            System.Threading.Thread.Sleep(tsDelta);
-
-            gfx.UpdateScreen();
+            if (tsToWait == TimeSpan.Zero)
+            {
+                tsDelta = engine.Loop(tsDelta);
+                tsToWait = tsDelta;
+                gfx.UpdateScreen();
+            }
+            else
+            {
+                if (tsToWait > gameTime.ElapsedGameTime)
+                {
+                    tsToWait -= gameTime.ElapsedGameTime;
+                }
+                else
+                {
+                    tsToWait = TimeSpan.Zero;
+                }
+            }            
 
             base.Update(gameTime);
         }
@@ -151,3 +166,4 @@ namespace NScumm.Windows
         }
     }
 }
+

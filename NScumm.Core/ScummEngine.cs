@@ -2470,9 +2470,9 @@ namespace NScumm.Core
         private void InitScreens(int b, int h)
         {
             var format = PixelFormat.Indexed8;
-            _mainVirtScreen = new VirtScreen(b, _screenWidth, h - b, format, 2, true) { TopLine = b };
-            _textVirtScreen = new VirtScreen(0, _screenWidth, b, format, 1) { TopLine = 0 };
-            _verbVirtScreen = new VirtScreen(h, _screenWidth, _screenHeight - h, format, 1) { TopLine = h };
+            _mainVirtScreen = new VirtScreen(b, _screenWidth, h - b, format, 2, true);
+            _textVirtScreen = new VirtScreen(0, _screenWidth, b, format, 1);
+            _verbVirtScreen = new VirtScreen(h, _screenWidth, _screenHeight - h, format, 1);
 
             _screenB = b;
             _screenH = h;
@@ -2872,8 +2872,99 @@ namespace NScumm.Core
             y2 = GetVarOrDirectWord(OpCodeParameter.Param2);
             color = GetVarOrDirectByte(OpCodeParameter.Param3);
 
-            // TODO:
-            //drawBox(x, y, x2, y2, color);
+            DrawBox(x, y, x2, y2, color);
+        }
+
+        private void DrawBox(int x, int y, int x2, int y2, int color)
+        {
+            int width, height;
+            VirtScreen vs;
+
+            if ((vs = FindVirtScreen(y)) == null)
+                return;
+
+            // Indy4 Amiga always uses the room or verb palette map to match colors to
+            // the currently setup palette, thus we need to select it over here too.
+            // Done like the original interpreter.
+            //if (_game.platform == Common::kPlatformAmiga && _game.id == GID_INDY4) {
+            //    if (vs->number == kVerbVirtScreen)
+            //        color = _verbPalette[color];
+            //    else
+            //        color = _roomPalette[color];
+            //}
+
+            if (x > x2)
+                ScummHelper.Swap(ref x, ref x2);
+
+            if (y > y2)
+                ScummHelper.Swap(ref y, ref y2);
+
+            x2++;
+            y2++;
+
+            // Adjust for the topline of the VirtScreen
+            y -= vs.TopLine;
+            y2 -= vs.TopLine;
+
+            // Clip the coordinates
+            if (x < 0)
+                x = 0;
+            else if (x >= vs.Width)
+                return;
+
+            if (x2 < 0)
+                return;
+            else if (x2 > vs.Width)
+                x2 = vs.Width;
+
+            if (y < 0)
+                y = 0;
+            else if (y > vs.Height)
+                return;
+
+            if (y2 < 0)
+                return;
+            else if (y2 > vs.Height)
+                y2 = vs.Height;
+
+            width = x2 - x;
+            height = y2 - y;
+
+            // This will happen in the Sam & Max intro - see bug #1039162 - where
+            // it would trigger an assertion in blit().
+
+            if (width <= 0 || height <= 0)
+                return;
+
+            MarkRectAsDirty(vs, x, x2, y, y2);
+
+            var backbuff = new PixelNavigator(vs.Surfaces[0]);
+            backbuff.GoTo(vs.XStart + x, y);
+
+            // A check for -1 might be wrong in all cases since o5_drawBox() in its current form
+            // is definitely not capable of passing a parameter of -1 (color range is 0 - 255).
+            // Just to make sure I don't break anything I restrict the code change to FM-Towns
+            // version 5 games where this change is necessary to fix certain long standing bugs.
+            if (color == -1)
+            {
+                if (vs != MainVirtScreen)
+                    Console.Error.WriteLine("can only copy bg to main window");
+
+                var bgbuff = new PixelNavigator(vs.Surfaces[1]);
+                bgbuff.GoTo(vs.XStart + x, y);
+
+                Blit(backbuff, vs.Pitch, bgbuff, vs.Pitch, width, height, vs.BytesPerPixel);
+                if (_charset._hasMask)
+                {
+                    var mask = new PixelNavigator(_textSurface);
+                    mask.GoToIgnoreBytesByPixel(x * _textSurfaceMultiplier, (y - _screenTop) * _textSurfaceMultiplier);
+                    Fill(mask, _textSurface.Pitch, CharsetMaskTransparency, width * _textSurfaceMultiplier, height * _textSurfaceMultiplier);
+                }
+            }
+            else
+            {
+                Fill(backbuff, vs.Pitch, (byte)color, width, height);
+            }
         }
 
         private void DrawObject()
@@ -3056,6 +3147,7 @@ namespace NScumm.Core
                         // copy string
                         var idA = GetVarOrDirectByte(OpCodeParameter.Param1);
                         var idB = GetVarOrDirectByte(OpCodeParameter.Param2);
+                        _strings[idA] = new byte[_strings[idB].Length];
                         Array.Copy(_strings[idB], _strings[idA], _strings[idB].Length);
                     }
                     break;
@@ -5711,6 +5803,38 @@ namespace NScumm.Core
                     MouseAndKeyboardStat = i;
                 }
             }
+            for (KeyCode i = KeyCode.F1; i <= KeyCode.F9; i++)
+            {
+                if (_inputManager.IsKeyDown(i))
+                {
+                    MouseAndKeyboardStat = i;
+                }
+            }
+
+            for (KeyCode i = KeyCode.F1; i <= KeyCode.F9; i++)
+            {
+                if (_inputManager.IsKeyDown(i))
+                {
+                    MouseAndKeyboardStat = i;
+                }
+            }
+
+            if (_inputManager.IsKeyDown(KeyCode.Return))
+            {
+                MouseAndKeyboardStat = KeyCode.Return;
+            }
+            if (_inputManager.IsKeyDown(KeyCode.Backspace))
+            {
+                MouseAndKeyboardStat = KeyCode.Backspace;
+            }
+            if (_inputManager.IsKeyDown(KeyCode.Tab))
+            {
+                MouseAndKeyboardStat = KeyCode.Tab;
+            }
+            if (_inputManager.IsKeyDown(KeyCode.Space))
+            {
+                MouseAndKeyboardStat = KeyCode.Space;
+            }
 
             if (_inputManager.IsMouseLeftPressed())
             {
@@ -5721,6 +5845,23 @@ namespace NScumm.Core
             {
                 MouseAndKeyboardStat = (KeyCode)ScummMouseButtonState.RightClick;
             }
+
+            int[] numpad = new int[]{
+				'0',
+				335, 336, 337,
+				331, 332, 333,
+				327, 328, 329
+			};
+
+            for (KeyCode i = KeyCode.D0; i <= KeyCode.D9; i++)
+            {
+                if (_inputManager.IsKeyDown(i))
+                {
+                    MouseAndKeyboardStat = (KeyCode)numpad[(int)(i - KeyCode.D0)];
+                }
+            }
+
+
 
             var pos = this._inputManager.GetMousePosition();
             var mouseX = (ScreenStartStrip * 8) + pos.X;
@@ -8125,8 +8266,7 @@ namespace NScumm.Core
             uint[] bitmask = new uint[3] { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF };
             int i;
 
-            //assert(strip >= 0 && strip < ARRAYSIZE(gfxUsageBits) / 3);
-            //assert(1 <= bit && bit <= 96);
+            ScummHelper.AssertRange(1, bit, 96, "TestGfxOtherUsageBits");
             bit--;
             bitmask[bit / 32] &= (uint)(~(1 << (bit % 32)));
 
@@ -8143,7 +8283,7 @@ namespace NScumm.Core
             uint[] bitmask = new uint[3] { 0xFFFFFFFF, 0xFFFFFFFF, 0x3FFFFFFF };
             int i;
 
-            //assert(strip >= 0 && strip < ARRAYSIZE(gfxUsageBits) / 3);
+            ScummHelper.AssertRange(0, strip, _gfxUsageBits.Length / 3, "TestGfxOtherUsageBits");
             for (i = 0; i < 3; i++)
                 if ((_gfxUsageBits[3 * strip + i] & bitmask[i]) != 0)
                     return true;

@@ -65,7 +65,7 @@ namespace NScumm.Windows
             {
                 for (int w = 0; w < width; w++)
                 {
-                    _pixels[x + w + (y + h) * 320] = buffer[x + w + (y + h) * sourceStride];
+                    _pixels[x + w + (y + h) * 320] = buffer[w + h * sourceStride];
                 }
             }
         }

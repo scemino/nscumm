@@ -8085,78 +8085,42 @@ namespace NScumm.Core
             if (width <= 0 || height <= 0)
                 return;
 
+            var srcNav = new PixelNavigator(vs.Surfaces[0]);
+            srcNav.GoTo(vs.XStart + x, top);
+
             var compNav = new PixelNavigator(_composite);
-            if (vs == _verbVirtScreen)
-            {
-                compNav.GoTo(x, y);
-            }
-            else
-            {
-                compNav.GoTo(x, top);
-            }
-            var vsNav = new PixelNavigator(vs.Surfaces[0]);
-            vsNav.GoTo(vs.XStart + x, top);
             var txtNav = new PixelNavigator(_textSurface);
             int m = _textSurfaceMultiplier;
             txtNav.GoTo(x * m, y * m);
 
-            if (vs.BytesPerPixel == 2)
+            var vsPitch = vs.Pitch - width * vs.BytesPerPixel;
+            var textPitch = _textSurface.Pitch - width * m;
+
+            for (int h = height * m; h > 0; --h)
             {
-                for (int h = 0; h < height; h++)
+                for (int w = width * m; w > 0; w--)
                 {
-                    for (int w = 0; w < width; w++)
-                    {
-                        var txtPixel = txtNav.ReadUInt16();
-                        ushort pixel;
-                        if (txtPixel != 0xFDFD)
-                        {
-                            pixel = txtPixel;
-                        }
-                        else
-                        {
-                            pixel = vsNav.ReadUInt16();
-                        }
-                        compNav.WriteUInt16(pixel);
-                        compNav.OffsetX(1);
-                        txtNav.OffsetX(1);
-                        vsNav.OffsetX(1);
-                    }
-                    compNav.Offset(-width, 1);
-                    txtNav.Offset(-width, 1);
-                    vsNav.Offset(-width, 1);
+                    var temp = txtNav.Read();
+                    int mask = temp ^ CharsetMaskTransparency;
+                    mask = (((mask & 0x7f) + 0x7f) | mask) & 0x80;
+                    mask = ((mask >> 7) + 0x7f) ^ 0x80;
+
+                    var dst = ((temp ^ srcNav.Read()) & mask) ^ temp;
+                    compNav.Write((byte)dst);
+
+                    srcNav.OffsetX(1);
+                    txtNav.OffsetX(1);
+                    compNav.OffsetX(1);
                 }
-            }
-            else
-            {
-                for (int h = 0; h < height; h++)
-                {
-                    for (int w = 0; w < width; w++)
-                    {
-                        var txtPixel = txtNav.Read();
-                        byte pixel;
-                        if (txtPixel != 0xFD)
-                        {
-                            pixel = txtPixel;
-                        }
-                        else
-                        {
-                            pixel = vsNav.Read();
-                        }
-                        compNav.Write(pixel);
-                        compNav.OffsetX(1);
-                        txtNav.OffsetX(1);
-                        vsNav.OffsetX(1);
-                    }
-                    compNav.Offset(-width, 1);
-                    txtNav.Offset(-width, 1);
-                    vsNav.Offset(-width, 1);
-                }
+
+                srcNav.OffsetX(vsPitch);
+                txtNav.OffsetX(textPitch);
             }
 
             var src = _composite.Pixels;
 
             // Finally blit the whole thing to the screen
-            _gfxManager.CopyRectToScreen(src, vs.Pitch, x, y, width, height);
+            _gfxManager.CopyRectToScreen(src, width * vs.BytesPerPixel, x, y, width, height);
         }
 
         public void MarkRectAsDirty(VirtScreen vs, int left, int right, int top, int bottom, int dirtybit = 0)

@@ -87,6 +87,7 @@ namespace NScumm.Core.Graphics
         {
             if (numBuffers <= 0) throw new ArgumentOutOfRangeException("numBuffers", numBuffers, "The number of buffers should be positive.");
 
+            TopLine = top;
             _surfaces = new Surface[numBuffers];
             _roSurfaces = new ReadOnlyCollection<Surface>(_surfaces);
             for (int i = 0; i < numBuffers; i++)

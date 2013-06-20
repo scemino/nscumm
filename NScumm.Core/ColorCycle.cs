@@ -20,7 +20,7 @@ using System;
 
 namespace NScumm.Core
 {
-    class ColorCycle
+    public class ColorCycle
     {
         public ushort delay;
         public ushort counter;

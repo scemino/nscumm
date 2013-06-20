@@ -76,7 +76,7 @@ namespace NScumm.Core
         Param3 = 0x20,
     }
 
-    public class ScummEngine
+    public partial class ScummEngine
     {
         #region Constants
         private static readonly int[] ShakePositions={0,1*2,2*2,1*2,0*2,2*2,3*2,1*2};
@@ -181,6 +181,7 @@ namespace NScumm.Core
         private bool _egoPositioned;
 
         private Cursor _cursor = new Cursor();
+        private Point _mousePos;
         private int _resultVarIndex;
         private byte _opCode;
         private Stack<int> _stack = new Stack<int>();
@@ -242,7 +243,7 @@ namespace NScumm.Core
         private bool _screenEffectFlag;
 
         private ObjectData[] _objs = new ObjectData[200];
-        private ColorCycle[] _colorCycle;
+
         private ScaleSlot[] _scaleSlots;
 
         private int _numGlobalObjects = 1000;
@@ -461,7 +462,7 @@ namespace NScumm.Core
         {
             _opCode = opCode;
             _slots[_currentScript].didexec = true;
-			//Console.WriteLine("OpCode: {1:X2}, Name = {2}", _currentScript, _opCode, _opCodes.ContainsKey(_opCode) ? _opCodes[opCode].Method.Name : "Unknown");
+            //Console.WriteLine("OpCode: {1:X2}, Name = {2}", _currentScript, _opCode, _opCodes.ContainsKey(_opCode) ? _opCodes[opCode].Method.Name : "Unknown");
             _opCodes[opCode]();
         }
 
@@ -521,7 +522,7 @@ namespace NScumm.Core
             if ((var & 0xF000) == 0)
             {
                 //Console.WriteLine("ReadVariable({0}) => {1}", var, _variables[var]);
-				ScummHelper.AssertRange(0, var, NumVariables - 1, "variable (reading)");
+                ScummHelper.AssertRange(0, var, NumVariables - 1, "variable (reading)");
                 return _variables[var];
             }
 
@@ -529,9 +530,9 @@ namespace NScumm.Core
             {
                 var &= 0x7FFF;
 
-             	ScummHelper.AssertRange(0, _resultVarIndex, _bitVars.Length - 1, "variable (reading)");
-				//Console.WriteLine ("ReadVariable({0}) => {1}", var, _bitVars[var]);
-                return _bitVars[var]?1:0;
+                ScummHelper.AssertRange(0, _resultVarIndex, _bitVars.Length - 1, "variable (reading)");
+                //Console.WriteLine ("ReadVariable({0}) => {1}", var, _bitVars[var]);
+                return _bitVars[var] ? 1 : 0;
             }
 
             if ((var & 0x4000) == 0x4000)
@@ -540,11 +541,11 @@ namespace NScumm.Core
 
                 ScummHelper.AssertRange(0, var, 20, "local variable (reading)");
 
-				//Console.WriteLine ("ReadVariable({0}) => {1}", var, this._localVariables[_currentScript][var]);
+                //Console.WriteLine ("ReadVariable({0}) => {1}", var, this._localVariables[_currentScript][var]);
                 return this._localVariables[_currentScript][var];
             }
 
-			throw new NotSupportedException("Illegal varbits (r)");
+            throw new NotSupportedException("Illegal varbits (r)");
             return -1;
         }
 
@@ -562,9 +563,9 @@ namespace NScumm.Core
         {
             if ((_resultVarIndex & 0xF000) == 0)
             {
-				ScummHelper.AssertRange(0, _resultVarIndex, NumVariables - 1, "variable (writing)");
-				//Console.WriteLine ("SetResult({0},{1})",_resultVarIndex,value);
-				_variables[_resultVarIndex] = value;
+                ScummHelper.AssertRange(0, _resultVarIndex, NumVariables - 1, "variable (writing)");
+                //Console.WriteLine ("SetResult({0},{1})",_resultVarIndex,value);
+                _variables[_resultVarIndex] = value;
                 return;
             }
 
@@ -573,8 +574,8 @@ namespace NScumm.Core
                 _resultVarIndex &= 0x7FFF;
 
                 ScummHelper.AssertRange(0, _resultVarIndex, _bitVars.Length - 1, "bit variable (writing)");
-				//Console.WriteLine ("SetResult({0},{1})",_resultVarIndex,value!=0);
-				_bitVars[_resultVarIndex] = value != 0;
+                //Console.WriteLine ("SetResult({0},{1})",_resultVarIndex,value!=0);
+                _bitVars[_resultVarIndex] = value != 0;
                 return;
             }
 
@@ -582,9 +583,9 @@ namespace NScumm.Core
             {
                 _resultVarIndex &= 0xFFF;
 
-				ScummHelper.AssertRange(0, _resultVarIndex, 20, "local variable (writing)");
-				//Console.WriteLine ("SetLocalVariables(script={0},var={1},value={2})",_currentScript, _resultVarIndex,value);
-				_localVariables[_currentScript][_resultVarIndex] = value;
+                ScummHelper.AssertRange(0, _resultVarIndex, 20, "local variable (writing)");
+                //Console.WriteLine ("SetLocalVariables(script={0},var={1},value={2})",_currentScript, _resultVarIndex,value);
+                _localVariables[_currentScript][_resultVarIndex] = value;
                 return;
             }
         }
@@ -1911,16 +1912,16 @@ namespace NScumm.Core
 
             while ((_opCode = ReadByte()) != 0xFF)
             {
-				_opCode = (byte)((_opCode & 0xE0) | convertTable[(_opCode & 0x1F) - 1]);
-				switch (_opCode & 0x1F)
+                _opCode = (byte)((_opCode & 0xE0) | convertTable[(_opCode & 0x1F) - 1]);
+                switch (_opCode & 0x1F)
                 {
                     case 0:										/* dummy case */
                         GetVarOrDirectByte(OpCodeParameter.Param1);
                         break;
 
                     case 1:			// SO_COSTUME
-					    var cost = (ushort)GetVarOrDirectByte(OpCodeParameter.Param1);
-					    a.SetActorCostume(cost);
+                        var cost = (ushort)GetVarOrDirectByte(OpCodeParameter.Param1);
+                        a.SetActorCostume(cost);
                         break;
 
                     case 2:			// SO_STEP_DIST
@@ -2479,9 +2480,9 @@ namespace NScumm.Core
         private void InitScreens(int b, int h)
         {
             var format = PixelFormat.Indexed8;
-            _mainVirtScreen = new VirtScreen(b, _screenWidth, h - b, format, 2, true) { TopLine = b };
-            _textVirtScreen = new VirtScreen(0, _screenWidth, b, format, 1) { TopLine = 0 };
-            _verbVirtScreen = new VirtScreen(h, _screenWidth, _screenHeight - h, format, 1) { TopLine = h };
+            _mainVirtScreen = new VirtScreen(b, _screenWidth, h - b, format, 2, true);
+            _textVirtScreen = new VirtScreen(0, _screenWidth, b, format, 1);
+            _verbVirtScreen = new VirtScreen(h, _screenWidth, _screenHeight - h, format, 1);
 
             _screenB = b;
             _screenH = h;
@@ -2642,8 +2643,8 @@ namespace NScumm.Core
             if (!condition)
             {
                 _currentPos += offset;
-				if(_currentPos<0) 
-					throw new NotSupportedException("Invalid position in JumpRelative");
+                if (_currentPos < 0)
+                    throw new NotSupportedException("Invalid position in JumpRelative");
             }
         }
 
@@ -2997,8 +2998,99 @@ namespace NScumm.Core
             y2 = GetVarOrDirectWord(OpCodeParameter.Param2);
             color = GetVarOrDirectByte(OpCodeParameter.Param3);
 
-            // TODO:
-            //drawBox(x, y, x2, y2, color);
+            DrawBox(x, y, x2, y2, color);
+        }
+
+        private void DrawBox(int x, int y, int x2, int y2, int color)
+        {
+            int width, height;
+            VirtScreen vs;
+
+            if ((vs = FindVirtScreen(y)) == null)
+                return;
+
+            // Indy4 Amiga always uses the room or verb palette map to match colors to
+            // the currently setup palette, thus we need to select it over here too.
+            // Done like the original interpreter.
+            //if (_game.platform == Common::kPlatformAmiga && _game.id == GID_INDY4) {
+            //    if (vs->number == kVerbVirtScreen)
+            //        color = _verbPalette[color];
+            //    else
+            //        color = _roomPalette[color];
+            //}
+
+            if (x > x2)
+                ScummHelper.Swap(ref x, ref x2);
+
+            if (y > y2)
+                ScummHelper.Swap(ref y, ref y2);
+
+            x2++;
+            y2++;
+
+            // Adjust for the topline of the VirtScreen
+            y -= vs.TopLine;
+            y2 -= vs.TopLine;
+
+            // Clip the coordinates
+            if (x < 0)
+                x = 0;
+            else if (x >= vs.Width)
+                return;
+
+            if (x2 < 0)
+                return;
+            else if (x2 > vs.Width)
+                x2 = vs.Width;
+
+            if (y < 0)
+                y = 0;
+            else if (y > vs.Height)
+                return;
+
+            if (y2 < 0)
+                return;
+            else if (y2 > vs.Height)
+                y2 = vs.Height;
+
+            width = x2 - x;
+            height = y2 - y;
+
+            // This will happen in the Sam & Max intro - see bug #1039162 - where
+            // it would trigger an assertion in blit().
+
+            if (width <= 0 || height <= 0)
+                return;
+
+            MarkRectAsDirty(vs, x, x2, y, y2);
+
+            var backbuff = new PixelNavigator(vs.Surfaces[0]);
+            backbuff.GoTo(vs.XStart + x, y);
+
+            // A check for -1 might be wrong in all cases since o5_drawBox() in its current form
+            // is definitely not capable of passing a parameter of -1 (color range is 0 - 255).
+            // Just to make sure I don't break anything I restrict the code change to FM-Towns
+            // version 5 games where this change is necessary to fix certain long standing bugs.
+            if (color == -1)
+            {
+                if (vs != MainVirtScreen)
+                    Console.Error.WriteLine("can only copy bg to main window");
+
+                var bgbuff = new PixelNavigator(vs.Surfaces[1]);
+                bgbuff.GoTo(vs.XStart + x, y);
+
+                Blit(backbuff, vs.Pitch, bgbuff, vs.Pitch, width, height, vs.BytesPerPixel);
+                if (_charset._hasMask)
+                {
+                    var mask = new PixelNavigator(_textSurface);
+                    mask.GoToIgnoreBytesByPixel(x * _textSurfaceMultiplier, (y - _screenTop) * _textSurfaceMultiplier);
+                    Fill(mask, _textSurface.Pitch, CharsetMaskTransparency, width * _textSurfaceMultiplier, height * _textSurfaceMultiplier);
+                }
+            }
+            else
+            {
+                Fill(backbuff, vs.Pitch, (byte)color, width, height);
+            }
         }
 
         private void DrawObject()
@@ -3181,6 +3273,7 @@ namespace NScumm.Core
                         // copy string
                         var idA = GetVarOrDirectByte(OpCodeParameter.Param1);
                         var idB = GetVarOrDirectByte(OpCodeParameter.Param2);
+                        _strings[idA] = new byte[_strings[idB].Length];
                         Array.Copy(_strings[idB], _strings[idA], _strings[idB].Length);
                     }
                     break;
@@ -3659,7 +3752,7 @@ namespace NScumm.Core
             GetResult();
             var max = GetVarOrDirectByte(OpCodeParameter.Param1);
             Random rnd = new Random();
-            var value = rnd.Next(max+1);
+            var value = rnd.Next(max + 1);
             SetResult(value);
         }
 
@@ -4087,6 +4180,8 @@ namespace NScumm.Core
 
             KillScriptsAndResources();
 
+            StopCycle(0);
+
             for (int i = 1; i < NumActors; i++)
             {
                 _actors[i].HideActor();
@@ -4223,6 +4318,11 @@ namespace NScumm.Core
             {
                 var box = roomData.Boxes[i];
                 _boxes[i] = new Box { flags = box.flags, llx = box.llx, lly = box.lly, lrx = box.lrx, lry = box.lry, mask = box.mask, scale = box.scale, ulx = box.ulx, uly = box.uly, urx = box.urx, ury = box.ury };
+            }
+
+            if (roomData.ColorCycle != null)
+            {
+                Array.Copy(roomData.ColorCycle, _colorCycle, 16);
             }
         }
 
@@ -4477,7 +4577,7 @@ namespace NScumm.Core
             }
         }
 
-        public void RunBootScript(int bootParam=0)
+        public void RunBootScript(int bootParam = 0)
         {
             RunScript(1, false, false, new int[] { bootParam });
         }
@@ -4655,8 +4755,8 @@ namespace NScumm.Core
         private void ResetScriptPointer()
         {
             _currentPos = (int)_slots[_currentScript].offs;
-			if( _currentPos<0)
-				throw new NotSupportedException("Invalid offset in reset script pointer");
+            if (_currentPos < 0)
+                throw new NotSupportedException("Invalid offset in reset script pointer");
         }
 
         private byte GetScriptSlotIndex()
@@ -5014,9 +5114,12 @@ namespace NScumm.Core
             {
                 byte code = ((((ScummMouseButtonState)MouseAndKeyboardStat) & ScummMouseButtonState.LeftClick) != 0) ? (byte)1 : (byte)2;
 
-                int mouseX = _variables[VariableMouseX];
-                int mouseY = _variables[VariableMouseY];
-                var over = FindVerbAtPos(mouseX, mouseY);
+                VirtScreen zone = FindVirtScreen(_mousePos.Y);
+
+                if (zone == null)
+                    return;
+
+                var over = FindVerbAtPos(_mousePos.X, _mousePos.Y);
 
                 if (over != 0)
                 {
@@ -5026,7 +5129,7 @@ namespace NScumm.Core
                 else
                 {
                     // Scene was clicked
-                    var area = mouseY < roomData.Header.Height ? ClickArea.Scene : ClickArea.Verb;
+                    var area = zone == MainVirtScreen ? ClickArea.Scene : ClickArea.Verb;
                     RunInputScript(area, 0, code);
                 }
             }
@@ -5828,6 +5931,38 @@ namespace NScumm.Core
                     MouseAndKeyboardStat = i;
                 }
             }
+            for (KeyCode i = KeyCode.F1; i <= KeyCode.F9; i++)
+            {
+                if (_inputManager.IsKeyDown(i))
+                {
+                    MouseAndKeyboardStat = i;
+                }
+            }
+
+            for (KeyCode i = KeyCode.F1; i <= KeyCode.F9; i++)
+            {
+                if (_inputManager.IsKeyDown(i))
+                {
+                    MouseAndKeyboardStat = i;
+                }
+            }
+
+            if (_inputManager.IsKeyDown(KeyCode.Return))
+            {
+                MouseAndKeyboardStat = KeyCode.Return;
+            }
+            if (_inputManager.IsKeyDown(KeyCode.Backspace))
+            {
+                MouseAndKeyboardStat = KeyCode.Backspace;
+            }
+            if (_inputManager.IsKeyDown(KeyCode.Tab))
+            {
+                MouseAndKeyboardStat = KeyCode.Tab;
+            }
+            if (_inputManager.IsKeyDown(KeyCode.Space))
+            {
+                MouseAndKeyboardStat = KeyCode.Space;
+            }
 
             if (_inputManager.IsMouseLeftPressed())
             {
@@ -5839,12 +5974,36 @@ namespace NScumm.Core
                 MouseAndKeyboardStat = (KeyCode)ScummMouseButtonState.RightClick;
             }
 
-            var pos = this._inputManager.GetMousePosition();
-            var mouseX = (ScreenStartStrip * 8) + pos.X;
-            Variables[ScummEngine.VariableMouseX] = (int)pos.X;
-            Variables[ScummEngine.VariableMouseY] = (int)pos.Y;
+            int[] numpad = new int[]{
+				'0',
+				335, 336, 337,
+				331, 332, 333,
+				327, 328, 329
+			};
+
+            for (KeyCode i = KeyCode.D0; i <= KeyCode.D9; i++)
+            {
+                if (_inputManager.IsKeyDown(i))
+                {
+                    MouseAndKeyboardStat = (KeyCode)numpad[(int)(i - KeyCode.D0)];
+                }
+            }
+
+            _mousePos = this._inputManager.GetMousePosition();
+            if (_mousePos.X < 0)
+                _mousePos.X = 0;
+            if (_mousePos.X > _screenWidth - 1)
+                _mousePos.X = (short)(_screenWidth - 1);
+            if (_mousePos.Y < 0)
+                _mousePos.Y = 0;
+            if (_mousePos.Y > _screenHeight - 1)
+                _mousePos.Y = (short)(_screenHeight - 1);
+
+            var mouseX = (ScreenStartStrip * 8) + _mousePos.X;
+            Variables[ScummEngine.VariableMouseX] = (int)_mousePos.X;
+            Variables[ScummEngine.VariableMouseY] = (int)_mousePos.Y;
             Variables[ScummEngine.VariableVirtualMouseX] = (int)mouseX;
-            Variables[ScummEngine.VariableVirtualMouseY] = (int)pos.Y;
+            Variables[ScummEngine.VariableVirtualMouseY] = (int)_mousePos.Y - MainVirtScreen.TopLine;
         }
 
         private TimeSpan GetTimeToWait()
@@ -5970,9 +6129,38 @@ namespace NScumm.Core
             // show or hide mouse
             _gfxManager.ShowCursor(_cursor.State > 0);
 
-			Update(tsDelta);
+            Update(tsDelta);
 
-			return GetTimeToWait ();
+            return GetTimeToWait();
+        }
+
+        private void StopCycle(int i)
+        {
+            ScummHelper.AssertRange(0, i, 16, "stopCycle: cycle");
+            if (i != 0)
+            {
+                _colorCycle[i - 1].delay = 0;
+                //if (_game.platform == Common::kPlatformAmiga && _game.id == GID_INDY4) {
+                //    cycl = &_colorCycle[i - 1];
+                //    for (int j = cycl->start; j <= cycl->end && j < 32; ++j) {
+                //        _shadowPalette[j] = j;
+                //        _colorUsedByCycle[j] = 0;
+                //    }
+                //}
+                return;
+            }
+
+            for (i = 0; i < 16; i++)
+            {
+                var cycl = _colorCycle[i];
+                cycl.delay = 0;
+                //if (_game.platform == Common::kPlatformAmiga && _game.id == GID_INDY4) {
+                //    for (int j = cycl->start; j <= cycl->end && j < 32; ++j) {
+                //        _shadowPalette[j] = j;
+                //        _colorUsedByCycle[j] = 0;
+                //    }
+                //}
+            }
         }
 
         #region Save & Load
@@ -6159,7 +6347,6 @@ namespace NScumm.Core
             short mouseX, mouseY;
             byte[] colorUsedByCycle;
             byte palManipStart, palManipEnd;
-            ushort palManipCounter = 0;
             byte[] darkenPalette = null;
             ushort[] gdiImgBufOffs;
             byte[] proc_special_palette;
@@ -6278,17 +6465,17 @@ namespace NScumm.Core
                     LoadAndSaveEntry.Create(reader => _bgNeedsRedraw = reader.ReadByte()!=0, writer => writer.WriteByte(_bgNeedsRedraw), 8),
 
                     // The state of palManipulate is stored only since V10
-                    LoadAndSaveEntry.Create((reader)=> palManipStart = reader.ReadByte(), writer => writer.WriteByte(0), 10),
-                    LoadAndSaveEntry.Create((reader)=> palManipEnd = reader.ReadByte(), writer => writer.WriteByte(0), 10),
-                    LoadAndSaveEntry.Create((reader)=> palManipCounter = reader.ReadUInt16(), writer => writer.WriteUInt16(palManipCounter), 10),
+                    LoadAndSaveEntry.Create(reader => palManipStart = reader.ReadByte(), writer => writer.WriteByte(0), 10),
+                    LoadAndSaveEntry.Create(reader => palManipEnd = reader.ReadByte(), writer => writer.WriteByte(0), 10),
+                    LoadAndSaveEntry.Create(reader => reader.ReadUInt16(), writer => writer.WriteUInt16(0), 10),
 
                     // gfxUsageBits grew from 200 to 410 entries. Then 3 * 410 entries:
-                    LoadAndSaveEntry.Create((reader)=> _gfxUsageBits = reader.ReadUInt32s(200), writer => writer.WriteUInt32s(_gfxUsageBits,200), 8,9),
-                    LoadAndSaveEntry.Create((reader)=> _gfxUsageBits = reader.ReadUInt32s(410), writer => writer.WriteUInt32s(_gfxUsageBits,410), 10,13),
-                    LoadAndSaveEntry.Create((reader)=> _gfxUsageBits = reader.ReadUInt32s(3*410), writer => writer.WriteUInt32s(_gfxUsageBits,3*410), 14),
-
-                    LoadAndSaveEntry.Create((reader)=> _gdi.TransparentColor = reader.ReadByte(), writer => writer.WriteByte(_gdi.TransparentColor), 8,50),
-                    LoadAndSaveEntry.Create((reader)=> {
+                    LoadAndSaveEntry.Create(reader => _gfxUsageBits = reader.ReadUInt32s(200), writer => writer.WriteUInt32s(_gfxUsageBits,200), 8,9),
+                    LoadAndSaveEntry.Create(reader => _gfxUsageBits = reader.ReadUInt32s(410), writer => writer.WriteUInt32s(_gfxUsageBits,410), 10,13),
+                    LoadAndSaveEntry.Create(reader => _gfxUsageBits = reader.ReadUInt32s(3*410), writer => writer.WriteUInt32s(_gfxUsageBits,3*410), 14),
+                                                   
+                    LoadAndSaveEntry.Create(reader => _gdi.TransparentColor = reader.ReadByte(), writer => writer.WriteByte(_gdi.TransparentColor), 8,50),
+                    LoadAndSaveEntry.Create(reader => {
                         for (int i = 0; i < 256; i++)
                         {
                             _currentPalette.Colors[i] = Color.FromRgb(reader.ReadByte(), reader.ReadByte(), reader.ReadByte());
@@ -6302,44 +6489,44 @@ namespace NScumm.Core
                             writer.Write(l_color.B);
                         }
                     }, 8),
-                    LoadAndSaveEntry.Create((reader)=> darkenPalette = reader.ReadBytes(768), writer => writer.Write(new byte[768]), 53),
+                    LoadAndSaveEntry.Create(reader => darkenPalette = reader.ReadBytes(768), writer => writer.Write(new byte[768]), 53),
 
                     // Sam & Max specific palette replaced by _shadowPalette now.
-                    LoadAndSaveEntry.Create((reader)=> proc_special_palette = reader.ReadBytes(256), writer => writer.Write(new byte[256]), 8,33),
+                    LoadAndSaveEntry.Create(reader => proc_special_palette = reader.ReadBytes(256), writer => writer.Write(new byte[256]), 8,33),
 
-                    LoadAndSaveEntry.Create((reader)=> _charsetBuffer = reader.ReadBytes(256), writer => writer.WriteBytes(_charsetBuffer,256), 8),
+                    LoadAndSaveEntry.Create(reader => _charsetBuffer = reader.ReadBytes(256), writer => writer.WriteBytes(_charsetBuffer,256), 8),
 
-                    LoadAndSaveEntry.Create((reader)=> _egoPositioned = reader.ReadByte()!=0, writer => writer.WriteByte(_egoPositioned), 8),
+                    LoadAndSaveEntry.Create(reader => _egoPositioned = reader.ReadByte()!=0, writer => writer.WriteByte(_egoPositioned), 8),
 
                     // _gdi->_imgBufOffs grew from 4 to 5 entries. Then one day we realized
                     // that we don't have to store it since initBGBuffers() recomputes it.
-                    LoadAndSaveEntry.Create((reader)=> gdiImgBufOffs = reader.ReadUInt16s(4), writer => writer.WriteUInt16s(new ushort[4],4), 8,9),
-                    LoadAndSaveEntry.Create((reader)=> gdiImgBufOffs = reader.ReadUInt16s(5), writer => writer.WriteUInt16s(new ushort[5],5), 10,26),
+                    LoadAndSaveEntry.Create(reader => gdiImgBufOffs = reader.ReadUInt16s(4), writer => writer.WriteUInt16s(new ushort[4],4), 8,9),
+                    LoadAndSaveEntry.Create(reader => gdiImgBufOffs = reader.ReadUInt16s(5), writer => writer.WriteUInt16s(new ushort[5],5), 10,26),
 
                     // See _imgBufOffs: _numZBuffer is recomputed by initBGBuffers().
-                    LoadAndSaveEntry.Create((reader)=> _gdi._numZBuffer = reader.ReadByte(), writer => writer.WriteByte(_gdi._numZBuffer), 8,26),
-
-                    LoadAndSaveEntry.Create((reader)=> _screenEffectFlag = reader.ReadByte()!=0, writer => writer.WriteByte(_screenEffectFlag), 8),
-
-                    LoadAndSaveEntry.Create((reader)=> randSeed1 = reader.ReadByte(), writer => writer.WriteByte(0), 8,9),
-                    LoadAndSaveEntry.Create((reader)=> randSeed2 = reader.ReadByte(), writer => writer.WriteByte(0), 8,9),
+                    LoadAndSaveEntry.Create(reader => _gdi._numZBuffer = reader.ReadByte(), writer => writer.WriteByte(_gdi._numZBuffer), 8,26),
+                                                   
+                    LoadAndSaveEntry.Create(reader => _screenEffectFlag = reader.ReadByte()!=0, writer => writer.WriteByte(_screenEffectFlag), 8),
+                                                   
+                    LoadAndSaveEntry.Create(reader => randSeed1 = reader.ReadByte(), writer => writer.WriteByte(0), 8,9),
+                    LoadAndSaveEntry.Create(reader => randSeed2 = reader.ReadByte(), writer => writer.WriteByte(0), 8,9),
 
                     // Converted _shakeEnabled to boolean and added a _shakeFrame field.
-                    LoadAndSaveEntry.Create((reader)=> shakeEnabled = reader.ReadInt16(), writer => writer.WriteInt16(0), 8,9),
-                    LoadAndSaveEntry.Create((reader)=> shakeEnabled = reader.ReadByte(), writer => writer.WriteByte(0), 10),
-                    LoadAndSaveEntry.Create((reader)=> shakeFrame = reader.ReadUInt32(), writer => writer.WriteUInt32(0), 10),
-
-                    LoadAndSaveEntry.Create((reader)=> _keepText = reader.ReadByte()!=0, writer => writer.WriteByte(_keepText), 8),
-
-                    LoadAndSaveEntry.Create((reader)=> _screenB = reader.ReadUInt16(), writer => writer.WriteUInt16(_screenB), 8),
-                    LoadAndSaveEntry.Create((reader)=> _screenH = reader.ReadUInt16(), writer => writer.WriteUInt16(_screenH), 8),
-
-                    LoadAndSaveEntry.Create((reader)=> NESCostumeSet = reader.ReadUInt16(), writer => writer.WriteUInt16(0), 47),
-
-                    LoadAndSaveEntry.Create((reader)=> cd_track = reader.ReadInt16(), writer => writer.WriteInt16(0), 9,9),
-                    LoadAndSaveEntry.Create((reader)=> cd_loops = reader.ReadInt16(), writer => writer.WriteInt16(0), 9,9),
-                    LoadAndSaveEntry.Create((reader)=> cd_frame = reader.ReadInt16(), writer => writer.WriteInt16(0), 9,9),
-                    LoadAndSaveEntry.Create((reader)=> cd_end = reader.ReadInt16(), writer => writer.WriteInt16(0), 9,9)
+                    LoadAndSaveEntry.Create(reader => shakeEnabled = reader.ReadInt16(), writer => writer.WriteInt16(0), 8,9),
+                    LoadAndSaveEntry.Create(reader => shakeEnabled = reader.ReadByte(), writer => writer.WriteByte(0), 10),
+                    LoadAndSaveEntry.Create(reader => shakeFrame = reader.ReadUInt32(), writer => writer.WriteUInt32(0), 10),
+                                                   
+                    LoadAndSaveEntry.Create(reader => _keepText = reader.ReadByte()!=0, writer => writer.WriteByte(_keepText), 8),
+                                                   
+                    LoadAndSaveEntry.Create(reader => _screenB = reader.ReadUInt16(), writer => writer.WriteUInt16(_screenB), 8),
+                    LoadAndSaveEntry.Create(reader => _screenH = reader.ReadUInt16(), writer => writer.WriteUInt16(_screenH), 8),
+                                                   
+                    LoadAndSaveEntry.Create(reader => NESCostumeSet = reader.ReadUInt16(), writer => writer.WriteUInt16(0), 47),
+                                                   
+                    LoadAndSaveEntry.Create(reader => cd_track = reader.ReadInt16(), writer => writer.WriteInt16(0), 9,9),
+                    LoadAndSaveEntry.Create(reader => cd_loops = reader.ReadInt16(), writer => writer.WriteInt16(0), 9,9),
+                    LoadAndSaveEntry.Create(reader => cd_frame = reader.ReadInt16(), writer => writer.WriteInt16(0), 9,9),
+                    LoadAndSaveEntry.Create(reader => cd_end = reader.ReadInt16(), writer => writer.WriteInt16(0), 9,9)
                 };
 
             #endregion MainEntries
@@ -6504,9 +6691,10 @@ namespace NScumm.Core
                     {
                         _scaleSlots[i] = new ScaleSlot();
                     }
-					if(_scaleSlots[i]!=null) {
-                    	_scaleSlots[i].SaveOrLoad(serializer);
-					}
+                    if (_scaleSlots[i] != null)
+                    {
+                        _scaleSlots[i].SaveOrLoad(serializer);
+                    }
                 }
             }
 
@@ -6567,41 +6755,11 @@ namespace NScumm.Core
                 writer => {
                     writer.WriteBytes(_roomPalette,256);
                 },21),
-                // PalManip data was not saved before V10 save games
-                LoadAndSaveEntry.Create(reader => {
-                    if (palManipCounter != 0)
-                    {
-                        _palManipPalette = reader.ReadBytes(0x300);
-                        _palManipIntermediatePal = reader.ReadBytes(0x600);
-                    }
-                },
-                writer => {
-                    if (palManipCounter != 0)
-                    {
-                        writer.WriteBytes(_palManipPalette, 0x300);
-                        writer.WriteBytes(_palManipIntermediatePal, 0x600);
-                    }
-                },10),
                 // darkenPalette was not saved before V53
                 LoadAndSaveEntry.Create(reader => {
                     // TODO?
                     //Array.Copy(currentPalette, darkenPalette, 768);
                 },0, 53),
-                // darkenPalette was not saved before V53
-                LoadAndSaveEntry.Create(reader => {
-                    if (palManipCounter != 0)
-                    {
-                        _palManipPalette = reader.ReadBytes(0x300);
-                        _palManipIntermediatePal = reader.ReadBytes(0x600);
-                    }
-                },
-                writer => {
-                    if (palManipCounter != 0)
-                    {
-                        writer.WriteBytes(_palManipPalette,0x300);
-                        writer.WriteBytes(_palManipIntermediatePal,0x600);
-                    }
-                },53)
             };
             Array.ForEach(l_paletteEntries, entry => entry.Execute(serializer));
 
@@ -6610,7 +6768,7 @@ namespace NScumm.Core
             {
                 if (serializer.Version < 60)
                 {
-                    Array.Clear(_colorUsedByCycle, 0, _colorUsedByCycle.Length);
+                    //Array.Clear(_colorUsedByCycle, 0, _colorUsedByCycle.Length);
                 }
             }
 
@@ -6921,9 +7079,7 @@ namespace NScumm.Core
         }
 
         private int _shadowPaletteSize = 256;
-		private byte[] _shadowPalette=new byte[256];
-        private byte[] _palManipPalette, _palManipIntermediatePal;
-        private byte[] _colorUsedByCycle = new byte[256];
+        private byte[] _shadowPalette = new byte[256];
 
         private void LoadResource(BinaryReader reader, ResType type, ushort idx)
         {
@@ -7787,24 +7943,33 @@ namespace NScumm.Core
             if (_palDirtyMax == -1)
                 return;
 
+            var colors = new Color[256];
+
             int first = _palDirtyMin;
             int num = _palDirtyMax - first + 1;
+
+            int j = 0;
+            for (int i = _palDirtyMin; i <= _palDirtyMax; i++)
+            {
+                var color = _currentPalette.Colors[_shadowPalette[i]];
+                colors[i] = color;
+            }
 
             _palDirtyMax = -1;
             _palDirtyMin = 256;
 
-            _gfxManager.SetPalette(_currentPalette.Colors, first, num);
+            _gfxManager.SetPalette(colors, first, num);
         }
 
         private void HandleEffects()
         {
-            // TODO:
-            //CyclePalette();
+            CyclePalette();
             //PalManipulate();
             if (_doEffect)
             {
                 _doEffect = false;
                 FadeIn(_newEffect);
+                // TODO:
                 //clearClickedStatus();
             }
         }
@@ -7954,7 +8119,6 @@ namespace NScumm.Core
             for (int i = 0; i < num; i++)
                 SetGfxUsageBit(s + i, UsageBitDirty);
 
-            //var room = _scumm.GetRoom(_roomResource);
             _gdi.DrawBitmap(roomData.Data, _mainVirtScreen, s, 0, this.roomData.Header.Width, _mainVirtScreen.Height, s, num, 0);
         }
 
@@ -8061,78 +8225,42 @@ namespace NScumm.Core
             if (width <= 0 || height <= 0)
                 return;
 
+            var srcNav = new PixelNavigator(vs.Surfaces[0]);
+            srcNav.GoTo(vs.XStart + x, top);
+
             var compNav = new PixelNavigator(_composite);
-            if (vs == _verbVirtScreen)
-            {
-                compNav.GoTo(x, y);
-            }
-            else
-            {
-                compNav.GoTo(x, top);
-            }
-            var vsNav = new PixelNavigator(vs.Surfaces[0]);
-            vsNav.GoTo(vs.XStart + x, top);
             var txtNav = new PixelNavigator(_textSurface);
             int m = _textSurfaceMultiplier;
             txtNav.GoTo(x * m, y * m);
 
-            if (vs.BytesPerPixel == 2)
+            var vsPitch = vs.Pitch - width * vs.BytesPerPixel;
+            var textPitch = _textSurface.Pitch - width * m;
+
+            for (int h = height * m; h > 0; --h)
             {
-                for (int h = 0; h < height; h++)
+                for (int w = width * m; w > 0; w--)
                 {
-                    for (int w = 0; w < width; w++)
-                    {
-                        var txtPixel = txtNav.ReadUInt16();
-                        ushort pixel;
-                        if (txtPixel != 0xFDFD)
-                        {
-                            pixel = txtPixel;
-                        }
-                        else
-                        {
-                            pixel = vsNav.ReadUInt16();
-                        }
-                        compNav.WriteUInt16(pixel);
-                        compNav.OffsetX(1);
-                        txtNav.OffsetX(1);
-                        vsNav.OffsetX(1);
-                    }
-                    compNav.Offset(-width, 1);
-                    txtNav.Offset(-width, 1);
-                    vsNav.Offset(-width, 1);
+                    var temp = txtNav.Read();
+                    int mask = temp ^ CharsetMaskTransparency;
+                    mask = (((mask & 0x7f) + 0x7f) | mask) & 0x80;
+                    mask = ((mask >> 7) + 0x7f) ^ 0x80;
+
+                    var dst = ((temp ^ srcNav.Read()) & mask) ^ temp;
+                    compNav.Write((byte)dst);
+
+                    srcNav.OffsetX(1);
+                    txtNav.OffsetX(1);
+                    compNav.OffsetX(1);
                 }
-            }
-            else
-            {
-                for (int h = 0; h < height; h++)
-                {
-                    for (int w = 0; w < width; w++)
-                    {
-                        var txtPixel = txtNav.Read();
-                        byte pixel;
-                        if (txtPixel != 0xFD)
-                        {
-                            pixel = txtPixel;
-                        }
-                        else
-                        {
-                            pixel = vsNav.Read();
-                        }
-                        compNav.Write(pixel);
-                        compNav.OffsetX(1);
-                        txtNav.OffsetX(1);
-                        vsNav.OffsetX(1);
-                    }
-                    compNav.Offset(-width, 1);
-                    txtNav.Offset(-width, 1);
-                    vsNav.Offset(-width, 1);
-                }
+
+                srcNav.OffsetX(vsPitch);
+                txtNav.OffsetX(textPitch);
             }
 
             var src = _composite.Pixels;
 
             // Finally blit the whole thing to the screen
-            _gfxManager.CopyRectToScreen(src, vs.Pitch, x, y, width, height);
+            _gfxManager.CopyRectToScreen(src, width * vs.BytesPerPixel, x, y, width, height);
         }
 
         public void MarkRectAsDirty(VirtScreen vs, int left, int right, int top, int bottom, int dirtybit = 0)
@@ -8242,8 +8370,7 @@ namespace NScumm.Core
             uint[] bitmask = new uint[3] { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF };
             int i;
 
-            //assert(strip >= 0 && strip < ARRAYSIZE(gfxUsageBits) / 3);
-            //assert(1 <= bit && bit <= 96);
+            ScummHelper.AssertRange(1, bit, 96, "TestGfxOtherUsageBits");
             bit--;
             bitmask[bit / 32] &= (uint)(~(1 << (bit % 32)));
 
@@ -8260,7 +8387,7 @@ namespace NScumm.Core
             uint[] bitmask = new uint[3] { 0xFFFFFFFF, 0xFFFFFFFF, 0x3FFFFFFF };
             int i;
 
-            //assert(strip >= 0 && strip < ARRAYSIZE(gfxUsageBits) / 3);
+            ScummHelper.AssertRange(0, strip, _gfxUsageBits.Length / 3, "TestGfxOtherUsageBits");
             for (i = 0; i < 3; i++)
                 if ((_gfxUsageBits[3 * strip + i] & bitmask[i]) != 0)
                     return true;

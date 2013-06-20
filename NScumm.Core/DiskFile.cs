@@ -174,7 +174,7 @@ namespace NScumm.Core
                             break;
                         case 0x4343:
                             // CYCL
-                            ReadCYCL();
+                            room.ColorCycle = ReadCYCL();
                             break;
                         case 0x5053:
                             // EPAL
@@ -426,14 +426,28 @@ namespace NScumm.Core
             return header;
         }
 
-        private void ReadCYCL()
+        private ColorCycle[] ReadCYCL()
         {
+            var colorCycle = new ColorCycle[16];
             for (int i = 0; i < 16; i++)
             {
-                var freq = _reader.ReadUInt16();
+                var delay = ScummHelper.SwapBytes(_reader.ReadUInt16());
                 var start = _reader.ReadByte();
                 var end = _reader.ReadByte();
+
+                colorCycle[i] = new ColorCycle();
+
+                if (delay == 0 || delay == 0x0aaa || start >= end)
+                    continue;
+
+                colorCycle[i].counter = 0;
+                colorCycle[i].delay = (ushort)(16384 / delay);
+                colorCycle[i].flags = 2;
+                colorCycle[i].start = start;
+                colorCycle[i].end = end;
             }
+
+            return colorCycle;
         }
 
         private Scale[] ReadSCAL()

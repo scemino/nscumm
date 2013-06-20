@@ -177,6 +177,7 @@ namespace NScumm.Core
         private bool _egoPositioned;
 
         private Cursor _cursor = new Cursor();
+        private Point _mousePos;
         private int _resultVarIndex;
         private byte _opCode;
         private Stack<int> _stack = new Stack<int>();
@@ -4989,9 +4990,12 @@ namespace NScumm.Core
             {
                 byte code = ((((ScummMouseButtonState)MouseAndKeyboardStat) & ScummMouseButtonState.LeftClick) != 0) ? (byte)1 : (byte)2;
 
-                int mouseX = _variables[VariableMouseX];
-                int mouseY = _variables[VariableMouseY];
-                var over = FindVerbAtPos(mouseX, mouseY);
+                VirtScreen zone = FindVirtScreen(_mousePos.Y);
+
+                if (zone == null)
+                    return;
+
+                var over = FindVerbAtPos(_mousePos.X, _mousePos.Y);
 
                 if (over != 0)
                 {
@@ -5001,7 +5005,7 @@ namespace NScumm.Core
                 else
                 {
                     // Scene was clicked
-                    var area = mouseY < roomData.Header.Height ? ClickArea.Scene : ClickArea.Verb;
+                    var area = zone == MainVirtScreen ? ClickArea.Scene : ClickArea.Verb;
                     RunInputScript(area, 0, code);
                 }
             }
@@ -5861,14 +5865,21 @@ namespace NScumm.Core
                 }
             }
 
+            _mousePos = this._inputManager.GetMousePosition();
+            if (_mousePos.X < 0)
+                _mousePos.X = 0;
+            if (_mousePos.X > _screenWidth - 1)
+                _mousePos.X = (short)(_screenWidth - 1);
+            if (_mousePos.Y < 0)
+                _mousePos.Y = 0;
+            if (_mousePos.Y > _screenHeight - 1)
+                _mousePos.Y = (short)(_screenHeight - 1);
 
-
-            var pos = this._inputManager.GetMousePosition();
-            var mouseX = (ScreenStartStrip * 8) + pos.X;
-            Variables[ScummEngine.VariableMouseX] = (int)pos.X;
-            Variables[ScummEngine.VariableMouseY] = (int)pos.Y;
+            var mouseX = (ScreenStartStrip * 8) + _mousePos.X;
+            Variables[ScummEngine.VariableMouseX] = (int)_mousePos.X;
+            Variables[ScummEngine.VariableMouseY] = (int)_mousePos.Y;
             Variables[ScummEngine.VariableVirtualMouseX] = (int)mouseX;
-            Variables[ScummEngine.VariableVirtualMouseY] = (int)pos.Y;
+            Variables[ScummEngine.VariableVirtualMouseY] = (int)_mousePos.Y - MainVirtScreen.TopLine;
         }
 
         private TimeSpan GetTimeToWait()

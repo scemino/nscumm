@@ -100,7 +100,7 @@ namespace NScumm.Core
 
             LoadCostume(a.Costume);
 
-            anim = ScummHelper.NewDirToOldDir(a.GetFacing()) + frame * 4;
+            anim = ScummHelper.NewDirToOldDir(a.Facing) + frame * 4;
 
             if (anim > _numAnim)
             {

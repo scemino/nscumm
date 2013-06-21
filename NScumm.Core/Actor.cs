@@ -25,6 +25,7 @@ namespace NScumm.Core
     [Flags]
     public enum MoveFlags
     {
+        None = 0,
         NewLeg = 1,
         InLeg = 2,
         Turn = 4,
@@ -81,16 +82,11 @@ namespace NScumm.Core
         public int _top, _bottom;
         public uint _width;
 
-        public byte _talkColor;
         public ushort _boxscale;
         public byte _scalex, _scaley;
         public byte _charset;
-        public MoveFlags _moving;
-        public bool _ignoreBoxes;
         public int _forceClip;
 
-        public byte _shadowMode;
-        public byte _walkbox;
         public ushort[] _sound = new ushort[32];
         public CostumeData _cost;
         #endregion
@@ -114,6 +110,40 @@ namespace NScumm.Core
         public byte TalkStopFrame { get; set; }
 
         public byte Room { get; set; }
+
+        public Point Position
+        {
+            get { return _position; }
+        }
+
+        public ushort Facing
+        {
+            get { return _facing; }
+            set { _facing = value; }
+        }
+
+        public int Elevation
+        {
+            get { return _elevation; }
+            set
+            {
+                if (_elevation != value)
+                {
+                    _elevation = value;
+                    NeedRedraw = true;
+                }
+            }
+        }
+
+        public MoveFlags Moving { get; set; }
+
+        public byte Walkbox { get; set; }
+
+        public byte ShadowMode { get; set; }
+
+        public byte TalkColor { get; set; }
+
+        public bool IgnoreBoxes { get; set; }
         #endregion
 
         #region ActorWalkData Structures
@@ -124,7 +154,7 @@ namespace NScumm.Core
             public short destdir;        // Final destination, direction to face at
 
             public Point cur;            // Last position
-            public byte curbox;                  // Last box
+            public byte curbox;          // Last box
 
             public Point next;           // Next position on our way to the destination, i.e. our intermediate destination
 
@@ -143,14 +173,14 @@ namespace NScumm.Core
         #endregion
 
         #region Public Methods
-        public virtual void HideActor()
+        public void HideActor()
         {
             if (!IsVisible)
                 return;
 
             Console.WriteLine("HideActor: {0}", Costume);
 
-            if (_moving != 0)
+            if (Moving != MoveFlags.None)
             {
                 StopActorMoving();
                 StartAnimActor(StandFrame);
@@ -186,7 +216,7 @@ namespace NScumm.Core
             NeedRedraw = true;
         }
 
-        public virtual void InitActor(int mode)
+        public void InitActor(int mode)
         {
             this.Name = null;
             if (mode == -1)
@@ -200,7 +230,7 @@ namespace NScumm.Core
                 _speedx = 8;
                 _speedy = 2;
                 _frame = 0;
-                _walkbox = 0;
+                Walkbox = 0;
                 _animProgress = 0;
                 _animVariable = new short[27];
                 _palette = new ushort[256];
@@ -225,14 +255,14 @@ namespace NScumm.Core
             }
             _elevation = 0;
             _width = 24;
-            _talkColor = 15;
+            TalkColor = 15;
             _talkPos = new Point(0, -80);
             _boxscale = _scaley = _scalex = 0xFF;
             _charset = 0;
             _sound = new ushort[32];
             _targetFacing = _facing;
 
-            _shadowMode = 0;
+            ShadowMode = 0;
 
             StopActorMoving();
 
@@ -240,7 +270,7 @@ namespace NScumm.Core
 
             _animSpeed = 0;
 
-            _ignoreBoxes = false;
+            IgnoreBoxes = false;
             _forceClip = 0;
             _ignoreTurns = false;
 
@@ -262,28 +292,27 @@ namespace NScumm.Core
 
         public void PutActor()
         {
-            PutActor(_position.X, _position.Y, Room);
+            PutActor(_position, Room);
         }
 
         public void PutActor(byte room)
         {
-            PutActor(_position.X, _position.Y, room);
+            PutActor(_position, room);
         }
 
-        public void PutActor(short x, short y)
+        public void PutActor(Point pos)
         {
-            PutActor(x, y, Room);
+            PutActor(pos, Room);
         }
 
-        public void PutActor(short dstX, short dstY, byte newRoom)
+        public void PutActor(Point pos, byte newRoom)
         {
             if (IsVisible && _scumm.CurrentRoom != newRoom && _scumm.GetTalkingActor() == Number)
             {
                 _scumm.StopTalk();
             }
 
-            _position.X = dstX;
-            _position.Y = dstY;
+            _position = pos;
             Room = newRoom;
             NeedRedraw = true;
 
@@ -296,7 +325,7 @@ namespace NScumm.Core
             {
                 if (IsInCurrentRoom())
                 {
-                    if (_moving != 0)
+                    if (Moving != MoveFlags.None)
                     {
                         StopActorMoving();
                         StartAnimActor(StandFrame);
@@ -315,7 +344,7 @@ namespace NScumm.Core
             }
         }
 
-        public void SetActorCostume(ushort c)
+        public void SetActorCostume(ushort costume)
         {
             _costumeNeedsInit = true;
 
@@ -323,12 +352,12 @@ namespace NScumm.Core
             {
                 HideActor();
                 _cost.Reset();
-                Costume = c;
+                Costume = costume;
                 ShowActor();
             }
             else
             {
-                Costume = c;
+                Costume = costume;
                 _cost.Reset();
             }
 
@@ -344,41 +373,13 @@ namespace NScumm.Core
             _speedx = newSpeedX;
             _speedy = newSpeedY;
 
-            if (_moving != 0)
+            if (Moving != MoveFlags.None)
             {
                 CalcMovementFactor(_walkdata.next);
             }
         }
 
-        public void AdjustActorPos()
-        {
-            AdjustBoxResult abr;
-
-            abr = AdjustXYToBeInBox(_position.X, _position.Y);
-
-            _position.X = abr.x;
-            _position.Y = abr.y;
-            _walkdata.destbox = abr.box;
-
-            SetBox(abr.box);
-
-            _walkdata.dest.X = -1;
-
-            StopActorMoving();
-            _cost.soundCounter = 0;
-            _cost.soundPos = 0;
-
-            if (_walkbox != InvalidBox)
-            {
-                int flags = (int)_scumm.GetBoxFlags(_walkbox);
-                if ((flags & 7) != 0)
-                {
-                    TurnToDirection(_facing);
-                }
-            }
-        }
-
-        public virtual AdjustBoxResult AdjustXYToBeInBox(short dstX, short dstY)
+        public AdjustBoxResult AdjustXYToBeInBox(short dstX, short dstY)
         {
             int[] thresholdTable = new int[] { 30, 80, 0 };
             AdjustBoxResult abr = new AdjustBoxResult();
@@ -395,7 +396,7 @@ namespace NScumm.Core
             abr.y = dstY;
             abr.box = InvalidBox;
 
-            if (_ignoreBoxes)
+            if (IgnoreBoxes)
                 return abr;
 
             for (int tIdx = 0; tIdx < thresholdTable.Length; tIdx++)
@@ -510,31 +511,22 @@ namespace NScumm.Core
             TurnToDirection(dir);
         }
 
-        public void TurnToDirection(int newdir)
-        {
-            if (newdir == -1 || _ignoreTurns)
-                return;
-
-            _moving = MoveFlags.Turn;
-            _targetFacing = (ushort)newdir;
-        }
-
-        public virtual void WalkActor()
+        public void WalkActor()
         {
             int new_dir, next_box;
             Point foundPath;
 
-            if (_moving == 0)
+            if (Moving == MoveFlags.None)
                 return;
 
-            if ((_moving & MoveFlags.NewLeg) == 0)
+            if (!Moving.HasFlag(MoveFlags.NewLeg))
             {
-                if (((_moving & MoveFlags.InLeg) != 0) && ActorWalkStep() != 0)
+                if (Moving.HasFlag(MoveFlags.InLeg) && ActorWalkStep() != 0)
                     return;
 
-                if ((_moving & MoveFlags.LastLeg) != 0)
+                if (Moving.HasFlag(MoveFlags.LastLeg))
                 {
-                    _moving = 0;
+                    Moving = MoveFlags.None;
                     SetBox(_walkdata.destbox);
                     StartAnimActor(StandFrame);
                     if (_targetFacing != _walkdata.destdir)
@@ -542,44 +534,44 @@ namespace NScumm.Core
                     return;
                 }
 
-                if ((_moving & MoveFlags.Turn) != 0)
+                if (Moving.HasFlag(MoveFlags.Turn))
                 {
                     new_dir = UpdateActorDirection(false);
                     if (_facing != new_dir)
                         SetDirection(new_dir);
                     else
-                        _moving = 0;
+                        Moving = MoveFlags.None;
                     return;
                 }
 
                 SetBox(_walkdata.curbox);
-                _moving &= MoveFlags.InLeg;
+                Moving &= MoveFlags.InLeg;
             }
 
-            _moving &= ~MoveFlags.NewLeg;
+            Moving &= ~MoveFlags.NewLeg;
             do
             {
-                if (_walkbox == InvalidBox)
+                if (Walkbox == InvalidBox)
                 {
                     SetBox(_walkdata.destbox);
                     _walkdata.curbox = _walkdata.destbox;
                     break;
                 }
 
-                if (_walkbox == _walkdata.destbox)
+                if (Walkbox == _walkdata.destbox)
                     break;
 
-                next_box = _scumm.GetNextBox(_walkbox, _walkdata.destbox);
+                next_box = _scumm.GetNextBox(Walkbox, _walkdata.destbox);
                 if (next_box < 0)
                 {
-                    _walkdata.destbox = _walkbox;
-                    _moving |= MoveFlags.LastLeg;
+                    _walkdata.destbox = Walkbox;
+                    Moving |= MoveFlags.LastLeg;
                     return;
                 }
 
                 _walkdata.curbox = (byte)next_box;
 
-                if (FindPathTowards(_walkbox, (byte)next_box, _walkdata.destbox, out foundPath))
+                if (FindPathTowards(Walkbox, (byte)next_box, _walkdata.destbox, out foundPath))
                     break;
 
                 if (CalcMovementFactor(foundPath) != 0)
@@ -588,7 +580,7 @@ namespace NScumm.Core
                 SetBox(_walkdata.curbox);
             } while (true);
 
-            _moving |= MoveFlags.LastLeg;
+            Moving |= MoveFlags.LastLeg;
             CalcMovementFactor(_walkdata.dest);
         }
 
@@ -624,50 +616,12 @@ namespace NScumm.Core
             }
         }
 
-        public virtual void PrepareDrawActorCostume(ICostumeRenderer bcr)
-        {
-            bcr.ActorID = Number;
-            bcr.ActorX = _position.X - _scumm.MainVirtScreen.XStart;
-            bcr.ActorY = _position.Y - _elevation;
-
-            if ((_boxscale & 0x8000) != 0)
-            {
-                bcr.ScaleX = bcr.ScaleY = (byte)_scumm.GetScaleFromSlot((_boxscale & 0x7fff) + 1, _position.X, _position.Y);
-            }
-            else
-            {
-                bcr.ScaleX = _scalex;
-                bcr.ScaleY = _scaley;
-            }
-
-            bcr.ShadowMode = _shadowMode;
-
-            bcr.SetCostume(Costume, 0);
-            bcr.SetPalette(_palette);
-            bcr.SetFacing(this);
-
-
-            if (_forceClip > 0)
-                bcr.ZBuffer = (byte)_forceClip;
-            else if (IsInClass(ObjectClass.NeverClip))
-                bcr.ZBuffer = 0;
-            else
-            {
-                bcr.ZBuffer = _scumm.GetBoxMask(_walkbox);
-                if (bcr.ZBuffer > _scumm._gdi._numZBuffer - 1)
-                    bcr.ZBuffer = (byte)(_scumm._gdi._numZBuffer - 1);
-            }
-
-            bcr.DrawTop = 0x7fffffff;
-            bcr.DrawBottom = 0;
-        }
-
-        public void StartWalkActor(int destX, int destY, int dir)
+        public void StartWalkActor(Point dest, int dir)
         {
             AdjustBoxResult abr;
 
-            abr.x = (short)destX;
-            abr.y = (short)destY;
+            abr.x = dest.X;
+            abr.y = dest.Y;
 
             if (!IsInCurrentRoom())
             {
@@ -678,10 +632,10 @@ namespace NScumm.Core
                 return;
             }
 
-            if (_ignoreBoxes)
+            if (IgnoreBoxes)
             {
                 abr.box = InvalidBox;
-                _walkbox = InvalidBox;
+                Walkbox = InvalidBox;
             }
             else
             {
@@ -693,7 +647,7 @@ namespace NScumm.Core
                 {
                     abr = AdjustXYToBeInBox(abr.x, abr.y);
                 }
-                if (_moving != 0 && _walkdata.destdir == dir && _walkdata.dest.X == abr.x && _walkdata.dest.Y == abr.y)
+                if (Moving != MoveFlags.None && _walkdata.destdir == dir && _walkdata.dest.X == abr.x && _walkdata.dest.Y == abr.y)
                     return;
             }
 
@@ -708,74 +662,16 @@ namespace NScumm.Core
             _walkdata.dest.Y = abr.y;
             _walkdata.destbox = abr.box;
             _walkdata.destdir = (short)dir;
-            _moving = (_moving & MoveFlags.InLeg) | MoveFlags.NewLeg;
+            Moving = (Moving & MoveFlags.InLeg) | MoveFlags.NewLeg;
             _walkdata.point3.X = 32000;
 
-            _walkdata.curbox = _walkbox;
-        }
-
-        public void StopActorMoving()
-        {
-            if (_walkScript != 0)
-                _scumm.StopScript(_walkScript);
-
-            _moving = 0;
-        }
-
-        public Point GetPos()
-        {
-            Point p = new Point(_position);
-            return p;
-        }
-
-        public Point GetRealPos()
-        {
-            return _position;
-        }
-
-        public int GetRoom()
-        {
-            return Room;
-        }
-
-        public int GetFacing()
-        {
-            return _facing;
-        }
-
-        public void SetFacing(ushort newFacing)
-        {
-            _facing = newFacing;
+            _walkdata.curbox = Walkbox;
         }
 
         public void SetAnimSpeed(byte newAnimSpeed)
         {
             _animSpeed = newAnimSpeed;
             _animProgress = 0;
-        }
-
-        public int GetAnimSpeed()
-        {
-            return _animSpeed;
-        }
-
-        public int GetAnimProgress()
-        {
-            return _animProgress;
-        }
-
-        public int GetElevation()
-        {
-            return _elevation;
-        }
-
-        public void SetElevation(int newElevation)
-        {
-            if (_elevation != newElevation)
-            {
-                _elevation = newElevation;
-                NeedRedraw = true;
-            }
         }
 
         public void SetPalette(int idx, ushort val)
@@ -791,11 +687,6 @@ namespace NScumm.Core
             if (sy != -1)
                 _scaley = (byte)sy;
             NeedRedraw = true;
-        }
-
-        public bool IsInClass(ObjectClass cls)
-        {
-            return _scumm.GetClass(Number, cls);
         }
 
         public void AnimateActor(int anim)
@@ -814,7 +705,7 @@ namespace NScumm.Core
                     StopActorMoving();
                     break;
                 case 3:				// change direction immediatly
-                    _moving &= ~MoveFlags.Turn;
+                    Moving &= ~MoveFlags.Turn;
                     SetDirection(dir);
                     break;
                 case 4:				// turn to new direction
@@ -850,27 +741,17 @@ namespace NScumm.Core
             if (cls == ObjectClass.AlwaysClip)
                 _forceClip = value ? 1 : 0;
             if (cls == ObjectClass.IgnoreBoxes)
-                _ignoreBoxes = value;
+                IgnoreBoxes = value;
         }
 
         public void SaveOrLoad(Serializer serializer)
         {
-            short heOffsX, heOffsY;
-            ushort[] sound;
-            byte drawToBackBuf;
-            byte heSkipLimbs;
-            byte mask;
-            uint heCondMask, hePaletteNum, heXmapNum;
-            int layer;
-            ushort[] heJumpOffsetTable, heJumpCountTable;
-            uint[] heCondMaskTable;
-
             var actorEntries = new[]{
                     LoadAndSaveEntry.Create( reader => _position.X = reader.ReadInt16(),writer => writer.WriteInt16(_position.X),8),
                     LoadAndSaveEntry.Create( reader => _position.Y = reader.ReadInt16(),writer => writer.WriteInt16(_position.Y),8),
                                                     
-                    LoadAndSaveEntry.Create( reader => heOffsX = reader.ReadInt16(),writer => writer.WriteInt16(0xCDCD),32),
-                    LoadAndSaveEntry.Create( reader => heOffsY = reader.ReadInt16(),writer => writer.WriteInt16(0xCDCD),32),
+                    LoadAndSaveEntry.Create( reader => reader.ReadInt16(),writer => writer.WriteInt16(0xCDCD),32),
+                    LoadAndSaveEntry.Create( reader => reader.ReadInt16(),writer => writer.WriteInt16(0xCDCD),32),
                     LoadAndSaveEntry.Create( reader => _top = reader.ReadInt16(),writer => writer.WriteInt16(_top),8),
                     LoadAndSaveEntry.Create( reader => _bottom = reader.ReadInt16(),writer => writer.WriteInt16(_bottom),8),
                     LoadAndSaveEntry.Create( reader => _elevation = reader.ReadInt16(),writer => writer.WriteInt16(_elevation),8),
@@ -878,7 +759,7 @@ namespace NScumm.Core
                     LoadAndSaveEntry.Create( reader => _facing = reader.ReadUInt16(),writer => writer.WriteUInt16(_facing),8),
                     LoadAndSaveEntry.Create( reader => Costume = reader.ReadUInt16(),writer => writer.WriteUInt16(Costume),8),
                     LoadAndSaveEntry.Create( reader => Room = reader.ReadByte(),writer => writer.WriteByte(Room),8),
-                    LoadAndSaveEntry.Create( reader => _talkColor = reader.ReadByte(),writer => writer.WriteByte(_talkColor),8),
+                    LoadAndSaveEntry.Create( reader => TalkColor = reader.ReadByte(),writer => writer.WriteByte(TalkColor),8),
                     LoadAndSaveEntry.Create( reader => _talkFrequency = reader.ReadInt16(),writer => writer.WriteInt16(_talkFrequency),16),
                     LoadAndSaveEntry.Create( reader => _talkPan = (byte)reader.ReadInt16(),writer => writer.WriteInt16(_talkPan),24),
                     LoadAndSaveEntry.Create( reader => _talkVolume = (byte)reader.ReadInt16(),writer => writer.WriteInt16(_talkVolume),29),
@@ -889,15 +770,15 @@ namespace NScumm.Core
 		            
                     // Actor sound grew from 8 to 32 bytes and switched to uint16 in HE games
                     LoadAndSaveEntry.Create(
-                        reader => sound = reader.ReadBytes(8).Cast<ushort>().ToArray(),
+                        reader => reader.ReadBytes(8).Cast<ushort>().ToArray(),
                         writer=> writer.Write(new byte[8]),
                         8,36),
                     LoadAndSaveEntry.Create(
-                        reader => sound = reader.ReadBytes(32).Cast<ushort>().ToArray(),
+                        reader => reader.ReadBytes(32).Cast<ushort>().ToArray(),
                         writer=> writer.Write(new byte[32]),
                         37,61),
                     LoadAndSaveEntry.Create(
-                        reader => sound = reader.ReadUInt16s(32),
+                        reader => reader.ReadUInt16s(32),
                         writer=> writer.WriteUInt16s(new ushort[32], 32),
                         62),
                     
@@ -906,8 +787,8 @@ namespace NScumm.Core
                     LoadAndSaveEntry.Create(reader => _animVariable = reader.ReadInt16s(27), writer=> writer.WriteInt16s(_animVariable,27),41),
                                                    
                     LoadAndSaveEntry.Create(reader => _targetFacing = reader.ReadUInt16(),writer=> writer.WriteUInt16(_targetFacing),8),
-                    LoadAndSaveEntry.Create(reader => _moving = (MoveFlags)reader.ReadByte(),writer=> writer.WriteByte((byte)_moving),8),
-                    LoadAndSaveEntry.Create(reader => _ignoreBoxes = reader.ReadByte()!=0,writer=> writer.WriteByte(_ignoreBoxes),8),
+                    LoadAndSaveEntry.Create(reader => Moving = (MoveFlags)reader.ReadByte(),writer=> writer.WriteByte((byte)Moving),8),
+                    LoadAndSaveEntry.Create(reader => IgnoreBoxes = reader.ReadByte()!=0,writer=> writer.WriteByte(IgnoreBoxes),8),
                     LoadAndSaveEntry.Create(reader => _forceClip = reader.ReadByte(),writer=> writer.WriteByte(_forceClip),8),
                     LoadAndSaveEntry.Create(reader => InitFrame = reader.ReadByte(),writer=> writer.WriteByte(InitFrame),8),
                     LoadAndSaveEntry.Create(reader => WalkFrame = reader.ReadByte(),writer=> writer.WriteByte(WalkFrame),8),
@@ -918,9 +799,9 @@ namespace NScumm.Core
                     LoadAndSaveEntry.Create(reader => _speedy = reader.ReadUInt16(),writer=> writer.WriteUInt16(_speedy),8),
                     LoadAndSaveEntry.Create(reader => _cost.animCounter = reader.ReadUInt16(),writer=> writer.WriteUInt16(_cost.animCounter),8),
                     LoadAndSaveEntry.Create(reader => _cost.soundCounter = reader.ReadByte(),writer=> writer.WriteByte(_cost.soundCounter),8),
-                    LoadAndSaveEntry.Create(reader => drawToBackBuf = reader.ReadByte(),writer=> writer.WriteByte(0),32),
+                    LoadAndSaveEntry.Create(reader => reader.ReadByte(),writer=> writer.WriteByte(0),32),
                     LoadAndSaveEntry.Create(reader => _flip = reader.ReadByte()!=0, writer=> writer.WriteByte(_flip),32),
-                    LoadAndSaveEntry.Create(reader => heSkipLimbs = reader.ReadByte(), writer=> writer.WriteByte(0xCD),32),
+                    LoadAndSaveEntry.Create(reader => reader.ReadByte(), writer=> writer.WriteByte(0xCD),32),
 
 		            // Actor palette grew from 64 to 256 bytes and switched to uint16 in HE games
                     LoadAndSaveEntry.Create(
@@ -936,19 +817,19 @@ namespace NScumm.Core
                         writer=> writer.WriteUInt16s(_palette, 256)
                         ,80),
 
-                    LoadAndSaveEntry.Create((reader)=> mask = reader.ReadByte(),writer => writer.WriteByte(0),8,9),
-                    LoadAndSaveEntry.Create((reader)=> _shadowMode = reader.ReadByte(), writer=>writer.WriteByte(_shadowMode),8),
+                    LoadAndSaveEntry.Create((reader)=> reader.ReadByte(),writer => writer.WriteByte(0),8,9),
+                    LoadAndSaveEntry.Create((reader)=> ShadowMode = reader.ReadByte(), writer=>writer.WriteByte(ShadowMode),8),
                     LoadAndSaveEntry.Create((reader)=> IsVisible = reader.ReadByte()!=0, writer=>writer.WriteByte(IsVisible),8),
                     LoadAndSaveEntry.Create((reader)=> _frame = reader.ReadByte(), writer=>writer.WriteByte(_frame),8),
                     LoadAndSaveEntry.Create((reader)=> _animSpeed = reader.ReadByte(), writer=>writer.WriteByte(_animSpeed),8),
                     LoadAndSaveEntry.Create((reader)=> _animProgress = reader.ReadByte(), writer=>writer.WriteByte(_animProgress),8),
-                    LoadAndSaveEntry.Create((reader)=> _walkbox = reader.ReadByte(), writer=>writer.WriteByte(_walkbox),8),
+                    LoadAndSaveEntry.Create((reader)=> Walkbox = reader.ReadByte(), writer=>writer.WriteByte(Walkbox),8),
                     LoadAndSaveEntry.Create((reader)=> NeedRedraw = reader.ReadByte()!=0, writer=>writer.WriteByte(NeedRedraw),8),
                     LoadAndSaveEntry.Create((reader)=> NeedBackgroundReset = reader.ReadByte()!=0, writer=>writer.WriteByte(NeedBackgroundReset),8),
                     LoadAndSaveEntry.Create((reader)=> _costumeNeedsInit = reader.ReadByte()!=0, writer=>writer.WriteByte(_costumeNeedsInit),8),
-                    LoadAndSaveEntry.Create((reader)=> heCondMask = reader.ReadUInt32(),writer=> writer.WriteUInt32(0xCDCDCDCD),38),
-                    LoadAndSaveEntry.Create((reader)=> hePaletteNum = reader.ReadUInt32(),writer=> writer.WriteUInt32(0xCDCDCDCD),59),
-                    LoadAndSaveEntry.Create((reader)=> heXmapNum = reader.ReadUInt32(),writer=> writer.WriteUInt32(0xCDCDCDCD),59),
+                    LoadAndSaveEntry.Create((reader)=> reader.ReadUInt32(),writer=> writer.WriteUInt32(0xCDCDCDCD),38),
+                    LoadAndSaveEntry.Create((reader)=> reader.ReadUInt32(),writer=> writer.WriteUInt32(0xCDCDCDCD),59),
+                    LoadAndSaveEntry.Create((reader)=> reader.ReadUInt32(),writer=> writer.WriteUInt32(0xCDCDCDCD),59),
 
                     LoadAndSaveEntry.Create(reader => {
                         _talkPos = new Point(reader.ReadInt16(),reader.ReadInt16());
@@ -959,8 +840,8 @@ namespace NScumm.Core
                     LoadAndSaveEntry.Create(reader => _ignoreTurns = reader.ReadByte()!=0, writer=>writer.WriteByte(_ignoreTurns),8),
 
                     // Actor layer switched to int32 in HE games
-                    LoadAndSaveEntry.Create((reader)=> layer = reader.ReadByte(),writer=>writer.WriteByte(0),8,57),
-                    LoadAndSaveEntry.Create((reader)=> layer = reader.ReadInt32(),writer=>writer.WriteInt32(0),58),
+                    LoadAndSaveEntry.Create((reader)=> reader.ReadByte(),writer=>writer.WriteByte(0),8,57),
+                    LoadAndSaveEntry.Create((reader)=> reader.ReadInt32(),writer=>writer.WriteInt32(0),58),
                                              
                     LoadAndSaveEntry.Create((reader)=> _talkScript = reader.ReadUInt16(), writer=>writer.WriteUInt16(_talkScript),8),
                     LoadAndSaveEntry.Create((reader)=> _walkScript = reader.ReadUInt16(), writer=>writer.WriteUInt16(_walkScript),8),
@@ -989,9 +870,9 @@ namespace NScumm.Core
                     LoadAndSaveEntry.Create((reader)=> _cost.end = reader.ReadUInt16s(16),writer=>writer.WriteUInt16s(_cost.end,16),8),
                     LoadAndSaveEntry.Create((reader)=> _cost.frame = reader.ReadUInt16s(16),writer=>writer.WriteUInt16s(_cost.frame,16),8),
                                              
-                    LoadAndSaveEntry.Create((reader)=> heJumpOffsetTable = reader.ReadUInt16s(16),writer=>writer.WriteUInt16s(new ushort[16],16),65),
-                    LoadAndSaveEntry.Create((reader)=> heJumpCountTable = reader.ReadUInt16s(16),writer=>writer.WriteUInt16s(new ushort[16],16),65),
-                    LoadAndSaveEntry.Create((reader)=> heCondMaskTable = reader.ReadUInt32s(16),writer=>writer.WriteUInt32s(new uint[16],16),65),
+                    LoadAndSaveEntry.Create((reader)=> reader.ReadUInt16s(16),writer=>writer.WriteUInt16s(new ushort[16],16),65),
+                    LoadAndSaveEntry.Create((reader)=> reader.ReadUInt16s(16),writer=>writer.WriteUInt16s(new ushort[16],16),65),
+                    LoadAndSaveEntry.Create((reader)=> reader.ReadUInt32s(16),writer=>writer.WriteUInt32s(new uint[16],16),65),
             };
 
             if (serializer.IsLoading)
@@ -1005,19 +886,19 @@ namespace NScumm.Core
             Array.ForEach(actorEntries, e => e.Execute(serializer));
         }
 
-        public void RunActorTalkScript(int f)
+        public void RunActorTalkScript(int frame)
         {
-            if (_scumm.GetTalkingActor() == 0 || Room != _scumm.CurrentRoom || _frame == f)
+            if (_scumm.GetTalkingActor() == 0 || Room != _scumm.CurrentRoom || _frame == frame)
                 return;
 
             if (_talkScript != 0)
             {
                 int script = _talkScript;
-                _scumm.RunScript((byte)script, true, false, new int[] { f, Number });
+                _scumm.RunScript((byte)script, true, false, new int[] { frame, Number });
             }
             else
             {
-                StartAnimActor((byte)f);
+                StartAnimActor((byte)frame);
             }
         }
 
@@ -1065,6 +946,94 @@ namespace NScumm.Core
         #endregion
 
         #region Private Methods
+        private void TurnToDirection(int newdir)
+        {
+            if (newdir == -1 || _ignoreTurns)
+                return;
+
+            Moving = MoveFlags.Turn;
+            _targetFacing = (ushort)newdir;
+        }
+
+        private void StopActorMoving()
+        {
+            if (_walkScript != 0)
+                _scumm.StopScript(_walkScript);
+
+            Moving = MoveFlags.None;
+        }
+
+        private void PrepareDrawActorCostume(ICostumeRenderer bcr)
+        {
+            bcr.ActorID = Number;
+            bcr.ActorX = _position.X - _scumm.MainVirtScreen.XStart;
+            bcr.ActorY = _position.Y - _elevation;
+
+            if ((_boxscale & 0x8000) != 0)
+            {
+                bcr.ScaleX = bcr.ScaleY = (byte)_scumm.GetScaleFromSlot((_boxscale & 0x7fff) + 1, _position.X, _position.Y);
+            }
+            else
+            {
+                bcr.ScaleX = _scalex;
+                bcr.ScaleY = _scaley;
+            }
+
+            bcr.ShadowMode = ShadowMode;
+
+            bcr.SetCostume(Costume, 0);
+            bcr.SetPalette(_palette);
+            bcr.SetFacing(this);
+
+
+            if (_forceClip > 0)
+                bcr.ZBuffer = (byte)_forceClip;
+            else if (IsInClass(ObjectClass.NeverClip))
+                bcr.ZBuffer = 0;
+            else
+            {
+                bcr.ZBuffer = _scumm.GetBoxMask(Walkbox);
+                if (bcr.ZBuffer > _scumm._gdi._numZBuffer - 1)
+                    bcr.ZBuffer = (byte)(_scumm._gdi._numZBuffer - 1);
+            }
+
+            bcr.DrawTop = 0x7fffffff;
+            bcr.DrawBottom = 0;
+        }
+
+        private bool IsInClass(ObjectClass cls)
+        {
+            return _scumm.GetClass(Number, cls);
+        }
+
+        private void AdjustActorPos()
+        {
+            AdjustBoxResult abr;
+
+            abr = AdjustXYToBeInBox(_position.X, _position.Y);
+
+            _position.X = abr.x;
+            _position.Y = abr.y;
+            _walkdata.destbox = abr.box;
+
+            SetBox(abr.box);
+
+            _walkdata.dest.X = -1;
+
+            StopActorMoving();
+            _cost.soundCounter = 0;
+            _cost.soundPos = 0;
+
+            if (Walkbox != InvalidBox)
+            {
+                int flags = (int)_scumm.GetBoxFlags(Walkbox);
+                if ((flags & 7) != 0)
+                {
+                    TurnToDirection(_facing);
+                }
+            }
+        }
+
         protected int CalcMovementFactor(Point next)
         {
             int diffX, diffY;
@@ -1204,16 +1173,16 @@ namespace NScumm.Core
             NeedRedraw = true;
 
             nextFacing = UpdateActorDirection(true);
-            if (!_moving.HasFlag(MoveFlags.InLeg) || _facing != nextFacing)
+            if (!Moving.HasFlag(MoveFlags.InLeg) || _facing != nextFacing)
             {
                 if (WalkFrame != _frame || _facing != nextFacing)
                 {
                     StartWalkAnim(1, nextFacing);
                 }
-                _moving |= MoveFlags.InLeg;
+                Moving |= MoveFlags.InLeg;
             }
 
-            if (_walkbox != _walkdata.curbox && _scumm.CheckXYInBoxBounds(_walkdata.curbox, _position.X, _position.Y))
+            if (Walkbox != _walkdata.curbox && _scumm.CheckXYInBoxBounds(_walkdata.curbox, _position.X, _position.Y))
             {
                 SetBox(_walkdata.curbox);
             }
@@ -1223,7 +1192,7 @@ namespace NScumm.Core
 
             if (Math.Abs(_position.X - _walkdata.cur.X) >= distX && Math.Abs(_position.Y - _walkdata.cur.Y) >= distY)
             {
-                _moving &= ~MoveFlags.InLeg;
+                Moving &= ~MoveFlags.InLeg;
                 return 0;
             }
 
@@ -1247,7 +1216,7 @@ namespace NScumm.Core
 
             if (_position == _walkdata.next)
             {
-                _moving &= ~MoveFlags.InLeg;
+                Moving &= ~MoveFlags.InLeg;
                 return 0;
             }
             return 1;
@@ -1270,9 +1239,9 @@ namespace NScumm.Core
             // not necessary here because we never call the function unless the
             // actor is in the current room anyway.
 
-            if (!_ignoreBoxes)
+            if (!IgnoreBoxes)
             {
-                flags = _scumm.GetBoxFlags(_walkbox);
+                flags = _scumm.GetBoxFlags(Walkbox);
 
                 flipX = (_walkdata.deltaXFactor > 0);
                 flipY = (_walkdata.deltaYFactor > 0);
@@ -1322,19 +1291,19 @@ namespace NScumm.Core
 
         protected virtual void SetupActorScale()
         {
-            if (_ignoreBoxes)
+            if (IgnoreBoxes)
                 return;
 
-            _boxscale = (ushort)_scumm.GetBoxScale(_walkbox);
+            _boxscale = (ushort)_scumm.GetBoxScale(Walkbox);
 
-            var scale = _scumm.GetScale(_walkbox, _position.X, _position.Y);
+            var scale = _scumm.GetScale(Walkbox, _position.X, _position.Y);
 
             _scalex = _scaley = (byte)scale;
         }
 
         protected void SetBox(byte box)
         {
-            _walkbox = box;
+            Walkbox = box;
             SetupActorScale();
         }
 

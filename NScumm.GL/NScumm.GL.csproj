@@ -23,6 +23,7 @@
     <PlatformTarget>x86</PlatformTarget>
     <ConsolePause>false</ConsolePause>
     <ApplicationIcon>Icon.png</ApplicationIcon>
+    <Commandlineparameters>"/home/jenny/Documents/Games/Scumm/pass/000.LFL"</Commandlineparameters>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <DebugType>none</DebugType>

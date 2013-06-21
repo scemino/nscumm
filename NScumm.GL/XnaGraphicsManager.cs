@@ -38,7 +38,7 @@ namespace NScumm.GL
             {
                 for (int w = 0; w < width; w++)
                 {
-                    var color = _colors[buffer[x + w + (y + h) * sourceStride]];
+                    var color = _colors[buffer[w + h * sourceStride]];
                     _pixels[x + w + (y + h) * 320] = color;
                 }
             }

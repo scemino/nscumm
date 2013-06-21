@@ -159,7 +159,8 @@ namespace NScumm.Core
                     {
                         case 0x464C:
                             // *LFLF* disk block
-                            var roomNum = _reader.ReadUInt16();
+                            // room number
+                            _reader.ReadUInt16();
                             //its.Push(it);
                             it = new ChunkIterator(_reader, it.Current.Size - 2);
                             break;
@@ -263,13 +264,13 @@ namespace NScumm.Core
                         case 0x4C53:
                             {
                                 // *SL* 
-                                var num = _reader.ReadByte();
+                                _reader.ReadByte();
                             }
                             break;
                         case 0x434C: //LC
                             {
                                 // *NLSC* number of local scripts
-                                var numScripts = _reader.ReadUInt16();
+                                _reader.ReadUInt16();
                             }
                             break;
                         case 0x534C:
@@ -294,7 +295,7 @@ namespace NScumm.Core
                             {
                                 // Object script
                                 var objId = _reader.ReadUInt16();
-                                var unk = _reader.ReadByte();
+                                _reader.ReadByte();
                                 var x = _reader.ReadByte();
                                 var tmp = _reader.ReadByte();
                                 var y = tmp & 0x7F;
@@ -353,8 +354,7 @@ namespace NScumm.Core
 
         public XorReader ReadCostume(byte room, int costOffset)
         {
-            _reader.BaseStream.Seek(costOffset + 8, SeekOrigin.Begin);
-            var size = _reader.ReadInt32();
+            _reader.BaseStream.Seek(costOffset + 12, SeekOrigin.Begin);
             var tag = _reader.ReadInt16();
             if (tag != 0x4F43) throw new NotSupportedException("Invalid costume.");
             return _reader;
@@ -400,8 +400,7 @@ namespace NScumm.Core
                 var offset = _reader.ReadUInt16();
                 data.ScriptOffsets.Add(id, offset);
             }
-            var end = _reader.ReadByte();
-
+            _reader.ReadByte();
         }
 
         private static void SetObjectImage(Dictionary<ushort, byte[]> stripsDic, ObjectData obj)

@@ -55,8 +55,6 @@ namespace NScumm.Core
 
         public void SaveOrLoad(Serializer serializer, ScriptData[] localScripts)
         {
-            byte cycle;
-            byte unk5;
             var scriptSlotEntries = new[]{
                 LoadAndSaveEntry.Create(
                     reader => offs = reader.ReadUInt32(),
@@ -84,8 +82,8 @@ namespace NScumm.Core
                 LoadAndSaveEntry.Create(reader => freezeCount = reader.ReadByte(),writer=> writer.WriteByte(freezeCount),8),
                 LoadAndSaveEntry.Create(reader => didexec = reader.ReadBoolean(),writer=> writer.WriteByte(didexec),8),
                 LoadAndSaveEntry.Create(reader => cutsceneOverride = reader.ReadByte(),writer=> writer.WriteByte(cutsceneOverride),8),
-                LoadAndSaveEntry.Create(reader => cycle = reader.ReadByte(),writer=> writer.WriteByte((byte)0),46),
-                LoadAndSaveEntry.Create(reader => unk5 = reader.ReadByte(),writer=> writer.WriteByte((byte)0),8,10),
+                LoadAndSaveEntry.Create(reader => reader.ReadByte(),writer=> writer.WriteByte((byte)0),46),
+                LoadAndSaveEntry.Create(reader => reader.ReadByte(),writer=> writer.WriteByte((byte)0),8,10),
             };
 
             //if (serializer.IsLoading)

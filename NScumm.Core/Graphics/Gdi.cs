@@ -444,45 +444,45 @@ namespace NScumm.Core.Graphics
                 case 1:
                     throw new NotImplementedException();
                     //DrawStripRaw(dst, dstPitch, src, numLinesToProcess, false);
-                    break;
+                    //break;
 
                 case 2:
                     throw new NotImplementedException();
                     //unkDecode8(dst, dstPitch, src, numLinesToProcess);       /* Ender - Zak256/Indy256 */
-                    break;
+                    //break;
 
                 case 3:
                     throw new NotImplementedException();
                     //unkDecode9(dst, dstPitch, src, numLinesToProcess);       /* Ender - Zak256/Indy256 */
-                    break;
+                    //break;
 
                 case 4:
                     throw new NotImplementedException();
                     //unkDecode10(dst, dstPitch, src, numLinesToProcess);      /* Ender - Zak256/Indy256 */
-                    break;
+                    //break;
 
                 case 7:
                     throw new NotImplementedException();
                     //unkDecode11(dst, dstPitch, src, numLinesToProcess);      /* Ender - Zak256/Indy256 */
-                    break;
+                    //break;
 
                 case 8:
                     // Used in 3DO versions of HE games
                     transpStrip = true;
                     throw new NotImplementedException();
                     //drawStrip3DO(dst, dstPitch, src, numLinesToProcess, true);
-                    break;
+                    //break;
 
                 case 9:
                     //drawStrip3DO(dst, dstPitch, src, numLinesToProcess, false);
                     throw new NotImplementedException();
-                    break;
+                    //break;
 
                 case 10:
                     // Used in Amiga version of Monkey Island 1
                     //drawStripEGA(dst, dstPitch, src, numLinesToProcess);
                     throw new NotImplementedException();
-                    break;
+                    //break;
 
                 case 14:
                 case 15:
@@ -530,7 +530,7 @@ namespace NScumm.Core.Graphics
                 case 108:
                     throw new NotImplementedException();
                     //DrawStripComplex(dst, dstPitch, src, numLinesToProcess, false);
-                    break;
+                    //break;
 
                 case 84:
                 case 85:
@@ -545,7 +545,7 @@ namespace NScumm.Core.Graphics
                     transpStrip = true;
                     throw new NotImplementedException();
                     //DrawStripComplex(dst, dstPitch, src, numLinesToProcess, true);
-                    break;
+                    //break;
 
                 case 134:
                 case 135:
@@ -554,7 +554,7 @@ namespace NScumm.Core.Graphics
                 case 138:
                     //drawStripHE(dst, dstPitch, src, 8, numLinesToProcess, false);
                     throw new NotImplementedException();
-                    break;
+                    //break;
 
                 case 143: // Triggered by Russian water
                 case 144:
@@ -565,12 +565,12 @@ namespace NScumm.Core.Graphics
                     transpStrip = true;
                     //drawStripHE(dst, dstPitch, src, 8, numLinesToProcess, true);
                     throw new NotImplementedException();
-                    break;
+                    //break;
 
                 case 149:
                     //drawStripRaw(dst, dstPitch, src, numLinesToProcess, true);
                     throw new NotImplementedException();
-                    break;
+                    //break;
 
                 default:
                     //error("Gdi::decompressBitmap: default case %d", code);

@@ -28,7 +28,6 @@ namespace NScumm.Core.Graphics
         private int _fontPos;
         private int _charPos;
         private int _fontHeight;
-        private byte _bytesPerPixel;
         public uint _numChars;
 
         public CharsetRendererClassic(ScummEngine vm)
@@ -156,7 +155,6 @@ namespace NScumm.Core.Graphics
 
             _fontPos = 17;
 
-            _bytesPerPixel = _fontPtr[_fontPos];
             _fontHeight = _fontPtr[_fontPos + 1];
             _numChars = ((uint)_fontPtr[_fontPos + 2]) | (((uint)_fontPtr[_fontPos + 3]) << 8);
         }
@@ -192,7 +190,6 @@ namespace NScumm.Core.Graphics
             PixelNavigator? back = null;
             PixelNavigator dstPtr;
             Surface dstSurface;
-            Surface backSurface;
             if ((ignoreCharsetMask || !vs.HasTwoBuffers))
             {
                 dstSurface = vs.Surfaces[0];
@@ -208,7 +205,6 @@ namespace NScumm.Core.Graphics
 
             if (_blitAlso && vs.HasTwoBuffers)
             {
-                backSurface = dstSurface;
                 back = dstPtr;
                 dstSurface = vs.Surfaces[0];
                 dstPtr = new PixelNavigator(dstSurface);
@@ -275,9 +271,9 @@ namespace NScumm.Core.Graphics
             int color;
             byte numbits, bits;
 
-            int pitch = s.Pitch - width;
+            if (bpp != 1 && bpp != 2 && bpp != 4 && bpp != 8)
+                throw new ArgumentException("Invalid bpp","bpp");
 
-            //assert(bpp == 1 || bpp == 2 || bpp == 4 || bpp == 8);
             bits = src[srcPos++];
             numbits = 8;
             byte[] cmap = _vm._charsetColorMap;

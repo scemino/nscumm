@@ -110,7 +110,6 @@ namespace NScumm.Core.Graphics
         private PixelNavigator startNav;
         private int _w;
         private int _h;
-        private int _numStrips;
 
         #region Constructor
         public ClassicCostumeRenderer(ScummEngine vm)
@@ -154,7 +153,7 @@ namespace NScumm.Core.Graphics
 
         public void SetFacing(Actor actor)
         {
-            _mirror = ScummHelper.NewDirToOldDir(actor.GetFacing()) != 0 || _loaded._mirror;
+            _mirror = ScummHelper.NewDirToOldDir(actor.Facing) != 0 || _loaded._mirror;
         }
 
         public void SetCostume(int costume, int shadow)
@@ -172,8 +171,6 @@ namespace NScumm.Core.Graphics
             _h = vs.Height;
             pixelsNavigator.OffsetX(-(vs.XStart & 7));
             startNav = new PixelNavigator(pixelsNavigator);
-
-            _numStrips = numStrips;
 
             _xmove = _ymove = 0;
 

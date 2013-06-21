@@ -39,7 +39,6 @@
   <ItemGroup>
     <Compile Include="Actor.cs" />
     <Compile Include="AdjustBoxResult.cs" />
-    <Compile Include="AnimPict.cs" />
     <Compile Include="Box.cs" />
     <Compile Include="BoxCoords.cs" />
     <Compile Include="Camera.cs" />

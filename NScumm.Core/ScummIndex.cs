@@ -36,7 +36,6 @@ namespace NScumm.Core
         #region Fields
         private Resource[] _rooms;
         private Resource[] _scripts;
-        private Resource[] _sounds;
         private Resource[] _costumes;
         private Dictionary<byte, string> _roomNames;
         private string _directory;
@@ -64,7 +63,7 @@ namespace NScumm.Core
                 XorReader br = new XorReader(br1, 0);
                 while (br.BaseStream.Position < br.BaseStream.Length)
                 {
-                    var size = br.ReadInt32();
+                    br.ReadInt32();
                     var block = br.ReadInt16();
                     switch (block)
                     {
@@ -90,7 +89,7 @@ namespace NScumm.Core
                             break;
 
                         case 0x4E30:	// 'N0'
-                            _sounds = ReadResTypeList(br);
+                            ReadResTypeList(br);
                             break;
 
                         case 0x4330:	// 'C0'

@@ -31,7 +31,7 @@ namespace NScumm.GL
         public bool IsKeyDown(NScumm.Core.KeyCode code)
         {
             //var state = Microsoft.Xna.Framework.Input.GamePad.GetState(Microsoft.Xna.Framework.PlayerIndex.One);
-            var keyState = Microsoft.Xna.Framework.Input.Keyboard.GetState();
+            var keyState = Microsoft.Xna.Framework.Input.Keyboard.GetState (Microsoft.Xna.Framework.PlayerIndex.One);
             if (code >= NScumm.Core.KeyCode.A && code <= NScumm.Core.KeyCode.Z)
             {
                 return /*state.IsButtonDown(code - Scumm4.KeyCode.A + Microsoft.Xna.Framework.Input.Buttons.A) ||*/

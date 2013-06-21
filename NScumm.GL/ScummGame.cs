@@ -133,10 +133,16 @@ namespace NScumm.GL
                 win.Destroy ();
                 Gtk.Application.Quit ();
             };
-            win.DeleteEvent += (o,e2) => Gtk.Application.Quit ();
-            win.Show ();
+            win.DestroyWithParent=true;
+            win.DeleteEvent += (o,e2) => {
+                win.Destroy ();
+                Gtk.Application.Quit ();
+            };
+            win.ShowAll ();
             Gtk.Application.Run ();
         }
+
+        bool pause;
 
         /// <summary>
         /// Allows the game to run logic such as updating the world,
@@ -159,6 +165,9 @@ namespace NScumm.GL
                 base.IsMouseVisible = !graphics.IsFullScreen;
                 graphics.ApplyChanges ();
             }
+            if (oldKeyboardState.IsKeyDown (Keys.Space) && keyboardState.IsKeyUp (Keys.Space)) {
+                pause=!pause;
+            }
             oldKeyboardState = keyboardState;
 
             // update mouse position
@@ -171,7 +180,7 @@ namespace NScumm.GL
             } else {
                 if (gameTime.ElapsedGameTime > tsDelta) {
                     tsDelta = TimeSpan.Zero;
-                } else {
+                } else if (!pause) {
                     tsDelta -= gameTime.ElapsedGameTime;
                 }
             }

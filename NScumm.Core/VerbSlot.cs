@@ -44,6 +44,11 @@ namespace NScumm.Core
 
         public byte[] Text { get; set; }
 
+        public byte[] Image { get; set; }
+
+        public ushort ImageWidth { get; set; }
+        public ushort ImageHeight { get; set; }
+
         public void SaveOrLoad(Serializer serializer)
         {
             var verbEntries = new[]{

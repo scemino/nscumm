@@ -30,7 +30,6 @@ namespace NScumm.Core.Graphics
         public int _numStrips = 40;
 
         private ScummEngine _vm;
-        private bool _zbufferDisabled;
         private int _paletteMod;
         private byte _decomp_shr;
         private byte _decomp_mask;
@@ -45,10 +44,10 @@ namespace NScumm.Core.Graphics
             set { _transparentColor = value; }
         }
 
-        public bool IsZbufferEnabled
+        public bool IsZBufferEnabled
         {
-            get { return !_zbufferDisabled; }
-            set { _zbufferDisabled = !value; }
+            get;
+            set;
         }
         #endregion
 
@@ -60,6 +59,7 @@ namespace NScumm.Core.Graphics
             {
                 _maskBuffer[i] = new byte[40 * (200 + 4)];
             }
+            IsZBufferEnabled=true;
         }
         #endregion
 
@@ -779,33 +779,34 @@ namespace NScumm.Core.Graphics
         {
             List<byte[]> zplanes = new List<byte[]>();
 
-            var zplane = new MemoryStream(ptr);
-            var zplaneReader = new BinaryReader(zplane);
-            int uPtr;
-            byte[] ptr1;
-            if (_vm.Game.Features.HasFlag(GameFeatures.SixteenColors))
+            if (IsZBufferEnabled)
             {
-                uPtr = zplaneReader.ReadInt16();
-                ptr1 = zplaneReader.ReadBytes(uPtr - 2);
-                uPtr = zplaneReader.ReadInt16();
-                zplaneReader.BaseStream.Seek(-2, SeekOrigin.Current);
-            }
-            else
-            {
-                uPtr = zplaneReader.ReadInt32();
-                ptr1 = zplaneReader.ReadBytes(uPtr - 4);
-            }
-            zplanes.Add(ptr1);
-            if (uPtr != 0)
-            {
-                byte[] ptr2 = null;
-                if (ptr.Length - uPtr > 2)
+                var zplane = new MemoryStream(ptr);
+                var zplaneReader = new BinaryReader(zplane);
+                int uPtr;
+                byte[] ptr1;
+                if (_vm.Game.Features.HasFlag(GameFeatures.SixteenColors))
                 {
-                    ptr2 = zplaneReader.ReadBytes(ptr.Length - uPtr);
+                    uPtr = zplaneReader.ReadInt16();
+                    ptr1 = zplaneReader.ReadBytes(uPtr - 2);
+                    uPtr = zplaneReader.ReadInt16();
+                    zplaneReader.BaseStream.Seek(-2, SeekOrigin.Current);
+                } else
+                {
+                    uPtr = zplaneReader.ReadInt32();
+                    ptr1 = zplaneReader.ReadBytes(uPtr - 4);
                 }
-                zplanes.Add(ptr2);
+                zplanes.Add(ptr1);
+                if (uPtr != 0)
+                {
+                    byte[] ptr2 = null;
+                    if (ptr.Length - uPtr > 2)
+                    {
+                        ptr2 = zplaneReader.ReadBytes(ptr.Length - uPtr);
+                    }
+                    zplanes.Add(ptr2);
+                }
             }
-
             return zplanes;
         }
         #endregion

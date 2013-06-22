@@ -3621,10 +3621,10 @@ namespace NScumm.Core
                 switch (_opCode & 0x1F)
                 {
                     case 1:		// SO_VERB_IMAGE
-                        GetVarOrDirectWord(OpCodeParameter.Param1);
+                        var a = GetVarOrDirectWord(OpCodeParameter.Param1);
                         if (slot != 0)
                         {
-                            //setVerbObject(_roomResource, a, slot);
+                            SetVerbObject(_roomResource, a, slot);
                             vs.type = VerbType.Image;
                         }
                         break;
@@ -5651,9 +5651,34 @@ namespace NScumm.Core
             return 0;
         }
 
-        private void DrawVerbBitmap(int verb, double p, double p_2)
+        private void DrawVerbBitmap(int verb, int x, int y)
         {
-            throw new NotImplementedException();
+            var vst=_verbs[verb];
+            var vs=FindVirtScreen(y);
+
+            if(vs==null) return;
+
+            _gdi.IsZBufferEnabled=false;
+
+            var hasTwoBufs = vs.HasTwoBuffers;
+            //vs.HasTwoBuffers=false;
+
+            int xStrip=x/8;
+            int yDiff=y-vs.TopLine;
+
+            for (int i = 0; i < vst.ImageWidth/8; i++)
+            {
+                _gdi.DrawBitmap(vst.Image,vs,xStrip+i,yDiff,
+                                vst.ImageWidth,vst.ImageHeight,
+                                i,1,DrawBitmaps.AllowMaskOr| DrawBitmaps.ObjectMode);
+            }
+
+            vst.curRect.right=vst.curRect.left+vst.ImageWidth;
+            vst.curRect.bottom=vst.curRect.top+vst.ImageHeight;
+            vst.oldRect=vst.curRect;
+        
+            _gdi.IsZBufferEnabled=true;
+            //vs.HasTwoBuffers=hasTwoBufs;
         }
 
         private bool IsScriptInUse(int script)
@@ -8425,6 +8450,21 @@ namespace NScumm.Core
         private int _numLocalScripts = 60;
         private int _screenB;
         private int _screenH;
+
+        private void SetVerbObject(byte room, int obj, int verb)
+        {
+            for (int i = NumLocalObjects-1; i>0; i--)
+            {
+                if (_objs [i].obj_nr == obj)
+                {
+                    var o = _objs[i];
+                    _verbs[verb].ImageWidth = o.width;
+                    _verbs[verb].ImageHeight = o.height;
+                    _verbs[verb].Image = new byte[_objs [i].Image.Length];
+                    Array.Copy(o.Image, _verbs[verb].Image, o.Image.Length);
+                }
+            }
+        }
 
         private void VerbMouseOver(int verb)
         {

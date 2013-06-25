@@ -18,30 +18,28 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 
 namespace NScumm.Core.Graphics
 {
     public class Gdi
     {
         #region Fields
-        public int _numZBuffer = 2;
-        public int _numStrips = 40;
+        public int NumZBuffer = 2;
+        public int NumStrips = 40;
 
-        private ScummEngine _vm;
-        private int _paletteMod;
-        private byte _decomp_shr;
-        private byte _decomp_mask;
-        private byte _transparentColor = 255;
-        private byte[][] _maskBuffer = new byte[2][];
+        ScummEngine _vm;
+        int paletteMod;
+        byte decompShr;
+        byte decompMask;
+        byte transparentColor = 255;
+        byte[][] maskBuffer = new byte[2][];
         #endregion
 
         #region Properties
         public byte TransparentColor
         {
-            get { return _transparentColor; }
-            set { _transparentColor = value; }
+            get { return transparentColor; }
+            set { transparentColor = value; }
         }
 
         public bool IsZBufferEnabled
@@ -57,7 +55,7 @@ namespace NScumm.Core.Graphics
             _vm = vm;
             for (int i = 0; i < 2; i++)
             {
-                _maskBuffer[i] = new byte[40 * (200 + 4)];
+                maskBuffer[i] = new byte[40 * (200 + 4)];
             }
             IsZBufferEnabled=true;
         }
@@ -66,7 +64,7 @@ namespace NScumm.Core.Graphics
         #region Public Methods
         public void Init()
         {
-            _numStrips = _vm._screenWidth / 8;
+            NumStrips = _vm.ScreenWidth / 8;
         }
 
         /// <summary>
@@ -95,8 +93,8 @@ namespace NScumm.Core.Graphics
             int limit = Math.Max(_vm.CurrentRoomData.Header.Width, vs.Width) / 8 - x;
             if (limit > numstrip)
                 limit = numstrip;
-            if (limit > _numStrips - sx)
-                limit = _numStrips - sx;
+            if (limit > NumStrips - sx)
+                limit = NumStrips - sx;
 
             for (int k = 0; k < limit; ++k, ++stripnr, ++sx, ++x)
             {
@@ -134,7 +132,7 @@ namespace NScumm.Core.Graphics
                 }
 
                 var zplanes = GetZPlanes(ptr);
-                DecodeMask(x, y, width, height, stripnr, zplanes, transpStrip, flags);
+                DecodeMask(x, y, height, stripnr, zplanes, transpStrip, flags);
 
             }
         }
@@ -142,7 +140,7 @@ namespace NScumm.Core.Graphics
         public PixelNavigator GetMaskBuffer(int x, int y, int i)
         {
             PixelNavigator nav;
-            nav = new PixelNavigator(_maskBuffer[i], 40, 1);
+            nav = new PixelNavigator(maskBuffer[i], 40, 1);
             nav.GoTo(x, y);
             return nav;
         }
@@ -161,7 +159,7 @@ namespace NScumm.Core.Graphics
             if (top >= bottom)
                 return;
 
-            System.Diagnostics.Debug.Assert(0 <= strip && strip < _numStrips);
+            System.Diagnostics.Debug.Assert(0 <= strip && strip < NumStrips);
 
             if (top < vs.TDirty[strip])
                 vs.TDirty[strip] = top;
@@ -172,11 +170,11 @@ namespace NScumm.Core.Graphics
             numLinesToProcess = bottom - top;
             if (numLinesToProcess > 0)
             {
-                PixelNavigator navDest = new PixelNavigator(vs.Surfaces[0]);
+                var navDest = new PixelNavigator(vs.Surfaces[0]);
                 navDest.GoTo(strip * 8 + vs.XStart, top);
                 if (_vm.IsLightOn())
                 {
-                    PixelNavigator bgBakNav = new PixelNavigator(vs.Surfaces[1]);
+                    var bgBakNav = new PixelNavigator(vs.Surfaces[1]);
                     bgBakNav.GoTo(strip * 8 + vs.XStart, top);
                     Copy8Col(navDest, bgBakNav, numLinesToProcess);
                 }
@@ -189,7 +187,7 @@ namespace NScumm.Core.Graphics
         #endregion
 
         #region Private Methods
-        private void DecodeMask(BinaryReader reader, byte[] mask, int offset, int width, int height)
+        void DecodeMask(BinaryReader reader, IList<byte> mask, int offset, int width, int height)
         {
             int dstIndex = offset;
             byte c, b;
@@ -221,7 +219,7 @@ namespace NScumm.Core.Graphics
             }
         }
 
-        private void Clear8Col(PixelNavigator nav, int height)
+        void Clear8Col(PixelNavigator nav, int height)
         {
             do
             {
@@ -234,7 +232,7 @@ namespace NScumm.Core.Graphics
             } while ((--height) != 0);
         }
 
-        private void Copy8Col(PixelNavigator navDst, PixelNavigator navSource, int height)
+        void Copy8Col(PixelNavigator navDst, PixelNavigator navSource, int height)
         {
             do
             {
@@ -249,7 +247,7 @@ namespace NScumm.Core.Graphics
             } while ((--height) != 0);
         }
 
-        private void DecodeMask(int x, int y, int width, int height, int stripnr, List<byte[]> zplanes, bool transpStrip, DrawBitmaps flags)
+        void DecodeMask(int x, int y, int height, int stripnr, IList<byte[]> zplanes, bool transpStrip, DrawBitmaps flags)
         {
             int i;
             PixelNavigator mask_ptr;
@@ -274,7 +272,7 @@ namespace NScumm.Core.Graphics
 
                 //z_plane_ptr = (byte*)zplanes[1] + *(ushort*)(zplanes[1] + stripnr * 2 + 8);
                 var zplaneStream = new MemoryStream(zplanes[1]);
-                BinaryReader binZplane = new BinaryReader(zplaneStream);
+                var binZplane = new BinaryReader(zplaneStream);
                 binZplane.BaseStream.Seek(stripnr * 2 + 8, SeekOrigin.Begin);
                 zplaneStream.Seek(binZplane.ReadUInt16(), SeekOrigin.Begin);
                 for (i = 0; i < zplanes.Count; i++)
@@ -327,7 +325,7 @@ namespace NScumm.Core.Graphics
             }
         }
 
-        private void DecompressMaskImg(PixelNavigator dst, Stream src, int height)
+        void DecompressMaskImg(PixelNavigator dst, Stream src, int height)
         {
             byte b, c;
 
@@ -359,7 +357,7 @@ namespace NScumm.Core.Graphics
             }
         }
 
-        private void DecompressMaskImgOr(PixelNavigator dst, Stream src, int height)
+        void DecompressMaskImgOr(PixelNavigator dst, Stream src, int height)
         {
             byte b, c;
 
@@ -391,7 +389,7 @@ namespace NScumm.Core.Graphics
             }
         }
 
-        private bool DrawStrip(PixelNavigator navDst, int height, int stripnr, BinaryReader smapReader)
+        bool DrawStrip(PixelNavigator navDst, int height, int stripnr, BinaryReader smapReader)
         {
             // Do some input verification and make sure the strip/strip offset
             // are actually valid. Normally, this should never be a problem,
@@ -424,7 +422,7 @@ namespace NScumm.Core.Graphics
             return DecompressBitmap(navDst, smapReader, height);
         }
 
-        private bool DecompressBitmap(PixelNavigator navDst, BinaryReader src, int numLinesToProcess)
+        bool DecompressBitmap(PixelNavigator navDst, BinaryReader src, int numLinesToProcess)
         {
             if (_vm.Game.Features.HasFlag(GameFeatures.SixteenColors))
             {
@@ -432,12 +430,12 @@ namespace NScumm.Core.Graphics
                 return false;
             }
 
-            _paletteMod = 0;
+            paletteMod = 0;
 
             byte code = src.ReadByte();
             bool transpStrip = false;
-            _decomp_shr = (byte)(code % 10);
-            _decomp_mask = (byte)(0xFF >> (8 - _decomp_shr));
+            decompShr = (byte)(code % 10);
+            decompMask = (byte)(0xFF >> (8 - decompShr));
 
             switch (code)
             {
@@ -468,7 +466,6 @@ namespace NScumm.Core.Graphics
 
                 case 8:
                     // Used in 3DO versions of HE games
-                    transpStrip = true;
                     throw new NotImplementedException();
                     //drawStrip3DO(dst, dstPitch, src, numLinesToProcess, true);
                     //break;
@@ -542,7 +539,6 @@ namespace NScumm.Core.Graphics
                 case 126:
                 case 127:
                 case 128:
-                    transpStrip = true;
                     throw new NotImplementedException();
                     //DrawStripComplex(dst, dstPitch, src, numLinesToProcess, true);
                     //break;
@@ -562,7 +558,6 @@ namespace NScumm.Core.Graphics
                 case 146:
                 case 147:
                 case 148:
-                    transpStrip = true;
                     //drawStripHE(dst, dstPitch, src, 8, numLinesToProcess, true);
                     throw new NotImplementedException();
                     //break;
@@ -580,10 +575,12 @@ namespace NScumm.Core.Graphics
             return transpStrip;
         }
 
-        private void DrawStripEGA(PixelNavigator navDst, BinaryReader src, int height)
+        void DrawStripEGA(PixelNavigator navDst, BinaryReader src, int height)
         {
-            byte color = 0;
-            int run = 0, x = 0, y = 0, z;
+            byte color;
+            int run;
+            int x = 0, y = 0;
+            int z;
 
             navDst = new PixelNavigator(navDst);
 
@@ -606,7 +603,7 @@ namespace NScumm.Core.Graphics
                         for (z = 0; z < run; z++)
                         {
                             navDst.GoTo(x, y);
-                            navDst.Write((z & 1) != 0 ? _vm._roomPalette[(color & 0xf) + _paletteMod] : _vm._roomPalette[(color >> 4) + _paletteMod]);
+                            navDst.Write((z & 1) != 0 ? _vm.RoomPalette[(color & 0xf) + paletteMod] : _vm.RoomPalette[(color >> 4) + paletteMod]);
 
                             y++;
                             if (y >= height)
@@ -650,7 +647,7 @@ namespace NScumm.Core.Graphics
                     for (z = 0; z < run; z++)
                     {
                         navDst.GoTo(x, y);
-                        navDst.Write(_vm._roomPalette[(color & 0xf) + _paletteMod]);
+                        navDst.Write(_vm.RoomPalette[(color & 0xf) + paletteMod]);
 
                         y++;
                         if (y >= height)
@@ -663,7 +660,7 @@ namespace NScumm.Core.Graphics
             }
         }
 
-        private void DrawStripBasicH(PixelNavigator navDst, BinaryReader src, int height, bool transpCheck)
+        void DrawStripBasicH(PixelNavigator navDst, BinaryReader src, int height, bool transpCheck)
         {
             byte color = src.ReadByte();
             uint bits = src.ReadByte();
@@ -675,22 +672,22 @@ namespace NScumm.Core.Graphics
                 int x = 8;
                 do
                 {
-                    FILL_BITS(ref cl, ref bits, src);
-                    if (!transpCheck || color != _transparentColor)
+                    FillBits(ref cl, ref bits, src);
+                    if (!transpCheck || color != transparentColor)
                         WriteRoomColor(navDst, color);
                     navDst.OffsetX(1);
-                    if (!READ_BIT(ref cl, ref bits))
+                    if (!ReadBit(ref cl, ref bits))
                     {
                     }
-                    else if (!READ_BIT(ref cl, ref bits))
+                    else if (!ReadBit(ref cl, ref bits))
                     {
-                        FILL_BITS(ref cl, ref bits, src);
-                        color = (byte)(bits & _decomp_mask);
-                        bits >>= _decomp_shr;
-                        cl -= _decomp_shr;
+                        FillBits(ref cl, ref bits, src);
+                        color = (byte)(bits & decompMask);
+                        bits >>= decompShr;
+                        cl -= decompShr;
                         inc = -1;
                     }
-                    else if (!READ_BIT(ref cl, ref bits))
+                    else if (!ReadBit(ref cl, ref bits))
                     {
                         color = (byte)(color + inc);
                     }
@@ -704,7 +701,7 @@ namespace NScumm.Core.Graphics
             } while (--height != 0);
         }
 
-        private void DrawStripBasicV(PixelNavigator navDst, BinaryReader src, int height, bool transpCheck)
+        void DrawStripBasicV(PixelNavigator navDst, BinaryReader src, int height, bool transpCheck)
         {
             byte color = src.ReadByte();
             uint bits = src.ReadByte();
@@ -717,24 +714,24 @@ namespace NScumm.Core.Graphics
                 int h = height;
                 do
                 {
-                    FILL_BITS(ref cl, ref bits, src);
-                    if (!transpCheck || color != _transparentColor)
+                    FillBits(ref cl, ref bits, src);
+                    if (!transpCheck || color != transparentColor)
                     {
                         WriteRoomColor(navDst, color);
                     }
                     navDst.OffsetY(1);
-                    if (!READ_BIT(ref cl, ref bits))
+                    if (!ReadBit(ref cl, ref bits))
                     {
                     }
-                    else if (!READ_BIT(ref cl, ref bits))
+                    else if (!ReadBit(ref cl, ref bits))
                     {
-                        FILL_BITS(ref cl, ref bits, src);
-                        color = (byte)(bits & _decomp_mask);
-                        bits >>= _decomp_shr;
-                        cl -= _decomp_shr;
+                        FillBits(ref cl, ref bits, src);
+                        color = (byte)(bits & decompMask);
+                        bits >>= decompShr;
+                        cl -= decompShr;
                         inc = -1;
                     }
-                    else if (!READ_BIT(ref cl, ref bits))
+                    else if (!ReadBit(ref cl, ref bits))
                     {
                         color = (byte)(color + inc);
                     }
@@ -748,7 +745,7 @@ namespace NScumm.Core.Graphics
             } while ((--x) != 0);
         }
 
-        private void FILL_BITS(ref byte cl, ref uint bits, BinaryReader src)
+        void FillBits(ref byte cl, ref uint bits, BinaryReader src)
         {
             if (cl <= 8)
             {
@@ -758,7 +755,7 @@ namespace NScumm.Core.Graphics
             }
         }
 
-        private bool READ_BIT(ref byte cl, ref uint bits)
+        bool ReadBit(ref byte cl, ref uint bits)
         {
             cl--;
             var bit = bits & 1;
@@ -766,18 +763,18 @@ namespace NScumm.Core.Graphics
             return bit != 0;
         }
 
-        private void WriteRoomColor(PixelNavigator navDst, int color)
+        void WriteRoomColor(PixelNavigator navDst, int color)
         {
             // As described in bug #1294513 "FOA/Amiga: Palette problem (Regression)"
             // the original AMIGA version of Indy4: The Fate of Atlantis allowed
             // overflowing of the palette index. To have the same result in our code,
             // we need to do an logical AND 0xFF here to keep the result in [0, 255].
-            navDst.Write(_vm._roomPalette[(color + _paletteMod) & 0xFF]);
+            navDst.Write(_vm.RoomPalette[(color + paletteMod) & 0xFF]);
         }
 
-        private List<byte[]> GetZPlanes(byte[] ptr)
+        List<byte[]> GetZPlanes(byte[] ptr)
         {
-            List<byte[]> zplanes = new List<byte[]>();
+            var zplanes = new List<byte[]>();
 
             if (IsZBufferEnabled)
             {

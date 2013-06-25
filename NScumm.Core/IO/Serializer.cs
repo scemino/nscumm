@@ -17,8 +17,6 @@
 
 using System;
 using System.IO;
-using System.Linq.Expressions;
-using System.Reflection;
 
 namespace NScumm.Core.IO
 {
@@ -42,12 +40,12 @@ namespace NScumm.Core.IO
     }
 
 
-    internal class LoadAndSaveEntry
+    class LoadAndSaveEntry
     {
-        private Action<BinaryReader> _load;
-        private Action<BinaryWriter> _save;
-        private uint _minVersion;
-        private uint _maxVersion = uint.MaxValue;
+        Action<BinaryReader> _load;
+        Action<BinaryWriter> _save;
+        uint _minVersion;
+        uint _maxVersion = uint.MaxValue;
 
         public static LoadAndSaveEntry Create(Action<BinaryReader> load, uint minVersion=0, uint maxVersion = uint.MaxValue)
         {
@@ -75,40 +73,40 @@ namespace NScumm.Core.IO
         }
     }
 
-    internal class SaveGameHeader
+    class SaveGameHeader
     {
-        public uint type;
-        public uint size;
-        public uint ver;
-        public string name;
+        public uint Type;
+        public uint Size;
+        public uint Version;
+        public string Name;
     }
 
-    internal class SaveStateMetaInfos
+    class SaveStateMetaInfos
     {
-        public uint date;
-        public ushort time;
-        public uint playtime;
+        public uint Date;
+        public ushort Time;
+        public uint PlayTime;
     }
 
-    internal class ThumbnailHeader
+    class ThumbnailHeader
     {
-        public uint type;
-        public uint size;
-        public byte version;
-        public ushort width, height;
-        public byte bpp;
+        public uint Type;
+        public uint Size;
+        public byte Version;
+        public ushort Width, Height;
+        public byte Bpp;
     }
 
-    internal class SaveInfoSection
+    class SaveInfoSection
     {
-        public uint type;
-        public uint version;
-        public uint size;
+        public uint Type;
+        public uint Version;
+        public uint Size;
 
-        public uint timeTValue;  // Obsolete since version 2, but kept for compatibility
-        public uint playtime;
+        public uint TimeTValue;  // Obsolete since version 2, but kept for compatibility
+        public uint PlayTime;
 
-        public uint date;
-        public ushort time;
+        public uint Date;
+        public ushort Time;
     }
 }

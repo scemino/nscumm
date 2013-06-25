@@ -20,7 +20,7 @@ namespace NScumm.Core
 {
     public struct AdjustBoxResult
     {
-        public short x, y;
-        public byte box;
+        public short X, Y;
+        public byte Box;
     }
 }

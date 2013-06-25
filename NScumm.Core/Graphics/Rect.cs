@@ -19,25 +19,25 @@ namespace NScumm.Core.Graphics
 {
     public struct Rect
     {
-        public int top, left;
-        public int bottom, right;
+        public int Top, Left;
+        public int Bottom, Right;
 
         public int Height
         {
-            get { return bottom - top; }
+            get { return Bottom - Top; }
         }
 
         public int Width
         {
-            get { return right - left; }
+            get { return Right - Left; }
         }
 
         public Rect(int x1, int y1, int x2, int y2)
         {
-            top = y1;
-            left = x1;
-            bottom = y2;
-            right = x2;
+            Top = y1;
+            Left = x1;
+            Bottom = y2;
+            Right = x2;
         }
 
         public void Clip(int maxw, int maxh)
@@ -47,17 +47,17 @@ namespace NScumm.Core.Graphics
 
         public void Clip(Rect r)
         {
-            if (top < r.top) top = r.top;
-            else if (top > r.bottom) top = r.bottom;
+            if (Top < r.Top) Top = r.Top;
+            else if (Top > r.Bottom) Top = r.Bottom;
 
-            if (left < r.left) left = r.left;
-            else if (left > r.right) left = r.right;
+            if (Left < r.Left) Left = r.Left;
+            else if (Left > r.Right) Left = r.Right;
 
-            if (bottom > r.bottom) bottom = r.bottom;
-            else if (bottom < r.top) bottom = r.top;
+            if (Bottom > r.Bottom) Bottom = r.Bottom;
+            else if (Bottom < r.Top) Bottom = r.Top;
 
-            if (right > r.right) right = r.right;
-            else if (right < r.left) right = r.left;
+            if (Right > r.Right) Right = r.Right;
+            else if (Right < r.Left) Right = r.Left;
         }
     }
 }

@@ -17,7 +17,6 @@
 
 using NScumm.Core.IO;
 using System;
-using System.IO;
 
 namespace NScumm.Core
 {
@@ -40,63 +39,51 @@ namespace NScumm.Core
 
     public class ScriptSlot
     {
-        public uint offs;
-        public int delay;
-        public ushort number;
-        public ushort delayFrameCount;
-        public bool freezeResistant, recursive;
-        public bool didexec;
-        public ScriptStatus status;
-        public WhereIsObject where;
-        public byte freezeCount;
-        public byte cutsceneOverride;
+        public uint Offset;
+        public int Delay;
+        public ushort Number;
+        public bool FreezeResistant;
+        public bool Recursive;
+        public bool IsExecuted;
+        public ScriptStatus Status;
+        public WhereIsObject Where;
+        public byte FreezeCount;
+        public byte CutSceneOverride;
         public int InventoryEntry { get; set; }
         public bool Frozen { get; set; }
 
-        public void SaveOrLoad(Serializer serializer, ScriptData[] localScripts)
+        public void SaveOrLoad(Serializer serializer, System.Collections.Generic.IList<ScriptData> localScripts)
         {
             var scriptSlotEntries = new[]{
                 LoadAndSaveEntry.Create(
-                    reader => offs = reader.ReadUInt32(),
+                    reader => Offset = reader.ReadUInt32(),
                     writer=>
                     {
-                        var offsetToSave = offs;
-                        if (where == WhereIsObject.Global)
+                        var offsetToSave = Offset;
+                        if (Where == WhereIsObject.Global)
                         {
                             offsetToSave += 6;
                         }
-                        else if (where == WhereIsObject.Local && number >= 0xC8 && localScripts[number - 0xC8]!=null)
+                        else if (Where == WhereIsObject.Local && Number >= 0xC8 && localScripts[Number - 0xC8]!=null)
                         {
-                            offsetToSave = (uint)(offs + localScripts[number - 0xC8].Offset);
+                            offsetToSave = (uint)(Offset + localScripts[Number - 0xC8].Offset);
                         }
                         writer.WriteUInt32(offsetToSave);
                     },8),
 
-                LoadAndSaveEntry.Create(reader => delay = reader.ReadInt32(),writer=> writer.WriteInt32(delay),8),
-                LoadAndSaveEntry.Create(reader => number = reader.ReadUInt16(),writer=> writer.WriteUInt16(number),8),
-                LoadAndSaveEntry.Create(reader => delayFrameCount = reader.ReadUInt16(),writer=> writer.WriteUInt16(delayFrameCount),8),
-                LoadAndSaveEntry.Create(reader => status = (ScriptStatus)reader.ReadByte(),writer=> writer.WriteByte((byte)status),8),
-                LoadAndSaveEntry.Create(reader => where = (WhereIsObject)reader.ReadByte(),writer=> writer.WriteByte((byte)where),8),
-                LoadAndSaveEntry.Create(reader => freezeResistant = reader.ReadBoolean(),writer=> writer.WriteByte(freezeResistant),8),
-                LoadAndSaveEntry.Create(reader => recursive = reader.ReadBoolean(),writer=> writer.WriteByte(recursive),8),
-                LoadAndSaveEntry.Create(reader => freezeCount = reader.ReadByte(),writer=> writer.WriteByte(freezeCount),8),
-                LoadAndSaveEntry.Create(reader => didexec = reader.ReadBoolean(),writer=> writer.WriteByte(didexec),8),
-                LoadAndSaveEntry.Create(reader => cutsceneOverride = reader.ReadByte(),writer=> writer.WriteByte(cutsceneOverride),8),
+                LoadAndSaveEntry.Create(reader => Delay = reader.ReadInt32(),writer=> writer.WriteInt32(Delay),8),
+                LoadAndSaveEntry.Create(reader => Number = reader.ReadUInt16(),writer=> writer.WriteUInt16(Number),8),
+                LoadAndSaveEntry.Create(reader => reader.ReadUInt16(),writer=> writer.WriteUInt16(0),8),
+                LoadAndSaveEntry.Create(reader => Status = (ScriptStatus)reader.ReadByte(),writer=> writer.WriteByte((byte)Status),8),
+                LoadAndSaveEntry.Create(reader => Where = (WhereIsObject)reader.ReadByte(),writer=> writer.WriteByte((byte)Where),8),
+                LoadAndSaveEntry.Create(reader => FreezeResistant = reader.ReadBoolean(),writer=> writer.WriteByte(FreezeResistant),8),
+                LoadAndSaveEntry.Create(reader => Recursive = reader.ReadBoolean(),writer=> writer.WriteByte(Recursive),8),
+                LoadAndSaveEntry.Create(reader => FreezeCount = reader.ReadByte(),writer=> writer.WriteByte(FreezeCount),8),
+                LoadAndSaveEntry.Create(reader => IsExecuted = reader.ReadBoolean(),writer=> writer.WriteByte(IsExecuted),8),
+                LoadAndSaveEntry.Create(reader => CutSceneOverride = reader.ReadByte(),writer=> writer.WriteByte(CutSceneOverride),8),
                 LoadAndSaveEntry.Create(reader => reader.ReadByte(),writer=> writer.WriteByte((byte)0),46),
                 LoadAndSaveEntry.Create(reader => reader.ReadByte(),writer=> writer.WriteByte((byte)0),8,10),
             };
-
-            //if (serializer.IsLoading)
-            //{
-            //    if (where == WhereIsObject.Global)
-            //    {
-            //        offs -= 6;
-            //    }
-            //    else if (where == WhereIsObject.Local && number >= 0xC8)
-            //    {
-            //        offs = (uint)(offs - localScripts[number - 0xC8].Offset);
-            //    }
-            //}
 
             Array.ForEach(scriptSlotEntries, e => e.Execute(serializer));
         }

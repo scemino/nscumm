@@ -32,12 +32,12 @@ namespace NScumm.Core
 
     public class Box
     {
-        public short ulx, uly;
-        public short urx, ury;
-        public short lrx, lry;
-        public short llx, lly;
-        public byte mask;
-        public BoxFlags flags;
-        public ushort scale;
+        public short Ulx, Uly;
+        public short Urx, Ury;
+        public short Lrx, Lry;
+        public short Llx, Lly;
+        public byte Mask;
+        public BoxFlags Flags;
+        public ushort Scale;
     }
 }

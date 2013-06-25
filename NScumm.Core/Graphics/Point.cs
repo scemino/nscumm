@@ -62,7 +62,7 @@ namespace NScumm.Core.Graphics
             if (obj is Point)
             {
                 var pos = ((Point)obj);
-                return pos.X == this.X && pos.Y == this.Y;
+                return pos.X == X && pos.Y == Y;
             }
             return false;
         }

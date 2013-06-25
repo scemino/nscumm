@@ -19,74 +19,74 @@ namespace NScumm.Core.Graphics
 {
     public abstract class CharsetRenderer
     {
-        internal Rect _str;
-        public int _top;
-        public int _left, _startLeft;
-        public int _right;
+        internal Rect Str;
+        public int Top;
+        public int Left, StartLeft;
+        public int Right;
 
-        public bool _center;
+        public bool Center;
 
         /// <summary>
         /// <c>true</c> if "removable" text is visible somewhere (should be called _hasText or so).
         /// </summary>
-        public bool _hasMask;
+        public bool HasMask;
         /// <summary>
         /// The virtual screen on which the text is visible.
         /// </summary>
-        public VirtScreen _textScreen;
+        public VirtScreen TextScreen;
 
-        public bool _blitAlso;
+        public bool BlitAlso;
 
-        public bool _firstChar;
-        public bool _disableOffsX;
+        public bool FirstChar;
+        public bool DisableOffsX;
 
-        protected byte _color;
-        protected ScummEngine _vm;
+        protected byte Color;
+        protected ScummEngine Vm;
 
-        protected int _curId;
+        protected int CurId;
 
         protected CharsetRenderer(ScummEngine vm)
         {
-            _top = 0;
-            _left = 0;
-            _startLeft = 0;
-            _right = 0;
+            Top = 0;
+            Left = 0;
+            StartLeft = 0;
+            Right = 0;
 
-            _color = 0;
+            Color = 0;
 
-            _center = false;
-            _hasMask = false;
-            _textScreen = vm.MainVirtScreen;
-            _blitAlso = false;
-            _firstChar = false;
-            _disableOffsX = false;
+            Center = false;
+            HasMask = false;
+            TextScreen = vm.MainVirtScreen;
+            BlitAlso = false;
+            FirstChar = false;
+            DisableOffsX = false;
 
-            _vm = vm;
-            _curId = -1;
+            Vm = vm;
+            CurId = -1;
         }
 
         public virtual void SetColor(byte color)
         {
-            _color = color;
+            Color = color;
         }
 
         public abstract void PrintChar(int chr, bool ignoreCharsetMask);
 
         public abstract void SetCurID(int id);
-        public int getCurID() { return _curId; }
+        public int GetCurId() { return CurId; }
 
         public abstract int GetFontHeight();
         public abstract int GetCharWidth(int chr);
 
-        public int GetStringWidth(int arg, byte[] text, int pos)
+        public int GetStringWidth(int arg, System.Collections.Generic.IList<byte> text, int pos)
         {
             int width = 1;
             int chr;
-            int oldID = getCurID();
+            int oldID = GetCurId();
 
             while ((chr = text[pos++]) != 0)
             {
-                if (chr == '\n' || chr == '\r' || chr == _vm._newLineCharacter)
+                if (chr == '\n' || chr == '\r' || chr == Vm.NewLineCharacter)
                     break;
                 {
                     // TODO: ?
@@ -102,7 +102,8 @@ namespace NScumm.Core.Graphics
                             if (arg == 1)
                                 break;
                             while (text[pos++] == ' ')
-                                ;
+                            {
+                            }
                             continue;
                         }
                         if (chr == 10 || chr == 21 || chr == 12 || chr == 13)
@@ -122,12 +123,12 @@ namespace NScumm.Core.Graphics
                     }
                 }
 
-                if (_vm._useCJKMode)
+                if (Vm.UseCjkMode)
                 {
                     if ((chr & 0x80) != 0)
                     {
                         pos++;
-                        width += _vm._2byteWidth;
+                        width += Vm._2byteWidth;
                         continue;
                     }
                 }
@@ -139,12 +140,12 @@ namespace NScumm.Core.Graphics
             return width;
         }
 
-        public void AddLinebreaks(int a, byte[] str, int pos, int maxwidth)
+        public void AddLinebreaks(int a, System.Collections.Generic.IList<byte> str, int pos, int maxwidth)
         {
             int lastspace = -1;
             int curw = 1;
             int chr;
-            int oldID = getCurID();
+            int oldID = GetCurId();
 
             while ((chr = str[pos++]) != 0)
             {
@@ -193,15 +194,15 @@ namespace NScumm.Core.Graphics
                 if (chr == ' ')
                     lastspace = pos - 1;
 
-                if (chr == _vm._newLineCharacter)
+                if (chr == Vm.NewLineCharacter)
                     lastspace = pos - 1;
 
-                if (_vm._useCJKMode)
+                if (Vm.UseCjkMode)
                 {
                     if ((chr & 0x80) != 0)
                     {
                         pos++;
-                        curw += _vm._2byteWidth;
+                        curw += Vm._2byteWidth;
                     }
                 }
                 else

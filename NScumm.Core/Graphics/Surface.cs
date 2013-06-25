@@ -32,7 +32,7 @@ namespace NScumm.Core.Graphics
         /// <summary>
         /// The surface's pixel data.
         /// </summary>
-        private byte[] _buffer;
+        byte[] _buffer;
         #endregion
 
         #region Properties

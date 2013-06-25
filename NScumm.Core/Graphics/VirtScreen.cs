@@ -23,8 +23,8 @@ namespace NScumm.Core.Graphics
     public class VirtScreen
     {
         #region Fields
-        private Surface[] _surfaces;
-        private ReadOnlyCollection<Surface> _roSurfaces;
+        Surface[] _surfaces;
+        ReadOnlyCollection<Surface> _roSurfaces;
 
         /// <summary>
         /// Array containing for each visible strip of this virtual screen the
@@ -33,7 +33,7 @@ namespace NScumm.Core.Graphics
         /// This together with bdirty is used to do efficient redrawing of
         /// the screen.
         /// </summary>
-        private int[] tdirty = new int[80 + 1];
+        int[] tdirty = new int[80 + 1];
 
         /// <summary>
         /// Array containing for each visible strip of this virtual screen the
@@ -42,7 +42,7 @@ namespace NScumm.Core.Graphics
         /// This together with tdirty is used to do efficient redrawing of
         /// the screen.
         /// </summary>
-        private int[] bdirty = new int[80 + 1];
+        int[] bdirty = new int[80 + 1];
         #endregion
 
         #region Properties
@@ -69,17 +69,17 @@ namespace NScumm.Core.Graphics
         /// </summary>
         public int TopLine { get; set; }
 
-        public bool HasTwoBuffers { get { return this.Surfaces.Count == 2; } }
+        public bool HasTwoBuffers { get { return Surfaces.Count == 2; } }
 
-        public int Pitch { get { return this.Surfaces[0].Pitch; } }
+        public int Pitch { get { return Surfaces[0].Pitch; } }
 
-        public PixelFormat PixelFormat { get { return this.Surfaces[0].PixelFormat; } }
+        public PixelFormat PixelFormat { get { return Surfaces[0].PixelFormat; } }
 
-        public int BytesPerPixel { get { return this.Surfaces[0].BytesPerPixel; } }
+        public int BytesPerPixel { get { return Surfaces[0].BytesPerPixel; } }
 
-        public int Width { get { return this.Surfaces[0].Width; } }
+        public int Width { get { return Surfaces[0].Width; } }
 
-        public int Height { get { return this.Surfaces[0].Height; } }
+        public int Height { get { return Surfaces[0].Height; } }
         #endregion
 
         #region Constructor

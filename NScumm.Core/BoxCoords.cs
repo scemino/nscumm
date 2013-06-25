@@ -25,9 +25,9 @@ namespace NScumm.Core
     /// </summary>
     public class BoxCoords
     {
-        public Point ul = new Point();
-        public Point ur = new Point();
-        public Point ll = new Point();
-        public Point lr = new Point();
+        public Point Ul = new Point();
+        public Point Ur = new Point();
+        public Point Ll = new Point();
+        public Point Lr = new Point();
     }
 }

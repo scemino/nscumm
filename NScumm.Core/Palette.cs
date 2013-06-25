@@ -17,9 +17,6 @@
 
 using NScumm.Core.Graphics;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace NScumm.Core
 {
@@ -28,9 +25,9 @@ namespace NScumm.Core
         /// <summary>
         /// Palette cycles.
         /// </summary>
-        private ColorCycle[] _colorCycle;
+        ColorCycle[] _colorCycle;
 
-        private void CyclePalette()
+        void CyclePalette()
         {
             int valueToAdd = _variables[VariableTimer];
             if (valueToAdd < _variables[VariableTimerNext])
@@ -39,26 +36,26 @@ namespace NScumm.Core
             for (int i = 0; i < 16; i++)
             {
                 ColorCycle cycl = _colorCycle[i];
-                if (cycl.delay == 0 || cycl.start > cycl.end)
+                if (cycl.Delay == 0 || cycl.Start > cycl.End)
                     continue;
-                cycl.counter = (ushort)(cycl.counter + valueToAdd);
-                if (cycl.counter >= cycl.delay)
+                cycl.Counter = (ushort)(cycl.Counter + valueToAdd);
+                if (cycl.Counter >= cycl.Delay)
                 {
-                    cycl.counter %= cycl.delay;
+                    cycl.Counter %= cycl.Delay;
 
-                    SetDirtyColors(cycl.start, cycl.end);
+                    SetDirtyColors(cycl.Start, cycl.End);
 
-                    DoCyclePalette(_currentPalette, cycl.start, cycl.end, (cycl.flags & 2) == 0);
+                    DoCyclePalette(_currentPalette, cycl.Start, cycl.End, (cycl.Flags & 2) == 0);
 
                     if (_shadowPalette != null)
                     {
-                        DoCycleIndirectPalette(_shadowPalette, cycl.start, cycl.end, (cycl.flags & 2) == 0);
+                        DoCycleIndirectPalette(_shadowPalette, cycl.Start, cycl.End, (cycl.Flags & 2) == 0);
                     }
                 }
             }
         }
 
-        private void DoCycleIndirectPalette(byte[] palette, byte cycleStart, byte cycleEnd, bool forward)
+        void DoCycleIndirectPalette(byte[] palette, byte cycleStart, byte cycleEnd, bool forward)
         {
             int num = cycleEnd - cycleStart + 1;
             int i;
@@ -83,7 +80,7 @@ namespace NScumm.Core
         /// <param name="cycleStart"></param>
         /// <param name="cycleEnd"></param>
         /// <param name="forward"></param>
-        private static void DoCyclePalette(Palette palette, byte cycleStart, byte cycleEnd, bool forward)
+        static void DoCyclePalette(Palette palette, byte cycleStart, byte cycleEnd, bool forward)
         {
             int num = cycleEnd - cycleStart;
 
@@ -101,7 +98,7 @@ namespace NScumm.Core
             }
         }
 
-        private static void DoCyclePalette(byte[] palette, byte cycleStart, byte cycleEnd, bool forward)
+        static void DoCyclePalette(byte[] palette, byte cycleStart, byte cycleEnd, bool forward)
         {
             int num = cycleEnd - cycleStart;
 

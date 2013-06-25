@@ -31,13 +31,13 @@ namespace NScumm.Core
 
     public class Camera
     {
-        public Point _cur;
-        public Point _dest;
-        public Point _accel;
-        public Point _last;
-        public int _leftTrigger=10, _rightTrigger=30;
-        public byte _follows;
-        public CameraMode _mode;
-        public bool _movingToActor;
+        public Point Cur;
+        public Point Dest;
+        public Point Accel;
+        public Point Last;
+        public int LeftTrigger=10, RightTrigger=30;
+        public byte Follows;
+        public CameraMode Mode;
+        public bool MovingToActor;
     }
 }

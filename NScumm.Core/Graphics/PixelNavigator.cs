@@ -19,11 +19,11 @@ namespace NScumm.Core.Graphics
 {
     public struct PixelNavigator
     {
-        private readonly int _startOffset;
-        private int _offset;
-        private byte[] _pixels;
-        private int _pitch;
-        private int _bytesByPixel;
+        readonly int _startOffset;
+        int _offset;
+        byte[] _pixels;
+        int _pitch;
+        int _bytesByPixel;
 
         public PixelNavigator(Surface surface)
             : this(surface.Pixels, surface.Pitch, surface.BytesPerPixel)

@@ -20,22 +20,22 @@ using System;
 
 namespace NScumm.Core
 {
-    internal class Sentence
+    class Sentence
     {
-        public byte verb;
-        public byte preposition;
-        public ushort objectA;
-        public ushort objectB;
-        public byte freezeCount;
+        public byte Verb;
+        public byte Preposition;
+        public ushort ObjectA;
+        public ushort ObjectB;
+        public byte FreezeCount;
 
         public void SaveOrLoad(Serializer serializer)
         {
             var sentenceEntries = new[]{
-                    LoadAndSaveEntry.Create(reader => verb = reader.ReadByte(), writer => writer.Write(verb), 8),
-                    LoadAndSaveEntry.Create(reader => preposition = reader.ReadByte(), writer => writer.Write(preposition),8),
-                    LoadAndSaveEntry.Create(reader => objectA = reader.ReadUInt16(), writer => writer.Write(objectA),8),
-                    LoadAndSaveEntry.Create(reader => objectB = reader.ReadUInt16(), writer => writer.Write(objectB),8),
-                    LoadAndSaveEntry.Create(reader => freezeCount = reader.ReadByte(), writer => writer.Write(freezeCount),8),
+                    LoadAndSaveEntry.Create(reader => Verb = reader.ReadByte(), writer => writer.Write(Verb), 8),
+                    LoadAndSaveEntry.Create(reader => Preposition = reader.ReadByte(), writer => writer.Write(Preposition),8),
+                    LoadAndSaveEntry.Create(reader => ObjectA = reader.ReadUInt16(), writer => writer.Write(ObjectA),8),
+                    LoadAndSaveEntry.Create(reader => ObjectB = reader.ReadUInt16(), writer => writer.Write(ObjectB),8),
+                    LoadAndSaveEntry.Create(reader => FreezeCount = reader.ReadByte(), writer => writer.Write(FreezeCount),8),
              };
             Array.ForEach(sentenceEntries, e => e.Execute(serializer));
         }

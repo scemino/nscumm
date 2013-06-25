@@ -20,8 +20,8 @@ namespace NScumm.Core
 {
     public struct FlashLight
     {
-        public int x, y, w, h;
-        public ushort xStrips, yStrips;
-        public bool isDrawn;
+        public int X, Y, W, H;
+        public ushort XStrips, YStrips;
+        public bool IsDrawn;
     }
 }

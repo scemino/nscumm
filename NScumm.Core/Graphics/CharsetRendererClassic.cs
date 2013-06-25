@@ -20,15 +20,15 @@ using System.IO;
 
 namespace NScumm.Core.Graphics
 {
-    internal sealed class CharsetRendererClassic : CharsetRenderer
+    sealed class CharsetRendererClassic : CharsetRenderer
     {
-        private int _offsX, _offsY;
-        private int _width, _height, _origWidth, _origHeight;
-        private byte[] _fontPtr;
-        private int _fontPos;
-        private int _charPos;
-        private int _fontHeight;
-        public uint _numChars;
+        int _offsX, _offsY;
+        int _width, _height, _origWidth, _origHeight;
+        byte[] _fontPtr;
+        int _fontPos;
+        int _charPos;
+        int _fontHeight;
+        public uint NumChars;
 
         public CharsetRendererClassic(ScummEngine vm)
             : base(vm)
@@ -38,86 +38,86 @@ namespace NScumm.Core.Graphics
         public override void PrintChar(int chr, bool ignoreCharsetMask)
         {
             VirtScreen vs;
-            bool is2byte = (chr >= 256 && _vm._useCJKMode);
+            bool is2byte = (chr >= 256 && Vm.UseCjkMode);
 
             //ScummHelper.AssertRange(1, _curId, _vm._numCharsets - 1, "charset");
 
-            if ((vs = _vm.FindVirtScreen(_top)) == null && (vs = _vm.FindVirtScreen(_top + GetFontHeight())) == null)
+            if ((vs = Vm.FindVirtScreen(Top)) == null && (vs = Vm.FindVirtScreen(Top + GetFontHeight())) == null)
                 return;
 
             if (chr == '@')
                 return;
 
-            _vm._charsetColorMap[1] = _color;
+            Vm.CharsetColorMap[1] = Color;
 
             if (!PrepareDraw(chr))
                 return;
 
-            if (_firstChar)
+            if (FirstChar)
             {
-                _str.left = 0;
-                _str.top = 0;
-                _str.right = 0;
-                _str.bottom = 0;
+                Str.Left = 0;
+                Str.Top = 0;
+                Str.Right = 0;
+                Str.Bottom = 0;
             }
 
-            _top += _offsY;
-            _left += _offsX;
+            Top += _offsY;
+            Left += _offsX;
 
-            if (_left + _origWidth > _right + 1 || _left < 0)
+            if (Left + _origWidth > Right + 1 || Left < 0)
             {
-                _left += _origWidth;
-                _top -= _offsY;
+                Left += _origWidth;
+                Top -= _offsY;
                 return;
             }
 
-            _disableOffsX = false;
+            DisableOffsX = false;
 
-            if (_firstChar)
+            if (FirstChar)
             {
-                _str.left = _left;
-                _str.top = _top;
-                _str.right = _left;
-                _str.bottom = _top;
-                _firstChar = false;
+                Str.Left = Left;
+                Str.Top = Top;
+                Str.Right = Left;
+                Str.Bottom = Top;
+                FirstChar = false;
             }
 
-            if (_left < _str.left)
-                _str.left = _left;
+            if (Left < Str.Left)
+                Str.Left = Left;
 
-            if (_top < _str.top)
-                _str.top = _top;
+            if (Top < Str.Top)
+                Str.Top = Top;
 
-            int drawTop = _top - vs.TopLine;
+            int drawTop = Top - vs.TopLine;
 
-            _vm.MarkRectAsDirty(vs, _left, _left + _width, drawTop, drawTop + _height);
+            Vm.MarkRectAsDirty(vs, Left, Left + _width, drawTop, drawTop + _height);
 
             // This check for kPlatformFMTowns and kMainVirtScreen is at least required for the chat with
             // the navigator's head in front of the ghost ship in Monkey Island 1
             if (!ignoreCharsetMask)
             {
-                _hasMask = true;
-                _textScreen = vs;
+                HasMask = true;
+                TextScreen = vs;
             }
 
             PrintCharIntern(is2byte, _fontPtr, _charPos + 17, _origWidth, _origHeight, _width, _height, vs, ignoreCharsetMask);
 
-            _left += _origWidth;
+            Left += _origWidth;
 
-            if (_str.right < _left)
+            if (Str.Right < Left)
             {
-                _str.right = _left;
+                Str.Right = Left;
             }
 
-            if (_str.bottom < _top + _origHeight)
-                _str.bottom = _top + _origHeight;
+            if (Str.Bottom < Top + _origHeight)
+                Str.Bottom = Top + _origHeight;
 
-            _top -= _offsY;
+            Top -= _offsY;
         }
 
-        private bool PrepareDraw(int chr)
+        bool PrepareDraw(int chr)
         {
-            BinaryReader reader = new BinaryReader(new MemoryStream(_fontPtr));
+            var reader = new BinaryReader(new MemoryStream(_fontPtr));
             reader.BaseStream.Seek(_fontPos + chr * 4 + 4, SeekOrigin.Begin);
             int charOffs = reader.ReadInt32();
             //assert(charOffs < 0x14000);
@@ -129,7 +129,7 @@ namespace NScumm.Core.Graphics
             _width = _origWidth = reader.ReadByte();
             _height = _origHeight = reader.ReadByte();
 
-            if (_disableOffsX)
+            if (DisableOffsX)
             {
                 _offsX = 0;
                 reader.ReadByte();
@@ -147,16 +147,16 @@ namespace NScumm.Core.Graphics
 
         public override void SetCurID(int id)
         {
-            _curId = id;
+            CurId = id;
 
-            _fontPtr = _vm.Index.GetCharsetData((byte)id);
+            _fontPtr = Vm.Index.GetCharsetData((byte)id);
             if (_fontPtr == null)
                 throw new NotSupportedException(string.Format("CharsetRendererCommon::setCurID: charset %d not found", id));
 
             _fontPos = 17;
 
             _fontHeight = _fontPtr[_fontPos + 1];
-            _numChars = ((uint)_fontPtr[_fontPos + 2]) | (((uint)_fontPtr[_fontPos + 3]) << 8);
+            NumChars = ((uint)_fontPtr[_fontPos + 2]) | (((uint)_fontPtr[_fontPos + 3]) << 8);
         }
 
         public override int GetFontHeight()
@@ -170,7 +170,7 @@ namespace NScumm.Core.Graphics
         public override int GetCharWidth(int chr)
         {
             int spacing = 0;
-            BinaryReader reader = new BinaryReader(new MemoryStream(_fontPtr));
+            var reader = new BinaryReader(new MemoryStream(_fontPtr));
             reader.BaseStream.Seek(_fontPos + chr * 4 + 4, SeekOrigin.Begin);
             var offs = reader.ReadInt32();
             if (offs != 0)
@@ -183,9 +183,9 @@ namespace NScumm.Core.Graphics
             return spacing;
         }
 
-        private void PrintCharIntern(bool is2byte, byte[] _fontPtr, int charPos, int origWidth, int origHeight, int width, int height, VirtScreen vs, bool ignoreCharsetMask)
+        void PrintCharIntern(bool is2byte, byte[] _fontPtr, int charPos, int origWidth, int origHeight, int width, int height, VirtScreen vs, bool ignoreCharsetMask)
         {
-            int drawTop = _top - vs.TopLine;
+            int drawTop = Top - vs.TopLine;
 
             PixelNavigator? back = null;
             PixelNavigator dstPtr;
@@ -194,31 +194,31 @@ namespace NScumm.Core.Graphics
             {
                 dstSurface = vs.Surfaces[0];
                 dstPtr = new PixelNavigator(vs.Surfaces[0]);
-                dstPtr.GoTo(vs.XStart + _left, drawTop);
+                dstPtr.GoTo(vs.XStart + Left, drawTop);
             }
             else
             {
-                dstSurface = _vm.TextSurface;
+                dstSurface = Vm.TextSurface;
                 dstPtr = new PixelNavigator(dstSurface);
-                dstPtr.GoTo(_left, _top - _vm._screenTop);
+                dstPtr.GoTo(Left, Top - Vm.ScreenTop);
             }
 
-            if (_blitAlso && vs.HasTwoBuffers)
+            if (BlitAlso && vs.HasTwoBuffers)
             {
                 back = dstPtr;
                 dstSurface = vs.Surfaces[0];
                 dstPtr = new PixelNavigator(dstSurface);
-                dstPtr.GoTo(vs.XStart + _left, drawTop);
+                dstPtr.GoTo(vs.XStart + Left, drawTop);
             }
 
             if (!ignoreCharsetMask && vs.HasTwoBuffers)
             {
-                drawTop = _top - _vm._screenTop;
+                drawTop = Top - Vm.ScreenTop;
             }
 
             DrawBitsN(dstSurface, dstPtr, _fontPtr, charPos, _fontPtr[_fontPos], drawTop, origWidth, origHeight);
 
-            if (_blitAlso && vs.HasTwoBuffers)
+            if (BlitAlso && vs.HasTwoBuffers)
             {
                 // FIXME: Revisiting this code, I think the _blitAlso mode is likely broken
                 // right now -- we are copying stuff from "dstPtr" to "back", but "dstPtr" really
@@ -231,13 +231,13 @@ namespace NScumm.Core.Graphics
                     throw new NotSupportedException("This might be broken -- please report where you encountered this to Fingolfin");
 
                 // Perform some clipping
-                int w = Math.Min(width, dstSurface.Width - _left);
+                int w = Math.Min(width, dstSurface.Width - Left);
                 int h = Math.Min(height, dstSurface.Height - drawTop);
-                if (_left < 0)
+                if (Left < 0)
                 {
-                    w += _left;
-                    back.Value.OffsetX(-_left);
-                    dstPtr.OffsetX(-_left);
+                    w += Left;
+                    back.Value.OffsetX(-Left);
+                    dstPtr.OffsetX(-Left);
                 }
                 if (drawTop < 0)
                 {
@@ -265,24 +265,20 @@ namespace NScumm.Core.Graphics
             }
         }
 
-        private void DrawBitsN(Surface s, PixelNavigator dst, byte[] src, int srcPos, byte bpp, int drawTop, int width, int height)
+        void DrawBitsN(Surface s, PixelNavigator dst, System.Collections.Generic.IList<byte> src, int srcPos, byte bpp, int drawTop, int width, int height)
         {
-            int y, x;
-            int color;
-            byte numbits, bits;
-
             if (bpp != 1 && bpp != 2 && bpp != 4 && bpp != 8)
                 throw new ArgumentException("Invalid bpp","bpp");
 
-            bits = src[srcPos++];
-            numbits = 8;
-            byte[] cmap = _vm._charsetColorMap;
+            byte bits = src[srcPos++];
+            byte numbits = 8;
+            var cmap = Vm.CharsetColorMap;
 
-            for (y = 0; y < height && y + drawTop < s.Height; y++)
+            for (int y = 0; y < height && y + drawTop < s.Height; y++)
             {
-                for (x = 0; x < width; x++)
+                for (int x = 0; x < width; x++)
                 {
-                    color = (bits >> (8 - bpp)) & 0xFF;
+                    int color = (bits >> (8 - bpp)) & 0xFF;
 
                     if (color != 0 && (y + drawTop >= 0))
                     {

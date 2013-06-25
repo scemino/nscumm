@@ -90,7 +90,7 @@ namespace NScumm.GL
         #region Draw Methods
         public void DrawScreen(SpriteBatch spriteBatch)
         {
-			var rect = spriteBatch.GraphicsDevice.PresentationParameters.Bounds;
+			var rect = spriteBatch.GraphicsDevice.Viewport.Bounds;
             rect.Offset(0,_shakePos);
             spriteBatch.Draw(_texture, rect, null, Microsoft.Xna.Framework.Color.White);
         }
@@ -99,8 +99,8 @@ namespace NScumm.GL
         {
             if (_cursorVisible)
             {
-                double scaleX = spriteBatch.GraphicsDevice.PresentationParameters.Bounds.Width / 320.0;
-                double scaleY = spriteBatch.GraphicsDevice.PresentationParameters.Bounds.Height / 200.0;
+                double scaleX = spriteBatch.GraphicsDevice.Viewport.Bounds.Width / 320.0;
+                double scaleY = spriteBatch.GraphicsDevice.Viewport.Bounds.Height / 200.0;
                 var rect = new Rectangle((int)(cursorPos.X - scaleX * _hotspot.X), (int)(cursorPos.Y - scaleY * _hotspot.Y), (int)(scaleX * 16), (int)(scaleY * 16));
                 spriteBatch.Draw(_textureCursor, rect, null, Microsoft.Xna.Framework.Color.White);
             }

@@ -19,7 +19,7 @@ namespace NScumm.Core.Graphics
 {
     public class ClassicCostumeRenderer : ICostumeRenderer
     {
-        static byte[] SmallCostumeScaleTable = new byte[256] {
+        static byte[] smallCostumeScaleTable = new byte[256] {
 	        0xFF, 0xFD, 0x7D, 0xBD, 0x3D, 0xDD, 0x5D, 0x9D,
 	        0x1D, 0xED, 0x6D, 0xAD, 0x2D, 0xCD, 0x4D, 0x8D,
 	        0x0D, 0xF5, 0x75, 0xB5, 0x35, 0xD5, 0x55, 0x95,
@@ -58,16 +58,16 @@ namespace NScumm.Core.Graphics
         {
             // Parameters for the original ("V1") costume codec.
             // These ones are accessed from ARM code. Don't reorder.
-            public int x;
-            public int y;
-            public byte[] scaletable;
-            public int skip_width;
-            public PixelNavigator destptr;
-            public PixelNavigator mask_ptr;
-            public int scaleXstep;
-            public byte mask, shr;
-            public byte repcolor;
-            public byte replen;
+            public int X;
+            public int Y;
+            public byte[] Scaletable;
+            public int SkipWidth;
+            public PixelNavigator DestPtr;
+            public PixelNavigator MaskPtr;
+            public int ScaleXStep;
+            public byte Mask, Shr;
+            public byte RepColor;
+            public byte RepLen;
         }
 
         public int DrawTop { get; set; }
@@ -85,14 +85,14 @@ namespace NScumm.Core.Graphics
         public byte ScaleX { get; set; }
         public byte ScaleY { get; set; }
 
-        private ushort[] _palette;
-        private ClassicCostumeLoader _loaded;
-        private ScummEngine _vm;
+        ushort[] _palette;
+        ClassicCostumeLoader _loaded;
+        ScummEngine _vm;
 
         /// <summary>
         /// Indicates whether to draw the actor mirrored.
         /// </summary>
-        private bool _mirror;
+        bool _mirror;
 
         byte _scaleIndexX;						/* must wrap at 256 */
         byte _scaleIndexY;
@@ -100,16 +100,16 @@ namespace NScumm.Core.Graphics
         // current move offset
         int _xmove, _ymove;
 
-        private long _srcptr;
+        long _srcptr;
 
         // width and height of cel to decode
         int _width, _height;
 
         // _out
-        private PixelNavigator _pixelsNavigator;
-        private PixelNavigator startNav;
-        private int _w;
-        private int _h;
+        PixelNavigator _pixelsNavigator;
+        PixelNavigator startNav;
+        int _w;
+        int _h;
 
         #region Constructor
         public ClassicCostumeRenderer(ScummEngine vm)
@@ -123,7 +123,7 @@ namespace NScumm.Core.Graphics
         #region Public Methods
         public void SetPalette(ushort[] palette)
         {
-            if (_loaded._format == 0x57)
+            if (_loaded.Format == 0x57)
             {
                 for (int i = 0; i < 13; i++)
                     _palette[i] = palette[i];
@@ -132,17 +132,17 @@ namespace NScumm.Core.Graphics
             {
                 if (_vm.GetCurrentLights().HasFlag(LightModes.ActorUseColors))
                 {
-                    for (int i = 0; i < _loaded._numColors; i++)
+                    for (int i = 0; i < _loaded.NumColors; i++)
                     {
                         byte color = (byte)palette[i];
                         if (color == 255)
-                            color = _loaded._palette[i];
+                            color = _loaded.Palette[i];
                         _palette[i] = color;
                     }
                 }
                 else
                 {
-                    for (int i = 0; i < _loaded._numColors; i++)
+                    for (int i = 0; i < _loaded.NumColors; i++)
                     {
                         _palette[i] = 8;
                     }
@@ -153,7 +153,7 @@ namespace NScumm.Core.Graphics
 
         public void SetFacing(Actor actor)
         {
-            _mirror = ScummHelper.NewDirToOldDir(actor.Facing) != 0 || _loaded._mirror;
+            _mirror = ScummHelper.NewDirToOldDir(actor.Facing) != 0 || _loaded.Mirror;
         }
 
         public void SetCostume(int costume, int shadow)
@@ -182,60 +182,60 @@ namespace NScumm.Core.Graphics
         #endregion
 
         #region Private Methods
-        private int DrawLimb(Actor a, int limb)
+        int DrawLimb(Actor a, int limb)
         {
             int i;
             int code;
             long baseptr, frameptr;
-            CostumeData cost = a._cost;
+            CostumeData cost = a.Cost;
 
             // If the specified limb is stopped or not existing, do nothing.
-            if ((cost.curpos[limb] == 0xFFFF) || ((cost.stopped & (1 << limb)) > 0))
+            if ((cost.Curpos[limb] == 0xFFFF) || ((cost.Stopped & (1 << limb)) > 0))
                 return 0;
 
             // Determine the position the limb is at
-            i = cost.curpos[limb] & 0x7FFF;
+            i = cost.Curpos[limb] & 0x7FFF;
 
-            baseptr = _loaded._baseptr;
+            baseptr = _loaded.BasePtr;
 
             // Get the frame pointer for that limb
-            _loaded._costumeReader.BaseStream.Seek(_loaded._frameOffsets + limb * 2, System.IO.SeekOrigin.Begin);
+            _loaded.CostumeReader.BaseStream.Seek(_loaded.FrameOffsets + limb * 2, System.IO.SeekOrigin.Begin);
 
-            frameptr = baseptr + _loaded._costumeReader.ReadUInt16();
+            frameptr = baseptr + _loaded.CostumeReader.ReadUInt16();
 
             // Determine the offset to the costume data for the limb at position i
-            _loaded._costumeReader.BaseStream.Seek(_loaded._animCmds + i, System.IO.SeekOrigin.Begin);
-            code = _loaded._costumeReader.ReadByte() & 0x7F;
+            _loaded.CostumeReader.BaseStream.Seek(_loaded.AnimCmds + i, System.IO.SeekOrigin.Begin);
+            code = _loaded.CostumeReader.ReadByte() & 0x7F;
 
             // Code 0x7B indicates a limb for which there is nothing to draw
             if (code != 0x7B)
             {
-                _loaded._costumeReader.BaseStream.Seek(frameptr + code * 2, System.IO.SeekOrigin.Begin);
-                _srcptr = baseptr + _loaded._costumeReader.ReadUInt16();
+                _loaded.CostumeReader.BaseStream.Seek(frameptr + code * 2, System.IO.SeekOrigin.Begin);
+                _srcptr = baseptr + _loaded.CostumeReader.ReadUInt16();
 
 
                 int xmoveCur, ymoveCur;
 
-                _loaded._costumeReader.BaseStream.Seek(_srcptr, System.IO.SeekOrigin.Begin);
+                _loaded.CostumeReader.BaseStream.Seek(_srcptr, System.IO.SeekOrigin.Begin);
 
-                if (_loaded._format == 0x57)
+                if (_loaded.Format == 0x57)
                 {
-                    _width = _loaded._costumeReader.ReadByte() * 8;
-                    _height = _loaded._costumeReader.ReadByte();
-                    xmoveCur = _xmove + (sbyte)_loaded._costumeReader.ReadByte() * 8;
-                    ymoveCur = _ymove - (sbyte)_loaded._costumeReader.ReadByte();
-                    _xmove += (sbyte)_loaded._costumeReader.ReadByte() * 8;
-                    _ymove -= (sbyte)_loaded._costumeReader.ReadByte();
+                    _width = _loaded.CostumeReader.ReadByte() * 8;
+                    _height = _loaded.CostumeReader.ReadByte();
+                    xmoveCur = _xmove + (sbyte)_loaded.CostumeReader.ReadByte() * 8;
+                    ymoveCur = _ymove - (sbyte)_loaded.CostumeReader.ReadByte();
+                    _xmove += (sbyte)_loaded.CostumeReader.ReadByte() * 8;
+                    _ymove -= (sbyte)_loaded.CostumeReader.ReadByte();
                     _srcptr += 6;
                 }
                 else
                 {
-                    _width = _loaded._costumeReader.ReadUInt16();
-                    _height = _loaded._costumeReader.ReadUInt16();
-                    xmoveCur = _xmove + _loaded._costumeReader.ReadInt16();
-                    ymoveCur = _ymove + _loaded._costumeReader.ReadInt16();
-                    _xmove += _loaded._costumeReader.ReadInt16();
-                    _ymove -= _loaded._costumeReader.ReadInt16();
+                    _width = _loaded.CostumeReader.ReadUInt16();
+                    _height = _loaded.CostumeReader.ReadUInt16();
+                    xmoveCur = _xmove + _loaded.CostumeReader.ReadInt16();
+                    ymoveCur = _ymove + _loaded.CostumeReader.ReadInt16();
+                    _xmove += _loaded.CostumeReader.ReadInt16();
+                    _ymove -= _loaded.CostumeReader.ReadInt16();
                     _srcptr += 12;
                 }
 
@@ -244,65 +244,65 @@ namespace NScumm.Core.Graphics
             return 0;
         }
 
-        private int MainRoutine(int xmoveCur, int ymoveCur)
+        int MainRoutine(int xmoveCur, int ymoveCur)
         {
             int i, skip = 0;
             byte drawFlag = 1;
             bool use_scaling;
             byte startScaleIndexX;
             int ex1, ex2;
-            Rect rect = new Rect();
+            var rect = new Rect();
             int step;
-            Codec1 v1 = new Codec1();
+            var v1 = new Codec1();
 
             const int ScaletableSize = 128;
 
-            v1.scaletable = SmallCostumeScaleTable;
+            v1.Scaletable = smallCostumeScaleTable;
 
-            if (_loaded._numColors == 32)
+            if (_loaded.NumColors == 32)
             {
-                v1.mask = 7;
-                v1.shr = 3;
+                v1.Mask = 7;
+                v1.Shr = 3;
             }
             else
             {
-                v1.mask = 15;
-                v1.shr = 4;
+                v1.Mask = 15;
+                v1.Shr = 4;
             }
-            _loaded._costumeReader.BaseStream.Seek(_srcptr, System.IO.SeekOrigin.Begin);
+            _loaded.CostumeReader.BaseStream.Seek(_srcptr, System.IO.SeekOrigin.Begin);
 
-            switch (_loaded._format)
+            switch (_loaded.Format)
             {
                 case 0x60:
                 case 0x61:
                     // This format is used e.g. in the Sam&Max intro
-                    ex1 = _loaded._costumeReader.ReadByte();
-                    ex2 = _loaded._costumeReader.ReadByte();
+                    ex1 = _loaded.CostumeReader.ReadByte();
+                    ex2 = _loaded.CostumeReader.ReadByte();
                     _srcptr += 2;
                     if (ex1 != 0xFF || ex2 != 0xFF)
                     {
-                        _loaded._costumeReader.BaseStream.Seek(_loaded._frameOffsets + ex1 * 2, System.IO.SeekOrigin.Begin);
-                        ex1 = _loaded._costumeReader.ReadUInt16();
-                        _loaded._costumeReader.BaseStream.Seek(_loaded._baseptr + ex1 + ex2 * 2, System.IO.SeekOrigin.Begin);
-                        _srcptr = _loaded._baseptr + _loaded._costumeReader.ReadUInt16() + 14;
+                        _loaded.CostumeReader.BaseStream.Seek(_loaded.FrameOffsets + ex1 * 2, System.IO.SeekOrigin.Begin);
+                        ex1 = _loaded.CostumeReader.ReadUInt16();
+                        _loaded.CostumeReader.BaseStream.Seek(_loaded.BasePtr + ex1 + ex2 * 2, System.IO.SeekOrigin.Begin);
+                        _srcptr = _loaded.BasePtr + _loaded.CostumeReader.ReadUInt16() + 14;
                     }
                     break;
             }
 
             use_scaling = (ScaleX != 0xFF) || (ScaleY != 0xFF);
 
-            v1.x = ActorX;
-            v1.y = ActorY;
+            v1.X = ActorX;
+            v1.Y = ActorY;
 
             if (use_scaling)
             {
 
                 /* Scale direction */
-                v1.scaleXstep = -1;
+                v1.ScaleXStep = -1;
                 if (xmoveCur < 0)
                 {
                     xmoveCur = -xmoveCur;
-                    v1.scaleXstep = 1;
+                    v1.ScaleXStep = 1;
                 }
 
                 // It's possible that the scale indexes will overflow and wrap
@@ -316,22 +316,22 @@ namespace NScumm.Core.Graphics
                     startScaleIndexX = _scaleIndexX = (byte)(ScaletableSize - xmoveCur);
                     for (i = 0; i < xmoveCur; i++)
                     {
-                        if (v1.scaletable[_scaleIndexX++] < ScaleX)
-                            v1.x -= v1.scaleXstep;
+                        if (v1.Scaletable[_scaleIndexX++] < ScaleX)
+                            v1.X -= v1.ScaleXStep;
                     }
 
-                    rect.left = rect.right = v1.x;
+                    rect.Left = rect.Right = v1.X;
 
                     _scaleIndexX = startScaleIndexX;
                     for (i = 0; i < _width; i++)
                     {
-                        if (rect.right < 0)
+                        if (rect.Right < 0)
                         {
                             skip++;
                             startScaleIndexX = _scaleIndexX;
                         }
-                        if (v1.scaletable[_scaleIndexX++] < ScaleX)
-                            rect.right++;
+                        if (v1.Scaletable[_scaleIndexX++] < ScaleX)
+                            rect.Right++;
                     }
                 }
                 else
@@ -341,22 +341,22 @@ namespace NScumm.Core.Graphics
                     startScaleIndexX = _scaleIndexX = (byte)(xmoveCur + ScaletableSize);
                     for (i = 0; i < xmoveCur; i++)
                     {
-                        if (v1.scaletable[_scaleIndexX--] < ScaleX)
-                            v1.x += v1.scaleXstep;
+                        if (v1.Scaletable[_scaleIndexX--] < ScaleX)
+                            v1.X += v1.ScaleXStep;
                     }
 
-                    rect.left = rect.right = v1.x;
+                    rect.Left = rect.Right = v1.X;
 
                     _scaleIndexX = startScaleIndexX;
                     for (i = 0; i < _width; i++)
                     {
-                        if (rect.left >= _w)
+                        if (rect.Left >= _w)
                         {
                             startScaleIndexX = _scaleIndexX;
                             skip++;
                         }
-                        if (v1.scaletable[_scaleIndexX--] < ScaleX)
-                            rect.left--;
+                        if (v1.Scaletable[_scaleIndexX--] < ScaleX)
+                            rect.Left--;
                     }
                 }
                 _scaleIndexX = startScaleIndexX;
@@ -374,16 +374,16 @@ namespace NScumm.Core.Graphics
                 _scaleIndexY = (byte)(ScaletableSize - ymoveCur);
                 for (i = 0; i < ymoveCur; i++)
                 {
-                    if (v1.scaletable[_scaleIndexY++] < ScaleY)
-                        v1.y -= step;
+                    if (v1.Scaletable[_scaleIndexY++] < ScaleY)
+                        v1.Y -= step;
                 }
 
-                rect.top = rect.bottom = v1.y;
+                rect.Top = rect.Bottom = v1.Y;
                 _scaleIndexY = (byte)(ScaletableSize - ymoveCur);
                 for (i = 0; i < _height; i++)
                 {
-                    if (v1.scaletable[_scaleIndexY++] < ScaleY)
-                        rect.bottom++;
+                    if (v1.Scaletable[_scaleIndexY++] < ScaleY)
+                        rect.Bottom++;
                 }
 
                 _scaleIndexY = (byte)(ScaletableSize - ymoveCur);
@@ -393,153 +393,153 @@ namespace NScumm.Core.Graphics
                 if (!_mirror)
                     xmoveCur = -xmoveCur;
 
-                v1.x += xmoveCur;
-                v1.y += ymoveCur;
+                v1.X += xmoveCur;
+                v1.Y += ymoveCur;
 
                 if (_mirror)
                 {
-                    rect.left = v1.x;
-                    rect.right = v1.x + _width;
+                    rect.Left = v1.X;
+                    rect.Right = v1.X + _width;
                 }
                 else
                 {
-                    rect.left = v1.x - _width;
-                    rect.right = v1.x;
+                    rect.Left = v1.X - _width;
+                    rect.Right = v1.X;
                 }
 
-                rect.top = v1.y;
-                rect.bottom = rect.top + _height;
+                rect.Top = v1.Y;
+                rect.Bottom = rect.Top + _height;
 
             }
 
-            v1.skip_width = _width;
-            v1.scaleXstep = _mirror ? 1 : -1;
+            v1.SkipWidth = _width;
+            v1.ScaleXStep = _mirror ? 1 : -1;
 
-            _vm.MarkRectAsDirty(_vm.MainVirtScreen, rect.left, rect.right + 1, rect.top, rect.bottom, ActorID);
+            _vm.MarkRectAsDirty(_vm.MainVirtScreen, rect.Left, rect.Right + 1, rect.Top, rect.Bottom, ActorID);
 
-            if (rect.top >= _h || rect.bottom <= 0)
+            if (rect.Top >= _h || rect.Bottom <= 0)
                 return 0;
 
-            if (rect.left >= _w || rect.right <= 0)
+            if (rect.Left >= _w || rect.Right <= 0)
                 return 0;
 
-            v1.replen = 0;
+            v1.RepLen = 0;
 
             if (_mirror)
             {
                 if (!use_scaling)
-                    skip = -v1.x;
+                    skip = -v1.X;
                 if (skip > 0)
                 {
-                    if (_loaded._format != 0x57)
+                    if (_loaded.Format != 0x57)
                     {
-                        v1.skip_width -= skip;
+                        v1.SkipWidth -= skip;
                         Codec1IgnorePakCols(v1, skip);
-                        v1.x = 0;
+                        v1.X = 0;
                     }
                 }
                 else
                 {
-                    skip = rect.right - _w;
+                    skip = rect.Right - _w;
                     if (skip <= 0)
                     {
                         drawFlag = 2;
                     }
                     else
                     {
-                        v1.skip_width -= skip;
+                        v1.SkipWidth -= skip;
                     }
                 }
             }
             else
             {
                 if (!use_scaling)
-                    skip = rect.right - _w;
+                    skip = rect.Right - _w;
                 if (skip > 0)
                 {
-                    if (_loaded._format != 0x57)
+                    if (_loaded.Format != 0x57)
                     {
-                        v1.skip_width -= skip;
+                        v1.SkipWidth -= skip;
                         Codec1IgnorePakCols(v1, skip);
-                        v1.x = _w - 1;
+                        v1.X = _w - 1;
                     }
                 }
                 else
                 {
                     // V1 games uses 8 x 8 pixels for actors
-                    if (_loaded._format == 0x57)
-                        skip = -8 - rect.left;
+                    if (_loaded.Format == 0x57)
+                        skip = -8 - rect.Left;
                     else
-                        skip = -1 - rect.left;
+                        skip = -1 - rect.Left;
                     if (skip <= 0)
                         drawFlag = 2;
                     else
-                        v1.skip_width -= skip;
+                        v1.SkipWidth -= skip;
                 }
             }
 
-            if (v1.skip_width <= 0)
+            if (v1.SkipWidth <= 0)
                 return 0;
 
-            if (rect.left < 0)
-                rect.left = 0;
+            if (rect.Left < 0)
+                rect.Left = 0;
 
-            if (rect.top < 0)
-                rect.top = 0;
+            if (rect.Top < 0)
+                rect.Top = 0;
 
-            if (rect.top > _h)
-                rect.top = _h;
+            if (rect.Top > _h)
+                rect.Top = _h;
 
-            if (rect.bottom > _h)
-                rect.bottom = _h;
+            if (rect.Bottom > _h)
+                rect.Bottom = _h;
 
-            if (DrawTop > rect.top)
-                DrawTop = rect.top;
-            if (DrawBottom < rect.bottom)
-                DrawBottom = rect.bottom;
+            if (DrawTop > rect.Top)
+                DrawTop = rect.Top;
+            if (DrawBottom < rect.Bottom)
+                DrawBottom = rect.Bottom;
 
-            if (_height + rect.top >= 256)
+            if (_height + rect.Top >= 256)
             {
                 return 2;
             }
 
             _pixelsNavigator = new PixelNavigator(startNav);
-            _pixelsNavigator.Offset(v1.x, v1.y);
-            v1.destptr = _pixelsNavigator;
+            _pixelsNavigator.Offset(v1.X, v1.Y);
+            v1.DestPtr = _pixelsNavigator;
 
-            v1.mask_ptr = _vm.GetMaskBuffer(0, v1.y, ZBuffer);
+            v1.MaskPtr = _vm.GetMaskBuffer(0, v1.Y, ZBuffer);
 
             Proc3(v1);
 
             return drawFlag;
         }
 
-        private void Codec1IgnorePakCols(Codec1 v1, int num)
+        void Codec1IgnorePakCols(Codec1 v1, int num)
         {
-            _loaded._costumeReader.BaseStream.Seek(_srcptr, System.IO.SeekOrigin.Begin);
+            _loaded.CostumeReader.BaseStream.Seek(_srcptr, System.IO.SeekOrigin.Begin);
             num *= _height;
 
             do
             {
-                v1.replen = _loaded._costumeReader.ReadByte();
-                v1.repcolor = (byte)(v1.replen >> v1.shr);
-                v1.replen &= v1.mask;
+                v1.RepLen = _loaded.CostumeReader.ReadByte();
+                v1.RepColor = (byte)(v1.RepLen >> v1.Shr);
+                v1.RepLen &= v1.Mask;
 
-                if (v1.replen == 0)
-                    v1.replen = _loaded._costumeReader.ReadByte();
+                if (v1.RepLen == 0)
+                    v1.RepLen = _loaded.CostumeReader.ReadByte();
 
                 do
                 {
                     if ((--num) == 0)
                     {
-                        _srcptr = _loaded._costumeReader.BaseStream.Position;
+                        _srcptr = _loaded.CostumeReader.BaseStream.Position;
                         return;
                     }
-                } while ((--v1.replen) != 0);
+                } while ((--v1.RepLen) != 0);
             } while (true);
         }
 
-        private void Proc3(Codec1 v1)
+        void Proc3(Codec1 v1)
         {
             PixelNavigator dst;
             byte len, maskbit;
@@ -548,17 +548,17 @@ namespace NScumm.Core.Graphics
             byte scaleIndexY;
             bool masked;
 
-            y = v1.y;
-            _loaded._costumeReader.BaseStream.Seek(_srcptr, System.IO.SeekOrigin.Begin);
-            dst = new PixelNavigator(v1.destptr);
-            len = v1.replen;
-            color = v1.repcolor;
+            y = v1.Y;
+            _loaded.CostumeReader.BaseStream.Seek(_srcptr, System.IO.SeekOrigin.Begin);
+            dst = new PixelNavigator(v1.DestPtr);
+            len = v1.RepLen;
+            color = v1.RepColor;
             height = (uint)_height;
 
             scaleIndexY = _scaleIndexY;
-            maskbit = (byte)ScummHelper.RevBitMask(v1.x & 7);
-            var mask = new PixelNavigator(v1.mask_ptr);
-            mask.OffsetX(v1.x / 8);
+            maskbit = (byte)ScummHelper.RevBitMask(v1.X & 7);
+            var mask = new PixelNavigator(v1.MaskPtr);
+            mask.OffsetX(v1.X / 8);
 
             bool ehmerde = false;
             if (len != 0)
@@ -570,20 +570,20 @@ namespace NScumm.Core.Graphics
             {
                 if (!ehmerde)
                 {
-                    len = _loaded._costumeReader.ReadByte();
-                    color = (uint)(len >> v1.shr);
-                    len &= v1.mask;
+                    len = _loaded.CostumeReader.ReadByte();
+                    color = (uint)(len >> v1.Shr);
+                    len &= v1.Mask;
                     if (len == 0)
-                        len = _loaded._costumeReader.ReadByte();
+                        len = _loaded.CostumeReader.ReadByte();
                 }
 
                 do
                 {
                     if (!ehmerde)
                     {
-                        if (ScaleY == 255 || v1.scaletable[scaleIndexY++] < ScaleY)
+                        if (ScaleY == 255 || v1.Scaletable[scaleIndexY++] < ScaleY)
                         {
-                            masked = (y < 0 || y >= _h) || (v1.x < 0 || v1.x >= _w) || ((mask.Read() & maskbit) != 0);
+                            masked = (y < 0 || y >= _h) || (v1.X < 0 || v1.X >= _w) || ((mask.Read() & maskbit) != 0);
 
                             if (color != 0 && !masked)
                             {
@@ -596,25 +596,25 @@ namespace NScumm.Core.Graphics
                         }
                         if ((--height) == 0)
                         {
-                            if ((--v1.skip_width) == 0)
+                            if ((--v1.SkipWidth) == 0)
                                 return;
                             height = (uint)_height;
-                            y = v1.y;
+                            y = v1.Y;
 
                             scaleIndexY = _scaleIndexY;
 
-                            if (ScaleX == 255 || v1.scaletable[_scaleIndexX] < ScaleX)
+                            if (ScaleX == 255 || v1.Scaletable[_scaleIndexX] < ScaleX)
                             {
-                                v1.x += v1.scaleXstep;
-                                if (v1.x < 0 || v1.x >= _w)
+                                v1.X += v1.ScaleXStep;
+                                if (v1.X < 0 || v1.X >= _w)
                                     return;
-                                maskbit = (byte)ScummHelper.RevBitMask(v1.x & 7);
-                                v1.destptr.OffsetX(v1.scaleXstep);
+                                maskbit = (byte)ScummHelper.RevBitMask(v1.X & 7);
+                                v1.DestPtr.OffsetX(v1.ScaleXStep);
                             }
-                            _scaleIndexX = (byte)(_scaleIndexX + v1.scaleXstep);
-                            dst = new PixelNavigator(v1.destptr);
-                            mask = new PixelNavigator(v1.mask_ptr);
-                            mask.OffsetX(v1.x / 8);
+                            _scaleIndexX = (byte)(_scaleIndexX + v1.ScaleXStep);
+                            dst = new PixelNavigator(v1.DestPtr);
+                            mask = new PixelNavigator(v1.MaskPtr);
+                            mask.OffsetX(v1.X / 8);
                         }
                     }
                     ehmerde = false;

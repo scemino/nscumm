@@ -18,7 +18,6 @@
 using NScumm.Core.IO;
 using System;
 using System.Collections.Generic;
-using System.IO;
 
 namespace NScumm.Core
 {
@@ -26,18 +25,18 @@ namespace NScumm.Core
     {
         public uint OBIMoffset;
         public uint OBCDoffset;
-        public short walk_x, walk_y;
-        public ushort obj_nr;
-        public short x_pos;
-        public short y_pos;
-        public ushort width;
-        public ushort height;
-        public byte actordir;
-        public byte parent;
-        public byte parentstate;
-        public byte state;
-        public byte fl_object_index;
-        public DrawBitmaps flags;
+        public short WalkX, WalkY;
+        public ushort Number;
+        public short XPos;
+        public short YPos;
+        public ushort Width;
+        public ushort Height;
+        public byte ActorDir;
+        public byte Parent;
+        public byte ParentState;
+        public byte State;
+        public byte FlObjectIndex;
+        public DrawBitmaps Flags;
 
         public Dictionary<byte, ushort> ScriptOffsets { get; private set; }
         public ScriptData Script { get; private set; }
@@ -56,19 +55,19 @@ namespace NScumm.Core
             var objectEntries = new[]{
                 LoadAndSaveEntry.Create(reader => OBIMoffset = reader.ReadUInt32(), writer => writer.Write(OBIMoffset), 8),
                 LoadAndSaveEntry.Create(reader => OBCDoffset = reader.ReadUInt32(), writer => writer.Write(OBCDoffset),8),
-                LoadAndSaveEntry.Create(reader => walk_x = reader.ReadInt16(), writer => writer.Write(walk_x),8),
-                LoadAndSaveEntry.Create(reader => walk_y = reader.ReadInt16(), writer => writer.Write(walk_y),8),
-                LoadAndSaveEntry.Create(reader => obj_nr = reader.ReadUInt16(), writer => writer.Write(obj_nr),8),
-                LoadAndSaveEntry.Create(reader => x_pos = reader.ReadInt16(), writer => writer.Write(x_pos),8),
-                LoadAndSaveEntry.Create(reader => y_pos = reader.ReadInt16(), writer => writer.Write(y_pos),8),
-                LoadAndSaveEntry.Create(reader => width = reader.ReadUInt16(), writer => writer.Write(width),8),
-                LoadAndSaveEntry.Create(reader => height = reader.ReadUInt16(), writer => writer.Write(height),8),
-                LoadAndSaveEntry.Create(reader => actordir = reader.ReadByte(), writer => writer.Write(actordir),8),
-                LoadAndSaveEntry.Create(reader => parentstate = reader.ReadByte(), writer => writer.Write(parentstate),8),
-                LoadAndSaveEntry.Create(reader => parent = reader.ReadByte(), writer => writer.Write(parent),8),
-                LoadAndSaveEntry.Create(reader => state = reader.ReadByte(), writer => writer.Write(state),8),
-                LoadAndSaveEntry.Create(reader => fl_object_index = reader.ReadByte(), writer => writer.Write(fl_object_index),8),
-                LoadAndSaveEntry.Create(reader => flags = (DrawBitmaps)reader.ReadByte(), writer => writer.Write((byte)flags),46),
+                LoadAndSaveEntry.Create(reader => WalkX = reader.ReadInt16(), writer => writer.Write(WalkX),8),
+                LoadAndSaveEntry.Create(reader => WalkY = reader.ReadInt16(), writer => writer.Write(WalkY),8),
+                LoadAndSaveEntry.Create(reader => Number = reader.ReadUInt16(), writer => writer.Write(Number),8),
+                LoadAndSaveEntry.Create(reader => XPos = reader.ReadInt16(), writer => writer.Write(XPos),8),
+                LoadAndSaveEntry.Create(reader => YPos = reader.ReadInt16(), writer => writer.Write(YPos),8),
+                LoadAndSaveEntry.Create(reader => Width = reader.ReadUInt16(), writer => writer.Write(Width),8),
+                LoadAndSaveEntry.Create(reader => Height = reader.ReadUInt16(), writer => writer.Write(Height),8),
+                LoadAndSaveEntry.Create(reader => ActorDir = reader.ReadByte(), writer => writer.Write(ActorDir),8),
+                LoadAndSaveEntry.Create(reader => ParentState = reader.ReadByte(), writer => writer.Write(ParentState),8),
+                LoadAndSaveEntry.Create(reader => Parent = reader.ReadByte(), writer => writer.Write(Parent),8),
+                LoadAndSaveEntry.Create(reader => State = reader.ReadByte(), writer => writer.Write(State),8),
+                LoadAndSaveEntry.Create(reader => FlObjectIndex = reader.ReadByte(), writer => writer.Write(FlObjectIndex),8),
+                LoadAndSaveEntry.Create(reader => Flags = (DrawBitmaps)reader.ReadByte(), writer => writer.Write((byte)Flags),46),
             };
             Array.ForEach(objectEntries, e => e.Execute(serializer));
         }

@@ -28,17 +28,17 @@ namespace NScumm.Core
         #region Resource Structure
         private struct Resource
         {
-            public byte roomNum;
-            public int offset;
+            public byte RoomNum;
+            public int Offset;
         }
         #endregion
 
         #region Fields
-        private Resource[] _rooms;
-        private Resource[] _scripts;
-        private Resource[] _costumes;
-        private Dictionary<byte, string> _roomNames;
-        private string _directory;
+        Resource[] _rooms;
+        Resource[] _scripts;
+        Resource[] _costumes;
+        Dictionary<byte, string> _roomNames;
+        string _directory;
         #endregion
 
         #region Properties
@@ -55,12 +55,12 @@ namespace NScumm.Core
         #region Public Methods
         public void LoadIndex(string path)
         {
-            this._roomNames = new Dictionary<byte, string>();
-            this._directory = System.IO.Path.GetDirectoryName(path);
+            _roomNames = new Dictionary<byte, string>();
+            _directory = Path.GetDirectoryName(path);
             using (var file = File.Open(path, FileMode.Open))
             {
-                BinaryReader br1 = new BinaryReader(file);
-                XorReader br = new XorReader(br1, 0);
+                var br1 = new BinaryReader(file);
+                var br = new XorReader(br1, 0);
                 while (br.BaseStream.Position < br.BaseStream.Length)
                 {
                     br.ReadInt32();
@@ -71,13 +71,13 @@ namespace NScumm.Core
                             for (byte room; (room = br.ReadByte()) != 0; )
                             {
                                 var dataName = br.ReadBytes(9);
-                                StringBuilder name = new StringBuilder();
+                                var name = new StringBuilder();
                                 for (int i = 0; i < 9; i++)
                                 {
                                     var b = dataName[i] ^ 0xFF;
                                     name.Append((char)b);
                                 }
-                                this._roomNames.Add(room, name.ToString());
+                                _roomNames.Add(room, name.ToString());
                             }
                             break;
                         case 0x5230:	// 'R0'
@@ -114,12 +114,12 @@ namespace NScumm.Core
         public byte[] GetScript(byte scriptNum)
         {
             byte[] data = null;
-            var offset = _scripts[scriptNum].offset;
-            var disk = OpenRoom(_scripts[scriptNum].roomNum);
+            var offset = _scripts[scriptNum].Offset;
+            var disk = OpenRoom(_scripts[scriptNum].RoomNum);
             if (disk != null)
             {
                 var rOffsets = disk.ReadRoomOffsets();
-                data = disk.ReadScript(rOffsets[_scripts[scriptNum].roomNum] + offset);
+                data = disk.ReadScript(rOffsets[_scripts[scriptNum].RoomNum] + offset);
             }
             return data;
         }
@@ -127,12 +127,12 @@ namespace NScumm.Core
         public XorReader GetCostumeReader(byte scriptNum)
         {
             XorReader reader = null;
-            var disk = OpenRoom(_costumes[scriptNum].roomNum);
+            var disk = OpenRoom(_costumes[scriptNum].RoomNum);
             if (disk != null)
             {
                 var rOffsets = disk.ReadRoomOffsets();
-                var offset = _costumes[scriptNum].offset;
-                reader = disk.ReadCostume(_costumes[scriptNum].roomNum, rOffsets[_costumes[scriptNum].roomNum] + offset);
+                var offset = _costumes[scriptNum].Offset;
+                reader = disk.ReadCostume(rOffsets[_costumes[scriptNum].RoomNum] + offset);
             }
             return reader;
         }
@@ -164,50 +164,50 @@ namespace NScumm.Core
         #endregion
 
         #region Private Methods
-        private DiskFile OpenCharset(byte id)
+        DiskFile OpenCharset(byte id)
         {
             var diskName = string.Format("{0}.lfl", 900 + id);
-            var game1Path = System.IO.Path.Combine(_directory, diskName);
-            DiskFile file = new DiskFile(game1Path, 0x0);
+            var game1Path = Path.Combine(_directory, diskName);
+            var file = new DiskFile(game1Path, 0x0);
             return file;
         }
 
-        private DiskFile OpenRoom(byte roomNum)
+        DiskFile OpenRoom(byte roomNum)
         {
-            var diskNum = _rooms[roomNum].roomNum;
+            var diskNum = _rooms[roomNum].RoomNum;
             var diskName = string.Format("disk{0:00}.lec", diskNum);
-            var game1Path = System.IO.Path.Combine(_directory, diskName);
+            var game1Path = Path.Combine(_directory, diskName);
 
             DiskFile file = diskNum != 0 ? new DiskFile(game1Path, 0x69) : null;
             return file;
         }
 
-        private static Resource[] ReadResTypeList(XorReader br)
+        static Resource[] ReadResTypeList(XorReader br)
         {
             var numEntries = br.ReadInt16();
-            Resource[] res = new Resource[numEntries];
+            var res = new Resource[numEntries];
             for (int i = 0; i < numEntries; i++)
             {
                 var roomNum = br.ReadByte();
                 var offset = br.ReadInt32();
-                res[i] = new Resource { roomNum = roomNum, offset = offset };
+                res[i] = new Resource { RoomNum = roomNum, Offset = offset };
             }
             return res;
         }
 
-        private void ReadDirectoryOfObjects(XorReader br)
+        void ReadDirectoryOfObjects(XorReader br)
         {
             var numEntries = br.ReadInt16();
-            this.ObjectOwnerTable = new byte[numEntries];
-            this.ObjectStateTable = new byte[numEntries];
-            this.ClassData = new uint[numEntries];
+            ObjectOwnerTable = new byte[numEntries];
+            ObjectStateTable = new byte[numEntries];
+            ClassData = new uint[numEntries];
             uint bits;
             for (int i = 0; i < numEntries; i++)
             {
                 bits = br.ReadByte();
                 bits |= (uint)(br.ReadByte() << 8);
                 bits |= (uint)(br.ReadByte() << 16);
-                this.ClassData[i] = bits;
+                ClassData[i] = bits;
                 var tmp = br.ReadByte();
                 ObjectStateTable[i] = (byte)(tmp >> 4);
                 ObjectOwnerTable[i] = (byte)(tmp & 0x0F);

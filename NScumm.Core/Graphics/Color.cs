@@ -40,7 +40,7 @@ namespace NScumm.Core.Graphics
                 return false;
             }
 
-            Color color = (Color)obj;
+            var color = (Color)obj;
             return R == color.R && G == color.G && B == color.B;
         }
     }

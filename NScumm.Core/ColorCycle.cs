@@ -22,20 +22,20 @@ namespace NScumm.Core
 {
     public class ColorCycle
     {
-        public ushort delay;
-        public ushort counter;
-        public ushort flags;
-        public byte start;
-        public byte end;
+        public ushort Delay;
+        public ushort Counter;
+        public ushort Flags;
+        public byte Start;
+        public byte End;
 
         public void SaveOrLoad(Serializer serializer)
         {
             var colorCycleEntries = new[]{
-                    LoadAndSaveEntry.Create(reader => delay = reader.ReadUInt16(), writer => writer.Write(delay), 8),
-                    LoadAndSaveEntry.Create(reader => counter = reader.ReadUInt16(), writer => writer.Write(counter),8),
-                    LoadAndSaveEntry.Create(reader => flags = reader.ReadUInt16(), writer => writer.Write(flags),8),
-                    LoadAndSaveEntry.Create(reader => start = reader.ReadByte(), writer => writer.Write(start),8),
-                    LoadAndSaveEntry.Create(reader => end = reader.ReadByte(), writer => writer.Write(end),8),
+                    LoadAndSaveEntry.Create(reader => Delay = reader.ReadUInt16(), writer => writer.Write(Delay), 8),
+                    LoadAndSaveEntry.Create(reader => Counter = reader.ReadUInt16(), writer => writer.Write(Counter),8),
+                    LoadAndSaveEntry.Create(reader => Flags = reader.ReadUInt16(), writer => writer.Write(Flags),8),
+                    LoadAndSaveEntry.Create(reader => Start = reader.ReadByte(), writer => writer.Write(Start),8),
+                    LoadAndSaveEntry.Create(reader => End = reader.ReadByte(), writer => writer.Write(End),8),
              };
             Array.ForEach(colorCycleEntries, e => e.Execute(serializer));
         }

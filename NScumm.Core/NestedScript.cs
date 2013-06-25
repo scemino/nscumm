@@ -17,24 +17,21 @@
 
 using NScumm.Core.IO;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace NScumm.Core
 {
     public class NestedScript
     {
-        public ushort number;
-        public WhereIsObject where;
-        public byte slot;
+        public ushort Number;
+        public WhereIsObject Where;
+        public byte Slot;
 
         public void SaveOrLoad(Serializer serializer)
         {
             var nestedScriptEntries = new[]{
-                LoadAndSaveEntry.Create(reader => number = reader.ReadUInt16(), writer => writer.Write(number),8),
-                LoadAndSaveEntry.Create(reader => where = (WhereIsObject)reader.ReadByte(), writer => writer.Write((byte)where),8),
-                LoadAndSaveEntry.Create(reader => slot = reader.ReadByte(), writer => writer.Write(slot),8),
+                LoadAndSaveEntry.Create(reader => Number = reader.ReadUInt16(), writer => writer.Write(Number),8),
+                LoadAndSaveEntry.Create(reader => Where = (WhereIsObject)reader.ReadByte(), writer => writer.Write((byte)Where),8),
+                LoadAndSaveEntry.Create(reader => Slot = reader.ReadByte(), writer => writer.Write(Slot),8),
             };
             Array.ForEach(nestedScriptEntries, e => e.Execute(serializer));
         }

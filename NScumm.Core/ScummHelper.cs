@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 
 namespace NScumm.Core
 {
-    internal static class ScummHelper
+    static class ScummHelper
     {
         public static int NewDirToOldDir(int dir)
         {

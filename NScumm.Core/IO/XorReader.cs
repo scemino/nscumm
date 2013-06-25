@@ -21,8 +21,8 @@ namespace NScumm.Core.IO
 {
     public class XorReader
     {
-        private BinaryReader _reader;
-        private byte _xor;
+        BinaryReader _reader;
+        byte _xor;
 
         public Stream BaseStream { get { return _reader.BaseStream; } }
 
@@ -92,13 +92,13 @@ namespace NScumm.Core.IO
             return ToUInt32(data);
         }
 
-        private static int ToInt32(int b0, int b1, int b2, int b3)
+        static int ToInt32(int b0, int b1, int b2, int b3)
         {
             int value = (b0) | (b1 << 8) | (b2 << 16) | (b3 << 24);
             return value;
         }
 
-        private static uint ToUInt32(byte[] data)
+        static uint ToUInt32(System.Collections.Generic.IList<byte> data)
         {
             uint value = data[0] | ((uint)data[1] << 8) | ((uint)data[2] << 16) | ((uint)data[3] << 24);
             return value;

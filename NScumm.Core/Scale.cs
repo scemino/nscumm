@@ -19,9 +19,9 @@ namespace NScumm.Core
 {
     public class Scale
     {
-        public ushort scale1;
-        public ushort scale2;
-        public ushort y1;
-        public ushort y2;
+        public ushort Scale1;
+        public ushort Scale2;
+        public ushort Y1;
+        public ushort Y2;
     }
 }

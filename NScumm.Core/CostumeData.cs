@@ -19,35 +19,35 @@ namespace NScumm.Core
 {
     public class CostumeData
     {
-        public byte[] active;
-        public ushort animCounter;
-        public byte soundCounter;
-        public byte soundPos;
-        public ushort stopped;
-        public ushort[] curpos;
-        public ushort[] start;
-        public ushort[] end;
-        public ushort[] frame;
+        public byte[] Active;
+        public ushort AnimCounter;
+        public byte SoundCounter;
+        public byte SoundPos;
+        public ushort Stopped;
+        public ushort[] Curpos;
+        public ushort[] Start;
+        public ushort[] End;
+        public ushort[] Frame;
 
-        public ushort current;
+        public ushort Current;
 
         public CostumeData()
         {
-            active = new byte[16];
-            curpos = new ushort[16];
-            start = new ushort[16];
-            end = new ushort[16];
-            frame = new ushort[16];
+            Active = new byte[16];
+            Curpos = new ushort[16];
+            Start = new ushort[16];
+            End = new ushort[16];
+            Frame = new ushort[16];
         }
 
         public void Reset()
         {
-            current = 0;
-            stopped = 0;
+            Current = 0;
+            Stopped = 0;
             for (int i = 0; i < 16; i++)
             {
-                active[i] = 0;
-                curpos[i] = start[i] = end[i] = frame[i] = 0xFFFF;
+                Active[i] = 0;
+                Curpos[i] = Start[i] = End[i] = Frame[i] = 0xFFFF;
             }
         }
     }

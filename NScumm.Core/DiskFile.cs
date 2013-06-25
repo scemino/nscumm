@@ -26,7 +26,7 @@ namespace NScumm.Core
     public class DiskFile
     {
         #region Fields
-        private XorReader _reader;
+        XorReader _reader;
         #endregion
 
         #region Chunk Class
@@ -41,9 +41,9 @@ namespace NScumm.Core
         #region ChunkIterator Class
         private sealed class ChunkIterator : IEnumerator<Chunk>
         {
-            private readonly XorReader _reader;
-            private readonly long _position;
-            private readonly long _size;
+            readonly XorReader _reader;
+            readonly long _position;
+            readonly long _size;
 
             public ChunkIterator(XorReader reader, long size)
             {
@@ -69,25 +69,25 @@ namespace NScumm.Core
 
             public bool MoveNext()
             {
-                if (this.Current != null)
+                if (Current != null)
                 {
-                    var offset = this.Current.Offset + this.Current.Size - 6;
+                    var offset = Current.Offset + Current.Size - 6;
                     _reader.BaseStream.Seek(offset, SeekOrigin.Begin);
                 }
-                this.Current = null;
+                Current = null;
                 if (_reader.BaseStream.Position < (_position + _size - 6) && _reader.BaseStream.Position < _reader.BaseStream.Length)
                 {
                     var size = _reader.ReadUInt32();
                     var tag = _reader.ReadUInt16();
-                    this.Current = new Chunk { Offset = _reader.BaseStream.Position, Size = size, Tag = tag };
+                    Current = new Chunk { Offset = _reader.BaseStream.Position, Size = size, Tag = tag };
                 }
-                return this.Current != null;
+                return Current != null;
             }
 
             public void Reset()
             {
                 _reader.BaseStream.Seek(_position, SeekOrigin.Begin);
-                this.Current = null;
+                Current = null;
             }
         }
         #endregion
@@ -108,7 +108,7 @@ namespace NScumm.Core
         #region Public Methods
         public Dictionary<byte, int> ReadRoomOffsets()
         {
-            Dictionary<byte, int> roomOffsets = new Dictionary<byte, int>();
+            var roomOffsets = new Dictionary<byte, int>();
             do
             {
                 var size = _reader.ReadInt32();
@@ -146,9 +146,9 @@ namespace NScumm.Core
 
         public Room ReadRoom(int roomOffset)
         {
-            Dictionary<ushort, byte[]> stripsDic = new Dictionary<ushort, byte[]>();
-            Stack<ChunkIterator> its = new Stack<ChunkIterator>();
-            Room room = new Room();
+            var stripsDic = new Dictionary<ushort, byte[]>();
+            var its = new Stack<ChunkIterator>();
+            var room = new Room();
             _reader.BaseStream.Seek(roomOffset, SeekOrigin.Begin);
             var it = new ChunkIterator(_reader, _reader.BaseStream.Length - _reader.BaseStream.Position);
             do
@@ -188,18 +188,18 @@ namespace NScumm.Core
                                 var numBoxes = _reader.ReadByte();
                                 for (int i = 0; i < numBoxes; i++)
                                 {
-                                    Box box = new Box();
-                                    box.ulx = _reader.ReadInt16();
-                                    box.uly = _reader.ReadInt16();
-                                    box.urx = _reader.ReadInt16();
-                                    box.ury = _reader.ReadInt16();
-                                    box.lrx = _reader.ReadInt16();
-                                    box.lry = _reader.ReadInt16();
-                                    box.llx = _reader.ReadInt16();
-                                    box.lly = _reader.ReadInt16();
-                                    box.mask = _reader.ReadByte();
-                                    box.flags = (BoxFlags)_reader.ReadByte();
-                                    box.scale = _reader.ReadUInt16();
+                                    var box = new Box();
+                                    box.Ulx = _reader.ReadInt16();
+                                    box.Uly = _reader.ReadInt16();
+                                    box.Urx = _reader.ReadInt16();
+                                    box.Ury = _reader.ReadInt16();
+                                    box.Lrx = _reader.ReadInt16();
+                                    box.Lry = _reader.ReadInt16();
+                                    box.Llx = _reader.ReadInt16();
+                                    box.Lly = _reader.ReadInt16();
+                                    box.Mask = _reader.ReadByte();
+                                    box.Flags = (BoxFlags)_reader.ReadByte();
+                                    box.Scale = _reader.ReadUInt16();
                                     room.Boxes.Add(box);
                                     size -= 20;
                                 }
@@ -308,22 +308,22 @@ namespace NScumm.Core
                                 byte height = (byte)(tmp & 0xF8);
                                 byte actordir = (byte)(tmp & 0x07);
 
-                                ObjectData data = new ObjectData();
-                                data.obj_nr = objId;
-                                data.x_pos = (short)(8 * x);
-                                data.y_pos = (short)(8 * y);
-                                data.width = (ushort)(8 * width);
-                                data.height = height;
-                                data.parent = parent;
-                                data.parentstate = parentState;
-                                data.walk_x = walk_x;
-                                data.walk_y = walk_y;
-                                data.actordir = actordir;
+                                var data = new ObjectData();
+                                data.Number = objId;
+                                data.XPos = (short)(8 * x);
+                                data.YPos = (short)(8 * y);
+                                data.Width = (ushort)(8 * width);
+                                data.Height = height;
+                                data.Parent = parent;
+                                data.ParentState = parentState;
+                                data.WalkX = walk_x;
+                                data.WalkY = walk_y;
+                                data.ActorDir = actordir;
                                 room.Objects.Add(data);
 
                                 var nameOffset = _reader.ReadByte();
                                 var size = nameOffset - 6 - 13;
-                                ReadVerbTable(it, data, size);
+                                ReadVerbTable(data, size);
                                 data.Name = ReadObjectName(it, nameOffset);
                                 // read script
                                 size = (int)(it.Current.Offset + it.Current.Size - 6 - _reader.BaseStream.Position);
@@ -352,7 +352,7 @@ namespace NScumm.Core
             return room;
         }
 
-        public XorReader ReadCostume(byte room, int costOffset)
+        public XorReader ReadCostume(int costOffset)
         {
             _reader.BaseStream.Seek(costOffset + 12, SeekOrigin.Begin);
             var tag = _reader.ReadInt16();
@@ -378,10 +378,10 @@ namespace NScumm.Core
         #endregion
 
         #region Private Methods
-        private byte[] ReadObjectName(ChunkIterator it, byte nameOffset)
+        byte[] ReadObjectName(IEnumerator<Chunk> it, byte nameOffset)
         {
             _reader.BaseStream.Seek(it.Current.Offset + nameOffset - 6, SeekOrigin.Begin);
-            List<byte> name = new List<byte>();
+            var name = new List<byte>();
             var c = _reader.ReadByte();
             while (c != 0)
             {
@@ -391,7 +391,7 @@ namespace NScumm.Core
             return name.ToArray();
         }
 
-        private void ReadVerbTable(ChunkIterator it, ObjectData data, int size)
+        void ReadVerbTable(ObjectData data, int size)
         {
             var tableLength = (size - 1) / 3;
             for (int i = 0; i < tableLength; i++)
@@ -403,11 +403,11 @@ namespace NScumm.Core
             _reader.ReadByte();
         }
 
-        private static void SetObjectImage(Dictionary<ushort, byte[]> stripsDic, ObjectData obj)
+        static void SetObjectImage(IDictionary<ushort, byte[]> stripsDic, ObjectData obj)
         {
-            if (stripsDic.ContainsKey(obj.obj_nr))
+            if (stripsDic.ContainsKey(obj.Number))
             {
-                var stripData = stripsDic[obj.obj_nr];
+                var stripData = stripsDic[obj.Number];
                 obj.Image = stripData;
             }
             else
@@ -416,16 +416,16 @@ namespace NScumm.Core
             }
         }
 
-        private RoomHeader ReadRMHD()
+        RoomHeader ReadRMHD()
         {
-            RoomHeader header = new RoomHeader();
+            var header = new RoomHeader();
             header.Width = _reader.ReadUInt16();
             header.Height = _reader.ReadUInt16();
             header.NumObjects = _reader.ReadUInt16();
             return header;
         }
 
-        private ColorCycle[] ReadCYCL()
+        ColorCycle[] ReadCYCL()
         {
             var colorCycle = new ColorCycle[16];
             for (int i = 0; i < 16; i++)
@@ -439,17 +439,17 @@ namespace NScumm.Core
                 if (delay == 0 || delay == 0x0aaa || start >= end)
                     continue;
 
-                colorCycle[i].counter = 0;
-                colorCycle[i].delay = (ushort)(16384 / delay);
-                colorCycle[i].flags = 2;
-                colorCycle[i].start = start;
-                colorCycle[i].end = end;
+                colorCycle[i].Counter = 0;
+                colorCycle[i].Delay = (ushort)(16384 / delay);
+                colorCycle[i].Flags = 2;
+                colorCycle[i].Start = start;
+                colorCycle[i].End = end;
             }
 
             return colorCycle;
         }
 
-        private Scale[] ReadSCAL()
+        Scale[] ReadSCAL()
         {
             Scale[] scales = new Scale[4];
             for (int i = 0; i < 4; i++)
@@ -458,17 +458,17 @@ namespace NScumm.Core
                 var y1 = _reader.ReadUInt16();
                 var scale2 = _reader.ReadUInt16();
                 var y2 = _reader.ReadUInt16();
-                scales[i] = new Scale { scale1 = scale1, y1 = y1, y2 = y2, scale2 = scale2 };
+                scales[i] = new Scale { Scale1 = scale1, Y1 = y1, Y2 = y2, Scale2 = scale2 };
             }
             return scales;
         }
 
-        private byte[] ReadEPAL()
+        byte[] ReadEPAL()
         {
             return _reader.ReadBytes(256);
         }
 
-        private NScumm.Core.Graphics.Color[] ReadCLUT()
+        NScumm.Core.Graphics.Color[] ReadCLUT()
         {
             var numColors = _reader.ReadUInt16() / 3;
             var colors = new NScumm.Core.Graphics.Color[numColors];

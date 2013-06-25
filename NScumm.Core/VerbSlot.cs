@@ -18,7 +18,6 @@
 using NScumm.Core.Graphics;
 using NScumm.Core.IO;
 using System;
-using System.IO;
 
 namespace NScumm.Core
 {
@@ -30,17 +29,17 @@ namespace NScumm.Core
 
     public class VerbSlot
     {
-        public Rect curRect;
-        public Rect oldRect;
-        public ushort verbid;
-        public byte color, hicolor, dimcolor, bkcolor;
-        public VerbType type;
-        public byte charset_nr, curmode;
-        public ushort saveid;
-        public byte key;
-        public bool center;
-        public byte prep;
-        public ushort imgindex;
+        public Rect CurRect;
+        public Rect OldRect;
+        public ushort VerbId;
+        public byte Color, HiColor, DimColor, BkColor;
+        public VerbType Type;
+        public byte CharsetNr, CurMode;
+        public ushort SaveId;
+        public byte Key;
+        public bool Center;
+        public byte Prep;
+        public ushort ImgIndex;
 
         public byte[] Text { get; set; }
 
@@ -52,30 +51,30 @@ namespace NScumm.Core
         public void SaveOrLoad(Serializer serializer)
         {
             var verbEntries = new[]{
-                LoadAndSaveEntry.Create(reader => curRect.left = reader.ReadInt16(), writer => writer.WriteInt16(curRect.left),8),
-                LoadAndSaveEntry.Create(reader => curRect.top = reader.ReadInt16(), writer => writer.WriteInt16(curRect.top),8),
-                LoadAndSaveEntry.Create(reader => curRect.right = reader.ReadInt16(), writer => writer.WriteInt16(curRect.right),8),
-                LoadAndSaveEntry.Create(reader => curRect.bottom = reader.ReadInt16(), writer => writer.WriteInt16(curRect.bottom),8),
-                LoadAndSaveEntry.Create(reader => oldRect.left = reader.ReadInt16(), writer => writer.WriteInt16(oldRect.left),8),
-                LoadAndSaveEntry.Create(reader => oldRect.top = reader.ReadInt16(), writer => writer.WriteInt16(oldRect.top),8),
-                LoadAndSaveEntry.Create(reader => oldRect.right = reader.ReadInt16(), writer => writer.WriteInt16(oldRect.right),8),
-                LoadAndSaveEntry.Create(reader => oldRect.bottom = reader.ReadInt16(), writer => writer.WriteInt16(oldRect.bottom),8),
+                LoadAndSaveEntry.Create(reader => CurRect.Left = reader.ReadInt16(), writer => writer.WriteInt16(CurRect.Left),8),
+                LoadAndSaveEntry.Create(reader => CurRect.Top = reader.ReadInt16(), writer => writer.WriteInt16(CurRect.Top),8),
+                LoadAndSaveEntry.Create(reader => CurRect.Right = reader.ReadInt16(), writer => writer.WriteInt16(CurRect.Right),8),
+                LoadAndSaveEntry.Create(reader => CurRect.Bottom = reader.ReadInt16(), writer => writer.WriteInt16(CurRect.Bottom),8),
+                LoadAndSaveEntry.Create(reader => OldRect.Left = reader.ReadInt16(), writer => writer.WriteInt16(OldRect.Left),8),
+                LoadAndSaveEntry.Create(reader => OldRect.Top = reader.ReadInt16(), writer => writer.WriteInt16(OldRect.Top),8),
+                LoadAndSaveEntry.Create(reader => OldRect.Right = reader.ReadInt16(), writer => writer.WriteInt16(OldRect.Right),8),
+                LoadAndSaveEntry.Create(reader => OldRect.Bottom = reader.ReadInt16(), writer => writer.WriteInt16(OldRect.Bottom),8),
                                                
-                LoadAndSaveEntry.Create(reader => verbid = reader.ReadByte(), writer => writer.Write((byte)verbid),8,11),
-                LoadAndSaveEntry.Create(reader => verbid = reader.ReadUInt16(), writer => writer.Write(verbid),12),
+                LoadAndSaveEntry.Create(reader => VerbId = reader.ReadByte(), writer => writer.Write((byte)VerbId),8,11),
+                LoadAndSaveEntry.Create(reader => VerbId = reader.ReadUInt16(), writer => writer.Write(VerbId),12),
                                                
-                LoadAndSaveEntry.Create(reader => color = reader.ReadByte(), writer => writer.Write(color),8),
-                LoadAndSaveEntry.Create(reader => hicolor = reader.ReadByte(), writer => writer.Write(hicolor),8),
-                LoadAndSaveEntry.Create(reader => dimcolor = reader.ReadByte(), writer => writer.Write(dimcolor),8),
-                LoadAndSaveEntry.Create(reader => bkcolor = reader.ReadByte(), writer => writer.Write(bkcolor),8),
-                LoadAndSaveEntry.Create(reader => type = (VerbType)reader.ReadByte(), writer => writer.Write((byte)type),8),
-                LoadAndSaveEntry.Create(reader => charset_nr = reader.ReadByte(), writer => writer.Write(charset_nr),8),
-                LoadAndSaveEntry.Create(reader => curmode = reader.ReadByte(), writer => writer.Write(curmode),8),
-                LoadAndSaveEntry.Create(reader => saveid = reader.ReadByte(), writer => writer.WriteByte(saveid),8),
-                LoadAndSaveEntry.Create(reader => key = reader.ReadByte(), writer => writer.Write(key),8),
-                LoadAndSaveEntry.Create(reader => center = reader.ReadBoolean(), writer => writer.Write(center),8),
-                LoadAndSaveEntry.Create(reader => prep = reader.ReadByte(), writer => writer.Write(prep),8),
-                LoadAndSaveEntry.Create(reader => imgindex = reader.ReadUInt16(), writer => writer.Write(imgindex),8),
+                LoadAndSaveEntry.Create(reader => Color = reader.ReadByte(), writer => writer.Write(Color),8),
+                LoadAndSaveEntry.Create(reader => HiColor = reader.ReadByte(), writer => writer.Write(HiColor),8),
+                LoadAndSaveEntry.Create(reader => DimColor = reader.ReadByte(), writer => writer.Write(DimColor),8),
+                LoadAndSaveEntry.Create(reader => BkColor = reader.ReadByte(), writer => writer.Write(BkColor),8),
+                LoadAndSaveEntry.Create(reader => Type = (VerbType)reader.ReadByte(), writer => writer.Write((byte)Type),8),
+                LoadAndSaveEntry.Create(reader => CharsetNr = reader.ReadByte(), writer => writer.Write(CharsetNr),8),
+                LoadAndSaveEntry.Create(reader => CurMode = reader.ReadByte(), writer => writer.Write(CurMode),8),
+                LoadAndSaveEntry.Create(reader => SaveId = reader.ReadByte(), writer => writer.WriteByte(SaveId),8),
+                LoadAndSaveEntry.Create(reader => Key = reader.ReadByte(), writer => writer.Write(Key),8),
+                LoadAndSaveEntry.Create(reader => Center = reader.ReadBoolean(), writer => writer.Write(Center),8),
+                LoadAndSaveEntry.Create(reader => Prep = reader.ReadByte(), writer => writer.Write(Prep),8),
+                LoadAndSaveEntry.Create(reader => ImgIndex = reader.ReadUInt16(), writer => writer.Write(ImgIndex),8),
             };
             Array.ForEach(verbEntries, e => e.Execute(serializer));
         }

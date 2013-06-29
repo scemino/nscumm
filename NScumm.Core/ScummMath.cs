@@ -108,13 +108,107 @@ namespace NScumm.Core
             return result;
         }
 
-        public static int GetDistance(int x, int y, int x2, int y2)
+        public static uint GetClosestPtOnBox(BoxCoords box, Point pIn, out Point pOut)
         {
-            int a = Math.Abs(y - y2);
-            int b = Math.Abs(x - x2);
+            Point tmp;
+            uint dist;
+            uint bestdist = 0xFFFFFF;
+            pOut = new Point();
+
+            tmp = ScummMath.ClosestPtOnLine(box.Ul, box.Ur, pIn);
+            dist = pIn.SquareDistance(tmp);
+            if (dist < bestdist)
+            {
+                bestdist = dist;
+                pOut = tmp;
+            }
+
+            tmp = ScummMath.ClosestPtOnLine(box.Ur, box.Lr, pIn);
+            dist = pIn.SquareDistance(tmp);
+            if (dist < bestdist)
+            {
+                bestdist = dist;
+                pOut = tmp;
+            }
+
+            tmp = ScummMath.ClosestPtOnLine(box.Lr, box.Ll, pIn);
+            dist = pIn.SquareDistance(tmp);
+            if (dist < bestdist)
+            {
+                bestdist = dist;
+                pOut = tmp;
+            }
+
+            tmp = ScummMath.ClosestPtOnLine(box.Ll, box.Ul, pIn);
+            dist = pIn.SquareDistance(tmp);
+            if (dist < bestdist)
+            {
+                bestdist = dist;
+                pOut = tmp;
+            }
+
+            return bestdist;
+        }
+
+        public static int GetDistance(Point p1, Point p2)
+        {
+            int a = Math.Abs(p1.Y - p2.Y);
+            int b = Math.Abs(p1.X - p2.X);
             return Math.Max(a, b);
         }
 
+        public static int GetAngleFromPos(int x, int y, bool useATAN)
+        {
+            if (useATAN)
+            {
+                double temp = Math.Atan2((double)x, (double)-y);
+                return NormalizeAngle((int)(temp * 180 / Math.PI));
+            }
+            if (Math.Abs(y) * 2 < Math.Abs(x))
+            {
+                if (x > 0)
+                    return 90;
+                return 270;
+            }
+            if (y > 0)
+                return 180;
+            return 0;
+        }
+
+        public static int NormalizeAngle(int angle)
+        {
+            int temp = (angle + 360) % 360;
+            return ToSimpleDir(true, temp) * 45;
+        }
+
+        public static int ToSimpleDir(bool dirType, int dir)
+        {
+            if (dirType)
+            {
+                var directions = new short[] { 22, 72, 107, 157, 202, 252, 287, 337 };
+                for (int i = 0; i < 7; i++)
+                    if (dir >= directions[i] && dir <= directions[i + 1])
+                        return i + 1;
+            }
+            else
+            {
+                var directions = new short[] { 71, 109, 251, 289 };
+                for (int i = 0; i < 3; i++)
+                    if (dir >= directions[i] && dir <= directions[i + 1])
+                        return i + 1;
+            }
+            return 0;
+        }
+
+        /// <summary>
+        /// Convert a simple direction to an angle.
+        /// </summary>
+        /// <param name="dir"></param>
+        /// <returns></returns>
+        public static int FromSimpleDirection(int dir)
+        {
+            return dir * 90;
+        }
     }
 }
 

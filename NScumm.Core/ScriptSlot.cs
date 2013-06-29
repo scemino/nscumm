@@ -52,6 +52,14 @@ namespace NScumm.Core
         public int InventoryEntry { get; set; }
         public bool Frozen { get; set; }
 
+        public int[] LocalVariables = new int[26];
+
+        public void InitializeLocals(Array locals)
+        {
+            Array.Copy(locals, LocalVariables, locals.Length);
+            Array.Clear(LocalVariables, locals.Length, LocalVariables.Length - locals.Length);
+        }
+
         public void SaveOrLoad(Serializer serializer, System.Collections.Generic.IList<ScriptData> localScripts)
         {
             var scriptSlotEntries = new[]{

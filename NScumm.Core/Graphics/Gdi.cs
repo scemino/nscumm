@@ -22,14 +22,14 @@ using System.IO;
 namespace NScumm.Core.Graphics
 {
     [Flags]
-    public enum DrawBitmaps
+    enum DrawBitmaps
     {
         AllowMaskOr = 1 << 0,
         DrawMaskOnAll = 1 << 1,
         ObjectMode = 2 << 2
     }
 
-    public class Gdi
+    class Gdi
     {
         #region Fields
         public int NumZBuffer = 2;
@@ -50,11 +50,7 @@ namespace NScumm.Core.Graphics
             set { transparentColor = value; }
         }
 
-        public bool IsZBufferEnabled
-        {
-            get;
-            set;
-        }
+        public bool IsZBufferEnabled { get; set; }
         #endregion
 
         #region Constructor
@@ -200,15 +196,14 @@ namespace NScumm.Core.Graphics
 
         public PixelNavigator GetMaskBuffer(int x, int y, int i)
         {
-            PixelNavigator nav;
-            nav = new PixelNavigator(maskBuffer[i], 40, 1);
+            var nav = new PixelNavigator(maskBuffer[i], 40, 1);
             nav.GoTo(x, y);
             return nav;
         }
 
         public void ResetBackground(int top, int bottom, int strip)
         {
-            VirtScreen vs = _vm.MainVirtScreen;
+            var vs = _vm.MainVirtScreen;
             int numLinesToProcess;
 
             if (top < 0)

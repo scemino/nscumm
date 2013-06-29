@@ -38,7 +38,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Actor.cs" />
-    <Compile Include="AdjustBoxResult.cs" />
     <Compile Include="Box.cs" />
     <Compile Include="BoxCoords.cs" />
     <Compile Include="Camera.cs" />
@@ -85,6 +84,7 @@
     <Compile Include="Graphics\VirtScreen.cs" />
     <Compile Include="IO\XorReader.cs" />
     <Compile Include="ScummMath.cs" />
+    <Compile Include="CutScene.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Nscumm.xml">

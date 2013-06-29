@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using NScumm.Core.Graphics;
 
 namespace NScumm.Core
 {
@@ -310,8 +311,7 @@ namespace NScumm.Core
 
                                 var data = new ObjectData();
                                 data.Number = objId;
-                                data.XPos = (short)(8 * x);
-                                data.YPos = (short)(8 * y);
+                                data.Position = new Point((short)(8 * x),(short)(8 * y));
                                 data.Width = (ushort)(8 * width);
                                 data.Height = height;
                                 data.Parent = parent;

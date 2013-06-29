@@ -29,5 +29,26 @@ namespace NScumm.Core
         public Point Ur = new Point();
         public Point Ll = new Point();
         public Point Lr = new Point();
+
+        public bool InBoxQuickReject(Point p, int threshold)
+        {
+            int t = p.X - threshold;
+            if (t > Ul.X && t > Ur.X && t > Lr.X && t > Ll.X)
+                return true;
+
+            t = p.X + threshold;
+            if (t < Ul.X && t < Ur.X && t < Lr.X && t < Ll.X)
+                return true;
+
+            t = p.Y - threshold;
+            if (t > Ul.Y && t > Ur.Y && t > Lr.Y && t > Ll.Y)
+                return true;
+
+            t = p.Y + threshold;
+            if (t < Ul.Y && t < Ur.Y && t < Lr.Y && t < Ll.Y)
+                return true;
+
+            return false;
+        }
     }
 }

@@ -23,7 +23,7 @@ using System.Linq;
 namespace NScumm.Core
 {
     [Flags]
-    public enum MoveFlags
+    enum MoveFlags
     {
         None = 0,
         NewLeg = 1,
@@ -34,7 +34,7 @@ namespace NScumm.Core
     }
 
     [Flags]
-    public enum ObjectClass
+    enum ObjectClass
     {
         NeverClip = 20,
         AlwaysClip = 21,
@@ -43,6 +43,12 @@ namespace NScumm.Core
         XFlip = 30,
         Player = 31,	// Actor is controlled by the player
         Untouchable = 32
+    }
+
+    struct AdjustBoxResult
+    {
+        public Point Position;
+        public byte Box;
     }
 
     class Actor
@@ -85,7 +91,7 @@ namespace NScumm.Core
         public ushort BoxScale;
         public byte ScaleX, ScaleY;
         public byte Charset;
-        public int ForceClip;
+        public bool ForceClip;
 
         public ushort[] Sound = new ushort[32];
         public CostumeData Cost;
@@ -99,9 +105,9 @@ namespace NScumm.Core
 
         public byte[] Name { get; set; }
 
-        public bool IsVisible { get; set; }
+        public bool IsVisible { get; private set; }
 
-        public ushort Costume { get; set; }
+        public ushort Costume { get; private set; }
 
         public byte InitFrame { get; set; }
         public byte WalkFrame { get; set; }
@@ -119,7 +125,7 @@ namespace NScumm.Core
         public ushort Facing
         {
             get { return _facing; }
-            set { _facing = value; }
+            private set { _facing = value; }
         }
 
         public int Elevation
@@ -144,6 +150,17 @@ namespace NScumm.Core
         public byte TalkColor { get; set; }
 
         public bool IgnoreBoxes { get; set; }
+
+        public bool IsInCurrentRoom
+        {
+            get { return Room == _scumm.CurrentRoom;}
+        }
+
+        bool IsPlayer
+        {
+            get{ return IsInClass(ObjectClass.Player); }
+        }
+
         #endregion
 
         #region ActorWalkData Structures
@@ -173,25 +190,7 @@ namespace NScumm.Core
         #endregion
 
         #region Public Methods
-        public void HideActor()
-        {
-            if (!IsVisible)
-                return;
-
-            if (Moving != MoveFlags.None)
-            {
-                StopActorMoving();
-                StartAnimActor(StandFrame);
-            }
-
-            IsVisible = false;
-            Cost.SoundCounter = 0;
-            Cost.SoundPos = 0;
-            NeedRedraw = false;
-            NeedBackgroundReset = true;
-        }
-
-        public void ShowActor()
+        public void Show()
         {
             if (_scumm.CurrentRoom == 0 || IsVisible)
                 return;
@@ -212,9 +211,28 @@ namespace NScumm.Core
             NeedRedraw = true;
         }
 
-        public void InitActor(int mode)
+        public void Hide()
+        {
+            if (!IsVisible)
+                return;
+
+            if (Moving != MoveFlags.None)
+            {
+                StopActorMoving();
+                StartAnimActor(StandFrame);
+            }
+
+            IsVisible = false;
+            Cost.SoundCounter = 0;
+            Cost.SoundPos = 0;
+            NeedRedraw = false;
+            NeedBackgroundReset = true;
+        }
+
+        public void Init(int mode)
         {
             Name = null;
+        
             if (mode == -1)
             {
                 Top = Bottom = 0;
@@ -235,20 +253,14 @@ namespace NScumm.Core
                 _walkdata = new ActorWalkData();
                 _walkdata.Point3.X = 32000;
                 _walkScript = 0;
-            }
-
-            if (mode == 1 || mode == -1)
-            {
+            
                 Costume = 0;
                 Room = 0;
                 _position.X = 0;
                 _position.Y = 0;
                 _facing = 180;
             }
-            else if (mode == 2)
-            {
-                _facing = 180;
-            }
+
             _elevation = 0;
             Width = 24;
             TalkColor = 15;
@@ -267,23 +279,28 @@ namespace NScumm.Core
             _animSpeed = 0;
 
             IgnoreBoxes = false;
-            ForceClip = 0;
+            ForceClip = false;
             _ignoreTurns = false;
 
             _talkFrequency = 256;
             _talkPan = 64;
             _talkVolume = 127;
 
-            InitFrame = 1;
-            WalkFrame = 2;
-            StandFrame = 3;
-            TalkStartFrame = 4;
-            TalkStopFrame = 5;
+            ResetFrames();
 
             _walkScript = 0;
             _talkScript = 0;
 
             _scumm.ClassData[Number] = 0;
+        }
+
+        public void ResetFrames()
+        {
+            InitFrame = 1;
+            WalkFrame = 2;
+            StandFrame = 3;
+            TalkStartFrame = 4;
+            TalkStopFrame = 5;
         }
 
         public void PutActor()
@@ -303,7 +320,7 @@ namespace NScumm.Core
 
         public void PutActor(Point pos, byte newRoom)
         {
-            if (IsVisible && _scumm.CurrentRoom != newRoom && _scumm.GetTalkingActor() == Number)
+            if (IsVisible && _scumm.CurrentRoom != newRoom && _scumm.TalkingActor == Number)
             {
                 _scumm.StopTalk();
             }
@@ -319,7 +336,7 @@ namespace NScumm.Core
 
             if (IsVisible)
             {
-                if (IsInCurrentRoom())
+                if (IsInCurrentRoom)
                 {
                     if (Moving != MoveFlags.None)
                     {
@@ -330,13 +347,13 @@ namespace NScumm.Core
                 }
                 else
                 {
-                    HideActor();
+                    Hide();
                 }
             }
             else
             {
-                if (IsInCurrentRoom())
-                    ShowActor();
+                if (IsInCurrentRoom)
+                    Show();
             }
         }
 
@@ -346,10 +363,10 @@ namespace NScumm.Core
 
             if (IsVisible)
             {
-                HideActor();
+                Hide();
                 Cost.Reset();
                 Costume = costume;
-                ShowActor();
+                Show();
             }
             else
             {
@@ -375,12 +392,10 @@ namespace NScumm.Core
             }
         }
 
-        public AdjustBoxResult AdjustXYToBeInBox(short dstX, short dstY)
+        public AdjustBoxResult AdjustXYToBeInBox(Point dst)
         {
             var thresholdTable = new int[] { 30, 80, 0 };
             var abr = new AdjustBoxResult();
-            short tmpX = 0;
-            short tmpY = 0;
             uint tmpDist, bestDist;
             int threshold, numBoxes;
             BoxFlags flags;
@@ -388,8 +403,7 @@ namespace NScumm.Core
             int box;
             int firstValidBox = 0;
 
-            abr.X = dstX;
-            abr.Y = dstY;
+            abr.Position = dst;
             abr.Box = InvalidBox;
 
             if (IgnoreBoxes)
@@ -413,39 +427,40 @@ namespace NScumm.Core
                     flags = _scumm.GetBoxFlags((byte)box);
 
                     // Skip over invisible boxes
-                    if (flags.HasFlag(BoxFlags.Invisible) && !(flags.HasFlag(BoxFlags.PlayerOnly) && !IsPlayer()))
+                    if (flags.HasFlag(BoxFlags.Invisible) && !(flags.HasFlag(BoxFlags.PlayerOnly) 
+                                                               && !IsPlayer))
                         continue;
 
                     // For increased performance, we perform a quick test if
                     // the coordinates can even be within a distance of 'threshold'
                     // pixels of the box.
-                    if (threshold > 0 && InBoxQuickReject(_scumm.GetBoxCoordinates(box), dstX, dstY, threshold))
+                    if (threshold > 0 && _scumm.GetBoxCoordinates(box).InBoxQuickReject(dst, threshold))
                         continue;
 
                     // Check if the point is contained in the box. If it is,
                     // we don't have to search anymore.
-                    if (_scumm.CheckXYInBoxBounds(box, dstX, dstY))
+                    if (_scumm.CheckXYInBoxBounds(box, dst))
                     {
-                        abr.X = dstX;
-                        abr.Y = dstY;
+                        abr.Position = dst;
                         abr.Box = (byte)box;
                         return abr;
                     }
 
                     // Find the point in the box which is closest to our point.
-                    tmpDist = GetClosestPtOnBox(_scumm.GetBoxCoordinates(box), dstX, dstY, ref tmpX, ref tmpY);
+                    Point pTmp;
+                    tmpDist = ScummMath.GetClosestPtOnBox(_scumm.GetBoxCoordinates(box), dst, out pTmp);
 
                     // Check if the box is closer than the previous boxes.
                     if (tmpDist < bestDist)
                     {
-                        abr.X = tmpX;
-                        abr.Y = tmpY;
+                        abr.Position = pTmp;
 
                         if (tmpDist == 0)
                         {
                             abr.Box = (byte)box;
                             return abr;
                         }
+
                         bestDist = tmpDist;
                         bestBox = (byte)box;
                     }
@@ -474,7 +489,7 @@ namespace NScumm.Core
                 return;
 
             // Normalize the angle
-            _facing = (ushort)NormalizeAngle(direction);
+            _facing = (ushort)ScummMath.NormalizeAngle(direction);
 
             // If there is no costume set for this actor, we are finished
             if (Costume == 0)
@@ -495,19 +510,20 @@ namespace NScumm.Core
 
         public void FaceToObject(int obj)
         {
-            int x2, y2, dir;
+            int dir;
 
-            if (!IsInCurrentRoom())
+            if (!IsInCurrentRoom)
                 return;
 
-            if (!_scumm.GetObjectOrActorXY(obj, out x2, out y2))
+            Point p;
+            if (!_scumm.GetObjectOrActorXY(obj, out p))
                 return;
 
-            dir = (x2 > _position.X) ? 90 : 270;
+            dir = (p.X > _position.X) ? 90 : 270;
             TurnToDirection(dir);
         }
 
-        public void WalkActor()
+        public void Walk()
         {
             int new_dir, next_box;
             Point foundPath;
@@ -580,7 +596,7 @@ namespace NScumm.Core
             CalcMovementFactor(_walkdata.Dest);
         }
 
-        public void DrawActorCostume(bool hitTestMode = false)
+        public void DrawCostume(bool hitTestMode = false)
         {
             if (Costume == 0)
                 return;
@@ -612,17 +628,15 @@ namespace NScumm.Core
             }
         }
 
-        public void StartWalkActor(Point dest, int dir)
+        public void StartWalk(Point dest, int dir)
         {
             AdjustBoxResult abr;
 
-            abr.X = dest.X;
-            abr.Y = dest.Y;
+            abr.Position = dest;
 
-            if (!IsInCurrentRoom())
+            if (!IsInCurrentRoom)
             {
-                _position.X = abr.X;
-                _position.Y = abr.Y;
+                _position = abr.Position;
                 if (!_ignoreTurns && dir != -1)
                     _facing = (ushort)dir;
                 return;
@@ -635,27 +649,29 @@ namespace NScumm.Core
             }
             else
             {
-                if (_scumm.CheckXYInBoxBounds(_walkdata.DestBox, abr.X, abr.Y))
+                if (_scumm.CheckXYInBoxBounds(_walkdata.DestBox, abr.Position))
                 {
                     abr.Box = _walkdata.DestBox;
                 }
                 else
                 {
-                    abr = AdjustXYToBeInBox(abr.X, abr.Y);
+                    abr = AdjustXYToBeInBox(abr.Position);
                 }
-                if (Moving != MoveFlags.None && _walkdata.DestDir == dir && _walkdata.Dest.X == abr.X && _walkdata.Dest.Y == abr.Y)
+                if (Moving != MoveFlags.None && 
+                    _walkdata.DestDir == dir && 
+                    _walkdata.Dest.X == abr.Position.X && _walkdata.Dest.Y == abr.Position.Y)
                     return;
             }
 
-            if (_position.X == abr.X && _position.Y == abr.Y)
+            if (_position == abr.Position)
             {
                 if (dir != _facing)
                     TurnToDirection(dir);
                 return;
             }
 
-            _walkdata.Dest.X = abr.X;
-            _walkdata.Dest.Y = abr.Y;
+            _walkdata.Dest.X = abr.Position.X;
+            _walkdata.Dest.Y = abr.Position.Y;
             _walkdata.DestBox = abr.Box;
             _walkdata.DestDir = (short)dir;
             Moving = (Moving & MoveFlags.InLeg) | MoveFlags.NewLeg;
@@ -685,11 +701,10 @@ namespace NScumm.Core
             NeedRedraw = true;
         }
 
-        public void AnimateActor(int anim)
+        public void Animate(int anim)
         {
-            int cmd, dir;
-            cmd = anim / 4;
-            dir = ScummHelper.OldDirToNewDir(anim % 4);
+            int cmd = anim / 4;
+            int dir = ScummHelper.OldDirToNewDir(anim % 4);
 
             // Convert into old cmd code
             cmd = 0x3F - cmd + 2;
@@ -734,7 +749,7 @@ namespace NScumm.Core
         public void ClassChanged(ObjectClass cls, bool value)
         {
             if (cls == ObjectClass.AlwaysClip)
-                ForceClip = value ? 1 : 0;
+                ForceClip = value;
             if (cls == ObjectClass.IgnoreBoxes)
                 IgnoreBoxes = value;
         }
@@ -784,7 +799,7 @@ namespace NScumm.Core
                     LoadAndSaveEntry.Create(reader => _targetFacing = reader.ReadUInt16(),writer=> writer.WriteUInt16(_targetFacing),8),
                     LoadAndSaveEntry.Create(reader => Moving = (MoveFlags)reader.ReadByte(),writer=> writer.WriteByte((byte)Moving),8),
                     LoadAndSaveEntry.Create(reader => IgnoreBoxes = reader.ReadByte()!=0,writer=> writer.WriteByte(IgnoreBoxes),8),
-                    LoadAndSaveEntry.Create(reader => ForceClip = reader.ReadByte(),writer=> writer.WriteByte(ForceClip),8),
+                LoadAndSaveEntry.Create(reader => ForceClip = reader.ReadBoolean(), writer=> writer.WriteByte(ForceClip),8),
                     LoadAndSaveEntry.Create(reader => InitFrame = reader.ReadByte(),writer=> writer.WriteByte(InitFrame),8),
                     LoadAndSaveEntry.Create(reader => WalkFrame = reader.ReadByte(),writer=> writer.WriteByte(WalkFrame),8),
                     LoadAndSaveEntry.Create(reader => StandFrame = reader.ReadByte(),writer=> writer.WriteByte(StandFrame),8),
@@ -875,21 +890,20 @@ namespace NScumm.Core
                 // Not all actor data is saved; so when loading, we first reset
                 // the actor, to ensure completely reproducible behavior (else,
                 // some not saved value in the actor class can cause odd things)
-                InitActor(-1);
+                Init(-1);
             }
 
             Array.ForEach(actorEntries, e => e.Execute(serializer));
         }
 
-        public void RunActorTalkScript(int frame)
+        public void RunTalkScript(int frame)
         {
-            if (_scumm.GetTalkingActor() == 0 || Room != _scumm.CurrentRoom || _frame == frame)
+            if (_scumm.TalkingActor == 0 || Room != _scumm.CurrentRoom || _frame == frame)
                 return;
 
             if (_talkScript != 0)
             {
-                int script = _talkScript;
-                _scumm.RunScript((byte)script, true, false, new int[] { frame, Number });
+                _scumm.RunScript((byte)_talkScript, true, false, new int[] { frame, Number });
             }
             else
             {
@@ -918,7 +932,7 @@ namespace NScumm.Core
                     break;
             }
 
-            if (IsInCurrentRoom() && Costume != 0)
+            if (IsInCurrentRoom && Costume != 0)
             {
                 _animProgress = 0;
                 NeedRedraw = true;
@@ -934,10 +948,6 @@ namespace NScumm.Core
             }
         }
 
-        public bool IsInCurrentRoom()
-        {
-            return Room == _scumm.CurrentRoom;
-        }
         #endregion
 
         #region Private Methods
@@ -981,8 +991,8 @@ namespace NScumm.Core
             bcr.SetFacing(this);
 
 
-            if (ForceClip > 0)
-                bcr.ZBuffer = (byte)ForceClip;
+            if (ForceClip)
+                bcr.ZBuffer = ForceClip ? (byte)1 : (byte)0;
             else if (IsInClass(ObjectClass.NeverClip))
                 bcr.ZBuffer = 0;
             else
@@ -1003,12 +1013,9 @@ namespace NScumm.Core
 
         void AdjustActorPos()
         {
-            AdjustBoxResult abr;
+            var abr = AdjustXYToBeInBox(_position);
 
-            abr = AdjustXYToBeInBox(_position.X, _position.Y);
-
-            _position.X = abr.X;
-            _position.Y = abr.Y;
+            _position = abr.Position;
             _walkdata.DestBox = abr.Box;
 
             SetBox(abr.Box);
@@ -1029,22 +1036,19 @@ namespace NScumm.Core
             }
         }
 
-        protected int CalcMovementFactor(Point next)
+        int CalcMovementFactor(Point next)
         {
-            int diffX, diffY;
-            int deltaXFactor, deltaYFactor;
-
             if (_position == next)
                 return 0;
 
-            diffX = next.X - _position.X;
-            diffY = next.Y - _position.Y;
-            deltaYFactor = (int)_speedy << 16;
+            int diffX = next.X - _position.X;
+            int diffY = next.Y - _position.Y;
+            int deltaYFactor = (int)_speedy << 16;
 
             if (diffY < 0)
                 deltaYFactor = -deltaYFactor;
 
-            deltaXFactor = deltaYFactor * diffX;
+            int deltaXFactor = deltaYFactor * diffX;
             if (diffY != 0)
             {
                 deltaXFactor /= diffY;
@@ -1052,7 +1056,7 @@ namespace NScumm.Core
             else
             {
                 deltaYFactor = 0;
-            }
+            } 
 
             if ((uint)Math.Abs(deltaXFactor) > (_speedx << 16))
             {
@@ -1078,98 +1082,33 @@ namespace NScumm.Core
             _walkdata.XFrac = 0;
             _walkdata.YFrac = 0;
 
-            _targetFacing = (ushort)GetAngleFromPos(deltaXFactor, deltaYFactor, false);
+            _targetFacing = (ushort)ScummMath.GetAngleFromPos(deltaXFactor, deltaYFactor, false);
 
             return ActorWalkStep();
         }
 
-        static int GetAngleFromPos(int x, int y, bool useATAN)
+        int ActorWalkStep()
         {
-            if (useATAN)
-            {
-                double temp = Math.Atan2((double)x, (double)-y);
-                return NormalizeAngle((int)(temp * 180 / Math.PI));
-            }
-            if (Math.Abs(y) * 2 < Math.Abs(x))
-            {
-                if (x > 0)
-                    return 90;
-                return 270;
-            }
-            if (y > 0)
-                return 180;
-            return 0;
-        }
-
-        static ushort FetAngleFromPos(int x, int y, bool useATAN)
-        {
-            if (useATAN)
-            {
-                double temp = Math.Atan2((double)x, (double)-y);
-                return (ushort)NormalizeAngle((int)(temp * 180 / Math.PI));
-            }
-            if (Math.Abs(y) * 2 < Math.Abs(x))
-            {
-                if (x > 0)
-                    return 90;
-                return 270;
-            }
-            if (y > 0)
-                return 180;
-            return 0;
-        }
-
-        static int NormalizeAngle(int angle)
-        {
-            int temp;
-            temp = (angle + 360) % 360;
-            return ToSimpleDir(true, temp) * 45;
-        }
-
-        static int ToSimpleDir(bool dirType, int dir)
-        {
-            if (dirType)
-            {
-                var directions = new short[] { 22, 72, 107, 157, 202, 252, 287, 337 };
-                for (int i = 0; i < 7; i++)
-                    if (dir >= directions[i] && dir <= directions[i + 1])
-                        return i + 1;
-            }
-            else
-            {
-                var directions = new short[] { 71, 109, 251, 289 };
-                for (int i = 0; i < 3; i++)
-                    if (dir >= directions[i] && dir <= directions[i + 1])
-                        return i + 1;
-            }
-            return 0;
-        }
-
-        protected int ActorWalkStep()
-        {
-            int tmpX, tmpY;
-            int distX, distY;
-            int nextFacing;
-
             NeedRedraw = true;
 
-            nextFacing = UpdateActorDirection(true);
+            int nextFacing = UpdateActorDirection(true);
             if (!Moving.HasFlag(MoveFlags.InLeg) || _facing != nextFacing)
             {
                 if (WalkFrame != _frame || _facing != nextFacing)
                 {
-                    StartWalkAnim(1, nextFacing);
+                    StartWalkAnim(nextFacing);
                 }
                 Moving |= MoveFlags.InLeg;
             }
 
-            if (Walkbox != _walkdata.CurBox && _scumm.CheckXYInBoxBounds(_walkdata.CurBox, _position.X, _position.Y))
+            if (Walkbox != _walkdata.CurBox && 
+                _scumm.CheckXYInBoxBounds(_walkdata.CurBox, _position))
             {
                 SetBox(_walkdata.CurBox);
             }
 
-            distX = Math.Abs(_walkdata.Next.X - _walkdata.Cur.X);
-            distY = Math.Abs(_walkdata.Next.Y - _walkdata.Cur.Y);
+            int distX = Math.Abs(_walkdata.Next.X - _walkdata.Cur.X);
+            int distY = Math.Abs(_walkdata.Next.Y - _walkdata.Cur.Y);
 
             if (Math.Abs(_position.X - _walkdata.Cur.X) >= distX && Math.Abs(_position.Y - _walkdata.Cur.Y) >= distY)
             {
@@ -1177,11 +1116,11 @@ namespace NScumm.Core
                 return 0;
             }
 
-            tmpX = (_position.X << 16) + _walkdata.XFrac + (_walkdata.DeltaXFactor >> 8) * ScaleX;
+            int tmpX = (_position.X << 16) + _walkdata.XFrac + (_walkdata.DeltaXFactor >> 8) * ScaleX;
             _walkdata.XFrac = (ushort)tmpX;
             _position.X = (short)(tmpX >> 16);
 
-            tmpY = (_position.Y << 16) + _walkdata.YFrac + (_walkdata.DeltaYFactor >> 8) * ScaleY;
+            int tmpY = (_position.Y << 16) + _walkdata.YFrac + (_walkdata.DeltaYFactor >> 8) * ScaleY;
             _walkdata.YFrac = (ushort)tmpY;
             _position.Y = (short)(tmpY >> 16);
 
@@ -1203,7 +1142,7 @@ namespace NScumm.Core
             return 1;
         }
 
-        protected int RemapDirection(int dir, bool isWalking)
+        int RemapDirection(int dir, bool isWalking)
         {
             BoxFlags flags;
             bool flipX;
@@ -1265,10 +1204,10 @@ namespace NScumm.Core
                 }
             }
             // OR 1024 in to signal direction interpolation should be done
-            return NormalizeAngle(dir) | 1024;
+            return ScummMath.NormalizeAngle(dir) | 1024;
         }
 
-        protected virtual void SetupActorScale()
+        void SetupActorScale()
         {
             if (IgnoreBoxes)
                 return;
@@ -1280,29 +1219,24 @@ namespace NScumm.Core
             ScaleX = ScaleY = (byte)scale;
         }
 
-        protected void SetBox(byte box)
+        void SetBox(byte box)
         {
             Walkbox = box;
             SetupActorScale();
         }
 
-        protected int UpdateActorDirection(bool isWalking)
+        int UpdateActorDirection(bool isWalking)
         {
-            int from;
-            bool dirType = false;
-            int dir;
-            bool shouldInterpolate;
+            int from = ScummMath.ToSimpleDir(false, _facing);
+            int dir = RemapDirection(_targetFacing, isWalking);
 
-            from = ToSimpleDir(dirType, _facing);
-            dir = RemapDirection(_targetFacing, isWalking);
-
-            shouldInterpolate = (dir & 1024) != 0 ? true : false;
+            bool shouldInterpolate = (dir & 1024) != 0;
             dir &= 1023;
 
             if (shouldInterpolate)
             {
-                int to = ToSimpleDir(dirType, dir);
-                int num = dirType ? 8 : 4;
+                int to = ScummMath.ToSimpleDir(false, dir);
+                int num = 4;
 
                 // Turn left or right, depending on which is shorter.
                 int diff = to - from;
@@ -1318,153 +1252,13 @@ namespace NScumm.Core
                     to = from - 1;
                 }
 
-                dir = FromSimpleDir(dirType, (to + num) % num);
+                dir = ScummMath.FromSimpleDirection((to + num) % num);
             }
 
             return dir;
         }
 
-        /// <summary>
-        /// Convert a simple direction to an angle.
-        /// </summary>
-        /// <param name="dirType"></param>
-        /// <param name="dir"></param>
-        /// <returns></returns>
-        static int FromSimpleDir(bool dirType, int dir)
-        {
-            if (dirType)
-                return dir * 45;
-            return dir * 90;
-        }
-
-        uint GetClosestPtOnBox(BoxCoords box, short x, short y, ref short outX, ref short outY)
-        {
-            var p = new Point(x, y);
-            Point tmp;
-            uint dist;
-            uint bestdist = 0xFFFFFF;
-
-            tmp = ClosestPtOnLine(box.Ul, box.Ur, p);
-            dist = p.SquareDistance(tmp);
-            if (dist < bestdist)
-            {
-                bestdist = dist;
-                outX = tmp.X;
-                outY = tmp.Y;
-            }
-
-            tmp = ClosestPtOnLine(box.Ur, box.Lr, p);
-            dist = p.SquareDistance(tmp);
-            if (dist < bestdist)
-            {
-                bestdist = dist;
-                outX = tmp.X;
-                outY = tmp.Y;
-            }
-
-            tmp = ClosestPtOnLine(box.Lr, box.Ll, p);
-            dist = p.SquareDistance(tmp);
-            if (dist < bestdist)
-            {
-                bestdist = dist;
-                outX = tmp.X;
-                outY = tmp.Y;
-            }
-
-            tmp = ClosestPtOnLine(box.Ll, box.Ul, p);
-            dist = p.SquareDistance(tmp);
-            if (dist < bestdist)
-            {
-                bestdist = dist;
-                outX = tmp.X;
-                outY = tmp.Y;
-            }
-
-            return bestdist;
-        }
-
-        Point ClosestPtOnLine(Point lineStart, Point lineEnd, Point p)
-        {
-            Point result;
-
-            int lxdiff = lineEnd.X - lineStart.X;
-            int lydiff = lineEnd.Y - lineStart.Y;
-
-            if (lineEnd.X == lineStart.X)
-            {	// Vertical line?
-                result.X = lineStart.X;
-                result.Y = p.Y;
-            }
-            else if (lineEnd.Y == lineStart.Y)
-            {	// Horizontal line?
-                result.X = p.X;
-                result.Y = lineStart.Y;
-            }
-            else
-            {
-                int dist = lxdiff * lxdiff + lydiff * lydiff;
-                int a, b, c;
-                if (Math.Abs(lxdiff) > Math.Abs(lydiff))
-                {
-                    a = lineStart.X * lydiff / lxdiff;
-                    b = p.X * lxdiff / lydiff;
-
-                    c = (a + b - lineStart.Y + p.Y) * lydiff * lxdiff / dist;
-
-                    result.X = (short)c;
-                    result.Y = (short)(c * lydiff / lxdiff - a + lineStart.Y);
-                }
-                else
-                {
-                    a = lineStart.Y * lxdiff / lydiff;
-                    b = p.Y * lydiff / lxdiff;
-
-                    c = (a + b - lineStart.X + p.X) * lydiff * lxdiff / dist;
-
-                    result.X = (short)(c * lxdiff / lydiff - a + lineStart.X);
-                    result.Y = (short)c;
-                }
-            }
-
-            if (Math.Abs(lydiff) < Math.Abs(lxdiff))
-            {
-                if (lxdiff > 0)
-                {
-                    if (result.X < lineStart.X)
-                        result = lineStart;
-                    else if (result.X > lineEnd.X)
-                        result = lineEnd;
-                }
-                else
-                {
-                    if (result.X > lineStart.X)
-                        result = lineStart;
-                    else if (result.X < lineEnd.X)
-                        result = lineEnd;
-                }
-            }
-            else
-            {
-                if (lydiff > 0)
-                {
-                    if (result.Y < lineStart.Y)
-                        result = lineStart;
-                    else if (result.Y > lineEnd.Y)
-                        result = lineEnd;
-                }
-                else
-                {
-                    if (result.Y > lineStart.Y)
-                        result = lineStart;
-                    else if (result.Y < lineEnd.Y)
-                        result = lineEnd;
-                }
-            }
-
-            return result;
-        }
-
-        protected void StartWalkAnim(int cmd, int angle)
+        void StartWalkAnim(int angle)
         {
             if (angle == -1)
                 angle = _facing;
@@ -1474,73 +1268,28 @@ namespace NScumm.Core
              */
             if (_walkScript != 0)
             {
-                var args = new int[16];
-
-                args[0] = Number;
-                args[1] = cmd;
-                args[2] = angle;
+                var args = new int[] { Number, 1, angle };
                 _scumm.RunScript((byte)_walkScript, true, false, args);
             }
             else
             {
-                switch (cmd)
-                {
-                    case 1:										/* start walk */
-                        SetDirection(angle);
-                        StartAnimActor(WalkFrame);
-                        break;
-                    case 2:										/* change dir only */
-                        SetDirection(angle);
-                        break;
-                    case 3:										/* stop walk */
-                        TurnToDirection(angle);
-                        StartAnimActor(StandFrame);
-                        break;
-                }
+                SetDirection(angle);
+                StartAnimActor(WalkFrame);
             }
         }
 
-        static bool InBoxQuickReject(BoxCoords box, int x, int y, int threshold)
-        {
-            int t;
-
-            t = x - threshold;
-            if (t > box.Ul.X && t > box.Ur.X && t > box.Lr.X && t > box.Ll.X)
-                return true;
-
-            t = x + threshold;
-            if (t < box.Ul.X && t < box.Ur.X && t < box.Lr.X && t < box.Ll.X)
-                return true;
-
-            t = y - threshold;
-            if (t > box.Ul.Y && t > box.Ur.Y && t > box.Lr.Y && t > box.Ll.Y)
-                return true;
-
-            t = y + threshold;
-            if (t < box.Ul.Y && t < box.Ur.Y && t < box.Lr.Y && t < box.Ll.Y)
-                return true;
-
-            return false;
-        }
-
-        protected virtual bool IsPlayer()
-        {
-            return IsInClass(ObjectClass.Player);
-        }
-
-        protected bool FindPathTowards(byte box1nr, byte box2nr, byte box3nr, out Point foundPath)
+        bool FindPathTowards(byte box1nr, byte box2nr, byte box3nr, out Point foundPath)
         {
             foundPath = new Point();
-            BoxCoords box1 = _scumm.GetBoxCoordinates(box1nr);
-            BoxCoords box2 = _scumm.GetBoxCoordinates(box2nr);
+            var box1 = _scumm.GetBoxCoordinates(box1nr);
+            var box2 = _scumm.GetBoxCoordinates(box2nr);
             Point tmp;
-            int i, j;
             int flag;
             int q, pos;
 
-            for (i = 0; i < 4; i++)
+            for (int i = 0; i < 4; i++)
             {
-                for (j = 0; j < 4; j++)
+                for (int j = 0; j < 4; j++)
                 {
                     if (box1.Ul.X == box1.Ur.X && box1.Ul.X == box2.Ul.X && box1.Ul.X == box2.Ur.X)
                     {
@@ -1577,10 +1326,8 @@ namespace NScumm.Core
 
                                 if (diffX != 0)
                                 {
-                                    int t;
-
                                     diffY *= boxDiffX;
-                                    t = diffY / diffX;
+                                    int t = diffY / diffX;
                                     if (t == 0 && (diffY <= 0 || diffX <= 0)
                                             && (diffY >= 0 || diffX >= 0))
                                         t = -1;

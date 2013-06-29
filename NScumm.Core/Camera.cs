@@ -22,22 +22,22 @@ namespace NScumm.Core
     /// <summary>
     /// Camera mode.
     /// </summary>
-    public enum CameraMode
+    enum CameraMode
     {
         Normal = 1,
         FollowActor = 2,
         Panning = 3
     }
 
-    public class Camera
+    class Camera
     {
-        public Point Cur;
-        public Point Dest;
+        public Point CurrentPosition;
+        public Point DestinationPosition;
         public Point Accel;
-        public Point Last;
+        public Point LastPosition;
         public int LeftTrigger=10, RightTrigger=30;
-        public byte Follows;
-        public CameraMode Mode;
-        public bool MovingToActor;
+        public byte ActorToFollow;
+        public CameraMode Mode { get; set; }
+        public bool MovingToActor { get; set; }
     }
 }

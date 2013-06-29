@@ -1,17 +1,12 @@
 #region Using Statements
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using NScumm.Core;
-
 #endregion
 
 namespace NScumm.GL
 { 
     static class Program
     {
-        private static ScummGame game;
-
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
@@ -27,7 +22,7 @@ namespace NScumm.GL
             } 
 
             if (info != null) {
-                game = new ScummGame (info);
+                var game = new ScummGame (info);
                 game.Run ();
             } else {
                 Usage ();

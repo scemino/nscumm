@@ -20,7 +20,7 @@ using System;
 
 namespace NScumm.Core
 {
-    public class ClassicCostumeLoader : ICostumeLoader
+    class ClassicCostumeLoader : ICostumeLoader
     {
         public int Id;
         public long BasePtr;

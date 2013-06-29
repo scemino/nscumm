@@ -17,7 +17,7 @@
 
 namespace NScumm.Core
 {
-    public interface ICostumeLoader
+    interface ICostumeLoader
     {
         void LoadCostume(int id);
         int IncreaseAnims(Actor actor);

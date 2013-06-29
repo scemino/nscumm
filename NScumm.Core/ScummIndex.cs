@@ -23,7 +23,7 @@ using System.Text;
 
 namespace NScumm.Core
 {
-    public class ScummIndex
+    class ScummIndex
     {
         #region Resource Structure
         private struct Resource

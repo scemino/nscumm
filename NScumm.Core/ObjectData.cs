@@ -15,21 +15,19 @@
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-using NScumm.Core.IO;
 using System;
 using System.Collections.Generic;
 using NScumm.Core.Graphics;
+using NScumm.Core.IO;
 
 namespace NScumm.Core
 {
-    public class ObjectData
+    class ObjectData
     {
         public uint OBIMoffset;
         public uint OBCDoffset;
         public short WalkX, WalkY;
         public ushort Number;
-        public short XPos;
-        public short YPos;
         public ushort Width;
         public ushort Height;
         public byte ActorDir;
@@ -39,6 +37,7 @@ namespace NScumm.Core
         public byte FlObjectIndex;
         public DrawBitmaps Flags;
 
+        public Point Position { get; set; }
         public Dictionary<byte, ushort> ScriptOffsets { get; private set; }
         public ScriptData Script { get; private set; }
         public byte[] Name { get; set; }
@@ -59,8 +58,12 @@ namespace NScumm.Core
                 LoadAndSaveEntry.Create(reader => WalkX = reader.ReadInt16(), writer => writer.Write(WalkX),8),
                 LoadAndSaveEntry.Create(reader => WalkY = reader.ReadInt16(), writer => writer.Write(WalkY),8),
                 LoadAndSaveEntry.Create(reader => Number = reader.ReadUInt16(), writer => writer.Write(Number),8),
-                LoadAndSaveEntry.Create(reader => XPos = reader.ReadInt16(), writer => writer.Write(XPos),8),
-                LoadAndSaveEntry.Create(reader => YPos = reader.ReadInt16(), writer => writer.Write(YPos),8),
+                LoadAndSaveEntry.Create(reader => {
+                    Position = new Point(reader.ReadInt16(),reader.ReadInt16());
+                }, writer => {
+                    writer.Write(Position.X);
+                    writer.Write(Position.Y);
+                },8),
                 LoadAndSaveEntry.Create(reader => Width = reader.ReadUInt16(), writer => writer.Write(Width),8),
                 LoadAndSaveEntry.Create(reader => Height = reader.ReadUInt16(), writer => writer.Write(Height),8),
                 LoadAndSaveEntry.Create(reader => ActorDir = reader.ReadByte(), writer => writer.Write(ActorDir),8),

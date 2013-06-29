@@ -541,30 +541,19 @@ namespace NScumm.Core.Graphics
 
         void Proc3(Codec1 v1)
         {
-            PixelNavigator dst;
-            byte len, maskbit;
-            int y;
-            uint color, height, pcolor;
-            byte scaleIndexY;
-            bool masked;
-
-            y = v1.Y;
+            int y = v1.Y;
             _loaded.CostumeReader.BaseStream.Seek(_srcptr, System.IO.SeekOrigin.Begin);
-            dst = new PixelNavigator(v1.DestPtr);
-            len = v1.RepLen;
-            color = v1.RepColor;
-            height = (uint)_height;
+            var dst = new PixelNavigator(v1.DestPtr);
+            var len = v1.RepLen;
+            uint color = v1.RepColor;
+            var height = (uint)_height;
 
-            scaleIndexY = _scaleIndexY;
-            maskbit = (byte)ScummHelper.RevBitMask(v1.X & 7);
+            var scaleIndexY = _scaleIndexY;
+            var maskbit = (byte)ScummHelper.RevBitMask(v1.X & 7);
             var mask = new PixelNavigator(v1.MaskPtr);
             mask.OffsetX(v1.X / 8);
 
-            bool ehmerde = false;
-            if (len != 0)
-            {
-                ehmerde = true;
-            }
+            bool ehmerde = (len != 0);
 
             do
             {
@@ -583,11 +572,11 @@ namespace NScumm.Core.Graphics
                     {
                         if (ScaleY == 255 || v1.Scaletable[scaleIndexY++] < ScaleY)
                         {
-                            masked = (y < 0 || y >= _h) || (v1.X < 0 || v1.X >= _w) || ((mask.Read() & maskbit) != 0);
+                            var masked = (y < 0 || y >= _h) || (v1.X < 0 || v1.X >= _w) || ((mask.Read() & maskbit) != 0);
 
                             if (color != 0 && !masked)
                             {
-                                pcolor = _palette[color];
+                                var pcolor = _palette[color];
                                 dst.Write((byte)pcolor);
                             }
                             dst.OffsetY(1);

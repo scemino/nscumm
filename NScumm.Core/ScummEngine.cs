@@ -77,7 +77,6 @@ namespace NScumm.Core
         const int OwnerRoom = 0x0F;
 
         const int NumVariables = 800;
-        const int NumActors = 13;
         const int NumLocalObjects = 200;
         const int NumArray = 50;
         const int NumScriptSlot = 80;
@@ -152,20 +151,17 @@ namespace NScumm.Core
         List<byte> _boxMatrix = new List<byte>();
         ScummIndex _scumm;
         string _directory;
-        Actor[] _actors = new Actor[NumActors];
         byte _currentRoom;
         int _actorToPrintStrFor;
-        public int ScreenWidth = 320;
-        int _screenHeight = 200;
         ushort[] _inventory = new ushort[NumInventory];
 
-        ScriptSlot[] _slots;
-        int[][] _localVariables = new int[NumScriptSlot][];
         BitArray _bitVars = new BitArray(4096);
-        Dictionary<byte, Action> _opCodes;
-        byte[] _currentScriptData;
-        int _currentPos;
         int[] _variables;
+        Stack<int> _stack = new Stack<int>();
+        int _resultVarIndex;
+
+        Actor[] _actors = new Actor[13];
+        ObjectData[] _objs = new ObjectData[200];
         HashSet<ObjectData> _drawingObjects = new HashSet<ObjectData>();
 
         sbyte _userPut;
@@ -174,18 +170,20 @@ namespace NScumm.Core
 
         Cursor _cursor = new Cursor();
         Point _mousePos;
-        int _resultVarIndex;
+
+        Dictionary<byte, Action> _opCodes;
+        byte[] _currentScriptData;
+        int _currentPos;
         byte _opCode;
-        Stack<int> _stack = new Stack<int>();
         byte _currentScript;
         int _numNestedScripts;
         NestedScript[] _nest;
-        uint[] _cutScenePtr = new uint[MaxCutsceneNum];
-        byte[] _cutSceneScript = new byte[MaxCutsceneNum];
-        int[] _cutSceneData = new int[MaxCutsceneNum];
+        ScriptSlot[] _slots;
+
+        CutScene cutScene = new CutScene();
+
         Room roomData;
         int _sentenceNum;
-        int cutSceneStackPointer;
         TextSlot[] _string = new TextSlot[6];
         byte[] _charsetBuffer = new byte[512];
 
@@ -194,7 +192,6 @@ namespace NScumm.Core
         byte[][] _charsets;
         public byte[] CharsetColorMap = new byte[16];
 
-        int _cutSceneScriptIndex;
         FlashLight _flashlight;
         Camera _camera = new Camera();
         ICostumeLoader _costumeLoader;
@@ -206,27 +203,33 @@ namespace NScumm.Core
         int _talkDelay;
         int _haveMsg;
         int _charsetBufPos;
-        int _screenStartStrip;
-        int _screenEndStrip;
-        public int ScreenTop;
+
         VerbSlot[] _verbs;
         byte cursorColor;
         int _currentCursor;
+
+        int _screenStartStrip;
+        int _screenEndStrip;
+        public int ScreenTop;
+        public int ScreenWidth = 320;
+        public int ScreenHeight = 200;
 
         VirtScreen _mainVirtScreen;
         VirtScreen _textVirtScreen;
         VirtScreen _verbVirtScreen;
         VirtScreen _unkVirtScreen;
+        Surface _textSurface;
+        Surface _composite;
 
         bool _bgNeedsRedraw;
         bool _fullRedraw;
-        public Gdi Gdi;
+        internal Gdi Gdi;
 
         // Somewhat hackish stuff for 2 byte support (Chinese/Japanese/Korean)
         public byte NewLineCharacter;
 
-        public bool UseCjkMode;
-        public int _2byteWidth;
+        internal bool UseCjkMode;
+        internal int _2byteWidth;
 
         static byte[] defaultCursorColors = new byte[] { 15, 15, 7, 8 };
 
@@ -237,14 +240,10 @@ namespace NScumm.Core
         bool _doEffect;
         bool _screenEffectFlag;
 
-        ObjectData[] _objs = new ObjectData[200];
-
         ScaleSlot[] _scaleSlots;
 
         int _numGlobalObjects = 1000;
-        int _numLocalObjects = 200;
         bool _haveActorSpeechMsg;
-        Surface _composite;
 
         CharsetRenderer _charset;
         const byte CharsetMaskTransparency = 0xFD;
@@ -262,9 +261,7 @@ namespace NScumm.Core
         int _palDirtyMin, _palDirtyMax;
         int _nextLeft, _nextTop;
         int _textSurfaceMultiplier = 1;
-        Surface _textSurface;
 
-        int _shadowPaletteSize = 256;
         byte[] _shadowPalette = new byte[256];
 
         Sentence[] _sentence = InitSentences();
@@ -333,30 +330,30 @@ namespace NScumm.Core
             _slots = new ScriptSlot[NumScriptSlot];
             for (int i = 0; i < NumScriptSlot; i++)
             {
-                _slots [i] = new ScriptSlot();
+                _slots[i] = new ScriptSlot();
             }
             for (int i = 0; i < 200; i++)
             {
-                _objs [i] = new ObjectData();
+                _objs[i] = new ObjectData();
             }
             for (int i = 0; i < 6; i++)
             {
-                _string [i] = new TextSlot();
+                _string[i] = new TextSlot();
             }
             _colorCycle = new ColorCycle[16];
             for (int i = 0; i < _colorCycle.Length; i++)
             {
-                _colorCycle [i] = new ColorCycle();
+                _colorCycle[i] = new ColorCycle();
             }
             _nest = new NestedScript[MaxScriptNesting + 1];
             for (int i = 0; i < _nest.Length; i++)
             {
-                _nest [i] = new NestedScript();
+                _nest[i] = new NestedScript();
             }
             _scaleSlots = new ScaleSlot[20];
             for (int i = 0; i < _scaleSlots.Length; i++)
             {
-                _scaleSlots [i] = new ScaleSlot();
+                _scaleSlots[i] = new ScaleSlot();
             }
             Gdi = new Gdi(this);
             _costumeLoader = new ClassicCostumeLoader(_scumm);
@@ -368,11 +365,11 @@ namespace NScumm.Core
             ResetCursors();
 
             // Create the text surface
-            _textSurface = new Surface(ScreenWidth * _textSurfaceMultiplier, _screenHeight * _textSurfaceMultiplier, PixelFormat.Indexed8, false);
+            _textSurface = new Surface(ScreenWidth * _textSurfaceMultiplier, ScreenHeight * _textSurfaceMultiplier, PixelFormat.Indexed8, false);
             ClearTextSurface();
 
             InitScreens(16, 144);
-            _composite = new Surface(ScreenWidth, _screenHeight, PixelFormat.Indexed8, false);
+            _composite = new Surface(ScreenWidth, ScreenHeight, PixelFormat.Indexed8, false);
             InitActors();
             InitOpCodes();
 
@@ -390,7 +387,7 @@ namespace NScumm.Core
             if (game.Features.HasFlag(GameFeatures.SixteenColors))
             {
                 for (int i = 0; i < 256; i++)
-                _shadowPalette[i] = (byte)i;
+                    _shadowPalette [i] = (byte)i;
             }
 
             InitializeVerbs();
@@ -403,41 +400,30 @@ namespace NScumm.Core
             for (int i = 0; i < 100; i++)
             {
                 _verbs[i] = new VerbSlot();
-                _verbs[i].VerbId = 0;
                 _verbs[i].CurRect.Right = ScreenWidth - 1;
                 _verbs[i].OldRect.Left = -1;
-                _verbs[i].Type = 0;
                 _verbs[i].Color = 2;
-                _verbs[i].HiColor = 0;
                 _verbs[i].CharsetNr = 1;
-                _verbs[i].CurMode = 0;
-                _verbs[i].SaveId = 0;
-                _verbs[i].Center = false;
-                _verbs[i].Key = 0;
             }
         }
 
         void InitActors()
         {
-            for (byte i = 0; i < NumActors; i++)
+            for (byte i = 0; i < _actors.Length; i++)
             {
                 _actors[i] = new Actor(this, i);
-                _actors[i].InitActor(-1);
+                _actors[i].Init(-1);
             }
         }
 
         void InitVariables()
         {
-            for (int i = 0; i < NumScriptSlot; i++)
-            {
-                _localVariables[i] = new int[26];
-            }
             _variables = new int[NumVariables];
             _variables[VariableVideoMode] = 19;
             _variables[VariableFixedDisk] = 1;
             _variables[VariableHeapSpace] = 1400;
             _variables[VariableCharIncrement] = 4;
-            SetTalkingActor(0);
+            TalkingActor = 0;
 #if DEBUG
             //_variables[VariableDebugMode] = 1;
 #endif
@@ -471,7 +457,7 @@ namespace NScumm.Core
 
             _mainVirtScreen = new VirtScreen(b, ScreenWidth, h - b, format, 2, true);
             _textVirtScreen = new VirtScreen(0, ScreenWidth, b, format, 1);
-            _verbVirtScreen = new VirtScreen(h, ScreenWidth, _screenHeight - h, format, 1);
+            _verbVirtScreen = new VirtScreen(h, ScreenWidth, ScreenHeight - h, format, 1);
             _unkVirtScreen = new VirtScreen(80, ScreenWidth, 13, format, 1);
 
             _screenB = b;
@@ -564,7 +550,6 @@ namespace NScumm.Core
                 var &= 0x7FFF;
 
                 ScummHelper.AssertRange(0, _resultVarIndex, _bitVars.Length - 1, "variable (reading)");
-                //Console.WriteLine ("ReadVariable({0}) => {1}", var, _bitVars[var]);
                 return _bitVars[var] ? 1 : 0;
             }
 
@@ -573,22 +558,44 @@ namespace NScumm.Core
                 var &= 0xFFF;
 
                 ScummHelper.AssertRange(0, var, 20, "local variable (reading)");
-
-                //Console.WriteLine ("ReadVariable({0}) => {1}", var, _localVariables[_currentScript][var]);
-                return _localVariables[_currentScript][var];
+                return _slots[_currentScript].LocalVariables[var];
             }
 
             throw new NotSupportedException("Illegal varbits (r)");
         }
 
-        List<int> GetWordVarArgs()
+        int GetVarOrDirectWord(OpCodeParameter param)
+        {
+            if (((OpCodeParameter)_opCode).HasFlag(param))
+                return GetVar();
+            return ReadWordSigned();
+        }
+
+        int GetVarOrDirectByte(OpCodeParameter param)
+        {
+            if (((OpCodeParameter)_opCode).HasFlag(param))
+                return GetVar();
+            return ReadByte();
+        }
+
+        int GetVar()
+        {
+            return ReadVariable(ReadWord());
+        }
+
+        short ReadWordSigned()
+        {
+            return (short)ReadWord();
+        }
+
+        int[] GetWordVarArgs()
         {
             var args = new List<int>();
             while ((_opCode = ReadByte()) != 0xFF)
             {
                 args.Add(GetVarOrDirectWord(OpCodeParameter.Param1));
             }
-            return args;
+            return args.ToArray();
         }
 
         void SetResult(int value)
@@ -617,7 +624,7 @@ namespace NScumm.Core
 
                 ScummHelper.AssertRange(0, _resultVarIndex, 20, "local variable (writing)");
                 //Console.WriteLine ("SetLocalVariables(script={0},var={1},value={2})",_currentScript, _resultVarIndex,value);
-                _localVariables[_currentScript][_resultVarIndex] = value;
+                _slots[_currentScript].LocalVariables[_resultVarIndex] = value;
                 return;
             }
         }
@@ -962,17 +969,19 @@ namespace NScumm.Core
 
         void PutActorAtObject()
         {
-            int obj, x, y;
+            int obj;
+            Point p;
             Actor a = _actors[GetVarOrDirectByte(OpCodeParameter.Param1)];
             obj = GetVarOrDirectWord(OpCodeParameter.Param2);
             if (GetWhereIsObject(obj) != WhereIsObject.NotFound)
-                GetObjectXYPos(obj, out x, out y);
+            {
+                p = GetObjectXYPos(obj);
+            }
             else
             {
-                x = 240;
-                y = 120;
+                p = new Point(240,120);
             }
-            a.PutActor(new Point((short)x, (short)y));
+            a.PutActor(p);
         }
 
         void WalkActorToActor()
@@ -983,11 +992,11 @@ namespace NScumm.Core
             int dist = ReadByte();
 
             var a = _actors[nr];
-            if (!a.IsInCurrentRoom())
+            if (!a.IsInCurrentRoom)
                 return;
 
             var a2 = _actors[nr2];
-            if (!a2.IsInCurrentRoom())
+            if (!a2.IsInCurrentRoom)
                 return;
 
             if (dist == 0xFF)
@@ -1002,7 +1011,7 @@ namespace NScumm.Core
             else
                 x -= dist;
 
-            a.StartWalkActor(new Point((short)x, (short)y), -1);
+            a.StartWalk(new Point((short)x, (short)y), -1);
         }
 
         void PanCameraTo()
@@ -1065,9 +1074,10 @@ namespace NScumm.Core
         void ActorFromPosition()
         {
             GetResult();
-            var x = GetVarOrDirectWord(OpCodeParameter.Param1);
-            var y = GetVarOrDirectWord(OpCodeParameter.Param2);
-            SetResult(GetActorFromPos(x, y));
+            var x = (short)GetVarOrDirectWord(OpCodeParameter.Param1);
+            var y = (short)GetVarOrDirectWord(OpCodeParameter.Param2);
+            var actor = GetActorFromPos(new Point(x, y));
+            SetResult(actor);
         }
 
         void ChainScript()
@@ -1090,12 +1100,10 @@ namespace NScumm.Core
 
         void GetDistance()
         {
-            int o1, o2;
-            int r;
             GetResult();
-            o1 = GetVarOrDirectWord(OpCodeParameter.Param1);
-            o2 = GetVarOrDirectWord(OpCodeParameter.Param2);
-            r = GetObjActToObjActDist(o1, o2);
+            var o1 = GetVarOrDirectWord(OpCodeParameter.Param1);
+            var o2 = GetVarOrDirectWord(OpCodeParameter.Param2);
+            var r = GetObjActToObjActDist(o1, o2);
 
             // TODO: WORKAROUND bug #795937 ?
             //if ((_game.id == GID_MONKEY_EGA || _game.id == GID_PASS) && o1 == 1 && o2 == 307 && vm.slot[_currentScript].number == 205 && r == 2)
@@ -1160,7 +1168,7 @@ namespace NScumm.Core
             {
                 case 1:     // SO_WAIT_FOR_ACTOR
                     {
-                        Actor a = _actors[GetVarOrDirectByte(OpCodeParameter.Param1)];
+                        var a = _actors[GetVarOrDirectByte(OpCodeParameter.Param1)];
                         if (a != null && a.Moving != 0)
                             break;
                         return;
@@ -1171,7 +1179,7 @@ namespace NScumm.Core
                     return;
 
                 case 3:     // SO_WAIT_FOR_CAMERA
-                    if (_camera.Cur.X / 8 != _camera.Dest.X / 8)
+                    if (_camera.CurrentPosition.X / 8 != _camera.DestinationPosition.X / 8)
                         break;
                     return;
 
@@ -1198,7 +1206,7 @@ namespace NScumm.Core
             var a = _actors[GetVarOrDirectByte(OpCodeParameter.Param1)];
             var x = (short)GetVarOrDirectWord(OpCodeParameter.Param2);
             var y = (short)GetVarOrDirectWord(OpCodeParameter.Param3);
-            a.StartWalkActor(new Point(x, y), -1);
+            a.StartWalk(new Point(x, y), -1);
         }
 
         void WalkActorToObject()
@@ -1207,9 +1215,10 @@ namespace NScumm.Core
             var obj = GetVarOrDirectWord(OpCodeParameter.Param2);
             if (GetWhereIsObject(obj) != WhereIsObject.NotFound)
             {
-                int x, y, dir;
-                GetObjectXYPos(obj, out x, out y, out dir);
-                a.StartWalkActor(new Point((short)x, (short)y), dir);
+                int dir;
+                Point p;
+                GetObjectXYPos(obj, out p, out dir);
+                a.StartWalk(p, dir);
             }
         }
 
@@ -1217,7 +1226,7 @@ namespace NScumm.Core
         {
             int act = GetVarOrDirectByte(OpCodeParameter.Param1);
             int obj = GetVarOrDirectWord(OpCodeParameter.Param2);
-            Actor a = _actors[act];
+            var a = _actors[act];
             a.FaceToObject(obj);
         }
 
@@ -1279,23 +1288,24 @@ namespace NScumm.Core
 
             if (!_egoPositioned)
             {
-                int x2, y2, dir;
-                GetObjectXYPos(obj, out x2, out y2, out dir);
-                a.PutActor(new Point((short)x2, (short)y2), _currentRoom);
+                int dir;
+                Point p;
+                GetObjectXYPos(obj, out p, out dir);
+                a.PutActor(p, _currentRoom);
                 if (a.Facing == oldDir)
                     a.SetDirection(dir + 180);
             }
             a.Moving = 0;
 
             // This is based on disassembly
-            _camera.Cur.X = _camera.Dest.X = a.Position.X;
+            _camera.CurrentPosition.X = _camera.DestinationPosition.X = a.Position.X;
             SetCameraFollows(a, false);
 
             _fullRedraw = true;
 
             if (x != -1)
             {
-                a.StartWalkActor(new Point(x, y), -1);
+                a.StartWalk(new Point(x, y), -1);
             }
         }
 
@@ -1375,10 +1385,10 @@ namespace NScumm.Core
         void ActorFollowCamera()
         {
             var actor = GetVarOrDirectByte(OpCodeParameter.Param1);
-            var old = _camera.Follows;
+            var old = _camera.ActorToFollow;
             SetCameraFollows(_actors[actor], false);
 
-            if (_camera.Follows != old)
+            if (_camera.ActorToFollow != old)
                 RunInventoryScript(0);
 
             _camera.MovingToActor = false;
@@ -1389,17 +1399,13 @@ namespace NScumm.Core
             if (_slots[_currentScript].CutSceneOverride > 0)    // Only terminate if active
                 _slots[_currentScript].CutSceneOverride--;
 
-            var args = new int[] { _cutSceneData[cutSceneStackPointer] };
+            var cutSceneData = cutScene.Data.Pop();
+            var args = new int[] { cutSceneData.Data };
 
             _variables[VariableOverride] = 0;
 
-            if (_cutScenePtr[cutSceneStackPointer] != 0 && (_slots[_currentScript].CutSceneOverride > 0))   // Only terminate if active
+            if (cutSceneData.Pointer != 0 && (_slots[_currentScript].CutSceneOverride > 0))   // Only terminate if active
                 _slots[_currentScript].CutSceneOverride--;
-
-            _cutSceneScript[cutSceneStackPointer] = 0;
-            _cutScenePtr[cutSceneStackPointer] = 0;
-
-            cutSceneStackPointer--;
 
             if (_variables[VariableCutSceneEndScript] != 0)
                 RunScript((byte)_variables[VariableCutSceneEndScript], false, false, args);
@@ -1425,7 +1431,7 @@ namespace NScumm.Core
             int anim = GetVarOrDirectByte(OpCodeParameter.Param2);
 
             Actor a = _actors[act];
-            a.AnimateActor(anim);
+            a.Animate(anim);
         }
 
         void ActorOps()
@@ -1479,7 +1485,7 @@ namespace NScumm.Core
                         break;
 
                     case 8:         // SO_DEFAULT
-                        a.InitActor(0);
+                        a.Init(0);
                         break;
 
                     case 9:         // SO_ELEVATION
@@ -1487,11 +1493,7 @@ namespace NScumm.Core
                         break;
 
                     case 10:        // SO_ANIMATION_DEFAULT
-                        a.InitFrame = 1;
-                        a.WalkFrame = 2;
-                        a.StandFrame = 3;
-                        a.TalkStartFrame = 4;
-                        a.TalkStopFrame = 5;
+                        a.ResetFrames();
                         break;
 
                     case 11:        // SO_PALETTE
@@ -1506,8 +1508,7 @@ namespace NScumm.Core
                         break;
 
                     case 13:        // SO_ACTOR_NAME
-                        var name = ReadCharacters();
-                        a.Name = name;
+                        a.Name = ReadCharacters();
                         break;
 
                     case 14:        // SO_INIT_ANIMATION
@@ -1525,18 +1526,18 @@ namespace NScumm.Core
                         break;
 
                     case 18:        // SO_NEVER_ZCLIP
-                        a.ForceClip = 0;
+                        a.ForceClip = false;
                         break;
 
                     case 19:        // SO_ALWAYS_ZCLIP
-                        a.ForceClip = GetVarOrDirectByte(OpCodeParameter.Param1);
+                        a.ForceClip = GetVarOrDirectByte(OpCodeParameter.Param1)>0;
                         break;
 
                     case 20:        // SO_IGNORE_BOXES
                     case 21:        // SO_FOLLOW_BOXES
                         a.IgnoreBoxes = (_opCode & 1) == 0;
-                        a.ForceClip = 0;
-                        if (a.IsInCurrentRoom())
+                        a.ForceClip = false;
+                        if (a.IsInCurrentRoom)
                             a.PutActor();
                         break;
 
@@ -1587,11 +1588,11 @@ namespace NScumm.Core
                 {
                     // Class '0' means: clean all class data
                     ClassData[obj] = 0;
-                    if (obj <= NumActors)
+                    if (obj < _actors.Length)
                     {
-                        Actor a = _actors[obj];
+                        var a = _actors[obj];
                         a.IgnoreBoxes = false;
-                        a.ForceClip = 0;
+                        a.ForceClip = false;
                     }
                 }
                 else
@@ -1625,7 +1626,7 @@ namespace NScumm.Core
 
             var a = _actors[act];
 
-            if (a.IsVisible && _currentRoom != room && GetTalkingActor() == a.Number)
+            if (a.IsVisible && _currentRoom != room && TalkingActor == a.Number)
             {
                 StopTalk();
             }
@@ -1642,22 +1643,11 @@ namespace NScumm.Core
                 EndOverrideCore();
         }
 
-        void EndOverrideCore()
-        {
-            var idx = cutSceneStackPointer;
-            _cutScenePtr[idx] = 0;
-            _cutSceneScript[idx] = 0;
-
-            _variables[VariableOverride] = 0;
-        }
-
         void BeginOverrideCore()
         {
-            int idx = cutSceneStackPointer;
-
-            _cutScenePtr[idx] = (uint)_currentPos;
-            _cutSceneScript[idx] = _currentScript;
-
+            cutScene.Override.Pointer = _currentPos;
+            cutScene.Override.Script = _currentScript;
+            
             // Skip the jump instruction following the override instruction
             // (the jump is responsible for "skipping" cutscenes, and the reason
             // why we record the current script position in vm.cutScenePtr).
@@ -1665,11 +1655,19 @@ namespace NScumm.Core
             ReadWord();
         }
 
+        void EndOverrideCore()
+        {
+            cutScene.Override.Pointer = 0;
+            cutScene.Override.Script = 0;
+
+            _variables[VariableOverride] = 0;
+        }
+
         void SetCameraAt()
         {
             short at = (short)GetVarOrDirectWord(OpCodeParameter.Param1);
             _camera.Mode = CameraMode.Normal;
-            _camera.Cur.X = at;
+            _camera.CurrentPosition.X = at;
             SetCameraAt(at, 0);
             _camera.MovingToActor = false;
         }
@@ -2030,24 +2028,25 @@ namespace NScumm.Core
 
             if (xpos != 0xFF)
             {
-                Objects[idx].WalkX += (short)((xpos * 8) - Objects[idx].XPos);
-                Objects[idx].XPos = (short)(xpos * 8);
-                Objects[idx].WalkY += (short)((ypos * 8) - Objects[idx].YPos);
-                Objects[idx].YPos = (short)(ypos * 8);
+                _objs[idx].WalkX += (short)((xpos * 8) - _objs[idx].Position.X);
+                _objs[idx].WalkY += (short)((ypos * 8) - _objs[idx].Position.Y);
+                _objs[idx].Position =new Point((short)(xpos * 8),(short)(ypos * 8));
             }
 
             AddObjectToDrawQue((byte)idx);
 
-            var x = (ushort)Objects[idx].XPos;
-            var y = (ushort)Objects[idx].YPos;
-            var w = Objects[idx].Width;
-            var h = Objects[idx].Height;
+            var x = (ushort)_objs[idx].Position.X;
+            var y = (ushort)_objs[idx].Position.Y;
+            var w = _objs[idx].Width;
+            var h = _objs[idx].Height;
 
-            int i = _numLocalObjects - 1;
+            int i = _objs.Length - 1;
             do
             {
-                if (Objects[i].Number != 0 && Objects[i].XPos == x && Objects[i].YPos == y && Objects[i].Width == w && Objects[i].Height == h)
-                    PutState(Objects[i].Number, 0);
+                if (_objs[i].Number != 0 && 
+                    _objs[i].Position.X == x && _objs[i].Position.Y == y && 
+                    _objs[i].Width == w && _objs[i].Height == h)
+                    PutState(_objs[i].Number, 0);
             } while ((--i) != 0);
 
             PutState(obj, state);
@@ -2627,14 +2626,6 @@ namespace NScumm.Core
 
         #region Properties
 
-        internal IList<ObjectData> Objects
-        {
-            get
-            {
-                return _objs;
-            }
-        }
-
         internal int ScreenStartStrip
         {
             get { return _screenStartStrip; }
@@ -2681,8 +2672,7 @@ namespace NScumm.Core
         {
             for (int i = 0; i < roomData.Objects.Count; i++)
             {
-                _objs[i + 1].XPos = roomData.Objects[i].XPos;
-                _objs[i + 1].YPos = roomData.Objects[i].YPos;
+                _objs[i + 1].Position = roomData.Objects[i].Position;
                 _objs[i + 1].Width = roomData.Objects[i].Width;
                 _objs[i + 1].WalkX = roomData.Objects[i].WalkX;
                 _objs[i + 1].WalkY = roomData.Objects[i].WalkY;
@@ -2715,9 +2705,9 @@ namespace NScumm.Core
 
         void ClearRoomObjects()
         {
-            for (int i = 0; i < _numLocalObjects; i++)
+            for (int i = 0; i < _objs.Length; i++)
             {
-                Objects[i].Number = 0;
+                _objs[i].Number = 0;
             }
         }
 
@@ -2799,9 +2789,9 @@ namespace NScumm.Core
 
             StopCycle(0);
 
-            for (int i = 1; i < NumActors; i++)
+            for (int i = 0; i < _actors.Length; i++)
             {
-                _actors[i].HideActor();
+                _actors[i].Hide();
             }
 
             for (int i = 0; i < 256; i++)
@@ -2847,8 +2837,8 @@ namespace NScumm.Core
             _variables[VariableCameraMaxX] = roomData.Header.Width - (ScreenWidth / 2);
 
             _camera.Mode = CameraMode.Normal;
-            _camera.Cur.X = _camera.Dest.X = (short)(ScreenWidth / 2);
-            _camera.Cur.Y = _camera.Dest.Y = (short)(_screenHeight / 2);
+            _camera.CurrentPosition.X = _camera.DestinationPosition.X = (short)(ScreenWidth / 2);
+            _camera.CurrentPosition.Y = _camera.DestinationPosition.Y = (short)(ScreenHeight / 2);
 
             if (_roomResource == 0)
                 return;
@@ -2937,7 +2927,7 @@ namespace NScumm.Core
 
         void UpdateVariables()
         {
-            _variables[VariableCameraPosX] = _camera.Cur.X;
+            _variables[VariableCameraPosX] = _camera.CurrentPosition.X;
             _variables[VariableHaveMessage] = _haveMsg;
         }
 
@@ -2957,7 +2947,7 @@ namespace NScumm.Core
                 _slots[slot].Recursive = false;
                 _slots[slot].FreezeCount = 0;
                 _currentScriptData = roomData.EntryScript.Data;
-                InitializeLocals((byte)slot, new int[] { });
+                _slots[slot].InitializeLocals(new int[0]);
                 RunScriptNested((byte)slot);
             }
 
@@ -2983,7 +2973,7 @@ namespace NScumm.Core
                 _slots[slot].Recursive = false;
                 _slots[slot].FreezeCount = 0;
                 _currentScriptData = roomData.ExitScript.Data;
-                InitializeLocals((byte)slot, new int[] { });
+                _slots[slot].InitializeLocals(new int[0]);
                 RunScriptNested((byte)slot);
             }
         }
@@ -3026,16 +3016,15 @@ namespace NScumm.Core
             }
         }
 
-        public void RunScript(byte scriptNum, bool freezeResistant, bool recursive, IList<int> data)
+        public void RunScript(byte scriptNum, bool freezeResistant, bool recursive, int[] data)
         {
-            WhereIsObject scriptType;
-
             if (scriptNum == 0)
                 return;
 
             if (!recursive)
                 StopScript(scriptNum);
 
+            WhereIsObject scriptType;
             if (scriptNum < NumGlobalScripts)
             {
                 scriptType = WhereIsObject.Global;
@@ -3055,20 +3044,8 @@ namespace NScumm.Core
             _slots[slotIndex].FreezeCount = 0;
 
             UpdateScriptData(slotIndex);
-            InitializeLocals(slotIndex, data);
+            _slots[slotIndex].InitializeLocals(data);
             RunScriptNested(slotIndex);
-        }
-
-        void InitializeLocals(byte slotIndex, IList<int> data)
-        {
-            for (int i = 0; i < data.Count; i++)
-            {
-                _localVariables[slotIndex][i] = data[i];
-            }
-            for (int i = data.Count; i < 25; i++)
-            {
-                _localVariables[slotIndex][i] = 0;
-            }
         }
 
         void UpdateScriptData(ushort slotIndex)
@@ -3237,7 +3214,7 @@ namespace NScumm.Core
             }
         }
 
-        void RunObjectScript(int obj, byte entry, bool freezeResistant, bool recursive, IList<int> vars)
+        void RunObjectScript(int obj, byte entry, bool freezeResistant, bool recursive, int[] vars)
         {
             if (obj == 0)
                 return;
@@ -3278,7 +3255,7 @@ namespace NScumm.Core
             _slots[slot].Recursive = recursive;
             _slots[slot].FreezeCount = 0;
 
-            InitializeLocals(slot, vars);
+            _slots[slot].InitializeLocals(vars);
 
             // V0 Ensure we don't try and access objects via index inside the script
             //_v0ObjectIndex = false;
@@ -3329,10 +3306,10 @@ namespace NScumm.Core
             for (int i = 0; i < _sentence.Length; i++)
                 _sentence[i].FreezeCount++;
 
-            if (_cutSceneScriptIndex != 0xFF)
+            if (cutScene.CutSceneScriptIndex != 0xFF)
             {
-                _slots[_cutSceneScriptIndex].Frozen = false;
-                _slots[_cutSceneScriptIndex].FreezeCount = 0;
+                _slots[cutScene.CutSceneScriptIndex].Frozen = false;
+                _slots[cutScene.CutSceneScriptIndex].FreezeCount = 0;
             }
         }
 
@@ -3347,23 +3324,25 @@ namespace NScumm.Core
             return false;
         }
 
-        void BeginCutscene(IList<int> args)
+        void BeginCutscene(int[] args)
         {
             int scr = _currentScript;
             _slots[scr].CutSceneOverride++;
 
-            ++cutSceneStackPointer;
-            if (cutSceneStackPointer >= MaxCutsceneNum)
+            var cutSceneData = new CutSceneData {
+                Data = args.Length > 0 ? args [0] : 0
+            };
+            cutScene.Data.Push(cutSceneData);
+
+            if (cutScene.Data.Count >= MaxCutsceneNum)
                 throw new NotSupportedException("Cutscene stack overflow");
 
-            _cutSceneData[cutSceneStackPointer] = args.Count > 0 ? args[0] : 0;
-            _cutSceneScript[cutSceneStackPointer] = 0;
-            _cutScenePtr[cutSceneStackPointer] = 0;
+            cutScene.CutSceneScriptIndex = scr;
 
-            _cutSceneScriptIndex = scr;
             if (_variables[VariableCutSceneStartScript] != 0)
                 RunScript((byte)_variables[VariableCutSceneStartScript], false, false, args);
-            _cutSceneScriptIndex = 0xFF;
+
+            cutScene.CutSceneScriptIndex = 0xFF;
         }
 
         void JumpRelative(bool condition)
@@ -3379,20 +3358,23 @@ namespace NScumm.Core
 
         void AbortCutscene()
         {
-            int idx = cutSceneStackPointer;
+            if (cutScene.Data.Count == 0)
+                return;
 
-            var offs = _cutScenePtr[idx];
+            var cutSceneData = cutScene.Data.Peek();
+
+            var offs = cutSceneData.Pointer;
             if (offs != 0)
             {
-                _slots[_cutSceneScript[idx]].Offset = offs;
-                _slots[_cutSceneScript[idx]].Status = ScriptStatus.Running;
-                _slots[_cutSceneScript[idx]].FreezeCount = 0;
+                _slots[cutSceneData.Script].Offset = (uint)offs;
+                _slots[cutSceneData.Script].Status = ScriptStatus.Running;
+                _slots[cutSceneData.Script].FreezeCount = 0;
 
-                if (_slots[_cutSceneScript[idx]].CutSceneOverride > 0)
-                    _slots[_cutSceneScript[idx]].CutSceneOverride--;
+                if (_slots[cutSceneData.Script].CutSceneOverride > 0)
+                    _slots[cutSceneData.Script].CutSceneOverride--;
 
                 _variables[VariableOverride] = 1;
-                _cutScenePtr[idx] = 0;
+                cutSceneData.Pointer = 0;
             }
         }
 
@@ -3413,30 +3395,6 @@ namespace NScumm.Core
                     }
                 }
             }
-        }
-
-        int GetVarOrDirectWord(OpCodeParameter param)
-        {
-            if (((OpCodeParameter)_opCode).HasFlag(param))
-                return GetVar();
-            return ReadWordSigned();
-        }
-
-        int GetVarOrDirectByte(OpCodeParameter param)
-        {
-            if (((OpCodeParameter)_opCode).HasFlag(param))
-                return GetVar();
-            return ReadByte();
-        }
-
-        int GetVar()
-        {
-            return ReadVariable(ReadWord());
-        }
-
-        short ReadWordSigned()
-        {
-            return (short)ReadWord();
         }
 
         public TimeSpan Loop(TimeSpan tsDelta)
@@ -3532,7 +3490,7 @@ namespace NScumm.Core
 
             //HandleSound();
 
-            _camera.Last = _camera.Cur;
+            _camera.LastPosition = _camera.CurrentPosition;
 
             //_res->increaseExpireCounter();
 
@@ -3552,47 +3510,47 @@ namespace NScumm.Core
         #region Camera Members
         void PanCameraTo(int x)
         {
-            _camera.Dest.X = (short)x;
+            _camera.DestinationPosition.X = (short)x;
             _camera.Mode = CameraMode.Panning;
             _camera.MovingToActor = false;
         }
 
         void SetCameraAt(short posX, short posY)
         {
-            if (_camera.Mode != CameraMode.FollowActor || Math.Abs(posX - _camera.Cur.X) > (ScreenWidth / 2))
+            if (_camera.Mode != CameraMode.FollowActor || Math.Abs(posX - _camera.CurrentPosition.X) > (ScreenWidth / 2))
             {
-                _camera.Cur.X = posX;
+                _camera.CurrentPosition.X = posX;
             }
-            _camera.Dest.X = posX;
+            _camera.DestinationPosition.X = posX;
 
-            if (_camera.Cur.X < _variables[VariableCameraMinX])
-                _camera.Cur.X = (short)_variables[VariableCameraMinX];
+            if (_camera.CurrentPosition.X < _variables[VariableCameraMinX])
+                _camera.CurrentPosition.X = (short)_variables[VariableCameraMinX];
 
-            if (_camera.Cur.X > _variables[VariableCameraMaxX])
-                _camera.Cur.X = (short)_variables[VariableCameraMaxX];
+            if (_camera.CurrentPosition.X > _variables[VariableCameraMaxX])
+                _camera.CurrentPosition.X = (short)_variables[VariableCameraMaxX];
 
             if (_variables[VariableScrollScript] != 0)
             {
-                _variables[VariableCameraPosX] = _camera.Cur.X;
+                _variables[VariableCameraPosX] = _camera.CurrentPosition.X;
                 RunScript((byte)_variables[VariableScrollScript], false, false, new int[0]);
             }
 
             // If the camera moved and text is visible, remove it
-            if (_camera.Cur.X != _camera.Last.X && _charset.HasMask)
+            if (_camera.CurrentPosition.X != _camera.LastPosition.X && _charset.HasMask)
                 StopTalk();
         }
 
         void SetCameraFollows(Actor actor, bool setCamera)
         {
             _camera.Mode = CameraMode.FollowActor;
-            _camera.Follows = actor.Number;
+            _camera.ActorToFollow = actor.Number;
 
-            if (!actor.IsInCurrentRoom())
+            if (!actor.IsInCurrentRoom)
             {
                 StartScene(actor.Room);
                 _camera.Mode = CameraMode.FollowActor;
-                _camera.Cur.X = actor.Position.X;
-                SetCameraAt(_camera.Cur.X, 0);
+                _camera.CurrentPosition.X = actor.Position.X;
+                SetCameraAt(_camera.CurrentPosition.X, 0);
             }
 
             int t = actor.Position.X / 8 - _screenStartStrip;
@@ -3602,7 +3560,7 @@ namespace NScumm.Core
 
             for (int i = 1; i < _actors.Length; i++)
             {
-                if (_actors[i].IsInCurrentRoom())
+                if (_actors[i].IsInCurrentRoom)
                     _actors[i].NeedRedraw = true;
             }
             RunInventoryScript(0);
@@ -3610,30 +3568,30 @@ namespace NScumm.Core
 
         void MoveCamera()
         {
-            int pos = _camera.Cur.X;
+            int pos = _camera.CurrentPosition.X;
             int t;
             Actor a = null;
             bool snapToX = /*_snapScroll ||*/ _variables[VariableCameraFastX] != 0;
 
-            _camera.Cur.X = (short)(_camera.Cur.X & 0xFFF8);
+            _camera.CurrentPosition.X = (short)(_camera.CurrentPosition.X & 0xFFF8);
 
-            if (_camera.Cur.X < _variables[VariableCameraMinX])
+            if (_camera.CurrentPosition.X < _variables[VariableCameraMinX])
             {
                 if (snapToX)
-                    _camera.Cur.X = (short)_variables[VariableCameraMinX];
+                    _camera.CurrentPosition.X = (short)_variables[VariableCameraMinX];
                 else
-                    _camera.Cur.X += 8;
+                    _camera.CurrentPosition.X += 8;
 
                 CameraMoved();
                 return;
             }
 
-            if (_camera.Cur.X > _variables[VariableCameraMaxX])
+            if (_camera.CurrentPosition.X > _variables[VariableCameraMaxX])
             {
                 if (snapToX)
-                    _camera.Cur.X = (short)_variables[VariableCameraMaxX];
+                    _camera.CurrentPosition.X = (short)_variables[VariableCameraMaxX];
                 else
-                    _camera.Cur.X -= 8;
+                    _camera.CurrentPosition.X -= 8;
 
                 CameraMoved();
                 return;
@@ -3641,7 +3599,7 @@ namespace NScumm.Core
 
             if (_camera.Mode == CameraMode.FollowActor)
             {
-                a = _actors[_camera.Follows];
+                a = _actors[_camera.ActorToFollow];
 
                 int actorx = a.Position.X;
                 t = actorx / 8 - _screenStartStrip;
@@ -3651,9 +3609,9 @@ namespace NScumm.Core
                     if (snapToX)
                     {
                         if (t > 40 - 5)
-                            _camera.Dest.X = (short)(actorx + 80);
+                            _camera.DestinationPosition.X = (short)(actorx + 80);
                         if (t < 5)
-                            _camera.Dest.X = (short)(actorx - 80);
+                            _camera.DestinationPosition.X = (short)(actorx - 80);
                     }
                     else
                         _camera.MovingToActor = true;
@@ -3662,39 +3620,39 @@ namespace NScumm.Core
 
             if (_camera.MovingToActor)
             {
-                a = _actors[_camera.Follows];
-                _camera.Dest.X = a.Position.X;
+                a = _actors[_camera.ActorToFollow];
+                _camera.DestinationPosition.X = a.Position.X;
             }
 
-            if (_camera.Dest.X < _variables[VariableCameraMinX])
-                _camera.Dest.X = (short)_variables[VariableCameraMinX];
+            if (_camera.DestinationPosition.X < _variables[VariableCameraMinX])
+                _camera.DestinationPosition.X = (short)_variables[VariableCameraMinX];
 
-            if (_camera.Dest.X > _variables[VariableCameraMaxX])
-                _camera.Dest.X = (short)_variables[VariableCameraMaxX];
+            if (_camera.DestinationPosition.X > _variables[VariableCameraMaxX])
+                _camera.DestinationPosition.X = (short)_variables[VariableCameraMaxX];
 
             if (snapToX)
             {
-                _camera.Cur.X = _camera.Dest.X;
+                _camera.CurrentPosition.X = _camera.DestinationPosition.X;
             }
             else
             {
-                if (_camera.Cur.X < _camera.Dest.X)
-                    _camera.Cur.X += 8;
-                if (_camera.Cur.X > _camera.Dest.X)
-                    _camera.Cur.X -= 8;
+                if (_camera.CurrentPosition.X < _camera.DestinationPosition.X)
+                    _camera.CurrentPosition.X += 8;
+                if (_camera.CurrentPosition.X > _camera.DestinationPosition.X)
+                    _camera.CurrentPosition.X -= 8;
             }
 
             /* Actor 'a' is set a bit above */
-            if (_camera.MovingToActor && (_camera.Cur.X / 8) == (a.Position.X / 8))
+            if (_camera.MovingToActor && (_camera.CurrentPosition.X / 8) == (a.Position.X / 8))
             {
                 _camera.MovingToActor = false;
             }
 
             CameraMoved();
 
-            if (_variables[VariableScrollScript] != 0 && pos != _camera.Cur.X)
+            if (_variables[VariableScrollScript] != 0 && pos != _camera.CurrentPosition.X)
             {
-                _variables[VariableCameraPosX] = _camera.Cur.X;
+                _variables[VariableCameraPosX] = _camera.CurrentPosition.X;
                 RunScript((byte)_variables[VariableScrollScript], false, false, new int[0]);
             }
         }
@@ -3703,19 +3661,19 @@ namespace NScumm.Core
         {
             int screenLeft;
 
-            if (_camera.Cur.X < (ScreenWidth / 2))
+            if (_camera.CurrentPosition.X < (ScreenWidth / 2))
             {
-                _camera.Cur.X = (short)(ScreenWidth / 2);
+                _camera.CurrentPosition.X = (short)(ScreenWidth / 2);
             }
-            else if (_camera.Cur.X > (CurrentRoomData.Header.Width - (ScreenWidth / 2)))
+            else if (_camera.CurrentPosition.X > (CurrentRoomData.Header.Width - (ScreenWidth / 2)))
             {
-                _camera.Cur.X = (short)(CurrentRoomData.Header.Width - (ScreenWidth / 2));
+                _camera.CurrentPosition.X = (short)(CurrentRoomData.Header.Width - (ScreenWidth / 2));
             }
 
-            _screenStartStrip = _camera.Cur.X / 8 - Gdi.NumStrips / 2;
+            _screenStartStrip = _camera.CurrentPosition.X / 8 - Gdi.NumStrips / 2;
             _screenEndStrip = _screenStartStrip + Gdi.NumStrips - 1;
 
-            ScreenTop = _camera.Cur.Y - (_screenHeight / 2);
+            ScreenTop = _camera.CurrentPosition.Y - (ScreenHeight / 2);
             screenLeft = _screenStartStrip * 8;
 
             _mainVirtScreen.XStart = (ushort)screenLeft;
@@ -4035,7 +3993,7 @@ namespace NScumm.Core
 
         internal BoxFlags GetBoxFlags(byte boxNum)
         {
-            Box box = GetBoxBase(boxNum);
+            var box = GetBoxBase(boxNum);
             if (box == null)
                 return 0;
             return box.Flags;
@@ -4151,7 +4109,7 @@ namespace NScumm.Core
             return dest;
         }
 
-        internal bool CheckXYInBoxBounds(int boxnum, short x, short y)
+        internal bool CheckXYInBoxBounds(int boxnum, Point p)
         {
             // Since this method is called by many other methods that take params
             // from e.g. script opcodes, but do not validate the boxnum, we
@@ -4160,23 +4118,22 @@ namespace NScumm.Core
             if (boxnum < 0 || boxnum == Actor.InvalidBox)
                 return false;
 
-            BoxCoords box = GetBoxCoordinates(boxnum);
-            var p = new Point(x, y);
-
+            var box = GetBoxCoordinates(boxnum);
+           
             // Quick check: If the x (resp. y) coordinate of the point is
             // strictly smaller (bigger) than the x (y) coordinates of all
             // corners of the quadrangle, then it certainly is *not* contained
             // inside the quadrangle.
-            if (x < box.Ul.X && x < box.Ur.X && x < box.Lr.X && x < box.Ll.X)
+            if (p.X < box.Ul.X && p.X < box.Ur.X && p.X < box.Lr.X && p.X < box.Ll.X)
                 return false;
 
-            if (x > box.Ul.X && x > box.Ur.X && x > box.Lr.X && x > box.Ll.X)
+            if (p.X > box.Ul.X && p.X > box.Ur.X && p.X > box.Lr.X && p.X > box.Ll.X)
                 return false;
 
-            if (y < box.Ul.Y && y < box.Ur.Y && y < box.Lr.Y && y < box.Ll.Y)
+            if (p.Y < box.Ul.Y && p.Y < box.Ur.Y && p.Y < box.Lr.Y && p.Y < box.Ll.Y)
                 return false;
 
-            if (y > box.Ul.Y && y > box.Ur.Y && y > box.Lr.Y && y > box.Ll.Y)
+            if (p.Y > box.Ul.Y && p.Y > box.Ur.Y && p.Y > box.Lr.Y && p.Y > box.Ll.Y)
                 return false;
 
             // Corner case: If the box is a simple line segment, we consider the
@@ -4271,7 +4228,6 @@ namespace NScumm.Core
 
             return itineraryMatrix;
         }
-
 
         /// <summary>
         /// Check if two boxes are neighbors.
@@ -4769,7 +4725,7 @@ namespace NScumm.Core
         {
             _mainVirtScreen.SetDirtyRange(0, 0);
 
-            _camera.Last.X = _camera.Cur.X;
+            _camera.LastPosition.X = _camera.CurrentPosition.X;
 
             if (_screenEffectFlag && effect != 0)
             {
@@ -5002,8 +4958,8 @@ namespace NScumm.Core
                 _mousePos.X = (short)(ScreenWidth - 1);
             if (_mousePos.Y < 0)
                 _mousePos.Y = 0;
-            if (_mousePos.Y > _screenHeight - 1)
-                _mousePos.Y = (short)(_screenHeight - 1);
+            if (_mousePos.Y > ScreenHeight - 1)
+                _mousePos.Y = (short)(ScreenHeight - 1);
 
             var mouseX = (ScreenStartStrip * 8) + _mousePos.X;
             Variables[ScummEngine.VariableMouseX] = (int)_mousePos.X;
@@ -5202,10 +5158,10 @@ namespace NScumm.Core
 
                 var sb = _screenB;
                 var sh = _screenH;
-                _camera.Last.X = _camera.Cur.X;
+                _camera.LastPosition.X = _camera.CurrentPosition.X;
 
                 // Restore the virtual screens and force a fade to black.
-                InitScreens(0, _screenHeight);
+                InitScreens(0, ScreenHeight);
 
                 Gdi.Fill(MainVirtScreen.Surfaces[0].Pixels, MainVirtScreen.Pitch, 0, MainVirtScreen.Width, MainVirtScreen.Height);
                 MainVirtScreen.SetDirtyRange(0, MainVirtScreen.Height);
@@ -5260,23 +5216,73 @@ namespace NScumm.Core
                     // vm.localvar grew from 25 to 40 script entries and then from
                     // 16 to 32 bit variables (but that wasn't reflect here)... and
                     // THEN from 16 to 25 variables.
-                    LoadAndSaveEntry.Create(reader => _localVariables = reader.ReadMatrixUInt16(17,25),writer => writer.WriteMatrixUInt16(_localVariables,17,25),8,8),
-                    LoadAndSaveEntry.Create(reader => _localVariables = reader.ReadMatrixUInt16(17,40),writer => writer.WriteMatrixUInt16(_localVariables,17,40),9,14),
+                    LoadAndSaveEntry.Create(reader => {
+                        for (int i = 0; i < 25; i++)
+                        {
+                            _slots[i].InitializeLocals(reader.ReadUInt16s(17));
+                        }
+                    },writer => {
+                        for (int i = 0; i < 25; i++) 
+                        {
+                            writer.WriteUInt16s(_slots[i].LocalVariables.Cast<ushort>().ToArray(),17);
+                        }
+                    },8,8),
+                    LoadAndSaveEntry.Create(reader => {
+                        for (int i = 0; i < 40; i++)
+                        {
+                            _slots[i].InitializeLocals(reader.ReadUInt16s(17));
+                        }
+                    },writer => {
+                        for (int i = 0; i < 40; i++)
+                        {
+                            writer.WriteUInt16s(_slots[i].LocalVariables.Cast<ushort>().ToArray(),17);
+                        }
+                    },9,14),
                     // We used to save 25 * 40 = 1000 blocks; but actually, each 'row consisted of 26 entry,
                     // i.e. 26 * 40 = 1040. Thus the last 40 blocks of localvar where not saved at all. To be
                     // able to load this screwed format, we use a trick: We load 26 * 38 = 988 blocks.
                     // Then, we mark the followin 12 blocks (24 bytes) as obsolete.
-                    LoadAndSaveEntry.Create((reader)=> _localVariables = reader.ReadMatrixUInt16(26,38),writer => writer.WriteMatrixUInt16(_localVariables,26,38),15,17),
+                    LoadAndSaveEntry.Create(reader => {
+                        for (int i = 0; i < 38; i++)
+                        {
+                            _slots[i].InitializeLocals(reader.ReadUInt16s(26));
+                        }
+                    },writer => {
+                        for (int i = 0; i < 38; i++)
+                        {
+                            writer.WriteUInt16s(_slots[i].LocalVariables.Cast<ushort>().ToArray(),26);
+                        }
+                    },15,17),
                     // TODO
                     //MK_OBSOLETE_ARRAY(ScummEngine, vm.localvar[39][0], sleUint16, 12, VER(15), VER(17)),
                     // This was the first proper multi dimensional version of the localvars, with 32 bit values
-                    LoadAndSaveEntry.Create((reader)=> _localVariables = reader.ReadMatrixInt32(26,40),writer => writer.WriteMatrixInt32(_localVariables,26,40),18,19),
+                    LoadAndSaveEntry.Create(reader => {
+                        for (int i = 0; i < 40; i++)
+                        {
+                            _slots[i].InitializeLocals(reader.ReadInt32s(26));
+                        }
+                    }, writer => {
+                        for (int i = 0; i < 40; i++)
+                        {
+                        writer.WriteInt32s(_slots[i].LocalVariables,26);
+                        }
+                    },18,19),
 
                     // Then we doubled the script slots again, from 40 to 80
-                    LoadAndSaveEntry.Create((reader)=> _localVariables = reader.ReadMatrixInt32(26,NumScriptSlot),writer => writer.WriteMatrixInt32(_localVariables,26,NumScriptSlot),20),
+                    LoadAndSaveEntry.Create(reader => {
+                        for (int i = 0; i < NumScriptSlot; i++)
+                        {
+                            _slots[i].InitializeLocals(reader.ReadInt32s(26));
+                        }
+                    },writer => {
+                    for (int i = 0; i < NumScriptSlot; i++)
+                        {
+                            writer.WriteInt32s(_slots[i].LocalVariables,26);
+                        }
+                    },20),
 
-                    LoadAndSaveEntry.Create((reader)=> _resourceMapper = reader.ReadBytes(128),writer => writer.Write(_resourceMapper), 8),
-                    LoadAndSaveEntry.Create((reader)=> CharsetColorMap = reader.ReadBytes(16),writer => writer.Write(CharsetColorMap), 8),
+                    LoadAndSaveEntry.Create(reader => _resourceMapper = reader.ReadBytes(128),writer => writer.Write(_resourceMapper), 8),
+                    LoadAndSaveEntry.Create(reader => CharsetColorMap = reader.ReadBytes(16),writer => writer.Write(CharsetColorMap), 8),
 
                     // _charsetData grew from 10*16, to 15*16, to 23*16 bytes
                     LoadAndSaveEntry.Create(reader => reader.ReadMatrixBytes(10,16), writer => writer.WriteMatrixBytes(new byte[16,10],10,16), 8,9),
@@ -5285,18 +5291,18 @@ namespace NScumm.Core
                                                    
                     LoadAndSaveEntry.Create(reader => reader.ReadUInt16(), writer => writer.WriteUInt16(0), 8,62),
                                                    
-                    LoadAndSaveEntry.Create(reader => _camera.Dest.X = reader.ReadInt16(), writer => writer.WriteInt16(_camera.Dest.X), 8),
-                    LoadAndSaveEntry.Create(reader => _camera.Dest.Y = reader.ReadInt16(), writer => writer.WriteInt16(_camera.Dest.Y), 8),
-                    LoadAndSaveEntry.Create(reader => _camera.Cur.X = reader.ReadInt16(), writer => writer.WriteInt16(_camera.Cur.X), 8),
-                    LoadAndSaveEntry.Create(reader => _camera.Cur.Y = reader.ReadInt16(), writer => writer.WriteInt16(_camera.Cur.Y), 8),
-                    LoadAndSaveEntry.Create(reader => _camera.Last.X = reader.ReadInt16(), writer => writer.WriteInt16(_camera.Last.X), 8),
-                    LoadAndSaveEntry.Create(reader => _camera.Last.Y = reader.ReadInt16(), writer => writer.WriteInt16(_camera.Last.Y), 8),
+                    LoadAndSaveEntry.Create(reader => _camera.DestinationPosition.X = reader.ReadInt16(), writer => writer.WriteInt16(_camera.DestinationPosition.X), 8),
+                    LoadAndSaveEntry.Create(reader => _camera.DestinationPosition.Y = reader.ReadInt16(), writer => writer.WriteInt16(_camera.DestinationPosition.Y), 8),
+                    LoadAndSaveEntry.Create(reader => _camera.CurrentPosition.X = reader.ReadInt16(), writer => writer.WriteInt16(_camera.CurrentPosition.X), 8),
+                    LoadAndSaveEntry.Create(reader => _camera.CurrentPosition.Y = reader.ReadInt16(), writer => writer.WriteInt16(_camera.CurrentPosition.Y), 8),
+                    LoadAndSaveEntry.Create(reader => _camera.LastPosition.X = reader.ReadInt16(), writer => writer.WriteInt16(_camera.LastPosition.X), 8),
+                    LoadAndSaveEntry.Create(reader => _camera.LastPosition.Y = reader.ReadInt16(), writer => writer.WriteInt16(_camera.LastPosition.Y), 8),
                     LoadAndSaveEntry.Create(reader => _camera.Accel.X = reader.ReadInt16(), writer => writer.WriteInt16(_camera.Accel.X), 8),
                     LoadAndSaveEntry.Create(reader => _camera.Accel.Y = reader.ReadInt16(), writer => writer.WriteInt16(_camera.Accel.Y), 8),
                     LoadAndSaveEntry.Create(reader => _screenStartStrip = reader.ReadInt16(), writer => writer.WriteInt16(_screenStartStrip), 8),
                     LoadAndSaveEntry.Create(reader => _screenEndStrip = reader.ReadInt16(), writer => writer.WriteInt16(_screenEndStrip), 8),
                     LoadAndSaveEntry.Create(reader => _camera.Mode = (CameraMode)reader.ReadByte(), writer => writer.Write((byte)_camera.Mode), 8),
-                    LoadAndSaveEntry.Create(reader => _camera.Follows = reader.ReadByte(), writer => writer.Write(_camera.Follows), 8),
+                    LoadAndSaveEntry.Create(reader => _camera.ActorToFollow = reader.ReadByte(), writer => writer.Write(_camera.ActorToFollow), 8),
                     LoadAndSaveEntry.Create(reader => _camera.LeftTrigger = reader.ReadInt16(), writer => writer.WriteInt16(_camera.LeftTrigger), 8),
                     LoadAndSaveEntry.Create(reader => _camera.RightTrigger = reader.ReadInt16(), writer => writer.WriteInt16(_camera.RightTrigger), 8),
                     LoadAndSaveEntry.Create(reader => _camera.MovingToActor = reader.ReadUInt16()!=0, writer => writer.WriteUInt16(_camera.MovingToActor), 8),
@@ -5317,11 +5323,7 @@ namespace NScumm.Core
                     LoadAndSaveEntry.Create(reader => reader.ReadInt16(), writer => writer.WriteInt16(0), 8,27),
                     LoadAndSaveEntry.Create(reader => _sentenceNum = reader.ReadByte(), writer => writer.WriteByte(_sentenceNum), 8),
                                                    
-                    LoadAndSaveEntry.Create(reader => cutSceneStackPointer = reader.ReadByte(), writer => writer.WriteByte(cutSceneStackPointer), 8),
-                    LoadAndSaveEntry.Create(reader => _cutScenePtr = reader.ReadUInt32s(5), writer => writer.WriteUInt32s(_cutScenePtr,5), 8),
-                    LoadAndSaveEntry.Create(reader => _cutSceneScript = reader.ReadBytes(5), writer => writer.WriteBytes(_cutSceneScript,5), 8),
-                    LoadAndSaveEntry.Create(reader => _cutSceneData = Array.ConvertAll(reader.ReadInt16s(5), n => (int)n), writer => writer.WriteInt16s(_cutSceneData,5), 8),
-                    LoadAndSaveEntry.Create(reader => _cutSceneScriptIndex = reader.ReadInt16(), writer => writer.WriteInt16(_cutSceneScriptIndex), 8),
+                    LoadAndSaveEntry.Create(reader => cutScene.SaveOrLoad(serializer), writer => cutScene.SaveOrLoad(serializer), 8),
                                                    
                     LoadAndSaveEntry.Create(reader => _numNestedScripts = reader.ReadByte(), writer => writer.WriteByte(_numNestedScripts), 8),
                     LoadAndSaveEntry.Create(reader => _userPut = (sbyte)reader.ReadByte(), writer => writer.WriteByte(_userPut), 8),
@@ -5523,21 +5525,9 @@ namespace NScumm.Core
             //
             // Save/load local objects
             //
-            for (int i = 0; i < _numLocalObjects; i++)
+            for (int i = 0; i < _objs.Length; i++)
             {
                 _objs[i].SaveOrLoad(serializer);
-            }
-
-            if (serializer.IsLoading)
-            {
-                if (serializer.Version < 13)
-                {
-                    // Since roughly v13 of the save games, the objs storage has changed a bit
-                    for (int i = _objs.Length; i < _numLocalObjects; i++)
-                    {
-                        _objs[i].Number = 0;
-                    }
-                }
             }
 
             //
@@ -5620,10 +5610,10 @@ namespace NScumm.Core
 
             var l_paletteEntries = new[]{
                 LoadAndSaveEntry.Create(reader => {
-                    _shadowPalette = reader.ReadBytes(_shadowPaletteSize);
+                    _shadowPalette = reader.ReadBytes(_shadowPalette.Length);
                 },
                 writer => {
-                    writer.WriteBytes(_shadowPalette, _shadowPaletteSize);
+                    writer.WriteBytes(_shadowPalette, _shadowPalette.Length);
                 }),
                 // _roomPalette didn't show up until V21 save games
                 // Note that we also save the room palette for Indy4 Amiga, since it
@@ -6366,14 +6356,14 @@ namespace NScumm.Core
                 {
                     StopTalk();
                 }
-                SetTalkingActor(0xFF);
+                TalkingActor=0xFF;
             }
             else
             {
                 int oldact;
 
                 var a = _actors[_actorToPrintStrFor];
-                if (!a.IsInCurrentRoom())
+                if (!a.IsInCurrentRoom)
                 {
                     oldact = 0xFF;
                 }
@@ -6383,26 +6373,26 @@ namespace NScumm.Core
                     {
                         StopTalk();
                     }
-                    SetTalkingActor(a.Number);
+                    TalkingActor = a.Number;
 
                     if (!_string[0].NoTalkAnim)
                     {
-                        a.RunActorTalkScript(a.TalkStartFrame);
+                        a.RunTalkScript(a.TalkStartFrame);
                         _useTalkAnims = true;
                     }
-                    oldact = GetTalkingActor();
+                    oldact = TalkingActor;
                 }
                 if (oldact >= 0x80)
                     return;
             }
 
-            if (GetTalkingActor() > 0x7F)
+            if (TalkingActor > 0x7F)
             {
                 _charsetColor = _string [0].Color;
             }
             else
             {
-                var a = _actors[GetTalkingActor()];
+                var a = _actors[TalkingActor];
                 _charsetColor = a.TalkColor;
             }
 
@@ -6415,45 +6405,29 @@ namespace NScumm.Core
             Charset();
         }
 
-        public int GetTalkingActor()
+        internal int TalkingActor
         {
-            return _variables[VariableTalkActor];
+            get{ return _variables[VariableTalkActor]; }
+            set { _variables [VariableTalkActor] = value; }
         }
 
-        void SetTalkingActor(int actor)
-        {
-            //        if (i == 255) {
-            //    _system->clearFocusRectangle();
-            //} else {
-            //    // Work out the screen co-ordinates of the actor
-            //    int x = _actors[i]->getPos().x - (camera._cur.x - (_screenWidth >> 1));
-            //    int y = _actors[i]->_top - (camera._cur.y - (_screenHeight >> 1));
-
-            //    // Set the focus area to the calculated position
-            //    // TODO: Make the size adjust depending on what it's focusing on.
-            //    _system->setFocusRectangle(Common::Rect::center(x, y, 192, 128));
-            //}
-
-            _variables[VariableTalkActor] = actor;
-        }
-
-        public void StopTalk()
+        internal void StopTalk()
         {
             //_sound->stopTalkSound();
 
             _haveMsg = 0;
             _talkDelay = 0;
 
-            var act = GetTalkingActor();
+            var act = TalkingActor;
             if (act != 0 && act < 0x80)
             {
-                Actor a = _actors[act];
-                if (a.IsInCurrentRoom() && _useTalkAnims)
+                var a = _actors[act];
+                if (a.IsInCurrentRoom && _useTalkAnims)
                 {
-                    a.RunActorTalkScript(a.TalkStopFrame);
+                    a.RunTalkScript(a.TalkStopFrame);
                     _useTalkAnims = false;
                 }
-                SetTalkingActor(0xFF);
+                TalkingActor = 0xFF;
             }
 
             _keepText = false;
@@ -6462,26 +6436,26 @@ namespace NScumm.Core
 
         void ShowActors()
         {
-            for (int i = 1; i < NumActors; i++)
+            for (int i = 0; i < _actors.Length; i++)
             {
-                if (_actors[i].IsInCurrentRoom())
-                    _actors[i].ShowActor();
+                if (_actors[i].IsInCurrentRoom)
+                    _actors[i].Show();
             }
         }
 
         void WalkActors()
         {
-            for (int i = 1; i < NumActors; ++i)
+            for (int i = 0; i < _actors.Length; i++)
             {
-                if (_actors[i].IsInCurrentRoom())
-                    _actors[i].WalkActor();
+                if (_actors[i].IsInCurrentRoom)
+                    _actors[i].Walk();
             }
         }
 
         void ProcessActors()
         {
             var actors = from actor in _actors
-                where actor.IsInCurrentRoom()
+                where actor.IsInCurrentRoom
                     orderby actor.Position.Y
                     select actor;
 
@@ -6489,7 +6463,7 @@ namespace NScumm.Core
             {
                 if (actor.Costume != 0)
                 {
-                    actor.DrawActorCostume();
+                    actor.DrawCostume();
                     actor.AnimateCostume();
                 }
             }
@@ -6513,14 +6487,12 @@ namespace NScumm.Core
 
         void ResetActorBgs()
         {
-            int i, j;
-
-            for (i = 0; i < Gdi.NumStrips; i++)
+            for (int i = 0; i < Gdi.NumStrips; i++)
             {
                 int strip = _screenStartStrip + i;
                 ClearGfxUsageBit(strip, UsageBitDirty);
                 ClearGfxUsageBit(strip, UsageBitRestored);
-                for (j = 1; j < _actors.Length; j++)
+                for (int j = 0; j < _actors.Length; j++)
                 {
                     if (TestGfxUsageBit(strip, j) &&
                         ((_actors[j].Top != 0x7fffffff && _actors[j].NeedRedraw) || _actors[j].NeedBackgroundReset))
@@ -6532,7 +6504,7 @@ namespace NScumm.Core
                 }
             }
 
-            for (i = 1; i < _actors.Length; i++)
+            for (int i = 0; i < _actors.Length; i++)
             {
                 _actors[i].NeedBackgroundReset = false;
             }
@@ -6544,7 +6516,7 @@ namespace NScumm.Core
             // Also redraw all actors in COMI (see bug #1066329 for details).
             if (_fullRedraw)
             {
-                for (int j = 1; j < _actors.Length; j++)
+                for (int j = 0; j < _actors.Length; j++)
                 {
                     _actors[j].NeedRedraw = true;
                 }
@@ -6568,11 +6540,12 @@ namespace NScumm.Core
             }
         }
 
-        int GetActorFromPos(int x, int y)
+        int GetActorFromPos(Point p)
         {
             for (int i = 1; i < _actors.Length; i++)
             {
-                if (!GetClass(i, ObjectClass.Untouchable) && y >= _actors[i].Top && y <= _actors[i].Bottom)
+                if (!GetClass(i, ObjectClass.Untouchable) && p.Y >= _actors[i].Top &&
+                    p.Y <= _actors[i].Bottom)
                 {
                     return i;
                 }
@@ -6583,7 +6556,6 @@ namespace NScumm.Core
 
         int GetObjActToObjActDist(int a, int b)
         {
-            int x, y, x2, y2;
             Actor acta = null;
             Actor actb = null;
 
@@ -6593,13 +6565,15 @@ namespace NScumm.Core
             if (b < _actors.Length)
                 actb = _actors[b];
 
-            if ((acta != null) && (actb != null) && (acta.Room == actb.Room) && (acta.Room != 0) && !acta.IsInCurrentRoom())
+            if ((acta != null) && (actb != null) && (acta.Room == actb.Room) && (acta.Room != 0) && !acta.IsInCurrentRoom)
                 return 0;
 
-            if (!GetObjectOrActorXY(a, out x, out y))
+            Point pA;
+            if (!GetObjectOrActorXY(a, out pA))
                 return 0xFF;
 
-            if (!GetObjectOrActorXY(b, out x2, out y2))
+            Point pB;
+            if (!GetObjectOrActorXY(b, out pB))
                 return 0xFF;
 
             // Perform adjustXYToBeInBox() *only* if the first item is an
@@ -6608,13 +6582,12 @@ namespace NScumm.Core
             // #853874).
             if (acta != null && actb == null)
             {
-                AdjustBoxResult r = acta.AdjustXYToBeInBox((short)x2, (short)y2);
-                x2 = r.X;
-                y2 = r.Y;
+                var r = acta.AdjustXYToBeInBox(pB);
+                pB = r.Position;
             }
 
             // Now compute the distance between the two points
-            return ScummMath.GetDistance(x, y, x2, y2);
+            return ScummMath.GetDistance(pA, pB);
         }
 
         #endregion Actors
@@ -6639,7 +6612,7 @@ namespace NScumm.Core
 
                 if (obj == null)
                 {
-                    obj = (from o in Objects
+                    obj = (from o in _objs
                            where o.Number == num
                            select o).FirstOrDefault();
                 }
@@ -6657,10 +6630,10 @@ namespace NScumm.Core
 
         void UpdateObjectStates()
         {
-            for (int i = 1; i < _numLocalObjects; i++)
+            for (int i = 1; i < _objs.Length; i++)
             {
-                if (Objects[i].Number > 0)
-                    Objects[i].State = GetState(Objects[i].Number);
+                if (_objs[i].Number > 0)
+                    _objs[i].State = GetState(_objs[i].Number);
             }
         }
 
@@ -6676,18 +6649,16 @@ namespace NScumm.Core
             SetResult(GetOwner(GetVarOrDirectWord(OpCodeParameter.Param1)));
         }
 
-        public bool GetObjectOrActorXY(int obj, out int x, out int y)
+        internal bool GetObjectOrActorXY(int obj, out Point p)
         {
-            x = 0;
-            y = 0;
+            p = new Point();
 
             if (ObjIsActor(obj))
             {
                 var act = _actors [ObjToActor(obj)];
-                if (act != null && act.IsInCurrentRoom())
+                if (act != null && act.IsInCurrentRoom)
                 {
-                    x = act.Position.X;
-                    y = act.Position.Y;
+                    p = act.Position;
                     return true;
                 }
                 return false;
@@ -6701,10 +6672,9 @@ namespace NScumm.Core
                     if (ObjIsActor(_scumm.ObjectOwnerTable[obj]))
                     {
                         var act = _actors[_scumm.ObjectOwnerTable[obj]];
-                        if (act != null && act.IsInCurrentRoom())
+                        if (act != null && act.IsInCurrentRoom)
                         {
-                            x = act.Position.X;
-                            y = act.Position.Y;
+                            p = act.Position;
                             return true;
                         }
                     }
@@ -6712,7 +6682,7 @@ namespace NScumm.Core
             }
 
             int dir;
-            GetObjectXYPos(obj, out x, out y, out dir);
+            GetObjectXYPos(obj, out p, out dir);
             return true;
         }
 
@@ -6723,10 +6693,10 @@ namespace NScumm.Core
 
         bool ObjIsActor(int obj)
         {
-            return obj < NumActors;
+            return obj < _actors.Length;
         }
 
-        public bool GetClass(int obj, ObjectClass cls)
+        internal bool GetClass(int obj, ObjectClass cls)
         {
             cls &= (ObjectClass)0x7F;
 
@@ -6775,11 +6745,13 @@ namespace NScumm.Core
             {
                 return _actors [obj].Position.X;
             }
+
             if (GetWhereIsObject(obj) == WhereIsObject.NotFound)
                 return -1;
-            int x, y;
-            GetObjectOrActorXY(obj, out x, out y);
-            return x;
+
+            Point p;
+            GetObjectOrActorXY(obj, out p);
+            return p.X;
         }
 
         int GetObjY(int obj)
@@ -6793,9 +6765,10 @@ namespace NScumm.Core
             }
             if (GetWhereIsObject(obj) == WhereIsObject.NotFound)
                 return -1;
-            int x, y;
-            GetObjectOrActorXY(obj, out x, out y);
-            return y;
+
+            Point p;
+            GetObjectOrActorXY(obj, out p);
+            return p.Y;
         }
 
         WhereIsObject GetWhereIsObject(int obj)
@@ -6816,10 +6789,10 @@ namespace NScumm.Core
                 return WhereIsObject.NotFound;
             }
 
-            for (i = (_numLocalObjects - 1); i > 0; i--)
-                if (Objects[i].Number == obj)
+            for (i = (_objs.Length - 1); i > 0; i--)
+                if (_objs[i].Number == obj)
             {
-                if (Objects[i].FlObjectIndex != 0)
+                if (_objs[i].FlObjectIndex != 0)
                     return WhereIsObject.FLObject;
                 return WhereIsObject.Room;
             }
@@ -6836,14 +6809,12 @@ namespace NScumm.Core
 
         int GetObjectIndex(int obj)
         {
-            int i;
-
             if (obj < 1)
                 return -1;
 
-            for (i = (_numLocalObjects - 1); i > 0; i--)
+            for(int i = (_objs.Length - 1); i > 0; i--)
             {
-                if (Objects[i].Number == obj)
+                if (_objs[i].Number == obj)
                     return i;
             }
             return -1;
@@ -6851,7 +6822,7 @@ namespace NScumm.Core
 
         void AddObjectToDrawQue(byte obj)
         {
-            _drawingObjects.Add(Objects[obj]);
+            _drawingObjects.Add(_objs[obj]);
         }
 
         void ClearDrawObjectQueue()
@@ -6896,7 +6867,7 @@ namespace NScumm.Core
             else
                 ClassData[obj] &= (uint)~(1 << ((int)cls2 - 1));
 
-            if (obj >= 1 && obj < NumActors)
+            if (obj >= 0 && obj < _actors.Length)
             {
                 _actors[obj].ClassChanged(cls2, set);
             }
@@ -6909,58 +6880,58 @@ namespace NScumm.Core
 
         int FindObject(int x, int y)
         {
-            int i, b;
             byte a;
             int mask = 0xF;
 
-            for (i = 1; i < _numLocalObjects; i++)
+            for (int i = 1; i < _objs.Length; i++)
             {
-                if ((Objects[i].Number < 1) || GetClass(Objects[i].Number, ObjectClass.Untouchable))
+                if ((_objs[i].Number < 1) || GetClass(_objs[i].Number, ObjectClass.Untouchable))
                     continue;
 
-                b = i;
+                var b = i;
                 do
                 {
-                    a = Objects[b].ParentState;
-                    b = Objects[b].Parent;
+                    a = _objs[b].ParentState;
+                    b = _objs[b].Parent;
                     if (b == 0)
                     {
-                        if (Objects[i].XPos <= x && (Objects[i].Width + Objects[i].XPos) > x &&
-                            Objects[i].YPos <= y && (Objects[i].Height + Objects[i].YPos) > y)
+                        if (_objs[i].Position.X <= x && (_objs[i].Width + _objs[i].Position.X) > x &&
+                            _objs[i].Position.Y <= y && (_objs[i].Height + _objs[i].Position.Y) > y)
                         {
-                            return Objects[i].Number;
+                            return _objs[i].Number;
                         }
                         break;
                     }
-                } while ((Objects[b].State & mask) == a);
+                } while ((_objs[b].State & mask) == a);
             }
 
             return 0;
         }
 
-        void GetObjectXYPos(int obj, out int x, out int y, out int dir)
+        void GetObjectXYPos(int obj, out Point p, out int dir)
         {
             var idx = GetObjectIndex(obj);
 
-            var od = Objects[idx];
-            x = od.WalkX;
-            y = od.WalkY;
+            var od = _objs[idx];
+            p = new Point(od.WalkX, od.WalkY);
 
             dir = ScummHelper.OldDirToNewDir(od.ActorDir & 3);
         }
 
-        void GetObjectXYPos(int obj, out int x, out int y)
+        Point GetObjectXYPos(int obj)
         {
             int dir;
-            GetObjectXYPos(obj, out x, out y, out dir);
+            Point p;
+            GetObjectXYPos(obj, out p, out dir);
+            return p;
         }
 
         void DrawRoomObjects(int argument)
         {
             const int mask = 0xF;
-            for (int i = (_numLocalObjects - 1); i > 0; i--)
+            for (int i = (_objs.Length - 1); i > 0; i--)
             {
-                if (Objects[i].Number > 0 && ((Objects[i].State & mask) != 0))
+                if (_objs[i].Number > 0 && ((_objs[i].State & mask) != 0))
                 {
                     DrawRoomObject(i, argument);
                 }
@@ -6973,7 +6944,7 @@ namespace NScumm.Core
             byte a;
             const int mask = 0xF;
 
-            od = Objects[i];
+            od = _objs[i];
             if ((i < 1) || (od.Number < 1) || od.State == 0)
             {
                 return;
@@ -6987,13 +6958,13 @@ namespace NScumm.Core
                         DrawObject(i, argument);
                     break;
                 }
-                od = Objects[od.Parent];
+                od = _objs[od.Parent];
             } while ((od.State & mask) == a);
         }
 
         void DrawObject(int obj, int arg)
         {
-            ObjectData od = Objects[obj];
+            ObjectData od = _objs[obj];
             int height, width;
 
             int x, a, numstrip;
@@ -7007,8 +6978,8 @@ namespace NScumm.Core
 
             ScummHelper.AssertRange(0, od.Number, _numGlobalObjects - 1, "object");
 
-            int xpos = (od.XPos / 8);
-            int ypos = (int)od.YPos;
+            int xpos = (od.Position.X / 8);
+            int ypos = (int)od.Position.Y;
 
             width = od.Width / 8;
             height = (ushort)(od.Height &= 0xFFF8); // Mask out last 3 bits
@@ -7052,7 +7023,7 @@ namespace NScumm.Core
         {
             foreach (var obj in _drawingObjects)
             {
-                var index = Objects.IndexOf(obj);
+                var index = Array.IndexOf(_objs, obj);
                 DrawObject(index, 0);
             }
             ClearDrawObjectQueue();
@@ -7107,13 +7078,13 @@ namespace NScumm.Core
             // object list and (only if it's a floating object) nuke it.
             if (GetOwner(obj) == OwnerRoom)
             {
-                for (i = 0; i < _numLocalObjects; i++)
+                for (i = 0; i < _objs.Length; i++)
                 {
-                    if (Objects[i].Number == obj && Objects[i].FlObjectIndex != 0)
+                    if (_objs[i].Number == obj && _objs[i].FlObjectIndex != 0)
                     {
                         // Removing an flObject from a room means we can nuke it
-                        Objects[i].Number = 0;
-                        Objects[i].FlObjectIndex = 0;
+                        _objs[i].Number = 0;
+                        _objs[i].FlObjectIndex = 0;
                     }
                 }
             }
@@ -7181,12 +7152,12 @@ namespace NScumm.Core
                 return;
 
             // Do nothing while the camera is moving
-            if ((_camera.Dest.X / 8) != (_camera.Cur.X / 8) || _camera.Cur.X != _camera.Last.X)
+            if ((_camera.DestinationPosition.X / 8) != (_camera.CurrentPosition.X / 8) || _camera.CurrentPosition.X != _camera.LastPosition.X)
                 return;
 
             Actor a = null;
-            if (GetTalkingActor() != 0xFF)
-                a = _actors[GetTalkingActor()];
+            if (TalkingActor != 0xFF)
+                a = _actors[TalkingActor];
 
             if (a != null && _string[0].Overhead)
             {
@@ -7238,7 +7209,7 @@ namespace NScumm.Core
 
             if (a != null && !_string[0].NoTalkAnim)
             {
-                a.RunActorTalkScript(a.TalkStartFrame);
+                a.RunTalkScript(a.TalkStartFrame);
                 _useTalkAnims = true;
             }
 
@@ -7820,7 +7791,7 @@ namespace NScumm.Core
 
         void HandleDrawing()
         {
-            if (_camera.Cur != _camera.Last || _bgNeedsRedraw || _fullRedraw)
+            if (_camera.CurrentPosition != _camera.LastPosition || _bgNeedsRedraw || _fullRedraw)
             {
                 RedrawBGAreas();
             }
@@ -7843,7 +7814,7 @@ namespace NScumm.Core
                 // separate region of the screen). So, when scrolling in one of these
                 // games (pre-new camera system), if actor text is visible (as indicated
                 // by the _hasMask flag), we first remove it before proceeding.
-                if (_camera.Cur.X != _camera.Last.X && _charset.HasMask)
+                if (_camera.CurrentPosition.X != _camera.LastPosition.X && _charset.HasMask)
                 {
                     StopTalk();
                 }
@@ -7862,7 +7833,7 @@ namespace NScumm.Core
             }
 
             int val = 0;
-            var diff = _camera.Cur.X - _camera.Last.X;
+            var diff = _camera.CurrentPosition.X - _camera.LastPosition.X;
             if (!_fullRedraw && diff == 8)
             {
                 val = -1;
@@ -7917,7 +7888,7 @@ namespace NScumm.Core
             UpdateDirtyScreen(_textVirtScreen);
 
             // Update game area ("stage")
-            if (_camera.Last.X != _camera.Cur.X)
+            if (_camera.LastPosition.X != _camera.CurrentPosition.X)
             {
                 // Camera moved: redraw everything
                 DrawStripToScreen(_mainVirtScreen, 0, _mainVirtScreen.Width, 0, _mainVirtScreen.Height);
@@ -7987,8 +7958,8 @@ namespace NScumm.Core
                 width = vs.Width - x;
             if (top < ScreenTop)
                 top = ScreenTop;
-            if (bottom > ScreenTop + _screenHeight)
-                bottom = ScreenTop + _screenHeight;
+            if (bottom > ScreenTop + ScreenHeight)
+                bottom = ScreenTop + ScreenHeight;
 
             // Convert the vertical coordinates to real screen coords
             int y = vs.TopLine + top - ScreenTop;
@@ -8037,14 +8008,14 @@ namespace NScumm.Core
 
         void MarkObjectRectAsDirty(int obj)
         {
-            for (int i = 1; i < _numLocalObjects; i++)
+            for (int i = 1; i < _objs.Length; i++)
             {
-                if (Objects[i].Number == obj)
+                if (_objs[i].Number == obj)
                 {
-                    if (Objects[i].Width != 0)
+                    if (_objs[i].Width != 0)
                     {
-                        int minStrip = Math.Max(_screenStartStrip, Objects[i].XPos / 8);
-                        int maxStrip = Math.Min(_screenEndStrip + 1, Objects[i].XPos / 8 + Objects[i].Width / 8);
+                        int minStrip = Math.Max(_screenStartStrip, _objs[i].Position.X / 8);
+                        int maxStrip = Math.Min(_screenEndStrip + 1, _objs[i].Position.X / 8 + _objs[i].Width / 8);
                         for (int strip = minStrip; strip < maxStrip; strip++)
                         {
                             SetGfxUsageBit(strip, UsageBitDirty);
@@ -8056,7 +8027,7 @@ namespace NScumm.Core
             }
         }
 
-        public void MarkRectAsDirty(VirtScreen vs, int left, int right, int top, int bottom, int dirtybit = 0)
+        internal void MarkRectAsDirty(VirtScreen vs, int left, int right, int top, int bottom, int dirtybit = 0)
         {
             int lp, rp;
 
@@ -8144,7 +8115,7 @@ namespace NScumm.Core
         bool TestGfxUsageBit(int strip, int bit)
         {
             if (strip < 0 || strip >= (_gfxUsageBits.Length / 3)) throw new ArgumentOutOfRangeException("strip");
-            if (bit < 1 || bit > 96) throw new ArgumentOutOfRangeException("bit");
+            if (bit < 0 || bit > 96) throw new ArgumentOutOfRangeException("bit");
             bit--;
             return (_gfxUsageBits[3 * strip + bit / 32] & (1 << (bit % 32))) != 0;
         }
@@ -8180,12 +8151,12 @@ namespace NScumm.Core
 
         #endregion GfxUsageBit Members
 
-        public PixelNavigator GetMaskBuffer(int x, int y, int z)
+        internal PixelNavigator GetMaskBuffer(int x, int y, int z)
         {
             return Gdi.GetMaskBuffer((x + _mainVirtScreen.XStart) / 8, y, z);
         }
 
-        public VirtScreen FindVirtScreen(int y)
+        internal VirtScreen FindVirtScreen(int y)
         {
             if (VirtScreenContains(_mainVirtScreen, y)) return _mainVirtScreen;
             if (VirtScreenContains(_textVirtScreen, y)) return _textVirtScreen;
@@ -8266,7 +8237,7 @@ namespace NScumm.Core
             }
             else
             {
-                result = (from o in Objects
+                result = (from o in _objs
                           where o.Number == obj
                           select o).FirstOrDefault();
             }
@@ -8290,14 +8261,10 @@ namespace NScumm.Core
 
         void DrawVerb(int verb, int mode)
         {
-            VerbSlot vs;
-            bool tmp;
-
             if (verb == 0)
                 return;
 
-            vs = _verbs[verb];
-
+            var vs = _verbs[verb];
             if (vs.SaveId == 0 && vs.CurMode != 0 && vs.VerbId != 0)
             {
                 if (vs.Type == VerbType.Image)
@@ -8327,10 +8294,10 @@ namespace NScumm.Core
                    verb += _inventoryOffset;
                  */
                 byte[] msg = _verbs[verb].Text;
-                if (msg.Length == 0)
+                if (msg==null || msg.Length == 0)
                     return;
 
-                tmp = _charset.Center;
+                var tmp = _charset.Center;
                 DrawString(4, msg);
                 _charset.Center = tmp;
 
@@ -8401,8 +8368,7 @@ namespace NScumm.Core
 
         int GetVerbSlot(int id, int mode)
         {
-            int i;
-            for (i = 1; i < _verbs.Length; i++)
+            for (int i = 1; i < _verbs.Length; i++)
             {
                 if (_verbs[i].VerbId == id && _verbs[i].SaveId == mode)
                 {

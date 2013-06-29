@@ -21,13 +21,13 @@ using System;
 
 namespace NScumm.Core
 {
-    public enum VerbType
+    enum VerbType
     {
         Text = 0,
         Image = 1
     }
 
-    public class VerbSlot
+    class VerbSlot
     {
         public Rect CurRect;
         public Rect OldRect;

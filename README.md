@@ -15,6 +15,8 @@ Supported Games
 
 The Secret of Monkey Island by LucasArts
 
+The Passport to Adventure by LucasArts (Demo)
+
 Hotkeys
 -------
 
@@ -27,11 +29,13 @@ Screenshots
 -----------
 
 ![nscumm screenshot](https://raw.github.com/scemino/nscumm/master/Doc/Images/MonkeyIsland.png)
+![nscumm screenshot](https://raw.github.com/scemino/nscumm/master/Doc/Images/Indy3.png)
+![nscumm screenshot](https://raw.github.com/scemino/nscumm/master/Doc/Images/loom.png)
 
 License
 -------
 
-Copyright (C) 2013  Valéry Sablonnière
+Copyright (C) 2012-2013  Valéry Sablonnière
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

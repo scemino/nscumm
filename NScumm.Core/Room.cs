@@ -20,14 +20,14 @@ using System.Collections.Generic;
 
 namespace NScumm.Core
 {
-    public class RoomHeader
+    class RoomHeader
     {
         public ushort Width { get; set; }
         public ushort Height { get; set; }
         public ushort NumObjects { get; set; }
     }
 
-    public class Room
+    class Room
     {
         public RoomHeader Header { get; set; }
         public Palette Palette { get; private set; }

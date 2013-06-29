@@ -1,4 +1,4 @@
-﻿/*
+/*
  * This file is part of NScumm.
  *
  * NScumm is free software: you can redistribute it and/or modify
@@ -28,7 +28,7 @@ using System.Collections;
 namespace NScumm.Core
 {
     [Flags]
-    public enum LightModes
+    enum LightModes
     {
         /**
          * Lighting flag that indicates whether the normal palette, or the 'dark'
@@ -61,15 +61,7 @@ namespace NScumm.Core
         ActorUseColors = 8
     }
 
-    [Flags]
-    public enum DrawBitmaps
-    {
-        AllowMaskOr = 1 << 0,
-        DrawMaskOnAll = 1 << 1,
-        ObjectMode = 2 << 2
-    }
-
-    public enum OpCodeParameter : byte
+    enum OpCodeParameter : byte
     {
         Param1 = 0x80,
         Param2 = 0x40,
@@ -220,9 +212,12 @@ namespace NScumm.Core
         VerbSlot[] _verbs;
         byte cursorColor;
         int _currentCursor;
+
         VirtScreen _mainVirtScreen;
         VirtScreen _textVirtScreen;
         VirtScreen _verbVirtScreen;
+        VirtScreen _unkVirtScreen;
+
         bool _bgNeedsRedraw;
         bool _fullRedraw;
         public Gdi Gdi;
@@ -256,33 +251,56 @@ namespace NScumm.Core
         GameInfo _game;
         Box[] _boxes;
 
+        byte[] _gameMD5;
+        int _numLocalScripts = 60;
+        int _screenB;
+        int _screenH;
+
+        bool _completeScreenRedraw;
+        IGraphicsManager _gfxManager;
+        IInputManager _inputManager;
+        int _palDirtyMin, _palDirtyMax;
+        int _nextLeft, _nextTop;
+        int _textSurfaceMultiplier = 1;
+        Surface _textSurface;
+
+        int _shadowPaletteSize = 256;
+        byte[] _shadowPalette = new byte[256];
+
+        Sentence[] _sentence = InitSentences();
+        ObjectData[] _invData = new ObjectData[NumInventory];
+
+        KeyCode mouseAndKeyboardStat;
+
+        Dictionary<int, byte[]> _newNames = new Dictionary<int, byte[]>();
+
         #endregion Fields
 
         #region Properties
 
-        public uint[] ClassData
+        internal uint[] ClassData
         {
             get { return _scumm.ClassData; }
         }
 
-        public int[] Variables
+        internal int[] Variables
         {
             get { return _variables; }
         }
 
-        public Room CurrentRoomData
+        internal Room CurrentRoomData
         {
             get { return roomData; }
         }
 
-        public byte CurrentRoom
+        internal byte CurrentRoom
         {
             get { return _currentRoom; }
         }
 
-        public ScummIndex Index { get { return _scumm; } }
+        internal ScummIndex Index { get { return _scumm; } }
 
-        public VirtScreen MainVirtScreen
+        internal VirtScreen MainVirtScreen
         {
             get { return _mainVirtScreen; }
         }
@@ -292,13 +310,17 @@ namespace NScumm.Core
             get { return _game; }
         }
 
+        public bool HastToQuit { get; set; }
+
         #endregion Properties
 
         #region Constructor
 
-        public ScummEngine(ScummIndex index, GameInfo game, IGraphicsManager gfxManager, IInputManager inputManager)
+        public ScummEngine(GameInfo game, IGraphicsManager gfxManager, IInputManager inputManager)
         {
-            _scumm = index;
+            _scumm = new ScummIndex();
+            _scumm.LoadIndex(game.Path);
+
             _game = game;
             _gameMD5 = Encoding.Default.GetBytes(game.MD5);
             _gfxManager = gfxManager;
@@ -337,7 +359,7 @@ namespace NScumm.Core
                 _scaleSlots [i] = new ScaleSlot();
             }
             Gdi = new Gdi(this);
-            _costumeLoader = new ClassicCostumeLoader(index);
+            _costumeLoader = new ClassicCostumeLoader(_scumm);
             _costumeRenderer = new ClassicCostumeRenderer(this);
 
             // Create the charset renderer
@@ -431,6 +453,31 @@ namespace NScumm.Core
             {
                 _variables[74] = 1225;
             }
+        }
+
+        static Sentence[] InitSentences()
+        {
+            var sentences = new Sentence[6];
+            for (int i = 0; i < sentences.Length; i++)
+            {
+                sentences[i] = new Sentence();
+            }
+            return sentences;
+        }
+
+        void InitScreens(int b, int h)
+        {
+            var format = PixelFormat.Indexed8;
+
+            _mainVirtScreen = new VirtScreen(b, ScreenWidth, h - b, format, 2, true);
+            _textVirtScreen = new VirtScreen(0, ScreenWidth, b, format, 1);
+            _verbVirtScreen = new VirtScreen(h, ScreenWidth, _screenHeight - h, format, 1);
+            _unkVirtScreen = new VirtScreen(80, ScreenWidth, 13, format, 1);
+
+            _screenB = b;
+            _screenH = h;
+
+            Gdi.Init();
         }
 
         #endregion Constructor
@@ -1008,247 +1055,6 @@ namespace NScumm.Core
             }
         }
 
-        void CreateBoxMatrix()
-        {
-            // The total number of boxes
-            int num = GetNumBoxes();
-
-            // calculate shortest paths
-            var itineraryMatrix = CalcItineraryMatrix(num);
-
-            // "Compress" the distance matrix into the box matrix format used
-            // by the engine. The format is like this:
-            // For each box (from 0 to num) there is first a byte with value 0xFF,
-            // followed by an arbitrary number of byte triples; the end is marked
-            // again by the lead 0xFF for the next "row". The meaning of the
-            // byte triples is as follows: the first two bytes define a range
-            // of box numbers (e.g. 7-11), while the third byte defines an
-            // itineray box. Assuming we are in the 5th "row" and encounter
-            // the triplet 7,11,15: this means to get from box 5 to any of
-            // the boxes 7,8,9,10,11 the shortest way is to go via box 15.
-            // See also getNextBox.
-
-            var boxMatrix = new List<byte>();
-
-            for (byte i = 0; i < num; i++)
-            {
-                boxMatrix.Add(0xFF);
-                for (byte j = 0; j < num; j++)
-                {
-                    byte itinerary = itineraryMatrix[i, j];
-                    if (itinerary != Actor.InvalidBox)
-                    {
-                        boxMatrix.Add(j);
-                        while (j < num - 1 && itinerary == itineraryMatrix[i, (j + 1)])
-                            j++;
-                        boxMatrix.Add(j);
-                        boxMatrix.Add(itinerary);
-                    }
-                }
-            }
-            boxMatrix.Add(0xFF);
-
-            _boxMatrix.Clear();
-            _boxMatrix.AddRange(boxMatrix);
-        }
-
-        byte[,] CalcItineraryMatrix(int num)
-        {
-            const byte boxSize = 64;
-
-            // Allocate the adjacent & itinerary matrices
-            var itineraryMatrix = new byte[boxSize, boxSize];
-            var adjacentMatrix = new byte[boxSize, boxSize];
-
-            // Initialize the adjacent matrix: each box has distance 0 to itself,
-            // and distance 1 to its direct neighbors. Initially, it has distance
-            // 255 (= infinity) to all other boxes.
-            for (byte i = 0; i < num; i++)
-            {
-                for (byte j = 0; j < num; j++)
-                {
-                    if (i == j)
-                    {
-                        adjacentMatrix[i, j] = 0;
-                        itineraryMatrix[i, j] = j;
-                    }
-                    else if (AreBoxesNeighbors(i, j))
-                    {
-                        adjacentMatrix[i, j] = 1;
-                        itineraryMatrix[i, j] = j;
-                    }
-                    else
-                    {
-                        adjacentMatrix[i, j] = 255;
-                        itineraryMatrix[i, j] = Actor.InvalidBox;
-                    }
-                }
-            }
-
-            // Compute the shortest routes between boxes via Kleene's algorithm.
-            // The original code used some kind of mangled Dijkstra's algorithm;
-            // while that might in theory be slightly faster, it was
-            // a) extremly obfuscated
-            // b) incorrect: it didn't always find the shortest paths
-            // c) not any faster in reality for our sparse & small adjacent matrices
-            for (byte k = 0; k < num; k++)
-            {
-                for (byte i = 0; i < num; i++)
-                {
-                    for (byte j = 0; j < num; j++)
-                    {
-                        if (i == j)
-                            continue;
-                        byte distIK = adjacentMatrix[i, k];
-                        byte distKJ = adjacentMatrix[k, j];
-                        if (adjacentMatrix[i, j] > distIK + distKJ)
-                        {
-                            adjacentMatrix[i, j] = (byte)(distIK + distKJ);
-                            itineraryMatrix[i, j] = itineraryMatrix[i, k];
-                        }
-                    }
-                }
-            }
-
-            return itineraryMatrix;
-        }
-
-
-        /// <summary>
-        /// Check if two boxes are neighbors.
-        /// </summary>
-        /// <param name="box1nr"></param>
-        /// <param name="box2nr"></param>
-        /// <returns></returns>
-        bool AreBoxesNeighbors(byte box1nr, byte box2nr)
-        {
-            Point tmp;
-
-            if (GetBoxFlags(box1nr).HasFlag(BoxFlags.Invisible) || GetBoxFlags(box2nr).HasFlag(BoxFlags.Invisible))
-                return false;
-
-            //System.Diagnostics.Debug.Assert(_game.version >= 3);
-            var box2 = GetBoxCoordinates(box1nr);
-            var box = GetBoxCoordinates(box2nr);
-
-            // Roughly, the idea of this algorithm is to search for sies of the given
-            // boxes that touch each other.
-            // In order to keep te code simple, we only match the upper sides;
-            // then, we "rotate" the box coordinates four times each, for a total
-            // of 16 comparisions.
-            for (int j = 0; j < 4; j++)
-            {
-                for (int k = 0; k < 4; k++)
-                {
-                    // Are the "upper" sides of the boxes on a single vertical line
-                    // (i.e. all share one x value) ?
-                    if (box2.Ur.X == box2.Ul.X && box.Ul.X == box2.Ul.X && box.Ur.X == box2.Ul.X)
-                    {
-                        bool swappedBox2 = false, swappedBox1 = false;
-                        if (box2.Ur.Y < box2.Ul.Y)
-                        {
-                            swappedBox2 = true;
-                            ScummHelper.Swap(ref box2.Ur.Y, ref box2.Ul.Y);
-                        }
-                        if (box.Ur.Y < box.Ul.Y)
-                        {
-                            swappedBox1 = true;
-                            ScummHelper.Swap(ref box.Ur.Y, ref box.Ul.Y);
-                        }
-                        if (box.Ur.Y < box2.Ul.Y ||
-                                box.Ul.Y > box2.Ur.Y ||
-                                ((box.Ul.Y == box2.Ur.Y ||
-                                 box.Ur.Y == box2.Ul.Y) && box2.Ur.Y != box2.Ul.Y && box.Ul.Y != box.Ur.Y))
-                        {
-                        }
-                        else
-                        {
-                            return true;
-                        }
-
-                        // Swap back if necessary
-                        if (swappedBox2)
-                        {
-                            ScummHelper.Swap(ref box2.Ur.Y, ref box2.Ul.Y);
-                        }
-                        if (swappedBox1)
-                        {
-                            ScummHelper.Swap(ref box.Ur.Y, ref box.Ul.Y);
-                        }
-                    }
-
-                    // Are the "upper" sides of the boxes on a single horizontal line
-                    // (i.e. all share one y value) ?
-                    if (box2.Ur.Y == box2.Ul.Y && box.Ul.Y == box2.Ul.Y && box.Ur.Y == box2.Ul.Y)
-                    {
-                        var swappedBox2 = false;
-                        var swappedBox1 = false;
-                        if (box2.Ur.X < box2.Ul.X)
-                        {
-                            swappedBox2 = true;
-                            ScummHelper.Swap(ref box2.Ur.X, ref box2.Ul.X);
-                        }
-                        if (box.Ur.X < box.Ul.X)
-                        {
-                            swappedBox1 = true;
-                            ScummHelper.Swap(ref box.Ur.X, ref box.Ul.X);
-                        }
-                        if (box.Ur.X < box2.Ul.X ||
-                                box.Ul.X > box2.Ur.X ||
-                                ((box.Ul.X == box2.Ur.X ||
-                                 box.Ur.X == box2.Ul.X) && box2.Ur.X != box2.Ul.X && box.Ul.X != box.Ur.X))
-                        {
-
-                        }
-                        else
-                        {
-                            return true;
-                        }
-
-                        // Swap back if necessary
-                        if (swappedBox2)
-                        {
-                            ScummHelper.Swap(ref box2.Ur.X, ref box2.Ul.X);
-                        }
-                        if (swappedBox1)
-                        {
-                            ScummHelper.Swap(ref box.Ur.X, ref box.Ul.X);
-                        }
-                    }
-
-                    // "Rotate" the box coordinates
-                    tmp = box2.Ul;
-                    box2.Ul = box2.Ur;
-                    box2.Ur = box2.Lr;
-                    box2.Lr = box2.Ll;
-                    box2.Ll = tmp;
-                }
-
-                // "Rotate" the box coordinates
-                tmp = box.Ul;
-                box.Ul = box.Ur;
-                box.Ur = box.Lr;
-                box.Lr = box.Ll;
-                box.Ll = tmp;
-            }
-
-            return false;
-        }
-
-        void SetBoxScale(int box, int scale)
-        {
-            var b = GetBoxBase(box);
-            b.Scale = (ushort)scale;
-        }
-
-        void SetBoxFlags(int box, int val)
-        {
-            var b = GetBoxBase(box);
-            if (b == null)
-                return;
-            b.Flags = (BoxFlags)val;
-        }
-
         void DelayVariable()
         {
             _slots[_currentScript].Delay = GetVar();
@@ -1262,19 +1068,6 @@ namespace NScumm.Core
             var x = GetVarOrDirectWord(OpCodeParameter.Param1);
             var y = GetVarOrDirectWord(OpCodeParameter.Param2);
             SetResult(GetActorFromPos(x, y));
-        }
-
-        int GetActorFromPos(int x, int y)
-        {
-            for (int i = 1; i < _actors.Length; i++)
-            {
-                if (!GetClass(i, ObjectClass.Untouchable) && y >= _actors[i].Top && y <= _actors[i].Bottom)
-                {
-                    return i;
-                }
-            }
-
-            return 0;
         }
 
         void ChainScript()
@@ -1309,49 +1102,6 @@ namespace NScumm.Core
             //    r = 3;
 
             SetResult(r);
-        }
-
-        int GetObjActToObjActDist(int a, int b)
-        {
-            int x, y, x2, y2;
-            Actor acta = null;
-            Actor actb = null;
-
-            if (a < _actors.Length)
-                acta = _actors[a];
-
-            if (b < _actors.Length)
-                actb = _actors[b];
-
-            if ((acta != null) && (actb != null) && (acta.Room == actb.Room) && (acta.Room != 0) && !acta.IsInCurrentRoom())
-                return 0;
-
-            if (!GetObjectOrActorXY(a, out x, out y))
-                return 0xFF;
-
-            if (!GetObjectOrActorXY(b, out x2, out y2))
-                return 0xFF;
-
-            // Perform adjustXYToBeInBox() *only* if the first item is an
-            // actor and the second is an object. This used to not check
-            // whether the second item is a non-actor, which caused bug
-            // #853874).
-            if (acta != null && actb == null)
-            {
-                AdjustBoxResult r = acta.AdjustXYToBeInBox((short)x2, (short)y2);
-                x2 = r.X;
-                y2 = r.Y;
-            }
-
-            // Now compute the distance between the two points
-            return GetDistance(x, y, x2, y2);
-        }
-
-        int GetDistance(int x, int y, int x2, int y2)
-        {
-            int a = Math.Abs(y - y2);
-            int b = Math.Abs(x - x2);
-            return Math.Max(a, b);
         }
 
         void IfClassOfIs()
@@ -1485,37 +1235,6 @@ namespace NScumm.Core
             SetResult(FindObject(x, y));
         }
 
-        int FindObject(int x, int y)
-        {
-            int i, b;
-            byte a;
-            int mask = 0xF;
-
-            for (i = 1; i < _numLocalObjects; i++)
-            {
-                if ((Objects[i].Number < 1) || GetClass(Objects[i].Number, ObjectClass.Untouchable))
-                    continue;
-
-                b = i;
-                do
-                {
-                    a = Objects[b].ParentState;
-                    b = Objects[b].Parent;
-                    if (b == 0)
-                    {
-                        if (Objects[i].XPos <= x && (Objects[i].Width + Objects[i].XPos) > x &&
-                            Objects[i].YPos <= y && (Objects[i].Height + Objects[i].YPos) > y)
-                        {
-                            return Objects[i].Number;
-                        }
-                        break;
-                    }
-                } while ((Objects[b].State & mask) == a);
-            }
-
-            return 0;
-        }
-
         void SetOwnerOf()
         {
             int obj, owner;
@@ -1524,97 +1243,6 @@ namespace NScumm.Core
             owner = GetVarOrDirectByte(OpCodeParameter.Param2);
 
             SetOwnerOf(obj, owner);
-        }
-
-        void SetOwnerOf(int obj, int owner)
-        {
-            // In Sam & Max this is necessary, or you won't get your stuff back
-            // from the Lost and Found tent after riding the Cone of Tragedy. But
-            // it probably applies to all V6+ games. See bugs #493153 and #907113.
-            // FT disassembly is checked, behavior is correct. [sev]
-            int arg = 0;
-
-            // WORKAROUND for bug #1917981: Game crash when finishing Indy3 demo.
-            // Script 94 tries to empty the inventory but does so in a bogus way.
-            // This causes it to try to remove object 0 from the inventory.
-            if (owner == 0)
-            {
-                ClearOwnerOf(obj);
-
-                if (_currentScript != 0xFF)
-                {
-                    var ss = _slots[_currentScript];
-                    if (ss.Where == WhereIsObject.Inventory)
-                    {
-                        if (ss.Number < NumInventory && _inventory[ss.Number] == obj)
-                        {
-                            //throw new NotSupportedException("Odd setOwnerOf case #1: Please report to Fingolfin where you encountered this");
-                            PutOwner(obj, 0);
-                            RunInventoryScript(arg);
-                            StopObjectCode();
-                            return;
-                        }
-                        if (ss.Number == obj)
-                            throw new NotSupportedException("Odd setOwnerOf case #2: Please report to Fingolfin where you encountered this");
-                    }
-                }
-            }
-
-            PutOwner(obj, (byte)owner);
-            RunInventoryScript(arg);
-        }
-
-        void ClearOwnerOf(int obj)
-        {
-            int i;
-
-            // Stop the associated object script code (else crashes might occurs)
-            StopObjectScript((ushort)obj);
-
-            // If the object is "owned" by a the current room, we scan the
-            // object list and (only if it's a floating object) nuke it.
-            if (GetOwner(obj) == OwnerRoom)
-            {
-                for (i = 0; i < _numLocalObjects; i++)
-                {
-                    if (Objects[i].Number == obj && Objects[i].FlObjectIndex != 0)
-                    {
-                        // Removing an flObject from a room means we can nuke it
-                        Objects[i].Number = 0;
-                        Objects[i].FlObjectIndex = 0;
-                    }
-                }
-            }
-            else
-            {
-                // Alternatively, scan the inventory to see if the object is in there...
-                for (i = 0; i < NumInventory; i++)
-                {
-                    if (_inventory[i] == obj)
-                    {
-                        // Found the object! Nuke it from the inventory.
-                        _inventory[i] = 0;
-
-                        // Now fill up the gap removing the object from the inventory created.
-                        for (i = 0; i < NumInventory - 1; i++)
-                        {
-                            if (_inventory[i] == 0 && _inventory[i + 1] != 0)
-                            {
-                                _inventory[i] = _inventory[i + 1];
-                                _invData[i] = _invData[i + 1];
-                                _inventory[i + 1] = 0;
-                                // FIXME FIXME FIXME: This is incomplete, as we do not touch flags, status... BUG
-                                // TODO:
-                                //_res->_types[rtInventory][i]._address = _res->_types[rtInventory][i + 1]._address;
-                                //_res->_types[rtInventory][i]._size = _res->_types[rtInventory][i + 1]._size;
-                                //_res->_types[rtInventory][i + 1]._address = NULL;
-                                //_res->_types[rtInventory][i + 1]._size = 0;
-                            }
-                        }
-                        break;
-                    }
-                }
-            }
         }
 
         void IsSoundRunning()
@@ -1671,40 +1299,10 @@ namespace NScumm.Core
             }
         }
 
-        void GetObjectXYPos(int obj, out int x, out int y, out int dir)
-        {
-            int idx = GetObjectIndex(obj);
-
-            ObjectData od = Objects[idx];
-            x = od.WalkX;
-            y = od.WalkY;
-
-            dir = ScummHelper.OldDirToNewDir(od.ActorDir & 3);
-        }
-
-        void GetObjectXYPos(int obj, out int x, out int y)
-        {
-            int dir;
-            GetObjectXYPos(obj, out x, out y, out dir);
-        }
-
         void GetInventoryCount()
         {
             GetResult();
             SetResult(GetInventoryCount(GetVarOrDirectByte(OpCodeParameter.Param1)));
-        }
-
-        int GetInventoryCount(int owner)
-        {
-            int i, obj;
-            int count = 0;
-            for (i = 0; i < NumInventory; i++)
-            {
-                obj = _inventory[i];
-                if (obj != 0 && GetOwner(obj) == owner)
-                    count++;
-            }
-            return count;
         }
 
         void FindInventory()
@@ -1713,18 +1311,6 @@ namespace NScumm.Core
             int x = GetVarOrDirectByte(OpCodeParameter.Param1);
             int y = GetVarOrDirectByte(OpCodeParameter.Param2);
             SetResult(FindInventory(x, y));
-        }
-
-        int FindInventory(int owner, int idx)
-        {
-            int count = 1, i, obj;
-            for (i = 0; i < NumInventory; i++)
-            {
-                obj = _inventory[i];
-                if (obj != 0 && GetOwner(obj) == owner && count++ == idx)
-                    return obj;
-            }
-            return 0;
         }
 
         void SaveRestoreVerbs()
@@ -1786,11 +1372,6 @@ namespace NScumm.Core
             }
         }
 
-        int GetOwner(int obj)
-        {
-            return _scumm.ObjectOwnerTable[obj];
-        }
-
         void ActorFollowCamera()
         {
             var actor = GetVarOrDirectByte(OpCodeParameter.Param1);
@@ -1801,42 +1382,6 @@ namespace NScumm.Core
                 RunInventoryScript(0);
 
             _camera.MovingToActor = false;
-        }
-
-        void SetCameraFollows(Actor actor, bool setCamera)
-        {
-            int t, i;
-
-            _camera.Mode = CameraMode.FollowActor;
-            _camera.Follows = actor.Number;
-
-            if (!actor.IsInCurrentRoom())
-            {
-                StartScene(actor.Room);
-                _camera.Mode = CameraMode.FollowActor;
-                _camera.Cur.X = actor.Position.X;
-                SetCameraAt(_camera.Cur.X, 0);
-            }
-
-            t = actor.Position.X / 8 - _screenStartStrip;
-
-            if (t < _camera.LeftTrigger || t > _camera.RightTrigger || setCamera)
-                SetCameraAt(actor.Position.X, 0);
-
-            for (i = 1; i < _actors.Length; i++)
-            {
-                if (_actors[i].IsInCurrentRoom())
-                    _actors[i].NeedRedraw = true;
-            }
-            RunInventoryScript(0);
-        }
-
-        void RunInventoryScript(int i)
-        {
-            if (_variables[VariableInventoryScript] != 0)
-            {
-                RunScript((byte)_variables[VariableInventoryScript], false, false, new int[] { i });
-            }
         }
 
         void EndCutscene()
@@ -2056,44 +1601,6 @@ namespace NScumm.Core
             }
         }
 
-        void PutClass(int obj, int cls, bool set)
-        {
-            ScummHelper.AssertRange(0, obj, _numGlobalObjects - 1, "object");
-            var cls2 = (ObjectClass)(cls & 0x7F);
-            ScummHelper.AssertRange(1, (int)cls2, 32, "class");
-
-            // Translate the new (V5) object classes to the old classes
-            // (for those which differ).
-            switch (cls2)
-            {
-                case ObjectClass.Untouchable:
-                    cls2 = (ObjectClass)24;
-                    break;
-
-                case ObjectClass.Player:
-                    cls2 = (ObjectClass)23;
-                    break;
-
-                case ObjectClass.XFlip:
-                    cls2 = (ObjectClass)19;
-                    break;
-
-                case ObjectClass.YFlip:
-                    cls2 = (ObjectClass)18;
-                    break;
-            }
-
-            if (set)
-                ClassData[obj] |= (uint)(1 << ((int)cls2 - 1));
-            else
-                ClassData[obj] &= (uint)~(1 << ((int)cls2 - 1));
-
-            if (obj >= 1 && obj < NumActors)
-            {
-                _actors[obj].ClassChanged(cls2, set);
-            }
-        }
-
         void GetActorRoom()
         {
             GetResult();
@@ -2167,31 +1674,6 @@ namespace NScumm.Core
             _camera.MovingToActor = false;
         }
 
-        void SetCameraAt(short posX, short posY)
-        {
-            if (_camera.Mode != CameraMode.FollowActor || Math.Abs(posX - _camera.Cur.X) > (ScreenWidth / 2))
-            {
-                _camera.Cur.X = posX;
-            }
-            _camera.Dest.X = posX;
-
-            if (_camera.Cur.X < _variables[VariableCameraMinX])
-                _camera.Cur.X = (short)_variables[VariableCameraMinX];
-
-            if (_camera.Cur.X > _variables[VariableCameraMaxX])
-                _camera.Cur.X = (short)_variables[VariableCameraMaxX];
-
-            if (_variables[VariableScrollScript] != 0)
-            {
-                _variables[VariableCameraPosX] = _camera.Cur.X;
-                RunScript((byte)_variables[VariableScrollScript], false, false, new int[0]);
-            }
-
-            // If the camera moved and text is visible, remove it
-            if (_camera.Cur.X != _camera.Last.X && _charset.HasMask)
-                StopTalk();
-        }
-
         void Lights()
         {
             int a, b, c;
@@ -2240,29 +1722,6 @@ namespace NScumm.Core
             }
         }
 
-        void FreezeScripts(int flag)
-        {
-            int i;
-
-            for (i = 0; i < NumScriptSlot; i++)
-            {
-                if (_currentScript != i && _slots[i].Status != ScriptStatus.Dead && (!_slots[i].FreezeResistant || flag >= 0x80))
-                {
-                    _slots[i].Frozen = true;
-                    _slots[i].FreezeCount++;
-                }
-            }
-
-            for (i = 0; i < _sentence.Length; i++)
-                _sentence[i].FreezeCount++;
-
-            if (_cutSceneScriptIndex != 0xFF)
-            {
-                _slots[_cutSceneScriptIndex].Frozen = false;
-                _slots[_cutSceneScriptIndex].FreezeCount = 0;
-            }
-        }
-
         void DoSentence()
         {
             var verb = GetVarOrDirectByte(OpCodeParameter.Param1);
@@ -2279,50 +1738,6 @@ namespace NScumm.Core
             DoSentence((byte)verb, (ushort)objectA, (ushort)objectB);
         }
 
-        Sentence[] _sentence = InitSentences();
-
-        static Sentence[] InitSentences()
-        {
-            var sentences = new Sentence[6];
-            for (int i = 0; i < sentences.Length; i++)
-            {
-                sentences[i] = new Sentence();
-            }
-            return sentences;
-        }
-
-        void DoSentence(byte verb, ushort objectA, ushort objectB)
-        {
-            Sentence st;
-
-            st = _sentence[_sentenceNum++];
-
-            st.Verb = verb;
-            st.ObjectA = objectA;
-            st.ObjectB = objectB;
-            st.Preposition = (byte)((objectB != 0) ? 1 : 0);
-            st.FreezeCount = 0;
-        }
-
-        void BeginCutscene(IList<int> args)
-        {
-            int scr = _currentScript;
-            _slots[scr].CutSceneOverride++;
-
-            ++cutSceneStackPointer;
-            if (cutSceneStackPointer >= MaxCutsceneNum)
-                throw new NotSupportedException("Cutscene stack overflow");
-
-            _cutSceneData[cutSceneStackPointer] = args.Count > 0 ? args[0] : 0;
-            _cutSceneScript[cutSceneStackPointer] = 0;
-            _cutScenePtr[cutSceneStackPointer] = 0;
-
-            _cutSceneScriptIndex = scr;
-            if (_variables[VariableCutSceneStartScript] != 0)
-                RunScript((byte)_variables[VariableCutSceneStartScript], false, false, args);
-            _cutSceneScriptIndex = 0xFF;
-        }
-
         void CutScene()
         {
             var args = GetWordVarArgs();
@@ -2335,17 +1750,6 @@ namespace NScumm.Core
             SetResult(IsScriptRunning(GetVarOrDirectByte(OpCodeParameter.Param1)) ? 1 : 0);
         }
 
-        bool IsScriptRunning(int script)
-        {
-            for (int i = 0; i < NumScriptSlot; i++)
-            {
-                var ss = _slots[i];
-                if (ss.Number == script && (ss.Where == WhereIsObject.Global || ss.Where == WhereIsObject.Local) && ss.Status != ScriptStatus.Dead)
-                    return true;
-            }
-            return false;
-        }
-
         void LoadRoom()
         {
             var room = (byte)GetVarOrDirectByte(OpCodeParameter.Param1);
@@ -2354,16 +1758,6 @@ namespace NScumm.Core
                 StartScene(room);
             }
             _fullRedraw = true;
-        }
-
-        void SetShake(bool enabled)
-        {
-            if(_shakeEnabled!=enabled)
-                _fullRedraw=true;
-
-            _shakeEnabled=enabled;
-            _shakeFrame=0;
-            _gfxManager.SetShakePos(0);
         }
 
         void RoomOps()
@@ -2457,22 +1851,6 @@ namespace NScumm.Core
             }
         }
 
-        VirtScreen _unkVirtScreen;
-        void InitScreens(int b, int h)
-        {
-            var format = PixelFormat.Indexed8;
-
-            _mainVirtScreen = new VirtScreen(b, ScreenWidth, h - b, format, 2, true);
-            _textVirtScreen = new VirtScreen(0, ScreenWidth, b, format, 1);
-            _verbVirtScreen = new VirtScreen(h, ScreenWidth, _screenHeight - h, format, 1);
-            _unkVirtScreen = new VirtScreen(80, ScreenWidth, 13, format, 1);
-
-            _screenB = b;
-            _screenH = h;
-
-            Gdi.Init();
-        }
-
         void StartObject()
         {
             var obj = GetVarOrDirectWord(OpCodeParameter.Param1);
@@ -2480,55 +1858,6 @@ namespace NScumm.Core
 
             var data = GetWordVarArgs();
             RunObjectScript(obj, script, false, false, data);
-        }
-
-        void RunObjectScript(int obj, byte entry, bool freezeResistant, bool recursive, IList<int> vars)
-        {
-            if (obj == 0)
-                return;
-
-            if (!recursive)
-                StopObjectScript((ushort)obj);
-
-            WhereIsObject where = GetWhereIsObject(obj);
-
-            if (where == WhereIsObject.NotFound)
-            {
-                Console.WriteLine("warning: Code for object {0} not in room {1}", obj, _roomResource);
-                return;
-            }
-
-            // Find a free object slot, unless one was specified
-            byte slot = GetScriptSlotIndex();
-
-            ObjectData objFound = null;
-            if (roomData != null)
-            {
-                objFound = (from o in roomData.Objects.Concat(_invData)
-                            where o != null
-                            where o.Number == obj
-                            where o.ScriptOffsets.ContainsKey(entry) || o.ScriptOffsets.ContainsKey(0xFF)
-                            select o).FirstOrDefault();
-            }
-
-            if (objFound == null)
-                return;
-
-            _slots[slot].Number = (ushort)obj;
-            _slots[slot].InventoryEntry = entry;
-            _slots[slot].Offset = (uint)((objFound.ScriptOffsets.ContainsKey(entry) ? objFound.ScriptOffsets[entry] : objFound.ScriptOffsets[0xFF]) - objFound.Script.Offset);
-            _slots[slot].Status = ScriptStatus.Running;
-            _slots[slot].Where = where;
-            _slots[slot].FreezeResistant = freezeResistant;
-            _slots[slot].Recursive = recursive;
-            _slots[slot].FreezeCount = 0;
-
-            InitializeLocals(slot, vars);
-
-            // V0 Ensure we don't try and access objects via index inside the script
-            //_v0ObjectIndex = false;
-            UpdateScriptData(slot);
-            RunScriptNested(slot);
         }
 
         void StopObjectCode()
@@ -2548,37 +1877,6 @@ namespace NScumm.Core
         void StopObjectScript()
         {
             StopObjectScript((ushort)GetVarOrDirectWord(OpCodeParameter.Param1));
-        }
-
-        void StopObjectScript(ushort script)
-        {
-            int i;
-
-            if (script == 0)
-                return;
-
-            for (i = 0; i < NumScriptSlot; i++)
-            {
-                if (script == _slots[i].Number && _slots[i].Status != ScriptStatus.Dead &&
-                    (_slots[i].Where == WhereIsObject.Room || _slots[i].Where == WhereIsObject.Inventory || _slots[i].Where == WhereIsObject.FLObject))
-                {
-                    _slots[i].Number = 0;
-                    _slots[i].Status = ScriptStatus.Dead;
-                    if (_currentScript == i)
-                        _currentScript = 0xFF;
-                }
-            }
-
-            for (i = 0; i < _numNestedScripts; ++i)
-            {
-                if (_nest[i].Number == script &&
-                        (_nest[i].Where == WhereIsObject.Room || _nest[i].Where == WhereIsObject.Inventory || _nest[i].Where == WhereIsObject.FLObject))
-                {
-                    _nest[i].Number = 0xFF;
-                    _nest[i].Slot = 0xFF;
-                    _nest[i].Where = WhereIsObject.NotFound;
-                }
-            }
         }
 
         void Delay()
@@ -2612,17 +1910,6 @@ namespace NScumm.Core
             GetResult();
             var result = GetVarOrDirectWord(OpCodeParameter.Param1);
             SetResult(result);
-        }
-
-        void JumpRelative(bool condition)
-        {
-            var offset = (short)ReadWord();
-            if (!condition)
-            {
-                _currentPos += offset;
-                if (_currentPos < 0)
-                    throw new NotSupportedException("Invalid position in JumpRelative");
-            }
         }
 
         void IsEqual()
@@ -2674,246 +1961,6 @@ namespace NScumm.Core
             }
         }
 
-        void FadeIn(byte effect)
-        {
-            if (_disableFadeInEffect)
-            {
-                // fadeIn() calls can be disabled in TheDig after a SMUSH movie
-                // has been played. Like the original interpreter, we introduce
-                // an extra flag to handle 
-                _disableFadeInEffect = false;
-                _doEffect = false;
-                _screenEffectFlag = true;
-                return;
-            }
-
-            UpdatePalette();
-
-            switch (effect)
-            {
-                case 0:
-                    // seems to do nothing
-                    break;
-
-                case 1:
-                case 2:
-                case 3:
-                case 4:
-                case 5:
-                case 6:
-                    // Some of the transition effects won't work properly unless
-                    // the screen is marked as clean first. At first I thought I
-                    // could safely do this every time fadeIn() was called, but
-                    // that broke the FOA intro. Probably other things as well.
-                    //
-                    // Hopefully it's safe to do it at this point, at least.
-                    MainVirtScreen.SetDirtyRange(0, 0);
-                    //TransitionEffect(effect - 1);
-                    //throw new NotImplementedException();
-                    break;
-
-                case 128:
-                    UnkScreenEffect6();
-                    break;
-
-                case 129:
-                    break;
-
-                case 130:
-                case 131:
-                case 132:
-                case 133:
-                    //scrollEffect(133 - effect);
-                    throw new NotImplementedException();
-                    //break;
-
-                case 134:
-                    DissolveEffect(1, 1);
-                    break;
-
-                case 135:
-                    DissolveEffect(1, MainVirtScreen.Height);
-                    break;
-
-                default:
-                    throw new NotImplementedException(string.Format("Unknown screen effect {0}", effect));
-            }
-            _screenEffectFlag = true;
-        }
-
-        void UnkScreenEffect6()
-        {
-            DissolveEffect(8, 4);
-        }
-
-        /// <summary>
-        /// Update width*height areas of the screen, in random order, until the whole
-        /// screen has been updated. For instance:
-        ///
-        /// dissolveEffect(1, 1) produces a pixel-by-pixel dissolve
-        /// dissolveEffect(8, 8) produces a square-by-square dissolve
-        /// dissolveEffect(virtsrc[0].width, 1) produces a line-by-line dissolve
-        /// </summary>
-        /// <param name='width'>
-        /// Width.
-        /// </param>
-        /// <param name='height'>
-        /// Height.
-        /// </param>
-        void DissolveEffect(int width, int height)
-        {
-            var vs = MainVirtScreen;
-            int[] offsets;
-            int blits_before_refresh, blits;
-            int x, y;
-            int w, h;
-            int i;
-            var rnd = new Random();
-                    
-            // There's probably some less memory-hungry way of doing  But
-            // since we're only dealing with relatively small images, it shouldn't
-            // be too bad.
-
-            w = vs.Width / width;
-            h = vs.Height / height;
-
-            // When used correctly, vs->width % width and vs->height % height
-            // should both be zero, but just to be safe...
-
-            if ((vs.Width % width)!=0)
-                w++;
-
-            if ((vs.Height % height)!=0)
-                h++;
-
-            offsets = new int[w * h];
-
-            // Create a permutation of offsets into the frame buffer
-
-            if (width == 1 && height == 1)
-            {
-                // Optimized case for pixel-by-pixel dissolve
-
-                for (i = 0; i < vs.Width * vs.Height; i++)
-                    offsets [i] = i;
-
-                for (i = 1; i < w * h; i++)
-                {
-                    int j;
-
-                    j = rnd.Next(i);
-                    offsets [i] = offsets [j];
-                    offsets [j] = i;
-                }
-            } else
-            {
-                int[] offsets2;
-
-                for (i = 0, x = 0; x < vs.Width; x += width)
-                    for (y = 0; y < vs.Height; y += height)
-                        offsets [i++] = y * vs.Pitch + x;
-
-                offsets2 = new int[w * h];
-               
-                Array.Copy(offsets,offsets2,offsets.Length);
-
-                for (i = 1; i < w * h; i++)
-                {
-                    int j;
-
-                    j = rnd.Next(i);
-                    offsets [i] = offsets [j];
-                    offsets [j] = offsets2 [i];
-                }
-            }
-
-            // Blit the image piece by piece to the screen. The idea here is that
-            // the whole update should take about a quarter of a second, assuming
-            // most of the time is spent in waitForTimer(). It looks good to me,
-            // but might still need some tuning.
-
-            blits = 0;
-            blits_before_refresh = (3 * w * h) / 25;
-
-            // Speed up the effect for CD Loom since it uses it so often. I don't
-            // think the original had any delay at all, so on modern hardware it
-            // wasn't even noticeable.
-            if (_game.Id=="loom")
-                blits_before_refresh *= 2;
-
-            for (i = 0; i < w * h; i++)
-            {
-                x = offsets [i] % vs.Pitch;
-                y = offsets [i] / vs.Pitch;
-
-                _gfxManager.CopyRectToScreen(vs.Surfaces[0].Pixels, vs.Pitch, 
-                                             x, y, width, height);
-
-
-                if (++blits >= blits_before_refresh)
-                {
-                    blits = 0;
-                    System.Threading.Thread.Sleep(30);
-                }
-            }
-
-            if (blits != 0)
-            {
-                System.Threading.Thread.Sleep(30);
-            }
-        }
-
-        void FadeOut(int effect)
-        {
-            _mainVirtScreen.SetDirtyRange(0, 0);
-
-            _camera.Last.X = _camera.Cur.X;
-
-            if (_screenEffectFlag && effect != 0)
-            {
-                // Fill screen 0 with black
-                var l_pixNav = new PixelNavigator(_mainVirtScreen.Surfaces[0]);
-                l_pixNav.OffsetX(_mainVirtScreen.XStart);
-                Fill(l_pixNav, 0, _mainVirtScreen.Width, _mainVirtScreen.Height);
-
-                // Fade to black with the specified effect, if any.
-                switch (effect)
-                {
-                    case 1:
-                    case 2:
-                    case 3:
-                    case 4:
-                    case 5:
-                    //case 6:
-                    //    transitionEffect(effect - 1);
-                    //    break;
-                    case 128:
-                        UnkScreenEffect6();
-                        break;
-
-                    case 129:
-                        // Just blit screen 0 to the display (i.e. display will be black)
-                        _mainVirtScreen.SetDirtyRange(0, _mainVirtScreen.Height);
-                        UpdateDirtyScreen(_mainVirtScreen);
-                        break;
-                    //case 134:
-                    //    dissolveEffect(1, 1);
-                    //    break;
-                    //case 135:
-                    //    dissolveEffect(1, _virtscr[kMainVirtScreen].h);
-                    //    break;
-                    default:
-                        throw new NotImplementedException(string.Format("fadeOut: case {0}", effect));
-                }
-            }
-
-            // Update the palette at the end (once we faded to black) to avoid
-            // some nasty effects when the palette is changed
-            UpdatePalette();
-
-            _screenEffectFlag = false;
-        }
-
         void PseudoRoom()
         {
             int i = ReadByte(), j;
@@ -2954,11 +2001,6 @@ namespace NScumm.Core
             //_sound->addSoundToQueue(sound);
         }
 
-        void AddObjectToDrawQue(byte obj)
-        {
-            _drawingObjects.Add(Objects[obj]);
-        }
-
         void DrawBox()
         {
             int x, y, x2, y2, color;
@@ -2972,98 +2014,6 @@ namespace NScumm.Core
             color = GetVarOrDirectByte(OpCodeParameter.Param3);
 
             DrawBox(x, y, x2, y2, color);
-        }
-
-        void DrawBox(int x, int y, int x2, int y2, int color)
-        {
-            int width, height;
-            VirtScreen vs;
-
-            if ((vs = FindVirtScreen(y)) == null)
-                return;
-
-            // Indy4 Amiga always uses the room or verb palette map to match colors to
-            // the currently setup palette, thus we need to select it over here too.
-            // Done like the original interpreter.
-            //if (_game.platform == Common::kPlatformAmiga && _game.id == GID_INDY4) {
-            //    if (vs->number == kVerbVirtScreen)
-            //        color = _verbPalette[color];
-            //    else
-            //        color = _roomPalette[color];
-            //}
-
-            if (x > x2)
-                ScummHelper.Swap(ref x, ref x2);
-
-            if (y > y2)
-                ScummHelper.Swap(ref y, ref y2);
-
-            x2++;
-            y2++;
-
-            // Adjust for the topline of the VirtScreen
-            y -= vs.TopLine;
-            y2 -= vs.TopLine;
-
-            // Clip the coordinates
-            if (x < 0)
-                x = 0;
-            else if (x >= vs.Width)
-                return;
-
-            if (x2 < 0)
-                return;
-            if (x2 > vs.Width)
-                x2 = vs.Width;
-
-            if (y < 0)
-                y = 0;
-            else if (y > vs.Height)
-                return;
-
-            if (y2 < 0)
-                return;
-            if (y2 > vs.Height)
-                y2 = vs.Height;
-
-            width = x2 - x;
-            height = y2 - y;
-
-            // This will happen in the Sam & Max intro - see bug #1039162 - where
-            // it would trigger an assertion in blit().
-
-            if (width <= 0 || height <= 0)
-                return;
-
-            MarkRectAsDirty(vs, x, x2, y, y2);
-
-            var backbuff = new PixelNavigator(vs.Surfaces[0]);
-            backbuff.GoTo(vs.XStart + x, y);
-
-            // A check for -1 might be wrong in all cases since o5_drawBox() in its current form
-            // is definitely not capable of passing a parameter of -1 (color range is 0 - 255).
-            // Just to make sure I don't break anything I restrict the code change to FM-Towns
-            // version 5 games where this change is necessary to fix certain long standing bugs.
-            if (color == -1)
-            {
-                if (vs != MainVirtScreen)
-                    Console.Error.WriteLine("can only copy bg to main window");
-
-                var bgbuff = new PixelNavigator(vs.Surfaces[1]);
-                bgbuff.GoTo(vs.XStart + x, y);
-
-                Blit(backbuff, bgbuff, width, height);
-                if (_charset.HasMask)
-                {
-                    var mask = new PixelNavigator(_textSurface);
-                    mask.GoToIgnoreBytesByPixel(x * _textSurfaceMultiplier, (y - ScreenTop) * _textSurfaceMultiplier);
-                    Fill(mask, CharsetMaskTransparency, width * _textSurfaceMultiplier, height * _textSurfaceMultiplier);
-                }
-            }
-            else
-            {
-                Fill(backbuff, (byte)color, width, height);
-            }
         }
 
         void DrawObject()
@@ -3101,52 +2051,6 @@ namespace NScumm.Core
             } while ((--i) != 0);
 
             PutState(obj, state);
-        }
-
-        void PutState(int obj, byte state)
-        {
-            ScummHelper.AssertRange(0, obj, _numGlobalObjects - 1, "object");
-            ScummHelper.AssertRange(0, state, 0xFF, "state");
-            _scumm.ObjectStateTable[obj] = state;
-        }
-
-        int GetObjectIndex(int obj)
-        {
-            int i;
-
-            if (obj < 1)
-                return -1;
-
-            for (i = (_numLocalObjects - 1); i > 0; i--)
-            {
-                if (Objects[i].Number == obj)
-                    return i;
-            }
-            return -1;
-        }
-
-        int GetVarOrDirectWord(OpCodeParameter param)
-        {
-            if (((OpCodeParameter)_opCode).HasFlag(param))
-                return GetVar();
-            return ReadWordSigned();
-        }
-
-        int GetVarOrDirectByte(OpCodeParameter param)
-        {
-            if (((OpCodeParameter)_opCode).HasFlag(param))
-                return GetVar();
-            return ReadByte();
-        }
-
-        int GetVar()
-        {
-            return ReadVariable(ReadWord());
-        }
-
-        short ReadWordSigned()
-        {
-            return (short)ReadWord();
         }
 
         void IsLess()
@@ -3280,30 +2184,6 @@ namespace NScumm.Core
             }
         }
 
-        byte[] ReadCharacters()
-        {
-            var sb = new List<byte>();
-            var character = ReadByte();
-            while (character != 0)
-            {
-                sb.Add(character);
-                if (character == 0xFF)
-                {
-                    character = ReadByte();
-                    sb.Add(character);
-                    if (character != 1 && character != 2 && character != 3 && character != 8)
-                    {
-                        character = ReadByte();
-                        sb.Add(character);
-                        character = ReadByte();
-                        sb.Add(character);
-                    }
-                }
-                character = ReadByte();
-            }
-            return sb.ToArray();
-        }
-
         void ResourceRoutines()
         {
             int resId = 0;
@@ -3383,17 +2263,6 @@ namespace NScumm.Core
 
                 default:
                     throw new NotImplementedException();
-            }
-        }
-
-        void LoadCharset(int resId)
-        {
-            var diskName = string.Format("{0}.lfl", 900 + resId);
-            var path = Path.Combine(_directory, diskName);
-            using (var br = new BinaryReader(File.OpenRead(path)))
-            {
-                var size = (int)br.ReadUInt32() + 11;
-                _charsets[resId] = br.ReadBytes(size);
             }
         }
 
@@ -3486,17 +2355,6 @@ namespace NScumm.Core
 
             _variables[VariableCursorState] = _cursor.State;
             _variables[VariableUserPut] = _userPut;
-        }
-
-        void InitCharset(int charsetNum)
-        {
-            _string[0].Default.Charset = (byte)charsetNum;
-            _string[1].Default.Charset = (byte)charsetNum;
-
-            //if (_charsets[charsetNum] != null)
-            //{
-            //    Array.Copy(_charsets[charsetNum], _charsetColorMap, 16);
-            //}
         }
 
         void Expression()
@@ -3738,32 +2596,6 @@ namespace NScumm.Core
                 ClearDrawObjectQueue();
         }
 
-        void MarkObjectRectAsDirty(int obj)
-        {
-            for (int i = 1; i < _numLocalObjects; i++)
-            {
-                if (Objects[i].Number == obj)
-                {
-                    if (Objects[i].Width != 0)
-                    {
-                        int minStrip = Math.Max(_screenStartStrip, Objects[i].XPos / 8);
-                        int maxStrip = Math.Min(_screenEndStrip + 1, Objects[i].XPos / 8 + Objects[i].Width / 8);
-                        for (int strip = minStrip; strip < maxStrip; strip++)
-                        {
-                            SetGfxUsageBit(strip, UsageBitDirty);
-                        }
-                    }
-                    _bgNeedsRedraw = true;
-                    return;
-                }
-            }
-        }
-
-        void ClearDrawObjectQueue()
-        {
-            _drawingObjects.Clear();
-        }
-
         void PickupObject()
         {
             int obj = GetVarOrDirectWord(OpCodeParameter.Param1);
@@ -3791,48 +2623,11 @@ namespace NScumm.Core
             RunInventoryScript(1);
         }
 
-        void AddObjectToInventory(int obj, byte room)
-        {
-            var slot = GetInventorySlot();
-            if (GetWhereIsObject(obj) == WhereIsObject.FLObject)
-            {
-                GetObjectIndex(obj);
-                throw new NotImplementedException();
-            }
-            else
-            {
-                var objs = _scumm.GetRoom(room).Objects;
-                var objFound = (from o in objs
-                                where o.Number == obj
-                                select o).FirstOrDefault();
-                _invData[slot] = objFound;
-            }
-            _inventory[slot] = (ushort)obj;
-        }
-
-        int GetInventorySlot()
-        {
-            int i;
-            for (i = 0; i < NumInventory; i++)
-            {
-                if (_inventory[i] == 0)
-                    return i;
-            }
-            return -1;
-        }
-
-        void PutOwner(int obj, byte owner)
-        {
-            _scumm.ObjectOwnerTable[obj] = owner;
-        }
-
-        ObjectData[] _invData = new ObjectData[NumInventory];
-
         #endregion OpCodes
 
         #region Properties
 
-        public IList<ObjectData> Objects
+        internal IList<ObjectData> Objects
         {
             get
             {
@@ -3840,272 +2635,138 @@ namespace NScumm.Core
             }
         }
 
-        public int ScreenStartStrip
+        internal int ScreenStartStrip
         {
             get { return _screenStartStrip; }
         }
 
-        public int CharsetBufPos
+        internal int CharsetBufPos
         {
             get { return _charsetBufPos; }
             set { _charsetBufPos = value; }
         }
 
-        public int HaveMsg
+        internal int HaveMsg
         {
             get { return _haveMsg; }
             set { _haveMsg = value; }
         }
 
-        public bool EgoPositioned
+        internal bool EgoPositioned
         {
             get { return _egoPositioned; }
             set { _egoPositioned = value; }
         }
 
-        public int TalkDelay
+        internal int TalkDelay
         {
             get { return _talkDelay; }
             set { _talkDelay = value; }
         }
 
-        public ICostumeLoader CostumeLoader
+        internal ICostumeLoader CostumeLoader
         {
             get { return _costumeLoader; }
         }
 
-        public ICostumeRenderer CostumeRenderer { get { return _costumeRenderer; } }
+        internal ICostumeRenderer CostumeRenderer { get { return _costumeRenderer; } }
 
-        public Surface TextSurface { get { return _textSurface; } }
+        internal Surface TextSurface { get { return _textSurface; } }
 
         #endregion Properties
 
-        #region Misc Methods
+        #region Room Methods
 
-        Dictionary<int, byte[]> _newNames = new Dictionary<int, byte[]>();
-
-        void SetObjectName(int obj)
+        void ResetRoomObjects()
         {
-            if (obj < _actors.Length)
+            for (int i = 0; i < roomData.Objects.Count; i++)
             {
-                string msg = string.Format("Can't set actor {0} name with new name.", obj);
-                throw new NotSupportedException(msg);
-            }
-
-            _newNames[obj] = ReadCharacters();
-            RunInventoryScript(0);
-        }
-
-        void PanCameraTo(int x)
-        {
-            _camera.Dest.X = (short)x;
-            _camera.Mode = CameraMode.Panning;
-            _camera.MovingToActor = false;
-        }
-
-        int GetObjX(int obj)
-        {
-            if (obj < 1)
-                return 0;                                   /* fix for indy4's map */
-
-            if (obj < _actors.Length)
-            {
-                return _actors [obj].Position.X;
-            }
-            if (GetWhereIsObject(obj) == WhereIsObject.NotFound)
-                return -1;
-            int x, y;
-            GetObjectOrActorXY(obj, out x, out y);
-            return x;
-        }
-
-        int GetObjY(int obj)
-        {
-            if (obj < 1)
-                return 0;                                   /* fix for indy4's map */
-
-            if (obj < _actors.Length)
-            {
-                return _actors [obj].Position.Y;
-            }
-            if (GetWhereIsObject(obj) == WhereIsObject.NotFound)
-                return -1;
-            int x, y;
-            GetObjectOrActorXY(obj, out x, out y);
-            return y;
-        }
-
-        WhereIsObject GetWhereIsObject(int obj)
-        {
-            int i;
-
-            if (obj >= _numGlobalObjects)
-                return WhereIsObject.NotFound;
-
-            if (obj < 1)
-                return WhereIsObject.NotFound;
-
-            if (_scumm.ObjectOwnerTable[obj] != OwnerRoom)
-            {
-                for (i = 0; i < NumInventory; i++)
-                    if (_inventory[i] == obj)
-                        return WhereIsObject.Inventory;
-                return WhereIsObject.NotFound;
-            }
-
-            for (i = (_numLocalObjects - 1); i > 0; i--)
-                if (Objects[i].Number == obj)
+                _objs[i + 1].XPos = roomData.Objects[i].XPos;
+                _objs[i + 1].YPos = roomData.Objects[i].YPos;
+                _objs[i + 1].Width = roomData.Objects[i].Width;
+                _objs[i + 1].WalkX = roomData.Objects[i].WalkX;
+                _objs[i + 1].WalkY = roomData.Objects[i].WalkY;
+                _objs[i + 1].State = roomData.Objects[i].State;
+                _objs[i + 1].Parent = roomData.Objects[i].Parent;
+                _objs[i + 1].ParentState = roomData.Objects[i].ParentState;
+                _objs[i + 1].Number = roomData.Objects[i].Number;
+                _objs[i + 1].Height = roomData.Objects[i].Height;
+                _objs[i + 1].Flags = roomData.Objects[i].Flags;
+                _objs[i + 1].FlObjectIndex = roomData.Objects[i].FlObjectIndex;
+                _objs[i + 1].ActorDir = roomData.Objects[i].ActorDir;
+                _objs[i + 1].Image = roomData.Objects[i].Image;
+                _objs[i + 1].Script.Offset = roomData.Objects[i].Script.Offset;
+                _objs[i + 1].Script.Data = roomData.Objects[i].Script.Data;
+                _objs[i + 1].ScriptOffsets.Clear();
+                foreach (var scriptOffset in roomData.Objects[i].ScriptOffsets)
                 {
-                    if (Objects[i].FlObjectIndex != 0)
-                        return WhereIsObject.FLObject;
-                    return WhereIsObject.Room;
+                    _objs[i + 1].ScriptOffsets.Add(scriptOffset.Key, scriptOffset.Value);
                 }
-
-            return WhereIsObject.NotFound;
+                _objs[i + 1].Name = roomData.Objects[i].Name;
+            }
+            for (int i = roomData.Objects.Count + 1; i < _objs.Length; i++)
+            {
+                _objs[i].Number = 0;
+                _objs[i].Script.Offset = 0;
+                _objs[i].ScriptOffsets.Clear();
+                _objs[i].Script.Data = new byte[0];
+            }
         }
 
-        void KillScriptsAndResources()
+        void ClearRoomObjects()
         {
-            for (int i = 0; i < NumScriptSlot; i++)
+            for (int i = 0; i < _numLocalObjects; i++)
             {
-                var ss = _slots[i];
-                if (ss.Where == WhereIsObject.Room || ss.Where == WhereIsObject.FLObject)
-                {
-                    if (ss.CutSceneOverride != 0)
-                    {
-                        //if (_game.version >= 5)
-                        //    warning("Object %d stopped with active cutscene/override in exit", ss->number);
-                        ss.CutSceneOverride = 0;
-                    }
-                    //nukeArrays(i);
-                    ss.Status = ScriptStatus.Dead;
-                }
-                else if (ss.Where == WhereIsObject.Local)
-                {
-                    if (ss.CutSceneOverride != 0)
-                    {
-                        //if (_game.version >= 5)
-                        //    warning("Script %d stopped with active cutscene/override in exit", ss->number);
-                        ss.CutSceneOverride = 0;
-                    }
-                    //nukeArrays(i);
-                    ss.Status = ScriptStatus.Dead;
-                }
+                Objects[i].Number = 0;
+            }
+        }
+
+        void ResetRoomSubBlocks()
+        {
+            _boxMatrix.Clear();
+            _boxMatrix.AddRange(roomData.BoxMatrix);
+
+            for (int i = 0; i < _scaleSlots.Length; i++)
+            {
+                _scaleSlots [i] = new ScaleSlot();
             }
 
-            /* Nuke local object names */
-            if (_newNames != null)
+            if (roomData.Scales != null)
             {
-                foreach (var obj in _newNames.Keys.ToArray())
+                for (int i = 1; i <= roomData.Scales.Length; i++)
                 {
-                    var owner = GetOwner(obj);
-                    // We can delete custom name resources if either the object is
-                    // no longer in use (i.e. not owned by anyone anymore); or if
-                    // it is an object which is owned by a room.
-                    if (owner == 0 || (owner == OwnerRoom))
+                    var scale = roomData.Scales [i - 1];
+                    if (scale.Scale1 != 0 || scale.Y1 != 0 || scale.Scale2 != 0 || scale.Y2 != 0)
                     {
-                        // WORKAROUND for a problem mentioned in bug report #941275:
-                        // In FOA in the sentry room, in the chest plate of the statue,
-                        // the pegs may be renamed to mouth: this custom name is lost
-                        // when leaving the room; this hack prevents this).
-                        //if (owner == OF_OWNER_ROOM && _game.id == GID_INDY4 && 336 <= obj && obj <= 340)
-                        //    continue;
-
-                        _newNames[obj] = new byte[0];
+                        SetScaleSlot(i, 0, scale.Y1, scale.Scale1, 0, scale.Y2, scale.Scale2);
                     }
                 }
             }
-        }
 
-        void WalkActors()
-        {
-            for (int i = 1; i < NumActors; ++i)
+            _boxes = new Box[roomData.Boxes.Count];
+            for (int i = 0; i < roomData.Boxes.Count; i++)
             {
-                if (_actors[i].IsInCurrentRoom())
-                    _actors[i].WalkActor();
+                var box = roomData.Boxes[i];
+                _boxes[i] = new Box { Flags = box.Flags, Llx = box.Llx, Lly = box.Lly, Lrx = box.Lrx, Lry = box.Lry, Mask = box.Mask, Scale = box.Scale, Ulx = box.Ulx, Uly = box.Uly, Urx = box.Urx, Ury = box.Ury };
+            }
+
+            if (roomData.ColorCycle != null)
+            {
+                Array.Copy(roomData.ColorCycle, _colorCycle, 16);
             }
         }
 
-        void ProcessActors()
+        #endregion Room Methods
+
+        #region Script Members
+
+        TimeSpan GetTimeToWait()
         {
-            var actors = from actor in _actors
-                         where actor.IsInCurrentRoom()
-                         orderby actor.Position.Y
-                         select actor;
-
-            foreach (var actor in actors)
-            {
-                if (actor.Costume != 0)
-                {
-                    actor.DrawActorCostume();
-                    actor.AnimateCostume();
-                }
-            }
-        }
-
-        /// <summary>
-        /// Compute if there is a way that connects box 'from' with box 'to'.
-        /// </summary>
-        /// <param name="from"></param>
-        /// <param name="to"></param>
-        /// <returns>
-        /// The number of a box adjacent to 'from' that is the next on the
-        /// way to 'to' (this can be 'to' itself or a third box).
-        /// If there is no connection -1 is return.
-        /// </returns>
-        public int GetNextBox(byte from, byte to)
-        {
-            byte i;
-            int numOfBoxes = GetNumBoxes();
-            int dest = -1;
-
-            if (from == to)
-                return to;
-
-            if (to == Actor.InvalidBox)
-                return -1;
-
-            if (from == Actor.InvalidBox)
-                return to;
-
-            if (from >= numOfBoxes) throw new ArgumentOutOfRangeException("from");
-            if (to >= numOfBoxes) throw new ArgumentOutOfRangeException("to");
-
-            var boxm = _boxMatrix;
-
-            // WORKAROUND #1: It seems that in some cases, the box matrix is corrupt
-            // (more precisely, is too short) in the datafiles already. In
-            // particular this seems to be the case in room 46 of Indy3 EGA (see
-            // also bug #770690). This didn't cause problems in the original
-            // engine, because there, the memory layout is different. After the
-            // walkbox would follow the rest of the room file, thus the program
-            // always behaved the same (and by chance, correct). Not so for us,
-            // since random data may follow after the resource in ScummVM.
-            //
-            // As a workaround, we add a check for the end of the box matrix
-            // resource, and abort the search once we reach the end.
-
-            int boxmIndex = _boxMatrix[0] == 0xFF ? 1 : 0;
-            // Skip up to the matrix data for box 'from'
-            for (i = 0; i < from && boxmIndex < boxm.Count; i++)
-            {
-                while (boxmIndex < boxm.Count && boxm[boxmIndex] != 0xFF)
-                    boxmIndex += 3;
-                boxmIndex++;
-            }
-
-            // Now search for the entry for box 'to'
-            while (boxmIndex < boxm.Count && boxm[boxmIndex] != 0xFF)
-            {
-                if (boxm[boxmIndex] <= to && to <= boxm[boxmIndex + 1])
-                    dest = (sbyte)boxm[boxmIndex + 2];
-                boxmIndex += 3;
-            }
-
-            //if (boxm >= boxm.Count)
-            //    debug(0, "The box matrix apparently is truncated (room %d)", _roomResource);
-
-            return dest;
+            int delta = _variables[VariableTimerNext];
+            if (delta < 0)  // Ensure we don't get into an endless loop
+                delta = 0;  // by not decreasing sleepers.
+            var tsDelta = TimeSpan.FromSeconds(delta / 60.0);
+            return tsDelta;
         }
 
         void StartScene(byte room)
@@ -4203,285 +2864,81 @@ namespace NScumm.Core
             _doEffect = true;
         }
 
-        void ResetRoomObjects()
+        void KillScriptsAndResources()
         {
-            for (int i = 0; i < roomData.Objects.Count; i++)
+            for (int i = 0; i < NumScriptSlot; i++)
             {
-                _objs[i + 1].XPos = roomData.Objects[i].XPos;
-                _objs[i + 1].YPos = roomData.Objects[i].YPos;
-                _objs[i + 1].Width = roomData.Objects[i].Width;
-                _objs[i + 1].WalkX = roomData.Objects[i].WalkX;
-                _objs[i + 1].WalkY = roomData.Objects[i].WalkY;
-                _objs[i + 1].State = roomData.Objects[i].State;
-                _objs[i + 1].Parent = roomData.Objects[i].Parent;
-                _objs[i + 1].ParentState = roomData.Objects[i].ParentState;
-                _objs[i + 1].Number = roomData.Objects[i].Number;
-                _objs[i + 1].Height = roomData.Objects[i].Height;
-                _objs[i + 1].Flags = roomData.Objects[i].Flags;
-                _objs[i + 1].FlObjectIndex = roomData.Objects[i].FlObjectIndex;
-                _objs[i + 1].ActorDir = roomData.Objects[i].ActorDir;
-                _objs[i + 1].Image = roomData.Objects[i].Image;
-                _objs[i + 1].Script.Offset = roomData.Objects[i].Script.Offset;
-                _objs[i + 1].Script.Data = roomData.Objects[i].Script.Data;
-                _objs[i + 1].ScriptOffsets.Clear();
-                foreach (var scriptOffset in roomData.Objects[i].ScriptOffsets)
+                var ss = _slots[i];
+                if (ss.Where == WhereIsObject.Room || ss.Where == WhereIsObject.FLObject)
                 {
-                    _objs[i + 1].ScriptOffsets.Add(scriptOffset.Key, scriptOffset.Value);
-                }
-                _objs[i + 1].Name = roomData.Objects[i].Name;
-            }
-            for (int i = roomData.Objects.Count + 1; i < _objs.Length; i++)
-            {
-                _objs[i].Number = 0;
-                _objs[i].Script.Offset = 0;
-                _objs[i].ScriptOffsets.Clear();
-                _objs[i].Script.Data = new byte[0];
-            }
-        }
-
-        void ClearRoomObjects()
-        {
-            for (int i = 0; i < _numLocalObjects; i++)
-            {
-                Objects[i].Number = 0;
-            }
-        }
-
-        void ResetRoomSubBlocks()
-        {
-            _boxMatrix.Clear();
-            _boxMatrix.AddRange(roomData.BoxMatrix);
-
-            for (int i = 0; i < _scaleSlots.Length; i++)
-            {
-                _scaleSlots [i] = new ScaleSlot();
-            }
-
-            if (roomData.Scales != null)
-            {
-                for (int i = 1; i <= roomData.Scales.Length; i++)
-                {
-                    var scale = roomData.Scales [i - 1];
-                    if (scale.Scale1 != 0 || scale.Y1 != 0 || scale.Scale2 != 0 || scale.Y2 != 0)
+                    if (ss.CutSceneOverride != 0)
                     {
-                        SetScaleSlot(i, 0, scale.Y1, scale.Scale1, 0, scale.Y2, scale.Scale2);
+                        //if (_game.version >= 5)
+                        //    warning("Object %d stopped with active cutscene/override in exit", ss->number);
+                        ss.CutSceneOverride = 0;
+                    }
+                    //nukeArrays(i);
+                    ss.Status = ScriptStatus.Dead;
+                }
+                else if (ss.Where == WhereIsObject.Local)
+                {
+                    if (ss.CutSceneOverride != 0)
+                    {
+                        //if (_game.version >= 5)
+                        //    warning("Script %d stopped with active cutscene/override in exit", ss->number);
+                        ss.CutSceneOverride = 0;
+                    }
+                    //nukeArrays(i);
+                    ss.Status = ScriptStatus.Dead;
+                }
+            }
+
+            /* Nuke local object names */
+            if (_newNames != null)
+            {
+                foreach (var obj in _newNames.Keys.ToArray())
+                {
+                    var owner = GetOwner(obj);
+                    // We can delete custom name resources if either the object is
+                    // no longer in use (i.e. not owned by anyone anymore); or if
+                    // it is an object which is owned by a room.
+                    if (owner == 0 || (owner == OwnerRoom))
+                    {
+                        // WORKAROUND for a problem mentioned in bug report #941275:
+                        // In FOA in the sentry room, in the chest plate of the statue,
+                        // the pegs may be renamed to mouth: this custom name is lost
+                        // when leaving the room; this hack prevents this).
+                        //if (owner == OF_OWNER_ROOM && _game.id == GID_INDY4 && 336 <= obj && obj <= 340)
+                        //    continue;
+
+                        _newNames[obj] = new byte[0];
                     }
                 }
             }
+        }
 
-            _boxes = new Box[roomData.Boxes.Count];
-            for (int i = 0; i < roomData.Boxes.Count; i++)
+        void RunInventoryScript(int i)
+        {
+            if (_variables[VariableInventoryScript] != 0)
             {
-                var box = roomData.Boxes[i];
-                _boxes[i] = new Box { Flags = box.Flags, Llx = box.Llx, Lly = box.Lly, Lrx = box.Lrx, Lry = box.Lry, Mask = box.Mask, Scale = box.Scale, Ulx = box.Ulx, Uly = box.Uly, Urx = box.Urx, Ury = box.Ury };
-            }
-
-            if (roomData.ColorCycle != null)
-            {
-                Array.Copy(roomData.ColorCycle, _colorCycle, 16);
+                RunScript((byte)_variables[VariableInventoryScript], false, false, new int[] { i });
             }
         }
 
-        void SetDirtyColors(int min, int max)
+        void RunInputScript(ClickArea clickArea, KeyCode code, int mode)
         {
-            if (_palDirtyMin > min)
-                _palDirtyMin = min;
-            if (_palDirtyMax < max)
-                _palDirtyMax = max;
-        }
+            var verbScript = _variables[VariableVerbScript];
 
-        void ShowActors()
-        {
-            int i;
-
-            for (i = 1; i < NumActors; i++)
+            if (verbScript != 0)
             {
-                if (_actors[i].IsInCurrentRoom())
-                    _actors[i].ShowActor();
+                RunScript((byte)verbScript, false, false, new int[] { (int)clickArea, (int)code, mode });
             }
         }
 
-        void Print()
+        void UpdateVariables()
         {
-            _actorToPrintStrFor = GetVarOrDirectByte(OpCodeParameter.Param1);
-            DecodeParseString();
-        }
-
-        void DecodeParseString()
-        {
-            int textSlot;
-            switch (_actorToPrintStrFor)
-            {
-                case 252:
-                    textSlot = 3;
-                    break;
-
-                case 253:
-                    textSlot = 2;
-                    break;
-
-                case 254:
-                    textSlot = 1;
-                    break;
-
-                default:
-                    textSlot = 0;
-                    break;
-            }
-
-            _string[textSlot].LoadDefault();
-            while ((_opCode = ReadByte()) != 0xFF)
-            {
-                switch (_opCode & 0xF)
-                {
-                    case 0:     // SO_AT
-                        _string[textSlot].XPos = (short)GetVarOrDirectWord(OpCodeParameter.Param1);
-                        _string[textSlot].YPos = (short)GetVarOrDirectWord(OpCodeParameter.Param2);
-                        _string[textSlot].Overhead = false;
-                        break;
-
-                    case 1:     // SO_COLOR
-                        _string[textSlot].Color = (byte)GetVarOrDirectByte(OpCodeParameter.Param1);
-                        break;
-
-                    case 2:     // SO_CLIPPED
-                        _string[textSlot].Right = (short)GetVarOrDirectWord(OpCodeParameter.Param1);
-                        break;
-
-                    case 4:     // SO_CENTER
-                        _string[textSlot].Center = true;
-                        _string[textSlot].Overhead = false;
-                        break;
-
-                    case 6:     // SO_LEFT
-                        {
-                            _string[textSlot].Center = false;
-                            _string[textSlot].Overhead = false;
-                        }
-                        break;
-
-                    case 7:     // SO_OVERHEAD
-                        _string[textSlot].Overhead = true;
-                        break;
-
-                    case 15:
-                        {   // SO_TEXTSTRING
-                            var tmp = ReadCharacters();
-                            PrintString(textSlot, tmp);
-                        }
-                        return;
-
-                    default:
-                        throw new NotImplementedException();
-                }
-            }
-
-            _string[textSlot].SaveDefault();
-        }
-
-        void PrintString(int textSlot, byte[] msg)
-        {
-            switch (textSlot)
-            {
-                case 0:
-                    ActorTalk(msg);
-                    break;
-
-                case 1:
-                    DrawString(1, msg);
-                    break;
-                //case 2:
-                //    debugMessage(msg);
-                //    break;
-                //case 3:
-                //    showMessageDialog(msg);
-                //    break;
-                default:
-                    throw new NotImplementedException();
-            }
-        }
-
-        void ActorTalk(byte[] msg)
-        {
-            Actor a;
-
-            ConvertMessageToString(msg, _charsetBuffer, 0);
-
-            if (_actorToPrintStrFor == 0xFF)
-            {
-                if (!_keepText)
-                {
-                    StopTalk();
-                }
-                SetTalkingActor(0xFF);
-            }
-            else
-            {
-                int oldact;
-
-                a = _actors[_actorToPrintStrFor];
-                if (!a.IsInCurrentRoom())
-                {
-                    oldact = 0xFF;
-                }
-                else
-                {
-                    if (!_keepText)
-                    {
-                        StopTalk();
-                    }
-                    SetTalkingActor(a.Number);
-
-                    if (!_string[0].NoTalkAnim)
-                    {
-                        a.RunActorTalkScript(a.TalkStartFrame);
-                        _useTalkAnims = true;
-                    }
-                    oldact = GetTalkingActor();
-                }
-                if (oldact >= 0x80)
-                    return;
-            }
-
-            if (GetTalkingActor() > 0x7F)
-            {
-                _charsetColor = _string [0].Color;
-            }
-            else
-            {
-                a = _actors[GetTalkingActor()];
-                _charsetColor = a.TalkColor;
-            }
-
-            _charsetBufPos = 0;
-            _talkDelay = 0;
-            _haveMsg = 0xFF;
-            _variables[VariableHaveMessage] = 0xFF;
-
-            _haveActorSpeechMsg = true;
-            Charset();
-        }
-
-        public int GetTalkingActor()
-        {
-            return _variables[VariableTalkActor];
-        }
-
-        void SetTalkingActor(int actor)
-        {
-            //        if (i == 255) {
-            //    _system->clearFocusRectangle();
-            //} else {
-            //    // Work out the screen co-ordinates of the actor
-            //    int x = _actors[i]->getPos().x - (camera._cur.x - (_screenWidth >> 1));
-            //    int y = _actors[i]->_top - (camera._cur.y - (_screenHeight >> 1));
-
-            //    // Set the focus area to the calculated position
-            //    // TODO: Make the size adjust depending on what it's focusing on.
-            //    _system->setFocusRectangle(Common::Rect::center(x, y, 192, 128));
-            //}
-
-            _variables[VariableTalkActor] = actor;
+            _variables[VariableCameraPosX] = _camera.Cur.X;
+            _variables[VariableHaveMessage] = _haveMsg;
         }
 
         void RunEntryScript()
@@ -4741,221 +3198,182 @@ namespace NScumm.Core
             }
         }
 
-        public BoxFlags GetBoxFlags(byte boxNum)
+        bool IsScriptInUse(int script)
         {
-            Box box = GetBoxBase(boxNum);
-            if (box == null)
-                return 0;
-            return box.Flags;
+            for (int i = 0; i < NumScriptSlot; i++)
+                if (_slots[i].Number == script)
+                    return true;
+            return false;
         }
 
-        public byte GetBoxMask(byte boxNum)
+        void CheckAndRunSentenceScript()
         {
-            Box box = GetBoxBase(boxNum);
-            if (box == null)
-                return 0;
-            return box.Mask;
-        }
+            int i;
+            int sentenceScript;
 
-        public int GetNumBoxes()
-        {
-            return _boxes.Length;
-        }
+            sentenceScript = _variables[VariableSentenceScript];
 
-        public BoxCoords GetBoxCoordinates(int boxnum)
-        {
-            var bp = GetBoxBase(boxnum);
-            var box = new BoxCoords();
-
-            box.Ul.X = bp.Ulx;
-            box.Ul.Y = bp.Uly;
-            box.Ur.X = bp.Urx;
-            box.Ur.Y = bp.Ury;
-
-            box.Ll.X = bp.Llx;
-            box.Ll.Y = bp.Lly;
-            box.Lr.X = bp.Lrx;
-            box.Lr.Y = bp.Lry;
-
-            return box;
-        }
-
-        Box GetBoxBase(int boxnum)
-        {
-            if (boxnum == 255)
-                return null;
-
-            // As a workaround, we simply use the last box if the last+1 box is requested.
-            // Note that this may cause different behavior than the original game
-            // engine exhibited! To faithfully reproduce the behavior of the original
-            // engine, we would have to know the data coming *after* the walkbox table.
-            if (_boxes.Length == boxnum)
-                boxnum--;
-            return _boxes[boxnum];
-        }
-
-        public bool CheckXYInBoxBounds(int boxnum, short x, short y)
-        {
-            // Since this method is called by many other methods that take params
-            // from e.g. script opcodes, but do not validate the boxnum, we
-            // make a check here to filter out invalid boxes.
-            // See also bug #1599113.
-            if (boxnum < 0 || boxnum == Actor.InvalidBox)
-                return false;
-
-            BoxCoords box = GetBoxCoordinates(boxnum);
-            var p = new Point(x, y);
-
-            // Quick check: If the x (resp. y) coordinate of the point is
-            // strictly smaller (bigger) than the x (y) coordinates of all
-            // corners of the quadrangle, then it certainly is *not* contained
-            // inside the quadrangle.
-            if (x < box.Ul.X && x < box.Ur.X && x < box.Lr.X && x < box.Ll.X)
-                return false;
-
-            if (x > box.Ul.X && x > box.Ur.X && x > box.Lr.X && x > box.Ll.X)
-                return false;
-
-            if (y < box.Ul.Y && y < box.Ur.Y && y < box.Lr.Y && y < box.Ll.Y)
-                return false;
-
-            if (y > box.Ul.Y && y > box.Ur.Y && y > box.Lr.Y && y > box.Ll.Y)
-                return false;
-
-            // Corner case: If the box is a simple line segment, we consider the
-            // point to be contained "in" (or rather, lying on) the line if it
-            // is very close to its projection to the line segment.
-            if ((box.Ul == box.Ur && box.Lr == box.Ll) ||
-                (box.Ul == box.Ll && box.Ur == box.Lr))
+            if (IsScriptInUse(sentenceScript))
             {
-                Point tmp;
-                tmp = ClosestPtOnLine(box.Ul, box.Lr, p);
-                if (p.SquareDistance(tmp) <= 4)
+                for (i = 0; i < NumScriptSlot; i++)
+                    if (_slots[i].Number == sentenceScript && _slots[i].Status != ScriptStatus.Dead && _slots[i].FreezeCount == 0)
+                        return;
+            }
+
+            if (_sentenceNum == 0 || _sentence[_sentenceNum - 1].FreezeCount != 0)
+                return;
+
+            _sentenceNum--;
+            Sentence st = _sentence[_sentenceNum];
+
+            if (st.Preposition != 0 && st.ObjectB == st.ObjectA)
+                return;
+
+            _currentScript = 0xFF;
+            if (sentenceScript != 0)
+            {
+                var data = new int[3] { st.Verb, st.ObjectA, st.ObjectB };
+                RunScript((byte)sentenceScript, false, false, data);
+            }
+        }
+
+        void RunObjectScript(int obj, byte entry, bool freezeResistant, bool recursive, IList<int> vars)
+        {
+            if (obj == 0)
+                return;
+
+            if (!recursive)
+                StopObjectScript((ushort)obj);
+
+            var where = GetWhereIsObject(obj);
+
+            if (where == WhereIsObject.NotFound)
+            {
+                Console.Error.WriteLine("warning: Code for object {0} not in room {1}", obj, _roomResource);
+                return;
+            }
+
+            // Find a free object slot, unless one was specified
+            byte slot = GetScriptSlotIndex();
+
+            ObjectData objFound = null;
+            if (roomData != null)
+            {
+                objFound = (from o in roomData.Objects.Concat(_invData)
+                            where o != null
+                            where o.Number == obj
+                            where o.ScriptOffsets.ContainsKey(entry) || o.ScriptOffsets.ContainsKey(0xFF)
+                            select o).FirstOrDefault();
+            }
+
+            if (objFound == null)
+                return;
+
+            _slots[slot].Number = (ushort)obj;
+            _slots[slot].InventoryEntry = entry;
+            _slots[slot].Offset = (uint)((objFound.ScriptOffsets.ContainsKey(entry) ? objFound.ScriptOffsets[entry] : objFound.ScriptOffsets[0xFF]) - objFound.Script.Offset);
+            _slots[slot].Status = ScriptStatus.Running;
+            _slots[slot].Where = where;
+            _slots[slot].FreezeResistant = freezeResistant;
+            _slots[slot].Recursive = recursive;
+            _slots[slot].FreezeCount = 0;
+
+            InitializeLocals(slot, vars);
+
+            // V0 Ensure we don't try and access objects via index inside the script
+            //_v0ObjectIndex = false;
+            UpdateScriptData(slot);
+            RunScriptNested(slot);
+        }
+
+        void StopObjectScript(ushort script)
+        {
+            if (script == 0)
+                return;
+
+            for (int i = 0; i < NumScriptSlot; i++)
+            {
+                if (script == _slots[i].Number && _slots[i].Status != ScriptStatus.Dead &&
+                    (_slots[i].Where == WhereIsObject.Room || _slots[i].Where == WhereIsObject.Inventory || _slots[i].Where == WhereIsObject.FLObject))
+                {
+                    _slots[i].Number = 0;
+                    _slots[i].Status = ScriptStatus.Dead;
+                    if (_currentScript == i)
+                        _currentScript = 0xFF;
+                }
+            }
+
+            for (int i = 0; i < _numNestedScripts; ++i)
+            {
+                if (_nest[i].Number == script &&
+                    (_nest[i].Where == WhereIsObject.Room || _nest[i].Where == WhereIsObject.Inventory || _nest[i].Where == WhereIsObject.FLObject))
+                {
+                    _nest[i].Number = 0xFF;
+                    _nest[i].Slot = 0xFF;
+                    _nest[i].Where = WhereIsObject.NotFound;
+                }
+            }
+        }
+
+        void FreezeScripts(int flag)
+        {
+            for (int i = 0; i < NumScriptSlot; i++)
+            {
+                if (_currentScript != i && _slots[i].Status != ScriptStatus.Dead && (!_slots[i].FreezeResistant || flag >= 0x80))
+                {
+                    _slots[i].Frozen = true;
+                    _slots[i].FreezeCount++;
+                }
+            }
+
+            for (int i = 0; i < _sentence.Length; i++)
+                _sentence[i].FreezeCount++;
+
+            if (_cutSceneScriptIndex != 0xFF)
+            {
+                _slots[_cutSceneScriptIndex].Frozen = false;
+                _slots[_cutSceneScriptIndex].FreezeCount = 0;
+            }
+        }
+
+        bool IsScriptRunning(int script)
+        {
+            for (int i = 0; i < NumScriptSlot; i++)
+            {
+                var ss = _slots[i];
+                if (ss.Number == script && (ss.Where == WhereIsObject.Global || ss.Where == WhereIsObject.Local) && ss.Status != ScriptStatus.Dead)
                     return true;
             }
-
-            // Finally, fall back to the classic algorithm to compute containment
-            // in a convex polygon: For each (oriented) side of the polygon
-            // (quadrangle in this case), compute whether p is "left" or "right"
-            // from it.
-
-            if (!CompareSlope(box.Ul, box.Ur, p))
-                return false;
-
-            if (!CompareSlope(box.Ur, box.Lr, p))
-                return false;
-
-            if (!CompareSlope(box.Lr, box.Ll, p))
-                return false;
-
-            if (!CompareSlope(box.Ll, box.Ul, p))
-                return false;
-
-            return true;
+            return false;
         }
 
-        static bool CompareSlope(Point p1, Point p2, Point p3)
+        void BeginCutscene(IList<int> args)
         {
-            return (p2.Y - p1.Y) * (p3.X - p1.X) <= (p3.Y - p1.Y) * (p2.X - p1.X);
+            int scr = _currentScript;
+            _slots[scr].CutSceneOverride++;
+
+            ++cutSceneStackPointer;
+            if (cutSceneStackPointer >= MaxCutsceneNum)
+                throw new NotSupportedException("Cutscene stack overflow");
+
+            _cutSceneData[cutSceneStackPointer] = args.Count > 0 ? args[0] : 0;
+            _cutSceneScript[cutSceneStackPointer] = 0;
+            _cutScenePtr[cutSceneStackPointer] = 0;
+
+            _cutSceneScriptIndex = scr;
+            if (_variables[VariableCutSceneStartScript] != 0)
+                RunScript((byte)_variables[VariableCutSceneStartScript], false, false, args);
+            _cutSceneScriptIndex = 0xFF;
         }
 
-        static Point ClosestPtOnLine(Point lineStart, Point lineEnd, Point p)
+        void JumpRelative(bool condition)
         {
-            Point result;
-
-            int lxdiff = lineEnd.X - lineStart.X;
-            int lydiff = lineEnd.Y - lineStart.Y;
-
-            if (lineEnd.X == lineStart.X)
-            {   // Vertical line?
-                result.X = lineStart.X;
-                result.Y = p.Y;
-            }
-            else if (lineEnd.Y == lineStart.Y)
-            {   // Horizontal line?
-                result.X = p.X;
-                result.Y = lineStart.Y;
-            }
-            else
+            var offset = (short)ReadWord();
+            if (!condition)
             {
-                int dist = lxdiff * lxdiff + lydiff * lydiff;
-                int a, b, c;
-                if (Math.Abs(lxdiff) > Math.Abs(lydiff))
-                {
-                    a = lineStart.X * lydiff / lxdiff;
-                    b = p.X * lxdiff / lydiff;
-
-                    c = (a + b - lineStart.Y + p.Y) * lydiff * lxdiff / dist;
-
-                    result.X = (short)c;
-                    result.Y = (short)(c * lydiff / lxdiff - a + lineStart.Y);
-                }
-                else
-                {
-                    a = lineStart.Y * lxdiff / lydiff;
-                    b = p.Y * lydiff / lxdiff;
-
-                    c = (a + b - lineStart.X + p.X) * lydiff * lxdiff / dist;
-
-                    result.X = (short)(c * lxdiff / lydiff - a + lineStart.X);
-                    result.Y = (short)c;
-                }
-            }
-
-            if (Math.Abs(lydiff) < Math.Abs(lxdiff))
-            {
-                if (lxdiff > 0)
-                {
-                    if (result.X < lineStart.X)
-                        result = lineStart;
-                    else if (result.X > lineEnd.X)
-                        result = lineEnd;
-                }
-                else
-                {
-                    if (result.X > lineStart.X)
-                        result = lineStart;
-                    else if (result.X < lineEnd.X)
-                        result = lineEnd;
-                }
-            }
-            else
-            {
-                if (lydiff > 0)
-                {
-                    if (result.Y < lineStart.Y)
-                        result = lineStart;
-                    else if (result.Y > lineEnd.Y)
-                        result = lineEnd;
-                }
-                else
-                {
-                    if (result.Y > lineStart.Y)
-                        result = lineStart;
-                    else if (result.Y < lineEnd.Y)
-                        result = lineEnd;
-                }
-            }
-
-            return result;
-        }
-
-        void DecreaseScriptDelay(int amount)
-        {
-            _talkDelay -= amount;
-            if (_talkDelay < 0) _talkDelay = 0;
-            int i;
-            for (i = 0; i < NumScriptSlot; i++)
-            {
-                if (_slots[i].Status == ScriptStatus.Paused)
-                {
-                    _slots[i].Delay -= amount;
-                    if (_slots[i].Delay < 0)
-                    {
-                        _slots[i].Status = ScriptStatus.Running;
-                        _slots[i].Delay = 0;
-                    }
-                }
+                _currentPos += offset;
+                if (_currentPos < 0)
+                    throw new NotSupportedException("Invalid position in JumpRelative");
             }
         }
 
@@ -4978,190 +3396,216 @@ namespace NScumm.Core
             }
         }
 
-        public void StopTalk()
+        void DecreaseScriptDelay(int amount)
         {
-            //_sound->stopTalkSound();
-
-            _haveMsg = 0;
-            _talkDelay = 0;
-
-            var act = GetTalkingActor();
-            if (act != 0 && act < 0x80)
+            _talkDelay -= amount;
+            if (_talkDelay < 0) _talkDelay = 0;
+            int i;
+            for (i = 0; i < NumScriptSlot; i++)
             {
-                Actor a = _actors[act];
-                if (a.IsInCurrentRoom() && _useTalkAnims)
+                if (_slots[i].Status == ScriptStatus.Paused)
                 {
-                    a.RunActorTalkScript(a.TalkStopFrame);
-                    _useTalkAnims = false;
-                }
-                SetTalkingActor(0xFF);
-            }
-
-            _keepText = false;
-            RestoreCharsetBg();
-        }
-
-        public bool GetClass(int obj, ObjectClass cls)
-        {
-            cls &= (ObjectClass)0x7F;
-
-            // Translate the new (V5) object classes to the old classes
-            // (for those which differ).
-            switch (cls)
-            {
-                case ObjectClass.Untouchable:
-                    cls = (ObjectClass)24;
-                    break;
-
-                case ObjectClass.Player:
-                    cls = (ObjectClass)23;
-                    break;
-
-                case ObjectClass.XFlip:
-                    cls = (ObjectClass)19;
-                    break;
-
-                case ObjectClass.YFlip:
-                    cls = (ObjectClass)18;
-                    break;
-            }
-
-            return (_scumm.ClassData[obj] & (1 << ((int)cls - 1))) != 0;
-        }
-
-        public KeyCode MouseAndKeyboardStat { get; set; }
-
-        void CheckExecVerbs()
-        {
-            if (_userPut <= 0 || MouseAndKeyboardStat == 0)
-                return;
-
-            if ((ScummMouseButtonState)MouseAndKeyboardStat < ScummMouseButtonState.MaxKey)
-            {
-                // Check keypresses
-                var vs = (from verb in _verbs.Skip(1)
-                          where verb.VerbId != 0 && verb.SaveId == 0 && verb.CurMode == 1
-                          where verb.Key == (byte)MouseAndKeyboardStat
-                          select verb).FirstOrDefault();
-                if (vs != null)
-                {
-                    // Trigger verb as if the user clicked it
-                    RunInputScript(ClickArea.Verb, (KeyCode)vs.VerbId, 1);
-                    return;
-                }
-
-                // Generic keyboard input
-                RunInputScript(ClickArea.Key, MouseAndKeyboardStat, 1);
-            }
-            else if ((((ScummMouseButtonState)MouseAndKeyboardStat) & ScummMouseButtonState.MouseMask) != 0)
-            {
-                var code = MouseAndKeyboardStat.HasFlag(ScummMouseButtonState.LeftClick) ? (byte)1 : (byte)2;
-                var zone = FindVirtScreen(_mousePos.Y);
-
-                if (zone == null)
-                    return;
-
-                var over = FindVerbAtPos(_mousePos.X, _mousePos.Y);
-
-                if (over != 0)
-                {
-                    // Verb was clicked
-                    RunInputScript(ClickArea.Verb, (KeyCode)_verbs[over].VerbId, code);
-                }
-                else
-                {
-                    // Scene was clicked
-                    var area = zone == MainVirtScreen ? ClickArea.Scene : ClickArea.Verb;
-                    RunInputScript(area, 0, code);
-                }
-            }
-        }
-
-        void RunInputScript(ClickArea clickArea, KeyCode code, int mode)
-        {
-            var verbScript = _variables[VariableVerbScript];
-
-            if (verbScript != 0)
-            {
-                RunScript((byte)verbScript, false, false, new int[] { (int)clickArea, (int)code, mode });
-            }
-        }
-
-        void UpdateObjectStates()
-        {
-            for (int i = 1; i < _numLocalObjects; i++)
-            {
-                if (Objects[i].Number > 0)
-                    Objects[i].State = GetState(Objects[i].Number);
-            }
-        }
-
-        byte GetState(int obj)
-        {
-            ScummHelper.AssertRange(0, obj, _numGlobalObjects - 1, "object");
-            return _scumm.ObjectStateTable[obj];
-        }
-
-        void GetObjectOwner()
-        {
-            GetResult();
-            SetResult(GetOwner(GetVarOrDirectWord(OpCodeParameter.Param1)));
-        }
-
-        public bool GetObjectOrActorXY(int obj, out int x, out int y)
-        {
-            Actor act;
-            x = 0;
-            y = 0;
-            if (ObjIsActor(obj))
-            {
-                act = _actors [ObjToActor(obj)];
-                if (act != null && act.IsInCurrentRoom())
-                {
-                    x = act.Position.X;
-                    y = act.Position.Y;
-                    return true;
-                }
-                return false;
-            }
-
-            switch (GetWhereIsObject(obj))
-            {
-                case WhereIsObject.NotFound:
-                    return false;
-                case WhereIsObject.Inventory:
-                    if (ObjIsActor(_scumm.ObjectOwnerTable[obj]))
+                    _slots[i].Delay -= amount;
+                    if (_slots[i].Delay < 0)
                     {
-                        act = _actors[_scumm.ObjectOwnerTable[obj]];
-                        if (act != null && act.IsInCurrentRoom())
-                        {
-                            x = act.Position.X;
-                            y = act.Position.Y;
-                            return true;
-                        }
+                        _slots[i].Status = ScriptStatus.Running;
+                        _slots[i].Delay = 0;
                     }
-                    return false;
+                }
+            }
+        }
+
+        int GetVarOrDirectWord(OpCodeParameter param)
+        {
+            if (((OpCodeParameter)_opCode).HasFlag(param))
+                return GetVar();
+            return ReadWordSigned();
+        }
+
+        int GetVarOrDirectByte(OpCodeParameter param)
+        {
+            if (((OpCodeParameter)_opCode).HasFlag(param))
+                return GetVar();
+            return ReadByte();
+        }
+
+        int GetVar()
+        {
+            return ReadVariable(ReadWord());
+        }
+
+        short ReadWordSigned()
+        {
+            return (short)ReadWord();
+        }
+
+        public TimeSpan Loop(TimeSpan tsDelta)
+        {
+            var delta = (int)tsDelta.TotalMilliseconds;
+            if (delta == 0) delta = 4;
+            _variables[VariableTimer1] += delta;
+            _variables[VariableTimer2] += delta;
+            _variables[VariableTimer3] += delta;
+
+            if (delta > 15)
+                delta = 15;
+
+            DecreaseScriptDelay(delta);
+
+            _talkDelay -= delta;
+            if (_talkDelay < 0)
+            {
+                _talkDelay = 0;
             }
 
-            int dir;
-            GetObjectXYPos(obj, out x, out y, out dir);
-            return true;
+            ProcessInput();
+
+            UpdateVariables();
+
+            SaveLoad();
+
+            if (_completeScreenRedraw)
+            {
+                _charset.HasMask = false;
+
+                for (int i = 0; i < _verbs.Length; i++)
+                {
+                    DrawVerb(i, 0);
+                }
+
+                HandleMouseOver();
+
+                _completeScreenRedraw = false;
+                _fullRedraw = true;
+            }
+
+            RunAllScripts();
+            CheckExecVerbs();
+            CheckAndRunSentenceScript();
+
+            if (HastToQuit)
+                return TimeSpan.Zero;
+
+            // HACK: If a load was requested, immediately perform it. This avoids
+            // drawing the current room right after the load is request but before
+            // it is performed. That was annoying esp. if you loaded while a SMUSH
+            // cutscene was playing.
+            //if (_saveLoadFlag && _saveLoadFlag != 1) {
+            //    goto load_game;
+            //}
+
+            if (_currentRoom == 0)
+            {
+                Charset();
+                DrawDirtyScreenParts();
+            }
+            else
+            {
+                WalkActors();
+                MoveCamera();
+                UpdateObjectStates();
+                Charset();
+
+                HandleDrawing();
+
+                HandleActors();
+
+                _fullRedraw = false;
+
+                HandleEffects();
+
+                //if (VAR_MAIN_SCRIPT != 0xFF && VAR(VAR_MAIN_SCRIPT) != 0) {
+                //    runScript(VAR(VAR_MAIN_SCRIPT), 0, 0, 0);
+                //}
+
+                // Handle mouse over effects (for verbs).
+                HandleMouseOver();
+
+                // Render everything to the screen.
+                UpdatePalette();
+                DrawDirtyScreenParts();
+
+                // FIXME / TODO: Try to move the following to scummLoop_handleSound or
+                // scummLoop_handleActors (but watch out for regressions!)
+                //PlayActorSounds();
+            }
+
+            //HandleSound();
+
+            _camera.Last = _camera.Cur;
+
+            //_res->increaseExpireCounter();
+
+            AnimateCursor();
+
+            // show or hide mouse
+            _gfxManager.ShowCursor(_cursor.State > 0);
+
+            _variables[VariableTimer] = (int)tsDelta.TotalSeconds * 60;
+            _variables[VariableTimerTotal] += (int)tsDelta.TotalSeconds * 60;
+
+            return GetTimeToWait();
         }
 
-        int ObjToActor(int obj)
+        #endregion Script Members
+
+        #region Camera Members
+        void PanCameraTo(int x)
         {
-            return obj;
+            _camera.Dest.X = (short)x;
+            _camera.Mode = CameraMode.Panning;
+            _camera.MovingToActor = false;
         }
 
-        bool ObjIsActor(int obj)
+        void SetCameraAt(short posX, short posY)
         {
-            return obj < NumActors;
+            if (_camera.Mode != CameraMode.FollowActor || Math.Abs(posX - _camera.Cur.X) > (ScreenWidth / 2))
+            {
+                _camera.Cur.X = posX;
+            }
+            _camera.Dest.X = posX;
+
+            if (_camera.Cur.X < _variables[VariableCameraMinX])
+                _camera.Cur.X = (short)_variables[VariableCameraMinX];
+
+            if (_camera.Cur.X > _variables[VariableCameraMaxX])
+                _camera.Cur.X = (short)_variables[VariableCameraMaxX];
+
+            if (_variables[VariableScrollScript] != 0)
+            {
+                _variables[VariableCameraPosX] = _camera.Cur.X;
+                RunScript((byte)_variables[VariableScrollScript], false, false, new int[0]);
+            }
+
+            // If the camera moved and text is visible, remove it
+            if (_camera.Cur.X != _camera.Last.X && _charset.HasMask)
+                StopTalk();
         }
 
-        void UpdateVariables()
+        void SetCameraFollows(Actor actor, bool setCamera)
         {
-            _variables[VariableCameraPosX] = _camera.Cur.X;
-            _variables[VariableHaveMessage] = _haveMsg;
+            _camera.Mode = CameraMode.FollowActor;
+            _camera.Follows = actor.Number;
+
+            if (!actor.IsInCurrentRoom())
+            {
+                StartScene(actor.Room);
+                _camera.Mode = CameraMode.FollowActor;
+                _camera.Cur.X = actor.Position.X;
+                SetCameraAt(_camera.Cur.X, 0);
+            }
+
+            int t = actor.Position.X / 8 - _screenStartStrip;
+
+            if (t < _camera.LeftTrigger || t > _camera.RightTrigger || setCamera)
+                SetCameraAt(actor.Position.X, 0);
+
+            for (int i = 1; i < _actors.Length; i++)
+            {
+                if (_actors[i].IsInCurrentRoom())
+                    _actors[i].NeedRedraw = true;
+            }
+            RunInventoryScript(0);
         }
 
         void MoveCamera()
@@ -5276,40 +3720,131 @@ namespace NScumm.Core
 
             _mainVirtScreen.XStart = (ushort)screenLeft;
         }
+        #endregion
 
-        byte[] GetObjectOrActorName(int num)
+        #region Message Methods
+        byte[] ReadCharacters()
         {
-            byte[] name;
-            if (num < _actors.Length)
+            var sb = new List<byte>();
+            var character = ReadByte();
+            while (character != 0)
             {
-                name = _actors[num].Name;
+                sb.Add(character);
+                if (character == 0xFF)
+                {
+                    character = ReadByte();
+                    sb.Add(character);
+                    if (character != 1 && character != 2 && character != 3 && character != 8)
+                    {
+                        character = ReadByte();
+                        sb.Add(character);
+                        character = ReadByte();
+                        sb.Add(character);
+                    }
+                }
+                character = ReadByte();
             }
-            else if (_newNames.ContainsKey(num))
-            {
-                name = _newNames[num];
-            }
-            else
-            {
-                var obj = (from o in _invData
-                           where o != null && o.Number == num
-                           select o).FirstOrDefault();
+            return sb.ToArray();
+        }
 
-                if (obj == null)
+        void Print()
+        {
+            _actorToPrintStrFor = GetVarOrDirectByte(OpCodeParameter.Param1);
+            DecodeParseString();
+        }
+
+        void DecodeParseString()
+        {
+            int textSlot;
+            switch (_actorToPrintStrFor)
+            {
+                case 252:
+                    textSlot = 3;
+                    break;
+
+                    case 253:
+                    textSlot = 2;
+                    break;
+
+                    case 254:
+                    textSlot = 1;
+                    break;
+
+                    default:
+                    textSlot = 0;
+                    break;
+            }
+
+            _string[textSlot].LoadDefault();
+            while ((_opCode = ReadByte()) != 0xFF)
+            {
+                switch (_opCode & 0xF)
                 {
-                    obj = (from o in Objects
-                           where o.Number == num
-                           select o).FirstOrDefault();
-                }
-                if (obj != null && obj.Name != null)
-                {
-                    name = obj.Name;
-                }
-                else
-                {
-                    name = new byte[] { (byte)'F', (byte)'o', (byte)'o' };
+                    case 0:     // SO_AT
+                        _string[textSlot].XPos = (short)GetVarOrDirectWord(OpCodeParameter.Param1);
+                        _string[textSlot].YPos = (short)GetVarOrDirectWord(OpCodeParameter.Param2);
+                        _string[textSlot].Overhead = false;
+                        break;
+
+                        case 1:     // SO_COLOR
+                        _string[textSlot].Color = (byte)GetVarOrDirectByte(OpCodeParameter.Param1);
+                        break;
+
+                        case 2:     // SO_CLIPPED
+                        _string[textSlot].Right = (short)GetVarOrDirectWord(OpCodeParameter.Param1);
+                        break;
+
+                        case 4:     // SO_CENTER
+                        _string[textSlot].Center = true;
+                        _string[textSlot].Overhead = false;
+                        break;
+
+                        case 6:     // SO_LEFT
+                    {
+                        _string[textSlot].Center = false;
+                        _string[textSlot].Overhead = false;
+                    }
+                        break;
+
+                        case 7:     // SO_OVERHEAD
+                        _string[textSlot].Overhead = true;
+                        break;
+
+                        case 15:
+                    {   // SO_TEXTSTRING
+                        var tmp = ReadCharacters();
+                        PrintString(textSlot, tmp);
+                    }
+                        return;
+
+                        default:
+                        throw new NotImplementedException();
                 }
             }
-            return name;
+
+            _string[textSlot].SaveDefault();
+        }
+
+        void PrintString(int textSlot, byte[] msg)
+        {
+            switch (textSlot)
+            {
+                case 0:
+                    ActorTalk(msg);
+                    break;
+
+                    case 1:
+                    DrawString(1, msg);
+                    break;
+                    //case 2:
+                    //    debugMessage(msg);
+                    //    break;
+                    //case 3:
+                    //    showMessageDialog(msg);
+                    //    break;
+                    default:
+                    throw new NotImplementedException();
+            }
         }
 
         static IList<char> ConvertMessage(IList<char> msg, int i, string text)
@@ -5321,174 +3856,6 @@ namespace NScumm.Core
             Array.Copy(src, i + 2, dst, i - 1 + text.Length, src.Length - i - 3);
             msg = dst;
             return msg;
-        }
-
-        void RestoreBackground(Rect rect, byte backColor)
-        {
-            VirtScreen vs;
-
-            if (rect.Top < 0)
-                rect.Top = 0;
-            if (rect.Left >= rect.Right || rect.Top >= rect.Bottom)
-                return;
-
-            if ((vs = FindVirtScreen(rect.Top)) == null)
-                return;
-
-            if (rect.Left > vs.Width)
-                return;
-
-            // Convert 'rect' to local (virtual screen) coordinates
-            rect.Top -= vs.TopLine;
-            rect.Bottom -= vs.TopLine;
-
-            rect.Clip(vs.Width, vs.Height);
-
-            int height = rect.Height;
-            int width = rect.Width;
-
-            MarkRectAsDirty(vs, rect.Left, rect.Right, rect.Top, rect.Bottom, UsageBitRestored);
-
-            var screenBuf = new PixelNavigator(vs.Surfaces[0]);
-            screenBuf.GoTo(vs.XStart + rect.Left, rect.Top);
-
-            if (height == 0)
-                return;
-
-            if (vs.HasTwoBuffers && _currentRoom != 0 && IsLightOn())
-            {
-                var back = new PixelNavigator(vs.Surfaces[1]);
-                back.GoTo(vs.XStart + rect.Left, rect.Top);
-                Blit(screenBuf, back, width, height);
-                if (vs == MainVirtScreen && _charset.HasMask)
-                {
-                    var mask = new PixelNavigator(_textSurface);
-                    mask.GoTo(rect.Left, rect.Top - ScreenTop);
-                    Fill(mask, CharsetMaskTransparency, width * _textSurfaceMultiplier, height * _textSurfaceMultiplier);
-                }
-            }
-            else
-            {
-                Fill(screenBuf, backColor, width, height);
-            }
-        }
-
-        void DrawString(int a, byte[] msg)
-        {
-            var buf = new byte[270];
-            int i, c;
-            int fontHeight;
-            uint color;
-
-            ConvertMessageToString(msg, buf, 0);
-
-            _charset.Top = _string[a].YPos + ScreenTop;
-            _charset.StartLeft = _charset.Left = _string[a].XPos;
-            _charset.Right = _string[a].Right;
-            _charset.Center = _string[a].Center;
-            _charset.SetColor(_string[a].Color);
-            _charset.DisableOffsX = _charset.FirstChar = true;
-            _charset.SetCurID(_string[a].Charset);
-
-            fontHeight = _charset.GetFontHeight();
-
-            // trim from the right
-            int tmpPos = 0;
-            int spacePos = 0;
-            while (buf[tmpPos] != 0)
-            {
-                if (buf[tmpPos] == ' ')
-                {
-                    if (spacePos == 0)
-                        spacePos = tmpPos;
-                }
-                else
-                {
-                    spacePos = 0;
-                }
-                tmpPos++;
-            }
-            if (spacePos != 0)
-            {
-                buf[spacePos] = 0;
-            }
-
-            if (_charset.Center)
-            {
-                _charset.Left -= _charset.GetStringWidth(a, buf, 0) / 2;
-            }
-
-            if (buf[0] == 0)
-            {
-                _charset.Str.Left = _charset.Left;
-                _charset.Str.Top = _charset.Top;
-                _charset.Str.Right = _charset.Left;
-                _charset.Str.Bottom = _charset.Top;
-            }
-
-            for (i = 0; (c = buf[i++]) != 0; )
-            {
-                if (c == 0xFF || (c == 0xFE))
-                {
-                    c = buf[i++];
-                    switch (c)
-                    {
-                        case 9:
-                        case 10:
-                        case 13:
-                        case 14:
-                            i += 2;
-                            break;
-
-                        case 1:
-                        case 8:
-                            if (_charset.Center)
-                            {
-                                _charset.Left = _charset.StartLeft - _charset.GetStringWidth(a, buf, i);
-                            }
-                            else
-                            {
-                                _charset.Left = _charset.StartLeft;
-                            }
-                            if (_string[0].Height != 0)
-                            {
-                                _nextTop += _string[0].Height;
-                            }
-                            else
-                            {
-                                _charset.Top += fontHeight;
-                            }
-                            break;
-
-                        case 12:
-                            color = (uint)(buf[i] + (buf[i + 1] << 8));
-                            i += 2;
-                            if (color == 0xFF)
-                                _charset.SetColor(_string[a].Color);
-                            else
-                                _charset.SetColor((byte)color);
-                            break;
-                    }
-                }
-                else
-                {
-                    //if ((c & 0x80) != 0 && _useCJKMode)
-                    //{
-                    //    if (checkSJISCode(c))
-                    //        c += buf[i++] * 256;
-                    //}
-                    _charset.PrintChar(c, true);
-                    _charset.BlitAlso = false;
-                }
-            }
-
-            if (a == 0)
-            {
-                _nextLeft = _charset.Left;
-                _nextTop = _charset.Top;
-            }
-
-            _string[a].XPos = (short)_charset.Str.Right;
         }
 
         int ConvertMessageToString(byte[] src, byte[] dst, int dstPos)
@@ -5618,84 +3985,430 @@ namespace NScumm.Core
             return 0;
         }
 
-        void DrawVerbBitmap(int verb, int x, int y)
+        #endregion Message Methods
+
+        #region Box Members
+
+        void CreateBoxMatrix()
         {
-            var vst=_verbs[verb];
-            var vs=FindVirtScreen(y);
+            // The total number of boxes
+            int num = GetNumBoxes();
 
-            if(vs==null) return;
+            // calculate shortest paths
+            var itineraryMatrix = CalcItineraryMatrix(num);
 
-            Gdi.IsZBufferEnabled=false;
+            // "Compress" the distance matrix into the box matrix format used
+            // by the engine. The format is like this:
+            // For each box (from 0 to num) there is first a byte with value 0xFF,
+            // followed by an arbitrary number of byte triples; the end is marked
+            // again by the lead 0xFF for the next "row". The meaning of the
+            // byte triples is as follows: the first two bytes define a range
+            // of box numbers (e.g. 7-11), while the third byte defines an
+            // itineray box. Assuming we are in the 5th "row" and encounter
+            // the triplet 7,11,15: this means to get from box 5 to any of
+            // the boxes 7,8,9,10,11 the shortest way is to go via box 15.
+            // See also getNextBox.
 
-            var hasTwoBufs = vs.HasTwoBuffers;
-            //vs.HasTwoBuffers=false;
+            var boxMatrix = new List<byte>();
 
-            int xStrip=x/8;
-            int yDiff=y-vs.TopLine;
-
-            for (int i = 0; i < vst.ImageWidth/8; i++)
+            for (byte i = 0; i < num; i++)
             {
-                Gdi.DrawBitmap(vst.Image,vs,xStrip+i,yDiff,
-                                vst.ImageWidth,vst.ImageHeight,
-                                i,1,DrawBitmaps.AllowMaskOr| DrawBitmaps.ObjectMode);
+                boxMatrix.Add(0xFF);
+                for (byte j = 0; j < num; j++)
+                {
+                    byte itinerary = itineraryMatrix[i, j];
+                    if (itinerary != Actor.InvalidBox)
+                    {
+                        boxMatrix.Add(j);
+                        while (j < num - 1 && itinerary == itineraryMatrix[i, (j + 1)])
+                            j++;
+                        boxMatrix.Add(j);
+                        boxMatrix.Add(itinerary);
+                    }
+                }
             }
+            boxMatrix.Add(0xFF);
 
-            vst.CurRect.Right=vst.CurRect.Left+vst.ImageWidth;
-            vst.CurRect.Bottom=vst.CurRect.Top+vst.ImageHeight;
-            vst.OldRect=vst.CurRect;
-        
-            Gdi.IsZBufferEnabled=true;
-            //vs.HasTwoBuffers=hasTwoBufs;
+            _boxMatrix.Clear();
+            _boxMatrix.AddRange(boxMatrix);
         }
 
-        bool IsScriptInUse(int script)
+        internal BoxFlags GetBoxFlags(byte boxNum)
         {
-            for (int i = 0; i < NumScriptSlot; i++)
-                if (_slots[i].Number == script)
+            Box box = GetBoxBase(boxNum);
+            if (box == null)
+                return 0;
+            return box.Flags;
+        }
+
+        internal byte GetBoxMask(byte boxNum)
+        {
+            Box box = GetBoxBase(boxNum);
+            if (box == null)
+                return 0;
+            return box.Mask;
+        }
+
+        internal int GetNumBoxes()
+        {
+            return _boxes.Length;
+        }
+
+        internal BoxCoords GetBoxCoordinates(int boxnum)
+        {
+            var bp = GetBoxBase(boxnum);
+            var box = new BoxCoords();
+
+            box.Ul.X = bp.Ulx;
+            box.Ul.Y = bp.Uly;
+            box.Ur.X = bp.Urx;
+            box.Ur.Y = bp.Ury;
+
+            box.Ll.X = bp.Llx;
+            box.Ll.Y = bp.Lly;
+            box.Lr.X = bp.Lrx;
+            box.Lr.Y = bp.Lry;
+
+            return box;
+        }
+
+        Box GetBoxBase(int boxnum)
+        {
+            if (boxnum == 255)
+                return null;
+
+            // As a workaround, we simply use the last box if the last+1 box is requested.
+            // Note that this may cause different behavior than the original game
+            // engine exhibited! To faithfully reproduce the behavior of the original
+            // engine, we would have to know the data coming *after* the walkbox table.
+            if (_boxes.Length == boxnum)
+                boxnum--;
+            return _boxes[boxnum];
+        }
+
+        /// <summary>
+        /// Compute if there is a way that connects box 'from' with box 'to'.
+        /// </summary>
+        /// <param name="from"></param>
+        /// <param name="to"></param>
+        /// <returns>
+        /// The number of a box adjacent to 'from' that is the next on the
+        /// way to 'to' (this can be 'to' itself or a third box).
+        /// If there is no connection -1 is return.
+        /// </returns>
+        internal int GetNextBox(byte from, byte to)
+        {
+            byte i;
+            int numOfBoxes = GetNumBoxes();
+            int dest = -1;
+
+            if (from == to)
+                return to;
+
+            if (to == Actor.InvalidBox)
+                return -1;
+
+            if (from == Actor.InvalidBox)
+                return to;
+
+            if (from >= numOfBoxes) throw new ArgumentOutOfRangeException("from");
+            if (to >= numOfBoxes) throw new ArgumentOutOfRangeException("to");
+
+            var boxm = _boxMatrix;
+
+            // WORKAROUND #1: It seems that in some cases, the box matrix is corrupt
+            // (more precisely, is too short) in the datafiles already. In
+            // particular this seems to be the case in room 46 of Indy3 EGA (see
+            // also bug #770690). This didn't cause problems in the original
+            // engine, because there, the memory layout is different. After the
+            // walkbox would follow the rest of the room file, thus the program
+            // always behaved the same (and by chance, correct). Not so for us,
+            // since random data may follow after the resource in ScummVM.
+            //
+            // As a workaround, we add a check for the end of the box matrix
+            // resource, and abort the search once we reach the end.
+
+            int boxmIndex = _boxMatrix[0] == 0xFF ? 1 : 0;
+            // Skip up to the matrix data for box 'from'
+            for (i = 0; i < from && boxmIndex < boxm.Count; i++)
+            {
+                while (boxmIndex < boxm.Count && boxm[boxmIndex] != 0xFF)
+                    boxmIndex += 3;
+                boxmIndex++;
+            }
+
+            // Now search for the entry for box 'to'
+            while (boxmIndex < boxm.Count && boxm[boxmIndex] != 0xFF)
+            {
+                if (boxm[boxmIndex] <= to && to <= boxm[boxmIndex + 1])
+                    dest = (sbyte)boxm[boxmIndex + 2];
+                boxmIndex += 3;
+            }
+
+            //if (boxm >= boxm.Count)
+            //    debug(0, "The box matrix apparently is truncated (room %d)", _roomResource);
+
+            return dest;
+        }
+
+        internal bool CheckXYInBoxBounds(int boxnum, short x, short y)
+        {
+            // Since this method is called by many other methods that take params
+            // from e.g. script opcodes, but do not validate the boxnum, we
+            // make a check here to filter out invalid boxes.
+            // See also bug #1599113.
+            if (boxnum < 0 || boxnum == Actor.InvalidBox)
+                return false;
+
+            BoxCoords box = GetBoxCoordinates(boxnum);
+            var p = new Point(x, y);
+
+            // Quick check: If the x (resp. y) coordinate of the point is
+            // strictly smaller (bigger) than the x (y) coordinates of all
+            // corners of the quadrangle, then it certainly is *not* contained
+            // inside the quadrangle.
+            if (x < box.Ul.X && x < box.Ur.X && x < box.Lr.X && x < box.Ll.X)
+                return false;
+
+            if (x > box.Ul.X && x > box.Ur.X && x > box.Lr.X && x > box.Ll.X)
+                return false;
+
+            if (y < box.Ul.Y && y < box.Ur.Y && y < box.Lr.Y && y < box.Ll.Y)
+                return false;
+
+            if (y > box.Ul.Y && y > box.Ur.Y && y > box.Lr.Y && y > box.Ll.Y)
+                return false;
+
+            // Corner case: If the box is a simple line segment, we consider the
+            // point to be contained "in" (or rather, lying on) the line if it
+            // is very close to its projection to the line segment.
+            if ((box.Ul == box.Ur && box.Lr == box.Ll) ||
+                (box.Ul == box.Ll && box.Ur == box.Lr))
+            {
+                Point tmp;
+                tmp = ScummMath.ClosestPtOnLine(box.Ul, box.Lr, p);
+                if (p.SquareDistance(tmp) <= 4)
                     return true;
+            }
+
+            // Finally, fall back to the classic algorithm to compute containment
+            // in a convex polygon: For each (oriented) side of the polygon
+            // (quadrangle in this case), compute whether p is "left" or "right"
+            // from it.
+
+            if (!ScummMath.CompareSlope(box.Ul, box.Ur, p))
+                return false;
+
+            if (!ScummMath.CompareSlope(box.Ur, box.Lr, p))
+                return false;
+
+            if (!ScummMath.CompareSlope(box.Lr, box.Ll, p))
+                return false;
+
+            if (!ScummMath.CompareSlope(box.Ll, box.Ul, p))
+                return false;
+
+            return true;
+        }
+
+        byte[,] CalcItineraryMatrix(int num)
+        {
+            const byte boxSize = 64;
+
+            // Allocate the adjacent & itinerary matrices
+            var itineraryMatrix = new byte[boxSize, boxSize];
+            var adjacentMatrix = new byte[boxSize, boxSize];
+
+            // Initialize the adjacent matrix: each box has distance 0 to itself,
+            // and distance 1 to its direct neighbors. Initially, it has distance
+            // 255 (= infinity) to all other boxes.
+            for (byte i = 0; i < num; i++)
+            {
+                for (byte j = 0; j < num; j++)
+                {
+                    if (i == j)
+                    {
+                        adjacentMatrix[i, j] = 0;
+                        itineraryMatrix[i, j] = j;
+                    }
+                    else if (AreBoxesNeighbors(i, j))
+                    {
+                        adjacentMatrix[i, j] = 1;
+                        itineraryMatrix[i, j] = j;
+                    }
+                    else
+                    {
+                        adjacentMatrix[i, j] = 255;
+                        itineraryMatrix[i, j] = Actor.InvalidBox;
+                    }
+                }
+            }
+
+            // Compute the shortest routes between boxes via Kleene's algorithm.
+            // The original code used some kind of mangled Dijkstra's algorithm;
+            // while that might in theory be slightly faster, it was
+            // a) extremly obfuscated
+            // b) incorrect: it didn't always find the shortest paths
+            // c) not any faster in reality for our sparse & small adjacent matrices
+            for (byte k = 0; k < num; k++)
+            {
+                for (byte i = 0; i < num; i++)
+                {
+                    for (byte j = 0; j < num; j++)
+                    {
+                        if (i == j)
+                            continue;
+                        byte distIK = adjacentMatrix[i, k];
+                        byte distKJ = adjacentMatrix[k, j];
+                        if (adjacentMatrix[i, j] > distIK + distKJ)
+                        {
+                            adjacentMatrix[i, j] = (byte)(distIK + distKJ);
+                            itineraryMatrix[i, j] = itineraryMatrix[i, k];
+                        }
+                    }
+                }
+            }
+
+            return itineraryMatrix;
+        }
+
+
+        /// <summary>
+        /// Check if two boxes are neighbors.
+        /// </summary>
+        /// <param name="box1nr"></param>
+        /// <param name="box2nr"></param>
+        /// <returns></returns>
+        bool AreBoxesNeighbors(byte box1nr, byte box2nr)
+        {
+            Point tmp;
+
+            if (GetBoxFlags(box1nr).HasFlag(BoxFlags.Invisible) || GetBoxFlags(box2nr).HasFlag(BoxFlags.Invisible))
+                return false;
+
+            //System.Diagnostics.Debug.Assert(_game.version >= 3);
+            var box2 = GetBoxCoordinates(box1nr);
+            var box = GetBoxCoordinates(box2nr);
+
+            // Roughly, the idea of this algorithm is to search for sies of the given
+            // boxes that touch each other.
+            // In order to keep te code simple, we only match the upper sides;
+            // then, we "rotate" the box coordinates four times each, for a total
+            // of 16 comparisions.
+            for (int j = 0; j < 4; j++)
+            {
+                for (int k = 0; k < 4; k++)
+                {
+                    // Are the "upper" sides of the boxes on a single vertical line
+                    // (i.e. all share one x value) ?
+                    if (box2.Ur.X == box2.Ul.X && box.Ul.X == box2.Ul.X && box.Ur.X == box2.Ul.X)
+                    {
+                        bool swappedBox2 = false, swappedBox1 = false;
+                        if (box2.Ur.Y < box2.Ul.Y)
+                        {
+                            swappedBox2 = true;
+                            ScummHelper.Swap(ref box2.Ur.Y, ref box2.Ul.Y);
+                        }
+                        if (box.Ur.Y < box.Ul.Y)
+                        {
+                            swappedBox1 = true;
+                            ScummHelper.Swap(ref box.Ur.Y, ref box.Ul.Y);
+                        }
+                        if (box.Ur.Y < box2.Ul.Y ||
+                            box.Ul.Y > box2.Ur.Y ||
+                            ((box.Ul.Y == box2.Ur.Y ||
+                          box.Ur.Y == box2.Ul.Y) && box2.Ur.Y != box2.Ul.Y && box.Ul.Y != box.Ur.Y))
+                        {
+                        }
+                        else
+                        {
+                            return true;
+                        }
+
+                        // Swap back if necessary
+                        if (swappedBox2)
+                        {
+                            ScummHelper.Swap(ref box2.Ur.Y, ref box2.Ul.Y);
+                        }
+                        if (swappedBox1)
+                        {
+                            ScummHelper.Swap(ref box.Ur.Y, ref box.Ul.Y);
+                        }
+                    }
+
+                    // Are the "upper" sides of the boxes on a single horizontal line
+                    // (i.e. all share one y value) ?
+                    if (box2.Ur.Y == box2.Ul.Y && box.Ul.Y == box2.Ul.Y && box.Ur.Y == box2.Ul.Y)
+                    {
+                        var swappedBox2 = false;
+                        var swappedBox1 = false;
+                        if (box2.Ur.X < box2.Ul.X)
+                        {
+                            swappedBox2 = true;
+                            ScummHelper.Swap(ref box2.Ur.X, ref box2.Ul.X);
+                        }
+                        if (box.Ur.X < box.Ul.X)
+                        {
+                            swappedBox1 = true;
+                            ScummHelper.Swap(ref box.Ur.X, ref box.Ul.X);
+                        }
+                        if (box.Ur.X < box2.Ul.X ||
+                            box.Ul.X > box2.Ur.X ||
+                            ((box.Ul.X == box2.Ur.X ||
+                          box.Ur.X == box2.Ul.X) && box2.Ur.X != box2.Ul.X && box.Ul.X != box.Ur.X))
+                        {
+
+                        }
+                        else
+                        {
+                            return true;
+                        }
+
+                        // Swap back if necessary
+                        if (swappedBox2)
+                        {
+                            ScummHelper.Swap(ref box2.Ur.X, ref box2.Ul.X);
+                        }
+                        if (swappedBox1)
+                        {
+                            ScummHelper.Swap(ref box.Ur.X, ref box.Ul.X);
+                        }
+                    }
+
+                    // "Rotate" the box coordinates
+                    tmp = box2.Ul;
+                    box2.Ul = box2.Ur;
+                    box2.Ur = box2.Lr;
+                    box2.Lr = box2.Ll;
+                    box2.Ll = tmp;
+                }
+
+                // "Rotate" the box coordinates
+                tmp = box.Ul;
+                box.Ul = box.Ur;
+                box.Ur = box.Lr;
+                box.Lr = box.Ll;
+                box.Ll = tmp;
+            }
+
             return false;
         }
 
-        void CheckAndRunSentenceScript()
+        void SetBoxScale(int box, int scale)
         {
-            int i;
-            int sentenceScript;
-
-            sentenceScript = _variables[VariableSentenceScript];
-
-            if (IsScriptInUse(sentenceScript))
-            {
-                for (i = 0; i < NumScriptSlot; i++)
-                    if (_slots[i].Number == sentenceScript && _slots[i].Status != ScriptStatus.Dead && _slots[i].FreezeCount == 0)
-                        return;
-            }
-
-            if (_sentenceNum == 0 || _sentence[_sentenceNum - 1].FreezeCount != 0)
-                return;
-
-            _sentenceNum--;
-            Sentence st = _sentence[_sentenceNum];
-
-            if (st.Preposition != 0 && st.ObjectB == st.ObjectA)
-                return;
-
-            _currentScript = 0xFF;
-            if (sentenceScript != 0)
-            {
-                var data = new int[3] { st.Verb, st.ObjectA, st.ObjectB };
-                RunScript((byte)sentenceScript, false, false, data);
-            }
+            var b = GetBoxBase(box);
+            b.Scale = (ushort)scale;
         }
 
-        public LightModes GetCurrentLights()
+        void SetBoxFlags(int box, int val)
         {
-            //if (_game.version >= 6)
-            //    return LIGHTMODE_room_lights_on | LIGHTMODE_actor_use_colors;
-            //else
-            return (LightModes)_variables[VariableCurrentLights];
+            var b = GetBoxBase(box);
+            if (b == null)
+                return;
+            b.Flags = (BoxFlags)val;
         }
 
-        #endregion Misc Methods
+        #endregion Box Members
 
         #region Cursor Members
 
@@ -5862,20 +4575,349 @@ namespace NScumm.Core
 
         #endregion Scale Members
 
-        public bool IsLightOn()
+        #region Effects Methods
+        void UnkScreenEffect6()
+        {
+            DissolveEffect(8, 4);
+        }
+
+        void FadeIn(byte effect)
+        {
+            if (_disableFadeInEffect)
+            {
+                // fadeIn() calls can be disabled in TheDig after a SMUSH movie
+                // has been played. Like the original interpreter, we introduce
+                // an extra flag to handle 
+                _disableFadeInEffect = false;
+                _doEffect = false;
+                _screenEffectFlag = true;
+                return;
+            }
+
+            UpdatePalette();
+
+            switch (effect)
+            {
+                case 0:
+                    // seems to do nothing
+                    break;
+
+                    case 1:
+                    case 2:
+                    case 3:
+                    case 4:
+                    case 5:
+                    case 6:
+                    // Some of the transition effects won't work properly unless
+                    // the screen is marked as clean first. At first I thought I
+                    // could safely do this every time fadeIn() was called, but
+                    // that broke the FOA intro. Probably other things as well.
+                    //
+                    // Hopefully it's safe to do it at this point, at least.
+                    MainVirtScreen.SetDirtyRange(0, 0);
+                    //TransitionEffect(effect - 1);
+                    //throw new NotImplementedException();
+                    break;
+
+                    case 128:
+                    UnkScreenEffect6();
+                    break;
+
+                    case 129:
+                    break;
+
+                    case 130:
+                    case 131:
+                    case 132:
+                    case 133:
+                    //scrollEffect(133 - effect);
+                    throw new NotImplementedException();
+                    //break;
+
+                    case 134:
+                    DissolveEffect(1, 1);
+                    break;
+
+                    case 135:
+                    DissolveEffect(1, MainVirtScreen.Height);
+                    break;
+
+                    default:
+                    throw new NotImplementedException(string.Format("Unknown screen effect {0}", effect));
+            }
+            _screenEffectFlag = true;
+        }
+
+        /// <summary>
+        /// Update width*height areas of the screen, in random order, until the whole
+        /// screen has been updated. For instance:
+        ///
+        /// dissolveEffect(1, 1) produces a pixel-by-pixel dissolve
+        /// dissolveEffect(8, 8) produces a square-by-square dissolve
+        /// dissolveEffect(virtsrc[0].width, 1) produces a line-by-line dissolve
+        /// </summary>
+        /// <param name='width'>
+        /// Width.
+        /// </param>
+        /// <param name='height'>
+        /// Height.
+        /// </param>
+        void DissolveEffect(int width, int height)
+        {
+            var vs = MainVirtScreen;
+            int[] offsets;
+            int blits_before_refresh, blits;
+            int x, y;
+            int w, h;
+            int i;
+            var rnd = new Random();
+
+            // There's probably some less memory-hungry way of doing  But
+            // since we're only dealing with relatively small images, it shouldn't
+            // be too bad.
+
+            w = vs.Width / width;
+            h = vs.Height / height;
+
+            // When used correctly, vs->width % width and vs->height % height
+            // should both be zero, but just to be safe...
+
+            if ((vs.Width % width)!=0)
+                w++;
+
+            if ((vs.Height % height)!=0)
+                h++;
+
+            offsets = new int[w * h];
+
+            // Create a permutation of offsets into the frame buffer
+
+            if (width == 1 && height == 1)
+            {
+                // Optimized case for pixel-by-pixel dissolve
+
+                for (i = 0; i < vs.Width * vs.Height; i++)
+                    offsets [i] = i;
+
+                for (i = 1; i < w * h; i++)
+                {
+                    int j;
+
+                    j = rnd.Next(i);
+                    offsets [i] = offsets [j];
+                    offsets [j] = i;
+                }
+            } else
+            {
+                int[] offsets2;
+
+                for (i = 0, x = 0; x < vs.Width; x += width)
+                    for (y = 0; y < vs.Height; y += height)
+                        offsets [i++] = y * vs.Pitch + x;
+
+                offsets2 = new int[w * h];
+
+                Array.Copy(offsets,offsets2,offsets.Length);
+
+                for (i = 1; i < w * h; i++)
+                {
+                    int j;
+
+                    j = rnd.Next(i);
+                    offsets [i] = offsets [j];
+                    offsets [j] = offsets2 [i];
+                }
+            }
+
+            // Blit the image piece by piece to the screen. The idea here is that
+            // the whole update should take about a quarter of a second, assuming
+            // most of the time is spent in waitForTimer(). It looks good to me,
+            // but might still need some tuning.
+
+            blits = 0;
+            blits_before_refresh = (3 * w * h) / 25;
+
+            // Speed up the effect for CD Loom since it uses it so often. I don't
+            // think the original had any delay at all, so on modern hardware it
+            // wasn't even noticeable.
+            if (_game.Id=="loom")
+                blits_before_refresh *= 2;
+
+            for (i = 0; i < w * h; i++)
+            {
+                x = offsets [i] % vs.Pitch;
+                y = offsets [i] / vs.Pitch;
+
+                _gfxManager.CopyRectToScreen(vs.Surfaces[0].Pixels, vs.Pitch, 
+                                             x, y, width, height);
+
+
+                if (++blits >= blits_before_refresh)
+                {
+                    blits = 0;
+                    System.Threading.Thread.Sleep(30);
+                }
+            }
+
+            if (blits != 0)
+            {
+                System.Threading.Thread.Sleep(30);
+            }
+        }
+
+        void FadeOut(int effect)
+        {
+            _mainVirtScreen.SetDirtyRange(0, 0);
+
+            _camera.Last.X = _camera.Cur.X;
+
+            if (_screenEffectFlag && effect != 0)
+            {
+                // Fill screen 0 with black
+                var l_pixNav = new PixelNavigator(_mainVirtScreen.Surfaces[0]);
+                l_pixNav.OffsetX(_mainVirtScreen.XStart);
+                Gdi.Fill(l_pixNav, 0, _mainVirtScreen.Width, _mainVirtScreen.Height);
+
+                // Fade to black with the specified effect, if any.
+                switch (effect)
+                {
+                    case 1:
+                        case 2:
+                        case 3:
+                        case 4:
+                        case 5:
+                        //case 6:
+                        //    transitionEffect(effect - 1);
+                        //    break;
+                        case 128:
+                        UnkScreenEffect6();
+                        break;
+
+                        case 129:
+                        // Just blit screen 0 to the display (i.e. display will be black)
+                        _mainVirtScreen.SetDirtyRange(0, _mainVirtScreen.Height);
+                        UpdateDirtyScreen(_mainVirtScreen);
+                        break;
+                        //case 134:
+                        //    dissolveEffect(1, 1);
+                        //    break;
+                        //case 135:
+                        //    dissolveEffect(1, _virtscr[kMainVirtScreen].h);
+                        //    break;
+                        default:
+                        throw new NotImplementedException(string.Format("fadeOut: case {0}", effect));
+                }
+            }
+
+            // Update the palette at the end (once we faded to black) to avoid
+            // some nasty effects when the palette is changed
+            UpdatePalette();
+
+            _screenEffectFlag = false;
+        }
+
+        void SetShake(bool enabled)
+        {
+            if(_shakeEnabled != enabled)
+                _fullRedraw = true;
+
+            _shakeEnabled = enabled;
+            _shakeFrame = 0;
+            _gfxManager.SetShakePos(0);
+        }
+
+        void StopCycle(int i)
+        {
+            ScummHelper.AssertRange(0, i, 16, "stopCycle: cycle");
+            if (i != 0)
+            {
+                _colorCycle[i - 1].Delay = 0;
+                return;
+            }
+
+            for (i = 0; i < 16; i++)
+            {
+                var cycl = _colorCycle[i];
+                cycl.Delay = 0;
+            }
+        }
+
+        #endregion Effects Methods
+
+        #region Lights Methods
+
+        internal LightModes GetCurrentLights()
+        {
+            //if (_game.version >= 6)
+            //    return LIGHTMODE_room_lights_on | LIGHTMODE_actor_use_colors;
+            //else
+            return (LightModes)_variables[VariableCurrentLights];
+        }
+
+        internal bool IsLightOn()
         {
             return GetCurrentLights().HasFlag(LightModes.RoomLightsOn);
         }
 
+        #endregion Lights Methods
+
+        #region Input Methods
+       
+        void CheckExecVerbs()
+        {
+            if (_userPut <= 0 || mouseAndKeyboardStat == 0)
+                return;
+
+            if ((ScummMouseButtonState)mouseAndKeyboardStat < ScummMouseButtonState.MaxKey)
+            {
+                // Check keypresses
+                var vs = (from verb in _verbs.Skip(1)
+                          where verb.VerbId != 0 && verb.SaveId == 0 && verb.CurMode == 1
+                          where verb.Key == (byte)mouseAndKeyboardStat
+                          select verb).FirstOrDefault();
+                if (vs != null)
+                {
+                    // Trigger verb as if the user clicked it
+                    RunInputScript(ClickArea.Verb, (KeyCode)vs.VerbId, 1);
+                    return;
+                }
+
+                // Generic keyboard input
+                RunInputScript(ClickArea.Key, mouseAndKeyboardStat, 1);
+            }
+            else if ((((ScummMouseButtonState)mouseAndKeyboardStat) & ScummMouseButtonState.MouseMask) != 0)
+            {
+                var code = mouseAndKeyboardStat.HasFlag(ScummMouseButtonState.LeftClick) ? (byte)1 : (byte)2;
+                var zone = FindVirtScreen(_mousePos.Y);
+
+                if (zone == null)
+                    return;
+
+                var over = FindVerbAtPos(_mousePos.X, _mousePos.Y);
+
+                if (over != 0)
+                {
+                    // Verb was clicked
+                    RunInputScript(ClickArea.Verb, (KeyCode)_verbs[over].VerbId, code);
+                }
+                else
+                {
+                    // Scene was clicked
+                    var area = zone == MainVirtScreen ? ClickArea.Scene : ClickArea.Verb;
+                    RunInputScript(area, 0, code);
+                }
+            }
+        }
+
         void ProcessInput()
         {
-            MouseAndKeyboardStat = 0;
+            mouseAndKeyboardStat = 0;
 
             bool mainmenuKeyEnabled = _variables[VariableMainMenu] != 0;
 
             if (_inputManager.IsKeyDown(KeyCode.Escape))
             {
-                MouseAndKeyboardStat = (KeyCode)Variables[ScummEngine.VariableCutSceneExitKey];
+                mouseAndKeyboardStat = (KeyCode)Variables[ScummEngine.VariableCutSceneExitKey];
                 AbortCutscene();
             }
 
@@ -5892,14 +4934,14 @@ namespace NScumm.Core
             {
                 if (_inputManager.IsKeyDown(i))
                 {
-                    MouseAndKeyboardStat = i;
+                    mouseAndKeyboardStat = i;
                 }
             }
             for (var i = KeyCode.F1; i <= KeyCode.F9; i++)
             {
                 if (_inputManager.IsKeyDown(i))
                 {
-                    MouseAndKeyboardStat = i;
+                    mouseAndKeyboardStat = i;
                 }
             }
 
@@ -5907,35 +4949,35 @@ namespace NScumm.Core
             {
                 if (_inputManager.IsKeyDown(i))
                 {
-                    MouseAndKeyboardStat = i;
+                    mouseAndKeyboardStat = i;
                 }
             }
 
             if (_inputManager.IsKeyDown(KeyCode.Return))
             {
-                MouseAndKeyboardStat = KeyCode.Return;
+                mouseAndKeyboardStat = KeyCode.Return;
             }
             if (_inputManager.IsKeyDown(KeyCode.Backspace))
             {
-                MouseAndKeyboardStat = KeyCode.Backspace;
+                mouseAndKeyboardStat = KeyCode.Backspace;
             }
             if (_inputManager.IsKeyDown(KeyCode.Tab))
             {
-                MouseAndKeyboardStat = KeyCode.Tab;
+                mouseAndKeyboardStat = KeyCode.Tab;
             }
             if (_inputManager.IsKeyDown(KeyCode.Space))
             {
-                MouseAndKeyboardStat = KeyCode.Space;
+                mouseAndKeyboardStat = KeyCode.Space;
             }
 
             if (_inputManager.IsMouseLeftPressed())
             {
-                MouseAndKeyboardStat = (KeyCode)ScummMouseButtonState.LeftClick;
+                mouseAndKeyboardStat = (KeyCode)ScummMouseButtonState.LeftClick;
             }
 
             if (_inputManager.IsMouseRightPressed())
             {
-                MouseAndKeyboardStat = (KeyCode)ScummMouseButtonState.RightClick;
+                mouseAndKeyboardStat = (KeyCode)ScummMouseButtonState.RightClick;
             }
 
             var numpad = new int[]{
@@ -5949,7 +4991,7 @@ namespace NScumm.Core
             {
                 if (_inputManager.IsKeyDown(i))
                 {
-                    MouseAndKeyboardStat = (KeyCode)numpad[i - KeyCode.D0];
+                    mouseAndKeyboardStat = (KeyCode)numpad[i - KeyCode.D0];
                 }
             }
 
@@ -5970,163 +5012,70 @@ namespace NScumm.Core
             Variables[ScummEngine.VariableVirtualMouseY] = (int)_mousePos.Y - MainVirtScreen.TopLine;
         }
 
-        TimeSpan GetTimeToWait()
+        #endregion Input Methods
+
+        #region Inventory
+        int GetInventorySlot()
         {
-            int delta = _variables[VariableTimerNext];
-            if (delta < 0)  // Ensure we don't get into an endless loop
-                delta = 0;  // by not decreasing sleepers.
-            var tsDelta = TimeSpan.FromSeconds(delta / 60.0);
-            return tsDelta;
+            for (int i = 0; i < NumInventory; i++)
+            {
+                if (_inventory[i] == 0)
+                    return i;
+            }
+            return -1;
         }
 
-        void Update(TimeSpan diff)
+        void AddObjectToInventory(int obj, byte room)
         {
-            _variables[VariableTimer] = (int)diff.TotalSeconds * 60;
-            _variables[VariableTimerTotal] += (int)diff.TotalSeconds * 60;
-        }
-
-        public bool HastToQuit { get; set; }
-
-        public TimeSpan Loop(TimeSpan tsDelta)
-        {
-            var delta = (int)tsDelta.TotalMilliseconds;
-            if (delta == 0) delta = 4;
-            _variables[VariableTimer1] += delta;
-            _variables[VariableTimer2] += delta;
-            _variables[VariableTimer3] += delta;
-
-            if (delta > 15)
-                delta = 15;
-
-            DecreaseScriptDelay(delta);
-
-            _talkDelay -= delta;
-            if (_talkDelay < 0)
+            var slot = GetInventorySlot();
+            if (GetWhereIsObject(obj) == WhereIsObject.FLObject)
             {
-                _talkDelay = 0;
-            }
-
-            ProcessInput();
-
-            UpdateVariables();
-
-            SaveLoad();
-
-            if (_completeScreenRedraw)
-            {
-                _charset.HasMask = false;
-
-                for (int i = 0; i < _verbs.Length; i++)
-                {
-                    DrawVerb(i, 0);
-                }
-
-                HandleMouseOver();
-
-                _completeScreenRedraw = false;
-                _fullRedraw = true;
-            }
-
-            RunAllScripts();
-            CheckExecVerbs();
-            CheckAndRunSentenceScript();
-
-            if (HastToQuit)
-                return TimeSpan.Zero;
-
-            // HACK: If a load was requested, immediately perform it. This avoids
-            // drawing the current room right after the load is request but before
-            // it is performed. That was annoying esp. if you loaded while a SMUSH
-            // cutscene was playing.
-            //if (_saveLoadFlag && _saveLoadFlag != 1) {
-            //    goto load_game;
-            //}
-
-            if (_currentRoom == 0)
-            {
-                Charset();
-                DrawDirtyScreenParts();
+                GetObjectIndex(obj);
+                throw new NotImplementedException();
             }
             else
             {
-                WalkActors();
-                MoveCamera();
-                UpdateObjectStates();
-                Charset();
-
-                HandleDrawing();
-
-                HandleActors();
-
-                _fullRedraw = false;
-
-                HandleEffects();
-
-                //if (VAR_MAIN_SCRIPT != 0xFF && VAR(VAR_MAIN_SCRIPT) != 0) {
-                //    runScript(VAR(VAR_MAIN_SCRIPT), 0, 0, 0);
-                //}
-
-                // Handle mouse over effects (for verbs).
-                HandleMouseOver();
-
-                // Render everything to the screen.
-                UpdatePalette();
-                DrawDirtyScreenParts();
-
-                // FIXME / TODO: Try to move the following to scummLoop_handleSound or
-                // scummLoop_handleActors (but watch out for regressions!)
-                //PlayActorSounds();
+                var objs = _scumm.GetRoom(room).Objects;
+                var objFound = (from o in objs
+                                where o.Number == obj
+                                select o).FirstOrDefault();
+                _invData[slot] = objFound;
             }
-
-            //HandleSound();
-
-            _camera.Last = _camera.Cur;
-
-            //_res->increaseExpireCounter();
-
-            AnimateCursor();
-
-            // show or hide mouse
-            _gfxManager.ShowCursor(_cursor.State > 0);
-
-            Update(tsDelta);
-
-            return GetTimeToWait();
+            _inventory[slot] = (ushort)obj;
         }
 
-        void StopCycle(int i)
+        int GetInventoryCount(int owner)
         {
-            ScummHelper.AssertRange(0, i, 16, "stopCycle: cycle");
-            if (i != 0)
+            int i, obj;
+            int count = 0;
+            for (i = 0; i < NumInventory; i++)
             {
-                _colorCycle[i - 1].Delay = 0;
-                //if (_game.platform == Common::kPlatformAmiga && _game.id == GID_INDY4) {
-                //    cycl = &_colorCycle[i - 1];
-                //    for (int j = cycl->start; j <= cycl->end && j < 32; ++j) {
-                //        _shadowPalette[j] = j;
-                //        _colorUsedByCycle[j] = 0;
-                //    }
-                //}
-                return;
+                obj = _inventory[i];
+                if (obj != 0 && GetOwner(obj) == owner)
+                    count++;
             }
-
-            for (i = 0; i < 16; i++)
-            {
-                var cycl = _colorCycle[i];
-                cycl.Delay = 0;
-                //if (_game.platform == Common::kPlatformAmiga && _game.id == GID_INDY4) {
-                //    for (int j = cycl->start; j <= cycl->end && j < 32; ++j) {
-                //        _shadowPalette[j] = j;
-                //        _colorUsedByCycle[j] = 0;
-                //    }
-                //}
-            }
+            return count;
         }
+
+        int FindInventory(int owner, int idx)
+        {
+            int count = 1, i, obj;
+            for (i = 0; i < NumInventory; i++)
+            {
+                obj = _inventory[i];
+                if (obj != 0 && GetOwner(obj) == owner && count++ == idx)
+                    return obj;
+            }
+            return 0;
+        }
+        #endregion
 
         #region Save & Load
 
         const uint InfoSectionVersion = 2;
         const uint SaveInfoSectionSize = (4 + 4 + 4 + 4 + 4 + 4 + 2);
+        const uint SaveCurrentVersion = 94;
+
         bool _hasToLoad;
         bool _hasToSave;
         string _savegame;
@@ -6157,9 +5106,6 @@ namespace NScumm.Core
                 }
             }
         }
-
-        const uint SaveCurrentVersion = 94;
-
 
         void SaveState(string path, string name)
         {
@@ -6261,7 +5207,7 @@ namespace NScumm.Core
                 // Restore the virtual screens and force a fade to black.
                 InitScreens(0, _screenHeight);
 
-                Fill(MainVirtScreen.Surfaces[0].Pixels, MainVirtScreen.Pitch, 0, MainVirtScreen.Width, MainVirtScreen.Height);
+                Gdi.Fill(MainVirtScreen.Surfaces[0].Pixels, MainVirtScreen.Pitch, 0, MainVirtScreen.Width, MainVirtScreen.Height);
                 MainVirtScreen.SetDirtyRange(0, MainVirtScreen.Height);
                 UpdateDirtyScreen(MainVirtScreen);
                 //UpdatePalette();
@@ -7045,9 +5991,6 @@ namespace NScumm.Core
             return encodedName.ToArray();
         }
 
-        int _shadowPaletteSize = 256;
-        byte[] _shadowPalette = new byte[256];
-
         void LoadResource(BinaryReader reader, ResType type, ushort idx)
         {
             bool dynamic = false;
@@ -7413,9 +6356,143 @@ namespace NScumm.Core
 
         #region Actors
 
-        void PlayActorSounds()
+        void ActorTalk(byte[] msg)
         {
-            throw new NotImplementedException();
+            ConvertMessageToString(msg, _charsetBuffer, 0);
+
+            if (_actorToPrintStrFor == 0xFF)
+            {
+                if (!_keepText)
+                {
+                    StopTalk();
+                }
+                SetTalkingActor(0xFF);
+            }
+            else
+            {
+                int oldact;
+
+                var a = _actors[_actorToPrintStrFor];
+                if (!a.IsInCurrentRoom())
+                {
+                    oldact = 0xFF;
+                }
+                else
+                {
+                    if (!_keepText)
+                    {
+                        StopTalk();
+                    }
+                    SetTalkingActor(a.Number);
+
+                    if (!_string[0].NoTalkAnim)
+                    {
+                        a.RunActorTalkScript(a.TalkStartFrame);
+                        _useTalkAnims = true;
+                    }
+                    oldact = GetTalkingActor();
+                }
+                if (oldact >= 0x80)
+                    return;
+            }
+
+            if (GetTalkingActor() > 0x7F)
+            {
+                _charsetColor = _string [0].Color;
+            }
+            else
+            {
+                var a = _actors[GetTalkingActor()];
+                _charsetColor = a.TalkColor;
+            }
+
+            _charsetBufPos = 0;
+            _talkDelay = 0;
+            _haveMsg = 0xFF;
+            _variables[VariableHaveMessage] = 0xFF;
+
+            _haveActorSpeechMsg = true;
+            Charset();
+        }
+
+        public int GetTalkingActor()
+        {
+            return _variables[VariableTalkActor];
+        }
+
+        void SetTalkingActor(int actor)
+        {
+            //        if (i == 255) {
+            //    _system->clearFocusRectangle();
+            //} else {
+            //    // Work out the screen co-ordinates of the actor
+            //    int x = _actors[i]->getPos().x - (camera._cur.x - (_screenWidth >> 1));
+            //    int y = _actors[i]->_top - (camera._cur.y - (_screenHeight >> 1));
+
+            //    // Set the focus area to the calculated position
+            //    // TODO: Make the size adjust depending on what it's focusing on.
+            //    _system->setFocusRectangle(Common::Rect::center(x, y, 192, 128));
+            //}
+
+            _variables[VariableTalkActor] = actor;
+        }
+
+        public void StopTalk()
+        {
+            //_sound->stopTalkSound();
+
+            _haveMsg = 0;
+            _talkDelay = 0;
+
+            var act = GetTalkingActor();
+            if (act != 0 && act < 0x80)
+            {
+                Actor a = _actors[act];
+                if (a.IsInCurrentRoom() && _useTalkAnims)
+                {
+                    a.RunActorTalkScript(a.TalkStopFrame);
+                    _useTalkAnims = false;
+                }
+                SetTalkingActor(0xFF);
+            }
+
+            _keepText = false;
+            RestoreCharsetBg();
+        }
+
+        void ShowActors()
+        {
+            for (int i = 1; i < NumActors; i++)
+            {
+                if (_actors[i].IsInCurrentRoom())
+                    _actors[i].ShowActor();
+            }
+        }
+
+        void WalkActors()
+        {
+            for (int i = 1; i < NumActors; ++i)
+            {
+                if (_actors[i].IsInCurrentRoom())
+                    _actors[i].WalkActor();
+            }
+        }
+
+        void ProcessActors()
+        {
+            var actors = from actor in _actors
+                where actor.IsInCurrentRoom()
+                    orderby actor.Position.Y
+                    select actor;
+
+            foreach (var actor in actors)
+            {
+                if (actor.Costume != 0)
+                {
+                    actor.DrawActorCostume();
+                    actor.AnimateCostume();
+                }
+            }
         }
 
         void HandleActors()
@@ -7463,25 +6540,23 @@ namespace NScumm.Core
 
         void SetActorRedrawFlags()
         {
-            int i, j;
-
             // Redraw all actors if a full redraw was requested.
             // Also redraw all actors in COMI (see bug #1066329 for details).
             if (_fullRedraw)
             {
-                for (j = 1; j < _actors.Length; j++)
+                for (int j = 1; j < _actors.Length; j++)
                 {
                     _actors[j].NeedRedraw = true;
                 }
             }
             else
             {
-                for (i = 0; i < Gdi.NumStrips; i++)
+                for (int i = 0; i < Gdi.NumStrips; i++)
                 {
                     int strip = _screenStartStrip + i;
                     if (TestGfxAnyUsageBits(strip))
                     {
-                        for (j = 1; j < _actors.Length; j++)
+                        for (int j = 1; j < _actors.Length; j++)
                         {
                             if (TestGfxUsageBit(strip, j) && TestGfxOtherUsageBits(strip, j))
                             {
@@ -7493,9 +6568,392 @@ namespace NScumm.Core
             }
         }
 
+        int GetActorFromPos(int x, int y)
+        {
+            for (int i = 1; i < _actors.Length; i++)
+            {
+                if (!GetClass(i, ObjectClass.Untouchable) && y >= _actors[i].Top && y <= _actors[i].Bottom)
+                {
+                    return i;
+                }
+            }
+
+            return 0;
+        }
+
+        int GetObjActToObjActDist(int a, int b)
+        {
+            int x, y, x2, y2;
+            Actor acta = null;
+            Actor actb = null;
+
+            if (a < _actors.Length)
+                acta = _actors[a];
+
+            if (b < _actors.Length)
+                actb = _actors[b];
+
+            if ((acta != null) && (actb != null) && (acta.Room == actb.Room) && (acta.Room != 0) && !acta.IsInCurrentRoom())
+                return 0;
+
+            if (!GetObjectOrActorXY(a, out x, out y))
+                return 0xFF;
+
+            if (!GetObjectOrActorXY(b, out x2, out y2))
+                return 0xFF;
+
+            // Perform adjustXYToBeInBox() *only* if the first item is an
+            // actor and the second is an object. This used to not check
+            // whether the second item is a non-actor, which caused bug
+            // #853874).
+            if (acta != null && actb == null)
+            {
+                AdjustBoxResult r = acta.AdjustXYToBeInBox((short)x2, (short)y2);
+                x2 = r.X;
+                y2 = r.Y;
+            }
+
+            // Now compute the distance between the two points
+            return ScummMath.GetDistance(x, y, x2, y2);
+        }
+
         #endregion Actors
 
         #region Objects
+        byte[] GetObjectOrActorName(int num)
+        {
+            byte[] name;
+            if (num < _actors.Length)
+            {
+                name = _actors[num].Name;
+            }
+            else if (_newNames.ContainsKey(num))
+            {
+                name = _newNames[num];
+            }
+            else
+            {
+                var obj = (from o in _invData
+                           where o != null && o.Number == num
+                           select o).FirstOrDefault();
+
+                if (obj == null)
+                {
+                    obj = (from o in Objects
+                           where o.Number == num
+                           select o).FirstOrDefault();
+                }
+                if (obj != null && obj.Name != null)
+                {
+                    name = obj.Name;
+                }
+                else
+                {
+                    name = new byte[0];
+                }
+            }
+            return name;
+        }
+
+        void UpdateObjectStates()
+        {
+            for (int i = 1; i < _numLocalObjects; i++)
+            {
+                if (Objects[i].Number > 0)
+                    Objects[i].State = GetState(Objects[i].Number);
+            }
+        }
+
+        byte GetState(int obj)
+        {
+            ScummHelper.AssertRange(0, obj, _numGlobalObjects - 1, "object");
+            return _scumm.ObjectStateTable[obj];
+        }
+
+        void GetObjectOwner()
+        {
+            GetResult();
+            SetResult(GetOwner(GetVarOrDirectWord(OpCodeParameter.Param1)));
+        }
+
+        public bool GetObjectOrActorXY(int obj, out int x, out int y)
+        {
+            x = 0;
+            y = 0;
+
+            if (ObjIsActor(obj))
+            {
+                var act = _actors [ObjToActor(obj)];
+                if (act != null && act.IsInCurrentRoom())
+                {
+                    x = act.Position.X;
+                    y = act.Position.Y;
+                    return true;
+                }
+                return false;
+            }
+
+            switch (GetWhereIsObject(obj))
+            {
+                case WhereIsObject.NotFound:
+                    return false;
+                    case WhereIsObject.Inventory:
+                    if (ObjIsActor(_scumm.ObjectOwnerTable[obj]))
+                    {
+                        var act = _actors[_scumm.ObjectOwnerTable[obj]];
+                        if (act != null && act.IsInCurrentRoom())
+                        {
+                            x = act.Position.X;
+                            y = act.Position.Y;
+                            return true;
+                        }
+                    }
+                    return false;
+            }
+
+            int dir;
+            GetObjectXYPos(obj, out x, out y, out dir);
+            return true;
+        }
+
+        int ObjToActor(int obj)
+        {
+            return obj;
+        }
+
+        bool ObjIsActor(int obj)
+        {
+            return obj < NumActors;
+        }
+
+        public bool GetClass(int obj, ObjectClass cls)
+        {
+            cls &= (ObjectClass)0x7F;
+
+            // Translate the new (V5) object classes to the old classes
+            // (for those which differ).
+            switch (cls)
+            {
+                case ObjectClass.Untouchable:
+                    cls = (ObjectClass)24;
+                    break;
+
+                    case ObjectClass.Player:
+                    cls = (ObjectClass)23;
+                    break;
+
+                    case ObjectClass.XFlip:
+                    cls = (ObjectClass)19;
+                    break;
+
+                    case ObjectClass.YFlip:
+                    cls = (ObjectClass)18;
+                    break;
+            }
+
+            return (_scumm.ClassData[obj] & (1 << ((int)cls - 1))) != 0;
+        }
+
+        void SetObjectName(int obj)
+        {
+            if (obj < _actors.Length)
+            {
+                string msg = string.Format("Can't set actor {0} name with new name.", obj);
+                throw new NotSupportedException(msg);
+            }
+
+            _newNames[obj] = ReadCharacters();
+            RunInventoryScript(0);
+        }
+
+        int GetObjX(int obj)
+        {
+            if (obj < 1)
+                return 0;                                   /* fix for indy4's map */
+
+            if (obj < _actors.Length)
+            {
+                return _actors [obj].Position.X;
+            }
+            if (GetWhereIsObject(obj) == WhereIsObject.NotFound)
+                return -1;
+            int x, y;
+            GetObjectOrActorXY(obj, out x, out y);
+            return x;
+        }
+
+        int GetObjY(int obj)
+        {
+            if (obj < 1)
+                return 0;                                   /* fix for indy4's map */
+
+            if (obj < _actors.Length)
+            {
+                return _actors [obj].Position.Y;
+            }
+            if (GetWhereIsObject(obj) == WhereIsObject.NotFound)
+                return -1;
+            int x, y;
+            GetObjectOrActorXY(obj, out x, out y);
+            return y;
+        }
+
+        WhereIsObject GetWhereIsObject(int obj)
+        {
+            int i;
+
+            if (obj >= _numGlobalObjects)
+                return WhereIsObject.NotFound;
+
+            if (obj < 1)
+                return WhereIsObject.NotFound;
+
+            if (_scumm.ObjectOwnerTable[obj] != OwnerRoom)
+            {
+                for (i = 0; i < NumInventory; i++)
+                    if (_inventory[i] == obj)
+                        return WhereIsObject.Inventory;
+                return WhereIsObject.NotFound;
+            }
+
+            for (i = (_numLocalObjects - 1); i > 0; i--)
+                if (Objects[i].Number == obj)
+            {
+                if (Objects[i].FlObjectIndex != 0)
+                    return WhereIsObject.FLObject;
+                return WhereIsObject.Room;
+            }
+
+            return WhereIsObject.NotFound;
+        }
+
+        void PutState(int obj, byte state)
+        {
+            ScummHelper.AssertRange(0, obj, _numGlobalObjects - 1, "object");
+            ScummHelper.AssertRange(0, state, 0xFF, "state");
+            _scumm.ObjectStateTable[obj] = state;
+        }
+
+        int GetObjectIndex(int obj)
+        {
+            int i;
+
+            if (obj < 1)
+                return -1;
+
+            for (i = (_numLocalObjects - 1); i > 0; i--)
+            {
+                if (Objects[i].Number == obj)
+                    return i;
+            }
+            return -1;
+        }
+
+        void AddObjectToDrawQue(byte obj)
+        {
+            _drawingObjects.Add(Objects[obj]);
+        }
+
+        void ClearDrawObjectQueue()
+        {
+            _drawingObjects.Clear();
+        }
+
+        void PutOwner(int obj, byte owner)
+        {
+            _scumm.ObjectOwnerTable[obj] = owner;
+        }
+
+        void PutClass(int obj, int cls, bool set)
+        {
+            ScummHelper.AssertRange(0, obj, _numGlobalObjects - 1, "object");
+            var cls2 = (ObjectClass)(cls & 0x7F);
+            ScummHelper.AssertRange(1, (int)cls2, 32, "class");
+
+            // Translate the new (V5) object classes to the old classes
+            // (for those which differ).
+            switch (cls2)
+            {
+                case ObjectClass.Untouchable:
+                    cls2 = (ObjectClass)24;
+                    break;
+
+                    case ObjectClass.Player:
+                    cls2 = (ObjectClass)23;
+                    break;
+
+                    case ObjectClass.XFlip:
+                    cls2 = (ObjectClass)19;
+                    break;
+
+                    case ObjectClass.YFlip:
+                    cls2 = (ObjectClass)18;
+                    break;
+            }
+
+            if (set)
+                ClassData[obj] |= (uint)(1 << ((int)cls2 - 1));
+            else
+                ClassData[obj] &= (uint)~(1 << ((int)cls2 - 1));
+
+            if (obj >= 1 && obj < NumActors)
+            {
+                _actors[obj].ClassChanged(cls2, set);
+            }
+        }
+
+        int GetOwner(int obj)
+        {
+            return _scumm.ObjectOwnerTable[obj];
+        }
+
+        int FindObject(int x, int y)
+        {
+            int i, b;
+            byte a;
+            int mask = 0xF;
+
+            for (i = 1; i < _numLocalObjects; i++)
+            {
+                if ((Objects[i].Number < 1) || GetClass(Objects[i].Number, ObjectClass.Untouchable))
+                    continue;
+
+                b = i;
+                do
+                {
+                    a = Objects[b].ParentState;
+                    b = Objects[b].Parent;
+                    if (b == 0)
+                    {
+                        if (Objects[i].XPos <= x && (Objects[i].Width + Objects[i].XPos) > x &&
+                            Objects[i].YPos <= y && (Objects[i].Height + Objects[i].YPos) > y)
+                        {
+                            return Objects[i].Number;
+                        }
+                        break;
+                    }
+                } while ((Objects[b].State & mask) == a);
+            }
+
+            return 0;
+        }
+
+        void GetObjectXYPos(int obj, out int x, out int y, out int dir)
+        {
+            var idx = GetObjectIndex(obj);
+
+            var od = Objects[idx];
+            x = od.WalkX;
+            y = od.WalkY;
+
+            dir = ScummHelper.OldDirToNewDir(od.ActorDir & 3);
+        }
+
+        void GetObjectXYPos(int obj, out int x, out int y)
+        {
+            int dir;
+            GetObjectXYPos(obj, out x, out y, out dir);
+        }
 
         void DrawRoomObjects(int argument)
         {
@@ -7600,9 +7058,122 @@ namespace NScumm.Core
             ClearDrawObjectQueue();
         }
 
+        void SetOwnerOf(int obj, int owner)
+        {
+            // In Sam & Max this is necessary, or you won't get your stuff back
+            // from the Lost and Found tent after riding the Cone of Tragedy. But
+            // it probably applies to all V6+ games. See bugs #493153 and #907113.
+            // FT disassembly is checked, behavior is correct. [sev]
+            int arg = 0;
+
+            // WORKAROUND for bug #1917981: Game crash when finishing Indy3 demo.
+            // Script 94 tries to empty the inventory but does so in a bogus way.
+            // This causes it to try to remove object 0 from the inventory.
+            if (owner == 0)
+            {
+                ClearOwnerOf(obj);
+
+                if (_currentScript != 0xFF)
+                {
+                    var ss = _slots[_currentScript];
+                    if (ss.Where == WhereIsObject.Inventory)
+                    {
+                        if (ss.Number < NumInventory && _inventory[ss.Number] == obj)
+                        {
+                            //throw new NotSupportedException("Odd setOwnerOf case #1: Please report to Fingolfin where you encountered this");
+                            PutOwner(obj, 0);
+                            RunInventoryScript(arg);
+                            StopObjectCode();
+                            return;
+                        }
+                        if (ss.Number == obj)
+                            throw new NotSupportedException("Odd setOwnerOf case #2: Please report to Fingolfin where you encountered this");
+                    }
+                }
+            }
+
+            PutOwner(obj, (byte)owner);
+            RunInventoryScript(arg);
+        }
+
+        void ClearOwnerOf(int obj)
+        {
+            int i;
+
+            // Stop the associated object script code (else crashes might occurs)
+            StopObjectScript((ushort)obj);
+
+            // If the object is "owned" by a the current room, we scan the
+            // object list and (only if it's a floating object) nuke it.
+            if (GetOwner(obj) == OwnerRoom)
+            {
+                for (i = 0; i < _numLocalObjects; i++)
+                {
+                    if (Objects[i].Number == obj && Objects[i].FlObjectIndex != 0)
+                    {
+                        // Removing an flObject from a room means we can nuke it
+                        Objects[i].Number = 0;
+                        Objects[i].FlObjectIndex = 0;
+                    }
+                }
+            }
+            else
+            {
+                // Alternatively, scan the inventory to see if the object is in there...
+                for (i = 0; i < NumInventory; i++)
+                {
+                    if (_inventory[i] == obj)
+                    {
+                        // Found the object! Nuke it from the inventory.
+                        _inventory[i] = 0;
+
+                        // Now fill up the gap removing the object from the inventory created.
+                        for (i = 0; i < NumInventory - 1; i++)
+                        {
+                            if (_inventory[i] == 0 && _inventory[i + 1] != 0)
+                            {
+                                _inventory[i] = _inventory[i + 1];
+                                _invData[i] = _invData[i + 1];
+                                _inventory[i + 1] = 0;
+                                // FIXME FIXME FIXME: This is incomplete, as we do not touch flags, status... BUG
+                                // TODO:
+                                //_res->_types[rtInventory][i]._address = _res->_types[rtInventory][i + 1]._address;
+                                //_res->_types[rtInventory][i]._size = _res->_types[rtInventory][i + 1]._size;
+                                //_res->_types[rtInventory][i + 1]._address = NULL;
+                                //_res->_types[rtInventory][i + 1]._size = 0;
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+
         #endregion Objects
 
         #region Charset
+
+        void InitCharset(int charsetNum)
+        {
+            _string[0].Default.Charset = (byte)charsetNum;
+            _string[1].Default.Charset = (byte)charsetNum;
+
+            //if (_charsets[charsetNum] != null)
+            //{
+            //    Array.Copy(_charsets[charsetNum], _charsetColorMap, 16);
+            //}
+        }
+
+        void LoadCharset(int resId)
+        {
+            var diskName = string.Format("{0}.lfl", 900 + resId);
+            var path = Path.Combine(_directory, diskName);
+            using (var br = new BinaryReader(File.OpenRead(path)))
+            {
+                var size = (int)br.ReadUInt32() + 11;
+                _charsets[resId] = br.ReadBytes(size);
+            }
+        }
 
         void Charset()
         {
@@ -7879,7 +7450,7 @@ namespace NScumm.Core
                         screenBufNav.OffsetX(vs.XStart);
                         var backNav = new PixelNavigator(vs.Surfaces[1]);
                         backNav.OffsetX(vs.XStart);
-                        Blit(screenBufNav, backNav, vs.Width, vs.Height);
+                        Gdi.Blit(screenBufNav, backNav, vs.Width, vs.Height);
                     }
                 }
                 else
@@ -7902,6 +7473,294 @@ namespace NScumm.Core
         #region Drawing Methods
 
         Palette _currentPalette = new Palette();
+
+        void RestoreBackground(Rect rect, byte backColor)
+        {
+            VirtScreen vs;
+
+            if (rect.Top < 0)
+                rect.Top = 0;
+            if (rect.Left >= rect.Right || rect.Top >= rect.Bottom)
+                return;
+
+            if ((vs = FindVirtScreen(rect.Top)) == null)
+                return;
+
+            if (rect.Left > vs.Width)
+                return;
+
+            // Convert 'rect' to local (virtual screen) coordinates
+            rect.Top -= vs.TopLine;
+            rect.Bottom -= vs.TopLine;
+
+            rect.Clip(vs.Width, vs.Height);
+
+            int height = rect.Height;
+            int width = rect.Width;
+
+            MarkRectAsDirty(vs, rect.Left, rect.Right, rect.Top, rect.Bottom, UsageBitRestored);
+
+            var screenBuf = new PixelNavigator(vs.Surfaces[0]);
+            screenBuf.GoTo(vs.XStart + rect.Left, rect.Top);
+
+            if (height == 0)
+                return;
+
+            if (vs.HasTwoBuffers && _currentRoom != 0 && IsLightOn())
+            {
+                var back = new PixelNavigator(vs.Surfaces[1]);
+                back.GoTo(vs.XStart + rect.Left, rect.Top);
+                Gdi.Blit(screenBuf, back, width, height);
+                if (vs == MainVirtScreen && _charset.HasMask)
+                {
+                    var mask = new PixelNavigator(_textSurface);
+                    mask.GoTo(rect.Left, rect.Top - ScreenTop);
+                    Gdi.Fill(mask, CharsetMaskTransparency, width * _textSurfaceMultiplier, height * _textSurfaceMultiplier);
+                }
+            }
+            else
+            {
+                Gdi.Fill(screenBuf, backColor, width, height);
+            }
+        }
+
+        void DrawVerbBitmap(int verb, int x, int y)
+        {
+            var vst=_verbs[verb];
+            var vs=FindVirtScreen(y);
+
+            if(vs==null) return;
+
+            Gdi.IsZBufferEnabled=false;
+
+            var hasTwoBufs = vs.HasTwoBuffers;
+            //vs.HasTwoBuffers=false;
+
+            int xStrip=x/8;
+            int yDiff=y-vs.TopLine;
+
+            for (int i = 0; i < vst.ImageWidth/8; i++)
+            {
+                Gdi.DrawBitmap(vst.Image,vs,xStrip+i,yDiff,
+                               vst.ImageWidth,vst.ImageHeight,
+                               i,1,DrawBitmaps.AllowMaskOr| DrawBitmaps.ObjectMode);
+            }
+
+            vst.CurRect.Right=vst.CurRect.Left+vst.ImageWidth;
+            vst.CurRect.Bottom=vst.CurRect.Top+vst.ImageHeight;
+            vst.OldRect=vst.CurRect;
+
+            Gdi.IsZBufferEnabled=true;
+            //vs.HasTwoBuffers=hasTwoBufs;
+        }
+
+        void DrawString(int a, byte[] msg)
+        {
+            var buf = new byte[270];
+            int i, c;
+            int fontHeight;
+            uint color;
+
+            ConvertMessageToString(msg, buf, 0);
+
+            _charset.Top = _string[a].YPos + ScreenTop;
+            _charset.StartLeft = _charset.Left = _string[a].XPos;
+            _charset.Right = _string[a].Right;
+            _charset.Center = _string[a].Center;
+            _charset.SetColor(_string[a].Color);
+            _charset.DisableOffsX = _charset.FirstChar = true;
+            _charset.SetCurID(_string[a].Charset);
+
+            fontHeight = _charset.GetFontHeight();
+
+            // trim from the right
+            int tmpPos = 0;
+            int spacePos = 0;
+            while (buf[tmpPos] != 0)
+            {
+                if (buf[tmpPos] == ' ')
+                {
+                    if (spacePos == 0)
+                        spacePos = tmpPos;
+                }
+                else
+                {
+                    spacePos = 0;
+                }
+                tmpPos++;
+            }
+            if (spacePos != 0)
+            {
+                buf[spacePos] = 0;
+            }
+
+            if (_charset.Center)
+            {
+                _charset.Left -= _charset.GetStringWidth(a, buf, 0) / 2;
+            }
+
+            if (buf[0] == 0)
+            {
+                _charset.Str.Left = _charset.Left;
+                _charset.Str.Top = _charset.Top;
+                _charset.Str.Right = _charset.Left;
+                _charset.Str.Bottom = _charset.Top;
+            }
+
+            for (i = 0; (c = buf[i++]) != 0; )
+            {
+                if (c == 0xFF || (c == 0xFE))
+                {
+                    c = buf[i++];
+                    switch (c)
+                    {
+                        case 9:
+                        case 10:
+                        case 13:
+                        case 14:
+                            i += 2;
+                        break;
+
+                        case 1:
+                        case 8:
+                            if (_charset.Center)
+                            {
+                                _charset.Left = _charset.StartLeft - _charset.GetStringWidth(a, buf, i);
+                            }   
+                            else
+                            {
+                                _charset.Left = _charset.StartLeft;
+                            }
+                            if (_string[0].Height != 0)
+                            {
+                                _nextTop += _string[0].Height;
+                            }
+                            else
+                            {
+                                _charset.Top += fontHeight;
+                            }
+                            break;
+
+                        case 12:
+                            color = (uint)(buf[i] + (buf[i + 1] << 8));
+                            i += 2;
+                            if (color == 0xFF)
+                                _charset.SetColor(_string[a].Color);
+                            else
+                                _charset.SetColor((byte)color);
+                            break;
+                    }
+                }
+                else
+                {
+                    //if ((c & 0x80) != 0 && _useCJKMode)
+                    //{
+                    //    if (checkSJISCode(c))
+                    //        c += buf[i++] * 256;
+                    //}
+                    _charset.PrintChar(c, true);
+                    _charset.BlitAlso = false;
+                }
+            }
+
+            if (a == 0)
+            {
+                _nextLeft = _charset.Left;
+                _nextTop = _charset.Top;
+            }
+
+            _string[a].XPos = (short)_charset.Str.Right;
+        }
+
+        void SetDirtyColors(int min, int max)
+        {
+            if (_palDirtyMin > min)
+                _palDirtyMin = min;
+            if (_palDirtyMax < max)
+                _palDirtyMax = max;
+        }
+
+        void DrawBox(int x, int y, int x2, int y2, int color)
+        {
+            VirtScreen vs;
+
+            if ((vs = FindVirtScreen(y)) == null)
+                return;
+
+            if (x > x2)
+                ScummHelper.Swap(ref x, ref x2);
+
+            if (y > y2)
+                ScummHelper.Swap(ref y, ref y2);
+
+            x2++;
+            y2++;
+
+            // Adjust for the topline of the VirtScreen
+            y -= vs.TopLine;
+            y2 -= vs.TopLine;
+
+            // Clip the coordinates
+            if (x < 0)
+                x = 0;
+            else if (x >= vs.Width)
+                return;
+
+            if (x2 < 0)
+                return;
+            if (x2 > vs.Width)
+                x2 = vs.Width;
+
+            if (y < 0)
+                y = 0;
+            else if (y > vs.Height)
+                return;
+
+            if (y2 < 0)
+                return;
+
+            if (y2 > vs.Height)
+                y2 = vs.Height;
+
+            int width = x2 - x;
+            int height = y2 - y;
+
+            // This will happen in the Sam & Max intro - see bug #1039162 - where
+            // it would trigger an assertion in blit().
+
+            if (width <= 0 || height <= 0)
+                return;
+
+            MarkRectAsDirty(vs, x, x2, y, y2);
+
+            var backbuff = new PixelNavigator(vs.Surfaces[0]);
+            backbuff.GoTo(vs.XStart + x, y);
+
+            // A check for -1 might be wrong in all cases since o5_drawBox() in its current form
+            // is definitely not capable of passing a parameter of -1 (color range is 0 - 255).
+            // Just to make sure I don't break anything I restrict the code change to FM-Towns
+            // version 5 games where this change is necessary to fix certain long standing bugs.
+            if (color == -1)
+            {
+                if (vs != MainVirtScreen)
+                    Console.Error.WriteLine("can only copy bg to main window");
+
+                var bgbuff = new PixelNavigator(vs.Surfaces[1]);
+                bgbuff.GoTo(vs.XStart + x, y);
+
+                Gdi.Blit(backbuff, bgbuff, width, height);
+                if (_charset.HasMask)
+                {
+                    var mask = new PixelNavigator(_textSurface);
+                    mask.GoToIgnoreBytesByPixel(x * _textSurfaceMultiplier, (y - ScreenTop) * _textSurfaceMultiplier);
+                    Gdi.Fill(mask, CharsetMaskTransparency, width * _textSurfaceMultiplier, height * _textSurfaceMultiplier);
+                }
+            }
+            else
+            {
+                Gdi.Fill(backbuff, (byte)color, width, height);
+            }
+        }
 
         void UpdatePalette()
         {
@@ -7956,58 +7815,7 @@ namespace NScumm.Core
 
         void ClearTextSurface()
         {
-            Fill(_textSurface.Pixels, _textSurface.Pitch, CharsetMaskTransparency, _textSurface.Width, _textSurface.Height);
-        }
-
-        static void Fill(PixelNavigator dst, byte color, int width, int height)
-        {
-            for (int h = 0; h < height; h++)
-            {
-                for (int w = 0; w < width; w++)
-                {
-                    dst.Write(color);
-                    dst.OffsetX(1);
-                }
-                dst.Offset(-width, 1);
-            }
-        }
-
-        static void Fill(byte[] dst, int dstPitch, byte color, int w, int h)
-        {
-            if (w == dstPitch)
-            {
-                for (int i = 0; i < dst.Length; i++)
-                {
-                    dst[i] = color;
-                }
-            }
-            else
-            {
-                int offset = 0;
-                do
-                {
-                    for (int i = 0; i < w; i++)
-                    {
-                        dst[offset + i] = color;
-                    }
-                    offset += dstPitch;
-                } while ((--h) != 0);
-            }
-        }
-
-        static void Blit(PixelNavigator dst, PixelNavigator src, int width, int height)
-        {
-            for (int h = 0; h < height; h++)
-            {
-                for (int w = 0; w < width; w++)
-                {
-                    dst.Write(src.Read());
-                    src.OffsetX(1);
-                    dst.OffsetX(1);
-                }
-                src.Offset(-width, 1);
-                dst.Offset(-width, 1);
-            }
+            Gdi.Fill(_textSurface.Pixels, _textSurface.Pitch, CharsetMaskTransparency, _textSurface.Width, _textSurface.Height);
         }
 
         void HandleDrawing()
@@ -8227,6 +8035,27 @@ namespace NScumm.Core
             _gfxManager.CopyRectToScreen(src, width * vs.BytesPerPixel, x, y, width, height);
         }
 
+        void MarkObjectRectAsDirty(int obj)
+        {
+            for (int i = 1; i < _numLocalObjects; i++)
+            {
+                if (Objects[i].Number == obj)
+                {
+                    if (Objects[i].Width != 0)
+                    {
+                        int minStrip = Math.Max(_screenStartStrip, Objects[i].XPos / 8);
+                        int maxStrip = Math.Min(_screenEndStrip + 1, Objects[i].XPos / 8 + Objects[i].Width / 8);
+                        for (int strip = minStrip; strip < maxStrip; strip++)
+                        {
+                            SetGfxUsageBit(strip, UsageBitDirty);
+                        }
+                    }
+                    _bgNeedsRedraw = true;
+                    return;
+                }
+            }
+        }
+
         public void MarkRectAsDirty(VirtScreen vs, int left, int right, int top, int bottom, int dirtybit = 0)
         {
             int lp, rp;
@@ -8295,14 +8124,6 @@ namespace NScumm.Core
         /// restoreBackground(), but I'm not yet sure why.
         /// </summary>
         uint[] _gfxUsageBits;
-
-        bool _completeScreenRedraw;
-        IGraphicsManager _gfxManager;
-        IInputManager _inputManager;
-        int _palDirtyMin, _palDirtyMax;
-        int _nextLeft, _nextTop;
-        int _textSurfaceMultiplier = 1;
-        Surface _textSurface;
 
         void SetGfxUsageBit(int strip, int bit)
         {
@@ -8384,10 +8205,6 @@ namespace NScumm.Core
         #region Verb Members
 
         int _verbMouseOver;
-        byte[] _gameMD5;
-        int _numLocalScripts = 60;
-        int _screenB;
-        int _screenH;
 
         void SetVerbObject(int obj, int verb)
         {
@@ -8595,30 +8412,15 @@ namespace NScumm.Core
             return 0;
         }
 
-        //public void RedrawVerbs()
-        //{
-        //    int i, verb = 0;
-        //    int mouseX = _variables[VariableMouseX];
-        //    int mouseY = _variables[VariableMouseY];
-
-        //    if (_cursor.State > 0)
-        //        verb = FindVerbAtPos(mouseX, mouseY);
-
-        //    // Iterate over all verbs.
-        //    // Note: This is the correct order (at least for MI EGA, MI2, Full Throttle).
-        //    // Do not change it! If you discover, based on disasm, that some game uses
-        //    // another (e.g. the reverse) order here, you have to use an if/else construct
-        //    // to add it as a special case!
-        //    for (i = 0; i < _verbs.Length; i++)
-        //    {
-        //        if (i == verb && _verbs[verb].hicolor != 0)
-        //            DrawVerb(i, 1);
-        //        else
-        //            DrawVerb(i, 0);
-        //    }
-
-        //    _verbMouseOver = verb;
-        //}
+        void DoSentence(byte verb, ushort objectA, ushort objectB)
+        {
+            var st = _sentence[_sentenceNum++];
+            st.Verb = verb;
+            st.ObjectA = objectA;
+            st.ObjectB = objectB;
+            st.Preposition = (byte)((objectB != 0) ? 1 : 0);
+            st.FreezeCount = 0;
+        }
 
         #endregion Verb Members
     }

@@ -45,7 +45,7 @@ namespace NScumm.Core
         Untouchable = 32
     }
 
-    public class Actor
+    class Actor
     {
         #region Constants
         public const int InvalidBox = 0xFF;
@@ -178,8 +178,6 @@ namespace NScumm.Core
             if (!IsVisible)
                 return;
 
-            Console.WriteLine("HideActor: {0}", Costume);
-
             if (Moving != MoveFlags.None)
             {
                 StopActorMoving();
@@ -197,8 +195,6 @@ namespace NScumm.Core
         {
             if (_scumm.CurrentRoom == 0 || IsVisible)
                 return;
-
-            Console.WriteLine("ShowActor: {0}", Costume);
 
             AdjustActorPos();
 

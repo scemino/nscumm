@@ -144,7 +144,7 @@ namespace NScumm.Core
             return null;
         }
 
-        public Room ReadRoom(int roomOffset)
+        internal Room ReadRoom(int roomOffset)
         {
             var stripsDic = new Dictionary<ushort, byte[]>();
             var its = new Stack<ChunkIterator>();

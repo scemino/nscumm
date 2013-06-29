@@ -17,7 +17,7 @@
 
 namespace NScumm.Core.Graphics
 {
-    public class ClassicCostumeRenderer : ICostumeRenderer
+    class ClassicCostumeRenderer : ICostumeRenderer
     {
         static byte[] smallCostumeScaleTable = new byte[256] {
 	        0xFF, 0xFD, 0x7D, 0xBD, 0x3D, 0xDD, 0x5D, 0x9D,

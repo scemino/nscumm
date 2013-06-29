@@ -21,16 +21,12 @@
 
 
 #region Using Statements
+
 using System;
-using System.Collections.Generic;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using Microsoft.Xna.Framework.Storage;
-using Microsoft.Xna.Framework.GamerServices;
 using NScumm.Core;
-using NScumm.Core.Graphics;
 
 #endregion
 
@@ -41,17 +37,20 @@ namespace NScumm.GL
     /// </summary>
     public class ScummGame : Game
     {
-        private GraphicsDeviceManager graphics;
-        private SpriteBatch spriteBatch;
-        private ScummEngine engine;
-        private ScummIndex index;
-        private GameInfo info;
-        private XnaGraphicsManager gfx;
-        private XnaInputManager inputManager;
-        private TimeSpan tsDelta;
-        private Microsoft.Xna.Framework.Vector2 cursorPos;
-        private bool quitRequested;
-        private KeyboardState oldKeyboardState;
+        GraphicsDeviceManager graphics;
+        SpriteBatch spriteBatch;
+
+        ScummEngine engine;
+        GameInfo info;
+        XnaGraphicsManager gfx;
+        XnaInputManager inputManager;
+
+        TimeSpan tsDelta;
+        Vector2 cursorPos;
+
+        bool quitRequested;
+        KeyboardState oldKeyboardState;
+        bool pause;
 
         public ScummGame (GameInfo info)
         {
@@ -59,14 +58,10 @@ namespace NScumm.GL
                 throw new ArgumentNullException ("info");
 
             base.IsMouseVisible = true;
-            base.IsFixedTimeStep = true;
+            //base.IsFixedTimeStep = true;
             base.Window.AllowUserResizing = true;
 
             graphics = new GraphicsDeviceManager (this);
-            graphics.PreferredBackBufferWidth = 320;
-            graphics.PreferredBackBufferHeight = 200;
-            //graphics.IsFullScreen = true;
-
             Content.RootDirectory = "Content";
             this.info = info;            
         }
@@ -79,11 +74,17 @@ namespace NScumm.GL
         /// </summary>
         protected override void Initialize ()
         {
-            index = new ScummIndex ();
-            index.LoadIndex (info.Path);
-
             // update title
             base.Window.Title = string.Format ("NSucmm - {0} [{1}]", info.Description, info.Culture.NativeName);
+
+            // Create a new SpriteBatch, which can be used to draw textures.
+            spriteBatch = new SpriteBatch (GraphicsDevice);
+            inputManager = new XnaInputManager (Window);
+            gfx = new XnaGraphicsManager (GraphicsDevice);
+
+            // init engines
+            engine = new ScummEngine (info, gfx, inputManager);
+            engine.ShowMenuDialogRequested += OnShowMenuDialogRequested;
 
             base.Initialize ();
         }
@@ -94,14 +95,6 @@ namespace NScumm.GL
         /// </summary>
         protected override void LoadContent ()
         {
-            // Create a new SpriteBatch, which can be used to draw textures.
-            spriteBatch = new SpriteBatch (GraphicsDevice);
-            inputManager = new XnaInputManager (Window);
-            gfx = new XnaGraphicsManager (GraphicsDevice);
-
-            // init engines
-            engine = new ScummEngine (index, info, gfx, inputManager);
-            engine.ShowMenuDialogRequested += OnShowMenuDialogRequested;
             engine.RunBootScript ();
         }
 
@@ -114,7 +107,7 @@ namespace NScumm.GL
             gfx.Dispose ();
         }
 
-        private void OnShowMenuDialogRequested (object sender, EventArgs e)
+        void OnShowMenuDialogRequested (object sender, EventArgs e)
         {
             Gtk.Application.Init ();
             var win = new MenuWindow ();
@@ -142,8 +135,6 @@ namespace NScumm.GL
             Gtk.Application.Run ();
         }
 
-        bool pause;
-
         /// <summary>
         /// Allows the game to run logic such as updating the world,
         /// checking for collisions, gathering input, and playing audio.
@@ -152,7 +143,7 @@ namespace NScumm.GL
         protected override void Update (GameTime gameTime)
         {
             if (quitRequested) {
-                this.Exit ();
+                Exit ();
             }
 
             // toggle fullscreen ?
@@ -194,7 +185,7 @@ namespace NScumm.GL
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Draw (GameTime gameTime)
         {
-            GraphicsDevice.Clear (Microsoft.Xna.Framework.Color.Black);
+            GraphicsDevice.Clear (Color.Black);
 
             spriteBatch.Begin (SpriteSortMode.Deferred, BlendState.NonPremultiplied, SamplerState.PointClamp, DepthStencilState.None, RasterizerState.CullNone);
             gfx.DrawScreen (spriteBatch);

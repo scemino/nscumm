@@ -84,6 +84,7 @@
     <Compile Include="VerbSlot.cs" />
     <Compile Include="Graphics\VirtScreen.cs" />
     <Compile Include="IO\XorReader.cs" />
+    <Compile Include="ScummMath.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Nscumm.xml">

@@ -17,7 +17,7 @@
 
 namespace NScumm.Core.Graphics
 {
-    public interface ICostumeRenderer
+    interface ICostumeRenderer
     {
         int DrawTop { get; set; }
         int DrawBottom { get; set; }

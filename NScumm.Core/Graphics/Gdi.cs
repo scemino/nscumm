@@ -21,6 +21,14 @@ using System.IO;
 
 namespace NScumm.Core.Graphics
 {
+    [Flags]
+    public enum DrawBitmaps
+    {
+        AllowMaskOr = 1 << 0,
+        DrawMaskOnAll = 1 << 1,
+        ObjectMode = 2 << 2
+    }
+
     public class Gdi
     {
         #region Fields
@@ -134,6 +142,59 @@ namespace NScumm.Core.Graphics
                 var zplanes = GetZPlanes(ptr);
                 DecodeMask(x, y, height, stripnr, zplanes, transpStrip, flags);
 
+            }
+        }
+
+        public static void Fill(byte[] dst, int dstPitch, byte color, int w, int h)
+        {
+            if (w == dstPitch)
+            {
+                for (int i = 0; i < dst.Length; i++)
+                {
+                    dst[i] = color;
+                }
+            }
+            else
+            {
+                int offset = 0;
+                do
+                {
+                    for (int i = 0; i < w; i++)
+                    {
+                        dst[offset + i] = color;
+                    }
+                    offset += dstPitch;
+                } while ((--h) != 0);
+            }
+        }
+
+        public static void Blit(PixelNavigator dst, PixelNavigator src, int width, int height)
+        {
+            for (int h = 0; h < height; h++)
+            {
+                for (int w = 0; w < width; w++)
+                {
+                    dst.Write(src.Read());
+                    src.OffsetX(1);
+                    dst.OffsetX(1);
+                }
+                src.Offset(-width, 1);
+                dst.Offset(-width, 1);
+            }
+        }
+
+
+
+        public static void Fill(PixelNavigator dst, byte color, int width, int height)
+        {
+            for (int h = 0; h < height; h++)
+            {
+                for (int w = 0; w < width; w++)
+                {
+                    dst.Write(color);
+                    dst.OffsetX(1);
+                }
+                dst.Offset(-width, 1);
             }
         }
 

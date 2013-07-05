@@ -28,9 +28,14 @@ F5                     - Displays a save/load box
 Screenshots
 -----------
 
-![nscumm screenshot](https://raw.github.com/scemino/nscumm/master/Doc/Images/MonkeyIsland.png)
-![nscumm screenshot](https://raw.github.com/scemino/nscumm/master/Doc/Images/Indy3.png)
-![nscumm screenshot](https://raw.github.com/scemino/nscumm/master/Doc/Images/loom.png)
+### The Secret of Monkey Island
+
+![nscumm screenshot](https://raw.github.com/scemino/nscumm/master/Doc/Images/MonkeyIsland.png "The Secret of Monkey Island")
+
+### Passport to Adventure
+
+![nscumm screenshot](https://raw.github.com/scemino/nscumm/master/Doc/Images/Indy3.png "Indiana Jones 3")
+![nscumm screenshot](https://raw.github.com/scemino/nscumm/master/Doc/Images/Loom.png "Loom")
 
 License
 -------

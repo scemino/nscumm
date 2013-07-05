@@ -39,7 +39,7 @@ namespace NScumm.Core
         public List<byte> BoxMatrix { get; private set; }
         public string Name { get; set; }
         public byte[] Data { get; set; }
-        public Scale[] Scales { get; set; }
+        public ScaleSlot[] Scales { get; set; }
         public byte TransparentColor { get; set; }
         public bool HasPalette { get; set; }
         public ColorCycle[] ColorCycle { get; set; }
@@ -54,6 +54,8 @@ namespace NScumm.Core
             this.ExitScript = new ScriptData();
             this.LocalScripts = new ScriptData[1024];
             this.TransparentColor = 255;
+            this.Scales = new ScaleSlot[0];
+            this.ColorCycle = new ColorCycle[16];
         }
     }
 }

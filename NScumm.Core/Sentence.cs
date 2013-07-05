@@ -22,20 +22,49 @@ namespace NScumm.Core
 {
     class Sentence
     {
-        public byte Verb;
-        public byte Preposition;
-        public ushort ObjectA;
-        public ushort ObjectB;
-        public byte FreezeCount;
+        byte freezeCount;
+
+        public byte Verb { get; private set;}
+        public bool Preposition { get; private set;}
+        public ushort ObjectA { get; private set;}
+        public ushort ObjectB { get; private set;}
+
+        public bool IsFrozen
+        {
+            get{ return freezeCount > 0;}
+        }
+
+        public Sentence()
+        {
+        }
+
+        public Sentence(byte verb, ushort objectA, ushort objectB)
+        {
+            Verb = verb;
+            ObjectA = objectA;
+            ObjectB = objectB;
+            Preposition = objectB != 0;
+        }
+
+        public void Freeze()
+        {
+            freezeCount++;
+        }
+
+        public void Unfreeze()
+        {
+            if(IsFrozen)
+                freezeCount--;
+        }
 
         public void SaveOrLoad(Serializer serializer)
         {
             var sentenceEntries = new[]{
                     LoadAndSaveEntry.Create(reader => Verb = reader.ReadByte(), writer => writer.Write(Verb), 8),
-                    LoadAndSaveEntry.Create(reader => Preposition = reader.ReadByte(), writer => writer.Write(Preposition),8),
+                    LoadAndSaveEntry.Create(reader => Preposition = reader.ReadBoolean(), writer => writer.Write(Preposition),8),
                     LoadAndSaveEntry.Create(reader => ObjectA = reader.ReadUInt16(), writer => writer.Write(ObjectA),8),
                     LoadAndSaveEntry.Create(reader => ObjectB = reader.ReadUInt16(), writer => writer.Write(ObjectB),8),
-                    LoadAndSaveEntry.Create(reader => FreezeCount = reader.ReadByte(), writer => writer.Write(FreezeCount),8),
+                    LoadAndSaveEntry.Create(reader => freezeCount = reader.ReadByte(), writer => writer.Write(freezeCount),8),
              };
             Array.ForEach(sentenceEntries, e => e.Execute(serializer));
         }

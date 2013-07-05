@@ -18,6 +18,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using NScumm.Core.IO;
 
 namespace NScumm.Core.Graphics
 {
@@ -61,7 +62,8 @@ namespace NScumm.Core.Graphics
             {
                 maskBuffer[i] = new byte[40 * (200 + 4)];
             }
-            IsZBufferEnabled=true;
+            IsZBufferEnabled = true;
+            _gfxUsageBits = new uint[410 * 3];
         }
         #endregion
 
@@ -241,6 +243,96 @@ namespace NScumm.Core.Graphics
             }
         }
         #endregion
+
+        #region GfxUsageBit Members
+
+        public const int UsageBitDirty = 96;
+        public const int UsageBitRestored = 95;
+
+        /// <summary>
+        /// For each of the 410 screen strips, gfxUsageBits contains a
+        /// bitmask. The lower 80 bits each correspond to one actor and
+        /// signify if any part of that actor is currently contained in
+        /// that strip.
+        ///
+        /// If the leftmost bit is set, the strip (background) is dirty
+        /// needs to be redrawn.
+        ///
+        /// The second leftmost bit is set by removeBlastObject() and
+        /// restoreBackground(), but I'm not yet sure why.
+        /// </summary>
+        uint[] _gfxUsageBits;
+
+        public void SetGfxUsageBit(int strip, int bit)
+        {
+            if (strip < 0 || strip >= (_gfxUsageBits.Length / 3)) throw new ArgumentOutOfRangeException("strip");
+            if (bit < 1 || bit > 96) throw new ArgumentOutOfRangeException("bit");
+            bit--;
+            _gfxUsageBits[3 * strip + bit / 32] |= (uint)((1 << bit % 32));
+        }
+
+        public void ClearGfxUsageBits()
+        {
+            Array.Clear(_gfxUsageBits, 0, _gfxUsageBits.Length);
+        }
+
+        public void ClearGfxUsageBit(int strip, int bit)
+        {
+            if (strip < 0 || strip >= (_gfxUsageBits.Length / 3)) throw new ArgumentOutOfRangeException("strip");
+            if (bit < 1 || bit > 96) throw new ArgumentOutOfRangeException("bit");
+            bit--;
+            _gfxUsageBits[3 * strip + bit / 32] &= (uint)~(1 << (bit % 32));
+        }
+
+        public bool TestGfxUsageBit(int strip, int bit)
+        {
+            if (strip < 0 || strip >= (_gfxUsageBits.Length / 3)) throw new ArgumentOutOfRangeException("strip");
+            if (bit < 0 || bit > 96) throw new ArgumentOutOfRangeException("bit");
+            bit--;
+            return (_gfxUsageBits[3 * strip + bit / 32] & (1 << (bit % 32))) != 0;
+        }
+
+        public bool TestGfxOtherUsageBits(int strip, int bit)
+        {
+            // Don't exclude the DIRTY and RESTORED bits from the test
+            var bitmask = new uint[3] { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF };
+
+            ScummHelper.AssertRange(1, bit, 96, "TestGfxOtherUsageBits");
+            bit--;
+            bitmask[bit / 32] &= (uint)(~(1 << (bit % 32)));
+
+            for (int i = 0; i < 3; i++)
+                if ((_gfxUsageBits[3 * strip + i] & bitmask[i]) != 0)
+                    return true;
+
+            return false;
+        }
+
+        public bool TestGfxAnyUsageBits(int strip)
+        {
+            // Exclude the DIRTY and RESTORED bits from the test
+            var bitmask = new uint[3] { 0xFFFFFFFF, 0xFFFFFFFF, 0x3FFFFFFF };
+
+            ScummHelper.AssertRange(0, strip, _gfxUsageBits.Length / 3, "TestGfxOtherUsageBits");
+            for (var i = 0; i < 3; i++)
+                if ((_gfxUsageBits[3 * strip + i] & bitmask[i]) != 0)
+                    return true;
+
+            return false;
+        }
+
+        public void SaveOrLoad(Serializer serializer)
+        {
+            var entries = new []
+            {
+                LoadAndSaveEntry.Create(reader => _gfxUsageBits = reader.ReadUInt32s(200), writer => writer.WriteUInt32s(_gfxUsageBits,200), 8,9),
+                LoadAndSaveEntry.Create(reader => _gfxUsageBits = reader.ReadUInt32s(410), writer => writer.WriteUInt32s(_gfxUsageBits,410), 10,13),
+                LoadAndSaveEntry.Create(reader => _gfxUsageBits = reader.ReadUInt32s(3*410), writer => writer.WriteUInt32s(_gfxUsageBits,3*410), 14)
+            };
+            Array.ForEach(entries, entry => entry.Execute(serializer));
+        }
+
+        #endregion GfxUsageBit Members
 
         #region Private Methods
         void DecodeMask(BinaryReader reader, IList<byte> mask, int offset, int width, int height)

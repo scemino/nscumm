@@ -316,8 +316,7 @@ namespace NScumm.Core
                                 data.Height = height;
                                 data.Parent = parent;
                                 data.ParentState = parentState;
-                                data.WalkX = walk_x;
-                                data.WalkY = walk_y;
+                                data.Walk = new Point(walk_x, walk_y);
                                 data.ActorDir = actordir;
                                 room.Objects.Add(data);
 
@@ -449,16 +448,16 @@ namespace NScumm.Core
             return colorCycle;
         }
 
-        Scale[] ReadSCAL()
+        ScaleSlot[] ReadSCAL()
         {
-            Scale[] scales = new Scale[4];
+            var scales = new ScaleSlot[4];
             for (int i = 0; i < 4; i++)
             {
                 var scale1 = _reader.ReadUInt16();
                 var y1 = _reader.ReadUInt16();
                 var scale2 = _reader.ReadUInt16();
                 var y2 = _reader.ReadUInt16();
-                scales[i] = new Scale { Scale1 = scale1, Y1 = y1, Y2 = y2, Scale2 = scale2 };
+                scales[i] = new ScaleSlot { Scale1 = scale1, Y1 = y1, Y2 = y2, Scale2 = scale2 };
             }
             return scales;
         }

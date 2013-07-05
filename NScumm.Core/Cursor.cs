@@ -14,20 +14,16 @@
  * You should have received a copy of the GNU General Public License
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
+using NScumm.Core.Graphics;
 
 namespace NScumm.Core
 {
     public class Cursor
     {
         public sbyte State { get; set; }
-
         public bool Animate { get; set; }
-
         public int AnimateIndex { get; set; }
-
-        public int HotspotX { get; set; }
-        public int HotspotY { get; set; }
-
+        public Point Hotspot { get; set; }
         public int Width { get; set; }
         public int Height { get; set; }
 

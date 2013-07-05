@@ -66,9 +66,9 @@ namespace NScumm.GL
         }
         #endregion
         #region Cursor Methods
-        public void SetCursor (byte[] pixels, int width, int height, int hotspotX, int hotspotY)
+        public void SetCursor (byte[] pixels, int width, int height, NScumm.Core.Graphics.Point hotspot)
         {
-            _hotspot = new Vector2 (hotspotX, hotspotY);
+            _hotspot = new Vector2 (hotspot.X, hotspot.Y);
 
             var pixelsCursor = new Color[16 * 16];
             for (int h = 0; h < height; h++) {

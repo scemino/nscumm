@@ -28,7 +28,7 @@ namespace NScumm.Core.Graphics
         void SetPalette(Color[] color);
         void SetPalette(Color[] color, int first, int num);
 
-        void SetCursor(byte[] pixels, int width, int height, int hotspotX, int hotspotY);
+        void SetCursor(byte[] pixels, int width, int height, Point hotspot);
 
         void ShowCursor(bool show);
     }

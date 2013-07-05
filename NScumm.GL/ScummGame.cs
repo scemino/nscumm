@@ -75,7 +75,7 @@ namespace NScumm.GL
         protected override void Initialize ()
         {
             // update title
-            base.Window.Title = string.Format ("NSucmm - {0} [{1}]", info.Description, info.Culture.NativeName);
+            base.Window.Title = string.Format ("NScumm - {0} [{1}]", info.Description, info.Culture.NativeName);
 
             // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch (GraphicsDevice);
@@ -113,23 +113,22 @@ namespace NScumm.GL
             var win = new MenuWindow ();
             win.LoadRequested += (o1,e1) => {
                 engine.Load (e1.Filename);
-                win.Destroy ();
+                win.Destroy();
                 Gtk.Application.Quit ();
             };
             win.SaveRequested += (o1,e1) => {
                 engine.Save (e1.Filename);
-                win.Destroy ();
+                win.Destroy();
                 Gtk.Application.Quit ();
             };
             win.QuitRequested += (o1,e1) => {
                 quitRequested = true;
-                win.Destroy ();
+                win.Destroy();
                 Gtk.Application.Quit ();
             };
-            win.DestroyWithParent=true;
-            win.DeleteEvent += (o,e2) => {
-                win.Destroy ();
+            win.DeleteEvent+=(o,e1)=> {
                 Gtk.Application.Quit ();
+                e1.RetVal=true;
             };
             win.ShowAll ();
             Gtk.Application.Run ();

@@ -15,28 +15,34 @@
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-using NScumm.Core.IO;
 using System;
+using NScumm.Core.Graphics;
+using NScumm.Core.IO;
 
 namespace NScumm.Core
 {
-    public class Slot
+    class Slot
     {
-        public short XPos = 2;
-        public short YPos = 5;
-        public short Right = 319;
-        public short Height = 0;
-        public byte Color = 0xF;
-        public byte Charset = 4;
+        public Point Position { get; set; }
+        public short Right { get; set; }
+        public byte Color { get; set; }
+        public byte Charset { get; set; }
         public bool Center;
         public bool Overhead;
         public bool NoTalkAnim;
         public bool Wrapping;
 
+        public Slot()
+        {
+            Position = new Point(2, 5);
+            Right = 319;
+            Color = 0xF;
+            Charset = 4;
+        }
+
         public void CopyFrom(Slot s)
         {
-            XPos = s.XPos;
-            YPos = s.YPos;
+            Position = s.Position;
             Right = s.Right;
             Color = s.Color;
             Charset = s.Charset;
@@ -47,7 +53,7 @@ namespace NScumm.Core
         }
     }
 
-    public class TextSlot : Slot
+    class TextSlot : Slot
     {
         Slot _default = new Slot();
 
@@ -69,10 +75,19 @@ namespace NScumm.Core
         public void SaveOrLoad(Serializer serializer)
         {
             var stringTabEntries = new[]{
-                    LoadAndSaveEntry.Create(reader => XPos = reader.ReadInt16(), writer => writer.Write(XPos), 8),
-                    LoadAndSaveEntry.Create(reader => _default.XPos = reader.ReadInt16(), writer => writer.Write(_default.XPos),8),
-                    LoadAndSaveEntry.Create(reader => YPos = reader.ReadInt16(), writer => writer.Write(YPos),8),
-                    LoadAndSaveEntry.Create(reader => _default.YPos = reader.ReadInt16(), writer => writer.Write(_default.YPos),8),
+                    LoadAndSaveEntry.Create(reader => {
+                        var xPos = reader.ReadInt16(); 
+                        var defaultXPos = reader.ReadInt16();
+                        var yPos = reader.ReadInt16();
+                        var defaultYPos = reader.ReadInt16();
+                        Position = new Point(xPos, yPos);
+                        _default.Position = new Point(defaultXPos, defaultYPos);
+                    }, writer => {
+                        writer.Write(Position.X);
+                        writer.Write(_default.Position.X);
+                        writer.Write(Position.Y);
+                        writer.Write(_default.Position.Y);
+                    },8),
                     LoadAndSaveEntry.Create(reader => Right= reader.ReadInt16(), writer => writer.Write(Right),8),
                     LoadAndSaveEntry.Create(reader => _default.Right= reader.ReadInt16(), writer => writer.Write(_default.Right),8),
                     LoadAndSaveEntry.Create(reader => Color= reader.ReadByte(), writer => writer.Write(Color),8),

@@ -38,6 +38,7 @@ namespace NScumm.Core
         CutSceneData cutSceneOverride = new CutSceneData();
 
         public Stack<CutSceneData> Data { get; private set; }
+
         public CutSceneData Override
         {
             get
@@ -50,7 +51,7 @@ namespace NScumm.Core
             }
         }
 
-        public int CutSceneScriptIndex;
+        public int CutSceneScriptIndex { get; set; }
 
         public CutScene()
         {

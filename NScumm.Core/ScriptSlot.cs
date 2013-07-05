@@ -14,7 +14,6 @@
  * You should have received a copy of the GNU General Public License
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 using NScumm.Core.IO;
 using System;
 
@@ -37,8 +36,10 @@ namespace NScumm.Core
         FLObject = 4
     }
 
-    public class ScriptSlot
+    class ScriptSlot
     {
+        byte freezeCount;
+
         public uint Offset;
         public int Delay;
         public ushort Number;
@@ -47,10 +48,11 @@ namespace NScumm.Core
         public bool IsExecuted;
         public ScriptStatus Status;
         public WhereIsObject Where;
-        public byte FreezeCount;
         public byte CutSceneOverride;
+
         public int InventoryEntry { get; set; }
-        public bool Frozen { get; set; }
+
+        public bool Frozen { get { return freezeCount > 0; } }
 
         public int[] LocalVariables = new int[26];
 
@@ -60,9 +62,26 @@ namespace NScumm.Core
             Array.Clear(LocalVariables, locals.Length, LocalVariables.Length - locals.Length);
         }
 
+        public void Freeze()
+        {
+            freezeCount++;
+        }
+
+        public void Unfreeze()
+        {
+            if (Frozen)
+                freezeCount--;
+        }
+
+        public void UnfreezeAll()
+        {
+            freezeCount = 0;
+        }
+
         public void SaveOrLoad(Serializer serializer, System.Collections.Generic.IList<ScriptData> localScripts)
         {
-            var scriptSlotEntries = new[]{
+            var scriptSlotEntries = new[]
+            {
                 LoadAndSaveEntry.Create(
                     reader => Offset = reader.ReadUInt32(),
                     writer=>
@@ -86,7 +105,7 @@ namespace NScumm.Core
                 LoadAndSaveEntry.Create(reader => Where = (WhereIsObject)reader.ReadByte(),writer=> writer.WriteByte((byte)Where),8),
                 LoadAndSaveEntry.Create(reader => FreezeResistant = reader.ReadBoolean(),writer=> writer.WriteByte(FreezeResistant),8),
                 LoadAndSaveEntry.Create(reader => Recursive = reader.ReadBoolean(),writer=> writer.WriteByte(Recursive),8),
-                LoadAndSaveEntry.Create(reader => FreezeCount = reader.ReadByte(),writer=> writer.WriteByte(FreezeCount),8),
+                LoadAndSaveEntry.Create(reader => freezeCount = reader.ReadByte(),writer=> writer.WriteByte(freezeCount),8),
                 LoadAndSaveEntry.Create(reader => IsExecuted = reader.ReadBoolean(),writer=> writer.WriteByte(IsExecuted),8),
                 LoadAndSaveEntry.Create(reader => CutSceneOverride = reader.ReadByte(),writer=> writer.WriteByte(CutSceneOverride),8),
                 LoadAndSaveEntry.Create(reader => reader.ReadByte(),writer=> writer.WriteByte((byte)0),46),

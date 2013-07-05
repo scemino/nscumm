@@ -189,7 +189,7 @@ namespace NScumm.Core
             return r;
         }
 
-        protected bool IncreaseAnim(Actor a, int slot)
+        bool IncreaseAnim(Actor a, int slot)
         {
             int highflag;
             int i, end;

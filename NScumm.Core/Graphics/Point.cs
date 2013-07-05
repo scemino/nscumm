@@ -67,6 +67,12 @@ namespace NScumm.Core.Graphics
             return false;
         }
 
+        public void Offset(short x, short y)
+        {
+            X += x;
+            Y += y;
+        }
+
         /// <summary>
         /// Computes the square of the distance between this point and the point p.
         /// </summary>

@@ -99,7 +99,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NScumm.Core\NScumm.Core.csproj">
-      <Project>{b33e2d2e-e360-4f10-a82f-aa98500497fd}</Project>
+      <Project>{B33E2D2E-E360-4F10-A82F-AA98500497FD}</Project>
       <Name>NScumm.Core</Name>
     </ProjectReference>
   </ItemGroup>

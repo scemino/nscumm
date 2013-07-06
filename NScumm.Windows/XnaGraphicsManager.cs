@@ -33,6 +33,7 @@ namespace NScumm.Windows
         private Microsoft.Xna.Framework.Color[] _colors;
         private bool _cursorVisible;
         private Microsoft.Xna.Framework.Vector2 _hotspot;
+        private int shakePos;
         #endregion
 
         #region Constructor
@@ -42,7 +43,7 @@ namespace NScumm.Windows
             _texture = new Texture2D(device, 320, 200);
             _textureCursor = new Texture2D(device, 16, 16);
             _colors = new Microsoft.Xna.Framework.Color[256];
-        } 
+        }
         #endregion
 
         public void UpdateScreen()
@@ -70,6 +71,11 @@ namespace NScumm.Windows
             }
         }
 
+        public void SetShakePos(int pos)
+        {
+            shakePos = pos;
+        }
+
         #region Palette Methods
         public void SetPalette(NScumm.Core.Graphics.Color[] colors)
         {
@@ -90,9 +96,9 @@ namespace NScumm.Windows
         #endregion
 
         #region Cursor Methods
-        public void SetCursor(byte[] pixels, int width, int height, int hotspotX, int hotspotY)
+        public void SetCursor(byte[] pixels, int width, int height, NScumm.Core.Graphics.Point hotspot)
         {
-            _hotspot = new Microsoft.Xna.Framework.Vector2(hotspotX, hotspotY);
+            _hotspot = new Microsoft.Xna.Framework.Vector2(hotspot.X, hotspot.Y);
 
             var pixelsCursor = new Microsoft.Xna.Framework.Color[16 * 16];
             for (int h = 0; h < height; h++)
@@ -101,7 +107,7 @@ namespace NScumm.Windows
                 {
                     var palColor = pixels[w + h * width];
                     var color = palColor == 0 ? Microsoft.Xna.Framework.Color.Transparent : _colors[palColor];
-                    pixelsCursor[w + h * width] = color;
+                    pixelsCursor[(width - w - 1) + h * width] = color;
                 }
             }
             _textureCursor.SetData(pixelsCursor);
@@ -116,7 +122,8 @@ namespace NScumm.Windows
         #region Draw Methods
         public void DrawScreen(SpriteBatch spriteBatch)
         {
-			var rect = spriteBatch.GraphicsDevice.PresentationParameters.Bounds;
+            var rect = spriteBatch.GraphicsDevice.PresentationParameters.Bounds;
+            rect.Offset(0, shakePos);
             spriteBatch.Draw(_texture, rect, null, Microsoft.Xna.Framework.Color.White);
         }
 
@@ -129,7 +136,7 @@ namespace NScumm.Windows
                 var rect = new Rectangle((int)(cursorPos.X - scaleX * _hotspot.X), (int)(cursorPos.Y - scaleY * _hotspot.Y), (int)(scaleX * 16), (int)(scaleY * 16));
                 spriteBatch.Draw(_textureCursor, rect, null, Microsoft.Xna.Framework.Color.White);
             }
-        } 
+        }
         #endregion
 
         #region Dispose
@@ -142,7 +149,7 @@ namespace NScumm.Windows
         {
             _texture.Dispose();
             _textureCursor.Dispose();
-        } 
+        }
         #endregion
     }
 }

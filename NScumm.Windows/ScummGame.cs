@@ -38,7 +38,6 @@ namespace NScumm.Windows
         private GraphicsDeviceManager graphics;
         private SpriteBatch spriteBatch;
         private ScummEngine engine;
-        private ScummIndex index;
         private GameInfo info;
         private XnaGraphicsManager gfx;
         private XnaInputManager inputManager;
@@ -65,11 +64,8 @@ namespace NScumm.Windows
         /// </summary>
         protected override void Initialize()
         {
-            index = new ScummIndex();
-            index.LoadIndex(info.Path);
-
             // update title
-            base.Window.Title = string.Format("NSucmm - {0} [{1}]", info.Description, info.Culture.NativeName);
+            base.Window.Title = string.Format("NScumm - {0} [{1}]", info.Description, info.Culture.NativeName);
 
             base.Initialize();
         }
@@ -86,7 +82,7 @@ namespace NScumm.Windows
             gfx = new XnaGraphicsManager(GraphicsDevice);
 
             // init engines
-            engine = new ScummEngine(index, info, gfx, inputManager);
+            engine = new ScummEngine(info, gfx, inputManager);
             engine.ShowMenuDialogRequested += OnShowMenuDialogRequested;
             engine.RunBootScript();
         }
@@ -130,6 +126,7 @@ namespace NScumm.Windows
             var dt = DateTime.Now;
             if (tsToWait == TimeSpan.Zero)
             {
+                inputManager.UpdateStates();
                 tsDelta = engine.Loop(tsDelta);
                 tsToWait = tsDelta;
                 gfx.UpdateScreen();

@@ -54,6 +54,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
-		StartupItem = NScumm.Android\NScumm.Droid.csproj
+		StartupItem = NScumm.Windows\NScumm.Windows.csproj
 	EndGlobalSection
 EndGlobal

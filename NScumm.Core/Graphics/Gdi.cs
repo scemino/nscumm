@@ -41,7 +41,7 @@ namespace NScumm.Core.Graphics
         byte decompShr;
         byte decompMask;
         byte transparentColor = 255;
-        byte[][] maskBuffer = new byte[2][];
+        byte[][] maskBuffer = new byte[4][];
         #endregion
 
         #region Properties
@@ -58,7 +58,7 @@ namespace NScumm.Core.Graphics
         public Gdi(ScummEngine vm)
         {
             _vm = vm;
-            for (int i = 0; i < 2; i++)
+            for (int i = 0; i < maskBuffer.Length; i++)
             {
                 maskBuffer[i] = new byte[40 * (200 + 4)];
             }
@@ -206,7 +206,6 @@ namespace NScumm.Core.Graphics
         public void ResetBackground(int top, int bottom, int strip)
         {
             var vs = _vm.MainVirtScreen;
-            int numLinesToProcess;
 
             if (top < 0)
                 top = 0;
@@ -217,7 +216,7 @@ namespace NScumm.Core.Graphics
             if (top >= bottom)
                 return;
 
-            System.Diagnostics.Debug.Assert(0 <= strip && strip < NumStrips);
+            if (strip < 0 || strip >= NumStrips) throw new ArgumentOutOfRangeException("strip");
 
             if (top < vs.TDirty[strip])
                 vs.TDirty[strip] = top;
@@ -225,7 +224,7 @@ namespace NScumm.Core.Graphics
             if (bottom > vs.BDirty[strip])
                 vs.BDirty[strip] = bottom;
 
-            numLinesToProcess = bottom - top;
+            int numLinesToProcess = bottom - top;
             if (numLinesToProcess > 0)
             {
                 var navDest = new PixelNavigator(vs.Surfaces[0]);
@@ -323,7 +322,7 @@ namespace NScumm.Core.Graphics
 
         public void SaveOrLoad(Serializer serializer)
         {
-            var entries = new []
+            var entries = new[]
             {
                 LoadAndSaveEntry.Create(reader => _gfxUsageBits = reader.ReadUInt32s(200), writer => writer.WriteUInt32s(_gfxUsageBits,200), 8,9),
                 LoadAndSaveEntry.Create(reader => _gfxUsageBits = reader.ReadUInt32s(410), writer => writer.WriteUInt32s(_gfxUsageBits,410), 10,13),
@@ -437,9 +436,6 @@ namespace NScumm.Core.Graphics
                 for (i = 1; i < zplanes.Count; i++)
                 {
                     uint offs;
-
-                    if (zplanes[i] == null)
-                        continue;
 
                     var zplanePtr = new MemoryStream(zplanes[i]);
                     zplanePtr.Seek(stripnr * 2 + 2, SeekOrigin.Begin);
@@ -589,45 +585,45 @@ namespace NScumm.Core.Graphics
             {
                 case 1:
                     throw new NotImplementedException();
-                    //DrawStripRaw(dst, dstPitch, src, numLinesToProcess, false);
-                    //break;
+                //DrawStripRaw(dst, dstPitch, src, numLinesToProcess, false);
+                //break;
 
                 case 2:
                     throw new NotImplementedException();
-                    //unkDecode8(dst, dstPitch, src, numLinesToProcess);       /* Ender - Zak256/Indy256 */
-                    //break;
+                //unkDecode8(dst, dstPitch, src, numLinesToProcess);       /* Ender - Zak256/Indy256 */
+                //break;
 
                 case 3:
                     throw new NotImplementedException();
-                    //unkDecode9(dst, dstPitch, src, numLinesToProcess);       /* Ender - Zak256/Indy256 */
-                    //break;
+                //unkDecode9(dst, dstPitch, src, numLinesToProcess);       /* Ender - Zak256/Indy256 */
+                //break;
 
                 case 4:
                     throw new NotImplementedException();
-                    //unkDecode10(dst, dstPitch, src, numLinesToProcess);      /* Ender - Zak256/Indy256 */
-                    //break;
+                //unkDecode10(dst, dstPitch, src, numLinesToProcess);      /* Ender - Zak256/Indy256 */
+                //break;
 
                 case 7:
                     throw new NotImplementedException();
-                    //unkDecode11(dst, dstPitch, src, numLinesToProcess);      /* Ender - Zak256/Indy256 */
-                    //break;
+                //unkDecode11(dst, dstPitch, src, numLinesToProcess);      /* Ender - Zak256/Indy256 */
+                //break;
 
                 case 8:
                     // Used in 3DO versions of HE games
                     throw new NotImplementedException();
-                    //drawStrip3DO(dst, dstPitch, src, numLinesToProcess, true);
-                    //break;
+                //drawStrip3DO(dst, dstPitch, src, numLinesToProcess, true);
+                //break;
 
                 case 9:
                     //drawStrip3DO(dst, dstPitch, src, numLinesToProcess, false);
                     throw new NotImplementedException();
-                    //break;
+                //break;
 
                 case 10:
                     // Used in Amiga version of Monkey Island 1
                     //drawStripEGA(dst, dstPitch, src, numLinesToProcess);
                     throw new NotImplementedException();
-                    //break;
+                //break;
 
                 case 14:
                 case 15:
@@ -674,8 +670,8 @@ namespace NScumm.Core.Graphics
                 case 107:
                 case 108:
                     throw new NotImplementedException();
-                    //DrawStripComplex(dst, dstPitch, src, numLinesToProcess, false);
-                    //break;
+                //DrawStripComplex(dst, dstPitch, src, numLinesToProcess, false);
+                //break;
 
                 case 84:
                 case 85:
@@ -688,8 +684,8 @@ namespace NScumm.Core.Graphics
                 case 127:
                 case 128:
                     throw new NotImplementedException();
-                    //DrawStripComplex(dst, dstPitch, src, numLinesToProcess, true);
-                    //break;
+                //DrawStripComplex(dst, dstPitch, src, numLinesToProcess, true);
+                //break;
 
                 case 134:
                 case 135:
@@ -698,7 +694,7 @@ namespace NScumm.Core.Graphics
                 case 138:
                     //drawStripHE(dst, dstPitch, src, 8, numLinesToProcess, false);
                     throw new NotImplementedException();
-                    //break;
+                //break;
 
                 case 143: // Triggered by Russian water
                 case 144:
@@ -708,12 +704,12 @@ namespace NScumm.Core.Graphics
                 case 148:
                     //drawStripHE(dst, dstPitch, src, 8, numLinesToProcess, true);
                     throw new NotImplementedException();
-                    //break;
+                //break;
 
                 case 149:
                     //drawStripRaw(dst, dstPitch, src, numLinesToProcess, true);
                     throw new NotImplementedException();
-                    //break;
+                //break;
 
                 default:
                     //error("Gdi::decompressBitmap: default case %d", code);
@@ -928,28 +924,29 @@ namespace NScumm.Core.Graphics
             {
                 var zplane = new MemoryStream(ptr);
                 var zplaneReader = new BinaryReader(zplane);
-                int uPtr;
-                byte[] ptr1;
+                int zOffset;
                 if (_vm.Game.Features.HasFlag(GameFeatures.SixteenColors))
                 {
-                    uPtr = zplaneReader.ReadInt16();
-                    ptr1 = zplaneReader.ReadBytes(uPtr - 2);
-                    uPtr = zplaneReader.ReadInt16();
+                    zOffset = zplaneReader.ReadInt16();
                     zplaneReader.BaseStream.Seek(-2, SeekOrigin.Current);
-                } else
-                {
-                    uPtr = zplaneReader.ReadInt32();
-                    ptr1 = zplaneReader.ReadBytes(uPtr - 4);
                 }
-                zplanes.Add(ptr1);
-                if (uPtr != 0)
+                else
                 {
-                    byte[] ptr2 = null;
-                    if (ptr.Length - uPtr > 2)
+                    zOffset = zplaneReader.ReadInt32();
+                    zplaneReader.BaseStream.Seek(-4, SeekOrigin.Current);
+                }
+                while (zOffset != 0 && zplanes.Count < 4)
+                {
+                    zplanes.Add(zplaneReader.ReadBytes(zOffset));
+                    if (zplaneReader.BaseStream.Position < (zplaneReader.BaseStream.Length - 2))
                     {
-                        ptr2 = zplaneReader.ReadBytes(ptr.Length - uPtr);
+                        zOffset = zplaneReader.ReadInt16();
+                        zplaneReader.BaseStream.Seek(-2, SeekOrigin.Current);
                     }
-                    zplanes.Add(ptr2);
+                    else
+                    {
+                        zOffset = 0;
+                    }
                 }
             }
             return zplanes;

@@ -67,10 +67,11 @@ namespace NScumm.Core.Graphics
             return false;
         }
 
-        public void Offset(short x, short y)
+		public Point Offset(short x, short y)
         {
             X += x;
             Y += y;
+			return this;
         }
 
         /// <summary>

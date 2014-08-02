@@ -87,7 +87,7 @@ namespace NScumm.Core
 
 				if (_variables [VariableTalkStringY] < 0) {
 					s = (a.ScaleY * _variables [VariableTalkStringY]) / 0xFF;
-					_string [0].Position.Offset (0, (short)(((_variables [VariableTalkStringY] - s) / 2) + s));
+					_string [0].Position = _string [0].Position.Offset (0, (short)(((_variables [VariableTalkStringY] - s) / 2) + s));
 				} else {
 					_string [0].Position = new Point (_string [0].Position.X, (short)_variables [VariableTalkStringY]);
 				}

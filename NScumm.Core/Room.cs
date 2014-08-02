@@ -20,14 +20,14 @@ using System.Collections.Generic;
 
 namespace NScumm.Core
 {
-    class RoomHeader
+    public class RoomHeader
     {
         public ushort Width { get; set; }
         public ushort Height { get; set; }
         public ushort NumObjects { get; set; }
     }
 
-    class Room
+    public class Room
     {
         public RoomHeader Header { get; set; }
         public Palette Palette { get; private set; }
@@ -56,6 +56,9 @@ namespace NScumm.Core
             this.TransparentColor = 255;
             this.Scales = new ScaleSlot[0];
             this.ColorCycle = new ColorCycle[16];
+			for (int i = 0; i < ColorCycle.Length; i++) {
+				this.ColorCycle [i] = new NScumm.Core.ColorCycle ();
+			}
         }
     }
 }

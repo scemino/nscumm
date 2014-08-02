@@ -16,7 +16,7 @@
  */
 
 
-namespace NScumm.Core
+namespace NScumm.Core.Input
 {
     public enum ScummMouseButtonState
     {

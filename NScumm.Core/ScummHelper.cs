@@ -1,10 +1,38 @@
-﻿using System;
+﻿/*
+ * This file is part of NScumm.
+ *
+ * NScumm is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * NScumm is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+using System;
 using System.IO;
 
 namespace NScumm.Core
 {
     static class ScummHelper
     {
+		public static int ToTicks (TimeSpan time)
+		{
+			return (int)time.TotalSeconds * 60;
+		}
+
+		public static TimeSpan ToTimeSpan (int ticks)
+		{
+			var t = ticks;
+			return TimeSpan.FromSeconds(t / 60.0);
+		}
+
         public static int NewDirToOldDir(int dir)
         {
             if (dir >= 71 && dir <= 109)

@@ -22,7 +22,7 @@ using NScumm.Core.IO;
 
 namespace NScumm.Core
 {
-    class ObjectData
+    public class ObjectData
     {
         public ushort Number;
         public ushort Width;

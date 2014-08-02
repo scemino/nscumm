@@ -1,14 +1,31 @@
-﻿using Microsoft.Xna.Framework;
+﻿/*
+ * This file is part of NScumm.
+ * 
+ * NScumm is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * NScumm is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 
-namespace NScumm.GL
+namespace NScumm.MonoGame
 {
     sealed class XnaGraphicsManager : NScumm.Core.Graphics.IGraphicsManager, IDisposable
     {
         #region Fields
-        Texture2D _texture;
-        Texture2D _textureCursor;
+        readonly Texture2D _texture;
+        readonly Texture2D _textureCursor;
         byte[] _pixels;
         Color[] _colors;
         bool _cursorVisible;
@@ -20,7 +37,7 @@ namespace NScumm.GL
         public XnaGraphicsManager (GraphicsDevice device)
         {
             if (device == null)
-                new ArgumentNullException ("device");
+				throw new ArgumentNullException ("device");
 
             _pixels = new byte[320 * 200];
             _texture = new Texture2D (device, 320, 200);
@@ -91,7 +108,7 @@ namespace NScumm.GL
         {
             var rect = spriteBatch.GraphicsDevice.Viewport.Bounds;
             rect.Offset (0, _shakePos);
-            spriteBatch.Draw (_texture, rect, null, Color.White);
+			spriteBatch.Draw (_texture, rect, null, Color.White);
         }
 
         public void DrawCursor (SpriteBatch spriteBatch, Vector2 cursorPos)

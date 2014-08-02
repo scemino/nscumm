@@ -20,7 +20,7 @@ using System;
 namespace NScumm.Core
 {
     [Flags]
-    enum BoxFlags
+    public enum BoxFlags
     {
         XFlip = 0x08,
         YFlip = 0x10,
@@ -30,7 +30,7 @@ namespace NScumm.Core
         Invisible = 0x80
     }
 
-    class Box
+    public class Box
     {
         public short Ulx, Uly;
         public short Urx, Ury;

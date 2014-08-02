@@ -5,12 +5,15 @@
   <MD5 signature="e6cd81b25ab1453a8a6d3482118c391e" gameId="pass" variant="" language="en" features="SixteenColors" />
   <MD5 signature="5d88b9d6a88e6f8e90cded9d01b7f082" gameId="loom" variant="VGA" language="en" />
   <MD5 signature="1875b90fade138c9253a8e967007031a" gameId="indy3" variant="VGA" language="en" />
+  <MD5 signature="8e4ee4db46954bfe2912e259a16fad82" gameId="monkey2" variant="VGA" language="en" />
   <Game id="indy3" variant="VGA" version="3"/>
   <Game id="monkey" variant="VGA" version="4" />
   <Game id="pass" variant="" version="4" />
   <Game id="loom" variant="VGA" version="4" />
+  <Game id="monkey2" variant="VGA" version="5" />
   <Description gameId="indy3" text="Indiana Jones and the Last Crusade" />
   <Description gameId="monkey" text="The Secret of Monkey Island" />
+  <Description gameId="monkey2" text="Monkey Island 2: LeChuck's revenge" />
   <Description gameId="pass" text="Passport to Adventure" />
   <Description gameId="loom" text="Loom" />
 </NScumm>

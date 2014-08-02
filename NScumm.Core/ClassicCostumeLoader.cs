@@ -34,9 +34,9 @@ namespace NScumm.Core
         public bool Mirror;
         public XorReader CostumeReader;
 
-        ScummIndex _vm;
+        ResourceManager _vm;
 
-        public ClassicCostumeLoader(ScummIndex vm)
+        public ClassicCostumeLoader(ResourceManager vm)
         {
             _vm = vm;
             Id = -1;

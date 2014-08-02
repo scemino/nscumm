@@ -115,7 +115,7 @@ namespace NScumm.Core.Graphics
         public ClassicCostumeRenderer(ScummEngine vm)
         {
             _vm = vm;
-            _loaded = new ClassicCostumeLoader(vm.Index);
+			_loaded = new ClassicCostumeLoader(vm.ResourceManager);
             _palette = new ushort[32];
         } 
         #endregion

@@ -27,7 +27,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("NScumm.Core")]
-[assembly: AssemblyCopyright("Copyright ©  2012-2013")]
+[assembly: AssemblyCopyright("Copyright ©  2012-2014")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

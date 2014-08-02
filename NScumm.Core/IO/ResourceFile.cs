@@ -15,23 +15,22 @@
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-using NScumm.Core.IO;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using NScumm.Core.Graphics;
 
-namespace NScumm.Core
+namespace NScumm.Core.IO
 {
-    public class DiskFile
+    public class ResourceFile
     {
         #region Fields
-        XorReader _reader;
+        readonly XorReader _reader;
         #endregion
 
         #region Chunk Class
-        private sealed class Chunk
+        sealed class Chunk
         {
             public uint Size { get; set; }
             public ushort Tag { get; set; }
@@ -40,7 +39,7 @@ namespace NScumm.Core
         #endregion
 
         #region ChunkIterator Class
-        private sealed class ChunkIterator : IEnumerator<Chunk>
+        sealed class ChunkIterator : IEnumerator<Chunk>
         {
             readonly XorReader _reader;
             readonly long _position;
@@ -94,7 +93,7 @@ namespace NScumm.Core
         #endregion
 
         #region Constructor
-        public DiskFile(string path, byte encByte)
+        public ResourceFile(string path, byte encByte)
         {
             var dir=Path.GetDirectoryName(path);
             var realPath=(from file in Directory.EnumerateFiles(dir)
@@ -369,6 +368,38 @@ namespace NScumm.Core
             return data;
         }
 
+		public byte[] ReadSound(int roomOffset)
+		{
+			_reader.BaseStream.Seek(roomOffset + 8, SeekOrigin.Begin);
+			_reader.ReadBytes(4);
+			_reader.BaseStream.Seek(-4, SeekOrigin.Current);
+			var size = _reader.ReadInt32();
+			var tag = _reader.ReadInt16();
+			if (tag != 0x4F53) throw new NotSupportedException("Expected SO block.");
+			var totalSize = size - 6;
+			while (totalSize > 0)
+			{
+				size = _reader.ReadInt32();
+				tag = _reader.ReadInt16();
+				if (tag == 0x4F53)
+				{
+					totalSize -= 6;
+				}
+				else if (tag == 0x4441)
+				{
+					_reader.BaseStream.Seek(-6, SeekOrigin.Current);
+					return _reader.ReadBytes(size);
+				}
+				else
+				{
+					totalSize -= size;
+					_reader.BaseStream.Seek(size - 6, SeekOrigin.Current);
+				}
+
+			}
+			return null;
+		}
+
         public byte[] ReadCharsetData()
         {
             var size = _reader.ReadInt32() + 11;
@@ -467,13 +498,13 @@ namespace NScumm.Core
             return _reader.ReadBytes(256);
         }
 
-        NScumm.Core.Graphics.Color[] ReadCLUT()
+        Color[] ReadCLUT()
         {
             var numColors = _reader.ReadUInt16() / 3;
-            var colors = new NScumm.Core.Graphics.Color[numColors];
+            var colors = new Color[numColors];
             for (int i = 0; i < numColors; i++)
             {
-                colors[i] = NScumm.Core.Graphics.Color.FromRgb(_reader.ReadByte(), _reader.ReadByte(), _reader.ReadByte());
+                colors[i] = Color.FromRgb(_reader.ReadByte(), _reader.ReadByte(), _reader.ReadByte());
             }
             return colors;
         }

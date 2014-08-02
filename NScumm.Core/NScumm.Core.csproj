@@ -94,6 +94,25 @@
     <Compile Include="Audio\IAudioDriver.cs" />
     <Compile Include="Audio\IAudioStream.cs" />
     <Compile Include="Audio\MidiPlayer.cs" />
+    <Compile Include="ScummEngine_Actor.cs" />
+    <Compile Include="ScummEngine_Verb.cs" />
+    <Compile Include="ScummEngine_Variable.cs" />
+    <Compile Include="ScummEngine_Object.cs" />
+    <Compile Include="ScummEngine_Camera.cs" />
+    <Compile Include="ScummEngine_Inventory.cs" />
+    <Compile Include="ScummEngine_Script.cs" />
+    <Compile Include="ScummEngine_Room.cs" />
+    <Compile Include="ScummEngine_Audio.cs" />
+    <Compile Include="ScummEngine_String.cs" />
+    <Compile Include="ScummEngine_Box.cs" />
+    <Compile Include="ScummEngine_Cursor.cs" />
+    <Compile Include="ScummEngine_Effect.cs" />
+    <Compile Include="ScummEngine_SaveLoad.cs" />
+    <Compile Include="ScummEngine_Charset.cs" />
+    <Compile Include="ScummEngine_Drawing.cs" />
+    <Compile Include="ScummEngine_Input.cs" />
+    <Compile Include="ScummEngine_Light.cs" />
+    <Compile Include="ScummEngine_Expression.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Nscumm.xml">

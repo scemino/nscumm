@@ -101,7 +101,7 @@ namespace NScumm.Core
 					if (obj < _actors.Length) {
 						var a = _actors [obj];
 						a.IgnoreBoxes = false;
-						a.ForceClip = false;
+						a.ForceClip = 0;
 					}
 				} else {
 					PutClass (obj, cls, (cls & 0x80) != 0);
@@ -136,7 +136,7 @@ namespace NScumm.Core
 			int obj = GetVarOrDirectWord (OpCodeParameter.Param1);
 
 			if (obj < 1) {
-				string msg = string.Format ("pickupObjectOld received invalid index %d (script %d)", obj, _slots [_currentScript].Number);
+				string msg = string.Format ("pickupObjectOld received invalid index {0} (script {1})", obj, _slots [_currentScript].Number);
 				throw new NotSupportedException (msg);
 			}
 

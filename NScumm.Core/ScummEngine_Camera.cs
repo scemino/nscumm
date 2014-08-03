@@ -26,7 +26,7 @@ namespace NScumm.Core
 {
 	partial class ScummEngine
 	{
-		Camera _camera = new Camera ();
+		readonly Camera _camera = new Camera ();
 
 		void PanCameraTo ()
 		{

@@ -34,8 +34,8 @@ namespace NScumm.Core.IO
 
 		public Script (int id, byte[] data)
 		{
-			this.Id = id;
-			this.Data = data;
+			Id = id;
+			Data = data;
 		}
 	}
 
@@ -63,7 +63,15 @@ namespace NScumm.Core.IO
 			get {
 				for (byte i = 0; i < index.ScriptResources.Count; i++) {
 					if (index.ScriptResources [i].RoomNum != 0) {
-						yield return new Script (i, GetScript (i));
+						byte[] script = null;
+						try {
+							script = GetScript (i);
+						} catch (NotSupportedException) {
+							// TODO: mmmh suspicious script error
+						}
+						if (script != null) {
+							yield return new Script (i, script);
+						}
 					}
 				}
 			}
@@ -73,7 +81,7 @@ namespace NScumm.Core.IO
 			get {
 				for (byte i = 0; i < index.SoundResources.Count; i++) {
 					if (index.SoundResources [i].RoomNum != 0) {
-						yield return GetSound(i);
+						yield return GetSound (i);
 					}
 				}
 			}
@@ -138,15 +146,14 @@ namespace NScumm.Core.IO
 			return data;
 		}
 
-		public byte[] GetSound(int sound)
+		public byte[] GetSound (int sound)
 		{
 			byte[] data = null;
 			var resource = index.SoundResources [sound];
-			var disk = OpenRoom(resource.RoomNum);
-			if (disk != null)
-			{
-				var rOffsets = disk.ReadRoomOffsets();
-				data = disk.ReadSound(rOffsets[resource.RoomNum] + resource.Offset);
+			var disk = OpenRoom (resource.RoomNum);
+			if (disk != null) {
+				var rOffsets = disk.ReadRoomOffsets ();
+				data = disk.ReadSound (rOffsets [resource.RoomNum] + resource.Offset);
 			}
 			return data;
 		}

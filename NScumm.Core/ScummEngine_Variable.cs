@@ -197,9 +197,9 @@ namespace NScumm.Core
 
 		void SetResult (int value)
 		{
+			Console.WriteLine ("SetResult({0},{1})", _resultVarIndex, value);
 			if ((_resultVarIndex & 0xF000) == 0) {
 				ScummHelper.AssertRange (0, _resultVarIndex, NumVariables - 1, "variable (writing)");
-				//Console.WriteLine ("SetResult({0},{1})",_resultVarIndex,value);
 				_variables [_resultVarIndex] = value;
 				return;
 			}
@@ -208,7 +208,6 @@ namespace NScumm.Core
 				_resultVarIndex &= 0x7FFF;
 
 				ScummHelper.AssertRange (0, _resultVarIndex, _bitVars.Length - 1, "bit variable (writing)");
-				//Console.WriteLine ("SetResult({0},{1})",_resultVarIndex,value!=0);
 				_bitVars [_resultVarIndex] = value != 0;
 				return;
 			}
@@ -217,7 +216,7 @@ namespace NScumm.Core
 				_resultVarIndex &= 0xFFF;
 
 				ScummHelper.AssertRange (0, _resultVarIndex, 20, "local variable (writing)");
-				//Console.WriteLine ("SetLocalVariables(script={0},var={1},value={2})",_currentScript, _resultVarIndex,value);
+				//Console.WriteLine ("SetLocalVariables(script={0},var={1},value={2})", _currentScript, _resultVarIndex, value);
 				_slots [_currentScript].LocalVariables [_resultVarIndex] = value;
 				return;
 			}

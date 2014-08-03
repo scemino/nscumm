@@ -28,7 +28,7 @@ namespace NScumm.Core
 	partial class ScummEngine
 	{
 		VerbSlot[] _verbs;
-		Sentence[] _sentence = InitSentences ();
+		readonly Sentence[] _sentence = InitSentences ();
 		int _sentenceNum;
 
 		void InitializeVerbs ()
@@ -237,7 +237,7 @@ namespace NScumm.Core
 			DrawVerb (slot, 0);
 			VerbMouseOver (0);
 		}
-			
+
 		int _verbMouseOver;
 
 		void SetVerbObject (int obj, int verb)
@@ -292,8 +292,8 @@ namespace NScumm.Core
 				}
 			} else {
 				result = (from o in _objs
-					where o.Number == obj
-					select o).FirstOrDefault ();
+				          where o.Number == obj
+				          select o).FirstOrDefault ();
 			}
 
 			foreach (var key in result.ScriptOffsets.Keys) {
@@ -307,8 +307,8 @@ namespace NScumm.Core
 		VerbSlot GetVerb (int num)
 		{
 			var verbSlot = (from verb in _verbs
-				where num == verb.VerbId && verb.Type == 0 && verb.SaveId == 0
-				select verb).FirstOrDefault ();
+			                where num == verb.VerbId && verb.Type == 0 && verb.SaveId == 0
+			                select verb).FirstOrDefault ();
 			return verbSlot;
 		}
 

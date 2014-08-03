@@ -49,9 +49,7 @@ namespace NScumm.Core
 			GetResult ();
 			int snd = GetVarOrDirectByte (OpCodeParameter.Param1);
 			if (snd != 0) {
-				// TODO:
-				//snd = _sound->isSoundRunning(snd);
-				snd = 0;
+				snd = _sound.IsSoundRunning (snd);
 			}
 			SetResult (snd);
 		}

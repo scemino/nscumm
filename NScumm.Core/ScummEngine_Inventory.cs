@@ -26,7 +26,7 @@ namespace NScumm.Core
 {
 	partial class ScummEngine
 	{
-		ushort[] _inventory = new ushort[NumInventory];
+		readonly ushort[] _inventory = new ushort[NumInventory];
 		ObjectData[] _invData = new ObjectData[NumInventory];
 
 		void GetInventoryCount ()
@@ -61,8 +61,8 @@ namespace NScumm.Core
 			} else {
 				var objs = _resManager.GetRoom (room).Objects;
 				var objFound = (from o in objs
-					where o.Number == obj
-					select o).FirstOrDefault ();
+				                where o.Number == obj
+				                select o).FirstOrDefault ();
 				_invData [slot] = objFound;
 			}
 			_inventory [slot] = (ushort)obj;

@@ -39,7 +39,7 @@ namespace NScumm.MonoGame
 		TimeSpan tsToWait;
 		Vector2 cursorPos;
 		SpriteFont defaultFont;
-        OpenALDriver audioDriver;
+		OpenALDriver audioDriver;
 
 		public ScummGame (GameInfo info)
 		{

@@ -25,7 +25,7 @@ namespace NScumm.Core
 {
 	partial class ScummEngine
 	{
-		Cursor _cursor = new Cursor ();
+		readonly Cursor _cursor = new Cursor ();
 		Point _mousePos;
 		byte cursorColor;
 		int _currentCursor;
@@ -80,10 +80,10 @@ namespace NScumm.Core
 			cursorColor = defaultCursorColors [idx];
 
 			_cursor.Hotspot = new Point (
-				(short)(_cursorHotspots [2 * _currentCursor] * _textSurfaceMultiplier),
-				(short)(_cursorHotspots [2 * _currentCursor + 1] * _textSurfaceMultiplier));
-			_cursor.Width = 16 * _textSurfaceMultiplier;
-			_cursor.Height = 16 * _textSurfaceMultiplier;
+				(short)(_cursorHotspots [2 * _currentCursor]),
+				(short)(_cursorHotspots [2 * _currentCursor + 1]));
+			_cursor.Width = 16;
+			_cursor.Height = 16;
 
 			var pixels = new byte[_cursor.Width * _cursor.Height];
 

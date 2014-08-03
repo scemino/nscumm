@@ -19,7 +19,7 @@ using System;
 
 namespace NScumm.Core.Graphics
 {
-    public struct Point
+	public struct Point: IEquatable<Point>
     {
         /// <summary>
         /// The horizontal part of the point.
@@ -32,14 +32,14 @@ namespace NScumm.Core.Graphics
 
         public Point(short x, short y)
         {
-            this.X = x;
-            this.Y = y;
+            X = x;
+            Y = y;
         }
 
         public Point(Point pos)
         {
-            this.X = pos.X;
-            this.Y = pos.Y;
+            X = pos.X;
+            Y = pos.Y;
         }
 
         public static bool operator ==(Point pos1, Point pos2)
@@ -57,12 +57,16 @@ namespace NScumm.Core.Graphics
             return X ^ Y;
         }
 
+		public bool Equals(Point point)
+		{
+			return point.X == X && point.Y == Y;
+		}
+
         public override bool Equals(object obj)
         {
             if (obj is Point)
             {
-                var pos = ((Point)obj);
-                return pos.X == X && pos.Y == Y;
+				return Equals ((Point)obj);
             }
             return false;
         }

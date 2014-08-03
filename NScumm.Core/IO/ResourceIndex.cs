@@ -27,7 +27,7 @@ namespace NScumm.Core.IO
 	public struct Resource
 	{
 		public byte RoomNum;
-		public int Offset;
+		public long Offset;
 	}
 
 	public class ResourceIndex
@@ -89,7 +89,7 @@ namespace NScumm.Core.IO
 				var br1 = new BinaryReader (file);
 				var br = new XorReader (br1, 0);
 				while (br.BaseStream.Position < br.BaseStream.Length) {
-					br.ReadInt32 ();
+					br.ReadUInt32 ();
 					var block = br.ReadInt16 ();
 					switch (block) {
 					case 0x4E52:
@@ -140,11 +140,11 @@ namespace NScumm.Core.IO
 
 		static Resource[] ReadResTypeList (XorReader br)
 		{
-			var numEntries = br.ReadInt16 ();
+			var numEntries = br.ReadUInt16 ();
 			var res = new Resource[numEntries];
 			for (int i = 0; i < numEntries; i++) {
 				var roomNum = br.ReadByte ();
-				var offset = br.ReadInt32 ();
+				var offset = br.ReadUInt32 ();
 				res [i] = new Resource { RoomNum = roomNum, Offset = offset };
 			}
 			return res;

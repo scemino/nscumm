@@ -19,25 +19,27 @@ using NScumm.Core.Graphics;
 
 namespace NScumm.Core
 {
-    /// <summary>
-    /// Camera mode.
-    /// </summary>
-    enum CameraMode
-    {
-        Normal = 1,
-        FollowActor = 2,
-        Panning = 3
-    }
+	/// <summary>
+	/// Camera mode.
+	/// </summary>
+	enum CameraMode
+	{
+		Normal = 1,
+		FollowActor = 2,
+		Panning = 3
+	}
 
-    class Camera
-    {
-        public Point CurrentPosition;
-        public Point DestinationPosition;
-        public Point Accel;
-        public Point LastPosition;
-        public int LeftTrigger=10, RightTrigger=30;
-        public byte ActorToFollow;
-        public CameraMode Mode { get; set; }
-        public bool MovingToActor { get; set; }
-    }
+	class Camera
+	{
+		public Point CurrentPosition;
+		public Point DestinationPosition;
+		public Point Accel;
+		public Point LastPosition;
+		public int LeftTrigger = 10, RightTrigger = 30;
+		public byte ActorToFollow;
+
+		public CameraMode Mode { get; set; }
+
+		public bool MovingToActor { get; set; }
+	}
 }

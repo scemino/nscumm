@@ -208,7 +208,7 @@ namespace NScumm.Core
 				LoadAndSaveEntry.Create (reader => _roomResource = reader.ReadByte (), (writer) => writer.Write (_roomResource), 8),
 				LoadAndSaveEntry.Create (reader => numObjectsInRoom = reader.ReadByte (), (writer) => writer.Write (numObjectsInRoom), 8),
 				LoadAndSaveEntry.Create (reader => _currentScript = reader.ReadByte (), (writer) => writer.Write (_currentScript), 8),
-				LoadAndSaveEntry.Create (reader => reader.ReadUInt32s (_numLocalScripts), (writer) => writer.Write (new uint[_numLocalScripts], _numLocalScripts), 8, 50),
+				LoadAndSaveEntry.Create (reader => reader.ReadUInt32s (NumLocalScripts), (writer) => writer.Write (new uint[NumLocalScripts], NumLocalScripts), 8, 50),
 				// vm.localvar grew from 25 to 40 script entries and then from
 				// 16 to 32 bit variables (but that wasn't reflect here)... and
 				// THEN from 16 to 25 variables.

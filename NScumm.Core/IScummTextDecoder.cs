@@ -35,37 +35,34 @@
  * You should have received a copy of the GNU General Public License
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace NScumm.Core
 {
-    public interface IScummTextDecoder
-    {
-        void WriteVariable(int variable);
+	public interface IScummTextDecoder
+	{
+		void WriteVariable (int variable);
 
-        void WriteVerbMessage(int id);
+		void WriteVerbMessage (int id);
 
-        void WriteObjectOrActorName(int id);
+		void WriteObjectOrActorName (int id);
 
-        void WriteString(int val);
+		void WriteString (int val);
 
-        void Write(byte c);
+		void Write (byte c);
 
-        void WriteNewLine();
+		void WriteNewLine ();
 
-        void WriteKeep();
+		void WriteKeep ();
 
-        void WriteWait();
+		void WriteWait ();
 
-        void SetColor(int val);
+		void SetColor (int val);
 
-        void UseCharset(int val);
+		void UseCharset (int val);
 
-        void PlaySound(int val);
+		void PlaySound (int val);
 
-        void StartActorAnim(int val);
-    }
+		void StartActorAnim (int val);
+	}
     
 }

@@ -115,7 +115,7 @@ namespace NScumm.Core
             uint bestdist = 0xFFFFFF;
             pOut = new Point();
 
-            tmp = ScummMath.ClosestPtOnLine(box.Ul, box.Ur, pIn);
+            tmp = ScummMath.ClosestPtOnLine(box.UpperLeft, box.UpperRight, pIn);
             dist = pIn.SquareDistance(tmp);
             if (dist < bestdist)
             {
@@ -123,7 +123,7 @@ namespace NScumm.Core
                 pOut = tmp;
             }
 
-            tmp = ScummMath.ClosestPtOnLine(box.Ur, box.Lr, pIn);
+            tmp = ScummMath.ClosestPtOnLine(box.UpperRight, box.LowerRight, pIn);
             dist = pIn.SquareDistance(tmp);
             if (dist < bestdist)
             {
@@ -131,7 +131,7 @@ namespace NScumm.Core
                 pOut = tmp;
             }
 
-            tmp = ScummMath.ClosestPtOnLine(box.Lr, box.Ll, pIn);
+            tmp = ScummMath.ClosestPtOnLine(box.LowerRight, box.LowerLeft, pIn);
             dist = pIn.SquareDistance(tmp);
             if (dist < bestdist)
             {
@@ -139,7 +139,7 @@ namespace NScumm.Core
                 pOut = tmp;
             }
 
-            tmp = ScummMath.ClosestPtOnLine(box.Ll, box.Ul, pIn);
+            tmp = ScummMath.ClosestPtOnLine(box.LowerLeft, box.UpperLeft, pIn);
             dist = pIn.SquareDistance(tmp);
             if (dist < bestdist)
             {

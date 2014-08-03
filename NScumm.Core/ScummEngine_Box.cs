@@ -28,7 +28,7 @@ namespace NScumm.Core
 	{
 		List<byte> _boxMatrix = new List<byte> ();
 		Box[] _boxes;
-		ScaleSlot[] _scaleSlots;
+		readonly ScaleSlot[] _scaleSlots;
 
 		void MatrixOperations ()
 		{
@@ -127,15 +127,15 @@ namespace NScumm.Core
 			var bp = GetBoxBase (boxnum);
 			var box = new BoxCoords ();
 
-			box.Ul.X = bp.Ulx;
-			box.Ul.Y = bp.Uly;
-			box.Ur.X = bp.Urx;
-			box.Ur.Y = bp.Ury;
+			box.UpperLeft.X = bp.Ulx;
+			box.UpperLeft.Y = bp.Uly;
+			box.UpperRight.X = bp.Urx;
+			box.UpperRight.Y = bp.Ury;
 
-			box.Ll.X = bp.Llx;
-			box.Ll.Y = bp.Lly;
-			box.Lr.X = bp.Lrx;
-			box.Lr.Y = bp.Lry;
+			box.LowerLeft.X = bp.Llx;
+			box.LowerLeft.Y = bp.Lly;
+			box.LowerRight.X = bp.Lrx;
+			box.LowerRight.Y = bp.Lry;
 
 			return box;
 		}
@@ -234,25 +234,25 @@ namespace NScumm.Core
 			// strictly smaller (bigger) than the x (y) coordinates of all
 			// corners of the quadrangle, then it certainly is *not* contained
 			// inside the quadrangle.
-			if (p.X < box.Ul.X && p.X < box.Ur.X && p.X < box.Lr.X && p.X < box.Ll.X)
+			if (p.X < box.UpperLeft.X && p.X < box.UpperRight.X && p.X < box.LowerRight.X && p.X < box.LowerLeft.X)
 				return false;
 
-			if (p.X > box.Ul.X && p.X > box.Ur.X && p.X > box.Lr.X && p.X > box.Ll.X)
+			if (p.X > box.UpperLeft.X && p.X > box.UpperRight.X && p.X > box.LowerRight.X && p.X > box.LowerLeft.X)
 				return false;
 
-			if (p.Y < box.Ul.Y && p.Y < box.Ur.Y && p.Y < box.Lr.Y && p.Y < box.Ll.Y)
+			if (p.Y < box.UpperLeft.Y && p.Y < box.UpperRight.Y && p.Y < box.LowerRight.Y && p.Y < box.LowerLeft.Y)
 				return false;
 
-			if (p.Y > box.Ul.Y && p.Y > box.Ur.Y && p.Y > box.Lr.Y && p.Y > box.Ll.Y)
+			if (p.Y > box.UpperLeft.Y && p.Y > box.UpperRight.Y && p.Y > box.LowerRight.Y && p.Y > box.LowerLeft.Y)
 				return false;
 
 			// Corner case: If the box is a simple line segment, we consider the
 			// point to be contained "in" (or rather, lying on) the line if it
 			// is very close to its projection to the line segment.
-			if ((box.Ul == box.Ur && box.Lr == box.Ll) ||
-				(box.Ul == box.Ll && box.Ur == box.Lr)) {
+			if ((box.UpperLeft == box.UpperRight && box.LowerRight == box.LowerLeft) ||
+			    (box.UpperLeft == box.LowerLeft && box.UpperRight == box.LowerRight)) {
 				Point tmp;
-				tmp = ScummMath.ClosestPtOnLine (box.Ul, box.Lr, p);
+				tmp = ScummMath.ClosestPtOnLine (box.UpperLeft, box.LowerRight, p);
 				if (p.SquareDistance (tmp) <= 4)
 					return true;
 			}
@@ -262,16 +262,16 @@ namespace NScumm.Core
 			// (quadrangle in this case), compute whether p is "left" or "right"
 			// from it.
 
-			if (!ScummMath.CompareSlope (box.Ul, box.Ur, p))
+			if (!ScummMath.CompareSlope (box.UpperLeft, box.UpperRight, p))
 				return false;
 
-			if (!ScummMath.CompareSlope (box.Ur, box.Lr, p))
+			if (!ScummMath.CompareSlope (box.UpperRight, box.LowerRight, p))
 				return false;
 
-			if (!ScummMath.CompareSlope (box.Lr, box.Ll, p))
+			if (!ScummMath.CompareSlope (box.LowerRight, box.LowerLeft, p))
 				return false;
 
-			if (!ScummMath.CompareSlope (box.Ll, box.Ul, p))
+			if (!ScummMath.CompareSlope (box.LowerLeft, box.UpperLeft, p))
 				return false;
 
 			return true;
@@ -353,50 +353,50 @@ namespace NScumm.Core
 				for (int k = 0; k < 4; k++) {
 					// Are the "upper" sides of the boxes on a single vertical line
 					// (i.e. all share one x value) ?
-					if (box2.Ur.X == box2.Ul.X && box.Ul.X == box2.Ul.X && box.Ur.X == box2.Ul.X) {
+					if (box2.UpperRight.X == box2.UpperLeft.X && box.UpperLeft.X == box2.UpperLeft.X && box.UpperRight.X == box2.UpperLeft.X) {
 						bool swappedBox2 = false, swappedBox1 = false;
-						if (box2.Ur.Y < box2.Ul.Y) {
+						if (box2.UpperRight.Y < box2.UpperLeft.Y) {
 							swappedBox2 = true;
-							ScummHelper.Swap (ref box2.Ur.Y, ref box2.Ul.Y);
+							ScummHelper.Swap (ref box2.UpperRight.Y, ref box2.UpperLeft.Y);
 						}
-						if (box.Ur.Y < box.Ul.Y) {
+						if (box.UpperRight.Y < box.UpperLeft.Y) {
 							swappedBox1 = true;
-							ScummHelper.Swap (ref box.Ur.Y, ref box.Ul.Y);
+							ScummHelper.Swap (ref box.UpperRight.Y, ref box.UpperLeft.Y);
 						}
-						if (box.Ur.Y < box2.Ul.Y ||
-							box.Ul.Y > box2.Ur.Y ||
-							((box.Ul.Y == box2.Ur.Y ||
-								box.Ur.Y == box2.Ul.Y) && box2.Ur.Y != box2.Ul.Y && box.Ul.Y != box.Ur.Y)) {
+						if (box.UpperRight.Y < box2.UpperLeft.Y ||
+						    box.UpperLeft.Y > box2.UpperRight.Y ||
+						    ((box.UpperLeft.Y == box2.UpperRight.Y ||
+						    box.UpperRight.Y == box2.UpperLeft.Y) && box2.UpperRight.Y != box2.UpperLeft.Y && box.UpperLeft.Y != box.UpperRight.Y)) {
 						} else {
 							return true;
 						}
 
 						// Swap back if necessary
 						if (swappedBox2) {
-							ScummHelper.Swap (ref box2.Ur.Y, ref box2.Ul.Y);
+							ScummHelper.Swap (ref box2.UpperRight.Y, ref box2.UpperLeft.Y);
 						}
 						if (swappedBox1) {
-							ScummHelper.Swap (ref box.Ur.Y, ref box.Ul.Y);
+							ScummHelper.Swap (ref box.UpperRight.Y, ref box.UpperLeft.Y);
 						}
 					}
 
 					// Are the "upper" sides of the boxes on a single horizontal line
 					// (i.e. all share one y value) ?
-					if (box2.Ur.Y == box2.Ul.Y && box.Ul.Y == box2.Ul.Y && box.Ur.Y == box2.Ul.Y) {
+					if (box2.UpperRight.Y == box2.UpperLeft.Y && box.UpperLeft.Y == box2.UpperLeft.Y && box.UpperRight.Y == box2.UpperLeft.Y) {
 						var swappedBox2 = false;
 						var swappedBox1 = false;
-						if (box2.Ur.X < box2.Ul.X) {
+						if (box2.UpperRight.X < box2.UpperLeft.X) {
 							swappedBox2 = true;
-							ScummHelper.Swap (ref box2.Ur.X, ref box2.Ul.X);
+							ScummHelper.Swap (ref box2.UpperRight.X, ref box2.UpperLeft.X);
 						}
-						if (box.Ur.X < box.Ul.X) {
+						if (box.UpperRight.X < box.UpperLeft.X) {
 							swappedBox1 = true;
-							ScummHelper.Swap (ref box.Ur.X, ref box.Ul.X);
+							ScummHelper.Swap (ref box.UpperRight.X, ref box.UpperLeft.X);
 						}
-						if (box.Ur.X < box2.Ul.X ||
-							box.Ul.X > box2.Ur.X ||
-							((box.Ul.X == box2.Ur.X ||
-								box.Ur.X == box2.Ul.X) && box2.Ur.X != box2.Ul.X && box.Ul.X != box.Ur.X)) {
+						if (box.UpperRight.X < box2.UpperLeft.X ||
+						    box.UpperLeft.X > box2.UpperRight.X ||
+						    ((box.UpperLeft.X == box2.UpperRight.X ||
+						    box.UpperRight.X == box2.UpperLeft.X) && box2.UpperRight.X != box2.UpperLeft.X && box.UpperLeft.X != box.UpperRight.X)) {
 
 						} else {
 							return true;
@@ -404,27 +404,27 @@ namespace NScumm.Core
 
 						// Swap back if necessary
 						if (swappedBox2) {
-							ScummHelper.Swap (ref box2.Ur.X, ref box2.Ul.X);
+							ScummHelper.Swap (ref box2.UpperRight.X, ref box2.UpperLeft.X);
 						}
 						if (swappedBox1) {
-							ScummHelper.Swap (ref box.Ur.X, ref box.Ul.X);
+							ScummHelper.Swap (ref box.UpperRight.X, ref box.UpperLeft.X);
 						}
 					}
 
 					// "Rotate" the box coordinates
-					tmp = box2.Ul;
-					box2.Ul = box2.Ur;
-					box2.Ur = box2.Lr;
-					box2.Lr = box2.Ll;
-					box2.Ll = tmp;
+					tmp = box2.UpperLeft;
+					box2.UpperLeft = box2.UpperRight;
+					box2.UpperRight = box2.LowerRight;
+					box2.LowerRight = box2.LowerLeft;
+					box2.LowerLeft = tmp;
 				}
 
 				// "Rotate" the box coordinates
-				tmp = box.Ul;
-				box.Ul = box.Ur;
-				box.Ur = box.Lr;
-				box.Lr = box.Ll;
-				box.Ll = tmp;
+				tmp = box.UpperLeft;
+				box.UpperLeft = box.UpperRight;
+				box.UpperRight = box.LowerRight;
+				box.LowerRight = box.LowerLeft;
+				box.LowerLeft = tmp;
 			}
 
 			return false;

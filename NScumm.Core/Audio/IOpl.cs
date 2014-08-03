@@ -17,10 +17,11 @@
 
 namespace NScumm.Core.Audio
 {
-    public interface IOpl
-    {
-        void write(int array, int address, int data);
-        short[] read();
-    }
+	public interface IOpl
+	{
+		void Write (int array, int address, int data);
+
+		short[] Read ();
+	}
 }
 

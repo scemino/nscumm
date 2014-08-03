@@ -301,7 +301,7 @@ namespace NScumm.Core
 							break;
 
 						default:
-							throw new NotSupportedException (string.Format ("convertMessageToString(): string escape sequence %d unknown", chr));
+							throw new NotSupportedException (string.Format ("convertMessageToString(): string escape sequence {0} unknown", chr));
 						}
 						num += 2;
 					}
@@ -363,7 +363,7 @@ namespace NScumm.Core
 
 		void PrintEgo ()
 		{
-			_actorToPrintStrFor = (byte)_variables [VariableEgo];
+			_actorToPrintStrFor = _variables [VariableEgo];
 			DecodeParseString ();
 		}
 	}

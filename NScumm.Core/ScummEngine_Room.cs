@@ -195,7 +195,7 @@ namespace NScumm.Core
 				}
 			}
 		}
-			
+
 		void ResetRoomObjects ()
 		{
 			for (int i = 0; i < roomData.Objects.Count; i++) {

@@ -15,9 +15,11 @@
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+using System;
 
 namespace NScumm.Core.Input
 {
+	[Flags]
     public enum ScummMouseButtonState
     {
         LeftClick = 0x8000,

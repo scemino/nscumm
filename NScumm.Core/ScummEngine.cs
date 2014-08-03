@@ -20,7 +20,6 @@ using NScumm.Core.Input;
 using NScumm.Core.IO;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text;
 using NScumm.Core.Audio;
@@ -232,7 +231,7 @@ namespace NScumm.Core
 		{
 			_opCode = opCode;
 			_slots [_currentScript].IsExecuted = true;
-			Console.WriteLine ("OpCode: {1:X2}, Name = {2}", _currentScript, _opCode, _opCodes.ContainsKey (_opCode) ? _opCodes [opCode].Method.Name : "Unknown");
+			Console.WriteLine ("OpCode = {1:X2}, Script = {0}, Name = {2}", _slots [_currentScript].Number, _opCode, _opCodes.ContainsKey (_opCode) ? _opCodes [opCode].Method.Name : "Unknown");
 			_opCodes [opCode] ();
 		}
 
@@ -556,7 +555,7 @@ namespace NScumm.Core
 
 		void SystemOps ()
 		{
-			byte subOp = ReadByte();
+			byte subOp = ReadByte ();
 			switch (subOp) {
 			case 1:		// SO_RESTART
 				//restart();
@@ -681,7 +680,7 @@ namespace NScumm.Core
 				break;
 
 			case 12:        // SO_LOCK_ROOM
-				// TODO:
+				// TODO: lock room
 				// if (resid > 0x7F)
 				//    resid = _resourceMapper[resid & 0x7F];
 				//_res->lock(rtRoom, resid);
@@ -820,7 +819,7 @@ namespace NScumm.Core
 			UpdateVariables ();
 
 			// The music engine generates the timer data for us.
-			_variables [VariableMusicTimer]++;
+			//_variables [VariableMusicTimer]++;
 
 			SaveLoad ();
 

@@ -33,11 +33,6 @@ namespace NScumm.Core
 		bool _doEffect;
 		bool _screenEffectFlag;
 
-		void UnkScreenEffect6 ()
-		{
-			DissolveEffect (8, 4);
-		}
-
 		void FadeIn (byte effect)
 		{
 			if (_disableFadeInEffect) {
@@ -80,14 +75,6 @@ namespace NScumm.Core
 
 			case 129:
 				break;
-
-			case 130:
-			case 131:
-			case 132:
-			case 133:
-				//scrollEffect(133 - effect);
-				throw new NotImplementedException ();
-				//break;
 
 			case 134:
 				DissolveEffect (1, 1);
@@ -213,6 +200,11 @@ namespace NScumm.Core
 			}
 		}
 
+		void UnkScreenEffect6 ()
+		{
+			DissolveEffect (8, 4);
+		}
+
 		void FadeOut (int effect)
 		{
 			_mainVirtScreen.SetDirtyRange (0, 0);
@@ -232,9 +224,10 @@ namespace NScumm.Core
 				case 3:
 				case 4:
 				case 5:
-					//case 6:
+				case 6:
 					//    transitionEffect(effect - 1);
-					//    break;
+					Console.Error.WriteLine (string.Format ("fadeOut: case {0} not implemented", effect));
+					break;
 				case 128:
 					UnkScreenEffect6 ();
 					break;
@@ -244,12 +237,7 @@ namespace NScumm.Core
 					_mainVirtScreen.SetDirtyRange (0, _mainVirtScreen.Height);
 					UpdateDirtyScreen (_mainVirtScreen);
 					break;
-					//case 134:
-					//    dissolveEffect(1, 1);
-					//    break;
-					//case 135:
-					//    dissolveEffect(1, _virtscr[kMainVirtScreen].h);
-					//    break;
+				
 				default:
 					throw new NotImplementedException (string.Format ("fadeOut: case {0}", effect));
 				}

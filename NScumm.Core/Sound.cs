@@ -33,6 +33,7 @@ namespace NScumm.Core
 		long minicnt;
 		bool playing;
 		IAudioDriver driver;
+		IAudioStream stream;
 
 		class AudioStream: IAudioStream
 		{
@@ -121,8 +122,6 @@ namespace NScumm.Core
 			}
 		}
 
-		IAudioStream stream;
-
 		void PlaySound (int sound)
 		{
 			var data = vm.ResourceManager.GetSound (sound);
@@ -130,6 +129,11 @@ namespace NScumm.Core
 			minicnt = 0;
 
 			driver.Play (stream);
+		}
+
+		public int IsSoundRunning (int snd)
+		{
+			return 0;
 		}
 
 		public void Update ()
@@ -142,7 +146,7 @@ namespace NScumm.Core
 		short[] Read ()
 		{
 			long i, towrite = BufferSize;
-			short[] buffer = new short[towrite];
+			var buffer = new short[towrite];
 			long pos = 0;
 
 			// Prepare audiobuf with emulator output
@@ -164,7 +168,7 @@ namespace NScumm.Core
 		long Update (short[] buf, long pos, long samples)
 		{
 			for (int i = 0; i < samples; i += 4) {
-				var data = opl.read ();
+				var data = opl.Read ();
 				Array.Copy (data, 0, buf, pos, 2);
 				pos += 2;
 			}

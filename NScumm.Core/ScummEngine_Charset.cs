@@ -33,7 +33,7 @@ namespace NScumm.Core
 		byte[][] _charsets;
 		public byte[] CharsetColorMap = new byte[16];
 		int _charsetBufPos;
-		CharsetRenderer _charset;
+		readonly CharsetRenderer _charset;
 		// Somewhat hackish stuff for 2 byte support (Chinese/Japanese/Korean)
 		public byte NewLineCharacter;
 		internal bool UseCjkMode;

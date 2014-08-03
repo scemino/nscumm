@@ -51,23 +51,22 @@ namespace NScumm.Core
 		void GetActorMoving ()
 		{
 			GetResult ();
-			int act = GetVarOrDirectByte (OpCodeParameter.Param1);
+			var act = GetVarOrDirectByte (OpCodeParameter.Param1);
 			Actor a = _actors [act];
 			SetResult ((int)a.Moving);
 		}
 
 		void PutActorAtObject ()
 		{
-			int obj;
 			Point p;
-			Actor a = _actors [GetVarOrDirectByte (OpCodeParameter.Param1)];
-			obj = GetVarOrDirectWord (OpCodeParameter.Param2);
+			var actor = _actors [GetVarOrDirectByte (OpCodeParameter.Param1)];
+			var obj = GetVarOrDirectWord (OpCodeParameter.Param2);
 			if (GetWhereIsObject (obj) != WhereIsObject.NotFound) {
 				p = GetObjectXYPos (obj);
 			} else {
 				p = new Point (240, 120);
 			}
-			a.PutActor (p);
+			actor.PutActor (p);
 		}
 
 		void WalkActorToActor ()
@@ -177,7 +176,7 @@ namespace NScumm.Core
 
 		void ActorOps ()
 		{
-			var convertTable = new byte[20] { 1, 0, 0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 20 };
+			var convertTable = new byte[] { 1, 0, 0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 20 };
 			var act = GetVarOrDirectByte (OpCodeParameter.Param1);
 			var a = _actors [act];
 			int i, j;
@@ -265,17 +264,17 @@ namespace NScumm.Core
 					break;
 
 				case 18:        // SO_NEVER_ZCLIP
-					a.ForceClip = false;
+					a.ForceClip = 0;
 					break;
 
 				case 19:        // SO_ALWAYS_ZCLIP
-					a.ForceClip = GetVarOrDirectByte (OpCodeParameter.Param1) > 0;
+					a.ForceClip = (byte)GetVarOrDirectByte (OpCodeParameter.Param1);
 					break;
 
 				case 20:        // SO_IGNORE_BOXES
 				case 21:        // SO_FOLLOW_BOXES
 					a.IgnoreBoxes = (_opCode & 1) == 0;
-					a.ForceClip = false;
+					a.ForceClip = 0;
 					if (a.IsInCurrentRoom)
 						a.PutActor ();
 					break;
@@ -362,7 +361,7 @@ namespace NScumm.Core
 
 				// WORKAROUND bug #770724
 				if (_game.Id == "loom" && _roomResource == 23 &&
-					_slots [_currentScript].Number == 232 && _actorToPrintStrFor == 0) {
+				    _slots [_currentScript].Number == 232 && _actorToPrintStrFor == 0) {
 					_actorToPrintStrFor = 2;	// Could be anything from 2 to 5. Maybe compare to original?
 				}
 
@@ -446,9 +445,9 @@ namespace NScumm.Core
 		void ProcessActors ()
 		{
 			var actors = from actor in _actors
-					where actor.IsInCurrentRoom
-				orderby actor.Position.Y
-				select actor;
+			             where actor.IsInCurrentRoom
+			             orderby actor.Position.Y
+			             select actor;
 
 			foreach (var actor in actors) {
 				if (actor.Costume != 0) {
@@ -481,7 +480,7 @@ namespace NScumm.Core
 				Gdi.ClearGfxUsageBit (strip, Gdi.UsageBitRestored);
 				for (int j = 0; j < _actors.Length; j++) {
 					if (Gdi.TestGfxUsageBit (strip, j) &&
-						((_actors [j].Top != 0x7fffffff && _actors [j].NeedRedraw) || _actors [j].NeedBackgroundReset)) {
+					    ((_actors [j].Top != 0x7fffffff && _actors [j].NeedRedraw) || _actors [j].NeedBackgroundReset)) {
 						Gdi.ClearGfxUsageBit (strip, j);
 						if ((_actors [j].Bottom - _actors [j].Top) >= 0)
 							Gdi.ResetBackground (_actors [j].Top, _actors [j].Bottom, i);
@@ -520,7 +519,7 @@ namespace NScumm.Core
 		{
 			for (int i = 1; i < _actors.Length; i++) {
 				if (!GetClass (i, ObjectClass.Untouchable) && p.Y >= _actors [i].Top &&
-					p.Y <= _actors [i].Bottom) {
+				    p.Y <= _actors [i].Bottom) {
 					return i;
 				}
 			}

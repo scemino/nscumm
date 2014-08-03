@@ -20,35 +20,35 @@ using NScumm.Core.Graphics;
 
 namespace NScumm.Core
 {
-    /// <summary>
-    /// Box coordinates.
-    /// </summary>
-    public class BoxCoords
-    {
-        public Point Ul = new Point();
-        public Point Ur = new Point();
-        public Point Ll = new Point();
-        public Point Lr = new Point();
+	/// <summary>
+	/// Box coordinates.
+	/// </summary>
+	public class BoxCoords
+	{
+		public Point UpperLeft;
+		public Point UpperRight;
+		public Point LowerLeft;
+		public Point LowerRight;
 
-        public bool InBoxQuickReject(Point p, int threshold)
-        {
-            int t = p.X - threshold;
-            if (t > Ul.X && t > Ur.X && t > Lr.X && t > Ll.X)
-                return true;
+		public bool InBoxQuickReject (Point p, int threshold)
+		{
+			int t = p.X - threshold;
+			if (t > UpperLeft.X && t > UpperRight.X && t > LowerRight.X && t > LowerLeft.X)
+				return true;
 
-            t = p.X + threshold;
-            if (t < Ul.X && t < Ur.X && t < Lr.X && t < Ll.X)
-                return true;
+			t = p.X + threshold;
+			if (t < UpperLeft.X && t < UpperRight.X && t < LowerRight.X && t < LowerLeft.X)
+				return true;
 
-            t = p.Y - threshold;
-            if (t > Ul.Y && t > Ur.Y && t > Lr.Y && t > Ll.Y)
-                return true;
+			t = p.Y - threshold;
+			if (t > UpperLeft.Y && t > UpperRight.Y && t > LowerRight.Y && t > LowerLeft.Y)
+				return true;
 
-            t = p.Y + threshold;
-            if (t < Ul.Y && t < Ur.Y && t < Lr.Y && t < Ll.Y)
-                return true;
+			t = p.Y + threshold;
+			if (t < UpperLeft.Y && t < UpperRight.Y && t < LowerRight.Y && t < LowerLeft.Y)
+				return true;
 
-            return false;
-        }
-    }
+			return false;
+		}
+	}
 }

@@ -1,4 +1,4 @@
-﻿﻿/*
+﻿/*
  * This file is part of NScumm.
  * 
  * NScumm is free software: you can redistribute it and/or modify
@@ -46,7 +46,6 @@ namespace NScumm.Core.Graphics
 		public override void PrintChar(int chr, bool ignoreCharsetMask)
 		{
 			VirtScreen vs;
-			bool is2byte = (chr >= 256 && Vm.UseCjkMode);
 
 			//ScummHelper.AssertRange(1, _curId, _vm._numCharsets - 1, "charset");
 
@@ -108,7 +107,7 @@ namespace NScumm.Core.Graphics
 				TextScreen = vs;
 			}
 
-			PrintCharIntern(is2byte, _fontPtr, _charPos + 17, _origWidth, _origHeight, _width, _height, vs, ignoreCharsetMask);
+			PrintCharIntern(_fontPtr, _charPos + 17, _origWidth, _origHeight, _width, _height, vs, ignoreCharsetMask);
 
 			Left += _origWidth;
 
@@ -202,7 +201,7 @@ namespace NScumm.Core.Graphics
 			return true;
 		}
 
-		void PrintCharIntern(bool is2byte, byte[] _fontPtr, int charPos, int origWidth, int origHeight, int width, int height, VirtScreen vs, bool ignoreCharsetMask)
+		void PrintCharIntern(byte[] fontPtr, int charPos, int origWidth, int origHeight, int width, int height, VirtScreen vs, bool ignoreCharsetMask)
 		{
 			int drawTop = Top - vs.TopLine;
 
@@ -235,7 +234,7 @@ namespace NScumm.Core.Graphics
 				drawTop = Top - Vm.ScreenTop;
 			}
 
-			DrawBitsN(dstSurface, dstPtr, _fontPtr, charPos, _fontPtr[_fontPos], drawTop, origWidth, origHeight);
+			DrawBitsN(dstSurface, dstPtr, fontPtr, charPos, fontPtr[_fontPos], drawTop, origWidth, origHeight);
 
 			if (BlitAlso && vs.HasTwoBuffers)
 			{

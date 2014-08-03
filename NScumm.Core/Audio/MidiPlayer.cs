@@ -610,7 +610,7 @@ namespace NScumm.Core.Audio
 
 		void midi_write_adlib (int r, int v)
 		{
-			opl.write (0, r, v);
+			opl.Write (0, r, v);
 			adlib_data [r] = (byte)v;
 		}
 
@@ -794,7 +794,7 @@ namespace NScumm.Core.Audio
 			while (iwait == 0 && ret == 1) {
 				for (curtrack = 0; curtrack < 16; curtrack++)
 					if (track [curtrack].on != 0 && track [curtrack].iwait == 0 &&
-					                   track [curtrack].pos < track [curtrack].tend) {
+					    track [curtrack].pos < track [curtrack].tend) {
 						pos = track [curtrack].pos;
 
 						v = getnext (1);
@@ -991,8 +991,8 @@ midi_fm_playnote(i,note+cnote[c],my_midi_fm_vol_table[(cvols[c]*vel)/128]*2);
 //								Console.WriteLine ("{0}", l);
                                         
 								if (datalook (pos) == 0x7d &&
-								                                    datalook (pos + 1) == 0x10 &&
-								                                    datalook (pos + 2) < 16) {
+								    datalook (pos + 1) == 0x10 &&
+								    datalook (pos + 2) < 16) {
 									adlib_style = AdlibStyles.Lucas | AdlibStyles.Midi;
 									for (i = 0; i < l; i++) {
 //										Console.Write ("%x ", datalook (pos + i));
@@ -1056,7 +1056,7 @@ midi_fm_playnote(i,note+cnote[c],my_midi_fm_vol_table[(cvols[c]*vel)/128]*2);
 							case 0xfc:
                                     //this ends the track for sierra.
 								if (type == FileType.Sierra ||
-								                                    type == FileType.AdvancedSierra) {
+								    type == FileType.AdvancedSierra) {
 									track [curtrack].tend = pos;
 //									Console.WriteLine ("endmark: {0} -- {1:X}", pos, pos);
 								}
@@ -1112,15 +1112,15 @@ midi_fm_playnote(i,note+cnote[c],my_midi_fm_vol_table[(cvols[c]*vel)/128]*2);
 				iwait = 0;
 				for (curtrack = 0; curtrack < 16; curtrack++)
 					if (track [curtrack].on == 1 &&
-					                   track [curtrack].pos < track [curtrack].tend)
+					    track [curtrack].pos < track [curtrack].tend)
 						ret = 1;  //not yet..
 
 				if (ret == 1) {
 					iwait = 0xffffff;  // bigger than any wait can be!
 					for (curtrack = 0; curtrack < 16; curtrack++)
 						if (track [curtrack].on == 1 &&
-						                      track [curtrack].pos < track [curtrack].tend &&
-						                      track [curtrack].iwait < iwait)
+						    track [curtrack].pos < track [curtrack].tend &&
+						    track [curtrack].iwait < iwait)
 							iwait = track [curtrack].iwait;
 				}
 			}

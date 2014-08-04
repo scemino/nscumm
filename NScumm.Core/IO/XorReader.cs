@@ -84,10 +84,7 @@ namespace NScumm.Core.IO
 		public uint ReadUInt32 ()
 		{
 			var data = _reader.ReadBytes (4);
-			for (int i = 0; i < 4; i++) {
-				data [i] = (byte)(data [i] ^ _xor);
-			}
-			return ToUInt32 (data);
+			return ToUInt32 (data [0] ^ _xor, data [1] ^ _xor, data [2] ^ _xor, data [3] ^ _xor);
 		}
 
 		static int ToInt32 (int b0, int b1, int b2, int b3)
@@ -96,9 +93,9 @@ namespace NScumm.Core.IO
 			return value;
 		}
 
-		static uint ToUInt32 (System.Collections.Generic.IList<byte> data)
+		static uint ToUInt32 (int b0, int b1, int b2, int b3)
 		{
-			uint value = data [0] | ((uint)data [1] << 8) | ((uint)data [2] << 16) | ((uint)data [3] << 24);
+			uint value = (uint)ToInt32 (b0, b1, b2, b3);
 			return value;
 		}
 	}

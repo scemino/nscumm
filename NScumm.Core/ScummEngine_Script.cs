@@ -93,7 +93,9 @@ namespace NScumm.Core
 			cutScene.Override.Pointer = 0;
 			cutScene.Override.Script = 0;
 
-			_variables [VariableOverride] = 0;
+			if (Game.Version >= 4) {
+				_variables [VariableOverride] = 0;
+			}
 		}
 
 		void CutScene ()
@@ -208,7 +210,7 @@ namespace NScumm.Core
 			}
 
 			for (int i = 0; i < 256; i++) {
-				RoomPalette [i] = (byte)i;
+				Gdi.RoomPalette [i] = (byte)i;
 				if (_shadowPalette != null)
 					_shadowPalette [i] = (byte)i;
 			}
@@ -229,13 +231,13 @@ namespace NScumm.Core
 
 			ClearRoomObjects ();
 
+			if (_currentRoom == 0) {
+				return;
+			}
+
 			roomData = _resManager.GetRoom (_roomResource);
 			if (roomData != null && roomData.HasPalette) {
 				Array.Copy (roomData.Palette.Colors, _currentPalette.Colors, roomData.Palette.Colors.Length);
-			}
-
-			if (_currentRoom == 0) {
-				return;
 			}
 
 			Gdi.NumZBuffer = GetNumZBuffers ();

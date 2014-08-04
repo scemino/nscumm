@@ -17,83 +17,83 @@
 
 namespace NScumm.Core.Graphics
 {
-    public struct PixelNavigator
-    {
-        readonly int _startOffset;
-        int _offset;
-        byte[] _pixels;
-        int _pitch;
-        int _bytesByPixel;
+	public struct PixelNavigator
+	{
+		readonly int _startOffset;
+		int _offset;
+		byte[] _pixels;
+		int _pitch;
+		int _bytesByPixel;
 
-        public PixelNavigator(Surface surface)
-            : this(surface.Pixels, surface.Pitch, surface.BytesPerPixel)
-        {
-        }
+		public PixelNavigator (Surface surface)
+			: this (surface.Pixels, surface.Pitch, surface.BytesPerPixel)
+		{
+		}
 
-        public PixelNavigator(byte[] pixels, int pitch, int bytesByPixel)
-        {
-            _startOffset = 0;
-            _offset = 0;
-            _pixels = pixels;
-            _pitch = pitch;
-            _bytesByPixel = bytesByPixel;
-        }
+		public PixelNavigator (byte[] pixels, int pitch, int bytesByPixel)
+		{
+			_startOffset = 0;
+			_offset = 0;
+			_pixels = pixels;
+			_pitch = pitch;
+			_bytesByPixel = bytesByPixel;
+		}
 
-        public PixelNavigator(PixelNavigator navigator)
-        {
-            _startOffset = navigator._offset;
-            _offset = _startOffset;
-            _pixels = navigator._pixels;
-            _pitch = navigator._pitch;
-            _bytesByPixel = navigator._bytesByPixel;
-        }
+		public PixelNavigator (PixelNavigator navigator)
+		{
+			_startOffset = navigator._offset;
+			_offset = _startOffset;
+			_pixels = navigator._pixels;
+			_pitch = navigator._pitch;
+			_bytesByPixel = navigator._bytesByPixel;
+		}
 
-        public void GoTo(int x, int y)
-        {
-            _offset = _startOffset + y * _pitch + x * _bytesByPixel;
-        }
+		public void GoTo (int x, int y)
+		{
+			_offset = _startOffset + y * _pitch + x * _bytesByPixel;
+		}
 
-        public void GoToIgnoreBytesByPixel(int x, int y)
-        {
-            _offset = _startOffset + y * _pitch + x;
-        }
+		public void GoToIgnoreBytesByPixel (int x, int y)
+		{
+			_offset = _startOffset + y * _pitch + x;
+		}
 
-        public void OffsetX(int x)
-        {
-            _offset += x * _bytesByPixel;
-        }
+		public void OffsetX (int x)
+		{
+			_offset += x * _bytesByPixel;
+		}
 
-        public void OffsetY(int y)
-        {
-            _offset += y * _pitch;
-        }
+		public void OffsetY (int y)
+		{
+			_offset += y * _pitch;
+		}
 
-        public void Offset(int x, int y)
-        {
-            _offset += y * _pitch + x * _bytesByPixel;
-        }
+		public void Offset (int x, int y)
+		{
+			_offset += y * _pitch + x * _bytesByPixel;
+		}
 
-        public void Write(byte data)
-        {
-            _pixels[_offset] = data;
-        }
+		public void Write (byte data)
+		{
+			_pixels [_offset] = data;
+		}
 
-        public void WriteUInt16(ushort data)
-        {
-            _pixels[_offset] = (byte)(data >> 8);
-            _pixels[_offset + 1] = (byte)(data & 0x00FF);
-        }
+		public void WriteUInt16 (ushort data)
+		{
+			_pixels [_offset] = (byte)(data >> 8);
+			_pixels [_offset + 1] = (byte)(data & 0x00FF);
+		}
 
-        public byte Read()
-        {
-            return _pixels[_offset];
-        }
+		public byte Read ()
+		{
+			return _pixels [_offset];
+		}
 
-        public ushort ReadUInt16()
-        {
-            ushort data = _pixels[_offset];
-            data = (ushort)(data << 8 | _pixels[_offset + 1]);
-            return data;
-        }
-    }
+		public ushort ReadUInt16 ()
+		{
+			ushort data = _pixels [_offset];
+			data = (ushort)(data << 8 | _pixels [_offset + 1]);
+			return data;
+		}
+	}
 }

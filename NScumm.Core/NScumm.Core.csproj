@@ -112,6 +112,10 @@
     <Compile Include="ScummEngine_Input.cs" />
     <Compile Include="ScummEngine_Light.cs" />
     <Compile Include="ScummEngine_Expression.cs" />
+    <Compile Include="IO\ResourceManager3.cs" />
+    <Compile Include="IO\ResourceManager4.cs" />
+    <Compile Include="IO\ResourceFile3.cs" />
+    <Compile Include="IO\ResourceFile4.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Nscumm.xml">

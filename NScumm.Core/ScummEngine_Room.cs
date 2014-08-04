@@ -27,7 +27,6 @@ namespace NScumm.Core
 	{
 		byte _currentRoom;
 		Room roomData;
-		public byte[] RoomPalette = new byte[256];
 
 		internal Room CurrentRoomData {
 			get { return roomData; }
@@ -87,12 +86,22 @@ namespace NScumm.Core
 
 		void RoomOps ()
 		{
+			bool paramsBeforeOpcode = (_game.Version == 3);
+			int a = 0;
+			int b = 0;
+			if (paramsBeforeOpcode) {
+				a = GetVarOrDirectWord (OpCodeParameter.Param1);
+				b = GetVarOrDirectWord (OpCodeParameter.Param2);
+			}
+
 			_opCode = ReadByte ();
 			switch (_opCode & 0x1F) {
 			case 1:     // SO_ROOM_SCROLL
 				{
-					var a = GetVarOrDirectWord (OpCodeParameter.Param1);
-					var b = GetVarOrDirectWord (OpCodeParameter.Param2);
+					if (!paramsBeforeOpcode) {
+						a = GetVarOrDirectWord (OpCodeParameter.Param1);
+						b = GetVarOrDirectWord (OpCodeParameter.Param2);
+					}
 					if (a < (ScreenWidth / 2))
 						a = (ScreenWidth / 2);
 					if (b < (ScreenWidth / 2))
@@ -108,26 +117,32 @@ namespace NScumm.Core
 
 			case 2:     // SO_ROOM_COLOR
 				{
-					var a = GetVarOrDirectWord (OpCodeParameter.Param1);
-					var b = GetVarOrDirectWord (OpCodeParameter.Param2);
-					RoomPalette [b] = (byte)a;
+					if (!paramsBeforeOpcode) {
+						a = GetVarOrDirectWord (OpCodeParameter.Param1);
+						b = GetVarOrDirectWord (OpCodeParameter.Param2);
+					}
+					ScummHelper.AssertRange (0, a, 256, "RoomOps: 2: room color slot");
+					Gdi.RoomPalette [b] = (byte)a;
 					_fullRedraw = true;
 				}
 				break;
 
 			case 3:     // SO_ROOM_SCREEN
 				{
-					var a = GetVarOrDirectWord (OpCodeParameter.Param1);
-					var b = GetVarOrDirectWord (OpCodeParameter.Param2);
+					if (!paramsBeforeOpcode) {
+						a = GetVarOrDirectWord (OpCodeParameter.Param1);
+						b = GetVarOrDirectWord (OpCodeParameter.Param2);
+					}
 					InitScreens (a, b);
 				}
 				break;
 
 			case 4:     // SO_ROOM_PALETTE
 				{
-					var a = GetVarOrDirectWord (OpCodeParameter.Param1);
-					var b = GetVarOrDirectWord (OpCodeParameter.Param2);
-
+					if (!paramsBeforeOpcode) {
+						a = GetVarOrDirectWord (OpCodeParameter.Param1);
+						b = GetVarOrDirectWord (OpCodeParameter.Param2);
+					}
 					ScummHelper.AssertRange (0, a, 256, "RoomOps: 4: room color slot");
 					_shadowPalette [b] = (byte)a;
 					SetDirtyColors (b, b);
@@ -144,8 +159,8 @@ namespace NScumm.Core
 
 			case 7:     // SO_ROOM_SCALE
 				{
-					var a = GetVarOrDirectByte (OpCodeParameter.Param1);
-					var b = GetVarOrDirectByte (OpCodeParameter.Param2);
+					a = GetVarOrDirectByte (OpCodeParameter.Param1);
+					b = GetVarOrDirectByte (OpCodeParameter.Param2);
 					_opCode = ReadByte ();
 					var c = GetVarOrDirectByte (OpCodeParameter.Param1);
 					var d = GetVarOrDirectByte (OpCodeParameter.Param2);
@@ -157,13 +172,21 @@ namespace NScumm.Core
 
 			case 10:    // SO_ROOM_FADE
 				{
-					var a = GetVarOrDirectWord (OpCodeParameter.Param1);
+					a = GetVarOrDirectWord (OpCodeParameter.Param1);
 					if (a != 0) {
 						_switchRoomEffect = (byte)(a & 0xFF);
 						_switchRoomEffect2 = (byte)(a >> 8);
 					} else {
 						FadeIn (_newEffect);
 					}
+				}
+				break;
+			case 16:	// SO_CYCLE_SPEED
+				{
+					a = GetVarOrDirectByte (OpCodeParameter.Param1);
+					b = GetVarOrDirectByte (OpCodeParameter.Param2);
+					ScummHelper.AssertRange (1, a, 16, "o5_roomOps: 16: color cycle");
+					_colorCycle [a - 1].Delay = (ushort)((b != 0) ? 0x4000 / (b * 0x4C) : 0);
 				}
 				break;
 

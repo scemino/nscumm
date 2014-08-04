@@ -570,10 +570,10 @@ namespace NScumm.Core
 				// is used as palette map there too, but we do so slightly a bit
 				// further down to group it with the other special palettes needed.
 				LoadAndSaveEntry.Create (reader => {
-					RoomPalette = reader.ReadBytes (256);
+					Gdi.RoomPalette = reader.ReadBytes (256);
 				},
 					writer => {
-						writer.WriteBytes (RoomPalette, 256);
+						writer.WriteBytes (Gdi.RoomPalette, 256);
 					}, 21),
 
 				// PalManip data was not saved before V10 save games
@@ -779,7 +779,7 @@ namespace NScumm.Core
 					}
 				}
 			},
-				writer => {
+				              writer => {
 					// inventory
 					writer.Write ((ushort)ResType.Inventory);
 					for (int i = 0; i < _invData.Length; i++) {
@@ -973,8 +973,8 @@ namespace NScumm.Core
 					{
 						var index = reader.ReadUInt16 ();
 						var obj = (from o in _invData
-							where o != null && o.Number == index
-							select o).FirstOrDefault ();
+						           where o != null && o.Number == index
+						           select o).FirstOrDefault ();
 						obj.Name = ptr;
 					}
 					break;

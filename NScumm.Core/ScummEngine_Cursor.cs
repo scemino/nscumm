@@ -234,13 +234,25 @@ namespace NScumm.Core
 			case 13:
 				InitCharset (GetVarOrDirectByte (OpCodeParameter.Param1));
 				break;
-
+			case 14:											/* unk */
+				if (_game.Version == 3) {
+					GetVarOrDirectByte (OpCodeParameter.Param1);
+					GetVarOrDirectByte (OpCodeParameter.Param2);
+					// This is some kind of "init charset" opcode. However, we don't have to do anything
+					// in here, as our initCharset automatically calls loadCharset for GF_SMALL_HEADER,
+					// games if needed.
+				} else {
+					throw new NotImplementedException ();
+				}
+				break;
 			default:
 				throw new NotImplementedException ();
 			}
 
-			_variables [VariableCursorState] = _cursor.State;
-			_variables [VariableUserPut] = _userPut;
+			if (_game.Version >= 4) {
+				_variables [VariableCursorState] = _cursor.State;
+				_variables [VariableUserPut] = _userPut;
+			}
 		}
 	}
 }

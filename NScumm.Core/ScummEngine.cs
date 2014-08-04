@@ -124,7 +124,7 @@ namespace NScumm.Core
 
 		public ScummEngine (GameInfo game, IGraphicsManager gfxManager, IInputManager inputManager, IAudioDriver driver)
 		{
-			_resManager = ResourceManager.Load (game.Path);
+			_resManager = ResourceManager.Load (game.Path, game.Version);
 
 			_game = game;
 			_gameMD5 = Encoding.Default.GetBytes (game.MD5);
@@ -158,8 +158,8 @@ namespace NScumm.Core
 			for (int i = 0; i < _scaleSlots.Length; i++) {
 				_scaleSlots [i] = new ScaleSlot ();
 			}
-			Gdi = new Gdi (this);
-			_costumeLoader = new ClassicCostumeLoader (_resManager);
+			Gdi = new Gdi (this, game.Features);
+			_costumeLoader = new ClassicCostumeLoader (this);
 			_costumeRenderer = new ClassicCostumeRenderer (this);
 
 			// Create the charset renderer
@@ -183,7 +183,7 @@ namespace NScumm.Core
 			}
 
 			for (int i = 0; i < 256; i++)
-				RoomPalette [i] = (byte)i;
+				Gdi.RoomPalette [i] = (byte)i;
 
 			if (game.Features.HasFlag (GameFeatures.SixteenColors)) {
 				for (int i = 0; i < 256; i++)
@@ -252,6 +252,7 @@ namespace NScumm.Core
 			/* 00 */
 			_opCodes [0x00] = StopObjectCode;
 			_opCodes [0x01] = PutActor;
+			_opCodes [0x02] = StartMusic;
 			_opCodes [0x03] = GetActorRoom;
 			/* 04 */
 			_opCodes [0x04] = IsGreaterEqual;
@@ -819,7 +820,7 @@ namespace NScumm.Core
 			UpdateVariables ();
 
 			// The music engine generates the timer data for us.
-			//_variables [VariableMusicTimer]++;
+			_variables [VariableMusicTimer]++;
 
 			SaveLoad ();
 

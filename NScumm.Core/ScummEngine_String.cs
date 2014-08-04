@@ -161,8 +161,12 @@ namespace NScumm.Core
 
 				case 6:     // SO_LEFT
 					{
-						_string [textSlot].Center = false;
-						_string [textSlot].Overhead = false;
+						if (_game.Version == 3) {
+							_string [textSlot].Height = GetVarOrDirectWord (OpCodeParameter.Param1);
+						} else {
+							_string [textSlot].Center = false;
+							_string [textSlot].Overhead = false;
+						}
 					}
 					break;
 
@@ -208,6 +212,23 @@ namespace NScumm.Core
 				default:
 					throw new NotImplementedException ();
 				}
+			}
+
+			// In SCUMM V1-V3, there were no 'default' values for the text slot
+			// values. Hence to achieve correct behavior, we have to keep the
+			// 'default' values in sync with the active values.
+			//
+			// Note: This is needed for Indy3 (Grail Diary). It's also needed
+			// for Loom, or the lines Bobbin speaks during the intro are put
+			// at position 0,0.
+			//
+			// Note: We can't use saveDefault() here because we only want to
+			// save the position and color. In particular, we do not want to
+			// save the 'center' flag. See bug #933168.
+			if (_game.Version <= 3) {
+				_string [textSlot].Default.Position = _string [textSlot].Position;
+				_string [textSlot].Default.Height = _string [textSlot].Height;
+				_string [textSlot].Default.Color = _string [textSlot].Color;
 			}
 
 			_string [textSlot].SaveDefault ();

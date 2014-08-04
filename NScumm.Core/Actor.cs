@@ -427,7 +427,7 @@ namespace NScumm.Core
 
 					// Skip over invisible boxes
 					if (flags.HasFlag (BoxFlags.Invisible) && !(flags.HasFlag (BoxFlags.PlayerOnly)
-					                   && !IsPlayer))
+					    && !IsPlayer))
 						continue;
 
 					// For increased performance, we perform a quick test if
@@ -636,8 +636,8 @@ namespace NScumm.Core
 					abr = AdjustXYToBeInBox (abr.Position);
 				}
 				if (Moving != MoveFlags.None &&
-				                _walkdata.DestDir == dir &&
-				                _walkdata.Dest.X == abr.Position.X && _walkdata.Dest.Y == abr.Position.Y)
+				    _walkdata.DestDir == dir &&
+				    _walkdata.Dest.X == abr.Position.X && _walkdata.Dest.Y == abr.Position.Y)
 					return;
 			}
 
@@ -723,7 +723,7 @@ namespace NScumm.Core
 		public void ClassChanged (ObjectClass cls, bool value)
 		{
 			if (cls == ObjectClass.AlwaysClip)
-				ForceClip = value?(byte)1:(byte)0;
+				ForceClip = value ? (byte)1 : (byte)0;
 			if (cls == ObjectClass.IgnoreBoxes)
 				IgnoreBoxes = value;
 		}
@@ -942,7 +942,7 @@ namespace NScumm.Core
 			bcr.ActorX = _position.X - _scumm.MainVirtScreen.XStart;
 			bcr.ActorY = _position.Y - _elevation;
 
-			if ((BoxScale & 0x8000) != 0) {
+			if (_scumm.Game.Version == 4 && (BoxScale & 0x8000) != 0) {
 				bcr.ScaleX = bcr.ScaleY = (byte)_scumm.GetScaleFromSlot ((BoxScale & 0x7fff) + 1, _position.X, _position.Y);
 			} else {
 				bcr.ScaleX = ScaleX;
@@ -1055,7 +1055,7 @@ namespace NScumm.Core
 			}
 
 			if (Walkbox != _walkdata.CurBox &&
-			             _scumm.CheckXYInBoxBounds (_walkdata.CurBox, _position)) {
+			    _scumm.CheckXYInBoxBounds (_walkdata.CurBox, _position)) {
 				SetBox (_walkdata.CurBox);
 			}
 
@@ -1083,7 +1083,7 @@ namespace NScumm.Core
 				_position.Y = _walkdata.Next.Y;
 			}
 
-			if (_position == _walkdata.Next) {
+			if (_scumm.Game.Version >= 4 && _position == _walkdata.Next) {
 				Moving &= ~MoveFlags.InLeg;
 				return 0;
 			}
@@ -1239,8 +1239,8 @@ namespace NScumm.Core
 						}
 
 						if (box1.UpperLeft.Y > box2.UpperRight.Y || box2.UpperLeft.Y > box1.UpperRight.Y ||
-						                      ((box1.UpperRight.Y == box2.UpperLeft.Y || box2.UpperRight.Y == box1.UpperLeft.Y) &&
-						                      box1.UpperLeft.Y != box1.UpperRight.Y && box2.UpperLeft.Y != box2.UpperRight.Y)) {
+						    ((box1.UpperRight.Y == box2.UpperLeft.Y || box2.UpperRight.Y == box1.UpperLeft.Y) &&
+						    box1.UpperLeft.Y != box1.UpperRight.Y && box2.UpperLeft.Y != box2.UpperRight.Y)) {
 							if ((flag & 1) != 0)
 								ScummHelper.Swap (ref box1.UpperLeft.Y, ref box1.UpperRight.Y);
 							if ((flag & 2) != 0)
@@ -1256,7 +1256,7 @@ namespace NScumm.Core
 									diffY *= boxDiffX;
 									int t = diffY / diffX;
 									if (t == 0 && (diffY <= 0 || diffX <= 0)
-									                               && (diffY >= 0 || diffX >= 0))
+									    && (diffY >= 0 || diffX >= 0))
 										t = -1;
 									pos = _position.Y + t;
 								}
@@ -1292,8 +1292,8 @@ namespace NScumm.Core
 						}
 
 						if (box1.UpperLeft.X > box2.UpperRight.X || box2.UpperLeft.X > box1.UpperRight.X ||
-						                      ((box1.UpperRight.X == box2.UpperLeft.X || box2.UpperRight.X == box1.UpperLeft.X) &&
-						                      box1.UpperLeft.X != box1.UpperRight.X && box2.UpperLeft.X != box2.UpperRight.X)) {
+						    ((box1.UpperRight.X == box2.UpperLeft.X || box2.UpperRight.X == box1.UpperLeft.X) &&
+						    box1.UpperLeft.X != box1.UpperRight.X && box2.UpperLeft.X != box2.UpperRight.X)) {
 							if ((flag & 1) != 0)
 								ScummHelper.Swap (ref box1.UpperLeft.X, ref box1.UpperRight.X);
 							if ((flag & 2) != 0)

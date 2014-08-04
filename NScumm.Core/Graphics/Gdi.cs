@@ -30,23 +30,31 @@ namespace NScumm.Core.Graphics
 		ObjectMode = 2 << 2
 	}
 
-	class Gdi
+	public class Gdi
 	{
 		#region Fields
 
 		public int NumZBuffer = 2;
 		public int NumStrips = 40;
 
-		ScummEngine _vm;
+		readonly ScummEngine _vm;
+		GameFeatures features;
+
 		int paletteMod;
 		byte decompShr;
 		byte decompMask;
 		byte transparentColor = 255;
 		byte[][] maskBuffer = new byte[4][];
+		byte[] roomPalette = new byte[256];
 
 		#endregion
 
 		#region Properties
+
+		public byte[] RoomPalette {
+			get{ return roomPalette; }
+			set{ roomPalette = value; }
+		}
 
 		public byte TransparentColor {
 			get { return transparentColor; }
@@ -59,9 +67,10 @@ namespace NScumm.Core.Graphics
 
 		#region Constructor
 
-		public Gdi (ScummEngine vm)
+		public Gdi (ScummEngine vm, GameFeatures features)
 		{
 			_vm = vm;
+			this.features = features;
 			for (int i = 0; i < maskBuffer.Length; i++) {
 				maskBuffer [i] = new byte[40 * (200 + 4)];
 			}
@@ -78,15 +87,19 @@ namespace NScumm.Core.Graphics
 			NumStrips = _vm.ScreenWidth / 8;
 		}
 
-		/// <summary>
-		/// Draw a bitmap onto a virtual screen. This is main drawing method for room backgrounds
-		/// and objects, used throughout all SCUMM versions.
-		/// </summary>
 		public void DrawBitmap (byte[] ptr, VirtScreen vs, int x, int y, int width, int height, int stripnr, int numstrip, DrawBitmaps flags)
 		{
 			// Check whether lights are turned on or not
 			var lightsOn = _vm.IsLightOn ();
+			DrawBitmap (ptr, vs, x, y, width, height, stripnr, numstrip, flags, lightsOn, _vm.CurrentRoomData.Header.Width);
+		}
 
+		/// <summary>
+		/// Draw a bitmap onto a virtual screen. This is main drawing method for room backgrounds
+		/// and objects, used throughout all SCUMM versions.
+		/// </summary>
+		public void DrawBitmap (byte[] ptr, VirtScreen vs, int x, int y, int width, int height, int stripnr, int numstrip, DrawBitmaps flags, bool isLightOn, int roomWidth)
+		{
 			int sx = x - vs.XStart / 8;
 			if (sx < 0) {
 				numstrip -= -sx;
@@ -100,7 +113,7 @@ namespace NScumm.Core.Graphics
 			// It was added as a kind of hack to fix some corner cases, but it compares
 			// the room width to the virtual screen width; but the former should always
 			// be bigger than the latter (except for MM NES, maybe)... strange
-			int limit = Math.Max (_vm.CurrentRoomData.Header.Width, vs.Width) / 8 - x;
+			int limit = Math.Max (roomWidth, vs.Width) / 8 - x;
 			if (limit > numstrip)
 				limit = numstrip;
 			if (limit > NumStrips - sx)
@@ -130,7 +143,7 @@ namespace NScumm.Core.Graphics
 				if (vs.HasTwoBuffers) {
 					var navFrontBuf = new PixelNavigator (vs.Surfaces [0]);
 					navFrontBuf.GoTo (x * 8, y);
-					if (lightsOn)
+					if (isLightOn)
 						Copy8Col (navFrontBuf, navDst, height);
 					else
 						Clear8Col (navFrontBuf, height);
@@ -171,8 +184,6 @@ namespace NScumm.Core.Graphics
 				dst.Offset (-width, 1);
 			}
 		}
-
-
 
 		public static void Fill (PixelNavigator dst, byte color, int width, int height)
 		{
@@ -287,7 +298,7 @@ namespace NScumm.Core.Graphics
 		public bool TestGfxOtherUsageBits (int strip, int bit)
 		{
 			// Don't exclude the DIRTY and RESTORED bits from the test
-			var bitmask = new uint[3] { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF };
+			var bitmask = new [] { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF };
 
 			ScummHelper.AssertRange (1, bit, 96, "TestGfxOtherUsageBits");
 			bit--;
@@ -303,7 +314,7 @@ namespace NScumm.Core.Graphics
 		public bool TestGfxAnyUsageBits (int strip)
 		{
 			// Exclude the DIRTY and RESTORED bits from the test
-			var bitmask = new uint[3] { 0xFFFFFFFF, 0xFFFFFFFF, 0x3FFFFFFF };
+			var bitmask = new uint[] { 0xFFFFFFFF, 0xFFFFFFFF, 0x3FFFFFFF };
 
 			ScummHelper.AssertRange (0, strip, _gfxUsageBits.Length / 3, "TestGfxOtherUsageBits");
 			for (var i = 0; i < 3; i++)
@@ -416,7 +427,11 @@ namespace NScumm.Core.Graphics
 					uint offs;
 
 					var zplanePtr = new MemoryStream (zplanes [i]);
-					zplanePtr.Seek (stripnr * 2 + 2, SeekOrigin.Begin);
+					if (features.HasFlag (GameFeatures.Old256)) {
+						zplanePtr.Seek (stripnr * 2 + 4, SeekOrigin.Begin);
+					} else {
+						zplanePtr.Seek (stripnr * 2 + 2, SeekOrigin.Begin);
+					}
 					var br = new BinaryReader (zplanePtr);
 					offs = br.ReadUInt16 ();
 
@@ -500,7 +515,7 @@ namespace NScumm.Core.Graphics
 			// trouble here. See also bug #795214.
 			int offset = -1;
 			int smapLen;
-			if (_vm.Game.Features.HasFlag (GameFeatures.SixteenColors)) {
+			if (features.HasFlag (GameFeatures.SixteenColors)) {
 				smapLen = smapReader.ReadInt16 ();
 				if (stripnr * 2 + 2 < smapLen) {
 					smapReader.BaseStream.Seek (stripnr * 2, SeekOrigin.Current);
@@ -522,7 +537,7 @@ namespace NScumm.Core.Graphics
 
 		bool DecompressBitmap (PixelNavigator navDst, BinaryReader src, int numLinesToProcess)
 		{
-			if (_vm.Game.Features.HasFlag (GameFeatures.SixteenColors)) {
+			if (features.HasFlag (GameFeatures.SixteenColors)) {
 				DrawStripEGA (navDst, src, numLinesToProcess);
 				return false;
 			}
@@ -535,6 +550,26 @@ namespace NScumm.Core.Graphics
 			decompMask = (byte)(0xFF >> (8 - decompShr));
 
 			switch (code) {
+			case 1:
+				DrawStripRaw (navDst, src, numLinesToProcess, false);
+				break;
+			case 2:
+				// Indy256
+				//UnkDecode8 (navDst, src, numLinesToProcess);
+				break;
+			case 3:
+				// Indy256
+				UnkDecode9 (navDst, src, numLinesToProcess);
+				break;
+			case 4:
+				// Indy256
+				//UnkDecode10 (navDst, src, numLinesToProcess);
+				break;
+			case 7:
+				// Indy256
+				UnkDecode11 (navDst, src, numLinesToProcess);
+				break;
+
 			case 14:
 			case 15:
 			case 16:
@@ -576,6 +611,176 @@ namespace NScumm.Core.Graphics
 			return transpStrip;
 		}
 
+		void DrawStripRaw (PixelNavigator navDst, BinaryReader src, int height, bool transpCheck)
+		{
+			int x;
+
+			if (features.HasFlag (GameFeatures.Old256)) {
+				int h = height;
+				x = 8;
+				while (true) {
+					navDst.Write (RoomPalette [src.ReadByte ()]);
+					if (!NextRow (navDst, ref x, ref h, height))
+						return;
+				}
+			}
+			do {
+				for (x = 0; x < 8; x++) {
+					int color = src.ReadByte ();
+					if (!transpCheck || color != TransparentColor)
+						WriteRoomColor (navDst, color);
+				}
+				navDst.OffsetY (1);
+			} while ((--height) != 0);
+		}
+
+		//		void UnkDecode8 (PixelNavigator navDst, BinaryReader src, int height)
+		//		{
+		//			int h = height;
+		//			int x = 8;
+		//			while (true) {
+		//				int run = src.ReadByte () + 1;
+		//				int color = src.ReadByte ();
+		//
+		//				for (var i = 0; i < run; i++) {
+		//					navDst.Write (RoomPalette [color]);
+		//					if (!NextRow (navDst, ref x, ref h, height))
+		//						return;
+		//				}
+		//			}
+		//		}
+
+		void UnkDecode9 (PixelNavigator navDst, BinaryReader src, int height)
+		{
+			int c, color;
+			int i;
+			int buffer = 0;
+			int mask = 128;
+			int h = height;
+			byte run = 0;
+
+			int x = 8;
+			while (true) {
+				c = ReadNBits (src, 4, ref mask, ref buffer);
+		
+				switch (c >> 2) {
+				case 0:
+					color = ReadNBits (src, 4, ref mask, ref buffer);
+					for (i = 0; i < ((c & 3) + 2); i++) {
+						navDst.Write (RoomPalette [run * 16 + color]);
+						if (!NextRow (navDst, ref x, ref h, height))
+							return;
+					}
+					break;
+		
+				case 1:
+					for (i = 0; i < ((c & 3) + 1); i++) {
+						color = ReadNBits (src, 4, ref mask, ref buffer);
+						navDst.Write (RoomPalette [run * 16 + color]);
+						if (!NextRow (navDst, ref x, ref h, height))
+							return;
+					}
+					break;
+		
+				case 2:
+					run = (byte)ReadNBits (src, 4, ref mask, ref buffer);
+					break;
+				}
+			}
+		}
+
+		//		void UnkDecode10 (PixelNavigator navDst, BinaryReader src, int height)
+		//		{
+		//			int h = height;
+		//			int numcolors = src.ReadByte ();
+		//			var local_palette = src.ReadBytes (numcolors);
+		//
+		//			int x = 8;
+		//
+		//			while (true) {
+		//				int color = src.ReadByte ();
+		//				if (color < numcolors) {
+		//					navDst.Write (RoomPalette [local_palette [color]]);
+		//					if (!NextRow (navDst, ref x, ref h, height))
+		//						return;
+		//				} else {
+		//					int run = color - numcolors + 1;
+		//					color = src.ReadByte ();
+		//					for (var i = 0; i < run; i++) {
+		//						navDst.Write (RoomPalette [color]);
+		//						if (!NextRow (navDst, ref x, ref h, height))
+		//							return;
+		//					}
+		//				}
+		//			}
+		//		}
+		//
+		void UnkDecode11 (PixelNavigator navDst, BinaryReader src, int height)
+		{
+			int i;
+			int buffer = 0, mask = 128;
+			int inc = 1;
+			int color = src.ReadByte ();
+		
+			int x = 8;
+			do {
+				int h = height;
+				do {
+					navDst.Write (RoomPalette [color]);
+					navDst.OffsetY (1);
+					for (i = 0; i < 3; i++) {
+						if (!ReadBit256 (src, ref mask, ref buffer))
+							break;
+					}
+					switch (i) {
+					case 1:
+						inc = -inc;
+						color -= inc;
+						break;
+					case 2:
+						color -= inc;
+						break;
+					case 3:
+						inc = 1;
+						color = ReadNBits (src, 8, ref mask, ref buffer);
+						break;
+					}
+				} while ((--h) != 0);
+				navDst.Offset (1, -height);
+			} while ((--x) != 0);
+		}
+
+		static bool ReadBit256 (BinaryReader src, ref int mask, ref int buffer)
+		{
+			if ((mask <<= 1) == 256) {     
+				buffer = src.ReadByte ();           
+				mask = 1;                  
+			}                              
+			return ((buffer & mask) != 0);
+		}
+
+		static int ReadNBits (BinaryReader src, int n, ref int mask, ref int buffer)
+		{
+			var color = 0;
+			for (int b = 0; b < n; b++) {  
+				var bits = ReadBit256 (src, ref mask, ref buffer) ? 1 : 0;
+				color += (bits << b);          
+			}
+			return color;
+		}
+
+		static bool NextRow (PixelNavigator navDst, ref int x, ref int y, int height)
+		{
+			navDst.OffsetY (1);
+			if (--y == 0) { 
+				if ((--x) == 0)
+					return false; 
+				navDst.Offset (1, -height);
+				y = height;              
+			}               
+			return true;
+		}
+
 		void DrawStripEGA (PixelNavigator navDst, BinaryReader src, int height)
 		{
 			byte color;
@@ -599,7 +804,7 @@ namespace NScumm.Core.Graphics
 						}
 						for (z = 0; z < run; z++) {
 							navDst.GoTo (x, y);
-							navDst.Write ((z & 1) != 0 ? _vm.RoomPalette [(color & 0xf) + paletteMod] : _vm.RoomPalette [(color >> 4) + paletteMod]);
+							navDst.Write ((z & 1) != 0 ? RoomPalette [(color & 0xf) + paletteMod] : RoomPalette [(color >> 4) + paletteMod]);
 
 							y++;
 							if (y >= height) {
@@ -633,7 +838,7 @@ namespace NScumm.Core.Graphics
 
 					for (z = 0; z < run; z++) {
 						navDst.GoTo (x, y);
-						navDst.Write (_vm.RoomPalette [(color & 0xf) + paletteMod]);
+						navDst.Write (RoomPalette [(color & 0xf) + paletteMod]);
 
 						y++;
 						if (y >= height) {
@@ -734,7 +939,7 @@ namespace NScumm.Core.Graphics
 			// the original AMIGA version of Indy4: The Fate of Atlantis allowed
 			// overflowing of the palette index. To have the same result in our code,
 			// we need to do an logical AND 0xFF here to keep the result in [0, 255].
-			navDst.Write (_vm.RoomPalette [(color + paletteMod) & 0xFF]);
+			navDst.Write (RoomPalette [(color + paletteMod) & 0xFF]);
 		}
 
 		List<byte[]> GetZPlanes (byte[] ptr)
@@ -745,7 +950,7 @@ namespace NScumm.Core.Graphics
 				var zplane = new MemoryStream (ptr);
 				var zplaneReader = new BinaryReader (zplane);
 				int zOffset;
-				if (_vm.Game.Features.HasFlag (GameFeatures.SixteenColors)) {
+				if (features.HasFlag (GameFeatures.SixteenColors)) {
 					zOffset = zplaneReader.ReadInt16 ();
 					zplaneReader.BaseStream.Seek (-2, SeekOrigin.Current);
 				} else {

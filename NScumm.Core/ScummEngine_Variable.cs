@@ -146,6 +146,13 @@ namespace NScumm.Core
 			}
 
 			if ((var & 0x8000) == 0x8000) {
+				if (_game.Version <= 3) {
+					int bit = var & 0xF;
+					var = (var >> 4) & 0xFF;
+
+					ScummHelper.AssertRange (0, var, NumVariables - 1, "variable (reading)");
+					return (_variables [var] & (1 << bit)) > 0 ? 1 : 0;
+				}
 				var &= 0x7FFF;
 
 				ScummHelper.AssertRange (0, _resultVarIndex, _bitVars.Length - 1, "variable (reading)");
@@ -205,11 +212,20 @@ namespace NScumm.Core
 			}
 
 			if ((_resultVarIndex & 0x8000) != 0) {
-				_resultVarIndex &= 0x7FFF;
+				if (_game.Version <= 3) {
+					int bit = value & 0xF;
+					value = (value >> 4) & 0xFF;
+					ScummHelper.AssertRange (0, value, NumVariables - 1, "variable (writing)");
+					if (value > 0)
+						_variables [value] |= (1 << bit);
+					else
+						_variables [value] &= ~(1 << bit);
+				} else {
+					_resultVarIndex &= 0x7FFF;
 
-				ScummHelper.AssertRange (0, _resultVarIndex, _bitVars.Length - 1, "bit variable (writing)");
-				_bitVars [_resultVarIndex] = value != 0;
-				return;
+					ScummHelper.AssertRange (0, _resultVarIndex, _bitVars.Length - 1, "bit variable (writing)");
+					_bitVars [_resultVarIndex] = value != 0;
+				}
 			}
 
 			if ((_resultVarIndex & 0x4000) != 0) {

@@ -95,6 +95,12 @@ namespace NScumm.Core
 			else
 				x -= dist;
 
+			if (_game.Version <= 3) {
+				var abr = a.AdjustXYToBeInBox (new Point ((short)x, (short)y));
+				x = abr.Position.X;
+				y = abr.Position.Y;
+			}
+
 			a.StartWalk (new Point ((short)x, (short)y), -1);
 		}
 
@@ -159,9 +165,10 @@ namespace NScumm.Core
 
 		void PutActor ()
 		{
-			Actor a = _actors [GetVarOrDirectByte (OpCodeParameter.Param1)];
-			short x = (short)GetVarOrDirectWord (OpCodeParameter.Param2);
-			short y = (short)GetVarOrDirectWord (OpCodeParameter.Param3);
+			var index = GetVarOrDirectByte (OpCodeParameter.Param1);
+			var a = _actors [index];
+			var x = (short)GetVarOrDirectWord (OpCodeParameter.Param2);
+			var y = (short)GetVarOrDirectWord (OpCodeParameter.Param3);
 			a.PutActor (new Point (x, y));
 		}
 
@@ -258,7 +265,12 @@ namespace NScumm.Core
 					break;
 
 				case 17:        // SO_ACTOR_SCALE
-					i = j = GetVarOrDirectByte (OpCodeParameter.Param1);
+					if (_game.Version == 4) {
+						i = j = GetVarOrDirectByte (OpCodeParameter.Param1);
+					} else {
+						i = GetVarOrDirectByte (OpCodeParameter.Param1);
+						j = GetVarOrDirectByte (OpCodeParameter.Param2);
+					}
 					a.BoxScale = (ushort)i;
 					a.SetScale (i, j);
 					break;

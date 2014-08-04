@@ -189,7 +189,7 @@ namespace NScumm.Core
 						vs = _verbs [slot];
 						vs.VerbId = (ushort)verb;
 						vs.Color = 2;
-						vs.HiColor = 0;
+						vs.HiColor = (_game.Version == 3) ? (byte)14 : (byte)0;
 						vs.DimColor = 8;
 						vs.Type = VerbType.Text;
 						vs.CharsetNr = _string [0].Default.Charset;

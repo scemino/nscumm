@@ -26,6 +26,11 @@ namespace NScumm.Core
 	{
 		Sound _sound;
 
+		void StartMusic ()
+		{
+			_sound.AddSoundToQueue (GetVarOrDirectByte (OpCodeParameter.Param1));
+		}
+
 		void StartSound ()
 		{
 			var sound = GetVarOrDirectByte (OpCodeParameter.Param1);

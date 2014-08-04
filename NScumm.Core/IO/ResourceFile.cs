@@ -23,11 +23,11 @@ using NScumm.Core.Graphics;
 
 namespace NScumm.Core.IO
 {
-	public class ResourceFile
+	public abstract class ResourceFile
 	{
 		#region Fields
 
-		readonly XorReader _reader;
+		protected readonly XorReader _reader;
 
 		#endregion
 
@@ -98,7 +98,7 @@ namespace NScumm.Core.IO
 
 		#region Constructor
 
-		public ResourceFile (string path, byte encByte)
+		protected ResourceFile (string path, byte encByte)
 		{
 			var dir = Path.GetDirectoryName (path);
 			var realPath = (from file in Directory.EnumerateFiles (dir)
@@ -113,35 +113,7 @@ namespace NScumm.Core.IO
 
 		#region Public Methods
 
-		public Dictionary<byte, long> ReadRoomOffsets ()
-		{
-			var roomOffsets = new Dictionary<byte, long> ();
-			do {
-				var size = _reader.ReadUInt32 ();
-				var blockType = _reader.ReadUInt16 ();
-
-				switch (blockType) {
-				// *LECF* main container
-				case 0x454C:
-					break;
-				// *LOFF* room offset table
-				case 0x4F46:
-					var numRooms = _reader.ReadByte ();
-					while (numRooms-- != 0) {
-						var room = _reader.ReadByte ();
-						var offset = _reader.ReadUInt32 ();
-						roomOffsets [room] = offset;
-					}
-					return roomOffsets;
-				default:
-                        // skip
-					Console.WriteLine ("Skip Block: 0x{0:X2}", blockType);
-					_reader.BaseStream.Seek (size - 6, SeekOrigin.Current);
-					break;
-				}
-			} while (_reader.BaseStream.Position < _reader.BaseStream.Length);
-			return null;
-		}
+		public abstract Dictionary<byte, long> ReadRoomOffsets ();
 
 		internal Room ReadRoom (long roomOffset)
 		{
@@ -338,9 +310,14 @@ namespace NScumm.Core.IO
 			return room;
 		}
 
+		protected virtual void GotoResourceHeader (long offset)
+		{
+			_reader.BaseStream.Seek (offset, SeekOrigin.Begin);
+		}
+
 		public XorReader ReadCostume (long costOffset)
 		{
-			_reader.BaseStream.Seek (costOffset + 12, SeekOrigin.Begin);
+			GotoResourceHeader (costOffset + 4);
 			var tag = _reader.ReadInt16 ();
 			if (tag != 0x4F43)
 				throw new NotSupportedException ("Invalid costume.");
@@ -349,7 +326,7 @@ namespace NScumm.Core.IO
 
 		public byte[] ReadScript (long roomOffset)
 		{
-			_reader.BaseStream.Seek (roomOffset + 8, SeekOrigin.Begin);
+			GotoResourceHeader (roomOffset);
 			long size = _reader.ReadUInt32 ();
 			var tag = _reader.ReadInt16 ();
 			if (tag != 0x4353)
@@ -360,9 +337,7 @@ namespace NScumm.Core.IO
 
 		public byte[] ReadSound (long roomOffset)
 		{
-			_reader.BaseStream.Seek (roomOffset + 8, SeekOrigin.Begin);
-			_reader.ReadBytes (4);
-			_reader.BaseStream.Seek (-4, SeekOrigin.Current);
+			GotoResourceHeader (roomOffset);
 			long size = _reader.ReadUInt32 ();
 			var tag = _reader.ReadInt16 ();
 			if (tag != 0x4F53)
@@ -383,12 +358,6 @@ namespace NScumm.Core.IO
 
 			}
 			return null;
-		}
-
-		public byte[] ReadCharsetData ()
-		{
-			var size = _reader.ReadUInt32 () + 11;
-			return _reader.ReadBytes ((int)size);
 		}
 
 		#endregion

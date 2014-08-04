@@ -4,7 +4,7 @@
   <MD5 signature="a01fab4a64d47b96e2e58e6b0f825cc7" gameId="monkey" variant="VGA" language="fr-fr" />
   <MD5 signature="e6cd81b25ab1453a8a6d3482118c391e" gameId="pass" variant="" language="en" features="SixteenColors" />
   <MD5 signature="5d88b9d6a88e6f8e90cded9d01b7f082" gameId="loom" variant="VGA" language="en" />
-  <MD5 signature="1875b90fade138c9253a8e967007031a" gameId="indy3" variant="VGA" language="en" />
+  <MD5 signature="1875b90fade138c9253a8e967007031a" gameId="indy3" variant="VGA" language="en" features="Old256" />
   <MD5 signature="8e4ee4db46954bfe2912e259a16fad82" gameId="monkey2" variant="VGA" language="en" />
   <Game id="indy3" variant="VGA" version="3"/>
   <Game id="monkey" variant="VGA" version="4" />

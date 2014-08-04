@@ -31,6 +31,7 @@ namespace NScumm.Core
 
 		public byte Charset { get; set; }
 
+		public int Height;
 		public bool Center;
 		public bool Overhead;
 		public bool NoTalkAnim;

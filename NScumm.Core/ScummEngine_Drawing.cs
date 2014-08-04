@@ -50,6 +50,7 @@ namespace NScumm.Core
 			0xFF, 0x55, 0x55,   0xFF, 0x55, 0xFF,   0xFF, 0xFF, 0x55,   0xFF, 0xFF, 0xFF
 		};
 		Palette _currentPalette = new Palette ();
+
 		internal Surface TextSurface { get { return _textSurface; } }
 
 		void DrawBox ()
@@ -96,8 +97,8 @@ namespace NScumm.Core
 			int i = _objs.Length - 1;
 			do {
 				if (_objs [i].Number != 0 &&
-					_objs [i].Position.X == x && _objs [i].Position.Y == y &&
-					_objs [i].Width == w && _objs [i].Height == h)
+				    _objs [i].Position.X == x && _objs [i].Position.Y == y &&
+				    _objs [i].Width == w && _objs [i].Height == h)
 					PutState (_objs [i].Number, 0);
 			} while ((--i) != 0);
 
@@ -688,7 +689,9 @@ namespace NScumm.Core
 			var smapReader = new BinaryReader (new MemoryStream (roomData.Data));
 			var numZBuffer = 0;
 			int zOffset = 0;
-			if (Game.Features.HasFlag (GameFeatures.SixteenColors)) {
+			if (Game.Version == 3) {
+				numZBuffer = 2;
+			} else if (Game.Features.HasFlag (GameFeatures.SixteenColors)) {
 				zOffset = smapReader.ReadInt16 ();
 				smapReader.BaseStream.Seek (-2, SeekOrigin.Current);
 			} else {

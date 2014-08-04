@@ -15,6 +15,7 @@
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
 using System;
+using System.Linq;
 using System.IO;
 using System.Collections.Generic;
 
@@ -39,30 +40,40 @@ namespace NScumm.Core.IO
 		}
 	}
 
-	public class ResourceManager
+	public abstract class ResourceManager
 	{
-		readonly ResourceIndex index;
+		protected readonly ResourceIndex Index;
 
-		public byte[] ObjectOwnerTable { get { return index.ObjectOwnerTable; } }
+		public byte[] ObjectOwnerTable { get { return Index.ObjectOwnerTable; } }
 
-		public byte[] ObjectStateTable { get { return index.ObjectStateTable; } }
+		public byte[] ObjectStateTable { get { return Index.ObjectStateTable; } }
 
-		public uint[] ClassData { get { return index.ClassData; } }
+		public uint[] ClassData { get { return Index.ClassData; } }
 
 		public string Directory { get; private set; }
 
 		public IEnumerable<Room> Rooms {
 			get {
-				foreach (var rIndex in index.RoomNames) {
-					yield return GetRoom (rIndex.Key);
+				var roomIndices = (from res in Enumerable.Range (1, Index.RoomResources.Count - 1)
+				                   where res != 0
+				                   select (byte)res).Distinct ();
+				Room room = null;
+				foreach (var i in roomIndices) {
+					try {
+						room = GetRoom (i);
+					} catch (Exception) {
+					}
+					if (room != null) {
+						yield return room;
+					}
 				}
 			}
 		}
 
 		public IEnumerable<Script> Scripts {
 			get {
-				for (byte i = 0; i < index.ScriptResources.Count; i++) {
-					if (index.ScriptResources [i].RoomNum != 0) {
+				for (byte i = 0; i < Index.ScriptResources.Count; i++) {
+					if (Index.ScriptResources [i].RoomNum != 0) {
 						byte[] script = null;
 						try {
 							script = GetScript (i);
@@ -79,23 +90,37 @@ namespace NScumm.Core.IO
 
 		public IEnumerable<byte[]> Sounds {
 			get {
-				for (byte i = 0; i < index.SoundResources.Count; i++) {
-					if (index.SoundResources [i].RoomNum != 0) {
+				for (byte i = 0; i < Index.SoundResources.Count; i++) {
+					if (Index.SoundResources [i].RoomNum != 0) {
 						yield return GetSound (i);
 					}
 				}
 			}
 		}
 
-		ResourceManager (string path)
+		protected ResourceManager (string path)
 		{
-			index = ResourceIndex.Load (path);
+			Index = ResourceIndex.Load (path);
 			Directory = Path.GetDirectoryName (path);
 		}
 
-		public static ResourceManager Load (string path)
+		public static ResourceManager Load (string path, int version)
 		{
-			return new ResourceManager (path); 
+			switch (version) {
+			case 3:
+				return new ResourceManager3 (path); 
+			case 4:
+				return new ResourceManager4 (path); 
+			default:
+				throw new NotSupportedException (string.Format ("ResourceManager {0} is not supported", version)); 
+			}
+		}
+
+		static long GetRoomOffset (ResourceFile disk, byte roomNum)
+		{
+			var rOffsets = disk.ReadRoomOffsets ();
+			var roomOffset = rOffsets.ContainsKey (roomNum) ? rOffsets [roomNum] : 0;
+			return roomOffset;
 		}
 
 		public Room GetRoom (byte roomNum)
@@ -103,9 +128,9 @@ namespace NScumm.Core.IO
 			Room room = null;
 			var disk = OpenRoom (roomNum);
 			if (disk != null) {
-				var rOffsets = disk.ReadRoomOffsets ();
-				room = disk.ReadRoom (rOffsets [roomNum]);
-				room.Name = index.RoomNames [roomNum];
+				var roomOffset = GetRoomOffset (disk, roomNum);
+				room = disk.ReadRoom (roomOffset);
+				room.Name = Index.RoomNames != null ? Index.RoomNames [roomNum] : null;
 			}
 
 			return room;
@@ -114,34 +139,29 @@ namespace NScumm.Core.IO
 		public XorReader GetCostumeReader (byte scriptNum)
 		{
 			XorReader reader = null;
-			var res = index.CostumeResources [scriptNum];
+			var res = Index.CostumeResources [scriptNum];
 			var disk = OpenRoom (res.RoomNum);
 			if (disk != null) {
-				var rOffsets = disk.ReadRoomOffsets ();
-				var offset = res.Offset;
-				reader = disk.ReadCostume (rOffsets [res.RoomNum] + offset);
+				var roomOffset = GetRoomOffset (disk, res.RoomNum);
+				reader = disk.ReadCostume (roomOffset + res.Offset);
 			}
 			return reader;
 		}
 
 		public byte[] GetCharsetData (byte id)
 		{
-			byte[] charset = null;
-			var disk = OpenCharset (id);
-			if (disk != null) {
-				charset = disk.ReadCharsetData ();
-			}
+			var charset = ReadCharset (id);
 			return charset;
 		}
 
 		public byte[] GetScript (byte scriptNum)
 		{
 			byte[] data = null;
-			var resource = index.ScriptResources [scriptNum];
+			var resource = Index.ScriptResources [scriptNum];
 			var disk = OpenRoom (resource.RoomNum);
 			if (disk != null) {
-				var rOffsets = disk.ReadRoomOffsets ();
-				data = disk.ReadScript (rOffsets [resource.RoomNum] + resource.Offset);
+				var roomOffset = GetRoomOffset (disk, resource.RoomNum);
+				data = disk.ReadScript (roomOffset + resource.Offset);
 			}
 			return data;
 		}
@@ -149,32 +169,18 @@ namespace NScumm.Core.IO
 		public byte[] GetSound (int sound)
 		{
 			byte[] data = null;
-			var resource = index.SoundResources [sound];
+			var resource = Index.SoundResources [sound];
 			var disk = OpenRoom (resource.RoomNum);
 			if (disk != null) {
-				var rOffsets = disk.ReadRoomOffsets ();
-				data = disk.ReadSound (rOffsets [resource.RoomNum] + resource.Offset);
+				var roomOffset = GetRoomOffset (disk, resource.RoomNum);
+				data = disk.ReadSound (roomOffset + resource.Offset);
 			}
 			return data;
 		}
 
-		ResourceFile OpenRoom (byte roomIndex)
-		{
-			var diskNum = index.RoomResources [roomIndex].RoomNum;
-			var diskName = string.Format ("disk{0:00}.lec", diskNum);
-			var game1Path = Path.Combine (Directory, diskName);
+		protected abstract ResourceFile OpenRoom (byte roomIndex);
 
-			var file = diskNum != 0 ? new ResourceFile (game1Path, 0x69) : null;
-			return file;
-		}
-
-		ResourceFile OpenCharset (byte id)
-		{
-			var diskName = string.Format ("{0}.lfl", 900 + id);
-			var game1Path = Path.Combine (Directory, diskName);
-			var file = new ResourceFile (game1Path, 0x0);
-			return file;
-		}
+		protected abstract byte[] ReadCharset (byte id);
 	}
 }
 

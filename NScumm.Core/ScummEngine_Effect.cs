@@ -66,7 +66,8 @@ namespace NScumm.Core
 				// that broke the FOA intro. Probably other things as well.
 				//
 				// Hopefully it's safe to do it at this point, at least.
-                    MainVirtScreen.SetDirtyRange(0, 0);
+//                    MainVirtScreen.SetDirtyRange(0, 0);
+                    MainVirtScreen.SetDirtyRange(0, MainVirtScreen.Height);
                     UpdateDirtyScreen(MainVirtScreen);
 				//TransitionEffect(effect - 1);
                     break;

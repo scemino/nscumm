@@ -116,6 +116,11 @@
     <Compile Include="IO\ResourceManager4.cs" />
     <Compile Include="IO\ResourceFile3.cs" />
     <Compile Include="IO\ResourceFile4.cs" />
+    <Compile Include="Actor3.cs" />
+    <Compile Include="Graphics\CharsetRenderer3.cs" />
+    <Compile Include="Graphics\CharsetRendererCommon.cs" />
+    <Compile Include="ScummEngine4.cs" />
+    <Compile Include="ScummEngine3.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Nscumm.xml">

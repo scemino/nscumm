@@ -20,300 +20,302 @@ using System.IO;
 
 namespace NScumm.Core.Graphics
 {
-	sealed class CharsetRendererClassic : CharsetRenderer
-	{
-		#region Fields
-		int _offsX, _offsY;
-		int _width, _height, _origWidth, _origHeight;
-		byte[] _fontPtr;
-		int _fontPos;
-		int _charPos;
-		int _fontHeight; 
-		#endregion
+    sealed class CharsetRendererClassic : CharsetRendererCommon
+    {
+        #region Fields
 
-		#region Properties
-		public uint NumChars { get; set; } 
-		#endregion
+        int _offsX, _offsY;
+        int _width, _height, _origWidth, _origHeight;
+        int _fontPos;
+        int _charPos;
 
-		#region Constructor
-		public CharsetRendererClassic(ScummEngine vm)
-			: base(vm)
-		{
-		} 
-		#endregion
+        #endregion
 
-		#region Methods
-		public override void PrintChar(int chr, bool ignoreCharsetMask)
-		{
-			VirtScreen vs;
+        #region Constructor
 
-			//ScummHelper.AssertRange(1, _curId, _vm._numCharsets - 1, "charset");
+        public CharsetRendererClassic(ScummEngine vm)
+            : base(vm)
+        {
+        }
 
-			if ((vs = Vm.FindVirtScreen(Top)) == null && (vs = Vm.FindVirtScreen(Top + GetFontHeight())) == null)
-				return;
+        #endregion
 
-			if (chr == '@')
-				return;
+        #region Methods
 
-			Vm.CharsetColorMap[1] = Color;
+        public override void PrintChar(int chr, bool ignoreCharsetMask)
+        {
+            VirtScreen vs;
 
-			if (!PrepareDraw(chr))
-				return;
+            //ScummHelper.AssertRange(1, _curId, _vm._numCharsets - 1, "charset");
 
-			if (FirstChar)
-			{
-				Str.Left = 0;
-				Str.Top = 0;
-				Str.Right = 0;
-				Str.Bottom = 0;
-			}
+            if ((vs = Vm.FindVirtScreen(Top)) == null && (vs = Vm.FindVirtScreen(Top + GetFontHeight())) == null)
+                return;
 
-			Top += _offsY;
-			Left += _offsX;
+            if (chr == '@')
+                return;
 
-			if (Left + _origWidth > Right + 1 || Left < 0)
-			{
-				Left += _origWidth;
-				Top -= _offsY;
-				return;
-			}
+            Vm.CharsetColorMap[1] = Color;
 
-			DisableOffsX = false;
+            if (!PrepareDraw(chr))
+                return;
 
-			if (FirstChar)
-			{
-				Str.Left = Left;
-				Str.Top = Top;
-				Str.Right = Left;
-				Str.Bottom = Top;
-				FirstChar = false;
-			}
+            if (FirstChar)
+            {
+                Str.Left = 0;
+                Str.Top = 0;
+                Str.Right = 0;
+                Str.Bottom = 0;
+            }
 
-			if (Left < Str.Left)
-				Str.Left = Left;
+            Top += _offsY;
+            Left += _offsX;
 
-			if (Top < Str.Top)
-				Str.Top = Top;
+            if (Left + _origWidth > Right + 1 || Left < 0)
+            {
+                Left += _origWidth;
+                Top -= _offsY;
+                return;
+            }
 
-			int drawTop = Top - vs.TopLine;
+            DisableOffsX = false;
 
-			Vm.MarkRectAsDirty(vs, Left, Left + _width, drawTop, drawTop + _height);
+            if (FirstChar)
+            {
+                Str.Left = Left;
+                Str.Top = Top;
+                Str.Right = Left;
+                Str.Bottom = Top;
+                FirstChar = false;
+            }
 
-			// This check for kPlatformFMTowns and kMainVirtScreen is at least required for the chat with
-			// the navigator's head in front of the ghost ship in Monkey Island 1
-			if (!ignoreCharsetMask)
-			{
-				HasMask = true;
-				TextScreen = vs;
-			}
+            if (Left < Str.Left)
+                Str.Left = Left;
 
-			PrintCharIntern(_fontPtr, _charPos + 17, _origWidth, _origHeight, _width, _height, vs, ignoreCharsetMask);
+            if (Top < Str.Top)
+                Str.Top = Top;
 
-			Left += _origWidth;
+            int drawTop = Top - vs.TopLine;
 
-			if (Str.Right < Left)
-			{
-				Str.Right = Left;
-			}
+            Vm.MarkRectAsDirty(vs, Left, Left + _width, drawTop, drawTop + _height);
 
-			if (Str.Bottom < Top + _origHeight)
-				Str.Bottom = Top + _origHeight;
+            // This check for kPlatformFMTowns and kMainVirtScreen is at least required for the chat with
+            // the navigator's head in front of the ghost ship in Monkey Island 1
+            if (!ignoreCharsetMask)
+            {
+                HasMask = true;
+                TextScreen = vs;
+            }
 
-			Top -= _offsY;
-		}
+            PrintCharIntern(_fontPtr, _charPos + 17, _origWidth, _origHeight, _width, _height, vs, ignoreCharsetMask);
 
-		public override void DrawChar(int chr, Surface s, int x, int y)
-		{
-			if (!PrepareDraw(chr))
-				return;
-			var pn = new PixelNavigator(s);
-			pn.GoTo(x, y);
-			DrawBitsN(s, pn, _fontPtr, _fontPos +_charPos, _fontPtr[_fontPos], y, _width, _height);
-		}
+            Left += _origWidth;
 
-		public override void SetCurID(int id)
-		{
-			CurId = id;
+            if (Str.Right < Left)
+            {
+                Str.Right = Left;
+            }
 
-			_fontPtr = Vm.ResourceManager.GetCharsetData((byte)id);
-			if (_fontPtr == null)
-				throw new NotSupportedException(string.Format("CharsetRendererCommon::setCurID: charset %d not found", id));
+            if (Str.Bottom < Top + _origHeight)
+                Str.Bottom = Top + _origHeight;
 
-			_fontPos = 17;
+            Top -= _offsY;
+        }
 
-			_fontHeight = _fontPtr[_fontPos + 1];
-			NumChars = ((uint)_fontPtr[_fontPos + 2]) | (((uint)_fontPtr[_fontPos + 3]) << 8);
-		}
+        public override void DrawChar(int chr, Surface s, int x, int y)
+        {
+            if (!PrepareDraw(chr))
+                return;
+            var pn = new PixelNavigator(s);
+            pn.GoTo(x, y);
+            DrawBitsN(s, pn, _fontPtr, _fontPos + _charPos, _fontPtr[_fontPos], y, _width, _height);
+        }
 
-		public override int GetFontHeight()
-		{
-			//if (_vm._useCJKMode)
-			//    return Math.Max(_vm._2byteHeight + 1, _fontHeight);
-			//else
-			return _fontHeight;
-		}
+        public override void SetCurID(int id)
+        {
+            CurId = id;
 
-		public override int GetCharWidth(int chr)
-		{
-			int spacing = 0;
-			var reader = new BinaryReader(new MemoryStream(_fontPtr));
-			reader.BaseStream.Seek(_fontPos + chr * 4 + 4, SeekOrigin.Begin);
-			var offs = reader.ReadInt32();
-			if (offs != 0)
-			{
-				reader.BaseStream.Seek(_fontPos + offs, SeekOrigin.Begin);
-				spacing = reader.PeekChar();
-				reader.BaseStream.Seek(2, SeekOrigin.Current);
-				spacing += reader.ReadSByte();
-			}
-			return spacing;
-		} 
-		#endregion
+            _fontPtr = Vm.ResourceManager.GetCharsetData((byte)id);
+            if (_fontPtr == null)
+                throw new NotSupportedException(string.Format("CharsetRendererCommon::setCurID: charset {0} not found", id));
 
-		#region Private Methods
-		bool PrepareDraw(int chr)
-		{
-			var reader = new BinaryReader(new MemoryStream(_fontPtr));
-			reader.BaseStream.Seek(_fontPos + chr * 4 + 4, SeekOrigin.Begin);
-			int charOffs = reader.ReadInt32();
-			//assert(charOffs < 0x14000);
-			if (charOffs == 0)
-				return false;
-			_charPos = charOffs;
+            _fontPos = 17;
 
-			reader.BaseStream.Seek(_fontPos + _charPos, SeekOrigin.Begin);
-			_width = _origWidth = reader.ReadByte();
-			_height = _origHeight = reader.ReadByte();
+            _fontHeight = _fontPtr[_fontPos + 1];
+            NumChars = ((uint)_fontPtr[_fontPos + 2]) | (((uint)_fontPtr[_fontPos + 3]) << 8);
+        }
 
-			if (DisableOffsX)
-			{
-				_offsX = 0;
-				reader.ReadByte();
-			}
-			else
-			{
-				_offsX = reader.ReadSByte();
-			}
+        public override int GetFontHeight()
+        {
+            //if (_vm._useCJKMode)
+            //    return Math.Max(_vm._2byteHeight + 1, _fontHeight);
+            //else
+            return _fontHeight;
+        }
 
-			_offsY = reader.ReadByte();
+        public override int GetCharWidth(int chr)
+        {
+            int spacing = 0;
+            var reader = new BinaryReader(new MemoryStream(_fontPtr));
+            reader.BaseStream.Seek(_fontPos + chr * 4 + 4, SeekOrigin.Begin);
+            var offs = reader.ReadInt32();
+            if (offs != 0)
+            {
+                reader.BaseStream.Seek(_fontPos + offs, SeekOrigin.Begin);
+                spacing = reader.PeekChar();
+                reader.BaseStream.Seek(2, SeekOrigin.Current);
+                spacing += reader.ReadSByte();
+            }
+            return spacing;
+        }
 
-			_charPos += 4;	// Skip over char header
-			return true;
-		}
+        #endregion
 
-		void PrintCharIntern(byte[] fontPtr, int charPos, int origWidth, int origHeight, int width, int height, VirtScreen vs, bool ignoreCharsetMask)
-		{
-			int drawTop = Top - vs.TopLine;
+        #region Private Methods
 
-			PixelNavigator? back = null;
-			PixelNavigator dstPtr;
-			Surface dstSurface;
-			if ((ignoreCharsetMask || !vs.HasTwoBuffers))
-			{
-				dstSurface = vs.Surfaces[0];
-				dstPtr = new PixelNavigator(vs.Surfaces[0]);
-				dstPtr.GoTo(vs.XStart + Left, drawTop);
-			}
-			else
-			{
-				dstSurface = Vm.TextSurface;
-				dstPtr = new PixelNavigator(dstSurface);
-				dstPtr.GoTo(Left, Top - Vm.ScreenTop);
-			}
+        bool PrepareDraw(int chr)
+        {
+            var reader = new BinaryReader(new MemoryStream(_fontPtr));
+            reader.BaseStream.Seek(_fontPos + chr * 4 + 4, SeekOrigin.Begin);
+            int charOffs = reader.ReadInt32();
+            //assert(charOffs < 0x14000);
+            if (charOffs == 0)
+                return false;
+            _charPos = charOffs;
 
-			if (BlitAlso && vs.HasTwoBuffers)
-			{
-				back = dstPtr;
-				dstSurface = vs.Surfaces[0];
-				dstPtr = new PixelNavigator(dstSurface);
-				dstPtr.GoTo(vs.XStart + Left, drawTop);
-			}
+            reader.BaseStream.Seek(_fontPos + _charPos, SeekOrigin.Begin);
+            _width = _origWidth = reader.ReadByte();
+            _height = _origHeight = reader.ReadByte();
 
-			if (!ignoreCharsetMask && vs.HasTwoBuffers)
-			{
-				drawTop = Top - Vm.ScreenTop;
-			}
+            if (DisableOffsX)
+            {
+                _offsX = 0;
+                reader.ReadByte();
+            }
+            else
+            {
+                _offsX = reader.ReadSByte();
+            }
 
-			DrawBitsN(dstSurface, dstPtr, fontPtr, charPos, fontPtr[_fontPos], drawTop, origWidth, origHeight);
+            _offsY = reader.ReadByte();
 
-			if (BlitAlso && vs.HasTwoBuffers)
-			{
-				// FIXME: Revisiting this code, I think the _blitAlso mode is likely broken
-				// right now -- we are copying stuff from "dstPtr" to "back", but "dstPtr" really
-				// only conatains charset data...
-				// One way to fix this: don't copy etc.; rather simply render the char twice,
-				// once to each of the two buffers. That should hypothetically yield
-				// identical results, though I didn't try it and right now I don't know
-				// any spots where I can test this...
-				if (!ignoreCharsetMask)
-					throw new NotSupportedException("This might be broken -- please report where you encountered this to Fingolfin");
+            _charPos += 4;	// Skip over char header
+            return true;
+        }
 
-				// Perform some clipping
-				int w = Math.Min(width, dstSurface.Width - Left);
-				int h = Math.Min(height, dstSurface.Height - drawTop);
-				if (Left < 0)
-				{
-					w += Left;
-					back.Value.OffsetX(-Left);
-					dstPtr.OffsetX(-Left);
-				}
-				if (drawTop < 0)
-				{
-					h += drawTop;
-					back.Value.OffsetY(-drawTop);
-					dstPtr.OffsetY(-drawTop);
-				}
+        void PrintCharIntern(byte[] fontPtr, int charPos, int origWidth, int origHeight, int width, int height, VirtScreen vs, bool ignoreCharsetMask)
+        {
+            int drawTop = Top - vs.TopLine;
 
-				// Blit the image data
-				if (w > 0)
-				{
-					while (h-- > 0)
-					{
-						for (int i = 0; i < w; i++)
-						{
-							back.Value.Write(dstPtr.Read());
-							back.Value.OffsetX(1);
-							dstPtr.OffsetX(1);
-						}
-						back.Value.Offset(-w, 1);
-						dstPtr.Offset(-w, 1);
-					}
-				}
+            PixelNavigator? back = null;
+            PixelNavigator dstPtr;
+            Surface dstSurface;
+            if ((ignoreCharsetMask || !vs.HasTwoBuffers))
+            {
+                dstSurface = vs.Surfaces[0];
+                dstPtr = new PixelNavigator(vs.Surfaces[0]);
+                dstPtr.GoTo(vs.XStart + Left, drawTop);
+            }
+            else
+            {
+                dstSurface = Vm.TextSurface;
+                dstPtr = new PixelNavigator(dstSurface);
+                dstPtr.GoTo(Left, Top - Vm.ScreenTop);
+            }
 
-			}
-		}
+            if (BlitAlso && vs.HasTwoBuffers)
+            {
+                back = dstPtr;
+                dstSurface = vs.Surfaces[0];
+                dstPtr = new PixelNavigator(dstSurface);
+                dstPtr.GoTo(vs.XStart + Left, drawTop);
+            }
 
-		void DrawBitsN(Surface s, PixelNavigator dst, System.Collections.Generic.IList<byte> src, int srcPos, byte bpp, int drawTop, int width, int height)
-		{
-			if (bpp != 1 && bpp != 2 && bpp != 4 && bpp != 8)
-				throw new ArgumentException("Invalid bpp", "bpp");
+            if (!ignoreCharsetMask && vs.HasTwoBuffers)
+            {
+                drawTop = Top - Vm.ScreenTop;
+            }
 
-			byte bits = src[srcPos++];
-			byte numbits = 8;
-			var cmap = Vm.CharsetColorMap;
+            DrawBitsN(dstSurface, dstPtr, fontPtr, charPos, fontPtr[_fontPos], drawTop, origWidth, origHeight);
 
-			for (int y = 0; y < height && y + drawTop < s.Height; y++)
-			{
-				for (int x = 0; x < width; x++)
-				{
-					int color = (bits >> (8 - bpp)) & 0xFF;
+            if (BlitAlso && vs.HasTwoBuffers)
+            {
+                // FIXME: Revisiting this code, I think the _blitAlso mode is likely broken
+                // right now -- we are copying stuff from "dstPtr" to "back", but "dstPtr" really
+                // only conatains charset data...
+                // One way to fix this: don't copy etc.; rather simply render the char twice,
+                // once to each of the two buffers. That should hypothetically yield
+                // identical results, though I didn't try it and right now I don't know
+                // any spots where I can test this...
+                if (!ignoreCharsetMask)
+                    throw new NotSupportedException("This might be broken -- please report where you encountered this to Fingolfin");
 
-					if (color != 0 && (y + drawTop >= 0))
-					{
-						dst.Write(cmap[color]);
-					}
-					dst.OffsetX(1);
-					bits <<= bpp;
-					numbits -= bpp;
-					if (numbits == 0)
-					{
-						bits = src[srcPos++];
-						numbits = 8;
-					}
-				}
-				dst.Offset(-width, 1);
-			}
-		} 
-		#endregion
-	}
+                // Perform some clipping
+                int w = Math.Min(width, dstSurface.Width - Left);
+                int h = Math.Min(height, dstSurface.Height - drawTop);
+                if (Left < 0)
+                {
+                    w += Left;
+                    back.Value.OffsetX(-Left);
+                    dstPtr.OffsetX(-Left);
+                }
+                if (drawTop < 0)
+                {
+                    h += drawTop;
+                    back.Value.OffsetY(-drawTop);
+                    dstPtr.OffsetY(-drawTop);
+                }
+
+                // Blit the image data
+                if (w > 0)
+                {
+                    while (h-- > 0)
+                    {
+                        for (int i = 0; i < w; i++)
+                        {
+                            back.Value.Write(dstPtr.Read());
+                            back.Value.OffsetX(1);
+                            dstPtr.OffsetX(1);
+                        }
+                        back.Value.Offset(-w, 1);
+                        dstPtr.Offset(-w, 1);
+                    }
+                }
+
+            }
+        }
+
+        void DrawBitsN(Surface s, PixelNavigator dst, System.Collections.Generic.IList<byte> src, int srcPos, byte bpp, int drawTop, int width, int height)
+        {
+            if (bpp != 1 && bpp != 2 && bpp != 4 && bpp != 8)
+                throw new ArgumentException("Invalid bpp", "bpp");
+
+            byte bits = src[srcPos++];
+            byte numbits = 8;
+            var cmap = Vm.CharsetColorMap;
+
+            for (int y = 0; y < height && y + drawTop < s.Height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    int color = (bits >> (8 - bpp)) & 0xFF;
+
+                    if (color != 0 && (y + drawTop >= 0))
+                    {
+                        dst.Write(cmap[color]);
+                    }
+                    dst.OffsetX(1);
+                    bits <<= bpp;
+                    numbits -= bpp;
+                    if (numbits == 0)
+                    {
+                        bits = src[srcPos++];
+                        numbits = 8;
+                    }
+                }
+                dst.Offset(-width, 1);
+            }
+        }
+
+        #endregion
+    }
 }

@@ -82,23 +82,13 @@ namespace NScumm.Core.IO
 			return index;
 		}
 
-		//		int GetEncodingByte ()
-		//		{
-		//			if (version <= 3) {
-		//				return 0xFF;
-		//			}
-		//			return version == 4 ? 0 : 0x69;
-		//		}
-
 		void LoadIndex (string path)
 		{
 			var roomNames = new Dictionary<byte, string> ();
 			Directory = Path.GetDirectoryName (path);
 			using (var file = File.Open (path, FileMode.Open)) {
 				var br1 = new BinaryReader (file);
-//				var encByte = GetEncodingByte ();
-				var encByte = 0;
-				var br = new XorReader (br1, (byte)encByte);
+                var br = new XorReader (br1, 0);
 				while (br.BaseStream.Position < br.BaseStream.Length) {
 					br.ReadUInt32 ();
 					var block = br.ReadInt16 ();

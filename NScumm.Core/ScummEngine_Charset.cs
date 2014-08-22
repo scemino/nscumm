@@ -70,9 +70,12 @@ namespace NScumm.Core
 			if (_haveMsg == 0)
 				return;
 
-			// Do nothing while the camera is moving
-			if ((_camera.DestinationPosition.X / 8) != (_camera.CurrentPosition.X / 8) || _camera.CurrentPosition.X != _camera.LastPosition.X)
-				return;
+            if (Game.Version >= 4)
+            {
+                // Do nothing while the camera is moving
+                if ((_camera.DestinationPosition.X / 8) != (_camera.CurrentPosition.X / 8) || _camera.CurrentPosition.X != _camera.LastPosition.X)
+                    return;
+            }
 
 			Actor a = null;
 			if (TalkingActor != 0xFF)

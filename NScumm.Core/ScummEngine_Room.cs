@@ -190,8 +190,9 @@ namespace NScumm.Core
 				}
 				break;
 
-			default:
-				throw new NotImplementedException ();
+                default:
+                    //throw new NotImplementedException ();
+                    break;
 			}
 		}
 

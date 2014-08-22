@@ -131,6 +131,11 @@ namespace NScumm.Core
 			driver.Play (stream);
 		}
 
+        public void StopAllSounds()
+        {
+            soundQueue.Clear();
+        }
+
 		public int IsSoundRunning (int snd)
 		{
 			return 0;
@@ -174,5 +179,22 @@ namespace NScumm.Core
 			}
 			return samples / 2;
 		}
+
+        public void SoundKludge(int[] items)
+        {
+            if (items[0] == -1)
+            {
+                ProcessSoundQueue();
+            }
+            else
+            {
+                soundQueue.Push(items.Length);
+                foreach (var item in items)
+                {
+                    soundQueue.Push(item);
+                }
+            }
+        }
+
 	}
 }

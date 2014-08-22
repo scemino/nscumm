@@ -122,7 +122,14 @@ namespace NScumm.Core
 
 			var ptr = _cursorImages [index];
 
-			_charset.SetCurID (1);
+            if (_game.Version == 3)
+            {
+                _charset.SetCurID(0);
+            }
+            else if (_game.Version >= 4)
+            {
+                _charset.SetCurID(1);
+            }
 
 			var s = new Surface (_charset.GetCharWidth (chr), _charset.GetFontHeight (), PixelFormat.Indexed8, false);
 			var p = new PixelNavigator (s);

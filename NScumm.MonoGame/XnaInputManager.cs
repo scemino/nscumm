@@ -16,24 +16,32 @@
  */
 
 using Microsoft.Xna.Framework.Input;
+using OpenTK;
+
+
 namespace NScumm.MonoGame
 {
 	sealed class XnaInputManager : NScumm.Core.Input.IInputManager
 	{
 		Microsoft.Xna.Framework.GameWindow window;
+        INativeWindow nativeWindow;
+
 		KeyboardState keyboardState;
 		MouseState mouseState;
 
 		public XnaInputManager(Microsoft.Xna.Framework.GameWindow window)
 		{
 			this.window = window;
+            var prop = window.GetType().GetProperty("Window", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            this.nativeWindow = (INativeWindow)prop.GetValue(window, null);
 		}
 
 		public NScumm.Core.Graphics.Point GetMousePosition()
 		{
 			var state = Mouse.GetState();
-			var x = state.X;
-			var y = state.Y;
+            var x = state.X - nativeWindow.Bounds.Location.X;
+            var y = state.Y - nativeWindow.Bounds.Location.Y;
 
 			var scaleX = 320.0 / window.ClientBounds.Width;
 			var scaleY = 200.0 / window.ClientBounds.Height;

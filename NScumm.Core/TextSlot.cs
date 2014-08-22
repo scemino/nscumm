@@ -39,7 +39,7 @@ namespace NScumm.Core
 
 		public Slot ()
 		{
-			Position = new Point (2, 5);
+			Position = new Point ();
 			Right = 319;
 			Color = 0xF;
 			Charset = 4;

@@ -276,7 +276,10 @@ namespace NScumm.Core
 
 		void HandleEffects ()
 		{
-			CyclePalette ();
+            if (Game.Version >= 4)
+            {
+                CyclePalette();
+            }
 			//PalManipulate();
 			if (_doEffect) {
 				_doEffect = false;

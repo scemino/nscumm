@@ -200,21 +200,29 @@ namespace NScumm.Core
 
 			fontHeight = _charset.GetFontHeight ();
 
-			// trim from the right
-			int tmpPos = 0;
-			int spacePos = 0;
-			while (buf [tmpPos] != 0) {
-				if (buf [tmpPos] == ' ') {
-					if (spacePos == 0)
-						spacePos = tmpPos;
-				} else {
-					spacePos = 0;
-				}
-				tmpPos++;
-			}
-			if (spacePos != 0) {
-				buf [spacePos] = 0;
-			}
+            if (Game.Version >= 4)
+            {
+                // trim from the right
+                int tmpPos = 0;
+                int spacePos = 0;
+                while (buf[tmpPos] != 0)
+                {
+                    if (buf[tmpPos] == ' ')
+                    {
+                        if (spacePos == 0)
+                            spacePos = tmpPos;
+                    }
+                    else
+                    {
+                        spacePos = 0;
+                    }
+                    tmpPos++;
+                }
+                if (spacePos != 0)
+                {
+                    buf[spacePos] = 0;
+                }
+            }
 
 			if (_charset.Center) {
 				_charset.Left -= _charset.GetStringWidth (a, buf, 0) / 2;
@@ -689,7 +697,7 @@ namespace NScumm.Core
 			var smapReader = new BinaryReader (new MemoryStream (roomData.Data));
 			var numZBuffer = 0;
 			int zOffset = 0;
-			if (Game.Version == 3) {
+            if (Game.Version <= 3) {
 				numZBuffer = 2;
 			} else if (Game.Features.HasFlag (GameFeatures.SixteenColors)) {
 				zOffset = smapReader.ReadInt16 ();

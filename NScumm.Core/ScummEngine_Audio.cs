@@ -22,42 +22,47 @@ using System;
 
 namespace NScumm.Core
 {
-	partial class ScummEngine
-	{
-		Sound _sound;
+    partial class ScummEngine
+    {
+        protected Sound _sound;
 
-		void StartMusic ()
-		{
-			_sound.AddSoundToQueue (GetVarOrDirectByte (OpCodeParameter.Param1));
-		}
+        void StartMusic()
+        {
+            _sound.AddSoundToQueue(GetVarOrDirectByte(OpCodeParameter.Param1));
+        }
 
-		void StartSound ()
-		{
-			var sound = GetVarOrDirectByte (OpCodeParameter.Param1);
-			_variables [VariableMusicTimer] = 0;
-			_sound.AddSoundToQueue (sound);
-		}
+        void StopMusic(){
+            _sound.StopAllSounds();
+        }
 
-		void StopSound ()
-		{
-			GetVarOrDirectByte (OpCodeParameter.Param1);
-			//_sound.stopSound();
-		}
+        void StartSound()
+        {
+            var sound = GetVarOrDirectByte(OpCodeParameter.Param1);
+            _variables[VariableMusicTimer] = 0;
+            _sound.AddSoundToQueue(sound);
+        }
 
-		public void UpdateSound ()
-		{
-			_sound.Update ();
-		}
+        void StopSound()
+        {
+            GetVarOrDirectByte(OpCodeParameter.Param1);
+            //_sound.stopSound();
+        }
 
-		void IsSoundRunning ()
-		{
-			GetResult ();
-			int snd = GetVarOrDirectByte (OpCodeParameter.Param1);
-			if (snd != 0) {
-				snd = _sound.IsSoundRunning (snd);
-			}
-			SetResult (snd);
-		}
-	}
+        public void UpdateSound()
+        {
+            _sound.Update();
+        }
+
+        void IsSoundRunning()
+        {
+            GetResult();
+            int snd = GetVarOrDirectByte(OpCodeParameter.Param1);
+            if (snd != 0)
+            {
+                snd = _sound.IsSoundRunning(snd);
+            }
+            SetResult(snd);
+        }
+    }
 }
 

@@ -1,7 +1,7 @@
 NSCUMM
 ======
 
-Quick and dirty .NET port of the Scumm engine version 4 of the project scummvm.
+Quick and dirty .NET port of the SCUMM engine version 3 and 4 of the project scummvm.
 
 Quick start
 -----------
@@ -13,17 +13,31 @@ Start NScumm with the full path of the file named '000.lfl' in argument.
 Supported Games
 ---------------
 
-The Secret of Monkey Island by LucasArts
+Indiana Jones and the Last Crusade (SCUMM version 3)
 
-The Passport to Adventure by LucasArts (Demo)
+The Secret of Monkey Island by LucasArts (SCUMM version 4)
+
+The Passport to Adventure by LucasArts (Demo) (SCUMM version 4)
+
+Loom (Scumm version 4)
 
 Hotkeys
 -------
 
 Alt-Enter              - Toggles full screen/windowed
 
-F5                     - Displays a save/load box
+Bugs and missing features
+-------------------------
 
+Bad music synchronization
+
+No sound effect
+
+Screen effects not implemented
+
+Load and save games with scumm version 4 games not implemented
+
+And many other things ???
 
 Screenshots
 -----------

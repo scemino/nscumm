@@ -5,6 +5,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NScumm.Core", "NScumm.Core\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NScumm.MonoGame", "NScumm.MonoGame\NScumm.MonoGame.csproj", "{B1F1416B-C52A-4CE5-AF06-C960F5165784}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{1D326366-843A-46C2-B75D-3AEF082E5A8B}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
@@ -19,6 +24,8 @@ Global
 		{B33E2D2E-E360-4F10-A82F-AA98500497FD}.Debug|x86.Build.0 = Debug|Any CPU
 		{B33E2D2E-E360-4F10-A82F-AA98500497FD}.Release|x86.ActiveCfg = Release|Any CPU
 		{B33E2D2E-E360-4F10-A82F-AA98500497FD}.Release|x86.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		BaseDirectory = ..\NScumm.GL

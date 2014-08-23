@@ -238,13 +238,13 @@ namespace NScumm.Core
             {
                 if (_game.Version <= 3)
                 {
-                    int bit = value & 0xF;
-                    value = (value >> 4) & 0xFF;
-                    ScummHelper.AssertRange(0, value, NumVariables - 1, "variable (writing)");
+                    int bit = _resultVarIndex & 0xF;
+                    _resultVarIndex = (_resultVarIndex >> 4) & 0xFF;
+                    ScummHelper.AssertRange(0, _resultVarIndex, NumVariables - 1, "variable (writing)");
                     if (value > 0)
-                        _variables[value] |= (1 << bit);
+                        _variables[_resultVarIndex] |= (1 << bit);
                     else
-                        _variables[value] &= ~(1 << bit);
+                        _variables[_resultVarIndex] &= ~(1 << bit);
                 }
                 else
                 {

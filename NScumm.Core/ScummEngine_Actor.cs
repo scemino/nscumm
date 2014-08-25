@@ -237,7 +237,7 @@ namespace NScumm.Core
                         break;
 
                     case 3:         // SO_SOUND
-                        a.Sound[0] = (byte)GetVarOrDirectByte(OpCodeParameter.Param1);
+                        a.Sound = GetVarOrDirectByte(OpCodeParameter.Param1);
                         break;
 
                     case 4:         // SO_WALK_ANIMATION

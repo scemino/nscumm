@@ -136,9 +136,9 @@ namespace NScumm.Core
             soundQueue.Clear();
         }
 
-		public int IsSoundRunning (int snd)
+        public bool IsSoundRunning (int snd)
 		{
-			return 0;
+            return soundQueue.Contains(snd);
 		}
 
 		public void Update ()

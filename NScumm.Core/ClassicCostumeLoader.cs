@@ -191,8 +191,7 @@ namespace NScumm.Core
 
 			if (_vm.Game.Version <= 3) {
 				if ((ReadAnimCommand (i) & 0x80) > 0) {
-					// TODO: ?
-					//a->_cost.SoundCounter++;
+                    a.Cost.SoundCounter++;
 				}
 			}
 

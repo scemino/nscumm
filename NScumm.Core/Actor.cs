@@ -99,12 +99,13 @@ namespace NScumm.Core
         public byte Charset;
         public byte ForceClip;
 
-        public ushort[] Sound = new ushort[32];
         public CostumeData Cost;
 
         #endregion
 
         #region Properties
+
+        public int Sound { get; set; }
 
         public bool NeedRedraw { get; set; }
 
@@ -272,7 +273,7 @@ namespace NScumm.Core
                 _animProgress = 0;
                 _animVariable = new short[27];
                 _palette = new ushort[256];
-                Sound = new ushort[32];
+                Sound = 0;
                 Cost = new CostumeData();
                 _walkdata = new ActorWalkData();
                 _walkdata.Point3.X = 32000;
@@ -291,7 +292,7 @@ namespace NScumm.Core
             _talkPos = new Point(0, -80);
             BoxScale = ScaleY = ScaleX = 0xFF;
             Charset = 0;
-            Sound = new ushort[32];
+            Sound = 0;
             _targetFacing = _facing;
 
             ShadowMode = 0;
@@ -452,7 +453,7 @@ namespace NScumm.Core
 
                     // Skip over invisible boxes
                     if (flags.HasFlag(BoxFlags.Invisible) && !(flags.HasFlag(BoxFlags.PlayerOnly)
-                    && !IsPlayer))
+                        && !IsPlayer))
                         continue;
 
                     // For increased performance, we perform a quick test if
@@ -682,8 +683,8 @@ namespace NScumm.Core
                     abr = AdjustXYToBeInBox(abr.Position);
                 }
                 if (Moving != MoveFlags.None &&
-                _walkdata.DestDir == dir &&
-                _walkdata.Dest.X == abr.Position.X && _walkdata.Dest.Y == abr.Position.Y)
+                    _walkdata.DestDir == dir &&
+                    _walkdata.Dest.X == abr.Position.X && _walkdata.Dest.Y == abr.Position.Y)
                     return;
             }
 
@@ -805,16 +806,31 @@ namespace NScumm.Core
 		            
                 // Actor sound grew from 8 to 32 bytes and switched to uint16 in HE games
                 LoadAndSaveEntry.Create(
-                    reader => reader.ReadBytes(8).Cast<ushort>().ToArray(),
-                    writer => writer.Write(new byte[8]),
+                    reader => Sound = reader.ReadBytes(8).ToArray()[0],
+                    writer =>
+                    {
+                        var sounds = new byte[8];
+                        sounds[0] = (byte)Sound;
+                        writer.Write(sounds);
+                    },
                     8, 36),
                 LoadAndSaveEntry.Create(
-                    reader => reader.ReadBytes(32).Cast<ushort>().ToArray(),
-                    writer => writer.Write(new byte[32]),
+                    reader => Sound = reader.ReadBytes(32).ToArray()[0],
+                    writer =>
+                    {
+                        var sounds = new byte[32];
+                        sounds[0] = (byte)Sound;
+                        writer.Write(sounds);
+                    },
                     37, 61),
                 LoadAndSaveEntry.Create(
-                    reader => reader.ReadUInt16s(32),
-                    writer => writer.WriteUInt16s(new ushort[32], 32),
+                    reader => Sound = (int)reader.ReadUInt16s(32)[0],
+                    writer =>
+                    {
+                        var sounds = new ushort[32];
+                        sounds[0] = (ushort)Sound;
+                        writer.WriteUInt16s(sounds,32);
+                    },
                     62),
                     
                 // Actor animVariable grew from 8 to 27
@@ -1130,7 +1146,7 @@ namespace NScumm.Core
             }
 
             if (Walkbox != _walkdata.CurBox &&
-            _scumm.CheckXYInBoxBounds(_walkdata.CurBox, _position))
+                _scumm.CheckXYInBoxBounds(_walkdata.CurBox, _position))
             {
                 SetBox(_walkdata.CurBox);
             }
@@ -1335,8 +1351,8 @@ namespace NScumm.Core
                         }
 
                         if (box1.UpperLeft.Y > box2.UpperRight.Y || box2.UpperLeft.Y > box1.UpperRight.Y ||
-                        ((box1.UpperRight.Y == box2.UpperLeft.Y || box2.UpperRight.Y == box1.UpperLeft.Y) &&
-                        box1.UpperLeft.Y != box1.UpperRight.Y && box2.UpperLeft.Y != box2.UpperRight.Y))
+                            ((box1.UpperRight.Y == box2.UpperLeft.Y || box2.UpperRight.Y == box1.UpperLeft.Y) &&
+                            box1.UpperLeft.Y != box1.UpperRight.Y && box2.UpperLeft.Y != box2.UpperRight.Y))
                         {
                             if ((flag & 1) != 0)
                                 ScummHelper.Swap(ref box1.UpperLeft.Y, ref box1.UpperRight.Y);
@@ -1357,7 +1373,7 @@ namespace NScumm.Core
                                     diffY *= boxDiffX;
                                     int t = diffY / diffX;
                                     if (t == 0 && (diffY <= 0 || diffX <= 0)
-                                    && (diffY >= 0 || diffX >= 0))
+                                        && (diffY >= 0 || diffX >= 0))
                                         t = -1;
                                     pos = _position.Y + t;
                                 }
@@ -1396,8 +1412,8 @@ namespace NScumm.Core
                         }
 
                         if (box1.UpperLeft.X > box2.UpperRight.X || box2.UpperLeft.X > box1.UpperRight.X ||
-                        ((box1.UpperRight.X == box2.UpperLeft.X || box2.UpperRight.X == box1.UpperLeft.X) &&
-                        box1.UpperLeft.X != box1.UpperRight.X && box2.UpperLeft.X != box2.UpperRight.X))
+                            ((box1.UpperRight.X == box2.UpperLeft.X || box2.UpperRight.X == box1.UpperLeft.X) &&
+                            box1.UpperLeft.X != box1.UpperRight.X && box2.UpperLeft.X != box2.UpperRight.X))
                         {
                             if ((flag & 1) != 0)
                                 ScummHelper.Swap(ref box1.UpperLeft.X, ref box1.UpperRight.X);

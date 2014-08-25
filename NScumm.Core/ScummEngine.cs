@@ -989,7 +989,10 @@ namespace NScumm.Core
 
                 // FIXME / TODO: Try to move the following to scummLoop_handleSound or
                 // scummLoop_handleActors (but watch out for regressions!)
-                //PlayActorSounds();
+                if (Game.Version <= 5)
+                {
+                    PlayActorSounds();
+                }
             }
 
             _sound.ProcessSoundQueue();

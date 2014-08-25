@@ -31,7 +31,8 @@ namespace NScumm.Core
             _sound.AddSoundToQueue(GetVarOrDirectByte(OpCodeParameter.Param1));
         }
 
-        void StopMusic(){
+        void StopMusic()
+        {
             _sound.StopAllSounds();
         }
 
@@ -59,10 +60,33 @@ namespace NScumm.Core
             int snd = GetVarOrDirectByte(OpCodeParameter.Param1);
             if (snd != 0)
             {
-                snd = _sound.IsSoundRunning(snd);
+                snd = _sound.IsSoundRunning(snd) ? 1 : 0;
             }
             SetResult(snd);
         }
+
+        void PlayActorSounds()
+        {
+            for (var i = 1; i < _actors.Length; i++)
+            {
+                if (_actors[i].Cost.SoundCounter != 0 && _actors[i].IsInCurrentRoom)
+                {
+                    _currentScript = 0xFF;
+
+                    var sound = _actors[i].Sound;
+                    // fast mode will flood the queue with walk sounds
+//                    if (!_fastMode) {
+                    _sound.AddSoundToQueue(sound);
+//                    }
+                    for (var j = 1; j < _actors.Length; j++)
+                    {
+                        _actors[j].Cost.SoundCounter = 0;
+                    }
+                    return;
+                }
+            }
+        }
+
     }
 }
 

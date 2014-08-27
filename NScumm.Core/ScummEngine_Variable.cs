@@ -253,6 +253,7 @@ namespace NScumm.Core
                     ScummHelper.AssertRange(0, _resultVarIndex, _bitVars.Length - 1, "bit variable (writing)");
                     _bitVars[_resultVarIndex] = value != 0;
                 }
+                return;
             }
 
             if ((_resultVarIndex & 0x4000) != 0)

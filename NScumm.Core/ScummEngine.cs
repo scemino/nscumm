@@ -429,6 +429,7 @@ namespace NScumm.Core
             /* 64 */
             _opCodes[0x64] = LoadRoomWithEgo;
             _opCodes[0x65] = DrawObject;
+            _opCodes[0x67] = GetStringWidth;
             /* 68 */
             _opCodes[0x68] = IsScriptRunning;
             _opCodes[0x69] = SetOwnerOf;
@@ -462,6 +463,7 @@ namespace NScumm.Core
             /* 80 */
             _opCodes[0x80] = BreakHere;
             _opCodes[0x81] = PutActor;
+            _opCodes[0x82] = StartMusic;
             _opCodes[0x83] = GetActorRoom;
             /* 84 */
             _opCodes[0x84] = IsGreaterEqual;

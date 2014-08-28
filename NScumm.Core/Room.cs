@@ -20,60 +20,63 @@ using System.Collections.Generic;
 
 namespace NScumm.Core
 {
-	public class RoomHeader
-	{
-		public ushort Width { get; set; }
+    public class RoomHeader
+    {
+        public ushort Width { get; set; }
 
-		public ushort Height { get; set; }
+        public ushort Height { get; set; }
 
-		public ushort NumObjects { get; set; }
-	}
+        public ushort NumObjects { get; set; }
+    }
 
-	public class Room
-	{
-		public RoomHeader Header { get; set; }
+    public class Room
+    {
+        public RoomHeader Header { get; set; }
 
-		public Palette Palette { get; private set; }
+        public Palette Palette { get; private set; }
 
-		public ScriptData[] LocalScripts { get; private set; }
+        public ScriptData[] LocalScripts { get; private set; }
 
-		public ScriptData EntryScript { get; private set; }
+        public ScriptData EntryScript { get; private set; }
 
-		public ScriptData ExitScript { get; private set; }
+        public ScriptData ExitScript { get; private set; }
 
-		public List<ObjectData> Objects { get; private set; }
+        public List<ObjectData> Objects { get; private set; }
 
-		public List<Box> Boxes { get; private set; }
+        public List<Box> Boxes { get; private set; }
 
-		public List<byte> BoxMatrix { get; private set; }
+        public List<byte> BoxMatrix { get; private set; }
 
-		public string Name { get; set; }
+        public string Name { get; set; }
 
-		public byte[] Data { get; set; }
+        public int Number { get; set; }
 
-		public ScaleSlot[] Scales { get; set; }
+        public byte[] Data { get; set; }
 
-		public byte TransparentColor { get; set; }
+        public ScaleSlot[] Scales { get; set; }
 
-		public bool HasPalette { get; set; }
+        public byte TransparentColor { get; set; }
 
-		public ColorCycle[] ColorCycle { get; set; }
+        public bool HasPalette { get; set; }
 
-		public Room ()
-		{
-			Boxes = new List<Box> ();
-			Objects = new List<ObjectData> ();
-			BoxMatrix = new List<byte> ();
-			Palette = new Palette ();
-			EntryScript = new ScriptData ();
-			ExitScript = new ScriptData ();
-			LocalScripts = new ScriptData[1024];
-			TransparentColor = 255;
-			Scales = new ScaleSlot[0];
-			ColorCycle = new ColorCycle[16];
-			for (int i = 0; i < ColorCycle.Length; i++) {
-				ColorCycle [i] = new ColorCycle ();
-			}
-		}
-	}
+        public ColorCycle[] ColorCycle { get; set; }
+
+        public Room()
+        {
+            Boxes = new List<Box>();
+            Objects = new List<ObjectData>();
+            BoxMatrix = new List<byte>();
+            Palette = new Palette();
+            EntryScript = new ScriptData();
+            ExitScript = new ScriptData();
+            LocalScripts = new ScriptData[1024];
+            TransparentColor = 255;
+            Scales = new ScaleSlot[0];
+            ColorCycle = new ColorCycle[16];
+            for (int i = 0; i < ColorCycle.Length; i++)
+            {
+                ColorCycle[i] = new ColorCycle();
+            }
+        }
+    }
 }

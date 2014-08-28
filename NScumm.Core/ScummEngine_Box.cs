@@ -26,53 +26,9 @@ namespace NScumm.Core
 {
     partial class ScummEngine
     {
-        List<byte> _boxMatrix = new List<byte>();
+        protected List<byte> _boxMatrix = new List<byte>();
         Box[] _boxes;
         readonly ScaleSlot[] _scaleSlots;
-
-        protected void CreateBoxMatrix()
-        {
-            // The total number of boxes
-            int num = GetNumBoxes();
-
-            // calculate shortest paths
-            var itineraryMatrix = CalcItineraryMatrix(num);
-
-            // "Compress" the distance matrix into the box matrix format used
-            // by the engine. The format is like this:
-            // For each box (from 0 to num) there is first a byte with value 0xFF,
-            // followed by an arbitrary number of byte triples; the end is marked
-            // again by the lead 0xFF for the next "row". The meaning of the
-            // byte triples is as follows: the first two bytes define a range
-            // of box numbers (e.g. 7-11), while the third byte defines an
-            // itineray box. Assuming we are in the 5th "row" and encounter
-            // the triplet 7,11,15: this means to get from box 5 to any of
-            // the boxes 7,8,9,10,11 the shortest way is to go via box 15.
-            // See also getNextBox.
-
-            var boxMatrix = new List<byte>();
-
-            for (byte i = 0; i < num; i++)
-            {
-                boxMatrix.Add(0xFF);
-                for (byte j = 0; j < num; j++)
-                {
-                    byte itinerary = itineraryMatrix[i, j];
-                    if (itinerary != Actor.InvalidBox)
-                    {
-                        boxMatrix.Add(j);
-                        while (j < num - 1 && itinerary == itineraryMatrix[i, (j + 1)])
-                            j++;
-                        boxMatrix.Add(j);
-                        boxMatrix.Add(itinerary);
-                    }
-                }
-            }
-            boxMatrix.Add(0xFF);
-
-            _boxMatrix.Clear();
-            _boxMatrix.AddRange(boxMatrix);
-        }
 
         internal BoxFlags GetBoxFlags(byte boxNum)
         {
@@ -117,7 +73,7 @@ namespace NScumm.Core
             return box;
         }
 
-        Box GetBoxBase(int boxnum)
+        protected Box GetBoxBase(int boxnum)
         {
             if (boxnum == 255)
                 return null;
@@ -229,7 +185,7 @@ namespace NScumm.Core
             // point to be contained "in" (or rather, lying on) the line if it
             // is very close to its projection to the line segment.
             if ((box.UpperLeft == box.UpperRight && box.LowerRight == box.LowerLeft) ||
-            (box.UpperLeft == box.LowerLeft && box.UpperRight == box.LowerRight))
+                (box.UpperLeft == box.LowerLeft && box.UpperRight == box.LowerRight))
             {
                 Point tmp;
                 tmp = ScummMath.ClosestPtOnLine(box.UpperLeft, box.LowerRight, p);
@@ -255,194 +211,6 @@ namespace NScumm.Core
                 return false;
 
             return true;
-        }
-
-        byte[,] CalcItineraryMatrix(int num)
-        {
-            const byte boxSize = 64;
-
-            // Allocate the adjacent & itinerary matrices
-            var itineraryMatrix = new byte[boxSize, boxSize];
-            var adjacentMatrix = new byte[boxSize, boxSize];
-
-            // Initialize the adjacent matrix: each box has distance 0 to itself,
-            // and distance 1 to its direct neighbors. Initially, it has distance
-            // 255 (= infinity) to all other boxes.
-            for (byte i = 0; i < num; i++)
-            {
-                for (byte j = 0; j < num; j++)
-                {
-                    if (i == j)
-                    {
-                        adjacentMatrix[i, j] = 0;
-                        itineraryMatrix[i, j] = j;
-                    }
-                    else if (AreBoxesNeighbors(i, j))
-                    {
-                        adjacentMatrix[i, j] = 1;
-                        itineraryMatrix[i, j] = j;
-                    }
-                    else
-                    {
-                        adjacentMatrix[i, j] = 255;
-                        itineraryMatrix[i, j] = Actor.InvalidBox;
-                    }
-                }
-            }
-
-            // Compute the shortest routes between boxes via Kleene's algorithm.
-            // The original code used some kind of mangled Dijkstra's algorithm;
-            // while that might in theory be slightly faster, it was
-            // a) extremly obfuscated
-            // b) incorrect: it didn't always find the shortest paths
-            // c) not any faster in reality for our sparse & small adjacent matrices
-            for (byte k = 0; k < num; k++)
-            {
-                for (byte i = 0; i < num; i++)
-                {
-                    for (byte j = 0; j < num; j++)
-                    {
-                        if (i == j)
-                            continue;
-                        byte distIK = adjacentMatrix[i, k];
-                        byte distKJ = adjacentMatrix[k, j];
-                        if (adjacentMatrix[i, j] > distIK + distKJ)
-                        {
-                            adjacentMatrix[i, j] = (byte)(distIK + distKJ);
-                            itineraryMatrix[i, j] = itineraryMatrix[i, k];
-                        }
-                    }
-                }
-            }
-
-            return itineraryMatrix;
-        }
-
-        /// <summary>
-        /// Check if two boxes are neighbors.
-        /// </summary>
-        /// <param name="box1nr"></param>
-        /// <param name="box2nr"></param>
-        /// <returns></returns>
-        bool AreBoxesNeighbors(byte box1nr, byte box2nr)
-        {
-            Point tmp;
-
-            if (GetBoxFlags(box1nr).HasFlag(BoxFlags.Invisible) || GetBoxFlags(box2nr).HasFlag(BoxFlags.Invisible))
-                return false;
-
-            //System.Diagnostics.Debug.Assert(_game.version >= 3);
-            var box2 = GetBoxCoordinates(box1nr);
-            var box = GetBoxCoordinates(box2nr);
-
-            // Roughly, the idea of this algorithm is to search for sies of the given
-            // boxes that touch each other.
-            // In order to keep te code simple, we only match the upper sides;
-            // then, we "rotate" the box coordinates four times each, for a total
-            // of 16 comparisions.
-            for (int j = 0; j < 4; j++)
-            {
-                for (int k = 0; k < 4; k++)
-                {
-                    // Are the "upper" sides of the boxes on a single vertical line
-                    // (i.e. all share one x value) ?
-                    if (box2.UpperRight.X == box2.UpperLeft.X && box.UpperLeft.X == box2.UpperLeft.X && box.UpperRight.X == box2.UpperLeft.X)
-                    {
-                        bool swappedBox2 = false, swappedBox1 = false;
-                        if (box2.UpperRight.Y < box2.UpperLeft.Y)
-                        {
-                            swappedBox2 = true;
-                            ScummHelper.Swap(ref box2.UpperRight.Y, ref box2.UpperLeft.Y);
-                        }
-                        if (box.UpperRight.Y < box.UpperLeft.Y)
-                        {
-                            swappedBox1 = true;
-                            ScummHelper.Swap(ref box.UpperRight.Y, ref box.UpperLeft.Y);
-                        }
-                        if (box.UpperRight.Y < box2.UpperLeft.Y ||
-                        box.UpperLeft.Y > box2.UpperRight.Y ||
-                        ((box.UpperLeft.Y == box2.UpperRight.Y ||
-                        box.UpperRight.Y == box2.UpperLeft.Y) && box2.UpperRight.Y != box2.UpperLeft.Y && box.UpperLeft.Y != box.UpperRight.Y))
-                        {
-                        }
-                        else
-                        {
-                            return true;
-                        }
-
-                        // Swap back if necessary
-                        if (swappedBox2)
-                        {
-                            ScummHelper.Swap(ref box2.UpperRight.Y, ref box2.UpperLeft.Y);
-                        }
-                        if (swappedBox1)
-                        {
-                            ScummHelper.Swap(ref box.UpperRight.Y, ref box.UpperLeft.Y);
-                        }
-                    }
-
-                    // Are the "upper" sides of the boxes on a single horizontal line
-                    // (i.e. all share one y value) ?
-                    if (box2.UpperRight.Y == box2.UpperLeft.Y && box.UpperLeft.Y == box2.UpperLeft.Y && box.UpperRight.Y == box2.UpperLeft.Y)
-                    {
-                        var swappedBox2 = false;
-                        var swappedBox1 = false;
-                        if (box2.UpperRight.X < box2.UpperLeft.X)
-                        {
-                            swappedBox2 = true;
-                            ScummHelper.Swap(ref box2.UpperRight.X, ref box2.UpperLeft.X);
-                        }
-                        if (box.UpperRight.X < box.UpperLeft.X)
-                        {
-                            swappedBox1 = true;
-                            ScummHelper.Swap(ref box.UpperRight.X, ref box.UpperLeft.X);
-                        }
-                        if (box.UpperRight.X < box2.UpperLeft.X ||
-                        box.UpperLeft.X > box2.UpperRight.X ||
-                        ((box.UpperLeft.X == box2.UpperRight.X ||
-                        box.UpperRight.X == box2.UpperLeft.X) && box2.UpperRight.X != box2.UpperLeft.X && box.UpperLeft.X != box.UpperRight.X))
-                        {
-
-                        }
-                        else
-                        {
-                            return true;
-                        }
-
-                        // Swap back if necessary
-                        if (swappedBox2)
-                        {
-                            ScummHelper.Swap(ref box2.UpperRight.X, ref box2.UpperLeft.X);
-                        }
-                        if (swappedBox1)
-                        {
-                            ScummHelper.Swap(ref box.UpperRight.X, ref box.UpperLeft.X);
-                        }
-                    }
-
-                    // "Rotate" the box coordinates
-                    tmp = box2.UpperLeft;
-                    box2.UpperLeft = box2.UpperRight;
-                    box2.UpperRight = box2.LowerRight;
-                    box2.LowerRight = box2.LowerLeft;
-                    box2.LowerLeft = tmp;
-                }
-
-                // "Rotate" the box coordinates
-                tmp = box.UpperLeft;
-                box.UpperLeft = box.UpperRight;
-                box.UpperRight = box.LowerRight;
-                box.LowerRight = box.LowerLeft;
-                box.LowerLeft = tmp;
-            }
-
-            return false;
-        }
-
-        protected void SetBoxScale(int box, int scale)
-        {
-            var b = GetBoxBase(box);
-            b.Scale = (ushort)scale;
         }
 
         protected void SetBoxFlags(int box, int val)

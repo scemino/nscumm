@@ -231,79 +231,79 @@ namespace NScumm.Core
                 // 16 to 32 bit variables (but that wasn't reflect here)... and
                 // THEN from 16 to 25 variables.
                 LoadAndSaveEntry.Create(reader =>
-                {
-                    for (int i = 0; i < 25; i++)
                     {
-                        _slots[i].InitializeLocals(reader.ReadUInt16s(17));
-                    }
-                }, writer =>
-                {
-                    for (int i = 0; i < 25; i++)
+                        for (int i = 0; i < 25; i++)
+                        {
+                            _slots[i].InitializeLocals(reader.ReadUInt16s(17));
+                        }
+                    }, writer =>
                     {
-                        writer.WriteUInt16s(_slots[i].LocalVariables.Cast<ushort>().ToArray(), 17);
-                    }
-                }, 8, 8),
+                        for (int i = 0; i < 25; i++)
+                        {
+                            writer.WriteUInt16s(_slots[i].LocalVariables.Cast<ushort>().ToArray(), 17);
+                        }
+                    }, 8, 8),
                 LoadAndSaveEntry.Create(reader =>
-                {
-                    for (int i = 0; i < 40; i++)
                     {
-                        _slots[i].InitializeLocals(reader.ReadUInt16s(17));
-                    }
-                }, writer =>
-                {
-                    for (int i = 0; i < 40; i++)
+                        for (int i = 0; i < 40; i++)
+                        {
+                            _slots[i].InitializeLocals(reader.ReadUInt16s(17));
+                        }
+                    }, writer =>
                     {
-                        writer.WriteUInt16s(_slots[i].LocalVariables.Cast<ushort>().ToArray(), 17);
-                    }
-                }, 9, 14),
+                        for (int i = 0; i < 40; i++)
+                        {
+                            writer.WriteUInt16s(_slots[i].LocalVariables.Cast<ushort>().ToArray(), 17);
+                        }
+                    }, 9, 14),
                 // We used to save 25 * 40 = 1000 blocks; but actually, each 'row consisted of 26 entry,
                 // i.e. 26 * 40 = 1040. Thus the last 40 blocks of localvar where not saved at all. To be
                 // able to load this screwed format, we use a trick: We load 26 * 38 = 988 blocks.
                 // Then, we mark the followin 12 blocks (24 bytes) as obsolete.
                 LoadAndSaveEntry.Create(reader =>
-                {
-                    for (int i = 0; i < 38; i++)
                     {
-                        _slots[i].InitializeLocals(reader.ReadUInt16s(26));
-                    }
-                }, writer =>
-                {
-                    for (int i = 0; i < 38; i++)
+                        for (int i = 0; i < 38; i++)
+                        {
+                            _slots[i].InitializeLocals(reader.ReadUInt16s(26));
+                        }
+                    }, writer =>
                     {
-                        writer.WriteUInt16s(_slots[i].LocalVariables.Cast<ushort>().ToArray(), 26);
-                    }
-                }, 15, 17),
+                        for (int i = 0; i < 38; i++)
+                        {
+                            writer.WriteUInt16s(_slots[i].LocalVariables.Cast<ushort>().ToArray(), 26);
+                        }
+                    }, 15, 17),
                 // TODO
                 //MK_OBSOLETE_ARRAY(ScummEngine, vm.localvar[39][0], sleUint16, 12, VER(15), VER(17)),
                 // This was the first proper multi dimensional version of the localvars, with 32 bit values
                 LoadAndSaveEntry.Create(reader =>
-                {
-                    for (int i = 0; i < 40; i++)
                     {
-                        _slots[i].InitializeLocals(reader.ReadInt32s(26));
-                    }
-                }, writer =>
-                {
-                    for (int i = 0; i < 40; i++)
+                        for (int i = 0; i < 40; i++)
+                        {
+                            _slots[i].InitializeLocals(reader.ReadInt32s(26));
+                        }
+                    }, writer =>
                     {
-                        writer.WriteInt32s(_slots[i].LocalVariables, 26);
-                    }
-                }, 18, 19),
+                        for (int i = 0; i < 40; i++)
+                        {
+                            writer.WriteInt32s(_slots[i].LocalVariables, 26);
+                        }
+                    }, 18, 19),
 
                 // Then we doubled the script slots again, from 40 to 80
                 LoadAndSaveEntry.Create(reader =>
-                {
-                    for (int i = 0; i < NumScriptSlot; i++)
                     {
-                        _slots[i].InitializeLocals(reader.ReadInt32s(26));
-                    }
-                }, writer =>
-                {
-                    for (int i = 0; i < NumScriptSlot; i++)
+                        for (int i = 0; i < NumScriptSlot; i++)
+                        {
+                            _slots[i].InitializeLocals(reader.ReadInt32s(26));
+                        }
+                    }, writer =>
                     {
-                        writer.WriteInt32s(_slots[i].LocalVariables, 26);
-                    }
-                }, 20),
+                        for (int i = 0; i < NumScriptSlot; i++)
+                        {
+                            writer.WriteInt32s(_slots[i].LocalVariables, 26);
+                        }
+                    }, 20),
 
                 LoadAndSaveEntry.Create(reader => _resourceMapper = reader.ReadBytes(128), writer => writer.Write(_resourceMapper), 8),
                 LoadAndSaveEntry.Create(reader => CharsetColorMap = reader.ReadBytes(16), writer => writer.Write(CharsetColorMap), 8),
@@ -359,10 +359,10 @@ namespace NScumm.Core
                 LoadAndSaveEntry.Create(reader => _cursor.Width = reader.ReadInt16(), writer => writer.WriteInt16(_cursor.Width), 20),
                 LoadAndSaveEntry.Create(reader => _cursor.Height = reader.ReadInt16(), writer => writer.WriteInt16(_cursor.Height), 20),
                 LoadAndSaveEntry.Create(reader => _cursor.Hotspot = new Point(reader.ReadInt16(), reader.ReadInt16()), writer =>
-                {
-                    writer.WriteInt16(_cursor.Hotspot.X);
-                    writer.WriteInt16(_cursor.Hotspot.Y);
-                }, 20),
+                    {
+                        writer.WriteInt16(_cursor.Hotspot.X);
+                        writer.WriteInt16(_cursor.Hotspot.Y);
+                    }, 20),
                 LoadAndSaveEntry.Create(reader => _cursor.Animate = reader.ReadByte() != 0, writer => writer.WriteByte(_cursor.Animate), 20),
                 LoadAndSaveEntry.Create(reader => _cursor.AnimateIndex = reader.ReadByte(), writer => writer.WriteByte(_cursor.AnimateIndex), 20),
                 LoadAndSaveEntry.Create(reader => reader.ReadInt16(), writer => writer.WriteInt16(0), 20),
@@ -385,21 +385,21 @@ namespace NScumm.Core
 
                 LoadAndSaveEntry.Create(reader => Gdi.TransparentColor = reader.ReadByte(), writer => writer.WriteByte(Gdi.TransparentColor), 8, 50),
                 LoadAndSaveEntry.Create(reader =>
-                {
-                    for (int i = 0; i < 256; i++)
                     {
-                        _currentPalette.Colors[i] = Color.FromRgb(reader.ReadByte(), reader.ReadByte(), reader.ReadByte());
-                    }
-                }, writer =>
-                {
-                    for (int i = 0; i < 256; i++)
+                        for (int i = 0; i < 256; i++)
+                        {
+                            _currentPalette.Colors[i] = Color.FromRgb(reader.ReadByte(), reader.ReadByte(), reader.ReadByte());
+                        }
+                    }, writer =>
                     {
-                        var l_color = _currentPalette.Colors[i];
-                        writer.Write(l_color.R);
-                        writer.Write(l_color.G);
-                        writer.Write(l_color.B);
-                    }
-                }, 8),
+                        for (int i = 0; i < 256; i++)
+                        {
+                            var l_color = _currentPalette.Colors[i];
+                            writer.Write(l_color.R);
+                            writer.Write(l_color.G);
+                            writer.Write(l_color.B);
+                        }
+                    }, 8),
                 LoadAndSaveEntry.Create(reader => reader.ReadBytes(768), writer => writer.Write(new byte[768]), 53),
 
                 // Sam & Max specific palette replaced by _shadowPalette now.
@@ -536,16 +536,16 @@ namespace NScumm.Core
             if (serializer.IsLoading)
             {
                 Array.ForEach(_slots, slot =>
-                {
-                    if (slot.Where == WhereIsObject.Global)
                     {
-                        slot.Offset -= 6;
-                    }
-                    else if (slot.Where == WhereIsObject.Local && slot.Number >= 0xC8 && roomData.LocalScripts[slot.Number - 0xC8] != null)
-                    {
-                        slot.Offset = (uint)(slot.Offset - roomData.LocalScripts[slot.Number - 0xC8].Offset);
-                    }
-                });
+                        if (slot.Where == WhereIsObject.Global)
+                        {
+                            slot.Offset -= 6;
+                        }
+                        else if (slot.Where == WhereIsObject.Local && slot.Number >= 0xC8 && roomData.LocalScripts[slot.Number - 0xC8] != null)
+                        {
+                            slot.Offset = (uint)(slot.Offset - roomData.LocalScripts[slot.Number - 0xC8].Offset);
+                        }
+                    });
 
                 ResetRoomObjects();
             }
@@ -607,19 +607,19 @@ namespace NScumm.Core
             var l_objStatesEntries = new[]
             {
                 LoadAndSaveEntry.Create(reader =>
-                {
-                    var objectOwnerTable = reader.ReadBytes(NumGlobalObjects);
-                    Array.Copy(objectOwnerTable, _resManager.ObjectOwnerTable, NumGlobalObjects);
-                },
+                    {
+                        var objectOwnerTable = reader.ReadBytes(NumGlobalObjects);
+                        Array.Copy(objectOwnerTable, _resManager.ObjectOwnerTable, NumGlobalObjects);
+                    },
                     writer =>
                     {
                         writer.WriteBytes(_resManager.ObjectOwnerTable, NumGlobalObjects);
                     }),
                 LoadAndSaveEntry.Create(reader =>
-                {
-                    var objectStateTable = reader.ReadBytes(NumGlobalObjects);
-                    Array.Copy(objectStateTable, _resManager.ObjectStateTable, NumGlobalObjects);
-                },
+                    {
+                        var objectStateTable = reader.ReadBytes(NumGlobalObjects);
+                        Array.Copy(objectStateTable, _resManager.ObjectStateTable, NumGlobalObjects);
+                    },
                     writer =>
                     {
                         writer.WriteBytes(_resManager.ObjectStateTable, NumGlobalObjects);
@@ -640,9 +640,9 @@ namespace NScumm.Core
             var l_paletteEntries = new[]
             {
                 LoadAndSaveEntry.Create(reader =>
-                {
-                    _shadowPalette = reader.ReadBytes(_shadowPalette.Length);
-                },
+                    {
+                        _shadowPalette = reader.ReadBytes(_shadowPalette.Length);
+                    },
                     writer =>
                     {
                         writer.WriteBytes(_shadowPalette, _shadowPalette.Length);
@@ -652,9 +652,9 @@ namespace NScumm.Core
                 // is used as palette map there too, but we do so slightly a bit
                 // further down to group it with the other special palettes needed.
                 LoadAndSaveEntry.Create(reader =>
-                {
-                    Gdi.RoomPalette = reader.ReadBytes(256);
-                },
+                    {
+                        Gdi.RoomPalette = reader.ReadBytes(256);
+                    },
                     writer =>
                     {
                         writer.WriteBytes(Gdi.RoomPalette, 256);
@@ -662,13 +662,13 @@ namespace NScumm.Core
 
                 // PalManip data was not saved before V10 save games
                 LoadAndSaveEntry.Create(reader =>
-                {
-                    //                    if (palManipCounter!=0)
-                    //                    {
-                    //                        _palManipPalette = reader.ReadBytes(0x300);
-                    //                        _palManipIntermediatePal = reader.ReadBytes(0x600);
-                    //                    }
-                },
+                    {
+                        //                    if (palManipCounter!=0)
+                        //                    {
+                        //                        _palManipPalette = reader.ReadBytes(0x300);
+                        //                        _palManipIntermediatePal = reader.ReadBytes(0x600);
+                        //                    }
+                    },
                     writer =>
                     {
                         //                    if (palManipCounter!=0)
@@ -681,20 +681,20 @@ namespace NScumm.Core
 
                 // darkenPalette was not saved before V53
                 LoadAndSaveEntry.Create(reader =>
-                {
-                    // TODO?
-                    //Array.Copy(currentPalette, darkenPalette, 768);
-                }, 0, 53),
+                    {
+                        // TODO?
+                        //Array.Copy(currentPalette, darkenPalette, 768);
+                    }, 0, 53),
 
                 // darkenPalette was not saved before V53
                 LoadAndSaveEntry.Create(reader =>
-                {
-                    //                    if (palManipCounter != 0)
-                    //                    {
-                    //                        _palManipPalette = reader.ReadBytes(0x300);
-                    //                        _palManipIntermediatePal = reader.ReadBytes(0x600);
-                    //                    }
-                },
+                    {
+                        //                    if (palManipCounter != 0)
+                        //                    {
+                        //                        _palManipPalette = reader.ReadBytes(0x300);
+                        //                        _palManipIntermediatePal = reader.ReadBytes(0x600);
+                        //                    }
+                    },
                     writer =>
                     {
                         //                    if (palManipCounter != 0)
@@ -744,9 +744,9 @@ namespace NScumm.Core
             var l_globalObjStatesEntries = new[]
             {
                 LoadAndSaveEntry.Create(reader =>
-                {
-                    Array.Copy(reader.ReadUInt32s(NumGlobalObjects), _resManager.ClassData, NumGlobalObjects);
-                },
+                    {
+                        Array.Copy(reader.ReadUInt32s(NumGlobalObjects), _resManager.ClassData, NumGlobalObjects);
+                    },
                     writer =>
                     {
                         writer.WriteUInt32s(_resManager.ClassData, NumGlobalObjects);
@@ -769,9 +769,9 @@ namespace NScumm.Core
             var l_variablesEntries = new[]
             {
                 LoadAndSaveEntry.Create(reader =>
-                {
-                    _variables = Array.ConvertAll(reader.ReadInt16s(_variables.Length), s => (int)s);
-                },
+                    {
+                        _variables = Array.ConvertAll(reader.ReadInt16s(_variables.Length), s => (int)s);
+                    },
                     writer =>
                     {
                         writer.WriteInt16s(_variables, _variables.Length);
@@ -801,13 +801,13 @@ namespace NScumm.Core
             var l_lockedObjEntries = new[]
             {
                 LoadAndSaveEntry.Create(reader =>
-                {
-                    while (((ResType)reader.ReadByte()) != (ResType)0xFF)
                     {
-                        reader.ReadUInt16();
-                        //_res->lock(type, idx);
-                    }
-                },
+                        while (((ResType)reader.ReadByte()) != (ResType)0xFF)
+                        {
+                            reader.ReadUInt16();
+                            //_res->lock(type, idx);
+                        }
+                    },
                     writer =>
                     {
                         writer.Write((byte)0xFF);
@@ -873,17 +873,17 @@ namespace NScumm.Core
         void SaveOrLoadResources(Serializer serializer)
         {
             var l_entry = LoadAndSaveEntry.Create(reader =>
-            {
-                ResType type;
-                ushort idx;
-                while ((type = (ResType)reader.ReadUInt16()) != (ResType)0xFFFF)
                 {
-                    while ((idx = reader.ReadUInt16()) != 0xFFFF)
+                    ResType type;
+                    ushort idx;
+                    while ((type = (ResType)reader.ReadUInt16()) != (ResType)0xFFFF)
                     {
-                        LoadResource(reader, type, idx);
+                        while ((idx = reader.ReadUInt16()) != 0xFFFF)
+                        {
+                            LoadResource(reader, type, idx);
+                        }
                     }
-                }
-            },
+                },
                               writer =>
                 {
                     // inventory
@@ -946,17 +946,18 @@ namespace NScumm.Core
 
                     // objects name
                     writer.Write((ushort)ResType.ObjectName);
-                    var objs = _invData.ToArray();
-                    for (int i = 0; i < objs.Length; i++)
+                    var objs = _invData.Where(obj => obj != null && obj.Number != 0).ToArray();
+                    for (var i = 0; i < objs.Length; i++)
                     {
                         var obj = objs[i];
-                        if (obj != null && obj.Name != null && _inventory.Any(inv => inv == obj.Number))
+                        var name = GetObjectOrActorName(obj.Number);
+                        if (name.Length > 0)
                         {
                             // write index
                             writer.WriteUInt16(i);
                             // write name
-                            writer.WriteInt32(obj.Name.Length);
-                            writer.WriteBytes(obj.Name, obj.Name.Length);
+                            writer.WriteInt32(name.Length);
+                            writer.WriteBytes(name, name.Length);
                             // writer obj number
                             writer.WriteUInt16(obj.Number);
                         }
@@ -1090,7 +1091,6 @@ namespace NScumm.Core
 
                     case ResType.ActorName:
                         {
-                            _newNames[idx] = ptr;
                             _actors[idx].Name = ptr;
                         }
                         break;
@@ -1098,10 +1098,7 @@ namespace NScumm.Core
                     case ResType.ObjectName:
                         {
                             var index = reader.ReadUInt16();
-                            var obj = (from o in _invData
-                                                            where o != null && o.Number == index
-                                                            select o).FirstOrDefault();
-                            obj.Name = ptr;
+                            _newNames[index] = ptr;
                         }
                         break;
 

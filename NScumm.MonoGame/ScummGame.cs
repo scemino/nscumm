@@ -149,15 +149,9 @@ namespace NScumm.MonoGame
 
         void UpdateMouseState()
         {
-            // HACK: to get the client mouse position 
-
-            var prop = Window.GetType().GetProperty("Window", 
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var nativeWindow = (INativeWindow)prop.GetValue(Window, null);
-
             var state = Mouse.GetState();
-            var x = state.X - nativeWindow.Bounds.Location.X;
-            var y = state.Y - nativeWindow.Bounds.Location.Y;
+            var x = state.X;
+            var y = state.Y;
             cursorPos = new Microsoft.Xna.Framework.Vector2(x, y);
         }
 

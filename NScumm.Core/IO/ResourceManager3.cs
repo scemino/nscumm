@@ -26,8 +26,8 @@ namespace NScumm.Core.IO
 {
     class ResourceManager3: ResourceManager
     {
-        public ResourceManager3(string path)
-            : base(path)
+        public ResourceManager3(GameInfo game)
+            : base(game)
         {
         }
 
@@ -36,7 +36,9 @@ namespace NScumm.Core.IO
             var diskName = string.Format("{0:00}.lfl", roomIndex);
             var game1Path = Path.Combine(Directory, diskName);
 
-            var file = new ResourceFile3(game1Path, 0);
+            var file = Game.Features.HasFlag(GameFeatures.Old256) ? 
+                (ResourceFile)new ResourceFile3(game1Path, 0) :
+                new ResourceFile3_16(game1Path, 0xFF);
             return file;
         }
 

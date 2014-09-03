@@ -121,6 +121,8 @@
     <Compile Include="Graphics\CharsetRendererCommon.cs" />
     <Compile Include="ScummEngine4.cs" />
     <Compile Include="ScummEngine3.cs" />
+    <Compile Include="IO\ResourceIndex3_16.cs" />
+    <Compile Include="IO\ResourceFile3_16.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Nscumm.xml">

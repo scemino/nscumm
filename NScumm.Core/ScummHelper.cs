@@ -18,6 +18,7 @@
 using System;
 using System.Linq;
 using System.IO;
+using NScumm.Core.IO;
 
 namespace NScumm.Core
 {
@@ -106,6 +107,15 @@ namespace NScumm.Core
 			}
 			return values;
 		}
+
+        public static ushort[] ReadUInt16s (this XorReader reader, int count)
+        {
+            ushort[] values = new ushort[count];
+            for (int i = 0; i < count; i++) {
+                values [i] = reader.ReadUInt16 ();
+            }
+            return values;
+        }
 
 		public static ushort[] ReadUInt16s (this BinaryReader reader, int count)
 		{

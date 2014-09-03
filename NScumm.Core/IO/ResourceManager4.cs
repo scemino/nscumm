@@ -24,33 +24,34 @@ using System.IO;
 
 namespace NScumm.Core.IO
 {
-	class ResourceManager4: ResourceManager
-	{
-		public ResourceManager4 (string path)
-			: base (path)
-		{			
-		}
+    class ResourceManager4: ResourceManager
+    {
+        public ResourceManager4(GameInfo game)
+            : base(game)
+        {			
+        }
 
-		protected override ResourceFile OpenRoom (byte roomIndex)
-		{
-			var diskNum = Index.RoomResources [roomIndex].RoomNum;
-			var diskName = string.Format ("disk{0:00}.lec", diskNum);
-			var game1Path = Path.Combine (Directory, diskName);
+        protected override ResourceFile OpenRoom(byte roomIndex)
+        {
+            var diskNum = Index.RoomResources[roomIndex].RoomNum;
+            var diskName = string.Format("disk{0:00}.lec", diskNum);
+            var game1Path = Path.Combine(Directory, diskName);
 
-			var file = diskNum != 0 ? (ResourceFile)new ResourceFile4 (game1Path, 0x69) : null;
-			return file;
-		}
+            var file = new ResourceFile4(game1Path, 0x69);
+            return file;
+        }
 
-		protected override byte[] ReadCharset (byte id)
-		{
-			var diskName = string.Format ("{0}.lfl", 900 + id);
-			var path = ScummHelper.NormalizePath (Path.Combine (Directory, diskName));
-			using (var file = File.OpenRead (path)) {
-				var reader = new BinaryReader (file);
-				var size = reader.ReadUInt32 () + 11;
-				return reader.ReadBytes ((int)size);
-			}
-		}
-	}
+        protected override byte[] ReadCharset(byte id)
+        {
+            var diskName = string.Format("{0}.lfl", 900 + id);
+            var path = ScummHelper.NormalizePath(Path.Combine(Directory, diskName));
+            using (var file = File.OpenRead(path))
+            {
+                var reader = new BinaryReader(file);
+                var size = reader.ReadUInt32() + 11;
+                return reader.ReadBytes((int)size);
+            }
+        }
+    }
 	
 }

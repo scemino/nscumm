@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{D53EB07B-F186-4281-A225-2C3DC5850148}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>NScumm.Tmp</RootNamespace>
+    <AssemblyName>NScumm.Tmp</AssemblyName>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug</OutputPath>
+    <DefineConstants>DEBUG;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Externalconsole>true</Externalconsole>
+    <Commandlineparameters>/home/valery/Games/indy3e/00.LFL</Commandlineparameters>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>full</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Externalconsole>true</Externalconsole>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Drawing" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TextDecoder.cs" />
+    <Compile Include="Grammar\Expression.cs" />
+    <Compile Include="Grammar\Statement.cs" />
+    <Compile Include="Grammar\AstNodeVisitor.cs" />
+    <Compile Include="Grammar\MethodInvocation.cs" />
+    <Compile Include="Grammar\LiteralExpression.cs" />
+    <Compile Include="Grammar\DefaultVisitor.cs" />
+    <Compile Include="DumpAstVisitor.cs" />
+    <Compile Include="Grammar\SimpleName.cs" />
+    <Compile Include="Grammar\MemberAccess.cs" />
+    <Compile Include="Grammar\BinaryExpression.cs" />
+    <Compile Include="Grammar\UnaryExpression.cs" />
+    <Compile Include="Grammar\ElementAccess.cs" />
+    <Compile Include="ScriptParser.cs" />
+    <Compile Include="Grammar\IAstNode.cs" />
+    <Compile Include="Grammar\AstNodeBase.cs" />
+    <Compile Include="Grammar\CompilationUnit.cs" />
+    <Compile Include="ScriptParser_Actor.cs" />
+    <Compile Include="ScriptParser_Audio.cs" />
+    <Compile Include="ScriptParser_Expression.cs" />
+    <Compile Include="ScriptParser_Scripts.cs" />
+    <Compile Include="ScriptParser_Camera.cs" />
+    <Compile Include="ScriptParser_Inventory.cs" />
+    <Compile Include="ScriptParser_Strings.cs" />
+    <Compile Include="ScriptParser_Room.cs" />
+    <Compile Include="ScriptParser_Variable.cs" />
+    <Compile Include="ScriptParser_Verb.cs" />
+    <Compile Include="ScriptParser_Object.cs" />
+    <Compile Include="ScriptParser_OpCode.cs" />
+    <Compile Include="ScriptParser3.cs" />
+    <Compile Include="Grammar\IfStatement.cs" />
+    <Compile Include="ScriptParser4.cs" />
+    <Compile Include="IDumper.cs" />
+    <Compile Include="ImageDumper.cs" />
+    <Compile Include="ScriptDumper.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <Folder Include="Grammar\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\NScumm.Core\NScumm.Core.csproj">
+      <Project>{B33E2D2E-E360-4F10-A82F-AA98500497FD}</Project>
+      <Name>NScumm.Core</Name>
+    </ProjectReference>
+  </ItemGroup>
+</Project>

@@ -26,166 +26,199 @@ using System.Collections.Generic;
 
 namespace NScumm.Core.IO
 {
-	public class Script
-	{
-		public int Id {
-			get;
-			private set;
-		}
+    public class Script
+    {
+        public int Id
+        {
+            get;
+            private set;
+        }
 
-		public byte[] Data {
-			get;
-			private set;
-		}
+        public byte[] Data
+        {
+            get;
+            private set;
+        }
 
-		public Script (int id, byte[] data)
-		{
-			Id = id;
-			Data = data;
-		}
-	}
+        public Script(int id, byte[] data)
+        {
+            Id = id;
+            Data = data;
+        }
+    }
 
-	public abstract class ResourceManager
-	{
-		protected readonly ResourceIndex Index;
+    public abstract class ResourceManager
+    {
+        protected GameInfo Game { get; private set; }
 
-		public byte[] ObjectOwnerTable { get { return Index.ObjectOwnerTable; } }
+        protected ResourceIndex Index { get; private set; }
 
-		public byte[] ObjectStateTable { get { return Index.ObjectStateTable; } }
+        public byte[] ObjectOwnerTable { get { return Index.ObjectOwnerTable; } }
 
-		public uint[] ClassData { get { return Index.ClassData; } }
+        public byte[] ObjectStateTable { get { return Index.ObjectStateTable; } }
 
-		public string Directory { get; private set; }
+        public uint[] ClassData { get { return Index.ClassData; } }
 
-		public IEnumerable<Room> Rooms {
-			get {
-				var roomIndices = (from res in Enumerable.Range (1, Index.RoomResources.Count - 1)
-				                   where res != 0
-				                   select (byte)res).Distinct ();
-				Room room = null;
-				foreach (var i in roomIndices) {
-					try {
-						room = GetRoom (i);
-					} catch (Exception) {
-					}
-					if (room != null) {
-						yield return room;
-					}
-				}
-			}
-		}
+        public string Directory { get; private set; }
 
-		public IEnumerable<Script> Scripts {
-			get {
-				for (byte i = 0; i < Index.ScriptResources.Count; i++) {
-					if (Index.ScriptResources [i].RoomNum != 0) {
-						byte[] script = null;
-						try {
-							script = GetScript (i);
-						} catch (NotSupportedException) {
-							// TODO: mmmh suspicious script error
-						}
-						if (script != null) {
-							yield return new Script (i, script);
-						}
-					}
-				}
-			}
-		}
+        public IEnumerable<Room> Rooms
+        {
+            get
+            {
+                var roomIndices = (from res in Enumerable.Range(1, Index.RoomResources.Count - 1)
+                                               where Index.RoomResources[res].RoomNum != 0 && Index.RoomResources[res].Offset != 0xFFFFFFFF
+                                               select (byte)res).Distinct();
+                Room room = null;
+                foreach (var i in roomIndices)
+                {
+                    try
+                    {
+                        room = GetRoom(i);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine(e);
+                        Console.ResetColor();
+                    }
+                    if (room != null)
+                    {
+                        yield return room;
+                    }
+                }
+            }
+        }
 
-		public IEnumerable<byte[]> Sounds {
-			get {
-				for (byte i = 0; i < Index.SoundResources.Count; i++) {
-					if (Index.SoundResources [i].RoomNum != 0) {
-						yield return GetSound (i);
-					}
-				}
-			}
-		}
+        public IEnumerable<Script> Scripts
+        {
+            get
+            {
+                for (byte i = 1; i < Index.ScriptResources.Count; i++)
+                {
+                    if (Index.ScriptResources[i].RoomNum != 0 && Index.ScriptResources[i].Offset != 0xFFFFFFFF)
+                    {
+                        byte[] script = null;
+                        try
+                        {
+                            script = GetScript(i);
+                        }
+                        catch (NotSupportedException)
+                        {
+                            // TODO: mmmh suspicious script error
+                        }
+                        if (script != null)
+                        {
+                            yield return new Script(i, script);
+                        }
+                    }
+                }
+            }
+        }
 
-		protected ResourceManager (string path)
-		{
-			Index = ResourceIndex.Load (path);
-			Directory = Path.GetDirectoryName (path);
-		}
+        public IEnumerable<byte[]> Sounds
+        {
+            get
+            {
+                for (byte i = 0; i < Index.SoundResources.Count; i++)
+                {
+                    if (Index.SoundResources[i].RoomNum != 0)
+                    {
+                        yield return GetSound(i);
+                    }
+                }
+            }
+        }
 
-		public static ResourceManager Load (string path, int version)
-		{
-			switch (version) {
-			case 3:
-				return new ResourceManager3 (path); 
-			case 4:
-				return new ResourceManager4 (path); 
-			default:
-				throw new NotSupportedException (string.Format ("ResourceManager {0} is not supported", version)); 
-			}
-		}
+        protected ResourceManager(GameInfo game)
+        {
+            Game = game;
+            Index = ResourceIndex.Load(game);
+            Directory = Path.GetDirectoryName(game.Path);
+        }
 
-		static long GetRoomOffset (ResourceFile disk, byte roomNum)
-		{
-			var rOffsets = disk.ReadRoomOffsets ();
-			var roomOffset = rOffsets.ContainsKey (roomNum) ? rOffsets [roomNum] : 0;
-			return roomOffset;
-		}
+        public static ResourceManager Load(GameInfo game)
+        {
+            switch (game.Version)
+            {
+                case 3:
+                    return new ResourceManager3(game); 
+                case 4:
+                    return new ResourceManager4(game); 
+                default:
+                    throw new NotSupportedException(string.Format("ResourceManager {0} is not supported", game.Version)); 
+            }
+        }
 
-		public Room GetRoom (byte roomNum)
-		{
-			Room room = null;
-			var disk = OpenRoom (roomNum);
-			if (disk != null) {
-				var roomOffset = GetRoomOffset (disk, roomNum);
-				room = disk.ReadRoom (roomOffset);
-				room.Name = Index.RoomNames != null ? Index.RoomNames [roomNum] : null;
-			}
+        static long GetRoomOffset(ResourceFile disk, byte roomNum)
+        {
+            var rOffsets = disk.ReadRoomOffsets();
+            var roomOffset = rOffsets.ContainsKey(roomNum) ? rOffsets[roomNum] : 0;
+            return roomOffset;
+        }
 
-			return room;
-		}
+        public Room GetRoom(byte roomNum)
+        {
+            Room room = null;
+            var disk = OpenRoom(roomNum);
+            if (disk != null)
+            {
+                var roomOffset = GetRoomOffset(disk, roomNum);
+                room = disk.ReadRoom(roomOffset);
+                room.Number = roomNum;
+                room.Name = Index.RoomNames != null ? Index.RoomNames[roomNum] : null;
+            }
 
-		public XorReader GetCostumeReader (byte scriptNum)
-		{
-			XorReader reader = null;
-			var res = Index.CostumeResources [scriptNum];
-			var disk = OpenRoom (res.RoomNum);
-			if (disk != null) {
-				var roomOffset = GetRoomOffset (disk, res.RoomNum);
-				reader = disk.ReadCostume (roomOffset + res.Offset);
-			}
-			return reader;
-		}
+            return room;
+        }
 
-		public byte[] GetCharsetData (byte id)
-		{
-			var charset = ReadCharset (id);
-			return charset;
-		}
+        public XorReader GetCostumeReader(byte scriptNum)
+        {
+            XorReader reader = null;
+            var res = Index.CostumeResources[scriptNum];
+            var disk = OpenRoom(res.RoomNum);
+            if (disk != null)
+            {
+                var roomOffset = GetRoomOffset(disk, res.RoomNum);
+                reader = disk.ReadCostume(roomOffset + res.Offset);
+            }
+            return reader;
+        }
 
-		public byte[] GetScript (byte scriptNum)
-		{
-			byte[] data = null;
-			var resource = Index.ScriptResources [scriptNum];
-			var disk = OpenRoom (resource.RoomNum);
-			if (disk != null) {
-				var roomOffset = GetRoomOffset (disk, resource.RoomNum);
-				data = disk.ReadScript (roomOffset + resource.Offset);
-			}
-			return data;
-		}
+        public byte[] GetCharsetData(byte id)
+        {
+            var charset = ReadCharset(id);
+            return charset;
+        }
 
-		public byte[] GetSound (int sound)
-		{
-			byte[] data = null;
-			var resource = Index.SoundResources [sound];
-			var disk = OpenRoom (resource.RoomNum);
-			if (disk != null) {
-				var roomOffset = GetRoomOffset (disk, resource.RoomNum);
-				data = disk.ReadSound (roomOffset + resource.Offset);
-			}
-			return data;
-		}
+        public byte[] GetScript(byte scriptNum)
+        {
+            byte[] data = null;
+            var resource = Index.ScriptResources[scriptNum];
+            var disk = OpenRoom(resource.RoomNum);
+            if (disk != null)
+            {
+                var roomOffset = GetRoomOffset(disk, resource.RoomNum);
+                data = disk.ReadScript(roomOffset + resource.Offset);
+            }
+            return data;
+        }
 
-		protected abstract ResourceFile OpenRoom (byte roomIndex);
+        public byte[] GetSound(int sound)
+        {
+            byte[] data = null;
+            var resource = Index.SoundResources[sound];
+            var disk = OpenRoom(resource.RoomNum);
+            if (disk != null)
+            {
+                var roomOffset = GetRoomOffset(disk, resource.RoomNum);
+                data = disk.ReadSound(roomOffset + resource.Offset);
+            }
+            return data;
+        }
 
-		protected abstract byte[] ReadCharset (byte id);
-	}
+        protected abstract ResourceFile OpenRoom(byte roomIndex);
+
+        protected abstract byte[] ReadCharset(byte id);
+    }
 }
 

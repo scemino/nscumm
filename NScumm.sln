@@ -10,6 +10,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NScumm.Dump", "NScumm.Dump\NScumm.Dump.csproj", "{D53EB07B-F186-4281-A225-2C3DC5850148}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
@@ -24,12 +26,16 @@ Global
 		{B33E2D2E-E360-4F10-A82F-AA98500497FD}.Debug|x86.Build.0 = Debug|Any CPU
 		{B33E2D2E-E360-4F10-A82F-AA98500497FD}.Release|x86.ActiveCfg = Release|Any CPU
 		{B33E2D2E-E360-4F10-A82F-AA98500497FD}.Release|x86.Build.0 = Release|Any CPU
+		{D53EB07B-F186-4281-A225-2C3DC5850148}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{D53EB07B-F186-4281-A225-2C3DC5850148}.Debug|x86.Build.0 = Debug|Any CPU
+		{D53EB07B-F186-4281-A225-2C3DC5850148}.Release|x86.ActiveCfg = Release|Any CPU
+		{D53EB07B-F186-4281-A225-2C3DC5850148}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		BaseDirectory = ..\NScumm.GL
-		StartupItem = NScumm.MonoGame\NScumm.MonoGame.csproj
+		StartupItem = NScumm.Dump\NScumm.Dump.csproj
 		Policies = $0
 		$0.DotNetNamingPolicy = $1
 		$1.DirectoryNamespaceAssociation = None

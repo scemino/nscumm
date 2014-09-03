@@ -50,6 +50,8 @@ namespace NScumm.Core
         public CultureInfo Culture { get; set; }
 
         public GameFeatures Features { get; set; }
+
+        public bool IsOldBundle { get { return Version <= 3 && Features.HasFlag(GameFeatures.SixteenColors); } }
     }
 
     public static class GameManager

@@ -399,8 +399,16 @@ namespace NScumm.Core
                 Cost.Reset();
             }
 
-            for (int i = 0; i < 32; i++)
-                _palette[i] = 0xFF;
+            if (_scumm.Game.IsOldBundle)
+            {
+                for (int i = 0; i < 16; i++)
+                    _palette[i] = (byte)i;
+            }
+            else
+            {
+                for (int i = 0; i < 32; i++)
+                    _palette[i] = 0xFF;
+            }
         }
 
         public void SetActorWalkSpeed(uint newSpeedX, uint newSpeedY)

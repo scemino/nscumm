@@ -26,48 +26,51 @@ using NScumm.Core.Graphics;
 
 namespace NScumm.Core.IO
 {
-	public class ResourceFile4: ResourceFile
-	{
-		public ResourceFile4 (string path, byte encByte)
-			: base (path, encByte)
-		{
+    class ResourceFile4: ResourceFile3
+    {
+        public ResourceFile4(string path, byte encByte)
+            : base(path, encByte)
+        {
 
-		}
+        }
 
-		public override Dictionary<byte, long> ReadRoomOffsets ()
-		{
-			var roomOffsets = new Dictionary<byte, long> ();
-			do {
-				var size = _reader.ReadUInt32 ();
-				var blockType = _reader.ReadUInt16 ();
+        public override Dictionary<byte, long> ReadRoomOffsets()
+        {
+            var roomOffsets = new Dictionary<byte, long>();
+            do
+            {
+                var size = _reader.ReadUInt32();
+                var blockType = _reader.ReadUInt16();
 
-				switch (blockType) {
-				// *LECF* main container
-				case 0x454C:
-					break;
-				// *LOFF* room offset table
-				case 0x4F46:
-					var numRooms = _reader.ReadByte ();
-					while (numRooms-- != 0) {
-						var room = _reader.ReadByte ();
-						var offset = _reader.ReadUInt32 ();
-						roomOffsets [room] = offset;
-					}
-					return roomOffsets;
-				default:
+                switch (blockType)
+                {
+                // *LECF* main container
+                    case 0x454C:
+                        break;
+                // *LOFF* room offset table
+                    case 0x4F46:
+                        var numRooms = _reader.ReadByte();
+                        while (numRooms-- != 0)
+                        {
+                            var room = _reader.ReadByte();
+                            var offset = _reader.ReadUInt32();
+                            roomOffsets[room] = offset;
+                        }
+                        return roomOffsets;
+                    default:
 					// skip
-					Console.WriteLine ("Skip Block: 0x{0:X2}", blockType);
-					_reader.BaseStream.Seek (size - 6, SeekOrigin.Current);
-					break;
-				}
-			} while (_reader.BaseStream.Position < _reader.BaseStream.Length);
-			return null;
-		}
+                        Console.WriteLine("Skip Block: 0x{0:X2}", blockType);
+                        _reader.BaseStream.Seek(size - 6, SeekOrigin.Current);
+                        break;
+                }
+            } while (_reader.BaseStream.Position < _reader.BaseStream.Length);
+            return null;
+        }
 
-		protected override void GotoResourceHeader (long offset)
-		{
-			_reader.BaseStream.Seek (offset + 8, SeekOrigin.Begin);
-		}
+        protected override void GotoResourceHeader(long offset)
+        {
+            _reader.BaseStream.Seek(offset + 8, SeekOrigin.Begin);
+        }
 
         protected override Box ReadBox(ref int size)
         {
@@ -97,6 +100,6 @@ namespace NScumm.Core.IO
             }
             return colors;
         }
-	}
+    }
 	
 }

@@ -38,7 +38,7 @@ namespace NScumm.Core.Graphics
         public int NumStrips = 40;
 
         readonly ScummEngine _vm;
-        GameFeatures features;
+        GameInfo game;
 
         int paletteMod;
         byte decompShr;
@@ -69,10 +69,10 @@ namespace NScumm.Core.Graphics
 
         #region Constructor
 
-        public Gdi(ScummEngine vm, GameFeatures features)
+        public Gdi(ScummEngine vm, GameInfo game)
         {
             _vm = vm;
-            this.features = features;
+            this.game = game;
             for (int i = 0; i < maskBuffer.Length; i++)
             {
                 maskBuffer[i] = new byte[40 * (200 + 4)];
@@ -464,7 +464,11 @@ namespace NScumm.Core.Graphics
                 for (i = 1; i < zplanes.Count; i++)
                 {
                     var zplanePtr = new MemoryStream(zplanes[i]);
-                    if (features.HasFlag(GameFeatures.Old256))
+                    if (game.IsOldBundle)
+                    {
+                        zplanePtr.Seek(stripnr * 2, SeekOrigin.Begin);
+                    }
+                    else if (game.Features.HasFlag(GameFeatures.Old256))
                     {
                         zplanePtr.Seek(stripnr * 2 + 4, SeekOrigin.Begin);
                     }
@@ -572,7 +576,7 @@ namespace NScumm.Core.Graphics
             // trouble here. See also bug #795214.
             int offset = -1;
             int smapLen;
-            if (features.HasFlag(GameFeatures.SixteenColors))
+            if (game.Features.HasFlag(GameFeatures.SixteenColors))
             {
                 smapLen = smapReader.ReadInt16();
                 if (stripnr * 2 + 2 < smapLen)
@@ -599,7 +603,7 @@ namespace NScumm.Core.Graphics
 
         bool DecompressBitmap(PixelNavigator navDst, BinaryReader src, int numLinesToProcess)
         {
-            if (features.HasFlag(GameFeatures.SixteenColors))
+            if (game.Features.HasFlag(GameFeatures.SixteenColors))
             {
                 DrawStripEGA(navDst, src, numLinesToProcess);
                 return false;
@@ -679,7 +683,7 @@ namespace NScumm.Core.Graphics
         {
             int x;
 
-            if (features.HasFlag(GameFeatures.Old256))
+            if (game.Features.HasFlag(GameFeatures.Old256))
             {
                 int h = height;
                 x = 8;
@@ -1073,9 +1077,9 @@ namespace NScumm.Core.Graphics
                 var zplane = new MemoryStream(ptr);
                 var zplaneReader = new BinaryReader(zplane);
                 int zOffset;
-                if (features.HasFlag(GameFeatures.SixteenColors))
+                if (game.Features.HasFlag(GameFeatures.SixteenColors))
                 {
-                    zOffset = zplaneReader.ReadInt16();
+                    zOffset = zplaneReader.ReadUInt16();
                     zplaneReader.BaseStream.Seek(-2, SeekOrigin.Current);
                 }
                 else
@@ -1088,7 +1092,7 @@ namespace NScumm.Core.Graphics
                     zplanes.Add(zplaneReader.ReadBytes(zOffset));
                     if (zplaneReader.BaseStream.Position < (zplaneReader.BaseStream.Length - 2))
                     {
-                        zOffset = zplaneReader.ReadInt16();
+                        zOffset = zplaneReader.ReadUInt16();
                         zplaneReader.BaseStream.Seek(-2, SeekOrigin.Current);
                     }
                     else

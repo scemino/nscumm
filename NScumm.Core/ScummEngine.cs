@@ -163,7 +163,7 @@ namespace NScumm.Core
 
         protected ScummEngine(GameInfo game, IGraphicsManager gfxManager, IInputManager inputManager, IAudioDriver driver)
         {
-            _resManager = ResourceManager.Load(game.Path, game.Version);
+            _resManager = ResourceManager.Load(game);
 
             _game = game;
             _gameMD5 = ToMd5Bytes(game.MD5);
@@ -207,7 +207,7 @@ namespace NScumm.Core
             {
                 _scaleSlots[i] = new ScaleSlot();
             }
-            Gdi = new Gdi(this, game.Features);
+            Gdi = new Gdi(this, game);
             _costumeLoader = new ClassicCostumeLoader(this);
             _costumeRenderer = new ClassicCostumeRenderer(this);
 

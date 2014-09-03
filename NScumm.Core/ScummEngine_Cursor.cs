@@ -166,7 +166,7 @@ namespace NScumm.Core
 		void CursorCommand ()
 		{
 			_opCode = ReadByte ();
-			switch (_opCode) {
+            switch (_opCode & 0x1F) {
 			case 1:
 				// Cursor On
 				_cursor.State = 1;

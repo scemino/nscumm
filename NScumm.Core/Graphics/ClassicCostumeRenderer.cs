@@ -171,7 +171,15 @@ namespace NScumm.Core.Graphics
 			pixelsNavigator.OffsetX (-(vs.XStart & 7));
 			startNav = new PixelNavigator (pixelsNavigator);
 
-			_xmove = _ymove = 0;
+            if (_vm.Game.IsOldBundle)
+            {
+                _xmove = -72;
+                _ymove = -100;
+            }
+            else
+            {
+                _xmove = _ymove = 0;
+            }
 
 			int result = 0;
 			for (int i = 0; i < 16; i++)

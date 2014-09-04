@@ -50,7 +50,7 @@ namespace NScumm.Tmp
                 dumper.Indent();
                 foreach (var obj in room.Objects)
                 {
-                    if (obj.Script.Data.Length > 0)
+                    if (obj.Script.Data != null && obj.Script.Data.Length > 0)
                     {
                         dumper.WriteLine("obj {0} {1} {{", obj.Number, System.Text.Encoding.ASCII.GetString(obj.Name));
                         dumper.Indent();

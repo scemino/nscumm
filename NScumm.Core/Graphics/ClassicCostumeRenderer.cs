@@ -14,6 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
+using System;
 
 namespace NScumm.Core.Graphics
 {
@@ -130,9 +131,24 @@ namespace NScumm.Core.Graphics
 
 		public void SetPalette (ushort[] palette)
 		{
-			if (_loaded.Format == 0x57) {
-				for (int i = 0; i < 13; i++)
-					_palette [i] = palette [i];
+            if (_loaded.Format == 0x57)
+            {
+                for (int i = 0; i < 13; i++)
+                    _palette[i] = palette[i];
+            } else if(_vm.Game.IsOldBundle) {
+                if (_vm.GetCurrentLights().HasFlag(LightModes.ActorUseColors))
+                {
+                    Array.Copy(palette, _palette, 16);
+                }
+                else
+                {
+                    for (int i = 0; i < 16; i++)
+                    {
+                        _palette[i] = 8;
+                    }
+                    _palette[12] = 0;
+                }
+                _palette[_loaded.Palette[0]] = _palette[0];
 			} else {
 				if (_vm.GetCurrentLights ().HasFlag (LightModes.ActorUseColors)) {
 					for (int i = 0; i < _loaded.NumColors; i++) {

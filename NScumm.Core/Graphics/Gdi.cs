@@ -361,39 +361,6 @@ namespace NScumm.Core.Graphics
         #endregion GfxUsageBit Members
 
         #region Private Methods
-
-        static void DecodeMask(BinaryReader reader, IList<byte> mask, int offset, int width, int height)
-        {
-            int dstIndex = offset;
-            byte c, b;
-            while (height != 0)
-            {
-                b = reader.ReadByte();
-
-                if ((b & 0x80) != 0)
-                {
-                    b &= 0x7F;
-                    c = reader.ReadByte();
-
-                    do
-                    {
-                        mask[dstIndex] = c;
-                        dstIndex += width;
-                        --height;
-                    } while ((--b != 0) && (height != 0));
-                }
-                else
-                {
-                    do
-                    {
-                        mask[dstIndex] = reader.ReadByte();
-                        dstIndex += width;
-                        --height;
-                    } while ((--b != 0) && (height != 0));
-                }
-            }
-        }
-
         static void Clear8Col(PixelNavigator nav, int height)
         {
             do

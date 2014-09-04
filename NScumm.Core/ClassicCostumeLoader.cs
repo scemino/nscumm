@@ -71,6 +71,12 @@ namespace NScumm.Core
 				throw new NotSupportedException (string.Format ("Costume {0} with format 0x{1:X2} is invalid", id, Format));
 			}
 
+            if (_vm.Game.IsOldBundle)
+            {
+                NumColors = Format == 0x57 ? (byte)0 : (byte)1;
+                BasePtr += 2;
+            }
+
 			Palette = CostumeReader.ReadBytes (NumColors);
 			FrameOffsets = CostumeReader.BaseStream.Position + 2;
 			if (Format == 0x57) {
@@ -156,18 +162,16 @@ namespace NScumm.Core
 
 		byte ReadAnimCommand (int j)
 		{
-			byte cmd;
-			long r = CostumeReader.BaseStream.Position;
+            var r = CostumeReader.BaseStream.Position;
 			CostumeReader.BaseStream.Seek (AnimCmds + j, System.IO.SeekOrigin.Begin);
-			cmd = CostumeReader.ReadByte ();
+            var cmd = CostumeReader.ReadByte ();
 			CostumeReader.BaseStream.Seek (r, System.IO.SeekOrigin.Begin);
 			return cmd;
 		}
 
 		public int IncreaseAnims (Actor a)
 		{
-			int r = 0;
-
+            var r = 0;
 			for (int i = 0; i != 16; i++) {
 				if (a.Cost.Curpos [i] != 0xFFFF)
 					r += IncreaseAnim (a, i) ? 1 : 0;

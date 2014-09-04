@@ -22,10 +22,5 @@ namespace NScumm.Core
         public byte[] Data { get; set; }
 
         public long Offset { get; set; }
-
-        public ScriptData()
-        {
-            Data = new byte[0];
-        }
     }
 }

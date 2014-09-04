@@ -66,8 +66,8 @@ namespace NScumm.Core.IO
             get
             {
                 var roomIndices = (from res in Enumerable.Range(1, Index.RoomResources.Count - 1)
-                                               where Index.RoomResources[res].RoomNum != 0 && Index.RoomResources[res].Offset != 0xFFFFFFFF
-                                               select (byte)res).Distinct();
+                                   where Index.RoomResources[res].RoomNum != 0 && Index.RoomResources[res].Offset != 0xFFFFFFFF
+                                   select (byte)res).Distinct();
                 Room room = null;
                 foreach (var i in roomIndices)
                 {

@@ -22,6 +22,7 @@ using System;
 using NScumm.Core.IO;
 using NScumm.Core.Graphics;
 using NScumm.Core;
+using System.Text;
 
 namespace NScumm.Tmp
 {
@@ -93,26 +94,28 @@ namespace NScumm.Tmp
                     var gdi = new Gdi(null, Game);
                     gdi.RoomPalette = CreatePalette();
 
-                    //              foreach (var obj in room.Objects) {
-                    //                  if (obj.Name.Length == 0)
-                    //                      continue;
-                    //
-                    //                  var text = new ScummText (obj.Name);
-                    //                  var sb = new StringBuilder ();
-                    //                  sb.AppendLine ("Object #" + obj.Number);
-                    //                  sb.Append ("  ");
-                    //                  var decoder = new TextDecoder (sb);
-                    //                  text.Decode (decoder);
-                    //                  Console.WriteLine (sb);
-                    //
-                    //                  if (obj.Image.Length == 0)
-                    //                      continue;
-                    //                  var screen = new VirtScreen (0, obj.Width, obj.Height, PixelFormat.Indexed8, 2);
-                    //                  //byte[] ptr, VirtScreen vs, int x, int y, int width, int height, int stripnr, int numstrip, DrawBitmaps flags)
-                    //                  gdi.DrawBitmap (obj.Image, screen, 0, 0, obj.Width, obj.Height, 0, obj.Width / 8, 0);
-                    //                  var bmp = ToBitmap (room, screen);
-                    //                  bmp.Save ("obj_" + obj.Number + ".png");
-                    //              }
+                    foreach (var obj in room.Objects)
+                    {
+                        if (obj.Name.Length == 0)
+                            continue;
+                    
+                        var text = new ScummText(obj.Name);
+                        var sb = new StringBuilder();
+                        sb.AppendLine("Object #" + obj.Number);
+                        sb.Append("  ");
+                        var decoder = new TextDecoder(sb);
+                        text.Decode(decoder);
+                        Console.WriteLine(sb);
+                    
+                        if (obj.Image.Length == 0)
+                            continue;
+
+                        var screen = new VirtScreen(0, obj.Width, obj.Height, PixelFormat.Indexed8, 2);
+                        //byte[] ptr, VirtScreen vs, int x, int y, int width, int height, int stripnr, int numstrip, DrawBitmaps flags)
+                        gdi.DrawBitmap(obj.Image, screen, 0, 0, obj.Width, obj.Height, 0, obj.Width / 8, 0, true, room.Header.Width);
+                        var bmp = ToBitmap(room, screen);
+                        bmp.Save("obj_" + obj.Number + ".png");
+                    }
 
                     var screen2 = new VirtScreen(0, room.Header.Width, room.Header.Height, 
                                       PixelFormat.Indexed8, 2);

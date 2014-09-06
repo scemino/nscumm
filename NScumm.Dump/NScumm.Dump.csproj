@@ -7,8 +7,8 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{D53EB07B-F186-4281-A225-2C3DC5850148}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>NScumm.Tmp</RootNamespace>
-    <AssemblyName>NScumm.Tmp</AssemblyName>
+    <RootNamespace>NScumm.Dump</RootNamespace>
+    <AssemblyName>nsdump</AssemblyName>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -19,7 +19,6 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Externalconsole>true</Externalconsole>
-    <Commandlineparameters>/home/valery/Games/indy3e/00.LFL</Commandlineparameters>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>full</DebugType>

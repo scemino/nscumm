@@ -190,7 +190,7 @@ namespace NScumm.Core.IO
             return charset;
         }
 
-        public byte[] GetScript(byte scriptNum)
+        public byte[] GetScript(int scriptNum)
         {
             byte[] data = null;
             var resource = Index.ScriptResources[scriptNum];

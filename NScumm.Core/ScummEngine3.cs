@@ -22,13 +22,14 @@
 using NScumm.Core.Graphics;
 using NScumm.Core.Input;
 using NScumm.Core.Audio;
+using NScumm.Core.IO;
 
 namespace NScumm.Core
-{   
+{
     public class ScummEngine3: ScummEngine
     {
         public ScummEngine3(GameInfo game, IGraphicsManager graphicsManager, IInputManager inputManager, IAudioDriver audioDriver)
-            : base(game,graphicsManager,inputManager,audioDriver)
+            : base(game, graphicsManager, inputManager, audioDriver)
         {
         }
     }

@@ -1,25 +1,45 @@
 NSCUMM
 ======
 
-Quick and dirty .NET port of the SCUMM engine version 3 and 4 of the project scummvm.
+Quick and dirty .NET port of the SCUMM engine version 3, 4 and 5 of the project scummvm.
 
 Quick start
 -----------
 
 Copy the original files of the game you want to play in a directory.
 
-Start NScumm with the full path of the file named '000.lfl' in argument.
+__NScumm.MonoGame.exe__ [game]
+
+with game:
+
+* __00.lfl__ for Indiana Jones and the Last Crusade
+
+* __000.lfl__ for The Secret of Monkey Island or Loom
+
+* __MONKEY2.000__ for Monkey Island 2: LeChuck's revenge
+
+* __ATLANTIS.000__ for Indiana Jones and the Fate of Atlantis
 
 Supported Games
 ---------------
 
-Indiana Jones and the Last Crusade (SCUMM version 3)
+SCUMM 3:
 
-The Secret of Monkey Island by LucasArts (SCUMM version 4)
+* Indiana Jones and the Last Crusade
 
-The Passport to Adventure by LucasArts (Demo) (SCUMM version 4)
+SCUMM 4:
 
-Loom (Scumm version 4)
+* The Secret of Monkey Island by LucasArts
+
+* The Passport to Adventure by LucasArts (Demo)
+
+* Loom
+
+SCUMM 5:
+
+* Monkey Island 2: LeChuck's revenge
+
+* Indiana Jones and the Fate of Atlantis
 
 Hotkeys
 -------

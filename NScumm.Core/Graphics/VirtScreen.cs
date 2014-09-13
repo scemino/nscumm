@@ -23,6 +23,7 @@ namespace NScumm.Core.Graphics
     public class VirtScreen
     {
         #region Fields
+
         Surface[] _surfaces;
         ReadOnlyCollection<Surface> _roSurfaces;
 
@@ -43,9 +44,11 @@ namespace NScumm.Core.Graphics
         /// the screen.
         /// </summary>
         int[] bdirty = new int[80 + 1];
+
         #endregion
 
         #region Properties
+
         public ReadOnlyCollection<Surface> Surfaces
         {
             get { return _roSurfaces; }
@@ -69,7 +72,7 @@ namespace NScumm.Core.Graphics
         /// </summary>
         public int TopLine { get; set; }
 
-        public bool HasTwoBuffers { get { return Surfaces.Count == 2; } }
+        public bool HasTwoBuffers { get; set; }
 
         public int Pitch { get { return Surfaces[0].Pitch; } }
 
@@ -80,12 +83,15 @@ namespace NScumm.Core.Graphics
         public int Width { get { return Surfaces[0].Width; } }
 
         public int Height { get { return Surfaces[0].Height; } }
+
         #endregion
 
         #region Constructor
+
         public VirtScreen(int top, int width, int height, PixelFormat format, int numBuffers, bool trick = false)
         {
-            if (numBuffers <= 0) throw new ArgumentOutOfRangeException("numBuffers", numBuffers, "The number of buffers should be positive.");
+            if (numBuffers <= 0)
+                throw new ArgumentOutOfRangeException("numBuffers", numBuffers, "The number of buffers should be positive.");
 
             TopLine = top;
             _surfaces = new Surface[numBuffers];
@@ -96,10 +102,13 @@ namespace NScumm.Core.Graphics
             }
 
             SetDirtyRange(0, height);
+            HasTwoBuffers = Surfaces.Count == 2;
         }
+
         #endregion
 
         #region Methods
+
         public void SetDirtyRange(int top, int bottom)
         {
             for (int i = 0; i < 80 + 1; i++)
@@ -108,6 +117,7 @@ namespace NScumm.Core.Graphics
                 bdirty[i] = bottom;
             }
         }
-        #endregion        
+
+        #endregion
     }
 }

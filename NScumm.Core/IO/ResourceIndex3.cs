@@ -88,7 +88,7 @@ namespace NScumm.Core.IO
                     var b = dataName[i] ^ 0xFF;
                     name.Append((char)b);
                 }
-                roomNames.Add(room, name.ToString());
+                roomNames[room] = name.ToString();
             }
             RoomNames = roomNames;
         }

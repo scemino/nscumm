@@ -253,6 +253,15 @@ namespace NScumm.Core
                         SetShadowPalette(a, b, c, d, e, 0, 256);
                     }
                     break;
+                case 14:    // SO_LOAD_STRING
+                    {
+                        // This subopcode is used in Indy 4 to load the IQ points data.
+                        // See SO_SAVE_STRING for details
+                        var index = GetVarOrDirectByte(OpCodeParameter.Param1);
+                        var filename = ReadCharacters();
+                        // TODO: LoadString
+                    }
+                    break;
 
                 case 16:	// SO_CYCLE_SPEED
                     {
@@ -265,90 +274,6 @@ namespace NScumm.Core
 
                 default:
                     throw new NotImplementedException();
-            }
-        }
-
-        void DarkenPalette(int redScale, int greenScale, int blueScale, int startColor, int endColor)
-        {
-            // TODO: DarkenPalette
-            if (startColor <= endColor)
-            {
-                var max = _game.Version >= 5 ? 252 : 255;
-                                
-                for (var j = startColor; j <= endColor; j++)
-                {
-                    var color = _currentPalette.Colors[j];
-                    var red = (color.R * redScale) / 255.0;
-                    if (red > max)
-                        red = max;
-                    
-                    var green = (color.G * greenScale) / 255.0;
-                    if (green > max)
-                        green = max;
-
-                    var blue = (color.B * blueScale) / 255.0;
-                    if (blue > max)
-                        blue = max;
-
-                    _currentPalette.Colors[j] = Color.FromRgb((int)red, (int)green, (int)blue);
-                    SetDirtyColors(startColor, endColor);
-//                    if (_game.features & GF_16BIT_COLOR)
-//                        _16BitPalette[idx] = get16BitColor(_currentPalette[idx * 3 + 0], _currentPalette[idx * 3 + 1], _currentPalette[idx * 3 + 2]);
-                }
-            }
-
-        }
-
-        void SetPalColor(int index, int r, int g, int b)
-        {
-            _currentPalette.Colors[index] = Color.FromRgb(r, g, b);
-
-//            if (_game.Features.HasFlag(GameFeatures.SixteenColors))
-//                _16BitPalette[idx] = get16BitColor(r, g, b);
-
-            SetDirtyColors(index, index);
-        }
-
-        void SetShadowPalette(int redScale, int greenScale, int blueScale, int startColor, int endColor, int start, int end)
-        {
-            // This is an implementation based on the original games code.
-            //
-            // The four known rooms where setShadowPalette is used in atlantis are:
-            //
-            // 1) FOA Room 53: subway departing Knossos for Atlantis.
-            // 2) FOA Room 48: subway crashing into the Atlantis entrance area
-            // 3) FOA Room 82: boat/sub shadows while diving near Thera
-            // 4) FOA Room 23: the big machine room inside Atlantis
-            //
-            // There seems to be no explanation for why this function is called
-            // from within Room 23 (the big machine), as it has no shadow effects
-            // and thus doesn't result in any visual differences.
-
-
-            for (var i = start; i < end; i++)
-            {
-                var r = ((_currentPalette.Colors[i].R >> 2) * redScale) >> 8;
-                var g = ((_currentPalette.Colors[i].G >> 2) * greenScale) >> 8;
-                var b = ((_currentPalette.Colors[i].B >> 2) * blueScale) >> 8;
-
-                var bestitem = 0;
-                uint bestsum = 32000;
-
-                for (var j = startColor; j <= endColor; j++)
-                {
-                    int ar = _currentPalette.Colors[j].R >> 2;
-                    int ag = _currentPalette.Colors[j].G >> 2;
-                    int ab = _currentPalette.Colors[j].B >> 2;
-
-                    uint sum = (uint)(Math.Abs(ar - r) + Math.Abs(ag - g) + Math.Abs(ab - b));
-
-                    if (sum < bestsum)
-                    {
-                        bestsum = sum;
-                        bestitem = j;
-                    }
-                }
-                _shadowPalette[i] = (byte)bestitem;
             }
         }
 

@@ -22,7 +22,7 @@ using System.Linq;
 using System.Text;
 using System.Xml.Linq;
 
-namespace NScumm.Core
+namespace NScumm.Core.IO
 {
     [Flags]
     public enum GameFeatures
@@ -61,7 +61,7 @@ namespace NScumm.Core
 
         static GameManager()
         {
-            using (var stream = typeof(GameManager).Assembly.GetManifestResourceStream("NScumm.Core.Nscumm.xml"))
+            using (var stream = typeof(GameManager).Assembly.GetManifestResourceStream("NScumm.Core.IO.Nscumm.xml"))
             {
                 doc = XDocument.Load(stream);
             }

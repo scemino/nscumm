@@ -15,6 +15,7 @@
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
 using OpenTK;
+using NScumm.Core.IO;
 
 #region Using Statements
 using System;

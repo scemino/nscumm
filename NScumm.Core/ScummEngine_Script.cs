@@ -193,28 +193,6 @@ namespace NScumm.Core
                 StopScript(script);
         }
 
-        void SetCurrentPalette()
-        {
-            if (roomData != null && roomData.HasPalette)
-            {
-                if (_game.Version < 5)
-                {
-                    Array.Copy(roomData.Palette.Colors, _currentPalette.Colors, roomData.Palette.Colors.Length);
-                }
-                else
-                {
-                    for (int i = 0; i < roomData.Palette.Colors.Length; i++)
-                    {
-                        var color = roomData.Palette.Colors[i];
-                        if (i <= 15 || color.R < 252 || color.G < 252 || color.B < 252)
-                        {
-                            _currentPalette.Colors[i] = color;
-                        }
-                    }
-                }
-            }
-        }
-
         void StartScene(byte room, Actor a = null, int objectNr = 0)
         {
             StopTalk();
@@ -402,6 +380,10 @@ namespace NScumm.Core
 
         public TimeSpan RunBootScript(int bootParam = 0)
         {
+            if (_game.Id == "atlantis" && bootParam == 0)
+            {
+                bootParam = -7873;
+            }
             RunScript(1, false, false, new [] { bootParam });
             return GetTimeToWaitBeforeLoop(TimeSpan.Zero);
         }

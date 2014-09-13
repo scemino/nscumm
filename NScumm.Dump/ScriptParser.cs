@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System;
 using System.Linq;
 using NScumm.Core;
+using NScumm.Core.IO;
 
 namespace NScumm.Tmp
 {

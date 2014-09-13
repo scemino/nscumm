@@ -48,7 +48,6 @@
     <Compile Include="CostumeData.cs" />
     <Compile Include="Cursor.cs" />
     <Compile Include="FlashLight.cs" />
-    <Compile Include="GameManager.cs" />
     <Compile Include="Graphics\CharsetRenderer.cs" />
     <Compile Include="Graphics\CharsetRendererClassic.cs" />
     <Compile Include="Graphics\Color.cs" />
@@ -63,7 +62,6 @@
     <Compile Include="NestedScript.cs" />
     <Compile Include="ObjectData.cs" />
     <Compile Include="Graphics\Point.cs" />
-    <Compile Include="Palette.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Graphics\Rect.cs" />
     <Compile Include="Room.cs" />
@@ -130,14 +128,16 @@
     <Compile Include="IO\ResourceFile5.cs" />
     <Compile Include="Graphics\ImageData.cs" />
     <Compile Include="ScummEngine5.cs" />
+    <Compile Include="IO\GameManager.cs" />
+    <Compile Include="ScummEngine_Palette.cs" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Nscumm.xml">
+    <EmbeddedResource Include="IO\Nscumm.xml">
       <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Nscumm.xsd">
+    <None Include="IO\Nscumm.xsd">
       <SubType>Designer</SubType>
     </None>
   </ItemGroup>

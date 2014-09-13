@@ -191,6 +191,16 @@ namespace NScumm.Tmp
                     }
                     break;
 
+                case 14:    // SO_LOAD_STRING
+                    {
+                        // This subopcode is used in Indy 4 to load the IQ points data.
+                        // See SO_SAVE_STRING for details
+                        var index = GetVarOrDirectByte(OpCodeParameter.Param1);
+                        var filename = ReadCharacters();
+                        yield return new MethodInvocation("LoadString").AddArguments(index, filename).ToStatement();
+                    }
+                    break;
+
                 case 16:	// SO_CYCLE_SPEED
                     {
                         a = GetVarOrDirectByte(OpCodeParameter.Param1);

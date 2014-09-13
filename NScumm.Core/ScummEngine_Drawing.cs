@@ -21,6 +21,7 @@
 using System;
 using NScumm.Core.Graphics;
 using System.IO;
+using NScumm.Core.IO;
 
 namespace NScumm.Core
 {
@@ -177,7 +178,7 @@ namespace NScumm.Core
             Gdi.IsZBufferEnabled = false;
 
             var hasTwoBufs = vs.HasTwoBuffers;
-            //vs.HasTwoBuffers=false;
+            vs.HasTwoBuffers = false;
 
             int xStrip = x / 8;
             int yDiff = y - vs.TopLine;
@@ -203,7 +204,7 @@ namespace NScumm.Core
             vst.OldRect = vst.CurRect;
 
             Gdi.IsZBufferEnabled = true;
-            //vs.HasTwoBuffers=hasTwoBufs;
+            vs.HasTwoBuffers = hasTwoBufs;
         }
 
         void DrawString(int a, byte[] msg)
@@ -529,9 +530,9 @@ namespace NScumm.Core
 
         void RedrawBGStrip(int start, int num)
         {
-            int s = _screenStartStrip + start;
+            var s = _screenStartStrip + start;
 
-            for (int i = 0; i < num; i++)
+            for (var i = 0; i < num; i++)
                 Gdi.SetGfxUsageBit(s + i, Gdi.UsageBitDirty);
 
             if (roomData.Data != null)

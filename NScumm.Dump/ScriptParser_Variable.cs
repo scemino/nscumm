@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using NScumm.Core;
+using NScumm.Core.IO;
 
 namespace NScumm.Tmp
 {

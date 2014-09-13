@@ -55,7 +55,7 @@ namespace NScumm.Core
             }
         }
 
-        void DoCycleIndirectPalette(byte[] palette, byte cycleStart, byte cycleEnd, bool forward)
+        static void DoCycleIndirectPalette(byte[] palette, byte cycleStart, byte cycleEnd, bool forward)
         {
             int num = cycleEnd - cycleStart + 1;
             int i;
@@ -87,7 +87,7 @@ namespace NScumm.Core
             if (forward)
             {
                 var tmp = palette.Colors[cycleEnd];
-                Buffer.BlockCopy(palette.Colors, cycleStart, palette.Colors, cycleStart + 1, num);
+                Array.Copy(palette.Colors, cycleStart, palette.Colors, cycleStart + 1, num);
                 palette.Colors[cycleStart] = tmp;
             }
             else

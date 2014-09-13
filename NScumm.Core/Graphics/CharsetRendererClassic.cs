@@ -106,7 +106,8 @@ namespace NScumm.Core.Graphics
                 TextScreen = vs;
             }
 
-            PrintCharIntern(_fontPtr, _charPos + 17, _origWidth, _origHeight, _width, _height, vs, ignoreCharsetMask);
+            var offset = (Vm.Game.Version == 4) ? 17 : 29;
+            PrintCharIntern(_fontPtr, _charPos + offset, _origWidth, _origHeight, _width, _height, vs, ignoreCharsetMask);
 
             Left += _origWidth;
 
@@ -138,7 +139,10 @@ namespace NScumm.Core.Graphics
             if (_fontPtr == null)
                 throw new NotSupportedException(string.Format("CharsetRendererCommon::setCurID: charset {0} not found", id));
 
-            _fontPos = 17;
+            if (Vm.Game.Version == 4)
+                _fontPos = 17;
+            else
+                _fontPos = 29;
 
             _fontHeight = _fontPtr[_fontPos + 1];
             NumChars = ((uint)_fontPtr[_fontPos + 2]) | (((uint)_fontPtr[_fontPos + 3]) << 8);
@@ -189,14 +193,14 @@ namespace NScumm.Core.Graphics
             if (DisableOffsX)
             {
                 _offsX = 0;
-                reader.ReadByte();
+                reader.ReadSByte();
             }
             else
             {
                 _offsX = reader.ReadSByte();
             }
 
-            _offsY = reader.ReadByte();
+            _offsY = reader.ReadSByte();
 
             _charPos += 4;	// Skip over char header
             return true;

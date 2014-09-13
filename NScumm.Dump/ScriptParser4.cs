@@ -41,7 +41,7 @@ namespace NScumm.Tmp
             opCodes[0x4C] = SoundKludge;
         }
 
-        IEnumerable<Statement> GetActorScale()
+        protected IEnumerable<Statement> GetActorScale()
         {
             var indexExp = GetResultIndexExpression();
             var actor = GetVarOrDirectByte(OpCodeParameter.Param1);
@@ -51,7 +51,7 @@ namespace NScumm.Tmp
                     "Scale"));
         }
 
-        IEnumerable<Statement> SoundKludge()
+        protected IEnumerable<Statement> SoundKludge()
         {
             var items = GetWordVarArgs();
             yield return new MethodInvocation("SoundKludge").AddArguments(items).ToStatement();

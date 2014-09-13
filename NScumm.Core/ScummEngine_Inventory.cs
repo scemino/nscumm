@@ -24,72 +24,78 @@ using System.Linq;
 
 namespace NScumm.Core
 {
-	partial class ScummEngine
-	{
-		readonly ushort[] _inventory = new ushort[NumInventory];
-		ObjectData[] _invData = new ObjectData[NumInventory];
+    partial class ScummEngine
+    {
+        readonly ushort[] _inventory = new ushort[NumInventory];
+        ObjectData[] _invData = new ObjectData[NumInventory];
 
-		void GetInventoryCount ()
-		{
-			GetResult ();
-			SetResult (GetInventoryCount (GetVarOrDirectByte (OpCodeParameter.Param1)));
-		}
+        void GetInventoryCount()
+        {
+            GetResult();
+            SetResult(GetInventoryCount(GetVarOrDirectByte(OpCodeParameter.Param1)));
+        }
 
-		void FindInventory ()
-		{
-			GetResult ();
-			int x = GetVarOrDirectByte (OpCodeParameter.Param1);
-			int y = GetVarOrDirectByte (OpCodeParameter.Param2);
-			SetResult (FindInventory (x, y));
-		}
+        void FindInventory()
+        {
+            GetResult();
+            int x = GetVarOrDirectByte(OpCodeParameter.Param1);
+            int y = GetVarOrDirectByte(OpCodeParameter.Param2);
+            SetResult(FindInventory(x, y));
+        }
 
-		int GetInventorySlot ()
-		{
-			for (int i = 0; i < NumInventory; i++) {
-				if (_inventory [i] == 0)
-					return i;
-			}
-			return -1;
-		}
+        int GetInventorySlot()
+        {
+            for (int i = 0; i < NumInventory; i++)
+            {
+                if (_inventory[i] == 0)
+                    return i;
+            }
+            return -1;
+        }
 
-		void AddObjectToInventory (int obj, byte room)
-		{
-			var slot = GetInventorySlot ();
-			if (GetWhereIsObject (obj) == WhereIsObject.FLObject) {
-				GetObjectIndex (obj);
-				throw new NotImplementedException ();
-			} else {
-				var objs = _resManager.GetRoom (room).Objects;
-				var objFound = (from o in objs
-				                where o.Number == obj
-				                select o).FirstOrDefault ();
-				_invData [slot] = objFound;
-			}
-			_inventory [slot] = (ushort)obj;
-		}
+        protected void AddObjectToInventory(int obj, byte room)
+        {
+            var slot = GetInventorySlot();
+            if (GetWhereIsObject(obj) == WhereIsObject.FLObject)
+            {
+                GetObjectIndex(obj);
+                throw new NotImplementedException();
+            }
+            else
+            {
+                var objs = _resManager.GetRoom(room).Objects;
+                var objFound = (from o in objs
+                                where o.Number == obj
+                                select o).FirstOrDefault();
+                _invData[slot] = objFound;
+            }
+            _inventory[slot] = (ushort)obj;
+        }
 
-		int GetInventoryCount (int owner)
-		{
-			int i, obj;
-			int count = 0;
-			for (i = 0; i < NumInventory; i++) {
-				obj = _inventory [i];
-				if (obj != 0 && GetOwner (obj) == owner)
-					count++;
-			}
-			return count;
-		}
+        int GetInventoryCount(int owner)
+        {
+            int i, obj;
+            int count = 0;
+            for (i = 0; i < NumInventory; i++)
+            {
+                obj = _inventory[i];
+                if (obj != 0 && GetOwner(obj) == owner)
+                    count++;
+            }
+            return count;
+        }
 
-		int FindInventory (int owner, int idx)
-		{
-			int count = 1, i, obj;
-			for (i = 0; i < NumInventory; i++) {
-				obj = _inventory [i];
-				if (obj != 0 && GetOwner (obj) == owner && count++ == idx)
-					return obj;
-			}
-			return 0;
-		}
-	}
+        int FindInventory(int owner, int idx)
+        {
+            int count = 1, i, obj;
+            for (i = 0; i < NumInventory; i++)
+            {
+                obj = _inventory[i];
+                if (obj != 0 && GetOwner(obj) == owner && count++ == idx)
+                    return obj;
+            }
+            return 0;
+        }
+    }
 }
 

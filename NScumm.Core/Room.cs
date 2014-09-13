@@ -29,6 +29,27 @@ namespace NScumm.Core
         public ushort NumObjects { get; set; }
     }
 
+    public class ZPlane
+    {
+        public int Id
+        {
+            get;
+            private set;
+        }
+
+        public byte[] Data
+        {
+            get;
+            private set;
+        }
+
+        public ZPlane(int id, byte[] data)
+        {
+            Id = id;
+            Data = data;
+        }
+    }
+
     public class Room
     {
         public RoomHeader Header { get; set; }
@@ -52,6 +73,10 @@ namespace NScumm.Core
         public int Number { get; set; }
 
         public byte[] Data { get; set; }
+
+        public ImageData Image { get; set; }
+
+        public int NumZBuffer { get; set; }
 
         public ScaleSlot[] Scales { get; set; }
 

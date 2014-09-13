@@ -23,7 +23,21 @@ namespace NScumm.Tmp
 
         public static ScriptParser Create(GameInfo info)
         {
-            var parser = info.Version == 3 ? (ScriptParser)new ScriptParser3(info) : new ScriptParser4(info);
+            ScriptParser parser;
+            switch (info.Version)
+            {
+                case 3:
+                    parser = new ScriptParser3(info);
+                    break;
+                case 4:
+                    parser = new ScriptParser4(info);
+                    break;
+                case 5:
+                    parser = new ScriptParser5(info);
+                    break;
+                default:
+                    throw new NotSupportedException(string.Format("SCUMM version {0} not supported.", info.Version));
+            }
             parser.InitOpCodes();
             return parser;
         }
@@ -373,25 +387,23 @@ namespace NScumm.Tmp
                     break;
 
                 case 16:        // SO_UNLOCK_ROOM
-                    yield return new ExpressionStatement(
-                        new MethodInvocation("UnlockRoom").
-					AddArgument(resId));
+                    yield return new MethodInvocation("UnlockRoom").AddArgument(resId).ToStatement();
                     break;
 
                 case 17:
-                    yield return new ExpressionStatement(
-                        new MethodInvocation("ClearHeap"));
+                    yield return 
+                        new MethodInvocation("ClearHeap").ToStatement();
                     break;
 
                 case 18:
-                    yield return new ExpressionStatement(
-                        new MethodInvocation("LoadCharset").
-					AddArgument(resId));
+                    yield return new MethodInvocation("LoadCharset").AddArgument(resId).ToStatement();
                     break;
                 case 19:
-                    yield return new ExpressionStatement(
-                        new MethodInvocation("UnloadCharset").
-					AddArgument(resId));
+                    yield return new MethodInvocation("UnloadCharset").AddArgument(resId).ToStatement();
+                    break;
+                case 20:        // SO_LOAD_OBJECT
+                    var a = GetVarOrDirectWord(OpCodeParameter.Param2);
+                    yield return new MethodInvocation("LoadObject").AddArguments(resId, a).ToStatement();
                     break;
                 default:
                     throw new NotImplementedException(string.Format("ResourceRoutines #{0} is not yet implemented, sorry :(", op));
@@ -496,7 +508,7 @@ namespace NScumm.Tmp
                     break;
 
                 default:
-                    throw new NotImplementedException(string.Format("CursorCommand sub opcode #{0} not implemented",_opCode & 0x1F));
+                    throw new NotImplementedException(string.Format("CursorCommand sub opcode #{0} not implemented", _opCode & 0x1F));
             }
         }
     }

@@ -24,7 +24,7 @@ namespace NScumm.Core.Graphics
 
         public Palette()
         {
-            this.Colors = new Color[256];
+            Colors = new Color[256];
         }
     }
 }

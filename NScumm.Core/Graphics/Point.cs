@@ -19,7 +19,8 @@ using System;
 
 namespace NScumm.Core.Graphics
 {
-	public struct Point: IEquatable<Point>
+    [System.Diagnostics.DebuggerDisplay("{DebuggerDisplay,nq}")]
+    public struct Point: IEquatable<Point>
     {
         /// <summary>
         /// The horizontal part of the point.
@@ -57,25 +58,25 @@ namespace NScumm.Core.Graphics
             return X ^ Y;
         }
 
-		public bool Equals(Point point)
-		{
-			return point.X == X && point.Y == Y;
-		}
+        public bool Equals(Point point)
+        {
+            return point.X == X && point.Y == Y;
+        }
 
         public override bool Equals(object obj)
         {
             if (obj is Point)
             {
-				return Equals ((Point)obj);
+                return Equals((Point)obj);
             }
             return false;
         }
 
-		public Point Offset(short x, short y)
+        public Point Offset(short x, short y)
         {
             X += x;
             Y += y;
-			return this;
+            return this;
         }
 
         /// <summary>
@@ -94,6 +95,14 @@ namespace NScumm.Core.Graphics
                 return 0xFFFFFF;
 
             return (uint)(diffx * diffx + diffy * diffy);
+        }
+
+        internal string DebuggerDisplay
+        {
+            get
+            { 
+                return string.Format("({0}, {1})", X, Y);
+            }    
         }
     }
 }

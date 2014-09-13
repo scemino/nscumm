@@ -26,18 +26,18 @@ using System;
 
 namespace NScumm.Core.IO
 {
-	public class ResourceFile3: ResourceFile
-	{
-		public ResourceFile3 (string path, byte encByte)
-			: base (path, encByte)
-		{
+    public class ResourceFile3: ResourceFile
+    {
+        public ResourceFile3(string path, byte encByte)
+            : base(path, encByte)
+        {
 			
-		}
+        }
 
-		public override Dictionary<byte, long> ReadRoomOffsets ()
-		{
-			return new Dictionary<byte, long> ();
-		}
+        public override Dictionary<byte, long> ReadRoomOffsets()
+        {
+            return new Dictionary<byte, long>();
+        }
 
         protected virtual Box ReadBox(ref int size)
         {
@@ -272,7 +272,7 @@ namespace NScumm.Core.IO
                         case 0x4E45:
                             {
                                 // Entry script
-                                byte[] entryScript = _reader.ReadBytes((int)(it.Current.Size - 6));
+                                var entryScript = _reader.ReadBytes((int)(it.Current.Size - 6));
                                 if (room.EntryScript.Data == null)
                                 {
                                     room.EntryScript.Data = entryScript;
@@ -371,13 +371,13 @@ namespace NScumm.Core.IO
                                 SetObjectImage(stripsDic, data);
                             }
                             break;
-                            //case 0x4F53:
-                            //    {
-                            //        // SO
-                            //        its.Push(it);
-                            //        it = new ChunkIterator(_reader, it.Current.Size);
-                            //    }
-                            //    break;
+                    //case 0x4F53:
+                    //    {
+                    //        // SO
+                    //        its.Push(it);
+                    //        it = new ChunkIterator(_reader, it.Current.Size);
+                    //    }
+                    //    break;
                         default:
                             System.Diagnostics.Debug.WriteLine("Ignoring Resource Tag: {0:X2} ({2}{3}), Size: {1:X4}",
                                 it.Current.Tag, it.Current.Size, (char)(it.Current.Tag & 0x00FF), (char)(it.Current.Tag >> 8));
@@ -390,7 +390,7 @@ namespace NScumm.Core.IO
             return room;
         }
 
-        #region Private Methods
+        #region Protected Methods
 
         byte[] ReadObjectName(IEnumerator<Chunk> it, byte nameOffset)
         {
@@ -405,7 +405,7 @@ namespace NScumm.Core.IO
             return name.ToArray();
         }
 
-        void ReadVerbTable(ObjectData data, int size)
+        protected void ReadVerbTable(ObjectData data, int size)
         {
             var tableLength = (size - 1) / 3;
             for (int i = 0; i < tableLength; i++)
@@ -430,7 +430,7 @@ namespace NScumm.Core.IO
             }
         }
 
-        RoomHeader ReadRMHD()
+        protected RoomHeader ReadRMHD()
         {
             var header = new RoomHeader
             {
@@ -441,7 +441,7 @@ namespace NScumm.Core.IO
             return header;
         }
 
-        ColorCycle[] ReadCYCL()
+        protected virtual ColorCycle[] ReadCYCL()
         {
             var colorCycle = new ColorCycle[16];
             for (int i = 0; i < 16; i++)
@@ -465,7 +465,7 @@ namespace NScumm.Core.IO
             return colorCycle;
         }
 
-        ScaleSlot[] ReadSCAL()
+        protected ScaleSlot[] ReadSCAL()
         {
             var scales = new ScaleSlot[4];
             for (int i = 0; i < 4; i++)
@@ -479,12 +479,12 @@ namespace NScumm.Core.IO
             return scales;
         }
 
-        byte[] ReadEPAL()
+        protected byte[] ReadEPAL()
         {
             return _reader.ReadBytes(256);
         }
 
         #endregion
-	}
+    }
 	
 }

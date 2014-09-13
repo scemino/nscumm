@@ -21,6 +21,7 @@
 
 using System;
 using System.Linq;
+using NScumm.Core.Graphics;
 
 namespace NScumm.Core
 {
@@ -83,11 +84,17 @@ namespace NScumm.Core
             cutScene.Override.Pointer = _currentPos;
             cutScene.Override.Script = _currentScript;
 
+
             // Skip the jump instruction following the override instruction
             // (the jump is responsible for "skipping" cutscenes, and the reason
             // why we record the current script position in vm.cutScenePtr).
             ReadByte();
             ReadWord();
+
+            if (Game.Version >= 5)
+            {
+                Variables[VariableOverride] = 0;
+            }
         }
 
         void EndOverrideCore()
@@ -186,7 +193,29 @@ namespace NScumm.Core
                 StopScript(script);
         }
 
-        void StartScene(byte room)
+        void SetCurrentPalette()
+        {
+            if (roomData != null && roomData.HasPalette)
+            {
+                if (_game.Version < 5)
+                {
+                    Array.Copy(roomData.Palette.Colors, _currentPalette.Colors, roomData.Palette.Colors.Length);
+                }
+                else
+                {
+                    for (int i = 0; i < roomData.Palette.Colors.Length; i++)
+                    {
+                        var color = roomData.Palette.Colors[i];
+                        if (i <= 15 || color.R < 252 || color.G < 252 || color.B < 252)
+                        {
+                            _currentPalette.Colors[i] = color;
+                        }
+                    }
+                }
+            }
+        }
+
+        void StartScene(byte room, Actor a = null, int objectNr = 0)
         {
             StopTalk();
 
@@ -233,7 +262,7 @@ namespace NScumm.Core
 
             SetDirtyColors(0, 255);
 
-            _variables[VariableRoom] = room;
+            Variables[VariableRoom] = room;
             _fullRedraw = true;
 
             _currentRoom = room;
@@ -243,7 +272,10 @@ namespace NScumm.Core
             else
                 _roomResource = room;
 
-            _variables[VariableRoomResource] = _roomResource;
+            Variables[VariableRoomResource] = _roomResource;
+
+            if (room != 0 && _game.Version == 5 && room == _roomResource)
+                Variables[VariableRoomFlag] = 1;
 
             ClearRoomObjects();
 
@@ -253,10 +285,7 @@ namespace NScumm.Core
             }
 
             roomData = _resManager.GetRoom(_roomResource);
-            if (roomData != null && roomData.HasPalette)
-            {
-                Array.Copy(roomData.Palette.Colors, _currentPalette.Colors, roomData.Palette.Colors.Length);
-            }
+            SetCurrentPalette();
 
             Gdi.NumZBuffer = GetNumZBuffers();
 
@@ -277,16 +306,40 @@ namespace NScumm.Core
 
             Gdi.ClearGfxUsageBits();
 
+            if (_game.Version >= 5 && a != null)
+            {
+                var where = GetWhereIsObject(objectNr);
+                if (where != WhereIsObject.Room && where != WhereIsObject.FLObject)
+                    throw new NotSupportedException(string.Format("StartScene: Object {0} is not in room {1}", objectNr, _currentRoom));
+
+                Point pos;
+                int dir;
+                GetObjectXYPos(objectNr, out pos, out dir);
+                a.PutActor(pos, _currentRoom);
+                a.SetDirection(dir + 180);
+                a.StopActorMoving();
+            }
+
             ShowActors();
 
             _egoPositioned = false;
 
             RunEntryScript();
 
+            if (_game.Version >= 5)
+            {
+                if (a != null && !_egoPositioned)
+                {
+                    var pos = GetObjectXYPos(objectNr);
+                    a.PutActor(pos, _currentRoom);
+                    a.Moving = 0;
+                }
+            }
+
             _doEffect = true;
         }
 
-        void RunInventoryScript(int i)
+        protected void RunInventoryScript(int i)
         {
             if (_variables[VariableInventoryScript] != 0)
             {
@@ -361,7 +414,7 @@ namespace NScumm.Core
             for (int i = 0; i < NumScriptSlot; i++)
             {
                 if (script == _slots[i].Number && _slots[i].Status != ScriptStatus.Dead &&
-                (_slots[i].Where == WhereIsObject.Global || _slots[i].Where == WhereIsObject.Local))
+                    (_slots[i].Where == WhereIsObject.Global || _slots[i].Where == WhereIsObject.Local))
                 {
                     _slots[i].Number = 0;
                     _slots[i].Status = ScriptStatus.Dead;
@@ -374,7 +427,7 @@ namespace NScumm.Core
             for (int i = 0; i < _numNestedScripts; ++i)
             {
                 if (_nest[i].Number == script &&
-                (_nest[i].Where == WhereIsObject.Global || _nest[i].Where == WhereIsObject.Local))
+                    (_nest[i].Where == WhereIsObject.Global || _nest[i].Where == WhereIsObject.Local))
                 {
                     //nukeArrays(vm.nest[i].slot);
                     _nest[i].Number = 0xFF;
@@ -423,8 +476,8 @@ namespace NScumm.Core
             if (_slots[slotIndex].Where == WhereIsObject.Inventory)
             {
                 var data = (from o in _invData
-                            where o.Number == scriptNum
-                            select o.Script.Data).FirstOrDefault();
+                                        where o.Number == scriptNum
+                                        select o.Script.Data).FirstOrDefault();
                 _currentScriptData = data;
             }
             else if (scriptNum == 10002)
@@ -438,10 +491,10 @@ namespace NScumm.Core
             else if (_slots[slotIndex].Where == WhereIsObject.Room)
             {
                 var data = (from o in roomData.Objects
-                            where o.Number == scriptNum
-                            let entry = (byte)_slots[slotIndex].InventoryEntry
-                            where o.ScriptOffsets.ContainsKey(entry) || o.ScriptOffsets.ContainsKey(0xFF)
-                            select o.Script.Data).FirstOrDefault();
+                                        where o.Number == scriptNum
+                                        let entry = (byte)_slots[slotIndex].InventoryEntry
+                                        where o.ScriptOffsets.ContainsKey(entry) || o.ScriptOffsets.ContainsKey(0xFF)
+                                        select o.Script.Data).FirstOrDefault();
                 _currentScriptData = data;
             }
             else if (scriptNum < NumGlobalScripts)
@@ -456,10 +509,10 @@ namespace NScumm.Core
             else
             {
                 var data = (from o in roomData.Objects
-                            where o.Number == scriptNum
-                            let entry = (byte)_slots[slotIndex].InventoryEntry
-                            where o.ScriptOffsets.ContainsKey(entry) || o.ScriptOffsets.ContainsKey(0xFF)
-                            select o.Script.Data).FirstOrDefault();
+                                        where o.Number == scriptNum
+                                        let entry = (byte)_slots[slotIndex].InventoryEntry
+                                        where o.ScriptOffsets.ContainsKey(entry) || o.ScriptOffsets.ContainsKey(0xFF)
+                                        select o.Script.Data).FirstOrDefault();
                 _currentScriptData = data;
             }
         }
@@ -497,7 +550,7 @@ namespace NScumm.Core
                 // stopped in the meantime, and if it did not already move on.
                 var slot = _slots[nest.Slot];
                 if (slot.Number == nest.Number && slot.Where == nest.Where &&
-                slot.Status != ScriptStatus.Dead && !slot.Frozen)
+                    slot.Status != ScriptStatus.Dead && !slot.Frozen)
                 {
                     _currentScript = nest.Slot;
                     UpdateScriptData(nest.Slot);
@@ -560,7 +613,7 @@ namespace NScumm.Core
             {
                 for (int i = 0; i < NumScriptSlot; i++)
                     if (_slots[i].Number == sentenceScript && _slots[i].Status != ScriptStatus.Dead &&
-                    !_slots[i].Frozen)
+                        !_slots[i].Frozen)
                         return;
             }
 
@@ -604,10 +657,10 @@ namespace NScumm.Core
             if (roomData != null)
             {
                 objFound = (from o in roomData.Objects.Concat(_invData)
-                            where o != null
-                            where o.Number == obj
-                            where o.ScriptOffsets.ContainsKey(entry) || o.ScriptOffsets.ContainsKey(0xFF)
-                            select o).FirstOrDefault();
+                                        where o != null
+                                        where o.Number == obj
+                                        where o.ScriptOffsets.ContainsKey(entry) || o.ScriptOffsets.ContainsKey(0xFF)
+                                        select o).FirstOrDefault();
             }
 
             if (objFound == null)
@@ -640,7 +693,7 @@ namespace NScumm.Core
             for (int i = 0; i < NumScriptSlot; i++)
             {
                 if (script == _slots[i].Number && _slots[i].Status != ScriptStatus.Dead &&
-                (_slots[i].Where == WhereIsObject.Room || _slots[i].Where == WhereIsObject.Inventory || _slots[i].Where == WhereIsObject.FLObject))
+                    (_slots[i].Where == WhereIsObject.Room || _slots[i].Where == WhereIsObject.Inventory || _slots[i].Where == WhereIsObject.FLObject))
                 {
                     _slots[i].Number = 0;
                     _slots[i].Status = ScriptStatus.Dead;
@@ -652,7 +705,7 @@ namespace NScumm.Core
             for (int i = 0; i < _numNestedScripts; ++i)
             {
                 if (_nest[i].Number == script &&
-                (_nest[i].Where == WhereIsObject.Room || _nest[i].Where == WhereIsObject.Inventory || _nest[i].Where == WhereIsObject.FLObject))
+                    (_nest[i].Where == WhereIsObject.Room || _nest[i].Where == WhereIsObject.Inventory || _nest[i].Where == WhereIsObject.FLObject))
                 {
                     _nest[i].Number = 0xFF;
                     _nest[i].Slot = 0xFF;
@@ -693,7 +746,7 @@ namespace NScumm.Core
 
         void BeginCutscene(int[] args)
         {
-            int scr = _currentScript;
+            var scr = _currentScript;
             _slots[scr].CutSceneOverride++;
 
             var cutSceneData = new CutSceneData
@@ -715,23 +768,35 @@ namespace NScumm.Core
 
         void AbortCutscene()
         {
-            if (cutScene.Data.Count == 0)
+            int offs;
+            byte script;
+            if (cutScene.Override.Pointer != 0)
+            {
+                offs = cutScene.Override.Pointer;
+                script = cutScene.Override.Script;
+            }
+            else if (cutScene.Data.Count != 0)
+            {
+                var cutSceneData = cutScene.Data.Pop();
+                offs = cutSceneData.Pointer;
+                script = cutSceneData.Script;
+            }
+            else
+            {
                 return;
+            }
 
-            var cutSceneData = cutScene.Data.Peek();
-
-            var offs = cutSceneData.Pointer;
             if (offs != 0)
             {
-                _slots[cutSceneData.Script].Offset = (uint)offs;
-                _slots[cutSceneData.Script].Status = ScriptStatus.Running;
-                _slots[cutSceneData.Script].UnfreezeAll();
+                _slots[script].Offset = (uint)offs;
+                _slots[script].Status = ScriptStatus.Running;
+                _slots[script].UnfreezeAll();
 
-                if (_slots[cutSceneData.Script].CutSceneOverride > 0)
-                    _slots[cutSceneData.Script].CutSceneOverride--;
+                if (_slots[script].CutSceneOverride > 0)
+                    _slots[script].CutSceneOverride--;
 
                 _variables[VariableOverride] = 1;
-                cutSceneData.Pointer = 0;
+                cutScene.Override.Pointer = 0;
             }
         }
 

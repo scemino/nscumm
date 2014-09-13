@@ -15,36 +15,20 @@
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-namespace NScumm.Core.Graphics
+using NScumm.Core.IO;
+
+namespace NScumm.Core.IO
 {
-    interface ICostumeRenderer
+    class ResourceIndex4: ResourceIndex3
     {
-        int DrawTop { get; set; }
-
-        int DrawBottom { get; set; }
-
-        byte ActorID { get; set; }
-
-        byte ShadowMode { get; set; }
-
-        byte[] ShadowTable { get; set; }
-
-        int ActorX { get; set; }
-
-        int ActorY { get; set; }
-
-        byte ZBuffer { get; set; }
-
-        byte ScaleX { get; set; }
-
-        byte ScaleY { get; set; }
-
-        void SetPalette(ushort[] palette);
-
-        void SetFacing(Actor a);
-
-        void SetCostume(int costume, int shadow);
-
-        int DrawCostume(VirtScreen vs, int numStrips, Actor actor);
+        protected override byte GetEncodingByte(GameInfo game)
+        {
+            byte encByte = 0;
+            if (!game.Features.HasFlag(GameFeatures.Old256))
+            {
+                encByte = 0;
+            }
+            return encByte;
+        }
     }
 }

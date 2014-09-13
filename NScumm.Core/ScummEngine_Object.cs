@@ -130,7 +130,7 @@ namespace NScumm.Core
             JumpRelative(cond);
         }
 
-        void PickupObject()
+        protected virtual void PickupObject()
         {
             int obj = GetVarOrDirectWord(OpCodeParameter.Param1);
 
@@ -171,14 +171,14 @@ namespace NScumm.Core
             else
             {
                 var obj = (from o in _invData
-                           where o != null && o.Number == num
-                           select o).FirstOrDefault();
+                                       where o != null && o.Number == num
+                                       select o).FirstOrDefault();
 
                 if (obj == null)
                 {
                     obj = (from o in _objs
-                           where o.Number == num
-                           select o).FirstOrDefault();
+                                          where o.Number == num
+                                          select o).FirstOrDefault();
                 }
                 if (obj != null && obj.Name != null)
                 {
@@ -217,9 +217,8 @@ namespace NScumm.Core
             JumpRelative(GetState(a) != b);
         }
 
-        byte GetState(int obj)
+        protected byte GetState(int obj)
         {
-            ScummHelper.AssertRange(0, obj, NumGlobalObjects - 1, "object");
             return _resManager.ObjectStateTable[obj];
         }
 
@@ -280,25 +279,28 @@ namespace NScumm.Core
         {
             cls &= (ObjectClass)0x7F;
 
-            // Translate the new (V5) object classes to the old classes
-            // (for those which differ).
-            switch (cls)
+            if (Game.Version < 5)
             {
-                case ObjectClass.Untouchable:
-                    cls = (ObjectClass)24;
-                    break;
+                // Translate the new (V5) object classes to the old classes
+                // (for those which differ).
+                switch (cls)
+                {
+                    case ObjectClass.Untouchable:
+                        cls = (ObjectClass)24;
+                        break;
 
-                case ObjectClass.Player:
-                    cls = (ObjectClass)23;
-                    break;
+                    case ObjectClass.Player:
+                        cls = (ObjectClass)23;
+                        break;
 
-                case ObjectClass.XFlip:
-                    cls = (ObjectClass)19;
-                    break;
+                    case ObjectClass.XFlip:
+                        cls = (ObjectClass)19;
+                        break;
 
-                case ObjectClass.YFlip:
-                    cls = (ObjectClass)18;
-                    break;
+                    case ObjectClass.YFlip:
+                        cls = (ObjectClass)18;
+                        break;
+                }
             }
 
             return (_resManager.ClassData[obj] & (1 << ((int)cls - 1))) != 0;
@@ -378,11 +380,10 @@ namespace NScumm.Core
             return WhereIsObject.NotFound;
         }
 
-        void PutState(int obj, byte state)
+        protected void PutState(int obj, int state)
         {
-            ScummHelper.AssertRange(0, obj, NumGlobalObjects - 1, "object");
             ScummHelper.AssertRange(0, state, 0xFF, "state");
-            _resManager.ObjectStateTable[obj] = state;
+            _resManager.ObjectStateTable[obj] = (byte)state;
         }
 
         int GetObjectIndex(int obj)
@@ -403,41 +404,43 @@ namespace NScumm.Core
             _drawingObjects.Add(_objs[obj]);
         }
 
-        void ClearDrawObjectQueue()
+        protected void ClearDrawObjectQueue()
         {
             _drawingObjects.Clear();
         }
 
-        void PutOwner(int obj, byte owner)
+        protected void PutOwner(int obj, byte owner)
         {
             _resManager.ObjectOwnerTable[obj] = owner;
         }
 
-        void PutClass(int obj, int cls, bool set)
+        protected void PutClass(int obj, int cls, bool set)
         {
-            ScummHelper.AssertRange(0, obj, NumGlobalObjects - 1, "object");
             var cls2 = (ObjectClass)(cls & 0x7F);
             ScummHelper.AssertRange(1, (int)cls2, 32, "class");
 
-            // Translate the new (V5) object classes to the old classes
-            // (for those which differ).
-            switch (cls2)
+            if (_game.Version < 5)
             {
-                case ObjectClass.Untouchable:
-                    cls2 = (ObjectClass)24;
-                    break;
+                // Translate the new (V5) object classes to the old classes
+                // (for those which differ).
+                switch (cls2)
+                {
+                    case ObjectClass.Untouchable:
+                        cls2 = (ObjectClass)24;
+                        break;
 
-                case ObjectClass.Player:
-                    cls2 = (ObjectClass)23;
-                    break;
+                    case ObjectClass.Player:
+                        cls2 = (ObjectClass)23;
+                        break;
 
-                case ObjectClass.XFlip:
-                    cls2 = (ObjectClass)19;
-                    break;
+                    case ObjectClass.XFlip:
+                        cls2 = (ObjectClass)19;
+                        break;
 
-                case ObjectClass.YFlip:
-                    cls2 = (ObjectClass)18;
-                    break;
+                    case ObjectClass.YFlip:
+                        cls2 = (ObjectClass)18;
+                        break;
+                }
             }
 
             if (set)
@@ -445,7 +448,7 @@ namespace NScumm.Core
             else
                 ClassData[obj] &= (uint)~(1 << ((int)cls2 - 1));
 
-            if (obj >= 0 && obj < _actors.Length)
+            if (_game.Version < 5 && obj >= 0 && obj < _actors.Length)
             {
                 _actors[obj].ClassChanged(cls2, set);
             }
@@ -474,7 +477,7 @@ namespace NScumm.Core
                     if (b == 0)
                     {
                         if (_objs[i].Position.X <= x && (_objs[i].Width + _objs[i].Position.X) > x &&
-                        _objs[i].Position.Y <= y && (_objs[i].Height + _objs[i].Position.Y) > y)
+                            _objs[i].Position.Y <= y && (_objs[i].Height + _objs[i].Position.Y) > y)
                         {
                             return _objs[i].Number;
                         }
@@ -540,11 +543,7 @@ namespace NScumm.Core
 
         void DrawObject(int obj, int arg)
         {
-            ObjectData od = _objs[obj];
-            int height, width;
-
-            int x, a, numstrip;
-            int tmp;
+            var od = _objs[obj];
 
             if (_bgNeedsRedraw)
                 arg = 0;
@@ -552,29 +551,28 @@ namespace NScumm.Core
             if (od.Number == 0)
                 return;
 
-            ScummHelper.AssertRange(0, od.Number, NumGlobalObjects - 1, "object");
+            var xpos = (od.Position.X / 8);
+            var ypos = (int)od.Position.Y;
 
-            int xpos = (od.Position.X / 8);
-            int ypos = (int)od.Position.Y;
-
-            width = od.Width / 8;
-            height = (ushort)(od.Height &= 0xFFF8); // Mask out last 3 bits
+            var width = od.Width / 8;
+            var height = (od.Height &= 0xFFF8); // Mask out last 3 bits
 
             // Short circuit for objects which aren't visible at all.
             if (width == 0 || xpos > _screenEndStrip || xpos + width < _screenStartStrip)
                 return;
 
-            var ptr = (from o in roomData.Objects
-                       where o.Number == od.Number
-                       select o).First().Image;
-            if (ptr == null || ptr.Length == 0)
+            var objToDraw = (from o in roomData.Objects
+                                      where o.Number == od.Number
+                                      select o).FirstOrDefault();
+            if (objToDraw == null || objToDraw.Image == null && objToDraw.Images == null)
                 return;
 
-            x = 0xFFFF;
+            var x = 0xFFFF;
 
-            for (a = numstrip = 0; a < width; a++)
+            int numstrip;
+            for (var a = numstrip = 0; a < width; a++)
             {
-                tmp = xpos + a;
+                var tmp = xpos + a;
                 if (tmp < _screenStartStrip || _screenEndStrip < tmp)
                     continue;
                 if (arg > 0 && _screenStartStrip + arg <= tmp)
@@ -590,7 +588,15 @@ namespace NScumm.Core
             if (numstrip != 0)
             {
                 var flags = od.Flags | DrawBitmaps.ObjectMode;
-                Gdi.DrawBitmap(ptr, _mainVirtScreen, x, ypos, width * 8, height, x - xpos, numstrip, flags);
+                if (objToDraw.Image != null)
+                {
+                    Gdi.DrawBitmap(objToDraw.Image, _mainVirtScreen, x, ypos, width * 8, height, x - xpos, numstrip, flags);
+                }
+                else
+                {
+                    var state = GetState(od.Number);
+                    Gdi.DrawBitmap(objToDraw.Images[state - 1], _mainVirtScreen, x, ypos, width * 8, height, x - xpos, numstrip, flags);
+                }
             }
         }
 

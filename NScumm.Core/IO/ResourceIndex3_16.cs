@@ -25,7 +25,7 @@ using System.Collections.ObjectModel;
 
 namespace NScumm.Core
 {
-    class ResourceIndex3_16: ResourceIndex
+    class ResourceIndex3_16: ResourceIndex3
     {
         protected override void LoadIndex(GameInfo game)
         {
@@ -50,7 +50,7 @@ namespace NScumm.Core
         {
             var num = br.ReadByte();
             var rooms = new Resource[num];
-            var tmp = br.ReadBytes(num);
+            br.ReadBytes(num); // disk file numbers
             for (int i = 0; i < num; i++)
             {
                 var offset = ToOffset(br.ReadUInt16());
@@ -62,19 +62,6 @@ namespace NScumm.Core
         static uint ToOffset(ushort offset)
         {
             return offset == 0xFFFF ? 0xFFFFFFFF : offset;
-        }
-
-        static Resource[] ReadResTypeList(XorReader br)
-        {
-            var num = br.ReadByte();
-            var res = new Resource[num];
-            var rooms = br.ReadBytes(num);
-            for (int i = 0; i < num; i++)
-            {
-                var offset = ToOffset(br.ReadUInt16());
-                res[i] = new Resource{ RoomNum = rooms[i], Offset = offset };
-            }
-            return res;
         }
     }
 }

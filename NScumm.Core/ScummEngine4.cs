@@ -52,7 +52,7 @@ namespace NScumm.Core
             SetResult((int)actor.ScaleX);
         }
 
-        void SoundKludge()
+        protected void SoundKludge()
         {
             var items = GetWordVarArgs();
             _sound.SoundKludge(items);

@@ -123,6 +123,13 @@
     <Compile Include="ScummEngine3.cs" />
     <Compile Include="IO\ResourceIndex3_16.cs" />
     <Compile Include="IO\ResourceFile3_16.cs" />
+    <Compile Include="IO\ResourceManager5.cs" />
+    <Compile Include="IO\ResourceIndex3.cs" />
+    <Compile Include="IO\ResourceIndex4.cs" />
+    <Compile Include="IO\ResourceIndex5.cs" />
+    <Compile Include="IO\ResourceFile5.cs" />
+    <Compile Include="Graphics\ImageData.cs" />
+    <Compile Include="ScummEngine5.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Nscumm.xml">

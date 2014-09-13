@@ -69,8 +69,9 @@ namespace NScumm.Core
         const int VariableCursorState = 0x34;
         const int VariableUserPut = 0x35;
         const int VariableTalkStringY = 0x36;
+        const int VariableRoomFlag = 0x46;
 
-        int[] _variables;
+        protected int[] _variables;
         BitArray _bitVars = new BitArray(4096);
         Stack<int> _stack = new Stack<int>();
         int _resultVarIndex;
@@ -153,6 +154,10 @@ namespace NScumm.Core
             {
                 //Console.WriteLine("ReadVariable({0}) => {1}", var, _variables[var]);
                 ScummHelper.AssertRange(0, var, NumVariables - 1, "variable (reading)");
+                if (var == 490 && _game.Id == "monkey2")
+                {
+                    var = 518;
+                }
                 return _variables[var];
             }
 
@@ -168,7 +173,7 @@ namespace NScumm.Core
                 }
                 var &= 0x7FFF;
 
-                ScummHelper.AssertRange(0, _resultVarIndex, _bitVars.Length - 1, "variable (reading)");
+                ScummHelper.AssertRange(0, var, _bitVars.Length - 1, "variable (reading)");
                 return _bitVars[var] ? 1 : 0;
             }
 
@@ -190,7 +195,7 @@ namespace NScumm.Core
             throw new NotSupportedException("Illegal varbits (r)");
         }
 
-        int GetVarOrDirectWord(OpCodeParameter param)
+        protected int GetVarOrDirectWord(OpCodeParameter param)
         {
             if (((OpCodeParameter)_opCode).HasFlag(param))
                 return GetVar();

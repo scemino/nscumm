@@ -66,8 +66,8 @@ namespace NScumm.Core.IO
             get
             {
                 var roomIndices = (from res in Enumerable.Range(1, Index.RoomResources.Count - 1)
-                                   where Index.RoomResources[res].RoomNum != 0 && Index.RoomResources[res].Offset != 0xFFFFFFFF
-                                   select (byte)res).Distinct();
+                                               where Index.RoomResources[res].RoomNum != 0 && Index.RoomResources[res].Offset != 0xFFFFFFFF
+                                               select (byte)res).Distinct();
                 Room room = null;
                 foreach (var i in roomIndices)
                 {
@@ -144,6 +144,8 @@ namespace NScumm.Core.IO
                     return new ResourceManager3(game); 
                 case 4:
                     return new ResourceManager4(game); 
+                case 5:
+                    return new ResourceManager5(game); 
                 default:
                     throw new NotSupportedException(string.Format("ResourceManager {0} is not supported", game.Version)); 
             }

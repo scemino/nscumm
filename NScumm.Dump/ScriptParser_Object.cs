@@ -106,7 +106,7 @@ namespace NScumm.Tmp
             yield return new MethodInvocation("StartObject").AddArguments(obj, script).AddArguments(data).ToStatement();
         }
 
-        IEnumerable<Statement> PickupObject()
+        protected virtual IEnumerable<Statement> PickupObject()
         {
             var obj = GetVarOrDirectWord(OpCodeParameter.Param1);
             yield return new MethodInvocation("PickupObject").AddArgument(obj).ToStatement();
@@ -128,7 +128,7 @@ namespace NScumm.Tmp
             yield return new MethodInvocation("StopObjectCode").ToStatement();
         }
 
-        IEnumerable<Statement> DrawObject()
+        protected virtual IEnumerable<Statement> DrawObject()
         {
             var obj = GetVarOrDirectWord(OpCodeParameter.Param1);
             var xpos = GetVarOrDirectWord(OpCodeParameter.Param2);

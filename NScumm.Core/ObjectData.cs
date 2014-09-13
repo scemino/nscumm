@@ -24,46 +24,68 @@ namespace NScumm.Core
 {
     public class ObjectData
     {
-        public ushort Number;
-        public ushort Width;
-        public ushort Height;
-        public byte ActorDir;
-        public byte Parent;
-        public byte ParentState;
-        public byte State;
-        public DrawBitmaps Flags;
+        public ushort Number { get; set; }
+
+        public ushort Width { get; set; }
+
+        public ushort Height { get; set; }
+
+        public byte ActorDir { get; set; }
+
+        public byte Parent { get; set; }
+
+        public byte ParentState { get; set; }
+
+        public byte State { get; set; }
+
+        public DrawBitmaps Flags { get; set; }
+
+        public int FloatingObjectIndex { get; set; }
 
         public Point Walk { get; set; }
+
         public Point Position { get; set; }
+
         public Dictionary<byte, ushort> ScriptOffsets { get; private set; }
+
         public ScriptData Script { get; private set; }
+
         public byte[] Name { get; set; }
+
         public byte[] Image { get; set; }
+
+        public List<ImageData> Images { get; private set; }
 
         public ObjectData()
         {
-            this.ScriptOffsets = new Dictionary<byte, ushort>();
-            this.Script = new ScriptData();
+            ScriptOffsets = new Dictionary<byte, ushort>();
+            Script = new ScriptData();
+            Images = new List<ImageData>();
         }
 
         public void SaveOrLoad(Serializer serializer)
         {
-            var objectEntries = new[]{
+            var objectEntries = new[]
+            {
                 LoadAndSaveEntry.Create(reader => reader.ReadUInt32(), writer => writer.WriteUInt32(0), 8),
                 LoadAndSaveEntry.Create(reader => reader.ReadUInt32(), writer => writer.WriteUInt32(0), 8),
-                LoadAndSaveEntry.Create(reader => {
-                    Walk = new Point(reader.ReadInt16(),reader.ReadInt16());
-                }, writer => {
-                    writer.Write(Walk.X);
-                    writer.Write(Walk.Y);
-                },8),
-                LoadAndSaveEntry.Create(reader => Number = reader.ReadUInt16(), writer => writer.Write(Number),8),
-                LoadAndSaveEntry.Create(reader => {
-                    Position = new Point(reader.ReadInt16(),reader.ReadInt16());
-                }, writer => {
-                    writer.Write(Position.X);
-                    writer.Write(Position.Y);
-                },8),
+                LoadAndSaveEntry.Create(reader =>
+                    {
+                        Walk = new Point(reader.ReadInt16(), reader.ReadInt16());
+                    }, writer =>
+                    {
+                        writer.Write(Walk.X);
+                        writer.Write(Walk.Y);
+                    }, 8),
+                LoadAndSaveEntry.Create(reader => Number = reader.ReadUInt16(), writer => writer.Write(Number), 8),
+                LoadAndSaveEntry.Create(reader =>
+                    {
+                        Position = new Point(reader.ReadInt16(), reader.ReadInt16());
+                    }, writer =>
+                    {
+                        writer.Write(Position.X);
+                        writer.Write(Position.Y);
+                    }, 8),
                 LoadAndSaveEntry.Create(reader => Width = reader.ReadUInt16(), writer => writer.Write(Width), 8),
                 LoadAndSaveEntry.Create(reader => Height = reader.ReadUInt16(), writer => writer.Write(Height), 8),
                 LoadAndSaveEntry.Create(reader => ActorDir = reader.ReadByte(), writer => writer.Write(ActorDir), 8),
@@ -71,7 +93,7 @@ namespace NScumm.Core
                 LoadAndSaveEntry.Create(reader => Parent = reader.ReadByte(), writer => writer.Write(Parent), 8),
                 LoadAndSaveEntry.Create(reader => State = reader.ReadByte(), writer => writer.Write(State), 8),
                 LoadAndSaveEntry.Create(reader => reader.ReadByte(), writer => writer.WriteByte(0), 8),
-                LoadAndSaveEntry.Create(reader => Flags = (DrawBitmaps)reader.ReadByte(), writer => writer.Write((byte)Flags),46),
+                LoadAndSaveEntry.Create(reader => Flags = (DrawBitmaps)reader.ReadByte(), writer => writer.Write((byte)Flags), 46),
             };
             Array.ForEach(objectEntries, e => e.Execute(serializer));
         }

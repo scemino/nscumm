@@ -17,13 +17,16 @@
 
 namespace NScumm.Core.Graphics
 {
+    [System.Diagnostics.DebuggerDisplay("{DebuggerDisplay,nq}")]
     public struct Color
     {
-        public byte R { get; set; }
-        public byte G { get; set; }
-        public byte B { get; set; }
+        public int R { get; set; }
 
-        public static Color FromRgb(byte r, byte g, byte b)
+        public int G { get; set; }
+
+        public int B { get; set; }
+
+        public static Color FromRgb(int r, int g, int b)
         {
             return new Color { R = r, G = g, B = b };
         }
@@ -42,6 +45,14 @@ namespace NScumm.Core.Graphics
 
             var color = (Color)obj;
             return R == color.R && G == color.G && B == color.B;
+        }
+
+        internal string DebuggerDisplay
+        {
+            get
+            { 
+                return string.Format("({0}, {1}, {2})", R, G, B);
+            }    
         }
     }
 }

@@ -25,9 +25,7 @@ using NScumm.Core.IO;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using NScumm.Core.Audio;
-using System.IO;
 
 namespace NScumm.Core
 {
@@ -70,7 +68,7 @@ namespace NScumm.Core
         string _directory;
 
         ResourceManager _resManager;
-        byte _roomResource;
+        protected byte _roomResource;
         byte[] _resourceMapper = new byte[128];
 
         bool _egoPositioned;
@@ -146,6 +144,10 @@ namespace NScumm.Core
             else if (game.Version == 4)
             {
                 engine = new ScummEngine4(game, gfxManager, inputManager, driver);
+            }
+            else if (game.Version == 5)
+            {
+                engine = new ScummEngine5(game, gfxManager, inputManager, driver);
             }
             return engine;
         }
@@ -284,7 +286,7 @@ namespace NScumm.Core
         {
             _opCode = opCode;
             _slots[_currentScript].IsExecuted = true;
-            Console.WriteLine("OpCode = {1:X2}, Script = {0}, Name = {2}", _slots[_currentScript].Number, _opCode, _opCodes.ContainsKey(_opCode) ? _opCodes[opCode].Method.Name : "Unknown");
+            Console.WriteLine("Room = {1}, Script = {0}, Name = {2}", _slots[_currentScript].Number, _roomResource, _opCodes.ContainsKey(_opCode) ? _opCodes[opCode].Method.Name : "Unknown");
             _opCodes[opCode]();
         }
 

@@ -160,6 +160,74 @@ namespace NScumm.Core.Graphics
 
                 var zplanes = GetZPlanes(ptr);
                 DecodeMask(x, y, height, stripnr, zplanes, transpStrip, flags);
+            }
+        }
+
+        public void DrawBitmap(ImageData img, VirtScreen vs, int x, int y, int width, int height, int stripnr, int numstrip, DrawBitmaps flags)
+        {
+            // Check whether lights are turned on or not
+            var lightsOn = _vm.IsLightOn();
+            DrawBitmap(img, vs, x, y, width, height, stripnr, numstrip, flags, lightsOn, _vm.CurrentRoomData.Header.Width);
+        }
+
+        public void DrawBitmap(ImageData img, VirtScreen vs, int x, int y, int width, int height, int stripnr, int numstrip, DrawBitmaps flags, bool isLightOn, int roomWidth)
+        {
+            int sx = x - vs.XStart / 8;
+            if (sx < 0)
+            {
+                numstrip -= -sx;
+                x += -sx;
+                stripnr += -sx;
+                sx = 0;
+            }
+
+            // Compute the number of strips we have to iterate over.
+            // TODO/FIXME: The computation of its initial value looks very fishy.
+            // It was added as a kind of hack to fix some corner cases, but it compares
+            // the room width to the virtual screen width; but the former should always
+            // be bigger than the latter (except for MM NES, maybe)... strange
+            int limit = Math.Max(roomWidth, vs.Width) / 8 - x;
+            if (limit > numstrip)
+                limit = numstrip;
+            if (limit > NumStrips - sx)
+                limit = NumStrips - sx;
+
+            for (int k = 0; k < limit; ++k, ++stripnr, ++sx, ++x)
+            {
+                if (y < vs.TDirty[sx])
+                    vs.TDirty[sx] = y;
+
+                if (y + height > vs.BDirty[sx])
+                    vs.BDirty[sx] = y + height;
+
+                // In the case of a double buffered virtual screen, we draw to
+                // the backbuffer, otherwise to the primary surface memory.
+                PixelNavigator navDst;
+                if (vs.HasTwoBuffers)
+                {
+                    navDst = new PixelNavigator(vs.Surfaces[1]);
+                    navDst.GoTo(x * 8, y);
+                }
+                else
+                {
+                    navDst = new PixelNavigator(vs.Surfaces[0]);
+                    navDst.GoTo(x * 8, y);
+                }
+
+                var smapReader = new BinaryReader(new MemoryStream(img.Data));
+                bool transpStrip = DrawStrip(navDst, height, stripnr, smapReader);
+
+                if (vs.HasTwoBuffers)
+                {
+                    var navFrontBuf = new PixelNavigator(vs.Surfaces[0]);
+                    navFrontBuf.GoTo(x * 8, y);
+                    if (isLightOn)
+                        Copy8Col(navFrontBuf, navDst, height);
+                    else
+                        Clear8Col(navFrontBuf, height);
+                }
+
+                DecodeMask(x, y, height, stripnr, img, transpStrip, flags);
 
             }
         }
@@ -361,6 +429,7 @@ namespace NScumm.Core.Graphics
         #endregion GfxUsageBit Members
 
         #region Private Methods
+
         static void Clear8Col(PixelNavigator nav, int height)
         {
             do
@@ -473,6 +542,93 @@ namespace NScumm.Core.Graphics
             }
         }
 
+        void DecodeMask(int x, int y, int height, int stripnr, ImageData data, bool transpStrip, DrawBitmaps flags)
+        {
+            int i;
+            PixelNavigator mask_ptr;
+
+            if (flags.HasFlag(DrawBitmaps.DrawMaskOnAll))
+            {
+                // Sam & Max uses dbDrawMaskOnAll for things like the inventory
+                // box and the speech icons. While these objects only have one
+                // mask, it should be applied to all the Z-planes in the room,
+                // i.e. they should mask every actor.
+                //
+                // This flag used to be called dbDrawMaskOnBoth, and all it
+                // would do was to mask Z-plane 0. (Z-plane 1 would also be
+                // masked, because what is now the else-clause used to be run
+                // always.) While this seems to be the only way there is to
+                // mask Z-plane 0, this wasn't good enough since actors in
+                // Z-planes >= 2 would not be masked.
+                //
+                // The flag is also used by The Dig and Full Throttle, but I
+                // don't know what for. At the time of writing, these games
+                // are still too unstable for me to investigate.
+
+                var zplaneStream = new MemoryStream(data.ZPlanes[1].Data);
+                var binZplane = new BinaryReader(zplaneStream);
+                binZplane.BaseStream.Seek(stripnr * 2 + 8, SeekOrigin.Begin);
+                zplaneStream.Seek(binZplane.ReadUInt16(), SeekOrigin.Begin);
+                for (i = 0; i < data.ZPlanes.Count; i++)
+                {
+                    mask_ptr = GetMaskBuffer(x, y, i);
+                    if (transpStrip && flags.HasFlag(DrawBitmaps.AllowMaskOr))
+                        DecompressMaskImgOr(mask_ptr, zplaneStream, height);
+                    else
+                        DecompressMaskImg(mask_ptr, zplaneStream, height);
+                }
+            }
+            else
+            {
+                for (i = 1; i < data.ZPlanes.Count; i++)
+                {
+                    var zplanePtr = new MemoryStream(data.ZPlanes[i].Data);
+                    if (game.IsOldBundle)
+                    {
+                        zplanePtr.Seek(stripnr * 2, SeekOrigin.Begin);
+                    }
+                    else if (game.Features.HasFlag(GameFeatures.Old256))
+                    {
+                        zplanePtr.Seek(stripnr * 2 + 4, SeekOrigin.Begin);
+                    }
+                    else if (game.Version < 5)
+                    {
+                        zplanePtr.Seek(stripnr * 2 + 2, SeekOrigin.Begin);
+                    }
+                    else
+                    {
+                        zplanePtr.Seek(stripnr * 2, SeekOrigin.Begin);
+                    }
+                    var br = new BinaryReader(zplanePtr);
+                    uint offs = br.ReadUInt16();
+
+                    mask_ptr = GetMaskBuffer(x, y, i);
+
+                    if (offs != 0)
+                    {
+                        zplanePtr.Seek(offs, SeekOrigin.Begin);
+                        if (transpStrip && flags.HasFlag(DrawBitmaps.AllowMaskOr))
+                        {
+                            DecompressMaskImgOr(mask_ptr, zplanePtr, height);
+                        }
+                        else
+                        {
+                            DecompressMaskImg(mask_ptr, zplanePtr, height);
+                        }
+                    }
+                    else
+                    {
+                        if (!(transpStrip && flags.HasFlag(DrawBitmaps.AllowMaskOr)))
+                            for (int h = 0; h < height; h++)
+                            {
+                                mask_ptr.OffsetY(1);
+                                mask_ptr.Write(0);
+                            }
+                    }
+                }
+            }
+        }
+
         static void DecompressMaskImg(PixelNavigator dst, Stream src, int height)
         {
             while (height != 0)
@@ -541,8 +697,8 @@ namespace NScumm.Core.Graphics
             // are actually valid. Normally, this should never be a problem,
             // but if e.g. a savegame gets corrupted, we can easily get into
             // trouble here. See also bug #795214.
-            int offset = -1;
-            int smapLen;
+            long offset = -1;
+            long smapLen;
             if (game.Features.HasFlag(GameFeatures.SixteenColors))
             {
                 smapLen = smapReader.ReadInt16();
@@ -552,13 +708,22 @@ namespace NScumm.Core.Graphics
                     offset = smapReader.ReadInt16();
                 }
             }
-            else
+            else if (game.Version < 5)
             {
                 smapLen = smapReader.ReadInt32();
                 if (stripnr * 4 + 4 < smapLen)
                 {
                     smapReader.BaseStream.Seek(stripnr * 4, SeekOrigin.Current);
                     offset = smapReader.ReadInt32();
+                }
+            }
+            else
+            {
+                smapLen = smapReader.BaseStream.Length;
+                if (stripnr * 4 + 8 < smapLen)
+                {
+                    smapReader.BaseStream.Seek(stripnr * 4, SeekOrigin.Begin);
+                    offset = smapReader.ReadUInt32() - 8;
                 }
             }
 
@@ -639,11 +804,101 @@ namespace NScumm.Core.Graphics
                     DrawStripBasicH(navDst, src, numLinesToProcess, true);
                     break;
 
+                case 64:
+                case 65:
+                case 66:
+                case 67:
+                case 68:
+                case 104:
+                case 105:
+                case 106:
+                case 107:
+                case 108:
+                    DrawStripComplex(navDst, src, numLinesToProcess, false);
+                    break;
+
+                case 84:
+                case 85:
+                case 86:
+                case 87:
+                case 88:
+                case 124:
+                case 125:
+                case 126:
+                case 127:
+                case 128:
+                    transpStrip = true;
+                    DrawStripComplex(navDst, src, numLinesToProcess, true);
+                    break;
                 default:
                     throw new NotImplementedException(string.Format("Gdi.DecompressBitmap: default case {0}", code));
             }
 
             return transpStrip;
+        }
+
+        void DrawStripComplex(PixelNavigator navDst, BinaryReader src, int height, bool transpCheck)
+        {
+            byte color = src.ReadByte();
+            uint bits = src.ReadByte();
+            byte cl = 8;
+            byte incm, reps;
+
+            do
+            {
+                int x = 8;
+                do
+                {
+                    FillBits(ref cl, ref bits, src);
+                    if (!transpCheck || color != TransparentColor)
+                        WriteRoomColor(navDst, color);
+                    navDst.OffsetX(1);
+
+                    againPos:
+                    if (!ReadBit(ref cl, ref bits))
+                    {
+                    }
+                    else if (!ReadBit(ref cl, ref bits))
+                    {
+                        FillBits(ref cl, ref bits, src);
+                        color = (byte)(bits & decompMask);
+                        bits >>= decompShr;
+                        cl -= decompShr;
+                    }
+                    else
+                    {
+                        incm = (byte)((bits & 7) - 4);
+                        cl -= 3;
+                        bits >>= 3;
+                        if (incm != 0)
+                        {
+                            color += incm;
+                        }
+                        else
+                        {
+                            FillBits(ref cl, ref bits, src);
+                            reps = (byte)(bits & 0xFF);
+                            do
+                            {
+                                if ((--x) == 0)
+                                {
+                                    x = 8;
+                                    navDst.Offset(-8, 1);
+                                    if ((--height) == 0)
+                                        return;
+                                }
+                                if (!transpCheck || color != TransparentColor)
+                                    WriteRoomColor(navDst, color);
+                                navDst.OffsetX(1);
+                            } while ((--reps) != 0);
+                            bits >>= 8;
+                            bits |= (uint)(src.ReadByte()) << (cl - 8);
+                            goto againPos;
+                        }
+                    }
+                } while ((--x) != 0);
+                navDst.Offset(-8, 1);
+            } while ((--height) != 0);
         }
 
         void DrawStripRaw(PixelNavigator navDst, BinaryReader src, int height, bool transpCheck)

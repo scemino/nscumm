@@ -205,7 +205,10 @@ namespace NScumm.Tmp
             var actor = new ElementAccess("Actors", GetVarOrDirectByte(OpCodeParameter.Param1));
             while ((_opCode = ReadByte()) != 0xFF)
             {
-                _opCode = (byte)((_opCode & 0xE0) | convertTable[(_opCode & 0x1F) - 1]);
+                if (Game.Version < 5)
+                {
+                    _opCode = (byte)((_opCode & 0xE0) | convertTable[(_opCode & 0x1F) - 1]);
+                }
                 switch (_opCode & 0x1F)
                 {
                     case 0:

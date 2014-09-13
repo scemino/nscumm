@@ -434,7 +434,7 @@ namespace NScumm.Core
             BoxFlags flags;
             byte bestBox;
             int box;
-            int firstValidBox = 0;
+            int firstValidBox = _scumm.Game.Version < 5 ? 0 : 1;
 
             abr.Position = dst;
             abr.Box = InvalidBox;
@@ -837,7 +837,7 @@ namespace NScumm.Core
                     {
                         var sounds = new ushort[32];
                         sounds[0] = (ushort)Sound;
-                        writer.WriteUInt16s(sounds,32);
+                        writer.WriteUInt16s(sounds, 32);
                     },
                     62),
                     
@@ -891,13 +891,13 @@ namespace NScumm.Core
                 LoadAndSaveEntry.Create(reader => reader.ReadUInt32(), writer => writer.WriteUInt32(0xCDCDCDCD), 59),
 
                 LoadAndSaveEntry.Create(reader =>
-                {
-                    _talkPos = new Point(reader.ReadInt16(), reader.ReadInt16());
-                }, writer =>
-                {
-                    writer.WriteInt16(_talkPos.X);
-                    writer.WriteInt16(_talkPos.Y);
-                }, 8),
+                    {
+                        _talkPos = new Point(reader.ReadInt16(), reader.ReadInt16());
+                    }, writer =>
+                    {
+                        writer.WriteInt16(_talkPos.X);
+                        writer.WriteInt16(_talkPos.Y);
+                    }, 8),
                 LoadAndSaveEntry.Create(reader => _ignoreTurns = reader.ReadByte() != 0, writer => writer.WriteByte(_ignoreTurns), 8),
 
                 // Actor layer switched to int32 in HE games
@@ -999,6 +999,14 @@ namespace NScumm.Core
             }
         }
 
+        public void StopActorMoving()
+        {
+            if (_walkScript != 0)
+                _scumm.StopScript(_walkScript);
+
+            Moving = MoveFlags.None;
+        }
+
         #endregion
 
         #region Private Methods
@@ -1010,14 +1018,6 @@ namespace NScumm.Core
 
             Moving = MoveFlags.Turn;
             _targetFacing = (ushort)newdir;
-        }
-
-        void StopActorMoving()
-        {
-            if (_walkScript != 0)
-                _scumm.StopScript(_walkScript);
-
-            Moving = MoveFlags.None;
         }
 
         void PrepareDrawActorCostume(ICostumeRenderer bcr)
@@ -1037,6 +1037,10 @@ namespace NScumm.Core
             }
 
             bcr.ShadowMode = ShadowMode;
+            if (_scumm.Game.Version >= 5)
+            {
+                bcr.ShadowTable = _scumm.ShadowPalette;
+            }
 
             bcr.SetCostume(Costume, 0);
             bcr.SetPalette(_palette);

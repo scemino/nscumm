@@ -68,6 +68,11 @@ namespace NScumm.Core.IO
             return (ushort)value;
         }
 
+        public ushort ReadUInt16BigEndian()
+        {
+            return ScummHelper.SwapBytes(ReadUInt16());
+        }
+
         public ushort PeekUint16()
         {
             var data = _reader.ReadBytes(2);
@@ -86,6 +91,11 @@ namespace NScumm.Core.IO
         {
             var data = _reader.ReadBytes(4);
             return ToUInt32(data[0] ^ _xor, data[1] ^ _xor, data[2] ^ _xor, data[3] ^ _xor);
+        }
+
+        public uint ReadUInt32BigEndian()
+        {
+            return ScummHelper.SwapBytes(ReadUInt32());
         }
 
         static int ToInt32(int b0, int b1, int b2, int b3)

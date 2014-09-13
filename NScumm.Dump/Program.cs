@@ -15,6 +15,7 @@ namespace NScumm.Tmp
             System.Console.WriteLine("\tv3 old [experimental] (indy3 16 colors)");
             System.Console.WriteLine("\tv3 (indy3 256 colors)");
             System.Console.WriteLine("\tv4 (monkey island1)");
+            System.Console.WriteLine("\tv5 [experimental] (monkey island2)");
         }
 
         public static int Main(string[] args)

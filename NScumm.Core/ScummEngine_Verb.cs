@@ -119,7 +119,7 @@ namespace NScumm.Core
                         var a = GetVarOrDirectWord(OpCodeParameter.Param1);
                         if (slot != 0)
                         {
-                            SetVerbObject(a, slot);
+                            SetVerbObject(_roomResource, a, slot);
                             vs.Type = VerbType.Image;
                         }
                         break;
@@ -243,7 +243,21 @@ namespace NScumm.Core
                         vs.Type = VerbType.Text;
                         vs.ImgIndex = 0;
                         break;
-
+                    case 22:    // assign object
+                        {
+                            a = GetVarOrDirectWord(OpCodeParameter.Param1);
+                            var b = GetVarOrDirectByte(OpCodeParameter.Param2);
+                            if (slot != 0 && vs.ImgIndex != a)
+                            {
+                                SetVerbObject((byte)b, a, slot);
+                                vs.Type = VerbType.Image;
+                                vs.ImgIndex = (ushort)a;
+                            }
+                        }
+                        break;
+                    case 23:                                        /* set back color */
+                        vs.BkColor = (byte)GetVarOrDirectByte(OpCodeParameter.Param1);
+                        break;
                     default:
                         throw new NotImplementedException();
                 }
@@ -256,18 +270,30 @@ namespace NScumm.Core
 
         int _verbMouseOver;
 
-        void SetVerbObject(int obj, int verb)
+        void SetVerbObject(byte room, int obj, int verb)
         {
-            for (int i = NumLocalObjects - 1; i > 0; i--)
+            ObjectData o = null;
+            if (Game.Version < 5)
             {
-                if (_objs[i].Number == obj)
+                for (var i = NumLocalObjects - 1; i > 0; i--)
                 {
-                    var o = _objs[i];
-                    _verbs[verb].ImageWidth = o.Width;
-                    _verbs[verb].ImageHeight = o.Height;
-                    _verbs[verb].Image = new byte[_objs[i].Image.Length];
-                    Array.Copy(o.Image, _verbs[verb].Image, o.Image.Length);
+                    if (_objs[i].Number == obj)
+                    {
+                        o = _objs[i];
+                    }
                 }
+            }
+            else
+            {
+                var roomD = room == _roomResource ? roomData : _resManager.GetRoom(room);
+                o = roomD.Objects.FirstOrDefault(ro => ro.Number == obj);
+            }
+
+            if (o != null)
+            {
+                _verbs[verb].ImageWidth = o.Width;
+                _verbs[verb].ImageHeight = o.Height;
+                _verbs[verb].ImageData = o.Images[0];
             }
         }
 
@@ -317,8 +343,8 @@ namespace NScumm.Core
             else
             {
                 result = (from o in _objs
-                          where o.Number == obj
-                          select o).FirstOrDefault();
+                                      where o.Number == obj
+                                      select o).FirstOrDefault();
             }
 
             foreach (var key in result.ScriptOffsets.Keys)
@@ -333,8 +359,8 @@ namespace NScumm.Core
         VerbSlot GetVerb(int num)
         {
             var verbSlot = (from verb in _verbs
-                            where num == verb.VerbId && verb.Type == 0 && verb.SaveId == 0
-                            select verb).FirstOrDefault();
+                                     where num == verb.VerbId && verb.Type == 0 && verb.SaveId == 0
+                                     select verb).FirstOrDefault();
             return verbSlot;
         }
 

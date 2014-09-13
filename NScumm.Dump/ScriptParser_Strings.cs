@@ -92,10 +92,11 @@ namespace NScumm.Tmp
                     {
                         // loadstring
                         var id = GetVarOrDirectByte(OpCodeParameter.Param1);
+                        var text = ReadCharacters();
                         yield return new BinaryExpression(
                             new ElementAccess("Strings", id),
                             Operator.Assignment,
-                            ReadCharacters()).ToStatement();
+                            text).ToStatement();
                     }
                     break;
 
@@ -129,9 +130,9 @@ namespace NScumm.Tmp
                 case 4:
                     {
                         // Get string char
+                        var index = GetResultIndexExpression();
                         var id = GetVarOrDirectByte(OpCodeParameter.Param1);
                         var b = GetVarOrDirectByte(OpCodeParameter.Param2);
-                        var index = GetResultIndexExpression();
                         yield return SetResultExpression(
                             index,
                             new ElementAccess(

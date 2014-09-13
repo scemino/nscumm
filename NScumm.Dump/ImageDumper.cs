@@ -83,7 +83,7 @@ namespace NScumm.Tmp
         {
             foreach (var room in index.Rooms)
             {
-                if (room.Data == null)
+                if (room.Image == null && room.Data == null)
                     continue;
 
                 var name = room.Name ?? "room_" + room.Number;
@@ -96,8 +96,8 @@ namespace NScumm.Tmp
 
                     foreach (var obj in room.Objects)
                     {
-                        if (obj.Name.Length == 0)
-                            continue;
+//                        if (obj.Name.Length == 0)
+//                            continue;
                     
                         var text = new ScummText(obj.Name);
                         var sb = new StringBuilder();
@@ -107,21 +107,42 @@ namespace NScumm.Tmp
                         text.Decode(decoder);
                         Console.WriteLine(sb);
                     
-                        if (obj.Image.Length == 0)
+                        if (obj.Images.Count == 0 && (obj.Image == null || obj.Image.Length == 0))
                             continue;
 
-                        var screen = new VirtScreen(0, obj.Width, obj.Height, PixelFormat.Indexed8, 2);
-                        //byte[] ptr, VirtScreen vs, int x, int y, int width, int height, int stripnr, int numstrip, DrawBitmaps flags)
-                        gdi.DrawBitmap(obj.Image, screen, 0, 0, obj.Width, obj.Height, 0, obj.Width / 8, 0, true, room.Header.Width);
-                        var bmp = ToBitmap(room, screen);
-                        bmp.Save("obj_" + obj.Number + ".png");
+                        if (obj.Images.Count == 0)
+                        {
+                            var screen = new VirtScreen(0, obj.Width, obj.Height, PixelFormat.Indexed8, 2);
+                            gdi.DrawBitmap(obj.Image, screen, 0, 0, obj.Width, obj.Height, 0, obj.Width / 8, 0, true, room.Header.Width);
+                            var bmp = ToBitmap(room, screen);
+                            bmp.Save("obj_" + obj.Number + ".png");
+                        }
+                        else
+                        {
+                            var j = 0;
+                            foreach (var img in obj.Images)
+                            {
+                                var screen = new VirtScreen(0, obj.Width, obj.Height, PixelFormat.Indexed8, 2);
+                                gdi.DrawBitmap(img, screen, 0, 0, obj.Width, obj.Height, 0, obj.Width / 8, 0, true, room.Header.Width);
+                                var bmp = ToBitmap(room, screen);
+                                bmp.Save("obj_" + obj.Number + "_" + (++j) + ".png");
+                            }
+                        }
                     }
 
                     var screen2 = new VirtScreen(0, room.Header.Width, room.Header.Height, 
                                       PixelFormat.Indexed8, 2);
 
                     var numStrips = room.Header.Width / 8;
-                    gdi.DrawBitmap(room.Data, screen2, 0, 0, room.Header.Width, room.Header.Height, 0, numStrips, 0, true, room.Header.Width);
+
+                    if (room.Data != null)
+                    {
+                        gdi.DrawBitmap(room.Data, screen2, 0, 0, room.Header.Width, room.Header.Height, 0, numStrips, 0, true, room.Header.Width);
+                    }
+                    else
+                    {
+                        gdi.DrawBitmap(room.Image, screen2, 0, 0, room.Header.Width, room.Header.Height, 0, numStrips, 0, true, room.Header.Width);
+                    }
 
                     var bmpRoom = ToBitmap(room, screen2);
                     bmpRoom.Save("bg_" + name + ".png");

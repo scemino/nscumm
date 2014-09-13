@@ -19,6 +19,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Externalconsole>true</Externalconsole>
+    <Commandlineparameters>/home/valery/Games/m2/MONKEY2.000</Commandlineparameters>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>full</DebugType>
@@ -70,6 +71,7 @@
     <Compile Include="IDumper.cs" />
     <Compile Include="ImageDumper.cs" />
     <Compile Include="ScriptDumper.cs" />
+    <Compile Include="ScriptParser5.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

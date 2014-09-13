@@ -232,50 +232,51 @@ namespace NScumm.Core
 
         protected void SetResult(int value)
         {
-            Console.WriteLine("SetResult({0},{1})", _resultVarIndex, value);
-            if ((_resultVarIndex & 0xF000) == 0)
+            int index = _resultVarIndex;
+            Console.WriteLine("SetResult({0},{1})", index, value);
+            if ((index & 0xF000) == 0)
             {
-                ScummHelper.AssertRange(0, _resultVarIndex, NumVariables - 1, "variable (writing)");
-                _variables[_resultVarIndex] = value;
+                ScummHelper.AssertRange(0, index, NumVariables - 1, "variable (writing)");
+                _variables[index] = value;
                 return;
             }
 
-            if ((_resultVarIndex & 0x8000) != 0)
+            if ((index & 0x8000) != 0)
             {
                 if (_game.Version <= 3)
                 {
-                    int bit = _resultVarIndex & 0xF;
-                    _resultVarIndex = (_resultVarIndex >> 4) & 0xFF;
-                    ScummHelper.AssertRange(0, _resultVarIndex, NumVariables - 1, "variable (writing)");
+                    int bit = index & 0xF;
+                    index = (index >> 4) & 0xFF;
+                    ScummHelper.AssertRange(0, index, NumVariables - 1, "variable (writing)");
                     if (value > 0)
-                        _variables[_resultVarIndex] |= (1 << bit);
+                        _variables[index] |= (1 << bit);
                     else
-                        _variables[_resultVarIndex] &= ~(1 << bit);
+                        _variables[index] &= ~(1 << bit);
                 }
                 else
                 {
-                    _resultVarIndex &= 0x7FFF;
+                    index &= 0x7FFF;
 
-                    ScummHelper.AssertRange(0, _resultVarIndex, _bitVars.Length - 1, "bit variable (writing)");
-                    _bitVars[_resultVarIndex] = value != 0;
+                    ScummHelper.AssertRange(0, index, _bitVars.Length - 1, "bit variable (writing)");
+                    _bitVars[index] = value != 0;
                 }
                 return;
             }
 
-            if ((_resultVarIndex & 0x4000) != 0)
+            if ((index & 0x4000) != 0)
             {
                 if (Game.Features.HasFlag(GameFeatures.FewLocals))
                 {
-                    _resultVarIndex &= 0xF;
+                    index &= 0xF;
                 }
                 else
                 {
-                    _resultVarIndex &= 0xFFF;
+                    index &= 0xFFF;
                 }
 
-                ScummHelper.AssertRange(0, _resultVarIndex, 20, "local variable (writing)");
-                //Console.WriteLine ("SetLocalVariables(script={0},var={1},value={2})", _currentScript, _resultVarIndex, value);
-                _slots[_currentScript].LocalVariables[_resultVarIndex] = value;
+                ScummHelper.AssertRange(0, index, 20, "local variable (writing)");
+                //Console.WriteLine ("SetLocalVariables(script={0},var={1},value={2})", _currentScript, index, value);
+                _slots[_currentScript].LocalVariables[index] = value;
                 return;
             }
         }

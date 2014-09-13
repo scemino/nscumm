@@ -100,7 +100,7 @@ namespace NScumm.Core.IO
 
         }
 
-        IEnumerator<Chunk> CreateChunkIterator(XorReader reader, long size)
+        IEnumerator<Chunk> CreateChunkIterator(long size)
         {
             return new ChunkIterator5(_reader, size);
         }
@@ -121,7 +121,7 @@ namespace NScumm.Core.IO
             var its = new Stack<IEnumerator<Chunk>>();
             var room = new Room();
             _reader.BaseStream.Seek(offset, SeekOrigin.Begin);
-            var it = CreateChunkIterator(_reader, _reader.BaseStream.Length - offset);
+            var it = CreateChunkIterator(_reader.BaseStream.Length - offset);
             var images = new Dictionary<ushort, List<ImageData>>();
             do
             {
@@ -132,13 +132,13 @@ namespace NScumm.Core.IO
                         case "LFLF":
                                     // disk block
                             room.Number = _reader.ReadUInt16();
-                            it = CreateChunkIterator(_reader, it.Current.Size - 2);
+                            it = CreateChunkIterator(it.Current.Size - 2);
                             break;
                         
                         case "ROOM":
                                     // room block
                             its.Push(it);
-                            it = CreateChunkIterator(_reader, it.Current.Size);
+                            it = CreateChunkIterator(it.Current.Size);
                             break;
 
                         case "TRNS":
@@ -157,7 +157,7 @@ namespace NScumm.Core.IO
                         case "RMIM":
                                     // room image
                             its.Push(it);
-                            it = CreateChunkIterator(_reader, it.Current.Size);
+                            it = CreateChunkIterator(it.Current.Size);
                             break;
                                 
                         case "RMIH":
@@ -280,7 +280,7 @@ namespace NScumm.Core.IO
         {
             List<ImageData> images = new List<ImageData>();
             ushort id = 0;
-            var it = CreateChunkIterator(_reader, size);
+            var it = CreateChunkIterator(size);
             while (it.MoveNext())
             {
                 switch (it.Current.Tag)
@@ -317,7 +317,7 @@ namespace NScumm.Core.IO
         ObjectData ReadObjectCode(long size)
         {
             ObjectData obj = null;
-            var it = CreateChunkIterator(_reader, size);
+            var it = CreateChunkIterator(size);
             while (it.MoveNext())
             {
                 switch (it.Current.Tag)
@@ -376,12 +376,14 @@ namespace NScumm.Core.IO
         ImageData ReadImage(long size)
         {
             var img = new ImageData();
-            var it = CreateChunkIterator(_reader, size);
+            var it = CreateChunkIterator(size);
             while (it.MoveNext())
             {
                 if (it.Current.Tag == "SMAP")
                 {
                     img.Data = _reader.ReadBytes((int)(it.Current.Size));
+                    var zplane = new ZPlane(0, img.Data);
+                    img.ZPlanes.Add(zplane);
                 }
                 else if (it.Current.Tag.StartsWith("ZP", StringComparison.InvariantCulture))
                 {

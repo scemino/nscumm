@@ -547,6 +547,8 @@ namespace NScumm.Core.Graphics
             int i;
             PixelNavigator mask_ptr;
 
+            var zplaneCount = IsZBufferEnabled ? data.ZPlanes.Count : 0;
+
             if (flags.HasFlag(DrawBitmaps.DrawMaskOnAll))
             {
                 // Sam & Max uses dbDrawMaskOnAll for things like the inventory
@@ -567,9 +569,9 @@ namespace NScumm.Core.Graphics
 
                 var zplaneStream = new MemoryStream(data.ZPlanes[1].Data);
                 var binZplane = new BinaryReader(zplaneStream);
-                binZplane.BaseStream.Seek(stripnr * 2 + 8, SeekOrigin.Begin);
-                zplaneStream.Seek(binZplane.ReadUInt16(), SeekOrigin.Begin);
-                for (i = 0; i < data.ZPlanes.Count; i++)
+                binZplane.BaseStream.Seek(stripnr * 2, SeekOrigin.Begin);
+                zplaneStream.Seek(binZplane.ReadUInt16() - 8, SeekOrigin.Begin);
+                for (i = 0; i < zplaneCount; i++)
                 {
                     mask_ptr = GetMaskBuffer(x, y, i);
                     if (transpStrip && flags.HasFlag(DrawBitmaps.AllowMaskOr))
@@ -580,27 +582,12 @@ namespace NScumm.Core.Graphics
             }
             else
             {
-                for (i = 1; i < data.ZPlanes.Count; i++)
+                for (i = 1; i < zplaneCount; i++)
                 {
                     var zplanePtr = new MemoryStream(data.ZPlanes[i].Data);
-                    if (game.IsOldBundle)
-                    {
-                        zplanePtr.Seek(stripnr * 2, SeekOrigin.Begin);
-                    }
-                    else if (game.Features.HasFlag(GameFeatures.Old256))
-                    {
-                        zplanePtr.Seek(stripnr * 2 + 4, SeekOrigin.Begin);
-                    }
-                    else if (game.Version < 5)
-                    {
-                        zplanePtr.Seek(stripnr * 2 + 2, SeekOrigin.Begin);
-                    }
-                    else
-                    {
-                        zplanePtr.Seek(stripnr * 2, SeekOrigin.Begin);
-                    }
+                    zplanePtr.Seek(stripnr * 2, SeekOrigin.Begin);
                     var br = new BinaryReader(zplanePtr);
-                    uint offs = br.ReadUInt16();
+                    uint offs = (uint)(br.ReadUInt16() - 8);
 
                     mask_ptr = GetMaskBuffer(x, y, i);
 

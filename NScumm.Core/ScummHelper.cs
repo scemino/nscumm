@@ -22,7 +22,7 @@ using NScumm.Core.IO;
 
 namespace NScumm.Core
 {
-    static class ScummHelper
+    public static class ScummHelper
     {
         public static string NormalizePath(string path)
         {

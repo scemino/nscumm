@@ -92,8 +92,9 @@ namespace NScumm.Core.IO
 
         protected override Color[] ReadCLUT()
         {
-            var colors = new Color[256];
-            for (var i = 0; i < 256; i++)
+            var numColors = _reader.ReadUInt16() / 3;
+            var colors = new Color[numColors];
+            for (var i = 0; i < numColors; i++)
             {
                 colors[i] = Color.FromRgb(_reader.ReadByte(), _reader.ReadByte(), _reader.ReadByte());
             }

@@ -363,6 +363,16 @@ namespace NScumm.Core.IO
             return obj;
         }
 
+        protected override Color[] ReadCLUT()
+        {
+            var colors = new Color[256];
+            for (var i = 0; i < 256; i++)
+            {
+                colors[i] = Color.FromRgb(_reader.ReadByte(), _reader.ReadByte(), _reader.ReadByte());
+            }
+            return colors;
+        }
+
         ImageData ReadImage(long size)
         {
             var img = new ImageData();

@@ -29,13 +29,16 @@ namespace NScumm.Core.Graphics
     public class Surface
     {
         #region Fields
+
         /// <summary>
         /// The surface's pixel data.
         /// </summary>
         byte[] _buffer;
+
         #endregion
 
         #region Properties
+
         /// <summary>
         /// The width of the surface.
         /// </summary>
@@ -65,9 +68,11 @@ namespace NScumm.Core.Graphics
         public PixelFormat PixelFormat { get; private set; }
 
         public byte[] Pixels { get { return _buffer; } }
+
         #endregion
 
         #region Constructor
+
         /// <summary>
         /// Allocate memory for the pixel data of the surface.
         /// </summary>
@@ -76,38 +81,39 @@ namespace NScumm.Core.Graphics
         /// <param name="format">The pixel format the surface should use.</param>
         public Surface(int width, int height, PixelFormat format, bool trick)
         {
-            if (width < 0) throw new ArgumentOutOfRangeException("width", width, "Width should be positive");
-            if (height < 0) throw new ArgumentOutOfRangeException("height", height, "Height should be positive");
+            if (width < 0)
+                throw new ArgumentOutOfRangeException("width", width, "Width should be positive");
+            if (height < 0)
+                throw new ArgumentOutOfRangeException("height", height, "Height should be positive");
 
-            this.Width = width;
-            this.Height = height;
-            this.PixelFormat = format;
+            Width = width;
+            Height = height;
+            PixelFormat = format;
 
-            switch (this.PixelFormat)
+            switch (PixelFormat)
             {
                 case PixelFormat.Indexed8:
-                    this.BytesPerPixel = 1;
+                    BytesPerPixel = 1;
                     break;
                 case PixelFormat.Rgb16:
-                    this.BytesPerPixel = 2;
+                    BytesPerPixel = 2;
                     break;
                 case PixelFormat.Rgb24:
-                    this.BytesPerPixel = 3;
-                    break;
-                default:
+                    BytesPerPixel = 3;
                     break;
             }
 
-            this.Pitch = width * BytesPerPixel;
+            Pitch = width * BytesPerPixel;
             if (trick)
             {
-                this._buffer = new byte[this.Pitch * height + 4 * this.Pitch];
+                _buffer = new byte[Pitch * height + 4 * Pitch];
             }
             else
             {
-                this._buffer = new byte[this.Pitch * height];
+                _buffer = new byte[Pitch * height];
             }
         }
+
         #endregion
     }
 }

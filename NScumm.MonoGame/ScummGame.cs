@@ -14,15 +14,10 @@
  * You should have received a copy of the GNU General Public License
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
-using OpenTK;
 using NScumm.Core.IO;
 
 #region Using Statements
-using System;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
-using NScumm.Core;
 
 #endregion
 namespace NScumm.MonoGame
@@ -32,16 +27,10 @@ namespace NScumm.MonoGame
     /// </summary>
     public class ScummGame : Game
     {
-        GraphicsDeviceManager graphics;
-        SpriteBatch spriteBatch;
-        ScummEngine engine;
-        GameInfo info;
-        XnaGraphicsManager gfx;
-        XnaInputManager inputManager;
-        TimeSpan tsToWait;
-        Microsoft.Xna.Framework.Vector2 cursorPos;
-        SpriteFont defaultFont;
-        OpenALDriver audioDriver;
+        readonly GameInfo info;
+        readonly ScreenManager screenManager;
+
+        public GraphicsDeviceManager GraphicsDeviceManager{ get; private set; }
 
         public ScummGame(GameInfo info)
         {
@@ -49,9 +38,12 @@ namespace NScumm.MonoGame
             IsFixedTimeStep = false;
             Window.AllowUserResizing = true;
 
-            graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
             this.info = info;
+            GraphicsDeviceManager = new GraphicsDeviceManager(this);
+
+            screenManager = new ScreenManager(this);
+            Components.Add(screenManager);
         }
 
         /// <summary>
@@ -62,115 +54,11 @@ namespace NScumm.MonoGame
         /// </summary>
         protected override void Initialize()
         {
-            // update title
             Window.Title = string.Format("NScumm - {0} [{1}]", info.Description, info.Culture.NativeName);
+            screenManager.AddScreen(new BackgroundScreen());
+            screenManager.AddScreen(new ScummScreen(this, info));
 
             base.Initialize();
-        }
-
-        /// <summary>
-        /// LoadContent will be called once per game and is the place to load
-        /// all of your content.
-        /// </summary>
-        protected override void LoadContent()
-        {
-            defaultFont = Content.Load<SpriteFont>("spriteFont");
-            spriteBatch = new SpriteBatch(GraphicsDevice);
-            inputManager = new XnaInputManager(Window);
-            gfx = new XnaGraphicsManager(GraphicsDevice);
-            audioDriver = new OpenALDriver();
-            // init engines
-            engine = ScummEngine.Create(info, gfx, inputManager, audioDriver);
-            engine.ShowMenuDialogRequested += OnShowMenuDialogRequested;
-            tsToWait = engine.RunBootScript();
-        }
-
-        void OnShowMenuDialogRequested(object sender, EventArgs e)
-        {
-//			var dialog = new MenuDialog();
-//			dialog.WindowStartupLocation = System.Windows.WindowStartupLocation.CenterScreen;
-//			dialog.Engine = this.engine;
-//			dialog.ShowDialog();
-        }
-
-        /// <summary>
-        /// UnloadContent will be called once per game and is the place to unload
-        /// all content.
-        /// </summary>
-        protected override void UnloadContent()
-        {
-            engine.ShowMenuDialogRequested -= OnShowMenuDialogRequested;
-            gfx.Dispose();
-            audioDriver.Dispose();
-        }
-
-        /// <summary>
-        /// Allows the game to run logic such as updating the world,
-        /// checking for collisions, gathering input, and playing audio.
-        /// </summary>
-        /// <param name="gameTime">Provides a snapshot of timing values.</param>
-        protected override void Update(GameTime gameTime)
-        {
-            UpdateKeyboardState();
-            UpdateMouseState();
-
-            if (!pause)
-            {
-                UpdateGame();            
-            }
-
-            base.Update(gameTime);
-        }
-
-        void UpdateGame()
-        {
-            engine.UpdateSound();
-
-            inputManager.UpdateStates();
-            System.Threading.Thread.Sleep(tsToWait);
-            tsToWait = engine.Loop();
-            gfx.UpdateScreen();
-        }
-
-        bool pause;
-
-        void UpdateKeyboardState()
-        {
-            var keyboardState = Keyboard.GetState();
-            if (keyboardState.IsKeyDown(Keys.LeftAlt) && keyboardState.IsKeyDown(Keys.Enter))
-            {
-                graphics.IsFullScreen = !graphics.IsFullScreen;
-                graphics.ApplyChanges();
-            }
-            else if (keyboardState.IsKeyDown(Keys.Space))
-            {
-                pause = !pause;
-            }
-        }
-
-        void UpdateMouseState()
-        {
-            var state = Mouse.GetState();
-            var x = state.X;
-            var y = state.Y;
-            cursorPos = new Microsoft.Xna.Framework.Vector2(x, y);
-        }
-
-        /// <summary>
-        /// This is called when the game should draw itself.
-        /// </summary>
-        /// <param name="gameTime">Provides a snapshot of timing values.</param>
-        protected override void Draw(GameTime gameTime)
-        {
-            GraphicsDevice.Clear(Color.Black);
-
-            spriteBatch.Begin(SpriteSortMode.BackToFront, BlendState.AlphaBlend,
-                SamplerState.PointClamp, DepthStencilState.Default, RasterizerState.CullNone);
-            gfx.DrawScreen(spriteBatch);
-            gfx.DrawCursor(spriteBatch, cursorPos);
-            spriteBatch.End();
-
-            base.Draw(gameTime);
         }
     }
 }

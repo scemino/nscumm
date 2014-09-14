@@ -40,6 +40,13 @@
     <Compile Include="XnaGraphicsManager.cs" />
     <Compile Include="XnaInputManager.cs" />
     <Compile Include="Program.cs" />
+    <Compile Include="ScreenManager\GameScreen.cs" />
+    <Compile Include="ScreenManager\ScreenManager.cs" />
+    <Compile Include="ScreenManager\MenuScreen.cs" />
+    <Compile Include="ScreenManager\InputState.cs" />
+    <Compile Include="Screens\BackgroundScreen.cs" />
+    <Compile Include="Screens\MainMenuScreen.cs" />
+    <Compile Include="Screens\ScummScreen.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NScumm.Core\NScumm.Core.csproj">
@@ -48,15 +55,27 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Content\spriteFont.xnb">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Include="packages.config" />
     <None Include="SDL.dll" />
+    <None Include="Content\Textures\blank.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Content\Fonts\MenuFont.xnb">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Content\Fonts\SpriteFont.xnb">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <Import Project="..\packages\MonoGame.Binaries.3.2.2-alpha\build\net40\MonoGame.Binaries.targets" Condition="Exists('..\packages\MonoGame.Binaries.3.2.2-alpha\build\net40\MonoGame.Binaries.targets')" />
   <Import Project="../../NScumm.GL/packages/MonoGame.Binaries.3.2.2-alpha/build/net40/MonoGame.Binaries.targets" />
   <ItemGroup>
     <Reference Include="System.Drawing" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="ScreenManager\" />
+    <Folder Include="Content\Textures\" />
+    <Folder Include="Content\Fonts\" />
+    <Folder Include="Screens\" />
   </ItemGroup>
 </Project>

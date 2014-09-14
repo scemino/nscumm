@@ -49,7 +49,6 @@ namespace NScumm.Core
 
         void SaveLoad()
         {
-            // TODO: improve this
             if (_variables[VariableMainMenu] != 0)
             {
                 if (_hasToLoad)

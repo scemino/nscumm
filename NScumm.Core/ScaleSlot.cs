@@ -27,14 +27,15 @@ namespace NScumm.Core
 
         public void SaveOrLoad(Serializer serializer)
         {
-            var scaleSlotsEntries = new[]{
-                    LoadAndSaveEntry.Create(reader => X1 = reader.ReadInt16(), writer => writer.WriteInt16(X1),13),
-                    LoadAndSaveEntry.Create(reader => Y1 = reader.ReadInt16(), writer => writer.WriteInt16(Y1),13),
-                    LoadAndSaveEntry.Create(reader => Scale1 = reader.ReadInt16(), writer => writer.WriteInt16(Scale1),13),
-                    LoadAndSaveEntry.Create(reader => X2 = reader.ReadInt16(), writer => writer.WriteInt16(X2),13),
-                    LoadAndSaveEntry.Create(reader => Y2 = reader.ReadInt16(), writer => writer.WriteInt16(Y2),13),
-                    LoadAndSaveEntry.Create(reader => Scale2 = reader.ReadInt16(), writer => writer.WriteInt16(Scale2),13),
-             };
+            var scaleSlotsEntries = new[]
+            {
+                LoadAndSaveEntry.Create(reader => X1 = reader.ReadInt16(), writer => writer.WriteInt16(X1), 13),
+                LoadAndSaveEntry.Create(reader => Y1 = reader.ReadInt16(), writer => writer.WriteInt16(Y1), 13),
+                LoadAndSaveEntry.Create(reader => Scale1 = reader.ReadInt16(), writer => writer.WriteInt16(Scale1), 13),
+                LoadAndSaveEntry.Create(reader => X2 = reader.ReadInt16(), writer => writer.WriteInt16(X2), 13),
+                LoadAndSaveEntry.Create(reader => Y2 = reader.ReadInt16(), writer => writer.WriteInt16(Y2), 13),
+                LoadAndSaveEntry.Create(reader => Scale2 = reader.ReadInt16(), writer => writer.WriteInt16(Scale2), 13),
+            };
             Array.ForEach(scaleSlotsEntries, e => e.Execute(serializer));
         }
     }

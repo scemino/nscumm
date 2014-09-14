@@ -99,7 +99,7 @@ namespace NScumm.Core
                 // the save game and the save time.
                 if (hdr.Version >= 56)
                 {
-                    SaveStateMetaInfos infos = LoadInfos(br);
+                    var infos = LoadInfos(br);
                     if (infos == null)
                     {
                         //warning("Info section could not be found");
@@ -394,9 +394,9 @@ namespace NScumm.Core
                         for (int i = 0; i < 256; i++)
                         {
                             var l_color = _currentPalette.Colors[i];
-                            writer.Write(l_color.R);
-                            writer.Write(l_color.G);
-                            writer.Write(l_color.B);
+                            writer.WriteByte(l_color.R);
+                            writer.WriteByte(l_color.G);
+                            writer.WriteByte(l_color.B);
                         }
                     }, 8),
                 LoadAndSaveEntry.Create(reader => reader.ReadBytes(768), writer => writer.Write(new byte[768]), 53),
@@ -638,26 +638,17 @@ namespace NScumm.Core
 
             var l_paletteEntries = new[]
             {
-                LoadAndSaveEntry.Create(reader =>
-                    {
-                        _shadowPalette = reader.ReadBytes(_shadowPalette.Length);
-                    },
-                    writer =>
-                    {
-                        writer.WriteBytes(_shadowPalette, _shadowPalette.Length);
-                    }),
+                LoadAndSaveEntry.Create(
+                    reader => _shadowPalette = reader.ReadBytes(_shadowPalette.Length),
+                    writer => writer.WriteBytes(_shadowPalette, _shadowPalette.Length)),
                 // _roomPalette didn't show up until V21 save games
                 // Note that we also save the room palette for Indy4 Amiga, since it
                 // is used as palette map there too, but we do so slightly a bit
                 // further down to group it with the other special palettes needed.
-                LoadAndSaveEntry.Create(reader =>
-                    {
-                        Gdi.RoomPalette = reader.ReadBytes(256);
-                    },
-                    writer =>
-                    {
-                        writer.WriteBytes(Gdi.RoomPalette, 256);
-                    }, 21),
+                LoadAndSaveEntry.Create(
+                    reader => Gdi.RoomPalette = reader.ReadBytes(256),
+                    writer => writer.WriteBytes(Gdi.RoomPalette, 256)
+                        , 21),
 
                 // PalManip data was not saved before V10 save games
                 LoadAndSaveEntry.Create(reader =>
@@ -740,18 +731,13 @@ namespace NScumm.Core
             //
             // Save/load more global object state
             //
-            var l_globalObjStatesEntries = new[]
+            var globalObjStatesEntries = new[]
             {
-                LoadAndSaveEntry.Create(reader =>
-                    {
-                        Array.Copy(reader.ReadUInt32s(NumGlobalObjects), _resManager.ClassData, NumGlobalObjects);
-                    },
-                    writer =>
-                    {
-                        writer.WriteUInt32s(_resManager.ClassData, NumGlobalObjects);
-                    }),
+                LoadAndSaveEntry.Create(
+                    reader => Array.Copy(reader.ReadUInt32s(NumGlobalObjects), _resManager.ClassData, NumGlobalObjects),
+                    writer => writer.WriteUInt32s(_resManager.ClassData, NumGlobalObjects))
             };
-            Array.ForEach(l_globalObjStatesEntries, entry => entry.Execute(serializer));
+            Array.ForEach(globalObjStatesEntries, entry => entry.Execute(serializer));
 
             //
             // Save/load script variables
@@ -765,16 +751,12 @@ namespace NScumm.Core
             //}
 
             // The variables grew from 16 to 32 bit.
-            var l_variablesEntries = new[]
+            var variablesEntries = new[]
             {
-                LoadAndSaveEntry.Create(reader =>
-                    {
-                        _variables = Array.ConvertAll(reader.ReadInt16s(_variables.Length), s => (int)s);
-                    },
-                    writer =>
-                    {
-                        writer.WriteInt16s(_variables, _variables.Length);
-                    }, 0, 15),
+                LoadAndSaveEntry.Create(
+                    reader => _variables = Array.ConvertAll(reader.ReadInt16s(_variables.Length), s => (int)s),
+                    writer => writer.WriteInt16s(_variables, _variables.Length)
+                        , 0, 15),
                 LoadAndSaveEntry.Create(
                     reader => _variables = reader.ReadInt32s(_variables.Length),
                     writer => writer.WriteInt32s(_variables, _variables.Length), 15),
@@ -792,12 +774,12 @@ namespace NScumm.Core
                     }
                 ),
             };
-            Array.ForEach(l_variablesEntries, entry => entry.Execute(serializer));
+            Array.ForEach(variablesEntries, entry => entry.Execute(serializer));
 
             //
             // Save/load a list of the locked objects
             //
-            var l_lockedObjEntries = new[]
+            var lockedObjEntries = new[]
             {
                 LoadAndSaveEntry.Create(reader =>
                     {
@@ -807,12 +789,10 @@ namespace NScumm.Core
                             //_res->lock(type, idx);
                         }
                     },
-                    writer =>
-                    {
-                        writer.Write((byte)0xFF);
-                    })
+                    writer => writer.Write((byte)0xFF)
+                )
             };
-            Array.ForEach(l_lockedObjEntries, entry => entry.Execute(serializer));
+            Array.ForEach(lockedObjEntries, entry => entry.Execute(serializer));
 
             //
             // Save/load the Audio CD status
@@ -886,7 +866,7 @@ namespace NScumm.Core
                               writer =>
                 {
                     // inventory
-                    writer.Write((ushort)ResType.Inventory);
+                    writer.WriteUInt16((ushort)ResType.Inventory);
                     for (int i = 0; i < _invData.Length; i++)
                     {
                         var data = _invData[i];
@@ -928,7 +908,7 @@ namespace NScumm.Core
                     writer.WriteUInt16(0xFFFF);
 
                     // actors name
-                    writer.Write((ushort)ResType.ActorName);
+                    writer.WriteUInt16((ushort)ResType.ActorName);
                     for (int i = 0; i < _actors.Length; i++)
                     {
                         var actor = _actors[i];
@@ -944,7 +924,7 @@ namespace NScumm.Core
                     writer.WriteUInt16(0xFFFF);
 
                     // objects name
-                    writer.Write((ushort)ResType.ObjectName);
+                    writer.WriteUInt16((ushort)ResType.ObjectName);
                     var objs = _invData.Where(obj => obj != null && obj.Number != 0).ToArray();
                     for (var i = 0; i < objs.Length; i++)
                     {
@@ -964,7 +944,7 @@ namespace NScumm.Core
                     writer.WriteUInt16(0xFFFF);
 
                     // matrix
-                    writer.Write((ushort)ResType.Matrix);
+                    writer.WriteUInt16((ushort)ResType.Matrix);
                     // write BoxMatrix
                     writer.WriteUInt16(1);
                     writer.WriteInt32(_boxMatrix.Count);
@@ -991,7 +971,7 @@ namespace NScumm.Core
                     writer.WriteUInt16(0xFFFF);
 
                     // verbs
-                    writer.Write((ushort)ResType.Verb);
+                    writer.WriteUInt16((ushort)ResType.Verb);
                     for (int i = 0; i < _verbs.Length; i++)
                     {
                         var verb = _verbs[i];

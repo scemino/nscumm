@@ -28,10 +28,11 @@ namespace NScumm.Core
 
         public void SaveOrLoad(Serializer serializer)
         {
-            var nestedScriptEntries = new[]{
-                LoadAndSaveEntry.Create(reader => Number = reader.ReadUInt16(), writer => writer.Write(Number),8),
-                LoadAndSaveEntry.Create(reader => Where = (WhereIsObject)reader.ReadByte(), writer => writer.Write((byte)Where),8),
-                LoadAndSaveEntry.Create(reader => Slot = reader.ReadByte(), writer => writer.Write(Slot),8),
+            var nestedScriptEntries = new[]
+            {
+                LoadAndSaveEntry.Create(reader => Number = reader.ReadUInt16(), writer => writer.WriteUInt16(Number), 8),
+                LoadAndSaveEntry.Create(reader => Where = (WhereIsObject)reader.ReadByte(), writer => writer.WriteByte((byte)Where), 8),
+                LoadAndSaveEntry.Create(reader => Slot = reader.ReadByte(), writer => writer.WriteByte(Slot), 8),
             };
             Array.ForEach(nestedScriptEntries, e => e.Execute(serializer));
         }

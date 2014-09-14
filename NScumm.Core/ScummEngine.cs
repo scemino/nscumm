@@ -65,8 +65,6 @@ namespace NScumm.Core
 
         #region Fields
 
-        string _directory;
-
         ResourceManager _resManager;
         protected byte _roomResource;
         byte[] _resourceMapper = new byte[128];
@@ -171,7 +169,6 @@ namespace NScumm.Core
             _gameMD5 = ToMd5Bytes(game.MD5);
             _gfxManager = gfxManager;
             _inputManager = inputManager;
-            _directory = _resManager.Directory;
             _strings = new byte[NumArray][];
             _charsets = new byte[NumArray][];
             _currentScript = 0xFF;

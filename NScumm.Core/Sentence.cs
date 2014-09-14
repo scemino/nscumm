@@ -20,55 +20,57 @@ using System;
 
 namespace NScumm.Core
 {
-	class Sentence
-	{
-		byte freezeCount;
+    class Sentence
+    {
+        byte freezeCount;
 
-		public byte Verb { get; private set; }
+        public byte Verb { get; private set; }
 
-		public bool Preposition { get; private set; }
+        public bool Preposition { get; private set; }
 
-		public ushort ObjectA { get; private set; }
+        public ushort ObjectA { get; private set; }
 
-		public ushort ObjectB { get; private set; }
+        public ushort ObjectB { get; private set; }
 
-		public bool IsFrozen {
-			get{ return freezeCount > 0; }
-		}
+        public bool IsFrozen
+        {
+            get{ return freezeCount > 0; }
+        }
 
-		public Sentence ()
-		{
-		}
+        public Sentence()
+        {
+        }
 
-		public Sentence (byte verb, ushort objectA, ushort objectB)
-		{
-			Verb = verb;
-			ObjectA = objectA;
-			ObjectB = objectB;
-			Preposition = objectB != 0;
-		}
+        public Sentence(byte verb, ushort objectA, ushort objectB)
+        {
+            Verb = verb;
+            ObjectA = objectA;
+            ObjectB = objectB;
+            Preposition = objectB != 0;
+        }
 
-		public void Freeze ()
-		{
-			freezeCount++;
-		}
+        public void Freeze()
+        {
+            freezeCount++;
+        }
 
-		public void Unfreeze ()
-		{
-			if (IsFrozen)
-				freezeCount--;
-		}
+        public void Unfreeze()
+        {
+            if (IsFrozen)
+                freezeCount--;
+        }
 
-		public void SaveOrLoad (Serializer serializer)
-		{
-			var sentenceEntries = new[] {
-				LoadAndSaveEntry.Create (reader => Verb = reader.ReadByte (), writer => writer.Write (Verb), 8),
-				LoadAndSaveEntry.Create (reader => Preposition = reader.ReadBoolean (), writer => writer.Write (Preposition), 8),
-				LoadAndSaveEntry.Create (reader => ObjectA = reader.ReadUInt16 (), writer => writer.Write (ObjectA), 8),
-				LoadAndSaveEntry.Create (reader => ObjectB = reader.ReadUInt16 (), writer => writer.Write (ObjectB), 8),
-				LoadAndSaveEntry.Create (reader => freezeCount = reader.ReadByte (), writer => writer.Write (freezeCount), 8),
-			};
-			Array.ForEach (sentenceEntries, e => e.Execute (serializer));
-		}
-	}
+        public void SaveOrLoad(Serializer serializer)
+        {
+            var sentenceEntries = new[]
+            {
+                LoadAndSaveEntry.Create(reader => Verb = reader.ReadByte(), writer => writer.WriteByte(Verb), 8),
+                LoadAndSaveEntry.Create(reader => Preposition = reader.ReadBoolean(), writer => writer.WriteByte(Preposition), 8),
+                LoadAndSaveEntry.Create(reader => ObjectA = reader.ReadUInt16(), writer => writer.WriteUInt16(ObjectA), 8),
+                LoadAndSaveEntry.Create(reader => ObjectB = reader.ReadUInt16(), writer => writer.WriteUInt16(ObjectB), 8),
+                LoadAndSaveEntry.Create(reader => freezeCount = reader.ReadByte(), writer => writer.WriteByte(freezeCount), 8),
+            };
+            Array.ForEach(sentenceEntries, e => e.Execute(serializer));
+        }
+    }
 }

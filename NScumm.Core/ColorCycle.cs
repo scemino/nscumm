@@ -30,13 +30,14 @@ namespace NScumm.Core
 
         public void SaveOrLoad(Serializer serializer)
         {
-            var colorCycleEntries = new[]{
-                    LoadAndSaveEntry.Create(reader => Delay = reader.ReadUInt16(), writer => writer.Write(Delay), 8),
-                    LoadAndSaveEntry.Create(reader => Counter = reader.ReadUInt16(), writer => writer.Write(Counter),8),
-                    LoadAndSaveEntry.Create(reader => Flags = reader.ReadUInt16(), writer => writer.Write(Flags),8),
-                    LoadAndSaveEntry.Create(reader => Start = reader.ReadByte(), writer => writer.Write(Start),8),
-                    LoadAndSaveEntry.Create(reader => End = reader.ReadByte(), writer => writer.Write(End),8),
-             };
+            var colorCycleEntries = new[]
+            {
+                LoadAndSaveEntry.Create(reader => Delay = reader.ReadUInt16(), writer => writer.WriteUInt16(Delay), 8),
+                LoadAndSaveEntry.Create(reader => Counter = reader.ReadUInt16(), writer => writer.WriteUInt16(Counter), 8),
+                LoadAndSaveEntry.Create(reader => Flags = reader.ReadUInt16(), writer => writer.WriteUInt16(Flags), 8),
+                LoadAndSaveEntry.Create(reader => Start = reader.ReadByte(), writer => writer.WriteByte(Start), 8),
+                LoadAndSaveEntry.Create(reader => End = reader.ReadByte(), writer => writer.WriteByte(End), 8),
+            };
             Array.ForEach(colorCycleEntries, e => e.Execute(serializer));
         }
     }

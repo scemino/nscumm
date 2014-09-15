@@ -595,7 +595,10 @@ namespace NScumm.Core
                 else
                 {
                     var state = GetState(od.Number);
-                    Gdi.DrawBitmap(objToDraw.Images[state - 1], _mainVirtScreen, x, ypos, width * 8, height, x - xpos, numstrip, flags);
+                    if (state > 0)
+                    {
+                        Gdi.DrawBitmap(objToDraw.Images[state - 1], _mainVirtScreen, x, ypos, width * 8, height, x - xpos, numstrip, flags);
+                    }
                 }
             }
         }

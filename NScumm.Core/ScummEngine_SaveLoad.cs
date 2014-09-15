@@ -603,28 +603,22 @@ namespace NScumm.Core
             //
             // Save/load global object state
             //
-            var l_objStatesEntries = new[]
+            var objStatesEntries = new[]
             {
                 LoadAndSaveEntry.Create(reader =>
                     {
                         var objectOwnerTable = reader.ReadBytes(NumGlobalObjects);
                         Array.Copy(objectOwnerTable, _resManager.ObjectOwnerTable, NumGlobalObjects);
                     },
-                    writer =>
-                    {
-                        writer.WriteBytes(_resManager.ObjectOwnerTable, NumGlobalObjects);
-                    }),
+                    writer => writer.WriteBytes(_resManager.ObjectOwnerTable, NumGlobalObjects)),
                 LoadAndSaveEntry.Create(reader =>
                     {
                         var objectStateTable = reader.ReadBytes(NumGlobalObjects);
                         Array.Copy(objectStateTable, _resManager.ObjectStateTable, NumGlobalObjects);
                     },
-                    writer =>
-                    {
-                        writer.WriteBytes(_resManager.ObjectStateTable, NumGlobalObjects);
-                    })
+                    writer => writer.WriteBytes(_resManager.ObjectStateTable, NumGlobalObjects))
             };
-            Array.ForEach(l_objStatesEntries, e => e.Execute(serializer));
+            Array.ForEach(objStatesEntries, e => e.Execute(serializer));
 
             //if (_objectRoomTable)
             //    s->saveLoadArrayOf(_objectRoomTable, _numGlobalObjects, sizeof(_objectRoomTable[0]), sleByte);
@@ -636,7 +630,7 @@ namespace NScumm.Core
             //    s->saveLoadArrayOf(_16BitPalette, 512, sizeof(_16BitPalette[0]), sleUint16);
             //}
 
-            var l_paletteEntries = new[]
+            var paletteEntries = new[]
             {
                 LoadAndSaveEntry.Create(
                     reader => _shadowPalette = reader.ReadBytes(_shadowPalette.Length),
@@ -694,7 +688,7 @@ namespace NScumm.Core
                         //                    }
                     }, 53)
             };
-            Array.ForEach(l_paletteEntries, entry => entry.Execute(serializer));
+            Array.ForEach(paletteEntries, entry => entry.Execute(serializer));
 
             // _colorUsedByCycle was not saved before V60
             if (serializer.IsLoading)
@@ -875,7 +869,7 @@ namespace NScumm.Core
                         // write index
                         writer.WriteUInt16(i);
                         // write size
-                        var nameOffset = data.ScriptOffsets.Values.Min() - data.Name.Length - 1;
+                        var nameOffset = 18 + 1 + 3 * data.ScriptOffsets.Count + 1;
                         writer.WriteInt32(nameOffset + data.Name.Length + 1 + data.Script.Data.Length);
                         writer.Write(new byte[18]);
                         // write name offset
@@ -888,11 +882,6 @@ namespace NScumm.Core
                         }
                         // write end of table
                         writer.WriteByte(0);
-                        var diff = nameOffset - (19 + 3 * data.ScriptOffsets.Count + 1);
-                        for (int c = 0; c < diff; c++)
-                        {
-                            writer.WriteByte(0);
-                        }
                         var name = EncodeName(data.Name);
                         // write name
                         for (int c = 0; c < name.Length; c++)
@@ -1054,7 +1043,6 @@ namespace NScumm.Core
                                 c = br.ReadByte();
                             }
                             _invData[idx] = new ObjectData { Number = index, Name = name.ToArray() };
-                            _invData[idx].Script.Offset = offset + name.Count + 1;
                             _invData[idx].Script.Data = br.ReadBytes((int)(br.BaseStream.Length - br.BaseStream.Position));
                             br.BaseStream.Seek(19, SeekOrigin.Begin);
                             while (true)
@@ -1065,6 +1053,7 @@ namespace NScumm.Core
                                     break;
                                 _invData[idx].ScriptOffsets.Add(id, off);
                             }
+                            _invData[idx].Script.Offset = _invData[idx].ScriptOffsets.Count * 3 + 1 + 8;
                         }
                         break;
 

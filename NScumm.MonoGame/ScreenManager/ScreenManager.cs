@@ -291,11 +291,13 @@ namespace NScumm.MonoGame
         /// </summary>
         /// <param name="rectangle">The destination rectangle.</param>
         /// <param name="color">The color of the rectangle.</param>
-        public void DrawRectangle(Rectangle rectangle, Color color)
+        /// <param name="blendState">The blending to use.</param>
+        public void DrawRectangle(Rectangle rectangle, Color color, BlendState blendState = null)
         {
             //SpriteBatch.Begin();
             // We changed this to be Opaque
-            spriteBatch.Begin(0, BlendState.Opaque, null, null, null);
+            blendState = blendState ?? BlendState.Opaque;
+            spriteBatch.Begin(0, blendState, null, null, null);
             SpriteBatch.Draw(blankTexture, rectangle, color);
             SpriteBatch.End();
         }

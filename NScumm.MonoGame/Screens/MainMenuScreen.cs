@@ -141,6 +141,14 @@ namespace NScumm.MonoGame
 
         }
 
+        public override void Draw(GameTime gameTime)
+        {
+            var viewport = ScreenManager.GraphicsDevice.Viewport;
+            var rectangle = new Rectangle(0, 0, viewport.Width, viewport.Height);
+            ScreenManager.DrawRectangle(rectangle, new Color(Color.Black, 0.7f), Microsoft.Xna.Framework.Graphics.BlendState.AlphaBlend);
+            base.Draw(gameTime);
+        }
+
 
         /// <summary>
         /// When the user cancels the main menu, ask if they want to exit the sample.

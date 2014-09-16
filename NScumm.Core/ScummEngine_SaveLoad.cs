@@ -975,6 +975,22 @@ namespace NScumm.Core
                     }
                     writer.WriteUInt16(0xFFFF);
 
+                    // strings
+                    writer.WriteUInt16((ushort)ResType.String);
+                    for (int i = 0; i < _strings.Length; i++)
+                    {
+                        var str = _strings[i];
+                        if (str != null)
+                        {
+                            // write index
+                            writer.WriteUInt16(i);
+                            // write text
+                            writer.WriteInt32(str.Length);
+                            writer.WriteBytes(str, str.Length);
+                        }
+                    }
+                    writer.WriteUInt16(0xFFFF);
+
                     // write end of resources
                     writer.WriteUInt16(0xFFFF);
 
@@ -1113,7 +1129,7 @@ namespace NScumm.Core
 
                     case ResType.String:
                         {
-                            Console.WriteLine("String: {0}", Encoding.ASCII.GetString(ptr));
+                            _strings[idx] = ptr;
                         }
                         break;
                 }

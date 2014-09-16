@@ -108,6 +108,52 @@ namespace NScumm.Core
             }
         }
 
+        void BeginCutscene(int[] args)
+        {
+            var scr = _currentScript;
+            _slots[scr].CutSceneOverride++;
+
+            var cutSceneData = new CutSceneData
+            {
+                Data = args.Length > 0 ? args[0] : 0
+            };
+            cutScene.Data.Push(cutSceneData);
+
+            if (cutScene.Data.Count >= MaxCutsceneNum)
+                throw new NotSupportedException("Cutscene stack overflow");
+
+            cutScene.CutSceneScriptIndex = scr;
+
+            if (_variables[VariableCutSceneStartScript] != 0)
+                RunScript((byte)_variables[VariableCutSceneStartScript], false, false, args);
+
+            cutScene.CutSceneScriptIndex = 0xFF;
+        }
+
+        void AbortCutscene()
+        {
+            byte script = 0;
+            var offs = 0;
+            if (cutScene.Override.Pointer != 0)
+            {
+                offs = cutScene.Override.Pointer;
+                script = cutScene.Override.Script;
+            }
+
+            if (offs != 0)
+            {
+                _slots[script].Offset = (uint)offs;
+                _slots[script].Status = ScriptStatus.Running;
+                _slots[script].UnfreezeAll();
+
+                if (_slots[script].CutSceneOverride > 0)
+                    _slots[script].CutSceneOverride--;
+
+                _variables[VariableOverride] = 1;
+                cutScene.Override.Pointer = 0;
+            }
+        }
+
         void CutScene()
         {
             var args = GetWordVarArgs();
@@ -724,62 +770,6 @@ namespace NScumm.Core
                     return true;
             }
             return false;
-        }
-
-        void BeginCutscene(int[] args)
-        {
-            var scr = _currentScript;
-            _slots[scr].CutSceneOverride++;
-
-            var cutSceneData = new CutSceneData
-            {
-                Data = args.Length > 0 ? args[0] : 0
-            };
-            cutScene.Data.Push(cutSceneData);
-
-            if (cutScene.Data.Count >= MaxCutsceneNum)
-                throw new NotSupportedException("Cutscene stack overflow");
-
-            cutScene.CutSceneScriptIndex = scr;
-
-            if (_variables[VariableCutSceneStartScript] != 0)
-                RunScript((byte)_variables[VariableCutSceneStartScript], false, false, args);
-
-            cutScene.CutSceneScriptIndex = 0xFF;
-        }
-
-        void AbortCutscene()
-        {
-            int offs;
-            byte script;
-            if (cutScene.Override.Pointer != 0)
-            {
-                offs = cutScene.Override.Pointer;
-                script = cutScene.Override.Script;
-            }
-            else if (cutScene.Data.Count != 0)
-            {
-                var cutSceneData = cutScene.Data.Pop();
-                offs = cutSceneData.Pointer;
-                script = cutSceneData.Script;
-            }
-            else
-            {
-                return;
-            }
-
-            if (offs != 0)
-            {
-                _slots[script].Offset = (uint)offs;
-                _slots[script].Status = ScriptStatus.Running;
-                _slots[script].UnfreezeAll();
-
-                if (_slots[script].CutSceneOverride > 0)
-                    _slots[script].CutSceneOverride--;
-
-                _variables[VariableOverride] = 1;
-                cutScene.Override.Pointer = 0;
-            }
         }
 
         void BreakHere()

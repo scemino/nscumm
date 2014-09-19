@@ -143,8 +143,8 @@ namespace NScumm.Core
 
                 //closeRoom();
 
-                Array.Clear(_inventory, 0, _inventory.Length);
-                Array.Clear(_invData, 0, _invData.Length);
+                _inventory = new ushort[_inventory.Length];
+                _invData = new ObjectData[_invData.Length];
                 _newNames.Clear();
 
                 // Because old savegames won't fill the entire gfxUsageBits[] array,
@@ -845,7 +845,8 @@ namespace NScumm.Core
 
         void SaveOrLoadResources(Serializer serializer)
         {
-            var l_entry = LoadAndSaveEntry.Create(reader =>
+            var l_entry = LoadAndSaveEntry.Create(
+                              reader =>
                 {
                     ResType type;
                     ushort idx;
@@ -868,10 +869,11 @@ namespace NScumm.Core
                             break;
                         // write index
                         writer.WriteUInt16(i);
-                        // write size
                         var nameOffset = 18 + 1 + 3 * data.ScriptOffsets.Count + 1;
+                        // write size
                         writer.WriteInt32(nameOffset + data.Name.Length + 1 + data.Script.Data.Length);
-                        writer.Write(new byte[18]);
+                        // write image offset
+                        writer.WriteBytes(new byte[18], 18);
                         // write name offset
                         writer.WriteByte(nameOffset);
                         // write verb table
@@ -938,6 +940,7 @@ namespace NScumm.Core
                     writer.WriteUInt16(1);
                     writer.WriteInt32(_boxMatrix.Count);
                     writer.WriteBytes(_boxMatrix.ToArray(), _boxMatrix.Count);
+
                     // write boxes
                     writer.WriteUInt16(2);
                     writer.WriteInt32(20 * _boxes.Length + 1);
@@ -971,6 +974,26 @@ namespace NScumm.Core
                             // write text
                             writer.WriteInt32(verb.Text.Length);
                             writer.WriteBytes(verb.Text, verb.Text.Length);
+                        }
+                    }
+                    writer.WriteUInt16(0xFFFF);
+
+                    // verb images
+                    writer.WriteUInt16((ushort)ResType.VerbImage);
+                    for (int i = 0; i < _verbs.Length; i++)
+                    {
+                        var verb = _verbs[i];
+                        if (verb.ImageData != null)
+                        {
+                            // write index
+                            writer.WriteUInt16(i);
+                            // write size
+                            writer.WriteInt32(4 + verb.ImageData.Data.Length);
+                            // wrie width and height
+                            writer.WriteUInt16(verb.ImageWidth);
+                            writer.WriteUInt16(verb.ImageHeight);
+                            // write
+                            writer.WriteBytes(verb.ImageData.Data, verb.ImageData.Data.Length);
                         }
                     }
                     writer.WriteUInt16(0xFFFF);
@@ -1024,6 +1047,7 @@ namespace NScumm.Core
                 case ResType.Inventory:
                 case ResType.String:
                 case ResType.Verb:
+                case ResType.VerbImage:
                 case ResType.ActorName:
                 case ResType.ScaleTable:
                 case ResType.Temp:
@@ -1047,6 +1071,7 @@ namespace NScumm.Core
                         {
                             var index = reader.ReadUInt16();
                             _inventory[idx] = index;
+                            _invData[idx] = new ObjectData { Number = index };
                             var br = new BinaryReader(new MemoryStream(ptr));
                             br.BaseStream.Seek(18, SeekOrigin.Begin);
                             var offset = br.ReadByte();
@@ -1058,7 +1083,7 @@ namespace NScumm.Core
                                 name.Add(c);
                                 c = br.ReadByte();
                             }
-                            _invData[idx] = new ObjectData { Number = index, Name = name.ToArray() };
+                            _invData[idx].Name = name.ToArray();
                             _invData[idx].Script.Data = br.ReadBytes((int)(br.BaseStream.Length - br.BaseStream.Position));
                             br.BaseStream.Seek(19, SeekOrigin.Begin);
                             while (true)
@@ -1127,6 +1152,16 @@ namespace NScumm.Core
                         }
                         break;
 
+                    case ResType.VerbImage:
+                        {
+                            var br = new BinaryReader(new MemoryStream(ptr));
+                            _verbs[idx].ImageWidth = br.ReadUInt16();
+                            _verbs[idx].ImageHeight = br.ReadUInt16();
+                            var imgSize = (int)(br.BaseStream.Length - 4);
+                            _verbs[idx].ImageData = new ImageData{ Data = br.ReadBytes(imgSize) };
+                        }
+                        break;
+
                     case ResType.String:
                         {
                             _strings[idx] = ptr;
@@ -1165,7 +1200,8 @@ namespace NScumm.Core
             Image = 19,
             Talkie = 20,
             SpoolBuffer = 21,
-            Last = 21
+            VerbImage = 22,
+            Last = 22
         }
 
         public void Save(string filename)

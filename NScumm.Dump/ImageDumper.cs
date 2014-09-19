@@ -114,7 +114,7 @@ namespace NScumm.Tmp
             }
             else
             {
-                gdi.DrawBitmap(room.Image, screen2, 0, 0, room.Header.Width, room.Header.Height, 0, numStrips, 0, true, room.Header.Width);
+                gdi.DrawBitmap(room.Image, screen2, 0, 0, room.Header.Width, room.Header.Height, 0, numStrips, 0, true);
             }
             var bmpRoom = ToBitmap(room, screen2);
             bmpRoom.Save("bg_" + name + ".png");
@@ -218,7 +218,7 @@ namespace NScumm.Tmp
                     foreach (var img in obj.Images)
                     {
                         var screen = new VirtScreen(0, obj.Width, obj.Height, PixelFormat.Indexed8, 2);
-                        gdi.DrawBitmap(img, screen, 0, 0, obj.Width, obj.Height, 0, obj.Width / 8, 0, true, room.Header.Width);
+                        gdi.DrawBitmap(img, screen, 0, 0, obj.Width, obj.Height, 0, obj.Width / 8, 0, true);
                         var bmp = ToBitmap(room, screen);
                         bmp.Save("obj_" + obj.Number + "_" + (++j) + ".png");
                     }

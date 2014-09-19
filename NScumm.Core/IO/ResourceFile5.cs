@@ -344,7 +344,11 @@ namespace NScumm.Core.IO
                             byte id;
                             while ((id = _reader.ReadByte()) != 0)
                             {
-                                obj.ScriptOffsets.Add(id, _reader.ReadUInt16());
+                                var offset = _reader.ReadUInt16();
+                                if (!obj.ScriptOffsets.ContainsKey(id))
+                                {
+                                    obj.ScriptOffsets[id] = offset;
+                                }
                             }
                             obj.Script.Offset = _reader.BaseStream.Position - pos;
                             obj.Script.Data = _reader.ReadBytes((int)(it.Current.Size - 8 - (obj.ScriptOffsets.Count * 3 + 1)));

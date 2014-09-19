@@ -195,7 +195,7 @@ namespace NScumm.Core
                 {
                     Gdi.DrawBitmap(vst.ImageData, vs, xStrip + i, yDiff,
                         vst.ImageWidth, vst.ImageHeight,
-                        i, 1, DrawBitmaps.AllowMaskOr | DrawBitmaps.ObjectMode);
+                        i, 1, vst.ImageWidth, DrawBitmaps.AllowMaskOr | DrawBitmaps.ObjectMode);
                 }
             }
 
@@ -543,7 +543,7 @@ namespace NScumm.Core
             else
             {
                 Gdi.DrawBitmap(roomData.Image, _mainVirtScreen, s, 0, 
-                    roomData.Header.Width, _mainVirtScreen.Height, s, num, 0);
+                    roomData.Header.Width, _mainVirtScreen.Height, s, num, roomData.Header.Width, 0);
             }
         }
 

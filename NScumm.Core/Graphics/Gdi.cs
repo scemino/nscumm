@@ -163,14 +163,14 @@ namespace NScumm.Core.Graphics
             }
         }
 
-        public void DrawBitmap(ImageData img, VirtScreen vs, int x, int y, int width, int height, int stripnr, int numstrip, DrawBitmaps flags)
+        public void DrawBitmap(ImageData img, VirtScreen vs, int x, int y, int width, int height, int stripnr, int numstrip, int roomWidth, DrawBitmaps flags)
         {
             // Check whether lights are turned on or not
             var lightsOn = _vm.IsLightOn();
-            DrawBitmap(img, vs, x, y, width, height, stripnr, numstrip, flags, lightsOn);
+            DrawBitmap(img, vs, x, y, width, height, stripnr, numstrip, roomWidth, flags, lightsOn);
         }
 
-        public void DrawBitmap(ImageData img, VirtScreen vs, int x, int y, int width, int height, int stripnr, int numstrip, DrawBitmaps flags, bool isLightOn)
+        public void DrawBitmap(ImageData img, VirtScreen vs, int x, int y, int width, int height, int stripnr, int numstrip, int roomWidth, DrawBitmaps flags, bool isLightOn)
         {
             int sx = x - vs.XStart / 8;
             if (sx < 0)
@@ -186,7 +186,7 @@ namespace NScumm.Core.Graphics
             // It was added as a kind of hack to fix some corner cases, but it compares
             // the room width to the virtual screen width; but the former should always
             // be bigger than the latter (except for MM NES, maybe)... strange
-            int limit = Math.Max(width, vs.Width) / 8 - x;
+            int limit = Math.Max(roomWidth, vs.Width) / 8 - x;
             if (limit > numstrip)
                 limit = numstrip;
             if (limit > NumStrips - sx)

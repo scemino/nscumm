@@ -89,6 +89,24 @@ namespace NScumm.Core
             }
         }
 
+        string GetIqFilename(string filename)
+        {
+            var targetName = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Game.Path), Game.Id);
+            if (_game.Id == "atlantis")
+            {
+                filename = targetName + ".iq";
+            }
+            else if (_game.Id == "monkey" || _game.Id == "monkey2")
+            {
+                filename = targetName + ".cfg";
+            }
+            else
+            {
+                throw new NotSupportedException(string.Format("SO_SAVE_STRING: Unsupported filename {0}", filename));
+            }
+            return filename;
+        }
+
         void RoomOps()
         {
             bool paramsBeforeOpcode = (_game.Version == 3);
@@ -253,13 +271,46 @@ namespace NScumm.Core
                         SetShadowPalette(a, b, c, d, e, 0, 256);
                     }
                     break;
+                case 13:    // SO_SAVE_STRING
+                    {
+                        // This subopcode is used in Indy 4 to save the IQ points
+                        // data. No other LucasArts game uses it. We use this fact
+                        // to substitute a filename based on the targetname
+                        // ("TARGET.iq").
+                        //
+                        // This way, the iq data of each Indy 4 variant stays
+                        // separate. Moreover, the filename now clearly reflects to
+                        // which target it belongs (as it should).
+                        //
+                        // In addition, the Monkey Island fan patch (which adds
+                        // speech support and more things to MI 1 and 2) uses
+                        // this opcode to generate a "monkey.cfg" file containing.
+                        // some user controllable settings.
+                        // Once more we use a custom filename ("TARGET.cfg").
+                        var index = GetVarOrDirectByte(OpCodeParameter.Param1);
+                        var filename = System.Text.Encoding.ASCII.GetString(ReadCharacters());
+                        filename = GetIqFilename(filename);
+
+                        using (var file = System.IO.File.OpenWrite(filename))
+                        {
+                            var str = _strings[index];
+                            file.Write(str, 0, str.Length);
+                            // TODO: sound result
+                            //Variables[var_soundresult] = 0;
+                        }
+                        break;
+                    }
                 case 14:    // SO_LOAD_STRING
                     {
                         // This subopcode is used in Indy 4 to load the IQ points data.
                         // See SO_SAVE_STRING for details
                         var index = GetVarOrDirectByte(OpCodeParameter.Param1);
-                        var filename = ReadCharacters();
-                        // TODO: LoadString
+                        var filename = System.Text.Encoding.ASCII.GetString(ReadCharacters());
+                        filename = GetIqFilename(filename);
+                        if (System.IO.File.Exists(filename))
+                        {
+                            _strings[index] = System.IO.File.ReadAllBytes(filename);
+                        }
                     }
                     break;
 

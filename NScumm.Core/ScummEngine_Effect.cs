@@ -79,6 +79,13 @@ namespace NScumm.Core
                 case 129:
                     break;
 
+                case 130:
+                case 131:
+                case 132:
+                case 133:
+                    ScrollEffect(133 - effect);
+                    break;
+
                 case 134:
                     DissolveEffect(1, 1);
                     break;
@@ -91,6 +98,11 @@ namespace NScumm.Core
                     throw new NotImplementedException(string.Format("Unknown screen effect {0}", effect));
             }
             _screenEffectFlag = true;
+        }
+
+        void ScrollEffect(int dir)
+        {
+            // TODO: ScrollEffect
         }
 
         /// <summary>

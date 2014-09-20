@@ -47,7 +47,7 @@ namespace NScumm.Core.Audio.Midi
         OldLucas = 6
     }
 
-    public partial class MidiPlayer: IMusicPlayer
+    public partial class MidiPlayer: IMidiPlayer
     {
         readonly MidiTrack[] track = new MidiTrack[16];
         readonly MidiChannel[] ch = new MidiChannel[16];
@@ -128,6 +128,11 @@ namespace NScumm.Core.Audio.Midi
                 subsongs = 1;
                 Rewind(0);
             }
+        }
+
+        public void Stop()
+        {
+            pos = data.Length;
         }
 
         public void Rewind(int subsong)

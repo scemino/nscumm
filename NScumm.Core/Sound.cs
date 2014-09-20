@@ -21,22 +21,26 @@ using System.Collections.Generic;
 using System.Timers;
 using NScumm.Core.Audio.OPL;
 using NScumm.Core.Audio.Midi;
+using System.Linq;
+using NScumm.Core.Audio.IMuse;
 
 namespace NScumm.Core
 {
-    class Sound
+    class Sound: ISoundRepository
     {
         ScummEngine vm;
         Timer timer;
         Stack<int> soundQueue;
-        Stack<int> soundQueueIMuse;
+        Queue<int> soundQueueIMuse;
         const int BufferSize = 4096;
         readonly IOpl opl;
-        IMusicPlayer player;
+        IMidiPlayer midi;
         long minicnt;
         bool playing;
         IAudioDriver driver;
         IAudioStream stream;
+        IMuse imuse;
+        IPlayer player;
 
         class AudioStream: IAudioStream
         {
@@ -70,14 +74,17 @@ namespace NScumm.Core
             this.vm = vm;
             this.driver = driver;
             soundQueue = new Stack<int>();
-            soundQueueIMuse = new Stack<int>();
+            soundQueueIMuse = new Queue<int>();
             timer = new Timer(100.7);
             timer.Elapsed += OnCDTimer;
 
             // initialize output & player
             opl = new OPL3();
-            player = new MidiPlayer(opl);
+            midi = new MidiPlayer(opl);
+            player = new Player(midi, this);
+            imuse = new IMuse(player);
             stream = new AudioStream(this);
+            driver.Play(stream);
         }
 
         public void PlayCDTrack(int track, int numLoops, int startFrame, int duration)
@@ -128,19 +135,24 @@ namespace NScumm.Core
                     PlaySound(sound);
             }
 
-            // TODO: soundQueueIMuse
-            soundQueueIMuse.Clear();
+            if (soundQueueIMuse.Count > 0)
+            {
+                var num = soundQueueIMuse.Dequeue();
+                var data = (from i in Enumerable.Range(0, num)
+                                        select soundQueueIMuse.Dequeue()).ToArray();
+                vm.Variables[ScummEngine5.VariableSoundResult] = imuse.DoCommand(data);
+            }
         }
 
         void PlaySound(int sound)
         {
-            var data = vm.ResourceManager.GetSound(sound);
-            if (data == null)
-                return;
-            player.LoadFrom(data);
-            minicnt = 0;
-
-            driver.Play(stream);
+//            var data = vm.ResourceManager.GetSound(sound);
+//            if (data == null)
+//                return;
+//            midi.LoadFrom(data);
+//            minicnt = 0;
+//
+            imuse.StartSound(sound);
         }
 
         public void StopAllSounds()
@@ -155,7 +167,7 @@ namespace NScumm.Core
 
         public void Update()
         {
-            if (playing)
+            //if (playing)
             {
                 driver.Update(stream);
             }
@@ -173,13 +185,13 @@ namespace NScumm.Core
                 while (minicnt < 0)
                 {
                     minicnt += stream.Frequency * 4;
-                    playing = player.Update();
+                    playing = midi.Update();
                 }
-                i = Math.Min(towrite, (long)(minicnt / player.GetRefresh() + 4) & ~3);
+                i = Math.Min(towrite, (long)(minicnt / midi.GetRefresh() + 4) & ~3);
                 var n = Update(buffer, pos, i);
                 pos += n;
                 towrite -= i;
-                minicnt -= (long)(player.GetRefresh() * i);
+                minicnt -= (long)(midi.GetRefresh() * i);
             }
 
             return buffer;
@@ -204,13 +216,22 @@ namespace NScumm.Core
             }
             else
             {
-                soundQueueIMuse.Push(items.Length);
+                soundQueueIMuse.Enqueue(items.Length);
                 foreach (var item in items)
                 {
-                    soundQueueIMuse.Push(item);
+                    soundQueueIMuse.Enqueue(item);
                 }
             }
         }
+
+        #region ISoundRepository implementation
+
+        byte[] ISoundRepository.GetSound(int id)
+        {
+            return vm.ResourceManager.GetSound(id);
+        }
+
+        #endregion
 
     }
 }

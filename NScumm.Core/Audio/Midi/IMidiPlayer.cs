@@ -36,17 +36,14 @@
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-using System;
-using System.IO;
-using System.Text;
-using NScumm.Core.Audio.OPL;
 
-namespace NScumm.Core.Audio
+namespace NScumm.Core.Audio.Midi
 {
-
-    public interface IMusicPlayer
+    public interface IMidiPlayer
     {
         void LoadFrom(byte[] data);
+
+        void Stop();
 
         bool Update();
 

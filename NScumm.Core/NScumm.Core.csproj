@@ -129,11 +129,16 @@
     <Compile Include="ScummEngine_Palette.cs" />
     <Compile Include="Audio\OPL\IOpl.cs" />
     <Compile Include="Audio\OPL\OPL3.cs" />
-    <Compile Include="Audio\IMusicPlayer.cs" />
     <Compile Include="Audio\Midi\MidiPlayer.cs" />
     <Compile Include="Audio\Midi\MidiChannel.cs" />
     <Compile Include="Audio\Midi\MidiTrack.cs" />
     <Compile Include="Audio\Midi\MidiPlayer_Data.cs" />
+    <Compile Include="Audio\IMuse\IMuse.cs" />
+    <Compile Include="Audio\Midi\IMidiPlayer.cs" />
+    <Compile Include="Audio\IPlayer.cs" />
+    <Compile Include="Audio\IMusicEngine.cs" />
+    <Compile Include="Audio\Player.cs" />
+    <Compile Include="Audio\IMuse\IIMuse.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="IO\Nscumm.xml">
@@ -157,5 +162,6 @@
     <Folder Include="Audio\" />
     <Folder Include="Audio\OPL\" />
     <Folder Include="Audio\Midi\" />
+    <Folder Include="Audio\IMuse\" />
   </ItemGroup>
 </Project>

@@ -17,10 +17,10 @@
 
 namespace NScumm.Core.Audio
 {
-	public interface IAudioStream
-	{
-		int Frequency { get; }
+    public interface IAudioStream
+    {
+        int Frequency { get; }
 
-		short[] Read ();
-	}
+        short[] Read();
+    }
 }

@@ -85,12 +85,9 @@
     <Compile Include="ScummText.cs" />
     <Compile Include="IScummTextDecoder.cs" />
     <Compile Include="Input\KeyCode.cs" />
-    <Compile Include="Audio\IOpl.cs" />
-    <Compile Include="Audio\OPL3.cs" />
     <Compile Include="Sound.cs" />
     <Compile Include="Audio\IAudioDriver.cs" />
     <Compile Include="Audio\IAudioStream.cs" />
-    <Compile Include="Audio\MidiPlayer.cs" />
     <Compile Include="ScummEngine_Actor.cs" />
     <Compile Include="ScummEngine_Verb.cs" />
     <Compile Include="ScummEngine_Variable.cs" />
@@ -130,6 +127,13 @@
     <Compile Include="ScummEngine5.cs" />
     <Compile Include="IO\GameManager.cs" />
     <Compile Include="ScummEngine_Palette.cs" />
+    <Compile Include="Audio\OPL\IOpl.cs" />
+    <Compile Include="Audio\OPL\OPL3.cs" />
+    <Compile Include="Audio\IMusicPlayer.cs" />
+    <Compile Include="Audio\Midi\MidiPlayer.cs" />
+    <Compile Include="Audio\Midi\MidiChannel.cs" />
+    <Compile Include="Audio\Midi\MidiTrack.cs" />
+    <Compile Include="Audio\Midi\MidiPlayer_Data.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="IO\Nscumm.xml">
@@ -151,5 +155,7 @@
   -->
   <ItemGroup>
     <Folder Include="Audio\" />
+    <Folder Include="Audio\OPL\" />
+    <Folder Include="Audio\Midi\" />
   </ItemGroup>
 </Project>

@@ -17,9 +17,10 @@
 
 namespace NScumm.Core.Audio
 {
-	public interface IAudioDriver
-	{
-		void Play (IAudioStream stream);
-		void Update (IAudioStream stream);
-	}
+    public interface IAudioDriver
+    {
+        void Play(IAudioStream stream);
+
+        void Update(IAudioStream stream);
+    }
 }

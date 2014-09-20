@@ -15,13 +15,13 @@
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-namespace NScumm.Core.Audio
+namespace NScumm.Core.Audio.OPL
 {
-	public interface IOpl
-	{
-		void Write (int array, int address, int data);
+    public interface IOpl
+    {
+        void Write(int array, int address, int data);
 
-		short[] Read ();
-	}
+        short[] Read();
+    }
 }
 

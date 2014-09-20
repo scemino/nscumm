@@ -19,6 +19,8 @@ using NScumm.Core.Audio;
 using System;
 using System.Collections.Generic;
 using System.Timers;
+using NScumm.Core.Audio.OPL;
+using NScumm.Core.Audio.Midi;
 
 namespace NScumm.Core
 {
@@ -29,8 +31,8 @@ namespace NScumm.Core
         Stack<int> soundQueue;
         Stack<int> soundQueueIMuse;
         const int BufferSize = 4096;
-        readonly OPL3 opl;
-        MidiPlayer player;
+        readonly IOpl opl;
+        IMusicPlayer player;
         long minicnt;
         bool playing;
         IAudioDriver driver;

@@ -209,11 +209,14 @@ namespace NScumm.Core.IO
         {
             byte[] data = null;
             var resource = Index.SoundResources[sound];
-            var disk = OpenRoom(resource.RoomNum);
-            if (disk != null)
+            if (resource.RoomNum != 0)
             {
-                var roomOffset = GetRoomOffset(disk, resource.RoomNum);
-                data = disk.ReadSound(roomOffset + resource.Offset);
+                var disk = OpenRoom(resource.RoomNum);
+                if (disk != null)
+                {
+                    var roomOffset = GetRoomOffset(disk, resource.RoomNum);
+                    data = disk.ReadSound(roomOffset + resource.Offset);
+                }
             }
             return data;
         }

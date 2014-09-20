@@ -426,7 +426,7 @@ namespace NScumm.Core.IO
             if (tag != "SOUN")
                 throw new NotSupportedException("Expected SO block.");
             var size = _reader.ReadUInt32BigEndian();
-            var pos = _reader.BaseStream.Position + size;
+            var pos = _reader.BaseStream.Position + size - 8;
 
             do
             {
@@ -437,7 +437,7 @@ namespace NScumm.Core.IO
                 {
                     case "ADL ":
                         _reader.BaseStream.Seek(-8, SeekOrigin.Current);
-                        return _reader.ReadBytes((int)size);
+                        return _reader.ReadBytes((int)size + 8);
                     case "SOU ":
                         break;
                     default:

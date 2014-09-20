@@ -59,7 +59,7 @@ namespace NScumm.Tmp
                     var gdi = new Gdi(null, Game);
                     gdi.RoomPalette = CreatePalette();
 
-                    //                    DumpRommObjects(room, gdi);
+                    DumpRoomObjects(room, gdi);
                     DumpRoomImage(room, gdi);
                 }
                 catch (Exception e)
@@ -114,7 +114,7 @@ namespace NScumm.Tmp
             }
             else
             {
-                gdi.DrawBitmap(room.Image, screen2, 0, 0, room.Header.Width, room.Header.Height, 0, numStrips, 0, true);
+                gdi.DrawBitmap(room.Image, screen2, 0, 0, room.Header.Width, room.Header.Height, 0, numStrips, room.Header.Width, 0, true);
             }
             var bmpRoom = ToBitmap(room, screen2);
             bmpRoom.Save("bg_" + name + ".png");
@@ -190,12 +190,10 @@ namespace NScumm.Tmp
             }
         }
 
-        void DumpRommObjects(Room room, Gdi gdi)
+        void DumpRoomObjects(Room room, Gdi gdi)
         {
             foreach (var obj in room.Objects)
             {
-                //                        if (obj.Name.Length == 0)
-                //                            continue;
                 var text = new ScummText(obj.Name);
                 var sb = new StringBuilder();
                 sb.AppendLine("Object #" + obj.Number);
@@ -218,7 +216,7 @@ namespace NScumm.Tmp
                     foreach (var img in obj.Images)
                     {
                         var screen = new VirtScreen(0, obj.Width, obj.Height, PixelFormat.Indexed8, 2);
-                        gdi.DrawBitmap(img, screen, 0, 0, obj.Width, obj.Height, 0, obj.Width / 8, 0, true);
+                        gdi.DrawBitmap(img, screen, 0, 0, obj.Width, obj.Height, 0, obj.Width / 8, room.Header.Width, 0, true);
                         var bmp = ToBitmap(room, screen);
                         bmp.Save("obj_" + obj.Number + "_" + (++j) + ".png");
                     }

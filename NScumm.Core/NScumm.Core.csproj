@@ -139,6 +139,16 @@
     <Compile Include="Audio\IMusicEngine.cs" />
     <Compile Include="Audio\Player.cs" />
     <Compile Include="Audio\IMuse\IIMuse.cs" />
+    <Compile Include="Audio\HookDatas.cs" />
+    <Compile Include="Audio\OPL\Channels\Channel.cs" />
+    <Compile Include="Audio\OPL\Channels\Channel2op.cs" />
+    <Compile Include="Audio\OPL\Channels\Channel4op.cs" />
+    <Compile Include="Audio\OPL\Channels\DisabledChannel.cs" />
+    <Compile Include="Audio\OPL\Operators\Operator.cs" />
+    <Compile Include="Audio\OPL\Operators\TopCymbalOperator.cs" />
+    <Compile Include="Audio\OPL\Operators\HighHatOperator.cs" />
+    <Compile Include="Audio\OPL\Operators\SnareDrumOperator.cs" />
+    <Compile Include="Audio\OPL\Operators\TomTomOperator.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="IO\Nscumm.xml">
@@ -163,5 +173,7 @@
     <Folder Include="Audio\OPL\" />
     <Folder Include="Audio\Midi\" />
     <Folder Include="Audio\IMuse\" />
+    <Folder Include="Audio\OPL\Channels\" />
+    <Folder Include="Audio\OPL\Operators\" />
   </ItemGroup>
 </Project>

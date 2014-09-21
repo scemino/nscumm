@@ -37,14 +37,14 @@ namespace NScumm.Core.Audio.Midi
         Rythm = 1
     }
 
-    public enum FileType
+    public enum MidiFileType
     {
-        Lucas = 1,
-        Midi = 2,
-        Cmf = 3,
-        Sierra = 4,
-        AdvancedSierra = 5,
-        OldLucas = 6
+        Lucas,
+        Midi,
+        Cmf,
+        Sierra,
+        AdvancedSierra,
+        OldLucas
     }
 
     public partial class MidiPlayer: IMidiPlayer
@@ -57,7 +57,7 @@ namespace NScumm.Core.Audio.Midi
         long pos;
         long sierra_pos;
         //sierras gotta be special.. :>
-        FileType type;
+        MidiFileType type;
         int tins;
         readonly int[,] chp = new int[18, 3];
         long deltas;
@@ -81,18 +81,18 @@ namespace NScumm.Core.Audio.Midi
 
         public void Load(string filename)
         {
-            FileType good = 0;
+            MidiFileType good = 0;
             using (var stream = File.OpenRead(filename))
             {
                 var br = new BinaryReader(stream);
                 var sig = br.ReadBytes(6);
                 if (sig[0] == 'A' && sig[1] == 'D' && sig[2] == 'L')
                 {
-                    good = FileType.Lucas;
+                    good = MidiFileType.Lucas;
                 }
                 else if (sig[4] == 'A' && sig[5] == 'D')
                 {
-                    good = FileType.OldLucas;
+                    good = MidiFileType.OldLucas;
                 }
 
                 if (good != 0)
@@ -108,16 +108,16 @@ namespace NScumm.Core.Audio.Midi
 
         public void LoadFrom(byte[] data)
         {
-            FileType good = 0;
+            MidiFileType good = 0;
             var br = new BinaryReader(new MemoryStream(data));
             var sig = br.ReadBytes(6);
             if (sig[0] == 'A' && sig[1] == 'D' && sig[2] == 'L')
             {
-                good = FileType.Lucas;
+                good = MidiFileType.Lucas;
             }
             else if (sig[4] == 'A' && sig[5] == 'D')
             {
-                good = FileType.OldLucas;
+                good = MidiFileType.OldLucas;
             }
 
             if (good != 0)
@@ -132,7 +132,7 @@ namespace NScumm.Core.Audio.Midi
 
         public void Stop()
         {
-            pos = data.Length;
+            pos = data != null ? data.Length : 0;
         }
 
         public void Rewind(int subsong)
@@ -187,20 +187,20 @@ namespace NScumm.Core.Audio.Midi
             getnext(1);
             switch (type)
             {
-                case FileType.Lucas:
-                case FileType.Midi:
+                case MidiFileType.Lucas:
+                case MidiFileType.Midi:
                     InitMidi();
                     break;
-                case FileType.Cmf:
+                case MidiFileType.Cmf:
                     InitCmf();
                     break;
-                case FileType.OldLucas:
+                case MidiFileType.OldLucas:
                     InitOldLucas();
                     break;
-                case FileType.AdvancedSierra:
+                case MidiFileType.AdvancedSierra:
                     InitAdvancedSierra(subsong);
                     break;
-                case FileType.Sierra:
+                case MidiFileType.Sierra:
                     InitSierra();
                     break;
             }
@@ -240,7 +240,7 @@ namespace NScumm.Core.Audio.Midi
                     if (track[curtrack].on != 0)
                     {
                         pos = track[curtrack].pos;
-                        if (type != FileType.Sierra && type != FileType.AdvancedSierra)
+                        if (type != MidiFileType.Sierra && type != MidiFileType.AdvancedSierra)
                             track[curtrack].iwait += getval();
                         else
                             track[curtrack].iwait += getnext(1);
@@ -490,12 +490,12 @@ namespace NScumm.Core.Audio.Midi
                                             datalook(pos + 2) < 16)
                                         {
                                             adlib_style = AdlibStyles.Lucas | AdlibStyles.Midi;
-                                            for (i = 0; i < l; i++)
-                                            {
-                                                //                                      Console.Write ("%x ", datalook (pos + i));
-                                                //                                      if ((i - 3) % 10 == 0)
-                                                //                                          Console.WriteLine ();
-                                            }
+//                                            for (i = 0; i < l; i++)
+//                                            {
+                                            //                                      Console.Write ("%x ", datalook (pos + i));
+                                            //                                      if ((i - 3) % 10 == 0)
+                                            //                                          Console.WriteLine ();
+//                                            }
                                             //                                  Console.WriteLine ();
                                             getnext(1);
                                             getnext(1);
@@ -554,8 +554,8 @@ namespace NScumm.Core.Audio.Midi
                                     case 0xfb:
                                     case 0xfc:
                                                 //this ends the track for sierra.
-                                        if (type == FileType.Sierra ||
-                                            type == FileType.AdvancedSierra)
+                                        if (type == MidiFileType.Sierra ||
+                                            type == MidiFileType.AdvancedSierra)
                                         {
                                             track[curtrack].tend = pos;
                                             //                                  Console.WriteLine ("endmark: {0} -- {1:X}", pos, pos);
@@ -591,7 +591,7 @@ namespace NScumm.Core.Audio.Midi
 
                         if (pos < track[curtrack].tend)
                         {
-                            if (type != FileType.Sierra && type != FileType.AdvancedSierra)
+                            if (type != MidiFileType.Sierra && type != MidiFileType.AdvancedSierra)
                                 w = getval();
                             else
                                 w = getnext(1);
@@ -669,13 +669,13 @@ namespace NScumm.Core.Audio.Midi
 
         void InitMidi()
         {
-            if (type == FileType.Lucas)
+            if (type == MidiFileType.Lucas)
             {
                 getnext(24);  //skip junk and get to the midi.
                 adlib_style = AdlibStyles.Lucas | AdlibStyles.Midi;
             }
             //note: no break, we go right into midi headers...
-            if (type != FileType.Lucas)
+            if (type != MidiFileType.Lucas)
                 tins = 128;
             getnext(11);  /*skip header*/
             deltas = getnext(2);
@@ -907,19 +907,19 @@ namespace NScumm.Core.Audio.Midi
             }
         }
 
-        void midi_fm_reset()
+        int getval()
         {
-            for (int i = 0; i < 256; i++)
-                midi_write_adlib(i, 0);
+            int v = 0;
+            byte b;
 
-            midi_write_adlib(0x01, 0x20);
-            midi_write_adlib(0xBD, 0xc0);
-        }
-
-        void midi_write_adlib(int r, int v)
-        {
-            opl.Write(0, r, v);
-            adlib_data[r] = (byte)v;
+            b = (byte)getnext(1);
+            v = b & 0x7f;
+            while ((b & 0x80) != 0)
+            {
+                b = (byte)getnext(1);
+                v = (v << 7) + (b & 0x7F);
+            }
+            return(v);
         }
 
         void sierra_next_section()
@@ -929,7 +929,7 @@ namespace NScumm.Core.Audio.Midi
             for (i = 0; i < 16; i++)
                 track[i].on = 0;
 
-//            Console.WriteLine("\n\nnext adv sierra section");
+            //            Console.WriteLine("\n\nnext adv sierra section");
 
             pos = sierra_pos;
             i = 0;
@@ -946,7 +946,7 @@ namespace NScumm.Core.Audio.Midi
                 track[curtrack].tend = data.Length; //0xFC will kill it
                 track[curtrack].iwait = 0;
                 track[curtrack].pv = 0;
-//                Console.WriteLine("track {0} starts at {1:X}", curtrack, track [curtrack].spos);
+                //                Console.WriteLine("track {0} starts at {1:X}", curtrack, track [curtrack].spos);
 
                 getnext(2);
                 i = (int)getnext(1);
@@ -960,19 +960,19 @@ namespace NScumm.Core.Audio.Midi
             doing = 1;
         }
 
-        int getval()
+        void midi_fm_reset()
         {
-            int v = 0;
-            byte b;
+            for (int i = 0; i < 256; i++)
+                midi_write_adlib(i, 0);
 
-            b = (byte)getnext(1);
-            v = b & 0x7f;
-            while ((b & 0x80) != 0)
-            {
-                b = (byte)getnext(1);
-                v = (v << 7) + (b & 0x7F);
-            }
-            return(v);
+            midi_write_adlib(0x01, 0x20);
+            midi_write_adlib(0xBD, 0xc0);
+        }
+
+        void midi_write_adlib(int r, int v)
+        {
+            opl.Write(0, r, v);
+            adlib_data[r] = (byte)v;
         }
 
         void midi_fm_endnote(int voice)
@@ -1058,7 +1058,7 @@ namespace NScumm.Core.Audio.Midi
         {
             int vol;
 
-            if (adlib_style.HasFlag(AdlibStyles.Sierra) == false)
+            if (!adlib_style.HasFlag(AdlibStyles.Sierra))
             {  //sierra likes it loud!
                 vol = volume >> 2;
 

@@ -102,7 +102,7 @@ namespace NScumm.Core.Audio.IMuse
 
         #region IIMuse implementation
 
-        public int DoCommand(int[] a)
+        public int DoCommand(int num, int[] a)
         {
             var cmd = a[0] & 0xFF;
             var param = a[0] >> 8;
@@ -126,6 +126,38 @@ namespace NScumm.Core.Audio.IMuse
                     case 1:
                             //player.SetPriority(a[2]);
                         return 0;
+                    case 2:
+//                        return player.SetVolume(a[2]);
+                        return 0;
+                    case 3:
+//                        player.SetPan(a[2]);
+                        return 0;
+                    case 4:
+//                        return player.SetTranspose(a[2], a[3]);
+                        return 0;
+                    case 5:
+//                        player.SetDetune(a[2]);
+                        return 0;
+                    case 6:
+                            // WORKAROUND for bug #1324106. When playing the
+                            // "flourishes" as Rapp's body appears from his ashes,
+                            // MI2 sets up triggers to pause the music, in case the
+                            // animation plays too slowly, and then the music is
+                            // manually unpaused for the next part of the music.
+                            //
+                            // In ScummVM, the animation finishes slightly too
+                            // quickly, and the pause command is run *after* the
+                            // unpause command. So we work around it by ignoring
+                            // all attempts at pausing this particular sound.
+                            //
+                            // I could have sworn this wasn't needed after the
+                            // recent timer change, but now it looks like it's
+                            // still needed after all.
+//                        if (_game.Id != "monkey2" || player.Id != 183 || a[2] != 0)
+//                        {
+//                            player.SetSpeed(a[2]);
+//                        }
+                        return 0;
                     case 7:
                             //return player.Jump(a[2], a[3], a[4]) ? 0 : -1;
                         return 0;
@@ -142,8 +174,7 @@ namespace NScumm.Core.Audio.IMuse
                             //((Part)player).SetOnOff(a[3] != 0);
                         return 0;
                     case 12:
-                            //return player.SetHook(a[2], a[3], a[4]);
-                        return 0;
+                        return player.SetHook(a[2], a[3], a[4]);
                     case 13:
                             //return player.AddParameterFader(ParameterFader.Volume, a[2], a[3]);
                         return -1;
@@ -158,8 +189,7 @@ namespace NScumm.Core.Audio.IMuse
                             //return player.GetParam(a[2], a[3]);
                         return -1;
                     case 20:
-                            //return player.SetHook(a[2], a[3], a[4]);
-                        return -1;
+                        return player.SetHook(a[2], a[3], a[4]);
                     case 21:
                         return -1;
                     case 22:

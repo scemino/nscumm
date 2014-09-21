@@ -1,5 +1,5 @@
 ﻿//
-//  IPlayer.cs
+//  DisabledChannel.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -19,30 +19,32 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace NScumm.Core
+namespace NScumm.Core.Audio.OPL
 {
-    public interface IPlayer
+    // There's just one instance of this class, that fills the eventual gaps in the Channel array;
+    class DisabledChannel : Channel
     {
-        int Id { get; }
+        internal DisabledChannel()
+            : base(0)
+        {
+        }
 
-        bool IsActive { get; }
+        public override double[] getChannelOutput()
+        {
+            return getInFourChannels(0);
+        }
 
-        bool IsFadingOut { get; }
+        protected override void keyOn()
+        {
+        }
 
-        int OffsetNote { get; set; }
+        protected override void keyOff()
+        {
+        }
 
-        bool StartSound(int sound);
-
-        void Clear();
-
-        int GetParam(int param, int chan);
-
-        int SetHook(int cls, int value, int chan);
-    }
-
-    public interface ISoundRepository
-    {
-        byte[] GetSound(int id);
+        protected override void updateOperators()
+        {
+        }
     }
 }
 

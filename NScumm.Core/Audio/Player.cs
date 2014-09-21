@@ -28,11 +28,13 @@ namespace NScumm.Core
     {
         readonly IMidiPlayer midi;
         readonly ISoundRepository soundRepository;
+        readonly HookDatas hook;
 
         public Player(IMidiPlayer midi, ISoundRepository soundRepository)
         {
             this.midi = midi;
             this.soundRepository = soundRepository;
+            hook = new HookDatas();
         }
 
         public int OffsetNote { get; set; }
@@ -65,6 +67,8 @@ namespace NScumm.Core
             Id = sound;
 
             var data = soundRepository.GetSound(sound);
+            if (data == null)
+                return false;
             midi.LoadFrom(data);
             return true;
         }
@@ -111,12 +115,16 @@ namespace NScumm.Core
 //                case 20:
 //                case 21:
 //                case 22:
-//                case 23:
-//                    return _hook.query_param(param, chan);
+                case 23:
+                    return hook.QueryParam(param, chan);
                 default:
                     return -1;
             }
         }
 
+        public int SetHook(int cls, int value, int chan)
+        { 
+            return hook.Set(cls, value, chan);
+        }
     }
 }

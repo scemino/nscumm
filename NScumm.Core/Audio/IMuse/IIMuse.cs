@@ -23,7 +23,7 @@ namespace NScumm.Core.Audio.IMuse
 {
     public interface IIMuse
     {
-        int DoCommand(int[] args);
+        int DoCommand(int num, int[] args);
     }
 }
 

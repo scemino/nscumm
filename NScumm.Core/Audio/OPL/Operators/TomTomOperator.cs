@@ -1,5 +1,5 @@
 ﻿//
-//  IPlayer.cs
+//  TomTomOperator.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -19,30 +19,16 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace NScumm.Core
+namespace NScumm.Core.Audio.OPL
 {
-    public interface IPlayer
+    class TomTomOperator : Operator
     {
-        int Id { get; }
+        const int tomTomOperatorBaseAddress = 0x12;
 
-        bool IsActive { get; }
-
-        bool IsFadingOut { get; }
-
-        int OffsetNote { get; set; }
-
-        bool StartSound(int sound);
-
-        void Clear();
-
-        int GetParam(int param, int chan);
-
-        int SetHook(int cls, int value, int chan);
-    }
-
-    public interface ISoundRepository
-    {
-        byte[] GetSound(int id);
+        internal TomTomOperator()
+            : base(tomTomOperatorBaseAddress)
+        {
+        }
     }
 }
 

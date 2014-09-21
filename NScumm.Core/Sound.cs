@@ -138,9 +138,12 @@ namespace NScumm.Core
             if (soundQueueIMuse.Count > 0)
             {
                 var num = soundQueueIMuse.Dequeue();
-                var data = (from i in Enumerable.Range(0, num)
-                                        select soundQueueIMuse.Dequeue()).ToArray();
-                vm.Variables[ScummEngine5.VariableSoundResult] = imuse.DoCommand(data);
+                var args = new int[16];
+                for (int i = 0; i < num; i++)
+                {
+                    args[i] = soundQueueIMuse.Dequeue();
+                }
+                vm.Variables[ScummEngine5.VariableSoundResult] = imuse.DoCommand(num, args);
             }
         }
 

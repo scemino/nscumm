@@ -64,9 +64,9 @@ using System.Text;
 
 namespace NScumm.Core.Audio.OPL
 {
-    internal sealed class OPL3 : IOpl
+    sealed class OPL3 : IOpl
     {
-        static int[] registers = new int[0x200];
+        internal static int[] registers = new int[0x200];
         Operator[,] operators;
         Channel2op[,] channels2op;
         Channel4op[,] channels4op;
@@ -75,16 +75,17 @@ namespace NScumm.Core.Audio.OPL
         static BassDrumChannel bassDrumChannel;
         static HighHatSnareDrumChannel highHatSnareDrumChannel;
         static TomTomTopCymbalChannel tomTomTopCymbalChannel;
-        static HighHatOperator highHatOperator;
+        internal static HighHatOperator highHatOperator;
         static SnareDrumOperator snareDrumOperator;
         static TomTomOperator tomTomOperator;
-        static TopCymbalOperator topCymbalOperator;
+        internal static TopCymbalOperator topCymbalOperator;
         static Operator highHatOperatorInNonRhythmMode;
         static Operator snareDrumOperatorInNonRhythmMode;
         static Operator tomTomOperatorInNonRhythmMode;
         static Operator topCymbalOperatorInNonRhythmMode;
-        static int nts, dam, dvb, ryt, bd, sd, tom, tc, hh, _new, connectionsel;
+        internal static int nts, dam, dvb, ryt, bd, sd, tom, tc, hh, _new, connectionsel;
         static int vibratoIndex, tremoloIndex;
+   
         // The methods read() and write() are the only
         // ones needed by the user to interface with the emulator.
         // read() returns one frame at a time, to be played at 49700 Hz,
@@ -239,14 +240,14 @@ namespace NScumm.Core.Audio.OPL
             vibratoIndex = tremoloIndex = 0;
             channels = new Channel[2, 9];
 
-            initOperators();
-            initChannels2op();
-            initChannels4op();
-            initRhythmChannels();
-            initChannels();
+            InitOperators();
+            InitChannels2op();
+            InitChannels4op();
+            InitRhythmChannels();
+            InitChannels();
         }
 
-        void initOperators()
+        void InitOperators()
         {
             int baseAddress;
             // The YMF262 has 36 operators:
@@ -275,7 +276,7 @@ namespace NScumm.Core.Audio.OPL
 
         }
 
-        void initChannels2op()
+        void InitChannels2op()
         {
             // The YMF262 has 18 2-op channels.
             // Each 2-op channel can be at a serial or parallel operator configuration:
@@ -294,7 +295,7 @@ namespace NScumm.Core.Audio.OPL
                 }
         }
 
-        void initChannels4op()
+        void InitChannels4op()
         {
             // The YMF262 has 3 4-op channels in each array:
             channels4op = new Channel4op[2, 3];
@@ -307,14 +308,14 @@ namespace NScumm.Core.Audio.OPL
                 }
         }
 
-        void initRhythmChannels()
+        void InitRhythmChannels()
         {
             bassDrumChannel = new BassDrumChannel();
             highHatSnareDrumChannel = new HighHatSnareDrumChannel();
             tomTomTopCymbalChannel = new TomTomTopCymbalChannel();
         }
 
-        private void initChannels()
+        void InitChannels()
         {
             // Channel is an abstract class that can be a 2-op, 4-op, rhythm or disabled channel, 
             // depending on the OPL3 configuration at the time.
@@ -328,7 +329,7 @@ namespace NScumm.Core.Audio.OPL
             disabledChannel = new DisabledChannel();
         }
 
-        private void update_1_NTS1_6()
+        void update_1_NTS1_6()
         {
             int _1_nts1_6 = OPL3.registers[OPL3Data._1_NTS1_6_Offset];
             // Note Selection. This register is used in Channel.updateOperators() implementations,
@@ -338,7 +339,7 @@ namespace NScumm.Core.Audio.OPL
             nts = (_1_nts1_6 & 0x40) >> 6;
         }
 
-        private void update_DAM1_DVB1_RYT1_BD1_SD1_TOM1_TC1_HH1()
+        void update_DAM1_DVB1_RYT1_BD1_SD1_TOM1_TC1_HH1()
         {
             int dam1_dvb1_ryt1_bd1_sd1_tom1_tc1_hh1 = OPL3.registers[OPL3Data.DAM1_DVB1_RYT1_BD1_SD1_TOM1_TC1_HH1_Offset];
             // Depth of amplitude. This register is used in EnvelopeGenerator.getEnvelope();
@@ -399,7 +400,7 @@ namespace NScumm.Core.Audio.OPL
 
         }
 
-        private void update_7_NEW1()
+        void update_7_NEW1()
         {
             int _7_new1 = OPL3.registers[OPL3Data._7_NEW1_Offset];
             // OPL2/OPL3 mode selection. This register is used in 
@@ -457,7 +458,7 @@ namespace NScumm.Core.Audio.OPL
                 }
         }
 
-        private void setRhythmMode()
+        void setRhythmMode()
         {
             if (ryt == 1)
             {
@@ -481,513 +482,7 @@ namespace NScumm.Core.Audio.OPL
             for (int i = 6; i <= 8; i++)
                 channels[0, i].updateChannel();
         }
-        //
-        // Channels
-        //
-        internal abstract class Channel
-        {
-            internal int channelBaseAddress;
-            protected double[] feedback;
-            protected int fnuml, fnumh, kon, block, cha, chb, chc, chd, fb, cnt;
-            // Factor to convert between normalized amplitude to normalized
-            // radians. The amplitude maximum is equivalent to 8*Pi radians.
-            internal const double toPhase = 4;
 
-            internal Channel(int baseAddress)
-            {
-                channelBaseAddress = baseAddress;
-                fnuml = fnumh = kon = block = cha = chb = chc = chd = fb = cnt = 0;
-                feedback = new double[2];
-                feedback[0] = feedback[1] = 0;
-            }
-
-            internal void update_2_KON1_BLOCK3_FNUMH2()
-            {
-
-                int _2_kon1_block3_fnumh2 = OPL3.registers[channelBaseAddress + ChannelData._2_KON1_BLOCK3_FNUMH2_Offset];
-
-                // Frequency Number (hi-register) and Block. These two registers, together with fnuml, 
-                // sets the Channel´s base frequency;
-                block = (_2_kon1_block3_fnumh2 & 0x1C) >> 2;
-                fnumh = _2_kon1_block3_fnumh2 & 0x03;
-                updateOperators();
-
-                // Key On. If changed, calls Channel.keyOn() / keyOff().
-                int newKon = (_2_kon1_block3_fnumh2 & 0x20) >> 5;
-                if (newKon != kon)
-                {
-                    if (newKon == 1)
-                        keyOn();
-                    else
-                        keyOff();
-                    kon = newKon;
-                }
-            }
-
-            internal void update_FNUML8()
-            {
-                int fnuml8 = OPL3.registers[channelBaseAddress + ChannelData.FNUML8_Offset];
-                // Frequency Number, low register.
-                fnuml = fnuml8 & 0xFF;
-                updateOperators();
-            }
-
-            internal void update_CHD1_CHC1_CHB1_CHA1_FB3_CNT1()
-            {
-                int chd1_chc1_chb1_cha1_fb3_cnt1 = OPL3.registers[channelBaseAddress + ChannelData.CHD1_CHC1_CHB1_CHA1_FB3_CNT1_Offset];
-                chd = (chd1_chc1_chb1_cha1_fb3_cnt1 & 0x80) >> 7;
-                chc = (chd1_chc1_chb1_cha1_fb3_cnt1 & 0x40) >> 6;
-                chb = (chd1_chc1_chb1_cha1_fb3_cnt1 & 0x20) >> 5;
-                cha = (chd1_chc1_chb1_cha1_fb3_cnt1 & 0x10) >> 4;
-                fb = (chd1_chc1_chb1_cha1_fb3_cnt1 & 0x0E) >> 1;
-                cnt = chd1_chc1_chb1_cha1_fb3_cnt1 & 0x01;
-                updateOperators();
-            }
-
-            internal void updateChannel()
-            {
-                update_2_KON1_BLOCK3_FNUMH2();
-                update_FNUML8();
-                update_CHD1_CHC1_CHB1_CHA1_FB3_CNT1();
-            }
-
-            protected double[] getInFourChannels(double channelOutput)
-            {
-                double[] output = new double[4];
-
-                if (OPL3._new == 0)
-                    output[0] = output[1] = output[2] = output[3] = channelOutput;
-                else
-                {
-                    output[0] = (cha == 1) ? channelOutput : 0;
-                    output[1] = (chb == 1) ? channelOutput : 0;
-                    output[2] = (chc == 1) ? channelOutput : 0;
-                    output[3] = (chd == 1) ? channelOutput : 0;
-                }
-
-                return output;
-            }
-
-            public abstract double[] getChannelOutput();
-
-            protected abstract void keyOn();
-
-            protected abstract void keyOff();
-
-            protected abstract void updateOperators();
-        }
-
-        internal class Channel2op : Channel
-        {
-            internal Operator op1, op2;
-
-            public Channel2op(int baseAddress, Operator o1, Operator o2)
-                : base(baseAddress)
-            {
-                op1 = o1;
-                op2 = o2;
-            }
-
-            public override double[] getChannelOutput()
-            {
-                double channelOutput = 0, op1Output = 0, op2Output = 0;
-                double[] output;
-                // The feedback uses the last two outputs from
-                // the first operator, instead of just the last one. 
-                double feedbackOutput = (feedback[0] + feedback[1]) / 2;
-
-
-                switch (cnt)
-                {
-                // CNT = 0, the operators are in series, with the first in feedback.
-                    case 0:
-                        if (op2.envelopeGenerator.stage == EnvelopeGenerator.Stage.OFF)
-                            return getInFourChannels(0);
-                        op1Output = op1.getOperatorOutput(feedbackOutput);
-                        channelOutput = op2.getOperatorOutput(op1Output * toPhase);
-                        break;
-                // CNT = 1, the operators are in parallel, with the first in feedback.    
-                    case 1:
-                        if (op1.envelopeGenerator.stage == EnvelopeGenerator.Stage.OFF &&
-                            op2.envelopeGenerator.stage == EnvelopeGenerator.Stage.OFF)
-                            return getInFourChannels(0);
-                        op1Output = op1.getOperatorOutput(feedbackOutput);
-                        op2Output = op2.getOperatorOutput(Operator.noModulator);
-                        channelOutput = (op1Output + op2Output) / 2;
-                        break;
-                }
-
-                feedback[0] = feedback[1];
-                feedback[1] = (op1Output * ChannelData.feedback[fb]) % 1;
-                output = getInFourChannels(channelOutput);
-                return output;
-            }
-
-            protected override void keyOn()
-            {
-                op1.keyOn();
-                op2.keyOn();
-                feedback[0] = feedback[1] = 0;
-            }
-
-            protected override void keyOff()
-            {
-                op1.keyOff();
-                op2.keyOff();
-            }
-
-            protected override void updateOperators()
-            {
-                // Key Scale Number, used in EnvelopeGenerator.setActualRates().
-                int keyScaleNumber = block * 2 + ((fnumh >> OPL3.nts) & 0x01);
-                int f_number = (fnumh << 8) | fnuml;
-                op1.updateOperator(keyScaleNumber, f_number, block);
-                op2.updateOperator(keyScaleNumber, f_number, block);
-            }
-
-            public override string ToString()
-            {
-                var str = new StringBuilder();
-
-                int f_number = (fnumh << 8) + fnuml;
-
-                str.AppendFormat("channelBaseAddress: {0}\n", channelBaseAddress);
-                str.AppendFormat("f_number: {0}, block: {1}\n", f_number, block);
-                str.AppendFormat("cnt: {0}, feedback: {1}\n", cnt, fb);
-                str.AppendFormat("op1:\n{0}", op1);
-                str.AppendFormat("op2:\n{0}", op2);
-
-                return str.ToString();
-            }
-        }
-
-        class Channel4op : Channel
-        {
-            Operator op1, op2, op3, op4;
-
-            internal Channel4op(int baseAddress, Operator o1, Operator o2, Operator o3, Operator o4)
-                : base(baseAddress)
-            {
-                op1 = o1;
-                op2 = o2;
-                op3 = o3;
-                op4 = o4;
-            }
-
-            public override double[] getChannelOutput()
-            {
-                double channelOutput = 0,
-                op1Output = 0, op2Output = 0, op3Output = 0, op4Output = 0;
-
-                double[] output;
-
-                int secondChannelBaseAddress = channelBaseAddress + 3;
-                int secondCnt = OPL3.registers[secondChannelBaseAddress + ChannelData.CHD1_CHC1_CHB1_CHA1_FB3_CNT1_Offset] & 0x1;
-                int cnt4op = (cnt << 1) | secondCnt;
-
-                double feedbackOutput = (feedback[0] + feedback[1]) / 2;
-
-                switch (cnt4op)
-                {
-                    case 0:
-                        if (op4.envelopeGenerator.stage == EnvelopeGenerator.Stage.OFF)
-                            return getInFourChannels(0);
-
-                        op1Output = op1.getOperatorOutput(feedbackOutput);
-                        op2Output = op2.getOperatorOutput(op1Output * toPhase);
-                        op3Output = op3.getOperatorOutput(op2Output * toPhase);
-                        channelOutput = op4.getOperatorOutput(op3Output * toPhase);
-
-                        break;
-                    case 1:
-                        if (op2.envelopeGenerator.stage == EnvelopeGenerator.Stage.OFF &&
-                            op4.envelopeGenerator.stage == EnvelopeGenerator.Stage.OFF)
-                            return getInFourChannels(0);
-
-                        op1Output = op1.getOperatorOutput(feedbackOutput);
-                        op2Output = op2.getOperatorOutput(op1Output * toPhase);
-
-                        op3Output = op3.getOperatorOutput(Operator.noModulator);
-                        op4Output = op4.getOperatorOutput(op3Output * toPhase);
-
-                        channelOutput = (op2Output + op4Output) / 2;
-                        break;
-                    case 2:
-                        if (op1.envelopeGenerator.stage == EnvelopeGenerator.Stage.OFF &&
-                            op4.envelopeGenerator.stage == EnvelopeGenerator.Stage.OFF)
-                            return getInFourChannels(0);
-
-                        op1Output = op1.getOperatorOutput(feedbackOutput);
-
-                        op2Output = op2.getOperatorOutput(Operator.noModulator);
-                        op3Output = op3.getOperatorOutput(op2Output * toPhase);
-                        op4Output = op4.getOperatorOutput(op3Output * toPhase);
-
-                        channelOutput = (op1Output + op4Output) / 2;
-                        break;
-                    case 3:
-                        if (op1.envelopeGenerator.stage == EnvelopeGenerator.Stage.OFF &&
-                            op3.envelopeGenerator.stage == EnvelopeGenerator.Stage.OFF &&
-                            op4.envelopeGenerator.stage == EnvelopeGenerator.Stage.OFF)
-                            return getInFourChannels(0);
-
-                        op1Output = op1.getOperatorOutput(feedbackOutput);
-
-                        op2Output = op2.getOperatorOutput(Operator.noModulator);
-                        op3Output = op3.getOperatorOutput(op2Output * toPhase);
-
-                        op4Output = op4.getOperatorOutput(Operator.noModulator);
-
-                        channelOutput = (op1Output + op3Output + op4Output) / 3;
-                        break;
-                }
-
-                feedback[0] = feedback[1];
-                feedback[1] = (op1Output * ChannelData.feedback[fb]) % 1;
-
-                output = getInFourChannels(channelOutput);
-                return output;
-            }
-
-            protected override void keyOn()
-            {
-                op1.keyOn();
-                op2.keyOn();
-                op3.keyOn();
-                op4.keyOn();
-                feedback[0] = feedback[1] = 0;
-            }
-
-            protected override void keyOff()
-            {
-                op1.keyOff();
-                op2.keyOff();
-                op3.keyOff();
-                op4.keyOff();
-            }
-
-            protected override void updateOperators()
-            {
-                // Key Scale Number, used in EnvelopeGenerator.setActualRates().
-                int keyScaleNumber = block * 2 + ((fnumh >> OPL3.nts) & 0x01);
-                int f_number = (fnumh << 8) | fnuml;
-                op1.updateOperator(keyScaleNumber, f_number, block);
-                op2.updateOperator(keyScaleNumber, f_number, block);
-                op3.updateOperator(keyScaleNumber, f_number, block);
-                op4.updateOperator(keyScaleNumber, f_number, block);
-            }
-
-            public override string ToString()
-            {
-                StringBuilder str = new StringBuilder();
-
-                int f_number = (fnumh << 8) + fnuml;
-
-                str.AppendFormat("channelBaseAddress: {0}\n", channelBaseAddress);
-                str.AppendFormat("f_number: {0}, block: {1}\n", f_number, block);
-                str.AppendFormat("cnt: {0}, feedback: {1}\n", cnt, fb);
-                str.AppendFormat("op1:\n{0}", op1);
-                str.AppendFormat("op2:\n{0}", op2);
-                str.AppendFormat("op3:\n{0}", op3);
-                str.AppendFormat("op4:\n{0}", op4);
-
-                return str.ToString();
-            }
-        }
-        // There's just one instance of this class, that fills the eventual gaps in the Channel array;
-        class DisabledChannel : Channel
-        {
-            internal DisabledChannel()
-                : base(0)
-            {
-            }
-
-            public override double[] getChannelOutput()
-            {
-                return getInFourChannels(0);
-            }
-
-            protected override void keyOn()
-            {
-            }
-
-            protected override void keyOff()
-            {
-            }
-
-            protected override void updateOperators()
-            {
-            }
-        }
-        //
-        // Operators
-        //
-        internal class Operator
-        {
-            internal PhaseGenerator phaseGenerator;
-            internal EnvelopeGenerator envelopeGenerator;
-            public double envelope, phase;
-            public int operatorBaseAddress;
-            public int am, vib, ksr, egt, mult, ksl, tl, ar, dr, sl, rr, ws;
-            public int keyScaleNumber, f_number, block;
-            public const double noModulator = 0;
-
-            internal Operator(int baseAddress)
-            {
-                operatorBaseAddress = baseAddress;
-                phaseGenerator = new PhaseGenerator();
-                envelopeGenerator = new EnvelopeGenerator();
-
-                envelope = 0;
-                am = vib = ksr = egt = mult = ksl = tl = ar = dr = sl = rr = ws = 0;
-                keyScaleNumber = f_number = block = 0;
-            }
-
-            internal void update_AM1_VIB1_EGT1_KSR1_MULT4()
-            {
-
-                int am1_vib1_egt1_ksr1_mult4 = OPL3.registers[operatorBaseAddress + OperatorData.AM1_VIB1_EGT1_KSR1_MULT4_Offset];
-
-                // Amplitude Modulation. This register is used int EnvelopeGenerator.getEnvelope();
-                am = (am1_vib1_egt1_ksr1_mult4 & 0x80) >> 7;
-                // Vibrato. This register is used in PhaseGenerator.getPhase();
-                vib = (am1_vib1_egt1_ksr1_mult4 & 0x40) >> 6;
-                // Envelope Generator Type. This register is used in EnvelopeGenerator.getEnvelope();
-                egt = (am1_vib1_egt1_ksr1_mult4 & 0x20) >> 5;
-                // Key Scale Rate. Sets the actual envelope rate together with rate and keyScaleNumber.
-                // This register os used in EnvelopeGenerator.setActualAttackRate().
-                ksr = (am1_vib1_egt1_ksr1_mult4 & 0x10) >> 4;
-                // Multiple. Multiplies the Channel.baseFrequency to get the Operator.operatorFrequency.
-                // This register is used in PhaseGenerator.setFrequency().
-                mult = am1_vib1_egt1_ksr1_mult4 & 0x0F;
-
-                phaseGenerator.setFrequency(f_number, block, mult);
-                envelopeGenerator.setActualAttackRate(ar, ksr, keyScaleNumber);
-                envelopeGenerator.setActualDecayRate(dr, ksr, keyScaleNumber);
-                envelopeGenerator.setActualReleaseRate(rr, ksr, keyScaleNumber);
-            }
-
-            internal void update_KSL2_TL6()
-            {
-
-                int ksl2_tl6 = OPL3.registers[operatorBaseAddress + OperatorData.KSL2_TL6_Offset];
-
-                // Key Scale Level. Sets the attenuation in accordance with the octave.
-                ksl = (ksl2_tl6 & 0xC0) >> 6;
-                // Total Level. Sets the overall damping for the envelope.
-                tl = ksl2_tl6 & 0x3F;
-
-                envelopeGenerator.setAtennuation(f_number, block, ksl);
-                envelopeGenerator.setTotalLevel(tl);
-            }
-
-            internal void update_AR4_DR4()
-            {
-
-                int ar4_dr4 = OPL3.registers[operatorBaseAddress + OperatorData.AR4_DR4_Offset];
-
-                // Attack Rate.
-                ar = (ar4_dr4 & 0xF0) >> 4;
-                // Decay Rate.
-                dr = ar4_dr4 & 0x0F;
-
-                envelopeGenerator.setActualAttackRate(ar, ksr, keyScaleNumber);
-                envelopeGenerator.setActualDecayRate(dr, ksr, keyScaleNumber);
-            }
-
-            internal void update_SL4_RR4()
-            {
-
-                int sl4_rr4 = OPL3.registers[operatorBaseAddress + OperatorData.SL4_RR4_Offset];
-
-                // Sustain Level.
-                sl = (sl4_rr4 & 0xF0) >> 4;
-                // Release Rate.
-                rr = sl4_rr4 & 0x0F;
-
-                envelopeGenerator.setActualSustainLevel(sl);
-                envelopeGenerator.setActualReleaseRate(rr, ksr, keyScaleNumber);
-            }
-
-            internal void update_5_WS3()
-            {
-                int _5_ws3 = OPL3.registers[operatorBaseAddress + OperatorData._5_WS3_Offset];
-                ws = _5_ws3 & 0x07;
-            }
-
-            public virtual double getOperatorOutput(double modulator)
-            {
-                if (envelopeGenerator.stage == EnvelopeGenerator.Stage.OFF)
-                    return 0;
-
-                double envelopeInDB = envelopeGenerator.getEnvelope(egt, am);
-                envelope = Math.Pow(10, envelopeInDB / 10.0);
-
-                // If it is in OPL2 mode, use first four waveforms only:
-                ws &= ((OPL3._new << 2) + 3);
-                double[] waveform = OperatorData.waveforms[ws];
-
-                phase = phaseGenerator.getPhase(vib);
-
-                double operatorOutput = getOutput(modulator, phase, waveform);
-                return operatorOutput;
-            }
-
-            protected double getOutput(double modulator, double outputPhase, double[] waveform)
-            {
-                outputPhase = (outputPhase + modulator) % 1;
-                if (outputPhase < 0)
-                {
-                    outputPhase++;
-                    // If the double could not afford to be less than 1:
-                    outputPhase %= 1;
-                }
-                int sampleIndex = (int)(outputPhase * OperatorData.waveLength);
-                return waveform[sampleIndex] * envelope;
-            }
-
-            internal void keyOn()
-            {
-                if (ar > 0)
-                {
-                    envelopeGenerator.keyOn();
-                    phaseGenerator.keyOn();
-                }
-                else
-                    envelopeGenerator.stage = EnvelopeGenerator.Stage.OFF;
-            }
-
-            internal void keyOff()
-            {
-                envelopeGenerator.keyOff();
-            }
-
-            protected internal void updateOperator(int ksn, int f_num, int blk)
-            {
-                keyScaleNumber = ksn;
-                f_number = f_num;
-                block = blk;
-                update_AM1_VIB1_EGT1_KSR1_MULT4();
-                update_KSL2_TL6();
-                update_AR4_DR4();
-                update_SL4_RR4();
-                update_5_WS3();
-            }
-
-            public override string ToString()
-            {
-                StringBuilder str = new StringBuilder();
-
-                double operatorFrequency = f_number * Math.Pow(2, block - 1) * OPL3Data.sampleRate / Math.Pow(2, 19) * OperatorData.multTable[mult];
-
-                str.AppendFormat("operatorBaseAddress: %d\n", operatorBaseAddress);
-                str.AppendFormat("operatorFrequency: %f\n", operatorFrequency);
-                str.AppendFormat("mult: %d, ar: %d, dr: %d, sl: %d, rr: %d, ws: %d\n", mult, ar, dr, sl, rr, ws);
-                str.AppendFormat("am: %d, vib: %d, ksr: %d, egt: %d, ksl: %d, tl: %d\n", am, vib, ksr, egt, ksl, tl);
-
-                return str.ToString();
-            }
-        }
         //
         // Envelope Generator
         //
@@ -999,8 +494,8 @@ namespace NScumm.Core.Audio.OPL
                 DECAY,
                 SUSTAIN,
                 RELEASE,
-                OFF}
-            ;
+                OFF
+            }
 
             public Stage stage;
             int actualAttackRate, actualDecayRate, actualReleaseRate;
@@ -1231,17 +726,17 @@ namespace NScumm.Core.Audio.OPL
                     stage = Stage.RELEASE;
             }
 
-            private static double dBtoX(double dB)
+            static double dBtoX(double dB)
             {
                 return OperatorData.log2(-dB);
             }
 
-            private static double percentageToDB(double percentage)
+            static double percentageToDB(double percentage)
             {
                 return Math.Log10(percentage) * 10d;
             }
 
-            private static double percentageToX(double percentage)
+            static double percentageToX(double percentage)
             {
                 return dBtoX(percentageToDB(percentage));
             }
@@ -1379,132 +874,6 @@ namespace NScumm.Core.Audio.OPL
             }
         }
 
-        class TopCymbalOperator : Operator
-        {
-            const int topCymbalOperatorBaseAddress = 0x15;
-
-            internal TopCymbalOperator(int baseAddress)
-                : base(baseAddress)
-            {
-
-            }
-
-            internal TopCymbalOperator()
-                : this(topCymbalOperatorBaseAddress)
-            {
-
-            }
-
-            public override double getOperatorOutput(double modulator)
-            {
-                double highHatOperatorPhase =
-                    OPL3.highHatOperator.phase * OperatorData.multTable[OPL3.highHatOperator.mult];
-                // The Top Cymbal operator uses his own phase together with the High Hat phase.
-                return getOperatorOutput(modulator, highHatOperatorPhase);
-            }
-            // This method is used here with the HighHatOperator phase
-            // as the externalPhase.
-            // Conversely, this method is also used through inheritance by the HighHatOperator,
-            // now with the TopCymbalOperator phase as the externalPhase.
-            protected double getOperatorOutput(double modulator, double externalPhase)
-            {
-                double envelopeInDB = envelopeGenerator.getEnvelope(egt, am);
-                envelope = Math.Pow(10, envelopeInDB / 10.0);
-
-                phase = phaseGenerator.getPhase(vib);
-
-                int waveIndex = ws & ((OPL3._new << 2) + 3);
-                double[] waveform = OperatorData.waveforms[waveIndex];
-
-                // Empirically tested multiplied phase for the Top Cymbal:
-                double carrierPhase = (8 * phase) % 1;
-                double modulatorPhase = externalPhase;
-                double modulatorOutput = getOutput(Operator.noModulator, modulatorPhase, waveform);
-                double carrierOutput = getOutput(modulatorOutput, carrierPhase, waveform);
-
-                int cycles = 4;
-                if ((carrierPhase * cycles) % cycles > 0.1)
-                    carrierOutput = 0;
-
-                return carrierOutput * 2;
-            }
-        }
-
-        class HighHatOperator : TopCymbalOperator
-        {
-            const int highHatOperatorBaseAddress = 0x11;
-
-            internal HighHatOperator()
-                : base(highHatOperatorBaseAddress)
-            {
-
-            }
-
-            public override double getOperatorOutput(double modulator)
-            {
-                double topCymbalOperatorPhase =
-                    OPL3.topCymbalOperator.phase * OperatorData.multTable[OPL3.topCymbalOperator.mult];
-                // The sound output from the High Hat resembles the one from
-                // Top Cymbal, so we use the parent method and modifies his output
-                // accordingly afterwards.
-                double operatorOutput = base.getOperatorOutput(modulator, topCymbalOperatorPhase);
-                if (operatorOutput == 0)
-                    operatorOutput = new Random().NextDouble() * envelope;
-                return operatorOutput;
-            }
-        }
-
-        class SnareDrumOperator : Operator
-        {
-            const int snareDrumOperatorBaseAddress = 0x14;
-
-            internal SnareDrumOperator()
-                : base(snareDrumOperatorBaseAddress)
-            {
-            }
-
-            public override double getOperatorOutput(double modulator)
-            {
-                if (envelopeGenerator.stage == EnvelopeGenerator.Stage.OFF)
-                    return 0;
-
-                double envelopeInDB = envelopeGenerator.getEnvelope(egt, am);
-                envelope = Math.Pow(10, envelopeInDB / 10.0);
-
-                // If it is in OPL2 mode, use first four waveforms only:
-                int waveIndex = ws & ((OPL3._new << 2) + 3);
-                double[] waveform = OperatorData.waveforms[waveIndex];
-
-                phase = OPL3.highHatOperator.phase * 2;
-
-                double operatorOutput = getOutput(modulator, phase, waveform);
-
-                double noise = new Random().NextDouble() * envelope;
-
-                if (operatorOutput / envelope != 1 && operatorOutput / envelope != -1)
-                {
-                    if (operatorOutput > 0)
-                        operatorOutput = noise;
-                    else if (operatorOutput < 0)
-                        operatorOutput = -noise;
-                    else
-                        operatorOutput = 0;
-                }
-
-                return operatorOutput * 2;
-            }
-        }
-
-        class TomTomOperator : Operator
-        {
-            const int tomTomOperatorBaseAddress = 0x12;
-
-            internal TomTomOperator()
-                : base(tomTomOperatorBaseAddress)
-            {
-            }
-        }
-
         class BassDrumChannel : Channel2op
         {
             const int bassDrumChannelBaseAddress = 6;
@@ -1535,7 +904,7 @@ namespace NScumm.Core.Audio.OPL
         //
         // OPl3 Data
         //
-        class OPL3Data
+        internal class OPL3Data
         {
 
             // OPL3-wide registers offsets:
@@ -1677,7 +1046,7 @@ namespace NScumm.Core.Audio.OPL
         //
         // Channel Data
         //
-        class ChannelData
+        internal class ChannelData
         {
 
             internal const int
@@ -1688,14 +1057,10 @@ namespace NScumm.Core.Audio.OPL
             // 0, Pi/16, Pi/8, Pi/4, Pi/2, Pi, 2*Pi, 4*Pi turns to be:
             internal readonly static double[] feedback = { 0, 1 / 32d, 1 / 16d, 1 / 8d, 1 / 4d, 1 / 2d, 1, 2 };
         }
-
-
         //
         // Operator Data
         //
-
-
-        class OperatorData
+        internal class OperatorData
         {
 
             public const int
@@ -1719,26 +1084,26 @@ namespace NScumm.Core.Audio.OPL
 
             public readonly static double[,] ksl3dBtable =
                 {
-                { 0, 0, 0, 0, 0, 0, 0, 0 },
-                { 0, 0, 0, 0, 0, -3, -6, -9 },
-                { 0, 0, 0, 0, -3, -6, -9, -12 },
-                { 0, 0, 0, -1.875, -4.875, -7.875, -10.875, -13.875 },
+                    { 0, 0, 0, 0, 0, 0, 0, 0 },
+                    { 0, 0, 0, 0, 0, -3, -6, -9 },
+                    { 0, 0, 0, 0, -3, -6, -9, -12 },
+                    { 0, 0, 0, -1.875, -4.875, -7.875, -10.875, -13.875 },
 
-                { 0, 0, 0, -3, -6, -9, -12, -15 },
-                { 0, 0, -1.125, -4.125, -7.125, -10.125, -13.125, -16.125 }, 
-                { 0, 0, -1.875, -4.875, -7.875, -10.875, -13.875, -16.875 },
-                { 0, 0, -2.625, -5.625, -8.625, -11.625, -14.625, -17.625 },
+                    { 0, 0, 0, -3, -6, -9, -12, -15 },
+                    { 0, 0, -1.125, -4.125, -7.125, -10.125, -13.125, -16.125 }, 
+                    { 0, 0, -1.875, -4.875, -7.875, -10.875, -13.875, -16.875 },
+                    { 0, 0, -2.625, -5.625, -8.625, -11.625, -14.625, -17.625 },
 
-                { 0, 0, -3, -6, -9, -12, -15, -18 },
-                { 0, -0.750, -3.750, -6.750, -9.750, -12.750, -15.750, -18.750 },
-                { 0, -1.125, -4.125, -7.125, -10.125, -13.125, -16.125, -19.125 },
-                { 0, -1.500, -4.500, -7.500, -10.500, -13.500, -16.500, -19.500 },
+                    { 0, 0, -3, -6, -9, -12, -15, -18 },
+                    { 0, -0.750, -3.750, -6.750, -9.750, -12.750, -15.750, -18.750 },
+                    { 0, -1.125, -4.125, -7.125, -10.125, -13.125, -16.125, -19.125 },
+                    { 0, -1.500, -4.500, -7.500, -10.500, -13.500, -16.500, -19.500 },
 
-                { 0, -1.875, -4.875, -7.875, -10.875, -13.875, -16.875, -19.875 },
-                { 0, -2.250, -5.250, -8.250, -11.250, -14.250, -17.250, -20.250 },
-                { 0, -2.625, -5.625, -8.625, -11.625, -14.625, -17.625, -20.625 },
-                { 0, -3, -6, -9, -12, -15, -18, -21 }
-            };
+                    { 0, -1.875, -4.875, -7.875, -10.875, -13.875, -16.875, -19.875 },
+                    { 0, -2.250, -5.250, -8.250, -11.250, -14.250, -17.250, -20.250 },
+                    { 0, -2.625, -5.625, -8.625, -11.625, -14.625, -17.625, -20.625 },
+                    { 0, -3, -6, -9, -12, -15, -18, -21 }
+                };
 
             public static double[][] waveforms;
 
@@ -1808,13 +1173,9 @@ namespace NScumm.Core.Audio.OPL
                 return Math.Log(x) / Math.Log(2);
             }
         }
-
-
         //
         // Envelope Generator Data
         //
-
-
         class EnvelopeGeneratorData
         {
 

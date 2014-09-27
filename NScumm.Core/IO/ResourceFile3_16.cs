@@ -136,10 +136,12 @@ namespace NScumm.Core.IO
             var room = new Room
             {
                 Header = header,
-                ExitScript = {
+                ExitScript =
+                {
                     Data = ReadBytes(offset + exitScriptOffset, exitScriptLength)
                 },
-                EntryScript =  {
+                EntryScript =
+                {
                     Data = ReadBytes(offset + entryScriptOffset, (int)entryScriptLength)
                 }
             };
@@ -152,7 +154,7 @@ namespace NScumm.Core.IO
                 exitScriptOffset = entryScriptOffset;
             }
 
-            room.Data = ReadBytes(offset + imgOffset, exitScriptOffset - imgOffset);
+            room.Image = new ImageData{ Data = ReadBytes(offset + imgOffset, exitScriptOffset - imgOffset) };
 
             var objScriptSizes = new ushort[objScriptOffsets.Length + 1];
             Array.Copy(objScriptOffsets, objScriptSizes, objScriptOffsets.Length);
@@ -171,7 +173,7 @@ namespace NScumm.Core.IO
             {
                 var objImgOffset = objImgSizes[i];
                 var objImgSize = objImgSizes[i + 1] - objImgOffset;
-                room.Objects[i].Image = ReadBytes(objImgOffset, objImgSize);
+                room.Objects[i].Images.Add(new ImageData{ Data = ReadBytes(objImgOffset, objImgSize) });
             }
 
             return room;

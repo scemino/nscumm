@@ -29,26 +29,6 @@ namespace NScumm.Core
         public ushort NumObjects { get; set; }
     }
 
-    public class ZPlane
-    {
-        public int Id
-        {
-            get;
-            private set;
-        }
-
-        public byte[] Data
-        {
-            get;
-            private set;
-        }
-
-        public ZPlane(int id, byte[] data)
-        {
-            Id = id;
-            Data = data;
-        }
-    }
 
     public class Room
     {
@@ -71,8 +51,6 @@ namespace NScumm.Core
         public string Name { get; set; }
 
         public int Number { get; set; }
-
-        public byte[] Data { get; set; }
 
         public ImageData Image { get; set; }
 
@@ -102,6 +80,7 @@ namespace NScumm.Core
             {
                 ColorCycle[i] = new ColorCycle();
             }
+            Image = new ImageData();
         }
     }
 }

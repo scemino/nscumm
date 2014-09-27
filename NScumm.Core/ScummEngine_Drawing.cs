@@ -185,17 +185,11 @@ namespace NScumm.Core
 
             for (int i = 0; i < vst.ImageWidth / 8; i++)
             {
-                if (vst.Image != null)
-                {
-                    Gdi.DrawBitmap(vst.Image, vs, xStrip + i, yDiff,
-                        vst.ImageWidth, vst.ImageHeight,
-                        i, 1, DrawBitmaps.AllowMaskOr | DrawBitmaps.ObjectMode);
-                }
-                else if (vst.ImageData != null)
+                if (vst.ImageData != null)
                 {
                     Gdi.DrawBitmap(vst.ImageData, vs, xStrip + i, yDiff,
                         vst.ImageWidth, vst.ImageHeight,
-                        i, 1, vst.ImageWidth, DrawBitmaps.AllowMaskOr | DrawBitmaps.ObjectMode);
+                        i, 1, vst.ImageWidth, DrawBitmaps.AllowMaskOr);
                 }
             }
 
@@ -535,16 +529,8 @@ namespace NScumm.Core
             for (var i = 0; i < num; i++)
                 Gdi.SetGfxUsageBit(s + i, Gdi.UsageBitDirty);
 
-            if (roomData.Data != null)
-            {
-                Gdi.DrawBitmap(roomData.Data, _mainVirtScreen, s, 0, 
-                    roomData.Header.Width, _mainVirtScreen.Height, s, num, 0);
-            }
-            else
-            {
-                Gdi.DrawBitmap(roomData.Image, _mainVirtScreen, s, 0, 
-                    roomData.Header.Width, _mainVirtScreen.Height, s, num, roomData.Header.Width, 0);
-            }
+            Gdi.DrawBitmap(roomData.Image, _mainVirtScreen, s, 0, 
+                roomData.Header.Width, _mainVirtScreen.Height, s, num, roomData.Header.Width, 0);
         }
 
         void HandleShaking()
@@ -785,39 +771,20 @@ namespace NScumm.Core
 
         int GetNumZBuffers()
         {
-            // TODO: GetNumZBuffer
+            int numZBuffer;
             if (Game.Version >= 5)
             {
-                return  roomData.NumZBuffer;
+                numZBuffer = roomData.NumZBuffer;
+            }
+            else if (Game.Version <= 3)
+            {
+                numZBuffer = 2;
             }
             else
             {
-                var smapReader = new BinaryReader(new MemoryStream(roomData.Data));
-                var numZBuffer = 0;
-                int zOffset = 0;
-                if (Game.Version <= 3)
-                {
-                    numZBuffer = 2;
-                }
-                else if (Game.Features.HasFlag(GameFeatures.SixteenColors))
-                {
-                    zOffset = smapReader.ReadInt16();
-                    smapReader.BaseStream.Seek(-2, SeekOrigin.Current);
-                }
-                else
-                {
-                    zOffset = smapReader.ReadInt32();
-                    smapReader.BaseStream.Seek(-4, SeekOrigin.Current);
-                }
-                while (zOffset != 0 && numZBuffer < 4)
-                {
-                    numZBuffer++;
-                    smapReader.BaseStream.Seek(zOffset, SeekOrigin.Current);
-                    zOffset = smapReader.ReadInt16();
-                    smapReader.BaseStream.Seek(-2, SeekOrigin.Current);
-                }
-                return numZBuffer;
+                numZBuffer = roomData.Image.ZPlanes.Count + 1;
             }
+            return numZBuffer;
         }
     }
 }

@@ -25,9 +25,8 @@ namespace NScumm.Core.Graphics
     [Flags]
     public enum DrawBitmaps
     {
+        None = 0,
         AllowMaskOr = 1 << 0,
-        DrawMaskOnAll = 1 << 1,
-        ObjectMode = 2 << 2
     }
 
     public class Gdi
@@ -90,79 +89,6 @@ namespace NScumm.Core.Graphics
             NumStrips = _vm.ScreenWidth / 8;
         }
 
-        public void DrawBitmap(byte[] ptr, VirtScreen vs, int x, int y, int width, int height, int stripnr, int numstrip, DrawBitmaps flags)
-        {
-            // Check whether lights are turned on or not
-            var lightsOn = _vm.IsLightOn();
-            DrawBitmap(ptr, vs, x, y, width, height, stripnr, numstrip, flags, lightsOn, _vm.CurrentRoomData.Header.Width);
-        }
-
-        /// <summary>
-        /// Draw a bitmap onto a virtual screen. This is main drawing method for room backgrounds
-        /// and objects, used throughout all SCUMM versions.
-        /// </summary>
-        public void DrawBitmap(byte[] ptr, VirtScreen vs, int x, int y, int width, int height, int stripnr, int numstrip, DrawBitmaps flags, bool isLightOn, int roomWidth)
-        {
-            int sx = x - vs.XStart / 8;
-            if (sx < 0)
-            {
-                numstrip -= -sx;
-                x += -sx;
-                stripnr += -sx;
-                sx = 0;
-            }
-
-            // Compute the number of strips we have to iterate over.
-            // TODO/FIXME: The computation of its initial value looks very fishy.
-            // It was added as a kind of hack to fix some corner cases, but it compares
-            // the room width to the virtual screen width; but the former should always
-            // be bigger than the latter (except for MM NES, maybe)... strange
-            int limit = Math.Max(roomWidth, vs.Width) / 8 - x;
-            if (limit > numstrip)
-                limit = numstrip;
-            if (limit > NumStrips - sx)
-                limit = NumStrips - sx;
-
-            for (int k = 0; k < limit; ++k, ++stripnr, ++sx, ++x)
-            {
-                if (y < vs.TDirty[sx])
-                    vs.TDirty[sx] = y;
-
-                if (y + height > vs.BDirty[sx])
-                    vs.BDirty[sx] = y + height;
-
-                // In the case of a double buffered virtual screen, we draw to
-                // the backbuffer, otherwise to the primary surface memory.
-                PixelNavigator navDst;
-                if (vs.HasTwoBuffers)
-                {
-                    navDst = new PixelNavigator(vs.Surfaces[1]);
-                    navDst.GoTo(x * 8, y);
-                }
-                else
-                {
-                    navDst = new PixelNavigator(vs.Surfaces[0]);
-                    navDst.GoTo(x * 8, y);
-                }
-
-                var smapReader = new BinaryReader(new MemoryStream(ptr));
-                bool transpStrip = DrawStrip(navDst, height, stripnr, smapReader);
-
-                if (vs.HasTwoBuffers)
-                {
-                    var navFrontBuf = new PixelNavigator(vs.Surfaces[0]);
-                    navFrontBuf.GoTo(x * 8, y);
-                    if (isLightOn)
-                        Copy8Col(navFrontBuf, navDst, height);
-                    else
-                        Clear8Col(navFrontBuf, height);
-                }
-
-                var zplanes = GetZPlanes(ptr);
-                DecodeMask(x, y, height, stripnr, zplanes, transpStrip, flags);
-            }
-        }
-
         public void DrawBitmap(ImageData img, VirtScreen vs, int x, int y, int width, int height, int stripnr, int numstrip, int roomWidth, DrawBitmaps flags)
         {
             // Check whether lights are turned on or not
@@ -202,20 +128,12 @@ namespace NScumm.Core.Graphics
 
                 // In the case of a double buffered virtual screen, we draw to
                 // the backbuffer, otherwise to the primary surface memory.
-                PixelNavigator navDst;
-                if (vs.HasTwoBuffers)
-                {
-                    navDst = new PixelNavigator(vs.Surfaces[1]);
-                    navDst.GoTo(x * 8, y);
-                }
-                else
-                {
-                    navDst = new PixelNavigator(vs.Surfaces[0]);
-                    navDst.GoTo(x * 8, y);
-                }
+                var surface = vs.HasTwoBuffers ? vs.Surfaces[1] : vs.Surfaces[0];
+                var navDst = new PixelNavigator(surface);
+                navDst.GoTo(x * 8, y);
 
                 var smapReader = new BinaryReader(new MemoryStream(img.Data));
-                bool transpStrip = DrawStrip(navDst, height, stripnr, smapReader);
+                var transpStrip = DrawStrip(navDst, height, stripnr, smapReader);
 
                 if (vs.HasTwoBuffers)
                 {
@@ -227,8 +145,7 @@ namespace NScumm.Core.Graphics
                         Clear8Col(navFrontBuf, height);
                 }
 
-                DecodeMask(x, y, height, stripnr, img, transpStrip, flags);
-
+                DecodeMask(x, y, height, stripnr, img.ZPlanes, transpStrip, flags);
             }
         }
 
@@ -236,17 +153,17 @@ namespace NScumm.Core.Graphics
         {
             if (w == dstPitch)
             {
-                for (int i = 0; i < dst.Length; i++)
+                for (var i = 0; i < dst.Length; i++)
                 {
                     dst[i] = color;
                 }
             }
             else
             {
-                int offset = 0;
+                var offset = 0;
                 do
                 {
-                    for (int i = 0; i < w; i++)
+                    for (var i = 0; i < w; i++)
                     {
                         dst[offset + i] = color;
                     }
@@ -257,7 +174,7 @@ namespace NScumm.Core.Graphics
 
         public static void Blit(PixelNavigator dst, PixelNavigator src, int width, int height)
         {
-            for (int h = 0; h < height; h++)
+            for (var h = 0; h < height; h++)
             {
                 for (int w = 0; w < width; w++)
                 {
@@ -458,66 +375,20 @@ namespace NScumm.Core.Graphics
             } while ((--height) != 0);
         }
 
-        void DecodeMask(int x, int y, int height, int stripnr, IList<byte[]> zplanes, bool transpStrip, DrawBitmaps flags)
+        void DecodeMask(int x, int y, int height, int stripnr, IList<ZPlane> zPlanes, bool transpStrip, DrawBitmaps flags)
         {
-            int i;
-            PixelNavigator mask_ptr;
-
-            if (flags.HasFlag(DrawBitmaps.DrawMaskOnAll))
+            var zplaneCount = IsZBufferEnabled ? zPlanes.Count : 0;
+        
+            for (var i = 0; i < zplaneCount; i++)
             {
-                // Sam & Max uses dbDrawMaskOnAll for things like the inventory
-                // box and the speech icons. While these objects only have one
-                // mask, it should be applied to all the Z-planes in the room,
-                // i.e. they should mask every actor.
-                //
-                // This flag used to be called dbDrawMaskOnBoth, and all it
-                // would do was to mask Z-plane 0. (Z-plane 1 would also be
-                // masked, because what is now the else-clause used to be run
-                // always.) While this seems to be the only way there is to
-                // mask Z-plane 0, this wasn't good enough since actors in
-                // Z-planes >= 2 would not be masked.
-                //
-                // The flag is also used by The Dig and Full Throttle, but I
-                // don't know what for. At the time of writing, these games
-                // are still too unstable for me to investigate.
+                var zPlane = zPlanes[i];
+                var offs = zPlane.StripOffsets[stripnr];
 
-                //z_plane_ptr = (byte*)zplanes[1] + *(ushort*)(zplanes[1] + stripnr * 2 + 8);
-                var zplaneStream = new MemoryStream(zplanes[1]);
-                var binZplane = new BinaryReader(zplaneStream);
-                binZplane.BaseStream.Seek(stripnr * 2 + 8, SeekOrigin.Begin);
-                zplaneStream.Seek(binZplane.ReadUInt16(), SeekOrigin.Begin);
-                for (i = 0; i < zplanes.Count; i++)
+                if (offs > 0)
                 {
-                    mask_ptr = GetMaskBuffer(x, y, i);
-                    if (transpStrip && flags.HasFlag(DrawBitmaps.AllowMaskOr))
-                        DecompressMaskImgOr(mask_ptr, zplaneStream, height);
-                    else
-                        DecompressMaskImg(mask_ptr, zplaneStream, height);
-                }
-            }
-            else
-            {
-                for (i = 1; i < zplanes.Count; i++)
-                {
-                    var zplanePtr = new MemoryStream(zplanes[i]);
-                    if (game.IsOldBundle)
-                    {
-                        zplanePtr.Seek(stripnr * 2, SeekOrigin.Begin);
-                    }
-                    else if (game.Features.HasFlag(GameFeatures.Old256))
-                    {
-                        zplanePtr.Seek(stripnr * 2 + 4, SeekOrigin.Begin);
-                    }
-                    else
-                    {
-                        zplanePtr.Seek(stripnr * 2 + 2, SeekOrigin.Begin);
-                    }
-                    var br = new BinaryReader(zplanePtr);
-                    uint offs = br.ReadUInt16();
-
-                    mask_ptr = GetMaskBuffer(x, y, i);
-
-                    if (offs != 0)
+                    var mask_ptr = GetMaskBuffer(x, y, i + 1);
+        
+                    using (var zplanePtr = new MemoryStream(zPlane.Data))
                     {
                         zplanePtr.Seek(offs, SeekOrigin.Begin);
                         if (transpStrip && flags.HasFlag(DrawBitmaps.AllowMaskOr))
@@ -528,89 +399,6 @@ namespace NScumm.Core.Graphics
                         {
                             DecompressMaskImg(mask_ptr, zplanePtr, height);
                         }
-                    }
-                    else
-                    {
-                        if (!(transpStrip && flags.HasFlag(DrawBitmaps.AllowMaskOr)))
-                            for (int h = 0; h < height; h++)
-                            {
-                                mask_ptr.OffsetY(1);
-                                mask_ptr.Write(0);
-                            }
-                    }
-                }
-            }
-        }
-
-        void DecodeMask(int x, int y, int height, int stripnr, ImageData data, bool transpStrip, DrawBitmaps flags)
-        {
-            int i;
-            PixelNavigator mask_ptr;
-
-            var zplaneCount = IsZBufferEnabled ? data.ZPlanes.Count : 0;
-
-            if (flags.HasFlag(DrawBitmaps.DrawMaskOnAll))
-            {
-                // Sam & Max uses dbDrawMaskOnAll for things like the inventory
-                // box and the speech icons. While these objects only have one
-                // mask, it should be applied to all the Z-planes in the room,
-                // i.e. they should mask every actor.
-                //
-                // This flag used to be called dbDrawMaskOnBoth, and all it
-                // would do was to mask Z-plane 0. (Z-plane 1 would also be
-                // masked, because what is now the else-clause used to be run
-                // always.) While this seems to be the only way there is to
-                // mask Z-plane 0, this wasn't good enough since actors in
-                // Z-planes >= 2 would not be masked.
-                //
-                // The flag is also used by The Dig and Full Throttle, but I
-                // don't know what for. At the time of writing, these games
-                // are still too unstable for me to investigate.
-
-                var zplaneStream = new MemoryStream(data.ZPlanes[1].Data);
-                var binZplane = new BinaryReader(zplaneStream);
-                binZplane.BaseStream.Seek(stripnr * 2, SeekOrigin.Begin);
-                zplaneStream.Seek(binZplane.ReadUInt16() - 8, SeekOrigin.Begin);
-                for (i = 0; i < zplaneCount; i++)
-                {
-                    mask_ptr = GetMaskBuffer(x, y, i);
-                    if (transpStrip && flags.HasFlag(DrawBitmaps.AllowMaskOr))
-                        DecompressMaskImgOr(mask_ptr, zplaneStream, height);
-                    else
-                        DecompressMaskImg(mask_ptr, zplaneStream, height);
-                }
-            }
-            else
-            {
-                for (i = 1; i < zplaneCount; i++)
-                {
-                    var zplanePtr = new MemoryStream(data.ZPlanes[i].Data);
-                    zplanePtr.Seek(stripnr * 2, SeekOrigin.Begin);
-                    var br = new BinaryReader(zplanePtr);
-                    uint offs = (uint)(br.ReadUInt16() - 8);
-
-                    mask_ptr = GetMaskBuffer(x, y, i);
-
-                    if (offs != 0)
-                    {
-                        zplanePtr.Seek(offs, SeekOrigin.Begin);
-                        if (transpStrip && flags.HasFlag(DrawBitmaps.AllowMaskOr))
-                        {
-                            DecompressMaskImgOr(mask_ptr, zplanePtr, height);
-                        }
-                        else
-                        {
-                            DecompressMaskImg(mask_ptr, zplanePtr, height);
-                        }
-                    }
-                    else
-                    {
-                        if (!(transpStrip && flags.HasFlag(DrawBitmaps.AllowMaskOr)))
-                            for (int h = 0; h < height; h++)
-                            {
-                                mask_ptr.OffsetY(1);
-                                mask_ptr.Write(0);
-                            }
                     }
                 }
             }
@@ -1275,42 +1063,6 @@ namespace NScumm.Core.Graphics
             // overflowing of the palette index. To have the same result in our code,
             // we need to do an logical AND 0xFF here to keep the result in [0, 255].
             navDst.Write(RoomPalette[(color + paletteMod) & 0xFF]);
-        }
-
-        List<byte[]> GetZPlanes(byte[] ptr)
-        {
-            var zplanes = new List<byte[]>();
-
-            if (IsZBufferEnabled)
-            {
-                var zplane = new MemoryStream(ptr);
-                var zplaneReader = new BinaryReader(zplane);
-                int zOffset;
-                if (game.Features.HasFlag(GameFeatures.SixteenColors))
-                {
-                    zOffset = zplaneReader.ReadUInt16();
-                    zplaneReader.BaseStream.Seek(-2, SeekOrigin.Current);
-                }
-                else
-                {
-                    zOffset = zplaneReader.ReadInt32();
-                    zplaneReader.BaseStream.Seek(-4, SeekOrigin.Current);
-                }
-                while (zOffset != 0 && zplanes.Count < 4)
-                {
-                    zplanes.Add(zplaneReader.ReadBytes(zOffset));
-                    if (zplaneReader.BaseStream.Position < (zplaneReader.BaseStream.Length - 2))
-                    {
-                        zOffset = zplaneReader.ReadUInt16();
-                        zplaneReader.BaseStream.Seek(-2, SeekOrigin.Current);
-                    }
-                    else
-                    {
-                        zOffset = 0;
-                    }
-                }
-            }
-            return zplanes;
         }
 
         #endregion

@@ -48,15 +48,16 @@ namespace NScumm.Tmp
         {
             foreach (var room in index.Rooms)
             {
-                if (room.Image == null && room.Data == null)
+                if (room.Image == null)
                     continue;
 
                 var name = room.Name ?? "room_" + room.Number;
-                Console.WriteLine(name);
+                Console.WriteLine("room #{0}: {1}", room.Number, name);
 
                 try
                 {
                     var gdi = new Gdi(null, Game);
+                    //gdi.NumStrips = room.Header.Width / 8;
                     gdi.RoomPalette = CreatePalette();
 
                     DumpRoomObjects(room, gdi);
@@ -106,18 +107,17 @@ namespace NScumm.Tmp
         {
             var name = room.Name ?? "room_" + room.Number;
 
-            var screen2 = new VirtScreen(0, room.Header.Width, room.Header.Height, PixelFormat.Indexed8, 2);
+            var screen = new VirtScreen(0, room.Header.Width, room.Header.Height, PixelFormat.Indexed8, 2);
             var numStrips = room.Header.Width / 8;
-            if (room.Data != null)
+            if (room.Header.Height > 0)
             {
-                gdi.DrawBitmap(room.Data, screen2, 0, 0, room.Header.Width, room.Header.Height, 0, numStrips, 0, true, room.Header.Width);
+                gdi.DrawBitmap(room.Image, screen, 0, 0, room.Header.Width, room.Header.Height, 0, numStrips, room.Header.Width, 0, true);
+
+                using (var bmpRoom = ToBitmap(room, screen))
+                {
+                    bmpRoom.Save(name + ".png");
+                }
             }
-            else
-            {
-                gdi.DrawBitmap(room.Image, screen2, 0, 0, room.Header.Width, room.Header.Height, 0, numStrips, room.Header.Width, 0, true);
-            }
-            var bmpRoom = ToBitmap(room, screen2);
-            bmpRoom.Save("bg_" + name + ".png");
 
             DumpZPlanes(room, name);
         }
@@ -126,36 +126,39 @@ namespace NScumm.Tmp
         {
             if (room.Image != null)
             {
-                for (int i = 1; i < room.Image.ZPlanes.Count; i++)
+                for (int i = 0; i < room.Image.ZPlanes.Count; i++)
                 {
                     var zplane = room.Image.ZPlanes[i];
-                    var nStrips = room.Header.Width / 8;
+                    var nStrips = zplane.StripOffsets.Count;
                     var pixels = new byte[nStrips * room.Header.Height];
                     var pn = new PixelNavigator(pixels, nStrips, 1);
                     using (var ms = new MemoryStream(zplane.Data))
                     {
-                        var binZplane = new BinaryReader(ms);
-                        var offsets = binZplane.ReadUInt16s(nStrips);
                         for (int nStrip = 0; nStrip < nStrips; nStrip++)
                         {
-                            var offset = offsets[nStrip] - 8;
-                            ms.Seek(offset, SeekOrigin.Begin);
-                            pn.GoTo(nStrip, 0);
-                            DecompressMaskImg(pn, ms, room.Header.Height);
-                        }
-                    }
-                    var bmpZ = new System.Drawing.Bitmap(nStrips * 8, room.Header.Height);
-                    for (int j = 0; j < room.Header.Height; j++)
-                    {
-                        for (int x = 0; x < nStrips; x++)
-                        {
-                            for (int b = 0; b < 8; b++)
+                            var offset = zplane.StripOffsets[nStrip];
+                            if (offset >= 0)
                             {
-                                bmpZ.SetPixel(x * 8 + b, j, (pixels[x + j * nStrips] & (0x80 >> b)) != 0 ? System.Drawing.Color.White : System.Drawing.Color.Black);
+                                ms.Seek(offset, SeekOrigin.Begin);
+                                pn.GoTo(nStrip, 0);
+                                DecompressMaskImg(pn, ms, room.Header.Height);
                             }
                         }
                     }
-                    bmpZ.Save("bg_" + name + "_z" + i + ".png");
+                    using (var bmpZ = new System.Drawing.Bitmap(nStrips * 8, room.Header.Height))
+                    {
+                        for (int j = 0; j < room.Header.Height; j++)
+                        {
+                            for (int x = 0; x < nStrips; x++)
+                            {
+                                for (int b = 0; b < 8; b++)
+                                {
+                                    bmpZ.SetPixel(x * 8 + b, j, (pixels[x + j * nStrips] & (0x80 >> b)) != 0 ? System.Drawing.Color.White : System.Drawing.Color.Black);
+                                }
+                            }
+                        }
+                        bmpZ.Save(name + "_z" + i + ".png");
+                    }
                 }
             }
         }
@@ -196,29 +199,31 @@ namespace NScumm.Tmp
             {
                 var text = new ScummText(obj.Name);
                 var sb = new StringBuilder();
-                sb.AppendLine("Object #" + obj.Number);
-                sb.Append("  ");
+                sb.Append("Object #" + obj.Number).Append(" ");
+                
                 var decoder = new TextDecoder(sb);
                 text.Decode(decoder);
+
+                sb.AppendFormat(" size: {0}x{1}", obj.Width, obj.Height);
                 Console.WriteLine(sb);
-                if (obj.Images.Count == 0 && (obj.Image == null || obj.Image.Length == 0))
-                    continue;
-                if (obj.Images.Count == 0)
+                
+                var j = 0;
+                foreach (var img in obj.Images)
                 {
-                    var screen = new VirtScreen(0, obj.Width, obj.Height, PixelFormat.Indexed8, 2);
-                    gdi.DrawBitmap(obj.Image, screen, 0, 0, obj.Width, obj.Height, 0, obj.Width / 8, 0, true, room.Header.Width);
-                    var bmp = ToBitmap(room, screen);
-                    bmp.Save("obj_" + obj.Number + ".png");
-                }
-                else
-                {
-                    var j = 0;
-                    foreach (var img in obj.Images)
+                    try
                     {
                         var screen = new VirtScreen(0, obj.Width, obj.Height, PixelFormat.Indexed8, 2);
-                        gdi.DrawBitmap(img, screen, 0, 0, obj.Width, obj.Height, 0, obj.Width / 8, room.Header.Width, 0, true);
-                        var bmp = ToBitmap(room, screen);
-                        bmp.Save("obj_" + obj.Number + "_" + (++j) + ".png");
+                        gdi.DrawBitmap(img, screen, 0, 0, obj.Width, obj.Height, 0, obj.Width / 8, room.Header.Width, DrawBitmaps.None, true);
+                        using (var bmp = ToBitmap(room, screen))
+                        {
+                            bmp.Save("obj_" + obj.Number + "_" + (++j) + ".png");
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine(e);
+                        Console.ResetColor();
                     }
                 }
             }

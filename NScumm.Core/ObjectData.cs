@@ -52,8 +52,6 @@ namespace NScumm.Core
 
         public byte[] Name { get; set; }
 
-        public byte[] Image { get; set; }
-
         public List<ImageData> Images { get; private set; }
 
         public ObjectData()

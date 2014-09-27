@@ -1,5 +1,5 @@
-﻿//
-//  ImageData.cs
+//
+//  ZPlane.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -23,17 +23,38 @@ using System.Collections.Generic;
 
 namespace NScumm.Core.Graphics
 {
-    public class ImageData
+
+    public class ZPlane
     {
-        public List<ZPlane>  ZPlanes { get; private set; }
-
-        public byte[] Data { get; set; }
-
-        public ImageData()
+        public int Id
         {
-            ZPlanes = new List<ZPlane>();
-            Data = new byte[0];
+            get;
+            private set;
+        }
+
+        public byte[] Data
+        {
+            get;
+            private set;
+        }
+
+        public IList<int> StripOffsets
+        {
+            get;
+            private set;
+        }
+
+        public ZPlane(int id, byte[] data)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public ZPlane(int id, byte[] data, IList<int> offsets)
+        {
+            Id = id;
+            Data = data;
+            StripOffsets = offsets;
         }
     }
+    
 }
-

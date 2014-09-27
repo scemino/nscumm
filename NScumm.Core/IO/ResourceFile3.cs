@@ -21,6 +21,7 @@
 
 using System.Collections.Generic;
 using NScumm.Core.Graphics;
+using NScumm.Core;
 using System.IO;
 using System;
 
@@ -31,7 +32,6 @@ namespace NScumm.Core.IO
         public ResourceFile3(string path, byte encByte)
             : base(path, encByte)
         {
-			
         }
 
         public override Dictionary<byte, long> ReadRoomOffsets()
@@ -194,7 +194,7 @@ namespace NScumm.Core.IO
 
         public override Room ReadRoom(long offset)
         {
-            var stripsDic = new Dictionary<ushort, byte[]>();
+            var objImages = new Dictionary<ushort, ImageData>();
             var its = new Stack<ChunkIterator>();
             var room = new Room();
             _reader.BaseStream.Seek(offset, SeekOrigin.Begin);
@@ -264,37 +264,24 @@ namespace NScumm.Core.IO
                             break;
                         case 0x4D42:
                             // BM (IM00)
-                            if (it.Current.Size > 6)
+                            if (it.Current.Size > 8)
                             {
-                                room.Data = _reader.ReadBytes((int)(it.Current.Size - 6));
+                                using (var ms = new MemoryStream(_reader.ReadBytes((int)(it.Current.Size - 6))))
+                                {
+                                    room.Image = ReadImage(ms, room.Header.Width / 8);
+                                }
                             }
                             break;
                         case 0x4E45:
                             {
                                 // Entry script
-                                var entryScript = _reader.ReadBytes((int)(it.Current.Size - 6));
-                                if (room.EntryScript.Data == null)
-                                {
-                                    room.EntryScript.Data = entryScript;
-                                }
-                                else
-                                {
-                                    throw new NotSupportedException("Entry script has already been defined.");
-                                }
+                                room.EntryScript.Data = _reader.ReadBytes((int)(it.Current.Size - 6));
                             }
                             break;
                         case 0x5845:
                             {
                                 // Exit script
-                                byte[] exitScript = _reader.ReadBytes((int)(it.Current.Size - 6));
-                                if (room.ExitScript.Data == null)
-                                {
-                                    room.ExitScript.Data = exitScript;
-                                }
-                                else
-                                {
-                                    throw new NotSupportedException("Exit script has already been defined.");
-                                }
+                                room.ExitScript.Data = _reader.ReadBytes((int)(it.Current.Size - 6));
                             }
                             break;
                         case 0x4C53:
@@ -327,7 +314,8 @@ namespace NScumm.Core.IO
                                 var objId = _reader.ReadUInt16();
                                 if (it.Current.Size > 8)
                                 {
-                                    stripsDic.Add(objId, _reader.ReadBytes((int)(it.Current.Size - 6)));
+                                    var img = new ImageData{ Data = _reader.ReadBytes((int)(it.Current.Size - 6)) };
+                                    objImages.Add(objId, img);
                                 }
                             }
                             break;
@@ -368,7 +356,7 @@ namespace NScumm.Core.IO
                                 data.Script.Data = _reader.ReadBytes(size);
                                 data.Script.Offset = nameOffset + data.Name.Length + 1;
 
-                                SetObjectImage(stripsDic, data);
+                                SetObjectImage(objImages, data);
                             }
                             break;
                     //case 0x4F53:
@@ -388,6 +376,60 @@ namespace NScumm.Core.IO
             } while (its.Count > 0);
 
             return room;
+        }
+
+        ImageData ReadImage(Stream stream, int numStrips)
+        {
+            var br = new BinaryReader(stream);
+            var img = new ImageData();
+            var size = br.ReadInt32();
+            br.BaseStream.Seek(-4, SeekOrigin.Current);
+            if (size > 0)
+            {
+                img.Data = br.ReadBytes(size + 2);
+                br.BaseStream.Seek(-2, SeekOrigin.Current);
+                size = br.ReadUInt16();
+            }
+            while (size != 0 && img.ZPlanes.Count < 3)
+            {
+                var zPlane = ReadZPlane(br, size, numStrips);
+                img.ZPlanes.Add(zPlane);
+                size = 0;
+                if ((br.BaseStream.Position + 2) < br.BaseStream.Length)
+                {
+                    size = br.ReadUInt16();
+                }
+            }
+            return img;
+        }
+
+        protected virtual ZPlane ReadZPlane(BinaryReader b, int size, int numStrips)
+        {
+            var zPlaneData = b.ReadBytes(size);
+            byte[] strips = null;
+            var offsets = new List<int>();
+            using (var ms = new MemoryStream(zPlaneData))
+            {
+                var br = new BinaryReader(ms);
+                var tableSize = 4 + numStrips * 2;
+                br.BaseStream.Seek(2, SeekOrigin.Begin);
+                // read table offsets
+                for (int i = 0; i < numStrips; i++)
+                {
+                    var offset = br.ReadUInt16();
+                    if (offset > 0)
+                    {
+                        offsets.Add(offset - tableSize);
+                    }
+                    else
+                    {
+                        offsets.Add(-1);
+                    }
+                }
+                strips = br.ReadBytes(size - tableSize);
+            }
+            var zPlane = new ZPlane(0, strips, offsets);
+            return zPlane;
         }
 
         #region Protected Methods
@@ -417,16 +459,11 @@ namespace NScumm.Core.IO
             _reader.ReadByte();
         }
 
-        static void SetObjectImage(IDictionary<ushort, byte[]> stripsDic, ObjectData obj)
+        static void SetObjectImage(IDictionary<ushort, ImageData> stripsDic, ObjectData obj)
         {
             if (stripsDic.ContainsKey(obj.Number))
             {
-                var stripData = stripsDic[obj.Number];
-                obj.Image = stripData;
-            }
-            else
-            {
-                obj.Image = new byte[0];
+                obj.Images.Add(stripsDic[obj.Number]);
             }
         }
 

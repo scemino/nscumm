@@ -24,7 +24,7 @@ using System.Collections.ObjectModel;
 
 namespace NScumm.Core.IO
 {
-    class ResourceIndex3: ResourceIndex
+    class ResourceIndex3: ResourceIndex3_16
     {
         protected override void LoadIndex(GameInfo game)
         {
@@ -86,6 +86,8 @@ namespace NScumm.Core.IO
                 for (int i = 0; i < 9; i++)
                 {
                     var b = dataName[i] ^ 0xFF;
+                    if (b == 0)
+                        continue;
                     name.Append((char)b);
                 }
                 roomNames[room] = name.ToString();
@@ -103,7 +105,7 @@ namespace NScumm.Core.IO
             return encByte;
         }
 
-        protected virtual Resource[] ReadResTypeList(XorReader br)
+        protected override Resource[] ReadResTypeList(XorReader br)
         {
             var numEntries = br.ReadUInt16();
             var res = new Resource[numEntries];
@@ -114,25 +116,6 @@ namespace NScumm.Core.IO
                 res[i] = new Resource { RoomNum = roomNum, Offset = offset };
             }
             return res;
-        }
-
-        protected virtual void ReadDirectoryOfObjects(XorReader br)
-        {
-            var numEntries = br.ReadUInt16();
-            ObjectOwnerTable = new byte[numEntries];
-            ObjectStateTable = new byte[numEntries];
-            ClassData = new uint[numEntries];
-            uint bits;
-            for (int i = 0; i < numEntries; i++)
-            {
-                bits = br.ReadByte();
-                bits |= (uint)(br.ReadByte() << 8);
-                bits |= (uint)(br.ReadByte() << 16);
-                ClassData[i] = bits;
-                var tmp = br.ReadByte();
-                ObjectStateTable[i] = (byte)(tmp >> 4);
-                ObjectOwnerTable[i] = (byte)(tmp & 0x0F);
-            }
         }
 
         #endregion

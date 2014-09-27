@@ -260,7 +260,7 @@ namespace NScumm.Core.IO
                             if (it.Current.Tag.StartsWith("IM", StringComparison.InvariantCulture))
                             {
                                 var smapNum = int.Parse(it.Current.Tag.Substring(2), System.Globalization.NumberStyles.HexNumber);
-                                var img = ReadImage(it.Current.Size - 8);
+                                var img = ReadImage(it.Current.Size - 8, room.Header.Width / 8);
                                 room.Image = img;
                             }
                             else
@@ -278,9 +278,10 @@ namespace NScumm.Core.IO
 
         Tuple<ushort,List<ImageData>> ReadObjectImages(long size)
         {
-            List<ImageData> images = new List<ImageData>();
+            var images = new List<ImageData>();
             ushort id = 0;
             var it = CreateChunkIterator(size);
+            var width = 0;
             while (it.MoveNext())
             {
                 switch (it.Current.Tag)
@@ -295,7 +296,7 @@ namespace NScumm.Core.IO
                             var unknown1 = _reader.ReadByte();
                             var x = _reader.ReadInt16();
                             var y = _reader.ReadInt16();
-                            var width = _reader.ReadUInt16();
+                            width = _reader.ReadUInt16();
                             var height = _reader.ReadUInt16();
                             // TODO: 
                             //                                var numHotspots = _reader.ReadUInt16();
@@ -307,7 +308,7 @@ namespace NScumm.Core.IO
                         }
                         break;
                     default:
-                        images.Add(ReadImage(it.Current.Size - 8));
+                        images.Add(ReadImage(it.Current.Size - 8, width / 8));
                         break;
                 }
             }
@@ -377,7 +378,7 @@ namespace NScumm.Core.IO
             return colors;
         }
 
-        ImageData ReadImage(long size)
+        ImageData ReadImage(long size, int numStrips)
         {
             var img = new ImageData();
             var it = CreateChunkIterator(size);
@@ -386,13 +387,17 @@ namespace NScumm.Core.IO
                 if (it.Current.Tag == "SMAP")
                 {
                     img.Data = _reader.ReadBytes((int)(it.Current.Size));
-                    var zplane = new ZPlane(0, img.Data);
-                    img.ZPlanes.Add(zplane);
                 }
                 else if (it.Current.Tag.StartsWith("ZP", StringComparison.InvariantCulture))
                 {
                     var zpNum = int.Parse(it.Current.Tag.Substring(2), System.Globalization.NumberStyles.HexNumber);
-                    var zplane = new ZPlane(zpNum, _reader.ReadBytes((int)(it.Current.Size - 8)));
+                    //var zplane = new ZPlane(zpNum, _reader.ReadBytes((int)(it.Current.Size - 8)));
+                    ZPlane zplane;
+                    using (var ms = new MemoryStream(_reader.ReadBytes((int)(it.Current.Size))))
+                    {
+                        var br = new BinaryReader(ms);
+                        zplane = ReadZPlane(br, (int)(it.Current.Size), numStrips);
+                    }
                     img.ZPlanes.Add(zplane);
                 }
                 else
@@ -401,6 +406,35 @@ namespace NScumm.Core.IO
                 }
             }
             return img;
+        }
+
+        protected override ZPlane ReadZPlane(BinaryReader b, int size, int numStrips)
+        {
+            var zPlaneData = b.ReadBytes(size);
+            byte[] strips = null;
+            var offsets = new List<int>();
+            using (var ms = new MemoryStream(zPlaneData))
+            {
+                var br = new BinaryReader(ms);
+                var tableSize = 8 + numStrips * 2;
+
+                // read table offsets
+                for (int i = 0; i < numStrips; i++)
+                {
+                    var offset = br.ReadUInt16();
+                    if (offset > 0)
+                    {
+                        offsets.Add(offset - tableSize);
+                    }
+                    else
+                    {
+                        offsets.Add(-1);
+                    }
+                }
+                strips = br.ReadBytes(size - tableSize);
+            }
+            var zPlane = new ZPlane(0, strips, offsets);
+            return zPlane;
         }
 
         static void UnknownChunk(Chunk chunk)

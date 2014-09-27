@@ -564,7 +564,7 @@ namespace NScumm.Core
             var objToDraw = (from o in roomData.Objects
                                       where o.Number == od.Number
                                       select o).FirstOrDefault();
-            if (objToDraw == null || objToDraw.Image == null && objToDraw.Images == null)
+            if (objToDraw == null || /*objToDraw.Image == null &&*/ objToDraw.Images == null)
                 return;
 
             var x = 0xFFFF;
@@ -587,18 +587,11 @@ namespace NScumm.Core
 
             if (numstrip != 0)
             {
-                var flags = od.Flags | DrawBitmaps.ObjectMode;
-                if (objToDraw.Image != null)
+                var flags = od.Flags;
+                var state = GetState(od.Number);
+                if (state > 0)
                 {
-                    Gdi.DrawBitmap(objToDraw.Image, _mainVirtScreen, x, ypos, width * 8, height, x - xpos, numstrip, flags);
-                }
-                else
-                {
-                    var state = GetState(od.Number);
-                    if (state > 0)
-                    {
-                        Gdi.DrawBitmap(objToDraw.Images[state - 1], _mainVirtScreen, x, ypos, width * 8, height, x - xpos, numstrip, roomData.Header.Width, flags);
-                    }
+                    Gdi.DrawBitmap(objToDraw.Images[state - 1], _mainVirtScreen, x, ypos, width * 8, height, x - xpos, numstrip, roomData.Header.Width, flags);
                 }
             }
         }

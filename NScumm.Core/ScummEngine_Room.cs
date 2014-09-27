@@ -372,7 +372,6 @@ namespace NScumm.Core
                 _objs[i + 1].Height = roomData.Objects[i].Height;
                 _objs[i + 1].Flags = roomData.Objects[i].Flags;
                 _objs[i + 1].ActorDir = roomData.Objects[i].ActorDir;
-                _objs[i + 1].Image = roomData.Objects[i].Image;
                 _objs[i + 1].Script.Offset = roomData.Objects[i].Script.Offset;
                 _objs[i + 1].Script.Data = roomData.Objects[i].Script.Data;
                 _objs[i + 1].ScriptOffsets.Clear();

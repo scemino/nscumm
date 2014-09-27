@@ -134,6 +134,7 @@
     <Compile Include="Audio\Midi\MidiChannel.cs" />
     <Compile Include="Audio\Midi\MidiTrack.cs" />
     <Compile Include="Audio\Midi\MidiPlayer_Data.cs" />
+    <Compile Include="Graphics\ZPlane.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="IO\Nscumm.xml">

@@ -25,7 +25,7 @@ using System.Collections.ObjectModel;
 
 namespace NScumm.Core
 {
-    class ResourceIndex3_16: ResourceIndex3
+    class ResourceIndex3_16: ResourceIndex
     {
         protected override void LoadIndex(GameInfo game)
         {
@@ -43,6 +43,38 @@ namespace NScumm.Core
                 CostumeResources = new ReadOnlyCollection<Resource>(ReadResTypeList(br));
                 ScriptResources = new ReadOnlyCollection<Resource>(ReadResTypeList(br));
                 SoundResources = new ReadOnlyCollection<Resource>(ReadResTypeList(br));
+            }
+        }
+
+        protected virtual Resource[] ReadResTypeList(XorReader br)
+        {
+            var num = br.ReadByte();
+            var res = new Resource[num];
+            var rooms = br.ReadBytes(num);
+            for (int i = 0; i < num; i++)
+            {
+                var offset = ToOffset(br.ReadUInt16());
+                res[i] = new Resource{ RoomNum = rooms[i], Offset = offset };
+            }
+            return res;
+        }
+
+        protected virtual void ReadDirectoryOfObjects(XorReader br)
+        {
+            var numEntries = br.ReadUInt16();
+            ObjectOwnerTable = new byte[numEntries];
+            ObjectStateTable = new byte[numEntries];
+            ClassData = new uint[numEntries];
+            uint bits;
+            for (int i = 0; i < numEntries; i++)
+            {
+                bits = br.ReadByte();
+                bits |= (uint)(br.ReadByte() << 8);
+                bits |= (uint)(br.ReadByte() << 16);
+                ClassData[i] = bits;
+                var tmp = br.ReadByte();
+                ObjectStateTable[i] = (byte)(tmp >> 4);
+                ObjectOwnerTable[i] = (byte)(tmp & 0x0F);
             }
         }
 

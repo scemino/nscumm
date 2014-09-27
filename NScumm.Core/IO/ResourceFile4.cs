@@ -67,6 +67,34 @@ namespace NScumm.Core.IO
             return null;
         }
 
+        protected override ZPlane ReadZPlane(BinaryReader b, int size, int numStrips)
+        {
+            var zPlaneData = b.ReadBytes(size);
+            byte[] strips = null;
+            var offsets = new List<int>();
+            using (var ms = new MemoryStream(zPlaneData))
+            {
+                var br = new BinaryReader(ms);
+                var tableSize = 2 + numStrips * 2;
+                // read table offsets
+                for (int i = 0; i < numStrips; i++)
+                {
+                    var offset = br.ReadUInt16();
+                    if (offset > 0)
+                    {
+                        offsets.Add(offset - tableSize);
+                    }
+                    else
+                    {
+                        offsets.Add(-1);
+                    }
+                }
+                strips = br.ReadBytes(size - tableSize);
+            }
+            var zPlane = new ZPlane(0, strips, offsets);
+            return zPlane;
+        }
+
         protected override void GotoResourceHeader(long offset)
         {
             _reader.BaseStream.Seek(offset + 8, SeekOrigin.Begin);

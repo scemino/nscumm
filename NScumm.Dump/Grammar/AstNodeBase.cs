@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
-namespace NScumm.Tmp
+namespace NScumm.Dump
 {
 	public abstract class AstNodeBase: IAstNode
 	{

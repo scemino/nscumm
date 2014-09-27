@@ -22,7 +22,7 @@ using NScumm.Core;
 using System.Collections.Generic;
 using NScumm.Core.IO;
 
-namespace NScumm.Tmp
+namespace NScumm.Dump
 {
     class ScriptParser4: ScriptParser
     {

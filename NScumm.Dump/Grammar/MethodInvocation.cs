@@ -23,7 +23,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Linq;
 
-namespace NScumm.Tmp
+namespace NScumm.Dump
 {
 	public class MethodInvocation: Expression
 	{

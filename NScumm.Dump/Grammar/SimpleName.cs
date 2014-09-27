@@ -1,4 +1,4 @@
-namespace NScumm.Tmp
+namespace NScumm.Dump
 {
 	[System.Diagnostics.DebuggerDisplay ("{DebuggerDisplay,nq}")]
     public class SimpleName: Expression

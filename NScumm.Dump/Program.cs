@@ -1,7 +1,7 @@
 using NScumm.Core;
 using NScumm.Core.IO;
 
-namespace NScumm.Tmp
+namespace NScumm.Dump
 {
     class MainClass
     {

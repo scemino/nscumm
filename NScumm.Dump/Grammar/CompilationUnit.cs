@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace NScumm.Tmp
+namespace NScumm.Dump
 {
 	public class CompilationUnit: AstNodeBase
 	{

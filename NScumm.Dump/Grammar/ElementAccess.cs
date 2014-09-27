@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 
-namespace NScumm.Tmp
+namespace NScumm.Dump
 {
 	public class ElementAccess: Expression
 	{

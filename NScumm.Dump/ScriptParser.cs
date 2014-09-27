@@ -5,7 +5,7 @@ using System.Linq;
 using NScumm.Core;
 using NScumm.Core.IO;
 
-namespace NScumm.Tmp
+namespace NScumm.Dump
 {
     public abstract partial class ScriptParser
     {

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using NScumm.Core;
 using NScumm.Core.IO;
 
-namespace NScumm.Tmp
+namespace NScumm.Dump
 {
     partial class ScriptParser
     {

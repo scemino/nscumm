@@ -20,7 +20,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-namespace NScumm.Tmp
+namespace NScumm.Dump
 {
 	[System.Diagnostics.DebuggerDisplay ("{DebuggerDisplay,nq}")]
 	public class LiteralExpression: Expression

@@ -1,4 +1,4 @@
-namespace NScumm.Tmp
+namespace NScumm.Dump
 {
 	public enum Operator
 	{

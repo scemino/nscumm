@@ -2,9 +2,8 @@ using System;
 using System.Linq;
 using System.Text;
 
-namespace NScumm.Tmp
+namespace NScumm.Dump
 {
-
     public class DumpAstVisitor: DefaultVisitor<string>
     {
         public override string Visit(CompilationUnit node)

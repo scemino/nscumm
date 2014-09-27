@@ -22,7 +22,7 @@ using System;
 using NScumm.Core;
 using NScumm.Core.IO;
 
-namespace NScumm.Tmp
+namespace NScumm.Dump
 {
     public class ScriptDumper
     {

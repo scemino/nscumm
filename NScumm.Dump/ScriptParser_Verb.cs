@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using NScumm.Core;
 
-namespace NScumm.Tmp
+namespace NScumm.Dump
 {
     partial class ScriptParser
     {

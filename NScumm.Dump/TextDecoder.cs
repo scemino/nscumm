@@ -1,7 +1,7 @@
 using NScumm.Core;
 using System.Text;
 
-namespace NScumm.Tmp
+namespace NScumm.Dump
 {
     class TextDecoder: IScummTextDecoder
     {

@@ -25,7 +25,7 @@ using NScumm.Core;
 using System.Text;
 using System.IO;
 
-namespace NScumm.Tmp
+namespace NScumm.Dump
 {
     public class ImageDumper
     {

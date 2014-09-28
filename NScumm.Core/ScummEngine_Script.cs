@@ -426,7 +426,6 @@ namespace NScumm.Core
 
         public TimeSpan RunBootScript(int bootParam = 0)
         {
-            bootParam = 619;
             if (_game.Id == "atlantis" && bootParam == 0)
             {
                 bootParam = -7873;

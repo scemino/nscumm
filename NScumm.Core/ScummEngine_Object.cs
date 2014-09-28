@@ -588,7 +588,7 @@ namespace NScumm.Core
             {
                 var flags = od.Flags;
                 var state = GetState(od.Number);
-                if (state > 0)
+                if (state > 0 && (state - 1) < objToDraw.Images.Count)
                 {
                     Gdi.DrawBitmap(objToDraw.Images[state - 1], _mainVirtScreen, x, ypos, width * 8, height, x - xpos, numstrip, roomData.Header.Width, flags);
                 }

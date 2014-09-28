@@ -78,7 +78,7 @@ namespace NScumm.Core
         {
             if (dir < 0 && dir > 3)
                 throw new ArgumentOutOfRangeException("dir", dir, "Invalid direction");
-            int[] new_dir_table = new int[4] { 270, 90, 180, 0 };
+            int[] new_dir_table = { 270, 90, 180, 0 };
             return new_dir_table[dir];
         }
 

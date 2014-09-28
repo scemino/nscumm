@@ -520,11 +520,10 @@ namespace NScumm.Core
 
         void DrawRoomObject(int i, int argument)
         {
-            ObjectData od;
             byte a;
             const int mask = 0xF;
 
-            od = _objs[i];
+            var od = _objs[i];
             if ((i < 1) || (od.Number < 1) || od.State == 0)
             {
                 return;
@@ -564,7 +563,7 @@ namespace NScumm.Core
             var objToDraw = (from o in roomData.Objects
                                       where o.Number == od.Number
                                       select o).FirstOrDefault();
-            if (objToDraw == null || /*objToDraw.Image == null &&*/ objToDraw.Images == null)
+            if (objToDraw == null || objToDraw.Images == null)
                 return;
 
             var x = 0xFFFF;

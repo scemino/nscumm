@@ -23,9 +23,11 @@ with game:
 Supported Games
 ---------------
 
-SCUMM 3:
+SCUMM 5:
 
-* Indiana Jones and the Last Crusade
+* Monkey Island 2: LeChuck's revenge
+
+* Indiana Jones and the Fate of Atlantis
 
 SCUMM 4:
 
@@ -35,11 +37,9 @@ SCUMM 4:
 
 * Loom
 
-SCUMM 5:
+SCUMM 3:
 
-* Monkey Island 2: LeChuck's revenge
-
-* Indiana Jones and the Fate of Atlantis
+* Indiana Jones and the Last Crusade
 
 Hotkeys
 -------
@@ -51,11 +51,9 @@ Bugs and missing features
 
 Bad music synchronization
 
-No sound effect
+No music for SCUMM 5
 
 Screen effects not implemented
-
-Load and save games with scumm version 4 games not implemented
 
 And many other things ???
 

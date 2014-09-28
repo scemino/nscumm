@@ -337,6 +337,7 @@ namespace NScumm.Core.IO
                                 Walk = new Point(_reader.ReadInt16(), _reader.ReadInt16()),
                                 ActorDir = _reader.ReadByte()
                             };
+                            obj.ParentState = (obj.Flags == (DrawBitmaps)0x80) ? (byte)1 : (byte)((int)obj.Flags & 0xF);
                         }
                         break;
                     case "VERB":

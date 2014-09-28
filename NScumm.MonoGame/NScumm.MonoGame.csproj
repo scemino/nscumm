@@ -66,6 +66,10 @@
     <None Include="Content\Fonts\SpriteFont.xnb">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="OpenTK.dll.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Gettext-ScanForTranslations>False</Gettext-ScanForTranslations>
+    </None>
   </ItemGroup>
   <Import Project="..\packages\MonoGame.Binaries.3.2.2-alpha\build\net40\MonoGame.Binaries.targets" Condition="Exists('..\packages\MonoGame.Binaries.3.2.2-alpha\build\net40\MonoGame.Binaries.targets')" />
   <Import Project="../../NScumm.GL/packages/MonoGame.Binaries.3.2.2-alpha/build/net40/MonoGame.Binaries.targets" />

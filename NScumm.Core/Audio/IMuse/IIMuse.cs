@@ -1,5 +1,5 @@
-//
-//  MidiChannel.cs
+﻿//
+//  IIMuse.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -19,19 +19,11 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace NScumm.Core.Audio.Midi
+namespace NScumm.Core.Audio.IMuse
 {
-    public class MidiChannel
+    public interface IIMuse
     {
-        public int inum;
-        public byte[] ins;
-        public int vol;
-        public int nshift;
-        public int on;
-
-        public MidiChannel()
-        {
-            ins = new byte[11];
-        }
+        int DoCommand(int num, int[] args);
     }
 }
+

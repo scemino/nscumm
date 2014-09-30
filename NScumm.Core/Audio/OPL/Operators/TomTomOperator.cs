@@ -1,5 +1,5 @@
-//
-//  MidiChannel.cs
+﻿//
+//  TomTomOperator.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -19,19 +19,16 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace NScumm.Core.Audio.Midi
+namespace NScumm.Core.Audio.OPL
 {
-    public class MidiChannel
+    class TomTomOperator : Operator
     {
-        public int inum;
-        public byte[] ins;
-        public int vol;
-        public int nshift;
-        public int on;
+        const int tomTomOperatorBaseAddress = 0x12;
 
-        public MidiChannel()
+        internal TomTomOperator()
+            : base(tomTomOperatorBaseAddress)
         {
-            ins = new byte[11];
         }
     }
 }
+

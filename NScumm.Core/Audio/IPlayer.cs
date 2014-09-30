@@ -1,5 +1,5 @@
-//
-//  MidiChannel.cs
+﻿//
+//  IPlayer.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -19,19 +19,30 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace NScumm.Core.Audio.Midi
+namespace NScumm.Core
 {
-    public class MidiChannel
+    public interface IPlayer
     {
-        public int inum;
-        public byte[] ins;
-        public int vol;
-        public int nshift;
-        public int on;
+        int Id { get; }
 
-        public MidiChannel()
-        {
-            ins = new byte[11];
-        }
+        bool IsActive { get; }
+
+        bool IsFadingOut { get; }
+
+        int OffsetNote { get; set; }
+
+        bool StartSound(int sound);
+
+        void Clear();
+
+        int GetParam(int param, int chan);
+
+        int SetHook(int cls, int value, int chan);
+    }
+
+    public interface ISoundRepository
+    {
+        byte[] GetSound(int id);
     }
 }
+

@@ -30,7 +30,7 @@ namespace NScumm.Core
     public class ScummEngine5: ScummEngine4
     {
         const int VariableCameraPosX = 0x02;
-        const int VariableSoundResult = 56;
+        public const int VariableSoundResult = 56;
         const int VariableTalkStopKey = 57;
         const int VariableFadeDelay = 59;
         const int VariableSoundParam = 64;

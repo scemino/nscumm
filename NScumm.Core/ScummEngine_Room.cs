@@ -226,13 +226,12 @@ namespace NScumm.Core
                     }
                     break;
                 case 9:         // SO_ROOM_SAVEGAME
-                    // TODO: SO_ROOM_SAVEGAME
-                    /*_saveLoadFlag = */
-                    GetVarOrDirectByte(OpCodeParameter.Param1);
-                    /*_saveLoadSlot = */
-                    GetVarOrDirectByte(OpCodeParameter.Param2);
-//                    _saveLoadSlot = 99;                                     /* use this slot */
-//                    _saveTemporaryState = true;
+                    {
+                        _saveLoadFlag = GetVarOrDirectByte(OpCodeParameter.Param1);
+                        _saveLoadSlot = GetVarOrDirectByte(OpCodeParameter.Param2);
+                        _saveLoadSlot = 99;                                     /* use this slot */
+                        _saveTemporaryState = true;
+                    }
                     break;
 
                 case 10:    // SO_ROOM_FADE

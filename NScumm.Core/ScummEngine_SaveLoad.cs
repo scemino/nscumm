@@ -35,35 +35,50 @@ namespace NScumm.Core
         const uint InfoSectionVersion = 2;
         const uint SaveInfoSectionSize = (4 + 4 + 4 + 4 + 4 + 4 + 2);
         const uint SaveCurrentVersion = 94;
-        bool _hasToLoad;
-        bool _hasToSave;
         string _savegame;
+        int _saveLoadFlag;
+        int _saveLoadSlot;
+        bool _saveTemporaryState;
 
         string _saveLoadVarsFilename;
 
         public void Load(string savegame)
         {
-            _hasToLoad = true;
+            _saveLoadFlag = 2;
             _savegame = savegame;
+            _saveTemporaryState = false;
         }
 
         void SaveLoad()
         {
-            if (_variables[VariableMainMenu] != 0)
+            if (_saveLoadFlag != 0)
             {
-                if (_hasToLoad)
+                if (_savegame == null)
                 {
-                    _hasToLoad = false;
+                    var dir = Path.GetDirectoryName(Game.Path);
+                    _savegame = Path.Combine(dir, string.Format("{0}_{1}{2}.sav", Game.Id, _saveTemporaryState ? 'c' : 's', (_saveLoadSlot + 1)));
+                }
+                if (_saveLoadFlag == 2)
+                {
                     if (File.Exists(_savegame))
                     {
                         LoadState(_savegame);
+                        if (_saveTemporaryState && Game.Version <= 7)
+                        {
+                            _variables[VariableGameLoaded] = (_game.Version == 8) ? 1 : 203;
+                        }
                     }
                 }
-                else if (_hasToSave)
+                else if (_saveLoadFlag == 1)
                 {
-                    _hasToSave = false;
                     SaveState(_savegame, Path.GetFileNameWithoutExtension(_savegame));
+                    if (_saveTemporaryState)
+                    {
+                        _variables[VariableGameLoaded] = 201;
+                    }
                 }
+
+                _saveLoadFlag = 0;
             }
         }
 
@@ -1206,8 +1221,9 @@ namespace NScumm.Core
 
         public void Save(string filename)
         {
-            _hasToSave = true;
+            _saveLoadFlag = 1;
             _savegame = filename;
+            _saveTemporaryState = false;
         }
 
         static bool SkipThumbnail(BinaryReader reader)

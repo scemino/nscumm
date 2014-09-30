@@ -71,6 +71,7 @@ namespace NScumm.Core
         const int VariableUserPut = 0x35;
         const int VariableTalkStringY = 0x36;
         const int VariableRoomFlag = 0x46;
+        const int VariableGameLoaded = 0x47;
 
         protected int[] _variables;
         BitArray _bitVars = new BitArray(4096);

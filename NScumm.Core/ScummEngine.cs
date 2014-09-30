@@ -283,7 +283,7 @@ namespace NScumm.Core
         {
             _opCode = opCode;
             _slots[_currentScript].IsExecuted = true;
-            Console.WriteLine("Room = {1}, Script = {0}, Name = {2}", _slots[_currentScript].Number, _roomResource, _opCodes.ContainsKey(_opCode) ? _opCodes[opCode].Method.Name : "Unknown");
+            Console.WriteLine("Room = {1}, Script = {0}, Name = {2} [{3:X2}]", _slots[_currentScript].Number, _roomResource, _opCodes.ContainsKey(_opCode) ? _opCodes[opCode].Method.Name : "Unknown", _opCode);
             _opCodes[opCode]();
         }
 
@@ -797,8 +797,29 @@ namespace NScumm.Core
                     LoadCharset(resId);
                     break;
 
+                case 20:        // SO_LOAD_OBJECT
+                    LoadFlObject(GetVarOrDirectWord(OpCodeParameter.Param2), resId);
+                    break;
+
                 default:
                     throw new NotImplementedException();
+            }
+        }
+
+        List<ObjectData> flObjects = new List<ObjectData>();
+
+        void LoadFlObject(int obj, int room)
+        {
+            var od = ResourceManager.GetRoom((byte)room).Objects.First(o => o.Number == obj);
+            for (int i = 0; i < _objs.Length; i++)
+            {
+                if (_objs[i].Number == 0)
+                {
+                    _objs[i] = od;
+                    od.FloatingObjectIndex = flObjects.Count;
+                    flObjects.Add(od);
+                    return;
+                }
             }
         }
 
@@ -925,6 +946,7 @@ namespace NScumm.Core
             // The music engine generates the timer data for us.
             _variables[VariableMusicTimer]++;
 
+            load_game:
             SaveLoad();
 
             if (_completeScreenRedraw)
@@ -953,9 +975,10 @@ namespace NScumm.Core
             // drawing the current room right after the load is request but before
             // it is performed. That was annoying esp. if you loaded while a SMUSH
             // cutscene was playing.
-            //if (_saveLoadFlag && _saveLoadFlag != 1) {
-            //    goto load_game;
-            //}
+            if (_saveLoadFlag != 0 && _saveLoadFlag != 1)
+            {
+                goto load_game;
+            }
 
             if (_currentRoom == 0)
             {

@@ -282,10 +282,10 @@ namespace NScumm.Core
                     throw new NotImplementedException();
             }
 
-            if (_game.Version >= 4)
+            if (VariableCursorState.HasValue)
             {
-                _variables[VariableCursorState] = _cursor.State;
-                _variables[VariableUserPut] = _userPut;
+                _variables[VariableCursorState.Value] = _cursor.State;
+                _variables[VariableUserPut.Value] = _userPut;
             }
         }
     }

@@ -81,14 +81,14 @@ namespace NScumm.Core
                     (short)(a.Position.X - MainVirtScreen.XStart),
                     (short)(a.Position.Y - a.Elevation - ScreenTop));
 
-                if (_variables[VariableTalkStringY] < 0)
+                if (_variables[VariableTalkStringY.Value] < 0)
                 {
-                    s = (a.ScaleY * _variables[VariableTalkStringY]) / 0xFF;
-                    _string[0].Position = _string[0].Position.Offset(0, (short)(((_variables[VariableTalkStringY] - s) / 2) + s));
+                    s = (a.ScaleY * _variables[VariableTalkStringY.Value]) / 0xFF;
+                    _string[0].Position = _string[0].Position.Offset(0, (short)(((_variables[VariableTalkStringY.Value] - s) / 2) + s));
                 }
                 else
                 {
-                    _string[0].Position = new Point(_string[0].Position.X, (short)_variables[VariableTalkStringY]);
+                    _string[0].Position = new Point(_string[0].Position.X, (short)_variables[VariableTalkStringY.Value]);
                 }
 
                 if (_string[0].Position.Y < 1)
@@ -179,7 +179,7 @@ namespace NScumm.Core
                 _nextLeft = _charset.Left;
                 _nextTop = _charset.Top;
 
-                _talkDelay += _variables[VariableCharIncrement];
+                _talkDelay += _variables[VariableCharIncrement.Value];
             }
         }
 

@@ -29,24 +29,29 @@ namespace NScumm.Core
 {
     public class ScummEngine5: ScummEngine4
     {
-        const int VariableCameraPosX = 0x02;
-        public const int VariableSoundResult = 56;
-        const int VariableTalkStopKey = 57;
-        const int VariableFadeDelay = 59;
-        const int VariableSoundParam = 64;
-        const int VariableSoundParam2 = 65;
-        const int VariableSoundParam3 = 66;
-        const int VariableInputMode = 67;
-        // 1 is keyboard, 2 is joystick, 3 is mouse
-        const int VariableMemoryPerformance = 68;
-        const int VariableVideoPerformance = 69;
-        const int VariableRoomFlag = 70;
-        const int VariableGameLoaded = 71;
-        const int VariableNewRoom = 72;
+
 
         public ScummEngine5(GameInfo game, IGraphicsManager graphicsManager, IInputManager inputManager, IAudioDriver audioDriver)
             : base(game, graphicsManager, inputManager, audioDriver)
         {
+            VariableSoundResult = 56;
+            VariableTalkStopKey = 57;
+            VariableFadeDelay = 59;
+            VariableNoSubtitles = 60;
+            VariableSoundParam = 64;
+            VariableSoundParam2 = 65;
+            VariableSoundParam3 = 66;
+            VariableInputMode = 67;
+            VariableMemoryPerformance = 68;
+            VariableVideoPerformance = 69;
+            VariableRoomFlag = 70;
+            VariableGameLoaded = 71;
+            VariableNewRoom = 72;
+
+            // 1 is keyboard, 2 is joystick, 3 is mouse
+            Variables[VariableInputMode.Value] = 3;
+
+            Variables[VariableFadeDelay.Value] = 3;
         }
 
         protected override void InitOpCodes()
@@ -117,7 +122,7 @@ namespace NScumm.Core
             if (room == 0)
                 room = _roomResource;
             AddObjectToInventory(obj, (byte)room);
-            PutOwner(obj, (byte)_variables[VariableEgo]);
+            PutOwner(obj, (byte)Variables[VariableEgo.Value]);
             PutClass(obj, (int)ObjectClass.Untouchable, true);
             PutState(obj, 1);
             MarkObjectRectAsDirty(obj);

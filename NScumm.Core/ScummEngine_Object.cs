@@ -150,7 +150,7 @@ namespace NScumm.Core
             // debug(0, "adding %d from %d to inventoryOld", obj, _currentRoom);
             AddObjectToInventory(obj, _roomResource);
             MarkObjectRectAsDirty(obj);
-            PutOwner(obj, (byte)_variables[VariableEgo]);
+            PutOwner(obj, (byte)_variables[VariableEgo.Value]);
             PutClass(obj, (int)ObjectClass.Untouchable, true);
             PutState(obj, 1);
             ClearDrawObjectQueue();

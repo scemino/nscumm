@@ -39,7 +39,7 @@ namespace NScumm.Core
         void StartSound()
         {
             var sound = GetVarOrDirectByte(OpCodeParameter.Param1);
-            _variables[VariableMusicTimer] = 0;
+            _variables[VariableMusicTimer.Value] = 0;
             _sound.AddSoundToQueue(sound);
         }
 

@@ -89,7 +89,7 @@ namespace NScumm.Core
         public void PlayCDTrack(int track, int numLoops, int startFrame, int duration)
         {
             // Reset the music timer variable at the start of a new track
-            vm.Variables[ScummEngine.VariableMusicTimer] = 0;
+            vm.Variables[vm.VariableMusicTimer.Value] = 0;
 
             // Play it
             //if (!_soundsPaused)
@@ -117,7 +117,7 @@ namespace NScumm.Core
             // should be possible to check with pollCD(), but since CD sound isn't
             // properly restarted when reloading a saved game, I don't dare to.
 
-            vm.Variables[ScummEngine.VariableMusicTimer] += 6;
+            vm.Variables[vm.VariableMusicTimer.Value] += 6;
         }
 
         public void AddSoundToQueue(int sound)
@@ -142,7 +142,7 @@ namespace NScumm.Core
                 {
                     args[i] = soundQueueIMuse.Dequeue();
                 }
-                vm.Variables[ScummEngine5.VariableSoundResult] = imuse.DoCommand(num, args);
+                vm.Variables[vm.VariableSoundResult.Value] = imuse.DoCommand(num, args);
             }
         }
 

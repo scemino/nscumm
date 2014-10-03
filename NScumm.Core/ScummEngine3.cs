@@ -31,6 +31,7 @@ namespace NScumm.Core
         public ScummEngine3(GameInfo game, IGraphicsManager graphicsManager, IInputManager inputManager, IAudioDriver audioDriver)
             : base(game, graphicsManager, inputManager, audioDriver)
         {
+            Variables[VariableCurrentLights.Value] = (int)(LightModes.ActorUseBasePalette | LightModes.ActorUseColors | LightModes.RoomLightsOn);
         }
     }
     

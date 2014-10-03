@@ -676,7 +676,7 @@ namespace NScumm.Core
                         return;
                     }
                 case 2:     // SO_WAIT_FOR_MESSAGE
-                    if (_variables[VariableHaveMessage] != 0)
+                    if (_variables[VariableHaveMessage.Value] != 0)
                         break;
                     return;
 
@@ -688,10 +688,10 @@ namespace NScumm.Core
                 case 4:     // SO_WAIT_FOR_SENTENCE
                     if (_sentenceNum != 0)
                     {
-                        if (_sentence[_sentenceNum - 1].IsFrozen && !IsScriptInUse(_variables[VariableSentenceScript]))
+                        if (_sentence[_sentenceNum - 1].IsFrozen && !IsScriptInUse(_variables[VariableSentenceScript.Value]))
                             return;
                     }
-                    else if (!IsScriptInUse(_variables[VariableSentenceScript]))
+                    else if (!IsScriptInUse(_variables[VariableSentenceScript.Value]))
                         return;
                     break;
 
@@ -901,10 +901,10 @@ namespace NScumm.Core
         TimeSpan GetTimeToWaitBeforeLoop(TimeSpan lastTimeLoop)
         {
             var numTicks = ScummHelper.ToTicks(timeToWait);
-            _variables[VariableTimer] = numTicks;
-            _variables[VariableTimerTotal] += numTicks;
+            _variables[VariableTimer.Value] = numTicks;
+            _variables[VariableTimerTotal.Value] += numTicks;
 
-            deltaTicks = _variables[VariableTimerNext];
+            deltaTicks = _variables[VariableTimerNext.Value];
             if (deltaTicks < 1)
                 deltaTicks = 1;
 
@@ -921,9 +921,9 @@ namespace NScumm.Core
             var t = DateTime.Now;
             int delta = deltaTicks;
 
-            _variables[VariableTimer1] += delta;
-            _variables[VariableTimer2] += delta;
-            _variables[VariableTimer3] += delta;
+            _variables[VariableTimer1.Value] += delta;
+            _variables[VariableTimer2.Value] += delta;
+            _variables[VariableTimer3.Value] += delta;
 
             if (Game.Id == "indy3")
             {
@@ -944,7 +944,7 @@ namespace NScumm.Core
             UpdateVariables();
 
             // The music engine generates the timer data for us.
-            _variables[VariableMusicTimer]++;
+            _variables[VariableMusicTimer.Value]++;
 
             load_game:
             SaveLoad();

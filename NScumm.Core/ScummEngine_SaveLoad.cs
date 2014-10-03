@@ -65,7 +65,7 @@ namespace NScumm.Core
                         LoadState(_savegame);
                         if (_saveTemporaryState && Game.Version <= 7)
                         {
-                            _variables[VariableGameLoaded] = (_game.Version == 8) ? 1 : 203;
+                            _variables[VariableGameLoaded.Value] = (_game.Version == 8) ? 1 : 203;
                         }
                     }
                 }
@@ -74,7 +74,7 @@ namespace NScumm.Core
                     SaveState(_savegame, Path.GetFileNameWithoutExtension(_savegame));
                     if (_saveTemporaryState)
                     {
-                        _variables[VariableGameLoaded] = 201;
+                        _variables[VariableGameLoaded.Value] = 201;
                     }
                 }
 
@@ -204,6 +204,11 @@ namespace NScumm.Core
                 _verbMouseOver = 0;
 
                 CameraMoved();
+
+                if (VariableRoomFlag.HasValue)
+                {
+                    Variables[VariableRoomFlag.Value] = 1;
+                }
 
                 Gdi.NumZBuffer = GetNumZBuffers();
             }

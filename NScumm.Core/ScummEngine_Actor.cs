@@ -456,7 +456,7 @@ namespace NScumm.Core
             _charsetBufPos = 0;
             _talkDelay = 0;
             _haveMsg = 0xFF;
-            _variables[VariableHaveMessage] = 0xFF;
+            _variables[VariableHaveMessage.Value] = 0xFF;
 
             _haveActorSpeechMsg = true;
             Charset();
@@ -464,8 +464,8 @@ namespace NScumm.Core
 
         internal int TalkingActor
         {
-            get { return _variables[VariableTalkActor]; }
-            set { _variables[VariableTalkActor] = value; }
+            get { return _variables[VariableTalkActor.Value]; }
+            set { _variables[VariableTalkActor.Value] = value; }
         }
 
         internal void StopTalk()

@@ -27,11 +27,30 @@ using NScumm.Core.IO;
 
 namespace NScumm.Core
 {
-    public class ScummEngine4: ScummEngine
+    public class ScummEngine4: ScummEngine3
     {
         public ScummEngine4(GameInfo game, IGraphicsManager graphicsManager, IInputManager inputManager, IAudioDriver audioDriver)
             : base(game, graphicsManager, inputManager, audioDriver)
         {
+            VariableScrollScript = 0x1B;
+            VariableDebugMode = 0x27;
+            VariableMainMenu = 0x32;
+            VariableFixedDisk = 0x33;
+            VariableCursorState = 0x34;
+            VariableUserPut = 0x35;
+            VariableTalkStringY = 0x36;
+
+            Variables[VariableFixedDisk.Value] = 1;
+            Variables[VariableTalkStringY.Value] = -0x50;
+
+            if (game.Id == "loom")
+            {
+                VariableNoSubtitles = 60;
+            }
+            else if (game.Id == "monkey")
+            {
+                Variables[74] = 1225;
+            }
         }
 
         protected override void InitOpCodes()

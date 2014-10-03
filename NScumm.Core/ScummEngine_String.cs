@@ -204,7 +204,7 @@ namespace NScumm.Core
                             {
                                 if (offset == 0 && delay == 0)
                                 {
-                                    _variables[VariableMusicTimer] = 0;
+                                    _variables[VariableMusicTimer.Value] = 0;
                                     _sound.StopCD();
                                 }
                                 else
@@ -432,7 +432,7 @@ namespace NScumm.Core
 
         void PrintEgo()
         {
-            _actorToPrintStrFor = _variables[VariableEgo];
+            _actorToPrintStrFor = _variables[VariableEgo.Value];
             DecodeParseString();
         }
     }

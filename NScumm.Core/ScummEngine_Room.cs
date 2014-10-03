@@ -53,7 +53,7 @@ namespace NScumm.Core
             int obj = GetVarOrDirectWord(OpCodeParameter.Param1);
             int room = GetVarOrDirectByte(OpCodeParameter.Param2);
 
-            var a = _actors[_variables[VariableEgo]];
+            var a = _actors[_variables[VariableEgo.Value]];
 
             a.PutActor((byte)room);
             int oldDir = a.Facing;
@@ -62,9 +62,9 @@ namespace NScumm.Core
             short x = ReadWordSigned();
             short y = ReadWordSigned();
 
-            _variables[VariableWalkToObject] = obj;
+            _variables[VariableWalkToObject.Value] = obj;
             StartScene(a.Room, a, obj);
-            _variables[VariableWalkToObject] = 0;
+            _variables[VariableWalkToObject.Value] = 0;
 
             if (!_egoPositioned)
             {
@@ -136,8 +136,8 @@ namespace NScumm.Core
                             a = roomData.Header.Width - (ScreenWidth / 2);
                         if (b > roomData.Header.Width - (ScreenWidth / 2))
                             b = roomData.Header.Width - (ScreenWidth / 2);
-                        _variables[VariableCameraMinX] = a;
-                        _variables[VariableCameraMaxX] = b;
+                        _variables[VariableCameraMinX.Value] = a;
+                        _variables[VariableCameraMaxX.Value] = b;
                     }
                     break;
 

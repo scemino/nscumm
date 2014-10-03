@@ -27,88 +27,86 @@ namespace NScumm.Core
 {
     partial class ScummEngine
     {
-        public const int VariableEgo = 0x01;
-        const int VariableCameraPosX = 0x02;
-        const int VariableHaveMessage = 0x03;
-        const int VariableRoom = 0x04;
-        const int VariableOverride = 0x05;
-        const int VariableCurrentLights = 0x09;
-        public const int VariableTimer1 = 0x0B;
-        public const int VariableTimer2 = 0x0C;
-        public const int VariableTimer3 = 0x0D;
-        public const int VariableMusicTimer = 0x0E;
-        const int VariableCameraMinX = 0x11;
-        const int VariableCameraMaxX = 0x12;
-        public const int VariableTimerNext = 0x13;
-        public const int VariableVirtualMouseX = 0x14;
-        public const int VariableVirtualMouseY = 0x15;
-        const int VariableRoomResource = 0x16;
-        public const int VariableCutSceneExitKey = 0x18;
-        const int VariableTalkActor = 0x19;
-        const int VariableCameraFastX = 0x1A;
-        const int VariableScrollScript = 0x1B;
-        const int VariableEntryScript = 0x1C;
-        const int VariableEntryScript2 = 0x1D;
-        const int VariableExitScript = 0x1E;
-        const int VariableVerbScript = 0x20;
-        const int VariableSentenceScript = 0x21;
-        const int VariableInventoryScript = 0x22;
-        const int VariableCutSceneStartScript = 0x23;
-        const int VariableCutSceneEndScript = 0x24;
-        public const int VariableCharIncrement = 0x25;
-        const int VariableWalkToObject = 0x26;
-        const int VariableDebugMode = 0x27;
-        const int VariableHeapSpace = 0x28;
-        public const int VariableMouseX = 0x2C;
-        public const int VariableMouseY = 0x2D;
-        const int VariableTimer = 0x2E;
-        const int VariableTimerTotal = 0x2F;
-        const int VariableSoundcard = 0x30;
-        const int VariableVideoMode = 0x31;
-        const int VariableMainMenu = 0x32;
-        const int VariableFixedDisk = 0x33;
-        const int VariableCursorState = 0x34;
-        const int VariableUserPut = 0x35;
-        const int VariableTalkStringY = 0x36;
-        const int VariableRoomFlag = 0x46;
-        const int VariableGameLoaded = 0x47;
+        public int? VariableEgo = 0x01;
+        public int? VariableCameraPosX = 0x02;
+        public int? VariableHaveMessage = 0x03;
+        public int? VariableRoom = 0x04;
+        public int? VariableOverride = 0x05;
+        public int? VariableCurrentLights = 0x09;
+        public int? VariableTimer1 = 0x0B;
+        public int? VariableTimer2 = 0x0C;
+        public int? VariableTimer3 = 0x0D;
+        public int? VariableMusicTimer = 0x0E;
+        public int? VariableCameraMinX = 0x11;
+        public int? VariableCameraMaxX = 0x12;
+        public int? VariableTimerNext = 0x13;
+        public int? VariableVirtualMouseX = 0x14;
+        public int? VariableVirtualMouseY = 0x15;
+        public int? VariableRoomResource = 0x16;
+        public int? VariableCutSceneExitKey = 0x18;
+        public int? VariableTalkActor = 0x19;
+        public int? VariableCameraFastX = 0x1A;
+        public int? VariableScrollScript;
+        public int? VariableEntryScript = 0x1C;
+        public int? VariableEntryScript2 = 0x1D;
+        public int? VariableExitScript = 0x1E;
+        public int? VariableVerbScript = 0x20;
+        public int? VariableSentenceScript = 0x21;
+        public int? VariableInventoryScript = 0x22;
+        public int? VariableCutSceneStartScript = 0x23;
+        public int? VariableCutSceneEndScript = 0x24;
+        public int? VariableCharIncrement = 0x25;
+        public int? VariableWalkToObject = 0x26;
+        public int? VariableDebugMode;
+        public int? VariableHeapSpace = 0x28;
+        public int? VariableMouseX = 0x2C;
+        public int? VariableMouseY = 0x2D;
+        public int? VariableTimer = 0x2E;
+        public int? VariableTimerTotal = 0x2F;
+        public int? VariableSoundcard = 0x30;
+        public int? VariableVideoMode = 0x31;
+        public int? VariableMainMenu;
+        public int? VariableFixedDisk;
+        public int? VariableCursorState;
+        public int? VariableUserPut;
+        public int? VariableTalkStringY;
+        public int? VariableNoSubtitles;
+        public int? VariableSoundResult;
+        public int? VariableTalkStopKey;
+        public int? VariableFadeDelay;
+        public int? VariableSoundParam;
+        public int? VariableSoundParam2;
+        public int? VariableSoundParam3;
+        public int? VariableInputMode;
+        public int? VariableMemoryPerformance;
+        public int? VariableVideoPerformance;
+        public int? VariableRoomFlag;
+        public int? VariableGameLoaded;
+        public int? VariableNewRoom;
 
-        protected int[] _variables;
+        int[] _variables = new int[NumVariables];
         BitArray _bitVars = new BitArray(4096);
         Stack<int> _stack = new Stack<int>();
         int _resultVarIndex;
 
-        internal int[] Variables
+        public int[] Variables
         {
             get { return _variables; }
         }
 
         void InitVariables()
         {
-            _variables = new int[NumVariables];
-            _variables[VariableVideoMode] = 19;
-            if (Game.Version >= 4)
-            {
-                _variables[VariableFixedDisk] = 1;
-            }
-            _variables[VariableHeapSpace] = 1400;
-            _variables[VariableCharIncrement] = 4;
+            Variables[VariableVideoMode.Value] = 19;
+            Variables[VariableHeapSpace.Value] = 1400;
+            Variables[VariableCharIncrement.Value] = 4;
             TalkingActor = 0;
-            #if DEBUG
-            //_variables[VariableDebugMode] = 1;
-            #endif
-            // MDT_ADLIB
-            _variables[VariableSoundcard] = 3;
 
-            _variables[VariableTalkStringY] = -0x50;
-
-            // Setup light
-            _variables[VariableCurrentLights] = (int)(LightModes.ActorUseBasePalette | LightModes.ActorUseColors | LightModes.RoomLightsOn);
-
-            if (_game.Id == "monkey")
-            {
-                _variables[74] = 1225;
-            }
+            // 0 PC Speaker
+            // 1 Tandy
+            // 2 CMS
+            // 3 AdLib
+            // 4 Roland
+            Variables[VariableSoundcard.Value] = 3;
         }
 
         protected byte ReadByte()
@@ -300,8 +298,8 @@ namespace NScumm.Core
 
         void UpdateVariables()
         {
-            _variables[VariableCameraPosX] = _camera.CurrentPosition.X;
-            _variables[VariableHaveMessage] = _haveMsg;
+            _variables[VariableCameraPosX.Value] = _camera.CurrentPosition.X;
+            _variables[VariableHaveMessage.Value] = _haveMsg;
         }
     }
 }

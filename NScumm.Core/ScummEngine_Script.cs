@@ -93,7 +93,7 @@ namespace NScumm.Core
 
             if (Game.Version >= 5)
             {
-                Variables[VariableOverride] = 0;
+                Variables[VariableOverride.Value] = 0;
             }
         }
 
@@ -104,7 +104,7 @@ namespace NScumm.Core
 
             if (Game.Version >= 4)
             {
-                _variables[VariableOverride] = 0;
+                _variables[VariableOverride.Value] = 0;
             }
         }
 
@@ -124,8 +124,8 @@ namespace NScumm.Core
 
             cutScene.CutSceneScriptIndex = scr;
 
-            if (_variables[VariableCutSceneStartScript] != 0)
-                RunScript((byte)_variables[VariableCutSceneStartScript], false, false, args);
+            if (_variables[VariableCutSceneStartScript.Value] != 0)
+                RunScript((byte)_variables[VariableCutSceneStartScript.Value], false, false, args);
 
             cutScene.CutSceneScriptIndex = 0xFF;
         }
@@ -149,7 +149,7 @@ namespace NScumm.Core
                 if (_slots[script].CutSceneOverride > 0)
                     _slots[script].CutSceneOverride--;
 
-                _variables[VariableOverride] = 1;
+                _variables[VariableOverride.Value] = 1;
                 cutScene.Override.Pointer = 0;
             }
         }
@@ -168,13 +168,13 @@ namespace NScumm.Core
             var cutSceneData = cutScene.Data.Pop();
             var args = new [] { cutSceneData.Data };
 
-            _variables[VariableOverride] = 0;
+            _variables[VariableOverride.Value] = 0;
 
             if (cutSceneData.Pointer != 0 && (_slots[_currentScript].CutSceneOverride > 0))   // Only terminate if active
 				_slots[_currentScript].CutSceneOverride--;
 
-            if (_variables[VariableCutSceneEndScript] != 0)
-                RunScript((byte)_variables[VariableCutSceneEndScript], false, false, args);
+            if (_variables[VariableCutSceneEndScript.Value] != 0)
+                RunScript((byte)_variables[VariableCutSceneEndScript.Value], false, false, args);
         }
 
         void IsScriptRunning()
@@ -286,7 +286,7 @@ namespace NScumm.Core
 
             SetDirtyColors(0, 255);
 
-            Variables[VariableRoom] = room;
+            Variables[VariableRoom.Value] = room;
             _fullRedraw = true;
 
             _currentRoom = room;
@@ -296,10 +296,10 @@ namespace NScumm.Core
             else
                 _roomResource = room;
 
-            Variables[VariableRoomResource] = _roomResource;
+            Variables[VariableRoomResource.Value] = _roomResource;
 
             if (room != 0 && _game.Version == 5 && room == _roomResource)
-                Variables[VariableRoomFlag] = 1;
+                Variables[VariableRoomFlag.Value] = 1;
 
             ClearRoomObjects();
 
@@ -318,8 +318,8 @@ namespace NScumm.Core
             ResetRoomObjects();
             _drawingObjects.Clear();
 
-            _variables[VariableCameraMinX] = ScreenWidth / 2;
-            _variables[VariableCameraMaxX] = roomData.Header.Width - (ScreenWidth / 2);
+            _variables[VariableCameraMinX.Value] = ScreenWidth / 2;
+            _variables[VariableCameraMaxX.Value] = roomData.Header.Width - (ScreenWidth / 2);
 
             _camera.Mode = CameraMode.Normal;
             _camera.CurrentPosition.X = _camera.DestinationPosition.X = (short)(ScreenWidth / 2);
@@ -365,15 +365,15 @@ namespace NScumm.Core
 
         protected void RunInventoryScript(int i)
         {
-            if (_variables[VariableInventoryScript] != 0)
+            if (_variables[VariableInventoryScript.Value] != 0)
             {
-                RunScript((byte)_variables[VariableInventoryScript], false, false, new [] { i });
+                RunScript((byte)_variables[VariableInventoryScript.Value], false, false, new [] { i });
             }
         }
 
         void RunInputScript(ClickArea clickArea, KeyCode code, int mode)
         {
-            var verbScript = _variables[VariableVerbScript];
+            var verbScript = _variables[VariableVerbScript.Value];
 
             if (verbScript != 0)
             {
@@ -383,8 +383,8 @@ namespace NScumm.Core
 
         void RunEntryScript()
         {
-            if (_variables[VariableEntryScript] != 0)
-                RunScript((byte)_variables[VariableEntryScript], false, false, new int[0]);
+            if (_variables[VariableEntryScript.Value] != 0)
+                RunScript((byte)_variables[VariableEntryScript.Value], false, false, new int[0]);
 
             if (roomData != null && roomData.EntryScript.Data != null)
             {
@@ -399,15 +399,15 @@ namespace NScumm.Core
                 RunScriptNested((byte)slot);
             }
 
-            if (_variables[VariableEntryScript2] != 0)
-                RunScript((byte)_variables[VariableEntryScript2], false, false, new int[0]);
+            if (_variables[VariableEntryScript2.Value] != 0)
+                RunScript((byte)_variables[VariableEntryScript2.Value], false, false, new int[0]);
         }
 
         void RunExitScript()
         {
-            if (_variables[VariableExitScript] != 0)
+            if (_variables[VariableExitScript.Value] != 0)
             {
-                RunScript((byte)_variables[VariableExitScript], false, false, new int[0]);
+                RunScript((byte)_variables[VariableExitScript.Value], false, false, new int[0]);
             }
 
             if (roomData != null && roomData.ExitScript.Data.Length != 0)
@@ -635,7 +635,7 @@ namespace NScumm.Core
 
         void CheckAndRunSentenceScript()
         {
-            var sentenceScript = _variables[VariableSentenceScript];
+            var sentenceScript = _variables[VariableSentenceScript.Value];
 
             if (IsScriptInUse(sentenceScript))
             {
@@ -804,7 +804,7 @@ namespace NScumm.Core
             if (verb == 0xFE)
             {
                 _sentenceNum = 0;
-                StopScript(_variables[VariableSentenceScript]);
+                StopScript(_variables[VariableSentenceScript.Value]);
                 //TODO: clearClickedStatus();
                 return;
             }

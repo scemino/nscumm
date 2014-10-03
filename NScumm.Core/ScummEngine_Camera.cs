@@ -57,16 +57,16 @@ namespace NScumm.Core
             }
             _camera.DestinationPosition.X = pos.X;
 
-            if (_camera.CurrentPosition.X < _variables[VariableCameraMinX])
-                _camera.CurrentPosition.X = (short)_variables[VariableCameraMinX];
+            if (_camera.CurrentPosition.X < _variables[VariableCameraMinX.Value])
+                _camera.CurrentPosition.X = (short)_variables[VariableCameraMinX.Value];
 
-            if (_camera.CurrentPosition.X > _variables[VariableCameraMaxX])
-                _camera.CurrentPosition.X = (short)_variables[VariableCameraMaxX];
+            if (_camera.CurrentPosition.X > _variables[VariableCameraMaxX.Value])
+                _camera.CurrentPosition.X = (short)_variables[VariableCameraMaxX.Value];
 
-            if (_variables[VariableScrollScript] != 0)
+            if (VariableScrollScript.HasValue && _variables[VariableScrollScript.Value] != 0)
             {
-                _variables[VariableCameraPosX] = _camera.CurrentPosition.X;
-                RunScript((byte)_variables[VariableScrollScript], false, false, new int[0]);
+                _variables[VariableCameraPosX.Value] = _camera.CurrentPosition.X;
+                RunScript((byte)_variables[VariableScrollScript.Value], false, false, new int[0]);
             }
 
             // If the camera moved and text is visible, remove it
@@ -117,14 +117,14 @@ namespace NScumm.Core
             int pos = _camera.CurrentPosition.X;
             int t;
             Actor a = null;
-            bool snapToX = /*_snapScroll ||*/ _variables[VariableCameraFastX] != 0;
+            bool snapToX = /*_snapScroll ||*/ _variables[VariableCameraFastX.Value] != 0;
 
             _camera.CurrentPosition.X = (short)(_camera.CurrentPosition.X & 0xFFF8);
 
-            if (_camera.CurrentPosition.X < _variables[VariableCameraMinX])
+            if (_camera.CurrentPosition.X < _variables[VariableCameraMinX.Value])
             {
                 if (snapToX)
-                    _camera.CurrentPosition.X = (short)_variables[VariableCameraMinX];
+                    _camera.CurrentPosition.X = (short)_variables[VariableCameraMinX.Value];
                 else
                     _camera.CurrentPosition.X += 8;
 
@@ -132,10 +132,10 @@ namespace NScumm.Core
                 return;
             }
 
-            if (_camera.CurrentPosition.X > _variables[VariableCameraMaxX])
+            if (_camera.CurrentPosition.X > _variables[VariableCameraMaxX.Value])
             {
                 if (snapToX)
-                    _camera.CurrentPosition.X = (short)_variables[VariableCameraMaxX];
+                    _camera.CurrentPosition.X = (short)_variables[VariableCameraMaxX.Value];
                 else
                     _camera.CurrentPosition.X -= 8;
 
@@ -170,11 +170,11 @@ namespace NScumm.Core
                 _camera.DestinationPosition.X = a.Position.X;
             }
 
-            if (_camera.DestinationPosition.X < _variables[VariableCameraMinX])
-                _camera.DestinationPosition.X = (short)_variables[VariableCameraMinX];
+            if (_camera.DestinationPosition.X < _variables[VariableCameraMinX.Value])
+                _camera.DestinationPosition.X = (short)_variables[VariableCameraMinX.Value];
 
-            if (_camera.DestinationPosition.X > _variables[VariableCameraMaxX])
-                _camera.DestinationPosition.X = (short)_variables[VariableCameraMaxX];
+            if (_camera.DestinationPosition.X > _variables[VariableCameraMaxX.Value])
+                _camera.DestinationPosition.X = (short)_variables[VariableCameraMaxX.Value];
 
             if (snapToX)
             {
@@ -196,10 +196,10 @@ namespace NScumm.Core
 
             CameraMoved();
 
-            if (_variables[VariableScrollScript] != 0 && pos != _camera.CurrentPosition.X)
+            if (VariableScrollScript.HasValue && _variables[VariableScrollScript.Value] != 0 && pos != _camera.CurrentPosition.X)
             {
-                _variables[VariableCameraPosX] = _camera.CurrentPosition.X;
-                RunScript((byte)_variables[VariableScrollScript], false, false, new int[0]);
+                _variables[VariableCameraPosX.Value] = _camera.CurrentPosition.X;
+                RunScript((byte)_variables[VariableScrollScript.Value], false, false, new int[0]);
             }
         }
 

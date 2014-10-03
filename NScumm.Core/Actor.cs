@@ -354,7 +354,7 @@ namespace NScumm.Core
             Room = newRoom;
             NeedRedraw = true;
 
-            if (_scumm.Variables[ScummEngine.VariableEgo] == Number)
+            if (_scumm.Variables[_scumm.VariableEgo.Value] == Number)
             {
                 _scumm.EgoPositioned = true;
             }

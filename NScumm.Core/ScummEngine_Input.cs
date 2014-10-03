@@ -80,11 +80,11 @@ namespace NScumm.Core
         {
             mouseAndKeyboardStat = 0;
 
-            bool mainmenuKeyEnabled = _variables[VariableMainMenu] != 0;
+            bool mainmenuKeyEnabled = VariableMainMenu.HasValue && _variables[VariableMainMenu.Value] != 0;
 
             if (_inputManager.IsKeyDown(KeyCode.Escape))
             {
-                mouseAndKeyboardStat = (KeyCode)Variables[ScummEngine.VariableCutSceneExitKey];
+                mouseAndKeyboardStat = (KeyCode)Variables[VariableCutSceneExitKey.Value];
                 AbortCutscene();
             }
 
@@ -187,10 +187,10 @@ namespace NScumm.Core
                 _mousePos.Y = (short)(ScreenHeight - 1);
 
             var mouseX = (ScreenStartStrip * 8) + _mousePos.X;
-            Variables[ScummEngine.VariableMouseX] = (int)_mousePos.X;
-            Variables[ScummEngine.VariableMouseY] = (int)_mousePos.Y;
-            Variables[ScummEngine.VariableVirtualMouseX] = (int)mouseX;
-            Variables[ScummEngine.VariableVirtualMouseY] = (int)_mousePos.Y - MainVirtScreen.TopLine;
+            Variables[VariableMouseX.Value] = (int)_mousePos.X;
+            Variables[VariableMouseY.Value] = (int)_mousePos.Y;
+            Variables[VariableVirtualMouseX.Value] = (int)mouseX;
+            Variables[VariableVirtualMouseY.Value] = (int)_mousePos.Y - MainVirtScreen.TopLine;
         }
     }
 }

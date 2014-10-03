@@ -22,68 +22,69 @@ using System;
 
 namespace NScumm.Core
 {
-	[Flags]
-	enum LightModes
-	{
-		/**
+    [Flags]
+    enum LightModes
+    {
+        /**
          * Lighting flag that indicates whether the normal palette, or the 'dark'
          * palette shall be used to draw actors.
          * Apparantly only used in very old games (so far only NESCostumeRenderer
          * checks it).
          */
-		ActorUseBasePalette = 1,
-		/**
+        ActorUseBasePalette = 1,
+        /**
          * Lighting flag that indicates whether the room is currently lit. Normally
          * always on. Used for rooms in which the light can be switched "off".
          */
-		RoomLightsOn = 2,
-		/**
+        RoomLightsOn = 2,
+        /**
          * Lighting flag that indicates whether a flashlight like device is active.
          * Used in Loom (flashlight follows the actor) and Indy 3 (flashlight
          * follows the mouse). Only has any effect if the room lights are off.
          */
-		FlashlightOn = 4,
-		/**
+        FlashlightOn = 4,
+        /**
          * Lighting flag that indicates whether actors are to be drawn with their
          * own custom palette, or using a fixed 'dark' palette. This is the
          * modern successor of LIGHTMODE_actor_use_base_palette.
          * Note: It is tempting to 'merge' these two flags, but since flags can
          * check their values, this is probably not a good idea.
          */
-		ActorUseColors = 8
-	}
+        ActorUseColors = 8
+    }
 
-	partial class ScummEngine
-	{
-		FlashLight _flashlight;
+    partial class ScummEngine
+    {
+        FlashLight _flashlight;
 
-		internal LightModes GetCurrentLights ()
-		{
-			//if (_game.version >= 6)
-			//    return LIGHTMODE_room_lights_on | LIGHTMODE_actor_use_colors;
-			//else
-			return (LightModes)_variables [VariableCurrentLights];
-		}
+        internal LightModes GetCurrentLights()
+        {
+            //if (_game.version >= 6)
+            //    return LIGHTMODE_room_lights_on | LIGHTMODE_actor_use_colors;
+            //else
+            return (LightModes)_variables[VariableCurrentLights.Value];
+        }
 
-		internal bool IsLightOn ()
-		{
-			return GetCurrentLights ().HasFlag (LightModes.RoomLightsOn);
-		}
+        internal bool IsLightOn()
+        {
+            return GetCurrentLights().HasFlag(LightModes.RoomLightsOn);
+        }
 
-		void Lights ()
-		{
-			var a = GetVarOrDirectByte (OpCodeParameter.Param1);
-			var b = ReadByte ();
-			var c = ReadByte ();
+        void Lights()
+        {
+            var a = GetVarOrDirectByte(OpCodeParameter.Param1);
+            var b = ReadByte();
+            var c = ReadByte();
 
-			if (c == 0)
-				_variables [VariableCurrentLights] = a;
-			else if (c == 1) {
-				_flashlight.XStrips = (ushort)a;
-				_flashlight.YStrips = (ushort)b;
-			}
-			_fullRedraw = true;
-		}
-	}
+            if (c == 0)
+                _variables[VariableCurrentLights.Value] = a;
+            else if (c == 1)
+            {
+                _flashlight.XStrips = (ushort)a;
+                _flashlight.YStrips = (ushort)b;
+            }
+            _fullRedraw = true;
+        }
+    }
 }
 

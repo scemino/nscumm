@@ -501,10 +501,10 @@ namespace NScumm.Core
         {
             if (_sentenceNum != 0)
             {
-                if (_sentence[_sentenceNum - 1].IsFrozen && !IsScriptInUse(Variables[VariableSentenceScript]))
+                if (_sentence[_sentenceNum - 1].IsFrozen && !IsScriptInUse(Variables[VariableSentenceScript.Value]))
                     return;
             }
-            else if (!IsScriptInUse(Variables[VariableSentenceScript]))
+            else if (!IsScriptInUse(Variables[VariableSentenceScript.Value]))
                 return;
             _currentPos--;
             BreakHere();

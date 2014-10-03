@@ -29,9 +29,9 @@ namespace NScumm.Core
 
         void CyclePalette()
         {
-            int valueToAdd = _variables[VariableTimer];
-            if (valueToAdd < _variables[VariableTimerNext])
-                valueToAdd = _variables[VariableTimerNext];
+            int valueToAdd = _variables[VariableTimer.Value];
+            if (valueToAdd < _variables[VariableTimerNext.Value])
+                valueToAdd = _variables[VariableTimerNext.Value];
 
             for (int i = 0; i < 16; i++)
             {

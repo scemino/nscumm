@@ -1,5 +1,5 @@
-﻿//
-//  IfStatement.cs
+//
+//  StringLiteralExpression.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -21,16 +21,11 @@
 
 namespace NScumm.Dump
 {
-    public class IfStatement: Statement
+    public sealed class StringLiteralExpression: LiteralExpression<byte[]>
     {
-        public Expression Condition { get; private set; }
-
-        public int JumpOffset { get; private set; }
-
-        public IfStatement(Expression condition, int offset)
-        {
-            Condition = condition;
-            JumpOffset = offset;
+        public StringLiteralExpression(byte[] value)
+            : base(value)
+        {            
         }
 
         public override void Accept(IAstNodeVisitor visitor)
@@ -43,5 +38,5 @@ namespace NScumm.Dump
             return visitor.Visit(this);
         }
     }
+    
 }
-

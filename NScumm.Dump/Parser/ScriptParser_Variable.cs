@@ -7,33 +7,35 @@ namespace NScumm.Dump
 {
     partial class ScriptParser
     {
-        protected byte ReadByte()
+        public Dictionary<int, string> KnownVariables { get; private set; }
+
+        protected int ReadByte()
         {
             return _br.ReadByte();
         }
 
-        protected ushort ReadWord()
+        protected int ReadWord()
         {
             var word = _br.ReadUInt16();
             return word;
         }
 
-        protected short ReadWordSigned()
+        protected int ReadWordSigned()
         {
-            return (short)ReadWord();
+            return ReadWord();
         }
 
         protected Expression GetResultIndexExpression()
         {
-            var resultVarIndex = (int)ReadWord();
+            var resultVarIndex = ReadWord();
             Expression resultVarIndexExp = resultVarIndex.ToLiteral();
             if ((resultVarIndex & 0x2000) == 0x2000)
             {
-                int a = (int)ReadWord();
+                int a = ReadWord();
                 if ((a & 0x2000) == 0x2000)
                 {
                     var variableExp = ReadVariable(a & ~0x2000);
-                    var literalExp = variableExp as LiteralExpression;
+                    var literalExp = variableExp as IntegerLiteralExpression;
                     if (literalExp != null)
                     {
                         resultVarIndex += Convert.ToInt32(literalExp.Value);
@@ -108,10 +110,10 @@ namespace NScumm.Dump
 
         protected Statement SetResultExpression(Expression index, Expression value)
         {
-            var literalExp = index as LiteralExpression;
+            var literalExp = index as IntegerLiteralExpression;
             if (literalExp != null)
             {
-                return SetResult(Convert.ToInt32(literalExp.Value), value);
+                return SetResult(literalExp.Value, value);
             }
             else
             {
@@ -121,10 +123,10 @@ namespace NScumm.Dump
 
         Expression ReadVariable(Expression index)
         {
-            var literal = index as LiteralExpression;
+            var literal = index as IntegerLiteralExpression;
             if (literal != null)
             {
-                return ReadVariable(Convert.ToInt32(literal.Value));
+                return ReadVariable(literal.Value);
             }
             else
             {
@@ -140,7 +142,7 @@ namespace NScumm.Dump
                 if ((a & 0x2000) == 0x2000)
                 {
                     var exp = ReadVariable(a & ~0x2000);
-                    var literalExp = exp as LiteralExpression;
+                    var literalExp = exp as IntegerLiteralExpression;
                     if (literalExp != null)
                     {
                         var += Convert.ToInt32(literalExp.Value);
@@ -171,7 +173,7 @@ namespace NScumm.Dump
             {
                 return new ElementAccess(
                     new SimpleName("Variables"),
-                    new LiteralExpression(var));
+                    var.ToLiteral());
             }
 
             if ((var & 0x8000) == 0x8000)
@@ -180,7 +182,7 @@ namespace NScumm.Dump
 
                 return new ElementAccess(
                     new SimpleName("BitVariables"),
-                    new LiteralExpression(var));
+                    var.ToLiteral());
             }
 
             if ((var & 0x4000) == 0x4000)
@@ -201,14 +203,14 @@ namespace NScumm.Dump
         {
             if (((OpCodeParameter)_opCode).HasFlag(param))
                 return GetVar();
-            return new LiteralExpression(ReadByte());
+            return new IntegerLiteralExpression(ReadByte());
         }
 
         protected Expression GetVarOrDirectWord(OpCodeParameter param)
         {
             if (((OpCodeParameter)_opCode).HasFlag(param))
                 return GetVar();
-            return new LiteralExpression(ReadWordSigned());
+            return new IntegerLiteralExpression(ReadWordSigned());
         }
 
         protected IList<Expression> GetWordVarArgs()
@@ -223,7 +225,7 @@ namespace NScumm.Dump
 
         IEnumerable<Statement> SetVarRange()
         {
-            var index = Convert.ToInt32(((LiteralExpression)GetResultIndexExpression()).Value);
+            var index = ((IntegerLiteralExpression)GetResultIndexExpression()).Value;
             var a = ReadByte();
             int b;
             do
@@ -232,35 +234,35 @@ namespace NScumm.Dump
                     b = ReadWordSigned();
                 else
                     b = ReadByte();
-                var statement = SetResult(index, new LiteralExpression(b));
+                var statement = SetResult(index, new IntegerLiteralExpression(b));
                 yield return statement;
                 index++;
 
             } while ((--a) > 0);
         }
 
-        LiteralExpression ReadCharacters()
+        Expression ReadCharacters()
         {
             var sb = new List<byte>();
-            var character = ReadByte();
+            var character = (byte)ReadByte();
             while (character != 0)
             {
                 sb.Add(character);
                 if (character == 0xFF)
                 {
-                    character = ReadByte();
+                    character = (byte)ReadByte();
                     sb.Add(character);
                     if (character != 1 && character != 2 && character != 3 && character != 8)
                     {
-                        character = ReadByte();
+                        character = (byte)ReadByte();
                         sb.Add(character);
-                        character = ReadByte();
+                        character = (byte)ReadByte();
                         sb.Add(character);
                     }
                 }
-                character = ReadByte();
+                character = (byte)ReadByte();
             }
-            return new LiteralExpression(sb.ToArray());
+            return new StringLiteralExpression(sb.ToArray());
         }
 
         IEnumerable<Statement> Move()

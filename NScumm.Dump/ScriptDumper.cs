@@ -94,9 +94,11 @@ namespace NScumm.Dump
             try
             {
                 var scriptInterpreter = ScriptParser.Create(Game);
+                var resolveVarVisitor = new ResolveVariablesAstVisitor(scriptInterpreter.KnownVariables);
                 var visitor = new DumpAstVisitor();
                 var compilationUnit = scriptInterpreter.Parse(data);
-                dumper.Write(compilationUnit.Accept(visitor));
+                var cuWithResolvedVariables = compilationUnit.Accept(resolveVarVisitor);
+                dumper.Write(cuWithResolvedVariables.Accept(visitor));
             }
             catch (Exception e)
             {

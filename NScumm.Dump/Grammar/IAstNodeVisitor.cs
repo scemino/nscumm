@@ -6,11 +6,15 @@ namespace NScumm.Dump
 
         void Visit(ExpressionStatement node);
 
-        void Visit(IfStatement node);
+        void Visit(JumpStatement node);
 
         void Visit(SimpleName node);
 
-        void Visit(LiteralExpression node);
+        void Visit(IntegerLiteralExpression node);
+
+        void Visit(StringLiteralExpression node);
+
+        void Visit(BooleanLiteralExpression node);
 
         void Visit(MethodInvocation node);
 
@@ -27,13 +31,17 @@ namespace NScumm.Dump
     {
         T Visit(CompilationUnit node);
 
-        T Visit(IfStatement node);
+        T Visit(JumpStatement node);
 
         T Visit(ExpressionStatement node);
 
         T Visit(SimpleName node);
 
-        T Visit(LiteralExpression node);
+        T Visit(IntegerLiteralExpression node);
+
+        T Visit(StringLiteralExpression node);
+
+        T Visit(BooleanLiteralExpression node);
 
         T Visit(MethodInvocation node);
 

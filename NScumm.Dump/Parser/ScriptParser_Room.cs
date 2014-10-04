@@ -33,9 +33,9 @@ namespace NScumm.Dump
                         new BinaryExpression(
                             new ElementAccess(
                                 "ResourceMapper",
-                                new LiteralExpression(j & 0x7f)),
+                                new IntegerLiteralExpression(j & 0x7f)),
                             Operator.Assignment,
-                            new LiteralExpression(i)));
+                            i.ToLiteral()));
                 }
             }
         }

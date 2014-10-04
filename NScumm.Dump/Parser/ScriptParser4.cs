@@ -29,6 +29,18 @@ namespace NScumm.Dump
         public ScriptParser4(GameInfo game)
             : base(game)
         {
+            var knownVariables = new Dictionary<int,string>
+            {
+                { 27, "VariableScrollScript" },
+                { 39, "VariableDebugMode" },
+                { 50, "VariableMainMenu" },
+                { 51, "VariableFixedDisk" },
+                { 52, "VariableCursorState" },
+                { 53, "VariableUserPut" },
+                { 54, "VariableTalkStringY" }
+            };
+
+            AddKnownVariables(knownVariables);
         }
 
         protected override void InitOpCodes()

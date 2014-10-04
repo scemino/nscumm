@@ -1,6 +1,6 @@
 namespace NScumm.Dump
 {
-	[System.Diagnostics.DebuggerDisplay ("{DebuggerDisplay,nq}")]
+    [System.Diagnostics.DebuggerDisplay("{DebuggerDisplay,nq}")]
     public class SimpleName: Expression
     {
         public string Name
@@ -9,13 +9,14 @@ namespace NScumm.Dump
             private set;
         }
 
-		internal override string DebuggerDisplay {
-			get { return Name; }    
-		}
+        internal override string DebuggerDisplay
+        {
+            get { return Name; }    
+        }
 
         public SimpleName(string name)
         {
-            this.Name = name;
+            Name = name;
         }
 
         #region implemented abstract members of Expression

@@ -32,13 +32,13 @@ namespace NScumm.Core
         public ScummEngine4(GameInfo game, IGraphicsManager graphicsManager, IInputManager inputManager, IAudioDriver audioDriver)
             : base(game, graphicsManager, inputManager, audioDriver)
         {
-            VariableScrollScript = 0x1B;
-            VariableDebugMode = 0x27;
-            VariableMainMenu = 0x32;
-            VariableFixedDisk = 0x33;
-            VariableCursorState = 0x34;
-            VariableUserPut = 0x35;
-            VariableTalkStringY = 0x36;
+            VariableScrollScript = 27;
+            VariableDebugMode = 39;
+            VariableMainMenu = 50;
+            VariableFixedDisk = 51;
+            VariableCursorState = 52;
+            VariableUserPut = 53;
+            VariableTalkStringY = 54;
 
             Variables[VariableFixedDisk.Value] = 1;
             Variables[VariableTalkStringY.Value] = -0x50;

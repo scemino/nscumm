@@ -24,16 +24,16 @@ namespace NScumm.Dump
 
         IEnumerable<Statement> Multiply()
         {
-            var indexExp = (LiteralExpression)GetResultIndexExpression();
+            var indexExp = (IntegerLiteralExpression)GetResultIndexExpression();
             var a = GetVarOrDirectWord(OpCodeParameter.Param1);
-            yield return SetResultExpression(indexExp, new BinaryExpression(ReadVariable(Convert.ToInt32(indexExp.Value)), Operator.Multiply, a));
+            yield return SetResultExpression(indexExp, new BinaryExpression(ReadVariable(indexExp.Value), Operator.Multiply, a));
         }
 
         IEnumerable<Statement> Divide()
         {
-            var indexExp = (LiteralExpression)GetResultIndexExpression();
+            var indexExp = (IntegerLiteralExpression)GetResultIndexExpression();
             var a = GetVarOrDirectWord(OpCodeParameter.Param1);
-            yield return SetResultExpression(indexExp, new BinaryExpression(ReadVariable(Convert.ToInt32(indexExp.Value)), Operator.Divide, a));
+            yield return SetResultExpression(indexExp, new BinaryExpression(ReadVariable(indexExp.Value), Operator.Divide, a));
         }
 
         IEnumerable<Statement> Increment()
@@ -54,16 +54,16 @@ namespace NScumm.Dump
 
         IEnumerable<Statement> And()
         {
-            var indexExp = (LiteralExpression)GetResultIndexExpression();
+            var indexExp = (IntegerLiteralExpression)GetResultIndexExpression();
             var a = GetVarOrDirectWord(OpCodeParameter.Param1);
-            yield return SetResultExpression(indexExp, new BinaryExpression(ReadVariable(Convert.ToInt32(indexExp.Value)), Operator.And, a));
+            yield return SetResultExpression(indexExp, new BinaryExpression(ReadVariable(indexExp.Value), Operator.And, a));
         }
 
         IEnumerable<Statement> Or()
         {
-            var indexExp = (LiteralExpression)GetResultIndexExpression();
+            var indexExp = (IntegerLiteralExpression)GetResultIndexExpression();
             var a = GetVarOrDirectWord(OpCodeParameter.Param1);
-            yield return SetResultExpression(indexExp, new BinaryExpression(ReadVariable(Convert.ToInt32(indexExp.Value)), Operator.Or, a));
+            yield return SetResultExpression(indexExp, new BinaryExpression(ReadVariable(indexExp.Value), Operator.Or, a));
         }
 
         IEnumerable<Statement> NotEqualZero()
@@ -87,7 +87,7 @@ namespace NScumm.Dump
                 new BinaryExpression(
                     a,
                     Operator.Equals,
-                    new LiteralExpression(0)));
+                    0.ToLiteral()));
         }
 
         IEnumerable<Statement> IsNotEqual()
@@ -140,7 +140,7 @@ namespace NScumm.Dump
 
         IEnumerable<Statement> JumpRelative()
         {
-            yield return JumpRelative(new LiteralExpression(false));
+            yield return JumpRelative(false.ToLiteral());
         }
 
         Statement JumpRelative(Expression condition)
@@ -155,7 +155,7 @@ namespace NScumm.Dump
             {
                 condition = true.ToLiteral();
             }
-            return new IfStatement(condition, (int)_br.BaseStream.Position + offset);
+            return new JumpStatement(condition, (int)_br.BaseStream.Position + offset);
         }
 
         static Operator Not(Operator op)
@@ -239,7 +239,7 @@ namespace NScumm.Dump
                         {
                             _opCode = ReadByte();
                             statements.AddRange(ExecuteOpCode());
-                            stack.Push(new ElementAccess("Variables", new LiteralExpression(0)));
+                            stack.Push(new ElementAccess("Variables", 0.ToLiteral()));
                         }
                         break;
 

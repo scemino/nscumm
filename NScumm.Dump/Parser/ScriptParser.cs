@@ -20,6 +20,53 @@ namespace NScumm.Dump
         protected ScriptParser(GameInfo info)
         {
             Game = info;
+            KnownVariables = new Dictionary<int, string>
+            {
+                { 1,"VariableEgo" },
+                { 2,"VariableCameraPosX" },
+                { 3,"VariableHaveMessage" },
+                { 4,"VariableRoom" },
+                { 5,"VariableOverride" },
+                { 9,"VariableCurrentLights" },
+                { 11,"VariableTimer1" },
+                { 12,"VariableTimer2" },
+                { 13,"VariableTimer3" },
+                { 14,"VariableMusicTimer" },
+                { 17,"VariableCameraMinX" },
+                { 18,"VariableCameraMaxX" },
+                { 19,"VariableTimerNext" },
+                { 20,"VariableVirtualMouseX" },
+                { 21,"VariableVirtualMouseY" },
+                { 22,"VariableRoomResource" },
+                { 24,"VariableCutSceneExitKey" },
+                { 25,"VariableTalkActor" },
+                { 26,"VariableCameraFastX" },
+                { 28,"VariableEntryScript" },
+                { 29,"VariableEntryScript2" },
+                { 30,"VariableExitScript" },
+                { 32,"VariableVerbScript" },
+                { 33,"VariableSentenceScript" },
+                { 34,"VariableInventoryScript" },
+                { 35,"VariableCutSceneStartScript" },
+                { 36,"VariableCutSceneEndScript" },
+                { 37,"VariableCharIncrement" },
+                { 38,"VariableWalkToObject" },
+                { 40,"VariableHeapSpace" },
+                { 44,"VariableMouseX" },
+                { 45,"VariableMouseY" },
+                { 46,"VariableTimer" },
+                { 47,"VariableTimerTotal" },
+                { 48,"VariableSoundcard" },
+                { 49,"VariableVideoMode" }
+            };
+        }
+
+        protected void AddKnownVariables(IDictionary<int, string> knownVariables)
+        {
+            foreach (var item in knownVariables)
+            {
+                KnownVariables.Add(item.Key, item.Value);
+            }
         }
 
         public static ScriptParser Create(GameInfo info)
@@ -69,7 +116,7 @@ namespace NScumm.Dump
 
         IEnumerable<Statement> SaveLoadGame()
         {
-            var index = Convert.ToInt32(((LiteralExpression)GetResultIndexExpression()).Value);
+            var index = ((IntegerLiteralExpression)GetResultIndexExpression()).Value;
             var arg = GetVarOrDirectByte(OpCodeParameter.Param1);
             var result = new MethodInvocation("SaveLoadGame").AddArgument(arg);
             yield return SetResult(index, result);
@@ -269,7 +316,7 @@ namespace NScumm.Dump
         IEnumerable<Statement> DoSentence()
         {
             var verbExp = GetVarOrDirectByte(OpCodeParameter.Param1);
-            var verbLiteralExp = verbExp as LiteralExpression;
+            var verbLiteralExp = verbExp as IntegerLiteralExpression;
             var args = new List<Expression>();
             if (verbLiteralExp != null)
             {
@@ -284,15 +331,15 @@ namespace NScumm.Dump
 
         IEnumerable<Statement> Delay()
         {
-            uint delay = ReadByte();
-            delay |= (uint)(ReadByte() << 8);
-            delay |= (uint)(ReadByte() << 16);
+            int delay = ReadByte();
+            delay |= (ReadByte() << 8);
+            delay |= (ReadByte() << 16);
             yield return new MethodInvocation("Delay").AddArgument(delay.ToLiteral()).ToStatement();
         }
 
         IEnumerable<Statement> ResourceRoutines()
         {
-            Expression resId = new LiteralExpression(0);
+            Expression resId = 0.ToLiteral();
 
             _opCode = ReadByte();
             if (_opCode != 17)
@@ -419,13 +466,13 @@ namespace NScumm.Dump
                 case 1:
                     // Cursor On
                     yield return new BinaryExpression(new MemberAccess(new SimpleName("Cursor"), "State"),
-                        Operator.Assignment, new LiteralExpression(1)).ToStatement();
+                        Operator.Assignment, 1.ToLiteral()).ToStatement();
                     break;
 
                 case 2:
                     // Cursor Off
                     yield return new BinaryExpression(new MemberAccess(new SimpleName("Cursor"), "State"),
-                        Operator.Assignment, new LiteralExpression(0)).ToStatement();
+                        Operator.Assignment, 0.ToLiteral()).ToStatement();
                     break;
 
                 case 3:
@@ -486,7 +533,7 @@ namespace NScumm.Dump
                         var i = GetVarOrDirectByte(OpCodeParameter.Param1);
 
                         yield return new BinaryExpression(new MemberAccess(new SimpleName("Cursor"), "Type"),
-                            Operator.Assignment, new LiteralExpression(i)).ToStatement();
+                            Operator.Assignment, i.ToLiteral()).ToStatement();
                         break;
                     }
                 case 13:

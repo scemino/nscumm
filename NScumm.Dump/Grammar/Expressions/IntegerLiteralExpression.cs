@@ -1,5 +1,5 @@
-﻿//
-//  ScriptParser3.cs
+//
+//  IntegerLiteralExpression.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -18,17 +18,25 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-using NScumm.Core;
-using NScumm.Core.IO;
 
 namespace NScumm.Dump
 {
-    class ScriptParser3: ScriptParser
+    public sealed class IntegerLiteralExpression: LiteralExpression<int>
     {
-        public ScriptParser3(GameInfo game)
-            : base(game)
+        public IntegerLiteralExpression(int value)
+            : base(value)
+        {            
+        }
+
+        public override void Accept(IAstNodeVisitor visitor)
         {
+            visitor.Visit(this);
+        }
+
+        public override T Accept<T>(IAstNodeVisitor<T> visitor)
+        {
+            return visitor.Visit(this);
         }
     }
-}
 
+}

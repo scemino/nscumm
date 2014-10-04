@@ -6,12 +6,12 @@ namespace NScumm.Dump
 {
     partial class ScriptParser
     {
-        protected Dictionary<byte, Func<IEnumerable<Statement>>> opCodes;
-        protected byte _opCode;
+        protected Dictionary<int, Func<IEnumerable<Statement>>> opCodes;
+        protected int _opCode;
 
         protected virtual void InitOpCodes()
         {
-            opCodes = new Dictionary<byte, Func<IEnumerable<Statement>>>();
+            opCodes = new Dictionary<int, Func<IEnumerable<Statement>>>();
             /*			 00 */
             opCodes[0x00] = StopObjectCode;
             opCodes[0x01] = PutActor;

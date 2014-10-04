@@ -21,7 +21,7 @@ namespace NScumm.Dump
             return string.Format("[{0},{1}] {2}{3}", node.StartOffset.Value, node.EndOffset.Value, node.Expression.Accept(this), Environment.NewLine);
         }
 
-        public override string Visit(IfStatement node)
+        public override string Visit(JumpStatement node)
         {
             return string.Format("[{0},{1}] jump {2} if {3}{4}", 
                 node.StartOffset.Value, node.EndOffset.Value, 
@@ -38,16 +38,21 @@ namespace NScumm.Dump
             return text.ToString();
         }
 
-        public override string Visit(LiteralExpression node)
+        public override string Visit(StringLiteralExpression node)
         {
-            var valueText = node.Value as byte[];
-            if (valueText != null)
-            {
-                var text = new StringBuilder();
-                var decoder = new TextDecoder(text);
-                new NScumm.Core.ScummText(valueText).Decode(decoder);
-                return string.Format("\"{0}\"", text);
-            }
+            var text = new StringBuilder();
+            var decoder = new TextDecoder(text);
+            new NScumm.Core.ScummText(node.Value).Decode(decoder);
+            return string.Format("\"{0}\"", text);
+        }
+
+        public override string Visit(BooleanLiteralExpression node)
+        {
+            return node.Value.ToString();
+        }
+
+        public override string Visit(IntegerLiteralExpression node)
+        {
             return node.Value.ToString();
         }
 
@@ -58,9 +63,7 @@ namespace NScumm.Dump
 
         public override string Visit(MemberAccess node)
         {
-            var exp = node.Field as LiteralExpression;
-            var member = exp != null ? Convert.ToString(exp.Value) : node.Field.Accept(this);
-            return string.Format("{0}.{1}", node.Target.Accept(this), member);
+            return string.Format("{0}.{1}", node.Target.Accept(this), node.Field.Accept(this));
         }
 
         public override string Visit(ElementAccess node)

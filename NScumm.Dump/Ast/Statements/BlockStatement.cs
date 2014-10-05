@@ -1,5 +1,5 @@
 //
-//  BooleanLiteralExpression.cs
+//  BlockStatement.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -19,13 +19,23 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using System.Collections.Generic;
+using System.Linq;
+
 namespace NScumm.Dump
 {
-    public sealed class BooleanLiteralExpression: LiteralExpression<bool>
+    public class BlockStatement : Statement, IEnumerable<Statement>
     {
-        public BooleanLiteralExpression(bool value)
-            : base(value)
-        {            
+        public BlockStatement AddStatement(Statement statement)
+        {
+            ChildrenCore.Add(statement);
+            return this;
+        }
+
+        public BlockStatement AddStatements(IEnumerable<Statement> statements)
+        {
+            ChildrenCore.AddRange(statements);
+            return this;
         }
 
         public override void Accept(IAstNodeVisitor visitor)
@@ -37,5 +47,24 @@ namespace NScumm.Dump
         {
             return visitor.Visit(this);
         }
+
+        #region IEnumerable implementation
+
+        public IEnumerator<Statement> GetEnumerator()
+        {
+            return ChildrenCore.Cast<Statement>().GetEnumerator();
+        }
+
+        #endregion
+
+        #region IEnumerable implementation
+
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+        {
+            return ChildrenCore.GetEnumerator();
+        }
+
+        #endregion
     }
+    
 }

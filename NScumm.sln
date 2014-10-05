@@ -12,12 +12,18 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NScumm.Dump", "NScumm.Dump\NScumm.Dump.csproj", "{D53EB07B-F186-4281-A225-2C3DC5850148}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NScumm.Dump.Tests", "NScumm.Dump.Tests\NScumm.Dump.Tests.csproj", "{388CB59D-3D62-4C0A-8182-C3A1ADF317F3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{388CB59D-3D62-4C0A-8182-C3A1ADF317F3}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{388CB59D-3D62-4C0A-8182-C3A1ADF317F3}.Debug|x86.Build.0 = Debug|Any CPU
+		{388CB59D-3D62-4C0A-8182-C3A1ADF317F3}.Release|x86.ActiveCfg = Release|Any CPU
+		{388CB59D-3D62-4C0A-8182-C3A1ADF317F3}.Release|x86.Build.0 = Release|Any CPU
 		{B1F1416B-C52A-4CE5-AF06-C960F5165784}.Debug|x86.ActiveCfg = Debug|x86
 		{B1F1416B-C52A-4CE5-AF06-C960F5165784}.Debug|x86.Build.0 = Debug|x86
 		{B1F1416B-C52A-4CE5-AF06-C960F5165784}.Release|x86.ActiveCfg = Release|x86
@@ -35,7 +41,7 @@ Global
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		BaseDirectory = ..\NScumm.GL
-		StartupItem = NScumm.MonoGame\NScumm.MonoGame.csproj
+		StartupItem = NScumm.Dump.Tests\NScumm.Dump.Tests.csproj
 		Policies = $0
 		$0.DotNetNamingPolicy = $1
 		$1.DirectoryNamespaceAssociation = None

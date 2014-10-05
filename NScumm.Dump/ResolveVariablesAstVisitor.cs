@@ -45,7 +45,7 @@ namespace NScumm.Dump
 
         public override IAstNode Visit(CompilationUnit node)
         {
-            return new CompilationUnit().AddStatements(node.Statements.Select(st => (Statement)st.Accept(this)));
+            return new CompilationUnit((BlockStatement)node.Statement.Accept(this));
         }
 
         public override IAstNode Visit(ExpressionStatement node)
@@ -55,7 +55,7 @@ namespace NScumm.Dump
 
         public override IAstNode Visit(MemberAccess node)
         {
-            return new MemberAccess((Expression)node.Target.Accept(this), (Expression)node.Field.Accept(this));
+            return new MemberAccess((Expression)node.Target.Accept(this), node.Field);
         }
 
         public override IAstNode Visit(UnaryExpression node)
@@ -65,7 +65,7 @@ namespace NScumm.Dump
 
         public override IAstNode Visit(MethodInvocation node)
         {
-            return new MethodInvocation(node.Name).AddArguments(node.Arguments.Select(arg => (Expression)arg.Accept(this)));
+            return new MethodInvocation((Expression)node.Target.Accept(this)).AddArguments(node.Arguments.Select(arg => (Expression)arg.Accept(this)));
         }
 
         public override IAstNode Visit(JumpStatement node)
@@ -90,5 +90,5 @@ namespace NScumm.Dump
             return new ElementAccess((Expression)node.Target.Accept(this), node.Indices.Select(idx => (Expression)idx.Accept(this)));
         }
     }
-    
+
 }

@@ -19,7 +19,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Externalconsole>true</Externalconsole>
-    <Commandlineparameters>/home/valery/Games/m1/000.lfl</Commandlineparameters>
+    <Commandlineparameters>/home/valery/Games/m2/MONKEY2.000</Commandlineparameters>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>full</DebugType>
@@ -37,29 +37,11 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TextDecoder.cs" />
-    <Compile Include="Grammar\DefaultVisitor.cs" />
     <Compile Include="DumpAstVisitor.cs" />
-    <Compile Include="Grammar\IAstNode.cs" />
-    <Compile Include="Grammar\AstNodeBase.cs" />
-    <Compile Include="Grammar\CompilationUnit.cs" />
     <Compile Include="IDumper.cs" />
     <Compile Include="ImageDumper.cs" />
     <Compile Include="ScriptDumper.cs" />
     <Compile Include="ResolveVariablesAstVisitor.cs" />
-    <Compile Include="Grammar\Expressions\BinaryExpression.cs" />
-    <Compile Include="Grammar\Expressions\Expression.cs" />
-    <Compile Include="Grammar\Expressions\ElementAccess.cs" />
-    <Compile Include="Grammar\Expressions\MemberAccess.cs" />
-    <Compile Include="Grammar\Expressions\LiteralExpression.cs" />
-    <Compile Include="Grammar\Expressions\MethodInvocation.cs" />
-    <Compile Include="Grammar\Expressions\UnaryExpression.cs" />
-    <Compile Include="Grammar\Expressions\SimpleName.cs" />
-    <Compile Include="Grammar\Statements\JumpStatement.cs" />
-    <Compile Include="Grammar\Statements\Statement.cs" />
-    <Compile Include="Grammar\Expressions\StringLiteralExpression.cs" />
-    <Compile Include="Grammar\Expressions\IntegerLiteralExpression.cs" />
-    <Compile Include="Grammar\Expressions\BooleanLiteralExpression.cs" />
-    <Compile Include="Grammar\IAstNodeVisitor.cs" />
     <Compile Include="Parser\ScriptParser.cs" />
     <Compile Include="Parser\ScriptParser_Actor.cs" />
     <Compile Include="Parser\ScriptParser_Expression.cs" />
@@ -76,13 +58,36 @@
     <Compile Include="Parser\ScriptParser3.cs" />
     <Compile Include="Parser\ScriptParser4.cs" />
     <Compile Include="Parser\ScriptParser5.cs" />
+    <Compile Include="JumpAstVisitor.cs" />
+    <Compile Include="ChangeJumpToIf.cs" />
+    <Compile Include="Ast\DefaultVisitor.cs" />
+    <Compile Include="Ast\IAstNode.cs" />
+    <Compile Include="Ast\AstNodeBase.cs" />
+    <Compile Include="Ast\CompilationUnit.cs" />
+    <Compile Include="Ast\Expressions\BinaryExpression.cs" />
+    <Compile Include="Ast\Expressions\Expression.cs" />
+    <Compile Include="Ast\Expressions\ElementAccess.cs" />
+    <Compile Include="Ast\Expressions\MemberAccess.cs" />
+    <Compile Include="Ast\Expressions\LiteralExpression.cs" />
+    <Compile Include="Ast\Expressions\MethodInvocation.cs" />
+    <Compile Include="Ast\Expressions\UnaryExpression.cs" />
+    <Compile Include="Ast\Expressions\SimpleName.cs" />
+    <Compile Include="Ast\Statements\JumpStatement.cs" />
+    <Compile Include="Ast\Statements\Statement.cs" />
+    <Compile Include="Ast\Expressions\StringLiteralExpression.cs" />
+    <Compile Include="Ast\Expressions\IntegerLiteralExpression.cs" />
+    <Compile Include="Ast\Expressions\BooleanLiteralExpression.cs" />
+    <Compile Include="Ast\IAstNodeVisitor.cs" />
+    <Compile Include="Ast\Statements\IfStatement.cs" />
+    <Compile Include="Ast\Statements\ExpressionStatement.cs" />
+    <Compile Include="Ast\Statements\BlockStatement.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <Folder Include="Grammar\" />
-    <Folder Include="Grammar\Expressions\" />
-    <Folder Include="Grammar\Statements\" />
     <Folder Include="Parser\" />
+    <Folder Include="Ast\" />
+    <Folder Include="Ast\Expressions\" />
+    <Folder Include="Ast\Statements\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NScumm.Core\NScumm.Core.csproj">

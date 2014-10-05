@@ -1,5 +1,5 @@
 //
-//  IDumper.cs
+//  ExpressionStatement.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -18,55 +18,33 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-using System;
 
 namespace NScumm.Dump
 {
-    public interface IDumper
+
+    public class ExpressionStatement: Statement
     {
-        void Write(string format, params object[] args);
+        public Expression Expression
+        {
+            get;
+            private set;
+        }
 
-        void Write(string text);
+        public ExpressionStatement(Expression exp)
+        {
+            Expression = exp;
+            ChildrenCore.Add(Expression);
+        }
 
-        void WriteLine(string format, params object[] args);
+        public override void Accept(IAstNodeVisitor visitor)
+        {
+            visitor.Visit(this);
+        }
 
-        void WriteLine(string text);
-
-        void WriteLine();
+        public override T Accept<T>(IAstNodeVisitor<T> visitor)
+        {
+            return visitor.Visit(this);
+        }
     }
 
-
-    class ConsoleDumper: IDumper
-    {
-        #region IDumper implementation
-
-        public void Write(string format, params object[] args)
-        {
-            Write(string.Format(format, args));
-        }
-
-        public void Write(string text)
-        {
-            Console.Write(text);
-        }
-
-        public void WriteLine(string format, params object[] args)
-        {
-            Console.WriteLine(format, args);
-        }
-
-        public void WriteLine(string text)
-        {
-            Console.WriteLine(text);
-        }
-
-        public void WriteLine()
-        {
-            Console.WriteLine();
-        }
-
-        #endregion
-
-
-    }
 }

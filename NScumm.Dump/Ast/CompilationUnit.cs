@@ -1,5 +1,5 @@
 //
-//  StringLiteralExpression.cs
+//  CompilationUnit.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -18,15 +18,38 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+using System.Collections.Generic;
 
 namespace NScumm.Dump
 {
-    public sealed class StringLiteralExpression: LiteralExpression<byte[]>
+    public class CompilationUnit: AstNodeBase
     {
-        public StringLiteralExpression(byte[] value)
-            : base(value)
-        {            
+        public BlockStatement Statement { get; private set; }
+
+        public CompilationUnit()
+            : this(new BlockStatement())
+        {
         }
+
+        public CompilationUnit(BlockStatement statement)
+        {
+            Statement = statement;
+            ChildrenCore.Add(statement);
+        }
+
+        public CompilationUnit AddStatement(Statement statement)
+        {
+            Statement.AddStatement(statement);
+            return this;
+        }
+
+        public CompilationUnit AddStatements(IEnumerable<Statement> statements)
+        {
+            Statement.AddStatements(statements);
+            return this;
+        }
+
+        #region implemented abstract members of AstNodeBase
 
         public override void Accept(IAstNodeVisitor visitor)
         {
@@ -37,6 +60,9 @@ namespace NScumm.Dump
         {
             return visitor.Visit(this);
         }
+
+        #endregion
+
     }
-    
 }
+

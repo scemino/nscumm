@@ -61,7 +61,7 @@ namespace NScumm.Dump
             yield return SetResultExpression(indexExp, 
                 new MemberAccess(
                     new ElementAccess("Actors", actor),
-                    "Scale"));
+                    "Scale")).ToStatement();
         }
 
         protected IEnumerable<Statement> SoundKludge()

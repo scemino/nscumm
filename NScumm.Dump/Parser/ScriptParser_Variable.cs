@@ -60,32 +60,22 @@ namespace NScumm.Dump
             return resultVarIndexExp;
         }
 
-        Statement SetResult(int index, Expression value)
+        Expression GetResultIndex(int index)
         {
             if ((index & 0xF000) == 0)
             {
-                //Variables [index] = value;
-                return new BinaryExpression(
-                    new ElementAccess("Variables", index),
-                    Operator.Assignment,
-                    value).ToStatement();
+                return new ElementAccess("Variables", index);
             }
 
             if ((index & 0x8000) != 0)
             {
                 if (Game.Version <= 3)
                 {
-                    return new BinaryExpression(
-                        new ElementAccess("BitVariables", index),
-                        Operator.Assignment,
-                        value).ToStatement();
+                    return new ElementAccess("BitVariables", index);
                 }
                 index &= 0x7FFF;
                 //BitVariables [index] = value != 0;
-                return new BinaryExpression(
-                    new ElementAccess("BitVariables", index),
-                    Operator.Assignment,
-                    value).ToStatement();
+                return new ElementAccess("BitVariables", index);
             }
 
             if ((index & 0x4000) != 0)
@@ -99,16 +89,18 @@ namespace NScumm.Dump
                     index &= 0xFFF;
                 }
                 //LocalVariables [index] = value;
-                return new BinaryExpression(
-                    new ElementAccess("LocalVariables", index),
-                    Operator.Assignment,
-                    value).ToStatement();
+                return new ElementAccess("LocalVariables", index);
             }
             //throw new NotSupportedException ();
-            return new MethodInvocation("SetResult").AddArguments(index.ToLiteral(), value).ToStatement();
+            return new ElementAccess("Variables", index);
         }
 
-        protected Statement SetResultExpression(Expression index, Expression value)
+        Expression SetResult(int index, Expression value)
+        {
+            return new BinaryExpression(GetResultIndex(index), Operator.Assignment, value);
+        }
+
+        protected Expression SetResultExpression(Expression index, Expression value)
         {
             var literalExp = index as IntegerLiteralExpression;
             if (literalExp != null)
@@ -117,7 +109,7 @@ namespace NScumm.Dump
             }
             else
             {
-                return new MethodInvocation("WriteResult").AddArguments(index, value).ToStatement();
+                return new BinaryExpression(new ElementAccess("Variables", index), Operator.Assignment, value);
             }
         }
 
@@ -226,19 +218,16 @@ namespace NScumm.Dump
         IEnumerable<Statement> SetVarRange()
         {
             var index = ((IntegerLiteralExpression)GetResultIndexExpression()).Value;
-            var a = ReadByte();
-            int b;
+            var len = ReadByte();
+            var args = new List<Expression>();
             do
             {
                 if ((_opCode & 0x80) == 0x80)
-                    b = ReadWordSigned();
+                    args.Add(ReadWordSigned().ToLiteral());
                 else
-                    b = ReadByte();
-                var statement = SetResult(index, new IntegerLiteralExpression(b));
-                yield return statement;
-                index++;
-
-            } while ((--a) > 0);
+                    args.Add(ReadByte().ToLiteral());
+            } while ((--len) > 0);
+            yield return new MethodInvocation("SetVarRange").AddArgument(GetResultIndex(index)).AddArguments(args).ToStatement();
         }
 
         Expression ReadCharacters()
@@ -269,7 +258,7 @@ namespace NScumm.Dump
         {
             var indexExp = GetResultIndexExpression();
             var value = GetVarOrDirectWord(OpCodeParameter.Param1);
-            yield return SetResultExpression(indexExp, value);
+            yield return SetResultExpression(indexExp, value).ToStatement();
         }
     }
 }

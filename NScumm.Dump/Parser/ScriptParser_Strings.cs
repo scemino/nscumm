@@ -10,16 +10,17 @@ namespace NScumm.Dump
         {
             var actor = GetVarOrDirectByte(OpCodeParameter.Param1);
             yield return DecodeParseString(
-                new MemberAccess(
-                    new ElementAccess("Actors", actor), 
-                    new MethodInvocation("Print"))).ToStatement();
+                new MethodInvocation(
+                    new MemberAccess(
+                        new ElementAccess("Actors", actor), 
+                        "Print"))).ToStatement();
         }
 
         IEnumerable<Statement> GetStringWidth()
         {
             var exp = GetResultIndexExpression();
             var str = GetVarOrDirectByte(OpCodeParameter.Param1);
-            yield return SetResultExpression(exp, new MethodInvocation("GetStringWidth").AddArgument(str));
+            yield return SetResultExpression(exp, new MethodInvocation("GetStringWidth").AddArgument(str)).ToStatement();
         }
 
         Expression DecodeParseString(Expression exp)
@@ -31,21 +32,21 @@ namespace NScumm.Dump
                     case 0:     // SO_AT
                         var x = GetVarOrDirectWord(OpCodeParameter.Param1);
                         var y = GetVarOrDirectWord(OpCodeParameter.Param2);
-                        exp = new MemberAccess(exp, new MethodInvocation("At").AddArguments(x, y));
+                        exp = new MethodInvocation(new MemberAccess(exp, "At")).AddArguments(x, y);
                         break;
 
                     case 1:     // SO_COLOR
                         var color = GetVarOrDirectByte(OpCodeParameter.Param1);
-                        exp = new MemberAccess(exp, new MethodInvocation("Color").AddArguments(color));
+                        exp = new MethodInvocation(new MemberAccess(exp, "Color")).AddArguments(color);
                         break;
 
                     case 2:     // SO_CLIPPED
                         var clipped = GetVarOrDirectWord(OpCodeParameter.Param1);
-                        exp = new MemberAccess(exp, new MethodInvocation("Clipped").AddArguments(clipped));
+                        exp = new MethodInvocation(new MemberAccess(exp, "Clipped")).AddArguments(clipped);
                         break;
 
                     case 4:     // SO_CENTER
-                        exp = new MemberAccess(exp, new MethodInvocation("Center"));
+                        exp = new MethodInvocation(new MemberAccess(exp, "Center"));
                         break;
 
                     case 6:     // SO_LEFT
@@ -54,25 +55,25 @@ namespace NScumm.Dump
                         {
                             args.Add(GetVarOrDirectWord(OpCodeParameter.Param1));
                         }
-                        exp = new MemberAccess(exp, new MethodInvocation("Left").AddArguments(args));
+                        exp = new MethodInvocation(new MemberAccess(exp, "Left")).AddArguments(args);
                         break;
 
                     case 7:     // SO_OVERHEAD
-                        exp = new MemberAccess(exp, new MethodInvocation("Overhead"));
+                        exp = new MethodInvocation(new MemberAccess(exp, "Overhead"));
                         break;
 
                     case 8:
                         {	// SO_SAY_VOICE
                             var offset = GetVarOrDirectWord(OpCodeParameter.Param1);
                             var delay = GetVarOrDirectWord(OpCodeParameter.Param2);
-                            exp = new MemberAccess(exp, new MethodInvocation("PlayCDTrack").AddArguments(offset, delay));
+                            exp = new MethodInvocation(new MemberAccess(exp, "PlayCDTrack")).AddArguments(offset, delay);
                         }
                         break;
 
                     case 15:
                         {   // SO_TEXTSTRING
                             var text = ReadCharacters();
-                            exp = new MemberAccess(exp, new MethodInvocation("Print").AddArguments(text));
+                            exp = new MethodInvocation(new MemberAccess(exp, "Print")).AddArguments(text);
                         }
                         return exp;
 
@@ -137,7 +138,7 @@ namespace NScumm.Dump
                             index,
                             new ElementAccess(
                                 new ElementAccess("Strings", id),
-                                b));
+                                b)).ToStatement();
                     }
                     break;
 

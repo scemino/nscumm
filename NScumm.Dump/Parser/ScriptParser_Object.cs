@@ -64,15 +64,16 @@ namespace NScumm.Dump
                 args.Add(cls);
             }
             yield return JumpRelative(
-                new MemberAccess(
-                    new ElementAccess("Objects", obj),
-                    new MethodInvocation("IsOfClass").AddArguments(args)));
+                new MethodInvocation(
+                    new MemberAccess(
+                        new ElementAccess("Objects", obj),
+                        "IsOfClass")).AddArguments(args));
         }
 
         IEnumerable<Statement> GetObjectOwner()
         {
             var indexExp = GetResultIndexExpression();
-            yield return SetResultExpression(indexExp, new MethodInvocation("GetOwner").AddArgument(GetVarOrDirectWord(OpCodeParameter.Param1)));
+            yield return SetResultExpression(indexExp, new MethodInvocation("GetOwner").AddArgument(GetVarOrDirectWord(OpCodeParameter.Param1))).ToStatement();
         }
 
         IEnumerable<Statement> SetObjectName()
@@ -120,7 +121,7 @@ namespace NScumm.Dump
             yield return SetResultExpression(
                 resultIndexExp,
                 new MethodInvocation("FindObject").
-				AddArguments(x, y));
+                AddArguments(x, y)).ToStatement();
         }
 
         IEnumerable<Statement> StopObjectCode()

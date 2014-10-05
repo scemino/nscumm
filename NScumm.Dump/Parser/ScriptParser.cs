@@ -119,7 +119,7 @@ namespace NScumm.Dump
             var index = ((IntegerLiteralExpression)GetResultIndexExpression()).Value;
             var arg = GetVarOrDirectByte(OpCodeParameter.Param1);
             var result = new MethodInvocation("SaveLoadGame").AddArgument(arg);
-            yield return SetResult(index, result);
+            yield return SetResult(index, result).ToStatement();
         }
 
         IEnumerable<Statement> SaveLoadVars()
@@ -239,7 +239,7 @@ namespace NScumm.Dump
             var index = GetResultIndexExpression();
             var max = GetVarOrDirectByte(OpCodeParameter.Param1);
 
-            yield return SetResultExpression(index, new MethodInvocation("GetRandomNumber").AddArgument(max));
+            yield return SetResultExpression(index, new MethodInvocation("GetRandomNumber").AddArgument(max)).ToStatement();
         }
 
         IEnumerable<Statement> Lights()
@@ -262,7 +262,7 @@ namespace NScumm.Dump
             var o2 = GetVarOrDirectWord(OpCodeParameter.Param2);
             var r = new MethodInvocation("GetDistance").AddArguments(o1, o2);
 
-            yield return SetResultExpression(index, r);
+            yield return SetResultExpression(index, r).ToStatement();
         }
 
         IEnumerable<Statement> Wait()

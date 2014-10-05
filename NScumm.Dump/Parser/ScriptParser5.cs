@@ -91,14 +91,14 @@ namespace NScumm.Dump
         {
             var exp = GetResultIndexExpression();
             var obj = GetVarOrDirectWord(OpCodeParameter.Param1);
-            yield return SetResultExpression(exp, new MemberAccess(new ElementAccess("Objects", obj), "State"));
+            yield return SetResultExpression(exp, new MemberAccess(new ElementAccess("Objects", obj), "State")).ToStatement();
         }
 
         IEnumerable<Statement> GetAnimCounter()
         {
             var exp = GetResultIndexExpression();
             var index = GetVarOrDirectByte(OpCodeParameter.Param1);
-            yield return SetResultExpression(exp, new MemberAccess(new ElementAccess("Actors", index), "AnimCounter"));
+            yield return SetResultExpression(exp, new MemberAccess(new ElementAccess("Actors", index), "AnimCounter")).ToStatement();
         }
 
         protected override IEnumerable<Statement> DrawObject()

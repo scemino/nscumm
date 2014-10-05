@@ -1,5 +1,5 @@
-﻿//
-//  IfStatement.cs
+//
+//  JumpAstVisitor.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -19,29 +19,31 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using System.Collections.Generic;
+
 namespace NScumm.Dump
 {
-    public class JumpStatement: Statement
+    public class JumpAstVisitor: DefaultVisitor
     {
-        public Expression Condition { get; private set; }
+        public List<JumpStatement> Jumps { get; private set; }
 
-        public int JumpOffset { get; private set; }
-
-        public JumpStatement(Expression condition, int offset)
+        public JumpAstVisitor()
         {
-            Condition = condition;
-            JumpOffset = offset;
+            Jumps = new List<JumpStatement>();
         }
 
-        public override void Accept(IAstNodeVisitor visitor)
+        protected override void DefaultVisit(IAstNode node)
         {
-            visitor.Visit(this);
+            foreach (var child in node.Children)
+            {
+                child.Accept(this);
+            }
         }
 
-        public override T Accept<T>(IAstNodeVisitor<T> visitor)
+        public override void Visit(JumpStatement node)
         {
-            return visitor.Visit(this);
+            Jumps.Add(node);
         }
     }
-}
 
+}

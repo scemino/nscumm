@@ -4,9 +4,13 @@ namespace NScumm.Dump
     {
         void Visit(CompilationUnit node);
 
+        void Visit(BlockStatement node);
+
         void Visit(ExpressionStatement node);
 
         void Visit(JumpStatement node);
+
+        void Visit(IfStatement node);
 
         void Visit(SimpleName node);
 
@@ -31,7 +35,11 @@ namespace NScumm.Dump
     {
         T Visit(CompilationUnit node);
 
+        T Visit(BlockStatement node);
+
         T Visit(JumpStatement node);
+
+        T Visit(IfStatement node);
 
         T Visit(ExpressionStatement node);
 

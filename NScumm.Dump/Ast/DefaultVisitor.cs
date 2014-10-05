@@ -10,6 +10,11 @@ namespace NScumm.Dump
             DefaultVisit(node);
         }
 
+        public virtual void Visit(BlockStatement node)
+        {
+            DefaultVisit(node);
+        }
+
         public virtual void Visit(IntegerLiteralExpression node)
         {
             DefaultVisit(node);
@@ -36,6 +41,11 @@ namespace NScumm.Dump
         }
 
         public virtual void Visit(JumpStatement node)
+        {
+            DefaultVisit(node);
+        }
+
+        public virtual void Visit(IfStatement node)
         {
             DefaultVisit(node);
         }
@@ -82,7 +92,17 @@ namespace NScumm.Dump
             return DefaultVisit(node);
         }
 
+        public virtual T Visit(BlockStatement node)
+        {
+            return DefaultVisit(node);
+        }
+
         public virtual T Visit(JumpStatement node)
+        {
+            return DefaultVisit(node);
+        }
+
+        public virtual T Visit(IfStatement node)
         {
             return DefaultVisit(node);
         }

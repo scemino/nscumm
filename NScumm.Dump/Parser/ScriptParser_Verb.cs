@@ -36,12 +36,12 @@ namespace NScumm.Dump
             var a = GetVarOrDirectWord(OpCodeParameter.Param1);
             var b = GetVarOrDirectWord(OpCodeParameter.Param2);
 
-            yield return SetResultExpression(index, new MethodInvocation("GetVerbEntrypoint").AddArguments(a, b));
+            yield return SetResultExpression(index, new MethodInvocation("GetVerbEntrypoint").AddArguments(a, b)).ToStatement();
         }
 
         IEnumerable<Statement> VerbOps()
         {
-            var verb = new ElementAccess("Verbs", GetVarOrDirectByte(OpCodeParameter.Param1));
+            Expression verb = new ElementAccess("Verbs", GetVarOrDirectByte(OpCodeParameter.Param1));
 
             while ((_opCode = ReadByte()) != 0xFF)
             {
@@ -50,135 +50,96 @@ namespace NScumm.Dump
                     case 1:     // SO_VERB_IMAGE
                         {
                             var a = GetVarOrDirectWord(OpCodeParameter.Param1);
-                            yield return new BinaryExpression(
-                                new MemberAccess(verb, "Image"),
-                                Operator.Assignment,
-                                a).ToStatement();
+                            verb = new MethodInvocation(new MemberAccess(verb, "SetImage")).AddArgument(a);
                         }
                         break;
 
                     case 2:     // SO_VERB_NAME
                         var text = ReadCharacters();
-                        yield return new BinaryExpression(
-                            new MemberAccess(verb, "Name"),
-                            Operator.Assignment,
-                            text).ToStatement();
+                        verb = new MethodInvocation(new MemberAccess(verb, "SetName")).AddArgument(text);
                         break;
 
                     case 3:     // SO_VERB_COLOR
                         {
                             var color = GetVarOrDirectByte(OpCodeParameter.Param1);
-                            yield return new BinaryExpression(
-                                new MemberAccess(verb, "Color"),
-                                Operator.Assignment,
-                                color).ToStatement();
+                            verb = new MethodInvocation(new MemberAccess(verb, "SetColor")).AddArgument(color);
                         }
                         break;
 
                     case 4:     // SO_VERB_HICOLOR
                         var hiColor = GetVarOrDirectByte(OpCodeParameter.Param1);
-                        yield return new BinaryExpression(
-                            new MemberAccess(verb, "HiColor"),
-                            Operator.Assignment,
-                            hiColor).ToStatement();
+                        verb = new MethodInvocation(new MemberAccess(verb, "SetHiColor")).AddArgument(hiColor);
                         break;
 
                     case 5:     // SO_VERB_AT
                         var left = GetVarOrDirectWord(OpCodeParameter.Param1);
                         var top = GetVarOrDirectWord(OpCodeParameter.Param2);
-                        yield return new MemberAccess(
-                            verb,
-                            new MethodInvocation("At").
-						AddArguments(left, top)).ToStatement();
+                        verb = new MethodInvocation(new MemberAccess(verb, "At")).AddArguments(left, top);
                         break;
 
                     case 6:
 					// SO_VERB_ON
-                        yield return new BinaryExpression(
-                            new MemberAccess(verb, "CurMode"),
-                            Operator.Assignment,
-                            1.ToLiteral()).ToStatement();
+                        verb = new MethodInvocation(new MemberAccess(verb, "On"));
                         break;
 
                     case 7:
 					// SO_VERB_OFF
-                        yield return new BinaryExpression(
-                            new MemberAccess(verb, "CurMode"),
-                            Operator.Assignment,
-                            0.ToLiteral()).ToStatement();
+                        verb = new MethodInvocation(new MemberAccess(verb, "Off"));
                         break;
 
                     case 8:     // SO_VERB_DELETE
-                        yield return new MemberAccess(
-                            verb,
-                            new MethodInvocation("Delete")).ToStatement();
+                        verb = new MethodInvocation(new MemberAccess(verb, "Delete"));
                         break;
 
                     case 9:
                         {
                             // SO_VERB_NEW
-                            yield return new BinaryExpression(
-                                verb,
-                                Operator.Assignment,
-                                new MethodInvocation("CreateVerb")).ToStatement();
+                            verb = new MethodInvocation(new MemberAccess(verb, "New"));
                             break;
                         }
                     case 16:    // SO_VERB_DIMCOLOR
-                        yield return new BinaryExpression(
-                            new MemberAccess(verb, "DimColor"),
-                            Operator.Assignment,
-                            GetVarOrDirectByte(OpCodeParameter.Param1)).ToStatement();
+                        {
+                            var color = GetVarOrDirectByte(OpCodeParameter.Param1);
+                            verb = new MethodInvocation(new MemberAccess(verb, "SetDimColor")).AddArgument(color);
+                        }
                         break;
 
                     case 17:    // SO_VERB_DIM
-                        yield return new BinaryExpression(
-                            new MemberAccess(verb, "CurMode"),
-                            Operator.Assignment,
-                            2.ToLiteral()).ToStatement();
+                        verb = new MethodInvocation(new MemberAccess(verb, "Dim"));
                         break;
 
                     case 18:    // SO_VERB_KEY
                         var key = GetVarOrDirectByte(OpCodeParameter.Param1);
-                        yield return new BinaryExpression(
-                            new MemberAccess(verb, "Key"),
-                            Operator.Assignment,
-                            key).ToStatement();
+                        verb = new MethodInvocation(new MemberAccess(verb, "SetKey")).AddArgument(key);
                         break;
 
                     case 19:    // SO_VERB_CENTER
-                        yield return new BinaryExpression(
-                            new MemberAccess(verb, "Center"),
-                            Operator.Assignment,
-                            true.ToLiteral()).ToStatement();
+                        verb = new MethodInvocation(new MemberAccess(verb, "Center"));
                         break;
 
                     case 20:    // SO_VERB_NAME_STR
                         var index = GetVarOrDirectWord(OpCodeParameter.Param1);
-                        yield return new BinaryExpression(
-                            new MemberAccess(verb, "Text"),
-                            Operator.Assignment,
-                            new ElementAccess("Strings", index)).ToStatement();
+                        verb = new MethodInvocation(new MemberAccess(verb, "SetText")).AddArgument(new ElementAccess("Strings", index));
                         break;
                     case 22:    // assign object
                         {
                             var a = GetVarOrDirectWord(OpCodeParameter.Param1);
                             var b = GetVarOrDirectByte(OpCodeParameter.Param2);
-                            yield return new MethodInvocation("SetVerbObject").AddArguments(verb, a, b).ToStatement();
+                            verb = new MethodInvocation(new MemberAccess(verb, "SetVerbObject")).AddArguments(a, b);
                         }
                         break;
                     case 23:    // Set Back Color
                         {
                             var color = GetVarOrDirectByte(OpCodeParameter.Param1);
-                            yield return new MethodInvocation("SetBackColor").AddArguments(verb, color).ToStatement();
+                            verb = new MethodInvocation(new MemberAccess(verb, "SetBackColor")).AddArgument(color);
                         }
                         break;
                     default:
                         throw new NotImplementedException(string.Format("VerbOps #{0} is not yet implemented.", _opCode & 0x1F));
                 }
             }
+            yield return verb.ToStatement();
         }
-
-
     }
 }
 

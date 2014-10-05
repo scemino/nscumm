@@ -26,6 +26,8 @@ namespace NScumm.Dump
                 var index = ResourceManager.Load(game);
 
                 var scriptDumper = new ScriptDumper(game);
+//                var script = index.GetScript(22);
+//                scriptDumper.DumpScript(script, new ConsoleDumper());
                 scriptDumper.DumpScripts(index);
                 var imgDumper = new ImageDumper(game);
                 imgDumper.DumpImages(index);

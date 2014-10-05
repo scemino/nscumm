@@ -22,9 +22,10 @@ namespace NScumm.Dump
         IEnumerable<Statement> StopScript()
         {
             var script = GetVarOrDirectByte(OpCodeParameter.Param1);
-            yield return new MemberAccess(
-                new ElementAccess("Scripts", script),
-                new MethodInvocation("Stop")).ToStatement();
+            yield return new MethodInvocation(
+                new MemberAccess(
+                    new ElementAccess("Scripts", script),
+                    "Stop")).ToStatement();
         }
 
         IEnumerable<Statement> StopObjectScript()
@@ -69,7 +70,7 @@ namespace NScumm.Dump
         {
             var indexExp = GetResultIndexExpression();
             yield return SetResultExpression(indexExp, new MethodInvocation("IsScriptRunning").
-				AddArgument(GetVarOrDirectByte(OpCodeParameter.Param1)));
+                AddArgument(GetVarOrDirectByte(OpCodeParameter.Param1))).ToStatement();
         }
 
         IEnumerable<Statement> BreakHere()

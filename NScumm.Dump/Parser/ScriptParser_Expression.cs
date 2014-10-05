@@ -12,28 +12,28 @@ namespace NScumm.Dump
             var indexExp = GetResultIndexExpression();
             var a = GetVarOrDirectWord(OpCodeParameter.Param1);
             var b = ReadVariable(indexExp);
-            yield return SetResultExpression(indexExp, new BinaryExpression(a, Operator.Add, b));
+            yield return SetResultExpression(indexExp, new BinaryExpression(a, Operator.Add, b)).ToStatement();
         }
 
         IEnumerable<Statement> Subtract()
         {
             var indexExp = GetResultIndexExpression();
             var a = GetVarOrDirectWord(OpCodeParameter.Param1);
-            yield return SetResultExpression(indexExp, new BinaryExpression(ReadVariable(indexExp), Operator.Minus, a));
+            yield return SetResultExpression(indexExp, new BinaryExpression(ReadVariable(indexExp), Operator.Minus, a)).ToStatement();
         }
 
         IEnumerable<Statement> Multiply()
         {
             var indexExp = (IntegerLiteralExpression)GetResultIndexExpression();
             var a = GetVarOrDirectWord(OpCodeParameter.Param1);
-            yield return SetResultExpression(indexExp, new BinaryExpression(ReadVariable(indexExp.Value), Operator.Multiply, a));
+            yield return SetResultExpression(indexExp, new BinaryExpression(ReadVariable(indexExp.Value), Operator.Multiply, a)).ToStatement();
         }
 
         IEnumerable<Statement> Divide()
         {
             var indexExp = (IntegerLiteralExpression)GetResultIndexExpression();
             var a = GetVarOrDirectWord(OpCodeParameter.Param1);
-            yield return SetResultExpression(indexExp, new BinaryExpression(ReadVariable(indexExp.Value), Operator.Divide, a));
+            yield return SetResultExpression(indexExp, new BinaryExpression(ReadVariable(indexExp.Value), Operator.Divide, a)).ToStatement();
         }
 
         IEnumerable<Statement> Increment()
@@ -43,27 +43,27 @@ namespace NScumm.Dump
                 new BinaryExpression(
                     ReadVariable(index),
                     Operator.Add,
-                    1.ToLiteral()));
+                    1.ToLiteral())).ToStatement();
         }
 
         IEnumerable<Statement> Decrement()
         {
             var index = GetResultIndexExpression();
-            yield return SetResultExpression(index, new UnaryExpression(ReadVariable(index), Operator.PostDecrement));
+            yield return SetResultExpression(index, new UnaryExpression(ReadVariable(index), Operator.PostDecrement)).ToStatement();
         }
 
         IEnumerable<Statement> And()
         {
             var indexExp = (IntegerLiteralExpression)GetResultIndexExpression();
             var a = GetVarOrDirectWord(OpCodeParameter.Param1);
-            yield return SetResultExpression(indexExp, new BinaryExpression(ReadVariable(indexExp.Value), Operator.And, a));
+            yield return SetResultExpression(indexExp, new BinaryExpression(ReadVariable(indexExp.Value), Operator.And, a)).ToStatement();
         }
 
         IEnumerable<Statement> Or()
         {
             var indexExp = (IntegerLiteralExpression)GetResultIndexExpression();
             var a = GetVarOrDirectWord(OpCodeParameter.Param1);
-            yield return SetResultExpression(indexExp, new BinaryExpression(ReadVariable(indexExp.Value), Operator.Or, a));
+            yield return SetResultExpression(indexExp, new BinaryExpression(ReadVariable(indexExp.Value), Operator.Or, a)).ToStatement();
         }
 
         IEnumerable<Statement> NotEqualZero()
@@ -149,7 +149,7 @@ namespace NScumm.Dump
             var binExp = condition as BinaryExpression;
             if (binExp != null)
             {
-                condition = new BinaryExpression(binExp.Left, Not(binExp.Operator), binExp.Right);
+                condition = binExp.Not();
             }
             else
             {
@@ -158,41 +158,10 @@ namespace NScumm.Dump
             return new JumpStatement(condition, (int)_br.BaseStream.Position + offset);
         }
 
-        static Operator Not(Operator op)
-        {
-            Operator notOp;
-            switch (op)
-            {
-                case Operator.Equals:
-                    notOp = Operator.Inequals;
-                    break;
-                case Operator.Inequals:
-                    notOp = Operator.Equals;
-                    break;
-                case Operator.LowerOrEquals:
-                    notOp = Operator.Greater;
-                    break;
-                case Operator.Greater:
-                    notOp = Operator.LowerOrEquals;
-                    break;
-                case Operator.GreaterOrEquals:
-                    notOp = Operator.Lower;
-                    break;
-                case Operator.Lower:
-                    notOp = Operator.GreaterOrEquals;
-                    break;
-                default:
-                    throw new NotSupportedException(string.Format("Invalid operator {0}", op));
-            }
-            return notOp;
-        }
-
         IEnumerable<Statement> ExpressionFunc()
         {
-            var statements = new List<Statement>();
             var stack = new Stack<Expression>();
-            var indexExp = GetResultIndexExpression();
-            var dst = indexExp;
+            var dst = ((IntegerLiteralExpression)GetResultIndexExpression()).Value;
             while ((_opCode = ReadByte()) != 0xFF)
             {
                 switch (_opCode & 0x1F)
@@ -238,8 +207,18 @@ namespace NScumm.Dump
 					// normal opcode
                         {
                             _opCode = ReadByte();
-                            statements.AddRange(ExecuteOpCode());
-                            stack.Push(new ElementAccess("Variables", 0.ToLiteral()));
+                            var statements = ExecuteOpCode().ToList();
+                            if (statements.Count != 1)
+                                throw new InvalidOperationException("Only 1 ExpressionStatement expected");
+                            var expStatement = statements[0] as ExpressionStatement;
+                            if (expStatement == null)
+                                throw new InvalidOperationException("ExpressionStatement expected");
+                            var binExp = expStatement.Expression as BinaryExpression;
+                            if (binExp == null)
+                                throw new InvalidOperationException("BinaryExpression expected");
+                            if (!((binExp.Left is ElementAccess) && ((ElementAccess)binExp.Left).Target is SimpleName))
+                                throw new InvalidOperationException("Variables[0] was expected expected");
+                            stack.Push(binExp.Right);
                         }
                         break;
 
@@ -248,8 +227,8 @@ namespace NScumm.Dump
                 }
             }
 
-            statements.Add(SetResultExpression(dst, stack.Pop()));
-            return statements;
+            var exp = new BinaryExpression(GetResultIndex(dst), Operator.Assignment, stack.Pop());
+            yield return exp.ToStatement();
         }
     }
 }

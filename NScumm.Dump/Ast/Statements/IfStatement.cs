@@ -1,5 +1,5 @@
-//
-//  IntegerLiteralExpression.cs
+﻿//
+//  IfStatement.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -21,11 +21,27 @@
 
 namespace NScumm.Dump
 {
-    public sealed class IntegerLiteralExpression: LiteralExpression<int>
+    public class IfStatement: Statement
     {
-        public IntegerLiteralExpression(int value)
-            : base(value)
-        {            
+        public Expression Condition { get; private set; }
+
+        public Statement TrueStatement { get; private set; }
+
+        public IfStatement(Expression condition)
+        {
+            Condition = condition;
+        }
+
+        public IfStatement(Expression condition, Statement trueStatement)
+        {
+            Condition = condition;
+            TrueStatement = trueStatement;
+            ChildrenCore.Add(TrueStatement);
+        }
+
+        public IfStatement SetTrueStatement(Statement trueStatement)
+        {
+            return new IfStatement(Condition, trueStatement);
         }
 
         public override void Accept(IAstNodeVisitor visitor)
@@ -38,5 +54,5 @@ namespace NScumm.Dump
             return visitor.Visit(this);
         }
     }
-
 }
+

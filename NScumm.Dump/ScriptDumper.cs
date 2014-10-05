@@ -42,34 +42,34 @@ namespace NScumm.Dump
             var dumper = new ConsoleDumper();
             foreach (var script in index.Scripts)
             {
-                DumpScript("script " + script.Id, script.Data, dumper);
+                dumper.WriteLine("script " + script.Id);
+                DumpScript(script.Data, dumper);
             }
             foreach (var room in index.Rooms)
             {
                 dumper.WriteLine("room {0} {1} {{", room.Number, room.Name);
-                dumper.Indent();
                 foreach (var obj in room.Objects)
                 {
                     if (obj.Script.Data != null && obj.Script.Data.Length > 0)
                     {
                         dumper.WriteLine("obj {0} {1} {{", obj.Number, System.Text.Encoding.ASCII.GetString(obj.Name));
-                        dumper.Indent();
                         foreach (var off in obj.ScriptOffsets)
                         {
                             dumper.WriteLine("idx #{0}: {1}", off.Key, off.Value);
                         }
-                        DumpScript("script", obj.Script.Data, dumper);
-                        dumper.Deindent();
-                        dumper.WriteLine("}");
+                        dumper.WriteLine("script");
+                        DumpScript(obj.Script.Data, dumper);
                     }
                 }
                 if (room.EntryScript.Data.Length > 0)
                 {
-                    DumpScript("Entry script", room.EntryScript.Data, dumper);
+                    dumper.WriteLine("Entry script");
+                    DumpScript(room.EntryScript.Data, dumper);
                 }
                 if (room.EntryScript.Data.Length > 0)
                 {
-                    DumpScript("Exit script", room.ExitScript.Data, dumper);
+                    dumper.WriteLine("Exit script");
+                    DumpScript(room.ExitScript.Data, dumper);
 
                 }
                 for (int i = 0; i < room.LocalScripts.Length; i++)
@@ -77,40 +77,37 @@ namespace NScumm.Dump
                     var script = room.LocalScripts[i];
                     if (script != null && script.Data != null)
                     {
-                        DumpScript("Local script " + i, script.Data, dumper);
+                        dumper.WriteLine("Local script " + i);
+                        DumpScript(script.Data, dumper);
                     }
                 }
-                dumper.Deindent();
                 dumper.WriteLine("}");
             }
         }
 
-        void DumpScript(string id, byte[] data, IDumper dumper)
+        public void DumpScript(byte[] data, IDumper dumper)
         {
-            dumper.Write(id);
-            dumper.WriteLine(" {");
-            dumper.Indent();
-
-            try
+//            try
             {
                 var scriptInterpreter = ScriptParser.Create(Game);
                 var resolveVarVisitor = new ResolveVariablesAstVisitor(scriptInterpreter.KnownVariables);
                 var visitor = new DumpAstVisitor();
                 var compilationUnit = scriptInterpreter.Parse(data);
-                var cuWithResolvedVariables = compilationUnit.Accept(resolveVarVisitor);
-                dumper.Write(cuWithResolvedVariables.Accept(visitor));
+                var cuWithResolvedVariables = (CompilationUnit)compilationUnit.Accept(resolveVarVisitor);
+
+                var cuWithIfs = new ChangeJumpToIf().Change(cuWithResolvedVariables);
+
+                dumper.Write(cuWithIfs.Accept(visitor));
             }
-            catch (Exception e)
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine(e);
-                Console.ResetColor();
-            }
-            finally
-            {
-                dumper.Deindent();
-                dumper.WriteLine("}");
-            }
+//            catch (Exception e)
+//            {
+//                Console.ForegroundColor = ConsoleColor.Red;
+//                Console.WriteLine(e);
+//                Console.ResetColor();
+//            }
+//            finally
+//            {
+//            }
         }
     }
 }

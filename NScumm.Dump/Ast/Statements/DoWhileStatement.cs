@@ -1,5 +1,5 @@
 ﻿//
-//  IfStatement.cs
+//  DoWhileStatement.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -21,28 +21,17 @@
 
 namespace NScumm.Dump
 {
-    public class IfStatement: Statement
+    public class DoWhileStatement: Statement
     {
         public Expression Condition { get; private set; }
 
-        public Statement TrueStatement { get; private set; }
+        public Statement Statement { get; private set; }
 
-        public IfStatement(Expression condition)
+        public DoWhileStatement(Expression condition, Statement statement)
         {
             Condition = condition;
-        }
-
-        public IfStatement(Expression condition, Statement trueStatement)
-        {
-            Condition = condition;
-            TrueStatement = trueStatement;
+            Statement = statement;
             ChildrenCore.Add(Condition);
-            ChildrenCore.Add(TrueStatement);
-        }
-
-        public IfStatement SetTrueStatement(Statement trueStatement)
-        {
-            return new IfStatement(Condition, trueStatement);
         }
 
         public override void Accept(IAstNodeVisitor visitor)

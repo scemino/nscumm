@@ -96,7 +96,8 @@ namespace NScumm.Dump
                 var cuWithResolvedVariables = (CompilationUnit)compilationUnit.Accept(resolveVarVisitor);
 
                 var cuWithIfs = new ChangeJumpToIf().Change(cuWithResolvedVariables);
-                dumper.Write(cuWithIfs.Accept(visitor));
+                var cuWithWhiles = new ReplaceJumpToWhile().Replace(cuWithIfs);
+                dumper.Write(cuWithWhiles.Accept(visitor));
             }
             catch (Exception e)
             {

@@ -77,11 +77,7 @@ namespace NScumm.Dump
 
         #endregion
 
-        public bool ShowOffsets
-        {
-            get;
-            set;
-        }
+        public bool ShowOffsets{ get; set; }
 
         public DumpAstVisitor(bool showOffsets = true)
         {
@@ -128,6 +124,18 @@ namespace NScumm.Dump
             {
                 text.Append(node.TrueStatement.Accept(this));
             }
+            return text.ToString();
+        }
+
+        public override string Visit(DoWhileStatement node)
+        {
+            var text = new StringBuilder();
+            text.AppendLine(Indentation(node, "do"));
+            if (node.Statement != null)
+            {
+                text.Append(node.Statement.Accept(this));
+            }
+            text.AppendLine(Indentation(node, string.Format("while ({0})", node.Condition.Accept(this))));
             return text.ToString();
         }
 

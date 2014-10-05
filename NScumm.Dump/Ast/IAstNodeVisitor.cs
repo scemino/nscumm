@@ -12,6 +12,8 @@ namespace NScumm.Dump
 
         void Visit(IfStatement node);
 
+        void Visit(DoWhileStatement node);
+
         void Visit(SimpleName node);
 
         void Visit(IntegerLiteralExpression node);
@@ -40,6 +42,8 @@ namespace NScumm.Dump
         T Visit(JumpStatement node);
 
         T Visit(IfStatement node);
+
+        T Visit(DoWhileStatement node);
 
         T Visit(ExpressionStatement node);
 

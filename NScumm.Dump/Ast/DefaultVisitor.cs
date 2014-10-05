@@ -2,7 +2,6 @@ namespace NScumm.Dump
 {
     public class DefaultVisitor: IAstNodeVisitor
     {
-
         #region IAstNodeVisitor implementation
 
         public virtual void Visit(CompilationUnit node)
@@ -46,6 +45,11 @@ namespace NScumm.Dump
         }
 
         public virtual void Visit(IfStatement node)
+        {
+            DefaultVisit(node);
+        }
+
+        public virtual void Visit(DoWhileStatement node)
         {
             DefaultVisit(node);
         }
@@ -103,6 +107,11 @@ namespace NScumm.Dump
         }
 
         public virtual T Visit(IfStatement node)
+        {
+            return DefaultVisit(node);
+        }
+
+        public virtual T Visit(DoWhileStatement node)
         {
             return DefaultVisit(node);
         }

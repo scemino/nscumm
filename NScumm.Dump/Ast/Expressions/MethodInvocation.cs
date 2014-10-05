@@ -59,6 +59,11 @@ namespace NScumm.Dump
             Arguments = new List<Expression>();
         }
 
+        public MethodInvocation AddArgument(object literal)
+        {
+            return AddArgument(literal.ToLiteral());
+        }
+
         public MethodInvocation AddArgument(Expression exp)
         {
             Arguments.Add(exp);

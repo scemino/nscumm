@@ -81,6 +81,8 @@
     <Compile Include="Ast\Statements\IfStatement.cs" />
     <Compile Include="Ast\Statements\ExpressionStatement.cs" />
     <Compile Include="Ast\Statements\BlockStatement.cs" />
+    <Compile Include="ReplaceJumpToWhile.cs" />
+    <Compile Include="Ast\Statements\DoWhileStatement.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

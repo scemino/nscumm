@@ -24,9 +24,14 @@ namespace NScumm.Dump
             sb.AppendFormat("{{verb{0}}}", id);
         }
 
-        public void WriteObjectOrActorName(int id)
+        public void WriteActorName(int id)
         {
-            sb.AppendFormat("{{objOrActor{0}}}", id);
+            sb.AppendFormat("{{actor{0}}}", id);
+        }
+
+        public void WriteObjectName(int id)
+        {
+            sb.AppendFormat("{{obj{0}}}", id);
         }
 
         public void WriteString(int val)

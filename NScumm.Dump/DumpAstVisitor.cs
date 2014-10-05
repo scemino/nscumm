@@ -27,11 +27,19 @@ namespace NScumm.Dump
 {
     public class DumpAstVisitor: DefaultVisitor<string>
     {
+        #region Indentation
+
         int indentAmount;
 
-        StringBuilder Indentation(StringBuilder text)
+        string Indentation(Statement statement, string text)
         {
-            return text.Append(new string(' ', indentAmount * 2));
+            var newText = new StringBuilder();
+            if (ShowOffsets)
+            {
+                newText.AppendFormat("[{0,4},{1,4}]", statement.StartOffset, statement.EndOffset);
+            }
+            newText.Append(new string(' ', indentAmount * 2)).Append(text);
+            return newText.ToString();
         }
 
         void Indent()
@@ -67,6 +75,19 @@ namespace NScumm.Dump
             }
         }
 
+        #endregion
+
+        public bool ShowOffsets
+        {
+            get;
+            set;
+        }
+
+        public DumpAstVisitor(bool showOffsets = true)
+        {
+            ShowOffsets = showOffsets;
+        }
+
         public override string Visit(CompilationUnit node)
         {
             return node.Statement.Accept(this);
@@ -74,39 +95,35 @@ namespace NScumm.Dump
 
         public override string Visit(ExpressionStatement node)
         {
-            return string.Format("[{0},{1}] {2}{3}", node.StartOffset.Value, node.EndOffset.Value, node.Expression.Accept(this), Environment.NewLine);
+            return Indentation(node, string.Format("{0}{1}", node.Expression.Accept(this), Environment.NewLine));
         }
 
         public override string Visit(JumpStatement node)
         {
-            return string.Format("[{0},{1}] jump {2} if {3}{4}", 
-                node.StartOffset.Value, node.EndOffset.Value, 
-                node.JumpOffset, node.Condition.Accept(this), 
-                Environment.NewLine);
+            return Indentation(node, string.Format("jump {0} if {1}{2}", 
+                    node.JumpOffset, node.Condition.Accept(this), 
+                    Environment.NewLine));
         }
 
         public override string Visit(BlockStatement node)
         {
             var text = new StringBuilder();
-            Indentation(text).AppendLine("{");
+            text.AppendLine(Indentation(node, "{"));
             using (IndentBlock())
             {
                 foreach (var statement in node)
                 {
-                    Indentation(text).Append(statement.Accept(this));
+                    text.Append(statement.Accept(this));
                 }
             }
-            Indentation(text).AppendLine("}");
+            text.AppendLine(Indentation(node, "}"));
             return text.ToString();
         }
 
         public override string Visit(IfStatement node)
         {
             var text = new StringBuilder();
-            text.AppendFormat("[{0},{1}] if({2}){3}", 
-                node.StartOffset.Value, node.EndOffset.Value, 
-                node.Condition.Accept(this), 
-                Environment.NewLine);
+            text.AppendLine(Indentation(node, string.Format("if ({0})", node.Condition.Accept(this))));
             if (node.TrueStatement != null)
             {
                 text.Append(node.TrueStatement.Accept(this));

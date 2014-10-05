@@ -87,7 +87,7 @@ namespace NScumm.Dump
 
         public void DumpScript(byte[] data, IDumper dumper)
         {
-//            try
+            try
             {
                 var scriptInterpreter = ScriptParser.Create(Game);
                 var resolveVarVisitor = new ResolveVariablesAstVisitor(scriptInterpreter.KnownVariables);
@@ -96,18 +96,14 @@ namespace NScumm.Dump
                 var cuWithResolvedVariables = (CompilationUnit)compilationUnit.Accept(resolveVarVisitor);
 
                 var cuWithIfs = new ChangeJumpToIf().Change(cuWithResolvedVariables);
-
                 dumper.Write(cuWithIfs.Accept(visitor));
             }
-//            catch (Exception e)
-//            {
-//                Console.ForegroundColor = ConsoleColor.Red;
-//                Console.WriteLine(e);
-//                Console.ResetColor();
-//            }
-//            finally
-//            {
-//            }
+            catch (Exception e)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine(e);
+                Console.ResetColor();
+            }
         }
     }
 }

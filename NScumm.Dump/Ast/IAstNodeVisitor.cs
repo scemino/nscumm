@@ -31,7 +31,7 @@ namespace NScumm.Dump
         void Visit(BinaryExpression node);
     }
 
-    public interface IAstNodeVisitor<T>
+    public interface IAstNodeVisitor<out T>
     {
         T Visit(CompilationUnit node);
 

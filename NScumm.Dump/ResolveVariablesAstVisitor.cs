@@ -38,6 +38,11 @@ namespace NScumm.Dump
             return node;
         }
 
+        public override IAstNode Visit(BlockStatement node)
+        {
+            return new BlockStatement().AddStatements(node.Select(statement => (Statement)statement.Accept(this)));
+        }
+
         public override IAstNode Visit(BinaryExpression node)
         {
             return new BinaryExpression((Expression)node.Left.Accept(this), node.Operator, (Expression)node.Right.Accept(this));

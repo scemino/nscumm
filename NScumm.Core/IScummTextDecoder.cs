@@ -38,31 +38,33 @@
 
 namespace NScumm.Core
 {
-	public interface IScummTextDecoder
-	{
-		void WriteVariable (int variable);
+    public interface IScummTextDecoder
+    {
+        void WriteVariable(int variable);
 
-		void WriteVerbMessage (int id);
+        void WriteVerbMessage(int id);
 
-		void WriteObjectOrActorName (int id);
+        void WriteActorName(int id);
 
-		void WriteString (int val);
+        void WriteObjectName(int id);
 
-		void Write (byte c);
+        void WriteString(int val);
 
-		void WriteNewLine ();
+        void Write(byte c);
 
-		void WriteKeep ();
+        void WriteNewLine();
 
-		void WriteWait ();
+        void WriteKeep();
 
-		void SetColor (int val);
+        void WriteWait();
 
-		void UseCharset (int val);
+        void SetColor(int val);
 
-		void PlaySound (int val);
+        void UseCharset(int val);
 
-		void StartActorAnim (int val);
-	}
+        void PlaySound(int val);
+
+        void StartActorAnim(int val);
+    }
     
 }

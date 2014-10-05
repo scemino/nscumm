@@ -18,85 +18,104 @@ using System;
 
 namespace NScumm.Core
 {
-	public class ScummText
-	{
-		readonly byte[] data;
+    public class ScummText
+    {
+        readonly byte[] data;
 
-		public ScummText (byte[] data)
-		{
-			this.data = data;
-		}
+        public ScummText(byte[] data)
+        {
+            this.data = data;
+        }
 
-		public void Decode (IScummTextDecoder decoder)
-		{
-			uint num = 0;
+        public void Decode(IScummTextDecoder decoder)
+        {
+            uint num = 0;
 
-			while (num < data.Length) {
-				byte chr = data [num++];
-				if (chr == 0)
-					break;
+            while (num < data.Length)
+            {
+                byte chr = data[num++];
+                if (chr == 0)
+                    break;
 
-				if (chr == 0xFF) {
-					chr = data [num++];
-					int val = 0;
-					if (chr != 1 && chr != 2 && chr != 3 && chr != 8) {
-						val = data [num++] | ((int)data [num++] << 8);
-					}
-					switch (chr) {
-					case 1:
-						decoder.WriteNewLine ();
-						break;
-					case 2:
-						decoder.WriteKeep ();
-						break;
-					case 3:
-						decoder.WriteWait ();
-						break;
-					case 4:
-						decoder.WriteVariable (val);
-						break;
+                if (chr == 0xFF)
+                {
+                    chr = data[num++];
+                    int val = 0;
+                    if (chr != 1 && chr != 2 && chr != 3 && chr != 8)
+                    {
+                        val = data[num++] | ((int)data[num++] << 8);
+                    }
+                    switch (chr)
+                    {
+                        case 1:
+                            decoder.WriteNewLine();
+                            break;
+                        case 2:
+                            decoder.WriteKeep();
+                            break;
+                        case 3:
+                            decoder.WriteWait();
+                            break;
+                        case 4:
+                            decoder.WriteVariable(val);
+                            break;
 
-					case 5:
-						decoder.WriteVerbMessage (val);
-						break;
+                        case 5:
+                            decoder.WriteVerbMessage(val);
+                            break;
 
-					case 6:
-						decoder.WriteObjectOrActorName (val);
-						break;
+                        case 6:
+                            if (IsActor(val))
+                            {
+                                decoder.WriteActorName(val);
+                            }
+                            else
+                            {
+                                decoder.WriteObjectName(val);
+                            }
+                            break;
 
-					case 7:
-						decoder.WriteString (val);
-						break;
-					case 8:
+                        case 7:
+                            decoder.WriteString(val);
+                            break;
+                        case 8:
                             // new line ?
-						decoder.WriteNewLine ();
-						break;
-					case 9:
-						decoder.StartActorAnim (val);
-						break;
-					case 10:
-						decoder.PlaySound (val);
-						break;
-					case 12:
-						decoder.SetColor (val);
-						break;
-					case 13:
+                            decoder.WriteNewLine();
+                            break;
+                        case 9:
+                            decoder.StartActorAnim(val);
+                            break;
+                        case 10:
+                            decoder.PlaySound(val);
+                            break;
+                        case 12:
+                            decoder.SetColor(val);
+                            break;
+                        case 13:
                             // ???
-						break;
-					case 14:
-						decoder.UseCharset (val);
-						break;
+                            break;
+                        case 14:
+                            decoder.UseCharset(val);
+                            break;
 
-					default:
-						throw new NotSupportedException (string.Format ("convertMessageToString(): string escape sequence {0} unknown", chr));
-					}
-				} else {
-					if (chr != '@') {
-						decoder.Write (chr);
-					}
-				}
-			}
-		}
-	}
+                        default:
+                            throw new NotSupportedException(string.Format("convertMessageToString(): string escape sequence {0} unknown", chr));
+                    }
+                }
+                else
+                {
+                    if (chr != '@')
+                    {
+                        decoder.Write(chr);
+                    }
+                }
+            }
+        }
+
+        static bool IsActor(int val)
+        {
+            return val < 13;
+        }
+    }
 }
 

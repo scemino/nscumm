@@ -69,6 +69,11 @@ Screenshots
 ![nscumm screenshot](https://raw.github.com/scemino/nscumm/master/Doc/Images/Indy3.png "Indiana Jones 3")
 ![nscumm screenshot](https://raw.github.com/scemino/nscumm/master/Doc/Images/Loom.png "Loom")
 
+Tools
+-----
+
+*nsdump* dumps all images and scripts from SCUMM 3 to SCUMM 5.
+
 License
 -------
 

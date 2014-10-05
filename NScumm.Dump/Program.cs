@@ -15,7 +15,7 @@ namespace NScumm.Dump
             System.Console.WriteLine("\tv3 old [experimental] (indy3 16 colors)");
             System.Console.WriteLine("\tv3 (indy3 256 colors)");
             System.Console.WriteLine("\tv4 (monkey island1)");
-            System.Console.WriteLine("\tv5 [experimental] (monkey island2)");
+            System.Console.WriteLine("\tv5 (monkey island2)");
         }
 
         public static int Main(string[] args)
@@ -26,8 +26,6 @@ namespace NScumm.Dump
                 var index = ResourceManager.Load(game);
 
                 var scriptDumper = new ScriptDumper(game);
-//                var script = index.GetScript(22);
-//                scriptDumper.DumpScript(script, new ConsoleDumper());
                 scriptDumper.DumpScripts(index);
                 var imgDumper = new ImageDumper(game);
                 imgDumper.DumpImages(index);

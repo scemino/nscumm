@@ -72,7 +72,7 @@ namespace NScumm.Dump
                     var lastStatement = newBlock.LastOrDefault();
                     if (lastStatement != null && lastStatement.EndOffset > statement.StartOffset)
                     {
-                        //throw new NotSupportedException("invalid Statement");
+                        throw new NotSupportedException("invalid Statement");
                     }
                     newBlock.AddStatement(statement);
                 }

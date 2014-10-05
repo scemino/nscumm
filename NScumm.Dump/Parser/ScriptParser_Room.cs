@@ -23,21 +23,20 @@ namespace NScumm.Dump
 
         IEnumerable<Statement> PseudoRoom()
         {
-            int i = ReadByte(), j;
+            var i = ReadByte();
+            var args = new List<Expression>();
+            int j;
             while ((j = ReadByte()) != 0)
             {
                 if (j >= 0x80)
                 {
                     //_resourceMapper [j & 0x7F] = (byte)i;
-                    yield return new ExpressionStatement(
-                        new BinaryExpression(
-                            new ElementAccess(
-                                "ResourceMapper",
-                                new IntegerLiteralExpression(j & 0x7f)),
-                            Operator.Assignment,
-                            i.ToLiteral()));
+                    args.Add((j & 0x7f).ToLiteral());
                 }
             }
+            yield return new MethodInvocation(
+                new MemberAccess(new MethodInvocation("PseudoRoom").AddArguments(args), "SetValue"))
+                    .AddArgument(i).ToStatement();
         }
 
         IEnumerable<Statement> RoomEffect()

@@ -1,4 +1,24 @@
-using System;
+//
+//  ScriptParser_Object.cs
+//
+//  Author:
+//       Scemino <scemino74@gmail.com>
+//
+//  Copyright (c) 2014 
+//
+//  This program is free software: you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation, either version 3 of the License, or
+//  (at your option) any later version.
+//
+//  This program is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+//
+//  You should have received a copy of the GNU General Public License
+//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 using System.Collections.Generic;
 using NScumm.Core;
 
@@ -6,34 +26,34 @@ namespace NScumm.Dump
 {
     partial class ScriptParser
     {
-        IEnumerable<Statement> SetState()
+        Statement SetState()
         {
             var obj = GetVarOrDirectWord(OpCodeParameter.Param1);
             var state = GetVarOrDirectByte(OpCodeParameter.Param2);
-            yield return new BinaryExpression(new MemberAccess(
+            return new BinaryExpression(new MemberAccess(
                     new ElementAccess("Objects", obj),
                     "State"),
                 Operator.Assignment,
                 state).ToStatement();
         }
 
-        IEnumerable<Statement> SetOwnerOf()
+        Statement SetOwnerOf()
         {
             var obj = GetVarOrDirectWord(OpCodeParameter.Param1);
             var owner = GetVarOrDirectByte(OpCodeParameter.Param2);
 
-            yield return new BinaryExpression(new MemberAccess(
+            return new BinaryExpression(new MemberAccess(
                     new ElementAccess("Objects", obj),
                     "Owner"),
                 Operator.Assignment,
                 owner).ToStatement();
         }
 
-        IEnumerable<Statement> IfState()
+        Statement IfState()
         {
             var a = GetVarOrDirectWord(OpCodeParameter.Param1);
             var b = GetVarOrDirectByte(OpCodeParameter.Param2);
-            yield return JumpRelative(
+            return JumpRelative(
                 new BinaryExpression(
                     new MemberAccess(
                         new ElementAccess("Objects", a),
@@ -42,11 +62,11 @@ namespace NScumm.Dump
                     b));
         }
 
-        IEnumerable<Statement> IfNotState()
+        Statement IfNotState()
         {
             var a = GetVarOrDirectWord(OpCodeParameter.Param1);
             var b = GetVarOrDirectByte(OpCodeParameter.Param2);
-            yield return JumpRelative(new BinaryExpression(
+            return JumpRelative(new BinaryExpression(
                     new MemberAccess(
                         new ElementAccess("Objects", a),
                         "State"),
@@ -54,7 +74,7 @@ namespace NScumm.Dump
                     b));
         }
 
-        IEnumerable<Statement> IfClassOfIs()
+        Statement IfClassOfIs()
         {
             var obj = GetVarOrDirectWord(OpCodeParameter.Param1);
             var args = new List<Expression>();
@@ -63,23 +83,23 @@ namespace NScumm.Dump
                 var cls = GetVarOrDirectWord(OpCodeParameter.Param1);
                 args.Add(cls);
             }
-            yield return JumpRelative(
+            return JumpRelative(
                 new MethodInvocation(
                     new MemberAccess(
                         new ElementAccess("Objects", obj),
                         "IsOfClass")).AddArguments(args));
         }
 
-        IEnumerable<Statement> GetObjectOwner()
+        Statement GetObjectOwner()
         {
             var indexExp = GetResultIndexExpression();
-            yield return SetResultExpression(indexExp, new MethodInvocation("GetOwner").AddArgument(GetVarOrDirectWord(OpCodeParameter.Param1))).ToStatement();
+            return SetResultExpression(indexExp, new MethodInvocation("GetOwner").AddArgument(GetVarOrDirectWord(OpCodeParameter.Param1))).ToStatement();
         }
 
-        IEnumerable<Statement> SetObjectName()
+        Statement SetObjectName()
         {
             var obj = GetVarOrDirectWord(OpCodeParameter.Param1);
-            yield return new BinaryExpression(
+            return new BinaryExpression(
                 new MemberAccess(
                     new ElementAccess("Objects", obj),
                     "Name"),
@@ -87,7 +107,7 @@ namespace NScumm.Dump
                 ReadCharacters()).ToStatement();
         }
 
-        IEnumerable<Statement> SetClass()
+        Statement SetClass()
         {
             var obj = GetVarOrDirectWord(OpCodeParameter.Param1);
             var args = new List<Expression>();
@@ -96,45 +116,45 @@ namespace NScumm.Dump
                 var cls = GetVarOrDirectWord(OpCodeParameter.Param1);
                 args.Add(cls);
             }
-            yield return new MethodInvocation("SetClass").AddArgument(obj).AddArguments(args).ToStatement();
+            return new MethodInvocation("SetClass").AddArgument(obj).AddArguments(args).ToStatement();
         }
 
-        IEnumerable<Statement> StartObject()
+        Statement StartObject()
         {
             var obj = GetVarOrDirectWord(OpCodeParameter.Param1);
             var script = GetVarOrDirectByte(OpCodeParameter.Param2);
             var data = GetWordVarArgs();
-            yield return new MethodInvocation("StartObject").AddArguments(obj, script).AddArguments(data).ToStatement();
+            return new MethodInvocation("StartObject").AddArguments(obj, script).AddArguments(data).ToStatement();
         }
 
-        protected virtual IEnumerable<Statement> PickupObject()
+        protected virtual Statement PickupObject()
         {
             var obj = GetVarOrDirectWord(OpCodeParameter.Param1);
-            yield return new MethodInvocation("PickupObject").AddArgument(obj).ToStatement();
+            return new MethodInvocation("PickupObject").AddArgument(obj).ToStatement();
         }
 
-        IEnumerable<Statement> FindObject()
+        Statement FindObject()
         {
             var resultIndexExp = GetResultIndexExpression();
             var x = GetVarOrDirectByte(OpCodeParameter.Param1);
             var y = GetVarOrDirectByte(OpCodeParameter.Param2);
-            yield return SetResultExpression(
+            return SetResultExpression(
                 resultIndexExp,
                 new MethodInvocation("FindObject").
                 AddArguments(x, y)).ToStatement();
         }
 
-        IEnumerable<Statement> StopObjectCode()
+        Statement StopObjectCode()
         {
-            yield return new MethodInvocation("StopObjectCode").ToStatement();
+            return new MethodInvocation("StopObjectCode").ToStatement();
         }
 
-        protected virtual IEnumerable<Statement> DrawObject()
+        protected virtual Statement DrawObject()
         {
             var obj = GetVarOrDirectWord(OpCodeParameter.Param1);
             var xpos = GetVarOrDirectWord(OpCodeParameter.Param2);
             var ypos = GetVarOrDirectWord(OpCodeParameter.Param3);
-            yield return new MethodInvocation("DrawObject").AddArguments(obj, xpos, ypos).ToStatement();
+            return new MethodInvocation("DrawObject").AddArguments(obj, xpos, ypos).ToStatement();
         }
     }
 }

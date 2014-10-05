@@ -1,7 +1,27 @@
+//
+//  ScriptParser.cs
+//
+//  Author:
+//       Scemino <scemino74@gmail.com>
+//
+//  Copyright (c) 2014 
+//
+//  This program is free software: you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation, either version 3 of the License, or
+//  (at your option) any later version.
+//
+//  This program is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+//
+//  You should have received a copy of the GNU General Public License
+//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 using System.IO;
 using System.Collections.Generic;
 using System;
-using System.Linq;
 using NScumm.Core;
 using NScumm.Core.IO;
 
@@ -99,8 +119,8 @@ namespace NScumm.Dump
                 _opCode = _br.ReadByte();
                 try
                 {
-                    var statements = ExecuteOpCode().ToList();
-                    compilationUnit.AddStatements(statements);
+                    var statement = ExecuteOpCode();
+                    compilationUnit.AddStatement(statement);
                 }
                 catch (Exception e)
                 {
@@ -114,21 +134,22 @@ namespace NScumm.Dump
             return compilationUnit;
         }
 
-        IEnumerable<Statement> SaveLoadGame()
+        Statement SaveLoadGame()
         {
             var index = ((IntegerLiteralExpression)GetResultIndexExpression()).Value;
             var arg = GetVarOrDirectByte(OpCodeParameter.Param1);
             var result = new MethodInvocation("SaveLoadGame").AddArgument(arg);
-            yield return SetResult(index, result).ToStatement();
+            return SetResult(index, result).ToStatement();
         }
 
-        IEnumerable<Statement> SaveLoadVars()
+        Statement SaveLoadVars()
         {
             return ReadByte() == 1 ? SaveVars() : LoadVars();
         }
 
-        IEnumerable<Statement> SaveVars()
+        Statement SaveVars()
         {
+            var exp = new MethodInvocation("Vars");
             while ((_opCode = ReadByte()) != 0)
             {
                 switch (_opCode & 0x1F)
@@ -137,33 +158,35 @@ namespace NScumm.Dump
                         {
                             var a = GetResultIndexExpression();
                             var b = GetResultIndexExpression();
-                            yield return new MethodInvocation("SaveVars").AddArguments(a, b).ToStatement();
+                            exp = new MethodInvocation(new MemberAccess(exp, "SaveVars")).AddArguments(a, b);
                         }
                         break;
                     case 0x02:
                         {
                             var a = GetVarOrDirectByte(OpCodeParameter.Param1);
                             var b = GetVarOrDirectByte(OpCodeParameter.Param2);
-                            yield return new MethodInvocation("SaveStringVars").AddArguments(a, b).ToStatement();
+                            exp = new MethodInvocation(new MemberAccess(exp, "SaveStringVars")).AddArguments(a, b);
                         }
                         break;
                     case 0x03: // open file
                         {
                             var file = ReadCharacters();
-                            yield return new MethodInvocation("OpenWriteFile").AddArgument(file).ToStatement();
+                            exp = new MethodInvocation(new MemberAccess(exp, "OpenWriteFile")).AddArgument(file);
                         }
                         break;
                     case 0x04: //??
-                        yield  break;
+                        return exp.ToStatement();
                     case 0x1F: // close file
-                        yield return new MethodInvocation("CloseFile").ToStatement();
-                        yield  break;
+                        exp = new MethodInvocation(new MemberAccess(exp, "CloseFile"));
+                        return exp.ToStatement();
                 }
             }
+            return exp.ToStatement();
         }
 
-        IEnumerable<Statement> LoadVars()
+        Statement LoadVars()
         {
+            var exp = new MethodInvocation("Vars");
             while ((_opCode = ReadByte()) != 0)
             {
                 switch (_opCode & 0x1F)
@@ -172,51 +195,52 @@ namespace NScumm.Dump
                         {
                             var a = GetResultIndexExpression();
                             var b = GetResultIndexExpression();
-                            yield return new MethodInvocation("LoadVars").AddArguments(a, b).ToStatement();
+                            exp = new MethodInvocation(new MemberAccess(exp, "LoadVars")).AddArguments(a, b);
                         }
                         break;
                     case 0x02:
                         {
                             var a = GetVarOrDirectByte(OpCodeParameter.Param1);
                             var b = GetVarOrDirectByte(OpCodeParameter.Param2);
-                            yield return new MethodInvocation("LoadStringVars").AddArguments(a, b).ToStatement();
+                            exp = new MethodInvocation(new MemberAccess(exp, "LoadStringVars")).AddArguments(a, b);
                         }
                         break;
                     case 0x03: // open file
                         {
                             var file = ReadCharacters();
-                            yield return new MethodInvocation("OpenReadFile").AddArgument(file).ToStatement();
+                            exp = new MethodInvocation(new MemberAccess(exp, "OpenReadFile")).AddArgument(file);
                         }
                         break;
                     case 0x04: //??
-                        yield  break;
+                        return exp.ToStatement();
                     case 0x1F: // close file
-                        yield return new MethodInvocation("CloseFile").ToStatement();
-                        yield  break;
+                        exp = new MethodInvocation(new MemberAccess(exp, "CloseFile"));
+                        return exp.ToStatement();
                 }
             }
+            return exp.ToStatement();
         }
 
-        IEnumerable<Statement> SetBoxFlags()
+        Statement SetBoxFlags()
         {
             var a = GetVarOrDirectByte(OpCodeParameter.Param1);
             var b = ReadByte().ToLiteral();
-            yield return new MethodInvocation("SetBoxFlags").AddArguments(a, b).ToStatement();
+            return new MethodInvocation("SetBoxFlags").AddArguments(a, b).ToStatement();
         }
 
-        IEnumerable<Statement> DebugOp()
+        Statement DebugOp()
         {
             var a = GetVarOrDirectWord(OpCodeParameter.Param1);
-            yield return new MethodInvocation("Debug").AddArgument(a).ToStatement();
+            return new MethodInvocation("Debug").AddArgument(a).ToStatement();
         }
 
-        IEnumerable<Statement> SystemOps()
+        Statement SystemOps()
         {
             var subOp = ReadByte();
-            yield return new MethodInvocation("System").AddArgument(subOp.ToLiteral()).ToStatement();
+            return new MethodInvocation("System").AddArgument(subOp.ToLiteral()).ToStatement();
         }
 
-        IEnumerable<Statement> DrawBox()
+        Statement DrawBox()
         {
             var x = GetVarOrDirectWord(OpCodeParameter.Param1);
             var y = GetVarOrDirectWord(OpCodeParameter.Param2);
@@ -226,46 +250,46 @@ namespace NScumm.Dump
             var y2 = GetVarOrDirectWord(OpCodeParameter.Param2);
             var color = GetVarOrDirectByte(OpCodeParameter.Param3);
 
-            yield return new MethodInvocation("DrawBox").AddArguments(x, y, x2, y2, color).ToStatement();
+            return new MethodInvocation("DrawBox").AddArguments(x, y, x2, y2, color).ToStatement();
         }
 
-        IEnumerable<Statement> DelayVariable()
+        Statement DelayVariable()
         {
-            yield return new MethodInvocation("Delay").AddArgument(ReadVariable(ReadWord())).ToStatement();
+            return new MethodInvocation("Delay").AddArgument(ReadVariable(ReadWord())).ToStatement();
         }
 
-        IEnumerable<Statement> GetRandomNumber()
+        Statement GetRandomNumber()
         {
             var index = GetResultIndexExpression();
             var max = GetVarOrDirectByte(OpCodeParameter.Param1);
 
-            yield return SetResultExpression(index, new MethodInvocation("GetRandomNumber").AddArgument(max)).ToStatement();
+            return SetResultExpression(index, new MethodInvocation("GetRandomNumber").AddArgument(max)).ToStatement();
         }
 
-        IEnumerable<Statement> Lights()
+        Statement Lights()
         {
             var a = GetVarOrDirectByte(OpCodeParameter.Param1);
             var b = ReadByte().ToLiteral();
             var c = ReadByte().ToLiteral();
-            yield return new MethodInvocation("Lights").AddArguments(a, b, c).ToStatement();
+            return new MethodInvocation("Lights").AddArguments(a, b, c).ToStatement();
         }
 
-        IEnumerable<Statement> PrintEgo()
+        Statement PrintEgo()
         {
-            yield return DecodeParseString(new ElementAccess("Variables", 1)).ToStatement();
+            return DecodeParseString(new ElementAccess("Variables", 1)).ToStatement();
         }
 
-        IEnumerable<Statement> GetDistance()
+        Statement GetDistance()
         {
             var index = GetResultIndexExpression();
             var o1 = GetVarOrDirectWord(OpCodeParameter.Param1);
             var o2 = GetVarOrDirectWord(OpCodeParameter.Param2);
             var r = new MethodInvocation("GetDistance").AddArguments(o1, o2);
 
-            yield return SetResultExpression(index, r).ToStatement();
+            return SetResultExpression(index, r).ToStatement();
         }
 
-        IEnumerable<Statement> Wait()
+        Statement Wait()
         {
             if (Game.Id == "indy3")
             {
@@ -281,39 +305,36 @@ namespace NScumm.Dump
                 case 1:     // SO_WAIT_FOR_ACTOR
                     {
                         var actor = GetVarOrDirectByte(OpCodeParameter.Param1);
-                        yield return new MethodInvocation("WaitForActor").AddArgument(
+                        return new MethodInvocation("WaitForActor").AddArgument(
                             new ElementAccess("Actors", actor)).ToStatement();
                     }
-                    break;
                 case 2:     // SO_WAIT_FOR_MESSAGE
-                    yield return new MethodInvocation("WaitForMessage").ToStatement();
-                    break;
+                    return new MethodInvocation("WaitForMessage").ToStatement();
                 case 3:     // SO_WAIT_FOR_CAMERA
-                    yield return new MethodInvocation("WaitForCamera").ToStatement();
-                    break;
+                    return new MethodInvocation("WaitForCamera").ToStatement();
                 case 4:     // SO_WAIT_FOR_SENTENCE
-                    yield return new MethodInvocation("WaitForSentence").ToStatement();
-                    break;
+                    return new MethodInvocation("WaitForSentence").ToStatement();
                 default:
                     throw new NotImplementedException("Wait: unknown subopcode" + (_opCode & 0x1F));
             }
         }
 
-        IEnumerable<Statement> WaitForActor()
+        Statement WaitForActor()
         {
             if (Game.Id == "indy3")
             {
                 var actor = GetVarOrDirectByte(OpCodeParameter.Param1);
-                yield return new MethodInvocation("WaitForActor").AddArgument(actor).ToStatement();
+                return new MethodInvocation("WaitForActor").AddArgument(actor).ToStatement();
             }
+            return new MethodInvocation("WaitForActor").ToStatement();
         }
 
-        IEnumerable<Statement> WaitForSentence()
+        Statement WaitForSentence()
         {
-            yield return new MethodInvocation("WaitForSentence").ToStatement();
+            return new MethodInvocation("WaitForSentence").ToStatement();
         }
 
-        IEnumerable<Statement> DoSentence()
+        Statement DoSentence()
         {
             var verbExp = GetVarOrDirectByte(OpCodeParameter.Param1);
             var verbLiteralExp = verbExp as IntegerLiteralExpression;
@@ -326,18 +347,18 @@ namespace NScumm.Dump
                     args.Add(GetVarOrDirectWord(OpCodeParameter.Param3));
                 }
             }
-            yield return new MethodInvocation("DoSentence").AddArguments(verbExp).AddArguments(args).ToStatement();
+            return new MethodInvocation("DoSentence").AddArguments(verbExp).AddArguments(args).ToStatement();
         }
 
-        IEnumerable<Statement> Delay()
+        Statement Delay()
         {
             int delay = ReadByte();
             delay |= (ReadByte() << 8);
             delay |= (ReadByte() << 16);
-            yield return new MethodInvocation("Delay").AddArgument(delay.ToLiteral()).ToStatement();
+            return new MethodInvocation("Delay").AddArgument(delay.ToLiteral()).ToStatement();
         }
 
-        IEnumerable<Statement> ResourceRoutines()
+        Statement ResourceRoutines()
         {
             Expression resId = 0.ToLiteral();
 
@@ -351,210 +372,154 @@ namespace NScumm.Dump
             switch (op)
             {
                 case 1: // load script
-                    yield return new ExpressionStatement(
+                    return new ExpressionStatement(
                         new MethodInvocation("LoadScript").
 					AddArgument(resId));
-                    break;
                 case 2: // load sound
-                    yield return new ExpressionStatement(
+                    return new ExpressionStatement(
                         new MethodInvocation("LoadSound").
 					AddArgument(resId));
-                    break;
                 case 3: // load costume
-                    yield return new ExpressionStatement(
+                    return new ExpressionStatement(
                         new MethodInvocation("LoadCostume").
 					AddArgument(resId));
-                    break;
-
                 case 4: // load room
-                    yield return new ExpressionStatement(
+                    return new ExpressionStatement(
                         new MethodInvocation("LoadRoom").
 					AddArgument(resId));
-                    break;
-
                 case 5:         // SO_NUKE_SCRIPT
-                    yield return new ExpressionStatement(
+                    return new ExpressionStatement(
                         new MethodInvocation("UnloadScript").
 					AddArgument(resId));
-                    break;
                 case 6:         // SO_NUKE_SOUND
-                    yield return new ExpressionStatement(
+                    return new ExpressionStatement(
                         new MethodInvocation("UnloadSound").
 					AddArgument(resId));
-                    break;
                 case 7:         // SO_NUKE_COSTUME
-                    yield return new ExpressionStatement(
+                    return new ExpressionStatement(
                         new MethodInvocation("UnloadCostume").
 					AddArgument(resId));
-                    break;
                 case 8:         // SO_NUKE_ROOM
-                    yield return new ExpressionStatement(
+                    return new ExpressionStatement(
                         new MethodInvocation("UnloadRoom").
 					AddArgument(resId));
-                    break;
                 case 9:         // SO_LOCK_SCRIPT
-                    yield return new ExpressionStatement(
+                    return new ExpressionStatement(
                         new MethodInvocation("LockScript").
 					AddArgument(resId));
-                    break;
-
                 case 10:
-                    yield return new ExpressionStatement(
+                    return new ExpressionStatement(
                         new MethodInvocation("LockSound").
 					AddArgument(resId));
-                    break;
-
                 case 11:        // SO_LOCK_COSTUME
-                    yield return new ExpressionStatement(
+                    return new ExpressionStatement(
                         new MethodInvocation("LockCostume").
 					AddArgument(resId));
-                    break;
-
                 case 12:        // SO_LOCK_ROOM
-                    yield return new ExpressionStatement(
+                    return new ExpressionStatement(
                         new MethodInvocation("LockRoom").
 					AddArgument(resId));
-                    break;
-
                 case 13:        // SO_UNLOCK_SCRIPT
-                    yield return new ExpressionStatement(
+                    return new ExpressionStatement(
                         new MethodInvocation("UnlockScript").
 					AddArgument(resId));
-                    break;
-
                 case 14:        // SO_UNLOCK_SOUND
-                    yield return new ExpressionStatement(
+                    return new ExpressionStatement(
                         new MethodInvocation("UnlockSound").
 					AddArgument(resId));
-                    break;
-
                 case 15:        // SO_UNLOCK_COSTUME
-                    yield return new ExpressionStatement(
+                    return new ExpressionStatement(
                         new MethodInvocation("UnlockCostume").
 					AddArgument(resId));
-                    break;
-
                 case 16:        // SO_UNLOCK_ROOM
-                    yield return new MethodInvocation("UnlockRoom").AddArgument(resId).ToStatement();
-                    break;
-
+                    return new MethodInvocation("UnlockRoom").AddArgument(resId).ToStatement();
                 case 17:
-                    yield return 
-                        new MethodInvocation("ClearHeap").ToStatement();
-                    break;
-
+                    return new MethodInvocation("ClearHeap").ToStatement();
                 case 18:
-                    yield return new MethodInvocation("LoadCharset").AddArgument(resId).ToStatement();
-                    break;
+                    return new MethodInvocation("LoadCharset").AddArgument(resId).ToStatement();
                 case 19:
-                    yield return new MethodInvocation("UnloadCharset").AddArgument(resId).ToStatement();
-                    break;
+                    return new MethodInvocation("UnloadCharset").AddArgument(resId).ToStatement();
                 case 20:        // SO_LOAD_OBJECT
                     var a = GetVarOrDirectWord(OpCodeParameter.Param2);
-                    yield return new MethodInvocation("LoadObject").AddArguments(resId, a).ToStatement();
-                    break;
+                    return new MethodInvocation("LoadObject").AddArguments(resId, a).ToStatement();
                 default:
                     throw new NotImplementedException(string.Format("ResourceRoutines #{0} is not yet implemented, sorry :(", op));
             }
         }
 
-        IEnumerable<Statement> CursorCommand()
+        Statement CursorCommand()
         {
             _opCode = ReadByte();
             switch (_opCode & 0x1F)
             {
                 case 1:
                     // Cursor On
-                    yield return new BinaryExpression(new MemberAccess(new SimpleName("Cursor"), "State"),
+                    return new BinaryExpression(new MemberAccess(new SimpleName("Cursor"), "State"),
                         Operator.Assignment, 1.ToLiteral()).ToStatement();
-                    break;
-
                 case 2:
                     // Cursor Off
-                    yield return new BinaryExpression(new MemberAccess(new SimpleName("Cursor"), "State"),
+                    return new BinaryExpression(new MemberAccess(new SimpleName("Cursor"), "State"),
                         Operator.Assignment, 0.ToLiteral()).ToStatement();
-                    break;
-
                 case 3:
                     // User Input on
-                    yield return new BinaryExpression(new SimpleName("UserPut"),
+                    return new BinaryExpression(new SimpleName("UserPut"),
                         Operator.Assignment, 1.ToLiteral()).ToStatement();
-                    break;
-
                 case 4:
                     // User Input off
-                    yield return new BinaryExpression(new SimpleName("UserPut"),
+                    return new BinaryExpression(new SimpleName("UserPut"),
                         Operator.Assignment, 0.ToLiteral()).ToStatement();
-                    break;
-
                 case 5:
                     // SO_CURSOR_SOFT_ON
-                    yield return new UnaryExpression(new MemberAccess(new SimpleName("Cursor"), "State"),
+                    return new UnaryExpression(new MemberAccess(new SimpleName("Cursor"), "State"),
                         Operator.PostIncrement).ToStatement();
-                    break;
-
                 case 6:
                     // SO_CURSOR_SOFT_OFF
-                    yield return new UnaryExpression(new MemberAccess(new SimpleName("Cursor"), "State"),
+                    return new UnaryExpression(new MemberAccess(new SimpleName("Cursor"), "State"),
                         Operator.PostDecrement).ToStatement();
-                    break;
-
                 case 7:         // SO_USERPUT_SOFT_ON
-                    yield return new UnaryExpression(new SimpleName("UserPut"),
+                    return new UnaryExpression(new SimpleName("UserPut"),
                         Operator.PostIncrement).ToStatement();
-                    break;
-
                 case 8:         // SO_USERPUT_SOFT_OFF
-                    yield return new UnaryExpression(new SimpleName("UserPut"),
+                    return new UnaryExpression(new SimpleName("UserPut"),
                         Operator.PostDecrement).ToStatement();
-                    break;
-
                 case 10:
                     {
                         // SO_CURSOR_IMAGE
                         var a = GetVarOrDirectByte(OpCodeParameter.Param1); // Cursor number
                         var b = GetVarOrDirectByte(OpCodeParameter.Param2); // Charset letter to use
-                        yield return new MethodInvocation("CursorImage").AddArguments(a, b).ToStatement();
+                        return new MethodInvocation("CursorImage").AddArguments(a, b).ToStatement();
                     }
-                    break;
 
                 case 11:        // SO_CURSOR_HOTSPOT
                     {
                         var a = GetVarOrDirectByte(OpCodeParameter.Param1);
                         var b = GetVarOrDirectByte(OpCodeParameter.Param2);
                         var c = GetVarOrDirectByte(OpCodeParameter.Param3);
-                        yield return new MethodInvocation("CursorHotspot").AddArguments(a, b, c).ToStatement();
+                        return new MethodInvocation("CursorHotspot").AddArguments(a, b, c).ToStatement();
                     }
-                    break;
 
                 case 12:
                     {
                         // SO_CURSOR_SET
                         var i = GetVarOrDirectByte(OpCodeParameter.Param1);
 
-                        yield return new BinaryExpression(new MemberAccess(new SimpleName("Cursor"), "Type"),
+                        return new BinaryExpression(new MemberAccess(new SimpleName("Cursor"), "Type"),
                             Operator.Assignment, i.ToLiteral()).ToStatement();
-                        break;
                     }
                 case 13:
-                    {
-                        yield return new MethodInvocation("InitCharset").AddArgument(GetVarOrDirectByte(OpCodeParameter.Param1)).ToStatement();
-                    }
-                    break;
+                    return new MethodInvocation("InitCharset").AddArgument(GetVarOrDirectByte(OpCodeParameter.Param1)).ToStatement();
                 case 14:											/* unk */
                     if (Game.Version == 3)
                     {
                         var a = GetVarOrDirectByte(OpCodeParameter.Param1);
                         var b = GetVarOrDirectByte(OpCodeParameter.Param2);
-                        yield return new MethodInvocation("InitCharset").AddArguments(a, b).ToStatement();
+                        return new MethodInvocation("InitCharset").AddArguments(a, b).ToStatement();
                     }
                     else
                     {
                         var args = GetWordVarArgs();
-                        yield return new MethodInvocation("InitCharsetColormap").AddArguments(args).ToStatement();
+                        return new MethodInvocation("InitCharsetColormap").AddArguments(args).ToStatement();
                     }
-                    break;
-
                 default:
                     throw new NotImplementedException(string.Format("CursorCommand sub opcode #{0} not implemented", _opCode & 0x1F));
             }

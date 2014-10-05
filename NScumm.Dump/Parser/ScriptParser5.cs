@@ -21,6 +21,7 @@
 using NScumm.Core;
 using System.Collections.Generic;
 using NScumm.Core.IO;
+using System;
 
 namespace NScumm.Dump
 {
@@ -87,21 +88,21 @@ namespace NScumm.Dump
             opCodes[0xBB] = GetActorScale;
         }
 
-        IEnumerable<Statement> GetObjectState()
+        Statement GetObjectState()
         {
             var exp = GetResultIndexExpression();
             var obj = GetVarOrDirectWord(OpCodeParameter.Param1);
-            yield return SetResultExpression(exp, new MemberAccess(new ElementAccess("Objects", obj), "State")).ToStatement();
+            return SetResultExpression(exp, new MemberAccess(new ElementAccess("Objects", obj), "State")).ToStatement();
         }
 
-        IEnumerable<Statement> GetAnimCounter()
+        Statement GetAnimCounter()
         {
             var exp = GetResultIndexExpression();
             var index = GetVarOrDirectByte(OpCodeParameter.Param1);
-            yield return SetResultExpression(exp, new MemberAccess(new ElementAccess("Actors", index), "AnimCounter")).ToStatement();
+            return SetResultExpression(exp, new MemberAccess(new ElementAccess("Actors", index), "AnimCounter")).ToStatement();
         }
 
-        protected override IEnumerable<Statement> DrawObject()
+        protected override Statement DrawObject()
         {
             var obj = GetVarOrDirectWord(OpCodeParameter.Param1);
             _opCode = ReadByte();
@@ -110,22 +111,22 @@ namespace NScumm.Dump
                 case 1:
                     var xpos = GetVarOrDirectWord(OpCodeParameter.Param1);
                     var ypos = GetVarOrDirectWord(OpCodeParameter.Param2);
-                    yield return new MethodInvocation("DrawObject").AddArguments(obj, xpos, ypos).ToStatement();
-                    break;
+                    return new MethodInvocation("DrawObject").AddArguments(obj, xpos, ypos).ToStatement();
                 case 2:
                     var state = GetVarOrDirectWord(OpCodeParameter.Param1);
-                    yield return new MethodInvocation("DrawObjectState").AddArguments(obj, state).ToStatement();
-                    break;
+                    return new MethodInvocation("DrawObjectState").AddArguments(obj, state).ToStatement();
                 case 0x1F:
-                    break;
+                    return new MethodInvocation("DrawObject").ToStatement();
+                default:
+                    throw new NotImplementedException(string.Format("DrawObject subopcode {0} not implemented", _opCode & 0x1F));
             }
         }
 
-        protected override IEnumerable<Statement> PickupObject()
+        protected override Statement PickupObject()
         {
             var obj = GetVarOrDirectWord(OpCodeParameter.Param1);
             var room = GetVarOrDirectByte(OpCodeParameter.Param2);
-            yield return new MethodInvocation("PickupObject").AddArguments(obj, room).ToStatement();
+            return new MethodInvocation("PickupObject").AddArguments(obj, room).ToStatement();
         }
     }
 }

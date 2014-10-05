@@ -1,39 +1,58 @@
-using System;
-using System.Collections.Generic;
+//
+//  ScriptParser_Audio.cs
+//
+//  Author:
+//       Scemino <scemino74@gmail.com>
+//
+//  Copyright (c) 2014 
+//
+//  This program is free software: you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation, either version 3 of the License, or
+//  (at your option) any later version.
+//
+//  This program is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+//
+//  You should have received a copy of the GNU General Public License
+//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 using NScumm.Core;
 
 namespace NScumm.Dump
 {
     partial class ScriptParser
     {
-        IEnumerable<Statement> StartSound()
+        Statement StartSound()
         {
             var sound = GetVarOrDirectByte(OpCodeParameter.Param1);
-            yield return new MethodInvocation("StartSound").AddArgument(sound).ToStatement();
+            return new MethodInvocation("StartSound").AddArgument(sound).ToStatement();
         }
 
-        IEnumerable<Statement> StopSound()
+        Statement StopSound()
         {
             var sound = GetVarOrDirectByte(OpCodeParameter.Param1);
-            yield return new MethodInvocation("StopSound").AddArgument(sound).ToStatement();
+            return new MethodInvocation("StopSound").AddArgument(sound).ToStatement();
         }
 
-        IEnumerable<Statement> StartMusic()
+        Statement StartMusic()
         {
             var arg = GetVarOrDirectByte(OpCodeParameter.Param1);
-            yield return new MethodInvocation("StartMusic").AddArgument(arg).ToStatement();
+            return new MethodInvocation("StartMusic").AddArgument(arg).ToStatement();
         }
 
-        IEnumerable<Statement> StopMusic()
+        Statement StopMusic()
         {
-            yield return new MethodInvocation("StopMusic").ToStatement();
+            return new MethodInvocation("StopMusic").ToStatement();
         }
 
-        IEnumerable<Statement> IsSoundRunning()
+        Statement IsSoundRunning()
         {
             var index = GetResultIndexExpression();
             var snd = GetVarOrDirectByte(OpCodeParameter.Param1);
-            yield return SetResultExpression(index, new MethodInvocation("IsSoundRunning").AddArgument(snd)).ToStatement();
+            return SetResultExpression(index, new MethodInvocation("IsSoundRunning").AddArgument(snd)).ToStatement();
         }
     }
 }

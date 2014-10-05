@@ -1,17 +1,37 @@
+//
+//  ScriptParser_OpCode.cs
+//
+//  Author:
+//       Scemino <scemino74@gmail.com>
+//
+//  Copyright (c) 2014 
+//
+//  This program is free software: you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation, either version 3 of the License, or
+//  (at your option) any later version.
+//
+//  This program is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+//
+//  You should have received a copy of the GNU General Public License
+//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace NScumm.Dump
 {
     partial class ScriptParser
     {
-        protected Dictionary<int, Func<IEnumerable<Statement>>> opCodes;
+        protected Dictionary<int, Func<Statement>> opCodes;
         protected int _opCode;
 
         protected virtual void InitOpCodes()
         {
-            opCodes = new Dictionary<int, Func<IEnumerable<Statement>>>();
+            opCodes = new Dictionary<int, Func<Statement>>();
             /*			 00 */
             opCodes[0x00] = StopObjectCode;
             opCodes[0x01] = PutActor;
@@ -329,19 +349,17 @@ namespace NScumm.Dump
             opCodes[0xFF] = DrawBox;
         }
 
-        IEnumerable<Statement> ExecuteOpCode()
+        Statement ExecuteOpCode()
         {
             if (!opCodes.ContainsKey(_opCode))
                 throw new NotSupportedException(string.Format("Opcode 0x{0:X2} not supported yet!", _opCode));
             var startOffset = _br.BaseStream.Position - 1;
-            var statements = opCodes[_opCode]().ToList();
+            var statement = opCodes[_opCode]();
             var endOffset = _br.BaseStream.Position;
-            foreach (var statement in statements)
-            {
-                statement.StartOffset = startOffset;
-                statement.EndOffset = endOffset;
-                yield return statement;
-            }
+
+            statement.StartOffset = startOffset;
+            statement.EndOffset = endOffset;
+            return statement;
         }
     }
 }

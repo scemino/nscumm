@@ -21,6 +21,7 @@
 using NScumm.Core;
 using System.Collections.Generic;
 using NScumm.Core.IO;
+using System;
 
 namespace NScumm.Dump
 {
@@ -54,23 +55,23 @@ namespace NScumm.Dump
             opCodes[0x4C] = SoundKludge;
         }
 
-        protected IEnumerable<Statement> GetActorScale()
+        protected Statement GetActorScale()
         {
             var indexExp = GetResultIndexExpression();
             var actor = GetVarOrDirectByte(OpCodeParameter.Param1);
-            yield return SetResultExpression(indexExp, 
+            return SetResultExpression(indexExp, 
                 new MemberAccess(
                     new ElementAccess("Actors", actor),
                     "Scale")).ToStatement();
         }
 
-        protected IEnumerable<Statement> SoundKludge()
+        protected Statement SoundKludge()
         {
             var items = GetWordVarArgs();
-            yield return new MethodInvocation("SoundKludge").AddArguments(items).ToStatement();
+            return new MethodInvocation("SoundKludge").AddArguments(items).ToStatement();
         }
 
-        IEnumerable<Statement> MatrixOperations()
+        Statement MatrixOperations()
         {
             _opCode = ReadByte();
             switch (_opCode & 0x1F)
@@ -78,24 +79,19 @@ namespace NScumm.Dump
                 case 1:
                     var a = GetVarOrDirectByte(OpCodeParameter.Param1);
                     var b = GetVarOrDirectByte(OpCodeParameter.Param2);
-                    yield return new MethodInvocation("SetBoxFlags").AddArguments(a, b).ToStatement();
-                    break;
-
+                    return new MethodInvocation("SetBoxFlags").AddArguments(a, b).ToStatement();
                 case 2:
                     a = GetVarOrDirectByte(OpCodeParameter.Param1);
                     b = GetVarOrDirectByte(OpCodeParameter.Param2);
-                    yield return new MethodInvocation("SetBoxScale").AddArguments(a, b).ToStatement();
-                    break;
-
+                    return new MethodInvocation("SetBoxScale").AddArguments(a, b).ToStatement();
                 case 3:
                     a = GetVarOrDirectByte(OpCodeParameter.Param1);
                     b = GetVarOrDirectByte(OpCodeParameter.Param2);
-                    yield return new MethodInvocation("SetBoxScaleSlot").AddArguments(a, b).ToStatement();
-                    break;
-
+                    return new MethodInvocation("SetBoxScaleSlot").AddArguments(a, b).ToStatement();
                 case 4:
-                    yield return new MethodInvocation("CreateBoxMatrix").ToStatement();
-                    break;
+                    return new MethodInvocation("CreateBoxMatrix").ToStatement();
+                default:
+                    throw new NotImplementedException(string.Format("MatrixOperations subopcode {0} not implemented", _opCode & 0x1F));
             }
         }
     }

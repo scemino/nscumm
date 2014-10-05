@@ -1,3 +1,24 @@
+//
+//  ScriptParser_Expression.cs
+//
+//  Author:
+//       Scemino <scemino74@gmail.com>
+//
+//  Copyright (c) 2014 
+//
+//  This program is free software: you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation, either version 3 of the License, or
+//  (at your option) any later version.
+//
+//  This program is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+//
+//  You should have received a copy of the GNU General Public License
+//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 using System;
 using System.Collections.Generic;
 using NScumm.Core;
@@ -7,140 +28,140 @@ namespace NScumm.Dump
 {
     partial class ScriptParser
     {
-        IEnumerable<Statement> Add()
+        Statement Add()
         {
             var indexExp = GetResultIndexExpression();
             var a = GetVarOrDirectWord(OpCodeParameter.Param1);
             var b = ReadVariable(indexExp);
-            yield return SetResultExpression(indexExp, new BinaryExpression(a, Operator.Add, b)).ToStatement();
+            return SetResultExpression(indexExp, new BinaryExpression(a, Operator.Add, b)).ToStatement();
         }
 
-        IEnumerable<Statement> Subtract()
+        Statement Subtract()
         {
             var indexExp = GetResultIndexExpression();
             var a = GetVarOrDirectWord(OpCodeParameter.Param1);
-            yield return SetResultExpression(indexExp, new BinaryExpression(ReadVariable(indexExp), Operator.Minus, a)).ToStatement();
+            return SetResultExpression(indexExp, new BinaryExpression(ReadVariable(indexExp), Operator.Minus, a)).ToStatement();
         }
 
-        IEnumerable<Statement> Multiply()
+        Statement Multiply()
         {
             var indexExp = (IntegerLiteralExpression)GetResultIndexExpression();
             var a = GetVarOrDirectWord(OpCodeParameter.Param1);
-            yield return SetResultExpression(indexExp, new BinaryExpression(ReadVariable(indexExp.Value), Operator.Multiply, a)).ToStatement();
+            return SetResultExpression(indexExp, new BinaryExpression(ReadVariable(indexExp.Value), Operator.Multiply, a)).ToStatement();
         }
 
-        IEnumerable<Statement> Divide()
+        Statement Divide()
         {
             var indexExp = (IntegerLiteralExpression)GetResultIndexExpression();
             var a = GetVarOrDirectWord(OpCodeParameter.Param1);
-            yield return SetResultExpression(indexExp, new BinaryExpression(ReadVariable(indexExp.Value), Operator.Divide, a)).ToStatement();
+            return SetResultExpression(indexExp, new BinaryExpression(ReadVariable(indexExp.Value), Operator.Divide, a)).ToStatement();
         }
 
-        IEnumerable<Statement> Increment()
+        Statement Increment()
         {
             var index = GetResultIndexExpression();
-            yield return SetResultExpression(index, 
+            return SetResultExpression(index, 
                 new BinaryExpression(
                     ReadVariable(index),
                     Operator.Add,
                     1.ToLiteral())).ToStatement();
         }
 
-        IEnumerable<Statement> Decrement()
+        Statement Decrement()
         {
             var index = GetResultIndexExpression();
-            yield return SetResultExpression(index, new UnaryExpression(ReadVariable(index), Operator.PostDecrement)).ToStatement();
+            return SetResultExpression(index, new UnaryExpression(ReadVariable(index), Operator.PostDecrement)).ToStatement();
         }
 
-        IEnumerable<Statement> And()
+        Statement And()
         {
             var indexExp = (IntegerLiteralExpression)GetResultIndexExpression();
             var a = GetVarOrDirectWord(OpCodeParameter.Param1);
-            yield return SetResultExpression(indexExp, new BinaryExpression(ReadVariable(indexExp.Value), Operator.And, a)).ToStatement();
+            return SetResultExpression(indexExp, new BinaryExpression(ReadVariable(indexExp.Value), Operator.And, a)).ToStatement();
         }
 
-        IEnumerable<Statement> Or()
+        Statement Or()
         {
             var indexExp = (IntegerLiteralExpression)GetResultIndexExpression();
             var a = GetVarOrDirectWord(OpCodeParameter.Param1);
-            yield return SetResultExpression(indexExp, new BinaryExpression(ReadVariable(indexExp.Value), Operator.Or, a)).ToStatement();
+            return SetResultExpression(indexExp, new BinaryExpression(ReadVariable(indexExp.Value), Operator.Or, a)).ToStatement();
         }
 
-        IEnumerable<Statement> NotEqualZero()
+        Statement NotEqualZero()
         {
             var var = ReadWord();
             var a = ReadVariable(var);
 
-            yield return JumpRelative(
+            return JumpRelative(
                 new BinaryExpression(
                     a,
                     Operator.Inequals,
                     0.ToLiteral()));
         }
 
-        IEnumerable<Statement> EqualZero()
+        Statement EqualZero()
         {
             var var = ReadWord();
             var a = ReadVariable(var);
             //JumpRelative (a == 0);
-            yield return JumpRelative(
+            return JumpRelative(
                 new BinaryExpression(
                     a,
                     Operator.Equals,
                     0.ToLiteral()));
         }
 
-        IEnumerable<Statement> IsNotEqual()
+        Statement IsNotEqual()
         {
             var varNum = ReadWord();
             var a = ReadVariable(varNum);
             var b = GetVarOrDirectWord(OpCodeParameter.Param1);
-            yield return JumpRelative(new BinaryExpression(a, Operator.Inequals, b));
+            return JumpRelative(new BinaryExpression(a, Operator.Inequals, b));
         }
 
-        IEnumerable<Statement> IsGreater()
+        Statement IsGreater()
         {
             var a = ReadVariable(ReadWord());
             var b = GetVarOrDirectWord(OpCodeParameter.Param1);
-            yield return JumpRelative(new BinaryExpression(b, Operator.Greater, a));
+            return JumpRelative(new BinaryExpression(b, Operator.Greater, a));
         }
 
-        IEnumerable<Statement> IsGreaterEqual()
+        Statement IsGreaterEqual()
         {
             var a = ReadVariable(ReadWord());
             var b = GetVarOrDirectWord(OpCodeParameter.Param1);
-            yield return JumpRelative(new BinaryExpression(b, Operator.GreaterOrEquals, a));
+            return JumpRelative(new BinaryExpression(b, Operator.GreaterOrEquals, a));
         }
 
-        IEnumerable<Statement> IsLess()
+        Statement IsLess()
         {
             var varNum = ReadWord();
             var a = ReadVariable(varNum);
             var b = GetVarOrDirectWord(OpCodeParameter.Param1);
-            yield return JumpRelative(new BinaryExpression(b, Operator.Lower, a));
+            return JumpRelative(new BinaryExpression(b, Operator.Lower, a));
         }
 
-        IEnumerable<Statement> IsLessEqual()
+        Statement IsLessEqual()
         {
             var varNum = ReadWord();
             var a = ReadVariable(varNum);
             var b = GetVarOrDirectWord(OpCodeParameter.Param1);
-            yield return JumpRelative(new BinaryExpression(b, Operator.LowerOrEquals, a));
+            return JumpRelative(new BinaryExpression(b, Operator.LowerOrEquals, a));
         }
 
-        IEnumerable<Statement> IsEqual()
+        Statement IsEqual()
         {
             var varNum = ReadWord();
             var a = ReadVariable(varNum);
             var b = GetVarOrDirectWord(OpCodeParameter.Param1);
-            yield return 
+            return 
                 JumpRelative(
                 new BinaryExpression(a, Operator.Equals, b));
         }
 
-        IEnumerable<Statement> JumpRelative()
+        Statement JumpRelative()
         {
-            yield return JumpRelative(false.ToLiteral());
+            return JumpRelative(false.ToLiteral());
         }
 
         Statement JumpRelative(Expression condition)
@@ -158,10 +179,13 @@ namespace NScumm.Dump
             return new JumpStatement(condition, (int)_br.BaseStream.Position + offset);
         }
 
-        IEnumerable<Statement> ExpressionFunc()
+        Statement ExpressionFunc()
         {
             var stack = new Stack<Expression>();
-            var dst = ((IntegerLiteralExpression)GetResultIndexExpression()).Value;
+            var resultExp = GetResultIndexExpression();
+            if (!(resultExp is IntegerLiteralExpression))
+                throw new InvalidOperationException(string.Format("ResultExpression was expected to be an integer but was a {0} instead", resultExp.GetType()));
+            var dst = ((IntegerLiteralExpression)resultExp).Value;
             while ((_opCode = ReadByte()) != 0xFF)
             {
                 switch (_opCode & 0x1F)
@@ -207,10 +231,8 @@ namespace NScumm.Dump
 					// normal opcode
                         {
                             _opCode = ReadByte();
-                            var statements = ExecuteOpCode().ToList();
-                            if (statements.Count != 1)
-                                throw new InvalidOperationException("Only 1 ExpressionStatement expected");
-                            var expStatement = statements[0] as ExpressionStatement;
+                            var statement = ExecuteOpCode();
+                            var expStatement = statement as ExpressionStatement;
                             if (expStatement == null)
                                 throw new InvalidOperationException("ExpressionStatement expected");
                             var binExp = expStatement.Expression as BinaryExpression;
@@ -228,7 +250,7 @@ namespace NScumm.Dump
             }
 
             var exp = new BinaryExpression(GetResultIndex(dst), Operator.Assignment, stack.Pop());
-            yield return exp.ToStatement();
+            return exp.ToStatement();
         }
     }
 }

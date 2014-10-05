@@ -1,3 +1,24 @@
+//
+//  ScriptParser_Variable.cs
+//
+//  Author:
+//       Scemino <scemino74@gmail.com>
+//
+//  Copyright (c) 2014 
+//
+//  This program is free software: you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation, either version 3 of the License, or
+//  (at your option) any later version.
+//
+//  This program is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+//
+//  You should have received a copy of the GNU General Public License
+//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 using System;
 using System.Collections.Generic;
 using NScumm.Core;
@@ -215,7 +236,7 @@ namespace NScumm.Dump
             return args.ToArray();
         }
 
-        IEnumerable<Statement> SetVarRange()
+        Statement SetVarRange()
         {
             var index = ((IntegerLiteralExpression)GetResultIndexExpression()).Value;
             var len = ReadByte();
@@ -227,7 +248,7 @@ namespace NScumm.Dump
                 else
                     args.Add(ReadByte().ToLiteral());
             } while ((--len) > 0);
-            yield return new MethodInvocation("SetVarRange").AddArgument(GetResultIndex(index)).AddArguments(args).ToStatement();
+            return new MethodInvocation("SetVarRange").AddArgument(GetResultIndex(index)).AddArguments(args).ToStatement();
         }
 
         Expression ReadCharacters()
@@ -254,11 +275,11 @@ namespace NScumm.Dump
             return new StringLiteralExpression(sb.ToArray());
         }
 
-        IEnumerable<Statement> Move()
+        Statement Move()
         {
             var indexExp = GetResultIndexExpression();
             var value = GetVarOrDirectWord(OpCodeParameter.Param1);
-            yield return SetResultExpression(indexExp, value).ToStatement();
+            return SetResultExpression(indexExp, value).ToStatement();
         }
     }
 }

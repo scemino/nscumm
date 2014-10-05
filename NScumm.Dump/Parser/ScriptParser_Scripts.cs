@@ -1,3 +1,24 @@
+//
+//  ScriptParser_Scripts.cs
+//
+//  Author:
+//       Scemino <scemino74@gmail.com>
+//
+//  Copyright (c) 2014 
+//
+//  This program is free software: you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation, either version 3 of the License, or
+//  (at your option) any later version.
+//
+//  This program is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+//
+//  You should have received a copy of the GNU General Public License
+//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 using System;
 using System.Collections.Generic;
 using NScumm.Core;
@@ -6,12 +27,12 @@ namespace NScumm.Dump
 {
     partial class ScriptParser
     {
-        IEnumerable<Statement> StartScript()
+        Statement StartScript()
         {
             var op = _opCode;
             var script = GetVarOrDirectByte(OpCodeParameter.Param1);
             var args = GetWordVarArgs();
-            yield return new MethodInvocation("RunScript").
+            return new MethodInvocation("RunScript").
 				AddArguments(
                 script,
                 new BooleanLiteralExpression((op & 0x20) != 0),
@@ -19,63 +40,60 @@ namespace NScumm.Dump
 				AddArguments(args).ToStatement();
         }
 
-        IEnumerable<Statement> StopScript()
+        Statement StopScript()
         {
             var script = GetVarOrDirectByte(OpCodeParameter.Param1);
-            yield return new MethodInvocation(
+            return new MethodInvocation(
                 new MemberAccess(
                     new ElementAccess("Scripts", script),
                     "Stop")).ToStatement();
         }
 
-        IEnumerable<Statement> StopObjectScript()
+        Statement StopObjectScript()
         {
             var obj = GetVarOrDirectWord(OpCodeParameter.Param1);
-            yield return new MethodInvocation("StopObjectScript").AddArgument(obj).ToStatement();
+            return new MethodInvocation("StopObjectScript").AddArgument(obj).ToStatement();
         }
 
-        IEnumerable<Statement> FreezeScripts()
+        Statement FreezeScripts()
         {
             var scr = GetVarOrDirectByte(OpCodeParameter.Param1);
-            yield return new MethodInvocation("FreezeScripts").AddArgument(scr).ToStatement();
+            return new MethodInvocation("FreezeScripts").AddArgument(scr).ToStatement();
         }
 
-        IEnumerable<Statement> ChainScript()
+        Statement ChainScript()
         {
             var script = GetVarOrDirectByte(OpCodeParameter.Param1);
             var args = GetWordVarArgs();
-            yield return new MethodInvocation("ChainScript").AddArgument(script).AddArguments(args).ToStatement();
+            return new MethodInvocation("ChainScript").AddArgument(script).AddArguments(args).ToStatement();
         }
 
-        IEnumerable<Statement> CutScene()
+        Statement CutScene()
         {
             var args = GetWordVarArgs();
-            yield return new MethodInvocation("CutScene").AddArguments(args).ToStatement();
+            return new MethodInvocation("CutScene").AddArguments(args).ToStatement();
         }
 
-        IEnumerable<Statement> BeginOverride()
+        Statement BeginOverride()
         {
-            if (ReadByte() != 0)
-                yield return new MethodInvocation("BeginOverride").ToStatement();
-            else
-                yield return new MethodInvocation("EndOverride").ToStatement();
+            return new MethodInvocation((ReadByte() != 0) ? "BeginOverride" : "EndOverride").ToStatement();
         }
 
-        IEnumerable<Statement> EndCutscene()
+        Statement EndCutscene()
         {
-            yield return new MethodInvocation("EndCutScene").ToStatement();
+            return new MethodInvocation("EndCutScene").ToStatement();
         }
 
-        IEnumerable<Statement> IsScriptRunning()
+        Statement IsScriptRunning()
         {
             var indexExp = GetResultIndexExpression();
-            yield return SetResultExpression(indexExp, new MethodInvocation("IsScriptRunning").
+            return SetResultExpression(indexExp, new MethodInvocation("IsScriptRunning").
                 AddArgument(GetVarOrDirectByte(OpCodeParameter.Param1))).ToStatement();
         }
 
-        IEnumerable<Statement> BreakHere()
+        Statement BreakHere()
         {
-            yield return new MethodInvocation("BreakHere").ToStatement();
+            return new MethodInvocation("BreakHere").ToStatement();
         }
     }
 }

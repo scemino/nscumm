@@ -1,3 +1,24 @@
+//
+//  ScriptParser_Verb.cs
+//
+//  Author:
+//       Scemino <scemino74@gmail.com>
+//
+//  Copyright (c) 2014 
+//
+//  This program is free software: you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation, either version 3 of the License, or
+//  (at your option) any later version.
+//
+//  This program is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+//
+//  You should have received a copy of the GNU General Public License
+//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 using System;
 using System.Collections.Generic;
 using NScumm.Core;
@@ -6,7 +27,7 @@ namespace NScumm.Dump
 {
     partial class ScriptParser
     {
-        IEnumerable<Statement> SaveRestoreVerbs()
+        Statement SaveRestoreVerbs()
         {
             _opCode = ReadByte();
 
@@ -17,29 +38,26 @@ namespace NScumm.Dump
             switch (_opCode)
             {
                 case 1:
-                    yield return new MethodInvocation("SaveVerbs").AddArguments(a, b, c).ToStatement();
-                    break;
+                    return new MethodInvocation("SaveVerbs").AddArguments(a, b, c).ToStatement();
                 case 2:
-                    yield return new MethodInvocation("LoadVerbs").AddArguments(a, b, c).ToStatement();
-                    break;
+                    return new MethodInvocation("LoadVerbs").AddArguments(a, b, c).ToStatement();
                 case 3:
-                    yield return new MethodInvocation("DeleteVerbs").AddArguments(a, b, c).ToStatement();
-                    break;
+                    return new MethodInvocation("DeleteVerbs").AddArguments(a, b, c).ToStatement();
                 default:
                     throw new NotImplementedException();
             }
         }
 
-        IEnumerable<Statement> GetVerbEntrypoint()
+        Statement GetVerbEntrypoint()
         {
             var index = GetResultIndexExpression();
             var a = GetVarOrDirectWord(OpCodeParameter.Param1);
             var b = GetVarOrDirectWord(OpCodeParameter.Param2);
 
-            yield return SetResultExpression(index, new MethodInvocation("GetVerbEntrypoint").AddArguments(a, b)).ToStatement();
+            return SetResultExpression(index, new MethodInvocation("GetVerbEntrypoint").AddArguments(a, b)).ToStatement();
         }
 
-        IEnumerable<Statement> VerbOps()
+        Statement VerbOps()
         {
             Expression verb = new ElementAccess("Verbs", GetVarOrDirectByte(OpCodeParameter.Param1));
 
@@ -138,7 +156,7 @@ namespace NScumm.Dump
                         throw new NotImplementedException(string.Format("VerbOps #{0} is not yet implemented.", _opCode & 0x1F));
                 }
             }
-            yield return verb.ToStatement();
+            return verb.ToStatement();
         }
     }
 }

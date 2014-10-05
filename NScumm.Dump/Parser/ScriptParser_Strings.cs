@@ -1,3 +1,24 @@
+//
+//  ScriptParser_Strings.cs
+//
+//  Author:
+//       Scemino <scemino74@gmail.com>
+//
+//  Copyright (c) 2014 
+//
+//  This program is free software: you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation, either version 3 of the License, or
+//  (at your option) any later version.
+//
+//  This program is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+//
+//  You should have received a copy of the GNU General Public License
+//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 using System;
 using System.Collections.Generic;
 using NScumm.Core;
@@ -6,21 +27,21 @@ namespace NScumm.Dump
 {
     partial class ScriptParser
     {
-        IEnumerable<Statement> Print()
+        Statement Print()
         {
             var actor = GetVarOrDirectByte(OpCodeParameter.Param1);
-            yield return DecodeParseString(
+            return DecodeParseString(
                 new MethodInvocation(
                     new MemberAccess(
                         new ElementAccess("Actors", actor), 
                         "Print"))).ToStatement();
         }
 
-        IEnumerable<Statement> GetStringWidth()
+        Statement GetStringWidth()
         {
             var exp = GetResultIndexExpression();
             var str = GetVarOrDirectByte(OpCodeParameter.Param1);
-            yield return SetResultExpression(exp, new MethodInvocation("GetStringWidth").AddArgument(str)).ToStatement();
+            return SetResultExpression(exp, new MethodInvocation("GetStringWidth").AddArgument(str)).ToStatement();
         }
 
         Expression DecodeParseString(Expression exp)
@@ -84,7 +105,7 @@ namespace NScumm.Dump
             return exp;
         }
 
-        IEnumerable<Statement> StringOperations()
+        Statement StringOperations()
         {
             _opCode = ReadByte();
             switch (_opCode & 0x1F)
@@ -94,60 +115,52 @@ namespace NScumm.Dump
                         // loadstring
                         var id = GetVarOrDirectByte(OpCodeParameter.Param1);
                         var text = ReadCharacters();
-                        yield return new BinaryExpression(
+                        return new BinaryExpression(
                             new ElementAccess("Strings", id),
                             Operator.Assignment,
                             text).ToStatement();
                     }
-                    break;
-
                 case 2:
                     {
                         // copy string
                         var idA = GetVarOrDirectByte(OpCodeParameter.Param1);
                         var idB = GetVarOrDirectByte(OpCodeParameter.Param2);
-                        yield return new BinaryExpression(
+                        return new BinaryExpression(
                             idA,
                             Operator.Assignment,
                             idB).ToStatement();
                     }
-                    break;
-
                 case 3:
                     {
                         // Write Character
                         var id = GetVarOrDirectByte(OpCodeParameter.Param1);
                         var index = GetVarOrDirectByte(OpCodeParameter.Param2);
                         var character = GetVarOrDirectByte(OpCodeParameter.Param3);
-                        yield return new BinaryExpression(
+                        return new BinaryExpression(
                             new ElementAccess(
                                 new ElementAccess("Strings", id),
                                 index),
                             Operator.Assignment,
                             character).ToStatement();
                     }
-                    break;
-
                 case 4:
                     {
                         // Get string char
                         var index = GetResultIndexExpression();
                         var id = GetVarOrDirectByte(OpCodeParameter.Param1);
                         var b = GetVarOrDirectByte(OpCodeParameter.Param2);
-                        yield return SetResultExpression(
+                        return SetResultExpression(
                             index,
                             new ElementAccess(
                                 new ElementAccess("Strings", id),
                                 b)).ToStatement();
                     }
-                    break;
-
                 case 5:
                     {
                         // New String
                         var id = GetVarOrDirectByte(OpCodeParameter.Param1);
                         var size = GetVarOrDirectByte(OpCodeParameter.Param2);
-                        yield return new BinaryExpression(
+                        return new BinaryExpression(
                             new ElementAccess(
                                 new SimpleName("Strings"),
                                 id),
@@ -155,8 +168,6 @@ namespace NScumm.Dump
                             new MethodInvocation("CreateString").
 						AddArgument(size)).ToStatement();
                     }
-                    break;
-
                 default:
                     throw new NotImplementedException();
             }

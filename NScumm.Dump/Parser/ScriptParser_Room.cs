@@ -1,3 +1,24 @@
+//
+//  ScriptParser_Room.cs
+//
+//  Author:
+//       Scemino <scemino74@gmail.com>
+//
+//  Copyright (c) 2014 
+//
+//  This program is free software: you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation, either version 3 of the License, or
+//  (at your option) any later version.
+//
+//  This program is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+//
+//  You should have received a copy of the GNU General Public License
+//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 using System;
 using System.Collections.Generic;
 using NScumm.Core;
@@ -6,22 +27,22 @@ namespace NScumm.Dump
 {
     partial class ScriptParser
     {
-        IEnumerable<Statement> LoadRoom()
+        Statement LoadRoom()
         {
             var room = GetVarOrDirectByte(OpCodeParameter.Param1);
-            yield return new MethodInvocation("StartScene").AddArgument(room).ToStatement();
+            return new MethodInvocation("StartScene").AddArgument(room).ToStatement();
         }
 
-        IEnumerable<Statement> LoadRoomWithEgo()
+        Statement LoadRoomWithEgo()
         {
             var obj = GetVarOrDirectWord(OpCodeParameter.Param1);
             var room = GetVarOrDirectByte(OpCodeParameter.Param2);
             var x = ReadWordSigned().ToLiteral();
             var y = ReadWordSigned().ToLiteral();
-            yield return new MethodInvocation("LoadRoomWithEgo").AddArguments(obj, room, x, y).ToStatement();
+            return new MethodInvocation("LoadRoomWithEgo").AddArguments(obj, room, x, y).ToStatement();
         }
 
-        IEnumerable<Statement> PseudoRoom()
+        Statement PseudoRoom()
         {
             var i = ReadByte();
             var args = new List<Expression>();
@@ -34,24 +55,24 @@ namespace NScumm.Dump
                     args.Add((j & 0x7f).ToLiteral());
                 }
             }
-            yield return new MethodInvocation(
+            return new MethodInvocation(
                 new MemberAccess(new MethodInvocation("PseudoRoom").AddArguments(args), "SetValue"))
                     .AddArgument(i).ToStatement();
         }
 
-        IEnumerable<Statement> RoomEffect()
+        Statement RoomEffect()
         {
+            var exp = new MethodInvocation("RoomEffect");
             _opCode = ReadByte();
             if ((_opCode & 0x1F) == 3)
             {
                 var a = GetVarOrDirectWord(OpCodeParameter.Param1);
-                yield return new ExpressionStatement(
-                    new MethodInvocation("RoomEffect").
-					AddArgument(a));
+                exp.AddArgument(a);
             }
+            return exp.ToStatement();
         }
 
-        IEnumerable<Statement> RoomOps()
+        Statement RoomOps()
         {
             var paramsBeforeOpcode = (Game.Version == 3);
             Expression a = null;
@@ -71,11 +92,9 @@ namespace NScumm.Dump
                             a = GetVarOrDirectWord(OpCodeParameter.Param1);
                             b = GetVarOrDirectWord(OpCodeParameter.Param2);
                         }
-                        yield return new MethodInvocation("Scroll").
+                        return new MethodInvocation("Scroll").
 						AddArguments(a, b).ToStatement();
                     }
-                    break;
-
                 case 2:     // SO_ROOM_COLOR
                     {
                         if (!paramsBeforeOpcode)
@@ -83,12 +102,10 @@ namespace NScumm.Dump
                             a = GetVarOrDirectWord(OpCodeParameter.Param1);
                             b = GetVarOrDirectWord(OpCodeParameter.Param2);
                         }
-                        yield return new BinaryExpression(new ElementAccess(new SimpleName("RoomPalette"), b),
+                        return new BinaryExpression(new ElementAccess(new SimpleName("RoomPalette"), b),
                             Operator.Assignment,
                             a).ToStatement();
                     }
-                    break;
-
                 case 3:     // SO_ROOM_SCREEN
                     {
                         if (!paramsBeforeOpcode)
@@ -96,11 +113,9 @@ namespace NScumm.Dump
                             a = GetVarOrDirectWord(OpCodeParameter.Param1);
                             b = GetVarOrDirectWord(OpCodeParameter.Param2);
                         }
-                        yield return new MethodInvocation("InitRoomScreen").
+                        return new MethodInvocation("InitRoomScreen").
 						AddArguments(a, b).ToStatement();
                     }
-                    break;
-
                 case 4:     // SO_ROOM_PALETTE
                     {
                         if (Game.Version < 5)
@@ -110,7 +125,7 @@ namespace NScumm.Dump
                                 a = GetVarOrDirectWord(OpCodeParameter.Param1);
                                 b = GetVarOrDirectWord(OpCodeParameter.Param2);
                             }
-                            yield return new BinaryExpression(new ElementAccess(new SimpleName("RoomShadowPalette"), b),
+                            return new BinaryExpression(new ElementAccess(new SimpleName("RoomShadowPalette"), b),
                                 Operator.Assignment,
                                 a).ToStatement();
                         }
@@ -121,19 +136,13 @@ namespace NScumm.Dump
                             var g = GetVarOrDirectWord(OpCodeParameter.Param3);
                             _opCode = ReadByte();
                             b = GetVarOrDirectByte(OpCodeParameter.Param1);
-                            yield return new MethodInvocation("SetPaletteColor").AddArguments(index, r, g, b).ToStatement();
+                            return new MethodInvocation("SetPaletteColor").AddArguments(index, r, g, b).ToStatement();
                         }
                     }
-                    break;
-
                 case 5:     // SO_ROOM_SHAKE_ON
-                    yield return new MethodInvocation("Shake").AddArgument(true.ToLiteral()).ToStatement();
-                    break;
-
+                    return new MethodInvocation("Shake").AddArgument(true.ToLiteral()).ToStatement();
                 case 6:     // SO_ROOM_SHAKE_OFF
-                    yield return new MethodInvocation("Shake").AddArgument(false.ToLiteral()).ToStatement();
-                    break;
-
+                    return new MethodInvocation("Shake").AddArgument(false.ToLiteral()).ToStatement();
                 case 7:     // SO_ROOM_SCALE
                     {
                         a = GetVarOrDirectWord(OpCodeParameter.Param1);
@@ -143,30 +152,26 @@ namespace NScumm.Dump
                         var d = GetVarOrDirectByte(OpCodeParameter.Param2);
                         _opCode = ReadByte();
                         var e = GetVarOrDirectByte(OpCodeParameter.Param2);
-                        yield return new MethodInvocation("RoomScale").AddArguments(a, b, c, d, e).ToStatement();
+                        return new MethodInvocation("RoomScale").AddArguments(a, b, c, d, e).ToStatement();
                     }
-                    break;
                 case 8:     // SO_ROOM_INTENSITY
                     {
                         a = GetVarOrDirectByte(OpCodeParameter.Param1);
                         b = GetVarOrDirectByte(OpCodeParameter.Param2);
                         var c = GetVarOrDirectByte(OpCodeParameter.Param3);
-                        yield return new MethodInvocation("RoomIntensity").AddArguments(a, b, c).ToStatement();
+                        return new MethodInvocation("RoomIntensity").AddArguments(a, b, c).ToStatement();
                     }
-                    break;
                 case 9:     // SO_ROOM_SAVEGAME
                     {
                         a = GetVarOrDirectByte(OpCodeParameter.Param1);
                         b = GetVarOrDirectByte(OpCodeParameter.Param2);
-                        yield return new MethodInvocation("RoomSavegame").AddArguments(a, b).ToStatement();
+                        return new MethodInvocation("RoomSavegame").AddArguments(a, b).ToStatement();
                     }
-                    break;
                 case 10:    // SO_ROOM_FADE
                     {
                         a = GetVarOrDirectWord(OpCodeParameter.Param1);
-                        yield return new MethodInvocation("RoomEffect").AddArgument(a).ToStatement();
+                        return new MethodInvocation("RoomEffect").AddArgument(a).ToStatement();
                     }
-                    break;
                 case 11:    // SO_RGB_ROOM_INTENSITY
                     {
                         a = GetVarOrDirectWord(OpCodeParameter.Param1);
@@ -175,9 +180,8 @@ namespace NScumm.Dump
                         _opCode = ReadByte();
                         var d = GetVarOrDirectByte(OpCodeParameter.Param1);
                         var e = GetVarOrDirectByte(OpCodeParameter.Param2);
-                        yield return new MethodInvocation("RoomIntensity").AddArguments(a, b, c, d, e).ToStatement();
+                        return new MethodInvocation("RoomIntensity").AddArguments(a, b, c, d, e).ToStatement();
                     }
-                    break;
                 case 12:        // SO_ROOM_SHADOW
                     {
                         a = GetVarOrDirectWord(OpCodeParameter.Param1);
@@ -186,27 +190,22 @@ namespace NScumm.Dump
                         _opCode = ReadByte();
                         var d = GetVarOrDirectByte(OpCodeParameter.Param1);
                         var e = GetVarOrDirectByte(OpCodeParameter.Param2);
-                        yield return new MethodInvocation("RoomShadow").AddArguments(a, b, c, d, e).ToStatement();
+                        return new MethodInvocation("RoomShadow").AddArguments(a, b, c, d, e).ToStatement();
                     }
-                    break;
-
                 case 14:    // SO_LOAD_STRING
                     {
                         // This subopcode is used in Indy 4 to load the IQ points data.
                         // See SO_SAVE_STRING for details
                         var index = GetVarOrDirectByte(OpCodeParameter.Param1);
                         var filename = ReadCharacters();
-                        yield return new MethodInvocation("LoadString").AddArguments(index, filename).ToStatement();
+                        return new MethodInvocation("LoadString").AddArguments(index, filename).ToStatement();
                     }
-                    break;
-
                 case 16:	// SO_CYCLE_SPEED
                     {
                         a = GetVarOrDirectByte(OpCodeParameter.Param1);
                         b = GetVarOrDirectByte(OpCodeParameter.Param2);
-                        yield return new MethodInvocation("ColorCycleSpeed").AddArguments(a, b).ToStatement();
+                        return new MethodInvocation("ColorCycleSpeed").AddArguments(a, b).ToStatement();
                     }
-                    break;
                 default:
                     throw new NotImplementedException(string.Format("RoomOps #{0} not implemented", _opCode & 0x1F));
             }

@@ -1,3 +1,24 @@
+//
+//  ScriptParser_Actor.cs
+//
+//  Author:
+//       Scemino <scemino74@gmail.com>
+//
+//  Copyright (c) 2014 
+//
+//  This program is free software: you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation, either version 3 of the License, or
+//  (at your option) any later version.
+//
+//  This program is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+//
+//  You should have received a copy of the GNU General Public License
+//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 using System;
 using System.Collections.Generic;
 using NScumm.Core;
@@ -6,11 +27,11 @@ namespace NScumm.Dump
 {
     partial class ScriptParser
     {
-        IEnumerable<Statement> GetActorX()
+        Statement GetActorX()
         {
             var resultIndexExp = GetResultIndexExpression();
             var actorIndex = Game.Id == "indy3" ? GetVarOrDirectByte(OpCodeParameter.Param1) : GetVarOrDirectWord(OpCodeParameter.Param1);
-            yield return SetResultExpression(resultIndexExp,
+            return SetResultExpression(resultIndexExp,
                 new MemberAccess(
                     new ElementAccess(
                         new SimpleName("Actors"),
@@ -18,11 +39,11 @@ namespace NScumm.Dump
                     "X")).ToStatement();
         }
 
-        IEnumerable<Statement> GetActorY()
+        Statement GetActorY()
         {
             var resultIndexExp = GetResultIndexExpression();
             var actorIndex = Game.Id == "indy3" ? GetVarOrDirectByte(OpCodeParameter.Param1) : GetVarOrDirectWord(OpCodeParameter.Param1);
-            yield return SetResultExpression(
+            return SetResultExpression(
                 resultIndexExp,
                 new MemberAccess(
                     new ElementAccess(
@@ -31,144 +52,144 @@ namespace NScumm.Dump
                     "Y")).ToStatement();
         }
 
-        IEnumerable<Statement> GetActorElevation()
+        Statement GetActorElevation()
         {
             var index = GetResultIndexExpression();
             var actor = GetVarOrDirectByte(OpCodeParameter.Param1);
-            yield return SetResultExpression(index, new MemberAccess(
+            return SetResultExpression(index, new MemberAccess(
                     new ElementAccess("Actors", actor),
                     "Elevation")).ToStatement();
         }
 
-        IEnumerable<Statement> GetActorWalkBox()
+        Statement GetActorWalkBox()
         {
             var index = GetResultIndexExpression();
             var act = GetVarOrDirectByte(OpCodeParameter.Param1);
-            yield return SetResultExpression(index, new MemberAccess(
+            return SetResultExpression(index, new MemberAccess(
                     new ElementAccess("Actors", act),
                     "Walkbox")).ToStatement();
         }
 
-        IEnumerable<Statement> PutActorAtObject()
+        Statement PutActorAtObject()
         {
             var actor = GetVarOrDirectByte(OpCodeParameter.Param1);
             var obj = GetVarOrDirectWord(OpCodeParameter.Param2);
-            yield return new MethodInvocation("PutActorAtObject").AddArguments(actor, obj).ToStatement();
+            return new MethodInvocation("PutActorAtObject").AddArguments(actor, obj).ToStatement();
         }
 
-        IEnumerable<Statement> GetActorMoving()
+        Statement GetActorMoving()
         {
             var index = GetResultIndexExpression();
             var act = GetVarOrDirectByte(OpCodeParameter.Param1);
-            yield return SetResultExpression(index, new MemberAccess(
+            return SetResultExpression(index, new MemberAccess(
                     new ElementAccess("Actors", act),
                     "Moving")).ToStatement();
         }
 
-        IEnumerable<Statement> GetActorFacing()
+        Statement GetActorFacing()
         {
             var index = GetResultIndexExpression();
             var actor = GetVarOrDirectByte(OpCodeParameter.Param1);
-            yield return SetResultExpression(index, new MemberAccess(
+            return SetResultExpression(index, new MemberAccess(
                     new ElementAccess("Actors", actor),
                     "Facing")).ToStatement();
         }
 
-        IEnumerable<Statement> GetActorCostume()
+        Statement GetActorCostume()
         {
             var index = GetResultIndexExpression();
             var actor = GetVarOrDirectByte(OpCodeParameter.Param1);
-            yield return SetResultExpression(index, 
+            return SetResultExpression(index, 
                 new MemberAccess(
                     new ElementAccess("Actors", actor),
                     "Costume")).ToStatement();
         }
 
-        IEnumerable<Statement> ActorFromPosition()
+        Statement ActorFromPosition()
         {
             var index = GetResultIndexExpression();
             var x = GetVarOrDirectWord(OpCodeParameter.Param1);
             var y = GetVarOrDirectWord(OpCodeParameter.Param2);
-            yield return SetResultExpression(index, new MethodInvocation("GetActorFromPosition").AddArguments(x, y)).ToStatement();
+            return SetResultExpression(index, new MethodInvocation("GetActorFromPosition").AddArguments(x, y)).ToStatement();
         }
 
-        IEnumerable<Statement> PutActorInRoom()
+        Statement PutActorInRoom()
         {
             var actor = GetVarOrDirectByte(OpCodeParameter.Param1);
             var room = GetVarOrDirectByte(OpCodeParameter.Param2);
-            yield return new MethodInvocation(
+            return new MethodInvocation(
                 new MemberAccess(
                     new ElementAccess("Rooms", room),
                     "PutActor")).AddArgument(new ElementAccess("Actors", actor)).ToStatement();
         }
 
-        IEnumerable<Statement> GetActorWidth()
+        Statement GetActorWidth()
         {
             var indexExp = GetResultIndexExpression();
             var act = GetVarOrDirectByte(OpCodeParameter.Param1);
-            yield return SetResultExpression(indexExp, new MemberAccess(
+            return SetResultExpression(indexExp, new MemberAccess(
                     new ElementAccess("Actors", act),
                     "Width")).ToStatement();
         }
 
-        IEnumerable<Statement> ActorFollowCamera()
+        Statement ActorFollowCamera()
         {
             var actor = GetVarOrDirectByte(OpCodeParameter.Param1);
-            yield return new MethodInvocation(
+            return new MethodInvocation(
                 new MemberAccess(
                     "Camera",
                     "Follow")).AddArguments(
                 new ElementAccess("Actors", actor)).ToStatement();
         }
 
-        IEnumerable<Statement> AnimateActor()
+        Statement AnimateActor()
         {
             var actor = GetVarOrDirectByte(OpCodeParameter.Param1);
             var anim = GetVarOrDirectByte(OpCodeParameter.Param2);
 
-            yield return new MethodInvocation(
+            return new MethodInvocation(
                 new MemberAccess(
                     new ElementAccess("Actors", actor),
                     "Animate")).AddArguments(anim).ToStatement();
         }
 
-        IEnumerable<Statement> PutActor()
+        Statement PutActor()
         {
             var a = GetVarOrDirectByte(OpCodeParameter.Param1);
             var x = GetVarOrDirectWord(OpCodeParameter.Param2);
             var y = GetVarOrDirectWord(OpCodeParameter.Param3);
-            yield return new MethodInvocation(
+            return new MethodInvocation(
                 new MemberAccess(
                     new ElementAccess("Actors", a),
                     "MoveTo")).AddArguments(x, y).ToStatement();
         }
 
-        IEnumerable<Statement> FaceActor()
+        Statement FaceActor()
         {
             var actor = GetVarOrDirectByte(OpCodeParameter.Param1);
             var obj = GetVarOrDirectWord(OpCodeParameter.Param2);
-            yield return new MethodInvocation(new MemberAccess(
+            return new MethodInvocation(new MemberAccess(
                     new ElementAccess("Actors", actor),
                     "FaceTo")).AddArgument(obj).ToStatement();
         }
 
-        IEnumerable<Statement> WalkActorToObject()
+        Statement WalkActorToObject()
         {
             var actor = GetVarOrDirectByte(OpCodeParameter.Param1);
             var obj = GetVarOrDirectWord(OpCodeParameter.Param2);
-            yield return new MethodInvocation(
+            return new MethodInvocation(
                 new MemberAccess(
                     new ElementAccess("Actors", actor),
                     "WalkTo")).AddArgument(
                 new ElementAccess("Objects", obj)).ToStatement();
         }
 
-        IEnumerable<Statement> WalkActorToActor()
+        Statement WalkActorToActor()
         {
             var nr = GetVarOrDirectByte(OpCodeParameter.Param1);
             var nr2 = GetVarOrDirectByte(OpCodeParameter.Param2);
             var dist = ReadByte();
-            yield return new MethodInvocation(
+            return new MethodInvocation(
                 new MemberAccess(
                     new ElementAccess("Actors", nr),
                     "WalkTo")).AddArguments(
@@ -176,35 +197,35 @@ namespace NScumm.Dump
                 dist.ToLiteral()).ToStatement();
         }
 
-        IEnumerable<Statement> GetActorRoom()
+        Statement GetActorRoom()
         {
             var index = GetResultIndexExpression();
             var actor = GetVarOrDirectByte(OpCodeParameter.Param1);
 
-            yield return SetResultExpression(index, new MemberAccess(
+            return SetResultExpression(index, new MemberAccess(
                     new ElementAccess("Actors", actor),
                     "Room")).ToStatement();
         }
 
-        IEnumerable<Statement> WalkActorTo()
+        Statement WalkActorTo()
         {
             var a = GetVarOrDirectByte(OpCodeParameter.Param1);
             var x = GetVarOrDirectWord(OpCodeParameter.Param2);
             var y = GetVarOrDirectWord(OpCodeParameter.Param3);
-            yield return new MethodInvocation(new MemberAccess(
+            return new MethodInvocation(new MemberAccess(
                     new ElementAccess("Actors", a),
                     "WalkTo")).AddArguments(x, y).ToStatement();
         }
 
-        IEnumerable<Statement> IsActorInBox()
+        Statement IsActorInBox()
         {
             var act = GetVarOrDirectByte(OpCodeParameter.Param1);
             var box = GetVarOrDirectByte(OpCodeParameter.Param2);
 
-            yield return JumpRelative(new MethodInvocation("IsActorInBox").AddArguments(act, box));
+            return JumpRelative(new MethodInvocation("IsActorInBox").AddArguments(act, box));
         }
 
-        IEnumerable<Statement> ActorOps()
+        Statement ActorOps()
         {
             var convertTable = new byte[] { 1, 0, 0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 20 };
             Expression actor = new ElementAccess("Actors", GetVarOrDirectByte(OpCodeParameter.Param1));
@@ -386,7 +407,7 @@ namespace NScumm.Dump
                         throw new NotImplementedException(string.Format("ActorOps #{0} is not yet implemented, sorry :(", _opCode & 0x1F));
                 }
             }
-            yield return actor.ToStatement();
+            return actor.ToStatement();
         }
     }
 }

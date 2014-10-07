@@ -24,58 +24,13 @@ using System.Collections.Generic;
 
 namespace NScumm.Dump
 {
-    public class ResolveVariablesAstVisitor: DefaultVisitor<IAstNode>
+    public class ResolveVariablesAstVisitor: AstRewriterVisitor
     {
         IDictionary<int, string> KnownVariables{ get; set; }
 
         public ResolveVariablesAstVisitor(IDictionary<int,string> knownVariables)
         {
             KnownVariables = knownVariables;
-        }
-
-        protected override IAstNode DefaultVisit(IAstNode node)
-        {
-            return node;
-        }
-
-        public override IAstNode Visit(BlockStatement node)
-        {
-            return new BlockStatement().AddStatements(node.Select(statement => (Statement)statement.Accept(this)));
-        }
-
-        public override IAstNode Visit(BinaryExpression node)
-        {
-            return new BinaryExpression((Expression)node.Left.Accept(this), node.Operator, (Expression)node.Right.Accept(this));
-        }
-
-        public override IAstNode Visit(CompilationUnit node)
-        {
-            return new CompilationUnit((BlockStatement)node.Statement.Accept(this));
-        }
-
-        public override IAstNode Visit(ExpressionStatement node)
-        {
-            return new ExpressionStatement((Expression)node.Expression.Accept(this)){ StartOffset = node.StartOffset, EndOffset = node.EndOffset };
-        }
-
-        public override IAstNode Visit(MemberAccess node)
-        {
-            return new MemberAccess((Expression)node.Target.Accept(this), node.Field);
-        }
-
-        public override IAstNode Visit(UnaryExpression node)
-        {
-            return new UnaryExpression((Expression)node.Expression.Accept(this), node.Operator);
-        }
-
-        public override IAstNode Visit(MethodInvocation node)
-        {
-            return new MethodInvocation((Expression)node.Target.Accept(this)).AddArguments(node.Arguments.Select(arg => (Expression)arg.Accept(this)));
-        }
-
-        public override IAstNode Visit(JumpStatement node)
-        {
-            return new JumpStatement((Expression)node.Condition.Accept(this), node.JumpOffset){ StartOffset = node.StartOffset, EndOffset = node.EndOffset };
         }
 
         public override IAstNode Visit(ElementAccess node)

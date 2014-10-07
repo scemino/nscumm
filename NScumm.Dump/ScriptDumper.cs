@@ -91,13 +91,13 @@ namespace NScumm.Dump
             {
                 var scriptInterpreter = ScriptParser.Create(Game);
                 var resolveVarVisitor = new ResolveVariablesAstVisitor(scriptInterpreter.KnownVariables);
-                var visitor = new DumpAstVisitor();
                 var compilationUnit = scriptInterpreter.Parse(data);
                 var cuWithResolvedVariables = (CompilationUnit)compilationUnit.Accept(resolveVarVisitor);
 
                 var cuWithIfs = new ChangeJumpToIf().Change(cuWithResolvedVariables);
                 var cuWithWhiles = new ReplaceJumpToWhile().Replace(cuWithIfs);
-                dumper.Write(cuWithWhiles.Accept(visitor));
+                var cuWithGoTos = new ReplaceJumpToGoTo().Replace(cuWithWhiles);
+                dumper.Write(cuWithGoTos.Accept(new DumpAstVisitor()));
             }
             catch (Exception e)
             {

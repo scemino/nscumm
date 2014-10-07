@@ -1,5 +1,5 @@
 ﻿//
-//  DoWhileStatement.cs
+//  GoToStatement.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -21,19 +21,16 @@
 
 namespace NScumm.Dump
 {
-    public class DoWhileStatement: Statement
+    public class GoToStatement: Statement
     {
-        public Expression Condition { get; private set; }
+        public string Label{ get; private set; }
 
-        public Statement Statement { get; private set; }
-
-        public DoWhileStatement(Expression condition, Statement statement)
+        public GoToStatement(string label)
         {
-            Condition = condition;
-            Statement = statement;
-            ChildrenCore.Add(Condition);
-            ChildrenCore.Add(Statement);
+            Label = label;
         }
+
+        #region implemented abstract members of AstNodeBase
 
         public override void Accept(IAstNodeVisitor visitor)
         {
@@ -44,6 +41,8 @@ namespace NScumm.Dump
         {
             return visitor.Visit(this);
         }
+
+        #endregion
     }
 }
 

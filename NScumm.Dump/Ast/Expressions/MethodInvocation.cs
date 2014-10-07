@@ -56,6 +56,7 @@ namespace NScumm.Dump
         public MethodInvocation(Expression target)
         {
             Target = target;
+            ChildrenCore.Add(target);
             Arguments = new List<Expression>();
         }
 
@@ -74,20 +75,14 @@ namespace NScumm.Dump
         public MethodInvocation AddArguments(IEnumerable<Expression> expressions)
         {
             Arguments.AddRange(expressions);
-            foreach (var exp in expressions)
-            {
-                ChildrenCore.Add(exp);
-            }
+            ChildrenCore.AddRange(expressions);
             return this;
         }
 
         public MethodInvocation AddArguments(params Expression[] expressions)
         {
             Arguments.AddRange(expressions);
-            foreach (var exp in expressions)
-            {
-                ChildrenCore.Add(exp);
-            }
+            ChildrenCore.AddRange(expressions);
             return this;
         }
 

@@ -28,8 +28,8 @@ namespace NScumm.Dump
         public Statement TrueStatement { get; private set; }
 
         public IfStatement(Expression condition)
+            : this(condition, new BlockStatement())
         {
-            Condition = condition;
         }
 
         public IfStatement(Expression condition, Statement trueStatement)

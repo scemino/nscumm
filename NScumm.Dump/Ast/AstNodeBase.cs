@@ -11,7 +11,7 @@ namespace NScumm.Dump
             internal set;
         }
 
-        public IEnumerable<IAstNode> Children
+        public IList<IAstNode> Children
         {
             get{ return ChildrenCore; }
         }

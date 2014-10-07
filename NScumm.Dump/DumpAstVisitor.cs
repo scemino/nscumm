@@ -94,10 +94,19 @@ namespace NScumm.Dump
             return Indentation(node, string.Format("{0}{1}", node.Expression.Accept(this), Environment.NewLine));
         }
 
+        public override string Visit(LabelStatement node)
+        {
+            return string.Format("{0}:{1}", node.Label, Environment.NewLine);
+        }
+
+        public override string Visit(GoToStatement node)
+        {
+            return Indentation(node, string.Format("goto {0}{1}", node.Label, Environment.NewLine));
+        }
+
         public override string Visit(JumpStatement node)
         {
-            return Indentation(node, string.Format("jump {0} if {1}{2}", 
-                    node.JumpOffset, node.Condition.Accept(this), 
+            return Indentation(node, string.Format("jump {0} if {1}{2}", node.JumpOffset, node.Condition.Accept(this), 
                     Environment.NewLine));
         }
 

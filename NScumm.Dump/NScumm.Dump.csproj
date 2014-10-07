@@ -83,6 +83,10 @@
     <Compile Include="Ast\Statements\BlockStatement.cs" />
     <Compile Include="ReplaceJumpToWhile.cs" />
     <Compile Include="Ast\Statements\DoWhileStatement.cs" />
+    <Compile Include="Ast\Statements\LabelStatement.cs" />
+    <Compile Include="Ast\Statements\GoToStatement.cs" />
+    <Compile Include="ReplaceJumpToGoTo.cs" />
+    <Compile Include="AstRewriterVisitor.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

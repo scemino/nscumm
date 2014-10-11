@@ -1,5 +1,5 @@
-﻿//
-//  IPlayer.cs
+//
+//  IMuse.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -19,44 +19,16 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace NScumm.Core
+namespace NScumm.Core.Audio.IMuse
 {
-    public interface IPlayer
+    class CommandQueue
     {
-        bool IsNativeMT32 { get; }
+        public int[] array;
 
-        bool IsMidi { get; }
-
-        int Priority { get; set; }
-
-        int EffectiveVolume { get; }
-
-        int Transpose { get; }
-
-        int Pan { get; set; }
-
-        int Detune { get; set; }
-
-        int Id { get; }
-
-        bool IsActive { get; }
-
-        bool IsFadingOut { get; }
-
-        int OffsetNote { get; set; }
-
-        bool StartSound(int sound);
-
-        void Clear();
-
-        int GetParam(int param, int chan);
-
-        int SetHook(int cls, int value, int chan);
+        public CommandQueue()
+        {
+            array = new int[8];
+        }
     }
 
-    public interface ISoundRepository
-    {
-        byte[] GetSound(int id);
-    }
 }
-

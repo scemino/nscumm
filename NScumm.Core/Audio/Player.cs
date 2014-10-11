@@ -21,6 +21,8 @@
 
 using System;
 using NScumm.Core.Audio.Midi;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace NScumm.Core
 {
@@ -29,12 +31,66 @@ namespace NScumm.Core
         readonly IMidiPlayer midi;
         readonly ISoundRepository soundRepository;
         readonly HookDatas hook;
+        readonly List<Part> parts;
+        int detune;
+        int priority;
+        int pan;
 
         public Player(IMidiPlayer midi, ISoundRepository soundRepository)
         {
             this.midi = midi;
             this.soundRepository = soundRepository;
             hook = new HookDatas();
+            parts = new List<Part>();
+        }
+
+        public bool IsNativeMT32{ get; private set; }
+
+        public bool IsMidi { get; private set; }
+
+        public int Priority
+        {
+            get{ return priority; }
+            set
+            {
+                priority = value;
+                foreach (var part in parts)
+                {
+                    part.Priority = part.Priority;
+                }
+                // TODO:
+                //_se->reallocateMidiChannels(_midi);
+            }
+        }
+
+        public int EffectiveVolume { get; private set; }
+
+        public int Transpose { get; private set; }
+
+        public int Pan
+        {
+            get{ return pan; }
+            set
+            {
+                pan = value;
+                foreach (var part in parts)
+                {
+                    part.Pan = part.Pan;
+                }
+            }
+        }
+
+        public int Detune
+        {
+            get{ return detune; }
+            set
+            {
+                detune = value;
+                foreach (var part in parts)
+                {
+                    part.Detune = part.Detune;
+                }
+            }
         }
 
         public int OffsetNote { get; set; }
@@ -77,16 +133,16 @@ namespace NScumm.Core
         {
             switch (param)
             {
-//                case 0:
-//                    return _priority;
+                case 0:
+                    return Priority;
 //                case 1:
-//                    return _volume;
-//                case 2:
-//                    return _pan;
-//                case 3:
-//                    return _transpose;
-//                case 4:
-//                    return _detune;
+//                    return Volume;
+                case 2:
+                    return Pan;
+                case 3:
+                    return Transpose;
+                case 4:
+                    return Detune;
 //                case 5:
 //                    return _speed;
 //                case 6:
@@ -125,6 +181,26 @@ namespace NScumm.Core
         public int SetHook(int cls, int value, int chan)
         { 
             return hook.Set(cls, value, chan);
+        }
+
+        Part GetActivePart(int chan)
+        {
+            return parts.FirstOrDefault(p => p.Channel == chan);
+        }
+
+        Part GetPart(int chan)
+        {
+            var part = GetActivePart(chan);
+            if (part != null)
+                return part;
+
+            part = new Part(this, Priority, chan);
+
+            // Insert part into front of parts list
+            parts.Insert(0, part);
+
+
+            return part;
         }
     }
 }

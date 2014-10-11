@@ -24,12 +24,28 @@ namespace NScumm.Core.Audio.IMuse
 {
     public class IMuse: IIMuse, IMusicEngine
     {
+        const int TriggerId = 0;
+        const int CommandId = 1;
+
         IPlayer player;
         object locker = new object();
+        CommandQueue[] _cmd_queue;
+        bool _queue_adding;
+        int _queue_end;
+        int _queue_pos;
+        int _trigger_count;
+        int _queue_sound;
+        int _queue_marker;
+        bool _queue_cleared;
 
         public IMuse(IPlayer player)
         {
             this.player = player;
+            _cmd_queue = new CommandQueue[64];
+            for (int i = 0; i < _cmd_queue.Length; i++)
+            {
+                _cmd_queue[i] = new CommandQueue();
+            }
         }
 
         #region IMusicEngine implementation
@@ -111,8 +127,11 @@ namespace NScumm.Core.Audio.IMuse
             {
                 switch (cmd)
                 {
+
                     case 8:
                         return StartSoundCore(a[1]) ? 0 : -1;
+                    case 10: // FIXME: Sam and Max - Not sure if this is correct
+                        return StopAllSoundsCore();
                     case 11:
                         return StopAllSoundsCore();
                     case 13:
@@ -123,25 +142,24 @@ namespace NScumm.Core.Audio.IMuse
             }
             else if (param == 1)
             {
-                return -1;
                 switch (cmd)
                 {
                     case 0:
-                        return -1; //player.GetParam(a[2], a[3]);
+                        return player.GetParam(a[2], a[3]);
                     case 1:
-                            //player.SetPriority(a[2]);
+                        player.Priority = a[2];
                         return 0;
                     case 2:
 //                        return player.SetVolume(a[2]);
                         return 0;
                     case 3:
-//                        player.SetPan(a[2]);
+                        player.Pan = a[2];
                         return 0;
                     case 4:
 //                        return player.SetTranspose(a[2], a[3]);
                         return 0;
                     case 5:
-//                        player.SetDetune(a[2]);
+                        player.Detune = a[2];
                         return 0;
                     case 6:
                             // WORKAROUND for bug #1324106. When playing the
@@ -186,13 +204,11 @@ namespace NScumm.Core.Audio.IMuse
                     case 14:
                         return EnqueueTrigger(a[1], a[2]);
                     case 15:
-                            //return EnqueueCommand(new []{ a[1], a[2], a[3], a[4], a[5], a[6], a[7] });
-                        return 0;
+                        return EnqueueCommand(new []{ a[1], a[2], a[3], a[4], a[5], a[6], a[7] });
                     case 16:
                         return ClearQueue();
                     case 19:
-                            //return player.GetParam(a[2], a[3]);
-                        return -1;
+                        return player.GetParam(a[2], a[3]);
                     case 20:
                         return player.SetHook(a[2], a[3], a[4]);
                     case 21:
@@ -225,19 +241,18 @@ namespace NScumm.Core.Audio.IMuse
 
         int QueryQueue(int param)
         {
-            // TODO:
             switch (param)
             {
-//                case 0: // Get trigger count
-//                    return _trigger_count;
-//                case 1: // Get trigger type
-//                    if (_queue_end == _queue_pos)
-//                        return -1;
-//                    return _cmd_queue[_queue_end].array[1];
-//                case 2: // Get trigger sound
-//                    if (_queue_end == _queue_pos)
-//                        return 0xFF;
-//                    return _cmd_queue[_queue_end].array[2];
+                case 0: // Get trigger count
+                    return _trigger_count;
+                case 1: // Get trigger type
+                    if (_queue_end == _queue_pos)
+                        return -1;
+                    return _cmd_queue[_queue_end].array[1];
+                case 2: // Get trigger sound
+                    if (_queue_end == _queue_pos)
+                        return 0xFF;
+                    return _cmd_queue[_queue_end].array[2];
                 default:
                     return -1;
             }
@@ -245,20 +260,100 @@ namespace NScumm.Core.Audio.IMuse
 
         int EnqueueCommand(int[] arr)
         {
-            // TODO:
-            return 0;
+            var i = _queue_pos;
+
+            if (i == _queue_end)
+                return -1;
+
+            if (arr[0] == -1)
+            {
+                _queue_adding = false;
+                _trigger_count++;
+                return 0;
+            }
+
+            var p = _cmd_queue[_queue_pos].array;
+            p[0] = CommandId;
+            Array.Copy(arr, 0, p, 1, arr.Length);
+
+            i = (i + 1) % _cmd_queue.Length;
+
+            if (_queue_end != i)
+            {
+                _queue_pos = i;
+                return 0;
+            }
+            else
+            {
+                _queue_pos = (i - 1) % _cmd_queue.Length;
+                if (_queue_pos == -1)
+                {
+                    _queue_pos = _cmd_queue.Length - 1;
+                    if (_queue_pos == -1)
+                    {
+                        _queue_pos = _cmd_queue.Length - 1;
+                    }
+                }
+                return -1;
+            }
         }
 
         int EnqueueTrigger(int sound, int marker)
         {
-            // TODO:
+            var pos = _queue_pos;
+
+            var p = _cmd_queue[pos].array;
+            p[0] = TriggerId;
+            p[1] = sound;
+            p[2] = marker;
+
+            pos = (pos + 1) % _cmd_queue.Length;
+            if (_queue_end == pos)
+            {
+                _queue_pos = (pos - 1) % _cmd_queue.Length;
+                if (_queue_pos == -1)
+                {
+                    _queue_pos = _cmd_queue.Length - 1;
+                }
+                return -1;
+            }
+
+            _queue_pos = pos;
+            _queue_adding = true;
+            _queue_sound = sound;
+            _queue_marker = marker;
             return 0;
         }
 
         int ClearQueue()
         {
-            //TODO:
+            _queue_adding = false;
+            _queue_cleared = true;
+            _queue_pos = 0;
+            _queue_end = 0;
+            _trigger_count = 0;
             return 0;
+        }
+
+        void HandleMarker(uint id, byte data)
+        {
+            if ((_queue_end == _queue_pos) || (_queue_adding && _queue_sound == id && data == _queue_marker))
+                return;
+
+            var p = _cmd_queue[_queue_end].array;
+            if (p[0] != TriggerId || id != p[1] || data != p[2])
+                return;
+
+            _trigger_count--;
+            _queue_cleared = false;
+            _queue_end = (_queue_end + 1) % _cmd_queue.Length;
+
+            while (_queue_end != _queue_pos && _cmd_queue[_queue_end].array[0] == CommandId && !_queue_cleared)
+            {
+                p = _cmd_queue[_queue_end].array;
+                DoCommand(p[1], new []{ p[2], p[3], p[4], p[5], p[6], p[7], 0 });
+                _queue_end = (_queue_end + 1) % _cmd_queue.Length;
+            }
         }
 
         #endregion

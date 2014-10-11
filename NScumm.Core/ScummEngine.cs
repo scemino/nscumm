@@ -283,12 +283,13 @@ namespace NScumm.Core
         {
             _opCode = opCode;
             _slots[_currentScript].IsExecuted = true;
-            Console.WriteLine("Room = {1}, Script = {0}, Offset = {4}, Name = {2} [{3:X2}]", 
-                _slots[_currentScript].Number, 
-                _roomResource, 
-                _opCodes.ContainsKey(_opCode) ? _opCodes[opCode].Method.Name : "Unknown", 
-                _opCode,
-                _currentPos - 1);
+
+//            Console.WriteLine("Room = {1}, Script = {0}, Offset = {4}, Name = {2} [{3:X2}]", 
+//                _slots[_currentScript].Number, 
+//                _roomResource, 
+//                _opCodes.ContainsKey(_opCode) ? _opCodes[opCode].Method.Name : "Unknown", 
+//                _opCode,
+//                _currentPos - 1);
             _opCodes[opCode]();
         }
 

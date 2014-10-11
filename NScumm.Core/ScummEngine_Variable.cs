@@ -231,8 +231,8 @@ namespace NScumm.Core
 
         protected void SetResult(int value)
         {
-            int index = _resultVarIndex;
-            Console.WriteLine("SetResult({0},{1})", index, value);
+            var index = _resultVarIndex;
+//            Console.WriteLine("SetResult({0},{1})", index, value);
             if ((index & 0xF000) == 0)
             {
                 ScummHelper.AssertRange(0, index, NumVariables - 1, "variable (writing)");
@@ -244,7 +244,7 @@ namespace NScumm.Core
             {
                 if (_game.Version <= 3)
                 {
-                    int bit = index & 0xF;
+                    var bit = index & 0xF;
                     index = (index >> 4) & 0xFF;
                     ScummHelper.AssertRange(0, index, NumVariables - 1, "variable (writing)");
                     if (value > 0)

@@ -39,6 +39,7 @@ namespace NScumm.Core.Audio.Midi
 
     public enum MidiFileType
     {
+        None,
         Lucas,
         Midi,
         Cmf,
@@ -271,7 +272,7 @@ namespace NScumm.Core.Audio.Midi
                         track[curtrack].pv = (byte)v;
 
                         c = (int)(v & 0x0f);
-                        //                        Console.Write("[{0:X2}]", v);
+//                        Console.Write("[{0:X2}]", v);
                         switch (v & 0xf0)
                         {
                             case 0x80: /*note off*/
@@ -403,11 +404,11 @@ namespace NScumm.Core.Audio.Midi
                                             chp[on, 2] = 0;
                                         }
                                     }
-                                    //                                    Console.WriteLine(" [{0}:{1}:{2}:{3}]", c, ch [c].inum, note, vel);
+//                                    Console.WriteLine(" [{0}:{1}:{2}:{3}]", c, ch[c].inum, note, vel);
                                 }
                                 else
                                 {
-                                    Console.Write("off");
+//                                    Console.Write("off");
                                 }
                                 break;
                             case 0xa0: /*key after touch */
@@ -427,9 +428,9 @@ namespace NScumm.Core.Audio.Midi
                                 switch (ctrl)
                                 {
                                     case 0x07:
-                                                //                              Console.Write ("(pb:{0}: {1} {2})", c, ctrl, vel);
+//                                        Console.Write("(pb:{0}: {1} {2})", c, ctrl, vel);
                                         ch[c].vol = (int)vel;
-                                                //                              Console.Write ("vol");
+//                                        Console.Write("vol");
                                         break;
                                     case 0x63:
                                         if (adlib_style.HasFlag(AdlibStyles.Cmf))
@@ -443,10 +444,10 @@ namespace NScumm.Core.Audio.Midi
                                             //   2 == AM on
                                             //   3 == AM+VIB on
                                             midi_write_adlib(0xbd, (int)((adlib_data[0xbd] & ~0xC0) | (vel << 6)));
-                                            //                                  Console.WriteLine (" AM+VIB depth change - AM {0}, VIB {1}",
-                                            //                                      (adlib_data [0xbd] & 0x80) != 0 ? "on" : "off",
-                                            //                                      (adlib_data [0xbd] & 0x40) != 0 ? "on" : "off"
-                                            //                                  );
+//                                            Console.WriteLine(" AM+VIB depth change - AM {0}, VIB {1}",
+//                                                (adlib_data[0xbd] & 0x80) != 0 ? "on" : "off",
+//                                                (adlib_data[0xbd] & 0x40) != 0 ? "on" : "off"
+//                                            );
                                         }
                                         break;
                                     case 0x67:
@@ -483,7 +484,7 @@ namespace NScumm.Core.Audio.Midi
                                         l = getval();
                                         if (datalook(pos + l) == 0xf7)
                                             i = 1;
-                                                //                              Console.WriteLine ("{0}", l);
+//                                        Console.WriteLine("{0}", l);
 
                                         if (datalook(pos) == 0x7d &&
                                             datalook(pos + 1) == 0x10 &&
@@ -492,11 +493,11 @@ namespace NScumm.Core.Audio.Midi
                                             adlib_style = AdlibStyles.Lucas | AdlibStyles.Midi;
 //                                            for (i = 0; i < l; i++)
 //                                            {
-                                            //                                      Console.Write ("%x ", datalook (pos + i));
-                                            //                                      if ((i - 3) % 10 == 0)
-                                            //                                          Console.WriteLine ();
+//                                                Console.Write("{0:X} ", datalook(pos + i));
+//                                                if ((i - 3) % 10 == 0)
+//                                                    Console.WriteLine();
 //                                            }
-                                            //                                  Console.WriteLine ();
+//                                            Console.WriteLine();
                                             getnext(1);
                                             getnext(1);
                                             c = (int)getnext(1);
@@ -518,21 +519,25 @@ namespace NScumm.Core.Audio.Midi
                                             i = (int)((getnext(1) << 4) + getnext(1));
                                             ch[c].ins[10] = (byte)i;
 
-                                            //if ((i&1)==1) ch[c].ins[10]=1;
+                                            if ((i & 1) == 1)
+                                                ch[c].ins[10] = 1;
 
-                                            //                                  Console.Write ("\n{0}: ", c);
-                                            //                                  for (i = 0; i < 11; i++)
-                                            //                                      Console.Write ("{0:X2} ", ch [c].ins [i]);
+//                                            Console.Write("\n{0}: ", c);
+//                                            for (i = 0; i < 11; i++)
+//                                                Console.Write("{0:X2} ", ch[c].ins[i]);
+                                            i = 11;
                                             getnext(l - 26);
                                         }
                                         else
                                         {
-                                            //                                  Console.WriteLine ();
-                                            //                                  for (j = 0; j < l; j++)
-                                            //                                      Console.Write ("{0:X2} ", getnext (1));
+//                                            Console.WriteLine();
+//                                            for (j = 0; j < l; j++)
+//                                                Console.Write("{0:X2} ", getnext(1));
+                                            for (j = 0; j < l; j++)
+                                                getnext(1);
                                         }
 
-                                                //                              Console.WriteLine ();
+//                                        Console.WriteLine();
                                         if (i == 1)
                                             getnext(1);
                                         break;
@@ -568,8 +573,8 @@ namespace NScumm.Core.Audio.Midi
                                     case 0xff:
                                         v = getnext(1);
                                         l = getval();
-                                                //                              Console.WriteLine ();
-                                                //                              Console.Write ("[{0:X}_{1:X}]", v, l);
+//                                                                              Console.WriteLine ();
+//                                                                              Console.Write ("[{0:X}_{1:X}]", v, l);
                                         if (v == 0x51)
                                         {
                                             lnum = getnext(l);
@@ -578,14 +583,16 @@ namespace NScumm.Core.Audio.Midi
                                         }
                                         else
                                         {
-                                            //                                  for (i = 0; i < l; i++)
-                                            //                                      Console.Write ("{0:X2} ", getnext (1));
+//                                            for (i = 0; i < l; i++)
+//                                                Console.Write("{0:X2} ", getnext(1));
+                                            for (i = 0; i < l; i++)
+                                                getnext(1);
                                         }
                                         break;
                                 }
                                 break;
                             default:
-                                        //                          Console.Write ("!", v); /* if we get down here, a error occurred */
+//                                Console.Write("!", v); /* if we get down here, a error occurred */
                                 break;
                         }
 
@@ -679,14 +686,14 @@ namespace NScumm.Core.Audio.Midi
                 tins = 128;
             getnext(11);  /*skip header*/
             deltas = getnext(2);
-            //                    Console.WriteLine("deltas:{0}", deltas);
+//            Console.WriteLine("deltas:{0}", deltas);
             getnext(4);
 
             curtrack = 0;
             track[curtrack].on = 1;
             track[curtrack].tend = getnext(4);
             track[curtrack].spos = pos;
-            //                    Console.WriteLine("tracklen:{0}", track [curtrack].tend);
+//            Console.WriteLine("tracklen:{0}", track[curtrack].tend);
         }
 
         void InitCmf()
@@ -990,8 +997,9 @@ namespace NScumm.Core.Audio.Midi
             //'cause who knows when it'll be
             //reset otherwise.
 
-
+            // modCharacteristic
             midi_write_adlib(0x20 + adlib_opadd[voice], inst[0]);
+            // carCharacteristic
             midi_write_adlib(0x23 + adlib_opadd[voice], inst[1]);
 
             if (adlib_style.HasFlag(AdlibStyles.Lucas))
@@ -1011,20 +1019,28 @@ namespace NScumm.Core.Audio.Midi
             }
             else
             {
+                // modScalingOutputLevel
                 midi_write_adlib(0x40 + adlib_opadd[voice], inst[2]);
+                // carScalingOutputLevel
                 if ((inst[10] & 1) == 0)
                     midi_write_adlib(0x43 + adlib_opadd[voice], inst[3]);
                 else
                     midi_write_adlib(0x43 + adlib_opadd[voice], 0);
             }
 
+            // modAttackDelay
             midi_write_adlib(0x60 + adlib_opadd[voice], inst[4]);
+            // carAttackDelay
             midi_write_adlib(0x63 + adlib_opadd[voice], inst[5]);
+            // modSustainRelease
             midi_write_adlib(0x80 + adlib_opadd[voice], inst[6]);
+            // carSustainRelease
             midi_write_adlib(0x83 + adlib_opadd[voice], inst[7]);
+            // modWaveFormSelect
             midi_write_adlib(0xe0 + adlib_opadd[voice], inst[8]);
+            // carWaveFormSelect
             midi_write_adlib(0xe3 + adlib_opadd[voice], inst[9]);
-
+            // feedback
             midi_write_adlib(0xc0 + voice, inst[10]);
         }
 

@@ -50,13 +50,15 @@ namespace NScumm.Core.Audio.Midi
 
     public partial class MidiPlayer: IMidiPlayer
     {
+        const int IMuseSysExId = 0x7D;
+
         readonly MidiTrack[] track = new MidiTrack[16];
         readonly MidiChannel[] ch = new MidiChannel[16];
-        readonly byte[] adlib_data = new byte[256];
-        AdlibStyles adlib_style;
-        AdlibMode adlib_mode;
+        readonly byte[] adlibData = new byte[256];
+        AdlibStyles adlibStyle;
+        AdlibMode adlibMode;
         long pos;
-        long sierra_pos;
+        long sierraPos;
         //sierras gotta be special.. :>
         MidiFileType type;
         int tins;
@@ -73,11 +75,18 @@ namespace NScumm.Core.Audio.Midi
         readonly byte[,] myinsbank = new byte[128, 16];
         byte[,] smyinsbank = new byte[128, 16];
 
-        IOpl opl;
+        public MidiChannel[] Channels
+        {
+            get{ return ch; }
+        }
 
-        public MidiPlayer(IOpl opl)
+        IOpl opl;
+        ISysEx sysEx;
+
+        public MidiPlayer(IOpl opl, ISysEx sysEx)
         {   
             this.opl = opl;
+            this.sysEx = sysEx;
         }
 
         public void Load(string filename)
@@ -140,8 +149,8 @@ namespace NScumm.Core.Audio.Midi
         {
             pos = 0;
             tins = 0;
-            adlib_style = AdlibStyles.Midi | AdlibStyles.Cmf;
-            adlib_mode = AdlibMode.Melodic;
+            adlibStyle = AdlibStyles.Midi | AdlibStyles.Cmf;
+            adlibMode = AdlibMode.Melodic;
             for (var i = 0; i < 128; i++)
                 for (var j = 0; j < 14; j++)
                     myinsbank[i, j] = midiFmInstruments[i, j];
@@ -185,7 +194,7 @@ namespace NScumm.Core.Audio.Midi
             /* specific to file-type init */
 
             pos = 0;
-            getnext(1);
+            GetNext(1);
             switch (type)
             {
                 case MidiFileType.Lucas:
@@ -219,10 +228,10 @@ namespace NScumm.Core.Audio.Midi
                 }
 
             doing = 1;
-            midi_fm_reset();
+            MidiFmReset();
         }
 
-        public float GetRefresh()
+        public float GetMusicTimer()
         {
             return (fwait > 0.01f ? fwait : 0.01f);
         }
@@ -242,9 +251,9 @@ namespace NScumm.Core.Audio.Midi
                     {
                         pos = track[curtrack].pos;
                         if (type != MidiFileType.Sierra && type != MidiFileType.AdvancedSierra)
-                            track[curtrack].iwait += getval();
+                            track[curtrack].iwait += Getval();
                         else
-                            track[curtrack].iwait += getnext(1);
+                            track[curtrack].iwait += GetNext(1);
                         track[curtrack].pos = pos;
                     }
                 doing = 0;
@@ -261,7 +270,7 @@ namespace NScumm.Core.Audio.Midi
                     {
                         pos = track[curtrack].pos;
 
-                        v = getnext(1);
+                        v = GetNext(1);
 
                         //  This is to do implied MIDI events.
                         if (v < 0x80)
@@ -276,31 +285,28 @@ namespace NScumm.Core.Audio.Midi
                         switch (v & 0xf0)
                         {
                             case 0x80: /*note off*/
-                                note = getnext(1);
-                                vel = getnext(1);
+                                note = GetNext(1);
+                                vel = GetNext(1);
                                 for (i = 0; i < 9; i++)
                                     if (chp[i, 0] == c && chp[i, 1] == note)
                                     {
-                                        midi_fm_endnote(i);
+                                        MidiFmEndnote(i);
                                         chp[i, 0] = -1;
                                     }
                                 break;
                             case 0x90: /*note on*/
                                         //  doing=0;
-                                note = getnext(1);
-                                vel = getnext(1);
+                                note = GetNext(1);
+                                vel = GetNext(1);
 
-                                if (adlib_mode == AdlibMode.Rythm)
-                                    numchan = 6;
-                                else
-                                    numchan = 9;
+                                numchan = adlibMode == AdlibMode.Rythm ? 6 : 9;
 
                                 if (ch[c].on != 0)
                                 {
                                     for (i = 0; i < 18; i++)
                                         chp[i, 2]++;
 
-                                    if (c < 11 || adlib_mode == AdlibMode.Melodic)
+                                    if (c < 11 || adlibMode == AdlibMode.Melodic)
                                     {
                                         j = 0;
                                         on = -1;
@@ -325,30 +331,30 @@ namespace NScumm.Core.Audio.Midi
                                         }
 
                                         if (j == 0)
-                                            midi_fm_endnote(on);
+                                            MidiFmEndnote(on);
                                     }
                                     else
                                         on = percussion_map[c - 11];
 
                                     if (vel != 0 && ch[c].inum >= 0 && ch[c].inum < 128)
                                     {
-                                        if (adlib_mode == AdlibMode.Melodic || c < 12) // 11 == bass drum, handled like a normal instrument, on == channel 6 thanks to percussion_map[] above
-                                                            midi_fm_instrument(on, ch[c].ins);
+                                        if (adlibMode == AdlibMode.Melodic || c < 12) // 11 == bass drum, handled like a normal instrument, on == channel 6 thanks to percussion_map[] above
+                                                            MidiFmInstrument(on, ch[c].ins);
                                         else
-                                            midi_fm_percussion(c, ch[c].ins);
+                                            MidiFmPercussion(c, ch[c].ins);
 
-                                        if (adlib_style.HasFlag(AdlibStyles.Midi))
+                                        if (adlibStyle.HasFlag(AdlibStyles.Midi))
                                         {
                                             nv = ((ch[c].vol * vel) / 128);
-                                            if (adlib_style.HasFlag(AdlibStyles.Lucas))
+                                            if (adlibStyle.HasFlag(AdlibStyles.Lucas))
                                                 nv *= 2;
                                             if (nv > 127)
                                                 nv = 127;
                                             nv = my_midi_fm_vol_table[nv];
-                                            if (adlib_style.HasFlag(AdlibStyles.Lucas))
+                                            if (adlibStyle.HasFlag(AdlibStyles.Lucas))
                                                 nv = (int)((float)Math.Sqrt((float)nv) * 11);
                                         }
-                                        else if (adlib_style.HasFlag(AdlibStyles.Cmf))
+                                        else if (adlibStyle.HasFlag(AdlibStyles.Cmf))
                                         {
                                             // CMF doesn't support note velocity (even though some files have them!)
                                             nv = 127;
@@ -358,18 +364,18 @@ namespace NScumm.Core.Audio.Midi
                                             nv = vel;
                                         }
 
-                                        midi_fm_playnote(on, (int)note + ch[c].nshift, (int)nv * 2); // sets freq in rhythm mode
+                                        MidiFmPlaynote(on, (int)note + ch[c].nshift, (int)nv * 2); // sets freq in rhythm mode
                                         chp[on, 0] = c;
                                         chp[on, 1] = (int)note;
                                         chp[on, 2] = 0;
 
-                                        if (adlib_mode == AdlibMode.Rythm && c >= 11)
+                                        if (adlibMode == AdlibMode.Rythm && c >= 11)
                                         {
                                             // Still need to turn off the perc instrument before playing it again,
                                             // as not all songs send a noteoff.
-                                            midi_write_adlib(0xbd, (byte)adlib_data[0xbd] & ~(0x10 >> (c - 11)));
+                                            MidiWriteAdlib(0xbd, (byte)adlibData[0xbd] & ~(0x10 >> (c - 11)));
                                             // Play the perc instrument
-                                            midi_write_adlib(0xbd, (byte)adlib_data[0xbd] | (0x10 >> (c - 11)));
+                                            MidiWriteAdlib(0xbd, (byte)adlibData[0xbd] | (0x10 >> (c - 11)));
                                         }
 
                                     }
@@ -377,10 +383,10 @@ namespace NScumm.Core.Audio.Midi
                                     {
                                         if (vel == 0)
                                         { //same code as end note
-                                            if (adlib_mode == AdlibMode.Rythm && c >= 11)
+                                            if (adlibMode == AdlibMode.Rythm && c >= 11)
                                             {
                                                 // Turn off the percussion instrument
-                                                midi_write_adlib(0xbd, adlib_data[0xbd] & ~(0x10 >> (c - 11)));
+                                                MidiWriteAdlib(0xbd, adlibData[0xbd] & ~(0x10 >> (c - 11)));
                                                 //midi_fm_endnote(percussion_map[c]);
                                                 chp[percussion_map[c - 11], 0] = -1;
                                             }
@@ -391,7 +397,7 @@ namespace NScumm.Core.Audio.Midi
                                                     if (chp[i, 0] == c && chp[i, 1] == note)
                                                     {
                                                         // midi_fm_volume(i,0);  // really end the note
-                                                        midi_fm_endnote(i);
+                                                        MidiFmEndnote(i);
                                                         chp[i, 0] = -1;
                                                     }
                                                 }
@@ -406,14 +412,14 @@ namespace NScumm.Core.Audio.Midi
                                     }
 //                                    Console.WriteLine(" [{0}:{1}:{2}:{3}]", c, ch[c].inum, note, vel);
                                 }
-                                else
-                                {
+//                                else
+//                                {
 //                                    Console.Write("off");
-                                }
+//                                }
                                 break;
                             case 0xa0: /*key after touch */
-                                note = getnext(1);
-                                vel = getnext(1);
+                                note = GetNext(1);
+                                vel = GetNext(1);
                                         /*  //this might all be good
                                         for (i=0; i<9; i++)
                                             if (chp[i][0]==c & chp[i][1]==note)
@@ -422,8 +428,8 @@ namespace NScumm.Core.Audio.Midi
                                         */
                                 break;
                             case 0xb0: /*control change .. pitch bend? */
-                                ctrl = getnext(1);
-                                vel = getnext(1);
+                                ctrl = GetNext(1);
+                                vel = GetNext(1);
 
                                 switch (ctrl)
                                 {
@@ -433,7 +439,7 @@ namespace NScumm.Core.Audio.Midi
 //                                        Console.Write("vol");
                                         break;
                                     case 0x63:
-                                        if (adlib_style.HasFlag(AdlibStyles.Cmf))
+                                        if (adlibStyle.HasFlag(AdlibStyles.Cmf))
                                         {
                                             // Custom extension to allow CMF files to switch the
                                             // AM+VIB depth on and off (officially this is on,
@@ -443,7 +449,7 @@ namespace NScumm.Core.Audio.Midi
                                             //   1 == VIB on
                                             //   2 == AM on
                                             //   3 == AM+VIB on
-                                            midi_write_adlib(0xbd, (int)((adlib_data[0xbd] & ~0xC0) | (vel << 6)));
+                                            MidiWriteAdlib(0xbd, (int)((adlibData[0xbd] & ~0xC0) | (vel << 6)));
 //                                            Console.WriteLine(" AM+VIB depth change - AM {0}, VIB {1}",
 //                                                (adlib_data[0xbd] & 0x80) != 0 ? "on" : "off",
 //                                                (adlib_data[0xbd] & 0x40) != 0 ? "on" : "off"
@@ -452,102 +458,58 @@ namespace NScumm.Core.Audio.Midi
                                         break;
                                     case 0x67:
                                                 //                              Console.WriteLine ("Rhythm mode: {0}", vel);
-                                        if (adlib_style.HasFlag(AdlibStyles.Cmf))
+                                        if (adlibStyle.HasFlag(AdlibStyles.Cmf))
                                         {
-                                            adlib_mode = (AdlibMode)vel;
-                                            if (adlib_mode == AdlibMode.Rythm)
-                                                midi_write_adlib(0xbd, adlib_data[0xbd] | (1 << 5));
+                                            adlibMode = (AdlibMode)vel;
+                                            if (adlibMode == AdlibMode.Rythm)
+                                                MidiWriteAdlib(0xbd, adlibData[0xbd] | (1 << 5));
                                             else
-                                                midi_write_adlib(0xbd, adlib_data[0xbd] & ~(1 << 5));
+                                                MidiWriteAdlib(0xbd, adlibData[0xbd] & ~(1 << 5));
                                         }
                                         break;
                                 }
                                 break;
                             case 0xc0: /*patch change*/
-                                x = getnext(1);
+                                x = GetNext(1);
                                 ch[c].inum = (int)x;
                                 for (j = 0; j < 11; j++)
                                     ch[c].ins[j] = myinsbank[ch[c].inum, j];
                                 break;
                             case 0xd0: /*chanel touch*/
-                                x = getnext(1);
+                                x = GetNext(1);
                                 break;
                             case 0xe0: /*pitch wheel*/
-                                x = getnext(1);
-                                x = getnext(1);
+                                x = GetNext(1);
+                                x = GetNext(1);
                                 break;
                             case 0xf0:
                                 switch (v)
                                 {
                                     case 0xf0:
                                     case 0xf7: /*sysex*/
-                                        l = getval();
-                                        if (datalook(pos + l) == 0xf7)
-                                            i = 1;
-//                                        Console.WriteLine("{0}", l);
-
-                                        if (datalook(pos) == 0x7d &&
-                                            datalook(pos + 1) == 0x10 &&
-                                            datalook(pos + 2) < 16)
+                                        l = Getval();
+                                        if (Datalook(pos) == IMuseSysExId)
                                         {
-                                            adlib_style = AdlibStyles.Lucas | AdlibStyles.Midi;
-//                                            for (i = 0; i < l; i++)
-//                                            {
-//                                                Console.Write("{0:X} ", datalook(pos + i));
-//                                                if ((i - 3) % 10 == 0)
-//                                                    Console.WriteLine();
-//                                            }
-//                                            Console.WriteLine();
-                                            getnext(1);
-                                            getnext(1);
-                                            c = (int)getnext(1);
-                                            getnext(1);
-
-                                            //  getnext(22); //temp
-                                            ch[c].ins[0] = (byte)((getnext(1) << 4) + getnext(1));
-                                            ch[c].ins[2] = (byte)(0xff - (((getnext(1) << 4) + getnext(1)) & 0x3f));
-                                            ch[c].ins[4] = (byte)(0xff - ((getnext(1) << 4) + getnext(1)));
-                                            ch[c].ins[6] = (byte)(0xff - ((getnext(1) << 4) + getnext(1)));
-                                            ch[c].ins[8] = (byte)((getnext(1) << 4) + getnext(1));
-
-                                            ch[c].ins[1] = (byte)((getnext(1) << 4) + getnext(1));
-                                            ch[c].ins[3] = (byte)(0xff - (((getnext(1) << 4) + getnext(1)) & 0x3f));
-                                            ch[c].ins[5] = (byte)(0xff - ((getnext(1) << 4) + getnext(1)));
-                                            ch[c].ins[7] = (byte)(0xff - ((getnext(1) << 4) + getnext(1)));
-                                            ch[c].ins[9] = (byte)((getnext(1) << 4) + getnext(1));
-
-                                            i = (int)((getnext(1) << 4) + getnext(1));
-                                            ch[c].ins[10] = (byte)i;
-
-                                            if ((i & 1) == 1)
-                                                ch[c].ins[10] = 1;
-
-//                                            Console.Write("\n{0}: ", c);
-//                                            for (i = 0; i < 11; i++)
-//                                                Console.Write("{0:X2} ", ch[c].ins[i]);
-                                            i = 11;
-                                            getnext(l - 26);
+                                            adlibStyle = AdlibStyles.Lucas | AdlibStyles.Midi;
+                                            using (var ms = new MemoryStream(data, (int)pos + 1, (int)l - 1, false))
+                                            {
+                                                sysEx.Do(this, ms);
+                                            }
                                         }
-                                        else
+                                        pos += l;
+                                        // end of sysex
+                                        if (Datalook(1) == 0xf7)
                                         {
-//                                            Console.WriteLine();
-//                                            for (j = 0; j < l; j++)
-//                                                Console.Write("{0:X2} ", getnext(1));
-                                            for (j = 0; j < l; j++)
-                                                getnext(1);
+                                            pos++;
                                         }
-
-//                                        Console.WriteLine();
-                                        if (i == 1)
-                                            getnext(1);
                                         break;
                                     case 0xf1:
                                         break;
                                     case 0xf2:
-                                        getnext(2);
+                                        GetNext(2);
                                         break;
                                     case 0xf3:
-                                        getnext(1);
+                                        GetNext(1);
                                         break;
                                     case 0xf4:
                                         break;
@@ -571,13 +533,13 @@ namespace NScumm.Core.Audio.Midi
                                     case 0xfd:
                                         break;
                                     case 0xff:
-                                        v = getnext(1);
-                                        l = getval();
+                                        v = GetNext(1);
+                                        l = Getval();
 //                                                                              Console.WriteLine ();
 //                                                                              Console.Write ("[{0:X}_{1:X}]", v, l);
                                         if (v == 0x51)
                                         {
-                                            lnum = getnext(l);
+                                            lnum = GetNext(l);
                                             msqtr = lnum; /*set tempo*/
                                             //                                  Console.Write ("(qtr={0})", msqtr);
                                         }
@@ -586,22 +548,22 @@ namespace NScumm.Core.Audio.Midi
 //                                            for (i = 0; i < l; i++)
 //                                                Console.Write("{0:X2} ", getnext(1));
                                             for (i = 0; i < l; i++)
-                                                getnext(1);
+                                                GetNext(1);
                                         }
                                         break;
                                 }
                                 break;
-                            default:
+//                            default:
 //                                Console.Write("!", v); /* if we get down here, a error occurred */
-                                break;
+//                                break;
                         }
 
                         if (pos < track[curtrack].tend)
                         {
                             if (type != MidiFileType.Sierra && type != MidiFileType.AdvancedSierra)
-                                w = getval();
+                                w = Getval();
                             else
-                                w = getnext(1);
+                                w = GetNext(1);
                             track[curtrack].iwait = w;
                             /*
             if (w!=0)
@@ -678,58 +640,76 @@ namespace NScumm.Core.Audio.Midi
         {
             if (type == MidiFileType.Lucas)
             {
-                getnext(24);  //skip junk and get to the midi.
-                adlib_style = AdlibStyles.Lucas | AdlibStyles.Midi;
+                GetNext(23);  //skip junk and get to the midi.
+                adlibStyle = AdlibStyles.Lucas | AdlibStyles.Midi;
             }
             //note: no break, we go right into midi headers...
             if (type != MidiFileType.Lucas)
                 tins = 128;
-            getnext(11);  /*skip header*/
-            deltas = getnext(2);
+            var sig = new byte[4];
+            Array.Copy(data, pos, sig, 0, 4);
+            pos += 4;
+            if ("MThd" != Encoding.ASCII.GetString(sig))
+            {
+                throw new NotSupportedException("MThd was expected");
+            }
+            var len = GetNext(4);
+            if (len != 6)
+            {
+                throw new NotSupportedException(string.Format("MThd length 6 expected but found {0}", len));
+            }
+            GetNext(1);
+            var midiType = GetNext(1);
+            if (midiType > 2)
+            {
+                throw new NotSupportedException(string.Format("midiType {0} is not supported", midiType));
+            }
+            var numTracks = GetNext(2);
+            deltas = GetNext(2);
 //            Console.WriteLine("deltas:{0}", deltas);
-            getnext(4);
+            GetNext(4);
 
             curtrack = 0;
             track[curtrack].on = 1;
-            track[curtrack].tend = getnext(4);
+            track[curtrack].tend = GetNext(4);
             track[curtrack].spos = pos;
 //            Console.WriteLine("tracklen:{0}", track[curtrack].tend);
         }
 
         void InitCmf()
         {
-            getnext(3);  // ctmf
-            getnexti(2); //version
-            var n = getnexti(2); // instrument offset
-            var m = getnexti(2); // music offset
-            deltas = getnexti(2); //ticks/qtr note
-            msqtr = 1000000 / getnexti(2) * deltas;
+            GetNext(3);  // ctmf
+            Getnexti(2); //version
+            var n = Getnexti(2); // instrument offset
+            var m = Getnexti(2); // music offset
+            deltas = Getnexti(2); //ticks/qtr note
+            msqtr = 1000000 / Getnexti(2) * deltas;
             //the stuff in the cmf is click ticks per second..
 
-            var i = getnexti(2);
+            var i = Getnexti(2);
             if (i != 0)
             {
                 var title = ReadString(data, i);
                 Console.WriteLine("Title: {0}", title);
             }
-            i = getnexti(2);
+            i = Getnexti(2);
             if (i != 0)
             {
                 var author = ReadString(data, i);
                 Console.WriteLine("Author: {0}", author);
             }
-            i = getnexti(2);
+            i = Getnexti(2);
             if (i != 0)
             {
                 var remarks = ReadString(data, i);
                 Console.WriteLine("Remarks: {0}", remarks);
             }
 
-            getnext(16); // channel in use table ..
-            i = getnexti(2); // num instr
+            GetNext(16); // channel in use table ..
+            i = Getnexti(2); // num instr
             if (i > 128)
                 i = 128; // to ward of bad numbers...
-            getnexti(2); //basic tempo
+            Getnexti(2); //basic tempo
 
             //                    Console.WriteLine("\nioff:{0}\nmoff{1}\ndeltas:{2}\nmsqtr:{3}\nnumi:{4}",
             //                                      n, m, deltas, msqtr, i);
@@ -740,7 +720,7 @@ namespace NScumm.Core.Audio.Midi
                 //                        Console.Write("\n{0}: ", j);
                 for (var l = 0; l < 16; l++)
                 {
-                    myinsbank[j, l] = (byte)getnext(1);
+                    myinsbank[j, l] = (byte)GetNext(1);
                     //                            Console.Write("{0:X2} ", myinsbank [j, l]);
                 }
             }
@@ -748,7 +728,7 @@ namespace NScumm.Core.Audio.Midi
             for (i = 0; i < 16; i++)
                 ch[i].nshift = -13;
 
-            adlib_style = AdlibStyles.Cmf;
+            adlibStyle = AdlibStyles.Cmf;
 
             curtrack = 0;
             track[curtrack].on = 1;
@@ -758,20 +738,20 @@ namespace NScumm.Core.Audio.Midi
 
         void InitOldLucas()
         {
-            byte[] ins = new byte[16];
+            var ins = new byte[16];
 
             msqtr = 250000;
             pos = 9;
-            deltas = getnext(1);
+            deltas = GetNext(1);
 
             var i = 8;
             pos = 0x19;  // jump to instruments
-            tins = (int)i;
+            tins = i;
             for (var j = 0; j < i; j++)
             {
                 //                        Console.Write("\n{0}: ", j);
                 for (var l = 0; l < 16; l++)
-                    ins[l] = (byte)getnext(1);
+                    ins[l] = (byte)GetNext(1);
 
                 myinsbank[j, 10] = ins[2];
                 myinsbank[j, 0] = ins[3];
@@ -793,13 +773,13 @@ namespace NScumm.Core.Audio.Midi
             {
                 if (i < tins)
                 {
-                    ch[i].inum = (int)i;
+                    ch[i].inum = i;
                     for (var j = 0; j < 11; j++)
                         ch[i].ins[j] = myinsbank[ch[i].inum, j];
                 }
             }
 
-            adlib_style = AdlibStyles.Lucas | AdlibStyles.Midi;
+            adlibStyle = AdlibStyles.Lucas | AdlibStyles.Midi;
 
             curtrack = 0;
             track[curtrack].on = 1;
@@ -809,8 +789,8 @@ namespace NScumm.Core.Audio.Midi
 
         void InitSierra()
         {
-            memcpy(myinsbank, smyinsbank, 128, 16);
-            getnext(2);
+            Memcpy(myinsbank, smyinsbank, 128, 16);
+            GetNext(2);
             deltas = 0x20;
 
             curtrack = 0;
@@ -820,46 +800,46 @@ namespace NScumm.Core.Audio.Midi
             for (var i = 0; i < 16; i++)
             {
                 ch[i].nshift = -13;
-                ch[i].on = (int)getnext(1);
-                ch[i].inum = (int)getnext(1);
+                ch[i].on = (int)GetNext(1);
+                ch[i].inum = (int)GetNext(1);
                 for (var j = 0; j < 11; j++)
                     ch[i].ins[j] = myinsbank[ch[i].inum, j];
             }
 
             track[curtrack].spos = pos;
-            adlib_style = AdlibStyles.Sierra | AdlibStyles.Midi;
+            adlibStyle = AdlibStyles.Sierra | AdlibStyles.Midi;
         }
 
         void InitAdvancedSierra(int subsong)
         {
-            memcpy(myinsbank, smyinsbank, 128, 16);
+            Memcpy(myinsbank, smyinsbank, 128, 16);
             deltas = 0x20;
-            getnext(11); //worthless empty space and "stuff" :)
+            GetNext(11); //worthless empty space and "stuff" :)
 
-            var o_sierra_pos = sierra_pos = pos;
-            sierra_next_section();
-            while (datalook(sierra_pos - 2) != 0xff)
+            var o_sierra_pos = sierraPos = pos;
+            SierraNextSection();
+            while (Datalook(sierraPos - 2) != 0xff)
             {
-                sierra_next_section();
+                SierraNextSection();
                 subsongs++;
             }
 
             if (subsong < 0 || subsong >= subsongs)
                 subsong = 0;
 
-            sierra_pos = o_sierra_pos;
-            sierra_next_section();
+            sierraPos = o_sierra_pos;
+            SierraNextSection();
             var i = 0;
             while (i != subsong)
             {
-                sierra_next_section();
+                SierraNextSection();
                 i++;
             }
 
-            adlib_style = AdlibStyles.Sierra | AdlibStyles.Midi;  //advanced sierra tunes use volume
+            adlibStyle = AdlibStyles.Sierra | AdlibStyles.Midi;  //advanced sierra tunes use volume
         }
 
-        string ReadString(byte[] data, long index)
+        static string ReadString(byte[] data, long index)
         {
             var sb = new StringBuilder();
             while (data[index] != 0)
@@ -869,41 +849,37 @@ namespace NScumm.Core.Audio.Midi
             return sb.ToString();
         }
 
-        byte datalook(long pos)
+        byte Datalook(long position)
         {
-            if (pos < 0 || pos >= data.Length)
+            if (position < 0 || position >= data.Length)
                 return(0);
-            return(data[pos]);
+            return(data[position]);
         }
 
-        long getnext(long num)
+        long GetNext(long num)
         {
             long v = 0;
-            long i;
-
-            for (i = 0; i < num; i++)
+            for (var i = 0; i < num; i++)
             {
                 v <<= 8;
-                v += datalook(pos);
+                v += Datalook(pos);
                 pos++;
             }
             return v;
         }
 
-        long getnexti(long num)
+        long Getnexti(long num)
         {
             long v = 0;
-            int i;
-
-            for (i = 0; i < num; i++)
+            for (var i = 0; i < num; i++)
             {
-                v += (((long)datalook(pos)) << (8 * i));
+                v += (((long)Datalook(pos)) << (8 * i));
                 pos++;
             }
             return(v);
         }
 
-        void memcpy(byte[,] src, byte[,] dst, int dim1, int dim2)
+        static void Memcpy(byte[,] src, byte[,] dst, int dim1, int dim2)
         {
             for (int i = 0; i < dim1; i++)
             {
@@ -914,22 +890,19 @@ namespace NScumm.Core.Audio.Midi
             }
         }
 
-        int getval()
+        int Getval()
         {
-            int v = 0;
-            byte b;
-
-            b = (byte)getnext(1);
-            v = b & 0x7f;
+            var b = (byte)GetNext(1);
+            var v = b & 0x7f;
             while ((b & 0x80) != 0)
             {
-                b = (byte)getnext(1);
+                b = (byte)GetNext(1);
                 v = (v << 7) + (b & 0x7F);
             }
             return(v);
         }
 
-        void sierra_next_section()
+        void SierraNextSection()
         {
             int i, j;
 
@@ -938,164 +911,160 @@ namespace NScumm.Core.Audio.Midi
 
             //            Console.WriteLine("\n\nnext adv sierra section");
 
-            pos = sierra_pos;
+            pos = sierraPos;
             i = 0;
             j = 0;
             while (i != 0xff)
             {
-                getnext(1);
+                GetNext(1);
                 curtrack = (uint)j;
                 j++;
                 track[curtrack].on = 1;
-                track[curtrack].spos = getnext(1);
-                track[curtrack].spos += (getnext(1) << 8) + 4;  //4 best usually +3? not 0,1,2 or 5
+                track[curtrack].spos = GetNext(1);
+                track[curtrack].spos += (GetNext(1) << 8) + 4;  //4 best usually +3? not 0,1,2 or 5
                 //       track[curtrack].spos=getnext(1)+(getnext(1)<<8)+4;     // dynamite!: doesn't optimize correctly!!
                 track[curtrack].tend = data.Length; //0xFC will kill it
                 track[curtrack].iwait = 0;
                 track[curtrack].pv = 0;
                 //                Console.WriteLine("track {0} starts at {1:X}", curtrack, track [curtrack].spos);
 
-                getnext(2);
-                i = (int)getnext(1);
+                GetNext(2);
+                i = (int)GetNext(1);
             }
-            getnext(2);
+            GetNext(2);
             deltas = 0x20;
-            sierra_pos = pos;
+            sierraPos = pos;
             //getch();
 
             fwait = 0;
             doing = 1;
         }
 
-        void midi_fm_reset()
+        void MidiFmReset()
         {
             for (int i = 0; i < 256; i++)
-                midi_write_adlib(i, 0);
+                MidiWriteAdlib(i, 0);
 
-            midi_write_adlib(0x01, 0x20);
-            midi_write_adlib(0xBD, 0xc0);
+            MidiWriteAdlib(0x01, 0x20);
+            MidiWriteAdlib(0xBD, 0xc0);
         }
 
-        void midi_write_adlib(int r, int v)
+        void MidiWriteAdlib(int r, int v)
         {
             opl.Write(0, r, v);
-            adlib_data[r] = (byte)v;
+            adlibData[r] = (byte)v;
         }
 
-        void midi_fm_endnote(int voice)
+        void MidiFmEndnote(int voice)
         {
             //midi_fm_volume(voice,0);
             //midi_write_adlib(0xb0+voice,0);
 
-            midi_write_adlib(0xb0 + voice, (byte)(adlib_data[0xb0 + voice] & (255 - 32)));
+            MidiWriteAdlib(0xb0 + voice, (adlibData[0xb0 + voice] & (255 - 32)));
         }
 
-        void midi_fm_instrument(int voice, byte[] inst)
+        void MidiFmInstrument(int voice, byte[] inst)
         {
-            if (adlib_style.HasFlag(AdlibStyles.Sierra))
-                midi_write_adlib(0xbd, 0);  //just gotta make sure this happens..
+            if (adlibStyle.HasFlag(AdlibStyles.Sierra))
+                MidiWriteAdlib(0xbd, 0);  //just gotta make sure this happens..
             //'cause who knows when it'll be
             //reset otherwise.
 
             // modCharacteristic
-            midi_write_adlib(0x20 + adlib_opadd[voice], inst[0]);
+            MidiWriteAdlib(0x20 + adlib_opadd[voice], inst[0]);
             // carCharacteristic
-            midi_write_adlib(0x23 + adlib_opadd[voice], inst[1]);
+            MidiWriteAdlib(0x23 + adlib_opadd[voice], inst[1]);
 
-            if (adlib_style.HasFlag(AdlibStyles.Lucas))
+            if (adlibStyle.HasFlag(AdlibStyles.Lucas))
             {
-                midi_write_adlib(0x43 + adlib_opadd[voice], 0x3f);
+                MidiWriteAdlib(0x43 + adlib_opadd[voice], 0x3f);
                 if ((inst[10] & 1) == 0)
-                    midi_write_adlib(0x40 + adlib_opadd[voice], inst[2]);
+                    MidiWriteAdlib(0x40 + adlib_opadd[voice], inst[2]);
                 else
-                    midi_write_adlib(0x40 + adlib_opadd[voice], 0x3f);
+                    MidiWriteAdlib(0x40 + adlib_opadd[voice], 0x3f);
 
             }
-            else if ((adlib_style.HasFlag(AdlibStyles.Sierra)) || (adlib_style.HasFlag(AdlibStyles.Cmf)))
+            else if ((adlibStyle.HasFlag(AdlibStyles.Sierra)) || (adlibStyle.HasFlag(AdlibStyles.Cmf)))
             {
-                midi_write_adlib(0x40 + adlib_opadd[voice], inst[2]);
-                midi_write_adlib(0x43 + adlib_opadd[voice], inst[3]);
+                MidiWriteAdlib(0x40 + adlib_opadd[voice], inst[2]);
+                MidiWriteAdlib(0x43 + adlib_opadd[voice], inst[3]);
 
             }
             else
             {
                 // modScalingOutputLevel
-                midi_write_adlib(0x40 + adlib_opadd[voice], inst[2]);
+                MidiWriteAdlib(0x40 + adlib_opadd[voice], inst[2]);
                 // carScalingOutputLevel
                 if ((inst[10] & 1) == 0)
-                    midi_write_adlib(0x43 + adlib_opadd[voice], inst[3]);
+                    MidiWriteAdlib(0x43 + adlib_opadd[voice], inst[3]);
                 else
-                    midi_write_adlib(0x43 + adlib_opadd[voice], 0);
+                    MidiWriteAdlib(0x43 + adlib_opadd[voice], 0);
             }
 
             // modAttackDelay
-            midi_write_adlib(0x60 + adlib_opadd[voice], inst[4]);
+            MidiWriteAdlib(0x60 + adlib_opadd[voice], inst[4]);
             // carAttackDelay
-            midi_write_adlib(0x63 + adlib_opadd[voice], inst[5]);
+            MidiWriteAdlib(0x63 + adlib_opadd[voice], inst[5]);
             // modSustainRelease
-            midi_write_adlib(0x80 + adlib_opadd[voice], inst[6]);
+            MidiWriteAdlib(0x80 + adlib_opadd[voice], inst[6]);
             // carSustainRelease
-            midi_write_adlib(0x83 + adlib_opadd[voice], inst[7]);
+            MidiWriteAdlib(0x83 + adlib_opadd[voice], inst[7]);
             // modWaveFormSelect
-            midi_write_adlib(0xe0 + adlib_opadd[voice], inst[8]);
+            MidiWriteAdlib(0xe0 + adlib_opadd[voice], inst[8]);
             // carWaveFormSelect
-            midi_write_adlib(0xe3 + adlib_opadd[voice], inst[9]);
+            MidiWriteAdlib(0xe3 + adlib_opadd[voice], inst[9]);
             // feedback
-            midi_write_adlib(0xc0 + voice, inst[10]);
+            MidiWriteAdlib(0xc0 + voice, inst[10]);
         }
 
-        void midi_fm_percussion(int ch, byte[] inst)
+        void MidiFmPercussion(int channel, byte[] inst)
         {
-            int opadd = map_chan[ch - 12];
+            int opadd = map_chan[channel - 12];
 
-            midi_write_adlib(0x20 + opadd, inst[0]);
-            midi_write_adlib(0x40 + opadd, inst[2]);
-            midi_write_adlib(0x60 + opadd, inst[4]);
-            midi_write_adlib(0x80 + opadd, inst[6]);
-            midi_write_adlib(0xe0 + opadd, inst[8]);
+            MidiWriteAdlib(0x20 + opadd, inst[0]);
+            MidiWriteAdlib(0x40 + opadd, inst[2]);
+            MidiWriteAdlib(0x60 + opadd, inst[4]);
+            MidiWriteAdlib(0x80 + opadd, inst[6]);
+            MidiWriteAdlib(0xe0 + opadd, inst[8]);
             if (opadd < 0x13) // only output this for the modulator, not the carrier, as it affects the entire channel
-                midi_write_adlib(0xc0 + percussion_map[ch - 11], inst[10]);
+                MidiWriteAdlib(0xc0 + percussion_map[channel - 11], inst[10]);
         }
 
-        void midi_fm_playnote(int voice, int note, int volume)
+        void MidiFmPlaynote(int voice, int note, int volume)
         {
-            int freq = fnums[note % 12];
-            int oct = note / 12;
-            int c;
+            // TODO: strange...
+            if (note < 0)
+                note = 0;
 
-            midi_fm_volume(voice, volume);
-            midi_write_adlib(0xa0 + voice, (byte)(freq & 0xff));
+            var freq = fnums[note % 12];
+            var oct = note / 12;
 
-            c = ((freq & 0x300) >> 8) + ((oct & 7) << 2) + (adlib_mode == AdlibMode.Melodic || voice < 6 ? (1 << 5) : 0);
-            midi_write_adlib(0xb0 + voice, (byte)c);
+            MidiFmVolume(voice, volume);
+            MidiWriteAdlib(0xa0 + voice, (freq & 0xff));
+
+            var c = ((freq & 0x300) >> 8) + ((oct & 7) << 2) + (adlibMode == AdlibMode.Melodic || voice < 6 ? (1 << 5) : 0);
+            MidiWriteAdlib(0xb0 + voice, c);
         }
 
-        void midi_fm_volume(int voice, int volume)
+        void MidiFmVolume(int voice, int volume)
         {
-            int vol;
-
-            if (!adlib_style.HasFlag(AdlibStyles.Sierra))
+            if (!adlibStyle.HasFlag(AdlibStyles.Sierra))
             {  //sierra likes it loud!
-                vol = volume >> 2;
+                var vol = volume >> 2;
 
-                if (adlib_style.HasFlag(AdlibStyles.Lucas))
+                if (adlibStyle.HasFlag(AdlibStyles.Lucas))
                 {
-                    if ((adlib_data[0xc0 + voice] & 1) == 1)
-                        midi_write_adlib(0x40 + adlib_opadd[voice], (byte)((63 - vol) |
-                            (adlib_data[0x40 + adlib_opadd[voice]] & 0xc0)));
-                    midi_write_adlib(0x43 + adlib_opadd[voice], (byte)((63 - vol) |
-                        (adlib_data[0x43 + adlib_opadd[voice]] & 0xc0)));
+                    if ((adlibData[0xc0 + voice] & 1) == 1)
+                        MidiWriteAdlib(0x40 + adlib_opadd[voice], ((63 - vol) | (adlibData[0x40 + adlib_opadd[voice]] & 0xc0)));
+                    MidiWriteAdlib(0x43 + adlib_opadd[voice], ((63 - vol) | (adlibData[0x43 + adlib_opadd[voice]] & 0xc0)));
                 }
                 else
                 {
-                    if ((adlib_data[0xc0 + voice] & 1) == 1)
-                        midi_write_adlib(0x40 + adlib_opadd[voice], (byte)((63 - vol) |
-                            (adlib_data[0x40 + adlib_opadd[voice]] & 0xc0)));
-                    midi_write_adlib(0x43 + adlib_opadd[voice], (byte)((63 - vol) |
-                        (adlib_data[0x43 + adlib_opadd[voice]] & 0xc0)));
+                    if ((adlibData[0xc0 + voice] & 1) == 1)
+                        MidiWriteAdlib(0x40 + adlib_opadd[voice], ((63 - vol) | (adlibData[0x40 + adlib_opadd[voice]] & 0xc0)));
+                    MidiWriteAdlib(0x43 + adlib_opadd[voice], ((63 - vol) | (adlibData[0x43 + adlib_opadd[voice]] & 0xc0)));
                 }
             }
         }
     }
 }
-

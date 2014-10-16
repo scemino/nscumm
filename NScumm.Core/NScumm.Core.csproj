@@ -152,6 +152,8 @@
     <Compile Include="Audio\OPL\Operators\TomTomOperator.cs" />
     <Compile Include="Audio\IMuse\Part.cs" />
     <Compile Include="Audio\IMuse\CommandQueue.cs" />
+    <Compile Include="Audio\Midi\ISysEx.cs" />
+    <Compile Include="Audio\IMuse\IMuseSysEx.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="IO\Nscumm.xml">

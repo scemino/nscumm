@@ -19,6 +19,9 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using NScumm.Core.Audio.OPL;
 
 namespace NScumm.Core.Audio.IMuse
 {
@@ -27,8 +30,8 @@ namespace NScumm.Core.Audio.IMuse
         const int TriggerId = 0;
         const int CommandId = 1;
 
-        IPlayer player;
-        object locker = new object();
+        List<IPlayer> players;
+        object gate = new object();
         CommandQueue[] _cmd_queue;
         bool _queue_adding;
         int _queue_end;
@@ -37,10 +40,17 @@ namespace NScumm.Core.Audio.IMuse
         int _queue_sound;
         int _queue_marker;
         bool _queue_cleared;
+        ISoundRepository soundRepository;
+        IOpl opl;
+        ISysEx sysEx;
 
-        public IMuse(IPlayer player)
+        public IMuse(ISoundRepository soundRepository, IOpl opl)
         {
-            this.player = player;
+            sysEx = new IMuseSysEx(this);
+            this.opl = opl;
+            this.soundRepository = soundRepository;
+            players = new List<IPlayer>();
+
             _cmd_queue = new CommandQueue[64];
             for (int i = 0; i < _cmd_queue.Length; i++)
             {
@@ -50,6 +60,45 @@ namespace NScumm.Core.Audio.IMuse
 
         #region IMusicEngine implementation
 
+        public bool Update()
+        {
+            bool updated = false;
+            lock (gate)
+            {
+                foreach (var player in players.ToList())
+                {
+                    if (player.IsActive)
+                    {
+                        var isActive = player.Update();
+                        if (!isActive)
+                        {
+                            players.Remove(player);
+                        }
+                        updated |= isActive;
+                    }
+                }
+            }
+            return updated;
+        }
+
+        public float GetMusicTimer()
+        {
+            lock (gate)
+            {
+                var bestTime = 0f;
+                foreach (var player in players)
+                {
+                    if (player.IsActive)
+                    {
+                        var timer = player.GetMusicTimer();
+                        if (timer > bestTime)
+                            bestTime = timer;
+                    }
+                }
+                return bestTime;
+            }
+        }
+
         public void SetMusicVolume(int vol)
         {
             throw new NotImplementedException();
@@ -57,7 +106,7 @@ namespace NScumm.Core.Audio.IMuse
 
         public void StartSound(int sound)
         {
-            lock (locker)
+            lock (gate)
             {
                 StartSoundCore(sound);
             }
@@ -65,27 +114,36 @@ namespace NScumm.Core.Audio.IMuse
 
         bool StartSoundCore(int sound, int offset = 0)
         {
-            player.Clear();
+            var player = new Player(soundRepository, opl, sysEx);
             player.OffsetNote = offset;
+            players.Add(player);
             return player.StartSound(sound);
+        }
+
+        IPlayer FindActivePlayer(int sound)
+        {
+            return players.FirstOrDefault(o => o.IsActive && o.Id == sound);
         }
 
         public void StopSound(int sound)
         {
-            lock (locker)
+            lock (gate)
             {
-                player.Clear();
+                StopSoundCore(sound);
             }
         }
 
         public void StopAllSounds()
         {
-            throw new NotImplementedException();
+            lock (gate)
+            {
+                StopAllSoundsCore();
+            }
         }
 
         public int GetSoundStatus(int sound)
         {
-            lock (locker)
+            lock (gate)
             {
                 return GetSoundStatusCore(sound, true);
             }
@@ -93,12 +151,15 @@ namespace NScumm.Core.Audio.IMuse
 
         int GetSoundStatusCore(int sound, bool ignoreFadeouts)
         {
-            if (player.IsActive && (!ignoreFadeouts || !player.IsFadingOut))
+            foreach (var player in players)
             {
-                if (sound == -1)
-                    return player.Id;
-                else if (player.Id == sound)
-                    return 1;
+                if (player.IsActive && (!ignoreFadeouts || !player.IsFadingOut))
+                {
+                    if (sound == -1)
+                        return player.Id;
+                    else if (player.Id == sound)
+                        return 1;
+                }
             }
             return (sound == -1) ? 0 : GetQueueSoundStatus(sound);
         }
@@ -107,11 +168,6 @@ namespace NScumm.Core.Audio.IMuse
         {
             // TODO
             return 0;
-        }
-
-        public int GetMusicTimer()
-        {
-            throw new NotImplementedException();
         }
 
         #endregion
@@ -127,21 +183,45 @@ namespace NScumm.Core.Audio.IMuse
             {
                 switch (cmd)
                 {
-
+                    case 2:
+                    case 3:
+                        return 0;
                     case 8:
                         return StartSoundCore(a[1]) ? 0 : -1;
+                    case 9:
+                        StopSoundCore(a[1]);
+                        return 0;
                     case 10: // FIXME: Sam and Max - Not sure if this is correct
-                        return StopAllSoundsCore();
+                        StopAllSoundsCore();
+                        return 0;
                     case 11:
-                        return StopAllSoundsCore();
+                        StopAllSoundsCore();
+                        return 0;
                     case 13:
                         return GetSoundStatusCore(a[1], true);
                     default:
-                        throw new NotImplementedException();
+                        Console.Error.WriteLine("DoCommand({0} [{1}/{2}], {3}, {4}, {5}, {6}, {7}, {8}, {9}) unsupported", a[0], param, cmd, a[1], a[2], a[3], a[4], a[5], a[6], a[7]);
+                        return -1;
                 }
             }
             else if (param == 1)
             {
+                IPlayer player = null;
+                if (((1 << cmd) & 0x783FFF) != 0)
+                {
+                    player = FindActivePlayer(a[1]);
+                    if (player == null)
+                        return -1;
+                    if (((1 << cmd) & (1 << 11 | 1 << 22)) != 0)
+                    {
+                        System.Diagnostics.Debug.Assert(a[2] >= 0 && a[2] <= 15);
+                        // TODO:
+//                        player = player.GetPart(a[2]);
+//                        if (!player)
+//                            return -1;
+                    }
+                }
+
                 switch (cmd)
                 {
                     case 0:
@@ -222,21 +302,32 @@ namespace NScumm.Core.Audio.IMuse
                         return 0;
 
                     default:
-                        throw new NotImplementedException();
+                        Console.Error.WriteLine("DoCommand({0} [{1}/{2}], {3}, {4}, {5}, {6}, {7}, {8}, {9}) unsupported", a[0], param, cmd, a[1], a[2], a[3], a[4], a[5], a[6], a[7]);
+                        return -1;
                 }
             }
 
             return -1;
         }
 
-        int StopAllSoundsCore()
+        void StopSoundCore(int sound)
         {
-            ClearQueue();
-            if (player.IsActive)
+            var player = FindActivePlayer(sound);
+            if (player != null)
             {
                 player.Clear();
             }
-            return 0;
+        }
+
+        void StopAllSoundsCore()
+        {
+            ClearQueue();
+            foreach (var player in players)
+            {
+                if (player.IsActive)
+                    player.Clear();
+            }
+            players.Clear();
         }
 
         int QueryQueue(int param)
@@ -335,7 +426,7 @@ namespace NScumm.Core.Audio.IMuse
             return 0;
         }
 
-        void HandleMarker(uint id, byte data)
+        public void HandleMarker(int id, int data)
         {
             if ((_queue_end == _queue_pos) || (_queue_adding && _queue_sound == id && data == _queue_marker))
                 return;
@@ -351,7 +442,7 @@ namespace NScumm.Core.Audio.IMuse
             while (_queue_end != _queue_pos && _cmd_queue[_queue_end].array[0] == CommandId && !_queue_cleared)
             {
                 p = _cmd_queue[_queue_end].array;
-                DoCommand(p[1], new []{ p[2], p[3], p[4], p[5], p[6], p[7], 0 });
+                DoCommand(8, new []{ p[1], p[2], p[3], p[4], p[5], p[6], p[7], 0 });
                 _queue_end = (_queue_end + 1) % _cmd_queue.Length;
             }
         }

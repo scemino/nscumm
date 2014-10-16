@@ -45,7 +45,11 @@ namespace NScumm.Core
 
         int OffsetNote { get; set; }
 
+        float GetMusicTimer();
+
         bool StartSound(int sound);
+
+        bool Update();
 
         void Clear();
 

@@ -1,5 +1,5 @@
 ﻿//
-//  IIMuse.cs
+//  ISysEx.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -18,14 +18,14 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+using System.IO;
+using NScumm.Core.Audio.Midi;
 
-namespace NScumm.Core.Audio.IMuse
+namespace NScumm.Core
 {
-    public interface IIMuse
+    public interface ISysEx
     {
-        int DoCommand(int num, int[] args);
-
-        void HandleMarker(int id, int data);
+        void Do(IMidiPlayer midi, Stream data);
     }
 }
 

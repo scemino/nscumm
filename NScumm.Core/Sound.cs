@@ -20,7 +20,6 @@ using System;
 using System.Collections.Generic;
 using System.Timers;
 using NScumm.Core.Audio.OPL;
-using NScumm.Core.Audio.Midi;
 using NScumm.Core.Audio.IMuse;
 
 namespace NScumm.Core
@@ -33,13 +32,12 @@ namespace NScumm.Core
         Queue<int> soundQueueIMuse;
         const int BufferSize = 4096;
         readonly IOpl opl;
-        IMidiPlayer midi;
         long minicnt;
         bool playing;
         IAudioDriver driver;
         IAudioStream stream;
         IMuse imuse;
-        IPlayer player;
+        IMuseSysEx sysEx;
 
         class AudioStream: IAudioStream
         {
@@ -79,11 +77,15 @@ namespace NScumm.Core
 
             // initialize output & player
             opl = new OPL3();
-            midi = new MidiPlayer(opl);
-            player = new Player(midi, this);
-            imuse = new IMuse(player);
+            imuse = new IMuse(this, opl);
             stream = new AudioStream(this);
             driver.Play(stream);
+        }
+
+        public int GetMusicTimer()
+        {
+            var refresh = imuse.GetMusicTimer();
+            return (int)refresh;
         }
 
         public void PlayCDTrack(int track, int numLoops, int startFrame, int duration)
@@ -148,12 +150,6 @@ namespace NScumm.Core
 
         void PlaySound(int sound)
         {
-//            var data = vm.ResourceManager.GetSound(sound);
-//            if (data == null)
-//                return;
-//            midi.LoadFrom(data);
-//            minicnt = 0;
-//
             imuse.StartSound(sound);
         }
 
@@ -169,10 +165,7 @@ namespace NScumm.Core
 
         public void Update()
         {
-            //if (playing)
-            {
-                driver.Update(stream);
-            }
+            driver.Update(stream);
         }
 
         short[] Read()
@@ -187,13 +180,13 @@ namespace NScumm.Core
                 while (minicnt < 0)
                 {
                     minicnt += stream.Frequency * 4;
-                    playing = midi.Update();
+                    playing = imuse.Update();
                 }
-                i = Math.Min(towrite, (long)(minicnt / midi.GetRefresh() + 4) & ~3);
+                i = Math.Min(towrite, (long)(minicnt / imuse.GetMusicTimer() + 4) & ~3);
                 var n = Update(buffer, pos, i);
                 pos += n;
                 towrite -= i;
-                minicnt -= (long)(midi.GetRefresh() * i);
+                minicnt -= (long)(imuse.GetMusicTimer() * i);
             }
 
             return buffer;

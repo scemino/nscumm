@@ -23,10 +23,12 @@ using System;
 using NScumm.Core.Audio.Midi;
 using System.Collections.Generic;
 using System.Linq;
+using NScumm.Core.Audio.OPL;
+using System.IO;
 
 namespace NScumm.Core
 {
-    public class Player: IPlayer
+    public class Player: IPlayer, IMidiPlayer
     {
         readonly IMidiPlayer midi;
         readonly ISoundRepository soundRepository;
@@ -36,9 +38,58 @@ namespace NScumm.Core
         int priority;
         int pan;
 
-        public Player(IMidiPlayer midi, ISoundRepository soundRepository)
+        #region IMidiPlayer implementation
+
+        void IMidiPlayer.LoadFrom(byte[] data)
         {
-            this.midi = midi;
+            midi.LoadFrom(data);
+        }
+
+        void IMidiPlayer.Stop()
+        {
+            midi.Stop();
+        }
+
+        public bool Update()
+        {
+            return midi.Update();
+        }
+
+        public float GetMusicTimer()
+        {
+            return midi.GetMusicTimer();
+        }
+
+        public MidiChannel[] Channels
+        {
+            get
+            {
+                return midi.Channels;
+            }
+        }
+
+        #endregion
+
+        class PlayerSysEx: ISysEx
+        {
+            IMidiPlayer player;
+            ISysEx sysEx;
+
+            public PlayerSysEx(IMidiPlayer player, ISysEx sysEx)
+            {
+                this.player = player;
+                this.sysEx = sysEx;
+            }
+
+            public void Do(IMidiPlayer midi, Stream input)
+            {
+                sysEx.Do(player, input);
+            }
+        }
+
+        public Player(ISoundRepository soundRepository, IOpl opl, ISysEx sysEx)
+        {
+            midi = new MidiPlayer(opl, new PlayerSysEx(this, sysEx));
             this.soundRepository = soundRepository;
             hook = new HookDatas();
             parts = new List<Part>();

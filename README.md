@@ -51,7 +51,7 @@ Bugs and missing features
 
 Bad music synchronization
 
-No music for SCUMM 5
+IMUSE not implemented
 
 Screen effects not implemented
 

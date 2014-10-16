@@ -53,13 +53,6 @@ namespace NScumm.Core.Audio
         /// <returns>the status of the specified sound</returns>
         /// <param name="sound">the sound to for which we want the status</param>
         int GetSoundStatus(int sound);
-
-        /// <summary>
-        /// Get the value of the music timer. Used for synchronising scripts with
-        /// the music/sound.
-        /// </summary>
-        /// <returns>the music timer</returns>
-        int GetMusicTimer();
     }
 }
 

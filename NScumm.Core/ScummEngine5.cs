@@ -29,8 +29,6 @@ namespace NScumm.Core
 {
     public class ScummEngine5: ScummEngine4
     {
-
-
         public ScummEngine5(GameInfo game, IGraphicsManager graphicsManager, IInputManager inputManager, IAudioDriver audioDriver)
             : base(game, graphicsManager, inputManager, audioDriver)
         {
@@ -140,14 +138,9 @@ namespace NScumm.Core
 
         void GetAnimCounter()
         {
+            GetResult();
             var index = GetVarOrDirectByte(OpCodeParameter.Param1);
             SetResult(_actors[index].Cost.AnimCounter);
-        }
-
-        void GetActorScale()
-        {
-            var index = GetVarOrDirectByte(OpCodeParameter.Param1);
-            SetResult(_actors[index].ScaleX);
         }
     }
 }

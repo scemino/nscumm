@@ -39,7 +39,7 @@ Loom
 
 ### SCUMM 3
 
-* Indiana Jones and the Last Crusade
+Indiana Jones and the Last Crusade
 
 Hotkeys
 -------

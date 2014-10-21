@@ -64,7 +64,7 @@ namespace NScumm.Core
             _opCodes[0x4C] = SoundKludge;
         }
 
-        void GetActorScale()
+        protected void GetActorScale()
         {
             GetResult();
             var act = GetVarOrDirectByte(OpCodeParameter.Param1);

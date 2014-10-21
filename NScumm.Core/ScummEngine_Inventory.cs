@@ -38,14 +38,14 @@ namespace NScumm.Core
         void FindInventory()
         {
             GetResult();
-            int x = GetVarOrDirectByte(OpCodeParameter.Param1);
-            int y = GetVarOrDirectByte(OpCodeParameter.Param2);
+            var x = GetVarOrDirectByte(OpCodeParameter.Param1);
+            var y = GetVarOrDirectByte(OpCodeParameter.Param2);
             SetResult(FindInventory(x, y));
         }
 
         int GetInventorySlot()
         {
-            for (int i = 0; i < NumInventory; i++)
+            for (var i = 0; i < NumInventory; i++)
             {
                 if (_inventory[i] == 0)
                     return i;
@@ -74,11 +74,10 @@ namespace NScumm.Core
 
         int GetInventoryCount(int owner)
         {
-            int i, obj;
-            int count = 0;
-            for (i = 0; i < NumInventory; i++)
+            var count = 0;
+            for (var i = 0; i < NumInventory; i++)
             {
-                obj = _inventory[i];
+                var obj = _inventory[i];
                 if (obj != 0 && GetOwner(obj) == owner)
                     count++;
             }

@@ -317,10 +317,9 @@ namespace NScumm.Core
 
         void GetVerbEntrypoint()
         {
-            int a, b;
             GetResult();
-            a = GetVarOrDirectWord(OpCodeParameter.Param1);
-            b = GetVarOrDirectWord(OpCodeParameter.Param2);
+            var a = GetVarOrDirectWord(OpCodeParameter.Param1);
+            var b = GetVarOrDirectWord(OpCodeParameter.Param2);
 
             SetResult(GetVerbEntrypoint(a, b));
         }

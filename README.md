@@ -8,36 +8,36 @@ Quick start
 
 Copy the original files of the game you want to play in a directory.
 
-__NScumm.MonoGame.exe__ [game]
+`NScumm.MonoGame.exe [game]`
 
 with game:
 
-* __00.lfl__ for Indiana Jones and the Last Crusade
+`00.lfl` for Indiana Jones and the Last Crusade
 
-* __000.lfl__ for The Secret of Monkey Island or Loom
+`000.lfl` for The Secret of Monkey Island or Loom
 
-* __MONKEY2.000__ for Monkey Island 2: LeChuck's revenge
+`MONKEY2.000` for Monkey Island 2: LeChuck's revenge
 
-* __ATLANTIS.000__ for Indiana Jones and the Fate of Atlantis
+`ATLANTIS.000` for Indiana Jones and the Fate of Atlantis
 
 Supported Games
 ---------------
 
-SCUMM 5:
+### SCUMM 5
 
-* Monkey Island 2: LeChuck's revenge
+Monkey Island 2: LeChuck's revenge
 
-* Indiana Jones and the Fate of Atlantis
+Indiana Jones and the Fate of Atlantis
 
-SCUMM 4:
+### SCUMM 4
 
-* The Secret of Monkey Island by LucasArts
+The Secret of Monkey Island by LucasArts
 
-* The Passport to Adventure by LucasArts (Demo)
+The Passport to Adventure by LucasArts (Demo)
 
-* Loom
+Loom
 
-SCUMM 3:
+### SCUMM 3
 
 * Indiana Jones and the Last Crusade
 

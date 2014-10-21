@@ -30,8 +30,7 @@ namespace NScumm.Core
         byte cursorColor;
         int _currentCursor;
         sbyte _userPut;
-        byte[] _charsetColorMap = new byte[16];
-		
+        		
         static byte[] defaultCursorColors = new byte[] { 15, 15, 7, 8 };
         ushort[][] _cursorImages = new ushort[4][];
         readonly byte[] _cursorHotspots = new byte[2 * 4];
@@ -273,9 +272,8 @@ namespace NScumm.Core
                     else
                     {
                         var table = GetWordVarArgs();
-//                        for (var i = 0; i < 16; i++)
-//                            _charsetColorMap[i] = _charsetData[_string[1]._default.charset][i] = table[i];
-                        // TODO:
+                        for (var i = 0; i < table.Length; i++)
+                            CharsetColorMap[i] = _charsetData[_string[1].Default.Charset][i] = (byte)table[i];
                     }
                     break;
                 default:

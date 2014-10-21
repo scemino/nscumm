@@ -20,8 +20,6 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
-using System.Linq;
-using System.IO;
 using NScumm.Core.Graphics;
 
 namespace NScumm.Core
@@ -32,6 +30,7 @@ namespace NScumm.Core
         byte[] _charsetBuffer = new byte[512];
         byte[][] _charsets;
         public byte[] CharsetColorMap = new byte[16];
+        byte[][] _charsetData = CreateCharsetData();
         int _charsetBufPos;
         readonly CharsetRenderer _charset;
         // Somewhat hackish stuff for 2 byte support (Chinese/Japanese/Korean)
@@ -41,20 +40,39 @@ namespace NScumm.Core
         byte _charsetColor;
         int _nextLeft, _nextTop;
 
+        static byte[][] CreateCharsetData()
+        {
+            var data = new byte[16][];
+            for (int i = 0; i < 16; i++)
+            {
+                data[i] = new byte[23];
+            }
+            return data;
+        }
+
         void InitCharset(int charsetNum)
         {
             _string[0].Default.Charset = (byte)charsetNum;
             _string[1].Default.Charset = (byte)charsetNum;
 
-            //if (_charsets[charsetNum] != null)
-            //{
-            //    Array.Copy(_charsets[charsetNum], _charsetColorMap, 16);
-            //}
+            Array.Copy(_charsetData[charsetNum], CharsetColorMap, CharsetColorMap.Length);
         }
 
-        void LoadCharset(int resId)
+        void LoadCharset(int no)
         {
-            // TODO:
+            if (Game.Version > 4)
+            {
+                /* FIXME - hack around crash in Indy4 (occurs if you try to load after dieing) */
+                if (Game.Id == "indy4" && no == 0)
+                    no = 1;
+
+                var ptr = ResourceManager.GetCharsetData((byte)no);
+
+                for (var i = 0; i < 15; i++)
+                {
+                    _charsetData[no][i + 1] = ptr[i + 14];
+                }
+            }
         }
 
         void Charset()
@@ -110,6 +128,9 @@ namespace NScumm.Core
                 _charset.SetCurID(a.Charset);
             else
                 _charset.SetCurID(_string[0].Charset);
+
+            if (_game.Version >= 5)
+                Array.Copy(_charsetData[_charset.GetCurId()], CharsetColorMap, 4);
 
             if (_talkDelay != 0)
                 return;
@@ -285,8 +306,7 @@ namespace NScumm.Core
                         oldy = _charset.GetFontHeight();
                         _charset.SetCurID(_charsetBuffer[bufferPos++]);
                         bufferPos += 2;
-					// TODO:
-					//memcpy(_charsetColorMap, _charsetData[_charset.getCurID()], 4);
+                        Array.Copy(_charsetData[_charset.GetCurId()], CharsetColorMap, 4);
                         _nextTop -= _charset.GetFontHeight() - oldy;
                         break;
 

@@ -218,6 +218,9 @@ namespace NScumm.Core
             _charset.DisableOffsX = _charset.FirstChar = true;
             _charset.SetCurID(_string[a].Charset);
 
+            if (_game.Version >= 5)
+                Array.Copy(_charsetData[_charset.GetCurId()], CharsetColorMap, 4);
+
             fontHeight = _charset.GetFontHeight();
 
             if (Game.Version >= 4)

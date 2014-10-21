@@ -697,7 +697,11 @@ namespace NScumm.Core.Graphics
                 {
                     int color = src.ReadByte();
                     if (!transpCheck || color != TransparentColor)
+                    {
+                        navDst.OffsetX(x);
                         WriteRoomColor(navDst, color);
+                        navDst.OffsetX(-x);
+                    }
                 }
                 navDst.OffsetY(1);
             } while ((--height) != 0);

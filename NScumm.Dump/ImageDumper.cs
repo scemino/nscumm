@@ -137,9 +137,9 @@ namespace NScumm.Dump
                         for (int nStrip = 0; nStrip < nStrips; nStrip++)
                         {
                             var offset = zplane.StripOffsets[nStrip];
-                            if (offset >= 0)
+                            if (offset.HasValue)
                             {
-                                ms.Seek(offset, SeekOrigin.Begin);
+                                ms.Seek(offset.Value, SeekOrigin.Begin);
                                 pn.GoTo(nStrip, 0);
                                 DecompressMaskImg(pn, ms, room.Header.Height);
                             }

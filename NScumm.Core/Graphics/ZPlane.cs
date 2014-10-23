@@ -23,7 +23,6 @@ using System.Collections.Generic;
 
 namespace NScumm.Core.Graphics
 {
-
     public class ZPlane
     {
         public int Id
@@ -38,18 +37,13 @@ namespace NScumm.Core.Graphics
             private set;
         }
 
-        public IList<int> StripOffsets
+        public IList<int?> StripOffsets
         {
             get;
             private set;
         }
 
-        public ZPlane(int id, byte[] data)
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public ZPlane(int id, byte[] data, IList<int> offsets)
+        public ZPlane(int id, byte[] data, IList<int?> offsets)
         {
             Id = id;
             Data = data;

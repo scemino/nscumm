@@ -392,7 +392,6 @@ namespace NScumm.Core.IO
                 else if (it.Current.Tag.StartsWith("ZP", StringComparison.InvariantCulture))
                 {
                     var zpNum = int.Parse(it.Current.Tag.Substring(2), System.Globalization.NumberStyles.HexNumber);
-                    //var zplane = new ZPlane(zpNum, _reader.ReadBytes((int)(it.Current.Size - 8)));
                     ZPlane zplane;
                     using (var ms = new MemoryStream(_reader.ReadBytes((int)(it.Current.Size))))
                     {
@@ -413,7 +412,7 @@ namespace NScumm.Core.IO
         {
             var zPlaneData = b.ReadBytes(size);
             byte[] strips = null;
-            var offsets = new List<int>();
+            var offsets = new List<int?>();
             using (var ms = new MemoryStream(zPlaneData))
             {
                 var br = new BinaryReader(ms);
@@ -423,13 +422,13 @@ namespace NScumm.Core.IO
                 for (int i = 0; i < numStrips; i++)
                 {
                     var offset = br.ReadUInt16();
-                    if (offset > 0)
+                    if (offset != 0)
                     {
                         offsets.Add(offset - tableSize);
                     }
                     else
                     {
-                        offsets.Add(-1);
+                        offsets.Add(null);
                     }
                 }
                 strips = br.ReadBytes(size - tableSize);

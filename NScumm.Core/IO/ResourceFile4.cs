@@ -71,7 +71,7 @@ namespace NScumm.Core.IO
         {
             var zPlaneData = b.ReadBytes(size);
             byte[] strips = null;
-            var offsets = new List<int>();
+            var offsets = new List<int?>();
             using (var ms = new MemoryStream(zPlaneData))
             {
                 var br = new BinaryReader(ms);
@@ -86,7 +86,7 @@ namespace NScumm.Core.IO
                     }
                     else
                     {
-                        offsets.Add(-1);
+                        offsets.Add(null);
                     }
                 }
                 strips = br.ReadBytes(size - tableSize);

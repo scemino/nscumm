@@ -381,24 +381,28 @@ namespace NScumm.Core.Graphics
         
             for (var i = 0; i < zplaneCount; i++)
             {
-                var zPlane = zPlanes[i];
-                var offs = zPlane.StripOffsets[stripnr];
+                var offs = zPlanes[i].StripOffsets[stripnr];
+                var mask_ptr = GetMaskBuffer(x, y, i + 1);
 
-                if (offs > 0)
+                if (offs.HasValue)
                 {
-                    var mask_ptr = GetMaskBuffer(x, y, i + 1);
-        
-                    using (var zplanePtr = new MemoryStream(zPlane.Data))
+                    var zplanePtr = new MemoryStream(zPlanes[i].Data);
+                    zplanePtr.Seek(offs.Value, SeekOrigin.Begin);
+                    if (transpStrip && flags.HasFlag(DrawBitmaps.AllowMaskOr))
                     {
-                        zplanePtr.Seek(offs, SeekOrigin.Begin);
-                        if (transpStrip && flags.HasFlag(DrawBitmaps.AllowMaskOr))
-                        {
-                            DecompressMaskImgOr(mask_ptr, zplanePtr, height);
-                        }
-                        else
-                        {
-                            DecompressMaskImg(mask_ptr, zplanePtr, height);
-                        }
+                        DecompressMaskImgOr(mask_ptr, zplanePtr, height);
+                    }
+                    else
+                    {
+                        DecompressMaskImg(mask_ptr, zplanePtr, height);
+                    }
+                }
+                else if (!(transpStrip && flags.HasFlag(DrawBitmaps.AllowMaskOr)))
+                {
+                    for (var h = 0; h < height; h++)
+                    {
+                        mask_ptr.OffsetY(1);
+                        mask_ptr.Write(0);
                     }
                 }
             }

@@ -599,10 +599,13 @@ namespace NScumm.Core
 
         int GetActorFromPos(Point p)
         {
-            for (int i = 1; i < _actors.Length; i++)
+            if (!Gdi.TestGfxAnyUsageBits(p.X / 8))
+                return 0;
+
+            for (var i = 1; i < _actors.Length; i++)
             {
-                if (!GetClass(i, ObjectClass.Untouchable) && p.Y >= _actors[i].Top &&
-                    p.Y <= _actors[i].Bottom)
+                if (Gdi.TestGfxUsageBit(p.X / 8, i) && !GetClass(i, ObjectClass.Untouchable) &&
+                    p.Y >= _actors[i].Top && p.Y <= _actors[i].Bottom)
                 {
                     return i;
                 }

@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using NScumm.Core.Graphics;
+using System.Linq;
 
 namespace NScumm.Core.IO
 {
@@ -352,8 +353,15 @@ namespace NScumm.Core.IO
                                     obj.ScriptOffsets[id] = offset;
                                 }
                             }
-                            obj.Script.Offset = _reader.BaseStream.Position - pos;
-                            obj.Script.Data = _reader.ReadBytes((int)(it.Current.Size - 8 - (obj.ScriptOffsets.Count * 3 + 1)));
+                            var realCodeOffset = _reader.BaseStream.Position - pos;
+                            var virtualCodeOffset = (3 * obj.ScriptOffsets.Count + 1 + 8);
+                            var diff = (ushort)(realCodeOffset - virtualCodeOffset);
+                            foreach (var key in obj.ScriptOffsets.Keys.ToList())
+                            {
+                                obj.ScriptOffsets[key] -= diff;
+                            }
+                            obj.Script.Offset = virtualCodeOffset;
+                            obj.Script.Data = _reader.ReadBytes((int)(it.Current.Size - obj.Script.Offset));
                         }
                         break;
                     case "OBNA":

@@ -6,6 +6,7 @@
   <MD5 signature="5d88b9d6a88e6f8e90cded9d01b7f082" gameId="loom" variant="VGA" language="en" />
   <MD5 signature="15e03ffbfeddb9c2aebc13dcb2a4a8f4" gameId="monkey" variant="VGA" language="en" />
   <MD5 signature="a01fab4a64d47b96e2e58e6b0f825cc7" gameId="monkey" variant="VGA" language="fr-fr" />
+  <MD5 signature="2d1e891fe52df707c30185e52c50cd92" gameId="monkey" variant="CD" language="en" />
   <MD5 signature="3686cf8f89e102ececf4366e1d2c8126" gameId="monkey2" variant="VGA" language="en" />
   <MD5 signature="8e4ee4db46954bfe2912e259a16fad82" gameId="monkey2" variant="VGA" language="fr-fr" />
   <MD5 signature="e6cd81b25ab1453a8a6d3482118c391e" gameId="pass" variant="" language="en" features="SixteenColors" />
@@ -14,6 +15,7 @@
   <Game id="atlantis" variant="VGA" version="5"/>
   <Game id="loom" variant="VGA" version="4" />
   <Game id="monkey" variant="VGA" version="4" />
+  <Game id="monkey" variant="CD" version="5" />
   <Game id="monkey2" variant="VGA" version="5" />
   <Game id="pass" variant="" version="4" />
   <Description gameId="indy3" text="Indiana Jones and the Last Crusade" />

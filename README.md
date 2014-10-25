@@ -29,6 +29,8 @@ Monkey Island 2: LeChuck's revenge
 
 Indiana Jones and the Fate of Atlantis
 
+The Secret of Monkey Island (VGA CD) 
+
 ### SCUMM 4
 
 The Secret of Monkey Island by LucasArts
@@ -46,7 +48,7 @@ Hotkeys
 
 Alt-Enter              - Toggles full screen/windowed
 
-Bugs and missing features
+Known Issues
 -------------------------
 
 Bad music synchronization

@@ -41,7 +41,11 @@ namespace NScumm.Core
         void LoadRoom()
         {
             var room = (byte)GetVarOrDirectByte(OpCodeParameter.Param1);
-            if (room != _currentRoom)
+
+            // For small header games, we only call startScene if the room
+            // actually changed. This avoid unwanted (wrong) fades in Zak256
+            // and others. OTOH, it seems to cause a problem in newer games.
+            if ((_game.Version >= 5) || room != _currentRoom)
             {
                 StartScene(room);
             }

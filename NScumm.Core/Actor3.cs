@@ -48,7 +48,7 @@ namespace NScumm.Core
 
             if (!(Moving.HasFlag(MoveFlags.NewLeg)))
             {
-                if (Moving.HasFlag(MoveFlags.InLeg) && ActorWalkStep() != 0)
+                if (Moving.HasFlag(MoveFlags.InLeg) && ActorWalkStep())
                     return;
 
                 if (Moving.HasFlag(MoveFlags.LastLeg))
@@ -72,7 +72,7 @@ namespace NScumm.Core
 
                 if (_walkdata.Point3.X != 32000)
                 {
-                    if (CalcMovementFactor(_walkdata.Point3) != 0)
+                    if (CalcMovementFactor(_walkdata.Point3))
                     {
                         _walkdata.Point3.X = 32000;
                         return;
@@ -122,13 +122,13 @@ namespace NScumm.Core
 
                 if (p2.X != 32000)
                 {
-                    if (CalcMovementFactor(p2) != 0)
+                    if (CalcMovementFactor(p2))
                     {
                         _walkdata.Point3 = p3;
                         return;
                     }
                 }
-                if (CalcMovementFactor(p3) != 0)
+                if (CalcMovementFactor(p3))
                     return;
 
                 SetBox(_walkdata.CurBox);

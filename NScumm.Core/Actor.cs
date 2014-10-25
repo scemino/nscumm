@@ -56,7 +56,7 @@ namespace NScumm.Core
     {
         #region Constants
 
-        public const int InvalidBox = 0xFF;
+        public const int InvalidBox = 0;
 
         #endregion
 
@@ -543,8 +543,6 @@ namespace NScumm.Core
 
         public void FaceToObject(int obj)
         {
-            int dir;
-
             if (!IsInCurrentRoom)
                 return;
 
@@ -552,7 +550,7 @@ namespace NScumm.Core
             if (!_scumm.GetObjectOrActorXY(obj, out p))
                 return;
 
-            dir = (p.X > _position.X) ? 90 : 270;
+            var dir = (p.X > _position.X) ? 90 : 270;
             TurnToDirection(dir);
         }
 
@@ -566,7 +564,7 @@ namespace NScumm.Core
 
             if (!Moving.HasFlag(MoveFlags.NewLeg))
             {
-                if (Moving.HasFlag(MoveFlags.InLeg) && ActorWalkStep() != 0)
+                if (Moving.HasFlag(MoveFlags.InLeg) && ActorWalkStep())
                     return;
 
                 if (Moving.HasFlag(MoveFlags.LastLeg))
@@ -619,7 +617,7 @@ namespace NScumm.Core
                 if (FindPathTowards(Walkbox, (byte)next_box, _walkdata.DestBox, out foundPath))
                     break;
 
-                if (CalcMovementFactor(foundPath) != 0)
+                if (CalcMovementFactor(foundPath))
                     return;
 
                 SetBox(_walkdata.CurBox);
@@ -665,7 +663,14 @@ namespace NScumm.Core
         {
             AdjustBoxResult abr;
 
-            abr.Position = dest;
+            if (_scumm.Game.Version <= 4)
+            {
+                abr.Position = dest;
+            }
+            else
+            {
+                abr = AdjustXYToBeInBox(dest);
+            }
 
             if (!IsInCurrentRoom)
             {
@@ -692,7 +697,7 @@ namespace NScumm.Core
                 }
                 if (Moving != MoveFlags.None &&
                     _walkdata.DestDir == dir &&
-                    _walkdata.Dest.X == abr.Position.X && _walkdata.Dest.Y == abr.Position.Y)
+                    _walkdata.Dest == abr.Position)
                     return;
             }
 
@@ -1092,10 +1097,10 @@ namespace NScumm.Core
             }
         }
 
-        protected int CalcMovementFactor(Point next)
+        protected bool CalcMovementFactor(Point next)
         {
             if (_position == next)
-                return 0;
+                return false;
 
             int diffX = next.X - _position.X;
             int diffY = next.Y - _position.Y;
@@ -1143,7 +1148,7 @@ namespace NScumm.Core
             return ActorWalkStep();
         }
 
-        protected int ActorWalkStep()
+        protected bool ActorWalkStep()
         {
             NeedRedraw = true;
 
@@ -1169,7 +1174,7 @@ namespace NScumm.Core
             if (Math.Abs(_position.X - _walkdata.Cur.X) >= distX && Math.Abs(_position.Y - _walkdata.Cur.Y) >= distY)
             {
                 Moving &= ~MoveFlags.InLeg;
-                return 0;
+                return false;
             }
 
             int tmpX = (_position.X << 16) + _walkdata.XFrac + (_walkdata.DeltaXFactor >> 8) * ScaleX;
@@ -1193,9 +1198,9 @@ namespace NScumm.Core
             if (_scumm.Game.Version >= 4 && _position == _walkdata.Next)
             {
                 Moving &= ~MoveFlags.InLeg;
-                return 0;
+                return false;
             }
-            return 1;
+            return true;
         }
 
         int RemapDirection(int dir, bool isWalking)
@@ -1283,10 +1288,10 @@ namespace NScumm.Core
 
         protected int UpdateActorDirection(bool isWalking)
         {
-            int from = ScummMath.ToSimpleDir(false, _facing);
-            int dir = RemapDirection(_targetFacing, isWalking);
+            var from = ScummMath.ToSimpleDir(false, _facing);
+            var dir = RemapDirection(_targetFacing, isWalking);
 
-            bool shouldInterpolate = (dir & 1024) != 0;
+            var shouldInterpolate = (dir & 1024) != 0;
             dir &= 1023;
 
             if (shouldInterpolate)

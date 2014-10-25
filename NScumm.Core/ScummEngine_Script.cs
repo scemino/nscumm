@@ -50,7 +50,7 @@ namespace NScumm.Core
 
         void FreezeScripts()
         {
-            int scr = GetVarOrDirectByte(OpCodeParameter.Param1);
+            var scr = GetVarOrDirectByte(OpCodeParameter.Param1);
 
             if (scr != 0)
                 FreezeScripts(scr);
@@ -60,12 +60,12 @@ namespace NScumm.Core
 
         void UnfreezeScripts()
         {
-            for (int i = 0; i < NumScriptSlot; i++)
+            for (var i = 0; i < NumScriptSlot; i++)
             {
                 _slots[i].Unfreeze();
             }
 
-            for (int i = 0; i < _sentence.Length; i++)
+            for (var i = 0; i < _sentence.Length; i++)
             {
                 _sentence[i].Unfreeze();
             }
@@ -83,7 +83,6 @@ namespace NScumm.Core
         {
             cutScene.Override.Pointer = _currentPos;
             cutScene.Override.Script = _currentScript;
-
 
             // Skip the jump instruction following the override instruction
             // (the jump is responsible for "skipping" cutscenes, and the reason
@@ -229,9 +228,7 @@ namespace NScumm.Core
 
         void StopScript()
         {
-            int script;
-
-            script = GetVarOrDirectByte(OpCodeParameter.Param1);
+            var script = GetVarOrDirectByte(OpCodeParameter.Param1);
 
             if (script == 0)
                 StopObjectCode();
@@ -272,12 +269,12 @@ namespace NScumm.Core
                 StopCycle(0);
             }
 
-            for (int i = 0; i < _actors.Length; i++)
+            for (var i = 0; i < _actors.Length; i++)
             {
                 _actors[i].Hide();
             }
 
-            for (int i = 0; i < 256; i++)
+            for (var i = 0; i < 256; i++)
             {
                 Gdi.RoomPalette[i] = (byte)i;
                 if (_shadowPalette != null)
@@ -412,7 +409,7 @@ namespace NScumm.Core
 
             if (roomData != null && roomData.ExitScript.Data.Length != 0)
             {
-                int slot = GetScriptSlotIndex();
+                var slot = GetScriptSlotIndex();
                 _slots[slot] = new ScriptSlot
                 {
                     Status = ScriptStatus.Running,
@@ -439,26 +436,28 @@ namespace NScumm.Core
             if (script == 0)
                 return;
 
-            for (int i = 0; i < NumScriptSlot; i++)
+            for (var i = 0; i < NumScriptSlot; i++)
             {
                 if (script == _slots[i].Number && _slots[i].Status != ScriptStatus.Dead &&
                     (_slots[i].Where == WhereIsObject.Global || _slots[i].Where == WhereIsObject.Local))
                 {
+                    if (_slots[i].CutSceneOverride != 0 && Game.Version >= 5)
+                        throw new NotSupportedException(string.Format("Script {0} stopped with active cutscene/override", script));
+
                     _slots[i].Number = 0;
                     _slots[i].Status = ScriptStatus.Dead;
-                    //nukeArrays(i);
+
                     if (_currentScript == i)
                         _currentScript = 0xFF;
                 }
             }
 
-            for (int i = 0; i < _numNestedScripts; ++i)
+            for (var i = 0; i < _numNestedScripts; ++i)
             {
                 if (_nest[i].Number == script &&
                     (_nest[i].Where == WhereIsObject.Global || _nest[i].Where == WhereIsObject.Local))
                 {
-                    //nukeArrays(vm.nest[i].slot);
-                    _nest[i].Number = 0xFF;
+                    _nest[i].Number = 0;
                     _nest[i].Slot = 0xFF;
                     _nest[i].Where = WhereIsObject.NotFound;
                 }
@@ -571,7 +570,7 @@ namespace NScumm.Core
                 _numNestedScripts--;
 
             var nest = _nest[_numNestedScripts];
-            if (nest.Number != 0xFF)
+            if (nest.Number != 0)
             {
                 // Try to resume the script which called us, if its status has not changed
                 // since it invoked us. In particular, we only resume it if it hasn't been
@@ -608,12 +607,12 @@ namespace NScumm.Core
 
         void RunAllScripts()
         {
-            for (int i = 0; i < NumScriptSlot; i++)
+            for (var i = 0; i < NumScriptSlot; i++)
                 _slots[i].IsExecuted = false;
 
             _currentScript = 0xFF;
 
-            for (int i = 0; i < NumScriptSlot; i++)
+            for (var i = 0; i < NumScriptSlot; i++)
             {
                 if (_slots[i].Status == ScriptStatus.Running && !_slots[i].IsExecuted)
                 {
@@ -627,7 +626,7 @@ namespace NScumm.Core
 
         bool IsScriptInUse(int script)
         {
-            for (int i = 0; i < NumScriptSlot; i++)
+            for (var i = 0; i < NumScriptSlot; i++)
                 if (_slots[i].Number == script)
                     return true;
             return false;
@@ -639,7 +638,7 @@ namespace NScumm.Core
 
             if (IsScriptInUse(sentenceScript))
             {
-                for (int i = 0; i < NumScriptSlot; i++)
+                for (var i = 0; i < NumScriptSlot; i++)
                     if (_slots[i].Number == sentenceScript && _slots[i].Status != ScriptStatus.Dead &&
                         !_slots[i].Frozen)
                         return;
@@ -679,7 +678,7 @@ namespace NScumm.Core
             }
 
             // Find a free object slot, unless one was specified
-            byte slot = GetScriptSlotIndex();
+            var slot = GetScriptSlotIndex();
 
             ObjectData objFound = null;
             if (roomData != null)
@@ -718,11 +717,14 @@ namespace NScumm.Core
             if (script == 0)
                 return;
 
-            for (int i = 0; i < NumScriptSlot; i++)
+            for (var i = 0; i < NumScriptSlot; i++)
             {
                 if (script == _slots[i].Number && _slots[i].Status != ScriptStatus.Dead &&
                     (_slots[i].Where == WhereIsObject.Room || _slots[i].Where == WhereIsObject.Inventory || _slots[i].Where == WhereIsObject.FLObject))
                 {
+                    if (_slots[i].CutSceneOverride != 0 && Game.Version >= 5)
+                        throw new NotSupportedException(string.Format("Script {0} stopped with active cutscene/override", script));
+
                     _slots[i].Number = 0;
                     _slots[i].Status = ScriptStatus.Dead;
                     if (_currentScript == i)
@@ -730,12 +732,12 @@ namespace NScumm.Core
                 }
             }
 
-            for (int i = 0; i < _numNestedScripts; ++i)
+            for (var i = 0; i < _numNestedScripts; ++i)
             {
                 if (_nest[i].Number == script &&
                     (_nest[i].Where == WhereIsObject.Room || _nest[i].Where == WhereIsObject.Inventory || _nest[i].Where == WhereIsObject.FLObject))
                 {
-                    _nest[i].Number = 0xFF;
+                    _nest[i].Number = 0;
                     _nest[i].Slot = 0xFF;
                     _nest[i].Where = WhereIsObject.NotFound;
                 }
@@ -744,7 +746,7 @@ namespace NScumm.Core
 
         void FreezeScripts(int flag)
         {
-            for (int i = 0; i < NumScriptSlot; i++)
+            for (var i = 0; i < NumScriptSlot; i++)
             {
                 if (_currentScript != i && _slots[i].Status != ScriptStatus.Dead && (!_slots[i].FreezeResistant || flag >= 0x80))
                 {
@@ -752,7 +754,7 @@ namespace NScumm.Core
                 }
             }
 
-            for (int i = 0; i < _sentence.Length; i++)
+            for (var i = 0; i < _sentence.Length; i++)
                 _sentence[i].Freeze();
 
             if (cutScene.CutSceneScriptIndex != 0xFF)
@@ -763,7 +765,7 @@ namespace NScumm.Core
 
         bool IsScriptRunning(int script)
         {
-            for (int i = 0; i < NumScriptSlot; i++)
+            for (var i = 0; i < NumScriptSlot; i++)
             {
                 var ss = _slots[i];
                 if (ss.Number == script && (ss.Where == WhereIsObject.Global || ss.Where == WhereIsObject.Local) && ss.Status != ScriptStatus.Dead)
@@ -783,8 +785,7 @@ namespace NScumm.Core
             _talkDelay -= amount;
             if (_talkDelay < 0)
                 _talkDelay = 0;
-            int i;
-            for (i = 0; i < NumScriptSlot; i++)
+            for (var i = 0; i < NumScriptSlot; i++)
             {
                 if (_slots[i].Status == ScriptStatus.Paused)
                 {

@@ -493,7 +493,7 @@ namespace NScumm.Core
 
         void ShowActors()
         {
-            for (int i = 0; i < _actors.Length; i++)
+            for (int i = 1; i < _actors.Length; i++)
             {
                 if (_actors[i].IsInCurrentRoom)
                     _actors[i].Show();
@@ -502,7 +502,7 @@ namespace NScumm.Core
 
         void WalkActors()
         {
-            for (int i = 0; i < _actors.Length; i++)
+            for (int i = 1; i < _actors.Length; i++)
             {
                 if (_actors[i].IsInCurrentRoom)
                     _actors[i].Walk();
@@ -549,7 +549,7 @@ namespace NScumm.Core
                 int strip = _screenStartStrip + i;
                 Gdi.ClearGfxUsageBit(strip, Gdi.UsageBitDirty);
                 Gdi.ClearGfxUsageBit(strip, Gdi.UsageBitRestored);
-                for (int j = 0; j < _actors.Length; j++)
+                for (int j = 1; j < _actors.Length; j++)
                 {
                     if (Gdi.TestGfxUsageBit(strip, j) &&
                         ((_actors[j].Top != 0x7fffffff && _actors[j].NeedRedraw) || _actors[j].NeedBackgroundReset))
@@ -561,7 +561,7 @@ namespace NScumm.Core
                 }
             }
 
-            for (int i = 0; i < _actors.Length; i++)
+            for (int i = 1; i < _actors.Length; i++)
             {
                 _actors[i].NeedBackgroundReset = false;
             }

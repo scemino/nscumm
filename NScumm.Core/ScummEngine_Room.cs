@@ -66,16 +66,19 @@ namespace NScumm.Core
             StartScene(a.Room, a, obj);
             _variables[VariableWalkToObject.Value] = 0;
 
-            if (!_egoPositioned)
+            if (Game.Version <= 4)
             {
-                int dir;
-                Point p;
-                GetObjectXYPos(obj, out p, out dir);
-                a.PutActor(p, _currentRoom);
-                if (a.Facing == oldDir)
-                    a.SetDirection(dir + 180);
+                if (!_egoPositioned)
+                {
+                    int dir;
+                    Point p;
+                    GetObjectXYPos(obj, out p, out dir);
+                    a.PutActor(p, _currentRoom);
+                    if (a.Facing == oldDir)
+                        a.SetDirection(dir + 180);
+                }
+                a.Moving = 0;
             }
-            a.Moving = 0;
 
             // This is based on disassembly
             _camera.CurrentPosition.X = _camera.DestinationPosition.X = a.Position.X;
@@ -294,8 +297,7 @@ namespace NScumm.Core
                         {
                             var str = _strings[index];
                             file.Write(str, 0, str.Length);
-                            // TODO: sound result
-                            //Variables[var_soundresult] = 0;
+                            Variables[VariableSoundResult.Value] = 0;
                         }
                         break;
                     }

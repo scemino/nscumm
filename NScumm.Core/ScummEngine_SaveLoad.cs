@@ -627,16 +627,16 @@ namespace NScumm.Core
             {
                 LoadAndSaveEntry.Create(reader =>
                     {
-                        var objectOwnerTable = reader.ReadBytes(NumGlobalObjects);
-                        Array.Copy(objectOwnerTable, _resManager.ObjectOwnerTable, NumGlobalObjects);
+                        var objectOwnerTable = reader.ReadBytes(_resManager.ObjectOwnerTable.Length);
+                        Array.Copy(objectOwnerTable, _resManager.ObjectOwnerTable, _resManager.ObjectOwnerTable.Length);
                     },
-                    writer => writer.WriteBytes(_resManager.ObjectOwnerTable, NumGlobalObjects)),
+                    writer => writer.WriteBytes(_resManager.ObjectOwnerTable, _resManager.ObjectOwnerTable.Length)),
                 LoadAndSaveEntry.Create(reader =>
                     {
-                        var objectStateTable = reader.ReadBytes(NumGlobalObjects);
-                        Array.Copy(objectStateTable, _resManager.ObjectStateTable, NumGlobalObjects);
+                        var objectStateTable = reader.ReadBytes(_resManager.ObjectStateTable.Length);
+                        Array.Copy(objectStateTable, _resManager.ObjectStateTable, _resManager.ObjectStateTable.Length);
                     },
-                    writer => writer.WriteBytes(_resManager.ObjectStateTable, NumGlobalObjects))
+                    writer => writer.WriteBytes(_resManager.ObjectStateTable, _resManager.ObjectStateTable.Length))
             };
             Array.ForEach(objStatesEntries, e => e.Execute(serializer));
 
@@ -748,8 +748,8 @@ namespace NScumm.Core
             var globalObjStatesEntries = new[]
             {
                 LoadAndSaveEntry.Create(
-                    reader => Array.Copy(reader.ReadUInt32s(NumGlobalObjects), _resManager.ClassData, NumGlobalObjects),
-                    writer => writer.WriteUInt32s(_resManager.ClassData, NumGlobalObjects))
+                    reader => Array.Copy(reader.ReadUInt32s(_resManager.ClassData.Length), _resManager.ClassData, _resManager.ClassData.Length),
+                    writer => writer.WriteUInt32s(_resManager.ClassData, _resManager.ClassData.Length))
             };
             Array.ForEach(globalObjStatesEntries, entry => entry.Execute(serializer));
 

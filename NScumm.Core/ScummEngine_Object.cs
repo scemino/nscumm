@@ -28,8 +28,6 @@ namespace NScumm.Core
 {
     partial class ScummEngine
     {
-        const int NumGlobalObjects = 1000;
-
         ObjectData[] _objs = new ObjectData[200];
         HashSet<ObjectData> _drawingObjects = new HashSet<ObjectData>();
         Dictionary<int, byte[]> _newNames = new Dictionary<int, byte[]>();
@@ -355,7 +353,7 @@ namespace NScumm.Core
 
         WhereIsObject GetWhereIsObject(int obj)
         {
-            if (obj >= NumGlobalObjects)
+            if (obj >= _resManager.ObjectOwnerTable.Length)
                 return WhereIsObject.NotFound;
 
             if (obj < 1)

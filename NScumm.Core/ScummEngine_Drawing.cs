@@ -59,15 +59,13 @@ namespace NScumm.Core
 
         void DrawBox()
         {
-            int x, y, x2, y2, color;
-
-            x = GetVarOrDirectWord(OpCodeParameter.Param1);
-            y = GetVarOrDirectWord(OpCodeParameter.Param2);
+            var x = GetVarOrDirectWord(OpCodeParameter.Param1);
+            var y = GetVarOrDirectWord(OpCodeParameter.Param2);
 
             _opCode = ReadByte();
-            x2 = GetVarOrDirectWord(OpCodeParameter.Param1);
-            y2 = GetVarOrDirectWord(OpCodeParameter.Param2);
-            color = GetVarOrDirectByte(OpCodeParameter.Param3);
+            var x2 = GetVarOrDirectWord(OpCodeParameter.Param1);
+            var y2 = GetVarOrDirectWord(OpCodeParameter.Param2);
+            var color = GetVarOrDirectByte(OpCodeParameter.Param3);
 
             DrawBox(x, y, x2, y2, color);
         }
@@ -180,10 +178,10 @@ namespace NScumm.Core
             var hasTwoBufs = vs.HasTwoBuffers;
             vs.HasTwoBuffers = false;
 
-            int xStrip = x / 8;
-            int yDiff = y - vs.TopLine;
+            var xStrip = x / 8;
+            var yDiff = y - vs.TopLine;
 
-            for (int i = 0; i < vst.ImageWidth / 8; i++)
+            for (var i = 0; i < vst.ImageWidth / 8; i++)
             {
                 if (vst.ImageData != null)
                 {

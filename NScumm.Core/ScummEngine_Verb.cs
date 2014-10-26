@@ -396,7 +396,7 @@ namespace NScumm.Core
                    if (verb >= 31 && verb <= 36)
                    verb += _inventoryOffset;
                  */
-                byte[] msg = _verbs[verb].Text;
+                var msg = _verbs[verb].Text;
                 if (msg == null || msg.Length == 0)
                     return;
 

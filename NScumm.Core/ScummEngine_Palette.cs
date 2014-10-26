@@ -79,7 +79,6 @@ namespace NScumm.Core
 
         void DarkenPalette(int redScale, int greenScale, int blueScale, int startColor, int endColor)
         {
-            // TODO: DarkenPalette
             if (startColor <= endColor)
             {
                 var max = _game.Version >= 5 ? 252 : 255;

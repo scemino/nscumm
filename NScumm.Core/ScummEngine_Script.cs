@@ -570,7 +570,7 @@ namespace NScumm.Core
                 _numNestedScripts--;
 
             var nest = _nest[_numNestedScripts];
-            if (nest.Number != 0)
+            if (nest.Number != 0 && nest.Slot < _slots.Length)
             {
                 // Try to resume the script which called us, if its status has not changed
                 // since it invoked us. In particular, we only resume it if it hasn't been

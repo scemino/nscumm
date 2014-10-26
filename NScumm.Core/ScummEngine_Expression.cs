@@ -22,192 +22,194 @@ using System;
 
 namespace NScumm.Core
 {
-	partial class ScummEngine
-	{
-		void IsLess ()
-		{
-			var varNum = ReadWord ();
-			short a = (short)ReadVariable (varNum);
-			short b = (short)GetVarOrDirectWord (OpCodeParameter.Param1);
-			JumpRelative (b < a);
-		}
+    partial class ScummEngine
+    {
+        void IsLess()
+        {
+            var varNum = ReadWord();
+            var a = (short)ReadVariable(varNum);
+            var b = (short)GetVarOrDirectWord(OpCodeParameter.Param1);
+            JumpRelative(b < a);
+        }
 
-		void IsLessEqual ()
-		{
-			var varNum = ReadWord ();
-			var a = ReadVariable (varNum);
-			var b = GetVarOrDirectWord (OpCodeParameter.Param1);
-			JumpRelative (b <= a);
-		}
+        void IsLessEqual()
+        {
+            var varNum = ReadWord();
+            var a = (short)ReadVariable(varNum);
+            var b = (short)GetVarOrDirectWord(OpCodeParameter.Param1);
+            JumpRelative(b <= a);
+        }
 
-		void IsGreater ()
-		{
-			var a = ReadVariable (ReadWord ());
-			var b = GetVarOrDirectWord (OpCodeParameter.Param1);
-			JumpRelative (b > a);
-		}
+        void IsGreater()
+        {
+            var a = (short)ReadVariable(ReadWord());
+            var b = (short)GetVarOrDirectWord(OpCodeParameter.Param1);
+            JumpRelative(b > a);
+        }
 
-		void IsGreaterEqual ()
-		{
-			var a = ReadVariable (ReadWord ());
-			var b = GetVarOrDirectWord (OpCodeParameter.Param1);
-			JumpRelative (b >= a);
-		}
+        void IsGreaterEqual()
+        {
+            var a = (short)ReadVariable(ReadWord());
+            var b = (short)GetVarOrDirectWord(OpCodeParameter.Param1);
+            JumpRelative(b >= a);
+        }
 
-		void Multiply ()
-		{
-			GetResult ();
-			var a = GetVarOrDirectWord (OpCodeParameter.Param1);
-			var b = ReadVariable (_resultVarIndex);
-			SetResult (a * b);
-		}
+        void Multiply()
+        {
+            GetResult();
+            var a = GetVarOrDirectWord(OpCodeParameter.Param1);
+            var b = ReadVariable(_resultVarIndex);
+            SetResult(a * b);
+        }
 
-		void Or ()
-		{
-			GetResult ();
-			var a = GetVarOrDirectWord (OpCodeParameter.Param1);
-			var b = ReadVariable (_resultVarIndex);
-			SetResult (a | b);
-		}
+        void Or()
+        {
+            GetResult();
+            var a = GetVarOrDirectWord(OpCodeParameter.Param1);
+            var b = ReadVariable(_resultVarIndex);
+            SetResult(a | b);
+        }
 
-		void And ()
-		{
-			GetResult ();
-			var a = GetVarOrDirectWord (OpCodeParameter.Param1);
-			var b = ReadVariable (_resultVarIndex);
-			SetResult (a & b);
-		}
+        void And()
+        {
+            GetResult();
+            var a = GetVarOrDirectWord(OpCodeParameter.Param1);
+            var b = ReadVariable(_resultVarIndex);
+            SetResult(a & b);
+        }
 
-		void NotEqualZero ()
-		{
-			var var = ReadWord ();
-			var a = ReadVariable (var);
-			JumpRelative (a != 0);
-		}
+        void NotEqualZero()
+        {
+            var var = ReadWord();
+            var a = ReadVariable(var);
+            JumpRelative(a != 0);
+        }
 
-		void EqualZero ()
-		{
-			var var = ReadWord ();
-			var a = ReadVariable (var);
-			JumpRelative (a == 0);
-		}
+        void EqualZero()
+        {
+            var var = ReadWord();
+            var a = ReadVariable(var);
+            JumpRelative(a == 0);
+        }
 
-		void JumpRelative ()
-		{
-			JumpRelative (false);
-		}
+        void JumpRelative()
+        {
+            JumpRelative(false);
+        }
 
-		void IsEqual ()
-		{
-			var varNum = ReadWord ();
-			var a = ReadVariable (varNum);
-			var b = GetVarOrDirectWord (OpCodeParameter.Param1);
-			JumpRelative (a == b);
-		}
+        void IsEqual()
+        {
+            var varNum = ReadWord();
+            var a = (short)ReadVariable(varNum);
+            var b = (short)GetVarOrDirectWord(OpCodeParameter.Param1);
+            JumpRelative(a == b);
+        }
 
-		void IsNotEqual ()
-		{
-			var varNum = ReadWord ();
-			var a = ReadVariable (varNum);
-			var b = GetVarOrDirectWord (OpCodeParameter.Param1);
-			JumpRelative (a != b);
-		}
+        void IsNotEqual()
+        {
+            var varNum = ReadWord();
+            var a = (short)ReadVariable(varNum);
+            var b = (short)GetVarOrDirectWord(OpCodeParameter.Param1);
+            JumpRelative(a != b);
+        }
 
-		void Add ()
-		{
-			GetResult ();
-			int a = GetVarOrDirectWord (OpCodeParameter.Param1);
-			int b = ReadVariable (_resultVarIndex);
-			SetResult (a + b);
-		}
+        void Add()
+        {
+            GetResult();
+            int a = GetVarOrDirectWord(OpCodeParameter.Param1);
+            int b = ReadVariable(_resultVarIndex);
+            SetResult(a + b);
+        }
 
-		void Divide ()
-		{
-			GetResult ();
-			var a = GetVarOrDirectWord (OpCodeParameter.Param1);
-			SetResult (ReadVariable (_resultVarIndex) / a);
-		}
+        void Divide()
+        {
+            GetResult();
+            var a = GetVarOrDirectWord(OpCodeParameter.Param1);
+            SetResult(ReadVariable(_resultVarIndex) / a);
+        }
 
-		void Subtract ()
-		{
-			GetResult ();
-			int a = GetVarOrDirectWord (OpCodeParameter.Param1);
-			SetResult (ReadVariable (_resultVarIndex) - a);
-		}
+        void Subtract()
+        {
+            GetResult();
+            int a = GetVarOrDirectWord(OpCodeParameter.Param1);
+            SetResult(ReadVariable(_resultVarIndex) - a);
+        }
 
-		void Increment ()
-		{
-			GetResult ();
-			SetResult (ReadVariable (_resultVarIndex) + 1);
-		}
+        void Increment()
+        {
+            GetResult();
+            SetResult(ReadVariable(_resultVarIndex) + 1);
+        }
 
-		void Decrement ()
-		{
-			GetResult ();
-			SetResult (ReadVariable (_resultVarIndex) - 1);
-		}
+        void Decrement()
+        {
+            GetResult();
+            SetResult(ReadVariable(_resultVarIndex) - 1);
+        }
 
-		void Expression ()
-		{
-			_stack.Clear ();
-			GetResult ();
-			int dst = _resultVarIndex;
-			while ((_opCode = ReadByte ()) != 0xFF) {
-				switch (_opCode & 0x1F) {
-				case 1:
+        void Expression()
+        {
+            _stack.Clear();
+            GetResult();
+            int dst = _resultVarIndex;
+            while ((_opCode = ReadByte()) != 0xFF)
+            {
+                switch (_opCode & 0x1F)
+                {
+                    case 1:
 					// var
-					_stack.Push (GetVarOrDirectWord (OpCodeParameter.Param1));
-					break;
+                        _stack.Push(GetVarOrDirectWord(OpCodeParameter.Param1));
+                        break;
 
-				case 2:
+                    case 2:
 					// add
-					{
-						var i = _stack.Pop ();
-						_stack.Push (i + _stack.Pop ());
-					}
-					break;
+                        {
+                            var i = _stack.Pop();
+                            _stack.Push(i + _stack.Pop());
+                        }
+                        break;
 
-				case 3:
+                    case 3:
 					// sub
-					{
-						var i = _stack.Pop ();
-						_stack.Push (_stack.Pop () - i);
-					}
-					break;
+                        {
+                            var i = _stack.Pop();
+                            _stack.Push(_stack.Pop() - i);
+                        }
+                        break;
 
-				case 4:
+                    case 4:
 					// mul
-					{
-						var i = _stack.Pop ();
-						_stack.Push (i * _stack.Pop ());
-					}
-					break;
+                        {
+                            var i = _stack.Pop();
+                            _stack.Push(i * _stack.Pop());
+                        }
+                        break;
 
-				case 5:
+                    case 5:
 					// div
-					{
-						var i = _stack.Pop ();
-						_stack.Push (_stack.Pop () / i);
-					}
-					break;
+                        {
+                            var i = _stack.Pop();
+                            _stack.Push(_stack.Pop() / i);
+                        }
+                        break;
 
-				case 6:
+                    case 6:
 					// normal opcode
-					{
-						_opCode = ReadByte ();
-						ExecuteOpCode (_opCode);
-						_stack.Push (_variables [0]);
-					}
-					break;
+                        {
+                            _opCode = ReadByte();
+                            ExecuteOpCode(_opCode);
+                            _stack.Push(_variables[0]);
+                        }
+                        break;
 
-				default:
-					throw new NotImplementedException ();
-				}
-			}
+                    default:
+                        throw new NotImplementedException();
+                }
+            }
 
-			_resultVarIndex = dst;
-			SetResult (_stack.Pop ());
-		}
-	}
+            _resultVarIndex = dst;
+            SetResult(_stack.Pop());
+        }
+    }
 }
 

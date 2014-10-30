@@ -143,7 +143,7 @@ namespace NScumm.Core
                 for (byte j = 0; j < num; j++)
                 {
                     var itinerary = itineraryMatrix[i, j];
-                    if (itinerary != Actor.InvalidBox)
+                    if (itinerary != InvalidBox)
                     {
                         boxMatrix.Add(j);
                         while (j < num - 1 && itinerary == itineraryMatrix[i, (j + 1)])
@@ -308,7 +308,7 @@ namespace NScumm.Core
                     else
                     {
                         adjacentMatrix[i, j] = 255;
-                        itineraryMatrix[i, j] = Actor.InvalidBox;
+                        itineraryMatrix[i, j] = InvalidBox;
                     }
                 }
             }

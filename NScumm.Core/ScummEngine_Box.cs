@@ -106,10 +106,10 @@ namespace NScumm.Core
             if (from == to)
                 return to;
 
-            if (to == Actor.InvalidBox)
+            if (to == InvalidBox)
                 return -1;
 
-            if (from == Actor.InvalidBox)
+            if (from == InvalidBox)
                 return to;
 
             if (from >= numOfBoxes)
@@ -160,7 +160,7 @@ namespace NScumm.Core
             // from e.g. script opcodes, but do not validate the boxnum, we
             // make a check here to filter out invalid boxes.
             // See also bug #1599113.
-            if (boxnum < 0 || boxnum == Actor.InvalidBox)
+            if (boxnum < 0 || boxnum == InvalidBox)
                 return false;
 
             var box = GetBoxCoordinates(boxnum);

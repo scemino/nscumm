@@ -108,6 +108,8 @@ namespace NScumm.Core
             get { return _game; }
         }
 
+        public byte InvalidBox { get; private set; }
+
         public bool HastToQuit { get; set; }
 
         internal int ScreenStartStrip
@@ -166,6 +168,7 @@ namespace NScumm.Core
             _resManager = ResourceManager.Load(game);
 
             _game = game;
+            InvalidBox = _game.Version < 5 ? (byte)255 : (byte)0;
             _gameMD5 = ToMd5Bytes(game.MD5);
             _gfxManager = gfxManager;
             _inputManager = inputManager;

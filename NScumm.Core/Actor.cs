@@ -54,12 +54,6 @@ namespace NScumm.Core
 
     class Actor
     {
-        #region Constants
-
-        public const int InvalidBox = 0;
-
-        #endregion
-
         #region Private Fields
 
         /// <summary>
@@ -104,6 +98,8 @@ namespace NScumm.Core
         #endregion
 
         #region Properties
+
+        public byte InvalidBox { get; private set; }
 
         public int Sound { get; set; }
 
@@ -208,6 +204,7 @@ namespace NScumm.Core
         public Actor(ScummEngine scumm, byte id)
         {
             _scumm = scumm;
+            InvalidBox = _scumm.InvalidBox;
             Number = id;
         }
 

@@ -38,6 +38,7 @@ namespace NScumm.Core
         FLObject = 4
     }
 
+    [System.Diagnostics.DebuggerDisplay("{DebuggerDisplay,nq}")]
     class ScriptSlot
     {
         byte freezeCount;
@@ -123,6 +124,14 @@ namespace NScumm.Core
             };
 
             Array.ForEach(scriptSlotEntries, e => e.Execute(serializer));
+        }
+
+        internal string DebuggerDisplay
+        {
+            get
+            { 
+                return Number != 0 ? string.Format("(Number: {0}, {1}, {2}, {3})", Number, Status, Where, Frozen ? "Frozen" : string.Empty) : "Number 0";
+            }    
         }
     }
 }

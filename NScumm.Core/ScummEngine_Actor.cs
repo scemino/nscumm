@@ -89,10 +89,21 @@ namespace NScumm.Core
 
         void WalkActorToActor()
         {
-            int x, y;
-            int nr = GetVarOrDirectByte(OpCodeParameter.Param1);
-            int nr2 = GetVarOrDirectByte(OpCodeParameter.Param2);
+            var nr = GetVarOrDirectByte(OpCodeParameter.Param1);
+            var nr2 = GetVarOrDirectByte(OpCodeParameter.Param2);
             int dist = ReadByte();
+
+            if (_game.Id == "atlantis" && nr == 1 && nr2 == 106 &&
+                dist == 255 && _slots[_currentScript].Number == 210)
+            {
+                // WORKAROUND bug: Work around an invalid actor bug when using the
+                // camel in Fate of Atlantis, the "wits" path. The room-65-210 script
+                // contains this:
+                //   walkActorToActor(1,106,255)
+                // Once again this is either a script bug, or there is some hidden
+                // or unknown meaning to this odd walk request...
+                return;
+            }
 
             var a = _actors[nr];
             if (!a.IsInCurrentRoom)
@@ -107,8 +118,8 @@ namespace NScumm.Core
                 dist = (int)(a.ScaleX * a.Width / 0xFF);
                 dist += (int)(a2.ScaleX * a2.Width / 0xFF) / 2;
             }
-            x = a2.Position.X;
-            y = a2.Position.Y;
+            int x = a2.Position.X;
+            int y = a2.Position.Y;
             if (x < a.Position.X)
                 x += dist;
             else

@@ -78,6 +78,13 @@ namespace NScumm.Core
                     }
                 }
 
+                // update IQ points after loading
+                if (_saveLoadFlag == 2)
+                {
+                    if (_game.Id == "atlantis")
+                        RunScript(145, false, false, new int[0]);
+                }
+
                 _saveLoadFlag = 0;
             }
         }
@@ -395,9 +402,9 @@ namespace NScumm.Core
                 LoadAndSaveEntry.Create(reader => _bgNeedsRedraw = reader.ReadByte() != 0, writer => writer.WriteByte(_bgNeedsRedraw), 8),
 
                 // The state of palManipulate is stored only since V10
-                LoadAndSaveEntry.Create(reader => reader.ReadByte(), writer => writer.WriteByte(0), 10),
-                LoadAndSaveEntry.Create(reader => reader.ReadByte(), writer => writer.WriteByte(0), 10),
-                LoadAndSaveEntry.Create(reader => reader.ReadUInt16(), writer => writer.WriteUInt16(0), 10),
+                LoadAndSaveEntry.Create(reader => _palManipStart = reader.ReadByte(), writer => writer.WriteByte(_palManipStart), 10),
+                LoadAndSaveEntry.Create(reader => _palManipEnd = reader.ReadByte(), writer => writer.WriteByte(_palManipEnd), 10),
+                LoadAndSaveEntry.Create(reader => _palManipCounter = reader.ReadUInt16(), writer => writer.WriteUInt16(_palManipCounter), 10),
 
                 // gfxUsageBits grew from 200 to 410 entries. Then 3 * 410 entries:
                 LoadAndSaveEntry.Create(reader => Gdi.SaveOrLoad(serializer), writer => Gdi.SaveOrLoad(serializer), 0),
@@ -667,19 +674,37 @@ namespace NScumm.Core
                 // PalManip data was not saved before V10 save games
                 LoadAndSaveEntry.Create(reader =>
                     {
-                        //                    if (palManipCounter!=0)
-                        //                    {
-                        //                        _palManipPalette = reader.ReadBytes(0x300);
-                        //                        _palManipIntermediatePal = reader.ReadBytes(0x600);
-                        //                    }
+                        if (_palManipCounter != 0)
+                        {
+                            var colors = reader.ReadBytes(0x300);
+                            for (int i = 0; i < 0x100; i++)
+                            {
+                                _palManipPalette.Colors[i] = Color.FromRgb((int)colors[i * 3], (int)colors[i * 3 + 1], (int)colors[i * 3 + 2]);    
+                            }
+                            var colors2 = reader.ReadUInt16s(0x300);
+                            for (int i = 0; i < 0x100; i++)
+                            {
+                                _palManipIntermediatePal.Colors[i] = Color.FromRgb((int)colors[i * 3], (int)colors[i * 3 + 1], (int)colors[i * 3 + 2]);    
+                            }
+                        }
                     },
                     writer =>
                     {
-                        //                    if (palManipCounter!=0)
-                        //                    {
-                        //                        writer.WriteBytes(_palManipPalette, 0x300);
-                        //                        writer.WriteBytes(_palManipIntermediatePal, 0x600);
-                        //                    }
+                        if (_palManipCounter != 0)
+                        {
+                            for (int i = 0; i < 0x100; i++)
+                            {
+                                writer.WriteByte(_palManipPalette.Colors[i].R);
+                                writer.WriteByte(_palManipPalette.Colors[i].G);
+                                writer.WriteByte(_palManipPalette.Colors[i].B);
+                            }
+                            for (int i = 0; i < 0x100; i++)
+                            {
+                                writer.WriteUInt16(_palManipIntermediatePal.Colors[i].R);
+                                writer.WriteUInt16(_palManipIntermediatePal.Colors[i].G);
+                                writer.WriteUInt16(_palManipIntermediatePal.Colors[i].B);
+                            }
+                        }
                     }, 10),
 
 
@@ -689,24 +714,7 @@ namespace NScumm.Core
                         // TODO?
                         //Array.Copy(currentPalette, darkenPalette, 768);
                     }, 0, 53),
-
-                // darkenPalette was not saved before V53
-                LoadAndSaveEntry.Create(reader =>
-                    {
-                        //                    if (palManipCounter != 0)
-                        //                    {
-                        //                        _palManipPalette = reader.ReadBytes(0x300);
-                        //                        _palManipIntermediatePal = reader.ReadBytes(0x600);
-                        //                    }
-                    },
-                    writer =>
-                    {
-                        //                    if (palManipCounter != 0)
-                        //                    {
-                        //                        writer.WriteBytes(_palManipPalette,0x300);
-                        //                        writer.WriteBytes(_palManipIntermediatePal,0x600);
-                        //                    }
-                    }, 53)
+                
             };
             Array.ForEach(paletteEntries, entry => entry.Execute(serializer));
 
@@ -757,7 +765,7 @@ namespace NScumm.Core
             // Save/load script variables
             //
             //var120Backup = _scummVars[120];
-            //var98Backup = _scummVars[98];
+            var var98Backup = _variables[98];
 
             //if (serializer.Version > 37)
             //{
@@ -774,10 +782,6 @@ namespace NScumm.Core
                 LoadAndSaveEntry.Create(
                     reader => _variables = reader.ReadInt32s(_variables.Length),
                     writer => writer.WriteInt32s(_variables, _variables.Length), 15),
-                //if (_game.id == GID_TENTACLE) // Maybe misplaced, but that's the main idea
-                //    _scummVars[120] = var120Backup;
-                //if (_game.id == GID_INDY4)
-                //    _scummVars[98] = var98Backup;
                 LoadAndSaveEntry.Create(
                     reader => _bitVars = new BitArray(reader.ReadBytes(_bitVars.Length / 8)),
                     writer =>
@@ -789,6 +793,13 @@ namespace NScumm.Core
                 ),
             };
             Array.ForEach(variablesEntries, entry => entry.Execute(serializer));
+
+            //if (_game.id == GID_TENTACLE) // Maybe misplaced, but that's the main idea
+            //    _scummVars[120] = var120Backup;
+            if (_game.Id == "atlantis")
+            {
+                _variables[98] = var98Backup;
+            }
 
             //
             // Save/load a list of the locked objects

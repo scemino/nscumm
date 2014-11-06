@@ -26,16 +26,21 @@ namespace NScumm.Core
         /// Palette cycles.
         /// </summary>
         ColorCycle[] _colorCycle;
+        int _palManipStart;
+        int _palManipEnd;
+        int _palManipCounter;
+        Palette _palManipPalette;
+        Palette _palManipIntermediatePal;
 
         void CyclePalette()
         {
-            int valueToAdd = _variables[VariableTimer.Value];
+            var valueToAdd = _variables[VariableTimer.Value];
             if (valueToAdd < _variables[VariableTimerNext.Value])
                 valueToAdd = _variables[VariableTimerNext.Value];
 
-            for (int i = 0; i < 16; i++)
+            for (var i = 0; i < 16; i++)
             {
-                ColorCycle cycl = _colorCycle[i];
+                var cycl = _colorCycle[i];
                 if (cycl.Delay == 0 || cycl.Start > cycl.End)
                     continue;
                 cycl.Counter = (ushort)(cycl.Counter + valueToAdd);
@@ -44,6 +49,7 @@ namespace NScumm.Core
                     cycl.Counter %= cycl.Delay;
 
                     SetDirtyColors(cycl.Start, cycl.End);
+                    MoveMemInPalRes(cycl.Start, cycl.End, (cycl.Flags & 2) != 0);
 
                     DoCyclePalette(_currentPalette, cycl.Start, cycl.End, (cycl.Flags & 2) == 0);
 
@@ -52,6 +58,32 @@ namespace NScumm.Core
                         DoCycleIndirectPalette(_shadowPalette, cycl.Start, cycl.End, (cycl.Flags & 2) == 0);
                     }
                 }
+            }
+        }
+
+        void MoveMemInPalRes(int start, int end, bool direction)
+        {
+            if (_palManipCounter == 0)
+                return;
+
+            DoCyclePalette(_palManipPalette, start, end, !direction);
+            DoCyclePalette(_palManipIntermediatePal, start, end, !direction);
+        }
+
+
+        void StopCycle(int i)
+        {
+            ScummHelper.AssertRange(0, i, 16, "stopCycle: cycle");
+            if (i != 0)
+            {
+                _colorCycle[i - 1].Delay = 0;
+                return;
+            }
+
+            for (i = 0; i < 16; i++)
+            {
+                var cycl = _colorCycle[i];
+                cycl.Delay = 0;
             }
         }
 
@@ -74,6 +106,7 @@ namespace NScumm.Core
                         }
                     }
                 }
+                SetDirtyColors(0, _currentPalette.Colors.Length - 1);
             }
         }
 
@@ -86,23 +119,24 @@ namespace NScumm.Core
                 for (var j = startColor; j <= endColor; j++)
                 {
                     var color = roomData.Palette.Colors[j];
-                    var red = (color.R * redScale) / 255.0;
+                    var red = (color.R * redScale) / 255;
                     if (red > max)
                         red = max;
 
-                    var green = (color.G * greenScale) / 255.0;
+                    var green = (color.G * greenScale) / 255;
                     if (green > max)
                         green = max;
 
-                    var blue = (color.B * blueScale) / 255.0;
+                    var blue = (color.B * blueScale) / 255;
                     if (blue > max)
                         blue = max;
 
-                    _currentPalette.Colors[j] = Color.FromRgb((int)red, (int)green, (int)blue);
-                    SetDirtyColors(startColor, endColor);
+                    _currentPalette.Colors[j] = Color.FromRgb(red, green, blue);
                     //                    if (_game.features & GF_16BIT_COLOR)
                     //                        _16BitPalette[idx] = get16BitColor(_currentPalette[idx * 3 + 0], _currentPalette[idx * 3 + 1], _currentPalette[idx * 3 + 2]);
                 }
+
+                SetDirtyColors(startColor, endColor);
             }
 
         }
@@ -162,11 +196,10 @@ namespace NScumm.Core
 
         static void DoCycleIndirectPalette(byte[] palette, byte cycleStart, byte cycleEnd, bool forward)
         {
-            int num = cycleEnd - cycleStart + 1;
-            int i;
-            int offset = forward ? 1 : num - 1;
+            var num = cycleEnd - cycleStart + 1;
+            var offset = forward ? 1 : num - 1;
 
-            for (i = 0; i < 256; i++)
+            for (var i = 0; i < 256; i++)
             {
                 if (cycleStart <= palette[i] && palette[i] <= cycleEnd)
                 {
@@ -185,7 +218,7 @@ namespace NScumm.Core
         /// <param name="cycleStart"></param>
         /// <param name="cycleEnd"></param>
         /// <param name="forward"></param>
-        static void DoCyclePalette(Palette palette, byte cycleStart, byte cycleEnd, bool forward)
+        static void DoCyclePalette(Palette palette, int cycleStart, int cycleEnd, bool forward)
         {
             int num = cycleEnd - cycleStart;
 
@@ -210,7 +243,7 @@ namespace NScumm.Core
             if (forward)
             {
                 var tmp = palette[cycleEnd];
-                Buffer.BlockCopy(palette, cycleStart, palette, cycleStart + 1, num);
+                Array.Copy(palette, cycleStart, palette, cycleStart + 1, num);
                 palette[cycleStart] = tmp;
             }
             else
@@ -219,6 +252,57 @@ namespace NScumm.Core
                 Array.Copy(palette, cycleStart + 1, palette, cycleStart, num);
                 palette[cycleEnd] = tmp;
             }
+        }
+
+        void PalManipulateInit(int resID, int start, int end, int time)
+        {
+            var string1 = _strings[resID];
+            var string2 = _strings[resID + 1];
+            var string3 = _strings[resID + 2];
+            if (string1 == null || string2 == null || string3 == null)
+            {
+                throw new InvalidOperationException(string.Format(
+                        "palManipulateInit({0},{1},{2},{3}): Cannot obtain string resources {4}, {5} and {6}",
+                        resID, start, end, time, resID, resID + 1, resID + 2));
+            }
+
+            _palManipStart = start;
+            _palManipEnd = end;
+            _palManipCounter = 0;
+
+            if (_palManipPalette == null)
+                _palManipPalette = new Palette();
+
+            if (_palManipIntermediatePal == null)
+                _palManipIntermediatePal = new Palette();
+
+            for (var i = start; i < end; ++i)
+            {
+                _palManipPalette.Colors[i] = Color.FromRgb(string1[i], string2[i], string3[i]);
+                var pal = _currentPalette.Colors[i];
+                _palManipIntermediatePal.Colors[i] = Color.FromRgb(pal.R << 8, pal.G << 8, pal.B << 8);
+            }
+
+            _palManipCounter = time;
+        }
+
+        void PalManipulate()
+        {
+            if (_palManipCounter == 0 || _palManipPalette == null || _palManipIntermediatePal == null)
+                return;
+
+            for (var i = _palManipStart; i < _palManipEnd; ++i)
+            {
+                var target = _palManipPalette.Colors[i];
+                var between = _palManipIntermediatePal.Colors[i];
+                _palManipIntermediatePal.Colors[i] = Color.FromRgb(
+                    between.R + ((target.R << 8) - between.R) / _palManipCounter, 
+                    between.G + ((target.G << 8) - between.G) / _palManipCounter, 
+                    between.B + ((target.B << 8) - between.B) / _palManipCounter);
+                _currentPalette.Colors[i] = Color.FromRgb(between.R >> 8, between.G >> 8, between.B >> 8);
+            }
+            SetDirtyColors(_palManipStart, _palManipEnd);
+            _palManipCounter--;
         }
     }
 }

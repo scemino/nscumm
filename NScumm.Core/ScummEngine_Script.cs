@@ -260,6 +260,9 @@ namespace NScumm.Core
                 }
             }
 
+            if (VariableNewRoom.HasValue)
+                _variables[VariableNewRoom.Value] = room;
+
             RunExitScript();
 
             KillScriptsAndResources();
@@ -269,7 +272,7 @@ namespace NScumm.Core
                 StopCycle(0);
             }
 
-            for (var i = 0; i < _actors.Length; i++)
+            for (var i = 1; i < _actors.Length; i++)
             {
                 _actors[i].Hide();
             }
@@ -281,7 +284,10 @@ namespace NScumm.Core
                     _shadowPalette[i] = (byte)i;
             }
 
-            SetDirtyColors(0, 255);
+            if (Game.Version < 5)
+            {
+                SetDirtyColors(0, 255);
+            }
 
             Variables[VariableRoom.Value] = room;
             _fullRedraw = true;

@@ -285,29 +285,13 @@ namespace NScumm.Core
             _gfxManager.SetShakePos(0);
         }
 
-        void StopCycle(int i)
-        {
-            ScummHelper.AssertRange(0, i, 16, "stopCycle: cycle");
-            if (i != 0)
-            {
-                _colorCycle[i - 1].Delay = 0;
-                return;
-            }
-
-            for (i = 0; i < 16; i++)
-            {
-                var cycl = _colorCycle[i];
-                cycl.Delay = 0;
-            }
-        }
-
         void HandleEffects()
         {
             if (Game.Version >= 4)
             {
                 CyclePalette();
             }
-            //PalManipulate();
+            PalManipulate();
             if (_doEffect)
             {
                 _doEffect = false;

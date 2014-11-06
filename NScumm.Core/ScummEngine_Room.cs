@@ -318,6 +318,17 @@ namespace NScumm.Core
                         }
                     }
                     break;
+                case 15:        // SO_ROOM_TRANSFORM
+                    {
+                        a = GetVarOrDirectByte(OpCodeParameter.Param1);
+                        _opCode = ReadByte();
+                        b = GetVarOrDirectByte(OpCodeParameter.Param1);
+                        var c = GetVarOrDirectByte(OpCodeParameter.Param2);
+                        _opCode = ReadByte();
+                        var d = GetVarOrDirectByte(OpCodeParameter.Param1);
+                        PalManipulateInit(a, b, c, d);
+                    }
+                    break;
 
                 case 16:	// SO_CYCLE_SPEED
                     {

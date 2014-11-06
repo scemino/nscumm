@@ -71,7 +71,7 @@ namespace NScumm.Core
                         GetResult();
                         var id = GetVarOrDirectByte(OpCodeParameter.Param1);
                         var b = GetVarOrDirectByte(OpCodeParameter.Param2);
-                        var result = _strings[id][b];
+                        var result = b < _strings[id].Length && b >= 0 ? _strings[id][b] : 0;
                         SetResult(result);
                     }
                     break;

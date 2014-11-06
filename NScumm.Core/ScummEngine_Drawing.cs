@@ -20,7 +20,6 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
 using NScumm.Core.Graphics;
-using System.IO;
 using NScumm.Core.IO;
 
 namespace NScumm.Core
@@ -416,17 +415,20 @@ namespace NScumm.Core
 
         void UpdatePalette()
         {
+            if (Game.Features.HasFlag(GameFeatures.SixteenColors))
+                return;
+
             if (_palDirtyMax == -1)
                 return;
 
             var colors = new Color[256];
 
-            int first = _palDirtyMin;
-            int num = _palDirtyMax - first + 1;
+            var first = _palDirtyMin;
+            var num = _palDirtyMax - first + 1;
 
-            for (int i = _palDirtyMin; i <= _palDirtyMax; i++)
+            for (var i = _palDirtyMin; i <= _palDirtyMax; i++)
             {
-                var color = _currentPalette.Colors[_shadowPalette[i]];
+                var color = _currentPalette.Colors[Game.Version < 5 ? _shadowPalette[i] : i];
                 colors[i] = color;
             }
 

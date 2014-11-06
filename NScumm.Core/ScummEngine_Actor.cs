@@ -372,8 +372,23 @@ namespace NScumm.Core
         {
             GetResult();
             var index = GetVarOrDirectByte(OpCodeParameter.Param1);
+
+            // WORKAROUND bug #746349. This is a really odd bug in either the script
+            // or in our script engine. Might be a good idea to investigate this
+            // further by e.g. looking at the FOA engine a bit closer.
+            if (_game.Id == "atlantis" && _roomResource == 94 && _slots[_currentScript].Number == 206 && !IsValidActor(index))
+            {
+                SetResult(0);
+                return;
+            }
+
             var actor = _actors[index];
             SetResult(actor.Room);
+        }
+
+        bool IsValidActor(int id)
+        {
+            return id >= 0 && id < _actors.Length && _actors[id].Number == id;
         }
 
         void GetActorWidth()

@@ -387,6 +387,10 @@ namespace NScumm.Core.IO
                 img.Data = br.ReadBytes(size + 2);
                 br.BaseStream.Seek(-2, SeekOrigin.Current);
                 size = br.ReadUInt16();
+                if (br.BaseStream.Position == br.BaseStream.Length)
+                {
+                    size = 0;
+                }
             }
             while (size != 0 && img.ZPlanes.Count < 3)
             {

@@ -293,7 +293,7 @@ namespace NScumm.Core
             {
                 _verbs[verb].ImageWidth = o.Width;
                 _verbs[verb].ImageHeight = o.Height;
-                _verbs[verb].ImageData = o.Images[0];
+                _verbs[verb].ImageData = o.Images.Count > 0 ? o.Images[0] : null;
             }
         }
 

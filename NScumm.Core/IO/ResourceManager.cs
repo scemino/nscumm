@@ -146,6 +146,8 @@ namespace NScumm.Core.IO
                     return new ResourceManager4(game); 
                 case 5:
                     return new ResourceManager5(game); 
+                case 6:
+                    return new ResourceManager6(game); 
                 default:
                     throw new NotSupportedException(string.Format("ResourceManager {0} is not supported", game.Version)); 
             }
@@ -167,7 +169,7 @@ namespace NScumm.Core.IO
                 var roomOffset = GetRoomOffset(disk, roomNum);
                 room = disk.ReadRoom(roomOffset);
                 room.Number = roomNum;
-                room.Name = Index.RoomNames != null ? Index.RoomNames[roomNum] : null;
+                room.Name = Index.RoomNames != null && Index.RoomNames.ContainsKey(roomNum) ? Index.RoomNames[roomNum] : null;
             }
 
             return room;

@@ -154,6 +154,9 @@
     <Compile Include="Audio\IMuse\CommandQueue.cs" />
     <Compile Include="Audio\Midi\ISysEx.cs" />
     <Compile Include="Audio\IMuse\IMuseSysEx.cs" />
+    <Compile Include="IO\ResourceIndex6.cs" />
+    <Compile Include="IO\ResourceManager6.cs" />
+    <Compile Include="IO\ResourceFile6.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="IO\Nscumm.xml">

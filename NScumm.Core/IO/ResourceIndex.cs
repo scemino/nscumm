@@ -99,6 +99,9 @@ namespace NScumm.Core.IO
                 case 5:
                     index = new ResourceIndex5();
                     break;
+                case 6:
+                    index = new ResourceIndex6();
+                    break;
                 default:
                     throw new NotSupportedException("The SCUMM version {0} is not supported.");
             }

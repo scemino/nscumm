@@ -32,7 +32,7 @@ namespace NScumm.Core.IO
     {
         #region Chunk Class
 
-        sealed class Chunk
+        protected sealed class Chunk
         {
             public long Size { get; set; }
 
@@ -43,7 +43,7 @@ namespace NScumm.Core.IO
 
         #endregion
 
-        class ChunkIterator5: IEnumerator<Chunk>
+        protected class ChunkIterator5: IEnumerator<Chunk>
         {
             readonly XorReader _reader;
             readonly long _position;
@@ -88,6 +88,13 @@ namespace NScumm.Core.IO
                 return Current != null;
             }
 
+            public static Chunk ReadChunk(XorReader reader)
+            {
+                var tag = Encoding.ASCII.GetString(reader.ReadBytes(4));
+                var size = reader.ReadUInt32BigEndian();
+                return new Chunk { Offset = reader.BaseStream.Position, Size = size, Tag = tag };
+            }
+
             public void Reset()
             {
                 _reader.BaseStream.Seek(_position, SeekOrigin.Begin);
@@ -101,7 +108,7 @@ namespace NScumm.Core.IO
 
         }
 
-        IEnumerator<Chunk> CreateChunkIterator(long size)
+        protected IEnumerator<Chunk> CreateChunkIterator(long size)
         {
             return new ChunkIterator5(_reader, size);
         }
@@ -275,7 +282,7 @@ namespace NScumm.Core.IO
             return room;
         }
 
-        Tuple<ushort,List<ImageData>> ReadObjectImages(long size)
+        protected Tuple<ushort,List<ImageData>> ReadObjectImages(long size)
         {
             var images = new List<ImageData>();
             ushort id = 0;
@@ -314,7 +321,24 @@ namespace NScumm.Core.IO
             return Tuple.Create(id, images);
         }
 
-        ObjectData ReadObjectCode(long size)
+        protected virtual ObjectData ReadCDHD()
+        {
+            var obj = new ObjectData
+            {
+                Number = _reader.ReadUInt16(),
+                Position = new Point((short)(_reader.ReadByte() * 8), (short)(_reader.ReadByte() * 8)),
+                Width = (ushort)(_reader.ReadByte() * 8),
+                Height = (ushort)(_reader.ReadByte() * 8),
+                Flags = (DrawBitmaps)_reader.ReadByte(),
+                Parent = _reader.ReadByte(),
+                Walk = new Point(_reader.ReadInt16(), _reader.ReadInt16()),
+                ActorDir = _reader.ReadByte()
+            };
+            obj.ParentState = (obj.Flags == (DrawBitmaps)0x80) ? (byte)1 : (byte)((int)obj.Flags & 0xF);
+            return obj;
+        }
+
+        protected ObjectData ReadObjectCode(long size)
         {
             ObjectData obj = null;
             var it = CreateChunkIterator(size);
@@ -325,18 +349,7 @@ namespace NScumm.Core.IO
                     case "CDHD":
                         {
                             // code header
-                            obj = new ObjectData
-                            {
-                                Number = _reader.ReadUInt16(),
-                                Position = new Point((short)(_reader.ReadByte() * 8), (short)(_reader.ReadByte() * 8)),
-                                Width = (ushort)(_reader.ReadByte() * 8),
-                                Height = (ushort)(_reader.ReadByte() * 8),
-                                Flags = (DrawBitmaps)_reader.ReadByte(),
-                                Parent = _reader.ReadByte(),
-                                Walk = new Point(_reader.ReadInt16(), _reader.ReadInt16()),
-                                ActorDir = _reader.ReadByte()
-                            };
-                            obj.ParentState = (obj.Flags == (DrawBitmaps)0x80) ? (byte)1 : (byte)((int)obj.Flags & 0xF);
+                            obj = ReadCDHD();
                         }
                         break;
                     case "VERB":
@@ -385,7 +398,7 @@ namespace NScumm.Core.IO
             return colors;
         }
 
-        ImageData ReadImage(long size, int numStrips)
+        protected ImageData ReadImage(long size, int numStrips)
         {
             var img = new ImageData();
             var it = CreateChunkIterator(size);
@@ -443,12 +456,12 @@ namespace NScumm.Core.IO
             return zPlane;
         }
 
-        static void UnknownChunk(Chunk chunk)
+        protected static void UnknownChunk(Chunk chunk)
         {
             System.Diagnostics.Debug.WriteLine("Ignoring Resource Tag: {0}, Size: {1:X4}", chunk.Tag, chunk.Size);
         }
 
-        byte[] ReadObjectName()
+        protected byte[] ReadObjectName()
         {
             byte chr;
             var name = new List<byte>();

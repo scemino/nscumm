@@ -10,6 +10,7 @@
   <MD5 signature="3686cf8f89e102ececf4366e1d2c8126" gameId="monkey2" variant="VGA" language="en" />
   <MD5 signature="8e4ee4db46954bfe2912e259a16fad82" gameId="monkey2" variant="VGA" language="fr-fr" />
   <MD5 signature="e6cd81b25ab1453a8a6d3482118c391e" gameId="pass" variant="" language="en" features="SixteenColors" />
+  <MD5 signature="2723fea3dae0cb47768c424b145ae0e7" gameId="tentacle" variant="Floppy" language="en" />
   <Game id="indy3" variant="VGA" version="3"/>
   <Game id="indy3" variant="EGA" version="3"/>
   <Game id="atlantis" variant="VGA" version="5"/>
@@ -18,10 +19,12 @@
   <Game id="monkey" variant="CD" version="5" />
   <Game id="monkey2" variant="VGA" version="5" />
   <Game id="pass" variant="" version="4" />
+  <Game id="tentacle" variant="Floppy" version="6" />
   <Description gameId="indy3" text="Indiana Jones and the Last Crusade" />
   <Description gameId="atlantis" text="Indiana Jones and the Fate of Atlantis" />
   <Description gameId="monkey" text="The Secret of Monkey Island" />
   <Description gameId="monkey2" text="Monkey Island 2: LeChuck's revenge" />
   <Description gameId="loom" text="Loom" />
   <Description gameId="pass" text="Passport to Adventure" />
+  <Description gameId="tentacle" text="Day of the Tentacle" />
 </NScumm>

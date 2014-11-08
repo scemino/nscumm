@@ -29,7 +29,7 @@ namespace NScumm.Core.IO
         public ReadOnlyCollection<Resource> CharsetResources
         {
             get;
-            private set;
+            protected set;
         }
 
         protected override Resource[] ReadResTypeList(XorReader br)
@@ -101,7 +101,7 @@ namespace NScumm.Core.IO
                             ReadDirectoryOfObjects(br);
                             break;
                         default:
-                            Console.WriteLine("Unknown block {0}", block);
+                            Console.Error.WriteLine("Unknown block {0}", block);
                             break;
                     }
                 }

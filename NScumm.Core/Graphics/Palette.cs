@@ -14,6 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
+using System;
 
 
 namespace NScumm.Core.Graphics
@@ -25,6 +26,13 @@ namespace NScumm.Core.Graphics
         public Palette()
         {
             Colors = new Color[256];
+        }
+
+        public Palette(Color[] colors)
+        {
+            if (colors.Length != 256)
+                throw new ArgumentException("Palette needs 256 colors.");
+            Colors = colors;
         }
     }
 }

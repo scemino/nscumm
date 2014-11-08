@@ -38,17 +38,24 @@ namespace NScumm.MonoGame
             GameInfo info = null;
             if (args.Length > 0)
             {
-                var path = args[0];
+                var path = ScummHelper.NormalizePath(args[0]);
                 if (System.IO.File.Exists(path))
                 {
                     info = GameManager.GetInfo(path);
+                    if (info == null)
+                    {
+                        Console.Error.WriteLine("This game is not supported, sorry please contact me if you want to support this game.");
+                    }
+                    else
+                    {
+                        var game = new ScummGame(info);
+                        game.Run();
+                    }
                 }
-            }
-
-            if (info != null)
-            {
-                var game = new ScummGame(info);
-                game.Run();
+                else
+                {
+                    Console.Error.WriteLine("The file {0} does not exist.", path);
+                }
             }
             else
             {

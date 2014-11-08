@@ -415,9 +415,6 @@ namespace NScumm.Core
 
         void UpdatePalette()
         {
-            if (Game.Features.HasFlag(GameFeatures.SixteenColors))
-                return;
-
             if (_palDirtyMax == -1)
                 return;
 

@@ -132,8 +132,11 @@ namespace NScumm.Core.Graphics
                 var navDst = new PixelNavigator(surface);
                 navDst.GoTo(x * 8, y);
 
-                var smapReader = new BinaryReader(new MemoryStream(img.Data));
-                var transpStrip = DrawStrip(navDst, height, stripnr, smapReader);
+                bool transpStrip;
+                using (var smapReader = new BinaryReader(new MemoryStream(img.Data)))
+                {
+                    transpStrip = DrawStrip(navDst, height, stripnr, smapReader);
+                }
 
                 if (vs.HasTwoBuffers)
                 {
@@ -386,15 +389,17 @@ namespace NScumm.Core.Graphics
 
                 if (offs.HasValue)
                 {
-                    var zplanePtr = new MemoryStream(zPlanes[i].Data);
-                    zplanePtr.Seek(offs.Value, SeekOrigin.Begin);
-                    if (transpStrip && flags.HasFlag(DrawBitmaps.AllowMaskOr))
+                    using (var zplanePtr = new MemoryStream(zPlanes[i].Data))
                     {
-                        DecompressMaskImgOr(mask_ptr, zplanePtr, height);
-                    }
-                    else
-                    {
-                        DecompressMaskImg(mask_ptr, zplanePtr, height);
+                        zplanePtr.Seek(offs.Value, SeekOrigin.Begin);
+                        if (transpStrip && flags.HasFlag(DrawBitmaps.AllowMaskOr))
+                        {
+                            DecompressMaskImgOr(mask_ptr, zplanePtr, height);
+                        }
+                        else
+                        {
+                            DecompressMaskImg(mask_ptr, zplanePtr, height);
+                        }
                     }
                 }
                 else if (!(transpStrip && flags.HasFlag(DrawBitmaps.AllowMaskOr)))

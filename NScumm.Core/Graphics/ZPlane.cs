@@ -25,12 +25,6 @@ namespace NScumm.Core.Graphics
 {
     public class ZPlane
     {
-        public int Id
-        {
-            get;
-            private set;
-        }
-
         public byte[] Data
         {
             get;
@@ -43,9 +37,8 @@ namespace NScumm.Core.Graphics
             private set;
         }
 
-        public ZPlane(int id, byte[] data, IList<int?> offsets)
+        public ZPlane(byte[] data, IList<int?> offsets)
         {
-            Id = id;
             Data = data;
             StripOffsets = offsets;
         }

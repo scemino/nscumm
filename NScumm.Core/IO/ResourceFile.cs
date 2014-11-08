@@ -19,18 +19,18 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
+using System;
 
 namespace NScumm.Core.IO
 {
-    public abstract class ResourceFile
+    public abstract class ResourceFile: IDisposable
     {
         #region Fields
 
         protected readonly XorReader _reader;
+        FileStream _fs;
 
         #endregion
 
@@ -38,13 +38,22 @@ namespace NScumm.Core.IO
 
         protected ResourceFile(string path, byte encByte)
         {
-            var dir = Path.GetDirectoryName(path);
-            var realPath = (from file in Directory.EnumerateFiles(dir)
-                                     where string.Equals(file, path, StringComparison.OrdinalIgnoreCase)
-                                     select file).FirstOrDefault();
-            var fs = File.OpenRead(realPath);
-            var br2 = new BinaryReader(fs);
-            _reader = new XorReader(br2, encByte);
+            path = ScummHelper.NormalizePath(path);
+            _fs = File.OpenRead(path);
+            _reader = new XorReader(_fs, encByte);
+        }
+
+        #endregion
+
+        #region IDisposable implementation
+
+        public void Dispose()
+        {
+            if (_fs != null)
+            {
+                _fs.Dispose();
+                _fs = null;
+            }
         }
 
         #endregion

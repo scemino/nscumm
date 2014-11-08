@@ -26,6 +26,11 @@ namespace NScumm.Core.IO
 
         public Stream BaseStream { get { return _reader.BaseStream; } }
 
+        public XorReader(Stream input, byte xor)
+            : this(new BinaryReader(input), xor)
+        {
+        }
+
         public XorReader(BinaryReader reader, byte xor)
         {
             _reader = reader;

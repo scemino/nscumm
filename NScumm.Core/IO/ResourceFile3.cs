@@ -24,6 +24,8 @@ using NScumm.Core.Graphics;
 using NScumm.Core;
 using System.IO;
 using System;
+using System.Text;
+using System.Linq;
 
 namespace NScumm.Core.IO
 {
@@ -39,7 +41,7 @@ namespace NScumm.Core.IO
             return new Dictionary<byte, long>();
         }
 
-        protected virtual Box ReadBox(ref int size)
+        protected virtual Box ReadBox()
         {
             var box = new Box();
             box.Ulx = _reader.ReadInt16();
@@ -52,7 +54,6 @@ namespace NScumm.Core.IO
             box.Lly = _reader.ReadInt16();
             box.Mask = _reader.ReadByte();
             box.Flags = (BoxFlags)_reader.ReadByte();
-            size -= 18;
             return box;
         }
 
@@ -73,7 +74,7 @@ namespace NScumm.Core.IO
         {
             public long Size { get; set; }
 
-            public ushort Tag { get; set; }
+            public string Tag { get; set; }
 
             public long Offset { get; set; }
         }
@@ -121,7 +122,7 @@ namespace NScumm.Core.IO
                 if (_reader.BaseStream.Position < (_position + _size - 6) && _reader.BaseStream.Position < _reader.BaseStream.Length)
                 {
                     var size = _reader.ReadUInt32();
-                    var tag = _reader.ReadUInt16();
+                    var tag = Encoding.ASCII.GetString(_reader.ReadBytes(2));
                     Current = new Chunk { Offset = _reader.BaseStream.Position, Size = size, Tag = tag };
                 }
                 return Current != null;
@@ -134,6 +135,13 @@ namespace NScumm.Core.IO
             }
         }
 
+        static Chunk ReadChunk(XorReader reader)
+        {
+            var size = reader.ReadUInt32();
+            var tag = Encoding.ASCII.GetString(reader.ReadBytes(2));
+            return new Chunk { Offset = reader.BaseStream.Position, Size = size, Tag = tag };
+        }
+
         #endregion
 
         protected virtual void GotoResourceHeader(long offset)
@@ -143,10 +151,10 @@ namespace NScumm.Core.IO
 
         public override XorReader ReadCostume(long offset)
         {
-            GotoResourceHeader(offset + 4);
-            var tag = _reader.ReadInt16();
-            if (tag != 0x4F43)
-                throw new NotSupportedException("Invalid costume.");
+            GotoResourceHeader(offset);
+            var chunk = ReadChunk(_reader);
+            if (chunk.Tag != "CO")
+                throw new NotSupportedException("Expected costume block.");
             return _reader;
         }
 
@@ -164,28 +172,26 @@ namespace NScumm.Core.IO
         public override byte[] ReadSound(long offset)
         {
             GotoResourceHeader(offset);
-            long size = _reader.ReadUInt32();
-            var tag = _reader.ReadInt16();
-            if (tag != 0x4F53)
-                throw new NotSupportedException("Expected SO block.");
-            var totalSize = size - 6;
+            var chunk = ReadChunk(_reader);
+            if (chunk.Tag != "SO")
+                throw new NotSupportedException("Expected sound block.");
+            var totalSize = chunk.Size - 6;
             while (totalSize > 0)
             {
-                size = _reader.ReadUInt32();
-                tag = _reader.ReadInt16();
-                if (tag == 0x4F53)
+                chunk = ReadChunk(_reader);
+                if (chunk.Tag == "SO")
                 {
                     totalSize -= 6;
                 }
-                else if (tag == 0x4441)
+                else if (chunk.Tag == "AD")
                 {
                     _reader.BaseStream.Seek(-6, SeekOrigin.Current);
-                    return _reader.ReadBytes((int)size);
+                    return _reader.ReadBytes((int)chunk.Size);
                 }
                 else
                 {
-                    totalSize -= size;
-                    _reader.BaseStream.Seek(size - 6, SeekOrigin.Current);
+                    totalSize -= chunk.Size;
+                    _reader.BaseStream.Seek(chunk.Size - 6, SeekOrigin.Current);
                 }
 
             }
@@ -194,186 +200,178 @@ namespace NScumm.Core.IO
 
         public override Room ReadRoom(long offset)
         {
-            var objImages = new Dictionary<ushort, ImageData>();
-            var its = new Stack<ChunkIterator>();
-            var room = new Room();
-            _reader.BaseStream.Seek(offset, SeekOrigin.Begin);
-            var it = new ChunkIterator(_reader, _reader.BaseStream.Length - _reader.BaseStream.Position);
-            do
-            {
-                while (it.MoveNext())
-                {
-                    switch (it.Current.Tag)
-                    {
-                        case 0x464C:
-                            // *LFLF* disk block
-                            // room number
-                            _reader.ReadUInt16();
-                            //its.Push(it);
-                            it = new ChunkIterator(_reader, it.Current.Size - 2);
-                            break;
-                        case 0x4F52:
-                            // ROOM
-                            its.Push(it);
-                            it = new ChunkIterator(_reader, it.Current.Size);
-                            break;
-                        case 0x4448:
-                            // ROOM Header
-                            room.Header = ReadRMHD();
-                            break;
-                        case 0x4343:
-                            // CYCL
-                            room.ColorCycle = ReadCYCL();
-                            break;
-                        case 0x5053:
-                            // EPAL
-                            ReadEPAL();
-                            break;
-                        case 0x5842:
-                            // BOXD
-                            {
-                                int size = (int)(it.Current.Size - 6);
-                                var numBoxes = _reader.ReadByte();
-                                for (int i = 0; i < numBoxes; i++)
-                                {
-                                    var box = ReadBox(ref size);
-                                    room.Boxes.Add(box);
-                                }
+            GotoResourceHeader(offset);
+            var chunk = ReadChunk(_reader);
 
-                                if (size > 0)
-                                {
-                                    room.BoxMatrix.Clear();
-                                    room.BoxMatrix.AddRange(_reader.ReadBytes(size));
-                                }
-                            }
-                            break;
-                        case 0x4150:
+            if (chunk.Tag != "RO")
+            {
+                throw new NotSupportedException("Invalid room.");
+            }
+
+            var room = ReadRoomCore(offset, chunk.Size);
+            return room;
+        }
+
+        Room ReadRoomCore(long offset, long chunkSize)
+        {
+            var objImages = new Dictionary<ushort, byte[]>();
+            var room = new Room();
+            var it = new ChunkIterator(_reader, chunkSize);
+
+            while (it.MoveNext())
+            {
+                switch (it.Current.Tag)
+                {
+                    case "HD":
+                                    // Room Header
+                        room.Header = ReadRMHD();
+                        break;
+                    case "CC":
+                                    // Color Cylcle
+                        room.ColorCycle = ReadCYCL();
+                        break;
+                    case "SP":
+                                    // EPAL
+                        ReadEPAL();
+                        break;
+                    case "BX":
+                                    // BOXD
+                        {
+                            var size = (int)(it.Current.Size - 6);
+                            var numBoxes = _reader.ReadByte();
+                            var pos = _reader.BaseStream.Position;
+                            for (var i = 0; i < numBoxes; i++)
                             {
-                                // CLUT
-                                var colors = ReadCLUT();
-                                room.HasPalette = true;
-                                Array.Copy(colors, room.Palette.Colors, colors.Length);
+                                var box = ReadBox();
+                                room.Boxes.Add(box);
                             }
-                            break;
-                        case 0x4153:
-                            // SCAL
-                            if (it.Current.Size > 6)
+                            size -= (int)(_reader.BaseStream.Position - pos);
+
+                            if (size > 0)
                             {
-                                room.Scales = ReadSCAL();
+                                room.BoxMatrix.Clear();
+                                room.BoxMatrix.AddRange(_reader.ReadBytes(size));
                             }
-                            break;
-                        case 0x4D42:
-                            // BM (IM00)
+                        }
+                        break;
+                    case "PA":
+                        {
+                            // Palette
+                            var colors = ReadCLUT();
+                            room.HasPalette = true;
+                            Array.Copy(colors, room.Palette.Colors, colors.Length);
+                        }
+                        break;
+                    case "SA":
+                                    // Scale
+                        if (it.Current.Size > 6)
+                        {
+                            room.Scales = ReadSCAL();
+                        }
+                        break;
+                    case "BM":
+                                    // Bitmap
+                        if (it.Current.Size > 6)
+                        {
+                            using (var ms = new MemoryStream(_reader.ReadBytes((int)(it.Current.Size - 6))))
+                            {
+                                room.Image = ReadImage(ms, room.Header.Width / 8);
+                            }
+                        }
+                        break;
+                    case "EN":
+                        {
+                            // Entry script
+                            room.EntryScript.Data = _reader.ReadBytes((int)(it.Current.Size - 6));
+                        }
+                        break;
+                    case "EX":
+                        {
+                            // Exit script
+                            room.ExitScript.Data = _reader.ReadBytes((int)(it.Current.Size - 6));
+                        }
+                        break;
+                    case "LC": //LC
+                        {
+                            // *NLSC* number of local scripts
+                            var num = _reader.ReadUInt16();
+                        }
+                        break;
+                    case "LS":
+                        {
+                            // local scripts
+                            var index = _reader.ReadByte();
+                            var pos = _reader.BaseStream.Position;
+                            room.LocalScripts[index - 0xC8] = new ScriptData
+                            {
+                                Offset = pos - offset - 8,
+                                Data = _reader.ReadBytes((int)(it.Current.Size - 7))
+                            };
+                        }
+                        break;
+                    case "OI":
+                        {
+                            // Object Image
+                            var objId = _reader.ReadUInt16();
                             if (it.Current.Size > 8)
                             {
-                                using (var ms = new MemoryStream(_reader.ReadBytes((int)(it.Current.Size - 6))))
-                                {
-                                    room.Image = ReadImage(ms, room.Header.Width / 8);
-                                }
+                                var img = _reader.ReadBytes((int)(it.Current.Size - 6));
+                                objImages.Add(objId, img);
                             }
-                            break;
-                        case 0x4E45:
-                            {
-                                // Entry script
-                                room.EntryScript.Data = _reader.ReadBytes((int)(it.Current.Size - 6));
-                            }
-                            break;
-                        case 0x5845:
-                            {
-                                // Exit script
-                                room.ExitScript.Data = _reader.ReadBytes((int)(it.Current.Size - 6));
-                            }
-                            break;
-                        case 0x4C53:
-                            {
-                                // *SL* 
-                                _reader.ReadByte();
-                            }
-                            break;
-                        case 0x434C: //LC
-                            {
-                                // *NLSC* number of local scripts
-                                _reader.ReadUInt16();
-                            }
-                            break;
-                        case 0x534C:
-                            {
-                                // local scripts
-                                var index = _reader.ReadByte();
-                                var pos = _reader.BaseStream.Position;
-                                room.LocalScripts[index - 0xC8] = new ScriptData
-                                {
-                                    Offset = pos - offset - 8,
-                                    Data = _reader.ReadBytes((int)(it.Current.Size - 7))
-                                };
-                            }
-                            break;
-                        case 0x494F:
-                            {
-                                // Object Image
-                                var objId = _reader.ReadUInt16();
-                                if (it.Current.Size > 8)
-                                {
-                                    var img = new ImageData{ Data = _reader.ReadBytes((int)(it.Current.Size - 6)) };
-                                    objImages.Add(objId, img);
-                                }
-                            }
-                            break;
-                        case 0x434F:
-                            {
-                                // Object script
-                                var objId = _reader.ReadUInt16();
-                                _reader.ReadByte();
-                                var x = _reader.ReadByte();
-                                var tmp = _reader.ReadByte();
-                                var y = tmp & 0x7F;
-                                byte parentState = (byte)(((tmp & 0x80) != 0) ? 1 : 0);
-                                var width = _reader.ReadByte();
-                                var parent = _reader.ReadByte();
-                                var walk_x = _reader.ReadInt16();
-                                var walk_y = _reader.ReadInt16();
-                                tmp = _reader.ReadByte();
-                                byte height = (byte)(tmp & 0xF8);
-                                byte actordir = (byte)(tmp & 0x07);
+                        }
+                        break;
+                    case "OC":
+                        {
+                            // Object script
+                            var objId = _reader.ReadUInt16();
+                            var t = _reader.ReadByte();
+                            System.Diagnostics.Debug.WriteLine("objId={0}: {1}", objId, t);
+                            var x = _reader.ReadByte();
+                            var tmp = _reader.ReadByte();
+                            var y = tmp & 0x7F;
+                            byte parentState = (byte)(((tmp & 0x80) != 0) ? 1 : 0);
+                            var width = _reader.ReadByte();
+                            var parent = _reader.ReadByte();
+                            var walk_x = _reader.ReadInt16();
+                            var walk_y = _reader.ReadInt16();
+                            tmp = _reader.ReadByte();
+                            byte height = (byte)(tmp & 0xF8);
+                            byte actordir = (byte)(tmp & 0x07);
 
-                                var data = new ObjectData();
-                                data.Number = objId;
-                                data.Position = new Point((short)(8 * x), (short)(8 * y));
-                                data.Width = (ushort)(8 * width);
-                                data.Height = height;
-                                data.Parent = parent;
-                                data.ParentState = parentState;
-                                data.Walk = new Point(walk_x, walk_y);
-                                data.ActorDir = actordir;
-                                room.Objects.Add(data);
+                            var data = new ObjectData();
+                            data.Number = objId;
+                            data.Position = new Point((short)(8 * x), (short)(8 * y));
+                            data.Width = (ushort)(8 * width);
+                            data.Height = height;
+                            data.Parent = parent;
+                            data.ParentState = parentState;
+                            data.Walk = new Point(walk_x, walk_y);
+                            data.ActorDir = actordir;
+                            room.Objects.Add(data);
 
-                                var nameOffset = _reader.ReadByte();
-                                var size = nameOffset - 6 - 13;
-                                ReadVerbTable(data, size);
-                                data.Name = ReadObjectName(it, nameOffset);
-                                // read script
-                                size = (int)(it.Current.Offset + it.Current.Size - 6 - _reader.BaseStream.Position);
-                                data.Script.Data = _reader.ReadBytes(size);
-                                data.Script.Offset = nameOffset + data.Name.Length + 1;
+                            var nameOffset = _reader.ReadByte();
+                            var size = nameOffset - 6 - 13;
+                            ReadVerbTable(data, size);
+                            data.Name = ReadObjectName(it, nameOffset);
+                            // read script
+                            size = (int)(it.Current.Offset + it.Current.Size - 6 - _reader.BaseStream.Position);
+                            data.Script.Data = _reader.ReadBytes(size);
+                            data.Script.Offset = nameOffset + data.Name.Length + 1;
 
-                                SetObjectImage(objImages, data);
-                            }
-                            break;
-                    //case 0x4F53:
-                    //    {
-                    //        // SO
-                    //        its.Push(it);
-                    //        it = new ChunkIterator(_reader, it.Current.Size);
-                    //    }
-                    //    break;
-                        default:
-                            System.Diagnostics.Debug.WriteLine("Ignoring Resource Tag: {0:X2} ({2}{3}), Size: {1:X4}",
-                                it.Current.Tag, it.Current.Size, (char)(it.Current.Tag & 0x00FF), (char)(it.Current.Tag >> 8));
-                            break;
-                    }
+                            SetObjectImage(room.Image.ZPlanes.Count, objImages, data);
+                        }
+                        break;
+                    
+                    default:
+                        {
+                            var data = _reader.ReadBytes((int)it.Current.Size - 6);
+                            System.Diagnostics.Debug.WriteLine("Ignoring Resource Tag: {0} (0x{1:X2}{2:X2}) [{3}]", 
+                                it.Current.Tag, (int)it.Current.Tag[0], (int)it.Current.Tag[1], 
+                                string.Join(",", data.Select(b => b.ToString("X2"))));
+                        }
+                        break;
                 }
-                it = its.Pop();
-            } while (its.Count > 0);
+            }
 
             return room;
         }
@@ -384,7 +382,7 @@ namespace NScumm.Core.IO
             var img = new ImageData();
             var size = br.ReadInt32();
             br.BaseStream.Seek(-4, SeekOrigin.Current);
-            if (size > 0)
+            if (size != 0)
             {
                 img.Data = br.ReadBytes(size + 2);
                 br.BaseStream.Seek(-2, SeekOrigin.Current);
@@ -395,6 +393,7 @@ namespace NScumm.Core.IO
                 var zPlane = ReadZPlane(br, size, numStrips);
                 img.ZPlanes.Add(zPlane);
                 size = 0;
+                br.BaseStream.Seek(-2, SeekOrigin.Current);
                 if ((br.BaseStream.Position + 2) < br.BaseStream.Length)
                 {
                     size = br.ReadUInt16();
@@ -412,12 +411,12 @@ namespace NScumm.Core.IO
             {
                 var br = new BinaryReader(ms);
                 var tableSize = 4 + numStrips * 2;
-                br.BaseStream.Seek(2, SeekOrigin.Begin);
+                ms.Seek(2, SeekOrigin.Current);
                 // read table offsets
                 for (int i = 0; i < numStrips; i++)
                 {
                     var offset = br.ReadUInt16();
-                    if (offset > 0)
+                    if (offset != 0)
                     {
                         offsets.Add(offset - tableSize);
                     }
@@ -428,11 +427,9 @@ namespace NScumm.Core.IO
                 }
                 strips = br.ReadBytes(size - tableSize);
             }
-            var zPlane = new ZPlane(0, strips, offsets);
+            var zPlane = new ZPlane(strips, offsets);
             return zPlane;
         }
-
-        #region Protected Methods
 
         byte[] ReadObjectName(IEnumerator<Chunk> it, byte nameOffset)
         {
@@ -450,7 +447,7 @@ namespace NScumm.Core.IO
         protected void ReadVerbTable(ObjectData data, int size)
         {
             var tableLength = (size - 1) / 3;
-            for (int i = 0; i < tableLength; i++)
+            for (var i = 0; i < tableLength; i++)
             {
                 var id = _reader.ReadByte();
                 var offset = _reader.ReadUInt16();
@@ -459,11 +456,17 @@ namespace NScumm.Core.IO
             _reader.ReadByte();
         }
 
-        static void SetObjectImage(IDictionary<ushort, ImageData> stripsDic, ObjectData obj)
+        void SetObjectImage(int numZBuffer, IDictionary<ushort, byte[]> stripsDic, ObjectData obj)
         {
             if (stripsDic.ContainsKey(obj.Number))
             {
-                obj.Images.Add(stripsDic[obj.Number]);
+                using (var ms = new MemoryStream(stripsDic[obj.Number]))
+                {
+                    Console.Write("obj {0}: ", obj.DebuggerDisplay);
+                    obj.Images.Add(ReadImage(ms, obj.Width / 8));
+                }
+//                obj.Images.Add(new ImageData{ Data = stripsDic[obj.Number] });
+
             }
         }
 
@@ -520,8 +523,6 @@ namespace NScumm.Core.IO
         {
             return _reader.ReadBytes(256);
         }
-
-        #endregion
     }
 	
 }

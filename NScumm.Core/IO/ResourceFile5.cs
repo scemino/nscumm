@@ -177,11 +177,10 @@ namespace NScumm.Core.IO
                         case "BOXD":
                                     // box data
                             {
-                                var size = (int)(it.Current.Size - 8);
                                 var numBoxes = _reader.ReadUInt16();
                                 for (int i = 0; i < numBoxes; i++)
                                 {
-                                    var box = ReadBox(ref size);
+                                    var box = ReadBox();
                                     room.Boxes.Add(box);
                                 }
                             }
@@ -197,7 +196,6 @@ namespace NScumm.Core.IO
                         case "CLUT":
                             {
                                 // CLUT
-                                var numColors = (it.Current.Size - 8) / 3;
                                 var colors = ReadCLUT();
                                 room.HasPalette = true;
                                 Array.Copy(colors, room.Palette.Colors, colors.Length);
@@ -441,7 +439,7 @@ namespace NScumm.Core.IO
                 }
                 strips = br.ReadBytes(size - tableSize);
             }
-            var zPlane = new ZPlane(0, strips, offsets);
+            var zPlane = new ZPlane(strips, offsets);
             return zPlane;
         }
 

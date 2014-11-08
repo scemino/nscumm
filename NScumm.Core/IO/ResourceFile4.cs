@@ -80,7 +80,7 @@ namespace NScumm.Core.IO
                 for (int i = 0; i < numStrips; i++)
                 {
                     var offset = br.ReadUInt16();
-                    if (offset > 0)
+                    if (offset != 0)
                     {
                         offsets.Add(offset - tableSize);
                     }
@@ -91,7 +91,7 @@ namespace NScumm.Core.IO
                 }
                 strips = br.ReadBytes(size - tableSize);
             }
-            var zPlane = new ZPlane(0, strips, offsets);
+            var zPlane = new ZPlane(strips, offsets);
             return zPlane;
         }
 
@@ -100,7 +100,7 @@ namespace NScumm.Core.IO
             _reader.BaseStream.Seek(offset + 8, SeekOrigin.Begin);
         }
 
-        protected override Box ReadBox(ref int size)
+        protected override Box ReadBox()
         {
             var box = new Box();
             box.Ulx = _reader.ReadInt16();
@@ -114,7 +114,6 @@ namespace NScumm.Core.IO
             box.Mask = _reader.ReadByte();
             box.Flags = (BoxFlags)_reader.ReadByte();
             box.Scale = _reader.ReadUInt16();
-            size -= 20;
             return box;
         }
 

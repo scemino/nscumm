@@ -300,6 +300,19 @@ namespace NScumm.Dump
             var x = Pop();
             return Push(new MethodInvocation("GetActorFrom").AddArguments(x, y));
         }
+
+        Statement TalkActor()
+        {
+            var actor = Pop();
+            var text = ReadCharacters();
+            return new MethodInvocation(new MemberAccess(GetActor(actor), "Talk")).AddArgument(text).ToStatement();
+        }
+
+        Statement TalkEgo()
+        {
+            var text = ReadCharacters();
+            return new MethodInvocation(new MemberAccess("Ego", "Talk")).AddArgument(text).ToStatement();
+        }
     }
 }
 

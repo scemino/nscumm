@@ -26,6 +26,16 @@ namespace NScumm.Dump
     {
         const string VariablesName = "Variables";
 
+        Statement ByteArrayRead()
+        {
+            return Push(ReadArray(ReadByte().ToLiteral(), 0.ToLiteral(), Pop()));
+        }
+
+        Statement WordArrayRead()
+        {
+            return Push(ReadArray(ReadWord().ToLiteral(), 0.ToLiteral(), Pop()));
+        }
+
         Statement ByteArrayWrite()
         {
             var a = Pop();
@@ -36,6 +46,20 @@ namespace NScumm.Dump
         {
             var a = Pop();
             return WriteArray(ReadWord().ToLiteral(), 0.ToLiteral(), Pop(), a);
+        }
+
+        Statement ByteArrayIndexedRead()
+        {
+            var @base = Pop();
+            var index = Pop();
+            return Push(ReadArray(ReadByte().ToLiteral(), index, @base));
+        }
+
+        Statement WordArrayIndexedRead()
+        {
+            var @base = Pop();
+            var index = Pop();
+            return Push(ReadArray(ReadWord().ToLiteral(), index, @base));
         }
 
         Statement ByteArrayIndexedWrite()
@@ -55,6 +79,46 @@ namespace NScumm.Dump
         Statement WriteArray(params Expression[] args)
         {
             return new MethodInvocation("WriteArray").AddArguments(args).ToStatement();
+        }
+
+        Statement ByteVarDec()
+        {
+            var @var = ReadByte();
+            return new UnaryExpression(ReadVariable(var), Operator.PostDecrement).ToStatement();
+        }
+
+        Statement WordVarDec()
+        {
+            var @var = ReadWord();
+            return new UnaryExpression(ReadVariable(var), Operator.PostDecrement).ToStatement();
+        }
+
+        Statement ByteArrayDec()
+        {
+            var @var = ReadByte();
+            var @base = Pop();
+            return new UnaryExpression(ReadArray(@var.ToLiteral(), 0.ToLiteral(), @base), Operator.PostDecrement).ToStatement();
+        }
+
+        Statement WordArrayDec()
+        {
+            var @var = ReadWord();
+            var @base = Pop();
+            return new UnaryExpression(ReadArray(@var.ToLiteral(), 0.ToLiteral(), @base), Operator.PostDecrement).ToStatement();
+        }
+
+        Statement ByteArrayInc()
+        {
+            var @var = ReadByte();
+            var @base = Pop();
+            return new UnaryExpression(ReadArray(@var.ToLiteral(), 0.ToLiteral(), @base), Operator.PostIncrement).ToStatement();
+        }
+
+        Statement WordArrayInc()
+        {
+            var @var = ReadWord();
+            var @base = Pop();
+            return new UnaryExpression(ReadArray(@var.ToLiteral(), 0.ToLiteral(), @base), Operator.PostIncrement).ToStatement();
         }
 
         Statement WriteByteVar()

@@ -18,6 +18,7 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+using System;
 
 namespace NScumm.Dump
 {
@@ -60,6 +61,11 @@ namespace NScumm.Dump
             return new MethodInvocation("StopScript").AddArgument(Pop()).ToStatement();
         }
 
+        Statement StopObjectScript()
+        {
+            return new MethodInvocation("StopObjectScript").AddArgument(Pop()).ToStatement();
+        }
+
         Statement DoSentence()
         {
             var b = Pop();
@@ -95,6 +101,74 @@ namespace NScumm.Dump
         Statement StopObjectCode()
         {
             return new MethodInvocation("StopObjectCode").ToStatement();
+        }
+
+        Statement DelayFrames()
+        {
+            return new MethodInvocation("DelayFrames").AddArgument(Pop()).ToStatement();
+        }
+
+        Statement Delay()
+        {
+            return new MethodInvocation("Delay").AddArgument(Pop()).ToStatement();
+        }
+
+        Statement DelaySeconds()
+        {
+            return new MethodInvocation("DelaySeconds").AddArgument(Pop()).ToStatement();
+        }
+
+        Statement DelayMinutes()
+        {
+            return new MethodInvocation("DelayMinutes").AddArgument(Pop()).ToStatement();
+        }
+
+        Statement StopSentence()
+        {
+            return new MethodInvocation("StopSentence").ToStatement();
+        }
+
+        Statement Wait()
+        {
+            var subOp = ReadByte();
+            switch (subOp)
+            {
+                case 168:               // SO_WAIT_FOR_ACTOR Wait for actor
+                    {
+                        var offset = ReadWordSigned();
+                        var actor = Pop();
+                        return new MethodInvocation("WaitForActor").AddArguments(actor, offset.ToLiteral()).ToStatement();
+                    }
+                case 169:               // SO_WAIT_FOR_MESSAGE Wait for message
+                    return new MethodInvocation("WaitForMessage").ToStatement();
+                case 170:               // SO_WAIT_FOR_CAMERA Wait for camera
+                    return new MethodInvocation("WaitForCamera").ToStatement();
+                case 171:               // SO_WAIT_FOR_SENTENCE
+                    return new MethodInvocation("WaitForSentence").ToStatement();
+                case 226:               // SO_WAIT_FOR_ANIMATION
+                    {
+                        var offset = ReadWordSigned();
+                        var actor = Pop();
+                        return new MethodInvocation("WaitForAnimation").AddArguments(actor, offset.ToLiteral()).ToStatement();
+                    }
+                case 232:               // SO_WAIT_FOR_TURN
+                    {
+                        var offset = ReadWordSigned();
+                        var actor = Pop();
+                        return new MethodInvocation("WaitForTurn").AddArguments(actor, offset.ToLiteral()).ToStatement();
+                    }
+                default:
+                    throw new NotSupportedException(string.Format("Wait: default case 0x{0:X}", subOp));
+            }
+        }
+
+        Statement StartObject()
+        {
+            var args = GetStackList(25);
+            var entryp = Pop();
+            var script = Pop();
+            var flags = Pop();
+            return new MethodInvocation("StartObject").AddArguments(script, entryp, flags, args).ToStatement();
         }
     }
 }

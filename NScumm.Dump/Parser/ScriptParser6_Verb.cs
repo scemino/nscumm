@@ -25,12 +25,25 @@ namespace NScumm.Dump
     partial class ScriptParser6
     {
         readonly SimpleName CurrentVerb = new SimpleName("CurrentVerb");
+        readonly SimpleName Verbs = new SimpleName("Verbs");
+
+        Expression Verb(Expression index)
+        {
+            return new ElementAccess(Verbs, index);
+        }
 
         Statement GetVerbFromXY()
         {
             var y = Pop();
             var x = Pop();
             return Push(new MethodInvocation("FindVerbAt").AddArguments(x, y));
+        }
+
+        Statement GetVerbEntrypoint()
+        {
+            var entry = Pop();
+            var verb = Pop();
+            return Push(new MethodInvocation("GetVerbEntrypoint").AddArguments(verb, entry));
         }
 
         Statement VerbOps()
@@ -111,6 +124,31 @@ namespace NScumm.Dump
                     throw new NotSupportedException(string.Format("VerbOps: default case {0}", subOp));
             }
             return verb.ToStatement();
+        }
+
+        Statement SaveRestoreVerbs()
+        {
+            var c = Pop();
+            var b = Pop();
+            var a = Pop();
+
+            var subOp = ReadByte();
+            if (Game.Version == 8)
+            {
+                subOp = (subOp - 141) + 0xB4;
+            }
+
+            switch (subOp)
+            {
+                case 141:               // SO_SAVE_VERBS
+                    return new MethodInvocation("SaveVerbs").AddArguments(a, b, c).ToStatement();
+                case 142:               // SO_RESTORE_VERBS
+                    return new MethodInvocation("ResoreVerbs").AddArguments(a, b, c).ToStatement();
+                case 143:               // SO_DELETE_VERBS
+                    return new MethodInvocation("DeleteVerbs").AddArguments(a, b, c).ToStatement();
+                default:
+                    throw new NotSupportedException(string.Format("SaveRestoreVerbs: default case: {0}", subOp));
+            }
         }
     }
 }

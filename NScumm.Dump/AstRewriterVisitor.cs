@@ -40,6 +40,17 @@ namespace NScumm.Dump
             return new IfStatement((Expression)node.Condition.Accept(this), (Statement)node.TrueStatement.Accept(this)){ StartOffset = node.StartOffset, EndOffset = node.EndOffset };
         }
 
+        public override IAstNode Visit(CaseStatement node)
+        {
+            return new CaseStatement((Expression)node.Condition.Accept(this), (Statement)node.TrueStatement.Accept(this)){ StartOffset = node.StartOffset, EndOffset = node.EndOffset };
+        }
+
+        public override IAstNode Visit(SwitchStatement node)
+        {
+            return new SwitchStatement((Expression)node.Condition.Accept(this)){ StartOffset = node.StartOffset, EndOffset = node.EndOffset }
+                .Add(node.CaseStatements.Select(statement => (CaseStatement)statement.Accept(this)));
+        }
+
         public override IAstNode Visit(BlockStatement node)
         {
             return new BlockStatement().AddStatements(node.Select(statement => (Statement)statement.Accept(this)));

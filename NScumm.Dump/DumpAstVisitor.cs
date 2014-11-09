@@ -136,6 +136,28 @@ namespace NScumm.Dump
             return text.ToString();
         }
 
+        public override string Visit(CaseStatement node)
+        {
+            var text = new StringBuilder();
+            text.AppendLine(Indentation(node, string.Format("case {0}", node.Condition.Accept(this))));
+            if (node.TrueStatement != null)
+            {
+                text.Append(node.TrueStatement.Accept(this));
+            }
+            return text.ToString();
+        }
+
+        public override string Visit(SwitchStatement node)
+        {
+            var text = new StringBuilder();
+            text.AppendLine(Indentation(node, string.Format("switch ({0})", node.Condition.Accept(this))));
+            foreach (var caseStatement in node.CaseStatements)
+            {
+                text.Append(caseStatement.Accept(this));
+            }
+            return text.ToString();
+        }
+
         public override string Visit(DoWhileStatement node)
         {
             var text = new StringBuilder();
@@ -248,7 +270,7 @@ namespace NScumm.Dump
                 case Operator.Or:
                     return "|";
                 case Operator.Not:
-                    return "~";
+                    return "!";
                 case Operator.PostDecrement:
                     return "--";
                 case Operator.PostIncrement:

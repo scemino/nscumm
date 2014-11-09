@@ -49,6 +49,16 @@ namespace NScumm.Dump
             DefaultVisit(node);
         }
 
+        public virtual void Visit(CaseStatement node)
+        {
+            DefaultVisit(node);
+        }
+
+        public virtual void Visit(SwitchStatement node)
+        {
+            DefaultVisit(node);
+        }
+
         public virtual void Visit(GoToStatement node)
         {
             DefaultVisit(node);
@@ -117,6 +127,16 @@ namespace NScumm.Dump
         }
 
         public virtual T Visit(IfStatement node)
+        {
+            return DefaultVisit(node);
+        }
+
+        public virtual T Visit(CaseStatement node)
+        {
+            return DefaultVisit(node);
+        }
+
+        public virtual T Visit(SwitchStatement node)
         {
             return DefaultVisit(node);
         }

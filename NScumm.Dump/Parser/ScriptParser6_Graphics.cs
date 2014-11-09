@@ -76,6 +76,42 @@ namespace NScumm.Dump
             }
             return exp.ToStatement();
         }
+
+        Statement DrawObject()
+        {
+            var state = Pop();
+            var obj = Pop();
+            return new MethodInvocation("SetObjectState").AddArguments(obj, state).ToStatement();
+        }
+
+        Statement DrawObjectAt()
+        {
+            var y = Pop();
+            var x = Pop();
+            var obj = Pop();
+            return new MethodInvocation("SetObjectState").AddArguments(obj, x, y).ToStatement();
+        }
+
+        Statement DrawBlastObject()
+        {
+            var args = GetStackList(19);
+            var e = Pop();
+            var d = Pop();
+            var c = Pop();
+            var b = Pop();
+            var a = Pop();
+            return new MethodInvocation("DrawBlastObject").AddArguments(a, b, c, d, e, args).ToStatement();
+        }
+
+        Statement DrawBox()
+        {
+            var color = Pop();
+            var y2 = Pop();
+            var x2 = Pop();
+            var y = Pop();
+            var x = Pop();
+            return new MethodInvocation("DrawBox").AddArguments(x, y, x2, y2, color).ToStatement();
+        }
     }
 }
 

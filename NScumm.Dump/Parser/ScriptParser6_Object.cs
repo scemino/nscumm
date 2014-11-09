@@ -35,7 +35,7 @@ namespace NScumm.Dump
 
         Expression Object(Expression index)
         {
-            return new ElementAccess(Actors, index);
+            return new ElementAccess(Objects, index);
         }
 
         Statement GetObjectX()
@@ -90,6 +90,30 @@ namespace NScumm.Dump
             var list = GetStackList(16);
             var obj = Pop();
             return new MethodInvocation("SetClass").AddArguments(list, obj).ToStatement();
+        }
+
+        Statement DistObjectObject()
+        {
+            var b = Pop();
+            var a = Pop();
+            return Push(new MethodInvocation("GetDistanceBetween").AddArguments(a, b));
+        }
+
+        Statement DistObjectPt()
+        {
+            return Push(new MethodInvocation("GetDistanceBetween").AddArguments(Pop(), Pop(), Pop()));
+        }
+
+        Statement DistPtPt()
+        {
+            return Push(new MethodInvocation("GetDistanceBetween").AddArguments(Pop(), Pop(), Pop(), Pop()));
+        }
+
+        Statement FindObject()
+        {
+            var y = Pop();
+            var x = Pop();
+            return Push(new MethodInvocation("FindObject").AddArguments(x, y));
         }
     }
 }

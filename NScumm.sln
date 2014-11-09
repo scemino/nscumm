@@ -40,8 +40,8 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
-		BaseDirectory = ..\
-		StartupItem = NScumm.MonoGame\NScumm.MonoGame.csproj
+		BaseDirectory = .
+		StartupItem = NScumm.Dump\NScumm.Dump.csproj
 		Policies = $0
 		$0.DotNetNamingPolicy = $1
 		$1.DirectoryNamespaceAssociation = None

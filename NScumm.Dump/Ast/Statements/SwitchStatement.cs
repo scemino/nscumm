@@ -1,5 +1,5 @@
-﻿//
-//  ScriptParser6_Audio.cs
+//
+//  SwitchStatement.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -18,41 +18,43 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+using System.Collections.Generic;
+using System.Linq;
 
 namespace NScumm.Dump
 {
-    partial class ScriptParser6
+
+    public class SwitchStatement: Statement
     {
-        Statement SoundKludge()
+        public Expression Condition { get; private set; }
+
+        public IEnumerable<CaseStatement> CaseStatements { get { return ChildrenCore.OfType<CaseStatement>(); } }
+
+        public SwitchStatement(Expression condition)
         {
-            var args = GetStackList(16);
-            return new MethodInvocation("SoundKludge").AddArgument(args).ToStatement();
+            Condition = condition;
         }
 
-        Statement StartMusic()
+        public SwitchStatement Add(CaseStatement statement)
         {
-            return new MethodInvocation("StartMusic").AddArgument(Pop()).ToStatement();
+            ChildrenCore.Add(statement);
+            return this;
         }
 
-        Statement StopMusic()
+        public SwitchStatement Add(IEnumerable<CaseStatement> statements)
         {
-            return new MethodInvocation("StopMusic").ToStatement();
+            ChildrenCore.AddRange(statements);
+            return this;
         }
 
-        Statement StartSound()
+        public override void Accept(IAstNodeVisitor visitor)
         {
-            return new MethodInvocation("StartSound").AddArgument(Pop()).ToStatement();
+            visitor.Visit(this);
         }
 
-        Statement StopSound()
+        public override T Accept<T>(IAstNodeVisitor<T> visitor)
         {
-            return new MethodInvocation("StopSound").AddArgument(Pop()).ToStatement();
-        }
-
-        Statement IsSoundRunning()
-        {
-            return Push(new MethodInvocation("IsSoundRunning").AddArgument(Pop()));
+            return visitor.Visit(this);
         }
     }
 }
-

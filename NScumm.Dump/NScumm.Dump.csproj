@@ -101,6 +101,8 @@
     <Compile Include="Parser\ScriptParser6_Inventory.cs" />
     <Compile Include="Parser\ScriptParser6_Verb.cs" />
     <Compile Include="Parser\ScriptParser6_Camera.cs" />
+    <Compile Include="Ast\Statements\SwitchStatement.cs" />
+    <Compile Include="Ast\Statements\CaseStatement.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

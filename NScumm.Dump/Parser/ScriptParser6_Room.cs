@@ -159,6 +159,25 @@ namespace NScumm.Dump
             PopRoomAndObject(out room, out obj);
             return new MethodInvocation("LoadRoomWithEgo").AddArguments(room, obj, x, y).ToStatement();
         }
+
+        Statement SetBoxFlags()
+        {
+            var value = Pop();
+            var args = GetStackList(65);
+            return new MethodInvocation("SetBoxFlags").AddArguments(value, args).ToStatement();
+        }
+
+        Statement CreateBoxMatrix()
+        {
+            return new MethodInvocation("CreateBoxMatrix").ToStatement();
+        }
+
+        Statement PseudoRoom()
+        {
+            var args = GetStackList(100);
+            var value = Pop();
+            return new MethodInvocation("PseudoRoom").AddArguments(value, args).ToStatement();
+        }
     }
 }
 

@@ -110,6 +110,21 @@ namespace NScumm.Dump
             return BinaryExpression(Operator.LowerOrEquals);
         }
 
+        Statement Land()
+        {
+            return BinaryExpression(Operator.And);
+        }
+
+        Statement Lor()
+        {
+            return BinaryExpression(Operator.Or);
+        }
+
+        Statement PopStatement()
+        {
+            return Pop().ToStatement();
+        }
+
         Statement BinaryExpression(Operator op)
         {
             var a = Pop();
@@ -128,6 +143,11 @@ namespace NScumm.Dump
             var list = GetStackList(16);
             var @class = Pop();
             return Push(new MethodInvocation("IfClassOfIs").AddArguments(list, @class));
+        }
+
+        Statement Abs()
+        {
+            return Push(new MethodInvocation("Abs").AddArgument(Pop()));
         }
     }
 }

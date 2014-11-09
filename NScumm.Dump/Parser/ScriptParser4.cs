@@ -25,7 +25,7 @@ using System;
 
 namespace NScumm.Dump
 {
-    class ScriptParser4: ScriptParser
+    class ScriptParser4: ScriptParser3
     {
         public ScriptParser4(GameInfo game)
             : base(game)

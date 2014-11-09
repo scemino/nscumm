@@ -24,12 +24,9 @@ using System.Collections.Generic;
 
 namespace NScumm.Dump
 {
-    partial class ScriptParser
+    partial class ScriptParser3
     {
-        protected Dictionary<int, Func<Statement>> opCodes;
-        protected int _opCode;
-
-        protected virtual void InitOpCodes()
+        protected override void InitOpCodes()
         {
             opCodes = new Dictionary<int, Func<Statement>>();
             /*			 00 */
@@ -347,19 +344,6 @@ namespace NScumm.Dump
             opCodes[0xFD] = FindInventory;
             opCodes[0xFE] = WalkActorTo;
             opCodes[0xFF] = DrawBox;
-        }
-
-        Statement ExecuteOpCode()
-        {
-            if (!opCodes.ContainsKey(_opCode))
-                throw new NotSupportedException(string.Format("Opcode 0x{0:X2} not supported yet!", _opCode));
-            var startOffset = _br.BaseStream.Position - 1;
-            var statement = opCodes[_opCode]();
-            var endOffset = _br.BaseStream.Position;
-
-            statement.StartOffset = startOffset;
-            statement.EndOffset = endOffset;
-            return statement;
         }
     }
 }

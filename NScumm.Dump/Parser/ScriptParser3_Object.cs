@@ -24,7 +24,7 @@ using NScumm.Core;
 
 namespace NScumm.Dump
 {
-    partial class ScriptParser
+    partial class ScriptParser3
     {
         Statement SetState()
         {

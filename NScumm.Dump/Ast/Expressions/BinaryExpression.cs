@@ -17,7 +17,7 @@ namespace NScumm.Dump
         Not,
         Equals,
         Inequals,
-        Minus,
+        Subtract,
         PostIncrement,
         PostDecrement
     }

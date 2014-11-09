@@ -1,5 +1,5 @@
 //
-//  ScriptParser_Camera.cs
+//  ScriptParser_Inventory.cs
 //
 //  Author:
 //       Scemino <scemino74@gmail.com>
@@ -23,18 +23,20 @@ using NScumm.Core;
 
 namespace NScumm.Dump
 {
-    partial class ScriptParser
+    partial class ScriptParser3
     {
-        Statement PanCameraTo()
+        Statement FindInventory()
         {
-            var to = GetVarOrDirectWord(OpCodeParameter.Param1);
-            return new MethodInvocation("PanCameraTo").AddArgument(to).ToStatement();
+            var index = GetResultIndexExpression();
+            var x = GetVarOrDirectByte(OpCodeParameter.Param1);
+            var y = GetVarOrDirectByte(OpCodeParameter.Param2);
+            return SetResultExpression(index, new MethodInvocation("FindInventory").AddArguments(x, y)).ToStatement();
         }
 
-        Statement SetCameraAt()
+        Statement GetInventoryCount()
         {
-            var at = GetVarOrDirectWord(OpCodeParameter.Param1);
-            return new MethodInvocation("SetCameraAt").AddArgument(at).ToStatement();
+            var index = GetResultIndexExpression();
+            return SetResultExpression(index, new MethodInvocation("GetInventoryCount").AddArgument(GetVarOrDirectByte(OpCodeParameter.Param1))).ToStatement();
         }
     }
 }

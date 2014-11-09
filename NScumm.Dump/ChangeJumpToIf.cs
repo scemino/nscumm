@@ -91,7 +91,18 @@ namespace NScumm.Dump
 
         static Expression Not(Expression condition)
         {
-            return ((BinaryExpression)condition).Not();
+            if (condition is UnaryExpression)
+            {
+                return ((UnaryExpression)condition).Not();
+            }
+            else if (condition is BinaryExpression)
+            {
+                return ((BinaryExpression)condition).Not();
+            }
+            else
+            {
+                return new UnaryExpression(condition, Operator.Not);
+            }
         }
     }
 }

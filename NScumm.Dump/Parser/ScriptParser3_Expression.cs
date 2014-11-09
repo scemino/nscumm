@@ -22,11 +22,10 @@
 using System;
 using System.Collections.Generic;
 using NScumm.Core;
-using System.Linq;
 
 namespace NScumm.Dump
 {
-    partial class ScriptParser
+    partial class ScriptParser3
     {
         Statement Add()
         {
@@ -40,7 +39,7 @@ namespace NScumm.Dump
         {
             var indexExp = GetResultIndexExpression();
             var a = GetVarOrDirectWord(OpCodeParameter.Param1);
-            return SetResultExpression(indexExp, new BinaryExpression(ReadVariable(indexExp), Operator.Minus, a)).ToStatement();
+            return SetResultExpression(indexExp, new BinaryExpression(ReadVariable(indexExp), Operator.Subtract, a)).ToStatement();
         }
 
         Statement Multiply()
@@ -207,7 +206,7 @@ namespace NScumm.Dump
 					// sub
                         {
                             var i = stack.Pop();
-                            stack.Push(new BinaryExpression(stack.Pop(), Operator.Minus, i));
+                            stack.Push(new BinaryExpression(stack.Pop(), Operator.Subtract, i));
                         }
                         break;
 

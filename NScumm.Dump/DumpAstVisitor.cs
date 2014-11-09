@@ -235,7 +235,7 @@ namespace NScumm.Dump
                     return "!=";
                 case Operator.Add:
                     return "+";
-                case Operator.Minus:
+                case Operator.Subtract:
                     return "-";
                 case Operator.Multiply:
                     return "*";

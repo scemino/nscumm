@@ -26,26 +26,8 @@ using NScumm.Core.IO;
 
 namespace NScumm.Dump
 {
-    partial class ScriptParser
+    partial class ScriptParser3
     {
-        public Dictionary<int, string> KnownVariables { get; private set; }
-
-        protected int ReadByte()
-        {
-            return _br.ReadByte();
-        }
-
-        protected int ReadWord()
-        {
-            var word = _br.ReadUInt16();
-            return word;
-        }
-
-        protected int ReadWordSigned()
-        {
-            return ReadWord();
-        }
-
         protected Expression GetResultIndexExpression()
         {
             var resultVarIndex = ReadWord();
@@ -116,7 +98,7 @@ namespace NScumm.Dump
             return new ElementAccess("Variables", index);
         }
 
-        Expression SetResult(int index, Expression value)
+        protected Expression SetResult(int index, Expression value)
         {
             return new BinaryExpression(GetResultIndex(index), Operator.Assignment, value);
         }
@@ -145,66 +127,6 @@ namespace NScumm.Dump
             {
                 return ReadVariable2(index);
             }
-        }
-
-        Expression ReadVariable(int var)
-        {
-            if ((var & 0x2000) == 0x2000)
-            {
-                var a = ReadWord();
-                if ((a & 0x2000) == 0x2000)
-                {
-                    var exp = ReadVariable(a & ~0x2000);
-                    var literalExp = exp as IntegerLiteralExpression;
-                    if (literalExp != null)
-                    {
-                        var += Convert.ToInt32(literalExp.Value);
-                    }
-                    else
-                    {
-                        return ReadVariable2(exp);
-                    }
-                }
-                else
-                {
-                    var += a & 0xFFF;
-                }
-                var &= ~0x2000;
-            }
-
-            return ReadVariable2(var);
-        }
-
-        Expression ReadVariable2(Expression var)
-        {
-            return new MethodInvocation("ReadVariable").AddArgument(var);
-        }
-
-        Expression ReadVariable2(int var)
-        {
-            if ((var & 0xF000) == 0)
-            {
-                return new ElementAccess(
-                    new SimpleName("Variables"),
-                    var.ToLiteral());
-            }
-
-            if ((var & 0x8000) == 0x8000)
-            {
-                var &= 0x7FFF;
-
-                return new ElementAccess(
-                    new SimpleName("BitVariables"),
-                    var.ToLiteral());
-            }
-
-            if ((var & 0x4000) == 0x4000)
-            {
-                var &= 0xFFF;
-
-                return new ElementAccess("LocalVariables", var);
-            }
-            throw new NotSupportedException("Illegal varbits (r)");
         }
 
         Expression GetVar()
@@ -249,30 +171,6 @@ namespace NScumm.Dump
                     args.Add(ReadByte().ToLiteral());
             } while ((--len) > 0);
             return new MethodInvocation("SetVarRange").AddArgument(GetResultIndex(index)).AddArguments(args).ToStatement();
-        }
-
-        Expression ReadCharacters()
-        {
-            var sb = new List<byte>();
-            var character = (byte)ReadByte();
-            while (character != 0)
-            {
-                sb.Add(character);
-                if (character == 0xFF)
-                {
-                    character = (byte)ReadByte();
-                    sb.Add(character);
-                    if (character != 1 && character != 2 && character != 3 && character != 8)
-                    {
-                        character = (byte)ReadByte();
-                        sb.Add(character);
-                        character = (byte)ReadByte();
-                        sb.Add(character);
-                    }
-                }
-                character = (byte)ReadByte();
-            }
-            return new StringLiteralExpression(sb.ToArray());
         }
 
         Statement Move()

@@ -254,7 +254,7 @@ namespace NScumm.Core
 
             for (i = 0; (c = buf[i++]) != 0;)
             {
-                if (c == 0xFF || (c == 0xFE))
+                if (c == 0xFF || (_game.Version <= 6 && c == 0xFE))
                 {
                     c = buf[i++];
                     switch (c)

@@ -77,7 +77,7 @@ namespace NScumm.Core
                     break;
                 case 0x9D:              // SO_CHARSET_COLOR
                     var args = GetStackList(16);
-                    for (var i = 0; i < 16; i++)
+                    for (var i = 0; i < args.Length; i++)
                     /*_charsetColorMap[i] =*/ _charsetData[_string[1].Default.Charset][i] = (byte)args[i];
                     break;
             //                case 0xD6:              // SO_CURSOR_TRANSPARENT Set cursor transparent color

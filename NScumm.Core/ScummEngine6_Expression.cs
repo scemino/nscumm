@@ -146,6 +146,22 @@ namespace NScumm.Core
 
             CurrentPos += offset;
         }
+
+        [OpCode(0xad)]
+        void IsAnyOf(int value, int[] args)
+        {
+            var num = args.Length;
+            while (--num >= 0)
+            {
+                if (args[num] == value)
+                {
+                    Push(true);
+                    return;
+                }
+            }
+
+            Push(false);
+        }
     }
 }
 

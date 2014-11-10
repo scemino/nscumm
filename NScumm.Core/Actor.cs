@@ -130,6 +130,8 @@ namespace NScumm.Core
 
         public byte Room { get; set; }
 
+        public ushort[] Sounds { get; private set; }
+
         public Point Position
         {
             get { return _position; }
@@ -290,6 +292,8 @@ namespace NScumm.Core
                 _facing = 180;
             }
 
+            Sounds = new ushort[16];
+
             _elevation = 0;
             Width = 24;
             TalkColor = 15;
@@ -306,6 +310,10 @@ namespace NScumm.Core
             SetActorWalkSpeed(8, 2);
 
             _animSpeed = 0;
+            if (_scumm.Game.Version >= 6)
+            {
+                _animProgress = 0;
+            }
 
             IgnoreBoxes = false;
             ForceClip = 0;
@@ -652,7 +660,7 @@ namespace NScumm.Core
             // If the actor is partially hidden, redraw it next frame.
             if ((bcr.DrawCostume(_scumm.MainVirtScreen, _scumm.Gdi.NumStrips, this) & 1) != 0)
             {
-                NeedRedraw = true;
+                NeedRedraw = _scumm.Game.Version <= 6;
             }
 
             if (!hitTestMode)
@@ -1304,6 +1312,9 @@ namespace NScumm.Core
 
         protected int UpdateActorDirection(bool isWalking)
         {
+            if ((_scumm.Game.Version == 6) && IgnoreTurns)
+                return _facing;
+
             var from = ScummMath.ToSimpleDir(false, _facing);
             var dir = RemapDirection(_targetFacing, isWalking);
 

@@ -22,12 +22,23 @@ using NScumm.Core.IO;
 using System.IO;
 using System.Collections.ObjectModel;
 using System;
+using System.Collections.Generic;
 
 namespace NScumm.Core
 {
+    public class ArrayDefinition
+    {
+        public int Index{ get; set; }
+
+        public int Type{ get; set; }
+
+        public int Dim1{ get; set; }
+
+        public int Dim2{ get; set; }
+    }
+
     class ResourceIndex6 : ResourceIndex5
     {
-
         #region implemented abstract members of ResourceIndex
 
         protected override void LoadIndex(GameInfo game)
@@ -121,7 +132,7 @@ namespace NScumm.Core
         const int BitArray = 1;
         const int IntArray = 5;
 
-        static void ReadArrayFromIndexFile(XorReader br)
+        void ReadArrayFromIndexFile(XorReader br)
         {
             int num;
             while ((num = br.ReadUInt16()) != 0)
@@ -130,10 +141,8 @@ namespace NScumm.Core
                 var b = br.ReadUInt16();
                 var c = br.ReadUInt16();
                 // TODO: SCUMM6: define array
-//                if (c == BitArray)
-//                    DefineArray(num, BitArray, a, b);
-//                else
-//                    DefineArray(num, IntArray, a, b);
+                //DefineArray(num, c, a, b);
+                ArrayDefinitions.Add(new ArrayDefinition{ Index = num, Type = c, Dim2 = a, Dim1 = b });
             }
         }
     }

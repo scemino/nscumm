@@ -59,6 +59,8 @@ namespace NScumm.Core
 
         public bool Frozen { get { return freezeCount > 0; } }
 
+        public ushort DelayFrameCount { get; set; }
+
         public int[] LocalVariables = new int[26];
 
         public void InitializeLocals(Array locals)
@@ -111,7 +113,7 @@ namespace NScumm.Core
 
                 LoadAndSaveEntry.Create(reader => Delay = reader.ReadInt32(), writer => writer.WriteInt32(Delay), 8),
                 LoadAndSaveEntry.Create(reader => Number = reader.ReadUInt16(), writer => writer.WriteUInt16(Number), 8),
-                LoadAndSaveEntry.Create(reader => reader.ReadUInt16(), writer => writer.WriteUInt16(0), 8),
+                LoadAndSaveEntry.Create(reader => DelayFrameCount = reader.ReadUInt16(), writer => writer.WriteUInt16(DelayFrameCount), 8),
                 LoadAndSaveEntry.Create(reader => Status = (ScriptStatus)reader.ReadByte(), writer => writer.WriteByte((byte)Status), 8),
                 LoadAndSaveEntry.Create(reader => Where = (WhereIsObject)reader.ReadByte(), writer => writer.WriteByte((byte)Where), 8),
                 LoadAndSaveEntry.Create(reader => FreezeResistant = reader.ReadBoolean(), writer => writer.WriteByte(FreezeResistant), 8),

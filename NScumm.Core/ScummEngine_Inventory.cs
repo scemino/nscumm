@@ -58,25 +58,25 @@ namespace NScumm.Core
             _inventory[slot] = (ushort)obj;
         }
 
-        protected int GetInventoryCount(int owner)
+        protected int GetInventoryCountCore(int owner)
         {
             var count = 0;
             for (var i = 0; i < NumInventory; i++)
             {
                 var obj = _inventory[i];
-                if (obj != 0 && GetOwner(obj) == owner)
+                if (obj != 0 && GetOwnerCore(obj) == owner)
                     count++;
             }
             return count;
         }
 
-        protected int FindInventory(int owner, int idx)
+        protected int FindInventoryCore(int owner, int idx)
         {
             int count = 1, i, obj;
             for (i = 0; i < NumInventory; i++)
             {
                 obj = _inventory[i];
-                if (obj != 0 && GetOwner(obj) == owner && count++ == idx)
+                if (obj != 0 && GetOwnerCore(obj) == owner && count++ == idx)
                     return obj;
             }
             return 0;

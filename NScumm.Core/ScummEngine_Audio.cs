@@ -26,6 +26,8 @@ namespace NScumm.Core
     {
         protected Sound _sound;
 
+        public Sound Sound{ get { return _sound; } }
+
         public void UpdateSound()
         {
             _sound.Update();

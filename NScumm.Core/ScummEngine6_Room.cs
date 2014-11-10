@@ -185,6 +185,60 @@ namespace NScumm.Core
         {
             // TODO: scumm6
         }
+
+        [OpCode(0x85)]
+        void LoadRoomWithEgo(int obj, byte room, int x, int y)
+        {
+            var a = _actors[Variables[VariableEgo.Value]];
+            a.PutActor(room);
+            _egoPositioned = false;
+
+            Variables[VariableWalkToObject.Value] = obj;
+            StartScene(a.Room, a, obj);
+            Variables[VariableWalkToObject.Value] = 0;
+
+            if (Game.Version == 6)
+            {
+                Camera.CurrentPosition.X = Camera.DestinationPosition.X = a.Position.X;
+                SetCameraFollows(a);
+            }
+
+            _fullRedraw = true;
+
+            if (x != -1 && x != 0x7FFFFFFF)
+            {
+                a.StartWalk(new NScumm.Core.Graphics.Point((short)x, (short)y), -1);
+            }
+        }
+
+
+        [OpCode(0x8c)]
+        void GetActorRoom(int index)
+        {
+            if (index == 0)
+            {
+                // This case occurs at the very least in COMI. That's because in COMI's script 28,
+                // there is a check which looks as follows:
+                //   if (((VAR_TALK_ACTOR != 0) && (VAR_HAVE_MSG == 1)) &&
+                //        (getActorRoom(VAR_TALK_ACTOR) == VAR_ROOM))
+                // Due to the way this is represented in bytecode, the engine cannot
+                // short circuit. Hence, even though this would be perfectly fine code
+                // in C/C++, here it can (and does) lead to getActorRoom(0) being
+                // invoked. We silently ignore this.
+                Push(0);
+                return;
+            }
+
+            if (index == 255)
+            {
+                // This case also occurs in COMI...
+                Push(0);
+                return;
+            }
+
+            var actor = _actors[index];
+            Push(actor.Room);
+        }
     }
 }
 

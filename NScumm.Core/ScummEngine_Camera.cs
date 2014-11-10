@@ -30,7 +30,7 @@ namespace NScumm.Core
 
         protected Camera Camera { get { return _camera; } }
 
-        protected void PanCameraTo(int x)
+        protected void PanCameraToCore(int x)
         {
             _camera.DestinationPosition.X = (short)x;
             _camera.Mode = CameraMode.Panning;
@@ -62,7 +62,7 @@ namespace NScumm.Core
                 StopTalk();
         }
 
-        protected void SetCameraFollows(Actor actor, bool setCamera)
+        protected void SetCameraFollows(Actor actor, bool setCamera = false)
         {
             _camera.Mode = CameraMode.FollowActor;
             _camera.ActorToFollow = actor.Number;

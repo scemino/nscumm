@@ -104,7 +104,7 @@ namespace NScumm.Core
                     break;
 
                 case 4:
-                    CreateBoxMatrix();
+                    CreateBoxMatrixCore();
                     break;
             }
         }
@@ -115,7 +115,7 @@ namespace NScumm.Core
             b.Scale = (ushort)scale;
         }
 
-        void CreateBoxMatrix()
+        protected void CreateBoxMatrixCore()
         {
             // The total number of boxes
             var num = GetNumBoxes();

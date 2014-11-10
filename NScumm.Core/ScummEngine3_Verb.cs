@@ -255,7 +255,7 @@ namespace NScumm.Core
             var a = GetVarOrDirectWord(OpCodeParameter.Param1);
             var b = GetVarOrDirectWord(OpCodeParameter.Param2);
 
-            SetResult(GetVerbEntrypoint(a, b));
+            SetResult(GetVerbEntrypointCore(a, b));
         }
 
         void WaitForSentence()

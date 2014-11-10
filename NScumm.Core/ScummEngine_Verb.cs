@@ -319,7 +319,7 @@ namespace NScumm.Core
             }
         }
 
-        protected int GetVerbEntrypoint(int obj, int entry)
+        protected int GetVerbEntrypointCore(int obj, int entry)
         {
             if (GetWhereIsObject(obj) == WhereIsObject.NotFound)
                 return 0;
@@ -440,7 +440,7 @@ namespace NScumm.Core
             vs.SaveId = 0;
         }
 
-        int FindVerbAtPos(int x, int y)
+        protected int FindVerbAtPos(int x, int y)
         {
             for (int i = _verbs.Length - 1; i >= 0; i--)
             {
@@ -501,7 +501,7 @@ namespace NScumm.Core
             else if (!IsScriptInUse(Variables[VariableSentenceScript.Value]))
                 return;
             _currentPos--;
-            BreakHere();
+            BreakHereCore();
         }
     }
 }

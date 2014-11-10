@@ -59,6 +59,8 @@ namespace NScumm.Core.IO
 
         public uint[] ClassData { get { return Index.ClassData; } }
 
+        public List<ArrayDefinition> ArrayDefinitions { get; private set; }
+
         public string Directory { get; private set; }
 
         public IEnumerable<Room> Rooms
@@ -134,6 +136,7 @@ namespace NScumm.Core.IO
             Game = game;
             Index = ResourceIndex.Load(game);
             Directory = Path.GetDirectoryName(game.Path);
+            ArrayDefinitions = Index.ArrayDefinitions;
         }
 
         public static ResourceManager Load(GameInfo game)
@@ -175,7 +178,7 @@ namespace NScumm.Core.IO
             return room;
         }
 
-        public XorReader GetCostumeReader(byte scriptNum)
+        public XorReader GetCostumeReader(int scriptNum)
         {
             XorReader reader = null;
             var res = Index.CostumeResources[scriptNum];

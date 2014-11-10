@@ -30,7 +30,7 @@ namespace NScumm.Core
             GetResult();
             var x = GetVarOrDirectByte(OpCodeParameter.Param1);
             var y = GetVarOrDirectByte(OpCodeParameter.Param2);
-            SetResult(FindObject(x, y));
+            SetResult(FindObjectCore(x, y));
         }
 
         void SetOwnerOf()
@@ -148,7 +148,7 @@ namespace NScumm.Core
             int a = GetVarOrDirectWord(OpCodeParameter.Param1);
             int b = GetVarOrDirectByte(OpCodeParameter.Param2);
 
-            JumpRelative(GetState(a) == b);
+            JumpRelative(GetStateCore(a) == b);
         }
 
         void IfNotState()
@@ -156,13 +156,13 @@ namespace NScumm.Core
             int a = GetVarOrDirectWord(OpCodeParameter.Param1);
             int b = GetVarOrDirectByte(OpCodeParameter.Param2);
 
-            JumpRelative(GetState(a) != b);
+            JumpRelative(GetStateCore(a) != b);
         }
 
         void GetObjectOwner()
         {
             GetResult();
-            SetResult(GetOwner(GetVarOrDirectWord(OpCodeParameter.Param1)));
+            SetResult(GetOwnerCore(GetVarOrDirectWord(OpCodeParameter.Param1)));
         }
     }
 }

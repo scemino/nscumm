@@ -26,17 +26,17 @@ namespace NScumm.Dump
     {
         Statement Jump()
         {
-            return new JumpStatement(true.ToLiteral(), ReadWordSigned());
+            return new JumpStatement(true.ToLiteral(), ReadWordSigned() + (int)_br.BaseStream.Position);
         }
 
         Statement If()
         {
-            return new JumpStatement(Pop(), ReadWordSigned());
+            return new JumpStatement(Pop(), ReadWordSigned() + (int)_br.BaseStream.Position);
         }
 
         Statement IfNot()
         {
-            return new JumpStatement(new UnaryExpression(Pop(), Operator.Not), ReadWordSigned());
+            return new JumpStatement(new UnaryExpression(Pop(), Operator.Not), ReadWordSigned() + (int)_br.BaseStream.Position);
         }
 
         Statement Dup()

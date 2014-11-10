@@ -30,14 +30,17 @@ using System.Linq;
 
 namespace NScumm.Core
 {
-
     partial class ScummEngine6: ScummEngine5
     {
-        Stack<int> _vmStack = new Stack<int>(150);
-
         public ScummEngine6(GameInfo game, IGraphicsManager graphicsManager, IInputManager inputManager, IAudioDriver audioDriver)
             : base(game, graphicsManager, inputManager, audioDriver)
         {
+            VariableRandomNumber = 118;
+
+            foreach (var array in _resManager.ArrayDefinitions)
+            {
+                DefineArray(array.Index, (ArrayType)array.Type, array.Dim2, array.Dim1);
+            }
         }
 
         #region implemented abstract members of ScummEngine
@@ -88,75 +91,6 @@ namespace NScumm.Core
 
             var action = new Action(() => method.Invoke(this, args.Select(arg => arg()).Reverse().ToArray()));
             return action;
-        }
-
-        void Push(int value)
-        {
-            _vmStack.Push(value);
-        }
-
-        void Push(bool value)
-        {
-            _vmStack.Push(value ? 1 : 0);
-        }
-
-        int Pop()
-        {
-            return _vmStack.Pop();
-        }
-
-        int[] GetStackList(int max)
-        {
-            var num = Pop();
-
-            if (num > max)
-                throw new InvalidOperationException(string.Format("Too many items {0} in stack list, max {1}", num, max));
-
-            var args = new int[num];
-            var i = num;
-            while (i-- != 0)
-            {
-                args[i] = Pop();
-            }
-            return args;
-        }
-
-        [OpCode(0x00)]
-        void PushByte()
-        {
-            Push(ReadByte());
-        }
-
-        [OpCode(0x01)]
-        void PushWord()
-        {
-            Push(ReadWord());
-        }
-
-        [OpCode(0x02)]
-        void PushByteVar()
-        {
-            Push(ReadVariable(ReadByte()));
-        }
-
-        [OpCode(0x03)]
-        void PushWordVar()
-        {
-            Push(ReadVariable(ReadWord()));
-        }
-
-        [OpCode(0x4e)]
-        void ByteVarInc()
-        {
-            var var = ReadByte();
-            WriteVariable(var, ReadVariable(var) + 1);
-        }
-
-        [OpCode(0x4f)]
-        void WordVarInc()
-        {
-            var var = ReadWord();
-            WriteVariable(var, ReadVariable(var) + 1);
         }
 
         #endregion

@@ -46,7 +46,7 @@ namespace NScumm.Core
             return id >= 0 && id < _actors.Length && _actors[id].Number == id;
         }
 
-        void ActorTalk(byte[] msg)
+        protected void ActorTalk(byte[] msg)
         {
             ConvertMessageToString(msg, _charsetBuffer, 0);
 
@@ -127,7 +127,7 @@ namespace NScumm.Core
 
         internal void StopTalk()
         {
-            //_sound->stopTalkSound();
+            //_sound.StopTalkSound();
 
             _haveMsg = 0;
             _talkDelay = 0;
@@ -189,12 +189,15 @@ namespace NScumm.Core
             SetActorRedrawFlags();
             ResetActorBgs();
 
-            var mode = GetCurrentLights();
-            if (!mode.HasFlag(LightModes.RoomLightsOn) && mode.HasFlag(LightModes.FlashlightOn))
+            if (Game.Version < 6)
             {
-                // TODO:
-                //drawFlashlight();
-                SetActorRedrawFlags();
+                var mode = GetCurrentLights();
+                if (!mode.HasFlag(LightModes.RoomLightsOn) && mode.HasFlag(LightModes.FlashlightOn))
+                {
+                    // TODO:
+                    //drawFlashlight();
+                    SetActorRedrawFlags();
+                }
             }
 
             ProcessActors();

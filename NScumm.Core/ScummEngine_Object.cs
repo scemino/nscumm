@@ -77,11 +77,11 @@ namespace NScumm.Core
             for (int i = 1; i < _objs.Length; i++)
             {
                 if (_objs[i].Number > 0)
-                    _objs[i].State = GetState(_objs[i].Number);
+                    _objs[i].State = GetStateCore(_objs[i].Number);
             }
         }
 
-        protected byte GetState(int obj)
+        protected byte GetStateCore(int obj)
         {
             return _resManager.ObjectStateTable[obj];
         }
@@ -89,7 +89,7 @@ namespace NScumm.Core
         void GetObjectOwner()
         {
             GetResult();
-            SetResult(GetOwner(GetVarOrDirectWord(OpCodeParameter.Param1)));
+            SetResult(GetOwnerCore(GetVarOrDirectWord(OpCodeParameter.Param1)));
         }
 
         internal bool GetObjectOrActorXY(int obj, out Point p)
@@ -129,12 +129,12 @@ namespace NScumm.Core
             return true;
         }
 
-        int ObjToActor(int obj)
+        protected int ObjToActor(int obj)
         {
             return obj;
         }
 
-        bool ObjIsActor(int obj)
+        protected bool ObjIsActor(int obj)
         {
             return obj < _actors.Length;
         }
@@ -263,7 +263,7 @@ namespace NScumm.Core
             return -1;
         }
 
-        void AddObjectToDrawQue(byte obj)
+        protected void AddObjectToDrawQue(byte obj)
         {
             _drawingObjects.Add(_objs[obj]);
         }
@@ -318,12 +318,12 @@ namespace NScumm.Core
             }
         }
 
-        protected int GetOwner(int obj)
+        protected int GetOwnerCore(int obj)
         {
             return _resManager.ObjectOwnerTable[obj];
         }
 
-        protected int FindObject(int x, int y)
+        protected int FindObjectCore(int x, int y)
         {
             byte a;
             int mask = 0xF;
@@ -451,7 +451,7 @@ namespace NScumm.Core
             if (numstrip != 0)
             {
                 var flags = od.Flags;
-                var state = GetState(od.Number);
+                var state = GetStateCore(od.Number);
                 if (state > 0 && (state - 1) < objToDraw.Images.Count)
                 {
                     Gdi.DrawBitmap(objToDraw.Images[state - 1], _mainVirtScreen, x, ypos, width * 8, height, x - xpos, numstrip, roomData.Header.Width, flags);
@@ -512,7 +512,7 @@ namespace NScumm.Core
             // Stop the associated object script code (else crashes might occurs)
             StopObjectScript((ushort)obj);
 
-            if (GetOwner(obj) != OwnerRoom)
+            if (GetOwnerCore(obj) != OwnerRoom)
             {
                 // Alternatively, scan the inventory to see if the object is in there...
                 for (int i = 0; i < NumInventory; i++)

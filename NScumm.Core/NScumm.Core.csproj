@@ -183,6 +183,10 @@
     <Compile Include="ScummEngine6_String.cs" />
     <Compile Include="ScummEngine6_Actor.cs" />
     <Compile Include="ScummEngine6_Verb.cs" />
+    <Compile Include="ScummEngine6_Object.cs" />
+    <Compile Include="ScummEngine6_Camera.cs" />
+    <Compile Include="ScummEngine6_Inventory.cs" />
+    <Compile Include="ScummEngine6_Array.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="IO\Nscumm.xml">

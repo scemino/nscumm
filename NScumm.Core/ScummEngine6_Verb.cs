@@ -27,6 +27,15 @@ namespace NScumm.Core
         int _curVerbSlot;
         int _curVerb;
 
+        [OpCode(0x94)]
+        void GetVerbFromXY(int x, int y)
+        {
+            var over = FindVerbAtPos(x, y);
+            if (over != 0)
+                over = _verbs[over].VerbId;
+            Push(over);
+        }
+
         [OpCode(0x9e)]
         void VerbOps()
         {
@@ -150,6 +159,12 @@ namespace NScumm.Core
                 default:
                     throw new NotSupportedException(string.Format("Verbops: default case {0}", subOp));
             }
+        }
+
+        [OpCode(0xa3)]
+        void GetVerbEntrypoint(int verb, int entryp)
+        {
+            Push(GetVerbEntrypointCore(verb, entryp));
         }
     }
 }

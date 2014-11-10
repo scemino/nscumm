@@ -55,7 +55,7 @@ namespace NScumm.Core
             RunScript((byte)script, _slots[cur].FreezeResistant, _slots[cur].Recursive, vars);
         }
 
-        void UnfreezeScripts()
+        protected void UnfreezeScripts()
         {
             for (var i = 0; i < NumScriptSlot; i++)
             {
@@ -104,7 +104,7 @@ namespace NScumm.Core
             }
         }
 
-        void BeginCutscene(int[] args)
+        protected void BeginCutscene(int[] args)
         {
             var scr = _currentScript;
             _slots[scr].CutSceneOverride++;
@@ -156,7 +156,7 @@ namespace NScumm.Core
             BeginCutscene(args);
         }
 
-        void EndCutscene()
+        protected void EndCutsceneCore()
         {
             if (_slots[_currentScript].CutSceneOverride > 0)    // Only terminate if active
 				_slots[_currentScript].CutSceneOverride--;
@@ -766,7 +766,7 @@ namespace NScumm.Core
             return false;
         }
 
-        void BreakHere()
+        protected void BreakHereCore()
         {
             _slots[_currentScript].Offset = (uint)_currentPos;
             _currentScript = 0xFF;

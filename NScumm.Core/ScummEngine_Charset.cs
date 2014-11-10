@@ -170,7 +170,7 @@ namespace NScumm.Core
             {
                 _nextLeft -= _charset.GetStringWidth(0, _charsetBuffer, _charsetBufPos) / 2;
                 if (_nextLeft < 0)
-                    _nextLeft = 0;
+                    _nextLeft = Game.Version >= 6 ? _string[0].Position.X : 0;
             }
 
             _charset.DisableOffsX = _charset.FirstChar = !_keepText;
@@ -211,7 +211,7 @@ namespace NScumm.Core
             {
                 _nextLeft -= _charset.GetStringWidth(0, _charsetBuffer, _charsetBufPos) / 2;
                 if (_nextLeft < 0)
-                    _nextLeft = 0;
+                    _nextLeft = Game.Version >= 6 ? _string[0].Position.X : 0;
             }
 
             bool useCJK = UseCjkMode;

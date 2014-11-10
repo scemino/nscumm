@@ -74,9 +74,16 @@ namespace NScumm.Core.IO
 
         public uint[] ClassData { get; protected set; }
 
+        public List<ArrayDefinition> ArrayDefinitions { get; private set; }
+
         #endregion
 
         #region Public Methods
+
+        protected ResourceIndex()
+        {
+            ArrayDefinitions = new List<ArrayDefinition>();
+        }
 
         public static ResourceIndex Load(GameInfo game)
         {

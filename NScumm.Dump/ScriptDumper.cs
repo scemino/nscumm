@@ -94,10 +94,11 @@ namespace NScumm.Dump
                 var compilationUnit = scriptInterpreter.Parse(data);
                 var cuWithResolvedVariables = (CompilationUnit)compilationUnit.Accept(resolveVarVisitor);
 
-                var cuWithIfs = new ChangeJumpToIf().Change(cuWithResolvedVariables);
-                var cuWithWhiles = new ReplaceJumpToWhile().Replace(cuWithIfs);
-                var cuWithGoTos = new ReplaceJumpToGoTo().Replace(cuWithWhiles);
-                dumper.Write(cuWithGoTos.Accept(new DumpAstVisitor()));
+//                var cuWithIfs = new ChangeJumpToIf().Change(cuWithResolvedVariables);
+//                var cuWithWhiles = new ReplaceJumpToWhile().Replace(cuWithIfs);
+//                var cuWithGoTos = new ReplaceJumpToGoTo().Replace(cuWithWhiles);
+                //                dumper.Write(cuWithGoTos.Accept(new DumpAstVisitor()));
+                dumper.Write(cuWithResolvedVariables.Accept(new DumpAstVisitor()));
             }
             catch (Exception e)
             {

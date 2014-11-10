@@ -20,12 +20,63 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using NScumm.Core.Graphics;
 using System;
+using System.Diagnostics;
 
 namespace NScumm.Core
 {
     partial class ScummEngine6
     {
         int _curActor;
+
+        [OpCode(0x7d)]
+        void WalkActorToObj(int index, int obj, int dist)
+        {
+            var a = _actors[index];
+
+            if (obj >= _actors.Length)
+            {
+                var wio = GetWhereIsObject(obj);
+
+                if (wio != WhereIsObject.FLObject && wio != WhereIsObject.Room)
+                    return;
+
+                int dir;
+                Point pos;
+                GetObjectXYPos(obj, out pos, out dir);
+                a.StartWalk(pos, dir);
+            }
+            else
+            {
+                var a2 = _actors[obj];
+                if (Game.Id == "samnmax" && a2 == null)
+                {
+                    // WORKAROUND bug #742676 SAM: Fish Farm. Note quite sure why it
+                    // happens, whether it's normal or due to a bug in the ScummVM code.
+                    Debug.WriteLine("WalkActorToObj: invalid actor {0}", obj);
+                    return;
+                }
+                if (!a.IsInCurrentRoom || !a2.IsInCurrentRoom)
+                    return;
+                if (dist == 0)
+                {
+                    dist = (int)(a2.ScaleX * a2.Width / 0xFF);
+                    dist += dist / 2;
+                }
+                var x = a2.Position.X;
+                var y = a2.Position.Y;
+                if (x < a.Position.X)
+                    x += (short)dist;
+                else
+                    x -= (short)dist;
+                a.StartWalk(new Point(x, y), -1);
+            }
+        }
+
+        [OpCode(0x7e)]
+        void WalkActorTo(int index, short x, short y)
+        {
+            _actors[index].StartWalk(new Point(x, y), -1);
+        }
 
         [OpCode(0x7f)]
         void PutActorAtXY(int actorIndex, short x, short y, int room)
@@ -47,6 +98,64 @@ namespace NScumm.Core
                 }
             }
             actor.PutActor(new Point(x, y), (byte)room);
+        }
+
+        [OpCode(0x81)]
+        void FaceActor(int index, int obj)
+        {
+            _actors[index].FaceToObject(obj);
+        }
+
+        [OpCode(0x82)]
+        void AnimateActor(int index, int anim)
+        {
+            _actors[index].Animate(anim);
+        }
+
+        [OpCode(0x84)]
+        void PickupObject(int obj, byte room)
+        {
+            if (room == 0)
+                room = _roomResource;
+
+            for (var i = 0; i < _inventory.Length; i++)
+            {
+                if (_inventory[i] == obj)
+                {
+                    PutOwner(obj, (byte)Variables[VariableEgo.Value]);
+                    RunInventoryScript(obj);
+                    return;
+                }
+            }
+
+            AddObjectToInventory(obj, room);
+            PutOwner(obj, (byte)Variables[VariableEgo.Value]);
+            PutClass(obj, (int)ObjectClass.Untouchable, true);
+            PutState(obj, 1);
+            MarkObjectRectAsDirty(obj);
+            ClearDrawObjectQueue();
+            RunInventoryScript(obj);
+        }
+
+        [OpCode(0x8a)]
+        void GetActorMoving(int index)
+        {
+            var actor = _actors[index];
+            Push((int)actor.Moving);
+        }
+
+        [OpCode(0x90)]
+        void GetActorWalkBox(int index)
+        {
+            var actor = _actors[index];
+            Push(actor.IgnoreBoxes ? 0 : actor.Walkbox);
+        }
+
+        [OpCode(0x91)]
+        void GetActorCostume(int index)
+        {
+            var actor = _actors[index];
+            Push(actor.Costume);
         }
 
         [OpCode(0x9d)]
@@ -75,13 +184,13 @@ namespace NScumm.Core
                         a.SetActorWalkSpeed(i, j);
                     }
                     break;
-//                case 78:                // SO_SOUND
-//                    {
-//                        var args = GetStackList(8);
-//                        for (var i = 0; i < args.Length; i++)
-//                            a.Sound[i] = args[i];
-//                        break;
-//                    }
+                case 78:                // SO_SOUND
+                    {
+                        var args = GetStackList(8);
+                        for (var i = 0; i < args.Length; i++)
+                            a.Sounds[i] = (ushort)args[i];
+                        break;
+                    }
                 case 79:                // SO_WALK_ANIMATION
                     a.WalkFrame = (byte)Pop();
                     break;
@@ -215,10 +324,76 @@ namespace NScumm.Core
             }
         }
 
-        [OpCode(0x82)]
-        void AnimateActor(int index, int anim)
+        [OpCode(0x9f)]
+        void GetActorFromXY(int x, int y)
         {
-            _actors[index].Animate(anim);
+            Push(GetActorFromPos(new Point((short)x, (short)y)));
+        }
+
+        [OpCode(0xa2)]
+        void GetActorElevation(int index)
+        {
+            var actor = _actors[index];
+            Push(actor.Elevation);
+        }
+
+        [OpCode(0xa8)]
+        void GetActorWidth(int index)
+        {
+            var actor = _actors[index];
+            Push((int)actor.Width);
+        }
+
+        [OpCode(0xaa)]
+        void GetActorScaleX(int index)
+        {
+            var actor = _actors[index];
+            Push(actor.ScaleX);
+        }
+
+        [OpCode(0xab)]
+        void GetActorAnimCounter(int index)
+        {
+            var actor = _actors[index];
+            Push(actor.Cost.AnimCounter);
+        }
+
+        [OpCode(0xaf)]
+        void IsActorInBox(int index, int box)
+        {
+            var actor = _actors[index];
+            Push(CheckXYInBoxBounds(box, actor.Position));
+        }
+
+        [OpCode(0xba)]
+        void TalkActor(int actor)
+        {
+            _actorToPrintStrFor = actor;
+
+            // WORKAROUND for bug #2016521: "DOTT: Bernard impersonating LaVerne"
+            // Original script did not check for VAR_EGO == 2 before executing
+            // a talkActor opcode.
+//            if (_game.id == GID_TENTACLE && vm.slot[_currentScript].number == 307
+//                && VAR(VAR_EGO) != 2 && _actorToPrintStrFor == 2) {
+//                    _scriptPointer += resStrLen(_scriptPointer) + 1;
+//                    return;
+//                }
+
+            _string[0].LoadDefault();
+            ActorTalk(ReadCharacters());
+        }
+
+        [OpCode(0xbb)]
+        void TalkEgo()
+        {
+            TalkActor(Variables[VariableEgo.Value]);
+        }
+
+        [OpCode(0xec)]
+        void GetActorLayer(int index)
+        {
+            var actor = _actors[index];
+            Push(actor.Layer);
         }
     }
 }

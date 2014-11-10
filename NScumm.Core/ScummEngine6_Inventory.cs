@@ -1,8 +1,8 @@
 ﻿//
-//  ScummEngine6.cs
+//  ScummEngine6_Inventory.cs
 //
 //  Author:
-//       Scemino <scemino74@gmail.com>
+//       scemino <scemino74@gmail.com>
 //
 //  Copyright (c) 2014 
 //
@@ -18,41 +18,23 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+using System;
 
 namespace NScumm.Core
 {
     partial class ScummEngine6
     {
-        [OpCode(0xac)]
-        void SoundKludge(int[] args)
+        [OpCode(0x92)]
+        void FindInventory(int owner, int index)
         {
-            _sound.SoundKludge(args);
+            Push(FindInventoryCore(owner, index));
         }
 
-        [OpCode(0x74)]
-        void StartSound(int sound)
-        {
-            _sound.AddSoundToQueue(sound);
-        }
 
-        [OpCode(0x75)]
-        void StopSound(int sound)
+        [OpCode(0x93)]
+        void GetInventoryCount(int owner)
         {
-            // TODO: scumm6
-//            _sound.StopSound(sound);
-        }
-
-        [OpCode(0x76)]
-        void StartMusic(int sound)
-        {
-            _sound.AddSoundToQueue(sound);
-        }
-
-        [OpCode(0x98)]
-        void IsSoundRunning(int sound)
-        {
-            Push(sound != 0 && _sound.IsSoundRunning(sound));
+            Push(GetInventoryCountCore(owner));
         }
     }
 }

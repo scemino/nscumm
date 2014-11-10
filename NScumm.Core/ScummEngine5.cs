@@ -133,7 +133,7 @@ namespace NScumm.Core
         {
             GetResult();
             var obj = GetVarOrDirectWord(OpCodeParameter.Param1);
-            SetResult(GetState(obj));
+            SetResult(GetStateCore(obj));
         }
 
         void GetAnimCounter()

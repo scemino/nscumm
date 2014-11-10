@@ -28,7 +28,7 @@ namespace NScumm.Core
         void GetInventoryCount()
         {
             GetResult();
-            SetResult(GetInventoryCount(GetVarOrDirectByte(OpCodeParameter.Param1)));
+            SetResult(GetInventoryCountCore(GetVarOrDirectByte(OpCodeParameter.Param1)));
         }
 
         void FindInventory()
@@ -36,7 +36,7 @@ namespace NScumm.Core
             GetResult();
             var x = GetVarOrDirectByte(OpCodeParameter.Param1);
             var y = GetVarOrDirectByte(OpCodeParameter.Param2);
-            SetResult(FindInventory(x, y));
+            SetResult(FindInventoryCore(x, y));
         }
     }
 }

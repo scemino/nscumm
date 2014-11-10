@@ -489,7 +489,7 @@ namespace NScumm.Core
             {
                 foreach (var obj in _newNames.Keys.ToArray())
                 {
-                    var owner = GetOwner(obj);
+                    var owner = GetOwnerCore(obj);
                     // We can delete custom name resources if either the object is
                     // no longer in use (i.e. not owned by anyone anymore); or if
                     // it is an object which is owned by a room.

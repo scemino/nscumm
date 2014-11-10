@@ -21,113 +21,49 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 
 namespace NScumm.Core
 {
-    class ArrayHeader
-    {
-        public ArrayType Type
-        {
-            get
-            {
-                stream.Seek(0, SeekOrigin.Begin);
-                return (ArrayType)reader.ReadInt16();
-            }
-            set
-            {
-                stream.Seek(0, SeekOrigin.Begin);
-                writer.WriteInt16((int)value);
-            }
-        }
-
-        public int Dim1
-        {
-            get
-            {
-                stream.Seek(2, SeekOrigin.Begin);
-                return (int)reader.ReadInt16();
-            }
-            set
-            {
-                stream.Seek(2, SeekOrigin.Begin);
-                writer.WriteInt16(value);
-            }
-        }
-
-        public int Dim2
-        {
-            get
-            {
-                stream.Seek(4, SeekOrigin.Begin);
-                return (int)reader.ReadInt16();
-            }
-            set
-            {
-                stream.Seek(4, SeekOrigin.Begin);
-                writer.WriteInt16(value);
-            }
-        }
-
-        public byte[] Data
-        {
-            get
-            {
-                stream.Seek(6, SeekOrigin.Begin);
-                return reader.ReadBytes((int)(stream.Length - 6));
-            }
-        }
-
-        readonly MemoryStream stream;
-        readonly BinaryReader reader;
-        readonly BinaryWriter writer;
-
-        public ArrayHeader(byte[] data)
-        {
-            stream = new MemoryStream(data);
-            reader = new BinaryReader(stream);
-            writer = new BinaryWriter(stream);
-        }
-
-        public void Write(int index, byte value)
-        {
-            stream.Seek(6 + index, SeekOrigin.Begin);
-            writer.WriteByte(value);
-        }
-
-        public void Write(int index, ushort value)
-        {
-            stream.Seek(6 + index * 2, SeekOrigin.Begin);
-            writer.WriteUInt16(value);
-        }
-
-        public void Write(int index, uint value)
-        {
-            stream.Seek(6 + index * 4, SeekOrigin.Begin);
-            writer.WriteUInt32(value);
-        }
-
-        public void Write(int index, byte[] values)
-        {
-            stream.Seek(6 + index, SeekOrigin.Begin);
-            writer.WriteBytes(values, values.Length);
-        }
-    }
-
-    enum ArrayType
-    {
-        BitArray = 1,
-        NibbleArray = 2,
-        ByteArray = 3,
-        StringArray = 4,
-        IntArray = 5,
-        DwordArray = 6
-    }
-
     partial class ScummEngine6
     {
+        Stack<int> _vmStack = new Stack<int>(150);
         List<Array> _arrays = new List<Array>();
+
+        [OpCode(0x00)]
+        void PushByte()
+        {
+            Push(ReadByte());
+        }
+
+        [OpCode(0x01)]
+        void PushWord()
+        {
+            Push(ReadWord());
+        }
+
+        [OpCode(0x02)]
+        void PushByteVar()
+        {
+            Push(ReadVariable(ReadByte()));
+        }
+
+        [OpCode(0x03)]
+        void PushWordVar()
+        {
+            Push(ReadVariable(ReadWord()));
+        }
+
+        [OpCode(0x06)]
+        void ByteArrayRead(int @base)
+        {
+            Push(ReadArray(ReadByte(), 0, @base));
+        }
+
+        [OpCode(0x07)]
+        void WordArrayRead(int @base)
+        {
+            Push(ReadArray(ReadWord(), 0, @base));
+        }
 
         [OpCode(0x43)]
         void WriteWordVar(int value)
@@ -191,6 +127,20 @@ namespace NScumm.Core
             WriteArray(ReadWord(), 0, @base, value);
         }
 
+        [OpCode(0x4e)]
+        void ByteVarInc()
+        {
+            var var = ReadByte();
+            WriteVariable(var, ReadVariable(var) + 1);
+        }
+
+        [OpCode(0x4f)]
+        void WordVarInc()
+        {
+            var var = ReadWord();
+            WriteVariable(var, ReadVariable(var) + 1);
+        }
+
         [OpCode(0xbc)]
         void DimArray(int dim1)
         {
@@ -224,89 +174,35 @@ namespace NScumm.Core
             DefineArray(array, type, 0, dim1);
         }
 
-        int FindFreeArrayId()
+        void Push(int value)
         {
-            for (var i = 1; i < _strings.Length; i++)
-            {
-                if (_strings[i] == null)
-                    return i;
-            }
-            return -1;
+            _vmStack.Push(value);
         }
 
-        ArrayHeader GetArray(int array)
+        void Push(bool value)
         {
-            var data = _strings[ReadVariable(array)];
-            return data != null ? new ArrayHeader(data) : null;
+            _vmStack.Push(value ? 1 : 0);
         }
 
-        void WriteArray(int array, int idx, int @base, int value)
+        int Pop()
         {
-            var ah = GetArray(array);
-            if (ah == null)
-                return;
-
-            var offset = @base + idx * ah.Dim1;
-
-            if (offset < 0 || offset >= ah.Dim1 * ah.Dim2)
-            {
-                throw new InvalidOperationException(string.Format("writeArray: array {0} out of bounds: [{1},{2}] exceeds [{3},{4}]",
-                        array, @base, idx, ah.Dim1, ah.Dim2));
-            }
-
-            if (ah.Type != ArrayType.IntArray)
-            {
-                ah.Write(offset, (byte)value);
-            }
-            else if (Game.Version == 8)
-            {
-                ah.Write(offset, (uint)value);
-            }
-            else
-            {
-                ah.Write(offset, (ushort)value);
-            }
+            return _vmStack.Pop();
         }
 
-        ArrayHeader DefineArray(int array, ArrayType type, int dim2, int dim1)
+        int[] GetStackList(int max)
         {
-            int size;
+            var num = Pop();
 
-            Debug.Assert(0 <= (int)type && (int)type <= 5);
+            if (num > max)
+                throw new InvalidOperationException(string.Format("Too many items {0} in stack list, max {1}", num, max));
 
-            //nukeArray(array);
-
-            var id = FindFreeArrayId();
-
-            if (Game.Version == 8)
+            var args = new int[num];
+            var i = num;
+            while (i-- != 0)
             {
-                if ((array & 0x80000000) != 0)
-                {
-                    throw new InvalidOperationException("Can't define bit variable as array pointer");
-                }
-                size = (type == ArrayType.IntArray) ? 4 : 1;
+                args[i] = Pop();
             }
-            else
-            {
-                if ((array & 0x8000) != 0)
-                {
-                    throw new InvalidOperationException("Can't define bit variable as array pointer");
-                }
-
-                size = (type == ArrayType.IntArray) ? 2 : 1;
-            }
-
-            WriteVariable(array, id);
-
-            size *= dim2 + 1;
-            size *= dim1 + 1;
-
-            _strings[id] = new byte[size + 6 /*sizeof(ArrayHeader)*/];
-            var ah = new ArrayHeader(_strings[id]);
-            ah.Type = type;
-            ah.Dim1 = dim1 + 1;
-            ah.Dim2 = dim2 + 1;
-            return ah;
+            return args;
         }
     }
 }

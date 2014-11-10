@@ -341,10 +341,11 @@ namespace NScumm.Core
 
         int ConvertStringMessage(byte[] dst, int dstPos, int var)
         {
-            if (Game.Version == 3)
+            if ((Game.Version == 3) || (_game.Version >= 6))
             {
                 var = ReadVariable(var);
             }
+
             if (var != 0)
             {
                 var ptr = _strings[var];

@@ -1,5 +1,5 @@
 ﻿//
-//  ScummEngine_Audio.cs
+//  ScummEngine3_Audio.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -22,35 +22,40 @@ using System;
 
 namespace NScumm.Core
 {
-    partial class ScummEngine
+    partial class ScummEngine3
     {
-        protected Sound _sound;
-
-        public void UpdateSound()
+        void StartMusic()
         {
-            _sound.Update();
+            _sound.AddSoundToQueue(GetVarOrDirectByte(OpCodeParameter.Param1));
         }
 
-        void PlayActorSounds()
+        void StopMusic()
         {
-            for (var i = 1; i < _actors.Length; i++)
-            {
-                if (_actors[i].Cost.SoundCounter != 0 && _actors[i].IsInCurrentRoom)
-                {
-                    _currentScript = 0xFF;
+            _sound.StopAllSounds();
+        }
 
-                    var sound = _actors[i].Sound;
-                    // fast mode will flood the queue with walk sounds
-//                    if (!_fastMode) {
-                    _sound.AddSoundToQueue(sound);
-//                    }
-                    for (var j = 1; j < _actors.Length; j++)
-                    {
-                        _actors[j].Cost.SoundCounter = 0;
-                    }
-                    return;
-                }
+        void StartSound()
+        {
+            var sound = GetVarOrDirectByte(OpCodeParameter.Param1);
+            Variables[VariableMusicTimer.Value] = 0;
+            _sound.AddSoundToQueue(sound);
+        }
+
+        void StopSound()
+        {
+            GetVarOrDirectByte(OpCodeParameter.Param1);
+            //_sound.stopSound();
+        }
+
+        void IsSoundRunning()
+        {
+            GetResult();
+            var snd = GetVarOrDirectByte(OpCodeParameter.Param1);
+            if (snd != 0)
+            {
+                snd = _sound.IsSoundRunning(snd) ? 1 : 0;
             }
+            SetResult(snd);
         }
 
     }

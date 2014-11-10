@@ -30,9 +30,9 @@ namespace NScumm.Core
         byte[] _charsetBuffer = new byte[512];
         byte[][] _charsets;
         public byte[] CharsetColorMap = new byte[16];
-        byte[][] _charsetData = CreateCharsetData();
+        protected byte[][] _charsetData = CreateCharsetData();
         int _charsetBufPos;
-        readonly CharsetRenderer _charset;
+        protected readonly CharsetRenderer _charset;
         // Somewhat hackish stuff for 2 byte support (Chinese/Japanese/Korean)
         public byte NewLineCharacter;
         internal bool UseCjkMode;
@@ -50,7 +50,7 @@ namespace NScumm.Core
             return data;
         }
 
-        void InitCharset(int charsetNum)
+        protected void InitCharset(int charsetNum)
         {
             _string[0].Default.Charset = (byte)charsetNum;
             _string[1].Default.Charset = (byte)charsetNum;
@@ -58,7 +58,7 @@ namespace NScumm.Core
             Array.Copy(_charsetData[charsetNum], CharsetColorMap, CharsetColorMap.Length);
         }
 
-        void LoadCharset(int no)
+        protected void LoadCharset(int no)
         {
             if (Game.Version > 4)
             {

@@ -28,28 +28,16 @@ namespace NScumm.Core
     {
         readonly Camera _camera = new Camera();
 
-        void PanCameraTo()
-        {
-            PanCameraTo(GetVarOrDirectWord(OpCodeParameter.Param1));
-        }
+        protected Camera Camera { get { return _camera; } }
 
-        void SetCameraAt()
-        {
-            short at = (short)GetVarOrDirectWord(OpCodeParameter.Param1);
-            _camera.Mode = CameraMode.Normal;
-            _camera.CurrentPosition.X = at;
-            SetCameraAt(new Point(at, 0));
-            _camera.MovingToActor = false;
-        }
-
-        void PanCameraTo(int x)
+        protected void PanCameraTo(int x)
         {
             _camera.DestinationPosition.X = (short)x;
             _camera.Mode = CameraMode.Panning;
             _camera.MovingToActor = false;
         }
 
-        void SetCameraAt(Point pos)
+        protected void SetCameraAt(Point pos)
         {
             if (_camera.Mode != CameraMode.FollowActor || Math.Abs(pos.X - _camera.CurrentPosition.X) > (ScreenWidth / 2))
             {
@@ -74,19 +62,7 @@ namespace NScumm.Core
                 StopTalk();
         }
 
-        void ActorFollowCamera()
-        {
-            var actor = GetVarOrDirectByte(OpCodeParameter.Param1);
-            var old = _camera.ActorToFollow;
-            SetCameraFollows(_actors[actor], false);
-
-            if (_camera.ActorToFollow != old)
-                RunInventoryScript(0);
-
-            _camera.MovingToActor = false;
-        }
-
-        void SetCameraFollows(Actor actor, bool setCamera)
+        protected void SetCameraFollows(Actor actor, bool setCamera)
         {
             _camera.Mode = CameraMode.FollowActor;
             _camera.ActorToFollow = actor.Number;

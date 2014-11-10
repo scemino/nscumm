@@ -25,7 +25,7 @@ namespace NScumm.Core
         /// <summary>
         /// Palette cycles.
         /// </summary>
-        ColorCycle[] _colorCycle;
+        protected ColorCycle[] _colorCycle;
         int _palManipStart;
         int _palManipEnd;
         int _palManipCounter;
@@ -71,7 +71,7 @@ namespace NScumm.Core
         }
 
 
-        void StopCycle(int i)
+        protected void StopCycle(int i)
         {
             ScummHelper.AssertRange(0, i, 16, "stopCycle: cycle");
             if (i != 0)
@@ -110,7 +110,7 @@ namespace NScumm.Core
             }
         }
 
-        void DarkenPalette(int redScale, int greenScale, int blueScale, int startColor, int endColor)
+        protected void DarkenPalette(int redScale, int greenScale, int blueScale, int startColor, int endColor)
         {
             if (startColor <= endColor)
             {
@@ -141,7 +141,7 @@ namespace NScumm.Core
 
         }
 
-        void SetPalColor(int index, int r, int g, int b)
+        protected void SetPalColor(int index, int r, int g, int b)
         {
             _currentPalette.Colors[index] = Color.FromRgb(r, g, b);
 
@@ -151,7 +151,7 @@ namespace NScumm.Core
             SetDirtyColors(index, index);
         }
 
-        void SetShadowPalette(int redScale, int greenScale, int blueScale, int startColor, int endColor, int start, int end)
+        protected void SetShadowPalette(int redScale, int greenScale, int blueScale, int startColor, int endColor, int start, int end)
         {
             // This is an implementation based on the original games code.
             //
@@ -254,7 +254,7 @@ namespace NScumm.Core
             }
         }
 
-        void PalManipulateInit(int resID, int start, int end, int time)
+        protected void PalManipulateInit(int resID, int start, int end, int time)
         {
             var string1 = _strings[resID];
             var string2 = _strings[resID + 1];

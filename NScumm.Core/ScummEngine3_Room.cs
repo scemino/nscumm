@@ -1,5 +1,5 @@
 ﻿//
-//  ScummEngine_Room.cs
+//  ScummEngine3_Room.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -23,21 +23,8 @@ using NScumm.Core.Graphics;
 
 namespace NScumm.Core
 {
-    partial class ScummEngine
+    partial class ScummEngine3
     {
-        byte _currentRoom;
-        protected Room roomData;
-
-        internal Room CurrentRoomData
-        {
-            get { return roomData; }
-        }
-
-        internal byte CurrentRoom
-        {
-            get { return _currentRoom; }
-        }
-
         void LoadRoom()
         {
             var room = (byte)GetVarOrDirectByte(OpCodeParameter.Param1);
@@ -45,7 +32,7 @@ namespace NScumm.Core
             // For small header games, we only call startScene if the room
             // actually changed. This avoid unwanted (wrong) fades in Zak256
             // and others. OTOH, it seems to cause a problem in newer games.
-            if ((_game.Version >= 5) || room != _currentRoom)
+            if ((Game.Version >= 5) || room != CurrentRoom)
             {
                 StartScene(room);
             }
@@ -57,7 +44,7 @@ namespace NScumm.Core
             int obj = GetVarOrDirectWord(OpCodeParameter.Param1);
             int room = GetVarOrDirectByte(OpCodeParameter.Param2);
 
-            var a = _actors[_variables[VariableEgo.Value]];
+            var a = _actors[Variables[VariableEgo.Value]];
 
             a.PutActor((byte)room);
             int oldDir = a.Facing;
@@ -66,9 +53,9 @@ namespace NScumm.Core
             short x = ReadWordSigned();
             short y = ReadWordSigned();
 
-            _variables[VariableWalkToObject.Value] = obj;
+            Variables[VariableWalkToObject.Value] = obj;
             StartScene(a.Room, a, obj);
-            _variables[VariableWalkToObject.Value] = 0;
+            Variables[VariableWalkToObject.Value] = 0;
 
             if (Game.Version <= 4)
             {
@@ -77,7 +64,7 @@ namespace NScumm.Core
                     int dir;
                     Point p;
                     GetObjectXYPos(obj, out p, out dir);
-                    a.PutActor(p, _currentRoom);
+                    a.PutActor(p, CurrentRoom);
                     if (a.Facing == oldDir)
                         a.SetDirection(dir + 180);
                 }
@@ -85,7 +72,7 @@ namespace NScumm.Core
             }
 
             // This is based on disassembly
-            _camera.CurrentPosition.X = _camera.DestinationPosition.X = a.Position.X;
+            Camera.CurrentPosition.X = Camera.DestinationPosition.X = a.Position.X;
             SetCameraFollows(a, false);
 
             _fullRedraw = true;
@@ -96,27 +83,9 @@ namespace NScumm.Core
             }
         }
 
-        protected string GetIqFilename(string filename)
-        {
-            var targetName = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Game.Path), Game.Id);
-            if (_game.Id == "atlantis")
-            {
-                filename = targetName + ".iq";
-            }
-            else if (_game.Id == "monkey" || _game.Id == "monkey2")
-            {
-                filename = targetName + ".cfg";
-            }
-            else
-            {
-                throw new NotSupportedException(string.Format("SO_SAVE_STRING: Unsupported filename {0}", filename));
-            }
-            return filename;
-        }
-
         void RoomOps()
         {
-            bool paramsBeforeOpcode = (_game.Version == 3);
+            bool paramsBeforeOpcode = (Game.Version == 3);
             int a = 0;
             int b = 0;
             if (paramsBeforeOpcode)
@@ -143,8 +112,8 @@ namespace NScumm.Core
                             a = roomData.Header.Width - (ScreenWidth / 2);
                         if (b > roomData.Header.Width - (ScreenWidth / 2))
                             b = roomData.Header.Width - (ScreenWidth / 2);
-                        _variables[VariableCameraMinX.Value] = a;
-                        _variables[VariableCameraMaxX.Value] = b;
+                        Variables[VariableCameraMinX.Value] = a;
+                        Variables[VariableCameraMaxX.Value] = b;
                     }
                     break;
 
@@ -372,105 +341,6 @@ namespace NScumm.Core
                     _resourceMapper[j & 0x7F] = (byte)i;
                 }
             }
-        }
-
-        void ResetRoomObjects()
-        {
-            for (int i = 0; i < roomData.Objects.Count; i++)
-            {
-                _objs[i + 1].Position = roomData.Objects[i].Position;
-                _objs[i + 1].Width = roomData.Objects[i].Width;
-                _objs[i + 1].Walk = roomData.Objects[i].Walk;
-                _objs[i + 1].State = roomData.Objects[i].State;
-                _objs[i + 1].Parent = roomData.Objects[i].Parent;
-                _objs[i + 1].ParentState = roomData.Objects[i].ParentState;
-                _objs[i + 1].Number = roomData.Objects[i].Number;
-                _objs[i + 1].Height = roomData.Objects[i].Height;
-                _objs[i + 1].Flags = roomData.Objects[i].Flags;
-                _objs[i + 1].ActorDir = roomData.Objects[i].ActorDir;
-                _objs[i + 1].Script.Offset = roomData.Objects[i].Script.Offset;
-                _objs[i + 1].Script.Data = roomData.Objects[i].Script.Data;
-                _objs[i + 1].ScriptOffsets.Clear();
-                foreach (var scriptOffset in roomData.Objects[i].ScriptOffsets)
-                {
-                    _objs[i + 1].ScriptOffsets.Add(scriptOffset.Key, scriptOffset.Value);
-                }
-                _objs[i + 1].Name = roomData.Objects[i].Name;
-            }
-            for (int i = roomData.Objects.Count + 1; i < _objs.Length; i++)
-            {
-                _objs[i].Number = 0;
-                _objs[i].Script.Offset = 0;
-                _objs[i].ScriptOffsets.Clear();
-                _objs[i].Script.Data = new byte[0];
-            }
-        }
-
-        void ClearRoomObjects()
-        {
-            if (Game.Version < 5)
-            {
-                for (var i = 0; i < _objs.Length; i++)
-                {
-                    _objs[i].Number = 0;
-                }
-            }
-            else
-            {
-                for (var i = 0; i < _objs.Length; i++)
-                {
-                    if (_objs[i].Number < 1)    // Optimise codepath
-                                continue;
-
-                    // Nuke all non-flObjects (flObjects are nuked in script.cpp)
-                    if (_objs[i].FloatingObjectIndex == 0)
-                    {
-                        _objs[i].Number = 0;
-                    }
-                }
-            }
-        }
-
-        void ResetRoomSubBlocks()
-        {
-            _boxMatrix.Clear();
-            _boxMatrix.AddRange(roomData.BoxMatrix);
-
-            for (int i = 0; i < _scaleSlots.Length; i++)
-            {
-                _scaleSlots[i] = new ScaleSlot();
-            }
-
-            for (int i = 1; i <= roomData.Scales.Length; i++)
-            {
-                var scale = roomData.Scales[i - 1];
-                if (scale.Scale1 != 0 || scale.Y1 != 0 || scale.Scale2 != 0 || scale.Y2 != 0)
-                {
-                    SetScaleSlot(i, 0, scale.Y1, scale.Scale1, 0, scale.Y2, scale.Scale2);
-                }
-            }
-
-            _boxes = new Box[roomData.Boxes.Count];
-            for (int i = 0; i < roomData.Boxes.Count; i++)
-            {
-                var box = roomData.Boxes[i];
-                _boxes[i] = new Box
-                {
-                    Flags = box.Flags,
-                    Llx = box.Llx,
-                    Lly = box.Lly,
-                    Lrx = box.Lrx,
-                    Lry = box.Lry,
-                    Mask = box.Mask,
-                    Scale = box.Scale,
-                    Ulx = box.Ulx,
-                    Uly = box.Uly,
-                    Urx = box.Urx,
-                    Ury = box.Ury
-                };
-            }
-
-            Array.Copy(roomData.ColorCycle, _colorCycle, roomData.ColorCycle.Length);
         }
     }
 }

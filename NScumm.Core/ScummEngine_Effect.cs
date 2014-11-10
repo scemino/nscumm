@@ -28,12 +28,12 @@ namespace NScumm.Core
         bool _shakeEnabled;
         int _shakeFrame;
         static readonly int[] ShakePositions = { 0, 1 * 2, 2 * 2, 1 * 2, 0 * 2, 2 * 2, 3 * 2, 1 * 2 };
-        byte _newEffect = 129, _switchRoomEffect2, _switchRoomEffect;
+        protected byte _newEffect = 129, _switchRoomEffect2, _switchRoomEffect;
         bool _disableFadeInEffect;
         bool _doEffect;
         bool _screenEffectFlag;
 
-        void FadeIn(byte effect)
+        protected void FadeIn(byte effect)
         {
             if (_disableFadeInEffect)
             {
@@ -119,7 +119,7 @@ namespace NScumm.Core
         /// <param name='height'>
         /// Height.
         /// </param>
-        void DissolveEffect(int width, int height)
+        protected void DissolveEffect(int width, int height)
         {
             var vs = MainVirtScreen;
             int[] offsets;
@@ -228,7 +228,7 @@ namespace NScumm.Core
             DissolveEffect(8, 4);
         }
 
-        void FadeOut(int effect)
+        protected void FadeOut(int effect)
         {
             _mainVirtScreen.SetDirtyRange(0, 0);
 
@@ -275,7 +275,7 @@ namespace NScumm.Core
             _screenEffectFlag = false;
         }
 
-        void SetShake(bool enabled)
+        protected void SetShake(bool enabled)
         {
             if (_shakeEnabled != enabled)
                 _fullRedraw = true;

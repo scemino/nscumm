@@ -25,11 +25,11 @@ namespace NScumm.Core
 {
     partial class ScummEngine
     {
-        readonly Cursor _cursor = new Cursor();
+        protected readonly Cursor _cursor = new Cursor();
         Point _mousePos;
         byte cursorColor;
-        int _currentCursor;
-        sbyte _userPut;
+        protected int _currentCursor;
+        protected sbyte _userPut;
         		
         static byte[] defaultCursorColors = new byte[] { 15, 15, 7, 8 };
         ushort[][] _cursorImages = new ushort[4][];
@@ -121,7 +121,7 @@ namespace NScumm.Core
             Array.Copy(default_cursor_hotspots, _cursorHotspots, 8);
         }
 
-        void RedefineBuiltinCursorFromChar(int index, int chr)
+        protected void RedefineBuiltinCursorFromChar(int index, int chr)
         {
             // Cursor image in both Loom versions are based on images from charset.
             // This function is *only* supported for Loom!
@@ -165,7 +165,7 @@ namespace NScumm.Core
             //	_charset->setCurID(oldID);
         }
 
-        void RedefineBuiltinCursorHotspot(int index, int x, int y)
+        protected void RedefineBuiltinCursorHotspot(int index, int x, int y)
         {
             // Cursor image in both Looms are based on images from charset.
             // This function is *only* supported for Loom!

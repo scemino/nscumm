@@ -91,10 +91,8 @@
     <Compile Include="ScummEngine_Actor.cs" />
     <Compile Include="ScummEngine_Verb.cs" />
     <Compile Include="ScummEngine_Variable.cs" />
-    <Compile Include="ScummEngine_Object.cs" />
     <Compile Include="ScummEngine_Camera.cs" />
     <Compile Include="ScummEngine_Inventory.cs" />
-    <Compile Include="ScummEngine_Script.cs" />
     <Compile Include="ScummEngine_Room.cs" />
     <Compile Include="ScummEngine_Audio.cs" />
     <Compile Include="ScummEngine_String.cs" />
@@ -106,7 +104,6 @@
     <Compile Include="ScummEngine_Drawing.cs" />
     <Compile Include="ScummEngine_Input.cs" />
     <Compile Include="ScummEngine_Light.cs" />
-    <Compile Include="ScummEngine_Expression.cs" />
     <Compile Include="IO\ResourceManager3.cs" />
     <Compile Include="IO\ResourceManager4.cs" />
     <Compile Include="IO\ResourceFile3.cs" />
@@ -157,6 +154,35 @@
     <Compile Include="IO\ResourceIndex6.cs" />
     <Compile Include="IO\ResourceManager6.cs" />
     <Compile Include="IO\ResourceFile6.cs" />
+    <Compile Include="ScummEngine6.cs" />
+    <Compile Include="ScummEngine3_Object.cs" />
+    <Compile Include="ScummEngine_Object.cs" />
+    <Compile Include="ScummEngine_Script.cs" />
+    <Compile Include="ScummEngine3_Script.cs" />
+    <Compile Include="ScummEngine3_Actor.cs" />
+    <Compile Include="ScummEngine3_Audio.cs" />
+    <Compile Include="ScummEngine3_Expression.cs" />
+    <Compile Include="ScummEngine3_Verb.cs" />
+    <Compile Include="ScummEngine3_Camera.cs" />
+    <Compile Include="ScummEngine3_String.cs" />
+    <Compile Include="ScummEngine3_SaveLoad.cs" />
+    <Compile Include="ScummEngine3_Room.cs" />
+    <Compile Include="ScummEngine3_Variable.cs" />
+    <Compile Include="ScummEngine3_Cursor.cs" />
+    <Compile Include="ScummEngine3_Inventory.cs" />
+    <Compile Include="ScummEngine3_Drawing.cs" />
+    <Compile Include="ScummEngine3_Light.cs" />
+    <Compile Include="ScummEngine6_Audio.cs" />
+    <Compile Include="ScummEngine6_Cursor.cs" />
+    <Compile Include="OpCodeAttribute.cs" />
+    <Compile Include="ScummEngine6_Variable.cs" />
+    <Compile Include="ScummEngine6_Resources.cs" />
+    <Compile Include="ScummEngine6_Script.cs" />
+    <Compile Include="ScummEngine6_Expression.cs" />
+    <Compile Include="ScummEngine6_Room.cs" />
+    <Compile Include="ScummEngine6_String.cs" />
+    <Compile Include="ScummEngine6_Actor.cs" />
+    <Compile Include="ScummEngine6_Verb.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="IO\Nscumm.xml">

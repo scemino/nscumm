@@ -1,5 +1,5 @@
 ﻿//
-//  ScummEngine_Verb.cs
+//  ScummEngine3_Verb.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -20,34 +20,11 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
-using System.Linq;
-using NScumm.Core.Graphics;
 
 namespace NScumm.Core
 {
-    partial class ScummEngine
+    partial class ScummEngine3
     {
-        protected VerbSlot[] _verbs;
-        readonly Sentence[] _sentence = InitSentences();
-        int _sentenceNum;
-
-        protected int SentenceNum { get { return _sentenceNum; } set { _sentenceNum = value; } }
-
-        protected Sentence[] Sentence{ get { return _sentence; } }
-
-        void InitializeVerbs()
-        {
-            _verbs = new VerbSlot[100];
-            for (int i = 0; i < 100; i++)
-            {
-                _verbs[i] = new VerbSlot();
-                _verbs[i].CurRect.Right = ScreenWidth - 1;
-                _verbs[i].OldRect.Left = -1;
-                _verbs[i].Color = 2;
-                _verbs[i].CharsetNr = 1;
-            }
-        }
-
         void SaveRestoreVerbs()
         {
             int a, b, c, slot, slot2;
@@ -147,7 +124,7 @@ namespace NScumm.Core
                         var top = GetVarOrDirectWord(OpCodeParameter.Param2);
                         vs.CurRect.Left = left;
                         vs.CurRect.Top = top;
-                        if (_game.Id == "loom" && _game.Version == 4)
+                        if (Game.Id == "loom" && Game.Version == 4)
                         {
                             // FIXME: hack loom notes into right spot
                             if ((verb >= 90) && (verb <= 97))
@@ -208,7 +185,7 @@ namespace NScumm.Core
                             vs = _verbs[slot];
                             vs.VerbId = (ushort)verb;
                             vs.Color = 2;
-                            vs.HiColor = (_game.Version == 3) ? (byte)14 : (byte)0;
+                            vs.HiColor = (Game.Version == 3) ? (byte)14 : (byte)0;
                             vs.DimColor = 8;
                             vs.Type = VerbType.Text;
                             vs.CharsetNr = _string[0].Default.Charset;
@@ -272,235 +249,25 @@ namespace NScumm.Core
             VerbMouseOver(0);
         }
 
-        int _verbMouseOver;
-
-        protected void SetVerbObject(byte room, int obj, int verb)
+        void GetVerbEntrypoint()
         {
-            ObjectData o = null;
-            if (Game.Version < 5)
-            {
-                for (var i = NumLocalObjects - 1; i > 0; i--)
-                {
-                    if (_objs[i].Number == obj)
-                    {
-                        o = _objs[i];
-                    }
-                }
-            }
-            else
-            {
-                var roomD = room == _roomResource ? roomData : _resManager.GetRoom(room);
-                o = roomD.Objects.FirstOrDefault(ro => ro.Number == obj);
-            }
+            GetResult();
+            var a = GetVarOrDirectWord(OpCodeParameter.Param1);
+            var b = GetVarOrDirectWord(OpCodeParameter.Param2);
 
-            if (o != null)
-            {
-                _verbs[verb].ImageWidth = o.Width;
-                _verbs[verb].ImageHeight = o.Height;
-                _verbs[verb].ImageData = o.Images.Count > 0 ? o.Images[0] : null;
-            }
-        }
-
-        protected void VerbMouseOver(int verb)
-        {
-            if (_verbMouseOver != verb)
-            {
-                if (_verbs[_verbMouseOver].Type != VerbType.Image)
-                {
-                    DrawVerb(_verbMouseOver, 0);
-                    _verbMouseOver = verb;
-                }
-
-                if (_verbs[verb].Type != VerbType.Image && _verbs[verb].HiColor != 0)
-                {
-                    DrawVerb(verb, 1);
-                    _verbMouseOver = verb;
-                }
-            }
-        }
-
-        protected int GetVerbEntrypoint(int obj, int entry)
-        {
-            if (GetWhereIsObject(obj) == WhereIsObject.NotFound)
-                return 0;
-
-            ObjectData result = null;
-
-            if (_resManager.ObjectOwnerTable[obj] != OwnerRoom)
-            {
-                for (int i = 0; i < NumInventory; i++)
-                {
-                    if (_inventory[i] == obj)
-                        result = _invData[i];
-                }
-            }
-            else
-            {
-                result = (from o in _objs
-                                      where o.Number == obj
-                                      select o).FirstOrDefault();
-            }
-
-            foreach (var key in result.ScriptOffsets.Keys)
-            {
-                if (key == entry || key == 0xFF)
-                    return result.ScriptOffsets[key];
-            }
-
-            return 0;
-        }
-
-        VerbSlot GetVerb(int num)
-        {
-            var verbSlot = (from verb in _verbs
-                                     where num == verb.VerbId && verb.Type == 0 && verb.SaveId == 0
-                                     select verb).FirstOrDefault();
-            return verbSlot;
-        }
-
-        protected void DrawVerb(int verb, int mode)
-        {
-            if (verb == 0)
-                return;
-
-            var vs = _verbs[verb];
-            if (vs.SaveId == 0 && vs.CurMode != 0 && vs.VerbId != 0)
-            {
-                if (vs.Type == VerbType.Image)
-                {
-                    DrawVerbBitmap(verb, vs.CurRect.Left, vs.CurRect.Top);
-                    return;
-                }
-
-                RestoreVerbBG(verb);
-
-                _string[4].Charset = vs.CharsetNr;
-                _string[4].Position = new Point((short)vs.CurRect.Left, (short)vs.CurRect.Top);
-                _string[4].Right = (short)(ScreenWidth - 1);
-                _string[4].Center = vs.Center;
-
-                if (vs.CurMode == 2)
-                    _string[4].Color = vs.DimColor;
-                else if (mode != 0 && vs.HiColor != 0)
-                    _string[4].Color = vs.HiColor;
-                else
-                    _string[4].Color = vs.Color;
-
-                // FIXME For the future: Indy3 and under inv scrolling
-                /*
-                   if (verb >= 31 && verb <= 36)
-                   verb += _inventoryOffset;
-                 */
-                var msg = _verbs[verb].Text;
-                if (msg == null || msg.Length == 0)
-                    return;
-
-                var tmp = _charset.Center;
-                DrawString(4, msg);
-                _charset.Center = tmp;
-
-                vs.CurRect.Right = _charset.Str.Right;
-                vs.CurRect.Bottom = _charset.Str.Bottom;
-                vs.OldRect = _charset.Str;
-                _charset.Str.Left = _charset.Str.Right;
-            }
-            else
-            {
-                RestoreVerbBG(verb);
-            }
-        }
-
-        void RestoreVerbBG(int verb)
-        {
-            VerbSlot vs = _verbs[verb];
-            byte col = vs.BkColor;
-
-            if (vs.OldRect.Left != -1)
-            {
-                RestoreBackground(vs.OldRect, col);
-                vs.OldRect.Left = -1;
-            }
-        }
-
-        protected void KillVerb(int slot)
-        {
-            if (slot == 0)
-                return;
-
-            VerbSlot vs = _verbs[slot];
-            vs.VerbId = 0;
-            vs.CurMode = 0;
-            vs.Text = null;
-
-            if (vs.SaveId == 0)
-            {
-                DrawVerb(slot, 0);
-                VerbMouseOver(0);
-            }
-            vs.SaveId = 0;
-        }
-
-        int FindVerbAtPos(int x, int y)
-        {
-            for (int i = _verbs.Length - 1; i >= 0; i--)
-            {
-                var vs = _verbs[i];
-                if (vs.CurMode != 1 || vs.VerbId == 0 || vs.SaveId != 0 || y < vs.CurRect.Top || y >= vs.CurRect.Bottom)
-                    continue;
-                if (vs.Center)
-                {
-                    if (x < -(vs.CurRect.Right - 2 * vs.CurRect.Left) || x >= vs.CurRect.Right)
-                        continue;
-                }
-                else
-                {
-                    if (x < vs.CurRect.Left || x >= vs.CurRect.Right)
-                        continue;
-                }
-
-                return i;
-            }
-
-            return 0;
-        }
-
-        protected int GetVerbSlot(int id, int mode)
-        {
-            for (int i = 1; i < _verbs.Length; i++)
-            {
-                if (_verbs[i].VerbId == id && _verbs[i].SaveId == mode)
-                {
-                    return i;
-                }
-            }
-            return 0;
-        }
-
-        static Sentence[] InitSentences()
-        {
-            var sentences = new Sentence[6];
-            for (int i = 0; i < sentences.Length; i++)
-            {
-                sentences[i] = new Sentence();
-            }
-            return sentences;
-        }
-
-        protected void DoSentence(byte verb, ushort objectA, ushort objectB)
-        {
-            _sentence[_sentenceNum++] = new Sentence(verb, objectA, objectB);
+            SetResult(GetVerbEntrypoint(a, b));
         }
 
         void WaitForSentence()
         {
-            if (_sentenceNum != 0)
+            if (SentenceNum != 0)
             {
-                if (_sentence[_sentenceNum - 1].IsFrozen && !IsScriptInUse(Variables[VariableSentenceScript.Value]))
+                if (Sentence[SentenceNum - 1].IsFrozen && !IsScriptInUse(Variables[VariableSentenceScript.Value]))
                     return;
             }
             else if (!IsScriptInUse(Variables[VariableSentenceScript.Value]))
                 return;
-            _currentPos--;
+            CurrentPos--;
             BreakHere();
         }
     }

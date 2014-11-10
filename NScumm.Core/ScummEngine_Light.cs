@@ -55,7 +55,7 @@ namespace NScumm.Core
 
     partial class ScummEngine
     {
-        FlashLight _flashlight;
+        protected FlashLight _flashlight;
 
         internal LightModes GetCurrentLights()
         {

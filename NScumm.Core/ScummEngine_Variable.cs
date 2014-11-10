@@ -86,8 +86,8 @@ namespace NScumm.Core
 
         int[] _variables = new int[NumVariables];
         BitArray _bitVars = new BitArray(4096);
-        Stack<int> _stack = new Stack<int>();
-        int _resultVarIndex;
+        protected Stack<int> _stack = new Stack<int>();
+        protected int _resultVarIndex;
 
         public int[] Variables
         {
@@ -114,7 +114,7 @@ namespace NScumm.Core
             return _currentScriptData[_currentPos++];
         }
 
-        ushort ReadWord()
+        protected ushort ReadWord()
         {
             ushort word = (ushort)(_currentScriptData[_currentPos++] | (_currentScriptData[_currentPos++] << 8));
             return word;
@@ -138,7 +138,7 @@ namespace NScumm.Core
             }
         }
 
-        int ReadVariable(int var)
+        protected int ReadVariable(int var)
         {
             if ((var & 0x2000) == 0x2000)
             {
@@ -209,12 +209,12 @@ namespace NScumm.Core
             return ReadByte();
         }
 
-        int GetVar()
+        protected int GetVar()
         {
             return ReadVariable(ReadWord());
         }
 
-        short ReadWordSigned()
+        protected short ReadWordSigned()
         {
             return (short)ReadWord();
         }
@@ -231,8 +231,12 @@ namespace NScumm.Core
 
         protected void SetResult(int value)
         {
-            var index = _resultVarIndex;
-//            Console.WriteLine("SetResult({0},{1})", index, value);
+            WriteVariable(_resultVarIndex, value);
+        }
+
+        protected void WriteVariable(int index, int value)
+        {
+            //            Console.WriteLine("SetResult({0},{1})", index, value);
             if ((index & 0xF000) == 0)
             {
                 ScummHelper.AssertRange(0, index, NumVariables - 1, "variable (writing)");

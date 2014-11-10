@@ -26,22 +26,8 @@ namespace NScumm.Core
 {
     partial class ScummEngine
     {
-        ushort[] _inventory = new ushort[NumInventory];
-        ObjectData[] _invData = new ObjectData[NumInventory];
-
-        void GetInventoryCount()
-        {
-            GetResult();
-            SetResult(GetInventoryCount(GetVarOrDirectByte(OpCodeParameter.Param1)));
-        }
-
-        void FindInventory()
-        {
-            GetResult();
-            var x = GetVarOrDirectByte(OpCodeParameter.Param1);
-            var y = GetVarOrDirectByte(OpCodeParameter.Param2);
-            SetResult(FindInventory(x, y));
-        }
+        protected ushort[] _inventory = new ushort[NumInventory];
+        protected ObjectData[] _invData = new ObjectData[NumInventory];
 
         int GetInventorySlot()
         {
@@ -72,7 +58,7 @@ namespace NScumm.Core
             _inventory[slot] = (ushort)obj;
         }
 
-        int GetInventoryCount(int owner)
+        protected int GetInventoryCount(int owner)
         {
             var count = 0;
             for (var i = 0; i < NumInventory; i++)
@@ -84,7 +70,7 @@ namespace NScumm.Core
             return count;
         }
 
-        int FindInventory(int owner, int idx)
+        protected int FindInventory(int owner, int idx)
         {
             int count = 1, i, obj;
             for (i = 0; i < NumInventory; i++)

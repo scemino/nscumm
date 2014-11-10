@@ -1,5 +1,5 @@
 ﻿//
-//  ScummEngine_Audio.cs
+//  ScummEngine3_Inventory.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -18,41 +18,26 @@
 //
 //  You should have received a copy of the GNU Lesser General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 using System;
 
 namespace NScumm.Core
 {
-    partial class ScummEngine
+    partial class ScummEngine3
     {
-        protected Sound _sound;
-
-        public void UpdateSound()
+        void GetInventoryCount()
         {
-            _sound.Update();
+            GetResult();
+            SetResult(GetInventoryCount(GetVarOrDirectByte(OpCodeParameter.Param1)));
         }
 
-        void PlayActorSounds()
+        void FindInventory()
         {
-            for (var i = 1; i < _actors.Length; i++)
-            {
-                if (_actors[i].Cost.SoundCounter != 0 && _actors[i].IsInCurrentRoom)
-                {
-                    _currentScript = 0xFF;
-
-                    var sound = _actors[i].Sound;
-                    // fast mode will flood the queue with walk sounds
-//                    if (!_fastMode) {
-                    _sound.AddSoundToQueue(sound);
-//                    }
-                    for (var j = 1; j < _actors.Length; j++)
-                    {
-                        _actors[j].Cost.SoundCounter = 0;
-                    }
-                    return;
-                }
-            }
+            GetResult();
+            var x = GetVarOrDirectByte(OpCodeParameter.Param1);
+            var y = GetVarOrDirectByte(OpCodeParameter.Param2);
+            SetResult(FindInventory(x, y));
         }
-
     }
 }
 

@@ -28,131 +28,13 @@ namespace NScumm.Core
 {
     partial class ScummEngine
     {
-        ObjectData[] _objs = new ObjectData[200];
+        protected ObjectData[] _objs = new ObjectData[200];
         HashSet<ObjectData> _drawingObjects = new HashSet<ObjectData>();
         Dictionary<int, byte[]> _newNames = new Dictionary<int, byte[]>();
 
         internal uint[] ClassData
         {
             get { return _resManager.ClassData; }
-        }
-
-        void FindObject()
-        {
-            GetResult();
-            var x = GetVarOrDirectByte(OpCodeParameter.Param1);
-            var y = GetVarOrDirectByte(OpCodeParameter.Param2);
-            SetResult(FindObject(x, y));
-        }
-
-        void SetOwnerOf()
-        {
-            var obj = GetVarOrDirectWord(OpCodeParameter.Param1);
-            var owner = GetVarOrDirectByte(OpCodeParameter.Param2);
-            SetOwnerOf(obj, owner);
-        }
-
-        void SetObjectName()
-        {
-            var obj = GetVarOrDirectWord(OpCodeParameter.Param1);
-            SetObjectName(obj);
-        }
-
-        void GetDistance()
-        {
-            GetResult();
-            var o1 = GetVarOrDirectWord(OpCodeParameter.Param1);
-            var o2 = GetVarOrDirectWord(OpCodeParameter.Param2);
-            var r = GetObjActToObjActDist(o1, o2);
-
-            // TODO: WORKAROUND bug #795937 ?
-            //if ((_game.id == GID_MONKEY_EGA || _game.id == GID_PASS) && o1 == 1 && o2 == 307 && vm.slot[_currentScript].number == 205 && r == 2)
-            //    r = 3;
-
-            SetResult(r);
-        }
-
-        void SetState()
-        {
-            var obj = GetVarOrDirectWord(OpCodeParameter.Param1);
-            var state = (byte)GetVarOrDirectByte(OpCodeParameter.Param2);
-            PutState(obj, state);
-            MarkObjectRectAsDirty(obj);
-            if (_bgNeedsRedraw)
-                ClearDrawObjectQueue();
-        }
-
-        void SetClass()
-        {
-            int obj = GetVarOrDirectWord(OpCodeParameter.Param1);
-            int cls;
-
-            while ((_opCode = ReadByte()) != 0xFF)
-            {
-                cls = GetVarOrDirectWord(OpCodeParameter.Param1);
-
-                // WORKAROUND bug #1668393: Due to a script bug, the wrong opcode is
-                // used to test and set the state of various objects (e.g. the inside
-                // door (object 465) of the of the Hostel on Mars), when opening the
-                // Hostel door from the outside.
-                if (cls == 0)
-                {
-                    // Class '0' means: clean all class data
-                    ClassData[obj] = 0;
-                    if (obj < _actors.Length)
-                    {
-                        var a = _actors[obj];
-                        a.IgnoreBoxes = false;
-                        a.ForceClip = 0;
-                    }
-                }
-                else
-                {
-                    PutClass(obj, cls, (cls & 0x80) != 0);
-                }
-            }
-        }
-
-        void IfClassOfIs()
-        {
-            var cond = true;
-            var obj = GetVarOrDirectWord(OpCodeParameter.Param1);
-
-            while ((_opCode = ReadByte()) != 0xFF)
-            {
-                var cls = GetVarOrDirectWord(OpCodeParameter.Param1);
-                var b = GetClass(obj, (ObjectClass)cls);
-                if ((((cls & 0x80) != 0) && !b) || ((0 == (cls & 0x80)) && b))
-                    cond = false;
-            }
-            JumpRelative(cond);
-        }
-
-        protected virtual void PickupObject()
-        {
-            int obj = GetVarOrDirectWord(OpCodeParameter.Param1);
-
-            if (obj < 1)
-            {
-                string msg = string.Format("pickupObjectOld received invalid index {0} (script {1})", obj, _slots[_currentScript].Number);
-                throw new NotSupportedException(msg);
-            }
-
-            if (GetObjectIndex(obj) == -1)
-                return;
-
-            // Don't take an object twice
-            if (GetWhereIsObject(obj) == WhereIsObject.Inventory)
-                return;
-
-            // debug(0, "adding %d from %d to inventoryOld", obj, _currentRoom);
-            AddObjectToInventory(obj, _roomResource);
-            MarkObjectRectAsDirty(obj);
-            PutOwner(obj, (byte)_variables[VariableEgo.Value]);
-            PutClass(obj, (int)ObjectClass.Untouchable, true);
-            PutState(obj, 1);
-            ClearDrawObjectQueue();
-            RunInventoryScript(1);
         }
 
         byte[] GetObjectOrActorName(int num)
@@ -197,22 +79,6 @@ namespace NScumm.Core
                 if (_objs[i].Number > 0)
                     _objs[i].State = GetState(_objs[i].Number);
             }
-        }
-
-        void IfState()
-        {
-            int a = GetVarOrDirectWord(OpCodeParameter.Param1);
-            int b = GetVarOrDirectByte(OpCodeParameter.Param2);
-
-            JumpRelative(GetState(a) == b);
-        }
-
-        void IfNotState()
-        {
-            int a = GetVarOrDirectWord(OpCodeParameter.Param1);
-            int b = GetVarOrDirectByte(OpCodeParameter.Param2);
-
-            JumpRelative(GetState(a) != b);
         }
 
         protected byte GetState(int obj)
@@ -304,7 +170,7 @@ namespace NScumm.Core
             return (_resManager.ClassData[obj] & (1 << ((int)cls - 1))) != 0;
         }
 
-        void SetObjectName(int obj)
+        protected void SetObjectName(int obj)
         {
             if (obj < _actors.Length)
             {
@@ -316,7 +182,7 @@ namespace NScumm.Core
             RunInventoryScript(0);
         }
 
-        int GetObjX(int obj)
+        protected int GetObjX(int obj)
         {
             if (obj < 1)
                 return 0;                                   /* fix for indy4's map */
@@ -334,7 +200,7 @@ namespace NScumm.Core
             return p.X;
         }
 
-        int GetObjY(int obj)
+        protected int GetObjY(int obj)
         {
             if (obj < 1)
                 return 0;                                   /* fix for indy4's map */
@@ -351,7 +217,7 @@ namespace NScumm.Core
             return p.Y;
         }
 
-        WhereIsObject GetWhereIsObject(int obj)
+        protected WhereIsObject GetWhereIsObject(int obj)
         {
             if (obj >= _resManager.ObjectOwnerTable.Length)
                 return WhereIsObject.NotFound;
@@ -384,12 +250,12 @@ namespace NScumm.Core
             _resManager.ObjectStateTable[obj] = (byte)state;
         }
 
-        int GetObjectIndex(int obj)
+        protected int GetObjectIndex(int obj)
         {
             if (obj < 1)
                 return -1;
 
-            for (int i = (_objs.Length - 1); i > 0; i--)
+            for (var i = (_objs.Length - 1); i > 0; i--)
             {
                 if (_objs[i].Number == obj)
                     return i;
@@ -452,12 +318,12 @@ namespace NScumm.Core
             }
         }
 
-        int GetOwner(int obj)
+        protected int GetOwner(int obj)
         {
             return _resManager.ObjectOwnerTable[obj];
         }
 
-        int FindObject(int x, int y)
+        protected int FindObject(int x, int y)
         {
             byte a;
             int mask = 0xF;
@@ -487,7 +353,7 @@ namespace NScumm.Core
             return 0;
         }
 
-        void GetObjectXYPos(int obj, out Point p, out int dir)
+        protected void GetObjectXYPos(int obj, out Point p, out int dir)
         {
             var idx = GetObjectIndex(obj);
             var od = _objs[idx];
@@ -496,7 +362,7 @@ namespace NScumm.Core
             dir = ScummHelper.OldDirToNewDir(od.ActorDir & 3);
         }
 
-        Point GetObjectXYPos(int obj)
+        protected Point GetObjectXYPos(int obj)
         {
             int dir;
             Point p;
@@ -603,7 +469,7 @@ namespace NScumm.Core
             ClearDrawObjectQueue();
         }
 
-        void SetOwnerOf(int obj, int owner)
+        protected void SetOwnerOf(int obj, int owner)
         {
             // In Sam & Max this is necessary, or you won't get your stuff back
             // from the Lost and Found tent after riding the Cone of Tragedy. But

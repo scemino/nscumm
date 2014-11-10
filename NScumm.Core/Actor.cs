@@ -72,9 +72,6 @@ namespace NScumm.Core
         byte _animProgress, _animSpeed;
         bool _costumeNeedsInit;
         short[] _animVariable = new short[27];
-        ushort _talkScript, _walkScript;
-        bool _ignoreTurns;
-        Point _talkPos;
         bool _flip;
         int _talkFrequency;
         byte _talkVolume;
@@ -125,6 +122,12 @@ namespace NScumm.Core
 
         public byte TalkStopFrame { get; set; }
 
+        public ushort TalkScript { get; set; }
+
+        public ushort WalkScript { get; set; }
+
+        public bool IgnoreTurns { get; set; }
+
         public byte Room { get; set; }
 
         public Point Position
@@ -159,7 +162,11 @@ namespace NScumm.Core
 
         public byte TalkColor { get; set; }
 
+        public Point TalkPosition { get; set; }
+
         public bool IgnoreBoxes { get; set; }
+
+        public int Layer { get; set; }
 
         public bool IsInCurrentRoom
         {
@@ -274,7 +281,7 @@ namespace NScumm.Core
                 Cost = new CostumeData();
                 _walkdata = new ActorWalkData();
                 _walkdata.Point3.X = 32000;
-                _walkScript = 0;
+                WalkScript = 0;
             
                 Costume = 0;
                 Room = 0;
@@ -286,7 +293,7 @@ namespace NScumm.Core
             _elevation = 0;
             Width = 24;
             TalkColor = 15;
-            _talkPos = new Point(0, -80);
+            TalkPosition = new Point(0, -80);
             BoxScale = ScaleY = ScaleX = 0xFF;
             Charset = 0;
             Sound = 0;
@@ -302,7 +309,7 @@ namespace NScumm.Core
 
             IgnoreBoxes = false;
             ForceClip = 0;
-            _ignoreTurns = false;
+            IgnoreTurns = false;
 
             _talkFrequency = 256;
             _talkPan = 64;
@@ -310,8 +317,8 @@ namespace NScumm.Core
 
             ResetFrames();
 
-            _walkScript = 0;
-            _talkScript = 0;
+            WalkScript = 0;
+            TalkScript = 0;
 
             _scumm.ClassData[Number] = 0;
         }
@@ -672,7 +679,7 @@ namespace NScumm.Core
             if (!IsInCurrentRoom)
             {
                 _position = abr.Position;
-                if (!_ignoreTurns && dir != -1)
+                if (!IgnoreTurns && dir != -1)
                     _facing = (ushort)dir;
                 return;
             }
@@ -719,6 +726,18 @@ namespace NScumm.Core
         {
             _animSpeed = newAnimSpeed;
             _animProgress = 0;
+        }
+
+        public void SetAnimVar(int var, int value)
+        {
+            ScummHelper.AssertRange(0, var, 26, "SetAnimVar:");
+            _animVariable[var] = (short)value;
+        }
+
+        public int GetAnimVar(int var)
+        {
+            ScummHelper.AssertRange(0, var, 26, "GetAnimVar:");
+            return _animVariable[var];
         }
 
         public void SetPalette(int idx, ushort val)
@@ -894,20 +913,20 @@ namespace NScumm.Core
 
                 LoadAndSaveEntry.Create(reader =>
                     {
-                        _talkPos = new Point(reader.ReadInt16(), reader.ReadInt16());
+                        TalkPosition = new Point(reader.ReadInt16(), reader.ReadInt16());
                     }, writer =>
                     {
-                        writer.WriteInt16(_talkPos.X);
-                        writer.WriteInt16(_talkPos.Y);
+                        writer.WriteInt16(TalkPosition.X);
+                        writer.WriteInt16(TalkPosition.Y);
                     }, 8),
-                LoadAndSaveEntry.Create(reader => _ignoreTurns = reader.ReadByte() != 0, writer => writer.WriteByte(_ignoreTurns), 8),
+                LoadAndSaveEntry.Create(reader => IgnoreTurns = reader.ReadByte() != 0, writer => writer.WriteByte(IgnoreTurns), 8),
 
                 // Actor layer switched to int32 in HE games
-                LoadAndSaveEntry.Create(reader => reader.ReadByte(), writer => writer.WriteByte(0), 8, 57),
-                LoadAndSaveEntry.Create(reader => reader.ReadInt32(), writer => writer.WriteInt32(0), 58),
+                LoadAndSaveEntry.Create(reader => Layer = reader.ReadByte(), writer => writer.WriteByte(Layer), 8, 57),
+                LoadAndSaveEntry.Create(reader => Layer = reader.ReadInt32(), writer => writer.WriteInt32(Layer), 58),
                                              
-                LoadAndSaveEntry.Create(reader => _talkScript = reader.ReadUInt16(), writer => writer.WriteUInt16(_talkScript), 8),
-                LoadAndSaveEntry.Create(reader => _walkScript = reader.ReadUInt16(), writer => writer.WriteUInt16(_walkScript), 8),
+                LoadAndSaveEntry.Create(reader => TalkScript = reader.ReadUInt16(), writer => writer.WriteUInt16(TalkScript), 8),
+                LoadAndSaveEntry.Create(reader => WalkScript = reader.ReadUInt16(), writer => writer.WriteUInt16(WalkScript), 8),
 
                 LoadAndSaveEntry.Create(reader => _walkdata.Dest.X = reader.ReadInt16(), writer => writer.WriteInt16(_walkdata.Dest.X), 8),
                 LoadAndSaveEntry.Create(reader => _walkdata.Dest.Y = reader.ReadInt16(), writer => writer.WriteInt16(_walkdata.Dest.Y), 8),
@@ -954,9 +973,9 @@ namespace NScumm.Core
             if (_scumm.TalkingActor == 0 || Room != _scumm.CurrentRoom || _frame == frame)
                 return;
 
-            if (_talkScript != 0)
+            if (TalkScript != 0)
             {
-                _scumm.RunScript((byte)_talkScript, true, false, new int[] { frame, Number });
+                _scumm.RunScript((byte)TalkScript, true, false, new int[] { frame, Number });
             }
             else
             {
@@ -1003,24 +1022,24 @@ namespace NScumm.Core
 
         public void StopActorMoving()
         {
-            if (_walkScript != 0)
-                _scumm.StopScript(_walkScript);
+            if (WalkScript != 0)
+                _scumm.StopScript(WalkScript);
 
             Moving = MoveFlags.None;
         }
 
-        #endregion
-
-        #region Private Methods
-
-        protected void TurnToDirection(int newdir)
+        public void TurnToDirection(int newdir)
         {
-            if (newdir == -1 || _ignoreTurns)
+            if (newdir == -1 || IgnoreTurns)
                 return;
 
             Moving = MoveFlags.Turn;
             _targetFacing = (ushort)newdir;
         }
+
+        #endregion
+
+        #region Private Methods
 
         void PrepareDrawActorCostume(ICostumeRenderer bcr)
         {
@@ -1324,10 +1343,10 @@ namespace NScumm.Core
             /* Note: walk scripts aren't required to make the Dig
              * work as usual
              */
-            if (_walkScript != 0)
+            if (WalkScript != 0)
             {
                 var args = new int[] { Number, 1, angle };
-                _scumm.RunScript((byte)_walkScript, true, false, args);
+                _scumm.RunScript((byte)WalkScript, true, false, args);
             }
             else
             {

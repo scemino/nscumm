@@ -1,5 +1,5 @@
 ﻿//
-//  ScummEngine_Expression.cs
+//  ScummEngine3_Expression.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -22,7 +22,7 @@ using System;
 
 namespace NScumm.Core
 {
-    partial class ScummEngine
+    partial class ScummEngine3
     {
         void IsLess()
         {
@@ -198,7 +198,7 @@ namespace NScumm.Core
                         {
                             _opCode = ReadByte();
                             ExecuteOpCode(_opCode);
-                            _stack.Push(_variables[0]);
+                            _stack.Push(Variables[0]);
                         }
                         break;
 

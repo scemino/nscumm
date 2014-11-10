@@ -29,11 +29,18 @@ namespace NScumm.Core
     {
         byte[] _currentScriptData;
         byte _currentScript;
+        int _currentPos;
         int _numNestedScripts;
         NestedScript[] _nest;
         ScriptSlot[] _slots;
-        CutScene cutScene = new CutScene();
+        protected CutScene cutScene = new CutScene();
         const int NumLocalScripts = 60;
+
+        protected byte CurrentScript { get { return _currentScript; } set { _currentScript = value; } }
+
+        protected int CurrentPos { get { return _currentPos; } set { _currentPos = value; } }
+
+        protected ScriptSlot[] Slots{ get { return _slots; } }
 
         void ChainScript()
         {
@@ -46,16 +53,6 @@ namespace NScumm.Core
             _currentScript = 0xFF;
 
             RunScript((byte)script, _slots[cur].FreezeResistant, _slots[cur].Recursive, vars);
-        }
-
-        void FreezeScripts()
-        {
-            var scr = GetVarOrDirectByte(OpCodeParameter.Param1);
-
-            if (scr != 0)
-                FreezeScripts(scr);
-            else
-                UnfreezeScripts();
         }
 
         void UnfreezeScripts()
@@ -79,7 +76,7 @@ namespace NScumm.Core
                 EndOverrideCore();
         }
 
-        void BeginOverrideCore()
+        protected void BeginOverrideCore()
         {
             cutScene.Override.Pointer = _currentPos;
             cutScene.Override.Script = _currentScript;
@@ -96,7 +93,7 @@ namespace NScumm.Core
             }
         }
 
-        void EndOverrideCore()
+        protected void EndOverrideCore()
         {
             cutScene.Override.Pointer = 0;
             cutScene.Override.Script = 0;
@@ -176,12 +173,6 @@ namespace NScumm.Core
                 RunScript((byte)_variables[VariableCutSceneEndScript.Value], false, false, args);
         }
 
-        void IsScriptRunning()
-        {
-            GetResult();
-            SetResult(IsScriptRunning(GetVarOrDirectByte(OpCodeParameter.Param1)) ? 1 : 0);
-        }
-
         void StartObject()
         {
             var obj = GetVarOrDirectWord(OpCodeParameter.Param1);
@@ -191,7 +182,7 @@ namespace NScumm.Core
             RunObjectScript(obj, script, false, false, data);
         }
 
-        void StopObjectCode()
+        protected void StopObjectCode()
         {
             if (_slots[_currentScript].Where != WhereIsObject.Global && _slots[_currentScript].Where != WhereIsObject.Local)
             {
@@ -203,11 +194,6 @@ namespace NScumm.Core
                 _slots[_currentScript].Status = ScriptStatus.Dead;
             }
             _currentScript = 0xFF;
-        }
-
-        void StopObjectScript()
-        {
-            StopObjectScript((ushort)GetVarOrDirectWord(OpCodeParameter.Param1));
         }
 
         void StartScript()
@@ -236,7 +222,7 @@ namespace NScumm.Core
                 StopScript(script);
         }
 
-        void StartScene(byte room, Actor a = null, int objectNr = 0)
+        protected void StartScene(byte room, Actor a = null, int objectNr = 0)
         {
             StopTalk();
 
@@ -630,7 +616,7 @@ namespace NScumm.Core
             }
         }
 
-        bool IsScriptInUse(int script)
+        protected bool IsScriptInUse(int script)
         {
             for (var i = 0; i < NumScriptSlot; i++)
                 if (_slots[i].Number == script)
@@ -667,7 +653,7 @@ namespace NScumm.Core
             }
         }
 
-        void RunObjectScript(int obj, byte entry, bool freezeResistant, bool recursive, int[] vars)
+        protected void RunObjectScript(int obj, byte entry, bool freezeResistant, bool recursive, int[] vars)
         {
             if (obj == 0)
                 return;
@@ -718,7 +704,7 @@ namespace NScumm.Core
             RunScriptNested(slot);
         }
 
-        void StopObjectScript(ushort script)
+        protected void StopObjectScript(ushort script)
         {
             if (script == 0)
                 return;
@@ -750,7 +736,7 @@ namespace NScumm.Core
             }
         }
 
-        void FreezeScripts(int flag)
+        protected void FreezeScripts(int flag)
         {
             for (var i = 0; i < NumScriptSlot; i++)
             {
@@ -769,7 +755,7 @@ namespace NScumm.Core
             }
         }
 
-        bool IsScriptRunning(int script)
+        protected bool IsScriptRunningCore(int script)
         {
             for (var i = 0; i < NumScriptSlot; i++)
             {
@@ -803,22 +789,6 @@ namespace NScumm.Core
                     }
                 }
             }
-        }
-
-        void DoSentence()
-        {
-            var verb = GetVarOrDirectByte(OpCodeParameter.Param1);
-            if (verb == 0xFE)
-            {
-                _sentenceNum = 0;
-                StopScript(_variables[VariableSentenceScript.Value]);
-                //TODO: clearClickedStatus();
-                return;
-            }
-
-            var objectA = GetVarOrDirectWord(OpCodeParameter.Param2);
-            var objectB = GetVarOrDirectWord(OpCodeParameter.Param3);
-            DoSentence((byte)verb, (ushort)objectA, (ushort)objectB);
         }
     }
 }

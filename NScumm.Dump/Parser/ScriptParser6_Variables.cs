@@ -212,7 +212,6 @@ namespace NScumm.Dump
 
         Statement DimArray()
         {
-
             var subOp = ReadByte();
             string data;
             switch (subOp)

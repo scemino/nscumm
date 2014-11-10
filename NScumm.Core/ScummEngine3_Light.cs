@@ -1,5 +1,5 @@
 ﻿//
-//  ScummEngine_Audio.cs
+//  ScummEngine3_Light.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -22,37 +22,23 @@ using System;
 
 namespace NScumm.Core
 {
-    partial class ScummEngine
+    partial class ScummEngine3
     {
-        protected Sound _sound;
-
-        public void UpdateSound()
+        void Lights()
         {
-            _sound.Update();
-        }
+            var a = GetVarOrDirectByte(OpCodeParameter.Param1);
+            var b = ReadByte();
+            var c = ReadByte();
 
-        void PlayActorSounds()
-        {
-            for (var i = 1; i < _actors.Length; i++)
+            if (c == 0)
+                Variables[VariableCurrentLights.Value] = a;
+            else if (c == 1)
             {
-                if (_actors[i].Cost.SoundCounter != 0 && _actors[i].IsInCurrentRoom)
-                {
-                    _currentScript = 0xFF;
-
-                    var sound = _actors[i].Sound;
-                    // fast mode will flood the queue with walk sounds
-//                    if (!_fastMode) {
-                    _sound.AddSoundToQueue(sound);
-//                    }
-                    for (var j = 1; j < _actors.Length; j++)
-                    {
-                        _actors[j].Cost.SoundCounter = 0;
-                    }
-                    return;
-                }
+                _flashlight.XStrips = (ushort)a;
+                _flashlight.YStrips = (ushort)b;
             }
+            _fullRedraw = true;
         }
-
     }
 }
 

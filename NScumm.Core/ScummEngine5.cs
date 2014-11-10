@@ -1,5 +1,5 @@
 ﻿//
-//  ScummEngine4.cs
+//  ScummEngine5.cs
 //
 //  Author:
 //       Scemino <scemino74@gmail.com>

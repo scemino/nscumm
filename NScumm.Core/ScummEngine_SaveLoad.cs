@@ -35,10 +35,10 @@ namespace NScumm.Core
         const uint InfoSectionVersion = 2;
         const uint SaveInfoSectionSize = (4 + 4 + 4 + 4 + 4 + 4 + 2);
         const uint SaveCurrentVersion = 94;
-        string _savegame;
-        int _saveLoadFlag;
-        int _saveLoadSlot;
-        bool _saveTemporaryState;
+        protected string _savegame;
+        protected int _saveLoadFlag;
+        protected int _saveLoadSlot;
+        protected bool _saveTemporaryState;
 
         string _saveLoadVarsFilename;
 
@@ -89,7 +89,7 @@ namespace NScumm.Core
             }
         }
 
-        void SaveState(string path, string name)
+        protected void SaveState(string path, string name)
         {
             using (var file = File.OpenWrite(path))
             {
@@ -103,13 +103,13 @@ namespace NScumm.Core
             }
         }
 
-        bool LoadState(int slot, bool compat)
+        protected bool LoadState(int slot, bool compat)
         {
             var filename = Path.Combine(Path.GetDirectoryName(Game.Path), MakeSavegameName(slot, compat));
             return LoadState(filename);
         }
 
-        bool LoadState(string path)
+        protected bool LoadState(string path)
         {
             using (var file = File.OpenRead(path))
             {
@@ -1442,7 +1442,7 @@ namespace NScumm.Core
             return header;
         }
 
-        bool SavePreparedSavegame(int slot, string desc)
+        protected bool SavePreparedSavegame(int slot, string desc)
         {
             var filename = MakeSavegameName(slot, false);
             var directory = Path.GetDirectoryName(Game.Path);
@@ -1450,7 +1450,7 @@ namespace NScumm.Core
             return true;
         }
 
-        bool[] ListSavegames(int num)
+        protected bool[] ListSavegames(int num)
         {
             var marks = new bool[num];
             var prefix = new StringBuilder(MakeSavegameName(99, false));
@@ -1470,24 +1470,12 @@ namespace NScumm.Core
             return marks;
         }
 
-        string MakeSavegameName(int slot, bool temporary)
+        protected string MakeSavegameName(int slot, bool temporary)
         {
             return string.Format("{0}.{1}{2:D2}", Game.Id, temporary ? 'c' : 's', slot);
         }
 
-        void SaveLoadVars()
-        {
-            if (ReadByte() == 1)
-            {
-                SaveVars();
-            }
-            else
-            {
-                LoadVars();
-            }
-        }
-
-        void LoadVars()
+        protected void LoadVars()
         {
             int a, b;
 
@@ -1647,92 +1635,7 @@ namespace NScumm.Core
             return sb.ToString();
         }
 
-        void SaveLoadGame()
-        {
-            GetResult();
-            var a = GetVarOrDirectByte(OpCodeParameter.Param1);
-            var result = 0;
-
-            var slot = a & 0x1F;
-            // Slot numbers in older games start with 0, in newer games with 1
-            if (_game.Version <= 2)
-                slot++;
-            _opCode = (byte)(a & 0xE0);
-
-            switch (_opCode)
-            {
-                case 0x00: // num slots available
-                    result = 100;
-                    break;
-                case 0x20: // drive
-                    if (_game.Version <= 3)
-                    {
-                        // 0 = ???
-                        // [1,2] = disk drive [A:,B:]
-                        // 3 = hard drive
-                        result = 3;
-                    }
-                    else
-                    {
-                        // set current drive
-                        result = 1;
-                    }
-                    break;
-                case 0x40: // load
-                    if (LoadState(slot, false))
-                        result = 3; // sucess
-                                        else
-                        result = 5; // failed to load
-                    break;
-                case 0x80: // save
-                    if (_game.Version <= 3)
-                    {
-                        string name;
-                        if (_game.Version <= 2)
-                        {
-                            // use generic name
-                            name = string.Format("Game {0}", (char)('A' + slot - 1));
-                        }
-                        else
-                        {
-                            // use name entered by the user
-                            var firstSlot = StringIdSavename1;
-                            name = Encoding.ASCII.GetString(_strings[slot + firstSlot - 1]);
-                        }
-
-                        if (SavePreparedSavegame(slot, name))
-                            result = 0;
-                        else
-                            result = 2;
-                    }
-                    else
-                    {
-                        result = 2; // failed to save
-                    }
-                    break;
-                case 0xC0: // test if save exists
-                    {
-                        var availSaves = ListSavegames(100);
-                        var filename = MakeSavegameName(slot, false);
-                        var directory = Path.GetDirectoryName(Game.Path);
-                        if (availSaves[slot] && (File.Exists(Path.Combine(directory, filename))))
-                        {
-                            result = 6; // save file exists
-                        }
-                        else
-                        {
-                            result = 7; // save file does not exist
-                        }
-                    }
-                    break;
-            //                default:
-            //                    error("o4_saveLoadGame: unknown subopcode %d", _opcode);
-            }
-
-            SetResult(result);
-        }
-
-        void SaveVars()
+        protected void SaveVars()
         {
             int a, b;
 

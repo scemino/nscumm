@@ -26,22 +26,22 @@ namespace NScumm.Core
 {
     partial class ScummEngine
     {
-        VirtScreen _mainVirtScreen;
+        protected VirtScreen _mainVirtScreen;
         VirtScreen _textVirtScreen;
         VirtScreen _verbVirtScreen;
         VirtScreen _unkVirtScreen;
         Surface _textSurface;
         Surface _composite;
-        bool _bgNeedsRedraw;
-        bool _fullRedraw;
+        protected bool _bgNeedsRedraw;
+        protected bool _fullRedraw;
         internal Gdi Gdi;
         bool _completeScreenRedraw;
         IGraphicsManager _gfxManager;
-        byte[] _shadowPalette = new byte[256];
+        protected byte[] _shadowPalette = new byte[256];
         int _palDirtyMin, _palDirtyMax;
         int _textSurfaceMultiplier = 1;
-        int _screenStartStrip;
-        int _screenEndStrip;
+        protected int _screenStartStrip;
+        protected int _screenEndStrip;
 
         static byte[] tableEGAPalette = new byte[]
         {
@@ -55,19 +55,6 @@ namespace NScumm.Core
         internal Surface TextSurface { get { return _textSurface; } }
 
         internal byte[] ShadowPalette { get { return _shadowPalette; } }
-
-        void DrawBox()
-        {
-            var x = GetVarOrDirectWord(OpCodeParameter.Param1);
-            var y = GetVarOrDirectWord(OpCodeParameter.Param2);
-
-            _opCode = ReadByte();
-            var x2 = GetVarOrDirectWord(OpCodeParameter.Param1);
-            var y2 = GetVarOrDirectWord(OpCodeParameter.Param2);
-            var color = GetVarOrDirectByte(OpCodeParameter.Param3);
-
-            DrawBox(x, y, x2, y2, color);
-        }
 
         protected void DrawObject()
         {
@@ -323,7 +310,7 @@ namespace NScumm.Core
             _string[a].Position = new Point((short)_charset.Str.Right, _string[a].Position.Y);
         }
 
-        void SetDirtyColors(int min, int max)
+        protected void SetDirtyColors(int min, int max)
         {
             if (_palDirtyMin > min)
                 _palDirtyMin = min;
@@ -331,7 +318,7 @@ namespace NScumm.Core
                 _palDirtyMax = max;
         }
 
-        void DrawBox(int x, int y, int x2, int y2, int color)
+        protected void DrawBox(int x, int y, int x2, int y2, int color)
         {
             VirtScreen vs;
 

@@ -100,6 +100,24 @@ namespace NScumm.Core
             actor.PutActor(new Point(x, y), (byte)room);
         }
 
+        [OpCode(0x80)]
+        void PutActorAtObject(int index, byte room, int obj)
+        {
+            var a = _actors[index];
+            Point p;
+            if (GetWhereIsObject(obj) != WhereIsObject.NotFound)
+            {
+                p = GetObjectXYPos(obj);
+            }
+            else
+            {
+                p = new Point(160, 120);
+            }
+            if (room == 0xFF)
+                room = a.Room;
+            a.PutActor(p, room);
+        }
+
         [OpCode(0x81)]
         void FaceActor(int index, int obj)
         {
@@ -387,6 +405,19 @@ namespace NScumm.Core
         void TalkEgo()
         {
             TalkActor(Variables[VariableEgo.Value]);
+        }
+
+        [OpCode(0xd1)]
+        void StopTalking()
+        {
+            StopTalk();
+        }
+
+        [OpCode(0xd2)]
+        void GetAnimateVariable(int index, int variable)
+        {
+            var a = _actors[index];
+            Push(a.GetAnimVar(variable));
         }
 
         [OpCode(0xec)]

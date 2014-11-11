@@ -83,6 +83,13 @@ namespace NScumm.Core
         public int? VariableRoomFlag;
         public int? VariableGameLoaded;
         public int? VariableNewRoom;
+        public int? VariableRoomWidth;
+        public int? VariableRoomHeight;
+        public int? VariableVoiceMode;
+        public int? VariableSaveLoadScript;
+        public int? VariableSaveLoadScript2;
+        public int? VariableLeftButtonHold;
+        public int? VariableRightButtonHold;
 
         int[] _variables = new int[NumVariables];
         BitArray _bitVars = new BitArray(4096);
@@ -140,7 +147,7 @@ namespace NScumm.Core
 
         protected int ReadVariable(int var)
         {
-            if ((var & 0x2000) == 0x2000)
+            if (((var & 0x2000) != 0) && (Game.Version <= 5))
             {
                 var a = ReadWord();
                 if ((a & 0x2000) == 0x2000)

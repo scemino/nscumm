@@ -34,7 +34,7 @@ namespace NScumm.Core
             var y2 = GetVarOrDirectWord(OpCodeParameter.Param2);
             var color = GetVarOrDirectByte(OpCodeParameter.Param3);
 
-            DrawBox(x, y, x2, y2, color);
+            DrawBoxCore(x, y, x2, y2, color);
         }
     }
 }

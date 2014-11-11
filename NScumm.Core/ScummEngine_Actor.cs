@@ -166,7 +166,7 @@ namespace NScumm.Core
             }
         }
 
-        void ProcessActors()
+        protected void ProcessActors()
         {
             var actors = from actor in _actors
                                   where actor.IsInCurrentRoom
@@ -228,7 +228,7 @@ namespace NScumm.Core
             }
         }
 
-        void SetActorRedrawFlags()
+        protected void SetActorRedrawFlags()
         {
             // Redraw all actors if a full redraw was requested.
             // Also redraw all actors in COMI (see bug #1066329 for details).

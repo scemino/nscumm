@@ -24,10 +24,10 @@ namespace NScumm.Core
 {
     partial class ScummEngine6
     {
-        [OpCode(0xac)]
-        void SoundKludge(int[] args)
+        [OpCode(0x69)]
+        void StopMusic()
         {
-            _sound.SoundKludge(args);
+            _sound.StopAllSounds();
         }
 
         [OpCode(0x74)]
@@ -53,6 +53,12 @@ namespace NScumm.Core
         void IsSoundRunning(int sound)
         {
             Push(sound != 0 && _sound.IsSoundRunning(sound));
+        }
+
+        [OpCode(0xac)]
+        void SoundKludge(int[] args)
+        {
+            _sound.SoundKludge(args);
         }
     }
 }

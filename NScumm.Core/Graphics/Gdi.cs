@@ -210,6 +210,11 @@ namespace NScumm.Core.Graphics
             return nav;
         }
 
+        public void ClearMaskBuffer(int i)
+        {
+            Array.Clear(maskBuffer[i], 0, maskBuffer[i].Length);
+        }
+
         public void ResetBackground(int top, int bottom, int strip)
         {
             var vs = _vm.MainVirtScreen;

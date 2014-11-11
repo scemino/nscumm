@@ -42,7 +42,7 @@ namespace NScumm.Core
             var subOp = ReadByte();
             if (subOp == 196)
             {
-                _curVerbSlot = Pop();
+                _curVerb = Pop();
                 _curVerbSlot = GetVerbSlot(_curVerb, 0);
                 ScummHelper.AssertRange(0, _curVerbSlot, _verbs.Length - 1, "new verb slot");
                 return;
@@ -165,6 +165,62 @@ namespace NScumm.Core
         void GetVerbEntrypoint(int verb, int entryp)
         {
             Push(GetVerbEntrypointCore(verb, entryp));
+        }
+
+        [OpCode(0xa5)]
+        void SaveRestoreVerbs(int a, int b, int c)
+        {
+            var subOp = ReadByte();
+            if (Game.Version == 8)
+            {
+                subOp = (byte)((subOp - 141) + 0xB4);
+            }
+
+            switch (subOp)
+            {
+                case 141:               // SO_SAVE_VERBS
+                    while (a <= b)
+                    {
+                        var slot = GetVerbSlot(a, 0);
+                        if (slot != 0 && _verbs[slot].SaveId == 0)
+                        {
+                            _verbs[slot].SaveId = (ushort)c;
+                            DrawVerb(slot, 0);
+                            VerbMouseOver(0);
+                        }
+                        a++;
+                    }
+                    break;
+                case 142:               // SO_RESTORE_VERBS
+                    while (a <= b)
+                    {
+                        var slot = GetVerbSlot(a, c);
+                        if (slot != 0)
+                        {
+                            var slot2 = GetVerbSlot(a, 0);
+                            if (slot2 != 0)
+                                KillVerb(slot2);
+                            slot = GetVerbSlot(a, c);
+                            _verbs[slot].SaveId = 0;
+                            DrawVerb(slot, 0);
+                            VerbMouseOver(0);
+                        }
+                        a++;
+                    }
+                    break;
+                case 143:               // SO_DELETE_VERBS
+                    while (a <= b)
+                    {
+                        var slot = GetVerbSlot(a, c);
+                        if (slot != 0)
+                            KillVerb(slot);
+                        a++;
+                    }
+                    break;
+                default:
+                    throw new NotSupportedException("SaveRestoreVerbs: default case");
+            }
+
         }
     }
 }

@@ -39,6 +39,8 @@ namespace NScumm.Core
         IMuse imuse;
         IMuseSysEx sysEx;
 
+        public IMuse IMuse { get { return imuse; } }
+
         class AudioStream: IAudioStream
         {
             readonly Sound sound;

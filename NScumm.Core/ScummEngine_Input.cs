@@ -90,10 +90,20 @@ namespace NScumm.Core
 
             if (mainmenuKeyEnabled && _inputManager.IsKeyDown(KeyCode.F5))
             {
+                if (VariableSaveLoadScript.HasValue && _currentRoom != 0)
+                {
+                    RunScript((byte)Variables[VariableSaveLoadScript.Value], false, false, new int[0]);
+                }
+
                 var eh = ShowMenuDialogRequested;
                 if (eh != null)
                 {
                     eh(this, EventArgs.Empty);
+                }
+
+                if (VariableSaveLoadScript2.HasValue && _currentRoom != 0)
+                {
+                    RunScript((byte)Variables[VariableSaveLoadScript2.Value], false, false, new int[0]);
                 }
             }
 
@@ -137,12 +147,12 @@ namespace NScumm.Core
                 mouseAndKeyboardStat = KeyCode.Space;
             }
 
-            if (_inputManager.IsMouseLeftPressed())
+            if (_inputManager.IsMouseLeftClicked())
             {
                 mouseAndKeyboardStat = (KeyCode)ScummMouseButtonState.LeftClick;
             }
 
-            if (_inputManager.IsMouseRightPressed())
+            if (_inputManager.IsMouseRightClicked())
             {
                 mouseAndKeyboardStat = (KeyCode)ScummMouseButtonState.RightClick;
             }
@@ -174,6 +184,19 @@ namespace NScumm.Core
                         mouseAndKeyboardStat = i - (int)KeyCode.D0 + '0';
                     }
                 }
+            }
+
+            if (Game.Version >= 6)
+            {
+                Variables[VariableLeftButtonHold.Value] = _inputManager.IsMouseLeftPressed() ? 1 : 0;
+                Variables[VariableRightButtonHold.Value] = _inputManager.IsMouseLeftPressed() ? 1 : 0;
+
+                // TODO: scumm7: left/right buttonn down
+//                if (_game.version >= 7)
+//                {
+//                    VAR(VAR_LEFTBTN_DOWN) = (_leftBtnPressed & msClicked) != 0;
+//                    VAR(VAR_RIGHTBTN_DOWN) = (_rightBtnPressed & msClicked) != 0;
+//                }
             }
 
             _mousePos = _inputManager.GetMousePosition();

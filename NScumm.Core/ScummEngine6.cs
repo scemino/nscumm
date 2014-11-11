@@ -27,15 +27,63 @@ using System.Collections.Generic;
 using System;
 using System.Reflection;
 using System.Linq;
+using System.Diagnostics;
 
 namespace NScumm.Core
 {
+    enum VoiceMode
+    {
+        Voice = 0,
+        VoiceAndText = 1,
+        Text = 2
+    }
+
     partial class ScummEngine6: ScummEngine5
     {
+        int VariableTimeDateYear;
+        int VariableTimeDateMonth;
+        int VariableTimeDateDay;
+        int VariableTimeDateHour;
+        int VariableTimeDateMinute;
+        int VariableV6EMSSpace;
+        int? VariableV6SoundMode;
+        int? VariableCharsetMask;
+        int? VariableTimeDateSecond;
+
         public ScummEngine6(GameInfo game, IGraphicsManager graphicsManager, IInputManager inputManager, IAudioDriver audioDriver)
             : base(game, graphicsManager, inputManager, audioDriver)
         {
             VariableRandomNumber = 118;
+            VariableRoomWidth = 41;
+            VariableRoomHeight = 54;
+
+            VariableVoiceMode = 60; // 0 is voice, 1 is voice+text, 2 is text only
+            VariableSaveLoadScript = 61;
+            VariableSaveLoadScript2 = 62;
+
+            VariableLeftButtonHold = 74;
+            VariableRightButtonHold = 75;
+
+            VariableV6EMSSpace = 76;
+            VariableRandomNumber = 118;
+
+            VariableTimeDateYear = 119;
+            VariableTimeDateMonth = 129;
+            VariableTimeDateDay = 128;
+            VariableTimeDateHour = 125;
+            VariableTimeDateMinute = 126;
+
+            // Sam & Max specific
+            if (Game.Id == "samnmax")
+            {
+                VariableV6SoundMode = 9;
+                VariableCharsetMask = 123;
+            }
+
+            Variables[VariableRoomWidth.Value] = ScreenWidth;
+            Variables[VariableRoomHeight.Value] = ScreenHeight;
+            Variables[VariableVoiceMode.Value] = (int)VoiceMode.VoiceAndText;
+            Variables[VariableV6EMSSpace] = 10000;
 
             foreach (var array in _resManager.ArrayDefinitions)
             {
@@ -89,7 +137,18 @@ namespace NScumm.Core
                 }
             }
 
-            var action = new Action(() => method.Invoke(this, args.Select(arg => arg()).Reverse().ToArray()));
+            var action = new Action(() =>
+                { 
+                    var parameters = args.Select(arg => arg()).Reverse().ToArray();
+                    Console.WriteLine("Room = {1,3}, Script = {0,3}, Offset = {4,4}, Name = [{3:X2}] {2}({5})", 
+                        Slots[CurrentScript].Number, 
+                        _roomResource, 
+                        _opCodes.ContainsKey(_opCode) ? method.Name : "Unknown", 
+                        _opCode,
+                        CurrentPos - 1,
+                        string.Join(",", parameters.Select(p => p.ToString())));
+                    method.Invoke(this, parameters);
+                });
             return action;
         }
 

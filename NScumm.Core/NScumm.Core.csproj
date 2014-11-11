@@ -187,6 +187,7 @@
     <Compile Include="ScummEngine6_Camera.cs" />
     <Compile Include="ScummEngine6_Inventory.cs" />
     <Compile Include="ScummEngine6_Array.cs" />
+    <Compile Include="ScummEngine6_Misc.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="IO\Nscumm.xml">

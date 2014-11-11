@@ -99,15 +99,31 @@ namespace NScumm.Core
                     (short)(a.Position.X - MainVirtScreen.XStart),
                     (short)(a.Position.Y - a.Elevation - ScreenTop));
 
-                if (_variables[VariableTalkStringY.Value] < 0)
+                if (_game.Version <= 5)
                 {
-                    s = (a.ScaleY * _variables[VariableTalkStringY.Value]) / 0xFF;
-                    _string[0].Position = _string[0].Position.Offset(0, (short)(((_variables[VariableTalkStringY.Value] - s) / 2) + s));
+                    if (_variables[VariableTalkStringY.Value] < 0)
+                    {
+                        s = (a.ScaleY * _variables[VariableTalkStringY.Value]) / 0xFF;
+                        _string[0].Position = _string[0].Position.Offset(0, (short)(((_variables[VariableTalkStringY.Value] - s) / 2) + s));
+                    }
+                    else
+                    {
+                        _string[0].Position = new Point(_string[0].Position.X, (short)_variables[VariableTalkStringY.Value]);
+                    }
                 }
                 else
                 {
-                    _string[0].Position = new Point(_string[0].Position.X, (short)_variables[VariableTalkStringY.Value]);
+                    s = a.ScaleX * a.TalkPosition.X / 0xFF;
+                    var x = _string[0].Position.X + ((a.TalkPosition.X - s) / 2) + s;
+
+                    s = a.ScaleY * a.TalkPosition.Y / 0xFF;
+                    var y = _string[0].Position.Y + ((a.TalkPosition.Y - s) / 2) + s;
+
+                    if (y > ScreenHeight - 40)
+                        y = ScreenHeight - 40;
+                    _string[0].Position = new Point((short)x, (short)y);
                 }
+
 
                 if (_string[0].Position.Y < 1)
                     _string[0].Position = new Point(_string[0].Position.X, 1);

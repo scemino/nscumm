@@ -318,7 +318,7 @@ namespace NScumm.Core
                 _palDirtyMax = max;
         }
 
-        protected void DrawBox(int x, int y, int x2, int y2, int color)
+        protected void DrawBoxCore(int x, int y, int x2, int y2, int color)
         {
             VirtScreen vs;
 
@@ -459,7 +459,7 @@ namespace NScumm.Core
         /// Redraw background as needed, i.e. the left/right sides if scrolling took place etc.
         /// Note that this only updated the virtual screen, not the actual display.
         /// </summary>
-        void RedrawBGAreas()
+        protected void RedrawBGAreas()
         {
             if (_game.Id != "pass" && _game.Version >= 4 && _game.Version <= 6)
             {
@@ -501,7 +501,10 @@ namespace NScumm.Core
             else if (_fullRedraw || diff != 0)
             {
                 // TODO: ClearFlashlight
-                //ClearFlashlight();
+//                if (Game.Version <= 5)
+//                {
+//                  ClearFlashlight();
+//                }
                 _bgNeedsRedraw = false;
                 RedrawBGStrip(0, Gdi.NumStrips);
             }

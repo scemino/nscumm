@@ -170,7 +170,7 @@ namespace NScumm.Core
             return (_resManager.ClassData[obj] & (1 << ((int)cls - 1))) != 0;
         }
 
-        protected void SetObjectName(int obj)
+        protected void SetObjectNameCore(int obj)
         {
             if (obj < _actors.Length)
             {
@@ -268,7 +268,7 @@ namespace NScumm.Core
             _drawingObjects.Add(_objs[obj]);
         }
 
-        protected void ClearDrawObjectQueue()
+        protected virtual void ClearDrawObjectQueue()
         {
             _drawingObjects.Clear();
         }
@@ -358,7 +358,24 @@ namespace NScumm.Core
             var idx = GetObjectIndex(obj);
             var od = _objs[idx];
 
-            p = od.Walk;
+            if (Game.Version >= 6)
+            {
+                var state = GetStateCore(obj) - 1;
+                if (state < 0)
+                    state = 0;
+
+                var img = state >= od.Images.Count ? null : od.Images[state];
+
+                // TODO: scumm6  hotspot
+                var x = od.Position.X;
+                var y = od.Position.Y;
+                p = new Point(x, y);
+            }
+            else
+            {
+                p = od.Walk;
+            }
+
             dir = ScummHelper.OldDirToNewDir(od.ActorDir & 3);
         }
 
@@ -475,7 +492,7 @@ namespace NScumm.Core
             // from the Lost and Found tent after riding the Cone of Tragedy. But
             // it probably applies to all V6+ games. See bugs #493153 and #907113.
             // FT disassembly is checked, behavior is correct. [sev]
-            int arg = 0;
+            int arg = (Game.Version >= 6) ? obj : 0;
 
             // WORKAROUND for bug #1917981: Game crash when finishing Indy3 demo.
             // Script 94 tries to empty the inventory but does so in a bogus way.
@@ -510,7 +527,7 @@ namespace NScumm.Core
         void ClearOwnerOf(int obj)
         {
             // Stop the associated object script code (else crashes might occurs)
-            StopObjectScript((ushort)obj);
+            StopObjectScriptCore((ushort)obj);
 
             if (GetOwnerCore(obj) != OwnerRoom)
             {

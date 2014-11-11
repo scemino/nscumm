@@ -65,11 +65,43 @@ namespace NScumm.Core
             Push(ReadArray(ReadWord(), 0, @base));
         }
 
+        [OpCode(0x0a)]
+        void ByteArrayIndexedRead(int index, int @base)
+        {
+            Push(ReadArray(ReadByte(), index, @base));
+        }
+
+        [OpCode(0x0b)]
+        void WordArrayIndexedRead(int index, int @base)
+        {
+            Push(ReadArray(ReadWord(), index, @base));
+        }
+
         [OpCode(0x43)]
         void WriteWordVar(int value)
         {
             var index = ReadWord();
             WriteVariable(index, value);
+        }
+
+        [OpCode(0x47)]
+        void WordArrayWrite(int @base, int value)
+        {
+            WriteArray(ReadWord(), 0, @base, value);
+        }
+
+        [OpCode(0x4e)]
+        void ByteVarInc()
+        {
+            var var = ReadByte();
+            WriteVariable(var, ReadVariable(var) + 1);
+        }
+
+        [OpCode(0x4f)]
+        void WordVarInc()
+        {
+            var var = ReadWord();
+            WriteVariable(var, ReadVariable(var) + 1);
         }
 
         [OpCode(0xA4)]
@@ -103,42 +135,28 @@ namespace NScumm.Core
                         }
                     }
                     break;
-//                case 212:               // SO_ASSIGN_2DIM_LIST
-//                    b = pop();
-//                    len = getStackList(list, ARRAYSIZE(list));
-//                    d = readVar(array);
-//                    if (d == 0)
-//                        error("Must DIM a two dimensional array before assigning");
-//                    c = pop();
-//                    while (--len >= 0)
-//                    {
-//                        writeArray(array, c, b + len, list[len]);
-//                    }
-//                    break;
+            //                case 212:               // SO_ASSIGN_2DIM_LIST
+            //                    b = pop();
+            //                    len = getStackList(list, ARRAYSIZE(list));
+            //                    d = readVar(array);
+            //                    if (d == 0)
+            //                        error("Must DIM a two dimensional array before assigning");
+            //                    c = pop();
+            //                    while (--len >= 0)
+            //                    {
+            //                        writeArray(array, c, b + len, list[len]);
+            //                    }
+            //                    break;
                 default:
                     throw new NotSupportedException(string.Format("ArrayOps: default case {0} (array {1})", subOp, array));
             }
 
         }
 
-        [OpCode(0x47)]
-        void WordArrayWrite(int @base, int value)
+        [OpCode(0xA7)]
+        void Pop6()
         {
-            WriteArray(ReadWord(), 0, @base, value);
-        }
-
-        [OpCode(0x4e)]
-        void ByteVarInc()
-        {
-            var var = ReadByte();
-            WriteVariable(var, ReadVariable(var) + 1);
-        }
-
-        [OpCode(0x4f)]
-        void WordVarInc()
-        {
-            var var = ReadWord();
-            WriteVariable(var, ReadVariable(var) + 1);
+            Pop();
         }
 
         [OpCode(0xbc)]
@@ -172,6 +190,62 @@ namespace NScumm.Core
             }
 
             DefineArray(array, type, 0, dim1);
+        }
+
+        [OpCode(0xc0)]
+        void Dim2DimArray(int dim2, int dim1)
+        {
+            var subOp = ReadByte();
+            ArrayType type;
+            switch (subOp)
+            {
+                case 199:               // SO_INT_ARRAY
+                    type = ArrayType.IntArray;
+                    break;
+                case 200:               // SO_BIT_ARRAY
+                    type = ArrayType.BitArray;
+                    break;
+                case 201:               // SO_NIBBLE_ARRAY
+                    type = ArrayType.NibbleArray;
+                    break;
+                case 202:               // SO_BYTE_ARRAY
+                    type = ArrayType.ByteArray;
+                    break;
+                case 203:               // SO_STRING_ARRAY
+                    type = ArrayType.StringArray;
+                    break;
+                default:
+                    throw new NotSupportedException(string.Format("Dim2DimArray: default case {0}", subOp));
+            }
+
+            DefineArray(ReadWord(), type, dim2, dim1);
+        }
+
+        [OpCode(0xd4)]
+        void Shuffle(int a, int b)
+        {
+            ShuffleArray(ReadWord(), a, b);
+        }
+
+        void ShuffleArray(int num, int minIdx, int maxIdx)
+        {
+            int range = maxIdx - minIdx;
+            int count = range * 2;
+
+            // Shuffle the array 'num'
+            while (count-- != 0)
+            {
+                var rnd = new Random();
+                // Determine two random elements...
+                var rand1 = rnd.Next(minIdx, maxIdx);
+                var rand2 = rnd.Next(minIdx, maxIdx);
+
+                // ...and swap them
+                var val1 = ReadArray(num, 0, rand1);
+                var val2 = ReadArray(num, 0, rand2);
+                WriteArray(num, 0, rand1, val2);
+                WriteArray(num, 0, rand2, val1);
+            }
         }
 
         void Push(int value)

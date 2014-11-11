@@ -24,6 +24,7 @@ namespace NScumm.MonoGame
         Microsoft.Xna.Framework.GameWindow window;
 
         KeyboardState keyboardState;
+        MouseState lastMouseState;
         MouseState mouseState;
 
         public XnaInputManager(Microsoft.Xna.Framework.GameWindow window)
@@ -45,6 +46,7 @@ namespace NScumm.MonoGame
 
         public void UpdateStates()
         {
+            lastMouseState = mouseState;
             keyboardState = Keyboard.GetState();
             mouseState = Mouse.GetState();
         }
@@ -73,6 +75,16 @@ namespace NScumm.MonoGame
 
         }
 
+        public bool IsMouseLeftClicked()
+        {
+            return IsMouseLeftPressed();
+        }
+
+        public bool IsMouseRightClicked()
+        {
+            return IsMouseRightPressed();
+        }
+
         public bool IsMouseLeftPressed()
         {
             return mouseState.LeftButton == ButtonState.Pressed;
@@ -82,6 +94,5 @@ namespace NScumm.MonoGame
         {
             return mouseState.RightButton == ButtonState.Pressed;
         }
-
     }
 }

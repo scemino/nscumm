@@ -20,8 +20,6 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
-using System.Linq;
-using NScumm.Core.Graphics;
 
 namespace NScumm.Core
 {
@@ -50,75 +48,12 @@ namespace NScumm.Core
                 UnfreezeScripts();
         }
 
-        void UnfreezeScripts()
-        {
-            for (var i = 0; i < NumScriptSlot; i++)
-            {
-                Slots[i].Unfreeze();
-            }
-
-            for (var i = 0; i < Sentence.Length; i++)
-            {
-                Sentence[i].Unfreeze();
-            }
-        }
-
         void BeginOverride()
         {
             if (ReadByte() != 0)
                 BeginOverrideCore();
             else
                 EndOverrideCore();
-        }
-
-        void BeginOverrideCore()
-        {
-            cutScene.Override.Pointer = CurrentPos;
-            cutScene.Override.Script = CurrentScript;
-
-            // Skip the jump instruction following the override instruction
-            // (the jump is responsible for "skipping" cutscenes, and the reason
-            // why we record the current script position in vm.cutScenePtr).
-            ReadByte();
-            ReadWord();
-
-            if (Game.Version >= 5)
-            {
-                Variables[VariableOverride.Value] = 0;
-            }
-        }
-
-        void EndOverrideCore()
-        {
-            cutScene.Override.Pointer = 0;
-            cutScene.Override.Script = 0;
-
-            if (Game.Version >= 4)
-            {
-                Variables[VariableOverride.Value] = 0;
-            }
-        }
-
-        void BeginCutscene(int[] args)
-        {
-            var scr = CurrentScript;
-            Slots[scr].CutSceneOverride++;
-
-            var cutSceneData = new CutSceneData
-            {
-                Data = args.Length > 0 ? args[0] : 0
-            };
-            cutScene.Data.Push(cutSceneData);
-
-            if (cutScene.Data.Count >= MaxCutsceneNum)
-                throw new NotSupportedException("Cutscene stack overflow");
-
-            cutScene.CutSceneScriptIndex = scr;
-
-            if (Variables[VariableCutSceneStartScript.Value] != 0)
-                RunScript((byte)Variables[VariableCutSceneStartScript.Value], false, false, args);
-
-            cutScene.CutSceneScriptIndex = 0xFF;
         }
 
         void AbortCutscene()
@@ -183,23 +118,9 @@ namespace NScumm.Core
             RunObjectScript(obj, script, false, false, data);
         }
 
-        void StopObjectCode()
-        {
-            if (Slots[CurrentScript].Where != WhereIsObject.Global && Slots[CurrentScript].Where != WhereIsObject.Local)
-            {
-                StopObjectScript(Slots[CurrentScript].Number);
-            }
-            else
-            {
-                Slots[CurrentScript].Number = 0;
-                Slots[CurrentScript].Status = ScriptStatus.Dead;
-            }
-            CurrentScript = 0xFF;
-        }
-
         void StopObjectScript()
         {
-            StopObjectScript((ushort)GetVarOrDirectWord(OpCodeParameter.Param1));
+            StopObjectScriptCore((ushort)GetVarOrDirectWord(OpCodeParameter.Param1));
         }
 
         void StartScript()

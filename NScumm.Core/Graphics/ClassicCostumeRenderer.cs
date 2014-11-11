@@ -189,9 +189,9 @@ namespace NScumm.Core.Graphics
             _loaded.LoadCostume(costume);
         }
 
-        public int DrawCostume(VirtScreen vs, int numStrips, Actor actor)
+        public int DrawCostume(VirtScreen vs, int numStrips, Actor actor, bool drawToBackBuf)
         {
-            var pixelsNavigator = new PixelNavigator(vs.Surfaces[0]);
+            var pixelsNavigator = new PixelNavigator(vs.Surfaces[drawToBackBuf ? 1 : 0]);
             pixelsNavigator.OffsetX(vs.XStart);
 
             ActorX += (vs.XStart & 7);

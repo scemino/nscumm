@@ -58,6 +58,33 @@ namespace NScumm.Core
             EndCutsceneCore();
         }
 
+        [OpCode(0x68)]
+        void Cutscene(int[] args)
+        {
+            BeginCutscene(args);
+        }
+
+        [OpCode(0x6a)]
+        void FreezeUnfreeze(int script)
+        {
+            if (script != 0)
+                FreezeScripts(script);
+            else
+                UnfreezeScripts();
+        }
+
+        [OpCode(0x6c)]
+        void BreakHere()
+        {
+            BreakHereCore();
+        }
+
+        [OpCode(0x77)]
+        void StopObjectScript(ushort script)
+        {
+            StopObjectScriptCore(script);
+        }
+
         [OpCode(0x7c)]
         void StopScript6(int script)
         {
@@ -77,6 +104,35 @@ namespace NScumm.Core
             DoSentence(verb, objectA, objectB);
         }
 
+        [OpCode(0x87)]
+        void GetRandomNumber(int max)
+        {
+            var rnd = new Random().Next(Math.Abs(max) + 1);
+            Variables[VariableRandomNumber.Value] = rnd;
+            Push(rnd);
+        }
+
+        [OpCode(0x88)]
+        void GetRandomNumberRange(int min, int max)
+        {
+            var rnd = new Random().Next(min, max);
+            Variables[VariableRandomNumber.Value] = rnd;
+            Push(rnd);
+        }
+
+        [OpCode(0x95)]
+        void BeginOverride()
+        {
+            BeginOverrideCore();
+            _skipVideo = false;
+        }
+
+        [OpCode(0x96)]
+        void EndOverride()
+        {
+            EndOverrideCore();
+        }
+
         [OpCode(0x99)]
         void SetBoxFlags(int[] args, int value)
         {
@@ -94,17 +150,6 @@ namespace NScumm.Core
 
             if ((Game.Id == "dig") || (Game.Id == "cmi"))
                 PutActors();
-        }
-
-        void PutActors()
-        {
-
-            for (var i = 1; i < _actors.Length; i++)
-            {
-                var a = _actors[i];
-                if (a != null && a.IsInCurrentRoom)
-                    a.PutActor();
-            }
         }
 
         [OpCode(0xa1)]
@@ -207,15 +252,6 @@ namespace NScumm.Core
             BreakHere();
         }
 
-        [OpCode(0xb3)]
-        void StopSentence()
-        {
-            SentenceNum = 0;
-            StopScript(Variables[VariableSentenceScript.Value]);
-            // TODO: scumm6
-//            ClearClickedStatus();
-        }
-
         [OpCode(0xb0)]
         void Delay(int delay)
         {
@@ -234,11 +270,13 @@ namespace NScumm.Core
             DelayCore(minutes * 3600);
         }
 
-        void DelayCore(int delay)
+        [OpCode(0xb3)]
+        void StopSentence()
         {
-            Slots[CurrentScript].Delay = delay;
-            Slots[CurrentScript].Status = ScriptStatus.Paused;
-            BreakHere();
+            SentenceNum = 0;
+            StopScript(Variables[VariableSentenceScript.Value]);
+            // TODO: scumm6
+            //            ClearClickedStatus();
         }
 
         [OpCode(0xbe)]
@@ -266,44 +304,46 @@ namespace NScumm.Core
             }
         }
 
-        [OpCode(0x6c)]
-        void BreakHere()
-        {
-            BreakHereCore();
-        }
-
-        [OpCode(0x87)]
-        void GetRandomNumber(int max)
-        {
-            var rnd = new Random().Next(Math.Abs(max) + 1);
-            Variables[VariableRandomNumber.Value] = rnd;
-            Push(rnd);
-        }
-
-
-        [OpCode(0x95)]
-        void BeginOverride()
-        {
-            BeginOverrideCore();
-            _skipVideo = false;
-        }
-
-        [OpCode(0x96)]
-        void EndOverride()
-        {
-            EndOverrideCore();
-        }
-
         [OpCode(0x8b)]
         void IsScriptRunning(int script)
         {
             Push(IsScriptRunningCore(script));
         }
 
+        [OpCode(0xbf)]
+        void StartScriptQuick2(byte script, int[] args)
+        {
+            RunScript(script, false, true, args);
+        }
+
+        [OpCode(0xd5)]
+        void JumpToScript(int flags, int script, int[] args)
+        {
+            StopObjectCode();
+            RunScript((byte)script, (flags & 1) != 0, (flags & 2) != 0, args);
+        }
+
         [OpCode(0xd8)]
         void IsRoomScriptRunning(int script)
         {
             Push(IsRoomScriptRunningCore(script));
+        }
+
+        void PutActors()
+        {
+            for (var i = 1; i < _actors.Length; i++)
+            {
+                var a = _actors[i];
+                if (a != null && a.IsInCurrentRoom)
+                    a.PutActor();
+            }
+        }
+
+        void DelayCore(int delay)
+        {
+            Slots[CurrentScript].Delay = delay;
+            Slots[CurrentScript].Status = ScriptStatus.Paused;
+            BreakHere();
         }
 
         bool IsRoomScriptRunningCore(int script)
@@ -313,22 +353,6 @@ namespace NScumm.Core
                     return true;
             return false;
         }
-
-        [OpCode(0x68)]
-        void Cutscene(int[] args)
-        {
-            BeginCutscene(args);
-        }
-
-        [OpCode(0x6a)]
-        void FreezeUnfreeze(int script)
-        {
-            if (script != 0)
-                FreezeScripts(script);
-            else
-                UnfreezeScripts();
-        }
-
     }
 }
 

@@ -78,7 +78,8 @@ namespace NScumm.Core
                     _string[m].Color = (byte)Pop();
                     break;
                 case 67:                // SO_CLIPPED
-                    _string[m].Right = (byte)Pop();
+                    var r = Pop();
+                    _string[m].Right = (short)r;
                     break;
                 case 69:                // SO_CENTER
                     _string[m].Center = true;

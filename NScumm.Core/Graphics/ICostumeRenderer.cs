@@ -45,6 +45,6 @@ namespace NScumm.Core.Graphics
 
         void SetCostume(int costume, int shadow);
 
-        int DrawCostume(VirtScreen vs, int numStrips, Actor actor);
+        int DrawCostume(VirtScreen vs, int numStrips, Actor actor, bool drawToBackBuf);
     }
 }

@@ -216,6 +216,12 @@ namespace NScumm.Core
                 {
                     Variables[VariableRoomFlag.Value] = 1;
                 }
+                // Sync with current config setting
+                if (VariableVoiceMode.HasValue)
+                {
+                    Variables[VariableVoiceMode.Value] = (int)VoiceMode.VoiceAndText;
+                }
+
 
                 Gdi.NumZBuffer = GetNumZBuffers();
             }

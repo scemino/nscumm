@@ -59,10 +59,10 @@ namespace NScumm.Core
 
         internal LightModes GetCurrentLights()
         {
-            //if (_game.version >= 6)
-            //    return LIGHTMODE_room_lights_on | LIGHTMODE_actor_use_colors;
-            //else
-            return (LightModes)_variables[VariableCurrentLights.Value];
+            if (Game.Version >= 6)
+                return LightModes.RoomLightsOn | LightModes.ActorUseColors;
+            else
+                return (LightModes)_variables[VariableCurrentLights.Value];
         }
 
         internal bool IsLightOn()

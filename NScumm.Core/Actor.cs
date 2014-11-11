@@ -96,6 +96,8 @@ namespace NScumm.Core
 
         #region Properties
 
+        public bool DrawToBackBuf { get; set; }
+
         public byte InvalidBox { get; private set; }
 
         public int Sound { get; set; }
@@ -115,6 +117,8 @@ namespace NScumm.Core
         public byte InitFrame { get; set; }
 
         public byte WalkFrame { get; set; }
+
+        public byte Frame { get { return _frame; } }
 
         public byte StandFrame { get; set; }
 
@@ -277,6 +281,7 @@ namespace NScumm.Core
                 _frame = 0;
                 Walkbox = 0;
                 _animProgress = 0;
+                DrawToBackBuf = false;
                 _animVariable = new short[27];
                 _palette = new ushort[256];
                 Sound = 0;
@@ -658,7 +663,7 @@ namespace NScumm.Core
             PrepareDrawActorCostume(bcr);
 
             // If the actor is partially hidden, redraw it next frame.
-            if ((bcr.DrawCostume(_scumm.MainVirtScreen, _scumm.Gdi.NumStrips, this) & 1) != 0)
+            if ((bcr.DrawCostume(_scumm.MainVirtScreen, _scumm.Gdi.NumStrips, this, DrawToBackBuf) & 1) != 0)
             {
                 NeedRedraw = _scumm.Game.Version <= 6;
             }
@@ -887,7 +892,7 @@ namespace NScumm.Core
                 LoadAndSaveEntry.Create(reader => _speedy = reader.ReadUInt16(), writer => writer.WriteUInt16(_speedy), 8),
                 LoadAndSaveEntry.Create(reader => Cost.AnimCounter = reader.ReadUInt16(), writer => writer.WriteUInt16(Cost.AnimCounter), 8),
                 LoadAndSaveEntry.Create(reader => Cost.SoundCounter = reader.ReadByte(), writer => writer.WriteByte(Cost.SoundCounter), 8),
-                LoadAndSaveEntry.Create(reader => reader.ReadByte(), writer => writer.WriteByte(0), 32),
+                LoadAndSaveEntry.Create(reader => DrawToBackBuf = reader.ReadByte() != 0, writer => writer.WriteByte(DrawToBackBuf), 32),
                 LoadAndSaveEntry.Create(reader => _flip = reader.ReadByte() != 0, writer => writer.WriteByte(_flip), 32),
                 LoadAndSaveEntry.Create(reader => reader.ReadByte(), writer => writer.WriteByte(0xCD), 32),
 

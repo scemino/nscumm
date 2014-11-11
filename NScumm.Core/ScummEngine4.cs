@@ -41,7 +41,9 @@ namespace NScumm.Core
             VariableTalkStringY = 54;
 
             Variables[VariableFixedDisk.Value] = 1;
-            Variables[VariableTalkStringY.Value] = -0x50;
+
+            if (Game.Version >= 4 && Game.Version <= 5)
+                Variables[VariableTalkStringY.Value] = -0x50;
 
             if (game.Id == "loom")
             {

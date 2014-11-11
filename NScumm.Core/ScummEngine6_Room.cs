@@ -239,6 +239,65 @@ namespace NScumm.Core
             var actor = _actors[index];
             Push(actor.Room);
         }
+
+        [OpCode(0xa6)]
+        void DrawBox(int x, int y, int x2, int y2, int color)
+        {
+            DrawBoxCore(x, y, x2, y2, color);
+        }
+
+        [OpCode(0xe3)]
+        void PickVarRandom(int[] args)
+        {
+            int value = ReadWord();
+
+            if (ReadVariable(value) == 0)
+            {
+                DefineArray(value, ArrayType.IntArray, 0, args.Length);
+                if (args.Length > 0)
+                {
+                    int counter = 0;
+                    do
+                    {
+                        WriteArray(value, 0, counter + 1, args[counter]);
+                    } while (++counter < args.Length);
+                }
+
+                ShuffleArray(value, 1, args.Length);
+                WriteArray(value, 0, 0, 2);
+                Push(ReadArray(value, 0, 1));
+                return;
+            }
+
+            var num = ReadArray(value, 0, 0);
+
+            var ah = GetArray(value);
+            var dim1 = ah.Dim1 - 1;
+
+            if (dim1 < num)
+            {
+                var var_2 = ReadArray(value, 0, num - 1);
+                ShuffleArray(value, 1, dim1);
+                if (ReadArray(value, 0, 1) == var_2)
+                {
+                    num = 2;
+                }
+                else
+                {
+                    num = 1;
+                }
+            }
+
+            WriteArray(value, 0, 0, num + 1);
+            Push(ReadArray(value, 0, num));
+        }
+
+        [OpCode(0xe4)]
+        void SetBoxSet()
+        {
+            throw new NotImplementedException("TODO: SetBoxSet");
+        }
+
     }
 }
 

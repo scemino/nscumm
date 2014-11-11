@@ -23,7 +23,12 @@ namespace NScumm.Core.Input
 
         bool IsKeyDown(KeyCode code);
 
+        bool IsMouseLeftClicked();
+
+        bool IsMouseRightClicked();
+
         bool IsMouseLeftPressed();
+
         bool IsMouseRightPressed();
     }
 }

@@ -184,15 +184,28 @@ namespace NScumm.Core
 
         protected void StopObjectCode()
         {
-            if (_slots[_currentScript].Where != WhereIsObject.Global && _slots[_currentScript].Where != WhereIsObject.Local)
+            var ss = _slots[_currentScript];
+            if (Game.Version <= 5)
             {
-                StopObjectScript(_slots[_currentScript].Number);
+                if (ss.Where != WhereIsObject.Global && ss.Where != WhereIsObject.Local)
+                {
+                    StopObjectScriptCore(ss.Number);
+                }
+                else
+                {
+                    ss.Number = 0;
+                    ss.Status = ScriptStatus.Dead;
+                }
             }
             else
             {
-                _slots[_currentScript].Number = 0;
-                _slots[_currentScript].Status = ScriptStatus.Dead;
+                if (ss.CutSceneOverride != 0)
+                    throw new InvalidOperationException(
+                        string.Format("Object {0} ending with active cutscene/override ({1})", ss.Number, ss.CutSceneOverride));
+                ss.Number = 0;
+                ss.Status = ScriptStatus.Dead;
             }
+
             _currentScript = 0xFF;
         }
 
@@ -306,6 +319,12 @@ namespace NScumm.Core
             ResetRoomSubBlocks();
             ResetRoomObjects();
             _drawingObjects.Clear();
+
+            if (VariableRoomWidth.HasValue && VariableRoomHeight.HasValue)
+            {
+                Variables[VariableRoomWidth.Value] = roomData.Header.Width;
+                Variables[VariableRoomHeight.Value] = roomData.Header.Height;
+            }
 
             _variables[VariableCameraMinX.Value] = ScreenWidth / 2;
             _variables[VariableCameraMaxX.Value] = roomData.Header.Width - (ScreenWidth / 2);
@@ -659,7 +678,7 @@ namespace NScumm.Core
                 return;
 
             if (!recursive)
-                StopObjectScript((ushort)obj);
+                StopObjectScriptCore((ushort)obj);
 
             var where = GetWhereIsObject(obj);
 
@@ -704,7 +723,7 @@ namespace NScumm.Core
             RunScriptNested(slot);
         }
 
-        protected void StopObjectScript(ushort script)
+        protected void StopObjectScriptCore(ushort script)
         {
             if (script == 0)
                 return;

@@ -18,6 +18,7 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+using System;
 
 namespace NScumm.Core
 {
@@ -161,6 +162,24 @@ namespace NScumm.Core
             }
 
             Push(false);
+        }
+
+        [OpCode(0xc4)]
+        void Abs(int value)
+        {
+            Push(Math.Abs(value));
+        }
+
+        [OpCode(0xd6)]
+        void BAnd(int a, int b)
+        {
+            Push(a & b);
+        }
+
+        [OpCode(0xd7)]
+        void Bor(int a, int b)
+        {
+            Push(a | b);
         }
     }
 }

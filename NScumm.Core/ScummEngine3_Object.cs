@@ -43,7 +43,7 @@ namespace NScumm.Core
         void SetObjectName()
         {
             var obj = GetVarOrDirectWord(OpCodeParameter.Param1);
-            SetObjectName(obj);
+            SetObjectNameCore(obj);
         }
 
         void GetDistance()

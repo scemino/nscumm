@@ -396,6 +396,10 @@ namespace NScumm.Core
                     _objs[i + 1].ScriptOffsets.Add(scriptOffset.Key, scriptOffset.Value);
                 }
                 _objs[i + 1].Name = roomData.Objects[i].Name;
+                _objs[i + 1].Images.Clear();
+                _objs[i + 1].Images.AddRange(roomData.Objects[i].Images);
+                _objs[i + 1].Hotspots.Clear();
+                _objs[i + 1].Hotspots.AddRange(roomData.Objects[i].Hotspots);
             }
             for (int i = roomData.Objects.Count + 1; i < _objs.Length; i++)
             {

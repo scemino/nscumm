@@ -89,7 +89,7 @@ namespace NScumm.Core
             {
                 var cls = args[num];
                 var b = GetClass(obj, (ObjectClass)cls);
-                if (((cls & 0x80) != 0 && !b) || (!((cls & 0x80) != 0 && b)))
+                if (((cls & 0x80) != 0 && !b) || ((cls & 0x80) == 0 && b))
                     cond = false;
             }
             Push(cond);

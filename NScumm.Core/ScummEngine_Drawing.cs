@@ -175,7 +175,7 @@ namespace NScumm.Core
                 {
                     Gdi.DrawBitmap(vst.ImageData, vs, xStrip + i, yDiff,
                         vst.ImageWidth, vst.ImageHeight,
-                        i, 1, vst.ImageWidth, DrawBitmaps.AllowMaskOr);
+                        i, 1, roomData.Header.Width, DrawBitmaps.AllowMaskOr);
                 }
             }
 

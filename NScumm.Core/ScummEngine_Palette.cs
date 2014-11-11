@@ -26,11 +26,11 @@ namespace NScumm.Core
         /// Palette cycles.
         /// </summary>
         protected ColorCycle[] _colorCycle;
-        int _palManipStart;
-        int _palManipEnd;
-        int _palManipCounter;
-        Palette _palManipPalette;
-        Palette _palManipIntermediatePal;
+        protected int _palManipStart;
+        protected int _palManipEnd;
+        protected int _palManipCounter;
+        protected Palette _palManipPalette;
+        protected Palette _palManipIntermediatePal;
 
         void CyclePalette()
         {
@@ -254,7 +254,7 @@ namespace NScumm.Core
             }
         }
 
-        protected void PalManipulateInit(int resID, int start, int end, int time)
+        protected virtual void PalManipulateInit(int resID, int start, int end, int time)
         {
             var string1 = _strings[resID];
             var string2 = _strings[resID + 1];

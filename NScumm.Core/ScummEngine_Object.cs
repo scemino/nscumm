@@ -364,12 +364,9 @@ namespace NScumm.Core
                 if (state < 0)
                     state = 0;
 
-                var img = state >= od.Images.Count ? null : od.Images[state];
-
-                // TODO: scumm6  hotspot
-                var x = od.Position.X;
-                var y = od.Position.Y;
-                p = new Point(x, y);
+                var x = od.Position.X + od.Hotspots[state].X;
+                var y = od.Position.Y + od.Hotspots[state].Y;
+                p = new Point((short)x, (short)y);
             }
             else
             {

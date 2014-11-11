@@ -55,11 +55,14 @@ namespace NScumm.Core
 
         public List<ImageData> Images { get; private set; }
 
+        public List<Point> Hotspots { get; private set; }
+
         public ObjectData()
         {
             ScriptOffsets = new Dictionary<byte, ushort>();
             Script = new ScriptData();
             Images = new List<ImageData>();
+            Hotspots = new List<Point>();
         }
 
         public void SaveOrLoad(Serializer serializer)

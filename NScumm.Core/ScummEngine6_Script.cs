@@ -29,15 +29,15 @@ namespace NScumm.Core
         int? VariableRandomNumber;
 
         [OpCode(0x5e)]
-        void StartScript(int flags, byte script, int[] args)
+        void StartScript(int flags, int script, int[] args)
         {
-            RunScript(script, (flags & 1) != 0, (flags & 2) != 0, args);
+            RunScript((byte)script, (flags & 1) != 0, (flags & 2) != 0, args);
         }
 
         [OpCode(0x5f)]
-        void StartScriptQuick(byte script, int[] args)
+        void StartScriptQuick(int script, int[] args)
         {
-            RunScript(script, false, false, args);
+            RunScript((byte)script, false, false, args);
         }
 
         [OpCode(0x60)]

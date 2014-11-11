@@ -388,6 +388,31 @@ namespace NScumm.Core
             return bestitem;
         }
 
+        protected override void PalManipulateInit(int resID, int start, int end, int time)
+        {
+            var newPal = roomData.Palettes[resID];
+
+            _palManipStart = start;
+            _palManipEnd = end;
+            _palManipCounter = 0;
+
+            if (_palManipPalette == null)
+                _palManipPalette = new Palette();
+            if (_palManipIntermediatePal == null)
+                _palManipIntermediatePal = new Palette();
+
+            for (int i = start; i < end; ++i)
+            {
+                _palManipPalette.Colors[i] = newPal.Colors[i];
+                _palManipIntermediatePal.Colors[i] = Color.FromRgb(
+                    CurrentPalette.Colors[i].R << 8,
+                    CurrentPalette.Colors[i].G << 8,
+                    CurrentPalette.Colors[i].B << 8);
+            }
+
+            _palManipCounter = time;
+        }
+
         void KillAllScriptsExceptCurrent()
         {
             for (int i = 0; i < Slots.Length; i++)

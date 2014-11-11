@@ -54,7 +54,7 @@ namespace NScumm.Core.IO
             var stripsDic = new Dictionary<ushort, byte[]>();
             var room = new Room();
             var it = new ChunkIterator5(_reader, chunkSize);
-            var images = new Dictionary<ushort, List<ImageData>>();
+            var images = new Dictionary<ushort, ObjectImage>();
             while (it.MoveNext())
             {
                 switch (it.Current.Tag)
@@ -151,7 +151,7 @@ namespace NScumm.Core.IO
                         {
                             // Object Image
                             var imgObj = ReadObjectImages(it.Current.Size - 8);
-                            images[imgObj.Item1] = imgObj.Item2;
+                            images[imgObj.Id] = imgObj;
                         }
                         break;
                     case "OBCD":
@@ -160,7 +160,8 @@ namespace NScumm.Core.IO
                             var obj = ReadObjectCode(it.Current.Size - 8);
                             if (images.ContainsKey(obj.Number))
                             {
-                                obj.Images.AddRange(images[obj.Number]);
+                                obj.Hotspots.AddRange(images[obj.Number].Hotspots);
+                                obj.Images.AddRange(images[obj.Number].Images);
                             }
                             room.Objects.Add(obj);
                         }
@@ -208,6 +209,29 @@ namespace NScumm.Core.IO
                     throw new NotSupportedException("APAL block was expected.");
                 yield return new Palette(ReadCLUT());
             }
+        }
+
+        protected override ObjectImage ReadImageHeader()
+        {
+            // image header
+            var oi = new ObjectImage();
+            // image header
+            oi.Id = _reader.ReadUInt16();
+            var numImnn = _reader.ReadUInt16();
+            var numZpnn = _reader.ReadUInt16();
+            var flags = _reader.ReadByte();
+            var unknown1 = _reader.ReadByte();
+            var x = _reader.ReadInt16();
+            var y = _reader.ReadInt16();
+            oi.Width = _reader.ReadUInt16();
+            var height = _reader.ReadUInt16();
+
+            var numHotspots = _reader.ReadUInt16();
+            for (int i = 0; i < numHotspots; i++)
+            {
+                oi.Hotspots.Add(new Point(_reader.ReadInt16(), _reader.ReadInt16()));
+            }
+            return oi;
         }
 
         protected override ObjectData ReadCDHD()

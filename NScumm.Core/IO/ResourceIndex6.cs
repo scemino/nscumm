@@ -51,7 +51,7 @@ namespace NScumm.Core
                 while (br.BaseStream.Position < br.BaseStream.Length)
                 {
                     var tag = System.Text.Encoding.ASCII.GetString(br.ReadBytes(4));
-                    var size = br.ReadUInt32BigEndian();
+                    br.ReadUInt32BigEndian();
 
                     switch (tag)
                     {
@@ -129,9 +129,6 @@ namespace NScumm.Core
             var numGlobalObjects = reader.ReadUInt16();
         }
 
-        const int BitArray = 1;
-        const int IntArray = 5;
-
         void ReadArrayFromIndexFile(XorReader br)
         {
             int num;
@@ -140,8 +137,6 @@ namespace NScumm.Core
                 var a = br.ReadUInt16();
                 var b = br.ReadUInt16();
                 var c = br.ReadUInt16();
-                // TODO: SCUMM6: define array
-                //DefineArray(num, c, a, b);
                 ArrayDefinitions.Add(new ArrayDefinition{ Index = num, Type = c, Dim2 = a, Dim1 = b });
             }
         }

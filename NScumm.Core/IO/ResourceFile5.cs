@@ -130,7 +130,7 @@ namespace NScumm.Core.IO
             var room = new Room();
             _reader.BaseStream.Seek(offset, SeekOrigin.Begin);
             var it = CreateChunkIterator(_reader.BaseStream.Length - offset);
-            var images = new Dictionary<ushort, List<ImageData>>();
+            var images = new Dictionary<ushort, ObjectImage>();
             do
             {
                 while (it.MoveNext())
@@ -247,7 +247,7 @@ namespace NScumm.Core.IO
                             {
                                 // Object Image
                                 var imgObj = ReadObjectImages(it.Current.Size - 8);
-                                images[imgObj.Item1] = imgObj.Item2;
+                                images[imgObj.Id] = imgObj;
                             }
                             break;
                         case "OBCD":
@@ -256,7 +256,8 @@ namespace NScumm.Core.IO
                                 var obj = ReadObjectCode(it.Current.Size - 8);
                                 if (images.ContainsKey(obj.Number))
                                 {
-                                    obj.Images.AddRange(images[obj.Number]);
+                                    obj.Hotspots.AddRange(images[obj.Number].Hotspots);
+                                    obj.Images.AddRange(images[obj.Number].Images);
                                 }
                                 room.Objects.Add(obj);
                             }
@@ -282,43 +283,60 @@ namespace NScumm.Core.IO
             return room;
         }
 
-        protected Tuple<ushort,List<ImageData>> ReadObjectImages(long size)
+        protected class ObjectImage
         {
-            var images = new List<ImageData>();
-            ushort id = 0;
+            public ushort Id { get; set; }
+
+            public ushort Width { get; set; }
+
+            public List<ImageData> Images { get; private set; }
+
+            public List<Point> Hotspots { get; private set; }
+
+            public ObjectImage()
+            {
+                Images = new List<ImageData>();
+                Hotspots = new List<Point>();
+            }
+        }
+
+        protected ObjectImage ReadObjectImages(long size)
+        {
+            ObjectImage oi = null;
             var it = CreateChunkIterator(size);
-            var width = 0;
             while (it.MoveNext())
             {
                 switch (it.Current.Tag)
                 {
                     case "IMHD":
                         {
-                            // image header
-                            id = _reader.ReadUInt16();
-                            var numImnn = _reader.ReadUInt16();
-                            var numZpnn = _reader.ReadUInt16();
-                            var flags = _reader.ReadByte();
-                            var unknown1 = _reader.ReadByte();
-                            var x = _reader.ReadInt16();
-                            var y = _reader.ReadInt16();
-                            width = _reader.ReadUInt16();
-                            var height = _reader.ReadUInt16();
-                            // TODO: 
-                            //                                var numHotspots = _reader.ReadUInt16();
-                            //                                var hotspots = new Point[numHotspots];
-                            //                                for (int i = 0; i < numHotspots; i++)
-                            //                                {
-                            //                                    hotspots[i] = new Point(_reader.ReadInt16(), _reader.ReadInt16());
-                            //                                }
+                            oi = ReadImageHeader();
                         }
                         break;
                     default:
-                        images.Add(ReadImage(it.Current.Size - 8, width / 8));
+                        var img = ReadImage(it.Current.Size - 8, oi.Width / 8);
+                        oi.Images.Add(img);
                         break;
                 }
             }
-            return Tuple.Create(id, images);
+            return oi;
+        }
+
+        protected virtual ObjectImage ReadImageHeader()
+        {
+            var oi = new ObjectImage();
+            // image header
+            oi.Id = _reader.ReadUInt16();
+            var numImnn = _reader.ReadUInt16();
+            var numZpnn = _reader.ReadUInt16();
+            var flags = _reader.ReadByte();
+            var unknown1 = _reader.ReadByte();
+            var x = _reader.ReadInt16();
+            var y = _reader.ReadInt16();
+            oi.Width = _reader.ReadUInt16();
+            var height = _reader.ReadUInt16();
+
+            return oi;
         }
 
         protected virtual ObjectData ReadCDHD()

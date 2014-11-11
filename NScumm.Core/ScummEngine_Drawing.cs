@@ -54,6 +54,8 @@ namespace NScumm.Core
 
         internal Surface TextSurface { get { return _textSurface; } }
 
+        internal Palette CurrentPalette { get { return _currentPalette; } set { _currentPalette = value; } }
+
         internal byte[] ShadowPalette { get { return _shadowPalette; } }
 
         protected void DrawObject()

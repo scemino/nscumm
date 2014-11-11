@@ -34,7 +34,9 @@ namespace NScumm.Core
     {
         public RoomHeader Header { get; set; }
 
-        public Palette Palette { get; private set; }
+        public Palette Palette { get { return Palettes[0]; } }
+
+        public List<Palette> Palettes { get; private set; }
 
         public ScriptData[] LocalScripts { get; private set; }
 
@@ -69,7 +71,6 @@ namespace NScumm.Core
             Boxes = new List<Box>();
             Objects = new List<ObjectData>();
             BoxMatrix = new List<byte>();
-            Palette = new Palette();
             EntryScript = new ScriptData();
             ExitScript = new ScriptData();
             LocalScripts = new ScriptData[1024];
@@ -81,6 +82,8 @@ namespace NScumm.Core
                 ColorCycle[i] = new ColorCycle();
             }
             Image = new ImageData();
+            Palettes = new List<Palette>();
+            Palettes.Add(new Palette());
         }
     }
 }

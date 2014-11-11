@@ -108,7 +108,8 @@ namespace NScumm.Core.IO
                         {
                             room.HasPalette = true;
                             var palettes = ReadPalettes().ToArray();
-                            Array.Copy(palettes[0], room.Palette.Colors, palettes[0].Length);
+                            room.Palettes.Clear();
+                            room.Palettes.AddRange(palettes);
                         }
                         break;
                     case "SCAL":
@@ -189,7 +190,7 @@ namespace NScumm.Core.IO
             room.Image = ReadImage(chunk.Size - 8, room.Header.Width / 8);
         }
 
-        IEnumerable<Color[]> ReadPalettes()
+        IEnumerable<Palette> ReadPalettes()
         {
             var chunk = ChunkIterator5.ReadChunk(_reader);
             if (chunk.Tag != "WRAP")
@@ -205,7 +206,7 @@ namespace NScumm.Core.IO
                 chunk = ChunkIterator5.ReadChunk(_reader);
                 if (chunk.Tag != "APAL")
                     throw new NotSupportedException("APAL block was expected.");
-                yield return ReadCLUT();
+                yield return new Palette(ReadCLUT());
             }
         }
 

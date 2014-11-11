@@ -183,7 +183,7 @@ namespace NScumm.Core
 
         void SetCurrentPalette(int palIndex)
         {
-            // TODO: scumm6
+            CurrentPalette = roomData.Palettes[palIndex];
         }
 
         [OpCode(0x85)]

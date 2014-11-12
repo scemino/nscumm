@@ -19,6 +19,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
+using System.Linq;
 
 namespace NScumm.Core
 {
@@ -34,19 +35,19 @@ namespace NScumm.Core
         [OpCode(0x0d)]
         void Not(int value)
         {
-            Push(value == 0 ? 1 : 0);
+            Push(value == 0);
         }
 
         [OpCode(0x0e)]
         void Eq(int a, int b)
         {
-            Push(a == b ? 1 : 0);
+            Push(a == b);
         }
 
         [OpCode(0x0f)]
         void NEq(int a, int b)
         {
-            Push(a != b ? 1 : 0);
+            Push(a != b);
         }
 
         [OpCode(0x14)]
@@ -76,13 +77,13 @@ namespace NScumm.Core
         [OpCode(0x18)]
         void Land(int a, int b)
         {
-            Push((a != 0 && b != 0) ? 1 : 0);
+            Push((a != 0) && (b != 0));
         }
 
         [OpCode(0x19)]
         void Lor(int a, int b)
         {
-            Push((a != 0 || b != 0) ? 1 : 0);
+            Push((a != 0) || (b != 0));
         }
 
         [OpCode(0x1a)]
@@ -111,25 +112,25 @@ namespace NScumm.Core
         [OpCode(0x10)]
         void Gt(int a, int b)
         {
-            Push(a > b ? 1 : 0);
+            Push(a > b);
         }
 
         [OpCode(0x11)]
         void Lt(int a, int b)
         {
-            Push(a < b ? 1 : 0);
+            Push(a < b);
         }
 
         [OpCode(0x12)]
         void Le(int a, int b)
         {
-            Push(a <= b ? 1 : 0);
+            Push(a <= b);
         }
 
         [OpCode(0x13)]
         void Ge(int a, int b)
         {
-            Push(a >= b ? 1 : 0);
+            Push(a >= b);
         }
 
         [OpCode(0x73)]
@@ -151,17 +152,7 @@ namespace NScumm.Core
         [OpCode(0xad)]
         void IsAnyOf(int value, int[] args)
         {
-            var num = args.Length;
-            while (--num >= 0)
-            {
-                if (args[num] == value)
-                {
-                    Push(true);
-                    return;
-                }
-            }
-
-            Push(false);
+            Push(args.Any(v => v == value));
         }
 
         [OpCode(0xc4)]

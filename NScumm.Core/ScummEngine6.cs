@@ -27,7 +27,6 @@ using System.Collections.Generic;
 using System;
 using System.Reflection;
 using System.Linq;
-using System.Diagnostics;
 
 namespace NScumm.Core
 {
@@ -91,8 +90,6 @@ namespace NScumm.Core
             }
         }
 
-        #region implemented abstract members of ScummEngine
-
         protected override void InitOpCodes()
         {
             _opCodes = (from method in GetType().GetMethods(BindingFlags.Instance | BindingFlags.NonPublic)
@@ -107,7 +104,7 @@ namespace NScumm.Core
             if (method == null)
                 throw new ArgumentException("A method was expected.", "method");
 
-            List<Func<object>> args = new List<Func<object>>();
+            var args = new List<Func<object>>();
             foreach (var param in method.GetParameters().Reverse())
             {
                 var paramType = param.ParameterType;
@@ -147,13 +144,21 @@ namespace NScumm.Core
                         _opCodes.ContainsKey(_opCode) ? method.Name : "Unknown", 
                         _opCode,
                         CurrentPos - 1,
-                        string.Join(",", parameters.Select((p, i) => string.Format("{0}={1}", parameterNames[i], p))));
+                        string.Join(",", parameters.Select((p, i) => string.Format("{0}={1}", parameterNames[i], GetDebuggerDisplayFor(p)))));
                     method.Invoke(this, parameters);
                 });
             return action;
         }
 
-        #endregion
+        static string GetDebuggerDisplayFor(object value)
+        {
+            return value is int[] ? GetDebuggerDisplayForArray((int[])value) : value.ToString();
+        }
+
+        static string GetDebuggerDisplayForArray(int[] values)
+        {
+            return string.Format("[{0}]", string.Join(",", values.Select(o => o.ToString())));
+        }
     }
 }
 

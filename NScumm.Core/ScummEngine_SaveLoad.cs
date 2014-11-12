@@ -477,7 +477,6 @@ namespace NScumm.Core
             var md5Backup = new byte[16];
             Array.Copy(_gameMD5, md5Backup, 16);
 
-            //Array.ForEach(mainEntries, e => e.Execute(serializer));
             for (int i = 0; i < mainEntries.Length; i++)
             {
                 mainEntries[i].Execute(serializer);
@@ -770,7 +769,7 @@ namespace NScumm.Core
             //
             // Save/load script variables
             //
-            //var120Backup = _scummVars[120];
+            var var120Backup = _variables[120];
             var var98Backup = _variables[98];
 
             //if (serializer.Version > 37)
@@ -800,8 +799,10 @@ namespace NScumm.Core
             };
             Array.ForEach(variablesEntries, entry => entry.Execute(serializer));
 
-            //if (_game.id == GID_TENTACLE) // Maybe misplaced, but that's the main idea
-            //    _scummVars[120] = var120Backup;
+            if (_game.Id == "tentacle") // Maybe misplaced, but that's the main idea
+            {
+                _variables[120] = var120Backup;
+            }
             if (_game.Id == "atlantis")
             {
                 _variables[98] = var98Backup;

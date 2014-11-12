@@ -46,12 +46,11 @@ namespace NScumm.Core
 
         const uint CurrentVersion = 94;
         protected const int OwnerRoom = 0x0F;
-        protected const int NumVariables = 800;
-        protected const int NumLocalObjects = 200;
+
         protected const int NumArray = 50;
         protected const int NumScriptSlot = 80;
         protected const int NumGlobalScripts = 200;
-        protected const int NumInventory = 80;
+
         protected const int MaxScriptNesting = 15;
         protected const int MaxCutsceneNum = 5;
 
@@ -177,6 +176,8 @@ namespace NScumm.Core
             _inputManager = inputManager;
             _strings = new byte[NumArray][];
             _charsets = new byte[NumArray][];
+            _inventory = new ushort[_resManager.NumInventory];
+            _invData = new ObjectData[_resManager.NumInventory];
             _currentScript = 0xFF;
             _sound = new Sound(this, driver);
 

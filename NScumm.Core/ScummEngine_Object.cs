@@ -227,7 +227,7 @@ namespace NScumm.Core
 
             if (_resManager.ObjectOwnerTable[obj] != OwnerRoom)
             {
-                for (int i = 0; i < NumInventory; i++)
+                for (int i = 0; i < _resManager.NumInventory; i++)
                     if (_inventory[i] == obj)
                         return WhereIsObject.Inventory;
                 return WhereIsObject.NotFound;
@@ -503,7 +503,7 @@ namespace NScumm.Core
                     var ss = _slots[_currentScript];
                     if (ss.Where == WhereIsObject.Inventory)
                     {
-                        if (ss.Number < NumInventory && _inventory[ss.Number] == obj)
+                        if (ss.Number < _resManager.NumInventory && _inventory[ss.Number] == obj)
                         {
                             //throw new NotSupportedException("Odd setOwnerOf case #1: Please report to Fingolfin where you encountered this");
                             PutOwner(obj, 0);
@@ -529,7 +529,7 @@ namespace NScumm.Core
             if (GetOwnerCore(obj) != OwnerRoom)
             {
                 // Alternatively, scan the inventory to see if the object is in there...
-                for (int i = 0; i < NumInventory; i++)
+                for (int i = 0; i < _resManager.NumInventory; i++)
                 {
                     if (_inventory[i] == obj)
                     {
@@ -537,7 +537,7 @@ namespace NScumm.Core
                         _inventory[i] = 0;
 
                         // Now fill up the gap removing the object from the inventory created.
-                        for (i = 0; i < NumInventory - 1; i++)
+                        for (i = 0; i < _resManager.NumInventory - 1; i++)
                         {
                             if (_inventory[i] == 0 && _inventory[i + 1] != 0)
                             {

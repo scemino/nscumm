@@ -26,11 +26,25 @@ namespace NScumm.Core.IO
 {
     class ResourceIndex5: ResourceIndex4
     {
+        int numInventory;
+        int numVariables;
+        int numBitVariables;
+        int numLocalObjects;
+
         public ReadOnlyCollection<Resource> CharsetResources
         {
             get;
             protected set;
         }
+
+        public override int NumInventory { get { return numInventory; } }
+
+        public override int NumVariables { get { return numVariables; } }
+
+        public override int NumBitVariables { get { return numBitVariables; } }
+
+        public override int NumLocalObjects { get { return numLocalObjects; } }
+
 
         protected override Resource[] ReadResTypeList(XorReader br)
         {
@@ -122,18 +136,18 @@ namespace NScumm.Core.IO
             ClassData = br.ReadUInt32s(numEntries);
         }
 
-        static void ReadMaxSizes(XorReader reader)
+        void ReadMaxSizes(XorReader reader)
         {
-            var numVariables = reader.ReadUInt16();      // 800
+            numVariables = reader.ReadUInt16();      // 800
             reader.ReadUInt16();                      // 16
-            var numBitVariables = reader.ReadUInt16();   // 2048
-            var numLocalObjects = reader.ReadUInt16();   // 200
+            numBitVariables = reader.ReadUInt16();   // 2048
+            numLocalObjects = reader.ReadUInt16();   // 200
 
             reader.ReadUInt16();                      // 50
             var numCharsets = reader.ReadUInt16();       // 9
             reader.ReadUInt16();                      // 100
             reader.ReadUInt16();                      // 50
-            var numInventory = reader.ReadUInt16();      // 80
+            numInventory = reader.ReadUInt16();      // 80
         }
     }
 }

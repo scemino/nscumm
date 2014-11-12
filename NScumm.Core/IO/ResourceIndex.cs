@@ -76,6 +76,16 @@ namespace NScumm.Core.IO
 
         public List<ArrayDefinition> ArrayDefinitions { get; private set; }
 
+        public virtual int NumVerbs { get { return 100; } }
+
+        public virtual int NumInventory { get { return 80; } }
+
+        public virtual int NumVariables { get { return 800; } }
+
+        public virtual int NumBitVariables { get { return 4096; } }
+
+        public virtual int NumLocalObjects { get { return 200; } }
+
         #endregion
 
         #region Public Methods

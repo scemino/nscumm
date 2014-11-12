@@ -30,6 +30,7 @@ namespace NScumm.Core
         protected VerbSlot[] _verbs;
         readonly Sentence[] _sentence = InitSentences();
         int _sentenceNum;
+        int _verbMouseOver;
 
         protected int SentenceNum { get { return _sentenceNum; } set { _sentenceNum = value; } }
 
@@ -37,8 +38,8 @@ namespace NScumm.Core
 
         void InitializeVerbs()
         {
-            _verbs = new VerbSlot[100];
-            for (int i = 0; i < 100; i++)
+            _verbs = new VerbSlot[_resManager.NumVerbs];
+            for (int i = 0; i < _verbs.Length; i++)
             {
                 _verbs[i] = new VerbSlot();
                 _verbs[i].CurRect.Right = ScreenWidth - 1;
@@ -107,179 +108,12 @@ namespace NScumm.Core
             }
         }
 
-        void VerbOps()
-        {
-            var verb = GetVarOrDirectByte(OpCodeParameter.Param1);
-            var slot = GetVerbSlot(verb, 0);
-            ScummHelper.AssertRange(0, slot, _verbs.Length - 1, "new verb slot");
-            var vs = _verbs[slot];
-            vs.VerbId = (ushort)verb;
-
-            while ((_opCode = ReadByte()) != 0xFF)
-            {
-                switch (_opCode & 0x1F)
-                {
-                    case 1:     // SO_VERB_IMAGE
-                        var a = GetVarOrDirectWord(OpCodeParameter.Param1);
-                        if (slot != 0)
-                        {
-                            SetVerbObject(_roomResource, a, slot);
-                            vs.Type = VerbType.Image;
-                        }
-                        break;
-
-                    case 2:     // SO_VERB_NAME
-                        vs.Text = ReadCharacters();
-                        vs.Type = VerbType.Text;
-                        vs.ImgIndex = 0;
-                        break;
-
-                    case 3:     // SO_VERB_COLOR
-                        vs.Color = (byte)GetVarOrDirectByte(OpCodeParameter.Param1);
-                        break;
-
-                    case 4:     // SO_VERB_HICOLOR
-                        vs.HiColor = (byte)GetVarOrDirectByte(OpCodeParameter.Param1);
-                        break;
-
-                    case 5:     // SO_VERB_AT
-                        var left = GetVarOrDirectWord(OpCodeParameter.Param1);
-                        var top = GetVarOrDirectWord(OpCodeParameter.Param2);
-                        vs.CurRect.Left = left;
-                        vs.CurRect.Top = top;
-                        if (_game.Id == "loom" && _game.Version == 4)
-                        {
-                            // FIXME: hack loom notes into right spot
-                            if ((verb >= 90) && (verb <= 97))
-                            {	// Notes
-                                switch (verb)
-                                {
-                                    case 90:
-                                    case 91:
-                                        vs.CurRect.Top -= 7;
-                                        break;
-                                    case 92:
-                                        vs.CurRect.Top -= 6;
-                                        break;
-                                    case 93:
-                                        vs.CurRect.Top -= 4;
-                                        break;
-                                    case 94:
-                                        vs.CurRect.Top -= 3;
-                                        break;
-                                    case 95:
-                                        vs.CurRect.Top -= 1;
-                                        break;
-                                    case 97:
-                                        vs.CurRect.Top -= 5;
-                                        break;
-                                }
-                            }
-                        }
-                        break;
-
-                    case 6:
-					// SO_VERB_ON
-                        vs.CurMode = 1;
-                        break;
-
-                    case 7:
-					// SO_VERB_OFF
-                        vs.CurMode = 0;
-                        break;
-
-                    case 8:     // SO_VERB_DELETE
-                        KillVerb(slot);
-                        break;
-
-                    case 9:
-                        {
-                            // SO_VERB_NEW
-                            slot = GetVerbSlot(verb, 0);
-
-                            if (slot == 0)
-                            {
-                                for (slot = 1; slot < _verbs.Length; slot++)
-                                {
-                                    if (_verbs[slot].VerbId == 0)
-                                        break;
-                                }
-                            }
-                            vs = _verbs[slot];
-                            vs.VerbId = (ushort)verb;
-                            vs.Color = 2;
-                            vs.HiColor = (_game.Version == 3) ? (byte)14 : (byte)0;
-                            vs.DimColor = 8;
-                            vs.Type = VerbType.Text;
-                            vs.CharsetNr = _string[0].Default.Charset;
-                            vs.CurMode = 0;
-                            vs.SaveId = 0;
-                            vs.Key = 0;
-                            vs.Center = false;
-                            vs.ImgIndex = 0;
-                            break;
-                        }
-                    case 16:    // SO_VERB_DIMCOLOR
-                        vs.DimColor = (byte)GetVarOrDirectByte(OpCodeParameter.Param1);
-                        break;
-
-                    case 17:    // SO_VERB_DIM
-                        vs.CurMode = 2;
-                        break;
-
-                    case 18:    // SO_VERB_KEY
-                        vs.Key = (byte)GetVarOrDirectByte(OpCodeParameter.Param1);
-                        break;
-
-                    case 19:    // SO_VERB_CENTER
-                        vs.Center = true;
-                        break;
-
-                    case 20:    // SO_VERB_NAME_STR
-                        var index = GetVarOrDirectWord(OpCodeParameter.Param1);
-                        var ptr = _strings[index];
-                        if (ptr != null)
-                        {
-                            vs.Text = ptr;
-                        }
-					//if (slot == 0)
-					//    _res->nukeResource(rtVerb, slot);
-                        vs.Type = VerbType.Text;
-                        vs.ImgIndex = 0;
-                        break;
-                    case 22:    // assign object
-                        {
-                            a = GetVarOrDirectWord(OpCodeParameter.Param1);
-                            var b = GetVarOrDirectByte(OpCodeParameter.Param2);
-                            if (slot != 0 && vs.ImgIndex != a)
-                            {
-                                SetVerbObject((byte)b, a, slot);
-                                vs.Type = VerbType.Image;
-                                vs.ImgIndex = (ushort)a;
-                            }
-                        }
-                        break;
-                    case 23:                                        /* set back color */
-                        vs.BkColor = (byte)GetVarOrDirectByte(OpCodeParameter.Param1);
-                        break;
-                    default:
-                        throw new NotImplementedException();
-                }
-            }
-
-            // Force redraw of the modified verb slot
-            DrawVerb(slot, 0);
-            VerbMouseOver(0);
-        }
-
-        int _verbMouseOver;
-
         protected void SetVerbObject(byte room, int obj, int verb)
         {
             ObjectData o = null;
             if (Game.Version < 5)
             {
-                for (var i = NumLocalObjects - 1; i > 0; i--)
+                for (var i = _resManager.NumLocalObjects - 1; i > 0; i--)
                 {
                     if (_objs[i].Number == obj)
                     {
@@ -328,7 +162,7 @@ namespace NScumm.Core
 
             if (_resManager.ObjectOwnerTable[obj] != OwnerRoom)
             {
-                for (int i = 0; i < NumInventory; i++)
+                for (int i = 0; i < _resManager.NumInventory; i++)
                 {
                     if (_inventory[i] == obj)
                         result = _invData[i];

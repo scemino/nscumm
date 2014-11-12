@@ -91,8 +91,8 @@ namespace NScumm.Core
         public int? VariableLeftButtonHold;
         public int? VariableRightButtonHold;
 
-        int[] _variables = new int[NumVariables];
-        BitArray _bitVars = new BitArray(4096);
+        int[] _variables;
+        BitArray _bitVars;
         protected Stack<int> _stack = new Stack<int>();
         protected int _resultVarIndex;
 
@@ -103,6 +103,8 @@ namespace NScumm.Core
 
         void InitVariables()
         {
+            _variables = new int[_resManager.NumVariables];
+            _bitVars = new BitArray(_resManager.NumBitVariables);
             Variables[VariableVideoMode.Value] = 19;
             Variables[VariableHeapSpace.Value] = 1400;
             Variables[VariableCharIncrement.Value] = 4;
@@ -160,7 +162,7 @@ namespace NScumm.Core
             if ((var & 0xF000) == 0)
             {
                 //Console.WriteLine("ReadVariable({0}) => {1}", var, _variables[var]);
-                ScummHelper.AssertRange(0, var, NumVariables - 1, "variable (reading)");
+                ScummHelper.AssertRange(0, var, _resManager.NumVariables - 1, "variable (reading)");
                 if (var == 490 && _game.Id == "monkey2")
                 {
                     var = 518;
@@ -175,7 +177,7 @@ namespace NScumm.Core
                     int bit = var & 0xF;
                     var = (var >> 4) & 0xFF;
 
-                    ScummHelper.AssertRange(0, var, NumVariables - 1, "variable (reading)");
+                    ScummHelper.AssertRange(0, var, _resManager.NumVariables - 1, "variable (reading)");
                     return (_variables[var] & (1 << bit)) > 0 ? 1 : 0;
                 }
                 var &= 0x7FFF;
@@ -246,7 +248,7 @@ namespace NScumm.Core
             //            Console.WriteLine("SetResult({0},{1})", index, value);
             if ((index & 0xF000) == 0)
             {
-                ScummHelper.AssertRange(0, index, NumVariables - 1, "variable (writing)");
+                ScummHelper.AssertRange(0, index, _resManager.NumVariables - 1, "variable (writing)");
                 _variables[index] = value;
                 return;
             }
@@ -257,7 +259,7 @@ namespace NScumm.Core
                 {
                     var bit = index & 0xF;
                     index = (index >> 4) & 0xFF;
-                    ScummHelper.AssertRange(0, index, NumVariables - 1, "variable (writing)");
+                    ScummHelper.AssertRange(0, index, _resManager.NumVariables - 1, "variable (writing)");
                     if (value > 0)
                         _variables[index] |= (1 << bit);
                     else

@@ -26,17 +26,18 @@ namespace NScumm.Core
 {
     partial class ScummEngine
     {
-        protected ushort[] _inventory = new ushort[NumInventory];
-        protected ObjectData[] _invData = new ObjectData[NumInventory];
+        protected ushort[] _inventory;
+        protected ObjectData[] _invData;
 
         int GetInventorySlot()
         {
-            for (var i = 0; i < NumInventory; i++)
+            for (var i = 0; i < _resManager.NumInventory; i++)
             {
                 if (_inventory[i] == 0)
                     return i;
             }
-            return -1;
+
+            throw new NotSupportedException(string.Format("Inventory full, {0} max items", _resManager.NumInventory));
         }
 
         protected void AddObjectToInventory(int obj, byte room)
@@ -61,7 +62,7 @@ namespace NScumm.Core
         protected int GetInventoryCountCore(int owner)
         {
             var count = 0;
-            for (var i = 0; i < NumInventory; i++)
+            for (var i = 0; i < _resManager.NumInventory; i++)
             {
                 var obj = _inventory[i];
                 if (obj != 0 && GetOwnerCore(obj) == owner)
@@ -73,7 +74,7 @@ namespace NScumm.Core
         protected int FindInventoryCore(int owner, int idx)
         {
             int count = 1, i, obj;
-            for (i = 0; i < NumInventory; i++)
+            for (i = 0; i < _resManager.NumInventory; i++)
             {
                 obj = _inventory[i];
                 if (obj != 0 && GetOwnerCore(obj) == owner && count++ == idx)

@@ -131,6 +131,16 @@ namespace NScumm.Core.IO
             }
         }
 
+        public int NumVerbs { get { return Index.NumVerbs; } }
+
+        public int NumVariables { get { return Index.NumVariables; } }
+
+        public int NumBitVariables { get { return Index.NumBitVariables; } }
+
+        public int NumInventory { get { return Index.NumInventory; } }
+
+        public int NumLocalObjects { get { return Index.NumLocalObjects; } }
+
         protected ResourceManager(GameInfo game)
         {
             Game = game;

@@ -248,10 +248,10 @@ namespace NScumm.Core
             if (room != CurrentRoom)
                 throw new NotSupportedException(string.Format("FindAllObjects: current room is not {0}", room));
             WriteVariable(0, 0);
-            DefineArray(0, ArrayType.IntArray, 0, NumLocalObjects + 1);
-            WriteArray(0, 0, 0, NumLocalObjects);
+            DefineArray(0, ArrayType.IntArray, 0, _resManager.NumLocalObjects + 1);
+            WriteArray(0, 0, 0, _resManager.NumLocalObjects);
 
-            while (i < NumLocalObjects)
+            while (i < _resManager.NumLocalObjects)
             {
                 WriteArray(0, 0, i, _objs[i].Number);
                 i++;

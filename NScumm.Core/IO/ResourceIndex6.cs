@@ -39,6 +39,22 @@ namespace NScumm.Core
 
     class ResourceIndex6 : ResourceIndex5
     {
+        int numVerbs;
+        int numInventory;
+        int numVariables;
+        int numBitVariables;
+        int numLocalObjects;
+
+        public override int NumVerbs { get { return numVerbs; } }
+
+        public override int NumInventory { get { return numInventory; } }
+
+        public override int NumVariables { get { return numVariables; } }
+
+        public override int NumBitVariables { get { return numBitVariables; } }
+
+        public override int NumLocalObjects { get { return numLocalObjects; } }
+
         #region implemented abstract members of ResourceIndex
 
         protected override void LoadIndex(GameInfo game)
@@ -110,17 +126,17 @@ namespace NScumm.Core
 
         #endregion
 
-        static void ReadMaxSizes(XorReader reader)
+        void ReadMaxSizes(XorReader reader)
         {
-            var numVariables = reader.ReadUInt16();      // 800
+            numVariables = reader.ReadUInt16();      // 800
             reader.ReadUInt16();                      // 16
-            var numBitVariables = reader.ReadUInt16();   // 2048
-            var numLocalObjects = reader.ReadUInt16();   // 200
+            numBitVariables = reader.ReadUInt16();   // 2048
+            numLocalObjects = reader.ReadUInt16();   // 200
             var numArray = reader.ReadUInt16();                      // 50
             reader.ReadUInt16();
-            var numVerbs = reader.ReadUInt16();                      // 100
+            numVerbs = reader.ReadUInt16();                      // 100
             var numFlObject = reader.ReadUInt16();                      // 50
-            var numInventory = reader.ReadUInt16();      // 80
+            numInventory = reader.ReadUInt16();      // 80
             var numRooms = reader.ReadUInt16();
             var numScripts = reader.ReadUInt16();
             var numSounds = reader.ReadUInt16();

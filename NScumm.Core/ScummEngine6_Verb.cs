@@ -130,7 +130,7 @@ namespace NScumm.Core
                         }
                         else
                         {
-                            _verbs[slot].Text = _strings[a];
+                            _verbs[slot].Text = GetStringAt(a);
                         }
                         vs.Type = VerbType.Text;
                         vs.ImgIndex = 0;

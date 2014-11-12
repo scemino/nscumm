@@ -62,6 +62,16 @@ namespace NScumm.Core
             DecodeParseString(0, 1);
         }
 
+        protected override byte[] GetStringAt(int index)
+        {
+            var str = _strings[index];
+            if (str == null)
+                return null;
+            var dest = new byte[str.Length - 6];
+            Array.Copy(str, 6, dest, 0, str.Length - 6);
+            return dest;
+        }
+
         void DecodeParseString(int m, int n)
         {
             byte b = ReadByte();

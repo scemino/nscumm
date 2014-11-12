@@ -348,13 +348,18 @@ namespace NScumm.Core
 
             if (var != 0)
             {
-                var ptr = _strings[var];
+                var ptr = GetStringAt(var);
                 if (ptr != null)
                 {
                     return ConvertMessageToString(ptr, dst, dstPos);
                 }
             }
             return 0;
+        }
+
+        protected virtual byte[] GetStringAt(int index)
+        {
+            return _strings[index];
         }
     }
 }

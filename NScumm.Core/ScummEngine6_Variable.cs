@@ -21,6 +21,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace NScumm.Core
 {
@@ -81,6 +82,7 @@ namespace NScumm.Core
         void WriteWordVar(int value)
         {
             var index = ReadWord();
+            Debug.WriteLine("WriteWordVar {0} {1}", index, value);
             WriteVariable(index, value);
         }
 

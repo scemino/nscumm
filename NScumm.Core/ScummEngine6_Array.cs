@@ -109,16 +109,16 @@ namespace NScumm.Core
             return reader.ReadByte();
         }
 
-        public short ReadInt16(int index)
+        public ushort ReadUInt16(int index)
         {
             stream.Seek(6 + index * 2, SeekOrigin.Begin);
-            return reader.ReadInt16();
+            return reader.ReadUInt16();
         }
 
-        public int ReadInt32(int index)
+        public uint ReadUInt32(int index)
         {
             stream.Seek(6 + index * 4, SeekOrigin.Begin);
-            return reader.ReadInt32();
+            return reader.ReadUInt32();
         }
     }
 
@@ -254,15 +254,15 @@ namespace NScumm.Core
             int val;
             if (ah.Type != ArrayType.IntArray)
             {
-                val = ah.ReadByte(offset);
+                val = (sbyte)ah.ReadByte(offset);
             }
             else if (Game.Version == 8)
             {
-                val = ah.ReadInt32(offset);
+                val = (int)ah.ReadUInt32(offset);
             }
             else
             {
-                val = ah.ReadInt16(offset);
+                val = (short)ah.ReadUInt16(offset);
             }
             return val;
         }

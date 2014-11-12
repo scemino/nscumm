@@ -22,6 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections;
 using NScumm.Core.IO;
+using System.Diagnostics;
 
 namespace NScumm.Core
 {
@@ -161,7 +162,7 @@ namespace NScumm.Core
 
             if ((var & 0xF000) == 0)
             {
-                //Console.WriteLine("ReadVariable({0}) => {1}", var, _variables[var]);
+                Debug.WriteLine("ReadVariable({0}) => {1}", var, _variables[var]);
                 ScummHelper.AssertRange(0, var, _resManager.NumVariables - 1, "variable (reading)");
                 if (var == 490 && _game.Id == "monkey2")
                 {
@@ -172,6 +173,7 @@ namespace NScumm.Core
 
             if ((var & 0x8000) == 0x8000)
             {
+                Debug.Write(string.Format("ReadVariable({0}) => ", var));
                 if (_game.Version <= 3)
                 {
                     int bit = var & 0xF;
@@ -183,11 +185,13 @@ namespace NScumm.Core
                 var &= 0x7FFF;
 
                 ScummHelper.AssertRange(0, var, _bitVars.Length - 1, "variable (reading)");
+                Debug.WriteLine(_bitVars[var]);
                 return _bitVars[var] ? 1 : 0;
             }
 
             if ((var & 0x4000) == 0x4000)
             {
+                Debug.Write(string.Format("ReadVariable({0}) => ", var));
                 if (Game.Features.HasFlag(GameFeatures.FewLocals))
                 {
                     var &= 0xF;
@@ -198,6 +202,7 @@ namespace NScumm.Core
                 }
 
                 ScummHelper.AssertRange(0, var, 20, "local variable (reading)");
+                Debug.WriteLine(_slots[_currentScript].LocalVariables[var]);
                 return _slots[_currentScript].LocalVariables[var];
             }
 

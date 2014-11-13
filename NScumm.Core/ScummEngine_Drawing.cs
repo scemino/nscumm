@@ -36,7 +36,7 @@ namespace NScumm.Core
         protected bool _fullRedraw;
         internal Gdi Gdi;
         bool _completeScreenRedraw;
-        IGraphicsManager _gfxManager;
+        protected IGraphicsManager _gfxManager;
         protected byte[] _shadowPalette = new byte[256];
         int _palDirtyMin, _palDirtyMax;
         int _textSurfaceMultiplier = 1;

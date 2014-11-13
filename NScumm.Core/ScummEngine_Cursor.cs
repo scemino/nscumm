@@ -70,6 +70,11 @@ namespace NScumm.Core
                 8, 7, //zak256
             };
 
+        protected virtual void SetDefaultCursor()
+        {
+
+        }
+
         void AnimateCursor()
         {
             if (_cursor.Animate)
@@ -176,115 +181,6 @@ namespace NScumm.Core
 
             _cursorHotspots[index * 2] = (byte)x;
             _cursorHotspots[index * 2 + 1] = (byte)y;
-        }
-
-        void CursorCommand()
-        {
-            _opCode = ReadByte();
-            switch (_opCode & 0x1F)
-            {
-                case 1:
-				// Cursor On
-                    _cursor.State = 1;
-                    VerbMouseOver(0);
-                    break;
-
-                case 2:
-				// Cursor Off
-                    _cursor.State = 0;
-                    VerbMouseOver(0);
-                    break;
-
-                case 3:
-				// User Input on
-                    _userPut = 1;
-                    break;
-
-                case 4:
-				// User Input off
-                    _userPut = 0;
-                    break;
-
-                case 5:
-				// SO_CURSOR_SOFT_ON
-                    _cursor.State++;
-                    VerbMouseOver(0);
-                    break;
-
-                case 6:
-				// SO_CURSOR_SOFT_OFF
-                    _cursor.State--;
-                    VerbMouseOver(0);
-                    break;
-
-                case 7:         // SO_USERPUT_SOFT_ON
-                    _userPut++;
-                    break;
-
-                case 8:         // SO_USERPUT_SOFT_OFF
-                    _userPut--;
-                    break;
-
-                case 10:
-                    {
-                        // SO_CURSOR_IMAGE
-                        var i = GetVarOrDirectByte(OpCodeParameter.Param1); // Cursor number
-                        var j = GetVarOrDirectByte(OpCodeParameter.Param2); // Charset letter to use
-                        RedefineBuiltinCursorFromChar(i, j);
-                    }
-                    break;
-
-                case 11:        // SO_CURSOR_HOTSPOT
-                    {
-                        var i = GetVarOrDirectByte(OpCodeParameter.Param1);
-                        var j = GetVarOrDirectByte(OpCodeParameter.Param2);
-                        var k = GetVarOrDirectByte(OpCodeParameter.Param3);
-                        RedefineBuiltinCursorHotspot(i, j, k);
-                    }
-                    break;
-
-                case 12:
-                    {
-                        // SO_CURSOR_SET
-                        var i = GetVarOrDirectByte(OpCodeParameter.Param1);
-                        if (i >= 0 && i <= 3)
-                        {
-                            _currentCursor = i;
-                        }
-                        else
-                        {
-                            Console.Error.WriteLine("CURSOR_SET: unsupported cursor id {0}", i);
-                        }
-                        break;
-                    }
-                case 13:
-                    InitCharset(GetVarOrDirectByte(OpCodeParameter.Param1));
-                    break;
-                case 14:											/* unk */
-                    if (_game.Version == 3)
-                    {
-                        GetVarOrDirectByte(OpCodeParameter.Param1);
-                        GetVarOrDirectByte(OpCodeParameter.Param2);
-                        // This is some kind of "init charset" opcode. However, we don't have to do anything
-                        // in here, as our initCharset automatically calls loadCharset for GF_SMALL_HEADER,
-                        // games if needed.
-                    }
-                    else
-                    {
-                        var table = GetWordVarArgs();
-                        for (var i = 0; i < table.Length; i++)
-                            CharsetColorMap[i] = _charsetData[_string[1].Default.Charset][i] = (byte)table[i];
-                    }
-                    break;
-                default:
-                    throw new NotImplementedException();
-            }
-
-            if (VariableCursorState.HasValue)
-            {
-                _variables[VariableCursorState.Value] = _cursor.State;
-                _variables[VariableUserPut.Value] = _userPut;
-            }
         }
     }
 }

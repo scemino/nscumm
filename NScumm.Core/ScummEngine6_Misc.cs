@@ -177,10 +177,9 @@ namespace NScumm.Core
                 case 3:
                     // Dummy case
                     break;
-            // TODO: scumm6: GrabCursor
-//                case 4:
-//                    GrabCursor(args[1], args[2], args[3], args[4]);
-//                    break;
+                case 4:
+                    GrabCursor(args[1], args[2], args[3], args[4]);
+                    break;
                 case 5:
                     FadeOut(args[1]);
                     break;

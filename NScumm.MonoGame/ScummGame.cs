@@ -34,7 +34,7 @@ namespace NScumm.MonoGame
 
         public ScummGame(GameInfo info)
         {
-            IsMouseVisible = true;
+            IsMouseVisible = false;
             IsFixedTimeStep = false;
             Window.AllowUserResizing = true;
 

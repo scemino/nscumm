@@ -201,7 +201,9 @@ namespace NScumm.Core
             {
                 if (ss.CutSceneOverride != 0)
                     throw new InvalidOperationException(
-                        string.Format("Object {0} ending with active cutscene/override ({1})", ss.Number, ss.CutSceneOverride));
+                        string.Format("{0} {1} ending with active cutscene/override ({2})", 
+                            (ss.Where != WhereIsObject.Global && ss.Where != WhereIsObject.Local) ? "Object" : "Script",
+                            ss.Number, ss.CutSceneOverride));
                 ss.Number = 0;
                 ss.Status = ScriptStatus.Dead;
             }
@@ -439,6 +441,8 @@ namespace NScumm.Core
                 bootParam = -7873;
             }
             RunScript(1, false, false, new [] { bootParam });
+            SetDefaultCursor();
+
             return GetTimeToWaitBeforeLoop(TimeSpan.Zero);
         }
 

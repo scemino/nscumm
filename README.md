@@ -1,7 +1,7 @@
 NSCUMM
 ======
 
-Quick and dirty .NET port of the SCUMM engine version 3, 4 and 5 of the project scummvm.
+Quick and dirty .NET port of the SCUMM engine version 3, 4, 5 and 6 of the project scummvm.
 
 Quick start
 -----------
@@ -20,8 +20,14 @@ with game:
 
 `ATLANTIS.000` for Indiana Jones and the Fate of Atlantis
 
+`TENTACLE.000` for Day of the Tentacle
+
 Supported Games
 ---------------
+
+### SCUMM 6
+
+Day of the Tentacle
 
 ### SCUMM 5
 

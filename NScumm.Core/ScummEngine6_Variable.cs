@@ -79,7 +79,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0x43)]
-        void WriteWordVar(int value)
+        void WriteWordVar(short value)
         {
             var index = ReadWord();
             Debug.WriteLine("WriteWordVar {0} {1}", index, value);

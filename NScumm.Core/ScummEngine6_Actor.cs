@@ -101,7 +101,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0x80)]
-        void PutActorAtObject(int index, byte room, int obj)
+        void PutActorAtObject(int index, int obj, byte room)
         {
             var a = _actors[index];
             Point p;

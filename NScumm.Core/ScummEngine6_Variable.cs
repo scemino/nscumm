@@ -78,6 +78,14 @@ namespace NScumm.Core
             Push(ReadArray(ReadWord(), index, @base));
         }
 
+        [OpCode(0x42)]
+        void WriteByteVar(short value)
+        {
+            var index = ReadByte();
+            Debug.WriteLine("WriteByteVar {0} {1}", index, value);
+            WriteVariable(index, value);
+        }
+
         [OpCode(0x43)]
         void WriteWordVar(short value)
         {
@@ -86,10 +94,28 @@ namespace NScumm.Core
             WriteVariable(index, value);
         }
 
+        [OpCode(0x46)]
+        void ByteArrayWrite(int @base, int value)
+        {
+            WriteArray(ReadByte(), 0, @base, value);
+        }
+
         [OpCode(0x47)]
         void WordArrayWrite(int @base, int value)
         {
             WriteArray(ReadWord(), 0, @base, value);
+        }
+
+        [OpCode(0x4a)]
+        void ByteArrayIndexedWrite(int index, int @base, int value)
+        {
+            WriteArray(ReadByte(), index, @base, value);
+        }
+
+        [OpCode(0x4b)]
+        void WordArrayIndexedWrite(int index, int @base, int value)
+        {
+            WriteArray(ReadWord(), index, @base, value);
         }
 
         [OpCode(0x4e)]
@@ -104,6 +130,48 @@ namespace NScumm.Core
         {
             var var = ReadWord();
             WriteVariable(var, ReadVariable(var) + 1);
+        }
+
+        [OpCode(0x52)]
+        void ByteArrayInc(int @base)
+        {
+            var var = ReadByte();
+            WriteArray(var, 0, @base, ReadArray(var, 0, @base) + 1);
+        }
+
+        [OpCode(0x53)]
+        void WordArrayInc(int @base)
+        {
+            var var = ReadWord();
+            WriteArray(var, 0, @base, ReadArray(var, 0, @base) + 1);
+        }
+
+        [OpCode(0x56)]
+        void ByteVarDec()
+        {
+            var var = ReadByte();
+            WriteVariable(var, ReadVariable(var) - 1);
+        }
+
+        [OpCode(0x57)]
+        void WordVarDec()
+        {
+            var var = ReadWord();
+            WriteVariable(var, ReadVariable(var) - 1);
+        }
+
+        [OpCode(0x5a)]
+        void ByteArrayDec(int @base)
+        {
+            var var = ReadByte();
+            WriteArray(var, 0, @base, ReadArray(var, 0, @base) - 1);
+        }
+
+        [OpCode(0x5b)]
+        void WordArrayDec(int @base)
+        {
+            var var = ReadWord();
+            WriteArray(var, 0, @base, ReadArray(var, 0, @base) - 1);
         }
 
         [OpCode(0xA4)]

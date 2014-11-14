@@ -127,6 +127,17 @@ namespace NScumm.Core
         [OpCode(0x82)]
         void AnimateActor(int index, int anim)
         {
+            if (Game.Id == "tentacle" && _roomResource == 57 &&
+                Slots[CurrentScript].Number == 19 && index == 593)
+            {
+                // WORKAROUND bug #743363: This very odd case (animateActor(593,250))
+                // occurs in DOTT, in the cutscene after George cuts down the "cherry
+                // tree" and the tree Laverne is trapped in vanishes...
+                // Not sure if this means animateActor somehow also must work for objects
+                // (593 is the time machine in room 57), or if this is simply a script bug.
+                index = 6;
+            }
+
             _actors[index].Animate(anim);
         }
 

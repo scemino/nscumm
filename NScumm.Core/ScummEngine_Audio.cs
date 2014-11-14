@@ -28,10 +28,10 @@ namespace NScumm.Core
 
         public Sound Sound{ get { return _sound; } }
 
-        public void UpdateSound()
-        {
-            _sound.Update();
-        }
+        //        public void UpdateSound()
+        //        {
+        //            _sound.Update();
+        //        }
 
         void PlayActorSounds()
         {

@@ -92,6 +92,11 @@ namespace NScumm.Core
             return values;
         }
 
+        public static ushort ReadUInt16BigEndian(this BinaryReader reader)
+        {
+            return SwapBytes(reader.ReadUInt16());
+        }
+
         public static uint ReadUInt32BigEndian(this BinaryReader reader)
         {
             return SwapBytes(reader.ReadUInt32());

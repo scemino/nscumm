@@ -93,6 +93,7 @@ namespace NScumm.MonoGame
                 if (!pause)
                 {
                     UpdateGame();
+                    audioDriver.Update();
                 }
             }
 
@@ -119,8 +120,6 @@ namespace NScumm.MonoGame
 
         void UpdateGame()
         {
-            engine.UpdateSound();
-        
             inputManager.UpdateStates();
             System.Threading.Thread.Sleep(tsToWait);
             tsToWait = engine.Loop();

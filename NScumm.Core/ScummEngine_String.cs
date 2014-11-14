@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using NScumm.Core.Graphics;
 using System.Linq;
 using System.Text;
+using System.Diagnostics;
 
 namespace NScumm.Core
 {
@@ -31,6 +32,8 @@ namespace NScumm.Core
     {
         protected byte[][] _strings;
         protected TextSlot[] _string = new TextSlot[6];
+
+        public TextSlot[] String { get { return _string; } }
 
         protected byte[] ReadCharacters()
         {
@@ -200,8 +203,7 @@ namespace NScumm.Core
                     break;
 
                 case 2:
-				// TODO:
-				//debugMessage(msg);
+                    DebugMessage(msg);
                     break;
 
                 case 3:
@@ -213,6 +215,37 @@ namespace NScumm.Core
                     throw new NotImplementedException();
             }
         }
+
+        void DebugMessage(byte[] msg)
+        {
+            var buffer = new byte[500];
+
+            ConvertMessageToString(msg, buffer, 0);
+
+            if ((buffer[0] != 0xFF))
+            {
+                Debug.WriteLine("DEBUG: {0}", buffer);
+                return;
+            }
+
+            if (buffer[0] == 0xFF && buffer[1] == 10)
+            {
+                int channel = 0;
+
+                var a = buffer[2] | (buffer[3] << 8) | (buffer[6] << 16) | (buffer[7] << 24);
+                var b = buffer[10] | (buffer[11] << 8) | (buffer[14] << 16) | (buffer[15] << 24);
+
+                // Sam and Max uses a caching system, printing empty messages
+                // and setting VAR_V6_SOUNDMODE beforehand. See patch 609791.
+                // TODO: samnmax
+//                if (_game.Id == "samnmax")
+//                    channel = Variables[VARiableV6SOUNDMODE];
+
+                if (channel != 2)
+                    _sound.TalkSound(a, b, 1, channel);
+            }
+        }
+
 
         static IList<char> ConvertMessage(IList<char> msg, int i, string text)
         {

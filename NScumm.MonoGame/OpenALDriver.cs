@@ -19,99 +19,80 @@ using NScumm.Core.Audio;
 using OpenTK.Audio;
 using OpenTK.Audio.OpenAL;
 using System;
-using System.Collections.Generic;
+using NScumm.Core;
 
 namespace NScumm.MonoGame
 {
-	public class OpenALDriver : IAudioDriver, IDisposable
-	{
-		readonly AudioContext audioContext;
-		readonly List<int> bufferIds;
-		readonly List<int> sourceIds;
-		const int NumBuffers = 10;
+    public class OpenALDriver : Mixer, IDisposable
+    {
+        readonly AudioContext audioContext;
+        readonly int bufferId;
+        readonly int sourceId;
+        short[] buffer;
+        const int Frequency = 44100;
 
-		public OpenALDriver ()
-		{
-			audioContext = new AudioContext ();
-			bufferIds = new List<int> ();
-			sourceIds = new List<int> ();
-		}
+        public OpenALDriver()
+            : base(Frequency)
+        {
+            audioContext = new AudioContext();
+            buffer = new short[Frequency * 2];
+            bufferId = AL.GenBuffer();
+            sourceId = AL.GenSource();
+            CheckError();
+        }
 
-		public void Play (IAudioStream stream)
-		{
-			var bufferIds = AL.GenBuffers (NumBuffers);
-			this.bufferIds.AddRange (bufferIds);
-			var sourceId = AL.GenSource ();
-			sourceIds.Add (sourceId);
+        bool check;
 
-			if (AL.GetError () != ALError.NoError) {
-				Console.Error.WriteLine ("Error generating :(");
-				return;
-			}
+        static void CheckError()
+        {
+            var error = AL.GetError();
+            if (error != ALError.NoError)
+            {
+                var err = AL.GetErrorString(error);
+                Console.Error.WriteLine("AL Error: {0}", err);
+            }
+        }
 
-			ALError error;
-			foreach (var bufferId in bufferIds) {
-				var data = stream.Read ();
-				AL.BufferData (bufferId, ALFormat.Stereo16, data, data.Length, stream.Frequency);
+        public void Update()
+        {
+            int val = 0;
+            if (check)
+            {
+                AL.GetSource(sourceId, ALGetSourcei.BuffersProcessed, out val);
+            }
 
-				error = AL.GetError ();
-				if (error != ALError.NoError) {
-					Console.Error.WriteLine ("Error loading :( {0}", AL.GetErrorString (error));
-					return;
-				}
-			}
+            if (!check || val > 0)
+            {
+                Array.Clear(buffer, 0, buffer.Length);
+                var len = MixCallback(buffer);
+                if (len > 0)
+                {
+                    AL.SourceUnqueueBuffer(sourceId);
+                    AL.BufferData(bufferId, ALFormat.Stereo16, buffer, len * 4, Frequency);
+                    CheckError();
+                    AL.SourceQueueBuffer(sourceId, bufferId);
+                    CheckError();
+                    if (AL.GetSourceState(sourceId) != ALSourceState.Playing)
+                    {
+                        AL.SourcePlay(sourceId);
+                        CheckError();
+                    }
+                    check = true;
+                }
+            }
+        }
 
-			AL.SourceQueueBuffers (sourceId, bufferIds.Length, bufferIds);
-			AL.SourcePlay (sourceId);
-			error = AL.GetError ();
-			if (error != ALError.NoError) {
-				Console.Error.WriteLine ("Error Starting :( {0}", AL.GetErrorString (error));
-				return;
-			}
-		}
+        #region IDisposable implementation
 
-		public void Update (IAudioStream stream)
-		{
-			int val;
+        public void Dispose()
+        {
+            AL.DeleteBuffer(bufferId);
+            AL.DeleteSource(sourceId);
+            audioContext.Dispose();
+        }
 
-			if (sourceIds.Count > 0) {
-				var sourceId = sourceIds [0];
-				AL.GetSource (sourceId, ALGetSourcei.BuffersProcessed, out val);
-				if (val <= 0)
-					return;
-				while (val-- != 0) {
-					var buffer = stream.Read ();
+        #endregion
 
-					var bufId = AL.SourceUnqueueBuffer (sourceId);
-					AL.BufferData (bufId, ALFormat.Stereo16, buffer, buffer.Length, stream.Frequency);
-					AL.SourceQueueBuffer (sourceId, bufId);
-					if (AL.GetError () != ALError.NoError) {
-						Console.Error.WriteLine ("Error buffering :(");
-						return;
-					}
-				}
-
-				var state = AL.GetSourceState (sourceId);
-				if (state != ALSourceState.Playing)
-					AL.SourcePlay (sourceId);
-			}
-		}
-
-		#region IDisposable implementation
-
-		public void Dispose ()
-		{
-			if (bufferIds.Count > 0) {
-				AL.DeleteBuffers (bufferIds.ToArray ());
-			}
-			if (sourceIds.Count > 0) {
-				AL.DeleteSources (sourceIds.ToArray ());
-			}
-			audioContext.Dispose ();
-		}
-
-		#endregion
-
-	}
+    }
 	
 }

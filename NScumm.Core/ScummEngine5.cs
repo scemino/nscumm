@@ -29,8 +29,8 @@ namespace NScumm.Core
 {
     public class ScummEngine5: ScummEngine4
     {
-        public ScummEngine5(GameInfo game, IGraphicsManager graphicsManager, IInputManager inputManager, IAudioDriver audioDriver)
-            : base(game, graphicsManager, inputManager, audioDriver)
+        public ScummEngine5(GameInfo game, IGraphicsManager graphicsManager, IInputManager inputManager, IMixer mixer)
+            : base(game, graphicsManager, inputManager, mixer)
         {
             VariableSoundResult = 56;
             VariableTalkStopKey = 57;

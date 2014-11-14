@@ -128,28 +128,30 @@ namespace NScumm.Core
 
         internal ICostumeRenderer CostumeRenderer { get { return _costumeRenderer; } }
 
+        public int TalkDelay{ get { return _talkDelay; } }
+
         #endregion Properties
 
         #region Constructor
 
-        public static ScummEngine Create(GameInfo game, IGraphicsManager gfxManager, IInputManager inputManager, IAudioDriver driver)
+        public static ScummEngine Create(GameInfo game, IGraphicsManager gfxManager, IInputManager inputManager, IMixer mixer)
         {
             ScummEngine engine = null;
             if (game.Version == 3)
             {
-                engine = new ScummEngine3(game, gfxManager, inputManager, driver);
+                engine = new ScummEngine3(game, gfxManager, inputManager, mixer);
             }
             else if (game.Version == 4)
             {
-                engine = new ScummEngine4(game, gfxManager, inputManager, driver);
+                engine = new ScummEngine4(game, gfxManager, inputManager, mixer);
             }
             else if (game.Version == 5)
             {
-                engine = new ScummEngine5(game, gfxManager, inputManager, driver);
+                engine = new ScummEngine5(game, gfxManager, inputManager, mixer);
             }
             else if (game.Version == 6)
             {
-                engine = new ScummEngine6(game, gfxManager, inputManager, driver);
+                engine = new ScummEngine6(game, gfxManager, inputManager, mixer);
             }
             return engine;
         }
@@ -165,7 +167,7 @@ namespace NScumm.Core
             return sig;
         }
 
-        protected ScummEngine(GameInfo game, IGraphicsManager gfxManager, IInputManager inputManager, IAudioDriver driver)
+        protected ScummEngine(GameInfo game, IGraphicsManager gfxManager, IInputManager inputManager, IMixer mixer)
         {
             _resManager = ResourceManager.Load(game);
 
@@ -179,7 +181,7 @@ namespace NScumm.Core
             _inventory = new ushort[_resManager.NumInventory];
             _invData = new ObjectData[_resManager.NumInventory];
             _currentScript = 0xFF;
-            _sound = new Sound(this, driver);
+            _sound = new Sound(this, mixer);
 
             _slots = new ScriptSlot[NumScriptSlot];
             for (int i = 0; i < NumScriptSlot; i++)
@@ -258,6 +260,9 @@ namespace NScumm.Core
             {
                 _strings[21] = new byte[13];
             }
+
+            if (_game.Version >= 5 && _game.Version <= 7)
+                _sound.SetupSound();
         }
 
         protected void InitScreens(int b, int h)
@@ -436,7 +441,7 @@ namespace NScumm.Core
                 }
             }
 
-            _sound.ProcessSoundQueue();
+            _sound.ProcessSound();
 
             _camera.LastPosition = _camera.CurrentPosition;
 

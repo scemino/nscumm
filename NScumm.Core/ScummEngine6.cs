@@ -49,8 +49,8 @@ namespace NScumm.Core
         int? VariableCharsetMask;
         int? VariableTimeDateSecond;
 
-        public ScummEngine6(GameInfo game, IGraphicsManager graphicsManager, IInputManager inputManager, IAudioDriver audioDriver)
-            : base(game, graphicsManager, inputManager, audioDriver)
+        public ScummEngine6(GameInfo game, IGraphicsManager graphicsManager, IInputManager inputManager, IMixer mixer)
+            : base(game, graphicsManager, inputManager, mixer)
         {
             VariableRandomNumber = 118;
             VariableRoomWidth = 41;

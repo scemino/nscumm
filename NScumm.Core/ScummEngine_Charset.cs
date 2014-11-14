@@ -153,9 +153,8 @@ namespace NScumm.Core
 
             if (_haveMsg == 1)
             {
-                // TODO:
-                //if ((_sound->_sfxMode & 2) == 0)
-                StopTalk();
+                if ((_sound.SfxMode & 2) == 0)
+                    StopTalk();
                 return;
             }
 
@@ -244,8 +243,8 @@ namespace NScumm.Core
         {
             int color, frme, c = 0, oldy;
             bool endLoop = false;
-            //byte* buffer = _charsetBuffer + _charsetBufPos;
-            int bufferPos = _charsetBufPos;
+
+            var bufferPos = _charsetBufPos;
             while (!endLoop)
             {
                 c = _charsetBuffer[bufferPos++];
@@ -297,11 +296,13 @@ namespace NScumm.Core
 
                     case 10:
 					// Note the similarity to the code in debugMessage()
-					//talk_sound_a = (uint)(_charsetBuffer[bufferPos] | (_charsetBuffer[bufferPos + 1] << 8) | (_charsetBuffer[bufferPos + 4] << 16) | (_charsetBuffer[bufferPos + 5] << 24));
-					//talk_sound_b = (uint)(_charsetBuffer[bufferPos + 8] | (_charsetBuffer[bufferPos + 9] << 8) | (_charsetBuffer[bufferPos + 12] << 16) | (_charsetBuffer[bufferPos + 13] << 24));
-                        bufferPos += 14;
-					//_sound->talkSound(talk_sound_a, talk_sound_b, 2);
-                        _haveActorSpeechMsg = false;
+                        {
+                            var talk_sound_a = (_charsetBuffer[bufferPos] | (_charsetBuffer[bufferPos + 1] << 8) | (_charsetBuffer[bufferPos + 4] << 16) | (_charsetBuffer[bufferPos + 5] << 24));
+                            var talk_sound_b = (_charsetBuffer[bufferPos + 8] | (_charsetBuffer[bufferPos + 9] << 8) | (_charsetBuffer[bufferPos + 12] << 16) | (_charsetBuffer[bufferPos + 13] << 24));
+                            bufferPos += 14;
+                            _sound.TalkSound(talk_sound_a, talk_sound_b, 2);
+                            _haveActorSpeechMsg = false;
+                        }
                         break;
 
                     case 12:

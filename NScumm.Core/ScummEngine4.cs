@@ -21,7 +21,6 @@
 
 using NScumm.Core.Graphics;
 using NScumm.Core.Input;
-using NScumm.Core.Audio;
 using System.Collections.Generic;
 using NScumm.Core.IO;
 
@@ -29,8 +28,8 @@ namespace NScumm.Core
 {
     public class ScummEngine4: ScummEngine3
     {
-        public ScummEngine4(GameInfo game, IGraphicsManager graphicsManager, IInputManager inputManager, IAudioDriver audioDriver)
-            : base(game, graphicsManager, inputManager, audioDriver)
+        public ScummEngine4(GameInfo game, IGraphicsManager graphicsManager, IInputManager inputManager, IMixer mixer)
+            : base(game, graphicsManager, inputManager, mixer)
         {
             VariableScrollScript = 27;
             VariableDebugMode = 39;

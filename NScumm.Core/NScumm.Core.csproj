@@ -86,7 +86,6 @@
     <Compile Include="IScummTextDecoder.cs" />
     <Compile Include="Input\KeyCode.cs" />
     <Compile Include="Sound.cs" />
-    <Compile Include="Audio\IAudioDriver.cs" />
     <Compile Include="Audio\IAudioStream.cs" />
     <Compile Include="ScummEngine_Actor.cs" />
     <Compile Include="ScummEngine_Verb.cs" />
@@ -188,6 +187,18 @@
     <Compile Include="ScummEngine6_Inventory.cs" />
     <Compile Include="ScummEngine6_Array.cs" />
     <Compile Include="ScummEngine6_Misc.cs" />
+    <Compile Include="Audio\Decoders\VocStream.cs" />
+    <Compile Include="Audio\Timestamp.cs" />
+    <Compile Include="Audio\IMixerAudioStream.cs" />
+    <Compile Include="Audio\SoundHandle.cs" />
+    <Compile Include="Audio\IMixer.cs" />
+    <Compile Include="Audio\Mixer.cs" />
+    <Compile Include="Audio\Channel.cs" />
+    <Compile Include="Audio\CopyRateConverter.cs" />
+    <Compile Include="Audio\SimpleRateConverter.cs" />
+    <Compile Include="Audio\IRateConverter.cs" />
+    <Compile Include="Audio\LinearRateConverter.cs" />
+    <Compile Include="Audio\RateHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="IO\Nscumm.xml">
@@ -214,5 +225,6 @@
     <Folder Include="Audio\IMuse\" />
     <Folder Include="Audio\OPL\Channels\" />
     <Folder Include="Audio\OPL\Operators\" />
+    <Folder Include="Audio\Decoders\" />
   </ItemGroup>
 </Project>

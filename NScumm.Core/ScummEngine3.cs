@@ -21,7 +21,6 @@
 
 using NScumm.Core.Graphics;
 using NScumm.Core.Input;
-using NScumm.Core.Audio;
 using NScumm.Core.IO;
 using System.Collections.Generic;
 using System;
@@ -31,8 +30,8 @@ namespace NScumm.Core
 {
     public partial class ScummEngine3: ScummEngine
     {
-        public ScummEngine3(GameInfo game, IGraphicsManager graphicsManager, IInputManager inputManager, IAudioDriver audioDriver)
-            : base(game, graphicsManager, inputManager, audioDriver)
+        public ScummEngine3(GameInfo game, IGraphicsManager graphicsManager, IInputManager inputManager, IMixer mixer)
+            : base(game, graphicsManager, inputManager, mixer)
         {
             Variables[VariableCurrentLights.Value] = (int)(LightModes.ActorUseBasePalette | LightModes.ActorUseColors | LightModes.RoomLightsOn);
         }

@@ -32,6 +32,8 @@ namespace NScumm.Core
         bool _useTalkAnims;
         bool _haveActorSpeechMsg;
 
+        public Actor[] Actors { get { return _actors; } }
+
         void InitActors()
         {
             for (byte i = 0; i < _actors.Length; i++)
@@ -127,7 +129,7 @@ namespace NScumm.Core
 
         internal void StopTalk()
         {
-            //_sound.StopTalkSound();
+            _sound.StopTalkSound();
 
             _haveMsg = 0;
             _talkDelay = 0;

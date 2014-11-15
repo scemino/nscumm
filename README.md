@@ -57,9 +57,7 @@ Alt-Enter              - Toggles full screen/windowed
 Known Issues
 -------------------------
 
-Bad music synchronization
-
-IMUSE not implemented
+No music/IMUSE not implemented
 
 Screen effects not implemented
 

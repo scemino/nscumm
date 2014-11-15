@@ -25,6 +25,7 @@ namespace NScumm.Core
     partial class ScummEngine
     {
         protected Sound _sound;
+        protected bool _saveSound;
 
         public Sound Sound{ get { return _sound; } }
 

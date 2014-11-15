@@ -269,10 +269,9 @@ namespace NScumm.Core
 //                case 123:
 //                    CopyPalColor(args[2], args[1]);
 //                    break;
-            // TODO: scumm6: _saveSound
-//                case 124:
-//                    _saveSound = args[1];
-//                    break;
+                case 124:
+                    _saveSound = args[1] != 0;
+                    break;
                 default:
                     throw new NotSupportedException(string.Format("KernelSetFunctions: default case {0} (param count {1})", args[0], args.Length));
             }

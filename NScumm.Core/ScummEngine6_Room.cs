@@ -19,6 +19,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
+using NScumm.Core.Graphics;
 
 namespace NScumm.Core
 {
@@ -87,9 +88,8 @@ namespace NScumm.Core
                     _saveTemporaryState = true;
                     _saveLoadSlot = Pop();
                     _saveLoadFlag = Pop();
-                    // TODO: scumm6
-//                    if (Game.Id == "tentacle")
-//                        _saveSound = (_saveLoadSlot != 0);
+                    if (Game.Id == "tentacle")
+                        _saveSound = (_saveLoadSlot != 0);
                     break;
                 case 181:               // SO_ROOM_FADE
                     {
@@ -183,7 +183,15 @@ namespace NScumm.Core
 
         void SetCurrentPalette(int palIndex)
         {
-            CurrentPalette = roomData.Palettes[palIndex];
+            var palette = roomData.Palettes[palIndex];
+            for (var i = 0; i < 256; i++)
+            {
+                var color = palette.Colors[i];
+                if (i < 15 || i == 15 || color.R < 252 || color.G < 252 || color.B < 252)
+                {
+                    CurrentPalette.Colors[i] = color;
+                }
+            }
         }
 
         [OpCode(0x85)]

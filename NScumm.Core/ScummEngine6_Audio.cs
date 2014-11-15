@@ -39,8 +39,7 @@ namespace NScumm.Core
         [OpCode(0x75)]
         void StopSound(int sound)
         {
-            // TODO: scumm6
-//            _sound.StopSound(sound);
+            _sound.StopSound(sound);
         }
 
         [OpCode(0x76)]

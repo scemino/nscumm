@@ -44,6 +44,7 @@ namespace NScumm.Core
         public int? VariableVirtualMouseX = 20;
         public int? VariableVirtualMouseY = 21;
         public int? VariableRoomResource = 22;
+        public int? VariableLastSound = 23;
         public int? VariableCutSceneExitKey = 24;
         public int? VariableTalkActor = 25;
         public int? VariableCameraFastX = 26;

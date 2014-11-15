@@ -26,11 +26,6 @@ using System.IO;
 
 namespace NScumm.Core
 {
-    enum SoundMode
-    {
-        VOCMode
-    }
-
     class Sound: ISoundRepository
     {
         ScummEngine vm;
@@ -149,6 +144,9 @@ namespace NScumm.Core
 
         public void AddSoundToQueue(int sound)
         {
+            if (vm.VariableLastSound.HasValue)
+                vm.Variables[vm.VariableLastSound.Value] = sound;
+
             soundQueue.Push(sound);
         }
 
@@ -169,7 +167,7 @@ namespace NScumm.Core
         {
             while (soundQueue.Count > 0)
             {
-                int sound = soundQueue.Pop();
+                var sound = soundQueue.Pop();
                 if (sound != 0)
                     PlaySound(sound);
             }
@@ -383,6 +381,32 @@ namespace NScumm.Core
                 _sfxMode &= ~2;
             }
         }
+
+        public void StopSound(int sound)
+        {
+//            if (sound != 0 && sound == _currentCDSound)
+//            {
+//                _currentCDSound = 0;
+//                stopCD();
+//                stopCDTimer();
+//            }
+
+            if (vm.Game.Version < 7)
+                _mixer.StopID(sound);
+
+//            if (vm._musicEngine)
+//                vm->_musicEngine->stopSound(sound);
+
+            // TODO:
+//            for (var i = 0; i < soundQueue.Count; i++)
+//            {
+//                if (soundQueue[i] == sound)
+//                {
+//                    soundQueue[i] = 0;
+//                }
+//            }
+        }
+
 
         bool IsSfxFinished()
         {

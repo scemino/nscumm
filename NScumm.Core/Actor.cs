@@ -52,6 +52,7 @@ namespace NScumm.Core
         public byte Box;
     }
 
+    [System.Diagnostics.DebuggerDisplay("{DebuggerDisplay,nq}")]
     class Actor
     {
         #region Private Fields
@@ -95,6 +96,14 @@ namespace NScumm.Core
         #endregion
 
         #region Properties
+
+        internal string DebuggerDisplay
+        {
+            get
+            { 
+                return string.Format("Name: {0}, IsInCurrentRoom: {1}, Visible: {2}", Name != null ? System.Text.Encoding.ASCII.GetString(Name) : null, IsInCurrentRoom, IsVisible);
+            }    
+        }
 
         public bool DrawToBackBuf { get; set; }
 

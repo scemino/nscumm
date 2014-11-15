@@ -137,7 +137,7 @@ namespace NScumm.Core
 
             MainVirtScreen.HasTwoBuffers = false;
             Gdi.IsZBufferEnabled = false;
-            Gdi.DrawBitmap(im, MainVirtScreen, _screenStartStrip, 0, w, h, 0, w / 8, roomData.Header.Width, DrawBitmaps.None);
+            Gdi.DrawBitmap(im, MainVirtScreen, _screenStartStrip, 0, w, h, 0, w / 8, MainVirtScreen.Width, DrawBitmaps.None);
             MainVirtScreen.HasTwoBuffers = true;
             Gdi.IsZBufferEnabled = true;
 

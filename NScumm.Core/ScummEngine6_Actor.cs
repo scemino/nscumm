@@ -240,7 +240,7 @@ namespace NScumm.Core
                     a.Init(0);
                     break;
                 case 84:                // SO_ELEVATION
-                    a.Elevation = Pop();
+                    a.Elevation = (short)Pop();
                     break;
                 case 85:                // SO_ANIMATION_DEFAULT
                     a.InitFrame = 1;

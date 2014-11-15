@@ -51,7 +51,6 @@ namespace NScumm.Core.IO
 
         Room ReadRoomCore(long offset, long chunkSize)
         {
-            var stripsDic = new Dictionary<ushort, byte[]>();
             var room = new Room();
             var it = new ChunkIterator5(_reader, chunkSize);
             var images = new Dictionary<ushort, ObjectImage>();

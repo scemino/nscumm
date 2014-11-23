@@ -18,86 +18,279 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-using NScumm.Core.Audio.Midi;
+using System;
+using System.Diagnostics;
 
-namespace NScumm.Core
+namespace NScumm.Core.Audio.IMuse
 {
     class Part
     {
-        int _slot;
-        MidiChannel _mc;
-        IPlayer _player;
+        public IMuseInternal Se{ get; set; }
+
+        public int Slot{ get; set; }
+
+        public MidiChannel MidiChannel { get; set; }
+
+        public Player Player { get; private set; }
+
         short _pitchbend;
         byte _pitchbend_factor;
-        int _transpose, _transpose_eff;
+        int _transpose_eff;
         int _vol, _vol_eff;
         int _detune, _detune_eff;
         int _pan, _pan_eff;
-        bool _on;
-        byte _modwheel;
-        bool _pedal;
-        int priority;
-        int priorityEffective;
 
-        public int Channel{ get; private set; }
+        public Part Previous { get; set; }
+
+        public Part Next { get; set; }
+
+        public bool On { get; private set; }
+
+        byte _modwheel;
+        int priority;
+
+        public bool Pedal { get; private set; }
+
+        public int Transpose { get; private set; }
+
+        public int PriorityEffective { get; set; }
+
+        public int Channel { get; set; }
 
         int _effect_level;
         byte _chorus;
-        bool _percussion;
+
+        public bool Percussion { get; private set; }
+
         byte _bank;
 
         // New abstract instrument definition
-        //Instrument _instrument;
-        bool _unassigned_instrument;
+        public Instrument Instrument { get; private set; }
+
+        bool _unassignedInstrument;
         // For diagnostic reporting purposes only
+
+        public Part()
+        {
+            Instrument = new Instrument();
+        }
 
         // MidiChannel interface
         // (We don't currently derive from MidiChannel,
         //  but if we ever do, this will make it easy.)
-        //        void noteOff(byte note);
-        //
-        //        void noteOn(byte note, byte velocity);
-        //
-        //        void programChange(byte value);
-        //
-        //        void pitchBend(short value);
-        //
-        //        void modulationWheel(byte value);
-        //
-        //        void volume(byte value);
-        //
-        //        void pitchBendFactor(byte value);
-        //
-        //        void sustain(bool value);
-        //
-        //        void effectLevel(byte value);
-        //
-        //        void chorusLevel(byte value);
-        //
-        //        void allNotesOff();
+        public void NoteOff(byte note)
+        {
+            if (!On)
+                return;
 
-        //        void set_param(byte param, int value)
-        //        {
-        //        }
+            MidiChannel mc = MidiChannel;
+            if (mc != null)
+            {
+                mc.NoteOff(note);
+            }
+            else if (Percussion)
+            {
+                mc = Player.MidiDriver.GetPercussionChannel();
+                if (mc != null)
+                    mc.NoteOff(note);
+            }
+        }
 
-        //        void init();
-        //
-        //        void setup(Player*player);
-        //
-        //        void uninit();
-        //
-        //        void off();
-        //
-        //        void set_instrument(uint b);
-        //
-        //        void set_instrument(byte*data);
-        //
-        //        void set_instrument_pcspk(byte*data);
-        //
-        //        void load_global_instrument(byte b);
-        //
-        //        void set_transpose(sbyte transpose);
-        //
+        static byte prev_vol_eff;
+
+        internal void NoteOn(byte note, byte velocity)
+        {
+            if (!On)
+                return;
+
+            MidiChannel mc = MidiChannel;
+
+            // DEBUG
+            if (_unassignedInstrument && !Percussion)
+            {
+                _unassignedInstrument = false;
+                if (!Instrument.IsValid)
+                {
+                    Debug.WriteLine("[{0}] No instrument specified", (int)Channel);
+                    return;
+                }
+            }
+
+            if (mc != null && Instrument.IsValid)
+            {
+                mc.NoteOn(note, velocity);
+            }
+            else if (Percussion)
+            {
+                mc = Player.MidiDriver.GetPercussionChannel();
+                if (mc == null)
+                    return;
+
+                // FIXME: The following is evil, EVIL!!! Either prev_vol_eff is
+                // actually meant to be a member of the Part class (i.e. each
+                // instance of Part keeps a separate copy of it); or it really
+                // is supposed to be shared by all Part instances -- but then it
+                // should be implemented as a class static var. As it is, using
+                // a function level static var in most cases is arcane and evil.
+                prev_vol_eff = 128;
+                if (_vol_eff != prev_vol_eff)
+                {
+                    mc.Volume((byte)_vol_eff);
+                    prev_vol_eff = (byte)_vol_eff;
+                }
+                if ((note < 35) && (!Player._se.IsNativeMT32))
+                    note = Instrument._gmRhythmMap[note];
+
+                mc.NoteOn(note, velocity);
+            }
+        }
+
+        public void ProgramChange(byte value)
+        {
+            _bank = 0;
+            Instrument.Program(value, Player.IsMT32);
+            if (ClearToTransmit())
+                Instrument.Send(MidiChannel);
+        }
+
+        public void PitchBend(short value)
+        {
+            _pitchbend = value;
+            SendPitchBend();
+        }
+
+        public void ModulationWheel(byte value)
+        {
+            _modwheel = value;
+            if (MidiChannel != null)
+                MidiChannel.ModulationWheel(value);
+        }
+
+        public int Volume
+        {
+            get { return _vol; }
+            set
+            {
+                _vol_eff = ((_vol = value) + 1) * Player.GetEffectiveVolume() >> 7;
+                if (MidiChannel != null)
+                    MidiChannel.Volume((byte)_vol_eff);
+            }
+        }
+
+        public void PitchBendFactor(byte value)
+        {
+            if (value > 12)
+                return;
+            PitchBend(0);
+            _pitchbend_factor = value;
+            if (MidiChannel != null)
+                MidiChannel.PitchBendFactor(value);
+        }
+
+        public void Sustain(bool value)
+        {
+            Pedal = value;
+            if (MidiChannel != null)
+                MidiChannel.Sustain(value);
+        }
+
+        public void EffectLevel(byte value)
+        {
+            _effect_level = value;
+            SendEffectLevel(value);
+        }
+
+        public void ChorusLevel(byte value)
+        {
+            _chorus = value;
+            if (MidiChannel != null)
+                MidiChannel.ChorusLevel(value);
+        }
+
+        public   void AllNotesOff()
+        {
+            if (MidiChannel == null)
+                return;
+            MidiChannel.AllNotesOff();
+        }
+
+        public void Init()
+        {
+            Player = null;
+            Next = null;
+            Previous = null;
+            MidiChannel = null;
+        }
+
+        public void Uninit()
+        {
+            if (Player == null)
+                return;
+            Off();
+            Player.RemovePart(this);
+            Player = null;
+        }
+
+        public void Off()
+        {
+            if (MidiChannel != null)
+            {
+                MidiChannel.AllNotesOff();
+                MidiChannel.Release();
+                MidiChannel = null;
+            }
+        }
+
+        public void SetInstrument(uint b)
+        {
+            _bank = (byte)(b >> 8);
+            if (_bank != 0)
+                Console.Error.WriteLine("Non-zero instrument bank selection. Please report this");
+            // HACK: Horrible hack to allow tracing of program change source.
+            // The Mac m68k versions of MI2 and Indy4 use a different program "bank"
+            // when it gets program change events through the iMuse SysEx handler.
+            // We emulate this by introducing a special instrument, which sets
+            // the instrument via sysEx_customInstrument. This seems to be
+            // exclusively used for special sound effects like the "spit" sound.
+            // TODO: part
+//            if (ScummEngine.IsMacM68kIMuse())
+//            {
+//                Instrument.macSfx(b);
+//            }
+//            else
+            {
+                Instrument.Program((byte)b, Player.IsMT32);
+            }
+            if (ClearToTransmit())
+                Instrument.Send(MidiChannel);
+        }
+
+        public void SetInstrument(byte[] data)
+        {
+            // TODO: part
+//            if (Se.PcSpeaker)
+//                Instrument.PcSpk(data);
+//            else
+            Instrument.Adlib(data);
+
+            if (ClearToTransmit())
+                Instrument.Send(MidiChannel);
+        }
+
+        public void LoadGlobalInstrument(byte slot)
+        {
+            Player._se.CopyGlobalInstrument(slot, Instrument);
+            if (ClearToTransmit())
+                Instrument.Send(MidiChannel);
+        }
+
+        public void SetTranspose(sbyte transpose)
+        {
+            Transpose = transpose;
+            _transpose_eff = (Transpose == -128) ? 0 : Player.TransposeClamp(Transpose + Player.GetTranspose(), -24, 24);
+            SendPitchBend();
+        }
+
         public int Detune
         {
             get{ return _detune; }
@@ -106,16 +299,20 @@ namespace NScumm.Core
                 // Sam&Max does not have detune, so we just ignore this here. We still get
                 // this called, since Sam&Max uses the same controller for a different
                 // purpose.
-//                if (_se->_game_id == GID_SAMNMAX) {
-//                        #if 0
-//                        if (_mc) {
-//                        _mc->controlChange(17, detune + 0x40);
+                // TODO: part
+//                if (Se.GameId == GID_SAMNMAX)
+//                {
+//                    #if false
+//                                        if (MidiChannel) {
+//                                        MidiChannel->controlChange(17, detune + 0x40);
 //                        }
-//                        #endif
-//                } else {
-                _detune_eff = Clamp((_detune = value) + _player.Detune, -128, 127);
-                SendPitchBend();
-//                    }
+//                    #endif
+//                }
+//                else
+                {
+                    _detune_eff = Clamp((_detune = value) + Player.Detune, -128, 127);
+                    SendPitchBend();
+                }
             }
         }
 
@@ -124,74 +321,117 @@ namespace NScumm.Core
             get { return priority; }
             set
             {
-                priorityEffective = Clamp((priority = value) + _player.Priority, 0, 255);
-                // TODO:
-//                if (_mc != null)
-//                    _mc.Priority = priorityEffective;
+                PriorityEffective = Clamp((priority = value) + Player.Priority, 0, 255);
+                if (MidiChannel != null)
+                    MidiChannel.Priority((byte)PriorityEffective);
             }
         }
-        //
+
         public int Pan
         {
             get{ return _pan; }
             set
             {
-                _pan_eff = Clamp((_pan = value) + _player.Pan, -64, 63);
+                _pan_eff = Clamp((_pan = value) + Player.Pan, -64, 63);
                 SendPanPosition(_pan_eff + 0x40);
             }
         }
 
         void SendPanPosition(int value)
         {
-            if (_mc == null)
+            if (MidiChannel == null)
                 return;
 
             // As described in bug report #1088045 "MI2: Minor problems in native MT-32 mode"
             // the original iMuse MT-32 driver did revert the panning. So we do the same
             // here in our code to have correctly panned sound output.
-            if (_player.IsNativeMT32)
-                value = 127 - value;
+            // TODO: part
+//            if (Player.IsNativeMT32)
+//                value = 127 - value;
 
-            // TODO:
-//            _mc.PanPosition = value;
+            MidiChannel.PanPosition((byte)value);
         }
 
-        //
-        //        void set_onoff(bool on);
-        //
-        //        void fix_after_load();
-        //
-        //        void sendAll();
-        //
-        //        bool clearToTransmit();
-
-        public Part(IPlayer player, int priority, int channel)
+        public void SetOnOff(bool on)
         {
-            _player = player;
+            if (On != on)
+            {
+                On = on;
+                if (!on)
+                    Off();
+                if (!Percussion)
+                    Player._se.ReallocateMidiChannels(Player.MidiDriver);
+            }
+        }
 
-            Channel = channel;
-            Priority = priority;
-            _percussion = (player.IsMidi && Channel == 9); // true;
-            _on = true;
-            priorityEffective = player.Priority;
+
+        public void FixAfterLoad()
+        {
+            SetTranspose((sbyte)Transpose);
+            Volume = _vol;
+            Detune = _detune;
+            Priority = Priority;
+            Pan = Pan;
+            SendAll();
+        }
+
+        public void SendAll()
+        {
+            if (!ClearToTransmit())
+                return;
+
+            MidiChannel.PitchBendFactor(_pitchbend_factor);
+            SendPitchBend();
+            MidiChannel.Volume((byte)_vol_eff);
+            MidiChannel.Sustain(Pedal);
+            MidiChannel.ModulationWheel(_modwheel);
+            SendPanPosition(_pan_eff + 0x40);
+
+            if (Instrument.IsValid)
+                Instrument.Send(MidiChannel);
+
+            // We need to send the effect level after setting up the instrument
+            // otherwise the reverb setting for MT-32 will be overwritten.
+            SendEffectLevel((byte)_effect_level);
+
+            MidiChannel.ChorusLevel(_chorus);
+            MidiChannel.Priority((byte)PriorityEffective);
+        }
+
+        public bool ClearToTransmit()
+        {
+            if (MidiChannel != null)
+                return true;
+            if (Instrument.IsValid)
+                Player._se.ReallocateMidiChannels(Player.MidiDriver);
+            return false;
+        }
+
+        public void Setup(Player player)
+        {
+            Player = player;
+
+            Percussion = (player.IsMIDI && Channel == 9); // true;
+            On = true;
+            PriorityEffective = player.Priority;
+            Priority = 0;
             _vol = 127;
-            _vol_eff = player.EffectiveVolume;
+            _vol_eff = player.GetEffectiveVolume();
             _pan = Clamp(player.Pan, -64, 63);
-            _transpose_eff = player.Transpose;
-            _transpose = 0;
+            _transpose_eff = player.GetTranspose();
+            Transpose = 0;
             _detune = 0;
             _detune_eff = player.Detune;
             _pitchbend_factor = 2;
             _pitchbend = 0;
-            _effect_level = player.IsNativeMT32 ? 127 : 64;
-            _effect_level = 64;
-            // TODO:
-//            _instrument.clear();
-            _unassigned_instrument = true;
+            _effect_level = player._se.IsNativeMT32 ? 127 : 64;
+            Instrument.Clear();
+            _unassignedInstrument = true;
             _chorus = 0;
             _modwheel = 0;
             _bank = 0;
-            _pedal = false;
+            Pedal = false;
+            MidiChannel = null;
         }
 
         static int Clamp(int val, int min, int max)
@@ -206,21 +446,48 @@ namespace NScumm.Core
 
         void SendPitchBend()
         {
-            if (_mc == null)
+            if (MidiChannel == null)
                 return;
 
-            int bend = _pitchbend;
+            var bend = _pitchbend;
             // RPN-based pitchbend range doesn't work for the MT32,
             // so we'll do the scaling ourselves.
-            if (_player.IsNativeMT32)
-                bend = bend * _pitchbend_factor / 12;
-            // TODO:
-//            _mc.PitchBend(Clamp(bend + (_detune_eff * 64 / 12) + (_transpose_eff * 8192 / 12), -8192, 8191));
+            if (Player._se.IsNativeMT32)
+                bend = (short)(bend * _pitchbend_factor / 12);
+            MidiChannel.PitchBend((short)Clamp(bend + (_detune_eff * 64 / 12) + (_transpose_eff * 8192 / 12), -8192, 8191));
         }
-        //
-        //        void sendPanPosition(byte value);
-        //
-        //        void sendEffectLevel(byte value);
-    };
+
+        void SendEffectLevel(byte value)
+        {
+            if (MidiChannel == null)
+                return;
+
+            // As described in bug report #1088045 "MI2: Minor problems in native MT-32 mode"
+            // for the MT-32 one has to use a sysEx event to change the effect level (rather
+            // the reverb setting).
+            if (Player._se.IsNativeMT32)
+            {
+                if (value != 127 && value != 0)
+                {
+                    Console.Error.WriteLine("Trying to use unsupported effect level value {0} in native MT-32 mode.", value);
+
+                    if (value >= 64)
+                        value = 127;
+                    else
+                        value = 0;
+                }
+
+                var message = new byte[9]{ 0x41, 0x00, 0x16, 0x12, 0x00, 0x00, 0x06, 0x00, 0x00 };
+                message[1] = MidiChannel.Number;
+                message[7] = (byte)((value == 127) ? 1 : 0);
+                message[8] = (byte)(128 - (6 + message[7]));
+                Player.MidiDriver.SysEx(message, 9);
+            }
+            else
+            {
+                MidiChannel.EffectLevel(value);
+            }
+        }
+    }
 }
 

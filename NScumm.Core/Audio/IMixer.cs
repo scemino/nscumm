@@ -19,7 +19,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace NScumm.Core
+namespace NScumm.Core.Audio
 {
     public enum SoundType
     {
@@ -31,6 +31,8 @@ namespace NScumm.Core
 
     public interface IMixer
     {
+        int OutputRate { get; }
+
         /// <summary>
         /// Start playing the given audio stream.
         /// </summary>

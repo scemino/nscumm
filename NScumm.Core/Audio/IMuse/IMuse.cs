@@ -114,9 +114,16 @@ namespace NScumm.Core.Audio.IMuse
 
         bool StartSoundCore(int sound, int offset = 0)
         {
-            var player = new Player(soundRepository, opl, sysEx);
+            var player = FindActivePlayer(sound);
+            if (player == null)
+            {
+                player = new Player(soundRepository, opl, sysEx);
+                players.Add(player);
+            }
+
+            player.Clear();
             player.OffsetNote = offset;
-            players.Add(player);
+
             return player.StartSound(sound);
         }
 

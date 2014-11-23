@@ -1,5 +1,5 @@
-﻿//
-//  rate.cs
+//
+//  MusicPluginObject.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -19,13 +19,30 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using System.Collections.Generic;
+
 namespace NScumm.Core.Audio
 {
-    public interface IRateConverter
+    abstract class MusicPluginObject: IMusicPluginObject
     {
-        int Flow(IMixerAudioStream input, short[] obuf, int volLeft, int volRight);
+        public abstract IList<MusicDevice> GetDevices();
 
-        int Drain(short[] obuf, int vol);
+        public abstract MidiDriver CreateInstance(IMixer mixer, DeviceHandle handle);
+
+        public abstract string Id
+        {
+            get;
+        }
+
+        public abstract string Name
+        {
+            get;
+        }
+
+        public virtual bool CheckDevice(DeviceHandle handle)
+        {
+            return true;
+        }
     }
+    
 }
-

@@ -21,7 +21,7 @@
 
 using System;
 
-namespace NScumm.Core
+namespace NScumm.Core.Audio
 {
     class SimpleRateConverter : IRateConverter
     {

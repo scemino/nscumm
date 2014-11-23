@@ -17,11 +17,28 @@
 
 namespace NScumm.Core.Audio.OPL
 {
+    enum OplType
+    {
+        Opl2,
+        DualOpl2,
+        Opl3
+    }
+
     public interface IOpl
     {
-        void Write(int array, int address, int data);
+        bool Init(uint rate);
 
-        short[] Read();
+        void Reset();
+
+        void Write(int a, int v);
+
+        byte Read(int a);
+
+        void WriteReg(int r, int v);
+
+        void ReadBuffer(short[] buffer, int pos, int length);
+
+        bool IsStereo{ get; }
     }
 }
 

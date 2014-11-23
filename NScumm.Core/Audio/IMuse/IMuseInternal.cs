@@ -1,0 +1,1885 @@
+﻿//
+//  IMuseInternal.cs
+//
+//  Author:
+//       scemino <scemino74@gmail.com>
+//
+//  Copyright (c) 2014 
+//
+//  This program is free software: you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation, either version 3 of the License, or
+//  (at your option) any later version.
+//
+//  This program is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+//
+//  You should have received a copy of the GNU General Public License
+//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+using System;
+using NScumm.Core.Audio.IMuse;
+using System.Diagnostics;
+using System.Linq;
+using System.Diagnostics.Contracts;
+using System.IO;
+using NScumm.Core.Audio.SoftSynth;
+using NScumm.Core.IO;
+
+namespace NScumm.Core.Audio.IMuse
+{
+    class DeferredCommand
+    {
+        public uint TimeLeft { get; set; }
+
+        public int A { get; set; }
+
+        public int B { get; set; }
+
+        public int C { get; set; }
+
+        public int D { get; set; }
+
+        public int E { get; set; }
+
+        public int F { get; set; }
+
+        public DeferredCommand()
+        { 
+        }
+    }
+
+    class ImTrigger
+    {
+        public int Sound { get; set; }
+
+        public byte Id { get; set; }
+
+        public ushort Expire { get; set; }
+
+        public int[] Command { get; private set; }
+
+        public ImTrigger()
+        { 
+            Command = new int[8];
+        }
+    }
+
+    enum InstrumentType
+    {
+        None = 0,
+        Program = 1,
+        AdLib = 2,
+        Roland = 3,
+        PcSpk = 4,
+        MacSfx = 5
+    }
+
+    interface IInstrumentInternal
+    {
+        void Send(MidiChannel mc);
+
+        void CopyTo(Instrument dest);
+
+        bool IsValid{ get; }
+    }
+
+    class InstrumentAdLib : IInstrumentInternal
+    {
+        byte[] _instrument;
+
+        public InstrumentAdLib(byte[] data)
+        {
+            _instrument = data;
+        }
+
+        //        Instrument_AdLib(Serializer *s);
+        //        void saveOrLoad(Serializer *s);
+
+        public void Send(MidiChannel mc)
+        {
+            mc.SysExCustomInstrument(AdLibMidiDriver.ToType("ADL "), _instrument);
+        }
+
+        public void CopyTo(Instrument dest)
+        {
+            dest.Adlib(_instrument);
+        }
+
+        public bool IsValid { get { return true; } }
+    }
+
+    class Instrument
+    {
+        InstrumentType _type;
+        IInstrumentInternal _instrument;
+
+        static bool _native_mt32;
+
+        public static void NativeMT32(bool native)
+        {
+            _native_mt32 = native;
+        }
+
+        /// <summary>
+        /// This emulates the percussion bank setup LEC used with the MT-32,
+        /// where notes 24 - 34 were assigned instruments without reverb.
+        /// It also fixes problems on GS devices that map sounds to these
+        /// notes by default.
+        /// </summary>
+        public static readonly byte[] _gmRhythmMap = new byte[]
+        {
+            0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+            0,  0,  0,  0,  0,  0,  0,  0, 36, 37, 38, 39, 40, 41, 66, 47,
+            65, 48, 56
+        };
+
+        public void Clear()
+        {
+            _instrument = null;
+            _type = InstrumentType.None;
+        }
+
+        public void CopyTo(Instrument dest)
+        {
+            if (_instrument != null)
+                _instrument.CopyTo(dest);
+            else
+                dest.Clear();
+        }
+
+        public void Program(byte program, bool mt32)
+        {
+            Clear();
+            if (program > 127)
+                return;
+            _type = InstrumentType.Program;
+            throw new NotImplementedException();
+            //_instrument = new Instrument_Program(program, mt32);
+        }
+
+        public void Adlib(byte[] instrument)
+        {
+            Clear();
+            if (instrument == null)
+                return;
+            _type = InstrumentType.AdLib;
+            _instrument = new InstrumentAdLib(instrument);
+        }
+
+        public void Roland(byte[] instrument)
+        {
+            throw new NotImplementedException();
+            //            Clear();
+            //            if (instrument == null)
+            //                return;
+            //            _type = InstrumentType.Roland;
+            //            _instrument = new Instrument_Roland(instrument);
+        }
+
+        public void PcSpk(byte[] instrument)
+        {
+            throw new NotImplementedException();
+            //            Clear();
+            //            if (!instrument)
+            //                return;
+            //            _type = InstrumentType.PcSpk;
+            //            _instrument = new Instrument_PcSpk(instrument);
+        }
+
+        public void MacSfx(byte program)
+        {
+            throw new NotImplementedException();
+            //            Clear();
+            //            if (program > 127)
+            //                return;
+            //            _type = InstrumentType.MacSfx;
+            //            _instrument = new Instrument_MacSfx(program);
+        }
+
+        public InstrumentType Type { get { return _type; } }
+
+        public bool IsValid { get { return (_instrument != null && _instrument.IsValid); } }
+        //        public void saveOrLoad(Serializer *s);
+        public void Send(MidiChannel mc)
+        {
+            if (_instrument != null)
+                _instrument.Send(mc);
+        }
+    }
+
+    enum ParameterFaderType
+    {
+        None = 0,
+        Volume = 1,
+        Transpose = 3,
+        Speed = 4,
+        ClearAll = 127
+    }
+
+    class ParameterFader
+    {
+        public ParameterFaderType Param { get; set; }
+
+        public int Start { get; set; }
+
+        public int End { get; set; }
+
+        public uint TotalTime { get; set; }
+
+        public uint CurrentTime { get; set; }
+
+        public void Init()
+        {
+            Param = ParameterFaderType.None;
+        }
+    }
+
+    class TimerCallbackInfo
+    {
+        public IMuseInternal IMuse { get; set; }
+
+        public MidiDriver Driver { get; set; }
+    }
+
+    /// <summary>
+    /// SCUMM implementation of IMuse.
+    /// This class implements the IMuse mixin interface for the SCUMM environment.
+    /// </summary>
+    class IMuseInternal : IIMuse
+    {
+        const int TriggerId = 0;
+        const int CommandId = 1;
+
+        protected bool _native_mt32;
+        protected bool _enable_gs;
+        protected MidiDriver _midi_adlib;
+        protected MidiDriver _midi_native;
+        protected TimerCallbackInfo _timer_info_adlib;
+        protected TimerCallbackInfo _timer_info_native;
+    
+        protected GameId _game_id;
+    
+        // Plug-in SysEx handling. Right now this only supports one
+        // custom SysEx handler for the hardcoded IMUSE_SYSEX_ID
+        // manufacturer code. TODO: Expand this to support multiple
+        // SysEx handlers for client-specified manufacturer codes.
+        internal protected SysExFunc Sysex{ get; private set; }
+        //            protected OSystem *_system;
+        protected object _mutex = new object();
+    
+        protected bool _paused;
+        protected bool _initialized;
+
+        public int TempoFactor { get; protected set; }
+
+        protected int _player_limit;
+        // Limits how many simultaneous music tracks are played
+        protected bool _recycle_players;
+        // Can we stop a player in order to start another one?
+    
+        protected uint _queue_end, _queue_pos, _queue_sound;
+        protected bool _queue_adding;
+    
+        protected byte _queue_marker;
+        protected bool _queue_cleared;
+        protected byte _master_volume;
+        // Master volume. 0-255
+        protected byte _music_volume;
+        // Global music volume. 0-255
+    
+        protected ushort _trigger_count;
+        protected ImTrigger[] _snm_triggers;
+        //[16]; // Sam & Max triggers
+        protected ushort _snm_trigger_index;
+    
+        protected ushort[] _channel_volume;
+        //[8];
+        protected ushort[] _channel_volume_eff;
+        //[8]; // No Save
+        protected ushort[] _volchan_table;
+        //[8];
+    
+        protected Player[] _players;
+        //[8];
+        protected Part[] _parts;
+        //[32];
+    
+        protected bool _pcSpeaker;
+        protected Instrument[] _global_instruments;
+        //[32];
+        protected CommandQueue[] _cmd_queue;
+        //[64];
+        protected DeferredCommand[] _deferredCommands;
+        //[4];
+    
+        public IMuseInternal()
+        {
+            _snm_triggers = new ImTrigger[16];
+            for (int i = 0; i < _snm_triggers.Length; i++)
+            {
+                _snm_triggers[i] = new ImTrigger();
+            }
+            _channel_volume = new ushort[8];
+            _channel_volume_eff = new ushort[8];
+            _volchan_table = new ushort[8];
+            _players = new Player[8];
+            for (int i = 0; i < _players.Length; i++)
+            {
+                _players[i] = new Player();
+            }
+            _player_limit = _players.Length;
+            _parts = new Part[32];
+            for (int i = 0; i < _parts.Length; i++)
+            {
+                _parts[i] = new Part();
+            }
+            _global_instruments = new Instrument[32];
+            for (int i = 0; i < _global_instruments.Length; i++)
+            {
+                _global_instruments[i] = new Instrument();
+            }
+            _cmd_queue = new CommandQueue[64];
+            for (int i = 0; i < _cmd_queue.Length; i++)
+            {
+                _cmd_queue[i] = new CommandQueue();
+            }
+            _deferredCommands = new DeferredCommand[4];
+            for (int i = 0; i < _deferredCommands.Length; i++)
+            {
+                _deferredCommands[i] = new DeferredCommand();
+            }
+            _timer_info_adlib = new TimerCallbackInfo();
+            _timer_info_native = new TimerCallbackInfo();
+        }
+
+        internal protected int Initialize(MidiDriver nativeMidiDriver, MidiDriver adlibMidiDriver)
+        {
+            _midi_native = nativeMidiDriver;
+            _midi_adlib = adlibMidiDriver;
+            if (nativeMidiDriver != null)
+            {
+                _timer_info_native.IMuse = this;
+                _timer_info_native.Driver = nativeMidiDriver;
+                InitMidiDriver(_timer_info_native);
+            }
+            if (adlibMidiDriver != null)
+            {
+                _timer_info_adlib.IMuse = this;
+                _timer_info_adlib.Driver = adlibMidiDriver;
+                InitMidiDriver(_timer_info_adlib);
+            }
+
+            if (TempoFactor == 0)
+                TempoFactor = 100;
+            _master_volume = 255;
+
+            for (var i = 0; i != 8; i++)
+                _channel_volume[i] = _channel_volume_eff[i] = _volchan_table[i] = 127;
+
+            InitPlayers();
+            InitQueue();
+            InitParts();
+
+            _initialized = true;
+
+            return 0;
+        }
+
+        protected void InitMidiDriver(TimerCallbackInfo info)
+        {
+            // Open MIDI driver
+            var result = info.Driver.Open();
+            if (result != MidiDriverError.None)
+                Console.Error.WriteLine("IMuse initialization - {0}", MidiDriver.GetErrorName(result));
+
+            // Connect to the driver's timer
+            info.Driver.SetTimerCallback(info, MidiTimerCallback);
+        }
+
+        protected static void MidiTimerCallback(object data)
+        {
+            TimerCallbackInfo info = (TimerCallbackInfo)data;
+            info.IMuse.OnTimer(info.Driver);
+        }
+
+        void IIMuse.OnTimer(MidiDriver midi)
+        {
+            OnTimer(midi);
+        }
+
+        protected void OnTimer(MidiDriver midi)
+        {
+            lock (_mutex)
+            {
+                if (_paused || !_initialized)
+                    return;
+
+                if (midi == _midi_native || _midi_native == null)
+                    HandleDeferredCommands(midi);
+                SequencerTimers(midi);
+            }
+        }
+
+        [Flags]
+        internal protected enum ChunkType
+        {
+            MThd = 1,
+            FORM = 2,
+            MDhd = 4,
+            // Used in MI2 and INDY4. Contain certain start parameters (priority, volume, etc. ) for the player.
+            MDpg = 8
+            // These chunks exist in DOTT and SAMNMAX. They don't get processed, however.}
+        }
+
+
+        internal protected byte[] FindStartOfSound(int sound, ChunkType ct = ChunkType.MThd | ChunkType.FORM)
+        {
+            int size, pos;
+
+            var ptr = ScummEngine.Instance.ResourceManager.GetSound(sound);
+
+            if (ptr == null)
+            {
+                Debug.WriteLine("IMuseInternal::findStartOfSound(): Sound {0} doesn't exist", sound);
+                return null;
+            }
+
+            // Check for old-style headers first, like 'RO'
+            const ChunkType trFlag = ChunkType.MThd | ChunkType.FORM;
+            if (System.Text.Encoding.ASCII.GetString(ptr, 0, 3) == "ROL")
+                return ct == trFlag ? ptr : null;
+            if (System.Text.Encoding.ASCII.GetString(ptr, 4, 2) == "SO")
+            {
+                if (ct == trFlag)
+                {
+                    var tmp = new byte[ptr.Length - 4];
+                    Array.Copy(ptr, 4, tmp, 0, tmp.Length);
+                    return tmp;
+                }
+                return null;
+            }
+
+            var ids = new string[]
+            {
+                "MThd",
+                "FORM",
+                "MDhd",
+                "MDpg"
+            };
+
+            using (var ms = new MemoryStream(ptr))
+            {
+                var br = new BinaryReader(ms);
+                ms.Seek(4, SeekOrigin.Current);
+                size = (int)br.ReadUInt32BigEndian();
+                ms.Seek(4, SeekOrigin.Current);
+
+                // Okay, we're looking for one of those things: either
+                // an 'MThd' tag (for SMF), or a 'FORM' tag (for XMIDI).
+                size = 48; // Arbitrary; we should find our tag within the first 48 bytes of the resource
+                pos = 0;
+                while (pos < size)
+                {
+                    for (int i = 0; i < ids.Length; ++i)
+                    {
+                        var sig = br.ReadBytes(4);
+                        ms.Seek(-4, SeekOrigin.Current);
+                        if ((((int)ct) & (1 << i)) != 0 && (System.Text.Encoding.ASCII.GetString(sig) == ids[i]))
+                        {
+                            var tmp = new byte[ptr.Length - ms.Position];
+                            Array.Copy(ptr, ms.Position, tmp, 0, tmp.Length);
+                            return tmp;
+                        }
+                    }
+                    ++pos; // We could probably iterate more intelligently
+                    ms.Seek(1, SeekOrigin.Current);
+                }
+
+                if (ct == (ChunkType.MThd | ChunkType.FORM))
+                    Debug.WriteLine("IMuseInternal.FindStartOfSound(): Failed to align on sound {0}", sound);
+            }
+
+            return null;
+        }
+
+        internal protected bool IsMT32(int sound)
+        {
+            var ptr = ScummEngine.Instance.ResourceManager.GetSound(sound);
+            if (ptr == null)
+                return false;
+
+            var tag = System.Text.Encoding.ASCII.GetString(ptr, 0, 4);
+            switch (tag)
+            {
+                case "ADL ":
+                case "ASFX": // Special AD class for old AdLib sound effects
+                case "SPK ":
+                    return false;
+
+                case "AMI ":
+                case "ROL ":
+                    return true;
+
+                case "MAC ": // Occurs in the Mac version of FOA and MI2
+                    return false;
+
+                case "GMD ":
+                    return false;
+
+                case "MIDI": // Occurs in Sam & Max
+                    // HE games use Roland music
+                    if (ptr[8] == 'H' && ptr[9] == 'S')
+                        return true;
+                    else
+                        return false;
+            }
+
+            // Old style 'RO' has equivalent properties to 'ROL'
+            if (System.Text.Encoding.ASCII.GetString(ptr, 0, 2) == "RO")
+                return true;
+            // Euphony tracks show as 'SO' and have equivalent properties to 'ADL'
+            if (System.Text.Encoding.ASCII.GetString(ptr, 4, 2) == "SO")
+                return false;
+
+            Console.Error.WriteLine("Unknown music type: '{0}'", tag);
+
+            return false;
+        }
+
+        internal  protected bool IsMIDI(int sound)
+        {
+            var ptr = ScummEngine.Instance.ResourceManager.GetSound(sound);
+            if (ptr == null)
+                return false;
+
+            var tag = System.Text.Encoding.ASCII.GetString(ptr, 0, 4);
+            switch (tag)
+            {
+                case "ADL ":
+                case "ASFX": // Special AD class for old AdLib sound effects
+                case "SPK ":
+                    return false;
+
+                case "AMI ":
+                case "ROL ":
+                    return true;
+
+                case "MAC ": // Occurs in the Mac version of FOA and MI2
+                    return true;
+
+                case "GMD ":
+                case "MIDI": // Occurs in Sam & Max
+                    return true;
+            }
+
+            // Old style 'RO' has equivalent properties to 'ROL'
+            if (System.Text.Encoding.ASCII.GetString(ptr, 0, 2) == "RO")
+                return true;
+            // Euphony tracks show as 'SO' and have equivalent properties to 'ADL'
+            // FIXME: Right now we're pretending it's GM.
+            if (System.Text.Encoding.ASCII.GetString(ptr, 4, 2) == "SO")
+                return true;
+
+            Console.Error.WriteLine("Unknown music type: '{0}'", tag);
+
+            return false;
+        }
+
+        internal protected bool SupportsPercussion(int sound)
+        {
+            var ptr = ScummEngine.Instance.ResourceManager.GetSound(sound);
+            if (ptr == null)
+                return false;
+
+            var tag = System.Text.Encoding.ASCII.GetString(ptr, 0, 4);
+            switch (tag)
+            {
+                case "ADL ":
+                case "ASFX": // Special AD class for old AdLib sound effects
+                case "SPK ":
+                    return false;
+
+                case "AMI ":
+                case "ROL ":
+                    return true;
+
+                case "MAC ": // Occurs in the Mac version of FOA and MI2
+                    // This is MIDI, i.e. uses MIDI style program changes, but without a
+                    // special percussion channel.
+                    return false;
+
+                case "GMD ":
+                case "MIDI": // Occurs in Sam & Max
+                    return true;
+            }
+
+            // Old style 'RO' has equivalent properties to 'ROL'
+            if (System.Text.Encoding.ASCII.GetString(ptr, 0, 2) == "RO")
+                return true;
+            // Euphony tracks show as 'SO' and have equivalent properties to 'ADL'
+            // FIXME: Right now we're pretending it's GM.
+            if (System.Text.Encoding.ASCII.GetString(ptr, 4, 2) == "SO")
+                return true;
+
+            Console.Error.WriteLine("Unknown music type: '{0}'", tag);
+
+            return false;
+        }
+
+        protected int GetQueueSoundStatus(int sound)
+        {
+            var j = _queue_pos;
+            var i = _queue_end;
+
+            while (i != j)
+            {
+                var a = _cmd_queue[i].array;
+                if (a[0] == CommandId && a[1] == 8 && a[2] == sound)
+                    return 2;
+                i = (uint)((i + 1) % _cmd_queue.Length);
+            }
+
+            for (i = 0; i < _deferredCommands.Length; ++i)
+            {
+                if (_deferredCommands[i].TimeLeft != 0 && _deferredCommands[i].A == 8 &&
+                    _deferredCommands[i].B == sound)
+                {
+                    return 2;
+                }
+            }
+
+            return 0;
+        }
+
+        void IIMuse.HandleMarker(int id, int data)
+        {
+            HandleMarker(id, data);
+        }
+
+        protected void HandleMarker(int id, int data)
+        {
+            if ((_queue_end == _queue_pos) || (_queue_adding && _queue_sound == id && data == _queue_marker))
+                return;
+
+            var p = _cmd_queue[_queue_end].array;
+            if (p[0] != TriggerId || id != p[1] || data != p[2])
+                return;
+
+            _trigger_count--;
+            _queue_cleared = false;
+            _queue_end = (uint)((_queue_end + 1) % _cmd_queue.Length);
+
+            while (_queue_end != _queue_pos && _cmd_queue[_queue_end].array[0] == CommandId && !_queue_cleared)
+            {
+                p = _cmd_queue[_queue_end].array;
+                DoCommandInternal(p[1], p[2], p[3], p[4], p[5], p[6], p[7], 0);
+                _queue_end = (uint)((_queue_end + 1) % _cmd_queue.Length);
+            }
+        }
+
+        internal protected int GetChannelVolume(uint a)
+        {
+            if (a < 8)
+                return _channel_volume_eff[a];
+            return (_master_volume * _music_volume / 255) / 2;
+        }
+        //            protected void initMidiDriver(TimerCallbackInfo *info);
+        protected void InitGM(MidiDriver midi)
+        {
+            throw new NotImplementedException();
+        }
+
+        protected void InitMT32(MidiDriver midi)
+        {
+            throw new NotImplementedException();
+        }
+
+        protected void InitPlayers()
+        {
+            for (var i = 0; i < _players.Length; i++)
+            {
+                var player = _players[i];
+                player._se = this;
+                player.Clear();
+            }
+        }
+
+        protected void InitParts()
+        {
+            for (var i = 0; i < _parts.Length; i++)
+            {
+                var part = _parts[i];
+                part.Init();
+                part.Se = this;
+                part.Slot = i;
+            }
+        }
+
+        protected void InitQueue()
+        {
+            _queue_adding = false;
+            _queue_pos = 0;
+            _queue_end = 0;
+            _trigger_count = 0;
+        }
+
+        protected void SequencerTimers(MidiDriver midi)
+        {
+            for (var i = _players.Length; i != 0; i--)
+            {
+                var player = _players[i - 1];
+                if (player.IsActive && player.MidiDriver == midi)
+                {
+                    player.OnTimer();
+                }
+            }
+        }
+
+        internal protected MidiDriver GetBestMidiDriver(int sound)
+        {
+            MidiDriver driver = null;
+
+            if (IsMIDI(sound))
+            {
+                if (_midi_native != null)
+                {
+                    driver = _midi_native;
+                }
+                else
+                {
+                    // Route it through AdLib anyway.
+                    driver = _midi_adlib;
+                }
+            }
+            else
+            {
+                driver = _midi_adlib;
+            }
+            return driver;
+        }
+
+        protected Player AllocatePlayer(byte priority)
+        {
+            Player best = null;
+            byte bestpri = 255;
+
+            for (var i = 0; i < _player_limit; i++)
+            {
+                var player = _players[i];
+                if (!player.IsActive)
+                    return player;
+                if (player.Priority < bestpri)
+                {
+                    best = player;
+                    bestpri = player.Priority;
+                }
+            }
+
+            if (bestpri < priority || _recycle_players)
+                return best;
+
+            Debug.WriteLine("Denying player request");
+            return null;
+        }
+
+        internal protected Part AllocatePart(byte pri, MidiDriver midi)
+        {
+            Part best = null;
+
+            for (var i = 0; i < _parts.Length; i++)
+            {
+                var part = _parts[i];
+                if (part.Player != null)
+                {
+                    _parts[i] = new Part();
+                    _parts[i].Setup(part.Player);
+                    return _parts[i];
+                }
+                if (pri >= part.PriorityEffective)
+                {
+                    pri = (byte)part.PriorityEffective;
+                    best = part;
+                }
+            }
+
+            if (best != null)
+            {
+                best.Uninit();
+                ReallocateMidiChannels(midi);
+            }
+            else
+            {
+                Debug.WriteLine("Denying part request");
+            }
+            return best;
+        }
+
+        protected int ImSetTrigger(int sound, int id, int a, int b, int c, int d, int e, int f, int g, int h)
+        {
+            throw new NotImplementedException("Sam & Max: ImSetTrigger");
+//            // Sam & Max: ImSetTrigger.
+//            // Sets a trigger for a particular player and
+//            // marker ID, along with doCommand parameters
+//            // to invoke at the marker. The marker is
+//            // represented by MIDI SysEx block 00 xx(F7)
+//            // where "xx" is the marker ID.
+//            uint16 oldest_trigger = 0;
+//            ImTrigger* oldest_ptr = NULL;
+//
+//            int i;
+//            ImTrigger* trig = _snm_triggers;
+//            for (i = ARRAYSIZE(_snm_triggers); i; --i, ++trig)
+//            {
+//                if (!trig->id)
+//                    break;
+//                // We used to only compare 'id' and 'sound' here, but at least
+//                // at the Dino Bungie Memorial that causes the music to stop
+//                // after getting the T-Rex tooth. See bug #888161.
+//                if (trig->id == id && trig->sound == sound && trig->command[0] == a)
+//                    break;
+//
+//                uint16 diff;
+//                if (trig->expire <= _snm_trigger_index)
+//                    diff = _snm_trigger_index - trig->expire;
+//                else
+//                    diff = 0x10000 - trig->expire + _snm_trigger_index;
+//
+//                if (!oldest_ptr || oldest_trigger < diff)
+//                {
+//                    oldest_ptr = trig;
+//                    oldest_trigger = diff;
+//                }
+//            }
+//
+//            // If we didn't find a trigger, see if we can expire one.
+//            if (!i)
+//            {
+//                if (!oldest_ptr)
+//                    return -1;
+//                trig = oldest_ptr;
+//            }
+//
+//            trig->id = id;
+//            trig->sound = sound;
+//            trig->expire = (++_snm_trigger_index & 0xFFFF);
+//            trig->command[0] = a;
+//            trig->command[1] = b;
+//            trig->command[2] = c;
+//            trig->command[3] = d;
+//            trig->command[4] = e;
+//            trig->command[5] = f;
+//            trig->command[6] = g;
+//            trig->command[7] = h;
+//
+//            // If the command is to start a sound, stop that sound if it's already playing.
+//            // This fixes some carnival music problems.
+//            // NOTE: We ONLY do this if the sound that will trigger the command is actually
+//            // playing. Otherwise, there's a problem when exiting and re-entering the
+//            // Bumpusville mansion. Ref Bug #780918.
+//            if (trig->command[0] == 8 && getSoundStatus_internal(trig->command[1], true) && getSoundStatus_internal(sound, true))
+//                stopSound_internal(trig->command[1]);
+//            return 0;
+        }
+
+        protected int ImClearTrigger(int sound, int id)
+        {
+            int count = 0;
+            foreach (var trig in _snm_triggers)
+            {
+                if ((sound == -1 || trig.Sound == sound) && trig.Id != 0 && (id == -1 || trig.Id == id))
+                {
+                    trig.Sound = trig.Id = 0;
+                    ++count;
+                }
+            }
+            return (count > 0) ? 0 : -1;
+        }
+
+        internal protected int ImFireAllTriggers(int sound)
+        {
+            if (sound == 0)
+                return 0;
+            int count = 0;
+            foreach (var trig in _snm_triggers)
+            {
+                if (trig.Sound == sound)
+                {
+                    trig.Sound = trig.Id = 0;
+                    DoCommandInternal(8, trig.Command);
+                    ++count;
+                }
+            }
+            return (count > 0) ? 0 : -1;
+        }
+
+        protected void AddDeferredCommand(int time, int a, int b, int c, int d, int e, int f)
+        {
+            var cmd = _deferredCommands.FirstOrDefault(o => o.TimeLeft == 0);
+
+            if (cmd != null)
+            {
+                cmd.TimeLeft = (uint)time * 10000;
+                cmd.A = a;
+                cmd.B = b;
+                cmd.C = c;
+                cmd.D = d;
+                cmd.E = e;
+                cmd.F = f;
+            }
+        }
+
+        protected void HandleDeferredCommands(MidiDriver midi)
+        {
+            uint advance = midi.BaseTempo;
+
+            foreach (var cmd in _deferredCommands)
+            {
+                if (cmd.TimeLeft == 0)
+                    continue;
+                if (cmd.TimeLeft <= advance)
+                {
+                    DoCommandInternal(cmd.A, cmd.B, cmd.C, cmd.D, cmd.E, cmd.F, 0, 0);
+                    cmd.TimeLeft = advance;
+                }
+                cmd.TimeLeft -= advance;
+            }
+        }
+
+        protected int EnqueueCommand(int a, int b, int c, int d, int e, int f, int g)
+        {
+            var i = _queue_pos;
+
+            if (i == _queue_end)
+                return -1;
+
+            if (a == -1)
+            {
+                _queue_adding = false;
+                _trigger_count++;
+                return 0;
+            }
+
+            var p = _cmd_queue[_queue_pos].array;
+            p[0] = CommandId;
+            p[1] = a;
+            p[2] = b;
+            p[3] = c;
+            p[4] = d;
+            p[5] = e;
+            p[6] = f;
+            p[7] = g;
+
+            i = (uint)((i + 1) % _cmd_queue.Length);
+
+            if (_queue_end != i)
+            {
+                _queue_pos = i;
+                return 0;
+            }
+            else
+            {
+                _queue_pos = (uint)((i - 1) % _cmd_queue.Length);
+                return -1;
+            }
+        }
+
+        protected int EnqueueTrigger(int sound, int marker)
+        {
+            var pos = _queue_pos;
+
+            var p = _cmd_queue[pos].array;
+            p[0] = TriggerId;
+            p[1] = sound;
+            p[2] = marker;
+
+            pos = (uint)((pos + 1) % _cmd_queue.Length);
+            if (_queue_end == pos)
+            {
+                _queue_pos = (uint)((pos - 1) % _cmd_queue.Length);
+                return -1;
+            }
+
+            _queue_pos = pos;
+            _queue_adding = true;
+            _queue_sound = (uint)sound;
+            _queue_marker = (byte)marker;
+            return 0;
+        }
+
+        int IIMuse.ClearQueue()
+        {
+            return ClearQueue();
+        }
+
+        protected int ClearQueue()
+        {
+            _queue_adding = false;
+            _queue_cleared = true;
+            _queue_pos = 0;
+            _queue_end = 0;
+            _trigger_count = 0;
+            return 0;
+        }
+
+        protected int QueryQueue(int param)
+        {
+            switch (param)
+            {
+                case 0: // Get trigger count
+                    return _trigger_count;
+                case 1: // Get trigger type
+                    if (_queue_end == _queue_pos)
+                        return -1;
+                    return _cmd_queue[_queue_end].array[1];
+                case 2: // Get trigger sound
+                    if (_queue_end == _queue_pos)
+                        return 0xFF;
+                    return _cmd_queue[_queue_end].array[2];
+                default:
+                    return -1;
+            }
+        }
+
+        protected Player FindActivePlayer(int id)
+        {
+            foreach (var player in _players)
+            {
+                if (player.IsActive && player.Id == id)
+                    return player;
+            }
+            return null;
+        }
+
+        protected int GetVolchanEntry(uint a)
+        {
+            if (a < 8)
+                return _volchan_table[a];
+            return -1;
+        }
+
+        protected int SetVolchanEntry(int sound, uint volchan)
+        {
+            var r = GetVolchanEntry(volchan);
+            if (r == -1)
+                return -1;
+
+            if (r >= 8)
+            {
+                var player = FindActivePlayer(sound);
+                if (player != null && player.VolChan != volchan)
+                {
+                    player.VolChan = volchan;
+                    player.SetVolume(player.Volume);
+                    return 0;
+                }
+                return -1;
+            }
+            else
+            {
+                Player best = null;
+                var num = 0;
+                Player sameid = null;
+                foreach (var player in _players)
+                {
+                    if (player.IsActive)
+                    {
+                        if (player.VolChan == volchan)
+                        {
+                            num++;
+                            if (best == null || player.Priority <= best.Priority)
+                                best = player;
+                        }
+                        else if (player.Id == sound)
+                        {
+                            sameid = player;
+                        }
+                    }
+                }
+                if (sameid == null)
+                    return -1;
+                var p = _players.LastOrDefault();
+                if (num >= r)
+                    best.Clear();
+                p.VolChan = volchan;
+                p.SetVolume(p.Volume);
+                return 0;
+            }
+        }
+
+        protected int SetChannelVolume(uint chan, uint vol)
+        {
+            if (chan >= 8 || vol > 127)
+                return -1;
+
+            _channel_volume[chan] = (ushort)vol;
+            _channel_volume_eff[chan] = (ushort)(_master_volume * _music_volume * vol / 255 / 255);
+            UpdateVolumes();
+            return 0;
+        }
+
+        protected void UpdateVolumes()
+        {
+            foreach (var player in _players)
+            {
+                if (player.IsActive)
+                    player.SetVolume(player.Volume);
+            }
+        }
+
+        protected int SetVolchan(int a, int b)
+        {
+            if (a >= 8)
+                return -1;
+            _volchan_table[a] = (ushort)b;
+            return 0;
+        }
+
+        protected void FixPartsAfterLoad()
+        {
+            foreach (var part in _parts)
+                if (part.Player != null)
+                    part.FixAfterLoad();
+        }
+
+        protected void FixPlayersAfterLoad(ScummEngine scumm)
+        {
+            foreach (var player in _players)
+            {
+                if (player.IsActive)
+                {
+//                        scumm.->getResourceAddress(rtSound, player->getID());
+                    player.FixAfterLoad();
+                }
+            }
+        }
+
+        protected int SetImuseMasterVolume(uint vol)
+        {
+            if (vol > 255)
+                vol = 255;
+            if (_master_volume == vol)
+                return 0;
+            _master_volume = (byte)vol;
+            vol = (uint)_master_volume * _music_volume / 255;
+            for (var i = 0; i < _channel_volume.Length; i++)
+            {
+                _channel_volume_eff[i] = (ushort)(_channel_volume[i] * vol / 255);
+            }
+            if (!_paused)
+                UpdateVolumes();
+            return 0;
+        }
+
+        internal protected void ReallocateMidiChannels(MidiDriver midi)
+        {
+            Part part, hipart;
+            byte hipri, lopri;
+
+            while (true)
+            {
+                hipri = 0;
+                hipart = null;
+                for (var i = 0; i < 32; i++)
+                {
+                    part = _parts[i];
+                    if (part.Player != null && part.Player.MidiDriver == midi &&
+                        !part.Percussion && part.On &&
+                        part.MidiChannel == null && part.PriorityEffective >= hipri)
+                    {
+                        hipri = (byte)part.PriorityEffective;
+                        hipart = part;
+                    }
+                }
+
+                if (hipart == null)
+                    return;
+
+                if ((hipart.MidiChannel = midi.AllocateChannel()) == null)
+                {
+                    lopri = 255;
+                    Part lopart = null;
+                    for (var i = 0; i < 32; i++)
+                    {
+                        part = _parts[i];
+                        if (part.MidiChannel != null && part.MidiChannel.Device == midi && part.PriorityEffective <= lopri)
+                        {
+                            lopri = (byte)part.PriorityEffective;
+                            lopart = part;
+                        }
+                    }
+
+                    if (lopart == null || lopri >= hipri)
+                        return;
+                    lopart.Off();
+
+                    if ((hipart.MidiChannel = midi.AllocateChannel()) == null)
+                        return;
+                }
+                hipart.SendAll();
+            }
+        }
+
+        protected void SetGlobalInstrument(byte slot, byte[] data)
+        {
+            if (slot < 32)
+            {
+                if (_pcSpeaker)
+                {
+                    _global_instruments[slot].PcSpk(data);
+                }
+                else
+                    _global_instruments[slot].Adlib(data);
+            }
+        }
+
+        internal protected void CopyGlobalInstrument(byte slot, Instrument dest)
+        {
+            if (slot >= 32)
+                return;
+
+            // Both the AdLib code and the PC Speaker code use an all zero instrument
+            // as default in the original, thus we do the same.
+            // PC Speaker instrument size is 23, while AdLib instrument size is 30.
+            // Thus we just use a 30 byte instrument data array as default.
+            byte[] defaultInstr = new byte[30];
+
+            if (_global_instruments[slot].IsValid)
+            {
+                // In case we have an valid instrument set up, copy it to the part.
+                _global_instruments[slot].CopyTo(dest);
+            }
+            else if (_pcSpeaker)
+            {
+                Debug.WriteLine("Trying to use non-existent global PC Speaker instrument {0}", slot);
+                dest.PcSpk(defaultInstr);
+            }
+            else
+            {
+                Debug.WriteLine("Trying to use non-existent global AdLib instrument {0}", slot);
+                dest.Adlib(defaultInstr);
+            }
+        }
+
+        internal protected bool IsNativeMT32{ get { return _native_mt32; } }
+    
+        // Internal mutex-free versions of the IMuse and MusicEngine methods.
+        protected bool StartSoundInternal(int sound, int offset = 0)
+        {
+            // Do not start a sound if it is already set to start on an ImTrigger
+            // event. This fixes carnival music problems where a sound has been set
+            // to trigger at the right time, but then is started up immediately
+            // anyway, only to be restarted later when the trigger occurs.
+            //
+            // However, we have to make sure the sound with the trigger is actually
+            // playing, otherwise the music may stop when Sam and Max are thrown
+            // out of Bumpusville, because entering the mansion sets up a trigger
+            // for a sound that isn't necessarily playing. This is somewhat related
+            // to bug #780918.
+
+            foreach (var trigger in _snm_triggers)
+            {
+                if (trigger.Sound != 0 && trigger.Id != 0 && trigger.Command[0] == 8 && trigger.Command[1] == sound && GetSoundStatusInternal(trigger.Sound, true) != 0)
+                    return false;
+            }
+
+            var ptr = FindStartOfSound(sound);
+            if (ptr == null)
+            {
+                Debug.WriteLine("IMuseInternal::startSound(): Couldn't find sound {0}", sound);
+                return false;
+            }
+
+            // Check which MIDI driver this track should use.
+            // If it's NULL, it ain't something we can play.
+            var driver = GetBestMidiDriver(sound);
+            if (driver == null)
+                return false;
+
+            // If the requested sound is already playing, start it over
+            // from scratch. This was originally a hack to prevent Sam & Max
+            // iMuse messiness while upgrading the iMuse engine, but it
+            // is apparently necessary to deal with fade-and-restart
+            // race conditions that were observed in MI2. Reference
+            // Bug #590511 and Patch #607175 (which was reversed to fix
+            // an FOA regression: Bug #622606).
+            var player = FindActivePlayer(sound);
+            if (player == null)
+            {
+                ptr = FindStartOfSound(sound, ChunkType.MDhd);
+                int size = 128;
+                if (ptr != null)
+                {
+                    using (var br = new BinaryReader(new MemoryStream(ptr)))
+                    {
+                        br.BaseStream.Seek(4, SeekOrigin.Begin);
+                        var tmp = br.ReadUInt32BigEndian();
+                        size = tmp != 0 && ptr[10] != 0 ? ptr[10] : 128;
+                    }
+                }
+                player = AllocatePlayer((byte)size);
+            }
+
+            if (player == null)
+                return false;
+
+            // WORKAROUND: This is to work around a problem at the Dino Bungie
+            // Memorial.
+            //
+            // There are three pieces of music involved here:
+            //
+            // 80 - Main theme (looping)
+            // 81 - Music when entering Rex's and Wally's room (not looping)
+            // 82 - Music when listening to Rex or Wally
+            //
+            // When entering, tune 81 starts, tune 80 is faded down (not out) and
+            // a trigger is set in tune 81 to fade tune 80 back up.
+            //
+            // When listening to Rex or Wally, tune 82 is started, tune 81 is faded
+            // out and tune 80 is faded down even further.
+            //
+            // However, when tune 81 is faded out its trigger will cause tune 80 to
+            // fade back up, resulting in two tunes being played simultaneously at
+            // full blast. It's no use trying to keep tune 81 playing at volume 0.
+            // It doesn't loop, so eventually it will terminate on its own.
+            //
+            // I don't know how the original interpreter handled this - or even if
+            // it handled it at all - but it looks like sloppy scripting to me. Our
+            // workaround is to clear the trigger if the player listens to Rex or
+            // Wally before tune 81 has finished on its own.
+
+            if (_game_id == GameId.SamNMax && sound == 82 && GetSoundStatusInternal(81, false) != 0)
+                ImClearTrigger(81, 1);
+
+            player.Clear();
+            player.SetOffsetNote(offset);
+            return player.StartSound(sound, driver);
+        }
+
+        protected int StopSoundInternal(int sound)
+        {
+            int r = -1;
+            var player = FindActivePlayer(sound);
+            if (player != null)
+            {
+                player.Clear();
+                r = 0;
+            }
+            return r;
+        }
+
+        protected int StopAllSoundsInternal()
+        {
+            ClearQueue();
+            foreach (var player in _players)
+            {
+                if (player.IsActive)
+                    player.Clear();
+            }
+            return 0;
+        }
+
+        protected int GetSoundStatusInternal(int sound, bool ignoreFadeouts)
+        {
+            foreach (var player in _players)
+            {
+                if (player.IsActive && (!ignoreFadeouts || !player.IsFadingOut))
+                {
+                    if (sound == -1)
+                        return player.Id;
+                    else if (player.Id == sound)
+                        return 1;
+                }
+            }
+            return (sound == -1) ? 0 : GetQueueSoundStatus(sound);
+        }
+
+        protected int DoCommandInternal(int a, int b, int c, int d, int e, int f, int g, int h)
+        {
+            var args = new int[8]{ a, b, c, d, e, f, g, h };
+            return DoCommandInternal(8, args);
+        }
+
+        protected int DoCommandInternal(int numargs, int[] a)
+        {
+            if (numargs < 1)
+                return -1;
+
+            int i;
+            byte cmd = (byte)(a[0] & 0xFF);
+            byte param = (byte)(a[0] >> 8);
+            Player player = null;
+
+            if (!_initialized && (cmd != 0 || param != 0))
+                return -1;
+
+            {
+                string str = "doCommand - ";
+                str += string.Format("{0} ({1}/{2})", a[0], (int)param, (int)cmd);
+                for (i = 1; i < numargs; ++i)
+                    str += string.Format(", {0}", a[i]);
+                Debug.WriteLine(str);
+            }
+
+            if (param == 0)
+            {
+                switch (cmd)
+                {
+                    case 6:
+                        if (a[1] > 127)
+                            return -1;
+                        else
+                        {
+                            Debug.WriteLine("IMuse doCommand(6) - setImuseMasterVolume ({0})", a[1]);
+                            return SetImuseMasterVolume((uint)((a[1] << 1) | (a[1] != 0 ? 0 : 1))); // Convert from 0-127 to 0-255
+                        }
+                    case 7:
+                        Debug.WriteLine("IMuse doCommand(7) - getMasterVolume ({0})", a[1]);
+                        return _master_volume / 2; // Convert from 0-255 to 0-127
+                    case 8:
+                        return StartSoundInternal(a[1]) ? 0 : -1;
+                    case 9:
+                        return StopSoundInternal(a[1]);
+                    case 10: // FIXME: Sam and Max - Not sure if this is correct
+                        return StopAllSoundsInternal();
+                    case 11:
+                        return StopAllSoundsInternal();
+                    case 12:
+                            // Sam & Max: Player-scope commands
+                        player = FindActivePlayer(a[1]);
+                        if (player == null)
+                            return -1;
+
+                        switch (a[3])
+                        {
+                            case 6:
+                                    // Set player volume.
+                                return player.SetVolume((byte)a[4]);
+                            default:
+                                Console.Error.WriteLine("IMuseInternal::doCommand(12) unsupported sub-command {0}", a[3]);
+                                break;
+                        }
+                        return -1;
+                    case 13:
+                        return GetSoundStatusInternal(a[1], true);
+                    case 14:
+                            // Sam and Max: Parameter fade
+                        player = FindActivePlayer(a[1]);
+                        if (player != null)
+                            return player.AddParameterFader((ParameterFaderType)a[3], a[4], a[5]);
+                        return -1;
+
+                    case 15:
+                            // Sam & Max: Set hook for a "maybe" jump
+                        player = FindActivePlayer(a[1]);
+                        if (player != null)
+                        {
+                            player.SetHook(0, (byte)a[3], 0);
+                            return 0;
+                        }
+                        return -1;
+                    case 16:
+                        Debug.WriteLine("IMuse doCommand(16) - set_volchan ({0}, {1})", a[1], a[2]);
+                        return SetVolchan(a[1], a[2]);
+                    case 17:
+                        if (_game_id != GameId.SamNMax)
+                        {
+                            Debug.WriteLine("IMuse doCommand(17) - set_channel_volume ({0}, {1})", a[1], a[2]);
+                            return SetChannelVolume((uint)a[1], (uint)a[2]);
+                        }
+                        else
+                        {
+                            if (a[4] != 0)
+                            {
+                                int[] b = new int[16];
+                                for (i = 0; i < numargs; ++i)
+                                    b[i] = a[i];
+                                return ImSetTrigger(b[1], b[3], b[4], b[5], b[6], b[7], b[8], b[9], b[10], b[11]);
+                            }
+                            else
+                            {
+                                return ImClearTrigger(a[1], a[3]);
+                            }
+                        }
+                    case 18:
+                        if (_game_id != GameId.SamNMax)
+                        {
+                            return SetVolchanEntry(a[1], (uint)a[2]);
+                        }
+                        else
+                        {
+                            // Sam & Max: ImCheckTrigger.
+                            // According to Mike's notes to Ender,
+                            // this function returns the number of triggers
+                            // associated with a particular player ID and
+                            // trigger ID.
+                            a[0] = 0;
+                            for (i = 0; i < _snm_triggers.Length; ++i)
+                            {
+                                if (_snm_triggers[i].Sound == a[1] && _snm_triggers[i].Id != 0 &&
+                                    (a[3] == -1 || _snm_triggers[i].Id == a[3]))
+                                {
+                                    ++a[0];
+                                }
+                            }
+                            return a[0];
+                        }
+                    case 19:
+                            // Sam & Max: ImClearTrigger
+                            // This should clear a trigger that's been set up
+                            // with ImSetTrigger(cmd == 17). Seems to work....
+                        return ImClearTrigger(a[1], a[3]);
+                    case 20:
+                            // Sam & Max: Deferred Command
+                        AddDeferredCommand(a[1], a[2], a[3], a[4], a[5], a[6], a[7]);
+                        return 0;
+                    case 2:
+                    case 3:
+                        return 0;
+                    default:
+                        Console.Error.WriteLine("doCommand(%d [%d/%d], %d, %d, %d, %d, %d, %d, %d) unsupported", a[0], param, cmd, a[1], a[2], a[3], a[4], a[5], a[6], a[7]);
+                        break;
+                }
+            }
+            else if (param == 1)
+            {
+                if (((1 << cmd) & 0x783FFF) != 0)
+                {
+                    player = FindActivePlayer(a[1]);
+                    if (player == null)
+                        return -1;
+                    if (((1 << cmd) & (1 << 11 | 1 << 22)) != 0)
+                    {
+                        Contract.Assert(a[2] >= 0 && a[2] <= 15);
+                        // TODO: vs: check if it's correct...
+                        player = player.GetPart((byte)a[2]).Player;
+                        if (player == null)
+                            return -1;
+                    }
+                }
+
+                switch (cmd)
+                {
+                    case 0:
+                        if (_game_id == GameId.SamNMax)
+                        {
+                            if (a[3] == 1) // Measure number
+                                        return (int)(((player.GetBeatIndex() - 1) >> 2) + 1);
+                            else if (a[3] == 2) // Beat number
+                                        return (int)player.GetBeatIndex();
+                            return -1;
+                        }
+                        else
+                        {
+                            return player.GetParam(a[2], (byte)a[3]);
+                        }
+                    case 1:
+                        if (_game_id == GameId.SamNMax)
+                        {
+                            // FIXME: Could someone verify this?
+                            //
+                            // This jump instruction is known to be used in
+                            // the following cases:
+                            //
+                            // 1) Going anywhere on the USA map
+                            // 2) Winning the Wak-A-Rat game
+                            // 3) Losing or quitting the Wak-A-Rat game
+                            // 4) Conroy hitting Max with a golf club
+                            //
+                            // For all these cases the position parameters
+                            // are always the same: 2, 1, 0, 0.
+                            //
+                            // 5) When leaving the bigfoot party. The
+                            //    position parameters are: 3, 4, 300, 0
+                            // 6) At Frog Rock, when the UFO appears. The
+                            //    position parameters are: 10, 4, 400, 1
+                            //
+                            // The last two cases used to be buggy, so I
+                            // have made a change to how the last two
+                            // position parameters are handled. I still do
+                            // not know if it's correct, but it sounds
+                            // good to me at least.
+
+                            Debug.WriteLine("DoCommand({0} [{1}/{2}], {3}, {4}, {5}, {6}, {7}, {8}, {9})", a[0], param, cmd, a[1], a[2], a[3], a[4], a[5], a[6], a[7]);
+                            player.Jump((uint)(a[3] - 1), (uint)((a[4] - 1) * 4 + a[5]), (uint)(a[6] + ((a[7] * player.GetTicksPerBeat()) >> 2)));
+                        }
+                        else
+                            player.SetPriority(a[2]);
+                        return 0;
+                    case 2:
+                        return player.SetVolume((byte)a[2]);
+                    case 3:
+                        player.SetPan(a[2]);
+                        return 0;
+                    case 4:
+                        return player.SetTranspose((byte)a[2], a[3]);
+                    case 5:
+                        player.SetDetune(a[2]);
+                        return 0;
+                    case 6:
+                            // WORKAROUND for bug #1324106. When playing the
+                            // "flourishes" as Rapp's body appears from his ashes,
+                            // MI2 sets up triggers to pause the music, in case the
+                            // animation plays too slowly, and then the music is
+                            // manually unpaused for the next part of the music.
+                            //
+                            // In ScummVM, the animation finishes slightly too
+                            // quickly, and the pause command is run *after* the
+                            // unpause command. So we work around it by ignoring
+                            // all attempts at pausing this particular sound.
+                            //
+                            // I could have sworn this wasn't needed after the
+                            // recent timer change, but now it looks like it's
+                            // still needed after all.
+                        if (_game_id != GameId.Monkey2 || player.Id != 183 || a[2] != 0)
+                        {
+                            player.SetSpeed((byte)a[2]);
+                        }
+                        return 0;
+                    case 7:
+                        return player.Jump((uint)a[2], (uint)a[3], (uint)a[4]) ? 0 : -1;
+                    case 8:
+                        return player.Scan((uint)a[2], (uint)a[3], (uint)a[4]);
+                    case 9:
+                        return player.SetLoop((uint)a[2], (uint)a[3], (uint)a[4], (uint)a[5], (uint)a[6]) ? 0 : -1;
+                    case 10:
+                        player.ClearLoop();
+                        return 0;
+                    case 11:
+                            // TODO: vs: check if it's correct...
+//                        ((Part)player).SetOnOff(a[3] != 0);
+                        player.Part.SetOnOff(a[3] != 0);
+                        return 0;
+                    case 12:
+                        return player.SetHook((byte)a[2], (byte)a[3], (byte)a[4]);
+                    case 13:
+                        return player.AddParameterFader(ParameterFaderType.Volume, a[2], a[3]);
+                    case 14:
+                        return EnqueueTrigger(a[1], a[2]);
+                    case 15:
+                        return EnqueueCommand(a[1], a[2], a[3], a[4], a[5], a[6], a[7]);
+                    case 16:
+                        return ClearQueue();
+                    case 19:
+                        return player.GetParam(a[2], (byte)a[3]);
+                    case 20:
+                        return player.SetHook((byte)a[2], (byte)a[3], (byte)a[4]);
+                    case 21:
+                        return -1;
+                    case 22:
+                            // TODO: vs: check if it's correct
+//                        ((Part)player).Volume = a[3];
+                        player.Part.Volume = a[3];
+                        return 0;
+                    case 23:
+                        return QueryQueue(a[1]);
+                    case 24:
+                        return 0;
+                    default:
+                        Console.Error.WriteLine("DoCommand({0} [{1}/{2}], {3}, {4}, {5}, {6}, {7}, {8}, {9}) unsupported", a[0], param, cmd, a[1], a[2], a[3], a[4], a[5], a[6], a[7]);
+                        return -1;
+                }
+            }
+
+            return -1;
+        }
+    
+        // IMuse interface
+        public void Pause(bool paused)
+        {
+            lock (_mutex)
+            {
+                if (_paused == paused)
+                    return;
+                int vol = _music_volume;
+                if (paused)
+                    _music_volume = 0;
+                UpdateVolumes();
+                _music_volume = (byte)vol;
+
+                // Fix for Bug #817871. The MT-32 apparently fails
+                // sometimes to respond to a channel volume message
+                // (or only uses it for subsequent note events).
+                // The result is hanging notes on pause. Reportedly
+                // happens in the original distro, too. To fix that,
+                // just send AllNotesOff to the channels.
+                if (_midi_native != null && _native_mt32)
+                {
+                    for (int i = 0; i < 16; ++i)
+                        _midi_native.Send((byte)(123 << 8 | 0xB0 | i));
+                }
+
+                _paused = paused;
+            }
+        }
+        //            public int save_or_load(Serializer *ser, ScummEngine *scumm, bool fixAfterLoad = true);
+        public bool GetSoundActive(int sound)
+        {
+            lock (_mutex)
+            {
+                return GetSoundStatusInternal(sound, false) != 0;
+            }
+        }
+
+        public int DoCommand(int numargs, int[] args)
+        {
+            lock (_mutex)
+            {
+                return DoCommandInternal(numargs, args);
+            }
+        }
+
+        public uint Property(ImuseProperty prop, uint value)
+        {
+            lock (_mutex)
+            {
+                switch (prop)
+                {
+                    case ImuseProperty.TempoBase:
+                    // This is a specified as a percentage of normal
+                    // music speed. The number must be an integer
+                    // ranging from 50 to 200(for 50% to 200% normal speed).
+                        if (value >= 50 && value <= 200)
+                            TempoFactor = (int)value;
+                        break;
+
+                    case ImuseProperty.NativeMt32:
+                        _native_mt32 = (value > 0);
+                        Instrument.NativeMT32(_native_mt32);
+                        if (_midi_native != null && _native_mt32)
+                            InitMT32(_midi_native);
+                        break;
+
+                    case ImuseProperty.Gs:
+                        _enable_gs = (value > 0);
+
+                    // GS Mode emulates MT-32 on a GS device, so _native_mt32 should always be true
+                        if (_midi_native != null && _enable_gs)
+                        {
+                            _native_mt32 = true;
+                            InitGM(_midi_native);
+                        }
+                        break;
+
+                    case ImuseProperty.LimitPlayers:
+                        if (value > 0 && value <= _players.Length)
+                            _player_limit = (int)value;
+                        break;
+
+                    case ImuseProperty.RecyclePlayers:
+                        _recycle_players = (value != 0);
+                        break;
+
+                    case ImuseProperty.GameId:
+                        _game_id = (GameId)value;
+                        break;
+
+                    case ImuseProperty.PcSpeaker:
+                        _pcSpeaker = (value != 0);
+                        break;
+                }
+
+                return 0;
+            }
+        }
+
+        public virtual void AddSysexHandler(byte mfgID, SysExFunc handler)
+        {
+            // TODO: Eventually support multiple sysEx handlers and pay
+            // attention to the client-supplied manufacturer ID.
+            lock (_mutex)
+            {
+                Sysex = handler;
+            }
+        }
+
+    
+        public void StartSoundWithNoteOffset(int sound, int offset)
+        {
+            lock (_mutex)
+            {
+                StartSoundInternal(sound, offset);
+            }
+        }
+    
+        // MusicEngine interface
+        public void SetMusicVolume(int vol)
+        {
+            lock (_mutex)
+            {
+                if (vol > 255)
+                    vol = 255;
+                if (_music_volume == vol)
+                    return;
+                _music_volume = (byte)vol;
+                vol = _master_volume * _music_volume / 255;
+                for (var i = 0; i < _channel_volume.Length; i++)
+                {
+                    _channel_volume_eff[i] = (ushort)(_channel_volume[i] * vol / 255);
+                }
+                if (!_paused)
+                    UpdateVolumes();
+            }
+        }
+
+        public void StartSound(int sound)
+        {
+            lock (_mutex)
+            {
+                StartSoundInternal(sound);
+            }
+        }
+
+        public void StopSound(int sound)
+        {
+            lock (_mutex)
+            {
+                StopSoundInternal(sound);
+            }
+        }
+
+        public void StopAllSounds()
+        {
+            lock (_mutex)
+            {
+                StopAllSoundsInternal();
+            }
+        }
+
+        public int GetSoundStatus(int sound)
+        {
+            lock (_mutex)
+            {
+                return GetSoundStatusInternal(sound, true);
+            }
+        }
+
+        public int GetMusicTimer()
+        {
+            lock (_mutex)
+            {
+                int best_time = 0;
+                foreach (var player in _players)
+                {
+                    if (player.IsActive)
+                    {
+                        int timer = player.GetMusicTimer();
+                        if (timer > best_time)
+                            best_time = timer;
+                    }
+                }
+                return best_time;
+            }
+        }
+    
+        // Factory function
+        public static IMuseInternal Create(MidiDriver nativeMidiDriver, MidiDriver adlibMidiDriver)
+        {
+            var i = new IMuseInternal();
+            i.Initialize(nativeMidiDriver, adlibMidiDriver);
+            return i;
+        }
+    }
+}
+

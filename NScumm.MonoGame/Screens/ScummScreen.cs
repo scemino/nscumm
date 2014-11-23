@@ -41,6 +41,7 @@ namespace NScumm.MonoGame
         OpenALDriver audioDriver;
         Game game;
         bool pause;
+        bool contentLoaded;
 
         public ScummScreen(Game game, GameInfo info)
         {
@@ -53,14 +54,18 @@ namespace NScumm.MonoGame
 
         public override void LoadContent()
         {
-            spriteBatch = new SpriteBatch(ScreenManager.GraphicsDevice);
-            inputManager = new XnaInputManager(game.Window);
-            gfx = new XnaGraphicsManager(ScreenManager.GraphicsDevice);
-            audioDriver = new OpenALDriver();
-            // init engines
-            engine = ScummEngine.Create(info, gfx, inputManager, audioDriver);
-            engine.ShowMenuDialogRequested += OnShowMenuDialogRequested;
-            tsToWait = engine.RunBootScript();
+            if (!contentLoaded)
+            {
+                contentLoaded = true;
+                spriteBatch = new SpriteBatch(ScreenManager.GraphicsDevice);
+                inputManager = new XnaInputManager(game.Window);
+                gfx = new XnaGraphicsManager(ScreenManager.GraphicsDevice);
+                audioDriver = new OpenALDriver();
+                // init engines
+                engine = ScummEngine.Create(info, gfx, inputManager, audioDriver);
+                engine.ShowMenuDialogRequested += OnShowMenuDialogRequested;
+                tsToWait = engine.RunBootScript();
+            }
         }
 
         void OnShowMenuDialogRequested(object sender, EventArgs e)

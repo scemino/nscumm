@@ -1,5 +1,5 @@
 //
-//  RateHelper.cs
+//  DeviceHandle.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -22,22 +22,31 @@
 
 namespace NScumm.Core.Audio
 {
-    static class RateHelper
+    public struct DeviceHandle
     {
-        public const int IntermediateBufferSize = 512;
-        public const long SampleMax = 0x7fffL;
-        public const long SampleMin = (-SampleMax - 1L);
+        readonly int handle;
+        static readonly DeviceHandle _invalid = new DeviceHandle(0);
 
-        public static void ClampedAdd(ref short a, int b)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="NScumm.Core.DeviceHandle"/> struct.
+        /// </summary>
+        /// <param name="handle">Handle.</param>
+        /// <description>
+        /// The value 0 is reserved for an invalid device for now.
+        /// TODO: Maybe we should use -1 (i.e. 0xFFFFFFFF) as invalid device?
+        /// </description>
+        public DeviceHandle(int handle)
+            : this()
         {
-            long val = a + b;
+            this.handle = handle;
+        }
 
-            if (val > SampleMax)
-                val = SampleMax;
-            else if (val < SampleMin)
-                val = SampleMin;
+        public bool IsValid { get { return handle != 0; } }
 
-            a = (short)val;
+        public static DeviceHandle Invalid
+        {
+            get{ return _invalid; }
         }
     }
+    
 }

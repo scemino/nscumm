@@ -1,5 +1,5 @@
-﻿//
-//  TomTomOperator.cs
+//
+//  MusicManager.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -19,16 +19,25 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace NScumm.Core.Audio.OPL
-{
-    class TomTomOperator : Operator
-    {
-        const int tomTomOperatorBaseAddress = 0x12;
+using System.Linq;
+using System.Collections.Generic;
+using System;
 
-        internal TomTomOperator()
-            : base(tomTomOperatorBaseAddress)
+namespace NScumm.Core.Audio
+{
+    /// <summary>
+    /// Singleton class which manages all Music plugins.
+    /// </summary>
+    static class MusicManager
+    {
+        public static IList<IMusicPluginObject> GetPlugins()
         {
+            var types = (from type in typeof(MusicManager).Assembly.GetTypes()
+                                  where !type.IsAbstract && type.GetInterfaces().Contains(typeof(IMusicPluginObject))
+                                  select (IMusicPluginObject)Activator.CreateInstance(type)).ToList();
+
+            return types.ToList();
         }
     }
+    
 }
-

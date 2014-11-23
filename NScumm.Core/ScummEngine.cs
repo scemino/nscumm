@@ -26,6 +26,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using NScumm.Core.Audio;
+using NScumm.Core.Audio.IMuse;
 
 namespace NScumm.Core
 {
@@ -128,7 +129,13 @@ namespace NScumm.Core
 
         internal ICostumeRenderer CostumeRenderer { get { return _costumeRenderer; } }
 
-        public int TalkDelay{ get { return _talkDelay; } }
+        public int TalkDelay { get { return _talkDelay; } }
+
+        internal IIMuse IMuse { get; private set; }
+
+        public IMusicEngine MusicEngine { get; private set; }
+
+        public static ScummEngine Instance { get; private set; }
 
         #endregion Properties
 
@@ -153,6 +160,7 @@ namespace NScumm.Core
             {
                 engine = new ScummEngine6(game, gfxManager, inputManager, mixer);
             }
+            Instance = engine;
             return engine;
         }
 
@@ -182,6 +190,16 @@ namespace NScumm.Core
             _invData = new ObjectData[_resManager.NumInventory];
             _currentScript = 0xFF;
             _sound = new Sound(this, mixer);
+
+            MidiDriver nativeMidiDriver = null;
+            var adlibMidiDriver = MidiDriver.CreateMidi(mixer, MidiDriver.DetectDevice((int)MusicType.AdLib));
+            IMuse = NScumm.Core.Audio.IMuse.IMuse.Create(nativeMidiDriver, adlibMidiDriver);
+            IMuse.AddSysexHandler(0x7D, new IMuseSysEx().Do);
+//            _imuse.AddSysexHandler(/*IMUSE_SYSEX_ID*/ 0x7D,
+//                (_game.GameId == GameId.SamNMax) ? sysexHandler_SamNMax : sysexHandler_Scumm);
+
+            // Try to use OPL3 mode for Sam&Max when possible.
+            IMuse.Property(ImuseProperty.GameId, (uint)_game.GameId);
 
             _slots = new ScriptSlot[NumScriptSlot];
             for (int i = 0; i < NumScriptSlot; i++)
@@ -366,7 +384,7 @@ namespace NScumm.Core
             UpdateVariables();
 
             // The music engine generates the timer data for us.
-            _variables[VariableMusicTimer.Value] = _sound.GetMusicTimer();
+            _variables[VariableMusicTimer.Value] = IMuse.GetMusicTimer();
 
             load_game:
             SaveLoad();

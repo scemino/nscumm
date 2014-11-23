@@ -1,5 +1,5 @@
-﻿//
-//  DisabledChannel.cs
+//
+//  IMidiDriver.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -19,32 +19,15 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace NScumm.Core.Audio.OPL
+
+namespace NScumm.Core.Audio.Midi
 {
-    // There's just one instance of this class, that fills the eventual gaps in the Channel array;
-    class DisabledChannel : Channel
+    public interface IMidiDriver
     {
-        internal DisabledChannel()
-            : base(0)
-        {
-        }
+        void Send(int data);
 
-        public override double[] getChannelOutput()
-        {
-            return getInFourChannels(0);
-        }
+        void SysEx(byte[] msg, ushort length);
 
-        protected override void keyOn()
-        {
-        }
-
-        protected override void keyOff()
-        {
-        }
-
-        protected override void updateOperators()
-        {
-        }
+        void MetaEvent(byte type, byte[] data, ushort length);
     }
 }
-

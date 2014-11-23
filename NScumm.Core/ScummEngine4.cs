@@ -23,6 +23,7 @@ using NScumm.Core.Graphics;
 using NScumm.Core.Input;
 using System.Collections.Generic;
 using NScumm.Core.IO;
+using NScumm.Core.Audio;
 
 namespace NScumm.Core
 {

@@ -18,14 +18,13 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-using System.IO;
-using NScumm.Core.Audio.Midi;
+using NScumm.Core.Audio.IMuse;
 
-namespace NScumm.Core
+namespace NScumm.Core.Audio.Midi
 {
-    public interface ISysEx
+    interface ISysEx
     {
-        void Do(IMidiPlayer midi, Stream data);
+        void Do(Player player, byte[] msg, ushort len);
     }
 }
 

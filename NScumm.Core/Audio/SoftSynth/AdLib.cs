@@ -1,5 +1,5 @@
 ﻿//
-//  IIMuse.cs
+//  adlib.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -19,13 +19,32 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace NScumm.Core.Audio.IMuse
-{
-    public interface IIMuse
-    {
-        int DoCommand(int num, int[] args);
+using System.Collections.Generic;
 
-        void HandleMarker(int id, int data);
+namespace NScumm.Core.Audio.SoftSynth
+{
+    class AdLibEmuMusicPlugin : MusicPluginObject, IMusicPluginObject
+    {
+        public override string Id
+        {
+            get{ return "adlib"; }
+        }
+
+        public override string Name
+        {
+            get { return "AdLib Emulator"; }
+        }
+
+        public override IList<MusicDevice> GetDevices()
+        {
+            return new []{ new MusicDevice(this, string.Empty, MusicType.AdLib) };
+        }
+
+        public override MidiDriver CreateInstance(IMixer mixer, DeviceHandle handle)
+        {
+            // TODO: getMixer
+            return new AdLibMidiDriver(mixer);
+        }
     }
 }
 

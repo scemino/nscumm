@@ -22,7 +22,7 @@
 using System;
 using System.Diagnostics;
 
-namespace NScumm.Core
+namespace NScumm.Core.Audio
 {
     class CopyRateConverter: IRateConverter
     {

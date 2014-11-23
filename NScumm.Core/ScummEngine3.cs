@@ -25,6 +25,7 @@ using NScumm.Core.IO;
 using System.Collections.Generic;
 using System;
 using System.Linq;
+using NScumm.Core.Audio;
 
 namespace NScumm.Core
 {

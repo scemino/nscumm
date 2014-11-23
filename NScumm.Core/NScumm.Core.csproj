@@ -86,7 +86,6 @@
     <Compile Include="IScummTextDecoder.cs" />
     <Compile Include="Input\KeyCode.cs" />
     <Compile Include="Sound.cs" />
-    <Compile Include="Audio\IAudioStream.cs" />
     <Compile Include="ScummEngine_Actor.cs" />
     <Compile Include="ScummEngine_Verb.cs" />
     <Compile Include="ScummEngine_Variable.cs" />
@@ -124,28 +123,14 @@
     <Compile Include="IO\GameManager.cs" />
     <Compile Include="ScummEngine_Palette.cs" />
     <Compile Include="Audio\OPL\IOpl.cs" />
-    <Compile Include="Audio\OPL\OPL3.cs" />
-    <Compile Include="Audio\Midi\MidiPlayer.cs" />
     <Compile Include="Audio\Midi\MidiChannel.cs" />
     <Compile Include="Audio\Midi\MidiTrack.cs" />
     <Compile Include="Audio\Midi\MidiPlayer_Data.cs" />
     <Compile Include="Graphics\ZPlane.cs" />
-    <Compile Include="Audio\IMuse\IMuse.cs" />
     <Compile Include="Audio\Midi\IMidiPlayer.cs" />
     <Compile Include="Audio\IPlayer.cs" />
     <Compile Include="Audio\IMusicEngine.cs" />
-    <Compile Include="Audio\Player.cs" />
-    <Compile Include="Audio\IMuse\IIMuse.cs" />
     <Compile Include="Audio\HookDatas.cs" />
-    <Compile Include="Audio\OPL\Channels\Channel.cs" />
-    <Compile Include="Audio\OPL\Channels\Channel2op.cs" />
-    <Compile Include="Audio\OPL\Channels\Channel4op.cs" />
-    <Compile Include="Audio\OPL\Channels\DisabledChannel.cs" />
-    <Compile Include="Audio\OPL\Operators\Operator.cs" />
-    <Compile Include="Audio\OPL\Operators\TopCymbalOperator.cs" />
-    <Compile Include="Audio\OPL\Operators\HighHatOperator.cs" />
-    <Compile Include="Audio\OPL\Operators\SnareDrumOperator.cs" />
-    <Compile Include="Audio\OPL\Operators\TomTomOperator.cs" />
     <Compile Include="Audio\IMuse\Part.cs" />
     <Compile Include="Audio\IMuse\CommandQueue.cs" />
     <Compile Include="Audio\Midi\ISysEx.cs" />
@@ -199,6 +184,29 @@
     <Compile Include="Audio\IRateConverter.cs" />
     <Compile Include="Audio\LinearRateConverter.cs" />
     <Compile Include="Audio\RateHelper.cs" />
+    <Compile Include="Audio\Midi\MidiParser.cs" />
+    <Compile Include="Audio\Midi\SmfMidiParser.cs" />
+    <Compile Include="Audio\Midi\IMidiDriver.cs" />
+    <Compile Include="Audio\Midi\Tracker.cs" />
+    <Compile Include="Audio\Midi\NoteTimer.cs" />
+    <Compile Include="Audio\MidiDriver.cs" />
+    <Compile Include="Audio\MusicDevice.cs" />
+    <Compile Include="Audio\IMusicPluginObject.cs" />
+    <Compile Include="Audio\MusicManager.cs" />
+    <Compile Include="Audio\MusicPluginObject.cs" />
+    <Compile Include="Audio\SoftSynth\AdLib.cs" />
+    <Compile Include="Audio\SoftSynth\AdLibMidiDriver.cs" />
+    <Compile Include="Audio\SoftSynth\EmulatedMidiDriver.cs" />
+    <Compile Include="Audio\MidiChannel.cs" />
+    <Compile Include="Audio\DeviceHandle.cs" />
+    <Compile Include="Audio\IMuse\IMuseInternal.cs" />
+    <Compile Include="Audio\IMuse\Player.cs" />
+    <Compile Include="Audio\IMuse\IImuse.cs" />
+    <Compile Include="Audio\OPL\DosBoxOPL.cs" />
+    <Compile Include="Audio\OPL\DosBoxOPL_Chip.cs" />
+    <Compile Include="Audio\OPL\DosBoxOPL_Channel.cs" />
+    <Compile Include="Audio\OPL\DosBoxOPL_Operator.cs" />
+    <Compile Include="Audio\OPL\DosBoxOPL_Shared.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="IO\Nscumm.xml">
@@ -223,8 +231,7 @@
     <Folder Include="Audio\OPL\" />
     <Folder Include="Audio\Midi\" />
     <Folder Include="Audio\IMuse\" />
-    <Folder Include="Audio\OPL\Channels\" />
-    <Folder Include="Audio\OPL\Operators\" />
     <Folder Include="Audio\Decoders\" />
+    <Folder Include="Audio\SoftSynth\" />
   </ItemGroup>
 </Project>

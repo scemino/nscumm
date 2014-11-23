@@ -82,7 +82,7 @@ namespace NScumm.Core
         void WriteByteVar(short value)
         {
             var index = ReadByte();
-            Debug.WriteLine("WriteByteVar {0} {1}", index, value);
+//            Debug.WriteLine("WriteByteVar {0} {1}", index, value);
             WriteVariable(index, value);
         }
 
@@ -90,7 +90,7 @@ namespace NScumm.Core
         void WriteWordVar(short value)
         {
             var index = ReadWord();
-            Debug.WriteLine("WriteWordVar {0} {1}", index, value);
+//            Debug.WriteLine("WriteWordVar {0} {1}", index, value);
             WriteVariable(index, value);
         }
 

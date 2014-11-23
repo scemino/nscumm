@@ -23,7 +23,7 @@ using System.IO;
 using System.Collections.Generic;
 using System.Text;
 
-namespace NScumm.Core
+namespace NScumm.Core.Audio.Decoders
 {
     public class VocStream: IMixerAudioStream, IDisposable
     {

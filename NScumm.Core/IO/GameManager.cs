@@ -33,11 +33,25 @@ namespace NScumm.Core.IO
         FewLocals = 0x04
     }
 
+    public enum GameId
+    {
+        Indy3,
+        Indy4,
+        Monkey1,
+        Monkey2,
+        Loom,
+        Pass,
+        Tentacle,
+        SamNMax
+    }
+
     public class GameInfo
     {
         public string Path { get; set; }
 
         public string Id { get; set; }
+
+        public GameId GameId { get; set; }
 
         public string Variant { get; set; }
 
@@ -95,6 +109,7 @@ namespace NScumm.Core.IO
                     MD5 = signature,
                     Path = path,
                     Id = (string)game.Attribute("id"),
+                    GameId = (GameId)Enum.Parse(typeof(GameId), (string)game.Attribute("gameId")),
                     Variant = (string)game.Attribute("variant"),
                     Description = desc,
                     Version = (int)game.Attribute("version"),

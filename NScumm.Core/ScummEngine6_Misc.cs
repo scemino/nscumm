@@ -263,7 +263,7 @@ namespace NScumm.Core
 //                    SwapPalColors(args[1], args[2]);
 //                    break;
                 case 122:
-                    Variables[VariableSoundResult.Value] = _sound.IMuse.DoCommand(args.Length - 1, args.Skip(1).ToArray());
+                    Variables[VariableSoundResult.Value] = IMuse.DoCommand(args.Length - 1, args.Skip(1).ToArray());
                     break;
             // TODO: scumm6: CopyPalColor
 //                case 123:

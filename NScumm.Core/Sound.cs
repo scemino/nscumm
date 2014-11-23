@@ -23,6 +23,7 @@ using System.Timers;
 using NScumm.Core.Audio.OPL;
 using NScumm.Core.Audio.IMuse;
 using System.IO;
+using NScumm.Core.Audio.Decoders;
 
 namespace NScumm.Core
 {
@@ -33,11 +34,8 @@ namespace NScumm.Core
         Stack<int> soundQueue;
         Queue<int> soundQueueIMuse;
         const int BufferSize = 4096;
-        readonly IOpl opl;
         long minicnt;
         bool playing;
-        IAudioStream stream;
-        IMuse imuse;
         IMuseSysEx sysEx;
 
         string _sfxFilename;
@@ -51,40 +49,11 @@ namespace NScumm.Core
         int _sfxMode;
         int _curSoundPos;
         bool _mouthSyncMode;
-        IMixer _mixer;
+        readonly IMixer _mixer;
         SoundHandle _talkChannelHandle;
         bool _endOfMouthSync;
 
-        public IMuse IMuse { get { return imuse; } }
-
         public int SfxMode { get { return _sfxMode; } }
-
-        class AudioStream: IAudioStream
-        {
-            readonly Sound sound;
-
-            #region IAudioStream implementation
-
-            public short[] Read()
-            {
-                return sound.Read();
-            }
-
-            public int Frequency
-            {
-                get
-                {
-                    return 49700;
-                }
-            }
-
-            #endregion
-
-            public AudioStream(Sound sound)
-            {
-                this.sound = sound;
-            }
-        }
 
         public Sound(ScummEngine vm, IMixer mixer)
         {
@@ -95,17 +64,7 @@ namespace NScumm.Core
             timer.Elapsed += OnCDTimer;
 
             // initialize output & player
-            opl = new OPL3();
-            imuse = new IMuse(this, opl);
-            stream = new AudioStream(this);
-//            driver.Play(stream);
             _mixer = mixer;
-        }
-
-        public int GetMusicTimer()
-        {
-            var refresh = imuse.GetMusicTimer();
-            return (int)refresh;
         }
 
         public void PlayCDTrack(int track, int numLoops, int startFrame, int duration)
@@ -180,13 +139,18 @@ namespace NScumm.Core
                 {
                     args[i] = soundQueueIMuse.Dequeue();
                 }
-                vm.Variables[vm.VariableSoundResult.Value] = imuse.DoCommand(num, args);
+                vm.Variables[vm.VariableSoundResult.Value] = vm.IMuse.DoCommand(num, args);
             }
         }
 
-        void PlaySound(int sound)
+        void PlaySound(int soundID)
         {
-            imuse.StartSound(sound);
+            // TODO: vs
+//            if (vm.MusicEngine != null)
+//            {
+//                vm.MusicEngine.StartSound(soundID);
+//            }
+            vm.IMuse.StartSound(soundID);
         }
 
         public void StopAllSounds()
@@ -197,46 +161,6 @@ namespace NScumm.Core
         public bool IsSoundRunning(int snd)
         {
             return soundQueue.Contains(snd);
-        }
-
-        //        public void Update()
-        //        {
-        //            driver.Update(stream);
-        //    }
-
-        short[] Read()
-        {
-            long i, towrite = BufferSize;
-            var buffer = new short[towrite];
-            long pos = 0;
-
-            // Prepare audiobuf with emulator output
-            while (towrite > 0)
-            {
-                while (minicnt < 0)
-                {
-                    minicnt += stream.Frequency * 4;
-                    playing = imuse.Update();
-                }
-                i = Math.Min(towrite, (long)(minicnt / imuse.GetMusicTimer() + 4) & ~3);
-                var n = Update(buffer, pos, i);
-                pos += n;
-                towrite -= i;
-                minicnt -= (long)(imuse.GetMusicTimer() * i);
-            }
-
-            return buffer;
-        }
-
-        long Update(short[] buf, long pos, long samples)
-        {
-            for (int i = 0; i < samples; i += 4)
-            {
-                var data = opl.Read();
-                Array.Copy(data, 0, buf, pos, 2);
-                pos += 2;
-            }
-            return samples / 2;
         }
 
         public void SoundKludge(int[] items)
@@ -406,7 +330,6 @@ namespace NScumm.Core
 //                }
 //            }
         }
-
 
         bool IsSfxFinished()
         {

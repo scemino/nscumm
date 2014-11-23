@@ -153,7 +153,7 @@ namespace NScumm.Core
 
         void WriteArray(int array, int idx, int @base, int value)
         {
-            Debug.WriteLine("WriteArray: {0} {1} {2} {3}", array, idx, @base, value);
+//            Debug.WriteLine("WriteArray: {0} {1} {2} {3}", array, idx, @base, value);
             var ah = GetArray(array);
             if (ah == null)
                 return;
@@ -184,7 +184,7 @@ namespace NScumm.Core
         {
             int size;
 
-            Debug.WriteLine("DefineArray: {0} {1} {2} {3}", array, type, dim2, dim1);
+//            Debug.WriteLine("DefineArray: {0} {1} {2} {3}", array, type, dim2, dim1);
             Debug.Assert(0 <= (int)type && (int)type <= 5);
 
             //nukeArray(array);

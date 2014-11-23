@@ -1,5 +1,5 @@
-﻿//
-//  rate.cs
+//
+//  NoteTimer.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -19,13 +19,27 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace NScumm.Core.Audio
+namespace NScumm.Core
 {
-    public interface IRateConverter
+    class NoteTimer
     {
-        int Flow(IMixerAudioStream input, short[] obuf, int volLeft, int volRight);
+        /// <summary>
+        /// Gets or sets the MIDI channel on which the note was played.
+        /// </summary>
+        /// <value>The channel.</value>
+        public int Channel { get; set; }
 
-        int Drain(short[] obuf, int vol);
+        /// <summary>
+        /// Gets or sets the note number for the active note.
+        /// </summary>
+        /// <value>The note.</value>
+        public int Note { get; set; }
+
+        /// <summary>
+        /// Gets or sets the time, in microseconds, remaining before the note should be turned off
+        /// </summary>
+        /// <value>The time left.</value>
+        public int TimeLeft { get; set; }
     }
+    
 }
-

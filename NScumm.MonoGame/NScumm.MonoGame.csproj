@@ -30,6 +30,7 @@
     <WarningLevel>4</WarningLevel>
     <ConsolePause>false</ConsolePause>
     <PlatformTarget>x86</PlatformTarget>
+    <Commandlineparameters>/home/valery/Games/m2/MONKEY2.000</Commandlineparameters>
   </PropertyGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

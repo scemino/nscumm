@@ -20,7 +20,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
 
-namespace NScumm.Core
+namespace NScumm.Core.Audio
 {
     /// <summary>
     /// Generic audio input stream. Subclasses of this are used to feed arbitrary

@@ -20,33 +20,38 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-namespace NScumm.Core
+namespace NScumm.Core.Audio
 {
     class HookDatas
     {
-        byte[] jump;
-        byte transpose;
-        byte[] partOnOff;
-        byte[] partVolume;
-        byte[] partProgram;
-        byte[] partTranspose;
+        public byte[] Jump { get; private set; }
+
+        public byte Transpose { get; set; }
+
+        public byte[] PartOnOff { get; private set; }
+
+        public byte[] PartVolume { get; private set; }
+
+        public byte[] PartProgram { get; private set; }
+
+        public byte[] PartTranspose { get; private set; }
 
         public int QueryParam(int param, int chan)
         {
             switch (param)
             {
                 case 18:
-                    return jump[0];
+                    return Jump[0];
                 case 19:
-                    return transpose;
+                    return Transpose;
                 case 20:
-                    return partOnOff[chan];
+                    return PartOnOff[chan];
                 case 21:
-                    return partVolume[chan];
+                    return PartVolume[chan];
                 case 22:
-                    return partProgram[chan];
+                    return PartProgram[chan];
                 case 23:
-                    return partTranspose[chan];
+                    return PartTranspose[chan];
                 default:
                     return -1;
             }
@@ -57,38 +62,38 @@ namespace NScumm.Core
             switch (cls)
             {
                 case 0:
-                    if (value != jump[0])
+                    if (value != Jump[0])
                     {
-                        jump[1] = jump[0];
-                        jump[0] = (byte)value;
+                        Jump[1] = Jump[0];
+                        Jump[0] = (byte)value;
                     }
                     break;
                 case 1:
-                    transpose = (byte)value;
+                    Transpose = (byte)value;
                     break;
                 case 2:
                     if (chan < 16)
-                        partOnOff[chan] = (byte)value;
+                        PartOnOff[chan] = (byte)value;
                     else if (chan == 16)
-                        Set(partOnOff, (byte)value);
+                        Set(PartOnOff, (byte)value);
                     break;
                 case 3:
                     if (chan < 16)
-                        partVolume[chan] = (byte)value;
+                        PartVolume[chan] = (byte)value;
                     else if (chan == 16)
-                        Set(partVolume, (byte)value);
+                        Set(PartVolume, (byte)value);
                     break;
                 case 4:
                     if (chan < 16)
-                        partProgram[chan] = (byte)value;
+                        PartProgram[chan] = (byte)value;
                     else if (chan == 16)
-                        Set(partProgram, (byte)value);
+                        Set(PartProgram, (byte)value);
                     break;
                 case 5:
                     if (chan < 16)
-                        partTranspose[chan] = (byte)value;
+                        PartTranspose[chan] = (byte)value;
                     else if (chan == 16)
-                        Set(partTranspose, (byte)value);
+                        Set(PartTranspose, (byte)value);
                     break;
                 default:
                     return -1;
@@ -98,11 +103,11 @@ namespace NScumm.Core
 
         public HookDatas()
         { 
-            jump = new byte[2];
-            partOnOff = new byte[16];
-            partVolume = new byte[16];
-            partProgram = new byte[16];
-            partTranspose = new byte[16];
+            Jump = new byte[2];
+            PartOnOff = new byte[16];
+            PartVolume = new byte[16];
+            PartProgram = new byte[16];
+            PartTranspose = new byte[16];
         }
 
         static void Set<T>(T[] array, T value)

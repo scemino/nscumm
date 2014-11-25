@@ -106,15 +106,13 @@ namespace NScumm.Core.Audio
                     // interpolate
                     short out0, out1;
                     out0 = (short)(ilast0 + (((icur0 - ilast0) * opos + FracHalf) >> FracBits));
-                    out1 = (stereo ?
-                                (short)(ilast1 + (((icur1 - ilast1) * opos + FracHalf) >> FracBits)) :
-                                out0);
+                    out1 = stereo ? (short)(ilast1 + (((icur1 - ilast1) * opos + FracHalf) >> FracBits)) : out0;
 
                     // output left channel
                     RateHelper.ClampedAdd(ref obuf[obufPos + (reverseStereo ? 1 : 0)], (out0 * volLeft) / Mixer.MaxMixerVolume);
 
                     // output right channel
-                    RateHelper.ClampedAdd(ref obuf[obufPos + (reverseStereo ? 1 : 0 ^ 1)], (out1 * volRight) / Mixer.MaxMixerVolume);
+                    RateHelper.ClampedAdd(ref obuf[obufPos + (reverseStereo ? 0 : 1)], (out1 * volRight) / Mixer.MaxMixerVolume);
 
                     obufPos += 2;
 

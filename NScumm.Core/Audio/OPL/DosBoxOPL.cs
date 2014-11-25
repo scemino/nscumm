@@ -129,7 +129,7 @@ namespace NScumm.Core.Audio.OPL
             return false;
         }
         //Read the current timer state, will use current double
-        public byte read()
+        public byte Read()
         {
             double time = Environment.TickCount / 1000.0;
 
@@ -282,18 +282,18 @@ namespace NScumm.Core.Audio.OPL
                 case OplType.Opl2:
                     if (0 == (port & 1))
                         //Make sure the low bits are 6 on opl2
-                        return (byte)(_chip[0].read() | 0x6);
+                        return (byte)(_chip[0].Read() | 0x6);
                     break;
                 case OplType.Opl3:
                     if (0 == (port & 1))
-                        return _chip[0].read();
+                        return _chip[0].Read();
                     break;
                 case OplType.DualOpl2:
                     // Only return for the lower ports
                     if ((port & 1) != 0)
                         return 0xff;
                     // Make sure the low bits are 6 on opl2
-                    return (byte)(_chip[(port >> 1) & 1].read() | 0x6);
+                    return (byte)(_chip[(port >> 1) & 1].Read() | 0x6);
             }
             return 0;
         }
@@ -425,7 +425,7 @@ namespace NScumm.Core.Audio.OPL
             _emulator = null;
         }
 
-        static bool doneTables = false;
+        static bool doneTables;
 
         static void InitTables()
         {

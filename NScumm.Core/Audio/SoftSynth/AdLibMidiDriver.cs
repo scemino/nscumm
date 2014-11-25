@@ -65,6 +65,26 @@ namespace NScumm.Core.Audio.SoftSynth
         {
         }
 
+        public AdLibInstrument(AdLibInstrument copy)
+        {
+            ModCharacteristic = copy.ModCharacteristic;
+            ModScalingOutputLevel = copy.ModScalingOutputLevel;
+            ModAttackDecay = copy.ModAttackDecay;
+            ModSustainRelease = copy.ModSustainRelease;
+            ModWaveformSelect = copy.ModWaveformSelect;
+            CarCharacteristic = copy.CarCharacteristic;
+            CarScalingOutputLevel = copy.CarScalingOutputLevel;
+            CarAttackDecay = copy.CarAttackDecay;
+            CarSustainRelease = copy.CarSustainRelease;
+            CarWaveformSelect = copy.CarWaveformSelect;
+            Feedback = copy.Feedback;
+            FlagsA = copy.FlagsA;
+            ExtraA = copy.ExtraA;
+            FlagsB = copy.FlagsB;
+            ExtraB = copy.ExtraB;
+            Duration = copy.Duration;
+        }
+
         public AdLibInstrument(byte[] data1, InstrumentExtra extraA, byte flagsB, InstrumentExtra extraB, byte duration)
         {
             ModCharacteristic = data1[0];
@@ -973,7 +993,7 @@ namespace NScumm.Core.Audio.SoftSynth
                 #if ENABLE_OPL3
                 if (!_owner->_opl3Mode) {
                 #endif
-                _partInstr = gmInstruments[program];
+                _partInstr = new AdLibInstrument(gmInstruments[program]);
                 #if ENABLE_OPL3
                 } else {
                 memcpy(&_partInstr,          &g_gmInstrumentsOPL3[program][0], sizeof(AdLibInstrument));
@@ -1503,7 +1523,6 @@ namespace NScumm.Core.Audio.SoftSynth
                     if (_customInstruments[note] == null)
                     {
                         _customInstruments[note] = new AdLibInstrument();
-                        //memset(_customInstruments[note], 0, sizeof(AdLibInstrument));
                     }
 
                     // Save the new instrument data

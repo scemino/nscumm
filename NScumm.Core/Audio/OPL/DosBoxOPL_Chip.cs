@@ -359,7 +359,7 @@ namespace NScumm.Core.Audio.OPL
                 while (total > 0)
                 {
                     uint samples = ForwardLFO(total);
-                    Array.Clear(output, 0, (int)samples);
+                    Array.Clear(output, pos, (int)samples);
                     for (var ch = chan[0]; ch.ChannelNum < 9;)
                     {
                         ch = ch.SynthHandler(this, samples, output, pos);

@@ -55,6 +55,8 @@ namespace NScumm.Core.Audio.OPL
             //Routine that generate a wave
             
 
+
+
 #else
             public short[] waveBase;
             public uint waveMask;
@@ -172,7 +174,7 @@ namespace NScumm.Core.Audio.OPL
 
             public void UpdateAttenuation()
             {
-                byte kslBase = (byte)((chanData >> Channel.SHIFT_KSLBASE) & 0xff);
+                byte kslBase = (byte)((chanData >> Channel.ShiftKslBase) & 0xff);
                 int tl = (int)reg40 & 0x3f;
                 byte kslShift = KslShiftTable[(int)reg40 >> 6];
                 //Make sure the attenuation goes to the right bits
@@ -184,7 +186,7 @@ namespace NScumm.Core.Audio.OPL
             {
                 //Mame seems to reverse this where enabling ksr actually lowers
                 //the rate, but pdf manuals says otherwise?
-                byte newKsr = (byte)((chanData >> Channel.SHIFT_KEYCODE) & 0xff);
+                byte newKsr = (byte)((chanData >> Channel.ShiftKeyCode) & 0xff);
                 if (!(reg20.HasFlag(Mask.KSR)))
                 {
                     newKsr >>= 2;

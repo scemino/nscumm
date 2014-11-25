@@ -791,11 +791,9 @@ namespace NScumm.Core.Audio.IMuse
             for (var i = 0; i < _parts.Length; i++)
             {
                 var part = _parts[i];
-                if (part.Player != null)
+                if (part.Player == null)
                 {
-                    _parts[i] = new Part();
-                    _parts[i].Setup(part.Player);
-                    return _parts[i];
+                    return part;
                 }
                 if (pri >= part.PriorityEffective)
                 {

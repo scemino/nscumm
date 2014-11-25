@@ -160,7 +160,16 @@ namespace NScumm.Core
 
         public bool IsSoundRunning(int snd)
         {
-            return soundQueue.Contains(snd);
+            if (_mixer.IsSoundIdActive(snd))
+                return true;
+
+            if (soundQueue.Contains(snd))
+                return true;
+
+            if (vm.IMuse.GetSoundStatus(snd) != 0)
+                return true;
+
+            return false;
         }
 
         public void SoundKludge(int[] items)

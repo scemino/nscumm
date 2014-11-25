@@ -26,8 +26,8 @@ namespace NScumm.Core.Audio.OPL
         class Channel
         {
             //Shifts for the values contained in chandata variable
-            public const int SHIFT_KSLBASE = 16;
-            public const int SHIFT_KEYCODE = 24;
+            public const int ShiftKslBase = 16;
+            public const int ShiftKeyCode = 24;
 
             public Chip Chip { get; private set; }
 
@@ -40,7 +40,7 @@ namespace NScumm.Core.Audio.OPL
                 return Chip.Channels[ChannelNum + (index >> 1)].Ops[index & 1];
             }
 
-            public SynthHandler SynthHandler{ get; internal set; }
+            public SynthHandler SynthHandler { get; internal set; }
 
             uint chanData;
             //Frequency/octave and derived values
@@ -69,12 +69,12 @@ namespace NScumm.Core.Audio.OPL
                 //Since a frequency update triggered this, always update frequency
                 Op(0).UpdateFrequency();
                 Op(1).UpdateFrequency();
-                if ((change & (0xff << SHIFT_KSLBASE)) != 0)
+                if ((change & (0xff << ShiftKslBase)) != 0)
                 {
                     Op(0).UpdateAttenuation();
                     Op(1).UpdateAttenuation();
                 }
-                if ((change & (0xff << SHIFT_KEYCODE)) != 0)
+                if ((change & (0xff << ShiftKeyCode)) != 0)
                 {
                     Op(0).UpdateRates(chip);
                     Op(1).UpdateRates(chip);
@@ -96,7 +96,7 @@ namespace NScumm.Core.Audio.OPL
                     keyCode |= (data & 0x200) >> 9;  /* notesel == 0 */
                 }
                 //Add the keycode and ksl into the highest bits of chanData
-                data |= (keyCode << SHIFT_KEYCODE) | (kslBase << SHIFT_KSLBASE);
+                data |= (keyCode << ShiftKeyCode) | (kslBase << ShiftKslBase);
                 SetChanData(chip, data);
                 if ((fourOp & 0x3f) != 0)
                 {

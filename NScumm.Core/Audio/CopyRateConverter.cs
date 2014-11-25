@@ -42,8 +42,7 @@ namespace NScumm.Core.Audio
         {
             Debug.Assert(input.IsStereo == stereo);
 
-            int pos = 0;
-            var osamp = obuf.Length;
+            var osamp = obuf.Length / 2;
 
             if (stereo)
                 osamp *= 2;
@@ -51,27 +50,31 @@ namespace NScumm.Core.Audio
             // Reallocate temp buffer, if necessary
             if (osamp > _bufferSize)
             {
-                _buffer = new short[osamp * 2];
+                _buffer = new short[osamp];
                 _bufferSize = osamp;
             }
 
             // Read up to 'osamp' samples into our temporary buffer
             var len = input.ReadBuffer(_buffer);
 
+            int iPos = 0;
+            var oPos = 0;
+            var inc = stereo ? 2 : 1;
             // Mix the data into the output buffer
-            for (; len > 0; len -= (stereo ? 2 : 1))
+            for (; iPos < len; iPos += inc)
             {
-                short out0, out1;
-                out0 = _buffer[pos++];
-                out1 = (stereo ? _buffer[pos++] : out0);
+                var out0 = _buffer[iPos];
+                var out1 = stereo ? _buffer[iPos + 1] : out0;
 
                 // output left channel
-                RateHelper.ClampedAdd(ref obuf[reverseStereo ? 1 : 0], (out0 * (int)volLeft) / Mixer.MaxMixerVolume);
+                RateHelper.ClampedAdd(ref obuf[oPos + (reverseStereo ? 1 : 0)], (out0 * volLeft) / Mixer.MaxMixerVolume);
 
                 // output right channel
-                RateHelper.ClampedAdd(ref obuf[(reverseStereo ? 1 : 0) ^ 1], (out1 * (int)volRight) / Mixer.MaxMixerVolume);
+                RateHelper.ClampedAdd(ref obuf[oPos + (reverseStereo ? 0 : 1)], (out1 * volRight) / Mixer.MaxMixerVolume);
+
+                oPos += 2;
             }
-            return pos / 2;
+            return oPos / 2;
         }
 
         public int Drain(short[] obuf, int vol)

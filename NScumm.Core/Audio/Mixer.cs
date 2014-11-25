@@ -171,6 +171,17 @@ namespace NScumm.Core.Audio
             }
         }
 
+        public bool IsSoundIdActive(int id)
+        {
+            lock (_gate)
+            {
+                for (int i = 0; i != NumChannels; i++)
+                    if (_channels[i] != null && _channels[i].Id == id)
+                        return true;
+                return false;
+            }
+        }
+
         public bool HasActiveChannelOfType(SoundType type)
         {
             lock (_gate)

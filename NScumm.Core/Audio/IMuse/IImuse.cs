@@ -34,7 +34,7 @@ namespace NScumm.Core.Audio.IMuse
         PcSpeaker
     }
 
-    interface IIMuse
+    interface IIMuse: IMusicEngine
     {
         void OnTimer(MidiDriver midi);
 

@@ -19,29 +19,43 @@ using NScumm.Core.Audio;
 using OpenTK.Audio;
 using OpenTK.Audio.OpenAL;
 using System;
-using NScumm.Core;
 
 namespace NScumm.MonoGame
 {
     public class OpenALDriver : Mixer, IDisposable
     {
         readonly AudioContext audioContext;
-        readonly int bufferId;
+        readonly int[] bufferIds;
         readonly int sourceId;
         short[] buffer;
+        const int NumBuffers = 2;
         const int Frequency = 44100;
 
         public OpenALDriver()
             : base(Frequency)
         {
             audioContext = new AudioContext();
-            buffer = new short[Frequency * 2];
-            bufferId = AL.GenBuffer();
+            buffer = new short[Frequency];
+            bufferIds = AL.GenBuffers(NumBuffers);
             sourceId = AL.GenSource();
             CheckError();
-        }
 
-        bool check;
+            foreach (var bufId in bufferIds)
+            {
+                var len = MixCallback(buffer);
+                AL.BufferData(bufId, ALFormat.Stereo16, buffer, len, Frequency);
+                Array.Clear(buffer, 0, buffer.Length);
+                CheckError();
+                AL.SourceQueueBuffer(sourceId, bufId);
+                CheckError();
+            }
+
+            if (AL.GetSourceState(sourceId) != ALSourceState.Playing)
+            {
+                AL.SourcePlay(sourceId);
+                CheckError();
+            }
+        }
 
         static void CheckError()
         {
@@ -55,30 +69,28 @@ namespace NScumm.MonoGame
 
         public void Update()
         {
-            int val = 0;
-            if (check)
+            int val;
+            AL.GetSource(sourceId, ALGetSourcei.BuffersProcessed, out val);
+            if (val <= 0)
+                return;
+            while (val-- != 0)
             {
-                AL.GetSource(sourceId, ALGetSourcei.BuffersProcessed, out val);
-            }
-
-            if (!check || val > 0)
-            {
-                Array.Clear(buffer, 0, buffer.Length);
                 var len = MixCallback(buffer);
                 if (len > 0)
                 {
-                    AL.SourceUnqueueBuffer(sourceId);
-                    AL.BufferData(bufferId, ALFormat.Stereo16, buffer, len * 4, Frequency);
+                    var bufId = AL.SourceUnqueueBuffer(sourceId);
+                    AL.BufferData(bufId, ALFormat.Stereo16, buffer, len * 4, Frequency);
+                    Array.Clear(buffer, 0, buffer.Length);
                     CheckError();
-                    AL.SourceQueueBuffer(sourceId, bufferId);
+                    AL.SourceQueueBuffer(sourceId, bufId);
                     CheckError();
-                    if (AL.GetSourceState(sourceId) != ALSourceState.Playing)
-                    {
-                        AL.SourcePlay(sourceId);
-                        CheckError();
-                    }
-                    check = true;
                 }
+            }
+
+            if (AL.GetSourceState(sourceId) != ALSourceState.Playing)
+            {
+                AL.SourcePlay(sourceId);
+                CheckError();
             }
         }
 
@@ -86,7 +98,7 @@ namespace NScumm.MonoGame
 
         public void Dispose()
         {
-            AL.DeleteBuffer(bufferId);
+            AL.DeleteBuffers(bufferIds);
             AL.DeleteSource(sourceId);
             audioContext.Dispose();
         }

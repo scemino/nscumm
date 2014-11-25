@@ -64,6 +64,8 @@ namespace NScumm.Core.Audio
 
         void StopHandle(SoundHandle handle);
 
+        bool IsSoundIdActive(int id);
+
         bool IsSoundHandleActive(SoundHandle handle);
 
         bool HasActiveChannelOfType(SoundType type);

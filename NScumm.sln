@@ -41,7 +41,7 @@ Global
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		BaseDirectory = .
-		StartupItem = NScumm.Dump\NScumm.Dump.csproj
+		StartupItem = NScumm.MonoGame\NScumm.MonoGame.csproj
 		Policies = $0
 		$0.DotNetNamingPolicy = $1
 		$1.DirectoryNamespaceAssociation = None

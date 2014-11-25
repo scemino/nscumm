@@ -65,6 +65,7 @@ namespace NScumm.MonoGame
                 engine = ScummEngine.Create(info, gfx, inputManager, audioDriver);
                 engine.ShowMenuDialogRequested += OnShowMenuDialogRequested;
                 tsToWait = engine.RunBootScript();
+                audioDriver.Update();
             }
         }
 

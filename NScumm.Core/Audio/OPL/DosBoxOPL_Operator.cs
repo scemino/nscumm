@@ -20,6 +20,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define DBOPL_WAVE_EQUALS_WAVE_TABLEMUL
+#define DBOPL_WAVE_GREATER_OR_EQUALS_WAVE_HANDLER
 
 using System;
 
@@ -33,19 +34,19 @@ namespace NScumm.Core.Audio.OPL
             [Flags]
             public enum Mask
             {
-                KSR = 0x10,
-                SUSTAIN = 0x20,
-                VIBRATO = 0x40,
-                TREMOLO = 0x80
+                Ksr = 0x10,
+                Sustain = 0x20,
+                Vibrato = 0x40,
+                Tremolo = 0x80
             }
 
             public enum State
             {
-                OFF,
-                RELEASE,
-                SUSTAIN,
-                DECAY,
-                ATTACK
+                Off,
+                Release,
+                Sustain,
+                Decay,
+                Attack
             }
 
             public VolumeHandler volHandler;
@@ -57,8 +58,24 @@ namespace NScumm.Core.Audio.OPL
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #else
-            public short[] waveBase;
+            public int waveBase;
             public uint waveMask;
             public uint waveStart;
             #endif
@@ -106,80 +123,14 @@ namespace NScumm.Core.Audio.OPL
             //Keep track of the calculated KSR so we can check for changes
             public byte ksr;
 
-            void SetState(State s)
-            {
-                state = s;
-                volHandler = () => TemplateVolume(s);
-            }
-
-            /// <summary>
-            /// We zero out when rate == 0
-            /// </summary>
-            /// <param name="chip">Chip.</param>
-            void UpdateAttack(Chip chip)
-            {
-                byte rate = (byte)((int)reg60 >> 4);
-                if (rate != 0)
-                {
-                    byte val = (byte)((rate << 2) + ksr);
-                    attackAdd = chip.AttackRates[val];
-                    rateZero &= (byte)unchecked((byte)~(1 << (int)State.ATTACK));
-                }
-                else
-                {
-                    attackAdd = 0;
-                    rateZero |= (1 << (int)State.ATTACK);
-                }
-            }
-
-            void UpdateRelease(Chip chip)
-            {
-                byte rate = (byte)((int)reg80 & 0xf);
-                if (rate != 0)
-                {
-                    byte val = (byte)((rate << 2) + ksr);
-                    releaseAdd = chip.LinearRates[val];
-                    rateZero &= (byte)unchecked((byte)~(1 << (int)State.RELEASE));
-                    if (!(reg20.HasFlag(Mask.SUSTAIN)))
-                    {
-                        rateZero &= (byte)unchecked((byte)~(1 << (int)State.SUSTAIN));
-                    }
-                }
-                else
-                {
-                    rateZero |= (1 << (int)State.RELEASE);
-                    releaseAdd = 0;
-                    if (!(reg20.HasFlag(Mask.SUSTAIN)))
-                    {
-                        rateZero |= (1 << (int)State.SUSTAIN);
-                    }
-                }
-            }
-
-            void UpdateDecay(Chip chip)
-            {
-                byte rate = (byte)((int)reg60 & 0xf);
-                if (rate != 0)
-                {
-                    byte val = (byte)((rate << 2) + ksr);
-                    decayAdd = chip.LinearRates[val];
-                    rateZero &= unchecked((byte)~(1 << (int)State.DECAY));
-                }
-                else
-                {
-                    decayAdd = 0;
-                    rateZero |= (1 << (int)State.DECAY);
-                }
-            }
-
             public void UpdateAttenuation()
             {
                 byte kslBase = (byte)((chanData >> Channel.ShiftKslBase) & 0xff);
                 int tl = (int)reg40 & 0x3f;
                 byte kslShift = KslShiftTable[(int)reg40 >> 6];
                 //Make sure the attenuation goes to the right bits
-                totalLevel = tl << (Envelope.ENV_BITS - 7);    //Total level goes 2 bits below max
-                totalLevel += (kslBase << Envelope.ENV_EXTRA) >> kslShift;
+                totalLevel = tl << (ENV_BITS - 7);    //Total level goes 2 bits below max
+                totalLevel += (kslBase << ENV_EXTRA) >> kslShift;
             }
 
             public void UpdateRates(Chip chip)
@@ -187,7 +138,7 @@ namespace NScumm.Core.Audio.OPL
                 //Mame seems to reverse this where enabling ksr actually lowers
                 //the rate, but pdf manuals says otherwise?
                 byte newKsr = (byte)((chanData >> Channel.ShiftKeyCode) & 0xff);
-                if (!(reg20.HasFlag(Mask.KSR)))
+                if (!(reg20.HasFlag(Mask.Ksr)))
                 {
                     newKsr >>= 2;
                 }
@@ -209,7 +160,7 @@ namespace NScumm.Core.Audio.OPL
                 #else
                 waveAdd = (freq << block) * freqMul;
                 #endif
-                if (reg20.HasFlag(Mask.VIBRATO))
+                if (reg20.HasFlag(Mask.Vibrato))
                 {
                     vibStrength = (byte)(freq >> 7);
 
@@ -233,24 +184,24 @@ namespace NScumm.Core.Audio.OPL
                     return;
                 reg20 = (Mask)val;
                 //Shift the tremolo bit over the entire register, saved a branch, YES!
-                tremoloMask = (byte)(val >> 7);
-                tremoloMask &= unchecked((byte)~((1 << Envelope.ENV_EXTRA) - 1));
+                tremoloMask = (byte)(sbyte)(val >> 7);
+                tremoloMask &= unchecked((byte)~((1 << ENV_EXTRA) - 1));
                 //Update specific features based on changes
-                if ((change & (int)Mask.KSR) != 0)
+                if ((change & (int)Mask.Ksr) != 0)
                 {
                     UpdateRates(chip);
                 }
                 //With sustain enable the volume doesn't change
-                if (reg20.HasFlag(Mask.SUSTAIN) || (releaseAdd == 0))
+                if (reg20.HasFlag(Mask.Sustain) || (releaseAdd == 0))
                 {
-                    rateZero |= (1 << (int)State.SUSTAIN);
+                    rateZero |= (1 << (int)State.Sustain);
                 }
                 else
                 {
-                    rateZero &= unchecked((byte)~(1 << (int)State.SUSTAIN));
+                    rateZero &= unchecked((byte)~(1 << (int)State.Sustain));
                 }
                 //Frequency multiplier or vibrato changed
-                if ((change & (0xf | (int)Mask.VIBRATO)) != 0)
+                if ((change & (0xf | (int)Mask.Vibrato)) != 0)
                 {
                     freqMul = chip.FreqMul[val & 0xf];
                     UpdateFrequency();
@@ -288,7 +239,7 @@ namespace NScumm.Core.Audio.OPL
                 byte sustain = (byte)(val >> 4);
                 //Turn 0xf into 0x1f
                 sustain |= (byte)((sustain + 1) & 0x10);
-                sustainLevel = sustain << (Envelope.ENV_BITS - 5);
+                sustainLevel = sustain << (ENV_BITS - 5);
                 if ((change & 0x0f) != 0)
                 {
                     UpdateRelease(chip);
@@ -297,7 +248,7 @@ namespace NScumm.Core.Audio.OPL
 
             public void WriteE0(Chip chip, byte val)
             {
-                if (((int)regE0 ^ val) != 0)
+                if (((int)regE0 ^ val) == 0)
                     return;
                 //in opl3 mode you can always selet 7 waveforms regardless of waveformselect
                 byte waveForm = (byte)(val & ((0x3 & chip.WaveFormMask) | (0x7 & chip.Opl3Active)));
@@ -305,8 +256,7 @@ namespace NScumm.Core.Audio.OPL
                 #if ( DBOPL_WAVE_EQUALS_WAVE_HANDLER )
                 waveHandler = WaveHandlerTable[waveForm];
                 #else
-                waveBase = new short[WaveTable.Length - WaveBaseTable[waveForm]];
-                Array.Copy(WaveTable, WaveBaseTable[waveForm], waveBase, 0, waveBase.Length);
+                waveBase = WaveBaseTable[waveForm];
                 waveStart = (uint)(WaveStartTable[waveForm] << WAVE_SH);
                 waveMask = WaveMaskTable[waveForm];
                 #endif
@@ -314,7 +264,7 @@ namespace NScumm.Core.Audio.OPL
 
             public bool Silent()
             {
-                if (!Envelope.ENV_SILENT(totalLevel + volume))
+                if (!ENV_SILENT(totalLevel + volume))
                     return false;
                 if (0 == (rateZero & (1 << (int)state)))
                     return false;
@@ -343,12 +293,12 @@ namespace NScumm.Core.Audio.OPL
                 {
                     //Restart the frequency generator
                     #if DBOPL_WAVE_GREATER_OR_EQUALS_WAVE_HANDLER
-                        waveIndex = waveStart;
+                    waveIndex = waveStart;
                     #else
                     waveIndex = 0;
                     #endif
                     rateIndex = 0;
-                    SetState(State.ATTACK);
+                    SetState(State.Attack);
                 }
                 keyOn |= mask;
             }
@@ -358,9 +308,9 @@ namespace NScumm.Core.Audio.OPL
                 keyOn &= (byte)~mask;
                 if (keyOn == 0)
                 {
-                    if (state != State.OFF)
+                    if (state != State.Off)
                     {
-                        SetState(State.RELEASE);
+                        SetState(State.Release);
                     }
                 }
             }
@@ -371,58 +321,58 @@ namespace NScumm.Core.Audio.OPL
                 int change;
                 switch (state)
                 {
-                    case State.OFF:
-                        return Envelope.ENV_MAX;
-                    case State.ATTACK:
+                    case State.Off:
+                        return ENV_MAX;
+                    case State.Attack:
                         change = RateForward(attackAdd);
                         if (change == 0)
                             return vol;
                         vol += ((~vol) * change) >> 3;
-                        if (vol < Envelope.ENV_MIN)
+                        if (vol < ENV_MIN)
                         {
-                            volume = Envelope.ENV_MIN;
+                            volume = ENV_MIN;
                             rateIndex = 0;
-                            SetState(State.DECAY);
-                            return Envelope.ENV_MIN;
+                            SetState(State.Decay);
+                            return ENV_MIN;
                         }
                         break;
-                    case State.DECAY:
+                    case State.Decay:
                         vol += RateForward(decayAdd);
                         if (vol >= sustainLevel)
                         {
                             //Check if we didn't overshoot max attenuation, then just go off
-                            if (vol >= Envelope.ENV_MAX)
+                            if (vol >= ENV_MAX)
                             {
-                                volume = Envelope.ENV_MAX;
-                                SetState(State.OFF);
-                                return Envelope.ENV_MAX;
+                                volume = ENV_MAX;
+                                SetState(State.Off);
+                                return ENV_MAX;
                             }
                             //Continue as sustain
                             rateIndex = 0;
-                            SetState(State.SUSTAIN);
+                            SetState(State.Sustain);
                         }
                         break;
-                    case State.SUSTAIN:
-                        if (reg20.HasFlag(Mask.SUSTAIN))
+                    case State.Sustain:
+                        if (reg20.HasFlag(Mask.Sustain))
                         {
                             return vol;
                         }
                         vol += RateForward(releaseAdd);
-                        if (vol >= Envelope.ENV_MAX)
+                        if (vol >= ENV_MAX)
                         {
-                            volume = Envelope.ENV_MAX;
-                            SetState(State.OFF);
-                            return Envelope.ENV_MAX;
+                            volume = ENV_MAX;
+                            SetState(State.Off);
+                            return ENV_MAX;
                         }
                         break;
                 //In sustain phase, but not sustaining, do regular release
-                    case State.RELEASE:
+                    case State.Release:
                         vol += RateForward(releaseAdd);
-                        if (vol >= Envelope.ENV_MAX)
+                        if (vol >= ENV_MAX)
                         {
-                            volume = Envelope.ENV_MAX;
-                            SetState(State.OFF);
-                            return Envelope.ENV_MAX;
+                            volume = ENV_MAX;
+                            SetState(State.Off);
+                            return ENV_MAX;
                         }
                         break;
                 }
@@ -452,7 +402,7 @@ namespace NScumm.Core.Audio.OPL
             public int GetSample(int modulation)
             {
                 uint vol = ForwardVolume();
-                if (Envelope.ENV_SILENT((int)vol))
+                if (ENV_SILENT((int)vol))
                 {
                     //Simply forward the wave
                     waveIndex += waveCurrent;
@@ -469,9 +419,9 @@ namespace NScumm.Core.Audio.OPL
             public int GetWave(uint index, uint vol)
             {
                 #if ( DBOPL_WAVE_EQUALS_WAVE_HANDLER )
-                return waveHandler(index, vol << (3 - Envelope.ENV_EXTRA));
+                return waveHandler(index, vol << (3 - ENV_EXTRA));
                 #elif ( DBOPL_WAVE_EQUALS_WAVE_TABLEMUL )
-                return (waveBase[index & waveMask] * MulTable[vol >> Envelope.ENV_EXTRA]) >> MUL_SH;
+                return (WaveTable[waveBase + (index & waveMask)] * MulTable[vol >> ENV_EXTRA]) >> MUL_SH;
                 #elif ( DBOPL_WAVE_EQUALS_WAVE_TABLELOG )
                 int wave = waveBase[ index & waveMask ];
                 uint total = ( wave & 0x7fff ) + vol << ( 3 - ENV_EXTRA );
@@ -486,18 +436,84 @@ namespace NScumm.Core.Audio.OPL
 
             public Operator()
             {
-                SetState(State.OFF);
-                rateZero = (byte)(1 << (int)State.OFF);
-                sustainLevel = Envelope.ENV_MAX;
-                currentLevel = Envelope.ENV_MAX;
-                totalLevel = Envelope.ENV_MAX;
-                volume = Envelope.ENV_MAX;
-                releaseAdd = 0;
+                SetState(State.Off);
+                rateZero = (byte)(1 << (int)State.Off);
+                sustainLevel = ENV_MAX;
+                currentLevel = ENV_MAX;
+                totalLevel = ENV_MAX;
+                volume = ENV_MAX;
+            }
+
+            void SetState(State s)
+            {
+                state = s;
+                volHandler = () => TemplateVolume(s);
+            }
+
+            /// <summary>
+            /// We zero out when rate == 0
+            /// </summary>
+            /// <param name="chip">Chip.</param>
+            void UpdateAttack(Chip chip)
+            {
+                byte rate = (byte)((int)reg60 >> 4);
+                if (rate != 0)
+                {
+                    byte val = (byte)((rate << 2) + ksr);
+                    attackAdd = chip.AttackRates[val];
+                    rateZero &= (byte)unchecked((byte)~(1 << (int)State.Attack));
+                }
+                else
+                {
+                    attackAdd = 0;
+                    rateZero |= (1 << (int)State.Attack);
+                }
+            }
+
+            void UpdateRelease(Chip chip)
+            {
+                byte rate = (byte)((int)reg80 & 0xf);
+                if (rate != 0)
+                {
+                    byte val = (byte)((rate << 2) + ksr);
+                    releaseAdd = chip.LinearRates[val];
+                    rateZero &= (byte)unchecked((byte)~(1 << (int)State.Release));
+                    if (!(reg20.HasFlag(Mask.Sustain)))
+                    {
+                        rateZero &= (byte)unchecked((byte)~(1 << (int)State.Sustain));
+                    }
+                }
+                else
+                {
+                    rateZero |= (1 << (int)State.Release);
+                    releaseAdd = 0;
+                    if (!(reg20.HasFlag(Mask.Sustain)))
+                    {
+                        rateZero |= (1 << (int)State.Sustain);
+                    }
+                }
+            }
+
+            void UpdateDecay(Chip chip)
+            {
+                byte rate = (byte)((int)reg60 & 0xf);
+                if (rate != 0)
+                {
+                    byte val = (byte)((rate << 2) + ksr);
+                    decayAdd = chip.LinearRates[val];
+                    rateZero &= unchecked((byte)~(1 << (int)State.Decay));
+                }
+                else
+                {
+                    decayAdd = 0;
+                    rateZero |= (1 << (int)State.Decay);
+                }
             }
 
             //Shift strength for the ksl value determined by ksl strength
             static readonly byte[] KslShiftTable = { 31, 1, 2, 0 };
 
+            #if DBOPL_WAVE_EQUALS_WAVE_HANDLER
             static int WaveForm0(uint i, uint volume)
             {
                 int neg = (int)(0 - ((i >> 9) & 1));//Create ~0 or 0
@@ -566,7 +582,19 @@ namespace NScumm.Core.Audio.OPL
                 uint index = (total & 0xff);
                 uint sig = ExpTable[index];
                 int exp = (int)(total >> 8);
-                #if false
+                
+
+
+
+
+
+
+
+
+
+
+
+#if false
                 //Check if we overflow the 31 shift limit
                 if ( exp >= 32 ) {
                 LOG_MSG( "WTF %d %d", total, exp );
@@ -575,7 +603,6 @@ namespace NScumm.Core.Audio.OPL
                 return (int)(sig >> exp);
             }
 
-            #if (DBOPL_WAVE_EQUALS_WAVE_HANDLER)
             static readonly WaveHandler[] WaveHandlerTable =
                 {
                     WaveForm0, WaveForm1, WaveForm2, WaveForm3,

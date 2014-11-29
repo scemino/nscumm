@@ -26,24 +26,11 @@ namespace NScumm.Core.Audio.OPL
     {
         class Chip
         {
-            //This is used as the base counter for vibrato and tremolo
-            uint lfoCounter;
-            uint lfoAdd;
-
-
-            uint noiseCounter;
-            uint noiseAdd;
-            uint noiseValue;
-
-            uint[] freqMul = new uint[16];
-
             /// <summary>
             /// Gets the frequency scales for the different multiplications.
             /// </summary>
             /// <value>The freq mul.</value>
             public uint[] FreqMul { get { return freqMul; } }
-
-            uint[] linearRates = new uint[76];
 
             /// <summary>
             /// Gets the rates for decay and release for rate of this chip.
@@ -51,54 +38,27 @@ namespace NScumm.Core.Audio.OPL
             /// <value>The linear rates.</value>
             public uint[] LinearRates { get { return linearRates; } }
 
-            uint[] attackRates = new uint[76];
-
             /// <summary>
             /// Gets the best match attack rates for the rate of this chip.
             /// </summary>
             /// <value>The attack rates.</value>
             public uint[] AttackRates { get { return attackRates; } }
 
-            //18 channels with 2 operators each
-            Channel[] chan;
-
             public Channel[] Channels { get { return chan; } }
 
-            byte reg104;
+            public byte Reg104 { get { return reg104; } }
 
-            public byte Reg104{ get { return reg104; } }
+            public byte Reg08 { get { return reg08; } }
 
-            byte reg08;
-
-            public byte Reg08{ get { return reg08; } }
-
-            byte reg04;
-            byte regBD;
-
-            public byte RegBD { get { return regBD; } }
-
-            byte vibratoIndex;
-            byte tremoloIndex;
-            sbyte vibratoSign;
+            public byte RegBD  { get { return regBD; } }
 
             public sbyte VibratoSign { get { return vibratoSign; } }
 
-            byte vibratoShift;
-
             public byte VibratoShift { get { return vibratoShift; } }
-
-            byte tremoloValue;
 
             public byte TremoloValue { get { return tremoloValue; } }
 
-            byte vibratoStrength;
-            byte tremoloStrength;
-            //Mask for allowed wave forms
-            byte waveFormMask;
-
             public byte WaveFormMask { get { return waveFormMask; } }
-            //0 or -1 when enabled
-            sbyte opl3Active;
 
             public sbyte Opl3Active { get { return opl3Active; } }
 
@@ -111,7 +71,287 @@ namespace NScumm.Core.Audio.OPL
                 }
             }
 
-            //Return the maximum amount of samples before and LFO change
+            public uint ForwardNoise()
+            {
+                noiseCounter += noiseAdd;
+                uint count = noiseCounter >> LFO_SH;
+                noiseCounter &= WAVE_MASK;
+                for (; count > 0; --count)
+                {
+                    //Noise calculation from mame
+                    noiseValue ^= (0x800302) & (0 - (noiseValue & 1));
+                    noiseValue >>= 1;
+                }
+                return noiseValue;
+            }
+
+            public void WriteReg(uint reg, byte val)
+            {
+                switch ((reg & 0xf0) >> 4)
+                {
+                    case 0x00 >> 4:
+                        if (reg == 0x01)
+                        {
+                            waveFormMask = (byte)(((val & 0x20) != 0) ? 0x7 : 0x0);
+                        }
+                        else if (reg == 0x104)
+                        {
+                            //Only detect changes in lowest 6 bits
+                            if (0 == ((reg104 ^ val) & 0x3f))
+                                return;
+                            //Always keep the highest bit enabled, for checking > 0x80
+                            reg104 = (byte)(0x80 | (val & 0x3f));
+                        }
+                        else if (reg == 0x105)
+                        {
+                            //MAME says the real opl3 doesn't reset anything on opl3 disable/enable till the next write in another register
+                            if (0 == ((opl3Active ^ val) & 1))
+                                return;
+                            opl3Active = (sbyte)(((val & 1) != 0) ? 0xff : 0);
+                            //Update the 0xc0 register for all channels to signal the switch to mono/stereo handlers
+                            for (int i = 0; i < 18; i++)
+                            {
+                                chan[i].ResetC0(this);
+                            }
+                        }
+                        else if (reg == 0x08)
+                        {
+                            reg08 = val;
+                        }
+                        break;
+                    case 0x10 >> 4:
+                        break;
+                    case 0x20 >> 4:
+                    case 0x30 >> 4:
+                        RegOp(reg, op => op.Write20(this, val));
+                        break;
+                    case 0x40 >> 4:
+                    case 0x50 >> 4:
+                        RegOp(reg, op => op.Write40(this, val));
+                        break;
+                    case 0x60 >> 4:
+                    case 0x70 >> 4:
+                        RegOp(reg, op => op.Write60(this, val));
+                        break;
+                    case 0x80 >> 4:
+                    case 0x90 >> 4:
+                        RegOp(reg, op => op.Write80(this, val));
+                        break;
+                    case 0xa0 >> 4:
+                        RegChan(reg, ch => ch.WriteA0(this, val));
+                        break;
+                    case 0xb0 >> 4:
+                        if (reg == 0xbd)
+                        {
+                            WriteBD(val);
+                        }
+                        else
+                        {
+                            RegChan(reg, ch => ch.WriteB0(this, val));
+                        }
+                        break;
+                    case 0xc0 >> 4:
+                        RegChan(reg, ch => ch.WriteC0(this, val));
+                        break;
+                    case 0xd0 >> 4:
+                        break;
+                    case 0xe0 >> 4:
+                    case 0xf0 >> 4:
+                        RegOp(reg, op => op.WriteE0(this, val));
+                        break;
+                }
+            }
+
+            public uint WriteAddr(uint port, byte val)
+            {
+                switch (port & 3)
+                {
+                    case 0:
+                        return val;
+                    case 2:
+                        if (opl3Active != 0 || (val == 0x05))
+                            return (uint)(0x100 | val);
+                        else
+                            return val;
+                }
+                return 0;
+            }
+
+            public void GenerateBlock2(uint total, int[] output)
+            {
+                int pos = 0;
+                while (total > 0)
+                {
+                    uint samples = ForwardLFO(total);
+                    Array.Clear(output, pos, (int)samples);
+                    for (var ch = chan[0]; ch.ChannelNum < 9;)
+                    {
+                        ch = ch.SynthHandler(this, samples, output, pos);
+                    }
+                    total -= samples;
+                    pos += (int)samples;
+                }
+            }
+
+            public void GenerateBlock3(uint total, int[] output)
+            {
+                int pos = 0;
+                while (total > 0)
+                {
+                    uint samples = ForwardLFO(total);
+                    Array.Clear(output, 0, (int)samples * 2);
+
+                    for (var i = 0; i < 18; i++)
+                    {
+                        var ch = chan[i];
+                        ch.SynthHandler(this, samples, output, pos);
+                    }
+                    total -= samples;
+                    pos += (int)(samples * 2);
+                }
+            }
+
+            public void Setup(uint rate)
+            {
+                double scale = OPLRATE / (double)rate;
+
+                //Noise counter is run at the same precision as general waves
+                noiseAdd = (uint)(0.5 + scale * (1 << LFO_SH));
+                noiseCounter = 0;
+                noiseValue = 1; //Make sure it triggers the noise xor the first time
+                //The low frequency oscillation counter
+                //Every time his overflows vibrato and tremoloindex are increased
+                lfoAdd = (uint)(0.5 + scale * (1 << LFO_SH));
+                lfoCounter = 0;
+                vibratoIndex = 0;
+                tremoloIndex = 0;
+
+                //With higher octave this gets shifted up
+                //-1 since the freqCreateTable = *2
+                #if WAVE_PRECISION
+                double freqScale = ( 1 << 7 ) * scale * ( 1 << ( WAVE_SH - 1 - 10));
+                for ( int i = 0; i < 16; i++ ) {
+                freqMul[i] = (uint)( 0.5 + freqScale * FreqCreateTable[ i ] );
+                }
+                #else
+                uint freqScale = (uint)(0.5 + scale * (1 << (WAVE_SH - 1 - 10)));
+                for (int i = 0; i < 16; i++)
+                {
+                    freqMul[i] = freqScale * FreqCreateTable[i];
+                }
+                #endif
+
+                //-3 since the real envelope takes 8 steps to reach the single value we supply
+                for (byte i = 0; i < 76; i++)
+                {
+                    byte index, shift;
+                    EnvelopeSelect(i, out index, out shift);
+                    linearRates[i] = (uint)(scale * (EnvelopeIncreaseTable[index] << (RATE_SH + ENV_EXTRA - shift - 3)));
+                }
+                //Generate the best matching attack rate
+                for (byte i = 0; i < 62; i++)
+                {
+                    byte index, shift;
+                    EnvelopeSelect(i, out index, out shift);
+                    //Original amount of samples the attack would take
+                    int original = (int)((AttackSamplesTable[index] << shift) / scale);
+
+                    int guessAdd = (int)(scale * (EnvelopeIncreaseTable[index] << (RATE_SH - shift - 3)));
+                    int bestAdd = guessAdd;
+                    uint bestDiff = 1 << 30;
+                    for (uint passes = 0; passes < 16; passes++)
+                    {
+                        int volume = ENV_MAX;
+                        int samples = 0;
+                        uint count = 0;
+                        while (volume > 0 && samples < original * 2)
+                        {
+                            count += (uint)guessAdd;
+                            int change = (int)(count >> RATE_SH);
+                            count &= RATE_MASK;
+                            if (change != 0)
+                            { // less than 1 %
+                                volume += (~volume * change) >> 3;
+                            }
+                            samples++;
+
+                        }
+                        int diff = original - samples;
+                        uint lDiff = (uint)Math.Abs(diff);
+                        //Init last on first pass
+                        if (lDiff < bestDiff)
+                        {
+                            bestDiff = lDiff;
+                            bestAdd = guessAdd;
+                            if (bestDiff == 0)
+                                break;
+                        }
+                        //Below our target
+                        if (diff < 0)
+                        {
+                            //Better than the last time
+                            int mul = ((original - diff) << 12) / original;
+                            guessAdd = ((guessAdd * mul) >> 12);
+                            guessAdd++;
+                        }
+                        else if (diff > 0)
+                        {
+                            int mul = ((original - diff) << 12) / original;
+                            guessAdd = (guessAdd * mul) >> 12;
+                            guessAdd--;
+                        }
+                    }
+                    attackRates[i] = (uint)bestAdd;
+                }
+                for (byte i = 62; i < 76; i++)
+                {
+                    //This should provide instant volume maximizing
+                    attackRates[i] = 8 << RATE_SH;
+                }
+                //Setup the channels with the correct four op flags
+                //Channels are accessed through a table so they appear linear here
+                chan[0].FourMask = 0x00 | (1 << 0);
+                chan[1].FourMask = 0x80 | (1 << 0);
+                chan[2].FourMask = 0x00 | (1 << 1);
+                chan[3].FourMask = 0x80 | (1 << 1);
+                chan[4].FourMask = 0x00 | (1 << 2);
+                chan[5].FourMask = 0x80 | (1 << 2);
+
+                chan[9].FourMask = 0x00 | (1 << 3);
+                chan[10].FourMask = 0x80 | (1 << 3);
+                chan[11].FourMask = 0x00 | (1 << 4);
+                chan[12].FourMask = 0x80 | (1 << 4);
+                chan[13].FourMask = 0x00 | (1 << 5);
+                chan[14].FourMask = 0x80 | (1 << 5);
+
+                //mark the percussion channels
+                chan[6].FourMask = 0x40;
+                chan[7].FourMask = 0x40;
+                chan[8].FourMask = 0x40;
+
+                //Clear Everything in opl3 mode
+                WriteReg(0x105, 0x1);
+                for (uint i = 0; i < 512; i++)
+                {
+                    if (i == 0x105)
+                        continue;
+                    WriteReg(i, 0xff);
+                    WriteReg(i, 0x0);
+                }
+                WriteReg(0x105, 0x0);
+                //Clear everything in opl2 mode
+                for (uint i = 0; i < 255; i++)
+                {
+                    WriteReg(i, 0xff);
+                    WriteReg(i, 0x0);
+                }
+            }
+
+            /// <summary>
+            /// Return the maximum amount of samples before and LFO change.
+            /// </summary>
+            /// <returns>The maximum amount of samples before and LFO change.</returns>
+            /// <param name="samples">Samples.</param>
             uint ForwardLFO(uint samples)
             {
                 //Current vibrato value, runs 4x slower than tremolo
@@ -142,18 +382,23 @@ namespace NScumm.Core.Audio.OPL
                 return count;
             }
 
-            public uint ForwardNoise()
+            void RegOp(uint reg, Action<Operator> action)
             {
-                noiseCounter += noiseAdd;
-                uint count = noiseCounter >> LFO_SH;
-                noiseCounter &= WAVE_MASK;
-                for (; count > 0; --count)
+                var index = ((reg >> 3) & 0x20) | (reg & 0x1f);
+                var op = OpOffsetTable[index];
+                if (op != null)
                 {
-                    //Noise calculation from mame
-                    noiseValue ^= (0x800302) & (0 - (noiseValue & 1));
-                    noiseValue >>= 1;
+                    action(op(this));
                 }
-                return noiseValue;
+            }
+
+            void RegChan(uint reg, Action<Channel> action)
+            {
+                var ch = ChanOffsetTable[((reg >> 4) & 0x10) | (reg & 0xf)]; 
+                if (ch != null)
+                {
+                    action(ch(this));
+                }
             }
 
             void WriteBD(byte val)
@@ -241,289 +486,37 @@ namespace NScumm.Core.Audio.OPL
                 }
             }
 
-            public void WriteReg(uint reg, byte val)
-            {
-                switch ((reg & 0xf0) >> 4)
-                {
-                    case 0x00 >> 4:
-                        if (reg == 0x01)
-                        {
-                            waveFormMask = (byte)(((val & 0x20) != 0) ? 0x7 : 0x0);
-                        }
-                        else if (reg == 0x104)
-                        {
-                            //Only detect changes in lowest 6 bits
-                            if (0 == ((reg104 ^ val) & 0x3f))
-                                return;
-                            //Always keep the highest bit enabled, for checking > 0x80
-                            reg104 = (byte)(0x80 | (val & 0x3f));
-                        }
-                        else if (reg == 0x105)
-                        {
-                            //MAME says the real opl3 doesn't reset anything on opl3 disable/enable till the next write in another register
-                            if (0 == ((opl3Active ^ val) & 1))
-                                return;
-                            opl3Active = (sbyte)(((val & 1) != 0) ? 0xff : 0);
-                            //Update the 0xc0 register for all channels to signal the switch to mono/stereo handlers
-                            for (int i = 0; i < 18; i++)
-                            {
-                                chan[i].ResetC0(this);
-                            }
-                        }
-                        else if (reg == 0x08)
-                        {
-                            reg08 = val;
-                        }
-                        break;
-                    case 0x10 >> 4:
-                        break;
-                    case 0x20 >> 4:
-                    case 0x30 >> 4:
-                        RegOp(reg, op => op.Write20(this, val));
-                        break;
-                    case 0x40 >> 4:
-                    case 0x50 >> 4:
-                        RegOp(reg, op => op.Write40(this, val));
-                        break;
-                    case 0x60 >> 4:
-                    case 0x70 >> 4:
-                        RegOp(reg, op => op.Write60(this, val));
-                        break;
-                    case 0x80 >> 4:
-                    case 0x90 >> 4:
-                        RegOp(reg, op => op.Write80(this, val));
-                        break;
-                    case 0xa0 >> 4:
-                        RegChan(reg, ch => ch.WriteA0(this, val));
-                        break;
-                    case 0xb0 >> 4:
-                        if (reg == 0xbd)
-                        {
-                            WriteBD(val);
-                        }
-                        else
-                        {
-                            RegChan(reg, ch => ch.WriteB0(this, val));
-                        }
-                        break;
-                    case 0xc0 >> 4:
-                        RegChan(reg, ch => ch.WriteC0(this, val));
-                        break;
-                    case 0xd0 >> 4:
-                        break;
-                    case 0xe0 >> 4:
-                    case 0xf0 >> 4:
-                        RegOp(reg, op => op.WriteE0(this, val));
-                        break;
-                }
-            }
+            //This is used as the base counter for vibrato and tremolo
+            uint lfoCounter;
+            uint lfoAdd;
 
-            void RegOp(uint reg, Action<Operator> action)
-            {
-                var index = ((reg >> 3) & 0x20) | (reg & 0x1f);
-                var ch = index / 2;
-                var op = index % 2;
-                if (ch < Channels.Length)
-                {
-                    action(Channels[ch].Ops[op]);
-                }
-            }
+            uint noiseCounter;
+            uint noiseAdd;
+            uint noiseValue;
 
-            void RegChan(uint reg, Action<Channel> action)
-            {
-                var ch = ((reg >> 4) & 0x10) | (reg & 0xf);                                     
-                if (ch < Channels.Length)
-                {
-                    action(Channels[ch]);
-                }
-            }
+            uint[] freqMul = new uint[16];
+            uint[] linearRates = new uint[76];
+            uint[] attackRates = new uint[76];
 
-            public uint WriteAddr(uint port, byte val)
-            {
-                switch (port & 3)
-                {
-                    case 0:
-                        return val;
-                    case 2:
-                        if (opl3Active != 0 || (val == 0x05))
-                            return (uint)(0x100 | val);
-                        else
-                            return val;
-                }
-                return 0;
-            }
+            //18 channels with 2 operators each
+            readonly Channel[] chan;
 
-            public void GenerateBlock2(uint total, int[] output)
-            {
-                int pos = 0;
-                while (total > 0)
-                {
-                    uint samples = ForwardLFO(total);
-                    Array.Clear(output, pos, (int)samples);
-                    for (var ch = chan[0]; ch.ChannelNum < 9;)
-                    {
-                        ch = ch.SynthHandler(this, samples, output, pos);
-                    }
-                    total -= samples;
-                    pos += (int)samples;
-                }
-            }
-
-            public void GenerateBlock3(uint total, int[] output)
-            {
-                int pos = 0;
-                while (total > 0)
-                {
-                    uint samples = ForwardLFO(total);
-                    Array.Clear(output, 0, (int)samples * 2);
-
-                    for (var i = 0; i < 18; i++)
-                    {
-                        var ch = chan[i];
-                        ch.SynthHandler(this, samples, output, pos);
-                    }
-                    total -= samples;
-                    pos += (int)(samples * 2);
-                }
-            }
-
-            //            void Generate(uint samples);
-
-            public void Setup(uint rate)
-            {
-                double scale = OPLRATE / (double)rate;
-
-                //Noise counter is run at the same precision as general waves
-                noiseAdd = (uint)(0.5 + scale * (1 << LFO_SH));
-                noiseCounter = 0;
-                noiseValue = 1; //Make sure it triggers the noise xor the first time
-                //The low frequency oscillation counter
-                //Every time his overflows vibrato and tremoloindex are increased
-                lfoAdd = (uint)(0.5 + scale * (1 << LFO_SH));
-                lfoCounter = 0;
-                vibratoIndex = 0;
-                tremoloIndex = 0;
-
-                //With higher octave this gets shifted up
-                //-1 since the freqCreateTable = *2
-                #if WAVE_PRECISION
-                double freqScale = ( 1 << 7 ) * scale * ( 1 << ( WAVE_SH - 1 - 10));
-                for ( int i = 0; i < 16; i++ ) {
-                freqMul[i] = (uint)( 0.5 + freqScale * FreqCreateTable[ i ] );
-                }
-                #else
-                uint freqScale = (uint)(0.5 + scale * (1 << (WAVE_SH - 1 - 10)));
-                for (int i = 0; i < 16; i++)
-                {
-                    freqMul[i] = freqScale * FreqCreateTable[i];
-                }
-                #endif
-
-                //-3 since the real envelope takes 8 steps to reach the single value we supply
-                for (byte i = 0; i < 76; i++)
-                {
-                    byte index, shift;
-                    EnvelopeSelect(i, out index, out shift);
-                    linearRates[i] = (uint)(scale * (EnvelopeIncreaseTable[index] << (RATE_SH + Envelope.ENV_EXTRA - shift - 3)));
-                }
-                //Generate the best matching attack rate
-                for (byte i = 0; i < 62; i++)
-                {
-                    byte index, shift;
-                    EnvelopeSelect(i, out index, out shift);
-                    //Original amount of samples the attack would take
-                    int original = (int)((AttackSamplesTable[index] << shift) / scale);
-
-                    int guessAdd = (int)(scale * (EnvelopeIncreaseTable[index] << (RATE_SH - shift - 3)));
-                    int bestAdd = guessAdd;
-                    uint bestDiff = 1 << 30;
-                    for (uint passes = 0; passes < 16; passes++)
-                    {
-                        int volume = Envelope.ENV_MAX;
-                        int samples = 0;
-                        uint count = 0;
-                        while (volume > 0 && samples < original * 2)
-                        {
-                            count += (uint)guessAdd;
-                            int change = (int)(count >> RATE_SH);
-                            count &= RATE_MASK;
-                            if (change != 0)
-                            { // less than 1 %
-                                volume += (~volume * change) >> 3;
-                            }
-                            samples++;
-
-                        }
-                        int diff = original - samples;
-                        uint lDiff = (uint)Math.Abs(diff);
-                        //Init last on first pass
-                        if (lDiff < bestDiff)
-                        {
-                            bestDiff = lDiff;
-                            bestAdd = guessAdd;
-                            if (bestDiff == 0)
-                                break;
-                        }
-                        //Below our target
-                        if (diff < 0)
-                        {
-                            //Better than the last time
-                            int mul = ((original - diff) << 12) / original;
-                            guessAdd = ((guessAdd * mul) >> 12);
-                            guessAdd++;
-                        }
-                        else if (diff > 0)
-                        {
-                            int mul = ((original - diff) << 12) / original;
-                            guessAdd = (guessAdd * mul) >> 12;
-                            guessAdd--;
-                        }
-                    }
-                    attackRates[i] = (uint)bestAdd;
-                }
-                for (byte i = 62; i < 76; i++)
-                {
-                    //This should provide instant volume maximizing
-                    attackRates[i] = 8 << RATE_SH;
-                }
-                //Setup the channels with the correct four op flags
-                //Channels are accessed through a table so they appear linear here
-                chan[0].FourMask = 0x00 | (1 << 0);
-                chan[1].FourMask = 0x80 | (1 << 0);
-                chan[2].FourMask = 0x00 | (1 << 1);
-                chan[3].FourMask = 0x80 | (1 << 1);
-                chan[4].FourMask = 0x00 | (1 << 2);
-                chan[5].FourMask = 0x80 | (1 << 2);
-
-                chan[9].FourMask = 0x00 | (1 << 3);
-                chan[10].FourMask = 0x80 | (1 << 3);
-                chan[11].FourMask = 0x00 | (1 << 4);
-                chan[12].FourMask = 0x80 | (1 << 4);
-                chan[13].FourMask = 0x00 | (1 << 5);
-                chan[14].FourMask = 0x80 | (1 << 5);
-
-                //mark the percussion channels
-                chan[6].FourMask = 0x40;
-                chan[7].FourMask = 0x40;
-                chan[8].FourMask = 0x40;
-
-                //Clear Everything in opl3 mode
-                WriteReg(0x105, 0x1);
-                for (uint i = 0; i < 512; i++)
-                {
-                    if (i == 0x105)
-                        continue;
-                    WriteReg(i, 0xff);
-                    WriteReg(i, 0x0);
-                }
-                WriteReg(0x105, 0x0);
-                //Clear everything in opl2 mode
-                for (uint i = 0; i < 255; i++)
-                {
-                    WriteReg(i, 0xff);
-                    WriteReg(i, 0x0);
-                }
-            }
+            byte reg104;
+            byte reg08;
+            byte regBD;
+            byte vibratoIndex;
+            byte tremoloIndex;
+            sbyte vibratoSign;
+            byte vibratoShift;
+            byte tremoloValue;
+            byte vibratoStrength;
+            byte tremoloStrength;
+            /// <summary>
+            /// Mask for allowed wave forms.
+            /// </summary>
+            byte waveFormMask;
+            //0 or -1 when enabled
+            sbyte opl3Active;
 
             //The lower bits are the shift of the operator vibrato value
             //The highest bit is right shifted to generate -1 or 0 for negation

@@ -29,13 +29,14 @@ namespace NScumm.MonoGame
         readonly int sourceId;
         short[] buffer;
         const int NumBuffers = 2;
-        const int Frequency = 44100;
+        public const int Frequency = 44100;
+        public const int NumSamples = 44100;
 
         public OpenALDriver()
             : base(Frequency)
         {
             audioContext = new AudioContext();
-            buffer = new short[Frequency];
+            buffer = new short[NumSamples / NumBuffers];
             bufferIds = AL.GenBuffers(NumBuffers);
             sourceId = AL.GenSource();
             CheckError();
@@ -43,7 +44,7 @@ namespace NScumm.MonoGame
             foreach (var bufId in bufferIds)
             {
                 var len = MixCallback(buffer);
-                AL.BufferData(bufId, ALFormat.Stereo16, buffer, len, Frequency);
+                AL.BufferData(bufId, ALFormat.Stereo16, buffer, len * 2, Frequency);
                 Array.Clear(buffer, 0, buffer.Length);
                 CheckError();
                 AL.SourceQueueBuffer(sourceId, bufId);
@@ -76,6 +77,7 @@ namespace NScumm.MonoGame
             while (val-- != 0)
             {
                 var len = MixCallback(buffer);
+//                    Console.WriteLine("Mix: {0}", len);
                 if (len > 0)
                 {
                     var bufId = AL.SourceUnqueueBuffer(sourceId);

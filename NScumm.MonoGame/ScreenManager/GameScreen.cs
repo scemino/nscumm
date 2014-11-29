@@ -55,7 +55,7 @@ namespace NScumm.MonoGame
             protected set { isPopup = value; }
         }
 
-        bool isPopup = false;
+        bool isPopup;
 
 
         /// <summary>
@@ -135,7 +135,7 @@ namespace NScumm.MonoGame
             protected set { isExiting = value; }
         }
 
-        bool isExiting = false;
+        bool isExiting;
 
 
         /// <summary>

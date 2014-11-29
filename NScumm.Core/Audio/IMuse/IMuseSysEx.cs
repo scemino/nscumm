@@ -37,74 +37,78 @@ namespace NScumm.Core.Audio.IMuse
             byte code;
             switch (code = msg[p++])
             {
-//                case 0:
-//                        // Allocate new part.
-//                        // There are 8 bytes (after decoding!) of useful information here.
-//                        // Here is what we know about them so far:
-//                        //   BYTE 0: Channel #
-//                        //   BYTE 1: BIT 01(0x01): Part on?(1 = yes)
-//                        //            BIT 02(0x02): Reverb? (1 = yes) [bug #1088045]
-//                        //   BYTE 2: Priority adjustment
-//                        //   BYTE 3: Volume [guessing]
-//                        //   BYTE 4: Pan [bug #1088045]
-//                        //   BYTE 5: BIT 8(0x80): Percussion?(1 = yes) [guessed?]
-//                        //   BYTE 5: Transpose, if set to 0x80(=-1) it means no transpose
-//                        //   BYTE 6: Detune
-//                        //   BYTE 7: Pitchbend factor [bug #1088045]
-//                        //   BYTE 8: Program
-//
-//                    part = player.GetPart(p[0] & 0x0F);
-//                    player.decode_sysex_bytes(p + 1, buf + 1, len - 1);
-//                    if (part)
-//                    {
-//                        part.set_onoff(buf[1] & 0x01);
-//                        part.effectLevel((buf[1] & 0x02) ? 127 : 0);
-//                        part.set_pri(buf[2]);
-//                        part.volume(buf[3]);
-//                        part.set_pan(buf[4]);
-//                        part._percussion = player._supportsPercussion ? ((buf[5] & 0x80) > 0) : false;
-//                        part.set_transpose(buf[5]);
-//                        part.set_detune(buf[6]);
-//                        part.pitchBendFactor(buf[7]);
-//                        if (part._percussion)
-//                        {
-//                            if (part._mc)
-//                            {
-//                                part.off();
-//                                se.reallocateMidiChannels(player._midi);
-//                            }
-//                        }
-//                        else
-//                        {
-//                            if (player._isMIDI)
-//                            {
-//                                // Even in cases where a program does not seem to be specified,
-//                                // i.e. bytes 15 and 16 are 0, we send a program change because
-//                                // 0 is a valid program number. MI2 tests show that in such
-//                                // cases, a regular program change message always seems to follow
-//                                // anyway.
-//                                part._instrument.program(buf[8], player._isMT32);
-//                            }
-//                            else
-//                            {
-//                                // Like the original we set up the instrument data of the
-//                                // specified program here too. In case the global
-//                                // instrument data is not loaded already, this will take
-//                                // care of setting a default instrument too.
-//                                se.copyGlobalInstrument(buf[8], &part._instrument);
-//                            }
-//                            part.sendAll();
-//                        }
-//                    }
-//                    break;
-//
-//                case 1:
-//                        // Shut down a part. [Bug 1088045, comments]
-//                    part = player.GetPart(p[0]);
-//                    if (part != null)
-//                        part.uninit();
-//                    break;
-//
+                case 0:
+                    {
+                        // Allocate new part.
+                        // There are 8 bytes (after decoding!) of useful information here.
+                        // Here is what we know about them so far:
+                        //   BYTE 0: Channel #
+                        //   BYTE 1: BIT 01(0x01): Part on?(1 = yes)
+                        //            BIT 02(0x02): Reverb? (1 = yes) [bug #1088045]
+                        //   BYTE 2: Priority adjustment
+                        //   BYTE 3: Volume [guessing]
+                        //   BYTE 4: Pan [bug #1088045]
+                        //   BYTE 5: BIT 8(0x80): Percussion?(1 = yes) [guessed?]
+                        //   BYTE 5: Transpose, if set to 0x80(=-1) it means no transpose
+                        //   BYTE 6: Detune
+                        //   BYTE 7: Pitchbend factor [bug #1088045]
+                        //   BYTE 8: Program
+
+                        var part = player.GetPart((byte)(msg[p] & 0x0F));
+                        var buf = DecodeSysExBytes(msg, p + 1, len - 1);
+                        if (part != null)
+                        {
+                            part.SetOnOff((buf[0] & 0x01) != 0);
+                            part.EffectLevel((byte)(((buf[0] & 0x02) != 0) ? 127 : 0));
+                            part.Priority = buf[1];
+                            part.Volume = buf[2];
+                            part.Pan = buf[3];
+                            part.Percussion = player.SupportsPercussion && ((buf[4] & 0x80) > 0);
+                            part.SetTranspose((sbyte)buf[4]);
+                            part.Detune = buf[5];
+                            part.PitchBendFactor(buf[6]);
+                            if (part.Percussion)
+                            {
+                                if (part.MidiChannel != null)
+                                {
+                                    part.Off();
+                                    se.ReallocateMidiChannels(player.MidiDriver);
+                                }
+                            }
+                            else
+                            {
+                                if (player.IsMIDI)
+                                {
+                                    // Even in cases where a program does not seem to be specified,
+                                    // i.e. bytes 15 and 16 are 0, we send a program change because
+                                    // 0 is a valid program number. MI2 tests show that in such
+                                    // cases, a regular program change message always seems to follow
+                                    // anyway.
+                                    part.Instrument.Program(buf[7], player.IsMT32);
+                                }
+                                else
+                                {
+                                    // Like the original we set up the instrument data of the
+                                    // specified program here too. In case the global
+                                    // instrument data is not loaded already, this will take
+                                    // care of setting a default instrument too.
+                                    se.CopyGlobalInstrument(buf[7], part.Instrument);
+                                }
+                                part.SendAll();
+                            }
+                        }
+                    }
+                    break;
+
+                case 1:
+                        // Shut down a part. [Bug 1088045, comments]
+                    {
+                        var part = player.GetPart(msg[p]);
+                        if (part != null)
+                            part.Uninit();
+                    }
+                    break;
+
                 case 2: // Start of song. Ignore for now.
                     break;
 
@@ -117,7 +121,6 @@ namespace NScumm.Core.Audio.IMuse
                         {
                             if (len == 62 || len == 48)
                             {
-//                            player.decode_sysex_bytes(p, buf, len - 2);
                                 var buf = DecodeSysExBytes(msg, p, len - 2);
                                 part.SetInstrument(buf);
                             }
@@ -187,14 +190,14 @@ namespace NScumm.Core.Audio.IMuse
 //                    player.maybe_set_transpose_part(buf);
 //                    break;
 //
-//                case 64: // Marker
-//                    p++;
-//                    len--;
-//                    while (len--)
-//                    {
-//                        se.handle_marker(player._id, *p++);
-//                    }
-//                    break;
+                case 64: // Marker
+                    p++;
+                    len--;
+                    while (len-- != 0)
+                    {
+                        se.HandleMarker(player.Id, msg[p++]);
+                    }
+                    break;
 //
 //                case 80: // Loop
 //                    player.decode_sysex_bytes(p + 1, buf, len - 1);

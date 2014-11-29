@@ -130,6 +130,7 @@ namespace NScumm.Core.Audio
         /// Create music driver matching the given device handle, or NULL if there is no match.
         /// </summary>
         /// <returns>The midi.</returns>
+        /// <param name = "mixer"></param>
         /// <param name="handle">Handle.</param>
         public static MidiDriver CreateMidi(IMixer mixer, DeviceHandle handle)
         {
@@ -250,7 +251,7 @@ namespace NScumm.Core.Audio
         /// Gets the time in microseconds between invocations of the timer callback.
         /// </summary>
         /// <value>The time in microseconds between invocations of the timer callback.</value>
-        public abstract uint BaseTempo{ get; }
+        public abstract uint BaseTempo { get; }
 
         public abstract MidiChannel AllocateChannel();
 

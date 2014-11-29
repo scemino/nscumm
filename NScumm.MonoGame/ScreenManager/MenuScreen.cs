@@ -29,7 +29,7 @@ namespace NScumm.MonoGame
         #region Fields
 
         List<string> menuEntries = new List<string>();
-        int selectedEntry = 0;
+        int selectedEntry;
 
         #endregion
 

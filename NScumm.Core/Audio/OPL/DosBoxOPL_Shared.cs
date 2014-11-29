@@ -29,15 +29,14 @@
 //Select the type of wave generator routine
 #define DBOPL_WAVE_EQUALS_WAVE_TABLEMUL
 
+using System;
+
 namespace NScumm.Core.Audio.OPL
 {
     partial class DosBoxOPL
     {
         const double OPLRATE = (14318180.0 / 288.0);
-
-        //Attack/decay/release rate counter shift
-        const int RATE_SH = 24;
-        const int RATE_MASK = ((1 << RATE_SH) - 1);
+        const int TREMOLO_TABLE = 52;
 
         //Try to use most precision for frequencies
         //Else try to keep different waves in synch
@@ -55,6 +54,37 @@ namespace NScumm.Core.Audio.OPL
         const int WAVE_SH = (32 - WAVE_BITS);
         const int WAVE_MASK = ((1 << WAVE_SH) - 1);
 
+        //Use the same accuracy as the waves
+        const int LFO_SH = (WAVE_SH - 10);
+        //LFO is controlled by our tremolo 256 sample limit
+        const int LFO_MAX = (256 << (LFO_SH));
+
+        //Maximum amount of attenuation bits
+        //Envelope goes to 511, 9 bits
+        #if (DBOPL_WAVE_EQUALS_WAVE_TABLEMUL )
+        //Uses the value directly
+        public const int ENV_BITS = (9);
+
+        #else
+        //Add 3 bits here for more accuracy and would have to be shifted up either way
+        const int ENV_BITS = (9);
+        #endif
+
+        //Limits of the envelope with those bits and when the envelope goes silent
+        public const int ENV_MIN = 0;
+        public const int ENV_EXTRA = (ENV_BITS - 9);
+        public const int ENV_MAX = (511 << ENV_EXTRA);
+        public const int ENV_LIMIT = ((12 * 256) >> (3 - ENV_EXTRA));
+
+        public static bool ENV_SILENT(int x)
+        {
+            return x >= ENV_LIMIT;
+        }
+
+        //Attack/decay/release rate counter shift
+        const int RATE_SH = 24;
+        const int RATE_MASK = ((1 << RATE_SH) - 1);
+
         //Has to fit within 16bit lookuptable
         const int MUL_SH = 16;
 
@@ -67,9 +97,13 @@ namespace NScumm.Core.Audio.OPL
 
         delegate Channel SynthHandler(Chip chip,uint samples,int[] output,int pos);
 
+        #if ( DBOPL_WAVE_EQUALS_WAVE_HANDLER ) || ( DBOPL_WAVE_EQUALS_WAVE_TABLELOG )
         static ushort[] ExpTable = new ushort[256];
+        #endif
 
+        #if DBOPL_WAVE_EQUALS_WAVE_HANDLER
         static ushort[] SinTable = new ushort[512];
+        #endif
 
         static ushort[] MulTable = new ushort[384];
 
@@ -97,10 +131,10 @@ namespace NScumm.Core.Audio.OPL
             };
         //Mask the counter with this
         static readonly ushort[] WaveMaskTable =
-        {
-            1023, 1023, 511, 511,
-            1023, 1023, 512, 1023,
-        };
+            {
+                1023, 1023, 511, 511,
+                1023, 1023, 512, 1023,
+            };
 
         static byte[] KslTable = new byte[8 * 16];
 
@@ -114,13 +148,11 @@ namespace NScumm.Core.Audio.OPL
                 3,  2,  1,  0,
             };
 
-        const int TREMOLO_TABLE = 52;
         static byte[] TremoloTable = new byte[ TREMOLO_TABLE ];
-
-        //Use the same accuracy as the waves
-        const int LFO_SH = (WAVE_SH - 10);
-        //LFO is controlled by our tremolo 256 sample limit
-        const int LFO_MAX = (256 << (LFO_SH));
+        //Start of a channel behind the chip struct start
+        static Func<Chip,Channel>[] ChanOffsetTable = new Func<Chip,Channel>[32];
+        //Start of an operator behind the chip struct start
+        static Func<Chip,Operator>[] OpOffsetTable = new Func<Chip,Operator>[64];
 
         static byte M(double x)
         {
@@ -186,32 +218,6 @@ namespace NScumm.Core.Audio.OPL
             Sm6Start,
             Sm2Percussion,
             Sm3Percussion
-        }
-
-        //Limits of the envelope with those bits and when the envelope goes silent
-        static class Envelope
-        {
-            //Maximum amount of attenuation bits
-            //Envelope goes to 511, 9 bits
-            #if (DBOPL_WAVE_EQUALS_WAVE_TABLEMUL )
-            //Uses the value directly
-            public const int ENV_BITS = (9);
-            
-            #else
-            //Add 3 bits here for more accuracy and would have to be shifted up either way
-            const int ENV_BITS = (9);
-            #endif
-
-
-            public const int ENV_MIN = 0;
-            public const int ENV_EXTRA = (ENV_BITS - 9);
-            public const int ENV_MAX = (511 << ENV_EXTRA);
-            public const int ENV_LIMIT = ((12 * 256) >> (3 - ENV_EXTRA));
-
-            public static bool ENV_SILENT(int x)
-            {
-                return x >= ENV_LIMIT;
-            }
         }
     }
 }

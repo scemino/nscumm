@@ -29,56 +29,64 @@ namespace NScumm.Core.Audio.OPL
 {
     class OplTimer
     {
-        public double startTime;
-        public double delay;
-        public bool enabled, overflow, masked;
-        public byte counter;
+        const double Epsilon = 1e-3;
+
+        public double StartTime { get; private set; }
+
+        public double Delay { get; private set; }
+
+        public bool Enabled { get; private set; }
+
+        public bool Overflow { get; set; }
+
+        public bool Masked { get; set; }
+
+        public byte Counter { get; set; }
 
         //Call update before making any further changes
         public void Update(double time)
         {
-            if (!enabled || delay == 0)
+            if (!Enabled || Math.Abs(Delay) < Epsilon)
                 return;
-            double deltaStart = time - startTime;
+            double deltaStart = time - StartTime;
             // Only set the overflow flag when not masked
-            if (deltaStart >= 0 && !masked)
-                overflow = true;
+            if (deltaStart >= 0 && !Masked)
+                Overflow = true;
         }
 
         //On a reset make sure the start is in sync with the next cycle
         public void Reset(double time)
         {
-            overflow = false;
-            if (delay == 0 || !enabled)
+            Overflow = false;
+            if (Math.Abs(Delay) < Epsilon || !Enabled)
                 return;
-            double delta = (time - startTime);
+            double delta = (time - StartTime);
 //            double rem = fmod(delta, delay);
-            double rem = delta % delay;
-            double next = delay - rem;
-            startTime = time + next;
+            double rem = Math.IEEERemainder(delta, Delay);
+            double next = Delay - rem;
+            StartTime = time + next;
         }
 
         public void Stop()
         {
-            enabled = false;
+            Enabled = false;
         }
 
         public void Start(double time, int scale)
         {
             //Don't enable again
-            if (enabled)
+            if (Enabled)
                 return;
-            enabled = true;
-            delay = 0.001 * (256 - counter) * scale;
-            startTime = time + delay;
+            Enabled = true;
+            Delay = 0.001 * (256 - Counter) * scale;
+            StartTime = time + Delay;
         }
     }
-
 
     class OplChip
     {
         //Last selected register
-        OplTimer[] timer = new OplTimer[2];
+        readonly OplTimer[] timer = new OplTimer[2];
 
         //Check for it being a write to the timer
         public bool Write(uint reg, byte val)
@@ -86,10 +94,10 @@ namespace NScumm.Core.Audio.OPL
             switch (reg)
             {
                 case 0x02:
-                    timer[0].counter = val;
+                    timer[0].Counter = val;
                     return true;
                 case 0x03:
-                    timer[1].counter = val;
+                    timer[1].Counter = val;
                     return true;
                 case 0x04:
                     double time = Environment.TickCount / 1000.0;
@@ -109,20 +117,20 @@ namespace NScumm.Core.Audio.OPL
                         else
                             timer[0].Stop();
 
-                        timer[0].masked = (val & 0x40) > 0;
+                        timer[0].Masked = (val & 0x40) > 0;
 
-                        if (timer[0].masked)
-                            timer[0].overflow = false;
+                        if (timer[0].Masked)
+                            timer[0].Overflow = false;
 
                         if ((val & 0x2) != 0)
                             timer[1].Start(time, 320);
                         else
                             timer[1].Stop();
 
-                        timer[1].masked = (val & 0x20) > 0;
+                        timer[1].Masked = (val & 0x20) > 0;
 
-                        if (timer[1].masked)
-                            timer[1].overflow = false;
+                        if (timer[1].Masked)
+                            timer[1].Overflow = false;
                     }
                     return true;
             }
@@ -138,12 +146,12 @@ namespace NScumm.Core.Audio.OPL
 
             byte ret = 0;
             // Overflow won't be set if a channel is masked
-            if (timer[0].overflow)
+            if (timer[0].Overflow)
             {
                 ret |= 0x40;
                 ret |= 0x80;
             }
-            if (timer[1].overflow)
+            if (timer[1].Overflow)
             {
                 ret |= 0x20;
                 ret |= 0x80;
@@ -154,26 +162,18 @@ namespace NScumm.Core.Audio.OPL
 
     partial class DosBoxOPL: IOpl
     {
-        uint _rate;
-        OplType _type;
-
-        Chip _emulator;
-        OplChip[] _chip = new OplChip[2];
-
         [StructLayout(LayoutKind.Explicit)]
         struct Reg
         {
             [FieldOffset(0)]
-            public byte dual1;
+            public byte Dual1;
 
             [FieldOffset(1)]
-            public byte dual2;
+            public byte Dual2;
 
             [FieldOffset(0)]
-            public ushort normal;
+            public ushort Normal;
         }
-
-        Reg _reg;
 
         public DosBoxOPL(OplType type)
         {
@@ -186,13 +186,12 @@ namespace NScumm.Core.Audio.OPL
         {
             Free();
 
+            _reg = new Reg();
             for (int i = 0; i < _chip.Length; i++)
             {
                 _chip[i] = new OplChip();
             }
             _emulator = new Chip();
-            if (_emulator == null)
-                return false;
 
             InitTables();
             _emulator.Setup(rate);
@@ -220,21 +219,21 @@ namespace NScumm.Core.Audio.OPL
                 {
                     case OplType.Opl2:
                     case OplType.Opl3:
-                        if (!_chip[0].Write(_reg.normal, (byte)val))
-                            _emulator.WriteReg(_reg.normal, (byte)val);
+                        if (!_chip[0].Write(_reg.Normal, (byte)val))
+                            _emulator.WriteReg(_reg.Normal, (byte)val);
                         break;
                     case OplType.DualOpl2:
                             // Not a 0x??8 port, then write to a specific port
                         if (0 == (port & 0x8))
                         {
                             byte index = (byte)((port & 2) >> 1);
-                            DualWrite(index, index == 0 ? _reg.dual1 : _reg.dual2, (byte)val);
+                            DualWrite(index, index == 0 ? _reg.Dual1 : _reg.Dual2, (byte)val);
                         }
                         else
                         {
                             //Write to both ports
-                            DualWrite(0, _reg.dual1, (byte)val);
-                            DualWrite(1, _reg.dual2, (byte)val);
+                            DualWrite(0, _reg.Dual1, (byte)val);
+                            DualWrite(1, _reg.Dual2, (byte)val);
                         }
                         break;
                 }
@@ -246,10 +245,10 @@ namespace NScumm.Core.Audio.OPL
                 switch (_type)
                 {
                     case OplType.Opl2:
-                        _reg.normal = (ushort)(_emulator.WriteAddr((uint)port, (byte)val) & 0xff);
+                        _reg.Normal = (ushort)(_emulator.WriteAddr((uint)port, (byte)val) & 0xff);
                         break;
                     case OplType.Opl3:
-                        _reg.normal = (ushort)(_emulator.WriteAddr((uint)port, (byte)val) & 0x1ff);
+                        _reg.Normal = (ushort)(_emulator.WriteAddr((uint)port, (byte)val) & 0x1ff);
                         break;
                     case OplType.DualOpl2:
                             // Not a 0x?88 port, when write to a specific side
@@ -258,17 +257,17 @@ namespace NScumm.Core.Audio.OPL
                             byte index = (byte)((port & 2) >> 1);
                             if (index == 0)
                             {
-                                _reg.dual1 = (byte)(val & 0xff);
+                                _reg.Dual1 = (byte)(val & 0xff);
                             }
                             else
                             {
-                                _reg.dual2 = (byte)(val & 0xff);
+                                _reg.Dual2 = (byte)(val & 0xff);
                             }
                         }
                         else
                         {
-                            _reg.dual1 = (byte)(val & 0xff);
-                            _reg.dual2 = (byte)(val & 0xff);
+                            _reg.Dual1 = (byte)(val & 0xff);
+                            _reg.Dual2 = (byte)(val & 0xff);
                         }
                         break;
                 }
@@ -300,7 +299,7 @@ namespace NScumm.Core.Audio.OPL
 
         public void WriteReg(int r, int v)
         {
-            int tempReg = 0;
+            int tempReg;
             switch (_type)
             {
                 case OplType.Opl2:
@@ -309,7 +308,7 @@ namespace NScumm.Core.Audio.OPL
                     // We can't use _handler->writeReg here directly, since it would miss timer changes.
 
                     // Backup old setup register
-                    tempReg = _reg.normal;
+                    tempReg = _reg.Normal;
 
                     // We directly allow writing to secondary OPL3 registers by using
                     // register values >= 0x100.
@@ -401,7 +400,7 @@ namespace NScumm.Core.Audio.OPL
 
                     _emulator.GenerateBlock2(readSamples, tempBuffer);
 
-                    for (uint i = 0; i < readSamples; ++i)
+                    for (var i = 0; i < readSamples; ++i)
                         buffer[pos + i] = (short)tempBuffer[i];
 
                     pos += (int)readSamples;
@@ -528,11 +527,48 @@ namespace NScumm.Core.Audio.OPL
             //Create the Tremolo table, just increase and decrease a triangle wave
             for (byte i = 0; i < TREMOLO_TABLE / 2; i++)
             {
-                byte val = (byte)(i << Envelope.ENV_EXTRA);
+                byte val = (byte)(i << ENV_EXTRA);
                 TremoloTable[i] = val;
                 TremoloTable[TREMOLO_TABLE - 1 - i] = val;
             }
+            //Create a table with offsets of the channels from the start of the chip
+            for (var i = 0; i < 32; i++)
+            {
+                var index = i & 0xf;
+                if (index >= 9)
+                {
+                    ChanOffsetTable[i] = null;
+                    continue;
+                }
+                //Make sure the four op channels follow eachother
+                if (index < 6)
+                {
+                    index = (index % 3) * 2 + (index / 3);
+                }
+                //Add back the bits for highest ones
+                if (i >= 16)
+                    index += 9;
+                ChanOffsetTable[i] = new Func<Chip,Channel>(c => c.Channels[index]);
+            }
+            //Same for operators
+            for (var i = 0; i < 64; i++)
+            {
+                if (i % 8 >= 6 || ((i / 8) % 4 == 3))
+                {
+                    OpOffsetTable[i] = null;
+                    continue;
+                }
+                var chNum = (i / 8) * 3 + (i % 8) % 3;
+                //Make sure we use 16 and up for the 2nd range to match the chanoffset gap
+                if (chNum >= 12)
+                    chNum += 16 - 12;
+                var opNum = (i % 8) / 3;
 
+                if (chNum >= 18)
+                    continue;
+
+                OpOffsetTable[i] = new Func<Chip,Operator>(c => c.Channels[chNum].Ops[opNum]);
+            }
             #if false
             //Stupid checks if table's are correct
             for ( uint i = 0; i < 18; i++ ) {
@@ -561,6 +597,13 @@ namespace NScumm.Core.Audio.OPL
             }
             #endif
         }
+
+        uint _rate;
+        OplType _type;
+
+        Chip _emulator;
+        OplChip[] _chip = new OplChip[2];
+        Reg _reg;
     }
 }
 

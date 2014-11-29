@@ -117,12 +117,13 @@ namespace NScumm.Core.Audio.Midi
                 }
                 else
                 {
-                    // TODO: An SMF End of Track meta event must be placed
+                    // TODO: vs An SMF End of Track meta event must be placed
                     // at the end of the stream.
 //                    data[size++] = 0xFF;
 //                    data[size++] = 0x2F;
 //                    data[size++] = 0x00;
 //                    data[size++] = 0x00;
+                    throw new NotImplementedException("Gmf not implemented");
                 }
                 ++tracksRead;
             }
@@ -187,12 +188,14 @@ namespace NScumm.Core.Audio.Midi
                     if (info.Param2 == 0)
                         info.Event = info.Channel | 0x80;
                     info.Data = new byte[0];
+//                    Debug.WriteLine("MidiParser_SMF::ParseNextEvent NoteOn({0},{1},{2})", info.Event, info.Param1, info.Param2);
                     break;
 
                 case 0xC:
                 case 0xD:
                     info.Param1 = input.ReadByte();
                     info.Param2 = 0;
+//                    Debug.WriteLine("MidiParser_SMF::ParseNextEvent Param1 = {0}", info.Param1);
                     break;
 
                 case 0x8:
@@ -202,6 +205,7 @@ namespace NScumm.Core.Audio.Midi
                     info.Param1 = input.ReadByte();
                     info.Param2 = input.ReadByte();
                     info.Data = new byte[0];
+//                    Debug.WriteLine("MidiParser_SMF::ParseNextEvent Param1 = {0}, Param2 = {1}", info.Param1, info.Param2);
                     break;
 
                 case 0xF: // System Common, Meta or SysEx event

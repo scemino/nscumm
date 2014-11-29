@@ -44,10 +44,6 @@ namespace NScumm.Core.Audio.IMuse
         public int E { get; set; }
 
         public int F { get; set; }
-
-        public DeferredCommand()
-        { 
-        }
     }
 
     class ImTrigger
@@ -99,7 +95,7 @@ namespace NScumm.Core.Audio.IMuse
 
         public void Send(MidiChannel mc)
         {
-            mc.SysExCustomInstrument(AdLibMidiDriver.ToType("ADL "), _instrument);
+            mc.SysExCustomInstrument(AdlibMidiDriver.ToType("ADL "), _instrument);
         }
 
         public void CopyTo(Instrument dest)
@@ -128,8 +124,8 @@ namespace NScumm.Core.Audio.IMuse
         /// It also fixes problems on GS devices that map sounds to these
         /// notes by default.
         /// </summary>
-        public static readonly byte[] _gmRhythmMap = new byte[]
-        {
+        public static readonly byte[] _gmRhythmMap =
+            {
             0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
             0,  0,  0,  0,  0,  0,  0,  0, 36, 37, 38, 39, 40, 41, 66, 47,
             65, 48, 56
@@ -658,7 +654,7 @@ namespace NScumm.Core.Audio.IMuse
             HandleMarker(id, data);
         }
 
-        protected void HandleMarker(int id, int data)
+        public void HandleMarker(int id, int data)
         {
             if ((_queue_end == _queue_pos) || (_queue_adding && _queue_sound == id && data == _queue_marker))
                 return;
@@ -1536,7 +1532,7 @@ namespace NScumm.Core.Audio.IMuse
                     case 3:
                         return 0;
                     default:
-                        Console.Error.WriteLine("doCommand(%d [%d/%d], %d, %d, %d, %d, %d, %d, %d) unsupported", a[0], param, cmd, a[1], a[2], a[3], a[4], a[5], a[6], a[7]);
+                            Console.Error.WriteLine("DoCommand({0} [{1}/{2}], {3}, {4}, {5}, {6}, {7}, {8}, {9}) unsupported", a[0], param, cmd, a[1], a[2], a[3], a[4], a[5], a[6], a[7]);
                         break;
                 }
             }
@@ -1792,7 +1788,6 @@ namespace NScumm.Core.Audio.IMuse
             }
         }
 
-    
         public void StartSoundWithNoteOffset(int sound, int offset)
         {
             lock (_mutex)

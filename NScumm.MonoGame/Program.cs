@@ -35,7 +35,7 @@ namespace NScumm.MonoGame
         [STAThread]
         static void Main(string[] args)
         {
-            GameInfo info = null;
+            GameInfo info;
             if (args.Length > 0)
             {
                 var path = ScummHelper.NormalizePath(args[0]);

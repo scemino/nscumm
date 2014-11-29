@@ -20,7 +20,6 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Timers;
-using NScumm.Core.Audio.OPL;
 using NScumm.Core.Audio.IMuse;
 using System.IO;
 using NScumm.Core.Audio.Decoders;

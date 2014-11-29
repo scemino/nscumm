@@ -23,7 +23,9 @@ namespace NScumm.Core.Audio.SoftSynth
 {
     abstract class EmulatedMidiDriver: MidiDriver, IMixerAudioStream
     {
-        const int FixpShift = 16;
+        public bool IsOpen { get { return _isOpen; } }
+
+        public override uint BaseTempo { get { return 1000000 / (uint)_baseFreq; } }
 
         protected EmulatedMidiDriver(IMixer mixer)
         {
@@ -51,10 +53,6 @@ namespace NScumm.Core.Audio.SoftSynth
             _timerProc = timerProc;
             _timerParam = timerParam;
         }
-
-        public bool IsOpen { get { return _isOpen; } }
-
-        public override uint BaseTempo { get { return 1000000 / (uint)_baseFreq; } }
 
         protected abstract void GenerateSamples(short[] buf, int pos, int len);
 
@@ -122,6 +120,8 @@ namespace NScumm.Core.Audio.SoftSynth
         }
 
         #endregion
+
+        const int FixpShift = 16;
 
         protected bool _isOpen;
         protected IMixer _mixer;

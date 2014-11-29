@@ -60,7 +60,7 @@ namespace NScumm.Core.Audio.IMuse
         int _effect_level;
         byte _chorus;
 
-        public bool Percussion { get; private set; }
+        public bool Percussion { get; set; }
 
         byte _bank;
 
@@ -477,7 +477,7 @@ namespace NScumm.Core.Audio.IMuse
                         value = 0;
                 }
 
-                var message = new byte[9]{ 0x41, 0x00, 0x16, 0x12, 0x00, 0x00, 0x06, 0x00, 0x00 };
+                var message = new byte[]{ 0x41, 0x00, 0x16, 0x12, 0x00, 0x00, 0x06, 0x00, 0x00 };
                 message[1] = MidiChannel.Number;
                 message[7] = (byte)((value == 127) ? 1 : 0);
                 message[8] = (byte)(128 - (6 + message[7]));

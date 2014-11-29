@@ -53,8 +53,6 @@ namespace NScumm.Core.Audio.IMuse
         void HandleMarker(int id, int data);
 
         int GetMusicTimer();
-
-        void StartSound(int sound);
     }
 
     static class IMuse

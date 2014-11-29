@@ -35,74 +35,7 @@ namespace NScumm.Core.Audio.OPL
 
             public Operator[] Ops { get; private set; }
 
-            Operator Op(uint index)
-            {
-                return Chip.Channels[ChannelNum + (index >> 1)].Ops[index & 1];
-            }
-
             public SynthHandler SynthHandler { get; internal set; }
-
-            uint chanData;
-            //Frequency/octave and derived values
-            int[] old = new int[2];
-            //Old data for feedback
-
-            byte feedback;
-            //Feedback shift
-            byte regB0;
-            //Register values to check for changes
-            byte regC0;
-            //This should correspond with reg104, bit 6 indicates a Percussion channel, bit 7 indicates a silent channel
-            public byte FourMask{ get; set; }
-
-            sbyte maskLeft;
-            //Sign extended values for both channel's panning
-            sbyte maskRight;
-
-            //Forward the channel data to the operators of the channel
-            void SetChanData(Chip chip, uint data)
-            {
-                uint change = chanData ^ data;
-                chanData = data;
-                Op(0).chanData = data;
-                Op(1).chanData = data;
-                //Since a frequency update triggered this, always update frequency
-                Op(0).UpdateFrequency();
-                Op(1).UpdateFrequency();
-                if ((change & (0xff << ShiftKslBase)) != 0)
-                {
-                    Op(0).UpdateAttenuation();
-                    Op(1).UpdateAttenuation();
-                }
-                if ((change & (0xff << ShiftKeyCode)) != 0)
-                {
-                    Op(0).UpdateRates(chip);
-                    Op(1).UpdateRates(chip);
-                }
-            }
-            //Change in the chandata, check for new values and if we have to forward to operators
-            void UpdateFrequency(Chip chip, byte fourOp)
-            {
-                //Extrace the frequency bits
-                uint data = chanData & 0xffff;
-                uint kslBase = KslTable[data >> 6];
-                uint keyCode = (data & 0x1c00) >> 9;
-                if ((chip.Reg08 & 0x40) != 0)
-                {
-                    keyCode |= (data & 0x100) >> 8;  /* notesel == 1 */
-                }
-                else
-                {
-                    keyCode |= (data & 0x200) >> 9;  /* notesel == 0 */
-                }
-                //Add the keycode and ksl into the highest bits of chanData
-                data |= (keyCode << ShiftKeyCode) | (kslBase << ShiftKslBase);
-                SetChanData(chip, data);
-                if ((fourOp & 0x3f) != 0)
-                {
-                    Chip.Channels[ChannelNum + 1].SetChanData(chip, data);
-                }
-            }
 
             public void WriteA0(Chip chip, byte val)
             {
@@ -209,7 +142,7 @@ namespace NScumm.Core.Audio.OPL
                         }
                         //Disable updating percussion channels
                     }
-                    else if ((FourMask & 0x40) != 0 && (chip.RegBD & 0x20) != 0)
+                    else if (((FourMask & 0x40) != 0) && ((chip.RegBD & 0x20) != 0))
                     {
 
                         //Regular dual op, am or fm
@@ -229,9 +162,8 @@ namespace NScumm.Core.Audio.OPL
                 else
                 {
                     //Disable updating percussion channels
-                    if ((FourMask & 0x40) != 0 && (chip.RegBD & 0x20) != 0)
+                    if (((FourMask & 0x40) != 0) && ((chip.RegBD & 0x20) != 0))
                     {
-
                         //Regular dual op, am or fm
                     }
                     else if ((val & 1) != 0)
@@ -252,71 +184,15 @@ namespace NScumm.Core.Audio.OPL
                 WriteC0(chip, val);
             }
 
-            //call this for the first channel
-            void GeneratePercussion(bool opl3Mode, Chip chip, int[] output, int pos)
-            {
-                Channel chan = this;
-
-                //BassDrum
-                int mod = (int)((old[0] + old[1])) >> feedback;
-                old[0] = old[1];
-                old[1] = Op(0).GetSample(mod);
-
-                //When bassdrum is in AM mode first operator is ignoed
-                if ((chan.regC0 & 1) != 0)
-                {
-                    mod = 0;
-                }
-                else
-                {
-                    mod = old[0];
-                }
-                int sample = Op(1).GetSample(mod);
-
-
-                //Precalculate stuff used by other outputs
-                uint noiseBit = chip.ForwardNoise() & 0x1;
-                uint c2 = Op(2).ForwardWave();
-                uint c5 = Op(5).ForwardWave();
-                uint phaseBit = (uint)((((c2 & 0x88) ^ ((c2 << 5) & 0x80)) | ((c5 ^ (c5 << 2)) & 0x20)) != 0 ? 0x02 : 0x00);
-
-                //Hi-Hat
-                uint hhVol = Op(2).ForwardVolume();
-                if (!Envelope.ENV_SILENT((int)hhVol))
-                {
-                    uint hhIndex = (uint)((phaseBit << 8) | (0x34 << (int)(phaseBit ^ (noiseBit << 1))));
-                    sample += Op(2).GetWave(hhIndex, hhVol);
-                }
-                //Snare Drum
-                uint sdVol = Op(3).ForwardVolume();
-                if (!Envelope.ENV_SILENT((int)sdVol))
-                {
-                    uint sdIndex = (0x100 + (c2 & 0x100)) ^ (noiseBit << 8);
-                    sample += Op(3).GetWave(sdIndex, sdVol);
-                }
-                //Tom-tom
-                sample += Op(4).GetSample(0);
-
-                //Top-Cymbal
-                uint tcVol = Op(5).ForwardVolume();
-                if (!Envelope.ENV_SILENT((int)tcVol))
-                {
-                    uint tcIndex = (1 + phaseBit) << 8;
-                    sample += Op(5).GetWave(tcIndex, tcVol);
-                }
-                sample <<= 1;
-                if (opl3Mode)
-                {
-                    output[pos] += sample;
-                    output[pos + 1] += sample;
-                }
-                else
-                {
-                    output[pos + 0] += sample;
-                }
-            }
-
-            //Generate blocks of data in specific modes
+            /// <summary>
+            /// Generate blocks of data in specific modes.
+            /// </summary>
+            /// <returns>The template.</returns>
+            /// <param name="mode">Mode.</param>
+            /// <param name="chip">Chip.</param>
+            /// <param name="samples">Samples.</param>
+            /// <param name="output">Output.</param>
+            /// <param name="pos">Position.</param>
             public Channel BlockTemplate(SynthMode mode, Chip chip, uint samples, int[] output, int pos)
             {
                 switch (mode)
@@ -530,16 +406,170 @@ namespace NScumm.Core.Audio.OPL
                     Ops[i] = new Operator();
                 }
 
-                old[0] = old[1] = 0;
-                chanData = 0;
-                regB0 = 0;
-                regC0 = 0;
                 maskLeft = -1;
                 maskRight = -1;
                 feedback = 31;
-                FourMask = 0;
                 SynthHandler = (c, s, o, p) => BlockTemplate(SynthMode.Sm2FM, c, s, o, p);
             }
+
+            Operator Op(uint index)
+            {
+                return Chip.Channels[ChannelNum + (index >> 1)].Ops[index & 1];
+            }
+
+            /// <summary>
+            /// Forward the channel data to the operators of the channel.
+            /// </summary>
+            /// <param name="chip">Chip.</param>
+            /// <param name="data">Data.</param>
+            void SetChanData(Chip chip, uint data)
+            {
+                uint change = chanData ^ data;
+                chanData = data;
+                Op(0).chanData = data;
+                Op(1).chanData = data;
+                //Since a frequency update triggered this, always update frequency
+                Op(0).UpdateFrequency();
+                Op(1).UpdateFrequency();
+                if ((change & (0xff << ShiftKslBase)) != 0)
+                {
+                    Op(0).UpdateAttenuation();
+                    Op(1).UpdateAttenuation();
+                }
+                if ((change & (0xff << ShiftKeyCode)) != 0)
+                {
+                    Op(0).UpdateRates(chip);
+                    Op(1).UpdateRates(chip);
+                }
+            }
+
+            /// <summary>
+            /// Change in the chandata, check for new values and if we have to forward to operators.
+            /// </summary>
+            /// <param name="chip">Chip.</param>
+            /// <param name="fourOp">Four op.</param>
+            void UpdateFrequency(Chip chip, byte fourOp)
+            {
+                //Extrace the frequency bits
+                uint data = chanData & 0xffff;
+                uint kslBase = KslTable[data >> 6];
+                uint keyCode = (data & 0x1c00) >> 9;
+                if ((chip.Reg08 & 0x40) != 0)
+                {
+                    keyCode |= (data & 0x100) >> 8;  /* notesel == 1 */
+                }
+                else
+                {
+                    keyCode |= (data & 0x200) >> 9;  /* notesel == 0 */
+                }
+                //Add the keycode and ksl into the highest bits of chanData
+                data |= (keyCode << ShiftKeyCode) | (kslBase << ShiftKslBase);
+                SetChanData(chip, data);
+                if ((fourOp & 0x3f) != 0)
+                {
+                    Chip.Channels[ChannelNum + 1].SetChanData(chip, data);
+                }
+            }
+
+            // call this for the first channel
+            void GeneratePercussion(bool opl3Mode, Chip chip, int[] output, int pos)
+            {
+                Channel chan = this;
+
+                //BassDrum
+                int mod = (int)((old[0] + old[1])) >> feedback;
+                old[0] = old[1];
+                old[1] = Op(0).GetSample(mod);
+
+                //When bassdrum is in AM mode first operator is ignoed
+                if ((chan.regC0 & 1) != 0)
+                {
+                    mod = 0;
+                }
+                else
+                {
+                    mod = old[0];
+                }
+                int sample = Op(1).GetSample(mod);
+
+
+                //Precalculate stuff used by other outputs
+                uint noiseBit = chip.ForwardNoise() & 0x1;
+                uint c2 = Op(2).ForwardWave();
+                uint c5 = Op(5).ForwardWave();
+                uint phaseBit = (uint)((((c2 & 0x88) ^ ((c2 << 5) & 0x80)) | ((c5 ^ (c5 << 2)) & 0x20)) != 0 ? 0x02 : 0x00);
+
+                //Hi-Hat
+                uint hhVol = Op(2).ForwardVolume();
+                if (!ENV_SILENT((int)hhVol))
+                {
+                    uint hhIndex = (uint)((phaseBit << 8) | (0x34 << (int)(phaseBit ^ (noiseBit << 1))));
+                    sample += Op(2).GetWave(hhIndex, hhVol);
+                }
+                //Snare Drum
+                uint sdVol = Op(3).ForwardVolume();
+                if (!ENV_SILENT((int)sdVol))
+                {
+                    uint sdIndex = (0x100 + (c2 & 0x100)) ^ (noiseBit << 8);
+                    sample += Op(3).GetWave(sdIndex, sdVol);
+                }
+                //Tom-tom
+                sample += Op(4).GetSample(0);
+
+                //Top-Cymbal
+                uint tcVol = Op(5).ForwardVolume();
+                if (!ENV_SILENT((int)tcVol))
+                {
+                    uint tcIndex = (1 + phaseBit) << 8;
+                    sample += Op(5).GetWave(tcIndex, tcVol);
+                }
+                sample <<= 1;
+                if (opl3Mode)
+                {
+                    output[pos] += sample;
+                    output[pos + 1] += sample;
+                }
+                else
+                {
+                    output[pos + 0] += sample;
+                }
+            }
+
+            /// <summary>
+            /// Frequency/octave and derived values.
+            /// </summary>
+            uint chanData;
+
+            /// <summary>
+            /// Old data for feedback.
+            /// </summary>
+            readonly int[] old = new int[2];
+
+            /// <summary>
+            /// Feedback shift.
+            /// </summary>
+            byte feedback;
+
+            /// <summary>
+            /// Register values to check for changes.
+            /// </summary>
+            byte regB0;
+
+            /// <summary>
+            /// This should correspond with reg104, bit 6 indicates a Percussion channel, bit 7 indicates a silent channel
+            /// </summary>
+            byte regC0;
+
+            public byte FourMask { get; set; }
+
+            /// <summary>
+            /// Sign extended values for both channel's panning.
+            /// </summary>
+            sbyte maskLeft;
+            /// <summary>
+            /// Sign extended values for both channel's panning
+            /// </summary>
+            sbyte maskRight;
         }
     }
 }

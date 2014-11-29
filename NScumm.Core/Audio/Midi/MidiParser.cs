@@ -176,7 +176,7 @@ namespace NScumm.Core
         /// <remarks>We refer to "pulses" as "ticks".</remarks>
         public int PulsesPerQuarterNote { get; set; }
 
-        public abstract void LoadMusic(byte[] input);
+        public abstract void LoadMusic(byte[] data);
 
         public void UnloadMusic()
         {
@@ -223,14 +223,6 @@ namespace NScumm.Core
         /// Support smart expiration of hanging notes when jumping.
         /// </summary>
         bool _smartJump;
-        /// <summary>
-        /// Center the pitch wheels when unloading a song.
-        /// </summary>
-        bool _centerPitchWheelOnUnload;
-        /// <summary>
-        /// Send a sustain off on a notes off event, stopping hanging notes.
-        /// </summary>
-        bool _sendSustainOffOnNotesOff;
         /// <summary>
         /// The next event to transmit. Events are preparsed
         /// so each event is parsed only once; this permits
@@ -608,7 +600,7 @@ namespace NScumm.Core
         protected bool AbortParse { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether center <see cref="NScumm.Core.MidiParser"/> the pitch wheels when unloading a song or not.
+        /// Gets or sets a value indicating whether center the pitch wheels when unloading a song or not.
         /// </summary>
         /// <value><c>true</c> if center pitch wheel on unload; otherwise, <c>false</c>.</value>
         protected bool CenterPitchWheelOnUnload { get; set; }
@@ -629,7 +621,7 @@ namespace NScumm.Core
         protected int HangingNotesCount { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether this <see cref="NScumm.Core.MidiParser"/> sends a sustain off on a notes off event, stopping hanging notes.
+        /// Gets or sets a value indicating whether Send a sustain off on a notes off event, stopping hanging notes or not.
         /// </summary>
         /// <value><c>true</c> if send sustain off on notes off; otherwise, <c>false</c>.</value>
         protected bool SendSustainOffOnNotesOff { get; set; }
@@ -668,10 +660,10 @@ namespace NScumm.Core
                     _smartJump = (value != 0);
                     break;
                 case MidiParserProperty.CenterPitchWheelOnUnload:
-                    _centerPitchWheelOnUnload = (value != 0);
+                    CenterPitchWheelOnUnload = (value != 0);
                     break;
                 case MidiParserProperty.SendSustainOffOnNotesOff:
-                    _sendSustainOffOnNotesOff = (value != 0);
+                    SendSustainOffOnNotesOff = (value != 0);
                     break;
             }
         }

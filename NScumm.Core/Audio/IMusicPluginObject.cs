@@ -23,24 +23,14 @@ using System.Collections.Generic;
 
 namespace NScumm.Core.Audio
 {
-    /// <summary>
-    /// Interface for the plugin objects which handle plugins
-    /// instantiation. Subclasses for this may be used for engine plugins and other
-    /// types of plugins. An existing IPluginObject refers to an executable file
-    /// loaded in memory and ready to run. The plugin, on the other hand, is just
-    /// a handle to the file/object, whether it's loaded in memory or not.
-    /// </summary>
-    interface IPluginObject
+    interface IMusicPluginObject
     {
         /// <summary>
         /// Gets the name of the plugin.
         /// </summary>
         /// <value>The name.</value>
         string Name{ get; }
-    }
 
-    interface IMusicPluginObject: IPluginObject
-    {
         /// <summary>
         /// Gets a unique string identifier which will be used to save the
         /// selected MIDI driver to the config file.
@@ -67,6 +57,7 @@ namespace NScumm.Core.Audio
         /// Creates a MIDI Driver instance based on the device
         /// previously detected via MidiDriver.DetectDevice()
         /// </summary>
+        /// <param name = "mixer"></param>
         /// <param name="handle">Handle.</param>
         MidiDriver CreateInstance(IMixer mixer, DeviceHandle handle);
     }

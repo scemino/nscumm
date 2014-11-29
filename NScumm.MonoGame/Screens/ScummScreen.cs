@@ -26,6 +26,7 @@ using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework;
 using System.IO;
 using System.Linq;
+using System.Threading;
 
 namespace NScumm.MonoGame
 {
@@ -61,11 +62,12 @@ namespace NScumm.MonoGame
                 inputManager = new XnaInputManager(game.Window);
                 gfx = new XnaGraphicsManager(ScreenManager.GraphicsDevice);
                 audioDriver = new OpenALDriver();
+
                 // init engines
                 engine = ScummEngine.Create(info, gfx, inputManager, audioDriver);
                 engine.ShowMenuDialogRequested += OnShowMenuDialogRequested;
                 tsToWait = engine.RunBootScript();
-                audioDriver.Update();
+
             }
         }
 

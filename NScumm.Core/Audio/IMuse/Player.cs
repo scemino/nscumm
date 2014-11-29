@@ -70,7 +70,6 @@ namespace NScumm.Core.Audio.IMuse
         protected uint _loop_to_tick;
         protected uint _loop_from_tick;
         protected byte _speed;
-        protected bool _abort;
 
         // This does not get used by us! It is only
         // here for save/load purposes, and gets
@@ -85,6 +84,8 @@ namespace NScumm.Core.Audio.IMuse
         protected bool _isMT32;
         protected bool _isMIDI;
         protected bool _supportsPercussion;
+
+        public bool SupportsPercussion { get { return _supportsPercussion; } }
 
         // Player part
         protected void HookClear()
@@ -161,7 +162,6 @@ namespace NScumm.Core.Audio.IMuse
 
         protected void MaybePartOnOff(byte[] data)
         {
-
             var cmd = data[1];
             var chan = data[0];
 
@@ -245,7 +245,7 @@ namespace NScumm.Core.Audio.IMuse
             }
         }
 
-        protected int  QueryPartParam(int param, byte chan)
+        protected int QueryPartParam(int param, byte chan)
         {
             var part = _parts;
             while (part != null)
@@ -434,7 +434,7 @@ namespace NScumm.Core.Audio.IMuse
             _detune = 0;
 
             var ptr = _se.FindStartOfSound(sound, IMuseInternal.ChunkType.MDhd);
-            uint size = 0;
+            uint size;
 
             if (ptr != null)
             {
@@ -471,6 +471,7 @@ namespace NScumm.Core.Audio.IMuse
             {
                 _parameterFaders[i] = new ParameterFader();
             }
+            _active_notes = new ushort[128];
         }
 
         public int AddParameterFader(ParameterFaderType param, int target, int time)
@@ -1151,7 +1152,7 @@ namespace NScumm.Core.Audio.IMuse
             return tmp;
         }
 
-        public override void SysEx(byte[] msg, ushort len)
+        public override void SysEx(byte[] msg, ushort length)
         {
             int p = 0;
             byte a;
@@ -1160,7 +1161,7 @@ namespace NScumm.Core.Audio.IMuse
 
             // Check SysEx manufacturer.
             a = msg[p++];
-            --len;
+            --length;
             if (a != IMuseSysExId)
             {
                 if (a == RolandSysExId)
@@ -1180,7 +1181,7 @@ namespace NScumm.Core.Audio.IMuse
                 else if (a == YM2612SysExId)
                 {
                     // FM-TOWNS custom instrument definition
-                    _midi.SysExCustomInstrument(msg[p], NScumm.Core.Audio.SoftSynth.AdLibMidiDriver.ToType("EUP "), Extract(msg, p + 1));
+                    _midi.SysExCustomInstrument(msg[p], NScumm.Core.Audio.SoftSynth.AdlibMidiDriver.ToType("EUP "), Extract(msg, p + 1));
                 }
                 else
                 {
@@ -1196,14 +1197,14 @@ namespace NScumm.Core.Audio.IMuse
                 }
                 return;
             }
-            --len;
+            --length;
 
             // Too big?
-            if (len >= buf.Length * 2)
+            if (length >= buf.Length * 2)
                 return;
 
             if (_se.Sysex != null)
-                _se.Sysex(this, Extract(msg, p), len);
+                _se.Sysex(this, Extract(msg, p), length);
         }
 
         public override void MetaEvent(byte type, byte[] data, ushort length)

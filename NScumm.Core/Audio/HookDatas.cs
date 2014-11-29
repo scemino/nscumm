@@ -117,5 +117,5 @@ namespace NScumm.Core.Audio
                 array[i] = value;
             }
         }
-    };
+    }
 }

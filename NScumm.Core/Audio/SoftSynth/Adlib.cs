@@ -23,7 +23,7 @@ using System.Collections.Generic;
 
 namespace NScumm.Core.Audio.SoftSynth
 {
-    class AdLibEmuMusicPlugin : MusicPluginObject, IMusicPluginObject
+    class AdlibEmuMusicPlugin : MusicPluginObject, IMusicPluginObject
     {
         public override string Id
         {
@@ -32,7 +32,7 @@ namespace NScumm.Core.Audio.SoftSynth
 
         public override string Name
         {
-            get { return "AdLib Emulator"; }
+            get { return "Adlib Emulator"; }
         }
 
         public override IList<MusicDevice> GetDevices()
@@ -42,8 +42,8 @@ namespace NScumm.Core.Audio.SoftSynth
 
         public override MidiDriver CreateInstance(IMixer mixer, DeviceHandle handle)
         {
-            // TODO: getMixer
-            return new AdLibMidiDriver(mixer);
+            // TODO:
+            return new AdlibMidiDriver(mixer);
         }
     }
 }

@@ -53,7 +53,6 @@ namespace NScumm.Core.Audio.IMuse
                         //   BYTE 6: Detune
                         //   BYTE 7: Pitchbend factor [bug #1088045]
                         //   BYTE 8: Program
-
                         var part = player.GetPart((byte)(msg[p] & 0x0F));
                         var buf = DecodeSysExBytes(msg, p + 1, len - 1);
                         if (part != null)
@@ -132,23 +131,32 @@ namespace NScumm.Core.Audio.IMuse
                     }
                     break;
 
-//                case 17: // AdLib instrument definition(Global)
-//                    p += 2; // Skip hardware type and... whatever came right before it
-//                    a = *p++;
-//                    player.decode_sysex_bytes(p, buf, len - 3);
-//                    if (len == 63 || len == 49)
-//                        se.setGlobalInstrument(a, buf);
-//                    break;
-//
-//                case 33: // Parameter adjust
-//                    a = *p++ & 0x0F;
-//                    ++p; // Skip hardware type
-//                    player.decode_sysex_bytes(p, buf, len - 2);
-//                    part = player.GetPart(a);
-//                    if (part)
-//                        part.set_param(READ_BE_UINT16(buf), READ_BE_UINT16(buf + 2));
-//                    break;
-//
+                case 17: // AdLib instrument definition(Global)
+                    {
+                        p += 2; // Skip hardware type and... whatever came right before it
+                        var a = msg[p++];
+                        var buf = DecodeSysExBytes(msg, p, len - 3);
+                        if (len == 63 || len == 49)
+                            se.SetGlobalInstrument(a, buf);
+                    }
+                    break;
+
+                case 33: // Parameter adjust
+                    {
+                        var a = msg[p++] & 0x0F;
+                        ++p; // Skip hardware type
+                        var buf = DecodeSysExBytes(msg, p, len - 2);
+                        var part = player.GetPart((byte)a);
+                        if (part != null)
+                        {
+                            using (var br = new BinaryReader(new MemoryStream(buf)))
+                            {
+                                part.SetParam((byte)br.ReadUInt16BigEndian(), (int)br.ReadUInt16BigEndian());
+                            }
+                        }
+                    }
+                    break;
+
                 case 48: // Hook - jump
                     {
                         if (player.Scanning)
@@ -160,36 +168,50 @@ namespace NScumm.Core.Audio.IMuse
                         }
                     }
                     break;
-//
-//                case 49: // Hook - global transpose
-//                    player.decode_sysex_bytes(p + 1, buf, len - 1);
-//                    player.maybe_set_transpose(buf);
-//                    break;
-//
-//                case 50: // Hook - part on/off
-//                    buf[0] = *p++ & 0x0F;
-//                    player.decode_sysex_bytes(p, buf + 1, len - 1);
-//                    player.maybe_part_onoff(buf);
-//                    break;
-//
-//                case 51: // Hook - set volume
-//                    buf[0] = *p++ & 0x0F;
-//                    player.decode_sysex_bytes(p, buf + 1, len - 1);
-//                    player.maybe_set_volume(buf);
-//                    break;
-//
-//                case 52: // Hook - set program
-//                    buf[0] = *p++ & 0x0F;
-//                    player.decode_sysex_bytes(p, buf + 1, len - 1);
-//                    player.maybe_set_program(buf);
-//                    break;
-//
-//                case 53: // Hook - set transpose
-//                    buf[0] = *p++ & 0x0F;
-//                    player.decode_sysex_bytes(p, buf + 1, len - 1);
-//                    player.maybe_set_transpose_part(buf);
-//                    break;
-//
+
+                case 49: // Hook - global transpose
+                    {
+                        var buf = DecodeSysExBytes(msg, p + 1, len - 1);
+                        player.MaybeSetTranspose(buf);
+                    }
+                    break;
+
+                case 50: // Hook - part on/off
+                    {
+                        var tmp = msg[p++] & 0x0F;
+                        var buf = DecodeSysExBytes(msg, p, len - 1, 1);
+                        buf[0] = (byte)tmp;
+                        player.MaybePartOnOff(buf);
+                    }
+                    break;
+
+                case 51: // Hook - set volume
+                    {
+                        var tmp = msg[p++] & 0x0F;
+                        var buf=DecodeSysExBytes(msg, p, len - 1, 1);
+                        buf[0] = (byte)tmp;
+                        player.MaybeSetVolume(buf);
+                    }
+                    break;
+
+                case 52: // Hook - set program
+                    {
+                        var tmp = msg[p++] & 0x0F;
+                        var buf = DecodeSysExBytes(msg, p, len - 1, 1);
+                        buf[0] = (byte)tmp;
+                        player.MaybeSetProgram(buf);
+                    }
+                    break;
+
+                case 53: // Hook - set transpose
+                    {
+                        var tmp = msg[p++] & 0x0F;
+                        var buf = DecodeSysExBytes(msg, p, len - 1, 1);
+                        buf[0] = (byte)tmp;
+                        player.MaybeSetTransposePart(buf);
+                    }
+                    break;
+
                 case 64: // Marker
                     p++;
                     len--;
@@ -198,24 +220,31 @@ namespace NScumm.Core.Audio.IMuse
                         se.HandleMarker(player.Id, msg[p++]);
                     }
                     break;
-//
-//                case 80: // Loop
-//                    player.decode_sysex_bytes(p + 1, buf, len - 1);
-//                    player.setLoop(READ_BE_UINT16(buf), READ_BE_UINT16(buf + 2),
-//                        READ_BE_UINT16(buf + 4), READ_BE_UINT16(buf + 6),
-//                        READ_BE_UINT16(buf + 8));
-//                    break;
-//
-//                case 81: // End loop
-//                    player.clearLoop();
-//                    break;
-//
-//                case 96: // Set instrument
-//                    part = player.GetPart(p[0] & 0x0F);
-//                    a = (p[1] & 0x0F) << 12 | (p[2] & 0x0F) << 8 | (p[3] & 0x0F) << 4 | (p[4] & 0x0F);
-//                    if (part)
-//                        part.set_instrument(a);
-//                    break;
+
+                case 80: // Loop
+                    {
+                        var buf=DecodeSysExBytes(msg,p + 1, len - 1);
+                        using (var br = new BinaryReader(new MemoryStream(buf)))
+                        {
+                            player.SetLoop(br.ReadUInt16BigEndian(), br.ReadUInt16BigEndian(),
+                                br.ReadUInt16BigEndian(), br.ReadUInt16BigEndian(),
+                                br.ReadUInt16BigEndian());
+                        }
+                    }
+                    break;
+
+                case 81: // End loop
+                    player.ClearLoop();
+                    break;
+
+                case 96: // Set instrument
+                    {
+                        var part = player.GetPart((byte)(msg[p] & 0x0F));
+                        var a = (msg[p+1] & 0x0F) << 12 | (msg[p+2] & 0x0F) << 8 | (msg[p+3] & 0x0F) << 4 | (msg[p+4] & 0x0F);
+                        if (part!=null)
+                            part.SetInstrument((uint)a);
+                    }
+                    break;
 
                 default:
                     Console.Error.WriteLine("Unknown SysEx command {0}", (int)code);
@@ -223,11 +252,12 @@ namespace NScumm.Core.Audio.IMuse
             }
         }
 
-        static byte[] DecodeSysExBytes(byte[] input, int pos, long length)
+        static byte[] DecodeSysExBytes(byte[] input, int pos, long length, int destIndex=0)
         {
-            var data = new byte[length / 2];
+            var data = new byte[destIndex+length / 2];
             using (var ms = new MemoryStream(data))
             {
+                ms.Seek(destIndex, SeekOrigin.Begin);
                 while (length > 0)
                 {
                     var read = ((input[pos++] << 4) & 0xFF) | (input[pos++] & 0xF);

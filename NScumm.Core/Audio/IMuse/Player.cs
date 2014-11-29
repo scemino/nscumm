@@ -145,7 +145,7 @@ namespace NScumm.Core.Audio.IMuse
             Jump(track, beat, tick);
         }
 
-        protected void MaybeSetTranspose(byte[] data)
+        public void MaybeSetTranspose(byte[] data)
         {
             var cmd = data[0];
 
@@ -160,7 +160,7 @@ namespace NScumm.Core.Audio.IMuse
             SetTranspose(data[1], (sbyte)data[2]);
         }
 
-        protected void MaybePartOnOff(byte[] data)
+        public void MaybePartOnOff(byte[] data)
         {
             var cmd = data[1];
             var chan = data[0];
@@ -179,7 +179,7 @@ namespace NScumm.Core.Audio.IMuse
                 part.SetOnOff(data[2] != 0);
         }
 
-        protected void MaybeSetVolume(byte[] data)
+        public void MaybeSetVolume(byte[] data)
         {
             var cmd = data[1];
             var chan = data[0];
@@ -199,7 +199,7 @@ namespace NScumm.Core.Audio.IMuse
                 part.Volume = data[2];
         }
 
-        protected void MaybeSetProgram(byte[] data)
+        public void MaybeSetProgram(byte[] data)
         {
             var cmd = data[1];
             var chan = data[0];
@@ -218,7 +218,7 @@ namespace NScumm.Core.Audio.IMuse
                 part.ProgramChange(data[2]);
         }
 
-        protected void MaybeSetTransposePart(byte[] data)
+        public void MaybeSetTransposePart(byte[] data)
         {
             var cmd = data[1];
             var chan = data[0];

@@ -1215,7 +1215,7 @@ namespace NScumm.Core.Audio.IMuse
             }
         }
 
-        protected void SetGlobalInstrument(byte slot, byte[] data)
+        public void SetGlobalInstrument(byte slot, byte[] data)
         {
             if (slot < 32)
             {

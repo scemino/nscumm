@@ -25,9 +25,9 @@ namespace NScumm.Core.Audio.IMuse
 {
     class Part
     {
-        public IMuseInternal Se{ get; set; }
+        public IMuseInternal Se { get; set; }
 
-        public int Slot{ get; set; }
+        public int Slot { get; set; }
 
         public MidiChannel MidiChannel { get; set; }
 
@@ -368,7 +368,6 @@ namespace NScumm.Core.Audio.IMuse
             }
         }
 
-
         public void FixAfterLoad()
         {
             SetTranspose((sbyte)Transpose);
@@ -446,7 +445,6 @@ namespace NScumm.Core.Audio.IMuse
                 return max;
             return val;
         }
-
 
         void SendPitchBend()
         {

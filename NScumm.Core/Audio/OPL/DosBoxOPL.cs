@@ -29,7 +29,7 @@ namespace NScumm.Core.Audio.OPL
 {
     class OplTimer
     {
-        const double Epsilon = 1e-3;
+        const double Epsilon = 1e-6;
 
         public double StartTime { get; private set; }
 
@@ -62,7 +62,7 @@ namespace NScumm.Core.Audio.OPL
                 return;
             double delta = (time - StartTime);
 //            double rem = fmod(delta, delay);
-            double rem = Math.IEEERemainder(delta, Delay);
+            double rem = delta% Delay;
             double next = Delay - rem;
             StartTime = time + next;
         }
@@ -375,7 +375,7 @@ namespace NScumm.Core.Audio.OPL
                 length >>= 1;
 
             const uint bufferLength = 512;
-            int[] tempBuffer = new int[bufferLength * 2];
+            var tempBuffer = new int[bufferLength * 2];
 
             if (_emulator.Opl3Active != 0)
             {
@@ -452,22 +452,22 @@ namespace NScumm.Core.Audio.OPL
             #endif
             #if DBOPL_WAVE_EQUALS_WAVE_TABLEMUL
             //Multiplication based tables
-            for (int i = 0; i < 384; i++)
+            for (var i = 0; i < 384; i++)
             {
                 int s = i * 8;
                 //TODO maybe keep some of the precision errors of the original table?
-                double val = (0.5 + (Math.Pow(2.0, -1.0 + (255 - s) * (1.0 / 256))) * (1 << MUL_SH));
+                double val = (0.5 + (Math.Pow(2.0, -1.0 + (255 - s) * (1.0 / 256))) * (1 << MulShift));
                 MulTable[i] = (ushort)(val);
             }
 
             //Sine Wave Base
-            for (int i = 0; i < 512; i++)
+            for (var i = 0; i < 512; i++)
             {
                 WaveTable[0x0200 + i] = (short)(Math.Sin((i + 0.5) * (Math.PI / 512.0)) * 4084);
                 WaveTable[0x0000 + i] = (short)-WaveTable[0x200 + i];
             }
             //Exponential wave
-            for (int i = 0; i < 256; i++)
+            for (var i = 0; i < 256; i++)
             {
                 WaveTable[0x700 + i] = (short)(0.5 + (Math.Pow(2.0, -1.0 + (255 - i * 8) * (1.0 / 256))) * 4085);
                 WaveTable[0x6ff - i] = (short)-WaveTable[0x700 + i];
@@ -525,11 +525,11 @@ namespace NScumm.Core.Audio.OPL
                 }
             }
             //Create the Tremolo table, just increase and decrease a triangle wave
-            for (byte i = 0; i < TREMOLO_TABLE / 2; i++)
+            for (byte i = 0; i < TremoloTable.Length / 2; i++)
             {
-                byte val = (byte)(i << ENV_EXTRA);
+                byte val = (byte)(i << EnvExtra);
                 TremoloTable[i] = val;
-                TremoloTable[TREMOLO_TABLE - 1 - i] = val;
+                TremoloTable[TremoloTable.Length - 1 - i] = val;
             }
             //Create a table with offsets of the channels from the start of the chip
             for (var i = 0; i < 32; i++)

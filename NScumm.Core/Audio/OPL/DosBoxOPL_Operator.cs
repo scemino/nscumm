@@ -49,79 +49,58 @@ namespace NScumm.Core.Audio.OPL
                 Attack
             }
 
-            public VolumeHandler volHandler;
+            VolumeHandler volHandler;
 
-            #if (DBOPL_WAVE_EQUALS_WAVE_HANDLER)
+#if (DBOPL_WAVE_EQUALS_WAVE_HANDLER)
             public WaveHandler waveHandler;
-            //Routine that generate a wave
-            
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #else
-            public int waveBase;
-            public uint waveMask;
-            public uint waveStart;
-            #endif
-            public uint waveIndex;
+            int waveBase;
+            int waveMask;
+            int waveStart;
+#endif
+            int waveIndex;
             //WAVE_BITS shifted counter of the frequency index
-            public uint waveAdd;
+            int waveAdd;
             //The base frequency without vibrato
-            public uint waveCurrent;
+            int waveCurrent;
             //waveAdd + vibratao
 
             public uint chanData;
             //Frequency/octave and derived data coming from whatever channel controls this
-            public uint freqMul;
+            uint freqMul;
             //Scale channel frequency with this, TODO maybe remove?
-            public uint vibrato;
+            uint vibrato;
             //Scaled up vibrato strength
-            public int sustainLevel;
+            int sustainLevel;
             //When stopping at sustain level stop here
-            public int totalLevel;
+            int totalLevel;
             //totalLevel is added to every generated volume
-            public uint currentLevel;
+            uint currentLevel;
             //totalLevel + tremolo
-            public int volume;
+            int volume;
             //The currently active volume
 
-            public uint attackAdd;
+            uint attackAdd;
             //Timers for the different states of the envelope
-            public uint decayAdd;
-            public uint releaseAdd;
-            public uint rateIndex;
+            uint decayAdd;
+            uint releaseAdd;
+            uint rateIndex;
             //Current position of the evenlope
 
-            public byte rateZero;
+            byte rateZero;
             //int for the different states of the envelope having no changes
-            public byte keyOn;
+            byte keyOn;
             //Bitmask of different values that can generate keyon
             //Registers, also used to check for changes
-            public Mask reg20, reg40, reg60, reg80, regE0;
+            Mask reg20, reg40, reg60, reg80, regE0;
             //Active part of the envelope we're in
-            public State state;
+            State state;
             //0xff when tremolo is enabled
-            public byte tremoloMask;
+            byte tremoloMask;
             //Strength of the vibrato
-            public byte vibStrength;
+            byte vibStrength;
             //Keep track of the calculated KSR so we can check for changes
-            public byte ksr;
+            byte ksr;
 
             public void UpdateAttenuation()
             {
@@ -129,8 +108,8 @@ namespace NScumm.Core.Audio.OPL
                 int tl = (int)reg40 & 0x3f;
                 byte kslShift = KslShiftTable[(int)reg40 >> 6];
                 //Make sure the attenuation goes to the right bits
-                totalLevel = tl << (ENV_BITS - 7);    //Total level goes 2 bits below max
-                totalLevel += (kslBase << ENV_EXTRA) >> kslShift;
+                totalLevel = tl << (EnvBits - 7);    //Total level goes 2 bits below max
+                totalLevel += (kslBase << EnvExtra) >> kslShift;
             }
 
             public void UpdateRates(Chip chip)
@@ -138,7 +117,7 @@ namespace NScumm.Core.Audio.OPL
                 //Mame seems to reverse this where enabling ksr actually lowers
                 //the rate, but pdf manuals says otherwise?
                 byte newKsr = (byte)((chanData >> Channel.ShiftKeyCode) & 0xff);
-                if (!(reg20.HasFlag(Mask.Ksr)))
+                if (!reg20.HasFlag(Mask.Ksr))
                 {
                     newKsr >>= 2;
                 }
@@ -152,13 +131,13 @@ namespace NScumm.Core.Audio.OPL
 
             public void UpdateFrequency()
             {
-                uint freq = chanData & ((1 << 10) - 1);
-                int block = (int)((chanData >> 10) & 0xff);
+                var freq = chanData & ((1 << 10) - 1);
+                byte block = (byte)((chanData >> 10) & 0xff);
                 #if WAVE_PRECISION
                 block = 7 - block;
                 waveAdd = ( freq * freqMul ) >> block;
                 #else
-                waveAdd = (freq << block) * freqMul;
+                waveAdd = (int)((freq << block) * freqMul);
                 #endif
                 if (reg20.HasFlag(Mask.Vibrato))
                 {
@@ -179,13 +158,13 @@ namespace NScumm.Core.Audio.OPL
 
             public void Write20(Chip chip, byte val)
             {
-                byte change = (byte)((int)reg20 ^ val);
+                var change = ((int)reg20 ^ val);
                 if (change == 0)
                     return;
                 reg20 = (Mask)val;
                 //Shift the tremolo bit over the entire register, saved a branch, YES!
-                tremoloMask = (byte)(sbyte)(val >> 7);
-                tremoloMask &= unchecked((byte)~((1 << ENV_EXTRA) - 1));
+                tremoloMask = (byte)(val >> 7);
+                tremoloMask &= unchecked((byte)~((1 << EnvExtra) - 1));
                 //Update specific features based on changes
                 if ((change & (int)Mask.Ksr) != 0)
                 {
@@ -218,7 +197,7 @@ namespace NScumm.Core.Audio.OPL
 
             public void Write60(Chip chip, byte val)
             {
-                byte change = (byte)((int)reg60 ^ val);
+                var change = ((int)reg60 ^ val);
                 reg60 = (Mask)val;
                 if ((change & 0x0f) != 0)
                 {
@@ -232,14 +211,14 @@ namespace NScumm.Core.Audio.OPL
 
             public void Write80(Chip chip, byte val)
             {
-                byte change = (byte)((int)reg80 ^ val);
+                var change = ((int)reg80 ^ val);
                 if (change == 0)
                     return;
                 reg80 = (Mask)val;
                 byte sustain = (byte)(val >> 4);
                 //Turn 0xf into 0x1f
                 sustain |= (byte)((sustain + 1) & 0x10);
-                sustainLevel = sustain << (ENV_BITS - 5);
+                sustainLevel = sustain << (EnvBits - 5);
                 if ((change & 0x0f) != 0)
                 {
                     UpdateRelease(chip);
@@ -257,14 +236,14 @@ namespace NScumm.Core.Audio.OPL
                 waveHandler = WaveHandlerTable[waveForm];
                 #else
                 waveBase = WaveBaseTable[waveForm];
-                waveStart = (uint)(WaveStartTable[waveForm] << WAVE_SH);
+                waveStart = (WaveStartTable[waveForm] << WaveShift);
                 waveMask = WaveMaskTable[waveForm];
                 #endif
             }
 
             public bool Silent()
             {
-                if (!ENV_SILENT(totalLevel + volume))
+                if (!EnvSilent(totalLevel + volume))
                     return false;
                 if (0 == (rateZero & (1 << (int)state)))
                     return false;
@@ -282,7 +261,7 @@ namespace NScumm.Core.Audio.OPL
                     int neg = chip.VibratoSign;
                     //Negate the add with -1 or 0
                     add = (add ^ neg) - neg;
-                    waveCurrent += (uint)add;
+                    waveCurrent = (waveCurrent+add);
                 }
 
             }
@@ -322,18 +301,18 @@ namespace NScumm.Core.Audio.OPL
                 switch (state)
                 {
                     case State.Off:
-                        return ENV_MAX;
+                        return EnvMax;
                     case State.Attack:
                         change = RateForward(attackAdd);
                         if (change == 0)
                             return vol;
                         vol += ((~vol) * change) >> 3;
-                        if (vol < ENV_MIN)
+                        if (vol < EnvMin)
                         {
-                            volume = ENV_MIN;
+                            volume = EnvMin;
                             rateIndex = 0;
                             SetState(State.Decay);
-                            return ENV_MIN;
+                            return EnvMin;
                         }
                         break;
                     case State.Decay:
@@ -341,11 +320,11 @@ namespace NScumm.Core.Audio.OPL
                         if (vol >= sustainLevel)
                         {
                             //Check if we didn't overshoot max attenuation, then just go off
-                            if (vol >= ENV_MAX)
+                            if (vol >= EnvMax)
                             {
-                                volume = ENV_MAX;
+                                volume = EnvMax;
                                 SetState(State.Off);
-                                return ENV_MAX;
+                                return EnvMax;
                             }
                             //Continue as sustain
                             rateIndex = 0;
@@ -358,21 +337,21 @@ namespace NScumm.Core.Audio.OPL
                             return vol;
                         }
                         vol += RateForward(releaseAdd);
-                        if (vol >= ENV_MAX)
+                        if (vol >= EnvMax)
                         {
-                            volume = ENV_MAX;
+                            volume = EnvMax;
                             SetState(State.Off);
-                            return ENV_MAX;
+                            return EnvMax;
                         }
                         break;
                 //In sustain phase, but not sustaining, do regular release
                     case State.Release:
                         vol += RateForward(releaseAdd);
-                        if (vol >= ENV_MAX)
+                        if (vol >= EnvMax)
                         {
-                            volume = ENV_MAX;
+                            volume = EnvMax;
                             SetState(State.Off);
-                            return ENV_MAX;
+                            return EnvMax;
                         }
                         break;
                 }
@@ -383,15 +362,15 @@ namespace NScumm.Core.Audio.OPL
             public int RateForward(uint add)
             {
                 rateIndex += add;
-                int ret = (int)(rateIndex >> RATE_SH);
-                rateIndex = rateIndex & RATE_MASK;
+                int ret = (int)(rateIndex >> RateShift);
+                rateIndex = rateIndex & RateMask;
                 return ret;
             }
 
-            public uint ForwardWave()
+            public int ForwardWave()
             {
                 waveIndex += waveCurrent;
-                return waveIndex >> WAVE_SH;
+                return waveIndex >> WaveShift;
             }
 
             public uint ForwardVolume()
@@ -402,7 +381,7 @@ namespace NScumm.Core.Audio.OPL
             public int GetSample(int modulation)
             {
                 uint vol = ForwardVolume();
-                if (ENV_SILENT((int)vol))
+                if (EnvSilent((int)vol))
                 {
                     //Simply forward the wave
                     waveIndex += waveCurrent;
@@ -410,18 +389,18 @@ namespace NScumm.Core.Audio.OPL
                 }
                 else
                 {
-                    uint index = ForwardWave();
-                    index += (uint)modulation;
+                    int index = ForwardWave();
+                    index += modulation;
                     return GetWave(index, vol);
                 }
             }
 
-            public int GetWave(uint index, uint vol)
+            public int GetWave(int index, uint vol)
             {
                 #if ( DBOPL_WAVE_EQUALS_WAVE_HANDLER )
                 return waveHandler(index, vol << (3 - ENV_EXTRA));
                 #elif ( DBOPL_WAVE_EQUALS_WAVE_TABLEMUL )
-                return (WaveTable[waveBase + (index & waveMask)] * MulTable[vol >> ENV_EXTRA]) >> MUL_SH;
+                return (WaveTable[waveBase + (index & waveMask)] * MulTable[vol >> EnvExtra]) >> MulShift;
                 #elif ( DBOPL_WAVE_EQUALS_WAVE_TABLELOG )
                 int wave = waveBase[ index & waveMask ];
                 uint total = ( wave & 0x7fff ) + vol << ( 3 - ENV_EXTRA );
@@ -438,10 +417,10 @@ namespace NScumm.Core.Audio.OPL
             {
                 SetState(State.Off);
                 rateZero = (byte)(1 << (int)State.Off);
-                sustainLevel = ENV_MAX;
-                currentLevel = ENV_MAX;
-                totalLevel = ENV_MAX;
-                volume = ENV_MAX;
+                sustainLevel = EnvMax;
+                currentLevel = EnvMax;
+                totalLevel = EnvMax;
+                volume = EnvMax;
             }
 
             void SetState(State s)
@@ -496,7 +475,7 @@ namespace NScumm.Core.Audio.OPL
 
             void UpdateDecay(Chip chip)
             {
-                byte rate = (byte)((int)reg60 & 0xf);
+                var rate = (int)reg60 & 0xf;
                 if (rate != 0)
                 {
                     byte val = (byte)((rate << 2) + ksr);
@@ -582,24 +561,12 @@ namespace NScumm.Core.Audio.OPL
                 uint index = (total & 0xff);
                 uint sig = ExpTable[index];
                 int exp = (int)(total >> 8);
-                
-
-
-
-
-
-
-
-
-
-
-
 #if false
                 //Check if we overflow the 31 shift limit
                 if ( exp >= 32 ) {
                 LOG_MSG( "WTF %d %d", total, exp );
                 }
-                #endif
+#endif
                 return (int)(sig >> exp);
             }
 

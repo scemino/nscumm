@@ -36,7 +36,7 @@ namespace NScumm.Core.Audio.OPL
     partial class DosBoxOPL
     {
         const double OPLRATE = (14318180.0 / 288.0);
-        const int TREMOLO_TABLE = 52;
+        const int TremoloTableLength = 52;
 
         //Try to use most precision for frequencies
         //Else try to keep different waves in synch
@@ -44,49 +44,49 @@ namespace NScumm.Core.Audio.OPL
         #if !WAVE_PRECISION
         //Wave bits available in the top of the 32bit range
         //Original adlib uses 10.10, we use 10.22
-        const int WAVE_BITS = 10;
+        const int WaveBits = 10;
         #else
         //Need some extra bits at the top to have room for octaves and frequency multiplier
         //We support to 8 times lower rate
         //128 * 15 * 8 = 15350, 2^13.9, so need 14 bits
         const int WAVE_BITS   =14;
         #endif
-        const int WAVE_SH = (32 - WAVE_BITS);
-        const int WAVE_MASK = ((1 << WAVE_SH) - 1);
+        const int WaveShift = (32 - WaveBits);
+        const int WaveMask = ((1 << WaveShift) - 1);
 
         //Use the same accuracy as the waves
-        const int LFO_SH = (WAVE_SH - 10);
+        const int LfoShift = (WaveShift - 10);
         //LFO is controlled by our tremolo 256 sample limit
-        const int LFO_MAX = (256 << (LFO_SH));
+        const int LfoMax = (256 << (LfoShift));
 
         //Maximum amount of attenuation bits
         //Envelope goes to 511, 9 bits
         #if (DBOPL_WAVE_EQUALS_WAVE_TABLEMUL )
         //Uses the value directly
-        public const int ENV_BITS = (9);
+        public const int EnvBits = (9);
 
         #else
         //Add 3 bits here for more accuracy and would have to be shifted up either way
-        const int ENV_BITS = (9);
+        const int EnvBits = (9);
         #endif
 
         //Limits of the envelope with those bits and when the envelope goes silent
-        public const int ENV_MIN = 0;
-        public const int ENV_EXTRA = (ENV_BITS - 9);
-        public const int ENV_MAX = (511 << ENV_EXTRA);
-        public const int ENV_LIMIT = ((12 * 256) >> (3 - ENV_EXTRA));
+        public const int EnvMin = 0;
+        public const int EnvExtra = (EnvBits - 9);
+        public const int EnvMax = (511 << EnvExtra);
+        public const int EnvLimit = ((12 * 256) >> (3 - EnvExtra));
 
-        public static bool ENV_SILENT(int x)
+        public static bool EnvSilent(int x)
         {
-            return x >= ENV_LIMIT;
+            return x >= EnvLimit;
         }
 
         //Attack/decay/release rate counter shift
-        const int RATE_SH = 24;
-        const int RATE_MASK = ((1 << RATE_SH) - 1);
+        const int RateShift = 24;
+        const int RateMask = ((1 << RateShift) - 1);
 
         //Has to fit within 16bit lookuptable
-        const int MUL_SH = 16;
+        const int MulShift = 16;
 
 
         #if (DBOPL_WAVE == WAVE_HANDLER)
@@ -148,7 +148,7 @@ namespace NScumm.Core.Audio.OPL
                 3,  2,  1,  0,
             };
 
-        static byte[] TremoloTable = new byte[ TREMOLO_TABLE ];
+        static byte[] TremoloTable = new byte[ TremoloTableLength ];
         //Start of a channel behind the chip struct start
         static Func<Chip,Channel>[] ChanOffsetTable = new Func<Chip,Channel>[32];
         //Start of an operator behind the chip struct start

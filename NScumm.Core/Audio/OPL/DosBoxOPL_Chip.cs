@@ -74,8 +74,8 @@ namespace NScumm.Core.Audio.OPL
             public uint ForwardNoise()
             {
                 noiseCounter += noiseAdd;
-                uint count = noiseCounter >> LFO_SH;
-                noiseCounter &= WAVE_MASK;
+                uint count = noiseCounter >> LfoShift;
+                noiseCounter &= WaveMask;
                 for (; count > 0; --count)
                 {
                     //Noise calculation from mame
@@ -180,10 +180,10 @@ namespace NScumm.Core.Audio.OPL
             public void GenerateBlock2(uint total, int[] output)
             {
                 int pos = 0;
+                Array.Clear(output,0,output.Length);
                 while (total > 0)
                 {
                     uint samples = ForwardLFO(total);
-                    Array.Clear(output, pos, (int)samples);
                     for (var ch = chan[0]; ch.ChannelNum < 9;)
                     {
                         ch = ch.SynthHandler(this, samples, output, pos);
@@ -216,12 +216,12 @@ namespace NScumm.Core.Audio.OPL
                 double scale = OPLRATE / (double)rate;
 
                 //Noise counter is run at the same precision as general waves
-                noiseAdd = (uint)(0.5 + scale * (1 << LFO_SH));
+                noiseAdd = (uint)(0.5 + scale * (1 << LfoShift));
                 noiseCounter = 0;
                 noiseValue = 1; //Make sure it triggers the noise xor the first time
                 //The low frequency oscillation counter
                 //Every time his overflows vibrato and tremoloindex are increased
-                lfoAdd = (uint)(0.5 + scale * (1 << LFO_SH));
+                lfoAdd = (uint)(0.5 + scale * (1 << LfoShift));
                 lfoCounter = 0;
                 vibratoIndex = 0;
                 tremoloIndex = 0;
@@ -234,7 +234,7 @@ namespace NScumm.Core.Audio.OPL
                 freqMul[i] = (uint)( 0.5 + freqScale * FreqCreateTable[ i ] );
                 }
                 #else
-                uint freqScale = (uint)(0.5 + scale * (1 << (WAVE_SH - 1 - 10)));
+                uint freqScale = (uint)(0.5 + scale * (1 << (WaveShift - 1 - 10)));
                 for (int i = 0; i < 16; i++)
                 {
                     freqMul[i] = freqScale * FreqCreateTable[i];
@@ -246,7 +246,7 @@ namespace NScumm.Core.Audio.OPL
                 {
                     byte index, shift;
                     EnvelopeSelect(i, out index, out shift);
-                    linearRates[i] = (uint)(scale * (EnvelopeIncreaseTable[index] << (RATE_SH + ENV_EXTRA - shift - 3)));
+                    linearRates[i] = (uint)(scale * (EnvelopeIncreaseTable[index] << (RateShift + EnvExtra - shift - 3)));
                 }
                 //Generate the best matching attack rate
                 for (byte i = 0; i < 62; i++)
@@ -256,19 +256,19 @@ namespace NScumm.Core.Audio.OPL
                     //Original amount of samples the attack would take
                     int original = (int)((AttackSamplesTable[index] << shift) / scale);
 
-                    int guessAdd = (int)(scale * (EnvelopeIncreaseTable[index] << (RATE_SH - shift - 3)));
+                    int guessAdd = (int)(scale * (EnvelopeIncreaseTable[index] << (RateShift - shift - 3)));
                     int bestAdd = guessAdd;
                     uint bestDiff = 1 << 30;
                     for (uint passes = 0; passes < 16; passes++)
                     {
-                        int volume = ENV_MAX;
+                        int volume = EnvMax;
                         int samples = 0;
                         uint count = 0;
                         while (volume > 0 && samples < original * 2)
                         {
                             count += (uint)guessAdd;
-                            int change = (int)(count >> RATE_SH);
-                            count &= RATE_MASK;
+                            int change = (int)(count >> RateShift);
+                            count &= RateMask;
                             if (change != 0)
                             { // less than 1 %
                                 volume += (~volume * change) >> 3;
@@ -306,7 +306,7 @@ namespace NScumm.Core.Audio.OPL
                 for (byte i = 62; i < 76; i++)
                 {
                     //This should provide instant volume maximizing
-                    attackRates[i] = 8 << RATE_SH;
+                    attackRates[i] = 8 << RateShift;
                 }
                 //Setup the channels with the correct four op flags
                 //Channels are accessed through a table so they appear linear here
@@ -360,7 +360,7 @@ namespace NScumm.Core.Audio.OPL
                 tremoloValue = (byte)(TremoloTable[tremoloIndex] >> tremoloStrength);
 
                 //Check hom many samples there can be done before the value changes
-                uint todo = LFO_MAX - lfoCounter;
+                uint todo = LfoMax - lfoCounter;
                 uint count = (todo + lfoAdd - 1) / lfoAdd;
                 if (count > samples)
                 {
@@ -370,11 +370,11 @@ namespace NScumm.Core.Audio.OPL
                 else
                 {
                     lfoCounter += count * lfoAdd;
-                    lfoCounter &= (LFO_MAX - 1);
+                    lfoCounter &= (LfoMax - 1);
                     //Maximum of 7 vibrato value * 4
                     vibratoIndex = (byte)((vibratoIndex + 1) & 31);
                     //Clip tremolo to the the table size
-                    if (tremoloIndex + 1 < TREMOLO_TABLE)
+                    if (tremoloIndex + 1 < TremoloTable.Length)
                         ++tremoloIndex;
                     else
                         tremoloIndex = 0;
@@ -415,14 +415,8 @@ namespace NScumm.Core.Audio.OPL
                     //Drum was just enabled, make sure channel 6 has the right synth
                     if ((change & 0x20) != 0)
                     {
-                        if (opl3Active != 0)
-                        {
-                            chan[6].SynthHandler = (c, s, o, p) => chan[6].BlockTemplate(SynthMode.Sm3Percussion, c, s, o, p);
-                        }
-                        else
-                        {
-                            chan[6].SynthHandler = (c, s, o, p) => chan[6].BlockTemplate(SynthMode.Sm2Percussion, c, s, o, p);
-                        }
+                        var mode = (opl3Active != 0) ? SynthMode.Sm3Percussion : SynthMode.Sm2Percussion;
+                        chan[6].SynthHandler = (c, s, o, p) => chan[6].BlockTemplate(mode, c, s, o, p);
                     }
                     //Bass Drum
                     if ((val & 0x10) != 0)

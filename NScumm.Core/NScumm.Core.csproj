@@ -204,6 +204,13 @@
     <Compile Include="Audio\SoftSynth\AdlibMidiDriver_Data.cs" />
     <Compile Include="Audio\SoftSynth\AdlibMidiDriver.cs" />
     <Compile Include="Audio\SoftSynth\Adlib.cs" />
+    <Compile Include="Audio\IMuse\InstrumentAdLib.cs" />
+    <Compile Include="Audio\IMuse\IInstrumentInternal.cs" />
+    <Compile Include="Audio\IMuse\Instrument.cs" />
+    <Compile Include="Audio\IMuse\ParameterFader.cs" />
+    <Compile Include="Audio\IMuse\ImTrigger.cs" />
+    <Compile Include="Audio\IMuse\DeferredCommand.cs" />
+    <Compile Include="Audio\IMuse\TimerCallbackInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="IO\Nscumm.xml">

@@ -318,7 +318,7 @@ namespace NScumm.Core
 
             if (Game.Version < 6)
             {
-                Console.WriteLine("Room = {1}, Script = {0}, Offset = {4}, Name = {2} [{3:X2}]", 
+                System.Diagnostics.Debug.WriteLine("Room = {1}, Script = {0}, Offset = {4}, Name = {2} [{3:X2}]", 
                     _slots[_currentScript].Number, 
                     _roomResource, 
                     _opCodes.ContainsKey(_opCode) ? _opCodes[opCode].Method.Name : "Unknown", 

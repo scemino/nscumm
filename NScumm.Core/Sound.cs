@@ -20,7 +20,6 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Timers;
-using NScumm.Core.Audio.IMuse;
 using System.IO;
 using NScumm.Core.Audio.Decoders;
 
@@ -32,10 +31,6 @@ namespace NScumm.Core
         Timer timer;
         Stack<int> soundQueue;
         Queue<int> soundQueueIMuse;
-        const int BufferSize = 4096;
-        long minicnt;
-        bool playing;
-        IMuseSysEx sysEx;
 
         string _sfxFilename;
         int _talk_sound_a1;
@@ -309,7 +304,7 @@ namespace NScumm.Core
                 //                        stopSound(1);
                 //                } else {
                 _mixer.StopHandle(_talkChannelHandle);
-                //                }
+
                 _sfxMode &= ~2;
             }
         }
@@ -326,8 +321,8 @@ namespace NScumm.Core
             if (vm.Game.Version < 7)
                 _mixer.StopID(sound);
 
-//            if (vm._musicEngine)
-//                vm->_musicEngine->stopSound(sound);
+            if (vm.MusicEngine!=null)
+                vm.MusicEngine.StopSound(sound);
 
             // TODO:
 //            for (var i = 0; i < soundQueue.Count; i++)

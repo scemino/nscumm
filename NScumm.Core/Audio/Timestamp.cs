@@ -141,6 +141,18 @@ namespace NScumm.Core.Audio
             return ts;
         }
 
+        public Timestamp AddMsecs(int ms)
+        {
+            var ts=new Timestamp(this);
+            ts._secs += ms / 1000;
+            // Add the remaining frames. Note that _framerate is always divisible by 1000.
+            ts._numFrames += (ms % 1000) * (ts._framerate / 1000);
+
+            ts.Normalize();
+
+            return ts;
+        }
+
         /// <summary>
         /// Euclid's algorithm to compute the greatest common divisor.
         /// </summary>

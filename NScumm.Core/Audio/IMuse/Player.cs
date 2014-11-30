@@ -520,7 +520,6 @@ namespace NScumm.Core.Audio.IMuse
                         }
                         return 0;
                     }
-                    break;
 
                 default:
                     Debug.WriteLine("Player.AddParameterFader({0}, {1}, {2}): Unknown parameter", param, target, time);

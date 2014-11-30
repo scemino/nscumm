@@ -713,9 +713,9 @@ namespace NScumm.Core
             Array.Clear(ActiveNotes, 0, ActiveNotes.Length);
         }
 
-        protected static long ReadVLQ(Stream input)
+        protected static int ReadVLQ(Stream input)
         {
-            long value = 0;
+            int value = 0;
 
             for (var i = 0; i < 4; ++i)
             {

@@ -37,6 +37,8 @@ namespace NScumm.Core.Audio.OPL
 
             public SynthHandler SynthHandler { get; internal set; }
 
+            public byte FourMask { get; set; }
+
             public void WriteA0(Chip chip, byte val)
             {
                 byte fourOp = (byte)(chip.Reg104 & chip.Opl3Active & FourMask);
@@ -400,6 +402,7 @@ namespace NScumm.Core.Audio.OPL
                 Chip = chip;
                 ChannelNum = index;
 
+                old = new int[2];
                 Ops = new Operator[2];
                 for (int i = 0; i < Ops.Length; i++)
                 {
@@ -481,7 +484,7 @@ namespace NScumm.Core.Audio.OPL
                 old[0] = old[1];
                 old[1] = Op(0).GetSample(mod);
 
-                //When bassdrum is in AM mode first operator is ignoed
+                //When bassdrum is in AM mode first operator is ignored
                 if ((chan.regC0 & 1) != 0)
                 {
                     mod = 0;
@@ -495,22 +498,22 @@ namespace NScumm.Core.Audio.OPL
 
                 //Precalculate stuff used by other outputs
                 uint noiseBit = chip.ForwardNoise() & 0x1;
-                uint c2 = Op(2).ForwardWave();
-                uint c5 = Op(5).ForwardWave();
-                uint phaseBit = (uint)((((c2 & 0x88) ^ ((c2 << 5) & 0x80)) | ((c5 ^ (c5 << 2)) & 0x20)) != 0 ? 0x02 : 0x00);
+                int c2 = Op(2).ForwardWave();
+                int c5 = Op(5).ForwardWave();
+                int phaseBit = (int)((((c2 & 0x88) ^ ((c2 << 5) & 0x80)) | ((c5 ^ (c5 << 2)) & 0x20)) != 0 ? 0x02 : 0x00);
 
                 //Hi-Hat
                 uint hhVol = Op(2).ForwardVolume();
-                if (!ENV_SILENT((int)hhVol))
+                if (!EnvSilent((int)hhVol))
                 {
-                    uint hhIndex = (uint)((phaseBit << 8) | (0x34 << (int)(phaseBit ^ (noiseBit << 1))));
+                    var hhIndex = ((phaseBit << 8) | (0x34 << (byte)(phaseBit ^ (noiseBit << 1))));
                     sample += Op(2).GetWave(hhIndex, hhVol);
                 }
                 //Snare Drum
                 uint sdVol = Op(3).ForwardVolume();
-                if (!ENV_SILENT((int)sdVol))
+                if (!EnvSilent((int)sdVol))
                 {
-                    uint sdIndex = (0x100 + (c2 & 0x100)) ^ (noiseBit << 8);
+                    int sdIndex = (int)((0x100 + (c2 & 0x100)) ^ (noiseBit << 8));
                     sample += Op(3).GetWave(sdIndex, sdVol);
                 }
                 //Tom-tom
@@ -518,9 +521,9 @@ namespace NScumm.Core.Audio.OPL
 
                 //Top-Cymbal
                 uint tcVol = Op(5).ForwardVolume();
-                if (!ENV_SILENT((int)tcVol))
+                if (!EnvSilent((int)tcVol))
                 {
-                    uint tcIndex = (1 + phaseBit) << 8;
+                    var tcIndex = ((1 + phaseBit) << 8);
                     sample += Op(5).GetWave(tcIndex, tcVol);
                 }
                 sample <<= 1;
@@ -531,7 +534,7 @@ namespace NScumm.Core.Audio.OPL
                 }
                 else
                 {
-                    output[pos + 0] += sample;
+                    output[pos] += sample;
                 }
             }
 
@@ -543,7 +546,7 @@ namespace NScumm.Core.Audio.OPL
             /// <summary>
             /// Old data for feedback.
             /// </summary>
-            readonly int[] old = new int[2];
+            readonly int[] old;
 
             /// <summary>
             /// Feedback shift.
@@ -559,8 +562,6 @@ namespace NScumm.Core.Audio.OPL
             /// This should correspond with reg104, bit 6 indicates a Percussion channel, bit 7 indicates a silent channel
             /// </summary>
             byte regC0;
-
-            public byte FourMask { get; set; }
 
             /// <summary>
             /// Sign extended values for both channel's panning.

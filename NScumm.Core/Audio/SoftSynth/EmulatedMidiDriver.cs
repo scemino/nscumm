@@ -42,7 +42,6 @@ namespace NScumm.Core.Audio.SoftSynth
 
             // This is equivalent to (getRate() << FIXP_SHIFT) / BASE_FREQ
             // but less prone to arithmetic overflow.
-
             _samplesPerTick = (d << FixpShift) + (r << FixpShift) / _baseFreq;
 
             return MidiDriverError.None;

@@ -33,6 +33,7 @@ namespace NScumm.Core.Audio
         bool _permanent;
         int _volume;
         int _pauseLevel;
+        int _pauseStartTime;
         int _balance;
         int _volL;
         int _volR;
@@ -75,7 +76,7 @@ namespace NScumm.Core.Audio
             {
                 Debug.Assert(_converter != null);
                 _samplesConsumed = _samplesDecoded;
-                _mixerTimeStamp = (int)DateTime.Now.Ticks;
+                _mixerTimeStamp = Environment.TickCount;
                 _pauseTime = 0;
                 res = _converter.Flow(_stream, data, _volL, _volR);
                 _samplesDecoded += res;
@@ -111,12 +112,25 @@ namespace NScumm.Core.Audio
          */
         public void Pause(bool paused)
         {
-            throw new NotImplementedException();
+            if (paused) {
+                _pauseLevel++;
+
+                if (_pauseLevel == 1)
+                    _pauseStartTime = Environment.TickCount;
+            } else if (_pauseLevel > 0) {
+                _pauseLevel--;
+
+                if (_pauseLevel==0) {
+                    _pauseTime = (Environment.TickCount - _pauseStartTime);
+                    _pauseStartTime = 0;
+                }
+            }
         }
 
-        /**
-         * Queries whether the channel is currently paused.
-         */
+        /// <summary>
+        /// Gets a value indicating whether the channel is currently paused.
+        /// </summary>
+        /// <value><c>true</c> if the channel is currently paused; otherwise, <c>false</c>.</value>
         public bool IsPaused { get { return (_pauseLevel != 0); } }
 
         public int Volume
@@ -140,6 +154,34 @@ namespace NScumm.Core.Audio
         }
 
         public SoundHandle Handle{ get; set; }
+
+        Timestamp GetElapsedTime() {
+            int rate = _mixer.OutputRate;
+            int delta = 0;
+
+            var ts=new Timestamp(0, rate);
+
+            if (_mixerTimeStamp == 0)
+                return ts;
+
+            if (IsPaused)
+                delta = _pauseStartTime - _mixerTimeStamp;
+            else
+                delta = Environment.TickCount - _mixerTimeStamp - _pauseTime;
+
+            // Convert the number of samples into a time duration.
+
+            ts = ts.AddFrames(_samplesConsumed);
+            ts = ts.AddMsecs(delta);
+
+            // In theory it would seem like a good idea to limit the approximation
+            // so that it never exceeds the theoretical upper bound set by
+            // _samplesDecoded. Meanwhile, back in the real world, doing so makes
+            // the Broken Sword cutscenes noticeably jerkier. I guess the mixer
+            // isn't invoked at the regular intervals that I first imagined.
+
+            return ts;
+        }
 
         void UpdateChannelVolumes()
         {

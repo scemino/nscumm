@@ -37,8 +37,8 @@ namespace NScumm.Core.Audio.SoftSynth
         {
             _isOpen = true;
 
-            int d = Rate / _baseFreq;
-            int r = Rate % _baseFreq;
+            var d = Rate / _baseFreq;
+            var r = Rate % _baseFreq;
 
             // This is equivalent to (getRate() << FIXP_SHIFT) / BASE_FREQ
             // but less prone to arithmetic overflow.

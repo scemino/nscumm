@@ -193,6 +193,7 @@ namespace NScumm.Core
 
             MidiDriver nativeMidiDriver = null;
             var adlibMidiDriver = MidiDriver.CreateMidi(mixer, MidiDriver.DetectDevice((int)MusicType.AdLib));
+            adlibMidiDriver.Property(NScumm.Core.Audio.SoftSynth.AdlibMidiDriver.PropertyOldAdLib, (Game.Version < 5) ? 1 : 0);
             IMuse = NScumm.Core.Audio.IMuse.IMuse.Create(nativeMidiDriver, adlibMidiDriver);
             MusicEngine = IMuse;
             MusicEngine.SetMusicVolume(192);

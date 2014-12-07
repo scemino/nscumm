@@ -234,7 +234,7 @@ namespace NScumm.Core.IO
                     data = disk.ReadSound(roomOffset + resource.Offset);
                     if (Game.Version < 5)
                     {
-                        data = null;
+                        data = ConvertADResource(data, sound);
                     }
                 }
             }
@@ -306,11 +306,11 @@ namespace NScumm.Core.IO
             bw.WriteBytes(System.Text.Encoding.ASCII.GetBytes(type), 4);
             bw.WriteUInt32BigEndian((uint)totalSize);
             bw.WriteBytes(System.Text.Encoding.ASCII.GetBytes("MDhd"), 4);
-            bw.WriteBytes(new byte[4], 4);
+            bw.Write(new byte[]{ 0, 0, 0, 8 });
             bw.WriteBytes(new byte[8], 8);
             bw.WriteBytes(System.Text.Encoding.ASCII.GetBytes("MThd"), 4);
-            bw.WriteBytes(new byte[4], 4);
-            bw.WriteBytes(new byte[]{ 0, 0, 0, 1 }, 4); // MIDI format 0 with 1 track
+            bw.Write(new byte[]{ 0, 0, 0, 6 });
+            bw.Write(new byte[]{ 0, 0, 0, 1 }); // MIDI format 0 with 1 track
             bw.WriteByte(ppqn >> 8);
             bw.WriteByte(ppqn & 0xFF);
             bw.WriteBytes(System.Text.Encoding.ASCII.GetBytes("MTrk"), 4);
@@ -403,23 +403,25 @@ namespace NScumm.Core.IO
             return time;
         }
 
-        static byte[] ConvertADResource(byte[] srcPtr)
+        byte[] ConvertADResource(byte[] srcPtr, int idx)
         {
             var br = new BinaryReader(new MemoryStream(srcPtr));
 
             // We will ignore the PPQN in the original resource, because
             // it's invalid anyway. We use a constant PPQN of 480.
             const int ppqn = 480;
+            int dw;
             int total_size = MIDIHeaderSize + 7 + 8 * ADLIB_INSTR_MIDI_HACK.Length + srcPtr.Length;
             total_size += 24;   // Up to 24 additional bytes are needed for the jump sysex
 
             var ptr = new byte[total_size];
             var bw = new BinaryWriter(new MemoryStream(ptr));
-            br.BaseStream.Seek(2, SeekOrigin.Begin);
+            br.BaseStream.Seek(6 + 2, SeekOrigin.Begin);
             var size = srcPtr.Length - 2;
 
             // 0x80 marks a music resource. Otherwise it's a SFX
-            if (br.ReadByte() == 0x80)
+            var type = br.ReadByte();
+            if (type == 0x80)
             {
                 WriteMIDIHeader(bw, "ADL ", ppqn, total_size);
 
@@ -434,155 +436,158 @@ namespace NScumm.Core.IO
                 var num_instr = br.ReadByte(); // Normally 8
 
                 // copy the pointer to instrument data
-                var channel = br.ReadByte();
-//                instr = src_ptr + 0x11;
-//
-//                // skip over the rest of the header and copy the MIDI data into a buffer
-//                src_ptr += 0x11 + 8 * 16;
-//                size -= 0x11 + 8 * 16;
-//
-//                track = src_ptr;
-//
-//                // Convert the ticks into a MIDI tempo.
-//                // Unfortunate LOOM and INDY3 have different interpretation
-//                // of the ticks value.
-//                if (game.id == GID_INDY3)
-//                {
-//                    // Note: since we fix ppqn at 480, ppqn/473 is almost 1
-//                    dw = 500000 * 256 / 473 * ppqn / ticks;
-//                }
-//                else if (game.id == GID_LOOM && game.version == 3)
-//                {
-//                    dw = 500000 * ppqn / 4 / ticks;
-//                }
-//                else
-//                {
-//                    dw = 500000 * 256 / ticks;
-//                }
-//                debugC(DEBUG_SOUND, "  ticks = %d, speed = %d", ticks, dw);
-//
-//                // Write a tempo change Meta event
-//                memcpy(ptr, "\x00\xFF\x51\x03", 4);
-//                ptr += 4;
-//                *ptr++ = (byte)((dw >> 16) & 0xFF);
-//                *ptr++ = (byte)((dw >> 8) & 0xFF);
-//                *ptr++ = (byte)(dw & 0xFF);
-//
-//                // Copy our hardcoded instrument table into it
-//                // Then, convert the instrument table as given in this song resource
-//                // And write it *over* the hardcoded table.
-//                // Note: we deliberately.
-//
-//                /* now fill in the instruments */
-//                for (i = 0; i < num_instr; i++)
-//                {
-//                    ch = channel[i] - 1;
-//                    if (ch < 0 || ch > 15)
-//                        continue;
-//
-//                    if (instr[i * 16 + 13])
-//                        debugC(DEBUG_SOUND, "Sound %d instrument %d uses percussion", idx, i);
-//
-//                    debugC(DEBUG_SOUND, "Sound %d: instrument %d on channel %d.", idx, i, ch);
-//
-//                    memcpy(ptr, ADLIB_INSTR_MIDI_HACK, sizeof(ADLIB_INSTR_MIDI_HACK));
-//
-//                    ptr[5] += ch;
-//                    ptr[28] += ch;
-//                    ptr[92] += ch;
-//
-//                    /* mod_characteristics */
-//                    ptr[30 + 0] = (instr[i * 16 + 3] >> 4) & 0xf;
-//                    ptr[30 + 1] = instr[i * 16 + 3] & 0xf;
-//
-//                    /* mod_scalingOutputLevel */
-//                    ptr[30 + 2] = (instr[i * 16 + 4] >> 4) & 0xf;
-//                    ptr[30 + 3] = instr[i * 16 + 4] & 0xf;
-//
-//                    /* mod_attackDecay */
-//                    ptr[30 + 4] = ((~instr[i * 16 + 5]) >> 4) & 0xf;
-//                    ptr[30 + 5] = (~instr[i * 16 + 5]) & 0xf;
-//
-//                    /* mod_sustainRelease */
-//                    ptr[30 + 6] = ((~instr[i * 16 + 6]) >> 4) & 0xf;
-//                    ptr[30 + 7] = (~instr[i * 16 + 6]) & 0xf;
-//
-//                    /* mod_waveformSelect */
-//                    ptr[30 + 8] = (instr[i * 16 + 7] >> 4) & 0xf;
-//                    ptr[30 + 9] = instr[i * 16 + 7] & 0xf;
-//
-//                    /* car_characteristic */
-//                    ptr[30 + 10] = (instr[i * 16 + 8] >> 4) & 0xf;
-//                    ptr[30 + 11] = instr[i * 16 + 8] & 0xf;
-//
-//                    /* car_scalingOutputLevel */
-//                    ptr[30 + 12] = (instr[i * 16 + 9] >> 4) & 0xf;
-//                    ptr[30 + 13] = instr[i * 16 + 9] & 0xf;
-//
-//                    /* car_attackDecay */
-//                    ptr[30 + 14] = ((~instr[i * 16 + 10]) >> 4) & 0xf;
-//                    ptr[30 + 15] = (~instr[i * 16 + 10]) & 0xf;
-//
-//                    /* car_sustainRelease */
-//                    ptr[30 + 16] = ((~instr[i * 16 + 11]) >> 4) & 0xf;
-//                    ptr[30 + 17] = (~instr[i * 16 + 11]) & 0xf;
-//
-//                    /* car_waveFormSelect */
-//                    ptr[30 + 18] = (instr[i * 16 + 12] >> 4) & 0xf;
-//                    ptr[30 + 19] = instr[i * 16 + 12] & 0xf;
-//
-//                    /* feedback */
-//                    ptr[30 + 20] = (instr[i * 16 + 2] >> 4) & 0xf;
-//                    ptr[30 + 21] = instr[i * 16 + 2] & 0xf;
-//                    ptr += sizeof(ADLIB_INSTR_MIDI_HACK);
-//                }
-//
-//                // There is a constant delay of ppqn/3 before the music starts.
-//                if (ppqn / 3 >= 128)
-//                    *ptr++ = ((ppqn / 3) >> 7) | 0x80;
-//                *ptr++ = ppqn / 3 & 0x7f;
-//
-//                // Now copy the actual music data
-//                memcpy(ptr, track, size);
-//                ptr += size;
-//
-//                if (!play_once)
-//                {
-//                    // The song is meant to be looped. We achieve this by inserting just
-//                    // before the song end a jump to the song start. More precisely we abuse
-//                    // a S&M sysex, "maybe_jump" to achieve this effect. We could also
-//                    // use a set_loop sysex, but it's a bit longer, a little more complicated,
-//                    // and has no advantage either.
-//
-//                    // First, find the track end
-//                    byte* end = ptr;
-//                    ptr -= size;
-//                    for (; ptr < end; ptr++)
-//                    {
-//                        if (*ptr == 0xff && *(ptr + 1) == 0x2f)
-//                            break;
-//                    }
-//                    assert(ptr < end);
-//
-//                    // Now insert the jump. The jump offset is measured in ticks.
-//                    // We have ppqn/3 ticks before the first note.
-//
-//                    const int jump_offset = ppqn / 3;
-//                    memcpy(ptr, "\xf0\x13\x7d\x30\00", 5);
-//                    ptr += 5;    // maybe_jump
-//                    memcpy(ptr, "\x00\x00", 2);
-//                    ptr += 2;           // cmd -> 0 means always jump
-//                    memcpy(ptr, "\x00\x00\x00\x00", 4);
-//                    ptr += 4;   // track -> there is only one track, 0
-//                    memcpy(ptr, "\x00\x00\x00\x01", 4);
-//                    ptr += 4;   // beat -> for now, 1 (first beat)
-//                    // Ticks
-//                    *ptr++ = (byte)((jump_offset >> 12) & 0x0F);
-//                    *ptr++ = (byte)((jump_offset >> 8) & 0x0F);
-//                    *ptr++ = (byte)((jump_offset >> 4) & 0x0F);
-//                    *ptr++ = (byte)(jump_offset & 0x0F);
-//                    memcpy(ptr, "\x00\xf7", 2);
-//                    ptr += 2;   // sysex end marker
+                var channel = br.ReadBytes(8);
+                var instr = br.ReadBytes(8 * 16);
+
+                // skip over the rest of the header and copy the MIDI data into a buffer
+                size -= 0x11 + 8 * 16;
+
+                var trackPos = br.BaseStream.Position;
+
+                // Convert the ticks into a MIDI tempo.
+                // Unfortunate LOOM and INDY3 have different interpretation
+                // of the ticks value.
+                if (Game.GameId == GameId.Indy3)
+                {
+                    // Note: since we fix ppqn at 480, ppqn/473 is almost 1
+                    dw = 500000 * 256 / 473 * ppqn / ticks;
+                }
+                else if (Game.GameId == GameId.Loom && Game.Version == 3)
+                {
+                    dw = 500000 * ppqn / 4 / ticks;
+                }
+                else
+                {
+                    dw = 500000 * 256 / ticks;
+                }
+                Debug.WriteLine("  ticks = {0}, speed = {1}", ticks, dw);
+
+                // Write a tempo change Meta event
+                bw.WriteBytes(new byte[]{ 0x00, 0xFF, 0x51, 0x03 }, 4);
+                bw.Write((byte)((dw >> 16) & 0xFF));
+                bw.Write((byte)((dw >> 8) & 0xFF));
+                bw.Write((byte)(dw & 0xFF));
+
+                // Copy our hardcoded instrument table into it
+                // Then, convert the instrument table as given in this song resource
+                // And write it *over* the hardcoded table.
+                // Note: we deliberately.
+
+                /* now fill in the instruments */
+                for (var i = 0; i < num_instr; i++)
+                {
+                    var ch = channel[i] - 1;
+                    if (ch < 0 || ch > 15)
+                        continue;
+
+                    if (instr[i * 16 + 13] != 0)
+                        Debug.WriteLine("Sound {0} instrument {1} uses percussion", idx, i);
+
+                    Debug.WriteLine("Sound {0}: instrument {1} on channel {2}.", idx, i, ch);
+
+                    var p = (byte[])ADLIB_INSTR_MIDI_HACK.Clone();
+
+                    p[5] += (byte)ch;
+                    p[28] += (byte)ch;
+                    p[92] += (byte)ch;
+
+                    /* mod_characteristics */
+                    p[30 + 0] = (byte)((instr[i * 16 + 3] >> 4) & 0xf);
+                    p[30 + 1] = (byte)(instr[i * 16 + 3] & 0xf);
+
+                    /* mod_scalingOutputLevel */
+                    p[30 + 2] = (byte)((instr[i * 16 + 4] >> 4) & 0xf);
+                    p[30 + 3] = (byte)(instr[i * 16 + 4] & 0xf);
+
+                    /* mod_attackDecay */
+                    p[30 + 4] = (byte)(((~instr[i * 16 + 5]) >> 4) & 0xf);
+                    p[30 + 5] = (byte)((~instr[i * 16 + 5]) & 0xf);
+
+                    /* mod_sustainRelease */
+                    p[30 + 6] = (byte)(((~instr[i * 16 + 6]) >> 4) & 0xf);
+                    p[30 + 7] = (byte)((~instr[i * 16 + 6]) & 0xf);
+
+                    /* mod_waveformSelect */
+                    p[30 + 8] = (byte)((instr[i * 16 + 7] >> 4) & 0xf);
+                    p[30 + 9] = (byte)(instr[i * 16 + 7] & 0xf);
+
+                    /* car_characteristic */
+                    p[30 + 10] = (byte)((instr[i * 16 + 8] >> 4) & 0xf);
+                    p[30 + 11] = (byte)(instr[i * 16 + 8] & 0xf);
+
+                    /* car_scalingOutputLevel */
+                    p[30 + 12] = (byte)((instr[i * 16 + 9] >> 4) & 0xf);
+                    p[30 + 13] = (byte)(instr[i * 16 + 9] & 0xf);
+
+                    /* car_attackDecay */
+                    p[30 + 14] = (byte)(((~instr[i * 16 + 10]) >> 4) & 0xf);
+                    p[30 + 15] = (byte)((~instr[i * 16 + 10]) & 0xf);
+
+                    /* car_sustainRelease */
+                    p[30 + 16] = (byte)(((~instr[i * 16 + 11]) >> 4) & 0xf);
+                    p[30 + 17] = (byte)((~instr[i * 16 + 11]) & 0xf);
+
+                    /* car_waveFormSelect */
+                    p[30 + 18] = (byte)((instr[i * 16 + 12] >> 4) & 0xf);
+                    p[30 + 19] = (byte)(instr[i * 16 + 12] & 0xf);
+
+                    /* feedback */
+                    p[30 + 20] = (byte)((instr[i * 16 + 2] >> 4) & 0xf);
+                    p[30 + 21] = (byte)(instr[i * 16 + 2] & 0xf);
+
+                    bw.Write(p);
+                }
+
+                // There is a constant delay of ppqn/3 before the music starts.
+                if ((ppqn / 3) >= 128)
+                    bw.WriteByte(((ppqn / 3) >> 7) | 0x80);
+                bw.WriteByte(ppqn / 3 & 0x7f);
+
+                // Now copy the actual music data
+                br.BaseStream.Position = trackPos;
+                var track = br.ReadBytes(size);
+                bw.Write(track);
+                
+
+                if (play_once == 0)
+                {
+                    // The song is meant to be looped. We achieve this by inserting just
+                    // before the song end a jump to the song start. More precisely we abuse
+                    // a S&M sysex, "maybe_jump" to achieve this effect. We could also
+                    // use a set_loop sysex, but it's a bit longer, a little more complicated,
+                    // and has no advantage either.
+
+                    // First, find the track end
+                    var end = bw.BaseStream.Position;
+                    bw.BaseStream.Position -= size;
+                    for (; bw.BaseStream.Position < end; bw.BaseStream.Position++)
+                    {
+                        var pos = bw.BaseStream.Position;
+                        if (bw.BaseStream.ReadByte() == 0xff && bw.BaseStream.ReadByte() == 0x2f)
+                            break;
+                        bw.BaseStream.Position = pos;
+                    }
+
+                    // Now insert the jump. The jump offset is measured in ticks.
+                    // We have ppqn/3 ticks before the first note.
+
+                    const int jump_offset = ppqn / 3;
+                    // maybe_jump
+                    bw.Write(new byte[]{ 0xf0, 0x13, 0x7d, 0x30, 0x00 }); 
+                    // cmd -> 0 means always jump
+                    bw.Write(new byte[]{ 0x00, 0x00 });
+                    // track -> there is only one track, 0
+                    bw.Write(new byte[]{ 0x00, 0x00, 0x00, 0x00 }); 
+                    // beat -> for now, 1 (first beat)
+                    bw.Write(new byte[]{ 0x00, 0x00, 0x00, 0x01 }); 
+                    // Ticks
+                    bw.Write((byte)((jump_offset >> 12) & 0x0F));
+                    bw.Write((byte)((jump_offset >> 8) & 0x0F));
+                    bw.Write((byte)((jump_offset >> 4) & 0x0F));
+                    bw.Write((byte)(jump_offset & 0x0F));
+                    // sysex end marker
+                    bw.Write(new byte[]{ 0x00, 0xf7 });
+                }
             }
             else
             {
@@ -602,7 +607,7 @@ namespace NScumm.Core.IO
 
                 // Write a tempo change Meta event
                 // 473 / 4 Hz, convert to micro seconds.
-                const int dw = 1000000 * ppqn * 4 / 473;
+                dw = 1000000 * ppqn * 4 / 473;
                 bw.WriteBytes(new byte[]{ 0x00, 0xFF, 0x51, 0x03 }, 4);
                 bw.WriteByte(((dw >> 16) & 0xFF));
                 bw.WriteByte(((dw >> 8) & 0xFF));
@@ -822,7 +827,7 @@ namespace NScumm.Core.IO
             // Insert end of song sysex
             bw.WriteBytes(new byte[]{ 0x00, 0xff, 0x2f, 0x00, 0x00 }, 5);
 
-            return srcPtr;
+            return ptr;
         }
     }
 }

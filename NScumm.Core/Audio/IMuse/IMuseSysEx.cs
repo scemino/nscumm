@@ -188,7 +188,7 @@ namespace NScumm.Core.Audio.IMuse
                 case 51: // Hook - set volume
                     {
                         var tmp = msg[p++] & 0x0F;
-                        var buf=DecodeSysExBytes(msg, p, len - 1, 1);
+                        var buf = DecodeSysExBytes(msg, p, len - 1, 1);
                         buf[0] = (byte)tmp;
                         player.MaybeSetVolume(buf);
                     }
@@ -223,7 +223,7 @@ namespace NScumm.Core.Audio.IMuse
 
                 case 80: // Loop
                     {
-                        var buf=DecodeSysExBytes(msg,p + 1, len - 1);
+                        var buf = DecodeSysExBytes(msg, p + 1, len - 1);
                         using (var br = new BinaryReader(new MemoryStream(buf)))
                         {
                             player.SetLoop(br.ReadUInt16BigEndian(), br.ReadUInt16BigEndian(),
@@ -240,8 +240,8 @@ namespace NScumm.Core.Audio.IMuse
                 case 96: // Set instrument
                     {
                         var part = player.GetPart((byte)(msg[p] & 0x0F));
-                        var a = (msg[p+1] & 0x0F) << 12 | (msg[p+2] & 0x0F) << 8 | (msg[p+3] & 0x0F) << 4 | (msg[p+4] & 0x0F);
-                        if (part!=null)
+                        var a = (msg[p + 1] & 0x0F) << 12 | (msg[p + 2] & 0x0F) << 8 | (msg[p + 3] & 0x0F) << 4 | (msg[p + 4] & 0x0F);
+                        if (part != null)
                             part.SetInstrument((uint)a);
                     }
                     break;
@@ -252,9 +252,9 @@ namespace NScumm.Core.Audio.IMuse
             }
         }
 
-        static byte[] DecodeSysExBytes(byte[] input, int pos, long length, int destIndex=0)
+        static byte[] DecodeSysExBytes(byte[] input, int pos, long length, int destIndex = 0)
         {
-            var data = new byte[destIndex+length / 2];
+            var data = new byte[destIndex + length / 2];
             using (var ms = new MemoryStream(data))
             {
                 ms.Seek(destIndex, SeekOrigin.Begin);

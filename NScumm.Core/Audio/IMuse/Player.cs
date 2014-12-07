@@ -30,20 +30,9 @@ namespace NScumm.Core.Audio.IMuse
     {
         const int TicksPerBeat = 480;
 
-        /*
-     * External SysEx handler functions shall each be defined in
-     * a separate file. This header file shall be included at the
-     * top of the file immediately following this special #define:
-     * #define SYSEX_CALLBACK_FUNCTION nameOfHandlerFunction
-     */
-        #if SYSEX_CALLBACK_FUNCTION
-    friend void SYSEX_CALLBACK_FUNCTION(Player *, const byte *, uint16);
-#endif
-
         // Moved from IMuseInternal.
         // This is only used by one player at a time.
         protected static ushort[] _active_notes;
-        //[128];
 
         protected MidiDriver _midi;
         protected MidiParser _parser;
@@ -52,7 +41,7 @@ namespace NScumm.Core.Audio.IMuse
         protected bool _active;
         protected bool _scanning;
 
-        public bool Scanning{ get { return _scanning; } }
+        public bool Scanning { get { return _scanning; } }
 
         protected int _id;
         protected byte _priority;
@@ -79,7 +68,6 @@ namespace NScumm.Core.Audio.IMuse
 
         protected HookDatas _hook;
         protected ParameterFader[] _parameterFaders;
-        //[4];
 
         protected bool _isMT32;
         protected bool _isMIDI;
@@ -104,8 +92,6 @@ namespace NScumm.Core.Audio.IMuse
             if (_midi != null)
                 _se.ReallocateMidiChannels(_midi);
         }
-
-        //        protected byte ParseMidi(byte*s);
 
         protected void PartSetTranspose(byte chan, byte relative, sbyte b)
         {
@@ -351,18 +337,6 @@ namespace NScumm.Core.Audio.IMuse
             }
         }
 
-        protected static void DecodeSysexBytes(byte[] src, byte[] dst, int len)
-        {
-            int pos = 0;
-            int srcPos = 0;
-            while (len >= 0)
-            {
-                dst[pos++] = (byte)(((src[srcPos] << 4) & 0xFF) | (src[srcPos + 1] & 0xF));
-                srcPos += 2;
-                len -= 2;
-            }
-        }
-
         // Sequencer part
         protected int StartSeqSound(int sound, bool resetVars = true)
         {
@@ -461,7 +435,7 @@ namespace NScumm.Core.Audio.IMuse
 
         public IMuseInternal _se;
 
-        public uint VolChan{ get; set; }
+        public uint VolChan { get; set; }
 
         public Player()
         {
@@ -650,15 +624,15 @@ namespace NScumm.Core.Audio.IMuse
             switch (param)
             {
                 case 0:
-                    return (byte)_priority;
+                    return _priority;
                 case 1:
-                    return (byte)_volume;
+                    return _volume;
                 case 2:
-                    return (byte)_pan;
+                    return _pan;
                 case 3:
-                    return (byte)_transpose;
+                    return _transpose;
                 case 4:
-                    return (byte)_detune;
+                    return _detune;
                 case 5:
                     return _speed;
                 case 6:

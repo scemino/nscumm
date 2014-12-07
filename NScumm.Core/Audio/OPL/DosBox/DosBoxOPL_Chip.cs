@@ -20,7 +20,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
 
-namespace NScumm.Core.Audio.OPL
+namespace NScumm.Core.Audio.OPL.DosBox
 {
     partial class DosBoxOPL
     {
@@ -180,7 +180,7 @@ namespace NScumm.Core.Audio.OPL
             public void GenerateBlock2(uint total, int[] output)
             {
                 int pos = 0;
-                Array.Clear(output,0,output.Length);
+                Array.Clear(output, 0, output.Length);
                 while (total > 0)
                 {
                     uint samples = ForwardLFO(total);
@@ -266,7 +266,7 @@ namespace NScumm.Core.Audio.OPL
                         uint count = 0;
                         while (volume > 0 && samples < original * 2)
                         {
-                            count += (uint)guessAdd;
+                            count = (uint)(count + guessAdd);
                             int change = (int)(count >> RateShift);
                             count &= RateMask;
                             if (change != 0)
@@ -357,7 +357,7 @@ namespace NScumm.Core.Audio.OPL
                 //Current vibrato value, runs 4x slower than tremolo
                 vibratoSign = (sbyte)((VibratoTable[vibratoIndex >> 2]) >> 7);
                 vibratoShift = (byte)((VibratoTable[vibratoIndex >> 2] & 7) + vibratoStrength);
-                tremoloValue = (byte)(TremoloTable[tremoloIndex] >> tremoloStrength);
+                tremoloValue = (byte)(tremoloTable[tremoloIndex] >> tremoloStrength);
 
                 //Check hom many samples there can be done before the value changes
                 uint todo = LfoMax - lfoCounter;
@@ -374,7 +374,7 @@ namespace NScumm.Core.Audio.OPL
                     //Maximum of 7 vibrato value * 4
                     vibratoIndex = (byte)((vibratoIndex + 1) & 31);
                     //Clip tremolo to the the table size
-                    if (tremoloIndex + 1 < TremoloTable.Length)
+                    if (tremoloIndex + 1 < tremoloTable.Length)
                         ++tremoloIndex;
                     else
                         tremoloIndex = 0;
@@ -385,7 +385,7 @@ namespace NScumm.Core.Audio.OPL
             void RegOp(uint reg, Action<Operator> action)
             {
                 var index = ((reg >> 3) & 0x20) | (reg & 0x1f);
-                var op = OpOffsetTable[index];
+                var op = opOffsetTable[index];
                 if (op != null)
                 {
                     action(op(this));
@@ -394,7 +394,7 @@ namespace NScumm.Core.Audio.OPL
 
             void RegChan(uint reg, Action<Channel> action)
             {
-                var ch = ChanOffsetTable[((reg >> 4) & 0x10) | (reg & 0xf)]; 
+                var ch = chanOffsetTable[((reg >> 4) & 0x10) | (reg & 0xf)]; 
                 if (ch != null)
                 {
                     action(ch(this));
@@ -416,7 +416,7 @@ namespace NScumm.Core.Audio.OPL
                     if ((change & 0x20) != 0)
                     {
                         var mode = (opl3Active != 0) ? SynthMode.Sm3Percussion : SynthMode.Sm2Percussion;
-                        chan[6].SynthHandler = (c, s, o, p) => chan[6].BlockTemplate(mode, c, s, o, p);
+                        chan[6].SynthMode = mode;
                     }
                     //Bass Drum
                     if ((val & 0x10) != 0)

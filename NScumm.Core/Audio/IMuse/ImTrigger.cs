@@ -19,18 +19,9 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using System;
-using NScumm.Core.Audio.IMuse;
-using System.Diagnostics;
-using System.Linq;
-using System.Diagnostics.Contracts;
-using System.IO;
-using NScumm.Core.Audio.SoftSynth;
-using NScumm.Core.IO;
 
 namespace NScumm.Core.Audio.IMuse
 {
-
     class ImTrigger
     {
         public int Sound { get; set; }

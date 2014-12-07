@@ -191,11 +191,6 @@
     <Compile Include="Audio\IMuse\IMuseInternal.cs" />
     <Compile Include="Audio\IMuse\Player.cs" />
     <Compile Include="Audio\IMuse\IImuse.cs" />
-    <Compile Include="Audio\OPL\DosBoxOPL.cs" />
-    <Compile Include="Audio\OPL\DosBoxOPL_Chip.cs" />
-    <Compile Include="Audio\OPL\DosBoxOPL_Channel.cs" />
-    <Compile Include="Audio\OPL\DosBoxOPL_Operator.cs" />
-    <Compile Include="Audio\OPL\DosBoxOPL_Shared.cs" />
     <Compile Include="Audio\RateConverters\CopyRateConverter.cs" />
     <Compile Include="Audio\RateConverters\LinearRateConverter.cs" />
     <Compile Include="Audio\RateConverters\IRateConverter.cs" />
@@ -211,6 +206,13 @@
     <Compile Include="Audio\IMuse\ImTrigger.cs" />
     <Compile Include="Audio\IMuse\DeferredCommand.cs" />
     <Compile Include="Audio\IMuse\TimerCallbackInfo.cs" />
+    <Compile Include="Audio\OPL\DosBox\DosBoxOPL.cs" />
+    <Compile Include="Audio\OPL\DosBox\DosBoxOPL_Channel.cs" />
+    <Compile Include="Audio\OPL\DosBox\DosBoxOPL_Chip.cs" />
+    <Compile Include="Audio\OPL\DosBox\DosBoxOPL_Operator.cs" />
+    <Compile Include="Audio\OPL\DosBox\DosBoxOPL_Shared.cs" />
+    <Compile Include="Audio\OPL\DosBox\OplTimer.cs" />
+    <Compile Include="Audio\OPL\DosBox\OplChip.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="IO\Nscumm.xml">
@@ -238,5 +240,7 @@
     <Folder Include="Audio\Decoders\" />
     <Folder Include="Audio\SoftSynth\" />
     <Folder Include="Audio\RateConverters\" />
+    <Folder Include="Audio\OPL\DosBox\" />
+    <Folder Include="Audio\OPL\Mame\" />
   </ItemGroup>
 </Project>

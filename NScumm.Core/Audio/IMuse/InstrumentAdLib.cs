@@ -30,7 +30,7 @@ namespace NScumm.Core.Audio.IMuse
 
         public InstrumentAdLib(byte[] data)
         {
-            _instrument = data;
+            _instrument = (byte[])data.Clone();
         }
 
         //        Instrument_AdLib(Serializer *s);

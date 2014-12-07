@@ -25,141 +25,8 @@ using System;
 using NScumm.Core.Audio.OPL;
 using System.Runtime.InteropServices;
 
-namespace NScumm.Core.Audio.OPL
+namespace NScumm.Core.Audio.OPL.DosBox
 {
-    class OplTimer
-    {
-        const double Epsilon = 1e-6;
-
-        public double StartTime { get; private set; }
-
-        public double Delay { get; private set; }
-
-        public bool Enabled { get; private set; }
-
-        public bool Overflow { get; set; }
-
-        public bool Masked { get; set; }
-
-        public byte Counter { get; set; }
-
-        //Call update before making any further changes
-        public void Update(double time)
-        {
-            if (!Enabled || Math.Abs(Delay) < Epsilon)
-                return;
-            double deltaStart = time - StartTime;
-            // Only set the overflow flag when not masked
-            if (deltaStart >= 0 && !Masked)
-                Overflow = true;
-        }
-
-        //On a reset make sure the start is in sync with the next cycle
-        public void Reset(double time)
-        {
-            Overflow = false;
-            if (Math.Abs(Delay) < Epsilon || !Enabled)
-                return;
-            double delta = (time - StartTime);
-//            double rem = fmod(delta, delay);
-            double rem = delta% Delay;
-            double next = Delay - rem;
-            StartTime = time + next;
-        }
-
-        public void Stop()
-        {
-            Enabled = false;
-        }
-
-        public void Start(double time, int scale)
-        {
-            //Don't enable again
-            if (Enabled)
-                return;
-            Enabled = true;
-            Delay = 0.001 * (256 - Counter) * scale;
-            StartTime = time + Delay;
-        }
-    }
-
-    class OplChip
-    {
-        //Last selected register
-        readonly OplTimer[] timer = new OplTimer[2];
-
-        //Check for it being a write to the timer
-        public bool Write(uint reg, byte val)
-        {
-            switch (reg)
-            {
-                case 0x02:
-                    timer[0].Counter = val;
-                    return true;
-                case 0x03:
-                    timer[1].Counter = val;
-                    return true;
-                case 0x04:
-                    double time = Environment.TickCount / 1000.0;
-
-                    if ((val & 0x80) != 0)
-                    {
-                        timer[0].Reset(time);
-                        timer[1].Reset(time);
-                    }
-                    else
-                    {
-                        timer[0].Update(time);
-                        timer[1].Update(time);
-
-                        if ((val & 0x1) != 0)
-                            timer[0].Start(time, 80);
-                        else
-                            timer[0].Stop();
-
-                        timer[0].Masked = (val & 0x40) > 0;
-
-                        if (timer[0].Masked)
-                            timer[0].Overflow = false;
-
-                        if ((val & 0x2) != 0)
-                            timer[1].Start(time, 320);
-                        else
-                            timer[1].Stop();
-
-                        timer[1].Masked = (val & 0x20) > 0;
-
-                        if (timer[1].Masked)
-                            timer[1].Overflow = false;
-                    }
-                    return true;
-            }
-            return false;
-        }
-        //Read the current timer state, will use current double
-        public byte Read()
-        {
-            double time = Environment.TickCount / 1000.0;
-
-            timer[0].Update(time);
-            timer[1].Update(time);
-
-            byte ret = 0;
-            // Overflow won't be set if a channel is masked
-            if (timer[0].Overflow)
-            {
-                ret |= 0x40;
-                ret |= 0x80;
-            }
-            if (timer[1].Overflow)
-            {
-                ret |= 0x20;
-                ret |= 0x80;
-            }
-            return ret;
-        }
-    }
-
     partial class DosBoxOPL: IOpl
     {
         [StructLayout(LayoutKind.Explicit)]
@@ -457,20 +324,20 @@ namespace NScumm.Core.Audio.OPL
                 int s = i * 8;
                 //TODO maybe keep some of the precision errors of the original table?
                 double val = (0.5 + (Math.Pow(2.0, -1.0 + (255 - s) * (1.0 / 256))) * (1 << MulShift));
-                MulTable[i] = (ushort)(val);
+                mulTable[i] = (ushort)(val);
             }
 
             //Sine Wave Base
             for (var i = 0; i < 512; i++)
             {
-                WaveTable[0x0200 + i] = (short)(Math.Sin((i + 0.5) * (Math.PI / 512.0)) * 4084);
-                WaveTable[0x0000 + i] = (short)-WaveTable[0x200 + i];
+                waveTable[0x0200 + i] = (short)(Math.Sin((i + 0.5) * (Math.PI / 512.0)) * 4084);
+                waveTable[0x0000 + i] = (short)-waveTable[0x200 + i];
             }
             //Exponential wave
             for (var i = 0; i < 256; i++)
             {
-                WaveTable[0x700 + i] = (short)(0.5 + (Math.Pow(2.0, -1.0 + (255 - i * 8) * (1.0 / 256))) * 4085);
-                WaveTable[0x6ff - i] = (short)-WaveTable[0x700 + i];
+                waveTable[0x700 + i] = (short)(0.5 + (Math.Pow(2.0, -1.0 + (255 - i * 8) * (1.0 / 256))) * 4085);
+                waveTable[0x6ff - i] = (short)-waveTable[0x700 + i];
             }
             #endif
             #if ( DBOPL_WAVE_EQUALS_WAVE_TABLELOG )
@@ -496,18 +363,18 @@ namespace NScumm.Core.Audio.OPL
             for (int i = 0; i < 256; i++)
             {
                 //Fill silence gaps
-                WaveTable[0x400 + i] = WaveTable[0];
-                WaveTable[0x500 + i] = WaveTable[0];
-                WaveTable[0x900 + i] = WaveTable[0];
-                WaveTable[0xc00 + i] = WaveTable[0];
-                WaveTable[0xd00 + i] = WaveTable[0];
+                waveTable[0x400 + i] = waveTable[0];
+                waveTable[0x500 + i] = waveTable[0];
+                waveTable[0x900 + i] = waveTable[0];
+                waveTable[0xc00 + i] = waveTable[0];
+                waveTable[0xd00 + i] = waveTable[0];
                 //Replicate sines in other pieces
-                WaveTable[0x800 + i] = WaveTable[0x200 + i];
+                waveTable[0x800 + i] = waveTable[0x200 + i];
                 //double speed sines
-                WaveTable[0xa00 + i] = WaveTable[0x200 + i * 2];
-                WaveTable[0xb00 + i] = WaveTable[0x000 + i * 2];
-                WaveTable[0xe00 + i] = WaveTable[0x200 + i * 2];
-                WaveTable[0xf00 + i] = WaveTable[0x200 + i * 2];
+                waveTable[0xa00 + i] = waveTable[0x200 + i * 2];
+                waveTable[0xb00 + i] = waveTable[0x000 + i * 2];
+                waveTable[0xe00 + i] = waveTable[0x200 + i * 2];
+                waveTable[0xf00 + i] = waveTable[0x200 + i * 2];
             }
             #endif
 
@@ -521,15 +388,15 @@ namespace NScumm.Core.Audio.OPL
                     if (val < 0)
                         val = 0;
                     //*4 for the final range to match attenuation range
-                    KslTable[oct * 16 + i] = (byte)(val * 4);
+                    kslTable[oct * 16 + i] = (byte)(val * 4);
                 }
             }
             //Create the Tremolo table, just increase and decrease a triangle wave
-            for (byte i = 0; i < TremoloTable.Length / 2; i++)
+            for (byte i = 0; i < tremoloTable.Length / 2; i++)
             {
                 byte val = (byte)(i << EnvExtra);
-                TremoloTable[i] = val;
-                TremoloTable[TremoloTable.Length - 1 - i] = val;
+                tremoloTable[i] = val;
+                tremoloTable[tremoloTable.Length - 1 - i] = val;
             }
             //Create a table with offsets of the channels from the start of the chip
             for (var i = 0; i < 32; i++)
@@ -537,7 +404,7 @@ namespace NScumm.Core.Audio.OPL
                 var index = i & 0xf;
                 if (index >= 9)
                 {
-                    ChanOffsetTable[i] = null;
+                    chanOffsetTable[i] = null;
                     continue;
                 }
                 //Make sure the four op channels follow eachother
@@ -548,14 +415,14 @@ namespace NScumm.Core.Audio.OPL
                 //Add back the bits for highest ones
                 if (i >= 16)
                     index += 9;
-                ChanOffsetTable[i] = new Func<Chip,Channel>(c => c.Channels[index]);
+                chanOffsetTable[i] = new Func<Chip,Channel>(c => c.Channels[index]);
             }
             //Same for operators
             for (var i = 0; i < 64; i++)
             {
                 if (i % 8 >= 6 || ((i / 8) % 4 == 3))
                 {
-                    OpOffsetTable[i] = null;
+                    opOffsetTable[i] = null;
                     continue;
                 }
                 var chNum = (i / 8) * 3 + (i % 8) % 3;
@@ -567,35 +434,8 @@ namespace NScumm.Core.Audio.OPL
                 if (chNum >= 18)
                     continue;
 
-                OpOffsetTable[i] = new Func<Chip,Operator>(c => c.Channels[chNum].Ops[opNum]);
+                opOffsetTable[i] = new Func<Chip,Operator>(c => c.Channels[chNum].Ops[opNum]);
             }
-            #if false
-            //Stupid checks if table's are correct
-            for ( uint i = 0; i < 18; i++ ) {
-            Bit32u find = (Bit16u)( &(chip.chan[ i ]) );
-            for ( uint c = 0; c < 32; c++ ) {
-            if ( ChanOffsetTable[c] == find ) {
-            find = 0;
-            break;
-            }
-            }
-            if ( find ) {
-            find = find;
-            }
-            }
-            for ( uint i = 0; i < 36; i++ ) {
-            Bit32u find = (Bit16u)( &(chip.chan[ i / 2 ].op[i % 2]) );
-            for ( uint c = 0; c < 64; c++ ) {
-            if ( OpOffsetTable[c] == find ) {
-            find = 0;
-            break;
-            }
-            }
-            if ( find ) {
-            find = find;
-            }
-            }
-            #endif
         }
 
         uint _rate;

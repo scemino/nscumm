@@ -19,7 +19,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace NScumm.Core.Audio.OPL
+namespace NScumm.Core.Audio.OPL.DosBox
 {
     partial class DosBoxOPL
     {
@@ -35,7 +35,7 @@ namespace NScumm.Core.Audio.OPL
 
             public Operator[] Ops { get; private set; }
 
-            public SynthHandler SynthHandler { get; internal set; }
+            public SynthMode SynthMode { get; set; }
 
             public byte FourMask { get; set; }
 
@@ -45,7 +45,7 @@ namespace NScumm.Core.Audio.OPL
                 //Don't handle writes to silent fourop channels
                 if (fourOp > 0x80)
                     return;
-                uint change = (chanData ^ val) & 0xff;
+                int change = (chanData ^ val) & 0xff;
                 if (change != 0)
                 {
                     chanData ^= change;
@@ -59,7 +59,7 @@ namespace NScumm.Core.Audio.OPL
                 //Don't handle writes to silent fourop channels
                 if (fourOp > 0x80)
                     return;
-                uint change = (uint)((chanData ^ (val << 8)) & 0x1f00);
+                int change = ((chanData ^ (val << 8)) & 0x1f00);
                 if (change != 0)
                 {
                     chanData ^= change;
@@ -130,16 +130,16 @@ namespace NScumm.Core.Audio.OPL
                         switch (synth)
                         {
                             case 0:
-                                chan0.SynthHandler = (c, s, o, p) => BlockTemplate(SynthMode.Sm3FMFM, c, s, o, p);
+                                chan0.SynthMode = SynthMode.Sm3FMFM;
                                 break;
                             case 1:
-                                chan0.SynthHandler = (c, s, o, p) => BlockTemplate(SynthMode.Sm3AMFM, c, s, o, p);
+                                chan0.SynthMode = SynthMode.Sm3AMFM;
                                 break;
                             case 2:
-                                chan0.SynthHandler = (c, s, o, p) => BlockTemplate(SynthMode.Sm3FMAM, c, s, o, p);
+                                chan0.SynthMode = SynthMode.Sm3FMAM;
                                 break;
                             case 3:
-                                chan0.SynthHandler = (c, s, o, p) => BlockTemplate(SynthMode.Sm3AMAM, c, s, o, p);
+                                chan0.SynthMode = SynthMode.Sm3AMAM;
                                 break;
                         }
                         //Disable updating percussion channels
@@ -151,11 +151,11 @@ namespace NScumm.Core.Audio.OPL
                     }
                     else if ((val & 1) != 0)
                     {
-                        SynthHandler = (c, s, o, p) => BlockTemplate(SynthMode.Sm3AM, c, s, o, p);
+                        SynthMode = SynthMode.Sm3AM;
                     }
                     else
                     {
-                        SynthHandler = (c, s, o, p) => BlockTemplate(SynthMode.Sm3FM, c, s, o, p);
+                        SynthMode = SynthMode.Sm3FM;
                     }
                     maskLeft = (sbyte)((val & 0x10) != 0 ? -1 : 0);
                     maskRight = (sbyte)((val & 0x20) != 0 ? -1 : 0);
@@ -170,11 +170,11 @@ namespace NScumm.Core.Audio.OPL
                     }
                     else if ((val & 1) != 0)
                     {
-                        SynthHandler = (c, s, o, p) => BlockTemplate(SynthMode.Sm2AM, c, s, o, p);
+                        SynthMode = SynthMode.Sm2AM;
                     }
                     else
                     {
-                        SynthHandler = (c, s, o, p) => BlockTemplate(SynthMode.Sm2FM, c, s, o, p);
+                        SynthMode = SynthMode.Sm2FM;
                     }
                 }
             }
@@ -186,6 +186,29 @@ namespace NScumm.Core.Audio.OPL
                 WriteC0(chip, val);
             }
 
+            public Channel SynthHandler(Chip chip, uint samples, int[] output, int pos)
+            {
+                return BlockTemplate(SynthMode, chip, samples, output, pos);
+            }
+
+            public Channel(Chip chip, int index)
+            {
+                Chip = chip;
+                ChannelNum = index;
+
+                old = new int[2];
+                Ops = new Operator[2];
+                for (int i = 0; i < Ops.Length; i++)
+                {
+                    Ops[i] = new Operator();
+                }
+
+                maskLeft = -1;
+                maskRight = -1;
+                feedback = 31;
+                SynthMode = SynthMode.Sm2FM;
+            }
+
             /// <summary>
             /// Generate blocks of data in specific modes.
             /// </summary>
@@ -195,7 +218,7 @@ namespace NScumm.Core.Audio.OPL
             /// <param name="samples">Samples.</param>
             /// <param name="output">Output.</param>
             /// <param name="pos">Position.</param>
-            public Channel BlockTemplate(SynthMode mode, Chip chip, uint samples, int[] output, int pos)
+            Channel BlockTemplate(SynthMode mode, Chip chip, uint samples, int[] output, int pos)
             {
                 switch (mode)
                 {
@@ -397,24 +420,6 @@ namespace NScumm.Core.Audio.OPL
                 return null;
             }
 
-            public Channel(Chip chip, int index)
-            {
-                Chip = chip;
-                ChannelNum = index;
-
-                old = new int[2];
-                Ops = new Operator[2];
-                for (int i = 0; i < Ops.Length; i++)
-                {
-                    Ops[i] = new Operator();
-                }
-
-                maskLeft = -1;
-                maskRight = -1;
-                feedback = 31;
-                SynthHandler = (c, s, o, p) => BlockTemplate(SynthMode.Sm2FM, c, s, o, p);
-            }
-
             Operator Op(uint index)
             {
                 return Chip.Channels[ChannelNum + (index >> 1)].Ops[index & 1];
@@ -425,12 +430,12 @@ namespace NScumm.Core.Audio.OPL
             /// </summary>
             /// <param name="chip">Chip.</param>
             /// <param name="data">Data.</param>
-            void SetChanData(Chip chip, uint data)
+            void SetChanData(Chip chip, int data)
             {
-                uint change = chanData ^ data;
+                int change = chanData ^ data;
                 chanData = data;
-                Op(0).chanData = data;
-                Op(1).chanData = data;
+                Op(0).ChanData = data;
+                Op(1).ChanData = data;
                 //Since a frequency update triggered this, always update frequency
                 Op(0).UpdateFrequency();
                 Op(1).UpdateFrequency();
@@ -454,9 +459,9 @@ namespace NScumm.Core.Audio.OPL
             void UpdateFrequency(Chip chip, byte fourOp)
             {
                 //Extrace the frequency bits
-                uint data = chanData & 0xffff;
-                uint kslBase = KslTable[data >> 6];
-                uint keyCode = (data & 0x1c00) >> 9;
+                int data = chanData & 0xffff;
+                int kslBase = kslTable[data >> 6];
+                int keyCode = (data & 0x1c00) >> 9;
                 if ((chip.Reg08 & 0x40) != 0)
                 {
                     keyCode |= (data & 0x100) >> 8;  /* notesel == 1 */
@@ -541,7 +546,7 @@ namespace NScumm.Core.Audio.OPL
             /// <summary>
             /// Frequency/octave and derived values.
             /// </summary>
-            uint chanData;
+            int chanData;
 
             /// <summary>
             /// Old data for feedback.
@@ -567,6 +572,7 @@ namespace NScumm.Core.Audio.OPL
             /// Sign extended values for both channel's panning.
             /// </summary>
             sbyte maskLeft;
+
             /// <summary>
             /// Sign extended values for both channel's panning
             /// </summary>

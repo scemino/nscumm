@@ -21,6 +21,8 @@
 using System;
 using System.Diagnostics;
 using NScumm.Core.Audio.OPL;
+using System.Diagnostics.Contracts;
+using NScumm.Core.Audio.OPL.DosBox;
 
 namespace NScumm.Core.Audio.SoftSynth
 {
@@ -96,20 +98,20 @@ namespace NScumm.Core.Audio.SoftSynth
             Duration = copy.Duration;
         }
 
-        public AdLibInstrument(byte[] data1, InstrumentExtra extraA, byte flagsB, InstrumentExtra extraB, byte duration)
+        public AdLibInstrument(byte[] data, InstrumentExtra extraA, byte flagsB, InstrumentExtra extraB, byte duration)
         {
-            ModCharacteristic = data1[0];
-            ModScalingOutputLevel = data1[1];
-            ModAttackDecay = data1[2];
-            ModSustainRelease = data1[3];
-            ModWaveformSelect = data1[4];
-            CarCharacteristic = data1[5];
-            CarScalingOutputLevel = data1[6];
-            CarAttackDecay = data1[7];
-            CarSustainRelease = data1[8];
-            CarWaveformSelect = data1[9];
-            Feedback = data1[10];
-            FlagsA = data1[11];
+            ModCharacteristic = data[0];
+            ModScalingOutputLevel = data[1];
+            ModAttackDecay = data[2];
+            ModSustainRelease = data[3];
+            ModWaveformSelect = data[4];
+            CarCharacteristic = data[5];
+            CarScalingOutputLevel = data[6];
+            CarAttackDecay = data[7];
+            CarSustainRelease = data[8];
+            CarWaveformSelect = data[9];
+            Feedback = data[10];
+            FlagsA = data[11];
             ExtraA = new InstrumentExtra(extraA);
             FlagsB = flagsB;
             ExtraB = new InstrumentExtra(extraB);
@@ -381,7 +383,7 @@ namespace NScumm.Core.Audio.SoftSynth
             _opl = null;
         }
 
-        uint Property(int prop, uint param)
+        public override int Property(int prop, int param)
         {
             switch (prop)
             {
@@ -1055,7 +1057,6 @@ namespace NScumm.Core.Audio.SoftSynth
 
         int AdlibGetRegValueParam(int chan, byte param)
         {
-            byte val;
             byte channel;
 
             Debug.Assert(chan >= 0 && chan < 9);
@@ -1088,11 +1089,11 @@ namespace NScumm.Core.Audio.SoftSynth
             }
 
             var asp = setParamTable[param];
-            val = AdlibGetRegValue((byte)(channel + asp.RegisterBase));
+            int val = AdlibGetRegValue((byte)(channel + asp.RegisterBase));
             val &= asp.Mask;
             val >>= asp.Shift;
             if (asp.Inversion != 0)
-                val = (byte)(asp.Inversion - val);
+                val = asp.Inversion - val;
 
             return val;
         }
@@ -1639,8 +1640,6 @@ namespace NScumm.Core.Audio.SoftSynth
 
             byte[] _notes;
             AdLibInstrument[] _customInstruments;
-
-
         }
 
         class AdLibVoice
@@ -1682,6 +1681,9 @@ namespace NScumm.Core.Audio.SoftSynth
 
             public AdLibSetParams(byte[] data)
             {
+                Contract.Assert(data != null);
+                Contract.Assert(data.Length == 4);
+
                 RegisterBase = data[0];
                 Shift = data[1];
                 Mask = data[2];
@@ -1689,8 +1691,8 @@ namespace NScumm.Core.Audio.SoftSynth
             }
         }
 
-        const int PropertyOldAdLib = 2;
-        const int PropertyChannelMask = 3;
+        public const int PropertyOldAdLib = 2;
+        public const int PropertyChannelMask = 3;
         // HACK: Not so nice, but our SCUMM AdLib code is in audio/
         const int PropertyScummOPL3 = 4;
 
@@ -1721,13 +1723,13 @@ namespace NScumm.Core.Audio.SoftSynth
         /// FIXME: This flag controls a special mode for SCUMM V3 games
         /// </summary>
         bool _scummSmallHeader;
-#if ENABLE_OPL3
+        #if ENABLE_OPL3
     bool _opl3Mode;
 #endif
 
         IOpl _opl;
         byte[] _regCache;
-#if ENABLE_OPL3
+        #if ENABLE_OPL3
     byte *_regCacheSecondary;
 #endif
 

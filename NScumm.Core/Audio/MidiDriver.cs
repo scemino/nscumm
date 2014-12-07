@@ -229,6 +229,13 @@ namespace NScumm.Core.Audio
         public abstract MidiDriverError Open();
 
         /// <summary>
+        /// Get or set a property.
+        /// </summary>
+        /// <param name="prop">Property.</param>
+        /// <param name="param">Parameter.</param>
+        public abstract int Property(int prop, int param);
+
+        /// <summary>
         /// Gets a text representation of an error code.
         /// </summary>
         /// <returns>The error name.</returns>

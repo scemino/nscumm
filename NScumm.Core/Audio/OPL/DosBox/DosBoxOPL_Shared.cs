@@ -31,7 +31,7 @@
 
 using System;
 
-namespace NScumm.Core.Audio.OPL
+namespace NScumm.Core.Audio.OPL.DosBox
 {
     partial class DosBoxOPL
     {
@@ -41,16 +41,10 @@ namespace NScumm.Core.Audio.OPL
         //Try to use most precision for frequencies
         //Else try to keep different waves in synch
         //#define WAVE_PRECISION;
-        #if !WAVE_PRECISION
         //Wave bits available in the top of the 32bit range
         //Original adlib uses 10.10, we use 10.22
         const int WaveBits = 10;
-        #else
-        //Need some extra bits at the top to have room for octaves and frequency multiplier
-        //We support to 8 times lower rate
-        //128 * 15 * 8 = 15350, 2^13.9, so need 14 bits
-        const int WAVE_BITS   =14;
-        #endif
+
         const int WaveShift = (32 - WaveBits);
         const int WaveMask = ((1 << WaveShift) - 1);
 
@@ -61,14 +55,9 @@ namespace NScumm.Core.Audio.OPL
 
         //Maximum amount of attenuation bits
         //Envelope goes to 511, 9 bits
-        #if (DBOPL_WAVE_EQUALS_WAVE_TABLEMUL )
-        //Uses the value directly
-        public const int EnvBits = (9);
 
-        #else
-        //Add 3 bits here for more accuracy and would have to be shifted up either way
-        const int EnvBits = (9);
-        #endif
+        //Uses the value directly
+        public const int EnvBits = 9;
 
         //Limits of the envelope with those bits and when the envelope goes silent
         public const int EnvMin = 0;
@@ -88,11 +77,6 @@ namespace NScumm.Core.Audio.OPL
         //Has to fit within 16bit lookuptable
         const int MulShift = 16;
 
-
-        #if (DBOPL_WAVE == WAVE_HANDLER)
-        delegate int WaveHandler(uint i,uint volume);
-        #endif
-
         delegate int VolumeHandler();
 
         delegate Channel SynthHandler(Chip chip,uint samples,int[] output,int pos);
@@ -105,7 +89,7 @@ namespace NScumm.Core.Audio.OPL
         static ushort[] SinTable = new ushort[512];
         #endif
 
-        static ushort[] MulTable = new ushort[384];
+        static ushort[] mulTable = new ushort[384];
 
         //Layout of the waveform table in 512 entry intervals
         //With overlapping waves we reduce the table to half it's size
@@ -116,7 +100,7 @@ namespace NScumm.Core.Audio.OPL
 
         //6 is just 0 shifted and masked
 
-        static short[] WaveTable = new short[8 * 512];
+        static short[] waveTable = new short[8 * 512];
         //Distance into WaveTable the wave starts
         static readonly ushort[] WaveBaseTable =
             {
@@ -136,7 +120,7 @@ namespace NScumm.Core.Audio.OPL
                 1023, 1023, 512, 1023,
             };
 
-        static byte[] KslTable = new byte[8 * 16];
+        static byte[] kslTable = new byte[8 * 16];
 
         //How much to substract from the base value for the final attenuation
         static readonly byte[] KslCreateTable =
@@ -148,11 +132,11 @@ namespace NScumm.Core.Audio.OPL
                 3,  2,  1,  0,
             };
 
-        static byte[] TremoloTable = new byte[ TremoloTableLength ];
+        static byte[] tremoloTable = new byte[ TremoloTableLength ];
         //Start of a channel behind the chip struct start
-        static Func<Chip,Channel>[] ChanOffsetTable = new Func<Chip,Channel>[32];
+        static Func<Chip,Channel>[] chanOffsetTable = new Func<Chip,Channel>[32];
         //Start of an operator behind the chip struct start
-        static Func<Chip,Operator>[] OpOffsetTable = new Func<Chip,Operator>[64];
+        static Func<Chip,Operator>[] opOffsetTable = new Func<Chip,Operator>[64];
 
         static byte M(double x)
         {

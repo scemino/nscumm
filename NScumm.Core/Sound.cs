@@ -22,12 +22,15 @@ using System.Collections.Generic;
 using System.Timers;
 using System.IO;
 using NScumm.Core.Audio.Decoders;
+using NScumm.Core.IO;
 
 namespace NScumm.Core
 {
     class Sound: ISoundRepository
     {
-        ScummEngine vm;
+        readonly ScummEngine vm;
+        readonly IMixer _mixer;
+
         Timer timer;
         Stack<int> soundQueue;
         Queue<int> soundQueueIMuse;
@@ -43,7 +46,6 @@ namespace NScumm.Core
         int _sfxMode;
         int _curSoundPos;
         bool _mouthSyncMode;
-        readonly IMixer _mixer;
         SoundHandle _talkChannelHandle;
         bool _endOfMouthSync;
 
@@ -139,12 +141,10 @@ namespace NScumm.Core
 
         void PlaySound(int soundID)
         {
-            // TODO: vs
-//            if (vm.MusicEngine != null)
-//            {
-//                vm.MusicEngine.StartSound(soundID);
-//            }
-            vm.IMuse.StartSound(soundID);
+            if (vm.MusicEngine != null)
+            {
+                vm.MusicEngine.StartSound(soundID);
+            }
         }
 
         public void StopAllSounds()
@@ -321,7 +321,7 @@ namespace NScumm.Core
             if (vm.Game.Version < 7)
                 _mixer.StopID(sound);
 
-            if (vm.MusicEngine!=null)
+            if (vm.MusicEngine != null)
                 vm.MusicEngine.StopSound(sound);
 
             // TODO:
@@ -373,7 +373,7 @@ namespace NScumm.Core
             // automatically stop any other that may be playing at that time. So
             // that is what we do here, but we make an exception for speech.
 
-            if (mode == 1 && (vm.Game.Id == "tentacle" || vm.Game.Id == "samnmax"))
+            if (mode == 1 && (vm.Game.GameId == GameId.Tentacle || vm.Game.GameId == GameId.SamNMax))
             {
                 id = 777777 + _talk_sound_channel;
                 _mixer.StopID(id);

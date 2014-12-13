@@ -145,7 +145,7 @@ namespace NScumm.MonoGame
         public override void Draw(GameTime gameTime)
         {
             spriteBatch.Begin(SpriteSortMode.BackToFront, BlendState.AlphaBlend,
-                SamplerState.PointClamp, DepthStencilState.Default, RasterizerState.CullNone);
+                SamplerState.AnisotropicClamp, DepthStencilState.Default, RasterizerState.CullNone);
             gfx.DrawScreen(spriteBatch);
             gfx.DrawCursor(spriteBatch, cursorPos);
             spriteBatch.End();

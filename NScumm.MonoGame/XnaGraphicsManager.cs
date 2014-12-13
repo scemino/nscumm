@@ -48,6 +48,10 @@ namespace NScumm.MonoGame
             _texture = new Texture2D(device, 320, 200);
             _textureCursor = new Texture2D(device, 16, 16);
             _colors = new Color[256];
+            for (int i = 0; i < _colors.Length; i++)
+            {
+                _colors[i] = Color.White;               
+            }
         }
 
         #endregion

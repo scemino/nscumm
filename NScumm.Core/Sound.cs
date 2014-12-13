@@ -36,12 +36,12 @@ namespace NScumm.Core
         Queue<int> soundQueueIMuse;
 
         string _sfxFilename;
-        int _talk_sound_a1;
-        int _talk_sound_b1;
-        int _talk_sound_a2;
-        int _talk_sound_b2;
-        int _talk_sound_channel;
-        int _talk_sound_mode;
+        int _talkSound_a1;
+        int _talkSound_b1;
+        int _talkSound_a2;
+        int _talkSound_b2;
+        int _talkSound_channel;
+        int _talkSound_mode;
         ushort[] _mouthSyncTimes;
         int _sfxMode;
         int _curSoundPos;
@@ -69,7 +69,7 @@ namespace NScumm.Core
             vm.Variables[vm.VariableMusicTimer.Value] = 0;
 
             // Play it
-            //if (!_soundsPaused)
+            //if (!SoundsPaused)
             //    g_system->getAudioCDManager()->play(track, numLoops, startFrame, duration);
 
             // Start the timer after starting the track. Starting an MP3 track is
@@ -195,17 +195,17 @@ namespace NScumm.Core
         {
             if (mode == 1)
             {
-                _talk_sound_a1 = a;
-                _talk_sound_b1 = b;
-                _talk_sound_channel = channel;
+                _talkSound_a1 = a;
+                _talkSound_b1 = b;
+                _talkSound_channel = channel;
             }
             else
             {
-                _talk_sound_a2 = a;
-                _talk_sound_b2 = b;
+                _talkSound_a2 = a;
+                _talkSound_b2 = b;
             }
 
-            _talk_sound_mode |= mode;
+            _talkSound_mode |= mode;
         }
 
         public void SetupSound()
@@ -229,13 +229,13 @@ namespace NScumm.Core
 
         public void ProcessSfxQueues()
         {
-            if (_talk_sound_mode != 0)
+            if (_talkSound_mode != 0)
             {
-                if ((_talk_sound_mode & 1) != 0)
-                    StartTalkSound(_talk_sound_a1, _talk_sound_b1, 1);
-                if ((_talk_sound_mode & 2) != 0)
-                    _talkChannelHandle = StartTalkSound(_talk_sound_a2, _talk_sound_b2, 2);
-                _talk_sound_mode = 0;
+                if ((_talkSound_mode & 1) != 0)
+                    StartTalkSound(_talkSound_a1, _talkSound_b1, 1);
+                if ((_talkSound_mode & 2) != 0)
+                    _talkChannelHandle = StartTalkSound(_talkSound_a2, _talkSound_b2, 2);
+                _talkSound_mode = 0;
             }
 
             int act = vm.TalkingActor;
@@ -375,7 +375,7 @@ namespace NScumm.Core
 
             if (mode == 1 && (vm.Game.GameId == GameId.Tentacle || vm.Game.GameId == GameId.SamNMax))
             {
-                id = 777777 + _talk_sound_channel;
+                id = 777777 + _talkSound_channel;
                 _mixer.StopID(id);
             }
 
@@ -402,7 +402,7 @@ namespace NScumm.Core
             offset += num * 2;
             // TODO: In case we ever set up the size for VOC streams, we should
             // really check whether the size contains the _mouthSyncTimes.
-            // if (_soundMode == SoundMode.VOCMode)
+            // if (SoundMode == SoundMode.VOCMode)
             //      size -= num * 2;
 
             _mouthSyncTimes[num] = 0xFFFF;

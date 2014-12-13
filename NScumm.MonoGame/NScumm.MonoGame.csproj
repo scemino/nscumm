@@ -73,7 +73,7 @@
     </None>
   </ItemGroup>
   <Import Project="..\packages\MonoGame.Binaries.3.2.2-alpha\build\net40\MonoGame.Binaries.targets" Condition="Exists('..\packages\MonoGame.Binaries.3.2.2-alpha\build\net40\MonoGame.Binaries.targets')" />
-  <Import Project="../../NScumm.GL/packages/MonoGame.Binaries.3.2.2-alpha/build/net40/MonoGame.Binaries.targets" />
+  <Import Project="../packages/MonoGame.Binaries.3.2.2-alpha/build/net40/MonoGame.Binaries.targets" />
   <ItemGroup>
     <Reference Include="System.Drawing" />
   </ItemGroup>

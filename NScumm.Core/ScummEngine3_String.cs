@@ -122,47 +122,47 @@ namespace NScumm.Core
                     break;
             }
 
-            _string[textSlot].LoadDefault();
+            String[textSlot].LoadDefault();
             while ((_opCode = ReadByte()) != 0xFF)
             {
                 switch (_opCode & 0xF)
                 {
                     case 0:     // SO_AT
-                        _string[textSlot].Position = new Point(
+                        String[textSlot].Position = new Point(
                             (short)GetVarOrDirectWord(OpCodeParameter.Param1),
                             (short)GetVarOrDirectWord(OpCodeParameter.Param2));
-                        _string[textSlot].Overhead = false;
+                        String[textSlot].Overhead = false;
                         break;
 
                     case 1:     // SO_COLOR
-                        _string[textSlot].Color = (byte)GetVarOrDirectByte(OpCodeParameter.Param1);
+                        String[textSlot].Color = (byte)GetVarOrDirectByte(OpCodeParameter.Param1);
                         break;
 
                     case 2:     // SO_CLIPPED
-                        _string[textSlot].Right = (short)GetVarOrDirectWord(OpCodeParameter.Param1);
+                        String[textSlot].Right = (short)GetVarOrDirectWord(OpCodeParameter.Param1);
                         break;
 
                     case 4:     // SO_CENTER
-                        _string[textSlot].Center = true;
-                        _string[textSlot].Overhead = false;
+                        String[textSlot].Center = true;
+                        String[textSlot].Overhead = false;
                         break;
 
                     case 6:     // SO_LEFT
                         {
                             if (Game.Version == 3)
                             {
-                                _string[textSlot].Height = GetVarOrDirectWord(OpCodeParameter.Param1);
+                                String[textSlot].Height = GetVarOrDirectWord(OpCodeParameter.Param1);
                             }
                             else
                             {
-                                _string[textSlot].Center = false;
-                                _string[textSlot].Overhead = false;
+                                String[textSlot].Center = false;
+                                String[textSlot].Overhead = false;
                             }
                         }
                         break;
 
                     case 7:     // SO_OVERHEAD
-                        _string[textSlot].Overhead = true;
+                        String[textSlot].Overhead = true;
                         break;
 
                     case 8:
@@ -175,7 +175,7 @@ namespace NScumm.Core
                                 if (offset == 0 && delay == 0)
                                 {
                                     Variables[VariableMusicTimer.Value] = 0;
-                                    _sound.StopCD();
+                                    Sound.StopCD();
                                 }
                                 else
                                 {
@@ -189,7 +189,7 @@ namespace NScumm.Core
                                     // This noticably improves the experience in Loom CD.
                                     delay = (ushort)(delay * 7.5 + 5);
 
-                                    _sound.PlayCDTrack(1, 0, offset, delay);
+                                    Sound.PlayCDTrack(1, 0, offset, delay);
                                 }
                             }
                             else
@@ -216,9 +216,9 @@ namespace NScumm.Core
                             // save the 'center' flag. See bug #933168.
                             if (Game.Version <= 3)
                             {
-                                _string[textSlot].Default.Position = _string[textSlot].Position;
-                                _string[textSlot].Default.Height = _string[textSlot].Height;
-                                _string[textSlot].Default.Color = _string[textSlot].Color;
+                                String[textSlot].Default.Position = String[textSlot].Position;
+                                String[textSlot].Default.Height = String[textSlot].Height;
+                                String[textSlot].Default.Color = String[textSlot].Color;
                             }
                         }
                         return;
@@ -228,7 +228,7 @@ namespace NScumm.Core
                 }
             }
 
-            _string[textSlot].SaveDefault();
+            String[textSlot].SaveDefault();
         }
 
         void PrintEgo()

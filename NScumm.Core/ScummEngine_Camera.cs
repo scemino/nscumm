@@ -28,7 +28,7 @@ namespace NScumm.Core
     {
         readonly Camera _camera = new Camera();
 
-        protected Camera Camera { get { return _camera; } }
+        internal Camera Camera { get { return _camera; } }
 
         protected void PanCameraToCore(int x)
         {
@@ -62,7 +62,7 @@ namespace NScumm.Core
                 StopTalk();
         }
 
-        protected void SetCameraFollows(Actor actor, bool setCamera = false)
+        internal void SetCameraFollows(Actor actor, bool setCamera = false)
         {
             _camera.Mode = CameraMode.FollowActor;
             _camera.ActorToFollow = actor.Number;
@@ -80,10 +80,10 @@ namespace NScumm.Core
             if (t < _camera.LeftTrigger || t > _camera.RightTrigger || setCamera)
                 SetCameraAt(new Point(actor.Position.X, 0));
 
-            for (int i = 1; i < _actors.Length; i++)
+            for (int i = 1; i < Actors.Length; i++)
             {
-                if (_actors[i].IsInCurrentRoom)
-                    _actors[i].NeedRedraw = true;
+                if (Actors[i].IsInCurrentRoom)
+                    Actors[i].NeedRedraw = true;
             }
             RunInventoryScript(0);
         }
@@ -121,7 +121,7 @@ namespace NScumm.Core
 
             if (_camera.Mode == CameraMode.FollowActor)
             {
-                a = _actors[_camera.ActorToFollow];
+                a = Actors[_camera.ActorToFollow];
 
                 int actorx = a.Position.X;
                 t = actorx / 8 - _screenStartStrip;
@@ -142,7 +142,7 @@ namespace NScumm.Core
 
             if (_camera.MovingToActor)
             {
-                a = _actors[_camera.ActorToFollow];
+                a = Actors[_camera.ActorToFollow];
                 _camera.DestinationPosition.X = a.Position.X;
             }
 

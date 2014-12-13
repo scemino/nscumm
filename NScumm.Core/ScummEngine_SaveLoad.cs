@@ -157,11 +157,11 @@ namespace NScumm.Core
                 // default behavior here was to stopAllSounds on all state restores.
 
                 //if (!_imuse || _saveSound || !_saveTemporaryState)
-                //    _sound->stopAllSounds();
+                //    Sound->stopAllSounds();
 
-                //            _sound->stopCD();
+                //            Sound->stopCD();
 
-                //_sound->pauseSounds(true);
+                //Sound->pauseSounds(true);
 
                 //closeRoom();
 
@@ -525,9 +525,9 @@ namespace NScumm.Core
             //
             // Save/load actors
             //
-            for (int i = 0; i < _actors.Length; i++)
+            for (int i = 0; i < Actors.Length; i++)
             {
-                _actors[i].SaveOrLoad(serializer);
+                Actors[i].SaveOrLoad(serializer);
             }
 
             //
@@ -592,9 +592,9 @@ namespace NScumm.Core
             //
             // Save/load misc stuff
             //
-            for (int i = 0; i < _verbs.Length; i++)
+            for (int i = 0; i < Verbs.Length; i++)
             {
-                _verbs[i].SaveOrLoad(serializer);
+                Verbs[i].SaveOrLoad(serializer);
             }
             for (int i = 0; i < 16; i++)
             {
@@ -938,9 +938,9 @@ namespace NScumm.Core
 
                     // actors name
                     writer.WriteUInt16((ushort)ResType.ActorName);
-                    for (int i = 0; i < _actors.Length; i++)
+                    for (int i = 0; i < Actors.Length; i++)
                     {
-                        var actor = _actors[i];
+                        var actor = Actors[i];
                         if (actor.Name != null)
                         {
                             // write index
@@ -1002,9 +1002,9 @@ namespace NScumm.Core
 
                     // verbs
                     writer.WriteUInt16((ushort)ResType.Verb);
-                    for (int i = 0; i < _verbs.Length; i++)
+                    for (int i = 0; i < Verbs.Length; i++)
                     {
-                        var verb = _verbs[i];
+                        var verb = Verbs[i];
                         if (verb.Text != null)
                         {
                             // write index
@@ -1018,9 +1018,9 @@ namespace NScumm.Core
 
                     // verb images
                     writer.WriteUInt16((ushort)ResType.VerbImage);
-                    for (int i = 0; i < _verbs.Length; i++)
+                    for (int i = 0; i < Verbs.Length; i++)
                     {
-                        var verb = _verbs[i];
+                        var verb = Verbs[i];
                         if (verb.ImageData != null)
                         {
                             // write index
@@ -1138,7 +1138,7 @@ namespace NScumm.Core
 
                     case ResType.ActorName:
                         {
-                            _actors[idx].Name = ptr;
+                            Actors[idx].Name = ptr;
                         }
                         break;
 
@@ -1186,17 +1186,17 @@ namespace NScumm.Core
 
                     case ResType.Verb:
                         {
-                            _verbs[idx].Text = ptr;
+                            Verbs[idx].Text = ptr;
                         }
                         break;
 
                     case ResType.VerbImage:
                         {
                             var br = new BinaryReader(new MemoryStream(ptr));
-                            _verbs[idx].ImageWidth = br.ReadUInt16();
-                            _verbs[idx].ImageHeight = br.ReadUInt16();
+                            Verbs[idx].ImageWidth = br.ReadUInt16();
+                            Verbs[idx].ImageHeight = br.ReadUInt16();
                             var imgSize = (int)(br.BaseStream.Length - 4);
-                            _verbs[idx].ImageData = new ImageData{ Data = br.ReadBytes(imgSize) };
+                            Verbs[idx].ImageData = new ImageData{ Data = br.ReadBytes(imgSize) };
                         }
                         break;
 

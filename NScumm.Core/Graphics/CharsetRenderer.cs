@@ -130,15 +130,15 @@ namespace NScumm.Core.Graphics
                     }
                 }
 
-                if (Vm.UseCjkMode)
-                {
-                    if ((chr & 0x80) != 0)
-                    {
-                        pos++;
-                        width += Vm._2byteWidth;
-                        continue;
-                    }
-                }
+                //if (Vm.UseCjkMode)
+                //{
+                //    if ((chr & 0x80) != 0)
+                //    {
+                //        pos++;
+                //        width += Vm._2byteWidth;
+                //        continue;
+                //    }
+                //}
                 width += GetCharWidth(chr);
             }
 
@@ -204,15 +204,15 @@ namespace NScumm.Core.Graphics
                 if (chr == Vm.NewLineCharacter)
                     lastspace = pos - 1;
 
-                if (Vm.UseCjkMode)
-                {
-                    if ((chr & 0x80) != 0)
-                    {
-                        pos++;
-                        curw += Vm._2byteWidth;
-                    }
-                }
-                else
+                //if (Vm.UseCjkMode)
+                //{
+                //    if ((chr & 0x80) != 0)
+                //    {
+                //        pos++;
+                //        curw += Vm._2byteWidth;
+                //    }
+                //}
+                //else
                 {
                     curw += GetCharWidth(chr);
                 }

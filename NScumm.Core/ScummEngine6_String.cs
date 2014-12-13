@@ -81,42 +81,42 @@ namespace NScumm.Core
                 case 65:                // SO_AT
                     var y = (short)Pop();
                     var x = (short)Pop();
-                    _string[m].Position = new NScumm.Core.Graphics.Point(x, y);
-                    _string[m].Overhead = false;
+                    String[m].Position = new NScumm.Core.Graphics.Point(x, y);
+                    String[m].Overhead = false;
                     break;
                 case 66:                // SO_COLOR
-                    _string[m].Color = (byte)Pop();
+                    String[m].Color = (byte)Pop();
                     break;
                 case 67:                // SO_CLIPPED
                     var r = Pop();
-                    _string[m].Right = (short)r;
+                    String[m].Right = (short)r;
                     break;
                 case 69:                // SO_CENTER
-                    _string[m].Center = true;
-                    _string[m].Overhead = false;
+                    String[m].Center = true;
+                    String[m].Overhead = false;
                     break;
                 case 71:                // SO_LEFT
-                    _string[m].Center = false;
-                    _string[m].Overhead = false;
+                    String[m].Center = false;
+                    String[m].Overhead = false;
                     break;
                 case 72:                // SO_OVERHEAD
-                    _string[m].Overhead = true;
-                    _string[m].NoTalkAnim = false;
+                    String[m].Overhead = true;
+                    String[m].NoTalkAnim = false;
                     break;
                 case 74:                // SO_MUMBLE
-                    _string[m].NoTalkAnim = true;
+                    String[m].NoTalkAnim = true;
                     break;
                 case 75:                // SO_TEXTSTRING
                     var text = ReadCharacters();
                     PrintString(m, text);
                     break;
                 case 0xFE:
-                    _string[m].LoadDefault();
+                    String[m].LoadDefault();
                     if (n != 0)
                         _actorToPrintStrFor = Pop();
                     break;
                 case 0xFF:
-                    _string[m].SaveDefault();
+                    String[m].SaveDefault();
                     break;
                 default:
                     throw new NotSupportedException(string.Format("DecodeParseString: default case 0x{0:X}", b));

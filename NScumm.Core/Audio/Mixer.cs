@@ -42,7 +42,7 @@ namespace NScumm.Core.Audio
         }
 
         readonly Channel[] _channels;
-        SoundTypeSettings[] _soundTypeSettings;
+        SoundTypeSettings[] soundTypeSettings;
         bool _mixerReady;
         object _gate = new object();
         int _handleSeed;
@@ -54,10 +54,10 @@ namespace NScumm.Core.Audio
         {
             Debug.Assert(sampleRate > 0);
             _channels = new Channel[NumChannels];
-            _soundTypeSettings = new SoundTypeSettings[4];
-            for (int i = 0; i < _soundTypeSettings.Length; i++)
+            soundTypeSettings = new SoundTypeSettings[4];
+            for (int i = 0; i < soundTypeSettings.Length; i++)
             {
-                _soundTypeSettings[i] = new SoundTypeSettings(MaxMixerVolume);
+                soundTypeSettings[i] = new SoundTypeSettings(MaxMixerVolume);
             }
             _sampleRate = sampleRate;
         }
@@ -195,14 +195,14 @@ namespace NScumm.Core.Audio
 
         public bool IsSoundTypeMuted(SoundType type)
         {
-            Debug.Assert(0 <= (int)type && (int)type < _soundTypeSettings.Length);
-            return _soundTypeSettings[(int)type].Mute;
+            Debug.Assert(0 <= (int)type && (int)type < soundTypeSettings.Length);
+            return soundTypeSettings[(int)type].Mute;
         }
 
         public int GetVolumeForSoundType(SoundType type)
         {
-            Debug.Assert(0 <= (int)type && (int)type < _soundTypeSettings.Length);
-            return _soundTypeSettings[(int)type].Volume;
+            Debug.Assert(0 <= (int)type && (int)type < soundTypeSettings.Length);
+            return soundTypeSettings[(int)type].Volume;
         }
 
         SoundHandle InsertChannel(Channel chan)

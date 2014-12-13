@@ -26,25 +26,25 @@ namespace NScumm.Core
     {
         void StartMusic()
         {
-            _sound.AddSoundToQueue(GetVarOrDirectByte(OpCodeParameter.Param1));
+            Sound.AddSoundToQueue(GetVarOrDirectByte(OpCodeParameter.Param1));
         }
 
         void StopMusic()
         {
-            _sound.StopAllSounds();
+            Sound.StopAllSounds();
         }
 
         void StartSound()
         {
             var sound = GetVarOrDirectByte(OpCodeParameter.Param1);
             Variables[VariableMusicTimer.Value] = 0;
-            _sound.AddSoundToQueue(sound);
+            Sound.AddSoundToQueue(sound);
         }
 
         void StopSound()
         {
             GetVarOrDirectByte(OpCodeParameter.Param1);
-            //_sound.stopSound();
+            //Sound.stopSound();
         }
 
         void IsSoundRunning()
@@ -53,7 +53,7 @@ namespace NScumm.Core
             var snd = GetVarOrDirectByte(OpCodeParameter.Param1);
             if (snd != 0)
             {
-                snd = _sound.IsSoundRunning(snd) ? 1 : 0;
+                snd = Sound.IsSoundRunning(snd) ? 1 : 0;
             }
             SetResult(snd);
         }

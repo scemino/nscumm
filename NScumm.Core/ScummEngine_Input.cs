@@ -38,7 +38,7 @@ namespace NScumm.Core
             if ((ScummMouseButtonState)mouseAndKeyboardStat < ScummMouseButtonState.MaxKey)
             {
                 // Check keypresses
-                var vs = (from verb in _verbs.Skip(1)
+                var vs = (from verb in Verbs.Skip(1)
                                       where verb.VerbId != 0 && verb.SaveId == 0 && verb.CurMode == 1
                                       where verb.Key == (byte)mouseAndKeyboardStat
                                       select verb).FirstOrDefault();
@@ -65,7 +65,7 @@ namespace NScumm.Core
                 if (over != 0)
                 {
                     // Verb was clicked
-                    RunInputScript(ClickArea.Verb, (KeyCode)_verbs[over].VerbId, code);
+                    RunInputScript(ClickArea.Verb, (KeyCode)Verbs[over].VerbId, code);
                 }
                 else
                 {

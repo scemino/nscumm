@@ -87,9 +87,9 @@ namespace NScumm.Core
                 {
                     // Class '0' means: clean all class data
                     ClassData[obj] = 0;
-                    if (obj < _actors.Length)
+                    if (obj < Actors.Length)
                     {
-                        var a = _actors[obj];
+                        var a = Actors[obj];
                         a.IgnoreBoxes = false;
                         a.ForceClip = 0;
                     }

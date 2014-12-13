@@ -43,7 +43,7 @@ namespace NScumm.Core
         void ActorFollowCamera(int index)
         {
             if (Game.Version >= 7)
-                SetCameraFollows(_actors[index]);
+                SetCameraFollows(Actors[index]);
             else
                 ActorFollowCameraEx(index);
         }
@@ -53,7 +53,7 @@ namespace NScumm.Core
             if (Game.Version < 7)
             {
                 var old = Camera.ActorToFollow;
-                SetCameraFollows(_actors[act]);
+                SetCameraFollows(Actors[act]);
                 if (Camera.ActorToFollow != old)
                     RunInventoryScript(0);
 

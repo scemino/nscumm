@@ -31,9 +31,9 @@ namespace NScumm.Core
     partial class ScummEngine
     {
         protected byte[][] _strings;
-        protected TextSlot[] _string = new TextSlot[6];
+        TextSlot[] _string = new TextSlot[6];
 
-        public TextSlot[] String { get { return _string; } }
+        internal TextSlot[] String { get { return _string; } }
 
         protected byte[] ReadCharacters()
         {
@@ -134,7 +134,7 @@ namespace NScumm.Core
                                 if (offset == 0 && delay == 0)
                                 {
                                     _variables[VariableMusicTimer.Value] = 0;
-                                    _sound.StopCD();
+                                    Sound.StopCD();
                                 }
                                 else
                                 {
@@ -148,7 +148,7 @@ namespace NScumm.Core
                                     // This noticably improves the experience in Loom CD.
                                     delay = (ushort)(delay * 7.5 + 5);
 
-                                    _sound.PlayCDTrack(1, 0, offset, delay);
+                                    Sound.PlayCDTrack(1, 0, offset, delay);
                                 }
                             }
                             else
@@ -236,12 +236,12 @@ namespace NScumm.Core
                 var b = buffer[10] | (buffer[11] << 8) | (buffer[14] << 16) | (buffer[15] << 24);
 
                 // Sam and Max uses a caching system, printing empty messages
-                // and setting VAR_V6_SOUNDMODE beforehand. See patch 609791.
+                // and setting VAR_V6SoundMODE beforehand. See patch 609791.
                 if (_game.GameId == NScumm.Core.IO.GameId.SamNMax)
                     channel = Variables[VariableV6SoundMode.Value];
 
                 if (channel != 2)
-                    _sound.TalkSound(a, b, 1, channel);
+                    Sound.TalkSound(a, b, 1, channel);
             }
         }
 
@@ -352,11 +352,11 @@ namespace NScumm.Core
             var num = ReadVariable(var);
             if (num != 0)
             {
-                for (int k = 1; k < _verbs.Length; k++)
+                for (int k = 1; k < Verbs.Length; k++)
                 {
-                    if (num == _verbs[k].VerbId && _verbs[k].Type == VerbType.Text && (_verbs[k].SaveId == 0))
+                    if (num == Verbs[k].VerbId && Verbs[k].Type == VerbType.Text && (Verbs[k].SaveId == 0))
                     {
-                        return ConvertMessageToString(_verbs[k].Text, dst, dstPos);
+                        return ConvertMessageToString(Verbs[k].Text, dst, dstPos);
                     }
                 }
             }

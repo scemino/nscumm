@@ -233,7 +233,7 @@ namespace NScumm.Core
                 if (state == 0)
                     state = 255;
 
-                var a = _actors[obj];
+                var a = Actors[obj];
                 a.ScaleX = state;
                 a.ScaleY = state;
                 a.PutActor(new Point(x, y), CurrentRoom);
@@ -331,7 +331,7 @@ namespace NScumm.Core
             int dir;
             if (ObjIsActor(index))
             {
-                dir = _actors[ObjToActor(index)].Facing;
+                dir = Actors[ObjToActor(index)].Facing;
             }
             else
             {
@@ -353,8 +353,8 @@ namespace NScumm.Core
             {
                 if (!GetObjectOrActorXY(b, out pos1))
                     return -1;
-                if (b < _actors.Length)
-                    i = _actors[b].ScaleX;
+                if (b < Actors.Length)
+                    i = Actors[b].ScaleX;
             }
             else
             {
@@ -365,8 +365,8 @@ namespace NScumm.Core
             {
                 if (!GetObjectOrActorXY(e, out pos2))
                     return -1;
-                if (e < _actors.Length)
-                    j = _actors[e].ScaleX;
+                if (e < Actors.Length)
+                    j = Actors[e].ScaleX;
             }
             else
             {

@@ -36,7 +36,7 @@ namespace NScumm.Dump
                         exp = new MethodInvocation(new MemberAccess(exp, "LoadScript")).AddArgument(resId);
                     }
                     break;
-                case 101:               // SO_LOAD_SOUND
+                case 101:               // SO_LOADSound
                     {
                         var resId = Pop();
                         exp = new MethodInvocation(new MemberAccess(exp, "LoadSound")).AddArgument(resId);
@@ -60,7 +60,7 @@ namespace NScumm.Dump
                         exp = new MethodInvocation(new MemberAccess(exp, "NukeScript")).AddArgument(resId);
                     }
                     break;
-                case 105:               // SO_NUKE_SOUND
+                case 105:               // SO_NUKESound
                     {
                         var resId = Pop();
                         exp = new MethodInvocation(new MemberAccess(exp, "NukeSound")).AddArgument(resId);
@@ -84,7 +84,7 @@ namespace NScumm.Dump
                         exp = new MethodInvocation(new MemberAccess(exp, "LockScript")).AddArgument(resId);
                     }
                     break;
-                case 109:               // SO_LOCK_SOUND
+                case 109:               // SO_LOCKSound
                     {
                         var resId = Pop();
                         exp = new MethodInvocation(new MemberAccess(exp, "LockSound")).AddArgument(resId);
@@ -108,7 +108,7 @@ namespace NScumm.Dump
                         exp = new MethodInvocation(new MemberAccess(exp, "UnlockScript")).AddArgument(resId);
                     }
                     break;
-                case 113:               // SO_UNLOCK_SOUND
+                case 113:               // SO_UNLOCKSound
                     {
                         var resId = Pop();
                         exp = new MethodInvocation(new MemberAccess(exp, "UnlockSound")).AddArgument(resId);

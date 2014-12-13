@@ -65,8 +65,8 @@ namespace NScumm.Core.Graphics
         {
             int spacing = 0;
 
-            if (Vm.UseCjkMode && (chr & 0x80) != 0)
-                spacing = Vm._2byteWidth / 2;
+            //if (Vm.UseCjkMode && (chr & 0x80) != 0)
+            //    spacing = Vm._2byteWidth / 2;
 
             if (spacing == 0)
                 spacing = _fontPtr[6 + chr];

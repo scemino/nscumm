@@ -64,7 +64,7 @@ namespace NScumm.Core.Audio.IMuse
         protected bool _recycle_players;
         // Can we stop a player in order to start another one?
     
-        protected uint _queue_end, _queue_pos, _queue_sound;
+        protected uint _queue_end, _queue_pos, _queueSound;
         protected bool _queue_adding;
     
         protected byte _queue_marker;
@@ -79,7 +79,6 @@ namespace NScumm.Core.Audio.IMuse
         // Sam & Max triggers
         /// </summary>
         internal protected ImTrigger[] _snm_triggers;
-        protected ushort _snm_trigger_index;
     
         protected ushort[] _channel_volume;
         protected ushort[] _channel_volume_eff;
@@ -438,7 +437,7 @@ namespace NScumm.Core.Audio.IMuse
 
         public void HandleMarker(int id, int data)
         {
-            if ((_queue_end == _queue_pos) || (_queue_adding && _queue_sound == id && data == _queue_marker))
+            if ((_queue_end == _queue_pos) || (_queue_adding && _queueSound == id && data == _queue_marker))
                 return;
 
             var p = _cmd_queue[_queue_end].array;
@@ -781,7 +780,7 @@ namespace NScumm.Core.Audio.IMuse
 
             _queue_pos = pos;
             _queue_adding = true;
-            _queue_sound = (uint)sound;
+            _queueSound = (uint)sound;
             _queue_marker = (byte)marker;
             return 0;
         }

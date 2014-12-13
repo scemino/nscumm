@@ -41,9 +41,9 @@ namespace NScumm.Core
                     while (a <= b)
                     {
                         slot = GetVerbSlot(a, 0);
-                        if (slot != 0 && _verbs[slot].SaveId == 0)
+                        if (slot != 0 && Verbs[slot].SaveId == 0)
                         {
-                            _verbs[slot].SaveId = (ushort)c;
+                            Verbs[slot].SaveId = (ushort)c;
                             DrawVerb(slot, 0);
                             VerbMouseOver(0);
                         }
@@ -61,7 +61,7 @@ namespace NScumm.Core
                             if (slot2 != 0)
                                 KillVerb(slot2);
                             slot = GetVerbSlot(a, c);
-                            _verbs[slot].SaveId = 0;
+                            Verbs[slot].SaveId = 0;
                             DrawVerb(slot, 0);
                             VerbMouseOver(0);
                         }
@@ -88,8 +88,8 @@ namespace NScumm.Core
         {
             var verb = GetVarOrDirectByte(OpCodeParameter.Param1);
             var slot = GetVerbSlot(verb, 0);
-            ScummHelper.AssertRange(0, slot, _verbs.Length - 1, "new verb slot");
-            var vs = _verbs[slot];
+            ScummHelper.AssertRange(0, slot, Verbs.Length - 1, "new verb slot");
+            var vs = Verbs[slot];
             vs.VerbId = (ushort)verb;
 
             while ((_opCode = ReadByte()) != 0xFF)
@@ -176,19 +176,19 @@ namespace NScumm.Core
 
                             if (slot == 0)
                             {
-                                for (slot = 1; slot < _verbs.Length; slot++)
+                                for (slot = 1; slot < Verbs.Length; slot++)
                                 {
-                                    if (_verbs[slot].VerbId == 0)
+                                    if (Verbs[slot].VerbId == 0)
                                         break;
                                 }
                             }
-                            vs = _verbs[slot];
+                            vs = Verbs[slot];
                             vs.VerbId = (ushort)verb;
                             vs.Color = 2;
                             vs.HiColor = (Game.Version == 3) ? (byte)14 : (byte)0;
                             vs.DimColor = 8;
                             vs.Type = VerbType.Text;
-                            vs.CharsetNr = _string[0].Default.Charset;
+                            vs.CharsetNr = String[0].Default.Charset;
                             vs.CurMode = 0;
                             vs.SaveId = 0;
                             vs.Key = 0;

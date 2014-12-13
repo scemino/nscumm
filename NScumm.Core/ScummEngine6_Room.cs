@@ -197,7 +197,7 @@ namespace NScumm.Core
         [OpCode(0x85)]
         void LoadRoomWithEgo(int obj, byte room, int x, int y)
         {
-            var a = _actors[Variables[VariableEgo.Value]];
+            var a = Actors[Variables[VariableEgo.Value]];
             a.PutActor(room);
             _egoPositioned = false;
 
@@ -244,7 +244,7 @@ namespace NScumm.Core
                 return;
             }
 
-            var actor = _actors[index];
+            var actor = Actors[index];
             Push(actor.Room);
         }
 

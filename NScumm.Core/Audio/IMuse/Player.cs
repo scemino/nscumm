@@ -572,7 +572,7 @@ namespace NScumm.Core.Audio.IMuse
                 StartSeqSound(_id, false);
                 SetSpeed(_speed);
                 if (_parser != null)
-                    _parser.JumpToTick(_music_tick); // start_seq_sound already switched tracks
+                    _parser.JumpToTick(_music_tick); // start_seqSound already switched tracks
                 _isMT32 = _se.IsMT32(_id);
                 _isMIDI = _se.IsMIDI(_id);
                 _supportsPercussion = _se.SupportsPercussion(_id);

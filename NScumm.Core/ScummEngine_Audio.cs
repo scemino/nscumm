@@ -24,32 +24,31 @@ namespace NScumm.Core
 {
     partial class ScummEngine
     {
-        protected Sound _sound;
         protected bool _saveSound;
 
-        public Sound Sound{ get { return _sound; } }
+        internal Sound Sound { get; private set; }
 
         //        public void UpdateSound()
         //        {
-        //            _sound.Update();
+        //            Sound.Update();
         //        }
 
         void PlayActorSounds()
         {
-            for (var i = 1; i < _actors.Length; i++)
+            for (var i = 1; i < Actors.Length; i++)
             {
-                if (_actors[i].Cost.SoundCounter != 0 && _actors[i].IsInCurrentRoom)
+                if (Actors[i].Cost.SoundCounter != 0 && Actors[i].IsInCurrentRoom)
                 {
                     _currentScript = 0xFF;
 
-                    var sound = _actors[i].Sound;
+                    var sound = Actors[i].Sound;
                     // fast mode will flood the queue with walk sounds
 //                    if (!_fastMode) {
-                    _sound.AddSoundToQueue(sound);
+                    Sound.AddSoundToQueue(sound);
 //                    }
-                    for (var j = 1; j < _actors.Length; j++)
+                    for (var j = 1; j < Actors.Length; j++)
                     {
-                        _actors[j].Cost.SoundCounter = 0;
+                        Actors[j].Cost.SoundCounter = 0;
                     }
                     return;
                 }

@@ -32,7 +32,7 @@ namespace NScumm.Core
         {
             var over = FindVerbAtPos(x, y);
             if (over != 0)
-                over = _verbs[over].VerbId;
+                over = Verbs[over].VerbId;
             Push(over);
         }
 
@@ -44,10 +44,10 @@ namespace NScumm.Core
             {
                 _curVerb = Pop();
                 _curVerbSlot = GetVerbSlot(_curVerb, 0);
-                ScummHelper.AssertRange(0, _curVerbSlot, _verbs.Length - 1, "new verb slot");
+                ScummHelper.AssertRange(0, _curVerbSlot, Verbs.Length - 1, "new verb slot");
                 return;
             }
-            var vs = _verbs[_curVerbSlot];
+            var vs = Verbs[_curVerbSlot];
             var slot = _curVerbSlot;
             switch (subOp)
             {
@@ -62,7 +62,7 @@ namespace NScumm.Core
                     }
                     break;
                 case 125:               // SO_VERB_NAME
-                    _verbs[slot].Text = ReadCharacters();
+                    Verbs[slot].Text = ReadCharacters();
                     vs.Type = VerbType.Text;
                     vs.ImgIndex = 0;
                     break;
@@ -89,20 +89,20 @@ namespace NScumm.Core
                     slot = GetVerbSlot(_curVerb, 0);
                     if (slot == 0)
                     {
-                        for (slot = 1; slot < _verbs.Length; slot++)
+                        for (slot = 1; slot < Verbs.Length; slot++)
                         {
-                            if (_verbs[slot].VerbId == 0)
+                            if (Verbs[slot].VerbId == 0)
                                 break;
                         }
                         _curVerbSlot = slot;
                     }
-                    vs = _verbs[slot];
+                    vs = Verbs[slot];
                     vs.VerbId = (ushort)_curVerb;
                     vs.Color = 2;
                     vs.HiColor = 0;
                     vs.DimColor = 8;
                     vs.Type = VerbType.Text;
-                    vs.CharsetNr = _string[0].Default.Charset;
+                    vs.CharsetNr = String[0].Default.Charset;
                     vs.CurMode = 0;
                     vs.SaveId = 0;
                     vs.Key = 0;
@@ -126,11 +126,11 @@ namespace NScumm.Core
                         var a = Pop();
                         if (a == 0)
                         {
-                            _verbs[slot].Text = new byte[0];
+                            Verbs[slot].Text = new byte[0];
                         }
                         else
                         {
-                            _verbs[slot].Text = GetStringAt(a);
+                            Verbs[slot].Text = GetStringAt(a);
                         }
                         vs.Type = VerbType.Text;
                         vs.ImgIndex = 0;
@@ -182,9 +182,9 @@ namespace NScumm.Core
                     while (a <= b)
                     {
                         var slot = GetVerbSlot(a, 0);
-                        if (slot != 0 && _verbs[slot].SaveId == 0)
+                        if (slot != 0 && Verbs[slot].SaveId == 0)
                         {
-                            _verbs[slot].SaveId = (ushort)c;
+                            Verbs[slot].SaveId = (ushort)c;
                             DrawVerb(slot, 0);
                             VerbMouseOver(0);
                         }
@@ -201,7 +201,7 @@ namespace NScumm.Core
                             if (slot2 != 0)
                                 KillVerb(slot2);
                             slot = GetVerbSlot(a, c);
-                            _verbs[slot].SaveId = 0;
+                            Verbs[slot].SaveId = 0;
                             DrawVerb(slot, 0);
                             VerbMouseOver(0);
                         }

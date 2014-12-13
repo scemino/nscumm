@@ -36,7 +36,6 @@ namespace NScumm.Core
         // Somewhat hackish stuff for 2 byte support (Chinese/Japanese/Korean)
         public byte NewLineCharacter;
         internal bool UseCjkMode;
-        internal int _2byteWidth;
         byte _charsetColor;
         int _nextLeft, _nextTop;
 
@@ -89,7 +88,7 @@ namespace NScumm.Core
 
             Actor a = null;
             if (TalkingActor != 0xFF)
-                a = _actors[TalkingActor];
+                a = Actors[TalkingActor];
 
             if (a != null && _string[0].Overhead)
             {
@@ -153,7 +152,7 @@ namespace NScumm.Core
 
             if (_haveMsg == 1)
             {
-                if ((_sound.SfxMode & 2) == 0)
+                if ((Sound.SfxMode & 2) == 0)
                     StopTalk();
                 return;
             }
@@ -297,10 +296,10 @@ namespace NScumm.Core
                     case 10:
 					// Note the similarity to the code in debugMessage()
                         {
-                            var talk_sound_a = (_charsetBuffer[bufferPos] | (_charsetBuffer[bufferPos + 1] << 8) | (_charsetBuffer[bufferPos + 4] << 16) | (_charsetBuffer[bufferPos + 5] << 24));
-                            var talk_sound_b = (_charsetBuffer[bufferPos + 8] | (_charsetBuffer[bufferPos + 9] << 8) | (_charsetBuffer[bufferPos + 12] << 16) | (_charsetBuffer[bufferPos + 13] << 24));
+                            var talkSound_a = (_charsetBuffer[bufferPos] | (_charsetBuffer[bufferPos + 1] << 8) | (_charsetBuffer[bufferPos + 4] << 16) | (_charsetBuffer[bufferPos + 5] << 24));
+                            var talkSound_b = (_charsetBuffer[bufferPos + 8] | (_charsetBuffer[bufferPos + 9] << 8) | (_charsetBuffer[bufferPos + 12] << 16) | (_charsetBuffer[bufferPos + 13] << 24));
                             bufferPos += 14;
-                            _sound.TalkSound(talk_sound_a, talk_sound_b, 2);
+                            Sound.TalkSound(talkSound_a, talkSound_b, 2);
                             _haveActorSpeechMsg = false;
                         }
                         break;

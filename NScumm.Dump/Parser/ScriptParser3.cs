@@ -328,7 +328,7 @@ namespace NScumm.Dump
                     return new ExpressionStatement(
                         new MethodInvocation("UnloadScript").
                         AddArgument(resId));
-                case 6:         // SO_NUKE_SOUND
+                case 6:         // SO_NUKESound
                     return new ExpressionStatement(
                         new MethodInvocation("UnloadSound").
                         AddArgument(resId));
@@ -360,7 +360,7 @@ namespace NScumm.Dump
                     return new ExpressionStatement(
                         new MethodInvocation("UnlockScript").
                         AddArgument(resId));
-                case 14:        // SO_UNLOCK_SOUND
+                case 14:        // SO_UNLOCKSound
                     return new ExpressionStatement(
                         new MethodInvocation("UnlockSound").
                         AddArgument(resId));

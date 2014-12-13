@@ -27,25 +27,25 @@ namespace NScumm.Core
 {
     partial class ScummEngine
     {
-        protected VerbSlot[] _verbs;
+        internal VerbSlot[] Verbs { get; private set; }
         readonly Sentence[] _sentence = InitSentences();
         int _sentenceNum;
         int _verbMouseOver;
 
         protected int SentenceNum { get { return _sentenceNum; } set { _sentenceNum = value; } }
 
-        protected Sentence[] Sentence{ get { return _sentence; } }
+        internal Sentence[] Sentence{ get { return _sentence; } }
 
         void InitializeVerbs()
         {
-            _verbs = new VerbSlot[_resManager.NumVerbs];
-            for (int i = 0; i < _verbs.Length; i++)
+            Verbs = new VerbSlot[_resManager.NumVerbs];
+            for (int i = 0; i < Verbs.Length; i++)
             {
-                _verbs[i] = new VerbSlot();
-                _verbs[i].CurRect.Right = ScreenWidth - 1;
-                _verbs[i].OldRect.Left = -1;
-                _verbs[i].Color = 2;
-                _verbs[i].CharsetNr = 1;
+                Verbs[i] = new VerbSlot();
+                Verbs[i].CurRect.Right = ScreenWidth - 1;
+                Verbs[i].OldRect.Left = -1;
+                Verbs[i].Color = 2;
+                Verbs[i].CharsetNr = 1;
             }
         }
 
@@ -65,9 +65,9 @@ namespace NScumm.Core
                     while (a <= b)
                     {
                         slot = GetVerbSlot(a, 0);
-                        if (slot != 0 && _verbs[slot].SaveId == 0)
+                        if (slot != 0 && Verbs[slot].SaveId == 0)
                         {
-                            _verbs[slot].SaveId = (ushort)c;
+                            Verbs[slot].SaveId = (ushort)c;
                             DrawVerb(slot, 0);
                             VerbMouseOver(0);
                         }
@@ -85,7 +85,7 @@ namespace NScumm.Core
                             if (slot2 != 0)
                                 KillVerb(slot2);
                             slot = GetVerbSlot(a, c);
-                            _verbs[slot].SaveId = 0;
+                            Verbs[slot].SaveId = 0;
                             DrawVerb(slot, 0);
                             VerbMouseOver(0);
                         }
@@ -129,9 +129,9 @@ namespace NScumm.Core
 
             if (o != null)
             {
-                _verbs[verb].ImageWidth = o.Width;
-                _verbs[verb].ImageHeight = o.Height;
-                _verbs[verb].ImageData = o.Images.Count > 0 ? o.Images[0] : null;
+                Verbs[verb].ImageWidth = o.Width;
+                Verbs[verb].ImageHeight = o.Height;
+                Verbs[verb].ImageData = o.Images.Count > 0 ? o.Images[0] : null;
             }
         }
 
@@ -139,13 +139,13 @@ namespace NScumm.Core
         {
             if (_verbMouseOver != verb)
             {
-                if (_verbs[_verbMouseOver].Type != VerbType.Image)
+                if (Verbs[_verbMouseOver].Type != VerbType.Image)
                 {
                     DrawVerb(_verbMouseOver, 0);
                     _verbMouseOver = verb;
                 }
 
-                if (_verbs[verb].Type != VerbType.Image && _verbs[verb].HiColor != 0)
+                if (Verbs[verb].Type != VerbType.Image && Verbs[verb].HiColor != 0)
                 {
                     DrawVerb(verb, 1);
                     _verbMouseOver = verb;
@@ -186,7 +186,7 @@ namespace NScumm.Core
 
         VerbSlot GetVerb(int num)
         {
-            var verbSlot = (from verb in _verbs
+            var verbSlot = (from verb in Verbs
                                      where num == verb.VerbId && verb.Type == 0 && verb.SaveId == 0
                                      select verb).FirstOrDefault();
             return verbSlot;
@@ -197,7 +197,7 @@ namespace NScumm.Core
             if (verb == 0)
                 return;
 
-            var vs = _verbs[verb];
+            var vs = Verbs[verb];
             if (vs.SaveId == 0 && vs.CurMode != 0 && vs.VerbId != 0)
             {
                 if (vs.Type == VerbType.Image)
@@ -225,7 +225,7 @@ namespace NScumm.Core
                    if (verb >= 31 && verb <= 36)
                    verb += _inventoryOffset;
                  */
-                var msg = _verbs[verb].Text;
+                var msg = Verbs[verb].Text;
                 if (msg == null || msg.Length == 0)
                     return;
 
@@ -246,7 +246,7 @@ namespace NScumm.Core
 
         void RestoreVerbBG(int verb)
         {
-            VerbSlot vs = _verbs[verb];
+            VerbSlot vs = Verbs[verb];
             byte col = vs.BkColor;
 
             if (vs.OldRect.Left != -1)
@@ -261,7 +261,7 @@ namespace NScumm.Core
             if (slot == 0)
                 return;
 
-            VerbSlot vs = _verbs[slot];
+            VerbSlot vs = Verbs[slot];
             vs.VerbId = 0;
             vs.CurMode = 0;
             vs.Text = null;
@@ -276,9 +276,9 @@ namespace NScumm.Core
 
         protected int FindVerbAtPos(int x, int y)
         {
-            for (int i = _verbs.Length - 1; i >= 0; i--)
+            for (int i = Verbs.Length - 1; i >= 0; i--)
             {
-                var vs = _verbs[i];
+                var vs = Verbs[i];
                 if (vs.CurMode != 1 || vs.VerbId == 0 || vs.SaveId != 0 || y < vs.CurRect.Top || y >= vs.CurRect.Bottom)
                     continue;
                 if (vs.Center)
@@ -300,9 +300,9 @@ namespace NScumm.Core
 
         protected int GetVerbSlot(int id, int mode)
         {
-            for (int i = 1; i < _verbs.Length; i++)
+            for (int i = 1; i < Verbs.Length; i++)
             {
-                if (_verbs[i].VerbId == id && _verbs[i].SaveId == mode)
+                if (Verbs[i].VerbId == id && Verbs[i].SaveId == mode)
                 {
                     return i;
                 }

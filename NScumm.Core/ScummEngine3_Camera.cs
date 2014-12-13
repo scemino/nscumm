@@ -44,7 +44,7 @@ namespace NScumm.Core
         {
             var actor = GetVarOrDirectByte(OpCodeParameter.Param1);
             var old = Camera.ActorToFollow;
-            SetCameraFollows(_actors[actor], false);
+            SetCameraFollows(Actors[actor], false);
 
             if (Camera.ActorToFollow != old)
                 RunInventoryScript(0);

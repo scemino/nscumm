@@ -70,14 +70,14 @@ namespace NScumm.Core
         {
             GetResult();
             var act = GetVarOrDirectByte(OpCodeParameter.Param1);
-            var actor = _actors[act];
+            var actor = Actors[act];
             SetResult((int)actor.ScaleX);
         }
 
         protected void SoundKludge()
         {
             var items = GetWordVarArgs();
-            _sound.SoundKludge(items);
+            Sound.SoundKludge(items);
         }
 
         void MatrixOperations()

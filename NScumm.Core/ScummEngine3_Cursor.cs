@@ -120,7 +120,7 @@ namespace NScumm.Core
                     {
                         var table = GetWordVarArgs();
                         for (var i = 0; i < table.Length; i++)
-                            CharsetColorMap[i] = _charsetData[_string[1].Default.Charset][i] = (byte)table[i];
+                            CharsetColorMap[i] = _charsetData[String[1].Default.Charset][i] = (byte)table[i];
                     }
                     break;
                 default:

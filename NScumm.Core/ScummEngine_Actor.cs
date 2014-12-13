@@ -28,26 +28,25 @@ namespace NScumm.Core
 {
     partial class ScummEngine
     {
-        protected Actor[] _actors;
         protected int _actorToPrintStrFor;
         bool _useTalkAnims;
         bool _haveActorSpeechMsg;
 
-        public Actor[] Actors { get { return _actors; } }
+        internal Actor[] Actors { get; private set; }
 
         void InitActors()
         {
-            _actors = new Actor[Game.GameId == NScumm.Core.IO.GameId.SamNMax ? 30 : 13];
-            for (byte i = 0; i < _actors.Length; i++)
+            Actors = new Actor[Game.GameId == NScumm.Core.IO.GameId.SamNMax ? 30 : 13];
+            for (byte i = 0; i < Actors.Length; i++)
             {
-                _actors[i] = _game.Version == 3 ? new Actor3(this, i) : new Actor(this, i);
-                _actors[i].Init(-1);
+                Actors[i] = _game.Version == 3 ? new Actor3(this, i) : new Actor(this, i);
+                Actors[i].Init(-1);
             }
         }
 
         protected bool IsValidActor(int id)
         {
-            return id >= 0 && id < _actors.Length && _actors[id].Number == id;
+            return id >= 0 && id < Actors.Length && Actors[id].Number == id;
         }
 
         protected void ActorTalk(byte[] msg)
@@ -80,7 +79,7 @@ namespace NScumm.Core
                     _actorToPrintStrFor = 2;    // Could be anything from 2 to 5. Maybe compare to original?
                 }
 
-                var a = _actors[_actorToPrintStrFor];
+                var a = Actors[_actorToPrintStrFor];
                 if (!a.IsInCurrentRoom)
                 {
                     oldact = 0xFF;
@@ -110,7 +109,7 @@ namespace NScumm.Core
             }
             else
             {
-                var a = _actors[TalkingActor];
+                var a = Actors[TalkingActor];
                 _charsetColor = a.TalkColor;
             }
 
@@ -131,7 +130,7 @@ namespace NScumm.Core
 
         internal void StopTalk()
         {
-            _sound.StopTalkSound();
+            Sound.StopTalkSound();
 
             _haveMsg = 0;
             _talkDelay = 0;
@@ -139,7 +138,7 @@ namespace NScumm.Core
             var act = TalkingActor;
             if (act != 0 && act < 0x80)
             {
-                var a = _actors[act];
+                var a = Actors[act];
                 if (a.IsInCurrentRoom && _useTalkAnims)
                 {
                     a.RunTalkScript(a.TalkStopFrame);
@@ -154,19 +153,19 @@ namespace NScumm.Core
 
         void ShowActors()
         {
-            for (int i = 1; i < _actors.Length; i++)
+            for (int i = 1; i < Actors.Length; i++)
             {
-                if (_actors[i].IsInCurrentRoom)
-                    _actors[i].Show();
+                if (Actors[i].IsInCurrentRoom)
+                    Actors[i].Show();
             }
         }
 
         void WalkActors()
         {
-            for (int i = 1; i < _actors.Length; i++)
+            for (int i = 1; i < Actors.Length; i++)
             {
-                if (_actors[i].IsInCurrentRoom)
-                    _actors[i].Walk();
+                if (Actors[i].IsInCurrentRoom)
+                    Actors[i].Walk();
             }
         }
 
@@ -174,12 +173,12 @@ namespace NScumm.Core
         {
             if (Game.GameId == NScumm.Core.IO.GameId.SamNMax)
             {
-                return from actor in _actors
+                return from actor in Actors
                                    where actor.IsInCurrentRoom
                                    orderby actor.Position.Y, actor.Number
                                    select actor;
             }
-            return from actor in _actors
+            return from actor in Actors
                             where actor.IsInCurrentRoom
                             where (Game.Version != 8 || actor.Layer >= 0)
                             orderby actor.Position.Y - actor.Layer*2000
@@ -225,21 +224,21 @@ namespace NScumm.Core
                 int strip = _screenStartStrip + i;
                 Gdi.ClearGfxUsageBit(strip, Gdi.UsageBitDirty);
                 Gdi.ClearGfxUsageBit(strip, Gdi.UsageBitRestored);
-                for (int j = 1; j < _actors.Length; j++)
+                for (int j = 1; j < Actors.Length; j++)
                 {
                     if (Gdi.TestGfxUsageBit(strip, j) &&
-                        ((_actors[j].Top != 0x7fffffff && _actors[j].NeedRedraw) || _actors[j].NeedBackgroundReset))
+                        ((Actors[j].Top != 0x7fffffff && Actors[j].NeedRedraw) || Actors[j].NeedBackgroundReset))
                     {
                         Gdi.ClearGfxUsageBit(strip, j);
-                        if ((_actors[j].Bottom - _actors[j].Top) >= 0)
-                            Gdi.ResetBackground(_actors[j].Top, _actors[j].Bottom, i);
+                        if ((Actors[j].Bottom - Actors[j].Top) >= 0)
+                            Gdi.ResetBackground(Actors[j].Top, Actors[j].Bottom, i);
                     }
                 }
             }
 
-            for (int i = 1; i < _actors.Length; i++)
+            for (int i = 1; i < Actors.Length; i++)
             {
-                _actors[i].NeedBackgroundReset = false;
+                Actors[i].NeedBackgroundReset = false;
             }
         }
 
@@ -249,9 +248,9 @@ namespace NScumm.Core
             // Also redraw all actors in COMI (see bug #1066329 for details).
             if (_fullRedraw)
             {
-                for (int j = 0; j < _actors.Length; j++)
+                for (int j = 0; j < Actors.Length; j++)
                 {
-                    _actors[j].NeedRedraw = true;
+                    Actors[j].NeedRedraw = true;
                 }
             }
             else
@@ -261,11 +260,11 @@ namespace NScumm.Core
                     int strip = _screenStartStrip + i;
                     if (Gdi.TestGfxAnyUsageBits(strip))
                     {
-                        for (int j = 1; j < _actors.Length; j++)
+                        for (int j = 1; j < Actors.Length; j++)
                         {
                             if (Gdi.TestGfxUsageBit(strip, j) && Gdi.TestGfxOtherUsageBits(strip, j))
                             {
-                                _actors[j].NeedRedraw = true;
+                                Actors[j].NeedRedraw = true;
                             }
                         }
                     }
@@ -278,10 +277,10 @@ namespace NScumm.Core
             if (!Gdi.TestGfxAnyUsageBits(p.X / 8))
                 return 0;
 
-            for (var i = 1; i < _actors.Length; i++)
+            for (var i = 1; i < Actors.Length; i++)
             {
                 if (Gdi.TestGfxUsageBit(p.X / 8, i) && !GetClass(i, ObjectClass.Untouchable) &&
-                    p.Y >= _actors[i].Top && p.Y <= _actors[i].Bottom)
+                    p.Y >= Actors[i].Top && p.Y <= Actors[i].Bottom)
                 {
                     return i;
                 }
@@ -295,11 +294,11 @@ namespace NScumm.Core
             Actor acta = null;
             Actor actb = null;
 
-            if (a < _actors.Length)
-                acta = _actors[a];
+            if (a < Actors.Length)
+                acta = Actors[a];
 
-            if (b < _actors.Length)
-                actb = _actors[b];
+            if (b < Actors.Length)
+                actb = Actors[b];
 
             if ((acta != null) && (actb != null) && (acta.Room == actb.Room) && (acta.Room != 0) && !acta.IsInCurrentRoom)
                 return 0;

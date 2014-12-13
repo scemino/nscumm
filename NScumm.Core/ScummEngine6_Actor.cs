@@ -31,9 +31,9 @@ namespace NScumm.Core
         [OpCode(0x7d)]
         void WalkActorToObj(int index, int obj, int dist)
         {
-            var a = _actors[index];
+            var a = Actors[index];
 
-            if (obj >= _actors.Length)
+            if (obj >= Actors.Length)
             {
                 var wio = GetWhereIsObject(obj);
 
@@ -47,7 +47,7 @@ namespace NScumm.Core
             }
             else
             {
-                var a2 = _actors[obj];
+                var a2 = Actors[obj];
                 if (Game.Id == "samnmax" && a2 == null)
                 {
                     // WORKAROUND bug #742676 SAM: Fish Farm. Note quite sure why it
@@ -75,13 +75,13 @@ namespace NScumm.Core
         [OpCode(0x7e)]
         void WalkActorTo(int index, short x, short y)
         {
-            _actors[index].StartWalk(new Point(x, y), -1);
+            Actors[index].StartWalk(new Point(x, y), -1);
         }
 
         [OpCode(0x7f)]
         void PutActorAtXY(int actorIndex, short x, short y, int room)
         {
-            var actor = _actors[actorIndex];
+            var actor = Actors[actorIndex];
             if (room == 0xFF || room == 0x7FFFFFFF)
             {
                 room = actor.Room;
@@ -103,7 +103,7 @@ namespace NScumm.Core
         [OpCode(0x80)]
         void PutActorAtObject(int index, int obj, byte room)
         {
-            var a = _actors[index];
+            var a = Actors[index];
             Point p;
             if (GetWhereIsObject(obj) != WhereIsObject.NotFound)
             {
@@ -121,7 +121,7 @@ namespace NScumm.Core
         [OpCode(0x81)]
         void FaceActor(int index, int obj)
         {
-            _actors[index].FaceToObject(obj);
+            Actors[index].FaceToObject(obj);
         }
 
         [OpCode(0x82)]
@@ -138,7 +138,7 @@ namespace NScumm.Core
                 index = 6;
             }
 
-            _actors[index].Animate(anim);
+            Actors[index].Animate(anim);
         }
 
         [OpCode(0x84)]
@@ -169,21 +169,21 @@ namespace NScumm.Core
         [OpCode(0x8a)]
         void GetActorMoving(int index)
         {
-            var actor = _actors[index];
+            var actor = Actors[index];
             Push((int)actor.Moving);
         }
 
         [OpCode(0x90)]
         void GetActorWalkBox(int index)
         {
-            var actor = _actors[index];
+            var actor = Actors[index];
             Push(actor.IgnoreBoxes ? 0 : actor.Walkbox);
         }
 
         [OpCode(0x91)]
         void GetActorCostume(int index)
         {
-            var actor = _actors[index];
+            var actor = Actors[index];
             Push(actor.Costume);
         }
 
@@ -197,7 +197,7 @@ namespace NScumm.Core
                 return;
             }
 
-            var a = _actors[_curActor];
+            var a = Actors[_curActor];
             if (a == null)
                 return;
 
@@ -213,7 +213,7 @@ namespace NScumm.Core
                         a.SetActorWalkSpeed(i, j);
                     }
                     break;
-                case 78:                // SO_SOUND
+                case 78:                // SOSound
                     {
                         var args = GetStackList(8);
                         for (var i = 0; i < args.Length; i++)
@@ -362,35 +362,35 @@ namespace NScumm.Core
         [OpCode(0xa2)]
         void GetActorElevation(int index)
         {
-            var actor = _actors[index];
+            var actor = Actors[index];
             Push(actor.Elevation);
         }
 
         [OpCode(0xa8)]
         void GetActorWidth(int index)
         {
-            var actor = _actors[index];
+            var actor = Actors[index];
             Push((int)actor.Width);
         }
 
         [OpCode(0xaa)]
         void GetActorScaleX(int index)
         {
-            var actor = _actors[index];
+            var actor = Actors[index];
             Push(actor.ScaleX);
         }
 
         [OpCode(0xab)]
         void GetActorAnimCounter(int index)
         {
-            var actor = _actors[index];
+            var actor = Actors[index];
             Push(actor.Cost.AnimCounter);
         }
 
         [OpCode(0xaf)]
         void IsActorInBox(int index, int box)
         {
-            var actor = _actors[index];
+            var actor = Actors[index];
             Push(CheckXYInBoxBounds(box, actor.Position));
         }
 
@@ -408,7 +408,7 @@ namespace NScumm.Core
 //                    return;
 //                }
 
-            _string[0].LoadDefault();
+            String[0].LoadDefault();
             ActorTalk(ReadCharacters());
         }
 
@@ -427,14 +427,14 @@ namespace NScumm.Core
         [OpCode(0xd2)]
         void GetAnimateVariable(int index, int variable)
         {
-            var a = _actors[index];
+            var a = Actors[index];
             Push(a.GetAnimVar(variable));
         }
 
         [OpCode(0xec)]
         void GetActorLayer(int index)
         {
-            var actor = _actors[index];
+            var actor = Actors[index];
             Push(actor.Layer);
         }
     }

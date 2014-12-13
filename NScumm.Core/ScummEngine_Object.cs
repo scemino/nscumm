@@ -40,9 +40,9 @@ namespace NScumm.Core
         byte[] GetObjectOrActorName(int num)
         {
             byte[] name;
-            if (num < _actors.Length)
+            if (num < Actors.Length)
             {
-                name = _actors[num].Name;
+                name = Actors[num].Name;
             }
             else if (_newNames.ContainsKey(num))
             {
@@ -98,7 +98,7 @@ namespace NScumm.Core
 
             if (ObjIsActor(obj))
             {
-                var act = _actors[ObjToActor(obj)];
+                var act = Actors[ObjToActor(obj)];
                 if (act != null && act.IsInCurrentRoom)
                 {
                     p = act.Position;
@@ -114,7 +114,7 @@ namespace NScumm.Core
                 case WhereIsObject.Inventory:
                     if (ObjIsActor(_resManager.ObjectOwnerTable[obj]))
                     {
-                        var act = _actors[_resManager.ObjectOwnerTable[obj]];
+                        var act = Actors[_resManager.ObjectOwnerTable[obj]];
                         if (act != null && act.IsInCurrentRoom)
                         {
                             p = act.Position;
@@ -136,7 +136,7 @@ namespace NScumm.Core
 
         protected bool ObjIsActor(int obj)
         {
-            return obj < _actors.Length;
+            return obj < Actors.Length;
         }
 
         internal bool GetClass(int obj, ObjectClass cls)
@@ -172,7 +172,7 @@ namespace NScumm.Core
 
         protected void SetObjectNameCore(int obj)
         {
-            if (obj < _actors.Length)
+            if (obj < Actors.Length)
             {
                 string msg = string.Format("Can't set actor {0} name with new name.", obj);
                 throw new NotSupportedException(msg);
@@ -187,9 +187,9 @@ namespace NScumm.Core
             if (obj < 1)
                 return 0;                                   /* fix for indy4's map */
 
-            if (obj < _actors.Length)
+            if (obj < Actors.Length)
             {
-                return _actors[obj].Position.X;
+                return Actors[obj].Position.X;
             }
 
             if (GetWhereIsObject(obj) == WhereIsObject.NotFound)
@@ -205,9 +205,9 @@ namespace NScumm.Core
             if (obj < 1)
                 return 0;                                   /* fix for indy4's map */
 
-            if (obj < _actors.Length)
+            if (obj < Actors.Length)
             {
-                return _actors[obj].Position.Y;
+                return Actors[obj].Position.Y;
             }
             if (GetWhereIsObject(obj) == WhereIsObject.NotFound)
                 return -1;
@@ -312,9 +312,9 @@ namespace NScumm.Core
             else
                 ClassData[obj] &= (uint)~(1 << ((int)cls2 - 1));
 
-            if (_game.Version < 5 && obj >= 0 && obj < _actors.Length)
+            if (_game.Version < 5 && obj >= 0 && obj < Actors.Length)
             {
-                _actors[obj].ClassChanged(cls2, set);
+                Actors[obj].ClassChanged(cls2, set);
             }
         }
 

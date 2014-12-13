@@ -27,37 +27,37 @@ namespace NScumm.Core
         [OpCode(0x69)]
         void StopMusic()
         {
-            _sound.StopAllSounds();
+            Sound.StopAllSounds();
         }
 
         [OpCode(0x74)]
         void StartSound(int sound)
         {
-            _sound.AddSoundToQueue(sound);
+            Sound.AddSoundToQueue(sound);
         }
 
         [OpCode(0x75)]
         void StopSound(int sound)
         {
-            _sound.StopSound(sound);
+            Sound.StopSound(sound);
         }
 
         [OpCode(0x76)]
         void StartMusic(int sound)
         {
-            _sound.AddSoundToQueue(sound);
+            Sound.AddSoundToQueue(sound);
         }
 
         [OpCode(0x98)]
         void IsSoundRunning(int sound)
         {
-            Push(sound != 0 && _sound.IsSoundRunning(sound));
+            Push(sound != 0 && Sound.IsSoundRunning(sound));
         }
 
         [OpCode(0xac)]
         void SoundKludge(int[] args)
         {
-            _sound.SoundKludge(args);
+            Sound.SoundKludge(args);
         }
     }
 }

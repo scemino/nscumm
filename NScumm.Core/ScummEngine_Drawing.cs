@@ -155,7 +155,7 @@ namespace NScumm.Core
 
         void DrawVerbBitmap(int verb, int x, int y)
         {
-            var vst = _verbs[verb];
+            var vst = Verbs[verb];
             var vs = FindVirtScreen(y);
 
             if (vs == null)

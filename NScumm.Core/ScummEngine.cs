@@ -189,7 +189,7 @@ namespace NScumm.Core
             _inventory = new ushort[_resManager.NumInventory];
             _invData = new ObjectData[_resManager.NumInventory];
             _currentScript = 0xFF;
-            _sound = new Sound(this, mixer);
+            Sound = new Sound(this, mixer);
 
             MidiDriver nativeMidiDriver = null;
             var adlibMidiDriver = MidiDriver.CreateMidi(mixer, MidiDriver.DetectDevice((int)MusicType.AdLib));
@@ -282,7 +282,7 @@ namespace NScumm.Core
             }
 
             if (_game.Version >= 5 && _game.Version <= 7)
-                _sound.SetupSound();
+                Sound.SetupSound();
         }
 
         protected void InitScreens(int b, int h)
@@ -395,7 +395,7 @@ namespace NScumm.Core
             {
                 _charset.HasMask = false;
 
-                for (int i = 0; i < _verbs.Length; i++)
+                for (int i = 0; i < Verbs.Length; i++)
                 {
                     DrawVerb(i, 0);
                 }
@@ -461,7 +461,7 @@ namespace NScumm.Core
                 }
             }
 
-            _sound.ProcessSound();
+            Sound.ProcessSound();
 
             _camera.LastPosition = _camera.CurrentPosition;
 

@@ -31,7 +31,7 @@ namespace NScumm.Core
             if (Game.Id == "indy3")
             {
                 var pos = CurrentPos - 1;
-                var actor = _actors[GetVarOrDirectByte(OpCodeParameter.Param1)];
+                var actor = Actors[GetVarOrDirectByte(OpCodeParameter.Param1)];
                 if (actor.Moving != MoveFlags.None)
                 {
                     CurrentPos = pos;
@@ -44,7 +44,7 @@ namespace NScumm.Core
         {
             GetResult();
             int act = GetVarOrDirectByte(OpCodeParameter.Param1);
-            Actor a = _actors[act];
+            Actor a = Actors[act];
             SetResult(a.Costume);
         }
 
@@ -52,14 +52,14 @@ namespace NScumm.Core
         {
             GetResult();
             var act = GetVarOrDirectByte(OpCodeParameter.Param1);
-            Actor a = _actors[act];
+            Actor a = Actors[act];
             SetResult((int)a.Moving);
         }
 
         void PutActorAtObject()
         {
             Point p;
-            var actor = _actors[GetVarOrDirectByte(OpCodeParameter.Param1)];
+            var actor = Actors[GetVarOrDirectByte(OpCodeParameter.Param1)];
             var obj = GetVarOrDirectWord(OpCodeParameter.Param2);
             if (GetWhereIsObject(obj) != WhereIsObject.NotFound)
             {
@@ -90,11 +90,11 @@ namespace NScumm.Core
                 return;
             }
 
-            var a = _actors[nr];
+            var a = Actors[nr];
             if (!a.IsInCurrentRoom)
                 return;
 
-            var a2 = _actors[nr2];
+            var a2 = Actors[nr2];
             if (!a2.IsInCurrentRoom)
                 return;
 
@@ -138,7 +138,7 @@ namespace NScumm.Core
         {
             GetResult();
             var index = GetVarOrDirectByte(OpCodeParameter.Param1);
-            var actor = _actors[index];
+            var actor = Actors[index];
             SetResult(actor.Cost.AnimCounter);
         }
 
@@ -155,13 +155,13 @@ namespace NScumm.Core
         {
             GetResult();
             int act = GetVarOrDirectByte(OpCodeParameter.Param1);
-            Actor a = _actors[act];
+            Actor a = Actors[act];
             SetResult(a.Walkbox);
         }
 
         void WalkActorTo()
         {
-            var a = _actors[GetVarOrDirectByte(OpCodeParameter.Param1)];
+            var a = Actors[GetVarOrDirectByte(OpCodeParameter.Param1)];
             var x = (short)GetVarOrDirectWord(OpCodeParameter.Param2);
             var y = (short)GetVarOrDirectWord(OpCodeParameter.Param3);
             a.StartWalk(new Point(x, y), -1);
@@ -169,7 +169,7 @@ namespace NScumm.Core
 
         void WalkActorToObject()
         {
-            var a = _actors[GetVarOrDirectByte(OpCodeParameter.Param1)];
+            var a = Actors[GetVarOrDirectByte(OpCodeParameter.Param1)];
             var obj = GetVarOrDirectWord(OpCodeParameter.Param2);
             if (GetWhereIsObject(obj) != WhereIsObject.NotFound)
             {
@@ -184,14 +184,14 @@ namespace NScumm.Core
         {
             var act = GetVarOrDirectByte(OpCodeParameter.Param1);
             var obj = GetVarOrDirectWord(OpCodeParameter.Param2);
-            var actor = _actors[act];
+            var actor = Actors[act];
             actor.FaceToObject(obj);
         }
 
         void PutActor()
         {
             var index = GetVarOrDirectByte(OpCodeParameter.Param1);
-            var actor = _actors[index];
+            var actor = Actors[index];
             var x = (short)GetVarOrDirectWord(OpCodeParameter.Param2);
             var y = (short)GetVarOrDirectWord(OpCodeParameter.Param3);
             actor.PutActor(new Point(x, y));
@@ -201,7 +201,7 @@ namespace NScumm.Core
         {
             var act = GetVarOrDirectByte(OpCodeParameter.Param1);
             var anim = GetVarOrDirectByte(OpCodeParameter.Param2);
-            var actor = _actors[act];
+            var actor = Actors[act];
             actor.Animate(anim);
         }
 
@@ -209,7 +209,7 @@ namespace NScumm.Core
         {
             var convertTable = new byte[] { 1, 0, 0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 20 };
             var act = GetVarOrDirectByte(OpCodeParameter.Param1);
-            var a = _actors[act];
+            var a = Actors[act];
             int i, j;
 
             while ((_opCode = ReadByte()) != 0xFF)
@@ -235,7 +235,7 @@ namespace NScumm.Core
                         a.SetActorWalkSpeed((uint)i, (uint)j);
                         break;
 
-                    case 3:         // SO_SOUND
+                    case 3:         // SOSound
                         a.Sound = GetVarOrDirectByte(OpCodeParameter.Param1);
                         break;
 
@@ -341,7 +341,7 @@ namespace NScumm.Core
         {
             GetResult();
             int act = GetVarOrDirectByte(OpCodeParameter.Param1);
-            var a = _actors[act];
+            var a = Actors[act];
             SetResult(ScummHelper.NewDirToOldDir(a.Facing));
         }
 
@@ -349,7 +349,7 @@ namespace NScumm.Core
         {
             GetResult();
             var index = GetVarOrDirectByte(OpCodeParameter.Param1);
-            var a = _actors[index];
+            var a = Actors[index];
             SetResult(a.Elevation);
         }
 
@@ -367,7 +367,7 @@ namespace NScumm.Core
                 return;
             }
 
-            var actor = _actors[index];
+            var actor = Actors[index];
             SetResult(actor.Room);
         }
 
@@ -375,7 +375,7 @@ namespace NScumm.Core
         {
             GetResult();
             var act = GetVarOrDirectByte(OpCodeParameter.Param1);
-            var actor = _actors[act];
+            var actor = Actors[act];
             SetResult((int)actor.Width);
         }
 
@@ -384,7 +384,7 @@ namespace NScumm.Core
             int act = GetVarOrDirectByte(OpCodeParameter.Param1);
             byte room = (byte)GetVarOrDirectByte(OpCodeParameter.Param2);
 
-            var a = _actors[act];
+            var a = Actors[act];
 
             if (a.IsVisible && CurrentRoom != room && TalkingActor == a.Number)
             {

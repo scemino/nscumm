@@ -263,7 +263,7 @@ namespace NScumm.Dump
                         break;
 
                     case 3:
-                        {         // SO_SOUND
+                        {         // SOSound
                             var sound = GetVarOrDirectByte(OpCodeParameter.Param1);
                             actor = new MethodInvocation(new MemberAccess(actor, "SetSound")).AddArgument(sound);
                         }

@@ -134,7 +134,7 @@ namespace NScumm.Core
 //                    break;
                 case 212:
                     {
-                        var a = _actors[args[1]];
+                        var a = Actors[args[1]];
                         // This is used by walk scripts
                         Push(a.Frame);
                     }
@@ -142,13 +142,13 @@ namespace NScumm.Core
                 case 213:
                     {
                         var slot = GetVerbSlot(args[1], 0);
-                        Push(_verbs[slot].CurRect.Left);
+                        Push(Verbs[slot].CurRect.Left);
                     }
                     break;
                 case 214:
                     {
                         var slot = GetVerbSlot(args[1], 0);
-                        Push(_verbs[slot].CurRect.Top);
+                        Push(Verbs[slot].CurRect.Top);
                     }
                     break;
             // TODO: scumm7: _extraBoxFlags
@@ -203,7 +203,7 @@ namespace NScumm.Core
 //                    break;
                 case 107:                                                                       /* set actor scale */
                     {
-                        var a = _actors[args[1]];
+                        var a = Actors[args[1]];
                         a.SetScale(args[2], -1);
                     }
                     break;
@@ -219,7 +219,7 @@ namespace NScumm.Core
                     break;
                 case 111:
                     {
-                        var a = _actors[args[1]];
+                        var a = Actors[args[1]];
                         a.ShadowMode = (byte)(args[2] + args[3]);
                     }
                     break;
@@ -286,8 +286,8 @@ namespace NScumm.Core
             Variables[VariableTimeDateHour] = dt.Hour;
             Variables[VariableTimeDateMinute] = dt.Minute;
 
-            if (Game.Version == 8)
-                Variables[VariableTimeDateSecond.Value] = dt.Second;
+            //if (Game.Version == 8)
+            //    Variables[VariableTimeDateSecond.Value] = dt.Second;
         }
 
         [OpCode(0xe1)]
@@ -329,7 +329,7 @@ namespace NScumm.Core
             throw new NotImplementedException();
             // TODO: scumm6 RemapPaletteColor
 //            int ar, ag, ab, i;
-            int sum, bestsum, bestitem = 0;
+//            int sum, bestsum, bestitem = 0;
 //
 //            var startColor = (Game.Version == 8) ? 24 : 1;
 //
@@ -382,7 +382,7 @@ namespace NScumm.Core
 //                }
 //            }
 //
-            return bestitem;
+            //return bestitem;
         }
 
         protected override void PalManipulateInit(int resID, int start, int end, int time)

@@ -24,8 +24,6 @@ namespace NScumm.Core
 {
     partial class ScummEngine6
     {
-        bool _skipVideo;
-
         int? VariableRandomNumber;
 
         [OpCode(0x5e)]
@@ -124,7 +122,7 @@ namespace NScumm.Core
         void BeginOverride()
         {
             BeginOverrideCore();
-            _skipVideo = false;
+            //_skipVideo = false;
         }
 
         [OpCode(0x96)]
@@ -176,7 +174,7 @@ namespace NScumm.Core
                     {
                         offs = ReadWordSigned();
                         var index = Pop();
-                        var actor = _actors[index];
+                        var actor = Actors[index];
                         if (Game.Version >= 7)
                         {
                             if (actor.IsInCurrentRoom && actor.Moving != MoveFlags.None)
@@ -220,7 +218,7 @@ namespace NScumm.Core
                     {
                         offs = ReadWordSigned();
                         var index = Pop();
-                        var actor = _actors[index];
+                        var actor = Actors[index];
                         if (actor.IsInCurrentRoom && actor.NeedRedraw)
                             break;
                         return;
@@ -239,7 +237,7 @@ namespace NScumm.Core
                         {
                             index = _curActor;
                         }
-                        var actor = _actors[index];
+                        var actor = Actors[index];
                         if (actor.IsInCurrentRoom && actor.Moving.HasFlag(MoveFlags.Turn))
                             break;
                         return;
@@ -331,9 +329,9 @@ namespace NScumm.Core
 
         void PutActors()
         {
-            for (var i = 1; i < _actors.Length; i++)
+            for (var i = 1; i < Actors.Length; i++)
             {
-                var a = _actors[i];
+                var a = Actors[i];
                 if (a != null && a.IsInCurrentRoom)
                     a.PutActor();
             }

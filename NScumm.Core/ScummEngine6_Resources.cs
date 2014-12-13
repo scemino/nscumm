@@ -39,7 +39,7 @@ namespace NScumm.Core
 //                        ensureResourceLoaded(rtScript, resid);
                     }
                     break;
-                case 101:               // SO_LOAD_SOUND
+                case 101:               // SO_LOADSound
                     {
                         var resid = Pop();
 //                        ensureResourceLoaded(rtSound, resid);
@@ -67,7 +67,7 @@ namespace NScumm.Core
 //                        _res->setResourceCounter(rtScript, resid, 0x7F);
                     }
                     break;
-                case 105:               // SO_NUKE_SOUND
+                case 105:               // SO_NUKESound
                     {
                         var resid = Pop();
 //                        _res->setResourceCounter(rtSound, resid, 0x7F);
@@ -93,7 +93,7 @@ namespace NScumm.Core
 //                    _res->lock(rtScript, resid);
                     }
                     break;
-                case 109:               // SO_LOCK_SOUND
+                case 109:               // SO_LOCKSound
                     {
                         var resid = Pop();
 //                    _res->lock(rtSound, resid);
@@ -121,7 +121,7 @@ namespace NScumm.Core
 //                    _res->unlock(rtScript, resid);
                     }
                     break;
-                case 113:               // SO_UNLOCK_SOUND
+                case 113:               // SO_UNLOCKSound
                     {
                         var resid = Pop();
 //                    _res->unlock(rtSound, resid);
@@ -144,7 +144,6 @@ namespace NScumm.Core
                 case 116:               // SO_CLEAR_HEAP
                     /* this is actually a scumm message */
                     throw new NotSupportedException("clear heap not working yet");
-                    break;
                 case 117:               // SO_LOAD_CHARSET
                     {
                         var resid = Pop();

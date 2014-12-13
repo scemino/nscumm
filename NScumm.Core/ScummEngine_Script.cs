@@ -33,14 +33,14 @@ namespace NScumm.Core
         int _numNestedScripts;
         NestedScript[] _nest;
         ScriptSlot[] _slots;
-        protected CutScene cutScene = new CutScene();
+        internal CutScene cutScene = new CutScene();
         const int NumLocalScripts = 60;
 
         protected byte CurrentScript { get { return _currentScript; } set { _currentScript = value; } }
 
         protected int CurrentPos { get { return _currentPos; } set { _currentPos = value; } }
 
-        protected ScriptSlot[] Slots{ get { return _slots; } }
+        internal ScriptSlot[] Slots { get { return _slots; } }
 
         void ChainScript()
         {
@@ -237,7 +237,7 @@ namespace NScumm.Core
                 StopScript(script);
         }
 
-        protected void StartScene(byte room, Actor a = null, int objectNr = 0)
+        internal void StartScene(byte room, Actor a = null, int objectNr = 0)
         {
             StopTalk();
 
@@ -273,9 +273,9 @@ namespace NScumm.Core
                 StopCycle(0);
             }
 
-            for (var i = 1; i < _actors.Length; i++)
+            for (var i = 1; i < Actors.Length; i++)
             {
-                _actors[i].Hide();
+                Actors[i].Hide();
             }
 
             for (var i = 0; i < 256; i++)

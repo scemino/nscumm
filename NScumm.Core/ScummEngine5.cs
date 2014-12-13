@@ -140,7 +140,7 @@ namespace NScumm.Core
         {
             GetResult();
             var index = GetVarOrDirectByte(OpCodeParameter.Param1);
-            SetResult(_actors[index].Cost.AnimCounter);
+            SetResult(Actors[index].Cost.AnimCounter);
         }
     }
 }

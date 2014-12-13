@@ -410,7 +410,7 @@ namespace NScumm.Core
             {
                 case 1:     // SO_WAIT_FOR_ACTOR
                     {
-                        var a = _actors[GetVarOrDirectByte(OpCodeParameter.Param1)];
+                        var a = Actors[GetVarOrDirectByte(OpCodeParameter.Param1)];
                         if (a != null && a.Moving != 0)
                             break;
                         return;
@@ -484,7 +484,7 @@ namespace NScumm.Core
                     break;
 
                 case 5:         // SO_NUKE_SCRIPT
-                case 6:         // SO_NUKE_SOUND
+                case 6:         // SO_NUKESound
                 case 7:         // SO_NUKE_COSTUME
                 case 8:         // SO_NUKE_ROOM
                     break;
@@ -514,7 +514,7 @@ namespace NScumm.Core
                 case 13:        // SO_UNLOCK_SCRIPT
                     break;
 
-                case 14:        // SO_UNLOCK_SOUND
+                case 14:        // SO_UNLOCKSound
                     break;
 
                 case 15:        // SO_UNLOCK_COSTUME

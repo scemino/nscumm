@@ -58,7 +58,7 @@ namespace NScumm.Dump
                         actor = new MethodInvocation(new MemberAccess(actor, "WalkSpeed")).AddArguments(i, j);
                     }
                     break;
-                case 78:                // SO_SOUND
+                case 78:                // SOSound
                     {
                         var k = GetStackList(8);
                         actor = new MethodInvocation(new MemberAccess(actor, "Sound")).AddArgument(k);

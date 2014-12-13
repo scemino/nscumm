@@ -57,7 +57,7 @@ namespace NScumm.Core
             int obj = GetVarOrDirectWord(OpCodeParameter.Param1);
             int room = GetVarOrDirectByte(OpCodeParameter.Param2);
 
-            var a = _actors[_variables[VariableEgo.Value]];
+            var a = Actors[_variables[VariableEgo.Value]];
 
             a.PutActor((byte)room);
             int oldDir = a.Facing;

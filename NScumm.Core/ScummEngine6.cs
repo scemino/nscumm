@@ -45,8 +45,6 @@ namespace NScumm.Core
         int VariableTimeDateHour;
         int VariableTimeDateMinute;
         int VariableV6EMSSpace;
-        int? VariableCharsetMask;
-        int? VariableTimeDateSecond;
 
         public ScummEngine6(GameInfo game, IGraphicsManager graphicsManager, IInputManager inputManager, IMixer mixer)
             : base(game, graphicsManager, inputManager, mixer)
@@ -75,7 +73,7 @@ namespace NScumm.Core
             if (Game.GameId == GameId.SamNMax)
             {
                 VariableV6SoundMode = 9;
-                VariableCharsetMask = 123;
+                //VariableCharsetMask = 123;
             }
 
             Variables[VariableRoomWidth.Value] = ScreenWidth;

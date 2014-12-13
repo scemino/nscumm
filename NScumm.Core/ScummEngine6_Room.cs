@@ -162,7 +162,7 @@ namespace NScumm.Core
                         // this way, we avoid some graphics glitches that the original
                         // interpreter had.
 
-                        if (Game.Id == "samnmax" && Slots[CurrentScript].Number == 64)
+                        if (Game.GameId == NScumm.Core.IO.GameId.SamNMax && Slots[CurrentScript].Number == 64)
                             SetDirtyColors(0, 255);
                         else
                             SetCurrentPalette(a);

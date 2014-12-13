@@ -92,6 +92,7 @@ namespace NScumm.Core
         public int? VariableSaveLoadScript2;
         public int? VariableLeftButtonHold;
         public int? VariableRightButtonHold;
+        public int? VariableV6SoundMode;
 
         int[] _variables;
         BitArray _bitVars;

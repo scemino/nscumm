@@ -78,7 +78,7 @@ namespace NScumm.Core.Audio.IMuse
         /// <summary>
         // Sam & Max triggers
         /// </summary>
-        protected ImTrigger[] _snm_triggers;
+        internal protected ImTrigger[] _snm_triggers;
         protected ushort _snm_trigger_index;
     
         protected ushort[] _channel_volume;
@@ -594,7 +594,9 @@ namespace NScumm.Core.Audio.IMuse
 
         protected int ImSetTrigger(int sound, int id, int a, int b, int c, int d, int e, int f, int g, int h)
         {
-            throw new NotImplementedException("Sam & Max: ImSetTrigger");
+            // TODO: vs
+            return 0;
+//            throw new NotImplementedException("Sam & Max: ImSetTrigger");
 //            // Sam & Max: ImSetTrigger.
 //            // Sets a trigger for a particular player and
 //            // marker ID, along with doCommand parameters

@@ -29,6 +29,12 @@ namespace NScumm.Core.Graphics
 
         public byte[] Data { get; set; }
 
+        public bool IsBomp
+        {
+            get;
+            set;
+        }
+
         public ImageData()
         {
             ZPlanes = new List<ZPlane>();

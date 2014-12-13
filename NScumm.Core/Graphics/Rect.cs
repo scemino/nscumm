@@ -17,6 +17,7 @@
 
 namespace NScumm.Core.Graphics
 {
+    [System.Diagnostics.DebuggerDisplay("{DebuggerDisplay,nq}")]
     public struct Rect
     {
         public int Top, Left;
@@ -30,6 +31,14 @@ namespace NScumm.Core.Graphics
         public int Width
         {
             get { return Right - Left; }
+        }
+
+        internal string DebuggerDisplay
+        {
+            get
+            { 
+                return string.Format("[{0},{1},{2},{3}]", Left, Top, Right, Bottom);
+            }
         }
 
         public Rect(int x1, int y1, int x2, int y2)
@@ -47,17 +56,25 @@ namespace NScumm.Core.Graphics
 
         public void Clip(Rect r)
         {
-            if (Top < r.Top) Top = r.Top;
-            else if (Top > r.Bottom) Top = r.Bottom;
+            if (Top < r.Top)
+                Top = r.Top;
+            else if (Top > r.Bottom)
+                Top = r.Bottom;
 
-            if (Left < r.Left) Left = r.Left;
-            else if (Left > r.Right) Left = r.Right;
+            if (Left < r.Left)
+                Left = r.Left;
+            else if (Left > r.Right)
+                Left = r.Right;
 
-            if (Bottom > r.Bottom) Bottom = r.Bottom;
-            else if (Bottom < r.Top) Bottom = r.Top;
+            if (Bottom > r.Bottom)
+                Bottom = r.Bottom;
+            else if (Bottom < r.Top)
+                Bottom = r.Top;
 
-            if (Right > r.Right) Right = r.Right;
-            else if (Right < r.Left) Right = r.Left;
+            if (Right > r.Right)
+                Right = r.Right;
+            else if (Right < r.Left)
+                Right = r.Left;
         }
     }
 }

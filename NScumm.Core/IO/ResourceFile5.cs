@@ -437,6 +437,15 @@ namespace NScumm.Core.IO
                     }
                     img.ZPlanes.Add(zplane);
                 }
+                else if (it.Current.Tag == "BOMP")
+                {
+                    var id = _reader.ReadUInt16();
+                    var width = _reader.ReadUInt16();
+                    var height = _reader.ReadUInt16();
+                    var padding = _reader.ReadUInt32();
+                    img.Data = _reader.ReadBytes((int)(it.Current.Size - 8 - 10));
+                    img.IsBomp = true;
+                }
                 else
                 {
                     UnknownChunk(it.Current);

@@ -22,12 +22,13 @@
 using System;
 using System.Linq;
 using NScumm.Core.Graphics;
+using System.Collections.Generic;
 
 namespace NScumm.Core
 {
     partial class ScummEngine
     {
-        protected Actor[] _actors = new Actor[13];
+        protected Actor[] _actors;
         protected int _actorToPrintStrFor;
         bool _useTalkAnims;
         bool _haveActorSpeechMsg;
@@ -36,6 +37,7 @@ namespace NScumm.Core
 
         void InitActors()
         {
+            _actors = new Actor[Game.GameId == NScumm.Core.IO.GameId.SamNMax ? 30 : 13];
             for (byte i = 0; i < _actors.Length; i++)
             {
                 _actors[i] = _game.Version == 3 ? new Actor3(this, i) : new Actor(this, i);
@@ -168,14 +170,25 @@ namespace NScumm.Core
             }
         }
 
+        IEnumerable<Actor> GetOrderedActors()
+        {
+            if (Game.GameId == NScumm.Core.IO.GameId.SamNMax)
+            {
+                return from actor in _actors
+                                   where actor.IsInCurrentRoom
+                                   orderby actor.Position.Y, actor.Number
+                                   select actor;
+            }
+            return from actor in _actors
+                            where actor.IsInCurrentRoom
+                            where (Game.Version != 8 || actor.Layer >= 0)
+                            orderby actor.Position.Y - actor.Layer*2000
+                            select actor;
+        }
+
         protected void ProcessActors()
         {
-            var actors = from actor in _actors
-                                  where actor.IsInCurrentRoom
-                                  where (Game.Version != 8 || actor.Layer >= 0)
-                                  orderby actor.Position.Y - actor.Layer*2000
-                                  select actor;
-
+            var actors = GetOrderedActors();
             foreach (var actor in actors)
             {
                 if (actor.Costume != 0)

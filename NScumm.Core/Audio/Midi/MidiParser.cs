@@ -272,7 +272,7 @@ namespace NScumm.Core
             {
 
                 if (value < 0 || value >= NumTracks)
-                    throw new ArgumentOutOfRangeException("value", value, "invalid track number");
+                    return;
 
                 // We allow restarting the track via setTrack when
                 // it isn't playing anymore. This allows us to reuse

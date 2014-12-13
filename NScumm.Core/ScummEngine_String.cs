@@ -237,9 +237,8 @@ namespace NScumm.Core
 
                 // Sam and Max uses a caching system, printing empty messages
                 // and setting VAR_V6_SOUNDMODE beforehand. See patch 609791.
-                // TODO: samnmax
-//                if (_game.Id == "samnmax")
-//                    channel = Variables[VARiableV6SOUNDMODE];
+                if (_game.GameId == NScumm.Core.IO.GameId.SamNMax)
+                    channel = Variables[VariableV6SoundMode.Value];
 
                 if (channel != 2)
                     _sound.TalkSound(a, b, 1, channel);

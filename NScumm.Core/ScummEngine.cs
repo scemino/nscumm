@@ -194,12 +194,11 @@ namespace NScumm.Core
             MidiDriver nativeMidiDriver = null;
             var adlibMidiDriver = MidiDriver.CreateMidi(mixer, MidiDriver.DetectDevice((int)MusicType.AdLib));
             adlibMidiDriver.Property(NScumm.Core.Audio.SoftSynth.AdlibMidiDriver.PropertyOldAdLib, (Game.Version < 5) ? 1 : 0);
+            adlibMidiDriver.Property(NScumm.Core.Audio.SoftSynth.AdlibMidiDriver.PropertyScummOPL3, (Game.GameId == GameId.SamNMax) ? 1 : 0);
             IMuse = NScumm.Core.Audio.IMuse.IMuse.Create(nativeMidiDriver, adlibMidiDriver);
             MusicEngine = IMuse;
             MusicEngine.SetMusicVolume(192);
-            IMuse.AddSysexHandler(0x7D, new IMuseSysEx().Do);
-//            _imuse.AddSysexHandler(/*IMUSE_SYSEX_ID*/ 0x7D,
-//                (_game.GameId == GameId.SamNMax) ? sysexHandler_SamNMax : sysexHandler_Scumm);
+            IMuse.AddSysexHandler(0x7D, _game.GameId == GameId.SamNMax ? new SysExFunc(new SamAndMaxSysEx().Do) : new SysExFunc(new ScummSysEx().Do));
 
             // Try to use OPL3 mode for Sam&Max when possible.
             IMuse.Property(ImuseProperty.GameId, (uint)_game.GameId);

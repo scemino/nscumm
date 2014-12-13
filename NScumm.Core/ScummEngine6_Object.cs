@@ -21,9 +21,11 @@
 using System;
 using NScumm.Core.Graphics;
 using System.Diagnostics;
+using System.IO;
 
 namespace NScumm.Core
 {
+    [System.Diagnostics.DebuggerDisplay("{DebuggerDisplay,nq}")]
     class BlastObject
     {
         public int Number { get; set; }
@@ -37,13 +39,31 @@ namespace NScumm.Core
         public int Image { get; set; }
 
         public int Mode { get; set; }
+
+        internal string DebuggerDisplay
+        {
+            get
+            { 
+                return string.Format("Id={0}, Rec={1}]", Number, Rect.DebuggerDisplay);
+            }
+        }
     }
 
 
     partial class ScummEngine6
     {
         int _blastObjectQueuePos;
-        readonly BlastObject[] _blastObjectQueue = new BlastObject[200];
+        readonly BlastObject[] _blastObjectQueue = CreateBlastObjects();
+
+        static BlastObject[] CreateBlastObjects()
+        {
+            var blastObjects = new BlastObject[200];
+            for (int i = 0; i < blastObjects.Length; i++)
+            {
+                blastObjects[i] = new BlastObject();
+            }
+            return blastObjects;
+        }
 
         [OpCode(0x61)]
         void DrawObject(int obj, int state)
@@ -268,7 +288,6 @@ namespace NScumm.Core
 
         void SetObjectState(int obj, int state, int x, int y)
         {
-
             var i = GetObjectIndex(obj);
             if (i == -1)
             {
@@ -366,7 +385,7 @@ namespace NScumm.Core
             }
 
             var idx = GetObjectIndex(objectNumber);
-            Debug.Assert(idx >= 0);
+            Debug.Assert(idx >= 0, "Object index should be positive");
 
             var left = objectX;
             var top = objectY + ScreenTop;
@@ -398,86 +417,453 @@ namespace NScumm.Core
             eo.Mode = mode;
         }
 
+        void BompApplyShadow(int shadowMode, byte[] lineBuffer, int linePos, PixelNavigator dst, int size)
+        {
+            Debug.Assert(size > 0);
+            switch (shadowMode)
+            {
+                case 0:
+                    BompApplyShadow0(lineBuffer, linePos, dst, size);
+                    break;
+                default:
+                    throw new ArgumentException(string.Format("Unknown shadow mode {0}", shadowMode));
+            }
+        }
+
+        void BompApplyShadow0(byte[] lineBuffer, int linePos, PixelNavigator dst, int size)
+        {
+            while (size-- > 0)
+            {
+                byte tmp = lineBuffer[linePos++];
+                if (tmp != 255)
+                {
+                    dst.Write(tmp);
+                }
+                dst.OffsetX(1);
+            }
+        }
+
         protected override void ClearDrawObjectQueue()
         {
             base.ClearDrawObjectQueue();
             _blastObjectQueuePos = 0;
         }
 
+        protected override void DrawDirtyScreenParts()
+        {
+            DrawBlastObjects();
+
+            // Call the original method.
+            base.DrawDirtyScreenParts();
+
+            // Remove all blasted objects/text again.
+            RemoveBlastObjects();
+        }
+
+        void RemoveBlastObjects()
+        {
+            for (var i = 0; i < _blastObjectQueuePos; i++)
+            {
+                var eo = _blastObjectQueue[i];
+                RemoveBlastObject(eo);
+            }
+            _blastObjectQueuePos = 0;
+        }
+
+        void RemoveBlastObject(BlastObject eo)
+        {
+            var vs = MainVirtScreen;
+
+            int left_strip, right_strip;
+
+            var r = eo.Rect;
+
+            r.Clip(vs.Width, vs.Height);
+
+            if (r.Width <= 0 || r.Height <= 0)
+                return;
+
+            left_strip = r.Left / 8;
+            right_strip = (r.Right + (vs.XStart % 8)) / 8;
+
+            if (left_strip < 0)
+                left_strip = 0;
+            if (right_strip > Gdi.NumStrips - 1)
+                right_strip = Gdi.NumStrips - 1;
+            for (var i = left_strip; i <= right_strip; i++)
+                Gdi.ResetBackground(r.Top, r.Bottom, i);
+
+            MarkRectAsDirty(MainVirtScreen, r, Gdi.UsageBitRestored);
+        }
+
         void DrawBlastObjects()
         {
-            foreach (var eo in _blastObjectQueue)
+            for (int i = 0; i < _blastObjectQueuePos; i++)
             {
+                var eo = _blastObjectQueue[i];
                 DrawBlastObject(eo);
+            }
+        }
+
+        [System.Diagnostics.DebuggerDisplay("{DebuggerDisplay,nq}")]
+        class BompDrawData
+        {
+            public Surface Dst;
+            public int X, Y;
+
+            public byte[] Src;
+            public int Width, Height;
+
+            public int ScaleX, ScaleY;
+
+            public int ShadowMode;
+
+            internal string DebuggerDisplay
+            {
+                get
+                { 
+                    return string.Format("Rect={0}]", new Rect(X, Y, X + Width, Y + Height).DebuggerDisplay);
+                }
             }
         }
 
         void DrawBlastObject(BlastObject eo)
         {
-            // TODO: scumm6 with sam&max
-//            var vs = MainVirtScreen;
-//
-//            //ScummHelper.AssertRange(30, eo.Number, _numGlobalObjects - 1, "blast object");
-//
-//            var objnum = GetObjectIndex(eo.Number);
-//            if (objnum == -1)
-//                throw new NotSupportedException(string.Format("DrawBlastObject: GetObjectIndex on BlastObject {0} failed", eo.Number));
-//
-//            var img = _objs[objnum].Images[eo.Image];
-//
-//            const byte *img = getObjectImage(ptr, eo->image);
-//            if (_game.version == 8) {
-//                    assert(img);
-//                    bomp = img + 8;
-//            } else {
-//                    if (!img)
-//                        img = getObjectImage(ptr, 1);   // Backward compatibility with samnmax blast objects
-//                    assert(img);
-//                    bomp = findResourceData(MKTAG('B','O','M','P'), img);
-//                }
-//
-//            if (!bomp)
-//                error("object %d is not a blast object", eo->number);
-//
-//            bdd.dst = *vs;
-//            bdd.dst.setPixels(vs->getPixels(0, 0));
-//            bdd.x = eo->rect.left;
-//            bdd.y = eo->rect.top;
-//
-//            // Skip the bomp header
-//            if (_game.version == 8) {
-//                    bdd.src = bomp + 8;
-//            } else {
-//                    bdd.src = bomp + 10;
-//                }
-//            if (_game.version == 8) {
-//                    bdd.srcwidth = READ_LE_UINT32(bomp);
-//                    bdd.srcheight = READ_LE_UINT32(bomp+4);
-//            } else {
-//                    bdd.srcwidth = READ_LE_UINT16(bomp+2);
-//                    bdd.srcheight = READ_LE_UINT16(bomp+4);
-//                }
-//
-//            bdd.scale_x = (byte)eo->scaleX;
-//            bdd.scale_y = (byte)eo->scaleY;
-//
-//            bdd.maskPtr = NULL;
-//            bdd.numStrips = _gdi->_numStrips;
-//
-//            if ((bdd.scale_x != 255) || (bdd.scale_y != 255)) {
-//                    bdd.shadowMode = 0;
-//            } else {
-//                    bdd.shadowMode = eo->mode;
-//                }
-//            bdd.shadowPalette = _shadowPalette;
-//
-//            bdd.actorPalette = 0;
-//            bdd.mirror = false;
-//
-//            DrawBomp(bdd);
-//
-//            MarkRectAsDirty(vs, bdd.x, bdd.x + bdd.srcwidth, bdd.y, bdd.y + bdd.srcheight);
+            var objnum = GetObjectIndex(eo.Number);
+            if (objnum == -1)
+                throw new NotSupportedException(string.Format("DrawBlastObject: GetObjectIndex on BlastObject {0} failed", eo.Number));
+
+            var index = eo.Image >= _objs[objnum].Images.Count ? 0 : eo.Image;
+            var img = _objs[objnum].Images[index];
+
+            if (!img.IsBomp)
+                throw new NotSupportedException(string.Format("object {0} is not a blast object", eo.Number));
+
+            var bdd = new BompDrawData();
+            bdd.Src = img.Data;
+            bdd.Dst = MainVirtScreen.Surfaces[0];
+            bdd.X = eo.Rect.Left;
+            bdd.Y = eo.Rect.Top;
+
+            bdd.Width = _objs[objnum].Width;
+            bdd.Height = _objs[objnum].Height;
+
+            bdd.ScaleX = eo.ScaleX;
+            bdd.ScaleY = eo.ScaleY;
+
+            if ((bdd.ScaleX != 255) || (bdd.ScaleY != 255))
+            {
+                bdd.ShadowMode = 0;
+            }
+            else
+            {
+                bdd.ShadowMode = eo.Mode;
+            }
+
+            DrawBomp(bdd);
+
+            MarkRectAsDirty(MainVirtScreen, new Rect(bdd.X, bdd.X + bdd.Width, bdd.Y, bdd.Y + bdd.Height));
         }
+
+        int SetupBompScale(byte[] scaling, int size, int scale)
+        {
+            int[] offsets = { 3, 2, 1, 0, 7, 6, 5, 4 };
+            var bitsCount = 0;
+            var pos = 0;
+
+            var count = (256 - size / 2);
+            Debug.Assert(0 <= count && count < 768);
+            var scalePos = count;
+
+            count = (size + 7) / 8;
+            while ((count--) != 0)
+            {
+                byte scaleMask = 0;
+                for (var i = 0; i < 8; i++)
+                {
+                    var scaleTest = bigCostumeScaleTable[scalePos + offsets[i]];
+                    scaleMask <<= 1;
+                    if (scale < scaleTest)
+                    {
+                        scaleMask |= 1;
+                    }
+                    else
+                    {
+                        bitsCount++;
+                    }
+                }
+                scalePos += 8;
+
+                scaling[pos++] = scaleMask;
+            }
+            size &= 7;
+            if (size != 0)
+            {
+                --pos;
+                if ((scaling[pos] & ScummHelper.RevBitMask(size)) == 0)
+                {
+                    scaling[pos] |= (byte)ScummHelper.RevBitMask(size);
+                    bitsCount--;
+                }
+            }
+
+            return bitsCount;
+        }
+
+        void BompScaleFuncX(byte[] lineBuffer, byte[] scaling, int scalingPos, byte skip, int size)
+        {
+            var line_ptr1 = 0;
+            var line_ptr2 = 0;
+
+            byte tmp = scaling[scalingPos++];
+
+            while ((size--) != 0)
+            {
+                if ((skip & tmp) == 0)
+                {
+                    lineBuffer[line_ptr1++] = lineBuffer[line_ptr2];
+                }
+                line_ptr2++;
+                skip >>= 1;
+                if (skip == 0)
+                {
+                    skip = 128;
+                    tmp = scaling[scalingPos++];
+                }
+            }
+        }
+
+        void DrawBomp(BompDrawData bd)
+        {
+            Rect clip;
+            byte skip_y_bits = 0x80;
+            byte skip_y_new = 0;
+            byte[] bomp_scaling_x = new byte[64];
+            byte[] bomp_scaling_y = new byte[64];
+
+            if (bd.X < 0)
+            {
+                clip.Left = -bd.X;
+            }
+            else
+            {
+                clip.Left = 0;
+            }
+
+            if (bd.Y < 0)
+            {
+                clip.Top = -bd.Y;
+            }
+            else
+            {
+                clip.Top = 0;
+            }
+
+            clip.Right = bd.Width;
+            if (clip.Right > bd.Dst.Width - bd.X)
+            {
+                clip.Right = bd.Dst.Width - bd.X;
+            }
+
+            clip.Bottom = bd.Height;
+            if (clip.Bottom > bd.Dst.Height - bd.Y)
+            {
+                clip.Bottom = bd.Dst.Height - bd.Y;
+            }
+
+            var src = bd.Src;
+            var pn = new PixelNavigator(bd.Dst);
+            pn.GoTo(bd.X + clip.Left, bd.Y);
+
+            var scalingYPtr = 0;
+
+            // Setup vertical scaling
+            if (bd.ScaleY != 255)
+            {
+                var scaleBottom = SetupBompScale(bomp_scaling_y, bd.Height, bd.ScaleY);
+
+                skip_y_new = bomp_scaling_y[scalingYPtr++];
+                skip_y_bits = 0x80;
+
+                if (clip.Bottom > scaleBottom)
+                {
+                    clip.Bottom = scaleBottom;
+                }
+            }
+
+            // Setup horizontal scaling
+            if (bd.ScaleX != 255)
+            {
+                var scaleRight = SetupBompScale(bomp_scaling_x, bd.Width, bd.ScaleX);
+
+                if (clip.Right > scaleRight)
+                {
+                    clip.Right = scaleRight;
+                }
+            }
+
+            var width = clip.Right - clip.Left;
+
+            if (width <= 0)
+                return;
+
+            int pos_y = 0;
+            var line_buffer = new byte[1024];
+
+            byte tmp;
+            using (var br = new BinaryReader(new MemoryStream(src)))
+            {
+                // Loop over all lines
+                while (pos_y < clip.Bottom)
+                {
+                    // Decode a single (bomp encoded) line
+                    BompDecodeLine(br, line_buffer, 0, bd.Width);
+
+                    // If vertical scaling is enabled, do it
+                    if (bd.ScaleY != 255)
+                    {
+                        // A bit set means we should skip this line...
+                        tmp = (byte)(skip_y_new & skip_y_bits);
+
+                        // Advance the scale-skip bit mask, if it's 0, get the next scale-skip byte
+                        skip_y_bits /= 2;
+                        if (skip_y_bits == 0)
+                        {
+                            skip_y_bits = 0x80;
+                            skip_y_new = bomp_scaling_y[scalingYPtr++];
+                        }
+
+                        // Skip the current line if the above check tells us to
+                        if (tmp != 0)
+                            continue;
+                    }
+
+                    // Perform horizontal scaling
+                    if (bd.ScaleX != 255)
+                    {
+                        BompScaleFuncX(line_buffer, bomp_scaling_x, 0, 0x80, (byte)bd.Width);
+                    }
+
+                    // The first clip.top lines are to be clipped, i.e. not drawn
+                    if (clip.Top > 0)
+                    {
+                        clip.Top--;
+                    }
+                    else
+                    {
+                        // Finally, draw the decoded, scaled, masked and recolored line onto
+                        // the target surface, using the specified shadow mode
+                        BompApplyShadow(bd.ShadowMode, line_buffer, clip.Left, pn, width);
+                    }
+
+                    // Advance to the next line
+                    pos_y++;
+                    pn.OffsetY(1);
+                }
+            }
+        }
+
+        static readonly byte[] bigCostumeScaleTable =
+            {
+                0x00, 0x80, 0x40, 0xC0, 0x20, 0xA0, 0x60, 0xE0,
+                0x10, 0x90, 0x50, 0xD0, 0x30, 0xB0, 0x70, 0xF0,
+                0x08, 0x88, 0x48, 0xC8, 0x28, 0xA8, 0x68, 0xE8,
+                0x18, 0x98, 0x58, 0xD8, 0x38, 0xB8, 0x78, 0xF8,
+                0x04, 0x84, 0x44, 0xC4, 0x24, 0xA4, 0x64, 0xE4,
+                0x14, 0x94, 0x54, 0xD4, 0x34, 0xB4, 0x74, 0xF4,
+                0x0C, 0x8C, 0x4C, 0xCC, 0x2C, 0xAC, 0x6C, 0xEC,
+                0x1C, 0x9C, 0x5C, 0xDC, 0x3C, 0xBC, 0x7C, 0xFC,
+                0x02, 0x82, 0x42, 0xC2, 0x22, 0xA2, 0x62, 0xE2,
+                0x12, 0x92, 0x52, 0xD2, 0x32, 0xB2, 0x72, 0xF2,
+                0x0A, 0x8A, 0x4A, 0xCA, 0x2A, 0xAA, 0x6A, 0xEA,
+                0x1A, 0x9A, 0x5A, 0xDA, 0x3A, 0xBA, 0x7A, 0xFA,
+                0x06, 0x86, 0x46, 0xC6, 0x26, 0xA6, 0x66, 0xE6,
+                0x16, 0x96, 0x56, 0xD6, 0x36, 0xB6, 0x76, 0xF6,
+                0x0E, 0x8E, 0x4E, 0xCE, 0x2E, 0xAE, 0x6E, 0xEE,
+                0x1E, 0x9E, 0x5E, 0xDE, 0x3E, 0xBE, 0x7E, 0xFE,
+                0x01, 0x81, 0x41, 0xC1, 0x21, 0xA1, 0x61, 0xE1,
+                0x11, 0x91, 0x51, 0xD1, 0x31, 0xB1, 0x71, 0xF1,
+                0x09, 0x89, 0x49, 0xC9, 0x29, 0xA9, 0x69, 0xE9,
+                0x19, 0x99, 0x59, 0xD9, 0x39, 0xB9, 0x79, 0xF9,
+                0x05, 0x85, 0x45, 0xC5, 0x25, 0xA5, 0x65, 0xE5,
+                0x15, 0x95, 0x55, 0xD5, 0x35, 0xB5, 0x75, 0xF5,
+                0x0D, 0x8D, 0x4D, 0xCD, 0x2D, 0xAD, 0x6D, 0xED,
+                0x1D, 0x9D, 0x5D, 0xDD, 0x3D, 0xBD, 0x7D, 0xFD,
+                0x03, 0x83, 0x43, 0xC3, 0x23, 0xA3, 0x63, 0xE3,
+                0x13, 0x93, 0x53, 0xD3, 0x33, 0xB3, 0x73, 0xF3,
+                0x0B, 0x8B, 0x4B, 0xCB, 0x2B, 0xAB, 0x6B, 0xEB,
+                0x1B, 0x9B, 0x5B, 0xDB, 0x3B, 0xBB, 0x7B, 0xFB,
+                0x07, 0x87, 0x47, 0xC7, 0x27, 0xA7, 0x67, 0xE7,
+                0x17, 0x97, 0x57, 0xD7, 0x37, 0xB7, 0x77, 0xF7,
+                0x0F, 0x8F, 0x4F, 0xCF, 0x2F, 0xAF, 0x6F, 0xEF,
+                0x1F, 0x9F, 0x5F, 0xDF, 0x3F, 0xBF, 0x7F, 0xFE,
+
+                0x00, 0x80, 0x40, 0xC0, 0x20, 0xA0, 0x60, 0xE0,
+                0x10, 0x90, 0x50, 0xD0, 0x30, 0xB0, 0x70, 0xF0,
+                0x08, 0x88, 0x48, 0xC8, 0x28, 0xA8, 0x68, 0xE8,
+                0x18, 0x98, 0x58, 0xD8, 0x38, 0xB8, 0x78, 0xF8,
+                0x04, 0x84, 0x44, 0xC4, 0x24, 0xA4, 0x64, 0xE4,
+                0x14, 0x94, 0x54, 0xD4, 0x34, 0xB4, 0x74, 0xF4,
+                0x0C, 0x8C, 0x4C, 0xCC, 0x2C, 0xAC, 0x6C, 0xEC,
+                0x1C, 0x9C, 0x5C, 0xDC, 0x3C, 0xBC, 0x7C, 0xFC,
+                0x02, 0x82, 0x42, 0xC2, 0x22, 0xA2, 0x62, 0xE2,
+                0x12, 0x92, 0x52, 0xD2, 0x32, 0xB2, 0x72, 0xF2,
+                0x0A, 0x8A, 0x4A, 0xCA, 0x2A, 0xAA, 0x6A, 0xEA,
+                0x1A, 0x9A, 0x5A, 0xDA, 0x3A, 0xBA, 0x7A, 0xFA,
+                0x06, 0x86, 0x46, 0xC6, 0x26, 0xA6, 0x66, 0xE6,
+                0x16, 0x96, 0x56, 0xD6, 0x36, 0xB6, 0x76, 0xF6,
+                0x0E, 0x8E, 0x4E, 0xCE, 0x2E, 0xAE, 0x6E, 0xEE,
+                0x1E, 0x9E, 0x5E, 0xDE, 0x3E, 0xBE, 0x7E, 0xFE,
+                0x01, 0x81, 0x41, 0xC1, 0x21, 0xA1, 0x61, 0xE1,
+                0x11, 0x91, 0x51, 0xD1, 0x31, 0xB1, 0x71, 0xF1,
+                0x09, 0x89, 0x49, 0xC9, 0x29, 0xA9, 0x69, 0xE9,
+                0x19, 0x99, 0x59, 0xD9, 0x39, 0xB9, 0x79, 0xF9,
+                0x05, 0x85, 0x45, 0xC5, 0x25, 0xA5, 0x65, 0xE5,
+                0x15, 0x95, 0x55, 0xD5, 0x35, 0xB5, 0x75, 0xF5,
+                0x0D, 0x8D, 0x4D, 0xCD, 0x2D, 0xAD, 0x6D, 0xED,
+                0x1D, 0x9D, 0x5D, 0xDD, 0x3D, 0xBD, 0x7D, 0xFD,
+                0x03, 0x83, 0x43, 0xC3, 0x23, 0xA3, 0x63, 0xE3,
+                0x13, 0x93, 0x53, 0xD3, 0x33, 0xB3, 0x73, 0xF3,
+                0x0B, 0x8B, 0x4B, 0xCB, 0x2B, 0xAB, 0x6B, 0xEB,
+                0x1B, 0x9B, 0x5B, 0xDB, 0x3B, 0xBB, 0x7B, 0xFB,
+                0x07, 0x87, 0x47, 0xC7, 0x27, 0xA7, 0x67, 0xE7,
+                0x17, 0x97, 0x57, 0xD7, 0x37, 0xB7, 0x77, 0xF7,
+                0x0F, 0x8F, 0x4F, 0xCF, 0x2F, 0xAF, 0x6F, 0xEF,
+                0x1F, 0x9F, 0x5F, 0xDF, 0x3F, 0xBF, 0x7F, 0xFE,
+
+                0x00, 0x80, 0x40, 0xC0, 0x20, 0xA0, 0x60, 0xE0,
+                0x10, 0x90, 0x50, 0xD0, 0x30, 0xB0, 0x70, 0xF0,
+                0x08, 0x88, 0x48, 0xC8, 0x28, 0xA8, 0x68, 0xE8,
+                0x18, 0x98, 0x58, 0xD8, 0x38, 0xB8, 0x78, 0xF8,
+                0x04, 0x84, 0x44, 0xC4, 0x24, 0xA4, 0x64, 0xE4,
+                0x14, 0x94, 0x54, 0xD4, 0x34, 0xB4, 0x74, 0xF4,
+                0x0C, 0x8C, 0x4C, 0xCC, 0x2C, 0xAC, 0x6C, 0xEC,
+                0x1C, 0x9C, 0x5C, 0xDC, 0x3C, 0xBC, 0x7C, 0xFC,
+                0x02, 0x82, 0x42, 0xC2, 0x22, 0xA2, 0x62, 0xE2,
+                0x12, 0x92, 0x52, 0xD2, 0x32, 0xB2, 0x72, 0xF2,
+                0x0A, 0x8A, 0x4A, 0xCA, 0x2A, 0xAA, 0x6A, 0xEA,
+                0x1A, 0x9A, 0x5A, 0xDA, 0x3A, 0xBA, 0x7A, 0xFA,
+                0x06, 0x86, 0x46, 0xC6, 0x26, 0xA6, 0x66, 0xE6,
+                0x16, 0x96, 0x56, 0xD6, 0x36, 0xB6, 0x76, 0xF6,
+                0x0E, 0x8E, 0x4E, 0xCE, 0x2E, 0xAE, 0x6E, 0xEE,
+                0x1E, 0x9E, 0x5E, 0xDE, 0x3E, 0xBE, 0x7E, 0xFE,
+                0x01, 0x81, 0x41, 0xC1, 0x21, 0xA1, 0x61, 0xE1,
+                0x11, 0x91, 0x51, 0xD1, 0x31, 0xB1, 0x71, 0xF1,
+                0x09, 0x89, 0x49, 0xC9, 0x29, 0xA9, 0x69, 0xE9,
+                0x19, 0x99, 0x59, 0xD9, 0x39, 0xB9, 0x79, 0xF9,
+                0x05, 0x85, 0x45, 0xC5, 0x25, 0xA5, 0x65, 0xE5,
+                0x15, 0x95, 0x55, 0xD5, 0x35, 0xB5, 0x75, 0xF5,
+                0x0D, 0x8D, 0x4D, 0xCD, 0x2D, 0xAD, 0x6D, 0xED,
+                0x1D, 0x9D, 0x5D, 0xDD, 0x3D, 0xBD, 0x7D, 0xFD,
+                0x03, 0x83, 0x43, 0xC3, 0x23, 0xA3, 0x63, 0xE3,
+                0x13, 0x93, 0x53, 0xD3, 0x33, 0xB3, 0x73, 0xF3,
+                0x0B, 0x8B, 0x4B, 0xCB, 0x2B, 0xAB, 0x6B, 0xEB,
+                0x1B, 0x9B, 0x5B, 0xDB, 0x3B, 0xBB, 0x7B, 0xFB,
+                0x07, 0x87, 0x47, 0xC7, 0x27, 0xA7, 0x67, 0xE7,
+                0x17, 0x97, 0x57, 0xD7, 0x37, 0xB7, 0x77, 0xF7,
+                0x0F, 0x8F, 0x4F, 0xCF, 0x2F, 0xAF, 0x6F, 0xEF,
+                0x1F, 0x9F, 0x5F, 0xDF, 0x3F, 0xBF, 0x7F, 0xFF,
+            };
 
     }
 }

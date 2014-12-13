@@ -166,6 +166,11 @@ namespace NScumm.Core
             // from within Room 23 (the big machine), as it has no shadow effects
             // and thus doesn't result in any visual differences.
 
+            if (Game.GameId == NScumm.Core.IO.GameId.SamNMax)
+            {
+                for (var i = 0; i < 256; i++)
+                    _shadowPalette[i] = (byte)i;
+            }
 
             for (var i = start; i < end; i++)
             {

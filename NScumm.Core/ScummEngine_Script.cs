@@ -352,6 +352,12 @@ namespace NScumm.Core
                 a.PutActor(pos, _currentRoom);
                 a.SetDirection(dir + 180);
                 a.StopActorMoving();
+
+                if (Game.GameId == NScumm.Core.IO.GameId.SamNMax)
+                {
+                    Camera.CurrentPosition.X = Camera.DestinationPosition.X = a.Position.X;
+                    SetCameraAt(a.Position);
+                }
             }
 
             ShowActors();
@@ -436,9 +442,13 @@ namespace NScumm.Core
 
         public TimeSpan RunBootScript(int bootParam = 0)
         {
-            if (_game.Id == "atlantis" && bootParam == 0)
+            if (_game.GameId == NScumm.Core.IO.GameId.Indy4 && bootParam == 0)
             {
                 bootParam = -7873;
+            }
+            else if (_game.GameId == NScumm.Core.IO.GameId.SamNMax && bootParam == 0)
+            {
+                bootParam = -1;
             }
             RunScript(1, false, false, new [] { bootParam });
             SetDefaultCursor();

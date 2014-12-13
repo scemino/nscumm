@@ -22,10 +22,14 @@ with game:
 
 `TENTACLE.000` for Day of the Tentacle
 
+`SAMNMAX.000` for Sam & Max Hit the Road
+
 Supported Games
 ---------------
 
 ### SCUMM 6
+
+Sam & Max Hit the Road
 
 Day of the Tentacle
 

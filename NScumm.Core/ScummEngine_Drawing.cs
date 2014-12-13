@@ -56,7 +56,7 @@ namespace NScumm.Core
 
         internal Palette CurrentPalette { get { return _currentPalette; } set { _currentPalette = value; } }
 
-        internal byte[] ShadowPalette { get { return _shadowPalette; } }
+        protected internal byte[] ShadowPalette { get { return _shadowPalette; } }
 
         protected void DrawObject()
         {
@@ -408,14 +408,26 @@ namespace NScumm.Core
                 return;
 
             var colors = new Color[256];
-
+            var noir_mode = (Game.GameId == GameId.SamNMax && ReadVariable(0x8000) != 0);
             var first = _palDirtyMin;
             var num = _palDirtyMax - first + 1;
 
-            for (var i = _palDirtyMin; i <= _palDirtyMax; i++)
+            if (noir_mode)
             {
-                var color = _currentPalette.Colors[Game.Version < 5 ? _shadowPalette[i] : i];
-                colors[i] = color;
+                for (var i = _palDirtyMin; i <= _palDirtyMax; i++)
+                {
+                    var color = _currentPalette.Colors[Game.Version < 5 ? _shadowPalette[i] : i];
+                    var brightness = (int)((0.299 * color.R + 0.587 * color.G + 0.114 * color.B) + 0.5);
+                    colors[i] = Color.FromRgb(brightness, brightness, brightness);
+                }
+            }
+            else
+            {
+                for (var i = _palDirtyMin; i <= _palDirtyMax; i++)
+                {
+                    var color = _currentPalette.Colors[Game.Version < 5 ? _shadowPalette[i] : i];
+                    colors[i] = color;
+                }
             }
 
             _palDirtyMax = -1;
@@ -539,7 +551,7 @@ namespace NScumm.Core
             }
         }
 
-        void DrawDirtyScreenParts()
+        protected virtual void DrawDirtyScreenParts()
         {
             // Update verbs
             UpdateDirtyScreen(_verbVirtScreen);
@@ -562,6 +574,7 @@ namespace NScumm.Core
             // Handle shaking
             HandleShaking();
         }
+
 
         void UpdateDirtyScreen(VirtScreen vs)
         {
@@ -685,6 +698,11 @@ namespace NScumm.Core
                     return;
                 }
             }
+        }
+
+        internal void MarkRectAsDirty(VirtScreen vs, Rect r, int dirtybit = 0)
+        {
+            MarkRectAsDirty(vs, r.Left, r.Right, r.Top, r.Bottom, dirtybit);
         }
 
         internal void MarkRectAsDirty(VirtScreen vs, int left, int right, int top, int bottom, int dirtybit = 0)

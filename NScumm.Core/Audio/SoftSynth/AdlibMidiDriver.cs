@@ -736,7 +736,7 @@ namespace NScumm.Core.Audio.SoftSynth
                     value -= 383;
                 value <<= 4;
                 _channelTable2[channel] = (ushort)value;
-                AdlibPlayNote(channel, _curNotTable[channel] + value);
+                AdlibPlayNote(channel, _curNotTable[channel] + (ushort)value);
                 return;
             }
             else
@@ -1694,7 +1694,7 @@ namespace NScumm.Core.Audio.SoftSynth
         public const int PropertyOldAdLib = 2;
         public const int PropertyChannelMask = 3;
         // HACK: Not so nice, but our SCUMM AdLib code is in audio/
-        const int PropertyScummOPL3 = 4;
+        public const int PropertyScummOPL3 = 4;
 
         static byte _randSeed = 1;
 

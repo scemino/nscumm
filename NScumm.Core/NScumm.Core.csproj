@@ -130,7 +130,6 @@
     <Compile Include="Audio\IMuse\Part.cs" />
     <Compile Include="Audio\IMuse\CommandQueue.cs" />
     <Compile Include="Audio\Midi\ISysEx.cs" />
-    <Compile Include="Audio\IMuse\IMuseSysEx.cs" />
     <Compile Include="IO\ResourceIndex6.cs" />
     <Compile Include="IO\ResourceManager6.cs" />
     <Compile Include="IO\ResourceFile6.cs" />
@@ -213,6 +212,8 @@
     <Compile Include="Audio\OPL\DosBox\DosBoxOPL_Shared.cs" />
     <Compile Include="Audio\OPL\DosBox\OplTimer.cs" />
     <Compile Include="Audio\OPL\DosBox\OplChip.cs" />
+    <Compile Include="Audio\IMuse\ScummSysEx.cs" />
+    <Compile Include="Audio\IMuse\SamAndMaxSysEx.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="IO\Nscumm.xml">

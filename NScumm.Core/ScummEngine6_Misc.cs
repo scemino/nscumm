@@ -30,7 +30,7 @@ namespace NScumm.Core
         [OpCode(0xae)]
         void SystemOps()
         {
-            //TODO: Restart/Pause/Quit
+            //TODO: Restart
             var subOp = ReadByte();
 
             switch (subOp)
@@ -39,10 +39,10 @@ namespace NScumm.Core
 //                    Restart();
                     break;
                 case 159:               // SO_PAUSE
-//                    PauseGame();
+                    ShowMenu();
                     break;
                 case 160:               // SO_QUIT
-//                    QuitGame();
+                    HastToQuit = true;
                     break;
                 default:
                     throw new NotSupportedException(string.Format("SystemOps invalid case {0}", subOp));
@@ -228,7 +228,7 @@ namespace NScumm.Core
                     break;
                 case 114:
                     // Sam & Max film noir mode
-                    if (Game.Id == "samnmax")
+                    if (Game.GameId == NScumm.Core.IO.GameId.SamNMax)
                     {
                         // At this point ScummVM will already have set
                         // variable 0x8000 to indicate that the game is
@@ -258,17 +258,15 @@ namespace NScumm.Core
                 case 119:
                     EnqueueObject(args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], 0);
                     break;
-            //TODO: scumm6: swapcolors
-//                case 120:
-//                    SwapPalColors(args[1], args[2]);
-//                    break;
+                case 120:
+                    SwapPalColors(args[1], args[2]);
+                    break;
                 case 122:
                     Variables[VariableSoundResult.Value] = IMuse.DoCommand(args.Length - 1, args.Skip(1).ToArray());
                     break;
-            // TODO: scumm6: CopyPalColor
-//                case 123:
-//                    CopyPalColor(args[2], args[1]);
-//                    break;
+                case 123:
+                    CopyPalColor(args[2], args[1]);
+                    break;
                 case 124:
                     _saveSound = args[1] != 0;
                     break;
@@ -328,6 +326,7 @@ namespace NScumm.Core
 
         int RemapPaletteColor(int r, int g, int b, int threshold)
         {
+            throw new NotImplementedException();
             // TODO: scumm6 RemapPaletteColor
 //            int ar, ag, ab, i;
             int sum, bestsum, bestitem = 0;
@@ -421,6 +420,28 @@ namespace NScumm.Core
                     Slots[i].CutSceneOverride = 0;
                 }
             }
+        }
+
+        void SwapPalColors(int a, int b)
+        {
+            if (a >= 256 || b >= 256)
+                throw new InvalidOperationException(string.Format("SwapPalColors: invalid values, {0}, {1}", a, b));
+
+            var tmp = CurrentPalette.Colors[a];
+            CurrentPalette.Colors[a] = CurrentPalette.Colors[b];
+            CurrentPalette.Colors[b] = tmp;
+
+            SetDirtyColors(a, a);
+            SetDirtyColors(b, b);
+        }
+
+        void CopyPalColor(int dst, int src)
+        {
+            if (dst >= 256 || src >= 256)
+                throw new InvalidOperationException(string.Format("copyPalColor: invalid values, {0}, {1}", dst, src));
+
+            CurrentPalette.Colors[dst] = CurrentPalette.Colors[src];
+            SetDirtyColors(dst, dst);
         }
     }
 }

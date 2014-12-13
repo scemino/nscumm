@@ -39,7 +39,8 @@ namespace NScumm.Core
         [OpCode(0x01)]
         void PushWord()
         {
-            Push(ReadWord());
+            Push(ReadWordSigned());
+            Console.WriteLine("Push({0})", _vmStack.Peek());
         }
 
         [OpCode(0x02)]
@@ -51,7 +52,9 @@ namespace NScumm.Core
         [OpCode(0x03)]
         void PushWordVar()
         {
-            Push(ReadVariable(ReadWord()));
+            var v = ReadWord();
+            Push(ReadVariable(v));
+            Console.WriteLine("Push({0}:{1})", v, _vmStack.Peek());
         }
 
         [OpCode(0x06)]
@@ -205,18 +208,20 @@ namespace NScumm.Core
                         }
                     }
                     break;
-            //                case 212:               // SO_ASSIGN_2DIM_LIST
-            //                    b = pop();
-            //                    len = getStackList(list, ARRAYSIZE(list));
-            //                    d = readVar(array);
-            //                    if (d == 0)
-            //                        error("Must DIM a two dimensional array before assigning");
-            //                    c = pop();
-            //                    while (--len >= 0)
-            //                    {
-            //                        writeArray(array, c, b + len, list[len]);
-            //                    }
-            //                    break;
+                case 212:               // SO_ASSIGN_2DIM_LIST
+                    {
+                        var b = Pop();
+                        var args = GetStackList(128);
+                        var d = ReadVariable(array);
+                        if (d == 0)
+                            throw new InvalidOperationException("Must DIM a two dimensional array before assigning");
+                        var c = Pop();
+                        for (int i = 0; i < args.Length; i++)
+                        {
+                            WriteArray(array, c, b + i, args[i]);
+                        }
+                    }
+                    break;
                 default:
                     throw new NotSupportedException(string.Format("ArrayOps: default case {0} (array {1})", subOp, array));
             }
@@ -230,7 +235,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0xbc)]
-        void DimArray(int dim1)
+        void DimArray()
         {
             var subOp = ReadByte();
             var array = ReadWord();
@@ -253,12 +258,13 @@ namespace NScumm.Core
                     type = ArrayType.StringArray;
                     break;
                 case 204:               // SO_UNDIM_ARRAY
-                    // TODO: SCUMM6: nukeArray(array);
+                    NukeArray(array);
                     return;
                 default:
                     throw new NotSupportedException(string.Format("DimArray: default case {0}", subOp));
             }
 
+            var dim1 = Pop();
             DefineArray(array, type, 0, dim1);
         }
 

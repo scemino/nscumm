@@ -27,6 +27,7 @@ namespace NScumm.Core.Graphics
     {
         None = 0,
         AllowMaskOr = 1 << 0,
+        DrawMaskOnAll = 1 << 1,
     }
 
     public class Gdi
@@ -386,33 +387,71 @@ namespace NScumm.Core.Graphics
         void DecodeMask(int x, int y, int height, int stripnr, IList<ZPlane> zPlanes, bool transpStrip, DrawBitmaps flags)
         {
             var zplaneCount = IsZBufferEnabled ? zPlanes.Count : 0;
-        
-            for (var i = 0; i < zplaneCount; i++)
-            {
-                var offs = zPlanes[i].StripOffsets[stripnr];
-                var mask_ptr = GetMaskBuffer(x, y, i + 1);
 
-                if (offs.HasValue)
+            if (flags.HasFlag(DrawBitmaps.DrawMaskOnAll))
+            {
+                // Sam & Max uses dbDrawMaskOnAll for things like the inventory
+                // box and the speech icons. While these objects only have one
+                // mask, it should be applied to all the Z-planes in the room,
+                // i.e. they should mask every actor.
+                //
+                // This flag used to be called dbDrawMaskOnBoth, and all it
+                // would do was to mask Z-plane 0. (Z-plane 1 would also be
+                // masked, because what is now the else-clause used to be run
+                // always.) While this seems to be the only way there is to
+                // mask Z-plane 0, this wasn't good enough since actors in
+                // Z-planes >= 2 would not be masked.
+                //
+                // The flag is also used by The Dig and Full Throttle, but I
+                // don't know what for. At the time of writing, these games
+                // are still too unstable for me to investigate.
+                for (var i = 0; i < zplaneCount; i++)
                 {
-                    using (var zplanePtr = new MemoryStream(zPlanes[i].Data))
+                    var offs = zPlanes[0].StripOffsets[stripnr];
+                    var mask_ptr = GetMaskBuffer(x, y, i + 1);
+
+                    if (offs.HasValue)
                     {
-                        zplanePtr.Seek(offs.Value, SeekOrigin.Begin);
-                        if (transpStrip && flags.HasFlag(DrawBitmaps.AllowMaskOr))
+                        using (var zplanePtr = new MemoryStream(zPlanes[0].Data))
                         {
-                            DecompressMaskImgOr(mask_ptr, zplanePtr, height);
-                        }
-                        else
-                        {
-                            DecompressMaskImg(mask_ptr, zplanePtr, height);
+                            zplanePtr.Seek(offs.Value, SeekOrigin.Begin);
+                            if (transpStrip && (flags.HasFlag(DrawBitmaps.AllowMaskOr)))
+                                DecompressMaskImgOr(mask_ptr, zplanePtr, height);
+                            else
+                                DecompressMaskImg(mask_ptr, zplanePtr, height);
                         }
                     }
                 }
-                else if (!(transpStrip && flags.HasFlag(DrawBitmaps.AllowMaskOr)))
+            }
+            else
+            {
+                for (var i = 0; i < zplaneCount; i++)
                 {
-                    for (var h = 0; h < height; h++)
+                    var offs = zPlanes[i].StripOffsets[stripnr];
+                    var mask_ptr = GetMaskBuffer(x, y, i + 1);
+
+                    if (offs.HasValue)
                     {
-                        mask_ptr.OffsetY(1);
-                        mask_ptr.Write(0);
+                        using (var zplanePtr = new MemoryStream(zPlanes[i].Data))
+                        {
+                            zplanePtr.Seek(offs.Value, SeekOrigin.Begin);
+                            if (transpStrip && flags.HasFlag(DrawBitmaps.AllowMaskOr))
+                            {
+                                DecompressMaskImgOr(mask_ptr, zplanePtr, height);
+                            }
+                            else
+                            {
+                                DecompressMaskImg(mask_ptr, zplanePtr, height);
+                            }
+                        }
+                    }
+                    else if (!(transpStrip && flags.HasFlag(DrawBitmaps.AllowMaskOr)))
+                    {
+                        for (var h = 0; h < height; h++)
+                        {
+                            mask_ptr.OffsetY(1);
+                            mask_ptr.Write(0);
+                        }
                     }
                 }
             }

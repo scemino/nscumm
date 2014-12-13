@@ -25,7 +25,7 @@ using System;
 
 namespace NScumm.Core.Audio.IMuse
 {
-    class IMuseSysEx: ISysEx
+    class ScummSysEx: ISysEx
     {
         #region ISysEx implementation
 
@@ -285,5 +285,6 @@ namespace NScumm.Core.Audio.IMuse
 
         #endregion
     }
+
 }
 

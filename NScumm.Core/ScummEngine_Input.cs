@@ -95,11 +95,7 @@ namespace NScumm.Core
                     RunScript((byte)Variables[VariableSaveLoadScript.Value], false, false, new int[0]);
                 }
 
-                var eh = ShowMenuDialogRequested;
-                if (eh != null)
-                {
-                    eh(this, EventArgs.Empty);
-                }
+                ShowMenu();
 
                 if (VariableSaveLoadScript2.HasValue && _currentRoom != 0)
                 {
@@ -214,6 +210,15 @@ namespace NScumm.Core
             Variables[VariableMouseY.Value] = (int)_mousePos.Y;
             Variables[VariableVirtualMouseX.Value] = (int)mouseX;
             Variables[VariableVirtualMouseY.Value] = (int)_mousePos.Y - MainVirtScreen.TopLine;
+        }
+
+        protected void ShowMenu()
+        {
+            var eh = ShowMenuDialogRequested;
+            if (eh != null)
+            {
+                eh(this, EventArgs.Empty);
+            }
         }
     }
 }

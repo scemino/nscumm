@@ -373,10 +373,10 @@ namespace NScumm.Core
                     //restart();
                     break;
                 case 2:     // SO_PAUSE
-                    //pauseGame();
+                    ShowMenu();
                     break;
                 case 3:     // SO_QUIT
-                    //quitGame();
+                    HastToQuit = true;
                     break;
             }
         }

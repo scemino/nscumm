@@ -184,10 +184,10 @@ namespace NScumm.Core
         {
             int size;
 
-//            Debug.WriteLine("DefineArray: {0} {1} {2} {3}", array, type, dim2, dim1);
+            Debug.WriteLine("DefineArray: {0} {1} {2} {3}", array, type, dim2, dim1);
             Debug.Assert(0 <= (int)type && (int)type <= 5);
 
-            //nukeArray(array);
+            NukeArray(array);
 
             var id = FindFreeArrayId();
 
@@ -220,6 +220,16 @@ namespace NScumm.Core
             ah.Dim1 = dim1 + 1;
             ah.Dim2 = dim2 + 1;
             return ah;
+        }
+
+        void NukeArray(int a)
+        {
+            var data = ReadVariable(a);
+
+            if (data != 0)
+                _strings[data] = null;
+
+            WriteVariable(a, 0);
         }
 
         int ReadArray(int array, int idx, int @base)

@@ -67,6 +67,10 @@ namespace NScumm.Core
 
         public void SaveOrLoad(Serializer serializer)
         {
+            if (serializer.IsLoading)
+            {
+                Images.Clear();
+            }
             var objectEntries = new[]
             {
                 LoadAndSaveEntry.Create(reader => reader.ReadUInt32(), writer => writer.WriteUInt32(0), 8),

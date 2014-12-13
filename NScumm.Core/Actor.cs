@@ -1311,6 +1311,12 @@ namespace NScumm.Core
             if (IgnoreBoxes)
                 return;
 
+            // For some boxes, we ignore the scaling and use whatever values the
+            // scripts set. This is used e.g. in the Mystery Vortex in Sam&Max.
+            // Older games used the flag 0x20 differently, though.
+            if (_scumm.Game.GameId == GameId.SamNMax && (_scumm.GetBoxFlags(Walkbox).HasFlag(BoxFlags.IgnoreScale)))
+                return;
+
             BoxScale = (ushort)_scumm.GetBoxScale(Walkbox);
 
             var scale = _scumm.GetScale(Walkbox, _position.X, _position.Y);

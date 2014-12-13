@@ -255,7 +255,7 @@ namespace NScumm.Core
             if (obj < 1)
                 return -1;
 
-            for (var i = (_objs.Length - 1); i > 0; i--)
+            for (var i = (_objs.Length - 1); i >= 0; i--)
             {
                 if (_objs[i].Number == obj)
                     return i;
@@ -386,12 +386,25 @@ namespace NScumm.Core
 
         void DrawRoomObjects(int argument)
         {
-            const int mask = 0xF;
-            for (int i = (_objs.Length - 1); i > 0; i--)
+            if (Game.GameId == NScumm.Core.IO.GameId.SamNMax)
             {
-                if (_objs[i].Number > 0 && ((_objs[i].State & mask) != 0))
+                for (int i = 1; i < _objs.Length; i++)
                 {
-                    DrawRoomObject(i, argument);
+                    if (_objs[i].Number > 0)
+                    {
+                        DrawRoomObject(i, argument);
+                    }
+                }
+            }
+            else
+            {
+                const int mask = 0xF;
+                for (int i = (_objs.Length - 1); i > 0; i--)
+                {
+                    if (_objs[i].Number > 0 && ((_objs[i].State & mask) != 0))
+                    {
+                        DrawRoomObject(i, argument);
+                    }
                 }
             }
         }
@@ -438,10 +451,7 @@ namespace NScumm.Core
             if (width == 0 || xpos > _screenEndStrip || xpos + width < _screenStartStrip)
                 return;
 
-            var objToDraw = (from o in roomData.Objects
-                                      where o.Number == od.Number
-                                      select o).FirstOrDefault();
-            if (objToDraw == null || objToDraw.Images == null)
+            if (od == null || od.Images == null)
                 return;
 
             var x = 0xFFFF;
@@ -465,10 +475,15 @@ namespace NScumm.Core
             if (numstrip != 0)
             {
                 var flags = od.Flags;
+                // Sam & Max needs this to fix object-layering problems with
+                // the inventory and conversation icons.
+                if (_game.GameId == NScumm.Core.IO.GameId.SamNMax && GetClass(od.Number, ObjectClass.IgnoreBoxes))
+                    flags |= DrawBitmaps.AllowMaskOr;
+
                 var state = GetStateCore(od.Number);
-                if (state > 0 && (state - 1) < objToDraw.Images.Count)
+                if (state > 0 && (state - 1) < od.Images.Count)
                 {
-                    Gdi.DrawBitmap(objToDraw.Images[state - 1], _mainVirtScreen, x, ypos, width * 8, height, x - xpos, numstrip, roomData.Header.Width, flags);
+                    Gdi.DrawBitmap(od.Images[state - 1], _mainVirtScreen, x, ypos, width * 8, height, x - xpos, numstrip, roomData.Header.Width, flags);
                 }
             }
         }
@@ -480,7 +495,7 @@ namespace NScumm.Core
                 var index = Array.IndexOf(_objs, obj);
                 DrawObject(index, 0);
             }
-            ClearDrawObjectQueue();
+            _drawingObjects.Clear();
         }
 
         protected void SetOwnerOf(int obj, int owner)

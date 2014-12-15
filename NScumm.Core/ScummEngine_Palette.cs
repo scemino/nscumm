@@ -31,6 +31,7 @@ namespace NScumm.Core
         protected int _palManipCounter;
         protected Palette _palManipPalette;
         protected Palette _palManipIntermediatePal;
+        protected int _curPalIndex;
 
         void CyclePalette()
         {
@@ -112,13 +113,15 @@ namespace NScumm.Core
 
         protected void DarkenPalette(int redScale, int greenScale, int blueScale, int startColor, int endColor)
         {
+            var currentPalette = roomData.Palettes[_curPalIndex];
+
             if (startColor <= endColor)
             {
                 var max = _game.Version >= 5 ? 252 : 255;
 
                 for (var j = startColor; j <= endColor; j++)
                 {
-                    var color = roomData.Palette.Colors[j];
+                    var color = currentPalette.Colors[j];
                     var red = (color.R * redScale) / 255;
                     if (red > max)
                         red = max;
@@ -153,6 +156,8 @@ namespace NScumm.Core
 
         protected void SetShadowPalette(int redScale, int greenScale, int blueScale, int startColor, int endColor, int start, int end)
         {
+            var currentPalette = roomData.Palettes[_curPalIndex];
+
             // This is an implementation based on the original games code.
             //
             // The four known rooms where setShadowPalette is used in atlantis are:
@@ -174,18 +179,18 @@ namespace NScumm.Core
 
             for (var i = start; i < end; i++)
             {
-                var r = ((_currentPalette.Colors[i].R >> 2) * redScale) >> 8;
-                var g = ((_currentPalette.Colors[i].G >> 2) * greenScale) >> 8;
-                var b = ((_currentPalette.Colors[i].B >> 2) * blueScale) >> 8;
+                var r = ((currentPalette.Colors[i].R >> 2) * redScale) >> 8;
+                var g = ((currentPalette.Colors[i].G >> 2) * greenScale) >> 8;
+                var b = ((currentPalette.Colors[i].B >> 2) * blueScale) >> 8;
 
                 var bestitem = 0;
                 uint bestsum = 32000;
 
                 for (var j = startColor; j <= endColor; j++)
                 {
-                    int ar = _currentPalette.Colors[j].R >> 2;
-                    int ag = _currentPalette.Colors[j].G >> 2;
-                    int ab = _currentPalette.Colors[j].B >> 2;
+                    int ar = currentPalette.Colors[j].R >> 2;
+                    int ag = currentPalette.Colors[j].G >> 2;
+                    int ab = currentPalette.Colors[j].B >> 2;
 
                     uint sum = (uint)(Math.Abs(ar - r) + Math.Abs(ag - g) + Math.Abs(ab - b));
 

@@ -237,7 +237,6 @@ namespace NScumm.Core
             uint CLUT_offs = 0;
             uint EPAL_offs = 0;
             uint PALS_offs = 0;
-            byte curPalIndex = 0;
             byte numObjectsInRoom = (byte)_objs.Length;
 
             #region MainEntries
@@ -253,7 +252,7 @@ namespace NScumm.Core
                 LoadAndSaveEntry.Create(reader => CLUT_offs = reader.ReadUInt32(), writer => writer.Write(CLUT_offs), 8, 50),
                 LoadAndSaveEntry.Create(reader => EPAL_offs = reader.ReadUInt32(), writer => writer.Write(EPAL_offs), 8, 9),
                 LoadAndSaveEntry.Create(reader => PALS_offs = reader.ReadUInt32(), writer => writer.Write(PALS_offs), 8, 50),
-                LoadAndSaveEntry.Create(reader => curPalIndex = reader.ReadByte(), writer => writer.Write(curPalIndex), 8),
+                LoadAndSaveEntry.Create(reader => _curPalIndex = reader.ReadByte(), writer => writer.WriteByte(_curPalIndex), 8),
                 LoadAndSaveEntry.Create(reader => _currentRoom = reader.ReadByte(), writer => writer.Write(_currentRoom), 8),
                 LoadAndSaveEntry.Create(reader => _roomResource = reader.ReadByte(), writer => writer.Write(_roomResource), 8),
                 LoadAndSaveEntry.Create(reader => numObjectsInRoom = reader.ReadByte(), writer => writer.Write(numObjectsInRoom), 8),
@@ -689,7 +688,7 @@ namespace NScumm.Core
                             var colors2 = reader.ReadUInt16s(0x300);
                             for (int i = 0; i < 0x100; i++)
                             {
-                            _palManipIntermediatePal.Colors[i] = Color.FromRgb((int)colors2[i * 3], (int)colors2[i * 3 + 1], (int)colors2[i * 3 + 2]);    
+                                _palManipIntermediatePal.Colors[i] = Color.FromRgb((int)colors2[i * 3], (int)colors2[i * 3 + 1], (int)colors2[i * 3 + 2]);    
                             }
                         }
                     },

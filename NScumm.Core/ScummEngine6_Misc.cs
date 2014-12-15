@@ -220,7 +220,9 @@ namespace NScumm.Core
                 case 111:
                     {
                         var a = Actors[args[1]];
-                        a.ShadowMode = (byte)(args[2] + args[3]);
+                        var modes = new int[2];
+                        Array.Copy(args, 2, modes, 0, args.Length - 2);
+                        a.ShadowMode = (byte)(modes[0] + modes[1]);
                     }
                     break;
                 case 112:                                                                       /* palette shift? */

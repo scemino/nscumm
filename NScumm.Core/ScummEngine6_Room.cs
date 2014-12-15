@@ -183,6 +183,7 @@ namespace NScumm.Core
 
         void SetCurrentPalette(int palIndex)
         {
+            _curPalIndex = palIndex;
             var palette = roomData.Palettes[palIndex];
             for (var i = 0; i < 256; i++)
             {

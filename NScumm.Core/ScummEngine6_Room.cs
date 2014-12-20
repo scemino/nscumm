@@ -181,20 +181,6 @@ namespace NScumm.Core
             _fullRedraw = true;
         }
 
-        void SetCurrentPalette(int palIndex)
-        {
-            _curPalIndex = palIndex;
-            var palette = roomData.Palettes[palIndex];
-            for (var i = 0; i < 256; i++)
-            {
-                var color = palette.Colors[i];
-                if (i < 15 || i == 15 || color.R < 252 || color.G < 252 || color.B < 252)
-                {
-                    CurrentPalette.Colors[i] = color;
-                }
-            }
-        }
-
         [OpCode(0x85)]
         void LoadRoomWithEgo(int obj, byte room, int x, int y)
         {

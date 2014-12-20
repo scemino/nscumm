@@ -281,7 +281,7 @@ namespace NScumm.Core.Graphics
         {
             if (strip < 0 || strip >= (_gfxUsageBits.Length / 3))
                 throw new ArgumentOutOfRangeException("strip");
-            if (bit < 1 || bit > 96)
+            if (bit < 0 || bit > 96)
                 throw new ArgumentOutOfRangeException("bit");
             bit--;
             _gfxUsageBits[3 * strip + bit / 32] |= (uint)((1 << bit % 32));
@@ -296,7 +296,7 @@ namespace NScumm.Core.Graphics
         {
             if (strip < 0 || strip >= (_gfxUsageBits.Length / 3))
                 throw new ArgumentOutOfRangeException("strip");
-            if (bit < 1 || bit > 96)
+            if (bit < 0 || bit > 96)
                 throw new ArgumentOutOfRangeException("bit");
             bit--;
             _gfxUsageBits[3 * strip + bit / 32] &= (uint)~(1 << (bit % 32));
@@ -386,7 +386,7 @@ namespace NScumm.Core.Graphics
 
         void DecodeMask(int x, int y, int height, int stripnr, IList<ZPlane> zPlanes, bool transpStrip, DrawBitmaps flags)
         {
-            var zplaneCount = IsZBufferEnabled ? zPlanes.Count : 0;
+            var zplaneCount = IsZBufferEnabled ? NumZBuffer : 0;
 
             if (flags.HasFlag(DrawBitmaps.DrawMaskOnAll))
             {
@@ -405,34 +405,31 @@ namespace NScumm.Core.Graphics
                 // The flag is also used by The Dig and Full Throttle, but I
                 // don't know what for. At the time of writing, these games
                 // are still too unstable for me to investigate.
-                for (var i = 0; i < zplaneCount; i++)
-                {
-                    var offs = zPlanes[0].StripOffsets[stripnr];
-                    var mask_ptr = GetMaskBuffer(x, y, i + 1);
+                var offs = zPlanes[0].StripOffsets[stripnr];
 
-                    if (offs.HasValue)
+                using (var zplanePtr = new MemoryStream(zPlanes[0].Data))
+                {
+                    zplanePtr.Seek(offs.Value, SeekOrigin.Begin);
+                    for (var i = 0; i < zplaneCount; i++)
                     {
-                        using (var zplanePtr = new MemoryStream(zPlanes[0].Data))
-                        {
-                            zplanePtr.Seek(offs.Value, SeekOrigin.Begin);
-                            if (transpStrip && (flags.HasFlag(DrawBitmaps.AllowMaskOr)))
-                                DecompressMaskImgOr(mask_ptr, zplanePtr, height);
-                            else
-                                DecompressMaskImg(mask_ptr, zplanePtr, height);
-                        }
+                        var mask_ptr = GetMaskBuffer(x, y, i);
+                        if (transpStrip && (flags.HasFlag(DrawBitmaps.AllowMaskOr)))
+                            DecompressMaskImgOr(mask_ptr, zplanePtr, height);
+                        else
+                            DecompressMaskImg(mask_ptr, zplanePtr, height);
                     }
                 }
             }
             else
             {
-                for (var i = 0; i < zplaneCount; i++)
+                for (var i = 1; i < zplaneCount; i++)
                 {
-                    var offs = zPlanes[i].StripOffsets[stripnr];
-                    var mask_ptr = GetMaskBuffer(x, y, i + 1);
+                    var offs = i <= zPlanes.Count ? zPlanes[i - 1].StripOffsets[stripnr] : null;
+                    var mask_ptr = GetMaskBuffer(x, y, i);
 
                     if (offs.HasValue)
                     {
-                        using (var zplanePtr = new MemoryStream(zPlanes[i].Data))
+                        using (var zplanePtr = new MemoryStream(zPlanes[i - 1].Data))
                         {
                             zplanePtr.Seek(offs.Value, SeekOrigin.Begin);
                             if (transpStrip && flags.HasFlag(DrawBitmaps.AllowMaskOr))

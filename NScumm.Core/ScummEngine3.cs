@@ -550,8 +550,12 @@ namespace NScumm.Core
 
         protected void LoadFlObject(int obj, int room)
         {
+            // Don't load an already loaded object
+            if (GetObjectIndex(obj) != -1)
+                return;
+
             var od = ResourceManager.GetRoom((byte)room).Objects.First(o => o.Number == obj);
-            for (int i = 0; i < _objs.Length; i++)
+            for (int i = 1; i < _objs.Length; i++)
             {
                 if (_objs[i].Number == 0)
                 {

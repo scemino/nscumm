@@ -71,6 +71,21 @@ namespace NScumm.Core
             DoCyclePalette(_palManipIntermediatePal, start, end, !direction);
         }
 
+        protected void SetCurrentPalette(int palIndex)
+        {
+            _curPalIndex = palIndex;
+            var palette = roomData.Palettes[palIndex];
+            for (var i = 0; i < 256; i++)
+            {
+                var color = palette.Colors[i];
+                if (i < 15 || i == 15 || color.R < 252 || color.G < 252 || color.B < 252)
+                {
+                    CurrentPalette.Colors[i] = color;
+                }
+            }
+
+            SetDirtyColors(0, 255);
+        }
 
         protected void StopCycle(int i)
         {
@@ -88,36 +103,12 @@ namespace NScumm.Core
             }
         }
 
-        void SetCurrentPalette()
-        {
-            if (roomData != null && roomData.HasPalette)
-            {
-                if (_game.Version < 5)
-                {
-                    Array.Copy(roomData.Palette.Colors, _currentPalette.Colors, roomData.Palette.Colors.Length);
-                }
-                else
-                {
-                    for (int i = 0; i < roomData.Palette.Colors.Length; i++)
-                    {
-                        var color = roomData.Palette.Colors[i];
-                        if (i <= 15 || color.R < 252 || color.G < 252 || color.B < 252)
-                        {
-                            _currentPalette.Colors[i] = color;
-                        }
-                    }
-                }
-                SetDirtyColors(0, _currentPalette.Colors.Length - 1);
-            }
-        }
-
         protected void DarkenPalette(int redScale, int greenScale, int blueScale, int startColor, int endColor)
         {
-            var currentPalette = roomData.Palettes[_curPalIndex];
-
             if (startColor <= endColor)
             {
-                var max = _game.Version >= 5 ? 252 : 255;
+                var max = _game.Version >= 5 && _game.Version <= 6 ? 252 : 255;
+                var currentPalette = roomData.Palettes[_curPalIndex];
 
                 for (var j = startColor; j <= endColor; j++)
                 {

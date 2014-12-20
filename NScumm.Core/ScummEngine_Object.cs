@@ -29,7 +29,7 @@ namespace NScumm.Core
     partial class ScummEngine
     {
         protected ObjectData[] _objs = new ObjectData[200];
-        HashSet<ObjectData> _drawingObjects = new HashSet<ObjectData>();
+        List<byte> _drawingObjects = new List<byte>();
         Dictionary<int, byte[]> _newNames = new Dictionary<int, byte[]>();
 
         internal uint[] ClassData
@@ -265,7 +265,7 @@ namespace NScumm.Core
 
         protected void AddObjectToDrawQue(byte obj)
         {
-            _drawingObjects.Add(_objs[obj]);
+            _drawingObjects.Add(obj);
         }
 
         protected virtual void ClearDrawObjectQueue()
@@ -312,7 +312,7 @@ namespace NScumm.Core
             else
                 ClassData[obj] &= (uint)~(1 << ((int)cls2 - 1));
 
-            if (_game.Version < 5 && obj >= 0 && obj < Actors.Length)
+            if (_game.Version < 5 && obj >= 1 && obj < Actors.Length)
             {
                 Actors[obj].ClassChanged(cls2, set);
             }
@@ -386,11 +386,12 @@ namespace NScumm.Core
 
         void DrawRoomObjects(int argument)
         {
+            const int mask = 0xF;
             if (Game.GameId == NScumm.Core.IO.GameId.SamNMax)
             {
                 for (int i = 1; i < _objs.Length; i++)
                 {
-                    if (_objs[i].Number > 0)
+                    if (_objs[i].Number > 0 && ((_objs[i].State & mask) != 0))
                     {
                         DrawRoomObject(i, argument);
                     }
@@ -398,7 +399,6 @@ namespace NScumm.Core
             }
             else
             {
-                const int mask = 0xF;
                 for (int i = (_objs.Length - 1); i > 0; i--)
                 {
                     if (_objs[i].Number > 0 && ((_objs[i].State & mask) != 0))
@@ -451,7 +451,7 @@ namespace NScumm.Core
             if (width == 0 || xpos > _screenEndStrip || xpos + width < _screenStartStrip)
                 return;
 
-            if (od == null || od.Images == null)
+            if (od == null || od.Images == null || od.Images.Count == 0)
                 return;
 
             var x = 0xFFFF;
@@ -478,7 +478,7 @@ namespace NScumm.Core
                 // Sam & Max needs this to fix object-layering problems with
                 // the inventory and conversation icons.
                 if (_game.GameId == NScumm.Core.IO.GameId.SamNMax && GetClass(od.Number, ObjectClass.IgnoreBoxes))
-                    flags |= DrawBitmaps.AllowMaskOr;
+                    flags |= DrawBitmaps.DrawMaskOnAll;
 
                 var state = GetStateCore(od.Number);
                 if (state > 0 && (state - 1) < od.Images.Count)
@@ -492,8 +492,10 @@ namespace NScumm.Core
         {
             foreach (var obj in _drawingObjects)
             {
-                var index = Array.IndexOf(_objs, obj);
-                DrawObject(index, 0);
+                if (obj != 0)
+                {
+                    DrawObject(obj, 0);
+                }
             }
             _drawingObjects.Clear();
         }

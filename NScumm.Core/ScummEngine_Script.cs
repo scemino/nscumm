@@ -313,7 +313,7 @@ namespace NScumm.Core
             }
 
             roomData = _resManager.GetRoom(_roomResource);
-            SetCurrentPalette();
+            SetCurrentPalette(0);
 
             Gdi.NumZBuffer = GetNumZBuffers();
 

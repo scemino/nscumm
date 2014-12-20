@@ -173,12 +173,13 @@ namespace NScumm.Core
         {
             if (Game.GameId == NScumm.Core.IO.GameId.SamNMax)
             {
-                return from actor in Actors
+                return from actor in Actors.Skip(1)
                                    where actor.IsInCurrentRoom
+                                   where actor.Layer >= 0
                                    orderby actor.Position.Y, actor.Number
                                    select actor;
             }
-            return from actor in Actors
+            return from actor in Actors.Skip(1)
                             where actor.IsInCurrentRoom
                             where (Game.Version != 8 || actor.Layer >= 0)
                             orderby actor.Position.Y - actor.Layer*2000
@@ -248,7 +249,7 @@ namespace NScumm.Core
             // Also redraw all actors in COMI (see bug #1066329 for details).
             if (_fullRedraw)
             {
-                for (int j = 0; j < Actors.Length; j++)
+                for (int j = 1; j < Actors.Length; j++)
                 {
                     Actors[j].NeedRedraw = true;
                 }

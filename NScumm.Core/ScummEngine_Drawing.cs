@@ -58,44 +58,6 @@ namespace NScumm.Core
 
         protected internal byte[] ShadowPalette { get { return _shadowPalette; } }
 
-        protected void DrawObject()
-        {
-            var obj = GetVarOrDirectWord(OpCodeParameter.Param1);
-
-            int xpos, ypos, state;
-            DrawObjectCore(out xpos, out ypos, out state);
-
-            var idx = GetObjectIndex(obj);
-            if (idx == -1)
-                return;
-
-            var od = _objs[idx];
-            if (xpos != 0xFF)
-            {
-                var wx = od.Walk.X + (xpos * 8) - od.Position.X;
-                var wy = od.Walk.Y + (ypos * 8) - od.Position.Y;
-                od.Walk = new Point((short)wx, (short)wy);
-                od.Position = new Point((short)(xpos * 8), (short)(ypos * 8));
-            }
-
-            AddObjectToDrawQue((byte)idx);
-
-            var pos = od.Position;
-            var w = od.Width;
-            var h = od.Height;
-
-            var i = _objs.Length - 1;
-            do
-            {
-                if (_objs[i].Number != 0 &&
-                    _objs[i].Position == pos &&
-                    _objs[i].Width == w && _objs[i].Height == h)
-                    PutState(_objs[i].Number, 0);
-            } while ((--i) != 0);
-
-            PutState(obj, state);
-        }
-
         protected virtual void DrawObjectCore(out int xpos, out int ypos, out int state)
         {
             xpos = GetVarOrDirectWord(OpCodeParameter.Param2);
@@ -465,8 +427,6 @@ namespace NScumm.Core
             }
 
             ProcessDrawQueue();
-
-            _fullRedraw = false;
         }
 
         /// <summary>

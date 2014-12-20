@@ -653,22 +653,19 @@ namespace NScumm.Core
             CalcMovementFactor(_walkdata.Dest);
         }
 
-        public void DrawCostume(bool hitTestMode = false)
+        public void DrawCostume()
         {
             if (Costume == 0)
                 return;
 
-            if (!hitTestMode)
-            {
-                if (!NeedRedraw)
-                    return;
+            if (!NeedRedraw)
+                return;
 
-                NeedRedraw = false;
-            }
+            NeedRedraw = false;
 
             SetupActorScale();
 
-            ICostumeRenderer bcr = _scumm.CostumeRenderer;
+            var bcr = _scumm.CostumeRenderer;
             PrepareDrawActorCostume(bcr);
 
             // If the actor is partially hidden, redraw it next frame.
@@ -677,12 +674,9 @@ namespace NScumm.Core
                 NeedRedraw = _scumm.Game.Version <= 6;
             }
 
-            if (!hitTestMode)
-            {
-                // Record the vertical extent of the drawn actor
-                Top = bcr.DrawTop;
-                Bottom = bcr.DrawBottom;
-            }
+            // Record the vertical extent of the drawn actor
+            Top = bcr.DrawTop;
+            Bottom = bcr.DrawBottom;
         }
 
         public void StartWalk(Point dest, int dir)
@@ -1088,7 +1082,6 @@ namespace NScumm.Core
             bcr.SetCostume(Costume, 0);
             bcr.SetPalette(_palette);
             bcr.SetFacing(this);
-
 
             if (ForceClip > 0)
                 bcr.ZBuffer = ForceClip;

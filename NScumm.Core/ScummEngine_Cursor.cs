@@ -26,12 +26,13 @@ namespace NScumm.Core
     partial class ScummEngine
     {
         protected readonly Cursor _cursor = new Cursor();
+        protected byte[] _cursorData;
         Point _mousePos;
         byte cursorColor;
         protected int _currentCursor;
         protected sbyte _userPut;
         		
-        static byte[] defaultCursorColors = new byte[] { 15, 15, 7, 8 };
+        static byte[] defaultCursorColors = { 15, 15, 7, 8 };
         ushort[][] _cursorImages = new ushort[4][];
         readonly byte[] _cursorHotspots = new byte[2 * 4];
         static readonly ushort[][] default_cursor_images =

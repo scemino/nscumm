@@ -180,6 +180,7 @@ namespace NScumm.Core
                 //        {
                 //            _res->nukeResource(type, idx);
                 //        }
+                Array.Clear(_strings, 0, _strings.Length);
 
                 InitVariables();
 
@@ -386,7 +387,12 @@ namespace NScumm.Core
                 LoadAndSaveEntry.Create(reader => _cursor.State = (sbyte)reader.ReadByte(), writer => writer.WriteByte(_cursor.State), 8),
                 LoadAndSaveEntry.Create(reader => reader.ReadByte(), writer => writer.WriteByte(0), 8, 20),
                 LoadAndSaveEntry.Create(reader => _currentCursor = reader.ReadByte(), writer => writer.WriteByte(_currentCursor), 8),
-                LoadAndSaveEntry.Create(reader => reader.ReadBytes(8192), writer => writer.Write(new byte[8192]), 20),
+                LoadAndSaveEntry.Create(reader => _cursorData = reader.ReadBytes(8192), writer =>
+                    {
+                        var data = new byte[8192];
+                        Array.Copy(_cursorData, data, _cursorData.Length);
+                        writer.Write(data);
+                    }, 20),
                 LoadAndSaveEntry.Create(reader => _cursor.Width = reader.ReadInt16(), writer => writer.WriteInt16(_cursor.Width), 20),
                 LoadAndSaveEntry.Create(reader => _cursor.Height = reader.ReadInt16(), writer => writer.WriteInt16(_cursor.Height), 20),
                 LoadAndSaveEntry.Create(reader => _cursor.Hotspot = new Point(reader.ReadInt16(), reader.ReadInt16()), writer =>

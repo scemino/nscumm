@@ -544,9 +544,7 @@ namespace NScumm.Core
             {
                 var data = (from o in roomData.Objects
                                         where o.Number == scriptNum
-                                        let entry = (byte)_slots[slotIndex].InventoryEntry
-                                        where o.ScriptOffsets.ContainsKey(entry) || o.ScriptOffsets.ContainsKey(0xFF)
-                                        select o.Script.Data).FirstOrDefault();
+                                        select o.Script.Data).First();
                 _currentScriptData = data;
             }
             else if (scriptNum < NumGlobalScripts)

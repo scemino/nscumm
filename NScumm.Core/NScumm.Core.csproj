@@ -204,6 +204,7 @@
     <Compile Include="Audio\SoftSynth\AdlibMidiDriver_Data.cs" />
     <Compile Include="Audio\SoftSynth\AdlibMidiDriver.cs" />
     <Compile Include="Audio\SoftSynth\Adlib.cs" />
+    <Compile Include="Audio\Player_AD.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="IO\Nscumm.xml">

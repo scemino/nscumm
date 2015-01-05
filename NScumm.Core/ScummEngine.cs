@@ -191,17 +191,24 @@ namespace NScumm.Core
             _currentScript = 0xFF;
             _sound = new Sound(this, mixer);
 
-            MidiDriver nativeMidiDriver = null;
-            var adlibMidiDriver = MidiDriver.CreateMidi(mixer, MidiDriver.DetectDevice((int)MusicType.AdLib));
-            IMuse = NScumm.Core.Audio.IMuse.IMuse.Create(nativeMidiDriver, adlibMidiDriver);
-            MusicEngine = IMuse;
-            MusicEngine.SetMusicVolume(192);
-            IMuse.AddSysexHandler(0x7D, new IMuseSysEx().Do);
+			if (game.GameId == GameId.Loom || game.GameId == GameId.Indy3) 
+			{
+				MusicEngine = new Player_AD(this, mixer);
+			} 
+			else 
+			{
+				MidiDriver nativeMidiDriver = null;
+				var adlibMidiDriver = MidiDriver.CreateMidi (mixer, MidiDriver.DetectDevice ((int)MusicType.AdLib));
+				IMuse = NScumm.Core.Audio.IMuse.IMuse.Create (nativeMidiDriver, adlibMidiDriver);
+				MusicEngine = IMuse;
+				MusicEngine.SetMusicVolume (192);
+				IMuse.AddSysexHandler (0x7D, new IMuseSysEx ().Do);
 //            _imuse.AddSysexHandler(/*IMUSE_SYSEX_ID*/ 0x7D,
 //                (_game.GameId == GameId.SamNMax) ? sysexHandler_SamNMax : sysexHandler_Scumm);
 
-            // Try to use OPL3 mode for Sam&Max when possible.
-            IMuse.Property(ImuseProperty.GameId, (uint)_game.GameId);
+				// Try to use OPL3 mode for Sam&Max when possible.
+				IMuse.Property (ImuseProperty.GameId, (uint)_game.GameId);
+			}
 
             _slots = new ScriptSlot[NumScriptSlot];
             for (int i = 0; i < NumScriptSlot; i++)
@@ -386,7 +393,7 @@ namespace NScumm.Core
             UpdateVariables();
 
             // The music engine generates the timer data for us.
-            _variables[VariableMusicTimer.Value] = IMuse.GetMusicTimer();
+			_variables[VariableMusicTimer.Value] = MusicEngine.GetMusicTimer();
 
             load_game:
             SaveLoad();

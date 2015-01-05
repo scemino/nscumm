@@ -148,7 +148,7 @@ namespace NScumm.Core.Audio.OPL
                 3,  2,  1,  0,
             };
 
-        static byte[] TremoloTable = new byte[ TREMOLO_TABLE ];
+        static byte[] tremoloTable = new byte[ TREMOLO_TABLE ];
         //Start of a channel behind the chip struct start
         static Func<Chip,Channel>[] ChanOffsetTable = new Func<Chip,Channel>[32];
         //Start of an operator behind the chip struct start

@@ -144,12 +144,14 @@ namespace NScumm.Core
 
         void PlaySound(int soundID)
         {
-            // TODO: vs
-//            if (vm.MusicEngine != null)
-//            {
-//                vm.MusicEngine.StartSound(soundID);
-//            }
-            vm.IMuse.StartSound(soundID);
+			var res = vm.ResourceManager.GetSound (soundID);
+			if (res == null)
+				return;
+
+            if (vm.MusicEngine != null)
+            {
+                vm.MusicEngine.StartSound(soundID);
+            }
         }
 
         public void StopAllSounds()
@@ -165,8 +167,8 @@ namespace NScumm.Core
             if (soundQueue.Contains(snd))
                 return true;
 
-            if (vm.IMuse.GetSoundStatus(snd) != 0)
-                return true;
+			if (vm.MusicEngine != null)
+				return vm.MusicEngine.GetSoundStatus (snd) != 0;
 
             return false;
         }
@@ -326,8 +328,8 @@ namespace NScumm.Core
             if (vm.Game.Version < 7)
                 _mixer.StopID(sound);
 
-//            if (vm._musicEngine)
-//                vm->_musicEngine->stopSound(sound);
+            if (vm.MusicEngine!=null)
+                vm.MusicEngine.StopSound(sound);
 
             // TODO:
 //            for (var i = 0; i < soundQueue.Count; i++)

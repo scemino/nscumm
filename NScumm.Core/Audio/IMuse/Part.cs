@@ -207,7 +207,7 @@ namespace NScumm.Core.Audio.IMuse
                 MidiChannel.ChorusLevel(value);
         }
 
-        public   void AllNotesOff()
+        public void AllNotesOff()
         {
             if (MidiChannel == null)
                 return;

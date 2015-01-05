@@ -232,10 +232,6 @@ namespace NScumm.Core.IO
                 {
                     var roomOffset = GetRoomOffset(disk, resource.RoomNum);
                     data = disk.ReadSound(roomOffset + resource.Offset);
-                    if (Game.Version < 5)
-                    {
-                        data = null;
-                    }
                 }
             }
             return data;

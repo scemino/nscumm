@@ -528,8 +528,8 @@ namespace NScumm.Core.Audio.OPL
             for (byte i = 0; i < TREMOLO_TABLE / 2; i++)
             {
                 byte val = (byte)(i << ENV_EXTRA);
-                TremoloTable[i] = val;
-                TremoloTable[TREMOLO_TABLE - 1 - i] = val;
+                tremoloTable[i] = val;
+                tremoloTable[TREMOLO_TABLE - 1 - i] = val;
             }
             //Create a table with offsets of the channels from the start of the chip
             for (var i = 0; i < 32; i++)

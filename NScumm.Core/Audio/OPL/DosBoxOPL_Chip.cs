@@ -357,7 +357,7 @@ namespace NScumm.Core.Audio.OPL
                 //Current vibrato value, runs 4x slower than tremolo
                 vibratoSign = (sbyte)((VibratoTable[vibratoIndex >> 2]) >> 7);
                 vibratoShift = (byte)((VibratoTable[vibratoIndex >> 2] & 7) + vibratoStrength);
-                tremoloValue = (byte)(TremoloTable[tremoloIndex] >> tremoloStrength);
+                tremoloValue = (byte)(tremoloTable[tremoloIndex] >> tremoloStrength);
 
                 //Check hom many samples there can be done before the value changes
                 uint todo = LFO_MAX - lfoCounter;

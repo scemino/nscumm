@@ -89,9 +89,11 @@ namespace NScumm.Core.IO
 
         public override byte[] ReadSound(long offset)
         {
-            _reader.BaseStream.Seek(offset, System.IO.SeekOrigin.Current);
-            var size = _reader.ReadUInt16();
-            _reader.BaseStream.Seek(2, System.IO.SeekOrigin.Current);
+			_reader.BaseStream.Seek(offset, System.IO.SeekOrigin.Begin);
+            var size = _reader.ReadUInt16(); // wa_size
+			_reader.BaseStream.Seek(size-2, System.IO.SeekOrigin.Current);
+			size = _reader.ReadUInt16(); // ad_size
+			_reader.BaseStream.Seek(2, System.IO.SeekOrigin.Current);
             var data = _reader.ReadBytes(size - HeaderSize);
             return data;
         }

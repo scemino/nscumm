@@ -20,7 +20,7 @@
     <WarningLevel>4</WarningLevel>
     <ConsolePause>false</ConsolePause>
     <PlatformTarget>x86</PlatformTarget>
-    <Commandlineparameters>/home/valery/Games/dott/TENTACLE.000</Commandlineparameters>
+    <Commandlineparameters>/home/scemino/Games/dott/TENTACLE.000</Commandlineparameters>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <DebugType>full</DebugType>
@@ -50,12 +50,6 @@
     <Compile Include="Screens\ScummScreen.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\NScumm.Core\NScumm.Core.csproj">
-      <Project>{B33E2D2E-E360-4F10-A82F-AA98500497FD}</Project>
-      <Name>NScumm.Core</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="packages.config" />
     <None Include="SDL.dll" />
     <None Include="Content\Textures\blank.png">
@@ -82,5 +76,11 @@
     <Folder Include="Content\Textures\" />
     <Folder Include="Content\Fonts\" />
     <Folder Include="Screens\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\NScumm.Core\NScumm.Core.csproj">
+      <Project>{B33E2D2E-E360-4F10-A82F-AA98500497FD}</Project>
+      <Name>NScumm.Core</Name>
+    </ProjectReference>
   </ItemGroup>
 </Project>

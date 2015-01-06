@@ -185,8 +185,7 @@ namespace NScumm.Core.IO
                 }
                 else if (chunk.Tag == "AD")
                 {
-                    _reader.BaseStream.Seek(-6, SeekOrigin.Current);
-                    return _reader.ReadBytes((int)chunk.Size);
+                    return _reader.ReadBytes((int)chunk.Size-6);
                 }
                 else
                 {

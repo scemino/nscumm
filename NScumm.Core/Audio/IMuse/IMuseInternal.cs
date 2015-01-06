@@ -1,4 +1,4 @@
-﻿//
+//
 //  IMuseInternal.cs
 //
 //  Author:
@@ -28,7 +28,7 @@ using NScumm.Core.IO;
 
 namespace NScumm.Core.Audio.IMuse
 {
-    /// <summary>
+       /// <summary>
     /// SCUMM implementation of IMuse.
     /// This class implements the IMuse mixin interface for the SCUMM environment.
     /// </summary>
@@ -1192,8 +1192,7 @@ namespace NScumm.Core.Audio.IMuse
                 return -1;
 
             {
-                string str = "DoCommand - ";
-                str += string.Format("{0} ({1}/{2})", a[0], (int)param, (int)cmd);
+                var str = string.Format("DoCommand - {0} ({1}/{2})", a[0], (int)param, (int)cmd);
                 for (i = 1; i < numargs; ++i)
                     str += string.Format(", {0}", a[i]);
                 Debug.WriteLine(str);
@@ -1208,11 +1207,11 @@ namespace NScumm.Core.Audio.IMuse
                             return -1;
                         else
                         {
-                            Debug.WriteLine("IMuse DoCommand(6) - setImuseMasterVolume ({0})", a[1]);
+                            Debug.WriteLine("IMuse DoCommand(6) - SetImuseMasterVolume ({0})", a[1]);
                             return SetImuseMasterVolume((uint)((a[1] << 1) | (a[1] != 0 ? 0 : 1))); // Convert from 0-127 to 0-255
                         }
                     case 7:
-                        Debug.WriteLine("IMuse DoCommand(7) - getMasterVolume ({0})", a[1]);
+                        Debug.WriteLine("IMuse DoCommand(7) - GetMasterVolume ({0})", a[1]);
                         return _master_volume / 2; // Convert from 0-255 to 0-127
                     case 8:
                         return StartSoundInternal(a[1]) ? 0 : -1;
@@ -1257,12 +1256,12 @@ namespace NScumm.Core.Audio.IMuse
                         }
                         return -1;
                     case 16:
-                        Debug.WriteLine("IMuse DoCommand(16) - set_volchan ({0}, {1})", a[1], a[2]);
+                        Debug.WriteLine("IMuse DoCommand(16) - SetVolChan ({0}, {1})", a[1], a[2]);
                         return SetVolchan(a[1], a[2]);
                     case 17:
                         if (_game_id != GameId.SamNMax)
                         {
-                            Debug.WriteLine("IMuse DoCommand(17) - set_channel_volume ({0}, {1})", a[1], a[2]);
+                            Debug.WriteLine("IMuse DoCommand(17) - setChannelVolume ({0}, {1})", a[1], a[2]);
                             return SetChannelVolume((uint)a[1], (uint)a[2]);
                         }
                         else

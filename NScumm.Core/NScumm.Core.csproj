@@ -214,6 +214,7 @@
     <Compile Include="Audio\OPL\DosBox\OplChip.cs" />
     <Compile Include="Audio\IMuse\ScummSysEx.cs" />
     <Compile Include="Audio\IMuse\SamAndMaxSysEx.cs" />
+    <Compile Include="Audio\Player_AD.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="IO\Nscumm.xml">

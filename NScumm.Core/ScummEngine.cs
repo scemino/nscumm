@@ -191,17 +191,21 @@ namespace NScumm.Core
             _currentScript = 0xFF;
             Sound = new Sound(this, mixer);
 
-            MidiDriver nativeMidiDriver = null;
-            var adlibMidiDriver = MidiDriver.CreateMidi(mixer, MidiDriver.DetectDevice((int)MusicType.AdLib));
-            adlibMidiDriver.Property(NScumm.Core.Audio.SoftSynth.AdlibMidiDriver.PropertyOldAdLib, (Game.Version < 5) ? 1 : 0);
-            adlibMidiDriver.Property(NScumm.Core.Audio.SoftSynth.AdlibMidiDriver.PropertyScummOPL3, (Game.GameId == GameId.SamNMax) ? 1 : 0);
-            IMuse = NScumm.Core.Audio.IMuse.IMuse.Create(nativeMidiDriver, adlibMidiDriver);
-            MusicEngine = IMuse;
+			if (game.GameId == GameId.Loom || game.GameId == GameId.Indy3) 
+			{
+				MusicEngine = new Player_AD(this, mixer);
+			} 
+			else 
+			{
+				MidiDriver nativeMidiDriver = null;
+				var adlibMidiDriver = MidiDriver.CreateMidi(mixer, MidiDriver.DetectDevice((int)MusicType.AdLib));
+				adlibMidiDriver.Property(NScumm.Core.Audio.SoftSynth.AdlibMidiDriver.PropertyOldAdLib, (Game.Version < 5) ? 1 : 0);
+				adlibMidiDriver.Property(NScumm.Core.Audio.SoftSynth.AdlibMidiDriver.PropertyScummOPL3, (Game.GameId == GameId.SamNMax) ? 1 : 0);
+				IMuse = NScumm.Core.Audio.IMuse.IMuse.Create(nativeMidiDriver, adlibMidiDriver);
+				MusicEngine = IMuse;
+				IMuse.AddSysexHandler(0x7D, _game.GameId == GameId.SamNMax ? new SysExFunc(new SamAndMaxSysEx().Do) : new SysExFunc(new ScummSysEx().Do));
+			}
             MusicEngine.SetMusicVolume(192);
-            IMuse.AddSysexHandler(0x7D, _game.GameId == GameId.SamNMax ? new SysExFunc(new SamAndMaxSysEx().Do) : new SysExFunc(new ScummSysEx().Do));
-
-            // Try to use OPL3 mode for Sam&Max when possible.
-            IMuse.Property(ImuseProperty.GameId, (uint)_game.GameId);
 
             _slots = new ScriptSlot[NumScriptSlot];
             for (int i = 0; i < NumScriptSlot; i++)
@@ -316,15 +320,15 @@ namespace NScumm.Core
             _opCode = opCode;
             _slots[_currentScript].IsExecuted = true;
 
-            if (Game.Version < 6)
-            {
-                System.Diagnostics.Debug.WriteLine("Room = {1}, Script = {0}, Offset = {4}, Name = {2} [{3:X2}]", 
-                    _slots[_currentScript].Number, 
-                    _roomResource, 
-                    _opCodes.ContainsKey(_opCode) ? _opCodes[opCode].Method.Name : "Unknown", 
-                    _opCode,
-                    _currentPos - 1);
-            }
+//            if (Game.Version < 6)
+//            {
+//                System.Diagnostics.Debug.WriteLine("Room = {1}, Script = {0}, Offset = {4}, Name = {2} [{3:X2}]", 
+//                    _slots[_currentScript].Number, 
+//                    _roomResource, 
+//                    _opCodes.ContainsKey(_opCode) ? _opCodes[opCode].Method.Name : "Unknown", 
+//                    _opCode,
+//                    _currentPos - 1);
+//            }
             _opCodes[opCode]();
         }
 
@@ -386,7 +390,7 @@ namespace NScumm.Core
             UpdateVariables();
 
             // The music engine generates the timer data for us.
-            _variables[VariableMusicTimer.Value] = IMuse.GetMusicTimer();
+			_variables[VariableMusicTimer.Value] = MusicEngine.GetMusicTimer();
 
             load_game:
             SaveLoad();

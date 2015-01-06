@@ -1,4 +1,4 @@
-﻿/*
+/*
  * This file is part of NScumm.
  *
  * NScumm is free software: you can redistribute it and/or modify
@@ -141,6 +141,10 @@ namespace NScumm.Core
 
         void PlaySound(int soundID)
         {
+			var res = vm.ResourceManager.GetSound (soundID);
+			if (res == null)
+				return;
+
             if (vm.MusicEngine != null)
             {
                 vm.MusicEngine.StartSound(soundID);
@@ -160,8 +164,8 @@ namespace NScumm.Core
             if (soundQueue.Contains(snd))
                 return true;
 
-            if (vm.IMuse.GetSoundStatus(snd) != 0)
-                return true;
+			if (vm.MusicEngine != null)
+				return vm.MusicEngine.GetSoundStatus (snd) != 0;
 
             return false;
         }

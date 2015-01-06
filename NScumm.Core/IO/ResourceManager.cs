@@ -232,7 +232,10 @@ namespace NScumm.Core.IO
                 {
                     var roomOffset = GetRoomOffset(disk, resource.RoomNum);
                     data = disk.ReadSound(roomOffset + resource.Offset);
-                    if (Game.Version < 5)
+                    // For games using AD except Indy3 and Loom we are using our iMuse
+                    // implementation. See output initialization in
+                    // ScummEngine::setupMusic for more information.
+                    if (data != null && Game.Version < 5 && Game.GameId != GameId.Indy3 && Game.GameId != GameId.Loom)
                     {
                         data = ConvertADResource(data, sound);
                     }
@@ -416,7 +419,7 @@ namespace NScumm.Core.IO
 
             var ptr = new byte[total_size];
             var bw = new BinaryWriter(new MemoryStream(ptr));
-            br.BaseStream.Seek(6 + 2, SeekOrigin.Begin);
+            br.BaseStream.Seek(2, SeekOrigin.Begin);
             var size = srcPtr.Length - 2;
 
             // 0x80 marks a music resource. Otherwise it's a SFX
@@ -627,6 +630,7 @@ namespace NScumm.Core.IO
                     while (size > 0)
                     {
                         chunk_type = br.ReadByte();
+                        br.BaseStream.Seek(-1, SeekOrigin.Current);
                         if (chunk_type == 1)
                         {
                             br.BaseStream.Seek(15, SeekOrigin.Current);

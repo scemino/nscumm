@@ -213,7 +213,7 @@ namespace NScumm.Core.Audio.SoftSynth
         _opl3Mode = false;
     }
 #endif
-            _opl.Init((uint)Rate);
+            _opl.Init(Rate);
 
             _regCache = new byte[256];
 

@@ -49,7 +49,7 @@ namespace NScumm.Core.Audio.OPL.DosBox
 
         #region IOpl implementation
 
-        public bool Init(uint rate)
+        public void Init(int rate)
         {
             Free();
 
@@ -70,98 +70,11 @@ namespace NScumm.Core.Audio.OPL.DosBox
             }
 
             _rate = rate;
-            return true;
         }
 
-        public void Reset()
+        private void Reset()
         {
             Init(_rate);
-        }
-
-        public void Write(int port, int val)
-        {
-            if ((port & 1) != 0)
-            {
-                switch (_type)
-                {
-                    case OplType.Opl2:
-                    case OplType.Opl3:
-                        if (!_chip[0].Write(_reg.Normal, (byte)val))
-                            _emulator.WriteReg(_reg.Normal, (byte)val);
-                        break;
-                    case OplType.DualOpl2:
-                            // Not a 0x??8 port, then write to a specific port
-                        if (0 == (port & 0x8))
-                        {
-                            byte index = (byte)((port & 2) >> 1);
-                            DualWrite(index, index == 0 ? _reg.Dual1 : _reg.Dual2, (byte)val);
-                        }
-                        else
-                        {
-                            //Write to both ports
-                            DualWrite(0, _reg.Dual1, (byte)val);
-                            DualWrite(1, _reg.Dual2, (byte)val);
-                        }
-                        break;
-                }
-            }
-            else
-            {
-                // Ask the handler to write the address
-                // Make sure to clip them in the right range
-                switch (_type)
-                {
-                    case OplType.Opl2:
-                        _reg.Normal = (ushort)(_emulator.WriteAddr((uint)port, (byte)val) & 0xff);
-                        break;
-                    case OplType.Opl3:
-                        _reg.Normal = (ushort)(_emulator.WriteAddr((uint)port, (byte)val) & 0x1ff);
-                        break;
-                    case OplType.DualOpl2:
-                            // Not a 0x?88 port, when write to a specific side
-                        if (0 == (port & 0x8))
-                        {
-                            byte index = (byte)((port & 2) >> 1);
-                            if (index == 0)
-                            {
-                                _reg.Dual1 = (byte)(val & 0xff);
-                            }
-                            else
-                            {
-                                _reg.Dual2 = (byte)(val & 0xff);
-                            }
-                        }
-                        else
-                        {
-                            _reg.Dual1 = (byte)(val & 0xff);
-                            _reg.Dual2 = (byte)(val & 0xff);
-                        }
-                        break;
-                }
-            }
-        }
-
-        public byte Read(int port)
-        {
-            switch (_type)
-            {
-                case OplType.Opl2:
-                    if (0 == (port & 1))
-                        //Make sure the low bits are 6 on opl2
-                        return (byte)(_chip[0].Read() | 0x6);
-                    break;
-                case OplType.Opl3:
-                    if (0 == (port & 1))
-                        return _chip[0].Read();
-                    break;
-                case OplType.DualOpl2:
-                    // Only return for the lower ports
-                    if ((port & 1) != 0)
-                        return 0xff;
-                    // Make sure the low bits are 6 on opl2
-                    return (byte)(_chip[(port >> 1) & 1].Read() | 0x6);
-            }
-            return 0;
         }
 
         public void WriteReg(int r, int v)
@@ -206,32 +119,6 @@ namespace NScumm.Core.Audio.OPL.DosBox
                     }
                     break;
             }
-        }
-
-        public void DualWrite(byte index, byte reg, byte val)
-        {
-            // Make sure you don't use opl3 features
-            // Don't allow write to disable opl3
-            if (reg == 5)
-                return;
-
-            // Only allow 4 waveforms
-            if (reg >= 0xE0 && reg <= 0xE8)
-                val &= 3;
-
-            // Write to the timer?
-            if (_chip[index].Write(reg, val))
-                return;
-
-            // Enabling panning
-            if (reg >= 0xC0 && reg <= 0xC8)
-            {
-                val &= 15;
-                val |= (byte)(index != 0 ? 0xA0 : 0x50);
-            }
-
-            uint fullReg = (uint)(reg + (index != 0 ? 0x100 : 0));
-            _emulator.WriteReg(fullReg, val);
         }
 
         public void ReadBuffer(short[] buffer, int pos, int length)
@@ -285,6 +172,118 @@ namespace NScumm.Core.Audio.OPL.DosBox
         }
 
         #endregion
+
+        private void DualWrite(byte index, byte reg, byte val)
+        {
+            // Make sure you don't use opl3 features
+            // Don't allow write to disable opl3
+            if (reg == 5)
+                return;
+
+            // Only allow 4 waveforms
+            if (reg >= 0xE0 && reg <= 0xE8)
+                val &= 3;
+
+            // Write to the timer?
+            if (_chip[index].Write(reg, val))
+                return;
+
+            // Enabling panning
+            if (reg >= 0xC0 && reg <= 0xC8)
+            {
+                val &= 15;
+                val |= (byte)(index != 0 ? 0xA0 : 0x50);
+            }
+
+            uint fullReg = (uint)(reg + (index != 0 ? 0x100 : 0));
+            _emulator.WriteReg(fullReg, val);
+        }
+
+        private byte Read(int port)
+        {
+            switch (_type)
+            {
+                case OplType.Opl2:
+                    if (0 == (port & 1))
+                        //Make sure the low bits are 6 on opl2
+                        return (byte)(_chip[0].Read() | 0x6);
+                    break;
+                case OplType.Opl3:
+                    if (0 == (port & 1))
+                        return _chip[0].Read();
+                    break;
+                case OplType.DualOpl2:
+                    // Only return for the lower ports
+                    if ((port & 1) != 0)
+                        return 0xff;
+                    // Make sure the low bits are 6 on opl2
+                    return (byte)(_chip[(port >> 1) & 1].Read() | 0x6);
+            }
+            return 0;
+        }
+
+        private void Write(int port, int val)
+        {
+            if ((port & 1) != 0)
+            {
+                switch (_type)
+                {
+                    case OplType.Opl2:
+                    case OplType.Opl3:
+                        if (!_chip[0].Write(_reg.Normal, (byte)val))
+                            _emulator.WriteReg(_reg.Normal, (byte)val);
+                        break;
+                    case OplType.DualOpl2:
+                        // Not a 0x??8 port, then write to a specific port
+                        if (0 == (port & 0x8))
+                        {
+                            byte index = (byte)((port & 2) >> 1);
+                            DualWrite(index, index == 0 ? _reg.Dual1 : _reg.Dual2, (byte)val);
+                        }
+                        else
+                        {
+                            //Write to both ports
+                            DualWrite(0, _reg.Dual1, (byte)val);
+                            DualWrite(1, _reg.Dual2, (byte)val);
+                        }
+                        break;
+                }
+            }
+            else
+            {
+                // Ask the handler to write the address
+                // Make sure to clip them in the right range
+                switch (_type)
+                {
+                    case OplType.Opl2:
+                        _reg.Normal = (ushort)(_emulator.WriteAddr((uint)port, (byte)val) & 0xff);
+                        break;
+                    case OplType.Opl3:
+                        _reg.Normal = (ushort)(_emulator.WriteAddr((uint)port, (byte)val) & 0x1ff);
+                        break;
+                    case OplType.DualOpl2:
+                        // Not a 0x?88 port, when write to a specific side
+                        if (0 == (port & 0x8))
+                        {
+                            byte index = (byte)((port & 2) >> 1);
+                            if (index == 0)
+                            {
+                                _reg.Dual1 = (byte)(val & 0xff);
+                            }
+                            else
+                            {
+                                _reg.Dual2 = (byte)(val & 0xff);
+                            }
+                        }
+                        else
+                        {
+                            _reg.Dual1 = (byte)(val & 0xff);
+                            _reg.Dual2 = (byte)(val & 0xff);
+                        }
+                        break;
+                }
+            }
+        }
 
         void Free()
         {
@@ -434,11 +433,11 @@ namespace NScumm.Core.Audio.OPL.DosBox
                 if (chNum >= 18)
                     continue;
 
-                opOffsetTable[i] = new Func<Chip,Operator>(c => c.Channels[chNum].Ops[opNum]);
+                opOffsetTable[i] = new Func<Chip,Operator>(c => chanOffsetTable[chNum](c).Ops[opNum]);
             }
         }
 
-        uint _rate;
+        int _rate;
         OplType _type;
 
         Chip _emulator;

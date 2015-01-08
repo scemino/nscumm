@@ -211,7 +211,7 @@ namespace NScumm.Core.Audio.OPL.DosBox
                 }
             }
 
-            public void Setup(uint rate)
+            public void Setup(int rate)
             {
                 double scale = OPLRATE / (double)rate;
 

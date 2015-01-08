@@ -26,19 +26,13 @@ namespace NScumm.Core.Audio.OPL
 
     public interface IOpl
     {
-        bool Init(uint rate);
-
-        void Reset();
-
-        void Write(int a, int v);
-
-        byte Read(int a);
+        void Init(int rate);
 
         void WriteReg(int r, int v);
 
         void ReadBuffer(short[] buffer, int pos, int length);
 
-        bool IsStereo{ get; }
+        bool IsStereo { get; }
     }
 }
 

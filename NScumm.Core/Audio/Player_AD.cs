@@ -37,10 +37,7 @@ namespace NScumm.Core
 			// TODO: vs OPL
 			//        _opl2 = OPL::Config::create();
 			_opl2 = new DosBoxOPL(OplType.Opl2);
-			if (!_opl2.Init((uint)_rate))
-			{
-				throw new NotSupportedException("Could not initialize OPL2 emulator");
-			}
+            _opl2.Init(_rate);
 
 			_samplesPerCallback = _rate / AD_CALLBACK_FREQUENCY;
 			_samplesPerCallbackRemainder = _rate % AD_CALLBACK_FREQUENCY;

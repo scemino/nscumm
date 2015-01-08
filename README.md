@@ -61,11 +61,15 @@ Alt-Enter              - Toggles full screen/windowed
 Known Issues
 -------------------------
 
-No music/IMUSE not implemented
-
 Screen effects not implemented
 
+Music of Monkey Island 1 is weird
+
+Cursor is sometimes not transparent
+
 And many other things ???
+
+Missing games in your language or anything else ? Feel free to contact me at scemino74 at gmail
 
 Screenshots
 -----------
@@ -87,7 +91,7 @@ Tools
 License
 -------
 
-Copyright (C) 2012-2014  Valéry Sablonnière
+Copyright (C) 2012-2015  Valéry Sablonnière
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

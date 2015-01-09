@@ -518,6 +518,9 @@ namespace NScumm.Core.IO
                     case "ADL ":
                         _reader.BaseStream.Seek(-8, SeekOrigin.Current);
                         return _reader.ReadBytes((int)size + 8);
+                    case "MIDI":
+                        _reader.BaseStream.Seek(-8, SeekOrigin.Current);
+                        return _reader.ReadBytes((int)size + 8);
                     case "SOU ":
                         break;
                     default:

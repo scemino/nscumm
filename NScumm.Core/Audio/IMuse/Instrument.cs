@@ -79,8 +79,7 @@ namespace NScumm.Core.Audio.IMuse
             if (program > 127)
                 return;
             _type = InstrumentType.Program;
-            throw new NotImplementedException();
-            //_instrument = new Instrument_Program(program, mt32);
+            _instrument = new InstrumentProgram(program, mt32);
         }
 
         public void Adlib(byte[] instrument)

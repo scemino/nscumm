@@ -215,6 +215,7 @@
     <Compile Include="Audio\IMuse\ScummSysEx.cs" />
     <Compile Include="Audio\IMuse\SamAndMaxSysEx.cs" />
     <Compile Include="Audio\Player_AD.cs" />
+    <Compile Include="Audio\IMuse\InstrumentProgram.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="IO\Nscumm.xml">

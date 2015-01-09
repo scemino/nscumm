@@ -203,7 +203,8 @@ namespace NScumm.Core
 				adlibMidiDriver.Property(NScumm.Core.Audio.SoftSynth.AdlibMidiDriver.PropertyScummOPL3, (Game.GameId == GameId.SamNMax) ? 1 : 0);
 				IMuse = NScumm.Core.Audio.IMuse.IMuse.Create(nativeMidiDriver, adlibMidiDriver);
 				MusicEngine = IMuse;
-				IMuse.AddSysexHandler(0x7D, _game.GameId == GameId.SamNMax ? new SysExFunc(new SamAndMaxSysEx().Do) : new SysExFunc(new ScummSysEx().Do));
+                IMuse.Property(ImuseProperty.GameId, (uint)Game.GameId);
+                IMuse.AddSysexHandler(0x7D, Game.GameId == GameId.SamNMax ? new SysExFunc(new SamAndMaxSysEx().Do) : new SysExFunc(new ScummSysEx().Do));
 			}
             MusicEngine.SetMusicVolume(192);
 

@@ -48,5 +48,5 @@ namespace NScumm.Core.Audio.IMuse
 
         public bool IsValid { get { return true; } }
     }
-    
+
 }

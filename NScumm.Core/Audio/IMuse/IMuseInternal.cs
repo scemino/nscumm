@@ -28,7 +28,7 @@ using NScumm.Core.IO;
 
 namespace NScumm.Core.Audio.IMuse
 {
-       /// <summary>
+    /// <summary>
     /// SCUMM implementation of IMuse.
     /// This class implements the IMuse mixin interface for the SCUMM environment.
     /// </summary>
@@ -45,6 +45,8 @@ namespace NScumm.Core.Audio.IMuse
         protected TimerCallbackInfo _timer_info_native;
     
         protected GameId _game_id;
+
+        public GameId GameId { get { return _game_id; } }
     
         // Plug-in SysEx handling. Right now this only supports one
         // custom SysEx handler for the hardcoded IMUSE_SYSEX_ID

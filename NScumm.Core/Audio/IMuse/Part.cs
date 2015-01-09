@@ -303,16 +303,15 @@ namespace NScumm.Core.Audio.IMuse
                 // Sam&Max does not have detune, so we just ignore this here. We still get
                 // this called, since Sam&Max uses the same controller for a different
                 // purpose.
-                // TODO: part
-//                if (Se.GameId == GID_SAMNMAX)
-//                {
-//                    #if false
-//                                        if (MidiChannel) {
-//                                        MidiChannel->controlChange(17, detune + 0x40);
-//                        }
-//                    #endif
-//                }
-//                else
+                if (Se.GameId == NScumm.Core.IO.GameId.SamNMax)
+                {
+                    #if false
+                                        if (MidiChannel) {
+                                        MidiChannel->controlChange(17, detune + 0x40);
+                        }
+                    #endif
+                }
+                else
                 {
                     _detune_eff = Clamp((_detune = value) + Player.Detune, -128, 127);
                     SendPitchBend();

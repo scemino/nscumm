@@ -304,40 +304,52 @@ namespace NScumm.Core.IO
 
         const int MIDIHeaderSize = 46;
 
-        static void WriteMIDIHeader(BinaryWriter bw, string type, int ppqn, int totalSize)
+        static void WriteMIDIHeader(byte[] input, string type, int ppqn, int totalSize)
         {
-            bw.WriteBytes(System.Text.Encoding.ASCII.GetBytes(type), 4);
-            bw.WriteUInt32BigEndian((uint)totalSize);
-            bw.WriteBytes(System.Text.Encoding.ASCII.GetBytes("MDhd"), 4);
-            bw.Write(new byte[]{ 0, 0, 0, 8 });
-            bw.WriteBytes(new byte[8], 8);
-            bw.WriteBytes(System.Text.Encoding.ASCII.GetBytes("MThd"), 4);
-            bw.Write(new byte[]{ 0, 0, 0, 6 });
-            bw.Write(new byte[]{ 0, 0, 0, 1 }); // MIDI format 0 with 1 track
-            bw.WriteByte(ppqn >> 8);
-            bw.WriteByte(ppqn & 0xFF);
-            bw.WriteBytes(System.Text.Encoding.ASCII.GetBytes("MTrk"), 4);
-            bw.WriteUInt32BigEndian((uint)totalSize);
+            int pos = 0;
+            Array.Copy(System.Text.Encoding.ASCII.GetBytes(type), 0, input, pos, 4);
+            pos += 4;
+            Array.Copy(ScummHelper.GetBytesBigEndian((uint)totalSize), 0, input, pos, 4);
+            pos += 4;
+            Array.Copy(System.Text.Encoding.ASCII.GetBytes("MDhd"), 0, input, pos, 4);
+            pos += 4;
+            Array.Copy(new byte[]{ 0, 0, 0, 8 }, 0, input, pos, 4);
+            pos += 4;
+            Array.Copy(new byte[8], 0, input, pos, 8);
+            pos += 8;
+            Array.Copy(System.Text.Encoding.ASCII.GetBytes("MThd"), 0, input, pos, 4);
+            pos += 4;
+            Array.Copy(new byte[]{ 0, 0, 0, 6 }, 0, input, pos, 4);
+            pos += 4;
+            Array.Copy(new byte[]{ 0, 0, 0, 1 }, 0, input, pos, 4);
+            pos += 4; // MIDI format 0 with 1 track
+            input[pos++] = (byte)(ppqn >> 8);
+            input[pos++] = (byte)(ppqn & 0xFF);
+            Array.Copy(System.Text.Encoding.ASCII.GetBytes("MTrk"), 0, input, pos, 4);
+            pos += 4;
+            Array.Copy(ScummHelper.GetBytesBigEndian((uint)totalSize), 0, input, pos, 4);
+            pos += 4;
         }
 
-        static void WriteVLQ(BinaryWriter bw, int value)
+        static int WriteVLQ(byte[] ptr, int outPos, int value)
         {
             if (value > 0x7f)
             {
                 if (value > 0x3fff)
                 {
-                    bw.WriteByte((value >> 14) | 0x80);
+                    ptr[outPos++] = (byte)((value >> 14) | 0x80);
                     value &= 0x3fff;
                 }
-                bw.WriteByte((value >> 7) | 0x80);
+                ptr[outPos++] = (byte)((value >> 7) | 0x80);
                 value &= 0x7f;
             }
-            bw.WriteByte(value);
+            ptr[outPos++] = (byte)value;
+            return outPos;
         }
 
-        static int ConvertExtraflags(byte[] ptr, int destIndex, byte[] srcPtr)
+        static int ConvertExtraflags(byte[] ptr, int destIndex, byte[] srcPtr, int inPos)
         {
-            int flags = srcPtr[0];
+            int flags = srcPtr[inPos + 0];
 
             int t1, t2, t3, t4, time;
             int v1, v2, v3;
@@ -345,12 +357,12 @@ namespace NScumm.Core.IO
             if (0 == (flags & 0x80))
                 return -1;
 
-            t1 = (srcPtr[1] & 0xf0) >> 3;
-            t2 = (srcPtr[2] & 0xf0) >> 3;
-            t3 = (srcPtr[3] & 0xf0) >> 3 | ((flags & 0x40) != 0 ? 0x80 : 0);
-            t4 = (srcPtr[3] & 0x0f) << 1;
-            v1 = (srcPtr[1] & 0x0f);
-            v2 = (srcPtr[2] & 0x0f);
+            t1 = (srcPtr[inPos + 1] & 0xf0) >> 3;
+            t2 = (srcPtr[inPos + 2] & 0xf0) >> 3;
+            t3 = (srcPtr[inPos + 3] & 0xf0) >> 3 | ((flags & 0x40) != 0 ? 0x80 : 0);
+            t4 = (srcPtr[inPos + 3] & 0x0f) << 1;
+            v1 = (srcPtr[inPos + 1] & 0x0f);
+            v2 = (srcPtr[inPos + 2] & 0x0f);
             v3 = 31;
             if ((flags & 0x7) == 0)
             {
@@ -394,8 +406,8 @@ namespace NScumm.Core.IO
             + num_steps_table[t3 & 0x7f] + num_steps_table[t4];
             if ((flags & 0x20) != 0)
             {
-                int playtime = ((srcPtr[4] >> 4) & 0xf) * 118 +
-                               (srcPtr[4] & 0xf) * 8;
+                int playtime = ((srcPtr[inPos + 4] >> 4) & 0xf) * 118 +
+                    (srcPtr[inPos + 4] & 0xf) * 8;
                 if (playtime > time)
                     time = playtime;
             }
@@ -406,46 +418,45 @@ namespace NScumm.Core.IO
             return time;
         }
 
-        byte[] ConvertADResource(byte[] srcPtr, int idx)
+        byte[] ConvertADResource(byte[] input, int idx)
         {
-            var br = new BinaryReader(new MemoryStream(srcPtr));
-
             // We will ignore the PPQN in the original resource, because
             // it's invalid anyway. We use a constant PPQN of 480.
             const int ppqn = 480;
             int dw;
-            int total_size = MIDIHeaderSize + 7 + 8 * ADLIB_INSTR_MIDI_HACK.Length + srcPtr.Length;
+            int total_size = MIDIHeaderSize + 7 + 8 * ADLIB_INSTR_MIDI_HACK.Length + input.Length;
             total_size += 24;   // Up to 24 additional bytes are needed for the jump sysex
 
             var ptr = new byte[total_size];
-            var bw = new BinaryWriter(new MemoryStream(ptr));
-            br.BaseStream.Seek(2, SeekOrigin.Begin);
-            var size = srcPtr.Length - 2;
+
+            var size = input.Length - 2;
+            int inputPos = 2;
+            int outPos = 0;
 
             // 0x80 marks a music resource. Otherwise it's a SFX
-            var type = br.ReadByte();
-            if (type == 0x80)
+            if (input[inputPos] == 0x80)
             {
-                WriteMIDIHeader(bw, "ADL ", ppqn, total_size);
+                WriteMIDIHeader(ptr, "ADL ", ppqn, total_size);
+                outPos += MIDIHeaderSize;
 
                 // The "speed" of the song
-                var ticks = br.ReadByte();
+                var ticks = input[inputPos + 1];
 
                 // Flag that tells us whether we should loop the song (0) or play it only once (1)
-                var play_once = br.ReadByte();
-                br.BaseStream.Seek(6, SeekOrigin.Current);
+                var play_once = input[inputPos + 2];
 
                 // Number of instruments used
-                var num_instr = br.ReadByte(); // Normally 8
+                var num_instr = input[inputPos + 8]; // Normally 8
 
                 // copy the pointer to instrument data
-                var channel = br.ReadBytes(8);
-                var instr = br.ReadBytes(8 * 16);
+                var channelPos = inputPos + 9;
+                var instrPos = inputPos + 0x11;
 
                 // skip over the rest of the header and copy the MIDI data into a buffer
+                inputPos += 0x11 + 8 * 16;
                 size -= 0x11 + 8 * 16;
 
-                var trackPos = br.BaseStream.Position;
+                var trackPos = inputPos;
 
                 // Convert the ticks into a MIDI tempo.
                 // Unfortunate LOOM and INDY3 have different interpretation
@@ -466,10 +477,11 @@ namespace NScumm.Core.IO
                 Debug.WriteLine("  ticks = {0}, speed = {1}", ticks, dw);
 
                 // Write a tempo change Meta event
-                bw.WriteBytes(new byte[]{ 0x00, 0xFF, 0x51, 0x03 }, 4);
-                bw.Write((byte)((dw >> 16) & 0xFF));
-                bw.Write((byte)((dw >> 8) & 0xFF));
-                bw.Write((byte)(dw & 0xFF));
+                Array.Copy(new byte[]{ 0x00, 0xFF, 0x51, 0x03 }, 0, ptr, outPos, 4);
+                outPos += 4;
+                ptr[outPos++] = (byte)((dw >> 16) & 0xFF);
+                ptr[outPos++] = (byte)((dw >> 8) & 0xFF);
+                ptr[outPos++] = (byte)(dw & 0xFF);
 
                 // Copy our hardcoded instrument table into it
                 // Then, convert the instrument table as given in this song resource
@@ -479,78 +491,76 @@ namespace NScumm.Core.IO
                 /* now fill in the instruments */
                 for (var i = 0; i < num_instr; i++)
                 {
-                    var ch = channel[i] - 1;
+                    var ch = input[channelPos + i] - 1;
                     if (ch < 0 || ch > 15)
                         continue;
 
-                    if (instr[i * 16 + 13] != 0)
+                    if (input[instrPos + i * 16 + 13] != 0)
                         Debug.WriteLine("Sound {0} instrument {1} uses percussion", idx, i);
 
                     Debug.WriteLine("Sound {0}: instrument {1} on channel {2}.", idx, i, ch);
 
-                    var p = (byte[])ADLIB_INSTR_MIDI_HACK.Clone();
+                    Array.Copy(ADLIB_INSTR_MIDI_HACK, 0, ptr, outPos, ADLIB_INSTR_MIDI_HACK.Length);
 
-                    p[5] += (byte)ch;
-                    p[28] += (byte)ch;
-                    p[92] += (byte)ch;
+                    ptr[outPos + 5] += (byte)ch;
+                    ptr[outPos + 28] += (byte)ch;
+                    ptr[outPos + 92] += (byte)ch;
 
                     /* mod_characteristics */
-                    p[30 + 0] = (byte)((instr[i * 16 + 3] >> 4) & 0xf);
-                    p[30 + 1] = (byte)(instr[i * 16 + 3] & 0xf);
+                    ptr[outPos + 30 + 0] = (byte)((input[instrPos + i * 16 + 3] >> 4) & 0xf);
+                    ptr[outPos + 30 + 1] = (byte)(input[instrPos + i * 16 + 3] & 0xf);
 
                     /* mod_scalingOutputLevel */
-                    p[30 + 2] = (byte)((instr[i * 16 + 4] >> 4) & 0xf);
-                    p[30 + 3] = (byte)(instr[i * 16 + 4] & 0xf);
+                    ptr[outPos + 30 + 2] = (byte)((input[instrPos + i * 16 + 4] >> 4) & 0xf);
+                    ptr[outPos + 30 + 3] = (byte)(input[instrPos + i * 16 + 4] & 0xf);
 
                     /* mod_attackDecay */
-                    p[30 + 4] = (byte)(((~instr[i * 16 + 5]) >> 4) & 0xf);
-                    p[30 + 5] = (byte)((~instr[i * 16 + 5]) & 0xf);
+                    ptr[outPos + 30 + 4] = (byte)(((~input[instrPos + i * 16 + 5]) >> 4) & 0xf);
+                    ptr[outPos + 30 + 5] = (byte)((~input[instrPos + i * 16 + 5]) & 0xf);
 
                     /* mod_sustainRelease */
-                    p[30 + 6] = (byte)(((~instr[i * 16 + 6]) >> 4) & 0xf);
-                    p[30 + 7] = (byte)((~instr[i * 16 + 6]) & 0xf);
+                    ptr[outPos + 30 + 6] = (byte)(((~input[instrPos + i * 16 + 6]) >> 4) & 0xf);
+                    ptr[outPos + 30 + 7] = (byte)((~input[instrPos + i * 16 + 6]) & 0xf);
 
                     /* mod_waveformSelect */
-                    p[30 + 8] = (byte)((instr[i * 16 + 7] >> 4) & 0xf);
-                    p[30 + 9] = (byte)(instr[i * 16 + 7] & 0xf);
+                    ptr[outPos + 30 + 8] = (byte)((input[instrPos + i * 16 + 7] >> 4) & 0xf);
+                    ptr[outPos + 30 + 9] = (byte)(input[instrPos + i * 16 + 7] & 0xf);
 
                     /* car_characteristic */
-                    p[30 + 10] = (byte)((instr[i * 16 + 8] >> 4) & 0xf);
-                    p[30 + 11] = (byte)(instr[i * 16 + 8] & 0xf);
+                    ptr[outPos + 30 + 10] = (byte)((input[instrPos + i * 16 + 8] >> 4) & 0xf);
+                    ptr[outPos + 30 + 11] = (byte)(input[instrPos + i * 16 + 8] & 0xf);
 
                     /* car_scalingOutputLevel */
-                    p[30 + 12] = (byte)((instr[i * 16 + 9] >> 4) & 0xf);
-                    p[30 + 13] = (byte)(instr[i * 16 + 9] & 0xf);
+                    ptr[outPos + 30 + 12] = (byte)((input[instrPos + i * 16 + 9] >> 4) & 0xf);
+                    ptr[outPos + 30 + 13] = (byte)(input[instrPos + i * 16 + 9] & 0xf);
 
                     /* car_attackDecay */
-                    p[30 + 14] = (byte)(((~instr[i * 16 + 10]) >> 4) & 0xf);
-                    p[30 + 15] = (byte)((~instr[i * 16 + 10]) & 0xf);
+                    ptr[outPos + 30 + 14] = (byte)(((~input[instrPos + i * 16 + 10]) >> 4) & 0xf);
+                    ptr[outPos + 30 + 15] = (byte)((~input[instrPos + i * 16 + 10]) & 0xf);
 
                     /* car_sustainRelease */
-                    p[30 + 16] = (byte)(((~instr[i * 16 + 11]) >> 4) & 0xf);
-                    p[30 + 17] = (byte)((~instr[i * 16 + 11]) & 0xf);
+                    ptr[outPos + 30 + 16] = (byte)(((~input[instrPos + i * 16 + 11]) >> 4) & 0xf);
+                    ptr[outPos + 30 + 17] = (byte)((~input[instrPos + i * 16 + 11]) & 0xf);
 
                     /* car_waveFormSelect */
-                    p[30 + 18] = (byte)((instr[i * 16 + 12] >> 4) & 0xf);
-                    p[30 + 19] = (byte)(instr[i * 16 + 12] & 0xf);
+                    ptr[outPos + 30 + 18] = (byte)((input[instrPos + i * 16 + 12] >> 4) & 0xf);
+                    ptr[outPos + 30 + 19] = (byte)(input[instrPos + i * 16 + 12] & 0xf);
 
                     /* feedback */
-                    p[30 + 20] = (byte)((instr[i * 16 + 2] >> 4) & 0xf);
-                    p[30 + 21] = (byte)(instr[i * 16 + 2] & 0xf);
+                    ptr[outPos + 30 + 20] = (byte)((input[instrPos + i * 16 + 2] >> 4) & 0xf);
+                    ptr[outPos + 30 + 21] = (byte)(input[instrPos + i * 16 + 2] & 0xf);
 
-                    bw.Write(p);
+                    outPos += ADLIB_INSTR_MIDI_HACK.Length;
                 }
 
                 // There is a constant delay of ppqn/3 before the music starts.
                 if ((ppqn / 3) >= 128)
-                    bw.WriteByte(((ppqn / 3) >> 7) | 0x80);
-                bw.WriteByte(ppqn / 3 & 0x7f);
+                    ptr[outPos++] = (byte)(((ppqn / 3) >> 7) | 0x80);
+                ptr[outPos++] = (byte)(ppqn / 3 & 0x7f);
 
                 // Now copy the actual music data
-                br.BaseStream.Position = trackPos;
-                var track = br.ReadBytes(size);
-                bw.Write(track);
-                
+                Array.Copy(input, trackPos, ptr, outPos, size);
+                outPos += size;
 
                 if (play_once == 0)
                 {
@@ -561,48 +571,53 @@ namespace NScumm.Core.IO
                     // and has no advantage either.
 
                     // First, find the track end
-                    var end = bw.BaseStream.Position;
-                    bw.BaseStream.Position -= size;
-                    for (; bw.BaseStream.Position < end; bw.BaseStream.Position++)
+                    var endPos = outPos;
+                    outPos -= size;
+                    for (; outPos < endPos; outPos++)
                     {
-                        var pos = bw.BaseStream.Position;
-                        if (bw.BaseStream.ReadByte() == 0xff && bw.BaseStream.ReadByte() == 0x2f)
+                        if (ptr[outPos] == 0xff && ptr[outPos + 1] == 0x2f)
                             break;
-                        bw.BaseStream.Position = pos;
                     }
+                    Debug.Assert(outPos < endPos);
 
                     // Now insert the jump. The jump offset is measured in ticks.
                     // We have ppqn/3 ticks before the first note.
 
                     const int jump_offset = ppqn / 3;
                     // maybe_jump
-                    bw.Write(new byte[]{ 0xf0, 0x13, 0x7d, 0x30, 0x00 }); 
+                    Array.Copy(new byte[]{ 0xf0, 0x13, 0x7d, 0x30, 0x00 }, 0, ptr, outPos, 5);
+                    outPos += 5;
                     // cmd -> 0 means always jump
-                    bw.Write(new byte[]{ 0x00, 0x00 });
+                    Array.Copy(new byte[]{ 0x00, 0x00 }, 0, ptr, outPos, 2);
+                    outPos += 2;
                     // track -> there is only one track, 0
-                    bw.Write(new byte[]{ 0x00, 0x00, 0x00, 0x00 }); 
+                    Array.Copy(new byte[]{ 0x00, 0x00, 0x00, 0x00 }, 0, ptr, outPos, 4);
+                    outPos += 4;
                     // beat -> for now, 1 (first beat)
-                    bw.Write(new byte[]{ 0x00, 0x00, 0x00, 0x01 }); 
+                    Array.Copy(new byte[]{ 0x00, 0x00, 0x00, 0x01 }, 0, ptr, outPos, 4);
+                    outPos += 4;
+
                     // Ticks
-                    bw.Write((byte)((jump_offset >> 12) & 0x0F));
-                    bw.Write((byte)((jump_offset >> 8) & 0x0F));
-                    bw.Write((byte)((jump_offset >> 4) & 0x0F));
-                    bw.Write((byte)(jump_offset & 0x0F));
+                    ptr[outPos++] = (byte)((jump_offset >> 12) & 0x0F);
+                    ptr[outPos++] = (byte)((jump_offset >> 8) & 0x0F);
+                    ptr[outPos++] = (byte)((jump_offset >> 4) & 0x0F);
+                    ptr[outPos++] = (byte)(jump_offset & 0x0F);
+
                     // sysex end marker
-                    bw.Write(new byte[]{ 0x00, 0xf7 });
+                    Array.Copy(new byte[]{ 0x00, 0xf7 }, 0, ptr, outPos, 2);
                 }
             }
             else
             {
-                br.BaseStream.Position--;
                 // This is a sfx resource.  First parse it quickly to find the parallel
                 // tracks.
-                WriteMIDIHeader(bw, "ASFX", ppqn, total_size);
+                WriteMIDIHeader(ptr, "ASFX", ppqn, total_size);
+                outPos += MIDIHeaderSize;
 
                 var current_instr = new byte[3][];
                 var current_note = new int[3];
                 var track_time = new int[3];
-                var track_data = new long[3];
+                var track_data = new int[3];
 
                 int track_ctr = 0;
                 byte chunk_type = 0;
@@ -611,10 +626,11 @@ namespace NScumm.Core.IO
                 // Write a tempo change Meta event
                 // 473 / 4 Hz, convert to micro seconds.
                 dw = 1000000 * ppqn * 4 / 473;
-                bw.WriteBytes(new byte[]{ 0x00, 0xFF, 0x51, 0x03 }, 4);
-                bw.WriteByte(((dw >> 16) & 0xFF));
-                bw.WriteByte(((dw >> 8) & 0xFF));
-                bw.WriteByte((dw & 0xFF));
+                Array.Copy(new byte[]{ 0x00, 0xFF, 0x51, 0x03 }, 0, ptr, outPos, 4);
+                outPos += 4;
+                ptr[outPos++] = (byte)((dw >> 16) & 0xFF);
+                ptr[outPos++] = (byte)((dw >> 8) & 0xFF);
+                ptr[outPos++] = (byte)(dw & 0xFF);
 
                 for (var i = 0; i < 3; i++)
                 {
@@ -624,26 +640,25 @@ namespace NScumm.Core.IO
                 while (size > 0)
                 {
                     Debug.Assert(track_ctr < 3);
-                    track_data[track_ctr] = br.BaseStream.Position;
+                    track_data[track_ctr] = inputPos;
                     track_time[track_ctr] = 0;
                     track_ctr++;
                     while (size > 0)
                     {
-                        chunk_type = br.ReadByte();
-                        br.BaseStream.Seek(-1, SeekOrigin.Current);
+                        chunk_type = input[inputPos];
                         if (chunk_type == 1)
                         {
-                            br.BaseStream.Seek(15, SeekOrigin.Current);
+                            inputPos += 15;
                             size -= 15;
                         }
                         else if (chunk_type == 2)
                         {
-                            br.BaseStream.Seek(11, SeekOrigin.Current);
+                            inputPos += 11;
                             size -= 11;
                         }
                         else if (chunk_type == 0x80)
                         {
-                            br.BaseStream.Seek(1, SeekOrigin.Current);
+                            inputPos++;
                             size--;
                         }
                         else
@@ -653,7 +668,7 @@ namespace NScumm.Core.IO
                     }
                     if (chunk_type == 0xff)
                         break;
-                    br.BaseStream.Seek(1, SeekOrigin.Current);
+                    inputPos++;
                 }
 
                 int curtime = 0;
@@ -673,17 +688,17 @@ namespace NScumm.Core.IO
                     if (mintime < 0)
                         break;
 
-                    br.BaseStream.Seek(track_data[ch], SeekOrigin.Begin);
-                    chunk_type = br.ReadByte();
+                    inputPos = track_data[ch];
+                    chunk_type = input[inputPos];
 
                     if (current_note[ch] >= 0)
                     {
                         delay = mintime - curtime;
                         curtime = mintime;
-                        WriteVLQ(bw, delay);
-                        bw.WriteByte(0x80 + ch);// key off channel;
-                        bw.WriteByte(current_note[ch]);
-                        bw.WriteByte(0);
+                        outPos = WriteVLQ(ptr, outPos, delay);
+                        ptr[outPos++] = (byte)(0x80 + ch);// key off channel;
+                        ptr[outPos++] = (byte)current_note[ch];
+                        ptr[outPos++] = 0;
                         current_note[ch] = -1;
                     }
 
@@ -691,72 +706,69 @@ namespace NScumm.Core.IO
                     {
                         case 1:
                                 /* Instrument definition */
-                            br.BaseStream.Seek(1, SeekOrigin.Current);
-                            current_instr[ch] = br.ReadBytes(14);
+                            current_instr[ch] = new byte[14];
+                            Array.Copy(input, inputPos + 1, current_instr[ch], 0, 14);
+                            inputPos += 15;
                             break;
 
                         case 2:
                                 /* tone/parammodulation */
-                            var tmp = new byte[ADLIB_INSTR_MIDI_HACK.Length];
-                            Array.Copy(ADLIB_INSTR_MIDI_HACK, 0, tmp, 0, ADLIB_INSTR_MIDI_HACK.Length);
+                            Array.Copy(ADLIB_INSTR_MIDI_HACK, 0, ptr, outPos, ADLIB_INSTR_MIDI_HACK.Length);
 
-                            tmp[5] += (byte)ch;
-                            tmp[28] += (byte)ch;
-                            tmp[92] += (byte)ch;
+                            ptr[outPos + 5] += (byte)ch;
+                            ptr[outPos + 28] += (byte)ch;
+                            ptr[outPos + 92] += (byte)ch;
 
                                 /* mod_characteristic */
-                            tmp[30 + 0] = (byte)((current_instr[ch][3] >> 4) & 0xf);
-                            tmp[30 + 1] = (byte)(current_instr[ch][3] & 0xf);
+                            ptr[outPos + 30 + 0] = (byte)((current_instr[ch][3] >> 4) & 0xf);
+                            ptr[outPos + 30 + 1] = (byte)(current_instr[ch][3] & 0xf);
 
                                 /* mod_scalingOutputLevel */
-                            tmp[30 + 2] = (byte)((current_instr[ch][4] >> 4) & 0xf);
-                            tmp[30 + 3] = (byte)(current_instr[ch][4] & 0xf);
+                            ptr[outPos + 30 + 2] = (byte)((current_instr[ch][4] >> 4) & 0xf);
+                            ptr[outPos + 30 + 3] = (byte)(current_instr[ch][4] & 0xf);
 
                                 /* mod_attackDecay */
-                            tmp[30 + 4] = (byte)(((~current_instr[ch][5]) >> 4) & 0xf);
-                            tmp[30 + 5] = (byte)((~current_instr[ch][5]) & 0xf);
+                            ptr[outPos + 30 + 4] = (byte)(((~current_instr[ch][5]) >> 4) & 0xf);
+                            ptr[outPos + 30 + 5] = (byte)((~current_instr[ch][5]) & 0xf);
 
                                 /* mod_sustainRelease */
-                            tmp[30 + 6] = (byte)(((~current_instr[ch][6]) >> 4) & 0xf);
-                            tmp[30 + 7] = (byte)((~current_instr[ch][6]) & 0xf);
+                            ptr[outPos + 30 + 6] = (byte)(((~current_instr[ch][6]) >> 4) & 0xf);
+                            ptr[outPos + 30 + 7] = (byte)((~current_instr[ch][6]) & 0xf);
 
                                 /* mod_waveformSelect */
-                            tmp[30 + 8] = (byte)((current_instr[ch][7] >> 4) & 0xf);
-                            tmp[30 + 9] = (byte)(current_instr[ch][7] & 0xf);
+                            ptr[outPos + 30 + 8] = (byte)((current_instr[ch][7] >> 4) & 0xf);
+                            ptr[outPos + 30 + 9] = (byte)(current_instr[ch][7] & 0xf);
 
                                 /* car_characteristic */
-                            tmp[30 + 10] = (byte)((current_instr[ch][8] >> 4) & 0xf);
-                            tmp[30 + 11] = (byte)(current_instr[ch][8] & 0xf);
+                            ptr[outPos + 30 + 10] = (byte)((current_instr[ch][8] >> 4) & 0xf);
+                            ptr[outPos + 30 + 11] = (byte)(current_instr[ch][8] & 0xf);
 
                                 /* car_scalingOutputLevel */
-                            tmp[30 + 12] = (byte)(((current_instr[ch][9]) >> 4) & 0xf);
-                            tmp[30 + 13] = (byte)((current_instr[ch][9]) & 0xf);
+                            ptr[outPos + 30 + 12] = (byte)(((current_instr[ch][9]) >> 4) & 0xf);
+                            ptr[outPos + 30 + 13] = (byte)((current_instr[ch][9]) & 0xf);
 
                                 /* car_attackDecay */
-                            tmp[30 + 14] = (byte)(((~current_instr[ch][10]) >> 4) & 0xf);
-                            tmp[30 + 15] = (byte)((~current_instr[ch][10]) & 0xf);
+                            ptr[outPos + 30 + 14] = (byte)(((~current_instr[ch][10]) >> 4) & 0xf);
+                            ptr[outPos + 30 + 15] = (byte)((~current_instr[ch][10]) & 0xf);
 
                                 /* car_sustainRelease */
-                            tmp[30 + 16] = (byte)(((~current_instr[ch][11]) >> 4) & 0xf);
-                            tmp[30 + 17] = (byte)((~current_instr[ch][11]) & 0xf);
+                            ptr[outPos + 30 + 16] = (byte)(((~current_instr[ch][11]) >> 4) & 0xf);
+                            ptr[outPos + 30 + 17] = (byte)((~current_instr[ch][11]) & 0xf);
 
                                 /* car_waveFormSelect */
-                            tmp[30 + 18] = (byte)((current_instr[ch][12] >> 4) & 0xf);
-                            tmp[30 + 19] = (byte)(current_instr[ch][12] & 0xf);
+                            ptr[outPos + 30 + 18] = (byte)((current_instr[ch][12] >> 4) & 0xf);
+                            ptr[outPos + 30 + 19] = (byte)(current_instr[ch][12] & 0xf);
 
                                 /* feedback */
-                            tmp[30 + 20] = (byte)((current_instr[ch][2] >> 4) & 0xf);
-                            tmp[30 + 21] = (byte)(current_instr[ch][2] & 0xf);
+                            ptr[outPos + 30 + 20] = (byte)((current_instr[ch][2] >> 4) & 0xf);
+                            ptr[outPos + 30 + 21] = (byte)(current_instr[ch][2] & 0xf);
 
                             delay = mintime - curtime;
                             curtime = mintime;
 
                             {
-                                br.ReadByte();
-                                delay = ConvertExtraflags(tmp, 30 + 22, br.ReadBytes(4));
-                                br.ReadByte();
-                                delay2 = ConvertExtraflags(tmp, 30 + 40, br.ReadBytes(4));
-                                br.ReadByte();
+                                delay = ConvertExtraflags(ptr, outPos + 30 + 22, input, inputPos + 1);
+                                delay2 = ConvertExtraflags(ptr, outPos + 30 + 40, input, inputPos + 6);
                                 Debug.WriteLine("delays: {0} / {1}", delay, delay2);
                                 if (delay2 >= 0 && delay2 < delay)
                                     delay = delay2;
@@ -765,14 +777,14 @@ namespace NScumm.Core.IO
                             }
 
                                 /* duration */
-                            tmp[30 + 58] = 0; // ((delay * 17 / 63) >> 4) & 0xf;
-                            tmp[30 + 59] = 0; // (delay * 17 / 63) & 0xf;
+                            ptr[outPos + 30 + 58] = 0; // ((delay * 17 / 63) >> 4) & 0xf;
+                            ptr[outPos + 30 + 59] = 0; // (delay * 17 / 63) & 0xf;
 
-                            bw.WriteBytes(tmp, tmp.Length);
+                            outPos += ADLIB_INSTR_MIDI_HACK.Length;
 
                             olddelay = mintime - curtime;
                             curtime = mintime;
-                            WriteVLQ(bw, olddelay);
+                            outPos = WriteVLQ(ptr, outPos, olddelay);
 
                             {
                                 int freq = ((current_instr[ch][1] & 3) << 8)
@@ -786,7 +798,7 @@ namespace NScumm.Core.IO
                                     note += 12;
                                     freq >>= 1;
                                 }
-                                Debug.WriteLine("Freq: {0} ({0:X} Note: {1}", freq, note);
+                                Debug.WriteLine("Freq: {0} (0x{0:X}) Note: {1}", freq, note);
                                 if (freq < 0x80)
                                     note = 0;
                                 else
@@ -799,12 +811,13 @@ namespace NScumm.Core.IO
                                     note = 127;
 
                                 // Insert a note on event
-                                bw.WriteByte(0x90 + ch); // key on channel
-                                bw.WriteByte(note);
-                                bw.WriteByte(63);
+                                ptr[outPos++] = (byte)(0x90 + ch); // key on channel
+                                ptr[outPos++] = (byte)note;
+                                ptr[outPos++] = 63;
                                 current_note[ch] = note;
                                 track_time[ch] = curtime + delay;
                             }
+                            inputPos += 11;
                             break;
 
                         case 0x80:
@@ -817,19 +830,19 @@ namespace NScumm.Core.IO
                                 // single channel via MIDI fixing this will require some more
                                 // thought.
                             track_time[ch] = -1;
-                            br.ReadByte();
+                            inputPos++;
                             break;
 
                         default:
                             track_time[ch] = -1;
                             break;
                     }
-                    track_data[ch] = br.BaseStream.Position;
+                    track_data[ch] = inputPos;
                 }
             }
 
             // Insert end of song sysex
-            bw.WriteBytes(new byte[]{ 0x00, 0xff, 0x2f, 0x00, 0x00 }, 5);
+            Array.Copy(new byte[]{ 0x00, 0xff, 0x2f, 0x00, 0x00 }, 0, ptr, outPos, 5);
 
             return ptr;
         }

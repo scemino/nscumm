@@ -355,6 +355,16 @@ namespace NScumm.Core
             writer.Write(SwapBytes(value));
         }
 
+        public static byte[] GetBytesBigEndian(ushort value)
+        {
+            return BitConverter.GetBytes(SwapBytes(value));
+        }
+
+        public static byte[] GetBytesBigEndian(uint value)
+        {
+            return BitConverter.GetBytes(SwapBytes(value));
+        }
+
         public static ushort SwapBytes(ushort value)
         {
             return (ushort)((value & 0xFFU) << 8 | (value & 0xFF00U) >> 8);

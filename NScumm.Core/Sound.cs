@@ -141,9 +141,22 @@ namespace NScumm.Core
 
         void PlaySound(int soundID)
         {
-			var res = vm.ResourceManager.GetSound (soundID);
-			if (res == null)
-				return;
+            var res = vm.ResourceManager.GetSound(soundID);
+            if (res == null)
+                return;
+
+            if (vm.Game.GameId == GameId.Monkey1)
+            {
+                // Works around the fact that in some places in MonkeyEGA/VGA,
+                // the music is never explicitly stopped.
+                // Rather it seems that starting a new music is supposed to
+                // automatically stop the old song.
+                if (vm.IMuse != null)
+                {
+                    if (System.Text.Encoding.ASCII.GetString(res, 0, 4) != "ASFX")
+                        vm.IMuse.StopAllSounds();
+                }
+            }
 
             if (vm.MusicEngine != null)
             {
@@ -164,8 +177,8 @@ namespace NScumm.Core
             if (soundQueue.Contains(snd))
                 return true;
 
-			if (vm.MusicEngine != null)
-				return vm.MusicEngine.GetSoundStatus (snd) != 0;
+            if (vm.MusicEngine != null)
+                return vm.MusicEngine.GetSoundStatus(snd) != 0;
 
             return false;
         }

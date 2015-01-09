@@ -63,8 +63,6 @@ Known Issues
 
 Screen effects not implemented
 
-Music of Monkey Island 1 is weird
-
 Cursor is sometimes not transparent
 
 And many other things ???

@@ -261,9 +261,9 @@ namespace NScumm.Core.Audio.IMuse
                 {
                     for (int i = 0; i < ids.Length; ++i)
                     {
-                        var sig = br.ReadBytes(4);
+                        var sig = System.Text.Encoding.ASCII.GetString(br.ReadBytes(4));
                         ms.Seek(-4, SeekOrigin.Current);
-                        if ((((int)ct) & (1 << i)) != 0 && (System.Text.Encoding.ASCII.GetString(sig) == ids[i]))
+                        if ((((int)ct) & (1 << i)) != 0 && (sig == ids[i]))
                         {
                             var tmp = new byte[ptr.Length - ms.Position];
                             Array.Copy(ptr, ms.Position, tmp, 0, tmp.Length);

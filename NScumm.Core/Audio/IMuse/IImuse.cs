@@ -21,7 +21,7 @@
 
 namespace NScumm.Core.Audio.IMuse
 {
-    delegate void SysExFunc(Player player,byte[] data,ushort length);
+    delegate void SysExFunc(Player player, byte[] data, ushort length);
 
     enum ImuseProperty
     {
@@ -39,7 +39,9 @@ namespace NScumm.Core.Audio.IMuse
         void OnTimer(MidiDriver midi);
 
         void Pause(bool paused);
+
         //        int save_or_load(Serializer *ser, ScummEngine *scumm, bool fixAfterLoad = true);
+
         bool GetSoundActive(int sound);
 
         int DoCommand(int numargs, int[] args);
@@ -51,8 +53,6 @@ namespace NScumm.Core.Audio.IMuse
         void AddSysexHandler(byte mfgID, SysExFunc handler);
 
         void HandleMarker(int id, int data);
-
-        int GetMusicTimer();
     }
 
     static class IMuse

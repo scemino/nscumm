@@ -81,6 +81,7 @@ namespace NScumm.Core.Audio.IMuse
         // Sam & Max triggers
         /// </summary>
         internal protected ImTrigger[] _snm_triggers;
+        private ushort _snm_trigger_index;
     
         protected ushort[] _channel_volume;
         protected ushort[] _channel_volume_eff;
@@ -595,71 +596,69 @@ namespace NScumm.Core.Audio.IMuse
 
         protected int ImSetTrigger(int sound, int id, int a, int b, int c, int d, int e, int f, int g, int h)
         {
-            // TODO: vs
+            // Sam & Max: ImSetTrigger.
+            // Sets a trigger for a particular player and
+            // marker ID, along with doCommand parameters
+            // to invoke at the marker. The marker is
+            // represented by MIDI SysEx block 00 xx(F7)
+            // where "xx" is the marker ID.
+            ushort oldest_trigger = 0;
+            ImTrigger oldest_ptr = null;
+            ImTrigger trig = null;
+            int i;
+
+            for (i = 0; i < _snm_triggers.Length; i++)
+            {
+                trig = _snm_triggers[i];
+                if (trig.Id == 0)
+                    break;
+                // We used to only compare 'id' and 'sound' here, but at least
+                // at the Dino Bungie Memorial that causes the music to stop
+                // after getting the T-Rex tooth. See bug #888161.
+                if (trig.Id == id && trig.Sound == sound && trig.Command[0] == a)
+                    break;
+
+                ushort diff;
+                if (trig.Expire <= _snm_trigger_index)
+                    diff = (ushort)(_snm_trigger_index - trig.Expire);
+                else
+                    diff = (ushort)(0x10000 - trig.Expire + _snm_trigger_index);
+
+                if (oldest_ptr == null || oldest_trigger < diff)
+                {
+                    oldest_ptr = trig;
+                    oldest_trigger = diff;
+                }
+            }
+
+            // If we didn't find a trigger, see if we can expire one.
+            if (i == _snm_triggers.Length)
+            {
+                if (oldest_ptr == null)
+                    return -1;
+                trig = oldest_ptr;
+            }
+
+            trig.Id = (byte)id;
+            trig.Sound = sound;
+            trig.Expire = (ushort)(++_snm_trigger_index & 0xFFFF);
+            trig.Command[0] = a;
+            trig.Command[1] = b;
+            trig.Command[2] = c;
+            trig.Command[3] = d;
+            trig.Command[4] = e;
+            trig.Command[5] = f;
+            trig.Command[6] = g;
+            trig.Command[7] = h;
+
+            // If the command is to start a sound, stop that sound if it's already playing.
+            // This fixes some carnival music problems.
+            // NOTE: We ONLY do this if the sound that will trigger the command is actually
+            // playing. Otherwise, there's a problem when exiting and re-entering the
+            // Bumpusville mansion. Ref Bug #780918.
+            if (trig.Command[0] == 8 && GetSoundStatusInternal(trig.Command[1], true) != 0 && GetSoundStatusInternal(sound, true) != 0)
+                StopSoundInternal(trig.Command[1]);
             return 0;
-//            throw new NotImplementedException("Sam & Max: ImSetTrigger");
-//            // Sam & Max: ImSetTrigger.
-//            // Sets a trigger for a particular player and
-//            // marker ID, along with doCommand parameters
-//            // to invoke at the marker. The marker is
-//            // represented by MIDI SysEx block 00 xx(F7)
-//            // where "xx" is the marker ID.
-//            uint16 oldest_trigger = 0;
-//            ImTrigger* oldest_ptr = NULL;
-//
-//            int i;
-//            ImTrigger* trig = _snm_triggers;
-//            for (i = ARRAYSIZE(_snm_triggers); i; --i, ++trig)
-//            {
-//                if (!trig->id)
-//                    break;
-//                // We used to only compare 'id' and 'sound' here, but at least
-//                // at the Dino Bungie Memorial that causes the music to stop
-//                // after getting the T-Rex tooth. See bug #888161.
-//                if (trig->id == id && trig->sound == sound && trig->command[0] == a)
-//                    break;
-//
-//                uint16 diff;
-//                if (trig->expire <= _snm_trigger_index)
-//                    diff = _snm_trigger_index - trig->expire;
-//                else
-//                    diff = 0x10000 - trig->expire + _snm_trigger_index;
-//
-//                if (!oldest_ptr || oldest_trigger < diff)
-//                {
-//                    oldest_ptr = trig;
-//                    oldest_trigger = diff;
-//                }
-//            }
-//
-//            // If we didn't find a trigger, see if we can expire one.
-//            if (!i)
-//            {
-//                if (!oldest_ptr)
-//                    return -1;
-//                trig = oldest_ptr;
-//            }
-//
-//            trig->id = id;
-//            trig->sound = sound;
-//            trig->expire = (++_snm_trigger_index & 0xFFFF);
-//            trig->command[0] = a;
-//            trig->command[1] = b;
-//            trig->command[2] = c;
-//            trig->command[3] = d;
-//            trig->command[4] = e;
-//            trig->command[5] = f;
-//            trig->command[6] = g;
-//            trig->command[7] = h;
-//
-//            // If the command is to start a sound, stop that sound if it's already playing.
-//            // This fixes some carnival music problems.
-//            // NOTE: We ONLY do this if the sound that will trigger the command is actually
-//            // playing. Otherwise, there's a problem when exiting and re-entering the
-//            // Bumpusville mansion. Ref Bug #780918.
-//            if (trig->command[0] == 8 && getSoundStatus_internal(trig->command[1], true) && getSoundStatus_internal(sound, true))
-//                stopSound_internal(trig->command[1]);
-//            return 0;
         }
 
         protected int ImClearTrigger(int sound, int id)
@@ -928,7 +927,7 @@ namespace NScumm.Core.Audio.IMuse
             {
                 if (player.IsActive)
                 {
-//                        scumm.->getResourceAddress(rtSound, player->getID());
+//                        scumm..getResourceAddress(rtSound, player.getID());
                     player.FixAfterLoad();
                 }
             }

@@ -20,6 +20,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
 using System.Diagnostics;
+using NScumm.Core.IO;
 
 namespace NScumm.Core.Audio.IMuse
 {
@@ -307,7 +308,7 @@ namespace NScumm.Core.Audio.IMuse
                 {
                     #if false
                                         if (MidiChannel) {
-                                        MidiChannel->controlChange(17, detune + 0x40);
+                                        MidiChannel.controlChange(17, detune + 0x40);
                         }
                     #endif
                 }
@@ -434,6 +435,54 @@ namespace NScumm.Core.Audio.IMuse
             _bank = 0;
             Pedal = false;
             MidiChannel = null;
+        }
+
+        public void SaveOrLoad(Serializer ser)
+        {
+            var partEntries = new []
+            {
+                LoadAndSaveEntry.Create(r => _pitchbend = r.ReadInt16(), w => w.WriteInt16(_pitchbend), 8),
+                LoadAndSaveEntry.Create(r => _pitchbend_factor = r.ReadByte(), w => w.WriteByte(_pitchbend_factor), 8),
+                LoadAndSaveEntry.Create(r => Transpose = r.ReadSByte(), w => w.Write((sbyte)Transpose), 8),
+                LoadAndSaveEntry.Create(r => _vol = r.ReadByte(), w => w.WriteByte(_vol), 8),
+                LoadAndSaveEntry.Create(r => _detune = r.ReadSByte(), w => w.Write((sbyte)_detune), 8),
+                LoadAndSaveEntry.Create(r => _pan = r.ReadSByte(), w => w.Write((sbyte)_pan), 8),
+                LoadAndSaveEntry.Create(r => On = r.ReadBoolean(), w => w.Write(On), 8),
+                LoadAndSaveEntry.Create(r => _modwheel = r.ReadByte(), w => w.WriteByte(_modwheel), 8),
+                LoadAndSaveEntry.Create(r => Pedal = r.ReadBoolean(), w => w.Write(Pedal), 8),
+                LoadAndSaveEntry.Create(r => r.ReadByte(), w => w.WriteByte(0), 8, 16),
+                LoadAndSaveEntry.Create(r => priority = r.ReadByte(), w => w.WriteByte(priority), 8),
+                LoadAndSaveEntry.Create(r => Channel = r.ReadByte(), w => w.WriteByte(Channel), 8),
+                LoadAndSaveEntry.Create(r => _effect_level = r.ReadByte(), w => w.WriteByte(_effect_level), 8),
+                LoadAndSaveEntry.Create(r => _chorus = r.ReadByte(), w => w.WriteByte(_chorus), 8),
+                LoadAndSaveEntry.Create(r => Percussion = r.ReadBoolean(), w => w.Write(Percussion), 8),
+                LoadAndSaveEntry.Create(r => _bank = r.ReadByte(), w => w.WriteByte(_bank), 8)
+            };
+
+            int num;
+            if (!ser.IsLoading)
+            {
+                num = Next != null ? Array.IndexOf(Se._parts, Next) + 1 : 0;
+                ser.Writer.WriteUInt16(num);
+
+                num = Previous != null ? Array.IndexOf(Se._parts, Previous) + 1 : 0;
+                ser.Writer.WriteUInt16(num);
+
+                num = Player != null ? Array.IndexOf(Se._players, Player) + 1 : 0;
+                ser.Writer.WriteUInt16(num);
+            }
+            else
+            {
+                num = ser.Reader.ReadUInt16();
+                Next = num != 0 ? Se._parts[num - 1] : null;
+
+                num = ser.Reader.ReadUInt16();
+                Previous = num != 0 ? Se._parts[num - 1] : null;
+
+                num = ser.Reader.ReadUInt16();
+                Player = num != 0 ? Se._players[num - 1] : null;
+            }
+            Array.ForEach(partEntries, e => e.Execute(ser));
         }
 
         static int Clamp(int val, int min, int max)

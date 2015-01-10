@@ -18,7 +18,9 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+using System.Linq;
+using NScumm.Core.IO;
+using System;
 
 namespace NScumm.Core.Audio.IMuse
 {
@@ -35,6 +37,18 @@ namespace NScumm.Core.Audio.IMuse
         public ImTrigger()
         { 
             Command = new int[8];
+        }
+
+        public void SaveOrLoad(Serializer ser)
+        {
+            var snmTriggerEntries = new []
+            {
+                LoadAndSaveEntry.Create(r => Sound = r.ReadInt16(), w => w.WriteInt16(Sound), 54),
+                LoadAndSaveEntry.Create(r => Id = r.ReadByte(), w => w.WriteByte(Id), 54),
+                LoadAndSaveEntry.Create(r => Expire = r.ReadUInt16(), w => w.WriteUInt16(Expire), 54),
+                    LoadAndSaveEntry.Create(r => Command = r.ReadUInt16s(8).Select(i => (int)i).ToArray(), w => w.WriteUInt16s(Command.Select(i => (ushort)i).ToArray(), 8), 54),
+            };
+            Array.ForEach(snmTriggerEntries, e => e.Execute(ser));
         }
     }
     

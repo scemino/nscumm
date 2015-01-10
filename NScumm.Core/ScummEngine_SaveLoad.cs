@@ -156,12 +156,12 @@ namespace NScumm.Core
                 // If we don't have iMUSE at all we may as well stop the sounds. The previous
                 // default behavior here was to stopAllSounds on all state restores.
 
-                //if (!_imuse || _saveSound || !_saveTemporaryState)
-                //    Sound->stopAllSounds();
+                if (IMuse == null || _saveSound || !_saveTemporaryState)
+                    Sound.StopAllSounds();
 
                 //            Sound->stopCD();
 
-                //Sound->pauseSounds(true);
+                Sound.PauseSounds(true);
 
                 //closeRoom();
 
@@ -187,7 +187,13 @@ namespace NScumm.Core
                 //if (_game.features & GF_OLD_BUNDLE)
                 //    loadCharset(0); // FIXME - HACK ?
 
+                //
+                // Now do the actual loading
+                //
                 SaveOrLoad(serializer);
+
+                // Update volume settings
+//                SyncSoundSettings();
 
                 var sb = _screenB;
                 var sh = _screenH;
@@ -223,6 +229,7 @@ namespace NScumm.Core
                     Variables[VariableVoiceMode.Value] = (int)VoiceMode.VoiceAndText;
                 }
 
+                Sound.PauseSounds(false);
 
                 Gdi.NumZBuffer = GetNumZBuffers();
             }
@@ -390,7 +397,10 @@ namespace NScumm.Core
                 LoadAndSaveEntry.Create(reader => _cursorData = reader.ReadBytes(8192), writer =>
                     {
                         var data = new byte[8192];
-                        Array.Copy(_cursorData, data, _cursorData.Length);
+                        if(_cursorData!=null)
+                        {
+                            Array.Copy(_cursorData, data, _cursorData.Length);
+                        }
                         writer.Write(data);
                     }, 20),
                 LoadAndSaveEntry.Create(reader => _cursor.Width = reader.ReadInt16(), writer => writer.WriteInt16(_cursor.Width), 20),
@@ -538,12 +548,7 @@ namespace NScumm.Core
             //
             // Save/load sound data
             //
-            var soundEntries = new[]
-            {
-                LoadAndSaveEntry.Create(reader => reader.ReadInt16(), writer => writer.WriteInt16(0), 35),
-                LoadAndSaveEntry.Create(reader => reader.ReadInt16(), writer => writer.WriteInt16(0), 35),
-            };
-            Array.ForEach(soundEntries, e => e.Execute(serializer));
+            Sound.SaveOrLoad(serializer);
 
             //
             // Save/load script data
@@ -850,18 +855,18 @@ namespace NScumm.Core
             //
             // Save/load the iMuse status
             //
-            //if (_imuse && (_saveSound || !_saveTemporaryState))
-            //{
-            //    _imuse->save_or_load(s, this);
-            //}
+            if (IMuse != null && (_saveSound || !_saveTemporaryState))
+            {
+                IMuse.SaveOrLoad(serializer);
+            }
 
             //
             // Save/load music engine status
             //
-            //if (_musicEngine)
-            //{
-            //    _musicEngine->saveLoadWithSerializer(s);
-            //}
+            if (MusicEngine != null)
+            {
+                MusicEngine.SaveOrLoad(serializer);
+            }
 
             //
             // Save/load the charset renderer state

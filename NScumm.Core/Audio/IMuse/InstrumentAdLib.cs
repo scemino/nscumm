@@ -21,6 +21,9 @@
 
 using NScumm.Core.Audio.IMuse;
 using NScumm.Core.Audio.SoftSynth;
+using NScumm.Core.IO;
+using System.Diagnostics;
+using System.IO;
 
 namespace NScumm.Core.Audio.IMuse
 {
@@ -30,11 +33,23 @@ namespace NScumm.Core.Audio.IMuse
 
         public InstrumentAdLib(byte[] data)
         {
+            Debug.Assert(data.Length == 30);
             _instrument = (byte[])data.Clone();
         }
 
-        //        Instrument_AdLib(Serializer *s);
-        //        void saveOrLoad(Serializer *s);
+        public InstrumentAdLib(Stream input)
+        {
+            _instrument = new byte[30];
+            input.Read(_instrument, 0, 30);
+        }
+
+        public void SaveOrLoad(Serializer s)
+        {
+            if (!s.IsLoading)
+                s.Writer.WriteBytes(_instrument, 30);
+            else
+                _instrument = s.Reader.ReadBytes(30);
+        }
 
         public void Send(MidiChannel mc)
         {

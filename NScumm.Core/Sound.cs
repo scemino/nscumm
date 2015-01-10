@@ -28,27 +28,6 @@ namespace NScumm.Core
 {
     class Sound: ISoundRepository
     {
-        readonly ScummEngine vm;
-        readonly IMixer _mixer;
-
-        Timer timer;
-        Stack<int> soundQueue;
-        Queue<int> soundQueueIMuse;
-
-        string _sfxFilename;
-        int _talkSound_a1;
-        int _talkSound_b1;
-        int _talkSound_a2;
-        int _talkSound_b2;
-        int _talkSound_channel;
-        int _talkSound_mode;
-        ushort[] _mouthSyncTimes;
-        int _sfxMode;
-        int _curSoundPos;
-        bool _mouthSyncMode;
-        SoundHandle _talkChannelHandle;
-        bool _endOfMouthSync;
-
         public int SfxMode { get { return _sfxMode; } }
 
         public Sound(ScummEngine vm, IMixer mixer)
@@ -88,15 +67,6 @@ namespace NScumm.Core
             timer.Stop();
         }
 
-        void OnCDTimer(object sender, EventArgs e)
-        {
-            // FIXME: Turn off the timer when it's no longer needed. In theory, it
-            // should be possible to check with pollCD(), but since CD sound isn't
-            // properly restarted when reloading a saved game, I don't dare to.
-
-            vm.Variables[vm.VariableMusicTimer.Value] += 6;
-        }
-
         public void AddSoundToQueue(int sound)
         {
             if (vm.VariableLastSound.HasValue)
@@ -118,55 +88,31 @@ namespace NScumm.Core
             }
         }
 
-        void ProcessSoundQueue()
+        public void StopAllSounds()
         {
-            while (soundQueue.Count > 0)
-            {
-                var sound = soundQueue.Pop();
-                if (sound != 0)
-                    PlaySound(sound);
-            }
+//            if (_currentCDSound != 0)
+//            {
+//                _currentCDSound = 0;
+//                StopCD();
+//                StopCDTimer();
+//            }
 
-            if (soundQueueIMuse.Count > 0)
-            {
-                var num = soundQueueIMuse.Dequeue();
-                var args = new int[16];
-                for (int i = 0; i < num; i++)
-                {
-                    args[i] = soundQueueIMuse.Dequeue();
-                }
-                vm.Variables[vm.VariableSoundResult.Value] = vm.IMuse.DoCommand(num, args);
-            }
-        }
-
-        void PlaySound(int soundID)
-        {
-            var res = vm.ResourceManager.GetSound(soundID);
-            if (res == null)
-                return;
-
-            if (vm.Game.GameId == GameId.Monkey1)
-            {
-                // Works around the fact that in some places in MonkeyEGA/VGA,
-                // the music is never explicitly stopped.
-                // Rather it seems that starting a new music is supposed to
-                // automatically stop the old song.
-                if (vm.IMuse != null)
-                {
-                    if (System.Text.Encoding.ASCII.GetString(res, 0, 4) != "ASFX")
-                        vm.IMuse.StopAllSounds();
-                }
-            }
+            // Clear the (secondary) sound queue
+//            _lastSound = 0;
+//            _soundQue2Pos = 0;
+//            memset(_soundQue2, 0, sizeof(_soundQue2));
+            soundQueue.Clear();
 
             if (vm.MusicEngine != null)
             {
-                vm.MusicEngine.StartSound(soundID);
+                vm.MusicEngine.StopAllSounds();
             }
-        }
 
-        public void StopAllSounds()
-        {
-            soundQueue.Clear();
+            // Stop all SFX
+//            if (vm.ImuseDigital==null)
+            {
+                _mixer.StopAll();
+            }
         }
 
         public bool IsSoundRunning(int snd)
@@ -199,14 +145,10 @@ namespace NScumm.Core
             }
         }
 
-        #region ISoundRepository implementation
-
         byte[] ISoundRepository.GetSound(int id)
         {
             return vm.ResourceManager.GetSound(id);
         }
-
-        #endregion
 
         public void TalkSound(int a, int b, int mode, int channel = 0)
         {
@@ -233,15 +175,6 @@ namespace NScumm.Core
 //            if (_vm->_game.id == GID_FT) {
 //                    _vm->VAR(_vm->VAR_VOICE_BUNDLE_LOADED) = _sfxFilename.empty() ? 0 : 1;
 //                }
-        }
-
-        void SetupSfxFile()
-        {
-            var dir = Path.GetDirectoryName(vm.Game.Path);
-            _sfxFilename = (from filename in new []{ vm.Game.Id + ".sou", "monster.sou" }
-                                     let path=ScummHelper.NormalizePath(Path.Combine(dir, filename))
-                                     where path != null
-                                     select path).FirstOrDefault();
         }
 
         public void ProcessSfxQueues()
@@ -351,6 +284,104 @@ namespace NScumm.Core
 //            }
         }
 
+        public void SaveOrLoad(Serializer serializer)
+        {
+            short _currentCDSound = 0;
+            short _currentMusic = 0;
+            var soundEntries = new[]
+            {
+                LoadAndSaveEntry.Create(r => _currentCDSound = r.ReadInt16(), writer => writer.WriteInt16(_currentCDSound), 35),
+                LoadAndSaveEntry.Create(r => _currentMusic = r.ReadInt16(), writer => writer.WriteInt16(_currentMusic), 35),
+            };
+
+            Array.ForEach(soundEntries, e => e.Execute(serializer));
+        }
+
+        public void PauseSounds(bool pause)
+        {
+            if (vm.IMuse != null)
+                vm.IMuse.Pause(pause);
+
+            // Don't pause sounds if the game isn't active
+            // FIXME - this is quite a nasty hack, replace with something cleaner, and w/o
+            // having to access member vars directly!
+            if (vm.CurrentRoomData == null)
+                return;
+
+            _soundsPaused = pause;
+
+#if ENABLE_SCUMM_7_8
+    if (_vm->_imuseDigital) {
+        _vm->_imuseDigital->pause(pause);
+    }
+#endif
+
+            _mixer.PauseAll(pause);
+
+//            if (vm.Game.Features.HasFlag(GameFeatures.AudioTracks) && vm.Variables[vm.VariableMusicTimer] > 0)
+//            {
+//                if (pause)
+//                    StopCDTimer();
+//                else
+//                    StartCDTimer();
+//            }
+        }
+
+        void ProcessSoundQueue()
+        {
+            while (soundQueue.Count > 0)
+            {
+                var sound = soundQueue.Pop();
+                if (sound != 0)
+                    PlaySound(sound);
+            }
+
+            if (soundQueueIMuse.Count > 0)
+            {
+                var num = soundQueueIMuse.Dequeue();
+                var args = new int[16];
+                for (int i = 0; i < num; i++)
+                {
+                    args[i] = soundQueueIMuse.Dequeue();
+                }
+                vm.Variables[vm.VariableSoundResult.Value] = vm.IMuse.DoCommand(num, args);
+            }
+        }
+
+        void PlaySound(int soundID)
+        {
+            var res = vm.ResourceManager.GetSound(soundID);
+            if (res == null)
+                return;
+
+            if (vm.Game.GameId == GameId.Monkey1)
+            {
+                // Works around the fact that in some places in MonkeyEGA/VGA,
+                // the music is never explicitly stopped.
+                // Rather it seems that starting a new music is supposed to
+                // automatically stop the old song.
+                if (vm.IMuse != null)
+                {
+                    if (System.Text.Encoding.ASCII.GetString(res, 0, 4) != "ASFX")
+                        vm.IMuse.StopAllSounds();
+                }
+            }
+
+            if (vm.MusicEngine != null)
+            {
+                vm.MusicEngine.StartSound(soundID);
+            }
+        }
+
+        void SetupSfxFile()
+        {
+            var dir = Path.GetDirectoryName(vm.Game.Path);
+            _sfxFilename = (from filename in new []{ vm.Game.Id + ".sou", "monster.sou" }
+                                     let path=ScummHelper.NormalizePath(Path.Combine(dir, filename))
+                                     where path != null
+                                     select path).FirstOrDefault();
+        }
+
         bool IsSfxFinished()
         {
             return !_mixer.HasActiveChannelOfType(SoundType.SFX);
@@ -438,5 +469,37 @@ namespace NScumm.Core
             }
             return handle;
         }
+
+        void OnCDTimer(object sender, EventArgs e)
+        {
+            // FIXME: Turn off the timer when it's no longer needed. In theory, it
+            // should be possible to check with pollCD(), but since CD sound isn't
+            // properly restarted when reloading a saved game, I don't dare to.
+
+            vm.Variables[vm.VariableMusicTimer.Value] += 6;
+        }
+
+        readonly ScummEngine vm;
+        readonly IMixer _mixer;
+
+        Timer timer;
+        Stack<int> soundQueue;
+        Queue<int> soundQueueIMuse;
+
+        string _sfxFilename;
+        int _talkSound_a1;
+        int _talkSound_b1;
+        int _talkSound_a2;
+        int _talkSound_b2;
+        int _talkSound_channel;
+        int _talkSound_mode;
+        ushort[] _mouthSyncTimes;
+        int _sfxMode;
+        int _curSoundPos;
+        bool _mouthSyncMode;
+        SoundHandle _talkChannelHandle;
+        bool _endOfMouthSync;
+
+        bool _soundsPaused;
     }
 }

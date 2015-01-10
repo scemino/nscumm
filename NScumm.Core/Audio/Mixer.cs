@@ -205,6 +205,34 @@ namespace NScumm.Core.Audio
             return soundTypeSettings[(int)type].Volume;
         }
 
+        public void PauseAll(bool pause)
+        {
+            lock (_gate)
+            {
+                for (int i = 0; i != _channels.Length; i++)
+                {
+                    if (_channels[i] != null)
+                    {
+                        _channels[i].Pause(pause);
+                    }
+                }
+            }
+        }
+
+        public void StopAll()
+        {
+            lock (_gate)
+            {
+                for (int i = 0; i != _channels.Length; i++)
+                {
+                    if (_channels[i] != null && !_channels[i].IsPermanent)
+                    {
+                        _channels[i] = null;
+                    }
+                }
+            }
+        }
+
         SoundHandle InsertChannel(Channel chan)
         {
             int index = -1;

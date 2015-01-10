@@ -19,6 +19,9 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using System.Linq;
+using NScumm.Core.IO;
+
 namespace NScumm.Core.Audio.IMuse
 {
     class CommandQueue
@@ -28,6 +31,11 @@ namespace NScumm.Core.Audio.IMuse
         public CommandQueue()
         {
             array = new int[8];
+        }
+
+        public void SaveOrLoad(Serializer ser)
+        {
+            LoadAndSaveEntry.Create(r => array = r.ReadInt16s(8).Select(i => (int)i).ToArray(), w => w.WriteInt16s(array.Cast<int>().ToArray(), 8), 54).Execute(ser);
         }
     }
 

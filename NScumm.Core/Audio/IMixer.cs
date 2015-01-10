@@ -62,6 +62,8 @@ namespace NScumm.Core.Audio
 
         void StopID(int id);
 
+        void StopAll();
+
         void StopHandle(SoundHandle handle);
 
         bool IsSoundIdActive(int id);
@@ -69,6 +71,8 @@ namespace NScumm.Core.Audio
         bool IsSoundHandleActive(SoundHandle handle);
 
         bool HasActiveChannelOfType(SoundType type);
+
+        void PauseAll(bool pause);
     }
 }
 

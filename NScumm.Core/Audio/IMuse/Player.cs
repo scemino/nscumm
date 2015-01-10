@@ -23,6 +23,7 @@ using System;
 using System.Diagnostics;
 using System.Text;
 using System.IO;
+using NScumm.Core.IO;
 
 namespace NScumm.Core.Audio.IMuse
 {
@@ -446,6 +447,7 @@ namespace NScumm.Core.Audio.IMuse
                 _parameterFaders[i] = new ParameterFader();
             }
             _active_notes = new ushort[128];
+            _hook = new HookDatas();
         }
 
         public int AddParameterFader(ParameterFaderType param, int target, int time)
@@ -842,7 +844,62 @@ namespace NScumm.Core.Audio.IMuse
             }
             return 0;
         }
-        //        public void saveLoadWithSerializer(Serializer *ser);
+
+        public void SaveOrLoad(Serializer ser)
+        {
+            var playerEntries = new []
+            {
+                LoadAndSaveEntry.Create(r => _active = r.ReadBoolean(), w => w.Write(_active), 8),
+                LoadAndSaveEntry.Create(r => _id = r.ReadUInt16(), w => w.WriteUInt16(_id), 8),
+                LoadAndSaveEntry.Create(r => _priority = r.ReadByte(), w => w.WriteByte(_priority), 8),
+                LoadAndSaveEntry.Create(r => _volume = r.ReadByte(), w => w.WriteByte(_volume), 8),
+                LoadAndSaveEntry.Create(r => _pan = r.ReadSByte(), w => w.Write(_pan), 8),
+                LoadAndSaveEntry.Create(r => _transpose = r.ReadSByte(), w => w.Write(_transpose), 8),
+                LoadAndSaveEntry.Create(r => _detune = r.ReadSByte(), w => w.Write(_detune), 8),
+                LoadAndSaveEntry.Create(r => VolChan = r.ReadUInt16(), w => w.WriteUInt16(VolChan), 8),
+                LoadAndSaveEntry.Create(r => _vol_eff = r.ReadByte(), w => w.WriteByte(_vol_eff), 8),
+                LoadAndSaveEntry.Create(r => _speed = r.ReadByte(), w => w.WriteByte(_speed), 8),
+                LoadAndSaveEntry.Create(r => r.ReadUInt16(), w => w.WriteUInt16(0), 8, 19), //_song_index
+                LoadAndSaveEntry.Create(r => _track_index = r.ReadUInt16(), w => w.WriteUInt16(_track_index), 8),
+                LoadAndSaveEntry.Create(r => r.ReadUInt16(), w => w.WriteUInt16(0), 8, 17), //_timer_counter
+                LoadAndSaveEntry.Create(r => _loop_to_beat = r.ReadUInt16(), w => w.WriteUInt16(_loop_to_beat), 8),
+                LoadAndSaveEntry.Create(r => _loop_from_beat = r.ReadUInt16(), w => w.WriteUInt16(_loop_from_beat), 8),
+                LoadAndSaveEntry.Create(r => _loop_counter = r.ReadUInt16(), w => w.WriteUInt16(_loop_counter), 8),
+                LoadAndSaveEntry.Create(r => _loop_to_tick = r.ReadUInt16(), w => w.WriteUInt16(_loop_to_tick), 8),
+                LoadAndSaveEntry.Create(r => _loop_from_tick = r.ReadUInt16(), w => w.WriteUInt16(_loop_from_tick), 8),
+                LoadAndSaveEntry.Create(r => r.ReadUInt32(), w => w.WriteUInt32(0), 8, 19), //_tempo
+                LoadAndSaveEntry.Create(r => r.ReadUInt32(), w => w.WriteUInt32(0), 8, 17), //_cur_pos
+                LoadAndSaveEntry.Create(r => r.ReadUInt32(), w => w.WriteUInt32(0), 8, 17), //_next_pos
+                LoadAndSaveEntry.Create(r => r.ReadUInt32(), w => w.WriteUInt32(0), 8, 17), //_song_offset
+                LoadAndSaveEntry.Create(r => r.ReadUInt16(), w => w.WriteUInt16(0), 8, 17), //_tick_index
+                LoadAndSaveEntry.Create(r => r.ReadUInt16(), w => w.WriteUInt16(0), 8, 17), //_beat_index
+                LoadAndSaveEntry.Create(r => r.ReadUInt16(), w => w.WriteUInt16(0), 8, 17), // _ticks_per_beat
+                LoadAndSaveEntry.Create(r => _music_tick = r.ReadUInt32(), w => w.WriteUInt32(_music_tick), 19),
+            };
+
+            if (ser.IsLoading && _parser != null)
+            {
+                _parser = null;
+            }
+            _music_tick = _parser != null ? (uint)_parser.Tick : 0;
+
+            int num;
+            if (!ser.IsLoading)
+            {
+                num = _parts != null ? Array.IndexOf(_se._parts, _parts) + 1 : 0;
+                ser.Writer.WriteUInt16(num);
+            }
+            else
+            {
+                num = ser.Reader.ReadUInt16();
+                _parts = num != 0 ? _se._parts[num - 1] : null;
+            }
+
+            Array.ForEach(playerEntries, e => e.Execute(ser));
+            _hook.SaveOrLoad(ser);
+            Array.ForEach(_parameterFaders, pf => pf.SaveOrLoad(ser));
+        }
+
         public int SetHook(byte cls, byte value, byte chan)
         {
             return _hook.Set(cls, value, chan);

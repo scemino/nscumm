@@ -20,6 +20,8 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using NScumm.Core.Audio.IMuse;
+using NScumm.Core.IO;
+using System;
 
 namespace NScumm.Core.Audio.IMuse
 {
@@ -47,6 +49,19 @@ namespace NScumm.Core.Audio.IMuse
         public void Init()
         {
             Param = ParameterFaderType.None;
+        }
+
+        public void SaveOrLoad(Serializer ser)
+        {
+            var parameterFaderEntries = new []  {
+                LoadAndSaveEntry.Create(r => Param = (ParameterFaderType)r.ReadInt16(), w => w.WriteInt16((short)Param), 17),
+                LoadAndSaveEntry.Create(r => Start = r.ReadInt16(), w => w.WriteInt16(Start), 17),
+                LoadAndSaveEntry.Create(r => End = r.ReadInt16(), w => w.WriteInt16(End), 17),
+                LoadAndSaveEntry.Create(r => TotalTime = r.ReadUInt32(), w => w.WriteUInt32(TotalTime), 17),
+                LoadAndSaveEntry.Create(r => CurrentTime = r.ReadUInt32(), w => w.WriteUInt32(CurrentTime), 17)
+            };
+
+            Array.ForEach(parameterFaderEntries, e => e.Execute(ser));
         }
     }
     

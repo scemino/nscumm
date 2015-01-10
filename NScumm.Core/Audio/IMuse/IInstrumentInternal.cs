@@ -20,6 +20,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using NScumm.Core.Audio.IMuse;
+using NScumm.Core.IO;
 
 namespace NScumm.Core.Audio.IMuse
 {
@@ -29,6 +30,8 @@ namespace NScumm.Core.Audio.IMuse
 
         void CopyTo(Instrument dest);
 
-        bool IsValid{ get; }
+        void SaveOrLoad(Serializer s);
+
+        bool IsValid { get; }
     }
 }

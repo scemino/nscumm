@@ -21,6 +21,7 @@
 
 using System;
 using NScumm.Core.Audio.IMuse;
+using NScumm.Core.IO;
 
 namespace NScumm.Core.Audio.IMuse
 {
@@ -54,10 +55,10 @@ namespace NScumm.Core.Audio.IMuse
         /// </summary>
         public static readonly byte[] _gmRhythmMap =
             {
-            0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-            0,  0,  0,  0,  0,  0,  0,  0, 36, 37, 38, 39, 40, 41, 66, 47,
-            65, 48, 56
-        };
+                0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+                0,  0,  0,  0,  0,  0,  0,  0, 36, 37, 38, 39, 40, 41, 66, 47,
+                65, 48, 56
+            };
 
         public void Clear()
         {
@@ -124,7 +125,45 @@ namespace NScumm.Core.Audio.IMuse
         public InstrumentType Type { get { return _type; } }
 
         public bool IsValid { get { return (_instrument != null && _instrument.IsValid); } }
-        //        public void saveOrLoad(Serializer *s);
+
+        public void SaveOrLoad(Serializer s)
+        {
+            if (!s.IsLoading)
+            {
+                s.Writer.WriteByte((byte)_type);
+                if (_instrument != null)
+                    _instrument.SaveOrLoad(s);
+            }
+            else
+            {
+                Clear();
+                _type = (InstrumentType)s.Reader.ReadByte();
+                switch (_type)
+                {
+                    case InstrumentType.None:
+                        break;
+                    case InstrumentType.Program:
+                        _instrument = new InstrumentProgram(s);
+                        break;
+                    case InstrumentType.AdLib:
+                        _instrument = new InstrumentAdLib(s.Reader.BaseStream);
+                        break;
+                        // TODO: vs: Roland, PcSpk, MacSfx
+//                    case InstrumentType.Roland:
+//                        _instrument = new InstrumentRoland(s);
+//                        break;
+//                    case InstrumentType.PcSpk:
+//                        _instrument = new InstrumentPcSpk(s);
+//                        break;
+//                    case InstrumentType.MacSfx:
+//                        _instrument = new InstrumentMacSfx(s);
+//                        break;
+                    default:
+                        throw new NotSupportedException(string.Format("No known instrument classification #{0}", (int)_type));
+                }
+            }
+        }
+
         public void Send(MidiChannel mc)
         {
             if (_instrument != null)

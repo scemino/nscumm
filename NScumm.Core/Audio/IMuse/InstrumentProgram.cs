@@ -21,6 +21,7 @@
 
 using NScumm.Core.Audio.IMuse;
 using NScumm.Core.Audio.SoftSynth;
+using NScumm.Core.IO;
 
 namespace NScumm.Core.Audio.IMuse
 {
@@ -34,21 +35,25 @@ namespace NScumm.Core.Audio.IMuse
                 _program = 255;
         }
 
-        //        InstrumentProgram(Serializer *s) {
-        //            _program = 255;
-        //            if (!s->isSaving())
-        //                saveOrLoad(s);
-        //        }
+        public InstrumentProgram(Serializer s)
+        {
+            _program = 255;
+            SaveOrLoad(s);
+        }
 
-        //        void InstrumentProgram::saveOrLoad(Serializer *s) {
-        //            if (s->isSaving()) {
-        //                s->saveByte(_program);
-        //                s->saveByte(_mt32 ? 1 : 0);
-        //            } else {
-        //                _program = s->loadByte();
-        //                _mt32 = (s->loadByte() > 0);
-        //            }
-        //        }
+        public void SaveOrLoad(Serializer s)
+        {
+            if (!s.IsLoading)
+            {
+                s.Writer.WriteByte(_program);
+                s.Writer.WriteByte(_mt32 ? 1 : 0);
+            }
+            else
+            {
+                _program = s.Reader.ReadByte();
+                _mt32 = s.Reader.ReadByte() > 0;
+            }
+        }
 
         public void Send(MidiChannel mc)
         {

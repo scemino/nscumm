@@ -18,6 +18,7 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+using NScumm.Core.IO;
 
 namespace NScumm.Core.Audio.IMuse
 {
@@ -40,7 +41,7 @@ namespace NScumm.Core.Audio.IMuse
 
         void Pause(bool paused);
 
-        //        int save_or_load(Serializer *ser, ScummEngine *scumm, bool fixAfterLoad = true);
+        void SaveOrLoad(Serializer serializer);
 
         bool GetSoundActive(int sound);
 

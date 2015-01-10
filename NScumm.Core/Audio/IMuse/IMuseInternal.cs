@@ -86,8 +86,8 @@ namespace NScumm.Core.Audio.IMuse
         protected ushort[] _channel_volume;
         protected ushort[] _channel_volume_eff;
         protected ushort[] _volchan_table;
-        protected Player[] _players;
-        protected Part[] _parts;
+        internal protected Player[] _players;
+        internal protected Part[] _parts;
     
         protected bool _pcSpeaker;
         protected Instrument[] _global_instruments;
@@ -1488,7 +1488,82 @@ namespace NScumm.Core.Audio.IMuse
                 _paused = paused;
             }
         }
-        //            public int save_or_load(Serializer *ser, ScummEngine *scumm, bool fixAfterLoad = true);
+
+        public void SaveOrLoad(Serializer ser)
+        {
+            if (ser.IsLoading && ser.Reader.BaseStream.Position >= ser.Reader.BaseStream.Length)
+                return;
+
+            lock (_mutex)
+            {
+                var mainEntries = new []
+                {
+                    LoadAndSaveEntry.Create(r => _queue_end = r.ReadByte(), w => w.WriteByte((byte)_queue_end), 8),
+                    LoadAndSaveEntry.Create(r => _queue_pos = r.ReadByte(), w => w.WriteByte((byte)_queue_pos), 8),
+                    LoadAndSaveEntry.Create(r => _queueSound = r.ReadUInt16(), w => w.WriteUInt16(_queueSound), 8),
+                    LoadAndSaveEntry.Create(r => _queue_adding = r.ReadBoolean(), w => w.Write(_queue_adding), 8),
+                    LoadAndSaveEntry.Create(r => _queue_marker = r.ReadByte(), w => w.WriteByte(_queue_marker), 8),
+                    LoadAndSaveEntry.Create(r => _queue_cleared = r.ReadBoolean(), w => w.Write(_queue_cleared), 8),
+                    LoadAndSaveEntry.Create(r => _master_volume = r.ReadByte(), w => w.WriteByte(_master_volume), 8),
+                    LoadAndSaveEntry.Create(r => _trigger_count = r.ReadUInt16(), w => w.WriteUInt16(_trigger_count), 8),
+                    LoadAndSaveEntry.Create(r => _snm_trigger_index = r.ReadUInt16(), w => w.WriteUInt16(_snm_trigger_index), 54),
+                    LoadAndSaveEntry.Create(r => _channel_volume = r.ReadUInt16s(8), w => w.WriteUInt16s(_channel_volume, 8), 8),
+                    LoadAndSaveEntry.Create(r => _volchan_table = r.ReadUInt16s(8), w => w.WriteUInt16s(_channel_volume, 8), 8)
+                };
+
+                Array.ForEach(mainEntries, e => e.Execute(ser));
+                Array.ForEach(_cmd_queue, e => e.SaveOrLoad(ser));
+                Array.ForEach(_snm_triggers, e => e.SaveOrLoad(ser));
+
+                // The players
+                Array.ForEach(_players, p => p.SaveOrLoad(ser));
+
+                // The parts
+                Array.ForEach(_parts, p => p.SaveOrLoad(ser));
+
+                {
+                    // Load/save the instrument definitions, which were revamped with V11.
+                    if (ser.Version >= 11)
+                    {
+                        foreach (var part in _parts)
+                        {
+                            part.Instrument.SaveOrLoad(ser);
+                        }
+                    }
+                    else
+                    {
+                        foreach (var part in _parts)
+                            part.Instrument.Clear();
+                    }
+                }
+
+                // VolumeFader has been replaced with the more generic ParameterFader.
+                // FIXME: replace this loop by something like
+                LoadAndSaveEntry.Create(r => r.ReadBytes(13 * 8), w => w.WriteBytes(new byte[13 * 8], 13 * 8), 8, 16).Execute(ser);
+//
+//            // Normally, we have to fix up the data structures after loading a
+//            // saved game. But there are cases where we don't. For instance, The
+//            // Macintosh version of Monkey Island 1 used to convert the Mac0 music
+//            // resources to General MIDI and play it through iMUSE as a rough
+//            // approximation. Now it has its own player, but old savegame still
+//            // have the iMUSE data in them. We have to skip that data, using a
+//            // dummy iMUSE object, but since the resource is no longer recognizable
+//            // to iMUSE, the fixup fails hard. So yes, this is a bit of a hack.
+//
+//            if (ser->isLoading() && fixAfterLoad) {
+//                // Load all sounds that we need
+//                fix_players_after_load(scumm);
+//                fix_parts_after_load();
+//                setImuseMasterVolume(_master_volume);
+//
+//                if (_midi_native)
+//                    reallocateMidiChannels(_midi_native);
+//                if (_midi_adlib)
+//                    reallocateMidiChannels(_midi_adlib);
+//            }
+            }
+        }
+
         public bool GetSoundActive(int sound)
         {
             lock (_mutex)

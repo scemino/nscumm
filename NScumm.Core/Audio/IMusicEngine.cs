@@ -18,6 +18,7 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+using NScumm.Core.IO;
 
 namespace NScumm.Core.Audio
 {
@@ -60,6 +61,8 @@ namespace NScumm.Core.Audio
 		/// </summary>
 		/// <returns>The music timer.</returns>
 		int GetMusicTimer();
+
+        void SaveOrLoad(Serializer serializer);
     }
 }
 

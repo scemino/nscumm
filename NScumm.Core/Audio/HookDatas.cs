@@ -18,6 +18,8 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+using NScumm.Core.IO;
+using System;
 
 
 namespace NScumm.Core.Audio
@@ -108,6 +110,22 @@ namespace NScumm.Core.Audio
             PartVolume = new byte[16];
             PartProgram = new byte[16];
             PartTranspose = new byte[16];
+        }
+
+        public void SaveOrLoad(Serializer ser)
+        {
+            var hookEntries = new []
+            {
+                LoadAndSaveEntry.Create(r => Jump[0] = r.ReadByte(), w => w.WriteByte(Jump[0]), 8),
+                LoadAndSaveEntry.Create(r => Jump[0] = r.ReadByte(), w => w.WriteByte(Jump[0]), 8),
+                LoadAndSaveEntry.Create(r => Transpose = r.ReadByte(), w => w.WriteByte(Transpose), 8),
+                LoadAndSaveEntry.Create(r => PartOnOff = r.ReadBytes(16), w => w.WriteBytes(PartOnOff, 16), 8),
+                LoadAndSaveEntry.Create(r => PartVolume = r.ReadBytes(16), w => w.WriteBytes(PartVolume, 16), 8),
+                LoadAndSaveEntry.Create(r => PartProgram = r.ReadBytes(16), w => w.WriteBytes(PartProgram, 16), 8),
+                LoadAndSaveEntry.Create(r => PartTranspose = r.ReadBytes(16), w => w.WriteBytes(PartTranspose, 16), 8)
+            };
+
+            Array.ForEach(hookEntries, e => e.Execute(ser));
         }
 
         static void Set<T>(T[] array, T value)

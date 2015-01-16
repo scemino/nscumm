@@ -42,7 +42,9 @@ namespace NScumm.Core.IO
         Loom,
         Pass,
         Tentacle,
-        SamNMax
+        SamNMax,
+        FullThrottle,
+        Dig
     }
 
     public class GameInfo
@@ -50,6 +52,8 @@ namespace NScumm.Core.IO
         public string Path { get; set; }
 
         public string Id { get; set; }
+
+        public string Pattern { get; set; }
 
         public GameId GameId { get; set; }
 
@@ -109,6 +113,7 @@ namespace NScumm.Core.IO
                     MD5 = signature,
                     Path = path,
                     Id = (string)game.Attribute("id"),
+                    Pattern = (string)game.Attribute("pattern"),
                     GameId = (GameId)Enum.Parse(typeof(GameId), (string)game.Attribute("gameId")),
                     Variant = (string)game.Attribute("variant"),
                     Description = desc,

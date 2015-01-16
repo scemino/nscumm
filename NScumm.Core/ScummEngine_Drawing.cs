@@ -33,15 +33,17 @@ namespace NScumm.Core
         Surface _textSurface;
         Surface _composite;
         protected bool _bgNeedsRedraw;
-        protected bool _fullRedraw;
+        protected internal bool _fullRedraw;
         internal Gdi Gdi;
         bool _completeScreenRedraw;
-        protected IGraphicsManager _gfxManager;
+        protected internal IGraphicsManager _gfxManager;
         protected byte[] _shadowPalette = new byte[256];
         int _palDirtyMin, _palDirtyMax;
         int _textSurfaceMultiplier = 1;
         protected int _screenStartStrip;
         protected int _screenEndStrip;
+
+        public const int NumShadowPalette = 8;
 
         static byte[] tableEGAPalette = new byte[]
         {
@@ -274,7 +276,7 @@ namespace NScumm.Core
             _string[a].Position = new Point((short)_charset.Str.Right, _string[a].Position.Y);
         }
 
-        protected void SetDirtyColors(int min, int max)
+        protected internal void SetDirtyColors(int min, int max)
         {
             if (_palDirtyMin > min)
                 _palDirtyMin = min;

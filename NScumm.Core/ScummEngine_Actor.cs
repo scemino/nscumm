@@ -36,7 +36,7 @@ namespace NScumm.Core
 
         void InitActors()
         {
-            Actors = new Actor[Game.GameId == NScumm.Core.IO.GameId.SamNMax ? 30 : 13];
+            Actors = new Actor[Game.Version == 7 || Game.GameId == NScumm.Core.IO.GameId.SamNMax ? 30 : 13];
             for (byte i = 0; i < Actors.Length; i++)
             {
                 Actors[i] = _game.Version == 3 ? new Actor3(this, i) : new Actor(this, i);

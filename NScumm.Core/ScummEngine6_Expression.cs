@@ -26,73 +26,73 @@ namespace NScumm.Core
     partial class ScummEngine6
     {
         [OpCode(0x0c)]
-        void Dup(int value)
+        protected void Dup(int value)
         {
             Push(value);
             Push(value);
         }
 
         [OpCode(0x0d)]
-        void Not(int value)
+        protected void Not(int value)
         {
             Push(value == 0);
         }
 
         [OpCode(0x0e)]
-        void Eq(int a, int b)
+        protected void Eq(int a, int b)
         {
             Push(a == b);
         }
 
         [OpCode(0x0f)]
-        void NEq(int a, int b)
+        protected void NEq(int a, int b)
         {
             Push(a != b);
         }
 
         [OpCode(0x14)]
-        void Add(int a, int b)
+        protected void Add(int a, int b)
         {
             Push(a + b);
         }
 
         [OpCode(0x15)]
-        void Sub(int a, int b)
+        protected void Sub(int a, int b)
         {
             Push(a - b);
         }
 
         [OpCode(0x16)]
-        void Mul(int a, int b)
+        protected void Mul(int a, int b)
         {
             Push(a * b);
         }
 
         [OpCode(0x17)]
-        void Div(int a, int b)
+        protected void Div(int a, int b)
         {
             Push(a / b);
         }
 
         [OpCode(0x18)]
-        void Land(int a, int b)
+        protected void Land(int a, int b)
         {
             Push((a != 0) && (b != 0));
         }
 
         [OpCode(0x19)]
-        void Lor(int a, int b)
+        protected void Lor(int a, int b)
         {
             Push((a != 0) || (b != 0));
         }
 
         [OpCode(0x1a)]
-        void Pop(int a)
+        protected void Pop(int a)
         {
         }
 
         [OpCode(0x5c)]
-        void If(int condition)
+        protected void If(int condition)
         {
             if (condition != 0)
                 Jump();
@@ -101,7 +101,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0x5d)]
-        void IfNot(int condition)
+        protected void IfNot(int condition)
         {
             if (condition == 0)
                 Jump();
@@ -110,31 +110,31 @@ namespace NScumm.Core
         }
 
         [OpCode(0x10)]
-        void Gt(int a, int b)
+        protected void Gt(int a, int b)
         {
             Push(a > b);
         }
 
         [OpCode(0x11)]
-        void Lt(int a, int b)
+        protected void Lt(int a, int b)
         {
             Push(a < b);
         }
 
         [OpCode(0x12)]
-        void Le(int a, int b)
+        protected void Le(int a, int b)
         {
             Push(a <= b);
         }
 
         [OpCode(0x13)]
-        void Ge(int a, int b)
+        protected void Ge(int a, int b)
         {
             Push(a >= b);
         }
 
         [OpCode(0x73)]
-        void Jump()
+        protected void Jump()
         {
             var offset = ReadWordSigned();
 
@@ -150,25 +150,25 @@ namespace NScumm.Core
         }
 
         [OpCode(0xad)]
-        void IsAnyOf(int value, int[] args)
+        protected void IsAnyOf(int value, int[] args)
         {
             Push(args.Any(v => v == value));
         }
 
         [OpCode(0xc4)]
-        void Abs(int value)
+        protected void Abs(int value)
         {
             Push(Math.Abs(value));
         }
 
         [OpCode(0xd6)]
-        void BAnd(int a, int b)
+        protected void BAnd(int a, int b)
         {
             Push(a & b);
         }
 
         [OpCode(0xd7)]
-        void Bor(int a, int b)
+        protected void Bor(int a, int b)
         {
             Push(a | b);
         }

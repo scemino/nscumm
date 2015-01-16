@@ -18,6 +18,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
+using OpenTK;
 
 namespace NScumm.MonoGame
 {
@@ -28,9 +29,8 @@ namespace NScumm.MonoGame
         readonly Texture2D _texture;
         Texture2D _textureCursor;
         byte[] _pixels;
-        Color[] _colors;
+        Color[] _palColors;
         bool _cursorVisible;
-        Vector2 _hotspot;
         int _shakePos;
         GraphicsDevice _device;
 
@@ -38,36 +38,62 @@ namespace NScumm.MonoGame
 
         #region Constructor
 
-        public XnaGraphicsManager(GraphicsDevice device)
+        NativeWindow _window;
+
+        public XnaGraphicsManager(NativeWindow window, GraphicsDevice device)
         {
             if (device == null)
                 throw new ArgumentNullException("device");
 
+            _window = window;
             _device = device;
             _pixels = new byte[320 * 200];
             _texture = new Texture2D(device, 320, 200);
             _textureCursor = new Texture2D(device, 16, 16);
-            _colors = new Color[256];
-            for (int i = 0; i < _colors.Length; i++)
+            _palColors = new Color[256];
+            for (int i = 0; i < _palColors.Length; i++)
             {
-                _colors[i] = Color.White;               
+                _palColors[i] = Color.White;               
             }
+            _colors = new Color[320 * 200];
         }
 
         #endregion
 
+        object _gate = new object();
+        Color[] _colors;
+
         public void UpdateScreen()
         {
-            var colors = new Color[320 * 200];
-            for (int h = 0; h < 200; h++)
+            lock (_gate)
             {
-                for (int w = 0; w < 320; w++)
+                for (int h = 0; h < 200; h++)
                 {
-                    var color = _colors[_pixels[w + h * 320]];
-                    colors[w + h * 320] = color;
+                    for (int w = 0; w < 320; w++)
+                    {
+                        var color = _palColors[_pixels[w + h * 320]];
+                        _colors[w + h * 320] = color;
+                    }
                 }
             }
-            _texture.SetData(colors);
+        }
+
+        int snapshot = 0;
+
+        public void Snapshot()
+        {
+            using (var bmp = new System.Drawing.Bitmap(320, 200))
+            {
+                for (int h = 0; h < 200; h++)
+                {
+                    for (int w = 0; w < 320; w++)
+                    {
+                        var color = _palColors[_pixels[w + h * 320]];
+                        bmp.SetPixel(w, h, System.Drawing.Color.FromArgb(color.R, color.G, color.B));
+                    }
+                }
+                bmp.Save(string.Format("/tmp/frame_{0}.png", ++snapshot));
+            }
         }
 
         public void CopyRectToScreen(byte[] buffer, int sourceStride, int x, int y, int width, int height)
@@ -96,13 +122,15 @@ namespace NScumm.MonoGame
             for (int i = 0; i < num; i++)
             {
                 var color = colors[i + first];
-                _colors[i + first] = new Color(color.R, color.G, color.B);
+                _palColors[i + first] = new Color(color.R, color.G, color.B);
             }
         }
 
         #endregion
 
         #region Cursor Methods
+
+        public Microsoft.Xna.Framework.Vector2 Hotspot { get; private set; }
 
         public void SetCursor(byte[] pixels, int width, int height, NScumm.Core.Graphics.Point hotspot)
         {
@@ -112,23 +140,25 @@ namespace NScumm.MonoGame
                 _textureCursor = new Texture2D(_device, width, height);
             }
 
-            _hotspot = new Vector2(hotspot.X, hotspot.Y);
+            Hotspot = new Microsoft.Xna.Framework.Vector2(hotspot.X, hotspot.Y);
             var pixelsCursor = new Color[width * height];
             for (int h = 0; h < height; h++)
             {
                 for (int w = 0; w < width; w++)
                 {
                     var palColor = pixels[w + h * width];
-                    var color = palColor == 0xFF ? Color.Transparent : _colors[palColor];
+                    var color = palColor == 0xFF ? Color.Transparent : _palColors[palColor];
                     pixelsCursor[w + h * width] = color;
                 }
             }
             _textureCursor.SetData(pixelsCursor);
         }
 
-        public void ShowCursor(bool show)
+        public bool ShowCursor(bool show)
         {
+            var lastState = _cursorVisible;
             _cursorVisible = show;
+            return lastState;
         }
 
         #endregion
@@ -137,18 +167,22 @@ namespace NScumm.MonoGame
 
         public void DrawScreen(SpriteBatch spriteBatch)
         {
-            var rect = spriteBatch.GraphicsDevice.Viewport.Bounds;
-            rect.Offset(0, _shakePos);
-            spriteBatch.Draw(_texture, rect, null, Color.White);
+            lock (_gate)
+            {
+                var rect = spriteBatch.GraphicsDevice.Viewport.Bounds;
+                rect.Offset(0, _shakePos);
+                _texture.SetData(_colors);
+                spriteBatch.Draw(_texture, rect, null, Color.White);
+            }
         }
 
-        public void DrawCursor(SpriteBatch spriteBatch, Vector2 cursorPos)
+        public void DrawCursor(SpriteBatch spriteBatch, Microsoft.Xna.Framework.Vector2 cursorPos)
         {
             if (_cursorVisible)
             {
-                double scaleX = spriteBatch.GraphicsDevice.Viewport.Bounds.Width / 320.0;
-                double scaleY = spriteBatch.GraphicsDevice.Viewport.Bounds.Height / 200.0;
-                var rect = new Rectangle((int)(cursorPos.X - scaleX * _hotspot.X), (int)(cursorPos.Y - scaleY * _hotspot.Y), (int)(scaleX * _textureCursor.Width), (int)(scaleY * _textureCursor.Height));
+                double scaleX = _window.Bounds.Width / 320.0;
+                double scaleY = _window.Bounds.Height / 200.0;
+                var rect = new Rectangle((int)(cursorPos.X - _window.Bounds.X - scaleX * Hotspot.X), (int)(cursorPos.Y - _window.Bounds.Y - scaleY * Hotspot.Y), (int)(scaleX * _textureCursor.Width), (int)(scaleY * _textureCursor.Height));
                 spriteBatch.Draw(_textureCursor, rect, null, Color.White);
             }
         }

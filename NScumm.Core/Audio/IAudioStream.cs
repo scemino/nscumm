@@ -23,10 +23,36 @@ using System;
 namespace NScumm.Core.Audio
 {
     /// <summary>
+    /// Various flags which can be bit-ORed and then passed to
+    /// makeRawStream and some other AudioStream factories
+    /// to control their behavior.
+    ///
+    /// Engine authors are advised not to rely on a certain value or
+    /// order of these flags (in particular, do not store them verbatim
+    /// in savestates).
+    /// </summary>
+    public enum AudioFlags
+    {
+        None,
+
+        /** unsigned samples (default: signed) */
+        Unsigned = 1 << 0,
+
+        /** sound is 16 bits wide (default: 8bit) */
+        Is16Bits = 1 << 1,
+
+        /** samples are little endian (default: big endian) */
+        LittleEndian = 1 << 2,
+
+        /** sound is in stereo (default: mono) */
+        Stereo = 1 << 3
+    }
+
+    /// <summary>
     /// Generic audio input stream. Subclasses of this are used to feed arbitrary
     /// sampled audio data into ScummVM's audio mixer.
     /// </summary>
-    public interface IMixerAudioStream: IDisposable
+    public interface IAudioStream: IDisposable
     {
         /// <summary>
         /// Fill the given buffer with up to numSamples samples. Returns the actual

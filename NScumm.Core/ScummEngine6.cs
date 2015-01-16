@@ -39,12 +39,11 @@ namespace NScumm.Core
 
     partial class ScummEngine6: ScummEngine5
     {
-        int VariableTimeDateYear;
-        int VariableTimeDateMonth;
-        int VariableTimeDateDay;
-        int VariableTimeDateHour;
-        int VariableTimeDateMinute;
-        int VariableV6EMSSpace;
+        protected int VariableTimeDateYear;
+        protected int VariableTimeDateMonth;
+        protected int VariableTimeDateDay;
+        protected int VariableTimeDateHour;
+        protected int VariableTimeDateMinute;
 
         public ScummEngine6(GameInfo game, IGraphicsManager graphicsManager, IInputManager inputManager, IMixer mixer)
             : base(game, graphicsManager, inputManager, mixer)
@@ -75,11 +74,6 @@ namespace NScumm.Core
                 VariableV6SoundMode = 9;
                 //VariableCharsetMask = 123;
             }
-
-            Variables[VariableRoomWidth.Value] = ScreenWidth;
-            Variables[VariableRoomHeight.Value] = ScreenHeight;
-            Variables[VariableVoiceMode.Value] = (int)VoiceMode.VoiceAndText;
-            Variables[VariableV6EMSSpace] = 10000;
 
             foreach (var array in _resManager.ArrayDefinitions)
             {

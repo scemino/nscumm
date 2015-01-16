@@ -69,7 +69,7 @@ namespace NScumm.Core.Audio
             inLen = 0;
         }
 
-        public int Flow(IMixerAudioStream input, short[] obuf, int volLeft, int volRight)
+        public int Flow(IAudioStream input, short[] obuf, int volLeft, int volRight)
         {
             var obufPos = 0;
             var inPos = 0;

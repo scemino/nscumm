@@ -40,19 +40,18 @@ namespace NScumm.Core
             VariableUserPut = 53;
             VariableTalkStringY = 54;
 
-            Variables[VariableFixedDisk.Value] = 1;
-
-            if (Game.Version >= 4 && Game.Version <= 5)
-                Variables[VariableTalkStringY.Value] = -0x50;
-
-            if (game.Id == "loom")
+            if ((game.GameId == GameId.Loom && Game.Version == 4) || Game.Version >= 5)
             {
                 VariableNoSubtitles = 60;
             }
-            else if (game.Id == "monkey")
-            {
-                Variables[74] = 1225;
-            }
+        }
+
+        protected override void ResetScummVars()
+        {
+            base.ResetScummVars();
+
+            if (Game.Version >= 4 && Game.Version <= 5)
+                Variables[VariableTalkStringY.Value] = -0x50;
         }
 
         protected override void InitOpCodes()

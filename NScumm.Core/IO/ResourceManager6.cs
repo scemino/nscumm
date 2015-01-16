@@ -34,10 +34,10 @@ namespace NScumm.Core
         protected override ResourceFile OpenRoom(byte roomIndex)
         {
             var diskNum = Index.RoomResources[roomIndex].RoomNum;
-            var diskName = string.Format("{0}.{1:000}", Game.Id, diskNum);
+            var diskName = Game.Pattern == null ? string.Format("{0}.{1:000}", Game.Id, diskNum) : string.Format(Game.Pattern, diskNum);
             var game1Path = ScummHelper.NormalizePath(Path.Combine(Directory, diskName));
 
-            var file = new ResourceFile6(game1Path, 0x69);
+            var file = new ResourceFile6(game1Path, (byte)0x69);
             return file;
         }
 

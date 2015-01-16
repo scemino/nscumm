@@ -45,7 +45,7 @@ namespace NScumm.Core
             };
 
         [OpCode(0x6b)]
-        void CursorCommand()
+        protected void CursorCommand()
         {
             var subOp = ReadByte();
             switch (subOp)
@@ -115,8 +115,11 @@ namespace NScumm.Core
 
         }
 
-        void SetCursorFromImg(int obj, int room, int index)
+        protected void SetCursorFromImg(int obj, int room, int index)
         {
+            if (room == - 1)
+                room = GetObjectRoom(obj);
+
             var roomD = (CurrentRoom != room) ? _resManager.GetRoom((byte)room) : roomData;
             var ob = roomD.Objects.First(o => o.Number == obj);
             var img = ob.Images[index - 1];
@@ -244,7 +247,7 @@ namespace NScumm.Core
             return pixels;
         }
 
-        void GrabCursor(int x, int y, int w, int h)
+        protected void GrabCursor(int x, int y, int w, int h)
         {
             var vs = FindVirtScreen(y);
             var pixels = Capture(vs, x, y - vs.TopLine, w, h);

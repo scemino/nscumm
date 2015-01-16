@@ -17,6 +17,7 @@
 
 using NScumm.Core.IO;
 using System;
+using System.IO;
 
 namespace NScumm.Core
 {
@@ -32,7 +33,7 @@ namespace NScumm.Core
         public byte NumAnim;
         public byte Format;
         public bool Mirror;
-        public XorReader CostumeReader;
+        public BinaryReader CostumeReader;
 
         ScummEngine _vm;
 
@@ -44,7 +45,7 @@ namespace NScumm.Core
 
         public void LoadCostume(int id)
         {
-            CostumeReader = _vm.ResourceManager.GetCostumeReader(id);
+            CostumeReader = new BinaryReader(new MemoryStream(_vm.ResourceManager.GetCostumeData(id)));
 
             if (_vm.Game.Version >= 6)
             {
@@ -53,8 +54,9 @@ namespace NScumm.Core
 
             BasePtr = CostumeReader.BaseStream.Position - 6;
             NumAnim = CostumeReader.ReadByte();
-            Format = (byte)(CostumeReader.PeekByte() & 0x7F);
-            Mirror = (CostumeReader.ReadByte() & 0x80) != 0;
+            var tmp = CostumeReader.ReadByte();
+            Format = (byte)(tmp & 0x7F);
+            Mirror = (tmp & 0x80) != 0;
 
             switch (Format)
             {

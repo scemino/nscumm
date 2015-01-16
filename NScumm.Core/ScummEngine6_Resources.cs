@@ -25,7 +25,7 @@ namespace NScumm.Core
     partial class ScummEngine6
     {
         [OpCode(0x9b)]
-        void ResourceRoutines()
+        protected void ResourceRoutines()
         {
             var subOp = ReadByte();
             switch (subOp)
@@ -184,13 +184,10 @@ namespace NScumm.Core
 
         }
 
-        int GetObjectRoom(int obj)
+        int GetObjectRoom(int obj) 
         {
-            throw new NotImplementedException();
-//            ScummHelper.AssertRange(0, obj, 200 - 1, "object");
-//            return _objectRoomTable[obj];
+            return _resManager.ObjectRoomTable[obj];
         }
-
     }
 }
 

@@ -38,7 +38,7 @@ namespace NScumm.Core.Audio
             _bufferSize = 0; 
         }
 
-        public int Flow(IMixerAudioStream input, short[] obuf, int volLeft, int volRight)
+        public int Flow(IAudioStream input, short[] obuf, int volLeft, int volRight)
         {
             Debug.Assert(input.IsStereo == stereo);
 

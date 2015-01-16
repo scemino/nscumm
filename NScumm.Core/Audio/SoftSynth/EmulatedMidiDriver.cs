@@ -21,7 +21,7 @@
 
 namespace NScumm.Core.Audio.SoftSynth
 {
-    abstract class EmulatedMidiDriver: MidiDriver, IMixerAudioStream
+    abstract class EmulatedMidiDriver: MidiDriver, IAudioStream
     {
         public bool IsOpen { get { return _isOpen; } }
 

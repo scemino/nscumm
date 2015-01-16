@@ -74,7 +74,11 @@ namespace NScumm.Core.Graphics
 
         public bool HasTwoBuffers { get; set; }
 
-        public int Pitch { get { return Surfaces[0].Pitch; } }
+        public int Pitch
+        { 
+            get { return Surfaces[0].Pitch; } 
+            internal set { Surfaces[0].Pitch = value; }
+        }
 
         public PixelFormat PixelFormat { get { return Surfaces[0].PixelFormat; } }
 

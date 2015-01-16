@@ -81,10 +81,13 @@ namespace NScumm.Core.IO
             return data;
         }
 
-        public override XorReader ReadCostume(long offset)
+        public override byte[] ReadCostume(long offset)
         {
-            _reader.BaseStream.Seek(offset + HeaderSize, System.IO.SeekOrigin.Current);
-            return _reader;
+            _reader.BaseStream.Seek(offset, System.IO.SeekOrigin.Current);
+            var size = _reader.ReadUInt16();
+            var tmp = _reader.ReadBytes(2);
+
+            return _reader.ReadBytes(size - HeaderSize);
         }
 
         public override byte[] ReadSound(long offset)

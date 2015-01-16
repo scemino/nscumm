@@ -50,6 +50,8 @@ namespace NScumm.Core.Audio
 
         public int OutputRate { get { return _sampleRate; } }
 
+        public bool IsReady { get { return _mixerReady; } }
+
         public Mixer(int sampleRate)
         {
             Debug.Assert(sampleRate > 0);
@@ -62,7 +64,7 @@ namespace NScumm.Core.Audio
             _sampleRate = sampleRate;
         }
 
-        public SoundHandle PlayStream(SoundType type, IMixerAudioStream stream, int id = -1, int volume = 255, int balance = 0, bool autofreeStream = true, bool permanent = false, bool reverseStereo = false)
+        public SoundHandle PlayStream(SoundType type, IAudioStream stream, int id = -1, int volume = 255, int balance = 0, bool autofreeStream = true, bool permanent = false, bool reverseStereo = false)
         {
             lock (_gate)
             {
@@ -230,6 +232,65 @@ namespace NScumm.Core.Audio
                         _channels[i] = null;
                     }
                 }
+            }
+        }
+
+        public int GetSoundElapsedTime(SoundHandle handle)
+        {
+            return GetElapsedTime(handle).Milliseconds;
+        }
+
+        public void SetChannelVolume(SoundHandle handle, int volume)
+        {
+            lock (_gate)
+            {
+                var index = handle.Value % NumChannels;
+                if (_channels[index] == null || _channels[index].Handle.Value != handle.Value)
+                    return;
+
+                _channels[index].Volume = volume;
+            }
+        }
+
+        public int GetChannelVolume(SoundHandle handle)
+        {
+            var index = handle.Value % NumChannels;
+            if (_channels[index] == null || _channels[index].Handle.Value != handle.Value)
+                return 0;
+            return _channels[index].Volume;
+        }
+
+        public void SetChannelBalance(SoundHandle handle, int balance)
+        {
+            lock (_gate)
+            {
+
+                var index = handle.Value % NumChannels;
+                if (_channels[index]==null || _channels[index].Handle.Value != handle.Value)
+                    return;
+
+                _channels[index].Balance = balance;
+            }
+        }
+
+        public int GetChannelBalance(SoundHandle handle)
+        {
+            var index = handle.Value % NumChannels;
+            if (_channels[index]==null || _channels[index].Handle.Value != handle.Value)
+                return 0;
+
+            return _channels[index].Balance;
+        }
+
+        Timestamp GetElapsedTime(SoundHandle handle)
+        {
+            lock (_gate)
+            {
+                var index = handle.Value % NumChannels;
+                if (_channels[index] == null || _channels[index].Handle.Value != handle.Value)
+                    return new Timestamp(0, _sampleRate);
+
+                return _channels[index].GetElapsedTime();
             }
         }
 

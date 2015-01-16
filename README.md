@@ -1,7 +1,7 @@
 NSCUMM
 ======
 
-Quick and dirty .NET port of the SCUMM engine version 3, 4, 5 and 6 of the project scummvm.
+Quick and dirty .NET port of the SCUMM engine version 3, 4, 5, 6 and 7 of the project scummvm.
 
 Quick start
 -----------
@@ -24,8 +24,14 @@ with game:
 
 `SAMNMAX.000` for Sam & Max Hit the Road
 
+`FT.LA0` for Full Throttle
+
 Supported Games
 ---------------
+
+### SCUMM 7
+
+Full Throttle
 
 ### SCUMM 6
 

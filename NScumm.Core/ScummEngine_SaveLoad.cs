@@ -36,7 +36,7 @@ namespace NScumm.Core
         const uint SaveInfoSectionSize = (4 + 4 + 4 + 4 + 4 + 4 + 2);
         const uint SaveCurrentVersion = 94;
         protected string _savegame;
-        protected int _saveLoadFlag;
+        protected internal int _saveLoadFlag;
         protected int _saveLoadSlot;
         protected bool _saveTemporaryState;
 

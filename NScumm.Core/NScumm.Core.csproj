@@ -169,7 +169,6 @@
     <Compile Include="ScummEngine6_Misc.cs" />
     <Compile Include="Audio\Decoders\VocStream.cs" />
     <Compile Include="Audio\Timestamp.cs" />
-    <Compile Include="Audio\IMixerAudioStream.cs" />
     <Compile Include="Audio\SoundHandle.cs" />
     <Compile Include="Audio\IMixer.cs" />
     <Compile Include="Audio\Mixer.cs" />
@@ -216,6 +215,25 @@
     <Compile Include="Audio\IMuse\SamAndMaxSysEx.cs" />
     <Compile Include="Audio\Player_AD.cs" />
     <Compile Include="Audio\IMuse\InstrumentProgram.cs" />
+    <Compile Include="ScummEngine7.cs" />
+    <Compile Include="IO\ResourceIndex7.cs" />
+    <Compile Include="ScummEngine7_Misc.cs" />
+    <Compile Include="IO\ResourceFile7.cs" />
+    <Compile Include="IO\ResourceManager7.cs" />
+    <Compile Include="AkosCostumeLoader.cs" />
+    <Compile Include="IO\ChunkIterator5.cs" />
+    <Compile Include="Graphics\AkosRenderer.cs" />
+    <Compile Include="IO\AkosHeader.cs" />
+    <Compile Include="Smush\SmushPlayer.cs" />
+    <Compile Include="Smush\TrsFile.cs" />
+    <Compile Include="Smush\SmushMixer.cs" />
+    <Compile Include="Smush\Codec37Decoder.cs" />
+    <Compile Include="Smush\SmushChannel.cs" />
+    <Compile Include="Audio\QueuingAudioStream.cs" />
+    <Compile Include="Audio\IAudioStream.cs" />
+    <Compile Include="Smush\SaudChannel.cs" />
+    <Compile Include="Audio\Decoders\RawStream.cs" />
+    <Compile Include="Audio\Decoders\AudioStreamHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="IO\Nscumm.xml">
@@ -245,5 +263,6 @@
     <Folder Include="Audio\RateConverters\" />
     <Folder Include="Audio\OPL\DosBox\" />
     <Folder Include="Audio\OPL\Mame\" />
+    <Folder Include="Smush\" />
   </ItemGroup>
 </Project>

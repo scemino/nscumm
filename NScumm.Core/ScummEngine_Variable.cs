@@ -93,6 +93,7 @@ namespace NScumm.Core
         public int? VariableLeftButtonHold;
         public int? VariableRightButtonHold;
         public int? VariableV6SoundMode;
+        public int? VariableV6EMSSpace;
 
         int[] _variables;
         BitArray _bitVars;

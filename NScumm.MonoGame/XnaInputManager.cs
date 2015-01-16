@@ -21,13 +21,13 @@ namespace NScumm.MonoGame
 {
     sealed class XnaInputManager : NScumm.Core.Input.IInputManager
     {
-        Microsoft.Xna.Framework.GameWindow window;
+        OpenTK.NativeWindow window;
 
         KeyboardState keyboardState;
         MouseState lastMouseState;
         MouseState mouseState;
 
-        public XnaInputManager(Microsoft.Xna.Framework.GameWindow window)
+        public XnaInputManager(OpenTK.NativeWindow window)
         {
             this.window = window;
         }
@@ -35,11 +35,11 @@ namespace NScumm.MonoGame
         public NScumm.Core.Graphics.Point GetMousePosition()
         {
             var state = Mouse.GetState();
-            var x = state.X;
-            var y = state.Y;
+            var x = state.X - window.Bounds.X;
+            var y = state.Y - window.Bounds.Y;
 
-            var scaleX = 320.0 / window.ClientBounds.Width;
-            var scaleY = 200.0 / window.ClientBounds.Height;
+            var scaleX = 320.0 / window.Bounds.Width;
+            var scaleY = 200.0 / window.Bounds.Height;
             var pOut = new NScumm.Core.Graphics.Point((short)(x * scaleX), (short)(y * scaleY));
             return pOut;
         }

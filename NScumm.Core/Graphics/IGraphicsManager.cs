@@ -30,6 +30,6 @@ namespace NScumm.Core.Graphics
 
         void SetCursor(byte[] pixels, int width, int height, Point hotspot);
 
-        void ShowCursor(bool show);
+        bool ShowCursor(bool show);
     }
 }

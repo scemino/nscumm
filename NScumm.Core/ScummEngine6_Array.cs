@@ -182,8 +182,6 @@ namespace NScumm.Core
 
         ArrayHeader DefineArray(int array, ArrayType type, int dim2, int dim1)
         {
-            int size;
-
             Debug.WriteLine("DefineArray: {0} {1} {2} {3}", array, type, dim2, dim1);
             Debug.Assert(0 <= (int)type && (int)type <= 5);
 
@@ -191,6 +189,7 @@ namespace NScumm.Core
 
             var id = FindFreeArrayId();
 
+            int size;
             if (Game.Version == 8)
             {
                 if ((array & 0x80000000) != 0)
@@ -248,7 +247,7 @@ namespace NScumm.Core
             // ...
             // So it checks for invalid array indices only *after* using them to access
             // the array. Ouch.
-            if (Game.Id == "fullThrottle" && array == 447 && CurrentRoom == 95 && Slots[CurrentScript].Number == 2010 && idx == -1 && @base == -1)
+            if (Game.GameId == NScumm.Core.IO.GameId.FullThrottle && array == 447 && CurrentRoom == 95 && Slots[CurrentScript].Number == 2010 && idx == -1 && @base == -1)
             {
                 return 0;
             }

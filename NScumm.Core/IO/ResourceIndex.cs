@@ -86,6 +86,10 @@ namespace NScumm.Core.IO
 
         public virtual int NumLocalObjects { get { return 200; } }
 
+        public virtual int NumArray { get { return 50; }}
+
+        public virtual byte[] ObjectRoomTable { get{ return null; } }
+
         #endregion
 
         #region Public Methods
@@ -118,6 +122,9 @@ namespace NScumm.Core.IO
                     break;
                 case 6:
                     index = new ResourceIndex6();
+                    break;
+                case 7:
+                    index = new ResourceIndex7();
                     break;
                 default:
                     throw new NotSupportedException("The SCUMM version {0} is not supported.");

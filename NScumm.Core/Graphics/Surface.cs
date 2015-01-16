@@ -55,7 +55,7 @@ namespace NScumm.Core.Graphics
         /// <remarks>
         /// This might not equal w * bytesPerPixel.
         /// </remarks>
-        public int Pitch { get; private set; }
+        public int Pitch { get; internal set; }
 
         /// <summary>
         /// Number of bytes used in the pixel format

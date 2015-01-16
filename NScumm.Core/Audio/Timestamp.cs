@@ -56,6 +56,20 @@ namespace NScumm.Core.Audio
         /// <value>The seconds.</value>
         public int Seconds { get { return _secs; } }
 
+        /// <summary>
+        /// Gets the time in milliseconds described by this timestamp,
+        /// rounded down.
+        /// </summary>
+        /// <value>The milliseconds.</value>
+        public int Milliseconds
+        {
+            get
+            {
+                // Note that _framerate is always divisible by 1000.
+                return _secs * 1000 + _numFrames / (_framerate / 1000);
+            }
+        }
+
         public Timestamp(Timestamp ts)
         {
             _secs = ts._secs;
@@ -143,7 +157,7 @@ namespace NScumm.Core.Audio
 
         public Timestamp AddMsecs(int ms)
         {
-            var ts=new Timestamp(this);
+            var ts = new Timestamp(this);
             ts._secs += ms / 1000;
             // Add the remaining frames. Note that _framerate is always divisible by 1000.
             ts._numFrames += (ms % 1000) * (ts._framerate / 1000);

@@ -30,78 +30,6 @@ namespace NScumm.Core.IO
 {
     class ResourceFile5: ResourceFile4
     {
-        #region Chunk Class
-
-        protected sealed class Chunk
-        {
-            public long Size { get; set; }
-
-            public string Tag { get; set; }
-
-            public long Offset { get; set; }
-        }
-
-        #endregion
-
-        protected class ChunkIterator5: IEnumerator<Chunk>
-        {
-            readonly XorReader _reader;
-            readonly long _position;
-            readonly long _size;
-
-            public ChunkIterator5(XorReader reader, long size)
-            {
-                _reader = reader;
-                _position = reader.BaseStream.Position;
-                _size = size;
-            }
-
-            public Chunk Current
-            {
-                get;
-                private set;
-            }
-
-            object System.Collections.IEnumerator.Current
-            {
-                get { return Current; }
-            }
-
-            public void Dispose()
-            {
-            }
-
-            public bool MoveNext()
-            {
-                if (Current != null)
-                {
-                    var offset = Current.Offset + Current.Size - 8;
-                    _reader.BaseStream.Seek(offset, SeekOrigin.Begin);
-                }
-                Current = null;
-                if (_reader.BaseStream.Position < (_position + _size - 8) && _reader.BaseStream.Position < _reader.BaseStream.Length)
-                {
-                    var tag = Encoding.ASCII.GetString(_reader.ReadBytes(4));
-                    var size = _reader.ReadUInt32BigEndian();
-                    Current = new Chunk { Offset = _reader.BaseStream.Position, Size = size, Tag = tag };
-                }
-                return Current != null;
-            }
-
-            public static Chunk ReadChunk(XorReader reader)
-            {
-                var tag = Encoding.ASCII.GetString(reader.ReadBytes(4));
-                var size = reader.ReadUInt32BigEndian();
-                return new Chunk { Offset = reader.BaseStream.Position, Size = size, Tag = tag };
-            }
-
-            public void Reset()
-            {
-                _reader.BaseStream.Seek(_position, SeekOrigin.Begin);
-                Current = null;
-            }
-        }
-
         public ResourceFile5(string path, byte encByte)
             : base(path, encByte)
         {
@@ -130,7 +58,7 @@ namespace NScumm.Core.IO
             var room = new Room();
             _reader.BaseStream.Seek(offset, SeekOrigin.Begin);
             var it = CreateChunkIterator(_reader.BaseStream.Length - offset);
-            var images = new Dictionary<ushort, ObjectImage>();
+            var images = new Dictionary<ushort, ObjectData>();
             do
             {
                 while (it.MoveNext())
@@ -246,8 +174,8 @@ namespace NScumm.Core.IO
                         case "OBIM":
                             {
                                 // Object Image
-                                var imgObj = ReadObjectImages(it.Current.Size - 8);
-                                images[imgObj.Id] = imgObj;
+                                var obj = ReadObjectImages(it.Current.Size - 8);
+                                images[obj.Number] = obj;
                             }
                             break;
                         case "OBCD":
@@ -283,26 +211,9 @@ namespace NScumm.Core.IO
             return room;
         }
 
-        protected class ObjectImage
+        protected ObjectData ReadObjectImages(long size)
         {
-            public ushort Id { get; set; }
-
-            public ushort Width { get; set; }
-
-            public List<ImageData> Images { get; private set; }
-
-            public List<Point> Hotspots { get; private set; }
-
-            public ObjectImage()
-            {
-                Images = new List<ImageData>();
-                Hotspots = new List<Point>();
-            }
-        }
-
-        protected ObjectImage ReadObjectImages(long size)
-        {
-            ObjectImage oi = null;
+            var od = new ObjectData();
             var it = CreateChunkIterator(size);
             while (it.MoveNext())
             {
@@ -310,33 +221,28 @@ namespace NScumm.Core.IO
                 {
                     case "IMHD":
                         {
-                            oi = ReadImageHeader();
+                            ReadImageHeader(od);
                         }
                         break;
                     default:
-                        var img = ReadImage(it.Current.Size - 8, oi.Width / 8);
-                        oi.Images.Add(img);
+                        var img = ReadImage(it.Current.Size - 8, od.Width / 8);
+                        od.Images.Add(img);
                         break;
                 }
             }
-            return oi;
+            return od;
         }
 
-        protected virtual ObjectImage ReadImageHeader()
+        protected virtual void ReadImageHeader(ObjectData od)
         {
-            var oi = new ObjectImage();
-            // image header
-            oi.Id = _reader.ReadUInt16();
+            od.Number = _reader.ReadUInt16();
             var numImnn = _reader.ReadUInt16();
             var numZpnn = _reader.ReadUInt16();
-            var flags = _reader.ReadByte();
+            od.Flags = (DrawBitmaps)_reader.ReadByte();
             var unknown1 = _reader.ReadByte();
-            var x = _reader.ReadInt16();
-            var y = _reader.ReadInt16();
-            oi.Width = _reader.ReadUInt16();
-            var height = _reader.ReadUInt16();
-
-            return oi;
+            od.Position = new Point(_reader.ReadInt16(), _reader.ReadInt16());
+            od.Width = _reader.ReadUInt16();
+            od.Height = _reader.ReadUInt16();
         }
 
         protected virtual ObjectData ReadCDHD()
@@ -583,14 +489,14 @@ namespace NScumm.Core.IO
             return data;
         }
 
-        public override XorReader ReadCostume(long offset)
+        public override byte[] ReadCostume(long offset)
         {
             GotoResourceHeader(offset);
             var block = ToTag(_reader.ReadBytes(4));
             var size = _reader.ReadUInt32BigEndian();
             if (block != "COST")
                 throw new NotSupportedException("Expected COST block.");
-            return _reader;
+            return _reader.ReadBytes((int)size - 8);
         }
 
         public override Dictionary<byte, long> ReadRoomOffsets()

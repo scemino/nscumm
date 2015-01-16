@@ -53,7 +53,7 @@ namespace NScumm.Core.IO
         {
             var room = new Room();
             var it = new ChunkIterator5(_reader, chunkSize);
-            var images = new Dictionary<ushort, ObjectImage>();
+            var images = new Dictionary<ushort, ObjectData>();
             while (it.MoveNext())
             {
                 switch (it.Current.Tag)
@@ -149,8 +149,8 @@ namespace NScumm.Core.IO
                     case "OBIM":
                         {
                             // Object Image
-                            var imgObj = ReadObjectImages(it.Current.Size - 8);
-                            images[imgObj.Id] = imgObj;
+                            var obj = ReadObjectImages(it.Current.Size - 8);
+                            images[obj.Number] = obj;
                         }
                         break;
                     case "OBCD":
@@ -210,27 +210,23 @@ namespace NScumm.Core.IO
             }
         }
 
-        protected override ObjectImage ReadImageHeader()
+        protected override void ReadImageHeader(ObjectData od)
         {
-            // image header
-            var oi = new ObjectImage();
-            // image header
-            oi.Id = _reader.ReadUInt16();
+            od.Number = _reader.ReadUInt16();
             var numImnn = _reader.ReadUInt16();
             var numZpnn = _reader.ReadUInt16();
-            var flags = _reader.ReadByte();
+            od.Flags = (DrawBitmaps)_reader.ReadByte();
             var unknown1 = _reader.ReadByte();
-            var x = _reader.ReadInt16();
-            var y = _reader.ReadInt16();
-            oi.Width = _reader.ReadUInt16();
-            var height = _reader.ReadUInt16();
+            od.Position = new Point(_reader.ReadInt16(), _reader.ReadInt16());
+            od.Width = _reader.ReadUInt16();
+            od.Height = _reader.ReadUInt16();
 
             var numHotspots = _reader.ReadUInt16();
             for (int i = 0; i < numHotspots; i++)
             {
-                oi.Hotspots.Add(new Point(_reader.ReadInt16(), _reader.ReadInt16()));
+                od.Hotspots.Add(new Point(_reader.ReadInt16(), _reader.ReadInt16()));
             }
-            return oi;
+
         }
 
         protected override ObjectData ReadCDHD()

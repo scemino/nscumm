@@ -48,7 +48,6 @@ namespace NScumm.Core
         const uint CurrentVersion = 94;
         protected const int OwnerRoom = 0x0F;
 
-        protected const int NumArray = 50;
         protected const int NumScriptSlot = 80;
         protected const int NumGlobalScripts = 200;
 
@@ -109,7 +108,7 @@ namespace NScumm.Core
 
         public byte InvalidBox { get; private set; }
 
-        public bool HastToQuit { get; set; }
+        public bool HasToQuit { get; set; }
 
         internal int ScreenStartStrip
         {
@@ -160,6 +159,10 @@ namespace NScumm.Core
             {
                 engine = new ScummEngine6(game, gfxManager, inputManager, mixer);
             }
+            else if (game.Version == 7)
+            {
+                engine = new ScummEngine7(game, gfxManager, inputManager, mixer);
+            }
             Instance = engine;
             return engine;
         }
@@ -184,11 +187,12 @@ namespace NScumm.Core
             _gameMD5 = ToMd5Bytes(game.MD5);
             _gfxManager = gfxManager;
             _inputManager = inputManager;
-            _strings = new byte[NumArray][];
-            _charsets = new byte[NumArray][];
+            _strings = new byte[_resManager.NumArray][];
+            _charsets = new byte[_resManager.NumArray][];
             _inventory = new ushort[_resManager.NumInventory];
             _invData = new ObjectData[_resManager.NumInventory];
             _currentScript = 0xFF;
+            Mixer = mixer;
             Sound = new Sound(this, mixer);
 
 			if (game.GameId == GameId.Loom || game.GameId == GameId.Indy3) 
@@ -241,7 +245,7 @@ namespace NScumm.Core
                 _scaleSlots[i] = new ScaleSlot();
             }
             Gdi = new Gdi(this, game);
-            _costumeLoader = new ClassicCostumeLoader(this);
+            _costumeLoader = game.Version < 7 ? (ICostumeLoader)new ClassicCostumeLoader(this) : new AkosCostumeLoader(this);
             _costumeRenderer = new ClassicCostumeRenderer(this);
 
             // Create the charset renderer
@@ -288,6 +292,57 @@ namespace NScumm.Core
 
             if (_game.Version >= 5 && _game.Version <= 7)
                 Sound.SetupSound();
+        }
+
+        protected virtual void ResetScummVars()
+        {
+            if (Game.Version <= 6)
+            {
+                // VAR_SOUNDCARD modes
+                // 0 PC Speaker
+                // 1 Tandy
+                // 2 CMS
+                // 3 AdLib
+                // 4 Roland
+                Variables[VariableSoundcard.Value] = 3; // adlib
+                Variables[VariableVideoMode.Value] = 19;
+
+                if (Game.GameId == GameId.Loom && Game.Version == 3)
+                {
+                    // Set number of sound resources
+                    Variables[39] = 80;
+                }
+                if (Game.GameId == GameId.Loom || Game.Version >= 4)
+                    Variables[VariableHeapSpace.Value] = 1400;
+
+                if (Game.Version >= 4)
+                    Variables[VariableFixedDisk.Value] = 1;
+
+                if (Game.Version >= 5)
+                    Variables[VariableInputMode.Value] = 3;
+                if (Game.Version == 6)
+                    Variables[VariableV6EMSSpace.Value] = 10000;
+            }
+
+            if (VariableVoiceMode.HasValue)
+            {
+                Variables[VariableVoiceMode.Value] = (int)VoiceMode.VoiceAndText;
+            }
+
+            if (VariableRoomWidth.HasValue && VariableRoomHeight.HasValue) {
+                Variables[VariableRoomWidth.Value] = ScreenWidth;
+                Variables[VariableRoomHeight.Value] = ScreenHeight;
+            }
+
+//            if (VariableDebugMode.HasValue) {
+//                Variables(VariableDebugMode) = (_debugMode ? 1 : 0);
+//            }
+
+            if (VariableFadeDelay.HasValue)
+                Variables[VariableFadeDelay.Value] = 3;
+
+            Variables[VariableCharIncrement.Value] = 4;
+            TalkingActor = 0;
         }
 
         protected void InitScreens(int b, int h)
@@ -415,7 +470,7 @@ namespace NScumm.Core
             CheckExecVerbs();
             CheckAndRunSentenceScript();
 
-            if (HastToQuit)
+            if (HasToQuit)
                 return TimeSpan.Zero;
 
             // HACK: If a load was requested, immediately perform it. This avoids
@@ -458,7 +513,7 @@ namespace NScumm.Core
                 UpdatePalette();
                 DrawDirtyScreenParts();
 
-                // FIXME / TODO: Try to move the following to scummLoop_handleSound or
+                // FIXME / TODO: Try to move the following to HandleSound or
                 // scummLoop_handleActors (but watch out for regressions!)
                 if (Game.Version <= 5)
                 {
@@ -466,7 +521,7 @@ namespace NScumm.Core
                 }
             }
 
-            Sound.ProcessSound();
+            HandleSound();
 
             _camera.LastPosition = _camera.CurrentPosition;
 
@@ -478,6 +533,11 @@ namespace NScumm.Core
             _gfxManager.ShowCursor(_cursor.State > 0);
 
             return GetTimeToWaitBeforeLoop(DateTime.Now - t);
+        }
+
+        protected internal virtual void HandleSound()
+        {
+            Sound.ProcessSound();
         }
 
         void UpdateTalkDelay(int delta)

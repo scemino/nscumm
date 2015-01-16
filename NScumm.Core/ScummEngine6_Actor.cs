@@ -29,7 +29,7 @@ namespace NScumm.Core
         int _curActor;
 
         [OpCode(0x7d)]
-        void WalkActorToObj(int index, int obj, int dist)
+        protected void WalkActorToObj(int index, int obj, int dist)
         {
             var a = Actors[index];
 
@@ -73,13 +73,13 @@ namespace NScumm.Core
         }
 
         [OpCode(0x7e)]
-        void WalkActorTo(int index, short x, short y)
+        protected void WalkActorTo(int index, short x, short y)
         {
             Actors[index].StartWalk(new Point(x, y), -1);
         }
 
         [OpCode(0x7f)]
-        void PutActorAtXY(int actorIndex, short x, short y, int room)
+        protected void PutActorAtXY(int actorIndex, short x, short y, int room)
         {
             var actor = Actors[actorIndex];
             if (room == 0xFF || room == 0x7FFFFFFF)
@@ -101,7 +101,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0x80)]
-        void PutActorAtObject(int index, int obj, byte room)
+        protected void PutActorAtObject(int index, int obj, byte room)
         {
             var a = Actors[index];
             Point p;
@@ -119,13 +119,13 @@ namespace NScumm.Core
         }
 
         [OpCode(0x81)]
-        void FaceActor(int index, int obj)
+        protected void FaceActor(int index, int obj)
         {
             Actors[index].FaceToObject(obj);
         }
 
         [OpCode(0x82)]
-        void AnimateActor(int index, int anim)
+        protected void AnimateActor(int index, int anim)
         {
             if (Game.Id == "tentacle" && _roomResource == 57 &&
                 Slots[CurrentScript].Number == 19 && index == 593)
@@ -142,7 +142,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0x84)]
-        void PickupObject(int obj, byte room)
+        protected void PickupObject(int obj, byte room)
         {
             if (room == 0)
                 room = _roomResource;
@@ -167,28 +167,28 @@ namespace NScumm.Core
         }
 
         [OpCode(0x8a)]
-        void GetActorMoving(int index)
+        protected void GetActorMoving(int index)
         {
             var actor = Actors[index];
             Push((int)actor.Moving);
         }
 
         [OpCode(0x90)]
-        void GetActorWalkBox(int index)
+        protected void GetActorWalkBox(int index)
         {
             var actor = Actors[index];
             Push(actor.IgnoreBoxes ? 0 : actor.Walkbox);
         }
 
         [OpCode(0x91)]
-        void GetActorCostume(int index)
+        protected void GetActorCostume(int index)
         {
             var actor = Actors[index];
             Push(actor.Costume);
         }
 
         [OpCode(0x9d)]
-        void ActorOps()
+        protected void ActorOps()
         {
             var subOp = ReadByte();
             if (subOp == 197)
@@ -354,48 +354,48 @@ namespace NScumm.Core
         }
 
         [OpCode(0x9f)]
-        void GetActorFromXY(int x, int y)
+        protected void GetActorFromXY(int x, int y)
         {
             Push(GetActorFromPos(new Point((short)x, (short)y)));
         }
 
         [OpCode(0xa2)]
-        void GetActorElevation(int index)
+        protected void GetActorElevation(int index)
         {
             var actor = Actors[index];
             Push(actor.Elevation);
         }
 
         [OpCode(0xa8)]
-        void GetActorWidth(int index)
+        protected void GetActorWidth(int index)
         {
             var actor = Actors[index];
             Push((int)actor.Width);
         }
 
         [OpCode(0xaa)]
-        void GetActorScaleX(int index)
+        protected void GetActorScaleX(int index)
         {
             var actor = Actors[index];
             Push(actor.ScaleX);
         }
 
         [OpCode(0xab)]
-        void GetActorAnimCounter(int index)
+        protected void GetActorAnimCounter(int index)
         {
             var actor = Actors[index];
             Push(actor.Cost.AnimCounter);
         }
 
         [OpCode(0xaf)]
-        void IsActorInBox(int index, int box)
+        protected void IsActorInBox(int index, int box)
         {
             var actor = Actors[index];
             Push(CheckXYInBoxBounds(box, actor.Position));
         }
 
         [OpCode(0xba)]
-        void TalkActor(int actor)
+        protected void TalkActor(int actor)
         {
             _actorToPrintStrFor = actor;
 
@@ -413,26 +413,26 @@ namespace NScumm.Core
         }
 
         [OpCode(0xbb)]
-        void TalkEgo()
+        protected void TalkEgo()
         {
             TalkActor(Variables[VariableEgo.Value]);
         }
 
         [OpCode(0xd1)]
-        void StopTalking()
+        protected void StopTalking()
         {
             StopTalk();
         }
 
         [OpCode(0xd2)]
-        void GetAnimateVariable(int index, int variable)
+        protected void GetAnimateVariable(int index, int variable)
         {
             var a = Actors[index];
             Push(a.GetAnimVar(variable));
         }
 
         [OpCode(0xec)]
-        void GetActorLayer(int index)
+        protected void GetActorLayer(int index)
         {
             var actor = Actors[index];
             Push(actor.Layer);

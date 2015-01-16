@@ -43,6 +43,7 @@ namespace NScumm.Core
         int numVariables;
         int numBitVariables;
         int numLocalObjects;
+        int numArray;
 
         public override int NumVerbs { get { return numVerbs; } }
 
@@ -53,6 +54,8 @@ namespace NScumm.Core
         public override int NumBitVariables { get { return numBitVariables; } }
 
         public override int NumLocalObjects { get { return numLocalObjects; } }
+
+        public override int NumArray { get { return numArray; } }
 
         #region implemented abstract members of ResourceIndex
 
@@ -125,13 +128,13 @@ namespace NScumm.Core
 
         #endregion
 
-        void ReadMaxSizes(XorReader reader)
+        protected virtual void ReadMaxSizes(XorReader reader)
         {
             numVariables = reader.ReadUInt16();      // 800
             reader.ReadUInt16();                      // 16
             numBitVariables = reader.ReadUInt16();   // 2048
             numLocalObjects = reader.ReadUInt16();   // 200
-            var numArray = reader.ReadUInt16();                      // 50
+            numArray = reader.ReadUInt16();                      // 50
             reader.ReadUInt16();
             numVerbs = reader.ReadUInt16();                      // 100
             var numFlObject = reader.ReadUInt16();                      // 50
@@ -144,7 +147,7 @@ namespace NScumm.Core
             var numGlobalObjects = reader.ReadUInt16();
         }
 
-        void ReadArrayFromIndexFile(XorReader br)
+        protected virtual void ReadArrayFromIndexFile(XorReader br)
         {
             int num;
             while ((num = br.ReadUInt16()) != 0)

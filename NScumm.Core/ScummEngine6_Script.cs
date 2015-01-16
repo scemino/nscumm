@@ -27,43 +27,43 @@ namespace NScumm.Core
         int? VariableRandomNumber;
 
         [OpCode(0x5e)]
-        void StartScript(int flags, int script, int[] args)
+        protected void StartScript(int flags, int script, int[] args)
         {
             RunScript((byte)script, (flags & 1) != 0, (flags & 2) != 0, args);
         }
 
         [OpCode(0x5f)]
-        void StartScriptQuick(int script, int[] args)
+        protected void StartScriptQuick(int script, int[] args)
         {
             RunScript((byte)script, false, false, args);
         }
 
         [OpCode(0x60)]
-        void StartObject(int flags, int script, byte entryp, int[] args)
+        protected void StartObject(int flags, int script, byte entryp, int[] args)
         {
             RunObjectScript(script, entryp, (flags & 1) != 0, (flags & 2) != 0, args);
         }
 
         [OpCode(0x65, 0x66)]
-        void StopObjectCode6()
+        protected void StopObjectCode6()
         {
             StopObjectCode();
         }
 
         [OpCode(0x67)]
-        void EndCutscene()
+        protected void EndCutscene()
         {
             EndCutsceneCore();
         }
 
         [OpCode(0x68)]
-        void Cutscene(int[] args)
+        protected void Cutscene(int[] args)
         {
             BeginCutscene(args);
         }
 
         [OpCode(0x6a)]
-        void FreezeUnfreeze(int script)
+        protected void FreezeUnfreeze(int script)
         {
             if (script != 0)
                 FreezeScripts(script);
@@ -72,19 +72,19 @@ namespace NScumm.Core
         }
 
         [OpCode(0x6c)]
-        void BreakHere()
+        protected void BreakHere()
         {
             BreakHereCore();
         }
 
         [OpCode(0x77)]
-        void StopObjectScript(ushort script)
+        protected void StopObjectScript(ushort script)
         {
             StopObjectScriptCore(script);
         }
 
         [OpCode(0x7c)]
-        void StopScript6(int script)
+        protected void StopScript6(int script)
         {
             if (script == 0)
             {
@@ -97,13 +97,13 @@ namespace NScumm.Core
         }
 
         [OpCode(0x83)]
-        void DoSentence(byte verb, ushort objectA, int tmp, ushort objectB)
+        protected void DoSentence(byte verb, ushort objectA, int tmp, ushort objectB)
         {
             DoSentence(verb, objectA, objectB);
         }
 
         [OpCode(0x87)]
-        void GetRandomNumber(int max)
+        protected void GetRandomNumber(int max)
         {
             var rnd = new Random().Next(Math.Abs(max) + 1);
             Variables[VariableRandomNumber.Value] = rnd;
@@ -111,7 +111,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0x88)]
-        void GetRandomNumberRange(int min, int max)
+        protected void GetRandomNumberRange(int min, int max)
         {
             var rnd = new Random().Next(min, max);
             Variables[VariableRandomNumber.Value] = rnd;
@@ -119,20 +119,20 @@ namespace NScumm.Core
         }
 
         [OpCode(0x95)]
-        void BeginOverride()
+        protected void BeginOverride()
         {
             BeginOverrideCore();
             //_skipVideo = false;
         }
 
         [OpCode(0x96)]
-        void EndOverride()
+        protected void EndOverride()
         {
             EndOverrideCore();
         }
 
         [OpCode(0x99)]
-        void SetBoxFlags(int[] args, int value)
+        protected void SetBoxFlags(int[] args, int value)
         {
             var num = args.Length;
             while (--num >= 0)
@@ -142,7 +142,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0x9a)]
-        void CreateBoxMatrix()
+        protected void CreateBoxMatrix()
         {
             CreateBoxMatrixCore();
 
@@ -151,7 +151,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0xa1)]
-        void PseudoRoom(byte value, int[] args)
+        protected void PseudoRoom(byte value, int[] args)
         {
             var num = args.Length;
             while (--num >= 0)
@@ -163,7 +163,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0xa9)]
-        void Wait()
+        protected void Wait()
         {
             var offs = -2;
             var subOp = ReadByte();
@@ -251,25 +251,25 @@ namespace NScumm.Core
         }
 
         [OpCode(0xb0)]
-        void Delay(int delay)
+        protected void Delay(int delay)
         {
             DelayCore(delay);
         }
 
         [OpCode(0xb1)]
-        void DelaySeconds(int seconds)
+        protected void DelaySeconds(int seconds)
         {
             DelayCore(seconds * 60);
         }
 
         [OpCode(0xb2)]
-        void DelayMinutes(int minutes)
+        protected void DelayMinutes(int minutes)
         {
             DelayCore(minutes * 3600);
         }
 
         [OpCode(0xb3)]
-        void StopSentence()
+        protected void StopSentence()
         {
             SentenceNum = 0;
             StopScript(Variables[VariableSentenceScript.Value]);
@@ -278,13 +278,13 @@ namespace NScumm.Core
         }
 
         [OpCode(0xbe)]
-        void StartObjectQuick(int script, byte entryp, int[] args)
+        protected void StartObjectQuick(int script, byte entryp, int[] args)
         {
             RunObjectScript(script, entryp, false, true, args);
         }
 
         [OpCode(0xca)]
-        void DelayFrames()
+        protected void DelayFrames()
         {
             var ss = Slots[CurrentScript];
             if (ss.DelayFrameCount == 0)
@@ -303,26 +303,26 @@ namespace NScumm.Core
         }
 
         [OpCode(0x8b)]
-        void IsScriptRunning(int script)
+        protected void IsScriptRunning(int script)
         {
             Push(IsScriptRunningCore(script));
         }
 
         [OpCode(0xbf)]
-        void StartScriptQuick2(byte script, int[] args)
+        protected void StartScriptQuick2(byte script, int[] args)
         {
             RunScript(script, false, true, args);
         }
 
         [OpCode(0xd5)]
-        void JumpToScript(int flags, int script, int[] args)
+        protected void JumpToScript(int flags, int script, int[] args)
         {
             StopObjectCode();
             RunScript((byte)script, (flags & 1) != 0, (flags & 2) != 0, args);
         }
 
         [OpCode(0xd8)]
-        void IsRoomScriptRunning(int script)
+        protected void IsRoomScriptRunning(int script)
         {
             Push(IsRoomScriptRunningCore(script));
         }

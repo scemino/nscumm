@@ -24,14 +24,14 @@ namespace NScumm.Core
     partial class ScummEngine6
     {
         [OpCode(0x92)]
-        void FindInventory(int owner, int index)
+        protected void FindInventory(int owner, int index)
         {
             Push(FindInventoryCore(owner, index));
         }
 
 
         [OpCode(0x93)]
-        void GetInventoryCount(int owner)
+        protected void GetInventoryCount(int owner)
         {
             Push(GetInventoryCountCore(owner));
         }

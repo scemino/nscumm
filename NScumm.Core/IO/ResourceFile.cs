@@ -64,7 +64,7 @@ namespace NScumm.Core.IO
 
         public abstract Room ReadRoom(long offset);
 
-        public abstract XorReader ReadCostume(long offset);
+        public abstract byte[] ReadCostume(long offset);
 
         public abstract byte[] ReadScript(long offset);
 

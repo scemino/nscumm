@@ -45,11 +45,6 @@ namespace NScumm.Core
             VariableRoomFlag = 70;
             VariableGameLoaded = 71;
             VariableNewRoom = 72;
-
-            // 1 is keyboard, 2 is joystick, 3 is mouse
-            Variables[VariableInputMode.Value] = 3;
-
-            Variables[VariableFadeDelay.Value] = 3;
         }
 
         protected override void InitOpCodes()

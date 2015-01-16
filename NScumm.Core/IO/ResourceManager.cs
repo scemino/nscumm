@@ -142,6 +142,10 @@ namespace NScumm.Core.IO
 
         public int NumLocalObjects { get { return Index.NumLocalObjects; } }
 
+        public int NumArray { get { return Index.NumArray; } }
+
+        public byte[] ObjectRoomTable { get { return Index.ObjectRoomTable; } }
+
         protected ResourceManager(GameInfo game)
         {
             Game = game;
@@ -162,6 +166,8 @@ namespace NScumm.Core.IO
                     return new ResourceManager5(game); 
                 case 6:
                     return new ResourceManager6(game); 
+                case 7:
+                    return new ResourceManager7(game); 
                 default:
                     throw new NotSupportedException(string.Format("ResourceManager {0} is not supported", game.Version)); 
             }
@@ -189,17 +195,17 @@ namespace NScumm.Core.IO
             return room;
         }
 
-        public XorReader GetCostumeReader(int scriptNum)
+        public byte[] GetCostumeData(int costNum)
         {
-            XorReader reader = null;
-            var res = Index.CostumeResources[scriptNum];
+            byte[] data = null;
+            var res = Index.CostumeResources[costNum];
             var disk = OpenRoom(res.RoomNum);
             if (disk != null)
             {
                 var roomOffset = GetRoomOffset(disk, res.RoomNum);
-                reader = disk.ReadCostume(roomOffset + res.Offset);
+                data = disk.ReadCostume(roomOffset + res.Offset);
             }
-            return reader;
+            return data;
         }
 
         public byte[] GetCharsetData(byte id)

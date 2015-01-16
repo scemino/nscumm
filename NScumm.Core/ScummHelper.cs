@@ -24,12 +24,30 @@ namespace NScumm.Core
 {
     public static class ScummHelper
     {
+        public static int Clip(int value, int min, int max)
+        {
+            if (value < min)
+                return min;
+            else if (value > max)
+                return max;
+            else
+                return value;
+        }
+
         public static string NormalizePath(string path)
         {
             var dir = Path.GetDirectoryName(path);
             return path = (from file in Directory.EnumerateFiles(dir)
                                     where string.Equals(file, path, StringComparison.OrdinalIgnoreCase)
                                     select file).FirstOrDefault();
+        }
+
+        public static string LocatePath(string directory, string filename)
+        {
+            return (from file in Directory.EnumerateFiles(directory, "*.*", SearchOption.AllDirectories)
+                             let fn = Path.GetFileName(file)
+                             where string.Equals(fn, filename, StringComparison.InvariantCultureIgnoreCase)
+                             select file).FirstOrDefault();
         }
 
         public static int ToTicks(TimeSpan time)

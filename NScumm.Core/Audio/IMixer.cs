@@ -33,6 +33,8 @@ namespace NScumm.Core.Audio
     {
         int OutputRate { get; }
 
+        bool IsReady { get; }
+
         /// <summary>
         /// Start playing the given audio stream.
         /// </summary>
@@ -52,7 +54,7 @@ namespace NScumm.Core.Audio
         /// the stream via suitable mixer methods</returns>
         SoundHandle PlayStream(
             SoundType type,
-            IMixerAudioStream stream,
+            IAudioStream stream,
             int id = -1,
             int volume = 255,
             int balance = 0,
@@ -72,7 +74,48 @@ namespace NScumm.Core.Audio
 
         bool HasActiveChannelOfType(SoundType type);
 
+        /// <summary>
+        /// Pause/unpause all sounds, including all regular and permanent
+        /// channels.
+        /// </summary>
+        /// <param name="pause">If set to <c>true</c> pause everything, false to unpause.</param>
         void PauseAll(bool pause);
+
+        /// <summary>
+        /// Get approximation of for how long the channel has been playing.
+        /// </summary>
+        /// <returns>The sound elapsed time.</returns>
+        /// <param name="_compressedFileSoundHandle">Compressed file sound handle.</param>
+        int GetSoundElapsedTime(SoundHandle handle);
+
+        /// <summary>
+        /// Set the channel volume for the given handle.
+        /// </summary>
+        /// <param name="handle">The sound to affect.</param>
+        /// <param name="volume">The new channel volume (0 - kMaxChannelVolume).</param>
+        void SetChannelVolume(SoundHandle handle, int volume);
+
+        /// <summary>
+        /// Get the channel volume for the given handle.
+        /// </summary>
+        /// <returns>The channel volume.</returns>
+        /// <param name="handle">The sound to affect.</param>
+        int GetChannelVolume(SoundHandle handle);
+
+        /// <summary>
+        /// Set the channel balance for the given handle.
+        /// </summary>
+        /// <param name="handle">the sound to affect</param>
+        /// <param name="balance">the new channel balance.</param>
+        /// <remarks>(-127 ... 0 ... 127) corresponds to (left ... center ... right)</remarks>
+        void SetChannelBalance(SoundHandle handle, int balance);
+
+        /// <summary>
+        /// Get the channel balance for the given handle.
+        /// </summary>
+        /// <returns>The channel balance.</returns>
+        /// <param name="handle">The sound to affect.</param>
+        int GetChannelBalance(SoundHandle handle);
     }
 }
 

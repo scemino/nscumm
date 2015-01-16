@@ -34,7 +34,16 @@ namespace NScumm.Core
         public ScummEngine3(GameInfo game, IGraphicsManager graphicsManager, IInputManager inputManager, IMixer mixer)
             : base(game, graphicsManager, inputManager, mixer)
         {
+        }
+
+        protected override void ResetScummVars()
+        {
+            base.ResetScummVars();
+
             Variables[VariableCurrentLights.Value] = (int)(LightModes.ActorUseBasePalette | LightModes.ActorUseColors | LightModes.RoomLightsOn);
+
+            if (Game.GameId == GameId.Monkey1)
+                Variables[74] = 1225;
         }
 
         #region OpCodes
@@ -376,7 +385,7 @@ namespace NScumm.Core
                     ShowMenu();
                     break;
                 case 3:     // SO_QUIT
-                    HastToQuit = true;
+                    HasToQuit = true;
                     break;
             }
         }

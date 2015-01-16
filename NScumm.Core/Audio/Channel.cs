@@ -29,7 +29,7 @@ namespace NScumm.Core.Audio
         const int MaxChannelVolume = 255;
 
         Mixer _mixer;
-        IMixerAudioStream _stream;
+        IAudioStream _stream;
         bool _permanent;
         int _volume;
         int _pauseLevel;
@@ -43,7 +43,7 @@ namespace NScumm.Core.Audio
         int _mixerTimeStamp;
         IRateConverter _converter;
 
-        public Channel(Mixer mixer, SoundType type, IMixerAudioStream stream, bool autofreeStream, bool reverseStereo, int id, bool permanent)
+        public Channel(Mixer mixer, SoundType type, IAudioStream stream, bool autofreeStream, bool reverseStereo, int id, bool permanent)
         {
             _mixer = mixer;
             Type = type;
@@ -155,7 +155,7 @@ namespace NScumm.Core.Audio
 
         public SoundHandle Handle{ get; set; }
 
-        Timestamp GetElapsedTime() {
+        public Timestamp GetElapsedTime() {
             int rate = _mixer.OutputRate;
             int delta = 0;
 

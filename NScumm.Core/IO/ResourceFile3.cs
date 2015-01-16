@@ -149,23 +149,22 @@ namespace NScumm.Core.IO
             _reader.BaseStream.Seek(offset, SeekOrigin.Begin);
         }
 
-        public override XorReader ReadCostume(long offset)
+        public override byte[] ReadCostume(long offset)
         {
             GotoResourceHeader(offset);
             var chunk = ReadChunk(_reader);
             if (chunk.Tag != "CO")
                 throw new NotSupportedException("Expected costume block.");
-            return _reader;
+            return _reader.ReadBytes((int)chunk.Size - 6);
         }
 
         public override byte[] ReadScript(long offset)
         {
             GotoResourceHeader(offset);
-            long size = _reader.ReadUInt32();
-            var tag = _reader.ReadInt16();
-            if (tag != 0x4353)
+            var chunk = ReadChunk(_reader);
+            if (chunk.Tag != "SC")
                 throw new NotSupportedException("Expected SC block.");
-            var data = _reader.ReadBytes((int)(size - 6));
+            var data = _reader.ReadBytes((int)(chunk.Size - 6));
             return data;
         }
 
@@ -185,7 +184,7 @@ namespace NScumm.Core.IO
                 }
                 else if (chunk.Tag == "AD")
                 {
-                    return _reader.ReadBytes((int)chunk.Size-6);
+                    return _reader.ReadBytes((int)chunk.Size - 6);
                 }
                 else
                 {

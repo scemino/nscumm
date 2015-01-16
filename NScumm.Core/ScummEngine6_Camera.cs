@@ -25,7 +25,7 @@ namespace NScumm.Core
     partial class ScummEngine6
     {
         [OpCode(0x78)]
-        void PanCameraTo(int x)
+        protected void PanCameraTo(int x)
         {
             // TODO: scumm7
 //            if (Game.Version >= 7)
@@ -40,7 +40,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0x79)]
-        void ActorFollowCamera(int index)
+        protected void ActorFollowCamera(int index)
         {
             if (Game.Version >= 7)
                 SetCameraFollows(Actors[index]);
@@ -48,22 +48,8 @@ namespace NScumm.Core
                 ActorFollowCameraEx(index);
         }
 
-        void ActorFollowCameraEx(int act)
-        {
-            if (Game.Version < 7)
-            {
-                var old = Camera.ActorToFollow;
-                SetCameraFollows(Actors[act]);
-                if (Camera.ActorToFollow != old)
-                    RunInventoryScript(0);
-
-                Camera.MovingToActor = false;
-            }
-        }
-
-
         [OpCode(0x7a)]
-        void SetCameraAt(int x)
+        protected void SetCameraAt(int x)
         {
             // TODO:scumm7
 //            if (Game.Version >= 7) {
@@ -77,6 +63,19 @@ namespace NScumm.Core
 //            } else {
             SetCameraAtEx(x);
 //                }
+        }
+
+        void ActorFollowCameraEx(int act)
+        {
+            if (Game.Version < 7)
+            {
+                var old = Camera.ActorToFollow;
+                SetCameraFollows(Actors[act]);
+                if (Camera.ActorToFollow != old)
+                    RunInventoryScript(0);
+
+                Camera.MovingToActor = false;
+            }
         }
 
         void SetCameraAtEx(int at)

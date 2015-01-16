@@ -126,7 +126,7 @@ namespace NScumm.Core
             cutScene.CutSceneScriptIndex = 0xFF;
         }
 
-        void AbortCutscene()
+        protected void AbortCutscene()
         {
             byte script = 0;
             var offs = 0;

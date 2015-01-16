@@ -25,7 +25,7 @@ using System.Text;
 
 namespace NScumm.Core.Audio.Decoders
 {
-    public class VocStream: IMixerAudioStream, IDisposable
+    public class VocStream: IAudioStream, IDisposable
     {
         /// <summary>
         /// How many samples we can buffer at once.
@@ -191,7 +191,7 @@ namespace NScumm.Core.Audio.Decoders
                 return false;
 
             // Search for the block containing the requested sample
-            int seekSample = ConvertTimeToStreamPos(where, Rate, IsStereo).TotalNumberOfFrames;
+            int seekSample = AudioStreamHelper.ConvertTimeToStreamPos(where, Rate, IsStereo).TotalNumberOfFrames;
             int curSample = 0;
 
             for (_curBlock = 0; _curBlock != _blocks.Count; ++_curBlock)
@@ -247,31 +247,6 @@ namespace NScumm.Core.Audio.Decoders
             public int Samples;
             public int Count;
          
-        }
-
-        protected static Timestamp ConvertTimeToStreamPos(Timestamp where, int rate, bool isStereo)
-        {
-            var result = new Timestamp(where.ConvertToFramerate(rate * (isStereo ? 2 : 1)));
-
-            // When the Stream is a stereo stream, we have to assure
-            // that the sample position is an even number.
-            if (isStereo && (result.TotalNumberOfFrames & 1) != 0)
-                result = result.AddFrames(-1); // We cut off one sample here.
-
-            // Since Timestamp allows sub-frame-precision it might lead to odd behaviors
-            // when we would just return result.
-            //
-            // An example is when converting the timestamp 500ms to a 11025 Hz based
-            // stream. It would have an internal frame counter of 5512.5. Now when
-            // doing calculations at frame precision, this might lead to unexpected
-            // results: The frame difference between a timestamp 1000ms and the above
-            // mentioned timestamp (both with 11025 as framerate) would be 5512,
-            // instead of 5513, which is what a frame-precision based code would expect.
-            //
-            // By creating a new Timestamp with the given parameters, we create a
-            // Timestamp with frame-precision, which just drops a sub-frame-precision
-            // information (i.e. rounds down).
-            return new Timestamp(result.Seconds, result.NumberOfFrames, result.Framerate);
         }
 
         bool IsAtEndOfStream

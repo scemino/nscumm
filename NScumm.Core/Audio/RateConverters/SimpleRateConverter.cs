@@ -71,7 +71,7 @@ namespace NScumm.Core.Audio
             inLen = 0;
         }
 
-        public int Flow(IMixerAudioStream input, short[] obuf, int volLeft, int volRight)
+        public int Flow(IAudioStream input, short[] obuf, int volLeft, int volRight)
         {
             int pos = 0;
             int oend = obuf.Length * 2;

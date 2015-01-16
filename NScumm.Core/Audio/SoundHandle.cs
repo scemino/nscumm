@@ -23,6 +23,6 @@ namespace NScumm.Core.Audio
 {
     public class SoundHandle
     {
-        public int Value{ get; set; }
+        public int Value { get; set; }
     }
 }

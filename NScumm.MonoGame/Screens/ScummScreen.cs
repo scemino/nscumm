@@ -44,6 +44,8 @@ namespace NScumm.MonoGame
         bool pause;
         bool contentLoaded;
 
+        Thread tg;
+
         public ScummScreen(Game game, GameInfo info)
         {
             TransitionOnTime = TimeSpan.FromSeconds(1.0);
@@ -59,15 +61,21 @@ namespace NScumm.MonoGame
             {
                 contentLoaded = true;
                 spriteBatch = new SpriteBatch(ScreenManager.GraphicsDevice);
-                inputManager = new XnaInputManager(game.Window);
-                gfx = new XnaGraphicsManager(ScreenManager.GraphicsDevice);
+
+                var prop = game.Window.GetType().GetProperty("Window", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                var window = (OpenTK.NativeWindow)prop.GetValue(game.Window, null);
+
+                inputManager = new XnaInputManager(window);
+                gfx = new XnaGraphicsManager(window, ScreenManager.GraphicsDevice);
                 audioDriver = new OpenALDriver();
 
                 // init engines
                 engine = ScummEngine.Create(info, gfx, inputManager, audioDriver);
                 engine.ShowMenuDialogRequested += OnShowMenuDialogRequested;
-                tsToWait = engine.RunBootScript();
 
+                tg = new Thread(new ThreadStart(UpdateGame));
+                tg.IsBackground = true;
+                tg.Start();
             }
         }
 
@@ -97,10 +105,11 @@ namespace NScumm.MonoGame
             if (!IsMenuActive())
             {
                 UpdateMouseState();
+                inputManager.UpdateStates();
             
                 if (!pause)
                 {
-                    UpdateGame();
+//                    UpdateGame();
                     audioDriver.Update();
                 }
             }
@@ -128,10 +137,13 @@ namespace NScumm.MonoGame
 
         void UpdateGame()
         {
-            inputManager.UpdateStates();
-            System.Threading.Thread.Sleep(tsToWait);
-            tsToWait = engine.Loop();
-            gfx.UpdateScreen();
+            tsToWait = engine.RunBootScript();
+            while (true)
+            {
+                System.Threading.Thread.Sleep(tsToWait);
+                tsToWait = engine.Loop();
+                gfx.UpdateScreen();
+            }
         }
 
         void UpdateMouseState()

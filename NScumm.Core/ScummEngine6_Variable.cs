@@ -31,26 +31,26 @@ namespace NScumm.Core
         List<Array> _arrays = new List<Array>();
 
         [OpCode(0x00)]
-        void PushByte()
+        protected void PushByte()
         {
             Push(ReadByte());
         }
 
         [OpCode(0x01)]
-        void PushWord()
+        protected void PushWord()
         {
             Push(ReadWordSigned());
             Console.WriteLine("Push({0})", _vmStack.Peek());
         }
 
         [OpCode(0x02)]
-        void PushByteVar()
+        protected void PushByteVar()
         {
             Push(ReadVariable(ReadByte()));
         }
 
         [OpCode(0x03)]
-        void PushWordVar()
+        protected void PushWordVar()
         {
             var v = ReadWord();
             Push(ReadVariable(v));
@@ -58,31 +58,31 @@ namespace NScumm.Core
         }
 
         [OpCode(0x06)]
-        void ByteArrayRead(int @base)
+        protected void ByteArrayRead(int @base)
         {
             Push(ReadArray(ReadByte(), 0, @base));
         }
 
         [OpCode(0x07)]
-        void WordArrayRead(int @base)
+        protected void WordArrayRead(int @base)
         {
             Push(ReadArray(ReadWord(), 0, @base));
         }
 
         [OpCode(0x0a)]
-        void ByteArrayIndexedRead(int index, int @base)
+        protected void ByteArrayIndexedRead(int index, int @base)
         {
             Push(ReadArray(ReadByte(), index, @base));
         }
 
         [OpCode(0x0b)]
-        void WordArrayIndexedRead(int index, int @base)
+        protected void WordArrayIndexedRead(int index, int @base)
         {
             Push(ReadArray(ReadWord(), index, @base));
         }
 
         [OpCode(0x42)]
-        void WriteByteVar(short value)
+        protected void WriteByteVar(short value)
         {
             var index = ReadByte();
 //            Debug.WriteLine("WriteByteVar {0} {1}", index, value);
@@ -90,7 +90,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0x43)]
-        void WriteWordVar(short value)
+        protected void WriteWordVar(short value)
         {
             var index = ReadWord();
 //            Debug.WriteLine("WriteWordVar {0} {1}", index, value);
@@ -98,87 +98,87 @@ namespace NScumm.Core
         }
 
         [OpCode(0x46)]
-        void ByteArrayWrite(int @base, int value)
+        protected void ByteArrayWrite(int @base, int value)
         {
             WriteArray(ReadByte(), 0, @base, value);
         }
 
         [OpCode(0x47)]
-        void WordArrayWrite(int @base, int value)
+        protected void WordArrayWrite(int @base, int value)
         {
             WriteArray(ReadWord(), 0, @base, value);
         }
 
         [OpCode(0x4a)]
-        void ByteArrayIndexedWrite(int index, int @base, int value)
+        protected void ByteArrayIndexedWrite(int index, int @base, int value)
         {
             WriteArray(ReadByte(), index, @base, value);
         }
 
         [OpCode(0x4b)]
-        void WordArrayIndexedWrite(int index, int @base, int value)
+        protected void WordArrayIndexedWrite(int index, int @base, int value)
         {
             WriteArray(ReadWord(), index, @base, value);
         }
 
         [OpCode(0x4e)]
-        void ByteVarInc()
+        protected void ByteVarInc()
         {
             var var = ReadByte();
             WriteVariable(var, ReadVariable(var) + 1);
         }
 
         [OpCode(0x4f)]
-        void WordVarInc()
+        protected void WordVarInc()
         {
             var var = ReadWord();
             WriteVariable(var, ReadVariable(var) + 1);
         }
 
         [OpCode(0x52)]
-        void ByteArrayInc(int @base)
+        protected void ByteArrayInc(int @base)
         {
             var var = ReadByte();
             WriteArray(var, 0, @base, ReadArray(var, 0, @base) + 1);
         }
 
         [OpCode(0x53)]
-        void WordArrayInc(int @base)
+        protected void WordArrayInc(int @base)
         {
             var var = ReadWord();
             WriteArray(var, 0, @base, ReadArray(var, 0, @base) + 1);
         }
 
         [OpCode(0x56)]
-        void ByteVarDec()
+        protected void ByteVarDec()
         {
             var var = ReadByte();
             WriteVariable(var, ReadVariable(var) - 1);
         }
 
         [OpCode(0x57)]
-        void WordVarDec()
+        protected void WordVarDec()
         {
             var var = ReadWord();
             WriteVariable(var, ReadVariable(var) - 1);
         }
 
         [OpCode(0x5a)]
-        void ByteArrayDec(int @base)
+        protected void ByteArrayDec(int @base)
         {
             var var = ReadByte();
             WriteArray(var, 0, @base, ReadArray(var, 0, @base) - 1);
         }
 
         [OpCode(0x5b)]
-        void WordArrayDec(int @base)
+        protected void WordArrayDec(int @base)
         {
             var var = ReadWord();
             WriteArray(var, 0, @base, ReadArray(var, 0, @base) - 1);
         }
 
         [OpCode(0xA4)]
-        void ArrayOps()
+        protected void ArrayOps()
         {
             var subOp = ReadByte();
             var array = ReadWord();
@@ -229,13 +229,13 @@ namespace NScumm.Core
         }
 
         [OpCode(0xA7)]
-        void Pop6()
+        protected void Pop6()
         {
             Pop();
         }
 
         [OpCode(0xbc)]
-        void DimArray()
+        protected void DimArray()
         {
             var subOp = ReadByte();
             var array = ReadWord();
@@ -269,7 +269,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0xc0)]
-        void Dim2DimArray(int dim2, int dim1)
+        protected void Dim2DimArray(int dim2, int dim1)
         {
             var subOp = ReadByte();
             ArrayType type;
@@ -298,7 +298,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0xd4)]
-        void Shuffle(int a, int b)
+        protected void Shuffle(int a, int b)
         {
             ShuffleArray(ReadWord(), a, b);
         }
@@ -339,7 +339,7 @@ namespace NScumm.Core
             return _vmStack.Pop();
         }
 
-        int[] GetStackList(int max)
+        protected int[] GetStackList(int max)
         {
             var num = Pop();
 

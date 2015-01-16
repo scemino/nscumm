@@ -27,8 +27,8 @@ namespace NScumm.Core
 {
     partial class ScummEngine
     {
-        IInputManager _inputManager;
-        KeyCode mouseAndKeyboardStat;
+        protected IInputManager _inputManager;
+        protected KeyCode mouseAndKeyboardStat;
 
         void CheckExecVerbs()
         {
@@ -76,7 +76,7 @@ namespace NScumm.Core
             }
         }
 
-        void ProcessInput()
+        internal protected virtual void ProcessInput()
         {
             mouseAndKeyboardStat = 0;
 

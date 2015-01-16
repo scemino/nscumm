@@ -66,7 +66,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0x61)]
-        void DrawObject(int obj, int state)
+        protected void DrawObject(int obj, int state)
         {
             // This is based on disassembly
             if (state == 0)
@@ -76,19 +76,19 @@ namespace NScumm.Core
         }
 
         [OpCode(0x62)]
-        void DrawObjectAt(int obj, int x, int y)
+        protected void DrawObjectAt(int obj, int x, int y)
         {
             SetObjectState(obj, 1, x, y);
         }
 
         [OpCode(0x63)]
-        void DrawBlastObject(int a, int b, int c, int d, int e, int[] args)
+        protected void DrawBlastObject(int a, int b, int c, int d, int e, int[] args)
         {
             EnqueueObject(a, b, c, d, e, 0xFF, 0xFF, 1, 0);
         }
 
         [OpCode(0x64)]
-        void SetBlastObjectWindow(int a, int b, int c, int d)
+        protected void SetBlastObjectWindow(int a, int b, int c, int d)
         {
             // None of the scripts of The Dig and Full Throttle use this opcode.
             // Sam & Max only uses it at the beginning of the highway subgame. In
@@ -100,7 +100,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0x6d)]
-        void IfClassOfIs(int obj, int[] args)
+        protected void IfClassOfIs(int obj, int[] args)
         {
             var num = args.Length;
             var cond = true;
@@ -116,7 +116,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0x6e)]
-        void SetClass(int obj, int[] args)
+        protected void SetClass(int obj, int[] args)
         {
             var num = args.Length;
             while (--num >= 0)
@@ -132,13 +132,13 @@ namespace NScumm.Core
         }
 
         [OpCode(0x6f)]
-        void GetState(int obj)
+        protected void GetState(int obj)
         {
             Push(GetStateCore(obj));
         }
 
         [OpCode(0x70)]
-        void SetState(int obj, int state)
+        protected void SetState(int obj, int state)
         {
             PutState(obj, state);
             MarkObjectRectAsDirty(obj);
@@ -147,67 +147,67 @@ namespace NScumm.Core
         }
 
         [OpCode(0x71)]
-        void SetOwner(int obj, int owner)
+        protected void SetOwner(int obj, int owner)
         {
             SetOwnerOf(obj, owner);
         }
 
         [OpCode(0x72)]
-        void GetOwner(int obj)
+        protected void GetOwner(int obj)
         {
             Push(GetOwnerCore(obj));
         }
 
         [OpCode(0x8d)]
-        void GetObjectX(int index)
+        protected void GetObjectX(int index)
         {
             Push(GetObjX(index));
         }
 
         [OpCode(0x8e)]
-        void GetObjectY(int index)
+        protected void GetObjectY(int index)
         {
             Push(GetObjY(index));
         }
 
         [OpCode(0x8f)]
-        void GetObjectOldDir(int index)
+        protected void GetObjectOldDir(int index)
         {
             Push(GetObjOldDir(index));
         }
 
         [OpCode(0x97)]
-        void SetObjectName(int obj)
+        protected void SetObjectName(int obj)
         {
             SetObjectNameCore(obj);
         }
 
         [OpCode(0xa0)]
-        void FindObject(int x, int y)
+        protected void FindObject(int x, int y)
         {
             Push(FindObjectCore(x, y));
         }
 
         [OpCode(0xc5)]
-        void DistObjectObject(int a, int b)
+        protected void DistObjectObject(int a, int b)
         {
             Push(GetDistanceBetween(true, a, 0, true, b, 0));
         }
 
         [OpCode(0xc6)]
-        void DistObjectPt(int a, int b, int c)
+        protected void DistObjectPt(int a, int b, int c)
         {
             Push(GetDistanceBetween(true, a, 0, false, b, c));
         }
 
         [OpCode(0xc7)]
-        void DistObjectPtPt(int a, int b, int c, int d)
+        protected void DistObjectPtPt(int a, int b, int c, int d)
         {
             Push(GetDistanceBetween(false, a, b, false, c, d));
         }
 
         [OpCode(0xcb)]
-        void PickOneOf(int i, int[] args)
+        protected void PickOneOf(int i, int[] args)
         {
             if (i < 0 || i > args.Length)
                 throw new ArgumentOutOfRangeException("i", i, string.Format("PickOneOf: {0} out of range (0, {1})", i, args.Length - 1));
@@ -215,7 +215,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0xcc)]
-        void PickOneOfDefault(int i, int[] args, int def)
+        protected void PickOneOfDefault(int i, int[] args, int def)
         {
             if (i < 0 || i >= args.Length)
                 i = def;
@@ -225,7 +225,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0xcd)]
-        void StampObject(int obj, short x, short y, byte state)
+        protected void StampObject(int obj, short x, short y, byte state)
         {
 
             if (Game.Version >= 7 && obj < 30)
@@ -261,7 +261,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0xdd)]
-        void FindAllObjects(int room)
+        protected void FindAllObjects(int room)
         {
             var i = 1;
 
@@ -281,7 +281,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0xed)]
-        void GetObjectNewDir(int index)
+        protected void GetObjectNewDir(int index)
         {
             Push(GetObjNewDir(index));
         }

@@ -28,7 +28,7 @@ namespace NScumm.Core
     partial class ScummEngine6
     {
         [OpCode(0xae)]
-        void SystemOps()
+        protected void SystemOps()
         {
             //TODO: Restart
             var subOp = ReadByte();
@@ -42,7 +42,7 @@ namespace NScumm.Core
                     ShowMenu();
                     break;
                 case 160:               // SO_QUIT
-                    HastToQuit = true;
+                    HasToQuit = true;
                     break;
                 default:
                     throw new NotSupportedException(string.Format("SystemOps invalid case {0}", subOp));
@@ -50,12 +50,12 @@ namespace NScumm.Core
         }
 
         [OpCode(0xbd)]
-        void Dummy()
+        protected void Dummy()
         {
         }
 
         [OpCode(0xc8)]
-        void KernelGetFunctions()
+        protected void KernelGetFunctions()
         {
             var vs = MainVirtScreen;
 
@@ -168,7 +168,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0xc9)]
-        void KernelSetFunctions()
+        protected virtual void KernelSetFunctions()
         {
             var args = GetStackList(30);
 
@@ -278,7 +278,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0xD0)]
-        void GetDateTime()
+        protected void GetDateTime()
         {
             var dt = DateTime.Now;
 
@@ -293,7 +293,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0xe1)]
-        void GetPixel(int x, int y)
+        protected void GetPixel(int x, int y)
         {
             var vs = FindVirtScreen(y);
             if (vs == null || x > ScreenWidth - 1 || x < 0)
@@ -326,65 +326,68 @@ namespace NScumm.Core
             return -1;
         }
 
-        int RemapPaletteColor(int r, int g, int b, int threshold)
+        protected int RemapPaletteColor(int r, int g, int b, int threshold)
         {
-            throw new NotImplementedException();
-            // TODO: scumm6 RemapPaletteColor
-//            int ar, ag, ab, i;
-//            int sum, bestsum, bestitem = 0;
-//
-//            var startColor = (Game.Version == 8) ? 24 : 1;
-//
-//            var pal = _currentPalette + startColor * 3;
-//
-//            if (r > 255)
-//                r = 255;
-//            if (g > 255)
-//                g = 255;
-//            if (b > 255)
-//                b = 255;
-//
-//            bestsum = 0x7FFFFFFF;
-//
-//            r &= ~3;
-//            g &= ~3;
-//            b &= ~3;
-//
-//            for (i = startColor; i < 255; i++, pal += 3)
-//            {
-//                    if (Game.Version == 7 && _colorUsedByCycle[i])
+            int ar, ag, ab;
+            int sum, bestsum, bestitem = 0;
+
+            var startColor = (Game.Version == 8) ? 24 : 1;
+
+            if (r > 255)
+                r = 255;
+            if (g > 255)
+                g = 255;
+            if (b > 255)
+                b = 255;
+
+            bestsum = 0x7FFFFFFF;
+
+            r &= ~3;
+            g &= ~3;
+            b &= ~3;
+
+            for (var i = startColor; i < 255; i++)
+            {
+                var palColor = CurrentPalette.Colors[i];
+                // TODO: vs
+//                if (Game.Version == 7 && _colorUsedByCycle[i])
 //                    continue;
-//
-//                ar = pal[0] & ~3;
-//                ag = pal[1] & ~3;
-//                ab = pal[2] & ~3;
-//                if (ar == r && ag == g && ab == b)
-//                    return i;
-//
-//                    sum = ColorWeight(ar - r, ag - g, ab - b);
-//
-//                if (sum < bestsum)
-//                {
-//                    bestsum = sum;
-//                    bestitem = i;
-//                }
-//            }
-//            if (threshold != -1 && bestsum > ColorWeight(threshold, threshold, threshold))
-//            {
-//                // Best match exceeded threshold. Try to find an unused palette entry and
-//                // use it for our purpose.
-//                pal = _currentPalette + (256 - 2) * 3;
-//                for (i = 254; i > 48; i--, pal -= 3)
-//                {
-//                    if (pal[0] >= 252 && pal[1] >= 252 && pal[2] >= 252)
-//                    {
-//                                    SetPalColor(i, r, g, b);
-//                        return i;
-//                    }
-//                }
-//            }
-//
-            //return bestitem;
+
+                ar = palColor.R & ~3;
+                ag = palColor.G & ~3;
+                ab = palColor.B & ~3;
+                if (ar == r && ag == g && ab == b)
+                    return i;
+
+                sum = ColorWeight(ar - r, ag - g, ab - b);
+
+                if (sum < bestsum)
+                {
+                    bestsum = sum;
+                    bestitem = i;
+                }
+            }
+            if (threshold != -1 && bestsum > ColorWeight(threshold, threshold, threshold))
+            {
+                // Best match exceeded threshold. Try to find an unused palette entry and
+                // use it for our purpose.
+                for (var i = 254; i > 48; i--)
+                {
+                    var palColor = CurrentPalette.Colors[i];
+                    if (palColor.R >= 252 && palColor.G >= 252 && palColor.B >= 252)
+                    {
+                        SetPalColor(i, r, g, b);
+                        return i;
+                    }
+                }
+            }
+
+            return bestitem;
+        }
+
+        static int ColorWeight(int red, int green, int blue)
+        {
+            return 3 * red * red + 6 * green * green + 2 * blue * blue;
         }
 
         protected override void PalManipulateInit(int resID, int start, int end, int time)

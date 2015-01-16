@@ -27,7 +27,7 @@ using NScumm.Core.Audio.OPL.DosBox;
 
 namespace NScumm.Core
 {
-    public class Player_AD: IMixerAudioStream, IMusicEngine
+    public class Player_AD: IAudioStream, IMusicEngine
     {
         public Player_AD(ScummEngine scumm, IMixer mixer)
         {

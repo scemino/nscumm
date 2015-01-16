@@ -26,7 +26,7 @@ namespace NScumm.Core
     partial class ScummEngine6
     {
         [OpCode(0x9c)]
-        void RoomOps()
+        protected void RoomOps()
         {
             var subOp = ReadByte();
 
@@ -175,14 +175,14 @@ namespace NScumm.Core
         }
 
         [OpCode(0x7b)]
-        void LoadRoom(byte room)
+        protected void LoadRoom(byte room)
         {
             StartScene(room);
             _fullRedraw = true;
         }
 
         [OpCode(0x85)]
-        void LoadRoomWithEgo(int obj, byte room, int x, int y)
+        protected void LoadRoomWithEgo(int obj, byte room, int x, int y)
         {
             var a = Actors[Variables[VariableEgo.Value]];
             a.PutActor(room);
@@ -206,9 +206,8 @@ namespace NScumm.Core
             }
         }
 
-
         [OpCode(0x8c)]
-        void GetActorRoom(int index)
+        protected void GetActorRoom(int index)
         {
             if (index == 0)
             {
@@ -236,13 +235,13 @@ namespace NScumm.Core
         }
 
         [OpCode(0xa6)]
-        void DrawBox(int x, int y, int x2, int y2, int color)
+        protected void DrawBox(int x, int y, int x2, int y2, int color)
         {
             DrawBoxCore(x, y, x2, y2, color);
         }
 
         [OpCode(0xe3)]
-        void PickVarRandom(int[] args)
+        protected void PickVarRandom(int[] args)
         {
             int value = ReadWord();
 
@@ -288,7 +287,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0xe4)]
-        void SetBoxSet()
+        protected void SetBoxSet()
         {
             throw new NotImplementedException("TODO: SetBoxSet");
         }

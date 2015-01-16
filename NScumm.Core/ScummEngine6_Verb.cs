@@ -28,7 +28,7 @@ namespace NScumm.Core
         int _curVerb;
 
         [OpCode(0x94)]
-        void GetVerbFromXY(int x, int y)
+        protected void GetVerbFromXY(int x, int y)
         {
             var over = FindVerbAtPos(x, y);
             if (over != 0)
@@ -37,7 +37,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0x9e)]
-        void VerbOps()
+        protected void VerbOps()
         {
             var subOp = ReadByte();
             if (subOp == 196)
@@ -162,13 +162,13 @@ namespace NScumm.Core
         }
 
         [OpCode(0xa3)]
-        void GetVerbEntrypoint(int verb, int entryp)
+        protected void GetVerbEntrypoint(int verb, int entryp)
         {
             Push(GetVerbEntrypointCore(verb, entryp));
         }
 
         [OpCode(0xa5)]
-        void SaveRestoreVerbs(int a, int b, int c)
+        protected void SaveRestoreVerbs(int a, int b, int c)
         {
             var subOp = ReadByte();
             if (Game.Version == 8)

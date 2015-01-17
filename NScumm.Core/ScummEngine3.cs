@@ -499,7 +499,7 @@ namespace NScumm.Core
                     break;
 
                 case 9:         // SO_LOCK_SCRIPT
-                    if (resId < NumGlobalScripts)
+                    if (resId < _resManager.NumGlobalScripts)
                     {
                         //_res.Sounds[resId].Lock = true;
                     }

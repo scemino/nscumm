@@ -190,6 +190,11 @@ namespace NScumm.Core
             } while ((mask & 0xFFFF) > 0);
         }
 
+        public bool HasManyDirections(int id)
+        {
+            return false;
+        }
+
         byte ReadAnimCommand(int j)
         {
             var r = CostumeReader.BaseStream.Position;

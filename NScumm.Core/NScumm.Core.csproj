@@ -41,7 +41,6 @@
     <Compile Include="Box.cs" />
     <Compile Include="BoxCoords.cs" />
     <Compile Include="Camera.cs" />
-    <Compile Include="ClassicCostumeLoader.cs" />
     <Compile Include="Graphics\ClassicCostumeRenderer.cs" />
     <Compile Include="ClickArea.cs" />
     <Compile Include="ColorCycle.cs" />
@@ -56,7 +55,6 @@
     <Compile Include="Graphics\Palette.cs" />
     <Compile Include="Graphics\PixelNavigator.cs" />
     <Compile Include="Graphics\Surface.cs" />
-    <Compile Include="ICostumeLoader.cs" />
     <Compile Include="Graphics\ICostumeRenderer.cs" />
     <Compile Include="Input\IInputManager.cs" />
     <Compile Include="NestedScript.cs" />
@@ -220,7 +218,6 @@
     <Compile Include="ScummEngine7_Misc.cs" />
     <Compile Include="IO\ResourceFile7.cs" />
     <Compile Include="IO\ResourceManager7.cs" />
-    <Compile Include="AkosCostumeLoader.cs" />
     <Compile Include="IO\ChunkIterator5.cs" />
     <Compile Include="Graphics\AkosRenderer.cs" />
     <Compile Include="IO\AkosHeader.cs" />
@@ -234,6 +231,11 @@
     <Compile Include="Smush\SaudChannel.cs" />
     <Compile Include="Audio\Decoders\RawStream.cs" />
     <Compile Include="Audio\Decoders\AudioStreamHelper.cs" />
+    <Compile Include="Insane\Insane.cs" />
+    <Compile Include="Insane\Insane_Scenes.cs" />
+    <Compile Include="IO\AkosCostumeLoader.cs" />
+    <Compile Include="IO\ClassicCostumeLoader.cs" />
+    <Compile Include="IO\ICostumeLoader.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="IO\Nscumm.xml">
@@ -264,5 +266,6 @@
     <Folder Include="Audio\OPL\DosBox\" />
     <Folder Include="Audio\OPL\Mame\" />
     <Folder Include="Smush\" />
+    <Folder Include="Insane\" />
   </ItemGroup>
 </Project>

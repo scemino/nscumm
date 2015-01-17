@@ -257,12 +257,16 @@ namespace NScumm.Core
             return msg;
         }
 
-        int ConvertMessageToString(byte[] src, byte[] dst, int dstPos)
+        protected int ConvertMessageToString(byte[] src, byte[] dst, int dstPos)
         {
             uint num = 0;
             int val;
             byte chr;
             int dstPosBegin = dstPos;
+
+            if (_game.Version >= 7) {
+                src = TranslateText(src);
+            }
 
             while (num < src.Length)
             {
@@ -331,6 +335,11 @@ namespace NScumm.Core
             dst[dstPos] = 0;
 
             return dstPos - dstPosBegin;
+        }
+
+        protected virtual byte[] TranslateText(byte[] src)
+        {
+            return src;
         }
 
         int ConvertNameMessage(byte[] dst, int dstPos, int var)

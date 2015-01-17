@@ -421,7 +421,7 @@ namespace NScumm.Core
             Gdi.Fill(_textSurface.Pixels, _textSurface.Pitch, CharsetMaskTransparency, _textSurface.Width, _textSurface.Height);
         }
 
-        void HandleDrawing()
+        protected virtual void HandleDrawing()
         {
             if (_camera.CurrentPosition != _camera.LastPosition || _bgNeedsRedraw || _fullRedraw)
             {
@@ -463,27 +463,50 @@ namespace NScumm.Core
             }
 
             int val = 0;
-            var diff = _camera.CurrentPosition.X - _camera.LastPosition.X;
-            if (!_fullRedraw && diff == 8)
+            if (_game.Version >= 7)
             {
-                val = -1;
-                RedrawBGStrip(Gdi.NumStrips - 1, 1);
+                var diff = Camera.CurrentPosition.X / 8 - Camera.LastPosition.X / 8;
+                if (_fullRedraw || Math.Abs(diff) >= Gdi.NumStrips)
+                {
+                    _bgNeedsRedraw = false;
+                    RedrawBGStrip(0, Gdi.NumStrips);
+                }
+                else if (diff > 0)
+                {
+                    val = -diff;
+                    RedrawBGStrip(Gdi.NumStrips - diff, diff);
+                }
+                else if (diff < 0)
+                {
+                    val = -diff;
+                    RedrawBGStrip(0, -diff);
+                }
             }
-            else if (!_fullRedraw && diff == -8)
+            else
             {
-                val = +1;
-                RedrawBGStrip(0, 1);
-            }
-            else if (_fullRedraw || diff != 0)
-            {
-                // TODO: ClearFlashlight
+                var diff = _camera.CurrentPosition.X - _camera.LastPosition.X;
+                if (!_fullRedraw && diff == 8)
+                {
+                    val = -1;
+                    RedrawBGStrip(Gdi.NumStrips - 1, 1);
+                }
+                else if (!_fullRedraw && diff == -8)
+                {
+                    val = +1;
+                    RedrawBGStrip(0, 1);
+                }
+                else if (_fullRedraw || diff != 0)
+                {
+                    // TODO: ClearFlashlight
 //                if (Game.Version <= 5)
 //                {
 //                  ClearFlashlight();
 //                }
-                _bgNeedsRedraw = false;
-                RedrawBGStrip(0, Gdi.NumStrips);
+                    _bgNeedsRedraw = false;
+                    RedrawBGStrip(0, Gdi.NumStrips);
+                }
             }
+
             DrawRoomObjects(val);
             _bgNeedsRedraw = false;
         }
@@ -522,7 +545,7 @@ namespace NScumm.Core
             UpdateDirtyScreen(_textVirtScreen);
 
             // Update game area ("stage")
-            if (_camera.LastPosition.X != _camera.CurrentPosition.X)
+            if (_camera.LastPosition.X != _camera.CurrentPosition.X || (_game.Version >= 7 && (Camera.CurrentPosition.Y != Camera.LastPosition.Y)))
             {
                 // Camera moved: redraw everything
                 DrawStripToScreen(_mainVirtScreen, 0, _mainVirtScreen.Width, 0, _mainVirtScreen.Height);
@@ -688,10 +711,16 @@ namespace NScumm.Core
                     lp = 0;
 
                 rp = (right + vs.XStart) / 8;
-
-                if (rp >= 200)
-                    rp = 200;
-
+                if (_game.Version >= 7)
+                {
+                    if (rp > 409)
+                        rp = 409;
+                }
+                else
+                {
+                    if (rp >= 200)
+                        rp = 200;
+                }
                 for (; lp <= rp; lp++)
                     Gdi.SetGfxUsageBit(lp, dirtybit);
             }

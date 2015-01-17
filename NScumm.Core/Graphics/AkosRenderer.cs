@@ -24,14 +24,85 @@ using NScumm.Core.IO;
 
 namespace NScumm.Core.Graphics
 {
+    enum AkosOpcode: ushort
+    {
+        Return = 0xC001,
+        SetVar = 0xC010,
+        CmdQue3 = 0xC015,
+        C016 = 0xC016,
+        C017 = 0xC017,
+        C018 = 0xC018,
+        C019 = 0xC019,
+        ComplexChan = 0xC020,
+        C021 = 0xC021,
+        C022 = 0xC022,
+        ComplexChan2 = 0xC025,
+        Jump = 0xC030,
+        JumpIfSet = 0xC031,
+        AddVar = 0xC040,
+        C042 = 0xC042,
+        C044 = 0xC044,
+        C045 = 0xC045,
+        C046 = 0xC046,
+        C047 = 0xC047,
+        C048 = 0xC048,
+        Ignore = 0xC050,
+        IncVar = 0xC060,
+        CmdQue3Quick = 0xC061,
+        JumpStart = 0xC070,
+        JumpE = 0xC070,
+        JumpNE = 0xC071,
+        JumpL = 0xC072,
+        JumpLE = 0xC073,
+        JumpG = 0xC074,
+        JumpGE = 0xC075,
+        StartAnim = 0xC080,
+        StartVarAnim = 0xC081,
+        Random = 0xC082,
+        SetActorClip = 0xC083,
+        StartAnimInActor = 0xC084,
+        SetVarInActor = 0xC085,
+        HideActor = 0xC086,
+        SetDrawOffs = 0xC087,
+        JumpTable = 0xC088,
+        SoundStuff = 0xC089,
+        Flip = 0xC08A,
+        Cmd3 = 0xC08B,
+        Ignore3 = 0xC08C,
+        Ignore2 = 0xC08D,
+        C08E = 0xC08E,
+        SkipStart = 0xC090,
+        SkipE = 0xC090,
+        SkipNE = 0xC091,
+        SkipL = 0xC092,
+        SkipLE = 0xC093,
+        SkipG = 0xC094,
+        SkipGE = 0xC095,
+        ClearFlag = 0xC09F,
+        C0A0 = 0xC0A0,
+        C0A1 = 0xC0A1,
+        C0A2 = 0xC0A2,
+        C0A3 = 0xC0A3,
+        C0A4 = 0xC0A4,
+        C0A5 = 0xC0A5,
+        C0A6 = 0xC0A6,
+        C0A7 = 0xC0A7,
+        EndSeq = 0xC0FF
+    }
+
+    struct CostumeInfo
+    {
+        public ushort width, height;
+        public short rel_x, rel_y;
+        public short move_x, move_y;
+    }
+
     class AkosRenderer: ICostumeRenderer
     {
         public AkosRenderer(ScummEngine vm)
         {
-            this.vm = vm;
+            this._vm = vm;
         }
-
-        #region ICostumeRenderer implementation
 
         public void SetPalette(ushort[] new_palette)
         {
@@ -47,36 +118,41 @@ namespace NScumm.Core.Graphics
 //            if (vm.Game.Features.HasFlag(GameFeatures.16BITCOLOR) {
 //                if (_paletteNum) {
 //                    for (i = 0; i < size; i++)
-//                        _palette[i] = READ_LE_UINT16(_vm->_hePalettes + _paletteNum * _vm->_hePaletteSlot + 768 + akpl[i] * 2);
+//                        _palette[i] = READ_LE_ushort(_vm._hePalettes + _paletteNum * _vm._hePaletteSlot + 768 + akpl[i] * 2);
 //                } else if (rgbs) {
 //                    for (i = 0; i < size; i++) {
 //                        if (new_palette[i] == 0xFF) {
-//                            uint8 col = akpl[i];
-//                            _palette[i] = _vm->get16BitColor(rgbs[col * 3 + 0], rgbs[col * 3 + 1], rgbs[col * 3 + 2]);
+//                            byte col = akpl[i];
+//                            _palette[i] = _vm.get16BitColor(rgbs[col * 3 + 0], rgbs[col * 3 + 1], rgbs[col * 3 + 2]);
 //                        } else {
 //                            _palette[i] = new_palette[i];
 //                        }
 //                    }
 //                }
-//            } else if (_vm->_game.heversion >= 99 && _paletteNum) {
+//            } else if (_vm._game.heversion >= 99 && _paletteNum) {
 //                for (i = 0; i < size; i++)
-//                    _palette[i] = (byte)_vm->_hePalettes[_paletteNum * _vm->_hePaletteSlot + 768 + akpl[i]];
+//                    _palette[i] = (byte)_vm._hePalettes[_paletteNum * _vm._hePaletteSlot + 768 + akpl[i]];
 //            } else {
-                for (i = 0; i < size; i++) {
-                    _palette[i] = new_palette[i] != 0xFF ? new_palette[i] : akpl[i];
-                }
+            for (i = 0; i < size; i++)
+            {
+                _palette[i] = new_palette[i] != 0xFF ? new_palette[i] : akpl[i];
+            }
 //            }
 
-//            if (_vm->_game.heversion == 70) {
+//            if (_vm._game.heversion == 70) {
 //                for (i = 0; i < size; i++)
-//                    _palette[i] = _vm->_HEV7ActorPalette[_palette[i]];
+//                    _palette[i] = _vm._HEV7ActorPalette[_palette[i]];
 //            }
 
-            if (size == 256) {
+            if (size == 256)
+            {
                 var color = new_palette[0];
-                if (color == 255) {
+                if (color == 255)
+                {
                     _palette[0] = color;
-                } else {
+                }
+                else
+                {
                     _useBompPalette = true;
                 }
             }
@@ -84,177 +160,774 @@ namespace NScumm.Core.Graphics
 
         public void SetFacing(Actor a)
         {
-            mirror = (ScummHelper.NewDirToOldDir(a.Facing) != 0) || ((akhd.flags & 1)!=0);
+            mirror = (ScummHelper.NewDirToOldDir(a.Facing) != 0) || ((akhd.flags & 1) != 0);
         }
 
         public void SetCostume(int costume, int shadow)
         {
-            var akos = vm.ResourceManager.GetCostumeData(costume);
-            Debug.Assert(akos!=null);
+            akos = _vm.ResourceManager.GetCostumeData(costume);
+            Debug.Assert(akos != null);
 
-            akhd = ResourceFile7.ReadData<AkosHeader>(akos,"AKHD");
-            akof = ResourceFile7.ReadData<AkosOffset>(akos,"AKOF");
-            akci = ResourceFile7.ReadData(akos,"AKCI");
-            aksq = ResourceFile7.ReadData(akos,"AKSQ");
-            akcd = ResourceFile7.ReadData(akos,"AKCD");
-            akpl = ResourceFile7.ReadData(akos,"AKPL");
-            codec = akhd.codec;
+            akhd = ResourceFile7.ReadData<AkosHeader>(akos, "AKHD");
+            akof = ResourceFile7.FindOffset(akos, "AKOF");
+            akci = ResourceFile7.FindOffset(akos, "AKCI");
+            aksq = ResourceFile7.ReadData(akos, "AKSQ");
+            akcd = ResourceFile7.ReadData(akos, "AKCD");
+            akpl = ResourceFile7.ReadData(akos, "AKPL");
+            _codec = akhd.codec;
 //            akct = ResourceFile7.ReadData(akos,"AKCT");
 //            rgbs = ResourceFile7.ReadData(akos,"RGBS");
 
 //            xmap = 0;
 //            if (shadow) {
-//                const uint8 *xmapPtr = _vm->getResourceAddress(rtImage, shadow);
-//                assert(xmapPtr);
+//                const byte *xmapPtr = _vm.getResourceAddress(rtImage, shadow);
+//                Debug.Assert(xmapPtr);
 //                xmap = ResourceFile7.ReadData(akos,'X','M','A','P'), xmapPtr);
-//                assert(xmap);
+//                Debug.Assert(xmap);
 //            }
         }
 
         public int DrawCostume(VirtScreen vs, int numStrips, Actor actor, bool drawToBackBuf)
         {
-            throw new NotImplementedException();
+            var pixelsNavigator = new PixelNavigator(vs.Surfaces[drawToBackBuf ? 1 : 0]);
+            pixelsNavigator.OffsetX(vs.XStart);
+
+            ActorX += (vs.XStart & 7);
+            _width = vs.Width;
+            _height = vs.Height;
+            pixelsNavigator.OffsetX(-(vs.XStart & 7));
+            startNav = new PixelNavigator(pixelsNavigator);
+
+            if (_vm.Game.IsOldBundle)
+            {
+                _xmove = -72;
+                _ymove = -100;
+            }
+            else
+            {
+                _xmove = _ymove = 0;
+            }
+
+            int result = 0;
+            for (int i = 0; i < 16; i++)
+                result |= DrawLimb(actor, i);
+            return result;
         }
 
-        public int DrawTop
+        public int DrawTop { get; set; }
+
+        public int DrawBottom { get; set; }
+
+        public byte ActorID { get; set; }
+
+        public byte ShadowMode { get; set; }
+
+        public byte[] ShadowTable { get; set; }
+
+        public int ActorX { get; set; }
+
+        public int ActorY { get; set; }
+
+        public byte ZBuffer { get; set; }
+
+        public byte ScaleX { get; set; }
+
+        public byte ScaleY { get; set; }
+
+        public bool SkipLimbs { get; set; }
+
+        public bool ActorHitMode { get; set; }
+
+        public short ActorHitX  { get; set; }
+
+        public short ActorHitY { get; set; }
+
+        public bool ActorHitResult { get; set; }
+
+        byte DrawLimb(Actor a, int limb)
         {
-            get
+            var cost = a.Cost;
+            byte result = 0;
+
+            var lastDx = 0;
+            var lastDy = 0;
+
+            if (SkipLimbs)
+                return 0;
+
+            if (cost.Active[limb] == 0 || ((cost.Stopped & (1 << limb)) != 0))
+                return 0;
+
+            var useCondMask = false;
+            var p = cost.Curpos[limb];
+
+            AkosOpcode code = (AkosOpcode)aksq[p];
+            if (((ushort)code & 0x80) != 0)
+                code = (AkosOpcode)ScummHelper.SwapBytes(BitConverter.ToUInt16(aksq, p));
+
+
+            if (code == AkosOpcode.C021 || code == AkosOpcode.C022)
             {
-                throw new NotImplementedException();
+                ushort s = (ushort)(cost.Curpos[limb] + 4);
+                uint j = 0;
+                var extra = aksq[p + 3];
+                byte n = extra;
+                useCondMask = true;
+                p += (ushort)(extra + 2);
+                code = (code == AkosOpcode.C021) ? AkosOpcode.ComplexChan : AkosOpcode.ComplexChan2;
             }
-            set
+
+            if (code == AkosOpcode.Return || code == AkosOpcode.EndSeq)
+                return 0;
+
+            if (code != AkosOpcode.ComplexChan && code != AkosOpcode.ComplexChan2)
             {
-                throw new NotImplementedException();
+                var off = ResourceFile7.ToStructure<AkosOffset>(akos, (int)(akof + ((ushort)code & 0xFFF)));
+
+                Debug.Assert(((ushort)code & 0xFFF) * 6 < BitConverter.ToUInt32(akos, (int)(akof - 4)) - 8);
+                Debug.Assert(((ushort)code & 0x7000) == 0);
+
+                _srcptr = off.akcd;
+                var costumeInfo = ResourceFile7.ToStructure<CostumeInfo>(akos, (int)(akci + off.akci));
+
+                _width = costumeInfo.width;
+                _height = costumeInfo.height;
+                var xmoveCur = _xmove + costumeInfo.rel_x;
+                var ymoveCur = _ymove + costumeInfo.rel_y;
+                _xmove += costumeInfo.move_x;
+                _ymove -= costumeInfo.move_y;
+
+                switch (_codec)
+                {
+                    case 1:
+                        result |= Codec1(xmoveCur, ymoveCur);
+                        break;
+                    case 5:
+                        result |= Codec5(xmoveCur, ymoveCur);
+                        break;
+                    case 16:
+                        result |= Codec16(xmoveCur, ymoveCur);
+                        break;
+                    default:
+                        throw new InvalidOperationException(string.Format("akos_drawLimb: invalid _codec {0}", _codec));
+                }
             }
+            else
+            {
+                if (code == AkosOpcode.ComplexChan2)
+                {
+                    lastDx = BitConverter.ToInt16(aksq, p + 2);
+                    lastDy = BitConverter.ToInt16(aksq, p + 4);
+                    p += 4;
+                }
+
+                var extra = aksq[p + 2];
+                p += 3;
+
+                for (var i = 0; i != extra; i++)
+                {
+                    code = (AkosOpcode)aksq[p + 4];
+                    if (((ushort)code & 0x80) != 0)
+                        code = (AkosOpcode)ScummHelper.SwapBytes(BitConverter.ToUInt16(aksq, p + 4));
+                    var off = ResourceFile7.ToStructure<AkosOffset>(akos, (int)(akof + 6 * ((ushort)code & 0xFFF)));
+
+                    _srcptr = off.akcd;
+                    var costumeInfo = ResourceFile7.ToStructure<CostumeInfo>(akos, (int)(akci + off.akci));
+
+                    _width = costumeInfo.width;
+                    _height = costumeInfo.height;
+
+                    var xmoveCur = _xmove + BitConverter.ToInt16(aksq, p + 0);
+                    var ymoveCur = _ymove + BitConverter.ToInt16(aksq, p + 2);
+
+                    if (i == extra - 1)
+                    {
+                        _xmove += lastDx;
+                        _ymove -= lastDy;
+                    }
+
+                    p += ((aksq[p + 4] & 0x80) != 0) ? (ushort)6 : (ushort)5;
+
+                    switch (_codec)
+                    {
+                        case 1:
+                            result |= Codec1(xmoveCur, ymoveCur);
+                            break;
+                        case 5:
+                            result |= Codec5(xmoveCur, ymoveCur);
+                            break;
+                        case 16:
+                            result |= Codec16(xmoveCur, ymoveCur);
+                            break;
+                        case 32:
+                            result |= Codec32(xmoveCur, ymoveCur);
+                            break;
+                        default:
+                            throw new InvalidOperationException(string.Format("akos_drawLimb: invalid _codec {0}", _codec));
+                    }
+                }
+            }
+
+            return result;
         }
 
-        public int DrawBottom
+        byte Codec1(int xmoveCur, int ymoveCur)
         {
-            get
+            int num_colors;
+            bool use_scaling;
+            int i, j;
+            int skip = 0, startScaleIndexX, startScaleIndexY;
+            Rect rect;
+            int step;
+            byte drawFlag = 1;
+            var v1 = new NScumm.Core.Graphics.Codec1();
+
+            int scaletableSize = 384;
+
+            /* implement custom scale table */
+
+            // FIXME. HACK
+            // For some illogical reason gcc 3.4.x produces wrong code if
+            // smallCostumeScaleTable from costume.cpp is used here
+            // So I had to put copy of it back here as it was before 1.227 revision
+            // of this file.
+            v1.Scaletable = bigCostumeScaleTable;
+            var table = ((ScummEngine7)_vm).GetStringAddressVar(((ScummEngine7)_vm).VariableCustomScaleTable);
+            if (table != null)
             {
-                throw new NotImplementedException();
+                v1.Scaletable = table;
             }
-            set
+
+            // Setup color decoding variables
+            num_colors = akpl.Length;
+            if (num_colors == 32)
             {
-                throw new NotImplementedException();
+                v1.Mask = 7;
+                v1.Shr = 3;
             }
+            else if (num_colors == 64)
+            {
+                v1.Mask = 3;
+                v1.Shr = 2;
+            }
+            else
+            {
+                v1.Mask = 15;
+                v1.Shr = 4;
+            }
+
+            use_scaling = (ScaleX != 0xFF) || (ScaleY != 0xFF);
+
+            v1.X = ActorX;
+            v1.Y = ActorY;
+
+            v1.BoundsRect.Left = 0;
+            v1.BoundsRect.Top = 0;
+            v1.BoundsRect.Right = _width;
+            v1.BoundsRect.Bottom = _height;
+
+            if (use_scaling)
+            {
+
+                /* Scale direction */
+                v1.ScaleXStep = -1;
+                if (xmoveCur < 0)
+                {
+                    xmoveCur = -xmoveCur;
+                    v1.ScaleXStep = 1;
+                }
+
+                if (_mirror)
+                {
+                    /* Adjust X position */
+                    startScaleIndexX = j = scaletableSize - xmoveCur;
+                    for (i = 0; i < xmoveCur; i++)
+                    {
+                        if (v1.Scaletable[j++] < ScaleX)
+                            v1.X -= v1.ScaleXStep;
+                    }
+
+                    rect.Left = rect.Right = v1.X;
+
+                    j = startScaleIndexX;
+                    for (i = 0, skip = 0; i < _width; i++)
+                    {
+                        if (rect.Right < 0)
+                        {
+                            skip++;
+                            startScaleIndexX = j;
+                        }
+                        if (v1.Scaletable[j++] < ScaleX)
+                            rect.Right++;
+                    }
+                }
+                else
+                {
+                    /* No mirror */
+                    /* Adjust X position */
+                    startScaleIndexX = j = scaletableSize + xmoveCur;
+                    for (i = 0; i < xmoveCur; i++)
+                    {
+                        if (v1.Scaletable[j--] < ScaleX)
+                            v1.X += v1.ScaleXStep;
+                    }
+
+                    rect.Left = rect.Right = v1.X;
+
+                    j = startScaleIndexX;
+                    for (i = 0; i < _width; i++)
+                    {
+                        if (rect.Left >= v1.BoundsRect.Right)
+                        {
+                            startScaleIndexX = j;
+                            skip++;
+                        }
+                        if (v1.Scaletable[j--] < ScaleX)
+                            rect.Left--;
+                    }
+                }
+
+                if (skip != 0)
+                    skip--;
+
+                step = -1;
+                if (ymoveCur < 0)
+                {
+                    ymoveCur = -ymoveCur;
+                    step = -step;
+                }
+
+                startScaleIndexY = scaletableSize - ymoveCur;
+                for (i = 0; i < ymoveCur; i++)
+                {
+                    if (v1.Scaletable[startScaleIndexY++] < ScaleY)
+                        v1.Y -= step;
+                }
+
+                rect.Top = rect.Bottom = v1.Y;
+                startScaleIndexY = scaletableSize - ymoveCur;
+                for (i = 0; i < _height; i++)
+                {
+                    if (v1.Scaletable[startScaleIndexY++] < ScaleY)
+                        rect.Bottom++;
+                }
+
+                startScaleIndexY = scaletableSize - ymoveCur;
+            }
+            else
+            {
+                if (!_mirror)
+                    xmoveCur = -xmoveCur;
+
+                v1.X += xmoveCur;
+                v1.Y += ymoveCur;
+
+                if (_mirror)
+                {
+                    rect.Left = v1.X;
+                    rect.Right = v1.X + _width;
+                }
+                else
+                {
+                    rect.Left = v1.X - _width;
+                    rect.Right = v1.X;
+                }
+
+                rect.Top = v1.Y;
+                rect.Bottom = rect.Top + _height;
+
+                startScaleIndexX = scaletableSize;
+                startScaleIndexY = scaletableSize;
+            }
+
+            v1.ScaleXIndex = startScaleIndexX;
+            v1.ScaleYIndex = startScaleIndexY;
+            v1.SkipWidth = _width;
+            v1.ScaleXStep = _mirror ? 1 : -1;
+
+            if (ActorHitMode)
+            {
+                if (ActorHitX < rect.Left || ActorHitX >= rect.Right || ActorHitY < rect.Top || ActorHitY >= rect.Bottom)
+                    return 0;
+            }
+            else
+                MarkRectAsDirty(rect);
+
+            if (rect.Top >= v1.BoundsRect.Bottom || rect.Bottom <= v1.BoundsRect.Top)
+                return 0;
+
+            if (rect.Left >= v1.BoundsRect.Right || rect.Right <= v1.BoundsRect.Left)
+                return 0;
+
+            v1.RepLen = 0;
+
+            if (_mirror)
+            {
+                if (!use_scaling)
+                    skip = v1.BoundsRect.Left - v1.X;
+
+                if (skip > 0)
+                {
+                    v1.SkipWidth -= skip;
+                    Codec1IgnorePakCols(v1, skip);
+                    v1.X = v1.BoundsRect.Left;
+                }
+                else
+                {
+                    skip = rect.Right - v1.BoundsRect.Right;
+                    if (skip <= 0)
+                    {
+                        drawFlag = 2;
+                    }
+                    else
+                    {
+                        v1.SkipWidth -= skip;
+                    }
+                }
+            }
+            else
+            {
+                if (!use_scaling)
+                    skip = rect.Right - v1.BoundsRect.Right + 1;
+                if (skip > 0)
+                {
+                    v1.SkipWidth -= skip;
+                    Codec1IgnorePakCols(v1, skip);
+                    v1.X = v1.BoundsRect.Right - 1;
+                }
+                else
+                {
+                    skip = (v1.BoundsRect.Left - 1) - rect.Left;
+
+                    if (skip <= 0)
+                        drawFlag = 2;
+                    else
+                        v1.SkipWidth -= skip;
+                }
+            }
+
+            if (v1.SkipWidth <= 0 || _height <= 0)
+                return 0;
+
+            if (rect.Left < v1.BoundsRect.Left)
+                rect.Left = v1.BoundsRect.Left;
+
+            if (rect.Top < v1.BoundsRect.Top)
+                rect.Top = v1.BoundsRect.Top;
+
+            if (rect.Top > v1.BoundsRect.Bottom)
+                rect.Top = v1.BoundsRect.Bottom;
+
+            if (rect.Bottom > v1.BoundsRect.Bottom)
+                rect.Bottom = v1.BoundsRect.Bottom;
+
+            if (DrawTop > rect.Top)
+                DrawTop = rect.Top;
+            if (DrawBottom < rect.Bottom)
+                DrawBottom = rect.Bottom;
+
+            _pixelsNavigator = new PixelNavigator(startNav);
+            _pixelsNavigator.Offset(v1.X, v1.Y);
+            v1.DestPtr = _pixelsNavigator;
+
+            Codec1GenericDecode(v1);
+
+            return drawFlag;
         }
 
-        public byte ActorID
+        byte Codec5(int xmoveCur, int ymoveCur)
         {
-            get
-            {
-                throw new NotImplementedException();
-            }
-            set
-            {
-                throw new NotImplementedException();
-            }
+            return 0;
         }
 
-        public byte ShadowMode
+        void Codec1GenericDecode(Codec1 v1)
         {
-            get
+            // TODO: vs
+            bool skip_column = false;
+
+            var y = v1.Y;
+            var src = _srcptr;
+            var dst = v1.DestPtr;
+            var len = v1.RepLen;
+            var color = v1.RepColor;
+            var height = _height;
+
+            var scaleytab = v1.ScaleYIndex;
+            var maskbit = ScummHelper.RevBitMask(v1.X & 7);
+            var mask = _vm.GetMaskBuffer(v1.X - (_vm.MainVirtScreen.XStart & 7), v1.Y, ZBuffer);
+
+            bool ehmerde = (len != 0);
+
+            do
             {
-                throw new NotImplementedException();
-            }
-            set
-            {
-                throw new NotImplementedException();
-            }
+                if (!ehmerde)
+                {
+                    len = akcd[src++];
+                    color = (byte)(len >> v1.Shr);
+                    len &= v1.Mask;
+                    if (len == 0)
+                        len = akcd[src++];
+                }
+
+                do
+                {
+                    if (!ehmerde)
+                    {
+                        if (ScaleY == 255 || v1.Scaletable[scaleytab++] < ScaleY)
+                        {
+                            if (ActorHitMode)
+                            {
+                                if (color != 0 && y == ActorHitY && v1.X == ActorHitX)
+                                {
+                                    ActorHitResult = true;
+                                    return;
+                                }
+                            }
+                            else
+                            {
+                                bool masked = (y < v1.BoundsRect.Top || y >= v1.BoundsRect.Bottom) || (v1.X < 0 || v1.X >= v1.BoundsRect.Right) || ((mask.Read() & maskbit) != 0);
+
+                                if (color != 0 && !masked && !skip_column)
+                                {
+                                    var pcolor = _palette[color];
+                                    if (ShadowMode == 1)
+                                    {
+                                        if (pcolor == 13)
+                                            pcolor = ShadowTable[dst.Read()];
+                                    }
+                                    else if (ShadowMode == 2)
+                                    {
+                                        throw new NotImplementedException("codec1_spec2"); // TODO
+                                    }
+                                    else if (ShadowMode == 3)
+                                    {
+                                        if (_vm.Game.Features.HasFlag(GameFeatures.Is16BitColor))
+                                        {
+                                            ushort srcColor = (ushort)((pcolor >> 1) & 0x7DEF);
+                                            ushort dstColor = (ushort)((dst.ReadUInt16() >> 1) & 0x7DEF);
+                                            pcolor = (ushort)(srcColor + dstColor);
+                                        }
+                                        else if (pcolor < 8)
+                                        {
+                                            pcolor = (ushort)((pcolor << 8) + dst.Read());
+                                            pcolor = ShadowTable[pcolor];
+                                        }
+                                    }
+                                    if (_vm.MainVirtScreen.BytesPerPixel == 2)
+                                    {
+                                        dst.WriteUInt16(pcolor);
+                                    }
+                                    else
+                                    {
+                                        dst.Write((byte)pcolor);
+                                    }
+                                }
+                            }
+                            dst.OffsetY(1);
+                            mask.OffsetY(1);
+                            y++;
+                        }
+                        if (--height == 0)
+                        {
+                            if (--v1.SkipWidth == 0)
+                                return;
+                            height = _height;
+                            y = v1.Y;
+
+                            scaleytab = v1.ScaleYIndex;
+
+                            if (ScaleX == 255 || v1.Scaletable[v1.ScaleXIndex] < ScaleX)
+                            {
+                                v1.X += v1.ScaleXStep;
+                                if (v1.X < 0 || v1.X >= v1.BoundsRect.Right)
+                                    return;
+                                maskbit = ScummHelper.RevBitMask(v1.X & 7);
+                                v1.DestPtr.OffsetX(v1.ScaleXStep);
+                                skip_column = false;
+                            }
+                            else
+                                skip_column = true;
+                            v1.ScaleXIndex += v1.ScaleXStep;
+                            dst = v1.DestPtr;
+                            mask = _vm.GetMaskBuffer(v1.X - (_vm.MainVirtScreen.XStart & 7), v1.Y, ZBuffer);
+                        }
+                    }
+                    ehmerde = false;
+                } while (--len != 0);
+            } while (true);
         }
 
-        public byte[] ShadowTable
+        byte Codec16(int xmoveCur, int ymoveCur)
         {
-            get
-            {
-                throw new NotImplementedException();
-            }
-            set
-            {
-                throw new NotImplementedException();
-            }
+            return 0;
         }
 
-        public int ActorX
+        byte Codec32(int xmoveCur, int ymoveCur)
         {
-            get
-            {
-                throw new NotImplementedException();
-            }
-            set
-            {
-                throw new NotImplementedException();
-            }
+            return 0;
         }
 
-        public int ActorY
+        void MarkRectAsDirty(Rect rect)
         {
-            get
-            {
-                throw new NotImplementedException();
-            }
-            set
-            {
-                throw new NotImplementedException();
-            }
+            rect.Left -= _vm.MainVirtScreen.XStart & 7;
+            rect.Right -= _vm.MainVirtScreen.XStart & 7;
+            _vm.MarkRectAsDirty(_vm.MainVirtScreen, rect, ActorID);
         }
 
-        public byte ZBuffer
+        void Codec1IgnorePakCols(Codec1 v1, int num)
         {
-            get
+            num *= _height;
+
+            do
             {
-                throw new NotImplementedException();
-            }
-            set
-            {
-                throw new NotImplementedException();
-            }
+                v1.RepLen = akcd[_srcptr++];
+                v1.RepColor = (byte)(v1.RepLen >> v1.Shr);
+                v1.RepLen &= v1.Mask;
+
+                if (v1.RepLen == 0)
+                    v1.RepLen = akcd[_srcptr++];
+
+                do
+                {
+                    if (--num == 0)
+                        return;
+                } while (--v1.RepLen != 0);
+            } while (true);
         }
 
-        public byte ScaleX
-        {
-            get
-            {
-                throw new NotImplementedException();
-            }
-            set
-            {
-                throw new NotImplementedException();
-            }
-        }
-
-        public byte ScaleY
-        {
-            get
-            {
-                throw new NotImplementedException();
-            }
-            set
-            {
-                throw new NotImplementedException();
-            }
-        }
-
-
-        #endregion
-
-        ScummEngine vm;
-
+        ScummEngine _vm;
+        // Destination
+        PixelNavigator _pixelsNavigator;
+        // Source pointer
+        uint _srcptr;
+        PixelNavigator startNav;
+        // current move offset
+        int _xmove, _ymove;
+        // whether to draw the actor mirrored
+        bool _mirror;
+        // width and height of cel to decode
+        int _width, _height;
         bool mirror;
-
         bool _useBompPalette;
-
-        ushort codec;
-        AkosHeader akhd; // header
-        byte[] akpl;     // palette data
-        byte[] akci;     // CostumeInfo table
-        byte[] aksq;     // command sequence
-        AkosOffset akof; // offsets into ci and cd table
-        byte[] akcd;     // costume data (contains the data for the codecs)
-
+        ushort _codec;
+        AkosHeader akhd;
+        byte[] akos;
+        // header
+        byte[] akpl;
+        // palette data
+        long akci;
+        // CostumeInfo table
+        byte[] aksq;
+        // command sequence
+        long akof;
+        // offsets into ci and cd table
+        byte[] akcd;
+        // costume data (contains the data for the codecs)
         // actor _palette
-        ushort[] _palette=new ushort[256];
+        ushort[] _palette = new ushort[256];
+
+        static readonly byte[] bigCostumeScaleTable =
+            {
+                0x00, 0x80, 0x40, 0xC0, 0x20, 0xA0, 0x60, 0xE0,
+                0x10, 0x90, 0x50, 0xD0, 0x30, 0xB0, 0x70, 0xF0,
+                0x08, 0x88, 0x48, 0xC8, 0x28, 0xA8, 0x68, 0xE8,
+                0x18, 0x98, 0x58, 0xD8, 0x38, 0xB8, 0x78, 0xF8,
+                0x04, 0x84, 0x44, 0xC4, 0x24, 0xA4, 0x64, 0xE4,
+                0x14, 0x94, 0x54, 0xD4, 0x34, 0xB4, 0x74, 0xF4,
+                0x0C, 0x8C, 0x4C, 0xCC, 0x2C, 0xAC, 0x6C, 0xEC,
+                0x1C, 0x9C, 0x5C, 0xDC, 0x3C, 0xBC, 0x7C, 0xFC,
+                0x02, 0x82, 0x42, 0xC2, 0x22, 0xA2, 0x62, 0xE2,
+                0x12, 0x92, 0x52, 0xD2, 0x32, 0xB2, 0x72, 0xF2,
+                0x0A, 0x8A, 0x4A, 0xCA, 0x2A, 0xAA, 0x6A, 0xEA,
+                0x1A, 0x9A, 0x5A, 0xDA, 0x3A, 0xBA, 0x7A, 0xFA,
+                0x06, 0x86, 0x46, 0xC6, 0x26, 0xA6, 0x66, 0xE6,
+                0x16, 0x96, 0x56, 0xD6, 0x36, 0xB6, 0x76, 0xF6,
+                0x0E, 0x8E, 0x4E, 0xCE, 0x2E, 0xAE, 0x6E, 0xEE,
+                0x1E, 0x9E, 0x5E, 0xDE, 0x3E, 0xBE, 0x7E, 0xFE,
+                0x01, 0x81, 0x41, 0xC1, 0x21, 0xA1, 0x61, 0xE1,
+                0x11, 0x91, 0x51, 0xD1, 0x31, 0xB1, 0x71, 0xF1,
+                0x09, 0x89, 0x49, 0xC9, 0x29, 0xA9, 0x69, 0xE9,
+                0x19, 0x99, 0x59, 0xD9, 0x39, 0xB9, 0x79, 0xF9,
+                0x05, 0x85, 0x45, 0xC5, 0x25, 0xA5, 0x65, 0xE5,
+                0x15, 0x95, 0x55, 0xD5, 0x35, 0xB5, 0x75, 0xF5,
+                0x0D, 0x8D, 0x4D, 0xCD, 0x2D, 0xAD, 0x6D, 0xED,
+                0x1D, 0x9D, 0x5D, 0xDD, 0x3D, 0xBD, 0x7D, 0xFD,
+                0x03, 0x83, 0x43, 0xC3, 0x23, 0xA3, 0x63, 0xE3,
+                0x13, 0x93, 0x53, 0xD3, 0x33, 0xB3, 0x73, 0xF3,
+                0x0B, 0x8B, 0x4B, 0xCB, 0x2B, 0xAB, 0x6B, 0xEB,
+                0x1B, 0x9B, 0x5B, 0xDB, 0x3B, 0xBB, 0x7B, 0xFB,
+                0x07, 0x87, 0x47, 0xC7, 0x27, 0xA7, 0x67, 0xE7,
+                0x17, 0x97, 0x57, 0xD7, 0x37, 0xB7, 0x77, 0xF7,
+                0x0F, 0x8F, 0x4F, 0xCF, 0x2F, 0xAF, 0x6F, 0xEF,
+                0x1F, 0x9F, 0x5F, 0xDF, 0x3F, 0xBF, 0x7F, 0xFE,
+
+                0x00, 0x80, 0x40, 0xC0, 0x20, 0xA0, 0x60, 0xE0,
+                0x10, 0x90, 0x50, 0xD0, 0x30, 0xB0, 0x70, 0xF0,
+                0x08, 0x88, 0x48, 0xC8, 0x28, 0xA8, 0x68, 0xE8,
+                0x18, 0x98, 0x58, 0xD8, 0x38, 0xB8, 0x78, 0xF8,
+                0x04, 0x84, 0x44, 0xC4, 0x24, 0xA4, 0x64, 0xE4,
+                0x14, 0x94, 0x54, 0xD4, 0x34, 0xB4, 0x74, 0xF4,
+                0x0C, 0x8C, 0x4C, 0xCC, 0x2C, 0xAC, 0x6C, 0xEC,
+                0x1C, 0x9C, 0x5C, 0xDC, 0x3C, 0xBC, 0x7C, 0xFC,
+                0x02, 0x82, 0x42, 0xC2, 0x22, 0xA2, 0x62, 0xE2,
+                0x12, 0x92, 0x52, 0xD2, 0x32, 0xB2, 0x72, 0xF2,
+                0x0A, 0x8A, 0x4A, 0xCA, 0x2A, 0xAA, 0x6A, 0xEA,
+                0x1A, 0x9A, 0x5A, 0xDA, 0x3A, 0xBA, 0x7A, 0xFA,
+                0x06, 0x86, 0x46, 0xC6, 0x26, 0xA6, 0x66, 0xE6,
+                0x16, 0x96, 0x56, 0xD6, 0x36, 0xB6, 0x76, 0xF6,
+                0x0E, 0x8E, 0x4E, 0xCE, 0x2E, 0xAE, 0x6E, 0xEE,
+                0x1E, 0x9E, 0x5E, 0xDE, 0x3E, 0xBE, 0x7E, 0xFE,
+                0x01, 0x81, 0x41, 0xC1, 0x21, 0xA1, 0x61, 0xE1,
+                0x11, 0x91, 0x51, 0xD1, 0x31, 0xB1, 0x71, 0xF1,
+                0x09, 0x89, 0x49, 0xC9, 0x29, 0xA9, 0x69, 0xE9,
+                0x19, 0x99, 0x59, 0xD9, 0x39, 0xB9, 0x79, 0xF9,
+                0x05, 0x85, 0x45, 0xC5, 0x25, 0xA5, 0x65, 0xE5,
+                0x15, 0x95, 0x55, 0xD5, 0x35, 0xB5, 0x75, 0xF5,
+                0x0D, 0x8D, 0x4D, 0xCD, 0x2D, 0xAD, 0x6D, 0xED,
+                0x1D, 0x9D, 0x5D, 0xDD, 0x3D, 0xBD, 0x7D, 0xFD,
+                0x03, 0x83, 0x43, 0xC3, 0x23, 0xA3, 0x63, 0xE3,
+                0x13, 0x93, 0x53, 0xD3, 0x33, 0xB3, 0x73, 0xF3,
+                0x0B, 0x8B, 0x4B, 0xCB, 0x2B, 0xAB, 0x6B, 0xEB,
+                0x1B, 0x9B, 0x5B, 0xDB, 0x3B, 0xBB, 0x7B, 0xFB,
+                0x07, 0x87, 0x47, 0xC7, 0x27, 0xA7, 0x67, 0xE7,
+                0x17, 0x97, 0x57, 0xD7, 0x37, 0xB7, 0x77, 0xF7,
+                0x0F, 0x8F, 0x4F, 0xCF, 0x2F, 0xAF, 0x6F, 0xEF,
+                0x1F, 0x9F, 0x5F, 0xDF, 0x3F, 0xBF, 0x7F, 0xFE,
+
+                0x00, 0x80, 0x40, 0xC0, 0x20, 0xA0, 0x60, 0xE0,
+                0x10, 0x90, 0x50, 0xD0, 0x30, 0xB0, 0x70, 0xF0,
+                0x08, 0x88, 0x48, 0xC8, 0x28, 0xA8, 0x68, 0xE8,
+                0x18, 0x98, 0x58, 0xD8, 0x38, 0xB8, 0x78, 0xF8,
+                0x04, 0x84, 0x44, 0xC4, 0x24, 0xA4, 0x64, 0xE4,
+                0x14, 0x94, 0x54, 0xD4, 0x34, 0xB4, 0x74, 0xF4,
+                0x0C, 0x8C, 0x4C, 0xCC, 0x2C, 0xAC, 0x6C, 0xEC,
+                0x1C, 0x9C, 0x5C, 0xDC, 0x3C, 0xBC, 0x7C, 0xFC,
+                0x02, 0x82, 0x42, 0xC2, 0x22, 0xA2, 0x62, 0xE2,
+                0x12, 0x92, 0x52, 0xD2, 0x32, 0xB2, 0x72, 0xF2,
+                0x0A, 0x8A, 0x4A, 0xCA, 0x2A, 0xAA, 0x6A, 0xEA,
+                0x1A, 0x9A, 0x5A, 0xDA, 0x3A, 0xBA, 0x7A, 0xFA,
+                0x06, 0x86, 0x46, 0xC6, 0x26, 0xA6, 0x66, 0xE6,
+                0x16, 0x96, 0x56, 0xD6, 0x36, 0xB6, 0x76, 0xF6,
+                0x0E, 0x8E, 0x4E, 0xCE, 0x2E, 0xAE, 0x6E, 0xEE,
+                0x1E, 0x9E, 0x5E, 0xDE, 0x3E, 0xBE, 0x7E, 0xFE,
+                0x01, 0x81, 0x41, 0xC1, 0x21, 0xA1, 0x61, 0xE1,
+                0x11, 0x91, 0x51, 0xD1, 0x31, 0xB1, 0x71, 0xF1,
+                0x09, 0x89, 0x49, 0xC9, 0x29, 0xA9, 0x69, 0xE9,
+                0x19, 0x99, 0x59, 0xD9, 0x39, 0xB9, 0x79, 0xF9,
+                0x05, 0x85, 0x45, 0xC5, 0x25, 0xA5, 0x65, 0xE5,
+                0x15, 0x95, 0x55, 0xD5, 0x35, 0xB5, 0x75, 0xF5,
+                0x0D, 0x8D, 0x4D, 0xCD, 0x2D, 0xAD, 0x6D, 0xED,
+                0x1D, 0x9D, 0x5D, 0xDD, 0x3D, 0xBD, 0x7D, 0xFD,
+                0x03, 0x83, 0x43, 0xC3, 0x23, 0xA3, 0x63, 0xE3,
+                0x13, 0x93, 0x53, 0xD3, 0x33, 0xB3, 0x73, 0xF3,
+                0x0B, 0x8B, 0x4B, 0xCB, 0x2B, 0xAB, 0x6B, 0xEB,
+                0x1B, 0x9B, 0x5B, 0xDB, 0x3B, 0xBB, 0x7B, 0xFB,
+                0x07, 0x87, 0x47, 0xC7, 0x27, 0xA7, 0x67, 0xE7,
+                0x17, 0x97, 0x57, 0xD7, 0x37, 0xB7, 0x77, 0xF7,
+                0x0F, 0x8F, 0x4F, 0xCF, 0x2F, 0xAF, 0x6F, 0xEF,
+                0x1F, 0x9F, 0x5F, 0xDF, 0x3F, 0xBF, 0x7F, 0xFF,
+            };
+
     }
 }
 

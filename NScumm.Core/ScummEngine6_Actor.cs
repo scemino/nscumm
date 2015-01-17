@@ -101,9 +101,11 @@ namespace NScumm.Core
         }
 
         [OpCode(0x80)]
-        protected void PutActorAtObject(int index, int obj, byte room)
+        protected void PutActorAtObject()
         {
-            var a = Actors[index];
+            int obj, room;
+            PopRoomAndObj(out room, out obj);
+            var a = Actors[Pop()];
             Point p;
             if (GetWhereIsObject(obj) != WhereIsObject.NotFound)
             {
@@ -115,7 +117,7 @@ namespace NScumm.Core
             }
             if (room == 0xFF)
                 room = a.Room;
-            a.PutActor(p, room);
+            a.PutActor(p, (byte)room);
         }
 
         [OpCode(0x81)]

@@ -35,6 +35,18 @@ namespace NScumm.Core.IO
         {
         }
 
+        protected override RoomHeader ReadRMHD()
+        {
+            var version = _reader.ReadUInt32();
+            var header = new RoomHeader
+            {
+                Width = _reader.ReadUInt16(),
+                Height = _reader.ReadUInt16(),
+                NumObjects = _reader.ReadUInt16()
+            };
+            return header;
+        }
+
         protected override void ReadImageHeader(ObjectData od)
         {
             // image header
@@ -57,13 +69,23 @@ namespace NScumm.Core.IO
         {
             var version = _reader.ReadUInt32();
             var obj = new ObjectData
-                {
-                    Number = _reader.ReadUInt16(),
-                    Parent = _reader.ReadByte(),
-                    ParentState = _reader.ReadByte()
-                };
+            {
+                Number = _reader.ReadUInt16(),
+                Parent = _reader.ReadByte(),
+                ParentState = _reader.ReadByte()
+            };
             obj.Flags = DrawBitmaps.AllowMaskOr;
             return obj;
+        }
+
+        protected override int ReadScriptIndex()
+        {
+            return _reader.ReadUInt16();
+        }
+
+        protected override int GetNumGlobalScripts()
+        {
+            return 2000;
         }
 
         public override byte[] ReadCostume(long offset)
@@ -92,6 +114,23 @@ namespace NScumm.Core.IO
             return null;
         }
 
+        public static long FindOffset(byte[] input, string tag)
+        {
+            using (var ms = new MemoryStream(input))
+            {
+                var reader = new XorReader(ms, 0);
+                var it = new ChunkIterator5(reader, input.Length);
+                while (it.MoveNext())
+                {
+                    if (it.Current.Tag == tag)
+                    {
+                        return reader.BaseStream.Position;
+                    }
+                }
+            }
+            return -1;
+        }
+
         public static T ReadData<T>(byte[] input, string tag)
         {
             return (T)ReadData(input, tag, typeof(T));
@@ -103,12 +142,17 @@ namespace NScumm.Core.IO
             if (data == null)
                 return null;
 
+            return ToStructure(data, 0, type);
+        }
+
+        public static object ToStructure(byte[] data, int offset, Type type)
+        {
             object obj;
-            var size = data.Length;
+            var size = Marshal.SizeOf(type);
             var ptr = Marshal.AllocHGlobal(size);
             try
             {
-                Marshal.Copy(data, 0, ptr, size);
+                Marshal.Copy(data, offset, ptr, size);
                 obj = Marshal.PtrToStructure(ptr, type);
             }
             finally
@@ -116,6 +160,11 @@ namespace NScumm.Core.IO
                 Marshal.FreeHGlobal(ptr);
             }
             return obj;
+        }
+
+        public static T ToStructure<T>(byte[] data, int offset)
+        {
+            return (T)ToStructure(data, offset, typeof(T));
         }
     }
  

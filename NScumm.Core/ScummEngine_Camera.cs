@@ -30,14 +30,14 @@ namespace NScumm.Core
 
         internal Camera Camera { get { return _camera; } }
 
-        protected void PanCameraToCore(int x)
+        protected virtual void PanCameraToCore(Point pos)
         {
-            _camera.DestinationPosition.X = (short)x;
+            _camera.DestinationPosition.X = pos.X;
             _camera.Mode = CameraMode.Panning;
             _camera.MovingToActor = false;
         }
 
-        protected void SetCameraAt(Point pos)
+        protected virtual void SetCameraAt(Point pos)
         {
             if (_camera.Mode != CameraMode.FollowActor || Math.Abs(pos.X - _camera.CurrentPosition.X) > (ScreenWidth / 2))
             {
@@ -62,7 +62,7 @@ namespace NScumm.Core
                 StopTalk();
         }
 
-        internal void SetCameraFollows(Actor actor, bool setCamera = false)
+        internal protected virtual void SetCameraFollows(Actor actor, bool setCamera = false)
         {
             _camera.Mode = CameraMode.FollowActor;
             _camera.ActorToFollow = actor.Number;
@@ -88,7 +88,7 @@ namespace NScumm.Core
             RunInventoryScript(0);
         }
 
-        void MoveCamera()
+        protected virtual void MoveCamera()
         {
             int pos = _camera.CurrentPosition.X;
             int t;
@@ -179,7 +179,7 @@ namespace NScumm.Core
             }
         }
 
-        void CameraMoved()
+        protected void CameraMoved()
         {
             int screenLeft;
 

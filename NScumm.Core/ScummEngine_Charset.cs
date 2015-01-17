@@ -27,16 +27,16 @@ namespace NScumm.Core
     partial class ScummEngine
     {
         const byte CharsetMaskTransparency = 0xFD;
-        byte[] _charsetBuffer = new byte[512];
+        protected byte[] _charsetBuffer = new byte[512];
         byte[][] _charsets;
         public byte[] CharsetColorMap = new byte[16];
         protected byte[][] _charsetData = CreateCharsetData();
-        int _charsetBufPos;
+        protected int _charsetBufPos;
         protected readonly CharsetRenderer _charset;
         // Somewhat hackish stuff for 2 byte support (Chinese/Japanese/Korean)
         public byte NewLineCharacter;
         internal bool UseCjkMode;
-        byte _charsetColor;
+        protected byte _charsetColor;
         int _nextLeft, _nextTop;
 
         static byte[][] CreateCharsetData()
@@ -74,7 +74,7 @@ namespace NScumm.Core
             }
         }
 
-        void Charset()
+        protected void Charset()
         {
             if (_haveMsg == 0)
                 return;
@@ -290,7 +290,7 @@ namespace NScumm.Core
                         frme = _charsetBuffer[bufferPos] | (_charsetBuffer[bufferPos + 1] << 8);
                         bufferPos += 2;
                         if (a != null)
-                            a.StartAnimActor((byte)frme);
+                            a.StartAnimActor(frme);
                         break;
 
                     case 10:

@@ -30,7 +30,9 @@ namespace NScumm.Core.IO
         None,
         SixteenColors = 0x01,
         Old256 = 0x02,
-        FewLocals = 0x04
+        FewLocals = 0x04,
+        Demo = 0x08,
+        Is16BitColor = 0x10,
     }
 
     public enum GameId

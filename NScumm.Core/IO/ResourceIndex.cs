@@ -38,6 +38,12 @@ namespace NScumm.Core.IO
             protected set;
         }
 
+        public GameInfo Game
+        {
+            get;
+            private set;
+        }
+
         public IDictionary<byte,string> RoomNames
         {
             get;
@@ -88,6 +94,8 @@ namespace NScumm.Core.IO
 
         public virtual int NumArray { get { return 50; }}
 
+        public virtual int NumGlobalScripts { get { return 200; }}
+
         public virtual byte[] ObjectRoomTable { get{ return null; } }
 
         #endregion
@@ -130,6 +138,7 @@ namespace NScumm.Core.IO
                     throw new NotSupportedException("The SCUMM version {0} is not supported.");
             }
 
+            index.Game = game;
             index.LoadIndex(game);
             return index;
         }

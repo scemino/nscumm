@@ -144,6 +144,8 @@ namespace NScumm.Core.IO
 
         public int NumArray { get { return Index.NumArray; } }
 
+        public int NumGlobalScripts { get { return Index.NumGlobalScripts; } }
+
         public byte[] ObjectRoomTable { get { return Index.ObjectRoomTable; } }
 
         protected ResourceManager(GameInfo game)
@@ -199,11 +201,14 @@ namespace NScumm.Core.IO
         {
             byte[] data = null;
             var res = Index.CostumeResources[costNum];
-            var disk = OpenRoom(res.RoomNum);
-            if (disk != null)
+            if (res.RoomNum != 0)
             {
-                var roomOffset = GetRoomOffset(disk, res.RoomNum);
-                data = disk.ReadCostume(roomOffset + res.Offset);
+                var disk = OpenRoom(res.RoomNum);
+                if (disk != null)
+                {
+                    var roomOffset = GetRoomOffset(disk, res.RoomNum);
+                    data = disk.ReadCostume(roomOffset + res.Offset);
+                }
             }
             return data;
         }

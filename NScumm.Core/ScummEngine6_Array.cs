@@ -151,7 +151,7 @@ namespace NScumm.Core
             return data != null ? new ArrayHeader(data) : null;
         }
 
-        void WriteArray(int array, int idx, int @base, int value)
+        public void WriteArray(int array, int idx, int @base, int value)
         {
 //            Debug.WriteLine("WriteArray: {0} {1} {2} {3}", array, idx, @base, value);
             var ah = GetArray(array);
@@ -231,7 +231,7 @@ namespace NScumm.Core
             WriteVariable(a, 0);
         }
 
-        int ReadArray(int array, int idx, int @base)
+        public int ReadArray(int array, int idx, int @base)
         {
             var ah = GetArray(array);
 

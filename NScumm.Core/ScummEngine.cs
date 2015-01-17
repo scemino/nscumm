@@ -46,10 +46,10 @@ namespace NScumm.Core
         protected const int StringIdSavename1 = 10;
 
         const uint CurrentVersion = 94;
-        protected const int OwnerRoom = 0x0F;
+
+        protected int OwnerRoom { get; private set; }
 
         protected const int NumScriptSlot = 80;
-        protected const int NumGlobalScripts = 200;
 
         protected const int MaxScriptNesting = 15;
         protected const int MaxCutsceneNum = 5;
@@ -75,9 +75,9 @@ namespace NScumm.Core
 
         ICostumeLoader _costumeLoader;
         ICostumeRenderer _costumeRenderer;
-        bool _keepText;
-        int _talkDelay;
-        int _haveMsg;
+        protected bool _keepText;
+        protected int _talkDelay;
+        protected int _haveMsg;
 
         public int ScreenTop;
         public int ScreenWidth = 320;
@@ -195,21 +195,21 @@ namespace NScumm.Core
             Mixer = mixer;
             Sound = new Sound(this, mixer);
 
-			if (game.GameId == GameId.Loom || game.GameId == GameId.Indy3) 
-			{
-				MusicEngine = new Player_AD(this, mixer);
-			} 
-			else 
-			{
-				MidiDriver nativeMidiDriver = null;
-				var adlibMidiDriver = MidiDriver.CreateMidi(mixer, MidiDriver.DetectDevice((int)MusicType.AdLib));
-				adlibMidiDriver.Property(NScumm.Core.Audio.SoftSynth.AdlibMidiDriver.PropertyOldAdLib, (Game.Version < 5) ? 1 : 0);
-				adlibMidiDriver.Property(NScumm.Core.Audio.SoftSynth.AdlibMidiDriver.PropertyScummOPL3, (Game.GameId == GameId.SamNMax) ? 1 : 0);
-				IMuse = NScumm.Core.Audio.IMuse.IMuse.Create(nativeMidiDriver, adlibMidiDriver);
-				MusicEngine = IMuse;
+            if (game.GameId == GameId.Loom || game.GameId == GameId.Indy3)
+            {
+                MusicEngine = new Player_AD(this, mixer);
+            }
+            else
+            {
+                MidiDriver nativeMidiDriver = null;
+                var adlibMidiDriver = MidiDriver.CreateMidi(mixer, MidiDriver.DetectDevice((int)MusicType.AdLib));
+                adlibMidiDriver.Property(NScumm.Core.Audio.SoftSynth.AdlibMidiDriver.PropertyOldAdLib, (Game.Version < 5) ? 1 : 0);
+                adlibMidiDriver.Property(NScumm.Core.Audio.SoftSynth.AdlibMidiDriver.PropertyScummOPL3, (Game.GameId == GameId.SamNMax) ? 1 : 0);
+                IMuse = NScumm.Core.Audio.IMuse.IMuse.Create(nativeMidiDriver, adlibMidiDriver);
+                MusicEngine = IMuse;
                 IMuse.Property(ImuseProperty.GameId, (uint)Game.GameId);
                 IMuse.AddSysexHandler(0x7D, Game.GameId == GameId.SamNMax ? new SysExFunc(new SamAndMaxSysEx().Do) : new SysExFunc(new ScummSysEx().Do));
-			}
+            }
             MusicEngine.SetMusicVolume(192);
 
             _slots = new ScriptSlot[NumScriptSlot];
@@ -246,7 +246,7 @@ namespace NScumm.Core
             }
             Gdi = new Gdi(this, game);
             _costumeLoader = game.Version < 7 ? (ICostumeLoader)new ClassicCostumeLoader(this) : new AkosCostumeLoader(this);
-            _costumeRenderer = new ClassicCostumeRenderer(this);
+            _costumeRenderer = game.Version < 7 ? (ICostumeRenderer)new ClassicCostumeRenderer(this) : new AkosRenderer(this);
 
             // Create the charset renderer
             _charset = game.Version == 3 ? (CharsetRenderer)new CharsetRenderer3(this) : new CharsetRendererClassic(this);
@@ -257,10 +257,25 @@ namespace NScumm.Core
             _textSurface = new Surface(ScreenWidth * _textSurfaceMultiplier, ScreenHeight * _textSurfaceMultiplier, PixelFormat.Indexed8, false);
             ClearTextSurface();
 
-            InitScreens(16, 144);
+            if (Game.Version >= 7)
+            {
+                InitScreens(0, ScreenHeight);
+            }
+            else
+            {
+                InitScreens(16, 144);
+            }
+            // Allocate gfx compositing buffer (not needed for V7/V8 games).
             _composite = new Surface(ScreenWidth, ScreenHeight, PixelFormat.Indexed8, false);
             InitActors();
+            OwnerRoom = Game.Version >= 7 ? 0x0FF : 0x0F;
             InitOpCodes();
+
+            if (Game.Version < 7)
+            {
+                Camera.LeftTrigger = 10;
+                Camera.RightTrigger = 30;
+            }
 
             if (_game.Features.HasFlag(GameFeatures.SixteenColors))
             {
@@ -329,7 +344,8 @@ namespace NScumm.Core
                 Variables[VariableVoiceMode.Value] = (int)VoiceMode.VoiceAndText;
             }
 
-            if (VariableRoomWidth.HasValue && VariableRoomHeight.HasValue) {
+            if (VariableRoomWidth.HasValue && VariableRoomHeight.HasValue)
+            {
                 Variables[VariableRoomWidth.Value] = ScreenWidth;
                 Variables[VariableRoomHeight.Value] = ScreenHeight;
             }
@@ -352,7 +368,21 @@ namespace NScumm.Core
             _mainVirtScreen = new VirtScreen(b, ScreenWidth, h - b, format, 2, true);
             _textVirtScreen = new VirtScreen(0, ScreenWidth, b, format, 1);
             _verbVirtScreen = new VirtScreen(h, ScreenWidth, ScreenHeight - h, format, 1);
-            _unkVirtScreen = new VirtScreen(80, ScreenWidth, 13, format, 1);
+
+            // Since the size of screen 3 is fixed, there is no need to reallocate
+            // it if its size changed.
+            // Not sure what it is good for, though. I think it may have been used
+            // in pre-V7 for the games messages (like 'Pause', Yes/No dialogs,
+            // version display, etc.). I don't know about V7, maybe the same is the
+            // case there. If so, we could probably just remove it completely.
+            if (_game.Version >= 7)
+            {
+                _unkVirtScreen = new VirtScreen((ScreenHeight / 2) - 10, ScreenWidth, 13, format, 1);
+            }
+            else
+            {
+                _unkVirtScreen = new VirtScreen(80, ScreenWidth, 13, format, 1);
+            }
 
             _screenB = b;
             _screenH = h;
@@ -423,15 +453,18 @@ namespace NScumm.Core
             var t = DateTime.Now;
             int delta = deltaTicks;
 
-            _variables[VariableTimer1.Value] += delta;
-            _variables[VariableTimer2.Value] += delta;
-            _variables[VariableTimer3.Value] += delta;
-
-            if (Game.Id == "indy3")
+            if (Game.Version >= 3)
             {
-                _variables[39] += delta;
-                _variables[40] += delta;
-                _variables[41] += delta;
+                _variables[VariableTimer1.Value] += delta;
+                _variables[VariableTimer2.Value] += delta;
+                _variables[VariableTimer3.Value] += delta;
+
+                if (Game.GameId == GameId.Indy3)
+                {
+                    _variables[39] += delta;
+                    _variables[40] += delta;
+                    _variables[41] += delta;
+                }
             }
 
             if (delta > 15)
@@ -441,12 +474,19 @@ namespace NScumm.Core
 
             UpdateTalkDelay(delta);
 
+            // Record the current ego actor before any scripts (including input scripts)
+            // get a chance to run.
+            var oldEgo = VariableEgo.HasValue ? Variables[VariableEgo.Value] : 0;
+
             ProcessInput();
 
             UpdateVariables();
 
             // The music engine generates the timer data for us.
-			_variables[VariableMusicTimer.Value] = MusicEngine.GetMusicTimer();
+            _variables[VariableMusicTimer.Value] = MusicEngine.GetMusicTimer();
+
+            if (VariableGameLoaded.HasValue)
+                _variables[VariableGameLoaded.Value] = 0;
 
             load_game:
             SaveLoad();

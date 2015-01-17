@@ -79,6 +79,19 @@ namespace NScumm.Core.Graphics
             }
             IsZBufferEnabled = true;
             _gfxUsageBits = new uint[410 * 3];
+            // Increase the number of screen strips by one; needed for smooth scrolling
+            if (_vm.Game.Version >= 7)
+            {
+                // We now have mostly working smooth scrolling code in place for V7+ games
+                // (i.e. The Dig, Full Throttle and COMI). It seems to work very well so far.
+                //
+                // To understand how we achieve smooth scrolling, first note that with it, the
+                // virtual screen strips don't match the display screen strips anymore. To
+                // overcome that problem, we simply use a screen pitch that is 8 pixel wider
+                // than the actual screen width, and always draw one strip more than needed to
+                // the backbuf (thus we have to treat the right border seperately).
+                NumStrips += 1;
+            }
         }
 
         #endregion

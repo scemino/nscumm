@@ -22,5 +22,6 @@ namespace NScumm.Core
         void LoadCostume(int id);
         int IncreaseAnims(Actor actor);
         void CostumeDecodeData(Actor actor, int frame, uint usemask);
+        bool HasManyDirections(int id);
     }
 }

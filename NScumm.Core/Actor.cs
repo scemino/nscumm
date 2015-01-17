@@ -19,6 +19,7 @@ using NScumm.Core.Graphics;
 using NScumm.Core.IO;
 using System;
 using System.Linq;
+using System.Diagnostics;
 
 namespace NScumm.Core
 {
@@ -77,7 +78,7 @@ namespace NScumm.Core
         int _talkFrequency;
         byte _talkVolume;
         byte _talkPan;
-        byte _frame;
+        int _frame;
 
         #endregion
 
@@ -127,7 +128,7 @@ namespace NScumm.Core
 
         public byte WalkFrame { get; set; }
 
-        public byte Frame { get { return _frame; } }
+        public int Frame { get { return _frame; } }
 
         public byte StandFrame { get; set; }
 
@@ -242,7 +243,7 @@ namespace NScumm.Core
             AdjustActorPos();
 
             // TODO:
-            //_vm->ensureResourceLoaded(rtCostume, _costume);
+            //_vm.ensureResourceLoaded(rtCostume, _costume);
 
             if (_costumeNeedsInit)
             {
@@ -298,15 +299,22 @@ namespace NScumm.Core
                 _walkdata = new ActorWalkData();
                 _walkdata.Point3.X = 32000;
                 WalkScript = 0;
-            
+            }
+
+            if (mode == 1 || mode == -1)
+            {
                 Costume = 0;
                 Room = 0;
                 _position.X = 0;
                 _position.Y = 0;
                 _facing = 180;
+                if (_scumm.Game.Version >= 7)
+                    IsVisible = false;
             }
-
-            Sounds = new ushort[16];
+            else if (mode == 2)
+            {
+                _facing = 180;
+            }
 
             _elevation = 0;
             Width = 24;
@@ -314,10 +322,12 @@ namespace NScumm.Core
             TalkPosition = new Point(0, -80);
             BoxScale = ScaleY = ScaleX = 0xFF;
             Charset = 0;
+            Sounds = new ushort[16];
             Sound = 0;
             _targetFacing = _facing;
 
             ShadowMode = 0;
+            Layer = 0;
 
             StopActorMoving();
 
@@ -330,7 +340,7 @@ namespace NScumm.Core
             }
 
             IgnoreBoxes = false;
-            ForceClip = 0;
+            ForceClip = (_scumm.Game.Version >= 7) ? (byte)100 : (byte)0;
             IgnoreTurns = false;
 
             _talkFrequency = 256;
@@ -342,7 +352,7 @@ namespace NScumm.Core
             WalkScript = 0;
             TalkScript = 0;
 
-            _scumm.ClassData[Number] = 0;
+            _scumm.ClassData[Number] = (_scumm.Game.Version >= 7) ? _scumm.ClassData[0] : 0;
         }
 
         public void ResetFrames()
@@ -476,7 +486,7 @@ namespace NScumm.Core
                 if (numBoxes < firstValidBox)
                     return abr;
 
-                bestDist = 0xFFFF;
+                bestDist = (_scumm.Game.Version >= 7) ? (uint)0x7FFFFFFF : (uint)0xFFFF;
                 bestBox = InvalidBox;
 
                 // We iterate (backwards) over all boxes, searching the one closest
@@ -585,6 +595,22 @@ namespace NScumm.Core
             int new_dir, next_box;
             Point foundPath;
 
+            if (_scumm.Game.Version >= 7)
+            {
+                if (Moving.HasFlag(MoveFlags.Frozen))
+                {
+                    if (Moving.HasFlag(MoveFlags.Turn))
+                    {
+                        new_dir = UpdateActorDirection(false);
+                        if (_facing != new_dir)
+                            SetDirection(new_dir);
+                        else
+                            Moving &= ~MoveFlags.Turn;
+                    }
+                    return;
+                }
+            }
+
             if (Moving == MoveFlags.None)
                 return;
 
@@ -683,6 +709,12 @@ namespace NScumm.Core
         {
             AdjustBoxResult abr;
 
+            if (!IsInCurrentRoom && _scumm.Game.Version >= 7)
+            {
+                Debug.WriteLine("startWalkActor: attempting to walk actor {0} who is not in this room", Number);
+                return;
+            }
+
             if (_scumm.Game.Version <= 4)
             {
                 abr.Position = dest;
@@ -773,11 +805,25 @@ namespace NScumm.Core
 
         public void Animate(int anim)
         {
-            int cmd = anim / 4;
-            int dir = ScummHelper.OldDirToNewDir(anim % 4);
+            int cmd, dir;
+            if (_scumm.Game.Version >= 7 && !((_scumm.Game.GameId == GameId.FullThrottle) && _scumm.Game.Features.HasFlag(GameFeatures.Demo) /*&& (_scumm->_game.platform == Common::kPlatformDOS)*/))
+            {
 
-            // Convert into old cmd code
-            cmd = 0x3F - cmd + 2;
+                if (anim == 0xFF)
+                    anim = 2000;
+
+                cmd = anim / 1000;
+                dir = anim % 1000;
+
+            }
+            else
+            {
+                cmd = anim / 4;
+                dir = ScummHelper.OldDirToNewDir(anim % 4);
+
+                // Convert into old cmd code
+                cmd = 0x3F - cmd + 2;
+            }
 
             switch (cmd)
             {
@@ -793,7 +839,7 @@ namespace NScumm.Core
                     TurnToDirection(dir);
                     break;
                 default:
-                    StartAnimActor((byte)anim);
+                    StartAnimActor(anim);
                     break;
             }
         }
@@ -995,44 +1041,78 @@ namespace NScumm.Core
             }
             else
             {
-                StartAnimActor((byte)frame);
+                StartAnimActor(frame);
             }
         }
 
-        public void StartAnimActor(byte frame)
+        public void StartAnimActor(int frame)
         {
-            switch (frame)
+            if (_scumm.Game.Version >= 7 && !((_scumm.Game.GameId == GameId.FullThrottle) && (_scumm.Game.Features.HasFlag(GameFeatures.Demo) /*&& (_vm.Game.Platform == Platform.DOS)*/)))
             {
-                case 0x38:
-                    frame = InitFrame;
-                    break;
-                case 0x39:
-                    frame = WalkFrame;
-                    break;
-                case 0x3A:
-                    frame = StandFrame;
-                    break;
-                case 0x3B:
-                    frame = TalkStartFrame;
-                    break;
-                case 0x3C:
-                    frame = TalkStopFrame;
-                    break;
-            }
-
-            if (IsInCurrentRoom && Costume != 0)
-            {
-                _animProgress = 0;
-                NeedRedraw = true;
-                Cost.AnimCounter = 0;
-                // V1 - V2 games don't seem to need a _cost.reset() at this point.
-                // Causes Zak to lose his body in several scenes, see bug #771508
-                if (frame == InitFrame)
+                switch (frame)
                 {
-                    Cost.Reset();
+                    case 1001:
+                        frame = InitFrame;
+                        break;
+                    case 1002:
+                        frame = WalkFrame;
+                        break;
+                    case 1003:
+                        frame = StandFrame;
+                        break;
+                    case 1004:
+                        frame = TalkStartFrame;
+                        break;
+                    case 1005:
+                        frame = TalkStopFrame;
+                        break;
                 }
-                _scumm.CostumeLoader.CostumeDecodeData(this, frame, uint.MaxValue);
-                _frame = frame;
+
+                if (Costume != 0)
+                {
+                    _animProgress = 0;
+                    NeedRedraw = true;
+                    if (frame == InitFrame)
+                        Cost.Reset();
+                    _scumm.CostumeLoader.CostumeDecodeData(this, frame, uint.MaxValue);
+                    _frame = frame;
+                }
+            }
+            else
+            {
+                switch (frame)
+                {
+                    case 0x38:
+                        frame = InitFrame;
+                        break;
+                    case 0x39:
+                        frame = WalkFrame;
+                        break;
+                    case 0x3A:
+                        frame = StandFrame;
+                        break;
+                    case 0x3B:
+                        frame = TalkStartFrame;
+                        break;
+                    case 0x3C:
+                        frame = TalkStopFrame;
+                        break;
+                }
+
+                if (IsInCurrentRoom && Costume != 0)
+                {
+                    _animProgress = 0;
+                    NeedRedraw = true;
+                    Cost.AnimCounter = 0;
+                    // V1 - V2 games don't seem to need a _cost.reset() at this point.
+                    // Causes Zak to lose his body in several scenes, see bug #771508
+                    if (frame == InitFrame)
+                    {
+                        Cost.Reset();
+                    }
+                    _scumm.CostumeLoader.CostumeDecodeData(this, frame, uint.MaxValue);
+                    _frame = frame;
+                }
             }
         }
 
@@ -1051,6 +1131,78 @@ namespace NScumm.Core
 
             Moving = MoveFlags.Turn;
             _targetFacing = (ushort)newdir;
+        }
+
+        public void RunActorTalkScript(int f)
+        {
+            if (_scumm.Game.Version == 8 && _scumm.Variables[_scumm.VariableHaveMessage.Value] == 2)
+                return;
+
+            if (_scumm.Game.GameId == GameId.FullThrottle && _scumm.String[0].NoTalkAnim)
+                return;
+
+            if (_scumm.TalkingActor == 0 || Room != _scumm.CurrentRoom || _frame == f)
+                return;
+
+            if (TalkScript != 0)
+            {
+                _scumm.RunScript(TalkScript, true, false, new int[]{ Number, f });
+            }
+            else
+            {
+                StartAnimActor(f);
+            }
+        }
+
+        public void RemapActorPalette(int r_fact, int g_fact, int b_fact, int threshold)
+        {
+            if (!IsInCurrentRoom)
+            {
+                Debug.WriteLine("Actor::remapActorPalette: Actor {0} not in current room", Number);
+                return;
+            }
+
+            var akos = _scumm.ResourceManager.GetCostumeData(Costume);
+            if (akos == null)
+            {
+                Debug.WriteLine("Actor::remapActorPalette: Can't remap actor {0}, costume {1} not found", Number, Costume);
+                return;
+            }
+
+            var akpl = ResourceFile7.ReadData(akos, "AKPL");
+            if (akpl == null)
+            {
+                Debug.WriteLine("Actor::remapActorPalette: Can't remap actor {0}, costume {1} doesn't contain an AKPL block", Number, Costume);
+                return;
+            }
+
+            // Get the number palette entries
+            var akpl_size = akpl.Length;
+
+            var rgbs = ResourceFile7.ReadData(akos, "RGBS");
+
+            if (rgbs == null)
+            {
+                Debug.WriteLine("Actor::remapActorPalette: Can't remap actor {0} costume {1} doesn't contain an RGB block", Number, Costume);
+                return;
+            }
+
+            // TODO: vs scumm7
+//            for (var i = 0; i < akpl_size; i++) {
+//                r = *rgbs++;
+//                g = *rgbs++;
+//                b = *rgbs++;
+//
+//                akpl_color = *akpl++;
+//
+//                // allow remap of generic palette entry?
+//                if (ShadowMode==0 || akpl_color >= 16) {
+//                    r = (r * r_fact) >> 8;
+//                    g = (g * g_fact) >> 8;
+//                    b = (b * b_fact) >> 8;
+//                    _palette[i] = _scumm.RemapPaletteColor(r, g, b, threshold);
+//                }
+//            }
         }
 
         #endregion
@@ -1083,15 +1235,29 @@ namespace NScumm.Core
             bcr.SetPalette(_palette);
             bcr.SetFacing(this);
 
-            if (ForceClip > 0)
+            if (_scumm.Game.Version >= 7)
+            {
                 bcr.ZBuffer = ForceClip;
-            else if (IsInClass(ObjectClass.NeverClip))
-                bcr.ZBuffer = 0;
+                if (bcr.ZBuffer == 100)
+                {
+                    bcr.ZBuffer = _scumm.GetBoxMask(Walkbox);
+                    if (bcr.ZBuffer > _scumm.Gdi.NumZBuffer - 1)
+                        bcr.ZBuffer = (byte)(_scumm.Gdi.NumZBuffer - 1);
+                }
+
+            }
             else
             {
-                bcr.ZBuffer = _scumm.GetBoxMask(Walkbox);
-                if (bcr.ZBuffer > _scumm.Gdi.NumZBuffer - 1)
-                    bcr.ZBuffer = (byte)(_scumm.Gdi.NumZBuffer - 1);
+                if (ForceClip > 0)
+                    bcr.ZBuffer = ForceClip;
+                else if (IsInClass(ObjectClass.NeverClip))
+                    bcr.ZBuffer = 0;
+                else
+                {
+                    bcr.ZBuffer = _scumm.GetBoxMask(Walkbox);
+                    if (bcr.ZBuffer > _scumm.Gdi.NumZBuffer - 1)
+                        bcr.ZBuffer = (byte)(_scumm.Gdi.NumZBuffer - 1);
+                }
             }
 
             bcr.DrawTop = 0x7fffffff;
@@ -1275,15 +1441,35 @@ namespace NScumm.Core
                 {
                     case 1:
                         {
-                            if (isWalking)	                       // Actor is walking
+                            if (_scumm.Game.Version >= 7)
+                            {
+                                if (dir < 180)
+                                    return 90;
+                                else
+                                    return 270;
+                            }
+                            else
+                            {
+                                if (isWalking)	                       // Actor is walking
                                 return flipX ? 90 : 270;	                               // Actor is standing/turning
-                            return (dir == 90) ? 90 : 270;
+                                return (dir == 90) ? 90 : 270;
+                            }
                         }
                     case 2:
                         {
-                            if (isWalking)	                       // Actor is walking
+                            if (_scumm.Game.Version >= 7)
+                            {
+                                if (dir > 90 && dir < 270)
+                                    return 180;
+                                else
+                                    return 0;
+                            }
+                            else
+                            {
+                                if (isWalking)	                       // Actor is walking
                                 return flipY ? 180 : 0;	                               // Actor is standing/turning
-                            return (dir == 0) ? 0 : 180;
+                                return (dir == 0) ? 0 : 180;
+                            }
                         }
                     case 3:
                         return 270;
@@ -1328,16 +1514,29 @@ namespace NScumm.Core
             if ((_scumm.Game.Version == 6) && IgnoreTurns)
                 return _facing;
 
+            var dirType = (_scumm.Game.Version >= 7) ? _scumm.CostumeLoader.HasManyDirections(Costume) : false;
+
             var from = ScummMath.ToSimpleDir(false, _facing);
             var dir = RemapDirection(_targetFacing, isWalking);
 
-            var shouldInterpolate = (dir & 1024) != 0;
+            bool shouldInterpolate;
+            if (_scumm.Game.Version >= 7)
+            {
+                // Direction interpolation interfers with walk scripts in Dig; they perform
+                // (much better) interpolation themselves.
+                shouldInterpolate = false;
+            }
+            else
+            {
+                shouldInterpolate = (dir & 1024) != 0;
+            }
+
             dir &= 1023;
 
             if (shouldInterpolate)
             {
                 int to = ScummMath.ToSimpleDir(false, dir);
-                int num = 4;
+                int num = dirType ? 8 : 4;
 
                 // Turn left or right, depending on which is shorter.
                 int diff = to - from;

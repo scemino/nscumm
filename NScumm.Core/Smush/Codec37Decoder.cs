@@ -21,7 +21,7 @@
 using System;
 using System.Diagnostics;
 
-namespace NScumm.Core
+namespace NScumm.Core.Smush
 {
     public class Codec37Decoder
     {

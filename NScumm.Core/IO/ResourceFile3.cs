@@ -472,7 +472,7 @@ namespace NScumm.Core.IO
             }
         }
 
-        protected RoomHeader ReadRMHD()
+        protected virtual RoomHeader ReadRMHD()
         {
             var header = new RoomHeader
             {

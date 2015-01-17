@@ -28,7 +28,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using NScumm.Core.Graphics;
 
-namespace NScumm.Core
+namespace NScumm.Core.Smush
 {
     class SmushPlayer
     {
@@ -169,6 +169,19 @@ namespace NScumm.Core
 
             // Reset mouse state
             _vm._gfxManager.ShowCursor(oldMouseState);
+        }
+
+        public void SeekSan(string filename, int pos, int contFrame)
+        {
+            _seekFile = filename;
+            _seekPos = pos;
+            _seekFrame = contFrame;
+            _pauseTime = 0;
+        }
+
+        public void Insanity(bool flag)
+        {
+            _insanity = flag;
         }
 
         void Release()
@@ -618,14 +631,18 @@ namespace NScumm.Core
             //      return;
             //  }
             var c = _smixer.FindChannel(track_id);
-            if (c == null) {
+            if (c == null)
+            {
                 c = new SaudChannel(track_id);
                 _smixer.AddChannel(c);
             }
 
-            if (_middleAudio || index == 0) {
+            if (_middleAudio || index == 0)
+            {
                 c.SetParameters(max_frames, flags, vol, pan, index);
-            } else {
+            }
+            else
+            {
                 c.CheckParameters(index, max_frames, flags, vol, pan);
             }
             _middleAudio = false;
@@ -772,7 +789,6 @@ namespace NScumm.Core
                 dstPos += pitch - left - width;
             }
         }
-
 
         void UpdateScreen()
         {

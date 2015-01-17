@@ -39,11 +39,6 @@ namespace NScumm.Core
             Debug.Assert(_akos != null);
         }
 
-        public int IncreaseAnims(Actor a)
-        {
-            throw new NotImplementedException();
-        }
-
         public void CostumeDecodeData(Actor a, int frame, uint usemask)
         {
             if (a.Costume == 0)
@@ -208,15 +203,33 @@ namespace NScumm.Core
             return HasManyDirections();
         }
 
+        public int IncreaseAnims(Actor a)
+        {
+            return 0;
+            var aksq = ResourceFile7.ReadData(_akos, "AKSQ");
+            var akfo = ResourceFile7.ReadData(_akos, "AKFO");
+
+            var size = akfo.Length / 2;
+
+            var result = false;
+            for (var i = 0; i < 16; i++)
+            {
+                if (a.Cost.Active[i] != 0)
+                    result |= IncreaseAnim(a, i, aksq, akfo, size);
+            }
+            return result ? 1 : 0;
+        }
+
         protected bool HasManyDirections()
         {
             var akhd = ResourceFile7.ReadData<AkosHeader>(_akos, "AKHD");
             return (akhd.flags & 2) != 0;
         }
 
-
-
-
+        bool IncreaseAnim(Actor a, int chan, byte[] aksq, byte[] akfo, int numakfo)
+        {
+            return false;
+        }
 
         protected byte[] _akos;
         private ScummEngine vm;

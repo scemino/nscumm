@@ -29,7 +29,7 @@ namespace NScumm.Core
         [OpCode(0x5e)]
         protected void StartScript(int flags, int script, int[] args)
         {
-            RunScript((byte)script, (flags & 1) != 0, (flags & 2) != 0, args);
+            RunScript(script, (flags & 1) != 0, (flags & 2) != 0, args);
         }
 
         [OpCode(0x5f)]

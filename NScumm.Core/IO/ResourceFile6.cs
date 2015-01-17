@@ -139,10 +139,12 @@ namespace NScumm.Core.IO
                     case "LSCR":
                         {
                             // local script
-                            var index = _reader.ReadByte();
-                            room.LocalScripts[index - 200] = new ScriptData
+                            var pos = _reader.BaseStream.Position;
+                            var index = ReadScriptIndex();
+                            var size = 8 + _reader.BaseStream.Position - pos;
+                            room.LocalScripts[index - GetNumGlobalScripts()] = new ScriptData
                             {
-                                Data = _reader.ReadBytes((int)(it.Current.Size - 9))
+                                Data = _reader.ReadBytes((int)(it.Current.Size - size))
                             };
                         }
                         break;
@@ -173,6 +175,16 @@ namespace NScumm.Core.IO
             }
 
             return room;
+        }
+
+        protected virtual int ReadScriptIndex()
+        {
+            return  _reader.ReadByte();
+        }
+
+        protected virtual int GetNumGlobalScripts()
+        {
+            return 200;
         }
 
         void ReadRoomImage(Room room)

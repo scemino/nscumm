@@ -44,6 +44,8 @@ namespace NScumm.Core
         protected int VariableTimeDateDay;
         protected int VariableTimeDateHour;
         protected int VariableTimeDateMinute;
+        protected int? VariableCameraFollowedActor;
+        protected int? VariableBlastAboveText;
 
         public ScummEngine6(GameInfo game, IGraphicsManager graphicsManager, IInputManager inputManager, IMixer mixer)
             : base(game, graphicsManager, inputManager, mixer)

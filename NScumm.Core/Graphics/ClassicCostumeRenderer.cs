@@ -19,6 +19,25 @@ using NScumm.Core.IO;
 
 namespace NScumm.Core.Graphics
 {
+    class Codec1
+    {
+        // Parameters for the original ("V1") costume codec.
+        // These ones are accessed from ARM code. Don't reorder.
+        public int X;
+        public int Y;
+        public byte[] Scaletable;
+        public int SkipWidth;
+        public PixelNavigator DestPtr;
+        public PixelNavigator MaskPtr;
+        public int ScaleXStep;
+        public byte Mask, Shr;
+        public byte RepColor;
+        public byte RepLen;
+        // These ones aren't accessed from ARM code.
+        public Rect BoundsRect;
+        public int ScaleXIndex, ScaleYIndex;
+    }
+
     class ClassicCostumeRenderer : ICostumeRenderer
     {
         static byte[] smallCostumeScaleTable = new byte[256]
@@ -56,22 +75,6 @@ namespace NScumm.Core.Graphics
             0x0E, 0x8E, 0x4E, 0xCE, 0x2E, 0xAE, 0x6E, 0xEE,
             0x1E, 0x9E, 0x5E, 0xDE, 0x3E, 0xBE, 0x7E, 0xFE
         };
-
-        class Codec1
-        {
-            // Parameters for the original ("V1") costume codec.
-            // These ones are accessed from ARM code. Don't reorder.
-            public int X;
-            public int Y;
-            public byte[] Scaletable;
-            public int SkipWidth;
-            public PixelNavigator DestPtr;
-            public PixelNavigator MaskPtr;
-            public int ScaleXStep;
-            public byte Mask, Shr;
-            public byte RepColor;
-            public byte RepLen;
-        }
 
         public int DrawTop { get; set; }
 

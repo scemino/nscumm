@@ -28,7 +28,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using NScumm.Core.Graphics;
 
-namespace NScumm.Core
+namespace NScumm.Core.Smush
 {
     class SaudChannel : SmushChannel
     {

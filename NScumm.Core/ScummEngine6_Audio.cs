@@ -33,7 +33,15 @@ namespace NScumm.Core
         [OpCode(0x74)]
         protected void StartSound(int sound)
         {
-            Sound.AddSoundToQueue(sound);
+            if (Game.Version >= 7)
+            {
+                // TODO: vs 
+//                ImuseDigital.StartSfx(sound, 64);
+            }
+            else
+            {
+                Sound.AddSoundToQueue(sound);
+            }
         }
 
         [OpCode(0x75)]

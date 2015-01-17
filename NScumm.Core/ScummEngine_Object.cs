@@ -477,7 +477,8 @@ namespace NScumm.Core
                 var flags = od.Flags;
                 // Sam & Max needs this to fix object-layering problems with
                 // the inventory and conversation icons.
-                if (_game.GameId == NScumm.Core.IO.GameId.SamNMax && GetClass(od.Number, ObjectClass.IgnoreBoxes))
+                if ((_game.GameId == NScumm.Core.IO.GameId.SamNMax && GetClass(od.Number, ObjectClass.IgnoreBoxes))||
+                    (_game.GameId == NScumm.Core.IO.GameId.FullThrottle && GetClass(od.Number, ObjectClass.Player)))
                     flags |= DrawBitmaps.DrawMaskOnAll;
 
                 var state = GetStateCore(od.Number);

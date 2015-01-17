@@ -30,7 +30,7 @@ namespace NScumm.Core
     {
         protected int _actorToPrintStrFor;
         bool _useTalkAnims;
-        bool _haveActorSpeechMsg;
+        protected bool _haveActorSpeechMsg;
 
         internal Actor[] Actors { get; private set; }
 
@@ -49,7 +49,7 @@ namespace NScumm.Core
             return id >= 0 && id < Actors.Length && Actors[id].Number == id;
         }
 
-        protected void ActorTalk(byte[] msg)
+        protected virtual void ActorTalk(byte[] msg)
         {
             ConvertMessageToString(msg, _charsetBuffer, 0);
 
@@ -139,15 +139,23 @@ namespace NScumm.Core
             if (act != 0 && act < 0x80)
             {
                 var a = Actors[act];
-                if (a.IsInCurrentRoom && _useTalkAnims)
+                if ((Game.Version >= 7 && !_string[0].NoTalkAnim) || (Game.Version <= 6 && a.IsInCurrentRoom && _useTalkAnims))
                 {
                     a.RunTalkScript(a.TalkStopFrame);
                     _useTalkAnims = false;
                 }
-                TalkingActor = 0xFF;
+                if (Game.Version <= 7)
+                {
+                    TalkingActor = 0xFF;
+                }
             }
 
             _keepText = false;
+            if (Game.Version >= 7)
+            {
+                // TODO: vs
+//                ((ScummEngine7)this).ClearSubtitleQueue();
+            }
             RestoreCharsetBg();
         }
 

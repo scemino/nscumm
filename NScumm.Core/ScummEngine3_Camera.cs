@@ -28,7 +28,7 @@ namespace NScumm.Core
     {
         void PanCameraTo()
         {
-            PanCameraToCore(GetVarOrDirectWord(OpCodeParameter.Param1));
+            PanCameraToCore(new Point((short)GetVarOrDirectWord(OpCodeParameter.Param1), (short)0));
         }
 
         void SetCameraAt()

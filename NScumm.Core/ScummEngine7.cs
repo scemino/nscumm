@@ -27,20 +27,17 @@ using System.Collections.Generic;
 using System;
 using System.Reflection;
 using System.Linq;
+using NScumm.Core.Smush;
 
 namespace NScumm.Core
 {
     partial class ScummEngine7: ScummEngine6
     {
-        int VariableCameraPosY;
         int VariableTimeDateSecond;
-        int VariableLeftButtonDown;
-        int VariableRightButtonDown;
         int VariableRandomNumber;
         int VariableNumGlobalObjs;
         int VariableCameraDestX;
         int VariableCameraDestY;
-        int VariableCameraFollowedActor;
         int VariableExitScript2;
         int VariableRestartKey;
         int VariablePauseKey;
@@ -49,26 +46,22 @@ namespace NScumm.Core
         int VariableKeypress;
         int VariableCameraMinY;
         int VariableCameraMaxY;
-        int VariableCameraThresholdX;
-        int VariableCameraThresholdY;
         int VariableCameraSpeedX;
         int VariableCameraSpeedY;
-        int VariableCameraAccelX;
-        int VariableCameraAccelY;
         int VariableDefaultTalkDelay;
         int VariableCharsetMask;
         int VariableVideoName;
         int VariableString2Draw;
-        int VariableCustomScaleTable;
-        int VariableBlastAboveText;
+        public int VariableCustomScaleTable;
         int VariableMusicBundleLoaded;
         int VariableVoiceBundleLoaded;
 
 
-        public bool SmushVideoShouldFinish { get; internal set;}
+        public bool SmushVideoShouldFinish { get; internal set; }
         public bool SmushActive { get; internal set; }
-        internal SmushPlayer SmushPlayer { get; private set;}
-        internal SmushMixer SmushMixer { get; private set;}
+        internal SmushPlayer SmushPlayer { get; private set; }
+        internal SmushMixer SmushMixer { get; private set; }
+        internal Insane.Insane Insane { get; private set; }
 
         public ScummEngine7(GameInfo game, IGraphicsManager graphicsManager, IInputManager inputManager, IMixer mixer)
             : base(game, graphicsManager, inputManager, mixer)
@@ -178,8 +171,20 @@ namespace NScumm.Core
             VariableMusicBundleLoaded = 135;
             VariableVoiceBundleLoaded = 136;
 
+            // Create FT INSANE object
+            if (Game.GameId == GameId.FullThrottle)
+                Insane = new Insane.Insane(this);
+
             SmushMixer = new SmushMixer(Mixer);
             SmushPlayer = new SmushPlayer(this);
+        }
+
+        protected override void ResetScummVars()
+        {
+            Variables[VariableCameraThresholdX.Value] = 100;
+            Variables[VariableCameraThresholdY.Value] = 70;
+            Variables[VariableCameraAccelX.Value] = 100;
+            Variables[VariableCameraAccelY.Value] = 100;
         }
     }
 }

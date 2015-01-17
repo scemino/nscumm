@@ -30,6 +30,7 @@ namespace NScumm.Core
     {
         public int? VariableEgo = 1;
         public int? VariableCameraPosX = 2;
+        public int? VariableCameraPosY;
         public int? VariableHaveMessage = 3;
         public int? VariableRoom = 4;
         public int? VariableOverride = 5;
@@ -92,8 +93,14 @@ namespace NScumm.Core
         public int? VariableSaveLoadScript2;
         public int? VariableLeftButtonHold;
         public int? VariableRightButtonHold;
+        public int? VariableLeftButtonDown;
+        public int? VariableRightButtonDown;
         public int? VariableV6SoundMode;
         public int? VariableV6EMSSpace;
+        public int? VariableCameraThresholdX;
+        public int? VariableCameraThresholdY;
+        public int? VariableCameraAccelX;
+        public int? VariableCameraAccelY;
 
         int[] _variables;
         BitArray _bitVars;
@@ -319,8 +326,17 @@ namespace NScumm.Core
 
         void UpdateVariables()
         {
-            _variables[VariableCameraPosX.Value] = _camera.CurrentPosition.X;
-            _variables[VariableHaveMessage.Value] = _haveMsg;
+            if (Game.Version >= 7)
+            {
+                Variables[VariableCameraPosX.Value] = Camera.CurrentPosition.X;
+                Variables[VariableCameraPosY.Value] = Camera.CurrentPosition.Y;
+            }
+            else
+            {
+                _variables[VariableCameraPosX.Value] = _camera.CurrentPosition.X;
+            }
+            if (Game.Version <= 7)
+            Variables[VariableHaveMessage.Value] = _haveMsg;
         }
     }
 }

@@ -35,7 +35,8 @@ namespace NScumm.Core
 		public Point DestinationPosition;
 		public Point Accel;
 		public Point LastPosition;
-		public int LeftTrigger = 10, RightTrigger = 30;
+        public int LeftTrigger;
+        public int RightTrigger;
 		public byte ActorToFollow;
 
 		public CameraMode Mode { get; set; }

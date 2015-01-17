@@ -28,6 +28,8 @@ namespace NScumm.Core
 {
     class Sound: ISoundRepository
     {
+        public const int TalkSoundID = 10000;
+
         public int SfxMode { get { return _sfxMode; } }
 
         public Sound(ScummEngine vm, IMixer mixer)

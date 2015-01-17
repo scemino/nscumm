@@ -19,6 +19,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
+using System.Runtime.InteropServices;
 
 namespace NScumm.Core.IO
 {
@@ -32,10 +33,15 @@ namespace NScumm.Core.IO
         public ushort codec;
     }
 
+    [StructLayout(LayoutKind.Explicit, Pack = 1)]
     struct AkosOffset
     {
-        public uint akcd;    // offset into the akcd data
-        public ushort akci;  // offset into the akci data
+        [FieldOffsetAttribute(0)]
+        public uint akcd;
+        // offset into the akcd data
+        [FieldOffsetAttribute(4)]
+        public ushort akci;
+        // offset into the akci data
     }
 }
 

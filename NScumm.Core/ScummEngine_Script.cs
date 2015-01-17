@@ -489,7 +489,7 @@ namespace NScumm.Core
             }
         }
 
-        public void RunScript(byte scriptNum, bool freezeResistant, bool recursive, int[] data)
+        public void RunScript(int scriptNum, bool freezeResistant, bool recursive, int[] data)
         {
             if (scriptNum == 0)
                 return;
@@ -498,7 +498,7 @@ namespace NScumm.Core
                 StopScript(scriptNum);
 
             WhereIsObject scriptType;
-            if (scriptNum < NumGlobalScripts)
+            if (scriptNum < _resManager.NumGlobalScripts)
             {
                 scriptType = WhereIsObject.Global;
             }
@@ -510,7 +510,7 @@ namespace NScumm.Core
             var slotIndex = GetScriptSlotIndex();
             _slots[slotIndex] = new ScriptSlot
             {
-                Number = scriptNum,
+                Number = (ushort)scriptNum,
                 Status = ScriptStatus.Running,
                 FreezeResistant = freezeResistant,
                 Recursive = recursive,
@@ -547,14 +547,14 @@ namespace NScumm.Core
                                         select o.Script.Data).First();
                 _currentScriptData = data;
             }
-            else if (scriptNum < NumGlobalScripts)
+            else if (scriptNum < _resManager.NumGlobalScripts)
             {
                 var data = _resManager.GetScript((byte)scriptNum);
                 _currentScriptData = data;
             }
-            else if ((scriptNum - NumGlobalScripts) < roomData.LocalScripts.Length)
+            else if ((scriptNum - _resManager.NumGlobalScripts) < roomData.LocalScripts.Length)
             {
-                _currentScriptData = roomData.LocalScripts[scriptNum - NumGlobalScripts].Data;
+                _currentScriptData = roomData.LocalScripts[scriptNum - _resManager.NumGlobalScripts].Data;
             }
             else
             {

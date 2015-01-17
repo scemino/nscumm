@@ -28,9 +28,8 @@ using System.Diagnostics;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
-namespace NScumm.Core
+namespace NScumm.Core.Smush
 {
-
     class TrsFile
     {
         static readonly Regex DefRegex = new Regex(@"#define\s+(\S+)\s+(\d+)", RegexOptions.Singleline);

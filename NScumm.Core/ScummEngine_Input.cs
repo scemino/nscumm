@@ -187,12 +187,12 @@ namespace NScumm.Core
                 Variables[VariableLeftButtonHold.Value] = _inputManager.IsMouseLeftPressed() ? 1 : 0;
                 Variables[VariableRightButtonHold.Value] = _inputManager.IsMouseLeftPressed() ? 1 : 0;
 
-                // TODO: scumm7: left/right buttonn down
-//                if (_game.version >= 7)
-//                {
-//                    VAR(VAR_LEFTBTN_DOWN) = (_leftBtnPressed & msClicked) != 0;
-//                    VAR(VAR_RIGHTBTN_DOWN) = (_rightBtnPressed & msClicked) != 0;
-//                }
+                // scumm7: left/right buttonn down
+                if (Game.Version >= 7)
+                {
+                    Variables[VariableLeftButtonDown.Value] = _inputManager.IsMouseLeftClicked() ? 1 : 0;
+                    Variables[VariableRightButtonDown.Value] = _inputManager.IsMouseRightClicked() ? 1 : 0;
+                }
             }
 
             _mousePos = _inputManager.GetMousePosition();
@@ -209,7 +209,7 @@ namespace NScumm.Core
             Variables[VariableMouseX.Value] = (int)_mousePos.X;
             Variables[VariableMouseY.Value] = (int)_mousePos.Y;
             Variables[VariableVirtualMouseX.Value] = (int)mouseX;
-            Variables[VariableVirtualMouseY.Value] = (int)_mousePos.Y - MainVirtScreen.TopLine;
+            Variables[VariableVirtualMouseY.Value] = (int)_mousePos.Y - MainVirtScreen.TopLine + ((_game.Version >= 7) ? ScreenTop : 0);
         }
 
         protected void ShowMenu()

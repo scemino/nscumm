@@ -23,7 +23,7 @@ using NScumm.Core.Audio;
 using System.IO;
 using System.Diagnostics;
 
-namespace NScumm.Core
+namespace NScumm.Core.Smush
 {
     class SmushMixer
     {

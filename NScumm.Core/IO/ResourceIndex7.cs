@@ -40,6 +40,8 @@ namespace NScumm.Core
 
         public override int NumArray { get { return numArray; } }
 
+        public override int NumGlobalScripts { get { return numGlobalScripts; }}
+
         public override byte[] ObjectRoomTable { get{ return objectRoomTable; } }
 
         protected override void LoadIndex(GameInfo game)
@@ -139,11 +141,10 @@ namespace NScumm.Core
 
 //            _objectRoomTable = (byte *)calloc(_numGlobalObjects, 1);
 //
-//            if ((_game.id == GID_FT) && (_game.features & GF_DEMO) &&
-//                (_game.platform == Common::kPlatformDOS))
-//                _numGlobalScripts = 300;
-//            else
-//                _numGlobalScripts = 2000;
+            if ((Game.GameId == GameId.FullThrottle) && (Game.Features.HasFlag(GameFeatures.Demo)) /*&& (_game.platform == Common::kPlatformDOS)*/)
+                numGlobalScripts = 300;
+            else
+                numGlobalScripts = 2000;
 //
 //            _shadowPaletteSize = NUM_SHADOW_PALETTE * 256;
 //            _shadowPalette = (byte *)calloc(_shadowPaletteSize, 1);
@@ -176,6 +177,7 @@ namespace NScumm.Core
         int numVariables;
         int numBitVariables;
         int numLocalObjects;
+        int numGlobalScripts;
         int numArray;
         byte[] objectRoomTable;
     }

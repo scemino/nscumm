@@ -28,6 +28,7 @@ namespace NScumm.Core
     partial class ScummEngine
     {
         internal VerbSlot[] Verbs { get; private set; }
+
         readonly Sentence[] _sentence = InitSentences();
         int _sentenceNum;
         int _verbMouseOver;
@@ -337,6 +338,31 @@ namespace NScumm.Core
             _currentPos--;
             BreakHereCore();
         }
+
+        protected void RedrawVerbs()
+        {
+//            if (_game.Version <= 2 && !(_userState & USERSTATE_IFACE_VERBS)) // Don't draw verbs unless active
+//                return;
+
+            int verb = 0;
+            if (_cursor.State > 0)
+                verb = FindVerbAtPos(_mousePos.X, _mousePos.Y);
+
+            // Iterate over all verbs.
+            // Note: This is the correct order (at least for MI EGA, MI2, Full Throttle).
+            // Do not change it! If you discover, based on disasm, that some game uses
+            // another (e.g. the reverse) order here, you have to use an if/else construct
+            // to add it as a special case!
+            for (var i = 0; i < Verbs.Length; i++)
+            {
+                if (i == verb && Verbs[verb].HiColor != 0)
+                    DrawVerb(i, 1);
+                else
+                    DrawVerb(i, 0);
+            }
+            _verbMouseOver = verb;
+        }
+
     }
 }
 

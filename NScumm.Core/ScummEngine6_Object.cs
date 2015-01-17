@@ -227,7 +227,6 @@ namespace NScumm.Core
         [OpCode(0xcd)]
         protected void StampObject(int obj, short x, short y, byte state)
         {
-
             if (Game.Version >= 7 && obj < 30)
             {
                 if (state == 0)
@@ -301,23 +300,22 @@ namespace NScumm.Core
             }
 
             AddObjectToDrawQue((byte)i);
-            //TODO: scumm 7
-            //            if (Game.Version >= 7)
-            //            {
-            //                if (state == 0xFF)
-            //                {
-            //                    state = GetState(obj);
-            //                    var imagecount = GetObjectImageCount(obj);
-            //
-            //                    if (state < imagecount)
-            //                        state++;
-            //                    else
-            //                        state = 1;
-            //                }
-            //
-            //                if (state == 0xFE)
-            //                    state = _rnd.getRandomNumber(getObjectImageCount(obj));
-            //            }
+            if (Game.Version >= 7)
+            {
+                if (state == 0xFF)
+                {
+                    state = GetStateCore(obj);
+                    var imagecount = _objs[i].Images.Count;
+            
+                    if (state < imagecount)
+                        state++;
+                    else
+                        state = 1;
+                }
+            
+                if (state == 0xFE)
+                    state = new Random().Next(_objs[i].Images.Count+1);
+            }
             PutState(obj, state);
         }
 
@@ -451,7 +449,29 @@ namespace NScumm.Core
 
         protected override void DrawDirtyScreenParts()
         {
-            DrawBlastObjects();
+            // TODO: vs
+            // For the Full Throttle credits to work properly, the blast
+            // texts have to be drawn before the blast objects. Unless
+            // someone can think of a better way to achieve this effect.
+            if (Game.Version >= 7 && Variables[VariableBlastAboveText.Value] == 1) {
+//                DrawBlastTexts();
+                DrawBlastObjects();
+                if (Game.Version == 8) {
+                    // Does this case ever happen? We need to draw the
+                    // actor over the blast object, so we're forced to
+                    // also draw it over the subtitles.
+//                    ProcessUpperActors();
+                }
+            } else {
+                DrawBlastObjects();
+                if (Game.Version == 8) {
+                    // Do this before drawing blast texts. Subtitles go on
+                    // top of the CoMI verb coin, e.g. when Murray is
+                    // talking to himself early in the game.
+//                    ProcessUpperActors();
+                }
+//                DrawBlastTexts();
+            }
 
             // Call the original method.
             base.DrawDirtyScreenParts();

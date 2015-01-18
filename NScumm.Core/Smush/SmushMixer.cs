@@ -158,7 +158,7 @@ namespace NScumm.Core.Smush
                     _channels[i].Chan != null ? _channels[i].Chan.IsTerminated : true);
             }
 
-            throw new InvalidOperationException(string.Format("SmushMixer::addChannel(%d): no channel available", track));
+            throw new InvalidOperationException(string.Format("SmushMixer::addChannel({0}): no channel available", track));
         }
 
         public bool Flush()

@@ -42,7 +42,6 @@ namespace NScumm.Core.Smush
         {
             filename = ScummHelper.LocatePath(Path.GetDirectoryName(_vm.Game.Path), filename);
             // Verify the specified file exists
-            var f = File.OpenRead(filename);
 
             _updateNeeded = false;
             _warpNeeded = false;
@@ -256,23 +255,16 @@ namespace NScumm.Core.Smush
 
             Debug.Assert(_base != null);
 
-            subType = System.Text.Encoding.ASCII.GetString(_base.ReadBytes(4));
-            try
-            {
-                subSize = _base.ReadUInt32BigEndian();
-                subOffset = _base.BaseStream.Position;
-            }
-            catch (Exception)
-            {
-                int tmp = -1;
-            }
-
             if (_base.BaseStream.Position >= _baseSize)
             {
                 _vm.SmushVideoShouldFinish = true;
                 _endOfFile = true;
                 return;
             }
+
+            subType = System.Text.Encoding.ASCII.GetString(_base.ReadBytes(4));
+            subSize = _base.ReadUInt32BigEndian();
+            subOffset = _base.BaseStream.Position;
 
 //            Debug.WriteLine("Chunk: {0} at {1}", subType, subOffset);
 
@@ -304,8 +296,7 @@ namespace NScumm.Core.Smush
 
             if (_insanity)
             {
-                // TODO: vs
-//        _vm.Insane.ProcPreRendering();
+                _vm.Insane.ProcPreRendering();
             }
 
             while (frameSize > 0)
@@ -345,9 +336,9 @@ namespace NScumm.Core.Smush
                     case "FTCH":
                         HandleFetch(subSize, b);
                         break;
-//                    case "SKIP":
-//                        _vm.Insane.ProcSKIP(subSize, b);
-//                        break;
+                    case "SKIP":
+                        _vm.Insane.ProcSKIP((int)subSize, b);
+                        break;
                     case "TEXT":
                         HandleTextResource(subType, subSize, b);
                         break;
@@ -477,15 +468,15 @@ namespace NScumm.Core.Smush
 //                return;
 
             // TODO: vs
-//            SmushFont *sf = getFont(0);
-//            int color = 15;
+            var sf = GetFont(0);
+            int color = 15;
 //            while (*str == '/') {
 //                str++; // For Full Throttle text resources
 //            }
 //
 //            byte transBuf[512];
-//            if (_vm->_game.id == GID_CMI) {
-//                _vm->translateText((const byte *)str - 1, transBuf);
+//            if (_vm._game.id == GID_CMI) {
+//                _vm.translateText((const byte *)str - 1, transBuf);
 //                while (*str++ != '/')
 //                    ;
 //                string2 = (char *)transBuf;
@@ -559,48 +550,98 @@ namespace NScumm.Core.Smush
 //                str = string3;
 //            }
 //
-//            assert(sf != NULL);
-//            sf->setColor(color);
+            Debug.Assert(sf != null);
+            sf.Color = (byte)color;
 //
-//            if (_vm->_game.id == GID_CMI && string2[0] != 0) {
+//            if (_vm._game.id == GID_CMI && string2[0] != 0) {
 //                str = string2;
 //            }
 //
-//            // flags:
-//            // bit 0 - center       1
-//            // bit 1 - not used     2
-//            // bit 2 - ???          4
-//            // bit 3 - wrap around  8
-//            switch (flags & 9) {
-//                case 0:
-//                    sf->drawString(str, _dst, _width, _height, pos_x, pos_y, false);
-//                    break;
-//                case 1:
-//                    sf->drawString(str, _dst, _width, _height, pos_x, MAX(pos_y, top), true);
-//                    break;
-//                case 8:
-//                    // FIXME: Is 'right' the maximum line width here, just
-//                    // as it is in the next case? It's used several times
-//                    // in The Dig's intro, where 'left' and 'right' are
-//                    // always 0 and 321 respectively, and apparently we
-//                    // handle that correctly.
-//                    sf->drawStringWrap(str, _dst, _width, _height, pos_x, MAX(pos_y, top), left, right, false);
-//                    break;
-//                case 9:
-//                    // In this case, the 'right' parameter is actually the
-//                    // maximum line width. This explains why it's sometimes
-//                    // smaller than 'left'.
-//                    //
-//                    // Note that in The Dig's "Spacetime Six" movie it's
-//                    // 621. I have no idea what that means.
-//                    sf->drawStringWrap(str, _dst, _width, _height, pos_x, MAX(pos_y, top), left, MIN(left + right, _width), true);
-//                    break;
-//                default:
-//                    error("SmushPlayer::handleTextResource. Not handled flags: %d", flags);
-//            }
+            // flags:
+            // bit 0 - center       1
+            // bit 1 - not used     2
+            // bit 2 - ???          4
+            // bit 3 - wrap around  8
+            switch (flags & 9) {
+                case 0:
+                    sf.DrawString(str, _dst, _width, _height, pos_x, pos_y, false);
+                    break;
+                case 1:
+                    sf.DrawString(str, _dst, _width, _height, pos_x, Math.Max(pos_y, top), true);
+                    break;
+                case 8:
+                    // FIXME: Is 'right' the maximum line width here, just
+                    // as it is in the next case? It's used several times
+                    // in The Dig's intro, where 'left' and 'right' are
+                    // always 0 and 321 respectively, and apparently we
+                    // handle that correctly.
+                    sf.DrawStringWrap(str, _dst, _width, _height, pos_x, Math.Max(pos_y, top), left, right, false);
+                    break;
+                case 9:
+                    // In this case, the 'right' parameter is actually the
+                    // maximum line width. This explains why it's sometimes
+                    // smaller than 'left'.
+                    //
+                    // Note that in The Dig's "Spacetime Six" movie it's
+                    // 621. I have no idea what that means.
+                    sf.DrawStringWrap(str, _dst, _width, _height, pos_x, Math.Max(pos_y, top), left, Math.Min(left + right, _width), true);
+                    break;
+                default:
+                    throw new InvalidOperationException(string.Format("SmushPlayer::handleTextResource. Not handled flags: {0}", flags));
+            }
 //
 //            free(string);
 //            free(string3);
+        }
+
+        SmushFont GetFont(int font)
+        {
+            if (_sf[font] != null)
+                return _sf[font];
+
+            if (_vm.Game.GameId == GameId.FullThrottle)
+            {
+                if (!(_vm.Game.Features.HasFlag(GameFeatures.Demo) /*&& (_vm._game.platform == Common::kPlatformDOS)*/))
+                {
+                    var ft_fonts = new []
+                    {
+                        "scummfnt.nut",
+                        "techfnt.nut",
+                        "titlfnt.nut",
+                        "specfnt.nut"
+                    };
+
+                    Debug.Assert(font >= 0 && font < ft_fonts.Length);
+
+                    var fn = ScummHelper.LocatePath(Path.GetDirectoryName(_vm.Game.Path), ft_fonts[font]);
+                    _sf[font] = new SmushFont(_vm, fn, true, false);
+                }
+            }
+            else if (_vm.Game.GameId == GameId.Dig)
+            {
+                if (!(_vm.Game.Features.HasFlag(GameFeatures.Demo)))
+                {
+                    Debug.Assert(font >= 0 && font < 4);
+
+                    var file_font = string.Format("font{0}.nut", font);
+                    _sf[font] = new SmushFont(_vm, file_font, font != 0, false);
+                }
+            }
+//            else if (_vm.Game.GameId == GameId.Comi)
+//            {
+//                int numFonts = (_vm._game.features & GF_DEMO) ? 4 : 5;
+//                assert(font >= 0 && font < numFonts);
+//
+//                sprintf(file_font, "font%d.nut", font);
+//                _sf[font] = new SmushFont(_vm, file_font, false, true);
+//            }
+            else
+            {
+                throw new NotSupportedException("SmushPlayer::getFont() Unknown font setup for game");
+            }
+
+            Debug.Assert(_sf[font] != null);
+            return _sf[font];
         }
 
         void HandleSoundFrame(uint subSize, XorReader b)
@@ -743,14 +784,14 @@ namespace NScumm.Core.Smush
             }
         }
 
-        void SmushDecodeCodec1(byte[] dst, byte[] src, int left, int top, int width, int height, int pitch)
+        internal static void SmushDecodeCodec1(byte[] dst, int dstPos, byte[] src, int srcfOffset, int left, int top, int width, int height, int pitch)
         {
             byte val, code;
             int length;
             int size_line;
 
-            int dstPos = top * pitch;
-            int srcPos = 0;
+            dstPos += top * pitch;
+            int srcPos = srcfOffset;
             for (var h = 0; h < height; h++)
             {
                 size_line = BitConverter.ToUInt16(src, srcPos);
@@ -912,7 +953,7 @@ namespace NScumm.Core.Smush
         int _nbframes;
         short[] _deltaPal = new short[0x300];
         Palette _pal;
-        //        SmushFont _sf[5];
+        SmushFont[] _sf = new SmushFont[5];
         TrsFile _strings;
         Codec37Decoder _codec37;
         //        Codec47Decoder _codec47;
@@ -927,7 +968,7 @@ namespace NScumm.Core.Smush
         int _seekPos;
         int _seekFrame;
 
-        bool _skipNext;
+        internal bool _skipNext;
         int _frame;
 
         SoundHandle _IACTchannel = new SoundHandle();

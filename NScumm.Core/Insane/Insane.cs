@@ -58,7 +58,8 @@ namespace NScumm.Core.Insane
 
         public void EscapeKeyHandler()
         {
-            if(!_insaneIsRunning) {
+            if (!_insaneIsRunning)
+            {
                 smush_setToFinish();
                 return;
             }
@@ -87,11 +88,11 @@ namespace NScumm.Core.Insane
 //                    break;
 //                case 2:
 //                    flu = &_fluConf[14 + _iactSceneId2];
-//                    if ((_vm->_game.features & GF_DEMO) && (_vm->_game.platform == Common::kPlatformDOS))
+//                    if ((_vm._game.features & GF_DEMO) && (_vm._game.platform == Common::kPlatformDOS))
 //                        queueSceneSwitch(4, 0, "tovista.san", 64, 0, 0, 0);
 //                    else
-//                        queueSceneSwitch(flu->sceneId, *flu->fluPtr, flu->filenamePtr, 64, 0,
-//                            flu->startFrame, flu->numFrames);
+//                        queueSceneSwitch(flu.sceneId, *flu.fluPtr, flu.filenamePtr, 64, 0,
+//                            flu.startFrame, flu.numFrames);
 //                    break;
 //                case 3:
 //                    queueSceneSwitch(1, _smush_minedrivFlu, "minedriv.san", 64, 0, _continueFrame, 1300);
@@ -141,19 +142,19 @@ namespace NScumm.Core.Insane
 //                    break;
 //                case 8:
 //                    flu = &_fluConf[7 + _iactSceneId2];
-//                    if ((_vm->_game.features & GF_DEMO) && (_vm->_game.platform == Common::kPlatformDOS))
+//                    if ((_vm._game.features & GF_DEMO) && (_vm._game.platform == Common::kPlatformDOS))
 //                        queueSceneSwitch(1, 0, "minedriv.san", 64, 0, 0, 0);
 //                    else
-//                        queueSceneSwitch(flu->sceneId, *flu->fluPtr, flu->filenamePtr, 64, 0,
-//                            flu->startFrame, flu->numFrames);
+//                        queueSceneSwitch(flu.sceneId, *flu.fluPtr, flu.filenamePtr, 64, 0,
+//                            flu.startFrame, flu.numFrames);
 //                    break;
 //                case 7:
 //                    flu = &_fluConf[0 + _iactSceneId2];
-//                    if ((_vm->_game.features & GF_DEMO) && (_vm->_game.platform == Common::kPlatformDOS))
+//                    if ((_vm._game.features & GF_DEMO) && (_vm._game.platform == Common::kPlatformDOS))
 //                        queueSceneSwitch(1, 0, "minedriv.san", 64, 0, 0, 0);
 //                    else
-//                        queueSceneSwitch(flu->sceneId, *flu->fluPtr, flu->filenamePtr, 64, 0,
-//                            flu->startFrame, flu->numFrames);
+//                        queueSceneSwitch(flu.sceneId, *flu.fluPtr, flu.filenamePtr, 64, 0,
+//                            flu.startFrame, flu.numFrames);
 //                    break;
 //                case 23:
 //                    _actor[0].damage = 0;
@@ -168,7 +169,7 @@ namespace NScumm.Core.Insane
 //                    queueSceneSwitch(1, _smush_minedrivFlu, "minedriv.san", 64, 0, _continueFrame1, 1300);
 //                    break;
 //                case 13:
-//                    if ((_vm->_game.features & GF_DEMO) && (_vm->_game.platform == Common::kPlatformDOS))
+//                    if ((_vm._game.features & GF_DEMO) && (_vm._game.platform == Common::kPlatformDOS))
 //                        queueSceneSwitch(1, 0, "minedriv.san", 64, 0, 0, 0);
 //                    else
 //                        queueSceneSwitch(1, _smush_minedrivFlu, "minedriv.san", 64, 0, _continueFrame, 1300);
@@ -200,6 +201,41 @@ namespace NScumm.Core.Insane
             }
         }
 
+        public void ProcSKIP(int subSize, XorReader b)
+        {
+            short par1, par2;
+            _player._skipNext = false;
+
+            if (_vm.Game.Features.HasFlag(GameFeatures.Demo) /*&& (_vm.Game.Platform == Common::kPlatformDOS)*/)
+            {
+                Debug.Assert(subSize >= 2);
+                par1 = b.ReadInt16();
+                par2 = 0;
+            }
+            else
+            {
+                Debug.Assert(subSize >= 4);
+                par1 = b.ReadInt16();
+                par2 = b.ReadInt16();
+            }
+
+            if (par2 == 0)
+            {
+                if (IsBitSet(par1))
+                    _player._skipNext = true;
+            }
+            else if (IsBitSet(par1) != IsBitSet(par2))
+            {
+                _player._skipNext = true;
+            }
+        }
+
+        bool IsBitSet(int n)
+        {
+            Debug.Assert(n < 0x80);
+            return (_iactBits[n] != 0);
+        }
+
         void InitVars()
         {
             _speed = 12;
@@ -209,7 +245,7 @@ namespace NScumm.Core.Insane
             _approachAnim = -1;
 
             // TODO: vs
-//            if ((_vm->_game.features & GF_DEMO) && (_vm->_game.platform == Common::kPlatformDOS)) {
+//            if ((_vm._game.features & GF_DEMO) && (_vm._game.platform == Common::kPlatformDOS)) {
 //                init_enemyStruct(EN_ROTT1, EN_ROTT1, 0, 0, 60, 0, INV_MACE, 63, "endcrshr.san",
 //                    25, 15, 16, 26, 13, 3);
 //            } else {
@@ -392,7 +428,7 @@ namespace NScumm.Core.Insane
 //            init_scenePropStruct(138, 57, 0, 59, 134, 0xFF, 0xFF, 0xFF, 0, 30, 0);
 //
 //            _actor[0].damage = 0;
-//            if ((_vm->_game.features & GF_DEMO) && (_vm->_game.platform == Common::kPlatformDOS))
+//            if ((_vm._game.features & GF_DEMO) && (_vm._game.platform == Common::kPlatformDOS))
 //                _actor[0].maxdamage = 60;
 //            else
 //                _actor[0].maxdamage = 80;
@@ -601,13 +637,15 @@ namespace NScumm.Core.Insane
             return offset;
         }
 
-        void smush_setFrameSteps(int step1, int step2) {
+        void smush_setFrameSteps(int step1, int step2)
+        {
             _smush_frameNum2 = _smush_curFrame;
             _smush_frameNum1 = (short)step2;
             _smush_frameStep = (short)step1;
         }
 
-        void smush_warpMouse(int x, int y, int buttons) {
+        void smush_warpMouse(int x, int y, int buttons)
+        {
             // TODO: vs
 //            _player.WarpMouse(x, y, buttons);
         }

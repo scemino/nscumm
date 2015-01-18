@@ -27,6 +27,7 @@ using NScumm.Core.IO;
 using System.Diagnostics;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using System.Text;
 
 namespace NScumm.Core.Smush
 {
@@ -46,7 +47,7 @@ namespace NScumm.Core.Smush
         public static TrsFile Load(string filename)
         {
             var texts = new Dictionary<int, string>();
-            using (var f = File.OpenText(filename))
+            using (var f = new StreamReader(filename, Encoding.GetEncoding("iso-8859-1")))
             {
                 string line;
                 while ((line = f.ReadLine()) != null)

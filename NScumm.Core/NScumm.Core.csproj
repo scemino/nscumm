@@ -236,6 +236,8 @@
     <Compile Include="IO\AkosCostumeLoader.cs" />
     <Compile Include="IO\ClassicCostumeLoader.cs" />
     <Compile Include="IO\ICostumeLoader.cs" />
+    <Compile Include="Graphics\NutRenderer.cs" />
+    <Compile Include="Smush\SmushFont.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="IO\Nscumm.xml">

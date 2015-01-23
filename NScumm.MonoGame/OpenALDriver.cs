@@ -43,6 +43,7 @@ namespace NScumm.MonoGame
 
             foreach (var bufId in bufferIds)
             {
+                Array.Clear(buffer, 0, buffer.Length);
                 var len = MixCallback(buffer);
                 AL.BufferData(bufId, ALFormat.Stereo16, buffer, len * 2, Frequency);
                 Array.Clear(buffer, 0, buffer.Length);
@@ -77,16 +78,12 @@ namespace NScumm.MonoGame
             while (val-- != 0)
             {
                 var len = MixCallback(buffer);
-//                    Console.WriteLine("Mix: {0}", len);
-                if (len > 0)
-                {
-                    var bufId = AL.SourceUnqueueBuffer(sourceId);
-                    AL.BufferData(bufId, ALFormat.Stereo16, buffer, len * 4, Frequency);
-                    Array.Clear(buffer, 0, buffer.Length);
-                    CheckError();
-                    AL.SourceQueueBuffer(sourceId, bufId);
-                    CheckError();
-                }
+                var bufId = AL.SourceUnqueueBuffer(sourceId);
+                AL.BufferData(bufId, ALFormat.Stereo16, buffer, len * 4, Frequency);
+                Array.Clear(buffer, 0, buffer.Length);
+                CheckError();
+                AL.SourceQueueBuffer(sourceId, bufId);
+                CheckError();
             }
 
             if (AL.GetSourceState(sourceId) != ALSourceState.Playing)

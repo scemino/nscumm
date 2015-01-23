@@ -284,7 +284,7 @@ namespace NScumm.Core.Graphics
 
             if (code != AkosOpcode.ComplexChan && code != AkosOpcode.ComplexChan2)
             {
-                var off = ResourceFile7.ToStructure<AkosOffset>(akos, (int)(akof + 6*((ushort)code & 0xFFF)));
+                var off = ResourceFile7.ToStructure<AkosOffset>(akos, (int)(akof + 6 * ((ushort)code & 0xFFF)));
 
                 Debug.Assert(((ushort)code & 0xFFF) * 6 < ScummHelper.SwapBytes(BitConverter.ToUInt32(akos, (int)(akof - 4))) - 8);
                 Debug.Assert(((ushort)code & 0x7000) == 0);
@@ -761,7 +761,273 @@ namespace NScumm.Core.Graphics
 
         byte Codec16(int xmoveCur, int ymoveCur)
         {
+            Debug.Assert(_vm.MainVirtScreen.BytesPerPixel == 1);
+
+            Rect clip;
+            int minx, miny, maxw, maxh;
+            int skip_x, skip_y, cur_x, cur_y;
+            byte transparency = 255;
+
+            if (ActorHitMode)
+            {
+                Console.Error.WriteLine("codec16: _actorHitMode not yet implemented");
+                return 0;
+            }
+
+            if (!_mirror)
+            {
+                clip.Left = (ActorX - xmoveCur - _width) + 1;
+            }
+            else
+            {
+                clip.Left = ActorX + xmoveCur;
+            }
+
+            clip.Top = ActorY + ymoveCur;
+            clip.Right = clip.Left + _width;
+            clip.Bottom = clip.Top + _height;
+
+            minx = miny = 0;
+            maxw = _vm.MainVirtScreen.Width;
+            maxh = _vm.MainVirtScreen.Height;
+
+            MarkRectAsDirty(clip);
+
+            skip_x = 0;
+            skip_y = 0;
+            cur_x = _width - 1;
+            cur_y = _height - 1;
+
+            if (clip.Left < minx)
+            {
+                skip_x = -clip.Left;
+                clip.Left = 0;
+            }
+
+            if (clip.Right > maxw)
+            {
+                cur_x -= clip.Right - maxw;
+                clip.Right = maxw;
+            }
+
+            if (clip.Top < miny)
+            {
+                skip_y -= clip.Top;
+                clip.Top = 0;
+            }
+
+            if (clip.Bottom > maxh)
+            {
+                cur_y -= clip.Bottom - maxh;
+                clip.Bottom = maxh;
+            }
+
+            if ((clip.Left >= clip.Right) || (clip.Top >= clip.Bottom))
+                return 0;
+
+            if (DrawTop > clip.Top)
+                DrawTop = clip.Top;
+            if (DrawBottom < clip.Bottom)
+                DrawBottom = clip.Bottom;
+
+            int width_unk, height_unk;
+
+            height_unk = clip.Top;
+            int dir;
+
+            if (!_mirror)
+            {
+                dir = -1;
+
+                int tmp_skip_x = skip_x;
+                skip_x = _width - 1 - cur_x;
+                cur_x = _width - 1 - tmp_skip_x;
+                width_unk = clip.Right - 1;
+            }
+            else
+            {
+                dir = 1;
+                width_unk = clip.Left;
+            }
+
+            int out_height;
+
+            out_height = cur_y - skip_y;
+            if (out_height < 0)
+            {
+                out_height = -out_height;
+            }
+            out_height++;
+
+            cur_x -= skip_x;
+            if (cur_x < 0)
+            {
+                cur_x = -cur_x;
+            }
+            cur_x++;
+
+            int numskip_before = skip_x + (skip_y * _width);
+            int numskip_after = _width - cur_x;
+
+            _pixelsNavigator = new PixelNavigator(_vm.MainVirtScreen.Surfaces[0]);
+            _pixelsNavigator.GoTo(width_unk, height_unk);
+
+            Akos16Decompress(_pixelsNavigator, (int)_srcptr, cur_x, out_height, dir, numskip_before, numskip_after, transparency, clip.Left, clip.Top, ZBuffer);
             return 0;
+        }
+
+        void Akos16Decompress(PixelNavigator dest, int srcPos, int t_width, int t_height, int dir,
+                              int numskip_before, int numskip_after, byte transparency, int maskLeft, int maskTop, int zBuf)
+        {
+            var tmp_buf = _akos16.Buffer;
+            var tmp_pos = _akos16.BufferPos;
+            var maskbit = (byte)ScummHelper.RevBitMask(maskLeft & 7);
+
+            if (dir < 0)
+            {
+                dest.OffsetX(-(t_width - 1));
+                tmp_pos += (t_width - 1);
+            }
+
+            Akos16SetupBitReader(srcPos);
+
+            if (numskip_before != 0)
+            {
+                Akos16SkipData(numskip_before);
+            }
+
+            var maskptr = _vm.GetMaskBuffer(maskLeft, maskTop, zBuf);
+
+            Debug.Assert(t_height > 0);
+            Debug.Assert(t_width > 0);
+            while ((t_height--) != 0)
+            {
+                Akos16DecodeLine(tmp_buf, tmp_pos, t_width, dir);
+                BompApplyMask(_akos16.Buffer, maskptr, maskbit, t_width, transparency);
+                ScummEngine6.BompApplyShadow(ShadowMode, ShadowTable, _akos16.Buffer, _akos16.BufferPos, dest, t_width, transparency);
+
+                if (numskip_after != 0)
+                {
+                    Akos16SkipData(numskip_after);
+                }
+                dest.OffsetY(1);
+                maskptr.OffsetY(1);
+            }
+        }
+
+        void BompApplyMask(byte[] line_buffer, PixelNavigator maskNav, byte maskbit, int size, byte transparency)
+        {
+            var maskPos = 0;
+            var linBufPos = 0;
+            while (true)
+            {
+                do
+                {
+                    if (size-- == 0)
+                        return;
+                    if ((maskNav.Read() & maskbit) != 0)
+                    {
+                        line_buffer[linBufPos] = transparency;
+                    }
+                    linBufPos++;
+                    maskbit >>= 1;
+                } while (maskbit != 0);
+                maskNav.OffsetX(1);
+                maskbit = 128;
+            }
+        }
+
+        void Akos16SetupBitReader(int srcPos)
+        {
+            _akos16.RepeatMode = false;
+            _akos16.Numbits = 16;
+            _akos16.Mask = (byte)((1 << akcd[srcPos]) - 1);
+            _akos16.Shift = akcd[srcPos];
+            _akos16.Color = akcd[srcPos + 1];
+            _akos16.Bits = (ushort)((akcd[srcPos + 2] | akcd[srcPos + 3] << 8));
+            _akos16.Dataptr = srcPos + 4;
+        }
+
+        void Akos16SkipData(int numbytes)
+        {
+            Akos16DecodeLine(null, 0, numbytes, 0);
+        }
+
+        void Akos16DecodeLine(byte[] buf, int bufPos, int numbytes, int dir)
+        {
+            ushort bits, tmp_bits;
+
+            while (numbytes != 0)
+            {
+                if (buf != null)
+                {
+                    buf[bufPos] = _akos16.Color;
+                    bufPos += dir;
+                }
+
+                if (!_akos16.RepeatMode)
+                {
+                    AKOS16_FILL_BITS();
+                    bits = (ushort)(_akos16.Bits & 3);
+                    if ((bits & 1) != 0)
+                    {
+                        AKOS16_EAT_BITS(2);
+                        if ((bits & 2) != 0)
+                        {
+                            tmp_bits = (ushort)(_akos16.Bits & 7);
+                            AKOS16_EAT_BITS(3);
+                            if (tmp_bits != 4)
+                            {
+                                // A color change
+                                _akos16.Color += (byte)(tmp_bits - 4);
+                            }
+                            else
+                            {
+                                // Color does not change, but rather identical pixels get repeated
+                                _akos16.RepeatMode = true;
+                                AKOS16_FILL_BITS();
+                                _akos16.RepeatCount = (_akos16.Bits & 0xff) - 1;
+                                AKOS16_EAT_BITS(8);
+                                AKOS16_FILL_BITS();
+                            }
+                        }
+                        else
+                        {
+                            AKOS16_FILL_BITS();
+                            _akos16.Color = (byte)(_akos16.Bits & _akos16.Mask);
+                            AKOS16_EAT_BITS(_akos16.Shift);
+                            AKOS16_FILL_BITS();
+                        }
+                    }
+                    else
+                    {
+                        AKOS16_EAT_BITS(1);
+                    }
+                }
+                else
+                {
+                    if (--_akos16.RepeatCount == 0)
+                    {
+                        _akos16.RepeatMode = false;
+                    }
+                }
+                numbytes--;
+            }
+        }
+
+        void AKOS16_FILL_BITS()
+        {
+            if (_akos16.Numbits <= 8 && _akos16.Dataptr < akcd.Length)
+            {
+                _akos16.Bits |= (ushort)(akcd[_akos16.Dataptr++] << _akos16.Numbits);
+                _akos16.Numbits += 8;
+            }
+        }
+
+        void AKOS16_EAT_BITS(byte n)
+        {
+            _akos16.Numbits -= n;
+            _akos16.Bits >>= n;
         }
 
         byte Codec32(int xmoveCur, int ymoveCur)
@@ -929,6 +1195,21 @@ namespace NScumm.Core.Graphics
                 0x1F, 0x9F, 0x5F, 0xDF, 0x3F, 0xBF, 0x7F, 0xFF,
             };
 
+        class Akos16
+        {
+            public bool RepeatMode;
+            public int RepeatCount;
+            public byte Mask;
+            public byte Color;
+            public byte Shift;
+            public ushort Bits;
+            public byte Numbits;
+            public int Dataptr;
+            public byte[] Buffer = new byte[336];
+            public int BufferPos;
+        }
+
+        Akos16 _akos16 = new Akos16();
     }
 }
 

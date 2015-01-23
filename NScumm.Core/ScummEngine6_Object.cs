@@ -402,7 +402,7 @@ namespace NScumm.Core
             eo.Mode = mode;
         }
 
-        void BompApplyShadow(int shadowMode, byte[] lineBuffer, int linePos, PixelNavigator dst, int size)
+        public static void BompApplyShadow(int shadowMode, byte[] shadowPalette, byte[] lineBuffer, int linePos, PixelNavigator dst, int size, byte transparency)
         {
             Debug.Assert(size > 0);
             switch (shadowMode)
@@ -410,18 +410,38 @@ namespace NScumm.Core
                 case 0:
                     BompApplyShadow0(lineBuffer, linePos, dst, size);
                     break;
+                case 1:
+                    BompApplyShadow1(shadowPalette, lineBuffer, linePos, dst, size, transparency);
+                    break;
                 default:
                     throw new ArgumentException(string.Format("Unknown shadow mode {0}", shadowMode));
             }
         }
 
-        void BompApplyShadow0(byte[] lineBuffer, int linePos, PixelNavigator dst, int size)
+        public static void BompApplyShadow0(byte[] lineBuffer, int linePos, PixelNavigator dst, int size)
         {
             while (size-- > 0)
             {
                 byte tmp = lineBuffer[linePos++];
                 if (tmp != 255)
                 {
+                    dst.Write(tmp);
+                }
+                dst.OffsetX(1);
+            }
+        }
+
+        static void BompApplyShadow1(byte[] shadowPalette, byte[] lineBuffer, int linePos, PixelNavigator dst, int size, byte transparency)
+        {
+            while (size-- > 0)
+            {
+                byte tmp = lineBuffer[linePos++];
+                if (tmp != transparency)
+                {
+                    if (tmp == 13)
+                    {
+                        tmp = shadowPalette[dst.Read()];
+                    }
                     dst.Write(tmp);
                 }
                 dst.OffsetX(1);
@@ -532,6 +552,8 @@ namespace NScumm.Core
 
             public int ShadowMode;
 
+            public byte[] ShadowPalette;
+
             internal string DebuggerDisplay
             {
                 get
@@ -573,6 +595,7 @@ namespace NScumm.Core
             {
                 bdd.ShadowMode = eo.Mode;
             }
+            bdd.ShadowPalette = _shadowPalette;
 
             DrawBomp(bdd);
 
@@ -868,7 +891,7 @@ namespace NScumm.Core
                     {
                         // Finally, draw the decoded, scaled, masked and recolored line onto
                         // the target surface, using the specified shadow mode
-                        BompApplyShadow(bd.ShadowMode, line_buffer, clip.Left, pn, width);
+                        BompApplyShadow(bd.ShadowMode, bd.ShadowPalette, line_buffer, clip.Left, pn, width, 255);
                     }
 
                     // Advance to the next line

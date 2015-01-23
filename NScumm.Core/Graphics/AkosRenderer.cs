@@ -160,7 +160,9 @@ namespace NScumm.Core.Graphics
 
         public void SetFacing(Actor a)
         {
-            mirror = (ScummHelper.NewDirToOldDir(a.Facing) != 0) || ((akhd.flags & 1) != 0);
+            _mirror = (ScummHelper.NewDirToOldDir(a.Facing) != 0) || ((akhd.flags & 1) != 0);
+            if (a.Flip)
+                _mirror = !_mirror;
         }
 
         public void SetCostume(int costume, int shadow)
@@ -282,12 +284,13 @@ namespace NScumm.Core.Graphics
 
             if (code != AkosOpcode.ComplexChan && code != AkosOpcode.ComplexChan2)
             {
-                var off = ResourceFile7.ToStructure<AkosOffset>(akos, (int)(akof + ((ushort)code & 0xFFF)));
+                var off = ResourceFile7.ToStructure<AkosOffset>(akos, (int)(akof + 6*((ushort)code & 0xFFF)));
 
-                Debug.Assert(((ushort)code & 0xFFF) * 6 < BitConverter.ToUInt32(akos, (int)(akof - 4)) - 8);
+                Debug.Assert(((ushort)code & 0xFFF) * 6 < ScummHelper.SwapBytes(BitConverter.ToUInt32(akos, (int)(akof - 4))) - 8);
                 Debug.Assert(((ushort)code & 0x7000) == 0);
 
                 _srcptr = off.akcd;
+                Debug.Assert(_srcptr < akcd.Length);
                 var costumeInfo = ResourceFile7.ToStructure<CostumeInfo>(akos, (int)(akci + off.akci));
 
                 _width = costumeInfo.width;
@@ -423,8 +426,8 @@ namespace NScumm.Core.Graphics
 
             v1.BoundsRect.Left = 0;
             v1.BoundsRect.Top = 0;
-            v1.BoundsRect.Right = _width;
-            v1.BoundsRect.Bottom = _height;
+            v1.BoundsRect.Right = _vm.MainVirtScreen.Width;
+            v1.BoundsRect.Bottom = _vm.MainVirtScreen.Height;
 
             if (use_scaling)
             {
@@ -642,7 +645,6 @@ namespace NScumm.Core.Graphics
 
         void Codec1GenericDecode(Codec1 v1)
         {
-            // TODO: vs
             bool skip_column = false;
 
             var y = v1.Y;
@@ -807,7 +809,6 @@ namespace NScumm.Core.Graphics
         bool _mirror;
         // width and height of cel to decode
         int _width, _height;
-        bool mirror;
         bool _useBompPalette;
         ushort _codec;
         AkosHeader akhd;

@@ -33,7 +33,7 @@ namespace NScumm.Core.Smush
 {
     class TrsFile
     {
-        static readonly Regex DefRegex = new Regex(@"#define\s+(\S+)\s+(\d+)", RegexOptions.Singleline);
+        static readonly Regex DefRegex = new Regex(@"^#.*?\s+(\d+)", RegexOptions.Singleline);
         static readonly Regex TextRegex = new Regex(@"//(.+)", RegexOptions.Singleline);
         IDictionary<int, string> _texts;
 
@@ -55,7 +55,7 @@ namespace NScumm.Core.Smush
                     var m = TrsFile.DefRegex.Match(line);
                     if (m.Success)
                     {
-                        var id = int.Parse(m.Groups[2].Value);
+                        var id = int.Parse(m.Groups[1].Value);
                         line = f.ReadLine();
                         var m2 = TrsFile.TextRegex.Match(line);
                         texts.Add(id, m2.Groups[1].Value);

@@ -19,6 +19,8 @@ namespace NScumm.Core.Input
 {
     public interface IInputManager
     {
+        void UpdateStates();
+
         NScumm.Core.Graphics.Point GetMousePosition();
 
         bool IsKeyDown(KeyCode code);
@@ -27,8 +29,10 @@ namespace NScumm.Core.Input
 
         bool IsMouseRightClicked();
 
-        bool IsMouseLeftPressed();
+        bool IsMouseLeftDown();
 
-        bool IsMouseRightPressed();
+        bool IsMouseRightDown();
+
+        void Swap();
     }
 }

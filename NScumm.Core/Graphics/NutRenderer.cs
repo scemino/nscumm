@@ -30,7 +30,9 @@ namespace NScumm.Core.Graphics
         public NutRenderer(ScummEngine vm, string filename)
         {
             _vm = vm;
-            LoadFont(filename);
+            var directory = Path.GetDirectoryName(_vm.Game.Path);
+            var path = ScummHelper.LocatePath(directory, filename);
+            LoadFont(path);
         }
 
         public int NumChars { get { return _numChars; } }
@@ -432,7 +434,7 @@ namespace NScumm.Core.Graphics
 
         void Codec21(byte[] dst, int dstPos, byte[] src, int srcPos, int width, int height, int pitch)
         {
-            while ((height--)!=0)
+            while ((height--) != 0)
             {
                 var dstPtrNext = dstPos + pitch;
                 var srcPtrNext = srcPos + 2 + BitConverter.ToUInt16(src, srcPos);
@@ -461,7 +463,7 @@ namespace NScumm.Core.Graphics
                     //  other src bytes values are copied as-is
                     for (int i = 0; i < w; i++)
                     {
-                        _paletteMap[src[srcPos+i]] = 1;
+                        _paletteMap[src[srcPos + i]] = 1;
                     }
                     Array.Copy(src, srcPos, dst, dstPos, w);
                     dstPos += w;

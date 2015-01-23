@@ -141,6 +141,7 @@ namespace NScumm.MonoGame
             while (true)
             {
                 System.Threading.Thread.Sleep(tsToWait);
+                inputManager.UpdateStates();
                 tsToWait = engine.Loop();
                 gfx.UpdateScreen();
             }

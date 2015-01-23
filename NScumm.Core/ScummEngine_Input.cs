@@ -27,7 +27,7 @@ namespace NScumm.Core
 {
     partial class ScummEngine
     {
-        protected IInputManager _inputManager;
+        protected internal IInputManager _inputManager;
         protected KeyCode mouseAndKeyboardStat;
 
         void CheckExecVerbs()
@@ -80,9 +80,10 @@ namespace NScumm.Core
         {
             mouseAndKeyboardStat = 0;
 
-            bool mainmenuKeyEnabled = VariableMainMenu.HasValue && _variables[VariableMainMenu.Value] != 0;
+            var cutsceneExitKeyEnabled = (!VariableCutSceneExitKey.HasValue || Variables[VariableCutSceneExitKey.Value] != 0);
+            var mainmenuKeyEnabled = VariableMainMenu.HasValue && _variables[VariableMainMenu.Value] != 0;
 
-            if (_inputManager.IsKeyDown(KeyCode.Escape))
+            if (cutsceneExitKeyEnabled && _inputManager.IsKeyDown(KeyCode.Escape))
             {
                 mouseAndKeyboardStat = (KeyCode)Variables[VariableCutSceneExitKey.Value];
                 AbortCutscene();
@@ -92,14 +93,14 @@ namespace NScumm.Core
             {
                 if (VariableSaveLoadScript.HasValue && _currentRoom != 0)
                 {
-                    RunScript((byte)Variables[VariableSaveLoadScript.Value], false, false, new int[0]);
+                    RunScript(Variables[VariableSaveLoadScript.Value], false, false, new int[0]);
                 }
 
                 ShowMenu();
 
                 if (VariableSaveLoadScript2.HasValue && _currentRoom != 0)
                 {
-                    RunScript((byte)Variables[VariableSaveLoadScript2.Value], false, false, new int[0]);
+                    RunScript(Variables[VariableSaveLoadScript2.Value], false, false, new int[0]);
                 }
             }
 
@@ -184,8 +185,8 @@ namespace NScumm.Core
 
             if (Game.Version >= 6)
             {
-                Variables[VariableLeftButtonHold.Value] = _inputManager.IsMouseLeftPressed() ? 1 : 0;
-                Variables[VariableRightButtonHold.Value] = _inputManager.IsMouseLeftPressed() ? 1 : 0;
+                Variables[VariableLeftButtonHold.Value] = _inputManager.IsMouseLeftDown() ? 1 : 0;
+                Variables[VariableRightButtonHold.Value] = _inputManager.IsMouseRightDown() ? 1 : 0;
 
                 // scumm7: left/right buttonn down
                 if (Game.Version >= 7)
@@ -210,6 +211,8 @@ namespace NScumm.Core
             Variables[VariableMouseY.Value] = (int)_mousePos.Y;
             Variables[VariableVirtualMouseX.Value] = (int)mouseX;
             Variables[VariableVirtualMouseY.Value] = (int)_mousePos.Y - MainVirtScreen.TopLine + ((_game.Version >= 7) ? ScreenTop : 0);
+
+            _inputManager.Swap();
         }
 
         protected void ShowMenu()

@@ -424,7 +424,8 @@ namespace NScumm.Core
                 a = od.ParentState;
                 if (od.Parent == 0)
                 {
-                    DrawObject(i, argument);
+                    if (Game.Version <= 6 || od.FloatingObjectIndex == 0)
+                        DrawObject(i, argument);
                     break;
                 }
                 od = _objs[od.Parent];
@@ -477,7 +478,7 @@ namespace NScumm.Core
                 var flags = od.Flags;
                 // Sam & Max needs this to fix object-layering problems with
                 // the inventory and conversation icons.
-                if ((_game.GameId == NScumm.Core.IO.GameId.SamNMax && GetClass(od.Number, ObjectClass.IgnoreBoxes))||
+                if ((_game.GameId == NScumm.Core.IO.GameId.SamNMax && GetClass(od.Number, ObjectClass.IgnoreBoxes)) ||
                     (_game.GameId == NScumm.Core.IO.GameId.FullThrottle && GetClass(od.Number, ObjectClass.Player)))
                     flags |= DrawBitmaps.DrawMaskOnAll;
 

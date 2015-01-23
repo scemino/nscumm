@@ -67,7 +67,7 @@ namespace NScumm.Core
             state = 1;
         }
 
-        void RestoreBackground(Rect rect, byte backColor)
+        protected void RestoreBackground(Rect rect, byte backColor = 0)
         {
             VirtScreen vs;
 
@@ -117,7 +117,7 @@ namespace NScumm.Core
             }
         }
 
-        void DrawVerbBitmap(int verb, int x, int y)
+        protected void DrawVerbBitmap(int verb, int x, int y)
         {
             var vst = Verbs[verb];
             var vs = FindVirtScreen(y);
@@ -626,39 +626,58 @@ namespace NScumm.Core
             if (width <= 0 || height <= 0)
                 return;
 
-            var srcNav = new PixelNavigator(vs.Surfaces[0]);
-            srcNav.GoTo(vs.XStart + x, top);
-
-            var compNav = new PixelNavigator(_composite);
-            var txtNav = new PixelNavigator(_textSurface);
-            int m = _textSurfaceMultiplier;
-            txtNav.GoTo(x * m, y * m);
-
-            var vsPitch = vs.Pitch - width * vs.BytesPerPixel;
-            var textPitch = _textSurface.Pitch - width * m;
-
-            for (int h = height * m; h > 0; --h)
+            byte[] src;
+            if (Game.Version < 7)
             {
-                for (int w = width * m; w > 0; w--)
+                var srcNav = new PixelNavigator(vs.Surfaces[0]);
+                srcNav.GoTo(vs.XStart + x, top);
+
+                var compNav = new PixelNavigator(_composite);
+                var txtNav = new PixelNavigator(_textSurface);
+                int m = _textSurfaceMultiplier;
+                txtNav.GoTo(x * m, y * m);
+
+                var vsPitch = vs.Pitch - width * vs.BytesPerPixel;
+                var textPitch = _textSurface.Pitch - width * m;
+
+                for (int h = height * m; h > 0; --h)
                 {
-                    var temp = txtNav.Read();
-                    int mask = temp ^ CharsetMaskTransparency;
-                    mask = (((mask & 0x7f) + 0x7f) | mask) & 0x80;
-                    mask = ((mask >> 7) + 0x7f) ^ 0x80;
+                    for (int w = width * m; w > 0; w--)
+                    {
+                        var temp = txtNav.Read();
+                        int mask = temp ^ CharsetMaskTransparency;
+                        mask = (((mask & 0x7f) + 0x7f) | mask) & 0x80;
+                        mask = ((mask >> 7) + 0x7f) ^ 0x80;
 
-                    var dst = ((temp ^ srcNav.Read()) & mask) ^ temp;
-                    compNav.Write((byte)dst);
+                        var dst = ((temp ^ srcNav.Read()) & mask) ^ temp;
+                        compNav.Write((byte)dst);
 
-                    srcNav.OffsetX(1);
-                    txtNav.OffsetX(1);
-                    compNav.OffsetX(1);
+                        srcNav.OffsetX(1);
+                        txtNav.OffsetX(1);
+                        compNav.OffsetX(1);
+                    }
+
+                    srcNav.OffsetX(vsPitch);
+                    txtNav.OffsetX(textPitch);
                 }
 
-                srcNav.OffsetX(vsPitch);
-                txtNav.OffsetX(textPitch);
+                src = _composite.Pixels;
             }
-
-            var src = _composite.Pixels;
+            else
+            {
+                src = new byte[width * height * vs.BytesPerPixel];
+                var srcNav = new PixelNavigator(vs.Surfaces[0]);
+                srcNav.GoTo(vs.XStart + x, top);
+                for (int h = 0; h < height; h++)
+                {
+                    for (int w = 0; w < width; w++)
+                    {
+                        src[h * width + w] = srcNav.Read();
+                        srcNav.OffsetX(1);
+                    }
+                    srcNav.Offset(-width, 1);
+                }
+            }
 
             // Finally blit the whole thing to the screen
             _gfxManager.CopyRectToScreen(src, width * vs.BytesPerPixel, x, y, width, height);

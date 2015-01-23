@@ -26,6 +26,7 @@ namespace NScumm.MonoGame
         KeyboardState keyboardState;
         MouseState lastMouseState;
         MouseState mouseState;
+        object gate = new object();
 
         public XnaInputManager(OpenTK.NativeWindow window)
         {
@@ -46,30 +47,35 @@ namespace NScumm.MonoGame
 
         public void UpdateStates()
         {
-            lastMouseState = mouseState;
-            keyboardState = Keyboard.GetState();
-            mouseState = Mouse.GetState();
+            lock (gate)
+            {
+                keyboardState = Keyboard.GetState();
+                mouseState = Mouse.GetState();
+            }
         }
 
         public bool IsKeyDown(NScumm.Core.KeyCode code)
         {
-            if (code >= NScumm.Core.KeyCode.A && code <= NScumm.Core.KeyCode.Z)
+            lock (gate)
             {
-                return //state.IsButtonDown(code - Scumm4.KeyCode.A + Microsoft.Xna.Framework.Input.Buttons.A) ||
-					keyboardState.IsKeyDown(code - NScumm.Core.KeyCode.A + Keys.A);
-            }
-            if (code == NScumm.Core.KeyCode.Escape)
-            {
-                return //state.IsButtonDown(Microsoft.Xna.Framework.Input.Buttons.Back) ||
-					keyboardState.IsKeyDown(Keys.Escape);
-            }
-            if (code >= NScumm.Core.KeyCode.F1 && code <= NScumm.Core.KeyCode.F9)
-            {
-                return keyboardState.IsKeyDown(code - NScumm.Core.KeyCode.F1 + Keys.F1);
-            }
-            if (code >= NScumm.Core.KeyCode.D0 && code <= NScumm.Core.KeyCode.D9)
-            {
-                return keyboardState.IsKeyDown(code - NScumm.Core.KeyCode.D0 + Keys.NumPad0);
+                if (code >= NScumm.Core.KeyCode.A && code <= NScumm.Core.KeyCode.Z)
+                {
+                    return //state.IsButtonDown(code - Scumm4.KeyCode.A + Microsoft.Xna.Framework.Input.Buttons.A) ||
+                    keyboardState.IsKeyDown(code - NScumm.Core.KeyCode.A + Keys.A);
+                }
+                if (code == NScumm.Core.KeyCode.Escape)
+                {
+                    return //state.IsButtonDown(Microsoft.Xna.Framework.Input.Buttons.Back) ||
+                    keyboardState.IsKeyDown(Keys.Escape);
+                }
+                if (code >= NScumm.Core.KeyCode.F1 && code <= NScumm.Core.KeyCode.F9)
+                {
+                    return keyboardState.IsKeyDown(code - NScumm.Core.KeyCode.F1 + Keys.F1);
+                }
+                if (code >= NScumm.Core.KeyCode.D0 && code <= NScumm.Core.KeyCode.D9)
+                {
+                    return keyboardState.IsKeyDown(code - NScumm.Core.KeyCode.D0 + Keys.NumPad0);
+                }
             }
             return false;
 
@@ -77,22 +83,27 @@ namespace NScumm.MonoGame
 
         public bool IsMouseLeftClicked()
         {
-            return IsMouseLeftPressed();
+            return lastMouseState.LeftButton == ButtonState.Pressed && mouseState.LeftButton == ButtonState.Released;
         }
 
         public bool IsMouseRightClicked()
         {
-            return IsMouseRightPressed();
+            return lastMouseState.RightButton == ButtonState.Pressed && mouseState.RightButton == ButtonState.Released;
         }
 
-        public bool IsMouseLeftPressed()
+        public bool IsMouseLeftDown()
         {
             return mouseState.LeftButton == ButtonState.Pressed;
         }
 
-        public bool IsMouseRightPressed()
+        public bool IsMouseRightDown()
         {
             return mouseState.RightButton == ButtonState.Pressed;
+        }
+
+        public void Swap()
+        {
+            lastMouseState = mouseState;
         }
     }
 }

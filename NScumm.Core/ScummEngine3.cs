@@ -288,7 +288,7 @@ namespace NScumm.Core
             _opCodes[0xBE] = WalkActorTo;
             _opCodes[0xBF] = DrawBox;
             /* C0 */
-            _opCodes[0xC0] = EndCutscene;
+            _opCodes[0xC0] = EndCutsceneCore;
             _opCodes[0xC1] = PutActor;
             _opCodes[0xC2] = ChainScript;
             _opCodes[0xC3] = GetActorX;

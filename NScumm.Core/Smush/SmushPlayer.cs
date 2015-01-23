@@ -116,8 +116,7 @@ namespace NScumm.Core.Smush
                     _warpNeeded = false;
                 }
 
-                // TODO: vs
-//                _vm.ParseEvents();
+                _vm._inputManager.UpdateStates();
                 _vm.ProcessInput();
                 if (_palDirtyMax >= _palDirtyMin)
                 {
@@ -357,8 +356,7 @@ namespace NScumm.Core.Smush
 
             if (_insanity)
             {
-                // TODO: vs
-//                _vm.Insane.ProcPostRendering(_dst, 0, 0, 0, _frame, _nbframes - 1);
+                _vm.Insane.ProcPostRendering(_dst, 0, 0, 0, _frame, _nbframes - 1);
             }
 
             if (_width != 0 && _height != 0)
@@ -488,25 +486,27 @@ namespace NScumm.Core.Smush
 //                    string2[0] = 0;
 //            }
 //
-//            while (str[0] == '^') {
-//                switch (str[1]) {
-//                    case 'f':
-//                        {
-//                            int id = str[3] - '0';
-//                            str += 4;
-//                            sf = getFont(id);
-//                        }
-//                        break;
-//                    case 'c':
-//                        {
-//                            color = str[4] - '0' + 10 *(str[3] - '0');
-//                            str += 5;
-//                        }
-//                        break;
-//                    default:
-//                        error("invalid escape code in text string");
-//                }
-//            }
+            while (str[0] == '^')
+            {
+                switch (str[1])
+                {
+                    case 'f':
+                        {
+                            int id = str[3] - '0';
+                            str = str.Substring(4);
+                            sf = GetFont(id);
+                        }
+                        break;
+                    case 'c':
+                        {
+                            color = str[4] - '0' + 10 * (str[3] - '0');
+                            str = str.Substring(5);
+                        }
+                        break;
+                    default:
+                        throw new InvalidOperationException("invalid escape code in text string");
+                }
+            }
 
             // HACK. This is to prevent bug #1310846. In updated Win95 dig
             // there is such line:
@@ -562,7 +562,8 @@ namespace NScumm.Core.Smush
             // bit 1 - not used     2
             // bit 2 - ???          4
             // bit 3 - wrap around  8
-            switch (flags & 9) {
+            switch (flags & 9)
+            {
                 case 0:
                     sf.DrawString(str, _dst, _width, _height, pos_x, pos_y, false);
                     break;
@@ -589,9 +590,6 @@ namespace NScumm.Core.Smush
                 default:
                     throw new InvalidOperationException(string.Format("SmushPlayer::handleTextResource. Not handled flags: {0}", flags));
             }
-//
-//            free(string);
-//            free(string3);
         }
 
         SmushFont GetFont(int font)
@@ -613,8 +611,7 @@ namespace NScumm.Core.Smush
 
                     Debug.Assert(font >= 0 && font < ft_fonts.Length);
 
-                    var fn = ScummHelper.LocatePath(Path.GetDirectoryName(_vm.Game.Path), ft_fonts[font]);
-                    _sf[font] = new SmushFont(_vm, fn, true, false);
+                    _sf[font] = new SmushFont(_vm, ft_fonts[font], true, false);
                 }
             }
             else if (_vm.Game.GameId == GameId.Dig)
@@ -886,8 +883,8 @@ namespace NScumm.Core.Smush
             if (_insanity)
             {
                 // TODO: vs
-//                if (!((_vm._game.Features & GF_DEMO) && (_vm._game.platform == Common::kPlatformDOS)))
-                ReadString("mineroad.trs");
+                if (!(_vm.Game.Features.HasFlag(GameFeatures.Demo) /*&& (_vm._game.platform == Common::kPlatformDOS)*/))
+                    ReadString("mineroad.trs");
             }
             else
                 ReadString(file);

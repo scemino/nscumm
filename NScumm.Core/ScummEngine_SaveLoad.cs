@@ -182,7 +182,7 @@ namespace NScumm.Core
                 //        }
                 Array.Clear(_strings, 0, _strings.Length);
 
-                InitVariables();
+                ResetScummVars();
 
                 //if (_game.features & GF_OLD_BUNDLE)
                 //    loadCharset(0); // FIXME - HACK ?

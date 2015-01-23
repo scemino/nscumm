@@ -27,6 +27,7 @@ using System.Collections.Generic;
 using System.Linq;
 using NScumm.Core.Audio;
 using NScumm.Core.Audio.IMuse;
+using System.Collections;
 
 namespace NScumm.Core
 {
@@ -164,6 +165,8 @@ namespace NScumm.Core
                 engine = new ScummEngine7(game, gfxManager, inputManager, mixer);
             }
             Instance = engine;
+            engine.SetupVars();
+            engine.ResetScummVars();
             return engine;
         }
 
@@ -212,6 +215,8 @@ namespace NScumm.Core
             }
             MusicEngine.SetMusicVolume(192);
 
+            _variables = new int[_resManager.NumVariables];
+            _bitVars = new BitArray(_resManager.NumBitVariables);
             _slots = new ScriptSlot[NumScriptSlot];
             for (int i = 0; i < NumScriptSlot; i++)
             {
@@ -266,7 +271,10 @@ namespace NScumm.Core
                 InitScreens(16, 144);
             }
             // Allocate gfx compositing buffer (not needed for V7/V8 games).
-            _composite = new Surface(ScreenWidth, ScreenHeight, PixelFormat.Indexed8, false);
+            if (Game.Version < 7)
+            {
+                _composite = new Surface(ScreenWidth, ScreenHeight, PixelFormat.Indexed8, false);
+            }
             InitActors();
             OwnerRoom = Game.Version >= 7 ? 0x0FF : 0x0F;
             InitOpCodes();
@@ -295,7 +303,6 @@ namespace NScumm.Core
             }
 
             InitializeVerbs();
-            InitVariables();
 
             // WORKAROUND for bug in boot script of Loom (CD)
             // The boot script sets the characters of string 21,
@@ -304,12 +311,55 @@ namespace NScumm.Core
             {
                 _strings[21] = new byte[13];
             }
+        }
 
-            if (_game.Version >= 5 && _game.Version <= 7)
-                Sound.SetupSound();
+        protected virtual void SetupVars()
+        {
+            VariableEgo = 1;
+            VariableCameraPosX = 2;
+            VariableHaveMessage = 3;
+            VariableRoom = 4;
+            VariableOverride = 5;
+            VariableCurrentLights = 9;
+            VariableTimer1 = 11;
+            VariableTimer2 = 12;
+            VariableTimer3 = 13;
+            VariableMusicTimer = 14;
+            VariableCameraMinX = 17;
+            VariableCameraMaxX = 18;
+            VariableTimerNext = 19;
+            VariableVirtualMouseX = 20;
+            VariableVirtualMouseY = 21;
+            VariableRoomResource = 22;
+            VariableLastSound = 23;
+            VariableCutSceneExitKey = 24;
+            VariableTalkActor = 25;
+            VariableCameraFastX = 26;
+            VariableEntryScript = 28;
+            VariableEntryScript2 = 29;
+            VariableExitScript = 30;
+            VariableVerbScript = 32;
+            VariableSentenceScript = 33;
+            VariableInventoryScript = 34;
+            VariableCutSceneStartScript = 35;
+            VariableCutSceneEndScript = 36;
+            VariableCharIncrement = 37;
+            VariableWalkToObject = 38;
+            VariableHeapSpace = 40;
+            VariableMouseX = 44;
+            VariableMouseY = 45;
+            VariableTimer = 46;
+            VariableTimerTotal = 47;
+            VariableSoundcard = 48;
+            VariableVideoMode = 49;
         }
 
         protected virtual void ResetScummVars()
+        {
+            ResetScummVarsCore();
+        }
+
+        protected void ResetScummVarsCore()
         {
             if (Game.Version <= 6)
             {
@@ -350,15 +400,18 @@ namespace NScumm.Core
                 Variables[VariableRoomHeight.Value] = ScreenHeight;
             }
 
-//            if (VariableDebugMode.HasValue) {
-//                Variables(VariableDebugMode) = (_debugMode ? 1 : 0);
-//            }
+            //            if (VariableDebugMode.HasValue) {
+            //                Variables(VariableDebugMode) = (_debugMode ? 1 : 0);
+            //            }
 
             if (VariableFadeDelay.HasValue)
                 Variables[VariableFadeDelay.Value] = 3;
 
             Variables[VariableCharIncrement.Value] = 4;
             TalkingActor = 0;
+
+            if (_game.Version >= 5 && _game.Version <= 7)
+                Sound.SetupSound();
         }
 
         protected void InitScreens(int b, int h)
@@ -482,8 +535,14 @@ namespace NScumm.Core
 
             UpdateVariables();
 
-            // The music engine generates the timer data for us.
-            _variables[VariableMusicTimer.Value] = MusicEngine.GetMusicTimer();
+            if (VariableMusicTimer.HasValue)
+            {
+                if (MusicEngine != null)
+                {
+                    // The music engine generates the timer data for us.
+                    _variables[VariableMusicTimer.Value] = MusicEngine.GetMusicTimer();
+                }
+            }
 
             if (VariableGameLoaded.HasValue)
                 _variables[VariableGameLoaded.Value] = 0;

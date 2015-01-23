@@ -25,6 +25,7 @@ namespace NScumm.Core
     partial class ScummEngine6
     {
         int? VariableRandomNumber;
+        protected bool _skipVideo;
 
         [OpCode(0x5e)]
         protected void StartScript(int flags, int script, int[] args)
@@ -35,7 +36,7 @@ namespace NScumm.Core
         [OpCode(0x5f)]
         protected void StartScriptQuick(int script, int[] args)
         {
-            RunScript((byte)script, false, false, args);
+            RunScript(script, false, false, args);
         }
 
         [OpCode(0x60)]
@@ -106,7 +107,10 @@ namespace NScumm.Core
         protected void GetRandomNumber(int max)
         {
             var rnd = new Random().Next(Math.Abs(max) + 1);
-            Variables[VariableRandomNumber.Value] = rnd;
+            if (VariableRandomNumber.HasValue)
+            {
+                Variables[VariableRandomNumber.Value] = rnd;
+            }
             Push(rnd);
         }
 
@@ -114,7 +118,10 @@ namespace NScumm.Core
         protected void GetRandomNumberRange(int min, int max)
         {
             var rnd = new Random().Next(min, max);
-            Variables[VariableRandomNumber.Value] = rnd;
+            if (VariableRandomNumber.HasValue)
+            {
+                Variables[VariableRandomNumber.Value] = rnd;
+            }
             Push(rnd);
         }
 
@@ -122,7 +129,7 @@ namespace NScumm.Core
         protected void BeginOverride()
         {
             BeginOverrideCore();
-            //_skipVideo = false;
+            _skipVideo = false;
         }
 
         [OpCode(0x96)]
@@ -318,7 +325,7 @@ namespace NScumm.Core
         protected void JumpToScript(int flags, int script, int[] args)
         {
             StopObjectCode();
-            RunScript((byte)script, (flags & 1) != 0, (flags & 2) != 0, args);
+            RunScript(script, (flags & 1) != 0, (flags & 2) != 0, args);
         }
 
         [OpCode(0xd8)]

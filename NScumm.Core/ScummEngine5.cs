@@ -32,6 +32,12 @@ namespace NScumm.Core
         public ScummEngine5(GameInfo game, IGraphicsManager graphicsManager, IInputManager inputManager, IMixer mixer)
             : base(game, graphicsManager, inputManager, mixer)
         {
+        }
+
+        protected override void SetupVars()
+        {
+            base.SetupVars();
+
             VariableSoundResult = 56;
             VariableTalkStopKey = 57;
             VariableFadeDelay = 59;

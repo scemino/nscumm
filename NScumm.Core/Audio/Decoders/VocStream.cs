@@ -538,11 +538,23 @@ namespace NScumm.Core.Audio.Decoders
 
         bool CheckVOCHeader()
         {
-            var desc = _br.ReadBytes(20);
-            if ((Encoding.ASCII.GetString(desc, 0, 4) != "VTLK") &&
-                (Encoding.ASCII.GetString(desc, 0, 8) != "Creative") &&
-                (Encoding.ASCII.GetString(desc, 0, 19) != "Creative Voice File"))
+            var desc = _br.ReadBytes(8);
+            if (Encoding.ASCII.GetString(desc, 0, 4) == "VTLK")
+            {
+                desc = _br.ReadBytes(20);
+            }
+            else if (Encoding.ASCII.GetString(desc, 0, 8) == "Creative")
+            {
+                desc = _br.ReadBytes(12);
+            }
+            else
+            {
                 return false;
+            }
+
+            if (Encoding.ASCII.GetString(desc, 0, 19) != "Creative Voice File")
+                return false;
+
             //if (fileHeader.desc[19] != 0x1A)
             //      debug(3, "checkVOCHeader: Partially invalid header");
 

@@ -37,28 +37,24 @@ namespace NScumm.Core
     {
         const int MaxCutsceneNum = 5;
 
-        CutSceneData cutSceneOverride = new CutSceneData();
+        public CutSceneData[] Data { get; private set; }
 
-        public Stack<CutSceneData> Data { get; private set; }
+        public int ScriptIndex { get; set; }
 
-        public CutSceneData Override
-        {
-            get
-            {
-                if (Data.Count > 0)
-                {
-                    cutSceneOverride = Data.Peek();
-       
-                }
-                return cutSceneOverride;
-            }
-        }
-
-        public int CutSceneScriptIndex { get; set; }
+        public byte StackPointer { get; set; }
 
         public CutScene()
         {
-            Data = new Stack<CutSceneData>(MaxCutsceneNum);
+            Data = new CutSceneData[MaxCutsceneNum];
+            ResetData();
+        }
+
+        void ResetData()
+        {
+            for (int i = 0; i < MaxCutsceneNum; i++)
+            {
+                Data[i] = new CutSceneData();
+            }
         }
 
         public void SaveOrLoad(Serializer serializer)
@@ -73,7 +69,7 @@ namespace NScumm.Core
                         var cutSceneData = Array.ConvertAll(reader.ReadInt16s(5), n => (int)n);
 
                         // load Cut Scene Data
-                        Data.Clear();
+                        ResetData();
                         for (int i = 0; i < num; i++)
                         {
                             var data = new CutSceneData
@@ -82,26 +78,26 @@ namespace NScumm.Core
                                 Script = cutSceneScript[i],
                                 Data = cutSceneData[i]
                             };
-                            Data.Push(data);
+                            Data[i] = data;
                         }
-                        CutSceneScriptIndex = reader.ReadInt16();
+                        ScriptIndex = reader.ReadInt16();
                     }, writer =>
                     {
                         var cutScenePtr = new uint[5];
                         var cutSceneScript = new byte[5];
                         var cutSceneData = new short[5];
-                        var cutSceneStack = Data.ToArray();
+                        var cutSceneStack = Data;
                         for (int i = 0; i < cutSceneStack.Length; i++)
                         {
                             cutScenePtr[i] = (uint)cutSceneStack[i].Pointer;   
                             cutSceneScript[i] = cutSceneStack[i].Script;   
                             cutSceneData[i] = (short)cutSceneStack[i].Data;   
                         }
-                        writer.WriteByte(Data.Count);
+                        writer.WriteByte(StackPointer);
                         writer.WriteUInt32s(cutScenePtr, 5);
                         writer.WriteBytes(cutSceneScript, 5);
                         writer.WriteInt16s(cutSceneData, 5);
-                        writer.WriteInt16(CutSceneScriptIndex);
+                        writer.WriteInt16(ScriptIndex);
                     }, 8)
             };
             Array.ForEach(entries, e => e.Execute(serializer));

@@ -74,7 +74,6 @@ namespace NScumm.Core
         byte _animProgress, _animSpeed;
         bool _costumeNeedsInit;
         short[] _animVariable = new short[27];
-        bool _flip;
         int _talkFrequency;
         byte _talkVolume;
         byte _talkPan;
@@ -141,6 +140,8 @@ namespace NScumm.Core
         public ushort WalkScript { get; set; }
 
         public bool IgnoreTurns { get; set; }
+
+        public bool Flip { get; set; }
 
         public byte Room { get; set; }
 
@@ -285,7 +286,7 @@ namespace NScumm.Core
                 NeedBackgroundReset = false;
                 _costumeNeedsInit = false;
                 IsVisible = false;
-                _flip = false;
+                Flip = false;
                 _speedx = 8;
                 _speedy = 2;
                 _frame = 0;
@@ -422,27 +423,48 @@ namespace NScumm.Core
         {
             _costumeNeedsInit = true;
 
-            if (IsVisible)
+            if (_scumm.Game.Version >= 7)
             {
-                Hide();
-                Cost.Reset();
+                Array.Clear(_animVariable, 0, _animVariable.Length);
+
                 Costume = costume;
-                Show();
+                Cost.Reset();
+
+                if (IsVisible)
+                {
+                    StartAnimActor(InitFrame);
+                }
             }
             else
             {
-                Costume = costume;
-                Cost.Reset();
+
+                if (IsVisible)
+                {
+                    Hide();
+                    Cost.Reset();
+                    Costume = costume;
+                    Show();
+                }
+                else
+                {
+                    Costume = costume;
+                    Cost.Reset();
+                }
             }
 
-            if (_scumm.Game.IsOldBundle)
+            if (_scumm.Game.Version >= 7)
             {
-                for (int i = 0; i < 16; i++)
+                for (var i = 0; i < 256; i++)
+                    _palette[i] = 0xFF;
+            }
+            else if (_scumm.Game.IsOldBundle)
+            {
+                for (var i = 0; i < 16; i++)
                     _palette[i] = (byte)i;
             }
             else
             {
-                for (int i = 0; i < 32; i++)
+                for (var i = 0; i < 32; i++)
                     _palette[i] = 0xFF;
             }
         }
@@ -942,7 +964,7 @@ namespace NScumm.Core
                 LoadAndSaveEntry.Create(reader => Cost.AnimCounter = reader.ReadUInt16(), writer => writer.WriteUInt16(Cost.AnimCounter), 8),
                 LoadAndSaveEntry.Create(reader => Cost.SoundCounter = reader.ReadByte(), writer => writer.WriteByte(Cost.SoundCounter), 8),
                 LoadAndSaveEntry.Create(reader => DrawToBackBuf = reader.ReadByte() != 0, writer => writer.WriteByte(DrawToBackBuf), 32),
-                LoadAndSaveEntry.Create(reader => _flip = reader.ReadByte() != 0, writer => writer.WriteByte(_flip), 32),
+                LoadAndSaveEntry.Create(reader => Flip = reader.ReadByte() != 0, writer => writer.WriteByte(Flip), 32),
                 LoadAndSaveEntry.Create(reader => reader.ReadByte(), writer => writer.WriteByte(0xCD), 32),
 
                 // Actor palette grew from 64 to 256 bytes and switched to uint16 in HE games
@@ -1037,7 +1059,7 @@ namespace NScumm.Core
 
             if (TalkScript != 0)
             {
-                _scumm.RunScript((byte)TalkScript, true, false, new int[] { frame, Number });
+                _scumm.RunScript(TalkScript, true, false, new int[] { frame, Number });
             }
             else
             {
@@ -1178,7 +1200,6 @@ namespace NScumm.Core
 
             // Get the number palette entries
             var akpl_size = akpl.Length;
-
             var rgbs = ResourceFile7.ReadData(akos, "RGBS");
 
             if (rgbs == null)
@@ -1187,22 +1208,23 @@ namespace NScumm.Core
                 return;
             }
 
-            // TODO: vs scumm7
-//            for (var i = 0; i < akpl_size; i++) {
-//                r = *rgbs++;
-//                g = *rgbs++;
-//                b = *rgbs++;
-//
-//                akpl_color = *akpl++;
-//
-//                // allow remap of generic palette entry?
-//                if (ShadowMode==0 || akpl_color >= 16) {
-//                    r = (r * r_fact) >> 8;
-//                    g = (g * g_fact) >> 8;
-//                    b = (b * b_fact) >> 8;
-//                    _palette[i] = _scumm.RemapPaletteColor(r, g, b, threshold);
-//                }
-//            }
+            for (var i = 0; i < akpl_size; i++)
+            {
+                int r = rgbs[i * 3];
+                int g = rgbs[i * 3 + 1];
+                int b = rgbs[i * 3 + 2];
+
+                var akpl_color = akpl[i];
+
+                // allow remap of generic palette entry?
+                if (ShadowMode == 0 || akpl_color >= 16)
+                {
+                    r = (r * r_fact) >> 8;
+                    g = (g * g_fact) >> 8;
+                    b = (b * b_fact) >> 8;
+                    _palette[i] = (ushort)((ScummEngine6)_scumm).RemapPaletteColor(r, g, b, threshold);
+                }
+            }
         }
 
         #endregion
@@ -1569,7 +1591,7 @@ namespace NScumm.Core
             if (WalkScript != 0)
             {
                 var args = new int[] { Number, 1, angle };
-                _scumm.RunScript((byte)WalkScript, true, false, args);
+                _scumm.RunScript(WalkScript, true, false, args);
             }
             else
             {

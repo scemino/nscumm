@@ -28,6 +28,17 @@ namespace NScumm.Core
     {
         int _curActor;
 
+        internal struct Akos
+        {
+            public short cmd;
+            public short actor;
+            public short param1;
+            public short param2;
+        }
+
+        internal Akos[] _akosQueue = new Akos[32];
+        internal short _akosQueuePos;
+
         [OpCode(0x7d)]
         protected void WalkActorToObj(int index, int obj, int dist)
         {

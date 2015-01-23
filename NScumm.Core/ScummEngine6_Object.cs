@@ -25,35 +25,12 @@ using System.IO;
 
 namespace NScumm.Core
 {
-    [System.Diagnostics.DebuggerDisplay("{DebuggerDisplay,nq}")]
-    class BlastObject
-    {
-        public int Number { get; set; }
-
-        public Rect Rect { get; set; }
-
-        public int ScaleX { get; set; }
-
-        public int ScaleY { get; set; }
-
-        public int Image { get; set; }
-
-        public int Mode { get; set; }
-
-        internal string DebuggerDisplay
-        {
-            get
-            { 
-                return string.Format("Id={0}, Rec={1}]", Number, Rect.DebuggerDisplay);
-            }
-        }
-    }
-
-
     partial class ScummEngine6
     {
         int _blastObjectQueuePos;
         readonly BlastObject[] _blastObjectQueue = CreateBlastObjects();
+        int _blastTextQueuePos;
+        readonly BlastText[] _blastTextQueue = CreateBlastTexts();
 
         static BlastObject[] CreateBlastObjects()
         {
@@ -63,6 +40,16 @@ namespace NScumm.Core
                 blastObjects[i] = new BlastObject();
             }
             return blastObjects;
+        }
+
+        static BlastText[] CreateBlastTexts()
+        {
+            var blastTextQueue = new BlastText[50];
+            for (int i = 0; i < blastTextQueue.Length; i++)
+            {
+                blastTextQueue[i] = new BlastText();
+            }
+            return blastTextQueue;
         }
 
         [OpCode(0x61)]
@@ -314,7 +301,7 @@ namespace NScumm.Core
                 }
             
                 if (state == 0xFE)
-                    state = new Random().Next(_objs[i].Images.Count+1);
+                    state = new Random().Next(_objs[i].Images.Count + 1);
             }
             PutState(obj, state);
         }
@@ -374,8 +361,8 @@ namespace NScumm.Core
             return ScummMath.GetDistance(pos1, pos2) * 0xFF / ((i + j) / 2);
         }
 
-        void EnqueueObject(int objectNumber, int objectX, int objectY, int objectWidth,
-                           int objectHeight, int scaleX, int scaleY, int image, int mode)
+        protected void EnqueueObject(int objectNumber, int objectX, int objectY, int objectWidth,
+                                     int objectHeight, int scaleX, int scaleY, int image, int mode)
         {
             if (_blastObjectQueuePos >= _blastObjectQueue.Length)
             {
@@ -449,34 +436,41 @@ namespace NScumm.Core
 
         protected override void DrawDirtyScreenParts()
         {
-            // TODO: vs
             // For the Full Throttle credits to work properly, the blast
             // texts have to be drawn before the blast objects. Unless
             // someone can think of a better way to achieve this effect.
-            if (Game.Version >= 7 && Variables[VariableBlastAboveText.Value] == 1) {
-//                DrawBlastTexts();
+            if (Game.Version >= 7 && Variables[VariableBlastAboveText.Value] == 1)
+            {
+                DrawBlastTexts();
                 DrawBlastObjects();
-                if (Game.Version == 8) {
+                if (Game.Version == 8)
+                {
                     // Does this case ever happen? We need to draw the
                     // actor over the blast object, so we're forced to
                     // also draw it over the subtitles.
+                    // TODO: vs 8
 //                    ProcessUpperActors();
                 }
-            } else {
+            }
+            else
+            {
                 DrawBlastObjects();
-                if (Game.Version == 8) {
+                if (Game.Version == 8)
+                {
                     // Do this before drawing blast texts. Subtitles go on
                     // top of the CoMI verb coin, e.g. when Murray is
                     // talking to himself early in the game.
+                    // TODO: vs 8
 //                    ProcessUpperActors();
                 }
-//                DrawBlastTexts();
+                DrawBlastTexts();
             }
 
             // Call the original method.
             base.DrawDirtyScreenParts();
 
             // Remove all blasted objects/text again.
+            RemoveBlastTexts();
             RemoveBlastObjects();
         }
 
@@ -583,6 +577,107 @@ namespace NScumm.Core
             DrawBomp(bdd);
 
             MarkRectAsDirty(MainVirtScreen, new Rect(bdd.X, bdd.X + bdd.Width, bdd.Y, bdd.Y + bdd.Height));
+        }
+
+        protected void EnqueueText(byte[] text, int x, int y, byte color, byte charset, bool center)
+        {
+            var bt = _blastTextQueue[_blastTextQueuePos++];
+            Debug.Assert(_blastTextQueuePos <= _blastTextQueue.Length);
+
+            ConvertMessageToString(text, bt.Text, 0);
+            bt.X = (short)x;
+            bt.Y = (short)y;
+            bt.Color = color;
+            bt.Charset = charset;
+            bt.Center = center;
+        }
+
+        void RemoveBlastTexts()
+        {
+            for (var i = 0; i < _blastTextQueuePos; i++)
+            {
+                RestoreBackground(_blastTextQueue[i].Rect);
+            }
+            _blastTextQueuePos = 0;
+        }
+
+        void DrawBlastTexts()
+        {
+            for (var i = 0; i < _blastTextQueuePos; i++)
+            {
+
+                var buf = _blastTextQueue[i].Text;
+                var bufPos = 0;
+
+                _charset.Top = _blastTextQueue[i].Y + ScreenTop;
+                _charset.Right = ScreenWidth - 1;
+                _charset.Center = _blastTextQueue[i].Center;
+                _charset.SetColor(_blastTextQueue[i].Color);
+                _charset.DisableOffsX = _charset.FirstChar = true;
+                _charset.SetCurID(_blastTextQueue[i].Charset);
+
+                int c;
+                do
+                {
+                    _charset.Left = _blastTextQueue[i].X;
+
+                    // Center text if necessary
+                    if (_charset.Center)
+                    {
+                        _charset.Left -= _charset.GetStringWidth(0, buf, bufPos) / 2;
+                        if (_charset.Left < 0)
+                            _charset.Left = 0;
+                    }
+
+                    do
+                    {
+                        c = buf[bufPos++];
+
+                        // FIXME: This is a workaround for bugs #864030 and #1399843:
+                        // In COMI, some text contains ASCII character 11 = 0xB. It's
+                        // not quite clear what it is good for; so for now we just ignore
+                        // it, which seems to match the original engine (BTW, traditionally,
+                        // this is a 'vertical tab').
+                        if (c == 0x0B)
+                            continue;
+
+                        // Some localizations may override colors
+                        // See credits in Chinese COMI
+//                        if (Game.GameId == GID_CMI && _language == Common::ZH_TWN &&
+//                            c == '^' && (buf == _blastTextQueue[i].text + 1))
+//                        {
+//                            if (*buf == 'c')
+//                            {
+//                                int color = buf[3] - '0' + 10 * (buf[2] - '0');
+//                                _charset.setColor(color);
+//
+//                                buf += 4;
+//                                c = *buf++;
+//                            }
+//                        }
+
+                        if (c != 0 && c != 0xFF && c != '\n')
+                        {
+//                            if (c & 0x80 && _useCJKMode)
+//                            {
+//                                if (_language == Common::JA_JPN && !checkSJISCode(c))
+//                                {
+//                                    c = 0x20; //not in S-JIS
+//                                }
+//                                else
+//                                {
+//                                    c += *buf++ * 256;
+//                                }
+//                            }
+                            _charset.PrintChar(c, true);
+                        }
+                    } while (c != 0 && c != '\n');
+
+                    _charset.Top += _charset.GetFontHeight();
+                } while (c != 0);
+
+                _blastTextQueue[i].Rect = _charset.Str;
+            }
         }
 
         int SetupBompScale(byte[] scaling, int size, int scale)

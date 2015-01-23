@@ -32,6 +32,12 @@ namespace NScumm.Core
         public ScummEngine4(GameInfo game, IGraphicsManager graphicsManager, IInputManager inputManager, IMixer mixer)
             : base(game, graphicsManager, inputManager, mixer)
         {
+        }
+
+        protected override void SetupVars()
+        {
+            base.SetupVars();
+
             VariableScrollScript = 27;
             VariableDebugMode = 39;
             VariableMainMenu = 50;
@@ -40,7 +46,7 @@ namespace NScumm.Core
             VariableUserPut = 53;
             VariableTalkStringY = 54;
 
-            if ((game.GameId == GameId.Loom && Game.Version == 4) || Game.Version >= 5)
+            if ((Game.GameId == GameId.Loom && Game.Version == 4) || Game.Version >= 5)
             {
                 VariableNoSubtitles = 60;
             }

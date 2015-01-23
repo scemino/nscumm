@@ -78,6 +78,16 @@ namespace NScumm.Core.IO
             return obj;
         }
 
+        protected override ObjectData Merge(ObjectData objImg, ObjectData objCode)
+        {
+            base.Merge(objImg, objCode);
+            objCode.Width = objImg.Width;
+            objCode.Height = objImg.Height;
+            objCode.Position = objImg.Position;
+            objCode.ActorDir = objImg.ActorDir;
+            return objCode;
+        }
+
         protected override int ReadScriptIndex()
         {
             return _reader.ReadUInt16();

@@ -38,33 +38,46 @@ namespace NScumm.Core
         int VariableNumGlobalObjs;
         int VariableCameraDestX;
         int VariableCameraDestY;
-        int VariableExitScript2;
         int VariableRestartKey;
         int VariablePauseKey;
         int VariableVersionKey;
         int VariableTalkStopKey;
         int VariableKeypress;
-        int VariableCameraMinY;
-        int VariableCameraMaxY;
         int VariableCameraSpeedX;
         int VariableCameraSpeedY;
-        int VariableDefaultTalkDelay;
-        int VariableCharsetMask;
+        int? VariableCharsetMask;
         int VariableVideoName;
         int VariableString2Draw;
         public int VariableCustomScaleTable;
         int VariableMusicBundleLoaded;
-        int VariableVoiceBundleLoaded;
-
 
         public bool SmushVideoShouldFinish { get; internal set; }
+
         public bool SmushActive { get; internal set; }
+
         internal SmushPlayer SmushPlayer { get; private set; }
+
         internal SmushMixer SmushMixer { get; private set; }
+
         internal Insane.Insane Insane { get; private set; }
 
         public ScummEngine7(GameInfo game, IGraphicsManager graphicsManager, IInputManager inputManager, IMixer mixer)
             : base(game, graphicsManager, inputManager, mixer)
+        {
+            for (int i = 0; i < _subtitleQueue.Length; i++)
+            {
+                _subtitleQueue[i] = new SubtitleText();
+            }
+
+            // Create FT INSANE object
+            if (Game.GameId == GameId.FullThrottle)
+                Insane = new Insane.Insane(this);
+
+            SmushMixer = new SmushMixer(Mixer);
+            SmushPlayer = new SmushPlayer(this);
+        }
+
+        protected override void SetupVars()
         {
             VariableMouseX = 1;
             VariableMouseY = 2;
@@ -156,7 +169,7 @@ namespace NScumm.Core
             VariableFadeDelay = 117;
 
             // Full Throttle specific
-            if (game.GameId == GameId.FullThrottle)
+            if (Game.GameId == GameId.FullThrottle)
             {
                 VariableCharsetMask = 119;
             }
@@ -170,21 +183,25 @@ namespace NScumm.Core
 
             VariableMusicBundleLoaded = 135;
             VariableVoiceBundleLoaded = 136;
-
-            // Create FT INSANE object
-            if (Game.GameId == GameId.FullThrottle)
-                Insane = new Insane.Insane(this);
-
-            SmushMixer = new SmushMixer(Mixer);
-            SmushPlayer = new SmushPlayer(this);
         }
 
         protected override void ResetScummVars()
         {
+            base.ResetScummVars();
+
             Variables[VariableCameraThresholdX.Value] = 100;
             Variables[VariableCameraThresholdY.Value] = 70;
             Variables[VariableCameraAccelX.Value] = 100;
             Variables[VariableCameraAccelY.Value] = 100;
+
+            if (Game.Version != 8)
+            {
+                Variables[VariableV6EMSSpace.Value] = 10000;
+                // TODO: vs change this: 1401
+                Variables[VariableNumGlobalObjs] = 1401 - 1;
+            }
+
+            Variables[VariableDefaultTalkDelay.Value] = 60;
         }
     }
 }

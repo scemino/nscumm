@@ -173,10 +173,10 @@ namespace NScumm.Core
         {
             SetupSfxFile();
 
-            // TODO: fullthrottle
-//            if (_vm->_game.id == GID_FT) {
-//                    _vm->VAR(_vm->VAR_VOICE_BUNDLE_LOADED) = _sfxFilename.empty() ? 0 : 1;
-//                }
+            if (vm.Game.GameId == GameId.FullThrottle)
+            {
+                vm.Variables[vm.VariableVoiceBundleLoaded.Value] = string.IsNullOrEmpty(_sfxFilename) ? 0 : 1;
+            }
         }
 
         public void ProcessSfxQueues()
@@ -197,7 +197,7 @@ namespace NScumm.Core
 
 //                if (vm._imuseDigital)
 //                {
-//                    finished = !isSoundRunning(kTalkSoundID);
+                finished = !IsSoundRunning(TalkSoundID);
 //                }
 //                else if (_vm->_game.heversion >= 60)
 //                {
@@ -205,7 +205,7 @@ namespace NScumm.Core
 //                }
 //                else
 //                {
-                finished = !_mixer.IsSoundHandleActive(_talkChannelHandle);
+//                finished |= !_mixer.IsSoundHandleActive(_talkChannelHandle);
 //                }
 
                 if ((uint)act < 0x80 && ((vm.Game.Version == 8) || (vm.Game.Version <= 7 && !vm.String[0].NoTalkAnim)))
@@ -312,11 +312,9 @@ namespace NScumm.Core
 
             _soundsPaused = pause;
 
-#if ENABLE_SCUMM_7_8
-    if (_vm->_imuseDigital) {
-        _vm->_imuseDigital->pause(pause);
-    }
-#endif
+//    if (_vm->_imuseDigital) {
+//        _vm->_imuseDigital->pause(pause);
+//    }
 
             _mixer.PauseAll(pause);
 

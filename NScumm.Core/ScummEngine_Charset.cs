@@ -76,10 +76,19 @@ namespace NScumm.Core
 
         protected void Charset()
         {
+            byte[] subtitleBuffer = new byte[200];
+            var subtitleLine = 0;
+            Point subtitlePos = new Point();
+
+            if (Game.Version >= 7)
+            {
+                ((ScummEngine7)this).ProcessSubtitleQueue();
+            }
+
             if (_haveMsg == 0)
                 return;
 
-            if (Game.Version >= 4)
+            if (Game.Version >= 4 && Game.Version <= 6)
             {
                 // Do nothing while the camera is moving
                 if ((_camera.DestinationPosition.X / 8) != (_camera.CurrentPosition.X / 8) || _camera.CurrentPosition.X != _camera.LastPosition.X)
@@ -150,7 +159,8 @@ namespace NScumm.Core
             if (_talkDelay != 0)
                 return;
 
-            if (_haveMsg == 1)
+            if ((Game.Version <= 6 && _haveMsg == 1) ||
+                (Game.Version == 7 && _haveMsg != 1))
             {
                 if ((Sound.SfxMode & 2) == 0)
                     StopTalk();
@@ -163,11 +173,20 @@ namespace NScumm.Core
                 _useTalkAnims = true;
             }
 
-            _talkDelay = 60;
+            _talkDelay = VariableDefaultTalkDelay.HasValue ? Variables[VariableDefaultTalkDelay.Value] : 60;
 
             if (!_keepText)
             {
-                RestoreCharsetBg();
+                if (Game.Version >= 7)
+                {
+                    ((ScummEngine7)this).ClearSubtitleQueue();
+                    _nextLeft = _string[0].Position.X;
+                    _nextTop = _string[0].Position.Y + ScreenTop;
+                }
+                else
+                {
+                    RestoreCharsetBg();
+                }
             }
 
             int maxWidth = _charset.Right - _string[0].Position.X - 1;
@@ -195,13 +214,19 @@ namespace NScumm.Core
                 if (c == 0)
                 {
                     // End of text reached, set _haveMsg accordingly
-                    _haveMsg = 1;
+                    _haveMsg = (_game.Version >= 7) ? 2 : 1;
                     _keepText = false;
                     break;
                 }
 
                 if (c == 13)
                 {
+                    if (Game.Version >= 7 && subtitleLine != 0)
+                    {
+                        ((ScummEngine7)this).AddSubtitleToQueue(subtitleBuffer, subtitlePos, _charsetColor, (byte)_charset.GetCurId());
+                        subtitleLine = 0;
+                    }
+
                     if (!NewLine())
                         break;
                     continue;
@@ -210,11 +235,30 @@ namespace NScumm.Core
                 _charset.Left = _nextLeft;
                 _charset.Top = _nextTop;
 
-                _charset.PrintChar(c, false);
+                if (Game.Version >= 7)
+                {
+                    if (subtitleLine == 0)
+                    {
+                        subtitlePos.X = (short)_charset.Left;
+                        // BlastText position is relative to the top of the screen, adjust y-coordinate
+                        subtitlePos.Y = (short)(_charset.Top - ScreenTop);
+                    }
+                    subtitleBuffer[subtitleLine++] = (byte)c;
+                    subtitleBuffer[subtitleLine] = 0;
+                }
+                else
+                {
+                    _charset.PrintChar(c, false);
+                }
                 _nextLeft = _charset.Left;
                 _nextTop = _charset.Top;
 
                 _talkDelay += _variables[VariableCharIncrement.Value];
+            }
+
+            if (Game.Version >= 7 && subtitleLine != 0)
+            {
+                ((ScummEngine7)this).AddSubtitleToQueue(subtitleBuffer, subtitlePos, _charsetColor, (byte)_charset.GetCurId());
             }
         }
 
@@ -247,7 +291,7 @@ namespace NScumm.Core
             while (!endLoop)
             {
                 c = _charsetBuffer[bufferPos++];
-                if (!(c == 0xFF || (c == 0xFE)))
+                if (!(c == 0xFF || (Game.Version <= 6 && c == 0xFE)))
                 {
                     break;
                 }
@@ -273,7 +317,7 @@ namespace NScumm.Core
                         break;
 
                     case 3:
-                        _haveMsg = 0xFF;
+                        _haveMsg = (_game.Version >= 7) ? 1 : 0xFF;
                         _keepText = false;
                         endLoop = true;
                         break;

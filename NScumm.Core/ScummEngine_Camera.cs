@@ -54,7 +54,7 @@ namespace NScumm.Core
             if (VariableScrollScript.HasValue && _variables[VariableScrollScript.Value] != 0)
             {
                 _variables[VariableCameraPosX.Value] = _camera.CurrentPosition.X;
-                RunScript((byte)_variables[VariableScrollScript.Value], false, false, new int[0]);
+                RunScript(_variables[VariableScrollScript.Value], false, false, new int[0]);
             }
 
             // If the camera moved and text is visible, remove it
@@ -175,7 +175,7 @@ namespace NScumm.Core
             if (VariableScrollScript.HasValue && _variables[VariableScrollScript.Value] != 0 && pos != _camera.CurrentPosition.X)
             {
                 _variables[VariableCameraPosX.Value] = _camera.CurrentPosition.X;
-                RunScript((byte)_variables[VariableScrollScript.Value], false, false, new int[0]);
+                RunScript(_variables[VariableScrollScript.Value], false, false, new int[0]);
             }
         }
 

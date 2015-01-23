@@ -35,7 +35,7 @@ namespace NScumm.Core
             Slots[cur].Status = ScriptStatus.Dead;
             CurrentScript = 0xFF;
 
-            RunScript((byte)script, Slots[cur].FreezeResistant, Slots[cur].Recursive, vars);
+            RunScript(script, Slots[cur].FreezeResistant, Slots[cur].Recursive, vars);
         }
 
         void FreezeScripts()
@@ -56,51 +56,10 @@ namespace NScumm.Core
                 EndOverrideCore();
         }
 
-        void AbortCutscene()
-        {
-            byte script = 0;
-            var offs = 0;
-            if (cutScene.Override.Pointer != 0)
-            {
-                offs = cutScene.Override.Pointer;
-                script = cutScene.Override.Script;
-            }
-
-            if (offs != 0)
-            {
-                Slots[script].Offset = (uint)offs;
-                Slots[script].Status = ScriptStatus.Running;
-                Slots[script].UnfreezeAll();
-
-                if (Slots[script].CutSceneOverride > 0)
-                    Slots[script].CutSceneOverride--;
-
-                Variables[VariableOverride.Value] = 1;
-                cutScene.Override.Pointer = 0;
-            }
-        }
-
         void CutScene()
         {
             var args = GetWordVarArgs();
             BeginCutscene(args);
-        }
-
-        void EndCutscene()
-        {
-            if (Slots[CurrentScript].CutSceneOverride > 0)    // Only terminate if active
-                Slots[CurrentScript].CutSceneOverride--;
-
-            var cutSceneData = cutScene.Data.Pop();
-            var args = new [] { cutSceneData.Data };
-
-            Variables[VariableOverride.Value] = 0;
-
-            if (cutSceneData.Pointer != 0 && (Slots[CurrentScript].CutSceneOverride > 0))   // Only terminate if active
-                Slots[CurrentScript].CutSceneOverride--;
-
-            if (Variables[VariableCutSceneEndScript.Value] != 0)
-                RunScript((byte)Variables[VariableCutSceneEndScript.Value], false, false, args);
         }
 
         void IsScriptRunning()
@@ -136,7 +95,7 @@ namespace NScumm.Core
                 return;
             }
 
-            RunScript((byte)script, (op & 0x20) != 0, (op & 0x40) != 0, data);
+            RunScript(script, (op & 0x20) != 0, (op & 0x40) != 0, data);
         }
 
         void StopScript()

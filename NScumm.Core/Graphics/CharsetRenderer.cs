@@ -85,6 +85,8 @@ namespace NScumm.Core.Graphics
 
         public abstract int GetCharWidth(int chr);
 
+        public virtual int GetCharHeight(int chr) { return GetFontHeight(); }
+
         public int GetStringWidth(int arg, System.Collections.Generic.IList<byte> text, int pos)
         {
             int width = 1;

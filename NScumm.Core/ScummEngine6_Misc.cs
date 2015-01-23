@@ -326,7 +326,7 @@ namespace NScumm.Core
             return -1;
         }
 
-        protected int RemapPaletteColor(int r, int g, int b, int threshold)
+        protected internal int RemapPaletteColor(int r, int g, int b, int threshold)
         {
             int ar, ag, ab;
             int sum, bestsum, bestitem = 0;

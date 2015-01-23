@@ -182,12 +182,7 @@ namespace NScumm.Core.IO
                             {
                                 // object script
                                 var obj = ReadObjectCode(it.Current.Size - 8);
-                                if (images.ContainsKey(obj.Number))
-                                {
-                                    obj.Hotspots.AddRange(images[obj.Number].Hotspots);
-                                    obj.Images.AddRange(images[obj.Number].Images);
-                                }
-                                room.Objects.Add(obj);
+                                room.Objects.Add(Merge(images[obj.Number],obj));
                             }
                             break;                        
 
@@ -209,6 +204,13 @@ namespace NScumm.Core.IO
             } while (its.Count > 0);
 
             return room;
+        }
+
+        protected virtual ObjectData Merge(ObjectData objImg, ObjectData objCode)
+        {
+            objCode.Hotspots.AddRange(objImg.Hotspots);
+            objCode.Images.AddRange(objImg.Images);
+            return objCode;
         }
 
         protected ObjectData ReadObjectImages(long size)

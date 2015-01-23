@@ -35,7 +35,7 @@ namespace NScumm.Core
 
         protected int SentenceNum { get { return _sentenceNum; } set { _sentenceNum = value; } }
 
-        internal Sentence[] Sentence{ get { return _sentence; } }
+        internal Sentence[] Sentence { get { return _sentence; } }
 
         void InitializeVerbs()
         {
@@ -193,7 +193,7 @@ namespace NScumm.Core
             return verbSlot;
         }
 
-        protected void DrawVerb(int verb, int mode)
+        protected virtual void DrawVerb(int verb, int mode)
         {
             if (verb == 0)
                 return;

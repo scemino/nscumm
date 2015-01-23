@@ -182,10 +182,12 @@ namespace NScumm.Core
         }
 
         [OpCode(0x85)]
-        protected void LoadRoomWithEgo(int obj, byte room, int x, int y)
+        protected void LoadRoomWithEgo(int x, int y)
         {
+            int obj, room;
+            PopRoomAndObj(out room, out obj);
             var a = Actors[Variables[VariableEgo.Value]];
-            a.PutActor(room);
+            a.PutActor((byte)room);
             _egoPositioned = false;
 
             Variables[VariableWalkToObject.Value] = obj;

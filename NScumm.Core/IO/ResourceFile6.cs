@@ -159,12 +159,7 @@ namespace NScumm.Core.IO
                         {
                             // object script
                             var obj = ReadObjectCode(it.Current.Size - 8);
-                            if (images.ContainsKey(obj.Number))
-                            {
-                                obj.Hotspots.AddRange(images[obj.Number].Hotspots);
-                                obj.Images.AddRange(images[obj.Number].Images);
-                            }
-                            room.Objects.Add(obj);
+                            room.Objects.Add(Merge(images[obj.Number],obj));
                         }
                         break;                        
 

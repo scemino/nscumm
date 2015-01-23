@@ -232,9 +232,10 @@ namespace NScumm.Core
         {
             _mainVirtScreen.SetDirtyRange(0, 0);
 
-            _camera.LastPosition.X = _camera.CurrentPosition.X;
+            if (Game.Version < 7)
+                Camera.LastPosition.X = Camera.CurrentPosition.X;
 
-            if (_screenEffectFlag && effect != 0)
+            if ((Game.Version == 7 ||_screenEffectFlag) && effect != 0)
             {
                 // Fill screen 0 with black
                 var l_pixNav = new PixelNavigator(_mainVirtScreen.Surfaces[0]);

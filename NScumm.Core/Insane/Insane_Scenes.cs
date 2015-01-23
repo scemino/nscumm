@@ -46,6 +46,11 @@ namespace NScumm.Core.Insane
             }
         }
 
+        public void SetSmushParams(int speed)
+        {
+            _speed = speed;
+        }
+
         public void RunScene(int arraynum) {
             _insaneIsRunning = true;
             _player = _vm.SmushPlayer;
@@ -183,6 +188,179 @@ namespace NScumm.Core.Insane
 //            }
 
             _vm.Sound.StopAllSounds(); // IMUSE_StopAllSounds();
+        }
+
+        public void ProcPostRendering(byte[] renderBitmap, int codecparam, int setupsan12,
+            int setupsan13, int curFrame, int maxFrame) {
+            int tmpSnd;
+            bool needMore = false;
+
+            Debug.WriteLine("procPostRendering");
+
+            throw new NotImplementedException();
+//            if (!_keyboardDisable) {
+//                switch (_currSceneId) {
+//                    case 12:
+//                        PostCase11(renderBitmap, codecparam, setupsan12, setupsan13, curFrame, maxFrame);
+//                        break;
+//                    case 1:
+//                        PostCase0(renderBitmap, codecparam, setupsan12, setupsan13, curFrame, maxFrame);
+//                        if (!smlayer_isSoundRunning(88))
+//                            smlayer_startSfx(88);
+//                        smlayer_soundSetPan(88, ((_actor[0].x+160)>>2)+64);
+//                        if (_tiresRustle) {
+//                            if (!smlayer_isSoundRunning(87))
+//                                smlayer_startSfx(87);
+//                        } else {
+//                            smlayer_stopSound(87);
+//                        }
+//                        break;
+//                    case 18:
+//                    case 19:
+//                        postCase17(renderBitmap, codecparam, setupsan12, setupsan13, curFrame, maxFrame);
+//                        smlayer_stopSound(95);
+//                        smlayer_stopSound(87);
+//                        smlayer_stopSound(88);
+//                        if (!smlayer_isSoundRunning(88))
+//                            smlayer_startSfx(88);
+//                        break;
+//                    case 17:
+//                        postCase16(renderBitmap, codecparam, setupsan12, setupsan13, curFrame, maxFrame);
+//                        if (!smlayer_isSoundRunning(88))
+//                            smlayer_startSfx(88);
+//                        break;
+//                    case 2:
+//                        postCase1(renderBitmap, codecparam, setupsan12, setupsan13, curFrame, maxFrame);
+//                        break;
+//                    case 3:
+//                        postCase2(renderBitmap, codecparam, setupsan12, setupsan13, curFrame, maxFrame);
+//                        needMore = true;
+//                        if (!smlayer_isSoundRunning(89)) {
+//                            smlayer_startSfx(89);
+//                            smlayer_soundSetPriority(89, 100);
+//                        }
+//                        tmpSnd = _enemy[_currEnemy].sound;
+//                        if (!smlayer_isSoundRunning(tmpSnd)) {
+//                            smlayer_startSfx(tmpSnd);
+//                            smlayer_soundSetPriority(tmpSnd, 100);
+//                        }
+//                        smlayer_soundSetPan(89, ((_actor[0].x+160)>>2)+64);
+//                        smlayer_soundSetPan(tmpSnd, ((_actor[1].x+160)>>2)+64);
+//                        if (!_tiresRustle) {
+//                            smlayer_stopSound(87);
+//                        } else {
+//                            if (!smlayer_isSoundRunning(87))
+//                                smlayer_startSfx(87);
+//                        }
+//                        break;
+//                    case 21:
+//                        postCase20(renderBitmap, codecparam, setupsan12, setupsan13, curFrame, maxFrame);
+//                        needMore = true;
+//                        if (!smlayer_isSoundRunning(89)) {
+//                            smlayer_startSfx(89);
+//                            smlayer_soundSetPriority(89, 100);
+//                        }
+//                        tmpSnd = _enemy[_currEnemy].sound;
+//                        if (!smlayer_isSoundRunning(tmpSnd)) {
+//                            smlayer_startSfx(tmpSnd);
+//                            smlayer_soundSetPriority(tmpSnd, 100);
+//                        }
+//                        smlayer_soundSetPan(89, ((_actor[0].x+160)>>2)+64);
+//                        smlayer_soundSetPan(tmpSnd, ((_actor[1].x+160)>>2)+64);
+//                        break;
+//                    case 4:
+//                    case 5:
+//                        postCase3(renderBitmap, codecparam, setupsan12, setupsan13, curFrame, maxFrame);
+//                        if (!smlayer_isSoundRunning(88))
+//                            smlayer_startSfx(88);
+//                        smlayer_soundSetPan(88, ((_actor[0].x+160)>>2)+64);
+//                        break;
+//                    case 6:
+//                        postCase5(renderBitmap, codecparam, setupsan12, setupsan13, curFrame, maxFrame);
+//                        if (!smlayer_isSoundRunning(88))
+//                            smlayer_startSfx(88);
+//                        smlayer_soundSetPan(88, ((_actor[0].x+160)>>2)+64);
+//                        break;
+//                    case 7:
+//                    case 8:
+//                        postCase6(renderBitmap, codecparam, setupsan12, setupsan13, curFrame, maxFrame);
+//                        break;
+//                    case 9:
+//                    case 23:
+//                        postCase8(renderBitmap, codecparam, setupsan12, setupsan13, curFrame, maxFrame);
+//                        break;
+//                    case 10:
+//                        postCase9(renderBitmap, codecparam, setupsan12, setupsan13, curFrame, maxFrame);
+//                        break;
+//                    case 11:
+//                    case 20:
+//                    case 22:
+//                        postCase10(renderBitmap, codecparam, setupsan12, setupsan13, curFrame, maxFrame);
+//                        break;
+//                    case 14:
+//                        postCase23(renderBitmap, codecparam, setupsan12, setupsan13, curFrame, maxFrame);
+//                        break;
+//                    case 13:
+//                        postCase12(renderBitmap, codecparam, setupsan12, setupsan13, curFrame, maxFrame);
+//                        needMore = true;
+//                        if (!smlayer_isSoundRunning(89)) {
+//                            smlayer_startSfx(89);
+//                            smlayer_soundSetPriority(89, 100);
+//                        }
+//                        tmpSnd = _enemy[_currEnemy].sound;
+//                        if (!smlayer_isSoundRunning(tmpSnd)) {
+//                            smlayer_startSfx(tmpSnd);
+//                            smlayer_soundSetPriority(tmpSnd, 100);
+//                        }
+//                        smlayer_soundSetPan(89, ((_actor[0].x+160)>>2)+64);
+//                        smlayer_soundSetPan(tmpSnd, ((_actor[1].x+160)>>2)+64);
+//                        break;
+//                    case 24:
+//                        if (!smlayer_isSoundRunning(90)) {
+//                            smlayer_startSfx(90);
+//                            smlayer_soundSetPriority(90, 100);
+//                        }
+//                        postCase23(renderBitmap, codecparam, setupsan12, setupsan13, curFrame, maxFrame);
+//                        break;
+//                    case 15:
+//                    case 16:
+//                        postCase14(renderBitmap, codecparam, setupsan12, setupsan13, curFrame, maxFrame);
+//                        break;
+//                    case 25:
+//                    case 26:
+//                        break;
+//                }
+//
+//                if (_currScenePropIdx)
+//                    postCaseAll(renderBitmap, codecparam, setupsan12, setupsan13, curFrame, maxFrame);
+//
+//                _actor[0].frame++;
+//                _actor[0].act[3].frame++;
+//                _actor[0].act[2].frame++;
+//                _actor[0].act[1].frame++;
+//                _actor[0].act[0].frame++;
+//                _actor[1].act[3].frame++;
+//                _actor[1].frame++;
+//                _actor[1].act[2].frame++;
+//                _actor[1].act[1].frame++;
+//                _actor[1].act[0].frame++;
+//            }
+//
+//            if (!_val115_) {
+//                smlayer_overrideDrawActorAt(&renderBitmap[0], renderBitmap[2], renderBitmap[3]);
+//                _isBenCut = 0;
+//            }
+//
+//            if (_isBenCut)
+//                smlayer_drawSomething(renderBitmap, codecparam, 89, 56, 1, _smush_bencutNut, 0, 0, 0);
+//
+//            if (!_keyboardDisable)
+//                _vm->processActors();
+//
+//            if (needMore)
+//                postCaseMore(renderBitmap, codecparam, setupsan12, setupsan13, curFrame, maxFrame);
+//
+//            _tiresRustle = false;
         }
 
         void StopSceneSounds(int sceneId) {

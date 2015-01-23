@@ -28,46 +28,49 @@ namespace NScumm.Core
 {
     partial class ScummEngine
     {
-        public int? VariableEgo = 1;
-        public int? VariableCameraPosX = 2;
+        public int? VariableEgo;
+        public int? VariableCameraPosX;
         public int? VariableCameraPosY;
-        public int? VariableHaveMessage = 3;
-        public int? VariableRoom = 4;
-        public int? VariableOverride = 5;
-        public int? VariableCurrentLights = 9;
-        public int? VariableTimer1 = 11;
-        public int? VariableTimer2 = 12;
-        public int? VariableTimer3 = 13;
-        public int? VariableMusicTimer = 14;
-        public int? VariableCameraMinX = 17;
-        public int? VariableCameraMaxX = 18;
-        public int? VariableTimerNext = 19;
-        public int? VariableVirtualMouseX = 20;
-        public int? VariableVirtualMouseY = 21;
-        public int? VariableRoomResource = 22;
-        public int? VariableLastSound = 23;
-        public int? VariableCutSceneExitKey = 24;
-        public int? VariableTalkActor = 25;
-        public int? VariableCameraFastX = 26;
+        public int? VariableHaveMessage;
+        public int? VariableRoom;
+        public int? VariableOverride;
+        public int? VariableCurrentLights;
+        public int? VariableTimer1;
+        public int? VariableTimer2;
+        public int? VariableTimer3;
+        public int? VariableMusicTimer;
+        public int? VariableCameraMinY;
+        public int? VariableCameraMaxY;
+        public int? VariableCameraMinX;
+        public int? VariableCameraMaxX;
+        public int? VariableTimerNext;
+        public int? VariableVirtualMouseX;
+        public int? VariableVirtualMouseY;
+        public int? VariableRoomResource;
+        public int? VariableLastSound;
+        public int? VariableCutSceneExitKey;
+        public int? VariableTalkActor;
+        public int? VariableCameraFastX;
         public int? VariableScrollScript;
-        public int? VariableEntryScript = 28;
-        public int? VariableEntryScript2 = 29;
-        public int? VariableExitScript = 30;
-        public int? VariableVerbScript = 32;
-        public int? VariableSentenceScript = 33;
-        public int? VariableInventoryScript = 34;
-        public int? VariableCutSceneStartScript = 35;
-        public int? VariableCutSceneEndScript = 36;
-        public int? VariableCharIncrement = 37;
-        public int? VariableWalkToObject = 38;
+        public int? VariableEntryScript;
+        public int? VariableEntryScript2;
+        public int? VariableExitScript;
+        public int? VariableExitScript2;
+        public int? VariableVerbScript;
+        public int? VariableSentenceScript;
+        public int? VariableInventoryScript;
+        public int? VariableCutSceneStartScript;
+        public int? VariableCutSceneEndScript;
+        public int? VariableCharIncrement;
+        public int? VariableWalkToObject;
         public int? VariableDebugMode;
-        public int? VariableHeapSpace = 40;
-        public int? VariableMouseX = 44;
-        public int? VariableMouseY = 45;
-        public int? VariableTimer = 46;
-        public int? VariableTimerTotal = 47;
-        public int? VariableSoundcard = 48;
-        public int? VariableVideoMode = 49;
+        public int? VariableHeapSpace;
+        public int? VariableMouseX;
+        public int? VariableMouseY;
+        public int? VariableTimer;
+        public int? VariableTimerTotal;
+        public int? VariableSoundcard;
+        public int? VariableVideoMode;
         public int? VariableMainMenu;
         public int? VariableFixedDisk;
         public int? VariableCursorState;
@@ -101,6 +104,8 @@ namespace NScumm.Core
         public int? VariableCameraThresholdY;
         public int? VariableCameraAccelX;
         public int? VariableCameraAccelY;
+        public int? VariableVoiceBundleLoaded;
+        public int? VariableDefaultTalkDelay;
 
         int[] _variables;
         BitArray _bitVars;
@@ -110,23 +115,6 @@ namespace NScumm.Core
         public int[] Variables
         {
             get { return _variables; }
-        }
-
-        void InitVariables()
-        {
-            _variables = new int[_resManager.NumVariables];
-            _bitVars = new BitArray(_resManager.NumBitVariables);
-            Variables[VariableVideoMode.Value] = 19;
-            Variables[VariableHeapSpace.Value] = 1400;
-            Variables[VariableCharIncrement.Value] = 4;
-            TalkingActor = 0;
-
-            // 0 PC Speaker
-            // 1 Tandy
-            // 2 CMS
-            // 3 AdLib
-            // 4 Roland
-            Variables[VariableSoundcard.Value] = 3;
         }
 
         protected byte ReadByte()

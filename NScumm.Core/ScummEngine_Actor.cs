@@ -153,10 +153,12 @@ namespace NScumm.Core
             _keepText = false;
             if (Game.Version >= 7)
             {
-                // TODO: vs
-//                ((ScummEngine7)this).ClearSubtitleQueue();
+                ((ScummEngine7)this).ClearSubtitleQueue();
             }
-            RestoreCharsetBg();
+            else
+            {
+                RestoreCharsetBg();
+            }
         }
 
         void ShowActors()
@@ -194,7 +196,7 @@ namespace NScumm.Core
                             select actor;
         }
 
-        protected void ProcessActors()
+        protected virtual void ProcessActors()
         {
             var actors = GetOrderedActors();
             foreach (var actor in actors)

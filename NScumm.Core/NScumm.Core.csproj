@@ -238,6 +238,10 @@
     <Compile Include="IO\ICostumeLoader.cs" />
     <Compile Include="Graphics\NutRenderer.cs" />
     <Compile Include="Smush\SmushFont.cs" />
+    <Compile Include="SubtitleText.cs" />
+    <Compile Include="BlastObject.cs" />
+    <Compile Include="BlastText.cs" />
+    <Compile Include="TextObject.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="IO\Nscumm.xml">

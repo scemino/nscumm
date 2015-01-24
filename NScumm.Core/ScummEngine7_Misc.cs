@@ -413,7 +413,7 @@ namespace NScumm.Core
             RedrawVerbs();
         }
 
-        protected override void ProcessActors()
+        internal protected override void ProcessActors()
         {
             base.ProcessActors();
             akos_processQueue();

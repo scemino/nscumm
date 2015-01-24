@@ -155,8 +155,12 @@ namespace NScumm.Core
         }
 
         [OpCode(0x84)]
-        protected void PickupObject(int obj, byte room)
+        protected override void PickupObject()
         {
+            int obj;
+            int room;
+
+            PopRoomAndObj(out room, out obj);
             if (room == 0)
                 room = _roomResource;
 
@@ -170,7 +174,7 @@ namespace NScumm.Core
                 }
             }
 
-            AddObjectToInventory(obj, room);
+            AddObjectToInventory(obj, (byte)room);
             PutOwner(obj, (byte)Variables[VariableEgo.Value]);
             PutClass(obj, (int)ObjectClass.Untouchable, true);
             PutState(obj, 1);

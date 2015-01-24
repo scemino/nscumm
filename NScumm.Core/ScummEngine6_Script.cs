@@ -316,7 +316,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0xbf)]
-        protected void StartScriptQuick2(byte script, int[] args)
+        protected void StartScriptQuick2(int script, int[] args)
         {
             RunScript(script, false, true, args);
         }

@@ -32,6 +32,16 @@ namespace NScumm.Core.Smush
 {
     class SmushPlayer
     {
+        public int Width
+        {
+            get{ return _width; }
+        }
+
+        public int Height
+        {
+            get{ return _height; }
+        }
+
         public SmushPlayer(ScummEngine7 scumm)
         {
             _vm = scumm;
@@ -171,7 +181,7 @@ namespace NScumm.Core.Smush
 
         public void SeekSan(string filename, int pos, int contFrame)
         {
-            _seekFile = filename;
+            _seekFile = ScummHelper.LocatePath(Path.GetDirectoryName(_vm.Game.Path), Path.GetFileName(filename));
             _seekPos = pos;
             _seekFrame = contFrame;
             _pauseTime = 0;
@@ -180,6 +190,75 @@ namespace NScumm.Core.Smush
         public void Insanity(bool flag)
         {
             _insanity = flag;
+        }
+
+        public void SetPalette(byte[] palette)
+        {
+            for (int i = 0; i < 256; i++)
+            {
+                _pal.Colors[i] = Color.FromRgb(palette[i * 3], palette[i * 3 + 1], palette[i * 3 + 2]);
+            }
+            SetDirtyColors(0, 255);
+        }
+
+        public void SetPaletteValue(int n, byte r, byte g, byte b)
+        {
+            _pal.Colors[n] = Color.FromRgb(r, g, b);
+            SetDirtyColors(n, n);
+        }
+
+        public SmushFont GetFont(int font)
+        {
+            if (_sf[font] != null)
+                return _sf[font];
+
+            if (_vm.Game.GameId == GameId.FullThrottle)
+            {
+                if (!(_vm.Game.Features.HasFlag(GameFeatures.Demo) /*&& (_vm._game.platform == Common::kPlatformDOS)*/))
+                {
+                    var ft_fonts = new []
+                    {
+                        "scummfnt.nut",
+                        "techfnt.nut",
+                        "titlfnt.nut",
+                        "specfnt.nut"
+                    };
+
+                    Debug.Assert(font >= 0 && font < ft_fonts.Length);
+
+                    _sf[font] = new SmushFont(_vm, ft_fonts[font], true, false);
+                }
+            }
+            else if (_vm.Game.GameId == GameId.Dig)
+            {
+                if (!(_vm.Game.Features.HasFlag(GameFeatures.Demo)))
+                {
+                    Debug.Assert(font >= 0 && font < 4);
+
+                    var file_font = string.Format("font{0}.nut", font);
+                    _sf[font] = new SmushFont(_vm, file_font, font != 0, false);
+                }
+            }
+            //            else if (_vm.Game.GameId == GameId.Comi)
+            //            {
+            //                int numFonts = (_vm._game.features & GF_DEMO) ? 4 : 5;
+            //                assert(font >= 0 && font < numFonts);
+            //
+            //                sprintf(file_font, "font%d.nut", font);
+            //                _sf[font] = new SmushFont(_vm, file_font, false, true);
+            //            }
+            else
+            {
+                throw new NotSupportedException("SmushPlayer::getFont() Unknown font setup for game");
+            }
+
+            Debug.Assert(_sf[font] != null);
+            return _sf[font];
+        }
+
+        public string GetString(int id)
+        {
+            return _strings[id];
         }
 
         void Release()
@@ -592,55 +671,6 @@ namespace NScumm.Core.Smush
             }
         }
 
-        SmushFont GetFont(int font)
-        {
-            if (_sf[font] != null)
-                return _sf[font];
-
-            if (_vm.Game.GameId == GameId.FullThrottle)
-            {
-                if (!(_vm.Game.Features.HasFlag(GameFeatures.Demo) /*&& (_vm._game.platform == Common::kPlatformDOS)*/))
-                {
-                    var ft_fonts = new []
-                    {
-                        "scummfnt.nut",
-                        "techfnt.nut",
-                        "titlfnt.nut",
-                        "specfnt.nut"
-                    };
-
-                    Debug.Assert(font >= 0 && font < ft_fonts.Length);
-
-                    _sf[font] = new SmushFont(_vm, ft_fonts[font], true, false);
-                }
-            }
-            else if (_vm.Game.GameId == GameId.Dig)
-            {
-                if (!(_vm.Game.Features.HasFlag(GameFeatures.Demo)))
-                {
-                    Debug.Assert(font >= 0 && font < 4);
-
-                    var file_font = string.Format("font{0}.nut", font);
-                    _sf[font] = new SmushFont(_vm, file_font, font != 0, false);
-                }
-            }
-//            else if (_vm.Game.GameId == GameId.Comi)
-//            {
-//                int numFonts = (_vm._game.features & GF_DEMO) ? 4 : 5;
-//                assert(font >= 0 && font < numFonts);
-//
-//                sprintf(file_font, "font%d.nut", font);
-//                _sf[font] = new SmushFont(_vm, file_font, false, true);
-//            }
-            else
-            {
-                throw new NotSupportedException("SmushPlayer::getFont() Unknown font setup for game");
-            }
-
-            Debug.Assert(_sf[font] != null);
-            return _sf[font];
-        }
-
         void HandleSoundFrame(uint subSize, XorReader b)
         {
 //            Debug.WriteLine("SmushPlayer.HandleSoundFrame()");
@@ -937,10 +967,10 @@ namespace NScumm.Core.Smush
             return false;
         }
 
-        static TrsFile GetStrings(ScummEngine vm, string file, bool is_encoded)
+        TrsFile GetStrings(ScummEngine vm, string file, bool is_encoded)
         {
             Debug.WriteLine("trying to read text resources from {0}", file);
-            var filename = ScummHelper.NormalizePath(file);
+            var filename = ScummHelper.LocatePath(Path.GetDirectoryName(_vm.Game.Path), Path.GetFileName(file));
             return filename != null ? TrsFile.Load(filename) : null;
         }
 

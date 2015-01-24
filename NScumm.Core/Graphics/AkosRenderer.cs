@@ -640,6 +640,77 @@ namespace NScumm.Core.Graphics
 
         byte Codec5(int xmoveCur, int ymoveCur)
         {
+            Rect clip;
+            int maxw, maxh;
+
+            if (ActorHitMode)
+            {
+                throw new NotImplementedException("codec5: _actorHitMode not yet implemented");
+            }
+
+            if (!_mirror)
+            {
+                clip.Left = (ActorX - xmoveCur - _width) + 1;
+            }
+            else
+            {
+                clip.Left = ActorX + xmoveCur - 1;
+            }
+
+            clip.Top = ActorY + ymoveCur;
+            clip.Right = clip.Left + _width;
+            clip.Bottom = clip.Top + _height;
+            maxw = _vm.MainVirtScreen.Width;
+            maxh = _vm.MainVirtScreen.Height;
+
+            MarkRectAsDirty(clip);
+
+            clip.Clip(maxw, maxh);
+
+            if ((clip.Left >= clip.Right) || (clip.Top >= clip.Bottom))
+                return 0;
+
+            if (DrawTop > clip.Top)
+                DrawTop = clip.Top;
+            if (DrawBottom < clip.Bottom)
+                DrawBottom = clip.Bottom;
+
+            var bdd = new BompDrawData();
+
+            bdd.Dst = startNav;
+            if (!_mirror)
+            {
+                bdd.X = (ActorX - xmoveCur - _width) + 1;
+            }
+            else
+            {
+                bdd.X = ActorX + xmoveCur;
+            }
+            bdd.Y = ActorY + ymoveCur;
+
+            var src = new byte[akcd.Length - _srcptr];
+            Array.Copy(akcd, _srcptr, src, 0, src.Length);
+            bdd.Src = src;
+            bdd.Width = _width;
+            bdd.Height = _height;
+
+            bdd.ScaleX = 255;
+            bdd.ScaleY = 255;
+
+            bdd.MaskPtr = _vm.GetMaskBuffer(0, 0, ZBuffer);
+            bdd.NumStrips = _vm.Gdi.NumStrips;
+
+            bdd.ShadowMode = ShadowMode;
+            bdd.ShadowPalette = _vm.ShadowPalette;
+
+            bdd.ActorPalette = _useBompPalette ? _palette : null;
+
+            bdd.Mirror = !_mirror;
+
+            bdd.DrawBomp();
+
+            _useBompPalette = false;
+
             return 0;
         }
 
@@ -904,7 +975,7 @@ namespace NScumm.Core.Graphics
             {
                 Akos16DecodeLine(tmp_buf, tmp_pos, t_width, dir);
                 BompApplyMask(_akos16.Buffer, maskptr, maskbit, t_width, transparency);
-                ScummEngine6.BompApplyShadow(ShadowMode, ShadowTable, _akos16.Buffer, _akos16.BufferPos, dest, t_width, transparency);
+                BompDrawData.BompApplyShadow(ShadowMode, ShadowTable, _akos16.Buffer, _akos16.BufferPos, dest, t_width, transparency);
 
                 if (numskip_after != 0)
                 {

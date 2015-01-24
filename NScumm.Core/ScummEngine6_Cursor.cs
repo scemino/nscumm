@@ -125,50 +125,8 @@ namespace NScumm.Core
             var img = ob.Images[index - 1];
 
             SetCursorHotspot(ob.Hotspots[index - 1]);
-            var pixels = img.IsBomp ? DecompressBomp(img.Data, ob.Width, ob.Height) : GrabPixels(img, ob.Width, ob.Height);
+            var pixels = img.IsBomp ? BompDrawData.DecompressBomp(img.Data, ob.Width, ob.Height) : GrabPixels(img, ob.Width, ob.Height);
             SetCursorFromBuffer(pixels, ob.Width, ob.Height);
-        }
-
-        static void BompDecodeLine(BinaryReader br, byte[] dst, int dstPos, int len)
-        {
-            br.ReadUInt16();
-            while (len > 0)
-            {
-                var code = br.ReadByte();
-                var num = (code >> 1) + 1;
-                if (num > len)
-                    num = len;
-                len -= num;
-                if ((code & 1) != 0)
-                {
-                    var color = br.ReadByte();
-                    for (int i = 0; i < num; i++)
-                    {
-                        dst[dstPos + i] = color;
-                    }
-                }
-                else
-                {
-                    for (int i = 0; i < num; i++)
-                    {
-                        dst[dstPos + i] = br.ReadByte();
-                    }
-                }
-                dstPos += num;
-            }
-        }
-
-        static byte[] DecompressBomp(byte[] data, int width, int height)
-        {
-            var pixels = new byte[width * height];
-            using (var br = new BinaryReader(new MemoryStream(data)))
-            {
-                for (int h = 0; h < height; h++)
-                {
-                    BompDecodeLine(br, pixels, h * width, width);
-                }
-            }
-            return pixels;
         }
 
         byte[] GrabPixels(ImageData im, int w, int h)

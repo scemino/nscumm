@@ -79,121 +79,144 @@ namespace NScumm.Core.Insane
                         WriteArray(9, 0);
                     }
                     break;
-            // TODO: vs
-//                case 18:
-//                    queueSceneSwitch(17, _smush_minedrivFlu, "minedriv.san", 64, 0, _continueFrame1, 1300);
-//                    writeArray(9, 1);
-//                    break;
-//                case 2:
-//                    flu = &_fluConf[14 + _iactSceneId2];
-//                    if ((_vm._game.features & GF_DEMO) && (_vm._game.platform == Common::kPlatformDOS))
-//                        queueSceneSwitch(4, 0, "tovista.san", 64, 0, 0, 0);
-//                    else
-//                        queueSceneSwitch(flu.sceneId, *flu.fluPtr, flu.filenamePtr, 64, 0,
-//                            flu.startFrame, flu.numFrames);
-//                    break;
-//                case 3:
-//                    queueSceneSwitch(1, _smush_minedrivFlu, "minedriv.san", 64, 0, _continueFrame, 1300);
-//                    break;
-//                case 4:
-//                    if (_needSceneSwitch)
-//                        return;
-//
-//                    if (readArray(6)) {
-//                        if (readArray(4)) {
-//                            queueSceneSwitch(14, 0, "hitdust2.san", 64, 0, 0, 0);
-//                        } else {
-//                            queueSceneSwitch(14, 0, "hitdust4.san", 64, 0, 0, 0);
-//                        }
-//                    } else {
-//                        if (readArray(4)) {
-//                            queueSceneSwitch(14, 0, "hitdust1.san", 64, 0, 0, 0);
-//                        } else {
-//                            queueSceneSwitch(14, 0, "hitdust3.san", 64, 0, 0, 0);
-//                        }
-//                    }
-//                    break;
-//                case 5:
-//                    if (readArray(4)) {
-//                        if (_needSceneSwitch)
-//                            return;
-//                        queueSceneSwitch(15, 0, "vistthru.san", 64, 0, 0, 0);
-//                    } else {
-//                        writeArray(1, _posVista);
-//                        smush_setToFinish();
-//                    }
-//                    break;
-//                case 6:
-//                    if (readArray(4)) {
-//                        if (_needSceneSwitch)
-//                            return;
-//                        queueSceneSwitch(15, 0, "chasthru.san", 64, 0, 0, 0);
-//                    } else {
-//                        if (readArray(5)) {
-//                            writeArray(1, _val57d);
-//                            smush_setToFinish();
-//                        } else {
-//                            writeArray(4, 1);
-//                            queueSceneSwitch(15, 0, "chasout.san", 64, 0, 0, 0);
-//                        }
-//                    }
-//                    break;
-//                case 8:
-//                    flu = &_fluConf[7 + _iactSceneId2];
-//                    if ((_vm._game.features & GF_DEMO) && (_vm._game.platform == Common::kPlatformDOS))
-//                        queueSceneSwitch(1, 0, "minedriv.san", 64, 0, 0, 0);
-//                    else
-//                        queueSceneSwitch(flu.sceneId, *flu.fluPtr, flu.filenamePtr, 64, 0,
-//                            flu.startFrame, flu.numFrames);
-//                    break;
-//                case 7:
-//                    flu = &_fluConf[0 + _iactSceneId2];
-//                    if ((_vm._game.features & GF_DEMO) && (_vm._game.platform == Common::kPlatformDOS))
-//                        queueSceneSwitch(1, 0, "minedriv.san", 64, 0, 0, 0);
-//                    else
-//                        queueSceneSwitch(flu.sceneId, *flu.fluPtr, flu.filenamePtr, 64, 0,
-//                            flu.startFrame, flu.numFrames);
-//                    break;
-//                case 23:
-//                    _actor[0].damage = 0;
-//                    queueSceneSwitch(21, 0, "rottfite.san", 64, 0, 0, 0);
-//                    break;
-//                case 9:
-//                    _actor[0].damage = 0;
-//                    queueSceneSwitch(1, _smush_minedrivFlu, "minedriv.san", 64, 0, _continueFrame, 1300);
-//                    break;
-//                case 10:
-//                    _actor[0].damage = 0;
-//                    queueSceneSwitch(1, _smush_minedrivFlu, "minedriv.san", 64, 0, _continueFrame1, 1300);
-//                    break;
-//                case 13:
-//                    if ((_vm._game.features & GF_DEMO) && (_vm._game.platform == Common::kPlatformDOS))
-//                        queueSceneSwitch(1, 0, "minedriv.san", 64, 0, 0, 0);
-//                    else
-//                        queueSceneSwitch(1, _smush_minedrivFlu, "minedriv.san", 64, 0, _continueFrame, 1300);
-//                    break;
-//                case 24:
-//                    queueSceneSwitch(21, 0, "rottfite.san", 64, 0, 0, 0);
-//                    break;
-//                case 16:
-//                    writeArray(4, 0);
-//                    writeArray(5, 1);
-//                    writeArray(1, _posBrokenCar);
-//                    writeArray(3, _posBrokenTruck);
-//                    smush_setToFinish();
-//                    break;
-//                case 15:
-//                    switch (_tempSceneId) {
-//                        case 5:
-//                            queueSceneSwitch(6, 0, "toranch.san", 64, 0, 0, 530);
-//                            break;
-//                        case 6:
-//                            queueSceneSwitch(4, 0, "tovista1.san", 64, 0, 0, 230);
-//                            break;
-//                        default:
-//                            break;
-//                    }
-//                    break;
+                case 18:
+                    QueueSceneSwitch(17, _smush_minedrivFlu, "minedriv.san", 64, 0, _continueFrame1, 1300);
+                    WriteArray(9, 1);
+                    break;
+                case 2:
+                    {
+                        var flu = _fluConf[14 + _iactSceneId2];
+                        if ((_vm.Game.Features.HasFlag(GameFeatures.Demo)) /*&& (_vm._game.platform == Common::kPlatformDOS)*/)
+                            QueueSceneSwitch(4, null, "tovista.san", 64, 0, 0, 0);
+                        else
+                            QueueSceneSwitch(flu.sceneId, flu.fluPtr, flu.filename, 64, 0, flu.startFrame, flu.numFrames);
+                    }
+                    break;
+                case 3:
+                    QueueSceneSwitch(1, _smush_minedrivFlu, "minedriv.san", 64, 0, _continueFrame, 1300);
+                    break;
+                case 4:
+                    if (_needSceneSwitch)
+                        return;
+
+                    if (ReadArray(6) != 0)
+                    {
+                        if (ReadArray(4) != 0)
+                        {
+                            QueueSceneSwitch(14, null, "hitdust2.san", 64, 0, 0, 0);
+                        }
+                        else
+                        {
+                            QueueSceneSwitch(14, null, "hitdust4.san", 64, 0, 0, 0);
+                        }
+                    }
+                    else
+                    {
+                        if (ReadArray(4) != 0)
+                        {
+                            QueueSceneSwitch(14, null, "hitdust1.san", 64, 0, 0, 0);
+                        }
+                        else
+                        {
+                            QueueSceneSwitch(14, null, "hitdust3.san", 64, 0, 0, 0);
+                        }
+                    }
+                    break;
+                case 5:
+                    if (ReadArray(4) != 0)
+                    {
+                        if (_needSceneSwitch)
+                            return;
+                        QueueSceneSwitch(15, null, "vistthru.san", 64, 0, 0, 0);
+                    }
+                    else
+                    {
+                        WriteArray(1, _posVista);
+                        smush_setToFinish();
+                    }
+                    break;
+                case 6:
+                    if (ReadArray(4) != 0)
+                    {
+                        if (_needSceneSwitch)
+                            return;
+                        QueueSceneSwitch(15, null, "chasthru.san", 64, 0, 0, 0);
+                    }
+                    else
+                    {
+                        if (ReadArray(5) != 0)
+                        {
+                            WriteArray(1, _val57d);
+                            smush_setToFinish();
+                        }
+                        else
+                        {
+                            WriteArray(4, 1);
+                            QueueSceneSwitch(15, null, "chasout.san", 64, 0, 0, 0);
+                        }
+                    }
+                    break;
+                case 8:
+                    {
+                        var flu = _fluConf[7 + _iactSceneId2];
+                        if ((_vm.Game.Features.HasFlag(GameFeatures.Demo)) /*&& (_vm._game.platform == Common::kPlatformDOS)*/)
+                            QueueSceneSwitch(1, null, "minedriv.san", 64, 0, 0, 0);
+                        else
+                            QueueSceneSwitch(flu.sceneId, flu.fluPtr, flu.filename, 64, 0,
+                                flu.startFrame, flu.numFrames);
+                    }
+                    break;
+                case 7:
+                    {
+                        var flu = _fluConf[0 + _iactSceneId2];
+                        if ((_vm.Game.Features.HasFlag(GameFeatures.Demo)) /*&& (_vm._game.platform == Common::kPlatformDOS)*/)
+                            QueueSceneSwitch(1, null, "minedriv.san", 64, 0, 0, 0);
+                        else
+                            QueueSceneSwitch(flu.sceneId, flu.fluPtr, flu.filename, 64, 0,
+                                flu.startFrame, flu.numFrames);
+                    }
+                    break;
+                case 23:
+                    _actor[0].damage = 0;
+                    QueueSceneSwitch(21, null, "rottfite.san", 64, 0, 0, 0);
+                    break;
+                case 9:
+                    _actor[0].damage = 0;
+                    QueueSceneSwitch(1, _smush_minedrivFlu, "minedriv.san", 64, 0, _continueFrame, 1300);
+                    break;
+                case 10:
+                    _actor[0].damage = 0;
+                    QueueSceneSwitch(1, _smush_minedrivFlu, "minedriv.san", 64, 0, _continueFrame1, 1300);
+                    break;
+                case 13:
+                    if ((_vm.Game.Features.HasFlag(GameFeatures.Demo)) /*&& (_vm._game.platform == Common::kPlatformDOS)*/)
+                        QueueSceneSwitch(1, null, "minedriv.san", 64, 0, 0, 0);
+                    else
+                        QueueSceneSwitch(1, _smush_minedrivFlu, "minedriv.san", 64, 0, _continueFrame, 1300);
+                    break;
+                case 24:
+                    QueueSceneSwitch(21, null, "rottfite.san", 64, 0, 0, 0);
+                    break;
+                case 16:
+                    WriteArray(4, 0);
+                    WriteArray(5, 1);
+                    WriteArray(1, _posBrokenCar);
+                    WriteArray(3, _posBrokenTruck);
+                    smush_setToFinish();
+                    break;
+                case 15:
+                    switch (_tempSceneId)
+                    {
+                        case 5:
+                            QueueSceneSwitch(6, null, "toranch.san", 64, 0, 0, 530);
+                            break;
+                        case 6:
+                            QueueSceneSwitch(4, null, "tovista1.san", 64, 0, 0, 230);
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
                 default:
                     break;
             }
@@ -287,106 +310,106 @@ namespace NScumm.Core.Insane
             init_fluConfStruct(19, 6, _smush_toranchFlu, "toranch.san", 115, 530);
             init_fluConfStruct(20, 6, _smush_toranchFlu, "toranch.san", 115, 530);
 
-            init_scenePropStruct(  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 1);
-            init_scenePropStruct(  1,  0, 1, 128, 2001, 0, 0, 0, 0, 56, 2);
-            init_scenePropStruct(  2,  0, 0, 125, 1002, 0, 0, 0, 0, 35, 3);
-            init_scenePropStruct(  3,  0, 1, 129, 2002, 0, 0, 0, 0, 23, 4);
-            init_scenePropStruct(  4,  0, 1, 130, 2003, 0, 0, 0, 0, 40, 5);
-            init_scenePropStruct(  5,  0, 0, 126, 1005, 0, 0, 0, 0, 46, 6);
-            init_scenePropStruct(  6,  0, 1, 131, 2004, 0, 0, 0, 0, 39, 7);
-            init_scenePropStruct(  7,  0, 1, 132, 2005, 0, 0, 0, 0, 45, 8);
-            init_scenePropStruct(  8,  0, 1, 133, 2006, 0, 0, 0, 0, 14, 9);
-            init_scenePropStruct(  9,  0, 0, 127, 1009, 0, 0, 0, 0, 15, 10);
-            init_scenePropStruct( 10,  0, 1, 134, 501, 0, 0, 0, 0, 25, 11);
-            init_scenePropStruct( 11,  0, 1, 135, 502, 0, 0, 0, 0, 15, 0);
-            init_scenePropStruct( 12,  1, -1, 0, 0, 0xFF, 0xFF, 0xFF, 0, 0, 1);
-            init_scenePropStruct( 13,  1, 0, 291, 135, 0xFF, 0xFF, 0xFF, 0, 25, 0);
-            init_scenePropStruct( 14,  2, -1, 0, 0, 0xFC, 0, 0xFC, 0, 0, 1);
-            init_scenePropStruct( 15,  2, 1, 277, 17, 0xFC, 0, 0xFC, 0, 56, 2);
-            init_scenePropStruct( 16,  2, 0, 288, 18, 0xFF, 0xFF, 0xFF, 0, 56, 3);
-            init_scenePropStruct( 17,  2, 1, 278, 19, 0xFC, 0, 0xFC, 0, 56, 0);
-            init_scenePropStruct( 18,  3, -1, 0, 0, 0xFC, 0, 0xFC, 0, 0, 1);
-            init_scenePropStruct( 19,  3, 1, 282, 23, 0xFC, 0, 0xFC, 0, 56, 0);
-            init_scenePropStruct( 20,  4, -1, 0, 0, 0xFC, 0, 0xFC, 0, 0, 1);
-            init_scenePropStruct( 21,  4, 1, 283, 24, 0xFC, 0, 0xFC, 0, 56, 0);
-            init_scenePropStruct( 22,  5, -1, 0, 0, 0xFC, 0, 0xFC, 0, 0, 1);
-            init_scenePropStruct( 23,  5, 1, 284, 25, 0xFC, 0, 0xFC, 0, 56, 0);
-            init_scenePropStruct( 24,  6, -1, 0, 0, 0xFC, 0, 0xFC, 0, 0, 1);
-            init_scenePropStruct( 25,  6, 1, 285, 26, 0xFC, 0, 0xFC, 0, 56, 0);
-            init_scenePropStruct( 26,  7, -1, 0, 0, 0xFC, 0, 0xFC, 0, 0, 1);
-            init_scenePropStruct( 27,  7, 1, 286, 27, 0xFC, 0, 0xFC, 0, 56, 0);
-            init_scenePropStruct( 28,  8, -1, 0, 0, 0xFC, 0, 0xFC, 0, 0, 1);
-            init_scenePropStruct( 29,  8, 1, 287, 28, 0xFC, 0, 0xFC, 0, 56, 0);
-            init_scenePropStruct( 30,  9, -1, 0, 0, 0xFC, 0, 0, 0, 0, 1);
-            init_scenePropStruct( 31,  9, 1, 261, 1, 0xFC, 0, 0, 0, 40, 2);
-            init_scenePropStruct( 32,  9, 1, 262, 2, 0xFC, 0, 0, 0, 40, 3);
-            init_scenePropStruct( 33,  9, 1, 263, 3, 0xFC, 0, 0, 0, 40, 0);
-            init_scenePropStruct( 34, 10, -1, 0, 0, 0xFC, 0, 0, 0, 0, 1);
-            init_scenePropStruct( 35, 10, 1, 263, 3, 0xFC, 0, 0, 0, 30, 0);
-            init_scenePropStruct( 36, 11, -1, 0, 0, 0xFC, 0, 0, 0, 0, 1);
-            init_scenePropStruct( 37, 11, 1, 264, 4, 0xFC, 0, 0, 0, 30, 0);
-            init_scenePropStruct( 38, 12, -1, 0, 0, 0xFC, 0, 0, 0, 0, 1);
-            init_scenePropStruct( 39, 12, 1, 265, 5, 0xFC, 0, 0, 0, 30, 0);
-            init_scenePropStruct( 40, 13, -1, 0, 0, 0xFC, 0, 0, 0, 0, 1);
-            init_scenePropStruct( 41, 13, 1, 266, 6, 0xFC, 0, 0, 0, 30, 0);
-            init_scenePropStruct( 42, 14, -1, 0, 0, 0xFC, 0, 0, 0, 0, 1);
-            init_scenePropStruct( 43, 14, 1, 267, 7, 0xFC, 0, 0, 0, 30, 0);
-            init_scenePropStruct( 44, 15, -1, 0, 0, 0xFC, 0, 0, 0, 0, 1);
-            init_scenePropStruct( 45, 15, 1, 268, 8, 0xFC, 0, 0, 0, 30, 0);
-            init_scenePropStruct( 46, 16, -1, 0, 0, 0xFC, 0, 0, 0, 0, 1);
-            init_scenePropStruct( 47, 16, 1, 274, 14, 0xFC, 0, 0, 0, 30, 0);
-            init_scenePropStruct( 48, 17, -1, 0, 0, 0xFC, 0, 0, 0, 0, 1);
-            init_scenePropStruct( 49, 17, 1, 270, 10, 0xFC, 0, 0, 0, 30, 0);
-            init_scenePropStruct( 50, 18, -1, 0, 0, 0xFC, 0xFC, 0x54, 0, 0, 1);
-            init_scenePropStruct( 51, 18, 0, 289, 45, 0xFF, 0xFF, 0xFF, 0, 40, 2);
-            init_scenePropStruct( 52, 18, 1, 177, 49, 0xFC, 0xFC, 0x54, 0, 40, 3);
-            init_scenePropStruct( 53, 18, 1, 178, 50, 0xFC, 0xFC, 0x54, 0, 40, 4);
-            init_scenePropStruct( 54, 18, 0, 290, 47, 0xFF, 0xFF, 0xFF, 0, 40, 0);
-            init_scenePropStruct( 55, 19, -1, 0, 0, 0xFC, 0xFC, 0x54, 0, 0, 1);
-            init_scenePropStruct( 56, 19, 1, 179, 51, 0xFC, 0xFC, 0x54, 0, 40, 0);
-            init_scenePropStruct( 57, 20, -1, 0, 0, 0xFC, 0xFC, 0x54, 0, 0, 1);
-            init_scenePropStruct( 58, 20, 1, 183, 55, 0xFC, 0xFC, 0x54, 0, 40, 0);
-            init_scenePropStruct( 59, 21, -1, 0, 0, 0xFC, 0xFC, 0x54, 0, 0, 1);
-            init_scenePropStruct( 60, 21, 1, 184, 56, 0xFC, 0xFC, 0x54, 0, 40, 0);
-            init_scenePropStruct( 61, 22, -1, 0, 0, 0xFC, 0xFC, 0x54, 0, 0, 1);
-            init_scenePropStruct( 62, 22, 1, 186, 58, 0xFC, 0xFC, 0x54, 0, 40, 0);
-            init_scenePropStruct( 63, 23, -1, 0, 0, 0xFC, 0xFC, 0x54, 0, 0, 1);
-            init_scenePropStruct( 64, 23, 1, 191, 63, 0xFC, 0xFC, 0x54, 0, 40, 0);
-            init_scenePropStruct( 65, 24, -1, 0, 0, 0xFC, 0xFC, 0x54, 0, 0, 1);
-            init_scenePropStruct( 66, 24, 1, 192, 64, 0xFC, 0xFC, 0x54, 0, 40, 0);
-            init_scenePropStruct( 67, 25, -1, 0, 0, 0xBC, 0x78, 0x48, 0, 0, 1);
-            init_scenePropStruct( 68, 25, 1, 220, 93, 0xBC, 0x78, 0x48, 0, 40, 2);
-            init_scenePropStruct( 69, 25, 1, 221, 94, 0xBC, 0x78, 0x48, 0, 40, 3);
-            init_scenePropStruct( 70, 25, 1, 222, 95, 0xBC, 0x78, 0x48, 0, 40, 0);
-            init_scenePropStruct( 71, 26, -1, 0, 0, 0xBC, 0x78, 0x48, 0, 0, 1);
-            init_scenePropStruct( 72, 26, 1, 223, 96, 0xBC, 0x78, 0x48, 0, 40, 0);
-            init_scenePropStruct( 73, 27, -1, 0, 0, 0xBC, 0x78, 0x48, 0, 0, 1);
-            init_scenePropStruct( 74, 27, 1, 224, 97, 0xBC, 0x78, 0x48, 0, 40, 0);
-            init_scenePropStruct( 75, 28, -1, 0, 0, 0xBC, 0x78, 0x48, 0, 0, 1);
-            init_scenePropStruct( 76, 28, 1, 225, 98, 0xBC, 0x78, 0x48, 0, 40, 0);
-            init_scenePropStruct( 77, 29, -1, 0, 0, 0xBC, 0x78, 0x48, 0, 0, 1);
-            init_scenePropStruct( 78, 29, 1, 226, 99, 0xBC, 0x78, 0x48, 0, 40, 0);
-            init_scenePropStruct( 79, 30, -1, 0, 0, 0xBC, 0x78, 0x48, 0, 0, 1);
-            init_scenePropStruct( 80, 30, 1, 228, 101, 0xBC, 0x78, 0x48, 0, 40, 0);
-            init_scenePropStruct( 81, 31, -1, 0, 0, 0xBC, 0x78, 0x48, 0, 0, 1);
-            init_scenePropStruct( 82, 31, 1, 229, 102, 0xBC, 0x78, 0x48, 0, 40, 0);
-            init_scenePropStruct( 83, 32, -1, 0, 0, 0xA8, 0xA8, 0xA8, 0, 0, 1);
-            init_scenePropStruct( 84, 32, 1, 233, 106, 0xA8, 0xA8, 0xA8, 0, 40, 2);
-            init_scenePropStruct( 85, 32, 1, 234, 107, 0xA8, 0xA8, 0xA8, 0, 40, 0);
-            init_scenePropStruct( 86, 33, -1, 0, 0, 0xA8, 0xA8, 0xA8, 0, 0, 1);
-            init_scenePropStruct( 87, 33, 1, 241, 114, 0xA8, 0xA8, 0xA8, 0, 40, 2);
-            init_scenePropStruct( 88, 33, 1, 242, 115, 0xA8, 0xA8, 0xA8, 0, 40, 0);
-            init_scenePropStruct( 89, 34, -1, 0, 0, 0xA8, 0xA8, 0xA8, 0, 0, 1);
-            init_scenePropStruct( 90, 34, 1, 237, 110, 0xA8, 0xA8, 0xA8, 0, 40, 2);
-            init_scenePropStruct( 91, 34, 1, 238, 111, 0xA8, 0xA8, 0xA8, 0, 40, 3);
-            init_scenePropStruct( 92, 34, 1, 239, 112, 0xA8, 0xA8, 0xA8, 0, 40, 0);
-            init_scenePropStruct( 93, 35, -1, 0, 0, 0xA8, 0xA8, 0xA8, 0, 0, 1);
-            init_scenePropStruct( 94, 35, 1, 258, 131, 0xA8, 0xA8, 0xA8, 0, 40, 0);
-            init_scenePropStruct( 95, 36, -1, 0, 0, 0xA8, 0xA8, 0xA8, 0, 0, 1);
-            init_scenePropStruct( 96, 36, 1, 260, 133, 0xA8, 0xA8, 0xA8, 0, 40, 0);
-            init_scenePropStruct( 97, 37, -1, 0, 0, 0xA8, 0xA8, 0xA8, 0, 0, 1);
-            init_scenePropStruct( 98, 37, 1, 252, 125, 0xA8, 0xA8, 0xA8, 0, 40, 0);
-            init_scenePropStruct( 99, 38, -1, 0, 0, 0xA8, 0xA8, 0xA8, 0, 0, 1);
+            init_scenePropStruct(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1);
+            init_scenePropStruct(1, 0, 1, 128, 2001, 0, 0, 0, 0, 56, 2);
+            init_scenePropStruct(2, 0, 0, 125, 1002, 0, 0, 0, 0, 35, 3);
+            init_scenePropStruct(3, 0, 1, 129, 2002, 0, 0, 0, 0, 23, 4);
+            init_scenePropStruct(4, 0, 1, 130, 2003, 0, 0, 0, 0, 40, 5);
+            init_scenePropStruct(5, 0, 0, 126, 1005, 0, 0, 0, 0, 46, 6);
+            init_scenePropStruct(6, 0, 1, 131, 2004, 0, 0, 0, 0, 39, 7);
+            init_scenePropStruct(7, 0, 1, 132, 2005, 0, 0, 0, 0, 45, 8);
+            init_scenePropStruct(8, 0, 1, 133, 2006, 0, 0, 0, 0, 14, 9);
+            init_scenePropStruct(9, 0, 0, 127, 1009, 0, 0, 0, 0, 15, 10);
+            init_scenePropStruct(10, 0, 1, 134, 501, 0, 0, 0, 0, 25, 11);
+            init_scenePropStruct(11, 0, 1, 135, 502, 0, 0, 0, 0, 15, 0);
+            init_scenePropStruct(12, 1, -1, 0, 0, 0xFF, 0xFF, 0xFF, 0, 0, 1);
+            init_scenePropStruct(13, 1, 0, 291, 135, 0xFF, 0xFF, 0xFF, 0, 25, 0);
+            init_scenePropStruct(14, 2, -1, 0, 0, 0xFC, 0, 0xFC, 0, 0, 1);
+            init_scenePropStruct(15, 2, 1, 277, 17, 0xFC, 0, 0xFC, 0, 56, 2);
+            init_scenePropStruct(16, 2, 0, 288, 18, 0xFF, 0xFF, 0xFF, 0, 56, 3);
+            init_scenePropStruct(17, 2, 1, 278, 19, 0xFC, 0, 0xFC, 0, 56, 0);
+            init_scenePropStruct(18, 3, -1, 0, 0, 0xFC, 0, 0xFC, 0, 0, 1);
+            init_scenePropStruct(19, 3, 1, 282, 23, 0xFC, 0, 0xFC, 0, 56, 0);
+            init_scenePropStruct(20, 4, -1, 0, 0, 0xFC, 0, 0xFC, 0, 0, 1);
+            init_scenePropStruct(21, 4, 1, 283, 24, 0xFC, 0, 0xFC, 0, 56, 0);
+            init_scenePropStruct(22, 5, -1, 0, 0, 0xFC, 0, 0xFC, 0, 0, 1);
+            init_scenePropStruct(23, 5, 1, 284, 25, 0xFC, 0, 0xFC, 0, 56, 0);
+            init_scenePropStruct(24, 6, -1, 0, 0, 0xFC, 0, 0xFC, 0, 0, 1);
+            init_scenePropStruct(25, 6, 1, 285, 26, 0xFC, 0, 0xFC, 0, 56, 0);
+            init_scenePropStruct(26, 7, -1, 0, 0, 0xFC, 0, 0xFC, 0, 0, 1);
+            init_scenePropStruct(27, 7, 1, 286, 27, 0xFC, 0, 0xFC, 0, 56, 0);
+            init_scenePropStruct(28, 8, -1, 0, 0, 0xFC, 0, 0xFC, 0, 0, 1);
+            init_scenePropStruct(29, 8, 1, 287, 28, 0xFC, 0, 0xFC, 0, 56, 0);
+            init_scenePropStruct(30, 9, -1, 0, 0, 0xFC, 0, 0, 0, 0, 1);
+            init_scenePropStruct(31, 9, 1, 261, 1, 0xFC, 0, 0, 0, 40, 2);
+            init_scenePropStruct(32, 9, 1, 262, 2, 0xFC, 0, 0, 0, 40, 3);
+            init_scenePropStruct(33, 9, 1, 263, 3, 0xFC, 0, 0, 0, 40, 0);
+            init_scenePropStruct(34, 10, -1, 0, 0, 0xFC, 0, 0, 0, 0, 1);
+            init_scenePropStruct(35, 10, 1, 263, 3, 0xFC, 0, 0, 0, 30, 0);
+            init_scenePropStruct(36, 11, -1, 0, 0, 0xFC, 0, 0, 0, 0, 1);
+            init_scenePropStruct(37, 11, 1, 264, 4, 0xFC, 0, 0, 0, 30, 0);
+            init_scenePropStruct(38, 12, -1, 0, 0, 0xFC, 0, 0, 0, 0, 1);
+            init_scenePropStruct(39, 12, 1, 265, 5, 0xFC, 0, 0, 0, 30, 0);
+            init_scenePropStruct(40, 13, -1, 0, 0, 0xFC, 0, 0, 0, 0, 1);
+            init_scenePropStruct(41, 13, 1, 266, 6, 0xFC, 0, 0, 0, 30, 0);
+            init_scenePropStruct(42, 14, -1, 0, 0, 0xFC, 0, 0, 0, 0, 1);
+            init_scenePropStruct(43, 14, 1, 267, 7, 0xFC, 0, 0, 0, 30, 0);
+            init_scenePropStruct(44, 15, -1, 0, 0, 0xFC, 0, 0, 0, 0, 1);
+            init_scenePropStruct(45, 15, 1, 268, 8, 0xFC, 0, 0, 0, 30, 0);
+            init_scenePropStruct(46, 16, -1, 0, 0, 0xFC, 0, 0, 0, 0, 1);
+            init_scenePropStruct(47, 16, 1, 274, 14, 0xFC, 0, 0, 0, 30, 0);
+            init_scenePropStruct(48, 17, -1, 0, 0, 0xFC, 0, 0, 0, 0, 1);
+            init_scenePropStruct(49, 17, 1, 270, 10, 0xFC, 0, 0, 0, 30, 0);
+            init_scenePropStruct(50, 18, -1, 0, 0, 0xFC, 0xFC, 0x54, 0, 0, 1);
+            init_scenePropStruct(51, 18, 0, 289, 45, 0xFF, 0xFF, 0xFF, 0, 40, 2);
+            init_scenePropStruct(52, 18, 1, 177, 49, 0xFC, 0xFC, 0x54, 0, 40, 3);
+            init_scenePropStruct(53, 18, 1, 178, 50, 0xFC, 0xFC, 0x54, 0, 40, 4);
+            init_scenePropStruct(54, 18, 0, 290, 47, 0xFF, 0xFF, 0xFF, 0, 40, 0);
+            init_scenePropStruct(55, 19, -1, 0, 0, 0xFC, 0xFC, 0x54, 0, 0, 1);
+            init_scenePropStruct(56, 19, 1, 179, 51, 0xFC, 0xFC, 0x54, 0, 40, 0);
+            init_scenePropStruct(57, 20, -1, 0, 0, 0xFC, 0xFC, 0x54, 0, 0, 1);
+            init_scenePropStruct(58, 20, 1, 183, 55, 0xFC, 0xFC, 0x54, 0, 40, 0);
+            init_scenePropStruct(59, 21, -1, 0, 0, 0xFC, 0xFC, 0x54, 0, 0, 1);
+            init_scenePropStruct(60, 21, 1, 184, 56, 0xFC, 0xFC, 0x54, 0, 40, 0);
+            init_scenePropStruct(61, 22, -1, 0, 0, 0xFC, 0xFC, 0x54, 0, 0, 1);
+            init_scenePropStruct(62, 22, 1, 186, 58, 0xFC, 0xFC, 0x54, 0, 40, 0);
+            init_scenePropStruct(63, 23, -1, 0, 0, 0xFC, 0xFC, 0x54, 0, 0, 1);
+            init_scenePropStruct(64, 23, 1, 191, 63, 0xFC, 0xFC, 0x54, 0, 40, 0);
+            init_scenePropStruct(65, 24, -1, 0, 0, 0xFC, 0xFC, 0x54, 0, 0, 1);
+            init_scenePropStruct(66, 24, 1, 192, 64, 0xFC, 0xFC, 0x54, 0, 40, 0);
+            init_scenePropStruct(67, 25, -1, 0, 0, 0xBC, 0x78, 0x48, 0, 0, 1);
+            init_scenePropStruct(68, 25, 1, 220, 93, 0xBC, 0x78, 0x48, 0, 40, 2);
+            init_scenePropStruct(69, 25, 1, 221, 94, 0xBC, 0x78, 0x48, 0, 40, 3);
+            init_scenePropStruct(70, 25, 1, 222, 95, 0xBC, 0x78, 0x48, 0, 40, 0);
+            init_scenePropStruct(71, 26, -1, 0, 0, 0xBC, 0x78, 0x48, 0, 0, 1);
+            init_scenePropStruct(72, 26, 1, 223, 96, 0xBC, 0x78, 0x48, 0, 40, 0);
+            init_scenePropStruct(73, 27, -1, 0, 0, 0xBC, 0x78, 0x48, 0, 0, 1);
+            init_scenePropStruct(74, 27, 1, 224, 97, 0xBC, 0x78, 0x48, 0, 40, 0);
+            init_scenePropStruct(75, 28, -1, 0, 0, 0xBC, 0x78, 0x48, 0, 0, 1);
+            init_scenePropStruct(76, 28, 1, 225, 98, 0xBC, 0x78, 0x48, 0, 40, 0);
+            init_scenePropStruct(77, 29, -1, 0, 0, 0xBC, 0x78, 0x48, 0, 0, 1);
+            init_scenePropStruct(78, 29, 1, 226, 99, 0xBC, 0x78, 0x48, 0, 40, 0);
+            init_scenePropStruct(79, 30, -1, 0, 0, 0xBC, 0x78, 0x48, 0, 0, 1);
+            init_scenePropStruct(80, 30, 1, 228, 101, 0xBC, 0x78, 0x48, 0, 40, 0);
+            init_scenePropStruct(81, 31, -1, 0, 0, 0xBC, 0x78, 0x48, 0, 0, 1);
+            init_scenePropStruct(82, 31, 1, 229, 102, 0xBC, 0x78, 0x48, 0, 40, 0);
+            init_scenePropStruct(83, 32, -1, 0, 0, 0xA8, 0xA8, 0xA8, 0, 0, 1);
+            init_scenePropStruct(84, 32, 1, 233, 106, 0xA8, 0xA8, 0xA8, 0, 40, 2);
+            init_scenePropStruct(85, 32, 1, 234, 107, 0xA8, 0xA8, 0xA8, 0, 40, 0);
+            init_scenePropStruct(86, 33, -1, 0, 0, 0xA8, 0xA8, 0xA8, 0, 0, 1);
+            init_scenePropStruct(87, 33, 1, 241, 114, 0xA8, 0xA8, 0xA8, 0, 40, 2);
+            init_scenePropStruct(88, 33, 1, 242, 115, 0xA8, 0xA8, 0xA8, 0, 40, 0);
+            init_scenePropStruct(89, 34, -1, 0, 0, 0xA8, 0xA8, 0xA8, 0, 0, 1);
+            init_scenePropStruct(90, 34, 1, 237, 110, 0xA8, 0xA8, 0xA8, 0, 40, 2);
+            init_scenePropStruct(91, 34, 1, 238, 111, 0xA8, 0xA8, 0xA8, 0, 40, 3);
+            init_scenePropStruct(92, 34, 1, 239, 112, 0xA8, 0xA8, 0xA8, 0, 40, 0);
+            init_scenePropStruct(93, 35, -1, 0, 0, 0xA8, 0xA8, 0xA8, 0, 0, 1);
+            init_scenePropStruct(94, 35, 1, 258, 131, 0xA8, 0xA8, 0xA8, 0, 40, 0);
+            init_scenePropStruct(95, 36, -1, 0, 0, 0xA8, 0xA8, 0xA8, 0, 0, 1);
+            init_scenePropStruct(96, 36, 1, 260, 133, 0xA8, 0xA8, 0xA8, 0, 40, 0);
+            init_scenePropStruct(97, 37, -1, 0, 0, 0xA8, 0xA8, 0xA8, 0, 0, 1);
+            init_scenePropStruct(98, 37, 1, 252, 125, 0xA8, 0xA8, 0xA8, 0, 40, 0);
+            init_scenePropStruct(99, 38, -1, 0, 0, 0xA8, 0xA8, 0xA8, 0, 0, 1);
             init_scenePropStruct(100, 38, 1, 254, 127, 0xA8, 0xA8, 0xA8, 0, 40, 0);
             init_scenePropStruct(101, 39, -1, 0, 0, 0xA8, 0xA8, 0xA8, 0, 0, 1);
             init_scenePropStruct(102, 39, 1, 236, 109, 0xA8, 0xA8, 0xA8, 0, 40, 0);
@@ -530,7 +553,7 @@ namespace NScumm.Core.Insane
                 _needSceneSwitch = false;
                 LoadSceneData(_temp2SceneId, 0, 1);
 
-                if (LoadSceneData(_temp2SceneId, 0, 2) != 0)
+                if (LoadSceneData(_temp2SceneId, 0, 2))
                 {
                     SetSceneCostumes(_temp2SceneId);
                     _sceneData2Loaded = 0;
@@ -552,13 +575,12 @@ namespace NScumm.Core.Insane
 
         void PutActors()
         {
-            // TODO: vs
-//            smlayer_putActor(0, 2, _actor[0].x, _actor[0].y1, _smlayer_room);
-//            smlayer_putActor(0, 0, _actor[0].x, _actor[0].y1, _smlayer_room);
-//            smlayer_putActor(0, 1, _actor[0].x, _actor[0].y1, _smlayer_room);
-//            smlayer_putActor(1, 2, _actor[0].x, _actor[0].y1, _smlayer_room);
-//            smlayer_putActor(1, 0, _actor[0].x, _actor[0].y1, _smlayer_room);
-//            smlayer_putActor(1, 1, _actor[0].x, _actor[0].y1, _smlayer_room);
+            smlayer_putActor(0, 2, _actor[0].x, _actor[0].y1, (byte)_smlayer_room);
+            smlayer_putActor(0, 0, _actor[0].x, _actor[0].y1, (byte)_smlayer_room);
+            smlayer_putActor(0, 1, _actor[0].x, _actor[0].y1, (byte)_smlayer_room);
+            smlayer_putActor(1, 2, _actor[0].x, _actor[0].y1, (byte)_smlayer_room);
+            smlayer_putActor(1, 0, _actor[0].x, _actor[0].y1, (byte)_smlayer_room);
+            smlayer_putActor(1, 1, _actor[0].x, _actor[0].y1, (byte)_smlayer_room);
         }
 
         void QueueSceneSwitch(int sceneId, byte[] fluPtr, string filename,
@@ -595,6 +617,332 @@ namespace NScumm.Core.Insane
         void WriteArray(int item, int value)
         {
             _vm.WriteArray(_numberArray, 0, item, value);
+        }
+
+        void ReadState()
+        { // PATCH
+
+            if ((_vm.Game.Features.HasFlag(GameFeatures.Demo)) /*&& (_vm.Game.platform == Common::kPlatformDOS)*/)
+            {
+                _actor[0].inventory[INV_CHAIN] = false;
+                _actor[0].inventory[INV_CHAINSAW] = false;
+                _actor[0].inventory[INV_MACE] = false;
+                _actor[0].inventory[INV_2X4] = false;
+                _actor[0].inventory[INV_WRENCH] = true;
+                _actor[0].inventory[INV_DUST] = false;
+                _actor[0].inventory[INV_HAND] = true;
+                _actor[0].inventory[INV_BOOT] = false;
+                _smlayer_room2 = 13;
+            }
+            else
+            {
+                _actor[0].inventory[INV_CHAIN] = ReadArray(50) != 0;
+                _actor[0].inventory[INV_CHAINSAW] = ReadArray(51) != 0;
+                _actor[0].inventory[INV_MACE] = ReadArray(52) != 0;
+                _actor[0].inventory[INV_2X4] = ReadArray(53) != 0;
+                _actor[0].inventory[INV_WRENCH] = ReadArray(54) != 0;
+                _actor[0].inventory[INV_DUST] = ReadArray(55) != 0;
+                _actor[0].inventory[INV_HAND] = true;
+                _actor[0].inventory[INV_BOOT] = true;
+                _smlayer_room = ReadArray(320);
+                _smlayer_room2 = ReadArray(321);
+                _posBrokenTruck = (short)ReadArray(322);
+                _posVista = (short)ReadArray(323);
+                _val57d = ReadArray(324);
+                _posCave = (short)ReadArray(325);
+                _posBrokenCar = (short)ReadArray(326);
+                _val54d = ReadArray(327);
+                _posFatherTorque = (short)ReadArray(328);
+                _enemy[EN_TORQUE].occurences = (short)ReadArray(337);
+                _enemy[EN_ROTT1].occurences = (short)ReadArray(329);
+                _enemy[EN_ROTT2].occurences = (short)ReadArray(330);
+                _enemy[EN_ROTT3].occurences = (short)ReadArray(331);
+                _enemy[EN_VULTF1].occurences = (short)ReadArray(332);
+                _enemy[EN_VULTM1].occurences = (short)ReadArray(333);
+                _enemy[EN_VULTF2].occurences = (short)ReadArray(334);
+                _enemy[EN_VULTM2].occurences = (short)ReadArray(335);
+                _enemy[EN_CAVEFISH].occurences = (short)ReadArray(336);
+                _enemy[EN_VULTM2].isEmpty = ReadArray(340);
+                _enemy[EN_VULTF2].isEmpty = ReadArray(339);
+                _enemy[EN_CAVEFISH].isEmpty = ReadArray(56);
+
+                // FIXME
+                // Some sanity checks. There were submitted savefiles where these values were wrong
+                // Still it is unknown what leads to this state. Most probably it is memory
+                // overwrite
+                if (_enemy[EN_VULTM2].isEmpty != ReadArray(7))
+                {
+                    Console.Error.WriteLine("Wrong INSANE parameters for EN_VULTM2 ({0} {1})",
+                        _enemy[EN_VULTM2].isEmpty, ReadArray(7));
+                    _enemy[EN_VULTM2].isEmpty = ReadArray(7);
+                }
+
+                if ((_enemy[EN_VULTF2].isEmpty != 0) != (_actor[0].inventory[INV_CHAINSAW]))
+                {
+                    Console.Error.WriteLine("Wrong INSANE parameters for EN_VULTF2 ({0} {1})",
+                        _enemy[EN_VULTF2].isEmpty, _actor[0].inventory[INV_CHAINSAW]);
+                    _enemy[EN_VULTF2].isEmpty = (_actor[0].inventory[INV_CHAINSAW]) ? 1 : 0;
+                }
+
+                // FIXME
+                // This used to be here but.
+                //  - bootparam 551 gives googles without cavefish met
+                //  - when you get the ramp, googles disappear, but you already won the cavefish
+                // Incorrect situation would be
+                //  you won cavefish, don't have googles, don't have ramp
+                //
+                // So if you find out what how to check ramp presense, feel free to add check here
+                // (beware of FT ver a and ver b. In version b var311 is inserted and all vars >311
+                // are shifted),
+                //
+                //if (_enemy[EN_CAVEFISH].isEmpty != ReadArray(8))
+                //  error("Wrong INSANE parameters for EN_CAVEFISH (%d %d). Please, report this",
+                //        _enemy[EN_CAVEFISH].isEmpty, ReadArray(8));
+            }
+        }
+
+        void StartVideo(string filename, int num, int argC, int frameRate, int doMainLoop, byte[] fluPtr = null, int startFrame = 0)
+        {
+            int offset = 0;
+            _smush_curFrame = 0;
+            _smush_isSanFileSetup = false;
+            _smush_setupsan4 = 0;
+            _smush_smushState = 0;
+            _smush_setupsan1 = 0;
+            _smush_setupsan17 = 0;
+
+            if (fluPtr != null)
+            {
+                offset = smush_setupSanWithFlu(filename, 0, -1, -1, 0, fluPtr, startFrame);
+            }
+            else
+            {
+                smush_setupSanFromStart(filename, 0, -1, -1, 0);
+            }
+
+            _player.Play(filename, _speed, offset, startFrame);
+        }
+
+        void SetupValues()
+        {
+            _actor[0].x = 160;
+            _actor[0].y = 200;
+            _actor[0].tilt = 0;
+            _actor[0].field_8 = 1;
+            _actor[0].frame = 0;
+            _actor[0].act[2].state = 1;
+            _actor[0].act[0].state = 1;
+            _actor[0].act[1].state = 0;
+            _actor[0].act[2].room = 1;
+            _actor[0].act[1].room = 0;
+            _actor[0].act[0].room = 0;
+            _actor[0].cursorX = 0;
+            _actor[0].lost = false;
+            _currEnemy = -1;
+            _approachAnim = -1;
+            smush_warpMouse(160, 100, -1);
+        }
+
+        void SetEnemyCostumes()
+        {
+            int i;
+
+            Debug.WriteLine("setEnemyCostumes(%d)", _currEnemy);
+
+            if ((_vm.Game.Features.HasFlag(GameFeatures.Demo))/* && (_vm->_game.platform == Common::kPlatformDOS)*/)
+            {
+                smlayer_setActorCostume(0, 2, ReadArray(11));
+                smlayer_setActorCostume(0, 0, ReadArray(13));
+                smlayer_setActorCostume(0, 1, ReadArray(12));
+            }
+            else
+            {
+                smlayer_setActorCostume(0, 2, ReadArray(12));
+                smlayer_setActorCostume(0, 0, ReadArray(14));
+                smlayer_setActorCostume(0, 1, ReadArray(13));
+            }
+            smlayer_setActorLayer(0, 1, 1);
+            smlayer_setActorLayer(0, 2, 5);
+            smlayer_setActorLayer(0, 0, 10);
+            smlayer_putActor(0, 2, _actor[0].x + 11, _actor[0].y1 + 102, (byte)_smlayer_room2);
+            smlayer_putActor(0, 1, _actor[0].x, _actor[0].y1 + 200, (byte)_smlayer_room2);
+            smlayer_putActor(0, 0, _actor[0].x, _actor[0].y1 + 200, (byte)_smlayer_room2);
+
+            if (_currEnemy == EN_CAVEFISH)
+            {
+                smlayer_setActorCostume(1, 2, ReadArray(_enemy[_currEnemy].costume4));
+                _actor[1].act[2].room = 1;
+                _actor[1].act[1].room = 0;
+                _actor[1].act[0].room = 0;
+                _actor[1].act[2].animTilt = 1;
+                _actor[1].field_8 = 98;
+                _actor[1].act[2].state = 98;
+                _actor[1].act[0].state = 98;
+                _actor[1].act[1].state = 98;
+
+                smlayer_putActor(1, 2, _actor[1].x + _actor[1].act[2].tilt - 17,
+                    _actor[1].y + _actor[1].y1 - 98, (byte)_smlayer_room2);
+            }
+            else if (_currEnemy == EN_TORQUE)
+            {
+                smlayer_setActorCostume(1, 2, ReadArray(_enemy[_currEnemy].costume4));
+                _actor[1].act[2].room = 1;
+                _actor[1].act[1].room = 0;
+                _actor[1].act[0].room = 0;
+                _actor[1].field_8 = 1;
+                _actor[1].act[2].state = 1;
+                _actor[1].act[0].state = 1;
+                _actor[1].act[1].state = 1;
+                smlayer_putActor(1, 2, _actor[1].x + _actor[1].act[2].tilt - 17,
+                    _actor[1].y + _actor[1].y1 - 98, (byte)_smlayer_room2);
+            }
+            else
+            {
+                _actor[1].act[2].room = 1;
+                _actor[1].act[1].room = 1;
+                _actor[1].act[0].room = 1;
+
+                if (_enemy[_currEnemy].costume4 != 0)
+                    smlayer_setActorCostume(1, 2, ReadArray(_enemy[_currEnemy].costume4));
+
+                if (_enemy[_currEnemy].costume5 != 0)
+                    smlayer_setActorCostume(1, 0, ReadArray(_enemy[_currEnemy].costume5));
+
+                if (_enemy[_currEnemy].costume6 != 0)
+                    smlayer_setActorCostume(1, 1, ReadArray(_enemy[_currEnemy].costume6));
+
+                _actor[1].field_8 = 1;
+                _actor[1].act[2].state = 1;
+                _actor[1].act[0].state = 1;
+                _actor[1].act[1].state = 1;
+
+                if (_actor[1].act[2].room != 0)
+                    smlayer_putActor(1, 2, _actor[1].x + _actor[1].act[2].tilt - 17,
+                        _actor[1].y + _actor[1].y1 - 98,
+                        (byte)_smlayer_room2);
+            }
+
+            if (_actor[1].act[1].room != 0)
+                smlayer_putActor(1, 1, _actor[1].x, _actor[1].y + _actor[1].y1,
+                    (byte)_smlayer_room2);
+
+            if (_actor[1].act[0].room != 0)
+                smlayer_putActor(1, 0, _actor[1].x, _actor[1].y + _actor[1].y1,
+                    (byte)_smlayer_room2);
+
+            smlayer_setActorLayer(1, 1, 1);
+            smlayer_setActorLayer(1, 2, 5);
+            smlayer_setActorLayer(1, 0, 10);
+
+            _actor[1].damage = 0;
+            _actor[1].x = 250;
+            _actor[1].y = 300;
+            _actor[1].cursorX = 0;
+            _actor[1].tilt = 0;
+            _actor[1].weapon = -1;
+            _actor[1].weaponClass = 2;
+            _enemy[_currEnemy].occurences++;
+            _actor[1].maxdamage = _enemy[_currEnemy].maxdamage;
+            _actor[1].enemyHandler = _enemy[_currEnemy].handler;
+            _actor[1].animWeaponClass = 0;
+            for (i = 0; i < 8; i++)
+                _actor[1].inventory[i] = false;
+            _actor[0].damage = 0;
+            _actor[0].x = 100;
+            _actor[0].y = 200;
+            _actor[0].weapon = INV_HAND;
+            _actor[0].weaponClass = 2;
+            _actor[0].animWeaponClass = 0;
+            _actor[0].newFacingFlag = 2;
+            _actor[0].curFacingFlag = 0;
+            _actor[0].tilt = 0;
+            _actor[0].field_8 = 1;
+            _actor[0].act[2].state = 1;
+            _actor[0].act[2].animTilt = 1;
+            _actor[0].act[0].state = 0;
+            _actor[0].act[1].state = 1;
+            _actor[0].act[2].room = 1;
+            _actor[0].act[1].room = 1;
+            _actor[0].act[0].room = 1;
+            _actor[0].cursorX = 0;
+            _actor[0].defunct = false;
+            _actor[0].scenePropSubIdx = 0;
+            _actor[0].field_54 = 0;
+            _actor[0].runningSound = 0;
+            _actor[0].lost = false;
+            _actor[0].kicking = false;
+            _actor[0].field_44 = false;
+            _actor[1].inventory[_enemy[_currEnemy].weapon] = true;
+            _actor[0].field_48 = false;
+            _actor[1].defunct = false;
+            _actor[1].scenePropSubIdx = 0;
+            _actor[1].field_54 = 0;
+            _actor[1].runningSound = 0;
+            _actor[1].lost = false;
+            _actor[1].kicking = false;
+            _actor[1].field_44 = false;
+            _actor[1].field_48 = false;
+            if (_enemy[_currEnemy].initializer != -1)
+                EnemyInitializer(_enemy[_currEnemy].initializer, _actor[1].damage,
+                    _actor[0].damage, _actor[1].probability);
+
+            smush_warpMouse(160, 100, -1);
+        }
+
+        static readonly int[] scenePropIdx =
+            {
+                0,  12,  14,  18,  20,  22,  24,  26,  28,  30,  34,
+                36,  38,  40,  42,  44,  46,  48,  50,  55,  57,  59,  61,  63,  65,  67,  71,
+                73,  75,  77,  79,  81,  83,  85,  89,  93,  95,  97,  99, 101, 103, 105, 107,
+                109, 111, 113, 115, 117, 119, 121, 123, 125, 127, 129, 131, 133, 135, 137
+            };
+
+        void PrepareScenePropScene(int scenePropNum, bool arg_4, bool arg_8)
+        {
+            int tmp, idx = scenePropIdx[scenePropNum];
+
+            Debug.WriteLine("Insane::prepareScenePropScene({0}, {1}, {2})", scenePropNum, arg_4, arg_8);
+
+            if (((_vm.Game.Features.HasFlag(GameFeatures.Demo)) /*&& (_vm->_game.platform == Common::kPlatformDOS)*/) || !LoadScenePropSounds(idx))
+                return;
+
+            _actor[0].defunct = arg_4;
+            _actor[1].defunct = arg_8;
+            _currScenePropIdx = idx;
+            _sceneProp[idx + 1].counter = 0;
+            _currScenePropSubIdx = 1;
+            if (_sceneProp[idx + 1].trsId != 0)
+                _currTrsMsg = HandleTrsTag(_sceneProp[idx + 1].trsId);
+            else
+                _currTrsMsg = null;
+
+            tmp = _sceneProp[idx + 1].actor;
+            if (tmp != -1)
+            {
+                _actor[tmp].field_54 = 1;
+                _actor[tmp].act[3].state = 117;
+                _actor[tmp].scenePropSubIdx = _currScenePropSubIdx;
+            }
+        }
+
+        bool LoadScenePropSounds(int scenePropNum)
+        {
+            int num = 0;
+            int res = 1;
+
+            if (_sceneProp[scenePropNum + num].index != 1)
+            {
+                while (num < 12)
+                {
+                    res &= smlayer_loadSound(_sceneProp[scenePropNum + num].sound, 0, 2);
+                    num = _sceneProp[scenePropNum + num].index;
+
+                    if (num == 0)
+                        break;
+                }
+            }
+
+            return res != 0;
         }
 
         void init_actStruct(int actornum, int actnum, int actorval, byte state, int room, int animTilt, int tilt, int frame)
@@ -761,6 +1109,442 @@ namespace NScumm.Core.Insane
             _vm.SmushVideoShouldFinish = true;
         }
 
+        void smush_rewindCurrentSan(int arg_0, int arg_4, int arg_8)
+        {
+            Debug.WriteLine("smush_rewindCurrentSan({0}, {1}, {2})", arg_0, arg_4, arg_8);
+            _smush_setupsan2 = (short)arg_0;
+
+            smush_setupSanFile(null, 0, 0);
+            _smush_isSanFileSetup = true;
+            smush_setFrameSteps(arg_4, arg_8);
+
+            _smush_curFrame = 0; // HACK
+        }
+
+        void smlayer_setActorCostume(int actornum, int actnum, int costume)
+        {
+            var a = _vm.Actors[_actor[actornum].act[actnum].actor];
+            a.SetActorCostume((ushort)costume);
+            a.SetDirection(180);
+            a.StartAnimActor(1);
+            _actor[actornum].act[actnum].frame = 0;
+        }
+
+        void smlayer_setActorLayer(int actornum, int actnum, int layer)
+        {
+            var a = _vm.Actors[_actor[actornum].act[actnum].actor];
+            a.Layer = layer;
+        }
+
+        int smlayer_loadSound(int id, int flag, int phase)
+        {
+            int resid;
+
+            if (phase == 1)
+            {
+                if (_idx2Exceeded != 0)
+                if (_objArray2Idx >= _objArray2Idx2)
+                    return 0;
+            }
+            resid = ReadArray(id);
+
+            if (resid == 0 && phase == 2)
+                return 0;
+
+//            if (phase == 2)
+//                _vm.ensureResourceLoaded(rtSound, resid);
+
+//            _vm._res.setResourceCounter(rtSound, resid, 1);
+
+            if (phase == 1)
+            {
+                _objArray2Idx2++;
+                _objArray2[_objArray2Idx2] = id;
+                if (_objArray2Idx2 >= 100)
+                {
+                    _idx2Exceeded = 1;
+                    _objArray2Idx2 = 0;
+                }
+            }
+            return resid;
+        }
+
+        int smlayer_loadCostume(int id, int phase)
+        {
+            var resid = ReadArray(id);
+
+            if (resid == 0)
+                return 0;
+
+//            _vm.ensureResourceLoaded(rtCostume, resid);
+//            _vm._res.setResourceCounter(rtCostume, resid, 1);
+
+            if (phase == 1)
+            {
+                _objArray1Idx2++;
+                _objArray1[_objArray1Idx2] = id;
+                if (_objArray1Idx2 == 100)
+                    _objArray1Idx2 = 0;
+            }
+
+            return resid;
+        }
+
+        void smlayer_putActor(int actornum, int actnum, int x, int y, byte room)
+        {
+            var a = _vm.Actors[_actor[actornum].act[actnum].actor];
+            a.PutActor(new Point((short)x, (short)y), room);
+        }
+
+        void smlayer_overrideDrawActorAt(byte[] arg_0, byte arg_4, byte arg_8)
+        {
+            // FIXME: doublecheck
+
+            // noop in current implementation
+        }
+
+        void smlayer_drawSomething(byte[] renderBitmap, int codecparam, int x, int y, int arg_10, NutRenderer nutfile,
+                                   int c, int arg_1C, int arg_20)
+        {
+            nutfile.DrawFrame(renderBitmap, c, x, y);
+        }
+
+        void smlayer_showStatusMsg(int arg_0, byte[] renderBitmap, int codecparam,
+                                   int pos_x, int pos_y, int arg_14, int arg_18,
+                                   int flags, string formatString, string strng)
+        {
+            var sf = _player.GetFont(0);
+            int color = 1;
+            int top = 0;
+
+            var str = string.Format(formatString, strng);
+
+            while (str[0] == '^')
+            {
+                switch (str[1])
+                {
+                    case 'f':
+                        {
+                            int id = str[3] - '0';
+                            str += 4;
+                            sf = _player.GetFont(id);
+                        }
+                        break;
+                    case 'c':
+                        {
+                            color = str[4] - '0' + 10 * (str[3] - '0');
+                            str += 5;
+                        }
+                        break;
+                    default:
+                        throw new InvalidOperationException("invalid escape code in text string");
+                }
+            }
+
+            sf.Color = (byte)color;
+
+            // flags:
+            // bit 0 - center       1
+            // bit 1 - not used     2
+            // bit 2 - ???          4
+            // bit 3 - wrap around  8
+            switch (flags)
+            {
+                case 0:
+                    sf.DrawString(str, renderBitmap, _player.Width, _player.Height, pos_x, pos_y, false);
+                    break;
+                case 1:
+                    sf.DrawString(str, renderBitmap, _player.Width, _player.Height, pos_x, Math.Max(pos_y, top), true);
+                    break;
+                case 5:
+                    sf.DrawStringWrap(str, renderBitmap, _player.Width, _player.Height, pos_x, pos_y, 10, 300, true);
+                    break;
+                default:
+                    throw new InvalidOperationException(string.Format("Insane::smlayer_showStatusMsg. Not handled flags: {0}", flags));
+            }
+        }
+
+        void smlayer_setFluPalette(byte[] pal, int shut_flag)
+        {
+            if ((_vm.Game.Features.HasFlag(GameFeatures.Demo)) /*&& (_vm->_game.platform == Common::kPlatformDOS)*/)
+                return;
+
+            //    if (shut_flag)
+            //      // FIXME: shut colors and make picture appear smoothly
+            //      SmushPlayer::setPalette(pal);
+            //    else
+            _player.SetPalette(pal);
+        }
+
+        void smlayer_setActorFacing(int actornum, int actnum, int frame, int direction)
+        {
+            if (_actor[actornum].act[actnum].room != 0)
+            {
+                var a = _vm.Actors[_actor[actornum].act[actnum].actor];
+                a.SetDirection(direction);
+                a.StartAnimActor(frame);
+                _actor[actornum].act[actnum].frame = 0;
+            }
+        }
+
+        bool smlayer_actorNeedRedraw(int actornum, int actnum)
+        {
+            var a = _vm.Actors[_actor[actornum].act[actnum].actor];
+            return a.NeedRedraw;
+        }
+
+        bool smlayer_isSoundRunning(int sound)
+        {
+            // TODO: vs ImuseDigital
+            return false;
+//            return _vm->_imuseDigital->getSoundStatus(readArray(sound)) != 0;
+        }
+
+        bool smlayer_startSfx(int sound)
+        {
+            if (smlayer_loadSound(sound, 0, 2) != 0)
+            {
+                // TODO: vs ImuseDigital
+//                _vm.ImuseDigital.StartSfx(ReadArray(sound), 40);
+                return true;
+            }
+            else
+                return false;
+        }
+
+        void smlayer_soundSetPriority(int soundId, int priority)
+        {
+            // TODO: vs ImuseDigital
+//            _vm->_imuseDigital->setPriority(soundId, priority);
+        }
+
+        void smlayer_stopSound(int idx)
+        {
+            // TODO: vs ImuseDigital
+//            _vm->_imuseDigital->stopSound(readArray(idx));
+        }
+
+        void smlayer_soundSetPan(int soundId, int pan)
+        {
+            // TODO: vs ImuseDigital
+//            _vm->_imuseDigital->setPan(soundId, pan);
+        }
+
+        bool smlayer_startVoice(int sound)
+        {
+            if (smlayer_loadSound(sound, 0, 2) != 0)
+            {
+                // TODO: vs ImuseDigital
+//                _vm.ImuseDigital.StartSfx(ReadArray(sound), 126);
+                return true;
+            }
+            else
+                return false;
+        }
+
+
+        string HandleTrsTag(int trsId)
+        {
+            Debug.WriteLine("Insane::handleTrsTag({0})", trsId);
+            return _player.GetString(trsId);
+        }
+
+        int CalcTilt(int speed)
+        {
+            if (speed + 3 > 6)
+                return 0;
+
+            return tilt[speed + 3];
+        }
+
+        int WeaponMaxRange(int actornum)
+        {
+
+            if (_actor[actornum].weapon == -1)
+                return 104;
+
+            return MaxRangeMap[_actor[actornum].weapon];
+        }
+
+        int WeaponMinRange(int actornum)
+        {
+
+            if (_actor[actornum].weapon == -1)
+                return 40;
+
+            return MinRangeMap[_actor[actornum].weapon];
+        }
+
+        int GetRandomNumber(int max)
+        {
+            return new Random().Next(max + 1);
+        }
+
+        int ProcessMouse()
+        {
+            int buttons = 0;
+
+            // TODO: vs check this
+            _enemyState[EN_BEN, 0] = (short)_vm.Variables[_vm.VariableMouseX.Value];
+            _enemyState[EN_BEN, 1] = (short)_vm.Variables[_vm.VariableMouseY.Value];
+
+            buttons = _vm.Variables[_vm.VariableLeftButtonHold.Value] != 0 ? 1 : 0;
+            buttons |= _vm.Variables[_vm.VariableRightButtonHold.Value] != 0 ? 2 : 0;
+
+            return buttons;
+        }
+
+        bool GetKeyState(int code)
+        {
+            // TODO: vs key state
+            return false;
+        }
+
+        int ProcessKeyboard()
+        {
+            int retval = 0;
+            int dx = 0, dy = 0;
+            int tmpx, tmpy;
+
+            if (GetKeyState(0x14f) || GetKeyState(0x14b) || GetKeyState(0x147))
+                dx--;
+
+            if (GetKeyState(0x151) || GetKeyState(0x14d) || GetKeyState(0x149))
+                dx++;
+
+            if (GetKeyState(0x147) || GetKeyState(0x148) || GetKeyState(0x149))
+                dy--;
+
+            if (GetKeyState(0x14f) || GetKeyState(0x150) || GetKeyState(0x151))
+                dy++;
+
+            if (dx == _keybOldDx)
+                _velocityX += 4;
+            else
+                _velocityX = 3;
+
+            if (dy == _keybOldDy)
+                _velocityY += 4;
+            else
+                _velocityY = 2;
+
+            _keybOldDx = dx;
+            _keybOldDy = dy;
+
+            if (_velocityX > 48)
+                _velocityX = 48;
+
+            if (_velocityY > 32)
+                _velocityY = 32;
+
+            _keybX += dx * _velocityX;
+            _keybY += dy * _velocityY;
+
+            tmpx = _keybX / 4;
+            tmpy = _keybY / 4;
+
+            _keybX -= tmpx * 4;
+            _keybY -= tmpy * 4;
+
+            if (tmpx != 0 || tmpy != 0)
+            {
+                _enemyState[EN_BEN, 0] += (short)tmpx;
+                _enemyState[EN_BEN, 1] += (short)tmpy;
+            }
+
+            if (GetKeyState((int)KeyCode.Return))
+                retval |= 1;
+
+            if (GetKeyState((int)KeyCode.Tab))
+                retval |= 2;
+
+            return retval;
+        }
+
+        bool Actor1StateFlags(int state)
+        {
+            // This is compressed table. It contains indexes where state
+            // changes. I.e. 0-33: true, 34-38: false 39-72: true, etc.
+
+            bool retvalue = false;
+
+            for (var i = 0; i < Actor1StateFlagsSpans.Length; i++)
+            {
+                retvalue = !retvalue;
+                if (Actor1StateFlagsSpans[i] <= state)
+                    break;
+            }
+            return retvalue;
+        }
+
+        bool Actor0StateFlags2(int state)
+        {
+            bool retvalue = true;
+            for (var i = 0; i < Actor0StateFlags2Spans.Length; i++)
+            {
+                retvalue = !retvalue;
+                if (Actor0StateFlags2Spans[i] >= state)
+                    break;
+            }
+            return retvalue;
+        }
+
+        int WeaponDamage(int actornum)
+        {
+            if (_actor[actornum].weapon == -1)
+                return 10;
+
+            return WeaponDamageMap[_actor[actornum].weapon];
+        }
+
+
+        bool Actor0StateFlags1(int state)
+        {
+            bool retvalue = true;
+
+            for (var i = 0; i < Actor0StateFlags1Spans.Length; i++)
+            {
+                retvalue = !retvalue;
+                if (Actor0StateFlags1Spans[i] >= state)
+                    break;
+            }
+            return retvalue;
+        }
+
+        void ReinitActors()
+        {
+            if ((_vm.Game.Features.HasFlag(GameFeatures.Demo)) /*&& (_vm->_game.platform == Common::kPlatformDOS)*/)
+            {
+                smlayer_setActorCostume(0, 2, ReadArray(11));
+                smlayer_setActorCostume(0, 0, ReadArray(13));
+                smlayer_setActorCostume(0, 1, ReadArray(12));
+            }
+            else
+            {
+                smlayer_setActorCostume(0, 2, ReadArray(12));
+                smlayer_setActorCostume(0, 0, ReadArray(14));
+                smlayer_setActorCostume(0, 1, ReadArray(13));
+            }
+            smlayer_setActorLayer(0, 1, 1);
+            smlayer_setActorLayer(0, 2, 5);
+            smlayer_setActorLayer(0, 0, 10);
+            _actor[0].weapon = INV_HAND;
+            _actor[0].weaponClass = 2;
+            _actor[0].animWeaponClass = 0;
+            _actor[0].newFacingFlag = 2;
+            _actor[0].curFacingFlag = 0;
+            _actor[0].tilt = 0;
+            _actor[0].field_8 = 1;
+            _actor[0].act[2].state = 1;
+            _actor[0].act[2].animTilt = 1;
+            _actor[0].act[0].state = 0;
+            _actor[0].act[1].state = 1;
+            _actor[0].act[2].room = 1;
+            _actor[0].act[1].room = 1;
+            _actor[0].act[0].room = 1;
+            _actor[0].cursorX = 0;
+        }
+
         const int INV_CHAIN = 0;
         const int INV_CHAINSAW = 1;
         const int INV_MACE = 2;
@@ -790,6 +1574,32 @@ namespace NScumm.Core.Insane
         // Father Torque
         const int EN_BEN = 9;
         // used only with handler
+
+        static readonly int[] tilt = { -5, -4, -2, 0, 2, 4, 5 };
+
+        static readonly int[] MaxRangeMap = { 135, 125, 130, 125, 120, 104, 104, 104 };
+        static readonly int[] MinRangeMap = { 80, 40, 80, 40, 80, 80, 40, 50 };
+
+        static readonly int[] Actor1StateFlagsSpans = { 0, 34, 39, 73, 89, 90, 92, 93, 99, 100, 117 };
+        static readonly int[] Actor0StateFlags2Spans =
+            {0, 10, 14, 34, 39, 73, 75, 79, 81, 90, 93, 94,
+                98, 100, 117, 133, 136, 153, 158, 200, 202, 209, 212, 213, 217,
+                219, 236, 256, 259, 272, 277, 311, 312, 315, 317, 328, 331, 332,
+                336, 338, 355, 379, 382, 391, 396, 440, 441, 447, 450, 451, 455,
+                457, 474, 502, 505, 510, 515, 549, 553, 566, 569, 570, 574, 576,
+                593, 601, 604, 629, 634, 680, 682, 685, 688, 689, 693, 695, 712,
+                716, 718, 748, 753, 787, 788, 804, 807, 808, 812, 814, 831, 863,
+                866, 867, 872, 920, 922, 923, 926, 927, 931, 933, 950
+            };
+        static readonly int[] Actor0StateFlags1Spans = { 0, 2, 34, 35, 39, 69, 98, 100, 117 };
+
+        static readonly int[] ActorAnimationData =
+            {
+                20, 21, 22, 23, 24, 25, 26, 13, 14, 15, 16, 17,
+                18, 19, 6, 7, 8, 9, 10, 11, 12
+            };
+
+        static readonly int[] WeaponDamageMap = { 20, 300, 25, 40, 15, 10, 10, 5 };
 
         ScummEngine7 _vm;
         SmushPlayer _player;
@@ -833,7 +1643,7 @@ namespace NScumm.Core.Insane
         int _velocityY;
         int _keybX;
         int _keybY;
-        int _firstBattle;
+        bool _firstBattle;
         bool _weaponBenJustSwitched;
         bool _kickBenProgress;
         bool _battleScene;

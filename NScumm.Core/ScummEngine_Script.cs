@@ -432,7 +432,7 @@ namespace NScumm.Core
                     Where = WhereIsObject.Room,
                 };
                 _currentScriptData = roomData.EntryScript.Data;
-                RunScriptNested((byte)slot);
+                RunScriptNested(slot);
             }
 
             if (_variables[VariableEntryScript2.Value] != 0)
@@ -456,7 +456,7 @@ namespace NScumm.Core
                     Where = WhereIsObject.Room
                 };
                 _currentScriptData = roomData.ExitScript.Data;
-                RunScriptNested((byte)slot);
+                RunScriptNested(slot);
             }
             if (VariableExitScript2.HasValue && _variables[VariableExitScript2.Value] != 0)
                 RunScript(_variables[VariableExitScript2.Value], false, false, new int[0]);
@@ -589,7 +589,7 @@ namespace NScumm.Core
             }
         }
 
-        void RunScriptNested(byte script)
+        void RunScriptNested(int script)
         {
             if (_currentScript == 0xFF)
             {
@@ -607,7 +607,7 @@ namespace NScumm.Core
 
             _numNestedScripts++;
 
-            _currentScript = script;
+            _currentScript = (byte)script;
             ResetScriptPointer();
             Run();
 

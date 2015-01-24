@@ -196,7 +196,7 @@ namespace NScumm.Core
                             select actor;
         }
 
-        protected virtual void ProcessActors()
+        internal protected virtual void ProcessActors()
         {
             var actors = GetOrderedActors();
             foreach (var actor in actors)

@@ -242,6 +242,9 @@
     <Compile Include="BlastObject.cs" />
     <Compile Include="BlastText.cs" />
     <Compile Include="TextObject.cs" />
+    <Compile Include="Insane\Insane_Enemy.cs" />
+    <Compile Include="Graphics\BompDrawData.cs" />
+    <Compile Include="Insane\Insane_Ben.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="IO\Nscumm.xml">

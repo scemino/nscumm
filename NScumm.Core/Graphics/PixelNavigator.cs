@@ -20,57 +20,85 @@ namespace NScumm.Core.Graphics
     public struct PixelNavigator
     {
         readonly int _startOffset;
+        readonly byte[] _pixels;
         int _offset;
-        byte[] _pixels;
-        int _pitch;
-        int _bytesByPixel;
+
+        public int Pitch
+        {
+            get;
+            private set;
+        }
+
+        public int BytesByPixel
+        {
+            get;
+            private set;
+        }
+
+        public int Width
+        {
+            get;
+            private set;
+        }
+
+        public int Height
+        {
+            get;
+            private set;
+        }
 
         public PixelNavigator(Surface surface)
-            : this(surface.Pixels, surface.Pitch, surface.BytesPerPixel)
+            : this(surface.Pixels, surface.Width, surface.BytesPerPixel)
         {
         }
 
-        public PixelNavigator(byte[] pixels, int pitch, int bytesByPixel)
+        public PixelNavigator(byte[] pixels, int width, int bytesByPixel)
+            : this()
         {
             _startOffset = 0;
             _offset = 0;
             _pixels = pixels;
-            _pitch = pitch;
-            _bytesByPixel = bytesByPixel;
+            Pitch = width * bytesByPixel;
+            BytesByPixel = bytesByPixel;
+            Width = width;
+            Height = pixels.Length / Pitch;
         }
 
         public PixelNavigator(PixelNavigator navigator)
+            : this()
         {
             _startOffset = navigator._offset;
             _offset = _startOffset;
             _pixels = navigator._pixels;
-            _pitch = navigator._pitch;
-            _bytesByPixel = navigator._bytesByPixel;
+            Pitch = navigator.Pitch;
+            BytesByPixel = navigator.BytesByPixel;
+            Width = navigator.Width;
+            Height = navigator.Height;
         }
 
         public void GoTo(int x, int y)
         {
-            _offset = _startOffset + y * _pitch + x * _bytesByPixel;
+            _offset = _startOffset + y * Pitch + x * BytesByPixel;
         }
 
         public void GoToIgnoreBytesByPixel(int x, int y)
         {
-            _offset = _startOffset + y * _pitch + x;
+            _offset = _startOffset + y * Pitch + x;
         }
 
         public void OffsetX(int x)
         {
-            _offset += x * _bytesByPixel;
+            _offset += x * BytesByPixel;
         }
 
         public void OffsetY(int y)
         {
-            _offset += y * _pitch;
+            _offset += y * Pitch;
         }
 
         public void Offset(int x, int y)
         {
-            _offset += y * _pitch + x * _bytesByPixel;
+            _offset += y * Pitch + x * BytesByPixel;
         }
 
         public void Write(byte data)

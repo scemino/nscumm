@@ -40,7 +40,7 @@ namespace NScumm.Core
         protected void PushWord()
         {
             Push(ReadWordSigned());
-            Console.WriteLine("Push({0})", _vmStack.Peek());
+//            Console.WriteLine("Push({0})", _vmStack.Peek());
         }
 
         [OpCode(0x02)]
@@ -54,7 +54,7 @@ namespace NScumm.Core
         {
             var v = ReadWord();
             Push(ReadVariable(v));
-            Console.WriteLine("Push({0}:{1})", v, _vmStack.Peek());
+//            Console.WriteLine("Push({0}:{1})", v, _vmStack.Peek());
         }
 
         [OpCode(0x06)]

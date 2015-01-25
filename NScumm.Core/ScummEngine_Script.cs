@@ -306,7 +306,7 @@ namespace NScumm.Core
 
             _currentRoom = room;
 
-            if (room >= 0x80)
+            if (room >= 0x80 && Game.Version < 7)
                 _roomResource = _resourceMapper[room & 0x7F];
             else
                 _roomResource = room;
@@ -571,7 +571,7 @@ namespace NScumm.Core
             }
             else if (scriptNum < _resManager.NumGlobalScripts)
             {
-                var data = _resManager.GetScript((byte)scriptNum);
+                var data = _resManager.GetScript(scriptNum);
                 _currentScriptData = data;
             }
             else if ((scriptNum - _resManager.NumGlobalScripts) < roomData.LocalScripts.Length)
@@ -695,8 +695,7 @@ namespace NScumm.Core
             _sentenceNum--;
             var st = _sentence[_sentenceNum];
 
-            if (Game.Version < 7)
-            if (st.Preposition && st.ObjectB == st.ObjectA)
+            if (Game.Version < 7 && st.Preposition && st.ObjectB == st.ObjectA)
                 return;
 
             _currentScript = 0xFF;

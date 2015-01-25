@@ -323,6 +323,24 @@ namespace NScumm.Core
 
         protected void DoSentence(byte verb, ushort objectA, ushort objectB)
         {
+            if (Game.Version >= 7)
+            {
+
+                if (objectA == objectB)
+                    return;
+
+                if (_sentenceNum > 0)
+                {
+                    var st = _sentence[_sentenceNum - 1];
+
+                    // Check if this doSentence request is identical to the previous one;
+                    // if yes, ignore this invocation.
+                    if (_sentenceNum != 0 && st.Verb == verb && st.ObjectA == objectA && st.ObjectB == objectB)
+                        return;
+                }
+
+            }
+
             _sentence[_sentenceNum++] = new Sentence(verb, objectA, objectB);
         }
 

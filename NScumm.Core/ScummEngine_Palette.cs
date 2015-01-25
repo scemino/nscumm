@@ -32,6 +32,27 @@ namespace NScumm.Core
         protected Palette _palManipPalette;
         protected Palette _palManipIntermediatePal;
         protected int _curPalIndex;
+        protected byte[] _shadowPalette;
+
+        public const int NumShadowPalette = 8;
+
+        static byte[] tableEGAPalette = new byte[]
+        {
+            0x00, 0x00, 0x00,   0x00, 0x00, 0xAA,   0x00, 0xAA, 0x00,   0x00, 0xAA, 0xAA,
+            0xAA, 0x00, 0x00,   0xAA, 0x00, 0xAA,   0xAA, 0x55, 0x00,   0xAA, 0xAA, 0xAA,
+            0x55, 0x55, 0x55,   0x55, 0x55, 0xFF,   0x55, 0xFF, 0x55,   0x55, 0xFF, 0xFF,
+            0xFF, 0x55, 0x55,   0xFF, 0x55, 0xFF,   0xFF, 0xFF, 0x55,   0xFF, 0xFF, 0xFF
+        };
+
+        Palette _currentPalette = new Palette();
+
+        internal Palette CurrentPalette
+        { 
+            get { return _currentPalette; } 
+            set { _currentPalette = value; } 
+        }
+
+        protected internal byte[] ShadowPalette { get { return _shadowPalette; } }
 
         void CyclePalette()
         {
@@ -56,7 +77,17 @@ namespace NScumm.Core
 
                     if (_shadowPalette != null)
                     {
-                        DoCycleIndirectPalette(_shadowPalette, cycl.Start, cycl.End, (cycl.Flags & 2) == 0);
+                        if (_game.Version >= 7)
+                        {
+                            for (var j = 0; j < NumShadowPalette; j++)
+                            {
+                                DoCycleIndirectPalette(_shadowPalette, cycl.Start, cycl.End, (cycl.Flags & 2)==0, j);
+                            }
+                        }
+                        else
+                        {
+                            DoCycleIndirectPalette(_shadowPalette, cycl.Start, cycl.End, (cycl.Flags & 2) == 0, 0);
+                        }
                     }
                 }
             }
@@ -195,12 +226,13 @@ namespace NScumm.Core
             }
         }
 
-        static void DoCycleIndirectPalette(byte[] palette, byte cycleStart, byte cycleEnd, bool forward)
+        static void DoCycleIndirectPalette(byte[] palette, byte cycleStart, byte cycleEnd, bool forward, int palIndex)
         {
             var num = cycleEnd - cycleStart + 1;
             var offset = forward ? 1 : num - 1;
+            var palOffset = palIndex * 256;
 
-            for (var i = 0; i < 256; i++)
+            for (var i = palOffset; i < (palOffset+256); i++)
             {
                 if (cycleStart <= palette[i] && palette[i] <= cycleEnd)
                 {

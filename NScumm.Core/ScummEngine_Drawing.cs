@@ -21,6 +21,7 @@
 using System;
 using NScumm.Core.Graphics;
 using NScumm.Core.IO;
+using System.Threading;
 
 namespace NScumm.Core
 {
@@ -37,28 +38,17 @@ namespace NScumm.Core
         internal Gdi Gdi;
         bool _completeScreenRedraw;
         protected internal IGraphicsManager _gfxManager;
-        protected byte[] _shadowPalette = new byte[256];
         int _palDirtyMin, _palDirtyMax;
         int _textSurfaceMultiplier = 1;
         protected int _screenStartStrip;
         protected int _screenEndStrip;
 
-        public const int NumShadowPalette = 8;
-
-        static byte[] tableEGAPalette = new byte[]
-        {
-            0x00, 0x00, 0x00,   0x00, 0x00, 0xAA,   0x00, 0xAA, 0x00,   0x00, 0xAA, 0xAA,
-            0xAA, 0x00, 0x00,   0xAA, 0x00, 0xAA,   0xAA, 0x55, 0x00,   0xAA, 0xAA, 0xAA,
-            0x55, 0x55, 0x55,   0x55, 0x55, 0xFF,   0x55, 0xFF, 0x55,   0x55, 0xFF, 0xFF,
-            0xFF, 0x55, 0x55,   0xFF, 0x55, 0xFF,   0xFF, 0xFF, 0x55,   0xFF, 0xFF, 0xFF
-        };
-        Palette _currentPalette = new Palette();
+        const int Scrolltime = 500;  // ms scrolling is supposed to take
+        const int PictureDelay = 20;
+        const int FadeDelay = 4;
+        // 1/4th of a jiffie
 
         internal Surface TextSurface { get { return _textSurface; } }
-
-        internal Palette CurrentPalette { get { return _currentPalette; } set { _currentPalette = value; } }
-
-        protected internal byte[] ShadowPalette { get { return _shadowPalette; } }
 
         protected virtual void DrawObjectCore(out int xpos, out int ypos, out int state)
         {

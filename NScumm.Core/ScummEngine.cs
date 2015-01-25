@@ -215,6 +215,7 @@ namespace NScumm.Core
             }
             MusicEngine.SetMusicVolume(192);
 
+            _shadowPalette = new byte[Game.Version >= 7 ? NumShadowPalette * 256 : 256];
             _variables = new int[_resManager.NumVariables];
             _bitVars = new BitArray(_resManager.NumBitVariables);
             _slots = new ScriptSlot[NumScriptSlot];

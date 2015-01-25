@@ -1210,15 +1210,15 @@ namespace NScumm.Core
 
             for (var i = 0; i < akpl_size; i++)
             {
-                int r = rgbs[i * 3];
-                int g = rgbs[i * 3 + 1];
-                int b = rgbs[i * 3 + 2];
-
                 var akpl_color = akpl[i];
 
                 // allow remap of generic palette entry?
                 if (ShadowMode == 0 || akpl_color >= 16)
                 {
+                    int r = rgbs[i * 3];
+                    int g = rgbs[i * 3 + 1];
+                    int b = rgbs[i * 3 + 2];
+
                     r = (r * r_fact) >> 8;
                     g = (g * g_fact) >> 8;
                     b = (b * b_fact) >> 8;

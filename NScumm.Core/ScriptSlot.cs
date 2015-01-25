@@ -91,7 +91,7 @@ namespace NScumm.Core
             Status &= ~ScriptStatus.Frozen;
         }
 
-        public void SaveOrLoad(Serializer serializer, System.Collections.Generic.IList<ScriptData> localScripts)
+        public void SaveOrLoad(Serializer serializer, System.Collections.Generic.IList<ScriptData> localScripts, int numGlobalScripts)
         {
             var scriptSlotEntries = new[]
             {
@@ -104,9 +104,9 @@ namespace NScumm.Core
                         {
                             offsetToSave += 6;
                         }
-                        else if (Where == WhereIsObject.Local && Number >= 0xC8 && localScripts[Number - 0xC8] != null)
+                        else if (Where == WhereIsObject.Local && Number >= numGlobalScripts && localScripts[Number - numGlobalScripts] != null)
                         {
-                            offsetToSave = (uint)(Offset + localScripts[Number - 0xC8].Offset);
+                            offsetToSave = (uint)(Offset + localScripts[Number - numGlobalScripts].Offset);
                         }
                         writer.WriteUInt32(offsetToSave);
                     }, 8),

@@ -557,21 +557,21 @@ namespace NScumm.Core
             {
                 for (int i = 0; i < 25; i++)
                 {
-                    _slots[i].SaveOrLoad(serializer, roomData.LocalScripts);
+                    _slots[i].SaveOrLoad(serializer, roomData.LocalScripts, ResourceManager.NumGlobalScripts);
                 }
             }
             else if (serializer.Version < 20)
             {
                 for (int i = 0; i < 40; i++)
                 {
-                    _slots[i].SaveOrLoad(serializer, roomData.LocalScripts);
+                    _slots[i].SaveOrLoad(serializer, roomData.LocalScripts, ResourceManager.NumGlobalScripts);
                 }
             }
             else
             {
                 for (int i = 0; i < NumScriptSlot; i++)
                 {
-                    _slots[i].SaveOrLoad(serializer, roomData.LocalScripts);
+                    _slots[i].SaveOrLoad(serializer, roomData.LocalScripts, ResourceManager.NumGlobalScripts);
                 }
             }
             if (serializer.IsLoading)
@@ -582,9 +582,9 @@ namespace NScumm.Core
                         {
                             slot.Offset -= 6;
                         }
-                        else if (slot.Where == WhereIsObject.Local && slot.Number >= 0xC8 && roomData.LocalScripts[slot.Number - 0xC8] != null)
+                        else if (slot.Where == WhereIsObject.Local && slot.Number >= ResourceManager.NumGlobalScripts && roomData.LocalScripts[slot.Number - ResourceManager.NumGlobalScripts] != null)
                         {
-                            slot.Offset = (uint)(slot.Offset - roomData.LocalScripts[slot.Number - 0xC8].Offset);
+                            slot.Offset = (uint)(slot.Offset - roomData.LocalScripts[slot.Number - ResourceManager.NumGlobalScripts].Offset);
                         }
                     });
 

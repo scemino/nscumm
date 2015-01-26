@@ -103,6 +103,24 @@ namespace NScumm.Core.Graphics
             NumStrips = _vm.ScreenWidth / 8;
         }
 
+        public void SetMaskHeight(int height)
+        {
+            if (game.Version >= 7)
+            {
+                for (int i = 0; i < maskBuffer.Length; i++)
+                {
+                    maskBuffer[i] = new byte[40 * (height + 10)];
+                }
+            }
+            else
+            {
+                for (int i = 0; i < maskBuffer.Length; i++)
+                {
+                    maskBuffer[i] = new byte[40 * (height + 4)];
+                }
+            }
+        }
+
         public void DrawBitmap(ImageData img, VirtScreen vs, int x, int y, int width, int height, int stripnr, int numstrip, int roomWidth, DrawBitmaps flags)
         {
             // Check whether lights are turned on or not

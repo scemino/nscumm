@@ -333,6 +333,9 @@ namespace NScumm.Core
             ResetRoomObjects();
             _drawingObjects.Clear();
 
+            _mainVirtScreen = new VirtScreen(MainVirtScreen.TopLine, ScreenWidth, roomData.Header.Height - MainVirtScreen.TopLine, MainVirtScreen.PixelFormat, 2, true);
+            Gdi.SetMaskHeight(roomData.Header.Height);
+
             if (VariableRoomWidth.HasValue && VariableRoomHeight.HasValue)
             {
                 Variables[VariableRoomWidth.Value] = roomData.Header.Width;

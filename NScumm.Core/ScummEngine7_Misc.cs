@@ -309,91 +309,99 @@ namespace NScumm.Core
 
         protected override void MoveCamera()
         {
-            // TODO: vs fix pos x and y
-            int pos = Camera.CurrentPosition.X;
-            int t;
+            Point old = Camera.CurrentPosition;
             Actor a = null;
-            var snapToX = (/*_snapScroll ||*/ (VariableCameraFastX.HasValue && Variables[VariableCameraFastX.Value] != 0));
 
-            Camera.CurrentPosition.X = (short)(Camera.CurrentPosition.X & 0xFFF8);
-
-            if (VariableCameraMinX.HasValue && Camera.CurrentPosition.X < Variables[VariableCameraMinX.Value])
-            {
-                if (snapToX)
-                    Camera.CurrentPosition.X = (short)Variables[VariableCameraMinX.Value];
-                else
-                    Camera.CurrentPosition.X += 8;
-                CameraMoved();
-                return;
-            }
-
-            if (VariableCameraMaxX.HasValue && Camera.CurrentPosition.X > Variables[VariableCameraMaxX.Value])
-            {
-                if (snapToX)
-                    Camera.CurrentPosition.X = (short)Variables[VariableCameraMaxX.Value];
-                else
-                    Camera.CurrentPosition.X -= 8;
-                CameraMoved();
-                return;
-            }
-
-            if (Camera.Mode == CameraMode.FollowActor)
+            if (Camera.ActorToFollow != 0)
             {
                 a = Actors[Camera.ActorToFollow];
-
-                int actorx = a.Position.X;
-                t = actorx / 8 - _screenStartStrip;
-
-                if (t < Camera.LeftTrigger || t > Camera.RightTrigger)
+                if (Math.Abs(Camera.CurrentPosition.X - a.Position.X) > Variables[VariableCameraThresholdX.Value] ||
+                    Math.Abs(Camera.CurrentPosition.Y - a.Position.Y) > Variables[VariableCameraThresholdY.Value])
                 {
-                    if (snapToX)
-                    {
-                        if (t > 40 - 5)
-                            Camera.DestinationPosition.X = (short)(actorx + 80);
-                        if (t < 5)
-                            Camera.DestinationPosition.X = (short)(actorx - 80);
-                    }
-                    else
-                        Camera.MovingToActor = true;
+                    Camera.MovingToActor = true;
+                    if (Variables[VariableCameraThresholdX.Value] == 0)
+                        Camera.CurrentPosition.X = a.Position.X;
+                    if (Variables[VariableCameraThresholdY.Value] == 0)
+                        Camera.CurrentPosition.Y = a.Position.Y;
+                    Camera.CurrentPosition = ClampCameraPos(Camera.CurrentPosition);
                 }
             }
-
-            if (Camera.MovingToActor)
-            {
-                a = Actors[Camera.ActorToFollow];
-                Camera.DestinationPosition.X = a.Position.X;
-            }
-
-            if (VariableCameraMinX.HasValue && Camera.DestinationPosition.X < Variables[VariableCameraMinX.Value])
-                Camera.DestinationPosition.X = (short)Variables[VariableCameraMinX.Value];
-
-            if (VariableCameraMaxX.HasValue && Camera.DestinationPosition.X > Variables[VariableCameraMaxX.Value])
-                Camera.DestinationPosition.X = (short)Variables[VariableCameraMaxX.Value];
-
-            if (snapToX)
-            {
-                Camera.CurrentPosition.X = Camera.DestinationPosition.X;
-            }
             else
-            {
-                if (Camera.CurrentPosition.X < Camera.DestinationPosition.X)
-                    Camera.CurrentPosition.X += 8;
-                if (Camera.CurrentPosition.X > Camera.DestinationPosition.X)
-                    Camera.CurrentPosition.X -= 8;
-            }
-
-            /* Actor 'a' is set a bit above */
-            if (Camera.MovingToActor && (Camera.CurrentPosition.X / 8) == (a.Position.X / 8))
             {
                 Camera.MovingToActor = false;
             }
 
+            if (Camera.MovingToActor)
+            {
+                Variables[VariableCameraDestX] = Camera.DestinationPosition.X = a.Position.X;
+                Variables[VariableCameraDestY] = Camera.DestinationPosition.Y = a.Position.Y;
+            }
+
+            Debug.Assert(Camera.CurrentPosition.X >= (ScreenWidth / 2) && Camera.CurrentPosition.Y >= (ScreenHeight / 2));
+
+            Camera.DestinationPosition = ClampCameraPos(Camera.DestinationPosition);
+
+            if (Camera.CurrentPosition.X < Camera.DestinationPosition.X)
+            {
+                Camera.CurrentPosition.X += (short)Variables[VariableCameraSpeedX];
+                if (Camera.CurrentPosition.X > Camera.DestinationPosition.X)
+                    Camera.CurrentPosition.X = Camera.DestinationPosition.X;
+            }
+
+            if (Camera.CurrentPosition.X > Camera.DestinationPosition.X)
+            {
+                Camera.CurrentPosition.X -= (short)Variables[VariableCameraSpeedX];
+                if (Camera.CurrentPosition.X < Camera.DestinationPosition.X)
+                    Camera.CurrentPosition.X = Camera.DestinationPosition.X;
+            }
+
+            if (Camera.CurrentPosition.Y < Camera.DestinationPosition.Y)
+            {
+                Camera.CurrentPosition.Y += (short)Variables[VariableCameraSpeedY];
+                if (Camera.CurrentPosition.Y > Camera.DestinationPosition.Y)
+                    Camera.CurrentPosition.Y = Camera.DestinationPosition.Y;
+            }
+
+            if (Camera.CurrentPosition.Y > Camera.DestinationPosition.Y)
+            {
+                Camera.CurrentPosition.Y -= (short)Variables[VariableCameraSpeedY];
+                if (Camera.CurrentPosition.Y < Camera.DestinationPosition.Y)
+                    Camera.CurrentPosition.Y = Camera.DestinationPosition.Y;
+            }
+
+            if (Camera.CurrentPosition.X == Camera.DestinationPosition.X && Camera.CurrentPosition.Y == Camera.DestinationPosition.Y)
+            {
+
+                Camera.MovingToActor = false;
+                Camera.Accel.X = Camera.Accel.Y = 0;
+                Variables[VariableCameraSpeedX] = Variables[VariableCameraSpeedY] = 0;
+            }
+            else
+            {
+
+                Camera.Accel.X += (short)Variables[VariableCameraAccelX.Value];
+                Camera.Accel.Y += (short)Variables[VariableCameraAccelY.Value];
+
+                Variables[VariableCameraSpeedX] += Camera.Accel.X / 100;
+                Variables[VariableCameraSpeedY] += Camera.Accel.Y / 100;
+
+                if (Variables[VariableCameraSpeedX] > 8)
+                    Variables[VariableCameraSpeedX] = 8;
+
+                if (Variables[VariableCameraSpeedY] > 8)
+                    Variables[VariableCameraSpeedY] = 8;
+
+            }
+
             CameraMoved();
 
-            if (VariableScrollScript.HasValue && Variables[VariableScrollScript.Value] != 0 && pos != Camera.CurrentPosition.X)
+            if (Camera.CurrentPosition.X != old.X || Camera.CurrentPosition.Y != old.Y)
             {
                 Variables[VariableCameraPosX.Value] = Camera.CurrentPosition.X;
-                RunScript(Variables[VariableScrollScript.Value], false, false, new int[0]);
+                Variables[VariableCameraPosY.Value] = Camera.CurrentPosition.Y;
+
+                if (Variables[VariableScrollScript.Value] != 0)
+                    RunScript(Variables[VariableScrollScript.Value], false, false, new int[0]);
             }
         }
 

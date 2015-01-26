@@ -511,7 +511,9 @@ namespace NScumm.Core
 //                }
 //                else
 //                {
-                EnqueueText(msg, vs.CurRect.Left, vs.CurRect.Top, color, vs.CharsetNr, vs.Center);
+                var tmp = new byte[msg.Length - msgPos];
+                Array.Copy(msg, msgPos, tmp, 0, tmp.Length);
+                EnqueueText(tmp, vs.CurRect.Left, vs.CurRect.Top, color, vs.CharsetNr, vs.Center);
 //                }
                 _charset.SetCurID(oldID);
             }

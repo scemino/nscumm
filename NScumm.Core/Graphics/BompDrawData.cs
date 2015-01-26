@@ -249,6 +249,9 @@ namespace NScumm.Core.Graphics
                 case 1:
                     BompApplyShadow1(shadowPalette, lineBuffer, linePos, dst, size, transparency);
                     break;
+                case 3:
+                    BompApplyShadow3(shadowPalette, lineBuffer, linePos, dst, size, transparency);
+                    break;
                 default:
                     throw new ArgumentException(string.Format("Unknown shadow mode {0}", shadowMode));
             }
@@ -277,6 +280,23 @@ namespace NScumm.Core.Graphics
                     if (tmp == 13)
                     {
                         tmp = shadowPalette[dst.Read()];
+                    }
+                    dst.Write(tmp);
+                }
+                dst.OffsetX(1);
+            }
+        }
+
+        static void BompApplyShadow3(byte[] shadowPalette, byte[] lineBuffer, int linePos, PixelNavigator dst, int size, byte transparency)
+        {
+            while (size-- > 0)
+            {
+                byte tmp = lineBuffer[linePos++];
+                if (tmp != transparency)
+                {
+                    if (tmp < 8)
+                    {
+                        tmp = shadowPalette[dst.Read() + (tmp << 8)];
                     }
                     dst.Write(tmp);
                 }

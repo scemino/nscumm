@@ -100,10 +100,12 @@ namespace NScumm.Core.Graphics
             pn.GoTo(X + clip.Left, Y);
 
             var maskbit = ScummHelper.RevBitMask((X + clip.Left) & 7);
+            PixelNavigator maskPtr = new PixelNavigator();
             // Mask against any additionally imposed mask
             if (MaskPtr.HasValue)
             {
-                MaskPtr.Value.GoTo((X + clip.Left) / 8, Y);
+                maskPtr = MaskPtr.Value;
+                maskPtr.GoTo((X + clip.Left) / 8, Y);
             }
 
             var scalingYPtr = 0;
@@ -147,6 +149,12 @@ namespace NScumm.Core.Graphics
                 // Loop over all lines
                 while (pos_y < clip.Bottom)
                 {
+                    br.ReadUInt16();
+                    // Decode a single (bomp encoded) line, reversed if we are in mirror mode
+                    // TODO: vs mirror
+//                    if (Mirror)
+//                        BompDecodeLineReverse(br, line_buffer, 0, Width);
+//                    else
                     // Decode a single (bomp encoded) line
                     BompDecodeLine(br, line_buffer, 0, Width);
 
@@ -172,7 +180,7 @@ namespace NScumm.Core.Graphics
                     // Perform horizontal scaling
                     if (ScaleX != 255)
                     {
-                        BompScaleFuncX(line_buffer, bomp_scaling_x, 0, 0x80, (byte)Width);
+                        BompScaleFuncX(line_buffer, bomp_scaling_x, 0, 0x80, Width);
                     }
 
                     // The first clip.top lines are to be clipped, i.e. not drawn
@@ -184,11 +192,11 @@ namespace NScumm.Core.Graphics
                     {
                         // Replace the parts of the line which are masked with the transparency color
                         if (MaskPtr.HasValue)
-                            BompApplyMask(line_buffer, MaskPtr.Value, (byte)maskbit, width, 255);
+                            BompApplyMask(line_buffer, clip.Left, maskPtr, (byte)maskbit, width, 255);
 
                         // Apply custom color map, if available
                         if (ActorPalette != null)
-                            BompApplyActorPalette(ActorPalette, line_buffer, width);
+                            BompApplyActorPalette(ActorPalette, line_buffer, clip.Left, width);
 
                         // Finally, draw the decoded, scaled, masked and recolored line onto
                         // the target surface, using the specified shadow mode
@@ -199,16 +207,15 @@ namespace NScumm.Core.Graphics
                     pos_y++;
                     if (MaskPtr.HasValue)
                     {
-                        MaskPtr.Value.OffsetY(1);
+                        maskPtr.OffsetY(1);
                     }
                     pn.OffsetY(1);
                 }
             }
         }
 
-        void BompApplyActorPalette(ushort[] actorPalette, byte[] line_buffer, int size)
+        void BompApplyActorPalette(ushort[] actorPalette, byte[] line_buffer, int pos, int size)
         {
-            var pos = 0;
             actorPalette[255] = 255;
             while (size-- > 0)
             {
@@ -217,9 +224,8 @@ namespace NScumm.Core.Graphics
             }
         }
 
-        void BompApplyMask(byte[] line_buffer, PixelNavigator mask, byte maskbit, int size, byte transparency)
+        void BompApplyMask(byte[] line_buffer, int linePos, PixelNavigator mask, byte maskbit, int size, byte transparency)
         {
-            var linePos = 0;
             while (true)
             {
                 do
@@ -374,7 +380,6 @@ namespace NScumm.Core.Graphics
 
         static void BompDecodeLine(BinaryReader br, byte[] dst, int dstPos, int len)
         {
-            br.ReadUInt16();
             while (len > 0)
             {
                 var code = br.ReadByte();
@@ -408,6 +413,7 @@ namespace NScumm.Core.Graphics
             {
                 for (int h = 0; h < height; h++)
                 {
+                    br.ReadUInt16();
                     BompDecodeLine(br, pixels, h * width, width);
                 }
             }

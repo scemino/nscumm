@@ -389,13 +389,21 @@ namespace NScumm.Core
 
             RunEntryScript();
 
-            if (_game.Version >= 5)
+            if ((Game.Version >= 5) && (Game.Version <= 6))
             {
                 if (a != null && !_egoPositioned)
                 {
                     var pos = GetObjectXYPos(objectNr);
                     a.PutActor(pos, _currentRoom);
                     a.Moving = 0;
+                }
+            }
+            else if (_game.Version >= 7)
+            {
+                if (Camera.ActorToFollow != 0)
+                {
+                    a = Actors[Camera.ActorToFollow];
+                    SetCameraAt(a.Position);
                 }
             }
 

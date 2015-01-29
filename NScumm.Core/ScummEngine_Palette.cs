@@ -109,7 +109,14 @@ namespace NScumm.Core
             for (var i = 0; i < 256; i++)
             {
                 var color = palette.Colors[i];
-                if (i < 15 || i == 15 || color.R < 252 || color.G < 252 || color.B < 252)
+                if (Game.Version <= 6)
+                {
+                    if (i < 15 || i == 15 || color.R < 252 || color.G < 252 || color.B < 252)
+                    {
+                        CurrentPalette.Colors[i] = color;
+                    }
+                }
+                else
                 {
                     CurrentPalette.Colors[i] = color;
                 }

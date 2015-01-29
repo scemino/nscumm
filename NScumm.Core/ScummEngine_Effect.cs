@@ -20,6 +20,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
 using NScumm.Core.Graphics;
+using System.Threading;
 
 namespace NScumm.Core
 {
@@ -67,9 +68,8 @@ namespace NScumm.Core
 				//
 				// Hopefully it's safe to do it at this point, at least.
 //                    MainVirtScreen.SetDirtyRange(0, 0);
-                    MainVirtScreen.SetDirtyRange(0, MainVirtScreen.Height);
-                    UpdateDirtyScreen(MainVirtScreen);
-				//TransitionEffect(effect - 1);
+                    MainVirtScreen.SetDirtyRange(0, 0);
+                    DoTransitionEffect(effect - 1);
                     break;
 
                 case 128:
@@ -100,9 +100,201 @@ namespace NScumm.Core
             _screenEffectFlag = true;
         }
 
+        protected void FadeOut(int effect)
+        {
+            _mainVirtScreen.SetDirtyRange(0, 0);
+
+            if (Game.Version < 7)
+                Camera.LastPosition.X = Camera.CurrentPosition.X;
+
+            if ((Game.Version == 7 || _screenEffectFlag) && effect != 0)
+            {
+                // Fill screen 0 with black
+                var pixNav = new PixelNavigator(_mainVirtScreen.Surfaces[0]);
+                pixNav.OffsetX(_mainVirtScreen.XStart);
+                Gdi.Fill(pixNav, 0, _mainVirtScreen.Width, _mainVirtScreen.Height);
+
+                // Fade to black with the specified effect, if any.
+                switch (effect)
+                {
+                    case 1:
+                    case 2:
+                    case 3:
+                    case 4:
+                    case 5:
+                    case 6:
+					    DoTransitionEffect(effect - 1);
+                        break;
+                    case 128:
+                        UnkScreenEffect6();
+                        break;
+
+                    case 129:
+					// Just blit screen 0 to the display (i.e. display will be black)
+                        _mainVirtScreen.SetDirtyRange(0, _mainVirtScreen.Height);
+                        UpdateDirtyScreen(_mainVirtScreen);
+                        break;
+				
+                    default:
+                        throw new NotImplementedException(string.Format("fadeOut: case {0}", effect));
+                }
+            }
+
+            // Update the palette at the end (once we faded to black) to avoid
+            // some nasty effects when the palette is changed
+            UpdatePalette();
+
+            _screenEffectFlag = false;
+        }
+
+        protected void SetShake(bool enabled)
+        {
+            if (_shakeEnabled != enabled)
+                _fullRedraw = true;
+
+            _shakeEnabled = enabled;
+            _shakeFrame = 0;
+            _gfxManager.SetShakePos(0);
+        }
+
+        void HandleEffects()
+        {
+            if (Game.Version >= 4)
+            {
+                CyclePalette();
+            }
+            PalManipulate();
+            if (_doEffect)
+            {
+                _doEffect = false;
+                FadeIn(_newEffect);
+                // TODO:
+                //clearClickedStatus();
+            }
+        }
+
         void ScrollEffect(int dir)
         {
-            // TODO: ScrollEffect
+//            var vs = MainVirtScreen;
+//
+//            int x, y;
+//            int step;
+//            var delay = VariableFadeDelay.HasValue ? Variables[VariableFadeDelay.Value] * FadeDelay : PictureDelay;
+//
+//            if ((dir == 0) || (dir == 1))
+//                step = vs.Height;
+//            else
+//                step = vs.Width;
+//
+//            step = (step * delay) / Scrolltime;
+
+//            byte* src;
+//            int m = _textSurfaceMultiplier;
+//            int vsPitch = vs.Pitch;
+//
+//            switch (dir)
+//            {
+//                case 0:
+//                    //up
+//                    y = 1 + step;
+//                    while (y < vs.Height)
+//                    {
+//                        MoveScreen(0, -step, vs.Height);
+//
+//                        {
+//                            var src = vs.getPixels(0, y - step);
+//                            _gfxManager.CopyRectToScreen(src,
+//                                vsPitch,
+//                                0, (vs.Height - step) * m,
+//                                vs.Width * m, step * m);
+//                            _gfxManager.UpdateScreen();
+//                        }
+//
+//                        WaitForTimer(delay);
+//                        y += step;
+//                    }
+//                    break;
+//                case 1:
+//                    // down
+//                    y = 1 + step;
+//                    while (y < vs.h)
+//                    {
+//                        MoveScreen(0, step, vs.h);
+//
+//                        {
+//                            src = vs.getPixels(0, vs.h - y);
+//                            _gfxManager.CopyRectToScreen(src,
+//                                vsPitch,
+//                                0, 0,
+//                                vs.w * m, step * m);
+//                            _gfxManager.UpdateScreen();
+//                        }
+//
+//                        WaitForTimer(delay);
+//                        y += step;
+//                    }
+//                    break;
+//                case 2:
+//                    // left
+//                    x = 1 + step;
+//                    while (x < vs.w)
+//                    {
+//                        MoveScreen(-step, 0, vs.h);
+//
+//                        {
+//                            src = vs.getPixels(x - step, 0);
+//                            _gfxManager.CopyRectToScreen(src,
+//                                vsPitch,
+//                                (vs.w - step) * m, 0,
+//                                step * m, vs.h * m);
+//                            _gfxManager.UpdateScreen();
+//                        }
+//
+//                        WaitForTimer(delay);
+//                        x += step;
+//                    }
+//                    break;
+//                case 3:
+//                    // right
+//                    x = 1 + step;
+//                    while (x < vs.w)
+//                    {
+//                        MoveScreen(step, 0, vs.h);
+//
+//                        {
+//                            src = vs.getPixels(vs.w - x, 0);
+//                            _gfxManager.CopyRectToScreen(src,
+//                                vsPitch,
+//                                0, 0,
+//                                step, vs.h);
+//                            _gfxManager.UpdateScreen();
+//                        }
+//
+//                        WaitForTimer(delay);
+//                        x += step;
+//                    }
+//                    break;
+//            }
+        }
+
+        /**
+ * Moves the screen content by the offset specified via dx/dy.
+ * Only the region from x=0 till x=height-1 is affected.
+ * @param dx    the horizontal offset.
+ * @param dy    the vertical offset.
+ * @param height    the number of lines which in which the move will be done.
+ */
+        void MoveScreen(int dx, int dy, int height)
+        {
+            // Short circuit check - do we have to do anything anyway?
+//            if ((dx == 0 && dy == 0) || height <= 0)
+//                return;
+//
+//            var screen = _system->lockScreen();
+//            if (!screen)
+//                return;
+//            screen->move(dx, dy, height);
+//            _system->unlockScreen();
         }
 
         /// <summary>
@@ -136,7 +328,7 @@ namespace NScumm.Core
             w = vs.Width / width;
             h = vs.Height / height;
 
-            // When used correctly, vs->width % width and vs->height % height
+            // When used correctly, vs.width % width and vs.height % height
             // should both be zero, but just to be safe...
 
             if ((vs.Width % width) != 0)
@@ -228,79 +420,250 @@ namespace NScumm.Core
             DissolveEffect(8, 4);
         }
 
-        protected void FadeOut(int effect)
+        /// <summary>
+        /// Perform a transition effect. There are four different effects possible:
+        /// 0: Iris effect
+        /// 1: Box wipe (a black box expands from the upper-left corner to the lower-right corner)
+        /// 2: Box wipe (a black box expands from the lower-right corner to the upper-left corner)
+        /// 3: Inverse box wipe
+        /// </summary>
+        /// <remarks>
+        /// All effects operate on 8x8 blocks of the screen. These blocks are updated
+        /// in a certain order; the exact order determines how the effect appears to the user.
+        /// </remarks>
+        /// <param name="a">The transition effect to perform.</param>
+        void DoTransitionEffect(int a)
         {
-            _mainVirtScreen.SetDirtyRange(0, 0);
+            int[] delta = new int[16];                              // Offset applied during each iteration
+            int[] tab_2 = new int[16];
+            int i, j;
+            int bottom;
+            int l, t, r, b;
+            var height = Math.Min((int)MainVirtScreen.Height, ScreenHeight);
+            var delay = VariableFadeDelay.HasValue ? Variables[VariableFadeDelay.Value] * FadeDelay : PictureDelay;
 
-            if (Game.Version < 7)
-                Camera.LastPosition.X = Camera.CurrentPosition.X;
-
-            if ((Game.Version == 7 ||_screenEffectFlag) && effect != 0)
+            for (i = 0; i < 16; i++)
             {
-                // Fill screen 0 with black
-                var l_pixNav = new PixelNavigator(_mainVirtScreen.Surfaces[0]);
-                l_pixNav.OffsetX(_mainVirtScreen.XStart);
-                Gdi.Fill(l_pixNav, 0, _mainVirtScreen.Width, _mainVirtScreen.Height);
+                delta[i] = transitionEffects[a].deltaTable[i];
+                j = transitionEffects[a].stripTable[i];
+                if (j == 24)
+                    j = height / 8 - 1;
+                tab_2[i] = j;
+            }
 
-                // Fade to black with the specified effect, if any.
-                switch (effect)
+            bottom = height / 8;
+            for (j = 0; j < transitionEffects[a].numOfIterations; j++)
+            {
+                for (i = 0; i < 4; i++)
                 {
-                    case 1:
-                    case 2:
-                    case 3:
-                    case 4:
-                    case 5:
-                    case 6:
-					//    transitionEffect(effect - 1);
-                        Console.Error.WriteLine(string.Format("fadeOut: case {0} not implemented", effect));
-                        break;
-                    case 128:
-                        UnkScreenEffect6();
-                        break;
+                    l = tab_2[i * 4];
+                    t = tab_2[i * 4 + 1];
+                    r = tab_2[i * 4 + 2];
+                    b = tab_2[i * 4 + 3];
 
-                    case 129:
-					// Just blit screen 0 to the display (i.e. display will be black)
-                        _mainVirtScreen.SetDirtyRange(0, _mainVirtScreen.Height);
-                        UpdateDirtyScreen(_mainVirtScreen);
-                        break;
-				
-                    default:
-                        throw new NotImplementedException(string.Format("fadeOut: case {0}", effect));
+                    if (t == b)
+                    {
+                        while (l <= r)
+                        {
+                            if (l >= 0 && l < Gdi.NumStrips && t < bottom)
+                            {
+                                MainVirtScreen.TDirty[l] = ScreenTop + t * 8;
+                                MainVirtScreen.BDirty[l] = ScreenTop + (b + 1) * 8;
+                            }
+                            l++;
+                        }
+                    }
+                    else
+                    {
+                        if (l < 0 || l >= Gdi.NumStrips || b <= t)
+                            continue;
+                        if (b > bottom)
+                            b = bottom;
+                        if (t < 0)
+                            t = 0;
+                        MainVirtScreen.TDirty[l] = ScreenTop + t * 8;
+                        MainVirtScreen.BDirty[l] = ScreenTop + (b + 1) * 8;
+                    }
+                    UpdateDirtyScreen(MainVirtScreen);
+                }
+
+                for (i = 0; i < 16; i++)
+                    tab_2[i] += delta[i];
+
+                // Draw the current state to the screen and wait a few secs so the
+                // user can watch the effect taking place.
+                WaitForTimer(delay);
+            }
+        }
+
+        void WaitForTimer(int msec_delay)
+        {
+            //            if (_fastMode & 2)
+            //                msec_delay = 0;
+            //            else if (_fastMode & 1)
+            //                msec_delay = 10;
+
+            var start_time = Environment.TickCount;
+
+            while (!HasToQuit)
+            {
+                //        _sound.updateCD(); // Loop CD Audio if needed
+                _inputManager.Swap();
+
+
+                _gfxManager.UpdateScreen();
+                if (Environment.TickCount >= start_time + msec_delay)
+                    break;
+                Thread.Sleep(10);
+            }
+        }
+
+        /**
+ * The following structs define four basic fades/transitions used by
+ * transitionEffect(), each looking differently to the user.
+ * Note that the stripTables contain strip numbers, and they assume
+ * that the screen has 40 vertical strips (i.e. 320 pixel), and 25 horizontal
+ * strips (i.e. 200 pixel). There is a hack in transitionEffect that
+ * makes it work correctly in games which have a different screen height
+ * (for example, 240 pixel), but nothing is done regarding the width, so this
+ * code won't work correctly in COMI. Also, the number of iteration depends
+ * on min(vertStrips, horizStrips}. So the 13 is derived from 25/2, rounded up.
+ * And the 25 = min(25,40). Hence for Zak256 instead of 13 and 25, the values
+ * 15 and 30 should be used, and for COMI probably 30 and 60.
+ */
+        struct TransitionEffect
+        {
+            public byte numOfIterations;
+            public sbyte[] deltaTable;
+            // four times l / t / r / b
+            public byte[] stripTable;
+            // ditto
+        }
+
+        static readonly TransitionEffect[] transitionEffects = new ScummEngine.TransitionEffect[]
+        {
+            // Iris effect (looks like an opening/closing camera iris)
+            new ScummEngine.TransitionEffect
+            {
+                numOfIterations = 13,
+                deltaTable = new sbyte[]
+                {
+                    1,  1, -1,  1,
+                    -1,  1, -1, -1,
+                    1, -1, -1, -1,
+                    1,  1,  1, -1
+                },
+                stripTable = new byte[]
+                {
+                    0,  0, 39,  0,
+                    39,  0, 39, 24,
+                    0, 24, 39, 24,
+                    0,  0,  0, 24
+                }
+            },
+
+            // Box wipe (a box expands from the upper-left corner to the lower-right corner)
+            new ScummEngine.TransitionEffect
+            {
+                numOfIterations = 25,     // Number of iterations
+                deltaTable = new sbyte[]
+                {
+                    0,  1,  2,  1,
+                    2,  0,  2,  1,
+                    2,  0,  2,  1,
+                    0,  0,  0,  0
+                },
+                stripTable = new byte[]
+                {
+                    0,  0,  0,  0,
+                    0,  0,  0,  0,
+                    1,  0,  1,  0,
+                    255,  0,  0,  0
+                }
+            },
+
+            // Box wipe (a box expands from the lower-right corner to the upper-left corner)
+            new ScummEngine.TransitionEffect
+            {
+                numOfIterations = 25,     // Number of iterations
+                deltaTable = new sbyte[]
+                {
+                    -2, -1,  0, -1,
+                    -2, -1, -2,  0,
+                    -2, -1, -2,  0,
+                    0,  0,  0,  0
+                },
+                stripTable = new byte[]
+                {
+                    39, 24, 39, 24,
+                    39, 24, 39, 24,
+                    38, 24, 38, 24,
+                    255,  0,  0,  0
+                }
+            },
+
+            // Inverse box wipe
+            new ScummEngine.TransitionEffect
+            {
+                numOfIterations = 25,     // Number of iterations
+                deltaTable = new sbyte[]
+                {
+                    0, -1, -2, -1,
+                    -2,  0, -2, -1,
+                    -2,  0, -2, -1,
+                    0,  0,  0,  0
+                },
+                stripTable = new byte[]
+                {
+                    0, 24, 39, 24,
+                    39,  0, 39, 24,
+                    38,  0, 38, 24,
+                    255,  0,  0,  0
+                }
+            },
+
+            // Inverse iris effect, specially tailored for V1/V2 games
+            new ScummEngine.TransitionEffect
+            {
+                numOfIterations = 9,      // Number of iterations
+                deltaTable = new sbyte[]
+                {
+                    -1, -1,  1, -1,
+                    -1,  1,  1,  1,
+                    -1, -1, -1,  1,
+                    1, -1,  1,  1
+                },
+                stripTable = new byte[]
+                {
+                    7, 7, 32, 7,
+                    7, 8, 32, 8,
+                    7, 8,  7, 8,
+                    32, 7, 32, 8
+                }
+            },
+
+            // Horizontal wipe (a box expands from left to right side). For MM NES
+            new ScummEngine.TransitionEffect
+            {
+                numOfIterations = 16,     // Number of iterations
+                deltaTable = new sbyte[]
+                {
+                    2,  0,  2,  0,
+                    2,  0,  2,  0,
+                    0,  0,  0,  0,
+                    0,  0,  0,  0
+                },
+                stripTable = new byte[]
+                {
+                    0, 0,  0,  15,
+                    1, 0,  1,  15,
+                    255, 0,  0,  0,
+                    255, 0,  0,  0
                 }
             }
 
-            // Update the palette at the end (once we faded to black) to avoid
-            // some nasty effects when the palette is changed
-            UpdatePalette();
+        };
 
-            _screenEffectFlag = false;
-        }
-
-        protected void SetShake(bool enabled)
-        {
-            if (_shakeEnabled != enabled)
-                _fullRedraw = true;
-
-            _shakeEnabled = enabled;
-            _shakeFrame = 0;
-            _gfxManager.SetShakePos(0);
-        }
-
-        void HandleEffects()
-        {
-            if (Game.Version >= 4)
-            {
-                CyclePalette();
-            }
-            PalManipulate();
-            if (_doEffect)
-            {
-                _doEffect = false;
-                FadeIn(_newEffect);
-                // TODO:
-                //clearClickedStatus();
-            }
-        }
     }
 }
 

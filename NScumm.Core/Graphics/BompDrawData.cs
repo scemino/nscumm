@@ -224,7 +224,7 @@ namespace NScumm.Core.Graphics
             }
         }
 
-        void BompApplyMask(byte[] line_buffer, int linePos, PixelNavigator mask, byte maskbit, int size, byte transparency)
+        public static void BompApplyMask(byte[] line_buffer, int linePos, PixelNavigator mask, byte maskbit, int size, byte transparency)
         {
             while (true)
             {

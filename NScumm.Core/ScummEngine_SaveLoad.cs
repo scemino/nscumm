@@ -195,9 +195,13 @@ namespace NScumm.Core
                 // Update volume settings
 //                SyncSoundSettings();
 
+                if (Game.Version < 7)
+                {
+                    Camera.LastPosition.X = Camera.CurrentPosition.X;
+                }
+
                 var sb = _screenB;
                 var sh = _screenH;
-                _camera.LastPosition.X = _camera.CurrentPosition.X;
 
                 // Restore the virtual screens and force a fade to black.
                 InitScreens(0, ScreenHeight);
@@ -219,10 +223,14 @@ namespace NScumm.Core
 
                 CameraMoved();
 
+                Gdi.NumZBuffer = GetNumZBuffers();
+                Gdi.SetMaskHeight(roomData.Header.Height);
+
                 if (VariableRoomFlag.HasValue)
                 {
                     Variables[VariableRoomFlag.Value] = 1;
                 }
+
                 // Sync with current config setting
                 if (VariableVoiceMode.HasValue)
                 {
@@ -230,8 +238,6 @@ namespace NScumm.Core
                 }
 
                 Sound.PauseSounds(false);
-
-                Gdi.NumZBuffer = GetNumZBuffers();
             }
 
             return true;

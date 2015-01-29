@@ -44,7 +44,7 @@ namespace NScumm.Core.Graphics
         byte decompShr;
         byte decompMask;
         byte transparentColor = 255;
-        byte[][] maskBuffer = new byte[4][];
+        byte[][] maskBuffer;
         byte[] roomPalette = new byte[256];
 
         #endregion
@@ -73,9 +73,10 @@ namespace NScumm.Core.Graphics
         {
             _vm = vm;
             this.game = game;
+            maskBuffer = new byte[4][];
             for (int i = 0; i < maskBuffer.Length; i++)
             {
-                maskBuffer[i] = new byte[40 * (200 + 4)];
+                maskBuffer[i] = new byte[NumStrips * (200 + 4)];
             }
             IsZBufferEnabled = true;
             _gfxUsageBits = new uint[410 * 3];
@@ -105,18 +106,19 @@ namespace NScumm.Core.Graphics
 
         public void SetMaskHeight(int height)
         {
+            maskBuffer = new byte[NumZBuffer][];
             if (game.Version >= 7)
             {
                 for (int i = 0; i < maskBuffer.Length; i++)
                 {
-                    maskBuffer[i] = new byte[40 * (height + 10)];
+                    maskBuffer[i] = new byte[NumStrips * (height + 10)];
                 }
             }
             else
             {
                 for (int i = 0; i < maskBuffer.Length; i++)
                 {
-                    maskBuffer[i] = new byte[40 * (height + 4)];
+                    maskBuffer[i] = new byte[NumStrips * (height + 4)];
                 }
             }
         }
@@ -237,7 +239,7 @@ namespace NScumm.Core.Graphics
 
         public PixelNavigator GetMaskBuffer(int x, int y, int i)
         {
-            var nav = new PixelNavigator(maskBuffer[i], 40, 1);
+            var nav = new PixelNavigator(maskBuffer[i], NumStrips, 1);
             nav.GoTo(x, y);
             return nav;
         }

@@ -195,8 +195,6 @@ namespace NScumm.Core.Graphics
             pixelsNavigator.OffsetX(vs.XStart);
 
             ActorX += (vs.XStart & 7);
-            _width = vs.Width;
-            _height = vs.Height;
             pixelsNavigator.OffsetX(-(vs.XStart & 7));
             startNav = new PixelNavigator(pixelsNavigator);
 
@@ -834,17 +832,13 @@ namespace NScumm.Core.Graphics
         {
             Debug.Assert(_vm.MainVirtScreen.BytesPerPixel == 1);
 
-            Rect clip;
-            int minx, miny, maxw, maxh;
-            int skip_x, skip_y, cur_x, cur_y;
-            byte transparency = 255;
-
             if (ActorHitMode)
             {
                 Console.Error.WriteLine("codec16: _actorHitMode not yet implemented");
                 return 0;
             }
 
+            Rect clip;
             if (!_mirror)
             {
                 clip.Left = (ActorX - xmoveCur - _width) + 1;
@@ -858,16 +852,17 @@ namespace NScumm.Core.Graphics
             clip.Right = clip.Left + _width;
             clip.Bottom = clip.Top + _height;
 
-            minx = miny = 0;
-            maxw = _vm.MainVirtScreen.Width;
-            maxh = _vm.MainVirtScreen.Height;
+            var minx = 0;
+            var miny = 0;
+            var maxw = _vm.MainVirtScreen.Width;
+            var maxh = _vm.MainVirtScreen.Height;
 
             MarkRectAsDirty(clip);
 
-            skip_x = 0;
-            skip_y = 0;
-            cur_x = _width - 1;
-            cur_y = _height - 1;
+            var skip_x = 0;
+            var skip_y = 0;
+            var cur_x = _width - 1;
+            var cur_y = _height - 1;
 
             if (clip.Left < minx)
             {
@@ -901,9 +896,9 @@ namespace NScumm.Core.Graphics
             if (DrawBottom < clip.Bottom)
                 DrawBottom = clip.Bottom;
 
-            int width_unk, height_unk;
+            int width_unk;
 
-            height_unk = clip.Top;
+            var height_unk = clip.Top;
             int dir;
 
             if (!_mirror)
@@ -921,9 +916,7 @@ namespace NScumm.Core.Graphics
                 width_unk = clip.Left;
             }
 
-            int out_height;
-
-            out_height = cur_y - skip_y;
+            var out_height = cur_y - skip_y;
             if (out_height < 0)
             {
                 out_height = -out_height;
@@ -943,7 +936,7 @@ namespace NScumm.Core.Graphics
             _pixelsNavigator = new PixelNavigator(_vm.MainVirtScreen.Surfaces[0]);
             _pixelsNavigator.GoTo(width_unk, height_unk);
 
-            Akos16Decompress(_pixelsNavigator, (int)_srcptr, cur_x, out_height, dir, numskip_before, numskip_after, transparency, clip.Left, clip.Top, ZBuffer);
+            Akos16Decompress(_pixelsNavigator, (int)_srcptr, cur_x, out_height, dir, numskip_before, numskip_after, 255, clip.Left, clip.Top, ZBuffer);
             return 0;
         }
 
@@ -951,7 +944,7 @@ namespace NScumm.Core.Graphics
                               int numskip_before, int numskip_after, byte transparency, int maskLeft, int maskTop, int zBuf)
         {
             var tmp_buf = _akos16.Buffer;
-            var tmp_pos = _akos16.BufferPos;
+            var tmp_pos = 0;
             var maskbit = (byte)ScummHelper.RevBitMask(maskLeft & 7);
 
             if (dir < 0)
@@ -974,8 +967,8 @@ namespace NScumm.Core.Graphics
             while ((t_height--) != 0)
             {
                 Akos16DecodeLine(tmp_buf, tmp_pos, t_width, dir);
-                BompApplyMask(_akos16.Buffer, maskptr, maskbit, t_width, transparency);
-                BompDrawData.BompApplyShadow(ShadowMode, ShadowTable, _akos16.Buffer, _akos16.BufferPos, dest, t_width, transparency);
+                BompDrawData.BompApplyMask(_akos16.Buffer, 0, maskptr, maskbit, t_width, transparency);
+                BompDrawData.BompApplyShadow(ShadowMode, ShadowTable, _akos16.Buffer, 0, dest, t_width, transparency);
 
                 if (numskip_after != 0)
                 {
@@ -983,28 +976,6 @@ namespace NScumm.Core.Graphics
                 }
                 dest.OffsetY(1);
                 maskptr.OffsetY(1);
-            }
-        }
-
-        void BompApplyMask(byte[] line_buffer, PixelNavigator maskNav, byte maskbit, int size, byte transparency)
-        {
-            var maskPos = 0;
-            var linBufPos = 0;
-            while (true)
-            {
-                do
-                {
-                    if (size-- == 0)
-                        return;
-                    if ((maskNav.Read() & maskbit) != 0)
-                    {
-                        line_buffer[linBufPos] = transparency;
-                    }
-                    linBufPos++;
-                    maskbit >>= 1;
-                } while (maskbit != 0);
-                maskNav.OffsetX(1);
-                maskbit = 128;
             }
         }
 
@@ -1277,7 +1248,6 @@ namespace NScumm.Core.Graphics
             public byte Numbits;
             public int Dataptr;
             public byte[] Buffer = new byte[336];
-            public int BufferPos;
         }
 
         Akos16 _akos16 = new Akos16();

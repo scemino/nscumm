@@ -42,8 +42,8 @@ namespace NScumm.Core
         IgnoreBoxes = 22,
         YFlip = 29,
         XFlip = 30,
-        Player = 31,
         // Actor is controlled by the player
+        Player = 31,
         Untouchable = 32
     }
 
@@ -1180,21 +1180,21 @@ namespace NScumm.Core
         {
             if (!IsInCurrentRoom)
             {
-                Debug.WriteLine("Actor::remapActorPalette: Actor {0} not in current room", Number);
+                Debug.WriteLine("Actor::RemapActorPalette: Actor {0} not in current room", Number);
                 return;
             }
 
             var akos = _scumm.ResourceManager.GetCostumeData(Costume);
             if (akos == null)
             {
-                Debug.WriteLine("Actor::remapActorPalette: Can't remap actor {0}, costume {1} not found", Number, Costume);
+                Debug.WriteLine("Actor::RemapActorPalette: Can't remap actor {0}, costume {1} not found", Number, Costume);
                 return;
             }
 
             var akpl = ResourceFile7.ReadData(akos, "AKPL");
             if (akpl == null)
             {
-                Debug.WriteLine("Actor::remapActorPalette: Can't remap actor {0}, costume {1} doesn't contain an AKPL block", Number, Costume);
+                Debug.WriteLine("Actor::RemapActorPalette: Can't remap actor {0}, costume {1} doesn't contain an AKPL block", Number, Costume);
                 return;
             }
 
@@ -1204,7 +1204,13 @@ namespace NScumm.Core
 
             if (rgbs == null)
             {
-                Debug.WriteLine("Actor::remapActorPalette: Can't remap actor {0} costume {1} doesn't contain an RGB block", Number, Costume);
+                Debug.WriteLine("Actor::RemapActorPalette: Can't remap actor {0} costume {1} doesn't contain an RGB block", Number, Costume);
+                return;
+            }
+
+            if (rgbs.Length == 4 && BitConverter.ToInt32(rgbs, 0) == 0)
+            {
+                Debug.WriteLine("Actor::RemapActorPalette: Can't remap actor {0} costume {1} contains a block of 0s", Number, Costume);
                 return;
             }
 

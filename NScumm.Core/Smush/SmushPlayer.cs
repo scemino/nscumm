@@ -405,9 +405,9 @@ namespace NScumm.Core.Smush
                     case "XPAL":
                         HandleDeltaPalette(subSize, b);
                         break;
-//                    case "IACT":
-//                        HandleIACT(subSize, b);
-//                        break;
+                    case "IACT":
+                        HandleIACT(subSize, b);
+                        break;
                     case "STOR":
                         HandleStore(subSize, b);
                         break;
@@ -501,6 +501,168 @@ namespace NScumm.Core.Smush
             else
             {
                 throw new InvalidOperationException("SmushPlayer.HandleDeltaPalette() Wrong size for DeltaPalette");
+            }
+        }
+
+        void HandleIACT(uint subSize, XorReader b)
+        {
+            Debug.WriteLine("SmushPlayer::IACT()");
+            Debug.Assert(subSize >= 8);
+
+            int code = b.ReadUInt16();
+            int flags = b.ReadUInt16();
+            int unknown = b.ReadInt16();
+            int track_flags = b.ReadUInt16();
+
+            if ((code != 8) && (flags != 46))
+            {
+                _vm.Insane.ProcIACT(_dst, 0, 0, 0, b, 0, 0, code, flags, unknown, track_flags);
+                return;
+            }
+
+            if (_compressedFileMode)
+            {
+                return;
+            }
+
+            Debug.Assert(flags == 46 && unknown == 0);
+            int track_id = b.ReadUInt16();
+            int index = b.ReadUInt16();
+            int nbframes = b.ReadUInt16();
+            int size = b.ReadInt32();
+            int bsize = (int)subSize - 18;
+
+            if (_vm.Game.GameId != GameId.CurseOfMonkeyIsland)
+            {
+                int track = track_id;
+                if (track_flags == 1)
+                {
+                    track = track_id + 100;
+                }
+                else if (track_flags == 2)
+                {
+                    track = track_id + 200;
+                }
+                else if (track_flags == 3)
+                {
+                    track = track_id + 300;
+                }
+                else if ((track_flags >= 100) && (track_flags <= 163))
+                {
+                    track = track_id + 400;
+                }
+                else if ((track_flags >= 200) && (track_flags <= 263))
+                {
+                    track = track_id + 500;
+                }
+                else if ((track_flags >= 300) && (track_flags <= 363))
+                {
+                    track = track_id + 600;
+                }
+                else
+                {
+                    Debug.Fail(string.Format("SmushPlayer::handleIACT(): bad track_flags: {0}", track_flags));
+                }
+                Debug.WriteLine("SmushPlayer::handleIACT(): {0}, {1}, {2}", track, index, track_flags);
+
+                var c = _smixer.FindChannel(track);
+                if (c == null)
+                {
+//                    c = new ImuseChannel(track);
+//                    _smixer.AddChannel(c);
+                    // TODO: vs and remove return
+                    return;
+                }
+                if (index == 0)
+                    c.SetParameters(nbframes, size, track_flags, unknown, 0);
+                else
+                    c.CheckParameters(index, nbframes, size, track_flags, unknown);
+                c.AppendData(b, bsize);
+            }
+            else
+            {
+                // TODO: Move this code into another SmushChannel subclass?
+                var src = b.ReadBytes(bsize);
+                int d_src = 0;
+                byte value;
+
+                while (bsize > 0)
+                {
+                    if (_IACTpos >= 2)
+                    {
+                        int len = ScummHelper.SwapBytes(BitConverter.ToUInt16(_IACToutput, 0)) + 2;
+                        len -= _IACTpos;
+                        if (len > bsize)
+                        {
+                            Array.Copy(src, d_src, _IACToutput, _IACTpos, bsize);
+                            _IACTpos += bsize;
+                            bsize = 0;
+                        }
+                        else
+                        {
+                            var output_data = new byte[4096];
+
+                            Array.Copy(src, d_src, _IACToutput, _IACTpos, len);
+                            var dst = 0;
+                            var d_src2 = 0;
+                            d_src2 += 2;
+                            int count = 1024;
+                            byte variable1 = _IACToutput[d_src2++];
+                            byte variable2 = (byte)(variable1 / 16);
+                            variable1 &= 0x0f;
+                            do
+                            {
+                                value = _IACToutput[d_src2++];
+                                if (value == 0x80)
+                                {
+                                    output_data[dst++] = _IACToutput[d_src2++];
+                                    output_data[dst++] = _IACToutput[d_src2++];
+                                }
+                                else
+                                {
+                                    short val = (sbyte)(value << variable2);
+                                    output_data[dst++] = (byte)(val >> 8);
+                                    output_data[dst++] = (byte)(val);
+                                }
+                                value = _IACToutput[d_src2++];
+                                if (value == 0x80)
+                                {
+                                    output_data[dst++] = _IACToutput[d_src2++];
+                                    output_data[dst++] = _IACToutput[d_src2++];
+                                }
+                                else
+                                {
+                                    short val = (sbyte)(value << variable1);
+                                    output_data[dst++] = (byte)(val >> 8);
+                                    output_data[dst++] = (byte)(val);
+                                }
+                            } while ((--count)!=0);
+
+                            if (_IACTstream == null)
+                            {
+                                _IACTstream = new QueuingAudioStream(22050, true);
+                                _IACTchannel = _vm.Mixer.PlayStream(SoundType.SFX, _IACTstream);
+                            }
+                            _IACTstream.QueueBuffer(output_data, 0x1000, true, AudioFlags.Stereo | AudioFlags.Is16Bits);
+
+                            bsize -= len;
+                            d_src += len;
+                            _IACTpos = 0;
+                        }
+                    }
+                    else
+                    {
+                        if (bsize > 1 && _IACTpos == 0)
+                        {
+                            _IACToutput[0] = src[d_src++];
+                            _IACTpos = 1;
+                            bsize--;
+                        }
+                        _IACToutput[_IACTpos] = src[d_src++];
+                        _IACTpos++;
+                        bsize--;
+                    }
+                }
             }
         }
 
@@ -999,11 +1161,11 @@ namespace NScumm.Core.Smush
         int _frame;
 
         SoundHandle _IACTchannel = new SoundHandle();
-        //        Audio::QueuingAudioStream *_IACTstream;
+        QueuingAudioStream _IACTstream;
 
         SoundHandle _compressedFileSoundHandle = new SoundHandle();
         bool _compressedFileMode;
-        //        byte _IACToutput[4096];
+        byte[] _IACToutput = new byte[4096];
         int _IACTpos;
         bool _storeFrame;
         int _speed;

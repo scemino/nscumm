@@ -1545,6 +1545,18 @@ namespace NScumm.Core.Insane
             _actor[0].cursorX = 0;
         }
 
+        void SetBit(int n)
+        {
+            Debug.Assert(n < 0x80);
+            _iactBits[n] = 1;
+        }
+
+        void ClearBit(int n)
+        {
+            Debug.Assert(n < 0x80);
+            _iactBits[n] = 0;
+        }
+
         const int INV_CHAIN = 0;
         const int INV_CHAINSAW = 1;
         const int INV_MACE = 2;

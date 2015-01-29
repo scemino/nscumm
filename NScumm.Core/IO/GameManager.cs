@@ -46,7 +46,8 @@ namespace NScumm.Core.IO
         Tentacle,
         SamNMax,
         FullThrottle,
-        Dig
+        Dig,
+        CurseOfMonkeyIsland
     }
 
     public class GameInfo

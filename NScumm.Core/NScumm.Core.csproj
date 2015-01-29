@@ -245,6 +245,7 @@
     <Compile Include="Insane\Insane_Enemy.cs" />
     <Compile Include="Graphics\BompDrawData.cs" />
     <Compile Include="Insane\Insane_Ben.cs" />
+    <Compile Include="Insane\Insane_Iact.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="IO\Nscumm.xml">

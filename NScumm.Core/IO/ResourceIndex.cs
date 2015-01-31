@@ -80,6 +80,7 @@ namespace NScumm.Core.IO
 
         public uint[] ClassData { get; protected set; }
 
+
         public List<ArrayDefinition> ArrayDefinitions { get; private set; }
 
         public virtual int NumVerbs { get { return 100; } }
@@ -92,12 +93,13 @@ namespace NScumm.Core.IO
 
         public virtual int NumLocalObjects { get { return 200; } }
 
-        public virtual int NumArray { get { return 50; }}
+        public virtual int NumArray { get { return 50; } }
 
-        public virtual int NumGlobalScripts { get { return 200; }}
+        public virtual int NumGlobalScripts { get { return 200; } }
 
-        public virtual byte[] ObjectRoomTable { get{ return null; } }
+        public virtual byte[] ObjectRoomTable { get { return null; } }
 
+        public virtual string[] AudioNames { get; protected set; }
         #endregion
 
         #region Public Methods
@@ -105,6 +107,7 @@ namespace NScumm.Core.IO
         protected ResourceIndex()
         {
             ArrayDefinitions = new List<ArrayDefinition>();
+            AudioNames = new string[0];
         }
 
         public static ResourceIndex Load(GameInfo game)

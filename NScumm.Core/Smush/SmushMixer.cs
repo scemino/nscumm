@@ -30,7 +30,6 @@ namespace NScumm.Core.Smush
         public SmushMixer(IMixer mixer)
         {
             _mixer = mixer;
-            _soundFrequency = 22050;
             for (var i = 0; i < _channels.Length; i++)
             {
                 _channels[i] = new Channel();
@@ -192,7 +191,6 @@ namespace NScumm.Core.Smush
         const int NumChannels = 16;
         IMixer _mixer;
         Channel[] _channels = new Channel[NumChannels];
-        int _soundFrequency;
     }
 }
 

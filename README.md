@@ -67,7 +67,7 @@ Alt-Enter              - Toggles full screen/windowed
 Known Issues
 -------------------------
 
-Screen effects not implemented
+Missing some screen effects
 
 Cursor is sometimes not transparent
 

@@ -35,6 +35,16 @@ namespace NScumm.Core.IO
         {
         }
 
+        public override byte[] ReadSound(long offset)
+        {
+            GotoResourceHeader(offset);
+            var tag = ToTag(_reader.ReadBytes(4));
+            if (tag != "SOUN")
+                throw new NotSupportedException("Expected SO block.");
+            var size = _reader.ReadUInt32BigEndian();
+            return _reader.ReadBytes((int)size);
+        }
+
         protected override RoomHeader ReadRMHD()
         {
             var version = _reader.ReadUInt32();

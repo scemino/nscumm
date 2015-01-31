@@ -60,6 +60,8 @@ namespace NScumm.Core.IO
 
         public uint[] ClassData { get { return Index.ClassData; } }
 
+        public string[] AudioNames { get { return Index.AudioNames; } }
+
         public List<ArrayDefinition> ArrayDefinitions { get; private set; }
 
         public string Directory { get; private set; }
@@ -418,7 +420,7 @@ namespace NScumm.Core.IO
             if ((flags & 0x20) != 0)
             {
                 int playtime = ((srcPtr[inPos + 4] >> 4) & 0xf) * 118 +
-                    (srcPtr[inPos + 4] & 0xf) * 8;
+                               (srcPtr[inPos + 4] & 0xf) * 8;
                 if (playtime > time)
                     time = playtime;
             }

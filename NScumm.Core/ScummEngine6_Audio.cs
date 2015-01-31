@@ -18,6 +18,7 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+using NScumm.Core.Audio.IMuse;
 
 
 namespace NScumm.Core
@@ -35,8 +36,7 @@ namespace NScumm.Core
         {
             if (Game.Version >= 7)
             {
-                // TODO: vs 
-//                ImuseDigital.StartSfx(sound, 64);
+                ((IMuseDigital)MusicEngine).StartSfx(sound, 64);
             }
             else
             {

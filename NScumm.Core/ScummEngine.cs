@@ -133,7 +133,7 @@ namespace NScumm.Core
 
         internal IIMuse IMuse { get; private set; }
 
-        public IMusicEngine MusicEngine { get; private set; }
+        public IMusicEngine MusicEngine { get; protected set; }
 
         public static ScummEngine Instance { get; private set; }
 

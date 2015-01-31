@@ -121,15 +121,17 @@ namespace NScumm.Core
         protected internal override void HandleSound()
         {
             base.HandleSound();
-//            if (_imuseDigital) {
-//                _imuseDigital.flushTracks();
-//                // In CoMI and the Dig the full (non-demo) version invoke IMuseDigital::refreshScripts
-//                if ((_game.id == GID_DIG || _game.id == GID_CMI) && !(_game.features & GF_DEMO))
-//                    _imuseDigital.refreshScripts();
-//            }
-//            if (_smixer) {
-//                _smixer.flush();
-//            }
+            if (IMuseDigital != null)
+            {
+                IMuseDigital.FlushTracks();
+                // In CoMI and the Dig the full (non-demo) version invoke IMuseDigital::refreshScripts
+                if ((Game.GameId == GameId.Dig || Game.GameId == GameId.CurseOfMonkeyIsland) && !(Game.Features.HasFlag(GameFeatures.Demo)))
+                    IMuseDigital.RefreshScripts();
+            }
+            if (SmushMixer != null)
+            {
+                SmushMixer.Flush();
+            }
         }
 
         protected internal override void ProcessInput()
@@ -542,11 +544,10 @@ namespace NScumm.Core
                     case 3:
                         if (param_1 != 0)
                         {
-                            // TODO: vs
-//                            if (_imuseDigital)
-//                            {
-//                                _imuseDigital.startSfx(param_1, 63);
-//                            }
+                            if (IMuseDigital!=null)
+                            {
+                                IMuseDigital.StartSfx(param_1, 63);
+                            }
                         }
                         break;
                     case 4:
@@ -562,31 +563,28 @@ namespace NScumm.Core
                     case 7:
                         if (param_1 != 0)
                         {
-                            // TODO: vs
-//                            if (_imuseDigital)
-//                            {
-//                                _imuseDigital.setVolume(param_1, param_2);
-//                            }
+                            if (IMuseDigital!=null)
+                            {
+                                IMuseDigital.SetVolume(param_1, param_2);
+                            }
                         }
                         break;
                     case 8:
                         if (param_1 != 0)
                         {
-                            // TODO: vs
-//                            if (_imuseDigital)
-//                            {
-//                                _imuseDigital.setPan(param_1, param_2);
-//                            }
+                            if (IMuseDigital!=null)
+                            {
+                                IMuseDigital.SetPan(param_1, param_2);
+                            }
                         }
                         break;
                     case 9:
                         if (param_1 != 0)
                         {
-                            // TODO: vs
-//                            if (_imuseDigital)
-//                            {
-//                                _imuseDigital.setPriority(param_1, param_2);
-//                            }
+                            if (IMuseDigital!=null)
+                            {
+                                IMuseDigital.SetPriority(param_1, param_2);
+                            }
                         }
                         break;
                     default:
@@ -671,9 +669,8 @@ namespace NScumm.Core
                     pointer += ".IMX";
 
                 Sound.StopTalkSound();
-                // TODO: vs _imuseDigital
-//                _imuseDigital.StopSound(Sound.TalkSoundID);
-//                _imuseDigital.StartVoice(Sound.TalkSoundID, pointer);
+                IMuseDigital.StopSound(Sound.TalkSoundID);
+                IMuseDigital.StartVoice(Sound.TalkSoundID, pointer);
                 Sound.TalkSound(0, 0, 2);
             }
         }

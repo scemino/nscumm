@@ -363,8 +363,7 @@ namespace NScumm.Core.Smush
             if (_insanity)
                 _vm.Sound.ProcessSound();
 
-            // TODO: vs
-//            _vm._imuseDigital.flushTracks();
+            _vm.IMuseDigital.FlushTracks();
         }
 
         void HandleFrame(uint frameSize, XorReader b)
@@ -568,10 +567,8 @@ namespace NScumm.Core.Smush
                 var c = _smixer.FindChannel(track);
                 if (c == null)
                 {
-//                    c = new ImuseChannel(track);
-//                    _smixer.AddChannel(c);
-                    // TODO: vs and remove return
-                    return;
+                    c = new ImuseChannel(track);
+                    _smixer.AddChannel(c);
                 }
                 if (index == 0)
                     c.SetParameters(nbframes, size, track_flags, unknown, 0);
@@ -727,25 +724,28 @@ namespace NScumm.Core.Smush
 //                    string2[0] = 0;
 //            }
 //
-            while (str[0] == '^')
+            if (str.Length > 0)
             {
-                switch (str[1])
+                while (str[0] == '^')
                 {
-                    case 'f':
-                        {
-                            int id = str[3] - '0';
-                            str = str.Substring(4);
-                            sf = GetFont(id);
-                        }
-                        break;
-                    case 'c':
-                        {
-                            color = str[4] - '0' + 10 * (str[3] - '0');
-                            str = str.Substring(5);
-                        }
-                        break;
-                    default:
-                        throw new InvalidOperationException("invalid escape code in text string");
+                    switch (str[1])
+                    {
+                        case 'f':
+                            {
+                                int id = str[3] - '0';
+                                str = str.Substring(4);
+                                sf = GetFont(id);
+                            }
+                            break;
+                        case 'c':
+                            {
+                                color = str[4] - '0' + 10 * (str[3] - '0');
+                                str = str.Substring(5);
+                            }
+                            break;
+                        default:
+                            throw new InvalidOperationException("invalid escape code in text string");
+                    }
                 }
             }
 
@@ -945,7 +945,7 @@ namespace NScumm.Core.Smush
             {
                 case 1:
                 case 3:
-//                    SmushDecodeCodec1(_dst, src, left, top, width, height, _vm.ScreenWidth);
+                    SmushDecodeCodec1(_dst, 0, src, 0, left, top, width, height, _vm.ScreenWidth);
                     break;
                 case 37:
                     if (_codec37 == null)

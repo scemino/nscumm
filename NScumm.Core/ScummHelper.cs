@@ -19,6 +19,7 @@ using System;
 using System.Linq;
 using System.IO;
 using NScumm.Core.IO;
+using System.Collections.Generic;
 
 namespace NScumm.Core
 {
@@ -398,5 +399,69 @@ namespace NScumm.Core
             return ((uint)((a3) | ((a2) << 8) | ((a1) << 16) | ((a0) << 24)));
         }
 
+        public static ushort ToUInt16(this byte[] value, int startIndex = 0)
+        {
+            return BitConverter.ToUInt16(value, startIndex);
+        }
+
+        public static short ToInt16(this byte[] value, int startIndex = 0)
+        {
+            return BitConverter.ToInt16(value, startIndex);
+        }
+
+        public static short ToInt16BigEndian(this byte[] value, int startIndex = 0)
+        {
+            return (short)ToUInt16BigEndian(value, startIndex);
+        }
+
+        public static ushort ToUInt16BigEndian(this byte[] value, int startIndex = 0)
+        {
+            return SwapBytes(ToUInt16(value, startIndex));
+        }
+
+        public static uint ToUInt32(this byte[] value, int startIndex = 0)
+        {
+            return BitConverter.ToUInt32(value, startIndex);
+        }
+
+        public static int ToInt32(this byte[] value, int startIndex = 0)
+        {
+            return BitConverter.ToInt32(value, startIndex);
+        }
+
+        public static uint ToUInt32BigEndian(this byte[] value, int startIndex = 0)
+        {
+            return SwapBytes(ToUInt32(value, startIndex));
+        }
+
+        public static int ToInt32BigEndian(this byte[] value, int startIndex = 0)
+        {
+            return (int)SwapBytes(ToUInt32(value, startIndex));
+        }
+
+        public static string ToText(this byte[] value, int startIndex = 0, int count = 4)
+        {
+            return System.Text.Encoding.ASCII.GetString(value, startIndex, count);
+        }
+
+        public static string GetText(this byte[] value, int startIndex = 0)
+        {
+            var data = new List<byte>();
+            for (int i = startIndex; i < value.Length && value[i] != 0; i++)
+            {
+                data.Add(value[i]);
+            }
+            return System.Text.Encoding.ASCII.GetString(data.ToArray());
+        }
+
+        public static int GetTextLength(this byte[] value, int startIndex = 0)
+        {
+            int length = 0;
+            for (int i = startIndex; i < value.Length && value[i] != 0; i++)
+            {
+                length++;
+            }
+            return length;
+        }
     }
 }

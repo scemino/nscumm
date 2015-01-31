@@ -516,7 +516,7 @@ namespace NScumm.Core.Audio.Decoders
             Rewind();
         }
 
-        static int GetSampleRateFromVOCRate(int vocSR)
+        public static int GetSampleRateFromVOCRate(int vocSR)
         {
             if (vocSR == 0xa5 || vocSR == 0xa6)
             {

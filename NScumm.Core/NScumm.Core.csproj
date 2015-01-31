@@ -246,6 +246,19 @@
     <Compile Include="Graphics\BompDrawData.cs" />
     <Compile Include="Insane\Insane_Ben.cs" />
     <Compile Include="Insane\Insane_Iact.cs" />
+    <Compile Include="Smush\ImuseChannel.cs" />
+    <Compile Include="Audio\IMuse\IMuseDigital\IMuseDigital.cs" />
+    <Compile Include="Audio\IMuse\IMuseDigital\IMuseDigiSndMgr.cs" />
+    <Compile Include="Audio\IMuse\IMuseDigital\ImuseTrack.cs" />
+    <Compile Include="Audio\IMuse\IMuseDigital\SoundDesc.cs" />
+    <Compile Include="Audio\IMuse\IMuseDigital\BundleMgr.cs" />
+    <Compile Include="Audio\IMuse\IMuseDigital\BundleDirCache.cs" />
+    <Compile Include="Audio\IMuse\IMuseDigital\BundleCodecs.cs" />
+    <Compile Include="Audio\Decoders\Ima_ADPCMStream.cs" />
+    <Compile Include="Audio\IMuse\IMuseDigital\IMuseDigital_Script.cs" />
+    <Compile Include="Audio\IMuse\IMuseDigital\IMuseDigital_Track.cs" />
+    <Compile Include="Audio\IMuse\IMuseDigital\IMuseDigital_Music.cs" />
+    <Compile Include="Audio\IMuse\IMuseDigital\IMuseDigital_Tables.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="IO\Nscumm.xml">
@@ -277,5 +290,6 @@
     <Folder Include="Audio\OPL\Mame\" />
     <Folder Include="Smush\" />
     <Folder Include="Insane\" />
+    <Folder Include="Audio\IMuse\IMuseDigital\" />
   </ItemGroup>
 </Project>

@@ -1295,17 +1295,14 @@ namespace NScumm.Core.Insane
 
         bool smlayer_isSoundRunning(int sound)
         {
-            // TODO: vs ImuseDigital
-            return false;
-//            return _vm->_imuseDigital->getSoundStatus(readArray(sound)) != 0;
+            return _vm.IMuseDigital.GetSoundStatus(ReadArray(sound)) != 0;
         }
 
         bool smlayer_startSfx(int sound)
         {
             if (smlayer_loadSound(sound, 0, 2) != 0)
             {
-                // TODO: vs ImuseDigital
-//                _vm.ImuseDigital.StartSfx(ReadArray(sound), 40);
+                _vm.IMuseDigital.StartSfx(ReadArray(sound), 40);
                 return true;
             }
             else
@@ -1314,28 +1311,24 @@ namespace NScumm.Core.Insane
 
         void smlayer_soundSetPriority(int soundId, int priority)
         {
-            // TODO: vs ImuseDigital
-//            _vm->_imuseDigital->setPriority(soundId, priority);
+            _vm.IMuseDigital.SetPriority(soundId, priority);
         }
 
         void smlayer_stopSound(int idx)
         {
-            // TODO: vs ImuseDigital
-//            _vm->_imuseDigital->stopSound(readArray(idx));
+            _vm.IMuseDigital.StopSound(ReadArray(idx));
         }
 
         void smlayer_soundSetPan(int soundId, int pan)
         {
-            // TODO: vs ImuseDigital
-//            _vm->_imuseDigital->setPan(soundId, pan);
+            _vm.IMuseDigital.SetPan(soundId, pan);
         }
 
         bool smlayer_startVoice(int sound)
         {
             if (smlayer_loadSound(sound, 0, 2) != 0)
             {
-                // TODO: vs ImuseDigital
-//                _vm.ImuseDigital.StartSfx(ReadArray(sound), 126);
+                _vm.IMuseDigital.StartSfx(ReadArray(sound), 126);
                 return true;
             }
             else

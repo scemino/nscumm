@@ -28,6 +28,7 @@ using System;
 using System.Reflection;
 using System.Linq;
 using NScumm.Core.Smush;
+using NScumm.Core.Audio.IMuse;
 
 namespace NScumm.Core
 {
@@ -41,7 +42,6 @@ namespace NScumm.Core
         int VariableRestartKey;
         int VariablePauseKey;
         int VariableVersionKey;
-        int VariableTalkStopKey;
         int VariableKeypress;
         int VariableCameraSpeedX;
         int VariableCameraSpeedY;
@@ -49,7 +49,6 @@ namespace NScumm.Core
         int VariableVideoName;
         int VariableString2Draw;
         public int VariableCustomScaleTable;
-        int VariableMusicBundleLoaded;
 
         public bool SmushVideoShouldFinish { get; internal set; }
 
@@ -61,6 +60,8 @@ namespace NScumm.Core
 
         internal Insane.Insane Insane { get; private set; }
 
+        internal IMuseDigital IMuseDigital { get; private set; }
+
         public ScummEngine7(GameInfo game, IGraphicsManager graphicsManager, IInputManager inputManager, IMixer mixer)
             : base(game, graphicsManager, inputManager, mixer)
         {
@@ -68,6 +69,10 @@ namespace NScumm.Core
             {
                 _subtitleQueue[i] = new SubtitleText();
             }
+
+            int dimuseTempo = 10;
+            MusicEngine = IMuseDigital = new IMuseDigital(this, mixer, dimuseTempo);
+            IMuseDigital.SetAudioNames(ResourceManager.AudioNames);
 
             // Create FT INSANE object
             if (Game.GameId == GameId.FullThrottle)

@@ -106,6 +106,8 @@ namespace NScumm.Core
         public int? VariableCameraAccelY;
         public int? VariableVoiceBundleLoaded;
         public int? VariableDefaultTalkDelay;
+        public int? VariableMusicBundleLoaded;
+        public int? VariableCurrentDisk;
 
         int[] _variables;
         BitArray _bitVars;

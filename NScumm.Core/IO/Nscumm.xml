@@ -13,6 +13,7 @@
   <MD5 signature="2723fea3dae0cb47768c424b145ae0e7" gameId="tentacle" variant="Floppy" language="en" />
   <MD5 signature="3b301b7892f883ce42ab4be6a274fea6" gameId="samnmax" variant="Floppy" language="en" />
   <MD5 signature="4bedb49943df95a9c900a5a82ccbe9de" gameId="ft" variant="" language="fr" />
+  <MD5 signature="d8323015ecb8b10bf53474f6e6b0ae33" gameId="dig" variant="" language="en" />
   <Game id="indy3" gameId="Indy3" variant="VGA" version="3"/>
   <Game id="indy3" gameId="Indy3" variant="EGA" version="3"/>
   <Game id="atlantis" gameId="Indy4" variant="VGA" version="5"/>
@@ -24,6 +25,7 @@
   <Game id="tentacle" gameId="Tentacle" variant="Floppy" version="6" />
   <Game id="samnmax" gameId="SamNMax" variant="Floppy" version="6" />
   <Game id="ft" gameId="FullThrottle" variant="" version="7" pattern="ft.la{0}" />
+  <Game id="dig" gameId="Dig" variant="" version="7" pattern="dig.la{0}" />
   <Description gameId="indy3" text="Indiana Jones and the Last Crusade" />
   <Description gameId="atlantis" text="Indiana Jones and the Fate of Atlantis" />
   <Description gameId="monkey" text="The Secret of Monkey Island" />
@@ -33,4 +35,5 @@
   <Description gameId="tentacle" text="Day of the Tentacle" />
   <Description gameId="samnmax" text="Sam &amp; Max Hit the Road" />
   <Description gameId="ft" text="Full Throttle" />
+  <Description gameId="dig" text="The Dig" />
 </NScumm>

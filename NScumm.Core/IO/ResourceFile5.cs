@@ -46,7 +46,7 @@ namespace NScumm.Core.IO
             _reader.BaseStream.Seek(offset, SeekOrigin.Begin);
         }
 
-        static string ToTag(byte[] data)
+        protected static string ToTag(byte[] data)
         {
             return Encoding.ASCII.GetString(data);
         }

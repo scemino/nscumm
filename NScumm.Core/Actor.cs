@@ -74,9 +74,9 @@ namespace NScumm.Core
         byte _animProgress, _animSpeed;
         bool _costumeNeedsInit;
         short[] _animVariable = new short[27];
-        int _talkFrequency;
-        byte _talkVolume;
-        byte _talkPan;
+        internal int _talkFrequency;
+        internal byte _talkVolume;
+        internal byte _talkPan;
         int _frame;
 
         #endregion

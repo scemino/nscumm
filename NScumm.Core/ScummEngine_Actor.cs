@@ -28,7 +28,7 @@ namespace NScumm.Core
 {
     partial class ScummEngine
     {
-        protected int _actorToPrintStrFor;
+        internal protected int _actorToPrintStrFor;
         bool _useTalkAnims;
         protected bool _haveActorSpeechMsg;
 

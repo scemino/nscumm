@@ -42,7 +42,9 @@ namespace NScumm.Core
 
         public override int NumGlobalScripts { get { return numGlobalScripts; }}
 
-        public override byte[] ObjectRoomTable { get{ return objectRoomTable; } }
+        public override byte[] ObjectRoomTable { get { return objectRoomTable; } }
+
+        public override string[] AudioNames { get { return audioNames; } }
 
         protected override void LoadIndex(GameInfo game)
         {
@@ -106,8 +108,11 @@ namespace NScumm.Core
                         case "ANAM":        // Used by: The Dig, FT
                             {
                                 var num = br.ReadUInt16();
-                                var ptr = br.ReadBytes(num * 9);
-//                                _imuseDigital->setAudioNames(num, ptr);
+                                audioNames = new string[num];
+                                for (int i = 0; i < num; i++)
+                                {
+                                    AudioNames[i] = System.Text.Encoding.ASCII.GetString(br.ReadBytes(9));
+                                }
                             }
                             break;
 
@@ -180,5 +185,6 @@ namespace NScumm.Core
         int numGlobalScripts;
         int numArray;
         byte[] objectRoomTable;
+        string[] audioNames;
     }
 }

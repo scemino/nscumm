@@ -23,6 +23,7 @@ using System.Timers;
 using System.IO;
 using NScumm.Core.Audio.Decoders;
 using NScumm.Core.IO;
+using NScumm.Core.Audio.IMuse;
 
 namespace NScumm.Core
 {
@@ -111,7 +112,7 @@ namespace NScumm.Core
             }
 
             // Stop all SFX
-//            if (vm.ImuseDigital==null)
+            if (!(vm.MusicEngine is NScumm.Core.Audio.IMuse.IMuseDigital))
             {
                 _mixer.StopAll();
             }
@@ -195,18 +196,18 @@ namespace NScumm.Core
             {
                 bool finished;
 
-//                if (vm._imuseDigital)
-//                {
-                finished = !IsSoundRunning(TalkSoundID);
-//                }
+                if (vm.MusicEngine is IMuseDigital)
+                {
+                    finished = !IsSoundRunning(TalkSoundID);
+                }
 //                else if (_vm->_game.heversion >= 60)
 //                {
 //                    finished = !isSoundRunning(1);
 //                }
-//                else
-//                {
-//                finished |= !_mixer.IsSoundHandleActive(_talkChannelHandle);
-//                }
+                else
+                {
+                    finished = !_mixer.IsSoundHandleActive(_talkChannelHandle);
+                }
 
                 if ((uint)act < 0x80 && ((vm.Game.Version == 8) || (vm.Game.Version <= 7 && !vm.String[0].NoTalkAnim)))
                 {
@@ -250,12 +251,18 @@ namespace NScumm.Core
         {
             if ((_sfxMode & 2) != 0)
             {
-                //                if (_vm->_imuseDigital) {
-                //                        _vm->_imuseDigital->stopSound(kTalkSoundID);
-                //                } else if (_vm->_game.heversion >= 60) {
-                //                        stopSound(1);
-                //                } else {
-                _mixer.StopHandle(_talkChannelHandle);
+                if (vm.MusicEngine is IMuseDigital)
+                {
+                    ((IMuseDigital)vm.MusicEngine).StopSound(TalkSoundID);
+                }
+//                else if (_vm->_game.heversion >= 60)
+//                {
+//                    stopSound(1);
+//                }
+                else
+                {
+                    _mixer.StopHandle(_talkChannelHandle);
+                }
 
                 _sfxMode &= ~2;
             }
@@ -312,9 +319,10 @@ namespace NScumm.Core
 
             _soundsPaused = pause;
 
-//    if (_vm->_imuseDigital) {
-//        _vm->_imuseDigital->pause(pause);
-//    }
+            if (vm.MusicEngine is IMuseDigital)
+            {
+                ((IMuseDigital)vm.MusicEngine).Pause(pause);
+            }
 
             _mixer.PauseAll(pause);
 

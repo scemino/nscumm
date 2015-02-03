@@ -467,13 +467,22 @@ namespace NScumm.Core
             _mouthSyncMode = true;
 
             var input = new VocStream(file, true);
-            if (mode == 1)
+
+            if (vm.MusicEngine is IMuseDigital)
             {
-                handle = _mixer.PlayStream(SoundType.SFX, input, id);
+                //_vm->_imuseDigital->stopSound(kTalkSoundID);
+                ((IMuseDigital)vm.MusicEngine).StartVoice(TalkSoundID, input);
             }
             else
             {
-                handle = _mixer.PlayStream(SoundType.Speech, input, id);
+                if (mode == 1)
+                {
+                    handle = _mixer.PlayStream(SoundType.SFX, input, id);
+                }
+                else
+                {
+                    handle = _mixer.PlayStream(SoundType.Speech, input, id);
+                }
             }
             return handle;
         }

@@ -280,7 +280,7 @@ namespace NScumm.Core.Audio.IMuse
             }
         }
 
-        void StartVoice(int soundId, IAudioStream input)
+        public void StartVoice(int soundId, IAudioStream input)
         {
             Debug.WriteLine("StartVoiceStream({0})", soundId);
             StartSound(soundId, "", 0, IMUSE_VOLGRP_VOICE, input, 0, 127, 127, null);

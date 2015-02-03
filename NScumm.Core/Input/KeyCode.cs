@@ -14,10 +14,19 @@
  * You should have received a copy of the GNU General Public License
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
+using System;
 
 
 namespace NScumm.Core
 {
+    [Flags]
+    public enum MouseButtonStatus
+    {
+        None = 0,
+        Down = 1,
+        Clicked = 2
+    }
+
     public enum KeyCode
     {
         Backspace = 8,

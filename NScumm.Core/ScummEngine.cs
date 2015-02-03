@@ -190,6 +190,7 @@ namespace NScumm.Core
             _gameMD5 = ToMd5Bytes(game.MD5);
             _gfxManager = gfxManager;
             _inputManager = inputManager;
+            _inputState = inputManager.GetState();
             _strings = new byte[_resManager.NumArray][];
             _charsets = new byte[_resManager.NumArray][];
             _inventory = new ushort[_resManager.NumInventory];

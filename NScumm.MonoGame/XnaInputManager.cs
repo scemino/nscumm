@@ -16,18 +16,15 @@
  */
 
 using Microsoft.Xna.Framework.Input;
+using NScumm.Core.Input;
+using System.Collections.Generic;
+using NScumm.Core;
+using System.Linq;
 
 namespace NScumm.MonoGame
 {
     sealed class XnaInputManager : NScumm.Core.Input.IInputManager
     {
-        OpenTK.NativeWindow window;
-
-        KeyboardState keyboardState;
-        MouseState lastMouseState;
-        MouseState mouseState;
-        object gate = new object();
-
         public XnaInputManager(OpenTK.NativeWindow window)
         {
             this.window = window;
@@ -45,65 +42,74 @@ namespace NScumm.MonoGame
             return pOut;
         }
 
-        public void UpdateStates()
+        public ScummInputState GetState()
         {
             lock (gate)
             {
-                keyboardState = Keyboard.GetState();
-                mouseState = Mouse.GetState();
+                var mouseState = Mouse.GetState();
+                var keys = Keyboard.GetState().GetPressedKeys().Where(key => keyToKeyCode.ContainsKey(key)).Select(key => keyToKeyCode[key]).ToList();
+                var inputState = new ScummInputState(keys, mouseState.LeftButton == ButtonState.Pressed, mouseState.RightButton == ButtonState.Pressed);
+                return inputState;
             }
         }
 
-        public bool IsKeyDown(NScumm.Core.KeyCode code)
-        {
-            lock (gate)
-            {
-                if (code >= NScumm.Core.KeyCode.A && code <= NScumm.Core.KeyCode.Z)
-                {
-                    return //state.IsButtonDown(code - Scumm4.KeyCode.A + Microsoft.Xna.Framework.Input.Buttons.A) ||
-                    keyboardState.IsKeyDown(code - NScumm.Core.KeyCode.A + Keys.A);
-                }
-                if (code == NScumm.Core.KeyCode.Escape)
-                {
-                    return //state.IsButtonDown(Microsoft.Xna.Framework.Input.Buttons.Back) ||
-                    keyboardState.IsKeyDown(Keys.Escape);
-                }
-                if (code >= NScumm.Core.KeyCode.F1 && code <= NScumm.Core.KeyCode.F9)
-                {
-                    return keyboardState.IsKeyDown(code - NScumm.Core.KeyCode.F1 + Keys.F1);
-                }
-                if (code >= NScumm.Core.KeyCode.D0 && code <= NScumm.Core.KeyCode.D9)
-                {
-                    return keyboardState.IsKeyDown(code - NScumm.Core.KeyCode.D0 + Keys.NumPad0);
-                }
-            }
-            return false;
-
-        }
-
-        public bool IsMouseLeftClicked()
-        {
-            return lastMouseState.LeftButton == ButtonState.Pressed && mouseState.LeftButton == ButtonState.Released;
-        }
-
-        public bool IsMouseRightClicked()
-        {
-            return lastMouseState.RightButton == ButtonState.Pressed && mouseState.RightButton == ButtonState.Released;
-        }
-
-        public bool IsMouseLeftDown()
-        {
-            return mouseState.LeftButton == ButtonState.Pressed;
-        }
-
-        public bool IsMouseRightDown()
-        {
-            return mouseState.RightButton == ButtonState.Pressed;
-        }
-
-        public void Swap()
-        {
-            lastMouseState = mouseState;
-        }
+        OpenTK.NativeWindow window;
+        object gate = new object();
+        static readonly Dictionary<Keys, KeyCode> keyToKeyCode = new Dictionary<Keys,KeyCode>
+        { 
+            { Keys.Back,   KeyCode.Backspace },
+            { Keys.Tab,    KeyCode.Tab       },
+            { Keys.Enter,  KeyCode.Return    },
+            { Keys.Escape, KeyCode.Escape    },
+            { Keys.Space,  KeyCode.Space     },
+            { Keys.F1 , KeyCode.F1 },
+            { Keys.F2 , KeyCode.F2 },
+            { Keys.F3 , KeyCode.F3 },
+            { Keys.F4 , KeyCode.F4 },
+            { Keys.F5 , KeyCode.F5 },
+            { Keys.F6 , KeyCode.F6 },
+            { Keys.F7 , KeyCode.F7 },
+            { Keys.F8 , KeyCode.F8 },
+            { Keys.F9 , KeyCode.F9 },
+            { Keys.F10, KeyCode.F10 },
+            { Keys.F11, KeyCode.F11 },
+            { Keys.F12, KeyCode.F12 },
+            { Keys.A, KeyCode.A },
+            { Keys.B, KeyCode.B },
+            { Keys.C, KeyCode.C },
+            { Keys.D, KeyCode.D },
+            { Keys.E, KeyCode.E },
+            { Keys.F, KeyCode.F },
+            { Keys.G, KeyCode.G },
+            { Keys.H, KeyCode.H },
+            { Keys.I, KeyCode.I },
+            { Keys.J, KeyCode.J },
+            { Keys.K, KeyCode.K },
+            { Keys.L, KeyCode.L },
+            { Keys.M, KeyCode.M },
+            { Keys.N, KeyCode.N },
+            { Keys.O, KeyCode.O },
+            { Keys.P, KeyCode.P },
+            { Keys.Q, KeyCode.Q },
+            { Keys.R, KeyCode.R },
+            { Keys.S, KeyCode.S },
+            { Keys.T, KeyCode.T },
+            { Keys.U, KeyCode.U },
+            { Keys.V, KeyCode.V },
+            { Keys.W, KeyCode.W },
+            { Keys.X, KeyCode.X },
+            { Keys.Y, KeyCode.Y },
+            { Keys.Z, KeyCode.Z },
+            { Keys.D0, KeyCode.D0 },
+            { Keys.D1, KeyCode.D1 },
+            { Keys.D2, KeyCode.D2 },
+            { Keys.D3, KeyCode.D3 },
+            { Keys.D4, KeyCode.D4 },
+            { Keys.D5, KeyCode.D5 },
+            { Keys.D6, KeyCode.D6 },
+            { Keys.D7, KeyCode.D7 },
+            { Keys.D8, KeyCode.D8 },
+            { Keys.D9, KeyCode.D9 },
+        };
     }
 }

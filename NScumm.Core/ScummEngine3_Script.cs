@@ -121,7 +121,7 @@ namespace NScumm.Core
             {
                 SentenceNum = 0;
                 StopScript(Variables[VariableSentenceScript.Value]);
-                //TODO: clearClickedStatus();
+                ClearClickedStatus();
                 return;
             }
 

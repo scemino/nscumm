@@ -104,9 +104,6 @@ namespace NScumm.MonoGame
         {
             if (!IsMenuActive())
             {
-                UpdateMouseState();
-                inputManager.UpdateStates();
-            
                 if (!pause)
                 {
                     audioDriver.Update();
@@ -130,6 +127,7 @@ namespace NScumm.MonoGame
             }
             else
             {
+                UpdateMouseState();
                 base.HandleInput(input);
             }
         }
@@ -139,10 +137,10 @@ namespace NScumm.MonoGame
             tsToWait = engine.RunBootScript();
             while (true)
             {
-                System.Threading.Thread.Sleep(tsToWait);
                 if (!pause)
                 {
-                    inputManager.UpdateStates();
+                    // Wait...
+                    engine.WaitForTimer((int)tsToWait.TotalMilliseconds);
                     tsToWait = engine.Loop();
                     gfx.UpdateScreen();
                 }

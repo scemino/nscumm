@@ -22,13 +22,41 @@
 using System;
 using System.Linq;
 using NScumm.Core.Input;
+using NScumm.Core.IO;
 
 namespace NScumm.Core
 {
     partial class ScummEngine
     {
         protected internal IInputManager _inputManager;
+        protected ScummInputState _inputState;
         protected KeyCode mouseAndKeyboardStat;
+        MouseButtonStatus _leftBtnPressed, _rightBtnPressed;
+
+        internal void ParseEvents()
+        {
+            var newInput = _inputManager.GetState();
+            if (newInput != _inputState)
+            {
+                _inputState = newInput;
+                if (_inputState.IsLeftButtonDown)
+                {
+                    _leftBtnPressed = MouseButtonStatus.Clicked | MouseButtonStatus.Down;
+                }
+                else
+                {
+                    _leftBtnPressed &= ~MouseButtonStatus.Down;
+                }
+                if (_inputState.IsRightButtonDown)
+                {
+                    _rightBtnPressed = MouseButtonStatus.Clicked | MouseButtonStatus.Down;
+                }
+                else
+                {
+                    _rightBtnPressed &= ~MouseButtonStatus.Down;
+                }
+            }
+        }
 
         void CheckExecVerbs()
         {
@@ -78,18 +106,64 @@ namespace NScumm.Core
 
         internal protected virtual void ProcessInput()
         {
+            //
+            // Determine the mouse button state.
+            //
             mouseAndKeyboardStat = 0;
+
+            if (_leftBtnPressed.HasFlag(MouseButtonStatus.Clicked) && _rightBtnPressed.HasFlag(MouseButtonStatus.Clicked))
+            {
+                // Pressing both mouse buttons is treated as if you pressed
+                // the cutscene exit key (ESC) in V4+ games. That mimicks
+                // the behavior of the original engine where pressing both
+                // mouse buttons also skips the current cutscene.
+                mouseAndKeyboardStat = 0;
+//                lastKeyHit = Common::KeyState(Common::KEYCODE_ESCAPE);
+            }
+            else if (_rightBtnPressed.HasFlag(MouseButtonStatus.Clicked) && (Game.Version <= 3 && Game.GameId != GameId.Loom))
+            {
+                // Pressing right mouse button is treated as if you pressed
+                // the cutscene exit key (ESC) in V0-V3 games. That mimicks
+                // the behavior of the original engine where pressing right
+                // mouse button also skips the current cutscene.
+                mouseAndKeyboardStat = 0;
+//                lastKeyHit = Common::KeyState(Common::KEYCODE_ESCAPE);
+            }
+            else if (_leftBtnPressed.HasFlag(MouseButtonStatus.Clicked))
+            {
+                mouseAndKeyboardStat = (KeyCode)ScummMouseButtonState.LeftClick;
+            }
+            else if (_rightBtnPressed.HasFlag(MouseButtonStatus.Clicked))
+            {
+                mouseAndKeyboardStat = (KeyCode)ScummMouseButtonState.RightClick;
+            }
+
+            if (Game.Version >= 6)
+            {
+                Variables[VariableLeftButtonHold.Value] = _leftBtnPressed.HasFlag(MouseButtonStatus.Down) ? 1 : 0;
+                Variables[VariableRightButtonHold.Value] = _rightBtnPressed.HasFlag(MouseButtonStatus.Down) ? 1 : 0;
+
+                // scumm7: left/right button down
+                if (Game.Version >= 7)
+                {
+                    Variables[VariableLeftButtonDown.Value] = _leftBtnPressed.HasFlag(MouseButtonStatus.Clicked) ? 1 : 0;
+                    Variables[VariableRightButtonDown.Value] = _rightBtnPressed.HasFlag(MouseButtonStatus.Clicked) ? 1 : 0;
+                }
+            }
+
+            _leftBtnPressed &= ~MouseButtonStatus.Clicked;
+            _rightBtnPressed &= ~MouseButtonStatus.Clicked;
 
             var cutsceneExitKeyEnabled = (!VariableCutSceneExitKey.HasValue || Variables[VariableCutSceneExitKey.Value] != 0);
             var mainmenuKeyEnabled = VariableMainMenu.HasValue && _variables[VariableMainMenu.Value] != 0;
 
-            if (cutsceneExitKeyEnabled && _inputManager.IsKeyDown(KeyCode.Escape))
+            if (cutsceneExitKeyEnabled && _inputState.IsKeyDown(KeyCode.Escape))
             {
                 mouseAndKeyboardStat = (KeyCode)Variables[VariableCutSceneExitKey.Value];
                 AbortCutscene();
             }
 
-            if (mainmenuKeyEnabled && _inputManager.IsKeyDown(KeyCode.F5))
+            if (mainmenuKeyEnabled && _inputState.IsKeyDown(KeyCode.F5))
             {
                 if (VariableSaveLoadScript.HasValue && _currentRoom != 0)
                 {
@@ -106,52 +180,34 @@ namespace NScumm.Core
 
             for (var i = KeyCode.A; i <= KeyCode.Z; i++)
             {
-                if (_inputManager.IsKeyDown(i))
+                if (_inputState.IsKeyDown(i))
                 {
                     mouseAndKeyboardStat = i;
                 }
             }
             for (var i = KeyCode.F1; i <= KeyCode.F9; i++)
             {
-                if (_inputManager.IsKeyDown(i))
+                if (_inputState.IsKeyDown(i))
                 {
                     mouseAndKeyboardStat = i;
                 }
             }
 
-            for (var i = KeyCode.F1; i <= KeyCode.F9; i++)
-            {
-                if (_inputManager.IsKeyDown(i))
-                {
-                    mouseAndKeyboardStat = i;
-                }
-            }
-
-            if (_inputManager.IsKeyDown(KeyCode.Return))
+            if (_inputState.IsKeyDown(KeyCode.Return))
             {
                 mouseAndKeyboardStat = KeyCode.Return;
             }
-            if (_inputManager.IsKeyDown(KeyCode.Backspace))
+            if (_inputState.IsKeyDown(KeyCode.Backspace))
             {
                 mouseAndKeyboardStat = KeyCode.Backspace;
             }
-            if (_inputManager.IsKeyDown(KeyCode.Tab))
+            if (_inputState.IsKeyDown(KeyCode.Tab))
             {
                 mouseAndKeyboardStat = KeyCode.Tab;
             }
-            if (_inputManager.IsKeyDown(KeyCode.Space))
+            if (_inputState.IsKeyDown(KeyCode.Space))
             {
                 mouseAndKeyboardStat = KeyCode.Space;
-            }
-
-            if (_inputManager.IsMouseLeftClicked())
-            {
-                mouseAndKeyboardStat = (KeyCode)ScummMouseButtonState.LeftClick;
-            }
-
-            if (_inputManager.IsMouseRightClicked())
-            {
-                mouseAndKeyboardStat = (KeyCode)ScummMouseButtonState.RightClick;
             }
 
             if ((Game.Id == "indy4" || Game.Id == "pass"))
@@ -166,7 +222,7 @@ namespace NScumm.Core
 
                 for (var i = KeyCode.D0; i <= KeyCode.D9; i++)
                 {
-                    if (_inputManager.IsKeyDown(i))
+                    if (_inputState.IsKeyDown(i))
                     {
                         mouseAndKeyboardStat = (KeyCode)numpad[i - KeyCode.D0];
                     }
@@ -176,23 +232,10 @@ namespace NScumm.Core
             {
                 for (var i = KeyCode.D0; i <= KeyCode.D9; i++)
                 {
-                    if (_inputManager.IsKeyDown(i))
+                    if (_inputState.IsKeyDown(i))
                     {
                         mouseAndKeyboardStat = i - (int)KeyCode.D0 + '0';
                     }
-                }
-            }
-
-            if (Game.Version >= 6)
-            {
-                Variables[VariableLeftButtonHold.Value] = _inputManager.IsMouseLeftDown() ? 1 : 0;
-                Variables[VariableRightButtonHold.Value] = _inputManager.IsMouseRightDown() ? 1 : 0;
-
-                // scumm7: left/right buttonn down
-                if (Game.Version >= 7)
-                {
-                    Variables[VariableLeftButtonDown.Value] = _inputManager.IsMouseLeftClicked() ? 1 : 0;
-                    Variables[VariableRightButtonDown.Value] = _inputManager.IsMouseRightClicked() ? 1 : 0;
                 }
             }
 
@@ -211,8 +254,13 @@ namespace NScumm.Core
             Variables[VariableMouseY.Value] = (int)_mousePos.Y;
             Variables[VariableVirtualMouseX.Value] = (int)mouseX;
             Variables[VariableVirtualMouseY.Value] = (int)_mousePos.Y - MainVirtScreen.TopLine + ((_game.Version >= 7) ? ScreenTop : 0);
+        }
 
-            _inputManager.Swap();
+        protected void ClearClickedStatus()
+        {
+            mouseAndKeyboardStat = 0;
+            _leftBtnPressed &= ~MouseButtonStatus.Clicked;
+            _rightBtnPressed &= ~MouseButtonStatus.Clicked;
         }
 
         protected void ShowMenu()

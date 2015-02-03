@@ -46,6 +46,7 @@ namespace NScumm.Core
         protected int VariableTimeDateMinute;
         protected int? VariableCameraFollowedActor;
         protected int? VariableBlastAboveText;
+        protected int? VariableCharsetMask;
 
         public ScummEngine6(GameInfo game, IGraphicsManager graphicsManager, IInputManager inputManager, IMixer mixer)
             : base(game, graphicsManager, inputManager, mixer)
@@ -90,7 +91,7 @@ namespace NScumm.Core
             if (Game.GameId == GameId.SamNMax)
             {
                 VariableV6SoundMode = 9;
-                //VariableCharsetMask = 123;
+                VariableCharsetMask = 123;
             }
         }
 

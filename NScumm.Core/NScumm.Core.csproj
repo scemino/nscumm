@@ -259,6 +259,7 @@
     <Compile Include="Audio\IMuse\IMuseDigital\IMuseDigital_Track.cs" />
     <Compile Include="Audio\IMuse\IMuseDigital\IMuseDigital_Music.cs" />
     <Compile Include="Audio\IMuse\IMuseDigital\IMuseDigital_Tables.cs" />
+    <Compile Include="Input\ScummInputState.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="IO\Nscumm.xml">

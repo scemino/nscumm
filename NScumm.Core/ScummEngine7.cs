@@ -35,7 +35,6 @@ namespace NScumm.Core
     partial class ScummEngine7: ScummEngine6
     {
         int VariableTimeDateSecond;
-        int VariableRandomNumber;
         int VariableNumGlobalObjs;
         int VariableCameraDestX;
         int VariableCameraDestY;
@@ -45,7 +44,6 @@ namespace NScumm.Core
         int VariableKeypress;
         int VariableCameraSpeedX;
         int VariableCameraSpeedY;
-        int? VariableCharsetMask;
         int VariableVideoName;
         int VariableString2Draw;
         public int VariableCustomScaleTable;

@@ -21,6 +21,7 @@
 using System;
 using NScumm.Core.Graphics;
 using System.Threading;
+using NScumm.Core.Input;
 
 namespace NScumm.Core
 {
@@ -123,7 +124,7 @@ namespace NScumm.Core
                     case 4:
                     case 5:
                     case 6:
-					    DoTransitionEffect(effect - 1);
+                        DoTransitionEffect(effect - 1);
                         break;
                     case 128:
                         UnkScreenEffect6();
@@ -168,8 +169,7 @@ namespace NScumm.Core
             {
                 _doEffect = false;
                 FadeIn(_newEffect);
-                // TODO:
-                //clearClickedStatus();
+                ClearClickedStatus();
             }
         }
 
@@ -496,7 +496,7 @@ namespace NScumm.Core
             }
         }
 
-        void WaitForTimer(int msec_delay)
+        public void WaitForTimer(int msec_delay)
         {
             //            if (_fastMode & 2)
             //                msec_delay = 0;
@@ -508,8 +508,7 @@ namespace NScumm.Core
             while (!HasToQuit)
             {
                 //        _sound.updateCD(); // Loop CD Audio if needed
-                _inputManager.Swap();
-
+                ParseEvents();
 
                 _gfxManager.UpdateScreen();
                 if (Environment.TickCount >= start_time + msec_delay)

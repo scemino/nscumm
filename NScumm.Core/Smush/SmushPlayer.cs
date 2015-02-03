@@ -126,7 +126,7 @@ namespace NScumm.Core.Smush
                     _warpNeeded = false;
                 }
 
-                _vm._inputManager.UpdateStates();
+                _vm.ParseEvents();
                 _vm.ProcessInput();
                 if (_palDirtyMax >= _palDirtyMin)
                 {
@@ -633,7 +633,7 @@ namespace NScumm.Core.Smush
                                     output_data[dst++] = (byte)(val >> 8);
                                     output_data[dst++] = (byte)(val);
                                 }
-                            } while ((--count)!=0);
+                            } while ((--count) != 0);
 
                             if (_IACTstream == null)
                             {
@@ -711,7 +711,7 @@ namespace NScumm.Core.Smush
 //            }
 //
 //            byte transBuf[512];
-//            if (_vm._game.id == GID_CMI) {
+//            if (_vm.Game.GameId == GameId.CurseOfMonkeyIsland) {
 //                _vm.translateText((const byte *)str - 1, transBuf);
 //                while (*str++ != '/')
 //                    ;
@@ -794,7 +794,7 @@ namespace NScumm.Core.Smush
             Debug.Assert(sf != null);
             sf.Color = (byte)color;
 //
-//            if (_vm._game.id == GID_CMI && string2[0] != 0) {
+//            if (_vm.Game.GameId == GameId.CurseOfMonkeyIsland && string2[0] != 0) {
 //                str = string2;
 //            }
 //

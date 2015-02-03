@@ -14,25 +14,15 @@
  * You should have received a copy of the GNU General Public License
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
+using System.Collections.Generic;
 
 namespace NScumm.Core.Input
 {
+
     public interface IInputManager
     {
-        void UpdateStates();
-
         NScumm.Core.Graphics.Point GetMousePosition();
 
-        bool IsKeyDown(KeyCode code);
-
-        bool IsMouseLeftClicked();
-
-        bool IsMouseRightClicked();
-
-        bool IsMouseLeftDown();
-
-        bool IsMouseRightDown();
-
-        void Swap();
+        ScummInputState GetState();
     }
 }

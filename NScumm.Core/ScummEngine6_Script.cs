@@ -24,7 +24,7 @@ namespace NScumm.Core
 {
     partial class ScummEngine6
     {
-        int? VariableRandomNumber;
+        protected int? VariableRandomNumber;
         protected bool _skipVideo;
 
         [OpCode(0x5e)]
@@ -280,8 +280,7 @@ namespace NScumm.Core
         {
             SentenceNum = 0;
             StopScript(Variables[VariableSentenceScript.Value]);
-            // TODO: scumm6
-            //            ClearClickedStatus();
+            ClearClickedStatus();
         }
 
         [OpCode(0xbe)]

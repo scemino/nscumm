@@ -84,6 +84,31 @@ namespace NScumm.Core
         D6 = 56,
         D7 = 57,
         D8 = 58,
-        D9 = 59
+        D9 = 59,
+
+        // Numeric keypad
+        NumPad0 = 256,
+        NumPad1 = 257,
+        NumPad2 = 258,
+        NumPad3 = 259,
+        NumPad4 = 260,
+        NumPad5 = 261,
+        NumPad6 = 262,
+        NumPad7 = 263,
+        NumPad8 = 264,
+        NumPad9 = 265,
+
+        // Arrows + Home/End pad
+        Up          = 273,
+        Down        = 274,
+        Right       = 275,
+        Left        = 276,
+        Insert      = 277,
+        Home        = 278,
+        End         = 279,
+        PageUp      = 280,
+        PageDown    = 281,
+
+        LeftShift   = 304,
     }
 }

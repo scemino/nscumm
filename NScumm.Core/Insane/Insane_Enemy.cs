@@ -1711,7 +1711,7 @@ namespace NScumm.Core.Insane
                 _actor[actor1].cursorX = -160;
 
             // Shift+V cheat to win the battle
-            if (GetKeyState('V') && !_beenCheated &&
+            if (GetKeyState(KeyCode.LeftShift) && GetKeyState(KeyCode.V) && !_beenCheated &&
                 !_actor[0].lost && !_actor[1].lost)
             {
                 _beenCheated = true;
@@ -1893,7 +1893,7 @@ namespace NScumm.Core.Insane
                 _actor[actor1].cursorX = 0;
 
             // Shift+V cheat to win the battle
-            if (GetKeyState('V') && !_beenCheated &&
+            if (GetKeyState(KeyCode.LeftShift) && GetKeyState(KeyCode.V) && !_beenCheated &&
                 !_actor[0].lost && !_actor[1].lost)
             {
                 _beenCheated = true;
@@ -2066,7 +2066,7 @@ namespace NScumm.Core.Insane
                 _actor[actor1].cursorX = -160;
 
             // Shift+V cheat to win the battle
-            if (GetKeyState('V') && !_beenCheated &&
+            if (GetKeyState(KeyCode.LeftShift) && GetKeyState(KeyCode.V) && !_beenCheated &&
                 !_actor[0].lost && !_actor[1].lost)
             {
                 _beenCheated = true;
@@ -2260,7 +2260,7 @@ namespace NScumm.Core.Insane
                 _actor[actor1].cursorX = -160;
 
             // Shift+V cheat to win the battle
-            if (GetKeyState('V') && !_beenCheated &&
+            if (GetKeyState(KeyCode.LeftShift) && GetKeyState(KeyCode.V) && !_beenCheated &&
                 !_actor[0].lost && !_actor[1].lost)
             {
                 _beenCheated = true;
@@ -2474,7 +2474,7 @@ namespace NScumm.Core.Insane
                 _actor[actor1].cursorX = -160;
 
             // Shift+V cheat to win the battle
-            if (GetKeyState('V') && !_beenCheated &&
+            if (GetKeyState(KeyCode.LeftShift) && GetKeyState(KeyCode.V) && !_beenCheated &&
                 !_actor[0].lost && !_actor[1].lost)
             {
                 _beenCheated = true;
@@ -2638,7 +2638,7 @@ namespace NScumm.Core.Insane
             _enHdlVar[EN_VULTF2, 0]++;
 
             // Shift+V cheat to win the battle
-            if (GetKeyState('V') && !_beenCheated &&
+            if (GetKeyState(KeyCode.LeftShift) && GetKeyState(KeyCode.V) && !_beenCheated &&
                 !_actor[0].lost && !_actor[1].lost)
             {
                 _beenCheated = true;
@@ -2793,7 +2793,7 @@ namespace NScumm.Core.Insane
             _enHdlVar[EN_VULTM2, 0]++;
 
             // Shift+V cheat to win the battle
-            if (GetKeyState('V') && !_beenCheated &&
+            if (GetKeyState(KeyCode.LeftShift) && GetKeyState(KeyCode.V) && !_beenCheated &&
                 !_actor[0].lost && !_actor[1].lost)
             {
                 _beenCheated = true;
@@ -2893,7 +2893,7 @@ namespace NScumm.Core.Insane
             _enHdlVar[EN_CAVEFISH, 0] = act1damage;
 
             // Shift+V cheat to win the battle
-            if (GetKeyState('V') && !_beenCheated &&
+            if (GetKeyState(KeyCode.LeftShift) && GetKeyState(KeyCode.V) && !_beenCheated &&
                 !_actor[0].lost && !_actor[1].lost)
             {
                 _beenCheated = true;

@@ -271,6 +271,42 @@ namespace NScumm.Core
                 eh(this, EventArgs.Empty);
             }
         }
+    
+        public bool GetKeyState(int key)
+        {
+            switch (key) {
+                case 0x147: // Home
+                    // FIXME: There seems to be a mistake in the code here ("insert" vs. "home")
+                    return _inputState.IsKeyDown(KeyCode.NumPad7) ||_inputState.IsKeyDown(KeyCode.Insert);
+                case 0x148: // Up
+                    return _inputState.IsKeyDown(KeyCode.NumPad8) ||
+                        _inputState.IsKeyDown(KeyCode.Up) ||
+                        _inputState.IsKeyDown(KeyCode.D8);
+                case 0x149: // PgUp
+                    return _inputState.IsKeyDown(KeyCode.NumPad9) ||
+                        _inputState.IsKeyDown(KeyCode.PageUp);
+                case 0x14B: // Left
+                    return _inputState.IsKeyDown(KeyCode.NumPad4) ||
+                        _inputState.IsKeyDown(KeyCode.Left) ||
+                        _inputState.IsKeyDown(KeyCode.D4);
+                case 0x14D: // Right
+                    return _inputState.IsKeyDown(KeyCode.NumPad6) ||
+                        _inputState.IsKeyDown(KeyCode.Right) ||
+                        _inputState.IsKeyDown(KeyCode.D6);
+                case 0x14F: // End
+                    return _inputState.IsKeyDown(KeyCode.NumPad1) ||
+                        _inputState.IsKeyDown(KeyCode.End);
+                case 0x150: // Down
+                    return _inputState.IsKeyDown(KeyCode.NumPad2) ||
+                        _inputState.IsKeyDown(KeyCode.Down) ||
+                        _inputState.IsKeyDown(KeyCode.D2);
+                case 0x151: // PgDn
+                    return _inputState.IsKeyDown(KeyCode.NumPad3) ||
+                        _inputState.IsKeyDown(KeyCode.PageDown);
+                default:
+                    return _inputState.IsKeyDown((KeyCode)key);
+            }
+        }
     }
 }
 

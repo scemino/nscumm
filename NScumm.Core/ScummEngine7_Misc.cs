@@ -242,7 +242,7 @@ namespace NScumm.Core
             int i;
             _lastStringTag[0] = 0;
 
-            if (text[0] == '/')
+            if (text.Length > 0 && text[0] == '/')
             {
                 // Extract the string tag from the text: /..../
                 for (i = 0; (i < 12) && (text[i + 1] != '/'); i++)

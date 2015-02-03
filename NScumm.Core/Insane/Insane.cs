@@ -1226,14 +1226,14 @@ namespace NScumm.Core.Insane
                     case 'f':
                         {
                             int id = str[3] - '0';
-                            str += 4;
+                            str = str.Substring(4);
                             sf = _player.GetFont(id);
                         }
                         break;
                     case 'c':
                         {
                             color = str[4] - '0' + 10 * (str[3] - '0');
-                            str += 5;
+                            str = str.Substring(5);
                         }
                         break;
                     default:
@@ -1387,10 +1387,14 @@ namespace NScumm.Core.Insane
             return buttons;
         }
 
+        bool GetKeyState(KeyCode code)
+        {
+            return GetKeyState((int)code);
+        }
+
         bool GetKeyState(int code)
         {
-            // TODO: vs key state
-            return false;
+            return _vm.GetKeyState(code);
         }
 
         int ProcessKeyboard()

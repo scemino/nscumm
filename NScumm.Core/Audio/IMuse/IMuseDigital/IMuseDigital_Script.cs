@@ -225,13 +225,13 @@ namespace NScumm.Core.Audio.IMuse
         {
             lock (_mutex)
             {
-                Debug.WriteLine(6, "flushTracks()");
+                Debug.WriteLine("flushTracks()");
                 for (int l = 0; l < MAX_DIGITAL_TRACKS + MAX_DIGITAL_FADETRACKS; l++)
                 {
                     Track track = _track[l];
                     if (track.used && track.toBeRemoved && !_mixer.IsSoundHandleActive(track.mixChanHandle))
                     {
-                        Debug.WriteLine("flushTracks() - soundId:%d", track.soundId);
+                        Debug.WriteLine("flushTracks() - soundId:{0}", track.soundId);
                         track.Clear();
                     }
                 }
@@ -288,25 +288,25 @@ namespace NScumm.Core.Audio.IMuse
 
         public void StartVoice(int soundId, string soundName)
         {
-            Debug.WriteLine("startVoiceBundle(%s, %d)", soundName, soundId);
+            Debug.WriteLine("startVoiceBundle({0}, {1})", soundName, soundId);
             StartSound(soundId, soundName, IMUSE_BUNDLE, IMUSE_VOLGRP_VOICE, null, 0, 127, 127, null);
         }
 
         void StartMusic(int soundId, int volume)
         {
-            Debug.WriteLine("startMusicResource(%d)", soundId);
+            Debug.WriteLine("startMusicResource({0})", soundId);
             StartSound(soundId, "", IMUSE_RESOURCE, IMUSE_VOLGRP_MUSIC, null, 0, volume, 126, null);
         }
 
         void StartMusic(string soundName, int soundId, int hookId, int volume)
         {
-            Debug.WriteLine("startMusicBundle(%s, soundId:%d, hookId:%d)", soundName, soundId, hookId);
+            Debug.WriteLine("startMusicBundle({0}, soundId:{1}, hookId:{2})", soundName, soundId, hookId);
             StartSound(soundId, soundName, IMUSE_BUNDLE, IMUSE_VOLGRP_MUSIC, null, hookId, volume, 126, null);
         }
 
         void StartMusicWithOtherPos(string soundName, int soundId, int hookId, int volume, Track otherTrack)
         {
-            Debug.WriteLine("startMusicWithOtherPos(%s, soundId:%d, hookId:%d, oldSoundId:%d)", soundName, soundId, hookId, otherTrack.soundId);
+            Debug.WriteLine("startMusicWithOtherPos({0}, soundId:{1}, hookId:{2}, oldSoundId:{3})", soundName, soundId, hookId, otherTrack.soundId);
             StartSound(soundId, soundName, IMUSE_BUNDLE, IMUSE_VOLGRP_MUSIC, null, hookId, volume, 126, otherTrack);
         }
 

@@ -99,7 +99,7 @@ namespace NScumm.Core.Graphics
                     break;
                 {
                     // TODO: ?
-                    //if (chr == '@' && !(_vm->_game.id == GID_CMI && _vm->_language == Common::ZH_TWN))
+                    //if (chr == '@' && !(_vm.Game.GameId == GameId.CurseOfMonkeyIsland && _vm->_language == Common::ZH_TWN))
                     //    continue;
                     if (chr == 255 || chr == 254)
                     {

@@ -209,8 +209,7 @@ namespace NScumm.Core
                 Graphics.Gdi.Fill(MainVirtScreen.Surfaces[0].Pixels, MainVirtScreen.Pitch, 0, MainVirtScreen.Width, MainVirtScreen.Height);
                 MainVirtScreen.SetDirtyRange(0, MainVirtScreen.Height);
                 UpdateDirtyScreen(MainVirtScreen);
-                //UpdatePalette();
-                _gfxManager.SetPalette(_currentPalette.Colors);
+                UpdatePalette();
                 InitScreens(sb, sh);
 
                 _completeScreenRedraw = true;
@@ -518,8 +517,8 @@ namespace NScumm.Core
             // that have more than 30 actors (up to 94 are supported now, in theory).
             // Since the format of the usage bits was changed by this, we have to
             // convert them when loading an older savegame.
-            //if (hdr.ver < 14)
-            //    UpgradeGfxUsageBits();
+//            if (serializer.IsLoading && serializer.Version < 14)
+//                Gdi.UpgradeGfxUsageBits();
 
             // When loading, move the mouse to the saved mouse position.
             //if (serializer.Version >= 20)
@@ -899,7 +898,7 @@ namespace NScumm.Core
 
         void SaveOrLoadResources(Serializer serializer)
         {
-            var l_entry = LoadAndSaveEntry.Create(
+            var entry = LoadAndSaveEntry.Create(
                               reader =>
                 {
                     ResType type;
@@ -1072,7 +1071,7 @@ namespace NScumm.Core
                     writer.WriteUInt16(0xFFFF);
 
                 });
-            l_entry.Execute(serializer);
+            entry.Execute(serializer);
         }
 
         static byte[] EncodeName(byte[] name)

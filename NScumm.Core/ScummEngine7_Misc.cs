@@ -142,12 +142,12 @@ namespace NScumm.Core
             // a version dialog, unless VAR_VERSION_KEY is set to 0. However, the COMI
             // version string is hard coded in the engine, hence we don't invoke
             // versionDialog for it. Dig/FT version strings are partly hard coded, too.
-//            if (Game.Id != GID_CMI && 0 != Variables[VariableVersionKey] &&
+//            if (Game.GameId != GameId.CurseOfMonkeyIsland && 0 != Variables[VariableVersionKey] &&
 //                _inputManager.IsKeyDown(KeyCode.V) && _inputManager.IsKeyDown(KeyCode.Control)) {
 //                VersionDialog();
 //
 //            } else 
-            if (cutsceneExitKeyEnabled && _inputManager.IsKeyDown(KeyCode.Escape))
+            if (cutsceneExitKeyEnabled && _inputState.IsKeyDown(KeyCode.Escape))
             {
                 // Skip cutscene (or active SMUSH video).
                 if (SmushActive)
@@ -189,7 +189,7 @@ namespace NScumm.Core
             // Play associated speech, if any
             PlaySpeech(_lastStringTag);
 
-            if (Game.GameId == GameId.Dig /*|| Game.GameId == GID_CMI*/)
+            if (Game.GameId == GameId.Dig || Game.GameId == GameId.CurseOfMonkeyIsland)
             {
                 if (Variables[VariableHaveMessage.Value] != 0)
                     StopTalk();
@@ -221,13 +221,13 @@ namespace NScumm.Core
             if (Game.GameId == GameId.FullThrottle)
                 Variables[VariableHaveMessage.Value] = 0xFF;
             _haveActorSpeechMsg = (Game.GameId == GameId.FullThrottle) ? true : (!Sound.IsSoundRunning(Sound.TalkSoundID));
-            if (Game.GameId == GameId.Dig /*|| Game.GameId == GameId.GID_CMI*/)
+            if (Game.GameId == GameId.Dig || Game.GameId == GameId.CurseOfMonkeyIsland)
             {
                 stringWrap = String[0].Wrapping;
                 String[0].Wrapping = true;
             }
             Charset();
-            if (Game.GameId == GameId.Dig /*|| Game.GameId == GameId.GID_CMI*/)
+            if (Game.GameId == GameId.Dig || Game.GameId == GameId.CurseOfMonkeyIsland)
             {
                 if (Game.Version == 8)
                     Variables[VariableHaveMessage.Value] = (String[0].NoTalkAnim) ? 2 : 1;
@@ -544,7 +544,7 @@ namespace NScumm.Core
                     case 3:
                         if (param_1 != 0)
                         {
-                            if (IMuseDigital!=null)
+                            if (IMuseDigital != null)
                             {
                                 IMuseDigital.StartSfx(param_1, 63);
                             }
@@ -563,7 +563,7 @@ namespace NScumm.Core
                     case 7:
                         if (param_1 != 0)
                         {
-                            if (IMuseDigital!=null)
+                            if (IMuseDigital != null)
                             {
                                 IMuseDigital.SetVolume(param_1, param_2);
                             }
@@ -572,7 +572,7 @@ namespace NScumm.Core
                     case 8:
                         if (param_1 != 0)
                         {
-                            if (IMuseDigital!=null)
+                            if (IMuseDigital != null)
                             {
                                 IMuseDigital.SetPan(param_1, param_2);
                             }
@@ -581,7 +581,7 @@ namespace NScumm.Core
                     case 9:
                         if (param_1 != 0)
                         {
-                            if (IMuseDigital!=null)
+                            if (IMuseDigital != null)
                             {
                                 IMuseDigital.SetPriority(param_1, param_2);
                             }
@@ -660,12 +660,12 @@ namespace NScumm.Core
             if (Game.GameId == GameId.Dig && /*(ConfMan.getBool("speech_mute") ||*/ Variables[VariableVoiceMode.Value] == 2)
                 return;
 
-            if ((Game.GameId == GameId.Dig /*|| Game.GameId == GID_CMI*/) && ptr[0] != 0)
+            if ((Game.GameId == GameId.Dig || Game.GameId == GameId.CurseOfMonkeyIsland) && ptr[0] != 0)
             {
                 var pointer = System.Text.Encoding.ASCII.GetString(ptr);
 
                 // Play speech
-                if (!(Game.Features.HasFlag(GameFeatures.Demo) /*&& Game.GameId == GameId.GID_CMI*/)) // CMI demo does not have .IMX for voice
+                if (!(Game.Features.HasFlag(GameFeatures.Demo) && Game.GameId == GameId.CurseOfMonkeyIsland)) // CMI demo does not have .IMX for voice
                     pointer += ".IMX";
 
                 Sound.StopTalkSound();

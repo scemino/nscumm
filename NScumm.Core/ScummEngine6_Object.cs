@@ -596,7 +596,7 @@ namespace NScumm.Core
 
                         // Some localizations may override colors
                         // See credits in Chinese COMI
-//                        if (Game.GameId == GID_CMI && _language == Common::ZH_TWN &&
+//                        if (Game.GameId == GameId.CurseOfMonkeyIsland && _language == Common::ZH_TWN &&
 //                            c == '^' && (buf == _blastTextQueue[i].text + 1))
 //                        {
 //                            if (*buf == 'c')

@@ -114,7 +114,7 @@ namespace NScumm.Core.Audio.IMuse
 
                 if (track.souStreamUsed)
                 {
-                    track.mixChanHandle = _mixer.PlayStream(track.GetType(), input, -1, track.Volume, track.Pan,
+                    track.mixChanHandle = _mixer.PlayStream(track.GetSoundType(), input, -1, track.Volume, track.Pan,
                         true, false, track.mixerFlags.HasFlag(AudioFlags.Stereo));
                 }
                 else
@@ -182,7 +182,7 @@ namespace NScumm.Core.Audio.IMuse
                     }
 
                     track.stream = new QueuingAudioStream(freq, track.mixerFlags.HasFlag(AudioFlags.Stereo));
-                    track.mixChanHandle = _mixer.PlayStream(track.GetType(), track.stream, -1, track.Volume, track.Pan,
+                    track.mixChanHandle = _mixer.PlayStream(track.GetSoundType(), track.stream, -1, track.Volume, track.Pan,
                         true, false, track.mixerFlags.HasFlag(AudioFlags.Stereo));
                 }
 
@@ -235,7 +235,7 @@ namespace NScumm.Core.Audio.IMuse
 
             // Create an appendable output buffer
             fadeTrack.stream = new QueuingAudioStream(_sound.GetFreq(fadeTrack.soundDesc), track.mixerFlags.HasFlag(AudioFlags.Stereo));
-            fadeTrack.mixChanHandle = _mixer.PlayStream(track.GetType(), fadeTrack.stream, -1, fadeTrack.Volume, fadeTrack.Pan,
+            fadeTrack.mixChanHandle = _mixer.PlayStream(track.GetSoundType(), fadeTrack.stream, -1, fadeTrack.Volume, fadeTrack.Pan,
                 true, false, track.mixerFlags.HasFlag(AudioFlags.Stereo));
             fadeTrack.used = true;
 

@@ -66,7 +66,6 @@ namespace NScumm.Core.IO
         protected override void LoadIndex(GameInfo game)
         {
             const byte encByte = 0x69;
-            var roomNames = new Dictionary<byte, string>();
             Directory = Path.GetDirectoryName(game.Path);
             using (var file = File.Open(game.Path, FileMode.Open))
             {
@@ -75,7 +74,7 @@ namespace NScumm.Core.IO
                 while (br.BaseStream.Position < br.BaseStream.Length)
                 {
                     var block = ToTag(br.ReadBytes(4));
-                    var size = br.ReadUInt32BigEndian(); // size
+                    br.ReadUInt32BigEndian(); // size
                     switch (block)
                     {
                         case "RNAM":

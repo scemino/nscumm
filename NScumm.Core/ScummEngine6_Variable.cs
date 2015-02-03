@@ -28,7 +28,6 @@ namespace NScumm.Core
     partial class ScummEngine6
     {
         Stack<int> _vmStack = new Stack<int>(150);
-        List<Array> _arrays = new List<Array>();
 
         [OpCode(0x00)]
         protected void PushByte()

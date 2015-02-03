@@ -130,7 +130,7 @@ namespace NScumm.Core.Audio.IMuse
 
         public int Volume { get { return vol / 1000; } }
 
-        public SoundType GetType()
+        public SoundType GetSoundType()
         {
             SoundType type;
             if (volGroupId == 1)

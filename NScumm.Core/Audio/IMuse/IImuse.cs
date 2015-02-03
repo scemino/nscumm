@@ -41,8 +41,6 @@ namespace NScumm.Core.Audio.IMuse
 
         void Pause(bool paused);
 
-        void SaveOrLoad(Serializer serializer);
-
         bool GetSoundActive(int sound);
 
         int DoCommand(int numargs, int[] args);

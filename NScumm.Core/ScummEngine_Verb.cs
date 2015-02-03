@@ -138,6 +138,9 @@ namespace NScumm.Core
 
         protected void VerbMouseOver(int verb)
         {
+            if (Game.GameId == NScumm.Core.IO.GameId.FullThrottle)
+                return;
+
             if (_verbMouseOver != verb)
             {
                 if (Verbs[_verbMouseOver].Type != VerbType.Image)
@@ -239,7 +242,7 @@ namespace NScumm.Core
                 vs.OldRect = _charset.Str;
                 _charset.Str.Left = _charset.Str.Right;
             }
-            else
+            else if (Game.GameId != NScumm.Core.IO.GameId.FullThrottle)
             {
                 RestoreVerbBG(verb);
             }

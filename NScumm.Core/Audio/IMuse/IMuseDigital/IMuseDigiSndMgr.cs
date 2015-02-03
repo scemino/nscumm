@@ -221,8 +221,8 @@ namespace NScumm.Core.Audio.IMuse
                             break;
                         default:
                             throw new InvalidOperationException(string.Format("Invalid code in VOC file : {0}", code));
-                            quit = true;
-                            break;
+//                            quit = true;
+//                            break;
                     }
                     offset += len;
                 }

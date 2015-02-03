@@ -1616,23 +1616,12 @@ namespace NScumm.Core.Insane
         bool _insaneIsRunning;
 
         int _numberArray;
-        int _emulTimerId;
-        int _emulateInterrupt;
-        int _flag1d;
-        int _mainTimerId;
-        int _objArray1Idx;
         int _objArray1Idx2;
         int[] _objArray1 = new int[101];
         int _objArray2Idx;
         int _objArray2Idx2;
         int[] _objArray2 = new int[101];
         byte _currSceneId;
-        int _timer1Flag;
-        int _timer3Id;
-        int _timer4Id;
-        int _timer6Id;
-        int _timer7Id;
-        int _timerSpriteId;
         byte _temp2SceneId;
         byte _tempSceneId;
         int _currEnemy;

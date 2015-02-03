@@ -192,7 +192,6 @@ namespace NScumm.Core
             _inputManager = inputManager;
             _inputState = inputManager.GetState();
             _strings = new byte[_resManager.NumArray][];
-            _charsets = new byte[_resManager.NumArray][];
             _inventory = new ushort[_resManager.NumInventory];
             _invData = new ObjectData[_resManager.NumInventory];
             _currentScript = 0xFF;

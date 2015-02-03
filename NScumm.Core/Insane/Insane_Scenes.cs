@@ -92,7 +92,6 @@ namespace NScumm.Core.Insane
             _objArray2Idx = 0;
             _objArray2Idx2 = 0;
             // zeroValues2()
-            _objArray1Idx = 0;
             _objArray1Idx2 = 0;
             // zeroValues3()
             _currScenePropIdx = 0;

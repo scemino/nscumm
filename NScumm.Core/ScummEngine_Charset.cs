@@ -28,7 +28,6 @@ namespace NScumm.Core
     {
         const byte CharsetMaskTransparency = 0xFD;
         protected byte[] _charsetBuffer = new byte[512];
-        byte[][] _charsets;
         public byte[] CharsetColorMap = new byte[16];
         protected byte[][] _charsetData = CreateCharsetData();
         protected int _charsetBufPos;

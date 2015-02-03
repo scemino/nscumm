@@ -53,7 +53,6 @@ namespace NScumm.Core.IO
 
         public override Room ReadRoom(long offset)
         {
-            var stripsDic = new Dictionary<ushort, byte[]>();
             var its = new Stack<IEnumerator<Chunk>>();
             var room = new Room();
             _reader.BaseStream.Seek(offset, SeekOrigin.Begin);

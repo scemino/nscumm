@@ -545,7 +545,8 @@ namespace NScumm.Core.Audio.Decoders
             }
             else if (Encoding.ASCII.GetString(desc, 0, 8) == "Creative")
             {
-                desc = _br.ReadBytes(12);
+                _br.BaseStream.Seek(-8, SeekOrigin.Current);
+                desc = _br.ReadBytes(20);
             }
             else
             {

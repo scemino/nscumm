@@ -430,6 +430,13 @@ namespace NScumm.Core
                     if (_objs[i].FloatingObjectIndex == 0)
                     {
                         _objs[i].Number = 0;
+                    } else {
+                        // Nuke all unlocked flObjects
+//                        if (!_res->isLocked(rtFlObject, _objs[i].fl_object_index)) {
+//                            _res->nukeResource(rtFlObject, _objs[i].fl_object_index);
+                        _objs[i].Number = 0;
+                        _objs[i].FloatingObjectIndex = 0;
+//                        }
                     }
                 }
             }

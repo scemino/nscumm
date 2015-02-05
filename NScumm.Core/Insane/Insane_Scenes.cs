@@ -964,7 +964,7 @@ namespace NScumm.Core.Insane
                 if (_actor[tsceneProp.actor].field_54 != 0)
                 {
                     tsceneProp.counter++;
-                    if (_actor[tsceneProp.actor].runningSound == 0 /*|| ConfMan.getBool("subtitles")*/)
+                    /*if (_actor[tsceneProp.actor].runningSound == 0 /*|| ConfMan.getBool("subtitles"))*/
                     {
                         if (_actor[tsceneProp.actor].act[3].state == 72 && _currTrsMsg != null)
                         {
@@ -972,7 +972,7 @@ namespace NScumm.Core.Insane
                             _player.SetPaletteValue(1, tsceneProp.r, tsceneProp.g, tsceneProp.b);
                             _player.SetPaletteValue(0, 0, 0, 0);
                             smlayer_showStatusMsg(-1, renderBitmap, codecparam, 160, 20, 1, 2, 5,
-                                "^f00%s", _currTrsMsg);
+                                "^f00{0}", _currTrsMsg);
                         }
                     }
                 }

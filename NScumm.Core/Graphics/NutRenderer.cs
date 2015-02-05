@@ -42,6 +42,7 @@ namespace NScumm.Core.Graphics
             var width = Math.Min((int)_chars[c].Width, _vm.ScreenWidth - x);
             var height = Math.Min((int)_chars[c].Height, _vm.ScreenHeight - y);
             var src = UnpackChar((char)c);
+            var srcPitch = _chars[c].Width;
 
             var minX = x < 0 ? -x : 0;
             var minY = y < 0 ? -y : 0;
@@ -51,14 +52,13 @@ namespace NScumm.Core.Graphics
                 return;
             }
 
-            var srcNav = new PixelNavigator(new Surface(_chars[c].Width, _chars[c].Height, PixelFormat.Indexed8, false));
-            var dstNav = new PixelNavigator(new Surface(_vm.ScreenWidth, _vm.ScreenHeight, PixelFormat.Indexed8, false));
-            dstNav.Offset(x, y);
+            var srcPos = 0;
+            var dstPos = y * _vm.ScreenWidth + x;
 
             if (minY != 0)
             {
-                srcNav.OffsetY(minY);
-                dstNav.OffsetY(minY);
+                srcPos += minY * srcPitch;
+                dstPos += minY * _vm.ScreenWidth;
             }
 
             byte bits = 0;
@@ -66,14 +66,14 @@ namespace NScumm.Core.Graphics
             {
                 for (int tx = minX; tx < width; tx++)
                 {
-                    bits = src[tx];
+                    bits = src[tx + srcPos];
                     if (bits != 231 && bits != 0)
                     {
-                        dst[tx] = bits;
+                        dst[tx + dstPos] = bits;
                     }
                 }
-                srcNav.OffsetY(1);
-                dstNav.OffsetY(1);
+                srcPos += srcPitch;
+                dstPos += _vm.ScreenWidth;
             }
         }
 
@@ -429,7 +429,7 @@ namespace NScumm.Core.Graphics
         {
             Smush.SmushPlayer.SmushDecodeCodec1(dst, dstPos, src, srcfOffset, 0, 0, width, height, pitch);
             for (var i = 0; i < width * height; i++)
-                _paletteMap[dst[i]] = 1;
+                _paletteMap[dst[dstPos + i]] = 1;
         }
 
         void Codec21(byte[] dst, int dstPos, byte[] src, int srcPos, int width, int height, int pitch)

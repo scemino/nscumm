@@ -213,7 +213,7 @@ namespace NScumm.Core.Audio.IMuse
             }
 
             // Clone the settings of the given track
-            fadeTrack=track.Clone();
+            fadeTrack = track.Clone();
             fadeTrack.trackId = track.trackId + MAX_DIGITAL_TRACKS;
 
             // Clone the sound.
@@ -389,6 +389,27 @@ namespace NScumm.Core.Audio.IMuse
                     if (track.used && !track.toBeRemoved && (track.volGroupId == IMuseDigital.IMUSE_VOLGRP_MUSIC))
                     {
                         Debug.WriteLine("IMuseDigital::fadeOutMusic(fade:{0}, sound:{1})", fadeDelay, track.soundId);
+                        CloneToFadeOutTrack(track, fadeDelay);
+                        FlushTrack(track);
+                        break;
+                    }
+                }
+            }
+        }
+
+        void FadeOutMusicAndStartNew(int fadeDelay, string filename, int soundId)
+        {
+            lock (_mutex)
+            {
+                Debug.WriteLine("IMuseDigital::fadeOutMusicAndStartNew(fade:{0}, file:{1}, sound:{2})", fadeDelay, filename, soundId);
+
+                for (int l = 0; l < MAX_DIGITAL_TRACKS; l++)
+                {
+                    var track = _track[l];
+                    if (track.used && !track.toBeRemoved && (track.volGroupId == IMUSE_VOLGRP_MUSIC))
+                    {
+                        Debug.WriteLine("IMuseDigital::fadeOutMusicAndStartNew(sound:{0}) - starting", soundId);
+                        StartMusicWithOtherPos(filename, soundId, 0, 127, track);
                         CloneToFadeOutTrack(track, fadeDelay);
                         FlushTrack(track);
                         break;

@@ -75,7 +75,7 @@ namespace NScumm.Core.Audio.IMuse
 
         public SoundDesc soundDesc;
         // sound handle used by iMuse sound manager
-        public SoundHandle mixChanHandle;
+        public SoundHandle mixChanHandle=new SoundHandle();
         // sound mixer's channel handle
         public QueuingAudioStream stream;
         // sound mixer's audio stream handle for *.la1 and *.bun
@@ -122,7 +122,7 @@ namespace NScumm.Core.Audio.IMuse
             mixerFlags = AudioFlags.None;
 
             soundDesc = null;
-            mixChanHandle = null;
+            mixChanHandle = new SoundHandle();
             stream = null;
         }
 

@@ -565,6 +565,15 @@ namespace NScumm.Core
                                         select o.Script.Data).FirstOrDefault();
                 _currentScriptData = data;
             }
+            else if (_slots[slotIndex].Where == WhereIsObject.FLObject)
+            {
+                var data = (from o in _objs
+                    where o.Number == scriptNum
+                    let entry = (byte)_slots[slotIndex].InventoryEntry
+                    where o.ScriptOffsets.ContainsKey(entry) || o.ScriptOffsets.ContainsKey(0xFF)
+                    select o.Script.Data).FirstOrDefault();
+                _currentScriptData = data;
+            }
             else if (scriptNum == 10002)
             {
                 _currentScriptData = roomData.EntryScript.Data;
@@ -741,6 +750,14 @@ namespace NScumm.Core
             {
                 objFound = (from o in roomData.Objects.Concat(_invData)
                                         where o != null
+                                        where o.Number == obj
+                                        where o.ScriptOffsets.ContainsKey(entry) || o.ScriptOffsets.ContainsKey(0xFF)
+                                        select o).FirstOrDefault();
+            }
+
+            if (objFound == null)
+            {
+                objFound = (from o in _objs
                                         where o.Number == obj
                                         where o.ScriptOffsets.ContainsKey(entry) || o.ScriptOffsets.ContainsKey(0xFF)
                                         select o).FirstOrDefault();

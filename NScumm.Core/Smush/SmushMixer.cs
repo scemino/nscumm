@@ -167,7 +167,7 @@ namespace NScumm.Core.Smush
             {
                 if (_channels[i].Id != -1)
                 {
-                    if (_channels[i].Stream.IsEndOfStream)
+                    if (_channels[i].Stream != null && _channels[i].Stream.IsEndOfStream)
                     {
                         _mixer.StopHandle(_channels[i].Handle);
                         _channels[i].Id = -1;

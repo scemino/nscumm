@@ -36,7 +36,7 @@ namespace NScumm.Core
         public byte NewLineCharacter;
         internal bool UseCjkMode;
         protected byte _charsetColor;
-        int _nextLeft, _nextTop;
+        protected int _nextLeft, _nextTop;
 
         static byte[][] CreateCharsetData()
         {
@@ -73,7 +73,7 @@ namespace NScumm.Core
             }
         }
 
-        protected void Charset()
+        protected virtual void Charset()
         {
             byte[] subtitleBuffer = new byte[200];
             var subtitleLine = 0;
@@ -222,7 +222,7 @@ namespace NScumm.Core
                 {
                     if (Game.Version >= 7 && subtitleLine != 0)
                     {
-                        ((ScummEngine7)this).AddSubtitleToQueue(subtitleBuffer, subtitlePos, _charsetColor, (byte)_charset.GetCurId());
+                        ((ScummEngine7)this).AddSubtitleToQueue(subtitleBuffer, 0, subtitlePos, _charsetColor, (byte)_charset.GetCurId());
                         subtitleLine = 0;
                     }
 
@@ -257,7 +257,7 @@ namespace NScumm.Core
 
             if (Game.Version >= 7 && subtitleLine != 0)
             {
-                ((ScummEngine7)this).AddSubtitleToQueue(subtitleBuffer, subtitlePos, _charsetColor, (byte)_charset.GetCurId());
+                ((ScummEngine7)this).AddSubtitleToQueue(subtitleBuffer, 0, subtitlePos, _charsetColor, (byte)_charset.GetCurId());
             }
         }
 
@@ -281,7 +281,7 @@ namespace NScumm.Core
             return true;
         }
 
-        bool HandleNextCharsetCode(Actor a, ref int code)
+        protected bool HandleNextCharsetCode(Actor a, ref int code)
         {
             int color, frme, c = 0, oldy;
             bool endLoop = false;

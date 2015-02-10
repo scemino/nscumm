@@ -26,7 +26,7 @@ namespace NScumm.Core.Audio.IMuse
 {
     partial class IMuseDigital
     {
-        void ParseScriptCmds(int cmd, int b, int c, int d, int e, int f, int g, int h)
+        public void ParseScriptCmds(int cmd, int b, int c, int d, int e, int f, int g, int h)
         {
             int soundId = b;
             int sub_cmd = c;
@@ -133,9 +133,7 @@ namespace NScumm.Core.Audio.IMuse
                     }
                     else if (_vm.Game.GameId == GameId.Dig)
                     {
-                        // TODO: vs
-                        throw new NotImplementedException();
-//                        SetDigMusicState(b);
+                        SetDigMusicState(b);
                     }
                     else if (_vm.Game.GameId == GameId.CurseOfMonkeyIsland)
                     {
@@ -152,8 +150,7 @@ namespace NScumm.Core.Audio.IMuse
                     Debug.WriteLine("ImuseSetSequence ({0})", b);
                     if (_vm.Game.GameId == GameId.Dig)
                     {
-                        // TODO: vs
-                        throw new NotImplementedException();
+                        SetDigMusicSequence(b);
                     }
                     else if (_vm.Game.GameId == GameId.CurseOfMonkeyIsland)
                     {

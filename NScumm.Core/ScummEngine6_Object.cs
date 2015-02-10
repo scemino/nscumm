@@ -499,6 +499,9 @@ namespace NScumm.Core
             if (objnum == -1)
                 throw new NotSupportedException(string.Format("DrawBlastObject: GetObjectIndex on BlastObject {0} failed", eo.Number));
 
+            if (_objs[objnum].Images.Count == 0)
+                return;
+
             var index = eo.Image >= _objs[objnum].Images.Count ? 0 : eo.Image;
             var img = _objs[objnum].Images[index];
 

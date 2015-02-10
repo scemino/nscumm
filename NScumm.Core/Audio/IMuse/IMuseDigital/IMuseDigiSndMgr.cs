@@ -36,11 +36,11 @@ namespace NScumm.Core.Audio.IMuse
             BundleCodecs.InitializeImcTables();
         }
 
-        void CountElements(byte[] ptr, ref int numRegions, ref int numJumps, ref int numSyncs, ref int numMarkers)
+        void CountElements(byte[] ptr, int posPtr, ref int numRegions, ref int numJumps, ref int numSyncs, ref int numMarkers)
         {
             string tag;
             int size = 0;
-            int pos = 0;
+            int pos = posPtr;
 
             do
             {
@@ -83,7 +83,7 @@ namespace NScumm.Core.Audio.IMuse
             } while (tag != "DATA");
         }
 
-        void PrepareSoundFromRMAP(Stream file, SoundDesc sound, int offset, int size)
+        void PrepareSoundFromRMAP(XorReader file, SoundDesc sound, int offset, int size)
         {
             // TODO: vs PrepareSoundFromRMAP
 //            int l;
@@ -243,7 +243,7 @@ namespace NScumm.Core.Audio.IMuse
                 sound.numJumps = 0;
                 sound.numSyncs = 0;
                 sound.numMarkers = 0;
-                CountElements(ptr, ref sound.numRegions, ref sound.numJumps, ref sound.numSyncs, ref sound.numMarkers);
+                CountElements(ptr, posPtr, ref sound.numRegions, ref sound.numJumps, ref sound.numSyncs, ref sound.numMarkers);
                 sound.region = new Region[sound.numRegions];
                 sound.jump = new Jump[sound.numJumps];
                 sound.sync = new Sync[sound.numSyncs];
@@ -353,15 +353,13 @@ namespace NScumm.Core.Audio.IMuse
                     if (disk == -1)
                         disk = _vm.Variables[_vm.VariableCurrentDisk.Value];
                     var musicfile = string.Format("musdisk{0}.bun", disk);
-                    if (_disk != _vm.Variables[_vm.VariableCurrentDisk.Value])
-                    {
-                        // TODO: vs
-                        throw new NotImplementedException();
+//                    if (_disk != _vm.Variables[_vm.VariableCurrentDisk.Value])
+//                    {
 //                        _vm.IMuseDigital.ParseScriptCmds(0x1000, 0, 0, 0, 0, 0, 0, 0);
 //                        _vm.IMuseDigital.ParseScriptCmds(0x2000, 0, 0, 0, 0, 0, 0, 0);
 //                        _vm.IMuseDigital.StopAllSounds();
 //                        sound.bundle.CloseFile();
-                    }
+//                    }E
 
                     result = sound.bundle.Open(musicfile, ref sound.compressed, true);
 

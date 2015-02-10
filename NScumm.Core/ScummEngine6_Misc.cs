@@ -117,21 +117,20 @@ namespace NScumm.Core
                         Push(_objs[i].Height);
                     }
                     break;
-            // TODO: scumm6: GetKeyState
-//                case 211:
-//                    /*
-//                   13 = thrust
-//                   336 = thrust
-//                   328 = thrust
-//                   27 = abort
-//                   97 = left
-//                   331 = left
-//                   115 = right
-//                   333 = right
-//                 */
-//
-//                    Push(GetKeyState(args[1]));
-//                    break;
+                case 211:
+                    /*
+                   13 = thrust
+                   336 = thrust
+                   328 = thrust
+                   27 = abort
+                   97 = left
+                   331 = left
+                   115 = right
+                   333 = right
+                 */
+
+                    Push(GetKeyState(args[1]));
+                    break;
                 case 212:
                     {
                         var a = Actors[args[1]];
@@ -151,17 +150,16 @@ namespace NScumm.Core
                         Push(Verbs[slot].CurRect.Top);
                     }
                     break;
-            // TODO: scumm7: _extraBoxFlags
-//                case 215:
-//                    if ((_extraBoxFlags[args[1]] & 0x00FF) == 0x00C0)
-//                    {
-//                        Push(_extraBoxFlags[args[1]]);
-//                    }
-//                    else
-//                    {
-//                        Push((int)GetBoxFlags((byte)args[1]));
-//                    }
-//                    break;
+                case 215:
+                    if ((_extraBoxFlags[args[1]] & 0x00FF) == 0x00C0)
+                    {
+                        Push(_extraBoxFlags[args[1]]);
+                    }
+                    else
+                    {
+                        Push((int)GetBoxFlags((byte)args[1]));
+                    }
+                    break;
                 default:
                     throw new NotSupportedException(string.Format("KernelGetFunctions: default case {0}", args[0]));
             }

@@ -26,12 +26,16 @@ with game:
 
 `FT.LA0` for Full Throttle
 
+`DIG.LA0` for The Dig
+
 Supported Games
 ---------------
 
 ### SCUMM 7
 
 Full Throttle
+
+The Dig
 
 ### SCUMM 6
 

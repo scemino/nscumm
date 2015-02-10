@@ -13,6 +13,7 @@
   <MD5 signature="2723fea3dae0cb47768c424b145ae0e7" gameId="tentacle" variant="Floppy" language="en" />
   <MD5 signature="3b301b7892f883ce42ab4be6a274fea6" gameId="samnmax" variant="Floppy" language="en" />
   <MD5 signature="4bedb49943df95a9c900a5a82ccbe9de" gameId="ft" variant="" language="fr" />
+  <MD5 signature="09820417db26687bb7fe0c83cc4c553b" gameId="ft" variant="" language="en" />
   <MD5 signature="d8323015ecb8b10bf53474f6e6b0ae33" gameId="dig" variant="" language="en" />
   <Game id="indy3" gameId="Indy3" variant="VGA" version="3"/>
   <Game id="indy3" gameId="Indy3" variant="EGA" version="3"/>

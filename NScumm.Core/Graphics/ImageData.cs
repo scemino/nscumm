@@ -20,10 +20,11 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System.Collections.Generic;
+using System;
 
 namespace NScumm.Core.Graphics
 {
-    public class ImageData
+    public class ImageData: ICloneable
     {
         public List<ZPlane>  ZPlanes { get; private set; }
 
@@ -40,6 +41,27 @@ namespace NScumm.Core.Graphics
             ZPlanes = new List<ZPlane>();
             Data = new byte[0];
         }
+
+        #region ICloneable implementation
+
+        object ICloneable.Clone()
+        {
+            return Clone();
+        }
+
+        public ImageData Clone()
+        {
+            var data = new ImageData{ IsBomp = IsBomp };
+            data.Data = new byte[Data.Length];
+            Array.Copy(Data, data.Data, Data.Length);
+            foreach (var zplane in ZPlanes)
+            {
+                data.ZPlanes.Add(zplane.Clone());
+            }
+            return data;
+        }
+
+        #endregion
     }
 }
 

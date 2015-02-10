@@ -21,6 +21,7 @@
 using System;
 using System.Collections.Generic;
 using NScumm.Core.Graphics;
+using System.Diagnostics;
 
 namespace NScumm.Core
 {
@@ -29,6 +30,7 @@ namespace NScumm.Core
         protected List<byte> _boxMatrix = new List<byte>();
         Box[] _boxes;
         readonly ScaleSlot[] _scaleSlots;
+        internal ushort[] _extraBoxFlags = new ushort[65];
 
         internal BoxFlags GetBoxFlags(byte boxNum)
         {
@@ -220,10 +222,19 @@ namespace NScumm.Core
 
         protected void SetBoxFlags(int box, int val)
         {
-            var b = GetBoxBase(box);
-            if (b == null)
-                return;
-            b.Flags = (BoxFlags)val;
+            // SCUMM7+ stuff
+            if ((val & 0xC000)!=0)
+            {
+                Debug.Assert(box >= 0 && box < 65);
+                _extraBoxFlags[box] = (ushort)val;
+            }
+            else
+            {
+                var b = GetBoxBase(box);
+                if (b == null)
+                    return;
+                b.Flags = (BoxFlags)val;
+            }
         }
 
         public int GetBoxScale(byte boxNum)

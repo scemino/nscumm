@@ -555,8 +555,6 @@ namespace NScumm.Core
             }
         }
 
-        List<ObjectData> flObjects = new List<ObjectData>();
-
         protected void LoadFlObject(int obj, int room)
         {
             // Don't load an already loaded object
@@ -569,8 +567,7 @@ namespace NScumm.Core
                 if (_objs[i].Number == 0)
                 {
                     _objs[i] = od;
-                    od.FloatingObjectIndex = flObjects.Count;
-                    flObjects.Add(od);
+                    od.FloatingObjectIndex = 1;
                     return;
                 }
             }

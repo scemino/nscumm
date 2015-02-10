@@ -63,6 +63,11 @@ namespace NScumm.Core
         public ScummEngine7(GameInfo game, IGraphicsManager graphicsManager, IInputManager inputManager, IMixer mixer)
             : base(game, graphicsManager, inputManager, mixer)
         {
+            if (Game.GameId == GameId.Dig && (Game.Features.HasFlag(GameFeatures.Demo)))
+                _smushFrameRate = 15;
+            else
+                _smushFrameRate = (Game.GameId == GameId.FullThrottle) ? 10 : 12;
+
             for (int i = 0; i < _subtitleQueue.Length; i++)
             {
                 _subtitleQueue[i] = new SubtitleText();

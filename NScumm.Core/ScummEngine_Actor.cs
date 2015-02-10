@@ -23,6 +23,7 @@ using System;
 using System.Linq;
 using NScumm.Core.Graphics;
 using System.Collections.Generic;
+using NScumm.Core.IO;
 
 namespace NScumm.Core
 {
@@ -148,6 +149,12 @@ namespace NScumm.Core
                 {
                     TalkingActor = 0xFF;
                 }
+            }
+
+            if (Game.GameId == GameId.Dig || _game.GameId == GameId.CurseOfMonkeyIsland)
+            {
+                TalkingActor = 0;
+                Variables[VariableHaveMessage.Value] = 0;
             }
 
             _keepText = false;

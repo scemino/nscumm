@@ -45,8 +45,10 @@ namespace NScumm.Core
             var slot = GetInventorySlot();
             if (GetWhereIsObject(obj) == WhereIsObject.FLObject)
             {
-                GetObjectIndex(obj);
-                throw new NotImplementedException();
+                var objFound = (from o in _objs
+                                            where o.Number == obj
+                                            select o).FirstOrDefault();
+                _invData[slot] = objFound.Clone();
             }
             else
             {
@@ -54,7 +56,7 @@ namespace NScumm.Core
                 var objFound = (from o in objs
                                             where o.Number == obj
                                             select o).FirstOrDefault();
-                _invData[slot] = objFound;
+                _invData[slot] = objFound.Clone();
             }
             _inventory[slot] = (ushort)obj;
         }

@@ -444,6 +444,11 @@ namespace NScumm.Core
             return System.Text.Encoding.ASCII.GetString(value, startIndex, count);
         }
 
+        public static string ReadTag(this XorReader reader)
+        {
+            return System.Text.Encoding.ASCII.GetString(reader.ReadBytes(4), 0, 4);
+        }
+
         public static string GetText(this byte[] value, int startIndex = 0)
         {
             var data = new List<byte>();

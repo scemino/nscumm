@@ -1368,7 +1368,7 @@ namespace NScumm.Core
             _walkdata.XFrac = 0;
             _walkdata.YFrac = 0;
 
-            _targetFacing = (ushort)ScummMath.GetAngleFromPos(deltaXFactor, deltaYFactor, false);
+            _targetFacing = (ushort)ScummMath.GetAngleFromPos(deltaXFactor, deltaYFactor, (_scumm.Game.GameId == GameId.Dig || _scumm.Game.GameId == GameId.CurseOfMonkeyIsland));
 
             return ActorWalkStep();
         }
@@ -1445,8 +1445,25 @@ namespace NScumm.Core
             // not necessary here because we never call the function unless the
             // actor is in the current room anyway.
 
-            if (!IgnoreBoxes)
+            if (!IgnoreBoxes || _scumm.Game.GameId == GameId.Loom)
             {
+                var specdir = _scumm._extraBoxFlags[Walkbox];
+                if (specdir != 0)
+                {
+                    if ((specdir & 0x8000) != 0)
+                    {
+                        dir = specdir & 0x3FFF;
+                    }
+                    else
+                    {
+                        specdir = (ushort)(specdir & 0x3FFF);
+                        if (specdir - 90 < dir && dir < specdir + 90)
+                            dir = specdir;
+                        else
+                            dir = specdir + 180;
+                    }
+                }
+
                 flags = _scumm.GetBoxFlags(Walkbox);
 
                 flipX = (_walkdata.DeltaXFactor > 0);

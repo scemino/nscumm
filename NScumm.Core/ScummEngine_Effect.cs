@@ -31,7 +31,7 @@ namespace NScumm.Core
         int _shakeFrame;
         static readonly int[] ShakePositions = { 0, 1 * 2, 2 * 2, 1 * 2, 0 * 2, 2 * 2, 3 * 2, 1 * 2 };
         protected byte _newEffect = 129, _switchRoomEffect2, _switchRoomEffect;
-        bool _disableFadeInEffect;
+        protected bool _disableFadeInEffect;
         bool _doEffect;
         bool _screenEffectFlag;
 

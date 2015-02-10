@@ -1074,7 +1074,6 @@ namespace NScumm.Core.Smush
         {
             if (_insanity)
             {
-                // TODO: vs
                 if (!(_vm.Game.Features.HasFlag(GameFeatures.Demo) /*&& (_vm._game.platform == Common::kPlatformDOS)*/))
                     ReadString("mineroad.trs");
             }
@@ -1129,11 +1128,11 @@ namespace NScumm.Core.Smush
             return false;
         }
 
-        TrsFile GetStrings(ScummEngine vm, string file, bool is_encoded)
+        TrsFile GetStrings(ScummEngine vm, string file, bool isEncoded)
         {
             Debug.WriteLine("trying to read text resources from {0}", file);
             var filename = ScummHelper.LocatePath(Path.GetDirectoryName(_vm.Game.Path), Path.GetFileName(file));
-            return filename != null ? TrsFile.Load(filename) : null;
+            return filename != null ? isEncoded ? TrsFile.LoadEncoded(filename) : TrsFile.Load(filename) : null;
         }
 
         ScummEngine7 _vm;

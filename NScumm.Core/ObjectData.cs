@@ -23,7 +23,7 @@ using NScumm.Core.IO;
 namespace NScumm.Core
 {
     [System.Diagnostics.DebuggerDisplay("{DebuggerDisplay,nq}")]
-    public class ObjectData
+    public class ObjectData: ICloneable
     {
         public ushort Number { get; set; }
 
@@ -64,6 +64,32 @@ namespace NScumm.Core
             Images = new List<ImageData>();
             Hotspots = new List<Point>();
         }
+
+        #region ICloneable implementation
+
+        object ICloneable.Clone()
+        {
+            return Clone();
+        }
+
+        public ObjectData Clone()
+        {
+            var obj = (ObjectData)this.MemberwiseClone();
+            obj.Script = obj.Script.Clone();
+            obj.ScriptOffsets = new Dictionary<byte, ushort>();
+            foreach (var item in ScriptOffsets)
+            {
+                obj.ScriptOffsets.Add(item.Key, item.Value);
+            }
+            obj.Images.Clear();
+            foreach (var img in Images)
+            {
+                obj.Images.Add(img.Clone());
+            }
+            return obj;
+        }
+
+        #endregion
 
         public void SaveOrLoad(Serializer serializer)
         {

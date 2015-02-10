@@ -237,6 +237,8 @@ namespace NScumm.Core
             {
                 if (_objs[i].Number == obj)
                 {
+                    if (_objs[i].FloatingObjectIndex != 0)
+                        return WhereIsObject.FLObject;
                     return WhereIsObject.Room;
                 }
             }
@@ -549,7 +551,7 @@ namespace NScumm.Core
             {
                 for (var i = 0; i < _objs.Length; i++)
                 {
-                    if (_objs[i].Number == obj && (_objs[i].FloatingObjectIndex!=0))
+                    if (_objs[i].Number == obj && (_objs[i].FloatingObjectIndex != 0))
                     {
                         // Removing an flObject from a room means we can nuke it
 //                        _res->nukeResource(rtFlObject, _objs[i].fl_object_index);

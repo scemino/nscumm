@@ -19,6 +19,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
+using NScumm.Core.IO;
 
 namespace NScumm.Core
 {
@@ -117,7 +118,7 @@ namespace NScumm.Core
         [OpCode(0x88)]
         protected void GetRandomNumberRange(int min, int max)
         {
-            var rnd = new Random().Next(min, max);
+            var rnd = new Random().Next(min, max + 1);
             if (VariableRandomNumber.HasValue)
             {
                 Variables[VariableRandomNumber.Value] = rnd;
@@ -153,7 +154,7 @@ namespace NScumm.Core
         {
             CreateBoxMatrixCore();
 
-            if ((Game.Id == "dig") || (Game.Id == "cmi"))
+            if ((Game.GameId == GameId.Dig) || (Game.GameId == GameId.CurseOfMonkeyIsland))
                 PutActors();
         }
 

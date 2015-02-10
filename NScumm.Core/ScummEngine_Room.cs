@@ -461,6 +461,8 @@ namespace NScumm.Core
                 }
             }
 
+            Array.Clear(_extraBoxFlags, 0, _extraBoxFlags.Length);
+
             _boxes = new Box[roomData.Boxes.Count];
             for (int i = 0; i < roomData.Boxes.Count; i++)
             {

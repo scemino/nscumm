@@ -76,7 +76,7 @@ namespace NScumm.Core.Smush
             return true;
         }
 
-        public override bool SetParameters(int nb, int flags, int volume, int pan, int index)
+        public override bool SetParameters(int nb, int size, int flags, int unk1, int tmp)
         {
             if ((flags == 1) || (flags == 2) || (flags == 3))
             {

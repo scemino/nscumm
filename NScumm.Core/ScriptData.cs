@@ -14,13 +14,27 @@
  * You should have received a copy of the GNU General Public License
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
+using System;
 
 namespace NScumm.Core
 {
-    public class ScriptData
+    public class ScriptData: ICloneable
     {
         public byte[] Data { get; set; }
 
         public long Offset { get; set; }
+
+
+        #region ICloneable implementation
+        object ICloneable.Clone()
+        {
+            return Clone();
+        }
+
+        public ScriptData Clone()
+        {
+            return (ScriptData)this.MemberwiseClone();
+        }
+        #endregion
     }
 }

@@ -28,10 +28,14 @@ namespace NScumm.Core
     partial class ScummEngine7
     {
         int _smushFrameRate;
-        bool _disableFadeInEffect;
         byte[] _lastStringTag = new byte[12 + 1];
         int _subtitleQueuePos;
         SubtitleText[] _subtitleQueue = new SubtitleText[20];
+
+        struct SubString
+        {
+            public int pos, w;
+        }
 
         [OpCode(0xc9)]
         protected override void KernelSetFunctions()
@@ -114,7 +118,8 @@ namespace NScumm.Core
                     _saveSound = args[1] != 0;
                     break;
                 default:
-                    throw new NotSupportedException(string.Format("KernelSetFunctions: default case {0} (param count {1})", args[0], args.Length));
+                    Console.Error.WriteLine("KernelSetFunctions: default case {0} (param count {1})", args[0], args.Length);
+                    break;
             }
         }
 
@@ -180,6 +185,204 @@ namespace NScumm.Core
             }
         }
 
+        protected override void Charset()
+        {
+            if (Game.GameId == GameId.FullThrottle)
+            {
+                base.Charset();
+                return;
+            }
+
+            byte[] subtitleBuffer = new byte[2048];
+            int subtitleLine = 0;
+            Point subtitlePos;
+
+            ProcessSubtitleQueue();
+
+            if (_haveMsg == 0)
+                return;
+
+            Actor a = null;
+            if (TalkingActor != 0xFF)
+                a = Actors[TalkingActor];
+
+            var saveStr = String[0];
+            if (a != null && String[0].Overhead)
+            {
+                int s;
+
+                String[0].Position = new Point((short)(a.Position.X - MainVirtScreen.XStart), String[0].Position.Y);
+                s = a.ScaleX * a.TalkPosition.X / 255;
+                String[0].Position = String[0].Position.Offset((short)((a.TalkPosition.X - s) / 2 + s), 0);
+
+                String[0].Position = new Point(a.Position.X, (short)(a.Position.Y - a.Elevation - ScreenTop));
+                s = a.ScaleY * a.TalkPosition.Y / 255;
+                String[0].Position = String[0].Position.Offset(0, (short)((a.TalkPosition.Y - s) / 2 + s));
+            }
+
+            _charset.SetColor(_charsetColor);
+
+            if (a != null && a.Charset != 0)
+                _charset.SetCurID(a.Charset);
+            else
+                _charset.SetCurID(String[0].Charset);
+
+            if (_talkDelay != 0)
+                return;
+
+            if (Variables[VariableHaveMessage.Value] != 0)
+            {
+                if ((Sound._sfxMode & 2) == 0)
+                {
+                    StopTalk();
+                }
+                return;
+            }
+
+            if (a != null && !String[0].NoTalkAnim)
+            {
+                a.RunActorTalkScript(a.TalkStartFrame);
+            }
+
+            if (!_keepText)
+            {
+                ClearSubtitleQueue();
+                _nextLeft = String[0].Position.X;
+                _nextTop = String[0].Position.Y + ScreenTop;
+            }
+
+            _charset.DisableOffsX = _charset.FirstChar = !_keepText;
+
+            _talkDelay = Variables[VariableDefaultTalkDelay.Value];
+            for (int i = _charsetBufPos; i < _charsetBuffer.Length && _charsetBuffer[i] != 0; ++i)
+            {
+                _talkDelay += Variables[VariableCharIncrement.Value];
+            }
+
+            if (String[0].Wrapping)
+            {
+                _charset.AddLinebreaks(0, _charsetBuffer, _charsetBufPos, ScreenWidth - 20);
+
+                var substring = new SubString[10];
+                int count = 0;
+                int maxLineWidth = 0;
+                int lastPos = 0;
+                int code = 0;
+                while (HandleNextCharsetCode(a, ref code))
+                {
+                    if (code == 13 || code == 0)
+                    {
+                        subtitleBuffer[subtitleLine++] = 0;
+                        Debug.Assert(count < 10);
+                        substring[count].w = _charset.GetStringWidth(0, subtitleBuffer, lastPos);
+                        if (maxLineWidth < substring[count].w)
+                        {
+                            maxLineWidth = substring[count].w;
+                        }
+                        substring[count].pos = lastPos;
+                        ++count;
+                        lastPos = subtitleLine;
+                    }
+                    else
+                    {
+                        subtitleBuffer[subtitleLine++] = (byte)code;
+                        subtitleBuffer[subtitleLine] = 0;
+                    }
+                    if (code == 0)
+                    {
+                        break;
+                    }
+                }
+
+                int h = count * _charset.GetFontHeight();
+                h += _charset.GetFontHeight() / 2;
+                subtitlePos.Y = String[0].Position.Y;
+                if (subtitlePos.Y + h > ScreenHeight - 10)
+                {
+                    subtitlePos.Y = (short)(ScreenHeight - 10 - h);
+                }
+                if (subtitlePos.Y < 10)
+                {
+                    subtitlePos.Y = 10;
+                }
+
+                for (int i = 0; i < count; ++i)
+                {
+                    subtitlePos.X = String[0].Position.X;
+                    if (String[0].Center)
+                    {
+                        if (subtitlePos.X + maxLineWidth / 2 > ScreenWidth - 10)
+                        {
+                            subtitlePos.X = (short)(ScreenWidth - 10 - maxLineWidth / 2);
+                        }
+                        if (subtitlePos.X - maxLineWidth / 2 < 10)
+                        {
+                            subtitlePos.X = (short)(10 + maxLineWidth / 2);
+                        }
+                        subtitlePos.X -= (short)(substring[i].w / 2);
+                    }
+                    else
+                    {
+                        if (subtitlePos.X + maxLineWidth > ScreenWidth - 10)
+                        {
+                            subtitlePos.X = (short)(ScreenWidth - 10 - maxLineWidth);
+                        }
+                        if (subtitlePos.X - maxLineWidth < 10)
+                        {
+                            subtitlePos.X = 10;
+                        }
+                    }
+                    if (subtitlePos.Y < ScreenHeight - 10)
+                    {
+                        AddSubtitleToQueue(subtitleBuffer, substring[i].pos, subtitlePos, _charsetColor, (byte)_charset.GetCurId());
+                    }
+                    subtitlePos.Y += (short)(_charset.GetFontHeight());
+                }
+            }
+            else
+            {
+                int code = 0;
+                subtitlePos.Y = String[0].Position.Y;
+                if (subtitlePos.Y < 10)
+                {
+                    subtitlePos.Y = 10;
+                }
+                while (HandleNextCharsetCode(a, ref code))
+                {
+                    if (code == 13 || code == 0)
+                    {
+                        subtitlePos.X = String[0].Position.X;
+                        if (String[0].Center)
+                        {
+                            subtitlePos.X -= (short)(_charset.GetStringWidth(0, subtitleBuffer, 0) / 2);
+                        }
+                        if (subtitlePos.X < 10)
+                        {
+                            subtitlePos.X = 10;
+                        }
+                        if (subtitlePos.Y < ScreenHeight - 10)
+                        {
+                            AddSubtitleToQueue(subtitleBuffer, 0, subtitlePos, _charsetColor, (byte)_charset.GetCurId());
+                            subtitlePos.Y += (short)(_charset.GetFontHeight());
+                        }
+                        subtitleLine = 0;
+                    }
+                    else
+                    {
+                        subtitleBuffer[subtitleLine++] = (byte)code;
+                    }
+                    subtitleBuffer[subtitleLine] = 0;
+                    if (code == 0)
+                    {
+                        break;
+                    }
+                }
+            }
+            _haveMsg = (Game.Version == 8) ? 2 : 1;
+            _keepText = false;
+            String[0] = saveStr;
+        }
+
         protected override void ActorTalk(byte[] msg)
         {
             var stringWrap = false;
@@ -241,6 +444,7 @@ namespace NScumm.Core
         {
             int i;
             _lastStringTag[0] = 0;
+            var translatedText = text;
 
             if (text.Length > 0 && text[0] == '/')
             {
@@ -248,10 +452,13 @@ namespace NScumm.Core
                 for (i = 0; (i < 12) && (text[i + 1] != '/'); i++)
                     _lastStringTag[i] = (byte)char.ToUpper((char)text[i + 1]);
                 _lastStringTag[i] = 0;
+
+                translatedText = new byte[text.Length - i - 2];
+                Array.Copy(text, i + 2, translatedText, 0, translatedText.Length);
             }
 
-            // TODO: vs translation
-            return text;
+
+            return translatedText;
         }
 
         protected override void SetCameraAt(Point pos)
@@ -605,17 +812,17 @@ namespace NScumm.Core
             }
         }
 
-        internal void AddSubtitleToQueue(byte[] text, Point pos, byte color, byte charset)
+        internal void AddSubtitleToQueue(byte[] text, int textPos, Point pos, byte color, byte charset)
         {
-            if (text[0] != 0 && System.Text.Encoding.ASCII.GetString(text) != " ")
+            if (text[textPos] != 0 && System.Text.Encoding.ASCII.GetString(text, textPos, 1) != " ")
             {
                 Debug.Assert(_subtitleQueuePos < _subtitleQueue.Length);
                 var st = _subtitleQueue[_subtitleQueuePos];
                 int i = 0;
                 while (true)
                 {
-                    st.Text[i] = text[i];
-                    if (text[i] == 0)
+                    st.Text[i] = text[textPos + i];
+                    if (text[textPos + i] == 0)
                         break;
                     ++i;
                 }
@@ -662,10 +869,10 @@ namespace NScumm.Core
 
             if ((Game.GameId == GameId.Dig || Game.GameId == GameId.CurseOfMonkeyIsland) && ptr[0] != 0)
             {
-                var pointer = System.Text.Encoding.ASCII.GetString(ptr);
+                var pointer = System.Text.Encoding.ASCII.GetString(ptr).TrimEnd((char)0);
 
                 // Play speech
-                if (!(Game.Features.HasFlag(GameFeatures.Demo) && Game.GameId == GameId.CurseOfMonkeyIsland)) // CMI demo does not have .IMX for voice
+                if (!Game.Features.HasFlag(GameFeatures.Demo) && Game.GameId == GameId.CurseOfMonkeyIsland) // CMI demo does not have .IMX for voice
                     pointer += ".IMX";
 
                 Sound.StopTalkSound();

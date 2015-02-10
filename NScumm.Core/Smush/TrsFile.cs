@@ -34,7 +34,7 @@ namespace NScumm.Core.Smush
     class TrsFile
     {
         static readonly Regex DefRegex = new Regex(@"^#.*?\s+(\d+)", RegexOptions.Singleline);
-        static readonly Regex TextRegex = new Regex(@"//(.+)", RegexOptions.Singleline);
+        static readonly Regex TextRegex = new Regex(@"(?://)?(.+)", RegexOptions.Singleline);
         IDictionary<int, string> _texts;
 
         private TrsFile(IDictionary<int, string> texts)
@@ -44,24 +44,148 @@ namespace NScumm.Core.Smush
             _texts = texts;
         }
 
-        public static TrsFile Load(string filename)
+        class XorStream:Stream
         {
-            var texts = new Dictionary<int, string>();
-            using (var f = new StreamReader(filename, Encoding.GetEncoding("iso-8859-1")))
+            public Stream Stream { get; private set; }
+
+            public byte EncodedByte { get; private set; }
+
+            public XorStream(Stream stream, byte encodedByte)
             {
-                string line;
-                while ((line = f.ReadLine()) != null)
+                Stream = stream;
+                EncodedByte = encodedByte;
+            }
+
+            #region implemented abstract members of Stream
+
+            public override void Flush()
+            {
+                Stream.Flush();
+            }
+
+            public override int Read(byte[] buffer, int offset, int count)
+            {
+                var read = Stream.Read(buffer, offset, count);
+                for (int i = 0; i < read; i++)
                 {
-                    var m = TrsFile.DefRegex.Match(line);
-                    if (m.Success)
-                    {
-                        var id = int.Parse(m.Groups[1].Value);
-                        line = f.ReadLine();
-                        var m2 = TrsFile.TextRegex.Match(line);
-                        texts.Add(id, m2.Groups[1].Value);
-                    }
+                    buffer[i] ^= EncodedByte;
+                }
+                return read;
+            }
+
+            public override long Seek(long offset, SeekOrigin origin)
+            {
+                return Stream.Seek(offset, origin);
+            }
+
+            public override void SetLength(long value)
+            {
+                Stream.SetLength(value);
+            }
+
+            public override void Write(byte[] buffer, int offset, int count)
+            {
+                for (int i = 0; i < count; i++)
+                {
+                    buffer[offset + i] ^= EncodedByte;
+                }
+                Stream.Write(buffer, offset, count);
+            }
+
+            public override bool CanRead
+            {
+                get
+                {
+                    return Stream.CanRead;
                 }
             }
+
+            public override bool CanSeek
+            {
+                get
+                {
+                    return Stream.CanSeek;
+                }
+            }
+
+            public override bool CanWrite
+            {
+                get
+                {
+                    return Stream.CanWrite;
+                }
+            }
+
+            public override long Length
+            {
+                get
+                {
+                    return Stream.Length;
+                }
+            }
+
+            public override long Position
+            {
+                get
+                {
+                    return Stream.Position;
+                }
+                set
+                {
+                    Stream.Position = value;
+                }
+            }
+
+            #endregion
+        }
+
+        public static TrsFile Load(string filename)
+        {
+            TrsFile file;
+            using (var f = new StreamReader(filename, Encoding.GetEncoding("iso-8859-1")))
+            {
+                file = Load(f);
+            }
+            return file;
+        }
+
+        public static TrsFile LoadEncoded(string filename)
+        {
+            TrsFile file;
+            using (var f = File.OpenRead(filename))
+            {
+                var sig = new byte[4];
+                f.Read(sig, 0, 4);
+                if (System.Text.Encoding.ASCII.GetString(sig) == "ETRS")
+                {
+                    f.Seek(16, SeekOrigin.Begin);
+                    file = Load(new StreamReader(new XorStream(f, 0xCC)));
+                }
+                else
+                {
+                    f.Position = 0;
+                    file = Load(new StreamReader(f));
+                }
+            }
+            return file;
+        }
+
+        public static TrsFile Load(StreamReader reader)
+        {
+            string line;
+            var texts = new Dictionary<int, string>();
+            while ((line = reader.ReadLine()) != null)
+            {
+                var m = TrsFile.DefRegex.Match(line);
+                if (m.Success)
+                {
+                    var id = int.Parse(m.Groups[1].Value);
+                    line = reader.ReadLine();
+                    var m2 = TrsFile.TextRegex.Match(line);
+                    texts.Add(id, m2.Groups[1].Value);
+                }
+            }
+
             return new TrsFile(texts);
         }
 

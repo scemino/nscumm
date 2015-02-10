@@ -134,6 +134,15 @@ namespace NScumm.Core
 
         public void SoundKludge(int[] items)
         {
+            var imuseDigital = vm.MusicEngine as IMuseDigital;
+            if (imuseDigital != null)
+            {
+                var param = new int[8];
+                Array.Copy(items, param, Math.Min(8, items.Length));
+                imuseDigital.ParseScriptCmds(param[0], param[1], param[2], param[3], param[4], param[5], param[6], param[7]);
+                return;
+            }
+
             if (items[0] == -1)
             {
                 ProcessSoundQueue();
@@ -417,54 +426,107 @@ namespace NScumm.Core
 
         SoundHandle StartTalkSound(int offset, int b, int mode)
         {
+            FileStream file;
             SoundHandle handle = null;
             var id = -1;
-            if (_sfxFilename == null)
+
+            if (vm.Game.GameId == GameId.Dig)
             {
-                Console.Error.WriteLine("StartTalkSound: SFX file not found");
-                return handle;
+                _sfxMode |= mode;
+                if (!(vm.Game.Features.HasFlag(GameFeatures.Demo)))
+                    return null;
+
+                string filename;
+                string roomname;
+
+                if (offset == 1)
+                    roomname = "logo";
+                else if (offset == 15)
+                    roomname = "canyon";
+                else if (offset == 17)
+                    roomname = "pig";
+                else if (offset == 18)
+                    roomname = "derelict";
+                else if (offset == 19)
+                    roomname = "wreck";
+                else if (offset == 20)
+                    roomname = "grave";
+                else if (offset == 23)
+                    roomname = "nexus";
+                else if (offset == 79)
+                    roomname = "newton";
+                else
+                {
+                    Console.Error.WriteLine("startTalkSound: dig demo: unknown room number: {0}", offset);
+                    return null;
+                }
+
+                throw new NotImplementedException();
+//                filename=string.Format("audio/{0}.{1}/{2}.voc", roomname, offset, b);
+//                if (!_vm->openFile(*file, filename)) {
+//                    sprintf(filename, "audio/%s_%u/%u.voc", roomname, offset, b);
+//                    _vm->openFile(*file, filename);
+//                }
+//
+//                if (!file->isOpen()) {
+//                    sprintf(filename, "%u.%u.voc", offset, b);
+//                    _vm->openFile(*file, filename);
+//                }
+//
+//                if (!file->isOpen()) {
+//                    warning("startTalkSound: dig demo: voc file not found");
+//                    return;
+//                }
             }
-
-            // Some games frequently assume that starting one sound effect will
-            // automatically stop any other that may be playing at that time. So
-            // that is what we do here, but we make an exception for speech.
-
-            if (mode == 1 && (vm.Game.GameId == GameId.Tentacle || vm.Game.GameId == GameId.SamNMax))
+            else
             {
-                id = 777777 + _talkSound_channel;
-                _mixer.StopID(id);
+                if (_sfxFilename == null)
+                {
+                    Console.Error.WriteLine("StartTalkSound: SFX file not found");
+                    return handle;
+                }
+
+                // Some games frequently assume that starting one sound effect will
+                // automatically stop any other that may be playing at that time. So
+                // that is what we do here, but we make an exception for speech.
+
+                if (mode == 1 && (vm.Game.GameId == GameId.Tentacle || vm.Game.GameId == GameId.SamNMax))
+                {
+                    id = 777777 + _talkSound_channel;
+                    _mixer.StopID(id);
+                }
+
+                int num = 0;
+                if (b > 8)
+                {
+                    num = (b - 8) >> 1;
+                }
+
+                offset += 8;
+
+                _mouthSyncTimes = new ushort[num + 1];
+                file = File.OpenRead(_sfxFilename);
+                var br = new BinaryReader(file);
+                file.Seek(offset, SeekOrigin.Begin);
+                for (int i = 0; i < num; i++)
+                {
+                    _mouthSyncTimes[i] = br.ReadUInt16BigEndian();
+                }
+
+                // Adjust offset to account for the mouth sync times. It is noteworthy
+                // that we do not adjust the size here for compressed streams, since
+                // they only set size to the size of the compressed sound data.
+                offset += num * 2;
+                // TODO: In case we ever set up the size for VOC streams, we should
+                // really check whether the size contains the _mouthSyncTimes.
+                // if (SoundMode == SoundMode.VOCMode)
+                //      size -= num * 2;
+
+                _mouthSyncTimes[num] = 0xFFFF;
+                _sfxMode |= mode;
+                _curSoundPos = 0;
+                _mouthSyncMode = true;
             }
-
-            int num = 0;
-            if (b > 8)
-            {
-                num = (b - 8) >> 1;
-            }
-
-            offset += 8;
-
-            _mouthSyncTimes = new ushort[num + 1];
-            var file = File.OpenRead(_sfxFilename);
-            var br = new BinaryReader(file);
-            file.Seek(offset, SeekOrigin.Begin);
-            for (int i = 0; i < num; i++)
-            {
-                _mouthSyncTimes[i] = br.ReadUInt16BigEndian();
-            }
-
-            // Adjust offset to account for the mouth sync times. It is noteworthy
-            // that we do not adjust the size here for compressed streams, since
-            // they only set size to the size of the compressed sound data.
-            offset += num * 2;
-            // TODO: In case we ever set up the size for VOC streams, we should
-            // really check whether the size contains the _mouthSyncTimes.
-            // if (SoundMode == SoundMode.VOCMode)
-            //      size -= num * 2;
-
-            _mouthSyncTimes[num] = 0xFFFF;
-            _sfxMode |= mode;
-            _curSoundPos = 0;
-            _mouthSyncMode = true;
 
             var input = new VocStream(file, true);
 
@@ -510,8 +572,8 @@ namespace NScumm.Core
         int _talkSound_b2;
         int _talkSound_channel;
         int _talkSound_mode;
-        ushort[] _mouthSyncTimes;
-        int _sfxMode;
+        ushort[] _mouthSyncTimes = new ushort[64];
+        internal int _sfxMode;
         int _curSoundPos;
         bool _mouthSyncMode;
         SoundHandle _talkChannelHandle;

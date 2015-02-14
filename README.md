@@ -82,14 +82,7 @@ Missing games in your language or anything else ? Feel free to contact me at sce
 Screenshots
 -----------
 
-### The Secret of Monkey Island
-
-![nscumm screenshot](https://raw.github.com/scemino/nscumm/master/Doc/Images/MonkeyIsland.png "The Secret of Monkey Island")
-
-### Passport to Adventure
-
-![nscumm screenshot](https://raw.github.com/scemino/nscumm/master/Doc/Images/Indy3.png "Indiana Jones 3")
-![nscumm screenshot](https://raw.github.com/scemino/nscumm/master/Doc/Images/Loom.png "Loom")
+![nscumm screenshot](https://raw.github.com/scemino/nscumm/master/Doc/Images/nscumm.png)
 
 Tools
 -----

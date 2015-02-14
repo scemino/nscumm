@@ -70,6 +70,7 @@
   <Import Project="../packages/MonoGame.Binaries.3.2.2-alpha/build/net40/MonoGame.Binaries.targets" />
   <ItemGroup>
     <Reference Include="System.Drawing" />
+    <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="ScreenManager\" />

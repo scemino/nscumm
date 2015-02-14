@@ -25,6 +25,9 @@ namespace NScumm.MonoGame
 {
     sealed class XnaInputManager : NScumm.Core.Input.IInputManager
     {
+        MouseState mouseState;
+        KeyboardState keyboardState;
+
         public XnaInputManager(OpenTK.NativeWindow window)
         {
             this.window = window;
@@ -42,12 +45,20 @@ namespace NScumm.MonoGame
             return pOut;
         }
 
+        public void UpdateInput(MouseState mouse, KeyboardState keyboard)
+        {
+            lock (gate)
+            {
+                mouseState = mouse;
+                keyboardState = keyboard;
+            }
+        }
+
         public ScummInputState GetState()
         {
             lock (gate)
             {
-                var mouseState = Mouse.GetState();
-                var keys = Keyboard.GetState().GetPressedKeys().Where(key => keyToKeyCode.ContainsKey(key)).Select(key => keyToKeyCode[key]).ToList();
+                var keys = keyboardState.GetPressedKeys().Where(key => keyToKeyCode.ContainsKey(key)).Select(key => keyToKeyCode[key]).ToList();
                 var inputState = new ScummInputState(keys, mouseState.LeftButton == ButtonState.Pressed, mouseState.RightButton == ButtonState.Pressed);
                 return inputState;
             }

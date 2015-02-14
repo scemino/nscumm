@@ -57,8 +57,17 @@ namespace NScumm.Core
         public string ptr;
     }
 
-    class SoundDesc
+    [System.Diagnostics.DebuggerDisplay("{DebuggerDisplay,nq}")]
+    class SoundDesc: ICloneable
     {
+        internal string DebuggerDisplay
+        {
+            get
+            { 
+                return inUse ? string.Format("SoundId {0}", soundId) : string.Empty;
+            }    
+        }
+
         public ushort freq;
         // frequency
         public byte channels;
@@ -96,6 +105,54 @@ namespace NScumm.Core
         public IAudioStream compressedStream;
         public bool compressed;
         public string lastFileName;
+
+        public SoundDesc Clone()
+        {
+            SoundDesc desc = new SoundDesc();
+            desc.freq = freq;
+            desc.channels = channels;
+            desc.bits = bits;
+            desc.numJumps = numJumps;
+            desc.region = new Region[region.Length];
+            Array.Copy(region, desc.region, region.Length);
+            desc.numRegions = numRegions;
+            desc.jump = new Jump[jump.Length];
+            Array.Copy(jump, desc.jump, jump.Length);
+            desc.numSyncs = numSyncs;
+            desc.sync = new Sync[sync.Length];
+            Array.Copy(sync, desc.sync, sync.Length);
+            desc.numMarkers = numMarkers;
+            desc.marker = new Marker[marker.Length];
+            Array.Copy(marker, desc.marker, marker.Length);
+            desc.endFlag = endFlag;
+            desc.inUse = inUse;
+            if (allData != null)
+            {
+                desc.allData = new byte[allData.Length];
+                Array.Copy(allData, desc.allData, allData.Length);
+            }
+            desc.offsetData = offsetData;
+            if (resPtr != null)
+            {
+                desc.resPtr = new byte[resPtr.Length];
+                Array.Copy(resPtr, desc.resPtr, resPtr.Length);
+            }
+            desc.name = name;
+            desc.soundId = soundId;
+            desc.bundle = bundle;
+            desc.type = type;
+            desc.volGroupId = volGroupId;
+            desc.disk = disk;
+            desc.compressedStream = compressedStream;
+            desc.compressed = compressed;
+            desc.lastFileName = lastFileName;
+            return desc;
+        }
+
+        object ICloneable.Clone()
+        {
+            return Clone();
+        }
 
         public void Clear()
         {

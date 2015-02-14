@@ -182,7 +182,7 @@ namespace NScumm.Core
 
         ArrayHeader DefineArray(int array, ArrayType type, int dim2, int dim1)
         {
-            Debug.WriteLine("DefineArray: {0} {1} {2} {3}", array, type, dim2, dim1);
+//            Debug.WriteLine("DefineArray: {0} {1} {2} {3}", array, type, dim2, dim1);
             Debug.Assert(0 <= (int)type && (int)type <= 5);
 
             NukeArray(array);
@@ -248,6 +248,10 @@ namespace NScumm.Core
             // So it checks for invalid array indices only *after* using them to access
             // the array. Ouch.
             if (Game.GameId == NScumm.Core.IO.GameId.FullThrottle && array == 447 && CurrentRoom == 95 && Slots[CurrentScript].Number == 2010 && idx == -1 && @base == -1)
+            {
+                return 0;
+            }
+            else if (array == 448)
             {
                 return 0;
             }

@@ -307,7 +307,7 @@ namespace NScumm.Core.Audio
             }
             if (index == -1)
             {
-                Console.Error.WriteLine("MixerImpl::out of mixer slots");
+                throw new InvalidOperationException("MixerImpl::out of mixer slots");
                 return null;
             }
 

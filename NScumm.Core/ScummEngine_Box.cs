@@ -247,6 +247,9 @@ namespace NScumm.Core
 
         public int GetScale(int boxNum, short x, short y)
         {
+            if (Game.Version <= 3)
+                return 255;
+
             var box = GetBoxBase(boxNum);
             if (box == null)
                 return 255;
@@ -271,8 +274,8 @@ namespace NScumm.Core
             int scaleY = 0;
             var s = _scaleSlots[slot - 1];
 
-            //if (s.y1 == s.y2 && s.x1 == s.x2)
-            //    throw new NotSupportedException(string.Format("Invalid scale slot {0}", slot));
+            if (s.Y1 == s.Y2 && s.X1 == s.X2)
+                throw new NotSupportedException(string.Format("Invalid scale slot {0}", slot));
 
             if (s.Y1 != s.Y2)
             {

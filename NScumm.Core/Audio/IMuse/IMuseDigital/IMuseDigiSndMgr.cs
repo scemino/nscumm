@@ -543,6 +543,12 @@ namespace NScumm.Core.Audio.IMuse
             soundDesc.jump = null;
             soundDesc.sync = null;
             soundDesc.marker = null;
+
+            for (var i = 0; i < _sounds.Length; i++)
+            {
+                if (_sounds[i].soundId == soundDesc.soundId)
+                    _sounds[i] = new SoundDesc();
+            }
             soundDesc.Clear();
         }
 
@@ -564,7 +570,7 @@ namespace NScumm.Core.Audio.IMuse
                 return false;
             for (int l = 0; l < IMuseDigital.MAX_IMUSE_SOUNDS; l++)
             {
-                if (soundDesc == _sounds[l])
+                if (soundDesc.soundId == _sounds[l].soundId)
                     return true;
             }
             return false;

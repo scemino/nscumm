@@ -212,7 +212,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0xcd)]
-        protected void StampObject(int obj, short x, short y, byte state)
+        protected void StampObject(int obj, short x, short y, int state)
         {
             if (Game.Version >= 7 && obj < 30)
             {
@@ -220,8 +220,8 @@ namespace NScumm.Core
                     state = 255;
 
                 var a = Actors[obj];
-                a.ScaleX = state;
-                a.ScaleY = state;
+                a.ScaleX = (byte)state;
+                a.ScaleY = (byte)state;
                 a.PutActor(new Point(x, y), CurrentRoom);
                 a.DrawToBackBuf = true;
                 a.DrawCostume();

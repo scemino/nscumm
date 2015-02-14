@@ -326,7 +326,7 @@ namespace NScumm.Core
                 _variables[VariableCameraPosX.Value] = _camera.CurrentPosition.X;
             }
             if (Game.Version <= 7)
-            Variables[VariableHaveMessage.Value] = _haveMsg;
+                Variables[VariableHaveMessage.Value] = _haveMsg;
         }
     }
 }

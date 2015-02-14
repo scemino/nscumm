@@ -53,12 +53,12 @@ namespace NScumm.Core
 
         public static int ToTicks(TimeSpan time)
         {
-            return (int)time.TotalSeconds * 60;
+            return (int)(time.TotalSeconds * 60);
         }
 
         public static TimeSpan ToTimeSpan(int ticks)
         {
-            var t = ticks;
+            var t = (double)ticks;
             return TimeSpan.FromSeconds(t / 60.0);
         }
 

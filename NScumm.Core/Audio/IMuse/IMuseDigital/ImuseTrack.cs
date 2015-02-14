@@ -87,12 +87,15 @@ namespace NScumm.Core.Audio.IMuse
 
         public Track Clone()
         {
-            return (Track)MemberwiseClone();
+            var track = (Track)MemberwiseClone();
+            track.soundDesc = soundDesc.Clone();
+            track.mixChanHandle = new SoundHandle{ Value = mixChanHandle.Value };
+            return track;
         }
 
         object ICloneable.Clone()
         {
-            return (Track)Clone();
+            return Clone();
         }
 
         public void Clear()

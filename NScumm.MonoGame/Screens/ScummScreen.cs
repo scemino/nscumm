@@ -128,6 +128,7 @@ namespace NScumm.MonoGame
             else
             {
                 UpdateMouseState();
+                inputManager.UpdateInput(Mouse.GetState(), input.CurrentKeyboardState);
                 base.HandleInput(input);
             }
         }

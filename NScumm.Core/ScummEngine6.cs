@@ -152,13 +152,13 @@ namespace NScumm.Core
 //                            _opCode,
 //                            CurrentPos - 1,
 //                            string.Join(",", parameters.Select((p, i) => string.Format("{0}={1}", parameterNames[i], GetDebuggerDisplayFor(p)))));
-                        Console.WriteLine("Script {0,3}, offset = {4,4}: [{3:X2}] {2}({5})", 
-                            Slots[CurrentScript].Number, 
-                            _roomResource, 
-                            _opCodes.ContainsKey(_opCode) ? method.Name : "Unknown", 
-                            _opCode,
-                            CurrentPos - 1,
-                            string.Join(",", parameters.Select((p, i) => string.Format("{0}={1}", parameterNames[i], GetDebuggerDisplayFor(p)))));
+//                        Console.WriteLine("Script {0,3}, offset = {4,4}: [{3:X2}] {2}({5})", 
+//                            Slots[CurrentScript].Number, 
+//                            _roomResource, 
+//                            _opCodes.ContainsKey(_opCode) ? method.Name : "Unknown", 
+//                            _opCode,
+//                            CurrentPos - 1,
+//                            string.Join(",", parameters.Select((p, i) => string.Format("{0}={1}", parameterNames[i], GetDebuggerDisplayFor(p)))));
 
                         method.Invoke(this, parameters);
                     }

@@ -499,6 +499,10 @@ namespace NScumm.Core
             {
                 timeToWait -= lastTimeLoop;
             }
+            else
+            {
+                timeToWait = TimeSpan.Zero;
+            }
             return timeToWait;
         }
 

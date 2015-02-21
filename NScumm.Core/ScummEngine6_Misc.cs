@@ -28,7 +28,7 @@ namespace NScumm.Core
     partial class ScummEngine6
     {
         [OpCode(0xae)]
-        protected void SystemOps()
+        protected virtual void SystemOps()
         {
             //TODO: Restart
             var subOp = ReadByte();
@@ -50,12 +50,12 @@ namespace NScumm.Core
         }
 
         [OpCode(0xbd)]
-        protected void Dummy()
+        protected virtual void Dummy()
         {
         }
 
         [OpCode(0xc8)]
-        protected void KernelGetFunctions()
+        protected virtual void KernelGetFunctions()
         {
             var vs = MainVirtScreen;
 
@@ -276,7 +276,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0xD0)]
-        protected void GetDateTime()
+        protected virtual void GetDateTime()
         {
             var dt = DateTime.Now;
 
@@ -306,7 +306,7 @@ namespace NScumm.Core
             Push(pixel);
         }
 
-        int GetSpecialBox(Point p)
+        protected int GetSpecialBox(Point p)
         {
             var numOfBoxes = GetNumBoxes() - 1;
 
@@ -413,7 +413,7 @@ namespace NScumm.Core
             _palManipCounter = time;
         }
 
-        void KillAllScriptsExceptCurrent()
+        protected void KillAllScriptsExceptCurrent()
         {
             for (int i = 0; i < Slots.Length; i++)
             {

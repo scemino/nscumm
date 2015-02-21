@@ -159,7 +159,7 @@ namespace NScumm.Core
             SetCursorFromBuffer(default_v6_cursor, 16, 13);
         }
 
-        void SetCursorHotspot(Point pos)
+        protected void SetCursorHotspot(Point pos)
         {
             _cursor.Hotspot = pos;
         }
@@ -174,7 +174,7 @@ namespace NScumm.Core
             _gfxManager.SetCursor(data, _cursor.Width, _cursor.Height, _cursor.Hotspot);
         }
 
-        void SetCursorTransparency(int a)
+        protected void SetCursorTransparency(int a)
         {
             for (var i = 0; i < _cursorData.Length; i++)
                 if (_cursorData[i] == a)

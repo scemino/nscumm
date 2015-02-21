@@ -32,7 +32,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0x74)]
-        protected void StartSound(int sound)
+        protected virtual void StartSound(int sound)
         {
             if (Game.Version >= 7)
             {
@@ -45,25 +45,25 @@ namespace NScumm.Core
         }
 
         [OpCode(0x75)]
-        protected void StopSound(int sound)
+        protected virtual void StopSound(int sound)
         {
             Sound.StopSound(sound);
         }
 
         [OpCode(0x76)]
-        protected void StartMusic(int sound)
+        protected virtual void StartMusic(int sound)
         {
             Sound.AddSoundToQueue(sound);
         }
 
         [OpCode(0x98)]
-        protected void IsSoundRunning(int sound)
+        protected virtual void IsSoundRunning(int sound)
         {
             Push(sound != 0 && Sound.IsSoundRunning(sound));
         }
 
         [OpCode(0xac)]
-        protected void SoundKludge(int[] args)
+        protected virtual void SoundKludge(int[] args)
         {
             Sound.SoundKludge(args);
         }

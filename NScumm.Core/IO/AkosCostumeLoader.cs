@@ -215,7 +215,7 @@ namespace NScumm.Core
             for (var i = 0; i < 16; i++)
             {
                 if (a.Cost.Active[i] != 0)
-                    result |= IncreaseAnim(a, i, aksq, akfo, size);
+                    result |= IncreaseAnim(a, i, aksq, akfo, size, vm);
             }
             return result ? 1 : 0;
         }
@@ -226,7 +226,7 @@ namespace NScumm.Core
             return (akhd.flags & 2) != 0;
         }
 
-        bool IncreaseAnim(Actor a, int chan, byte[] aksq, byte[] akfo, int numakfo)
+        public static bool IncreaseAnim(Actor a, int chan, byte[] aksq, byte[] akfo, int numakfo, ScummEngine vm)
         {
             byte active;
             int old_curpos, end;
@@ -348,7 +348,7 @@ namespace NScumm.Core
                                 curpos += aksq[curpos + 2];
                                 break;
                             case AkosOpcode.C08E:
-                                akos_queCommand(7, a, GW(aksq, curpos, 2), 0);
+                                akos_queCommand(7, a, GW(aksq, curpos, 2), 0, vm);
                                 curpos += 4;
                                 break;
                             default:
@@ -377,7 +377,7 @@ namespace NScumm.Core
                 switch (code)
                 {
                     case AkosOpcode.StartAnimInActor:
-                        akos_queCommand(4, vm.Actors[a.GetAnimVar(GB(aksq, curpos, 2))], a.GetAnimVar(GB(aksq, curpos, 3)), 0);
+                        akos_queCommand(4, vm.Actors[a.GetAnimVar(GB(aksq, curpos, 2))], a.GetAnimVar(GB(aksq, curpos, 3)), 0, vm);
                         continue;
 
                     case AkosOpcode.Random:
@@ -413,25 +413,25 @@ namespace NScumm.Core
 //                        else
                         tmp = GB(aksq, curpos, 2) - 1;
                         if ((uint)tmp < 24)
-                            akos_queCommand(3, a, a.Sounds[tmp], 0);
+                            akos_queCommand(3, a, a.Sounds[tmp], 0, vm);
                         continue;
                     case AkosOpcode.CmdQue3Quick:
-                        akos_queCommand(3, a, a.Sounds[0], 0);
+                        akos_queCommand(3, a, a.Sounds[0], 0, vm);
                         continue;
                     case AkosOpcode.StartAnim:
-                        akos_queCommand(4, a, GB(aksq, curpos, 2), 0);
+                        akos_queCommand(4, a, GB(aksq, curpos, 2), 0, vm);
                         continue;
                     case AkosOpcode.StartVarAnim:
-                        akos_queCommand(4, a, a.GetAnimVar(GB(aksq, curpos, 2)), 0);
+                        akos_queCommand(4, a, a.GetAnimVar(GB(aksq, curpos, 2)), 0, vm);
                         continue;
                     case AkosOpcode.SetVarInActor:
                         vm.Actors[a.GetAnimVar(GB(aksq, curpos, 2))].SetAnimVar(GB(aksq, curpos, 3), GW(aksq, curpos, 4));
                         continue;
                     case AkosOpcode.HideActor:
-                        akos_queCommand(1, a, 0, 0);
+                        akos_queCommand(1, a, 0, 0, vm);
                         continue;
                     case AkosOpcode.SetActorClip:
-                        akos_queCommand(5, a, GB(aksq, curpos, 2), 0);
+                        akos_queCommand(5, a, GB(aksq, curpos, 2), 0, vm);
                         continue;
                     case AkosOpcode.SoundStuff:
 //                        if (_game.heversion >= 61)
@@ -442,10 +442,10 @@ namespace NScumm.Core
                         tmp2 = GB(aksq, curpos, 4);
                         if (tmp2 < 1 || tmp2 > 3)
                             throw new InvalidOperationException(string.Format("akos_increaseAnim:8 invalid code {0}", tmp2));
-                        akos_queCommand((byte)(tmp2 + 6), a, a.Sounds[tmp], GB(aksq, curpos, 6));
+                        akos_queCommand((byte)(tmp2 + 6), a, a.Sounds[tmp], GB(aksq, curpos, 6), vm);
                         continue;
                     case AkosOpcode.SetDrawOffs:
-                        akos_queCommand(6, a, GW(aksq, curpos, 2), GW(aksq, curpos, 4));
+                        akos_queCommand(6, a, GW(aksq, curpos, 2), GW(aksq, curpos, 4), vm);
                         continue;
                     case AkosOpcode.JumpTable:
                         if (akfo == null)
@@ -539,10 +539,10 @@ namespace NScumm.Core
                         }
                         continue;
                     case AkosOpcode.C042:
-                        akos_queCommand(9, a, a.Sounds[GB(aksq, curpos, 2)], 0);
+                        akos_queCommand(9, a, a.Sounds[GB(aksq, curpos, 2)], 0, vm);
                         continue;
                     case AkosOpcode.C044:
-                        akos_queCommand(9, a, a.Sounds[a.GetAnimVar(GB(aksq, curpos, 2))], 0);
+                        akos_queCommand(9, a, a.Sounds[a.GetAnimVar(GB(aksq, curpos, 2))], 0, vm);
                         continue;
 //                    case AkosOpcode.C045:
 //                        ((ActorHE*)a).SetUserCondition(GB(aksq, curpos, 3), a.GetAnimVar(GB(aksq, curpos, 4)));
@@ -557,7 +557,7 @@ namespace NScumm.Core
 //                        a.setAnimVar(GB(aksq, curpos, 4), ((ActorHE*)a).isTalkConditionSet(GB(aksq, curpos, 3)));
 //                        continue;
                     case AkosOpcode.C0A0:
-                        akos_queCommand(8, a, GB(aksq, curpos, 2), 0);
+                        akos_queCommand(8, a, GB(aksq, curpos, 2), 0, vm);
                         continue;
 //                    case AkosOpcode.C0A1:
 //                        if (((ActorHE*)a)._heTalking != 0)
@@ -574,7 +574,7 @@ namespace NScumm.Core
 //                        }
 //                        continue;
                     case AkosOpcode.C0A3:
-                        akos_queCommand(8, a, a.GetAnimVar(GB(aksq, curpos, 2)), 0);
+                        akos_queCommand(8, a, a.GetAnimVar(GB(aksq, curpos, 2)), 0, vm);
                         continue;
                     case AkosOpcode.C0A4:
                         if (vm.Variables[vm.VariableTalkActor.Value] != 0)
@@ -616,22 +616,22 @@ namespace NScumm.Core
                 return curpos != old_curpos;
         }
 
-        short GW(byte[] aksq, int curpos, int o)
+        static short GW(byte[] aksq, int curpos, int o)
         {
             return BitConverter.ToInt16(aksq, curpos + o);
         }
 
-        ushort GUW(byte[] aksq, int curpos, int o)
+        static ushort GUW(byte[] aksq, int curpos, int o)
         {
             return BitConverter.ToUInt16(aksq, curpos + o);
         }
 
-        byte GB(byte[] aksq, int curpos, int o)
+        static byte GB(byte[] aksq, int curpos, int o)
         {
             return aksq[curpos + o];
         }
 
-        void akos_queCommand(byte cmd, Actor a, int param_1, int param_2)
+        static void akos_queCommand(byte cmd, Actor a, int param_1, int param_2, ScummEngine vm)
         {
             var v = (ScummEngine6)vm;
             v._akosQueuePos++;

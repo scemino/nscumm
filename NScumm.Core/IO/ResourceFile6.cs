@@ -42,7 +42,7 @@ namespace NScumm.Core.IO
 
             if (chunk.Tag != "ROOM")
             {
-                throw new NotSupportedException("Room cblock was expected.");
+                throw new NotSupportedException("Room block was expected.");
             }
 
             var room = ReadRoomCore(offset, chunk.Size);
@@ -54,6 +54,7 @@ namespace NScumm.Core.IO
             var room = new Room();
             var it = new ChunkIterator5(_reader, chunkSize);
             var images = new Dictionary<ushort, ObjectData>();
+            var objCodes = new Dictionary<ushort, ObjectData>();
             while (it.MoveNext())
             {
                 switch (it.Current.Tag)
@@ -75,6 +76,10 @@ namespace NScumm.Core.IO
                                     // room image
                         ReadRoomImage(room);
                         break;
+
+                    case "IMAG":
+                        ReadRoomImages(room);
+                        break;
                                 
                     case "CYCL":
                                     // CYCL
@@ -87,7 +92,7 @@ namespace NScumm.Core.IO
                     case "BOXD":
                                     // box data
                         {
-                            var numBoxes = _reader.ReadUInt16();
+                            var numBoxes = ReadNumBoxes();
                             for (int i = 0; i < numBoxes; i++)
                             {
                                 var box = ReadBox();
@@ -159,7 +164,7 @@ namespace NScumm.Core.IO
                         {
                             // object script
                             var obj = ReadObjectCode(it.Current.Size - 8);
-                            room.Objects.Add(Merge(images[obj.Number],obj));
+                            objCodes[obj.Number] = obj;
                         }
                         break;                        
 
@@ -169,7 +174,32 @@ namespace NScumm.Core.IO
                 }
             }
 
+            var objIds = images.Values.Concat(objCodes.Values).Select(o => o.Number).ToList();
+            foreach (var objId in objIds)
+            {
+                if (objCodes.ContainsKey(objId))
+                {
+                    if (images.ContainsKey(objId))
+                    {
+                        room.Objects.Add(Merge(images[objId], objCodes[objId]));
+                    }
+                    else
+                    {
+                        room.Objects.Add(objCodes[objId]);
+                    }
+                }
+                else
+                {
+                    room.Objects.Add(images[objId]);
+                }
+            }
+
             return room;
+        }
+
+        protected virtual int ReadNumBoxes()
+        {
+            return _reader.ReadUInt16();
         }
 
         protected virtual int ReadScriptIndex()
@@ -195,6 +225,11 @@ namespace NScumm.Core.IO
                 throw new NotSupportedException("Image block was expected.");
 
             room.Image = ReadImage(chunk.Size - 8, room.Header.Width / 8);
+        }
+
+        protected virtual void ReadRoomImages(Room room)
+        {
+            throw new InvalidOperationException("ReadRoomImages");
         }
 
         IEnumerable<Palette> ReadPalettes()

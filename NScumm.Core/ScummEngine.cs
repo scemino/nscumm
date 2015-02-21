@@ -80,9 +80,12 @@ namespace NScumm.Core
         protected int _talkDelay;
         protected int _haveMsg;
 
-        public int ScreenTop;
-        public int ScreenWidth = 320;
-        public int ScreenHeight = 200;
+        public int ScreenTop { get; private set; }
+
+        public int ScreenWidth { get; private set; }
+
+        public int ScreenHeight { get; private set; }
+
         int _screenB;
         int _screenH;
 
@@ -164,6 +167,10 @@ namespace NScumm.Core
             {
                 engine = new ScummEngine7(game, gfxManager, inputManager, mixer);
             }
+            else if (game.Version == 8)
+            {
+                engine = new ScummEngine8(game, gfxManager, inputManager, mixer);
+            }
             Instance = engine;
             engine.SetupVars();
             engine.ResetScummVars();
@@ -196,6 +203,9 @@ namespace NScumm.Core
             _invData = new ObjectData[_resManager.NumInventory];
             _currentScript = 0xFF;
             Mixer = mixer;
+            ScreenWidth = Game.Version == 8 ? 640 : 320;
+            ScreenHeight = Game.Version == 8 ? 480 : 200;
+
             Sound = new Sound(this, mixer);
 
             if (game.GameId == GameId.Loom || game.GameId == GameId.Indy3)
@@ -255,7 +265,18 @@ namespace NScumm.Core
             _costumeRenderer = game.Version < 7 ? (ICostumeRenderer)new ClassicCostumeRenderer(this) : new AkosRenderer(this);
 
             // Create the charset renderer
-            _charset = game.Version == 3 ? (CharsetRenderer)new CharsetRenderer3(this) : new CharsetRendererClassic(this);
+            if (game.Version == 3)
+            {
+                _charset = new CharsetRenderer3(this);
+            }
+            else if (game.Version == 8)
+            {
+                _charset = new CharsetRendererNut(this);
+            }
+            else
+            {
+                _charset = new CharsetRendererClassic(this);
+            }
 
             ResetCursors();
 
@@ -487,8 +508,10 @@ namespace NScumm.Core
         TimeSpan GetTimeToWaitBeforeLoop(TimeSpan lastTimeLoop)
         {
             var numTicks = ScummHelper.ToTicks(timeToWait);
-            _variables[VariableTimer.Value] = numTicks;
-            _variables[VariableTimerTotal.Value] += numTicks;
+            if (VariableTimer.HasValue)
+                _variables[VariableTimer.Value] = numTicks;
+            if (VariableTimerTotal.HasValue)
+                _variables[VariableTimerTotal.Value] += numTicks;
 
             deltaTicks = _variables[VariableTimerNext.Value];
             if (deltaTicks < 1)

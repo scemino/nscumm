@@ -25,7 +25,7 @@ namespace NScumm.Core
     partial class ScummEngine6
     {
         [OpCode(0x78)]
-        protected void PanCameraTo()
+        protected virtual void PanCameraTo()
         {
             var y = (Game.Version >= 7) ? Pop() : 0;
             var x = Pop();
@@ -33,7 +33,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0x79)]
-        protected void ActorFollowCamera(int index)
+        protected virtual void ActorFollowCamera(int index)
         {
             if (Game.Version >= 7)
                 SetCameraFollows(Actors[index]);
@@ -42,7 +42,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0x7a)]
-        protected void SetCameraAt()
+        protected virtual void SetCameraAt()
         {
             if (Game.Version >= 7)
             {

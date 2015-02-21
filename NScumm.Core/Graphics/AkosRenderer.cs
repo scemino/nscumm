@@ -695,7 +695,8 @@ namespace NScumm.Core.Graphics
             bdd.ScaleX = 255;
             bdd.ScaleY = 255;
 
-            bdd.MaskPtr = _vm.GetMaskBuffer(0, 0, ZBuffer);
+            // TODO: vs 8
+//            bdd.MaskPtr = _vm.GetMaskBuffer(0, 0, ZBuffer);
             bdd.NumStrips = _vm.Gdi.NumStrips;
 
             bdd.ShadowMode = ShadowMode;
@@ -725,7 +726,9 @@ namespace NScumm.Core.Graphics
 
             var scaleytab = v1.ScaleYIndex;
             var maskbit = ScummHelper.RevBitMask(v1.X & 7);
-            var mask = _vm.GetMaskBuffer(v1.X - (_vm.MainVirtScreen.XStart & 7), v1.Y, ZBuffer);
+
+            // TODO: vs 8
+//            var mask = _vm.GetMaskBuffer(v1.X - (_vm.MainVirtScreen.XStart & 7), v1.Y, ZBuffer);
 
             bool ehmerde = (len != 0);
 
@@ -756,7 +759,9 @@ namespace NScumm.Core.Graphics
                             }
                             else
                             {
-                                bool masked = (y < v1.BoundsRect.Top || y >= v1.BoundsRect.Bottom) || (v1.X < 0 || v1.X >= v1.BoundsRect.Right) || ((mask.Read() & maskbit) != 0);
+                                // TODO: vs 8
+//                                bool masked = (y < v1.BoundsRect.Top || y >= v1.BoundsRect.Bottom) || (v1.X < 0 || v1.X >= v1.BoundsRect.Right) || ((mask.Read() & maskbit) != 0);
+                                bool masked = (y < v1.BoundsRect.Top || y >= v1.BoundsRect.Bottom) || (v1.X < 0 || v1.X >= v1.BoundsRect.Right);
 
                                 if (color != 0 && !masked && !skip_column)
                                 {
@@ -795,7 +800,8 @@ namespace NScumm.Core.Graphics
                                 }
                             }
                             dst.OffsetY(1);
-                            mask.OffsetY(1);
+                            // TODO: vs 8
+//                            mask.OffsetY(1);
                             y++;
                         }
                         if (--height == 0)
@@ -820,7 +826,8 @@ namespace NScumm.Core.Graphics
                                 skip_column = true;
                             v1.ScaleXIndex += v1.ScaleXStep;
                             dst = v1.DestPtr;
-                            mask = _vm.GetMaskBuffer(v1.X - (_vm.MainVirtScreen.XStart & 7), v1.Y, ZBuffer);
+                            // TODO: vs 8
+//                            mask = _vm.GetMaskBuffer(v1.X - (_vm.MainVirtScreen.XStart & 7), v1.Y, ZBuffer);
                         }
                     }
                     ehmerde = false;
@@ -960,14 +967,16 @@ namespace NScumm.Core.Graphics
                 Akos16SkipData(numskip_before);
             }
 
-            var maskptr = _vm.GetMaskBuffer(maskLeft, maskTop, zBuf);
+            // TODO: vs 8
+//            var maskptr = _vm.GetMaskBuffer(maskLeft, maskTop, zBuf);
 
             Debug.Assert(t_height > 0);
             Debug.Assert(t_width > 0);
             while ((t_height--) != 0)
             {
                 Akos16DecodeLine(tmp_buf, tmp_pos, t_width, dir);
-                BompDrawData.BompApplyMask(_akos16.Buffer, 0, maskptr, maskbit, t_width, transparency);
+                // TODO: vs 8
+//                BompDrawData.BompApplyMask(_akos16.Buffer, 0, maskptr, maskbit, t_width, transparency);
                 BompDrawData.BompApplyShadow(ShadowMode, ShadowTable, _akos16.Buffer, 0, dest, t_width, transparency);
 
                 if (numskip_after != 0)
@@ -975,7 +984,8 @@ namespace NScumm.Core.Graphics
                     Akos16SkipData(numskip_after);
                 }
                 dest.OffsetY(1);
-                maskptr.OffsetY(1);
+                // TODO: vs 8
+//                maskptr.OffsetY(1);
             }
         }
 

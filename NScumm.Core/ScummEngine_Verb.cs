@@ -179,9 +179,10 @@ namespace NScumm.Core
                                       select o).FirstOrDefault();
             }
 
+            var FallbackEntry = Game.Version == 8 ? 0xFFFFFFFF : 0xFF;
             foreach (var key in result.ScriptOffsets.Keys)
             {
-                if (key == entry || key == 0xFF)
+                if (key == entry || key == FallbackEntry)
                     return result.ScriptOffsets[key];
             }
 

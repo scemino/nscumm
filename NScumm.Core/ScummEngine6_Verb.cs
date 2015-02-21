@@ -24,11 +24,11 @@ namespace NScumm.Core
 {
     partial class ScummEngine6
     {
-        int _curVerbSlot;
-        int _curVerb;
+        protected int _curVerbSlot;
+        protected int _curVerb;
 
         [OpCode(0x94)]
-        protected void GetVerbFromXY(int x, int y)
+        protected virtual void GetVerbFromXY(int x, int y)
         {
             var over = FindVerbAtPos(x, y);
             if (over != 0)
@@ -162,13 +162,13 @@ namespace NScumm.Core
         }
 
         [OpCode(0xa3)]
-        protected void GetVerbEntrypoint(int verb, int entryp)
+        protected virtual void GetVerbEntrypoint(int verb, int entryp)
         {
             Push(GetVerbEntrypointCore(verb, entryp));
         }
 
         [OpCode(0xa5)]
-        protected void SaveRestoreVerbs(int a, int b, int c)
+        protected virtual void SaveRestoreVerbs(int a, int b, int c)
         {
             var subOp = ReadByte();
             if (Game.Version == 8)

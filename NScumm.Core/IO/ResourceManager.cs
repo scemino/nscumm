@@ -172,6 +172,8 @@ namespace NScumm.Core.IO
                     return new ResourceManager6(game); 
                 case 7:
                     return new ResourceManager7(game); 
+                case 8:
+                    return new ResourceManager8(game); 
                 default:
                     throw new NotSupportedException(string.Format("ResourceManager {0} is not supported", game.Version)); 
             }

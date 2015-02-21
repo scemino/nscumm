@@ -175,14 +175,14 @@ namespace NScumm.Core
         }
 
         [OpCode(0x7b)]
-        protected void LoadRoom(byte room)
+        protected virtual void LoadRoom(byte room)
         {
             StartScene(room);
             _fullRedraw = true;
         }
 
         [OpCode(0x85)]
-        protected void LoadRoomWithEgo(int x, int y)
+        protected virtual void LoadRoomWithEgo(int x, int y)
         {
             int obj, room;
             PopRoomAndObj(out room, out obj);
@@ -209,7 +209,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0x8c)]
-        protected void GetActorRoom(int index)
+        protected virtual void GetActorRoom(int index)
         {
             if (index == 0)
             {
@@ -237,7 +237,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0xa6)]
-        protected void DrawBox(int x, int y, int x2, int y2, int color)
+        protected virtual void DrawBox(int x, int y, int x2, int y2, int color)
         {
             DrawBoxCore(x, y, x2, y2, color);
         }
@@ -245,7 +245,7 @@ namespace NScumm.Core
         [OpCode(0xe3)]
         protected void PickVarRandom(int[] args)
         {
-            int value = ReadWord();
+            var value = ReadWordSigned();
 
             if (ReadVariable(value) == 0)
             {

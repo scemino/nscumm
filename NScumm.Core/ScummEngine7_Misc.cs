@@ -31,6 +31,7 @@ namespace NScumm.Core
         byte[] _lastStringTag = new byte[12 + 1];
         int _subtitleQueuePos;
         SubtitleText[] _subtitleQueue = new SubtitleText[20];
+        protected int _verbLineSpacing;
 
         struct SubString
         {
@@ -440,7 +441,7 @@ namespace NScumm.Core
             }
         }
 
-        protected override byte[] TranslateText(byte[] text)
+        public override byte[] TranslateText(byte[] text)
         {
             int i;
             _lastStringTag[0] = 0;
@@ -693,37 +694,39 @@ namespace NScumm.Core
                 vs.OldRect = vs.CurRect;
 
                 var maxWidth = ScreenWidth - vs.CurRect.Left;
-//                if (_charset.GetStringWidth(0, buf) > maxWidth && Game.Version == 8)
-//                {
-//                    byte[] tmpBuf = new byte[384];
-//                    memcpy(tmpBuf, msg, 384);
-//
-//                    int len = resStrLen(tmpBuf) - 1;
-//                    while (len >= 0)
-//                    {
-//                        if (tmpBuf[len] == ' ')
-//                        {
-//                            tmpBuf[len] = 0;
-//                            if (_charset.getStringWidth(0, tmpBuf) <= maxWidth)
-//                            {
-//                                break;
-//                            }
-//                        }
-//                        --len;
-//                    }
-//                    enqueueText(tmpBuf, vs.CurRect.left, vs.CurRect.top, color, vs.charset_nr, vs.center);
-//                    if (len >= 0)
-//                    {
-//                        enqueueText(&msg[len + 1], vs.CurRect.left, vs.CurRect.top + _verbLineSpacing, color, vs.charset_nr, vs.center);
-//                        vs.CurRect.bottom += _verbLineSpacing;
-//                    }
-//                }
-//                else
-//                {
-                var tmp = new byte[msg.Length - msgPos];
-                Array.Copy(msg, msgPos, tmp, 0, tmp.Length);
-                EnqueueText(tmp, vs.CurRect.Left, vs.CurRect.Top, color, vs.CharsetNr, vs.Center);
-//                }
+                if (_charset.GetStringWidth(0, buf, 0) > maxWidth && Game.Version == 8)
+                {
+                    byte[] tmpBuf = new byte[384];
+                    Array.Copy(msg, tmpBuf, msg.Length);
+
+                    int len = ScummHelper.GetStringLength(tmpBuf, Game.Version);
+                    while (len >= 0)
+                    {
+                        if (tmpBuf[len] == ' ')
+                        {
+                            tmpBuf[len] = 0;
+                            if (_charset.GetStringWidth(0, tmpBuf, 0) <= maxWidth)
+                            {
+                                break;
+                            }
+                        }
+                        --len;
+                    }
+                    EnqueueText(tmpBuf, vs.CurRect.Left, vs.CurRect.Top, color, vs.CharsetNr, vs.Center);
+                    if (len >= 0)
+                    {
+                        var tmp = new byte[msg.Length - len - 1];
+                        Array.Copy(msg, len + 1, tmp, 0, tmp.Length);
+                        EnqueueText(tmp, vs.CurRect.Left, vs.CurRect.Top + _verbLineSpacing, color, vs.CharsetNr, vs.Center);
+                        vs.CurRect.Bottom += _verbLineSpacing;
+                    }
+                }
+                else
+                {
+                    var tmp = new byte[msg.Length - msgPos];
+                    Array.Copy(msg, msgPos, tmp, 0, tmp.Length);
+                    EnqueueText(tmp, vs.CurRect.Left, vs.CurRect.Top, color, vs.CharsetNr, vs.Center);
+                }
                 _charset.SetCurID(oldID);
             }
         }
@@ -846,18 +849,18 @@ namespace NScumm.Core
 
         Point ClampCameraPos(Point pt)
         {
-            short x = pt.X, y = pt.Y;
+            int x = pt.X, y = pt.Y;
             if (pt.X < Variables[VariableCameraMinX.Value])
-                x = (short)Variables[VariableCameraMinX.Value];
+                x = Variables[VariableCameraMinX.Value];
 
             if (pt.X > Variables[VariableCameraMaxX.Value])
-                x = (short)Variables[VariableCameraMaxX.Value];
+                x = Variables[VariableCameraMaxX.Value];
 
             if (pt.Y < Variables[VariableCameraMinY.Value])
-                y = (short)Variables[VariableCameraMinY.Value];
+                y = Variables[VariableCameraMinY.Value];
 
             if (pt.Y > Variables[VariableCameraMaxY.Value])
-                y = (short)Variables[VariableCameraMaxY.Value];
+                y = Variables[VariableCameraMaxY.Value];
 
             return new Point(x, y);
         }
@@ -882,7 +885,7 @@ namespace NScumm.Core
             }
         }
 
-        void SetShadowPalette(int slot, int redScale, int greenScale, int blueScale, int startColor, int endColor)
+        protected void SetShadowPalette(int slot, int redScale, int greenScale, int blueScale, int startColor, int endColor)
         {
             if (slot < 0 || slot >= NumShadowPalette)
                 throw new ArgumentException(string.Format("setShadowPalette: invalid slot {0}", slot), "slot");
@@ -894,7 +897,6 @@ namespace NScumm.Core
             for (var i = 0; i < 256; i++)
                 _shadowPalette[offs + i] = (byte)i;
 
-            offs += startColor;
             for (var i = startColor; i <= endColor; i++)
             {
                 var curColor = CurrentPalette.Colors[i];
@@ -910,7 +912,7 @@ namespace NScumm.Core
             return GetStringAddress(Variables[i]);
         }
 
-        byte[] GetStringAddress(int i)
+        protected byte[] GetStringAddress(int i)
         {
             byte[] addr = _strings[i];
             if (addr == null)

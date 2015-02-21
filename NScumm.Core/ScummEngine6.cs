@@ -95,13 +95,30 @@ namespace NScumm.Core
             }
         }
 
+        private static int GetDepth(Type type)
+        {
+            int depth = 0;
+            if (type.BaseType != null)
+            {
+                depth = 1 + GetDepth(type.BaseType);
+            }
+            return depth;
+        }
+
         protected override void InitOpCodes()
         {
-            _opCodes = (from method in GetType().GetMethods(BindingFlags.Instance | BindingFlags.NonPublic)
-                                 let attributes = (OpCodeAttribute[])method.GetCustomAttributes(typeof(OpCodeAttribute), false)
-                                 where attributes.Length > 0
-                                 from id in attributes[0].Ids
-                                 select new {OpCode = id,Action = OpCode(method)}).ToDictionary(o => o.OpCode, o => o.Action);
+            var opcodes = (from method in GetType().GetMethods(BindingFlags.Instance | BindingFlags.NonPublic)
+                                    let attributes = (OpCodeAttribute[])method.GetCustomAttributes(typeof(OpCodeAttribute), false)
+                                    where attributes.Length > 0
+                                    from id in attributes[0].Ids
+                                    group method by id);
+
+            //.ToDictionary(o => o.OpCode, o => o.Action);
+            _opCodes = new Dictionary<byte, Action>();
+            foreach (var op in opcodes)
+            {
+                _opCodes.Add(op.Key, op.OrderByDescending(o => GetDepth(o.DeclaringType)).Select(OpCode).First());
+            }
         }
 
         Action OpCode(MethodInfo method)
@@ -145,13 +162,13 @@ namespace NScumm.Core
                     {
                         var parameterNames = method.GetParameters().Select(p => p.Name).ToArray();
                         var parameters = args.Select(arg => arg()).Reverse().ToArray();
-//                        Console.WriteLine("Room = {1,3}, Script = {0,3}, Offset = {4,4}, Name = [{3:X2}] {2}({5})", 
-//                            Slots[CurrentScript].Number, 
-//                            _roomResource, 
-//                            _opCodes.ContainsKey(_opCode) ? method.Name : "Unknown", 
-//                            _opCode,
-//                            CurrentPos - 1,
-//                            string.Join(",", parameters.Select((p, i) => string.Format("{0}={1}", parameterNames[i], GetDebuggerDisplayFor(p)))));
+                        Console.WriteLine("Room = {1,3}, Script = {0,3}, Offset = {4,4}, Name = [{3:X2}] {2}({5})", 
+                            Slots[CurrentScript].Number, 
+                            _roomResource, 
+                            _opCodes.ContainsKey(_opCode) ? method.Name : "Unknown", 
+                            _opCode,
+                            CurrentPos - 1,
+                            string.Join(",", parameters.Select((p, i) => string.Format("{0}={1}", parameterNames[i], GetDebuggerDisplayFor(p)))));
 //                        Console.WriteLine("Script {0,3}, offset = {4,4}: [{3:X2}] {2}({5})", 
 //                            Slots[CurrentScript].Number, 
 //                            _roomResource, 

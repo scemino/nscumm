@@ -181,7 +181,7 @@ namespace NScumm.Core.IO
                             {
                                 // object script
                                 var obj = ReadObjectCode(it.Current.Size - 8);
-                                room.Objects.Add(Merge(images[obj.Number],obj));
+                                room.Objects.Add(Merge(images[obj.Number], obj));
                             }
                             break;                        
 
@@ -223,6 +223,11 @@ namespace NScumm.Core.IO
                     case "IMHD":
                         {
                             ReadImageHeader(od);
+                        }
+                        break;
+                    case "IMAG":
+                        {
+                            od.Images.AddRange(ReadImages(it.Current.Size));
                         }
                         break;
                     default:
@@ -323,6 +328,57 @@ namespace NScumm.Core.IO
             return colors;
         }
 
+        protected virtual ImageData ReadBomp(long size)
+        {
+            var id = _reader.ReadUInt16();
+            var width = _reader.ReadUInt16();
+            var height = _reader.ReadUInt16();
+            var padding = _reader.ReadUInt32();
+            var img = new ImageData();
+            img.Data = _reader.ReadBytes((int)(size - 10));
+            img.IsBomp = true;
+            return img;
+        }
+
+        protected IList<ImageData> ReadImages(long size)
+        {
+            var images = new List<ImageData>();
+            var it = CreateChunkIterator(size);
+            while (it.MoveNext())
+            {
+                if (it.Current.Tag == "WRAP")
+                {
+                    it = CreateChunkIterator(it.Current.Size);
+                }
+                else if (it.Current.Tag == "OFFS")
+                {
+                    // skip it
+                }
+                else if (it.Current.Tag == "BOMP")
+                {
+                    var img = ReadBomp(it.Current.Size - 8);
+                    images.Add(img);
+                }
+                else if (it.Current.Tag == "OBIM")
+                {
+                    // Object Image
+                    var obj = ReadObjectImages(it.Current.Size - 8);
+                    images.AddRange(obj.Images);
+                }
+                else if (it.Current.Tag == "SMAP")
+                {
+                    var img = new ImageData();
+                    img.Data = _reader.ReadBytes((int)(it.Current.Size - 8));
+                    images.Add(img);
+                }
+                else
+                {
+                    UnknownChunk(it.Current);
+                }
+            }
+            return images;
+        }
+
         protected ImageData ReadImage(long size, int numStrips)
         {
             var img = new ImageData();
@@ -346,12 +402,7 @@ namespace NScumm.Core.IO
                 }
                 else if (it.Current.Tag == "BOMP")
                 {
-                    var id = _reader.ReadUInt16();
-                    var width = _reader.ReadUInt16();
-                    var height = _reader.ReadUInt16();
-                    var padding = _reader.ReadUInt32();
-                    img.Data = _reader.ReadBytes((int)(it.Current.Size - 8 - 10));
-                    img.IsBomp = true;
+                    img = ReadBomp(it.Current.Size - 8);
                 }
                 else
                 {

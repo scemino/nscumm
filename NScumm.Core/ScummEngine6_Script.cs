@@ -29,43 +29,43 @@ namespace NScumm.Core
         protected bool _skipVideo;
 
         [OpCode(0x5e)]
-        protected void StartScript(int flags, int script, int[] args)
+        protected virtual void StartScript(int flags, int script, int[] args)
         {
             RunScript(script, (flags & 1) != 0, (flags & 2) != 0, args);
         }
 
         [OpCode(0x5f)]
-        protected void StartScriptQuick(int script, int[] args)
+        protected virtual void StartScriptQuick(int script, int[] args)
         {
             RunScript(script, false, false, args);
         }
 
         [OpCode(0x60)]
-        protected void StartObject(int flags, int script, byte entryp, int[] args)
+        protected virtual void StartObject(int flags, int script, byte entryp, int[] args)
         {
             RunObjectScript(script, entryp, (flags & 1) != 0, (flags & 2) != 0, args);
         }
 
         [OpCode(0x65, 0x66)]
-        protected void StopObjectCode6()
+        protected virtual void StopObjectCode6()
         {
             StopObjectCode();
         }
 
         [OpCode(0x67)]
-        protected void EndCutscene()
+        protected virtual void EndCutscene()
         {
             EndCutsceneCore();
         }
 
         [OpCode(0x68)]
-        protected void Cutscene(int[] args)
+        protected virtual void Cutscene(int[] args)
         {
             BeginCutscene(args);
         }
 
         [OpCode(0x6a)]
-        protected void FreezeUnfreeze(int script)
+        protected virtual void FreezeUnfreeze(int script)
         {
             if (script != 0)
                 FreezeScripts(script);
@@ -74,19 +74,19 @@ namespace NScumm.Core
         }
 
         [OpCode(0x6c)]
-        protected void BreakHere()
+        protected virtual void BreakHere()
         {
             BreakHereCore();
         }
 
         [OpCode(0x77)]
-        protected void StopObjectScript(ushort script)
+        protected virtual void StopObjectScript(ushort script)
         {
             StopObjectScriptCore(script);
         }
 
         [OpCode(0x7c)]
-        protected void StopScript6(int script)
+        protected virtual void StopScript6(int script)
         {
             if (script == 0)
             {
@@ -99,13 +99,13 @@ namespace NScumm.Core
         }
 
         [OpCode(0x83)]
-        protected void DoSentence(byte verb, ushort objectA, int tmp, ushort objectB)
+        protected virtual void DoSentence(byte verb, ushort objectA, int tmp, ushort objectB)
         {
             DoSentence(verb, objectA, objectB);
         }
 
         [OpCode(0x87)]
-        protected void GetRandomNumber(int max)
+        protected virtual void GetRandomNumber(int max)
         {
             var rnd = new Random().Next(Math.Abs(max) + 1);
             if (VariableRandomNumber.HasValue)
@@ -116,7 +116,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0x88)]
-        protected void GetRandomNumberRange(int min, int max)
+        protected virtual void GetRandomNumberRange(int min, int max)
         {
             var rnd = new Random().Next(min, max + 1);
             if (VariableRandomNumber.HasValue)
@@ -127,20 +127,20 @@ namespace NScumm.Core
         }
 
         [OpCode(0x95)]
-        protected void BeginOverride()
+        protected virtual void BeginOverride()
         {
             BeginOverrideCore();
             _skipVideo = false;
         }
 
         [OpCode(0x96)]
-        protected void EndOverride()
+        protected virtual void EndOverride()
         {
             EndOverrideCore();
         }
 
         [OpCode(0x99)]
-        protected void SetBoxFlags(int[] args, int value)
+        protected virtual void SetBoxFlags(int[] args, int value)
         {
             var num = args.Length;
             while (--num >= 0)
@@ -150,7 +150,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0x9a)]
-        protected void CreateBoxMatrix()
+        protected virtual void CreateBoxMatrix()
         {
             CreateBoxMatrixCore();
 
@@ -259,25 +259,25 @@ namespace NScumm.Core
         }
 
         [OpCode(0xb0)]
-        protected void Delay(int delay)
+        protected virtual void Delay(int delay)
         {
             DelayCore(delay);
         }
 
         [OpCode(0xb1)]
-        protected void DelaySeconds(int seconds)
+        protected virtual void DelaySeconds(int seconds)
         {
             DelayCore(seconds * 60);
         }
 
         [OpCode(0xb2)]
-        protected void DelayMinutes(int minutes)
+        protected virtual void DelayMinutes(int minutes)
         {
             DelayCore(minutes * 3600);
         }
 
         [OpCode(0xb3)]
-        protected void StopSentence()
+        protected virtual void StopSentence()
         {
             SentenceNum = 0;
             StopScript(Variables[VariableSentenceScript.Value]);
@@ -285,13 +285,13 @@ namespace NScumm.Core
         }
 
         [OpCode(0xbe)]
-        protected void StartObjectQuick(int script, byte entryp, int[] args)
+        protected virtual void StartObjectQuick(int script, byte entryp, int[] args)
         {
             RunObjectScript(script, entryp, false, true, args);
         }
 
         [OpCode(0xca)]
-        protected void DelayFrames()
+        protected virtual void DelayFrames()
         {
             var ss = Slots[CurrentScript];
             if (ss.DelayFrameCount == 0)
@@ -310,19 +310,19 @@ namespace NScumm.Core
         }
 
         [OpCode(0x8b)]
-        protected void IsScriptRunning(int script)
+        protected virtual void IsScriptRunning(int script)
         {
             Push(IsScriptRunningCore(script));
         }
 
         [OpCode(0xbf)]
-        protected void StartScriptQuick2(int script, int[] args)
+        protected virtual void StartScriptQuick2(int script, int[] args)
         {
             RunScript(script, false, true, args);
         }
 
         [OpCode(0xd5)]
-        protected void JumpToScript(int flags, int script, int[] args)
+        protected virtual void JumpToScript(int flags, int script, int[] args)
         {
             StopObjectCode();
             RunScript(script, (flags & 1) != 0, (flags & 2) != 0, args);

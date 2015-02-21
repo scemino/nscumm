@@ -76,5 +76,21 @@ namespace NScumm.Core.Graphics
             else if (Right < r.Left)
                 Right = r.Left;
         }
+
+        /// <summary>
+        /// Check if given position is inside this rectangle.
+        /// </summary>
+        /// <param name="x">The horizontal position to check.</param>
+        /// <param name="y">The vertical position to check.</param>
+        /// <returns>true if the given position is inside this rectangle, false otherwise</returns>
+        public bool Contains(int x, int y)
+        {
+            return (Left <= x) && (x < Right) && (Top <= y) && (y < Bottom);
+        }
+
+        public bool Contains(Point p)
+        {
+            return Contains(p.X, p.Y);
+        }
     }
 }

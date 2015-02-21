@@ -19,6 +19,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
+using System.Diagnostics;
 
 namespace NScumm.Core
 {
@@ -452,10 +453,10 @@ namespace NScumm.Core
                     t_table = null;
                     break;
 
-//                case 13:
-//                case 15:
-//                    outputSize = DecompressADPCM(compInput, compOutput, (codec == 13) ? 1 : 2);
-//                    break;
+                case 13:
+                case 15:
+                    outputSize = DecompressADPCM(compInput, compOutput, (codec == 13) ? 1 : 2);
+                    break;
 
                 default:
                     Console.Error.WriteLine("BundleCodecs::decompressCodec() Unknown codec {0}", codec);
@@ -464,6 +465,132 @@ namespace NScumm.Core
             }
 
             return outputSize;
+        }
+
+        static int DecompressADPCM(byte[] compInput, byte[] compOutput, int channels)
+        {
+            // Decoder for the the IMA ADPCM variants used in COMI.
+            // Contrary to regular IMA ADPCM, this codec uses a variable
+            // bitsize for the encoded data.
+
+            const int MAX_CHANNELS = 2;
+            int outputSamplesLeft;
+            int destPos;
+            short firstWord;
+            byte[] initialTablePos = new byte[MAX_CHANNELS];
+            //int32 initialimcTableEntry[MAX_CHANNELS] = {7, 7};
+            int[] initialOutputWord = new int[MAX_CHANNELS];
+            int totalBitOffset, curTablePos, outputWord;
+
+            // We only support mono and stereo
+            Debug.Assert(channels == 1 || channels == 2);
+
+            var src = compInput;
+            var dst = compOutput;
+            int srcPos = 0;
+            int dstPos = 0;
+            outputSamplesLeft = 0x1000;
+
+            // Every data packet contains 0x2000 bytes of audio data
+            // when extracted. In order to encode bigger data sets,
+            // one has to split the data into multiple blocks.
+            //
+            // Every block starts with a 2 byte word. If that word is
+            // non-zero, it indicates the size of a block of raw audio
+            // data (not encoded) following it. That data we simply copy
+            // to the output buffer and then proceed by decoding the
+            // remaining data.
+            //
+            // If on the other hand the word is zero, then what follows
+            // are 7*channels bytes containing seed data for the decoder.
+            firstWord = ScummHelper.ToInt16BigEndian(src);
+            srcPos += 2;
+            if (firstWord != 0)
+            {
+                // Copy raw data
+                Array.Copy(src, srcPos, dst, dstPos, firstWord);
+                dstPos += firstWord;
+                srcPos += firstWord;
+                Debug.Assert((firstWord & 1) == 0);
+                outputSamplesLeft -= firstWord / 2;
+            }
+            else
+            {
+                // Read the seed values for the decoder.
+                for (var i = 0; i < channels; i++)
+                {
+                    initialTablePos[i] = src[srcPos];
+                    srcPos += 1;
+                    //initialimcTableEntry[i] = READ_BE_UINT32(src);
+                    srcPos += 4;
+                    initialOutputWord[i] = ScummHelper.ToInt32BigEndian(src, srcPos);
+                    srcPos += 4;
+                }
+            }
+
+            totalBitOffset = 0;
+            // The channels are encoded separately.
+            for (int chan = 0; chan < channels; chan++)
+            {
+                // Read initial state (this makes it possible for the data stream
+                // to be split & spread across multiple data chunks.
+                curTablePos = initialTablePos[chan];
+                //imcTableEntry = initialimcTableEntry[chan];
+                outputWord = initialOutputWord[chan];
+
+                // We need to interleave the channels in the output; we achieve
+                // that by using a variables dest offset:
+                destPos = chan * 2;
+
+                var bound = (channels == 1)
+                    ? outputSamplesLeft
+                    : ((chan == 0)
+                        ? (outputSamplesLeft + 1) / 2
+                        : outputSamplesLeft / 2);
+                for (var i = 0; i < bound; ++i)
+                {
+                    // Determine the size (in bits) of the next data packet
+                    var curTableEntryBitCount = _destImcTable[curTablePos];
+                    Debug.Assert(2 <= curTableEntryBitCount && curTableEntryBitCount <= 7);
+
+                    // Read the next data packet
+                    int readPos = srcPos + (totalBitOffset >> 3);
+                    var readWord = (ushort)(ScummHelper.ToInt16BigEndian(src, readPos) << (totalBitOffset & 7));
+                    var packet = (byte)(readWord >> (16 - curTableEntryBitCount));
+
+                    // Advance read position to the next data packet
+                    totalBitOffset += curTableEntryBitCount;
+
+                    // Decode the data packet into a delta value for the output signal.
+                    byte signBitMask = (byte)(1 << (curTableEntryBitCount - 1));
+                    byte dataBitMask = (byte)(signBitMask - 1);
+                    byte data = (byte)(packet & dataBitMask);
+
+                    var tmpA = (data << (7 - curTableEntryBitCount));
+                    int imcTableEntry = Ima_ADPCMStream._imaTable[curTablePos] >> (curTableEntryBitCount - 1);
+                    int delta = (int)(imcTableEntry + _destImcTable2[tmpA + (curTablePos * 64)]);
+
+                    // The topmost bit in the data packet tells is a sign bit
+                    if ((packet & signBitMask) != 0)
+                    {
+                        delta = -delta;
+                    }
+
+                    // Accumulate the delta onto the output data
+                    outputWord += delta;
+
+                    // Clip outputWord to 16 bit signed, and write it into the destination stream
+                    outputWord = ScummHelper.Clip(outputWord, -0x8000, 0x7fff);
+                    ScummHelper.WriteUInt16BigEndian(dst, dstPos + destPos, (ushort)outputWord);
+                    destPos += channels << 1;
+
+                    // Adjust the curTablePos
+                    curTablePos += (sbyte)imxOtherTable[curTableEntryBitCount - 2][data];
+                    curTablePos = ScummHelper.Clip(curTablePos, 0, Ima_ADPCMStream._imaTable.Length - 1);
+                }
+            }
+
+            return 0x2000;
         }
 
         static int NextBit(byte[] src, ref int srcptr, ref int mask, ref int bitsleft)
@@ -523,6 +650,50 @@ namespace NScumm.Core
                 }
             }
         }
+    
+    
+        // This table is the "big brother" of Audio::ADPCMStream::_stepAdjustTable.
+        static readonly byte[][] imxOtherTable = new byte[6][]
+        {
+            new byte[]
+            {
+                0xFF,
+                4
+            },
+            new byte[]
+            {
+                0xFF, 0xFF,
+                2,    8
+            },
+            new byte[]
+            {
+                0xFF, 0xFF, 0xFF, 0xFF,
+                1,    2,    4,    6
+            },
+            new byte[]
+            {
+                0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                1,    2,    4,    6,    8,   12,   16,   32
+            },
+            new byte[]
+            {
+                0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                1,    2,    4,    6,    8,   10,   12,   14,
+                16,   18,   20,   22,   24,   26,   28,   32
+            },
+            new byte[]
+            {
+                0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                1,    2,    3,    4,    5,    6,    7,    8,
+                9,   10,   11,   12,   13,   14,   15,   16,
+                17,   18,   19,   20,   21,   22,   23,   24,
+                25,   26,   27,   28,   29,   30,   31,   32
+            }
+        };
     }
 
 }

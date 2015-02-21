@@ -33,6 +33,7 @@ namespace NScumm.MonoGame
         bool _cursorVisible;
         int _shakePos;
         GraphicsDevice _device;
+        int _width, _height;
 
         #endregion
 
@@ -40,22 +41,24 @@ namespace NScumm.MonoGame
 
         NativeWindow _window;
 
-        public XnaGraphicsManager(NativeWindow window, GraphicsDevice device)
+        public XnaGraphicsManager(int width, int height, NativeWindow window, GraphicsDevice device)
         {
             if (device == null)
                 throw new ArgumentNullException("device");
 
             _window = window;
             _device = device;
-            _pixels = new byte[320 * 200];
-            _texture = new Texture2D(device, 320, 200);
+            _width = width;
+            _height = height;
+            _pixels = new byte[_width * _height];
+            _texture = new Texture2D(device, _width, _height);
             _textureCursor = new Texture2D(device, 16, 16);
             _palColors = new Color[256];
             for (int i = 0; i < _palColors.Length; i++)
             {
                 _palColors[i] = Color.White;               
             }
-            _colors = new Color[320 * 200];
+            _colors = new Color[_width * _height];
         }
 
         #endregion
@@ -67,12 +70,12 @@ namespace NScumm.MonoGame
         {
             lock (_gate)
             {
-                for (int h = 0; h < 200; h++)
+                for (int h = 0; h < _height; h++)
                 {
-                    for (int w = 0; w < 320; w++)
+                    for (int w = 0; w < _width; w++)
                     {
-                        var color = _palColors[_pixels[w + h * 320]];
-                        _colors[w + h * 320] = color;
+                        var color = _palColors[_pixels[w + h * _width]];
+                        _colors[w + h * _width] = color;
                     }
                 }
             }
@@ -82,13 +85,13 @@ namespace NScumm.MonoGame
 
         public void Snapshot()
         {
-            using (var bmp = new System.Drawing.Bitmap(320, 200))
+            using (var bmp = new System.Drawing.Bitmap(_width, _height))
             {
-                for (int h = 0; h < 200; h++)
+                for (int h = 0; h < _height; h++)
                 {
-                    for (int w = 0; w < 320; w++)
+                    for (int w = 0; w < _width; w++)
                     {
-                        var color = _palColors[_pixels[w + h * 320]];
+                        var color = _palColors[_pixels[w + h * _width]];
                         bmp.SetPixel(w, h, System.Drawing.Color.FromArgb(color.R, color.G, color.B));
                     }
                 }
@@ -102,7 +105,7 @@ namespace NScumm.MonoGame
             {
                 for (int w = 0; w < width; w++)
                 {
-                    _pixels[x + w + (y + h) * 320] = buffer[w + h * sourceStride];
+                    _pixels[x + w + (y + h) * _width] = buffer[w + h * sourceStride];
                 }
             }
         }
@@ -180,8 +183,8 @@ namespace NScumm.MonoGame
         {
             if (_cursorVisible)
             {
-                double scaleX = _window.Bounds.Width / 320.0;
-                double scaleY = _window.Bounds.Height / 200.0;
+                double scaleX = _window.Bounds.Width / _width;
+                double scaleY = _window.Bounds.Height / _height;
                 var rect = new Rectangle((int)(cursorPos.X - _window.Bounds.X - scaleX * Hotspot.X), (int)(cursorPos.Y - _window.Bounds.Y - scaleY * Hotspot.Y), (int)(scaleX * _textureCursor.Width), (int)(scaleY * _textureCursor.Height));
                 spriteBatch.Draw(_textureCursor, rect, null, Color.White);
             }

@@ -195,6 +195,12 @@ namespace NScumm.Core
             get{ return IsInClass(ObjectClass.Player); }
         }
 
+        public int TalkVolume { get; set; }
+
+        public int TalkFrequency { get; set; }
+
+        public int TalkPan { get; set; }
+
         #endregion
 
         #region ActorWalkData Structures
@@ -479,6 +485,9 @@ namespace NScumm.Core
 
             if (Moving != MoveFlags.None)
             {
+                if (_scumm.Game.Version == 8 && !Moving.HasFlag(MoveFlags.InLeg))
+                    return;
+
                 CalcMovementFactor(_walkdata.Next);
             }
         }
@@ -701,15 +710,18 @@ namespace NScumm.Core
             CalcMovementFactor(_walkdata.Dest);
         }
 
-        public void DrawCostume()
+        public void DrawCostume(bool hitTestMode = false)
         {
             if (Costume == 0)
                 return;
 
-            if (!NeedRedraw)
-                return;
+            if (!hitTestMode)
+            {
+                if (!NeedRedraw)
+                    return;
 
-            NeedRedraw = false;
+                NeedRedraw = false;
+            }
 
             SetupActorScale();
 
@@ -722,9 +734,12 @@ namespace NScumm.Core
                 NeedRedraw = _scumm.Game.Version <= 6;
             }
 
-            // Record the vertical extent of the drawn actor
-            Top = bcr.DrawTop;
-            Bottom = bcr.DrawBottom;
+            if (!hitTestMode)
+            {
+                // Record the vertical extent of the drawn actor
+                Top = bcr.DrawTop;
+                Bottom = bcr.DrawBottom;
+            }
         }
 
         public void StartWalk(Point dest, int dir)
@@ -1233,6 +1248,22 @@ namespace NScumm.Core
             }
         }
 
+        public bool ActorHitTest(Point p)
+        {
+            var ar = (AkosRenderer)_scumm.CostumeRenderer;
+
+            ar.ActorHitX = (short)p.X;
+            ar.ActorHitY = (short)p.Y;
+            ar.ActorHitMode = true;
+            ar.ActorHitResult = false;
+
+            DrawCostume(true);
+
+            ar.ActorHitMode = false;
+
+            return ar.ActorHitResult;
+        }
+
         #endregion
 
         #region Private Methods
@@ -1268,7 +1299,7 @@ namespace NScumm.Core
                 bcr.ZBuffer = ForceClip;
                 if (bcr.ZBuffer == 100)
                 {
-                    bcr.ZBuffer = _scumm.GetBoxMask(Walkbox);
+                    bcr.ZBuffer = (byte)_scumm.GetBoxMask(Walkbox);
                     if (bcr.ZBuffer > _scumm.Gdi.NumZBuffer - 1)
                         bcr.ZBuffer = (byte)(_scumm.Gdi.NumZBuffer - 1);
                 }
@@ -1282,7 +1313,7 @@ namespace NScumm.Core
                     bcr.ZBuffer = 0;
                 else
                 {
-                    bcr.ZBuffer = _scumm.GetBoxMask(Walkbox);
+                    bcr.ZBuffer = (byte)_scumm.GetBoxMask(Walkbox);
                     if (bcr.ZBuffer > _scumm.Gdi.NumZBuffer - 1)
                         bcr.ZBuffer = (byte)(_scumm.Gdi.NumZBuffer - 1);
                 }
@@ -1770,6 +1801,42 @@ namespace NScumm.Core
                 box2.LowerLeft = tmp;
             }
             return false;
+        }
+
+        public void AnimateLimb(int limb, int f)
+        {
+            // This methods is very similiar to animateCostume().
+            // However, instead of animating *all* the limbs, it only animates
+            // the specified limb to be at the frame specified by "f".
+
+            if (f == 0)
+                return;
+
+            _animProgress++;
+            if (_animProgress >= _animSpeed)
+            {
+                _animProgress = 0;
+
+                if (Costume == 0)
+                    return;
+
+                var akos = _scumm.ResourceManager.GetCostumeData(Costume);
+                Debug.Assert(akos != null);
+
+                var aksq = ResourceFile7.ReadData(akos, "AKSQ");
+                var akfo = ResourceFile7.ReadData(akos, "AKFO");
+
+                var size = akfo.Length / 2;
+
+                while ((f--) != 0)
+                {
+                    if (Cost.Active[limb] != 0)
+                        AkosCostumeLoader.IncreaseAnim(this, limb, aksq, akfo, size, _scumm);
+                }
+
+                //      _needRedraw = true;
+                //      _needBgReset = true;
+            }
         }
 
         #endregion

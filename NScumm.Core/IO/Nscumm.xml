@@ -15,6 +15,7 @@
   <MD5 signature="4bedb49943df95a9c900a5a82ccbe9de" gameId="ft" variant="" language="fr" />
   <MD5 signature="09820417db26687bb7fe0c83cc4c553b" gameId="ft" variant="" language="en" />
   <MD5 signature="d8323015ecb8b10bf53474f6e6b0ae33" gameId="dig" variant="" language="en" />
+  <MD5 signature="fe60d6b5ff51b0553ac59963123b5777" gameId="comi" variant="" language="en" />
   <Game id="indy3" gameId="Indy3" variant="VGA" version="3"/>
   <Game id="indy3" gameId="Indy3" variant="EGA" version="3"/>
   <Game id="atlantis" gameId="Indy4" variant="VGA" version="5"/>
@@ -27,6 +28,7 @@
   <Game id="samnmax" gameId="SamNMax" variant="Floppy" version="6" />
   <Game id="ft" gameId="FullThrottle" variant="" version="7" pattern="ft.la{0}" />
   <Game id="dig" gameId="Dig" variant="" version="7" pattern="dig.la{0}" />
+  <Game id="comi" gameId="CurseOfMonkeyIsland" variant="" version="8" pattern="comi.la{0}" />
   <Description gameId="indy3" text="Indiana Jones and the Last Crusade" />
   <Description gameId="atlantis" text="Indiana Jones and the Fate of Atlantis" />
   <Description gameId="monkey" text="The Secret of Monkey Island" />
@@ -37,4 +39,5 @@
   <Description gameId="samnmax" text="Sam &amp; Max Hit the Road" />
   <Description gameId="ft" text="Full Throttle" />
   <Description gameId="dig" text="The Dig" />
+  <Description gameId="comi" text="The Curse of Monkey Island" />
 </NScumm>

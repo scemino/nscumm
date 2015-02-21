@@ -1,5 +1,5 @@
-//
-//  OpCodeAttribute.cs
+﻿//
+//  ResourceManager5.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -18,23 +18,28 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 using System;
+using NScumm.Core.IO;
+using System.IO;
 
 namespace NScumm.Core
 {
-    [AttributeUsage(AttributeTargets.All, Inherited = false, AllowMultiple = true)]
-    public sealed class OpCodeAttribute: Attribute
+    class ResourceManager8: ResourceManager7
     {
-        public byte[] Ids
-        {
-            get;
-            private set;
+        public ResourceManager8(GameInfo game)
+            : base(game)
+        {           
         }
 
-        public OpCodeAttribute(params byte[] ids)
+        protected override ResourceFile OpenRoom(byte roomIndex)
         {
-            Ids = ids;
+            var diskNum = Index.RoomResources[roomIndex].RoomNum;
+            var diskName = Game.Pattern == null ? string.Format("{0}.{1:000}", Game.Id, diskNum) : string.Format(Game.Pattern, diskNum);
+            var game1Path = ScummHelper.NormalizePath(Path.Combine(Directory, diskName));
+
+            var file = new ResourceFile8((ResourceIndex8)Index, game1Path);
+            return file;
         }
-    }    
+    }
 }
+

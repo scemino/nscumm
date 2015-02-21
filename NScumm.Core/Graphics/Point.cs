@@ -25,13 +25,13 @@ namespace NScumm.Core.Graphics
         /// <summary>
         /// The horizontal part of the point.
         /// </summary>
-        public short X;
+        public int X;
         /// <summary>
         /// The vertical part of the point
         /// </summary>
-        public short Y;
+        public int Y;
 
-        public Point(short x, short y)
+        public Point(int x, int y)
         {
             X = x;
             Y = y;

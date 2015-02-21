@@ -25,38 +25,38 @@ namespace NScumm.Core
     partial class ScummEngine6
     {
         [OpCode(0xb4)]
-        protected void PrintLine()
+        protected virtual void PrintLine()
         {
             _actorToPrintStrFor = 0xFF;
             DecodeParseString(0, 0);
         }
 
         [OpCode(0xb5)]
-        protected void PrintText()
+        protected virtual void PrintText()
         {
             DecodeParseString(1, 0);
         }
 
         [OpCode(0xb6)]
-        protected void PrintDebug()
+        protected virtual void PrintDebug()
         {
             DecodeParseString(2, 0);
         }
 
         [OpCode(0xb7)]
-        protected void PrintSystem()
+        protected virtual void PrintSystem()
         {
             DecodeParseString(3, 0);
         }
 
         [OpCode(0xb8)]
-        protected void PrintActor()
+        protected virtual void PrintActor()
         {
             DecodeParseString(0, 1);
         }
 
         [OpCode(0xb9)]
-        protected void PrintEgo()
+        protected virtual void PrintEgo()
         {
             Push(Variables[VariableEgo.Value]);
             DecodeParseString(0, 1);
@@ -72,7 +72,7 @@ namespace NScumm.Core
             return dest;
         }
 
-        void DecodeParseString(int m, int n)
+        protected virtual void DecodeParseString(int m, int n)
         {
             byte b = ReadByte();
 

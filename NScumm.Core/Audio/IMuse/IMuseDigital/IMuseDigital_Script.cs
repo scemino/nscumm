@@ -137,9 +137,7 @@ namespace NScumm.Core.Audio.IMuse
                     }
                     else if (_vm.Game.GameId == GameId.CurseOfMonkeyIsland)
                     {
-                        // TODO: vs
-                        throw new NotImplementedException();
-//                        SetComiMusicState(b);
+                        SetComiMusicState(b);
                     }
                     else if (_vm.Game.GameId == GameId.FullThrottle)
                     {
@@ -154,8 +152,7 @@ namespace NScumm.Core.Audio.IMuse
                     }
                     else if (_vm.Game.GameId == GameId.CurseOfMonkeyIsland)
                     {
-                        // TODO: vs
-                        throw new NotImplementedException();
+                        SetComiMusicSequence(b);
                     }
                     else if (_vm.Game.GameId == GameId.FullThrottle)
                     {
@@ -222,13 +219,13 @@ namespace NScumm.Core.Audio.IMuse
         {
             lock (_mutex)
             {
-                Debug.WriteLine("flushTracks()");
+//                Debug.WriteLine("flushTracks()");
                 for (int l = 0; l < MAX_DIGITAL_TRACKS + MAX_DIGITAL_FADETRACKS; l++)
                 {
                     Track track = _track[l];
                     if (track.used && track.toBeRemoved && !_mixer.IsSoundHandleActive(track.mixChanHandle))
                     {
-                        Debug.WriteLine("flushTracks() - soundId:{0}", track.soundId);
+//                        Debug.WriteLine("flushTracks() - soundId:{0}", track.soundId);
                         track.Clear();
                     }
                 }
@@ -239,7 +236,7 @@ namespace NScumm.Core.Audio.IMuse
         {
             lock (_mutex)
             {
-                Debug.WriteLine("refreshScripts()");
+//                Debug.WriteLine("refreshScripts()");
 
                 if (_stopingSequence != 0)
                 {
@@ -415,7 +412,7 @@ namespace NScumm.Core.Audio.IMuse
             }
         }
 
-        int GetCurMusicPosInMs()
+        public int GetCurMusicPosInMs()
         {
             lock (_mutex)
             {
@@ -436,7 +433,7 @@ namespace NScumm.Core.Audio.IMuse
             }
         }
 
-        int GetCurVoiceLipSyncWidth()
+        public int GetCurVoiceLipSyncWidth()
         {
             lock (_mutex)
             {
@@ -449,7 +446,7 @@ namespace NScumm.Core.Audio.IMuse
             }
         }
 
-        int getCurVoiceLipSyncHeight()
+        public int GetCurVoiceLipSyncHeight()
         {
             lock (_mutex)
             {
@@ -462,7 +459,7 @@ namespace NScumm.Core.Audio.IMuse
             }
         }
 
-        int GetCurMusicLipSyncWidth(int syncId)
+        public int GetCurMusicLipSyncWidth(int syncId)
         {
             lock (_mutex)
             {
@@ -486,7 +483,7 @@ namespace NScumm.Core.Audio.IMuse
             }
         }
 
-        int GetCurMusicLipSyncHeight(int syncId)
+        public int GetCurMusicLipSyncHeight(int syncId)
         {
             lock (_mutex)
             {
@@ -547,7 +544,7 @@ namespace NScumm.Core.Audio.IMuse
         {
             lock (_mutex)
             {
-                Debug.WriteLine("refreshScripts()");
+//                Debug.WriteLine("refreshScripts()");
 
                 if (_stopingSequence != 0)
                 {

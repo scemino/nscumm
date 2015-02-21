@@ -1576,7 +1576,7 @@ namespace NScumm.Core
             }
         }
 
-        bool GetSavegameName(int slot, out string desc)
+        protected bool GetSavegameName(int slot, out string desc)
         {
             bool result;
             var filename = MakeSavegameName(slot, false);

@@ -118,6 +118,7 @@ namespace NScumm.Core.Smush
 //                    }
 //                    break;
                 default:
+                    throw new NotImplementedException();
                     break;
             }
             _prevSeqNb = seq_nb;
@@ -237,7 +238,7 @@ namespace NScumm.Core.Smush
             return v;
         }
 
-        static void BompDecodeLine(byte[] src, int srcPos, byte[] dst, int dstPos, int len)
+        public static void BompDecodeLine(byte[] src, int srcPos, byte[] dst, int dstPos, int len)
         {
             while (len > 0)
             {

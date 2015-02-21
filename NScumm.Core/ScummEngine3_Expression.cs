@@ -26,7 +26,7 @@ namespace NScumm.Core
     {
         void IsLess()
         {
-            var varNum = ReadWord();
+            var varNum = ReadWordSigned();
             var a = (short)ReadVariable(varNum);
             var b = (short)GetVarOrDirectWord(OpCodeParameter.Param1);
             JumpRelative(b < a);
@@ -34,7 +34,7 @@ namespace NScumm.Core
 
         void IsLessEqual()
         {
-            var varNum = ReadWord();
+            var varNum = ReadWordSigned();
             var a = (short)ReadVariable(varNum);
             var b = (short)GetVarOrDirectWord(OpCodeParameter.Param1);
             JumpRelative(b <= a);
@@ -42,14 +42,14 @@ namespace NScumm.Core
 
         void IsGreater()
         {
-            var a = (short)ReadVariable(ReadWord());
+            var a = (short)ReadVariable(ReadWordSigned());
             var b = (short)GetVarOrDirectWord(OpCodeParameter.Param1);
             JumpRelative(b > a);
         }
 
         void IsGreaterEqual()
         {
-            var a = (short)ReadVariable(ReadWord());
+            var a = (short)ReadVariable(ReadWordSigned());
             var b = (short)GetVarOrDirectWord(OpCodeParameter.Param1);
             JumpRelative(b >= a);
         }
@@ -80,14 +80,14 @@ namespace NScumm.Core
 
         void NotEqualZero()
         {
-            var var = ReadWord();
+            var var = ReadWordSigned();
             var a = ReadVariable(var);
             JumpRelative(a != 0);
         }
 
         void EqualZero()
         {
-            var var = ReadWord();
+            var var = ReadWordSigned();
             var a = ReadVariable(var);
             JumpRelative(a == 0);
         }
@@ -99,7 +99,7 @@ namespace NScumm.Core
 
         void IsEqual()
         {
-            var varNum = ReadWord();
+            var varNum = ReadWordSigned();
             var a = (short)ReadVariable(varNum);
             var b = (short)GetVarOrDirectWord(OpCodeParameter.Param1);
             JumpRelative(a == b);
@@ -107,7 +107,7 @@ namespace NScumm.Core
 
         void IsNotEqual()
         {
-            var varNum = ReadWord();
+            var varNum = ReadWordSigned();
             var a = (short)ReadVariable(varNum);
             var b = (short)GetVarOrDirectWord(OpCodeParameter.Param1);
             JumpRelative(a != b);

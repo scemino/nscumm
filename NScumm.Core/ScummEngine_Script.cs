@@ -27,7 +27,7 @@ namespace NScumm.Core
 {
     partial class ScummEngine
     {
-        byte[] _currentScriptData;
+        protected byte[] _currentScriptData;
         byte _currentScript;
         int _currentPos;
         int _numNestedScripts;
@@ -311,7 +311,8 @@ namespace NScumm.Core
             else
                 _roomResource = room;
 
-            Variables[VariableRoomResource.Value] = _roomResource;
+            if (VariableRoomResource.HasValue)
+                Variables[VariableRoomResource.Value] = _roomResource;
 
             if (room != 0 && _game.Version == 5 && room == _roomResource)
                 Variables[VariableRoomFlag.Value] = 1;
@@ -568,10 +569,10 @@ namespace NScumm.Core
             else if (_slots[slotIndex].Where == WhereIsObject.FLObject)
             {
                 var data = (from o in _objs
-                    where o.Number == scriptNum
-                    let entry = (byte)_slots[slotIndex].InventoryEntry
-                    where o.ScriptOffsets.ContainsKey(entry) || o.ScriptOffsets.ContainsKey(0xFF)
-                    select o.Script.Data).FirstOrDefault();
+                                        where o.Number == scriptNum
+                                        let entry = (byte)_slots[slotIndex].InventoryEntry
+                                        where o.ScriptOffsets.ContainsKey(entry) || o.ScriptOffsets.ContainsKey(0xFF)
+                                        select o.Script.Data).FirstOrDefault();
                 _currentScriptData = data;
             }
             else if (scriptNum == 10002)

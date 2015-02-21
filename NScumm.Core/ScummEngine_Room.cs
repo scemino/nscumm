@@ -63,8 +63,8 @@ namespace NScumm.Core
             int oldDir = a.Facing;
             _egoPositioned = false;
 
-            short x = ReadWordSigned();
-            short y = ReadWordSigned();
+            var x = ReadWordSigned();
+            var y = ReadWordSigned();
 
             _variables[VariableWalkToObject.Value] = obj;
             StartScene(a.Room, a, obj);
@@ -386,8 +386,9 @@ namespace NScumm.Core
                 _objs[i + 1].ParentState = roomData.Objects[i].ParentState;
                 _objs[i + 1].Number = roomData.Objects[i].Number;
                 _objs[i + 1].Height = roomData.Objects[i].Height;
-                _objs[i + 1].Flags = roomData.Objects[i].Flags;
-                _objs[i + 1].ActorDir = roomData.Objects[i].ActorDir;
+                // HACK: This is done since an angle doesn't fit into a byte (360 > 256)
+                _objs[i + 1].ActorDir = Game.Version == 8 ? (byte)ScummMath.ToSimpleDir(true, roomData.Objects[i].ActorDir) : roomData.Objects[i].ActorDir;
+                _objs[i + 1].Flags = Game.Version == 8 ? ((((int)roomData.Objects[i].Flags & 16) != 0) ? DrawBitmaps.AllowMaskOr : 0) : roomData.Objects[i].Flags;
                 _objs[i + 1].Script.Offset = roomData.Objects[i].Script.Offset;
                 _objs[i + 1].Script.Data = roomData.Objects[i].Script.Data;
                 _objs[i + 1].ScriptOffsets.Clear();
@@ -430,7 +431,9 @@ namespace NScumm.Core
                     if (_objs[i].FloatingObjectIndex == 0)
                     {
                         _objs[i].Number = 0;
-                    } else {
+                    }
+                    else
+                    {
                         // Nuke all unlocked flObjects
 //                        if (!_res->isLocked(rtFlObject, _objs[i].fl_object_index)) {
 //                            _res->nukeResource(rtFlObject, _objs[i].fl_object_index);

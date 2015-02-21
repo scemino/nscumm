@@ -1,5 +1,5 @@
 //
-//  ResourceFile4.cs
+//  ResourceFile7.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -49,11 +49,11 @@ namespace NScumm.Core.IO
         {
             var version = _reader.ReadUInt32();
             var header = new RoomHeader
-            {
-                Width = _reader.ReadUInt16(),
-                Height = _reader.ReadUInt16(),
-                NumObjects = _reader.ReadUInt16()
-            };
+                {
+                    Width = _reader.ReadUInt16(),
+                    Height = _reader.ReadUInt16(),
+                    NumObjects = _reader.ReadUInt16()
+                };
             return header;
         }
 
@@ -79,11 +79,11 @@ namespace NScumm.Core.IO
         {
             var version = _reader.ReadUInt32();
             var obj = new ObjectData
-            {
-                Number = _reader.ReadUInt16(),
-                Parent = _reader.ReadByte(),
-                ParentState = _reader.ReadByte()
-            };
+                {
+                    Number = _reader.ReadUInt16(),
+                    Parent = _reader.ReadByte(),
+                    ParentState = _reader.ReadByte()
+                };
             obj.Flags = DrawBitmaps.AllowMaskOr;
             return obj;
         }
@@ -131,7 +131,7 @@ namespace NScumm.Core.IO
                     }
                 }
             }
-            return null;
+            return new byte[0];
         }
 
         public static long FindOffset(byte[] input, string tag)
@@ -187,5 +187,4 @@ namespace NScumm.Core.IO
             return (T)ToStructure(data, offset, typeof(T));
         }
     }
- 
 }

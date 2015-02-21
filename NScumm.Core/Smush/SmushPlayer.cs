@@ -239,14 +239,14 @@ namespace NScumm.Core.Smush
                     _sf[font] = new SmushFont(_vm, file_font, font != 0, false);
                 }
             }
-            //            else if (_vm.Game.GameId == GameId.Comi)
-            //            {
-            //                int numFonts = (_vm._game.features & GF_DEMO) ? 4 : 5;
-            //                assert(font >= 0 && font < numFonts);
-            //
-            //                sprintf(file_font, "font%d.nut", font);
-            //                _sf[font] = new SmushFont(_vm, file_font, false, true);
-            //            }
+            else if (_vm.Game.GameId == GameId.CurseOfMonkeyIsland)
+            {
+                int numFonts = _vm.Game.Features.HasFlag(GameFeatures.Demo) ? 4 : 5;
+                Debug.Assert(font >= 0 && font < numFonts);
+            
+                var file_font = string.Format("font{0}.nut", font);
+                _sf[font] = new SmushFont(_vm, file_font, false, true);
+            }
             else
             {
                 throw new NotSupportedException("SmushPlayer::getFont() Unknown font setup for game");
@@ -587,7 +587,7 @@ namespace NScumm.Core.Smush
                 {
                     if (_IACTpos >= 2)
                     {
-                        int len = ScummHelper.SwapBytes(BitConverter.ToUInt16(_IACToutput, 0)) + 2;
+                        int len = ScummHelper.ToUInt16BigEndian(_IACToutput, 0) + 2;
                         len -= _IACTpos;
                         if (len > bsize)
                         {
@@ -617,9 +617,9 @@ namespace NScumm.Core.Smush
                                 }
                                 else
                                 {
-                                    short val = (sbyte)(value << variable2);
+                                    short val = (short)((sbyte)value << variable2);
                                     output_data[dst++] = (byte)(val >> 8);
-                                    output_data[dst++] = (byte)(val);
+                                    output_data[dst++] = (byte)val;
                                 }
                                 value = _IACToutput[d_src2++];
                                 if (value == 0x80)
@@ -629,9 +629,9 @@ namespace NScumm.Core.Smush
                                 }
                                 else
                                 {
-                                    short val = (sbyte)(value << variable1);
+                                    short val = (short)((sbyte)value << variable1);
                                     output_data[dst++] = (byte)(val >> 8);
-                                    output_data[dst++] = (byte)(val);
+                                    output_data[dst++] = (byte)val;
                                 }
                             } while ((--count) != 0);
 
@@ -710,20 +710,20 @@ namespace NScumm.Core.Smush
 //                str++; // For Full Throttle text resources
 //            }
 //
-//            byte transBuf[512];
-//            if (_vm.Game.GameId == GameId.CurseOfMonkeyIsland) {
-//                _vm.translateText((const byte *)str - 1, transBuf);
+            if (_vm.Game.GameId == GameId.CurseOfMonkeyIsland)
+            {
+                var transBuf = _vm.TranslateText(System.Text.Encoding.ASCII.GetBytes(str));
 //                while (*str++ != '/')
 //                    ;
-//                string2 = (char *)transBuf;
-//
-//                // If string2 contains formatting information there probably
-//                // wasn't any translation for it in the language.tab file. In
-//                // that case, pretend there is no string2.
+                str = System.Text.Encoding.ASCII.GetString(transBuf);
+
+                // If string2 contains formatting information there probably
+                // wasn't any translation for it in the language.tab file. In
+                // that case, pretend there is no string2.
 //                if (string2[0] == '^')
-//                    string2[0] = 0;
-//            }
-//
+//                    string2 = null;
+            }
+
             if (str.Length > 0)
             {
                 while (str[0] == '^')
@@ -793,11 +793,12 @@ namespace NScumm.Core.Smush
 //
             Debug.Assert(sf != null);
             sf.Color = (byte)color;
-//
-//            if (_vm.Game.GameId == GameId.CurseOfMonkeyIsland && string2[0] != 0) {
-//                str = string2;
+
+//            if (_vm.Game.GameId == GameId.CurseOfMonkeyIsland && string2 != null)
+//            {
+//                str = System.Text.Encoding.ASCII.GetString(string2);
 //            }
-//
+
             // flags:
             // bit 0 - center       1
             // bit 1 - not used     2
@@ -952,12 +953,11 @@ namespace NScumm.Core.Smush
                         _codec37 = new Codec37Decoder(width, height);
                     _codec37.Decode(_dst, src);
                     break;
-//                case 47:
-//                    if (!_codec47)
-//                        _codec47 = new Codec47Decoder(width, height);
-//                    if (_codec47)
-//                        _codec47.decode(_dst, src);
-//                    break;
+                case 47:
+                    if (_codec47 == null)
+                        _codec47 = new Codec47Decoder(width, height);
+                    _codec47.Decode(_dst, src);
+                    break;
                 default:
                     throw new InvalidOperationException(string.Format("Invalid codec for frame object : {0}", codec));
             }
@@ -1144,7 +1144,7 @@ namespace NScumm.Core.Smush
         SmushFont[] _sf = new SmushFont[5];
         TrsFile _strings;
         Codec37Decoder _codec37;
-        //        Codec47Decoder _codec47;
+        Codec47Decoder _codec47;
         XorReader _base;
         uint _baseSize;
         byte[] _frameBuffer;

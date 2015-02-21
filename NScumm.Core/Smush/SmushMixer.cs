@@ -61,7 +61,7 @@ namespace NScumm.Core.Smush
 
         public bool HandleFrame()
         {
-            Debug.WriteLine("SmushMixer::handleFrame()");
+//            Debug.WriteLine("SmushMixer::handleFrame()");
             for (int i = 0; i < _channels.Length; i++)
             {
                 if (_channels[i].Id != -1)
@@ -162,7 +162,7 @@ namespace NScumm.Core.Smush
 
         public bool Flush()
         {
-            Debug.WriteLine("SmushMixer::flush()");
+//            Debug.WriteLine("SmushMixer::flush()");
             for (int i = 0; i < NumChannels; i++)
             {
                 if (_channels[i].Id != -1)

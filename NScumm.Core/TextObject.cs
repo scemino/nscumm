@@ -26,9 +26,9 @@ namespace NScumm.Core
 {
     class TextObject
     {
-        public short X { get; set; }
+        public int X { get; set; }
 
-        public short Y { get; set; }
+        public int Y { get; set; }
 
         public byte Color { get; set; }
 

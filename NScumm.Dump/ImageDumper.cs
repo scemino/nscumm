@@ -57,7 +57,8 @@ namespace NScumm.Dump
                 try
                 {
                     var gdi = new Gdi(null, Game);
-                    //gdi.NumStrips = room.Header.Width / 8;
+                    gdi.NumStrips = Game.Version == 8 ? 80 : 40;
+                    gdi.IsZBufferEnabled = false;
                     gdi.RoomPalette = CreatePalette();
 
                     DumpRoomObjects(room, gdi);
@@ -109,6 +110,7 @@ namespace NScumm.Dump
 
             var screen = new VirtScreen(0, room.Header.Width, room.Header.Height, PixelFormat.Indexed8, 2);
             var numStrips = room.Header.Width / 8;
+            gdi.IsZBufferEnabled = false;
             if (room.Header.Height > 0)
             {
                 gdi.DrawBitmap(room.Image, screen, 0, 0, room.Header.Width, room.Header.Height, 0, numStrips, room.Header.Width, 0, true);
@@ -212,11 +214,20 @@ namespace NScumm.Dump
                 {
                     try
                     {
-                        var screen = new VirtScreen(0, obj.Width, obj.Height, PixelFormat.Indexed8, 2);
-                        gdi.DrawBitmap(img, screen, 0, 0, obj.Width, obj.Height, 0, obj.Width / 8, room.Header.Width, DrawBitmaps.None, true);
-                        using (var bmp = ToBitmap(room, screen))
+                        if (img.IsBomp)
                         {
-                            bmp.Save("obj_" + obj.Number + "_" + (++j) + ".png");
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine("Image BOMP not yet supported");
+                            Console.ResetColor();
+                        }
+                        else
+                        {
+                            var screen = new VirtScreen(0, obj.Width, obj.Height, PixelFormat.Indexed8, 2);
+                            gdi.DrawBitmap(img, screen, 0, 0, obj.Width, obj.Height, 0, obj.Width / 8, room.Header.Width, DrawBitmaps.None, true);
+                            using (var bmp = ToBitmap(room, screen))
+                            {
+                                bmp.Save("obj_" + obj.Number + "_" + (++j) + ".png");
+                            }
                         }
                     }
                     catch (Exception e)

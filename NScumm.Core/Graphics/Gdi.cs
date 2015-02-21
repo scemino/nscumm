@@ -81,7 +81,7 @@ namespace NScumm.Core.Graphics
             IsZBufferEnabled = true;
             _gfxUsageBits = new uint[410 * 3];
             // Increase the number of screen strips by one; needed for smooth scrolling
-            if (_vm.Game.Version >= 7)
+            if (game.Version >= 7)
             {
                 // We now have mostly working smooth scrolling code in place for V7+ games
                 // (i.e. The Dig, Full Throttle and COMI). It seems to work very well so far.
@@ -171,6 +171,10 @@ namespace NScumm.Core.Graphics
                 {
                     transpStrip = DrawStrip(navDst, height, stripnr, smapReader);
                 }
+
+                // COMI and HE games only uses flag value
+                if (game.Version == 8)
+                    transpStrip = true;
 
                 if (vs.HasTwoBuffers)
                 {
@@ -573,6 +577,17 @@ namespace NScumm.Core.Graphics
                 {
                     smapReader.BaseStream.Seek(stripnr * 4, SeekOrigin.Current);
                     offset = smapReader.ReadInt32();
+                }
+            }
+            else if (game.Version == 8)
+            {
+                smapLen = smapReader.BaseStream.Length;
+                // Skip to the BSTR->WRAP->OFFS chunk
+                smapReader.BaseStream.Seek(24, SeekOrigin.Current);
+                if (stripnr * 4 + 8 < smapLen)
+                {
+                    smapReader.BaseStream.Seek(stripnr * 4, SeekOrigin.Current);
+                    offset = 16 + smapReader.ReadUInt32();
                 }
             }
             else

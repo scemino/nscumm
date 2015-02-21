@@ -65,8 +65,10 @@ namespace NScumm.MonoGame
                 var prop = game.Window.GetType().GetProperty("Window", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
                 var window = (OpenTK.NativeWindow)prop.GetValue(game.Window, null);
 
-                inputManager = new XnaInputManager(window);
-                gfx = new XnaGraphicsManager(window, ScreenManager.GraphicsDevice);
+                var width = info.Version == 8 ? 640 : 320;
+                var height = info.Version == 8 ? 480 : 200;
+                inputManager = new XnaInputManager(window, width, height);
+                gfx = new XnaGraphicsManager(width, height, window, ScreenManager.GraphicsDevice);
                 audioDriver = new OpenALDriver();
 
                 // init engines

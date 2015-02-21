@@ -359,7 +359,7 @@ namespace NScumm.Core.Audio.IMuse
 //                        _vm.IMuseDigital.ParseScriptCmds(0x2000, 0, 0, 0, 0, 0, 0, 0);
 //                        _vm.IMuseDigital.StopAllSounds();
 //                        sound.bundle.CloseFile();
-//                    }E
+//                    }
 
                     result = sound.bundle.Open(musicfile, ref sound.compressed, true);
 

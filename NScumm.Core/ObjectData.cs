@@ -47,7 +47,7 @@ namespace NScumm.Core
 
         public Point Position { get; set; }
 
-        public Dictionary<byte, ushort> ScriptOffsets { get; private set; }
+        public Dictionary<int, int> ScriptOffsets { get; private set; }
 
         public ScriptData Script { get; private set; }
 
@@ -59,7 +59,7 @@ namespace NScumm.Core
 
         public ObjectData()
         {
-            ScriptOffsets = new Dictionary<byte, ushort>();
+            ScriptOffsets = new Dictionary<int, int>();
             Script = new ScriptData();
             Images = new List<ImageData>();
             Hotspots = new List<Point>();
@@ -76,7 +76,7 @@ namespace NScumm.Core
         {
             var obj = (ObjectData)this.MemberwiseClone();
             obj.Script = obj.Script.Clone();
-            obj.ScriptOffsets = new Dictionary<byte, ushort>();
+            obj.ScriptOffsets = new Dictionary<int, int>();
             foreach (var item in ScriptOffsets)
             {
                 obj.ScriptOffsets.Add(item.Key, item.Value);

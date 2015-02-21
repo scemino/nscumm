@@ -50,8 +50,8 @@ namespace NScumm.Core
             int oldDir = a.Facing;
             _egoPositioned = false;
 
-            short x = ReadWordSigned();
-            short y = ReadWordSigned();
+            var x = ReadWordSigned();
+            var y = ReadWordSigned();
 
             Variables[VariableWalkToObject.Value] = obj;
             StartScene(a.Room, a, obj);

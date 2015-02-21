@@ -417,6 +417,36 @@ namespace NScumm.Core.Audio.IMuse
                 }
             }
         }
+
+        void SetHookIdForMusic(int hookId)
+        {
+            lock (_mutex)
+            {
+                Debug.WriteLine("IMuseDigital::SetHookIdForMusic(hookId:{0})", hookId);
+
+                for (int l = 0; l < MAX_DIGITAL_TRACKS; l++)
+                {
+                    var track = _track[l];
+                    if (track.used && !track.toBeRemoved && (track.volGroupId == IMUSE_VOLGRP_MUSIC))
+                    {
+                        Debug.WriteLine("IMuseDigital::setHookIdForMusic - setting for sound:{0}", track.soundId);
+                        track.curHookId = hookId;
+                        break;
+                    }
+                }
+            }
+        }
+
+        void SetTrigger(TriggerParams trigger)
+        {
+            lock (_mutex)
+            {
+                Debug.WriteLine("IMuseDigital::setTrigger({0})", trigger.filename);
+
+                _triggerParams = trigger;
+                _triggerUsed = true;
+            }
+        }
     }
 }
 

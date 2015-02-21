@@ -33,6 +33,7 @@ namespace NScumm.Core
         protected Palette _palManipIntermediatePal;
         protected int _curPalIndex;
         protected byte[] _shadowPalette;
+        protected Palette _darkenPalette=new Palette();
 
         public const int NumShadowPalette = 8;
 
@@ -81,7 +82,7 @@ namespace NScumm.Core
                         {
                             for (var j = 0; j < NumShadowPalette; j++)
                             {
-                                DoCycleIndirectPalette(_shadowPalette, cycl.Start, cycl.End, (cycl.Flags & 2)==0, j);
+                                DoCycleIndirectPalette(_shadowPalette, cycl.Start, cycl.End, (cycl.Flags & 2) == 0, j);
                             }
                         }
                         else
@@ -122,6 +123,11 @@ namespace NScumm.Core
                 }
             }
 
+            if (Game.Version == 8)
+            {
+                Array.Copy(_currentPalette.Colors, _darkenPalette.Colors, _darkenPalette.Colors.Length);
+            }
+
             SetDirtyColors(0, 255);
         }
 
@@ -146,7 +152,7 @@ namespace NScumm.Core
             if (startColor <= endColor)
             {
                 var max = _game.Version >= 5 && _game.Version <= 6 ? 252 : 255;
-                var currentPalette = roomData.Palettes[_curPalIndex];
+                var currentPalette = Game.Version == 8 ? _darkenPalette : roomData.Palettes[_curPalIndex];
 
                 for (var j = startColor; j <= endColor; j++)
                 {
@@ -176,6 +182,7 @@ namespace NScumm.Core
         protected void SetPalColor(int index, int r, int g, int b)
         {
             _currentPalette.Colors[index] = Color.FromRgb(r, g, b);
+            _darkenPalette.Colors[index] = Color.FromRgb(r, g, b);
 
             //            if (_game.Features.HasFlag(GameFeatures.SixteenColors))
             //                _16BitPalette[idx] = get16BitColor(r, g, b);
@@ -239,7 +246,7 @@ namespace NScumm.Core
             var offset = forward ? 1 : num - 1;
             var palOffset = palIndex * 256;
 
-            for (var i = palOffset; i < (palOffset+256); i++)
+            for (var i = palOffset; i < (palOffset + 256); i++)
             {
                 if (cycleStart <= palette[i] && palette[i] <= cycleEnd)
                 {

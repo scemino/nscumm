@@ -27,11 +27,194 @@ namespace NScumm.Core.Audio.IMuse
     {
         const int DIG_STATE_OFFSET = 11;
         const int DIG_SEQ_OFFSET = (DIG_STATE_OFFSET + 65);
+        const int COMI_STATE_OFFSET = 3;
 
         public void SetAudioNames(string[] names)
         {
             _numAudioNames = names.Length;
             _audioNames = names;
+        }
+
+        void SetComiMusicState(int stateId)
+        {
+            int l, num = -1;
+
+            if (stateId == 4) // look into #1881415 bug, ignore stateId == 4 it's seems needed after all
+                return;
+
+            if (stateId == 0)
+                stateId = 1000;
+
+            for (l = 0; _comiStateMusicTable[l].soundId != -1; l++)
+            {
+                if ((_comiStateMusicTable[l].soundId == stateId))
+                {
+                    Debug.WriteLine("Set music state: {0}, {1}", _comiStateMusicTable[l].name, _comiStateMusicTable[l].filename);
+                    num = l;
+                    break;
+                }
+            }
+
+            if (num == -1)
+                return;
+
+            if (_curMusicState == num)
+                return;
+
+            if (_curMusicSeq == 0)
+            {
+                if (num == 0)
+                    PlayComiMusic(null, _comiStateMusicTable[0], num, false);
+                else
+                    PlayComiMusic(_comiStateMusicTable[num].name, _comiStateMusicTable[num], num, false);
+            }
+
+            _curMusicState = num;
+        }
+
+        void SetComiMusicSequence(int seqId)
+        {
+            int l, num = -1;
+
+            if (seqId == 0)
+                seqId = 2000;
+
+            for (l = 0; _comiSeqMusicTable[l].soundId != -1; l++)
+            {
+                if ((_comiSeqMusicTable[l].soundId == seqId))
+                {
+                    Debug.WriteLine("Set music sequence: {0}, {1}", _comiSeqMusicTable[l].name, _comiSeqMusicTable[l].filename);
+                    num = l;
+                    break;
+                }
+            }
+
+            if (num == -1)
+                return;
+
+            if (_curMusicSeq == num)
+                return;
+
+            if (num != 0)
+            {
+                if (_curMusicSeq!=0 && ((_comiSeqMusicTable[_curMusicSeq].transitionType == 4)
+                    || (_comiSeqMusicTable[_curMusicSeq].transitionType == 6)))
+                {
+                    _nextSeqToPlay = num;
+                    return;
+                }
+                else
+                {
+                    PlayComiMusic(_comiSeqMusicTable[num].name, _comiSeqMusicTable[num], 0, true);
+                    _nextSeqToPlay = 0;
+                }
+            }
+            else
+            {
+                if (_nextSeqToPlay != 0)
+                {
+                    PlayComiMusic(_comiSeqMusicTable[_nextSeqToPlay].name, _comiSeqMusicTable[_nextSeqToPlay], 0, true);
+                    num = _nextSeqToPlay;
+                    _nextSeqToPlay = 0;
+                }
+                else
+                {
+                    if (_curMusicState != 0)
+                    {
+                        PlayComiMusic(_comiStateMusicTable[_curMusicState].name, _comiStateMusicTable[_curMusicState], _curMusicState, true);
+                    }
+                    else
+                        PlayComiMusic(null, _comiStateMusicTable[0], _curMusicState, true);
+                    num = 0;
+                }
+            }
+
+            _curMusicSeq = num;
+        }
+
+        void PlayComiMusic(string songName, ImuseComiTable table, int attribPos, bool sequence)
+        {
+            int hookId = 0;
+
+            if ((songName != null) && (attribPos != 0))
+            {
+                if (table.attribPos != 0)
+                    attribPos = table.attribPos;
+                hookId = _attributes[COMI_STATE_OFFSET + attribPos];
+                if (table.hookId != 0)
+                {
+                    if ((hookId != 0) && (table.hookId > 1))
+                    {
+                        _attributes[COMI_STATE_OFFSET + attribPos] = 2;
+                    }
+                    else
+                    {
+                        _attributes[COMI_STATE_OFFSET + attribPos] = hookId + 1;
+                        if (table.hookId < hookId + 1)
+                            _attributes[COMI_STATE_OFFSET + attribPos] = 1;
+                    }
+                }
+            }
+
+            if (string.IsNullOrEmpty(songName))
+            {
+                FadeOutMusic(120);
+                return;
+            }
+
+            switch (table.transitionType)
+            {
+                case 0:
+                    break;
+                case 8:
+                    SetHookIdForMusic(table.hookId);
+                    break;
+                case 9:
+                    _stopingSequence = 1;
+                    SetHookIdForMusic(table.hookId);
+                    break;
+                case 2:
+                case 3:
+                case 4:
+                case 12:
+                    if (table.filename[0] == 0)
+                    {
+                        FadeOutMusic(60);
+                        return;
+                    }
+                    if (GetCurMusicSoundId() == table.soundId)
+                        return;
+                    if (table.transitionType == 4)
+                        _stopingSequence = 1;
+                    if (table.transitionType == 2)
+                    {
+                        FadeOutMusic(table.fadeOutDelay);
+                        StartMusic(table.filename, table.soundId, table.hookId, 127);
+                        return;
+                    }
+                    if ((!sequence) && (table.attribPos != 0) &&
+                        (table.attribPos == _comiStateMusicTable[_curMusicState].attribPos))
+                    {
+                        FadeOutMusicAndStartNew(table.fadeOutDelay, table.filename, table.soundId);
+                    }
+                    else if (table.transitionType == 12)
+                    {
+                        TriggerParams trigger;
+                        trigger.marker = "exit";
+                        trigger.fadeOutDelay = table.fadeOutDelay;
+                        trigger.filename = table.filename;
+                        trigger.soundId = table.soundId;
+                        trigger.hookId = table.hookId;
+                        trigger.volume = 127;
+                        SetTrigger(trigger);
+                    }
+                    else
+                    {
+                        FadeOutMusic(table.fadeOutDelay);
+                        StartMusic(table.filename, table.soundId, hookId, 127);
+                    }
+                    break;
+            }
         }
 
         void SetDigMusicState(int stateId)

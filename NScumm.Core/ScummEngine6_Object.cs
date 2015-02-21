@@ -27,8 +27,8 @@ namespace NScumm.Core
 {
     partial class ScummEngine6
     {
-        int _blastObjectQueuePos;
-        readonly BlastObject[] _blastObjectQueue = CreateBlastObjects();
+        protected int _blastObjectQueuePos;
+        protected readonly BlastObject[] _blastObjectQueue = CreateBlastObjects();
         int _blastTextQueuePos;
         readonly BlastText[] _blastTextQueue = CreateBlastTexts();
 
@@ -87,7 +87,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0x6d)]
-        protected void IfClassOfIs(int obj, int[] args)
+        protected virtual void IfClassOfIs(int obj, int[] args)
         {
             var num = args.Length;
             var cond = true;
@@ -103,7 +103,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0x6e)]
-        protected void SetClass(int obj, int[] args)
+        protected virtual void SetClass(int obj, int[] args)
         {
             var num = args.Length;
             while (--num >= 0)
@@ -119,13 +119,13 @@ namespace NScumm.Core
         }
 
         [OpCode(0x6f)]
-        protected void GetState(int obj)
+        protected virtual void GetState(int obj)
         {
             Push(GetStateCore(obj));
         }
 
         [OpCode(0x70)]
-        protected void SetState(int obj, int state)
+        protected virtual void SetState(int obj, int state)
         {
             PutState(obj, state);
             MarkObjectRectAsDirty(obj);
@@ -134,25 +134,25 @@ namespace NScumm.Core
         }
 
         [OpCode(0x71)]
-        protected void SetOwner(int obj, int owner)
+        protected virtual void SetOwner(int obj, int owner)
         {
             SetOwnerOf(obj, owner);
         }
 
         [OpCode(0x72)]
-        protected void GetOwner(int obj)
+        protected virtual void GetOwner(int obj)
         {
             Push(GetOwnerCore(obj));
         }
 
         [OpCode(0x8d)]
-        protected void GetObjectX(int index)
+        protected virtual void GetObjectX(int index)
         {
             Push(GetObjX(index));
         }
 
         [OpCode(0x8e)]
-        protected void GetObjectY(int index)
+        protected virtual void GetObjectY(int index)
         {
             Push(GetObjY(index));
         }
@@ -164,19 +164,19 @@ namespace NScumm.Core
         }
 
         [OpCode(0x97)]
-        protected void SetObjectName(int obj)
+        protected virtual void SetObjectName(int obj)
         {
             SetObjectNameCore(obj);
         }
 
         [OpCode(0xa0)]
-        protected void FindObject(int x, int y)
+        protected virtual void FindObject(int x, int y)
         {
             Push(FindObjectCore(x, y));
         }
 
         [OpCode(0xc5)]
-        protected void DistObjectObject(int a, int b)
+        protected virtual void DistObjectObject(int a, int b)
         {
             Push(GetDistanceBetween(true, a, 0, true, b, 0));
         }
@@ -188,13 +188,13 @@ namespace NScumm.Core
         }
 
         [OpCode(0xc7)]
-        protected void DistObjectPtPt(int a, int b, int c, int d)
+        protected virtual void DistObjectPtPt(int a, int b, int c, int d)
         {
             Push(GetDistanceBetween(false, a, b, false, c, d));
         }
 
         [OpCode(0xcb)]
-        protected void PickOneOf(int i, int[] args)
+        protected virtual void PickOneOf(int i, int[] args)
         {
             if (i < 0 || i > args.Length)
                 throw new ArgumentOutOfRangeException("i", i, string.Format("PickOneOf: {0} out of range (0, {1})", i, args.Length - 1));
@@ -202,7 +202,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0xcc)]
-        protected void PickOneOfDefault(int i, int[] args, int def)
+        protected virtual void PickOneOfDefault(int i, int[] args, int def)
         {
             if (i < 0 || i >= args.Length)
                 i = def;
@@ -267,12 +267,12 @@ namespace NScumm.Core
         }
 
         [OpCode(0xed)]
-        protected void GetObjectNewDir(int index)
+        protected virtual void GetObjectNewDir(int index)
         {
             Push(GetObjNewDir(index));
         }
 
-        void SetObjectState(int obj, int state, int x, int y)
+        protected void SetObjectState(int obj, int state, int x, int y)
         {
             var i = GetObjectIndex(obj);
             if (i == -1)
@@ -422,8 +422,7 @@ namespace NScumm.Core
                     // Does this case ever happen? We need to draw the
                     // actor over the blast object, so we're forced to
                     // also draw it over the subtitles.
-                    // TODO: vs 8
-//                    ProcessUpperActors();
+                    ProcessUpperActors();
                 }
             }
             else
@@ -434,8 +433,7 @@ namespace NScumm.Core
                     // Do this before drawing blast texts. Subtitles go on
                     // top of the CoMI verb coin, e.g. when Murray is
                     // talking to himself early in the game.
-                    // TODO: vs 8
-//                    ProcessUpperActors();
+                    ProcessUpperActors();
                 }
                 DrawBlastTexts();
             }
@@ -446,6 +444,20 @@ namespace NScumm.Core
             // Remove all blasted objects/text again.
             RemoveBlastTexts();
             RemoveBlastObjects();
+        }
+
+        // Used in Scumm v8, to allow the verb coin to be drawn over the inventory
+        // chest. I'm assuming that draw order won't matter here.
+        void ProcessUpperActors()
+        {
+            for (var i = 1; i < Actors.Length; i++)
+            {
+                if (Actors[i].IsInCurrentRoom && Actors[i].Costume != 0 && Actors[i].Layer < 0)
+                {
+                    Actors[i].DrawCostume();
+                    Actors[i].AnimateCostume();
+                }
+            }
         }
 
         void RemoveBlastObjects()
@@ -548,7 +560,7 @@ namespace NScumm.Core
             bt.Center = center;
         }
 
-        void RemoveBlastTexts()
+        protected void RemoveBlastTexts()
         {
             for (var i = 0; i < _blastTextQueuePos; i++)
             {

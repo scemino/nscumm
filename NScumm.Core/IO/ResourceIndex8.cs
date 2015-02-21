@@ -23,28 +23,21 @@ using NScumm.Core.IO;
 using System.IO;
 using System.Collections.ObjectModel;
 using System;
+using System.Collections.Generic;
+using System.Text;
 
 namespace NScumm.Core
 {
-    class ResourceIndex7 : ResourceIndex6
+    class ResourceIndex8 : ResourceIndex7
     {
-        public override int NumVerbs { get { return numVerbs; } }
+        public Dictionary<string,int> ObjectIDMap { get; private set; }
 
-        public override int NumInventory { get { return numInventory; } }
+        public ReadOnlyCollection<Resource> RoomScriptResources { get; private set; }
 
-        public override int NumVariables { get { return numVariables; } }
-
-        public override int NumBitVariables { get { return numBitVariables; } }
-
-        public override int NumLocalObjects { get { return numLocalObjects; } }
-
-        public override int NumArray { get { return numArray; } }
-
-        public override int NumGlobalScripts { get { return numGlobalScripts; }}
-
-        public override byte[] ObjectRoomTable { get { return objectRoomTable; } }
-
-        public override string[] AudioNames { get { return audioNames; } }
+        public ResourceIndex8()
+        {
+            audioNames = new string[0];
+        }
 
         protected override void LoadIndex(GameInfo game)
         {
@@ -79,10 +72,16 @@ namespace NScumm.Core
                             var rooms = ReadResTypeList(br);
                             RoomResources = new ReadOnlyCollection<Resource>(rooms);
                             break;
+
                         case "DSCR":
                         case "DIRS":
                             var scripts = ReadResTypeList(br);
                             ScriptResources = new ReadOnlyCollection<Resource>(scripts);
+                            break;
+
+                        case "DRSC":
+                            var roomScripts = ReadResTypeList(br);
+                            RoomScriptResources = new ReadOnlyCollection<Resource>(roomScripts);
                             break;
 
                         case "DCOS":
@@ -104,7 +103,7 @@ namespace NScumm.Core
                         case "AARY":
                             ReadArrayFromIndexFile(br);
                             break;
-                        
+
                         case "ANAM":        // Used by: The Dig, FT
                             {
                                 var num = br.ReadUInt16();
@@ -124,67 +123,94 @@ namespace NScumm.Core
             }
         }
 
-        protected override void ReadMaxSizes(XorReader reader) 
+        protected override void ReadMaxSizes(XorReader reader)
         {
             reader.BaseStream.Seek(50, SeekOrigin.Current);  // Skip over SCUMM engine version
             reader.BaseStream.Seek(50, SeekOrigin.Current);  // Skip over data file version
-            numVariables = reader.ReadUInt16();
-            numBitVariables = reader.ReadUInt16();
-            reader.ReadUInt16();
-            var numGlobalObjects = reader.ReadUInt16();
-            numLocalObjects = reader.ReadUInt16();
-            var numNewNames = reader.ReadUInt16();
-            numVerbs = reader.ReadUInt16();
-            var numFlObject = reader.ReadUInt16();
-            numInventory = reader.ReadUInt16();
-            numArray = reader.ReadUInt16();
-            var numRooms = reader.ReadUInt16();
-            var numScripts = reader.ReadUInt16();
-            var numSounds = reader.ReadUInt16();
-            var numCharsets = reader.ReadUInt16();
-            var numCostumes = reader.ReadUInt16();
+            numVariables = reader.ReadInt32();
+            numBitVariables = reader.ReadInt32();
+            reader.ReadInt32();
+            var numScripts = reader.ReadInt32();
+            var numSounds = reader.ReadInt32();
+            var numCharsets = reader.ReadInt32();
+            var numCostumes = reader.ReadInt32();
+            var numRooms = reader.ReadInt32();
+            reader.ReadInt32();
+            var numGlobalObjects = reader.ReadInt32();
+            reader.ReadInt32();
+            numLocalObjects = reader.ReadInt32();
+            var numNewNames = reader.ReadInt32();
+            var numFlObject = reader.ReadInt32();
+            numInventory = reader.ReadInt32();
+            numArray = reader.ReadInt32();
+            numVerbs = reader.ReadInt32();
 
-//            _objectRoomTable = (byte *)calloc(_numGlobalObjects, 1);
-//
-            if ((Game.GameId == GameId.FullThrottle) && (Game.Features.HasFlag(GameFeatures.Demo)) /*&& (_game.platform == Common::kPlatformDOS)*/)
-                numGlobalScripts = 300;
-            else
-                numGlobalScripts = 2000;
-//
-//            _shadowPaletteSize = NUM_SHADOW_PALETTE * 256;
-//            _shadowPalette = (byte *)calloc(_shadowPaletteSize, 1);
+            numGlobalScripts = 2000;
         }
 
         protected override void ReadDirectoryOfObjects(XorReader br)
         {
-            int num = br.ReadUInt16();
+            var num = br.ReadInt32();
 
-            ObjectStateTable = br.ReadBytes(num);
-            objectRoomTable = br.ReadBytes(num);
-
+            ObjectIDMap = new Dictionary<string, int>();
+            ObjectStateTable = new byte[num];
+            objectRoomTable = new byte[num];
+            ClassData = new uint[num];
             ObjectOwnerTable = new byte[num];
-            for (int i = 0; i < num; i++)
+            for (var i = 0; i < num; i++)
             {
+                // Add to object name-to-id map
+                var name = DataToString(br.ReadBytes(40));
+                ObjectIDMap[name]=i;
+
+                ObjectStateTable[i] = br.ReadByte();
+                ObjectRoomTable[i] = br.ReadByte();
+                ClassData[i] = br.ReadUInt32();
                 ObjectOwnerTable[i] = 0xFF;
             }
-
-            ClassData = br.ReadUInt32s(num);
-
-            #if SCUMM_BIG_ENDIAN
-            // Correct the endianess if necessary
-            for (int i = 0; i != num; i++)
-            _classData[i] = FROM_LE_32(_classData[i]);
-            #endif
         }
 
-        protected int numVerbs;
-        protected int numInventory;
-        protected int numVariables;
-        protected int numBitVariables;
-        protected int numLocalObjects;
-        protected int numGlobalScripts;
-        protected int numArray;
-        protected byte[] objectRoomTable;
-        protected string[] audioNames;
+        public static string DataToString(byte[] data)
+        {
+            var sb = new List<byte>();
+            int i = 0;
+            while (i < data.Length && data[i] != 0)
+            {
+                sb.Add(data[i]);
+                i++;
+            }
+            return System.Text.Encoding.ASCII.GetString(sb.ToArray());
+        }
+
+        protected override Resource[] ReadResTypeList(XorReader br)
+        {
+            var numEntries = br.ReadInt32();
+            var res = new Resource[numEntries];
+            var roomNumbers = br.ReadBytes(numEntries);
+            for (int i = 0; i < numEntries; i++)
+            {
+                res[i] = new Resource { RoomNum = roomNumbers[i], Offset = br.ReadUInt32() };
+            }
+            return res;
+        }
+
+        protected virtual void ReadArrayFromIndexFile(XorReader br)
+        {
+            int num;
+            while ((num = br.ReadInt32()) != 0)
+            {
+                var a = br.ReadInt32();
+                var b = br.ReadInt32();
+
+                if (b != 0)
+                {
+                    ArrayDefinitions.Add(new ArrayDefinition{ Index = num, Type = (int)ArrayType.IntArray, Dim2 = b, Dim1 = a });
+                }
+                else
+                {
+                    ArrayDefinitions.Add(new ArrayDefinition{ Index = num, Type = (int)ArrayType.IntArray, Dim2 = a, Dim1 = b });
+                }
+            }
+        }
     }
 }

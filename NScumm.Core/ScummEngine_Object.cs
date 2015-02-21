@@ -375,7 +375,10 @@ namespace NScumm.Core
                 p = od.Walk;
             }
 
-            dir = ScummHelper.OldDirToNewDir(od.ActorDir & 3);
+            if (_game.Version == 8)
+                dir = ScummHelper.FromSimpleDir(1, od.ActorDir);
+            else
+                dir = ScummHelper.OldDirToNewDir(od.ActorDir & 3);
         }
 
         protected Point GetObjectXYPos(int obj)

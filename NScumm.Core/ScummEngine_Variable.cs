@@ -110,7 +110,7 @@ namespace NScumm.Core
         public int? VariableCurrentDisk;
 
         int[] _variables;
-        BitArray _bitVars;
+        protected BitArray _bitVars;
         protected Stack<int> _stack = new Stack<int>();
         protected int _resultVarIndex;
 
@@ -124,7 +124,7 @@ namespace NScumm.Core
             return _currentScriptData[_currentPos++];
         }
 
-        protected ushort ReadWord()
+        protected virtual uint ReadWord()
         {
             ushort word = (ushort)(_currentScriptData[_currentPos++] | (_currentScriptData[_currentPos++] << 8));
             return word;
@@ -132,10 +132,10 @@ namespace NScumm.Core
 
         protected void GetResult()
         {
-            _resultVarIndex = ReadWord();
+            _resultVarIndex = ReadWordSigned();
             if ((_resultVarIndex & 0x2000) == 0x2000)
             {
-                int a = (int)ReadWord();
+                var a = ReadWordSigned();
                 if ((a & 0x2000) == 0x2000)
                 {
                     _resultVarIndex += ReadVariable(a & ~0x2000);
@@ -148,11 +148,11 @@ namespace NScumm.Core
             }
         }
 
-        protected int ReadVariable(int var)
+        protected virtual int ReadVariable(int var)
         {
             if (((var & 0x2000) != 0) && (Game.Version <= 5))
             {
-                var a = ReadWord();
+                var a = ReadWordSigned();
                 if ((a & 0x2000) == 0x2000)
                     var += ReadVariable(a & ~0x2000);
                 else
@@ -225,10 +225,10 @@ namespace NScumm.Core
 
         protected int GetVar()
         {
-            return ReadVariable(ReadWord());
+            return ReadVariable(ReadWordSigned());
         }
 
-        protected short ReadWordSigned()
+        protected virtual int ReadWordSigned()
         {
             return (short)ReadWord();
         }
@@ -248,7 +248,7 @@ namespace NScumm.Core
             WriteVariable(_resultVarIndex, value);
         }
 
-        protected void WriteVariable(int index, int value)
+        protected virtual void WriteVariable(int index, int value)
         {
             //            Console.WriteLine("SetResult({0},{1})", index, value);
             if ((index & 0xF000) == 0)

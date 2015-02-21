@@ -22,11 +22,15 @@ namespace NScumm.Core
 {
     public class RoomHeader
     {
-        public ushort Width { get; set; }
+        public int Width { get; set; }
 
-        public ushort Height { get; set; }
+        public int Height { get; set; }
 
-        public ushort NumObjects { get; set; }
+        public int NumObjects { get; set; }
+
+        public int NumZBuffer { get; set; }
+
+        public int Transparency { get; set; }
     }
 
 

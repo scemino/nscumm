@@ -40,14 +40,14 @@ namespace NScumm.Core
             return box.Flags;
         }
 
-        internal byte GetBoxMask(byte boxNum)
+        internal int GetBoxMask(byte boxNum)
         {
             if (Game.Version <= 3 && boxNum == 255)
                 return 1;
 
             // WORKAROUND for bug #847827: This is a bug in the data files, as it also
             // occurs with the original engine. We work around it here anyway.
-            if (_game.Id == "atlantis" && _currentRoom == 225 && _roomResource == 94 && boxNum == 8)
+            if (_game.GameId == NScumm.Core.IO.GameId.Indy4 && _currentRoom == 225 && _roomResource == 94 && boxNum == 8)
                 return 0;
 
             var box = GetBoxBase(boxNum);
@@ -76,6 +76,26 @@ namespace NScumm.Core
             box.LowerLeft.Y = bp.Lly;
             box.LowerRight.X = bp.Lrx;
             box.LowerRight.Y = bp.Lry;
+
+            if (Game.Version == 8)
+            {
+                // WORKAROUND (see patch #684732): Some walkboxes in CMI appear
+                // to have been flipped, in the sense that for instance the
+                // lower boundary is above the upper one. We work around this
+                // by simply flipping them back.
+
+                if (box.UpperLeft.Y > box.LowerLeft.Y && box.UpperRight.Y > box.LowerRight.Y)
+                {
+                    ScummHelper.Swap(ref box.UpperLeft, ref box.LowerLeft);
+                    ScummHelper.Swap(ref box.UpperRight, ref box.LowerRight);
+                }
+
+                if (box.UpperLeft.X > box.UpperRight.X && box.LowerLeft.X > box.LowerRight.X)
+                {
+                    ScummHelper.Swap(ref box.UpperLeft, ref box.UpperRight);
+                    ScummHelper.Swap(ref box.LowerLeft, ref box.LowerRight);
+                }
+            }
 
             return box;
         }
@@ -223,7 +243,7 @@ namespace NScumm.Core
         protected void SetBoxFlags(int box, int val)
         {
             // SCUMM7+ stuff
-            if ((val & 0xC000)!=0)
+            if ((val & 0xC000) != 0)
             {
                 Debug.Assert(box >= 0 && box < 65);
                 _extraBoxFlags[box] = (ushort)val;
@@ -245,7 +265,7 @@ namespace NScumm.Core
             return box.Scale;
         }
 
-        public int GetScale(int boxNum, short x, short y)
+        public int GetScale(int boxNum, int x, int y)
         {
             if (Game.Version <= 3)
                 return 255;
@@ -254,10 +274,20 @@ namespace NScumm.Core
             if (box == null)
                 return 255;
 
-            int scale = (int)box.Scale;
-            int slot = 0;
-            if ((scale & 0x8000) != 0)
-                slot = (scale & 0x7FFF) + 1;
+            int scale, slot;
+            if (Game.Version == 8)
+            {
+                // COMI has a separate field for the scale slot...
+                slot = box.ScaleSlot;
+                scale = box.Scale;
+            }
+            else
+            {
+                scale = (int)box.Scale;
+                slot = 0;
+                if ((scale & 0x8000) != 0)
+                    slot = (scale & 0x7FFF) + 1;
+            }
 
             // Was a scale slot specified? If so, we compute the effective scale
             // from it, ignoring the box scale.

@@ -561,7 +561,8 @@ namespace NScumm.Core
             if (GetObjectIndex(obj) != -1)
                 return;
 
-            var od = ResourceManager.GetRoom((byte)room).Objects.First(o => o.Number == obj);
+            var r = ResourceManager.GetRoom((byte)room);
+            var od = r.Objects.First(o => o.Number == obj);
             for (int i = 1; i < _objs.Length; i++)
             {
                 if (_objs[i].Number == 0)

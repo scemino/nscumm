@@ -37,7 +37,22 @@ namespace NScumm.Core
 
         void InitActors()
         {
-            Actors = new Actor[Game.Version == 7 || Game.GameId == NScumm.Core.IO.GameId.SamNMax ? 30 : 13];
+            int numActors;
+
+            if (Game.Version == 8)
+            {
+                numActors = 80;
+            }
+            else if (Game.Version == 7 || Game.GameId == NScumm.Core.IO.GameId.SamNMax)
+            {
+                numActors = 30;
+            }
+            else
+            {
+                numActors = 13;
+            }
+
+            Actors = new Actor[numActors];
             for (byte i = 0; i < Actors.Length; i++)
             {
                 Actors[i] = _game.Version == 3 ? new Actor3(this, i) : new Actor(this, i);
@@ -264,7 +279,7 @@ namespace NScumm.Core
         {
             // Redraw all actors if a full redraw was requested.
             // Also redraw all actors in COMI (see bug #1066329 for details).
-            if (_fullRedraw)
+            if (_fullRedraw || _game.Version == 8)
             {
                 for (int j = 1; j < Actors.Length; j++)
                 {

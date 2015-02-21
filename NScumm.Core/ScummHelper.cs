@@ -93,6 +93,20 @@ namespace NScumm.Core
             }
         }
 
+        /// <summary>
+        /// Convert a simple direction to an angle.
+        /// </summary>
+        /// <returns>The simple dir.</returns>
+        /// <param name="dirType">Dir type.</param>
+        /// <param name="dir">Dir.</param>
+        public static int FromSimpleDir(int dirType, int dir)
+        {
+            if (dirType != 0)
+                return dir * 45;
+            else
+                return dir * 90;
+        }
+
         public static int OldDirToNewDir(int dir)
         {
             if (dir < 0 && dir > 3)
@@ -374,6 +388,11 @@ namespace NScumm.Core
             writer.Write(SwapBytes(value));
         }
 
+        public static void WriteUInt16BigEndian(byte[] destinationArray, int destinationIndex, ushort value)
+        {
+            Array.Copy(GetBytesBigEndian(value), 0, destinationArray, destinationIndex, 2);
+        }
+
         public static byte[] GetBytesBigEndian(ushort value)
         {
             return BitConverter.GetBytes(SwapBytes(value));
@@ -467,6 +486,37 @@ namespace NScumm.Core
                 length++;
             }
             return length;
+        }
+
+        public static int GetStringLength(byte[] data, int gameVersion)
+        {
+            int length = 0;
+            for (var i = 0; i < data.Length; i++)
+            {
+                var character = data[i];
+                length++;
+                if (character == 0xFF)
+                {
+                    character = data[i];
+                    length++;
+                    if (character != 1 && character != 2 && character != 3 && character != 8)
+                    {
+                        var count = gameVersion == 8 ? 4 : 2;
+                        i += count;
+                        length += count;
+                    }
+                }
+                length++;
+            }
+            return length;
+        }
+
+        public static void ArraySet<T>(T[] array, T value, int index)
+        {
+            for (int i = index; i < array.Length; i++)
+            {
+                array[i] = value;
+            }
         }
     }
 }

@@ -260,6 +260,12 @@
     <Compile Include="Audio\IMuse\IMuseDigital\IMuseDigital_Music.cs" />
     <Compile Include="Audio\IMuse\IMuseDigital\IMuseDigital_Tables.cs" />
     <Compile Include="Input\ScummInputState.cs" />
+    <Compile Include="ScummEngine8.cs" />
+    <Compile Include="IO\ResourceManager8.cs" />
+    <Compile Include="IO\ResourceIndex8.cs" />
+    <Compile Include="IO\ResourceFile8.cs" />
+    <Compile Include="Graphics\CharsetRendererNut.cs" />
+    <Compile Include="Smush\Codec47Decoder.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="IO\Nscumm.xml">

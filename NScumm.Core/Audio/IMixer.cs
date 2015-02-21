@@ -116,6 +116,13 @@ namespace NScumm.Core.Audio
         /// <returns>The channel balance.</returns>
         /// <param name="handle">The sound to affect.</param>
         int GetChannelBalance(SoundHandle handle);
+
+        /// <summary>
+        /// Query the global volume.
+        /// </summary>
+        /// <returns>The volume for sound type.</returns>
+        /// <param name="type">The global music volume, 0 - MaxMixerVolume.</param>
+        int GetVolumeForSoundType(SoundType type);
     }
 }
 

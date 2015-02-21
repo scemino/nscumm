@@ -169,7 +169,7 @@ namespace NScumm.Core
 
         }
 
-        void PopRoomAndObj(out int room, out int obj)
+        protected void PopRoomAndObj(out int room, out int obj)
         {
             if (Game.Version >= 7)
             {
@@ -184,7 +184,7 @@ namespace NScumm.Core
 
         }
 
-        int GetObjectRoom(int obj) 
+        protected int GetObjectRoom(int obj) 
         {
             return _resManager.ObjectRoomTable[obj];
         }

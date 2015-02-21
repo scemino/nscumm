@@ -27,10 +27,14 @@ namespace NScumm.MonoGame
     {
         MouseState mouseState;
         KeyboardState keyboardState;
+        double width; 
+        double height;
 
-        public XnaInputManager(OpenTK.NativeWindow window)
+        public XnaInputManager(OpenTK.NativeWindow window, int width, int height)
         {
             this.window = window;
+            this.width = width;
+            this.height = height;
         }
 
         public NScumm.Core.Graphics.Point GetMousePosition()
@@ -39,8 +43,8 @@ namespace NScumm.MonoGame
             var x = state.X - window.Bounds.X;
             var y = state.Y - window.Bounds.Y;
 
-            var scaleX = 320.0 / window.Bounds.Width;
-            var scaleY = 200.0 / window.Bounds.Height;
+            var scaleX = width / window.Bounds.Width;
+            var scaleY = height / window.Bounds.Height;
             var pOut = new NScumm.Core.Graphics.Point((short)(x * scaleX), (short)(y * scaleY));
             return pOut;
         }

@@ -34,18 +34,18 @@ namespace NScumm.Core
 {
     partial class ScummEngine7: ScummEngine6
     {
-        int VariableTimeDateSecond;
-        int VariableNumGlobalObjs;
-        int VariableCameraDestX;
-        int VariableCameraDestY;
-        int VariableRestartKey;
-        int VariablePauseKey;
-        int VariableVersionKey;
-        int VariableKeypress;
-        int VariableCameraSpeedX;
-        int VariableCameraSpeedY;
-        int VariableVideoName;
-        int VariableString2Draw;
+        protected int VariableTimeDateSecond;
+        protected int VariableNumGlobalObjs;
+        protected int VariableCameraDestX;
+        protected int VariableCameraDestY;
+        protected int VariableRestartKey;
+        protected int VariablePauseKey;
+        protected int VariableVersionKey;
+        protected int VariableKeyPress;
+        protected int VariableCameraSpeedX;
+        protected int VariableCameraSpeedY;
+        protected int VariableVideoName;
+        protected int VariableString2Draw;
         public int VariableCustomScaleTable;
 
         public bool SmushVideoShouldFinish { get; internal set; }
@@ -149,7 +149,7 @@ namespace NScumm.Core
             VariableMainMenu = 65;
             VariableVersionKey = 66;
             VariableTalkStopKey = 67;
-            VariableKeypress = 118;
+            VariableKeyPress = 118;
 
             VariableTimerNext = 97;
             VariableTimer1 = 98;

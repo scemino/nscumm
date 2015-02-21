@@ -446,7 +446,7 @@ namespace NScumm.Core.IO
             return name.ToArray();
         }
 
-        protected void ReadVerbTable(ObjectData data, int size)
+        protected virtual void ReadVerbTable(ObjectData data, int size)
         {
             var tableLength = (size - 1) / 3;
             for (var i = 0; i < tableLength; i++)
@@ -507,7 +507,7 @@ namespace NScumm.Core.IO
             return colorCycle;
         }
 
-        protected ScaleSlot[] ReadSCAL()
+        protected virtual ScaleSlot[] ReadSCAL()
         {
             var scales = new ScaleSlot[4];
             for (int i = 0; i < 4; i++)

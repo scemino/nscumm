@@ -394,7 +394,7 @@ namespace NScumm.Core.Audio.IMuse
         int _callbackFps;
         // value how many times callback needs to be called per second
 
-        class TriggerParams
+        struct TriggerParams
         {
             public string marker;
             public int fadeOutDelay;

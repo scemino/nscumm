@@ -48,10 +48,9 @@ namespace NScumm.Core
                     sb.Add(character);
                     if (character != 1 && character != 2 && character != 3 && character != 8)
                     {
-                        character = ReadByte();
-                        sb.Add(character);
-                        character = ReadByte();
-                        sb.Add(character);
+                        var count = _game.Version == 8 ? 4 : 2;
+                        sb.AddRange(from i in Enumerable.Range(0, count)
+                                                         select ReadByte());
                     }
                 }
                 character = ReadByte();
@@ -190,7 +189,7 @@ namespace NScumm.Core
             _string[textSlot].SaveDefault();
         }
 
-        protected void PrintString(int textSlot, byte[] msg)
+        protected virtual void PrintString(int textSlot, byte[] msg)
         {
             switch (textSlot)
             {
@@ -264,7 +263,8 @@ namespace NScumm.Core
             byte chr;
             int dstPosBegin = dstPos;
 
-            if (_game.Version >= 7) {
+            if (_game.Version >= 7)
+            {
                 src = TranslateText(src);
             }
 
@@ -337,7 +337,7 @@ namespace NScumm.Core
             return dstPos - dstPosBegin;
         }
 
-        protected virtual byte[] TranslateText(byte[] src)
+        public virtual byte[] TranslateText(byte[] src)
         {
             return src;
         }

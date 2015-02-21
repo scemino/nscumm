@@ -84,7 +84,8 @@ namespace NScumm.Core.Graphics
             var width = Math.Min((int)_chars[c].Width, s.Width - x);
             var height = Math.Min((int)_chars[c].Height, s.Height - y);
             var src = UnpackChar(c);
-            var srcNav = new PixelNavigator(new Surface(_chars[c].Width, _chars[c].Height, PixelFormat.Indexed8, false));
+            var srcPitch = _chars[c].Width;
+            var srcPos = 0;
 
             var minX = x < 0 ? -x : 0;
             var minY = y < 0 ? -y : 0;
@@ -96,7 +97,7 @@ namespace NScumm.Core.Graphics
 
             if (minY != 0)
             {
-                srcNav.OffsetY(minY);
+                srcPos += minY * srcPitch;
                 dst.OffsetY(minY);
             }
 
@@ -104,19 +105,19 @@ namespace NScumm.Core.Graphics
             {
                 for (int tx = minX; tx < width; tx++)
                 {
-                    if (src[tx] != _chars[c].Transparency)
+                    if (src[srcPos + tx] != _chars[c].Transparency)
                     {
-                        if (src[tx] == 1)
+                        if (src[srcPos + tx] == 1)
                         {
                             dst.Write(tx, color);
                         }
                         else
                         {
-                            dst.Write(tx, srcNav.Read(tx));
+                            dst.Write(tx, src[srcPos + tx]);
                         }
                     }
                 }
-                srcNav.OffsetY(1);
+                srcPos += srcPitch;
                 dst.OffsetY(1);
             }
         }

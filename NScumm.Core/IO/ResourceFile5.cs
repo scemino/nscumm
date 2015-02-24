@@ -284,24 +284,7 @@ namespace NScumm.Core.IO
                         break;
                     case "VERB":
                         {
-                            var pos = _reader.BaseStream.Position - 8;
-                            byte id;
-                            while ((id = _reader.ReadByte()) != 0)
-                            {
-                                var offset = _reader.ReadUInt16();
-                                if (!obj.ScriptOffsets.ContainsKey(id))
-                                {
-                                    obj.ScriptOffsets[id] = offset;
-                                }
-                            }
-                            var realCodeOffset = _reader.BaseStream.Position - pos;
-                            var virtualCodeOffset = (3 * obj.ScriptOffsets.Count + 1 + 8);
-                            var diff = (ushort)(realCodeOffset - virtualCodeOffset);
-                            foreach (var key in obj.ScriptOffsets.Keys.ToList())
-                            {
-                                obj.ScriptOffsets[key] -= diff;
-                            }
-                            obj.Script.Offset = virtualCodeOffset;
+                            ReadVerbTable(obj, (int)(it.Current.Size - 8));
                             obj.Script.Data = _reader.ReadBytes((int)(it.Current.Size - obj.Script.Offset));
                         }
                         break;
@@ -316,6 +299,28 @@ namespace NScumm.Core.IO
                 }
             }
             return obj;
+        }
+
+        protected override void ReadVerbTable(ObjectData data, int size)
+        {
+            var pos = _reader.BaseStream.Position - 8;
+            byte id;
+            while ((id = _reader.ReadByte()) != 0)
+            {
+                var offset = _reader.ReadUInt16();
+                if (!data.ScriptOffsets.ContainsKey(id))
+                {
+                    data.ScriptOffsets[id] = offset;
+                }
+            }
+            var realCodeOffset = _reader.BaseStream.Position - pos;
+            var virtualCodeOffset = (3 * data.ScriptOffsets.Count + 1 + 8);
+            var diff = (ushort)(realCodeOffset - virtualCodeOffset);
+            foreach (var key in data.ScriptOffsets.Keys.ToList())
+            {
+                data.ScriptOffsets[key] -= diff;
+            }
+            data.Script.Offset = virtualCodeOffset;
         }
 
         protected override Color[] ReadCLUT()
@@ -581,7 +586,7 @@ namespace NScumm.Core.IO
                         break;
                 }
             } while (_reader.BaseStream.Position < _reader.BaseStream.Length);
-            return null;
+            return roomOffsets;
         }
     }
  

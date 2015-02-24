@@ -161,7 +161,7 @@ namespace NScumm.Core
             {
                 // Add to object name-to-id map
                 var name = DataToString(br.ReadBytes(40));
-                ObjectIDMap[name]=i;
+                ObjectIDMap[name] = i;
 
                 ObjectStateTable[i] = br.ReadByte();
                 ObjectRoomTable[i] = br.ReadByte();
@@ -194,10 +194,10 @@ namespace NScumm.Core
             return res;
         }
 
-        protected virtual void ReadArrayFromIndexFile(XorReader br)
+        protected override void ReadArrayFromIndexFile(XorReader br)
         {
-            int num;
-            while ((num = br.ReadInt32()) != 0)
+            uint num;
+            while ((num = br.ReadUInt32()) != 0)
             {
                 var a = br.ReadInt32();
                 var b = br.ReadInt32();

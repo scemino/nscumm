@@ -80,7 +80,7 @@ namespace NScumm.Core.Insane
             return 1;
         }
 
-        public void RunScene(int arraynum)
+        public void RunScene(uint arraynum)
         {
             _insaneIsRunning = true;
             _player = _vm.SmushPlayer;

@@ -34,7 +34,6 @@ namespace NScumm.Core
 {
     partial class ScummEngine7: ScummEngine6
     {
-        protected int VariableTimeDateSecond;
         protected int VariableNumGlobalObjs;
         protected int VariableCameraDestX;
         protected int VariableCameraDestY;

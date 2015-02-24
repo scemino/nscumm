@@ -27,7 +27,7 @@ namespace NScumm.Core
 {
     public class ArrayDefinition
     {
-        public int Index{ get; set; }
+        public uint Index{ get; set; }
 
         public int Type{ get; set; }
 
@@ -149,7 +149,7 @@ namespace NScumm.Core
 
         protected virtual void ReadArrayFromIndexFile(XorReader br)
         {
-            int num;
+            uint num;
             while ((num = br.ReadUInt16()) != 0)
             {
                 var a = br.ReadUInt16();

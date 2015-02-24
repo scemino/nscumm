@@ -26,7 +26,7 @@ namespace NScumm.Core
     {
         void IsLess()
         {
-            var varNum = ReadWordSigned();
+            var varNum = ReadWord();
             var a = (short)ReadVariable(varNum);
             var b = (short)GetVarOrDirectWord(OpCodeParameter.Param1);
             JumpRelative(b < a);
@@ -34,7 +34,7 @@ namespace NScumm.Core
 
         void IsLessEqual()
         {
-            var varNum = ReadWordSigned();
+            var varNum = ReadWord();
             var a = (short)ReadVariable(varNum);
             var b = (short)GetVarOrDirectWord(OpCodeParameter.Param1);
             JumpRelative(b <= a);
@@ -42,14 +42,14 @@ namespace NScumm.Core
 
         void IsGreater()
         {
-            var a = (short)ReadVariable(ReadWordSigned());
+            var a = (short)ReadVariable(ReadWord());
             var b = (short)GetVarOrDirectWord(OpCodeParameter.Param1);
             JumpRelative(b > a);
         }
 
         void IsGreaterEqual()
         {
-            var a = (short)ReadVariable(ReadWordSigned());
+            var a = (short)ReadVariable(ReadWord());
             var b = (short)GetVarOrDirectWord(OpCodeParameter.Param1);
             JumpRelative(b >= a);
         }
@@ -58,7 +58,7 @@ namespace NScumm.Core
         {
             GetResult();
             var a = GetVarOrDirectWord(OpCodeParameter.Param1);
-            var b = ReadVariable(_resultVarIndex);
+            var b = ReadVariable((uint)_resultVarIndex);
             SetResult(a * b);
         }
 
@@ -66,7 +66,7 @@ namespace NScumm.Core
         {
             GetResult();
             var a = GetVarOrDirectWord(OpCodeParameter.Param1);
-            var b = ReadVariable(_resultVarIndex);
+            var b = ReadVariable((uint)_resultVarIndex);
             SetResult(a | b);
         }
 
@@ -74,20 +74,20 @@ namespace NScumm.Core
         {
             GetResult();
             var a = GetVarOrDirectWord(OpCodeParameter.Param1);
-            var b = ReadVariable(_resultVarIndex);
+            var b = ReadVariable((uint)_resultVarIndex);
             SetResult(a & b);
         }
 
         void NotEqualZero()
         {
-            var var = ReadWordSigned();
+            var var = ReadWord();
             var a = ReadVariable(var);
             JumpRelative(a != 0);
         }
 
         void EqualZero()
         {
-            var var = ReadWordSigned();
+            var var = ReadWord();
             var a = ReadVariable(var);
             JumpRelative(a == 0);
         }
@@ -99,7 +99,7 @@ namespace NScumm.Core
 
         void IsEqual()
         {
-            var varNum = ReadWordSigned();
+            var varNum = ReadWord();
             var a = (short)ReadVariable(varNum);
             var b = (short)GetVarOrDirectWord(OpCodeParameter.Param1);
             JumpRelative(a == b);
@@ -107,7 +107,7 @@ namespace NScumm.Core
 
         void IsNotEqual()
         {
-            var varNum = ReadWordSigned();
+            var varNum = ReadWord();
             var a = (short)ReadVariable(varNum);
             var b = (short)GetVarOrDirectWord(OpCodeParameter.Param1);
             JumpRelative(a != b);
@@ -117,7 +117,7 @@ namespace NScumm.Core
         {
             GetResult();
             int a = GetVarOrDirectWord(OpCodeParameter.Param1);
-            int b = ReadVariable(_resultVarIndex);
+            int b = ReadVariable((uint)_resultVarIndex);
             SetResult(a + b);
         }
 
@@ -125,26 +125,26 @@ namespace NScumm.Core
         {
             GetResult();
             var a = GetVarOrDirectWord(OpCodeParameter.Param1);
-            SetResult(ReadVariable(_resultVarIndex) / a);
+            SetResult(ReadVariable((uint)_resultVarIndex) / a);
         }
 
         void Subtract()
         {
             GetResult();
             int a = GetVarOrDirectWord(OpCodeParameter.Param1);
-            SetResult(ReadVariable(_resultVarIndex) - a);
+            SetResult(ReadVariable((uint)_resultVarIndex) - a);
         }
 
         void Increment()
         {
             GetResult();
-            SetResult(ReadVariable(_resultVarIndex) + 1);
+            SetResult(ReadVariable((uint)_resultVarIndex) + 1);
         }
 
         void Decrement()
         {
             GetResult();
-            SetResult(ReadVariable(_resultVarIndex) - 1);
+            SetResult(ReadVariable((uint)_resultVarIndex) - 1);
         }
 
         void Expression()

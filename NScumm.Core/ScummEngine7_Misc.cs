@@ -74,7 +74,7 @@ namespace NScumm.Core
                         else if (Game.GameId == GameId.FullThrottle && !_skipVideo)
                         {
                             var insaneVarNum = (Game.Features.HasFlag(GameFeatures.Demo)/* && (Game.Platform == Common::kPlatformDOS)*/)
-                                ? 232 : 233;
+                                ? (uint)232 : 233;
 
                             Insane.SetSmushParams(_smushFrameRate);
                             Insane.RunScene(insaneVarNum);

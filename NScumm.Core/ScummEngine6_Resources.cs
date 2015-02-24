@@ -25,7 +25,7 @@ namespace NScumm.Core
     partial class ScummEngine6
     {
         [OpCode(0x9b)]
-        protected void ResourceRoutines()
+        protected virtual void ResourceRoutines()
         {
             var subOp = ReadByte();
             switch (subOp)

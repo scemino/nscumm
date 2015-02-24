@@ -44,6 +44,7 @@ namespace NScumm.Core
         protected int VariableTimeDateDay;
         protected int VariableTimeDateHour;
         protected int VariableTimeDateMinute;
+        protected int? VariableTimeDateSecond;
         protected int? VariableCameraFollowedActor;
         protected int? VariableBlastAboveText;
         protected int? VariableCharsetMask;
@@ -162,7 +163,7 @@ namespace NScumm.Core
                     {
                         var parameterNames = method.GetParameters().Select(p => p.Name).ToArray();
                         var parameters = args.Select(arg => arg()).Reverse().ToArray();
-                        Console.WriteLine("Room = {1,3}, Script = {0,3}, Offset = {4,4}, Name = [{3:X2}] {2}({5})", 
+                        System.Diagnostics.Debug.WriteLine("Room = {1,3}, Script = {0,3}, Offset = {4,4}, Name = [{3:X2}] {2}({5})", 
                             Slots[CurrentScript].Number, 
                             _roomResource, 
                             _opCodes.ContainsKey(_opCode) ? method.Name : "Unknown", 

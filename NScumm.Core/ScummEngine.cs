@@ -490,7 +490,14 @@ namespace NScumm.Core
 //                    _opCode,
 //                    _currentPos - 1);
 //            }
-            _opCodes[opCode]();
+            if (_opCodes.ContainsKey(opCode))
+            {
+                _opCodes[opCode]();
+            }
+            else
+            {
+                throw new InvalidOperationException(string.Format("Invalid opcode {0}.", opCode));
+            }
         }
 
         void Run()

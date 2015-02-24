@@ -430,7 +430,12 @@ namespace NScumm.Core
             SoundHandle handle = null;
             var id = -1;
 
-            if (vm.Game.GameId == GameId.Dig)
+            if (vm.Game.GameId == GameId.CurseOfMonkeyIsland)
+            {
+                _sfxMode |= mode;
+                return null;
+            }
+            else if (vm.Game.GameId == GameId.Dig)
             {
                 _sfxMode |= mode;
                 if (!(vm.Game.Features.HasFlag(GameFeatures.Demo)))

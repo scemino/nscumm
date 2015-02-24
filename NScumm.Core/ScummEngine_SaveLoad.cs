@@ -209,7 +209,8 @@ namespace NScumm.Core
                 Graphics.Gdi.Fill(MainVirtScreen.Surfaces[0].Pixels, MainVirtScreen.Pitch, 0, MainVirtScreen.Width, MainVirtScreen.Height);
                 MainVirtScreen.SetDirtyRange(0, MainVirtScreen.Height);
                 UpdateDirtyScreen(MainVirtScreen);
-                UpdatePalette();
+                //UpdatePalette();
+                _gfxManager.SetPalette(_currentPalette.Colors);
                 InitScreens(sb, sh);
 
                 _completeScreenRedraw = true;

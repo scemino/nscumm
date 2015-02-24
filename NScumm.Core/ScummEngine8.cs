@@ -151,15 +151,16 @@ namespace NScumm.Core
 
         protected override int ReadWordSigned()
         {
-            return (int)ReadWord();
+            var word = BitConverter.ToInt32(_currentScriptData, CurrentPos);
+            CurrentPos += 4;
+            return word;
         }
 
-        protected override int ReadVariable(int var)
+        protected override int ReadVariable(uint var)
         {
-            Debug.WriteLine("Readvar({0})", var);
-
             if ((var & 0xF0000000) == 0)
             {
+                Debug.WriteLine("ReadVar({0})", var);
                 ScummHelper.AssertRange(0, var, Variables.Length - 1, "variable");
                 return Variables[var];
             }
@@ -167,27 +168,27 @@ namespace NScumm.Core
             if ((var & 0x80000000) != 0)
             {
                 var &= 0x7FFFFFFF;
+                Debug.WriteLine("Read BitVars({0})", var);
                 ScummHelper.AssertRange(0, var, _bitVars.Length - 1, "bit variable (reading)");
-                return _bitVars[var] ? 1 : 0;
+                return _bitVars[(int)var] ? 1 : 0;
             }
 
             if ((var & 0x40000000) != 0)
             {
                 var &= 0xFFFFFFF;
+                Debug.WriteLine("Read LocalVariables({0})", var);
                 ScummHelper.AssertRange(0, var, 25, "local variable (reading)");
                 return Slots[CurrentScript].LocalVariables[var];
             }
 
             throw new NotSupportedException("Illegal varbits (r)");
-            return -1;
         }
 
-        protected override void WriteVariable(int var, int value)
+        protected override void WriteVariable(uint var, int value)
         {
-            Debug.WriteLine("WriteVar({0}, {1})", var, value);
-
             if ((var & 0xF0000000) == 0)
             {
+                Debug.WriteLine("WriteVar({0}, {1})", var, value);
                 ScummHelper.AssertRange(0, var, Variables.Length - 1, "variable (writing)");
 
 //                if (var == VAR_CHARINC)
@@ -216,15 +217,17 @@ namespace NScumm.Core
             if ((var & 0x80000000) != 0)
             {
                 var &= 0x7FFFFFFF;
+                Debug.WriteLine("Write BitVars({0}, {1})", var, value);
                 ScummHelper.AssertRange(0, var, _bitVars.Length - 1, "bit variable (writing)");
 
-                _bitVars[var] = value != 0;
+                _bitVars[(int)var] = value != 0;
                 return;
             }
 
             if ((var & 0x40000000) != 0)
             {
                 var &= 0xFFFFFFF;
+                Debug.WriteLine("Write LocalVariables({0}, {1})", var, value);
                 ScummHelper.AssertRange(0, var, 25, "local variable (writing)");
                 Slots[CurrentScript].LocalVariables[var] = value;
                 return;
@@ -526,7 +529,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0x6D)]
-        protected override void WriteWordVar(short value)
+        protected override void WriteWordVar(int value)
         {
             base.WriteWordVar(value);
         }
@@ -544,10 +547,10 @@ namespace NScumm.Core
         }
 
         [OpCode(0x70)]
-        void DimArray8()
+        protected override void DimArray()
         {
             byte subOp = ReadByte();
-            int array = ReadWordSigned();
+            var array = ReadWord();
 
             switch (subOp)
             {
@@ -584,10 +587,11 @@ namespace NScumm.Core
         }
 
         [OpCode(0x74)]
-        void Dim2dimArray8()
+        void Dim2DimArray()
         {
             byte subOp = ReadByte();
-            int array = ReadWordSigned(), a, b;
+            var array = ReadWord();
+            int a, b;
 
             switch (subOp)
             {
@@ -616,10 +620,10 @@ namespace NScumm.Core
         }
 
         [OpCode(0x76)]
-        void ArrayOps8()
+        protected override void ArrayOps()
         {
             byte subOp = ReadByte();
-            int array = ReadWordSigned();
+            var array = ReadWord();
 
             switch (subOp)
             {
@@ -852,7 +856,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0x9C)]
-        void CursorCommand8()
+        protected override void CursorCommand()
         {
             byte subOp = ReadByte();
             int a;
@@ -945,13 +949,13 @@ namespace NScumm.Core
         }
 
         [OpCode(0xA0)]
-        protected override void WalkActorTo(int index, short x, short y)
+        protected override void WalkActorTo(int index, int x, int y)
         {
             base.WalkActorTo(index, x, y);
         }
 
         [OpCode(0xA1)]
-        protected override void PutActorAtXY(int actorIndex, short x, short y, int room)
+        protected override void PutActorAtXY(int actorIndex, int x, int y, int room)
         {
             base.PutActorAtXY(actorIndex, x, y, room);
         }
@@ -975,9 +979,9 @@ namespace NScumm.Core
         }
 
         [OpCode(0xA5)]
-        protected override void DoSentence(byte verb, ushort objectA, int tmp, ushort objectB)
+        void DoSentence8(byte verb, ushort objectA, ushort objectB)
         {
-            base.DoSentence(verb, objectA, tmp, objectB);
+            base.DoSentence(verb, objectA, 0, objectB);
         }
 
         [OpCode(0xA6)]
@@ -999,7 +1003,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0xAA)]
-        void ResourceRoutines8()
+        protected override void ResourceRoutines()
         {
             byte subOp = ReadByte();
             int resid = Pop();
@@ -1069,7 +1073,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0xAB)]
-        void RoomOps8()
+        protected override void RoomOps()
         {
             byte subOp = ReadByte();
             int a, b, c, d, e;
@@ -1143,7 +1147,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0xAC)]
-        void ActorOps8()
+        protected override void ActorOps()
         {
             byte subOp = ReadByte();
             int i, j;
@@ -1320,7 +1324,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0xAE)]
-        void VerbOps8()
+        protected override void VerbOps()
         {
             byte subOp = ReadByte();
 
@@ -1372,7 +1376,7 @@ namespace NScumm.Core
                     KillVerb(_curVerbSlot);
                     break;
                 case 0x99:      // SO_VERB_NAME Set verb name
-                    Verbs[_curVerbSlot].Text = null;
+                    Verbs[_curVerbSlot].Text = ReadCharacters();
                     vs.Type = VerbType.Text;
                     vs.ImgIndex = 0;
                     break;
@@ -1665,7 +1669,7 @@ namespace NScumm.Core
             base.PickOneOfDefault(i, args, def);
         }
 
-        [OpCode(0xCC)]
+        [OpCode(0xCD)]
         protected override void IsAnyOf(int value, int[] args)
         {
             base.IsAnyOf(value, args);

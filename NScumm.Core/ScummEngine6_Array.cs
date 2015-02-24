@@ -145,13 +145,13 @@ namespace NScumm.Core
             return -1;
         }
 
-        ArrayHeader GetArray(int array)
+        ArrayHeader GetArray(uint array)
         {
             var data = _strings[ReadVariable(array)];
             return data != null ? new ArrayHeader(data) : null;
         }
 
-        public void WriteArray(int array, int idx, int @base, int value)
+        public void WriteArray(uint array, int idx, int @base, int value)
         {
 //            Debug.WriteLine("WriteArray: {0} {1} {2} {3}", array, idx, @base, value);
             var ah = GetArray(array);
@@ -180,7 +180,7 @@ namespace NScumm.Core
             }
         }
 
-        protected ArrayHeader DefineArray(int array, ArrayType type, int dim2, int dim1)
+        protected ArrayHeader DefineArray(uint array, ArrayType type, int dim2, int dim1)
         {
 //            Debug.WriteLine("DefineArray: {0} {1} {2} {3}", array, type, dim2, dim1);
             Debug.Assert(0 <= (int)type && (int)type <= 5);
@@ -221,7 +221,7 @@ namespace NScumm.Core
             return ah;
         }
 
-        protected void NukeArray(int a)
+        protected void NukeArray(uint a)
         {
             var data = ReadVariable(a);
 
@@ -231,7 +231,7 @@ namespace NScumm.Core
             WriteVariable(a, 0);
         }
 
-        public int ReadArray(int array, int idx, int @base)
+        public int ReadArray(uint array, int idx, int @base)
         {
             var ah = GetArray(array);
 

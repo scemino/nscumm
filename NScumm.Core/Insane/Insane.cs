@@ -1615,7 +1615,7 @@ namespace NScumm.Core.Insane
         int _speed;
         bool _insaneIsRunning;
 
-        int _numberArray;
+        uint _numberArray;
         int _objArray1Idx2;
         int[] _objArray1 = new int[101];
         int _objArray2Idx;

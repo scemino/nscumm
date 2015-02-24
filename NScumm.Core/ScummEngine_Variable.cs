@@ -132,32 +132,32 @@ namespace NScumm.Core
 
         protected void GetResult()
         {
-            _resultVarIndex = ReadWordSigned();
+            _resultVarIndex = (int)ReadWord();
             if ((_resultVarIndex & 0x2000) == 0x2000)
             {
-                var a = ReadWordSigned();
+                var a = ReadWord();
                 if ((a & 0x2000) == 0x2000)
                 {
-                    _resultVarIndex += ReadVariable(a & ~0x2000);
+                    _resultVarIndex += ReadVariable((uint)(a & ~0x2000));
                 }
                 else
                 {
-                    _resultVarIndex += (a & 0xFFF);
+                    _resultVarIndex += (int)(a & 0xFFF);
                 }
                 _resultVarIndex &= ~0x2000;
             }
         }
 
-        protected virtual int ReadVariable(int var)
+        protected virtual int ReadVariable(uint var)
         {
             if (((var & 0x2000) != 0) && (Game.Version <= 5))
             {
-                var a = ReadWordSigned();
+                var a = ReadWord();
                 if ((a & 0x2000) == 0x2000)
-                    var += ReadVariable(a & ~0x2000);
+                    var += (uint)ReadVariable((uint)(a & ~0x2000));
                 else
                     var += a & 0xFFF;
-                var &= ~0x2000;
+                var = (uint)(var & ~0x2000);
             }
 
             if ((var & 0xF000) == 0)
@@ -176,7 +176,7 @@ namespace NScumm.Core
 //                Debug.Write(string.Format("ReadVariable({0}) => ", var));
                 if (_game.Version <= 3)
                 {
-                    int bit = var & 0xF;
+                    int bit = (int)(var & 0xF);
                     var = (var >> 4) & 0xFF;
 
                     ScummHelper.AssertRange(0, var, _resManager.NumVariables - 1, "variable (reading)");
@@ -186,7 +186,7 @@ namespace NScumm.Core
 
                 ScummHelper.AssertRange(0, var, _bitVars.Length - 1, "variable (reading)");
 //                Debug.WriteLine(_bitVars[var]);
-                return _bitVars[var] ? 1 : 0;
+                return _bitVars[(int)var] ? 1 : 0;
             }
 
             if ((var & 0x4000) == 0x4000)
@@ -225,7 +225,7 @@ namespace NScumm.Core
 
         protected int GetVar()
         {
-            return ReadVariable(ReadWordSigned());
+            return ReadVariable(ReadWord());
         }
 
         protected virtual int ReadWordSigned()
@@ -245,10 +245,10 @@ namespace NScumm.Core
 
         protected void SetResult(int value)
         {
-            WriteVariable(_resultVarIndex, value);
+            WriteVariable((uint)_resultVarIndex, value);
         }
 
-        protected virtual void WriteVariable(int index, int value)
+        protected virtual void WriteVariable(uint index, int value)
         {
             //            Console.WriteLine("SetResult({0},{1})", index, value);
             if ((index & 0xF000) == 0)
@@ -262,7 +262,7 @@ namespace NScumm.Core
             {
                 if (_game.Version <= 3)
                 {
-                    var bit = index & 0xF;
+                    var bit = (int)(index & 0xF);
                     index = (index >> 4) & 0xFF;
                     ScummHelper.AssertRange(0, index, _resManager.NumVariables - 1, "variable (writing)");
                     if (value > 0)
@@ -275,7 +275,7 @@ namespace NScumm.Core
                     index &= 0x7FFF;
 
                     ScummHelper.AssertRange(0, index, _bitVars.Length - 1, "bit variable (writing)");
-                    _bitVars[index] = value != 0;
+                    _bitVars[(int)index] = value != 0;
                 }
                 return;
             }

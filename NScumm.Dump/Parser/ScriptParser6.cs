@@ -27,12 +27,9 @@ namespace NScumm.Dump
 {
     partial class ScriptParser6: ScriptParser
     {
-        readonly Stack<int> stack;
-
         public ScriptParser6(GameInfo game)
             : base(game)
         {
-            stack = new Stack<int>();
             KnownVariables = new Dictionary<int, string>();
         }
 

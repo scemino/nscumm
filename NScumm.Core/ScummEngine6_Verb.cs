@@ -37,7 +37,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0x9e)]
-        protected void VerbOps()
+        protected virtual void VerbOps()
         {
             var subOp = ReadByte();
             if (subOp == 196)

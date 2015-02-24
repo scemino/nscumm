@@ -259,7 +259,7 @@ namespace NScumm.Core
         protected int ConvertMessageToString(byte[] src, byte[] dst, int dstPos)
         {
             uint num = 0;
-            int val;
+            uint val;
             byte chr;
             int dstPosBegin = dstPos;
 
@@ -286,7 +286,7 @@ namespace NScumm.Core
                     }
                     else
                     {
-                        val = src[num] | ((int)src[num + 1] << 8);
+                        val = (Game.Version == 8) ? BitConverter.ToUInt32(src, (int)num) : BitConverter.ToUInt16(src, (int)num);
                         switch (chr)
                         {
                             case 4:
@@ -320,7 +320,7 @@ namespace NScumm.Core
                             default:
                                 throw new NotSupportedException(string.Format("convertMessageToString(): string escape sequence {0} unknown", chr));
                         }
-                        num += 2;
+                        num += (Game.Version == 8) ? (uint)4 : 2;
                     }
                 }
                 else
@@ -342,7 +342,7 @@ namespace NScumm.Core
             return src;
         }
 
-        int ConvertNameMessage(byte[] dst, int dstPos, int var)
+        int ConvertNameMessage(byte[] dst, int dstPos, uint var)
         {
             var num = ReadVariable(var);
             if (num != 0)
@@ -356,7 +356,7 @@ namespace NScumm.Core
             return 0;
         }
 
-        int ConvertVerbMessage(byte[] dst, int dstPos, int var)
+        int ConvertVerbMessage(byte[] dst, int dstPos, uint var)
         {
             var num = ReadVariable(var);
             if (num != 0)
@@ -372,7 +372,7 @@ namespace NScumm.Core
             return 0;
         }
 
-        int ConvertIntMessage(Array dst, int dstPos, int var)
+        int ConvertIntMessage(Array dst, int dstPos, uint var)
         {
             var num = ReadVariable(var);
             var src = Encoding.ASCII.GetBytes(num.ToString());
@@ -380,16 +380,16 @@ namespace NScumm.Core
             return src.Length;
         }
 
-        int ConvertStringMessage(byte[] dst, int dstPos, int var)
+        int ConvertStringMessage(byte[] dst, int dstPos, uint var)
         {
             if ((Game.Version == 3) || (_game.Version >= 6))
             {
-                var = ReadVariable(var);
+                var = (uint)ReadVariable(var);
             }
 
             if (var != 0)
             {
-                var ptr = GetStringAt(var);
+                var ptr = GetStringAt((int)var);
                 if (ptr != null)
                 {
                     return ConvertMessageToString(ptr, dst, dstPos);

@@ -212,7 +212,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0xcd)]
-        protected void StampObject(int obj, short x, short y, int state)
+        protected void StampObject(int obj, int x, int y, int state)
         {
             if (Game.Version >= 7 && obj < 30)
             {
@@ -239,7 +239,7 @@ namespace NScumm.Core
 
             if (x != -1)
             {
-                _objs[objnum].Position = new Point((short)(x * 8), (short)(y * 8));
+                _objs[objnum].Position = new Point(x * 8, y * 8);
             }
 
             PutState(obj, state);

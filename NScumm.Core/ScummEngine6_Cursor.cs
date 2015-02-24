@@ -45,7 +45,7 @@ namespace NScumm.Core
             };
 
         [OpCode(0x6b)]
-        protected void CursorCommand()
+        protected virtual void CursorCommand()
         {
             var subOp = ReadByte();
             switch (subOp)

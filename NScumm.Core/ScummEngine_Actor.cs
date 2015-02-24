@@ -315,7 +315,8 @@ namespace NScumm.Core
                 if (Gdi.TestGfxUsageBit(p.X / 8, i) && !GetClass(i, ObjectClass.Untouchable) &&
                     p.Y >= Actors[i].Top && p.Y <= Actors[i].Bottom)
                 {
-                    return i;
+                    if (i != Variables[VariableEgo.Value])
+                        return i;
                 }
             }
 

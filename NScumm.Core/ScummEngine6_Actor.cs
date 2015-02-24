@@ -84,13 +84,13 @@ namespace NScumm.Core
         }
 
         [OpCode(0x7e)]
-        protected virtual void WalkActorTo(int index, short x, short y)
+        protected virtual void WalkActorTo(int index, int x, int y)
         {
             Actors[index].StartWalk(new Point(x, y), -1);
         }
 
         [OpCode(0x7f)]
-        protected virtual void PutActorAtXY(int actorIndex, short x, short y, int room)
+        protected virtual void PutActorAtXY(int actorIndex, int x, int y, int room)
         {
             var actor = Actors[actorIndex];
             if (room == 0xFF || room == 0x7FFFFFFF)
@@ -205,7 +205,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0x9d)]
-        protected void ActorOps()
+        protected virtual void ActorOps()
         {
             var subOp = ReadByte();
             if (subOp == 197)
@@ -373,7 +373,7 @@ namespace NScumm.Core
         [OpCode(0x9f)]
         protected virtual void GetActorFromXY(int x, int y)
         {
-            Push(GetActorFromPos(new Point((short)x, (short)y)));
+            Push(GetActorFromPos(new Point(x, y)));
         }
 
         [OpCode(0xa2)]

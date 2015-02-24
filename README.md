@@ -28,8 +28,14 @@ with game:
 
 `DIG.LA0` for The Dig
 
+`COMI.LA0` The Curse of Monkey Island
+
 Supported Games
 ---------------
+
+### SCUMM 8
+
+The Curse of Monkey Island
 
 ### SCUMM 7
 

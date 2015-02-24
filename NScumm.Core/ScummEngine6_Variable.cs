@@ -51,7 +51,7 @@ namespace NScumm.Core
         [OpCode(0x03)]
         protected virtual void PushWordVar()
         {
-            var v = ReadWordSigned();
+            var v = ReadWord();
             Push(ReadVariable(v));
 //            Console.WriteLine("Push({0}:{1})", v, _vmStack.Peek());
         }
@@ -65,7 +65,7 @@ namespace NScumm.Core
         [OpCode(0x07)]
         protected virtual void WordArrayRead(int @base)
         {
-            Push(ReadArray(ReadWordSigned(), 0, @base));
+            Push(ReadArray(ReadWord(), 0, @base));
         }
 
         [OpCode(0x0a)]
@@ -77,11 +77,11 @@ namespace NScumm.Core
         [OpCode(0x0b)]
         protected virtual void WordArrayIndexedRead(int index, int @base)
         {
-            Push(ReadArray(ReadWordSigned(), index, @base));
+            Push(ReadArray(ReadWord(), index, @base));
         }
 
         [OpCode(0x42)]
-        protected void WriteByteVar(short value)
+        protected void WriteByteVar(int value)
         {
             var index = ReadByte();
 //            Debug.WriteLine("WriteByteVar {0} {1}", index, value);
@@ -89,10 +89,10 @@ namespace NScumm.Core
         }
 
         [OpCode(0x43)]
-        protected virtual void WriteWordVar(short value)
+        protected virtual void WriteWordVar(int value)
         {
-            var index = ReadWordSigned();
-//            Debug.WriteLine("WriteWordVar {0} {1}", index, value);
+            var index = ReadWord();
+            Debug.WriteLine("WriteWordVar {0} {1}", index, value);
             WriteVariable(index, value);
         }
 
@@ -105,7 +105,7 @@ namespace NScumm.Core
         [OpCode(0x47)]
         protected virtual void WordArrayWrite(int @base, int value)
         {
-            WriteArray(ReadWordSigned(), 0, @base, value);
+            WriteArray(ReadWord(), 0, @base, value);
         }
 
         [OpCode(0x4a)]
@@ -117,7 +117,7 @@ namespace NScumm.Core
         [OpCode(0x4b)]
         protected virtual void WordArrayIndexedWrite(int index, int @base, int value)
         {
-            WriteArray(ReadWordSigned(), index, @base, value);
+            WriteArray(ReadWord(), index, @base, value);
         }
 
         [OpCode(0x4e)]
@@ -130,7 +130,7 @@ namespace NScumm.Core
         [OpCode(0x4f)]
         protected virtual void WordVarInc()
         {
-            var var = ReadWordSigned();
+            var var = ReadWord();
             WriteVariable(var, ReadVariable(var) + 1);
         }
 
@@ -144,7 +144,7 @@ namespace NScumm.Core
         [OpCode(0x53)]
         protected virtual void WordArrayInc(int @base)
         {
-            var var = ReadWordSigned();
+            var var = ReadWord();
             WriteArray(var, 0, @base, ReadArray(var, 0, @base) + 1);
         }
 
@@ -158,7 +158,7 @@ namespace NScumm.Core
         [OpCode(0x57)]
         protected virtual void WordVarDec()
         {
-            var var = ReadWordSigned();
+            var var = ReadWord();
             WriteVariable(var, ReadVariable(var) - 1);
         }
 
@@ -172,15 +172,15 @@ namespace NScumm.Core
         [OpCode(0x5b)]
         protected virtual void WordArrayDec(int @base)
         {
-            var var = ReadWordSigned();
+            var var = ReadWord();
             WriteArray(var, 0, @base, ReadArray(var, 0, @base) - 1);
         }
 
         [OpCode(0xA4)]
-        protected void ArrayOps()
+        protected virtual void ArrayOps()
         {
             var subOp = ReadByte();
-            var array = ReadWordSigned();
+            var array = ReadWord();
 
             switch (subOp)
             {
@@ -228,10 +228,10 @@ namespace NScumm.Core
         }
 
         [OpCode(0xbc)]
-        protected void DimArray()
+        protected virtual void DimArray()
         {
             var subOp = ReadByte();
-            var array = ReadWordSigned();
+            var array = ReadWord();
             ArrayType type;
             switch (subOp)
             {
@@ -287,16 +287,16 @@ namespace NScumm.Core
                     throw new NotSupportedException(string.Format("Dim2DimArray: default case {0}", subOp));
             }
 
-            DefineArray(ReadWordSigned(), type, dim2, dim1);
+            DefineArray(ReadWord(), type, dim2, dim1);
         }
 
         [OpCode(0xd4)]
         protected void Shuffle(int a, int b)
         {
-            ShuffleArray(ReadWordSigned(), a, b);
+            ShuffleArray(ReadWord(), a, b);
         }
 
-        void ShuffleArray(int num, int minIdx, int maxIdx)
+        void ShuffleArray(uint num, int minIdx, int maxIdx)
         {
             int range = maxIdx - minIdx;
             int count = range * 2;

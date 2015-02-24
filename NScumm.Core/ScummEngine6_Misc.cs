@@ -286,8 +286,8 @@ namespace NScumm.Core
             Variables[VariableTimeDateHour] = dt.Hour;
             Variables[VariableTimeDateMinute] = dt.Minute;
 
-            //if (Game.Version == 8)
-            //    Variables[VariableTimeDateSecond.Value] = dt.Second;
+            if (Game.Version == 8)
+                Variables[VariableTimeDateSecond.Value] = dt.Second;
         }
 
         [OpCode(0xe1)]

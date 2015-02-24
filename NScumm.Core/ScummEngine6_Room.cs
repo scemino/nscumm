@@ -26,7 +26,7 @@ namespace NScumm.Core
     partial class ScummEngine6
     {
         [OpCode(0x9c)]
-        protected void RoomOps()
+        protected virtual void RoomOps()
         {
             var subOp = ReadByte();
 
@@ -204,7 +204,7 @@ namespace NScumm.Core
 
             if (x != -1 && x != 0x7FFFFFFF)
             {
-                a.StartWalk(new NScumm.Core.Graphics.Point((short)x, (short)y), -1);
+                a.StartWalk(new NScumm.Core.Graphics.Point(x, y), -1);
             }
         }
 
@@ -245,7 +245,7 @@ namespace NScumm.Core
         [OpCode(0xe3)]
         protected void PickVarRandom(int[] args)
         {
-            var value = ReadWordSigned();
+            var value = ReadWord();
 
             if (ReadVariable(value) == 0)
             {

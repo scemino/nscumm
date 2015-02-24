@@ -40,14 +40,30 @@ namespace NScumm.Core.IO
 
         protected override void ReadVerbTable(ObjectData data, int size)
         {
-            var tableLength = (size - 4) / 8;
-            for (var i = 0; i < tableLength; i++)
+            var pos = _reader.BaseStream.Position - 8;
+            int id;
+            do
             {
-                var id = _reader.ReadInt32();
-                var offset = _reader.ReadInt32();
-                data.ScriptOffsets.Add(id, offset);
+                id = _reader.ReadInt32();
+                if (id != 0)
+                {
+                    var offset = _reader.ReadInt32();
+                    if (!data.ScriptOffsets.ContainsKey(id))
+                    {
+                        data.ScriptOffsets.Add(id, offset);
+                    }
+                }
             }
-            _reader.ReadByte();
+            while(id != 0);
+
+            var realCodeOffset = _reader.BaseStream.Position - pos;
+            var virtualCodeOffset = (8 * data.ScriptOffsets.Count + 4 + 8);
+            var diff = (int)(realCodeOffset - virtualCodeOffset);
+            foreach (var key in data.ScriptOffsets.Keys.ToList())
+            {
+                data.ScriptOffsets[key] -= diff;
+            }
+            data.Script.Offset = virtualCodeOffset - 8;
         }
 
         protected override int ReadNumBoxes()
@@ -70,7 +86,6 @@ namespace NScumm.Core.IO
             box.Flags = (BoxFlags)_reader.ReadInt32();
             box.ScaleSlot = _reader.ReadInt32();
             box.Scale = _reader.ReadInt32();
-            _reader.ReadInt32();
             _reader.ReadInt32();
             return box;
         }
@@ -174,11 +189,48 @@ namespace NScumm.Core.IO
                 throw new NotSupportedException("OFFS block was expected.");
             _reader.BaseStream.Seek(chunk.Size - 8, SeekOrigin.Current);
 
-            chunk = ChunkIterator5.ReadChunk(_reader);
-            if (chunk.Tag != "SMAP")
+            var smapChunk = ChunkIterator5.ReadChunk(_reader);
+            if (smapChunk.Tag != "SMAP")
                 throw new NotSupportedException("SMAP block was expected.");
 
-            room.Image = new ImageData{ Data = _reader.ReadBytes((int)(chunk.Size - 8)) };
+            List<Chunk> zplaneChunks = new List<Chunk>();
+            var it = CreateChunkIterator(smapChunk.Size - 8);
+            while (it.MoveNext())
+            {
+                switch (it.Current.Tag)
+                {
+                    case "ZPLN":
+                        chunk = ChunkIterator5.ReadChunk(_reader);
+                        if (chunk.Tag != "WRAP")
+                            throw new NotSupportedException("WRAP block was expected.");
+                        it = CreateChunkIterator(chunk.Size - 8);
+                        break;
+                    case "ZSTR":
+                        zplaneChunks.Add(it.Current);
+                        break;
+                }
+            }
+
+            if (zplaneChunks.Count < 2)
+            {
+                // Read smap
+                _reader.BaseStream.Seek(smapChunk.Offset, SeekOrigin.Begin);
+                room.Image = new ImageData{ Data = _reader.ReadBytes((int)(smapChunk.Size - 8)) };
+            }
+            else
+            {
+                _reader.BaseStream.Seek(smapChunk.Offset, SeekOrigin.Begin);
+                var zplanesSize = 0;
+                for (int i = 1; i < zplaneChunks.Count; i++)
+                {
+                    zplanesSize += (int)zplaneChunks[i].Size;
+                }
+                room.Image = new ImageData{ Data = _reader.ReadBytes((int)(smapChunk.Size - 8 - zplanesSize)) };
+                for (int i = 1; i < zplaneChunks.Count; i++)
+                {
+                    room.Image.ZPlanes.Add(new ZPlane(_reader.ReadBytes((int)zplaneChunks[i].Size), new int?[0]));
+                }
+            }
         }
 
         protected override ImageData ReadBomp(long size)

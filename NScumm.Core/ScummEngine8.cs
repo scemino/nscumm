@@ -2062,7 +2062,87 @@ namespace NScumm.Core
         /// <param name="endColor">End color.</param>
         void DesaturatePalette(int hueScale, int satScale, int lightScale, int startColor, int endColor)
         {
-            throw new NotImplementedException("DesaturatePalette");
+            if (startColor <= endColor)
+            {
+                for (var i = startColor; i <= endColor; i++)
+                {
+                    int R = _darkenPalette.Colors[i].R;
+                    int G = _darkenPalette.Colors[i].G;
+                    int B = _darkenPalette.Colors[i].B;
+
+                    // RGB to HLS (Foley and VanDam)
+
+                    int min = Math.Min(R, Math.Min(G, B));
+                    int max = Math.Max(R, Math.Max(G, B));
+                    int diff = (max - min);
+                    int sum = (max + min);
+
+                    if (diff != 0)
+                    {
+                        int H, S, L;
+
+                        if (sum <= 255)
+                            S = 255 * diff / sum;
+                        else
+                            S = 255 * diff / (255 * 2 - sum);
+
+                        if (R == max)
+                            H = 60 * (G - B) / diff;
+                        else if (G == max)
+                            H = 120 + 60 * (B - R) / diff;
+                        else
+                            H = 240 + 60 * (R - G) / diff;
+
+                        if (H < 0)
+                            H = H + 360;
+
+                        // Scale the result
+
+                        H = (H * hueScale) / 255;
+                        S = (S * satScale) / 255;
+                        L = (sum * lightScale) / 255;
+
+                        // HLS to RGB (Foley and VanDam)
+
+                        int m1, m2;
+                        if (L <= 255)
+                            m2 = L * (255 + S) / (255 * 2);
+                        else
+                            m2 = L * (255 - S) / (255 * 2) + S;
+
+                        m1 = L - m2;
+
+                        R = HSL2RGBHelper(m1, m2, H + 120);
+                        G = HSL2RGBHelper(m1, m2, H);
+                        B = HSL2RGBHelper(m1, m2, H - 120);
+                    }
+                    else
+                    {
+                        // Maximal color = minimal color -> R=G=B -> it's a grayscale.
+                        R = G = B = (R * lightScale) / 255;
+                    }
+
+                    CurrentPalette.Colors[i] = Color.FromRgb(R, G, B);
+                }
+
+                SetDirtyColors(startColor, endColor);
+            }
+        }
+
+        static int HSL2RGBHelper(int n1, int n2, int hue)
+        {
+            if (hue > 360)
+                hue = hue - 360;
+            else if (hue < 0)
+                hue = hue + 360;
+
+            if (hue < 60)
+                return n1 + (n2 - n1) * hue / 60;
+            if (hue < 180)
+                return n2;
+            if (hue < 240)
+                return n1 + (n2 - n1) * (240 - hue) / 60;
+            return n1;
         }
     }
 }

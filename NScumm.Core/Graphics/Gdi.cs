@@ -127,16 +127,16 @@ namespace NScumm.Core.Graphics
         {
             // Check whether lights are turned on or not
             var lightsOn = _vm.IsLightOn();
-            DrawBitmap(img, vs, x, y, width, height, stripnr, numstrip, roomWidth, flags, lightsOn);
+            DrawBitmap(img, vs, new Point(x, y), width, height, stripnr, numstrip, roomWidth, flags, lightsOn);
         }
 
-        public void DrawBitmap(ImageData img, VirtScreen vs, int x, int y, int width, int height, int stripnr, int numstrip, int roomWidth, DrawBitmaps flags, bool isLightOn)
+        public void DrawBitmap(ImageData img, VirtScreen vs, Point p, int width, int height, int stripnr, int numstrip, int roomWidth, DrawBitmaps flags, bool isLightOn)
         {
-            int sx = x - vs.XStart / 8;
+            int sx = p.X - vs.XStart / 8;
             if (sx < 0)
             {
                 numstrip -= -sx;
-                x += -sx;
+                p.X += -sx;
                 stripnr += -sx;
                 sx = 0;
             }
@@ -146,25 +146,25 @@ namespace NScumm.Core.Graphics
             // It was added as a kind of hack to fix some corner cases, but it compares
             // the room width to the virtual screen width; but the former should always
             // be bigger than the latter (except for MM NES, maybe)... strange
-            int limit = Math.Max(roomWidth, vs.Width) / 8 - x;
+            int limit = Math.Max(roomWidth, vs.Width) / 8 - p.X;
             if (limit > numstrip)
                 limit = numstrip;
             if (limit > NumStrips - sx)
                 limit = NumStrips - sx;
 
-            for (int k = 0; k < limit; ++k, ++stripnr, ++sx, ++x)
+            for (int k = 0; k < limit; ++k, ++stripnr, ++sx, ++p.X)
             {
-                if (y < vs.TDirty[sx])
-                    vs.TDirty[sx] = y;
+                if (p.Y < vs.TDirty[sx])
+                    vs.TDirty[sx] = p.Y;
 
-                if (y + height > vs.BDirty[sx])
-                    vs.BDirty[sx] = y + height;
+                if (p.Y + height > vs.BDirty[sx])
+                    vs.BDirty[sx] = p.Y + height;
 
                 // In the case of a double buffered virtual screen, we draw to
                 // the backbuffer, otherwise to the primary surface memory.
                 var surface = vs.HasTwoBuffers ? vs.Surfaces[1] : vs.Surfaces[0];
                 var navDst = new PixelNavigator(surface);
-                navDst.GoTo(x * 8, y);
+                navDst.GoTo(p.X * 8, p.Y);
 
                 bool transpStrip;
                 using (var smapReader = new BinaryReader(new MemoryStream(img.Data)))
@@ -179,14 +179,14 @@ namespace NScumm.Core.Graphics
                 if (vs.HasTwoBuffers)
                 {
                     var navFrontBuf = new PixelNavigator(vs.Surfaces[0]);
-                    navFrontBuf.GoTo(x * 8, y);
+                    navFrontBuf.GoTo(p.X * 8, p.Y);
                     if (isLightOn)
                         Copy8Col(navFrontBuf, navDst, height);
                     else
                         Clear8Col(navFrontBuf, height);
                 }
 
-                DecodeMask(x, y, height, stripnr, img.ZPlanes, transpStrip, flags);
+                DecodeMask(p.X, p.Y, height, stripnr, img.ZPlanes, transpStrip, flags);
             }
         }
 

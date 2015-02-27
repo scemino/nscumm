@@ -43,7 +43,8 @@ namespace NScumm.Core
         protected int _screenStartStrip;
         protected int _screenEndStrip;
 
-        const int Scrolltime = 500;  // ms scrolling is supposed to take
+        const int Scrolltime = 500;
+        // ms scrolling is supposed to take
         const int PictureDelay = 20;
         const int FadeDelay = 4;
         // 1/4th of a jiffie
@@ -782,17 +783,21 @@ namespace NScumm.Core
         int GetNumZBuffers()
         {
             int numZBuffer;
-            if (Game.Version >= 5)
-            {
-                numZBuffer = roomData.NumZBuffer;
-            }
-            else if (Game.Version <= 3)
+            if (Game.Version <= 3)
             {
                 numZBuffer = 2;
             }
-            else
+            else if (Game.Version < 5)
+            {
+                numZBuffer = roomData.NumZBuffer;
+            }
+            else if (Game.Version < 8)
             {
                 numZBuffer = roomData.Image.ZPlanes.Count + 1;
+            }
+            else
+            {
+                numZBuffer = roomData.Header.NumZBuffer + 1;
             }
             return numZBuffer;
         }

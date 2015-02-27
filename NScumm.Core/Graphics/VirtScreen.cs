@@ -34,7 +34,7 @@ namespace NScumm.Core.Graphics
         /// This together with bdirty is used to do efficient redrawing of
         /// the screen.
         /// </summary>
-        int[] tdirty = new int[80 + 1];
+        int[] tdirty;
 
         /// <summary>
         /// Array containing for each visible strip of this virtual screen the
@@ -43,7 +43,7 @@ namespace NScumm.Core.Graphics
         /// This together with tdirty is used to do efficient redrawing of
         /// the screen.
         /// </summary>
-        int[] bdirty = new int[80 + 1];
+        int[] bdirty;
 
         #endregion
 
@@ -97,6 +97,9 @@ namespace NScumm.Core.Graphics
             if (numBuffers <= 0)
                 throw new ArgumentOutOfRangeException("numBuffers", numBuffers, "The number of buffers should be positive.");
 
+            var numStrips = width / 8;
+            tdirty = new int[numStrips + 1];
+            bdirty = new int[numStrips + 1];
             TopLine = top;
             _surfaces = new Surface[numBuffers];
             _roSurfaces = new ReadOnlyCollection<Surface>(_surfaces);
@@ -115,7 +118,7 @@ namespace NScumm.Core.Graphics
 
         public void SetDirtyRange(int top, int bottom)
         {
-            for (int i = 0; i < 80 + 1; i++)
+            for (int i = 0; i < tdirty.Length; i++)
             {
                 tdirty[i] = top;
                 bdirty[i] = bottom;

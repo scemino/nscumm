@@ -47,7 +47,7 @@ namespace NScumm.Dump
         public void DumpImages(ResourceManager index)
         {
             foreach (var room in index.Rooms)
-            {
+                {
                 if (room.Image == null)
                     continue;
 
@@ -57,7 +57,7 @@ namespace NScumm.Dump
                 try
                 {
                     var gdi = new Gdi(null, Game);
-                    gdi.NumStrips = Game.Version == 8 ? 80 : 40;
+                    gdi.NumStrips = Game.Version == 8 ? 160 : 80;
                     gdi.IsZBufferEnabled = false;
                     gdi.RoomPalette = CreatePalette();
 
@@ -113,7 +113,7 @@ namespace NScumm.Dump
             gdi.IsZBufferEnabled = false;
             if (room.Header.Height > 0)
             {
-                gdi.DrawBitmap(room.Image, screen, 0, 0, room.Header.Width, room.Header.Height, 0, numStrips, room.Header.Width, 0, true);
+                gdi.DrawBitmap(room.Image, screen, new Point(), room.Header.Width, room.Header.Height, 0, numStrips, room.Header.Width, 0, true);
 
                 using (var bmpRoom = ToBitmap(room, screen))
                 {
@@ -223,7 +223,7 @@ namespace NScumm.Dump
                         else
                         {
                             var screen = new VirtScreen(0, obj.Width, obj.Height, PixelFormat.Indexed8, 2);
-                            gdi.DrawBitmap(img, screen, 0, 0, obj.Width, obj.Height, 0, obj.Width / 8, room.Header.Width, DrawBitmaps.None, true);
+                            gdi.DrawBitmap(img, screen, new Point(0, 0), obj.Width, obj.Height, 0, obj.Width / 8, room.Header.Width, DrawBitmaps.None, true);
                             using (var bmp = ToBitmap(room, screen))
                             {
                                 bmp.Save("obj_" + obj.Number + "_" + (++j) + ".png");

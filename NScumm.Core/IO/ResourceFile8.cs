@@ -211,7 +211,7 @@ namespace NScumm.Core.IO
                 }
             }
 
-            if (zplaneChunks.Count < 2)
+            if (zplaneChunks.Count == 0)
             {
                 // Read smap
                 _reader.BaseStream.Seek(smapChunk.Offset, SeekOrigin.Begin);
@@ -221,16 +221,41 @@ namespace NScumm.Core.IO
             {
                 _reader.BaseStream.Seek(smapChunk.Offset, SeekOrigin.Begin);
                 var zplanesSize = 0;
-                for (int i = 1; i < zplaneChunks.Count; i++)
+                for (int i = 0; i < zplaneChunks.Count; i++)
                 {
                     zplanesSize += (int)zplaneChunks[i].Size;
                 }
                 room.Image = new ImageData{ Data = _reader.ReadBytes((int)(smapChunk.Size - 8 - zplanesSize)) };
-                for (int i = 1; i < zplaneChunks.Count; i++)
+                for (int i = 0; i < zplaneChunks.Count; i++)
                 {
-                    room.Image.ZPlanes.Add(new ZPlane(_reader.ReadBytes((int)zplaneChunks[i].Size), new int?[0]));
+                    room.Image.ZPlanes.Add(ReadZPlane());
                 }
             }
+        }
+
+        ZPlane ReadZPlane()
+        {
+            var chunk = ChunkIterator5.ReadChunk(_reader);
+            if (chunk.Tag != "ZSTR")
+                throw new NotSupportedException("ZSTR block was expected.");
+
+            var chunkWrap = ChunkIterator5.ReadChunk(_reader);
+            if (chunkWrap.Tag != "WRAP")
+                throw new NotSupportedException("WRAP block was expected.");
+
+            var chunkOffs = ChunkIterator5.ReadChunk(_reader);
+            if (chunkOffs.Tag != "OFFS")
+                throw new NotSupportedException("OFFS block was expected.");
+
+            var num = (chunkOffs.Size - 8) / 4;
+            var offs = new int?[num];
+            for (int i = 0; i < num; i++)
+            {
+                offs[i] = (int)(_reader.ReadInt32() - chunkOffs.Size);
+            }
+
+            var data = _reader.ReadBytes((int)(chunkWrap.Size - 8 - chunkOffs.Size));
+            return new ZPlane(data, offs);
         }
 
         protected override ImageData ReadBomp(long size)
@@ -260,13 +285,15 @@ namespace NScumm.Core.IO
         protected override void ReadImageHeader(ObjectData od)
         {
             // image header
-            var name = _reader.ReadBytes(32);
+            var name = _reader.ReadBytes(40);
             var text = ResourceIndex8.DataToString(name);
-            var id = ResourceIndex.ObjectIDMap[text];
-            od.Number = (ushort)id;
+            if (ResourceIndex.ObjectIDMap.ContainsKey(text))
+            {
+                var id = ResourceIndex.ObjectIDMap[text];
+                od.Number = (ushort)id;
+            }
+
             od.Name = name;
-            _reader.ReadInt32();
-            _reader.ReadInt32();
             var version = _reader.ReadUInt32();
             var numImnn = _reader.ReadInt32();
             od.Position = new Point(_reader.ReadInt32(), _reader.ReadInt32());

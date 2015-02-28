@@ -458,7 +458,7 @@ namespace NScumm.Core
             for (int i = 1; i <= roomData.Scales.Length; i++)
             {
                 var scale = roomData.Scales[i - 1];
-                if (scale.Scale1 != 0 || scale.Y1 != 0 || scale.Scale2 != 0 || scale.Y2 != 0)
+                if (Game.Version == 8 || scale.Scale1 != 0 || scale.Y1 != 0 || scale.Scale2 != 0 || scale.Y2 != 0)
                 {
                     SetScaleSlot(i, 0, scale.Y1, scale.Scale1, 0, scale.Y2, scale.Scale2);
                 }
@@ -479,6 +479,7 @@ namespace NScumm.Core
                     Lry = box.Lry,
                     Mask = box.Mask,
                     Scale = box.Scale,
+                    ScaleSlot = box.ScaleSlot,
                     Ulx = box.Ulx,
                     Uly = box.Uly,
                     Urx = box.Urx,

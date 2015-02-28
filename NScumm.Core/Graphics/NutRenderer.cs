@@ -77,12 +77,10 @@ namespace NScumm.Core.Graphics
             }
         }
 
-        public void DrawChar(Surface s, char c, int x, int y, byte color)
+        public void DrawChar(PixelNavigator dst, char c, int x, int y, byte color)
         {
-            var dst = new PixelNavigator(s);
-            dst.GoTo(x, y);
-            var width = Math.Min((int)_chars[c].Width, s.Width - x);
-            var height = Math.Min((int)_chars[c].Height, s.Height - y);
+            var width = Math.Min((int)_chars[c].Width, dst.Width - x);
+            var height = Math.Min((int)_chars[c].Height, dst.Height - y);
             var src = UnpackChar(c);
             var srcPitch = _chars[c].Width;
             var srcPos = 0;

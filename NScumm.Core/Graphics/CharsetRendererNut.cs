@@ -75,12 +75,13 @@ namespace NScumm.Core.Graphics
                 TextScreen = Vm.MainVirtScreen;
             }
 
+            int offsetX = 0;
             int drawTop = Top;
             if (ignoreCharsetMask)
             {
                 VirtScreen vs = Vm.MainVirtScreen;
                 s = vs.Surfaces[0];
-                Array.Copy(vs.Surfaces[0].Pixels, s.Pixels, vs.Surfaces[0].Pixels.Length);
+                offsetX = vs.XStart;
             }
             else
             {
@@ -88,10 +89,13 @@ namespace NScumm.Core.Graphics
                 drawTop -= Vm.ScreenTop;
             }
 
+            var dst = new PixelNavigator(s);
+            dst.GoTo(Left + offsetX, drawTop);
+
 //            if (chr >= 256 && _vm._useCJKMode)
 //                _current.draw2byte(s, chr, _left, drawTop, _color);
 //            else
-            _current.DrawChar(s, (char)chr, Left, drawTop, Color);
+            _current.DrawChar(dst, (char)chr, Left, drawTop, Color);
             Vm.MarkRectAsDirty(Vm.MainVirtScreen, shadow);
 
             if (Str.Left > Left)

@@ -654,9 +654,16 @@ namespace NScumm.Core
                 {
                     Moving = MoveFlags.None;
                     SetBox(_walkdata.DestBox);
-                    StartAnimActor(StandFrame);
-                    if (_targetFacing != _walkdata.DestDir)
-                        TurnToDirection(_walkdata.DestDir);
+                    if (_scumm.Game.Version <= 6)
+                    {
+                        StartAnimActor(StandFrame);
+                        if (_targetFacing != _walkdata.DestDir)
+                            TurnToDirection(_walkdata.DestDir);
+                    }
+                    else
+                    {
+                        StartWalkAnim(3, _walkdata.DestDir);
+                    }
                     return;
                 }
 
@@ -1413,7 +1420,7 @@ namespace NScumm.Core
             {
                 if (WalkFrame != _frame || _facing != nextFacing)
                 {
-                    StartWalkAnim(nextFacing);
+                    StartWalkAnim(1, nextFacing);
                 }
                 Moving |= MoveFlags.InLeg;
             }
@@ -1592,7 +1599,7 @@ namespace NScumm.Core
 
             var dirType = (_scumm.Game.Version >= 7) ? _scumm.CostumeLoader.HasManyDirections(Costume) : false;
 
-            var from = ScummMath.ToSimpleDir(false, _facing);
+            var from = ScummMath.ToSimpleDir(dirType, _facing);
             var dir = RemapDirection(_targetFacing, isWalking);
 
             bool shouldInterpolate;
@@ -1634,7 +1641,7 @@ namespace NScumm.Core
             return dir;
         }
 
-        void StartWalkAnim(int angle)
+        void StartWalkAnim(int cmd, int angle)
         {
             if (angle == -1)
                 angle = _facing;
@@ -1649,8 +1656,20 @@ namespace NScumm.Core
             }
             else
             {
-                SetDirection(angle);
-                StartAnimActor(WalkFrame);
+                switch (cmd)
+                {
+                    case 1:                                     /* start walk */
+                        SetDirection(angle);
+                        StartAnimActor(WalkFrame);
+                        break;
+                    case 2:                                     /* change dir only */
+                        SetDirection(angle);
+                        break;
+                    case 3:                                     /* stop walk */
+                        TurnToDirection(angle);
+                        StartAnimActor(StandFrame);
+                        break;
+                }
             }
         }
 

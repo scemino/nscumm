@@ -31,7 +31,7 @@ namespace NScumm.Core
 
         public ushort Height { get; set; }
 
-        public byte ActorDir { get; set; }
+        public int ActorDir { get; set; }
 
         public byte Parent { get; set; }
 

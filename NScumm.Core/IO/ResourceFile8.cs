@@ -299,7 +299,7 @@ namespace NScumm.Core.IO
             od.Position = new Point(_reader.ReadInt32(), _reader.ReadInt32());
             od.Width = (ushort)_reader.ReadInt32();
             od.Height = (ushort)_reader.ReadInt32();
-            od.ActorDir = (byte)_reader.ReadInt32();
+            od.ActorDir = _reader.ReadInt32();
             od.Flags = (DrawBitmaps)_reader.ReadInt32();
             for (int i = 0; i < 15; i++)
             {

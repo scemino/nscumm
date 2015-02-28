@@ -315,7 +315,6 @@ namespace NScumm.Core.IO
             objCode.Position = objImg.Position;
             objCode.ActorDir = objImg.ActorDir;
             objCode.Flags = objImg.Flags;
-            objCode.Name = objImg.Name;
             objCode.Hotspots.Clear();
             objCode.Hotspots.AddRange(objImg.Hotspots);
             return objCode;

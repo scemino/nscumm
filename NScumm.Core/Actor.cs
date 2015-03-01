@@ -1651,7 +1651,7 @@ namespace NScumm.Core
              */
             if (WalkScript != 0)
             {
-                var args = new int[] { Number, 1, angle };
+                var args = new int[] { Number, cmd, angle };
                 _scumm.RunScript(WalkScript, true, false, args);
             }
             else

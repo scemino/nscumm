@@ -22,7 +22,6 @@ using System;
 using System.Diagnostics;
 using NScumm.Core.Audio.Decoders;
 using NScumm.Core.IO;
-using System.IO;
 
 namespace NScumm.Core.Audio.IMuse
 {
@@ -36,10 +35,10 @@ namespace NScumm.Core.Audio.IMuse
             BundleCodecs.InitializeImcTables();
         }
 
-        void CountElements(byte[] ptr, int posPtr, ref int numRegions, ref int numJumps, ref int numSyncs, ref int numMarkers)
+        static void CountElements(byte[] ptr, int posPtr, ref int numRegions, ref int numJumps, ref int numSyncs, ref int numMarkers)
         {
             string tag;
-            int size = 0;
+            int size;
             int pos = posPtr;
 
             do
@@ -85,6 +84,7 @@ namespace NScumm.Core.Audio.IMuse
 
         void PrepareSoundFromRMAP(XorReader file, SoundDesc sound, int offset, int size)
         {
+            throw new NotImplementedException("PrepareSoundFromRMAP");
             // TODO: vs PrepareSoundFromRMAP
 //            int l;
 //        
@@ -162,17 +162,17 @@ namespace NScumm.Core.Audio.IMuse
                 int offset = ptr.ToInt16(20);
                 int code = ptr.ToInt16(24);
 
-                sound.numRegions = 0;
-                sound.region = new Region[70];
+                sound.NumRegions = 0;
+                sound.Region = new Region[70];
 
-                sound.numJumps = 0;
-                sound.jump = new Jump[1];
+                sound.NumJumps = 0;
+                sound.Jump = new Jump[1];
 
-                sound.numSyncs = 0;
+                sound.NumSyncs = 0;
 
-                sound.resPtr = ptr;
-                sound.bits = 8;
-                sound.channels = 1;
+                sound.ResPtr = ptr;
+                sound.Bits = 8;
+                sound.Channels = 1;
 
                 while (!quit)
                 {
@@ -201,23 +201,23 @@ namespace NScumm.Core.Audio.IMuse
                                 int time_constant = ptr[offset];
                                 offset += 2;
                                 len -= 2;
-                                sound.freq = (ushort)VocStream.GetSampleRateFromVOCRate(time_constant);
-                                sound.region[sound.numRegions].offset = offset;
-                                sound.region[sound.numRegions].length = len;
-                                sound.numRegions++;
+                                sound.Freq = (ushort)VocStream.GetSampleRateFromVOCRate(time_constant);
+                                sound.Region[sound.NumRegions].Offset = offset;
+                                sound.Region[sound.NumRegions].Length = len;
+                                sound.NumRegions++;
                             }
                             break;
                         case 6: // begin of loop
-                            sound.jump[0].dest = offset + 8;
-                            sound.jump[0].hookId = 0;
-                            sound.jump[0].fadeDelay = 0;
+                            sound.Jump[0].Dest = offset + 8;
+                            sound.Jump[0].HookId = 0;
+                            sound.Jump[0].FadeDelay = 0;
                             break;
                         case 7: // end of loop
-                            sound.jump[0].offset = offset - 4;
-                            sound.numJumps++;
-                            sound.region[sound.numRegions].offset = offset - 4;
-                            sound.region[sound.numRegions].length = 0;
-                            sound.numRegions++;
+                            sound.Jump[0].Offset = offset - 4;
+                            sound.NumJumps++;
+                            sound.Region[sound.NumRegions].Offset = offset - 4;
+                            sound.Region[sound.NumRegions].Length = 0;
+                            sound.NumRegions++;
                             break;
                         default:
                             throw new InvalidOperationException(string.Format("Invalid code in VOC file : {0}", code));
@@ -231,7 +231,6 @@ namespace NScumm.Core.Audio.IMuse
             {
                 string tag;
                 int size = 0;
-                int s_ptr = 0;
                 int posPtr = 16;
 
                 int curIndexRegion = 0;
@@ -239,15 +238,15 @@ namespace NScumm.Core.Audio.IMuse
                 int curIndexSync = 0;
                 int curIndexMarker = 0;
 
-                sound.numRegions = 0;
-                sound.numJumps = 0;
-                sound.numSyncs = 0;
-                sound.numMarkers = 0;
-                CountElements(ptr, posPtr, ref sound.numRegions, ref sound.numJumps, ref sound.numSyncs, ref sound.numMarkers);
-                sound.region = new Region[sound.numRegions];
-                sound.jump = new Jump[sound.numJumps];
-                sound.sync = new Sync[sound.numSyncs];
-                sound.marker = new Marker[sound.numMarkers];
+                sound.NumRegions = 0;
+                sound.NumJumps = 0;
+                sound.NumSyncs = 0;
+                sound.NumMarkers = 0;
+                CountElements(ptr, posPtr, ref sound.NumRegions, ref sound.NumJumps, ref sound.NumSyncs, ref sound.NumMarkers);
+                sound.Region = new Region[sound.NumRegions];
+                sound.Jump = new Jump[sound.NumJumps];
+                sound.Sync = new Sync[sound.NumSyncs];
+                sound.Marker = new Marker[sound.NumMarkers];
 
                 do
                 {
@@ -257,18 +256,18 @@ namespace NScumm.Core.Audio.IMuse
                     {
                         case "FRMT":
                             posPtr += 12;
-                            sound.bits = (byte)ptr.ToUInt32BigEndian(posPtr);
+                            sound.Bits = (byte)ptr.ToUInt32BigEndian(posPtr);
                             posPtr += 4;
-                            sound.freq = (ushort)ptr.ToUInt32BigEndian(posPtr);
+                            sound.Freq = (ushort)ptr.ToUInt32BigEndian(posPtr);
                             posPtr += 4;
-                            sound.channels = (byte)ptr.ToUInt32BigEndian(posPtr);
+                            sound.Channels = (byte)ptr.ToUInt32BigEndian(posPtr);
                             posPtr += 4;
                             break;
                         case "TEXT":
                             if (string.Equals(ptr.ToText(posPtr + 8), "exit"))
                             {
-                                sound.marker[curIndexMarker].pos = ptr.ToInt32BigEndian(posPtr + 4);
-                                sound.marker[curIndexMarker].ptr = ptr.GetText(posPtr + 8);
+                                sound.Marker[curIndexMarker].Pos = ptr.ToInt32BigEndian(posPtr + 4);
+                                sound.Marker[curIndexMarker].Ptr = ptr.GetText(posPtr + 8);
                                 curIndexMarker++;
                             }
                             size = ptr.ToInt32BigEndian(posPtr);
@@ -280,29 +279,29 @@ namespace NScumm.Core.Audio.IMuse
                             break;
                         case "REGN":
                             posPtr += 4;
-                            sound.region[curIndexRegion].offset = ptr.ToInt32BigEndian(posPtr);
+                            sound.Region[curIndexRegion].Offset = ptr.ToInt32BigEndian(posPtr);
                             posPtr += 4;
-                            sound.region[curIndexRegion].length = ptr.ToInt32BigEndian(posPtr);
+                            sound.Region[curIndexRegion].Length = ptr.ToInt32BigEndian(posPtr);
                             posPtr += 4;
                             curIndexRegion++;
                             break;
                         case "JUMP":
                             posPtr += 4;
-                            sound.jump[curIndexJump].offset = ptr.ToInt32BigEndian(posPtr);
+                            sound.Jump[curIndexJump].Offset = ptr.ToInt32BigEndian(posPtr);
                             posPtr += 4;
-                            sound.jump[curIndexJump].dest = ptr.ToInt32BigEndian(posPtr);
+                            sound.Jump[curIndexJump].Dest = ptr.ToInt32BigEndian(posPtr);
                             posPtr += 4;
-                            sound.jump[curIndexJump].hookId = (byte)ptr.ToInt32BigEndian(posPtr);
+                            sound.Jump[curIndexJump].HookId = (byte)ptr.ToInt32BigEndian(posPtr);
                             posPtr += 4;
-                            sound.jump[curIndexJump].fadeDelay = (short)ptr.ToInt32BigEndian(posPtr);
+                            sound.Jump[curIndexJump].FadeDelay = (short)ptr.ToInt32BigEndian(posPtr);
                             posPtr += 4;
                             curIndexJump++;
                             break;
                         case "SYNC":
                             size = ptr.ToInt32BigEndian(posPtr);
                             posPtr += 4;
-                            sound.sync[curIndexSync].ptr = new byte[size];
-                            Array.Copy(ptr, posPtr, sound.sync[curIndexSync].ptr, 0, size);
+                            sound.Sync[curIndexSync].Ptr = new byte[size];
+                            Array.Copy(ptr, posPtr, sound.Sync[curIndexSync].Ptr, 0, size);
                             curIndexSync++;
                             posPtr += size;
                             break;
@@ -311,10 +310,10 @@ namespace NScumm.Core.Audio.IMuse
                             break;
                         default:
                             throw new InvalidOperationException(
-                                string.Format("ImuseDigiSndMgr::prepareSound({0}/{1}) Unknown sfx header '{2}'", sound.soundId, sound.name, tag));
+                                string.Format("ImuseDigiSndMgr::prepareSound({0}/{1}) Unknown sfx header '{2}'", sound.SoundId, sound.Name, tag));
                     }
                 } while (tag != "DATA");
-                sound.offsetData = posPtr - s_ptr;
+                sound.OffsetData = posPtr;
             }
             else
             {
@@ -324,11 +323,11 @@ namespace NScumm.Core.Audio.IMuse
 
         SoundDesc AllocSlot()
         {
-            for (int l = 0; l < IMuseDigital.MAX_IMUSE_SOUNDS; l++)
+            for (int l = 0; l < IMuseDigital.MaxImuseSounds; l++)
             {
-                if (!_sounds[l].inUse)
+                if (!_sounds[l].InUse)
                 {
-                    _sounds[l].inUse = true;
+                    _sounds[l].InUse = true;
                     return _sounds[l];
                 }
             }
@@ -338,15 +337,15 @@ namespace NScumm.Core.Audio.IMuse
 
         bool OpenMusicBundle(SoundDesc sound, ref int disk)
         {
-            bool result = false;
+            bool result;
 
-            sound.bundle = new BundleMgr(_cacheBundleDir);
+            sound.Bundle = new BundleMgr(_cacheBundleDir);
 
             if (_vm.Game.GameId == GameId.CurseOfMonkeyIsland)
             {
                 if (_vm.Game.Features.HasFlag(GameFeatures.Demo))
                 {
-                    result = sound.bundle.Open("music.bun", ref sound.compressed);
+                    result = sound.Bundle.Open("music.bun", ref sound.Compressed);
                 }
                 else
                 {
@@ -361,14 +360,14 @@ namespace NScumm.Core.Audio.IMuse
 //                        sound.bundle.CloseFile();
 //                    }
 
-                    result = sound.bundle.Open(musicfile, ref sound.compressed, true);
+                    result = sound.Bundle.Open(musicfile, ref sound.Compressed);
 
                     // FIXME: Shouldn't we only set _disk if result == true?
                     _disk = (byte)_vm.Variables[_vm.VariableCurrentDisk.Value];
                 }
             }
             else if (_vm.Game.GameId == GameId.Dig)
-                result = sound.bundle.Open("digmusic.bun", ref sound.compressed, true);
+                result = sound.Bundle.Open("digmusic.bun", ref sound.Compressed);
             else
                 throw new InvalidOperationException("openMusicBundle() Don't know which bundle file to load");
 
@@ -379,15 +378,15 @@ namespace NScumm.Core.Audio.IMuse
 
         bool OpenVoiceBundle(SoundDesc sound, ref int disk)
         {
-            bool result = false;
+            bool result;
 
-            sound.bundle = new BundleMgr(_cacheBundleDir);
+            sound.Bundle = new BundleMgr(_cacheBundleDir);
 
             if (_vm.Game.GameId == GameId.CurseOfMonkeyIsland)
             {
                 if (_vm.Game.Features.HasFlag(GameFeatures.Demo))
                 {
-                    result = sound.bundle.Open("voice.bun", ref sound.compressed);
+                    result = sound.Bundle.Open("voice.bun", ref sound.Compressed);
                 }
                 else
                 {
@@ -402,14 +401,14 @@ namespace NScumm.Core.Audio.IMuse
                     //              sound.bundle.closeFile();
                     //          }
 
-                    result = sound.bundle.Open(voxfile, ref sound.compressed);
+                    result = sound.Bundle.Open(voxfile, ref sound.Compressed);
 
                     // FIXME: Shouldn't we only set _disk if result == true?
                     _disk = (byte)_vm.Variables[_vm.VariableCurrentDisk.Value];
                 }
             }
             else if (_vm.Game.GameId == GameId.Dig)
-                result = sound.bundle.Open("digvoice.bun", ref sound.compressed);
+                result = sound.Bundle.Open("digvoice.bun", ref sound.Compressed);
             else
                 throw new InvalidOperationException("openVoiceBundle() Don't know which bundle file to load");
 
@@ -435,7 +434,7 @@ namespace NScumm.Core.Audio.IMuse
 
             switch (soundType)
             {
-                case IMuseDigital.IMUSE_RESOURCE:
+                case IMuseDigital.ImuseResource:
                     Debug.Assert(string.IsNullOrEmpty(soundName));  // Paranoia check
 
 //                    _vm.ensureResourceLoaded(rtSound, soundId);
@@ -447,12 +446,12 @@ namespace NScumm.Core.Audio.IMuse
                         CloseSound(sound);
                         return null;
                     }
-                    sound.resPtr = ptr;
+                    sound.ResPtr = ptr;
                     break;
-                case IMuseDigital.IMUSE_BUNDLE:
-                    if (volGroupId == IMuseDigital.IMUSE_VOLGRP_VOICE)
+                case IMuseDigital.ImuseBundle:
+                    if (volGroupId == IMuseDigital.ImuseVolumeGroupVoice)
                         result = OpenVoiceBundle(sound, ref disk);
-                    else if (volGroupId == IMuseDigital.IMUSE_VOLGRP_MUSIC)
+                    else if (volGroupId == IMuseDigital.ImuseVolumeGroupMusic)
                         result = OpenMusicBundle(sound, ref disk);
                     else
                         Console.Error.WriteLine("openSound() Don't know how load sound: {0}", soundId);
@@ -461,27 +460,27 @@ namespace NScumm.Core.Audio.IMuse
                         CloseSound(sound);
                         return null;
                     }
-                    if (sound.compressed)
+                    if (sound.Compressed)
                     {
                         int offset = 0, size = 0;
                         var fileName = string.Format("{0}.map", soundName);
-                        var rmapFile = sound.bundle.GetFile(fileName, ref offset, ref size);
+                        var rmapFile = sound.Bundle.GetFile(fileName, ref offset, ref size);
                         if (rmapFile == null)
                         {
                             CloseSound(sound);
                             return null;
                         }
                         PrepareSoundFromRMAP(rmapFile, sound, offset, size);
-                        sound.name = soundName;
-                        sound.soundId = (short)soundId;
-                        sound.type = soundType;
-                        sound.volGroupId = volGroupId;
-                        sound.disk = disk;
+                        sound.Name = soundName;
+                        sound.SoundId = (short)soundId;
+                        sound.Type = soundType;
+                        sound.VolGroupId = volGroupId;
+                        sound.Disk = disk;
                         return sound;
                     }
                     else if (soundName[0] == 0)
                     {
-                        if (sound.bundle.DecompressSampleByIndex(soundId, 0, 0x2000, out ptr, 0, header_outside) == 0 || ptr == null)
+                        if (sound.Bundle.DecompressSampleByIndex(soundId, 0, 0x2000, out ptr, 0, header_outside) == 0 || ptr == null)
                         {
                             CloseSound(sound);
                             return null;
@@ -489,24 +488,24 @@ namespace NScumm.Core.Audio.IMuse
                     }
                     else
                     {
-                        if (sound.bundle.DecompressSampleByName(soundName, 0, 0x2000, out ptr, header_outside) == 0 || ptr == null)
+                        if (sound.Bundle.DecompressSampleByName(soundName, 0, 0x2000, out ptr, header_outside) == 0 || ptr == null)
                         {
                             CloseSound(sound);
                             return null;
                         }
                     }
-                    sound.resPtr = null;
+                    sound.ResPtr = null;
                     break;
                 default:
                     Console.Error.WriteLine("openSound() Unknown soundType {0} (trying to load sound {1})", soundType, soundId);
                     break;
             }
 
-            sound.name = soundName;
-            sound.soundId = (short)soundId;
-            sound.type = soundType;
-            sound.volGroupId = volGroupId;
-            sound.disk = _disk;
+            sound.Name = soundName;
+            sound.SoundId = (short)soundId;
+            sound.Type = soundType;
+            sound.VolGroupId = volGroupId;
+            sound.Disk = _disk;
             PrepareSound(ptr, sound);
 
             return sound;
@@ -516,39 +515,36 @@ namespace NScumm.Core.Audio.IMuse
         {
             Debug.Assert(CheckForProperHandle(soundDesc));
 
-            if (soundDesc.resPtr != null)
-            {
-                bool found = false;
-                for (int l = 0; l < IMuseDigital.MAX_IMUSE_SOUNDS; l++)
-                {
-                    if ((_sounds[l].soundId == soundDesc.soundId) && (_sounds[l] != soundDesc))
-                        found = true;
-                }
+//            if (soundDesc.resPtr != null)
+//            {
+//                bool found = false;
+//                for (int l = 0; l < IMuseDigital.MAX_IMUSE_SOUNDS; l++)
+//                {
+//                    if ((_sounds[l].soundId == soundDesc.soundId) && (_sounds[l] != soundDesc))
+//                        found = true;
+//                }
                 // TODO: unlock
 //                if (!found)
 //                    _vm._res.unlock(rtSound, soundDesc.soundId);
-            }
+//            }
 
-            if (soundDesc.compressedStream != null)
+            if (soundDesc.CompressedStream != null)
             {
-                soundDesc.compressedStream.Dispose();
+                soundDesc.CompressedStream.Dispose();
+                soundDesc.CompressedStream = null;
             }
-            soundDesc.bundle = null;
+            soundDesc.Bundle = null;
 
-            for (int r = 0; r < soundDesc.numSyncs; r++)
-                soundDesc.sync[r].ptr = null;
-            for (int r = 0; r < soundDesc.numMarkers; r++)
-                soundDesc.marker[r].ptr = null;
-            soundDesc.region = null;
-            soundDesc.jump = null;
-            soundDesc.sync = null;
-            soundDesc.marker = null;
+            for (int r = 0; r < soundDesc.NumSyncs; r++)
+                soundDesc.Sync[r].Ptr = null;
+            for (int r = 0; r < soundDesc.NumMarkers; r++)
+                soundDesc.Marker[r].Ptr = null;
+            soundDesc.Region = null;
+            soundDesc.Jump = null;
+            soundDesc.Sync = null;
+            soundDesc.Marker = null;
+            soundDesc.InUse = false;
 
-            for (var i = 0; i < _sounds.Length; i++)
-            {
-                if (_sounds[i].soundId == soundDesc.soundId)
-                    _sounds[i] = new SoundDesc();
-            }
             soundDesc.Clear();
         }
 
@@ -556,11 +552,11 @@ namespace NScumm.Core.Audio.IMuse
         {
             Debug.Assert(CheckForProperHandle(soundDesc));
 
-            var desc = OpenSound(soundDesc.soundId, soundDesc.name, soundDesc.type, soundDesc.volGroupId, soundDesc.disk);
+            var desc = OpenSound(soundDesc.SoundId, soundDesc.Name, soundDesc.Type, soundDesc.VolGroupId, soundDesc.Disk);
             if (desc == null)
-                desc = OpenSound(soundDesc.soundId, soundDesc.name, soundDesc.type, soundDesc.volGroupId, 1);
+                desc = OpenSound(soundDesc.SoundId, soundDesc.Name, soundDesc.Type, soundDesc.VolGroupId, 1);
             if (desc == null)
-                desc = OpenSound(soundDesc.soundId, soundDesc.name, soundDesc.type, soundDesc.volGroupId, 2);
+                desc = OpenSound(soundDesc.SoundId, soundDesc.Name, soundDesc.Type, soundDesc.VolGroupId, 2);
             return desc;
         }
 
@@ -568,9 +564,9 @@ namespace NScumm.Core.Audio.IMuse
         {
             if (soundDesc == null)
                 return false;
-            for (int l = 0; l < IMuseDigital.MAX_IMUSE_SOUNDS; l++)
+            for (int l = 0; l < IMuseDigital.MaxImuseSounds; l++)
             {
-                if (soundDesc.soundId == _sounds[l].soundId)
+                if (soundDesc.SoundId == _sounds[l].SoundId)
                     return true;
             }
             return false;
@@ -579,65 +575,65 @@ namespace NScumm.Core.Audio.IMuse
         public bool IsSndDataExtComp(SoundDesc soundDesc)
         {
             Debug.Assert(CheckForProperHandle(soundDesc));
-            return soundDesc.compressed;
+            return soundDesc.Compressed;
         }
 
         public int GetFreq(SoundDesc soundDesc)
         {
             Debug.Assert(CheckForProperHandle(soundDesc));
-            return soundDesc.freq;
+            return soundDesc.Freq;
         }
 
         public int GetBits(SoundDesc soundDesc)
         {
             Debug.Assert(CheckForProperHandle(soundDesc));
-            return soundDesc.bits;
+            return soundDesc.Bits;
         }
 
         public int GetChannels(SoundDesc soundDesc)
         {
             Debug.Assert(CheckForProperHandle(soundDesc));
-            return soundDesc.channels;
+            return soundDesc.Channels;
         }
 
         public bool IsEndOfRegion(SoundDesc soundDesc, int region)
         {
             Debug.Assert(CheckForProperHandle(soundDesc));
-            Debug.Assert(region >= 0 && region < soundDesc.numRegions);
-            return soundDesc.endFlag;
+            Debug.Assert(region >= 0 && region < soundDesc.NumRegions);
+            return soundDesc.EndFlag;
         }
 
         public int GetNumRegions(SoundDesc soundDesc)
         {
             Debug.Assert(CheckForProperHandle(soundDesc));
-            return soundDesc.numRegions;
+            return soundDesc.NumRegions;
         }
 
         int GetNumJumps(SoundDesc soundDesc)
         {
             Debug.Assert(CheckForProperHandle(soundDesc));
-            return soundDesc.numJumps;
+            return soundDesc.NumJumps;
         }
 
         public int GetRegionOffset(SoundDesc soundDesc, int region)
         {
             Debug.WriteLine("getRegionOffset() region:{0}", region);
             Debug.Assert(CheckForProperHandle(soundDesc));
-            Debug.Assert(region >= 0 && region < soundDesc.numRegions);
-            return soundDesc.region[region].offset;
+            Debug.Assert(region >= 0 && region < soundDesc.NumRegions);
+            return soundDesc.Region[region].Offset;
         }
 
         public int GetJumpIdByRegionAndHookId(SoundDesc soundDesc, int region, int hookId)
         {
             Debug.WriteLine("getJumpIdByRegionAndHookId() region:{0}, hookId:{1}", region, hookId);
             Debug.Assert(CheckForProperHandle(soundDesc));
-            Debug.Assert(region >= 0 && region < soundDesc.numRegions);
-            var offset = soundDesc.region[region].offset;
-            for (var l = 0; l < soundDesc.numJumps; l++)
+            Debug.Assert(region >= 0 && region < soundDesc.NumRegions);
+            var offset = soundDesc.Region[region].Offset;
+            for (var l = 0; l < soundDesc.NumJumps; l++)
             {
-                if (offset == soundDesc.jump[l].offset)
+                if (offset == soundDesc.Jump[l].Offset)
                 {
-                    if (soundDesc.jump[l].hookId == hookId)
+                    if (soundDesc.Jump[l].HookId == hookId)
                         return l;
                 }
             }
@@ -649,14 +645,14 @@ namespace NScumm.Core.Audio.IMuse
         {
             Debug.WriteLine("checkForTriggerByRegionAndMarker() region:{0}, marker:{1}", region, marker);
             Debug.Assert(CheckForProperHandle(soundDesc));
-            Debug.Assert(region >= 0 && region < soundDesc.numRegions);
+            Debug.Assert(region >= 0 && region < soundDesc.NumRegions);
 
-            var offset = soundDesc.region[region].offset;
-            for (int l = 0; l < soundDesc.numMarkers; l++)
+            var offset = soundDesc.Region[region].Offset;
+            for (int l = 0; l < soundDesc.NumMarkers; l++)
             {
-                if (offset == soundDesc.marker[l].pos)
+                if (offset == soundDesc.Marker[l].Pos)
                 {
-                    if (soundDesc.marker[l].ptr == marker)
+                    if (soundDesc.Marker[l].Ptr == marker)
                         return true;
                 }
             }
@@ -664,19 +660,19 @@ namespace NScumm.Core.Audio.IMuse
             return false;
         }
 
-        public void GetSyncSizeAndPtrById(SoundDesc soundDesc, int number, out int sync_size, out byte[] sync_ptr)
+        public void GetSyncSizeAndPtrById(SoundDesc soundDesc, int number, out int syncSize, out byte[] syncPtr)
         {
             Debug.Assert(CheckForProperHandle(soundDesc));
             Debug.Assert(number >= 0);
-            if (number < soundDesc.numSyncs)
+            if (number < soundDesc.NumSyncs)
             {
-                sync_size = soundDesc.sync[number].ptr.Length;
-                sync_ptr = soundDesc.sync[number].ptr;
+                syncSize = soundDesc.Sync[number].Ptr.Length;
+                syncPtr = soundDesc.Sync[number].Ptr;
             }
             else
             {
-                sync_size = 0;
-                sync_ptr = null;
+                syncSize = 0;
+                syncPtr = null;
             }
         }
 
@@ -684,12 +680,12 @@ namespace NScumm.Core.Audio.IMuse
         {
             Debug.WriteLine("getRegionIdByJumpId() jumpId:{0}", jumpId);
             Debug.Assert(CheckForProperHandle(soundDesc));
-            Debug.Assert(jumpId >= 0 && jumpId < soundDesc.numJumps);
+            Debug.Assert(jumpId >= 0 && jumpId < soundDesc.NumJumps);
 
-            int dest = soundDesc.jump[jumpId].dest;
-            for (int l = 0; l < soundDesc.numRegions; l++)
+            int dest = soundDesc.Jump[jumpId].Dest;
+            for (int l = 0; l < soundDesc.NumRegions; l++)
             {
-                if (dest == soundDesc.region[l].offset)
+                if (dest == soundDesc.Region[l].Offset)
                 {
                     return l;
                 }
@@ -702,105 +698,90 @@ namespace NScumm.Core.Audio.IMuse
         {
             Debug.WriteLine("getJumpHookId() number:{0}", number);
             Debug.Assert(CheckForProperHandle(soundDesc));
-            Debug.Assert(number >= 0 && number < soundDesc.numJumps);
-            return soundDesc.jump[number].hookId;
+            Debug.Assert(number >= 0 && number < soundDesc.NumJumps);
+            return soundDesc.Jump[number].HookId;
         }
 
         public int GetJumpFade(SoundDesc soundDesc, int number)
         {
             Debug.WriteLine("getJumpFade() number:{0}", number);
             Debug.Assert(CheckForProperHandle(soundDesc));
-            Debug.Assert(number >= 0 && number < soundDesc.numJumps);
-            return soundDesc.jump[number].fadeDelay;
+            Debug.Assert(number >= 0 && number < soundDesc.NumJumps);
+            return soundDesc.Jump[number].FadeDelay;
         }
 
         public int GetDataFromRegion(SoundDesc soundDesc, int region, out byte[] buf, int offset, int size)
         {
-            Debug.WriteLine("getDataFromRegion() region:{0}, offset:{1}, size:{2}, numRegions:{3}", region, offset, size, soundDesc.numRegions);
+            Debug.WriteLine("getDataFromRegion() region:{0}, offset:{1}, size:{2}, numRegions:{3}", region, offset, size, soundDesc.NumRegions);
             Debug.Assert(CheckForProperHandle(soundDesc));
             Debug.Assert(offset >= 0 && size >= 0);
-            Debug.Assert(region >= 0 && region < soundDesc.numRegions);
+            Debug.Assert(region >= 0 && region < soundDesc.NumRegions);
 
             buf = null;
-            int region_offset = soundDesc.region[region].offset;
-            int region_length = soundDesc.region[region].length;
-            int offset_data = soundDesc.offsetData;
+            int region_offset = soundDesc.Region[region].Offset;
+            int region_length = soundDesc.Region[region].Length;
+            int offset_data = soundDesc.OffsetData;
             int start = region_offset - offset_data;
 
             if (offset + size + offset_data > region_length)
             {
                 size = region_length - offset;
-                soundDesc.endFlag = true;
+                soundDesc.EndFlag = true;
             }
             else
             {
-                soundDesc.endFlag = false;
+                soundDesc.EndFlag = false;
             }
 
-            int header_size = soundDesc.offsetData;
+            int header_size = soundDesc.OffsetData;
             bool header_outside = ((_vm.Game.GameId == GameId.CurseOfMonkeyIsland) && !(_vm.Game.Features.HasFlag(GameFeatures.Demo)));
-            if ((soundDesc.bundle != null) && (!soundDesc.compressed))
+            if ((soundDesc.Bundle != null) && (!soundDesc.Compressed))
             {
-                size = soundDesc.bundle.DecompressSampleByCurIndex(start + offset, size, out buf, header_size, header_outside);
+                size = soundDesc.Bundle.DecompressSampleByCurIndex(start + offset, size, out buf, header_size, header_outside);
             }
-            else if (soundDesc.resPtr != null)
+            else if (soundDesc.ResPtr != null)
             {
                 buf = new byte[size];
-                Array.Copy(soundDesc.resPtr, start + offset + header_size, buf, 0, size);
+                Array.Copy(soundDesc.ResPtr, start + offset + header_size, buf, 0, size);
             }
-            else if ((soundDesc.bundle != null) && (soundDesc.compressed))
+            else if ((soundDesc.Bundle != null) && (soundDesc.Compressed))
             {
                 buf = new byte[size];
 
-                int offsetMs = (((offset * 8 * 10) / soundDesc.bits) / (soundDesc.channels * soundDesc.freq)) * 100;
-                var fileName = string.Format("{0}_reg{1:D3}", soundDesc.name, region);
-                if (fileName != soundDesc.lastFileName)
+                int offsetMs = (((offset * 8 * 10) / soundDesc.Bits) / (soundDesc.Channels * soundDesc.Freq)) * 100;
+                var fileName = string.Format("{0}_reg{1:D3}", soundDesc.Name, region);
+                if (fileName != soundDesc.LastFileName)
                 {
                     int offs = 0, len = 0;
 
-#if USE_FLAC || USE_VORBIS || USE_MAD
-            uint8 soundMode = 0;
-#endif
-
-                    fileName = string.Format("{0}_reg{1:D3}.fla", soundDesc.name, region);
-                    var cmpFile = soundDesc.bundle.GetFile(fileName, ref offs, ref len);
+                    fileName = string.Format("{0}_reg{1:D3}.fla", soundDesc.Name, region);
+                    var cmpFile = soundDesc.Bundle.GetFile(fileName, ref offs, ref len);
                     if (len != 0)
                     {
-#if !USE_FLAC
+
                         Console.Error.WriteLine("FLAC library compiled support needed");
-#else
-                soundMode = 3;
-#endif
                     }
                     if (len == 0)
                     {
-                        fileName = string.Format("{0}_reg{1:D3}.ogg", soundDesc.name, region);
-                        cmpFile = soundDesc.bundle.GetFile(fileName, ref offs, ref len);
+                        fileName = string.Format("{0}_reg{1:D3}.ogg", soundDesc.Name, region);
+                        cmpFile = soundDesc.Bundle.GetFile(fileName, ref offs, ref len);
                         if (len != 0)
                         {
-#if !USE_VORBIS
                             Console.Error.WriteLine("Vorbis library compiled support needed");
-#else
-                    soundMode = 2;
-#endif
                         }
                     }
                     if (len == 0)
                     {
-                        fileName = string.Format("{0}_reg{1:D3}.mp3", soundDesc.name, region);
-                        cmpFile = soundDesc.bundle.GetFile(fileName, ref offs, ref len);
+                        fileName = string.Format("{0}_reg{1:D3}.mp3", soundDesc.Name, region);
+                        cmpFile = soundDesc.Bundle.GetFile(fileName, ref offs, ref len);
                         if (len != 0)
                         {
-#if !USE_MAD
                             Console.Error.WriteLine("Mad library compiled support needed");
-#else
-                    soundMode = 1;
-#endif
                         }
                     }
                     Debug.Assert(len != 0);
 
-                    if (soundDesc.compressedStream == null)
+                    if (soundDesc.CompressedStream == null)
                     {
 //                        var tmp = cmpFile.ReadStream(len);
 //                        Debug.Assert(tmp);
@@ -819,22 +800,22 @@ namespace NScumm.Core.Audio.IMuse
 //                        Debug.Assert(soundDesc.compressedStream!=null);
 //                        soundDesc.compressedStream.Seek(offsetMs);
                     }
-                    soundDesc.lastFileName = fileName;
+                    soundDesc.LastFileName = fileName;
                 }
                 var tmpBuf = new short[size / 2];
-                size = soundDesc.compressedStream.ReadBuffer(tmpBuf) * 2;
+                size = soundDesc.CompressedStream.ReadBuffer(tmpBuf) * 2;
                 // TODO: vs check this
                 for (int i = 0; i < size / 2; i++)
                 {
                     buf[i * 2] = (byte)(tmpBuf[i] & 0xFF);
                     buf[i * 2 + 1] = (byte)((tmpBuf[i] & 0xFF00) >> 8);
                 }
-                if (soundDesc.compressedStream.IsEndOfData || soundDesc.endFlag)
+                if (soundDesc.CompressedStream.IsEndOfData || soundDesc.EndFlag)
                 {
-                    soundDesc.compressedStream.Dispose();
-                    soundDesc.compressedStream = null;
-                    soundDesc.lastFileName = null;
-                    soundDesc.endFlag = true;
+                    soundDesc.CompressedStream.Dispose();
+                    soundDesc.CompressedStream = null;
+                    soundDesc.LastFileName = null;
+                    soundDesc.EndFlag = true;
                 }
             }
 
@@ -843,7 +824,7 @@ namespace NScumm.Core.Audio.IMuse
 
         static SoundDesc[] CreateSounds()
         {
-            var sounds = new SoundDesc[IMuseDigital.MAX_IMUSE_SOUNDS];
+            var sounds = new SoundDesc[IMuseDigital.MaxImuseSounds];
             for (int i = 0; i < sounds.Length; i++)
             {
                 sounds[i] = new SoundDesc();

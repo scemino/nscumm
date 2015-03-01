@@ -21,31 +21,31 @@
 using System;
 using NScumm.Core.Audio;
 
-namespace NScumm.Core
+namespace NScumm.Core.Audio.IMuse
 {
     struct Region
     {
-        public int offset;
+        public int Offset;
         // offset of region
-        public int length;
+        public int Length;
         // length of region
     }
 
     struct Jump
     {
-        public int offset;
+        public int Offset;
         // jump offset position
-        public int dest;
+        public int Dest;
         // jump to dest position
-        public byte hookId;
+        public byte HookId;
         // id of hook
-        public short fadeDelay;
+        public short FadeDelay;
         // fade delay in ms
     }
 
     struct Sync
     {
-        public byte[] ptr;
+        public byte[] Ptr;
     }
 
     struct Marker
@@ -53,8 +53,8 @@ namespace NScumm.Core
         /// <summary>
         /// Marker in sound data.
         /// </summary>
-        public int pos;
-        public string ptr;
+        public int Pos;
+        public string Ptr;
     }
 
     [System.Diagnostics.DebuggerDisplay("{DebuggerDisplay,nq}")]
@@ -64,88 +64,88 @@ namespace NScumm.Core
         {
             get
             { 
-                return inUse ? string.Format("SoundId {0}", soundId) : string.Empty;
+                return InUse ? string.Format("SoundId {0}", SoundId) : string.Empty;
             }    
         }
 
-        public ushort freq;
+        public ushort Freq;
         // frequency
-        public byte channels;
+        public byte Channels;
         // stereo or mono
-        public byte bits;
+        public byte Bits;
         // 8, 12, 16
 
-        public int numJumps;
+        public int NumJumps;
         // number of Jumps
-        public Region[] region;
+        public Region[] Region;
 
-        public int numRegions;
+        public int NumRegions;
         // number of Regions
-        public Jump[] jump;
+        public Jump[] Jump;
 
-        public int numSyncs;
+        public int NumSyncs;
         // number of Syncs
-        public Sync[] sync;
+        public Sync[] Sync;
 
-        public int numMarkers;
+        public int NumMarkers;
         // number of Markers
-        public Marker[] marker;
+        public Marker[] Marker;
 
-        public bool endFlag;
-        public bool inUse;
-        public byte[] allData;
-        public int offsetData;
-        public byte[] resPtr;
-        public string name;
-        public short soundId;
-        public BundleMgr bundle;
-        public int type;
-        public int volGroupId;
-        public int disk;
-        public IAudioStream compressedStream;
-        public bool compressed;
-        public string lastFileName;
+        public bool EndFlag;
+        public bool InUse;
+        public byte[] AllData;
+        public int OffsetData;
+        public byte[] ResPtr;
+        public string Name;
+        public short SoundId;
+        public BundleMgr Bundle;
+        public int Type;
+        public int VolGroupId;
+        public int Disk;
+        public IAudioStream CompressedStream;
+        public bool Compressed;
+        public string LastFileName;
 
         public SoundDesc Clone()
         {
             SoundDesc desc = new SoundDesc();
-            desc.freq = freq;
-            desc.channels = channels;
-            desc.bits = bits;
-            desc.numJumps = numJumps;
-            desc.region = new Region[region.Length];
-            Array.Copy(region, desc.region, region.Length);
-            desc.numRegions = numRegions;
-            desc.jump = new Jump[jump.Length];
-            Array.Copy(jump, desc.jump, jump.Length);
-            desc.numSyncs = numSyncs;
-            desc.sync = new Sync[sync.Length];
-            Array.Copy(sync, desc.sync, sync.Length);
-            desc.numMarkers = numMarkers;
-            desc.marker = new Marker[marker.Length];
-            Array.Copy(marker, desc.marker, marker.Length);
-            desc.endFlag = endFlag;
-            desc.inUse = inUse;
-            if (allData != null)
+            desc.Freq = Freq;
+            desc.Channels = Channels;
+            desc.Bits = Bits;
+            desc.NumJumps = NumJumps;
+            desc.Region = new Region[Region.Length];
+            Array.Copy(Region, desc.Region, Region.Length);
+            desc.NumRegions = NumRegions;
+            desc.Jump = new Jump[Jump.Length];
+            Array.Copy(Jump, desc.Jump, Jump.Length);
+            desc.NumSyncs = NumSyncs;
+            desc.Sync = new Sync[Sync.Length];
+            Array.Copy(Sync, desc.Sync, Sync.Length);
+            desc.NumMarkers = NumMarkers;
+            desc.Marker = new Marker[Marker.Length];
+            Array.Copy(Marker, desc.Marker, Marker.Length);
+            desc.EndFlag = EndFlag;
+            desc.InUse = InUse;
+            if (AllData != null)
             {
-                desc.allData = new byte[allData.Length];
-                Array.Copy(allData, desc.allData, allData.Length);
+                desc.AllData = new byte[AllData.Length];
+                Array.Copy(AllData, desc.AllData, AllData.Length);
             }
-            desc.offsetData = offsetData;
-            if (resPtr != null)
+            desc.OffsetData = OffsetData;
+            if (ResPtr != null)
             {
-                desc.resPtr = new byte[resPtr.Length];
-                Array.Copy(resPtr, desc.resPtr, resPtr.Length);
+                desc.ResPtr = new byte[ResPtr.Length];
+                Array.Copy(ResPtr, desc.ResPtr, ResPtr.Length);
             }
-            desc.name = name;
-            desc.soundId = soundId;
-            desc.bundle = bundle;
-            desc.type = type;
-            desc.volGroupId = volGroupId;
-            desc.disk = disk;
-            desc.compressedStream = compressedStream;
-            desc.compressed = compressed;
-            desc.lastFileName = lastFileName;
+            desc.Name = Name;
+            desc.SoundId = SoundId;
+            desc.Bundle = Bundle;
+            desc.Type = Type;
+            desc.VolGroupId = VolGroupId;
+            desc.Disk = Disk;
+            desc.CompressedStream = CompressedStream;
+            desc.Compressed = Compressed;
+            desc.LastFileName = LastFileName;
             return desc;
         }
 
@@ -156,31 +156,31 @@ namespace NScumm.Core
 
         public void Clear()
         {
-            freq = 0;
-            channels = 0;
-            bits = 0;
-            numJumps = 0;
-            region = null;
-            numRegions = 0;
-            jump = null;
-            numSyncs = 0;
-            sync = null;
-            numMarkers = 0;
-            marker = null;
-            endFlag = false;
-            inUse = false;
-            allData = null;
-            offsetData = 0;
-            resPtr = null;
-            name = null;
-            soundId = 0;
-            bundle = null;
-            type = 0;
-            volGroupId = 0;
-            disk = 0;
-            compressedStream = null;
-            compressed = false;
-            lastFileName = null;
+            Freq = 0;
+            Channels = 0;
+            Bits = 0;
+            NumJumps = 0;
+            Region = null;
+            NumRegions = 0;
+            Jump = null;
+            NumSyncs = 0;
+            Sync = null;
+            NumMarkers = 0;
+            Marker = null;
+            EndFlag = false;
+            InUse = false;
+            AllData = null;
+            OffsetData = 0;
+            ResPtr = null;
+            Name = null;
+            SoundId = 0;
+            Bundle = null;
+            Type = 0;
+            VolGroupId = 0;
+            Disk = 0;
+            CompressedStream = null;
+            Compressed = false;
+            LastFileName = null;
         }
     }
 }

@@ -23,7 +23,7 @@ using System.IO;
 using System.Text;
 using System.Collections.Generic;
 
-namespace NScumm.Core
+namespace NScumm.Core.Audio.IMuse
 {
     class BundleDirCache
     {
@@ -44,11 +44,11 @@ namespace NScumm.Core
 
             for (fileId = 0; fileId < _budleDirCache.Length; fileId++)
             {
-                if ((_budleDirCache[fileId].bundleTable == null) && (freeSlot == -1))
+                if ((_budleDirCache[fileId].BundleTable == null) && (freeSlot == -1))
                 {
                     freeSlot = fileId;
                 }
-                if (string.Equals(filename, _budleDirCache[fileId].fileName, StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(filename, _budleDirCache[fileId].FileName, StringComparison.OrdinalIgnoreCase))
                 {
                     found = true;
                     break;
@@ -64,25 +64,25 @@ namespace NScumm.Core
 
                 var tag = file.ReadTag();
                 if (tag == "LB23")
-                    _budleDirCache[freeSlot].isCompressed = true;
+                    _budleDirCache[freeSlot].IsCompressed = true;
                 offset = (int)file.ReadUInt32BigEndian();
 
-                _budleDirCache[freeSlot].fileName = filename;
-                _budleDirCache[freeSlot].numFiles = (int)file.ReadUInt32BigEndian();
-                _budleDirCache[freeSlot].bundleTable = CreateAudioTable(_budleDirCache[freeSlot].numFiles);
+                _budleDirCache[freeSlot].FileName = filename;
+                _budleDirCache[freeSlot].NumFiles = (int)file.ReadUInt32BigEndian();
+                _budleDirCache[freeSlot].BundleTable = CreateAudioTable(_budleDirCache[freeSlot].NumFiles);
 
                 file.BaseStream.Seek(offset, SeekOrigin.Begin);
 
-                _budleDirCache[freeSlot].indexTable = CreateIndexTable(_budleDirCache[freeSlot].numFiles);
+                _budleDirCache[freeSlot].IndexTable = CreateIndexTable(_budleDirCache[freeSlot].NumFiles);
 
-                for (int i = 0; i < _budleDirCache[freeSlot].numFiles; i++)
+                for (int i = 0; i < _budleDirCache[freeSlot].NumFiles; i++)
                 {
                     var name = new List<byte>();
                     byte c;
 
                     if (tag == "LB23")
                     {
-                        _budleDirCache[freeSlot].bundleTable[i].filename = Encoding.ASCII.GetString(file.ReadBytes(24));
+                        _budleDirCache[freeSlot].BundleTable[i].Filename = Encoding.ASCII.GetString(file.ReadBytes(24));
                     }
                     else
                     {
@@ -94,25 +94,20 @@ namespace NScumm.Core
                             if ((c = file.ReadByte()) != 0)
                                 name.Add(c);
 
-                        _budleDirCache[freeSlot].bundleTable[i].filename = Encoding.ASCII.GetString(name.ToArray());
+                        _budleDirCache[freeSlot].BundleTable[i].Filename = Encoding.ASCII.GetString(name.ToArray());
                     }
-                    _budleDirCache[freeSlot].bundleTable[i].offset = (int)file.ReadUInt32BigEndian();
-                    _budleDirCache[freeSlot].bundleTable[i].size = (int)file.ReadUInt32BigEndian();
-                    _budleDirCache[freeSlot].indexTable[i].filename = _budleDirCache[freeSlot].bundleTable[i].filename;
-                    _budleDirCache[freeSlot].indexTable[i].index = i;
+                    _budleDirCache[freeSlot].BundleTable[i].Offset = (int)file.ReadUInt32BigEndian();
+                    _budleDirCache[freeSlot].BundleTable[i].Size = (int)file.ReadUInt32BigEndian();
+                    _budleDirCache[freeSlot].IndexTable[i].Filename = _budleDirCache[freeSlot].BundleTable[i].Filename;
+                    _budleDirCache[freeSlot].IndexTable[i].Index = i;
                 }
 
-                Array.Sort(_budleDirCache[freeSlot].indexTable, new Comparison<IndexNode>((x, y) =>
-                        {
-                            return string.Compare(x.filename, y.filename, true);
-                        }));
+                Array.Sort(_budleDirCache[freeSlot].IndexTable, new Comparison<IndexNode>((x, y) =>
+                        string.Compare(x.Filename, y.Filename, StringComparison.OrdinalIgnoreCase)));
 
                 return freeSlot;
             }
-            else
-            {
-                return fileId;
-            }
+            return fileId;
         }
 
         static AudioTable[] CreateAudioTable(int length)
@@ -137,47 +132,47 @@ namespace NScumm.Core
 
         public AudioTable[] GetTable(int slot)
         {
-            return _budleDirCache[slot].bundleTable;
+            return _budleDirCache[slot].BundleTable;
         }
 
         public IndexNode[] GetIndexTable(int slot)
         {
-            return _budleDirCache[slot].indexTable;
+            return _budleDirCache[slot].IndexTable;
         }
 
         public int GetNumFiles(int slot)
         {
-            return _budleDirCache[slot].numFiles;
+            return _budleDirCache[slot].NumFiles;
         }
 
         public bool IsSndDataExtComp(int slot)
         {
-            return _budleDirCache[slot].isCompressed;
+            return _budleDirCache[slot].IsCompressed;
         }
 
         public class AudioTable
         {
-            public string filename;
-            public int offset;
-            public int size;
+            public string Filename;
+            public int Offset;
+            public int Size;
         }
 
         public class IndexNode
         {
-            public string filename;
-            public int index;
+            public string Filename;
+            public int Index;
         }
 
         public class FileDirCache
         {
-            public string fileName;
-            public AudioTable[] bundleTable;
-            public int numFiles;
-            public bool isCompressed;
-            public IndexNode[] indexTable;
+            public string FileName;
+            public AudioTable[] BundleTable;
+            public int NumFiles;
+            public bool IsCompressed;
+            public IndexNode[] IndexTable;
         }
 
-        FileDirCache[] _budleDirCache = new FileDirCache[4];
+        readonly FileDirCache[] _budleDirCache = new FileDirCache[4];
     }
 }
 

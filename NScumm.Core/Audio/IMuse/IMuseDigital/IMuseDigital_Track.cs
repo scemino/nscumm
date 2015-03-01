@@ -30,9 +30,9 @@ namespace NScumm.Core.Audio.IMuse
             int l, lowest_priority = 127;
             int trackId = -1;
 
-            for (l = 0; l < MAX_DIGITAL_TRACKS; l++)
+            for (l = 0; l < MaxDigitalTracks; l++)
             {
-                if (!_track[l].used)
+                if (!_track[l].Used)
                 {
                     trackId = l;
                     break;
@@ -42,13 +42,13 @@ namespace NScumm.Core.Audio.IMuse
             if (trackId == -1)
             {
                 Debug.WriteLine("IMuseDigital::allocSlot(): All slots are full");
-                for (l = 0; l < MAX_DIGITAL_TRACKS; l++)
+                for (l = 0; l < MaxDigitalTracks; l++)
                 {
                     var track = _track[l];
-                    if (track.used && !track.toBeRemoved &&
-                        (lowest_priority > track.soundPriority) && !track.souStreamUsed)
+                    if (track.Used && !track.ToBeRemoved &&
+                        (lowest_priority > track.SoundPriority) && !track.SouStreamUsed)
                     {
-                        lowest_priority = track.soundPriority;
+                        lowest_priority = track.SoundPriority;
                         trackId = l;
                     }
                 }
@@ -58,16 +58,16 @@ namespace NScumm.Core.Audio.IMuse
                     var track = _track[trackId];
 
                     // Stop the track immediately
-                    _mixer.StopHandle(track.mixChanHandle);
-                    if (track.soundDesc != null)
+                    _mixer.StopHandle(track.MixChanHandle);
+                    if (track.SoundDesc != null)
                     {
-                        _sound.CloseSound(track.soundDesc);
+                        _sound.CloseSound(track.SoundDesc);
                     }
 
                     // Mark it as unused
                     track.Clear();
 
-                    Debug.WriteLine("IMuseDigital::allocSlot(): Removed sound {0} from track {1}", _track[trackId].soundId, trackId);
+                    Debug.WriteLine("IMuseDigital::allocSlot(): Removed sound {0} from track {1}", _track[trackId].SoundId, trackId);
                 }
                 else
                 {
@@ -81,6 +81,7 @@ namespace NScumm.Core.Audio.IMuse
 
         void StartSound(int soundId, string soundName, int soundType, int volGroupId, IAudioStream input, int hookId, int volume, int priority, Track otherTrack)
         {
+            int bits, freq, channels;
             lock (_mutex)
             {
                 Debug.WriteLine("IMuseDigital::StartSound({0}) - begin func", soundId);
@@ -100,42 +101,39 @@ namespace NScumm.Core.Audio.IMuse
 
                 track.pan = 64;
                 track.vol = volume * 1000;
-                track.soundId = soundId;
-                track.volGroupId = volGroupId;
-                track.curHookId = hookId;
-                track.soundPriority = priority;
-                track.curRegion = -1;
-                track.soundType = soundType;
-                track.trackId = l;
+                track.SoundId = soundId;
+                track.VolGroupId = volGroupId;
+                track.CurHookId = hookId;
+                track.SoundPriority = priority;
+                track.CurRegion = -1;
+                track.SoundType = soundType;
+                track.TrackId = l;
+                track.SouStreamUsed = (input != null);
 
-                int bits = 0, freq = 0, channels = 0;
-
-                track.souStreamUsed = (input != null);
-
-                if (track.souStreamUsed)
+                if (track.SouStreamUsed)
                 {
-                    track.mixChanHandle = _mixer.PlayStream(track.GetSoundType(), input, -1, track.Volume, track.Pan,
-                        true, false, track.mixerFlags.HasFlag(AudioFlags.Stereo));
+                    track.MixChanHandle = _mixer.PlayStream(track.GetSoundType(), input, -1, track.Volume, track.Pan,
+                        true, false, track.MixerFlags.HasFlag(AudioFlags.Stereo));
                 }
                 else
                 {
-                    track.soundName = soundName;
-                    track.soundDesc = _sound.OpenSound(soundId, soundName, soundType, volGroupId, -1);
-                    if (track.soundDesc == null)
-                        track.soundDesc = _sound.OpenSound(soundId, soundName, soundType, volGroupId, 1);
-                    if (track.soundDesc == null)
-                        track.soundDesc = _sound.OpenSound(soundId, soundName, soundType, volGroupId, 2);
+                    track.SoundName = soundName;
+                    track.SoundDesc = _sound.OpenSound(soundId, soundName, soundType, volGroupId, -1);
+                    if (track.SoundDesc == null)
+                        track.SoundDesc = _sound.OpenSound(soundId, soundName, soundType, volGroupId, 1);
+                    if (track.SoundDesc == null)
+                        track.SoundDesc = _sound.OpenSound(soundId, soundName, soundType, volGroupId, 2);
 
-                    if (track.soundDesc == null)
+                    if (track.SoundDesc == null)
                         return;
 
-                    track.sndDataExtComp = _sound.IsSndDataExtComp(track.soundDesc);
+                    track.SndDataExtComp = _sound.IsSndDataExtComp(track.SoundDesc);
 
-                    bits = _sound.GetBits(track.soundDesc);
-                    channels = _sound.GetChannels(track.soundDesc);
-                    freq = _sound.GetFreq(track.soundDesc);
+                    bits = _sound.GetBits(track.SoundDesc);
+                    channels = _sound.GetChannels(track.SoundDesc);
+                    freq = _sound.GetFreq(track.SoundDesc);
 
-                    if ((soundId == Sound.TalkSoundID) && (soundType == IMUSE_BUNDLE))
+                    if ((soundId == Sound.TalkSoundID) && (soundType == ImuseBundle))
                     {
                         if (_vm._actorToPrintStrFor != 0xFF && _vm._actorToPrintStrFor != 0)
                         {
@@ -157,36 +155,36 @@ namespace NScumm.Core.Audio.IMuse
                     Debug.Assert(channels == 1 || channels == 2);
                     Debug.Assert(0 < freq && freq <= 65535);
 
-                    track.feedSize = freq * channels;
+                    track.FeedSize = freq * channels;
                     if (channels == 2)
-                        track.mixerFlags = AudioFlags.Stereo;
+                        track.MixerFlags = AudioFlags.Stereo;
 
                     if ((bits == 12) || (bits == 16))
                     {
-                        track.mixerFlags |= AudioFlags.Is16Bits;
-                        track.feedSize *= 2;
+                        track.MixerFlags |= AudioFlags.Is16Bits;
+                        track.FeedSize *= 2;
                     }
                     else if (bits == 8)
                     {
-                        track.mixerFlags |= AudioFlags.Unsigned;
+                        track.MixerFlags |= AudioFlags.Unsigned;
                     }
                     else
                         Console.Error.WriteLine("IMuseDigital::startSound(): Can't handle {0} bit samples", bits);
 
-                    if (otherTrack != null && otherTrack.used && !otherTrack.toBeRemoved)
+                    if (otherTrack != null && otherTrack.Used && !otherTrack.ToBeRemoved)
                     {
-                        track.curRegion = otherTrack.curRegion;
-                        track.dataOffset = otherTrack.dataOffset;
-                        track.regionOffset = otherTrack.regionOffset;
-                        track.dataMod12Bit = otherTrack.dataMod12Bit;
+                        track.CurRegion = otherTrack.CurRegion;
+                        track.DataOffset = otherTrack.DataOffset;
+                        track.RegionOffset = otherTrack.RegionOffset;
+                        track.DataMod12Bit = otherTrack.DataMod12Bit;
                     }
 
-                    track.stream = new QueuingAudioStream(freq, track.mixerFlags.HasFlag(AudioFlags.Stereo));
-                    track.mixChanHandle = _mixer.PlayStream(track.GetSoundType(), track.stream, -1, track.Volume, track.Pan,
-                        true, false, track.mixerFlags.HasFlag(AudioFlags.Stereo));
+                    track.Stream = new QueuingAudioStream(freq, track.MixerFlags.HasFlag(AudioFlags.Stereo));
+                    track.MixChanHandle = _mixer.PlayStream(track.GetSoundType(), track.Stream, -1, track.Volume, track.Pan,
+                        true, false, track.MixerFlags.HasFlag(AudioFlags.Stereo));
                 }
 
-                track.used = true;
+                track.Used = true;
             }
         }
 
@@ -194,52 +192,52 @@ namespace NScumm.Core.Audio.IMuse
         {
             Track fadeTrack;
 
-            Debug.WriteLine("cloneToFadeOutTrack(soundId:{0}, fade:{1}) - begin of func", track.trackId, fadeDelay);
+            Debug.WriteLine("cloneToFadeOutTrack(soundId:{0}, fade:{1}) - begin of func", track.TrackId, fadeDelay);
 
-            if (track.toBeRemoved)
+            if (track.ToBeRemoved)
             {
                 Console.Error.WriteLine("cloneToFadeOutTrack: Tried to clone a track to be removed, please bug report");
                 return null;
             }
 
-            Debug.Assert(track.trackId < MAX_DIGITAL_TRACKS);
-            fadeTrack = _track[track.trackId + MAX_DIGITAL_TRACKS];
+            Debug.Assert(track.TrackId < MaxDigitalTracks);
+            fadeTrack = _track[track.TrackId + MaxDigitalTracks];
 
-            if (fadeTrack.used)
+            if (fadeTrack.Used)
             {
-                Debug.WriteLine("cloneToFadeOutTrack: No free fade track, force flush fade soundId:{0}", fadeTrack.soundId);
+                Debug.WriteLine("cloneToFadeOutTrack: No free fade track, force flush fade soundId:{0}", fadeTrack.SoundId);
                 FlushTrack(fadeTrack);
-                _mixer.StopHandle(fadeTrack.mixChanHandle);
+                _mixer.StopHandle(fadeTrack.MixChanHandle);
             }
 
             // Clone the settings of the given track
             fadeTrack = track.Clone();
-            fadeTrack.trackId = track.trackId + MAX_DIGITAL_TRACKS;
+            fadeTrack.TrackId = track.TrackId + MaxDigitalTracks;
 
             // Clone the sound.
             // leaving bug number for now #1635361
-            var soundDesc = _sound.CloneSound(track.soundDesc);
+            var soundDesc = _sound.CloneSound(track.SoundDesc);
             if (soundDesc == null)
             {
                 // it fail load open old song after switch to diffrent CDs
                 // so gave up
                 Console.Error.WriteLine("Game not supported while playing on 2 diffrent CDs");
             }
-            track.soundDesc = soundDesc;
+            track.SoundDesc = soundDesc;
 
             // Set the volume fading parameters to indicate a fade out
-            fadeTrack.volFadeDelay = fadeDelay;
-            fadeTrack.volFadeDest = 0;
-            fadeTrack.volFadeStep = (fadeTrack.volFadeDest - fadeTrack.vol) * 60 * (1000 / _callbackFps) / (1000 * fadeDelay);
-            fadeTrack.volFadeUsed = true;
+            fadeTrack.VolFadeDelay = fadeDelay;
+            fadeTrack.VolFadeDest = 0;
+            fadeTrack.VolFadeStep = (fadeTrack.VolFadeDest - fadeTrack.vol) * 60 * (1000 / _callbackFps) / (1000 * fadeDelay);
+            fadeTrack.VolFadeUsed = true;
 
             // Create an appendable output buffer
-            fadeTrack.stream = new QueuingAudioStream(_sound.GetFreq(fadeTrack.soundDesc), track.mixerFlags.HasFlag(AudioFlags.Stereo));
-            fadeTrack.mixChanHandle = _mixer.PlayStream(track.GetSoundType(), fadeTrack.stream, -1, fadeTrack.Volume, fadeTrack.Pan,
-                true, false, track.mixerFlags.HasFlag(AudioFlags.Stereo));
-            fadeTrack.used = true;
+            fadeTrack.Stream = new QueuingAudioStream(_sound.GetFreq(fadeTrack.SoundDesc), track.MixerFlags.HasFlag(AudioFlags.Stereo));
+            fadeTrack.MixChanHandle = _mixer.PlayStream(track.GetSoundType(), fadeTrack.Stream, -1, fadeTrack.Volume, fadeTrack.Pan,
+                true, false, track.MixerFlags.HasFlag(AudioFlags.Stereo));
+            fadeTrack.Used = true;
 
-            Debug.WriteLine("CloneToFadeOutTrack() - end of func, soundId {0}, fade soundId {1}", track.soundId, fadeTrack.soundId);
+            Debug.WriteLine("CloneToFadeOutTrack() - end of func, soundId {0}, fade soundId {1}", track.SoundId, fadeTrack.SoundId);
 
             return fadeTrack;
         }
@@ -254,13 +252,13 @@ namespace NScumm.Core.Audio.IMuse
                 if (volGroupId == 4)
                     volGroupId = 3;
 
-                for (int l = 0; l < MAX_DIGITAL_TRACKS; l++)
+                for (int l = 0; l < MaxDigitalTracks; l++)
                 {
                     var track = _track[l];
-                    if (track.used && !track.toBeRemoved && (track.soundId == soundId))
+                    if (track.Used && !track.ToBeRemoved && (track.SoundId == soundId))
                     {
                         Debug.WriteLine("IMuseDigital::setVolumeGroup({0}) - setting", soundId);
-                        track.volGroupId = volGroupId;
+                        track.VolGroupId = volGroupId;
                     }
                 }
             }
@@ -273,13 +271,13 @@ namespace NScumm.Core.Audio.IMuse
                 Debug.WriteLine("IMuseDigital::setPriority({0}, {1})", soundId, priority);
                 Debug.Assert((priority >= 0) && (priority <= 127));
 
-                for (int l = 0; l < MAX_DIGITAL_TRACKS; l++)
+                for (int l = 0; l < MaxDigitalTracks; l++)
                 {
                     var track = _track[l];
-                    if (track.used && !track.toBeRemoved && (track.soundId == soundId))
+                    if (track.Used && !track.ToBeRemoved && (track.SoundId == soundId))
                     {
                         Debug.WriteLine("IMuseDigital::setPriority({0}) - setting", soundId);
-                        track.soundPriority = priority;
+                        track.SoundPriority = priority;
                     }
                 }
             }
@@ -291,10 +289,10 @@ namespace NScumm.Core.Audio.IMuse
             {
                 Debug.WriteLine("IMuseDigital::setVolume({0}, {1})", soundId, volume);
 
-                for (int l = 0; l < MAX_DIGITAL_TRACKS; l++)
+                for (int l = 0; l < MaxDigitalTracks; l++)
                 {
                     var track = _track[l];
-                    if (track.used && !track.toBeRemoved && (track.soundId == soundId))
+                    if (track.Used && !track.ToBeRemoved && (track.SoundId == soundId))
                     {
                         Debug.WriteLine("IMuseDigital::setVolume({0}) - setting", soundId);
                         track.vol = volume * 1000;
@@ -307,12 +305,12 @@ namespace NScumm.Core.Audio.IMuse
         {
             lock (_mutex)
             {
-                for (int l = 0; l < MAX_DIGITAL_TRACKS; l++)
+                for (int l = 0; l < MaxDigitalTracks; l++)
                 {
                     var track = _track[l];
-                    if (track.used && !track.toBeRemoved && (track.soundId == soundId))
+                    if (track.Used && !track.ToBeRemoved && (track.SoundId == soundId))
                     {
-                        track.curHookId = hookId;
+                        track.CurHookId = hookId;
                     }
                 }
             }
@@ -324,12 +322,12 @@ namespace NScumm.Core.Audio.IMuse
 
             lock (_mutex)
             {
-                for (int l = 0; l < MAX_DIGITAL_TRACKS; l++)
+                for (int l = 0; l < MaxDigitalTracks; l++)
                 {
                     var track = _track[l];
-                    if (track.used && !track.toBeRemoved && (track.volGroupId == IMUSE_VOLGRP_MUSIC))
+                    if (track.Used && !track.ToBeRemoved && (track.VolGroupId == ImuseVolumeGroupMusic))
                     {
-                        soundId = track.soundId;
+                        soundId = track.SoundId;
                         break;
                     }
                 }
@@ -344,10 +342,10 @@ namespace NScumm.Core.Audio.IMuse
             {
                 Debug.WriteLine("IMuseDigital::setPan({0}, {1})", soundId, pan);
 
-                for (int l = 0; l < MAX_DIGITAL_TRACKS; l++)
+                for (int l = 0; l < MaxDigitalTracks; l++)
                 {
                     var track = _track[l];
-                    if (track.used && !track.toBeRemoved && (track.soundId == soundId))
+                    if (track.Used && !track.ToBeRemoved && (track.SoundId == soundId))
                     {
                         Debug.WriteLine("IMuseDigital::setPan({0}) - setting", soundId);
                         track.pan = (sbyte)pan;
@@ -362,16 +360,16 @@ namespace NScumm.Core.Audio.IMuse
             {
                 Debug.WriteLine("IMuseDigital::setFade({0}, {1}, {2})", soundId, destVolume, delay60HzTicks);
 
-                for (int l = 0; l < MAX_DIGITAL_TRACKS; l++)
+                for (int l = 0; l < MaxDigitalTracks; l++)
                 {
                     var track = _track[l];
-                    if (track.used && !track.toBeRemoved && (track.soundId == soundId))
+                    if (track.Used && !track.ToBeRemoved && (track.SoundId == soundId))
                     {
                         Debug.WriteLine("IMuseDigital::setFade({0}) - setting", soundId);
-                        track.volFadeDelay = delay60HzTicks;
-                        track.volFadeDest = destVolume * 1000;
-                        track.volFadeStep = (track.volFadeDest - track.vol) * 60 * (1000 / _callbackFps) / (1000 * delay60HzTicks);
-                        track.volFadeUsed = true;
+                        track.VolFadeDelay = delay60HzTicks;
+                        track.VolFadeDest = destVolume * 1000;
+                        track.VolFadeStep = (track.VolFadeDest - track.vol) * 60 * (1000 / _callbackFps) / (1000 * delay60HzTicks);
+                        track.VolFadeUsed = true;
                     }
                 }
             }
@@ -383,12 +381,12 @@ namespace NScumm.Core.Audio.IMuse
             {
                 Debug.WriteLine("IMuseDigital::fadeOutMusic(fade:{0})", fadeDelay);
 
-                for (int l = 0; l < MAX_DIGITAL_TRACKS; l++)
+                for (int l = 0; l < MaxDigitalTracks; l++)
                 {
                     var track = _track[l];
-                    if (track.used && !track.toBeRemoved && (track.volGroupId == IMuseDigital.IMUSE_VOLGRP_MUSIC))
+                    if (track.Used && !track.ToBeRemoved && (track.VolGroupId == IMuseDigital.ImuseVolumeGroupMusic))
                     {
-                        Debug.WriteLine("IMuseDigital::fadeOutMusic(fade:{0}, sound:{1})", fadeDelay, track.soundId);
+                        Debug.WriteLine("IMuseDigital::fadeOutMusic(fade:{0}, sound:{1})", fadeDelay, track.SoundId);
                         CloneToFadeOutTrack(track, fadeDelay);
                         FlushTrack(track);
                         break;
@@ -403,10 +401,10 @@ namespace NScumm.Core.Audio.IMuse
             {
                 Debug.WriteLine("IMuseDigital::fadeOutMusicAndStartNew(fade:{0}, file:{1}, sound:{2})", fadeDelay, filename, soundId);
 
-                for (int l = 0; l < MAX_DIGITAL_TRACKS; l++)
+                for (int l = 0; l < MaxDigitalTracks; l++)
                 {
                     var track = _track[l];
-                    if (track.used && !track.toBeRemoved && (track.volGroupId == IMUSE_VOLGRP_MUSIC))
+                    if (track.Used && !track.ToBeRemoved && (track.VolGroupId == ImuseVolumeGroupMusic))
                     {
                         Debug.WriteLine("IMuseDigital::fadeOutMusicAndStartNew(sound:{0}) - starting", soundId);
                         StartMusicWithOtherPos(filename, soundId, 0, 127, track);
@@ -424,13 +422,13 @@ namespace NScumm.Core.Audio.IMuse
             {
                 Debug.WriteLine("IMuseDigital::SetHookIdForMusic(hookId:{0})", hookId);
 
-                for (int l = 0; l < MAX_DIGITAL_TRACKS; l++)
+                for (int l = 0; l < MaxDigitalTracks; l++)
                 {
                     var track = _track[l];
-                    if (track.used && !track.toBeRemoved && (track.volGroupId == IMUSE_VOLGRP_MUSIC))
+                    if (track.Used && !track.ToBeRemoved && (track.VolGroupId == ImuseVolumeGroupMusic))
                     {
-                        Debug.WriteLine("IMuseDigital::setHookIdForMusic - setting for sound:{0}", track.soundId);
-                        track.curHookId = hookId;
+                        Debug.WriteLine("IMuseDigital::setHookIdForMusic - setting for sound:{0}", track.SoundId);
+                        track.CurHookId = hookId;
                         break;
                     }
                 }
@@ -441,7 +439,7 @@ namespace NScumm.Core.Audio.IMuse
         {
             lock (_mutex)
             {
-                Debug.WriteLine("IMuseDigital::setTrigger({0})", trigger.filename);
+                Debug.WriteLine("IMuseDigital::setTrigger({0})", trigger.Filename);
 
                 _triggerParams = trigger;
                 _triggerUsed = true;

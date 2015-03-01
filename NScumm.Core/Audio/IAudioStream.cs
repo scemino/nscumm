@@ -31,6 +31,7 @@ namespace NScumm.Core.Audio
     /// order of these flags (in particular, do not store them verbatim
     /// in savestates).
     /// </summary>
+    [Flags]
     public enum AudioFlags
     {
         None,

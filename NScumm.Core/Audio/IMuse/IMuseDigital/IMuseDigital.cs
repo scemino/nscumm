@@ -38,10 +38,10 @@ namespace NScumm.Core.Audio.IMuse
             Debug.Assert(_sound != null);
             _callbackFps = fps;
             ResetState();
-            for (int l = 0; l < MAX_DIGITAL_TRACKS + MAX_DIGITAL_FADETRACKS; l++)
+            for (int l = 0; l < MaxDigitalTracks + MaxDigitalFadeTracks; l++)
             {
                 _track[l] = new Track();
-                _track[l].trackId = l;
+                _track[l].TrackId = l;
             }
 
             _timer = new Timer(new TimerCallback(o => Callback()), this, TimeSpan.Zero, TimeSpan.FromMilliseconds(1000 / _callbackFps));
@@ -71,7 +71,7 @@ namespace NScumm.Core.Audio.IMuse
 
         static AudioFlags MakeMixerFlags(Track track)
         {
-            var flags = track.mixerFlags;
+            var flags = track.MixerFlags;
             var mixerFlags = AudioFlags.None;
             if (flags.HasFlag(AudioFlags.Unsigned))
                 mixerFlags |= AudioFlags.Unsigned;
@@ -79,7 +79,7 @@ namespace NScumm.Core.Audio.IMuse
                 mixerFlags |= AudioFlags.Is16Bits;
 
 
-            if (track.sndDataExtComp)
+            if (track.SndDataExtComp)
                 mixerFlags |= AudioFlags.LittleEndian;
 
             if (flags.HasFlag(AudioFlags.Stereo))
@@ -104,34 +104,34 @@ namespace NScumm.Core.Audio.IMuse
             lock (_mutex)
             {
 
-                for (int l = 0; l < MAX_DIGITAL_TRACKS + MAX_DIGITAL_FADETRACKS; l++)
+                for (int l = 0; l < MaxDigitalTracks + MaxDigitalFadeTracks; l++)
                 {
                     var track = _track[l];
-                    if (track.used)
+                    if (track.Used)
                     {
                         // Ignore tracks which are about to finish. Also, if it did finish in the meantime,
                         // mark it as unused.
-                        if (track.stream == null)
+                        if (track.Stream == null)
                         {
-                            if (!_mixer.IsSoundHandleActive(track.mixChanHandle))
-                                _track[l] = new Track();
+                            if (!_mixer.IsSoundHandleActive(track.MixChanHandle))
+                                _track[l].Clear();
                             continue;
                         }
 
                         if (_pause)
                             return;
 
-                        if (track.volFadeUsed)
+                        if (track.VolFadeUsed)
                         {
-                            if (track.volFadeStep < 0)
+                            if (track.VolFadeStep < 0)
                             {
-                                if (track.vol > track.volFadeDest)
+                                if (track.vol > track.VolFadeDest)
                                 {
-                                    track.vol += track.volFadeStep;
-                                    if (track.vol < track.volFadeDest)
+                                    track.vol += track.VolFadeStep;
+                                    if (track.vol < track.VolFadeDest)
                                     {
-                                        track.vol = track.volFadeDest;
-                                        track.volFadeUsed = false;
+                                        track.vol = track.VolFadeDest;
+                                        track.VolFadeUsed = false;
                                     }
                                     if (track.vol == 0)
                                     {
@@ -141,40 +141,40 @@ namespace NScumm.Core.Audio.IMuse
                                     }
                                 }
                             }
-                            else if (track.volFadeStep > 0)
+                            else if (track.VolFadeStep > 0)
                             {
-                                if (track.vol < track.volFadeDest)
+                                if (track.vol < track.VolFadeDest)
                                 {
-                                    track.vol += track.volFadeStep;
-                                    if (track.vol > track.volFadeDest)
+                                    track.vol += track.VolFadeStep;
+                                    if (track.vol > track.VolFadeDest)
                                     {
-                                        track.vol = track.volFadeDest;
-                                        track.volFadeUsed = false;
+                                        track.vol = track.VolFadeDest;
+                                        track.VolFadeUsed = false;
                                     }
                                 }
                             }
-                            Debug.WriteLine("Fade: sound({0}), Vol({1})", track.soundId, track.vol / 1000);
+                            Debug.WriteLine("Fade: sound({0}), Vol({1})", track.SoundId, track.vol / 1000);
                         }
 
-                        if (!track.souStreamUsed)
+                        if (!track.SouStreamUsed)
                         {
-                            Debug.Assert(track.stream != null);
+                            Debug.Assert(track.Stream != null);
                             byte[] tmpSndBufferPtr = null;
                             int curFeedSize = 0;
 
-                            if (track.curRegion == -1)
+                            if (track.CurRegion == -1)
                             {
                                 SwitchToNextRegion(track);
-                                if (track.stream == null) // Seems we reached the end of the stream
+                                if (track.Stream == null) // Seems we reached the end of the stream
                                 continue;
                             }
 
-                            int bits = _sound.GetBits(track.soundDesc);
-                            int channels = _sound.GetChannels(track.soundDesc);
+                            int bits = _sound.GetBits(track.SoundDesc);
+                            int channels = _sound.GetChannels(track.SoundDesc);
 
-                            int feedSize = track.feedSize / _callbackFps;
+                            int feedSize = track.FeedSize / _callbackFps;
 
-                            if (track.stream.IsEndOfData)
+                            if (track.Stream.IsEndOfData)
                             {
                                 feedSize *= 2;
                             }
@@ -202,64 +202,63 @@ namespace NScumm.Core.Audio.IMuse
 
                             do
                             {
-                                if (bits == 12)
+                                switch (bits)
                                 {
-                                    byte[] tmpPtr = null;
-
-                                    feedSize += track.dataMod12Bit;
-                                    int tmpFeedSize12Bits = (feedSize * 3) / 4;
-                                    int tmpLength12Bits = (tmpFeedSize12Bits / 3) * 4;
-                                    track.dataMod12Bit = feedSize - tmpLength12Bits;
-
-                                    int tmpOffset = (track.regionOffset * 3) / 4;
-                                    int tmpFeedSize = _sound.GetDataFromRegion(track.soundDesc, track.curRegion, out tmpPtr, tmpOffset, tmpFeedSize12Bits);
-                                    curFeedSize = BundleCodecs.Decode12BitsSample(tmpPtr, out tmpSndBufferPtr, tmpFeedSize);
-                                }
-                                else if (bits == 16)
-                                {
-                                    curFeedSize = _sound.GetDataFromRegion(track.soundDesc, track.curRegion, out tmpSndBufferPtr, track.regionOffset, feedSize);
-                                    if (channels == 1)
-                                    {
-                                        curFeedSize &= ~1;
-                                    }
-                                    if (channels == 2)
-                                    {
-                                        curFeedSize &= ~3;
-                                    }
-                                }
-                                else if (bits == 8)
-                                {
-                                    curFeedSize = _sound.GetDataFromRegion(track.soundDesc, track.curRegion, out tmpSndBufferPtr, track.regionOffset, feedSize);
-                                    if (_radioChatterSFX && track.soundId == 10000)
-                                    {
-                                        if (curFeedSize > feedSize)
-                                            curFeedSize = feedSize;
-                                        var buf = new byte[curFeedSize];
-                                        int index = 0;
-                                        int count = curFeedSize - 4;
-                                        var ptr_1 = 0;
-                                        var ptr_2 = 4;
-                                        int value = tmpSndBufferPtr[ptr_1 + 0] - 0x80;
-                                        value += tmpSndBufferPtr[ptr_1 + 1] - 0x80;
-                                        value += tmpSndBufferPtr[ptr_1 + 2] - 0x80;
-                                        value += tmpSndBufferPtr[ptr_1 + 3] - 0x80;
-                                        do
+                                    case 12:
+                                        byte[] tmpPtr;
+                                        feedSize += track.DataMod12Bit;
+                                        int tmpFeedSize12Bits = (feedSize * 3) / 4;
+                                        int tmpLength12Bits = (tmpFeedSize12Bits / 3) * 4;
+                                        track.DataMod12Bit = feedSize - tmpLength12Bits;
+                                        int tmpOffset = (track.RegionOffset * 3) / 4;
+                                        int tmpFeedSize = _sound.GetDataFromRegion(track.SoundDesc, track.CurRegion, out tmpPtr, tmpOffset, tmpFeedSize12Bits);
+                                        curFeedSize = BundleCodecs.Decode12BitsSample(tmpPtr, out tmpSndBufferPtr, tmpFeedSize);
+                                        break;
+                                    case 16:
+                                        curFeedSize = _sound.GetDataFromRegion(track.SoundDesc, track.CurRegion, out tmpSndBufferPtr, track.RegionOffset, feedSize);
+                                        if (channels == 1)
                                         {
-                                            int t = tmpSndBufferPtr[ptr_1++];
-                                            int v = t - (value / 4);
-                                            value = tmpSndBufferPtr[ptr_2++] - 0x80 + (value - t + 0x80);
-                                            buf[index++] = (byte)(v * 2 + 0x80);
-                                        } while ((--count) != 0);
-                                        buf[curFeedSize - 1] = 0x80;
-                                        buf[curFeedSize - 2] = 0x80;
-                                        buf[curFeedSize - 3] = 0x80;
-                                        buf[curFeedSize - 4] = 0x80;
-                                        tmpSndBufferPtr = buf;
-                                    }
-                                    if (channels == 2)
-                                    {
-                                        curFeedSize &= ~1;
-                                    }
+                                            curFeedSize &= ~1;
+                                        }
+                                        if (channels == 2)
+                                        {
+                                            curFeedSize &= ~3;
+                                        }
+                                        break;
+                                    case 8:
+                                        curFeedSize = _sound.GetDataFromRegion(track.SoundDesc, track.CurRegion, out tmpSndBufferPtr, track.RegionOffset, feedSize);
+                                        if (_radioChatterSFX && track.SoundId == 10000)
+                                        {
+                                            if (curFeedSize > feedSize)
+                                                curFeedSize = feedSize;
+                                            var buf = new byte[curFeedSize];
+                                            int index = 0;
+                                            int count = curFeedSize - 4;
+                                            var ptr_1 = 0;
+                                            var ptr_2 = 4;
+                                            int value = tmpSndBufferPtr[ptr_1 + 0] - 0x80;
+                                            value += tmpSndBufferPtr[ptr_1 + 1] - 0x80;
+                                            value += tmpSndBufferPtr[ptr_1 + 2] - 0x80;
+                                            value += tmpSndBufferPtr[ptr_1 + 3] - 0x80;
+                                            do
+                                            {
+                                                int t = tmpSndBufferPtr[ptr_1++];
+                                                int v = t - (value / 4);
+                                                value = tmpSndBufferPtr[ptr_2++] - 0x80 + (value - t + 0x80);
+                                                buf[index++] = (byte)(v * 2 + 0x80);
+                                            }
+                                            while ((--count) != 0);
+                                            buf[curFeedSize - 1] = 0x80;
+                                            buf[curFeedSize - 2] = 0x80;
+                                            buf[curFeedSize - 3] = 0x80;
+                                            buf[curFeedSize - 4] = 0x80;
+                                            tmpSndBufferPtr = buf;
+                                        }
+                                        if (channels == 2)
+                                        {
+                                            curFeedSize &= ~1;
+                                        }
+                                        break;
                                 }
 
                                 if (curFeedSize > feedSize)
@@ -267,16 +266,16 @@ namespace NScumm.Core.Audio.IMuse
 
                                 if (_mixer.IsReady)
                                 {
-                                    track.stream.QueueBuffer(tmpSndBufferPtr, curFeedSize, true, MakeMixerFlags(track));
-                                    track.regionOffset += curFeedSize;
+                                    track.Stream.QueueBuffer(tmpSndBufferPtr, curFeedSize, true, MakeMixerFlags(track));
+                                    track.RegionOffset += curFeedSize;
                                 }
                                 else
                                     tmpSndBufferPtr = null;
 
-                                if (_sound.IsEndOfRegion(track.soundDesc, track.curRegion))
+                                if (_sound.IsEndOfRegion(track.SoundDesc, track.CurRegion))
                                 {
                                     SwitchToNextRegion(track);
-                                    if (track.stream == null) // Seems we reached the end of the stream
+                                    if (track.Stream == null) // Seems we reached the end of the stream
                                     break;
                                 }
                                 feedSize -= curFeedSize;
@@ -285,8 +284,8 @@ namespace NScumm.Core.Audio.IMuse
                         }
                         if (_mixer.IsReady)
                         {
-                            _mixer.SetChannelVolume(track.mixChanHandle, track.Volume);
-                            _mixer.SetChannelBalance(track.mixChanHandle, track.Pan);
+                            _mixer.SetChannelVolume(track.MixChanHandle, track.Volume);
+                            _mixer.SetChannelBalance(track.MixChanHandle, track.Pan);
                         }
                     }
                 }
@@ -297,123 +296,123 @@ namespace NScumm.Core.Audio.IMuse
         {
             Debug.Assert(track != null);
 
-            if (track.trackId >= MAX_DIGITAL_TRACKS)
+            if (track.TrackId >= MaxDigitalTracks)
             {
                 FlushTrack(track);
-                Debug.WriteLine("SwToNeReg(trackId:{0}) - fadetrack can't go next region, exiting SwToNeReg", track.trackId);
+                Debug.WriteLine("SwToNeReg(trackId:{0}) - fadetrack can't go next region, exiting SwToNeReg", track.TrackId);
                 return;
             }
 
-            int num_regions = _sound.GetNumRegions(track.soundDesc);
+            int num_regions = _sound.GetNumRegions(track.SoundDesc);
 
-            if (++track.curRegion == num_regions)
+            if (++track.CurRegion == num_regions)
             {
                 FlushTrack(track);
-                Debug.WriteLine("SwToNeReg(trackId:{0}) - end of region, exiting SwToNeReg", track.trackId);
+                Debug.WriteLine("SwToNeReg(trackId:{0}) - end of region, exiting SwToNeReg", track.TrackId);
                 return;
             }
 
-            SoundDesc soundDesc = track.soundDesc;
-            if (_triggerUsed && track.soundDesc.numMarkers != 0)
+            SoundDesc soundDesc = track.SoundDesc;
+            if (_triggerUsed && track.SoundDesc.NumMarkers != 0)
             {
-                if (_sound.CheckForTriggerByRegionAndMarker(soundDesc, track.curRegion, _triggerParams.marker))
+                if (_sound.CheckForTriggerByRegionAndMarker(soundDesc, track.CurRegion, _triggerParams.Marker))
                 {
-                    Debug.WriteLine("SwToNeReg(trackId:{0}) - trigger {1} reached", track.trackId, _triggerParams.marker);
-                    Debug.WriteLine("SwToNeReg(trackId:{0}) - exit current region {1}", track.trackId, track.curRegion);
-                    Debug.WriteLine("SwToNeReg(trackId:{0}) - call cloneToFadeOutTrack(delay:{1})", track.trackId, _triggerParams.fadeOutDelay);
-                    Track fadeTrack = CloneToFadeOutTrack(track, _triggerParams.fadeOutDelay);
+                    Debug.WriteLine("SwToNeReg(trackId:{0}) - trigger {1} reached", track.TrackId, _triggerParams.Marker);
+                    Debug.WriteLine("SwToNeReg(trackId:{0}) - exit current region {1}", track.TrackId, track.CurRegion);
+                    Debug.WriteLine("SwToNeReg(trackId:{0}) - call cloneToFadeOutTrack(delay:{1})", track.TrackId, _triggerParams.FadeOutDelay);
+                    Track fadeTrack = CloneToFadeOutTrack(track, _triggerParams.FadeOutDelay);
                     if (fadeTrack != null)
                     {
-                        fadeTrack.dataOffset = _sound.GetRegionOffset(fadeTrack.soundDesc, fadeTrack.curRegion);
-                        fadeTrack.regionOffset = 0;
-                        Debug.WriteLine("SwToNeReg(trackId:{0})-sound({1}) select region {2}, curHookId: {3}", fadeTrack.trackId, fadeTrack.soundId, fadeTrack.curRegion, fadeTrack.curHookId);
-                        fadeTrack.curHookId = 0;
+                        fadeTrack.DataOffset = _sound.GetRegionOffset(fadeTrack.SoundDesc, fadeTrack.CurRegion);
+                        fadeTrack.RegionOffset = 0;
+                        Debug.WriteLine("SwToNeReg(trackId:{0})-sound({1}) select region {2}, curHookId: {3}", fadeTrack.TrackId, fadeTrack.SoundId, fadeTrack.CurRegion, fadeTrack.CurHookId);
+                        fadeTrack.CurHookId = 0;
                     }
                     FlushTrack(track);
-                    StartMusic(_triggerParams.filename, _triggerParams.soundId, _triggerParams.hookId, _triggerParams.volume);
+                    StartMusic(_triggerParams.Filename, _triggerParams.SoundId, _triggerParams.HookId, _triggerParams.Volume);
                     _triggerUsed = false;
                     return;
                 }
             }
 
-            int jumpId = _sound.GetJumpIdByRegionAndHookId(soundDesc, track.curRegion, track.curHookId);
+            int jumpId = _sound.GetJumpIdByRegionAndHookId(soundDesc, track.CurRegion, track.CurHookId);
             if (jumpId != -1)
             {
                 int region = _sound.GetRegionIdByJumpId(soundDesc, jumpId);
                 Debug.Assert(region != -1);
                 int sampleHookId = _sound.GetJumpHookId(soundDesc, jumpId);
                 Debug.Assert(sampleHookId != -1);
-                Debug.WriteLine("SwToNeReg(trackId:{0}) - JUMP found - sound:{1}, track hookId:{2}, data hookId:{3}", track.trackId, track.soundId, track.curHookId, sampleHookId);
-                if (track.curHookId == sampleHookId)
+                Debug.WriteLine("SwToNeReg(trackId:{0}) - JUMP found - sound:{1}, track hookId:{2}, data hookId:{3}", track.TrackId, track.SoundId, track.CurHookId, sampleHookId);
+                if (track.CurHookId == sampleHookId)
                 {
                     int fadeDelay = (60 * _sound.GetJumpFade(soundDesc, jumpId)) / 1000;
-                    Debug.WriteLine("SwToNeReg(trackId:{0}) - sound({1}) match hookId", track.trackId, track.soundId);
+                    Debug.WriteLine("SwToNeReg(trackId:{0}) - sound({1}) match hookId", track.TrackId, track.SoundId);
                     if (fadeDelay != 0)
                     {
-                        Debug.WriteLine("SwToNeReg(trackId:{0}) - call cloneToFadeOutTrack(delay:{1})", track.trackId, fadeDelay);
+                        Debug.WriteLine("SwToNeReg(trackId:{0}) - call cloneToFadeOutTrack(delay:{1})", track.TrackId, fadeDelay);
                         var fadeTrack = CloneToFadeOutTrack(track, fadeDelay);
                         if (fadeTrack != null)
                         {
-                            fadeTrack.dataOffset = _sound.GetRegionOffset(fadeTrack.soundDesc, fadeTrack.curRegion);
-                            fadeTrack.regionOffset = 0;
-                            Debug.WriteLine("SwToNeReg(trackId:{0}) - sound({1}) faded track, select region {2}, curHookId: {3}", fadeTrack.trackId, fadeTrack.soundId, fadeTrack.curRegion, fadeTrack.curHookId);
-                            fadeTrack.curHookId = 0;
+                            fadeTrack.DataOffset = _sound.GetRegionOffset(fadeTrack.SoundDesc, fadeTrack.CurRegion);
+                            fadeTrack.RegionOffset = 0;
+                            Debug.WriteLine("SwToNeReg(trackId:{0}) - sound({1}) faded track, select region {2}, curHookId: {3}", fadeTrack.TrackId, fadeTrack.SoundId, fadeTrack.CurRegion, fadeTrack.CurHookId);
+                            fadeTrack.CurHookId = 0;
                         }
                     }
-                    track.curRegion = region;
-                    Debug.WriteLine("SwToNeReg(trackId:{0}) - sound({1}) jump to region {2}, curHookId: {3}", track.trackId, track.soundId, track.curRegion, track.curHookId);
-                    track.curHookId = 0;
+                    track.CurRegion = region;
+                    Debug.WriteLine("SwToNeReg(trackId:{0}) - sound({1}) jump to region {2}, curHookId: {3}", track.TrackId, track.SoundId, track.CurRegion, track.CurHookId);
+                    track.CurHookId = 0;
                 }
                 else
                 {
-                    Debug.WriteLine("SwToNeReg(trackId:{0}) - Normal switch region, sound({1}), hookId({2})", track.trackId, track.soundId, track.curHookId);
+                    Debug.WriteLine("SwToNeReg(trackId:{0}) - Normal switch region, sound({1}), hookId({2})", track.TrackId, track.SoundId, track.CurHookId);
                 }
             }
             else
             {
-                Debug.WriteLine("SwToNeReg(trackId:{0}) - Normal switch region, sound({1}), hookId({2})", track.trackId, track.soundId, track.curHookId);
+                Debug.WriteLine("SwToNeReg(trackId:{0}) - Normal switch region, sound({1}), hookId({2})", track.TrackId, track.SoundId, track.CurHookId);
             }
 
-            Debug.WriteLine("SwToNeReg(trackId:{0}) - sound({1}), select region {2}", track.trackId, track.soundId, track.curRegion);
-            track.dataOffset = _sound.GetRegionOffset(soundDesc, track.curRegion);
-            track.regionOffset = 0;
-            Debug.WriteLine("SwToNeReg(trackId:{0}) - end of func", track.trackId);
+            Debug.WriteLine("SwToNeReg(trackId:{0}) - sound({1}), select region {2}", track.TrackId, track.SoundId, track.CurRegion);
+            track.DataOffset = _sound.GetRegionOffset(soundDesc, track.CurRegion);
+            track.RegionOffset = 0;
+            Debug.WriteLine("SwToNeReg(trackId:{0}) - end of func", track.TrackId);
         }
 
-        const int MAX_DIGITAL_TRACKS = 8;
-        const int MAX_DIGITAL_FADETRACKS = 8;
+        const int MaxDigitalTracks = 8;
+        const int MaxDigitalFadeTracks = 8;
 
-        public const int MAX_IMUSE_SOUNDS = 16;
-        public const int IMUSE_RESOURCE = 1;
-        public const int IMUSE_BUNDLE = 2;
+        public const int MaxImuseSounds = 16;
+        public const int ImuseResource = 1;
+        public const int ImuseBundle = 2;
 
-        public const int IMUSE_VOLGRP_VOICE = 1;
-        public const int IMUSE_VOLGRP_SFX = 2;
-        public const int IMUSE_VOLGRP_MUSIC = 3;
+        public const int ImuseVolumeGroupVoice = 1;
+        public const int ImuseVolumeGroupSfx = 2;
+        public const int ImuseVolumeGroupMusic = 3;
 
         int _callbackFps;
         // value how many times callback needs to be called per second
 
         struct TriggerParams
         {
-            public string marker;
-            public int fadeOutDelay;
-            public string filename;
-            public int soundId;
-            public int hookId;
-            public int volume;
+            public string Marker;
+            public int FadeOutDelay;
+            public string Filename;
+            public int SoundId;
+            public int HookId;
+            public int Volume;
         }
 
         Timer _timer;
-        TriggerParams _triggerParams = new TriggerParams();
+        TriggerParams _triggerParams;
         bool _triggerUsed;
 
-        Track[] _track = new Track[MAX_DIGITAL_TRACKS + MAX_DIGITAL_FADETRACKS];
+        Track[] _track = new Track[MaxDigitalTracks + MaxDigitalFadeTracks];
 
         object _mutex = new object();
         ScummEngine7 _vm;
         IMixer _mixer;
-        ImuseDigiSndMgr _sound;
+        readonly ImuseDigiSndMgr _sound;
 
         string[] _audioNames;
         // filenames of sound SFX used in FT

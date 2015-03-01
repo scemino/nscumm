@@ -24,13 +24,13 @@ using System.Diagnostics;
 using System.Collections.Generic;
 using NScumm.Core.IO;
 
-namespace NScumm.Core
+namespace NScumm.Core.Audio.IMuse
 {
-    class IndexNodeComparer: Comparer<NScumm.Core.BundleDirCache.IndexNode>
+    class IndexNodeComparer: Comparer<BundleDirCache.IndexNode>
     {
-        public override int Compare(NScumm.Core.BundleDirCache.IndexNode x, NScumm.Core.BundleDirCache.IndexNode y)
+        public override int Compare(BundleDirCache.IndexNode x, BundleDirCache.IndexNode y)
         {
-            return string.Compare(x.filename, y.filename, true);
+            return string.Compare(x.Filename, y.Filename, StringComparison.OrdinalIgnoreCase);
         }
     }
 
@@ -44,7 +44,7 @@ namespace NScumm.Core
             _curSampleId = -1;
         }
 
-        public bool Open(string filename, ref bool compressed, bool errorFlag = false)
+        public bool Open(string filename, ref bool compressed)
         {
             if (_file != null)
                 return true;
@@ -69,15 +69,15 @@ namespace NScumm.Core
 
         public XorReader GetFile(string filename, ref int offset, ref int size)
         {
-            var target = new BundleDirCache.IndexNode{ filename = filename };
+            var target = new BundleDirCache.IndexNode{ Filename = filename };
             var index = Array.BinarySearch(_indexTable, target, _indexNodeComparer);
 
             if (index >= 0)
             {
                 target = _indexTable[index];
-                _file.BaseStream.Seek(_bundleTable[target.index].offset, SeekOrigin.Begin);
-                offset = _bundleTable[target.index].offset;
-                size = _bundleTable[target.index].size;
+                _file.BaseStream.Seek(_bundleTable[target.Index].Offset, SeekOrigin.Begin);
+                offset = _bundleTable[target.Index].Offset;
+                size = _bundleTable[target.Index].Size;
                 return _file;
             }
 
@@ -124,10 +124,10 @@ namespace NScumm.Core
                 if (_lastBlock != i)
                 {
                     // CMI hack: one more zero byte at the end of input buffer
-                    _compInputBuff[_compTable[i].size] = 0;
-                    _file.BaseStream.Seek(_bundleTable[index].offset + _compTable[i].offset, SeekOrigin.Begin);
-                    _file.BaseStream.Read(_compInputBuff, 0, _compTable[i].size);
-                    _outputSize = BundleCodecs.DecompressCodec(_compTable[i].codec, _compInputBuff, _compOutputBuff, _compTable[i].size);
+                    _compInputBuff[_compTable[i].Size] = 0;
+                    _file.BaseStream.Seek(_bundleTable[index].Offset + _compTable[i].Offset, SeekOrigin.Begin);
+                    _file.BaseStream.Read(_compInputBuff, 0, _compTable[i].Size);
+                    _outputSize = BundleCodecs.DecompressCodec(_compTable[i].Codec, _compInputBuff, _compOutputBuff, _compTable[i].Size);
                     if (_outputSize > 0x2000)
                     {
                         Console.Error.WriteLine("_outputSize: {0}", _outputSize);
@@ -169,18 +169,18 @@ namespace NScumm.Core
             return finalSize;
         }
 
-        public int DecompressSampleByName(string name, int offset, int size, out byte[] comp_final, bool header_outside)
+        public int DecompressSampleByName(string name, int offset, int size, out byte[] compFinal, bool headerOutside)
         {
             var final_size = 0;
-            var index = Array.BinarySearch(_indexTable, new NScumm.Core.BundleDirCache.IndexNode{ filename = name }, _indexNodeComparer);
+            var index = Array.BinarySearch(_indexTable, new BundleDirCache.IndexNode{ Filename = name }, _indexNodeComparer);
             if (index >= 0)
             {
-                final_size = DecompressSampleByIndex(index, offset, size, out comp_final, 0, header_outside);
+                final_size = DecompressSampleByIndex(index, offset, size, out compFinal, 0, headerOutside);
                 return final_size;
             }
 
             Debug.WriteLine("BundleMgr::decompressSampleByName() Failed finding sound {0}", name);
-            comp_final = null;
+            compFinal = null;
             return final_size;
         }
 
@@ -191,7 +191,7 @@ namespace NScumm.Core
 
         bool LoadCompTable(int index)
         {
-            _file.BaseStream.Seek(_bundleTable[index].offset, SeekOrigin.Begin);
+            _file.BaseStream.Seek(_bundleTable[index].Offset, SeekOrigin.Begin);
             var tag = _file.ReadTag();
             _numCompItems = (int)_file.ReadUInt32BigEndian();
             Debug.Assert(_numCompItems > 0);
@@ -199,7 +199,7 @@ namespace NScumm.Core
 
             if (tag != "COMP")
             {
-                Console.Error.WriteLine("BundleMgr::loadCompTable() Compressed sound {0} ({1}:{2}) invalid ({3})", index, ((FileStream)_file.BaseStream).Name, _bundleTable[index].offset, tag);
+                Console.Error.WriteLine("BundleMgr::loadCompTable() Compressed sound {0} ({1}:{2}) invalid ({3})", index, ((FileStream)_file.BaseStream).Name, _bundleTable[index].Offset, tag);
                 return false;
             }
 
@@ -208,12 +208,12 @@ namespace NScumm.Core
             for (int i = 0; i < _numCompItems; i++)
             {
                 _compTable[i] = new CompTable();
-                _compTable[i].offset = (int)_file.ReadUInt32BigEndian();
-                _compTable[i].size = (int)_file.ReadUInt32BigEndian();
-                _compTable[i].codec = (int)_file.ReadUInt32BigEndian();
+                _compTable[i].Offset = (int)_file.ReadUInt32BigEndian();
+                _compTable[i].Size = (int)_file.ReadUInt32BigEndian();
+                _compTable[i].Codec = (int)_file.ReadUInt32BigEndian();
                 _file.BaseStream.Seek(4, SeekOrigin.Current);
-                if (_compTable[i].size > maxSize)
-                    maxSize = _compTable[i].size;
+                if (_compTable[i].Size > maxSize)
+                    maxSize = _compTable[i].Size;
             }
             // CMI hack: one more byte at the end of input buffer
             _compInputBuff = new byte[maxSize + 1];
@@ -223,9 +223,9 @@ namespace NScumm.Core
 
         class CompTable
         {
-            public int offset;
-            public int size;
-            public int codec;
+            public int Offset;
+            public int Size;
+            public int Codec;
         }
 
         BundleDirCache _cache;

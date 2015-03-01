@@ -71,7 +71,7 @@ namespace NScumm.Core.Audio.IMuse
                                 SetFade(soundId, d, e);
                             break;
                         default:
-                            Console.Error.WriteLine("doCommand FadeParam DEFAULT sub command %d", sub_cmd);
+                            Console.Error.WriteLine("DoCommand FadeParam DEFAULT sub command {0}", sub_cmd);
                             break;
                     }
                     break;
@@ -101,34 +101,31 @@ namespace NScumm.Core.Audio.IMuse
                     }
                     else if ((_vm.Game.GameId == GameId.CurseOfMonkeyIsland) && (_vm.Game.Features.HasFlag(GameFeatures.Demo)))
                     {
-                        if (b == 2)
+                        switch (b)
                         {
-                            FadeOutMusic(108);
-                            StartMusic("in1.imx", 1100, 0, 127);
-                        }
-                        else if (b == 4)
-                        {
-                            FadeOutMusic(108);
-                            StartMusic("in2.imx", 1120, 0, 127);
-                        }
-                        else if (b == 8)
-                        {
-                            FadeOutMusic(108);
-                            StartMusic("out1.imx", 1140, 0, 127);
-                        }
-                        else if (b == 9)
-                        {
-                            FadeOutMusic(108);
-                            StartMusic("out2.imx", 1150, 0, 127);
-                        }
-                        else if (b == 16)
-                        {
-                            FadeOutMusic(108);
-                            StartMusic("gun.imx", 1210, 0, 127);
-                        }
-                        else
-                        {
-                            FadeOutMusic(120);
+                            case 2:
+                                FadeOutMusic(108);
+                                StartMusic("in1.imx", 1100, 0, 127);
+                                break;
+                            case 4:
+                                FadeOutMusic(108);
+                                StartMusic("in2.imx", 1120, 0, 127);
+                                break;
+                            case 8:
+                                FadeOutMusic(108);
+                                StartMusic("out1.imx", 1140, 0, 127);
+                                break;
+                            case 9:
+                                FadeOutMusic(108);
+                                StartMusic("out2.imx", 1150, 0, 127);
+                                break;
+                            case 16:
+                                FadeOutMusic(108);
+                                StartMusic("gun.imx", 1210, 0, 127);
+                                break;
+                            default:
+                                FadeOutMusic(120);
+                                break;
                         }
                     }
                     else if (_vm.Game.GameId == GameId.Dig)
@@ -146,17 +143,17 @@ namespace NScumm.Core.Audio.IMuse
                     break;
                 case 0x1001: // ImuseSetSequence
                     Debug.WriteLine("ImuseSetSequence ({0})", b);
-                    if (_vm.Game.GameId == GameId.Dig)
+                    switch (_vm.Game.GameId)
                     {
-                        SetDigMusicSequence(b);
-                    }
-                    else if (_vm.Game.GameId == GameId.CurseOfMonkeyIsland)
-                    {
-                        SetComiMusicSequence(b);
-                    }
-                    else if (_vm.Game.GameId == GameId.FullThrottle)
-                    {
-                        SetFtMusicSequence(b);
+                        case GameId.Dig:
+                            SetDigMusicSequence(b);
+                            break;
+                        case GameId.CurseOfMonkeyIsland:
+                            SetComiMusicSequence(b);
+                            break;
+                        case GameId.FullThrottle:
+                            SetFtMusicSequence(b);
+                            break;
                     }
                     break;
                 case 0x1002: // ImuseSetCuePoint
@@ -185,91 +182,19 @@ namespace NScumm.Core.Audio.IMuse
             }
         }
 
-        void FlushTrack(Track track)
-        {
-            track.toBeRemoved = true;
-
-            if (track.souStreamUsed)
-            {
-                _mixer.StopHandle(track.mixChanHandle);
-            }
-            else if (track.stream != null)
-            {
-                Debug.WriteLine("FlushTrack() - soundId:{0}", track.soundId);
-                // Finalize the appendable stream, then remove our reference to it.
-                // Note that there might still be some data left in the buffers of the
-                // appendable stream. We play it nice and wait till all of it
-                // played. The audio mixer will take care of it afterwards (and dispose it).
-                track.stream.Finish();
-                track.stream = null;
-                if (track.soundDesc != null)
-                {
-                    _sound.CloseSound(track.soundDesc);
-                    track.soundDesc = null;
-                }
-            }
-
-            if (!_mixer.IsSoundHandleActive(track.mixChanHandle))
-            {
-                track.Clear();
-            }
-        }
-
         public void FlushTracks()
         {
             lock (_mutex)
             {
 //                Debug.WriteLine("flushTracks()");
-                for (int l = 0; l < MAX_DIGITAL_TRACKS + MAX_DIGITAL_FADETRACKS; l++)
+                for (int l = 0; l < MaxDigitalTracks + MaxDigitalFadeTracks; l++)
                 {
                     Track track = _track[l];
-                    if (track.used && track.toBeRemoved && !_mixer.IsSoundHandleActive(track.mixChanHandle))
+                    if (track.Used && track.ToBeRemoved && !_mixer.IsSoundHandleActive(track.MixChanHandle))
                     {
-//                        Debug.WriteLine("flushTracks() - soundId:{0}", track.soundId);
+                        Debug.WriteLine("flushTracks() - soundId:{0}", track.SoundId);
                         track.Clear();
                     }
-                }
-            }
-        }
-
-        void refreshScripts()
-        {
-            lock (_mutex)
-            {
-//                Debug.WriteLine("refreshScripts()");
-
-                if (_stopingSequence != 0)
-                {
-                    // prevent start new music, only fade out old one
-                    if (_vm.SmushActive)
-                    {
-                        FadeOutMusic(60);
-                        return;
-                    }
-                    // small delay, it seems help for fix bug #1757010
-                    if (_stopingSequence++ > 120)
-                    {
-                        Debug.WriteLine("refreshScripts() Force restore music state");
-                        ParseScriptCmds(0x1001, 0, 0, 0, 0, 0, 0, 0);
-                        _stopingSequence = 0;
-                    }
-                }
-
-                bool found = false;
-                for (int l = 0; l < MAX_DIGITAL_TRACKS; l++)
-                {
-                    Track track = _track[l];
-                    if (track.used && !track.toBeRemoved && (track.volGroupId == IMUSE_VOLGRP_MUSIC))
-                    {
-                        found = true;
-                        break;
-                    }
-                }
-
-                if (!found && _curMusicState != 0)
-                {
-                    Debug.WriteLine("refreshScripts() Restore music state");
-                    ParseScriptCmds(0x1001, 0, 0, 0, 0, 0, 0, 0);
                 }
             }
         }
@@ -277,99 +202,19 @@ namespace NScumm.Core.Audio.IMuse
         public void StartVoice(int soundId, IAudioStream input)
         {
             Debug.WriteLine("StartVoiceStream({0})", soundId);
-            StartSound(soundId, "", 0, IMUSE_VOLGRP_VOICE, input, 0, 127, 127, null);
+            StartSound(soundId, "", 0, ImuseVolumeGroupVoice, input, 0, 127, 127, null);
         }
 
         public void StartVoice(int soundId, string soundName)
         {
             Debug.WriteLine("startVoiceBundle({0}, {1})", soundName, soundId);
-            StartSound(soundId, soundName, IMUSE_BUNDLE, IMUSE_VOLGRP_VOICE, null, 0, 127, 127, null);
-        }
-
-        void StartMusic(int soundId, int volume)
-        {
-            Debug.WriteLine("startMusicResource({0})", soundId);
-            StartSound(soundId, "", IMUSE_RESOURCE, IMUSE_VOLGRP_MUSIC, null, 0, volume, 126, null);
-        }
-
-        void StartMusic(string soundName, int soundId, int hookId, int volume)
-        {
-            Debug.WriteLine("startMusicBundle({0}, soundId:{1}, hookId:{2})", soundName, soundId, hookId);
-            StartSound(soundId, soundName, IMUSE_BUNDLE, IMUSE_VOLGRP_MUSIC, null, hookId, volume, 126, null);
-        }
-
-        void StartMusicWithOtherPos(string soundName, int soundId, int hookId, int volume, Track otherTrack)
-        {
-            Debug.WriteLine("startMusicWithOtherPos({0}, soundId:{1}, hookId:{2}, oldSoundId:{3})", soundName, soundId, hookId, otherTrack.soundId);
-            StartSound(soundId, soundName, IMUSE_BUNDLE, IMUSE_VOLGRP_MUSIC, null, hookId, volume, 126, otherTrack);
+            StartSound(soundId, soundName, ImuseBundle, ImuseVolumeGroupVoice, null, 0, 127, 127, null);
         }
 
         public void StartSfx(int soundId, int priority)
         {
             Debug.WriteLine("startSfx({0})", soundId);
-            StartSound(soundId, "", IMUSE_RESOURCE, IMUSE_VOLGRP_SFX, null, 0, 127, priority, null);
-        }
-
-        void GetLipSync(int soundId, int syncId, int msPos, out int width, out int height)
-        {
-            int sync_size;
-            byte[] sync_ptr;
-
-            width = 0;
-            height = 0;
-
-            msPos /= 16;
-            if (msPos < 65536)
-            {
-                lock (_mutex)
-                {
-                    for (int l = 0; l < MAX_DIGITAL_TRACKS; l++)
-                    {
-                        var track = _track[l];
-                        if (track.used && !track.toBeRemoved && (track.soundId == soundId))
-                        {
-                            _sound.GetSyncSizeAndPtrById(track.soundDesc, syncId, out sync_size, out sync_ptr);
-                            var sync_pos = 0;
-                            if ((sync_size != 0) && (sync_ptr != null))
-                            {
-                                sync_size /= 4;
-                                while ((sync_size--) != 0)
-                                {
-                                    if (sync_ptr.ToUInt16BigEndian(sync_pos) >= msPos)
-                                        break;
-                                    sync_pos += 4;
-                                }
-                                if (sync_size < 0)
-                                    sync_pos -= 4;
-                                else if (sync_ptr.ToUInt16BigEndian(sync_pos) > msPos)
-                                    sync_pos -= 4;
-
-                                width = sync_ptr[2];
-                                height = sync_ptr[3];
-                                return;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        int GetPosInMs(int soundId)
-        {
-            lock (_mutex)
-            {
-                for (int l = 0; l < MAX_DIGITAL_TRACKS; l++)
-                {
-                    var track = _track[l];
-                    if (track.used && !track.toBeRemoved && (track.soundId == soundId))
-                    {
-                        int pos = (5 * (track.dataOffset + track.regionOffset)) / (track.feedSize / 200);
-                        return pos;
-                    }
-                }
-
-                return 0;
-            }
+            StartSound(soundId, "", ImuseResource, ImuseVolumeGroupSfx, null, 0, 127, priority, null);
         }
 
         public int GetSoundStatus(int soundId)
@@ -377,14 +222,14 @@ namespace NScumm.Core.Audio.IMuse
             lock (_mutex)
             {
                 Debug.WriteLine("getSoundStatus({0})", soundId);
-                for (int l = 0; l < MAX_DIGITAL_TRACKS; l++)
+                for (int l = 0; l < MaxDigitalTracks; l++)
                 {
                     var track = _track[l];
                     // Note: We do not check track.toBeRemoved here on purpose (I *think*, at least).
                     // After all, tracks which are about to stop still are running (if only for a brief time).
-                    if ((track.soundId == soundId) && track.used)
+                    if ((track.SoundId == soundId) && track.Used)
                     {
-                        if (_mixer.IsSoundHandleActive(track.mixChanHandle))
+                        if (_mixer.IsSoundHandleActive(track.MixChanHandle))
                         {
                             return 1;
                         }
@@ -400,10 +245,10 @@ namespace NScumm.Core.Audio.IMuse
             lock (_mutex)
             {
                 Debug.WriteLine("stopSound({0})", soundId);
-                for (int l = 0; l < MAX_DIGITAL_TRACKS; l++)
+                for (int l = 0; l < MaxDigitalTracks; l++)
                 {
                     var track = _track[l];
-                    if (track.used && !track.toBeRemoved && (track.soundId == soundId))
+                    if (track.Used && !track.ToBeRemoved && (track.SoundId == soundId))
                     {
                         Debug.WriteLine("stopSound({0}) - stopping sound", soundId);
                         FlushTrack(track);
@@ -418,12 +263,12 @@ namespace NScumm.Core.Audio.IMuse
             {
                 int soundId = -1;
 
-                for (int l = 0; l < MAX_DIGITAL_TRACKS; l++)
+                for (int l = 0; l < MaxDigitalTracks; l++)
                 {
                     var track = _track[l];
-                    if (track.used && !track.toBeRemoved && (track.volGroupId == IMUSE_VOLGRP_MUSIC))
+                    if (track.Used && !track.ToBeRemoved && (track.VolGroupId == ImuseVolumeGroupMusic))
                     {
-                        soundId = track.soundId;
+                        soundId = track.SoundId;
                     }
                 }
 
@@ -438,7 +283,7 @@ namespace NScumm.Core.Audio.IMuse
             lock (_mutex)
             {
                 int msPos = GetPosInMs(Sound.TalkSoundID) + 50;
-                int width = 0, height = 0;
+                int width, height;
 
                 Debug.WriteLine("getCurVoiceLipSyncWidth({0})", Sound.TalkSoundID);
                 GetLipSync(Sound.TalkSoundID, 0, msPos, out width, out height);
@@ -451,7 +296,7 @@ namespace NScumm.Core.Audio.IMuse
             lock (_mutex)
             {
                 int msPos = GetPosInMs(Sound.TalkSoundID) + 50;
-                int width = 0, height = 0;
+                int width, height;
 
                 Debug.WriteLine("getCurVoiceLipSyncHeight({0})", Sound.TalkSoundID);
                 GetLipSync(Sound.TalkSoundID, 0, msPos, out width, out height);
@@ -465,12 +310,12 @@ namespace NScumm.Core.Audio.IMuse
             {
                 int soundId = -1;
 
-                for (int l = 0; l < MAX_DIGITAL_TRACKS; l++)
+                for (int l = 0; l < MaxDigitalTracks; l++)
                 {
                     var track = _track[l];
-                    if (track.used && !track.toBeRemoved && (track.volGroupId == IMUSE_VOLGRP_MUSIC))
+                    if (track.Used && !track.ToBeRemoved && (track.VolGroupId == ImuseVolumeGroupMusic))
                     {
-                        soundId = track.soundId;
+                        soundId = track.SoundId;
                     }
                 }
 
@@ -489,12 +334,12 @@ namespace NScumm.Core.Audio.IMuse
             {
                 int soundId = -1;
 
-                for (int l = 0; l < MAX_DIGITAL_TRACKS; l++)
+                for (int l = 0; l < MaxDigitalTracks; l++)
                 {
                     var track = _track[l];
-                    if (track.used && !track.toBeRemoved && (track.volGroupId == IMUSE_VOLGRP_MUSIC))
+                    if (track.Used && !track.ToBeRemoved && (track.VolGroupId == ImuseVolumeGroupMusic))
                     {
-                        soundId = track.soundId;
+                        soundId = track.SoundId;
                     }
                 }
 
@@ -513,19 +358,19 @@ namespace NScumm.Core.Audio.IMuse
             {
                 Debug.WriteLine("stopAllSounds");
 
-                for (int l = 0; l < MAX_DIGITAL_TRACKS + MAX_DIGITAL_FADETRACKS; l++)
+                for (int l = 0; l < MaxDigitalTracks + MaxDigitalFadeTracks; l++)
                 {
                     var track = _track[l];
-                    if (track.used)
+                    if (track.Used)
                     {
                         // Stop the sound output, *now*. No need to use toBeRemoved etc.
                         // as we are protected by a mutex, and this method is never called
                         // from callback either.
-                        _mixer.StopHandle(track.mixChanHandle);
-                        if (track.soundDesc != null)
+                        _mixer.StopHandle(track.MixChanHandle);
+                        if (track.SoundDesc != null)
                         {
-                            Debug.WriteLine("stopAllSounds - stopping sound({0})", track.soundId);
-                            _sound.CloseSound(track.soundDesc);
+                            Debug.WriteLine("stopAllSounds - stopping sound({0})", track.SoundId);
+                            _sound.CloseSound(track.SoundDesc);
                         }
 
                         // Mark the track as unused
@@ -564,10 +409,10 @@ namespace NScumm.Core.Audio.IMuse
                 }
 
                 bool found = false;
-                for (int l = 0; l < MAX_DIGITAL_TRACKS; l++)
+                for (int l = 0; l < MaxDigitalTracks; l++)
                 {
                     var track = _track[l];
-                    if (track.used && !track.toBeRemoved && (track.volGroupId == IMUSE_VOLGRP_MUSIC))
+                    if (track.Used && !track.ToBeRemoved && (track.VolGroupId == ImuseVolumeGroupMusic))
                     {
                         found = true;
                         break;
@@ -581,6 +426,117 @@ namespace NScumm.Core.Audio.IMuse
                 }
             }
         }
+
+        void FlushTrack(Track track)
+        {
+            track.ToBeRemoved = true;
+
+            if (track.SouStreamUsed)
+            {
+                _mixer.StopHandle(track.MixChanHandle);
+            }
+            else if (track.Stream != null)
+            {
+                Debug.WriteLine("FlushTrack() - soundId:{0}", track.SoundId);
+                // Finalize the appendable stream, then remove our reference to it.
+                // Note that there might still be some data left in the buffers of the
+                // appendable stream. We play it nice and wait till all of it
+                // played. The audio mixer will take care of it afterwards (and dispose it).
+                track.Stream.Finish();
+                track.Stream = null;
+                if (track.SoundDesc != null)
+                {
+                    _sound.CloseSound(track.SoundDesc);
+                    track.SoundDesc = null;
+                }
+            }
+
+            if (!_mixer.IsSoundHandleActive(track.MixChanHandle))
+            {
+                track.Clear();
+            }
+        }
+
+        void StartMusic(int soundId, int volume)
+        {
+            Debug.WriteLine("startMusicResource({0})", soundId);
+            StartSound(soundId, "", ImuseResource, ImuseVolumeGroupMusic, null, 0, volume, 126, null);
+        }
+
+        void StartMusic(string soundName, int soundId, int hookId, int volume)
+        {
+            Debug.WriteLine("startMusicBundle({0}, soundId:{1}, hookId:{2})", soundName, soundId, hookId);
+            StartSound(soundId, soundName, ImuseBundle, ImuseVolumeGroupMusic, null, hookId, volume, 126, null);
+        }
+
+        void StartMusicWithOtherPos(string soundName, int soundId, int hookId, int volume, Track otherTrack)
+        {
+            Debug.WriteLine("startMusicWithOtherPos({0}, soundId:{1}, hookId:{2}, oldSoundId:{3})", soundName, soundId, hookId, otherTrack.SoundId);
+            StartSound(soundId, soundName, ImuseBundle, ImuseVolumeGroupMusic, null, hookId, volume, 126, otherTrack);
+        }
+
+        void GetLipSync(int soundId, int syncId, int msPos, out int width, out int height)
+        {
+            int sync_size;
+            byte[] sync_ptr;
+
+            width = 0;
+            height = 0;
+
+            msPos /= 16;
+            if (msPos < 65536)
+            {
+                lock (_mutex)
+                {
+                    for (int l = 0; l < MaxDigitalTracks; l++)
+                    {
+                        var track = _track[l];
+                        if (track.Used && !track.ToBeRemoved && (track.SoundId == soundId))
+                        {
+                            _sound.GetSyncSizeAndPtrById(track.SoundDesc, syncId, out sync_size, out sync_ptr);
+                            var sync_pos = 0;
+                            if ((sync_size != 0) && (sync_ptr != null))
+                            {
+                                sync_size /= 4;
+                                while ((sync_size--) != 0)
+                                {
+                                    if (sync_ptr.ToUInt16BigEndian(sync_pos) >= msPos)
+                                        break;
+                                    sync_pos += 4;
+                                }
+                                if (sync_size < 0)
+                                    sync_pos -= 4;
+                                else if (sync_ptr.ToUInt16BigEndian(sync_pos) > msPos)
+                                    sync_pos -= 4;
+
+                                width = sync_ptr[2];
+                                height = sync_ptr[3];
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        int GetPosInMs(int soundId)
+        {
+            lock (_mutex)
+            {
+                for (int l = 0; l < MaxDigitalTracks; l++)
+                {
+                    var track = _track[l];
+                    if (track.Used && !track.ToBeRemoved && (track.SoundId == soundId))
+                    {
+                        int pos = (5 * (track.DataOffset + track.RegionOffset)) / (track.FeedSize / 200);
+                        return pos;
+                    }
+                }
+
+                return 0;
+            }
+        }
+
 
     }
 }

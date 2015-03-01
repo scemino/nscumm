@@ -24,72 +24,72 @@ namespace NScumm.Core.Audio.IMuse
 {
     class Track: ICloneable
     {
-        public int trackId;
+        public int TrackId;
         // used to identify track by value (0-15)
 
         public sbyte pan;
         // panning value of sound
         public int vol;
         // volume level (values 0-127 * 1000)
-        public int volFadeDest;
+        public int VolFadeDest;
         // volume level which fading target (values 0-127 * 1000)
-        public int volFadeStep;
+        public int VolFadeStep;
         // delta of step while changing volume at each imuse callback
-        public int volFadeDelay;
+        public int VolFadeDelay;
         // time in ms how long fading volume must be
-        public bool volFadeUsed;
+        public bool VolFadeUsed;
         // flag if fading is in progress
 
-        public int soundId;
+        public int SoundId;
         // sound id used by scumm script
-        public string soundName;
+        public string SoundName;
         // sound name but also filename of sound in bundle data
-        public bool used;
+        public bool Used;
         // flag mean that track is used
-        public bool toBeRemoved;
+        public bool ToBeRemoved;
         // flag mean that track need to be free
-        public bool souStreamUsed;
+        public bool SouStreamUsed;
         // flag mean that track use stream from sou file
-        public bool sndDataExtComp;
+        public bool SndDataExtComp;
         // flag mean that sound data is compressed by scummvm tools
-        public int soundPriority;
+        public int SoundPriority;
         // priority level of played sound (0-127)
-        public int regionOffset;
+        public int RegionOffset;
         // offset to sound data relative to begining of current region
-        public int dataOffset;
+        public int DataOffset;
         // offset to sound data relative to begining of 'DATA' chunk
-        public int curRegion;
+        public int CurRegion;
         // id of current used region
-        public int curHookId;
+        public int CurHookId;
         // id of current used hook id
-        public int volGroupId;
+        public int VolGroupId;
         // id of volume group (IMUSE_VOLGRP_VOICE, IMUSE_VOLGRP_SFX, IMUSE_VOLGRP_MUSIC)
-        public int soundType;
+        public int SoundType;
         // type of sound data (kSpeechSoundType, kSFXSoundType, kMusicSoundType)
-        public int feedSize;
+        public int FeedSize;
         // size of sound data needed to be filled at each callback iteration
-        public int dataMod12Bit;
+        public int DataMod12Bit;
         // value used between all callback to align 12 bit source of data
-        public AudioFlags mixerFlags;
+        public AudioFlags MixerFlags;
         // flags for sound mixer's channel (kFlagStereo, kFlag16Bits, kFlagUnsigned)
 
-        public SoundDesc soundDesc;
+        public SoundDesc SoundDesc;
         // sound handle used by iMuse sound manager
-        public SoundHandle mixChanHandle=new SoundHandle();
+        public SoundHandle MixChanHandle = new SoundHandle();
         // sound mixer's channel handle
-        public QueuingAudioStream stream;
+        public QueuingAudioStream Stream;
         // sound mixer's audio stream handle for *.la1 and *.bun
 
         public Track()
         {
-            soundId = -1;
+            SoundId = -1;
         }
 
         public Track Clone()
         {
             var track = (Track)MemberwiseClone();
-            track.soundDesc = soundDesc.Clone();
-            track.mixChanHandle = new SoundHandle{ Value = mixChanHandle.Value };
+            track.SoundDesc = SoundDesc.Clone();
+            track.MixChanHandle = new SoundHandle{ Value = MixChanHandle.Value };
             return track;
         }
 
@@ -100,33 +100,33 @@ namespace NScumm.Core.Audio.IMuse
 
         public void Clear()
         {
-            trackId = 0;
+            TrackId = 0;
             pan = 0;
             vol = 0;
-            volFadeDest = 0;
-            volFadeStep = 0;
-            volFadeDelay = 0;
-            volFadeUsed = false;
-            soundId = 0;
-            soundName = null;
-            used = false;
-            toBeRemoved = false;
-            souStreamUsed = false;
-            sndDataExtComp = false;
-            soundPriority = 0;
-            regionOffset = 0;
-            dataOffset = 0;
-            curRegion = 0;
-            curHookId = 0;
-            volGroupId = 0;
-            soundType = 0;
-            feedSize = 0;
-            dataMod12Bit = 0;
-            mixerFlags = AudioFlags.None;
+            VolFadeDest = 0;
+            VolFadeStep = 0;
+            VolFadeDelay = 0;
+            VolFadeUsed = false;
+            SoundId = 0;
+            SoundName = null;
+            Used = false;
+            ToBeRemoved = false;
+            SouStreamUsed = false;
+            SndDataExtComp = false;
+            SoundPriority = 0;
+            RegionOffset = 0;
+            DataOffset = 0;
+            CurRegion = 0;
+            CurHookId = 0;
+            VolGroupId = 0;
+            SoundType = 0;
+            FeedSize = 0;
+            DataMod12Bit = 0;
+            MixerFlags = AudioFlags.None;
 
-            soundDesc = null;
-            mixChanHandle = new SoundHandle();
-            stream = null;
+            SoundDesc = null;
+            MixChanHandle = new SoundHandle();
+            Stream = null;
         }
 
         public int Pan  { get { return (pan != 64) ? 2 * pan - 127 : 0; } }
@@ -136,12 +136,12 @@ namespace NScumm.Core.Audio.IMuse
         public SoundType GetSoundType()
         {
             SoundType type;
-            if (volGroupId == 1)
-                type = SoundType.Speech;
-            else if (volGroupId == 2)
-                type = SoundType.SFX;
-            else if (volGroupId == 3)
-                type = SoundType.Music;
+            if (VolGroupId == 1)
+                type = NScumm.Core.Audio.SoundType.Speech;
+            else if (VolGroupId == 2)
+                type = NScumm.Core.Audio.SoundType.SFX;
+            else if (VolGroupId == 3)
+                type = NScumm.Core.Audio.SoundType.Music;
             else
                 throw new InvalidOperationException("Track::GetType(): invalid sound type");
             return type;

@@ -25,9 +25,9 @@ namespace NScumm.Core.Audio.IMuse
 {
     partial class IMuseDigital
     {
-        const int DIG_STATE_OFFSET = 11;
-        const int DIG_SEQ_OFFSET = (DIG_STATE_OFFSET + 65);
-        const int COMI_STATE_OFFSET = 3;
+        const int DigStateOffset = 11;
+        const int DigSequenceOffset = (DigStateOffset + 65);
+        const int ComiStateOffset = 3;
 
         public void SetAudioNames(string[] names)
         {
@@ -45,11 +45,11 @@ namespace NScumm.Core.Audio.IMuse
             if (stateId == 0)
                 stateId = 1000;
 
-            for (l = 0; _comiStateMusicTable[l].soundId != -1; l++)
+            for (l = 0; _comiStateMusicTable[l].SoundId != -1; l++)
             {
-                if ((_comiStateMusicTable[l].soundId == stateId))
+                if ((_comiStateMusicTable[l].SoundId == stateId))
                 {
-                    Debug.WriteLine("Set music state: {0}, {1}", _comiStateMusicTable[l].name, _comiStateMusicTable[l].filename);
+                    Debug.WriteLine("Set music state: {0}, {1}", _comiStateMusicTable[l].Name, _comiStateMusicTable[l].Filename);
                     num = l;
                     break;
                 }
@@ -66,7 +66,7 @@ namespace NScumm.Core.Audio.IMuse
                 if (num == 0)
                     PlayComiMusic(null, _comiStateMusicTable[0], num, false);
                 else
-                    PlayComiMusic(_comiStateMusicTable[num].name, _comiStateMusicTable[num], num, false);
+                    PlayComiMusic(_comiStateMusicTable[num].Name, _comiStateMusicTable[num], num, false);
             }
 
             _curMusicState = num;
@@ -79,11 +79,11 @@ namespace NScumm.Core.Audio.IMuse
             if (seqId == 0)
                 seqId = 2000;
 
-            for (l = 0; _comiSeqMusicTable[l].soundId != -1; l++)
+            for (l = 0; _comiSeqMusicTable[l].SoundId != -1; l++)
             {
-                if ((_comiSeqMusicTable[l].soundId == seqId))
+                if ((_comiSeqMusicTable[l].SoundId == seqId))
                 {
-                    Debug.WriteLine("Set music sequence: {0}, {1}", _comiSeqMusicTable[l].name, _comiSeqMusicTable[l].filename);
+                    Debug.WriteLine("Set music sequence: {0}, {1}", _comiSeqMusicTable[l].Name, _comiSeqMusicTable[l].Filename);
                     num = l;
                     break;
                 }
@@ -97,15 +97,15 @@ namespace NScumm.Core.Audio.IMuse
 
             if (num != 0)
             {
-                if (_curMusicSeq!=0 && ((_comiSeqMusicTable[_curMusicSeq].transitionType == 4)
-                    || (_comiSeqMusicTable[_curMusicSeq].transitionType == 6)))
+                if (_curMusicSeq!=0 && ((_comiSeqMusicTable[_curMusicSeq].TransitionType == 4)
+                    || (_comiSeqMusicTable[_curMusicSeq].TransitionType == 6)))
                 {
                     _nextSeqToPlay = num;
                     return;
                 }
                 else
                 {
-                    PlayComiMusic(_comiSeqMusicTable[num].name, _comiSeqMusicTable[num], 0, true);
+                    PlayComiMusic(_comiSeqMusicTable[num].Name, _comiSeqMusicTable[num], 0, true);
                     _nextSeqToPlay = 0;
                 }
             }
@@ -113,7 +113,7 @@ namespace NScumm.Core.Audio.IMuse
             {
                 if (_nextSeqToPlay != 0)
                 {
-                    PlayComiMusic(_comiSeqMusicTable[_nextSeqToPlay].name, _comiSeqMusicTable[_nextSeqToPlay], 0, true);
+                    PlayComiMusic(_comiSeqMusicTable[_nextSeqToPlay].Name, _comiSeqMusicTable[_nextSeqToPlay], 0, true);
                     num = _nextSeqToPlay;
                     _nextSeqToPlay = 0;
                 }
@@ -121,7 +121,7 @@ namespace NScumm.Core.Audio.IMuse
                 {
                     if (_curMusicState != 0)
                     {
-                        PlayComiMusic(_comiStateMusicTable[_curMusicState].name, _comiStateMusicTable[_curMusicState], _curMusicState, true);
+                        PlayComiMusic(_comiStateMusicTable[_curMusicState].Name, _comiStateMusicTable[_curMusicState], _curMusicState, true);
                     }
                     else
                         PlayComiMusic(null, _comiStateMusicTable[0], _curMusicState, true);
@@ -138,20 +138,20 @@ namespace NScumm.Core.Audio.IMuse
 
             if ((songName != null) && (attribPos != 0))
             {
-                if (table.attribPos != 0)
-                    attribPos = table.attribPos;
-                hookId = _attributes[COMI_STATE_OFFSET + attribPos];
-                if (table.hookId != 0)
+                if (table.AttribPos != 0)
+                    attribPos = table.AttribPos;
+                hookId = _attributes[ComiStateOffset + attribPos];
+                if (table.HookId != 0)
                 {
-                    if ((hookId != 0) && (table.hookId > 1))
+                    if ((hookId != 0) && (table.HookId > 1))
                     {
-                        _attributes[COMI_STATE_OFFSET + attribPos] = 2;
+                        _attributes[ComiStateOffset + attribPos] = 2;
                     }
                     else
                     {
-                        _attributes[COMI_STATE_OFFSET + attribPos] = hookId + 1;
-                        if (table.hookId < hookId + 1)
-                            _attributes[COMI_STATE_OFFSET + attribPos] = 1;
+                        _attributes[ComiStateOffset + attribPos] = hookId + 1;
+                        if (table.HookId < hookId + 1)
+                            _attributes[ComiStateOffset + attribPos] = 1;
                     }
                 }
             }
@@ -162,56 +162,56 @@ namespace NScumm.Core.Audio.IMuse
                 return;
             }
 
-            switch (table.transitionType)
+            switch (table.TransitionType)
             {
                 case 0:
                     break;
                 case 8:
-                    SetHookIdForMusic(table.hookId);
+                    SetHookIdForMusic(table.HookId);
                     break;
                 case 9:
                     _stopingSequence = 1;
-                    SetHookIdForMusic(table.hookId);
+                    SetHookIdForMusic(table.HookId);
                     break;
                 case 2:
                 case 3:
                 case 4:
                 case 12:
-                    if (table.filename[0] == 0)
+                    if (table.Filename[0] == 0)
                     {
                         FadeOutMusic(60);
                         return;
                     }
-                    if (GetCurMusicSoundId() == table.soundId)
+                    if (GetCurMusicSoundId() == table.SoundId)
                         return;
-                    if (table.transitionType == 4)
+                    if (table.TransitionType == 4)
                         _stopingSequence = 1;
-                    if (table.transitionType == 2)
+                    if (table.TransitionType == 2)
                     {
-                        FadeOutMusic(table.fadeOutDelay);
-                        StartMusic(table.filename, table.soundId, table.hookId, 127);
+                        FadeOutMusic(table.FadeOutDelay);
+                        StartMusic(table.Filename, table.SoundId, table.HookId, 127);
                         return;
                     }
-                    if ((!sequence) && (table.attribPos != 0) &&
-                        (table.attribPos == _comiStateMusicTable[_curMusicState].attribPos))
+                    if ((!sequence) && (table.AttribPos != 0) &&
+                        (table.AttribPos == _comiStateMusicTable[_curMusicState].AttribPos))
                     {
-                        FadeOutMusicAndStartNew(table.fadeOutDelay, table.filename, table.soundId);
+                        FadeOutMusicAndStartNew(table.FadeOutDelay, table.Filename, table.SoundId);
                     }
-                    else if (table.transitionType == 12)
+                    else if (table.TransitionType == 12)
                     {
                         TriggerParams trigger;
-                        trigger.marker = "exit";
-                        trigger.fadeOutDelay = table.fadeOutDelay;
-                        trigger.filename = table.filename;
-                        trigger.soundId = table.soundId;
-                        trigger.hookId = table.hookId;
-                        trigger.volume = 127;
+                        trigger.Marker = "exit";
+                        trigger.FadeOutDelay = table.FadeOutDelay;
+                        trigger.Filename = table.Filename;
+                        trigger.SoundId = table.SoundId;
+                        trigger.HookId = table.HookId;
+                        trigger.Volume = 127;
                         SetTrigger(trigger);
                     }
                     else
                     {
-                        FadeOutMusic(table.fadeOutDelay);
-                        StartMusic(table.filename, table.soundId, hookId, 127);
+                        FadeOutMusic(table.FadeOutDelay);
+                        StartMusic(table.Filename, table.SoundId, hookId, 127);
                     }
                     break;
             }
@@ -221,11 +221,11 @@ namespace NScumm.Core.Audio.IMuse
         {
             int l, num = -1;
 
-            for (l = 0; _digStateMusicTable[l].soundId != -1; l++)
+            for (l = 0; _digStateMusicTable[l].SoundId != -1; l++)
             {
-                if ((_digStateMusicTable[l].soundId == stateId))
+                if ((_digStateMusicTable[l].SoundId == stateId))
                 {
-                    Debug.WriteLine("Set music state: {0}, {1}", _digStateMusicTable[l].name, _digStateMusicTable[l].filename);
+                    Debug.WriteLine("Set music state: {0}, {1}", _digStateMusicTable[l].Name, _digStateMusicTable[l].Filename);
                     num = l;
                     break;
                 }
@@ -233,33 +233,33 @@ namespace NScumm.Core.Audio.IMuse
 
             if (num == -1)
             {
-                for (l = 0; _digStateMusicMap[l].roomId != -1; l++)
+                for (l = 0; _digStateMusicMap[l].RoomId != -1; l++)
                 {
-                    if ((_digStateMusicMap[l].roomId == stateId))
+                    if ((_digStateMusicMap[l].RoomId == stateId))
                     {
                         break;
                     }
                 }
                 num = l;
 
-                int offset = _attributes[_digStateMusicMap[num].offset];
+                int offset = _attributes[_digStateMusicMap[num].Offset];
                 if (offset == 0)
                 {
-                    if (_attributes[_digStateMusicMap[num].attribPos] != 0)
+                    if (_attributes[_digStateMusicMap[num].AttribPos] != 0)
                     {
-                        num = _digStateMusicMap[num].stateIndex3;
+                        num = _digStateMusicMap[num].StateIndex3;
                     }
                     else
                     {
-                        num = _digStateMusicMap[num].stateIndex1;
+                        num = _digStateMusicMap[num].StateIndex1;
                     }
                 }
                 else
                 {
-                    int stateIndex2 = _digStateMusicMap[num].stateIndex2;
+                    int stateIndex2 = _digStateMusicMap[num].StateIndex2;
                     if (stateIndex2 == 0)
                     {
-                        num = _digStateMusicMap[num].stateIndex1 + offset;
+                        num = _digStateMusicMap[num].StateIndex1 + offset;
                     }
                     else
                     {
@@ -268,7 +268,7 @@ namespace NScumm.Core.Audio.IMuse
                 }
             }
 
-            Debug.WriteLine("Set music state: {0}, {1}", _digStateMusicTable[num].name, _digStateMusicTable[num].filename);
+            Debug.WriteLine("Set music state: {0}, {1}", _digStateMusicTable[num].Name, _digStateMusicTable[num].Filename);
 
             if (_curMusicState == num)
                 return;
@@ -278,7 +278,7 @@ namespace NScumm.Core.Audio.IMuse
                 if (num == 0)
                     PlayDigMusic(null, _digStateMusicTable[0], num, false);
                 else
-                    PlayDigMusic(_digStateMusicTable[num].name, _digStateMusicTable[num], num, false);
+                    PlayDigMusic(_digStateMusicTable[num].Name, _digStateMusicTable[num], num, false);
             }
 
             _curMusicState = num;
@@ -291,11 +291,11 @@ namespace NScumm.Core.Audio.IMuse
             if (seqId == 0)
                 seqId = 2000;
 
-            for (var l = 0; _digSeqMusicTable[l].soundId != -1; l++)
+            for (var l = 0; _digSeqMusicTable[l].SoundId != -1; l++)
             {
-                if ((_digSeqMusicTable[l].soundId == seqId))
+                if ((_digSeqMusicTable[l].SoundId == seqId))
                 {
-                    Debug.WriteLine("Set music sequence: {0}, {1}", _digSeqMusicTable[l].name, _digSeqMusicTable[l].filename);
+                    Debug.WriteLine("Set music sequence: {0}, {1}", _digSeqMusicTable[l].Name, _digSeqMusicTable[l].Filename);
                     num = l;
                     break;
                 }
@@ -309,25 +309,25 @@ namespace NScumm.Core.Audio.IMuse
 
             if (num != 0)
             {
-                if (_curMusicSeq != 0 && ((_digSeqMusicTable[_curMusicSeq].transitionType == 4)
-                    || (_digSeqMusicTable[_curMusicSeq].transitionType == 6)))
+                if (_curMusicSeq != 0 && ((_digSeqMusicTable[_curMusicSeq].TransitionType == 4)
+                    || (_digSeqMusicTable[_curMusicSeq].TransitionType == 6)))
                 {
                     _nextSeqToPlay = num;
                     return;
                 }
                 else
                 {
-                    PlayDigMusic(_digSeqMusicTable[num].name, _digSeqMusicTable[num], 0, true);
+                    PlayDigMusic(_digSeqMusicTable[num].Name, _digSeqMusicTable[num], 0, true);
                     _nextSeqToPlay = 0;
-                    _attributes[DIG_SEQ_OFFSET + num] = 1; // _attributes[COMI_SEQ_OFFSET] in Comi are not used as it doesn't have 'room' attributes table
+                    _attributes[DigSequenceOffset + num] = 1; // _attributes[COMI_SEQ_OFFSET] in Comi are not used as it doesn't have 'room' attributes table
                 }
             }
             else
             {
                 if (_nextSeqToPlay != 0)
                 {
-                    PlayDigMusic(_digSeqMusicTable[_nextSeqToPlay].name, _digSeqMusicTable[_nextSeqToPlay], 0, true);
-                    _attributes[DIG_SEQ_OFFSET + _nextSeqToPlay] = 1; // _attributes[COMI_SEQ_OFFSET] in Comi are not used as it doesn't have 'room' attributes table
+                    PlayDigMusic(_digSeqMusicTable[_nextSeqToPlay].Name, _digSeqMusicTable[_nextSeqToPlay], 0, true);
+                    _attributes[DigSequenceOffset + _nextSeqToPlay] = 1; // _attributes[COMI_SEQ_OFFSET] in Comi are not used as it doesn't have 'room' attributes table
                     num = _nextSeqToPlay;
                     _nextSeqToPlay = 0;
                 }
@@ -335,7 +335,7 @@ namespace NScumm.Core.Audio.IMuse
                 {
                     if (_curMusicState != 0)
                     {
-                        PlayDigMusic(_digStateMusicTable[_curMusicState].name, _digStateMusicTable[_curMusicState], _curMusicState, true);
+                        PlayDigMusic(_digStateMusicTable[_curMusicState].Name, _digStateMusicTable[_curMusicState], _curMusicState, true);
                     }
                     else
                         PlayDigMusic(null, _digStateMusicTable[0], _curMusicState, true);
@@ -352,19 +352,19 @@ namespace NScumm.Core.Audio.IMuse
 
             if (songName != null)
             {
-                if ((_attributes[DIG_SEQ_OFFSET + 38] != 0) && (_attributes[DIG_SEQ_OFFSET + 41] == 0))
+                if ((_attributes[DigSequenceOffset + 38] != 0) && (_attributes[DigSequenceOffset + 41] == 0))
                 {
                     if ((attribPos == 43) || (attribPos == 44))
                         hookId = 3;
                 }
 
-                if ((_attributes[DIG_SEQ_OFFSET + 46] != 0) && (_attributes[DIG_SEQ_OFFSET + 48] == 0))
+                if ((_attributes[DigSequenceOffset + 46] != 0) && (_attributes[DigSequenceOffset + 48] == 0))
                 {
                     if ((attribPos == 38) || (attribPos == 39))
                         hookId = 3;
                 }
 
-                if ((_attributes[DIG_SEQ_OFFSET + 53] != 0))
+                if ((_attributes[DigSequenceOffset + 53] != 0))
                 {
                     if ((attribPos == 50) || (attribPos == 51))
                         hookId = 3;
@@ -372,20 +372,20 @@ namespace NScumm.Core.Audio.IMuse
 
                 if ((attribPos != 0) && (hookId == 0))
                 {
-                    if (table.attribPos != 0)
-                        attribPos = table.attribPos;
-                    hookId = _attributes[DIG_STATE_OFFSET + attribPos];
-                    if (table.hookId != 0)
+                    if (table.AttribPos != 0)
+                        attribPos = table.AttribPos;
+                    hookId = _attributes[DigStateOffset + attribPos];
+                    if (table.HookId != 0)
                     {
-                        if ((hookId != 0) && (table.hookId > 1))
+                        if ((hookId != 0) && (table.HookId > 1))
                         {
-                            _attributes[DIG_STATE_OFFSET + attribPos] = 2;
+                            _attributes[DigStateOffset + attribPos] = 2;
                         }
                         else
                         {
-                            _attributes[DIG_STATE_OFFSET + attribPos] = hookId + 1;
-                            if (table.hookId < hookId + 1)
-                                _attributes[DIG_STATE_OFFSET + attribPos] = 1;
+                            _attributes[DigStateOffset + attribPos] = hookId + 1;
+                            if (table.HookId < hookId + 1)
+                                _attributes[DigStateOffset + attribPos] = 1;
                         }
                     }
                 }
@@ -397,29 +397,29 @@ namespace NScumm.Core.Audio.IMuse
                 return;
             }
 
-            switch (table.transitionType)
+            switch (table.TransitionType)
             {
                 case 0:
                 case 5:
                     break;
                 case 3:
                 case 4:
-                    if (table.filename[0] == 0)
+                    if (table.Filename[0] == 0)
                     {
                         FadeOutMusic(60);
                         return;
                     }
-                    if (table.transitionType == 4)
+                    if (table.TransitionType == 4)
                         _stopingSequence = 1;
-                    if ((!sequence) && (table.attribPos != 0) &&
-                        (table.attribPos == _digStateMusicTable[_curMusicState].attribPos))
+                    if ((!sequence) && (table.AttribPos != 0) &&
+                        (table.AttribPos == _digStateMusicTable[_curMusicState].AttribPos))
                     {
-                        FadeOutMusicAndStartNew(108, table.filename, table.soundId);
+                        FadeOutMusicAndStartNew(108, table.Filename, table.SoundId);
                     }
                     else
                     {
                         FadeOutMusic(108);
-                        StartMusic(table.filename, table.soundId, hookId, 127);
+                        StartMusic(table.Filename, table.SoundId, hookId, 127);
                     }
                     break;
                 case 6:
@@ -433,7 +433,7 @@ namespace NScumm.Core.Audio.IMuse
             if (stateId > 48)
                 return;
 
-            Debug.WriteLine("State music: {0}, {1}", _ftStateMusicTable[stateId].name, _ftStateMusicTable[stateId].audioName);
+            Debug.WriteLine("State music: {0}, {1}", _ftStateMusicTable[stateId].Name, _ftStateMusicTable[stateId].AudioName);
 
             if (_curMusicState == stateId)
                 return;
@@ -443,7 +443,7 @@ namespace NScumm.Core.Audio.IMuse
                 if (stateId == 0)
                     PlayFtMusic(null, 0, 0);
                 else
-                    PlayFtMusic(_ftStateMusicTable[stateId].audioName, _ftStateMusicTable[stateId].transitionType, _ftStateMusicTable[stateId].volume);
+                    PlayFtMusic(_ftStateMusicTable[stateId].AudioName, _ftStateMusicTable[stateId].TransitionType, _ftStateMusicTable[stateId].Volume);
             }
 
             _curMusicState = stateId;
@@ -465,13 +465,13 @@ namespace NScumm.Core.Audio.IMuse
                     PlayFtMusic(null, 0, 0);
                 else
                 {
-                    PlayFtMusic(_ftStateMusicTable[_curMusicState].audioName, _ftStateMusicTable[_curMusicState].transitionType, _ftStateMusicTable[_curMusicState].volume);
+                    PlayFtMusic(_ftStateMusicTable[_curMusicState].AudioName, _ftStateMusicTable[_curMusicState].TransitionType, _ftStateMusicTable[_curMusicState].Volume);
                 }
             }
             else
             {
                 int seq = (seqId - 1) * 4;
-                PlayFtMusic(_ftSeqMusicTable[seq].audioName, _ftSeqMusicTable[seq].transitionType, _ftSeqMusicTable[seq].volume);
+                PlayFtMusic(_ftSeqMusicTable[seq].AudioName, _ftSeqMusicTable[seq].TransitionType, _ftSeqMusicTable[seq].Volume);
             }
 
             _curMusicSeq = seqId;
@@ -496,7 +496,7 @@ namespace NScumm.Core.Audio.IMuse
             else
             {
                 int seq = ((_curMusicSeq - 1) * 4) + cueId;
-                PlayFtMusic(_ftSeqMusicTable[seq].audioName, _ftSeqMusicTable[seq].transitionType, _ftSeqMusicTable[seq].volume);
+                PlayFtMusic(_ftSeqMusicTable[seq].AudioName, _ftSeqMusicTable[seq].TransitionType, _ftSeqMusicTable[seq].Volume);
             }
 
             _curMusicCue = cueId;

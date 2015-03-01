@@ -18,7 +18,6 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-using System;
 
 namespace NScumm.Core.Audio.IMuse
 {
@@ -26,23 +25,23 @@ namespace NScumm.Core.Audio.IMuse
     {
         struct ImuseComiTable
         {
-            public byte transitionType;
-            public short soundId;
-            public string name;
-            public byte attribPos;
-            public byte hookId;
-            public short fadeOutDelay;
-            public string filename;
+            public byte TransitionType;
+            public short SoundId;
+            public string Name;
+            public byte AttribPos;
+            public byte HookId;
+            public short FadeOutDelay;
+            public string Filename;
 
             public ImuseComiTable(byte transitionType, short soundId, string name, byte attribPos, byte hookId, short fadeOutDelay, string filename)
             {
-                this.transitionType = transitionType;
-                this.soundId = soundId;
-                this.name = name;
-                this.attribPos = attribPos;
-                this.hookId = hookId;
-                this.fadeOutDelay = fadeOutDelay;
-                this.filename = filename;
+                TransitionType = transitionType;
+                SoundId = soundId;
+                Name = name;
+                AttribPos = attribPos;
+                HookId = hookId;
+                FadeOutDelay = fadeOutDelay;
+                Filename = filename;
             }
         }
 
@@ -241,41 +240,41 @@ namespace NScumm.Core.Audio.IMuse
 
         struct ImuseDigTable
         {
-            public byte transitionType;
-            public short soundId;
-            public string name;
-            public byte attribPos;
-            public byte hookId;
-            public string filename;
+            public byte TransitionType;
+            public short SoundId;
+            public string Name;
+            public byte AttribPos;
+            public byte HookId;
+            public string Filename;
 
             public ImuseDigTable(byte transitionType, short soundId, string name, byte attribPos, byte hookId, string filename)
             {
-                this.transitionType = transitionType;
-                this.soundId = soundId;
-                this.name = name;
-                this.attribPos = attribPos;
-                this.hookId = hookId;
-                this.filename = filename;
+                TransitionType = transitionType;
+                SoundId = soundId;
+                Name = name;
+                AttribPos = attribPos;
+                HookId = hookId;
+                Filename = filename;
             }
         }
 
         struct ImuseRoomMap
         {
-            public sbyte roomId;
-            public byte stateIndex1;
-            public byte offset;
-            public byte stateIndex2;
-            public byte attribPos;
-            public byte stateIndex3;
+            public sbyte RoomId;
+            public byte StateIndex1;
+            public byte Offset;
+            public byte StateIndex2;
+            public byte AttribPos;
+            public byte StateIndex3;
 
             public ImuseRoomMap(sbyte roomId, byte stateIndex1, byte offset, byte stateIndex2, byte attribPos, byte stateIndex3)
             {
-                this.roomId = roomId;
-                this.stateIndex1 = stateIndex1;
-                this.offset = offset;
-                this.stateIndex2 = stateIndex2;
-                this.attribPos = attribPos;
-                this.stateIndex3 = stateIndex3;
+                RoomId = roomId;
+                StateIndex1 = stateIndex1;
+                Offset = offset;
+                StateIndex2 = stateIndex2;
+                AttribPos = attribPos;
+                StateIndex3 = stateIndex3;
             }
         }
 
@@ -400,211 +399,211 @@ namespace NScumm.Core.Audio.IMuse
 
         static readonly ImuseDigTable[] _digSeqMusicTable =
             {
-            new ImuseDigTable(0, 2000, "SEQ_NULL", 0, 0, ""),
-            new ImuseDigTable(0, 2005, "seqLogo", 0, 0, ""),
-            new ImuseDigTable(0, 2010, "seqIntro", 0, 0, ""),
-            new ImuseDigTable(6, 2020, "seqExplosion1b", 0, 0, ""),
-            new ImuseDigTable(3, 2030, "seqAstTunnel1a", 0, 0, "SEQ(AS~1.IMU"),
-            new ImuseDigTable(6, 2031, "seqAstTunnel2b", 0, 0, ""),
-            new ImuseDigTable(4, 2032, "seqAstTunnel3a", 0, 0, "SEQ(AS~2.IMU"),
-            new ImuseDigTable(5, 2040, "seqToPlanet1b", 0, 0, ""),
-            new ImuseDigTable(4, 2045, "seqArgBegin", 0, 0, "SEQ(AR~1.IMU"),
-            new ImuseDigTable(4, 2046, "seqArgEnd", 0, 0, "SEQ(AR~2.IMU"),
-            new ImuseDigTable(4, 2050, "seqWreckGhost", 0, 0, "SEQ(GH~1.IMU"),
-            new ImuseDigTable(4, 2060, "seqCanyonGhost", 0, 0, "SEQ(GH~2.IMU"),
-            new ImuseDigTable(0, 2070, "seqBrinkFall", 0, 0, ""),
-            new ImuseDigTable(4, 2080, "seqPanUpCanyon", 0, 0, "SEQ(PA~1.IMU"),
-            new ImuseDigTable(6, 2091, "seqAirlockTunnel1b", 0, 0, ""),
-            new ImuseDigTable(6, 2100, "seqTramToMu", 0, 0, ""),
-            new ImuseDigTable(6, 2101, "seqTramFromMu", 0, 0, ""),
-            new ImuseDigTable(6, 2102, "seqTramToTomb", 0, 0, ""),
-            new ImuseDigTable(6, 2103, "seqTramFromTomb", 0, 0, ""),
-            new ImuseDigTable(6, 2104, "seqTramToPlan", 0, 0, ""),
-            new ImuseDigTable(6, 2105, "seqTramFromPlan", 0, 0, ""),
-            new ImuseDigTable(6, 2106, "seqTramToMap", 0, 0, ""),
-            new ImuseDigTable(6, 2107, "seqTramFromMap", 0, 0, ""),
-            new ImuseDigTable(6, 2108, "seqTramToCath", 0, 0, ""),
-            new ImuseDigTable(6, 2109, "seqTramFromCath", 0, 0, ""),
-            new ImuseDigTable(0, 2110, "seqMuseumGhost", 0, 0, ""),
-            new ImuseDigTable(0, 2120, "seqSerpentAppears", 0, 0, ""),
-            new ImuseDigTable(0, 2130, "seqSerpentEats", 0, 0, ""),
-            new ImuseDigTable(6, 2140, "seqBrinkRes1b", 0, 0, ""),
-            new ImuseDigTable(4, 2141, "seqBrinkRes2a", 0, 0, "SEQ(BR~1.IMU"),
-            new ImuseDigTable(3, 2150, "seqLockupEntry", 0, 0, "SEQ(BR~1.IMU"),
-            new ImuseDigTable(0, 2160, "seqSerpentExplodes", 0, 0, ""),
-            new ImuseDigTable(4, 2170, "seqSwimUnderwater", 0, 0, "SEQ(DE~1.IMU"),
-            new ImuseDigTable(4, 2175, "seqWavesPlunge", 0, 0, "SEQ(PL~1.IMU"),
-            new ImuseDigTable(0, 2180, "seqCryptOpens", 0, 0, ""),
-            new ImuseDigTable(0, 2190, "seqGuardsFight", 0, 0, ""),
-            new ImuseDigTable(3, 2200, "seqCreatorRes1.1a", 0, 0, "SEQ(CR~1.IMU"),
-            new ImuseDigTable(6, 2201, "seqCreatorRes1.2b", 0, 0, ""),
-            new ImuseDigTable(6, 2210, "seqMaggieCapture1b", 0, 0, ""),
-            new ImuseDigTable(3, 2220, "seqStealCrystals", 0, 0, "SEQ(BR~1.IMU"),
-            new ImuseDigTable(0, 2230, "seqGetByMonster", 0, 0, ""),
-            new ImuseDigTable(6, 2240, "seqKillMonster1b", 0, 0, ""),
-            new ImuseDigTable(3, 2250, "seqCreatorRes2.1a", 0, 0, "SEQ(CR~2.IMU"),
-            new ImuseDigTable(6, 2251, "seqCreatorRes2.2b", 0, 0, ""),
-            new ImuseDigTable(4, 2252, "seqCreatorRes2.3a", 0, 0, "SEQ(CR~3.IMU"),
-            new ImuseDigTable(0, 2260, "seqMaggieInsists", 0, 0, ""),
-            new ImuseDigTable(0, 2270, "seqBrinkHelpCall", 0, 0, ""),
-            new ImuseDigTable(3, 2280, "seqBrinkCrevice1a", 0, 0, "SEQ(BR~2.IMU"),
-            new ImuseDigTable(3, 2281, "seqBrinkCrevice2a", 0, 0, "SEQ(BR~3.IMU"),
-            new ImuseDigTable(6, 2290, "seqCathAccess1b", 0, 0, ""),
-            new ImuseDigTable(4, 2291, "seqCathAccess2a", 0, 0, "SEQ(CA~1.IMU"),
-            new ImuseDigTable(3, 2300, "seqBrinkAtGenerator", 0, 0, "SEQ(BR~1.IMU"),
-            new ImuseDigTable(6, 2320, "seqFightBrink1b", 0, 0, ""),
-            new ImuseDigTable(6, 2340, "seqMaggieDies1b", 0, 0, ""),
-            new ImuseDigTable(6, 2346, "seqMaggieRes1b", 0, 0, ""),
-            new ImuseDigTable(4, 2347, "seqMaggieRes2a", 0, 0, "SEQ(MA~1.IMU"),
-            new ImuseDigTable(0, 2350, "seqCreatureFalls", 0, 0, ""),
-            new ImuseDigTable(5, 2360, "seqFinale1b", 0, 0, ""),
-            new ImuseDigTable(3, 2370, "seqFinale2a", 0, 0, "SEQ(FI~1.IMU"),
-            new ImuseDigTable(6, 2380, "seqFinale3b1", 0, 0, ""),
-            new ImuseDigTable(6, 2390, "seqFinale3b2", 0, 0, ""),
-            new ImuseDigTable(3, 2400, "seqFinale4a", 0, 0, "SEQ(FI~2.IMU"),
-            new ImuseDigTable(3, 2410, "seqFinale5a", 0, 0, "SEQ(FI~3.IMU"),
-            new ImuseDigTable(3, 2420, "seqFinale6a", 0, 0, "SEQ(FI~4.IMU"),
-            new ImuseDigTable(3, 2430, "seqFinale7a", 0, 0, "SE3D2B~5.IMU"),
-            new ImuseDigTable(6, 2440, "seqFinale8b", 0, 0, ""),
-            new ImuseDigTable(4, 2450, "seqFinale9a", 0, 0, "SE313B~5.IMU"),
-            new ImuseDigTable(0, -1, "", 0, 0, "")
-        };
+                new ImuseDigTable(0, 2000, "SEQ_NULL", 0, 0, ""),
+                new ImuseDigTable(0, 2005, "seqLogo", 0, 0, ""),
+                new ImuseDigTable(0, 2010, "seqIntro", 0, 0, ""),
+                new ImuseDigTable(6, 2020, "seqExplosion1b", 0, 0, ""),
+                new ImuseDigTable(3, 2030, "seqAstTunnel1a", 0, 0, "SEQ(AS~1.IMU"),
+                new ImuseDigTable(6, 2031, "seqAstTunnel2b", 0, 0, ""),
+                new ImuseDigTable(4, 2032, "seqAstTunnel3a", 0, 0, "SEQ(AS~2.IMU"),
+                new ImuseDigTable(5, 2040, "seqToPlanet1b", 0, 0, ""),
+                new ImuseDigTable(4, 2045, "seqArgBegin", 0, 0, "SEQ(AR~1.IMU"),
+                new ImuseDigTable(4, 2046, "seqArgEnd", 0, 0, "SEQ(AR~2.IMU"),
+                new ImuseDigTable(4, 2050, "seqWreckGhost", 0, 0, "SEQ(GH~1.IMU"),
+                new ImuseDigTable(4, 2060, "seqCanyonGhost", 0, 0, "SEQ(GH~2.IMU"),
+                new ImuseDigTable(0, 2070, "seqBrinkFall", 0, 0, ""),
+                new ImuseDigTable(4, 2080, "seqPanUpCanyon", 0, 0, "SEQ(PA~1.IMU"),
+                new ImuseDigTable(6, 2091, "seqAirlockTunnel1b", 0, 0, ""),
+                new ImuseDigTable(6, 2100, "seqTramToMu", 0, 0, ""),
+                new ImuseDigTable(6, 2101, "seqTramFromMu", 0, 0, ""),
+                new ImuseDigTable(6, 2102, "seqTramToTomb", 0, 0, ""),
+                new ImuseDigTable(6, 2103, "seqTramFromTomb", 0, 0, ""),
+                new ImuseDigTable(6, 2104, "seqTramToPlan", 0, 0, ""),
+                new ImuseDigTable(6, 2105, "seqTramFromPlan", 0, 0, ""),
+                new ImuseDigTable(6, 2106, "seqTramToMap", 0, 0, ""),
+                new ImuseDigTable(6, 2107, "seqTramFromMap", 0, 0, ""),
+                new ImuseDigTable(6, 2108, "seqTramToCath", 0, 0, ""),
+                new ImuseDigTable(6, 2109, "seqTramFromCath", 0, 0, ""),
+                new ImuseDigTable(0, 2110, "seqMuseumGhost", 0, 0, ""),
+                new ImuseDigTable(0, 2120, "seqSerpentAppears", 0, 0, ""),
+                new ImuseDigTable(0, 2130, "seqSerpentEats", 0, 0, ""),
+                new ImuseDigTable(6, 2140, "seqBrinkRes1b", 0, 0, ""),
+                new ImuseDigTable(4, 2141, "seqBrinkRes2a", 0, 0, "SEQ(BR~1.IMU"),
+                new ImuseDigTable(3, 2150, "seqLockupEntry", 0, 0, "SEQ(BR~1.IMU"),
+                new ImuseDigTable(0, 2160, "seqSerpentExplodes", 0, 0, ""),
+                new ImuseDigTable(4, 2170, "seqSwimUnderwater", 0, 0, "SEQ(DE~1.IMU"),
+                new ImuseDigTable(4, 2175, "seqWavesPlunge", 0, 0, "SEQ(PL~1.IMU"),
+                new ImuseDigTable(0, 2180, "seqCryptOpens", 0, 0, ""),
+                new ImuseDigTable(0, 2190, "seqGuardsFight", 0, 0, ""),
+                new ImuseDigTable(3, 2200, "seqCreatorRes1.1a", 0, 0, "SEQ(CR~1.IMU"),
+                new ImuseDigTable(6, 2201, "seqCreatorRes1.2b", 0, 0, ""),
+                new ImuseDigTable(6, 2210, "seqMaggieCapture1b", 0, 0, ""),
+                new ImuseDigTable(3, 2220, "seqStealCrystals", 0, 0, "SEQ(BR~1.IMU"),
+                new ImuseDigTable(0, 2230, "seqGetByMonster", 0, 0, ""),
+                new ImuseDigTable(6, 2240, "seqKillMonster1b", 0, 0, ""),
+                new ImuseDigTable(3, 2250, "seqCreatorRes2.1a", 0, 0, "SEQ(CR~2.IMU"),
+                new ImuseDigTable(6, 2251, "seqCreatorRes2.2b", 0, 0, ""),
+                new ImuseDigTable(4, 2252, "seqCreatorRes2.3a", 0, 0, "SEQ(CR~3.IMU"),
+                new ImuseDigTable(0, 2260, "seqMaggieInsists", 0, 0, ""),
+                new ImuseDigTable(0, 2270, "seqBrinkHelpCall", 0, 0, ""),
+                new ImuseDigTable(3, 2280, "seqBrinkCrevice1a", 0, 0, "SEQ(BR~2.IMU"),
+                new ImuseDigTable(3, 2281, "seqBrinkCrevice2a", 0, 0, "SEQ(BR~3.IMU"),
+                new ImuseDigTable(6, 2290, "seqCathAccess1b", 0, 0, ""),
+                new ImuseDigTable(4, 2291, "seqCathAccess2a", 0, 0, "SEQ(CA~1.IMU"),
+                new ImuseDigTable(3, 2300, "seqBrinkAtGenerator", 0, 0, "SEQ(BR~1.IMU"),
+                new ImuseDigTable(6, 2320, "seqFightBrink1b", 0, 0, ""),
+                new ImuseDigTable(6, 2340, "seqMaggieDies1b", 0, 0, ""),
+                new ImuseDigTable(6, 2346, "seqMaggieRes1b", 0, 0, ""),
+                new ImuseDigTable(4, 2347, "seqMaggieRes2a", 0, 0, "SEQ(MA~1.IMU"),
+                new ImuseDigTable(0, 2350, "seqCreatureFalls", 0, 0, ""),
+                new ImuseDigTable(5, 2360, "seqFinale1b", 0, 0, ""),
+                new ImuseDigTable(3, 2370, "seqFinale2a", 0, 0, "SEQ(FI~1.IMU"),
+                new ImuseDigTable(6, 2380, "seqFinale3b1", 0, 0, ""),
+                new ImuseDigTable(6, 2390, "seqFinale3b2", 0, 0, ""),
+                new ImuseDigTable(3, 2400, "seqFinale4a", 0, 0, "SEQ(FI~2.IMU"),
+                new ImuseDigTable(3, 2410, "seqFinale5a", 0, 0, "SEQ(FI~3.IMU"),
+                new ImuseDigTable(3, 2420, "seqFinale6a", 0, 0, "SEQ(FI~4.IMU"),
+                new ImuseDigTable(3, 2430, "seqFinale7a", 0, 0, "SE3D2B~5.IMU"),
+                new ImuseDigTable(6, 2440, "seqFinale8b", 0, 0, ""),
+                new ImuseDigTable(4, 2450, "seqFinale9a", 0, 0, "SE313B~5.IMU"),
+                new ImuseDigTable(0, -1, "", 0, 0, "")
+            };
 
         static readonly ImuseDigTable[] _digStateMusicTable =
             {
-            new ImuseDigTable(0, 1000, "STATE_NULL", 0, 0, ""),             /* 00 */
-            new ImuseDigTable(0, 1001, "stateNoChange", 0, 0, ""),             /* 01 */
-            new ImuseDigTable(3, 1100, "stateAstShip", 2, 0, "ASTERO~1.IMU"), /* 02 */
-            new ImuseDigTable(3, 1120, "stateAstClose", 2, 0, "ASTERO~2.IMU"), /* 03 */
-            new ImuseDigTable(3, 1140, "stateAstInside", 0, 0, "ASTERO~3.IMU"), /* 04 */
-            new ImuseDigTable(3, 1150, "stateAstCore", 0, 2, "ASTERO~4.IMU"), /* 05 */
-            new ImuseDigTable(3, 1200, "stateCanyonClose", 0, 1, "CANYON~1.IMU"), /* 06 */
-            new ImuseDigTable(3, 1205, "stateCanyonClose_m", 0, 0, "CANYON~2.IMU"), /* 07 */
-            new ImuseDigTable(3, 1210, "stateCanyonOver", 0, 1, "CANYON~3.IMU"), /* 08 */
-            new ImuseDigTable(3, 1220, "stateCanyonWreck", 0, 1, "CANYON~4.IMU"), /* 09 */
-            new ImuseDigTable(3, 1300, "stateNexusCanyon", 10, 0, "NEXUS(~1.IMU"), /* 10 */
-            new ImuseDigTable(3, 1310, "stateNexusPlan", 10, 0, "NEXUS(~1.IMU"), /* 11 */
-            new ImuseDigTable(3, 1320, "stateNexusRamp", 10, 0, "NEXUS(~2.IMU"), /* 12 */
-            new ImuseDigTable(3, 1330, "stateNexusMuseum", 10, 0, "NEXUS(~3.IMU"), /* 13 */
-            new ImuseDigTable(3, 1340, "stateNexusMap", 10, 0, "NEXUS(~4.IMU"), /* 14 */
-            new ImuseDigTable(3, 1350, "stateNexusTomb", 10, 0, "NE3706~5.IMU"), /* 15 */
-            new ImuseDigTable(3, 1360, "stateNexusCath", 10, 0, "NE3305~5.IMU"), /* 16 */
-            new ImuseDigTable(3, 1370, "stateNexusAirlock", 0, 0, "NE2D3A~5.IMU"), /* 17 */
-            new ImuseDigTable(3, 1380, "stateNexusPowerOff", 0, 1, "NE8522~5.IMU"), /* 18 */
-            new ImuseDigTable(3, 1400, "stateMuseumTramNear", 0, 1, "TRAM(M~1.IMU"), /* 19 */
-            new ImuseDigTable(3, 1410, "stateMuseumTramFar", 0, 0, "TRAM(M~2.IMU"), /* 20 */
-            new ImuseDigTable(3, 1420, "stateMuseumLockup", 0, 0, "MUSEUM~1.IMU"), /* 21 */
-            new ImuseDigTable(3, 1433, "stateMuseumPool", 22, 1, "MUSEUM~2.IMU"), /* 22 */
-            new ImuseDigTable(3, 1436, "stateMuseumSpire", 22, 2, "MUSEUM~3.IMU"), /* 23 */
-            new ImuseDigTable(3, 1440, "stateMuseumMuseum", 22, 2, "MUSEUM~4.IMU"), /* 24 */
-            new ImuseDigTable(3, 1450, "stateMuseumLibrary", 0, 0, "MUB575~5.IMU"), /* 25 */
-            new ImuseDigTable(3, 1460, "stateMuseumCavern", 0, 0, "MUF9BE~5.IMU"), /* 26 */
-            new ImuseDigTable(3, 1500, "stateTombTramNear", 0, 1, "TRAM(T~1.IMU"), /* 27 */
-            new ImuseDigTable(3, 1510, "stateTombBase", 28, 2, "TOMB(A~1.IMU"), /* 28 */
-            new ImuseDigTable(3, 1520, "stateTombSpire", 28, 2, "TOMB(A~2.IMU"), /* 29 */
-            new ImuseDigTable(3, 1530, "stateTombCave", 28, 2, "TOMB(A~3.IMU"), /* 30 */
-            new ImuseDigTable(3, 1540, "stateTombCrypt", 31, 1, "TOMB(C~1.IMU"), /* 31 */
-            new ImuseDigTable(3, 1550, "stateTombGuards", 31, 1, "TOMB(C~2.IMU"), /* 32 */
-            new ImuseDigTable(3, 1560, "stateTombInner", 0, 1, "TOMB(I~1.IMU"), /* 33 */
-            new ImuseDigTable(3, 1570, "stateTombCreator1", 0, 0, "TOMB(C~3.IMU"), /* 34 */
-            new ImuseDigTable(3, 1580, "stateTombCreator2", 0, 0, "TOMB(C~4.IMU"), /* 35 */
-            new ImuseDigTable(3, 1600, "statePlanTramNear", 0, 1, "TRAM(P~1.IMU"), /* 36 */
-            new ImuseDigTable(3, 1610, "statePlanTramFar", 0, 0, "TRAM(P~2.IMU"), /* 37 */
-            new ImuseDigTable(3, 1620, "statePlanBase", 38, 2, "PLAN(A~1.IMU"), /* 38 */
-            new ImuseDigTable(3, 1630, "statePlanSpire", 38, 2, "PLAN(A~2.IMU"), /* 39 */
-            new ImuseDigTable(3, 1650, "statePlanDome", 0, 0, "PLAN(D~1.IMU"), /* 40 */
-            new ImuseDigTable(3, 1700, "stateMapTramNear", 0, 1, "TRAM(M~3.IMU"), /* 41 */
-            new ImuseDigTable(3, 1710, "stateMapTramFar", 0, 0, "TRAM(M~4.IMU"), /* 42 */
-            new ImuseDigTable(3, 1720, "stateMapCanyon", 43, 2, "MAP(AM~1.IMU"), /* 43 */
-            new ImuseDigTable(3, 1730, "stateMapExposed", 43, 2, "MAP(AM~2.IMU"), /* 44 */
-            new ImuseDigTable(3, 1750, "stateMapNestEmpty", 43, 2, "MAP(AM~4.IMU"), /* 45 */
-            new ImuseDigTable(3, 1760, "stateMapNestMonster", 0, 0, "MAP(MO~1.IMU"), /* 46 */
-            new ImuseDigTable(3, 1770, "stateMapKlein", 0, 0, "MAP(KL~1.IMU"), /* 47 */
-            new ImuseDigTable(3, 1800, "stateCathTramNear", 0, 1, "TRAM(C~1.IMU"), /* 48 */
-            new ImuseDigTable(3, 1810, "stateCathTramFar", 0, 0, "TRAM(C~2.IMU"), /* 49 */
-            new ImuseDigTable(3, 1820, "stateCathLab", 50, 1, "CATH(A~1.IMU"), /* 50 */
-            new ImuseDigTable(3, 1830, "stateCathOutside", 50, 1, "CATH(A~2.IMU"), /* 51 */
-            new ImuseDigTable(3, 1900, "stateWorldMuseum", 52, 0, "WORLD(~1.IMU"), /* 52 */
-            new ImuseDigTable(3, 1901, "stateWorldPlan", 52, 0, "WORLD(~2.IMU"), /* 53 */
-            new ImuseDigTable(3, 1902, "stateWorldTomb", 52, 0, "WORLD(~3.IMU"), /* 54 */
-            new ImuseDigTable(3, 1903, "stateWorldMap", 52, 0, "WORLD(~4.IMU"), /* 55 */
-            new ImuseDigTable(3, 1904, "stateWorldCath", 52, 0, "WO3227~5.IMU"), /* 56 */
-            new ImuseDigTable(3, 1910, "stateEye1", 0, 0, "EYE1~1.IMU"),   /* 57 */
-            new ImuseDigTable(3, 1911, "stateEye2", 0, 0, "EYE2~1.IMU"),   /* 58 */
-            new ImuseDigTable(3, 1912, "stateEye3", 0, 0, "EYE3~1.IMU"),   /* 59 */
-            new ImuseDigTable(3, 1913, "stateEye4", 0, 0, "EYE4~1.IMU"),   /* 60 */
-            new ImuseDigTable(3, 1914, "stateEye5", 0, 0, "EYE5~1.IMU"),   /* 61 */
-            new ImuseDigTable(3, 1915, "stateEye6", 0, 0, "EYE6~1.IMU"),   /* 62 */
-            new ImuseDigTable(3, 1916, "stateEye7", 0, 0, "EYE7~1.IMU"),   /* 63 */
-            new ImuseDigTable(0, -1, "", 0, 0, "")
-        };
+                new ImuseDigTable(0, 1000, "STATE_NULL", 0, 0, ""),             /* 00 */
+                new ImuseDigTable(0, 1001, "stateNoChange", 0, 0, ""),             /* 01 */
+                new ImuseDigTable(3, 1100, "stateAstShip", 2, 0, "ASTERO~1.IMU"), /* 02 */
+                new ImuseDigTable(3, 1120, "stateAstClose", 2, 0, "ASTERO~2.IMU"), /* 03 */
+                new ImuseDigTable(3, 1140, "stateAstInside", 0, 0, "ASTERO~3.IMU"), /* 04 */
+                new ImuseDigTable(3, 1150, "stateAstCore", 0, 2, "ASTERO~4.IMU"), /* 05 */
+                new ImuseDigTable(3, 1200, "stateCanyonClose", 0, 1, "CANYON~1.IMU"), /* 06 */
+                new ImuseDigTable(3, 1205, "stateCanyonClose_m", 0, 0, "CANYON~2.IMU"), /* 07 */
+                new ImuseDigTable(3, 1210, "stateCanyonOver", 0, 1, "CANYON~3.IMU"), /* 08 */
+                new ImuseDigTable(3, 1220, "stateCanyonWreck", 0, 1, "CANYON~4.IMU"), /* 09 */
+                new ImuseDigTable(3, 1300, "stateNexusCanyon", 10, 0, "NEXUS(~1.IMU"), /* 10 */
+                new ImuseDigTable(3, 1310, "stateNexusPlan", 10, 0, "NEXUS(~1.IMU"), /* 11 */
+                new ImuseDigTable(3, 1320, "stateNexusRamp", 10, 0, "NEXUS(~2.IMU"), /* 12 */
+                new ImuseDigTable(3, 1330, "stateNexusMuseum", 10, 0, "NEXUS(~3.IMU"), /* 13 */
+                new ImuseDigTable(3, 1340, "stateNexusMap", 10, 0, "NEXUS(~4.IMU"), /* 14 */
+                new ImuseDigTable(3, 1350, "stateNexusTomb", 10, 0, "NE3706~5.IMU"), /* 15 */
+                new ImuseDigTable(3, 1360, "stateNexusCath", 10, 0, "NE3305~5.IMU"), /* 16 */
+                new ImuseDigTable(3, 1370, "stateNexusAirlock", 0, 0, "NE2D3A~5.IMU"), /* 17 */
+                new ImuseDigTable(3, 1380, "stateNexusPowerOff", 0, 1, "NE8522~5.IMU"), /* 18 */
+                new ImuseDigTable(3, 1400, "stateMuseumTramNear", 0, 1, "TRAM(M~1.IMU"), /* 19 */
+                new ImuseDigTable(3, 1410, "stateMuseumTramFar", 0, 0, "TRAM(M~2.IMU"), /* 20 */
+                new ImuseDigTable(3, 1420, "stateMuseumLockup", 0, 0, "MUSEUM~1.IMU"), /* 21 */
+                new ImuseDigTable(3, 1433, "stateMuseumPool", 22, 1, "MUSEUM~2.IMU"), /* 22 */
+                new ImuseDigTable(3, 1436, "stateMuseumSpire", 22, 2, "MUSEUM~3.IMU"), /* 23 */
+                new ImuseDigTable(3, 1440, "stateMuseumMuseum", 22, 2, "MUSEUM~4.IMU"), /* 24 */
+                new ImuseDigTable(3, 1450, "stateMuseumLibrary", 0, 0, "MUB575~5.IMU"), /* 25 */
+                new ImuseDigTable(3, 1460, "stateMuseumCavern", 0, 0, "MUF9BE~5.IMU"), /* 26 */
+                new ImuseDigTable(3, 1500, "stateTombTramNear", 0, 1, "TRAM(T~1.IMU"), /* 27 */
+                new ImuseDigTable(3, 1510, "stateTombBase", 28, 2, "TOMB(A~1.IMU"), /* 28 */
+                new ImuseDigTable(3, 1520, "stateTombSpire", 28, 2, "TOMB(A~2.IMU"), /* 29 */
+                new ImuseDigTable(3, 1530, "stateTombCave", 28, 2, "TOMB(A~3.IMU"), /* 30 */
+                new ImuseDigTable(3, 1540, "stateTombCrypt", 31, 1, "TOMB(C~1.IMU"), /* 31 */
+                new ImuseDigTable(3, 1550, "stateTombGuards", 31, 1, "TOMB(C~2.IMU"), /* 32 */
+                new ImuseDigTable(3, 1560, "stateTombInner", 0, 1, "TOMB(I~1.IMU"), /* 33 */
+                new ImuseDigTable(3, 1570, "stateTombCreator1", 0, 0, "TOMB(C~3.IMU"), /* 34 */
+                new ImuseDigTable(3, 1580, "stateTombCreator2", 0, 0, "TOMB(C~4.IMU"), /* 35 */
+                new ImuseDigTable(3, 1600, "statePlanTramNear", 0, 1, "TRAM(P~1.IMU"), /* 36 */
+                new ImuseDigTable(3, 1610, "statePlanTramFar", 0, 0, "TRAM(P~2.IMU"), /* 37 */
+                new ImuseDigTable(3, 1620, "statePlanBase", 38, 2, "PLAN(A~1.IMU"), /* 38 */
+                new ImuseDigTable(3, 1630, "statePlanSpire", 38, 2, "PLAN(A~2.IMU"), /* 39 */
+                new ImuseDigTable(3, 1650, "statePlanDome", 0, 0, "PLAN(D~1.IMU"), /* 40 */
+                new ImuseDigTable(3, 1700, "stateMapTramNear", 0, 1, "TRAM(M~3.IMU"), /* 41 */
+                new ImuseDigTable(3, 1710, "stateMapTramFar", 0, 0, "TRAM(M~4.IMU"), /* 42 */
+                new ImuseDigTable(3, 1720, "stateMapCanyon", 43, 2, "MAP(AM~1.IMU"), /* 43 */
+                new ImuseDigTable(3, 1730, "stateMapExposed", 43, 2, "MAP(AM~2.IMU"), /* 44 */
+                new ImuseDigTable(3, 1750, "stateMapNestEmpty", 43, 2, "MAP(AM~4.IMU"), /* 45 */
+                new ImuseDigTable(3, 1760, "stateMapNestMonster", 0, 0, "MAP(MO~1.IMU"), /* 46 */
+                new ImuseDigTable(3, 1770, "stateMapKlein", 0, 0, "MAP(KL~1.IMU"), /* 47 */
+                new ImuseDigTable(3, 1800, "stateCathTramNear", 0, 1, "TRAM(C~1.IMU"), /* 48 */
+                new ImuseDigTable(3, 1810, "stateCathTramFar", 0, 0, "TRAM(C~2.IMU"), /* 49 */
+                new ImuseDigTable(3, 1820, "stateCathLab", 50, 1, "CATH(A~1.IMU"), /* 50 */
+                new ImuseDigTable(3, 1830, "stateCathOutside", 50, 1, "CATH(A~2.IMU"), /* 51 */
+                new ImuseDigTable(3, 1900, "stateWorldMuseum", 52, 0, "WORLD(~1.IMU"), /* 52 */
+                new ImuseDigTable(3, 1901, "stateWorldPlan", 52, 0, "WORLD(~2.IMU"), /* 53 */
+                new ImuseDigTable(3, 1902, "stateWorldTomb", 52, 0, "WORLD(~3.IMU"), /* 54 */
+                new ImuseDigTable(3, 1903, "stateWorldMap", 52, 0, "WORLD(~4.IMU"), /* 55 */
+                new ImuseDigTable(3, 1904, "stateWorldCath", 52, 0, "WO3227~5.IMU"), /* 56 */
+                new ImuseDigTable(3, 1910, "stateEye1", 0, 0, "EYE1~1.IMU"),   /* 57 */
+                new ImuseDigTable(3, 1911, "stateEye2", 0, 0, "EYE2~1.IMU"),   /* 58 */
+                new ImuseDigTable(3, 1912, "stateEye3", 0, 0, "EYE3~1.IMU"),   /* 59 */
+                new ImuseDigTable(3, 1913, "stateEye4", 0, 0, "EYE4~1.IMU"),   /* 60 */
+                new ImuseDigTable(3, 1914, "stateEye5", 0, 0, "EYE5~1.IMU"),   /* 61 */
+                new ImuseDigTable(3, 1915, "stateEye6", 0, 0, "EYE6~1.IMU"),   /* 62 */
+                new ImuseDigTable(3, 1916, "stateEye7", 0, 0, "EYE7~1.IMU"),   /* 63 */
+                new ImuseDigTable(0, -1, "", 0, 0, "")
+            };
 
         struct ImuseFtStateTable
         {
-            public string audioName;
-            public byte transitionType;
-            public byte volume;
-            public string name;
+            public string AudioName;
+            public byte TransitionType;
+            public byte Volume;
+            public string Name;
         }
 
         struct ImuseFtSeqTable
         {
-            public string audioName;
-            public byte transitionType;
-            public byte volume;
+            public string AudioName;
+            public byte TransitionType;
+            public byte Volume;
         }
 
         static readonly ImuseFtStateTable[] _ftStateMusicTable =
             {
-                new ImuseFtStateTable{ audioName = "",         transitionType = 0,  volume = 0,    name = "STATE_NULL"          },
-                new ImuseFtStateTable{ audioName = "",         transitionType = 4,  volume = 127,  name = "stateKstandOutside"  },
-                new ImuseFtStateTable{ audioName = "kinside",  transitionType = 2,  volume = 127,  name = "stateKstandInside"   },
-                new ImuseFtStateTable{ audioName = "moshop",   transitionType = 3,  volume = 64,   name = "stateMoesInside"     },
-                new ImuseFtStateTable{ audioName = "melcut",   transitionType = 2,  volume = 127,  name = "stateMoesOutside"    },
-                new ImuseFtStateTable{ audioName = "mellover", transitionType = 2,  volume = 127,  name = "stateMellonAbove"    },
-                new ImuseFtStateTable{ audioName = "radloop",  transitionType = 3,  volume = 28,   name = "stateTrailerOutside" },
-                new ImuseFtStateTable{ audioName = "radloop",  transitionType = 3,  volume = 58,   name = "stateTrailerInside"  },
-                new ImuseFtStateTable{ audioName = "radloop",  transitionType = 3,  volume = 127,  name = "stateTodShop"        },
-                new ImuseFtStateTable{ audioName = "junkgate", transitionType = 2,  volume = 127,  name = "stateJunkGate"       },
-                new ImuseFtStateTable{ audioName = "junkover", transitionType = 3,  volume = 127,  name = "stateJunkAbove"      },
-                new ImuseFtStateTable{ audioName = "gastower", transitionType = 2,  volume = 127,  name = "stateGasTower"       },
-                new ImuseFtStateTable{ audioName = "",         transitionType = 4,  volume = 0,    name = "stateTowerAlarm"     },
-                new ImuseFtStateTable{ audioName = "melcut",   transitionType = 2,  volume = 127,  name = "stateCopsOnGround"   },
-                new ImuseFtStateTable{ audioName = "melcut",   transitionType = 2,  volume = 127,  name = "stateCopsAround"     },
-                new ImuseFtStateTable{ audioName = "melcut",   transitionType = 2,  volume = 127,  name = "stateMoesRuins"      },
-                new ImuseFtStateTable{ audioName = "melcut",   transitionType = 2,  volume = 127,  name = "stateKstandNight"    },
-                new ImuseFtStateTable{ audioName = "trukblu2", transitionType = 2,  volume = 127,  name = "stateTruckerTalk"    },
-                new ImuseFtStateTable{ audioName = "stretch",  transitionType = 2,  volume = 127,  name = "stateMumblyPeg"      },
-                new ImuseFtStateTable{ audioName = "kstand",   transitionType = 2,  volume = 100,  name = "stateRanchOutside"   },
-                new ImuseFtStateTable{ audioName = "kinside",  transitionType = 2,  volume = 127,  name = "stateRanchInside"    },
-                new ImuseFtStateTable{ audioName = "desert",   transitionType = 2,  volume = 127,  name = "stateWreckedTruck"   },
-                new ImuseFtStateTable{ audioName = "opening",  transitionType = 2,  volume = 100,  name = "stateGorgeVista"     },
-                new ImuseFtStateTable{ audioName = "caveopen", transitionType = 2,  volume = 127,  name = "stateCaveOpen"       },
-                new ImuseFtStateTable{ audioName = "cavecut1", transitionType = 2,  volume = 127,  name = "stateCaveOuter"      },
-                new ImuseFtStateTable{ audioName = "cavecut1", transitionType = 1,  volume = 127,  name = "stateCaveMiddle"     },
-                new ImuseFtStateTable{ audioName = "cave",     transitionType = 2,  volume = 127,  name = "stateCaveInner"      },
-                new ImuseFtStateTable{ audioName = "corville", transitionType = 2,  volume = 127,  name = "stateCorvilleFront"  },
-                new ImuseFtStateTable{ audioName = "mines",    transitionType = 2,  volume = 127,  name = "stateMineField"      },
-                new ImuseFtStateTable{ audioName = "bunyman3", transitionType = 2,  volume = 127,  name = "stateBunnyStore"     },
-                new ImuseFtStateTable{ audioName = "stretch",  transitionType = 2,  volume = 127,  name = "stateStretchBen"     },
-                new ImuseFtStateTable{ audioName = "saveme",   transitionType = 2,  volume = 127,  name = "stateBenPleas"       },
-                new ImuseFtStateTable{ audioName = "",         transitionType = 4,  volume = 0,    name = "stateBenConvinces"   },
-                new ImuseFtStateTable{ audioName = "derby",    transitionType = 3,  volume = 127,  name = "stateDemoDerby"      },
-                new ImuseFtStateTable{ audioName = "fire",     transitionType = 3,  volume = 127,  name = "stateLightMyFire"    },
-                new ImuseFtStateTable{ audioName = "derby",    transitionType = 3,  volume = 127,  name = "stateDerbyChase"     },
-                new ImuseFtStateTable{ audioName = "carparts", transitionType = 2,  volume = 127,  name = "stateVultureCarParts" },
-                new ImuseFtStateTable{ audioName = "cavecut1", transitionType = 2,  volume = 127,  name = "stateVulturesInside" },
-                new ImuseFtStateTable{ audioName = "mines",    transitionType = 2,  volume = 127,  name = "stateFactoryRear"    },
-                new ImuseFtStateTable{ audioName = "croffice", transitionType = 2,  volume = 127,  name = "stateCorleyOffice"   },
-                new ImuseFtStateTable{ audioName = "melcut",   transitionType = 2,  volume = 127,  name = "stateCorleyHall"     },
-                new ImuseFtStateTable{ audioName = "",         transitionType = 4,  volume = 0,    name = "stateProjRoom"       },
-                new ImuseFtStateTable{ audioName = "",         transitionType = 4,  volume = 0,    name = "stateMMRoom"         },
-                new ImuseFtStateTable{ audioName = "bumper",   transitionType = 2,  volume = 127,  name = "stateBenOnBumper"    },
-                new ImuseFtStateTable{ audioName = "benump",   transitionType = 2,  volume = 127,  name = "stateBenOnBack"      },
-                new ImuseFtStateTable{ audioName = "plane",    transitionType = 2,  volume = 127,  name = "stateInCargoPlane"   },
-                new ImuseFtStateTable{ audioName = "saveme",   transitionType = 2,  volume = 127,  name = "statePlaneControls"  },
-                new ImuseFtStateTable{ audioName = "",         transitionType = 4,  volume = 0,    name = "stateCliffHanger1"   },
-                new ImuseFtStateTable{ audioName = "",         transitionType = 4,  volume = 0,    name = "stateCliffHanger2"   },
+                new ImuseFtStateTable{ AudioName = "",         TransitionType = 0,  Volume = 0,    Name = "STATE_NULL"          },
+                new ImuseFtStateTable{ AudioName = "",         TransitionType = 4,  Volume = 127,  Name = "stateKstandOutside"  },
+                new ImuseFtStateTable{ AudioName = "kinside",  TransitionType = 2,  Volume = 127,  Name = "stateKstandInside"   },
+                new ImuseFtStateTable{ AudioName = "moshop",   TransitionType = 3,  Volume = 64,   Name = "stateMoesInside"     },
+                new ImuseFtStateTable{ AudioName = "melcut",   TransitionType = 2,  Volume = 127,  Name = "stateMoesOutside"    },
+                new ImuseFtStateTable{ AudioName = "mellover", TransitionType = 2,  Volume = 127,  Name = "stateMellonAbove"    },
+                new ImuseFtStateTable{ AudioName = "radloop",  TransitionType = 3,  Volume = 28,   Name = "stateTrailerOutside" },
+                new ImuseFtStateTable{ AudioName = "radloop",  TransitionType = 3,  Volume = 58,   Name = "stateTrailerInside"  },
+                new ImuseFtStateTable{ AudioName = "radloop",  TransitionType = 3,  Volume = 127,  Name = "stateTodShop"        },
+                new ImuseFtStateTable{ AudioName = "junkgate", TransitionType = 2,  Volume = 127,  Name = "stateJunkGate"       },
+                new ImuseFtStateTable{ AudioName = "junkover", TransitionType = 3,  Volume = 127,  Name = "stateJunkAbove"      },
+                new ImuseFtStateTable{ AudioName = "gastower", TransitionType = 2,  Volume = 127,  Name = "stateGasTower"       },
+                new ImuseFtStateTable{ AudioName = "",         TransitionType = 4,  Volume = 0,    Name = "stateTowerAlarm"     },
+                new ImuseFtStateTable{ AudioName = "melcut",   TransitionType = 2,  Volume = 127,  Name = "stateCopsOnGround"   },
+                new ImuseFtStateTable{ AudioName = "melcut",   TransitionType = 2,  Volume = 127,  Name = "stateCopsAround"     },
+                new ImuseFtStateTable{ AudioName = "melcut",   TransitionType = 2,  Volume = 127,  Name = "stateMoesRuins"      },
+                new ImuseFtStateTable{ AudioName = "melcut",   TransitionType = 2,  Volume = 127,  Name = "stateKstandNight"    },
+                new ImuseFtStateTable{ AudioName = "trukblu2", TransitionType = 2,  Volume = 127,  Name = "stateTruckerTalk"    },
+                new ImuseFtStateTable{ AudioName = "stretch",  TransitionType = 2,  Volume = 127,  Name = "stateMumblyPeg"      },
+                new ImuseFtStateTable{ AudioName = "kstand",   TransitionType = 2,  Volume = 100,  Name = "stateRanchOutside"   },
+                new ImuseFtStateTable{ AudioName = "kinside",  TransitionType = 2,  Volume = 127,  Name = "stateRanchInside"    },
+                new ImuseFtStateTable{ AudioName = "desert",   TransitionType = 2,  Volume = 127,  Name = "stateWreckedTruck"   },
+                new ImuseFtStateTable{ AudioName = "opening",  TransitionType = 2,  Volume = 100,  Name = "stateGorgeVista"     },
+                new ImuseFtStateTable{ AudioName = "caveopen", TransitionType = 2,  Volume = 127,  Name = "stateCaveOpen"       },
+                new ImuseFtStateTable{ AudioName = "cavecut1", TransitionType = 2,  Volume = 127,  Name = "stateCaveOuter"      },
+                new ImuseFtStateTable{ AudioName = "cavecut1", TransitionType = 1,  Volume = 127,  Name = "stateCaveMiddle"     },
+                new ImuseFtStateTable{ AudioName = "cave",     TransitionType = 2,  Volume = 127,  Name = "stateCaveInner"      },
+                new ImuseFtStateTable{ AudioName = "corville", TransitionType = 2,  Volume = 127,  Name = "stateCorvilleFront"  },
+                new ImuseFtStateTable{ AudioName = "mines",    TransitionType = 2,  Volume = 127,  Name = "stateMineField"      },
+                new ImuseFtStateTable{ AudioName = "bunyman3", TransitionType = 2,  Volume = 127,  Name = "stateBunnyStore"     },
+                new ImuseFtStateTable{ AudioName = "stretch",  TransitionType = 2,  Volume = 127,  Name = "stateStretchBen"     },
+                new ImuseFtStateTable{ AudioName = "saveme",   TransitionType = 2,  Volume = 127,  Name = "stateBenPleas"       },
+                new ImuseFtStateTable{ AudioName = "",         TransitionType = 4,  Volume = 0,    Name = "stateBenConvinces"   },
+                new ImuseFtStateTable{ AudioName = "derby",    TransitionType = 3,  Volume = 127,  Name = "stateDemoDerby"      },
+                new ImuseFtStateTable{ AudioName = "fire",     TransitionType = 3,  Volume = 127,  Name = "stateLightMyFire"    },
+                new ImuseFtStateTable{ AudioName = "derby",    TransitionType = 3,  Volume = 127,  Name = "stateDerbyChase"     },
+                new ImuseFtStateTable{ AudioName = "carparts", TransitionType = 2,  Volume = 127,  Name = "stateVultureCarParts" },
+                new ImuseFtStateTable{ AudioName = "cavecut1", TransitionType = 2,  Volume = 127,  Name = "stateVulturesInside" },
+                new ImuseFtStateTable{ AudioName = "mines",    TransitionType = 2,  Volume = 127,  Name = "stateFactoryRear"    },
+                new ImuseFtStateTable{ AudioName = "croffice", TransitionType = 2,  Volume = 127,  Name = "stateCorleyOffice"   },
+                new ImuseFtStateTable{ AudioName = "melcut",   TransitionType = 2,  Volume = 127,  Name = "stateCorleyHall"     },
+                new ImuseFtStateTable{ AudioName = "",         TransitionType = 4,  Volume = 0,    Name = "stateProjRoom"       },
+                new ImuseFtStateTable{ AudioName = "",         TransitionType = 4,  Volume = 0,    Name = "stateMMRoom"         },
+                new ImuseFtStateTable{ AudioName = "bumper",   TransitionType = 2,  Volume = 127,  Name = "stateBenOnBumper"    },
+                new ImuseFtStateTable{ AudioName = "benump",   TransitionType = 2,  Volume = 127,  Name = "stateBenOnBack"      },
+                new ImuseFtStateTable{ AudioName = "plane",    TransitionType = 2,  Volume = 127,  Name = "stateInCargoPlane"   },
+                new ImuseFtStateTable{ AudioName = "saveme",   TransitionType = 2,  Volume = 127,  Name = "statePlaneControls"  },
+                new ImuseFtStateTable{ AudioName = "",         TransitionType = 4,  Volume = 0,    Name = "stateCliffHanger1"   },
+                new ImuseFtStateTable{ AudioName = "",         TransitionType = 4,  Volume = 0,    Name = "stateCliffHanger2"   },
             };
 
         static readonly string[] _ftSeqNames =
@@ -666,265 +665,265 @@ namespace NScumm.Core.Audio.IMuse
 
         static readonly ImuseFtSeqTable[] _ftSeqMusicTable =
             {
-                new ImuseFtSeqTable { audioName = "",         transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "opening",  transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
+                new ImuseFtSeqTable { AudioName = "opening",  TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "barbeat",  transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "barwarn",  transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0, },
+                new ImuseFtSeqTable { AudioName = "barbeat",  TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "barwarn",  TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "benwakes", transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
+                new ImuseFtSeqTable { AudioName = "benwakes", TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "barwarn",  transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
+                new ImuseFtSeqTable { AudioName = "barwarn",  TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "swatben",  transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
+                new ImuseFtSeqTable { AudioName = "swatben",  TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "dogattak", transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
+                new ImuseFtSeqTable { AudioName = "dogattak", TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "",         transitionType = 4,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 4,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "",         transitionType = 4,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 4,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "cops2",    transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
+                new ImuseFtSeqTable { AudioName = "cops2",    TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "cops2",    transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
+                new ImuseFtSeqTable { AudioName = "cops2",    TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "cops2",    transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
+                new ImuseFtSeqTable { AudioName = "cops2",    TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "bunymrch", transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
+                new ImuseFtSeqTable { AudioName = "bunymrch", TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "",         transitionType = 4,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 4,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "melcut",   transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "tada",     transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "melcut",   TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "tada",     TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "",         transitionType = 4,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 4,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "trucker",  transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
+                new ImuseFtSeqTable { AudioName = "trucker",  TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "cops2",    transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
+                new ImuseFtSeqTable { AudioName = "cops2",    TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "barwarn",  transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "murder",   transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "murder2",  transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
+                new ImuseFtSeqTable { AudioName = "barwarn",  TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "murder",   TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "murder2",  TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "corldie",  transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
+                new ImuseFtSeqTable { AudioName = "corldie",  TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "barwarn",  transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
+                new ImuseFtSeqTable { AudioName = "barwarn",  TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "picture",  transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
+                new ImuseFtSeqTable { AudioName = "picture",  TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "ripintro", transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
+                new ImuseFtSeqTable { AudioName = "ripintro", TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "trucker",  transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "hosed",    transitionType = 2,  volume = 127 },
+                new ImuseFtSeqTable { AudioName = "trucker",  TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "hosed",    TransitionType = 2,  Volume = 127 },
 
-                new ImuseFtSeqTable { audioName = "ripdead",  transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
+                new ImuseFtSeqTable { AudioName = "ripdead",  TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "nesranch", transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
+                new ImuseFtSeqTable { AudioName = "nesranch", TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "scolding", transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
+                new ImuseFtSeqTable { AudioName = "scolding", TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "desert",   transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
+                new ImuseFtSeqTable { AudioName = "desert",   TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "cavecut1", transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
+                new ImuseFtSeqTable { AudioName = "cavecut1", TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "caveamb",  transitionType = 2,  volume = 80 },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
+                new ImuseFtSeqTable { AudioName = "caveamb",  TransitionType = 2,  Volume = 80 },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "castle",   transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
+                new ImuseFtSeqTable { AudioName = "castle",   TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "bunymrch", transitionType = 2,  volume = 105 },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
+                new ImuseFtSeqTable { AudioName = "bunymrch", TransitionType = 2,  Volume = 105 },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "valkyrs",  transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
+                new ImuseFtSeqTable { AudioName = "valkyrs",  TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "melcut",   transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
+                new ImuseFtSeqTable { AudioName = "melcut",   TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "veltures", transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
+                new ImuseFtSeqTable { AudioName = "veltures", TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "sorry",    transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
+                new ImuseFtSeqTable { AudioName = "sorry",    TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "makeplan", transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
+                new ImuseFtSeqTable { AudioName = "makeplan", TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "castle",   transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "derby",    transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
+                new ImuseFtSeqTable { AudioName = "castle",   TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "derby",    TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "fire",     transitionType = 3,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
+                new ImuseFtSeqTable { AudioName = "fire",     TransitionType = 3,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "saveme",   transitionType = 3,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "scolding", transitionType = 2,  volume = 127 },
+                new ImuseFtSeqTable { AudioName = "saveme",   TransitionType = 3,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "scolding", TransitionType = 2,  Volume = 127 },
 
-                new ImuseFtSeqTable { audioName = "cops2",    transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
+                new ImuseFtSeqTable { AudioName = "cops2",    TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "sorry",    transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
+                new ImuseFtSeqTable { AudioName = "sorry",    TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "sorry",    transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
+                new ImuseFtSeqTable { AudioName = "sorry",    TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "caveamb",  transitionType = 2,  volume = 85 },
-                new ImuseFtSeqTable { audioName = "tada",     transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
+                new ImuseFtSeqTable { AudioName = "caveamb",  TransitionType = 2,  Volume = 85 },
+                new ImuseFtSeqTable { AudioName = "tada",     TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "expose",   transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 4,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "mocoup",   transitionType = 2,  volume = 127 },
+                new ImuseFtSeqTable { AudioName = "expose",   TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 4,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "mocoup",   TransitionType = 2,  Volume = 127 },
 
-                new ImuseFtSeqTable { audioName = "ripscram", transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
+                new ImuseFtSeqTable { AudioName = "ripscram", TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "",         transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "valkyrs",  transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
+                new ImuseFtSeqTable { AudioName = "valkyrs",  TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "ripdead",  transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
+                new ImuseFtSeqTable { AudioName = "ripdead",  TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "funeral",  transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "moshop",   transitionType = 3,  volume = 64 },
-                new ImuseFtSeqTable { audioName = "",         transitionType = 0,  volume = 0  },
+                new ImuseFtSeqTable { AudioName = "funeral",  TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "moshop",   TransitionType = 3,  Volume = 64 },
+                new ImuseFtSeqTable { AudioName = "",         TransitionType = 0,  Volume = 0  },
 
-                new ImuseFtSeqTable { audioName = "bornbad",  transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "hammvox",  transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "legavox",  transitionType = 2,  volume = 127 },
-                new ImuseFtSeqTable { audioName = "chances",  transitionType = 2,  volume = 90 },
+                new ImuseFtSeqTable { AudioName = "bornbad",  TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "hammvox",  TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "legavox",  TransitionType = 2,  Volume = 127 },
+                new ImuseFtSeqTable { AudioName = "chances",  TransitionType = 2,  Volume = 90 },
             };
 
     }

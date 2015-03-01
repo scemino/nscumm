@@ -21,7 +21,7 @@
 using System;
 using System.Diagnostics;
 
-namespace NScumm.Core
+namespace NScumm.Core.Audio.IMuse
 {
     static class BundleCodecs
     {
@@ -115,7 +115,7 @@ namespace NScumm.Core
         {
             int outputSize;
             int offset1, offset2, offset3, length, k, c, s, j, r, t, z;
-            int p, ptr;
+            int ptr;
             byte t_tmp1, t_tmp2;
 
             switch (codec)
@@ -185,7 +185,6 @@ namespace NScumm.Core
                     offset1 = ((length - 1) * 3) >> 1;
                     t_table[offset1 + 1] = (byte)((t_table[offset1 + 1]) | (src[length - 1] & 0xf0));
                     Array.Copy(t_table, src, outputSize);
-                    t_table = null;
                     break;
 
                 case 5:
@@ -230,7 +229,6 @@ namespace NScumm.Core
                         } while (k < t);
                     }
                     Array.Copy(t_table, src, outputSize);
-                    t_table = null;
                     break;
 
                 case 6:
@@ -276,7 +274,6 @@ namespace NScumm.Core
                         } while (k < t);
                     }
                     Array.Copy(t_table, src, outputSize);
-                    t_table = null;
                     break;
 
                 case 10:
@@ -334,7 +331,6 @@ namespace NScumm.Core
                     }
                     offset1 = ((length - 1) * 3) >> 1;
                     src[offset1 + 1] = (byte)((t_table[length] & 0xf0) | src[offset1 + 1]);
-                    t_table = null;
                     break;
 
                 case 11:
@@ -392,7 +388,6 @@ namespace NScumm.Core
                             k++;
                         } while (k < t);
                     }
-                    t_table = null;
                     break;
 
                 case 12:
@@ -450,7 +445,6 @@ namespace NScumm.Core
                             k++;
                         } while (k < t);
                     }
-                    t_table = null;
                     break;
 
                 case 13:
@@ -477,9 +471,9 @@ namespace NScumm.Core
             int outputSamplesLeft;
             int destPos;
             short firstWord;
-            byte[] initialTablePos = new byte[MAX_CHANNELS];
+            var initialTablePos = new byte[MAX_CHANNELS];
             //int32 initialimcTableEntry[MAX_CHANNELS] = {7, 7};
-            int[] initialOutputWord = new int[MAX_CHANNELS];
+            var initialOutputWord = new int[MAX_CHANNELS];
             int totalBitOffset, curTablePos, outputWord;
 
             // We only support mono and stereo
@@ -503,7 +497,7 @@ namespace NScumm.Core
             //
             // If on the other hand the word is zero, then what follows
             // are 7*channels bytes containing seed data for the decoder.
-            firstWord = ScummHelper.ToInt16BigEndian(src);
+            firstWord = src.ToInt16BigEndian();
             srcPos += 2;
             if (firstWord != 0)
             {
@@ -523,7 +517,7 @@ namespace NScumm.Core
                     srcPos += 1;
                     //initialimcTableEntry[i] = READ_BE_UINT32(src);
                     srcPos += 4;
-                    initialOutputWord[i] = ScummHelper.ToInt32BigEndian(src, srcPos);
+                    initialOutputWord[i] = src.ToInt32BigEndian(srcPos);
                     srcPos += 4;
                 }
             }
@@ -555,7 +549,7 @@ namespace NScumm.Core
 
                     // Read the next data packet
                     int readPos = srcPos + (totalBitOffset >> 3);
-                    var readWord = (ushort)(ScummHelper.ToInt16BigEndian(src, readPos) << (totalBitOffset & 7));
+                    var readWord = (ushort)(src.ToInt16BigEndian(readPos) << (totalBitOffset & 7));
                     var packet = (byte)(readWord >> (16 - curTableEntryBitCount));
 
                     // Advance read position to the next data packet
@@ -599,7 +593,7 @@ namespace NScumm.Core
             mask >>= 1;                        
             if ((--bitsleft) == 0)
             {                 
-                mask = ScummHelper.ToUInt16(src, srcptr); 
+                mask = src.ToUInt16(srcptr); 
                 srcptr += 2;                   
                 bitsleft = 16;                 
             } 
@@ -611,7 +605,7 @@ namespace NScumm.Core
             int result, srcptr;
             int dstptr = 0;
             int data, size, bit, bitsleft = 16;
-            int mask = ScummHelper.ToUInt16(src);
+            int mask = src.ToUInt16();
             srcptr = 2;
 
             for (;;)
@@ -653,8 +647,7 @@ namespace NScumm.Core
     
     
         // This table is the "big brother" of Audio::ADPCMStream::_stepAdjustTable.
-        static readonly byte[][] imxOtherTable = new byte[6][]
-        {
+        static readonly byte[][] imxOtherTable = {
             new byte[]
             {
                 0xFF,

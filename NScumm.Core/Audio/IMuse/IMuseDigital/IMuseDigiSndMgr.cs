@@ -513,6 +513,7 @@ namespace NScumm.Core.Audio.IMuse
 
         public void CloseSound(SoundDesc soundDesc)
         {
+            Debug.WriteLine("Close sound: {0}", soundDesc.SoundId);
             Debug.Assert(CheckForProperHandle(soundDesc));
 
 //            if (soundDesc.resPtr != null)
@@ -523,27 +524,10 @@ namespace NScumm.Core.Audio.IMuse
 //                    if ((_sounds[l].soundId == soundDesc.soundId) && (_sounds[l] != soundDesc))
 //                        found = true;
 //                }
-                // TODO: unlock
+            // TODO: unlock
 //                if (!found)
 //                    _vm._res.unlock(rtSound, soundDesc.soundId);
 //            }
-
-            if (soundDesc.CompressedStream != null)
-            {
-                soundDesc.CompressedStream.Dispose();
-                soundDesc.CompressedStream = null;
-            }
-            soundDesc.Bundle = null;
-
-            for (int r = 0; r < soundDesc.NumSyncs; r++)
-                soundDesc.Sync[r].Ptr = null;
-            for (int r = 0; r < soundDesc.NumMarkers; r++)
-                soundDesc.Marker[r].Ptr = null;
-            soundDesc.Region = null;
-            soundDesc.Jump = null;
-            soundDesc.Sync = null;
-            soundDesc.Marker = null;
-            soundDesc.InUse = false;
 
             soundDesc.Clear();
         }
@@ -712,7 +696,7 @@ namespace NScumm.Core.Audio.IMuse
 
         public int GetDataFromRegion(SoundDesc soundDesc, int region, out byte[] buf, int offset, int size)
         {
-            Debug.WriteLine("getDataFromRegion() region:{0}, offset:{1}, size:{2}, numRegions:{3}", region, offset, size, soundDesc.NumRegions);
+            Debug.WriteLine("GetDataFromRegion() soundId:{4,4}, region:{0}, offset:{1,7}, size:{2,4}, numRegions:{3}", region, offset, size, soundDesc.NumRegions, soundDesc.SoundId);
             Debug.Assert(CheckForProperHandle(soundDesc));
             Debug.Assert(offset >= 0 && size >= 0);
             Debug.Assert(region >= 0 && region < soundDesc.NumRegions);

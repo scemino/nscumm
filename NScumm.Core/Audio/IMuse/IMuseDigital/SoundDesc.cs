@@ -108,7 +108,7 @@ namespace NScumm.Core.Audio.IMuse
 
         public SoundDesc Clone()
         {
-            SoundDesc desc = new SoundDesc();
+            var desc = new SoundDesc();
             desc.Freq = Freq;
             desc.Channels = Channels;
             desc.Bits = Bits;

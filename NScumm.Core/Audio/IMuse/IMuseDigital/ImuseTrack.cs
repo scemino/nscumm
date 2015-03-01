@@ -22,6 +22,7 @@ using System;
 
 namespace NScumm.Core.Audio.IMuse
 {
+    [System.Diagnostics.DebuggerDisplay("{DebuggerDisplay,nq}")]
     class Track: ICloneable
     {
         public int TrackId;
@@ -88,8 +89,6 @@ namespace NScumm.Core.Audio.IMuse
         public Track Clone()
         {
             var track = (Track)MemberwiseClone();
-            track.SoundDesc = SoundDesc.Clone();
-            track.MixChanHandle = new SoundHandle{ Value = MixChanHandle.Value };
             return track;
         }
 
@@ -107,7 +106,7 @@ namespace NScumm.Core.Audio.IMuse
             VolFadeStep = 0;
             VolFadeDelay = 0;
             VolFadeUsed = false;
-            SoundId = 0;
+//            SoundId = 0;
             SoundName = null;
             Used = false;
             ToBeRemoved = false;
@@ -145,6 +144,14 @@ namespace NScumm.Core.Audio.IMuse
             else
                 throw new InvalidOperationException("Track::GetType(): invalid sound type");
             return type;
+        }
+
+        internal string DebuggerDisplay
+        {
+            get
+            { 
+                return SoundId != -1 ? string.Format("SoundId {0}", SoundId) : string.Empty;
+            }    
         }
     }
 }

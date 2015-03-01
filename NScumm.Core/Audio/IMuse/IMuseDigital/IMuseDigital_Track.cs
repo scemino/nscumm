@@ -212,6 +212,7 @@ namespace NScumm.Core.Audio.IMuse
 
             // Clone the settings of the given track
             fadeTrack = track.Clone();
+            _track[track.TrackId + MaxDigitalTracks] = fadeTrack;
             fadeTrack.TrackId = track.TrackId + MaxDigitalTracks;
 
             // Clone the sound.

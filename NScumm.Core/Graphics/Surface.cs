@@ -106,7 +106,7 @@ namespace NScumm.Core.Graphics
             Pitch = width * BytesPerPixel;
             if (trick)
             {
-                _buffer = new byte[Pitch * height + 4 * Pitch];
+                _buffer = new byte[Pitch * height + 8 * Pitch];
             }
             else
             {

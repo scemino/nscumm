@@ -789,11 +789,11 @@ namespace NScumm.Core
             }
             else if (Game.Version < 5)
             {
-                numZBuffer = roomData.NumZBuffer;
+                numZBuffer = roomData.Image.ZPlanes.Count + 1;
             }
             else if (Game.Version < 8)
             {
-                numZBuffer = roomData.Image.ZPlanes.Count + 1;
+                numZBuffer = roomData.NumZBuffer;
             }
             else
             {

@@ -573,7 +573,6 @@ namespace NScumm.Core
         {
             for (var i = 0; i < _blastTextQueuePos; i++)
             {
-
                 var buf = _blastTextQueue[i].Text;
                 var bufPos = 0;
 

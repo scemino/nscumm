@@ -212,13 +212,13 @@ namespace NScumm.Core
             {
                 int s;
 
-                String[0].Position = new Point((short)(a.Position.X - MainVirtScreen.XStart), String[0].Position.Y);
+                String[0].Position = new Point((a.Position.X - MainVirtScreen.XStart), String[0].Position.Y);
                 s = a.ScaleX * a.TalkPosition.X / 255;
-                String[0].Position = String[0].Position.Offset((short)((a.TalkPosition.X - s) / 2 + s), 0);
+                String[0].Position = String[0].Position.Offset(((a.TalkPosition.X - s) / 2 + s), 0);
 
-                String[0].Position = new Point(a.Position.X, (short)(a.Position.Y - a.Elevation - ScreenTop));
+                String[0].Position = new Point(String[0].Position.X, (a.Position.Y - a.Elevation - ScreenTop));
                 s = a.ScaleY * a.TalkPosition.Y / 255;
-                String[0].Position = String[0].Position.Offset(0, (short)((a.TalkPosition.Y - s) / 2 + s));
+                String[0].Position = String[0].Position.Offset(0, ((a.TalkPosition.Y - s) / 2 + s));
             }
 
             _charset.SetColor(_charsetColor);

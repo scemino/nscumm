@@ -72,7 +72,7 @@ namespace NScumm.Core.Graphics
             return false;
         }
 
-        public Point Offset(short x, short y)
+        public Point Offset(int x, int y)
         {
             X += x;
             Y += y;

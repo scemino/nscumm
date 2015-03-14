@@ -19,11 +19,13 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
+using System.Linq;
 using NScumm.Core.IO;
 using NScumm.Core.Graphics;
 using NScumm.Core;
 using System.Text;
 using System.IO;
+using System.Collections.Generic;
 
 namespace NScumm.Dump
 {
@@ -44,10 +46,64 @@ namespace NScumm.Dump
             Game = game;
         }
 
+        public void DumpRoomImages(ResourceManager index, IList<int> roomIds)
+        {
+            var gdi = new Gdi(null, Game);
+            gdi.IsZBufferEnabled = false;
+            gdi.RoomPalette = CreatePalette();
+
+            foreach (var room in index.Rooms)
+            {
+                if (room.Image == null || !roomIds.Contains(room.Number))
+                    continue;
+
+                var name = room.Name ?? "room_" + room.Number;
+                Console.WriteLine("room #{0}: {1}", room.Number, name);
+
+                try
+                {
+                    DumpRoomImage(room, gdi);
+                }
+                catch (Exception e)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine(e);
+                    Console.ResetColor();
+                }
+            }
+        }
+
+        public void DumpObjectImages(ResourceManager index, IList<int> objIds)
+        {
+            var gdi = new Gdi(null, Game);
+            gdi.IsZBufferEnabled = false;
+            gdi.RoomPalette = CreatePalette();
+
+            foreach (var room in index.Rooms)
+            {
+                foreach (var obj in room.Objects)
+                {
+                    if (!objIds.Contains(obj.Number))
+                        continue;
+
+                    try
+                    {
+                        DumpRoomObjectImages(room, obj, gdi);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine(e);
+                        Console.ResetColor();
+                    }
+                }
+            }
+        }
+
         public void DumpImages(ResourceManager index)
         {
             foreach (var room in index.Rooms)
-                {
+            {
                 if (room.Image == null)
                     continue;
 
@@ -199,54 +255,59 @@ namespace NScumm.Dump
         {
             foreach (var obj in room.Objects)
             {
-                var text = new ScummText(obj.Name);
-                var sb = new StringBuilder();
-                sb.Append("Object #" + obj.Number).Append(" ");
-                
-                var decoder = new TextDecoder(sb);
-                text.Decode(decoder);
+                DumpRoomObjectImages(room, obj, gdi);
+            }
+        }
 
-                sb.AppendFormat(" size: {0}x{1}", obj.Width, obj.Height);
-                Console.WriteLine(sb);
-                
-                var j = 0;
-                foreach (var img in obj.Images)
+        void DumpRoomObjectImages(Room room, ObjectData obj, Gdi gdi)
+        {
+            var text = new ScummText(obj.Name);
+            var sb = new StringBuilder();
+            sb.Append("Object #" + obj.Number).Append(" ");
+
+            var decoder = new TextDecoder(sb);
+            text.Decode(decoder);
+
+            sb.AppendFormat(" size: {0}x{1}", obj.Width, obj.Height);
+            Console.WriteLine(sb);
+
+            var j = 0;
+            foreach (var img in obj.Images)
+            {
+                try
                 {
-                    try
+                    var screen = new VirtScreen(0, obj.Width, obj.Height, PixelFormat.Indexed8, 2);
+                    if (img.IsBomp)
                     {
-                        var screen = new VirtScreen(0, obj.Width, obj.Height, PixelFormat.Indexed8, 2);
-                        if (img.IsBomp)
-                        {
-                            var bdd = new BompDrawData();
-                            bdd.Src = img.Data;
-                            bdd.Dst = new PixelNavigator(screen.Surfaces[0]);
-                            bdd.X = 0;
-                            bdd.Y = 0;
+                        var bdd = new BompDrawData();
+                        bdd.Src = img.Data;
+                        bdd.Dst = new PixelNavigator(screen.Surfaces[0]);
+                        bdd.X = 0;
+                        bdd.Y = 0;
 
-                            bdd.Width = obj.Width;
-                            bdd.Height = obj.Height;
+                        bdd.Width = obj.Width;
+                        bdd.Height = obj.Height;
 
-                            bdd.ScaleX = 255;
-                            bdd.ScaleY = 255;
-                            bdd.DrawBomp();
-                        }
-                        else
-                        {
-                            gdi.DrawBitmap(img, screen, new Point(0, 0), obj.Width, obj.Height, 0, obj.Width / 8, room.Header.Width, DrawBitmaps.None, true);
-                        }
-
-                        using (var bmp = ToBitmap(room, screen))
-                        {
-                            bmp.Save("obj_" + obj.Number + "_" + (++j) + ".png");
-                        }
+                        bdd.ScaleX = 255;
+                        bdd.ScaleY = 255;
+                        bdd.DrawBomp();
                     }
-                    catch (Exception e)
+                    else
                     {
-                        Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine(e);
-                        Console.ResetColor();
-                        Console.ReadLine();
+                        gdi.DrawBitmap(img, screen, new Point(0, 0), obj.Width, obj.Height, 0, obj.Width / 8, room.Header.Width, DrawBitmaps.None, true);
                     }
+
+                    using (var bmp = ToBitmap(room, screen))
+                    {
+                        bmp.Save("obj_" + obj.Number + "_" + (++j) + ".png");
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine(e);
+                    Console.ResetColor();
+                    Console.ReadLine();
                 }
             }
         }

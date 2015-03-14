@@ -270,9 +270,13 @@ namespace NScumm.Dump
                     return "/";
                 case Operator.Assignment:
                     return "=";
-                case Operator.And:
+                case Operator.BitwiseAnd:
                     return "&";
+                case Operator.And:
+                    return "&&";
                 case Operator.Or:
+                    return "||";
+                case Operator.BitwiseOr:
                     return "|";
                 case Operator.Not:
                     return "!";

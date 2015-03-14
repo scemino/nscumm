@@ -107,6 +107,7 @@
     <Compile Include="Ast\Expressions\ArrayLiteralExpression.cs" />
     <Compile Include="ReplaceJumpToIf.cs" />
     <Compile Include="ResolveAllTypesOfVariables.cs" />
+    <Compile Include="Mono.Options\Options.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -120,5 +121,8 @@
       <Project>{B33E2D2E-E360-4F10-A82F-AA98500497FD}</Project>
       <Name>NScumm.Core</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

@@ -1537,7 +1537,7 @@ namespace NScumm.Core
                 case 14:    // remapCostumeInsert
                     {
                         var a = Actors[args[1]];
-                        a.RemapActorPalette(args[2], args[3], args[4], args[5]);
+                        a.RemapActorPalette(args[2], args[3], args[4], args.Length == 5 ? 0 : args[5]);
                     }
                     break;
                 case 15:    // setVideoFrameRate

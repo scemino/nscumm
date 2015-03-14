@@ -1627,7 +1627,7 @@ namespace NScumm.Core
 //                        quitGame();
                     break;
                 case 108:   // buildPaletteShadow
-                    SetShadowPalette(args[1], args[2], args[3], args[4], args[5], args[6]);
+                    SetShadowPalette(args[1], args[2], args[3], args[4], args.Length < 6 ? 0 : args[5], args.Length < 7 ? 0 : args[6]);
                     break;
                 case 109:   // setPaletteShadow
                     SetShadowPalette(0, args[1], args[2], args[3], args[4], args[5]);

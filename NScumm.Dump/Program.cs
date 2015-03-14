@@ -29,6 +29,7 @@ namespace NScumm.Dump
             string input = null;
             var scripts = new List<int>();
             var scriptObjects = new List<int>();
+            var scriptRooms = new List<int>();
             var rooms = new List<int>();
             var objects = new List<int>();
 
@@ -37,6 +38,7 @@ namespace NScumm.Dump
                 { "f=", "The input file",   v => input = v },
                 { "s|script=", "the global script number to dump", (int s) => scripts.Add(s) },
                 { "so|script_object=", "the object number whose script has to be dumped", (int s) => scriptObjects.Add(s) },
+                { "sr|script_room=", "the room number whose script has to be dumped", (int s) => scriptRooms.Add(s) },
                 { "r|room=", "the room image to dump", (int r) => rooms.Add(r) },
                 { "o|object=", "the object images to dump",(int o) => objects.Add(o) },
                 { "h|help",  "show this message and exit",  v => showHelp = v != null }
@@ -77,7 +79,27 @@ namespace NScumm.Dump
                 scriptDumper.DumpScript(scr, dumper);
             }
 
-            // dump scripts
+            // dump room scripts
+            var roomScripts = index.Rooms.Where(r => scriptRooms.Contains(r.Number)).ToList();
+            foreach (var room in roomScripts)
+            {
+                dumper.WriteLine("Room {0}", room.Number);
+                dumper.WriteLine("  Entry");
+                scriptDumper.DumpScript(room.EntryScript.Data, dumper);
+                dumper.WriteLine("  Exit");
+                scriptDumper.DumpScript(room.ExitScript.Data, dumper);
+                for (int i = 0; i < room.LocalScripts.Length; i++)
+                {
+                    var ls = room.LocalScripts[i];
+                    if (ls != null)
+                    {
+                        dumper.WriteLine("  LocalScript {0}", i);
+                        scriptDumper.DumpScript(ls.Data, dumper);
+                    }
+                }
+            }
+
+            // dump object scripts
             var objs = index.Rooms.SelectMany(r => r.Objects).Where(o => scriptObjects.Contains(o.Number)).ToList();
             foreach (var obj in objs)
             {

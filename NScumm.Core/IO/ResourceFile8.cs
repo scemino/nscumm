@@ -24,7 +24,6 @@ using System.Collections.Generic;
 using System.IO;
 using NScumm.Core.Graphics;
 using System.Linq;
-using System.Runtime.InteropServices;
 
 namespace NScumm.Core.IO
 {
@@ -36,6 +35,11 @@ namespace NScumm.Core.IO
             : base(path)
         {
             ResourceIndex = resourceIndex;
+        }
+
+        protected override byte[] ReadVerbScript(ObjectData obj, Chunk chunk)
+        {
+            return _reader.ReadBytes((int)(chunk.Size - obj.Script.Offset - 8));
         }
 
         protected override void ReadVerbTable(ObjectData data, int size)

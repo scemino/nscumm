@@ -285,7 +285,7 @@ namespace NScumm.Core.IO
                     case "VERB":
                         {
                             ReadVerbTable(obj, (int)(it.Current.Size - 8));
-                            obj.Script.Data = _reader.ReadBytes((int)(it.Current.Size - obj.Script.Offset - 8));
+                            obj.Script.Data = ReadVerbScript(obj, it.Current);
                         }
                         break;
                     case "OBNA":
@@ -299,6 +299,11 @@ namespace NScumm.Core.IO
                 }
             }
             return obj;
+        }
+
+        protected virtual byte[] ReadVerbScript(ObjectData obj, Chunk chunk)
+        {
+            return _reader.ReadBytes((int)(chunk.Size - obj.Script.Offset));
         }
 
         protected override void ReadVerbTable(ObjectData data, int size)

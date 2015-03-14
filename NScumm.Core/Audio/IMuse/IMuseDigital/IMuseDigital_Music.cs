@@ -49,7 +49,7 @@ namespace NScumm.Core.Audio.IMuse
             {
                 if ((_comiStateMusicTable[l].SoundId == stateId))
                 {
-                    Debug.WriteLine("Set music state: {0}, {1}", _comiStateMusicTable[l].Name, _comiStateMusicTable[l].Filename);
+//                    Debug.WriteLine("Set music state: {0}, {1}", _comiStateMusicTable[l].Name, _comiStateMusicTable[l].Filename);
                     num = l;
                     break;
                 }
@@ -83,7 +83,7 @@ namespace NScumm.Core.Audio.IMuse
             {
                 if ((_comiSeqMusicTable[l].SoundId == seqId))
                 {
-                    Debug.WriteLine("Set music sequence: {0}, {1}", _comiSeqMusicTable[l].Name, _comiSeqMusicTable[l].Filename);
+//                    Debug.WriteLine("Set music sequence: {0}, {1}", _comiSeqMusicTable[l].Name, _comiSeqMusicTable[l].Filename);
                     num = l;
                     break;
                 }
@@ -225,7 +225,7 @@ namespace NScumm.Core.Audio.IMuse
             {
                 if ((_digStateMusicTable[l].SoundId == stateId))
                 {
-                    Debug.WriteLine("Set music state: {0}, {1}", _digStateMusicTable[l].Name, _digStateMusicTable[l].Filename);
+//                    Debug.WriteLine("Set music state: {0}, {1}", _digStateMusicTable[l].Name, _digStateMusicTable[l].Filename);
                     num = l;
                     break;
                 }
@@ -268,7 +268,7 @@ namespace NScumm.Core.Audio.IMuse
                 }
             }
 
-            Debug.WriteLine("Set music state: {0}, {1}", _digStateMusicTable[num].Name, _digStateMusicTable[num].Filename);
+//            Debug.WriteLine("Set music state: {0}, {1}", _digStateMusicTable[num].Name, _digStateMusicTable[num].Filename);
 
             if (_curMusicState == num)
                 return;
@@ -295,7 +295,7 @@ namespace NScumm.Core.Audio.IMuse
             {
                 if ((_digSeqMusicTable[l].SoundId == seqId))
                 {
-                    Debug.WriteLine("Set music sequence: {0}, {1}", _digSeqMusicTable[l].Name, _digSeqMusicTable[l].Filename);
+//                    Debug.WriteLine("Set music sequence: {0}, {1}", _digSeqMusicTable[l].Name, _digSeqMusicTable[l].Filename);
                     num = l;
                     break;
                 }
@@ -433,7 +433,7 @@ namespace NScumm.Core.Audio.IMuse
             if (stateId > 48)
                 return;
 
-            Debug.WriteLine("State music: {0}, {1}", _ftStateMusicTable[stateId].Name, _ftStateMusicTable[stateId].AudioName);
+//            Debug.WriteLine("State music: {0}, {1}", _ftStateMusicTable[stateId].Name, _ftStateMusicTable[stateId].AudioName);
 
             if (_curMusicState == stateId)
                 return;
@@ -454,7 +454,7 @@ namespace NScumm.Core.Audio.IMuse
             if (seqId > 52)
                 return;
 
-            Debug.WriteLine("Sequence music: {0}", _ftSeqNames[seqId]);
+//            Debug.WriteLine("Sequence music: {0}", _ftSeqNames[seqId]);
 
             if (_curMusicSeq == seqId)
                 return;
@@ -483,7 +483,7 @@ namespace NScumm.Core.Audio.IMuse
             if (cueId > 3)
                 return;
 
-            Debug.WriteLine("Cue point sequence: {0}", cueId);
+//            Debug.WriteLine("Cue point sequence: {0}", cueId);
 
             if (_curMusicSeq == 0)
                 return;

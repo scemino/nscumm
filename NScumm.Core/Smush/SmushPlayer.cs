@@ -448,14 +448,14 @@ namespace NScumm.Core.Smush
 
         void HandleStore(uint subSize, XorReader b)
         {
-            Debug.WriteLine("SmushPlayer::HandleStore()");
+//            Debug.WriteLine("SmushPlayer::HandleStore()");
             Debug.Assert(subSize >= 4);
             _storeFrame = true;
         }
 
         void HandleFetch(uint subSize, XorReader b)
         {
-            Debug.WriteLine("SmushPlayer::HandleFetch()");
+//            Debug.WriteLine("SmushPlayer::HandleFetch()");
             Debug.Assert(subSize >= 6);
 
             if (_frameBuffer != null)
@@ -466,7 +466,7 @@ namespace NScumm.Core.Smush
 
         void HandleDeltaPalette(uint subSize, XorReader b)
         {
-            Debug.WriteLine("SmushPlayer.HandleDeltaPalette()");
+//            Debug.WriteLine("SmushPlayer.HandleDeltaPalette()");
 
             if (subSize == 0x300 * 3 + 4)
             {
@@ -505,7 +505,7 @@ namespace NScumm.Core.Smush
 
         void HandleIACT(uint subSize, XorReader b)
         {
-            Debug.WriteLine("SmushPlayer::IACT()");
+//            Debug.WriteLine("SmushPlayer::IACT()");
             Debug.Assert(subSize >= 8);
 
             int code = b.ReadUInt16();
@@ -562,7 +562,7 @@ namespace NScumm.Core.Smush
                 {
                     Debug.Fail(string.Format("SmushPlayer::handleIACT(): bad track_flags: {0}", track_flags));
                 }
-                Debug.WriteLine("SmushPlayer::handleIACT(): {0}, {1}, {2}", track, index, track_flags);
+//                Debug.WriteLine("SmushPlayer::handleIACT(): {0}, {1}, {2}", track, index, track_flags);
 
                 var c = _smixer.FindChannel(track);
                 if (c == null)
@@ -846,7 +846,7 @@ namespace NScumm.Core.Smush
             int pan = (sbyte)b.ReadByte();
             if (index == 0)
             {
-                Debug.WriteLine("track_id:{0}, max_frames:{1}, flags:{2}, vol:{3}, pan:{4}", track_id, max_frames, flags, vol, pan);
+//                Debug.WriteLine("track_id:{0}, max_frames:{1}, flags:{2}, vol:{3}, pan:{4}", track_id, max_frames, flags, vol, pan);
             }
             int size = (int)(subSize - 10);
             HandleSoundBuffer(track_id, index, max_frames, flags, vol, pan, b, size);
@@ -854,7 +854,7 @@ namespace NScumm.Core.Smush
 
         void HandleSoundBuffer(int track_id, int index, int max_frames, int flags, int vol, int pan, XorReader b, int size)
         {
-            Debug.WriteLine("SmushPlayer::handleSoundBuffer({0}, {1})", track_id, index);
+//            Debug.WriteLine("SmushPlayer::handleSoundBuffer({0}, {1})", track_id, index);
             //  if ((flags & 128) == 128) {
             //      return;
             //  }
@@ -882,7 +882,7 @@ namespace NScumm.Core.Smush
 
         void HandleNewPalette(uint subSize, XorReader b)
         {
-            Debug.Write("SmushPlayer.HandleNewPalette()");
+//            Debug.WriteLine("SmushPlayer.HandleNewPalette()");
             Debug.Assert(subSize >= 0x300);
 
             if (_skipPalette)
@@ -1030,7 +1030,7 @@ namespace NScumm.Core.Smush
 
         void HandleAnimHeader(uint subSize, XorReader b)
         {
-            Debug.WriteLine("SmushPlayer::HandleAnimHeader()");
+//            Debug.WriteLine("SmushPlayer::HandleAnimHeader()");
             Debug.Assert(subSize >= 0x300 + 6);
 
             /* _version = */
@@ -1130,7 +1130,7 @@ namespace NScumm.Core.Smush
 
         TrsFile GetStrings(ScummEngine vm, string file, bool isEncoded)
         {
-            Debug.WriteLine("trying to read text resources from {0}", file);
+//            Debug.WriteLine("trying to read text resources from {0}", file);
             var filename = ScummHelper.LocatePath(Path.GetDirectoryName(_vm.Game.Path), Path.GetFileName(file));
             return filename != null ? isEncoded ? TrsFile.LoadEncoded(filename) : TrsFile.Load(filename) : null;
         }

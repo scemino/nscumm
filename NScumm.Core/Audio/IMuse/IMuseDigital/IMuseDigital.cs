@@ -153,7 +153,7 @@ namespace NScumm.Core.Audio.IMuse
                                     }
                                 }
                             }
-                            Debug.WriteLine("Fade: sound({0}), Vol({1})", track.SoundId, track.vol / 1000);
+//                            Debug.WriteLine("Fade: sound({0}), Vol({1})", track.SoundId, track.vol / 1000);
                         }
 
                         if (!track.SouStreamUsed)
@@ -299,7 +299,7 @@ namespace NScumm.Core.Audio.IMuse
             if (track.TrackId >= MaxDigitalTracks)
             {
                 FlushTrack(track);
-                Debug.WriteLine("SwToNeReg(trackId:{0}) - fadetrack can't go next region, exiting SwToNeReg", track.TrackId);
+//                Debug.WriteLine("SwToNeReg(trackId:{0}) - fadetrack can't go next region, exiting SwToNeReg", track.TrackId);
                 return;
             }
 
@@ -308,7 +308,7 @@ namespace NScumm.Core.Audio.IMuse
             if (++track.CurRegion == num_regions)
             {
                 FlushTrack(track);
-                Debug.WriteLine("SwToNeReg(trackId:{0}) - end of region, exiting SwToNeReg", track.TrackId);
+//                Debug.WriteLine("SwToNeReg(trackId:{0}) - end of region, exiting SwToNeReg", track.TrackId);
                 return;
             }
 
@@ -317,15 +317,15 @@ namespace NScumm.Core.Audio.IMuse
             {
                 if (_sound.CheckForTriggerByRegionAndMarker(soundDesc, track.CurRegion, _triggerParams.Marker))
                 {
-                    Debug.WriteLine("SwToNeReg(trackId:{0}) - trigger {1} reached", track.TrackId, _triggerParams.Marker);
-                    Debug.WriteLine("SwToNeReg(trackId:{0}) - exit current region {1}", track.TrackId, track.CurRegion);
-                    Debug.WriteLine("SwToNeReg(trackId:{0}) - call cloneToFadeOutTrack(delay:{1})", track.TrackId, _triggerParams.FadeOutDelay);
+//                    Debug.WriteLine("SwToNeReg(trackId:{0}) - trigger {1} reached", track.TrackId, _triggerParams.Marker);
+//                    Debug.WriteLine("SwToNeReg(trackId:{0}) - exit current region {1}", track.TrackId, track.CurRegion);
+//                    Debug.WriteLine("SwToNeReg(trackId:{0}) - call cloneToFadeOutTrack(delay:{1})", track.TrackId, _triggerParams.FadeOutDelay);
                     Track fadeTrack = CloneToFadeOutTrack(track, _triggerParams.FadeOutDelay);
                     if (fadeTrack != null)
                     {
                         fadeTrack.DataOffset = _sound.GetRegionOffset(fadeTrack.SoundDesc, fadeTrack.CurRegion);
                         fadeTrack.RegionOffset = 0;
-                        Debug.WriteLine("SwToNeReg(trackId:{0})-sound({1}) select region {2}, curHookId: {3}", fadeTrack.TrackId, fadeTrack.SoundId, fadeTrack.CurRegion, fadeTrack.CurHookId);
+//                        Debug.WriteLine("SwToNeReg(trackId:{0})-sound({1}) select region {2}, curHookId: {3}", fadeTrack.TrackId, fadeTrack.SoundId, fadeTrack.CurRegion, fadeTrack.CurHookId);
                         fadeTrack.CurHookId = 0;
                     }
                     FlushTrack(track);
@@ -342,41 +342,41 @@ namespace NScumm.Core.Audio.IMuse
                 Debug.Assert(region != -1);
                 int sampleHookId = _sound.GetJumpHookId(soundDesc, jumpId);
                 Debug.Assert(sampleHookId != -1);
-                Debug.WriteLine("SwToNeReg(trackId:{0}) - JUMP found - sound:{1}, track hookId:{2}, data hookId:{3}", track.TrackId, track.SoundId, track.CurHookId, sampleHookId);
+//                Debug.WriteLine("SwToNeReg(trackId:{0}) - JUMP found - sound:{1}, track hookId:{2}, data hookId:{3}", track.TrackId, track.SoundId, track.CurHookId, sampleHookId);
                 if (track.CurHookId == sampleHookId)
                 {
                     int fadeDelay = (60 * _sound.GetJumpFade(soundDesc, jumpId)) / 1000;
-                    Debug.WriteLine("SwToNeReg(trackId:{0}) - sound({1}) match hookId", track.TrackId, track.SoundId);
+//                    Debug.WriteLine("SwToNeReg(trackId:{0}) - sound({1}) match hookId", track.TrackId, track.SoundId);
                     if (fadeDelay != 0)
                     {
-                        Debug.WriteLine("SwToNeReg(trackId:{0}) - call cloneToFadeOutTrack(delay:{1})", track.TrackId, fadeDelay);
+//                        Debug.WriteLine("SwToNeReg(trackId:{0}) - call cloneToFadeOutTrack(delay:{1})", track.TrackId, fadeDelay);
                         var fadeTrack = CloneToFadeOutTrack(track, fadeDelay);
                         if (fadeTrack != null)
                         {
                             fadeTrack.DataOffset = _sound.GetRegionOffset(fadeTrack.SoundDesc, fadeTrack.CurRegion);
                             fadeTrack.RegionOffset = 0;
-                            Debug.WriteLine("SwToNeReg(trackId:{0}) - sound({1}) faded track, select region {2}, curHookId: {3}", fadeTrack.TrackId, fadeTrack.SoundId, fadeTrack.CurRegion, fadeTrack.CurHookId);
+//                            Debug.WriteLine("SwToNeReg(trackId:{0}) - sound({1}) faded track, select region {2}, curHookId: {3}", fadeTrack.TrackId, fadeTrack.SoundId, fadeTrack.CurRegion, fadeTrack.CurHookId);
                             fadeTrack.CurHookId = 0;
                         }
                     }
                     track.CurRegion = region;
-                    Debug.WriteLine("SwToNeReg(trackId:{0}) - sound({1}) jump to region {2}, curHookId: {3}", track.TrackId, track.SoundId, track.CurRegion, track.CurHookId);
+//                    Debug.WriteLine("SwToNeReg(trackId:{0}) - sound({1}) jump to region {2}, curHookId: {3}", track.TrackId, track.SoundId, track.CurRegion, track.CurHookId);
                     track.CurHookId = 0;
                 }
                 else
                 {
-                    Debug.WriteLine("SwToNeReg(trackId:{0}) - Normal switch region, sound({1}), hookId({2})", track.TrackId, track.SoundId, track.CurHookId);
+//                    Debug.WriteLine("SwToNeReg(trackId:{0}) - Normal switch region, sound({1}), hookId({2})", track.TrackId, track.SoundId, track.CurHookId);
                 }
             }
             else
             {
-                Debug.WriteLine("SwToNeReg(trackId:{0}) - Normal switch region, sound({1}), hookId({2})", track.TrackId, track.SoundId, track.CurHookId);
+//                Debug.WriteLine("SwToNeReg(trackId:{0}) - Normal switch region, sound({1}), hookId({2})", track.TrackId, track.SoundId, track.CurHookId);
             }
 
-            Debug.WriteLine("SwToNeReg(trackId:{0}) - sound({1}), select region {2}", track.TrackId, track.SoundId, track.CurRegion);
+//            Debug.WriteLine("SwToNeReg(trackId:{0}) - sound({1}), select region {2}", track.TrackId, track.SoundId, track.CurRegion);
             track.DataOffset = _sound.GetRegionOffset(soundDesc, track.CurRegion);
             track.RegionOffset = 0;
-            Debug.WriteLine("SwToNeReg(trackId:{0}) - end of func", track.TrackId);
+//            Debug.WriteLine("SwToNeReg(trackId:{0}) - end of func", track.TrackId);
         }
 
         const int MaxDigitalTracks = 8;

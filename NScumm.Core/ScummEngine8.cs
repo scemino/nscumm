@@ -22,7 +22,6 @@ using NScumm.Core.IO;
 using NScumm.Core.Graphics;
 using NScumm.Core.Input;
 using NScumm.Core.Audio;
-using System.Reflection.Emit;
 using System;
 using System.Diagnostics;
 
@@ -160,7 +159,7 @@ namespace NScumm.Core
         {
             if ((var & 0xF0000000) == 0)
             {
-                Debug.WriteLine("ReadVar({0})", var);
+//                Debug.WriteLine("ReadVar({0})", var);
                 ScummHelper.AssertRange(0, var, Variables.Length - 1, "variable");
                 return Variables[var];
             }
@@ -168,7 +167,7 @@ namespace NScumm.Core
             if ((var & 0x80000000) != 0)
             {
                 var &= 0x7FFFFFFF;
-                Debug.WriteLine("Read BitVars({0})", var);
+//                Debug.WriteLine("Read BitVars({0})", var);
                 ScummHelper.AssertRange(0, var, _bitVars.Length - 1, "bit variable (reading)");
                 return _bitVars[(int)var] ? 1 : 0;
             }
@@ -176,7 +175,7 @@ namespace NScumm.Core
             if ((var & 0x40000000) != 0)
             {
                 var &= 0xFFFFFFF;
-                Debug.WriteLine("Read LocalVariables({0})", var);
+//                Debug.WriteLine("Read LocalVariables({0})", var);
                 ScummHelper.AssertRange(0, var, 25, "local variable (reading)");
                 return Slots[CurrentScript].LocalVariables[var];
             }
@@ -184,12 +183,12 @@ namespace NScumm.Core
             throw new NotSupportedException("Illegal varbits (r)");
         }
 
-        protected override void WriteVariable(uint var, int value)
+        protected override void WriteVariable(uint index, int value)
         {
-            if ((var & 0xF0000000) == 0)
+            if ((index & 0xF0000000) == 0)
             {
-                Debug.WriteLine("WriteVar({0}, {1})", var, value);
-                ScummHelper.AssertRange(0, var, Variables.Length - 1, "variable (writing)");
+//                Debug.WriteLine("WriteVar({0}, {1})", var, value);
+                ScummHelper.AssertRange(0, index, Variables.Length - 1, "variable (writing)");
 
 //                if (var == VAR_CHARINC)
 //                {
@@ -209,27 +208,27 @@ namespace NScumm.Core
 //                    }
 //                }
 
-                Variables[var] = value;
+                Variables[index] = value;
 
                 return;
             }
 
-            if ((var & 0x80000000) != 0)
+            if ((index & 0x80000000) != 0)
             {
-                var &= 0x7FFFFFFF;
-                Debug.WriteLine("Write BitVars({0}, {1})", var, value);
-                ScummHelper.AssertRange(0, var, _bitVars.Length - 1, "bit variable (writing)");
+                index &= 0x7FFFFFFF;
+//                Debug.WriteLine("Write BitVars({0}, {1})", var, value);
+                ScummHelper.AssertRange(0, index, _bitVars.Length - 1, "bit variable (writing)");
 
-                _bitVars[(int)var] = value != 0;
+                _bitVars[(int)index] = value != 0;
                 return;
             }
 
-            if ((var & 0x40000000) != 0)
+            if ((index & 0x40000000) != 0)
             {
-                var &= 0xFFFFFFF;
-                Debug.WriteLine("Write LocalVariables({0}, {1})", var, value);
-                ScummHelper.AssertRange(0, var, 25, "local variable (writing)");
-                Slots[CurrentScript].LocalVariables[var] = value;
+                index &= 0xFFFFFFF;
+//                Debug.WriteLine("Write LocalVariables({0}, {1})", var, value);
+                ScummHelper.AssertRange(0, index, 25, "local variable (writing)");
+                Slots[CurrentScript].LocalVariables[index] = value;
                 return;
             }
 

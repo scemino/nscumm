@@ -513,7 +513,7 @@ namespace NScumm.Core.Audio.IMuse
 
         public void CloseSound(SoundDesc soundDesc)
         {
-            Debug.WriteLine("Close sound: {0}", soundDesc.SoundId);
+//            Debug.WriteLine("Close sound: {0}", soundDesc.SoundId);
             Debug.Assert(CheckForProperHandle(soundDesc));
 
 //            if (soundDesc.resPtr != null)
@@ -601,7 +601,7 @@ namespace NScumm.Core.Audio.IMuse
 
         public int GetRegionOffset(SoundDesc soundDesc, int region)
         {
-            Debug.WriteLine("getRegionOffset() region:{0}", region);
+//            Debug.WriteLine("getRegionOffset() region:{0}", region);
             Debug.Assert(CheckForProperHandle(soundDesc));
             Debug.Assert(region >= 0 && region < soundDesc.NumRegions);
             return soundDesc.Region[region].Offset;
@@ -609,7 +609,7 @@ namespace NScumm.Core.Audio.IMuse
 
         public int GetJumpIdByRegionAndHookId(SoundDesc soundDesc, int region, int hookId)
         {
-            Debug.WriteLine("getJumpIdByRegionAndHookId() region:{0}, hookId:{1}", region, hookId);
+//            Debug.WriteLine("getJumpIdByRegionAndHookId() region:{0}, hookId:{1}", region, hookId);
             Debug.Assert(CheckForProperHandle(soundDesc));
             Debug.Assert(region >= 0 && region < soundDesc.NumRegions);
             var offset = soundDesc.Region[region].Offset;
@@ -627,7 +627,7 @@ namespace NScumm.Core.Audio.IMuse
 
         public bool CheckForTriggerByRegionAndMarker(SoundDesc soundDesc, int region, string marker)
         {
-            Debug.WriteLine("checkForTriggerByRegionAndMarker() region:{0}, marker:{1}", region, marker);
+//            Debug.WriteLine("checkForTriggerByRegionAndMarker() region:{0}, marker:{1}", region, marker);
             Debug.Assert(CheckForProperHandle(soundDesc));
             Debug.Assert(region >= 0 && region < soundDesc.NumRegions);
 
@@ -662,7 +662,7 @@ namespace NScumm.Core.Audio.IMuse
 
         public int GetRegionIdByJumpId(SoundDesc soundDesc, int jumpId)
         {
-            Debug.WriteLine("getRegionIdByJumpId() jumpId:{0}", jumpId);
+//            Debug.WriteLine("getRegionIdByJumpId() jumpId:{0}", jumpId);
             Debug.Assert(CheckForProperHandle(soundDesc));
             Debug.Assert(jumpId >= 0 && jumpId < soundDesc.NumJumps);
 
@@ -680,7 +680,7 @@ namespace NScumm.Core.Audio.IMuse
 
         public int GetJumpHookId(SoundDesc soundDesc, int number)
         {
-            Debug.WriteLine("getJumpHookId() number:{0}", number);
+//            Debug.WriteLine("getJumpHookId() number:{0}", number);
             Debug.Assert(CheckForProperHandle(soundDesc));
             Debug.Assert(number >= 0 && number < soundDesc.NumJumps);
             return soundDesc.Jump[number].HookId;
@@ -688,7 +688,7 @@ namespace NScumm.Core.Audio.IMuse
 
         public int GetJumpFade(SoundDesc soundDesc, int number)
         {
-            Debug.WriteLine("getJumpFade() number:{0}", number);
+//            Debug.WriteLine("getJumpFade() number:{0}", number);
             Debug.Assert(CheckForProperHandle(soundDesc));
             Debug.Assert(number >= 0 && number < soundDesc.NumJumps);
             return soundDesc.Jump[number].FadeDelay;
@@ -696,7 +696,7 @@ namespace NScumm.Core.Audio.IMuse
 
         public int GetDataFromRegion(SoundDesc soundDesc, int region, out byte[] buf, int offset, int size)
         {
-            Debug.WriteLine("GetDataFromRegion() soundId:{4,4}, region:{0}, offset:{1,7}, size:{2,4}, numRegions:{3}", region, offset, size, soundDesc.NumRegions, soundDesc.SoundId);
+//            Debug.WriteLine("GetDataFromRegion() soundId:{4,4}, region:{0}, offset:{1,7}, size:{2,4}, numRegions:{3}", region, offset, size, soundDesc.NumRegions, soundDesc.SoundId);
             Debug.Assert(CheckForProperHandle(soundDesc));
             Debug.Assert(offset >= 0 && size >= 0);
             Debug.Assert(region >= 0 && region < soundDesc.NumRegions);

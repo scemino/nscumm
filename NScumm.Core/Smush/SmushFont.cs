@@ -43,7 +43,7 @@ namespace NScumm.Core.Smush
 
         public void DrawString(string str, byte[] buffer, int dst_width, int dst_height, int x, int y, bool center)
         {
-            Debug.WriteLine("SmushFont::drawString({0}, {1}, {2}, {3})", str, x, y, center);
+//            Debug.WriteLine("SmushFont::drawString({0}, {1}, {2}, {3})", str, x, y, center);
 
             foreach (var line in str.Split('\n'))
             {
@@ -54,7 +54,7 @@ namespace NScumm.Core.Smush
 
         public void DrawStringWrap(string  str, byte[] buffer, int dst_width, int dst_height, int x, int y, int left, int right, bool center)
         {
-            Debug.WriteLine("SmushFont::drawStringWrap({0}, {1}, {2}, {3}, {4}, {5})", str, x, y, left, right, center);
+//            Debug.WriteLine("SmushFont::drawStringWrap({0}, {1}, {2}, {3}, {4}, {5})", str, x, y, left, right, center);
 
             var width = right - left;
 

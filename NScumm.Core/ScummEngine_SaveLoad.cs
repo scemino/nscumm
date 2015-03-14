@@ -403,7 +403,7 @@ namespace NScumm.Core
                 LoadAndSaveEntry.Create(reader => _cursorData = reader.ReadBytes(8192), writer =>
                     {
                         var data = new byte[8192];
-                        if(_cursorData!=null)
+                        if (_cursorData != null)
                         {
                             Array.Copy(_cursorData, data, _cursorData.Length);
                         }
@@ -900,7 +900,7 @@ namespace NScumm.Core
         void SaveOrLoadResources(Serializer serializer)
         {
             var entry = LoadAndSaveEntry.Create(
-                              reader =>
+                            reader =>
                 {
                     ResType type;
                     ushort idx;
@@ -912,7 +912,7 @@ namespace NScumm.Core
                         }
                     }
                 },
-                              writer =>
+                            writer =>
                 {
                     // inventory
                     writer.WriteUInt16((ushort)ResType.Inventory);
@@ -923,7 +923,8 @@ namespace NScumm.Core
                             break;
                         // write index
                         writer.WriteUInt16(i);
-                        var nameOffset = 18 + 1 + 3 * data.ScriptOffsets.Count + 1;
+                        var verbTableLength = Game.Version == 8 ? 8 * data.ScriptOffsets.Count + 4 : 3 * data.ScriptOffsets.Count + 1;
+                        var nameOffset = 18 + 1 + verbTableLength;
                         // write size
                         writer.WriteInt32(nameOffset + data.Name.Length + 1 + data.Script.Data.Length);
                         // write image offset
@@ -931,13 +932,26 @@ namespace NScumm.Core
                         // write name offset
                         writer.WriteByte(nameOffset);
                         // write verb table
-                        foreach (var scriptOffset in data.ScriptOffsets)
+                        if (Game.Version == 8)
                         {
-                            writer.WriteByte(scriptOffset.Key);
-                            writer.WriteUInt16(scriptOffset.Value);
+                            foreach (var scriptOffset in data.ScriptOffsets)
+                            {
+                                writer.WriteInt32(scriptOffset.Key);
+                                writer.WriteInt32(scriptOffset.Value);
+                            }
+                            // write end of table
+                            writer.WriteUInt32(0);
                         }
-                        // write end of table
-                        writer.WriteByte(0);
+                        else
+                        {
+                            foreach (var scriptOffset in data.ScriptOffsets)
+                            {
+                                writer.WriteByte(scriptOffset.Key);
+                                writer.WriteUInt16(scriptOffset.Value);
+                            }
+                            // write end of table
+                            writer.WriteByte(0);
+                        }
                         var name = EncodeName(data.Name);
                         // write name
                         for (int c = 0; c < name.Length; c++)
@@ -997,7 +1011,7 @@ namespace NScumm.Core
 
                     // write boxes
                     writer.WriteUInt16(2);
-                    writer.WriteInt32(20 * _boxes.Length + 1);
+                    writer.WriteInt32((Game.Version == 8 ? 21 : 20) * _boxes.Length + 1);
                     writer.WriteByte(_boxes.Length);
                     for (int i = 0; i < _boxes.Length; i++)
                     {
@@ -1013,6 +1027,10 @@ namespace NScumm.Core
                         writer.WriteByte(box.Mask);
                         writer.WriteByte((byte)box.Flags);
                         writer.WriteUInt16(box.Scale);
+                        if (Game.Version == 8)
+                        {
+                            writer.WriteByte(box.ScaleSlot);
+                        }
                     }
                     writer.WriteUInt16(0xFFFF);
 
@@ -1130,6 +1148,7 @@ namespace NScumm.Core
                             br.BaseStream.Seek(18, SeekOrigin.Begin);
                             var offset = br.ReadByte();
                             br.BaseStream.Seek(offset, SeekOrigin.Begin);
+                            // read name
                             var name = new List<byte>();
                             var c = br.ReadByte();
                             while (c != 0)
@@ -1138,17 +1157,34 @@ namespace NScumm.Core
                                 c = br.ReadByte();
                             }
                             _invData[idx].Name = name.ToArray();
+                            // read script
                             _invData[idx].Script.Data = br.ReadBytes((int)(br.BaseStream.Length - br.BaseStream.Position));
+                            // read verb table
                             br.BaseStream.Seek(19, SeekOrigin.Begin);
-                            while (true)
+                            if (Game.Version == 8)
                             {
-                                var id = br.ReadByte();
-                                var off = br.ReadUInt16();
-                                if (id == 0)
-                                    break;
-                                _invData[idx].ScriptOffsets.Add(id, off);
+                                while (true)
+                                {
+                                    var id = br.ReadInt32();
+                                    var off = br.ReadInt32();
+                                    if (id == 0)
+                                        break;
+                                    _invData[idx].ScriptOffsets.Add(id, off);
+                                }
+                                _invData[idx].Script.Offset = _invData[idx].ScriptOffsets.Count * 8 + 4;
                             }
-                            _invData[idx].Script.Offset = _invData[idx].ScriptOffsets.Count * 3 + 1 + 8;
+                            else
+                            {
+                                while (true)
+                                {
+                                    var id = br.ReadByte();
+                                    var off = br.ReadUInt16();
+                                    if (id == 0)
+                                        break;
+                                    _invData[idx].ScriptOffsets.Add(id, off);
+                                }
+                                _invData[idx].Script.Offset = _invData[idx].ScriptOffsets.Count * 3 + 1 + 8;
+                            }
                         }
                         break;
 
@@ -1194,6 +1230,10 @@ namespace NScumm.Core
                                     box.Mask = br.ReadByte();
                                     box.Flags = (BoxFlags)br.ReadByte();
                                     box.Scale = br.ReadUInt16();
+                                    if (Game.Version == 8)
+                                    {
+                                        box.ScaleSlot = br.ReadByte();
+                                    }
                                     _boxes[i] = box;
                                 }
                             }

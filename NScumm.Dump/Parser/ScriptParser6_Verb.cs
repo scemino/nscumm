@@ -24,7 +24,7 @@ namespace NScumm.Dump
 {
     partial class ScriptParser6
     {
-        readonly SimpleName CurrentVerb = new SimpleName("CurrentVerb");
+        protected readonly SimpleName CurrentVerb = new SimpleName("CurrentVerb");
         readonly SimpleName Verbs = new SimpleName("Verbs");
 
         Expression Verb(Expression index)
@@ -32,21 +32,21 @@ namespace NScumm.Dump
             return new ElementAccess(Verbs, index);
         }
 
-        Statement GetVerbFromXY()
+        protected Statement GetVerbFromXY()
         {
             var y = Pop();
             var x = Pop();
             return Push(new MethodInvocation("FindVerbAt").AddArguments(x, y));
         }
 
-        Statement GetVerbEntrypoint()
+        protected Statement GetVerbEntrypoint()
         {
             var entry = Pop();
             var verb = Pop();
             return Push(new MethodInvocation("GetVerbEntrypoint").AddArguments(verb, entry));
         }
 
-        Statement VerbOps()
+        protected virtual Statement VerbOps()
         {
             var subOp = ReadByte();
             if (subOp == 196)
@@ -126,7 +126,7 @@ namespace NScumm.Dump
             return verb.ToStatement();
         }
 
-        Statement SaveRestoreVerbs()
+        protected Statement SaveRestoreVerbs()
         {
             var c = Pop();
             var b = Pop();

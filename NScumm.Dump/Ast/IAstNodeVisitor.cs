@@ -26,6 +26,8 @@ namespace NScumm.Dump
 
         void Visit(IntegerLiteralExpression node);
 
+        void Visit(ArrayLiteralExpression node);
+
         void Visit(StringLiteralExpression node);
 
         void Visit(BooleanLiteralExpression node);
@@ -66,6 +68,8 @@ namespace NScumm.Dump
         T Visit(SimpleName node);
 
         T Visit(IntegerLiteralExpression node);
+
+        T Visit(ArrayLiteralExpression node);
 
         T Visit(StringLiteralExpression node);
 

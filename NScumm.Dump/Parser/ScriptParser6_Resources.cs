@@ -24,7 +24,7 @@ namespace NScumm.Dump
 {
     partial class ScriptParser6
     {
-        Statement ResourceRoutines()
+        protected virtual Statement ResourceRoutines()
         {
             var subOp = ReadByte();
             var exp = new MethodInvocation("ResourceRoutines");

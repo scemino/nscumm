@@ -27,6 +27,15 @@ namespace NScumm.Dump
             ChildrenCore = new AstNodes(this);
         }
 
+        public long? StartOffset { get; set; }
+
+        public long? EndOffset { get; set; }
+
+        public bool Contains(long offset)
+        {
+            return StartOffset.HasValue && EndOffset.HasValue && StartOffset.Value <= offset && offset < EndOffset.Value;
+        }
+
         #region IAstNode implementation
 
         public abstract void Accept(IAstNodeVisitor visitor);
@@ -51,13 +60,15 @@ namespace NScumm.Dump
             protected override void InsertItem(int index, IAstNode item)
             {
                 base.InsertItem(index, item);
-                ((AstNodeBase)item).Parent = this.Parent;
+                ((AstNodeBase)item).Parent = Parent;
+                AdjustOffsets(item);
             }
 
             protected override void SetItem(int index, IAstNode item)
             {
                 base.SetItem(index, item);
-                ((AstNodeBase)item).Parent = this.Parent;
+                ((AstNodeBase)item).Parent = Parent;
+                AdjustOffsets(item);
             }
 
             public void AddRange(IEnumerable<IAstNode> nodes)
@@ -65,6 +76,34 @@ namespace NScumm.Dump
                 foreach (var node in nodes)
                 {
                     Add(node);
+                }
+            }
+
+            void AdjustOffsets(IAstNode node)
+            {
+                long? start = node.StartOffset;
+                long? end = node.EndOffset;
+
+                if (start.HasValue)
+                {
+                    var index = IndexOf(node);
+                    if (index > 0)
+                    {
+                        var previousNode = this[index - 1];
+                        if (previousNode.EndOffset != start.Value)
+                        {
+                            ((AstNodeBase)node).StartOffset = previousNode.EndOffset;
+                        }
+                    }
+
+                    if (!Parent.StartOffset.HasValue || Parent.StartOffset.Value > start)
+                    {
+                        ((AstNodeBase)Parent).StartOffset = start;
+                    }
+                    if (!Parent.EndOffset.HasValue || Parent.EndOffset.Value < end)
+                    {
+                        ((AstNodeBase)Parent).EndOffset = end;
+                    }
                 }
             }
         }

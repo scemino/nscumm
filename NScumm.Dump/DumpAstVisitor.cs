@@ -197,6 +197,11 @@ namespace NScumm.Dump
             return node.Value.ToString();
         }
 
+        public override string Visit(ArrayLiteralExpression node)
+        {
+            return string.Format("{{{0}}}", string.Join(", ", node.Value.Cast<Expression>().Select(v => v.Accept(this))));
+        }
+
         public override string Visit(SimpleName node)
         {
             return node.Name;
@@ -275,6 +280,8 @@ namespace NScumm.Dump
                     return "--";
                 case Operator.PostIncrement:
                     return "++";
+                case Operator.Modulus:
+                    return "%";
                 default:
                     throw new NotImplementedException();
             }

@@ -40,6 +40,8 @@
     <Compile Include="AstHelper.cs" />
     <Compile Include="ReplaceJumpToWhileFixtureFixture.cs" />
     <Compile Include="ReplaceJumpToGoToFixture.cs" />
+    <Compile Include="ReplacePushAndPopFixture.cs" />
+    <Compile Include="ResolveAllTypesOfVariablesFixture.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

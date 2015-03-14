@@ -266,8 +266,6 @@ namespace NScumm.Dump
         }
 
         #endregion
-
-
     }
 }
 

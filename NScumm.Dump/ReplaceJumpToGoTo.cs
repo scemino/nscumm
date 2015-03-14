@@ -23,7 +23,7 @@ using System.Collections.Generic;
 
 namespace NScumm.Dump
 {
-    public class ReplaceJumpToGoTo
+    public class ReplaceJumpToGoTo: IAstReplacer
     {
         public CompilationUnit Replace(CompilationUnit cu)
         {

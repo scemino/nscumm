@@ -93,7 +93,7 @@ Screenshots
 Tools
 -----
 
-*nsdump* dumps all images and scripts from SCUMM 3 to SCUMM 5.
+*nsdump* dumps all images and scripts from SCUMM 3 to SCUMM 5 and SCUMM 8.
 
 License
 -------

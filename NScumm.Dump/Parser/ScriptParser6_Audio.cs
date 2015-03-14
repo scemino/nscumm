@@ -23,33 +23,33 @@ namespace NScumm.Dump
 {
     partial class ScriptParser6
     {
-        Statement SoundKludge()
+        protected Statement SoundKludge()
         {
             var args = GetStackList(16);
             return new MethodInvocation("SoundKludge").AddArgument(args).ToStatement();
         }
 
-        Statement StartMusic()
+        protected Statement StartMusic()
         {
             return new MethodInvocation("StartMusic").AddArgument(Pop()).ToStatement();
         }
 
-        Statement StopMusic()
+        protected Statement StopMusic()
         {
             return new MethodInvocation("StopMusic").ToStatement();
         }
 
-        Statement StartSound()
+        protected Statement StartSound()
         {
             return new MethodInvocation("StartSound").AddArgument(Pop()).ToStatement();
         }
 
-        Statement StopSound()
+        protected Statement StopSound()
         {
             return new MethodInvocation("StopSound").AddArgument(Pop()).ToStatement();
         }
 
-        Statement IsSoundRunning()
+        protected Statement IsSoundRunning()
         {
             return Push(new MethodInvocation("IsSoundRunning").AddArgument(Pop()));
         }

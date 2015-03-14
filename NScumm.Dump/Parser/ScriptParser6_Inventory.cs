@@ -18,20 +18,19 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-using System;
 
 namespace NScumm.Dump
 {
     partial class ScriptParser6
     {
-        Statement FindInventory()
+        protected Statement FindInventory()
         {
             var index = Pop();
             var owner = Pop();
             return Push(new MethodInvocation("FindInventory").AddArguments(owner, index));
         }
 
-        Statement GetInventoryCount()
+        protected Statement GetInventoryCount()
         {
             return Push(new MethodInvocation("GetInventoryCount").AddArgument(Pop()));
         }

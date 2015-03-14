@@ -24,7 +24,7 @@ namespace NScumm.Dump
 {
     partial class ScriptParser6
     {
-        Statement RoomOps()
+        protected virtual Statement RoomOps()
         {
             var subOp = ReadByte();
             var exp = new MethodInvocation("RoomOps");
@@ -145,13 +145,13 @@ namespace NScumm.Dump
             return exp.ToStatement();
         }
 
-        Statement LoadRoom()
+        protected Statement LoadRoom()
         {
             var room = Pop();
             return new MethodInvocation("LoadRoom").AddArgument(room).ToStatement();
         }
 
-        Statement LoadRoomWithEgo()
+        protected Statement LoadRoomWithEgo()
         {
             var y = Pop();
             var x = Pop();
@@ -160,19 +160,19 @@ namespace NScumm.Dump
             return new MethodInvocation("LoadRoomWithEgo").AddArguments(room, obj, x, y).ToStatement();
         }
 
-        Statement SetBoxFlags()
+        protected Statement SetBoxFlags()
         {
             var value = Pop();
             var args = GetStackList(65);
             return new MethodInvocation("SetBoxFlags").AddArguments(value, args).ToStatement();
         }
 
-        Statement CreateBoxMatrix()
+        protected Statement CreateBoxMatrix()
         {
             return new MethodInvocation("CreateBoxMatrix").ToStatement();
         }
 
-        Statement PseudoRoom()
+        protected Statement PseudoRoom()
         {
             var args = GetStackList(100);
             var value = Pop();

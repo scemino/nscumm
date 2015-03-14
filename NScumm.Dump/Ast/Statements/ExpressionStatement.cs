@@ -21,7 +21,6 @@
 
 namespace NScumm.Dump
 {
-
     public class ExpressionStatement: Statement
     {
         public Expression Expression
@@ -30,8 +29,10 @@ namespace NScumm.Dump
             private set;
         }
 
-        public ExpressionStatement(Expression exp)
+        public ExpressionStatement(Expression exp, long? startOffset = null, long? endOffset = null)
         {
+            StartOffset = startOffset;
+            EndOffset = endOffset;
             Expression = exp;
             ChildrenCore.Add(Expression);
         }

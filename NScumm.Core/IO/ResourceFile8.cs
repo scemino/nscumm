@@ -319,5 +319,10 @@ namespace NScumm.Core.IO
             objCode.Hotspots.AddRange(objImg.Hotspots);
             return objCode;
         }
+
+        protected override int ReadScriptIndex()
+        {
+            return _reader.ReadInt32();
+        }
     }
 }

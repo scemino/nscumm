@@ -27,7 +27,7 @@ using System.IO;
 namespace NScumm.Core.Graphics
 {
     [System.Diagnostics.DebuggerDisplay("{DebuggerDisplay,nq}")]
-    class BompDrawData
+    public class BompDrawData
     {
         public PixelNavigator Dst;
         public int X, Y;

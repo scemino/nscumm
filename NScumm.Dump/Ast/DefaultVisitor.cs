@@ -19,6 +19,11 @@ namespace NScumm.Dump
             DefaultVisit(node);
         }
 
+        public virtual void Visit(ArrayLiteralExpression node)
+        {
+            DefaultVisit(node);
+        }
+
         public virtual void Visit(StringLiteralExpression node)
         {
             DefaultVisit(node);
@@ -157,6 +162,11 @@ namespace NScumm.Dump
         }
 
         public virtual T Visit(IntegerLiteralExpression node)
+        {
+            return DefaultVisit(node);
+        }
+
+        public virtual T Visit(ArrayLiteralExpression node)
         {
             return DefaultVisit(node);
         }

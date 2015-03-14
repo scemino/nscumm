@@ -36,8 +36,8 @@ namespace NScumm.Dump.Tests
                 });
 
             var knownVariables = new Dictionary<int,string>{ { 1, "Foo1" }, { 2,"Foo2" } };
-            var resolver = new ResolveVariablesAstVisitor(knownVariables);
-            var actualCu = cu.Accept(resolver);
+            var resolver = new ResolveVariables(knownVariables);
+            var actualCu = resolver.Replace(cu);
 
             var expectedCu = new CompilationUnit().AddStatements(new []
                 {

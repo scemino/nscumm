@@ -26,107 +26,107 @@ namespace NScumm.Dump
     {
         const string VariablesName = "Variables";
 
-        Statement ByteArrayRead()
+        protected Statement ByteArrayRead()
         {
             return Push(ReadArray(ReadByte().ToLiteral(), 0.ToLiteral(), Pop()));
         }
 
-        Statement WordArrayRead()
+        protected Statement WordArrayRead()
         {
             return Push(ReadArray(ReadWord().ToLiteral(), 0.ToLiteral(), Pop()));
         }
 
-        Statement ByteArrayWrite()
+        protected Statement ByteArrayWrite()
         {
             var a = Pop();
             return WriteArray(ReadByte().ToLiteral(), 0.ToLiteral(), Pop(), a);
         }
 
-        Statement WordArrayWrite()
+        protected Statement WordArrayWrite()
         {
             var a = Pop();
             return WriteArray(ReadWord().ToLiteral(), 0.ToLiteral(), Pop(), a);
         }
 
-        Statement ByteArrayIndexedRead()
+        protected Statement ByteArrayIndexedRead()
         {
             var @base = Pop();
             var index = Pop();
             return Push(ReadArray(ReadByte().ToLiteral(), index, @base));
         }
 
-        Statement WordArrayIndexedRead()
+        protected Statement WordArrayIndexedRead()
         {
             var @base = Pop();
             var index = Pop();
             return Push(ReadArray(ReadWord().ToLiteral(), index, @base));
         }
 
-        Statement ByteArrayIndexedWrite()
+        protected Statement ByteArrayIndexedWrite()
         {
             var val = Pop();
             var @base = Pop();
             return WriteArray(ReadByte().ToLiteral(), Pop(), @base, val);
         }
 
-        Statement WordArrayIndexedWrite()
+        protected Statement WordArrayIndexedWrite()
         {
             var val = Pop();
             var @base = Pop();
             return WriteArray(ReadWord().ToLiteral(), Pop(), @base, val);
         }
 
-        Statement WriteArray(params Expression[] args)
+        protected Statement WriteArray(params Expression[] args)
         {
             return new MethodInvocation("WriteArray").AddArguments(args).ToStatement();
         }
 
-        Statement ByteVarDec()
+        protected Statement ByteVarDec()
         {
             var @var = ReadByte();
             return new UnaryExpression(ReadVariable(var), Operator.PostDecrement).ToStatement();
         }
 
-        Statement WordVarDec()
+        protected Statement WordVarDec()
         {
             var @var = ReadWord();
             return new UnaryExpression(ReadVariable(var), Operator.PostDecrement).ToStatement();
         }
 
-        Statement ByteArrayDec()
+        protected Statement ByteArrayDec()
         {
             var @var = ReadByte();
             var @base = Pop();
             return new UnaryExpression(ReadArray(@var.ToLiteral(), 0.ToLiteral(), @base), Operator.PostDecrement).ToStatement();
         }
 
-        Statement WordArrayDec()
+        protected Statement WordArrayDec()
         {
             var @var = ReadWord();
             var @base = Pop();
             return new UnaryExpression(ReadArray(@var.ToLiteral(), 0.ToLiteral(), @base), Operator.PostDecrement).ToStatement();
         }
 
-        Statement ByteArrayInc()
+        protected Statement ByteArrayInc()
         {
             var @var = ReadByte();
             var @base = Pop();
             return new UnaryExpression(ReadArray(@var.ToLiteral(), 0.ToLiteral(), @base), Operator.PostIncrement).ToStatement();
         }
 
-        Statement WordArrayInc()
+        protected Statement WordArrayInc()
         {
             var @var = ReadWord();
             var @base = Pop();
             return new UnaryExpression(ReadArray(@var.ToLiteral(), 0.ToLiteral(), @base), Operator.PostIncrement).ToStatement();
         }
 
-        Statement WriteByteVar()
+        protected Statement WriteByteVar()
         {
             return WriteVar(ReadByte(), Pop()).ToStatement();
         }
 
-        Statement WriteWordVar()
+        protected Statement WriteWordVar()
         {
             return WriteVar(ReadWord(), Pop()).ToStatement();
         }
@@ -136,42 +136,42 @@ namespace NScumm.Dump
             return new BinaryExpression(new ElementAccess(VariablesName, index), Operator.Assignment, value);
         }
 
-        Statement PushByte()
+        protected Statement PushByte()
         {
             return Push(ReadByte().ToLiteral());
         }
 
-        Statement PushByteVar()
+        protected Statement PushByteVar()
         {
             return Push(ReadVariable(ReadByte()));
         }
 
-        Statement PushWord()
+        protected Statement PushWord()
         {
             return Push(ReadWordSigned().ToLiteral());
         }
 
-        Statement PushWordVar()
+        protected Statement PushWordVar()
         {
             return Push(ReadVariable(ReadWordSigned()));
         }
 
-        Statement Push(params Expression[] values)
+        protected Statement Push(params Expression[] values)
         {
             return new MethodInvocation("Push").AddArguments(values).ToStatement();
         }
 
-        Expression Pop()
+        protected Expression Pop()
         {
             return new MethodInvocation("Pop");
         }
 
-        Expression GetStackList(int maxNum)
+        protected Expression GetStackList(int maxNum)
         {
             return new MethodInvocation("Pop").AddArgument(maxNum);
         }
 
-        Statement ArrayOps()
+        protected virtual Statement ArrayOps()
         {
             var subOp = ReadByte();
             var array = ReadWord();
@@ -210,7 +210,7 @@ namespace NScumm.Dump
             return exp.ToStatement();
         }
 
-        Statement DimArray()
+        protected virtual Statement DimArray()
         {
             var subOp = ReadByte();
             string data;
@@ -240,14 +240,44 @@ namespace NScumm.Dump
             return new MethodInvocation("DefineArray").AddArguments(ReadWord().ToLiteral(), data.ToLiteral(), 0.ToLiteral(), Pop()).ToStatement();
         }
 
-        Statement ByteVarInc()
+        protected virtual Statement Dim2DimArray()
+        {
+            var subOp = ReadByte();
+            string data;
+            switch (subOp)
+            {
+                case 199:               // SO_INT_ARRAY
+                    data = "int";
+                    break;
+                case 200:               // SO_BIT_ARRAY
+                    data = "bit";
+                    break;
+                case 201:               // SO_NIBBLE_ARRAY
+                    data = "nibble";
+                    break;
+                case 202:               // SO_BYTE_ARRAY
+                    data = "byte";
+                    break;
+                case 203:               // SO_STRING_ARRAY
+                    data = "string";
+                    break;
+                default:
+                    throw new NotSupportedException(string.Format("DimArray: default case {0}", subOp));
+            }
+
+            var b=Pop();
+            var a=Pop();
+            return new MethodInvocation("DefineArray").AddArguments(ReadWord().ToLiteral(), data.ToLiteral(), a, b).ToStatement();
+        }
+
+        protected Statement ByteVarInc()
         {
             var var = ReadByte();
             var @base = Pop();
             return WriteArray(var.ToLiteral(), 0.ToLiteral(), @base, new BinaryExpression(ReadArray(var.ToLiteral(), 0.ToLiteral(), @base), Operator.Add, 1.ToLiteral()));
         }
 
-        Statement WordVarInc()
+        protected Statement WordVarInc()
         {
             var var = ReadWord();
             var @base = Pop();
@@ -259,12 +289,12 @@ namespace NScumm.Dump
             return new MethodInvocation("ReadArray").AddArguments(args);
         }
 
-        Statement GetRandomNumber()
+        protected Statement GetRandomNumber()
         {
             return Push(new MethodInvocation("GetRandomNumber").AddArgument(Pop()));
         }
 
-        Statement GetRandomNumberRange()
+        protected Statement GetRandomNumberRange()
         {
             var max = Pop();
             var min = Pop();

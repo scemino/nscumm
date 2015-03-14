@@ -24,24 +24,24 @@ namespace NScumm.Dump
 {
     partial class ScriptParser6
     {
-        Statement Cutscene()
+        protected Statement Cutscene()
         {
             var args = GetStackList(25);
             return new MethodInvocation("CutScene").AddArgument(args).ToStatement();
         }
 
-        Statement EndCutscene()
+        protected Statement EndCutscene()
         {
             return new MethodInvocation("EndCutScene").ToStatement();
         }
 
-        Statement FreezeUnfreeze()
+        protected Statement FreezeUnfreeze()
         {
             var args = Pop();
             return new MethodInvocation("FreezeUnfreeze").AddArgument(args).ToStatement();
         }
 
-        Statement StartScript()
+        protected Statement StartScript()
         {
             var args = GetStackList(25);
             var script = Pop();
@@ -49,24 +49,39 @@ namespace NScumm.Dump
             return new MethodInvocation("StartScript").AddArguments(script, flags, args).ToStatement();
         }
 
-        Statement StartScriptQuick()
+        protected Statement StartScriptQuick()
         {
             var args = GetStackList(25);
             var script = Pop();
-            return new MethodInvocation("RunScript").AddArgument(script).AddArguments(args).ToStatement();
+            return new MethodInvocation("RunScript").AddArgument(script).AddArgument(false).AddArguments(args).ToStatement();
         }
 
-        Statement StopScript()
+        protected Statement StartScriptQuick2()
+        {
+            var args = GetStackList(25);
+            var script = Pop();
+            return new MethodInvocation("RunScript").AddArgument(script).AddArgument(true).AddArguments(args).ToStatement();
+        }
+
+        protected Statement StopScript()
         {
             return new MethodInvocation("StopScript").AddArgument(Pop()).ToStatement();
         }
 
-        Statement StopObjectScript()
+        protected Statement StopObjectScript()
         {
             return new MethodInvocation("StopObjectScript").AddArgument(Pop()).ToStatement();
         }
 
-        Statement DoSentence()
+        protected Statement JumpToScript()
+        {
+            var args = GetStackList(25);
+            var script = Pop();
+            var flags = Pop();
+            return new MethodInvocation("RunScript").AddArgument(script).AddArgument(flags).AddArguments(args).ToStatement();
+        }
+
+        protected Statement DoSentence()
         {
             var b = Pop();
             var a = Pop();
@@ -78,57 +93,57 @@ namespace NScumm.Dump
             return new MethodInvocation("DoSentence").AddArguments(verb, a, b).ToStatement();
         }
 
-        Statement IsScriptRunning()
+        protected Statement IsScriptRunning()
         {
             return Push(new MethodInvocation("IsScriptRunning").AddArgument(Pop()));
         }
 
-        Statement BeginOverride()
+        protected Statement BeginOverride()
         {
             return new MethodInvocation("BeginOverride").ToStatement();
         }
 
-        Statement EndOverride()
+        protected Statement EndOverride()
         {
             return new MethodInvocation("EndOverride").ToStatement();
         }
 
-        Statement BreakHere()
+        protected Statement BreakHere()
         {
             return new MethodInvocation("BreakHere").ToStatement();
         }
 
-        Statement StopObjectCode()
+        protected Statement StopObjectCode()
         {
             return new MethodInvocation("StopObjectCode").ToStatement();
         }
 
-        Statement DelayFrames()
+        protected Statement DelayFrames()
         {
             return new MethodInvocation("DelayFrames").AddArgument(Pop()).ToStatement();
         }
 
-        Statement Delay()
+        protected Statement Delay()
         {
             return new MethodInvocation("Delay").AddArgument(Pop()).ToStatement();
         }
 
-        Statement DelaySeconds()
+        protected Statement DelaySeconds()
         {
             return new MethodInvocation("DelaySeconds").AddArgument(Pop()).ToStatement();
         }
 
-        Statement DelayMinutes()
+        protected Statement DelayMinutes()
         {
             return new MethodInvocation("DelayMinutes").AddArgument(Pop()).ToStatement();
         }
 
-        Statement StopSentence()
+        protected Statement StopSentence()
         {
             return new MethodInvocation("StopSentence").ToStatement();
         }
 
-        Statement Wait()
+        protected virtual Statement Wait()
         {
             var subOp = ReadByte();
             switch (subOp)
@@ -162,13 +177,26 @@ namespace NScumm.Dump
             }
         }
 
-        Statement StartObject()
+        protected Statement StartObject()
         {
             var args = GetStackList(25);
             var entryp = Pop();
             var script = Pop();
             var flags = Pop();
             return new MethodInvocation("StartObject").AddArguments(script, entryp, flags, args).ToStatement();
+        }
+
+        protected Statement StartObjectQuick()
+        {
+            var args = GetStackList(25);
+            var entryp = Pop();
+            var script = Pop();
+            return new MethodInvocation("StartObject").AddArguments(script, entryp, true.ToLiteral(), args).ToStatement();
+        }
+
+        protected Statement Dummy()
+        {
+            return new MethodInvocation("Dummy").ToStatement();
         }
     }
 }

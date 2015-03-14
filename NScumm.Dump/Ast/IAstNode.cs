@@ -11,6 +11,9 @@ namespace NScumm.Dump
         IAstNode Parent { get; }
 
         IList<IAstNode> Children { get; }
+
+        long? StartOffset { get; }
+        long? EndOffset { get; }
     }
 
     public static class IAstNodeExtension

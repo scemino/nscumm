@@ -30,8 +30,10 @@ namespace NScumm.Dump
 
         public IEnumerable<CaseStatement> CaseStatements { get { return ChildrenCore.OfType<CaseStatement>(); } }
 
-        public SwitchStatement(Expression condition)
+        public SwitchStatement(Expression condition, long? startOffset = null, long? endOffset = null)
         {
+            StartOffset = startOffset;
+            EndOffset = endOffset;
             Condition = condition;
         }
 

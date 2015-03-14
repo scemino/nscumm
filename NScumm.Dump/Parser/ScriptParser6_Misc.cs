@@ -24,37 +24,37 @@ namespace NScumm.Dump
 {
     partial class ScriptParser6
     {
-        Statement PrintLine()
+        protected Statement PrintLine()
         {
             return DecodeParseString(new MethodInvocation("PrintLine"), false).ToStatement();
         }
 
-        Statement PrintText()
+        protected Statement PrintText()
         {
             return DecodeParseString(new MethodInvocation("PrintText"), false).ToStatement();
         }
 
-        Statement PrintDebug()
+        protected Statement PrintDebug()
         {
             return DecodeParseString(new MethodInvocation("PrintDebug"), false).ToStatement();
         }
 
-        Statement PrintSystem()
+        protected Statement PrintSystem()
         {
             return DecodeParseString(new MethodInvocation("PrintSystem"), false).ToStatement();
         }
 
-        Statement PrintActor()
+        protected Statement PrintActor()
         {
             return DecodeParseString(new MethodInvocation("PrintActor"), true).ToStatement();
         }
 
-        Statement PrintEgo()
+        protected Statement PrintEgo()
         {
             return DecodeParseString(new MethodInvocation("PrintActor"), true).ToStatement();
         }
 
-        Expression DecodeParseString(Expression target, bool withActor)
+        protected virtual Expression DecodeParseString(Expression target, bool withActor)
         {
             var b = ReadByte();
 
@@ -111,7 +111,7 @@ namespace NScumm.Dump
             return target;
         }
 
-        Statement SystemOps()
+        protected Statement SystemOps()
         {
             var subOp = ReadByte();
 
@@ -124,7 +124,7 @@ namespace NScumm.Dump
                 case 160:               // SO_QUIT
                     return new MethodInvocation("Quit").ToStatement();
                 default:
-                    throw new NotSupportedException(string.Format("SystemOps invalid case {0}", subOp));
+                    return new MethodInvocation(string.Format("SystemOps invalid case {0}", subOp)).ToStatement();
             }
         }
 
@@ -133,7 +133,7 @@ namespace NScumm.Dump
             return new ElementAccess(exp, index);
         }
 
-        Statement SetBlastObjectWindow()
+        protected Statement SetBlastObjectWindow()
         {
             var d = Pop();
             var c = Pop();
@@ -142,7 +142,7 @@ namespace NScumm.Dump
             return new MethodInvocation("SetBlastObjectWindow").AddArguments(a, b, c, d).ToStatement();
         }
 
-        Statement KernelGetFunctions()
+        protected virtual Statement KernelGetFunctions()
         {
             var args = GetStackList(30);
         
@@ -176,7 +176,7 @@ namespace NScumm.Dump
         
         }
 
-        Statement KernelSetFunctions()
+        protected virtual Statement KernelSetFunctions()
         {
             var args = GetStackList(30);
 
@@ -210,6 +210,11 @@ namespace NScumm.Dump
                 .Add(new CaseStatement(122, new MethodInvocation("IMUSEDoCommand").AddArguments(args).ToStatement()))
                 .Add(new CaseStatement(123, new MethodInvocation("CopyPalColor").AddArguments(GetIndex(args, 2), GetIndex(args, 1)).ToStatement()))
                 .Add(new CaseStatement(124, new MethodInvocation("SaveSound").AddArguments(GetIndex(args, 1)).ToStatement()));
+        }
+
+        protected Statement GetDateTime()
+        {
+            return new MethodInvocation("GetDateTime").ToStatement();
         }
     }
 }

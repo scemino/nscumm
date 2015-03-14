@@ -47,7 +47,6 @@
     <Compile Include="Parser\ScriptParser4.cs" />
     <Compile Include="Parser\ScriptParser5.cs" />
     <Compile Include="JumpAstVisitor.cs" />
-    <Compile Include="ChangeJumpToIf.cs" />
     <Compile Include="Ast\DefaultVisitor.cs" />
     <Compile Include="Ast\IAstNode.cs" />
     <Compile Include="Ast\AstNodeBase.cs" />
@@ -103,6 +102,11 @@
     <Compile Include="Parser\ScriptParser6_Camera.cs" />
     <Compile Include="Ast\Statements\SwitchStatement.cs" />
     <Compile Include="Ast\Statements\CaseStatement.cs" />
+    <Compile Include="Parser\ScriptParser8.cs" />
+    <Compile Include="ReplacePushAndPop.cs" />
+    <Compile Include="Ast\Expressions\ArrayLiteralExpression.cs" />
+    <Compile Include="ReplaceJumpToIf.cs" />
+    <Compile Include="ResolveAllTypesOfVariables.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

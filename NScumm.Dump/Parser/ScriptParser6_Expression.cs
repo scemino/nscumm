@@ -18,34 +18,33 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-using System;
 
 namespace NScumm.Dump
 {
     partial class ScriptParser6
     {
-        Statement Jump()
+        protected Statement Jump()
         {
             return new JumpStatement(true.ToLiteral(), ReadWordSigned() + (int)_br.BaseStream.Position);
         }
 
-        Statement If()
+        protected Statement If()
         {
             return new JumpStatement(Pop(), ReadWordSigned() + (int)_br.BaseStream.Position);
         }
 
-        Statement IfNot()
+        protected Statement IfNot()
         {
             return new JumpStatement(new UnaryExpression(Pop(), Operator.Not), ReadWordSigned() + (int)_br.BaseStream.Position);
         }
 
-        Statement Dup()
+        protected Statement Dup()
         {
             var exp = Pop();
-            return Push(exp, exp);
+            return new MethodInvocation("Dup").AddArgument(exp).ToStatement();
         }
 
-        Statement Not()
+        protected Statement Not()
         {
             var exp = Pop();
             return Push(Not(exp));
@@ -56,96 +55,111 @@ namespace NScumm.Dump
             return new UnaryExpression(exp, Operator.Not);
         }
 
-        Statement Eq()
+        protected Statement Eq()
         {
             var a = Pop();
             var b = Pop();
             return Push(new BinaryExpression(a, Operator.Equals, b));
         }
 
-        Statement NEq()
+        protected Statement NEq()
         {
             var a = Pop();
             var b = Pop();
             return Push(new BinaryExpression(a, Operator.Inequals, b));
         }
 
-        Statement Add()
+        protected Statement Add()
         {
             return BinaryExpression(Operator.Add);
         }
 
-        Statement Sub()
+        protected Statement Sub()
         {
             return BinaryExpression(Operator.Subtract);
         }
 
-        Statement Mul()
+        protected Statement Mul()
         {
             return BinaryExpression(Operator.Multiply);
         }
 
-        Statement Div()
+        protected Statement Div()
         {
             return BinaryExpression(Operator.Divide);
         }
 
-        Statement Gt()
+        protected Statement Gt()
         {
             return BinaryExpression(Operator.Greater);
         }
 
-        Statement Ge()
+        protected Statement Ge()
         {
             return BinaryExpression(Operator.GreaterOrEquals);
         }
 
-        Statement Lt()
+        protected Statement Lt()
         {
             return BinaryExpression(Operator.Lower);
         }
 
-        Statement Le()
+        protected Statement Le()
         {
             return BinaryExpression(Operator.LowerOrEquals);
         }
 
-        Statement Land()
+        protected Statement Land()
         {
             return BinaryExpression(Operator.And);
         }
 
-        Statement Lor()
+        protected Statement Lor()
         {
             return BinaryExpression(Operator.Or);
         }
 
-        Statement PopStatement()
+        protected Statement Band()
+        {
+            return BinaryExpression(Operator.BitwiseAnd);
+        }
+
+        protected Statement Bor()
+        {
+            return BinaryExpression(Operator.BitwiseOr);
+        }
+
+        protected Statement Mod()
+        {
+            return BinaryExpression(Operator.Modulus);
+        }
+
+        protected Statement PopStatement()
         {
             return Pop().ToStatement();
         }
 
-        Statement BinaryExpression(Operator op)
+        protected Statement BinaryExpression(Operator op)
         {
             var a = Pop();
             return Push(new BinaryExpression(Pop(), op, a));
         }
 
-        Statement IsAnyOf()
+        protected Statement IsAnyOf()
         {
             var list = GetStackList(100);
             var val = Pop();
             return new MethodInvocation("IsAnyOf").AddArguments(list, val).ToStatement();
         }
 
-        Statement IfClassOfIs()
+        protected Statement IfClassOfIs()
         {
             var list = GetStackList(16);
             var @class = Pop();
             return Push(new MethodInvocation("IfClassOfIs").AddArguments(list, @class));
         }
 
-        Statement Abs()
+        protected Statement Abs()
         {
             return Push(new MethodInvocation("Abs").AddArgument(Pop()));
         }

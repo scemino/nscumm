@@ -24,31 +24,46 @@ using System.Collections.Generic;
 
 namespace NScumm.Dump
 {
-    public class ResolveVariablesAstVisitor: AstRewriterVisitor
+    public class ResolveVariables: IAstReplacer
     {
-        IDictionary<int, string> KnownVariables{ get; set; }
+        readonly ResolveVariablesAstVisitor visitor;
 
-        public ResolveVariablesAstVisitor(IDictionary<int,string> knownVariables)
+        public ResolveVariables(IDictionary<int,string> knownVariables)
         {
-            KnownVariables = knownVariables;
+            visitor = new ResolveVariablesAstVisitor(knownVariables);
         }
 
-        public override IAstNode Visit(ElementAccess node)
+        public CompilationUnit Replace(CompilationUnit cu)
         {
-            var name = node.Target as SimpleName;
-            if (name != null && name.Name == "Variables" && node.Indices.Count == 1)
+            var newCu = cu.Accept(visitor);
+            return (CompilationUnit)newCu;
+        }
+
+        class ResolveVariablesAstVisitor: AstRewriterVisitor
+        {
+            IDictionary<int, string> KnownVariables{ get; set; }
+
+            public ResolveVariablesAstVisitor(IDictionary<int,string> knownVariables)
             {
-                var index = node.Indices[0] as IntegerLiteralExpression;
-                if (index != null)
+                KnownVariables = knownVariables;
+            }
+
+            public override IAstNode Visit(ElementAccess node)
+            {
+                var name = node.Target as SimpleName;
+                if (name != null && name.Name == "Variables" && node.Indices.Count == 1)
                 {
-                    if (KnownVariables.ContainsKey(index.Value))
+                    var index = node.Indices[0] as IntegerLiteralExpression;
+                    if (index != null)
                     {
-                        return new SimpleName(KnownVariables[index.Value]);
+                        if (KnownVariables.ContainsKey(index.Value))
+                        {
+                            return new SimpleName(KnownVariables[index.Value]);
+                        }
                     }
                 }
+                return new ElementAccess((Expression)node.Target.Accept(this), node.Indices.Select(idx => (Expression)idx.Accept(this)));
             }
-            return new ElementAccess((Expression)node.Target.Accept(this), node.Indices.Select(idx => (Expression)idx.Accept(this)));
         }
     }
-
 }

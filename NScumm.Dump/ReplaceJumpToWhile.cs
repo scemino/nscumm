@@ -24,7 +24,12 @@ using System;
 
 namespace NScumm.Dump
 {
-    public class ReplaceJumpToWhile
+    public interface IAstReplacer
+    {
+        CompilationUnit Replace(CompilationUnit cu);
+    }
+
+    public class ReplaceJumpToWhile: IAstReplacer
     {
         public CompilationUnit Replace(CompilationUnit cu)
         {

@@ -24,10 +24,10 @@ namespace NScumm.Dump
 {
     partial class ScriptParser6
     {
-        readonly SimpleName CurrentActor = new SimpleName("CurrentActor");
+        protected readonly SimpleName CurrentActor = new SimpleName("CurrentActor");
         readonly SimpleName Actors = new SimpleName("Actors");
 
-        Statement PutActorAtXY()
+        protected Statement PutActorAtXY()
         {
             var room = Pop();
             var y = Pop();
@@ -36,7 +36,7 @@ namespace NScumm.Dump
             return new MethodInvocation("PutActor").AddArguments(act, x, y, room).ToStatement();
         }
 
-        Statement ActorOps()
+        protected virtual Statement ActorOps()
         {
             var subOp = ReadByte();
             if (subOp == 197)
@@ -201,12 +201,12 @@ namespace NScumm.Dump
             obj = Pop();
         }
 
-        Expression GetActor(Expression index)
+        protected Expression GetActor(Expression index)
         {
             return new ElementAccess(Actors, index);
         }
 
-        Statement PutActorAtObject()
+        protected Statement PutActorAtObject()
         {
             Expression room;
             Expression obj;
@@ -215,70 +215,82 @@ namespace NScumm.Dump
             return new MethodInvocation(new MemberAccess(GetActor(actor), "PutAtObject")).AddArguments(room, obj).ToStatement();
         }
 
-        Statement FaceActor()
+        protected Statement FaceActor()
         {
             var obj = Pop();
             var actor = Pop();
             return new MethodInvocation(new MemberAccess(GetActor(actor), "FaceToObject")).AddArgument(obj).ToStatement();
         }
 
-        Statement AnimateActor()
+        protected Statement AnimateActor()
         {
             var anim = Pop();
             var actor = Pop();
             return new MethodInvocation(new MemberAccess(GetActor(actor), "Animate")).AddArgument(anim).ToStatement();
         }
 
-        Statement GetActorMoving()
+        protected Statement GetActorMoving()
         {
             var actor = Pop();
             return Push(new MemberAccess(GetActor(actor), "IsMoving"));
         }
 
-        Statement GetActorRoom()
+        protected Statement GetActorRoom()
         {
             var actor = Pop();
             return Push(new MemberAccess(GetActor(actor), "Room"));
         }
 
-        Statement GetActorWalkBox()
+        protected Statement GetActorAnimateVariable()
+        {
+            var variable = Pop();
+            var actor = Pop();
+            return Push(new MethodInvocation(new MemberAccess(GetActor(actor), "AnimateVariable")).AddArgument(variable));
+        }
+
+        protected Statement GetActorWalkBox()
         {
             return Push(new MemberAccess(GetActor(Pop()), "WalkBox"));
         }
 
-        Statement GetActorCostume()
+        protected Statement GetActorCostume()
         {
             return Push(new MemberAccess(GetActor(Pop()), "Costume"));
         }
 
-        Statement GetActorElevation()
+        protected Statement GetActorElevation()
         {
             return Push(new MemberAccess(GetActor(Pop()), "Elevation"));
         }
 
-        Statement GetActorWidth()
+        protected Statement GetActorWidth()
         {
             return Push(new MemberAccess(GetActor(Pop()), "Width"));
         }
 
-        Statement GetActorScaleX()
+        protected Statement GetActorScaleX()
         {
             return Push(new MemberAccess(GetActor(Pop()), "ScaleX"));
         }
 
-        Statement GetActorAnimCounter()
+        protected Statement GetActorLayer()
+        {
+            return Push(new MemberAccess(GetActor(Pop()), "Layer"));
+        }
+
+        protected Statement GetActorAnimCounter()
         {
             return Push(new MemberAccess(GetActor(Pop()), "AnimCounter"));
         }
 
-        Statement IsActorInBox()
+        protected Statement IsActorInBox()
         {
             var box = Pop();
             var actor = Pop();
             return Push(new MethodInvocation(new MemberAccess(GetActor(actor), "IsActorInBox")).AddArgument(box));
         }
 
-        Statement WalkActorToObj()
+        protected Statement WalkActorToObj()
         {
             var dist = Pop();
             var obj = Pop();
@@ -286,7 +298,7 @@ namespace NScumm.Dump
             return new MethodInvocation(new MemberAccess(GetActor(actor), "WalkToObject")).AddArguments(obj, dist).ToStatement();
         }
 
-        Statement WalkActorTo()
+        protected Statement WalkActorTo()
         {
             var y = Pop();
             var x = Pop();
@@ -294,21 +306,21 @@ namespace NScumm.Dump
             return new MethodInvocation(new MemberAccess(GetActor(actor), "WalkTo")).AddArguments(x, y).ToStatement();
         }
 
-        Statement GetActorFromXY()
+        protected Statement GetActorFromXY()
         {
             var y = Pop();
             var x = Pop();
             return Push(new MethodInvocation("GetActorFrom").AddArguments(x, y));
         }
 
-        Statement TalkActor()
+        protected Statement TalkActor()
         {
             var actor = Pop();
             var text = ReadCharacters();
             return new MethodInvocation(new MemberAccess(GetActor(actor), "Talk")).AddArgument(text).ToStatement();
         }
 
-        Statement TalkEgo()
+        protected Statement TalkEgo()
         {
             var text = ReadCharacters();
             return new MethodInvocation(new MemberAccess("Ego", "Talk")).AddArgument(text).ToStatement();

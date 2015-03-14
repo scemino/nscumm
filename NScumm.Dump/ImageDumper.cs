@@ -57,7 +57,6 @@ namespace NScumm.Dump
                 try
                 {
                     var gdi = new Gdi(null, Game);
-                    gdi.NumStrips = Game.Version == 8 ? 160 : 80;
                     gdi.IsZBufferEnabled = false;
                     gdi.RoomPalette = CreatePalette();
 
@@ -110,6 +109,7 @@ namespace NScumm.Dump
 
             var screen = new VirtScreen(0, room.Header.Width, room.Header.Height, PixelFormat.Indexed8, 2);
             var numStrips = room.Header.Width / 8;
+            gdi.NumStrips = numStrips;
             gdi.IsZBufferEnabled = false;
             if (room.Header.Height > 0)
             {
@@ -214,20 +214,30 @@ namespace NScumm.Dump
                 {
                     try
                     {
+                        var screen = new VirtScreen(0, obj.Width, obj.Height, PixelFormat.Indexed8, 2);
                         if (img.IsBomp)
                         {
-                            Console.ForegroundColor = ConsoleColor.Red;
-                            Console.WriteLine("Image BOMP not yet supported");
-                            Console.ResetColor();
+                            var bdd = new BompDrawData();
+                            bdd.Src = img.Data;
+                            bdd.Dst = new PixelNavigator(screen.Surfaces[0]);
+                            bdd.X = 0;
+                            bdd.Y = 0;
+
+                            bdd.Width = obj.Width;
+                            bdd.Height = obj.Height;
+
+                            bdd.ScaleX = 255;
+                            bdd.ScaleY = 255;
+                            bdd.DrawBomp();
                         }
                         else
                         {
-                            var screen = new VirtScreen(0, obj.Width, obj.Height, PixelFormat.Indexed8, 2);
                             gdi.DrawBitmap(img, screen, new Point(0, 0), obj.Width, obj.Height, 0, obj.Width / 8, room.Header.Width, DrawBitmaps.None, true);
-                            using (var bmp = ToBitmap(room, screen))
-                            {
-                                bmp.Save("obj_" + obj.Number + "_" + (++j) + ".png");
-                            }
+                        }
+
+                        using (var bmp = ToBitmap(room, screen))
+                        {
+                            bmp.Save("obj_" + obj.Number + "_" + (++j) + ".png");
                         }
                     }
                     catch (Exception e)
@@ -235,6 +245,7 @@ namespace NScumm.Dump
                         Console.ForegroundColor = ConsoleColor.Red;
                         Console.WriteLine(e);
                         Console.ResetColor();
+                        Console.ReadLine();
                     }
                 }
             }

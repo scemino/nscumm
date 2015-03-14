@@ -27,8 +27,10 @@ namespace NScumm.Dump
 
         public int JumpOffset { get; private set; }
 
-        public JumpStatement(Expression condition, int offset)
+        public JumpStatement(Expression condition, int offset, long? startOffset = null, long? endOffset = null)
         {
+            StartOffset = startOffset;
+            EndOffset = endOffset;
             Condition = condition;
             JumpOffset = offset;
             ChildrenCore.Add(Condition);

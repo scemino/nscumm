@@ -18,13 +18,12 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-using System;
 
 namespace NScumm.Dump
 {
     partial class ScriptParser6
     {
-        Statement PanCameraTo()
+        protected Statement PanCameraTo()
         {
             if (Game.Version >= 7)
             {
@@ -39,12 +38,12 @@ namespace NScumm.Dump
 
         }
 
-        Statement ActorFollowCamera()
+        protected Statement ActorFollowCamera()
         {
             return new MethodInvocation("ActorFollowCamera").AddArgument(Pop()).ToStatement();
         }
 
-        Statement SetCameraAt()
+        protected Statement SetCameraAt()
         {
             if (Game.Version >= 7)
             {

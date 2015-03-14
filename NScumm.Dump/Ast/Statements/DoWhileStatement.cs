@@ -27,8 +27,10 @@ namespace NScumm.Dump
 
         public Statement Statement { get; private set; }
 
-        public DoWhileStatement(Expression condition, Statement statement)
+        public DoWhileStatement(Expression condition, Statement statement, long? startOffset = null, long? endOffset = null)
         {
+            StartOffset = startOffset;
+            EndOffset = endOffset;
             Condition = condition;
             Statement = statement;
             ChildrenCore.Add(Condition);

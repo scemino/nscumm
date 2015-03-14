@@ -19,6 +19,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using NUnit.Framework;
+using System;
 
 namespace NScumm.Dump.Tests
 {
@@ -52,9 +53,123 @@ namespace NScumm.Dump.Tests
                         new MethodInvocation("Print").AddArgument("End".ToLiteral())) { StartOffset = 10, EndOffset = 15 }
                 });
 
-            var actualCu = new ChangeJumpToIf().Change(cu);
+            var actualCu = new ReplaceJumpToIf().Replace(cu);
 
             AstHelper.AstEquals(expectedCu, actualCu);
+        }
+
+        [Test]
+        public void ReplaceJumpToIfWithRealExample()
+        {
+// cu =
+//            [   0,   5]  Push(156)
+//            [   5,  10]  Push(108)
+//            [  10,  15]  Variables[301] = Pop()
+//            [  15,  16]  StopObjectCode()
+//            [  16,  21]  Push(Bits[563])
+//            [  21,  22]  Push(!Pop())
+//            [  22,  27]  jump 48 if !Pop()
+//            [  27,  32]  Push(972)
+//            [  32,  37]  Push(972)
+//            [  37,  42]  Push(354)
+//            [  42,  43]  LoadRoomWithEgo(Pop(), Pop(), Pop(), Pop())
+//            [  43,  48]  jump 96 if True
+//            [  48,  53]  Push(Bits[9])
+//            [  53,  54]  Push(!Pop())
+//            [  54,  59]  Push(Bits[8])
+//            [  59,  60]  Push(!Pop())
+//            [  60,  61]  Push(Pop() & Pop())
+//            [  61,  66]  jump 80 if !Pop()
+//            [  66,  71]  Push(5)
+//            [  71,  76]  Push(1)
+//            [  76,  77]  CutScene(Pop(25))
+//            [  77,  79]  WaitForCamera()
+//            [  79,  80]  EndCutScene()
+//            [  80,  85]  Push(0)
+//            [  85,  90]  Push(351)
+//            [  90,  95]  Push(0)
+//            [  95,  96]  StartScript(Pop(), Pop(), Pop(25))
+//            [  96,  97]  StopObjectCode()
+
+            var cu = new CompilationUnit().AddStatements(new Statement[]
+                {
+                    new MethodInvocation("Push").AddArgument(156).ToStatement(0, 5),
+                    new MethodInvocation("Push").AddArgument(108).ToStatement(5, 10),
+                    new BinaryExpression(new ElementAccess("Variables", 301), Operator.Assignment, new MethodInvocation("Pop")).ToStatement(10, 15),
+                    new MethodInvocation("StopObjectCode").ToStatement(15, 16),
+                    new MethodInvocation("Push").AddArgument(new ElementAccess("Bits", 563)).ToStatement(16, 21),
+                    new MethodInvocation("Push").AddArgument(new UnaryExpression(new MethodInvocation("Pop"), Operator.Not)).ToStatement(21, 22),
+                    new JumpStatement(new UnaryExpression(new MethodInvocation("Pop"), Operator.Not), 48, 22, 27),
+                    new MethodInvocation("Push").AddArgument(972).ToStatement(27, 32),
+                    new MethodInvocation("Push").AddArgument(972).ToStatement(32, 37),
+                    new MethodInvocation("Push").AddArgument(354).ToStatement(37, 42),
+                    new MethodInvocation("LoadRoomWithEgo").AddArguments(new MethodInvocation("Pop"), new MethodInvocation("Pop"), new MethodInvocation("Pop"), new MethodInvocation("Pop")).ToStatement(42, 43),
+                    new JumpStatement(true.ToLiteral(), 96, 43, 48),
+                    new MethodInvocation("Push").AddArgument(new ElementAccess("Bits", 9)).ToStatement(48, 53),
+                    new MethodInvocation("Push").AddArgument(new UnaryExpression(new MethodInvocation("Pop"), Operator.Not)).ToStatement(53, 54),
+                    new MethodInvocation("Push").AddArgument(new ElementAccess("Bits", 8)).ToStatement(54, 59),
+                    new MethodInvocation("Push").AddArgument(new UnaryExpression(new MethodInvocation("Pop"), Operator.Not)).ToStatement(59, 60),
+                    new MethodInvocation("Push").AddArgument(new BinaryExpression(new MethodInvocation("Pop"), Operator.And, new MethodInvocation("Pop"))).ToStatement(60, 61),
+                    new JumpStatement(new UnaryExpression(new MethodInvocation("Pop"), Operator.Not), 80, 61, 66),
+                    new MethodInvocation("Push").AddArgument(5).ToStatement(66, 71),
+                    new MethodInvocation("Push").AddArgument(1).ToStatement(71, 76),
+                    new MethodInvocation("CutScene").AddArgument(new MethodInvocation("Pop").AddArgument(25)).ToStatement(76, 77),
+                    new MethodInvocation("WaitForCamera").ToStatement(77, 79),
+                    new MethodInvocation("EndCutScene").ToStatement(79, 80),
+                    new MethodInvocation("Push").AddArgument(0).ToStatement(80, 85),
+                    new MethodInvocation("Push").AddArgument(351).ToStatement(85, 90),
+                    new MethodInvocation("Push").AddArgument(0).ToStatement(90, 95),
+                    new MethodInvocation("StartScript").AddArguments(new MethodInvocation("Pop"), new MethodInvocation("Pop"), new MethodInvocation("Pop").AddArgument(25)).ToStatement(95, 96),
+                    new MethodInvocation("StopObjectCode").ToStatement(96, 97),
+                });
+
+
+// expectedCu =
+//            [   0,   5]  Push(156)
+//            [   5,  10]  Push(108)
+//            [  10,  15]  Variables[301] = Pop()
+//            [  15,  16]  StopObjectCode()
+//            [  16,  21]  Push(Bits[563])
+//            [  21,  22]  Push(!Pop())
+//            [  22,  27]  if (!Pop())
+//                         {
+//            [  27,  32]    Push(972)
+//            [  32,  37]    Push(972)
+//            [  37,  42]    Push(354)
+//            [  42,  43]    LoadRoomWithEgo(Pop(), Pop(), Pop(), Pop())
+//            [  43,  48]    goto label_96
+//                         }
+//            [  48,  53]  Push(Bits[9])
+//            [  53,  54]  Push(!Pop())
+//            [  54,  59]  Push(Bits[8])
+//            [  59,  60]  Push(!Pop())
+//            [  60,  61]  Push(Pop() & Pop())
+//            [  61,  66]  if !Pop()
+//                         {
+//            [  66,  71]    Push(5)
+//            [  71,  76]    Push(1)
+//            [  76,  77]    CutScene(Pop(25))
+//            [  77,  79]    WaitForCamera()
+//            [  79,  80]    EndCutScene()
+//                         }
+//            [  80,  85]  Push(0)
+//            [  85,  90]  Push(351)
+//            [  90,  95]  Push(0)
+//            [  95,  96]  StartScript(Pop(), Pop(), Pop(25))
+// label_96:
+//            [  96,  97]  StopObjectCode()
+
+            var replacers = new IAstReplacer[]
+            {
+                new ReplacePushAndPop(),
+                new ResolveAllTypesOfVariables(8),
+                new ReplaceJumpToIf(),
+                new ReplaceJumpToWhile(),
+                new ReplaceJumpToGoTo()
+            };
+            Array.ForEach(replacers, r => cu = r.Replace(cu));
+
+            Console.WriteLine(AstHelper.ToString(cu, true));
         }
     }
 }

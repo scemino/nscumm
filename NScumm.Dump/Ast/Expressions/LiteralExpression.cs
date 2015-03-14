@@ -64,6 +64,8 @@ namespace NScumm.Dump
                 throw new ArgumentException("obj");
             if (obj is int)
                 return new IntegerLiteralExpression((int)obj);
+            if (obj is uint)
+                return new IntegerLiteralExpression((int)(uint)obj);
             if (obj is byte[])
                 return new StringLiteralExpression((byte[])obj);
             if (obj is string)

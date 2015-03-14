@@ -24,7 +24,7 @@ namespace NScumm.Dump
 {
     partial class ScriptParser6
     {
-        Statement CursorCommand()
+        protected virtual Statement CursorCommand()
         {
             var exp = new MethodInvocation("CursorCommand");
 
@@ -77,14 +77,14 @@ namespace NScumm.Dump
             return exp.ToStatement();
         }
 
-        Statement DrawObject()
+        protected Statement DrawObject()
         {
             var state = Pop();
             var obj = Pop();
             return new MethodInvocation("SetObjectState").AddArguments(obj, state).ToStatement();
         }
 
-        Statement DrawObjectAt()
+        protected Statement DrawObjectAt()
         {
             var y = Pop();
             var x = Pop();
@@ -92,7 +92,7 @@ namespace NScumm.Dump
             return new MethodInvocation("SetObjectState").AddArguments(obj, x, y).ToStatement();
         }
 
-        Statement DrawBlastObject()
+        protected Statement DrawBlastObject()
         {
             var args = GetStackList(19);
             var e = Pop();
@@ -103,7 +103,7 @@ namespace NScumm.Dump
             return new MethodInvocation("DrawBlastObject").AddArguments(a, b, c, d, e, args).ToStatement();
         }
 
-        Statement DrawBox()
+        protected Statement DrawBox()
         {
             var color = Pop();
             var y2 = Pop();

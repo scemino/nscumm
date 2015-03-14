@@ -98,7 +98,7 @@ namespace NScumm.Core.IO
         {
             get
             {
-                for (byte i = 1; i < Index.ScriptResources.Count; i++)
+                for (var i = 1; i < Index.ScriptResources.Count; i++)
                 {
                     if (Index.ScriptResources[i].RoomNum != 0 && Index.ScriptResources[i].Offset != 0xFFFFFFFF)
                     {

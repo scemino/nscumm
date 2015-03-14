@@ -32,28 +32,28 @@ namespace NScumm.Dump
 
         public override IAstNode Visit(DoWhileStatement node)
         {
-            return new DoWhileStatement((Expression)node.Condition.Accept(this), (Statement)node.Statement.Accept(this)){ StartOffset = node.StartOffset, EndOffset = node.EndOffset };
+            return new DoWhileStatement((Expression)node.Condition.Accept(this), (Statement)node.Statement.Accept(this), node.StartOffset, node.EndOffset);
         }
 
         public override IAstNode Visit(IfStatement node)
         {
-            return new IfStatement((Expression)node.Condition.Accept(this), (Statement)node.TrueStatement.Accept(this)){ StartOffset = node.StartOffset, EndOffset = node.EndOffset };
+            return new IfStatement((Expression)node.Condition.Accept(this), (Statement)node.TrueStatement.Accept(this), node.StartOffset, node.EndOffset);
         }
 
         public override IAstNode Visit(CaseStatement node)
         {
-            return new CaseStatement((Expression)node.Condition.Accept(this), (Statement)node.TrueStatement.Accept(this)){ StartOffset = node.StartOffset, EndOffset = node.EndOffset };
+            return new CaseStatement((Expression)node.Condition.Accept(this), (Statement)node.TrueStatement.Accept(this), node.StartOffset, node.EndOffset);
         }
 
         public override IAstNode Visit(SwitchStatement node)
         {
-            return new SwitchStatement((Expression)node.Condition.Accept(this)){ StartOffset = node.StartOffset, EndOffset = node.EndOffset }
+            return new SwitchStatement((Expression)node.Condition.Accept(this), node.StartOffset, node.EndOffset)
                 .Add(node.CaseStatements.Select(statement => (CaseStatement)statement.Accept(this)));
         }
 
         public override IAstNode Visit(BlockStatement node)
         {
-            return new BlockStatement().AddStatements(node.Select(statement => (Statement)statement.Accept(this)));
+            return new BlockStatement().AddStatements(node.Select(statement => (Statement)statement.Accept(this)).Where(statement => statement!=null));
         }
 
         public override IAstNode Visit(BinaryExpression node)
@@ -68,7 +68,7 @@ namespace NScumm.Dump
 
         public override IAstNode Visit(ExpressionStatement node)
         {
-            return new ExpressionStatement((Expression)node.Expression.Accept(this)){ StartOffset = node.StartOffset, EndOffset = node.EndOffset };
+            return new ExpressionStatement((Expression)node.Expression.Accept(this), node.StartOffset, node.EndOffset);
         }
 
         public override IAstNode Visit(MemberAccess node)
@@ -83,12 +83,12 @@ namespace NScumm.Dump
 
         public override IAstNode Visit(MethodInvocation node)
         {
-            return new MethodInvocation((Expression)node.Target.Accept(this)).AddArguments(node.Arguments.Select(arg => (Expression)arg.Accept(this)));
+            return new MethodInvocation((Expression)node.Target.Accept(this)).AddArguments(node.Arguments.Select(arg => (Expression)arg.Accept(this)).ToList());
         }
 
         public override IAstNode Visit(JumpStatement node)
         {
-            return new JumpStatement((Expression)node.Condition.Accept(this), node.JumpOffset){ StartOffset = node.StartOffset, EndOffset = node.EndOffset };
+            return new JumpStatement((Expression)node.Condition.Accept(this), node.JumpOffset, node.StartOffset, node.EndOffset);
         }
 
         public override IAstNode Visit(ElementAccess node)

@@ -23,6 +23,7 @@ using System.IO;
 using System.Collections.Generic;
 using System;
 using NScumm.Core.IO;
+using System.Linq;
 
 namespace NScumm.Dump
 {
@@ -49,10 +50,13 @@ namespace NScumm.Dump
 
         protected Statement ExecuteOpCode()
         {
+            Func<Statement> func;
             if (!opCodes.ContainsKey(_opCode))
-                throw new NotSupportedException(string.Format("Opcode 0x{0:X2} not supported yet!", _opCode));
+                func = () => new MethodInvocation(string.Format("UnknownOpcode{0:X2}", _opCode)).ToStatement();
+            else
+                func = opCodes[_opCode];
             var startOffset = _br.BaseStream.Position - 1;
-            var statement = opCodes[_opCode]();
+            var statement = func();
             var endOffset = _br.BaseStream.Position;
 
             statement.StartOffset = startOffset;
@@ -84,6 +88,9 @@ namespace NScumm.Dump
                     break;
                 case 6:
                     parser = new ScriptParser6(info);
+                    break;
+                case 8:
+                    parser = new ScriptParser8(info);
                     break;
                 default:
                     throw new NotSupportedException(string.Format("SCUMM version {0} not supported.", info.Version));
@@ -121,13 +128,13 @@ namespace NScumm.Dump
             return _br.ReadByte();
         }
 
-        protected int ReadWord()
+        protected virtual int ReadWord()
         {
             var word = _br.ReadUInt16();
             return word;
         }
 
-        protected int ReadWordSigned()
+        protected virtual int ReadWordSigned()
         {
             return ReadWord();
         }
@@ -145,10 +152,9 @@ namespace NScumm.Dump
                     sb.Add(character);
                     if (character != 1 && character != 2 && character != 3 && character != 8)
                     {
-                        character = (byte)ReadByte();
-                        sb.Add(character);
-                        character = (byte)ReadByte();
-                        sb.Add(character);
+                        var count = Game.Version == 8 ? 4 : 2;
+                        sb.AddRange(from i in Enumerable.Range(0, count)
+                                                         select (byte)ReadByte());
                     }
                 }
                 character = (byte)ReadByte();

@@ -18,7 +18,6 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-using System;
 
 namespace NScumm.Dump
 {
@@ -26,90 +25,105 @@ namespace NScumm.Dump
     {
         readonly SimpleName Objects = new SimpleName("Objects");
 
-        Statement PickupObject()
+        protected Statement PickupObject()
         {
             Expression room, obj;
             PopRoomAndObject(out room, out obj);
             return new MethodInvocation("PickupObject").AddArguments(room, obj).ToStatement();
         }
 
-        Expression Object(Expression index)
+        protected Statement PickOneOf()
+        {
+            var args = GetStackList(100);
+            var i = Pop();
+            return new MethodInvocation("PickOneOf").AddArguments(i, args).ToStatement();
+        }
+
+        protected Statement PickOneOfDefault()
+        {
+            var def = Pop();
+            var args = GetStackList(100);
+            var i = Pop();
+            return new MethodInvocation("PickOneOfDefault").AddArguments(i, args, def).ToStatement();
+        }
+
+        protected Expression Object(Expression index)
         {
             return new ElementAccess(Objects, index);
         }
 
-        Statement GetObjectX()
+        protected Statement GetObjectX()
         {
             return Push(new MemberAccess(Object(Pop()), "X"));
         }
 
-        Statement GetObjectY()
+        protected Statement GetObjectY()
         {
             return Push(new MemberAccess(Object(Pop()), "Y"));
         }
 
-        Statement GetObjectOldDir()
+        protected Statement GetObjectOldDir()
         {
             return Push(new MemberAccess(Object(Pop()), "OldDir"));
         }
 
-        Statement GetObjectNewDir()
+        protected Statement GetObjectNewDir()
         {
             return Push(new MemberAccess(Object(Pop()), "NewDir"));
         }
 
-        Statement SetObjectName()
+        protected Statement SetObjectName()
         {
             return new BinaryExpression(Object(Pop()), Operator.Assignment, ReadCharacters()).ToStatement();
         }
 
-        Statement SetState()
+        protected Statement SetState()
         {
             var state = Pop();
             return new BinaryExpression(new MemberAccess(Object(Pop()), "State"), Operator.Assignment, state).ToStatement();
         }
 
-        Statement GetState()
+        protected Statement GetState()
         {
             return Push(new MemberAccess(Object(Pop()), "State"));
         }
 
-        Statement SetOwner()
+        protected Statement SetOwner()
         {
             var owner = Pop();
             return new BinaryExpression(new MemberAccess(Object(Pop()), "Owner"), Operator.Assignment, owner).ToStatement();
         }
 
-        Statement GetOwner()
+        protected Statement GetOwner()
         {
             return Push(new MemberAccess(Object(Pop()), "Owner"));
         }
 
-        Statement SetClass()
+        protected Statement SetClass()
         {
             var list = GetStackList(16);
             var obj = Pop();
             return new MethodInvocation("SetClass").AddArguments(list, obj).ToStatement();
         }
 
-        Statement DistObjectObject()
+        protected Statement DistObjectObject()
         {
             var b = Pop();
             var a = Pop();
             return Push(new MethodInvocation("GetDistanceBetween").AddArguments(a, b));
         }
 
-        Statement DistObjectPt()
+        protected Statement DistObjectPt()
         {
             return Push(new MethodInvocation("GetDistanceBetween").AddArguments(Pop(), Pop(), Pop()));
         }
 
-        Statement DistPtPt()
+        protected Statement DistPtPt()
         {
             return Push(new MethodInvocation("GetDistanceBetween").AddArguments(Pop(), Pop(), Pop(), Pop()));
         }
 
-        Statement FindObject()
+        protected Statement FindObject()
         {
             var y = Pop();
             var x = Pop();

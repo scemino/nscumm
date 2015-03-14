@@ -43,8 +43,10 @@ namespace NScumm.Dump
         {
         }
 
-        public CaseStatement(Expression condition, Statement trueStatement)
+        public CaseStatement(Expression condition, Statement trueStatement, long? startOffset = null, long? endOffset = null)
         {
+            StartOffset = startOffset;
+            EndOffset = endOffset;
             Condition = condition;
             TrueStatement = trueStatement;
             ChildrenCore.Add(Condition);

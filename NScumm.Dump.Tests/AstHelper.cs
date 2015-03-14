@@ -25,9 +25,16 @@ namespace NScumm.Dump.Tests
 {
     public static class AstHelper
     {
-        public static void AstEquals(IAstNode astExpected, IAstNode astActual)
+        public static string ToString(IAstNode ast, bool showOffsets = false)
         {
-            var dumper = new DumpAstVisitor(false);
+            var dumper = new DumpAstVisitor(showOffsets);
+            var code = ast.Accept(dumper);
+            return code;
+        }
+
+        public static void AstEquals(IAstNode astExpected, IAstNode astActual, bool showOffsets = false)
+        {
+            var dumper = new DumpAstVisitor(showOffsets);
 
             var expectedCode = astExpected.Accept(dumper);
             var actualCode = astActual.Accept(dumper);

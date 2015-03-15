@@ -54,7 +54,7 @@ namespace NScumm.Core
     }
 
     [System.Diagnostics.DebuggerDisplay("{DebuggerDisplay,nq}")]
-    class Actor
+    internal class Actor
     {
         #region Private Fields
 

@@ -493,7 +493,7 @@ namespace NScumm.Core
             }
         }
 
-        internal protected override void SetCameraFollows(Actor a, bool setCamera = false)
+        internal override void SetCameraFollows(Actor a, bool setCamera = false)
         {
             var oldfollow = Camera.ActorToFollow;
 

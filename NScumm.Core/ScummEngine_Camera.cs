@@ -62,7 +62,7 @@ namespace NScumm.Core
                 StopTalk();
         }
 
-        internal protected virtual void SetCameraFollows(Actor actor, bool setCamera = false)
+        internal virtual void SetCameraFollows(Actor actor, bool setCamera = false)
         {
             _camera.Mode = CameraMode.FollowActor;
             _camera.ActorToFollow = actor.Number;

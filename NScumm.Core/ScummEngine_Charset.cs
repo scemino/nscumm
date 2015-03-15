@@ -281,7 +281,7 @@ namespace NScumm.Core
             return true;
         }
 
-        protected bool HandleNextCharsetCode(Actor a, ref int code)
+        internal bool HandleNextCharsetCode(Actor a, ref int code)
         {
             int color, frme, c = 0, oldy;
             bool endLoop = false;

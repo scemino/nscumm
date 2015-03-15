@@ -521,7 +521,7 @@ namespace NScumm.Dump
                     break;
                 case 0x44:               // SO_HEAP_LOCK_SCRIPT Lock script in heap
                     {
-                        exp = new MethodInvocation(new MemberAccess(exp, "LockScri")).AddArgument(resId);
+                        exp = new MethodInvocation(new MemberAccess(exp, "LockScript")).AddArgument(resId);
                     }
                     break;
                 case 0x45:               // SO_HEAP_LOCK_SOUND Lock sound in heap

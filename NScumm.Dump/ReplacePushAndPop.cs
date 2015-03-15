@@ -138,7 +138,10 @@ namespace NScumm.Dump
                         return pushExp;
                     }
                 }
-                return base.Visit(node);
+                else
+                {
+                    return new MethodInvocation((Expression)node.Target.Accept(this)).AddArguments(node.Arguments.Cast<Expression>().Reverse().Select(arg => (Expression)arg.Accept(this)).ToList());
+                }
             }
         }
     }

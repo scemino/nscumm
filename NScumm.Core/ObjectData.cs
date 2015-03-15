@@ -57,6 +57,8 @@ namespace NScumm.Core
 
         public List<Point> Hotspots { get; private set; }
 
+        public bool IsLocked { get; set; }
+
         public ObjectData()
         {
             ScriptOffsets = new Dictionary<int, int>();

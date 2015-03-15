@@ -21,7 +21,6 @@
 using System;
 using NScumm.Core.Graphics;
 using System.Diagnostics;
-using System.IO;
 
 namespace NScumm.Core
 {
@@ -283,7 +282,7 @@ namespace NScumm.Core
 
             if (x != -1 && x != 0x7FFFFFFF)
             {
-                _objs[i].Position = new Point((short)(x * 8), (short)(y * 8));
+                _objs[i].Position = new Point((x * 8), (y * 8));
             }
 
             AddObjectToDrawQue((byte)i);
@@ -343,7 +342,7 @@ namespace NScumm.Core
             }
             else
             {
-                pos1 = new Point((short)b, (short)c);
+                pos1 = new Point(b, c);
             }
 
             if (isObj2)
@@ -355,7 +354,7 @@ namespace NScumm.Core
             }
             else
             {
-                pos2 = new Point((short)e, (short)f);
+                pos2 = new Point(e, f);
             }
 
             return ScummMath.GetDistance(pos1, pos2) * 0xFF / ((i + j) / 2);
@@ -398,7 +397,7 @@ namespace NScumm.Core
             eo.Rect = new Rect(left, top, right, bottom);
             eo.ScaleX = scaleX;
             eo.ScaleY = scaleY;
-            eo.Image = image;
+            eo.Image = image - 1;
             eo.Mode = mode;
         }
 
@@ -553,8 +552,8 @@ namespace NScumm.Core
             Debug.Assert(_blastTextQueuePos <= _blastTextQueue.Length);
 
             ConvertMessageToString(text, bt.Text, 0);
-            bt.X = (short)x;
-            bt.Y = (short)y;
+            bt.X = x;
+            bt.Y = y;
             bt.Color = color;
             bt.Charset = charset;
             bt.Center = center;

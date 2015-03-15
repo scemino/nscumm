@@ -376,38 +376,49 @@ namespace NScumm.Core
 
         void ResetRoomObjects()
         {
+            int j = 1;
             for (int i = 0; i < roomData.Objects.Count; i++)
             {
-                _objs[i + 1].Position = roomData.Objects[i].Position;
-                _objs[i + 1].Width = roomData.Objects[i].Width;
-                _objs[i + 1].Walk = roomData.Objects[i].Walk;
-                _objs[i + 1].State = roomData.Objects[i].State;
-                _objs[i + 1].Parent = roomData.Objects[i].Parent;
-                _objs[i + 1].ParentState = roomData.Objects[i].ParentState;
-                _objs[i + 1].Number = roomData.Objects[i].Number;
-                _objs[i + 1].Height = roomData.Objects[i].Height;
+                for (; j < _objs.Length; j++)
+                {
+                    if (_objs[j].FloatingObjectIndex == 0)
+                        break;
+                }
+                _objs[j].Position = roomData.Objects[i].Position;
+                _objs[j].Width = roomData.Objects[i].Width;
+                _objs[j].Walk = roomData.Objects[i].Walk;
+                _objs[j].State = roomData.Objects[i].State;
+                _objs[j].Parent = roomData.Objects[i].Parent;
+                _objs[j].ParentState = roomData.Objects[i].ParentState;
+                _objs[j].Number = roomData.Objects[i].Number;
+                _objs[j].Height = roomData.Objects[i].Height;
                 // HACK: This is done since an angle doesn't fit into a byte (360 > 256)
-                _objs[i + 1].ActorDir = Game.Version == 8 ? (byte)ScummMath.ToSimpleDir(true, roomData.Objects[i].ActorDir) : roomData.Objects[i].ActorDir;
-                _objs[i + 1].Flags = Game.Version == 8 ? ((((int)roomData.Objects[i].Flags & 16) != 0) ? DrawBitmaps.AllowMaskOr : 0) : roomData.Objects[i].Flags;
-                _objs[i + 1].Script.Offset = roomData.Objects[i].Script.Offset;
-                _objs[i + 1].Script.Data = roomData.Objects[i].Script.Data;
-                _objs[i + 1].ScriptOffsets.Clear();
+                _objs[j].ActorDir = Game.Version == 8 ? (byte)ScummMath.ToSimpleDir(true, roomData.Objects[i].ActorDir) : roomData.Objects[i].ActorDir;
+                _objs[j].Flags = Game.Version == 8 ? ((((int)roomData.Objects[i].Flags & 16) != 0) ? DrawBitmaps.AllowMaskOr : 0) : roomData.Objects[i].Flags;
+                _objs[j].Script.Offset = roomData.Objects[i].Script.Offset;
+                _objs[j].Script.Data = roomData.Objects[i].Script.Data;
+                _objs[j].ScriptOffsets.Clear();
                 foreach (var scriptOffset in roomData.Objects[i].ScriptOffsets)
                 {
-                    _objs[i + 1].ScriptOffsets.Add(scriptOffset.Key, scriptOffset.Value);
+                    _objs[j].ScriptOffsets.Add(scriptOffset.Key, scriptOffset.Value);
                 }
-                _objs[i + 1].Name = roomData.Objects[i].Name;
-                _objs[i + 1].Images.Clear();
-                _objs[i + 1].Images.AddRange(roomData.Objects[i].Images);
-                _objs[i + 1].Hotspots.Clear();
-                _objs[i + 1].Hotspots.AddRange(roomData.Objects[i].Hotspots);
+                _objs[j].Name = roomData.Objects[i].Name;
+                _objs[j].Images.Clear();
+                _objs[j].Images.AddRange(roomData.Objects[i].Images);
+                _objs[j].Hotspots.Clear();
+                _objs[j].Hotspots.AddRange(roomData.Objects[i].Hotspots);
+                _objs[j].IsLocked = _objs[i].IsLocked;
+                j++;
             }
-            for (int i = roomData.Objects.Count + 1; i < _objs.Length; i++)
+            for (int i = j; i < _objs.Length; i++)
             {
-                _objs[i].Number = 0;
-                _objs[i].Script.Offset = 0;
-                _objs[i].ScriptOffsets.Clear();
-                _objs[i].Script.Data = new byte[0];
+                if (_objs[i].FloatingObjectIndex == 0)
+                {
+                    _objs[i].Number = 0;
+                    _objs[i].Script.Offset = 0;
+                    _objs[i].ScriptOffsets.Clear();
+                    _objs[i].Script.Data = new byte[0];
+                }
             }
         }
 
@@ -435,11 +446,12 @@ namespace NScumm.Core
                     else
                     {
                         // Nuke all unlocked flObjects
-//                        if (!_res->isLocked(rtFlObject, _objs[i].fl_object_index)) {
+                        if (!_objs[i].IsLocked)
+                        {
 //                            _res->nukeResource(rtFlObject, _objs[i].fl_object_index);
-                        _objs[i].Number = 0;
-                        _objs[i].FloatingObjectIndex = 0;
-//                        }
+                            _objs[i].Number = 0;
+                            _objs[i].FloatingObjectIndex = 0;
+                        }
                     }
                 }
             }

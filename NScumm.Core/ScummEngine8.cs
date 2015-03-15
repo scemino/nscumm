@@ -1517,15 +1517,15 @@ namespace NScumm.Core
                 case 11:
                     {  // lockObject
                         int objidx = GetObjectIndex(args[1]);
-//                            Debug.Assert(objidx != -1);
-//                            _res.lock(rtFlObject, _objs[objidx].fl_object_index);
+                        Debug.Assert(objidx != -1);
+                        _objs[objidx].IsLocked = true;
                         break;
                     }
                 case 12:
                     {  // unlockObject
                         int objidx = GetObjectIndex(args[1]);
-//                            assert(objidx != -1);
-//                            _res.unlock(rtFlObject, _objs[objidx].fl_object_index);
+                        Debug.Assert(objidx != -1);
+                        _objs[objidx].IsLocked = false;
                         break;
                     }
                 case 13:    // remapCostume

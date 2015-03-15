@@ -831,13 +831,28 @@ namespace NScumm.Core
             {
                 LoadAndSaveEntry.Create(reader =>
                     {
-                        while (((ResType)reader.ReadByte()) != (ResType)0xFF)
+                        ResType tmp;
+                        while ((tmp = (ResType)reader.ReadByte()) != (ResType)0xFF)
                         {
-                            reader.ReadUInt16();
-                            //_res->lock(type, idx);
+                            var index = reader.ReadUInt16();
+                            if (tmp == ResType.FlObject)
+                            {
+                                _objs[index].IsLocked = true;
+                            }
                         }
                     },
-                    writer => writer.Write((byte)0xFF)
+                    writer =>
+                    {
+                        for (int i = 0; i < _objs.Length; i++)
+                        {
+                            if (_objs[i].IsLocked)
+                            {
+                                writer.WriteByte((byte)ResType.FlObject);
+                                writer.WriteUInt16(i);
+                            }
+                        }
+                        writer.Write((byte)0xFF);
+                    }
                 )
             };
             Array.ForEach(lockedObjEntries, entry => entry.Execute(serializer));

@@ -513,7 +513,7 @@ namespace NScumm.Core
             if (_objs[objnum].Images.Count == 0)
                 return;
 
-            var index = eo.Image >= _objs[objnum].Images.Count ? 0 : eo.Image;
+            var index = eo.Image >= _objs[objnum].Images.Count ? 0 : eo.Image < 0 ? 0 : eo.Image;
             var img = _objs[objnum].Images[index];
 
             if (!img.IsBomp)

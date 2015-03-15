@@ -27,6 +27,7 @@ namespace NScumm.Dump
         {
             bool showHelp = false;
             bool dumpAllObjectImages = false;
+            bool dumpAllRoomImages = false;
             string input = null;
             var scripts = new List<int>();
             var scriptObjects = new List<int>();
@@ -41,6 +42,7 @@ namespace NScumm.Dump
                 { "so|script_object=", "the object number whose script has to be dumped", (int s) => scriptObjects.Add(s) },
                 { "sr|script_room=", "the room number whose script has to be dumped", (int s) => scriptRooms.Add(s) },
                 { "r|room=", "the room image to dump", (int r) => rooms.Add(r) },
+                { "ra", "dump all object images",ra => dumpAllRoomImages = ra != null },
                 { "o|object=", "the object images to dump",(int o) => objects.Add(o) },
                 { "oa", "dump all object images",oa => dumpAllObjectImages = oa != null },
                 { "h|help",  "show this message and exit",  v => showHelp = v != null }
@@ -116,10 +118,10 @@ namespace NScumm.Dump
             }
 
             // dump rooms
-            if (rooms.Count > 0)
+            if (dumpAllRoomImages || rooms.Count > 0)
             {
                 var imgDumper = new ImageDumper(game);
-                imgDumper.DumpRoomImages(index, rooms);
+                imgDumper.DumpRoomImages(index, dumpAllRoomImages ? null : rooms);
             }
 
             // dump objects

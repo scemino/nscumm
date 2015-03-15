@@ -54,7 +54,7 @@ namespace NScumm.Dump
 
             foreach (var room in index.Rooms)
             {
-                if (room.Image == null || !roomIds.Contains(room.Number))
+                if (room.Image == null || (roomIds != null && !roomIds.Contains(room.Number)))
                     continue;
 
                 var name = room.Name ?? "room_" + room.Number;

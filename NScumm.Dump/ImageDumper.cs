@@ -73,7 +73,7 @@ namespace NScumm.Dump
             }
         }
 
-        public void DumpObjectImages(ResourceManager index, IList<int> objIds)
+        public void DumpObjectImages(ResourceManager index, IList<int> objIds = null)
         {
             var gdi = new Gdi(null, Game);
             gdi.IsZBufferEnabled = false;
@@ -83,7 +83,7 @@ namespace NScumm.Dump
             {
                 foreach (var obj in room.Objects)
                 {
-                    if (!objIds.Contains(obj.Number))
+                    if (objIds != null && !objIds.Contains(obj.Number))
                         continue;
 
                     try

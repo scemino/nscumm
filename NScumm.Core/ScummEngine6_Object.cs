@@ -522,6 +522,7 @@ namespace NScumm.Core
             var bdd = new BompDrawData();
             bdd.Src = img.Data;
             bdd.Dst = new PixelNavigator(MainVirtScreen.Surfaces[0]);
+            bdd.Dst.GoTo(MainVirtScreen.XStart, 0);
             bdd.X = eo.Rect.Left;
             bdd.Y = eo.Rect.Top;
 

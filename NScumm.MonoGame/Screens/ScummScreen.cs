@@ -41,10 +41,14 @@ namespace NScumm.MonoGame
         Vector2 cursorPos;
         OpenALDriver audioDriver;
         Game game;
-        bool pause;
         bool contentLoaded;
-
         Thread tg;
+
+        public bool IsPaused
+        {
+            get;
+            set;
+        }
 
         public ScummScreen(Game game, GameInfo info)
         {
@@ -65,10 +69,8 @@ namespace NScumm.MonoGame
                 var prop = game.Window.GetType().GetProperty("Window", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
                 var window = (OpenTK.NativeWindow)prop.GetValue(game.Window, null);
 
-                var width = info.Version == 8 ? 640 : 320;
-                var height = info.Version == 8 ? 480 : 200;
-                inputManager = new XnaInputManager(window, width, height);
-                gfx = new XnaGraphicsManager(width, height, window, ScreenManager.GraphicsDevice);
+                inputManager = new XnaInputManager(window, info.Width, info.Height);
+                gfx = new XnaGraphicsManager(info.Width, info.Height, window, ScreenManager.GraphicsDevice);
                 audioDriver = new OpenALDriver();
 
                 // init engines
@@ -86,7 +88,12 @@ namespace NScumm.MonoGame
             var isMenuActive = IsMenuActive();
             if (!isMenuActive)
             {
+                IsPaused = true;
                 ScreenManager.AddScreen(new MainMenuScreen(this));
+            }
+            else
+            {
+                IsPaused = false;
             }
         }
 
@@ -106,7 +113,7 @@ namespace NScumm.MonoGame
         {
             if (!IsMenuActive())
             {
-                if (!pause)
+                if (!IsPaused)
                 {
                     audioDriver.Update();
                 }
@@ -125,7 +132,7 @@ namespace NScumm.MonoGame
             }
             else if (input.IsNewKeyPress(Keys.Space))
             {
-                pause = !pause;
+                IsPaused = !IsPaused;
             }
             else
             {
@@ -140,7 +147,7 @@ namespace NScumm.MonoGame
             tsToWait = engine.RunBootScript();
             while (true)
             {
-                if (!pause)
+                if (!IsPaused)
                 {
                     // Wait...
                     engine.WaitForTimer((int)tsToWait.TotalMilliseconds);

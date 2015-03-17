@@ -73,6 +73,16 @@ namespace NScumm.Core.IO
         public GameFeatures Features { get; set; }
 
         public bool IsOldBundle { get { return Version <= 3 && Features.HasFlag(GameFeatures.SixteenColors); } }
+
+        public int Width
+        {
+            get{ return Version == 8 ? 640 : 320; }
+        }
+
+        public int Height
+        {
+            get{ return Version == 8 ? 480 : 200; }
+        }
     }
 
     public static class GameManager

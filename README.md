@@ -1,7 +1,7 @@
 NSCUMM
 ======
 
-Quick and dirty .NET port of the SCUMM engine version 3, 4, 5, 6 and 7 of the project scummvm.
+Quick and dirty .NET port of the SCUMM engine version 3, 4, 5, 6, 7 and 8 of the project scummvm.
 
 Quick start
 -----------

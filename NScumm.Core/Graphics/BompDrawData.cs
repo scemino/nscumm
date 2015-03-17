@@ -151,12 +151,11 @@ namespace NScumm.Core.Graphics
                 {
                     br.ReadUInt16();
                     // Decode a single (bomp encoded) line, reversed if we are in mirror mode
-                    // TODO: vs mirror
-//                    if (Mirror)
-//                        BompDecodeLineReverse(br, line_buffer, 0, Width);
-//                    else
-                    // Decode a single (bomp encoded) line
-                    BompDecodeLine(br, line_buffer, 0, Width);
+                    if (Mirror)
+                        BompDecodeLineReverse(br, line_buffer, 0, Width);
+                    else
+                        // Decode a single (bomp encoded) line
+                        BompDecodeLine(br, line_buffer, 0, Width);
 
                     // If vertical scaling is enabled, do it
                     if (ScaleY != 255)
@@ -374,6 +373,41 @@ namespace NScumm.Core.Graphics
                 {
                     skip = 128;
                     tmp = scaling[scalingPos++];
+                }
+            }
+        }
+
+        static void BompDecodeLineReverse(BinaryReader br, byte[] dst, int dstPos, int len)
+        {
+            Debug.Assert(len > 0);
+
+            dstPos += len;
+
+            int num;
+            byte code, color;
+
+            while (len > 0)
+            {
+                code = br.ReadByte();
+                num = (code >> 1) + 1;
+                if (num > len)
+                    num = len;
+                len -= num;
+                dstPos -= num;
+                if ((code & 1) != 0)
+                {
+                    color = br.ReadByte();
+                    for (int i = 0; i < num; i++)
+                    {
+                        dst[dstPos + i] = color;
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < num; i++)
+                    {
+                        dst[dstPos + i] = br.ReadByte();
+                    }
                 }
             }
         }

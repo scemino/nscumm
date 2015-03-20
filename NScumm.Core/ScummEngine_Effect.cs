@@ -390,7 +390,7 @@ namespace NScumm.Core
             // Speed up the effect for CD Loom since it uses it so often. I don't
             // think the original had any delay at all, so on modern hardware it
             // wasn't even noticeable.
-            if (_game.Id == "loom")
+            if (_game.GameId == NScumm.Core.IO.GameId.Loom)
                 blits_before_refresh *= 2;
 
             for (i = 0; i < w * h; i++)

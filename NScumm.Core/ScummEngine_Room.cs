@@ -99,11 +99,11 @@ namespace NScumm.Core
         protected string GetIqFilename(string filename)
         {
             var targetName = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Game.Path), Game.Id);
-            if (_game.Id == "atlantis")
+            if (_game.GameId == NScumm.Core.IO.GameId.Indy4)
             {
                 filename = targetName + ".iq";
             }
-            else if (_game.Id == "monkey" || _game.Id == "monkey2")
+            else if (_game.GameId == NScumm.Core.IO.GameId.Monkey1 || _game.GameId == NScumm.Core.IO.GameId.Monkey2)
             {
                 filename = targetName + ".cfg";
             }

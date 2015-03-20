@@ -428,7 +428,7 @@ namespace NScumm.Core
         /// </summary>
         protected void RedrawBGAreas()
         {
-            if (_game.Id != "pass" && _game.Version >= 4 && _game.Version <= 6)
+            if (_game.GameId != GameId.Pass && _game.Version >= 4 && _game.Version <= 6)
             {
                 // Starting with V4 games (with the exception of the PASS demo), text
                 // is drawn over the game graphics (as  opposed to be drawn in a

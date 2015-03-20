@@ -164,7 +164,7 @@ namespace NScumm.Core
             {
 //                Debug.WriteLine("ReadVariable({0}) => {1}", var, _variables[var]);
                 ScummHelper.AssertRange(0, var, _resManager.NumVariables - 1, "variable (reading)");
-                if (var == 490 && _game.Id == "monkey2")
+                if (var == 490 && _game.GameId == GameId.Monkey2)
                 {
                     var = 518;
                 }

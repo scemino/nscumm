@@ -329,7 +329,7 @@ namespace NScumm.Core
             // WORKAROUND for bug in boot script of Loom (CD)
             // The boot script sets the characters of string 21,
             // before creating the string.resource.
-            if (_game.Id == "loom")
+            if (_game.GameId == GameId.Loom)
             {
                 _strings[21] = new byte[13];
             }

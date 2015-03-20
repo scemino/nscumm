@@ -81,7 +81,7 @@ namespace NScumm.Core
                 // update IQ points after loading
                 if (_saveLoadFlag == 2)
                 {
-                    if (_game.Id == "atlantis")
+                    if (_game.GameId == NScumm.Core.IO.GameId.Indy4)
                         RunScript(145, false, false, new int[0]);
                 }
 
@@ -815,11 +815,11 @@ namespace NScumm.Core
             };
             Array.ForEach(variablesEntries, entry => entry.Execute(serializer));
 
-            if (_game.Id == "tentacle") // Maybe misplaced, but that's the main idea
+            if (_game.GameId == GameId.Tentacle) // Maybe misplaced, but that's the main idea
             {
                 _variables[120] = var120Backup;
             }
-            if (_game.Id == "atlantis")
+            if (_game.GameId == GameId.Indy4)
             {
                 _variables[98] = var98Backup;
             }
@@ -1578,7 +1578,7 @@ namespace NScumm.Core
                         if (a == StringIdIqSeries && b == StringIdIqSeries)
                         {
                             // Zak256 loads the IQ script-slot but does not use it -> ignore it
-                            if (_game.Id == "indy3")
+                            if (_game.GameId == GameId.Indy3)
                             {
                                 var ptr = _strings[StringIdIqSeries];
                                 if (ptr != null)
@@ -1734,7 +1734,7 @@ namespace NScumm.Core
 
                         if (a == StringIdIqEpisode && b == StringIdIqEpisode)
                         {
-                            if (_game.Id == "indy3")
+                            if (_game.GameId == NScumm.Core.IO.GameId.Indy3)
                             {
                                 SaveIQPoints();
                             }

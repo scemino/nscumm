@@ -90,7 +90,7 @@ namespace NScumm.Core
 
             // Copy protection was disabled in KIXX XL release (Amiga Disk) and
             // in LucasArts Classic Adventures (PC Disk)
-            if (Game.Id == "monkey" && Game.Variant == "VGA" && script == 0x98)
+            if (Game.GameId == NScumm.Core.IO.GameId.Monkey1 && Game.Variant == "VGA" && script == 0x98)
             {
                 return;
             }

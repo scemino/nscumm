@@ -88,7 +88,7 @@ namespace NScumm.Core
                     _saveTemporaryState = true;
                     _saveLoadSlot = Pop();
                     _saveLoadFlag = Pop();
-                    if (Game.Id == "tentacle")
+                    if (Game.GameId == NScumm.Core.IO.GameId.Tentacle)
                         _saveSound = (_saveLoadSlot != 0);
                     break;
                 case 181:               // SO_ROOM_FADE

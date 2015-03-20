@@ -128,7 +128,7 @@ namespace NScumm.Core
                             var offset = (ushort)GetVarOrDirectWord(OpCodeParameter.Param1);
                             var delay = (ushort)GetVarOrDirectWord(OpCodeParameter.Param2);
 
-                            if (_game.Id == "loom" && _game.Version == 4)
+                            if (_game.GameId == NScumm.Core.IO.GameId.Loom && _game.Version == 4)
                             {
                                 if (offset == 0 && delay == 0)
                                 {

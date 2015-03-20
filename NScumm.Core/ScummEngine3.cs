@@ -406,7 +406,7 @@ namespace NScumm.Core
         void Wait()
         {
             var oldPos = CurrentPos - 1;
-            if (Game.Id == "indy3")
+            if (Game.GameId == GameId.Indy3)
             {
                 _opCode = 2;
             }

@@ -216,7 +216,7 @@ namespace NScumm.Core
                 mouseAndKeyboardStat = KeyCode.Space;
             }
 
-            if ((Game.Id == "indy4" || Game.Id == "pass"))
+            if ((Game.GameId == NScumm.Core.IO.GameId.Indy4 || Game.GameId == NScumm.Core.IO.GameId.Pass))
             {
                 var numpad = new int[]
                 {

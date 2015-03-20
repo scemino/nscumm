@@ -59,7 +59,7 @@ namespace NScumm.Core
                 // update IQ points after loading
                 if (_saveLoadFlag == 2)
                 {
-                    if (Game.Id == "atlantis")
+                    if (Game.GameId == NScumm.Core.IO.GameId.Indy4)
                         RunScript(145, false, false, new int[0]);
                 }
 

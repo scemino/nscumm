@@ -61,7 +61,7 @@ namespace NScumm.Core
             if (Game.Version > 4)
             {
                 /* FIXME - hack around crash in Indy4 (occurs if you try to load after dieing) */
-                if (Game.Id == "indy4" && no == 0)
+                if (Game.GameId == NScumm.Core.IO.GameId.Indy4 && no == 0)
                     no = 1;
 
                 var ptr = ResourceManager.GetCharsetData((byte)no);

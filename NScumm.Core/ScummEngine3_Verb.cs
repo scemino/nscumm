@@ -124,7 +124,7 @@ namespace NScumm.Core
                         var top = GetVarOrDirectWord(OpCodeParameter.Param2);
                         vs.CurRect.Left = left;
                         vs.CurRect.Top = top;
-                        if (Game.Id == "loom" && Game.Version == 4)
+                        if (Game.GameId == NScumm.Core.IO.GameId.Loom && Game.Version == 4)
                         {
                             // FIXME: hack loom notes into right spot
                             if ((verb >= 90) && (verb <= 97))

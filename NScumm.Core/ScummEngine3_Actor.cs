@@ -28,7 +28,7 @@ namespace NScumm.Core
     {
         void WaitForActor()
         {
-            if (Game.Id == "indy3")
+            if (Game.GameId == NScumm.Core.IO.GameId.Indy3)
             {
                 var pos = CurrentPos - 1;
                 var actor = Actors[GetVarOrDirectByte(OpCodeParameter.Param1)];
@@ -78,7 +78,7 @@ namespace NScumm.Core
             var nr2 = GetVarOrDirectByte(OpCodeParameter.Param2);
             int dist = ReadByte();
 
-            if (Game.Id == "atlantis" && nr == 1 && nr2 == 106 &&
+            if (Game.GameId == NScumm.Core.IO.GameId.Indy4 && nr == 1 && nr2 == 106 &&
                 dist == 255 && Slots[CurrentScript].Number == 210)
             {
                 // WORKAROUND bug: Work around an invalid actor bug when using the
@@ -123,14 +123,14 @@ namespace NScumm.Core
         void GetActorX()
         {
             GetResult();
-            var actorIndex = Game.Id == "indy3" ? GetVarOrDirectByte(OpCodeParameter.Param1) : GetVarOrDirectWord(OpCodeParameter.Param1);
+            var actorIndex = Game.GameId == NScumm.Core.IO.GameId.Indy3 ? GetVarOrDirectByte(OpCodeParameter.Param1) : GetVarOrDirectWord(OpCodeParameter.Param1);
             SetResult(GetObjX(actorIndex));
         }
 
         void GetActorY()
         {
             GetResult();
-            var actorIndex = Game.Id == "indy3" ? GetVarOrDirectByte(OpCodeParameter.Param1) : GetVarOrDirectWord(OpCodeParameter.Param1);
+            var actorIndex = Game.GameId == NScumm.Core.IO.GameId.Indy3 ? GetVarOrDirectByte(OpCodeParameter.Param1) : GetVarOrDirectWord(OpCodeParameter.Param1);
             SetResult(GetObjY(actorIndex));
         }
 
@@ -361,7 +361,7 @@ namespace NScumm.Core
             // WORKAROUND bug #746349. This is a really odd bug in either the script
             // or in our script engine. Might be a good idea to investigate this
             // further by e.g. looking at the FOA engine a bit closer.
-            if (Game.Id == "atlantis" && _roomResource == 94 && Slots[CurrentScript].Number == 206 && !IsValidActor(index))
+            if (Game.GameId == NScumm.Core.IO.GameId.Indy4 && _roomResource == 94 && Slots[CurrentScript].Number == 206 && !IsValidActor(index))
             {
                 SetResult(0);
                 return;

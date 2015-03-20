@@ -70,7 +70,7 @@ namespace NScumm.Core
             ConvertMessageToString(msg, _charsetBuffer, 0);
 
             // WORKAROUND for bugs #770039 and #770049
-            if (_game.Id == "loom")
+            if (_game.GameId == GameId.Loom)
             {
                 if (_charsetBuffer[0] == 0)
                     return;
@@ -89,7 +89,7 @@ namespace NScumm.Core
                 int oldact;
 
                 // WORKAROUND bug #770724
-                if (_game.Id == "loom" && _roomResource == 23 &&
+                if (_game.GameId == GameId.Loom && _roomResource == 23 &&
                     _slots[_currentScript].Number == 232 && _actorToPrintStrFor == 0)
                 {
                     _actorToPrintStrFor = 2;    // Could be anything from 2 to 5. Maybe compare to original?

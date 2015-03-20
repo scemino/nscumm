@@ -223,7 +223,7 @@ namespace NScumm.Core
 
             if ((buffer[0] != 0xFF))
             {
-                Debug.WriteLine("DEBUG: {0}", buffer);
+                Debug.WriteLine("DEBUG: {0}", Encoding.ASCII.GetString(buffer));
                 return;
             }
 

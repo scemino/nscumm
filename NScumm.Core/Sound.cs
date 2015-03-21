@@ -31,7 +31,7 @@ namespace NScumm.Core
     {
         public const int TalkSoundID = 10000;
 
-        public int SfxMode { get { return _sfxMode; } }
+        public int SfxMode { get { return sfxMode; } }
 
         public Sound(ScummEngine vm, IMixer mixer)
         {
@@ -112,7 +112,7 @@ namespace NScumm.Core
             }
 
             // Stop all SFX
-            if (!(vm.MusicEngine is NScumm.Core.Audio.IMuse.IMuseDigital))
+            if (!(vm.MusicEngine is IMuseDigital))
             {
                 _mixer.StopAll();
             }
@@ -166,17 +166,17 @@ namespace NScumm.Core
         {
             if (mode == 1)
             {
-                _talkSound_a1 = a;
-                _talkSound_b1 = b;
-                _talkSound_channel = channel;
+                _talkSoundA1 = a;
+                _talkSoundB1 = b;
+                _talkSoundChannel = channel;
             }
             else
             {
-                _talkSound_a2 = a;
-                _talkSound_b2 = b;
+                _talkSoundA2 = a;
+                _talkSoundB2 = b;
             }
 
-            _talkSound_mode |= mode;
+            _talkSoundMode |= mode;
         }
 
         public void SetupSound()
@@ -191,17 +191,17 @@ namespace NScumm.Core
 
         public void ProcessSfxQueues()
         {
-            if (_talkSound_mode != 0)
+            if (_talkSoundMode != 0)
             {
-                if ((_talkSound_mode & 1) != 0)
-                    StartTalkSound(_talkSound_a1, _talkSound_b1, 1);
-                if ((_talkSound_mode & 2) != 0)
-                    _talkChannelHandle = StartTalkSound(_talkSound_a2, _talkSound_b2, 2);
-                _talkSound_mode = 0;
+                if ((_talkSoundMode & 1) != 0)
+                    StartTalkSound(_talkSoundA1, _talkSoundB1, 1);
+                if ((_talkSoundMode & 2) != 0)
+                    _talkChannelHandle = StartTalkSound(_talkSoundA2, _talkSoundB2, 2);
+                _talkSoundMode = 0;
             }
 
             int act = vm.TalkingActor;
-            if ((_sfxMode & 2) != 0 && act != 0)
+            if ((SfxMode & 2) != 0 && act != 0)
             {
                 bool finished;
 
@@ -247,18 +247,18 @@ namespace NScumm.Core
                 }
             }
 
-            if ((_sfxMode & 1) != 0)
+            if ((sfxMode & 1) != 0)
             {
                 if (IsSfxFinished())
                 {
-                    _sfxMode &= ~1;
+                    sfxMode &= ~1;
                 }
             }
         }
 
         public void StopTalkSound()
         {
-            if ((_sfxMode & 2) != 0)
+            if ((sfxMode & 2) != 0)
             {
                 if (vm.MusicEngine is IMuseDigital)
                 {
@@ -273,7 +273,7 @@ namespace NScumm.Core
                     _mixer.StopHandle(_talkChannelHandle);
                 }
 
-                _sfxMode &= ~2;
+                sfxMode &= ~2;
             }
         }
 
@@ -292,14 +292,12 @@ namespace NScumm.Core
             if (vm.MusicEngine != null)
                 vm.MusicEngine.StopSound(sound);
 
-            // TODO:
-//            for (var i = 0; i < soundQueue.Count; i++)
-//            {
-//                if (soundQueue[i] == sound)
-//                {
-//                    soundQueue[i] = 0;
-//                }
-//            }
+            if (soundQueue.Count > 0)
+            {
+                var sounds = soundQueue.ToList();
+                sounds.RemoveAll(obj => obj == sound);
+                soundQueue = new Stack<int>(sounds);
+            }
         }
 
         public void SaveOrLoad(Serializer serializer)
@@ -432,56 +430,15 @@ namespace NScumm.Core
 
             if (vm.Game.GameId == GameId.CurseOfMonkeyIsland)
             {
-                _sfxMode |= mode;
+                sfxMode |= mode;
                 return null;
             }
             else if (vm.Game.GameId == GameId.Dig)
             {
-                _sfxMode |= mode;
+                sfxMode |= mode;
                 if (!(vm.Game.Features.HasFlag(GameFeatures.Demo)))
                     return null;
-
-                string filename;
-                string roomname;
-
-                if (offset == 1)
-                    roomname = "logo";
-                else if (offset == 15)
-                    roomname = "canyon";
-                else if (offset == 17)
-                    roomname = "pig";
-                else if (offset == 18)
-                    roomname = "derelict";
-                else if (offset == 19)
-                    roomname = "wreck";
-                else if (offset == 20)
-                    roomname = "grave";
-                else if (offset == 23)
-                    roomname = "nexus";
-                else if (offset == 79)
-                    roomname = "newton";
-                else
-                {
-                    Console.Error.WriteLine("startTalkSound: dig demo: unknown room number: {0}", offset);
-                    return null;
-                }
-
                 throw new NotImplementedException();
-//                filename=string.Format("audio/{0}.{1}/{2}.voc", roomname, offset, b);
-//                if (!_vm->openFile(*file, filename)) {
-//                    sprintf(filename, "audio/%s_%u/%u.voc", roomname, offset, b);
-//                    _vm->openFile(*file, filename);
-//                }
-//
-//                if (!file->isOpen()) {
-//                    sprintf(filename, "%u.%u.voc", offset, b);
-//                    _vm->openFile(*file, filename);
-//                }
-//
-//                if (!file->isOpen()) {
-//                    warning("startTalkSound: dig demo: voc file not found");
-//                    return;
-//                }
             }
             else
             {
@@ -494,10 +451,9 @@ namespace NScumm.Core
                 // Some games frequently assume that starting one sound effect will
                 // automatically stop any other that may be playing at that time. So
                 // that is what we do here, but we make an exception for speech.
-
                 if (mode == 1 && (vm.Game.GameId == GameId.Tentacle || vm.Game.GameId == GameId.SamNMax))
                 {
-                    id = 777777 + _talkSound_channel;
+                    id = 777777 + _talkSoundChannel;
                     _mixer.StopID(id);
                 }
 
@@ -528,17 +484,17 @@ namespace NScumm.Core
                 //      size -= num * 2;
 
                 _mouthSyncTimes[num] = 0xFFFF;
-                _sfxMode |= mode;
+                sfxMode |= mode;
                 _curSoundPos = 0;
                 _mouthSyncMode = true;
             }
 
             var input = new VocStream(file, true);
 
-            if (vm.MusicEngine is IMuseDigital)
+            var iMuseDigital = vm.MusicEngine as IMuseDigital;
+            if (iMuseDigital != null)
             {
-                //_vm->_imuseDigital->stopSound(kTalkSoundID);
-                ((IMuseDigital)vm.MusicEngine).StartVoice(TalkSoundID, input);
+                iMuseDigital.StartVoice(TalkSoundID, input);
             }
             else
             {
@@ -571,14 +527,14 @@ namespace NScumm.Core
         Queue<int> soundQueueIMuse;
 
         string _sfxFilename;
-        int _talkSound_a1;
-        int _talkSound_b1;
-        int _talkSound_a2;
-        int _talkSound_b2;
-        int _talkSound_channel;
-        int _talkSound_mode;
+        int _talkSoundA1;
+        int _talkSoundB1;
+        int _talkSoundA2;
+        int _talkSoundB2;
+        int _talkSoundChannel;
+        int _talkSoundMode;
         ushort[] _mouthSyncTimes = new ushort[64];
-        internal int _sfxMode;
+        int sfxMode;
         int _curSoundPos;
         bool _mouthSyncMode;
         SoundHandle _talkChannelHandle;

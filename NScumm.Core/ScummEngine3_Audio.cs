@@ -43,8 +43,8 @@ namespace NScumm.Core
 
         void StopSound()
         {
-            GetVarOrDirectByte(OpCodeParameter.Param1);
-            //Sound.stopSound();
+            var sound = GetVarOrDirectByte(OpCodeParameter.Param1);
+            Sound.StopSound(sound);
         }
 
         void IsSoundRunning()

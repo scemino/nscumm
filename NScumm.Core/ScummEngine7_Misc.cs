@@ -233,7 +233,7 @@ namespace NScumm.Core
 
             if (Variables[VariableHaveMessage.Value] != 0)
             {
-                if ((Sound._sfxMode & 2) == 0)
+                if ((Sound.SfxMode & 2) == 0)
                 {
                     StopTalk();
                 }

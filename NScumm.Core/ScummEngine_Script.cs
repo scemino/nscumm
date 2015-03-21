@@ -325,7 +325,10 @@ namespace NScumm.Core
             }
 
             roomData = _resManager.GetRoom(_roomResource);
-            SetCurrentPalette(0);
+            if (roomData.HasPalette)
+            {
+                SetCurrentPalette(0);
+            }
 
             Gdi.NumZBuffer = GetNumZBuffers();
 
@@ -334,7 +337,13 @@ namespace NScumm.Core
             ResetRoomObjects();
             _drawingObjects.Clear();
 
-            _mainVirtScreen = new VirtScreen(MainVirtScreen.TopLine, ScreenWidth, roomData.Header.Height - MainVirtScreen.TopLine, MainVirtScreen.PixelFormat, 2, true);
+            if (Game.Version >= 7)
+            {
+                // Resize main virtual screen in V7 games. This is necessary
+                // because in V7, rooms may be higher than one screen, so we have
+                // to accomodate for that.
+                _mainVirtScreen = new VirtScreen(MainVirtScreen.TopLine, ScreenWidth, roomData.Header.Height - MainVirtScreen.TopLine, MainVirtScreen.PixelFormat, 2, true);
+            }
             Gdi.SetMaskHeight(roomData.Header.Height);
 
             if (VariableRoomWidth.HasValue && VariableRoomHeight.HasValue)
@@ -350,13 +359,13 @@ namespace NScumm.Core
             {
                 Variables[VariableCameraMinY.Value] = ScreenHeight / 2;
                 Variables[VariableCameraMaxY.Value] = roomData.Header.Height - (ScreenHeight / 2);
-                SetCameraAt(new Point((short)(ScreenWidth / 2), (short)(ScreenHeight / 2)));
+                SetCameraAt(new Point((ScreenWidth / 2), (ScreenHeight / 2)));
             }
             else
             {
                 _camera.Mode = CameraMode.Normal;
-                _camera.CurrentPosition.X = _camera.DestinationPosition.X = (short)(ScreenWidth / 2);
-                _camera.CurrentPosition.Y = _camera.DestinationPosition.Y = (short)(ScreenHeight / 2);
+                _camera.CurrentPosition.X = _camera.DestinationPosition.X = (ScreenWidth / 2);
+                _camera.CurrentPosition.Y = _camera.DestinationPosition.Y = (ScreenHeight / 2);
             }
 
             if (_roomResource == 0)

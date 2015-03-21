@@ -1,7 +1,7 @@
 NSCUMM
 ======
 
-Quick and dirty .NET port of the SCUMM engine version 3, 4, 5, 6, 7 and 8 of the project scummvm.
+Quick and dirty .NET port of the SCUMM engine version 3 to 8 of the project scummvm.
 
 Quick start
 -----------
@@ -78,8 +78,6 @@ Known Issues
 -------------------------
 
 Missing some screen effects
-
-Cursor is sometimes not transparent
 
 And many other things ???
 

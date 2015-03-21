@@ -110,6 +110,10 @@ namespace NScumm.Core
                     {
                         pixels[offset] = cursorColor;
                     }
+                    else
+                    {
+                        pixels[offset] = 0xFF;
+                    }
                     offset++;
                 }
             }

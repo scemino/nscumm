@@ -42,19 +42,6 @@ namespace NScumm.Core
 
         internal ScriptSlot[] Slots { get { return _slots; } }
 
-        void ChainScript()
-        {
-            var script = GetVarOrDirectByte(OpCodeParameter.Param1);
-            var vars = GetWordVarArgs();
-            var cur = _currentScript;
-
-            _slots[cur].Number = 0;
-            _slots[cur].Status = ScriptStatus.Dead;
-            _currentScript = 0xFF;
-
-            RunScript(script, _slots[cur].FreezeResistant, _slots[cur].Recursive, vars);
-        }
-
         protected void UnfreezeScripts()
         {
             for (var i = 0; i < NumScriptSlot; i++)
@@ -66,14 +53,6 @@ namespace NScumm.Core
             {
                 _sentence[i].Unfreeze();
             }
-        }
-
-        void BeginOverride()
-        {
-            if (ReadByte() != 0)
-                BeginOverrideCore();
-            else
-                EndOverrideCore();
         }
 
         protected void BeginOverrideCore()
@@ -145,12 +124,6 @@ namespace NScumm.Core
             }
         }
 
-        void CutScene()
-        {
-            var args = GetWordVarArgs();
-            BeginCutscene(args);
-        }
-
         protected void EndCutsceneCore()
         {
             var ss = _slots[_currentScript];
@@ -172,15 +145,6 @@ namespace NScumm.Core
 
             if (Variables[VariableCutSceneEndScript.Value] != 0)
                 RunScript(Variables[VariableCutSceneEndScript.Value], false, false, args);
-        }
-
-        void StartObject()
-        {
-            var obj = GetVarOrDirectWord(OpCodeParameter.Param1);
-            var script = (byte)GetVarOrDirectByte(OpCodeParameter.Param2);
-
-            var data = GetWordVarArgs();
-            RunObjectScript(obj, script, false, false, data);
         }
 
         protected void StopObjectCode()
@@ -210,32 +174,6 @@ namespace NScumm.Core
             }
 
             _currentScript = 0xFF;
-        }
-
-        void StartScript()
-        {
-            var op = _opCode;
-            var script = GetVarOrDirectByte(OpCodeParameter.Param1);
-            var data = GetWordVarArgs();
-
-            // Copy protection was disabled in KIXX XL release (Amiga Disk) and
-            // in LucasArts Classic Adventures (PC Disk)
-            if (_game.GameId == NScumm.Core.IO.GameId.Monkey1 && _game.Variant == "VGA" && script == 0x98)
-            {
-                return;
-            }
-
-            RunScript(script, (op & 0x20) != 0, (op & 0x40) != 0, data);
-        }
-
-        void StopScript()
-        {
-            var script = GetVarOrDirectByte(OpCodeParameter.Param1);
-
-            if (script == 0)
-                StopObjectCode();
-            else
-                StopScript(script);
         }
 
         internal void StartScene(byte room, Actor a = null, int objectNr = 0)

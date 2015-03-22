@@ -279,19 +279,6 @@ namespace NScumm.Core
             _sentence[SentenceNum++] = new Sentence(verb, objectA, objectB);
         }
 
-        void WaitForSentence()
-        {
-            if (SentenceNum != 0)
-            {
-                if (_sentence[SentenceNum - 1].IsFrozen && !IsScriptInUse(Variables[VariableSentenceScript.Value]))
-                    return;
-            }
-            else if (!IsScriptInUse(Variables[VariableSentenceScript.Value]))
-                return;
-            _currentPos--;
-            BreakHereCore();
-        }
-
         protected void RedrawVerbs()
         {
 //            if (_game.Version <= 2 && !(_userState & USERSTATE_IFACE_VERBS)) // Don't draw verbs unless active
@@ -315,7 +302,6 @@ namespace NScumm.Core
             }
             _verbMouseOver = verb;
         }
-
     }
 }
 

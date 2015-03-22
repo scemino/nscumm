@@ -1192,12 +1192,12 @@ namespace NScumm.Core.Audio.IMuse
             if (!_initialized && (cmd != 0 || param != 0))
                 return -1;
 
-            {
-                var str = string.Format("DoCommand - {0} ({1}/{2})", a[0], (int)param, (int)cmd);
-                for (i = 1; i < numargs; ++i)
-                    str += string.Format(", {0}", a[i]);
-                Debug.WriteLine(str);
-            }
+//            {
+//                var str = string.Format("DoCommand - {0} ({1}/{2})", a[0], (int)param, (int)cmd);
+//                for (i = 1; i < numargs; ++i)
+//                    str += string.Format(", {0}", a[i]);
+//                Debug.WriteLine(str);
+//            }
 
             if (param == 0)
             {

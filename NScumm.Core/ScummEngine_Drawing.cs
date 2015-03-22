@@ -550,7 +550,6 @@ namespace NScumm.Core
             HandleShaking();
         }
 
-
         void UpdateDirtyScreen(VirtScreen vs)
         {
             // Do nothing for unused virtual screens

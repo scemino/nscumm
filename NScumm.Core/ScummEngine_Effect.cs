@@ -21,7 +21,6 @@
 using System;
 using NScumm.Core.Graphics;
 using System.Threading;
-using NScumm.Core.Input;
 
 namespace NScumm.Core
 {
@@ -68,7 +67,6 @@ namespace NScumm.Core
 				// that broke the FOA intro. Probably other things as well.
 				//
 				// Hopefully it's safe to do it at this point, at least.
-//                    MainVirtScreen.SetDirtyRange(0, 0);
                     MainVirtScreen.SetDirtyRange(0, 0);
                     DoTransitionEffect(effect - 1);
                     break;
@@ -405,13 +403,13 @@ namespace NScumm.Core
                 if (++blits >= blits_before_refresh)
                 {
                     blits = 0;
-                    System.Threading.Thread.Sleep(30);
+                    Thread.Sleep(30);
                 }
             }
 
             if (blits != 0)
             {
-                System.Threading.Thread.Sleep(30);
+                Thread.Sleep(30);
             }
         }
 
@@ -539,8 +537,7 @@ namespace NScumm.Core
             // ditto
         }
 
-        static readonly TransitionEffect[] transitionEffects = new ScummEngine.TransitionEffect[]
-        {
+        static readonly TransitionEffect[] transitionEffects = {
             // Iris effect (looks like an opening/closing camera iris)
             new ScummEngine.TransitionEffect
             {

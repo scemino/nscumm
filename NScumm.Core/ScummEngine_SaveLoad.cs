@@ -32,6 +32,7 @@ namespace NScumm.Core
 {
     partial class ScummEngine
     {
+        const byte TumbnailVersion = 1;
         const uint InfoSectionVersion = 2;
         const uint SaveInfoSectionSize = (4 + 4 + 4 + 4 + 4 + 4 + 2);
         const uint SaveCurrentVersion = 94;
@@ -40,7 +41,34 @@ namespace NScumm.Core
         protected int _saveLoadSlot;
         protected bool _saveTemporaryState;
 
-        string _saveLoadVarsFilename;
+        enum ResType
+        {
+            Invalid = 0,
+            First = 1,
+            Room = 1,
+            Script = 2,
+            Costume = 3,
+            Sound = 4,
+            Inventory = 5,
+            Charset = 6,
+            String = 7,
+            Verb = 8,
+            ActorName = 9,
+            Buffer = 10,
+            ScaleTable = 11,
+            Temp = 12,
+            FlObject = 13,
+            Matrix = 14,
+            Box = 15,
+            ObjectName = 16,
+            RoomScripts = 17,
+            RoomImage = 18,
+            Image = 19,
+            Talkie = 20,
+            SpoolBuffer = 21,
+            VerbImage = 22,
+            Last = 22
+        }
 
         public void Load(string savegame)
         {
@@ -1284,35 +1312,6 @@ namespace NScumm.Core
             }
         }
 
-        enum ResType
-        {
-            Invalid = 0,
-            First = 1,
-            Room = 1,
-            Script = 2,
-            Costume = 3,
-            Sound = 4,
-            Inventory = 5,
-            Charset = 6,
-            String = 7,
-            Verb = 8,
-            ActorName = 9,
-            Buffer = 10,
-            ScaleTable = 11,
-            Temp = 12,
-            FlObject = 13,
-            Matrix = 14,
-            Box = 15,
-            ObjectName = 16,
-            RoomScripts = 17,
-            RoomImage = 18,
-            Image = 19,
-            Talkie = 20,
-            SpoolBuffer = 21,
-            VerbImage = 22,
-            Last = 22
-        }
-
         public void Save(string filename)
         {
             _saveLoadFlag = 1;
@@ -1345,9 +1344,7 @@ namespace NScumm.Core
             return header != null;
         }
 
-        const byte TumbnailVersion = 1;
-
-        void SaveHeader(string name, BinaryWriter bw)
+        static void SaveHeader(string name, BinaryWriter bw)
         {
             var hdr = new SaveGameHeader();
             hdr.Type = ScummHelper.MakeTag('S', 'C', 'V', 'M');
@@ -1366,7 +1363,7 @@ namespace NScumm.Core
             bw.Write(data2);
         }
 
-        SaveStateMetaInfos LoadInfos(BinaryReader reader)
+        static SaveStateMetaInfos LoadInfos(BinaryReader reader)
         {
             var stuff = new SaveStateMetaInfos();
             var section = new SaveInfoSection();
@@ -1420,7 +1417,7 @@ namespace NScumm.Core
             return stuff;
         }
 
-        void SaveInfos(BinaryWriter writer)
+        static void SaveInfos(BinaryWriter writer)
         {
             var section = new SaveInfoSection();
             section.Type = ScummHelper.MakeTag('I', 'N', 'F', 'O');
@@ -1553,85 +1550,6 @@ namespace NScumm.Core
             return string.Format("{0}.{1}{2:D2}", Game.Id, temporary ? 'c' : 's', slot);
         }
 
-        protected void LoadVars()
-        {
-            int a, b;
-
-            while ((_opCode = ReadByte()) != 0)
-            {
-                switch (_opCode & 0x1F)
-                {
-                    case 0x01: // read a range of variables
-                        GetResult();
-                        a = _resultVarIndex;
-                        GetResult();
-                        b = _resultVarIndex;
-                        //debug(0, "stub loadVars: vars %d -> %d", a, b);
-                        break;
-                    case 0x02: // read a range of string variables
-                        a = GetVarOrDirectByte(OpCodeParameter.Param1);
-                        b = GetVarOrDirectByte(OpCodeParameter.Param2);
-
-                        int slot;
-                        int savegameId;
-
-                        if (a == StringIdIqSeries && b == StringIdIqSeries)
-                        {
-                            // Zak256 loads the IQ script-slot but does not use it -> ignore it
-                            if (_game.GameId == GameId.Indy3)
-                            {
-                                var ptr = _strings[StringIdIqSeries];
-                                if (ptr != null)
-                                {
-                                    LoadIqPoints(ptr);
-                                }
-                            }
-                            break;
-                        }
-
-                        var avail_saves = ListSavegames(100);
-                        for (slot = a; slot <= b; ++slot)
-                        {
-                            var slotContent = _strings[slot];
-                        
-                            // load savegame names
-                            savegameId = slot - a + 1;
-                            string name;
-                            if (avail_saves[savegameId] && GetSavegameName(savegameId, out name))
-                            {
-                                int pos;
-                                var ptr = name;
-                                // slotContent ends with {'\0','@'} -> max. length = slotSize-2
-                                for (pos = 0; pos < name.Length - 2; ++pos)
-                                {
-                                    if (ptr[pos] == 0)
-                                        break;
-                                    // replace special characters
-                                    if (ptr[pos] >= 32 && ptr[pos] <= 122 && ptr[pos] != 64)
-                                        slotContent[pos] = (byte)ptr[pos];
-                                    else
-                                        slotContent[pos] = (byte)'_';
-                                }
-                                slotContent[pos] = 0;
-                            }
-                            else
-                            {
-                                slotContent[0] = 0;
-                            }
-                        }
-                        break;
-                    case 0x03: // open file
-                        _saveLoadVarsFilename = ReadString();
-                        break;
-                    case 0x04:
-                        return;
-                    case 0x1F: // close file
-                        _saveLoadVarsFilename = null;
-                        return;
-                }
-            }
-        }
-
         protected bool GetSavegameName(int slot, out string desc)
         {
             bool result;
@@ -1644,7 +1562,7 @@ namespace NScumm.Core
             return result;
         }
 
-        bool GetSavegameName(FileStream stream, out string desc)
+        static bool GetSavegameName(FileStream stream, out string desc)
         {
             SaveGameHeader hdr;
 
@@ -1670,88 +1588,6 @@ namespace NScumm.Core
 
             desc = hdr.Name;
             return true;
-        }
-
-        string GetIqPointsFilename()
-        {
-            var filename = Path.Combine(Path.GetDirectoryName(Game.Path), Game.Id + ".iq");
-            return filename;
-        }
-
-        void LoadIqPoints(byte[] ptr)
-        {
-            // load Indy3 IQ-points
-            var filename = GetIqPointsFilename();
-            if (File.Exists(filename))
-            {
-                using (var file = File.OpenRead(filename))
-                {
-                    file.Read(ptr, 0, ptr.Length);
-                }
-            }
-        }
-
-        void SaveIQPoints()
-        {
-            var filename = GetIqPointsFilename();
-            using (var file = File.OpenWrite(filename))
-            {
-                var data = _strings[StringIdIqEpisode];
-                file.Write(data, 0, data.Length);
-            }
-        }
-
-        string ReadString()
-        {
-            var sb = new StringBuilder();
-            var chr = (char)_currentScriptData[_currentPos++];
-            while (chr != 0)
-            {
-                sb.Append(chr);
-                chr = (char)_currentScriptData[_currentPos++];
-            }
-            return sb.ToString();
-        }
-
-        protected void SaveVars()
-        {
-            int a, b;
-
-            while ((_opCode = ReadByte()) != 0)
-            {
-                switch (_opCode & 0x1F)
-                {
-                    case 0x01: // write a range of variables
-                        GetResult();
-                        a = _resultVarIndex;
-                        GetResult();
-                        b = _resultVarIndex;
-                        //debug(0, "stub saveVars: vars %d -> %d", a, b);
-                        break;
-                    case 0x02: // write a range of string variables
-                        a = GetVarOrDirectByte(OpCodeParameter.Param1);
-                        b = GetVarOrDirectByte(OpCodeParameter.Param2);
-
-                        if (a == StringIdIqEpisode && b == StringIdIqEpisode)
-                        {
-                            if (_game.GameId == NScumm.Core.IO.GameId.Indy3)
-                            {
-                                SaveIQPoints();
-                            }
-                            break;
-                        }
-                        // FIXME: changing savegame-names not supported
-                        break;
-                    case 0x03: // open file
-                        _saveLoadVarsFilename = ReadString();
-                        break;
-                    case 0x04:
-                        return;
-                    case 0x1F: // close file
-                        _saveLoadVarsFilename = null;
-                        return;
-                }
-            }
         }
     }
 }

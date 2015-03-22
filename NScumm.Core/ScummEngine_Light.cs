@@ -69,22 +69,6 @@ namespace NScumm.Core
         {
             return GetCurrentLights().HasFlag(LightModes.RoomLightsOn);
         }
-
-        void Lights()
-        {
-            var a = GetVarOrDirectByte(OpCodeParameter.Param1);
-            var b = ReadByte();
-            var c = ReadByte();
-
-            if (c == 0)
-                _variables[VariableCurrentLights.Value] = a;
-            else if (c == 1)
-            {
-                _flashlight.XStrips = (ushort)a;
-                _flashlight.YStrips = (ushort)b;
-            }
-            _fullRedraw = true;
-        }
     }
 }
 

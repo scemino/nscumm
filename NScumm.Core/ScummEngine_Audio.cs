@@ -31,11 +31,6 @@ namespace NScumm.Core
 
         internal IMixer Mixer { get; private set; }
 
-        //        public void UpdateSound()
-        //        {
-        //            Sound.Update();
-        //        }
-
         void PlayActorSounds()
         {
             for (var i = 1; i < Actors.Length; i++)
@@ -57,7 +52,6 @@ namespace NScumm.Core
                 }
             }
         }
-
     }
 }
 

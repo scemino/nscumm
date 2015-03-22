@@ -425,8 +425,6 @@ namespace NScumm.Core
                 }
             }
         }
-
-
     }
 }
 

@@ -86,12 +86,6 @@ namespace NScumm.Core
             return _resManager.ObjectStateTable[obj];
         }
 
-        void GetObjectOwner()
-        {
-            GetResult();
-            SetResult(GetOwnerCore(GetVarOrDirectWord(OpCodeParameter.Param1)));
-        }
-
         internal bool GetObjectOrActorXY(int obj, out Point p)
         {
             p = new Point();
@@ -368,7 +362,7 @@ namespace NScumm.Core
 
                 var x = od.Position.X + od.Hotspots[state].X;
                 var y = od.Position.Y + od.Hotspots[state].Y;
-                p = new Point((short)x, (short)y);
+                p = new Point(x, y);
             }
             else
             {
@@ -448,7 +442,7 @@ namespace NScumm.Core
                 return;
 
             var xpos = (od.Position.X / 8);
-            var ypos = (int)od.Position.Y;
+            var ypos = od.Position.Y;
 
             var width = od.Width / 8;
             var height = (od.Height &= 0xFFF8); // Mask out last 3 bits
@@ -594,8 +588,6 @@ namespace NScumm.Core
                 }
             }
         }
-
-
     }
 }
 

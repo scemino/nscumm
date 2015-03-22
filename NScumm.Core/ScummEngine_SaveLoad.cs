@@ -390,7 +390,7 @@ namespace NScumm.Core
                 LoadAndSaveEntry.Create(reader => _talkDelay = reader.ReadInt16(), writer => writer.WriteInt16(_talkDelay), 8),
                 LoadAndSaveEntry.Create(reader => reader.ReadInt16(), writer => writer.WriteInt16(0), 8),
                 LoadAndSaveEntry.Create(reader => reader.ReadInt16(), writer => writer.WriteInt16(0), 8, 27),
-                LoadAndSaveEntry.Create(reader => _sentenceNum = reader.ReadByte(), writer => writer.WriteByte(_sentenceNum), 8),
+                LoadAndSaveEntry.Create(reader => SentenceNum = reader.ReadByte(), writer => writer.WriteByte(SentenceNum), 8),
 
                 LoadAndSaveEntry.Create(reader => cutScene.SaveOrLoad(serializer), writer => cutScene.SaveOrLoad(serializer), 8),
 

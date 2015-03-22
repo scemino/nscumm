@@ -21,7 +21,6 @@
 using System;
 using NScumm.Core.Graphics;
 using NScumm.Core.IO;
-using System.Threading;
 
 namespace NScumm.Core
 {
@@ -264,7 +263,7 @@ namespace NScumm.Core
                 _nextTop = _charset.Top;
             }
 
-            _string[a].Position = new Point((short)_charset.Str.Right, _string[a].Position.Y);
+            _string[a].Position = new Point(_charset.Str.Right, _string[a].Position.Y);
         }
 
         protected internal void SetDirtyColors(int min, int max)
@@ -402,7 +401,7 @@ namespace NScumm.Core
                 if (_cursor.State > 0)
                 {
                     var pos = _inputManager.GetMousePosition();
-                    VerbMouseOver(FindVerbAtPos((int)pos.X, (int)pos.Y));
+                    VerbMouseOver(FindVerbAtPos(pos));
                 }
             }
         }

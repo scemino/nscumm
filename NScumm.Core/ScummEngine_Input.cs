@@ -88,7 +88,7 @@ namespace NScumm.Core
                 if (zone == null)
                     return;
 
-                var over = FindVerbAtPos(_mousePos.X, _mousePos.Y);
+                var over = FindVerbAtPos(_mousePos);
 
                 if (over != 0)
                 {

@@ -321,6 +321,9 @@ namespace NScumm.Core
 
             if (_currentRoom == 0)
             {
+                roomData.EntryScript.Data = new byte[0];
+                roomData.ExitScript.Data = new byte[0];
+                roomData.Objects.Clear();
                 return;
             }
 
@@ -719,11 +722,11 @@ namespace NScumm.Core
                         return;
             }
 
-            if (_sentenceNum == 0 || _sentence[_sentenceNum - 1].IsFrozen)
+            if (SentenceNum == 0 || _sentence[SentenceNum - 1].IsFrozen)
                 return;
 
-            _sentenceNum--;
-            var st = _sentence[_sentenceNum];
+            SentenceNum--;
+            var st = _sentence[SentenceNum];
 
             if (Game.Version < 7 && st.Preposition && st.ObjectB == st.ObjectA)
                 return;

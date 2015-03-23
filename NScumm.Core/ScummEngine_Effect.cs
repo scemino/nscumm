@@ -94,7 +94,7 @@ namespace NScumm.Core
                     break;
 
                 default:
-                    throw new NotImplementedException(string.Format("Unknown screen effect {0}", effect));
+                    throw new NotSupportedException(string.Format("Unknown screen effect {0}", effect));
             }
             _screenEffectFlag = true;
         }
@@ -173,126 +173,130 @@ namespace NScumm.Core
 
         void ScrollEffect(int dir)
         {
-//            var vs = MainVirtScreen;
-//
-//            int x, y;
-//            int step;
-//            var delay = VariableFadeDelay.HasValue ? Variables[VariableFadeDelay.Value] * FadeDelay : PictureDelay;
-//
-//            if ((dir == 0) || (dir == 1))
-//                step = vs.Height;
-//            else
-//                step = vs.Width;
-//
-//            step = (step * delay) / Scrolltime;
+            var vs = MainVirtScreen;
 
-//            byte* src;
-//            int m = _textSurfaceMultiplier;
-//            int vsPitch = vs.Pitch;
-//
-//            switch (dir)
-//            {
-//                case 0:
-//                    //up
-//                    y = 1 + step;
-//                    while (y < vs.Height)
-//                    {
-//                        MoveScreen(0, -step, vs.Height);
-//
-//                        {
-//                            var src = vs.getPixels(0, y - step);
-//                            _gfxManager.CopyRectToScreen(src,
-//                                vsPitch,
-//                                0, (vs.Height - step) * m,
-//                                vs.Width * m, step * m);
-//                            _gfxManager.UpdateScreen();
-//                        }
-//
-//                        WaitForTimer(delay);
-//                        y += step;
-//                    }
-//                    break;
-//                case 1:
-//                    // down
-//                    y = 1 + step;
-//                    while (y < vs.h)
-//                    {
-//                        MoveScreen(0, step, vs.h);
-//
-//                        {
-//                            src = vs.getPixels(0, vs.h - y);
-//                            _gfxManager.CopyRectToScreen(src,
-//                                vsPitch,
-//                                0, 0,
-//                                vs.w * m, step * m);
-//                            _gfxManager.UpdateScreen();
-//                        }
-//
-//                        WaitForTimer(delay);
-//                        y += step;
-//                    }
-//                    break;
-//                case 2:
-//                    // left
-//                    x = 1 + step;
-//                    while (x < vs.w)
-//                    {
-//                        MoveScreen(-step, 0, vs.h);
-//
-//                        {
-//                            src = vs.getPixels(x - step, 0);
-//                            _gfxManager.CopyRectToScreen(src,
-//                                vsPitch,
-//                                (vs.w - step) * m, 0,
-//                                step * m, vs.h * m);
-//                            _gfxManager.UpdateScreen();
-//                        }
-//
-//                        WaitForTimer(delay);
-//                        x += step;
-//                    }
-//                    break;
-//                case 3:
-//                    // right
-//                    x = 1 + step;
-//                    while (x < vs.w)
-//                    {
-//                        MoveScreen(step, 0, vs.h);
-//
-//                        {
-//                            src = vs.getPixels(vs.w - x, 0);
-//                            _gfxManager.CopyRectToScreen(src,
-//                                vsPitch,
-//                                0, 0,
-//                                step, vs.h);
-//                            _gfxManager.UpdateScreen();
-//                        }
-//
-//                        WaitForTimer(delay);
-//                        x += step;
-//                    }
-//                    break;
-//            }
+            int step;
+            var delay = VariableFadeDelay.HasValue ? Variables[VariableFadeDelay.Value] * FadeDelay : PictureDelay;
+
+            if ((dir == 0) || (dir == 1))
+                step = vs.Height;
+            else
+                step = vs.Width;
+
+            step = (step * delay) / Scrolltime;
+
+            int m = _textSurfaceMultiplier;
+            int vsPitch = vs.Pitch;
+
+            switch (dir)
+            {
+                case 0:
+                    //up
+                    {
+                        var y = 1 + step;
+                        while (y < vs.Height)
+                        {
+                            MoveScreen(0, -step, vs.Height);
+
+                            var src = vs.Surfaces[0].Pixels;
+                            _gfxManager.CopyRectToScreen(src, vsPitch,
+                                0, y - step,
+                                0, (vs.Height - step) * m,
+                                vs.Width * m, step * m);
+                            _gfxManager.UpdateScreen();
+
+                            WaitForTimer(delay);
+                            y += step;
+                        }
+                    }
+                    break;
+                case 1:
+                    // down
+                    {
+                        var y = 1 + step;
+                        while (y < vs.Height)
+                        {
+                            MoveScreen(0, step, vs.Height);
+
+                            var src = vs.Surfaces[0].Pixels;
+                            _gfxManager.CopyRectToScreen(src,
+                                vsPitch,
+                                0, vs.Height - y,
+                                0, 0,
+                                vs.Width * m, step * m);
+                            _gfxManager.UpdateScreen();
+
+                            WaitForTimer(delay);
+                            y += step;
+                        }
+                    }
+                    break;
+                case 2:
+                    // left
+                    {
+                        var x = 1 + step;
+                        while (x < vs.Width)
+                        {
+                            MoveScreen(-step, 0, vs.Height);
+
+                            var src = vs.Surfaces[0].Pixels;
+                            _gfxManager.CopyRectToScreen(src,
+                                vsPitch,
+                                x - step, 0,
+                                (vs.Width - step) * m, 0,
+                                step * m, vs.Height * m);
+                            _gfxManager.UpdateScreen();
+
+                            WaitForTimer(delay);
+                            x += step;
+                        }
+                    }
+                    break;
+                case 3:
+                    // right
+                    {
+                        var x = 1 + step;
+                        while (x < vs.Width)
+                        {
+                            MoveScreen(step, 0, vs.Height);
+
+                            {
+                                var src = vs.Surfaces[0].Pixels;
+                                _gfxManager.CopyRectToScreen(src,
+                                    vsPitch,
+                                    vs.Width - x, 0,
+                                    0, 0,
+                                    step, vs.Height);
+                                _gfxManager.UpdateScreen();
+                            }
+
+                            WaitForTimer(delay);
+                            x += step;
+                        }
+                    }
+                    break;
+            }
         }
 
-        /**
- * Moves the screen content by the offset specified via dx/dy.
- * Only the region from x=0 till x=height-1 is affected.
- * @param dx    the horizontal offset.
- * @param dy    the vertical offset.
- * @param height    the number of lines which in which the move will be done.
- */
+        /// <summary>
+        /// Moves the screen content by the offset specified via dx/dy.
+        /// Only the region from x=0 till x=height-1 is affected.
+        /// </summary>
+        /// <param name="dx">The horizontal offset.</param>
+        /// <param name="dy">The vertical offset.</param>
+        /// <param name="height">The number of lines which in which the move will be done.</param>
         void MoveScreen(int dx, int dy, int height)
         {
             // Short circuit check - do we have to do anything anyway?
-//            if ((dx == 0 && dy == 0) || height <= 0)
-//                return;
-//
-//            var screen = _system->lockScreen();
-//            if (!screen)
-//                return;
-//            screen->move(dx, dy, height);
-//            _system->unlockScreen();
+            if ((dx == 0 && dy == 0) || height <= 0)
+                return;
+
+            var screen = _gfxManager.Capture();
+            if (screen == null)
+                return;
+
+            screen.Move(dx, dy, height);
+            _gfxManager.CopyRectToScreen(screen.Pixels, screen.Pitch, 0, 0, screen.Width, screen.Height);
         }
 
         /// <summary>
@@ -437,7 +441,7 @@ namespace NScumm.Core
             int i, j;
             int bottom;
             int l, t, r, b;
-            var height = Math.Min((int)MainVirtScreen.Height, ScreenHeight);
+            var height = Math.Min(MainVirtScreen.Height, ScreenHeight);
             var delay = VariableFadeDelay.HasValue ? Variables[VariableFadeDelay.Value] * FadeDelay : PictureDelay;
 
             for (i = 0; i < 16; i++)
@@ -537,128 +541,129 @@ namespace NScumm.Core
             // ditto
         }
 
-        static readonly TransitionEffect[] transitionEffects = {
-            // Iris effect (looks like an opening/closing camera iris)
-            new ScummEngine.TransitionEffect
+        static readonly TransitionEffect[] transitionEffects =
             {
-                numOfIterations = 13,
-                deltaTable = new sbyte[]
+                // Iris effect (looks like an opening/closing camera iris)
+                new ScummEngine.TransitionEffect
                 {
-                    1,  1, -1,  1,
-                    -1,  1, -1, -1,
-                    1, -1, -1, -1,
-                    1,  1,  1, -1
+                    numOfIterations = 13,
+                    deltaTable = new sbyte[]
+                    {
+                        1,  1, -1,  1,
+                        -1,  1, -1, -1,
+                        1, -1, -1, -1,
+                        1,  1,  1, -1
+                    },
+                    stripTable = new byte[]
+                    {
+                        0,  0, 39,  0,
+                        39,  0, 39, 24,
+                        0, 24, 39, 24,
+                        0,  0,  0, 24
+                    }
                 },
-                stripTable = new byte[]
-                {
-                    0,  0, 39,  0,
-                    39,  0, 39, 24,
-                    0, 24, 39, 24,
-                    0,  0,  0, 24
-                }
-            },
 
-            // Box wipe (a box expands from the upper-left corner to the lower-right corner)
-            new ScummEngine.TransitionEffect
-            {
-                numOfIterations = 25,     // Number of iterations
-                deltaTable = new sbyte[]
+                // Box wipe (a box expands from the upper-left corner to the lower-right corner)
+                new ScummEngine.TransitionEffect
                 {
-                    0,  1,  2,  1,
-                    2,  0,  2,  1,
-                    2,  0,  2,  1,
-                    0,  0,  0,  0
+                    numOfIterations = 25,     // Number of iterations
+                    deltaTable = new sbyte[]
+                    {
+                        0,  1,  2,  1,
+                        2,  0,  2,  1,
+                        2,  0,  2,  1,
+                        0,  0,  0,  0
+                    },
+                    stripTable = new byte[]
+                    {
+                        0,  0,  0,  0,
+                        0,  0,  0,  0,
+                        1,  0,  1,  0,
+                        255,  0,  0,  0
+                    }
                 },
-                stripTable = new byte[]
-                {
-                    0,  0,  0,  0,
-                    0,  0,  0,  0,
-                    1,  0,  1,  0,
-                    255,  0,  0,  0
-                }
-            },
 
-            // Box wipe (a box expands from the lower-right corner to the upper-left corner)
-            new ScummEngine.TransitionEffect
-            {
-                numOfIterations = 25,     // Number of iterations
-                deltaTable = new sbyte[]
+                // Box wipe (a box expands from the lower-right corner to the upper-left corner)
+                new ScummEngine.TransitionEffect
                 {
-                    -2, -1,  0, -1,
-                    -2, -1, -2,  0,
-                    -2, -1, -2,  0,
-                    0,  0,  0,  0
+                    numOfIterations = 25,     // Number of iterations
+                    deltaTable = new sbyte[]
+                    {
+                        -2, -1,  0, -1,
+                        -2, -1, -2,  0,
+                        -2, -1, -2,  0,
+                        0,  0,  0,  0
+                    },
+                    stripTable = new byte[]
+                    {
+                        39, 24, 39, 24,
+                        39, 24, 39, 24,
+                        38, 24, 38, 24,
+                        255,  0,  0,  0
+                    }
                 },
-                stripTable = new byte[]
-                {
-                    39, 24, 39, 24,
-                    39, 24, 39, 24,
-                    38, 24, 38, 24,
-                    255,  0,  0,  0
-                }
-            },
 
-            // Inverse box wipe
-            new ScummEngine.TransitionEffect
-            {
-                numOfIterations = 25,     // Number of iterations
-                deltaTable = new sbyte[]
+                // Inverse box wipe
+                new ScummEngine.TransitionEffect
                 {
-                    0, -1, -2, -1,
-                    -2,  0, -2, -1,
-                    -2,  0, -2, -1,
-                    0,  0,  0,  0
+                    numOfIterations = 25,     // Number of iterations
+                    deltaTable = new sbyte[]
+                    {
+                        0, -1, -2, -1,
+                        -2,  0, -2, -1,
+                        -2,  0, -2, -1,
+                        0,  0,  0,  0
+                    },
+                    stripTable = new byte[]
+                    {
+                        0, 24, 39, 24,
+                        39,  0, 39, 24,
+                        38,  0, 38, 24,
+                        255,  0,  0,  0
+                    }
                 },
-                stripTable = new byte[]
-                {
-                    0, 24, 39, 24,
-                    39,  0, 39, 24,
-                    38,  0, 38, 24,
-                    255,  0,  0,  0
-                }
-            },
 
-            // Inverse iris effect, specially tailored for V1/V2 games
-            new ScummEngine.TransitionEffect
-            {
-                numOfIterations = 9,      // Number of iterations
-                deltaTable = new sbyte[]
+                // Inverse iris effect, specially tailored for V1/V2 games
+                new ScummEngine.TransitionEffect
                 {
-                    -1, -1,  1, -1,
-                    -1,  1,  1,  1,
-                    -1, -1, -1,  1,
-                    1, -1,  1,  1
+                    numOfIterations = 9,      // Number of iterations
+                    deltaTable = new sbyte[]
+                    {
+                        -1, -1,  1, -1,
+                        -1,  1,  1,  1,
+                        -1, -1, -1,  1,
+                        1, -1,  1,  1
+                    },
+                    stripTable = new byte[]
+                    {
+                        7, 7, 32, 7,
+                        7, 8, 32, 8,
+                        7, 8,  7, 8,
+                        32, 7, 32, 8
+                    }
                 },
-                stripTable = new byte[]
-                {
-                    7, 7, 32, 7,
-                    7, 8, 32, 8,
-                    7, 8,  7, 8,
-                    32, 7, 32, 8
-                }
-            },
 
-            // Horizontal wipe (a box expands from left to right side). For MM NES
-            new ScummEngine.TransitionEffect
-            {
-                numOfIterations = 16,     // Number of iterations
-                deltaTable = new sbyte[]
+                // Horizontal wipe (a box expands from left to right side). For MM NES
+                new ScummEngine.TransitionEffect
                 {
-                    2,  0,  2,  0,
-                    2,  0,  2,  0,
-                    0,  0,  0,  0,
-                    0,  0,  0,  0
-                },
-                stripTable = new byte[]
-                {
-                    0, 0,  0,  15,
-                    1, 0,  1,  15,
-                    255, 0,  0,  0,
-                    255, 0,  0,  0
+                    numOfIterations = 16,     // Number of iterations
+                    deltaTable = new sbyte[]
+                    {
+                        2,  0,  2,  0,
+                        2,  0,  2,  0,
+                        0,  0,  0,  0,
+                        0,  0,  0,  0
+                    },
+                    stripTable = new byte[]
+                    {
+                        0, 0,  0,  15,
+                        1, 0,  1,  15,
+                        255, 0,  0,  0,
+                        255, 0,  0,  0
+                    }
                 }
-            }
 
-        };
+            };
 
     }
 }

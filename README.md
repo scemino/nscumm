@@ -77,8 +77,6 @@ Alt-Enter              - Toggles full screen/windowed
 Known Issues
 -------------------------
 
-Missing some screen effects
-
 And many other things ???
 
 Missing games in your language or anything else ? Feel free to contact me at scemino74 at gmail

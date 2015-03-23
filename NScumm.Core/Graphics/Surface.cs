@@ -115,5 +115,103 @@ namespace NScumm.Core.Graphics
         }
 
         #endregion
+
+        public void Move(int dx, int dy, int height)
+        {
+            // Short circuit check - do we have to do anything anyway?
+            if ((dx == 0 && dy == 0) || height <= 0)
+                return;
+
+            if (BytesPerPixel != 1 && BytesPerPixel != 2 && BytesPerPixel != 4)
+                throw new NotSupportedException("Surface.Move: bytesPerPixel must be 1, 2, or 4");
+
+            // vertical movement
+            if (dy > 0)
+            {
+                // move down - copy from bottom to top
+                var dstPos = (height - 1) * Pitch;
+                var srcPos = dstPos - dy * Pitch;
+                for (var y = dy; y < height; y++)
+                {
+                    Buffer.BlockCopy(Pixels, srcPos, Pixels, dstPos, Pitch);
+                    srcPos -= Pitch;
+                    dstPos -= Pitch;
+                }
+            }
+            else if (dy < 0)
+            {
+                // move up - copy from top to bottom
+                var dstPos = 0;
+                var srcPos = dstPos - dy * Pitch;
+                for (var y = -dy; y < height; y++)
+                {
+                    Buffer.BlockCopy(Pixels, srcPos, Pixels, dstPos, Pitch);
+                    srcPos += Pitch;
+                    dstPos += Pitch;
+                }
+            }
+
+            // horizontal movement
+            if (dx > 0)
+            {
+                // move right - copy from right to left
+                var dstPos = (Pitch - BytesPerPixel);
+                var srcPos = dstPos - (dx * BytesPerPixel);
+                for (var y = 0; y < height; y++)
+                {
+                    for (var x = dx; x < Width; x++)
+                    {
+                        if (BytesPerPixel == 1)
+                        {
+                            Pixels[dstPos--] = Pixels[srcPos--];
+                        }
+                        else if (BytesPerPixel == 2)
+                        {
+                            Array.Copy(Pixels, srcPos, Pixels, dstPos, 2);
+                            srcPos -= 2;
+                            dstPos -= 2;
+                        }
+                        else if (BytesPerPixel == 4)
+                        {
+                            Array.Copy(Pixels, srcPos, Pixels, dstPos, 4);
+                            srcPos -= 4;
+                            dstPos -= 4;
+                        }
+                    }
+                    srcPos += Pitch + (Pitch - dx * BytesPerPixel);
+                    dstPos += Pitch + (Pitch - dx * BytesPerPixel);
+                }
+            }
+            else if (dx < 0)
+            {
+                // move left - copy from left to right
+                var dstPos = 0;
+                var srcPos = dstPos - (dx * BytesPerPixel);
+                for (var y = 0; y < height; y++)
+                {
+                    for (var x = -dx; x < Width; x++)
+                    {
+                        if (BytesPerPixel == 1)
+                        {
+                            Pixels[dstPos++] = Pixels[srcPos++];
+                        }
+                        else if (BytesPerPixel == 2)
+                        {
+                            Array.Copy(Pixels, srcPos, Pixels, dstPos, 2);
+                            srcPos += 2;
+                            dstPos += 2;
+                        }
+                        else if (BytesPerPixel == 4)
+                        {
+                            Array.Copy(Pixels, srcPos, Pixels, dstPos, 4);
+                            srcPos += 4;
+                            dstPos += 4;
+                        }
+                    }
+                    srcPos += Pitch - (Pitch + dx * BytesPerPixel);
+                    dstPos += Pitch - (Pitch + dx * BytesPerPixel);
+                }
+            }
+        }
     }
 }

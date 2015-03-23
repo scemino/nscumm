@@ -110,6 +110,24 @@ namespace NScumm.MonoGame
             }
         }
 
+        public NScumm.Core.Graphics.Surface Capture()
+        {
+            var surface = new NScumm.Core.Graphics.Surface(_width, _height, NScumm.Core.Graphics.PixelFormat.Indexed8, false);
+            Array.Copy(_pixels, surface.Pixels, _pixels.Length);
+            return surface;
+        }
+
+        public void CopyRectToScreen(byte[] buffer, int sourceStride, int x, int y, int dstX, int dstY, int width, int height)
+        {
+            for (int h = 0; h < height; h++)
+            {
+                for (int w = 0; w < width; w++)
+                {
+                    _pixels[dstX + w + (dstY + h) * _width] = buffer[x + w + (h + y) * sourceStride];
+                }
+            }
+        }
+
         #region Palette Methods
 
         public void SetPalette(NScumm.Core.Graphics.Color[] colors)

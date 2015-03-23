@@ -259,9 +259,12 @@ namespace NScumm.Core
 
             if (_currentRoom == 0)
             {
-                roomData.EntryScript.Data = new byte[0];
-                roomData.ExitScript.Data = new byte[0];
-                roomData.Objects.Clear();
+                if (roomData != null)
+                {
+                    roomData.EntryScript.Data = new byte[0];
+                    roomData.ExitScript.Data = new byte[0];
+                    roomData.Objects.Clear();
+                }
                 return;
             }
 

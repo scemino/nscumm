@@ -251,10 +251,6 @@ namespace NScumm.Core
             {
                 return 0;
             }
-            else if (array == 448)
-            {
-                return 0;
-            }
 
             int offset = @base + idx * ah.Dim1;
 

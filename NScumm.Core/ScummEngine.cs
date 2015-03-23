@@ -309,10 +309,7 @@ namespace NScumm.Core
 
             if (_game.Features.HasFlag(GameFeatures.SixteenColors))
             {
-                for (int i = 0; i < 16; i++)
-                {
-                    _currentPalette.Colors[i] = Color.FromRgb(tableEGAPalette[i * 3], tableEGAPalette[i * 3 + 1], tableEGAPalette[i * 3 + 2]);
-                }
+                Array.Copy(Palette.Ega.Colors, _currentPalette.Colors, Palette.Ega.Colors.Length);
             }
 
             for (int i = 0; i < 256; i++)
@@ -692,8 +689,8 @@ namespace NScumm.Core
                 {
                     if (ss.CutSceneOverride != 0)
                     {
-                        //if (_game.version >= 5)
-                        //    warning("Object %d stopped with active cutscene/override in exit", ss->number);
+                        if (Game.Version >= 5)
+                            Console.Error.WriteLine("Object {0} stopped with active cutscene/override in exit", ss.Number);
                         ss.CutSceneOverride = 0;
                     }
                     //nukeArrays(i);
@@ -703,8 +700,8 @@ namespace NScumm.Core
                 {
                     if (ss.CutSceneOverride != 0)
                     {
-                        //if (_game.version >= 5)
-                        //    warning("Script %d stopped with active cutscene/override in exit", ss->number);
+                        if (Game.Version >= 5)
+                            Console.Error.WriteLine("Script {0} stopped with active cutscene/override in exit", ss.Number);
                         ss.CutSceneOverride = 0;
                     }
                     //nukeArrays(i);

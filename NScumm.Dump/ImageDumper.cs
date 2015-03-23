@@ -33,14 +33,6 @@ namespace NScumm.Dump
     {
         GameInfo Game { get; set; }
 
-        static Color[] tableEGAPalette =
-            {
-                Color.FromRgb(0x00, 0x00, 0x00),   Color.FromRgb(0x00, 0x00, 0xAA),   Color.FromRgb(0x00, 0xAA, 0x00),   Color.FromRgb(0x00, 0xAA, 0xAA),
-                Color.FromRgb(0xAA, 0x00, 0x00),   Color.FromRgb(0xAA, 0x00, 0xAA),   Color.FromRgb(0xAA, 0x55, 0x00),   Color.FromRgb(0xAA, 0xAA, 0xAA),
-                Color.FromRgb(0x55, 0x55, 0x55),   Color.FromRgb(0x55, 0x55, 0xFF),   Color.FromRgb(0x55, 0xFF, 0x55),   Color.FromRgb(0x55, 0xFF, 0xFF),
-                Color.FromRgb(0xFF, 0x55, 0x55),   Color.FromRgb(0xFF, 0x55, 0xFF),   Color.FromRgb(0xFF, 0xFF, 0x55),   Color.FromRgb(0xFF, 0xFF, 0xFF)
-            };
-
         public ImageDumper(GameInfo game)
         {
             Game = game;
@@ -52,9 +44,10 @@ namespace NScumm.Dump
             gdi.IsZBufferEnabled = false;
             gdi.RoomPalette = CreatePalette();
 
-            foreach (var room in index.Rooms)
+            var rooms = roomIds == null ? index.Rooms : roomIds.Select(i => index.GetRoom((byte)i));
+            foreach (var room in rooms)
             {
-                if (room.Image == null || (roomIds != null && !roomIds.Contains(room.Number)))
+                if (room.Image == null)
                     continue;
 
                 var name = room.Name ?? "room_" + room.Number;
@@ -142,18 +135,61 @@ namespace NScumm.Dump
         {
             var index = screen.Surfaces[0].Pixels[y * screen.Width + x];
             var c = Game.Features.HasFlag(GameFeatures.SixteenColors) ?
-                tableEGAPalette[index] : room.Palette.Colors[index];
+                Palette.Cga.Colors[index] : room.Palette.Colors[index];
             return System.Drawing.Color.FromArgb(c.R, c.G, c.B);
+        }
+
+        System.Drawing.Color ToColor(byte[] pixels, Palette palette, VirtScreen screen, int x, int y)
+        {
+            var index = pixels[y * screen.Width + x];
+            var c = palette.Colors[index];
+            return System.Drawing.Color.FromArgb(c.R, c.G, c.B);
+        }
+
+        static byte[,,] cgaDither = new byte[2, 2, 16]
+        {
+            {
+                { 0, 1, 0, 1, 2, 2, 0, 0, 3, 1, 3, 1, 3, 2, 1, 3 },
+                { 0, 0, 1, 1, 0, 2, 2, 3, 0, 3, 1, 1, 3, 3, 1, 3 }
+            },
+            {
+                { 0, 0, 1, 1, 0, 2, 2, 3, 0, 3, 1, 1, 3, 3, 1, 3 },
+                { 0, 1, 0, 1, 2, 2, 0, 0, 3, 1, 1, 1, 3, 2, 1, 3 }
+            }
+        };
+
+        // CGA dithers 4x4 square with direct substitutes
+        // Odd lines have colors swapped, so there will be checkered patterns.
+        // But apparently there is a mistake for 10th color.
+        static void DitherCGA(byte[] dst, int dstPitch, int x, int y, int width, int height)
+        {
+            int ptr;
+            int idx1, idx2;
+
+            for (var y1 = 0; y1 < height; y1++)
+            {
+                ptr = y1 * dstPitch;
+                idx1 = (y + y1) % 2;
+
+                for (var x1 = 0; x1 < width; x1++)
+                {
+                    idx2 = (x + x1) % 2;
+                    dst[ptr] = cgaDither[idx1, idx2, dst[ptr] & 0xF];
+                    ptr++;
+                }
+            }
         }
 
         System.Drawing.Bitmap ToBitmap(Room room, VirtScreen screen)
         {
             var bmp = new System.Drawing.Bitmap(screen.Width, screen.Height);
+//            DitherCGA(screen.Surfaces[0].Pixels, screen.Surfaces[0].Pitch, 0, 0, screen.Width, screen.Height);
+            var palette = Game.Features.HasFlag(GameFeatures.SixteenColors) ? Palette.Ega : room.Palette;
             for (int x = 0; x < screen.Width; x++)
             {
                 for (int y = 0; y < screen.Height; y++)
                 {
-                    bmp.SetPixel(x, y, ToColor(room, screen, x, y));
+                    bmp.SetPixel(x, y, ToColor(screen.Surfaces[0].Pixels, palette, screen, x, y));
                 }
             }
             return bmp;

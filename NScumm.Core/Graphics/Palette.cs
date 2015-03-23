@@ -21,6 +21,9 @@ namespace NScumm.Core.Graphics
 {
     public class Palette
     {
+        public static Palette Ega { get { return egaPalette ?? (egaPalette = CreatePalette(tableEGAPalette)); } }
+        public static Palette Cga { get { return cgaPalette ?? (cgaPalette = CreatePalette(tableCGAPalette)); } }
+
         public Color[] Colors { get; private set; }
 
         public Palette()
@@ -31,8 +34,35 @@ namespace NScumm.Core.Graphics
         public Palette(Color[] colors)
         {
             if (colors.Length != 256)
-                throw new ArgumentException("Palette needs 256 colors.");
+                throw new ArgumentException("Palette must have 256 colors.");
             Colors = colors;
         }
+
+        static Palette CreatePalette(Color[] colors)
+        {
+            if (colors.Length != 16)
+                throw new ArgumentException("16 colors was expected.");
+
+            var palette = new Palette();
+            Array.Copy(colors, palette.Colors, colors.Length);
+            return palette;
+        }
+
+        readonly static Color[] tableEGAPalette =
+            {
+                Color.FromRgb(0x00, 0x00, 0x00), Color.FromRgb(0x00, 0x00, 0xAA), Color.FromRgb(0x00, 0xAA, 0x00), Color.FromRgb(0x00, 0xAA, 0xAA),
+                Color.FromRgb(0xAA, 0x00, 0x00), Color.FromRgb(0xAA, 0x00, 0xAA), Color.FromRgb(0xAA, 0x55, 0x00), Color.FromRgb(0xAA, 0xAA, 0xAA),
+                Color.FromRgb(0x55, 0x55, 0x55), Color.FromRgb(0x55, 0x55, 0xFF), Color.FromRgb(0x55, 0xFF, 0x55), Color.FromRgb(0x55, 0xFF, 0xFF),
+                Color.FromRgb(0xFF, 0x55, 0x55), Color.FromRgb(0xFF, 0x55, 0xFF), Color.FromRgb(0xFF, 0xFF, 0x55), Color.FromRgb(0xFF, 0xFF, 0xFF)
+            };
+
+        readonly static Color[] tableCGAPalette =
+            {
+                Color.FromRgb(0x00, 0x00, 0x00), Color.FromRgb(0x00, 0xA8, 0xA8),   
+                Color.FromRgb(0xA8, 0x00, 0xA8), Color.FromRgb(0xA8, 0xA8, 0xA8)
+            };
+
+        static Palette egaPalette;
+        static Palette cgaPalette;
     }
 }

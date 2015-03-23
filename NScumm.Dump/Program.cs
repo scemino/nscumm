@@ -84,37 +84,43 @@ namespace NScumm.Dump
             }
 
             // dump room scripts
-            var roomScripts = index.Rooms.Where(r => scriptRooms.Contains(r.Number)).ToList();
-            foreach (var room in roomScripts)
+            if (scriptRooms.Count > 0)
             {
-                dumper.WriteLine("Room {0}", room.Number);
-                dumper.WriteLine("  Entry");
-                scriptDumper.DumpScript(room.EntryScript.Data, dumper);
-                dumper.WriteLine("  Exit");
-                scriptDumper.DumpScript(room.ExitScript.Data, dumper);
-                for (int i = 0; i < room.LocalScripts.Length; i++)
+                var roomScripts = index.Rooms.Where(r => scriptRooms.Contains(r.Number)).ToList();
+                foreach (var room in roomScripts)
                 {
-                    var ls = room.LocalScripts[i];
-                    if (ls != null)
+                    dumper.WriteLine("Room {0}", room.Number);
+                    dumper.WriteLine("  Entry");
+                    scriptDumper.DumpScript(room.EntryScript.Data, dumper);
+                    dumper.WriteLine("  Exit");
+                    scriptDumper.DumpScript(room.ExitScript.Data, dumper);
+                    for (int i = 0; i < room.LocalScripts.Length; i++)
                     {
-                        dumper.WriteLine("  LocalScript {0}", i);
-                        scriptDumper.DumpScript(ls.Data, dumper);
+                        var ls = room.LocalScripts[i];
+                        if (ls != null)
+                        {
+                            dumper.WriteLine("  LocalScript {0}", i);
+                            scriptDumper.DumpScript(ls.Data, dumper);
+                        }
                     }
                 }
             }
 
             // dump object scripts
-            var objs = index.Rooms.SelectMany(r => r.Objects).Where(o => scriptObjects.Contains(o.Number)).ToList();
-            foreach (var obj in objs)
+            if (scriptObjects.Count > 0)
             {
-                dumper.WriteLine("obj {0} {1} {{", obj.Number, System.Text.Encoding.ASCII.GetString(obj.Name));
-                dumper.WriteLine("Script offset: {0}", obj.Script.Offset);
-                foreach (var off in obj.ScriptOffsets)
+                var objs = index.Rooms.SelectMany(r => r.Objects).Where(o => scriptObjects.Contains(o.Number)).ToList();
+                foreach (var obj in objs)
                 {
-                    dumper.WriteLine("idx #{0}: {1}", off.Key, off.Value - obj.Script.Offset);
+                    dumper.WriteLine("obj {0} {1} {{", obj.Number, System.Text.Encoding.ASCII.GetString(obj.Name));
+                    dumper.WriteLine("Script offset: {0}", obj.Script.Offset);
+                    foreach (var off in obj.ScriptOffsets)
+                    {
+                        dumper.WriteLine("idx #{0}: {1}", off.Key, off.Value - obj.Script.Offset);
+                    }
+                    dumper.WriteLine("script");
+                    scriptDumper.DumpScript(obj.Script.Data, dumper);
                 }
-                dumper.WriteLine("script");
-                scriptDumper.DumpScript(obj.Script.Data, dumper);
             }
 
             // dump rooms

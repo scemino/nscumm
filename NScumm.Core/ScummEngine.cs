@@ -86,6 +86,8 @@ namespace NScumm.Core
 
         public int ScreenHeight { get; private set; }
 
+        public bool DebugMode { get; private set; }
+
         int _screenB;
         int _screenH;
 
@@ -144,7 +146,7 @@ namespace NScumm.Core
 
         #region Constructor
 
-        public static ScummEngine Create(GameInfo game, IGraphicsManager gfxManager, IInputManager inputManager, IMixer mixer)
+        public static ScummEngine Create(GameInfo game, IGraphicsManager gfxManager, IInputManager inputManager, IMixer mixer, bool debugMode = false)
         {
             ScummEngine engine = null;
             if (game.Version == 3)
@@ -172,6 +174,7 @@ namespace NScumm.Core
                 engine = new ScummEngine8(game, gfxManager, inputManager, mixer);
             }
             Instance = engine;
+            engine.DebugMode = debugMode;
             engine.SetupVars();
             engine.ResetScummVars();
             return engine;
@@ -419,9 +422,10 @@ namespace NScumm.Core
                 Variables[VariableRoomHeight.Value] = ScreenHeight;
             }
 
-            //            if (VariableDebugMode.HasValue) {
-            //                Variables(VariableDebugMode) = (_debugMode ? 1 : 0);
-            //            }
+            if (VariableDebugMode.HasValue)
+            {
+                Variables[VariableDebugMode.Value] = (DebugMode ? 1 : 0);
+            }
 
             if (VariableFadeDelay.HasValue)
                 Variables[VariableFadeDelay.Value] = 3;

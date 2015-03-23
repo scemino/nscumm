@@ -145,7 +145,7 @@ namespace NScumm.MonoGame
         void UpdateGame()
         {
             tsToWait = engine.RunBootScript();
-            while (true)
+            while (!engine.HasToQuit)
             {
                 if (!IsPaused)
                 {
@@ -155,6 +155,7 @@ namespace NScumm.MonoGame
                     gfx.UpdateScreen();
                 }
             }
+            base.ScreenManager.Game.Exit();
         }
 
         void UpdateMouseState()

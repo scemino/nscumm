@@ -89,6 +89,9 @@ namespace NScumm.Dump
                 case 6:
                     parser = new ScriptParser6(info);
                     break;
+                case 7:
+                    parser = new ScriptParser7(info);
+                    break;
                 case 8:
                     parser = new ScriptParser8(info);
                     break;
@@ -136,7 +139,7 @@ namespace NScumm.Dump
 
         protected virtual int ReadWordSigned()
         {
-            return ReadWord();
+            return (short)ReadWord();
         }
 
         protected Expression ReadCharacters()

@@ -265,8 +265,8 @@ namespace NScumm.Dump
                     throw new NotSupportedException(string.Format("DimArray: default case {0}", subOp));
             }
 
-            var b=Pop();
-            var a=Pop();
+            var b = Pop();
+            var a = Pop();
             return new MethodInvocation("DefineArray").AddArguments(ReadWord().ToLiteral(), data.ToLiteral(), a, b).ToStatement();
         }
 
@@ -299,6 +299,23 @@ namespace NScumm.Dump
             var max = Pop();
             var min = Pop();
             return Push(new MethodInvocation("GetRandom").AddArguments(min, max));
+        }
+
+        protected Statement Shuffle()
+        {
+            var b = Pop();
+            var a = Pop();
+            var num = ReadWord();
+            return new MethodInvocation("ShuffleArray")
+                .AddArguments(num.ToLiteral(), b, a).ToStatement();
+        }
+
+        protected Statement PickVarRandom()
+        {
+            var args = GetStackList(100);
+            var value = ReadWord();
+            return Push(new MethodInvocation("PickVarRandom")
+                .AddArguments(args, value.ToLiteral()));
         }
     }
 }

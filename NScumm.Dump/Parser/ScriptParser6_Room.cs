@@ -178,6 +178,11 @@ namespace NScumm.Dump
             var value = Pop();
             return new MethodInvocation("PseudoRoom").AddArguments(value, args).ToStatement();
         }
+
+        protected Statement SetBoxSet()
+        {
+            return new MethodInvocation("SetBoxSet").ToStatement();
+        }
     }
 }
 

@@ -194,9 +194,10 @@ namespace NScumm.Dump
             return new MethodInvocation("StartObject").AddArguments(script, entryp, true.ToLiteral(), args).ToStatement();
         }
 
-        protected Statement Dummy()
+        protected Statement IsRoomScriptRunning()
         {
-            return new MethodInvocation("Dummy").ToStatement();
+            var script = Pop();
+            return Push(new MethodInvocation("IsRoomScriptRunning").AddArgument(script));
         }
     }
 }

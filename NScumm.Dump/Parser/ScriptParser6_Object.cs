@@ -129,6 +129,21 @@ namespace NScumm.Dump
             var x = Pop();
             return Push(new MethodInvocation("FindObject").AddArguments(x, y));
         }
+
+        protected Statement StampObject()
+        {
+            var state = Pop();
+            var y = Pop();
+            var x = Pop();
+            var obj = Pop();
+            return new MethodInvocation("StampObject").AddArguments(obj, x, y, state).ToStatement();
+        }
+
+        protected Statement FindAllObjects()
+        {
+            var room = Pop();
+            return Push(new MethodInvocation("FindAllObjects").AddArgument(room));
+        }
     }
 }
 

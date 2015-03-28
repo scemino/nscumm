@@ -19,7 +19,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Externalconsole>true</Externalconsole>
-    <Commandlineparameters>/home/scemino/Games/comi/COMI.LA0</Commandlineparameters>
+    <Commandlineparameters>-f ~/Games/dig/DIG.LA0 -s 0</Commandlineparameters>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>full</DebugType>
@@ -108,6 +108,7 @@
     <Compile Include="ReplaceJumpToIf.cs" />
     <Compile Include="ResolveAllTypesOfVariables.cs" />
     <Compile Include="Mono.Options\Options.cs" />
+    <Compile Include="Parser\ScriptParser7.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

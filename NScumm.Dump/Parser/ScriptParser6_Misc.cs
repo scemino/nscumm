@@ -145,76 +145,30 @@ namespace NScumm.Dump
         protected virtual Statement KernelGetFunctions()
         {
             var args = GetStackList(30);
-        
-            return new SwitchStatement(GetIndex(args, 0))
-                .Add(new CaseStatement(113,
-                    Push(new MethodInvocation("GetPixels").AddArguments(GetIndex(args, 1), GetIndex(args, 2)))))
-                .Add(new CaseStatement(115,
-                    Push(new MethodInvocation("GetSpecialBox").AddArguments(GetIndex(args, 1), GetIndex(args, 2)))))
-                .Add(new CaseStatement(116,
-                    Push(new MethodInvocation("CheckXYInBoxBounds").AddArguments(GetIndex(args, 3), GetIndex(args, 1), GetIndex(args, 2)))))
-                .Add(new CaseStatement(206,
-                    Push(new MethodInvocation("RemapPaletteColor").AddArguments(GetIndex(args, 1), GetIndex(args, 2), GetIndex(args, 3)))))
-                .Add(new CaseStatement(207,
-                    Push(new MemberAccess(Object(new MethodInvocation("GetObjectIndex").AddArgument(GetIndex(args, 1))), "X"))))
-                .Add(new CaseStatement(208,
-                    Push(new MemberAccess(Object(new MethodInvocation("GetObjectIndex").AddArgument(GetIndex(args, 1))), "Y"))))
-                .Add(new CaseStatement(209,
-                    Push(new MemberAccess(Object(new MethodInvocation("GetObjectIndex").AddArgument(GetIndex(args, 1))), "Width"))))
-                .Add(new CaseStatement(210,
-                    Push(new MemberAccess(Object(new MethodInvocation("GetObjectIndex").AddArgument(GetIndex(args, 1))), "Height"))))
-                .Add(new CaseStatement(211,
-                    Push(new MethodInvocation("GetKeyState").AddArgument(GetIndex(args, 1)))))
-                .Add(new CaseStatement(212,
-                    Push(new MemberAccess(GetActor(GetIndex(args, 1)), "Frame"))))
-                .Add(new CaseStatement(213,
-                    Push(new MemberAccess(Verb(GetIndex(args, 1)), "Left"))))
-                .Add(new CaseStatement(214,
-                    Push(new MemberAccess(Verb(GetIndex(args, 1)), "Top"))))
-                .Add(new CaseStatement(215,
-                    Push(new MethodInvocation("GetBoxFlag").AddArgument(GetIndex(args, 1)))));
-        
+            return new MethodInvocation("KernelGetFunctions").AddArgument(args).ToStatement();
         }
 
         protected virtual Statement KernelSetFunctions()
         {
             var args = GetStackList(30);
-
-            return new SwitchStatement(GetIndex(args, 0))
-                .Add(new CaseStatement(3))
-                .Add(new CaseStatement(4,
-                    new MethodInvocation("GrabCursor").AddArguments(GetIndex(args, 1), GetIndex(args, 2), GetIndex(args, 3), GetIndex(args, 4)).ToStatement()))
-                .Add(new CaseStatement(5,
-                    new MethodInvocation("FadeOut").AddArguments(GetIndex(args, 1)).ToStatement()))
-                .Add(new CaseStatement(6,
-                    new MethodInvocation("FadeIn").AddArguments(GetIndex(args, 1)).ToStatement()))
-                .Add(new CaseStatement(8,
-                    new MethodInvocation("StartManiac").ToStatement()))
-                .Add(new CaseStatement(9,
-                    new MethodInvocation("killAllScriptsExceptCurrent").ToStatement()))
-                .Add(new CaseStatement(104,
-                    new MethodInvocation("nukeFlObjects").AddArguments(GetIndex(args, 2), GetIndex(args, 3)).ToStatement()))
-                .Add(new CaseStatement(107,
-                    new MethodInvocation(new MemberAccess(GetActor(GetIndex(args, 1)), "SetScale")).AddArgument(GetIndex(args, 2)).ToStatement()))
-                .Add(new CaseStatement(108))
-                .Add(new CaseStatement(109,
-                    new MethodInvocation("SetShadowPalette").AddArguments(GetIndex(args, 3), GetIndex(args, 4), GetIndex(args, 5), GetIndex(args, 1), GetIndex(args, 2)).ToStatement()))
-                .Add(new CaseStatement(110, new MethodInvocation("ClearCharsetMask").ToStatement()))
-                .Add(new CaseStatement(111, new MethodInvocation("ShadowMode").AddArguments(GetIndex(args, 2), GetIndex(args, 3)).ToStatement()))
-                .Add(new CaseStatement(112,
-                    new MethodInvocation("SetShadowPalette").AddArguments(GetIndex(args, 3), GetIndex(args, 4), GetIndex(args, 5), GetIndex(args, 1), GetIndex(args, 2), GetIndex(args, 6), GetIndex(args, 7)).ToStatement()))
-                .Add(new CaseStatement(114, new MethodInvocation("SetDirtyColors").ToStatement()))
-                .Add(new CaseStatement(117, new MethodInvocation("FreezeScripts").AddArgument(0x80).ToStatement()))
-                .Add(new CaseStatement(119, new MethodInvocation("EnqueueObject").AddArguments(GetIndex(args, 1), GetIndex(args, 2), GetIndex(args, 3), GetIndex(args, 4), GetIndex(args, 5), GetIndex(args, 6), GetIndex(args, 7), GetIndex(args, 8)).ToStatement()))
-                .Add(new CaseStatement(120, new MethodInvocation("SwapPalColors").AddArguments(GetIndex(args, 1), GetIndex(args, 2)).ToStatement()))
-                .Add(new CaseStatement(122, new MethodInvocation("IMUSEDoCommand").AddArguments(args).ToStatement()))
-                .Add(new CaseStatement(123, new MethodInvocation("CopyPalColor").AddArguments(GetIndex(args, 2), GetIndex(args, 1)).ToStatement()))
-                .Add(new CaseStatement(124, new MethodInvocation("SaveSound").AddArguments(GetIndex(args, 1)).ToStatement()));
+            return new MethodInvocation("KernelSetFunctions").AddArgument(args).ToStatement();
         }
 
         protected Statement GetDateTime()
         {
             return new MethodInvocation("GetDateTime").ToStatement();
+        }
+
+        protected Statement Dummy()
+        {
+            return new MethodInvocation("Dummy").ToStatement();
+        }
+
+        protected Statement GetPixel()
+        {
+            var y = Pop();
+            var x = Pop();
+            return Push(new MethodInvocation("GetPixel").AddArguments(x, y));
         }
     }
 }

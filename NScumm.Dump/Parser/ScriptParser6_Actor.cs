@@ -325,6 +325,20 @@ namespace NScumm.Dump
             var text = ReadCharacters();
             return new MethodInvocation(new MemberAccess("Ego", "Talk")).AddArgument(text).ToStatement();
         }
+
+        protected Statement StopTalking()
+        {
+            return new MethodInvocation("StopTalk").ToStatement();
+        }
+
+        protected Statement GetAnimateVariable()
+        {
+            var variable = Pop();
+            var index = Pop();
+            return new MethodInvocation(
+                new MemberAccess(GetActor(index), "GetAnimateVariable")
+            ).AddArgument(variable).ToStatement();
+        }
     }
 }
 

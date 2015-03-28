@@ -222,11 +222,11 @@ namespace NScumm.Dump
             opCodes[0xbb] = TalkEgo;
             /* BC */
             opCodes[0xbc] = DimArray;
-//            opCodes[0xbd]=Dummy;
-//            opCodes[0xbe]=StartObjectQuick;
-//            opCodes[0xbf]=StartScriptQuick2;
+            opCodes[0xbd] = Dummy;
+            opCodes[0xbe] = StartObjectQuick;
+            opCodes[0xbf] = StartScriptQuick2;
             /* C0 */
-//            opCodes[0xc0] = Dim2dimArray;
+            opCodes[0xc0] = Dim2DimArray;
             /* C4 */
             opCodes[0xc4] = Abs;
             opCodes[0xc5] = DistObjectObject;
@@ -236,32 +236,32 @@ namespace NScumm.Dump
             opCodes[0xc8] = KernelGetFunctions;
             opCodes[0xc9] = KernelSetFunctions;
             opCodes[0xca] = DelayFrames;
-//            opCodes[0xcb] = PickOneOf;
+            opCodes[0xcb] = PickOneOf;
             /* CC */
-//            opCodes[0xcc] = PickOneOfDefault;
-//            opCodes[0xcd] = StampObject;
+            opCodes[0xcc] = PickOneOfDefault;
+            opCodes[0xcd] = StampObject;
             /* D0 */
-//            opCodes[0xd0] = GetDateTime;
-//            opCodes[0xd1] = StopTalking;
-//            opCodes[0xd2] = GetAnimateVariable;
+            opCodes[0xd0] = GetDateTime;
+            opCodes[0xd1] = StopTalking;
+            opCodes[0xd2] = GetAnimateVariable;
             /* D4 */
-//            opCodes[0xd4] = Shuffle;
-//            opCodes[0xd5] = JumpToScript;
-//            opCodes[0xd6] = Band;
-//            opCodes[0xd7] = Bor;
+            opCodes[0xd4] = Shuffle;
+            opCodes[0xd5] = JumpToScript;
+            opCodes[0xd6] = Band;
+            opCodes[0xd7] = Bor;
             /* D8 */
-//            opCodes[0xd8] = IsRoomScriptRunning;
+            opCodes[0xd8] = IsRoomScriptRunning;
             /* DC */
-//            opCodes[0xdd] = FindAllObjects;
+            opCodes[0xdd] = FindAllObjects;
             /* E0 */
-//            opCodes[0xe1] = GetPixel;
-//            opCodes[0xe3] = PickVarRandom;
+            opCodes[0xe1] = GetPixel;
+            opCodes[0xe3] = PickVarRandom;
             /* E4 */
-//            opCodes[0xe4] = SetBoxSet;
+            opCodes[0xe4] = SetBoxSet;
             /* E8 */
             /* EC */
-//            opCodes[0xec] = GetActorLayer;
-//            opCodes[0xed] = GetObjectNewDir;
+            opCodes[0xec] = GetActorLayer;
+            opCodes[0xed] = GetObjectNewDir;
 
         }
 

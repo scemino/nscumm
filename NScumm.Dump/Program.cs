@@ -20,7 +20,8 @@ namespace NScumm.Dump
             System.Console.WriteLine("\tv4 (monkey island1)");
             System.Console.WriteLine("\tv5 (monkey island2)");
             System.Console.WriteLine("\tv6 [experimental] (Day of the tentacle)");
-            System.Console.WriteLine("\tv8 [experimental] (The Curse of Monkey Island)");
+            System.Console.WriteLine("\tv7 [experimental] (Full Throttle/The Dig)");
+            System.Console.WriteLine("\tv8 (The Curse of Monkey Island)");
         }
 
         public static int Main(string[] args)

@@ -768,7 +768,7 @@ namespace NScumm.Core
                 abr = AdjustXYToBeInBox(dest);
             }
 
-            if (!IsInCurrentRoom)
+            if (!IsInCurrentRoom && _scumm.Game.Version <= 6)
             {
                 _position = abr.Position;
                 if (!IgnoreTurns && dir != -1)
@@ -808,9 +808,10 @@ namespace NScumm.Core
             _walkdata.Dest.Y = abr.Position.Y;
             _walkdata.DestBox = abr.Box;
             _walkdata.DestDir = (short)dir;
-            Moving = (Moving & MoveFlags.InLeg) | MoveFlags.NewLeg;
-            _walkdata.Point3.X = 32000;
 
+            Moving = (Moving & MoveFlags.InLeg) | MoveFlags.NewLeg;
+
+            _walkdata.Point3.X = 32000;
             _walkdata.CurBox = Walkbox;
         }
 
@@ -1173,8 +1174,20 @@ namespace NScumm.Core
             if (newdir == -1 || IgnoreTurns)
                 return;
 
-            Moving = MoveFlags.Turn;
-            _targetFacing = (ushort)newdir;
+            if (_scumm.Game.Version <= 6)
+            {
+                _targetFacing = (ushort)newdir;
+                Moving = MoveFlags.Turn;
+            }
+            else
+            {
+                Moving &= ~MoveFlags.Turn;
+                if (newdir != _facing)
+                {
+                    Moving |= MoveFlags.Turn;
+                    _targetFacing = (ushort)newdir;
+                }
+            }
         }
 
         public void RunActorTalkScript(int f)
@@ -1442,11 +1455,11 @@ namespace NScumm.Core
 
             int tmpX = (_position.X << 16) + _walkdata.XFrac + (_walkdata.DeltaXFactor >> 8) * ScaleX;
             _walkdata.XFrac = (ushort)tmpX;
-            _position.X = (short)(tmpX >> 16);
+            _position.X = (tmpX >> 16);
 
             int tmpY = (_position.Y << 16) + _walkdata.YFrac + (_walkdata.DeltaYFactor >> 8) * ScaleY;
             _walkdata.YFrac = (ushort)tmpY;
-            _position.Y = (short)(tmpY >> 16);
+            _position.Y = (tmpY >> 16);
 
             if (Math.Abs(_position.X - _walkdata.Cur.X) > distX)
             {
@@ -1458,7 +1471,7 @@ namespace NScumm.Core
                 _position.Y = _walkdata.Next.Y;
             }
 
-            if (_scumm.Game.Version >= 4 && _position == _walkdata.Next)
+            if (_scumm.Game.Version >= 4 && _scumm.Game.Version <= 6 && _position == _walkdata.Next)
             {
                 Moving &= ~MoveFlags.InLeg;
                 return false;
@@ -1597,7 +1610,7 @@ namespace NScumm.Core
             if ((_scumm.Game.Version == 6) && IgnoreTurns)
                 return _facing;
 
-            var dirType = (_scumm.Game.Version >= 7) ? _scumm.CostumeLoader.HasManyDirections(Costume) : false;
+            var dirType = (_scumm.Game.Version >= 7) && _scumm.CostumeLoader.HasManyDirections(Costume);
 
             var from = ScummMath.ToSimpleDir(dirType, _facing);
             var dir = RemapDirection(_targetFacing, isWalking);
@@ -1741,7 +1754,7 @@ namespace NScumm.Core
                                 q = box1.UpperRight.Y;
                             if (q == pos && box2nr == box3nr)
                                 return true;
-                            foundPath.Y = (short)q;
+                            foundPath.Y = q;
                             foundPath.X = box1.UpperLeft.X;
                             return false;
                         }
@@ -1802,7 +1815,7 @@ namespace NScumm.Core
                                 q = box1.UpperRight.X;
                             if (q == pos && box2nr == box3nr)
                                 return true;
-                            foundPath.X = (short)q;
+                            foundPath.X = q;
                             foundPath.Y = box1.UpperLeft.Y;
                             return false;
                         }

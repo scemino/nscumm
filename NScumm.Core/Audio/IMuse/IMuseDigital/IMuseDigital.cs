@@ -95,7 +95,7 @@ namespace NScumm.Core.Audio.IMuse
             Array.Clear(_attributes, 0, _attributes.Length);
             _nextSeqToPlay = 0;
             _stopingSequence = 0;
-            _radioChatterSFX = false;
+            RadioChatterSFX = false;
             _triggerUsed = false;
         }
 
@@ -227,7 +227,7 @@ namespace NScumm.Core.Audio.IMuse
                                         break;
                                     case 8:
                                         curFeedSize = _sound.GetDataFromRegion(track.SoundDesc, track.CurRegion, out tmpSndBufferPtr, track.RegionOffset, feedSize);
-                                        if (_radioChatterSFX && track.SoundId == 10000)
+                                        if (RadioChatterSFX && track.SoundId == 10000)
                                         {
                                             if (curFeedSize > feedSize)
                                                 curFeedSize = feedSize;
@@ -379,6 +379,8 @@ namespace NScumm.Core.Audio.IMuse
 //            Debug.WriteLine("SwToNeReg(trackId:{0}) - end of func", track.TrackId);
         }
 
+        public bool RadioChatterSFX { get; set; }
+
         const int MaxDigitalTracks = 8;
         const int MaxDigitalFadeTracks = 8;
 
@@ -433,7 +435,6 @@ namespace NScumm.Core.Audio.IMuse
         int _curMusicCue;
         // current cue for current music. used in FT
         int _stopingSequence;
-        bool _radioChatterSFX;
     }
 }
 

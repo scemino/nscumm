@@ -97,6 +97,9 @@ namespace NScumm.Core
                 case 17:
                     EnqueueText(GetStringAddressVar(VariableString2Draw), args[3], args[4], (byte)args[2], (byte)args[1], (args[0] == 16));
                     break;
+                case 20:
+                    IMuseDigital.RadioChatterSFX = args[1] != 0;
+                    break;
                 case 107:
                     Actors[args[1]].SetScale(args[2], -1);
                     break;

@@ -174,23 +174,23 @@ namespace NScumm.Core.IO
                 }
             }
 
-            var objIds = images.Values.Concat(objCodes.Values).Select(o => o.Number).ToList();
+            var objIds = objCodes.Values.Concat(objCodes.Values).Select(o => o.Number).ToList();
             foreach (var objId in objIds)
             {
-                if (objCodes.ContainsKey(objId))
+                if (images.ContainsKey(objId))
                 {
-                    if (images.ContainsKey(objId))
+                    if (objCodes.ContainsKey(objId))
                     {
                         room.Objects.Add(Merge(images[objId], objCodes[objId]));
                     }
                     else
                     {
-                        room.Objects.Add(objCodes[objId]);
+                        room.Objects.Add(images[objId]);
                     }
                 }
                 else
                 {
-                    room.Objects.Add(images[objId]);
+                    room.Objects.Add(objCodes[objId]);
                 }
             }
 

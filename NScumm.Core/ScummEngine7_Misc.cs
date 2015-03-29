@@ -875,7 +875,10 @@ namespace NScumm.Core
 
             if ((Game.GameId == GameId.Dig || Game.GameId == GameId.CurseOfMonkeyIsland) && ptr[0] != 0)
             {
-                var pointer = System.Text.Encoding.ASCII.GetString(ptr).TrimEnd((char)0);
+                var count = Array.IndexOf(ptr, (byte)0);
+                if (count < 0)
+                    count = ptr.Length - 1;
+                var pointer = System.Text.Encoding.ASCII.GetString(ptr, 0, count);
 
                 // Play speech
                 if (!Game.Features.HasFlag(GameFeatures.Demo) && Game.GameId == GameId.CurseOfMonkeyIsland) // CMI demo does not have .IMX for voice

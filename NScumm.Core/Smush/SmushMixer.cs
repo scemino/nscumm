@@ -20,7 +20,6 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
 using NScumm.Core.Audio;
-using System.IO;
 using System.Diagnostics;
 
 namespace NScumm.Core.Smush
@@ -152,9 +151,9 @@ namespace NScumm.Core.Smush
 
             for (var i = 0; i < _channels.Length; i++)
             {
-                Debug.WriteLine("channel {0} : %p({1}, {2})", i, _channels[i].Chan,
+                Debug.WriteLine("channel {0} : {1}({2}, {3})", i, _channels[i].Chan,
                     _channels[i].Chan != null ? _channels[i].Chan.TrackIdentifier : -1,
-                    _channels[i].Chan != null ? _channels[i].Chan.IsTerminated : true);
+                    _channels[i].Chan == null || _channels[i].Chan.IsTerminated);
             }
 
             throw new InvalidOperationException(string.Format("SmushMixer::addChannel({0}): no channel available", track));

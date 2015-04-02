@@ -51,7 +51,7 @@ namespace NScumm.Core.Smush
             }
             else
             {
-                if (_tbuffer != null)
+                if (_tbuffer.Length != 0)
                 {
                     var old = _tbuffer;
                     int new_size = size + _tbufferSize;
@@ -71,7 +71,7 @@ namespace NScumm.Core.Smush
             ProcessBuffer();
 
             _srbufferSize = _sbufferSize;
-            if (_sbuffer != null && _bitsize == 12)
+            if (_sbuffer.Length != 0 && _bitsize == 12)
                 Decode();
 
             return true;
@@ -115,7 +115,7 @@ namespace NScumm.Core.Smush
             Debug.Assert(_dataSize > 0);
             _dataSize -= _srbufferSize;
 
-            _sbuffer = null;
+            _sbuffer = new byte[0];
             _sbufferSize = 0;
 
             return tmp;
@@ -186,7 +186,7 @@ namespace NScumm.Core.Smush
         {
             get
             {
-                return (_dataSize <= 0 && _sbuffer == null);
+                return (_dataSize <= 0 && _sbuffer.Length == 0);
             }
         }
 
@@ -254,7 +254,7 @@ namespace NScumm.Core.Smush
             {
                 _srbufferSize -= remaining_size;
                 Debug.Assert(_inData);
-                if (_tbuffer == null)
+                if (_tbuffer.Length == 0)
                 {
                     _tbuffer = new byte[remaining_size];
                     Array.Copy(_sbuffer, _sbufferSize - remaining_size, _tbuffer, 0, remaining_size);

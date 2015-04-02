@@ -20,8 +20,6 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
-using NScumm.Core.Audio;
-using System.IO;
 using System.Diagnostics;
 using NScumm.Core.IO;
 
@@ -30,7 +28,8 @@ namespace NScumm.Core.Smush
     abstract class SmushChannel
     {
         public int TrackIdentifier{ get { return _track; } }
-        public int AvailableSoundDataSize { get {return _sbufferSize; } }
+
+        public int AvailableSoundDataSize { get { return _sbufferSize; } }
 
         public abstract bool IsTerminated { get; }
 
@@ -58,7 +57,7 @@ namespace NScumm.Core.Smush
         {
             Debug.Assert(_tbuffer != null);
             Debug.Assert(_tbufferSize != 0);
-            Debug.Assert(_sbuffer == null);
+            Debug.Assert(_sbuffer == null || _sbuffer.Length == 0);
             Debug.Assert(_sbufferSize == 0);
 
             if (_inData)
@@ -80,12 +79,12 @@ namespace NScumm.Core.Smush
                     }
                     else
                     {
-                        _tbuffer = null;
+                        _tbuffer = new byte[0];
                         _tbufferSize = 0;
                     }
                     if (_sbufferSize == 0)
                     {
-                        _sbuffer = null;
+                        _sbuffer = new byte[0];
                     }
                 }
                 else
@@ -93,7 +92,7 @@ namespace NScumm.Core.Smush
                     _sbufferSize = _tbufferSize;
                     _sbuffer = _tbuffer;
                     _tbufferSize = 0;
-                    _tbuffer = null;
+                    _tbuffer = new byte[0];
                 }
             }
             else
@@ -104,16 +103,16 @@ namespace NScumm.Core.Smush
                 if (_inData)
                 {
                     _sbufferSize = _tbufferSize - offset;
-                    Debug.Assert(_sbufferSize!=0);
+                    Debug.Assert(_sbufferSize != 0);
                     _sbuffer = new byte[_sbufferSize];
 
                     Array.Copy(_tbuffer, offset, _sbuffer, 0, _sbufferSize);
-                    _tbuffer = null;
+                    _tbuffer = new byte[0];
                     _tbufferSize = 0;
                 }
                 else
                 {
-                    if (offset!=0)
+                    if (offset != 0)
                     {
                         var old = _tbuffer;
                         int new_size = _tbufferSize - offset;
@@ -136,7 +135,7 @@ namespace NScumm.Core.Smush
         /// <summary>
         /// Data temporary buffer.
         /// </summary>
-        protected byte[] _tbuffer;
+        protected byte[] _tbuffer = new byte[0];
         /// <summary>
         /// Temporary buffer size.
         /// </summary>
@@ -144,7 +143,7 @@ namespace NScumm.Core.Smush
         /// <summary>
         /// Sound buffer.
         /// </summary>
-        protected byte[] _sbuffer;
+        protected byte[] _sbuffer = new byte[0];
         /// <summary>
         /// Sound buffer size.
         /// </summary>

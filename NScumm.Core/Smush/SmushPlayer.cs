@@ -24,8 +24,6 @@ using NScumm.Core.Audio;
 using System.Threading;
 using NScumm.Core.IO;
 using System.Diagnostics;
-using System.Collections.Generic;
-using System.Text.RegularExpressions;
 using NScumm.Core.Graphics;
 
 namespace NScumm.Core.Smush

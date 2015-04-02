@@ -1,5 +1,5 @@
 //
-//  SmushPlayer.cs
+//  SaudChannel.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -19,27 +19,21 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
-using System.IO;
-using NScumm.Core.Audio;
-using System.Threading;
 using NScumm.Core.IO;
 using System.Diagnostics;
-using System.Collections.Generic;
-using System.Text.RegularExpressions;
-using NScumm.Core.Graphics;
 
 namespace NScumm.Core.Smush
 {
     class SaudChannel : SmushChannel
     {
-        public SaudChannel(int track_id)
-            : base(track_id)
+        public SaudChannel(int trackId)
+            : base(trackId)
         {
         }
 
         public override bool IsTerminated
         {
-            get{ return (_markReached && _dataSize == 0 && _sbuffer == null); }
+            get{ return (_markReached && _dataSize == 0 && _sbuffer.Length == 0); }
         }
 
         public override int Rate
@@ -60,7 +54,7 @@ namespace NScumm.Core.Smush
                 size -= 8;
                 _dataSize = -2;
             }
-            if (_tbuffer != null)
+            if (_tbuffer.Length != 0)
             {
                 var old = _tbuffer;
                 _tbuffer = new byte[_tbufferSize + size];
@@ -81,7 +75,7 @@ namespace NScumm.Core.Smush
                 _sbufferSize = _tbufferSize;
                 _sbuffer = _tbuffer;
                 _tbufferSize = 0;
-                _tbuffer = null;
+                _tbuffer = new byte[0];
             }
             else
             {
@@ -133,7 +127,7 @@ namespace NScumm.Core.Smush
                 _dataSize -= _sbufferSize;
             }
 
-            _sbuffer = null;
+            _sbuffer = new byte[0];
             _sbufferSize = 0;
 
             return tmp;

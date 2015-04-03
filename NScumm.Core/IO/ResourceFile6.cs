@@ -174,7 +174,7 @@ namespace NScumm.Core.IO
                 }
             }
 
-            var objIds = objCodes.Values.Concat(objCodes.Values).Select(o => o.Number).ToList();
+            var objIds = objCodes.Values.Concat(images.Values).Select(o => o.Number).Distinct().ToList();
             foreach (var objId in objIds)
             {
                 if (images.ContainsKey(objId))

@@ -68,7 +68,7 @@ namespace NScumm.Core.IO
 
         public abstract byte[] ReadScript(long offset);
 
-        public abstract byte[] ReadSound(long offset);
+        public abstract byte[] ReadSound(NScumm.Core.Audio.MusicDriverTypes music, long offset);
 
         #endregion
 

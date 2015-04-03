@@ -120,16 +120,13 @@ namespace NScumm.Core.IO
             }
         }
 
-        public IEnumerable<byte[]> Sounds
+        public IEnumerable<byte[]> GetSounds(NScumm.Core.Audio.MusicDriverTypes music)
         {
-            get
+            for (byte i = 0; i < Index.SoundResources.Count; i++)
             {
-                for (byte i = 0; i < Index.SoundResources.Count; i++)
+                if (Index.SoundResources[i].RoomNum != 0)
                 {
-                    if (Index.SoundResources[i].RoomNum != 0)
-                    {
-                        yield return GetSound(i);
-                    }
+                    yield return GetSound(music, i);
                 }
             }
         }
@@ -236,7 +233,7 @@ namespace NScumm.Core.IO
             return data;
         }
 
-        public byte[] GetSound(int sound)
+        public byte[] GetSound(NScumm.Core.Audio.MusicDriverTypes music, int sound)
         {
             byte[] data = null;
             var resource = Index.SoundResources[sound];
@@ -246,11 +243,11 @@ namespace NScumm.Core.IO
                 if (disk != null)
                 {
                     var roomOffset = GetRoomOffset(disk, resource.RoomNum);
-                    data = disk.ReadSound(roomOffset + resource.Offset);
+                    data = disk.ReadSound(music, roomOffset + resource.Offset);
                     // For games using AD except Indy3 and Loom we are using our iMuse
                     // implementation. See output initialization in
                     // ScummEngine::setupMusic for more information.
-                    if (data != null && Game.Version < 5 && Game.GameId != GameId.Indy3 && Game.GameId != GameId.Loom)
+                    if (data != null && Game.Version < 5 && Game.GameId != GameId.Indy3 && Game.GameId != GameId.Loom && music == NScumm.Core.Audio.MusicDriverTypes.AdLib)
                     {
                         data = ConvertADResource(data, sound);
                     }

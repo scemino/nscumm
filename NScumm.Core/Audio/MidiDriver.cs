@@ -19,6 +19,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using NScumm.Core.Audio.Midi;
 
@@ -35,7 +36,7 @@ namespace NScumm.Core.Audio
     /// <summary>
     /// Music types that music drivers can implement and engines can rely on.
     /// </summary>
-    enum MusicType
+    public enum MusicType
     {
         // Invalid output
         Invalid = -1,
@@ -67,6 +68,29 @@ namespace NScumm.Core.Audio
         MT32,
         // Roland GS
         RolandGS
+    }
+
+    [Flags]
+    public enum MusicDriverTypes
+    {
+        None = 0,
+        PCSpeaker = 1 << 0,
+        // PC Speaker: Maps to MT_PCSPK and MT_PCJR
+        CMS = 1 << 1,
+        // Creative Music System / Gameblaster: Maps to MT_CMS
+        PCjr = 1 << 2,
+        // Tandy/PC Junior driver
+        AdLib = 1 << 3,
+        // AdLib: Maps to MT_ADLIB
+        C64 = 1 << 4,
+        Amiga = 1 << 5,
+        AppleIIGS = 1 << 6,
+        FMTowns = 1 << 7,
+        // FM-TOWNS: Maps to MT_TOWNS
+        PC98 = 1 << 8,
+        // FM-TOWNS: Maps to MT_PC98
+        Midi = 1 << 9,
+        // Real MIDI
     }
 
     abstract class MidiDriverBase : IMidiDriver
@@ -132,9 +156,9 @@ namespace NScumm.Core.Audio
         /// <returns>The midi.</returns>
         /// <param name = "mixer"></param>
         /// <param name="handle">Handle.</param>
-        public static MidiDriver CreateMidi(IMixer mixer, DeviceHandle handle)
+        public static IMidiDriver CreateMidi(IMixer mixer, DeviceHandle handle)
         {
-            MidiDriver driver = null;
+            IMidiDriver driver = null;
             var plugins = MusicManager.GetPlugins();
             foreach (var m in plugins)
             {
@@ -180,10 +204,40 @@ namespace NScumm.Core.Audio
         /// </summary>
         /// <returns>The device handle based on the present devices and the flags parameter.</returns>
         /// <param name="flags">Flags.</param>
-        public static DeviceHandle DetectDevice(int flags)
+        public static DeviceHandle DetectDevice(MusicDriverTypes flags, string selectedDevice)
         {
-            // TODO:
-            return GetDeviceHandle("adlib");
+            var result = new DeviceHandle();
+            var handle = GetDeviceHandle(selectedDevice);
+            var musicType = GetMusicType(handle);
+            switch (musicType)
+            {
+                case MusicType.PCSpeaker:
+                    if (flags.HasFlag(MusicDriverTypes.PCSpeaker))
+                    {
+                        result = handle;
+                    }
+                    break;
+                case MusicType.AdLib:
+                    if (flags.HasFlag(MusicDriverTypes.AdLib))
+                    {
+                        result = handle;
+                    }
+                    break;
+            }
+            // TODO: other music drivers
+
+            return result;
+        }
+
+        public static MusicType GetMusicType(DeviceHandle handle)
+        {
+            var musicType = MusicType.Invalid;
+            var device = MusicManager.GetPlugins().SelectMany(p => p.GetDevices()).FirstOrDefault(d => Equals(d.Handle, handle));
+            if (device != null)
+            {
+                musicType = device.MusicType;
+            }
+            return musicType;
         }
 
         /// <summary>

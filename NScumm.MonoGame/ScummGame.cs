@@ -27,19 +27,19 @@ namespace NScumm.MonoGame
     /// </summary>
     public class ScummGame : Game
     {
-        readonly GameInfo info;
+        readonly GameSettings settings;
         readonly ScreenManager screenManager;
 
         public GraphicsDeviceManager GraphicsDeviceManager{ get; private set; }
 
-        public ScummGame(GameInfo info)
+        public ScummGame(GameSettings settings)
         {
             IsMouseVisible = false;
             IsFixedTimeStep = false;
             Window.AllowUserResizing = true;
 
             Content.RootDirectory = "Content";
-            this.info = info;
+            this.settings = settings;
             GraphicsDeviceManager = new GraphicsDeviceManager(this);
 
             screenManager = new ScreenManager(this);
@@ -54,9 +54,9 @@ namespace NScumm.MonoGame
         /// </summary>
         protected override void Initialize()
         {
-            Window.Title = string.Format("NScumm - {0} [{1}]", info.Description, info.Culture.NativeName);
+            Window.Title = string.Format("NScumm - {0} [{1}]", settings.Game.Description, settings.Game.Culture.NativeName);
             screenManager.AddScreen(new BackgroundScreen());
-            screenManager.AddScreen(new ScummScreen(this, info));
+            screenManager.AddScreen(new ScummScreen(this, settings));
 
             base.Initialize();
         }

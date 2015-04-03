@@ -272,11 +272,10 @@ namespace NScumm.Core.Audio.IMuse
 
         public void SetInstrument(byte[] data)
         {
-            // TODO: part
-//            if (Se.PcSpeaker)
-//                Instrument.PcSpk(data);
-//            else
-            Instrument.Adlib(data);
+            if (Se.PcSpeaker)
+                Instrument.PcSpk(data);
+            else
+                Instrument.Adlib(data);
 
             if (ClearToTransmit())
                 Instrument.Send(MidiChannel);

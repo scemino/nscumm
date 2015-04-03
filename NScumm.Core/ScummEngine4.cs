@@ -29,7 +29,7 @@ namespace NScumm.Core
 {
     public class ScummEngine4: ScummEngine3
     {
-        public ScummEngine4(GameInfo game, IGraphicsManager graphicsManager, IInputManager inputManager, IMixer mixer)
+        public ScummEngine4(GameSettings game, IGraphicsManager graphicsManager, IInputManager inputManager, IMixer mixer)
             : base(game, graphicsManager, inputManager, mixer)
         {
         }

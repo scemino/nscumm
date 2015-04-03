@@ -32,7 +32,7 @@ namespace NScumm.MonoGame
 {
     public class ScummScreen: GameScreen
     {
-        readonly GameInfo info;
+        readonly GameSettings info;
         SpriteBatch spriteBatch;
         ScummEngine engine;
         XnaGraphicsManager gfx;
@@ -50,7 +50,7 @@ namespace NScumm.MonoGame
             set;
         }
 
-        public ScummScreen(Game game, GameInfo info)
+        public ScummScreen(Game game, GameSettings info)
         {
             TransitionOnTime = TimeSpan.FromSeconds(1.0);
             TransitionOffTime = TimeSpan.FromSeconds(1.0);
@@ -69,8 +69,8 @@ namespace NScumm.MonoGame
                 var prop = game.Window.GetType().GetProperty("Window", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
                 var window = (OpenTK.NativeWindow)prop.GetValue(game.Window, null);
 
-                inputManager = new XnaInputManager(window, info.Width, info.Height);
-                gfx = new XnaGraphicsManager(info.Width, info.Height, window, ScreenManager.GraphicsDevice);
+                inputManager = new XnaInputManager(window, info.Game.Width, info.Game.Height);
+                gfx = new XnaGraphicsManager(info.Game.Width, info.Game.Height, window, ScreenManager.GraphicsDevice);
                 audioDriver = new OpenALDriver();
 
                 // init engines
@@ -177,7 +177,7 @@ namespace NScumm.MonoGame
 
         public string[] GetSaveGames()
         {
-            var dir = Path.GetDirectoryName(info.Path);
+            var dir = Path.GetDirectoryName(info.Game.Path);
             return Directory.EnumerateFiles(dir, "*.sav").ToArray();
         }
 
@@ -195,8 +195,8 @@ namespace NScumm.MonoGame
 
         string GetSaveGamePath(int index)
         {
-            var dir = Path.GetDirectoryName(info.Path);
-            var filename = Path.Combine(dir, string.Format("{0}{1}.sav", info.Id, (index + 1)));
+            var dir = Path.GetDirectoryName(info.Game.Path);
+            var filename = Path.Combine(dir, string.Format("{0}{1}.sav", info.Game.Id, (index + 1)));
             return filename;
         }
     }

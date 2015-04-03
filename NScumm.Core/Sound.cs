@@ -33,6 +33,11 @@ namespace NScumm.Core
 
         public int SfxMode { get { return sfxMode; } }
 
+        public MusicDriverTypes MusicType
+        {
+            get; set;
+        }
+
         public Sound(ScummEngine vm, IMixer mixer)
         {
             this.vm = vm;
@@ -159,7 +164,7 @@ namespace NScumm.Core
 
         byte[] ISoundRepository.GetSound(int id)
         {
-            return vm.ResourceManager.GetSound(id);
+            return vm.ResourceManager.GetSound(MusicType, id);
         }
 
         public void TalkSound(int a, int b, int mode, int channel = 0)
@@ -365,7 +370,7 @@ namespace NScumm.Core
 
         void PlaySound(int soundID)
         {
-            var res = vm.ResourceManager.GetSound(soundID);
+            var res = vm.ResourceManager.GetSound(MusicType, soundID);
             if (res == null)
                 return;
 

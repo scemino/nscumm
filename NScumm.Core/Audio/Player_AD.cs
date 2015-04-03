@@ -95,7 +95,7 @@ namespace NScumm.Core
                 SetupVolume();
 
                 // Query the sound resource
-                var res = _vm.ResourceManager.GetSound(sound);
+                var res = _vm.ResourceManager.GetSound(_vm.Sound.MusicType, sound);
 
                 if (res[2] == 0x80)
                 {

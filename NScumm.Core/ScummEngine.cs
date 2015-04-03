@@ -142,36 +142,39 @@ namespace NScumm.Core
 
         public static ScummEngine Instance { get; private set; }
 
+        public GameSettings Settings { get; private set; }
+
         #endregion Properties
 
         #region Constructor
 
-        public static ScummEngine Create(GameInfo game, IGraphicsManager gfxManager, IInputManager inputManager, IMixer mixer, bool debugMode = false)
+        public static ScummEngine Create(GameSettings settings, IGraphicsManager gfxManager, IInputManager inputManager, IMixer mixer, bool debugMode = false)
         {
             ScummEngine engine = null;
+            var game = settings.Game;
             if (game.Version == 3)
             {
-                engine = new ScummEngine3(game, gfxManager, inputManager, mixer);
+                engine = new ScummEngine3(settings, gfxManager, inputManager, mixer);
             }
             else if (game.Version == 4)
             {
-                engine = new ScummEngine4(game, gfxManager, inputManager, mixer);
+                engine = new ScummEngine4(settings, gfxManager, inputManager, mixer);
             }
             else if (game.Version == 5)
             {
-                engine = new ScummEngine5(game, gfxManager, inputManager, mixer);
+                engine = new ScummEngine5(settings, gfxManager, inputManager, mixer);
             }
             else if (game.Version == 6)
             {
-                engine = new ScummEngine6(game, gfxManager, inputManager, mixer);
+                engine = new ScummEngine6(settings, gfxManager, inputManager, mixer);
             }
             else if (game.Version == 7)
             {
-                engine = new ScummEngine7(game, gfxManager, inputManager, mixer);
+                engine = new ScummEngine7(settings, gfxManager, inputManager, mixer);
             }
             else if (game.Version == 8)
             {
-                engine = new ScummEngine8(game, gfxManager, inputManager, mixer);
+                engine = new ScummEngine8(settings, gfxManager, inputManager, mixer);
             }
             Instance = engine;
             engine.DebugMode = debugMode;
@@ -191,8 +194,10 @@ namespace NScumm.Core
             return sig;
         }
 
-        protected ScummEngine(GameInfo game, IGraphicsManager gfxManager, IInputManager inputManager, IMixer mixer)
+        protected ScummEngine(GameSettings settings, IGraphicsManager gfxManager, IInputManager inputManager, IMixer mixer)
         {
+            Settings = settings;
+            var game = settings.Game;
             _resManager = ResourceManager.Load(game);
 
             _game = game;
@@ -211,22 +216,7 @@ namespace NScumm.Core
 
             Sound = new Sound(this, mixer);
 
-            if (game.GameId == GameId.Loom || game.GameId == GameId.Indy3)
-            {
-                MusicEngine = new Player_AD(this, mixer);
-            }
-            else
-            {
-                MidiDriver nativeMidiDriver = null;
-                var adlibMidiDriver = MidiDriver.CreateMidi(mixer, MidiDriver.DetectDevice((int)MusicType.AdLib));
-                adlibMidiDriver.Property(NScumm.Core.Audio.SoftSynth.AdlibMidiDriver.PropertyOldAdLib, (Game.Version < 5) ? 1 : 0);
-                adlibMidiDriver.Property(NScumm.Core.Audio.SoftSynth.AdlibMidiDriver.PropertyScummOPL3, (Game.GameId == GameId.SamNMax) ? 1 : 0);
-                IMuse = NScumm.Core.Audio.IMuse.IMuse.Create(nativeMidiDriver, adlibMidiDriver);
-                MusicEngine = IMuse;
-                IMuse.Property(ImuseProperty.GameId, (uint)Game.GameId);
-                IMuse.AddSysexHandler(0x7D, Game.GameId == GameId.SamNMax ? new SysExFunc(new SamAndMaxSysEx().Do) : new SysExFunc(new ScummSysEx().Do));
-            }
-            MusicEngine.SetMusicVolume(192);
+            SetupMusic();
 
             _shadowPalette = new byte[Game.Version >= 7 ? NumShadowPalette * 256 : 256];
             _variables = new int[_resManager.NumVariables];
@@ -335,6 +325,91 @@ namespace NScumm.Core
             }
         }
 
+        void SetupMusic()
+        {
+            var selectedDevice = Settings.AudioDevice;
+            var deviceHandle = MidiDriver.DetectDevice(Game.Music, selectedDevice);
+
+            switch (MidiDriver.GetMusicType(deviceHandle))
+            {
+                case MusicType.Null:
+                    Sound.MusicType = MusicDriverTypes.None;
+                    break;
+                case MusicType.PCSpeaker:
+                    Sound.MusicType = MusicDriverTypes.PCSpeaker;
+                    break;
+                case MusicType.PCjr:
+                    Sound.MusicType = MusicDriverTypes.PCjr;
+                    break;
+                case MusicType.CMS:
+                    Sound.MusicType = MusicDriverTypes.CMS;
+                    break;
+                case MusicType.FMTowns:
+                    Sound.MusicType = MusicDriverTypes.FMTowns;
+                    break;
+                case MusicType.AdLib:
+                    Sound.MusicType = MusicDriverTypes.AdLib;
+                    break;
+                case MusicType.C64:
+                    Sound.MusicType = MusicDriverTypes.C64;
+                    break;
+                case MusicType.AppleIIGS:
+                    Sound.MusicType = MusicDriverTypes.AppleIIGS;
+                    break;
+                default:
+                    Sound.MusicType = MusicDriverTypes.Midi;
+                    break;
+            }
+
+            // Init iMuse
+            if (Game.Version >= 7)
+            {
+                // Setup for digital iMuse is performed in another place
+            }
+            else if ((Sound.MusicType == MusicDriverTypes.PCSpeaker || Sound.MusicType == MusicDriverTypes.PCjr) && (Game.Version > 2 && Game.Version <= 4))
+            {
+                MusicEngine = new Player_V2(this, Mixer, Sound.MusicType == MusicDriverTypes.PCjr);
+            }
+            else if (Game.GameId == GameId.Loom || Game.GameId == GameId.Indy3)
+            {
+                MusicEngine = new Player_AD(this, Mixer);
+            }
+            else
+            {
+                MidiDriver nativeMidiDriver = null;
+                MidiDriver adlibMidiDriver = null;
+                if (Sound.MusicType == MusicDriverTypes.AdLib)
+                {
+                    adlibMidiDriver = (MidiDriver)MidiDriver.CreateMidi(Mixer, MidiDriver.DetectDevice(Sound.MusicType, selectedDevice));
+                    adlibMidiDriver.Property(NScumm.Core.Audio.SoftSynth.AdlibMidiDriver.PropertyOldAdLib, (Game.Version < 5) ? 1 : 0);
+                    adlibMidiDriver.Property(NScumm.Core.Audio.SoftSynth.AdlibMidiDriver.PropertyScummOPL3, (Game.GameId == GameId.SamNMax) ? 1 : 0);
+                }
+                else if (Sound.MusicType == MusicDriverTypes.PCSpeaker)
+                {
+                    adlibMidiDriver = new PCSpeakerDriver(Mixer);
+                }
+
+                IMuse = NScumm.Core.Audio.IMuse.IMuse.Create(nativeMidiDriver, adlibMidiDriver);
+                MusicEngine = IMuse;
+
+                if (IMuse != null)
+                {
+                    IMuse.AddSysexHandler(0x7D, Game.GameId == GameId.SamNMax ? new SysExFunc(new SamAndMaxSysEx().Do) : new SysExFunc(new ScummSysEx().Do));
+                    IMuse.Property(ImuseProperty.GameId, (uint)Game.GameId);
+//                    IMuse.Property(ImuseProperty.NativeMt32, _native_mt32);
+//                    if (MidiDriver.GetMusicType(deviceHandle) != MusicType.MT32) // MT-32 Emulation shouldn't be GM/GS initialized
+//                        IMuse.Property(ImuseProperty.Gs, _enable_gs);
+                    if (Sound.MusicType == MusicDriverTypes.PCSpeaker)
+                        IMuse.Property(ImuseProperty.PcSpeaker, 1);
+                }
+            }
+
+            if (MusicEngine != null)
+            {
+                MusicEngine.SetMusicVolume(192);
+            }
+        }
+
         protected virtual void SetupVars()
         {
             VariableEgo = 1;
@@ -391,7 +466,37 @@ namespace NScumm.Core
                 // 2 CMS
                 // 3 AdLib
                 // 4 Roland
-                Variables[VariableSoundcard.Value] = 3; // adlib
+                switch (Sound.MusicType)
+                {
+                    case MusicDriverTypes.None:
+                    case MusicDriverTypes.PCSpeaker:
+                        Variables[VariableSoundcard.Value] = 0;
+                        break;
+                    case MusicDriverTypes.PCjr:
+                        Variables[VariableSoundcard.Value] = 1;
+                        break;
+                    case MusicDriverTypes.CMS:
+                        Variables[VariableSoundcard.Value] = 2;
+                        break;
+                    case MusicDriverTypes.AdLib:
+                        Variables[VariableSoundcard.Value] = 3;
+                        break;
+                    case MusicDriverTypes.Midi:
+                        Variables[VariableSoundcard.Value] = 4;
+                        break;
+                    default:
+                        if ((_game.GameId == GameId.Monkey1 && Game.Variant == "EGA") || (_game.GameId == GameId.Monkey1 && Game.Variant == "VGA")
+                            || (_game.GameId == GameId.Loom && Game.Version == 3)) /*&&  (_game.platform == Common::kPlatformDOS)*/
+                        {
+                            Variables[VariableSoundcard.Value] = 4;
+                        }
+                        else
+                        {
+                            Variables[VariableSoundcard.Value] = 3;
+                        }
+                        break;
+                }
+
                 Variables[VariableVideoMode.Value] = 19;
 
                 if (Game.GameId == GameId.Loom && Game.Version == 3)
@@ -660,7 +765,7 @@ namespace NScumm.Core
 
             _camera.LastPosition = _camera.CurrentPosition;
 
-            //_res->increaseExpireCounter();
+            //_res.increaseExpireCounter();
 
             AnimateCursor();
 

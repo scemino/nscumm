@@ -33,7 +33,7 @@ namespace NScumm.Core.IO
         {
         }
 
-        public override byte[] ReadSound(long offset)
+        public override byte[] ReadSound(NScumm.Core.Audio.MusicDriverTypes music, long offset)
         {
             GotoResourceHeader(offset);
             var tag = ToTag(_reader.ReadBytes(4));

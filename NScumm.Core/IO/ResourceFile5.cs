@@ -467,7 +467,7 @@ namespace NScumm.Core.IO
             return name.ToArray();
         }
 
-        public override byte[] ReadSound(long offset)
+        public override byte[] ReadSound(NScumm.Core.Audio.MusicDriverTypes music, long offset)
         {
             GotoResourceHeader(offset);
             var tag = ToTag(_reader.ReadBytes(4));
@@ -484,11 +484,29 @@ namespace NScumm.Core.IO
                 switch (tag)
                 {
                     case "ADL ":
-                        _reader.BaseStream.Seek(-8, SeekOrigin.Current);
-                        return _reader.ReadBytes((int)size + 8);
+                        if (music == NScumm.Core.Audio.MusicDriverTypes.AdLib)
+                        {
+                            _reader.BaseStream.Seek(-8, SeekOrigin.Current);
+                            return _reader.ReadBytes((int)size + 8);
+                        }
+                        _reader.BaseStream.Seek(size, SeekOrigin.Current);
+                        break;
+                    case "SPK ":
+                        if (music == NScumm.Core.Audio.MusicDriverTypes.PCSpeaker)
+                        {
+                            _reader.BaseStream.Seek(-8, SeekOrigin.Current);
+                            return _reader.ReadBytes((int)size + 8);
+                        }
+                        _reader.BaseStream.Seek(size, SeekOrigin.Current);
+                        break;
                     case "MIDI":
-                        _reader.BaseStream.Seek(-8, SeekOrigin.Current);
-                        return _reader.ReadBytes((int)size + 8);
+                        if (music == NScumm.Core.Audio.MusicDriverTypes.Midi)
+                        {
+                            _reader.BaseStream.Seek(-8, SeekOrigin.Current);
+                            return _reader.ReadBytes((int)size + 8);
+                        }
+                        _reader.BaseStream.Seek(size, SeekOrigin.Current);
+                        break;
                     case "SOU ":
                         break;
                     default:

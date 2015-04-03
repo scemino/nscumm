@@ -49,7 +49,7 @@ namespace NScumm.Core
         protected int? VariableBlastAboveText;
         protected int? VariableCharsetMask;
 
-        public ScummEngine6(GameInfo game, IGraphicsManager graphicsManager, IInputManager inputManager, IMixer mixer)
+        public ScummEngine6(GameSettings game, IGraphicsManager graphicsManager, IInputManager inputManager, IMixer mixer)
             : base(game, graphicsManager, inputManager, mixer)
         {
         }

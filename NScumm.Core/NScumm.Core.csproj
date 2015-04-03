@@ -266,6 +266,12 @@
     <Compile Include="IO\ResourceFile8.cs" />
     <Compile Include="Graphics\CharsetRendererNut.cs" />
     <Compile Include="Smush\Codec47Decoder.cs" />
+    <Compile Include="Audio\IMuse\InstrumentPcSpk.cs" />
+    <Compile Include="Audio\PCSpeaker.cs" />
+    <Compile Include="Audio\Player_V2Base.cs" />
+    <Compile Include="Audio\Player_V2.cs" />
+    <Compile Include="Audio\PCSpeakerMusicPlugin.cs" />
+    <Compile Include="Audio\PCSpeakerDriver.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="IO\Nscumm.xml">

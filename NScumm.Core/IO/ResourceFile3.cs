@@ -168,7 +168,7 @@ namespace NScumm.Core.IO
             return data;
         }
 
-        public override byte[] ReadSound(long offset)
+        public override byte[] ReadSound(NScumm.Core.Audio.MusicDriverTypes music, long offset)
         {
             GotoResourceHeader(offset);
             var chunk = ReadChunk(_reader);
@@ -182,7 +182,12 @@ namespace NScumm.Core.IO
                 {
                     totalSize -= 6;
                 }
-                else if (chunk.Tag == "AD")
+                else if (music == NScumm.Core.Audio.MusicDriverTypes.PCSpeaker && chunk.Tag == "WA")
+                {
+                    _reader.BaseStream.Seek(-6, SeekOrigin.Current);
+                    return _reader.ReadBytes((int)chunk.Size);
+                }
+                else if (music == NScumm.Core.Audio.MusicDriverTypes.AdLib && chunk.Tag == "AD")
                 {
                     return _reader.ReadBytes((int)chunk.Size - 6);
                 }

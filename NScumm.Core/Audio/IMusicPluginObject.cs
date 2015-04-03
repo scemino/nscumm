@@ -20,10 +20,11 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System.Collections.Generic;
+using NScumm.Core.Audio.Midi;
 
 namespace NScumm.Core.Audio
 {
-    interface IMusicPluginObject
+    public interface IMusicPluginObject
     {
         /// <summary>
         /// Gets the name of the plugin.
@@ -59,6 +60,6 @@ namespace NScumm.Core.Audio
         /// </summary>
         /// <param name = "mixer"></param>
         /// <param name="handle">Handle.</param>
-        MidiDriver CreateInstance(IMixer mixer, DeviceHandle handle);
+        IMidiDriver CreateInstance(IMixer mixer, DeviceHandle handle);
     }
 }

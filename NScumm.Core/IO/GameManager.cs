@@ -21,6 +21,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Xml.Linq;
+using NScumm.Core.Audio;
 
 namespace NScumm.Core.IO
 {
@@ -50,6 +51,18 @@ namespace NScumm.Core.IO
         CurseOfMonkeyIsland
     }
 
+    public class GameSettings
+    {
+        public GameInfo Game { get; private set; }
+        public string AudioDevice { get; set; }
+
+        public GameSettings(GameInfo game)
+        {
+            Game = game;
+            AudioDevice = "adlib";
+        }
+    }
+
     public class GameInfo
     {
         public string Path { get; set; }
@@ -71,6 +84,8 @@ namespace NScumm.Core.IO
         public CultureInfo Culture { get; set; }
 
         public GameFeatures Features { get; set; }
+
+        public MusicDriverTypes Music { get; set; }
 
         public bool IsOldBundle { get { return Version <= 3 && Features.HasFlag(GameFeatures.SixteenColors); } }
 
@@ -115,12 +130,9 @@ namespace NScumm.Core.IO
                                         where (string)d.Attribute("gameId") == (string)gameMd5.Attribute("gameId")
                                         select (string)d.Attribute("text")).FirstOrDefault();
                 var attFeatures = gameMd5.Attribute("features");
-                var feat = attFeatures == null ? new string[0] : attFeatures.Value.Split(' ');
-                GameFeatures features = GameFeatures.None;
-                foreach (var f in feat)
-                {
-                    features |= (GameFeatures)Enum.Parse(typeof(GameFeatures), f);
-                }
+                var features = ParseFeatures((string)attFeatures);
+                var attMusic = game.Attribute("music");
+                var music = ParseMusic((string)attMusic);
                 info = new GameInfo
                 {
                     MD5 = signature,
@@ -132,10 +144,33 @@ namespace NScumm.Core.IO
                     Description = desc,
                     Version = (int)game.Attribute("version"),
                     Culture = CultureInfo.GetCultureInfo((string)gameMd5.Attribute("language")),
-                    Features = features
+                    Features = features,
+                    Music = music
                 };
             }
             return info;
+        }
+
+        static GameFeatures ParseFeatures(string feature)
+        {
+            var feat = feature == null ? new string[0] : feature.Split(' ');
+            var features = GameFeatures.None;
+            foreach (var f in feat)
+            {
+                features |= (GameFeatures)Enum.Parse(typeof(GameFeatures), f);
+            }
+            return features;
+        }
+
+        static MusicDriverTypes ParseMusic(string music)
+        {
+            var mus = music == null ? new string[0] : music.Split(' ');
+            var musics = MusicDriverTypes.None;
+            foreach (var m in mus)
+            {
+                musics |= (MusicDriverTypes)Enum.Parse(typeof(MusicDriverTypes), m);
+            }
+            return musics;
         }
 
         static string GetSignature(string path)

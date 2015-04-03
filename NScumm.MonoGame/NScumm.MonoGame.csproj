@@ -48,6 +48,7 @@
     <Compile Include="Screens\BackgroundScreen.cs" />
     <Compile Include="Screens\MainMenuScreen.cs" />
     <Compile Include="Screens\ScummScreen.cs" />
+    <Compile Include="Mono.Options\Options.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

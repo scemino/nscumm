@@ -34,7 +34,7 @@ namespace NScumm.Core
         int VariableSync;
         int VariableLanguage;
 
-        public ScummEngine8(GameInfo game, IGraphicsManager graphicsManager, IInputManager inputManager, IMixer mixer)
+        public ScummEngine8(GameSettings game, IGraphicsManager graphicsManager, IInputManager inputManager, IMixer mixer)
             : base(game, graphicsManager, inputManager, mixer)
         {
         }

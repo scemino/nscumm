@@ -104,12 +104,11 @@ namespace NScumm.Core.Audio.IMuse
 
         public void PcSpk(byte[] instrument)
         {
-            throw new NotImplementedException();
-            //            Clear();
-            //            if (!instrument)
-            //                return;
-            //            _type = InstrumentType.PcSpk;
-            //            _instrument = new Instrument_PcSpk(instrument);
+            Clear();
+            if (instrument == null)
+                return;
+            _type = InstrumentType.PcSpk;
+            _instrument = new InstrumentPcSpk(instrument);
         }
 
         public void MacSfx(byte program)
@@ -148,13 +147,13 @@ namespace NScumm.Core.Audio.IMuse
                     case InstrumentType.AdLib:
                         _instrument = new InstrumentAdLib(s.Reader.BaseStream);
                         break;
-                        // TODO: vs: Roland, PcSpk, MacSfx
+                // TODO: vs: Roland, PcSpk, MacSfx
 //                    case InstrumentType.Roland:
 //                        _instrument = new InstrumentRoland(s);
 //                        break;
-//                    case InstrumentType.PcSpk:
-//                        _instrument = new InstrumentPcSpk(s);
-//                        break;
+                    case InstrumentType.PcSpk:
+                        _instrument = new InstrumentPcSpk(s.Reader.BaseStream);
+                        break;
 //                    case InstrumentType.MacSfx:
 //                        _instrument = new InstrumentMacSfx(s);
 //                        break;

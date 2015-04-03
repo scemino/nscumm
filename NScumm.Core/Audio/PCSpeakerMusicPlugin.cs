@@ -1,10 +1,10 @@
 //
-//  MusicPluginObject.cs
+//  PCSpeakerMusicPlugin.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
 //
-//  Copyright (c) 2014 
+//  Copyright (c) 2015 
 //
 //  This program is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -22,28 +22,28 @@
 using System.Collections.Generic;
 using NScumm.Core.Audio.Midi;
 
-namespace NScumm.Core.Audio
+namespace NScumm.Core.Audio.SoftSynth
 {
-    abstract class MusicPluginObject: IMusicPluginObject
+    class PCSpeakerMusicPlugin : MusicPluginObject, IMusicPluginObject
     {
-        public abstract IList<MusicDevice> GetDevices();
-
-        public abstract IMidiDriver CreateInstance(IMixer mixer, DeviceHandle handle);
-
-        public abstract string Id
+        public override string Id
         {
-            get;
+            get{ return "pcspk"; }
         }
 
-        public abstract string Name
+        public override string Name
         {
-            get;
+            get { return "PC Speaker Emulator"; }
         }
 
-        public virtual bool CheckDevice(DeviceHandle handle)
+        public override IList<MusicDevice> GetDevices()
         {
-            return true;
+            return new []{ new MusicDevice(this, string.Empty, MusicType.PCSpeaker) };
+        }
+
+        public override IMidiDriver CreateInstance(IMixer mixer, DeviceHandle handle)
+        {
+            return new PCSpeakerDriver(mixer);
         }
     }
-    
 }

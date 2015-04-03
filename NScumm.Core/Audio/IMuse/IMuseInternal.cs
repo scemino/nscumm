@@ -88,8 +88,9 @@ namespace NScumm.Core.Audio.IMuse
         protected ushort[] _volchan_table;
         internal protected Player[] _players;
         internal protected Part[] _parts;
-    
-        protected bool _pcSpeaker;
+
+        public bool PcSpeaker { get; private set; }
+
         protected Instrument[] _global_instruments;
         protected CommandQueue[] _cmd_queue;
         protected DeferredCommand[] _deferredCommands;
@@ -218,7 +219,7 @@ namespace NScumm.Core.Audio.IMuse
         {
             int size, pos;
 
-            var ptr = ScummEngine.Instance.ResourceManager.GetSound(sound);
+            var ptr = ScummEngine.Instance.ResourceManager.GetSound(ScummEngine.Instance.Sound.MusicType, sound);
 
             if (ptr == null)
             {
@@ -286,7 +287,7 @@ namespace NScumm.Core.Audio.IMuse
 
         internal protected bool IsMT32(int sound)
         {
-            var ptr = ScummEngine.Instance.ResourceManager.GetSound(sound);
+            var ptr = ScummEngine.Instance.ResourceManager.GetSound(ScummEngine.Instance.Sound.MusicType, sound);
             if (ptr == null)
                 return false;
 
@@ -328,9 +329,9 @@ namespace NScumm.Core.Audio.IMuse
             return false;
         }
 
-        internal  protected bool IsMIDI(int sound)
+        internal protected bool IsMIDI(int sound)
         {
-            var ptr = ScummEngine.Instance.ResourceManager.GetSound(sound);
+            var ptr = ScummEngine.Instance.ResourceManager.GetSound(ScummEngine.Instance.Sound.MusicType, sound);
             if (ptr == null)
                 return false;
 
@@ -369,7 +370,7 @@ namespace NScumm.Core.Audio.IMuse
 
         internal protected bool SupportsPercussion(int sound)
         {
-            var ptr = ScummEngine.Instance.ResourceManager.GetSound(sound);
+            var ptr = ScummEngine.Instance.ResourceManager.GetSound(ScummEngine.Instance.Sound.MusicType, sound);
             if (ptr == null)
                 return false;
 
@@ -1003,7 +1004,7 @@ namespace NScumm.Core.Audio.IMuse
         {
             if (slot < 32)
             {
-                if (_pcSpeaker)
+                if (PcSpeaker)
                 {
                     _global_instruments[slot].PcSpk(data);
                 }
@@ -1021,14 +1022,14 @@ namespace NScumm.Core.Audio.IMuse
             // as default in the original, thus we do the same.
             // PC Speaker instrument size is 23, while AdLib instrument size is 30.
             // Thus we just use a 30 byte instrument data array as default.
-            var defaultInstr = new byte[30];
+            var defaultInstr = new byte[PcSpeaker ? 23 : 30];
 
             if (_global_instruments[slot].IsValid)
             {
                 // In case we have an valid instrument set up, copy it to the part.
                 _global_instruments[slot].CopyTo(dest);
             }
-            else if (_pcSpeaker)
+            else if (PcSpeaker)
             {
                 Debug.WriteLine("Trying to use non-existent global PC Speaker instrument {0}", slot);
                 dest.PcSpk(defaultInstr);
@@ -1626,7 +1627,7 @@ namespace NScumm.Core.Audio.IMuse
                         break;
 
                     case ImuseProperty.PcSpeaker:
-                        _pcSpeaker = (value != 0);
+                        PcSpeaker = (value != 0);
                         break;
                 }
 

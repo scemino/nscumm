@@ -440,7 +440,7 @@ namespace NScumm.Core.Audio.IMuse
 //                    _vm.ensureResourceLoaded(rtSound, soundId);
                     // TODO: lock
 //                    _vm._res.lock(rtSound, soundId);
-                    ptr = _vm.ResourceManager.GetSound(soundId);
+                    ptr = _vm.ResourceManager.GetSound(_vm.Sound.MusicType, soundId);
                     if (ptr == null)
                     {
                         CloseSound(sound);

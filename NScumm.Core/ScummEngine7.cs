@@ -59,7 +59,7 @@ namespace NScumm.Core
 
         internal IMuseDigital IMuseDigital { get; private set; }
 
-        public ScummEngine7(GameInfo game, IGraphicsManager graphicsManager, IInputManager inputManager, IMixer mixer)
+        public ScummEngine7(GameSettings game, IGraphicsManager graphicsManager, IInputManager inputManager, IMixer mixer)
             : base(game, graphicsManager, inputManager, mixer)
         {
             if (Game.GameId == GameId.Dig && (Game.Features.HasFlag(GameFeatures.Demo)))

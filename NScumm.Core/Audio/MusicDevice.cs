@@ -18,7 +18,6 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-using System;
 
 namespace NScumm.Core.Audio
 {
@@ -27,7 +26,7 @@ namespace NScumm.Core.Audio
     /// can manage and their capabilities.
     /// A device with an empty name means the default device.
     /// </summary>
-    class MusicDevice
+    public class MusicDevice
     {
         public MusicDevice(IMusicPluginObject musicPlugin, string name, MusicType mt)
         {

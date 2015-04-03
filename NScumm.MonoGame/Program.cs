@@ -14,13 +14,13 @@
  * You should have received a copy of the GNU General Public License
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
-using NScumm.Core.IO;
-
-#region Using Statements
 using System;
+using Mono.Options;
 using NScumm.Core;
+using NScumm.Core.IO;
+using System.Reflection;
 
-#endregion
+[assembly:AssemblyVersion("0.1.0.*")]
 
 namespace NScumm.MonoGame
 {
@@ -33,41 +33,101 @@ namespace NScumm.MonoGame
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        static void Main(string[] args)
+        static int Main(string[] args)
         {
-            GameInfo info;
-            if (args.Length > 0)
+            var musicDriver = "adlib";
+            var showVersion = false;
+            var showHelp = false;
+            var listAudioDevices = false;
+            var options = new OptionSet
             {
-                var path = ScummHelper.NormalizePath(args[0]);
-                if (System.IO.File.Exists(path))
+                { "v|version", "Display NScumm version information and exit", v => showVersion = v != null },
+                { "h|help", "Display a brief help text and exit", h => showHelp = h != null },
+                { "e|music-driver=", "Select music driver", d => musicDriver = d },
+                { "list-audio-devices", "List all available audio devices", b => listAudioDevices = b != null }
+            };
+
+            try
+            {
+                var extras = options.Parse(args);
+                if (showVersion)
                 {
-                    info = GameManager.GetInfo(path);
-                    if (info == null)
+                    ShowVersion();
+                }
+                else if (showHelp)
+                {
+                    Usage(options);
+                }
+                else if (listAudioDevices)
+                {
+                    ListAudioDevices();
+                }
+                else if (extras.Count == 1)
+                {
+                    var path = ScummHelper.NormalizePath(extras[0]);
+                    if (System.IO.File.Exists(path))
                     {
-                        Console.Error.WriteLine("This game is not supported, sorry please contact me if you want to support this game.");
+                        var info = GameManager.GetInfo(path);
+                        if (info == null)
+                        {
+                            Console.Error.WriteLine("This game is not supported, sorry please contact me if you want to support this game.");
+                        }
+                        else
+                        {
+                            var settings = new GameSettings(info){ AudioDevice = musicDriver };
+                            var game = new ScummGame(settings);
+                            game.Run();
+                        }
                     }
                     else
                     {
-                        var game = new ScummGame(info);
-                        game.Run();
+                        Console.Error.WriteLine("The file {0} does not exist.", path);
                     }
                 }
                 else
                 {
-                    Console.Error.WriteLine("The file {0} does not exist.", path);
+                    Usage(options);
+                    return 1;
                 }
             }
-            else
+            catch (ArgumentException)
             {
-                Usage();
+                Usage(options);
+                return 1;
+            }
+            catch (OptionException)
+            {
+                Usage(options);
+                return 1;
+            }
+            return 0;
+        }
+
+        static void ShowVersion()
+        {
+            var filename = System.IO.Path.GetFileNameWithoutExtension(AppDomain.CurrentDomain.FriendlyName);
+            var asm = Assembly.GetExecutingAssembly();
+            var info = new System.IO.FileInfo(asm.Location);
+            Console.WriteLine("{0} {1} ({2:R})", filename, asm.GetName().Version, info.CreationTime);
+        }
+
+        static void ListAudioDevices()
+        {
+            Console.WriteLine("{0,-10} {1}", "Id", "Description");
+            Console.WriteLine("{0,-10} {1}", new string('-', 10), new string('-', 20));
+            var plugins = NScumm.Core.Audio.MusicManager.GetPlugins();
+            foreach (var plugin in plugins)
+            {
+                Console.WriteLine("{0,-10} {1}", plugin.Id, plugin.Name);
             }
         }
 
-        static void Usage()
+        static void Usage(OptionSet options)
         {
             var filename = System.IO.Path.GetFileNameWithoutExtension(AppDomain.CurrentDomain.FriendlyName);
             Console.ForegroundColor = ConsoleColor.Blue;
-            Console.WriteLine("Usage : {0} [FILE]", filename);
+            Console.WriteLine("Usage : {0} [OPTIONS]... [FILE]", filename);
+            options.WriteOptionDescriptions(Console.Out);
         }
     }
 }

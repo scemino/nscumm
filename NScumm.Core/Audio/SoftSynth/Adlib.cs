@@ -20,6 +20,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System.Collections.Generic;
+using NScumm.Core.Audio.Midi;
 
 namespace NScumm.Core.Audio.SoftSynth
 {
@@ -40,11 +41,12 @@ namespace NScumm.Core.Audio.SoftSynth
             return new []{ new MusicDevice(this, string.Empty, MusicType.AdLib) };
         }
 
-        public override MidiDriver CreateInstance(IMixer mixer, DeviceHandle handle)
+        public override IMidiDriver CreateInstance(IMixer mixer, DeviceHandle handle)
         {
             // TODO:
             return new AdlibMidiDriver(mixer);
         }
     }
+
 }
 

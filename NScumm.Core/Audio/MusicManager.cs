@@ -28,7 +28,7 @@ namespace NScumm.Core.Audio
     /// <summary>
     /// Singleton class which manages all Music plugins.
     /// </summary>
-    static class MusicManager
+    public static class MusicManager
     {
         public static IList<IMusicPluginObject> GetPlugins()
         {

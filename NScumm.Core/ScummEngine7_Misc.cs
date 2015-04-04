@@ -53,7 +53,7 @@ namespace NScumm.Core
                         // SMUSH movie playback
                         if (args[1] == 0 && !_skipVideo)
                         {
-                            var videoname = System.Text.Encoding.ASCII.GetString(GetStringAddressVar(VariableVideoName));
+                            var videoname = System.Text.Encoding.UTF8.GetString(GetStringAddressVar(VariableVideoName));
                             // TODO: vs
                             // Correct incorrect smush filename in Macintosh FT demo
 //                            if ((_game.id == GID_FT) && (_game.features & GF_DEMO) && (_game.platform == Common::kPlatformMacintosh) &&
@@ -122,7 +122,7 @@ namespace NScumm.Core
                     _saveSound = args[1] != 0;
                     break;
                 default:
-                    Console.Error.WriteLine("KernelSetFunctions: default case {0} (param count {1})", args[0], args.Length);
+//                    Console.Error.WriteLine("KernelSetFunctions: default case {0} (param count {1})", args[0], args.Length);
                     break;
             }
         }
@@ -820,7 +820,7 @@ namespace NScumm.Core
 
         internal void AddSubtitleToQueue(byte[] text, int textPos, Point pos, byte color, byte charset)
         {
-            if (text[textPos] != 0 && System.Text.Encoding.ASCII.GetString(text, textPos, 1) != " ")
+            if (text[textPos] != 0 && System.Text.Encoding.UTF8.GetString(text, textPos, 1) != " ")
             {
                 Debug.Assert(_subtitleQueuePos < _subtitleQueue.Length);
                 var st = _subtitleQueue[_subtitleQueuePos];
@@ -878,7 +878,7 @@ namespace NScumm.Core
                 var count = Array.IndexOf(ptr, (byte)0);
                 if (count < 0)
                     count = ptr.Length - 1;
-                var pointer = System.Text.Encoding.ASCII.GetString(ptr, 0, count);
+                var pointer = System.Text.Encoding.UTF8.GetString(ptr, 0, count);
 
                 // Play speech
                 if (!Game.Features.HasFlag(GameFeatures.Demo) && Game.GameId == GameId.CurseOfMonkeyIsland) // CMI demo does not have .IMX for voice

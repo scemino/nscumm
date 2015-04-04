@@ -247,7 +247,7 @@ namespace NScumm.Core.Audio.IMuse
                     break;
 
                 default:
-                    Console.Error.WriteLine("Unknown SysEx command {0}", (int)code);
+//                    Console.Error.WriteLine("Unknown SysEx command {0}", (int)code);
                     break;
             }
         }

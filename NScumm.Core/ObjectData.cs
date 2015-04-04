@@ -23,7 +23,7 @@ using NScumm.Core.IO;
 namespace NScumm.Core
 {
     [System.Diagnostics.DebuggerDisplay("{DebuggerDisplay,nq}")]
-    public class ObjectData: ICloneable
+    public class ObjectData
     {
         public ushort Number { get; set; }
 
@@ -67,13 +67,6 @@ namespace NScumm.Core
             Hotspots = new List<Point>();
         }
 
-        #region ICloneable implementation
-
-        object ICloneable.Clone()
-        {
-            return Clone();
-        }
-
         public ObjectData Clone()
         {
             var obj = (ObjectData)this.MemberwiseClone();
@@ -90,8 +83,6 @@ namespace NScumm.Core
             }
             return obj;
         }
-
-        #endregion
 
         public void SaveOrLoad(Serializer serializer)
         {
@@ -129,14 +120,14 @@ namespace NScumm.Core
                 LoadAndSaveEntry.Create(reader => reader.ReadByte(), writer => writer.WriteByte(0), 8),
                 LoadAndSaveEntry.Create(reader => Flags = (DrawBitmaps)reader.ReadByte(), writer => writer.WriteByte((byte)Flags), 46),
             };
-            Array.ForEach(objectEntries, e => e.Execute(serializer));
+            objectEntries.ForEach(e => e.Execute(serializer));
         }
 
         internal string DebuggerDisplay
         {
             get
             { 
-                return Number != 0 ? string.Format("(Number: {0}, Name = {1})", Number, System.Text.Encoding.ASCII.GetString(Name)) : "Number 0";
+                return Number != 0 ? string.Format("(Number: {0}, Name = {1})", Number, System.Text.Encoding.UTF8.GetString(Name)) : "Number 0";
             }    
         }
     }

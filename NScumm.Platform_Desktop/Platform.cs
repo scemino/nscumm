@@ -1,10 +1,10 @@
 ﻿//
-//  ImageData.cs
+//  Platform.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
 //
-//  Copyright (c) 2014 
+//  Copyright (c) 2015 
 //
 //  This program is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -18,40 +18,35 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-using System.Collections.Generic;
 using System;
+using System.Threading;
+using NScumm.Core;
+using System.Runtime.InteropServices;
 
-namespace NScumm.Core.Graphics
+namespace NScumm
 {
-    public class ImageData
+    public class Platform: IPlatform
     {
-        public List<ZPlane>  ZPlanes { get; private set; }
-
-        public byte[] Data { get; set; }
-
-        public bool IsBomp
+        public void Sleep(int timeInMs)
         {
-            get;
-            set;
+            Thread.Sleep(timeInMs);
         }
 
-        public ImageData()
+        public object ToStructure(byte[] data, int offset, Type type)
         {
-            ZPlanes = new List<ZPlane>();
-            Data = new byte[0];
-        }
-
-        public ImageData Clone()
-        {
-            var data = new ImageData{ IsBomp = IsBomp };
-            data.Data = new byte[Data.Length];
-            Array.Copy(Data, data.Data, Data.Length);
-            foreach (var zplane in ZPlanes)
+            object obj;
+            var size = Marshal.SizeOf(type);
+            var ptr = Marshal.AllocHGlobal(size);
+            try
             {
-                data.ZPlanes.Add(zplane.Clone());
+                Marshal.Copy(data, offset, ptr, size);
+                obj = Marshal.PtrToStructure(ptr, type);
             }
-            return data;
+            finally
+            {
+                Marshal.FreeHGlobal(ptr);
+            }
+            return obj;
         }
     }
 }

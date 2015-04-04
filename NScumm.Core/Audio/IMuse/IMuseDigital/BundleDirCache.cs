@@ -57,10 +57,10 @@ namespace NScumm.Core.Audio.IMuse
 
             if (!found)
             {
-                var file = new NScumm.Core.IO.XorReader(File.OpenRead(filename), 0);
+                var file = new NScumm.Core.IO.XorReader(ServiceLocator.FileStorage.OpenFileRead(filename), 0);
 
-                if (freeSlot == -1)
-                    Console.Error.WriteLine("BundleDirCache::matchFileFile() Can't find free slot for file bundle dir cache");
+//                if (freeSlot == -1)
+//                    Console.Error.WriteLine("BundleDirCache::matchFileFile() Can't find free slot for file bundle dir cache");
 
                 var tag = file.ReadTag();
                 if (tag == "LB23")
@@ -82,7 +82,7 @@ namespace NScumm.Core.Audio.IMuse
 
                     if (tag == "LB23")
                     {
-                        _budleDirCache[freeSlot].BundleTable[i].Filename = Encoding.ASCII.GetString(file.ReadBytes(24));
+                        _budleDirCache[freeSlot].BundleTable[i].Filename = Encoding.UTF8.GetString(file.ReadBytes(24));
                     }
                     else
                     {
@@ -94,7 +94,7 @@ namespace NScumm.Core.Audio.IMuse
                             if ((c = file.ReadByte()) != 0)
                                 name.Add(c);
 
-                        _budleDirCache[freeSlot].BundleTable[i].Filename = Encoding.ASCII.GetString(name.ToArray());
+                        _budleDirCache[freeSlot].BundleTable[i].Filename = Encoding.UTF8.GetString(name.ToArray());
                     }
                     _budleDirCache[freeSlot].BundleTable[i].Offset = (int)file.ReadUInt32BigEndian();
                     _budleDirCache[freeSlot].BundleTable[i].Size = (int)file.ReadUInt32BigEndian();

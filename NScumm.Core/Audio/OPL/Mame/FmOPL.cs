@@ -623,10 +623,10 @@ namespace NScumm.Core
             switch (address)
             {
                 case 0x05: /* KeyBoard IN */
-                    Console.Error.WriteLine("OPL:read unmapped KEYBOARD port");
+//                    Console.Error.WriteLine("OPL:read unmapped KEYBOARD port");
                     return 0;
                 case 0x19: /* I/O DATA    */
-                    Console.Error.WriteLine("OPL:read unmapped I/O port");
+//                    Console.Error.WriteLine("OPL:read unmapped I/O port");
                     return 0;
                 case 0x1a: /* PCM-DATA    */
                     return 0;

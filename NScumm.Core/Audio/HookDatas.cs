@@ -125,7 +125,7 @@ namespace NScumm.Core.Audio
                 LoadAndSaveEntry.Create(r => PartTranspose = r.ReadBytes(16), w => w.WriteBytes(PartTranspose, 16), 8)
             };
 
-            Array.ForEach(hookEntries, e => e.Execute(ser));
+            hookEntries.ForEach(e => e.Execute(ser));
         }
 
         static void Set<T>(T[] array, T value)

@@ -336,8 +336,8 @@ namespace NScumm.Core
             // version 5 games where this change is necessary to fix certain long standing bugs.
             if (color == -1)
             {
-                if (vs != MainVirtScreen)
-                    Console.Error.WriteLine("can only copy bg to main window");
+//                if (vs != MainVirtScreen)
+//                    Console.Error.WriteLine("can only copy bg to main window");
 
                 var bgbuff = new PixelNavigator(vs.Surfaces[1]);
                 bgbuff.GoTo(vs.XStart + x, y);

@@ -60,14 +60,14 @@ namespace NScumm.Core.IO
 
         static string ToTag(byte[] data)
         {
-            return Encoding.ASCII.GetString(data);
+            return Encoding.UTF8.GetString(data);
         }
 
         protected override void LoadIndex(GameInfo game)
         {
             const byte encByte = 0x69;
-            Directory = Path.GetDirectoryName(game.Path);
-            using (var file = File.Open(game.Path, FileMode.Open))
+            Directory = ServiceLocator.FileStorage.GetDirectoryName(game.Path);
+            using (var file = ServiceLocator.FileStorage.OpenFileRead(game.Path))
             {
                 var br1 = new BinaryReader(file);
                 var br = new XorReader(br1, encByte);
@@ -114,7 +114,7 @@ namespace NScumm.Core.IO
                             ReadDirectoryOfObjects(br);
                             break;
                         default:
-                            Console.Error.WriteLine("Unknown block {0}", block);
+//                            Console.Error.WriteLine("Unknown block {0}", block);
                             break;
                     }
                 }

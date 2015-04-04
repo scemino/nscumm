@@ -29,7 +29,7 @@ namespace NScumm.Core
     {
         protected override void LoadIndex(GameInfo game)
         {
-            using (var file = File.OpenRead(game.Path))
+            using (var file = ServiceLocator.FileStorage.OpenFileRead(game.Path))
             {
                 var brOrg = new BinaryReader(file);
                 var br = new XorReader(brOrg, 0xFF);

@@ -287,7 +287,7 @@ namespace NScumm.Core.Graphics
                 Debug.Assert(((ushort)code & 0xFFF) * 6 < ScummHelper.SwapBytes(BitConverter.ToUInt32(akos, (int)(akof - 4))) - 8);
                 Debug.Assert(((ushort)code & 0x7000) == 0);
 
-                _srcptr = off.akcd;
+                _srcptr = (int)off.akcd;
                 Debug.Assert(_srcptr < akcd.Length);
                 var costumeInfo = ResourceFile7.ToStructure<CostumeInfo>(akos, (int)(akci + off.akci));
 
@@ -332,7 +332,7 @@ namespace NScumm.Core.Graphics
                         code = (AkosOpcode)ScummHelper.SwapBytes(BitConverter.ToUInt16(aksq, p + 4));
                     var off = ResourceFile7.ToStructure<AkosOffset>(akos, (int)(akof + 6 * ((ushort)code & 0xFFF)));
 
-                    _srcptr = off.akcd;
+                    _srcptr = (int)off.akcd;
                     var costumeInfo = ResourceFile7.ToStructure<CostumeInfo>(akos, (int)(akci + off.akci));
 
                     _width = costumeInfo.width;
@@ -835,7 +835,7 @@ namespace NScumm.Core.Graphics
 
             if (ActorHitMode)
             {
-                Console.Error.WriteLine("codec16: _actorHitMode not yet implemented");
+//                Console.Error.WriteLine("codec16: _actorHitMode not yet implemented");
                 return 0;
             }
 
@@ -1110,7 +1110,7 @@ namespace NScumm.Core.Graphics
         // Destination
         PixelNavigator _pixelsNavigator;
         // Source pointer
-        uint _srcptr;
+        int _srcptr;
         PixelNavigator startNav;
         // current move offset
         int _xmove, _ymove;

@@ -23,7 +23,7 @@ using System;
 namespace NScumm.Core.Audio.IMuse
 {
     [System.Diagnostics.DebuggerDisplay("{DebuggerDisplay,nq}")]
-    class Track: ICloneable
+    class Track
     {
         public int TrackId;
         // used to identify track by value (0-15)
@@ -90,11 +90,6 @@ namespace NScumm.Core.Audio.IMuse
         {
             var track = (Track)MemberwiseClone();
             return track;
-        }
-
-        object ICloneable.Clone()
-        {
-            return Clone();
         }
 
         public void Clear()

@@ -110,10 +110,10 @@ namespace NScumm.Core
                                             }
                                             akstPtr += 8;
                                         }
-                                        if (!found)
-                                        {
-                                            Console.Error.WriteLine("Sequence not found in actor {0} costume {1}", a.Number, a.Costume);
-                                        }
+//                                        if (!found)
+//                                        {
+//                                            Console.Error.WriteLine("Sequence not found in actor {0} costume {1}", a.Number, a.Costume);
+//                                        }
                                     }
                                 }
                                 break;
@@ -148,10 +148,10 @@ namespace NScumm.Core
                                             }
                                             aksfPtr += 6;
                                         }
-                                        if (!found)
-                                        {
-                                            Console.Error.WriteLine("Sequence not found in actor {0} costume {1}", a.Number, a.Costume);
-                                        }
+//                                        if (!found)
+//                                        {
+//                                            Console.Error.WriteLine("Sequence not found in actor {0} costume {1}", a.Number, a.Costume);
+//                                        }
                                     }
                                 }
 
@@ -177,10 +177,10 @@ namespace NScumm.Core
                                             }
                                             akstPtr += 8;
                                         }
-                                        if (!found)
-                                        {
-                                            Console.Error.WriteLine("Sequence not found in actor {0} costume {1}", a.Number, a.Costume);
-                                        }
+//                                        if (!found)
+//                                        {
+//                                            Console.Error.WriteLine("Sequence not found in actor {0} costume {1}", a.Number, a.Costume);
+//                                        }
                                     }
                                 }
                                 break;

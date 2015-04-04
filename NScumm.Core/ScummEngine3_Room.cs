@@ -263,10 +263,10 @@ namespace NScumm.Core
                         // some user controllable settings.
                         // Once more we use a custom filename ("TARGET.cfg").
                         var index = GetVarOrDirectByte(OpCodeParameter.Param1);
-                        var filename = System.Text.Encoding.ASCII.GetString(ReadCharacters());
+                        var filename = System.Text.Encoding.UTF8.GetString(ReadCharacters());
                         filename = GetIqFilename(filename);
 
-                        using (var file = System.IO.File.OpenWrite(filename))
+                        using (var file = ServiceLocator.FileStorage.OpenFileWrite(filename))
                         {
                             var str = _strings[index];
                             file.Write(str, 0, str.Length);
@@ -279,11 +279,11 @@ namespace NScumm.Core
                         // This subopcode is used in Indy 4 to load the IQ points data.
                         // See SO_SAVE_STRING for details
                         var index = GetVarOrDirectByte(OpCodeParameter.Param1);
-                        var filename = System.Text.Encoding.ASCII.GetString(ReadCharacters());
+                        var filename = System.Text.Encoding.UTF8.GetString(ReadCharacters());
                         filename = GetIqFilename(filename);
-                        if (System.IO.File.Exists(filename))
+                        if (ServiceLocator.FileStorage.FileExists(filename))
                         {
-                            _strings[index] = System.IO.File.ReadAllBytes(filename);
+                            _strings[index] = ServiceLocator.FileStorage.ReadAllBytes(filename);
                         }
                     }
                     break;

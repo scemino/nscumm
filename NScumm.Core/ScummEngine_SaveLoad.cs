@@ -83,12 +83,12 @@ namespace NScumm.Core
             {
                 if (_savegame == null)
                 {
-                    var dir = Path.GetDirectoryName(Game.Path);
-                    _savegame = Path.Combine(dir, string.Format("{0}_{1}{2}.sav", Game.Id, _saveTemporaryState ? 'c' : 's', (_saveLoadSlot + 1)));
+                    var dir = ServiceLocator.FileStorage.GetDirectoryName(Game.Path);
+                    _savegame = ServiceLocator.FileStorage.Combine(dir, string.Format("{0}_{1}{2}.sav", Game.Id, _saveTemporaryState ? 'c' : 's', (_saveLoadSlot + 1)));
                 }
                 if (_saveLoadFlag == 2)
                 {
-                    if (File.Exists(_savegame))
+                    if (ServiceLocator.FileStorage.FileExists(_savegame))
                     {
                         LoadState(_savegame);
                         if (_saveTemporaryState && Game.Version <= 7)
@@ -99,7 +99,7 @@ namespace NScumm.Core
                 }
                 else if (_saveLoadFlag == 1)
                 {
-                    SaveState(_savegame, Path.GetFileNameWithoutExtension(_savegame));
+                    SaveState(_savegame, ServiceLocator.FileStorage.GetFileNameWithoutExtension(_savegame));
                     if (_saveTemporaryState)
                     {
                         _variables[VariableGameLoaded.Value] = 201;
@@ -119,7 +119,7 @@ namespace NScumm.Core
 
         protected void SaveState(string path, string name)
         {
-            using (var file = File.OpenWrite(path))
+            using (var file = ServiceLocator.FileStorage.OpenFileWrite(path))
             {
                 var bw = new BinaryWriter(file);
                 SaveHeader(name, bw);
@@ -133,13 +133,13 @@ namespace NScumm.Core
 
         protected bool LoadState(int slot, bool compat)
         {
-            var filename = Path.Combine(Path.GetDirectoryName(Game.Path), MakeSavegameName(slot, compat));
+            var filename = ServiceLocator.FileStorage.Combine(ServiceLocator.FileStorage.GetDirectoryName(Game.Path), MakeSavegameName(slot, compat));
             return LoadState(filename);
         }
 
         protected bool LoadState(string path)
         {
-            using (var file = File.OpenRead(path))
+            using (var file = ServiceLocator.FileStorage.OpenFileRead(path))
             {
                 var br = new BinaryReader(file);
                 var hdr = LoadSaveGameHeader(br);
@@ -610,7 +610,7 @@ namespace NScumm.Core
             }
             if (serializer.IsLoading)
             {
-                Array.ForEach(_slots, slot =>
+                _slots.ForEach(slot =>
                     {
                         if (slot.Where == WhereIsObject.Global)
                         {
@@ -694,7 +694,7 @@ namespace NScumm.Core
                     },
                     writer => writer.WriteBytes(_resManager.ObjectStateTable, _resManager.ObjectStateTable.Length))
             };
-            Array.ForEach(objStatesEntries, e => e.Execute(serializer));
+            objStatesEntries.ForEach(e => e.Execute(serializer));
 
             //if (_objectRoomTable)
             //    s->saveLoadArrayOf(_objectRoomTable, _numGlobalObjects, sizeof(_objectRoomTable[0]), sleByte);
@@ -765,7 +765,7 @@ namespace NScumm.Core
                     }, 0, 53),
                 
             };
-            Array.ForEach(paletteEntries, entry => entry.Execute(serializer));
+            paletteEntries.ForEach(entry => entry.Execute(serializer));
 
             // _colorUsedByCycle was not saved before V60
             if (serializer.IsLoading)
@@ -808,7 +808,7 @@ namespace NScumm.Core
                     reader => Array.Copy(reader.ReadUInt32s(_resManager.ClassData.Length), _resManager.ClassData, _resManager.ClassData.Length),
                     writer => writer.WriteUInt32s(_resManager.ClassData, _resManager.ClassData.Length))
             };
-            Array.ForEach(globalObjStatesEntries, entry => entry.Execute(serializer));
+            globalObjStatesEntries.ForEach(entry => entry.Execute(serializer));
 
             //
             // Save/load script variables
@@ -825,7 +825,7 @@ namespace NScumm.Core
             var variablesEntries = new[]
             {
                 LoadAndSaveEntry.Create(
-                    reader => _variables = Array.ConvertAll(reader.ReadInt16s(_variables.Length), s => (int)s),
+                    reader => _variables = reader.ReadInt16s(_variables.Length).ConvertAll(s => (int)s),
                     writer => writer.WriteInt16s(_variables, _variables.Length)
                         , 0, 15),
                 LoadAndSaveEntry.Create(
@@ -833,15 +833,10 @@ namespace NScumm.Core
                     writer => writer.WriteInt32s(_variables, _variables.Length), 15),
                 LoadAndSaveEntry.Create(
                     reader => _bitVars = new BitArray(reader.ReadBytes(_bitVars.Length / 8)),
-                    writer =>
-                    {
-                        var vars = new byte[_bitVars.Length / 8];
-                        _bitVars.CopyTo(vars, 0);
-                        writer.Write(vars);
-                    }
+                    writer => writer.Write(_bitVars.ToByteArray())
                 ),
             };
-            Array.ForEach(variablesEntries, entry => entry.Execute(serializer));
+            variablesEntries.ForEach(entry => entry.Execute(serializer));
 
             if (_game.GameId == GameId.Tentacle) // Maybe misplaced, but that's the main idea
             {
@@ -883,7 +878,7 @@ namespace NScumm.Core
                     }
                 )
             };
-            Array.ForEach(lockedObjEntries, entry => entry.Execute(serializer));
+            lockedObjEntries.ForEach(entry => entry.Execute(serializer));
 
             //
             // Save/load the Audio CD status
@@ -1306,10 +1301,10 @@ namespace NScumm.Core
                         break;
                 }
             }
-            else
-            {
-                Console.WriteLine("Type: {0}", type);
-            }
+//            else
+//            {
+//                Console.WriteLine("Type: {0}", type);
+//            }
         }
 
         public void Save(string filename)
@@ -1355,7 +1350,7 @@ namespace NScumm.Core
             bw.Write(hdr.Size);
             bw.Write(hdr.Version);
 
-            var data = Encoding.Default.GetBytes(name);
+            var data = Encoding.Unicode.GetBytes(name);
             var data2 = new byte[32];
             int length = Math.Min(data.Length, 31);
             Array.Copy(data, data2, Math.Min(data.Length, 31));
@@ -1445,11 +1440,10 @@ namespace NScumm.Core
 
         static SaveGameHeader LoadSaveGameHeader(BinaryReader reader)
         {
-            var filename = ((FileStream)reader.BaseStream).Name;
             var hdr = new SaveGameHeader();
             hdr.Type = ScummHelper.SwapBytes(reader.ReadUInt32());
             if (hdr.Type != ScummHelper.MakeTag('S', 'C', 'V', 'M'))
-                throw new NotSupportedException(string.Format("Invalid savegame '{0}'", filename));
+                throw new NotSupportedException("Invalid savegame");
             hdr.Size = reader.ReadUInt32();
             hdr.Version = reader.ReadUInt32();
             // In older versions of ScummVM, the header version was not endian safe.
@@ -1464,10 +1458,10 @@ namespace NScumm.Core
             // information).
             if (hdr.Version < 7 || hdr.Version > CurrentVersion)
             {
-                throw new NotSupportedException(string.Format("Invalid version of '{0}'", filename));
+                throw new NotSupportedException("Invalid version");
             }
 
-            hdr.Name = Encoding.Default.GetString(reader.ReadBytes(32));
+            hdr.Name = Encoding.Unicode.GetString(reader.ReadBytes(32));
 
             // Since version 52 a thumbnail is saved directly after the header.
             if (hdr.Version >= 52)
@@ -1520,8 +1514,8 @@ namespace NScumm.Core
         protected bool SavePreparedSavegame(int slot, string desc)
         {
             var filename = MakeSavegameName(slot, false);
-            var directory = Path.GetDirectoryName(Game.Path);
-            SaveState(Path.Combine(directory, filename), desc);
+            var directory = ServiceLocator.FileStorage.GetDirectoryName(Game.Path);
+            SaveState(ServiceLocator.FileStorage.Combine(directory, filename), desc);
             return true;
         }
 
@@ -1531,11 +1525,11 @@ namespace NScumm.Core
             var prefix = new StringBuilder(MakeSavegameName(99, false));
             prefix[prefix.Length - 2] = '*';
             prefix.Remove(prefix.Length - 1, 1);
-            var directory = Path.GetDirectoryName(Game.Path);
-            var files = Directory.EnumerateFiles(directory, prefix.ToString());
+            var directory = ServiceLocator.FileStorage.GetDirectoryName(Game.Path);
+            var files = ServiceLocator.FileStorage.EnumerateFiles(directory, prefix.ToString());
             foreach (var file in files)
             {
-                var ext = Path.GetExtension(file).Remove(0, 2);
+                var ext = ServiceLocator.FileStorage.GetExtension(file).Remove(0, 2);
                 var slotNum = int.Parse(ext);
                 if (slotNum >= 0 && slotNum < num)
                 {
@@ -1554,38 +1548,38 @@ namespace NScumm.Core
         {
             bool result;
             var filename = MakeSavegameName(slot, false);
-            var directory = Path.GetDirectoryName(Game.Path);
-            using (var file = File.OpenRead(Path.Combine(directory, filename)))
+            var directory = ServiceLocator.FileStorage.GetDirectoryName(Game.Path);
+            using (var file = ServiceLocator.FileStorage.OpenFileRead(ServiceLocator.FileStorage.Combine(directory, filename)))
             {
                 result = GetSavegameName(file, out desc);
             }
             return result;
         }
 
-        static bool GetSavegameName(FileStream stream, out string desc)
+        static bool GetSavegameName(Stream stream, out string desc)
         {
             SaveGameHeader hdr;
-
+        
             var br = new BinaryReader(stream);
             if ((hdr = LoadSaveGameHeader(br)) == null)
             {
                 desc = "Invalid savegame";
                 return false;
             }
-
+        
             if (hdr.Version < 7 || hdr.Version > CurrentVersion)
             {
                 desc = "Invalid version";
                 return false;
             }
-
+        
             // We (deliberately) broke HE savegame compatibility at some point.
             if (hdr.Version < 57 /* && heversion >= 60*/)
             {
                 desc = "Unsupported version";
                 return false;
             }
-
+        
             desc = hdr.Name;
             return true;
         }

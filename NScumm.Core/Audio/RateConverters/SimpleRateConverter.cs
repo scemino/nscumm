@@ -56,11 +56,11 @@ namespace NScumm.Core.Audio
 
             if (inrate >= 65536)
             {
-                throw new ArgumentOutOfRangeException("inrate", inrate, "rate effect can only handle rates < 65536");
+                throw new ArgumentOutOfRangeException("inrate", "rate effect can only handle rates < 65536");
             }
             if (outrate >= 65536)
             {
-                throw new ArgumentOutOfRangeException("outrate", outrate, "rate effect can only handle rates < 65536");
+                throw new ArgumentOutOfRangeException("outrate", "rate effect can only handle rates < 65536");
             }
 
             opos = 1;

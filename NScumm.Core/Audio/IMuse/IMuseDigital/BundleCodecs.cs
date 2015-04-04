@@ -453,7 +453,7 @@ namespace NScumm.Core.Audio.IMuse
                     break;
 
                 default:
-                    Console.Error.WriteLine("BundleCodecs::decompressCodec() Unknown codec {0}", codec);
+//                    Console.Error.WriteLine("BundleCodecs::decompressCodec() Unknown codec {0}", codec);
                     outputSize = 0;
                     break;
             }

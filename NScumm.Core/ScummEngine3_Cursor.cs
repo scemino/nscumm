@@ -98,10 +98,10 @@ namespace NScumm.Core
                         {
                             _currentCursor = i;
                         }
-                        else
-                        {
-                            Console.Error.WriteLine("CURSOR_SET: unsupported cursor id {0}", i);
-                        }
+//                        else
+//                        {
+//                            Console.Error.WriteLine("CURSOR_SET: unsupported cursor id {0}", i);
+//                        }
                         break;
                     }
                 case 13:

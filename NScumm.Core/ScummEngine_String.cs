@@ -92,7 +92,7 @@ namespace NScumm.Core
 
             if ((buffer[0] != 0xFF))
             {
-                Debug.WriteLine("DEBUG: {0}", Encoding.ASCII.GetString(buffer));
+                Debug.WriteLine("DEBUG: {0}", Encoding.UTF8.GetString(buffer));
                 return;
             }
 
@@ -111,17 +111,6 @@ namespace NScumm.Core
                 if (channel != 2)
                     Sound.TalkSound(a, b, 1, channel);
             }
-        }
-
-        static IList<char> ConvertMessage(IList<char> msg, int i, string text)
-        {
-            var src = msg.ToArray();
-            var dst = new char[msg.Count - 3 + text.Length];
-            Array.Copy(src, dst, i - 1);
-            Array.Copy(text.ToArray(), 0, dst, i - 1, text.Length);
-            Array.Copy(src, i + 2, dst, i - 1 + text.Length, src.Length - i - 3);
-            msg = dst;
-            return msg;
         }
 
         protected int ConvertMessageToString(byte[] src, byte[] dst, int dstPos)
@@ -243,7 +232,7 @@ namespace NScumm.Core
         int ConvertIntMessage(Array dst, int dstPos, uint var)
         {
             var num = ReadVariable(var);
-            var src = Encoding.ASCII.GetBytes(num.ToString());
+            var src = Encoding.UTF8.GetBytes(num.ToString());
             Array.Copy(src, 0, dst, dstPos, src.Length);
             return src.Length;
         }

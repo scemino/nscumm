@@ -30,7 +30,7 @@ namespace NScumm.Core.Graphics
         public NutRenderer(ScummEngine vm, string filename)
         {
             _vm = vm;
-            var directory = Path.GetDirectoryName(_vm.Game.Path);
+            var directory = ServiceLocator.FileStorage.GetDirectoryName(_vm.Game.Path);
             var path = ScummHelper.LocatePath(directory, filename);
             LoadFont(path);
         }
@@ -180,10 +180,10 @@ namespace NScumm.Core.Graphics
         void LoadFont(string filename)
         {
             byte[] dataSrc;
-            using (var file = File.OpenRead(filename))
+            using (var file = ServiceLocator.FileStorage.OpenFileRead(filename))
             {
                 var reader = new XorReader(file, 0);
-                var tag = System.Text.Encoding.ASCII.GetString(reader.ReadBytes(4));
+                var tag = System.Text.Encoding.UTF8.GetString(reader.ReadBytes(4));
                 if (tag != "ANIM")
                 {
                     throw new InvalidOperationException("NutRenderer.LoadFont() there is no ANIM chunk in font header");
@@ -193,7 +193,7 @@ namespace NScumm.Core.Graphics
                 dataSrc = reader.ReadBytes(length);
             }
 
-            if (System.Text.Encoding.ASCII.GetString(dataSrc, 0, 4) != "AHDR")
+            if (System.Text.Encoding.UTF8.GetString(dataSrc, 0, 4) != "AHDR")
             {
                 throw new InvalidOperationException("NutRenderer::loadFont() there is no AHDR chunk in font header");
             }
@@ -230,12 +230,12 @@ namespace NScumm.Core.Graphics
             for (var l = 0; l < _numChars; l++)
             {
                 offset += (int)ScummHelper.SwapBytes(BitConverter.ToUInt32(dataSrc, offset + 4)) + 8;
-                if (System.Text.Encoding.ASCII.GetString(dataSrc, offset, 4) != "FRME")
+                if (System.Text.Encoding.UTF8.GetString(dataSrc, offset, 4) != "FRME")
                 {
                     throw new InvalidOperationException(string.Format("NutRenderer::loadFont({0}) there is no FRME chunk {1} (offset {2:X})", filename, l, offset));
                 }
                 offset += 8;
-                if (System.Text.Encoding.ASCII.GetString(dataSrc, offset, 4) != "FOBJ")
+                if (System.Text.Encoding.UTF8.GetString(dataSrc, offset, 4) != "FOBJ")
                 {
                     throw new InvalidOperationException(string.Format("NutRenderer::loadFont({0}) there is no FOBJ chunk in FRME chunk {1} (offset {2:X})", filename, l, offset));
                 }

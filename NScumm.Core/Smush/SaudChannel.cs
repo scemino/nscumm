@@ -46,7 +46,7 @@ namespace NScumm.Core.Smush
             if (_dataSize == -1)
             {
                 Debug.Assert(size > 8);
-                var saud_type = System.Text.Encoding.ASCII.GetString(b.ReadBytes(4));
+                var saud_type = System.Text.Encoding.UTF8.GetString(b.ReadBytes(4));
                 /*uint32 saud_size =*/
                 b.ReadUInt32BigEndian();
                 if (saud_type != "SAUD")
@@ -146,7 +146,7 @@ namespace NScumm.Core.Smush
         {
             if (_tbufferSize - offset >= 8)
             {
-                var type = System.Text.Encoding.ASCII.GetString(_tbuffer, offset, 4);
+                var type = System.Text.Encoding.UTF8.GetString(_tbuffer, offset, 4);
                 var size = ScummHelper.SwapBytes(BitConverter.ToUInt32(_tbuffer, offset + 4));
                 var available_size = _tbufferSize - offset;
 

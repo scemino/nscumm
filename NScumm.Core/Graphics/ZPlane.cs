@@ -20,11 +20,10 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System.Collections.Generic;
-using System;
 
 namespace NScumm.Core.Graphics
 {
-    public class ZPlane: ICloneable
+    public class ZPlane
     {
         public byte[] Data
         {
@@ -44,20 +43,11 @@ namespace NScumm.Core.Graphics
             StripOffsets = offsets;
         }
 
-        #region ICloneable implementation
-
-        object ICloneable.Clone()
-        {
-            return Clone();
-        }
-
         public ZPlane Clone()
         {
             var zplane = (ZPlane)this.MemberwiseClone();
             return zplane;
         }
-
-        #endregion
     }
     
 }

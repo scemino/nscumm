@@ -160,29 +160,12 @@ namespace NScumm.Core.IO
             if (data == null)
                 return null;
 
-            return ToStructure(data, 0, type);
-        }
-
-        public static object ToStructure(byte[] data, int offset, Type type)
-        {
-            object obj;
-            var size = Marshal.SizeOf(type);
-            var ptr = Marshal.AllocHGlobal(size);
-            try
-            {
-                Marshal.Copy(data, offset, ptr, size);
-                obj = Marshal.PtrToStructure(ptr, type);
-            }
-            finally
-            {
-                Marshal.FreeHGlobal(ptr);
-            }
-            return obj;
+            return ServiceLocator.Platform.ToStructure(data, 0, type);
         }
 
         public static T ToStructure<T>(byte[] data, int offset)
         {
-            return (T)ToStructure(data, offset, typeof(T));
+            return (T)ServiceLocator.Platform.ToStructure(data, offset, typeof(T));
         }
     }
 }

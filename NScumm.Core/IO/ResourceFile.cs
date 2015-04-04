@@ -30,7 +30,7 @@ namespace NScumm.Core.IO
         #region Fields
 
         protected readonly XorReader _reader;
-        FileStream _fs;
+        Stream _fs;
 
         #endregion
 
@@ -39,7 +39,7 @@ namespace NScumm.Core.IO
         protected ResourceFile(string path, byte encByte)
         {
             path = ScummHelper.NormalizePath(path);
-            _fs = File.OpenRead(path);
+            _fs = ServiceLocator.FileStorage.OpenFileRead(path);
             _reader = new XorReader(_fs, encByte);
         }
 

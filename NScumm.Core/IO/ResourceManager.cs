@@ -76,16 +76,16 @@ namespace NScumm.Core.IO
                 Room room = null;
                 foreach (var i in roomIndices)
                 {
-                    try
-                    {
+//                    try
+//                    {
                         room = GetRoom(i);
-                    }
-                    catch (Exception e)
-                    {
-                        Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine(e);
-                        Console.ResetColor();
-                    }
+//                    }
+//                    catch (Exception e)
+//                    {
+//                        Console.ForegroundColor = ConsoleColor.Red;
+//                        Console.WriteLine(e);
+//                        Console.ResetColor();
+//                    }
                     if (room != null)
                     {
                         yield return room;
@@ -151,7 +151,7 @@ namespace NScumm.Core.IO
         {
             Game = game;
             Index = ResourceIndex.Load(game);
-            Directory = Path.GetDirectoryName(game.Path);
+            Directory = ServiceLocator.FileStorage.GetDirectoryName(game.Path);
             ArrayDefinitions = Index.ArrayDefinitions;
         }
 
@@ -319,17 +319,17 @@ namespace NScumm.Core.IO
         static void WriteMIDIHeader(byte[] input, string type, int ppqn, int totalSize)
         {
             int pos = 0;
-            Array.Copy(System.Text.Encoding.ASCII.GetBytes(type), 0, input, pos, 4);
+            Array.Copy(System.Text.Encoding.UTF8.GetBytes(type), 0, input, pos, 4);
             pos += 4;
             Array.Copy(ScummHelper.GetBytesBigEndian((uint)totalSize), 0, input, pos, 4);
             pos += 4;
-            Array.Copy(System.Text.Encoding.ASCII.GetBytes("MDhd"), 0, input, pos, 4);
+            Array.Copy(System.Text.Encoding.UTF8.GetBytes("MDhd"), 0, input, pos, 4);
             pos += 4;
             Array.Copy(new byte[]{ 0, 0, 0, 8 }, 0, input, pos, 4);
             pos += 4;
             Array.Copy(new byte[8], 0, input, pos, 8);
             pos += 8;
-            Array.Copy(System.Text.Encoding.ASCII.GetBytes("MThd"), 0, input, pos, 4);
+            Array.Copy(System.Text.Encoding.UTF8.GetBytes("MThd"), 0, input, pos, 4);
             pos += 4;
             Array.Copy(new byte[]{ 0, 0, 0, 6 }, 0, input, pos, 4);
             pos += 4;
@@ -337,7 +337,7 @@ namespace NScumm.Core.IO
             pos += 4; // MIDI format 0 with 1 track
             input[pos++] = (byte)(ppqn >> 8);
             input[pos++] = (byte)(ppqn & 0xFF);
-            Array.Copy(System.Text.Encoding.ASCII.GetBytes("MTrk"), 0, input, pos, 4);
+            Array.Copy(System.Text.Encoding.UTF8.GetBytes("MTrk"), 0, input, pos, 4);
             pos += 4;
             Array.Copy(ScummHelper.GetBytesBigEndian((uint)totalSize), 0, input, pos, 4);
             pos += 4;

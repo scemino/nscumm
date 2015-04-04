@@ -294,7 +294,7 @@ namespace NScumm.Core
                         LoadAndSaveEntry.Create(r => _nextEventTimer = r.ReadUInt32(), w => w.WriteUInt32(_nextEventTimer), 96)
                     };
 
-                    Array.ForEach(musicData, e => e.Execute(ser));
+                    musicData.ForEach(e => e.Execute(ser));
 
                     // We seek back to the old music position.
                     if (ser.IsLoading)

@@ -3,12 +3,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>8.0.30703</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{D53EB07B-F186-4281-A225-2C3DC5850148}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <RootNamespace>NScumm.Dump</RootNamespace>
     <AssemblyName>nsdump</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -19,7 +18,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Externalconsole>true</Externalconsole>
-    <Commandlineparameters>-f ~/Games/dig/DIG.LA0 -s 0</Commandlineparameters>
+    <Commandlineparameters>-f ~/Games/dig/DIG.LA0 -s 1</Commandlineparameters>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>full</DebugType>
@@ -118,12 +117,16 @@
     <Folder Include="Ast\Statements\" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\NScumm.Core\NScumm.Core.csproj">
-      <Project>{B33E2D2E-E360-4F10-A82F-AA98500497FD}</Project>
-      <Name>NScumm.Core</Name>
-    </ProjectReference>
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
+    <ProjectReference Include="..\NScumm.Core\NScumm.Core.csproj">
+      <Project>{8E7A9E5B-D7EB-4DA1-8EE7-A5D8DE202372}</Project>
+      <Name>NScumm.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\NScumm.Platform_Desktop\NScumm.Platform_Desktop.csproj">
+      <Project>{D42434C7-459D-461A-8B1D-1451F7FF4B13}</Project>
+      <Name>NScumm.Platform_Desktop</Name>
+    </ProjectReference>
   </ItemGroup>
 </Project>

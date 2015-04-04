@@ -192,10 +192,10 @@ namespace NScumm.Core
                                     Sound.PlayCDTrack(1, 0, offset, delay);
                                 }
                             }
-                            else
-                            {
-                                Console.Error.WriteLine("ScummEngine: decodeParseString: Unhandled case 8");
-                            }
+//                            else
+//                            {
+//                                Console.Error.WriteLine("ScummEngine: decodeParseString: Unhandled case 8");
+//                            }
                         }
                         break;
 

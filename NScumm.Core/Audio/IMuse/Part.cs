@@ -249,8 +249,8 @@ namespace NScumm.Core.Audio.IMuse
         public void SetInstrument(uint b)
         {
             _bank = (byte)(b >> 8);
-            if (_bank != 0)
-                Console.Error.WriteLine("Non-zero instrument bank selection. Please report this");
+//            if (_bank != 0)
+//                Console.Error.WriteLine("Non-zero instrument bank selection. Please report this");
             // HACK: Horrible hack to allow tracing of program change source.
             // The Mac m68k versions of MI2 and Indy4 use a different program "bank"
             // when it gets program change events through the iMuse SysEx handler.
@@ -481,7 +481,7 @@ namespace NScumm.Core.Audio.IMuse
                 num = ser.Reader.ReadUInt16();
                 Player = num != 0 ? Se._players[num - 1] : null;
             }
-            Array.ForEach(partEntries, e => e.Execute(ser));
+            partEntries.ForEach(e => e.Execute(ser));
         }
 
         static int Clamp(int val, int min, int max)
@@ -518,7 +518,7 @@ namespace NScumm.Core.Audio.IMuse
             {
                 if (value != 127 && value != 0)
                 {
-                    Console.Error.WriteLine("Trying to use unsupported effect level value {0} in native MT-32 mode.", value);
+//                    Console.Error.WriteLine("Trying to use unsupported effect level value {0} in native MT-32 mode.", value);
 
                     if (value >= 64)
                         value = 127;

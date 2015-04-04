@@ -279,11 +279,11 @@ namespace NScumm.Core.Audio.SoftSynth
                 case 0xF0: // SysEx
                     // We should never get here! SysEx information has to be
                     // sent via high-level semantic methods.
-                    Console.Error.WriteLine("MidiDriver_ADLIB: Receiving SysEx command on a Send() call");
+//                    Console.Error.WriteLine("MidiDriver_ADLIB: Receiving SysEx command on a Send() call");
                     break;
 
                 default:
-                    Console.Error.WriteLine("MidiDriver_ADLIB: Unknown Send() command 0x{0:X2}", cmd);
+//                    Console.Error.WriteLine("MidiDriver_ADLIB: Unknown Send() command 0x{0:X2}", cmd);
                     break;
             }
         }
@@ -1306,7 +1306,7 @@ namespace NScumm.Core.Audio.SoftSynth
                         AllNotesOff();
                         break;
                     default:
-                        Console.Error.WriteLine("AdLib: Unknown control change message {0} ({1})", (int)control, (int)value);
+//                        Console.Error.WriteLine("AdLib: Unknown control change message {0} ({1})", (int)control, (int)value);
                         break;
                 }
             }

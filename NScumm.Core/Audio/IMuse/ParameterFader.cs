@@ -61,7 +61,7 @@ namespace NScumm.Core.Audio.IMuse
                 LoadAndSaveEntry.Create(r => CurrentTime = r.ReadUInt32(), w => w.WriteUInt32(CurrentTime), 17)
             };
 
-            Array.ForEach(parameterFaderEntries, e => e.Execute(ser));
+            parameterFaderEntries.ForEach(e => e.Execute(ser));
         }
     }
     

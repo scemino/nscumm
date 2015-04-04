@@ -38,11 +38,11 @@ namespace NScumm.Core.Smush
             if (_dataSize == -1)
             {
                 Debug.Assert(size > 8);
-                var imus_type = System.Text.Encoding.ASCII.GetString(b.ReadBytes(4));
+                var imus_type = System.Text.Encoding.UTF8.GetString(b.ReadBytes(4));
                 /*uint32 imus_size =*/
                 b.ReadUInt32BigEndian();
-                if (imus_type != "iMUS")
-                    Console.Error.WriteLine("Invalid Chunk for imuse_channel");
+//                if (imus_type != "iMUS")
+//                    Console.Error.WriteLine("Invalid Chunk for imuse_channel");
                 size -= 8;
                 _tbufferSize = size;
                 Debug.Assert(_tbufferSize != 0);
@@ -95,10 +95,10 @@ namespace NScumm.Core.Smush
             {
                 _volume = flags * 2 - 600;
             }
-            else
-            {
-                Console.Error.WriteLine("ImuseChannel::setParameters(): bad flags: {0}", flags);
-            }
+//            else
+//            {
+//                Console.Error.WriteLine("ImuseChannel::setParameters(): bad flags: {0}", flags);
+//            }
             _pan = 0;
             return true;
         }
@@ -134,7 +134,7 @@ namespace NScumm.Core.Smush
         {
             if (_tbufferSize - offset >= 8)
             {
-                var type = System.Text.Encoding.ASCII.GetString(_tbuffer, offset, 4);
+                var type = System.Text.Encoding.UTF8.GetString(_tbuffer, offset, 4);
                 var size = ScummHelper.SwapBytes(BitConverter.ToUInt32(_tbuffer, offset + 4));
                 var available_size = _tbufferSize - offset;
                 switch (type)
@@ -172,9 +172,9 @@ namespace NScumm.Core.Smush
                             }
                         }
                         return false;
-                    default:
-                        Console.Error.WriteLine("unknown Chunk in iMUS track : {0} ", type);
-                        break;
+//                    default:
+//                        Console.Error.WriteLine("unknown Chunk in iMUS track : {0} ", type);
+//                        break;
                 }
                 offset += (int)(size + 8);
                 return true;
@@ -208,7 +208,7 @@ namespace NScumm.Core.Smush
 
             while (size > 0)
             {
-                var subType = System.Text.Encoding.ASCII.GetString(data, i, 4);
+                var subType = System.Text.Encoding.UTF8.GetString(data, i, 4);
                 var subSize = ScummHelper.SwapBytes(BitConverter.ToUInt32(data, i + 4));
                 i += 8;
                 size -= 8;
@@ -216,8 +216,8 @@ namespace NScumm.Core.Smush
                 switch (subType)
                 {
                     case "FRMT":
-                        if (subSize != 20)
-                            Console.Error.WriteLine("invalid size for FRMT Chunk");
+//                        if (subSize != 20)
+//                            Console.Error.WriteLine("invalid size for FRMT Chunk");
                         //uint32 imuse_start = READ_BE_UINT32(data);
                         //uint32 unk = READ_BE_UINT32(data+4);
                         _bitsize = (int)ScummHelper.SwapBytes(BitConverter.ToUInt32(data, i + 8));
@@ -229,16 +229,16 @@ namespace NScumm.Core.Smush
                         // Ignore this
                         break;
                     case "REGN":
-                        if (subSize != 8)
-                            Console.Error.WriteLine("invalid size for REGN Chunk");
+//                        if (subSize != 8)
+//                            Console.Error.WriteLine("invalid size for REGN Chunk");
                         break;
                     case "STOP":
-                        if (subSize != 4)
-                            Console.Error.WriteLine("invalid size for STOP Chunk");
+//                        if (subSize != 4)
+//                            Console.Error.WriteLine("invalid size for STOP Chunk");
                         break;
-                    default:
-                        Console.Error.WriteLine("Unknown iMUS subChunk found : {0}, {1}", subType, subSize);
-                        break;
+//                    default:
+//                        Console.Error.WriteLine("Unknown iMUS subChunk found : {0}, {1}", subType, subSize);
+//                        break;
                 }
 
                 i += (int)subSize;

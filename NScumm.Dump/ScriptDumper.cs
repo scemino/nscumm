@@ -52,7 +52,7 @@ namespace NScumm.Dump
                 {
                     if (obj.Script.Data != null && obj.Script.Data.Length > 0)
                     {
-                        dumper.WriteLine("obj {0} {1} {{", obj.Number, System.Text.Encoding.ASCII.GetString(obj.Name));
+                        dumper.WriteLine("obj {0} {1} {{", obj.Number, System.Text.Encoding.UTF8.GetString(obj.Name));
                         foreach (var off in obj.ScriptOffsets)
                         {
                             dumper.WriteLine("idx #{0}: {1}", off.Key, off.Value);

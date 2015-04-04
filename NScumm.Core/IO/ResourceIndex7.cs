@@ -48,14 +48,14 @@ namespace NScumm.Core
 
         protected override void LoadIndex(GameInfo game)
         {
-            Directory = Path.GetDirectoryName(game.Path);
-            using (var file = File.Open(game.Path, FileMode.Open))
+            Directory = ServiceLocator.FileStorage.GetDirectoryName(game.Path);
+            using (var file = ServiceLocator.FileStorage.OpenFileRead(game.Path))
             {
                 var br1 = new BinaryReader(file);
                 var br = new XorReader(br1, 0);
                 while (br.BaseStream.Position < br.BaseStream.Length)
                 {
-                    var tag = System.Text.Encoding.ASCII.GetString(br.ReadBytes(4));
+                    var tag = System.Text.Encoding.UTF8.GetString(br.ReadBytes(4));
                     br.ReadUInt32BigEndian();
 
                     switch (tag)
@@ -111,14 +111,14 @@ namespace NScumm.Core
                                 audioNames = new string[num];
                                 for (int i = 0; i < num; i++)
                                 {
-                                    AudioNames[i] = System.Text.Encoding.ASCII.GetString(br.ReadBytes(9));
+                                    AudioNames[i] = System.Text.Encoding.UTF8.GetString(br.ReadBytes(9));
                                 }
                             }
                             break;
 
-                        default:
-                            Console.Error.WriteLine("Unknown tag {0} found in index file directory", tag);
-                            break;
+//                        default:
+//                            Console.Error.WriteLine("Unknown tag {0} found in index file directory", tag);
+//                            break;
                     }
                 }
             }

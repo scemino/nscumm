@@ -539,7 +539,7 @@ namespace NScumm.Core.Insane
 
         byte[] ReadFileToMem(string name)
         {
-            return File.ReadAllBytes(ScummHelper.LocatePath(Path.GetDirectoryName(_vm.Game.Path), name));
+            return ServiceLocator.FileStorage.ReadAllBytes(ScummHelper.LocatePath(ServiceLocator.FileStorage.GetDirectoryName(_vm.Game.Path), name));
         }
 
         void SwitchSceneIfNeeded()
@@ -672,15 +672,15 @@ namespace NScumm.Core.Insane
                 // overwrite
                 if (_enemy[EN_VULTM2].isEmpty != ReadArray(7))
                 {
-                    Console.Error.WriteLine("Wrong INSANE parameters for EN_VULTM2 ({0} {1})",
-                        _enemy[EN_VULTM2].isEmpty, ReadArray(7));
+//                    Console.Error.WriteLine("Wrong INSANE parameters for EN_VULTM2 ({0} {1})",
+//                        _enemy[EN_VULTM2].isEmpty, ReadArray(7));
                     _enemy[EN_VULTM2].isEmpty = ReadArray(7);
                 }
 
                 if ((_enemy[EN_VULTF2].isEmpty != 0) != (_actor[0].inventory[INV_CHAINSAW]))
                 {
-                    Console.Error.WriteLine("Wrong INSANE parameters for EN_VULTF2 ({0} {1})",
-                        _enemy[EN_VULTF2].isEmpty, _actor[0].inventory[INV_CHAINSAW]);
+//                    Console.Error.WriteLine("Wrong INSANE parameters for EN_VULTF2 ({0} {1})",
+//                        _enemy[EN_VULTF2].isEmpty, _actor[0].inventory[INV_CHAINSAW]);
                     _enemy[EN_VULTF2].isEmpty = (_actor[0].inventory[INV_CHAINSAW]) ? 1 : 0;
                 }
 
@@ -1018,7 +1018,7 @@ namespace NScumm.Core.Insane
             _smush_setupsan1 = setupsan1;
 
             /* skip FLUP marker */
-            if (System.Text.Encoding.ASCII.GetString(fluPtr, 0, 4) == "FLUP")
+            if (System.Text.Encoding.UTF8.GetString(fluPtr, 0, 4) == "FLUP")
                 tmp += 8;
 
             _smush_setupsan2 = (short)setupsan2;

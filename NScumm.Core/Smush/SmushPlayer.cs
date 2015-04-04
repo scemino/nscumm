@@ -48,7 +48,7 @@ namespace NScumm.Core.Smush
 
         public void Play(string filename, int speed, int offset = 0, int startFrame = 0)
         {
-            filename = ScummHelper.LocatePath(Path.GetDirectoryName(_vm.Game.Path), filename);
+            filename = ScummHelper.LocatePath(ServiceLocator.FileStorage.GetDirectoryName(_vm.Game.Path), filename);
             // Verify the specified file exists
 
             _updateNeeded = false;
@@ -168,7 +168,7 @@ namespace NScumm.Core.Smush
                     _IACTpos = 0;
                     break;
                 }
-                Thread.Sleep(10);
+                ServiceLocator.Platform.Sleep(10);
             }
 
             Release();
@@ -179,7 +179,7 @@ namespace NScumm.Core.Smush
 
         public void SeekSan(string filename, int pos, int contFrame)
         {
-            _seekFile = ScummHelper.LocatePath(Path.GetDirectoryName(_vm.Game.Path), Path.GetFileName(filename));
+            _seekFile = ScummHelper.LocatePath(ServiceLocator.FileStorage.GetDirectoryName(_vm.Game.Path), ServiceLocator.FileStorage.GetFileName(filename));
             _seekPos = pos;
             _seekFrame = contFrame;
             _pauseTime = 0;
@@ -290,7 +290,7 @@ namespace NScumm.Core.Smush
 
                 if (!string.IsNullOrEmpty(_seekFile))
                 {
-                    _base = new XorReader(File.OpenRead(_seekFile), 0);
+                    _base = new XorReader(ServiceLocator.FileStorage.OpenFileRead(_seekFile), 0);
                     _base.ReadUInt32BigEndian();
                     _baseSize = _base.ReadUInt32BigEndian();
 
@@ -298,7 +298,7 @@ namespace NScumm.Core.Smush
                     {
                         Debug.Assert(_seekPos > 8);
                         // In this case we need to get palette and number of frames
-                        subType = System.Text.Encoding.ASCII.GetString(_base.ReadBytes(4));
+                        subType = System.Text.Encoding.UTF8.GetString(_base.ReadBytes(4));
                         subSize = _base.ReadUInt32BigEndian();
                         subOffset = _base.BaseStream.Position;
                         Debug.Assert(subType == "AHDR");
@@ -338,7 +338,7 @@ namespace NScumm.Core.Smush
                 return;
             }
 
-            subType = System.Text.Encoding.ASCII.GetString(_base.ReadBytes(4));
+            subType = System.Text.Encoding.UTF8.GetString(_base.ReadBytes(4));
             subSize = _base.ReadUInt32BigEndian();
             subOffset = _base.BaseStream.Position;
 
@@ -376,7 +376,7 @@ namespace NScumm.Core.Smush
 
             while (frameSize > 0)
             {
-                var subType = System.Text.Encoding.ASCII.GetString(_base.ReadBytes(4));
+                var subType = System.Text.Encoding.UTF8.GetString(_base.ReadBytes(4));
                 var subSize = b.ReadUInt32BigEndian();
                 var subOffset = b.BaseStream.Position;
                 switch (subType)
@@ -556,10 +556,10 @@ namespace NScumm.Core.Smush
                 {
                     track = track_id + 600;
                 }
-                else
-                {
-                    Debug.Fail(string.Format("SmushPlayer::handleIACT(): bad track_flags: {0}", track_flags));
-                }
+//                else
+//                {
+//                    Debug.Fail(string.Format("SmushPlayer::handleIACT(): bad track_flags: {0}", track_flags));
+//                }
 //                Debug.WriteLine("SmushPlayer::handleIACT(): {0}, {1}, {2}", track, index, track_flags);
 
                 var c = _smixer.FindChannel(track);
@@ -683,7 +683,7 @@ namespace NScumm.Core.Smush
             string str;
             if (subType == "TEXT")
             {
-                str = System.Text.Encoding.ASCII.GetString(b.ReadBytes((int)(subSize - 16)));
+                str = System.Text.Encoding.UTF8.GetString(b.ReadBytes((int)(subSize - 16)));
             }
             else
             {
@@ -710,10 +710,10 @@ namespace NScumm.Core.Smush
 //
             if (_vm.Game.GameId == GameId.CurseOfMonkeyIsland)
             {
-                var transBuf = _vm.TranslateText(System.Text.Encoding.ASCII.GetBytes(str));
+                var transBuf = _vm.TranslateText(System.Text.Encoding.UTF8.GetBytes(str));
 //                while (*str++ != '/')
 //                    ;
-                str = System.Text.Encoding.ASCII.GetString(transBuf);
+                str = System.Text.Encoding.UTF8.GetString(transBuf);
 
                 // If string2 contains formatting information there probably
                 // wasn't any translation for it in the language.tab file. In
@@ -794,7 +794,7 @@ namespace NScumm.Core.Smush
 
 //            if (_vm.Game.GameId == GameId.CurseOfMonkeyIsland && string2 != null)
 //            {
-//                str = System.Text.Encoding.ASCII.GetString(string2);
+//                str = System.Text.Encoding.UTF8.GetString(string2);
 //            }
 
             // flags:
@@ -1113,7 +1113,7 @@ namespace NScumm.Core.Smush
 
         bool ReadString(string file)
         {
-            var fname = Path.ChangeExtension(file, ".trs");
+            var fname = ServiceLocator.FileStorage.ChangeExtension(file, ".trs");
             if ((_strings = GetStrings(_vm, fname, false)) != null)
             {
                 return true;
@@ -1129,7 +1129,7 @@ namespace NScumm.Core.Smush
         TrsFile GetStrings(ScummEngine vm, string file, bool isEncoded)
         {
 //            Debug.WriteLine("trying to read text resources from {0}", file);
-            var filename = ScummHelper.LocatePath(Path.GetDirectoryName(_vm.Game.Path), Path.GetFileName(file));
+            var filename = ScummHelper.LocatePath(ServiceLocator.FileStorage.GetDirectoryName(_vm.Game.Path), ServiceLocator.FileStorage.GetFileName(file));
             return filename != null ? isEncoded ? TrsFile.LoadEncoded(filename) : TrsFile.Load(filename) : null;
         }
 

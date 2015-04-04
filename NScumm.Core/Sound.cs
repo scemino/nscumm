@@ -19,11 +19,11 @@ using NScumm.Core.Audio;
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using System.Timers;
 using System.IO;
 using NScumm.Core.Audio.Decoders;
 using NScumm.Core.IO;
 using NScumm.Core.Audio.IMuse;
+using System.Threading;
 
 namespace NScumm.Core
 {
@@ -35,7 +35,8 @@ namespace NScumm.Core
 
         public MusicDriverTypes MusicType
         {
-            get; set;
+            get;
+            set;
         }
 
         public Sound(ScummEngine vm, IMixer mixer)
@@ -43,8 +44,7 @@ namespace NScumm.Core
             this.vm = vm;
             soundQueue = new Stack<int>();
             soundQueueIMuse = new Queue<int>();
-            timer = new Timer(100.7);
-            timer.Elapsed += OnCDTimer;
+            timer = new Timer(OnCDTimer, this, -1, -1);
 
             // initialize output & player
             _mixer = mixer;
@@ -67,12 +67,12 @@ namespace NScumm.Core
 
         public void StartCDTimer()
         {
-            timer.Start();
+            timer.Change(TimeSpan.Zero, TimeSpan.FromMilliseconds(100.7));
         }
 
         public void StopCD()
         {
-            timer.Stop();
+            timer.Change(-1, -1);
         }
 
         public void AddSoundToQueue(int sound)
@@ -315,7 +315,7 @@ namespace NScumm.Core
                 LoadAndSaveEntry.Create(r => _currentMusic = r.ReadInt16(), writer => writer.WriteInt16(_currentMusic), 35),
             };
 
-            Array.ForEach(soundEntries, e => e.Execute(serializer));
+            soundEntries.ForEach(e => e.Execute(serializer));
         }
 
         public void PauseSounds(bool pause)
@@ -382,7 +382,7 @@ namespace NScumm.Core
                 // automatically stop the old song.
                 if (vm.IMuse != null)
                 {
-                    if (System.Text.Encoding.ASCII.GetString(res, 0, 4) != "ASFX")
+                    if (System.Text.Encoding.UTF8.GetString(res, 0, 4) != "ASFX")
                         vm.IMuse.StopAllSounds();
                 }
             }
@@ -395,9 +395,9 @@ namespace NScumm.Core
 
         void SetupSfxFile()
         {
-            var dir = Path.GetDirectoryName(vm.Game.Path);
+            var dir = ServiceLocator.FileStorage.GetDirectoryName(vm.Game.Path);
             _sfxFilename = (from filename in new []{ vm.Game.Id + ".sou", "monster.sou" }
-                                     let path=ScummHelper.NormalizePath(Path.Combine(dir, filename))
+                                     let path=ScummHelper.NormalizePath(ServiceLocator.FileStorage.Combine(dir, filename))
                                      where path != null
                                      select path).FirstOrDefault();
         }
@@ -429,7 +429,7 @@ namespace NScumm.Core
 
         SoundHandle StartTalkSound(int offset, int b, int mode)
         {
-            FileStream file;
+            Stream file;
             SoundHandle handle = null;
             var id = -1;
 
@@ -449,7 +449,7 @@ namespace NScumm.Core
             {
                 if (_sfxFilename == null)
                 {
-                    Console.Error.WriteLine("StartTalkSound: SFX file not found");
+//                    Console.Error.WriteLine("StartTalkSound: SFX file not found");
                     return handle;
                 }
 
@@ -471,7 +471,7 @@ namespace NScumm.Core
                 offset += 8;
 
                 _mouthSyncTimes = new ushort[num + 1];
-                file = File.OpenRead(_sfxFilename);
+                file = ServiceLocator.FileStorage.OpenFileRead(_sfxFilename);
                 var br = new BinaryReader(file);
                 file.Seek(offset, SeekOrigin.Begin);
                 for (int i = 0; i < num; i++)
@@ -515,7 +515,7 @@ namespace NScumm.Core
             return handle;
         }
 
-        void OnCDTimer(object sender, EventArgs e)
+        void OnCDTimer(object sender)
         {
             // FIXME: Turn off the timer when it's no longer needed. In theory, it
             // should be possible to check with pollCD(), but since CD sound isn't

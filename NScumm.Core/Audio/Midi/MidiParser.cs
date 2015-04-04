@@ -503,7 +503,7 @@ namespace NScumm.Core
 
             if (HangingNotesCount >= HangingNotes.Length)
             {
-                Console.Error.WriteLine("MidiParser::hangingNote(): Exceeded polyphony");
+//                Console.Error.WriteLine("MidiParser::hangingNote(): Exceeded polyphony");
                 return;
             }
 
@@ -545,7 +545,7 @@ namespace NScumm.Core
             else
             {
                 // We checked this up top. We should never get here!
-                Console.Error.WriteLine("MidiParser::hangingNote(): Internal error");
+//                Console.Error.WriteLine("MidiParser::hangingNote(): Internal error");
             }
         }
 
@@ -772,7 +772,7 @@ namespace NScumm.Core
                 Position.LastEventTick += info.Delta;
                 if (info.Event < 0x80)
                 {
-                    Console.Error.WriteLine("Bad command or running status {0:X2}", info.Event);
+//                    Console.Error.WriteLine("Bad command or running status {0:X2}", info.Event);
                     Position.PlayPos = 0;
                     return;
                 }

@@ -3,12 +3,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
-    <ProductVersion>8.0.30703</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{B1F1416B-C52A-4CE5-AF06-C960F5165784}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <RootNamespace>NScumm.MonoGame</RootNamespace>
     <AssemblyName>NScumm.MonoGame</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <DebugSymbols>true</DebugSymbols>
@@ -81,8 +80,12 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NScumm.Core\NScumm.Core.csproj">
-      <Project>{B33E2D2E-E360-4F10-A82F-AA98500497FD}</Project>
+      <Project>{8E7A9E5B-D7EB-4DA1-8EE7-A5D8DE202372}</Project>
       <Name>NScumm.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\NScumm.Platform_Desktop\NScumm.Platform_Desktop.csproj">
+      <Project>{D42434C7-459D-461A-8B1D-1451F7FF4B13}</Project>
+      <Name>NScumm.Platform_Desktop</Name>
     </ProjectReference>
   </ItemGroup>
 </Project>

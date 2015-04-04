@@ -58,7 +58,7 @@ namespace NScumm.Core.Audio.IMuse
     }
 
     [System.Diagnostics.DebuggerDisplay("{DebuggerDisplay,nq}")]
-    class SoundDesc: ICloneable
+    class SoundDesc
     {
         internal string DebuggerDisplay
         {
@@ -147,11 +147,6 @@ namespace NScumm.Core.Audio.IMuse
             desc.Compressed = Compressed;
             desc.LastFileName = LastFileName;
             return desc;
-        }
-
-        object ICloneable.Clone()
-        {
-            return Clone();
         }
 
         public void Clear()

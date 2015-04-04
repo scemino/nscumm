@@ -35,7 +35,7 @@ namespace NScumm.Core.IO
         {
             var diskNum = Index.RoomResources[roomIndex].RoomNum;
             var diskName = string.Format("disk{0:00}.lec", diskNum);
-            var game1Path = Path.Combine(Directory, diskName);
+            var game1Path = ServiceLocator.FileStorage.Combine(Directory, diskName);
 
             var file = new ResourceFile4(game1Path, 0x69);
             return file;
@@ -44,8 +44,8 @@ namespace NScumm.Core.IO
         protected override byte[] ReadCharset(byte id)
         {
             var diskName = string.Format("{0}.lfl", 900 + id);
-            var path = ScummHelper.NormalizePath(Path.Combine(Directory, diskName));
-            using (var file = File.OpenRead(path))
+            var path = ScummHelper.NormalizePath(ServiceLocator.FileStorage.Combine(Directory, diskName));
+            using (var file = ServiceLocator.FileStorage.OpenFileRead(path))
             {
                 var reader = new BinaryReader(file);
                 var size = reader.ReadUInt32() + 11;

@@ -1,12 +1,12 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{388CB59D-3D62-4C0A-8182-C3A1ADF317F3}</ProjectGuid>
+    <ProjectGuid>{D42434C7-459D-461A-8B1D-1451F7FF4B13}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>NScumm.Dump.Tests</RootNamespace>
-    <AssemblyName>NScumm.Dump.Tests</AssemblyName>
+    <RootNamespace>NScumm.Platform_Desktop</RootNamespace>
+    <AssemblyName>NScumm.Platform_Desktop</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -29,31 +29,17 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="nunit.framework">
-      <HintPath>..\packages\NUnit.2.6.4\lib\nunit.framework.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ChangeJumpToIfFixture.cs" />
-    <Compile Include="ResolveVariablesAstVisitorFixture.cs" />
-    <Compile Include="AstHelper.cs" />
-    <Compile Include="ReplaceJumpToWhileFixtureFixture.cs" />
-    <Compile Include="ReplaceJumpToGoToFixture.cs" />
-    <Compile Include="ReplacePushAndPopFixture.cs" />
-    <Compile Include="ResolveAllTypesOfVariablesFixture.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="FileStorage.cs" />
+    <Compile Include="Platform.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <ProjectReference Include="..\NScumm.Dump\NScumm.Dump.csproj">
-      <Project>{D53EB07B-F186-4281-A225-2C3DC5850148}</Project>
-      <Name>NScumm.Dump</Name>
-    </ProjectReference>
     <ProjectReference Include="..\NScumm.Core\NScumm.Core.csproj">
       <Project>{8E7A9E5B-D7EB-4DA1-8EE7-A5D8DE202372}</Project>
       <Name>NScumm.Core</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
   </ItemGroup>
 </Project>

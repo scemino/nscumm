@@ -221,7 +221,7 @@ namespace NScumm.Core.IO
             room.NumZBuffer = _reader.ReadUInt16() + 1;
 
             chunk = ChunkIterator5.ReadChunk(_reader);
-            if (!chunk.Tag.StartsWith("IM", StringComparison.InvariantCulture))
+            if (!chunk.Tag.StartsWith("IM", StringComparison.Ordinal))
                 throw new NotSupportedException("Image block was expected.");
 
             room.Image = ReadImage(chunk.Size - 8, room.Header.Width / 8);

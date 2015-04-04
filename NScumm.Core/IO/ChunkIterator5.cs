@@ -77,7 +77,7 @@ namespace NScumm.Core.IO
             Current = null;
             if (_reader.BaseStream.Position < (_position + _size - 8) && _reader.BaseStream.Position < _reader.BaseStream.Length)
             {
-                var tag = Encoding.ASCII.GetString(_reader.ReadBytes(4));
+                var tag = Encoding.UTF8.GetString(_reader.ReadBytes(4));
                 var size = _reader.ReadUInt32BigEndian();
                 Current = new Chunk { Offset = _reader.BaseStream.Position, Size = size, Tag = tag };
             }
@@ -86,7 +86,7 @@ namespace NScumm.Core.IO
 
         public static Chunk ReadChunk(XorReader reader)
         {
-            var tag = Encoding.ASCII.GetString(reader.ReadBytes(4));
+            var tag = Encoding.UTF8.GetString(reader.ReadBytes(4));
             var size = reader.ReadUInt32BigEndian();
             return new Chunk { Offset = reader.BaseStream.Position, Size = size, Tag = tag };
         }

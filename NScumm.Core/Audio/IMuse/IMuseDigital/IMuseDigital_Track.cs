@@ -89,7 +89,7 @@ namespace NScumm.Core.Audio.IMuse
                 int l = AllocSlot(priority);
                 if (l == -1)
                 {
-                    Console.Error.WriteLine("IMuseDigital::startSound() Can't start sound - no free slots");
+//                    Console.Error.WriteLine("IMuseDigital::startSound() Can't start sound - no free slots");
                     return;
                 }
 //                Debug.WriteLine("IMuseDigital::startSound({0}, trackId:{1})", soundId, l);
@@ -168,8 +168,8 @@ namespace NScumm.Core.Audio.IMuse
                     {
                         track.MixerFlags |= AudioFlags.Unsigned;
                     }
-                    else
-                        Console.Error.WriteLine("IMuseDigital::startSound(): Can't handle {0} bit samples", bits);
+//                    else
+//                        Console.Error.WriteLine("IMuseDigital::startSound(): Can't handle {0} bit samples", bits);
 
                     if (otherTrack != null && otherTrack.Used && !otherTrack.ToBeRemoved)
                     {
@@ -196,7 +196,7 @@ namespace NScumm.Core.Audio.IMuse
 
             if (track.ToBeRemoved)
             {
-                Console.Error.WriteLine("cloneToFadeOutTrack: Tried to clone a track to be removed, please bug report");
+//                Console.Error.WriteLine("cloneToFadeOutTrack: Tried to clone a track to be removed, please bug report");
                 return null;
             }
 
@@ -222,7 +222,7 @@ namespace NScumm.Core.Audio.IMuse
             {
                 // it fail load open old song after switch to diffrent CDs
                 // so gave up
-                Console.Error.WriteLine("Game not supported while playing on 2 diffrent CDs");
+//                Console.Error.WriteLine("Game not supported while playing on 2 diffrent CDs");
             }
             track.SoundDesc = soundDesc;
 

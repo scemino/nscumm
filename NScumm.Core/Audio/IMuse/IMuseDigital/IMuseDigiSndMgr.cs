@@ -453,8 +453,8 @@ namespace NScumm.Core.Audio.IMuse
                         result = OpenVoiceBundle(sound, ref disk);
                     else if (volGroupId == IMuseDigital.ImuseVolumeGroupMusic)
                         result = OpenMusicBundle(sound, ref disk);
-                    else
-                        Console.Error.WriteLine("openSound() Don't know how load sound: {0}", soundId);
+//                    else
+//                        Console.Error.WriteLine("openSound() Don't know how load sound: {0}", soundId);
                     if (!result)
                     {
                         CloseSound(sound);
@@ -497,7 +497,7 @@ namespace NScumm.Core.Audio.IMuse
                     sound.ResPtr = null;
                     break;
                 default:
-                    Console.Error.WriteLine("openSound() Unknown soundType {0} (trying to load sound {1})", soundType, soundId);
+//                    Console.Error.WriteLine("openSound() Unknown soundType {0} (trying to load sound {1})", soundType, soundId);
                     break;
             }
 
@@ -740,28 +740,28 @@ namespace NScumm.Core.Audio.IMuse
 
                     fileName = string.Format("{0}_reg{1:D3}.fla", soundDesc.Name, region);
                     var cmpFile = soundDesc.Bundle.GetFile(fileName, ref offs, ref len);
-                    if (len != 0)
-                    {
+//                    if (len != 0)
+//                    {
 
-                        Console.Error.WriteLine("FLAC library compiled support needed");
-                    }
+//                        Console.Error.WriteLine("FLAC library compiled support needed");
+//                    }
                     if (len == 0)
                     {
                         fileName = string.Format("{0}_reg{1:D3}.ogg", soundDesc.Name, region);
                         cmpFile = soundDesc.Bundle.GetFile(fileName, ref offs, ref len);
-                        if (len != 0)
-                        {
-                            Console.Error.WriteLine("Vorbis library compiled support needed");
-                        }
+//                        if (len != 0)
+//                        {
+//                            Console.Error.WriteLine("Vorbis library compiled support needed");
+//                        }
                     }
                     if (len == 0)
                     {
                         fileName = string.Format("{0}_reg{1:D3}.mp3", soundDesc.Name, region);
                         cmpFile = soundDesc.Bundle.GetFile(fileName, ref offs, ref len);
-                        if (len != 0)
-                        {
-                            Console.Error.WriteLine("Mad library compiled support needed");
-                        }
+//                        if (len != 0)
+//                        {
+//                            Console.Error.WriteLine("Mad library compiled support needed");
+//                        }
                     }
                     Debug.Assert(len != 0);
 

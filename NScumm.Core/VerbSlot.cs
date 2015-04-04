@@ -81,7 +81,7 @@ namespace NScumm.Core
                 LoadAndSaveEntry.Create(reader => Prep = reader.ReadByte(), writer => writer.WriteByte(Prep), 8),
                 LoadAndSaveEntry.Create(reader => ImgIndex = reader.ReadUInt16(), writer => writer.WriteUInt16(ImgIndex), 8),
             };
-            Array.ForEach(verbEntries, e => e.Execute(serializer));
+            verbEntries.ForEach(e => e.Execute(serializer));
         }
     }
 }

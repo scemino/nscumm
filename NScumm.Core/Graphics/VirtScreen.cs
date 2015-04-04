@@ -95,7 +95,7 @@ namespace NScumm.Core.Graphics
         public VirtScreen(int top, int width, int height, PixelFormat format, int numBuffers, bool trick = false)
         {
             if (numBuffers <= 0)
-                throw new ArgumentOutOfRangeException("numBuffers", numBuffers, "The number of buffers should be positive.");
+                throw new ArgumentOutOfRangeException("numBuffers", "The number of buffers should be positive.");
 
             var numStrips = width / 8;
             tdirty = new int[numStrips + 1];

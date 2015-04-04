@@ -142,9 +142,10 @@ namespace NScumm.Core.Smush
         public static TrsFile Load(string filename)
         {
             TrsFile file;
-            using (var f = new StreamReader(filename, Encoding.GetEncoding("iso-8859-1")))
+            using (var f = ServiceLocator.FileStorage.OpenFileRead(filename))
+            using (var sr = new StreamReader(f, Encoding.GetEncoding("iso-8859-1")))
             {
-                file = Load(f);
+                file = Load(sr);
             }
             return file;
         }
@@ -152,11 +153,11 @@ namespace NScumm.Core.Smush
         public static TrsFile LoadEncoded(string filename)
         {
             TrsFile file;
-            using (var f = File.OpenRead(filename))
+            using (var f = ServiceLocator.FileStorage.OpenFileRead(filename))
             {
                 var sig = new byte[4];
                 f.Read(sig, 0, 4);
-                if (System.Text.Encoding.ASCII.GetString(sig) == "ETRS")
+                if (System.Text.Encoding.UTF8.GetString(sig) == "ETRS")
                 {
                     f.Seek(16, SeekOrigin.Begin);
                     file = Load(new StreamReader(new XorStream(f, 0xCC)));

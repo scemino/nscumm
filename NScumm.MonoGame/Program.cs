@@ -19,6 +19,7 @@ using Mono.Options;
 using NScumm.Core;
 using NScumm.Core.IO;
 using System.Reflection;
+using System.IO;
 
 [assembly:AssemblyVersion("0.1.0.*")]
 
@@ -35,6 +36,8 @@ namespace NScumm.MonoGame
         [STAThread]
         static int Main(string[] args)
         {
+            Initialize();
+
             var musicDriver = "adlib";
             var showVersion = false;
             var showHelp = false;
@@ -65,7 +68,7 @@ namespace NScumm.MonoGame
                 else if (extras.Count == 1)
                 {
                     var path = ScummHelper.NormalizePath(extras[0]);
-                    if (System.IO.File.Exists(path))
+                    if (File.Exists(path))
                     {
                         var info = GameManager.GetInfo(path);
                         if (info == null)
@@ -103,11 +106,17 @@ namespace NScumm.MonoGame
             return 0;
         }
 
+        static void Initialize()
+        {
+            ServiceLocator.Platform = new Platform();
+            ServiceLocator.FileStorage = new FileStorage();
+        }
+
         static void ShowVersion()
         {
-            var filename = System.IO.Path.GetFileNameWithoutExtension(AppDomain.CurrentDomain.FriendlyName);
+            var filename = Path.GetFileNameWithoutExtension(AppDomain.CurrentDomain.FriendlyName);
             var asm = Assembly.GetExecutingAssembly();
-            var info = new System.IO.FileInfo(asm.Location);
+            var info = new FileInfo(asm.Location);
             Console.WriteLine("{0} {1} ({2:R})", filename, asm.GetName().Version, info.CreationTime);
         }
 
@@ -124,7 +133,7 @@ namespace NScumm.MonoGame
 
         static void Usage(OptionSet options)
         {
-            var filename = System.IO.Path.GetFileNameWithoutExtension(AppDomain.CurrentDomain.FriendlyName);
+            var filename = Path.GetFileNameWithoutExtension(AppDomain.CurrentDomain.FriendlyName);
             Console.ForegroundColor = ConsoleColor.Blue;
             Console.WriteLine("Usage : {0} [OPTIONS]... [FILE]", filename);
             options.WriteOptionDescriptions(Console.Out);

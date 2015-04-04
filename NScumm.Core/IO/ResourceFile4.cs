@@ -59,7 +59,7 @@ namespace NScumm.Core.IO
                         return roomOffsets;
                     default:
 					// skip
-                        Console.WriteLine("Skip Block: 0x{0:X2}", blockType);
+//                        Console.WriteLine("Skip Block: 0x{0:X2}", blockType);
                         _reader.BaseStream.Seek(size - 6, SeekOrigin.Current);
                         break;
                 }

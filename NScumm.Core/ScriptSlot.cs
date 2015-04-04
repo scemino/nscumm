@@ -125,7 +125,7 @@ namespace NScumm.Core
                 LoadAndSaveEntry.Create(reader => reader.ReadByte(), writer => writer.WriteByte((byte)0), 8, 10),
             };
 
-            Array.ForEach(scriptSlotEntries, e => e.Execute(serializer));
+            scriptSlotEntries.ForEach(e => e.Execute(serializer));
         }
 
         internal string DebuggerDisplay

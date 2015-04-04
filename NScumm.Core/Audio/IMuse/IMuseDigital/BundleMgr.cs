@@ -49,8 +49,8 @@ namespace NScumm.Core.Audio.IMuse
             if (_file != null)
                 return true;
 
-            filename = ScummHelper.LocatePath(Path.GetDirectoryName(ScummEngine.Instance.Game.Path), filename);
-            _file = new XorReader(File.OpenRead(filename), 0);
+            filename = ScummHelper.LocatePath(ServiceLocator.FileStorage.GetDirectoryName(ScummEngine.Instance.Game.Path), filename);
+            _file = new XorReader(ServiceLocator.FileStorage.OpenFileRead(filename), 0);
 
             int slot = _cache.MatchFile(filename);
             Debug.Assert(slot != -1);
@@ -130,7 +130,7 @@ namespace NScumm.Core.Audio.IMuse
                     _outputSize = BundleCodecs.DecompressCodec(_compTable[i].Codec, _compInputBuff, _compOutputBuff, _compTable[i].Size);
                     if (_outputSize > 0x2000)
                     {
-                        Console.Error.WriteLine("_outputSize: {0}", _outputSize);
+//                        Console.Error.WriteLine("_outputSize: {0}", _outputSize);
                     }
                     _lastBlock = i;
                 }
@@ -199,7 +199,7 @@ namespace NScumm.Core.Audio.IMuse
 
             if (tag != "COMP")
             {
-                Console.Error.WriteLine("BundleMgr::loadCompTable() Compressed sound {0} ({1}:{2}) invalid ({3})", index, ((FileStream)_file.BaseStream).Name, _bundleTable[index].Offset, tag);
+//                Console.Error.WriteLine("BundleMgr::loadCompTable() Compressed sound {0} ({1}:{2}) invalid ({3})", index, ((FileStream)_file.BaseStream).Name, _bundleTable[index].Offset, tag);
                 return false;
             }
 

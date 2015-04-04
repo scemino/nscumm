@@ -19,7 +19,6 @@ using System;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Xml.Linq;
 using NScumm.Core.Audio;
 
@@ -54,6 +53,7 @@ namespace NScumm.Core.IO
     public class GameSettings
     {
         public GameInfo Game { get; private set; }
+
         public string AudioDevice { get; set; }
 
         public GameSettings(GameInfo game)
@@ -116,7 +116,7 @@ namespace NScumm.Core.IO
         public static GameInfo GetInfo(string path)
         {
             GameInfo info = null;
-            var signature = GetSignature(path);
+            var signature = ServiceLocator.FileStorage.GetSignature(path);
             var gameMd5 = (from md5 in doc.Element(Namespace + "NScumm").Elements(Namespace + "MD5")
                                     where (string)md5.Attribute("signature") == signature
                                     select md5).FirstOrDefault();
@@ -139,11 +139,11 @@ namespace NScumm.Core.IO
                     Path = path,
                     Id = (string)game.Attribute("id"),
                     Pattern = (string)game.Attribute("pattern"),
-                    GameId = (GameId)Enum.Parse(typeof(GameId), (string)game.Attribute("gameId")),
+                    GameId = (GameId)Enum.Parse(typeof(GameId), (string)game.Attribute("gameId"), true),
                     Variant = (string)game.Attribute("variant"),
                     Description = desc,
                     Version = (int)game.Attribute("version"),
-                    Culture = CultureInfo.GetCultureInfo((string)gameMd5.Attribute("language")),
+                    Culture = new CultureInfo((string)gameMd5.Attribute("language")),
                     Features = features,
                     Music = music
                 };
@@ -157,7 +157,7 @@ namespace NScumm.Core.IO
             var features = GameFeatures.None;
             foreach (var f in feat)
             {
-                features |= (GameFeatures)Enum.Parse(typeof(GameFeatures), f);
+                features |= (GameFeatures)Enum.Parse(typeof(GameFeatures), f, true);
             }
             return features;
         }
@@ -168,31 +168,9 @@ namespace NScumm.Core.IO
             var musics = MusicDriverTypes.None;
             foreach (var m in mus)
             {
-                musics |= (MusicDriverTypes)Enum.Parse(typeof(MusicDriverTypes), m);
+                musics |= (MusicDriverTypes)Enum.Parse(typeof(MusicDriverTypes), m, true);
             }
             return musics;
-        }
-
-        static string GetSignature(string path)
-        {
-            string signature;
-            using (var md5 = System.Security.Cryptography.MD5.Create())
-            {
-
-                using (var file = File.OpenRead(path))
-                {
-                    var br = new BinaryReader(file);
-                    var data = br.ReadBytes(1024 * 1024);
-                    var md5Key = md5.ComputeHash(data, 0, data.Length);
-                    var md5Text = new StringBuilder();
-                    for (int i = 0; i < 16; i++)
-                    {
-                        md5Text.AppendFormat("{0:x2}", md5Key[i]);
-                    }
-                    signature = md5Text.ToString();
-                }
-            }
-            return signature;
         }
     }
 }

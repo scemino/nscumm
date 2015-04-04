@@ -70,7 +70,7 @@ namespace NScumm.Core.Audio
             {
                 if (stream == null)
                 {
-                    Console.Error.WriteLine("stream is null");
+//                    Console.Error.WriteLine("stream is null");
                     return null;
                 }
 

@@ -2,6 +2,7 @@ using NScumm.Core.IO;
 using Mono.Options;
 using System.Collections.Generic;
 using System.Linq;
+using NScumm.Core;
 
 namespace NScumm.Dump
 {
@@ -24,6 +25,12 @@ namespace NScumm.Dump
             System.Console.WriteLine("\tv8 (The Curse of Monkey Island)");
         }
 
+        static void Initialize()
+        {
+            ServiceLocator.Platform = new Platform();
+            ServiceLocator.FileStorage = new FileStorage();
+        }
+
         public static int Main(string[] args)
         {
             bool showHelp = false;
@@ -35,6 +42,8 @@ namespace NScumm.Dump
             var scriptRooms = new List<int>();
             var rooms = new List<int>();
             var objects = new List<int>();
+
+            Initialize();
 
             var options = new OptionSet()
             {
@@ -113,7 +122,7 @@ namespace NScumm.Dump
                 var objs = index.Rooms.SelectMany(r => r.Objects).Where(o => scriptObjects.Contains(o.Number)).ToList();
                 foreach (var obj in objs)
                 {
-                    dumper.WriteLine("obj {0} {1} {{", obj.Number, System.Text.Encoding.ASCII.GetString(obj.Name));
+                    dumper.WriteLine("obj {0} {1} {{", obj.Number, System.Text.Encoding.UTF8.GetString(obj.Name));
                     dumper.WriteLine("Script offset: {0}", obj.Script.Offset);
                     foreach (var off in obj.ScriptOffsets)
                     {

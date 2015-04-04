@@ -407,13 +407,13 @@ namespace NScumm.Core
                 if (++blits >= blits_before_refresh)
                 {
                     blits = 0;
-                    Thread.Sleep(30);
+                    ServiceLocator.Platform.Sleep(30);
                 }
             }
 
             if (blits != 0)
             {
-                Thread.Sleep(30);
+                ServiceLocator.Platform.Sleep(30);
             }
         }
 
@@ -515,7 +515,7 @@ namespace NScumm.Core
                 _gfxManager.UpdateScreen();
                 if (Environment.TickCount >= start_time + msec_delay)
                     break;
-                Thread.Sleep(10);
+                ServiceLocator.Platform.Sleep(10);
             }
         }
 

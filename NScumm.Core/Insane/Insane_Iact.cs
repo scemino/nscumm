@@ -55,9 +55,9 @@ namespace NScumm.Core.Insane
                 case 21:
                     IactScene21(renderBitmap, codecparam, setupsan12, setupsan13, b, size, flags, par1, par2, par3, par4);
                     break;
-                default:
-                    Debug.Fail(string.Format("Iasct scene {0} not supported", _currSceneId));
-                    break;
+//                default:
+//                    Debug.Fail(string.Format("Iasct scene {0} not supported", _currSceneId));
+//                    break;
             }
         }
 

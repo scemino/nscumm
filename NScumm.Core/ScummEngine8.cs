@@ -1502,7 +1502,7 @@ namespace NScumm.Core
         [OpCode(0xB9)]
         void StartVideo()
         {
-            var filename = System.Text.Encoding.ASCII.GetString(ReadCharacters());
+            var filename = System.Text.Encoding.UTF8.GetString(ReadCharacters());
             SmushPlayer.Play(filename, 12);
         }
 
@@ -1793,7 +1793,7 @@ namespace NScumm.Core
                 case 0xE0:      // readRegistryValue
                     {
                         int idx = args[1];
-                        var str = System.Text.Encoding.ASCII.GetString(GetStringAddress(idx));
+                        var str = System.Text.Encoding.UTF8.GetString(GetStringAddress(idx));
                         // TODO:
 //                        if (str=="SFX Volume")
 //                            Push(ConfMan.getInt("sfx_volume") / 2);

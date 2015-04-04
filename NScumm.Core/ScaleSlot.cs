@@ -36,7 +36,7 @@ namespace NScumm.Core
                 LoadAndSaveEntry.Create(reader => Y2 = reader.ReadInt16(), writer => writer.WriteInt16(Y2), 13),
                 LoadAndSaveEntry.Create(reader => Scale2 = reader.ReadInt16(), writer => writer.WriteInt16(Scale2), 13),
             };
-            Array.ForEach(scaleSlotsEntries, e => e.Execute(serializer));
+            scaleSlotsEntries.ForEach(e => e.Execute(serializer));
         }
     }
 }

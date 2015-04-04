@@ -248,7 +248,7 @@ namespace NScumm.Core.Audio.Midi
                             }
                             break;
                         default:
-                            Console.Error.WriteLine("MidiParser_SMF::parseNextEvent: Unsupported event code {0:X}", info.Event);
+//                            Console.Error.WriteLine("MidiParser_SMF::parseNextEvent: Unsupported event code {0:X}", info.Event);
                             break;
                     }
                     break;
@@ -260,7 +260,7 @@ namespace NScumm.Core.Audio.Midi
 
         static bool AreEquals(byte[] data1, string data2)
         {
-            return AreEquals(data1, Encoding.Default.GetBytes(data2));
+            return AreEquals(data1, Encoding.Unicode.GetBytes(data2));
         }
 
         static bool AreEquals(byte[] data1, byte[] data2)

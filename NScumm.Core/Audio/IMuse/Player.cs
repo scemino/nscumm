@@ -247,7 +247,7 @@ namespace NScumm.Core.Audio.IMuse
                             return part.Volume;
                         case 16:
                                     // FIXME: Need to know where this occurs...
-                            Console.Error.WriteLine("Trying to cast instrument ({0}, {1}) -- please tell Fingolfin", param, chan);
+//                            Console.Error.WriteLine("Trying to cast instrument ({0}, {1}) -- please tell Fingolfin", param, chan);
                     // In old versions of the code, this used to return part->_program.
                     // This was changed in revision 2.29 of imuse.cpp (where this code used
                     // to reside).
@@ -355,12 +355,12 @@ namespace NScumm.Core.Audio.IMuse
             if (ptr == null)
                 return -1;
 
-            if (Encoding.ASCII.GetString(ptr, 0, 2) == "RO")
+            if (Encoding.UTF8.GetString(ptr, 0, 2) == "RO")
             {
                 // Old style 'RO' resource
                 _parser = MidiParser.CreateRO();
             }
-            else if (Encoding.ASCII.GetString(ptr, 0, 4) == "FORM")
+            else if (Encoding.UTF8.GetString(ptr, 0, 4) == "FORM")
             {
                 // Humongous Games XMIDI resource
                 _parser = MidiParser.CreateXMidiParser();
@@ -895,9 +895,9 @@ namespace NScumm.Core.Audio.IMuse
                 _parts = num != 0 ? _se._parts[num - 1] : null;
             }
 
-            Array.ForEach(playerEntries, e => e.Execute(ser));
+            playerEntries.ForEach(e => e.Execute(ser));
             _hook.SaveOrLoad(ser);
-            Array.ForEach(_parameterFaders, pf => pf.SaveOrLoad(ser));
+            _parameterFaders.ForEach(pf => pf.SaveOrLoad(ser));
         }
 
         public int SetHook(byte cls, byte value, byte chan)
@@ -1005,7 +1005,7 @@ namespace NScumm.Core.Audio.IMuse
             var ptr = _se.FindStartOfSound(sound);
             if (ptr == null)
             {
-                Console.Error.WriteLine("Player::startSound(): Couldn't find start of sound {0}", sound);
+//                Console.Error.WriteLine("Player::startSound(): Couldn't find start of sound {0}", sound);
                 return false;
             }
 
@@ -1127,7 +1127,7 @@ namespace NScumm.Core.Audio.IMuse
                             part.AllNotesOff();
                             break;
                         default:
-                            Console.Error.WriteLine("Player::send(): Invalid control change {0}", param1);
+//                            Console.Error.WriteLine("Player::send(): Invalid control change {0}", param1);
                             break;
                     }
                     break;
@@ -1163,7 +1163,7 @@ namespace NScumm.Core.Audio.IMuse
                 default:
                     if (!_scanning)
                     {
-                        Console.Error.WriteLine("Player::send(): Invalid command {0}", cmd);
+//                        Console.Error.WriteLine("Player::send(): Invalid command {0}", cmd);
                         Clear();
                     }
                     break;
@@ -1220,10 +1220,10 @@ namespace NScumm.Core.Audio.IMuse
                     // fatal error. See bug #1481383.
                     // The Macintosh version of Monkey Island 2 simply
                     // ignores these SysEx events too.
-                    if (a == 0)
-                        Console.Error.WriteLine("Unknown SysEx manufacturer 0x00 0x{0:X2} 0x{1:X2}", msg[p], msg[p + 1]);
-                    else
-                        Console.Error.WriteLine("Unknown SysEx manufacturer 0x{0:X2}", (int)a);
+//                    if (a == 0)
+//                        Console.Error.WriteLine("Unknown SysEx manufacturer 0x00 0x{0:X2} 0x{1:X2}", msg[p], msg[p + 1]);
+//                    else
+//                        Console.Error.WriteLine("Unknown SysEx manufacturer 0x{0:X2}", (int)a);
                 }
                 return;
             }

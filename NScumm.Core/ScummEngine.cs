@@ -798,8 +798,8 @@ namespace NScumm.Core
                 {
                     if (ss.CutSceneOverride != 0)
                     {
-                        if (Game.Version >= 5)
-                            Console.Error.WriteLine("Object {0} stopped with active cutscene/override in exit", ss.Number);
+//                        if (Game.Version >= 5)
+//                            Console.Error.WriteLine("Object {0} stopped with active cutscene/override in exit", ss.Number);
                         ss.CutSceneOverride = 0;
                     }
                     //nukeArrays(i);
@@ -809,8 +809,8 @@ namespace NScumm.Core
                 {
                     if (ss.CutSceneOverride != 0)
                     {
-                        if (Game.Version >= 5)
-                            Console.Error.WriteLine("Script {0} stopped with active cutscene/override in exit", ss.Number);
+//                        if (Game.Version >= 5)
+//                            Console.Error.WriteLine("Script {0} stopped with active cutscene/override in exit", ss.Number);
                         ss.CutSceneOverride = 0;
                     }
                     //nukeArrays(i);

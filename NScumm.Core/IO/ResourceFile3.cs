@@ -122,7 +122,7 @@ namespace NScumm.Core.IO
                 if (_reader.BaseStream.Position < (_position + _size - 6) && _reader.BaseStream.Position < _reader.BaseStream.Length)
                 {
                     var size = _reader.ReadUInt32();
-                    var tag = Encoding.ASCII.GetString(_reader.ReadBytes(2));
+                    var tag = Encoding.UTF8.GetString(_reader.ReadBytes(2));
                     Current = new Chunk { Offset = _reader.BaseStream.Position, Size = size, Tag = tag };
                 }
                 return Current != null;
@@ -138,7 +138,7 @@ namespace NScumm.Core.IO
         static Chunk ReadChunk(XorReader reader)
         {
             var size = reader.ReadUInt32();
-            var tag = Encoding.ASCII.GetString(reader.ReadBytes(2));
+            var tag = Encoding.UTF8.GetString(reader.ReadBytes(2));
             return new Chunk { Offset = reader.BaseStream.Position, Size = size, Tag = tag };
         }
 
@@ -469,7 +469,7 @@ namespace NScumm.Core.IO
             {
                 using (var ms = new MemoryStream(stripsDic[obj.Number]))
                 {
-                    Console.Write("obj {0}: ", obj.DebuggerDisplay);
+//                    Console.Write("obj {0}: ", obj.DebuggerDisplay);
                     obj.Images.Add(ReadImage(ms, obj.Width / 8));
                 }
 //                obj.Images.Add(new ImageData{ Data = stripsDic[obj.Number] });

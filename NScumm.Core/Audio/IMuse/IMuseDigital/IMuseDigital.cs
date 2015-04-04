@@ -56,7 +56,7 @@ namespace NScumm.Core.Audio.IMuse
 
         void IMusicEngine.StartSound(int sound)
         {
-            Console.Error.WriteLine("IMuseDigital::startSound(int) should be never called"); 
+//            Console.Error.WriteLine("IMuseDigital::startSound(int) should be never called"); 
         }
 
         int IMusicEngine.GetMusicTimer()
@@ -193,7 +193,7 @@ namespace NScumm.Core.Audio.IMuse
                             }
                             else
                             {
-                                Console.Error.WriteLine("IMuseDigita::callback: Unexpected sample width, {0} bits", bits);
+//                                Console.Error.WriteLine("IMuseDigita::callback: Unexpected sample width, {0} bits", bits);
                                 continue;
                             }
 

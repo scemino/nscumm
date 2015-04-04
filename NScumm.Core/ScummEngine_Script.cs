@@ -692,7 +692,7 @@ namespace NScumm.Core
 
             if (where == WhereIsObject.NotFound)
             {
-                Console.Error.WriteLine("warning: Code for object {0} not in room {1}", obj, _roomResource);
+//                Console.Error.WriteLine("warning: Code for object {0} not in room {1}", obj, _roomResource);
                 return;
             }
 

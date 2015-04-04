@@ -70,7 +70,7 @@ namespace NScumm.Core
                 LoadAndSaveEntry.Create(reader => ObjectB = reader.ReadUInt16(), writer => writer.WriteUInt16(ObjectB), 8),
                 LoadAndSaveEntry.Create(reader => freezeCount = reader.ReadByte(), writer => writer.WriteByte(freezeCount), 8),
             };
-            Array.ForEach(sentenceEntries, e => e.Execute(serializer));
+            sentenceEntries.ForEach(e => e.Execute(serializer));
         }
     }
 }

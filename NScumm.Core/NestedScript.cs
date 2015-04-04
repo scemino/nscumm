@@ -34,7 +34,7 @@ namespace NScumm.Core
                 LoadAndSaveEntry.Create(reader => Where = (WhereIsObject)reader.ReadByte(), writer => writer.WriteByte((byte)Where), 8),
                 LoadAndSaveEntry.Create(reader => Slot = reader.ReadByte(), writer => writer.WriteByte(Slot), 8),
             };
-            Array.ForEach(nestedScriptEntries, e => e.Execute(serializer));
+            nestedScriptEntries.ForEach(e => e.Execute(serializer));
         }
     }
 }

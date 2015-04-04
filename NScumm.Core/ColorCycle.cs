@@ -38,7 +38,7 @@ namespace NScumm.Core
                 LoadAndSaveEntry.Create(reader => Start = reader.ReadByte(), writer => writer.WriteByte(Start), 8),
                 LoadAndSaveEntry.Create(reader => End = reader.ReadByte(), writer => writer.WriteByte(End), 8),
             };
-            Array.ForEach(colorCycleEntries, e => e.Execute(serializer));
+            colorCycleEntries.ForEach(e => e.Execute(serializer));
         }
     }
 }

@@ -36,12 +36,12 @@ namespace NScumm.Core
             {
                 if (_savegame == null)
                 {
-                    var dir = Path.GetDirectoryName(Game.Path);
-                    _savegame = Path.Combine(dir, string.Format("{0}_{1}{2}.sav", Game.Id, _saveTemporaryState ? 'c' : 's', (_saveLoadSlot + 1)));
+                    var dir = ServiceLocator.FileStorage.GetDirectoryName(Game.Path);
+                    _savegame = ServiceLocator.FileStorage.Combine(dir, string.Format("{0}_{1}{2}.sav", Game.Id, _saveTemporaryState ? 'c' : 's', (_saveLoadSlot + 1)));
                 }
                 if (_saveLoadFlag == 2)
                 {
-                    if (File.Exists(_savegame))
+                    if (ServiceLocator.FileStorage.FileExists(_savegame))
                     {
                         LoadState(_savegame);
                         if (_saveTemporaryState && Game.Version <= 7)
@@ -52,7 +52,7 @@ namespace NScumm.Core
                 }
                 else if (_saveLoadFlag == 1)
                 {
-                    SaveState(_savegame, Path.GetFileNameWithoutExtension(_savegame));
+                    SaveState(_savegame, ServiceLocator.FileStorage.GetFileNameWithoutExtension(_savegame));
                     if (_saveTemporaryState)
                     {
                         Variables[VariableGameLoaded.Value] = 201;
@@ -218,9 +218,9 @@ namespace NScumm.Core
         {
             // load Indy3 IQ-points
             var filename = GetIqPointsFilename();
-            if (File.Exists(filename))
+            if (ServiceLocator.FileStorage.FileExists(filename))
             {
-                using (var file = File.OpenRead(filename))
+                using (var file = ServiceLocator.FileStorage.OpenFileRead(filename))
                 {
                     file.Read(ptr, 0, ptr.Length);
                 }
@@ -230,7 +230,7 @@ namespace NScumm.Core
         void SaveIQPoints()
         {
             var filename = GetIqPointsFilename();
-            using (var file = File.OpenWrite(filename))
+            using (var file = ServiceLocator.FileStorage.OpenFileWrite(filename))
             {
                 var data = _strings[StringIdIqEpisode];
                 file.Write(data, 0, data.Length);
@@ -239,7 +239,7 @@ namespace NScumm.Core
 
         string GetIqPointsFilename()
         {
-            var filename = Path.Combine(Path.GetDirectoryName(Game.Path), Game.Id + ".iq");
+            var filename = ServiceLocator.FileStorage.Combine(ServiceLocator.FileStorage.GetDirectoryName(Game.Path), Game.Id + ".iq");
             return filename;
         }
 
@@ -293,7 +293,7 @@ namespace NScumm.Core
                         {
                             // use name entered by the user
                             var firstSlot = StringIdSavename1;
-                            name = Encoding.ASCII.GetString(_strings[slot + firstSlot - 1]);
+                            name = Encoding.UTF8.GetString(_strings[slot + firstSlot - 1]);
                         }
 
                         if (SavePreparedSavegame(slot, name))
@@ -310,8 +310,8 @@ namespace NScumm.Core
                     {
                         var availSaves = ListSavegames(100);
                         var filename = MakeSavegameName(slot, false);
-                        var directory = Path.GetDirectoryName(Game.Path);
-                        if (availSaves[slot] && (File.Exists(Path.Combine(directory, filename))))
+                        var directory = ServiceLocator.FileStorage.GetDirectoryName(Game.Path);
+                        if (availSaves[slot] && (ServiceLocator.FileStorage.FileExists(ServiceLocator.FileStorage.Combine(directory, filename))))
                         {
                             result = 6; // save file exists
                         }

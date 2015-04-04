@@ -33,7 +33,7 @@ namespace NScumm.Core.IO
         public ushort codec;
     }
 
-    [StructLayout(LayoutKind.Explicit, Pack = 1)]
+    [StructLayout(LayoutKind.Explicit)]
     struct AkosOffset
     {
         [FieldOffsetAttribute(0)]

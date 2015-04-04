@@ -386,7 +386,7 @@ namespace NScumm.Core.Graphics
                 LoadAndSaveEntry.Create(reader => _gfxUsageBits = reader.ReadUInt32s(410), writer => writer.WriteUInt32s(_gfxUsageBits, 410), 10, 13),
                 LoadAndSaveEntry.Create(reader => _gfxUsageBits = reader.ReadUInt32s(3 * 410), writer => writer.WriteUInt32s(_gfxUsageBits, 3 * 410), 14)
             };
-            Array.ForEach(entries, entry => entry.Execute(serializer));
+            entries.ForEach(entry => entry.Execute(serializer));
         }
 
         #endregion GfxUsageBit Members

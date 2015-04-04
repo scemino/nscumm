@@ -40,7 +40,7 @@ namespace NScumm.Core
 
         protected string GetIqFilename(string filename)
         {
-            var targetName = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Game.Path), Game.Id);
+            var targetName = ServiceLocator.FileStorage.Combine(ServiceLocator.FileStorage.GetDirectoryName(Game.Path), Game.Id);
             if (_game.GameId == NScumm.Core.IO.GameId.Indy4)
             {
                 filename = targetName + ".iq";

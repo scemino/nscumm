@@ -82,9 +82,9 @@ namespace NScumm.Core.Graphics
         public Surface(int width, int height, PixelFormat format, bool trick)
         {
             if (width < 0)
-                throw new ArgumentOutOfRangeException("width", width, "Width should be positive");
+                throw new ArgumentOutOfRangeException("width", "Width should be positive");
             if (height < 0)
-                throw new ArgumentOutOfRangeException("height", height, "Height should be positive");
+                throw new ArgumentOutOfRangeException("height", "Height should be positive");
 
             Width = width;
             Height = height;

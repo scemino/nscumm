@@ -15,6 +15,7 @@
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+using NScumm.Core;
 using NScumm.Core.Graphics;
 using NScumm.Core.IO;
 using System;
@@ -101,7 +102,7 @@ namespace NScumm.Core
         {
             get
             { 
-                return string.Format("Name: {0}, IsInCurrentRoom: {1}, Visible: {2}", Name != null ? System.Text.Encoding.ASCII.GetString(Name) : null, IsInCurrentRoom, IsVisible);
+                return string.Format("Name: {0}, IsInCurrentRoom: {1}, Visible: {2}", Name != null ? System.Text.Encoding.UTF8.GetString(Name) : null, IsInCurrentRoom, IsVisible);
             }    
         }
 
@@ -1072,7 +1073,7 @@ namespace NScumm.Core
                 Init(-1);
             }
 
-            Array.ForEach(actorEntries, e => e.Execute(serializer));
+            actorEntries.ForEach(e => e.Execute(serializer));
         }
 
         public void RunTalkScript(int frame)

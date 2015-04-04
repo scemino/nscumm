@@ -111,7 +111,7 @@ namespace NScumm.Core
                 LoadAndSaveEntry.Create(reader => Wrapping = reader.ReadBoolean(), writer => writer.WriteByte(Wrapping), 71),
                 LoadAndSaveEntry.Create(reader => _default.Wrapping = reader.ReadBoolean(), writer => writer.WriteByte(_default.Wrapping), 71)
             };
-            Array.ForEach(stringTabEntries, e => e.Execute(serializer));
+            stringTabEntries.ForEach(e => e.Execute(serializer));
         }
     }
 }

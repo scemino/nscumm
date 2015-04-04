@@ -196,7 +196,7 @@ namespace NScumm.Core
         protected virtual void PickOneOf(int i, int[] args)
         {
             if (i < 0 || i > args.Length)
-                throw new ArgumentOutOfRangeException("i", i, string.Format("PickOneOf: {0} out of range (0, {1})", i, args.Length - 1));
+                throw new ArgumentOutOfRangeException("i", string.Format("PickOneOf: {0} out of range (0, {1})", i, args.Length - 1));
             Push(args[i]);
         }
 

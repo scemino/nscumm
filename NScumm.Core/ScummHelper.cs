@@ -20,11 +20,36 @@ using System.Linq;
 using System.IO;
 using NScumm.Core.IO;
 using System.Collections.Generic;
+using System.Collections;
 
 namespace NScumm.Core
 {
     public static class ScummHelper
     {
+        public static string GetString(this System.Text.Encoding encoding, byte[] bytes)
+        {
+            return encoding.GetString(bytes, 0, bytes.Length);
+        }
+
+        public static void ForEach<T>(this T[] array, Action<T> action)
+        {
+            foreach (var item in array)
+            {
+                action(item);
+            }
+        }
+
+        public static TOut[] ConvertAll<TIn,TOut>(this TIn[] array, Func<TIn,TOut> action)
+        {
+            var results = new TOut[array.Length];
+            for (var i = 0; i < array.Length; i++)
+            {
+                var item = array[i];
+                results[i] = action(item);
+            }
+            return results;
+        }
+
         public static int Clip(int value, int min, int max)
         {
             if (value < min)
@@ -37,18 +62,43 @@ namespace NScumm.Core
 
         public static string NormalizePath(string path)
         {
-            var dir = Path.GetDirectoryName(path);
-            return path = (from file in Directory.EnumerateFiles(dir)
+            var dir = ServiceLocator.FileStorage.GetDirectoryName(path);
+            return path = (from file in ServiceLocator.FileStorage.EnumerateFiles(dir)
                                     where string.Equals(file, path, StringComparison.OrdinalIgnoreCase)
                                     select file).FirstOrDefault();
         }
 
         public static string LocatePath(string directory, string filename)
         {
-            return (from file in Directory.EnumerateFiles(directory, "*.*", SearchOption.AllDirectories)
-                             let fn = Path.GetFileName(file)
-                             where string.Equals(fn, filename, StringComparison.InvariantCultureIgnoreCase)
+            return (from file in ServiceLocator.FileStorage.EnumerateFiles(directory, "*.*", SearchOption.AllDirectories)
+                             let fn = ServiceLocator.FileStorage.GetFileName(file)
+                             where string.Equals(fn, filename, StringComparison.OrdinalIgnoreCase)
                              select file).FirstOrDefault();
+        }
+
+        public static byte[] ToByteArray(this BitArray bits)
+        {
+            int numBytes = bits.Length / 8;
+            if (bits.Length % 8 != 0)
+                numBytes++;
+
+            var bytes = new byte[numBytes];
+            int byteIndex = 0, bitIndex = 0;
+
+            for (int i = 0; i < bits.Length; i++)
+            {
+                if (bits[i])
+                    bytes[byteIndex] |= (byte)(1 << (7 - bitIndex));
+
+                bitIndex++;
+                if (bitIndex == 8)
+                {
+                    bitIndex = 0;
+                    byteIndex++;
+                }
+            }
+
+            return bytes;
         }
 
         public static int ToTicks(TimeSpan time)
@@ -110,7 +160,7 @@ namespace NScumm.Core
         public static int OldDirToNewDir(int dir)
         {
             if (dir < 0 && dir > 3)
-                throw new ArgumentOutOfRangeException("dir", dir, "Invalid direction");
+                throw new ArgumentOutOfRangeException("dir", "Invalid direction");
             int[] new_dir_table = { 270, 90, 180, 0 };
             return new_dir_table[dir];
         }
@@ -460,12 +510,12 @@ namespace NScumm.Core
 
         public static string ToText(this byte[] value, int startIndex = 0, int count = 4)
         {
-            return System.Text.Encoding.ASCII.GetString(value, startIndex, count);
+            return System.Text.Encoding.UTF8.GetString(value, startIndex, count);
         }
 
         public static string ReadTag(this XorReader reader)
         {
-            return System.Text.Encoding.ASCII.GetString(reader.ReadBytes(4), 0, 4);
+            return System.Text.Encoding.UTF8.GetString(reader.ReadBytes(4), 0, 4);
         }
 
         public static string GetText(this byte[] value, int startIndex = 0)
@@ -475,7 +525,7 @@ namespace NScumm.Core
             {
                 data.Add(value[i]);
             }
-            return System.Text.Encoding.ASCII.GetString(data.ToArray());
+            return System.Text.Encoding.UTF8.GetString(data.ToArray());
         }
 
         public static int GetTextLength(this byte[] value, int startIndex = 0)

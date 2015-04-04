@@ -35,7 +35,7 @@ namespace NScumm.Core
         {
             var diskNum = Index.RoomResources[roomIndex].RoomNum;
             var diskName = string.Format("{0}.{1:000}", Game.Id, diskNum);
-            var game1Path = ScummHelper.NormalizePath(Path.Combine(Directory, diskName));
+            var game1Path = ScummHelper.NormalizePath(ServiceLocator.FileStorage.Combine(Directory, diskName));
 
             var file = new ResourceFile5(game1Path, 0x69);
             return file;

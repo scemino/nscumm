@@ -48,7 +48,7 @@ namespace NScumm.Core.Audio.IMuse
                 LoadAndSaveEntry.Create(r => Expire = r.ReadUInt16(), w => w.WriteUInt16(Expire), 54),
                     LoadAndSaveEntry.Create(r => Command = r.ReadUInt16s(8).Select(i => (int)i).ToArray(), w => w.WriteUInt16s(Command.Select(i => (ushort)i).ToArray(), 8), 54),
             };
-            Array.ForEach(snmTriggerEntries, e => e.Execute(ser));
+            snmTriggerEntries.ForEach(e => e.Execute(ser));
         }
     }
     

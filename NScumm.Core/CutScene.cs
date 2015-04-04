@@ -59,14 +59,14 @@ namespace NScumm.Core
 
         public void SaveOrLoad(Serializer serializer)
         {
-            var entries = new[]
+            var entries = new LoadAndSaveEntry[]
             {
                 LoadAndSaveEntry.Create(reader =>
                     {
                         StackPointer = reader.ReadByte();
                         var cutScenePtr = reader.ReadInt32s(MaxCutsceneNum);
                         var cutSceneScript = reader.ReadBytes(MaxCutsceneNum);
-                        var cutSceneData = Array.ConvertAll(reader.ReadInt16s(MaxCutsceneNum), n => (int)n);
+                        var cutSceneData = reader.ReadInt16s(MaxCutsceneNum);
 
                         // load Cut Scene Data
                         for (var i = 0; i < MaxCutsceneNum; i++)
@@ -99,7 +99,7 @@ namespace NScumm.Core
                         writer.WriteInt16(ScriptIndex);
                     }, 8)
             };
-            Array.ForEach(entries, e => e.Execute(serializer));
+            entries.ForEach(e => e.Execute(serializer));
         }
     }
 }

@@ -18,23 +18,15 @@ using System;
 
 namespace NScumm.Core
 {
-    public class ScriptData: ICloneable
+    public class ScriptData
     {
         public byte[] Data { get; set; }
 
         public long Offset { get; set; }
 
-
-        #region ICloneable implementation
-        object ICloneable.Clone()
-        {
-            return Clone();
-        }
-
         public ScriptData Clone()
         {
             return (ScriptData)this.MemberwiseClone();
         }
-        #endregion
     }
 }

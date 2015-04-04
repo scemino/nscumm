@@ -172,8 +172,8 @@ namespace NScumm.Core.Audio.IMuse
         {
             // Open MIDI driver
             var result = info.Driver.Open();
-            if (result != MidiDriverError.None)
-                Console.Error.WriteLine("IMuse initialization - {0}", MidiDriver.GetErrorName(result));
+//            if (result != MidiDriverError.None)
+//                Console.Error.WriteLine("IMuse initialization - {0}", MidiDriver.GetErrorName(result));
 
             // Connect to the driver's timer
             info.Driver.SetTimerCallback(info, MidiTimerCallback);
@@ -229,9 +229,9 @@ namespace NScumm.Core.Audio.IMuse
 
             // Check for old-style headers first, like 'RO'
             const ChunkType trFlag = ChunkType.MThd | ChunkType.FORM;
-            if (System.Text.Encoding.ASCII.GetString(ptr, 0, 3) == "ROL")
+            if (System.Text.Encoding.UTF8.GetString(ptr, 0, 3) == "ROL")
                 return ct == trFlag ? ptr : null;
-            if (System.Text.Encoding.ASCII.GetString(ptr, 4, 2) == "SO")
+            if (System.Text.Encoding.UTF8.GetString(ptr, 4, 2) == "SO")
             {
                 if (ct == trFlag)
                 {
@@ -265,12 +265,12 @@ namespace NScumm.Core.Audio.IMuse
                 {
                     for (int i = 0; i < ids.Length; ++i)
                     {
-                        var sig = System.Text.Encoding.ASCII.GetString(br.ReadBytes(4));
+                        var sig = System.Text.Encoding.UTF8.GetString(br.ReadBytes(4));
                         ms.Seek(-4, SeekOrigin.Current);
                         if ((((int)ct) & (1 << i)) != 0 && (sig == ids[i]))
                         {
                             var tmp = new byte[ptr.Length - ms.Position];
-                            Array.Copy(ptr, ms.Position, tmp, 0, tmp.Length);
+                            Array.Copy(ptr, (int)ms.Position, tmp, 0, tmp.Length);
                             return tmp;
                         }
                     }
@@ -291,7 +291,7 @@ namespace NScumm.Core.Audio.IMuse
             if (ptr == null)
                 return false;
 
-            var tag = System.Text.Encoding.ASCII.GetString(ptr, 0, 4);
+            var tag = System.Text.Encoding.UTF8.GetString(ptr, 0, 4);
             switch (tag)
             {
                 case "ADL ":
@@ -318,13 +318,13 @@ namespace NScumm.Core.Audio.IMuse
             }
 
             // Old style 'RO' has equivalent properties to 'ROL'
-            if (System.Text.Encoding.ASCII.GetString(ptr, 0, 2) == "RO")
+            if (System.Text.Encoding.UTF8.GetString(ptr, 0, 2) == "RO")
                 return true;
             // Euphony tracks show as 'SO' and have equivalent properties to 'ADL'
-            if (System.Text.Encoding.ASCII.GetString(ptr, 4, 2) == "SO")
+            if (System.Text.Encoding.UTF8.GetString(ptr, 4, 2) == "SO")
                 return false;
 
-            Console.Error.WriteLine("Unknown music type: '{0}'", tag);
+//            Console.Error.WriteLine("Unknown music type: '{0}'", tag);
 
             return false;
         }
@@ -335,7 +335,7 @@ namespace NScumm.Core.Audio.IMuse
             if (ptr == null)
                 return false;
 
-            var tag = System.Text.Encoding.ASCII.GetString(ptr, 0, 4);
+            var tag = System.Text.Encoding.UTF8.GetString(ptr, 0, 4);
             switch (tag)
             {
                 case "ADL ":
@@ -356,14 +356,14 @@ namespace NScumm.Core.Audio.IMuse
             }
 
             // Old style 'RO' has equivalent properties to 'ROL'
-            if (System.Text.Encoding.ASCII.GetString(ptr, 0, 2) == "RO")
+            if (System.Text.Encoding.UTF8.GetString(ptr, 0, 2) == "RO")
                 return true;
             // Euphony tracks show as 'SO' and have equivalent properties to 'ADL'
             // FIXME: Right now we're pretending it's GM.
-            if (System.Text.Encoding.ASCII.GetString(ptr, 4, 2) == "SO")
+            if (System.Text.Encoding.UTF8.GetString(ptr, 4, 2) == "SO")
                 return true;
 
-            Console.Error.WriteLine("Unknown music type: '{0}'", tag);
+//            Console.Error.WriteLine("Unknown music type: '{0}'", tag);
 
             return false;
         }
@@ -374,7 +374,7 @@ namespace NScumm.Core.Audio.IMuse
             if (ptr == null)
                 return false;
 
-            var tag = System.Text.Encoding.ASCII.GetString(ptr, 0, 4);
+            var tag = System.Text.Encoding.UTF8.GetString(ptr, 0, 4);
             switch (tag)
             {
                 case "ADL ":
@@ -397,14 +397,14 @@ namespace NScumm.Core.Audio.IMuse
             }
 
             // Old style 'RO' has equivalent properties to 'ROL'
-            if (System.Text.Encoding.ASCII.GetString(ptr, 0, 2) == "RO")
+            if (System.Text.Encoding.UTF8.GetString(ptr, 0, 2) == "RO")
                 return true;
             // Euphony tracks show as 'SO' and have equivalent properties to 'ADL'
             // FIXME: Right now we're pretending it's GM.
-            if (System.Text.Encoding.ASCII.GetString(ptr, 4, 2) == "SO")
+            if (System.Text.Encoding.UTF8.GetString(ptr, 4, 2) == "SO")
                 return true;
 
-            Console.Error.WriteLine("Unknown music type: '{0}'", tag);
+//            Console.Error.WriteLine("Unknown music type: '{0}'", tag);
 
             return false;
         }
@@ -1235,7 +1235,7 @@ namespace NScumm.Core.Audio.IMuse
                                     // Set player volume.
                                 return player.SetVolume((byte)a[4]);
                             default:
-                                Console.Error.WriteLine("IMuseInternal::DoCommand(12) unsupported sub-command {0}", a[3]);
+//                                Console.Error.WriteLine("IMuseInternal::DoCommand(12) unsupported sub-command {0}", a[3]);
                                 break;
                         }
                         return -1;
@@ -1316,7 +1316,7 @@ namespace NScumm.Core.Audio.IMuse
                     case 3:
                         return 0;
                     default:
-                        Console.Error.WriteLine("DoCommand({0} [{1}/{2}], {3}, {4}, {5}, {6}, {7}, {8}, {9}) unsupported", a[0], param, cmd, a[1], a[2], a[3], a[4], a[5], a[6], a[7]);
+//                        Console.Error.WriteLine("DoCommand({0} [{1}/{2}], {3}, {4}, {5}, {6}, {7}, {8}, {9}) unsupported", a[0], param, cmd, a[1], a[2], a[3], a[4], a[5], a[6], a[7]);
                         break;
                 }
             }
@@ -1453,7 +1453,7 @@ namespace NScumm.Core.Audio.IMuse
                     case 24:
                         return 0;
                     default:
-                        Console.Error.WriteLine("DoCommand({0} [{1}/{2}], {3}, {4}, {5}, {6}, {7}, {8}, {9}) unsupported", a[0], param, cmd, a[1], a[2], a[3], a[4], a[5], a[6], a[7]);
+//                        Console.Error.WriteLine("DoCommand({0} [{1}/{2}], {3}, {4}, {5}, {6}, {7}, {8}, {9}) unsupported", a[0], param, cmd, a[1], a[2], a[3], a[4], a[5], a[6], a[7]);
                         return -1;
                 }
             }
@@ -1512,15 +1512,15 @@ namespace NScumm.Core.Audio.IMuse
                     LoadAndSaveEntry.Create(r => _volchan_table = r.ReadUInt16s(8), w => w.WriteUInt16s(_channel_volume, 8), 8)
                 };
 
-                Array.ForEach(mainEntries, e => e.Execute(ser));
-                Array.ForEach(_cmd_queue, e => e.SaveOrLoad(ser));
-                Array.ForEach(_snm_triggers, e => e.SaveOrLoad(ser));
+                mainEntries.ForEach(e => e.Execute(ser));
+                _cmd_queue.ForEach(e => e.SaveOrLoad(ser));
+                _snm_triggers.ForEach(e => e.SaveOrLoad(ser));
 
                 // The players
-                Array.ForEach(_players, p => p.SaveOrLoad(ser));
+                _players.ForEach(p => p.SaveOrLoad(ser));
 
                 // The parts
-                Array.ForEach(_parts, p => p.SaveOrLoad(ser));
+                _parts.ForEach(p => p.SaveOrLoad(ser));
 
                 {
                     // Load/save the instrument definitions, which were revamped with V11.

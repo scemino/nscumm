@@ -344,9 +344,9 @@ namespace NScumm.Core
         protected void SetScaleSlot(int slot, int x1, int y1, int scale1, int x2, int y2, int scale2)
         {
             if (slot < 1)
-                throw new ArgumentOutOfRangeException("slot", slot, "Invalid scale slot");
+                throw new ArgumentOutOfRangeException("slot", "Invalid scale slot");
             if (slot > _scaleSlots.Length)
-                throw new ArgumentOutOfRangeException("slot", slot, "Invalid scale slot");
+                throw new ArgumentOutOfRangeException("slot", "Invalid scale slot");
             _scaleSlots[slot - 1] = new ScaleSlot { X1 = x1, X2 = x2, Y1 = y1, Y2 = y2, Scale1 = scale1, Scale2 = scale2 };
         }
     }

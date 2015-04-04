@@ -29,8 +29,8 @@ namespace NScumm.Core.IO
         protected override void LoadIndex(GameInfo game)
         {
             var encByte = GetEncodingByte(game);
-            Directory = Path.GetDirectoryName(game.Path);
-            using (var file = File.Open(game.Path, FileMode.Open))
+            Directory = ServiceLocator.FileStorage.GetDirectoryName(game.Path);
+            using (var file = ServiceLocator.FileStorage.OpenFileRead(game.Path))
             {
                 var br1 = new BinaryReader(file);
                 var br = new XorReader(br1, encByte);
@@ -67,7 +67,7 @@ namespace NScumm.Core.IO
                             ReadDirectoryOfObjects(br);
                             break;
                         default:
-                            Console.WriteLine("Unknwon block {0:X2}", block);
+//                            Console.WriteLine("Unknwon block {0:X2}", block);
                             break;
                     }
                 }

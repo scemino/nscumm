@@ -48,7 +48,7 @@ namespace NScumm.Core.IO
 
         protected static string ToTag(byte[] data)
         {
-            return Encoding.ASCII.GetString(data);
+            return Encoding.UTF8.GetString(data);
         }
 
         public override Room ReadRoom(long offset)
@@ -186,7 +186,7 @@ namespace NScumm.Core.IO
                             break;                        
 
                         default:
-                            if (it.Current.Tag.StartsWith("IM", StringComparison.InvariantCulture))
+                            if (it.Current.Tag.StartsWith("IM", StringComparison.Ordinal))
                             {
                                 var smapNum = int.Parse(it.Current.Tag.Substring(2), System.Globalization.NumberStyles.HexNumber);
                                 var img = ReadImage(it.Current.Size - 8, room.Header.Width / 8);
@@ -399,7 +399,7 @@ namespace NScumm.Core.IO
                 {
                     img.Data = _reader.ReadBytes((int)(it.Current.Size));
                 }
-                else if (it.Current.Tag.StartsWith("ZP", StringComparison.InvariantCulture))
+                else if (it.Current.Tag.StartsWith("ZP", StringComparison.Ordinal))
                 {
                     var zpNum = int.Parse(it.Current.Tag.Substring(2), System.Globalization.NumberStyles.HexNumber);
                     ZPlane zplane;
@@ -511,7 +511,7 @@ namespace NScumm.Core.IO
                         break;
                     default:
                         // skip
-                        Console.WriteLine("Skip Block: {0}", tag);
+//                        Console.WriteLine("Skip Block: {0}", tag);
                         _reader.BaseStream.Seek(size, SeekOrigin.Current);
                         break;
                 }
@@ -604,7 +604,7 @@ namespace NScumm.Core.IO
                         return roomOffsets;
                     default:
                  // skip
-                        Console.WriteLine("Skip Block: {0}", block);
+//                        Console.WriteLine("Skip Block: {0}", block);
                         _reader.BaseStream.Seek(size - 8, SeekOrigin.Current);
                         break;
                 }

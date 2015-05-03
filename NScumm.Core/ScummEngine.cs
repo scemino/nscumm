@@ -78,6 +78,7 @@ namespace NScumm.Core
         ICostumeRenderer _costumeRenderer;
         protected bool _keepText;
         protected int _talkDelay;
+        protected int _defaultTalkDelay = 3;
         protected int _haveMsg;
 
         public int ScreenTop { get; private set; }
@@ -152,7 +153,11 @@ namespace NScumm.Core
         {
             ScummEngine engine = null;
             var game = settings.Game;
-            if (game.Version == 3)
+            if (game.Version == 2)
+            {
+                engine = new ScummEngine2(settings, gfxManager, inputManager, mixer);
+            }
+            else if (game.Version == 3)
             {
                 engine = new ScummEngine3(settings, gfxManager, inputManager, mixer);
             }
@@ -253,12 +258,16 @@ namespace NScumm.Core
             {
                 _scaleSlots[i] = new ScaleSlot();
             }
-            Gdi = new Gdi(this, game);
+            Gdi = Game.Version == 2 ? new Gdi2(this, game) : new Gdi(this, game);
             _costumeLoader = game.Version < 7 ? (ICostumeLoader)new ClassicCostumeLoader(this) : new AkosCostumeLoader(this);
             _costumeRenderer = game.Version < 7 ? (ICostumeRenderer)new ClassicCostumeRenderer(this) : new AkosRenderer(this);
 
             // Create the charset renderer
-            if (game.Version == 3)
+            if (game.Version == 2)
+            {
+                _charset = new CharsetRenderer2(this);
+            }
+            else if (game.Version == 3)
             {
                 _charset = new CharsetRenderer3(this);
             }
@@ -277,7 +286,11 @@ namespace NScumm.Core
             _textSurface = new Surface(ScreenWidth * _textSurfaceMultiplier, ScreenHeight * _textSurfaceMultiplier, PixelFormat.Indexed8, false);
             ClearTextSurface();
 
-            if (Game.Version >= 7)
+            if ((Game.GameId == GameId.Maniac) && (_game.Version <= 1) /*&& !(_game.Platform == Platform.NES)*/)
+            {
+                InitScreens(16, 152);
+            }
+            else if (Game.Version >= 7)
             {
                 InitScreens(0, ScreenHeight);
             }
@@ -303,6 +316,7 @@ namespace NScumm.Core
             if (_game.Features.HasFlag(GameFeatures.SixteenColors))
             {
                 Array.Copy(Palette.Ega.Colors, _currentPalette.Colors, Palette.Ega.Colors.Length);
+                gfxManager.SetPalette(_currentPalette.Colors);
             }
 
             for (int i = 0; i < 256; i++)
@@ -587,22 +601,22 @@ namespace NScumm.Core
             _opCode = opCode;
             _slots[_currentScript].IsExecuted = true;
 
-//            if (Game.Version < 6)
-//            {
-//                System.Diagnostics.Debug.WriteLine("Room = {1}, Script = {0}, Offset = {4}, Name = {2} [{3:X2}]", 
-//                    _slots[_currentScript].Number, 
-//                    _roomResource, 
-//                    _opCodes.ContainsKey(_opCode) ? _opCodes[opCode].Method.Name : "Unknown", 
-//                    _opCode,
-//                    _currentPos - 1);
-//            }
+            if (Game.Version < 6)
+            {
+                System.Diagnostics.Debug.WriteLine("Room = {1}, Script = {0}, Offset = {4}, Name = {2} [{3:X2}]", 
+                    _slots[_currentScript].Number, 
+                    _roomResource, 
+                    _opCodes.ContainsKey(_opCode) ? _opCodes[opCode].Method.Name : "Unknown", 
+                    _opCode,
+                    _currentPos - 1);
+            }
             if (_opCodes.ContainsKey(opCode))
             {
                 _opCodes[opCode]();
             }
             else
             {
-                throw new InvalidOperationException(string.Format("Invalid opcode {0}.", opCode));
+                throw new InvalidOperationException(string.Format("Invalid opcode 0x{0:X2}.", opCode));
             }
         }
 
@@ -700,7 +714,7 @@ namespace NScumm.Core
                     DrawVerb(i, 0);
                 }
 
-                HandleMouseOver();
+                HandleMouseOver(false);
 
                 _completeScreenRedraw = false;
                 _fullRedraw = true;
@@ -747,7 +761,7 @@ namespace NScumm.Core
                 //}
 
                 // Handle mouse over effects (for verbs).
-                HandleMouseOver();
+                HandleMouseOver(oldEgo != Variables[VariableEgo.Value]);
 
                 // Render everything to the screen.
                 UpdatePalette();

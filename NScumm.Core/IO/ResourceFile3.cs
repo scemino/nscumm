@@ -226,19 +226,19 @@ namespace NScumm.Core.IO
                 switch (it.Current.Tag)
                 {
                     case "HD":
-                                    // Room Header
+                        // Room Header
                         room.Header = ReadRMHD();
                         break;
                     case "CC":
-                                    // Color Cylcle
+                        // Color Cylcle
                         room.ColorCycle = ReadCYCL();
                         break;
                     case "SP":
-                                    // EPAL
+                        // EPAL
                         ReadEPAL();
                         break;
                     case "BX":
-                                    // BOXD
+                        // BOXD
                         {
                             var size = (int)(it.Current.Size - 6);
                             var numBoxes = _reader.ReadByte();
@@ -266,14 +266,14 @@ namespace NScumm.Core.IO
                         }
                         break;
                     case "SA":
-                                    // Scale
+                        // Scale
                         if (it.Current.Size > 6)
                         {
                             room.Scales = ReadSCAL();
                         }
                         break;
                     case "BM":
-                                    // Bitmap
+                        // Bitmap
                         if (it.Current.Size > 6)
                         {
                             using (var ms = new MemoryStream(_reader.ReadBytes((int)(it.Current.Size - 6))))
@@ -306,10 +306,10 @@ namespace NScumm.Core.IO
                             var index = _reader.ReadByte();
                             var pos = _reader.BaseStream.Position;
                             room.LocalScripts[index - 0xC8] = new ScriptData
-                            {
-                                Offset = pos - offset - 8,
-                                Data = _reader.ReadBytes((int)(it.Current.Size - 7))
-                            };
+                                {
+                                    Offset = pos - offset - 8,
+                                    Data = _reader.ReadBytes((int)(it.Current.Size - 7))
+                                };
                         }
                         break;
                     case "OI":
@@ -364,7 +364,7 @@ namespace NScumm.Core.IO
                             SetObjectImage(room.Image.ZPlanes.Count, objImages, data);
                         }
                         break;
-                    
+
                     default:
                         {
                             var data = _reader.ReadBytes((int)it.Current.Size - 6);
@@ -469,10 +469,10 @@ namespace NScumm.Core.IO
             {
                 using (var ms = new MemoryStream(stripsDic[obj.Number]))
                 {
-//                    Console.Write("obj {0}: ", obj.DebuggerDisplay);
+                    //                    Console.Write("obj {0}: ", obj.DebuggerDisplay);
                     obj.Images.Add(ReadImage(ms, obj.Width / 8));
                 }
-//                obj.Images.Add(new ImageData{ Data = stripsDic[obj.Number] });
+                //                obj.Images.Add(new ImageData{ Data = stripsDic[obj.Number] });
 
             }
         }
@@ -480,11 +480,11 @@ namespace NScumm.Core.IO
         protected virtual RoomHeader ReadRMHD()
         {
             var header = new RoomHeader
-            {
-                Width = _reader.ReadUInt16(),
-                Height = _reader.ReadUInt16(),
-                NumObjects = _reader.ReadUInt16()
-            };
+                {
+                    Width = _reader.ReadUInt16(),
+                    Height = _reader.ReadUInt16(),
+                    NumObjects = _reader.ReadUInt16()
+                };
             return header;
         }
 
@@ -531,5 +531,4 @@ namespace NScumm.Core.IO
             return _reader.ReadBytes(256);
         }
     }
-	
 }

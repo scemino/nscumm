@@ -28,6 +28,7 @@ namespace NScumm.Core.Graphics
         None = 0,
         AllowMaskOr = 1 << 0,
         DrawMaskOnAll = 1 << 1,
+        ObjectMode = 2 << 2,
     }
 
     public class Gdi
@@ -37,7 +38,7 @@ namespace NScumm.Core.Graphics
         public int NumZBuffer = 2;
         public int NumStrips = 40;
 
-        readonly ScummEngine _vm;
+        protected readonly ScummEngine _vm;
         GameInfo game;
 
         int paletteMod;
@@ -46,6 +47,11 @@ namespace NScumm.Core.Graphics
         byte transparentColor = 255;
         byte[][] maskBuffer;
         byte[] roomPalette = new byte[256];
+
+        /// <summary>
+        /// Flag which is true when an object is being rendered, false otherwise.
+        /// </summary>
+        protected bool _objectMode;
 
         #endregion
 
@@ -99,6 +105,10 @@ namespace NScumm.Core.Graphics
 
         #region Public Methods
 
+        public virtual void RoomChanged()
+        {
+        }
+
         public void Init()
         {
             NumStrips = _vm.ScreenWidth / 8;
@@ -132,6 +142,9 @@ namespace NScumm.Core.Graphics
 
         public void DrawBitmap(ImageData img, VirtScreen vs, Point p, int width, int height, int stripnr, int numstrip, int roomWidth, DrawBitmaps flags, bool isLightOn)
         {
+            _objectMode = flags.HasFlag(DrawBitmaps.ObjectMode);
+            PrepareDrawBitmap(img.Data, vs, p, width, height, stripnr, numstrip);
+
             int sx = p.X - vs.XStart / 8;
             if (sx < 0)
             {
@@ -291,6 +304,12 @@ namespace NScumm.Core.Graphics
                     Clear8Col(navDest, numLinesToProcess);
                 }
             }
+        }
+
+        protected virtual void PrepareDrawBitmap(byte[] ptr, VirtScreen vs,
+            Point p, int width, int height,
+            int stripnr, int numstrip)
+        {
         }
 
         #endregion
@@ -553,7 +572,7 @@ namespace NScumm.Core.Graphics
             }
         }
 
-        bool DrawStrip(PixelNavigator navDst, int height, int stripnr, BinaryReader smapReader)
+        protected virtual bool DrawStrip(PixelNavigator navDst, int height, int stripnr, BinaryReader smapReader)
         {
             // Do some input verification and make sure the strip/strip offset
             // are actually valid. Normally, this should never be a problem,

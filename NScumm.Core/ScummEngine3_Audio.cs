@@ -24,29 +24,6 @@ namespace NScumm.Core
 {
     partial class ScummEngine3
     {
-        void StartMusic()
-        {
-            Sound.AddSoundToQueue(GetVarOrDirectByte(OpCodeParameter.Param1));
-        }
-
-        void StopMusic()
-        {
-            Sound.StopAllSounds();
-        }
-
-        void StartSound()
-        {
-            var sound = GetVarOrDirectByte(OpCodeParameter.Param1);
-            Variables[VariableMusicTimer.Value] = 0;
-            Sound.AddSoundToQueue(sound);
-        }
-
-        void StopSound()
-        {
-            var sound = GetVarOrDirectByte(OpCodeParameter.Param1);
-            Sound.StopSound(sound);
-        }
-
         void IsSoundRunning()
         {
             GetResult();

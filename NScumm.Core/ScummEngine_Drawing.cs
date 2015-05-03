@@ -48,6 +48,8 @@ namespace NScumm.Core
         const int FadeDelay = 4;
         // 1/4th of a jiffie
 
+        public VirtScreen VerbVirtScreen { get { return _verbVirtScreen; } }
+
         internal Surface TextSurface { get { return _textSurface; } }
 
         protected virtual void DrawObjectCore(out int xpos, out int ypos, out int state)
@@ -141,7 +143,7 @@ namespace NScumm.Core
             vs.HasTwoBuffers = hasTwoBufs;
         }
 
-        void DrawString(int a, byte[] msg)
+        protected void DrawString(int a, byte[] msg)
         {
             var buf = new byte[270];
             int i, c;
@@ -379,7 +381,7 @@ namespace NScumm.Core
             {
                 for (var i = _palDirtyMin; i <= _palDirtyMax; i++)
                 {
-                    var color = _currentPalette.Colors[Game.Version < 5 ? _shadowPalette[i] : i];
+                    var color = _currentPalette.Colors[_game.Version > 2 && Game.Version < 5 ? _shadowPalette[i] : i];
                     colors[i] = color;
                 }
             }
@@ -390,7 +392,7 @@ namespace NScumm.Core
             _gfxManager.SetPalette(colors, first, num);
         }
 
-        void HandleMouseOver()
+        protected virtual void HandleMouseOver(bool updateInventory)
         {
             if (_completeScreenRedraw)
             {

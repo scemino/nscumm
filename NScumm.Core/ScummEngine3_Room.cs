@@ -25,20 +25,6 @@ namespace NScumm.Core
 {
     partial class ScummEngine3
     {
-        void LoadRoom()
-        {
-            var room = (byte)GetVarOrDirectByte(OpCodeParameter.Param1);
-
-            // For small header games, we only call startScene if the room
-            // actually changed. This avoid unwanted (wrong) fades in Zak256
-            // and others. OTOH, it seems to cause a problem in newer games.
-            if ((Game.Version >= 5) || room != CurrentRoom)
-            {
-                StartScene(room);
-            }
-            _fullRedraw = true;
-        }
-
         void LoadRoomWithEgo()
         {
             int obj = GetVarOrDirectWord(OpCodeParameter.Param1);
@@ -327,18 +313,6 @@ namespace NScumm.Core
                 else
                 {
                     FadeIn(_newEffect);
-                }
-            }
-        }
-
-        void PseudoRoom()
-        {
-            int i = ReadByte(), j;
-            while ((j = ReadByte()) != 0)
-            {
-                if (j >= 0x80)
-                {
-                    _resourceMapper[j & 0x7F] = (byte)i;
                 }
             }
         }

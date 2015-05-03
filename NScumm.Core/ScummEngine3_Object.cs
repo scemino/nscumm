@@ -72,31 +72,10 @@ namespace NScumm.Core
             SetResult(FindObjectCore(x, y));
         }
 
-        void SetOwnerOf()
-        {
-            var obj = GetVarOrDirectWord(OpCodeParameter.Param1);
-            var owner = GetVarOrDirectByte(OpCodeParameter.Param2);
-            SetOwnerOf(obj, owner);
-        }
-
         void SetObjectName()
         {
             var obj = GetVarOrDirectWord(OpCodeParameter.Param1);
             SetObjectNameCore(obj);
-        }
-
-        void GetDistance()
-        {
-            GetResult();
-            var o1 = GetVarOrDirectWord(OpCodeParameter.Param1);
-            var o2 = GetVarOrDirectWord(OpCodeParameter.Param2);
-            var r = GetObjActToObjActDist(o1, o2);
-
-            // TODO: WORKAROUND bug #795937 ?
-            //if ((_game.id == GID_MONKEY_EGA || _game.id == GID_PASS) && o1 == 1 && o2 == 307 && vm.slot[_currentScript].number == 205 && r == 2)
-            //    r = 3;
-
-            SetResult(r);
         }
 
         void SetState()
@@ -196,12 +175,6 @@ namespace NScumm.Core
             int b = GetVarOrDirectByte(OpCodeParameter.Param2);
 
             JumpRelative(GetStateCore(a) != b);
-        }
-
-        void GetObjectOwner()
-        {
-            GetResult();
-            SetResult(GetOwnerCore(GetVarOrDirectWord(OpCodeParameter.Param1)));
         }
     }
 }

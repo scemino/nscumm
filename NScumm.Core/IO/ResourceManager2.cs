@@ -1,5 +1,5 @@
-﻿//
-//  ScummEngine_Variables.cs
+//
+//  ResourceManager3.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -18,27 +18,32 @@
 //
 //  You should have received a copy of the GNU Lesser General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 using System;
 
-namespace NScumm.Core
+namespace NScumm.Core.IO
 {
-    partial class ScummEngine3
+    class ResourceManager2: ResourceManager
     {
-        void SetVarRange()
+        public ResourceManager2(GameInfo game)
+            : base(game)
         {
-            GetResult();
-            var a = ReadByte();
-            int b;
-            do
-            {
-                if ((_opCode & 0x80) == 0x80)
-                    b = ReadWordSigned();
-                else
-                    b = ReadByte();
-                SetResult(b);
-                _resultVarIndex++;
-            } while ((--a) > 0);
+        }
+
+        protected override ResourceFile OpenRoom(byte roomIndex)
+        {
+            var diskName = string.Format("{0:00}.lfl", roomIndex);
+            var game1Path = ServiceLocator.FileStorage.Combine(Directory, diskName);
+
+            var file = new ResourceFile2(game1Path, 0xFF);
+            return file;
+        }
+
+        protected override byte[] ReadCharset(byte id)
+        {
+            // Stub, V2 font resources are hardcoded into the engine.
+            return null;
         }
     }
+	
 }
-

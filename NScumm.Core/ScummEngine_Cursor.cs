@@ -27,7 +27,7 @@ namespace NScumm.Core
     {
         protected readonly Cursor _cursor = new Cursor();
         protected byte[] _cursorData;
-        Point _mousePos;
+        protected Point _mousePos;
         byte cursorColor;
         protected int _currentCursor;
         protected sbyte _userPut;

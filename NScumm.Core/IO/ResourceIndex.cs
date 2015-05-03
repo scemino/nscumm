@@ -115,6 +115,9 @@ namespace NScumm.Core.IO
             ResourceIndex index;
             switch (game.Version)
             {
+                case 2:
+                    index = new ResourceIndex2();
+                    break;
                 case 3:
                     if (game.IsOldBundle)
                     {

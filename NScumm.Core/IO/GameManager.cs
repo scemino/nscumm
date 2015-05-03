@@ -37,6 +37,8 @@ namespace NScumm.Core.IO
 
     public enum GameId
     {
+        Maniac,
+        Zak,
         Indy3,
         Indy4,
         Monkey1,

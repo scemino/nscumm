@@ -364,7 +364,7 @@ namespace NScumm.Core
             _doEffect = true;
         }
 
-        protected void RunInventoryScript(int i)
+        protected virtual void RunInventoryScript(int i)
         {
             if (_variables[VariableInventoryScript.Value] != 0)
             {
@@ -372,7 +372,7 @@ namespace NScumm.Core
             }
         }
 
-        void RunInputScript(ClickArea clickArea, KeyCode code, int mode)
+        protected virtual void RunInputScript(ClickArea clickArea, KeyCode code, int mode)
         {
             var verbScript = _variables[VariableVerbScript.Value];
 
@@ -384,7 +384,7 @@ namespace NScumm.Core
 
         void RunEntryScript()
         {
-            if (_variables[VariableEntryScript.Value] != 0)
+            if (VariableEntryScript.HasValue && _variables[VariableEntryScript.Value] != 0)
                 RunScript(_variables[VariableEntryScript.Value], false, false, new int[0]);
 
             if (roomData != null && roomData.EntryScript.Data != null)
@@ -400,13 +400,13 @@ namespace NScumm.Core
                 RunScriptNested(slot);
             }
 
-            if (_variables[VariableEntryScript2.Value] != 0)
+            if (VariableEntryScript2.HasValue && _variables[VariableEntryScript2.Value] != 0)
                 RunScript(_variables[VariableEntryScript2.Value], false, false, new int[0]);
         }
 
         void RunExitScript()
         {
-            if (_variables[VariableExitScript.Value] != 0)
+            if (VariableExitScript.HasValue && _variables[VariableExitScript.Value] != 0)
             {
                 RunScript(_variables[VariableExitScript.Value], false, false, new int[0]);
             }
@@ -653,7 +653,7 @@ namespace NScumm.Core
 
         void CheckAndRunSentenceScript()
         {
-            var sentenceScript = _variables[VariableSentenceScript.Value];
+            var sentenceScript = Game.Version <= 2 ? 2 : _variables[VariableSentenceScript.Value];
 
             if (IsScriptInUse(sentenceScript))
             {
@@ -672,20 +672,33 @@ namespace NScumm.Core
             if (Game.Version < 7 && st.Preposition && st.ObjectB == st.ObjectA)
                 return;
 
+            int[] data;
+            if (Game.Version <= 2)
+            {
+                data = new int[0];
+                Variables[VariableActiveVerb.Value] = st.Verb;
+                Variables[VariableActiveObject1.Value] = st.ObjectA;
+                Variables[VariableActiveObject2.Value] = st.ObjectB;
+                Variables[VariableVerbAllowed.Value] = GetVerbEntrypointCore(st.ObjectA, st.Verb);
+            }
+            else
+            {
+                data = new int[] { st.Verb, st.ObjectA, st.ObjectB };
+            }
+
             _currentScript = 0xFF;
             if (sentenceScript != 0)
             {
-                var data = new int[] { st.Verb, st.ObjectA, st.ObjectB };
                 RunScript(sentenceScript, false, false, data);
             }
         }
 
-        protected void RunObjectScript(int obj, byte entry, bool freezeResistant, bool recursive, int[] vars)
+        protected void RunObjectScript(int obj, byte entry, bool freezeResistant, bool recursive, int[] vars, int slot = -1)
         {
             if (obj == 0)
                 return;
 
-            if (!recursive)
+            if (!recursive && (Game.Version >= 3))
                 StopObjectScriptCore((ushort)obj);
 
             var where = GetWhereIsObject(obj);
@@ -697,7 +710,8 @@ namespace NScumm.Core
             }
 
             // Find a free object slot, unless one was specified
-            var slot = GetScriptSlotIndex();
+            if (slot == -1)
+                slot = GetScriptSlotIndex();
 
             ObjectData objFound = null;
             if (roomData != null)
@@ -735,7 +749,7 @@ namespace NScumm.Core
 
             // V0 Ensure we don't try and access objects via index inside the script
             //_v0ObjectIndex = false;
-            UpdateScriptData(slot);
+            UpdateScriptData((ushort)slot);
             RunScriptNested(slot);
         }
 

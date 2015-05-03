@@ -93,14 +93,14 @@ namespace NScumm.Core
             int pos = _camera.CurrentPosition.X;
             int t;
             Actor a = null;
-            bool snapToX = /*_snapScroll ||*/ _variables[VariableCameraFastX.Value] != 0;
+            bool snapToX = /*_snapScroll ||*/ VariableCameraFastX.HasValue && _variables[VariableCameraFastX.Value] != 0;
 
-            _camera.CurrentPosition.X = (short)(_camera.CurrentPosition.X & 0xFFF8);
+            _camera.CurrentPosition.X = (_camera.CurrentPosition.X & 0xFFF8);
 
-            if (_camera.CurrentPosition.X < _variables[VariableCameraMinX.Value])
+            if (VariableCameraMinX.HasValue && _camera.CurrentPosition.X < _variables[VariableCameraMinX.Value])
             {
                 if (snapToX)
-                    _camera.CurrentPosition.X = (short)_variables[VariableCameraMinX.Value];
+                    _camera.CurrentPosition.X = _variables[VariableCameraMinX.Value];
                 else
                     _camera.CurrentPosition.X += 8;
 
@@ -108,7 +108,7 @@ namespace NScumm.Core
                 return;
             }
 
-            if (_camera.CurrentPosition.X > _variables[VariableCameraMaxX.Value])
+            if (VariableCameraMaxX.HasValue &&_camera.CurrentPosition.X > _variables[VariableCameraMaxX.Value])
             {
                 if (snapToX)
                     _camera.CurrentPosition.X = (short)_variables[VariableCameraMaxX.Value];

@@ -29,7 +29,7 @@ using NScumm.Core.Audio;
 
 namespace NScumm.Core
 {
-    public partial class ScummEngine3: ScummEngine
+    public partial class ScummEngine3: ScummEngine2
     {
         public ScummEngine3(GameSettings game, IGraphicsManager graphicsManager, IInputManager inputManager, IMixer mixer)
             : base(game, graphicsManager, inputManager, mixer)
@@ -366,13 +366,6 @@ namespace NScumm.Core
             _opCodes[0xFF] = DrawBox;
         }
 
-        void SetBoxFlags()
-        {
-            var a = GetVarOrDirectByte(OpCodeParameter.Param1);
-            var b = ReadByte();
-            SetBoxFlags(a, b);
-        }
-
         void SystemOps()
         {
             byte subOp = ReadByte();
@@ -394,13 +387,6 @@ namespace NScumm.Core
         {
             int a = GetVarOrDirectWord(OpCodeParameter.Param1);
             System.Diagnostics.Debug.WriteLine("Debug: {0}", a);
-        }
-
-        void DelayVariable()
-        {
-            Slots[CurrentScript].Delay = GetVar();
-            Slots[CurrentScript].Status = ScriptStatus.Paused;
-            BreakHere();
         }
 
         void Wait()
@@ -460,13 +446,6 @@ namespace NScumm.Core
             Slots[CurrentScript].Delay = (int)delay;
             Slots[CurrentScript].Status = ScriptStatus.Paused;
             BreakHere();
-        }
-
-        void Move()
-        {
-            GetResult();
-            var result = GetVarOrDirectWord(OpCodeParameter.Param1);
-            SetResult(result);
         }
 
         void ResourceRoutines()
@@ -572,15 +551,6 @@ namespace NScumm.Core
                     return;
                 }
             }
-        }
-
-        void GetRandomNumber()
-        {
-            GetResult();
-            var max = GetVarOrDirectByte(OpCodeParameter.Param1);
-            var rnd = new Random();
-            var value = rnd.Next(max + 1);
-            SetResult(value);
         }
 
         #endregion OpCodes

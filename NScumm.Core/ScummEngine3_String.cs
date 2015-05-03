@@ -166,7 +166,7 @@ namespace NScumm.Core
                         break;
 
                     case 8:
-                        {	// SO_SAY_VOICE
+                        {   // SO_SAY_VOICE
                             var offset = (ushort)GetVarOrDirectWord(OpCodeParameter.Param1);
                             var delay = (ushort)GetVarOrDirectWord(OpCodeParameter.Param2);
 

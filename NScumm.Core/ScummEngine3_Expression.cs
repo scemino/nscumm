@@ -78,41 +78,6 @@ namespace NScumm.Core
             SetResult(a & b);
         }
 
-        void NotEqualZero()
-        {
-            var var = ReadWord();
-            var a = ReadVariable(var);
-            JumpRelative(a != 0);
-        }
-
-        void EqualZero()
-        {
-            var var = ReadWord();
-            var a = ReadVariable(var);
-            JumpRelative(a == 0);
-        }
-
-        void JumpRelative()
-        {
-            JumpRelative(false);
-        }
-
-        void IsEqual()
-        {
-            var varNum = ReadWord();
-            var a = (short)ReadVariable(varNum);
-            var b = (short)GetVarOrDirectWord(OpCodeParameter.Param1);
-            JumpRelative(a == b);
-        }
-
-        void IsNotEqual()
-        {
-            var varNum = ReadWord();
-            var a = (short)ReadVariable(varNum);
-            var b = (short)GetVarOrDirectWord(OpCodeParameter.Param1);
-            JumpRelative(a != b);
-        }
-
         void Add()
         {
             GetResult();
@@ -133,18 +98,6 @@ namespace NScumm.Core
             GetResult();
             int a = GetVarOrDirectWord(OpCodeParameter.Param1);
             SetResult(ReadVariable((uint)_resultVarIndex) - a);
-        }
-
-        void Increment()
-        {
-            GetResult();
-            SetResult(ReadVariable((uint)_resultVarIndex) + 1);
-        }
-
-        void Decrement()
-        {
-            GetResult();
-            SetResult(ReadVariable((uint)_resultVarIndex) - 1);
         }
 
         void Expression()

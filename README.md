@@ -1,7 +1,7 @@
 NSCUMM
 ======
 
-Quick and dirty .NET port of the SCUMM engine version 3 to 8 of the project scummvm.
+Quick and dirty .NET port of the SCUMM engine version 2 to 8 of the project scummvm.
 
 Quick start
 -----------
@@ -9,26 +9,6 @@ Quick start
 Copy the original files of the game you want to play in a directory.
 
 `NScumm.MonoGame.exe [game]`
-
-with game:
-
-`00.lfl` for Indiana Jones and the Last Crusade
-
-`000.lfl` for The Secret of Monkey Island or Loom
-
-`MONKEY2.000` for Monkey Island 2: LeChuck's revenge
-
-`ATLANTIS.000` for Indiana Jones and the Fate of Atlantis
-
-`TENTACLE.000` for Day of the Tentacle
-
-`SAMNMAX.000` for Sam & Max Hit the Road
-
-`FT.LA0` for Full Throttle
-
-`DIG.LA0` for The Dig
-
-`COMI.LA0` The Curse of Monkey Island
 
 Supported Games
 ---------------
@@ -68,6 +48,12 @@ Loom
 ### SCUMM 3
 
 Indiana Jones and the Last Crusade
+
+Loom
+
+### SCUMM 2
+
+Maniac Mansion
 
 Hotkeys
 -------

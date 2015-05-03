@@ -62,12 +62,6 @@ namespace NScumm.Core
             BeginCutscene(args);
         }
 
-        void IsScriptRunning()
-        {
-            GetResult();
-            SetResult(IsScriptRunningCore(GetVarOrDirectByte(OpCodeParameter.Param1)) ? 1 : 0);
-        }
-
         void StartObject()
         {
             var obj = GetVarOrDirectWord(OpCodeParameter.Param1);
@@ -106,12 +100,6 @@ namespace NScumm.Core
                 StopObjectCode();
             else
                 StopScript(script);
-        }
-
-        void BreakHere()
-        {
-            Slots[CurrentScript].Offset = (uint)CurrentPos;
-            CurrentScript = 0xFF;
         }
 
         void DoSentence()

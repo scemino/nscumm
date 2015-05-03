@@ -72,17 +72,6 @@ namespace NScumm.Core
                 Camera.MovingToActor = false;
             }
         }
-
-        void SetCameraAtEx(int at)
-        {
-            if (Game.Version < 7)
-            {
-                Camera.Mode = CameraMode.Normal;
-                Camera.CurrentPosition.X = (short)at;
-                SetCameraAt(new NScumm.Core.Graphics.Point((short)at, 0));
-                Camera.MovingToActor = false;
-            }
-        }
     }
 }
 

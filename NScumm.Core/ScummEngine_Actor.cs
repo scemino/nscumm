@@ -43,9 +43,13 @@ namespace NScumm.Core
             {
                 numActors = 80;
             }
-            else if (Game.Version == 7 || Game.GameId == NScumm.Core.IO.GameId.SamNMax)
+            else if (Game.Version == 7 || Game.GameId == GameId.SamNMax)
             {
                 numActors = 30;
+            }
+            else if (Game.GameId == GameId.Maniac)
+            {
+                numActors = 25;
             }
             else
             {
@@ -55,7 +59,18 @@ namespace NScumm.Core
             Actors = new Actor[numActors];
             for (byte i = 0; i < Actors.Length; i++)
             {
-                Actors[i] = _game.Version == 3 ? new Actor3(this, i) : new Actor(this, i);
+                if (Game.Version == 2)
+                {
+                    Actors[i] = new Actor2(this, i);
+                }
+                else if (Game.Version == 3)
+                {
+                    Actors[i] = new Actor3(this, i);
+                }
+                else
+                {
+                    Actors[i] = new Actor(this, i);
+                }
                 Actors[i].Init(-1);
             }
         }

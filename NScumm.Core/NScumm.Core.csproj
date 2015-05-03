@@ -66,7 +66,6 @@
     <Compile Include="ScummEngine3_SaveLoad.cs" />
     <Compile Include="ScummEngine3_Script.cs" />
     <Compile Include="ScummEngine3_String.cs" />
-    <Compile Include="ScummEngine3_Variable.cs" />
     <Compile Include="ScummEngine3_Verb.cs" />
     <Compile Include="ScummEngine4.cs" />
     <Compile Include="ScummEngine5.cs" />
@@ -265,6 +264,13 @@
     <Compile Include="Audio\SoftSynth\AdlibMidiDriver_Data.cs" />
     <Compile Include="Audio\SoftSynth\EmulatedMidiDriver.cs" />
     <Compile Include="ServiceLocator.cs" />
+    <Compile Include="IO\ResourceFile2.cs" />
+    <Compile Include="IO\ResourceIndex2.cs" />
+    <Compile Include="IO\ResourceManager2.cs" />
+    <Compile Include="ScummEngine2.cs" />
+    <Compile Include="Actor2.cs" />
+    <Compile Include="Graphics\Gdi2.cs" />
+    <Compile Include="Graphics\CharsetRenderer2.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <ItemGroup>

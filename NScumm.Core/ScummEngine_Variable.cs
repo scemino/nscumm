@@ -107,6 +107,11 @@ namespace NScumm.Core
         public int? VariableDefaultTalkDelay;
         public int? VariableMusicBundleLoaded;
         public int? VariableCurrentDisk;
+        public int? VariableActiveVerb;
+        public int? VariableActiveObject1;
+        public int? VariableActiveObject2;
+        public int? VariableVerbAllowed;
+        public int? VariableCharCount;
 
         int[] _variables;
         protected BitArray _bitVars;
@@ -129,7 +134,7 @@ namespace NScumm.Core
             return word;
         }
 
-        protected void GetResult()
+        protected virtual void GetResult()
         {
             _resultVarIndex = (int)ReadWord();
             if ((_resultVarIndex & 0x2000) == 0x2000)
@@ -222,7 +227,7 @@ namespace NScumm.Core
             return ReadByte();
         }
 
-        protected int GetVar()
+        protected virtual int GetVar()
         {
             return ReadVariable(ReadWord());
         }

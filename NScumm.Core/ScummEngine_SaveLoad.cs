@@ -30,6 +30,35 @@ using System.Text;
 
 namespace NScumm.Core
 {
+    public enum ResType
+    {
+        Invalid = 0,
+        First = 1,
+        Room = 1,
+        Script = 2,
+        Costume = 3,
+        Sound = 4,
+        Inventory = 5,
+        Charset = 6,
+        String = 7,
+        Verb = 8,
+        ActorName = 9,
+        Buffer = 10,
+        ScaleTable = 11,
+        Temp = 12,
+        FlObject = 13,
+        Matrix = 14,
+        Box = 15,
+        ObjectName = 16,
+        RoomScripts = 17,
+        RoomImage = 18,
+        Image = 19,
+        Talkie = 20,
+        SpoolBuffer = 21,
+        VerbImage = 22,
+        Last = 22
+    }
+
     partial class ScummEngine
     {
         const byte TumbnailVersion = 1;
@@ -40,35 +69,6 @@ namespace NScumm.Core
         protected internal int _saveLoadFlag;
         protected int _saveLoadSlot;
         protected bool _saveTemporaryState;
-
-        enum ResType
-        {
-            Invalid = 0,
-            First = 1,
-            Room = 1,
-            Script = 2,
-            Costume = 3,
-            Sound = 4,
-            Inventory = 5,
-            Charset = 6,
-            String = 7,
-            Verb = 8,
-            ActorName = 9,
-            Buffer = 10,
-            ScaleTable = 11,
-            Temp = 12,
-            FlObject = 13,
-            Matrix = 14,
-            Box = 15,
-            ObjectName = 16,
-            RoomScripts = 17,
-            RoomImage = 18,
-            Image = 19,
-            Talkie = 20,
-            SpoolBuffer = 21,
-            VerbImage = 22,
-            Last = 22
-        }
 
         public void Load(string savegame)
         {

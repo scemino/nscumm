@@ -28,6 +28,9 @@ namespace NScumm.Core
 {
     partial class ScummEngine
     {
+        internal const int V12_X_SHIFT = 3;
+        internal const int V12_Y_SHIFT = 1;
+
         protected internal IInputManager _inputManager;
         protected ScummInputState _inputState;
         protected KeyCode mouseAndKeyboardStat;
@@ -58,7 +61,7 @@ namespace NScumm.Core
             }
         }
 
-        void CheckExecVerbs()
+        protected virtual void CheckExecVerbs()
         {
             if (_userPut <= 0 || mouseAndKeyboardStat == 0)
                 return;
@@ -256,10 +259,32 @@ namespace NScumm.Core
                 _mousePos.Y = (short)(ScreenHeight - 1);
 
             var mouseX = (ScreenStartStrip * 8) + _mousePos.X;
-            Variables[VariableMouseX.Value] = (int)_mousePos.X;
-            Variables[VariableMouseY.Value] = (int)_mousePos.Y;
-            Variables[VariableVirtualMouseX.Value] = (int)mouseX;
-            Variables[VariableVirtualMouseY.Value] = (int)_mousePos.Y - MainVirtScreen.TopLine + ((_game.Version >= 7) ? ScreenTop : 0);
+            var mouseY = _mousePos.Y - MainVirtScreen.TopLine + ((_game.Version >= 7) ? ScreenTop : 0);
+
+            if (Game.Version >= 3)
+            {
+                Variables[VariableMouseX.Value] = _mousePos.X;
+                Variables[VariableMouseY.Value] = _mousePos.Y;
+                Variables[VariableVirtualMouseX.Value] = mouseX;
+                Variables[VariableVirtualMouseY.Value] = mouseY;
+            
+            }
+            else if (Game.Version >= 1)
+            {
+                // We use shifts below instead of dividing by V12_X_MULTIPLIER resp.
+                // V12_Y_MULTIPLIER to handle negative coordinates correctly.
+                // This fixes e.g. bugs #1328131 and #1537595.
+                Variables[VariableVirtualMouseX.Value] = mouseX >> V12_X_SHIFT;
+                Variables[VariableVirtualMouseY.Value] = mouseY >> V12_Y_SHIFT;
+
+                // Adjust mouse coordinates as narrow rooms in NES are centered
+//                if (_game.platform == Common::kPlatformNES && _NESStartStrip > 0)
+//                {
+//                    VAR(VAR_VIRT_MOUSE_X) -= 2;
+//                    if (VAR(VAR_VIRT_MOUSE_X) < 0)
+//                        VAR(VAR_VIRT_MOUSE_X) = 0;
+//                }
+            }
         }
 
         protected void ClearClickedStatus()

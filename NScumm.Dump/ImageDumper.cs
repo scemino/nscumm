@@ -38,9 +38,15 @@ namespace NScumm.Dump
             Game = game;
         }
 
+        Gdi CreateGdi()
+        {
+            var gdi = Game.Version == 2 ? new Gdi2(null, Game) : new Gdi(null, Game);
+            return gdi;
+        }
+
         public void DumpRoomImages(ResourceManager index, IList<int> roomIds)
         {
-            var gdi = new Gdi(null, Game);
+            var gdi = CreateGdi();
             gdi.IsZBufferEnabled = false;
             gdi.RoomPalette = CreatePalette();
 
@@ -68,7 +74,7 @@ namespace NScumm.Dump
 
         public void DumpObjectImages(ResourceManager index, IList<int> objIds = null)
         {
-            var gdi = new Gdi(null, Game);
+            var gdi = CreateGdi();
             gdi.IsZBufferEnabled = false;
             gdi.RoomPalette = CreatePalette();
 
@@ -105,7 +111,7 @@ namespace NScumm.Dump
 
                 try
                 {
-                    var gdi = new Gdi(null, Game);
+                    var gdi = CreateGdi();
                     gdi.IsZBufferEnabled = false;
                     gdi.RoomPalette = CreatePalette();
 

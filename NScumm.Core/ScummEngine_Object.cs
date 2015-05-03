@@ -37,7 +37,7 @@ namespace NScumm.Core
             get { return _resManager.ClassData; }
         }
 
-        byte[] GetObjectOrActorName(int num)
+        protected byte[] GetObjectOrActorName(int num)
         {
             byte[] name;
             if (num < Actors.Length)
@@ -322,12 +322,18 @@ namespace NScumm.Core
         protected int FindObjectCore(int x, int y)
         {
             byte a;
-            int mask = 0xF;
+            int mask = (Game.Version <= 2) ? (int)ObjectStateV2.State8 : 0xF;
 
             for (int i = 1; i < _objs.Length; i++)
             {
                 if ((_objs[i].Number < 1) || GetClass(_objs[i].Number, ObjectClass.Untouchable))
                     continue;
+
+                if (_game.Version > 0 && _game.Version <= 2)
+                {
+                    if ((_objs[i].State & (byte)ObjectStateV2.Untouchable) != 0)
+                        continue;
+                }
 
                 var b = i;
                 do

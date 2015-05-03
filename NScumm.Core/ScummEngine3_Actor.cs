@@ -40,14 +40,6 @@ namespace NScumm.Core
             }
         }
 
-        void GetActorCostume()
-        {
-            GetResult();
-            int act = GetVarOrDirectByte(OpCodeParameter.Param1);
-            Actor a = Actors[act];
-            SetResult(a.Costume);
-        }
-
         void GetActorMoving()
         {
             GetResult();
@@ -70,54 +62,6 @@ namespace NScumm.Core
                 p = new Point(240, 120);
             }
             actor.PutActor(p);
-        }
-
-        void WalkActorToActor()
-        {
-            var nr = GetVarOrDirectByte(OpCodeParameter.Param1);
-            var nr2 = GetVarOrDirectByte(OpCodeParameter.Param2);
-            int dist = ReadByte();
-
-            if (Game.GameId == NScumm.Core.IO.GameId.Indy4 && nr == 1 && nr2 == 106 &&
-                dist == 255 && Slots[CurrentScript].Number == 210)
-            {
-                // WORKAROUND bug: Work around an invalid actor bug when using the
-                // camel in Fate of Atlantis, the "wits" path. The room-65-210 script
-                // contains this:
-                //   walkActorToActor(1,106,255)
-                // Once again this is either a script bug, or there is some hidden
-                // or unknown meaning to this odd walk request...
-                return;
-            }
-
-            var a = Actors[nr];
-            if (!a.IsInCurrentRoom)
-                return;
-
-            var a2 = Actors[nr2];
-            if (!a2.IsInCurrentRoom)
-                return;
-
-            if (dist == 0xFF)
-            {
-                dist = (int)(a.ScaleX * a.Width / 0xFF);
-                dist += (int)(a2.ScaleX * a2.Width / 0xFF) / 2;
-            }
-            int x = a2.Position.X;
-            int y = a2.Position.Y;
-            if (x < a.Position.X)
-                x += dist;
-            else
-                x -= dist;
-
-            if (Game.Version <= 3)
-            {
-                var abr = a.AdjustXYToBeInBox(new Point((short)x, (short)y));
-                x = abr.Position.X;
-                y = abr.Position.Y;
-            }
-
-            a.StartWalk(new Point((short)x, (short)y), -1);
         }
 
         void GetActorX()
@@ -180,14 +124,6 @@ namespace NScumm.Core
             }
         }
 
-        void FaceActor()
-        {
-            var act = GetVarOrDirectByte(OpCodeParameter.Param1);
-            var obj = GetVarOrDirectWord(OpCodeParameter.Param2);
-            var actor = Actors[act];
-            actor.FaceToObject(obj);
-        }
-
         void PutActor()
         {
             var index = GetVarOrDirectByte(OpCodeParameter.Param1);
@@ -195,14 +131,6 @@ namespace NScumm.Core
             var x = (short)GetVarOrDirectWord(OpCodeParameter.Param2);
             var y = (short)GetVarOrDirectWord(OpCodeParameter.Param3);
             actor.PutActor(new Point(x, y));
-        }
-
-        void AnimateActor()
-        {
-            var act = GetVarOrDirectByte(OpCodeParameter.Param1);
-            var anim = GetVarOrDirectByte(OpCodeParameter.Param2);
-            var actor = Actors[act];
-            actor.Animate(anim);
         }
 
         void ActorOps()
@@ -337,38 +265,12 @@ namespace NScumm.Core
             }
         }
 
-        void GetActorFacing()
-        {
-            GetResult();
-            int act = GetVarOrDirectByte(OpCodeParameter.Param1);
-            var a = Actors[act];
-            SetResult(ScummHelper.NewDirToOldDir(a.Facing));
-        }
-
         void GetActorElevation()
         {
             GetResult();
             var index = GetVarOrDirectByte(OpCodeParameter.Param1);
             var a = Actors[index];
             SetResult(a.Elevation);
-        }
-
-        void GetActorRoom()
-        {
-            GetResult();
-            var index = GetVarOrDirectByte(OpCodeParameter.Param1);
-
-            // WORKAROUND bug #746349. This is a really odd bug in either the script
-            // or in our script engine. Might be a good idea to investigate this
-            // further by e.g. looking at the FOA engine a bit closer.
-            if (Game.GameId == NScumm.Core.IO.GameId.Indy4 && _roomResource == 94 && Slots[CurrentScript].Number == 206 && !IsValidActor(index))
-            {
-                SetResult(0);
-                return;
-            }
-
-            var actor = Actors[index];
-            SetResult(actor.Room);
         }
 
         void GetActorWidth()

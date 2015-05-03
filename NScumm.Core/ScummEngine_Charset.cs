@@ -231,6 +231,18 @@ namespace NScumm.Core
                     continue;
                 }
 
+                // Handle line overflow for V3. See also bug #1306269.
+                if (_game.Version == 3 && _nextLeft >= ScreenWidth)
+                {
+                    _nextLeft = ScreenWidth;
+                }
+                // Handle line breaks for V1-V2
+                if (_game.Version <= 2 && _nextLeft >= ScreenWidth)
+                {
+                    if (!NewLine())
+                        break;  // FIXME: Is this necessary? Only would be relevant for v0 games
+                }
+
                 _charset.Left = _nextLeft;
                 _charset.Top = _nextTop;
 
@@ -252,7 +264,15 @@ namespace NScumm.Core
                 _nextLeft = _charset.Left;
                 _nextTop = _charset.Top;
 
-                _talkDelay += _variables[VariableCharIncrement.Value];
+                if (_game.Version <= 2)
+                {
+                    _talkDelay += _defaultTalkDelay;
+                    Variables[VariableCharCount.Value]++;
+                }
+                else
+                {
+                    _talkDelay += _variables[VariableCharIncrement.Value];
+                }
             }
 
             if (Game.Version >= 7 && subtitleLine != 0)

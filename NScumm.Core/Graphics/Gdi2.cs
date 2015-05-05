@@ -300,6 +300,11 @@ namespace NScumm.Core.Graphics
         {
             return false;
         }
+
+        protected override void DecodeMask(int x, int y, int height, int stripnr, System.Collections.Generic.IList<ZPlane> zPlanes, bool transpStrip, DrawBitmaps flags)
+        {
+            // Do nothing here for V2 games - zplane was already handled.
+        }
     }
     
 }

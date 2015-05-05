@@ -440,7 +440,7 @@ namespace NScumm.Core.Graphics
             } while ((--height) != 0);
         }
 
-        void DecodeMask(int x, int y, int height, int stripnr, IList<ZPlane> zPlanes, bool transpStrip, DrawBitmaps flags)
+        protected virtual void DecodeMask(int x, int y, int height, int stripnr, IList<ZPlane> zPlanes, bool transpStrip, DrawBitmaps flags)
         {
             var zplaneCount = IsZBufferEnabled ? NumZBuffer : 0;
 

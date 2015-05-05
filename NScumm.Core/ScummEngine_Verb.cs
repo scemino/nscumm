@@ -31,6 +31,7 @@ namespace NScumm.Core
 
         readonly Sentence[] _sentence = InitSentences();
         int _verbMouseOver;
+        protected UserStates _userState;
 
         protected int SentenceNum { get; set; }
 
@@ -78,6 +79,10 @@ namespace NScumm.Core
 
         protected void VerbMouseOver(int verb)
         {
+            // Don't do anything unless verbs are active
+            if (Game.Version <= 2 && !(_userState.HasFlag(UserStates.IFaceVerbs)))
+                return;
+
             if (Game.GameId == NScumm.Core.IO.GameId.FullThrottle)
                 return;
 
@@ -281,8 +286,8 @@ namespace NScumm.Core
 
         protected void RedrawVerbs()
         {
-//            if (_game.Version <= 2 && !(_userState & USERSTATE_IFACE_VERBS)) // Don't draw verbs unless active
-//                return;
+            if (Game.Version <= 2 && !(_userState.HasFlag(UserStates.IFaceVerbs))) // Don't draw verbs unless active
+                return;
 
             int verb = 0;
             if (_cursor.State > 0)

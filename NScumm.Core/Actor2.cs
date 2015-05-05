@@ -120,7 +120,7 @@ namespace NScumm.Core
 
                         _walkdata.CurBox = (byte)next_box;
 
-                        ScummMath.GetClosestPtOnBox(_scumm.GetBoxCoordinates(_walkdata.CurBox), Position, out tmp);
+                        ScummMath.GetClosestPtOnBox(_scumm.GetBoxCoordinates(_walkdata.CurBox), RealPosition, out tmp);
                         ScummMath.GetClosestPtOnBox(_scumm.GetBoxCoordinates(Walkbox), tmp, out foundPath);
                     }
                     CalcMovementFactor(foundPath);
@@ -166,8 +166,8 @@ namespace NScumm.Core
         {
             base.PrepareDrawActorCostume(bcr);
 
-            bcr.ActorX = Position.X;
-            bcr.ActorY = Position.Y - Elevation;
+            bcr.ActorX = RealPosition.X;
+            bcr.ActorY = RealPosition.Y - Elevation;
 
             if (_scumm.Game.Version <= 2) {
                 bcr.ActorX *= V12_X_MULTIPLIER;

@@ -23,6 +23,7 @@ using System;
 using System.Linq;
 using NScumm.Core.Graphics;
 using System.Collections.Generic;
+using NScumm.Core.IO;
 
 namespace NScumm.Core
 {
@@ -83,6 +84,18 @@ namespace NScumm.Core
 
         protected byte GetStateCore(int obj)
         {
+            // I knew LucasArts sold cracked copies of the original Maniac Mansion,
+            // at least as part of Day of the Tentacle. Apparently they also sold
+            // cracked versions of the enhanced version. At least in Germany.
+            //
+            // This will keep the security door open at all times. I can only
+            // assume that 182 and 193 each correspond to one particular side of
+            // it. Fortunately this does not prevent frustrated players from
+            // blowing up the mansion, should they feel the urge to.
+
+            if (Game.GameId == GameId.Maniac && Game.Version != 0 && (obj == 182 || obj == 193))
+                _resManager.ObjectStateTable[obj] |= (byte)ObjectStateV2.State8;
+
             return _resManager.ObjectStateTable[obj];
         }
 
@@ -95,7 +108,7 @@ namespace NScumm.Core
                 var act = Actors[ObjToActor(obj)];
                 if (act != null && act.IsInCurrentRoom)
                 {
-                    p = act.Position;
+                    p = act.RealPosition;
                     return true;
                 }
                 return false;
@@ -111,7 +124,7 @@ namespace NScumm.Core
                         var act = Actors[_resManager.ObjectOwnerTable[obj]];
                         if (act != null && act.IsInCurrentRoom)
                         {
-                            p = act.Position;
+                            p = act.RealPosition;
                             return true;
                         }
                     }
@@ -183,7 +196,7 @@ namespace NScumm.Core
 
             if (obj < Actors.Length)
             {
-                return Actors[obj].Position.X;
+                return Actors[obj].RealPosition.X;
             }
 
             if (GetWhereIsObject(obj) == WhereIsObject.NotFound)
@@ -201,7 +214,7 @@ namespace NScumm.Core
 
             if (obj < Actors.Length)
             {
-                return Actors[obj].Position.Y;
+                return Actors[obj].RealPosition.Y;
             }
             if (GetWhereIsObject(obj) == WhereIsObject.NotFound)
                 return -1;
@@ -370,6 +383,24 @@ namespace NScumm.Core
                 var y = od.Position.Y + od.Hotspots[state].Y;
                 p = new Point(x, y);
             }
+            else if (Game.Version <= 2)
+            {
+                var x = od.Walk.X;
+                var y = od.Walk.Y;
+
+                // Adjust x, y when no actor direction is set, but only perform this
+                // adjustment for V0 games (e.g. MM C64), otherwise certain scenes in
+                // newer games are affected as well (e.g. the interior of the Shuttle
+                // Bus scene in Zak V2, where no actor is present). Refer to bug #3526089.
+                if (od.ActorDir == 0 && Game.Version == 0)
+                {
+                    x = od.Position.X + od.Width / 2;
+                    y = od.Position.Y + od.Height / 2;
+                }
+                x = x >> V12_X_SHIFT;
+                y = y >> V12_Y_SHIFT;
+                p = new Point(x, y);
+            }
             else
             {
                 p = od.Walk;
@@ -391,8 +422,8 @@ namespace NScumm.Core
 
         void DrawRoomObjects(int argument)
         {
-            const int mask = 0xF;
-            if (Game.GameId == NScumm.Core.IO.GameId.SamNMax)
+            var mask = (Game.Version <= 2) ? (int)ObjectStateV2.State8 : 0xF;
+            if (Game.GameId == GameId.SamNMax)
             {
                 for (int i = 1; i < _objs.Length; i++)
                 {
@@ -417,7 +448,7 @@ namespace NScumm.Core
         void DrawRoomObject(int i, int argument)
         {
             byte a;
-            const int mask = 0xF;
+            var mask = (Game.Version <= 2) ? (int)ObjectStateV2.State8 : 0xF;
 
             var od = _objs[i];
             if ((i < 1) || (od.Number < 1) || od.State == 0)
@@ -480,17 +511,30 @@ namespace NScumm.Core
 
             if (numstrip != 0)
             {
-                var flags = od.Flags;
+                var flags = od.Flags | DrawBitmaps.ObjectMode;
                 // Sam & Max needs this to fix object-layering problems with
                 // the inventory and conversation icons.
-                if ((_game.GameId == NScumm.Core.IO.GameId.SamNMax && GetClass(od.Number, ObjectClass.IgnoreBoxes)) ||
-                    (_game.GameId == NScumm.Core.IO.GameId.FullThrottle && GetClass(od.Number, ObjectClass.Player)))
+                if ((_game.GameId == GameId.SamNMax && GetClass(od.Number, ObjectClass.IgnoreBoxes)) ||
+                    (_game.GameId == GameId.FullThrottle && GetClass(od.Number, ObjectClass.Player)))
                     flags |= DrawBitmaps.DrawMaskOnAll;
 
-                var state = GetStateCore(od.Number);
-                if (state > 0 && (state - 1) < od.Images.Count)
+                ImageData img = null;
+                if (Game.Version > 4)
                 {
-                    Gdi.DrawBitmap(od.Images[state - 1], _mainVirtScreen, x, ypos, width * 8, height, x - xpos, numstrip, roomData.Header.Width, flags);
+                    var state = GetStateCore(od.Number);
+                    if (state > 0 && (state - 1) < od.Images.Count)
+                    {
+                        img = od.Images[state - 1];
+                    }
+                }
+                else
+                {
+                    img = od.Images.FirstOrDefault();
+                }
+
+                if (img != null)
+                {
+                    Gdi.DrawBitmap(img, _mainVirtScreen, x, ypos, width * 8, height, x - xpos, numstrip, roomData.Header.Width, flags);
                 }
             }
         }

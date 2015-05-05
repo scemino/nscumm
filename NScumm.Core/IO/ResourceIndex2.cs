@@ -68,8 +68,8 @@ namespace NScumm.Core
             for (int i = 0; i < numEntries; i++)
             {
                 var tmp = br.ReadByte();
-                ObjectStateTable[i] = (byte)(tmp >> 4);
                 ObjectOwnerTable[i] = (byte)(tmp & 0x0F);
+                ObjectStateTable[i] = (byte)(tmp >> 4);
             }
         }
 

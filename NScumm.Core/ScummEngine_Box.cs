@@ -146,6 +146,14 @@ namespace NScumm.Core
 
             var boxm = _boxMatrix;
 
+            if (Game.Version <= 2)
+            {
+                // The v2 box matrix is a real matrix with numOfBoxes rows and columns.
+                // The first numOfBoxes bytes contain indices to the start of the corresponding
+                // row (although that seems unnecessary to me - the value is easily computable.
+                return (sbyte)boxm[numOfBoxes + boxm[from] + to];
+            }
+
             // WORKAROUND #1: It seems that in some cases, the box matrix is corrupt
             // (more precisely, is too short) in the datafiles already. In
             // particular this seems to be the case in room 46 of Indy3 EGA (see

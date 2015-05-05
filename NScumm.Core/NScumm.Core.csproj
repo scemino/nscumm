@@ -54,7 +54,6 @@
     <Compile Include="ScummEngine.cs" />
     <Compile Include="ScummEngine3.cs" />
     <Compile Include="ScummEngine3_Actor.cs" />
-    <Compile Include="ScummEngine3_Audio.cs" />
     <Compile Include="ScummEngine3_Camera.cs" />
     <Compile Include="ScummEngine3_Cursor.cs" />
     <Compile Include="ScummEngine3_Drawing.cs" />

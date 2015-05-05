@@ -325,6 +325,10 @@ namespace NScumm.Core
                 Variables[VariableCameraPosX.Value] = Camera.CurrentPosition.X;
                 Variables[VariableCameraPosY.Value] = Camera.CurrentPosition.Y;
             }
+            else if (Game.Version <= 2)
+            {
+                Variables[VariableCameraPosX.Value] = Camera.CurrentPosition.X >> V12_X_SHIFT;
+            }
             else
             {
                 _variables[VariableCameraPosX.Value] = _camera.CurrentPosition.X;

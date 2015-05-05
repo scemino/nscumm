@@ -40,14 +40,6 @@ namespace NScumm.Core
             }
         }
 
-        void GetActorMoving()
-        {
-            GetResult();
-            var act = GetVarOrDirectByte(OpCodeParameter.Param1);
-            Actor a = Actors[act];
-            SetResult((int)a.Moving);
-        }
-
         void PutActorAtObject()
         {
             Point p;

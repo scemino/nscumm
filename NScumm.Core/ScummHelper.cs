@@ -28,6 +28,8 @@ namespace NScumm.Core
     {
         public static string GetString(this System.Text.Encoding encoding, byte[] bytes)
         {
+            if (bytes == null)
+                return null;
             return encoding.GetString(bytes, 0, bytes.Length);
         }
 

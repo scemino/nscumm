@@ -44,6 +44,15 @@ namespace NScumm.Core
 
         protected void UnfreezeScripts()
         {
+            if (Game.Version <= 2)
+            {
+                for (var i = 0; i < NumScriptSlot; i++)
+                {
+                    _slots[i].Unfreeze();
+                }
+                return;
+            }
+
             for (var i = 0; i < NumScriptSlot; i++)
             {
                 _slots[i].Unfreeze();
@@ -150,7 +159,19 @@ namespace NScumm.Core
         protected void StopObjectCode()
         {
             var ss = _slots[_currentScript];
-            if (Game.Version <= 5)
+            if (Game.Version <= 2)
+            {
+                if (ss.Where == WhereIsObject.Global || ss.Where == WhereIsObject.Local)
+                {
+                    StopScript(ss.Number);
+                }
+                else
+                {
+                    ss.Number = 0;
+                    ss.Status = ScriptStatus.Dead;
+                }
+            }
+            else if (Game.Version <= 5)
             {
                 if (ss.Where != WhereIsObject.Global && ss.Where != WhereIsObject.Local)
                 {
@@ -343,7 +364,11 @@ namespace NScumm.Core
 
             RunEntryScript();
 
-            if ((Game.Version >= 5) && (Game.Version <= 6))
+            if (Game.Version >= 1 && Game.Version <= 2)
+            {
+                RunScript(5, false, false, new int[0]);
+            }
+            else if ((Game.Version >= 5) && (Game.Version <= 6))
             {
                 if (a != null && !_egoPositioned)
                 {
@@ -787,6 +812,18 @@ namespace NScumm.Core
 
         protected void FreezeScripts(int flag)
         {
+            if (Game.Version <= 2)
+            {
+                for (var i = 0; i < NumScriptSlot; i++)
+                {
+                    if (_currentScript != i && _slots[i].Status != ScriptStatus.Dead && !_slots[i].FreezeResistant)
+                    {
+                        _slots[i].Freeze();
+                    }
+                }
+                return;
+            }
+
             for (var i = 0; i < NumScriptSlot; i++)
             {
                 if (_currentScript != i && _slots[i].Status != ScriptStatus.Dead && (!_slots[i].FreezeResistant || flag >= 0x80))

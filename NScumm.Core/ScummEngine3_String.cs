@@ -230,12 +230,6 @@ namespace NScumm.Core
 
             String[textSlot].SaveDefault();
         }
-
-        void PrintEgo()
-        {
-            _actorToPrintStrFor = Variables[VariableEgo.Value];
-            DecodeParseString();
-        }
     }
 }
 

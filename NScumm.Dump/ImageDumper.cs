@@ -316,8 +316,8 @@ namespace NScumm.Dump
             var j = 0;
             foreach (var img in obj.Images)
             {
-                try
-                {
+//                try
+//                {
                     var screen = new VirtScreen(0, obj.Width, obj.Height, PixelFormat.Indexed8, 2);
                     if (img.IsBomp)
                     {
@@ -336,21 +336,21 @@ namespace NScumm.Dump
                     }
                     else
                     {
-                        gdi.DrawBitmap(img, screen, new Point(0, 0), obj.Width, obj.Height, 0, obj.Width / 8, room.Header.Width, DrawBitmaps.None, true);
+                        gdi.DrawBitmap(img, screen, new Point(0, 0), obj.Width, obj.Height & 0xFFF8, 0, obj.Width / 8, room.Header.Width, DrawBitmaps.None, true);
                     }
 
                     using (var bmp = ToBitmap(room, screen))
                     {
                         bmp.Save("obj_" + obj.Number + "_" + (++j) + ".png");
                     }
-                }
-                catch (Exception e)
-                {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine(e);
-                    Console.ResetColor();
-                    Console.ReadLine();
-                }
+//                }
+//                catch (Exception e)
+//                {
+//                    Console.ForegroundColor = ConsoleColor.Red;
+//                    Console.WriteLine(e);
+//                    Console.ResetColor();
+//                    Console.ReadLine();
+//                }
             }
         }
     }

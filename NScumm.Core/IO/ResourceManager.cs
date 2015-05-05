@@ -76,16 +76,16 @@ namespace NScumm.Core.IO
                 Room room = null;
                 foreach (var i in roomIndices)
                 {
-//                    try
-//                    {
+                    try
+                    {
                         room = GetRoom(i);
-//                    }
-//                    catch (Exception e)
-//                    {
+                    }
+                    catch (Exception e)
+                    {
 //                        Console.ForegroundColor = ConsoleColor.Red;
 //                        Console.WriteLine(e);
 //                        Console.ResetColor();
-//                    }
+                    }
                     if (room != null)
                     {
                         yield return room;

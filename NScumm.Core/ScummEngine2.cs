@@ -41,7 +41,7 @@ namespace NScumm.Core
         // of "activation state" for the given object. E.g. is a door open?
         // Is a drawer extended? In addition it is used to toggle the look
         // of objects that the user can "pick up" (i.e. it is set in
-        // o2_pickupObject together with Untouchable). So in a sense,
+        // pickupObject together with Untouchable). So in a sense,
         // it can also mean "invisible" in some situations.
         State8 = 8
     }
@@ -92,7 +92,6 @@ namespace NScumm.Core
         public int? VariableClickVerb;
         public int? VariableClickObject;
 
-        UserStates _userState;
         string _sentenceBuf;
         bool _completeScreenRedraw;
         sbyte _mouseOverBoxV2;
@@ -352,11 +351,21 @@ namespace NScumm.Core
             _opCodes[0x51] = AnimateActor;
             _opCodes[0x52] = ActorFollowCamera;
             _opCodes[0x53] = ActorOps;
+            /* 54 */
+            _opCodes[0x54] = SetObjectName;
+            _opCodes[0x55] = ActorFromPos;
+            _opCodes[0x56] = GetActorMoving;
+            _opCodes[0x57] = SetState02;
             /* 58 */
             _opCodes[0x58] = BeginOverride;
             _opCodes[0x59] = DoSentence;
             _opCodes[0x5a] = Add;
             _opCodes[0x5b] = SetBitVar;
+            /* 5C */
+            _opCodes[0x5c] = Dummy;
+            _opCodes[0x5d] = IfClassOfIs;
+            _opCodes[0x5e] = WalkActorTo;
+            _opCodes[0x5f] = IfNotState02;
             /* 60 */
             _opCodes[0x60] = CursorCommand;
             _opCodes[0x61] = PutActor;
@@ -364,14 +373,19 @@ namespace NScumm.Core
             _opCodes[0x63] = GetActorFacing;
             /* 64 */
             _opCodes[0x64] = LoadRoomWithEgo;
-//            _opCodes[0x65] = o2_drawObject;
-//            _opCodes[0x66] = o5_getClosestObjActor;
+            _opCodes[0x65] = DrawObject;
+            _opCodes[0x66] = GetClosestObjActor;
             _opCodes[0x67] = ClearState04;
             /* 68 */
             _opCodes[0x68] = IsScriptRunning;
             _opCodes[0x69] = SetOwnerOf;
             _opCodes[0x6a] = SubIndirect;
             _opCodes[0x6b] = Dummy;
+            /* 6C */
+            _opCodes[0x6c] = GetObjPreposition;
+            _opCodes[0x6d] = PutActorInRoom;
+            _opCodes[0x6e] = Dummy;
+            _opCodes[0x6f] = IfState04;
             /* 70 */
             _opCodes[0x70] = Lights;
             _opCodes[0x71] = GetActorCostume;
@@ -385,8 +399,13 @@ namespace NScumm.Core
             /* 78 */
             _opCodes[0x78] = IsGreater;
             _opCodes[0x79] = DoSentence;
-//            _opCodes[0x7a] = VerbOps;
-//            _opCodes[0x7b] = GetActorWalkBox;
+            _opCodes[0x7a] = VerbOps;
+            _opCodes[0x7b] = GetActorWalkBox;
+            /* 7C */
+            _opCodes[0x7c] = IsSoundRunning;
+            _opCodes[0x7d] = SetActorElevation;
+            _opCodes[0x7e] = WalkActorTo;
+            _opCodes[0x7f] = IfState01;
             /* 80 */
             _opCodes[0x80] = BreakHere;
             _opCodes[0x81] = PutActor;
@@ -417,11 +436,21 @@ namespace NScumm.Core
             _opCodes[0x99] = DoSentence;
             _opCodes[0x9a] = Move;
             _opCodes[0x9b] = SetBitVar;
+            /* 9C */
+            _opCodes[0x9c] = StartSound;
+            _opCodes[0x9d] = IfClassOfIs;
+            _opCodes[0x9e] = WalkActorTo;
+            _opCodes[0x9f] = IfState02;
             /* A0 */
             _opCodes[0xa0] = StopObjectCode;
             _opCodes[0xa1] = PutActor;
             _opCodes[0xa2] = SaveLoadGame;
             _opCodes[0xa3] = GetActorY;
+            /* A4 */
+            _opCodes[0xa4] = LoadRoomWithEgo;
+            _opCodes[0xa5] = DrawObject;
+            _opCodes[0xa6] = SetVarRange;
+            _opCodes[0xa7] = SetState04;
             /* A8 */
             _opCodes[0xa8] = NotEqualZero;
             _opCodes[0xa9] = SetOwnerOf;
@@ -472,11 +501,51 @@ namespace NScumm.Core
             _opCodes[0xcd] = WalkActorToActor;
             _opCodes[0xce] = PutActorAtObject;
             _opCodes[0xcf] = IfState08;
+            /* D0 */
+            _opCodes[0xd0] = PickupObject;
+            _opCodes[0xd1] = AnimateActor;
+            _opCodes[0xd2] = ActorFollowCamera;
+            _opCodes[0xd3] = ActorOps;
+            /* D4 */
+            _opCodes[0xd4] = SetObjectName;
+            _opCodes[0xd5] = ActorFromPos;
+            _opCodes[0xd6] = GetActorMoving;
+            _opCodes[0xd7] = SetState02;
+            /* D8 */
+            _opCodes[0xd8] = PrintEgo;
+            _opCodes[0xd9] = DoSentence;
+            _opCodes[0xda] = Add;
+            _opCodes[0xdb] = SetBitVar;
+            /* DC */
+            _opCodes[0xdc] = Dummy;
+            _opCodes[0xdd] = IfClassOfIs;
+            _opCodes[0xde] = WalkActorTo;
+            _opCodes[0xdf] = IfNotState02;
+            /* E0 */
+            _opCodes[0xe0] = CursorCommand;
+            _opCodes[0xe1] = PutActor;
+            _opCodes[0xe2] = StopScript;
+            _opCodes[0xe3] = GetActorFacing;
             /* E4 */
             _opCodes[0xe4] = LoadRoomWithEgo;
             _opCodes[0xe5] = DrawObject;
-//            _opCodes[0xe6] = GetClosestObjActor;
+            _opCodes[0xe6] = GetClosestObjActor;
             _opCodes[0xe7] = ClearState04;
+            /* E8 */
+            _opCodes[0xe8] = IsScriptRunning;
+            _opCodes[0xe9] = SetOwnerOf;
+            _opCodes[0xea] = SubIndirect;
+            _opCodes[0xeb] = Dummy;
+            /* EC */
+            _opCodes[0xec] = GetObjPreposition;
+            _opCodes[0xed] = PutActorInRoom;
+            _opCodes[0xee] = Dummy;
+            _opCodes[0xef] = IfState04;
+            /* F0 */
+            _opCodes[0xf0] = Lights;
+            _opCodes[0xf1] = GetActorCostume;
+            _opCodes[0xf2] = LoadRoom;
+            _opCodes[0xf3] = RoomOps;
             /* F4 */
             _opCodes[0xf4] = GetDistance;
             _opCodes[0xf5] = FindObject;
@@ -485,13 +554,98 @@ namespace NScumm.Core
             /* F8 */
             _opCodes[0xf8] = IsGreater;
             _opCodes[0xf9] = DoSentence;
-//            _opCodes[0xfa] = VerbOps;
-//            _opCodes[0xfb] = GetActorWalkBox;
+            _opCodes[0xfa] = VerbOps;
+            _opCodes[0xfb] = GetActorWalkBox;
             /* FC */
-//            _opCodes[0xfc] = IsSoundRunning;
+            _opCodes[0xfc] = IsSoundRunning;
             _opCodes[0xfd] = SetActorElevation;
             _opCodes[0xfe] = WalkActorTo;
             _opCodes[0xff] = IfState01;
+        }
+
+        void GetObjPreposition()
+        {
+            GetResult();
+            int obj = GetVarOrDirectWord(OpCodeParameter.Param1);
+
+            if (GetWhereIsObject(obj) != WhereIsObject.NotFound)
+            {
+                var objFound = _objs.FirstOrDefault(o => o.Number == obj);
+                var result = objFound.Script.Data[12] >> 5;
+                SetResult(result);
+            }
+            else
+            {
+                SetResult(0xFF);
+            }
+        }
+
+        protected void IsSoundRunning()
+        {
+            GetResult();
+            var snd = GetVarOrDirectByte(OpCodeParameter.Param1);
+            if (snd != 0)
+            {
+                snd = Sound.IsSoundRunning(snd) ? 1 : 0;
+            }
+            SetResult(snd);
+        }
+
+        void GetActorWalkBox()
+        {
+            GetResult();
+            var a = Actors[GetVarOrDirectByte(OpCodeParameter.Param1)];
+            SetResult(a.IsInCurrentRoom ? a.Walkbox : 0xFF);
+        }
+
+        void GetClosestObjActor()
+        {
+            int obj;
+            int act;
+            int dist;
+
+            // This code can't detect any actors farther away than 255 units
+            // (pixels in newer games, characters in older ones.) But this is
+            // perfectly OK, as it is exactly how the original behaved.
+
+            int closest_obj = 0xFF, closest_dist = 0xFF;
+
+            GetResult();
+
+            act = GetVarOrDirectWord(OpCodeParameter.Param1);
+            obj = Variables[VariableActorRangeMax.Value];
+
+            do
+            {
+                dist = GetObjActToObjActDist(act, obj);
+                if (dist < closest_dist)
+                {
+                    closest_dist = dist;
+                    closest_obj = obj;
+                }
+            } while (--obj >= Variables[VariableActorRangeMin.Value]);
+
+            SetResult(closest_obj);
+        }
+
+        protected void PrintEgo()
+        {
+            _actorToPrintStrFor = Variables[VariableEgo.Value];
+            DecodeParseString();
+        }
+
+        protected void GetActorMoving()
+        {
+            GetResult();
+            var act = GetVarOrDirectByte(OpCodeParameter.Param1);
+            Actor a = Actors[act];
+            SetResult((int)a.Moving);
+        }
+
+        protected void SetObjectName()
+        {
+            var obj = GetVarOrDirectWord(OpCodeParameter.Param1);
+            SetObjectNameCore(obj);
         }
 
         protected void IsScriptRunning()
@@ -548,93 +702,102 @@ namespace NScumm.Core
         }
 
 
-        //        void VerbOps() {
-        //            int verb = ReadByte();
-        //            int slot, state;
-        //
-        //            switch (verb) {
-        //                case 0:     // SO_DELETE_VERBS
-        //                    slot = GetVarOrDirectByte(OpCodeParameter.Param1) + 1;
-        //                    assert(0 < slot && slot < _numVerbs);
-        //                    killVerb(slot);
-        //                    break;
-        //
-        //                case 0xFF:  // Verb On/Off
-        //                    verb = ReadByte();
-        //                    state = ReadByte();
-        //                    slot = GetVerbSlot(verb, 0);
-        //                    Verbs[slot].CurMode = state;
-        //                    break;
-        //
-        //                default: {  // New Verb
-        //                        int x = ReadByte() * 8;
-        //                        int y = ReadByte() * 8;
-        //                        slot = GetVarOrDirectByte(OpCodeParameter.Param1) + 1;
-        //                        int prep = ReadByte(); // Only used in V1?
-        //                        // V1 Maniac verbs are relative to the 'verb area' - under the sentence
-        //                        /*if (_game.platform == Common::kPlatformNES)
-        //                            x += 8;
-        //                        else*/ if ((Game.GameId == GameId.Maniac) && (Game.Version == 1))
-        //                            y += 8;
-        //
-        //                        VerbSlot vs = Verbs[slot];
-        //                        vs.verbid = verb;
-        //                        /*if (_game.platform == Common::kPlatformNES) {
-        //                            vs.color = 1;
-        //                            vs.hicolor = 1;
-        //                            vs.dimcolor = 1;
-        //                        } else*/ if (Game.Version == 1) {
-        //                            vs.color = (Game.GameId == GameId.Maniac && (Game.Features & GF_DEMO)) ? 16 : 5;
-        //                            vs.hicolor = 7;
-        //                            vs.dimcolor = 11;
-        //                        } else {
-        //                            vs.color = (_game.id == GID_MANIAC && (_game.features & GF_DEMO)) ? 13 : 2;
-        //                            vs.hicolor = 14;
-        //                            vs.dimcolor = 8;
-        //                        }
-        //                        vs.type = kTextVerbType;
-        //                        vs.charset_nr = _string[0]._default.charset;
-        //                        vs.curmode = 1;
-        //                        vs.saveid = 0;
-        //                        vs.key = 0;
-        //                        vs.center = 0;
-        //                        vs.imgindex = 0;
-        //                        vs.prep = prep;
-        //
-        //                        vs.curRect.left = x;
-        //                        vs.curRect.top = y;
-        //
-        //                        // FIXME: these keyboard map depends on the language of the game.
-        //                        // E.g. a german keyboard has 'z' and 'y' swapped, while a french
-        //                        // keyboard starts with "azerty", etc.
-        //                        if (_game.platform == Common::kPlatformNES) {
-        //                            static const char keyboard[] = {
-        //                                'q','w','e','r',
-        //                                'a','s','d','f',
-        //                                'z','x','c','v'
-        //                            };
-        //                            if (1 <= slot && slot <= ARRAYSIZE(keyboard))
-        //                                vs.key = keyboard[slot - 1];
-        //                        } else {
-        //                            static const char keyboard[] = {
-        //                                'q','w','e','r','t',
-        //                                'a','s','d','f','g',
-        //                                'z','x','c','v','b'
-        //                            };
-        //                            if (1 <= slot && slot <= ARRAYSIZE(keyboard))
-        //                                vs.key = keyboard[slot - 1];
-        //                        }
-        //
-        //                        // It follows the verb name
-        //                        loadPtrToResource(rtVerb, slot, NULL);
-        //                    }
-        //                    break;
-        //            }
-        //
-        //            // Force redraw of the modified verb slot
-        //            drawVerb(slot, 0);
-        //            verbMouseOver(0);
-        //        }
+        void VerbOps()
+        {
+            int verb = ReadByte();
+            int slot, state;
+        
+            switch (verb)
+            {
+                case 0:     // SO_DELETE_VERBS
+                    slot = GetVarOrDirectByte(OpCodeParameter.Param1) + 1;
+                    KillVerb(slot);
+                    break;
+        
+                case 0xFF:  // Verb On/Off
+                    verb = ReadByte();
+                    state = ReadByte();
+                    slot = GetVerbSlot(verb, 0);
+                    Verbs[slot].CurMode = (byte)state;
+                    break;
+        
+                default:
+                    {  // New Verb
+                        int x = ReadByte() * 8;
+                        int y = ReadByte() * 8;
+                        slot = GetVarOrDirectByte(OpCodeParameter.Param1) + 1;
+                        int prep = ReadByte(); // Only used in V1?
+                        // V1 Maniac verbs are relative to the 'verb area' - under the sentence
+                        /*if (_game.platform == Common::kPlatformNES)
+                                    x += 8;
+                                else*/
+                        if ((Game.GameId == GameId.Maniac) && (Game.Version == 1))
+                            y += 8;
+        
+                        VerbSlot vs = Verbs[slot];
+                        vs.VerbId = (ushort)verb;
+                        /*if (_game.platform == Common::kPlatformNES) {
+                                    vs.color = 1;
+                                    vs.hicolor = 1;
+                                    vs.dimcolor = 1;
+                                } else*/
+                        if (Game.Version == 1)
+                        {
+                            vs.Color = (byte)((Game.GameId == GameId.Maniac && (Game.Features.HasFlag(GameFeatures.Demo))) ? 16 : 5);
+                            vs.HiColor = 7;
+                            vs.DimColor = 11;
+                        }
+                        else
+                        {
+                            vs.Color = (byte)((Game.GameId == GameId.Maniac && (Game.Features.HasFlag(GameFeatures.Demo))) ? 13 : 2);
+                            vs.HiColor = 14;
+                            vs.DimColor = 8;
+                        }
+                        vs.Type = VerbType.Text;
+                        vs.CharsetNr = String[0].Default.Charset;
+                        vs.CurMode = 1;
+                        vs.SaveId = 0;
+                        vs.Key = 0;
+                        vs.Center = false;
+                        vs.ImgIndex = 0;
+                        vs.Prep = (byte)prep;
+        
+                        vs.CurRect.Left = x;
+                        vs.CurRect.Top = y;
+        
+                        // FIXME: these keyboard map depends on the language of the game.
+                        // E.g. a german keyboard has 'z' and 'y' swapped, while a french
+                        // keyboard starts with "azerty", etc.
+                        /*if (Game.Platform == Platform.NES) {
+                                    static const char keyboard[] = {
+                                        'q','w','e','r',
+                                        'a','s','d','f',
+                                        'z','x','c','v'
+                                    };
+                                    if (1 <= slot && slot <= ARRAYSIZE(keyboard))
+                                        vs.key = keyboard[slot - 1];
+                                } else*/
+                        {
+                            char[] keyboard =
+                                {
+                                    'q', 'w', 'e', 'r', 't',
+                                    'a', 's', 'd', 'f', 'g',
+                                    'z', 'x', 'c', 'v', 'b'
+                                };
+                            if (1 <= slot && slot <= keyboard.Length)
+                                vs.Key = (byte)keyboard[slot - 1];
+                        }
+        
+                        // It follows the verb name
+                        vs.Text = ReadCharacters();
+                    }
+                    break;
+            }
+        
+            // Force redraw of the modified verb slot
+            DrawVerb(slot, 0);
+            VerbMouseOver(0);
+        }
 
         protected void PseudoRoom()
         {
@@ -656,13 +819,7 @@ namespace NScumm.Core
         protected void ActorFollowCamera()
         {
             var actor = GetVarOrDirectByte(OpCodeParameter.Param1);
-            var old = Camera.ActorToFollow;
-            SetCameraFollows(Actors[actor], false);
-
-            if (Camera.ActorToFollow != old)
-                RunInventoryScript(0);
-
-            Camera.MovingToActor = false;
+            ActorFollowCamera(actor);
         }
 
         void ActorFollowCamera(int act)
@@ -745,7 +902,7 @@ namespace NScumm.Core
         {
             // Opcode 0xEE is used in maniac and zak but has no purpose
 //            if (_opCode != 0xEE)
-//                Console.WriteLine("o2_dummy invoked (opcode {0})", _opCode);
+//                Console.WriteLine("dummy invoked (opcode {0})", _opCode);
         }
 
 
@@ -953,7 +1110,7 @@ namespace NScumm.Core
                 // Prevent inventory entries from overflowing by truncating the text
                 byte[] msg = new byte[20];
                 msg[maxChars] = 0;
-                Array.Copy(tmp, msg, maxChars);
+                Array.Copy(tmp, msg, Math.Min(tmp.Length, maxChars));
 
                 // Draw it
                 DrawString(1, msg);
@@ -1171,8 +1328,8 @@ namespace NScumm.Core
             if (Game.Version < 7)
             {
                 Camera.Mode = CameraMode.Normal;
-                Camera.CurrentPosition.X = (short)at;
-                SetCameraAt(new NScumm.Core.Graphics.Point((short)at, 0));
+                Camera.CurrentPosition.X = at;
+                SetCameraAt(new Point(at, 0));
                 Camera.MovingToActor = false;
             }
         }
@@ -1486,6 +1643,11 @@ namespace NScumm.Core
             IfStateCommon(ObjectStateV2.Untouchable);
         }
 
+        void IfState04()
+        {
+            IfStateCommon(ObjectStateV2.Locked);
+        }
+
         void IfState08()
         {
             IfStateCommon(ObjectStateV2.State8);
@@ -1504,6 +1666,11 @@ namespace NScumm.Core
         void IfNotState04()
         {
             IfNotStateCommon(ObjectStateV2.Locked);
+        }
+
+        void IfNotState08()
+        {
+            IfNotStateCommon(ObjectStateV2.State8);
         }
 
         protected void BreakHere()
@@ -1918,8 +2085,8 @@ namespace NScumm.Core
                 (/*Game.Platform == Platform.NES*/ false && _userState.HasFlag(UserStates.IFaceAll))))
                 return;
 
-            if (Verbs[slot] != null)
-                _sentenceBuf = System.Text.Encoding.UTF8.GetString(Verbs[slot].Text);
+            if (Verbs[slot] != null && Verbs[slot].Text != null)
+                _sentenceBuf = Encoding.UTF8.GetString(Verbs[slot].Text);
             else
                 return;
 
@@ -1929,7 +2096,7 @@ namespace NScumm.Core
                 if (temp != null)
                 {
                     _sentenceBuf += " ";
-                    _sentenceBuf += temp;
+                    _sentenceBuf += Encoding.UTF8.GetString(temp);
                 }
 
                 // For V1 games, the engine must compute the preposition.
@@ -1956,7 +2123,7 @@ namespace NScumm.Core
                 if (temp != null)
                 {
                     _sentenceBuf += " ";
-                    _sentenceBuf += temp;
+                    _sentenceBuf += Encoding.UTF8.GetString(temp);
                 }
             }
 
@@ -1978,7 +2145,7 @@ namespace NScumm.Core
 
             // Maximum length of printable characters
             int maxChars = /*(Game.Platform == Platform.NES) ? 60 :*/ 40;
-            while (_sentenceBuf[i] != 0)
+            for (i = 0; i < _sentenceBuf.Length; i++)
             {
                 if (_sentenceBuf[i] != '@')
                     len++;
@@ -1986,13 +2153,7 @@ namespace NScumm.Core
                 {
                     break;
                 }
-
-                str[i++] = (byte)_sentenceBuf[i++];
-
-//                if (Game.Platform == Platform.NES && len == 30) {
-//                    string[i++] = 0xFF;
-//                    string[i++] = 8;
-//                }
+                str[i] = (byte)_sentenceBuf[i];
             }
             str[i] = 0;
 
@@ -2149,11 +2310,6 @@ namespace NScumm.Core
             ClearDrawObjectQueue();
         }
 
-        void IfNotState08()
-        {
-            IfNotStateCommon(ObjectStateV2.State8);
-        }
-
         void IfStateCommon(ObjectStateV2 type)
         {
             var obj = GetActiveObject();
@@ -2215,7 +2371,7 @@ namespace NScumm.Core
             int opcode = ReadByte();
 
             ResType type = ResType.Invalid;
-            if (0 <= (opcode >> 4) && (opcode >> 4) < (int)resTypes.Length)
+            if (0 <= (opcode >> 4) && (opcode >> 4) < resTypes.Length)
                 type = resTypes[opcode >> 4];
 
             if ((opcode & 0x0f) == 0 || type == ResType.Invalid)
@@ -2438,7 +2594,7 @@ namespace NScumm.Core
             var nr2 = GetVarOrDirectByte(OpCodeParameter.Param2);
             int dist = ReadByte();
 
-            if (Game.GameId == NScumm.Core.IO.GameId.Indy4 && nr == 1 && nr2 == 106 &&
+            if (Game.GameId == GameId.Indy4 && nr == 1 && nr2 == 106 &&
                 dist == 255 && Slots[CurrentScript].Number == 210)
             {
                 // WORKAROUND bug: Work around an invalid actor bug when using the
@@ -2458,7 +2614,11 @@ namespace NScumm.Core
             if (!a2.IsInCurrentRoom)
                 return;
 
-            if (dist == 0xFF)
+            if (Game.Version <= 2)
+            {
+                dist *= Actor2.V12_X_MULTIPLIER;
+            }
+            else if (dist == 0xFF)
             {
                 dist = (int)(a.ScaleX * a.Width / 0xFF);
                 dist += (int)(a2.ScaleX * a2.Width / 0xFF) / 2;
@@ -2470,14 +2630,19 @@ namespace NScumm.Core
             else
                 x -= dist;
 
+            if (Game.Version <= 2)
+            {
+                x /= Actor2.V12_X_MULTIPLIER;
+                y /= Actor2.V12_Y_MULTIPLIER;
+            }
             if (Game.Version <= 3)
             {
-                var abr = a.AdjustXYToBeInBox(new Point((short)x, (short)y));
+                var abr = a.AdjustXYToBeInBox(new Point(x, y));
                 x = abr.Position.X;
                 y = abr.Position.Y;
             }
 
-            a.StartWalk(new Point((short)x, (short)y), -1);
+            a.StartWalk(new Point(x, y), -1);
         }
 
         protected void FaceActor()
@@ -2508,7 +2673,7 @@ namespace NScumm.Core
             // WORKAROUND bug #746349. This is a really odd bug in either the script
             // or in our script engine. Might be a good idea to investigate this
             // further by e.g. looking at the FOA engine a bit closer.
-            if (Game.GameId == NScumm.Core.IO.GameId.Indy4 && _roomResource == 94 && Slots[CurrentScript].Number == 206 && !IsValidActor(index))
+            if (Game.GameId == GameId.Indy4 && _roomResource == 94 && Slots[CurrentScript].Number == 206 && !IsValidActor(index))
             {
                 SetResult(0);
                 return;

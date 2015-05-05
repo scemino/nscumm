@@ -149,7 +149,24 @@ namespace NScumm.Core
 
         public Point Position
         {
-            get { return _position; }
+            get
+            { 
+                Point pos = new Point(_position);
+                if (_scumm.Game.Version <= 2)
+                {
+                    pos.X *= Actor2.V12_X_MULTIPLIER;
+                    pos.Y *= Actor2.V12_Y_MULTIPLIER;
+                }
+                return pos; 
+            }
+        }
+
+        public Point RealPosition
+        {
+            get
+            { 
+                return _position; 
+            }
         }
 
         public ushort Facing { get; set; }
@@ -1102,7 +1119,7 @@ namespace NScumm.Core
             if (serializer.IsLoading && _scumm.Game.Version <= 2 && serializer.Version < 70)
             {
                 _position.X >>= ScummEngine.V12_X_SHIFT;
-                _position.Y  >>= ScummEngine.V12_Y_SHIFT;
+                _position.Y >>= ScummEngine.V12_Y_SHIFT;
 
                 _speedx >>= ScummEngine.V12_X_SHIFT;
                 _speedy >>= ScummEngine.V12_Y_SHIFT;

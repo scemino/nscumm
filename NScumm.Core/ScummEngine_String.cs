@@ -239,6 +239,22 @@ namespace NScumm.Core
 
         int ConvertStringMessage(byte[] dst, int dstPos, uint var)
         {
+            if (Game.Version <= 2)
+            {
+                byte chr;
+                int i = 0;
+                while ((chr = (byte)Variables[var++]) != 0)
+                {
+                    if (chr != '@')
+                    {
+                        dst[dstPos++] = chr;
+                        i++;
+                    }
+                }
+
+                return i;
+            }
+
             if ((Game.Version == 3) || (_game.Version >= 6))
             {
                 var = (uint)ReadVariable(var);

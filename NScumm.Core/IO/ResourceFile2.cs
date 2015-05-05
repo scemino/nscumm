@@ -22,6 +22,7 @@
 using System.Collections.Generic;
 using NScumm.Core;
 using System;
+using System.Linq;
 using NScumm.Core.Graphics;
 
 namespace NScumm.Core.IO
@@ -82,62 +83,121 @@ namespace NScumm.Core.IO
             {
                 room.ExitScript.Data = ReadBytes(offset + exitScriptOffset, exitScriptLength);
             }
+            else
+            {
+                room.ExitScript.Data = new byte[0];
+            }
 
             // read entry script
             if (entryScriptOffset > 0)
             {
                 room.EntryScript.Data = ReadBytes(offset + entryScriptOffset, entryScriptLength);
             }
-
-            // read room image
-            int imgLength;
-            if (exitScriptOffset > 0)
-            {
-                imgLength = exitScriptOffset;
-            }
-            else if (entryScriptOffset > 0)
-            {
-                imgLength = entryScriptOffset;
-            }
             else
             {
-                imgLength = size;
+                room.EntryScript.Data = new byte[0];
             }
-            imgLength -= imgOffset;
 
-            room.Image = new ImageData { Data = ReadBytes(offset + imgOffset, imgLength) };
+            // read room image
+            var imgLength = GetImageSize(offset + imgOffset, room.Header.Width, room.Header.Height);
+            room.Image = new ImageData { Data = ReadBytes(offset + imgOffset, (int)imgLength) };
 
             // read boxes
             ReadBoxes(offset + boxesOffset, room);
 
-            var objImgSizes = new ushort[objImgOffsets.Length + 1];
-            Array.Copy(objImgOffsets, objImgSizes, objScriptOffsets.Length);
-            objImgSizes[objImgOffsets.Length] = objScriptOffsets[0];
-            Array.Sort(objImgSizes);
-
-            var objScriptSizes = new ushort[objScriptOffsets.Length + 1];
-            Array.Copy(objScriptOffsets, objScriptSizes, objScriptOffsets.Length);
-            objScriptSizes[objScriptOffsets.Length] = exitScriptOffset;
-            Array.Sort(objScriptSizes);
-
             // read objects
-            for (var i = 0; i < objScriptSizes.Length - 1; i++)
+            if (numObjects > 0)
             {
-                var objOffset = objScriptSizes[i];
-                var objSize = objScriptSizes[i + 1] - objOffset - HeaderSize;
-                var obj = ReadObject(offset + objOffset + HeaderSize, objSize);
-                room.Objects.Add(obj);
-            }
+                var firstOffset = objScriptOffsets.Min();
+                for (var i = 0; i < numObjects; i++)
+                {
+                    var objOffset = objScriptOffsets[i];
+                    var obj = ReadObject(offset + objOffset);
+                    room.Objects.Add(obj);
+                }
 
-            // read obj images
-            for (var i = 0; i < objImgSizes.Length - 1; i++)
-            {
-                var objImgOffset = objImgSizes[i];
-                var objImgSize = objImgSizes[i + 1] - objImgOffset;
-                room.Objects[i].Images.Add(new ImageData{ Data = ReadBytes(objImgOffset, objImgSize) });
+                // read obj images
+//            var lastImgOffset = objScriptOffsets.ToList().Min();
+//            var sizes = new ushort[objImgOffsets.Length + 1];
+//            Array.Copy(objImgOffsets, sizes, objImgOffsets.Length);
+//            sizes[objImgOffsets.Length] = lastImgOffset;
+//            Array.Sort(sizes);
+
+                for (var i = 0; i < numObjects - 1; i++)
+                {
+                    var objImgOffset = objImgOffsets[i];
+                    if (firstOffset != objImgOffset)
+                    {
+//                var index = Array.IndexOf(sizes, objImgOffset);
+//                var objImgSize = sizes[index + 1] - objImgOffset;
+//                var objImgSize = lastImgOffset- objImgOffset;
+                        var objImgSize = GetImageSize(offset + objImgOffset, room.Objects[i].Width, room.Objects[i].Height);
+                        if (objImgSize > 0)
+                        {
+                            room.Objects[i].Images.Add(new ImageData{ Data = ReadBytes(offset + objImgOffset, (int)objImgSize) });
+                        }
+                    }
+                }
             }
 
             return room;
+        }
+
+        long GetImageSize(long offset, int width, int height)
+        {
+            height &= 0xFFF8;
+            byte data;
+            int y;
+            _reader.BaseStream.Seek(offset, System.IO.SeekOrigin.Begin);
+            int run = 1;
+            for (var x = 0; x < width; x++)
+            {
+                for (y = 0; y < height; y++)
+                {
+                    if (--run == 0)
+                    {
+                        data = _reader.ReadByte();
+                        if ((data & 0x80) != 0)
+                        {
+                            run = data & 0x7f;
+                        }
+                        else
+                        {
+                            run = data >> 4;
+                        }
+                        if (run == 0)
+                        {
+                            run = _reader.ReadByte();
+                        }
+                    }
+                }
+            }
+            y = 0;
+            run = _reader.ReadByte();
+            for (var x = 0; x < width;)
+            {
+                byte runFlag = (byte)(run & 0x80);
+                if (runFlag != 0)
+                {
+                    run &= 0x7f;
+                    data = _reader.ReadByte();
+                }
+                do
+                {
+                    if (runFlag == 0)
+                        data = _reader.ReadByte();
+                    y++;
+                    if (y >= height)
+                    {
+                        y = 0;
+                        x += 8;
+                        if (x >= width)
+                            break;
+                    }
+                } while ((--run) != 0);
+                run = _reader.ReadByte();
+            }
+            return _reader.BaseStream.Position - offset;
         }
 
         void ReadBoxes(long offset, Room room)
@@ -177,7 +237,6 @@ namespace NScumm.Core.IO
             _reader.BaseStream.Seek(offset, System.IO.SeekOrigin.Current);
             var size = _reader.ReadUInt16();
             var tmp = _reader.ReadBytes(2);
-
             return _reader.ReadBytes(size - HeaderSize);
         }
 
@@ -186,7 +245,6 @@ namespace NScumm.Core.IO
             _reader.BaseStream.Seek(offset, System.IO.SeekOrigin.Current);
             var size = _reader.ReadUInt16();
             var tmp = _reader.ReadBytes(2);
-
             var data = _reader.ReadBytes(size - HeaderSize);
             return data;
         }
@@ -211,11 +269,13 @@ namespace NScumm.Core.IO
             return header;
         }
 
-        ObjectData ReadObject(long offset, int size)
+        ObjectData ReadObject(long offset)
         {
             _reader.BaseStream.Seek(offset, System.IO.SeekOrigin.Begin);
+            var size = _reader.ReadUInt16();
+            var tmp = _reader.ReadUInt16();
             var id = _reader.ReadUInt16();
-            _reader.ReadByte();
+            var @class = _reader.ReadByte();
             var x = _reader.ReadByte() * 8;
             var tmpY = _reader.ReadByte();
             var y = (tmpY & 0x7F) * 8;
@@ -223,9 +283,9 @@ namespace NScumm.Core.IO
             var width = _reader.ReadByte() * 8;
             var parent = _reader.ReadByte();
             var walkX = _reader.ReadByte() * 8;
-            var walkY = _reader.ReadByte() * 8;
+            var walkY = (_reader.ReadByte() & 0x1F) * 8; // preposition = _reader.ReadByte() >> 5
             var tmpActor = _reader.ReadByte();
-            var actor = tmpActor & 0x7;
+            var actor = tmpActor & 0x3;
             var height = tmpActor & 0xF8;
             var obj = new ObjectData
             {
@@ -238,14 +298,11 @@ namespace NScumm.Core.IO
                 Walk = new Point(walkX, walkY),
                 ActorDir = actor
             };
-            _reader.ReadByte();
-            size -= 11;
+            var nameOffset = _reader.ReadByte();
             ReadObjectScriptOffsets(obj);
-            size -= (2 * obj.ScriptOffsets.Count + 1);
             ReadName(obj);
-            size -= (obj.Name.Length + 1);
-            obj.Script.Data = _reader.ReadBytes(size);
             obj.Script.Offset = 11 + 2 * obj.ScriptOffsets.Count + 1 + obj.Name.Length + 1 + HeaderSize;
+            obj.Script.Data = _reader.ReadBytes((int)(size - obj.Script.Offset));
             return obj;
         }
 

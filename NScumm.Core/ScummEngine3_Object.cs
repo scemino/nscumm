@@ -72,12 +72,6 @@ namespace NScumm.Core
             SetResult(FindObjectCore(x, y));
         }
 
-        void SetObjectName()
-        {
-            var obj = GetVarOrDirectWord(OpCodeParameter.Param1);
-            SetObjectNameCore(obj);
-        }
-
         void SetState()
         {
             var obj = GetVarOrDirectWord(OpCodeParameter.Param1);

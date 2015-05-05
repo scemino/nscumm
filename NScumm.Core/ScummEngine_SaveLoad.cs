@@ -271,7 +271,7 @@ namespace NScumm.Core
             return true;
         }
 
-        void SaveOrLoad(Serializer serializer)
+        protected virtual void SaveOrLoad(Serializer serializer)
         {
             uint ENCD_offs = 0;
             uint EXCD_offs = 0;

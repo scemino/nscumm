@@ -619,6 +619,24 @@ namespace NScumm.Core
             _gfxManager.SetCursor(pixels, _cursor.Width, _cursor.Height, _cursor.Hotspot);
         }
 
+        protected override void SaveOrLoad(Serializer serializer)
+        {
+            base.SaveOrLoad(serializer);
+
+            var v2Entries = new[]
+            {
+                LoadAndSaveEntry.Create(reader => _inventoryOffset = reader.ReadUInt16(), writer => writer.WriteUInt16(_inventoryOffset), 39)
+            };
+            v2Entries.ForEach(entry => entry.Execute(serializer));
+
+            // In old saves we didn't store _inventoryOffset -> reset it to
+            // a sane default when loading one of those.
+            if (serializer.Version < 79 && serializer.IsLoading)
+            {
+                _inventoryOffset = 0;
+            }
+        }
+
         void GetObjPreposition()
         {
             GetResult();

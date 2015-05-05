@@ -158,7 +158,7 @@ namespace NScumm.Core
             _rightBtnPressed &= ~MouseButtonStatus.Clicked;
 
             var cutsceneExitKeyEnabled = (!VariableCutSceneExitKey.HasValue || Variables[VariableCutSceneExitKey.Value] != 0);
-            var mainmenuKeyEnabled = VariableMainMenu.HasValue && _variables[VariableMainMenu.Value] != 0;
+            var mainmenuKeyEnabled = !VariableMainMenu.HasValue || _variables[VariableMainMenu.Value] != 0;
 
             // For games which use VAR_MAINMENU_KEY, disable the mainmenu key if
             // requested by the scripts. We make an exception for COMI (i.e.

@@ -563,6 +563,62 @@ namespace NScumm.Core
             _opCodes[0xff] = IfState01;
         }
 
+        protected override void SetBuiltinCursor(int idx)
+        {
+            var color = defaultCursorColors[idx];
+
+            _cursor.Hotspot = new Point(11, 10);
+            _cursor.Width = 23;
+            _cursor.Height = 21;
+
+            var pixels = new byte[_cursor.Width * _cursor.Height];
+            for (int i = 0; i < pixels.Length; i++)
+            {
+                pixels[i] = 0xFF;
+            }
+
+            // Crosshair, slightly assymetric
+            // TODO: Instead of setting this up via code, we should simply extend
+            //       default_cursor_images to contain this shape.
+
+            var offs = _cursor.Hotspot.Y * _cursor.Width + _cursor.Hotspot.X;
+            for (var i = 0; i < 7; i++)
+            {
+                pixels[offs - 5 - i] = color;
+                pixels[offs + 5 + i] = color;
+            }
+            for (var i = 0; i < 8; i++)
+            {
+                pixels[offs - _cursor.Width * (3 + i)] = color;
+                pixels[offs + _cursor.Width * (3 + i)] = color;
+            }
+
+            // Arrow heads, diagonal lines
+            for (var i = 1; i <= 3; i++)
+            {
+                pixels[offs - _cursor.Width * i - 5 - i] = color;
+                pixels[offs + _cursor.Width * i - 5 - i] = color;
+                pixels[offs - _cursor.Width * i + 5 + i] = color;
+                pixels[offs + _cursor.Width * i + 5 + i] = color;
+                pixels[offs - _cursor.Width * (i + 3) - i] = color;
+                pixels[offs - _cursor.Width * (i + 3) + i] = color;
+                pixels[offs + _cursor.Width * (i + 3) - i] = color;
+                pixels[offs + _cursor.Width * (i + 3) + i] = color;
+            }
+
+            // Final touches
+            pixels[offs - _cursor.Width - 7] = color;
+            pixels[offs - _cursor.Width + 7] = color;
+            pixels[offs + _cursor.Width - 7] = color;
+            pixels[offs + _cursor.Width + 7] = color;
+            pixels[offs - (_cursor.Width * 5) - 1] = color;
+            pixels[offs - (_cursor.Width * 5) + 1] = color;
+            pixels[offs + (_cursor.Width * 5) - 1] = color;
+            pixels[offs + (_cursor.Width * 5) + 1] = color;
+
+            _gfxManager.SetCursor(pixels, _cursor.Width, _cursor.Height, _cursor.Hotspot);
+        }
+
         void GetObjPreposition()
         {
             GetResult();

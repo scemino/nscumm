@@ -32,7 +32,7 @@ namespace NScumm.Core
         protected int _currentCursor;
         protected sbyte _userPut;
         		
-        static byte[] defaultCursorColors = { 15, 15, 7, 8 };
+        protected static byte[] defaultCursorColors = { 15, 15, 7, 8 };
         ushort[][] _cursorImages = new ushort[4][];
         readonly byte[] _cursorHotspots = new byte[2 * 4];
         static readonly ushort[][] default_cursor_images =
@@ -88,7 +88,7 @@ namespace NScumm.Core
             }
         }
 
-        void SetBuiltinCursor(int idx)
+        protected virtual void SetBuiltinCursor(int idx)
         {
             var src = _cursorImages[_currentCursor];
             cursorColor = defaultCursorColors[idx];

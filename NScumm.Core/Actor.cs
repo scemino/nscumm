@@ -1221,7 +1221,7 @@ namespace NScumm.Core
                     Cost.AnimCounter = 0;
                     // V1 - V2 games don't seem to need a _cost.reset() at this point.
                     // Causes Zak to lose his body in several scenes, see bug #771508
-                    if (frame == InitFrame)
+                    if (_scumm.Game.Version >= 3 && frame == InitFrame)
                     {
                         Cost.Reset();
                     }

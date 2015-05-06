@@ -432,6 +432,11 @@ namespace NScumm.Core
             _opCodes[0x91] = AnimateActor;
             _opCodes[0x92] = PanCameraTo;
             _opCodes[0x93] = ActorOps;
+            /* 94 */
+            _opCodes[0x94] = Print;
+            _opCodes[0x95] = ActorFromPos;
+            _opCodes[0x96] = GetRandomNumber;
+            _opCodes[0x97] = ClearState02;
             /* 98 */
             _opCodes[0x98] = Restart;
             _opCodes[0x99] = DoSentence;

@@ -243,8 +243,8 @@ namespace NScumm.Core.IO
         {
             _reader.BaseStream.Seek(offset, System.IO.SeekOrigin.Begin);
             var size = _reader.ReadUInt16(); // wa_size
-            _reader.BaseStream.Seek(2, System.IO.SeekOrigin.Current);
-            var data = _reader.ReadBytes(size - HeaderSize);
+            _reader.BaseStream.Seek(-2, System.IO.SeekOrigin.Current);
+            var data = _reader.ReadBytes(size);
             return data;
         }
 

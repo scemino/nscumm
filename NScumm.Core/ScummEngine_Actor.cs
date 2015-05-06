@@ -256,8 +256,7 @@ namespace NScumm.Core
                 var mode = GetCurrentLights();
                 if (!mode.HasFlag(LightModes.RoomLightsOn) && mode.HasFlag(LightModes.FlashlightOn))
                 {
-                    // TODO:
-                    //drawFlashlight();
+                    DrawFlashlight();
                     SetActorRedrawFlags();
                 }
             }

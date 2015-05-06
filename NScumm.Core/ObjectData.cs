@@ -59,6 +59,8 @@ namespace NScumm.Core
 
         public bool IsLocked { get; set; }
 
+        public int Preposition { get; set; }
+
         public ObjectData()
         {
             ScriptOffsets = new Dictionary<int, int>();

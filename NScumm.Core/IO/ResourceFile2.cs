@@ -116,21 +116,11 @@ namespace NScumm.Core.IO
                     room.Objects.Add(obj);
                 }
 
-                // read obj images
-//            var lastImgOffset = objScriptOffsets.ToList().Min();
-//            var sizes = new ushort[objImgOffsets.Length + 1];
-//            Array.Copy(objImgOffsets, sizes, objImgOffsets.Length);
-//            sizes[objImgOffsets.Length] = lastImgOffset;
-//            Array.Sort(sizes);
-
                 for (var i = 0; i < numObjects - 1; i++)
                 {
                     var objImgOffset = objImgOffsets[i];
                     if (firstOffset != objImgOffset)
                     {
-//                var index = Array.IndexOf(sizes, objImgOffset);
-//                var objImgSize = sizes[index + 1] - objImgOffset;
-//                var objImgSize = lastImgOffset- objImgOffset;
                         var objImgSize = GetImageSize(offset + objImgOffset, room.Objects[i].Width, room.Objects[i].Height);
                         if (objImgSize > 0)
                         {
@@ -283,7 +273,9 @@ namespace NScumm.Core.IO
             var width = _reader.ReadByte() * 8;
             var parent = _reader.ReadByte();
             var walkX = _reader.ReadByte() * 8;
-            var walkY = (_reader.ReadByte() & 0x1F) * 8; // preposition = _reader.ReadByte() >> 5
+            tmpY = _reader.ReadByte();
+            var walkY = (tmpY & 0x1F) * 8;
+            var preposition = tmpY >> 5;
             var tmpActor = _reader.ReadByte();
             var actor = tmpActor & 0x3;
             var height = tmpActor & 0xF8;
@@ -296,7 +288,8 @@ namespace NScumm.Core.IO
                 Height = (ushort)height,
                 Parent = parent,
                 Walk = new Point(walkX, walkY),
-                ActorDir = actor
+                ActorDir = actor,
+                Preposition = preposition
             };
             var nameOffset = _reader.ReadByte();
             ReadObjectScriptOffsets(obj);

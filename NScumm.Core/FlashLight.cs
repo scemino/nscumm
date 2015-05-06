@@ -14,6 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
+using NScumm.Core.Graphics;
 
 
 namespace NScumm.Core
@@ -23,5 +24,7 @@ namespace NScumm.Core
         public int X, Y, W, H;
         public ushort XStrips, YStrips;
         public bool IsDrawn;
+
+        public PixelNavigator? PixelNavigator;
     }
 }

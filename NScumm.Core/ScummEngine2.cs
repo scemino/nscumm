@@ -27,6 +27,7 @@ using System;
 using NScumm.Core.Audio;
 using System.Linq;
 using System.Text;
+using System.Diagnostics;
 
 namespace NScumm.Core
 {
@@ -640,13 +641,12 @@ namespace NScumm.Core
         void GetObjPreposition()
         {
             GetResult();
-            int obj = GetVarOrDirectWord(OpCodeParameter.Param1);
+            var obj = GetVarOrDirectWord(OpCodeParameter.Param1);
 
             if (GetWhereIsObject(obj) != WhereIsObject.NotFound)
             {
-                var objFound = _objs.FirstOrDefault(o => o.Number == obj);
-                var result = objFound.Script.Data[12] >> 5;
-                SetResult(result);
+                var objFound = _objs.Concat(_invData).FirstOrDefault(o => o.Number == obj);
+                SetResult(objFound.Preposition);
             }
             else
             {
@@ -1816,7 +1816,6 @@ namespace NScumm.Core
 
         void Lights()
         {
-
             var a = GetVarOrDirectByte(OpCodeParameter.Param1);
             var b = ReadByte();
             var c = ReadByte();

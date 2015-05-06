@@ -489,11 +489,10 @@ namespace NScumm.Core
                 }
                 else if (_fullRedraw || diff != 0)
                 {
-                    // TODO: ClearFlashlight
-//                if (Game.Version <= 5)
-//                {
-//                  ClearFlashlight();
-//                }
+                    if (Game.Version <= 5)
+                    {
+                        ClearFlashlight();
+                    }
                     _bgNeedsRedraw = false;
                     RedrawBGStrip(0, Gdi.NumStrips);
                 }

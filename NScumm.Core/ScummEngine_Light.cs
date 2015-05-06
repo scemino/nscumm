@@ -19,6 +19,9 @@
 //  You should have received a copy of the GNU Lesser General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
+using NScumm.Core.IO;
+using System.Diagnostics;
+using NScumm.Core.Graphics;
 
 namespace NScumm.Core
 {
@@ -68,6 +71,122 @@ namespace NScumm.Core
         internal bool IsLightOn()
         {
             return GetCurrentLights().HasFlag(LightModes.RoomLightsOn);
+        }
+
+        void DrawFlashlight()
+        {
+            int i, j, x, y;
+            var vs = MainVirtScreen;
+
+            // Remove the flash light first if it was previously drawn
+            if (_flashlight.IsDrawn)
+            {
+                MarkRectAsDirty(MainVirtScreen, _flashlight.X, _flashlight.X + _flashlight.W,
+                    _flashlight.Y, _flashlight.Y + _flashlight.H, NScumm.Core.Graphics.Gdi.UsageBitDirty);
+
+                if (_flashlight.PixelNavigator.HasValue)
+                {
+                    NScumm.Core.Graphics.Gdi.Fill(_flashlight.PixelNavigator.Value, 0, _flashlight.W, _flashlight.H);
+                }
+                _flashlight.IsDrawn = false;
+            }
+
+            if (_flashlight.XStrips == 0 || _flashlight.YStrips == 0)
+                return;
+
+            // Calculate the area of the flashlight
+            if (Game.GameId == GameId.Zak || Game.GameId == GameId.Maniac)
+            {
+                x = _mousePos.X + vs.XStart;
+                y = _mousePos.Y - vs.TopLine;
+            }
+            else
+            {
+                var a = Actors[Variables[VariableEgo.Value]];
+                x = a.Position.X;
+                y = a.Position.Y;
+            }
+            _flashlight.W = _flashlight.XStrips * 8;
+            _flashlight.H = _flashlight.YStrips * 8;
+            _flashlight.X = x - _flashlight.W / 2 - _screenStartStrip * 8;
+            _flashlight.Y = y - _flashlight.H / 2;
+
+            if (Game.GameId == GameId.Loom)
+                _flashlight.Y -= 12;
+
+            // Clip the flashlight at the borders
+            if (_flashlight.X < 0)
+                _flashlight.X = 0;
+            else if (_flashlight.X + _flashlight.W > Gdi.NumStrips * 8)
+                _flashlight.X = Gdi.NumStrips * 8 - _flashlight.W;
+            if (_flashlight.Y < 0)
+                _flashlight.Y = 0;
+            else if (_flashlight.Y + _flashlight.H > vs.Height)
+                _flashlight.Y = vs.Height - _flashlight.H;
+
+            // Redraw any actors "under" the flashlight
+            for (i = _flashlight.X / 8; i < (_flashlight.X + _flashlight.W) / 8; i++)
+            {
+                Debug.Assert(0 <= i && i < Gdi.NumStrips);
+                Gdi.SetGfxUsageBit(_screenStartStrip + i, Gdi.UsageBitDirty);
+                vs.TDirty[i] = 0;
+                vs.BDirty[i] = vs.Height;
+            }
+
+            var pn = new PixelNavigator(vs.Surfaces[0]);
+            pn.GoTo(_flashlight.X + vs.XStart, _flashlight.Y);
+            pn = new PixelNavigator(pn);
+            _flashlight.PixelNavigator = pn;
+            var bgbak = new PixelNavigator(vs.Surfaces[1]);
+            bgbak.GoTo(_flashlight.X + vs.XStart, _flashlight.Y);
+
+            Gdi.Blit(pn, bgbak, _flashlight.W, _flashlight.H);
+
+            // Round the corners. To do so, we simply hard-code a set of nicely
+            // rounded corners.
+            var corner_data = new [] { 8, 6, 4, 3, 2, 2, 1, 1 };
+            int minrow = 0;
+            int maxcol = (_flashlight.W - 1);
+            int maxrow = (_flashlight.H - 1);
+
+            for (i = 0; i < 8; i++, minrow++, maxrow--)
+            {
+                int d = corner_data[i];
+
+                for (j = 0; j < d; j++)
+                {
+                    if (vs.BytesPerPixel == 2)
+                    {
+                        pn.GoTo(j, minrow);
+                        pn.WriteUInt16(0);
+                        pn.GoTo(maxcol - j, minrow);
+                        pn.WriteUInt16(0);
+                        pn.GoTo(j, maxrow);
+                        pn.WriteUInt16(0);
+                        pn.GoTo(maxcol - j, maxrow);
+                        pn.WriteUInt16(0);
+                    }
+                    else
+                    {
+                        pn.GoTo(j, minrow);
+                        pn.Write(0);
+                        pn.GoTo(maxcol - j, minrow);
+                        pn.Write(0);
+                        pn.GoTo(j, maxrow);
+                        pn.Write(0);
+                        pn.GoTo(maxcol - j, maxrow);
+                        pn.Write(0);
+                    }
+                }
+            }
+
+            _flashlight.IsDrawn = true;
+        }
+
+        void ClearFlashlight()
+        {
+            _flashlight.IsDrawn = false;
+            _flashlight.PixelNavigator = null;
         }
     }
 }

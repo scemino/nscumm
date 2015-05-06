@@ -36,12 +36,12 @@ namespace NScumm.Core.Audio
             if (_pcjr)
             {
                 _decay = PCJR_DECAY;
-                _update_step = (uint)(((uint)_sampleRate << FIXP_SHIFT) / (111860 * 2));
+                _update_step = (((uint)_sampleRate << FIXP_SHIFT) / (111860 * 2));
             }
             else
             {
                 _decay = SPK_DECAY;
-                _update_step = (uint)(((uint)_sampleRate << FIXP_SHIFT) / (1193000 * 2));
+                _update_step = (((uint)_sampleRate << FIXP_SHIFT) / (1193000 * 2));
             }
 
             // Adapt _decay to sample rate.  It must be squared when
@@ -162,7 +162,6 @@ namespace NScumm.Core.Audio
                     && (_next_nr == 0
                     || nprio <= prio))
                 {
-
                     _next_nr = nr;
                     _next_data = data;
                 }
@@ -217,7 +216,7 @@ namespace NScumm.Core.Audio
                 }
             }
 
-            Array.Clear(data, offset, len);
+            Array.Clear(data, offset, len * 2);
             if (winning_channel != -1)
             {
                 SquareGenerator(0, _channels[winning_channel].d.freq, 0, 0, data, offset, len);
@@ -312,7 +311,6 @@ namespace NScumm.Core.Audio
                 _timer_count[channel] -= (1 << FIXP_SHIFT);
                 while (_timer_count[channel] <= 0)
                 {
-
                     if (noiseFeedback != 0)
                     {
                         if ((_RNG & 1) != 0)
@@ -353,7 +351,7 @@ namespace NScumm.Core.Audio
 
         void LowPassFilter(short[] sample, int offset, int len)
         {
-            for (var i = 0; i < len; i += 2)
+            for (var i = 0; i < len * 2; i += 2)
             {
                 _level = (int)(_level * _decay + sample[offset + i] * (0x10000 - _decay)) >> 16;
                 sample[offset + i] = sample[offset + i + 1] = (short)_level;

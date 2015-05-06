@@ -373,8 +373,12 @@ namespace NScumm.Core.Audio
             channel.d.base_freq += channel.d.freq_delta;
 
             channel.d.freqmod_offset += channel.d.freqmod_incr;
-            if (channel.d.freqmod_offset > channel.d.freqmod_modulo)
-                channel.d.freqmod_offset -= channel.d.freqmod_modulo;
+            if (channel.d.freqmod_modulo > 0)
+            {
+                channel.d.freqmod_offset %= channel.d.freqmod_modulo;
+            }
+//            if (channel.d.freqmod_offset > channel.d.freqmod_modulo)
+//                channel.d.freqmod_offset -= channel.d.freqmod_modulo;
 
             channel.d.freq = (ushort)(
                 (int)(freqmod_table[channel.d.freqmod_table + (channel.d.freqmod_offset >> 4)])

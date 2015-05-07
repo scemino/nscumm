@@ -21,11 +21,10 @@
 using System;
 using System.Collections.Generic;
 using System.Collections;
-using NScumm.Core.IO;
 
 namespace NScumm.Core
 {
-    partial class ScummEngine
+    abstract partial class ScummEngine
     {
         public int? VariableEgo;
         public int? VariableCameraPosX;
@@ -134,84 +133,9 @@ namespace NScumm.Core
             return word;
         }
 
-        protected virtual void GetResult()
-        {
-            _resultVarIndex = (int)ReadWord();
-            if ((_resultVarIndex & 0x2000) == 0x2000)
-            {
-                var a = ReadWord();
-                if ((a & 0x2000) == 0x2000)
-                {
-                    _resultVarIndex += ReadVariable((uint)(a & ~0x2000));
-                }
-                else
-                {
-                    _resultVarIndex += (int)(a & 0xFFF);
-                }
-                _resultVarIndex &= ~0x2000;
-            }
-        }
+        protected abstract void GetResult();
 
-        protected virtual int ReadVariable(uint var)
-        {
-            if (((var & 0x2000) != 0) && (Game.Version <= 5))
-            {
-                var a = ReadWord();
-                if ((a & 0x2000) == 0x2000)
-                    var += (uint)ReadVariable((uint)(a & ~0x2000));
-                else
-                    var += a & 0xFFF;
-                var = (uint)(var & ~0x2000);
-            }
-
-            if ((var & 0xF000) == 0)
-            {
-//                Debug.WriteLine("ReadVariable({0}) => {1}", var, _variables[var]);
-                ScummHelper.AssertRange(0, var, _resManager.NumVariables - 1, "variable (reading)");
-                if (var == 490 && _game.GameId == GameId.Monkey2)
-                {
-                    var = 518;
-                }
-                return _variables[var];
-            }
-
-            if ((var & 0x8000) == 0x8000)
-            {
-//                Debug.Write(string.Format("ReadVariable({0}) => ", var));
-                if (_game.Version <= 3)
-                {
-                    int bit = (int)(var & 0xF);
-                    var = (var >> 4) & 0xFF;
-
-                    ScummHelper.AssertRange(0, var, _resManager.NumVariables - 1, "variable (reading)");
-                    return (_variables[var] & (1 << bit)) > 0 ? 1 : 0;
-                }
-                var &= 0x7FFF;
-
-                ScummHelper.AssertRange(0, var, _bitVars.Length - 1, "variable (reading)");
-//                Debug.WriteLine(_bitVars[var]);
-                return _bitVars[(int)var] ? 1 : 0;
-            }
-
-            if ((var & 0x4000) == 0x4000)
-            {
-//                Debug.Write(string.Format("ReadVariable({0}) => ", var));
-                if (Game.Features.HasFlag(GameFeatures.FewLocals))
-                {
-                    var &= 0xF;
-                }
-                else
-                {
-                    var &= 0xFFF;
-                }
-
-                ScummHelper.AssertRange(0, var, 20, "local variable (reading)");
-//                Debug.WriteLine(_slots[_currentScript].LocalVariables[var]);
-                return _slots[_currentScript].LocalVariables[var];
-            }
-
-            throw new NotSupportedException("Illegal varbits (r)");
-        }
+        protected abstract int ReadVariable(uint var);
 
         protected int GetVarOrDirectWord(OpCodeParameter param)
         {
@@ -227,10 +151,7 @@ namespace NScumm.Core
             return ReadByte();
         }
 
-        protected virtual int GetVar()
-        {
-            return ReadVariable(ReadWord());
-        }
+        protected abstract int GetVar();
 
         protected virtual int ReadWordSigned()
         {
@@ -252,55 +173,7 @@ namespace NScumm.Core
             WriteVariable((uint)_resultVarIndex, value);
         }
 
-        protected virtual void WriteVariable(uint index, int value)
-        {
-            //            Console.WriteLine("SetResult({0},{1})", index, value);
-            if ((index & 0xF000) == 0)
-            {
-                ScummHelper.AssertRange(0, index, _resManager.NumVariables - 1, "variable (writing)");
-                _variables[index] = value;
-                return;
-            }
-
-            if ((index & 0x8000) != 0)
-            {
-                if (_game.Version <= 3)
-                {
-                    var bit = (int)(index & 0xF);
-                    index = (index >> 4) & 0xFF;
-                    ScummHelper.AssertRange(0, index, _resManager.NumVariables - 1, "variable (writing)");
-                    if (value > 0)
-                        _variables[index] |= (1 << bit);
-                    else
-                        _variables[index] &= ~(1 << bit);
-                }
-                else
-                {
-                    index &= 0x7FFF;
-
-                    ScummHelper.AssertRange(0, index, _bitVars.Length - 1, "bit variable (writing)");
-                    _bitVars[(int)index] = value != 0;
-                }
-                return;
-            }
-
-            if ((index & 0x4000) != 0)
-            {
-                if (Game.Features.HasFlag(GameFeatures.FewLocals))
-                {
-                    index &= 0xF;
-                }
-                else
-                {
-                    index &= 0xFFF;
-                }
-
-                ScummHelper.AssertRange(0, index, 20, "local variable (writing)");
-                //Console.WriteLine ("SetLocalVariables(script={0},var={1},value={2})", _currentScript, index, value);
-                _slots[_currentScript].LocalVariables[index] = value;
-                return;
-            }
-        }
+        protected abstract void WriteVariable(uint index, int value);
 
         void SetVarRange()
         {

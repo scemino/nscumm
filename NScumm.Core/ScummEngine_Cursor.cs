@@ -28,13 +28,13 @@ namespace NScumm.Core
         protected readonly Cursor _cursor = new Cursor();
         protected byte[] _cursorData;
         protected Point _mousePos;
-        byte cursorColor;
+        protected byte cursorColor;
         protected int _currentCursor;
         protected sbyte _userPut;
         		
         protected static byte[] defaultCursorColors = { 15, 15, 7, 8 };
-        ushort[][] _cursorImages = new ushort[4][];
-        readonly byte[] _cursorHotspots = new byte[2 * 4];
+        protected ushort[][] _cursorImages = new ushort[4][];
+        protected readonly byte[] _cursorHotspots = new byte[2 * 4];
         static readonly ushort[][] default_cursor_images =
             {
                 /* cross-hair */
@@ -88,38 +88,7 @@ namespace NScumm.Core
             }
         }
 
-        protected virtual void SetBuiltinCursor(int idx)
-        {
-            var src = _cursorImages[_currentCursor];
-            cursorColor = defaultCursorColors[idx];
-
-            _cursor.Hotspot = new Point(
-                (short)(_cursorHotspots[2 * _currentCursor]),
-                (short)(_cursorHotspots[2 * _currentCursor + 1]));
-            _cursor.Width = 16;
-            _cursor.Height = 16;
-
-            var pixels = new byte[_cursor.Width * _cursor.Height];
-
-            int offset = 0;
-            for (int w = 0; w < _cursor.Width; w++)
-            {
-                for (int h = 0; h < _cursor.Height; h++)
-                {
-                    if ((src[w] & (1 << h)) != 0)
-                    {
-                        pixels[offset] = cursorColor;
-                    }
-                    else
-                    {
-                        pixels[offset] = 0xFF;
-                    }
-                    offset++;
-                }
-            }
-
-            _gfxManager.SetCursor(pixels, _cursor.Width, _cursor.Height, _cursor.Hotspot);
-        }
+        protected abstract void SetBuiltinCursor(int idx);
 
         void ResetCursors()
         {

@@ -38,12 +38,324 @@ namespace NScumm.Core
 
         protected override void ResetScummVars()
         {
-            base.ResetScummVars();
+            ResetScummVarsCore();
 
             Variables[VariableCurrentLights.Value] = (int)(LightModes.ActorUseBasePalette | LightModes.ActorUseColors | LightModes.RoomLightsOn);
 
             if (Game.GameId == GameId.Monkey1)
                 Variables[74] = 1225;
+        }
+
+        protected void ResetScummVarsCore()
+        {
+            if (Game.Version <= 6)
+            {
+                // VAR_SOUNDCARD modes
+                // 0 PC Speaker
+                // 1 Tandy
+                // 2 CMS
+                // 3 AdLib
+                // 4 Roland
+                switch (Sound.MusicType)
+                {
+                    case MusicDriverTypes.None:
+                    case MusicDriverTypes.PCSpeaker:
+                        Variables[VariableSoundcard.Value] = 0;
+                        break;
+                    case MusicDriverTypes.PCjr:
+                        Variables[VariableSoundcard.Value] = 1;
+                        break;
+                    case MusicDriverTypes.CMS:
+                        Variables[VariableSoundcard.Value] = 2;
+                        break;
+                    case MusicDriverTypes.AdLib:
+                        Variables[VariableSoundcard.Value] = 3;
+                        break;
+                    case MusicDriverTypes.Midi:
+                        Variables[VariableSoundcard.Value] = 4;
+                        break;
+                    default:
+                        if ((Game.GameId == GameId.Monkey1 && Game.Variant == "EGA") || (Game.GameId == GameId.Monkey1 && Game.Variant == "VGA")
+                            || (Game.GameId == GameId.Loom && Game.Version == 3)) /*&&  (_game.platform == Common::kPlatformDOS)*/
+                        {
+                            Variables[VariableSoundcard.Value] = 4;
+                        }
+                        else
+                        {
+                            Variables[VariableSoundcard.Value] = 3;
+                        }
+                        break;
+                }
+
+                Variables[VariableVideoMode.Value] = 19;
+
+                if (Game.GameId == GameId.Loom && Game.Version == 3)
+                {
+                    // Set number of sound resources
+                    Variables[39] = 80;
+                }
+                if (Game.GameId == GameId.Loom || Game.Version >= 4)
+                    Variables[VariableHeapSpace.Value] = 1400;
+
+                if (Game.Version >= 4)
+                    Variables[VariableFixedDisk.Value] = 1;
+
+                if (Game.Version >= 5)
+                    Variables[VariableInputMode.Value] = 3;
+                if (Game.Version == 6)
+                    Variables[VariableV6EMSSpace.Value] = 10000;
+            }
+
+            if (VariableVoiceMode.HasValue)
+            {
+                Variables[VariableVoiceMode.Value] = (int)VoiceMode.VoiceAndText;
+            }
+
+            if (VariableRoomWidth.HasValue && VariableRoomHeight.HasValue)
+            {
+                Variables[VariableRoomWidth.Value] = ScreenWidth;
+                Variables[VariableRoomHeight.Value] = ScreenHeight;
+            }
+
+            if (VariableDebugMode.HasValue)
+            {
+                Variables[VariableDebugMode.Value] = (DebugMode ? 1 : 0);
+            }
+
+            if (VariableFadeDelay.HasValue)
+                Variables[VariableFadeDelay.Value] = 3;
+
+            Variables[VariableCharIncrement.Value] = 4;
+            TalkingActor = 0;
+
+            if (Game.Version >= 5 && Game.Version <= 7)
+                Sound.SetupSound();
+        }
+
+        protected override void SetupVars()
+        {
+            VariableEgo = 1;
+            VariableCameraPosX = 2;
+            VariableHaveMessage = 3;
+            VariableRoom = 4;
+            VariableOverride = 5;
+            VariableCurrentLights = 9;
+            VariableTimer1 = 11;
+            VariableTimer2 = 12;
+            VariableTimer3 = 13;
+            VariableMusicTimer = 14;
+            VariableCameraMinX = 17;
+            VariableCameraMaxX = 18;
+            VariableTimerNext = 19;
+            VariableVirtualMouseX = 20;
+            VariableVirtualMouseY = 21;
+            VariableRoomResource = 22;
+            VariableLastSound = 23;
+            VariableCutSceneExitKey = 24;
+            VariableTalkActor = 25;
+            VariableCameraFastX = 26;
+            VariableEntryScript = 28;
+            VariableEntryScript2 = 29;
+            VariableExitScript = 30;
+            VariableVerbScript = 32;
+            VariableSentenceScript = 33;
+            VariableInventoryScript = 34;
+            VariableCutSceneStartScript = 35;
+            VariableCutSceneEndScript = 36;
+            VariableCharIncrement = 37;
+            VariableWalkToObject = 38;
+            VariableHeapSpace = 40;
+            VariableMouseX = 44;
+            VariableMouseY = 45;
+            VariableTimer = 46;
+            VariableTimerTotal = 47;
+            VariableSoundcard = 48;
+            VariableVideoMode = 49;
+        }
+
+        protected override int ReadVariable(uint var)
+        {
+            if (((var & 0x2000) != 0) && (Game.Version <= 5))
+            {
+                var a = ReadWord();
+                if ((a & 0x2000) == 0x2000)
+                    var += (uint)ReadVariable((uint)(a & ~0x2000));
+                else
+                    var += a & 0xFFF;
+                var = (uint)(var & ~0x2000);
+            }
+
+            if ((var & 0xF000) == 0)
+            {
+                //                Debug.WriteLine("ReadVariable({0}) => {1}", var, _variables[var]);
+                ScummHelper.AssertRange(0, var, _resManager.NumVariables - 1, "variable (reading)");
+                if (var == 490 && Game.GameId == GameId.Monkey2)
+                {
+                    var = 518;
+                }
+                return Variables[var];
+            }
+
+            if ((var & 0x8000) == 0x8000)
+            {
+                //                Debug.Write(string.Format("ReadVariable({0}) => ", var));
+                if (Game.Version <= 3)
+                {
+                    int bit = (int)(var & 0xF);
+                    var = (var >> 4) & 0xFF;
+
+                    ScummHelper.AssertRange(0, var, _resManager.NumVariables - 1, "variable (reading)");
+                    return (Variables[var] & (1 << bit)) > 0 ? 1 : 0;
+                }
+                var &= 0x7FFF;
+
+                ScummHelper.AssertRange(0, var, _bitVars.Length - 1, "variable (reading)");
+                //                Debug.WriteLine(_bitVars[var]);
+                return _bitVars[(int)var] ? 1 : 0;
+            }
+
+            if ((var & 0x4000) == 0x4000)
+            {
+                //                Debug.Write(string.Format("ReadVariable({0}) => ", var));
+                if (Game.Features.HasFlag(GameFeatures.FewLocals))
+                {
+                    var &= 0xF;
+                }
+                else
+                {
+                    var &= 0xFFF;
+                }
+
+                ScummHelper.AssertRange(0, var, 20, "local variable (reading)");
+                //                Debug.WriteLine(_slots[_currentScript].LocalVariables[var]);
+                return Slots[CurrentScript].LocalVariables[var];
+            }
+
+            throw new NotSupportedException("Illegal varbits (r)");
+        }
+
+        protected override void WriteVariable(uint index, int value)
+        {
+            //            Console.WriteLine("SetResult({0},{1})", index, value);
+            if ((index & 0xF000) == 0)
+            {
+                ScummHelper.AssertRange(0, index, _resManager.NumVariables - 1, "variable (writing)");
+                Variables[index] = value;
+                return;
+            }
+
+            if ((index & 0x8000) != 0)
+            {
+                if (Game.Version <= 3)
+                {
+                    var bit = (int)(index & 0xF);
+                    index = (index >> 4) & 0xFF;
+                    ScummHelper.AssertRange(0, index, _resManager.NumVariables - 1, "variable (writing)");
+                    if (value > 0)
+                        Variables[index] |= (1 << bit);
+                    else
+                        Variables[index] &= ~(1 << bit);
+                }
+                else
+                {
+                    index &= 0x7FFF;
+
+                    ScummHelper.AssertRange(0, index, _bitVars.Length - 1, "bit variable (writing)");
+                    _bitVars[(int)index] = value != 0;
+                }
+                return;
+            }
+
+            if ((index & 0x4000) != 0)
+            {
+                if (Game.Features.HasFlag(GameFeatures.FewLocals))
+                {
+                    index &= 0xF;
+                }
+                else
+                {
+                    index &= 0xFFF;
+                }
+
+                ScummHelper.AssertRange(0, index, 20, "local variable (writing)");
+                //Console.WriteLine ("SetLocalVariables(script={0},var={1},value={2})", _currentScript, index, value);
+                Slots[CurrentScript].LocalVariables[index] = value;
+                return;
+            }
+        }
+
+        protected override int GetVar()
+        {
+            return ReadVariable(ReadWord());
+        }
+
+        protected override void GetResult()
+        {
+            _resultVarIndex = (int)ReadWord();
+            if ((_resultVarIndex & 0x2000) == 0x2000)
+            {
+                var a = ReadWord();
+                if ((a & 0x2000) == 0x2000)
+                {
+                    _resultVarIndex += ReadVariable((uint)(a & ~0x2000));
+                }
+                else
+                {
+                    _resultVarIndex += (int)(a & 0xFFF);
+                }
+                _resultVarIndex &= ~0x2000;
+            }
+        }
+
+        protected override void RunInventoryScript(int i)
+        {
+            if (Variables[VariableInventoryScript.Value] != 0)
+            {
+                RunScript(Variables[VariableInventoryScript.Value], false, false, new [] { i });
+            }
+        }
+
+        protected override void RunInputScript(ClickArea clickArea, KeyCode code, int mode)
+        {
+            var verbScript = Variables[VariableVerbScript.Value];
+
+            if (verbScript != 0)
+            {
+                RunScript(verbScript, false, false, new [] { (int)clickArea, (int)code, mode });
+            }
+        }
+
+        protected override void SetBuiltinCursor(int idx)
+        {
+            var src = _cursorImages[_currentCursor];
+            cursorColor = defaultCursorColors[idx];
+
+            _cursor.Hotspot = new Point(
+                (short)(_cursorHotspots[2 * _currentCursor]),
+                (short)(_cursorHotspots[2 * _currentCursor + 1]));
+            _cursor.Width = 16;
+            _cursor.Height = 16;
+
+            var pixels = new byte[_cursor.Width * _cursor.Height];
+
+            int offset = 0;
+            for (int w = 0; w < _cursor.Width; w++)
+            {
+                for (int h = 0; h < _cursor.Height; h++)
+                {
+                    if ((src[w] & (1 << h)) != 0)
+                    {
+                        pixels[offset] = cursorColor;
+                    }
+                    else
+                    {
+                        pixels[offset] = 0xFF;
+                    }
+                    offset++;
+                }
+            }
+
+            _gfxManager.SetCursor(pixels, _cursor.Width, _cursor.Height, _cursor.Hotspot);
         }
 
         #region OpCodes

@@ -100,7 +100,7 @@ namespace NScumm.Core
             DecodeParseString();
         }
 
-        void DecodeParseString()
+        protected override void DecodeParseString()
         {
             int textSlot;
             switch (_actorToPrintStrFor)

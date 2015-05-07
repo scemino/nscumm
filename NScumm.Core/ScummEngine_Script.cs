@@ -360,7 +360,7 @@ namespace NScumm.Core
 
             ShowActors();
 
-            _egoPositioned = false;
+            EgoPositioned = false;
 
             RunEntryScript();
 
@@ -370,7 +370,7 @@ namespace NScumm.Core
             }
             else if ((Game.Version >= 5) && (Game.Version <= 6))
             {
-                if (a != null && !_egoPositioned)
+                if (a != null && !EgoPositioned)
                 {
                     var pos = GetObjectXYPos(objectNr);
                     a.PutActor(pos, _currentRoom);
@@ -389,23 +389,9 @@ namespace NScumm.Core
             _doEffect = true;
         }
 
-        protected virtual void RunInventoryScript(int i)
-        {
-            if (_variables[VariableInventoryScript.Value] != 0)
-            {
-                RunScript(_variables[VariableInventoryScript.Value], false, false, new [] { i });
-            }
-        }
+        protected abstract void RunInventoryScript(int i);
 
-        protected virtual void RunInputScript(ClickArea clickArea, KeyCode code, int mode)
-        {
-            var verbScript = _variables[VariableVerbScript.Value];
-
-            if (verbScript != 0)
-            {
-                RunScript(verbScript, false, false, new [] { (int)clickArea, (int)code, mode });
-            }
-        }
+        protected abstract void RunInputScript(ClickArea clickArea, KeyCode code, int mode);
 
         void RunEntryScript()
         {

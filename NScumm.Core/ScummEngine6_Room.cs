@@ -188,7 +188,7 @@ namespace NScumm.Core
             PopRoomAndObj(out room, out obj);
             var a = Actors[Variables[VariableEgo.Value]];
             a.PutActor((byte)room);
-            _egoPositioned = false;
+            EgoPositioned = false;
 
             Variables[VariableWalkToObject.Value] = obj;
             StartScene(a.Room, a, obj);

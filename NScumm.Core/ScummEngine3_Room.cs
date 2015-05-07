@@ -34,7 +34,7 @@ namespace NScumm.Core
 
             a.PutActor((byte)room);
             int oldDir = a.Facing;
-            _egoPositioned = false;
+            EgoPositioned = false;
 
             var x = ReadWordSigned();
             var y = ReadWordSigned();
@@ -45,7 +45,7 @@ namespace NScumm.Core
 
             if (Game.Version <= 4)
             {
-                if (!_egoPositioned)
+                if (!EgoPositioned)
                 {
                     int dir;
                     Point p;

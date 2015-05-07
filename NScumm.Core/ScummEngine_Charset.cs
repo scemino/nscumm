@@ -31,7 +31,7 @@ namespace NScumm.Core
         public byte[] CharsetColorMap = new byte[16];
         protected byte[][] _charsetData = CreateCharsetData();
         protected int _charsetBufPos;
-        protected readonly CharsetRenderer _charset;
+        protected CharsetRenderer _charset;
         // Somewhat hackish stuff for 2 byte support (Chinese/Japanese/Korean)
         public byte NewLineCharacter;
         internal bool UseCjkMode;
@@ -46,6 +46,25 @@ namespace NScumm.Core
                 data[i] = new byte[23];
             }
             return data;
+        }
+
+        void CreateCharset()
+        {
+            switch (Game.Version)
+            {
+                case 2:
+                    _charset = new CharsetRenderer2(this);
+                    break;
+                case 3:
+                    _charset = new CharsetRenderer3(this);
+                    break;
+                case 8:
+                    _charset = new CharsetRendererNut(this);
+                    break;
+                default:
+                    _charset = new CharsetRendererClassic(this);
+                    break;
+            }
         }
 
         protected void InitCharset(int charsetNum)

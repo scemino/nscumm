@@ -27,7 +27,6 @@ using System;
 using NScumm.Core.Audio;
 using System.Linq;
 using System.Text;
-using System.Diagnostics;
 
 namespace NScumm.Core
 {
@@ -123,76 +122,6 @@ namespace NScumm.Core
             }
 
             _inventoryOffset = 0;
-        }
-
-        void InitV2MouseOver()
-        {
-            int i;
-            int arrow_color, color, hi_color;
-
-            if (Game.Version == 2)
-            {
-                color = 13;
-                hi_color = 14;
-                arrow_color = 1;
-            }
-            else
-            {
-                color = 16;
-                hi_color = 7;
-                arrow_color = 6;
-            }
-
-            _mouseOverBoxV2 = -1;
-
-            // Inventory items
-
-            for (i = 0; i < 2; i++)
-            {
-                _mouseOverBoxesV2[2 * i].rect.Left = 0;
-                _mouseOverBoxesV2[2 * i].rect.Right = 144;
-                _mouseOverBoxesV2[2 * i].rect.Top = 32 + 8 * i;
-                _mouseOverBoxesV2[2 * i].rect.Bottom = _mouseOverBoxesV2[2 * i].rect.Top + 8;
-
-                _mouseOverBoxesV2[2 * i].color = (byte)color;
-                _mouseOverBoxesV2[2 * i].hicolor = (byte)hi_color;
-
-                _mouseOverBoxesV2[2 * i + 1].rect.Left = 176;
-                _mouseOverBoxesV2[2 * i + 1].rect.Right = 320;
-                _mouseOverBoxesV2[2 * i + 1].rect.Top = _mouseOverBoxesV2[2 * i].rect.Top;
-                _mouseOverBoxesV2[2 * i + 1].rect.Bottom = _mouseOverBoxesV2[2 * i].rect.Bottom;
-
-                _mouseOverBoxesV2[2 * i + 1].color = (byte)color;
-                _mouseOverBoxesV2[2 * i + 1].hicolor = (byte)hi_color;
-            }
-
-            // Inventory arrows
-
-            _mouseOverBoxesV2[InventoryUpArrow].rect.Left = 144;
-            _mouseOverBoxesV2[InventoryUpArrow].rect.Right = 176;
-            _mouseOverBoxesV2[InventoryUpArrow].rect.Top = 32;
-            _mouseOverBoxesV2[InventoryUpArrow].rect.Bottom = 40;
-
-            _mouseOverBoxesV2[InventoryUpArrow].color = (byte)arrow_color;
-            _mouseOverBoxesV2[InventoryUpArrow].hicolor = (byte)hi_color;
-
-            _mouseOverBoxesV2[InventoryDownArrow].rect.Left = 144;
-            _mouseOverBoxesV2[InventoryDownArrow].rect.Right = 176;
-            _mouseOverBoxesV2[InventoryDownArrow].rect.Top = 40;
-            _mouseOverBoxesV2[InventoryDownArrow].rect.Bottom = 48;
-
-            _mouseOverBoxesV2[InventoryDownArrow].color = (byte)arrow_color;
-            _mouseOverBoxesV2[InventoryDownArrow].hicolor = (byte)hi_color;
-
-            // Sentence line
-
-            _mouseOverBoxesV2[SentenceLine].rect.Left = 0;
-            _mouseOverBoxesV2[SentenceLine].rect.Right = 320;
-            _mouseOverBoxesV2[SentenceLine].rect.Top = 0;
-            _mouseOverBoxesV2[SentenceLine].rect.Bottom = 8;
-
-            _mouseOverBoxesV2[SentenceLine].color = (byte)color;
-            _mouseOverBoxesV2[SentenceLine].hicolor = (byte)hi_color;
         }
 
         protected override void SetupVars()
@@ -629,18 +558,703 @@ namespace NScumm.Core
         {
             base.SaveOrLoad(serializer);
 
-            var v2Entries = new[]
+            if (Game.Version <= 2)
             {
-                LoadAndSaveEntry.Create(reader => _inventoryOffset = reader.ReadUInt16(), writer => writer.WriteUInt16(_inventoryOffset), 39)
-            };
-            v2Entries.ForEach(entry => entry.Execute(serializer));
+                var v2Entries = new[]
+                {
+                    LoadAndSaveEntry.Create(reader => _inventoryOffset = reader.ReadUInt16(), writer => writer.WriteUInt16(_inventoryOffset), 39)
+                };
+                v2Entries.ForEach(entry => entry.Execute(serializer));
 
-            // In old saves we didn't store _inventoryOffset -> reset it to
-            // a sane default when loading one of those.
-            if (serializer.Version < 79 && serializer.IsLoading)
+                // In old saves we didn't store _inventoryOffset -> reset it to
+                // a sane default when loading one of those.
+                if (serializer.Version < 79 && serializer.IsLoading)
+                {
+                    _inventoryOffset = 0;
+                }
+            }
+        }
+
+        protected override void HandleMouseOver(bool updateInventory)
+        {
+            base.HandleMouseOver(updateInventory);
+
+            if (updateInventory)
             {
+                // FIXME/TODO: Reset and redraw the sentence line
                 _inventoryOffset = 0;
             }
+            if (_completeScreenRedraw || updateInventory)
+            {
+                RedrawV2Inventory();
+            }
+            CheckV2MouseOver(_mousePos);
+        }
+
+        protected override void CheckExecVerbs()
+        {
+            int i, over;
+            VerbSlot vs;
+
+            if (_userPut <= 0 || mouseAndKeyboardStat == 0)
+                return;
+
+            if (mouseAndKeyboardStat < (KeyCode)ScummMouseButtonState.MaxKey)
+            {
+                /* Check keypresses */
+                for (i = 0; i < Verbs.Length; i++)
+                {
+                    vs = Verbs[i];
+                    if (vs.VerbId != 0 && vs.SaveId == 0 && vs.CurMode == 1)
+                    {
+                        if ((int)mouseAndKeyboardStat == vs.Key)
+                        {
+                            // Trigger verb as if the user clicked it
+                            RunInputScript(ClickArea.Verb, (KeyCode)vs.VerbId, 1);
+                            return;
+                        }
+                    }
+                }
+
+                // Simulate inventory picking and scrolling keys
+                int obj = -1;
+
+                switch (mouseAndKeyboardStat)
+                {
+                    case KeyCode.U: // arrow up
+                        if (_inventoryOffset >= 2)
+                        {
+                            _inventoryOffset -= 2;
+                            RedrawV2Inventory();
+                        }
+                        return;
+                    case KeyCode.J: // arrow down
+                        if (_inventoryOffset + 4 < GetInventoryCountCore(Variables[VariableEgo.Value]))
+                        {
+                            _inventoryOffset += 2;
+                            RedrawV2Inventory();
+                        }
+                        return;
+                    case KeyCode.I: // object
+                        obj = 0;
+                        break;
+                    case KeyCode.O:
+                        obj = 1;
+                        break;
+                    case KeyCode.K:
+                        obj = 2;
+                        break;
+                    case KeyCode.L:
+                        obj = 3;
+                        break;
+                }
+
+                if (obj != -1)
+                {
+                    obj = FindInventoryCore(Variables[VariableEgo.Value], obj + 1 + _inventoryOffset);
+                    if (obj > 0)
+                        RunInputScript(ClickArea.Inventory, (KeyCode)obj, 0);
+                    return;
+                }
+
+                // Generic keyboard input
+                RunInputScript(ClickArea.Key, mouseAndKeyboardStat, 1);
+            }
+            else if ((mouseAndKeyboardStat & (KeyCode)ScummMouseButtonState.MouseMask) != 0)
+            {
+                var zone = FindVirtScreen(_mousePos.Y);
+                int code = (mouseAndKeyboardStat & (KeyCode)ScummMouseButtonState.LeftClick) != 0 ? 1 : 2;
+                const int inventoryArea = /*(_game.platform == Common::kPlatformNES) ? 48: */32;
+
+                // This could be kUnkVirtScreen.
+                // Fixes bug #1536932: "MANIACNES: Crash on click in speechtext-area"
+                if (zone == null)
+                    return;
+
+                if (zone == VerbVirtScreen && _mousePos.Y <= zone.TopLine + 8)
+                {
+                    // Click into V2 sentence line
+                    RunInputScript(ClickArea.Sentence, 0, 0);
+                }
+                else if (zone == VerbVirtScreen && _mousePos.Y > zone.TopLine + inventoryArea)
+                {
+                    // Click into V2 inventory
+                    var obj = CheckV2Inventory(_mousePos.X, _mousePos.Y);
+                    if (obj > 0)
+                        RunInputScript(ClickArea.Inventory, (KeyCode)obj, 0);
+                }
+                else
+                {
+                    over = FindVerbAtPos(_mousePos);
+                    if (over != 0)
+                    {
+                        // Verb was clicked
+                        RunInputScript(ClickArea.Verb, (KeyCode)Verbs[over].VerbId, code);
+                    }
+                    else
+                    {
+                        // Scene was clicked
+                        RunInputScript((zone == MainVirtScreen) ? ClickArea.Scene : ClickArea.Verb, 0, code);
+                    }
+                }
+            }
+        }
+
+        protected override void RunInputScript(ClickArea clickArea, KeyCode code, int mode)
+        {
+            int verbScript;
+
+            verbScript = 4;
+            Variables[VariableClickArea.Value] = (int)clickArea;
+            switch (clickArea)
+            {
+                case ClickArea.Verb:        // Verb clicked
+                    Variables[VariableClickVerb.Value] = (int)code;
+                    break;
+                case ClickArea.Inventory:       // Inventory clicked
+                    Variables[VariableClickObject.Value] = (int)code;
+                    break;
+            }
+
+            var args = new []{ (int)clickArea, (int)code, mode };
+
+            if (verbScript != 0)
+                RunScript(verbScript, false, false, args);
+        }
+
+        protected override void RunInventoryScript(int i)
+        {
+            RedrawV2Inventory();
+        }
+
+        protected override void GetResult()
+        {
+            _resultVarIndex = ReadByte();
+        }
+
+        protected override int GetVar()
+        {
+            return ReadVariable(ReadByte());
+        }
+
+        protected override int ReadVariable(uint var)
+        {
+            if (Game.Version >= 1 && var >= 14 && var <= 16)
+                var = (uint)Variables[var];
+
+            ScummHelper.AssertRange(0, var, Variables.Length - 1, "variable (reading)");
+            //            debugC(DEBUG_VARS, "readvar(%d) = %d", var, _scummVars[var]);
+            return Variables[var];
+        }
+
+        protected override void WriteVariable(uint index, int value)
+        {
+            if (VariableCutSceneExitKey.HasValue && index == VariableCutSceneExitKey.Value)
+            {
+                // Remap the cutscene exit key in earlier games
+                if (value == 4 || value == 13 || value == 64)
+                    value = 27;
+            }
+
+            Variables[index] = value;
+        }
+
+        protected void IsSoundRunning()
+        {
+            GetResult();
+            var snd = GetVarOrDirectByte(OpCodeParameter.Param1);
+            if (snd != 0)
+            {
+                snd = Sound.IsSoundRunning(snd) ? 1 : 0;
+            }
+            SetResult(snd);
+        }
+
+        protected void PrintEgo()
+        {
+            _actorToPrintStrFor = Variables[VariableEgo.Value];
+            DecodeParseString();
+        }
+
+        protected void GetActorMoving()
+        {
+            GetResult();
+            var act = GetVarOrDirectByte(OpCodeParameter.Param1);
+            Actor a = Actors[act];
+            SetResult((int)a.Moving);
+        }
+
+        protected void SetObjectName()
+        {
+            var obj = GetVarOrDirectWord(OpCodeParameter.Param1);
+            SetObjectNameCore(obj);
+        }
+
+        protected void IsScriptRunning()
+        {
+            GetResult();
+            SetResult(IsScriptRunningCore(GetVarOrDirectByte(OpCodeParameter.Param1)) ? 1 : 0);
+        }
+
+        protected void Decrement()
+        {
+            GetResult();
+            SetResult(ReadVariable((uint)_resultVarIndex) - 1);
+        }
+
+        protected void PseudoRoom()
+        {
+            int i = ReadByte(), j;
+            while ((j = ReadByte()) != 0)
+            {
+                if (j >= 0x80)
+                {
+                    _resourceMapper[j & 0x7F] = (byte)i;
+                }
+            }
+        }
+
+        protected void ActorFollowCamera()
+        {
+            var actor = GetVarOrDirectByte(OpCodeParameter.Param1);
+            ActorFollowCamera(actor);
+        }
+
+        protected void StopSound()
+        {
+            var sound = GetVarOrDirectByte(OpCodeParameter.Param1);
+            Sound.StopSound(sound);
+        }
+
+        protected void NotEqualZero()
+        {
+            var a = GetVar();
+            JumpRelative(a != 0);
+        }
+
+        protected void GetDistance()
+        {
+            GetResult();
+            var o1 = GetVarOrDirectWord(OpCodeParameter.Param1);
+            var o2 = GetVarOrDirectWord(OpCodeParameter.Param2);
+            var r = GetObjActToObjActDist(o1, o2);
+
+            // TODO: WORKAROUND bug #795937 ?
+            //if ((_game.id == GID_MONKEY_EGA || _game.id == GID_PASS) && o1 == 1 && o2 == 307 && vm.slot[_currentScript].number == 205 && r == 2)
+            //    r = 3;
+
+            SetResult(r);
+        }
+
+        protected void SetCameraAtEx(int at)
+        {
+            if (Game.Version < 7)
+            {
+                Camera.Mode = CameraMode.Normal;
+                Camera.CurrentPosition.X = at;
+                SetCameraAt(new Point(at, 0));
+                Camera.MovingToActor = false;
+            }
+        }
+
+        protected void SetBoxFlags()
+        {
+            var a = GetVarOrDirectByte(OpCodeParameter.Param1);
+            var b = ReadByte();
+            SetBoxFlags(a, b);
+        }
+
+        protected void SaveLoadGame()
+        {
+            GetResult();
+            var a = GetVarOrDirectByte(OpCodeParameter.Param1);
+            var result = 0;
+
+            var slot = a & 0x1F;
+            // Slot numbers in older games start with 0, in newer games with 1
+            if (Game.Version <= 2)
+                slot++;
+            _opCode = (byte)(a & 0xE0);
+
+            switch (_opCode)
+            {
+                case 0x00: // num slots available
+                    result = 100;
+                    break;
+                case 0x20: // drive
+                    if (Game.Version <= 3)
+                    {
+                        // 0 = ???
+                        // [1,2] = disk drive [A:,B:]
+                        // 3 = hard drive
+                        result = 3;
+                    }
+                    else
+                    {
+                        // set current drive
+                        result = 1;
+                    }
+                    break;
+                case 0x40: // load
+                    if (LoadState(slot, false))
+                        result = 3; // sucess
+                    else
+                        result = 5; // failed to load
+                    break;
+                case 0x80: // save
+                    if (Game.Version <= 3)
+                    {
+                        string name;
+                        if (Game.Version <= 2)
+                        {
+                            // use generic name
+                            name = string.Format("Game {0}", (char)('A' + slot - 1));
+                        }
+                        else
+                        {
+                            // use name entered by the user
+                            var firstSlot = StringIdSavename1;
+                            name = Encoding.UTF8.GetString(_strings[slot + firstSlot - 1]);
+                        }
+
+                        if (SavePreparedSavegame(slot, name))
+                            result = 0;
+                        else
+                            result = 2;
+                    }
+                    else
+                    {
+                        result = 2; // failed to save
+                    }
+                    break;
+                case 0xC0: // test if save exists
+                    {
+                        var availSaves = ListSavegames(100);
+                        var filename = MakeSavegameName(slot, false);
+                        var directory = ServiceLocator.FileStorage.GetDirectoryName(Game.Path);
+                        if (availSaves[slot] && (ServiceLocator.FileStorage.FileExists(ServiceLocator.FileStorage.Combine(directory, filename))))
+                        {
+                            result = 6; // save file exists
+                        }
+                        else
+                        {
+                            result = 7; // save file does not exist
+                        }
+                    }
+                    break;
+            //                default:
+            //                    error("o4_saveLoadGame: unknown subopcode %d", _opcode);
+            }
+
+            SetResult(result);
+        }
+
+        protected void StopMusic()
+        {
+            Sound.StopAllSounds();
+        }
+
+        protected void StartSound()
+        {
+            var sound = GetVarOrDirectByte(OpCodeParameter.Param1);
+            Variables[VariableMusicTimer.Value] = 0;
+            Sound.AddSoundToQueue(sound);
+        }
+
+        protected void JumpRelative()
+        {
+            JumpRelative(false);
+        }
+
+        protected void Increment()
+        {
+            GetResult();
+            SetResult(ReadVariable((uint)_resultVarIndex) + 1);
+        }
+
+        protected void IsEqual()
+        {
+            uint varNum;
+            if (Game.Version <= 2)
+                varNum = ReadByte();
+            else
+                varNum = ReadWord();
+            var a = ReadVariable(varNum);
+            var b = GetVarOrDirectWord(OpCodeParameter.Param1);
+            JumpRelative(a == b);
+        }
+
+        protected void DelayVariable()
+        {
+            Slots[CurrentScript].Delay = GetVar();
+            Slots[CurrentScript].Status = ScriptStatus.Paused;
+            BreakHere();
+        }
+
+        protected void SetOwnerOf()
+        {
+            var obj = GetVarOrDirectWord(OpCodeParameter.Param1);
+            var owner = GetVarOrDirectByte(OpCodeParameter.Param2);
+            SetOwnerOf(obj, owner);
+        }
+
+        protected void EqualZero()
+        {
+            int a = GetVar();
+            JumpRelative(a == 0);
+        }
+
+        protected void BreakHere()
+        {
+            Slots[CurrentScript].Offset = (uint)CurrentPos;
+            CurrentScript = 0xFF;
+        }
+
+        protected void LoadRoom()
+        {
+            var room = (byte)GetVarOrDirectByte(OpCodeParameter.Param1);
+
+            // For small header games, we only call startScene if the room
+            // actually changed. This avoid unwanted (wrong) fades in Zak256
+            // and others. OTOH, it seems to cause a problem in newer games.
+            if ((Game.Version >= 5) || room != CurrentRoom)
+            {
+                StartScene(room);
+            }
+            _fullRedraw = true;
+        }
+
+        protected void GetActorCostume()
+        {
+            GetResult();
+            int act = GetVarOrDirectByte(OpCodeParameter.Param1);
+            Actor a = Actors[act];
+            SetResult(a.Costume);
+        }
+
+        protected void GetActorFacing()
+        {
+            GetResult();
+            int act = GetVarOrDirectByte(OpCodeParameter.Param1);
+            var a = Actors[act];
+            SetResult(ScummHelper.NewDirToOldDir(a.Facing));
+        }
+
+        protected void GetRandomNumber()
+        {
+            GetResult();
+            var max = GetVarOrDirectByte(OpCodeParameter.Param1);
+            var rnd = new Random();
+            var value = rnd.Next(max + 1);
+            SetResult(value);
+        }
+
+        protected void Print()
+        {
+            _actorToPrintStrFor = GetVarOrDirectByte(OpCodeParameter.Param1);
+            DecodeParseString();
+        }
+
+        protected void AnimateActor()
+        {
+            var act = GetVarOrDirectByte(OpCodeParameter.Param1);
+            var anim = GetVarOrDirectByte(OpCodeParameter.Param2);
+            var actor = Actors[act];
+            actor.Animate(anim);
+        }
+
+        protected void GetObjectOwner()
+        {
+            GetResult();
+            SetResult(GetOwnerCore(GetVarOrDirectWord(OpCodeParameter.Param1)));
+        }
+
+        protected void WalkActorToActor()
+        {
+            var nr = GetVarOrDirectByte(OpCodeParameter.Param1);
+            var nr2 = GetVarOrDirectByte(OpCodeParameter.Param2);
+            int dist = ReadByte();
+
+            if (Game.GameId == GameId.Indy4 && nr == 1 && nr2 == 106 &&
+                dist == 255 && Slots[CurrentScript].Number == 210)
+            {
+                // WORKAROUND bug: Work around an invalid actor bug when using the
+                // camel in Fate of Atlantis, the "wits" path. The room-65-210 script
+                // contains this:
+                //   walkActorToActor(1,106,255)
+                // Once again this is either a script bug, or there is some hidden
+                // or unknown meaning to this odd walk request...
+                return;
+            }
+
+            var a = Actors[nr];
+            if (!a.IsInCurrentRoom)
+                return;
+
+            var a2 = Actors[nr2];
+            if (!a2.IsInCurrentRoom)
+                return;
+
+            if (Game.Version <= 2)
+            {
+                dist *= Actor2.V12_X_MULTIPLIER;
+            }
+            else if (dist == 0xFF)
+            {
+                dist = (int)(a.ScaleX * a.Width / 0xFF);
+                dist += (int)(a2.ScaleX * a2.Width / 0xFF) / 2;
+            }
+            int x = a2.Position.X;
+            int y = a2.Position.Y;
+            if (x < a.Position.X)
+                x += dist;
+            else
+                x -= dist;
+
+            if (Game.Version <= 2)
+            {
+                x /= Actor2.V12_X_MULTIPLIER;
+                y /= Actor2.V12_Y_MULTIPLIER;
+            }
+            if (Game.Version <= 3)
+            {
+                var abr = a.AdjustXYToBeInBox(new Point(x, y));
+                x = abr.Position.X;
+                y = abr.Position.Y;
+            }
+
+            a.StartWalk(new Point(x, y), -1);
+        }
+
+        protected void FaceActor()
+        {
+            var act = GetVarOrDirectByte(OpCodeParameter.Param1);
+            var obj = GetVarOrDirectWord(OpCodeParameter.Param2);
+            var actor = Actors[act];
+            actor.FaceToObject(obj);
+        }
+
+        protected void IsNotEqual()
+        {
+            var a = GetVar();
+            var b = GetVarOrDirectWord(OpCodeParameter.Param1);
+            JumpRelative(a != b);
+        }
+
+        protected void StartMusic()
+        {
+            Sound.AddSoundToQueue(GetVarOrDirectByte(OpCodeParameter.Param1));
+        }
+
+        protected void GetActorRoom()
+        {
+            GetResult();
+            var index = GetVarOrDirectByte(OpCodeParameter.Param1);
+
+            // WORKAROUND bug #746349. This is a really odd bug in either the script
+            // or in our script engine. Might be a good idea to investigate this
+            // further by e.g. looking at the FOA engine a bit closer.
+            if (Game.GameId == GameId.Indy4 && _roomResource == 94 && Slots[CurrentScript].Number == 206 && !IsValidActor(index))
+            {
+                SetResult(0);
+                return;
+            }
+
+            var actor = Actors[index];
+            SetResult(actor.Room);
+        }
+
+        protected void Move()
+        {
+            GetResult();
+            var result = GetVarOrDirectWord(OpCodeParameter.Param1);
+            SetResult(result);
+        }
+
+        protected void SetVarRange()
+        {
+            GetResult();
+            var a = ReadByte();
+            int b;
+            do
+            {
+                if ((_opCode & 0x80) == 0x80)
+                    b = ReadWordSigned();
+                else
+                    b = ReadByte();
+                SetResult(b);
+                _resultVarIndex++;
+            } while ((--a) > 0);
+        }
+    
+        void InitV2MouseOver()
+        {
+            int i;
+            int arrow_color, color, hi_color;
+
+            if (Game.Version == 2)
+            {
+                color = 13;
+                hi_color = 14;
+                arrow_color = 1;
+            }
+            else
+            {
+                color = 16;
+                hi_color = 7;
+                arrow_color = 6;
+            }
+
+            _mouseOverBoxV2 = -1;
+
+            // Inventory items
+
+            for (i = 0; i < 2; i++)
+            {
+                _mouseOverBoxesV2[2 * i].rect.Left = 0;
+                _mouseOverBoxesV2[2 * i].rect.Right = 144;
+                _mouseOverBoxesV2[2 * i].rect.Top = 32 + 8 * i;
+                _mouseOverBoxesV2[2 * i].rect.Bottom = _mouseOverBoxesV2[2 * i].rect.Top + 8;
+
+                _mouseOverBoxesV2[2 * i].color = (byte)color;
+                _mouseOverBoxesV2[2 * i].hicolor = (byte)hi_color;
+
+                _mouseOverBoxesV2[2 * i + 1].rect.Left = 176;
+                _mouseOverBoxesV2[2 * i + 1].rect.Right = 320;
+                _mouseOverBoxesV2[2 * i + 1].rect.Top = _mouseOverBoxesV2[2 * i].rect.Top;
+                _mouseOverBoxesV2[2 * i + 1].rect.Bottom = _mouseOverBoxesV2[2 * i].rect.Bottom;
+
+                _mouseOverBoxesV2[2 * i + 1].color = (byte)color;
+                _mouseOverBoxesV2[2 * i + 1].hicolor = (byte)hi_color;
+            }
+
+            // Inventory arrows
+
+            _mouseOverBoxesV2[InventoryUpArrow].rect.Left = 144;
+            _mouseOverBoxesV2[InventoryUpArrow].rect.Right = 176;
+            _mouseOverBoxesV2[InventoryUpArrow].rect.Top = 32;
+            _mouseOverBoxesV2[InventoryUpArrow].rect.Bottom = 40;
+
+            _mouseOverBoxesV2[InventoryUpArrow].color = (byte)arrow_color;
+            _mouseOverBoxesV2[InventoryUpArrow].hicolor = (byte)hi_color;
+
+            _mouseOverBoxesV2[InventoryDownArrow].rect.Left = 144;
+            _mouseOverBoxesV2[InventoryDownArrow].rect.Right = 176;
+            _mouseOverBoxesV2[InventoryDownArrow].rect.Top = 40;
+            _mouseOverBoxesV2[InventoryDownArrow].rect.Bottom = 48;
+
+            _mouseOverBoxesV2[InventoryDownArrow].color = (byte)arrow_color;
+            _mouseOverBoxesV2[InventoryDownArrow].hicolor = (byte)hi_color;
+
+            // Sentence line
+
+            _mouseOverBoxesV2[SentenceLine].rect.Left = 0;
+            _mouseOverBoxesV2[SentenceLine].rect.Right = 320;
+            _mouseOverBoxesV2[SentenceLine].rect.Top = 0;
+            _mouseOverBoxesV2[SentenceLine].rect.Bottom = 8;
+
+            _mouseOverBoxesV2[SentenceLine].color = (byte)color;
+            _mouseOverBoxesV2[SentenceLine].hicolor = (byte)hi_color;
         }
 
         void GetObjPreposition()
@@ -657,17 +1271,6 @@ namespace NScumm.Core
             {
                 SetResult(0xFF);
             }
-        }
-
-        protected void IsSoundRunning()
-        {
-            GetResult();
-            var snd = GetVarOrDirectByte(OpCodeParameter.Param1);
-            if (snd != 0)
-            {
-                snd = Sound.IsSoundRunning(snd) ? 1 : 0;
-            }
-            SetResult(snd);
         }
 
         void GetActorWalkBox()
@@ -707,32 +1310,6 @@ namespace NScumm.Core
             SetResult(closest_obj);
         }
 
-        protected void PrintEgo()
-        {
-            _actorToPrintStrFor = Variables[VariableEgo.Value];
-            DecodeParseString();
-        }
-
-        protected void GetActorMoving()
-        {
-            GetResult();
-            var act = GetVarOrDirectByte(OpCodeParameter.Param1);
-            Actor a = Actors[act];
-            SetResult((int)a.Moving);
-        }
-
-        protected void SetObjectName()
-        {
-            var obj = GetVarOrDirectWord(OpCodeParameter.Param1);
-            SetObjectNameCore(obj);
-        }
-
-        protected void IsScriptRunning()
-        {
-            GetResult();
-            SetResult(IsScriptRunningCore(GetVarOrDirectByte(OpCodeParameter.Param1)) ? 1 : 0);
-        }
-
         void EndCutscene()
         {
             cutScene.StackPointer = 0;
@@ -764,7 +1341,6 @@ namespace NScumm.Core
             }
         }
 
-
         void WaitForMessage()
         {
             if (Variables[VariableHaveMessage.Value] != 0)
@@ -774,32 +1350,25 @@ namespace NScumm.Core
             }
         }
 
-        protected void Decrement()
-        {
-            GetResult();
-            SetResult(ReadVariable((uint)_resultVarIndex) - 1);
-        }
-
-
         void VerbOps()
         {
             int verb = ReadByte();
             int slot, state;
-        
+
             switch (verb)
             {
                 case 0:     // SO_DELETE_VERBS
                     slot = GetVarOrDirectByte(OpCodeParameter.Param1) + 1;
                     KillVerb(slot);
                     break;
-        
+
                 case 0xFF:  // Verb On/Off
                     verb = ReadByte();
                     state = ReadByte();
                     slot = GetVerbSlot(verb, 0);
                     Verbs[slot].CurMode = (byte)state;
                     break;
-        
+
                 default:
                     {  // New Verb
                         int x = ReadByte() * 8;
@@ -812,7 +1381,7 @@ namespace NScumm.Core
                                 else*/
                         if ((Game.GameId == GameId.Maniac) && (Game.Version == 1))
                             y += 8;
-        
+
                         VerbSlot vs = Verbs[slot];
                         vs.VerbId = (ushort)verb;
                         /*if (_game.platform == Common::kPlatformNES) {
@@ -840,10 +1409,10 @@ namespace NScumm.Core
                         vs.Center = false;
                         vs.ImgIndex = 0;
                         vs.Prep = (byte)prep;
-        
+
                         vs.CurRect.Left = x;
                         vs.CurRect.Top = y;
-        
+
                         // FIXME: these keyboard map depends on the language of the game.
                         // E.g. a german keyboard has 'z' and 'y' swapped, while a french
                         // keyboard starts with "azerty", etc.
@@ -866,39 +1435,21 @@ namespace NScumm.Core
                             if (1 <= slot && slot <= keyboard.Length)
                                 vs.Key = (byte)keyboard[slot - 1];
                         }
-        
+
                         // It follows the verb name
                         vs.Text = ReadCharacters();
                     }
                     break;
             }
-        
+
             // Force redraw of the modified verb slot
             DrawVerb(slot, 0);
             VerbMouseOver(0);
         }
 
-        protected void PseudoRoom()
-        {
-            int i = ReadByte(), j;
-            while ((j = ReadByte()) != 0)
-            {
-                if (j >= 0x80)
-                {
-                    _resourceMapper[j & 0x7F] = (byte)i;
-                }
-            }
-        }
-
         void Restart()
         {
-//            RestartCore();
-        }
-
-        protected void ActorFollowCamera()
-        {
-            var actor = GetVarOrDirectByte(OpCodeParameter.Param1);
-            ActorFollowCamera(actor);
+            //            RestartCore();
         }
 
         void ActorFollowCamera(int act)
@@ -937,8 +1488,8 @@ namespace NScumm.Core
             ClearDrawObjectQueue();
 
             RunInventoryScript(1);
-//            if (Game.Platform == Platform.NES)
-//                Sound.AddSoundToQueue(51);    // play 'pickup' sound
+            //            if (Game.Platform == Platform.NES)
+            //                Sound.AddSoundToQueue(51);    // play 'pickup' sound
         }
 
         void WaitForSentence()
@@ -959,36 +1510,23 @@ namespace NScumm.Core
             a.Elevation = elevation;
         }
 
-        protected void StopSound()
-        {
-            var sound = GetVarOrDirectByte(OpCodeParameter.Param1);
-            Sound.StopSound(sound);
-        }
-
         void SwitchCostumeSet()
         {
             // NES version of maniac uses this to switch between the two
             // groups of costumes it has
-//            if (Game.Platform == Platform.NES)
-//                NES_loadCostumeSet(ReadByte());
-//            else if (Game.Platform == Platform.C64)
-//                ReadByte();
-//            else
+            //            if (Game.Platform == Platform.NES)
+            //                NES_loadCostumeSet(ReadByte());
+            //            else if (Game.Platform == Platform.C64)
+            //                ReadByte();
+            //            else
             Dummy();
         }
 
         void Dummy()
         {
             // Opcode 0xEE is used in maniac and zak but has no purpose
-//            if (_opCode != 0xEE)
-//                Console.WriteLine("dummy invoked (opcode {0})", _opCode);
-        }
-
-
-        protected void NotEqualZero()
-        {
-            var a = GetVar();
-            JumpRelative(a != 0);
+            //            if (_opCode != 0xEE)
+            //                Console.WriteLine("dummy invoked (opcode {0})", _opCode);
         }
 
         void WaitForActor()
@@ -1042,36 +1580,6 @@ namespace NScumm.Core
                     obj = findInventory(VAR(VAR_EGO), _mouseOverBoxV2 + _inventoryOffset + 1);
             }*/
             SetResult(obj);
-        }
-
-        protected void GetDistance()
-        {
-            GetResult();
-            var o1 = GetVarOrDirectWord(OpCodeParameter.Param1);
-            var o2 = GetVarOrDirectWord(OpCodeParameter.Param2);
-            var r = GetObjActToObjActDist(o1, o2);
-
-            // TODO: WORKAROUND bug #795937 ?
-            //if ((_game.id == GID_MONKEY_EGA || _game.id == GID_PASS) && o1 == 1 && o2 == 307 && vm.slot[_currentScript].number == 205 && r == 2)
-            //    r = 3;
-
-            SetResult(r);
-        }
-
-        protected override void HandleMouseOver(bool updateInventory)
-        {
-            base.HandleMouseOver(updateInventory);
-
-            if (updateInventory)
-            {
-                // FIXME/TODO: Reset and redraw the sentence line
-                _inventoryOffset = 0;
-            }
-            if (_completeScreenRedraw || updateInventory)
-            {
-                RedrawV2Inventory();
-            }
-            CheckV2MouseOver(_mousePos);
         }
 
         void CheckV2MouseOver(Point pos)
@@ -1225,115 +1733,6 @@ namespace NScumm.Core
             }
         }
 
-        protected override void CheckExecVerbs()
-        {
-            int i, over;
-            VerbSlot vs;
-
-            if (_userPut <= 0 || mouseAndKeyboardStat == 0)
-                return;
-
-            if (mouseAndKeyboardStat < (KeyCode)ScummMouseButtonState.MaxKey)
-            {
-                /* Check keypresses */
-                for (i = 0; i < Verbs.Length; i++)
-                {
-                    vs = Verbs[i];
-                    if (vs.VerbId != 0 && vs.SaveId == 0 && vs.CurMode == 1)
-                    {
-                        if ((int)mouseAndKeyboardStat == vs.Key)
-                        {
-                            // Trigger verb as if the user clicked it
-                            RunInputScript(ClickArea.Verb, (KeyCode)vs.VerbId, 1);
-                            return;
-                        }
-                    }
-                }
-
-                // Simulate inventory picking and scrolling keys
-                int obj = -1;
-
-                switch (mouseAndKeyboardStat)
-                {
-                    case KeyCode.U: // arrow up
-                        if (_inventoryOffset >= 2)
-                        {
-                            _inventoryOffset -= 2;
-                            RedrawV2Inventory();
-                        }
-                        return;
-                    case KeyCode.J: // arrow down
-                        if (_inventoryOffset + 4 < GetInventoryCountCore(Variables[VariableEgo.Value]))
-                        {
-                            _inventoryOffset += 2;
-                            RedrawV2Inventory();
-                        }
-                        return;
-                    case KeyCode.I: // object
-                        obj = 0;
-                        break;
-                    case KeyCode.O:
-                        obj = 1;
-                        break;
-                    case KeyCode.K:
-                        obj = 2;
-                        break;
-                    case KeyCode.L:
-                        obj = 3;
-                        break;
-                }
-
-                if (obj != -1)
-                {
-                    obj = FindInventoryCore(Variables[VariableEgo.Value], obj + 1 + _inventoryOffset);
-                    if (obj > 0)
-                        RunInputScript(ClickArea.Inventory, (KeyCode)obj, 0);
-                    return;
-                }
-
-                // Generic keyboard input
-                RunInputScript(ClickArea.Key, mouseAndKeyboardStat, 1);
-            }
-            else if ((mouseAndKeyboardStat & (KeyCode)ScummMouseButtonState.MouseMask) != 0)
-            {
-                var zone = FindVirtScreen(_mousePos.Y);
-                int code = (mouseAndKeyboardStat & (KeyCode)ScummMouseButtonState.LeftClick) != 0 ? 1 : 2;
-                const int inventoryArea = /*(_game.platform == Common::kPlatformNES) ? 48: */32;
-
-                // This could be kUnkVirtScreen.
-                // Fixes bug #1536932: "MANIACNES: Crash on click in speechtext-area"
-                if (zone == null)
-                    return;
-
-                if (zone == VerbVirtScreen && _mousePos.Y <= zone.TopLine + 8)
-                {
-                    // Click into V2 sentence line
-                    RunInputScript(ClickArea.Sentence, 0, 0);
-                }
-                else if (zone == VerbVirtScreen && _mousePos.Y > zone.TopLine + inventoryArea)
-                {
-                    // Click into V2 inventory
-                    var obj = CheckV2Inventory(_mousePos.X, _mousePos.Y);
-                    if (obj > 0)
-                        RunInputScript(ClickArea.Inventory, (KeyCode)obj, 0);
-                }
-                else
-                {
-                    over = FindVerbAtPos(_mousePos);
-                    if (over != 0)
-                    {
-                        // Verb was clicked
-                        RunInputScript(ClickArea.Verb, (KeyCode)Verbs[over].VerbId, code);
-                    }
-                    else
-                    {
-                        // Scene was clicked
-                        RunInputScript((zone == MainVirtScreen) ? ClickArea.Scene : ClickArea.Verb, 0, code);
-                    }
-                }
-            }
-        }
-
         int CheckV2Inventory(int x, int y)
         {
             int inventoryArea = /*(_game.platform == Common::kPlatformNES) ? 48: */32;
@@ -1375,49 +1774,9 @@ namespace NScumm.Core
             return FindInventoryCore(Variables[VariableEgo.Value], obj + 1 + _inventoryOffset);
         }
 
-        protected override void RunInputScript(ClickArea clickArea, KeyCode code, int mode)
-        {
-            int verbScript;
-
-            verbScript = 4;
-            Variables[VariableClickArea.Value] = (int)clickArea;
-            switch (clickArea)
-            {
-                case ClickArea.Verb:        // Verb clicked
-                    Variables[VariableClickVerb.Value] = (int)code;
-                    break;
-                case ClickArea.Inventory:       // Inventory clicked
-                    Variables[VariableClickObject.Value] = (int)code;
-                    break;
-            }
-
-            var args = new []{ (int)clickArea, (int)code, mode };
-
-            if (verbScript != 0)
-                RunScript(verbScript, false, false, args);
-        }
-
         void SetCameraAt()
         {
             SetCameraAtEx(GetVarOrDirectByte(OpCodeParameter.Param1) * Actor2.V12_X_MULTIPLIER);
-        }
-
-        protected void SetCameraAtEx(int at)
-        {
-            if (Game.Version < 7)
-            {
-                Camera.Mode = CameraMode.Normal;
-                Camera.CurrentPosition.X = at;
-                SetCameraAt(new Point(at, 0));
-                Camera.MovingToActor = false;
-            }
-        }
-
-        protected void SetBoxFlags()
-        {
-            var a = GetVarOrDirectByte(OpCodeParameter.Param1);
-            var b = ReadByte();
-            SetBoxFlags(a, b);
         }
 
         void GetBitVar()
@@ -1431,96 +1790,6 @@ namespace NScumm.Core
             bit_var >>= 4;
 
             SetResult((Variables[bit_var] & (1 << bit_offset)) != 0 ? 1 : 0);
-        }
-
-        protected void SaveLoadGame()
-        {
-            GetResult();
-            var a = GetVarOrDirectByte(OpCodeParameter.Param1);
-            var result = 0;
-
-            var slot = a & 0x1F;
-            // Slot numbers in older games start with 0, in newer games with 1
-            if (Game.Version <= 2)
-                slot++;
-            _opCode = (byte)(a & 0xE0);
-
-            switch (_opCode)
-            {
-                case 0x00: // num slots available
-                    result = 100;
-                    break;
-                case 0x20: // drive
-                    if (Game.Version <= 3)
-                    {
-                        // 0 = ???
-                        // [1,2] = disk drive [A:,B:]
-                        // 3 = hard drive
-                        result = 3;
-                    }
-                    else
-                    {
-                        // set current drive
-                        result = 1;
-                    }
-                    break;
-                case 0x40: // load
-                    if (LoadState(slot, false))
-                        result = 3; // sucess
-                    else
-                        result = 5; // failed to load
-                    break;
-                case 0x80: // save
-                    if (Game.Version <= 3)
-                    {
-                        string name;
-                        if (Game.Version <= 2)
-                        {
-                            // use generic name
-                            name = string.Format("Game {0}", (char)('A' + slot - 1));
-                        }
-                        else
-                        {
-                            // use name entered by the user
-                            var firstSlot = StringIdSavename1;
-                            name = Encoding.UTF8.GetString(_strings[slot + firstSlot - 1]);
-                        }
-
-                        if (SavePreparedSavegame(slot, name))
-                            result = 0;
-                        else
-                            result = 2;
-                    }
-                    else
-                    {
-                        result = 2; // failed to save
-                    }
-                    break;
-                case 0xC0: // test if save exists
-                    {
-                        var availSaves = ListSavegames(100);
-                        var filename = MakeSavegameName(slot, false);
-                        var directory = ServiceLocator.FileStorage.GetDirectoryName(Game.Path);
-                        if (availSaves[slot] && (ServiceLocator.FileStorage.FileExists(ServiceLocator.FileStorage.Combine(directory, filename))))
-                        {
-                            result = 6; // save file exists
-                        }
-                        else
-                        {
-                            result = 7; // save file does not exist
-                        }
-                    }
-                    break;
-            //                default:
-            //                    error("o4_saveLoadGame: unknown subopcode %d", _opcode);
-            }
-
-            SetResult(result);
-        }
-
-        protected void StopMusic()
-        {
-            Sound.StopAllSounds();
         }
 
         void IfClassOfIs()
@@ -1558,24 +1827,6 @@ namespace NScumm.Core
             a.StartWalk(new Point(x, y), -1);
         }
 
-        protected void StartSound()
-        {
-            var sound = GetVarOrDirectByte(OpCodeParameter.Param1);
-            Variables[VariableMusicTimer.Value] = 0;
-            Sound.AddSoundToQueue(sound);
-        }
-
-        protected void JumpRelative()
-        {
-            JumpRelative(false);
-        }
-
-        protected void Increment()
-        {
-            GetResult();
-            SetResult(ReadVariable((uint)_resultVarIndex) + 1);
-        }
-
         void IsLess()
         {
             var a = GetVar();
@@ -1590,38 +1841,6 @@ namespace NScumm.Core
             StopScript(Slots[CurrentScript].Number);
             CurrentScript = 0xFF;
             RunScript(script, false, false, new int[0]);
-        }
-
-        protected void IsEqual()
-        {
-            uint varNum;
-            if (Game.Version <= 2)
-                varNum = ReadByte();
-            else
-                varNum = ReadWord();
-            var a = ReadVariable(varNum);
-            var b = GetVarOrDirectWord(OpCodeParameter.Param1);
-            JumpRelative(a == b);
-        }
-
-        protected void DelayVariable()
-        {
-            Slots[CurrentScript].Delay = GetVar();
-            Slots[CurrentScript].Status = ScriptStatus.Paused;
-            BreakHere();
-        }
-
-        protected void SetOwnerOf()
-        {
-            var obj = GetVarOrDirectWord(OpCodeParameter.Param1);
-            var owner = GetVarOrDirectByte(OpCodeParameter.Param2);
-            SetOwnerOf(obj, owner);
-        }
-
-        protected void EqualZero()
-        {
-            int a = GetVar();
-            JumpRelative(a == 0);
         }
 
         void SetBitVar()
@@ -1752,12 +1971,6 @@ namespace NScumm.Core
             IfNotStateCommon(ObjectStateV2.State8);
         }
 
-        protected void BreakHere()
-        {
-            Slots[CurrentScript].Offset = (uint)CurrentPos;
-            CurrentScript = 0xFF;
-        }
-
         void RoomOps()
         {
             var a = GetVarOrDirectByte(OpCodeParameter.Param1);
@@ -1797,28 +2010,6 @@ namespace NScumm.Core
             }
         }
 
-        protected void LoadRoom()
-        {
-            var room = (byte)GetVarOrDirectByte(OpCodeParameter.Param1);
-
-            // For small header games, we only call startScene if the room
-            // actually changed. This avoid unwanted (wrong) fades in Zak256
-            // and others. OTOH, it seems to cause a problem in newer games.
-            if ((Game.Version >= 5) || room != CurrentRoom)
-            {
-                StartScene(room);
-            }
-            _fullRedraw = true;
-        }
-
-        protected void GetActorCostume()
-        {
-            GetResult();
-            int act = GetVarOrDirectByte(OpCodeParameter.Param1);
-            Actor a = Actors[act];
-            SetResult(a.Costume);
-        }
-
         void Lights()
         {
             var a = GetVarOrDirectByte(OpCodeParameter.Param1);
@@ -1850,14 +2041,6 @@ namespace NScumm.Core
                 _flashlight.YStrips = b;
             }
             _fullRedraw = true;
-        }
-
-        protected void GetActorFacing()
-        {
-            GetResult();
-            int act = GetVarOrDirectByte(OpCodeParameter.Param1);
-            var a = Actors[act];
-            SetResult(ScummHelper.NewDirToOldDir(a.Facing));
         }
 
         void StopScriptCommon(int script)
@@ -1919,13 +2102,13 @@ namespace NScumm.Core
         {
             int script = GetVarOrDirectByte(OpCodeParameter.Param1);
 
-//            if (!_copyProtection) {
-//                // The enhanced version of Zak McKracken included in the
-//                // SelectWare Classic Collection bundle used CD check instead
-//                // of the usual key code check at airports.
-//                if ((_game.id == GID_ZAK) && (script == 15) && (_roomResource == 45))
-//                    return;
-//            }
+            //            if (!_copyProtection) {
+            //                // The enhanced version of Zak McKracken included in the
+            //                // SelectWare Classic Collection bundle used CD check instead
+            //                // of the usual key code check at airports.
+            //                if ((_game.id == GID_ZAK) && (script == 15) && (_roomResource == 45))
+            //                    return;
+            //            }
 
             // WORKAROUND bug #1447058: In Maniac Mansion, when the door bell
             // rings, then this normally causes Ted Edison to leave his room.
@@ -2002,9 +2185,9 @@ namespace NScumm.Core
         {
             if (state.HasFlag(UserStates.SetIFace))
             {          // Userface
-//                if (Game.Platform == Platform.NES)
-//                    _userState = (_userState & ~USERSTATE_IFACE_ALL) | (state & USERSTATE_IFACE_ALL);
-//                else
+                //                if (Game.Platform == Platform.NES)
+                //                    _userState = (_userState & ~USERSTATE_IFACE_ALL) | (state & USERSTATE_IFACE_ALL);
+                //                else
                 _userState = state & UserStates.IFaceAll;
             }
 
@@ -2018,8 +2201,8 @@ namespace NScumm.Core
 
             if (state.HasFlag(UserStates.SetCursor))
             {         // Cursor Show/Hide
-//                if (_game.Platform == Common::kPlatformNES)
-//                    _userState = (_userState & ~USERSTATE_CURSOR_ON) | (state & USERSTATE_CURSOR_ON);
+                //                if (_game.Platform == Common::kPlatformNES)
+                //                    _userState = (_userState & ~USERSTATE_CURSOR_ON) | (state & USERSTATE_CURSOR_ON);
                 if (state.HasFlag(UserStates.CursorOn))
                 {
                     _userPut = 1;
@@ -2037,11 +2220,11 @@ namespace NScumm.Core
             rect.Top = VerbVirtScreen.TopLine;
             rect.Bottom = VerbVirtScreen.TopLine + 8 * 88;
             rect.Right = VerbVirtScreen.Width - 1;
-//            if (_game.platform == Common::kPlatformNES)
-//            {
-//                rect.left = 16;
-//            }
-//            else
+            //            if (_game.platform == Common::kPlatformNES)
+            //            {
+            //                rect.left = 16;
+            //            }
+            //            else
             {
                 rect.Left = 0;
             }
@@ -2050,11 +2233,6 @@ namespace NScumm.Core
             // Draw all verbs and inventory
             RedrawVerbs();
             RunInventoryScript(1);
-        }
-
-        protected override void RunInventoryScript(int i)
-        {
-            RedrawV2Inventory();
         }
 
         void DoSentence()
@@ -2073,9 +2251,9 @@ namespace NScumm.Core
             }
 
             var st = Sentence[SentenceNum++] = new Sentence(
-                         (byte)a,
-                         (ushort)GetVarOrDirectWord(OpCodeParameter.Param2),
-                         (ushort)GetVarOrDirectWord(OpCodeParameter.Param3));
+                (byte)a,
+                (ushort)GetVarOrDirectWord(OpCodeParameter.Param2),
+                (ushort)GetVarOrDirectWord(OpCodeParameter.Param3));
 
             // Execute or print the sentence
             _opCode = ReadByte();
@@ -2180,14 +2358,14 @@ namespace NScumm.Core
                 // For V1 games, the engine must compute the preposition.
                 // In all other Scumm versions, this is done by the sentence script.
                 // TODO: vs V1
-//                if ((Game.GameId == GameId.Maniac && Game.Version == 1 && !(Game.Platform == Platform.NES)) && (VAR(VAR_SENTENCE_PREPOSITION) == 0)) {
-//                    if (_verbs[slot].prep == 0xFF) {
-//                        byte *ptr = getOBCDFromObject(VAR(VAR_SENTENCE_OBJECT1));
-//                        assert(ptr);
-//                        Variables(VAR_SENTENCE_PREPOSITION) = (*(ptr + 12) >> 5);
-//                    } else
-//                        Variables(VAR_SENTENCE_PREPOSITION) = _verbs[slot].prep;
-//                }
+                //                if ((Game.GameId == GameId.Maniac && Game.Version == 1 && !(Game.Platform == Platform.NES)) && (VAR(VAR_SENTENCE_PREPOSITION) == 0)) {
+                //                    if (_verbs[slot].prep == 0xFF) {
+                //                        byte *ptr = getOBCDFromObject(VAR(VAR_SENTENCE_OBJECT1));
+                //                        assert(ptr);
+                //                        Variables(VAR_SENTENCE_PREPOSITION) = (*(ptr + 12) >> 5);
+                //                    } else
+                //                        Variables(VAR_SENTENCE_PREPOSITION) = _verbs[slot].prep;
+                //                }
             }
 
             if (0 < Variables[VariableSentencePreposition.Value] && Variables[VariableSentencePreposition.Value] <= 4)
@@ -2258,13 +2436,13 @@ namespace NScumm.Core
             // we have to do that, too, and provde localized versions for all the
             // languages MM/Zak are available in.
             var prepositions = new string[5, 5]
-            {
-                { " ", " in", " with", " on", " to" },   // English
-                { " ", " mit", " mit", " mit", " zu" },  // German
-                { " ", " dans", " avec", " sur", " <" }, // French
-                { " ", " in", " con", " su", " a" },     // Italian
-                { " ", " en", " con", " en", " a" },     // Spanish
-            };
+                {
+                    { " ", " in", " with", " on", " to" },   // English
+                    { " ", " mit", " mit", " mit", " zu" },  // German
+                    { " ", " dans", " avec", " sur", " <" }, // French
+                    { " ", " in", " con", " su", " a" },     // Italian
+                    { " ", " en", " con", " en", " a" },     // Spanish
+                };
             int lang;
             switch (Game.Culture.TwoLetterISOLanguageName)
             {
@@ -2462,15 +2640,15 @@ namespace NScumm.Core
             if ((opcode & 0x0f) == 1)
             {
                 // TODO: vs ensureResourceLoaded
-//                ensureResourceLoaded(type, resid);
+                //                ensureResourceLoaded(type, resid);
             }
             else
             {
                 // TODO: vs lock/unlock
-//                if (opcode & 1)
-//                    _res.lock(type, resid);
-//                else
-//                    _res.unlock(type, resid);
+                //                if (opcode & 1)
+                //                    _res.lock(type, resid);
+                //                else
+                //                    _res.unlock(type, resid);
             }
         }
 
@@ -2479,8 +2657,8 @@ namespace NScumm.Core
             int obj = GetVarOrDirectWord(OpCodeParameter.Param1);
             int unk = ReadByte();
 
-//            if (Game.platform == Common::kPlatformNES)
-//                return;
+            //            if (Game.platform == Common::kPlatformNES)
+            //                return;
 
             if (GetWhereIsObject(obj) != WhereIsObject.NotFound)
             {
@@ -2581,16 +2759,7 @@ namespace NScumm.Core
             a.PutActor(new Point(x, y));
         }
 
-        protected void GetRandomNumber()
-        {
-            GetResult();
-            var max = GetVarOrDirectByte(OpCodeParameter.Param1);
-            var rnd = new Random();
-            var value = rnd.Next(max + 1);
-            SetResult(value);
-        }
-
-        void DecodeParseString()
+        protected virtual void DecodeParseString()
         {
             byte[] buffer = new byte[512];
             var ptr = 0;
@@ -2646,121 +2815,6 @@ namespace NScumm.Core
             ActorTalk(buffer);
         }
 
-        protected void Print()
-        {
-            _actorToPrintStrFor = GetVarOrDirectByte(OpCodeParameter.Param1);
-            DecodeParseString();
-        }
-
-        protected void AnimateActor()
-        {
-            var act = GetVarOrDirectByte(OpCodeParameter.Param1);
-            var anim = GetVarOrDirectByte(OpCodeParameter.Param2);
-            var actor = Actors[act];
-            actor.Animate(anim);
-        }
-
-        protected void GetObjectOwner()
-        {
-            GetResult();
-            SetResult(GetOwnerCore(GetVarOrDirectWord(OpCodeParameter.Param1)));
-        }
-
-        protected void WalkActorToActor()
-        {
-            var nr = GetVarOrDirectByte(OpCodeParameter.Param1);
-            var nr2 = GetVarOrDirectByte(OpCodeParameter.Param2);
-            int dist = ReadByte();
-
-            if (Game.GameId == GameId.Indy4 && nr == 1 && nr2 == 106 &&
-                dist == 255 && Slots[CurrentScript].Number == 210)
-            {
-                // WORKAROUND bug: Work around an invalid actor bug when using the
-                // camel in Fate of Atlantis, the "wits" path. The room-65-210 script
-                // contains this:
-                //   walkActorToActor(1,106,255)
-                // Once again this is either a script bug, or there is some hidden
-                // or unknown meaning to this odd walk request...
-                return;
-            }
-
-            var a = Actors[nr];
-            if (!a.IsInCurrentRoom)
-                return;
-
-            var a2 = Actors[nr2];
-            if (!a2.IsInCurrentRoom)
-                return;
-
-            if (Game.Version <= 2)
-            {
-                dist *= Actor2.V12_X_MULTIPLIER;
-            }
-            else if (dist == 0xFF)
-            {
-                dist = (int)(a.ScaleX * a.Width / 0xFF);
-                dist += (int)(a2.ScaleX * a2.Width / 0xFF) / 2;
-            }
-            int x = a2.Position.X;
-            int y = a2.Position.Y;
-            if (x < a.Position.X)
-                x += dist;
-            else
-                x -= dist;
-
-            if (Game.Version <= 2)
-            {
-                x /= Actor2.V12_X_MULTIPLIER;
-                y /= Actor2.V12_Y_MULTIPLIER;
-            }
-            if (Game.Version <= 3)
-            {
-                var abr = a.AdjustXYToBeInBox(new Point(x, y));
-                x = abr.Position.X;
-                y = abr.Position.Y;
-            }
-
-            a.StartWalk(new Point(x, y), -1);
-        }
-
-        protected void FaceActor()
-        {
-            var act = GetVarOrDirectByte(OpCodeParameter.Param1);
-            var obj = GetVarOrDirectWord(OpCodeParameter.Param2);
-            var actor = Actors[act];
-            actor.FaceToObject(obj);
-        }
-
-        protected void IsNotEqual()
-        {
-            var a = GetVar();
-            var b = GetVarOrDirectWord(OpCodeParameter.Param1);
-            JumpRelative(a != b);
-        }
-
-        protected void StartMusic()
-        {
-            Sound.AddSoundToQueue(GetVarOrDirectByte(OpCodeParameter.Param1));
-        }
-
-        protected void GetActorRoom()
-        {
-            GetResult();
-            var index = GetVarOrDirectByte(OpCodeParameter.Param1);
-
-            // WORKAROUND bug #746349. This is a really odd bug in either the script
-            // or in our script engine. Might be a good idea to investigate this
-            // further by e.g. looking at the FOA engine a bit closer.
-            if (Game.GameId == GameId.Indy4 && _roomResource == 94 && Slots[CurrentScript].Number == 206 && !IsValidActor(index))
-            {
-                SetResult(0);
-                return;
-            }
-
-            var actor = Actors[index];
-            SetResult(actor.Room);
-        }
-
         void LoadRoomWithEgo()
         {
             int x, y, dir;
@@ -2781,7 +2835,7 @@ namespace NScumm.Core
             {
                 a.PutActor(room);
             }
-            _egoPositioned = false;
+            EgoPositioned = false;
 
             x = (sbyte)ReadByte();
             y = (sbyte)ReadByte();
@@ -2816,61 +2870,6 @@ namespace NScumm.Core
             Variables[VariableSentenceObject1.Value] = 0;
             Variables[VariableSentenceObject2.Value] = 0;
             Variables[VariableSentencePreposition.Value] = 0;
-        }
-
-        protected override void GetResult()
-        {
-            _resultVarIndex = ReadByte();
-        }
-
-        protected override int GetVar()
-        {
-            return ReadVariable(ReadByte());
-        }
-
-        protected override int ReadVariable(uint var)
-        {
-            if (Game.Version >= 1 && var >= 14 && var <= 16)
-                var = (uint)Variables[var];
-
-            ScummHelper.AssertRange(0, var, Variables.Length - 1, "variable (reading)");
-//            debugC(DEBUG_VARS, "readvar(%d) = %d", var, _scummVars[var]);
-            return Variables[var];
-        }
-
-        protected override void WriteVariable(uint index, int value)
-        {
-            if (VariableCutSceneExitKey.HasValue && index == VariableCutSceneExitKey.Value)
-            {
-                // Remap the cutscene exit key in earlier games
-                if (value == 4 || value == 13 || value == 64)
-                    value = 27;
-            }
-
-            Variables[index] = value;
-        }
-
-        protected void Move()
-        {
-            GetResult();
-            var result = GetVarOrDirectWord(OpCodeParameter.Param1);
-            SetResult(result);
-        }
-
-        protected void SetVarRange()
-        {
-            GetResult();
-            var a = ReadByte();
-            int b;
-            do
-            {
-                if ((_opCode & 0x80) == 0x80)
-                    b = ReadWordSigned();
-                else
-                    b = ReadByte();
-                SetResult(b);
-                _resultVarIndex++;
-            } while ((--a) > 0);
         }
     }
 }

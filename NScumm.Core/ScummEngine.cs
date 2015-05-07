@@ -69,7 +69,6 @@ namespace NScumm.Core
         protected byte _roomResource;
         protected byte[] _resourceMapper = new byte[128];
 
-        protected bool _egoPositioned;
 
         protected Dictionary<byte, Action> _opCodes;
         protected byte _opCode;
@@ -124,8 +123,8 @@ namespace NScumm.Core
 
         internal bool EgoPositioned
         {
-            get { return _egoPositioned; }
-            set { _egoPositioned = value; }
+            get;
+            set;
         }
 
         internal ICostumeLoader CostumeLoader
@@ -183,6 +182,7 @@ namespace NScumm.Core
             }
             Instance = engine;
             engine.DebugMode = debugMode;
+            engine.InitOpCodes();
             engine.SetupVars();
             engine.ResetScummVars();
             return engine;
@@ -223,7 +223,6 @@ namespace NScumm.Core
 
             SetupMusic();
 
-            _shadowPalette = new byte[Game.Version >= 7 ? NumShadowPalette * 256 : 256];
             _variables = new int[_resManager.NumVariables];
             _bitVars = new BitArray(_resManager.NumBitVariables);
             _slots = new ScriptSlot[NumScriptSlot];
@@ -262,24 +261,7 @@ namespace NScumm.Core
             _costumeLoader = game.Version < 7 ? (ICostumeLoader)new ClassicCostumeLoader(this) : new AkosCostumeLoader(this);
             _costumeRenderer = game.Version < 7 ? (ICostumeRenderer)new ClassicCostumeRenderer(this) : new AkosRenderer(this);
 
-            // Create the charset renderer
-            if (game.Version == 2)
-            {
-                _charset = new CharsetRenderer2(this);
-            }
-            else if (game.Version == 3)
-            {
-                _charset = new CharsetRenderer3(this);
-            }
-            else if (game.Version == 8)
-            {
-                _charset = new CharsetRendererNut(this);
-            }
-            else
-            {
-                _charset = new CharsetRendererClassic(this);
-            }
-
+            CreateCharset();
             ResetCursors();
 
             // Create the text surface
@@ -305,7 +287,6 @@ namespace NScumm.Core
             }
             InitActors();
             OwnerRoom = Game.Version >= 7 ? 0x0FF : 0x0F;
-            InitOpCodes();
 
             if (Game.Version < 7)
             {
@@ -313,21 +294,7 @@ namespace NScumm.Core
                 Camera.RightTrigger = 30;
             }
 
-            if (_game.Features.HasFlag(GameFeatures.SixteenColors))
-            {
-                Array.Copy(Palette.Ega.Colors, _currentPalette.Colors, Palette.Ega.Colors.Length);
-                gfxManager.SetPalette(_currentPalette.Colors);
-            }
-
-            for (int i = 0; i < 256; i++)
-                Gdi.RoomPalette[i] = (byte)i;
-
-            if (game.Features.HasFlag(GameFeatures.SixteenColors))
-            {
-                for (int i = 0; i < 256; i++)
-                    _shadowPalette[i] = (byte)i;
-            }
-
+            InitPalettes();
             InitializeVerbs();
 
             // WORKAROUND for bug in boot script of Loom (CD)
@@ -424,137 +391,9 @@ namespace NScumm.Core
             }
         }
 
-        protected virtual void SetupVars()
-        {
-            VariableEgo = 1;
-            VariableCameraPosX = 2;
-            VariableHaveMessage = 3;
-            VariableRoom = 4;
-            VariableOverride = 5;
-            VariableCurrentLights = 9;
-            VariableTimer1 = 11;
-            VariableTimer2 = 12;
-            VariableTimer3 = 13;
-            VariableMusicTimer = 14;
-            VariableCameraMinX = 17;
-            VariableCameraMaxX = 18;
-            VariableTimerNext = 19;
-            VariableVirtualMouseX = 20;
-            VariableVirtualMouseY = 21;
-            VariableRoomResource = 22;
-            VariableLastSound = 23;
-            VariableCutSceneExitKey = 24;
-            VariableTalkActor = 25;
-            VariableCameraFastX = 26;
-            VariableEntryScript = 28;
-            VariableEntryScript2 = 29;
-            VariableExitScript = 30;
-            VariableVerbScript = 32;
-            VariableSentenceScript = 33;
-            VariableInventoryScript = 34;
-            VariableCutSceneStartScript = 35;
-            VariableCutSceneEndScript = 36;
-            VariableCharIncrement = 37;
-            VariableWalkToObject = 38;
-            VariableHeapSpace = 40;
-            VariableMouseX = 44;
-            VariableMouseY = 45;
-            VariableTimer = 46;
-            VariableTimerTotal = 47;
-            VariableSoundcard = 48;
-            VariableVideoMode = 49;
-        }
+        protected abstract void SetupVars();
 
-        protected virtual void ResetScummVars()
-        {
-            ResetScummVarsCore();
-        }
-
-        protected void ResetScummVarsCore()
-        {
-            if (Game.Version <= 6)
-            {
-                // VAR_SOUNDCARD modes
-                // 0 PC Speaker
-                // 1 Tandy
-                // 2 CMS
-                // 3 AdLib
-                // 4 Roland
-                switch (Sound.MusicType)
-                {
-                    case MusicDriverTypes.None:
-                    case MusicDriverTypes.PCSpeaker:
-                        Variables[VariableSoundcard.Value] = 0;
-                        break;
-                    case MusicDriverTypes.PCjr:
-                        Variables[VariableSoundcard.Value] = 1;
-                        break;
-                    case MusicDriverTypes.CMS:
-                        Variables[VariableSoundcard.Value] = 2;
-                        break;
-                    case MusicDriverTypes.AdLib:
-                        Variables[VariableSoundcard.Value] = 3;
-                        break;
-                    case MusicDriverTypes.Midi:
-                        Variables[VariableSoundcard.Value] = 4;
-                        break;
-                    default:
-                        if ((_game.GameId == GameId.Monkey1 && Game.Variant == "EGA") || (_game.GameId == GameId.Monkey1 && Game.Variant == "VGA")
-                            || (_game.GameId == GameId.Loom && Game.Version == 3)) /*&&  (_game.platform == Common::kPlatformDOS)*/
-                        {
-                            Variables[VariableSoundcard.Value] = 4;
-                        }
-                        else
-                        {
-                            Variables[VariableSoundcard.Value] = 3;
-                        }
-                        break;
-                }
-
-                Variables[VariableVideoMode.Value] = 19;
-
-                if (Game.GameId == GameId.Loom && Game.Version == 3)
-                {
-                    // Set number of sound resources
-                    Variables[39] = 80;
-                }
-                if (Game.GameId == GameId.Loom || Game.Version >= 4)
-                    Variables[VariableHeapSpace.Value] = 1400;
-
-                if (Game.Version >= 4)
-                    Variables[VariableFixedDisk.Value] = 1;
-
-                if (Game.Version >= 5)
-                    Variables[VariableInputMode.Value] = 3;
-                if (Game.Version == 6)
-                    Variables[VariableV6EMSSpace.Value] = 10000;
-            }
-
-            if (VariableVoiceMode.HasValue)
-            {
-                Variables[VariableVoiceMode.Value] = (int)VoiceMode.VoiceAndText;
-            }
-
-            if (VariableRoomWidth.HasValue && VariableRoomHeight.HasValue)
-            {
-                Variables[VariableRoomWidth.Value] = ScreenWidth;
-                Variables[VariableRoomHeight.Value] = ScreenHeight;
-            }
-
-            if (VariableDebugMode.HasValue)
-            {
-                Variables[VariableDebugMode.Value] = (DebugMode ? 1 : 0);
-            }
-
-            if (VariableFadeDelay.HasValue)
-                Variables[VariableFadeDelay.Value] = 3;
-
-            Variables[VariableCharIncrement.Value] = 4;
-            TalkingActor = 0;
-
-            if (_game.Version >= 5 && _game.Version <= 7)
-                Sound.SetupSound();
-        }
+        protected abstract void ResetScummVars();
 
         protected void InitScreens(int b, int h)
         {

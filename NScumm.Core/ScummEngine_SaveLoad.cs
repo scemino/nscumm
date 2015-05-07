@@ -488,7 +488,7 @@ namespace NScumm.Core
 
                 LoadAndSaveEntry.Create(reader => _charsetBuffer = reader.ReadBytes(256), writer => writer.WriteBytes(_charsetBuffer, 256), 8),
 
-                LoadAndSaveEntry.Create(reader => _egoPositioned = reader.ReadByte() != 0, writer => writer.WriteByte(_egoPositioned), 8),
+                LoadAndSaveEntry.Create(reader => EgoPositioned = reader.ReadByte() != 0, writer => writer.WriteByte(EgoPositioned), 8),
 
                 // _gdi->_imgBufOffs grew from 4 to 5 entries. Then one day we realized
                 // that we don't have to store it since initBGBuffers() recomputes it.
@@ -1350,7 +1350,7 @@ namespace NScumm.Core
             bw.Write(hdr.Size);
             bw.Write(hdr.Version);
 
-            var data = Encoding.Unicode.GetBytes(name);
+            var data = Encoding.UTF8.GetBytes(name);
             var data2 = new byte[32];
             int length = Math.Min(data.Length, 31);
             Array.Copy(data, data2, Math.Min(data.Length, 31));
@@ -1461,7 +1461,7 @@ namespace NScumm.Core
                 throw new NotSupportedException("Invalid version");
             }
 
-            hdr.Name = Encoding.Unicode.GetString(reader.ReadBytes(32));
+            hdr.Name = Encoding.UTF8.GetString(reader.ReadBytes(32));
 
             // Since version 52 a thumbnail is saved directly after the header.
             if (hdr.Version >= 52)

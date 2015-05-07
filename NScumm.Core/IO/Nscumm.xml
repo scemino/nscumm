@@ -1,6 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <NScumm xmlns="http://schemas.scemino.com/nscumm/2012/">
   <MD5 signature="624cdb93654667c869d204a64af7e57f" gameId="maniac" variant="V2" language="en" features="SixteenColors" />
+  <MD5 signature="675d71151e9b5a968c8ce46d9fbf4cbf" gameId="zak" variant="V2" language="en" features="SixteenColors" />
   <MD5 signature="1875b90fade138c9253a8e967007031a" gameId="indy3" variant="VGA" language="en" features="Old256 FewLocals" />
   <MD5 signature="6b3ec67da214f558dc5ceaa2acd47453" gameId="indy3" variant="EGA" language="en" features="SixteenColors" />
   <MD5 signature="c63ee46143ba65f9ce14cf539ca51bd7" gameId="atlantis" variant="" language="en" />
@@ -17,21 +18,23 @@
   <MD5 signature="09820417db26687bb7fe0c83cc4c553b" gameId="ft" variant="" language="en" />
   <MD5 signature="d8323015ecb8b10bf53474f6e6b0ae33" gameId="dig" variant="" language="en" />
   <MD5 signature="fe60d6b5ff51b0553ac59963123b5777" gameId="comi" variant="" language="en" />
-  <Game id="maniac" gameId="Maniac" variant="V2" version="2" music="PCSpeaker" />
-  <Game id="indy3" gameId="Indy3" variant="VGA" version="3" music="PCSpeaker AdLib" />
-  <Game id="indy3" gameId="Indy3" variant="EGA" version="3" music="PCSpeaker AdLib" />
-  <Game id="atlantis" gameId="Indy4" variant="" version="5" music="PCSpeaker AdLib" />
+  <Game id="maniac" gameId="Maniac" variant="V2" version="2" music="PCSpeaker PCjr" />
+  <Game id="zak" gameId="Zak" variant="V2" version="2" music="PCSpeaker PCjr" />
+  <Game id="indy3" gameId="Indy3" variant="VGA" version="3" music="PCSpeaker PCjr AdLib" />
+  <Game id="indy3" gameId="Indy3" variant="EGA" version="3" music="PCSpeaker PCjr AdLib" />
+  <Game id="atlantis" gameId="Indy4" variant="" version="5" music="PCSpeaker PCjr AdLib" />
   <Game id="loom" gameId="Loom" variant="VGA" version="4" />
-  <Game id="monkey" gameId="Monkey1" variant="VGA" version="4" music="PCSpeaker AdLib" />
+  <Game id="monkey" gameId="Monkey1" variant="VGA" version="4" music="PCSpeaker PCjr AdLib" />
   <Game id="monkey" gameId="Monkey1" variant="CD" version="5" music="AdLib" />
   <Game id="monkey2" gameId="Monkey2" variant="" version="5" music="PCSpeaker AdLib" />
-  <Game id="pass" gameId="Pass" variant="" version="4" music="PCSpeaker AdLib" />
+  <Game id="pass" gameId="Pass" variant="" version="4" music="PCSpeaker PCjr AdLib" />
   <Game id="tentacle" gameId="Tentacle" variant="Floppy" version="6" music="AdLib" />
   <Game id="samnmax" gameId="SamNMax" variant="Floppy" version="6" music="AdLib" />
   <Game id="ft" gameId="FullThrottle" variant="" version="7" pattern="ft.la{0}" />
   <Game id="dig" gameId="Dig" variant="" version="7" pattern="dig.la{0}" />
   <Game id="comi" gameId="CurseOfMonkeyIsland" variant="" version="8" pattern="comi.la{0}" />
   <Description gameId="maniac" text="Maniac Mansion" />
+  <Description gameId="zak" text="Zak McKracken and the Alien Mindbenders" />
   <Description gameId="indy3" text="Indiana Jones and the Last Crusade" />
   <Description gameId="atlantis" text="Indiana Jones and the Fate of Atlantis" />
   <Description gameId="monkey" text="The Secret of Monkey Island" />

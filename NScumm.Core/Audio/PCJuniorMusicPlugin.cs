@@ -1,10 +1,10 @@
 //
-//  MusicManager.cs
+//  PCJuniorMusicPlugin.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
 //
-//  Copyright (c) 2014 
+//  Copyright (c) 2015 
 //
 //  This program is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -19,25 +19,32 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using System.Linq;
 using System.Collections.Generic;
-using System;
+using NScumm.Core.Audio.Midi;
 
-namespace NScumm.Core.Audio
+namespace NScumm.Core.Audio.SoftSynth
 {
-    /// <summary>
-    /// Singleton class which manages all Music plugins.
-    /// </summary>
-    public static class MusicManager
-    {
-        public static IList<IMusicPluginObject> GetPlugins()
-        {
-            var types = (from type in typeof(MusicManager).Assembly.GetTypes()
-                                  where !type.IsAbstract && type.GetInterfaces().Contains(typeof(IMusicPluginObject))
-                                  select (IMusicPluginObject)Activator.CreateInstance(type)).ToList();
 
-            return types;
+    class PCJuniorMusicPlugin : MusicPluginObject, IMusicPluginObject
+    {
+        public override string Id
+        {
+            get{ return "pcjr"; }
+        }
+
+        public override string Name
+        {
+            get { return "IBM PCjr Emulator"; }
+        }
+
+        public override IList<MusicDevice> GetDevices()
+        {
+            return new []{ new MusicDevice(this, string.Empty, MusicType.PCjr) };
+        }
+
+        public override IMidiDriver CreateInstance(IMixer mixer, DeviceHandle handle)
+        {
+            return new PCSpeakerDriver(mixer);
         }
     }
-    
 }

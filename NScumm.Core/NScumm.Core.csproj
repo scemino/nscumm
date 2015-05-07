@@ -270,6 +270,7 @@
     <Compile Include="Actor2.cs" />
     <Compile Include="Graphics\Gdi2.cs" />
     <Compile Include="Graphics\CharsetRenderer2.cs" />
+    <Compile Include="Audio\PCJuniorMusicPlugin.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <ItemGroup>

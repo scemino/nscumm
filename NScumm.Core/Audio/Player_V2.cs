@@ -233,7 +233,7 @@ namespace NScumm.Core.Audio
             int i, j;
             int freq, vol;
 
-            Array.Clear(data, offset, len);
+            Array.Clear(data, offset, len * 2);
             bool hasdata = false;
 
             for (i = 1; i < 3; i++)

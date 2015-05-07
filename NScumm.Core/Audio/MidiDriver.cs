@@ -217,6 +217,12 @@ namespace NScumm.Core.Audio
                         result = handle;
                     }
                     break;
+                case MusicType.PCjr:
+                    if (flags.HasFlag(MusicDriverTypes.PCjr))
+                    {
+                        result = handle;
+                    }
+                    break;
                 case MusicType.AdLib:
                     if (flags.HasFlag(MusicDriverTypes.AdLib))
                     {

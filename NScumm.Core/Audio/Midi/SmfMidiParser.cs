@@ -260,7 +260,7 @@ namespace NScumm.Core.Audio.Midi
 
         static bool AreEquals(byte[] data1, string data2)
         {
-            return AreEquals(data1, Encoding.Unicode.GetBytes(data2));
+            return AreEquals(data1, Encoding.UTF8.GetBytes(data2));
         }
 
         static bool AreEquals(byte[] data1, byte[] data2)

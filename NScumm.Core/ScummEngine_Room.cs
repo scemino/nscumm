@@ -141,6 +141,10 @@ namespace NScumm.Core
 
         void ResetRoomSubBlocks()
         {
+            // Reset room color for V1 zak
+            if (Game.Version <= 1)
+                Gdi.RoomPalette[0] = 0;
+
             _boxMatrix.Clear();
             _boxMatrix.AddRange(roomData.BoxMatrix);
 

@@ -52,6 +52,9 @@ namespace NScumm.Core
         {
             switch (Game.Version)
             {
+                case 1:
+                    _charset = new CharsetRenderer2(this);
+                    break;
                 case 2:
                     _charset = new CharsetRenderer2(this);
                     break;

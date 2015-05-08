@@ -152,7 +152,7 @@ namespace NScumm.Core
         {
             ScummEngine engine = null;
             var game = settings.Game;
-            if (game.Version == 2)
+            if ((game.Version == 1) || (game.Version == 2))
             {
                 engine = new ScummEngine2(settings, gfxManager, inputManager, mixer);
             }
@@ -257,7 +257,18 @@ namespace NScumm.Core
             {
                 _scaleSlots[i] = new ScaleSlot();
             }
-            Gdi = Game.Version == 2 ? new Gdi2(this, game) : new Gdi(this, game);
+            switch (Game.Version)
+            {
+                case 1:
+                    Gdi = new Gdi1(this, game);
+                    break;
+                case 2:
+                    Gdi = new Gdi2(this, game);
+                    break;
+                default:
+                    Gdi = new Gdi(this, game);
+                    break;
+            }
             _costumeLoader = game.Version < 7 ? (ICostumeLoader)new ClassicCostumeLoader(this) : new AkosCostumeLoader(this);
             _costumeRenderer = game.Version < 7 ? (ICostumeRenderer)new ClassicCostumeRenderer(this) : new AkosRenderer(this);
 

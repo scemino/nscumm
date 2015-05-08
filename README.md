@@ -1,7 +1,7 @@
 NSCUMM
 ======
 
-Quick and dirty .NET port of the SCUMM engine version 2 to 8 of the project scummvm.
+Quick and dirty .NET port of the SCUMM engine version 1 to 8 of the project scummvm.
 
 Quick start
 -----------
@@ -56,6 +56,10 @@ Loom
 Maniac Mansion
 
 Zak McKracken and the Alien Mindbenders
+
+### SCUMM 1
+
+Maniac Mansion
 
 Hotkeys
 -------

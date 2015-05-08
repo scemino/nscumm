@@ -17,6 +17,7 @@
 
 using NScumm.Core.Graphics;
 using System;
+using NScumm.Core.IO;
 
 namespace NScumm.Core
 {
@@ -33,7 +34,7 @@ namespace NScumm.Core
         protected Palette _palManipIntermediatePal;
         protected int _curPalIndex;
         protected byte[] _shadowPalette;
-        protected Palette _darkenPalette=new Palette();
+        protected Palette _darkenPalette = new Palette();
 
         public const int NumShadowPalette = 8;
 
@@ -46,6 +47,33 @@ namespace NScumm.Core
         }
 
         protected internal byte[] ShadowPalette { get { return _shadowPalette; } }
+
+        void InitPalettes()
+        {
+            if (Game.Version <= 1)
+            {
+                SetPalette(Palette.V1);
+                if (Game.GameId == GameId.Zak)
+                    SetPalColor(15, 170, 170, 170);
+            }
+            else
+            {
+                _shadowPalette = new byte[Game.Version >= 7 ? NumShadowPalette * 256 : 256];
+                if (Game.Features.HasFlag(GameFeatures.SixteenColors))
+                {
+                    Array.Copy(Palette.Ega.Colors, _currentPalette.Colors, Palette.Ega.Colors.Length);
+                    _gfxManager.SetPalette(_currentPalette.Colors);
+                }
+                if (Game.Features.HasFlag(GameFeatures.SixteenColors))
+                {
+                    for (int i = 0; i < 256; i++)
+                        _shadowPalette[i] = (byte)i;
+                }
+            }
+
+            for (int i = 0; i < 256; i++)
+                Gdi.RoomPalette[i] = (byte)i;
+        }
 
         void CyclePalette()
         {
@@ -93,6 +121,14 @@ namespace NScumm.Core
 
             DoCyclePalette(_palManipPalette, start, end, !direction);
             DoCyclePalette(_palManipIntermediatePal, start, end, !direction);
+        }
+
+        void SetPalette(Palette palette)
+        {
+            for (var i = 0; i < 256; i++)
+            {
+                SetPalColor(i, palette.Colors[i].R, palette.Colors[i].G, palette.Colors[i].B);
+            }
         }
 
         protected void SetCurrentPalette(int palIndex)
@@ -174,7 +210,10 @@ namespace NScumm.Core
         protected void SetPalColor(int index, int r, int g, int b)
         {
             _currentPalette.Colors[index] = Color.FromRgb(r, g, b);
-            _darkenPalette.Colors[index] = Color.FromRgb(r, g, b);
+            if (Game.Version == 8)
+            {
+                _darkenPalette.Colors[index] = Color.FromRgb(r, g, b);
+            }
 
             //            if (_game.Features.HasFlag(GameFeatures.SixteenColors))
             //                _16BitPalette[idx] = get16BitColor(r, g, b);

@@ -76,6 +76,15 @@ namespace NScumm.Core.Graphics
             0x1E, 0x9E, 0x5E, 0xDE, 0x3E, 0xBE, 0x7E, 0xFE
         };
 
+        static readonly byte[] v1MMActorPalatte1 =
+            {
+                8, 8, 8, 8, 4, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8
+            };
+        static readonly byte[] v1MMActorPalatte2 =
+            {
+                0, 7, 2, 6, 9, 1, 3, 7, 7, 1, 1, 9, 1, 4, 5, 5, 4, 1, 0, 5, 4, 2, 2, 7, 7
+            };
+
         public int DrawTop { get; set; }
 
         public int DrawBottom { get; set; }
@@ -203,7 +212,12 @@ namespace NScumm.Core.Graphics
             pixelsNavigator.OffsetX(-(vs.XStart & 7));
             startNav = new PixelNavigator(pixelsNavigator);
 
-            if (_vm.Game.IsOldBundle)
+            if (_vm.Game.Version <= 1)
+            {
+                _xmove = 0;
+                _ymove = 0;
+            }
+            else if (_vm.Game.IsOldBundle)
             {
                 _xmove = -72;
                 _ymove = -100;
@@ -459,7 +473,11 @@ namespace NScumm.Core.Graphics
             v1.SkipWidth = _width;
             v1.ScaleXStep = _mirror ? 1 : -1;
 
-            _vm.MarkRectAsDirty(_vm.MainVirtScreen, rect.Left, rect.Right + 1, rect.Top, rect.Bottom, ActorID);
+            if (_vm.Game.Version == 1)
+                // V1 games uses 8 x 8 pixels for actors
+                _vm.MarkRectAsDirty(_vm.MainVirtScreen, rect.Left, rect.Right + 8, rect.Top, rect.Bottom, ActorID);
+            else
+                _vm.MarkRectAsDirty(_vm.MainVirtScreen, rect.Left, rect.Right + 1, rect.Top, rect.Bottom, ActorID);
 
             if (rect.Top >= _h || rect.Bottom <= 0)
                 return 0;
@@ -553,7 +571,16 @@ namespace NScumm.Core.Graphics
 
             v1.MaskPtr = _vm.GetMaskBuffer(0, v1.Y, ZBuffer);
 
-            Proc3(v1);
+            if (_loaded.Format == 0x57)
+            {
+                // The v1 costume renderer needs the actor number, which is
+                // the same thing as the costume renderer's _actorID.
+                ProcC64(v1, ActorID);
+            }
+            else
+            {
+                Proc3(v1);
+            }
 
             return drawFlag;
         }
@@ -581,6 +608,132 @@ namespace NScumm.Core.Graphics
                     }
                 } while ((--v1.RepLen) != 0);
             } while (true);
+        }
+
+        bool MaskAt(int xoff, Codec1 v1, PixelNavigator? mask)
+        {
+            return (mask.HasValue && ((mask.Value.Read(((v1.X + xoff) / 8)) & ScummHelper.RevBitMask((v1.X + xoff) & 7)) != 0));
+        }
+
+        void Line(int c, int p, Codec1 v1, PixelNavigator? mask, PixelNavigator dst, byte color, byte[] palette)
+        {
+            var pcolor = (color >> c) & 3;
+            if (pcolor != 0)
+            { 
+                if (!MaskAt(p, v1, mask))
+                    dst.Write(p, palette[pcolor]);
+                if (!MaskAt(p + 1, v1, mask))
+                    dst.Write(p + 1, palette[pcolor]);
+            }
+        }
+
+        void ProcC64(Codec1 v1, int actor)
+        {
+//            const byte *mask, *src;
+//            byte *dst;
+            byte len;
+            int y;
+            uint height;
+            byte color, pcolor;
+            bool rep;
+
+            y = v1.Y;
+            _loaded.CostumeReader.BaseStream.Seek(_srcptr, System.IO.SeekOrigin.Begin);
+            var dst = v1.DestPtr;
+            len = v1.RepLen;
+            color = v1.RepColor;
+            height = (uint)_height;
+
+            v1.SkipWidth /= 8;
+
+            // Set up the palette data
+            byte[] palette = new byte[4];
+            if (_vm.GetCurrentLights().HasFlag(LightModes.ActorUseColors))
+            {
+                if (_vm.Game.GameId == GameId.Maniac)
+                {
+                    palette[1] = v1MMActorPalatte1[actor];
+                    palette[2] = v1MMActorPalatte2[actor];
+                }
+                else
+                {
+                    // Adjust for C64 version of Zak McKracken
+                    palette[1] = /*(_vm.Game.Platform == Platform.C64) ? 10 : */8;
+                    palette[2] = (byte)_palette[actor];
+                }
+            }
+            else
+            {
+                palette[2] = 11;
+                palette[3] = 11;
+            }
+            var mask = v1.MaskPtr;
+
+            var skipInit = false;
+            if (len != 0)
+                skipInit = true;
+
+            do
+            {
+                if (!skipInit)
+                {
+                    len = Init(ref color);
+                }
+                else
+                {
+                    skipInit = false;
+                }
+
+                rep = (len & 0x80) != 0;
+                len &= 0x7f;
+                while ((len--) != 0)
+                {
+                    if (!rep)
+                        color = _loaded.CostumeReader.ReadByte();
+
+                    if (0 <= y && y < _h && 0 <= v1.X && v1.X < _w)
+                    {
+                        if (!_mirror)
+                        {
+                            Line(0, 0, v1, mask, dst, color, palette);
+                            Line(2, 2, v1, mask, dst, color, palette);
+                            Line(4, 4, v1, mask, dst, color, palette);
+                            Line(6, 6, v1, mask, dst, color, palette);
+                        }
+                        else
+                        {
+                            Line(6, 0, v1, mask, dst, color, palette);
+                            Line(4, 2, v1, mask, dst, color, palette);
+                            Line(2, 4, v1, mask, dst, color, palette);
+                            Line(0, 6, v1, mask, dst, color, palette);
+                        }
+                    }
+                    dst.OffsetY(1);
+                    y++;
+                    mask.OffsetY(1);
+                    if ((--height) == 0)
+                    {
+                        if ((--v1.SkipWidth) == 0)
+                            return;
+                        height = (uint)_height;
+                        y = v1.Y;
+                        v1.X += 8 * v1.ScaleXStep;
+                        if (v1.X < 0 || v1.X >= _w)
+                            return;
+                        mask = v1.MaskPtr;
+                        v1.DestPtr.OffsetX(8 * v1.ScaleXStep);
+                        dst = v1.DestPtr;
+                    }
+                }
+            } while (true);
+        }
+
+        byte Init(ref byte color)
+        {
+            var len = _loaded.CostumeReader.ReadByte();
+            if ((len & 0x80) != 0)
+                color = _loaded.CostumeReader.ReadByte();
+            return len;
         }
 
         void Proc3(Codec1 v1)

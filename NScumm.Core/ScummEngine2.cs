@@ -498,9 +498,14 @@ namespace NScumm.Core
             _opCodes[0xff] = IfState01;
         }
 
+        static readonly byte[] default_v1_cursor_colors =
+            {
+                1, 1, 12, 11
+            };
+
         protected override void SetBuiltinCursor(int idx)
         {
-            var color = defaultCursorColors[idx];
+            var color = (Game.Version <= 1) ? default_v1_cursor_colors[idx] : defaultCursorColors[idx];
 
             _cursor.Hotspot = new Point(11, 10);
             _cursor.Width = 23;
@@ -1186,7 +1191,7 @@ namespace NScumm.Core
                 _resultVarIndex++;
             } while ((--a) > 0);
         }
-    
+
         void InitV2MouseOver()
         {
             int i;
@@ -2251,9 +2256,9 @@ namespace NScumm.Core
             }
 
             var st = Sentence[SentenceNum++] = new Sentence(
-                (byte)a,
-                (ushort)GetVarOrDirectWord(OpCodeParameter.Param2),
-                (ushort)GetVarOrDirectWord(OpCodeParameter.Param3));
+                         (byte)a,
+                         (ushort)GetVarOrDirectWord(OpCodeParameter.Param2),
+                         (ushort)GetVarOrDirectWord(OpCodeParameter.Param3));
 
             // Execute or print the sentence
             _opCode = ReadByte();
@@ -2355,17 +2360,18 @@ namespace NScumm.Core
                     _sentenceBuf += Encoding.UTF8.GetString(temp);
                 }
 
-                // For V1 games, the engine must compute the preposition.
-                // In all other Scumm versions, this is done by the sentence script.
-                // TODO: vs V1
-                //                if ((Game.GameId == GameId.Maniac && Game.Version == 1 && !(Game.Platform == Platform.NES)) && (VAR(VAR_SENTENCE_PREPOSITION) == 0)) {
-                //                    if (_verbs[slot].prep == 0xFF) {
-                //                        byte *ptr = getOBCDFromObject(VAR(VAR_SENTENCE_OBJECT1));
-                //                        assert(ptr);
-                //                        Variables(VAR_SENTENCE_PREPOSITION) = (*(ptr + 12) >> 5);
-                //                    } else
-                //                        Variables(VAR_SENTENCE_PREPOSITION) = _verbs[slot].prep;
-                //                }
+//                 For V1 games, the engine must compute the preposition.
+//                 In all other Scumm versions, this is done by the sentence script.
+                if ((Game.GameId == GameId.Maniac && Game.Version == 1 /*&& !(Game.Platform == Platform.NES)*/) && (Variables[VariableSentencePreposition.Value] == 0))
+                {
+                    if (Verbs[slot].Prep == 0xFF)
+                    {
+                        var obj = _objs.First(o => o.Number == Variables[VariableSentenceObject1.Value]);
+                        Variables[VariableSentencePreposition.Value] = obj.Preposition;
+                    }
+                    else
+                        Variables[VariableSentencePreposition.Value] = Verbs[slot].Prep;
+                }
             }
 
             if (0 < Variables[VariableSentencePreposition.Value] && Variables[VariableSentencePreposition.Value] <= 4)
@@ -2436,13 +2442,13 @@ namespace NScumm.Core
             // we have to do that, too, and provde localized versions for all the
             // languages MM/Zak are available in.
             var prepositions = new string[5, 5]
-                {
-                    { " ", " in", " with", " on", " to" },   // English
-                    { " ", " mit", " mit", " mit", " zu" },  // German
-                    { " ", " dans", " avec", " sur", " <" }, // French
-                    { " ", " in", " con", " su", " a" },     // Italian
-                    { " ", " en", " con", " en", " a" },     // Spanish
-                };
+            {
+                { " ", " in", " with", " on", " to" },   // English
+                { " ", " mit", " mit", " mit", " zu" },  // German
+                { " ", " dans", " avec", " sur", " <" }, // French
+                { " ", " in", " con", " su", " a" },     // Italian
+                { " ", " en", " con", " en", " a" },     // Spanish
+            };
             int lang;
             switch (Game.Culture.TwoLetterISOLanguageName)
             {

@@ -159,10 +159,11 @@ namespace NScumm.Core.Graphics
             }
         }
 
-        protected override void PrepareDrawBitmap(byte[] ptr, VirtScreen vs,
+        protected override void PrepareDrawBitmap(ImageData img, VirtScreen vs,
                                Point p, int width, int height,
                                int stripnr, int numstrip)
         {
+            var ptr = img.Data;
             //
             // Since V3, all graphics data was encoded in strips, which is very efficient
             // for redrawing only parts of the screen. However, V2 is different: here
@@ -296,12 +297,12 @@ namespace NScumm.Core.Graphics
             }
         }
 
-        protected override bool DrawStrip(PixelNavigator navDst, int height, int stripnr, BinaryReader smapReader)
+        protected override bool DrawStrip(PixelNavigator navDst, int width, int height, int stripnr, BinaryReader smapReader)
         {
             return false;
         }
 
-        protected override void DecodeMask(int x, int y, int height, int stripnr, System.Collections.Generic.IList<ZPlane> zPlanes, bool transpStrip, DrawBitmaps flags)
+        protected override void DecodeMask(int x, int y, int width, int height, int stripnr, System.Collections.Generic.IList<ZPlane> zPlanes, bool transpStrip, DrawBitmaps flags)
         {
             // Do nothing here for V2 games - zplane was already handled.
         }

@@ -34,21 +34,77 @@ namespace NScumm.Core
                 var brOrg = new BinaryReader(file);
                 var br = new XorReader(brOrg, 0xFF);
                 var magic = br.ReadUInt16();
-                if (magic != 0x0100)
-                    throw new NotSupportedException(
-                        string.Format("The magic id doesn't match ({0:X2})", magic));
-
-                ReadDirectoryOfObjects(br);
-                RoomResources = new ReadOnlyCollection<Resource>(ReadRoomResTypeList(br));
-                CostumeResources = new ReadOnlyCollection<Resource>(ReadResTypeList(br));
-                ScriptResources = new ReadOnlyCollection<Resource>(ReadResTypeList(br));
-                SoundResources = new ReadOnlyCollection<Resource>(ReadResTypeList(br));
+                switch (magic)
+                {
+                    case 0x0A31:
+                        ReadClassicIndexFile(br);
+                        break;
+                    case 0x0100:
+                        ReadEnhancedIndexFile(br);
+                        break;
+                    default:
+                        throw new NotSupportedException(
+                            string.Format("The magic id doesn't match ({0:X2})", magic));
+                }
             }
         }
 
-        protected virtual Resource[] ReadResTypeList(XorReader br)
+        void ReadClassicIndexFile(XorReader br)
         {
-            var num = br.ReadByte();
+            int numGlobalObjects, numRooms, numCostumes, numScripts, numSounds;
+            if (Game.GameId == GameId.Maniac)
+            {
+                numGlobalObjects = 800;
+                numRooms = 55;
+                numCostumes = 35;
+                numScripts = 200;
+                numSounds = 100;
+            }
+            else if (Game.GameId == GameId.Zak)
+            {
+                numGlobalObjects = 775;
+                numRooms = 61;
+                numCostumes = 37;
+                numScripts = 155;
+                numSounds = 120;
+            }
+            else
+            {
+                throw new InvalidOperationException();
+            }
+
+            ReadDirectoryOfObjects(br, numGlobalObjects);
+            RoomResources = new ReadOnlyCollection<Resource>(ReadRoomResTypeList(br, numRooms));
+            CostumeResources = new ReadOnlyCollection<Resource>(ReadResTypeList(br, numCostumes));
+            ScriptResources = new ReadOnlyCollection<Resource>(ReadResTypeList(br, numScripts));
+            SoundResources = new ReadOnlyCollection<Resource>(ReadResTypeList(br, numSounds));
+        }
+
+        void ReadEnhancedIndexFile(XorReader br)
+        {
+            ReadDirectoryOfObjects(br);
+            RoomResources = new ReadOnlyCollection<Resource>(ReadRoomResTypeList(br));
+            CostumeResources = new ReadOnlyCollection<Resource>(ReadResTypeList(br));
+            ScriptResources = new ReadOnlyCollection<Resource>(ReadResTypeList(br));
+            SoundResources = new ReadOnlyCollection<Resource>(ReadResTypeList(br));
+        }
+
+        static Resource[] ReadRoomResTypeList(XorReader br, int? numEntries = null)
+        {
+            var num = numEntries.HasValue ? numEntries.Value : br.ReadByte();
+            var rooms = new Resource[num];
+            br.ReadBytes(num); // disk file numbers
+            for (int i = 0; i < num; i++)
+            {
+                var offset = ToOffset(br.ReadUInt16());
+                rooms[i] = new Resource{ RoomNum = (byte)i, Offset = offset };
+            }
+            return rooms;
+        }
+
+        protected virtual Resource[] ReadResTypeList(XorReader br, int? numEntries = null)
+        {
+            var num = numEntries.HasValue ? numEntries.Value : br.ReadByte();
             var res = new Resource[num];
             var rooms = br.ReadBytes(num);
             for (int i = 0; i < num; i++)
@@ -59,31 +115,18 @@ namespace NScumm.Core
             return res;
         }
 
-        protected virtual void ReadDirectoryOfObjects(XorReader br)
+        protected virtual void ReadDirectoryOfObjects(XorReader br, int? numEntries = null)
         {
-            var numEntries = br.ReadUInt16();
-            ObjectOwnerTable = new byte[numEntries];
-            ObjectStateTable = new byte[numEntries];
-            ClassData = new uint[numEntries];
-            for (int i = 0; i < numEntries; i++)
+            var num = numEntries.HasValue ? numEntries.Value : br.ReadByte();
+            ObjectOwnerTable = new byte[num];
+            ObjectStateTable = new byte[num];
+            ClassData = new uint[num];
+            for (int i = 0; i < num; i++)
             {
                 var tmp = br.ReadByte();
                 ObjectOwnerTable[i] = (byte)(tmp & 0x0F);
                 ObjectStateTable[i] = (byte)(tmp >> 4);
             }
-        }
-
-        static Resource[] ReadRoomResTypeList(XorReader br)
-        {
-            var num = br.ReadByte();
-            var rooms = new Resource[num];
-            br.ReadBytes(num); // disk file numbers
-            for (int i = 0; i < num; i++)
-            {
-                var offset = ToOffset(br.ReadUInt16());
-                rooms[i] = new Resource{ RoomNum = (byte)i, Offset = offset };
-            }
-            return rooms;
         }
 
         static uint ToOffset(ushort offset)

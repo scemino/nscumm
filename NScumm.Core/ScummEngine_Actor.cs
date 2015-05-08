@@ -32,6 +32,12 @@ namespace NScumm.Core
         internal protected int _actorToPrintStrFor;
         bool _useTalkAnims;
         protected bool _haveActorSpeechMsg;
+        static readonly byte[] v0MMActorTalkColor = {
+            1, 7, 2, 14, 8, 15, 3, 7, 7, 15, 1, 13, 1, 4, 5, 5, 4, 3, 1, 5, 1, 1, 1, 1, 7
+        };
+        static readonly byte[] v1MMActorTalkColor = {
+            1, 7, 2, 14, 8, 1, 3, 7, 7, 12, 1, 13, 1, 4, 5, 5, 4, 3, 1, 5, 1, 1, 1, 7, 7
+        };
 
         internal Actor[] Actors { get; private set; }
 
@@ -59,7 +65,7 @@ namespace NScumm.Core
             Actors = new Actor[numActors];
             for (byte i = 0; i < Actors.Length; i++)
             {
-                if (Game.Version == 2)
+                if (Game.Version <= 2)
                 {
                     Actors[i] = new Actor2(this, i);
                 }
@@ -72,6 +78,30 @@ namespace NScumm.Core
                     Actors[i] = new Actor(this, i);
                 }
                 Actors[i].Init(-1);
+
+                // this is from IDB
+                if ((_game.Version <= 1) || (Game.GameId == GameId.Maniac && (Game.Features.HasFlag(GameFeatures.Demo))))
+                    Actors[i].SetActorCostume(i);
+            }
+
+            if (Game.GameId == GameId.Maniac && Game.Version <= 1)
+            {
+                ResetV1ActorTalkColor();
+            }
+        }
+
+        void ResetV1ActorTalkColor()
+        {
+            for (var i = 1; i < Actors.Length; i++)
+            {
+                if (_game.Version == 0)
+                {
+                    Actors[i].TalkColor = v0MMActorTalkColor[i];
+                }
+                else
+                {
+                    Actors[i].TalkColor = v1MMActorTalkColor[i];
+                }
             }
         }
 
@@ -153,10 +183,24 @@ namespace NScumm.Core
             Charset();
         }
 
+        int _v1TalkingActor;
+
         internal int TalkingActor
         {
-            get { return _variables[VariableTalkActor.Value]; }
-            set { _variables[VariableTalkActor.Value] = value; }
+            get
+            {
+                if (_game.GameId == GameId.Maniac && Game.Version <= 1 /*&& !(Game.platform == Platform.NES)*/)
+                    return _v1TalkingActor;
+                else
+                    return _variables[VariableTalkActor.Value];
+            }
+            set
+            { 
+                if (_game.GameId == GameId.Maniac && Game.Version <= 1 /*&& !(Game.platform == Platform.NES)*/)
+                    _v1TalkingActor = value;
+                else
+                    _variables[VariableTalkActor.Value] = value;
+            }
         }
 
         internal void StopTalk()

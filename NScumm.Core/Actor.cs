@@ -481,6 +481,10 @@ namespace NScumm.Core
                 }
             }
 
+            // V1 zak uses palette[] as a dynamic costume color array.
+            if (_scumm.Game.Version <= 1)
+                return;
+
             if (_scumm.Game.Version >= 7)
             {
                 for (var i = 0; i < 256; i++)

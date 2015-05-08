@@ -22,7 +22,10 @@ namespace NScumm.Core.Graphics
     public class Palette
     {
         public static Palette Ega { get { return egaPalette ?? (egaPalette = CreatePalette(tableEGAPalette)); } }
+
         public static Palette Cga { get { return cgaPalette ?? (cgaPalette = CreatePalette(tableCGAPalette)); } }
+
+        public static Palette V1 { get { return v1Palette ?? (v1Palette = CreatePalette(tableV1Palette)); } }
 
         public Color[] Colors { get; private set; }
 
@@ -40,8 +43,8 @@ namespace NScumm.Core.Graphics
 
         static Palette CreatePalette(Color[] colors)
         {
-            if (colors.Length != 16)
-                throw new ArgumentException("16 colors was expected.");
+            if (colors.Length != 16 && colors.Length != 17)
+                throw new ArgumentException("16 or 17 colors was expected.");
 
             var palette = new Palette();
             Array.Copy(colors, palette.Colors, colors.Length);
@@ -62,7 +65,17 @@ namespace NScumm.Core.Graphics
                 Color.FromRgb(0xA8, 0x00, 0xA8), Color.FromRgb(0xA8, 0xA8, 0xA8)
             };
 
+        readonly static Color[] tableV1Palette =
+            {
+                Color.FromRgb(0x00, 0x00, 0x00),   Color.FromRgb(0xFF, 0xFF, 0xFF),   Color.FromRgb(0xAA, 0x00, 0x00),   Color.FromRgb(0x00, 0xAA, 0xAA),
+                Color.FromRgb(0xAA, 0x00, 0xAA),   Color.FromRgb(0x00, 0xAA, 0x00),   Color.FromRgb(0x00, 0x00, 0xAA),   Color.FromRgb(0xFF, 0xFF, 0x55),
+                Color.FromRgb(0xFF, 0x55, 0x55),   Color.FromRgb(0xAA, 0x55, 0x00),   Color.FromRgb(0xFF, 0x55, 0x55),   Color.FromRgb(0x55, 0x55, 0x55),
+                Color.FromRgb(0xAA, 0xAA, 0xAA),   Color.FromRgb(0x55, 0xFF, 0x55),   Color.FromRgb(0x55, 0x55, 0xFF),   Color.FromRgb(0x55, 0x55, 0x55),
+                Color.FromRgb(0xFF, 0x55, 0xFF)
+            };
+
         static Palette egaPalette;
         static Palette cgaPalette;
+        static Palette v1Palette;
     }
 }

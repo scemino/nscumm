@@ -143,7 +143,7 @@ namespace NScumm.Core.Graphics
         public void DrawBitmap(ImageData img, VirtScreen vs, Point p, int width, int height, int stripnr, int numstrip, int roomWidth, DrawBitmaps flags, bool isLightOn)
         {
             _objectMode = flags.HasFlag(DrawBitmaps.ObjectMode);
-            PrepareDrawBitmap(img.Data, vs, p, width, height, stripnr, numstrip);
+            PrepareDrawBitmap(img, vs, p, width, height, stripnr, numstrip);
 
             int sx = p.X - vs.XStart / 8;
             if (sx < 0)
@@ -182,7 +182,7 @@ namespace NScumm.Core.Graphics
                 bool transpStrip;
                 using (var smapReader = new BinaryReader(new MemoryStream(img.Data)))
                 {
-                    transpStrip = DrawStrip(navDst, height, stripnr, smapReader);
+                    transpStrip = DrawStrip(navDst, width, height, stripnr, smapReader);
                 }
 
                 // COMI and HE games only uses flag value
@@ -199,7 +199,7 @@ namespace NScumm.Core.Graphics
                         Clear8Col(navFrontBuf, height);
                 }
 
-                DecodeMask(p.X, p.Y, height, stripnr, img.ZPlanes, transpStrip, flags);
+                DecodeMask(p.X, p.Y, width, height, stripnr, img.ZPlanes, transpStrip, flags);
             }
         }
 
@@ -306,7 +306,7 @@ namespace NScumm.Core.Graphics
             }
         }
 
-        protected virtual void PrepareDrawBitmap(byte[] ptr, VirtScreen vs,
+        protected virtual void PrepareDrawBitmap(ImageData img, VirtScreen vs,
             Point p, int width, int height,
             int stripnr, int numstrip)
         {
@@ -440,7 +440,7 @@ namespace NScumm.Core.Graphics
             } while ((--height) != 0);
         }
 
-        protected virtual void DecodeMask(int x, int y, int height, int stripnr, IList<ZPlane> zPlanes, bool transpStrip, DrawBitmaps flags)
+        protected virtual void DecodeMask(int x, int y, int width, int height, int stripnr, IList<ZPlane> zPlanes, bool transpStrip, DrawBitmaps flags)
         {
             var zplaneCount = IsZBufferEnabled ? NumZBuffer : 0;
 
@@ -572,7 +572,7 @@ namespace NScumm.Core.Graphics
             }
         }
 
-        protected virtual bool DrawStrip(PixelNavigator navDst, int height, int stripnr, BinaryReader smapReader)
+        protected virtual bool DrawStrip(PixelNavigator navDst, int width, int height, int stripnr, BinaryReader smapReader)
         {
             // Do some input verification and make sure the strip/strip offset
             // are actually valid. Normally, this should never be a problem,

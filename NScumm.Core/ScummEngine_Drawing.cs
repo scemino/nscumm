@@ -52,23 +52,6 @@ namespace NScumm.Core
 
         internal Surface TextSurface { get { return _textSurface; } }
 
-        void InitPalettes()
-        {
-            _shadowPalette = new byte[Game.Version >= 7 ? NumShadowPalette * 256 : 256];
-            if (Game.Features.HasFlag(GameFeatures.SixteenColors))
-            {
-                Array.Copy(Palette.Ega.Colors, _currentPalette.Colors, Palette.Ega.Colors.Length);
-                _gfxManager.SetPalette(_currentPalette.Colors);
-            }
-            for (int i = 0; i < 256; i++)
-                Gdi.RoomPalette[i] = (byte)i;
-            if (Game.Features.HasFlag(GameFeatures.SixteenColors))
-            {
-                for (int i = 0; i < 256; i++)
-                    _shadowPalette[i] = (byte)i;
-            }
-        }
-
         protected virtual void DrawObjectCore(out int xpos, out int ypos, out int state)
         {
             xpos = GetVarOrDirectWord(OpCodeParameter.Param2);

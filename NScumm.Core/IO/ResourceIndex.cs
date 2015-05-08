@@ -115,6 +115,7 @@ namespace NScumm.Core.IO
             ResourceIndex index;
             switch (game.Version)
             {
+                case 1:
                 case 2:
                     index = new ResourceIndex2();
                     break;

@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <NScumm xmlns="http://schemas.scemino.com/nscumm/2012/">
+  <MD5 signature="7f45ddd6dbfbf8f80c0c0efea4c295bc" gameId="maniac" variant="V1" language="en" features="SixteenColors" />
   <MD5 signature="624cdb93654667c869d204a64af7e57f" gameId="maniac" variant="V2" language="en" features="SixteenColors" />
   <MD5 signature="675d71151e9b5a968c8ce46d9fbf4cbf" gameId="zak" variant="V2" language="en" features="SixteenColors" />
   <MD5 signature="1875b90fade138c9253a8e967007031a" gameId="indy3" variant="VGA" language="en" features="Old256 FewLocals" />
@@ -18,6 +19,7 @@
   <MD5 signature="09820417db26687bb7fe0c83cc4c553b" gameId="ft" variant="" language="en" />
   <MD5 signature="d8323015ecb8b10bf53474f6e6b0ae33" gameId="dig" variant="" language="en" />
   <MD5 signature="fe60d6b5ff51b0553ac59963123b5777" gameId="comi" variant="" language="en" />
+  <Game id="maniac" gameId="Maniac" variant="V1" version="1" music="PCSpeaker PCjr" />
   <Game id="maniac" gameId="Maniac" variant="V2" version="2" music="PCSpeaker PCjr" />
   <Game id="zak" gameId="Zak" variant="V2" version="2" music="PCSpeaker PCjr" />
   <Game id="indy3" gameId="Indy3" variant="VGA" version="3" music="PCSpeaker PCjr AdLib" />

@@ -24,6 +24,17 @@ using System;
 
 namespace NScumm.Core.Graphics
 {
+    public class ImageData1: ImageData
+    {
+        public byte[] Colors = new byte[4];
+        public byte[] CharMap = new byte[2048];
+        public byte[] ObjectMap = new byte[2048];
+        public byte[] PicMap = new byte[4096];
+        public byte[] ColorMap = new byte[4096];
+        public byte[] MaskMap = new byte[4096];
+        public byte[] MaskChar = new byte[4096];
+    }
+
     public class ImageData
     {
         public List<ZPlane>  ZPlanes { get; private set; }

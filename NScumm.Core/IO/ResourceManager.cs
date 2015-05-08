@@ -159,6 +159,7 @@ namespace NScumm.Core.IO
         {
             switch (game.Version)
             {
+                case 1:
                 case 2:
                     return new ResourceManager2(game); 
                 case 3:

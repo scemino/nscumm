@@ -49,7 +49,7 @@ namespace NScumm.Core
 
             if (_vm.Game.Version >= 6)
             {
-                CostumeReader.BaseStream.Seek(6, System.IO.SeekOrigin.Current);
+                CostumeReader.BaseStream.Seek(6, SeekOrigin.Current);
             }
 
             BasePtr = CostumeReader.BaseStream.Position - 6;
@@ -119,15 +119,22 @@ namespace NScumm.Core
 
             baseptr = BasePtr;
 
-            CostumeReader.BaseStream.Seek(DataOffsets + anim * 2, System.IO.SeekOrigin.Begin);
+            CostumeReader.BaseStream.Seek(DataOffsets + anim * 2, SeekOrigin.Begin);
             r = baseptr + CostumeReader.ReadUInt16();
             if (r == baseptr)
             {
                 return;
             }
 
-            CostumeReader.BaseStream.Seek(r, System.IO.SeekOrigin.Begin);
-            mask = CostumeReader.ReadUInt16();
+            CostumeReader.BaseStream.Seek(r, SeekOrigin.Begin);
+            if (_vm.Game.Version == 1)
+            {
+                mask = (uint)(CostumeReader.ReadByte() << 8);
+            }
+            else
+            {
+                mask = CostumeReader.ReadUInt16();
+            }
 
             i = 0;
             do
@@ -198,9 +205,9 @@ namespace NScumm.Core
         byte ReadAnimCommand(int j)
         {
             var r = CostumeReader.BaseStream.Position;
-            CostumeReader.BaseStream.Seek(AnimCmds + j, System.IO.SeekOrigin.Begin);
+            CostumeReader.BaseStream.Seek(AnimCmds + j, SeekOrigin.Begin);
             var cmd = CostumeReader.ReadByte();
-            CostumeReader.BaseStream.Seek(r, System.IO.SeekOrigin.Begin);
+            CostumeReader.BaseStream.Seek(r, SeekOrigin.Begin);
             return cmd;
         }
 

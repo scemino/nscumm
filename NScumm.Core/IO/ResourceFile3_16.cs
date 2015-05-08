@@ -92,20 +92,22 @@ namespace NScumm.Core.IO
 
         public override byte[] ReadSound(NScumm.Core.Audio.MusicDriverTypes music, long offset)
         {
-			_reader.BaseStream.Seek(offset, System.IO.SeekOrigin.Begin);
+            _reader.BaseStream.Seek(offset, System.IO.SeekOrigin.Begin);
             var size = _reader.ReadUInt16(); // wa_size
-			_reader.BaseStream.Seek(size-2, System.IO.SeekOrigin.Current);
-			size = _reader.ReadUInt16(); // ad_size
-			_reader.BaseStream.Seek(2, System.IO.SeekOrigin.Current);
+            _reader.BaseStream.Seek(size - 2, System.IO.SeekOrigin.Current);
+            size = _reader.ReadUInt16(); // ad_size
+            _reader.BaseStream.Seek(2, System.IO.SeekOrigin.Current);
             var data = _reader.ReadBytes(size - HeaderSize);
             return data;
         }
 
         public override Room ReadRoom(long offset)
         {
-            var size = _reader.ReadUInt16();
+            var size = (int)_reader.ReadUInt16();
             var tmp = _reader.ReadBytes(2);
             var header = ReadRMHD();
+
+            var room = new Room { Header = header };
 
             // 10
             var imgOffset = _reader.ReadUInt16();
@@ -123,75 +125,119 @@ namespace NScumm.Core.IO
             var exitScriptOffset = _reader.ReadUInt16();
             // 27
             var entryScriptOffset = _reader.ReadUInt16();
-            var exitScriptLength = exitScriptOffset > 0 ? entryScriptOffset - exitScriptOffset : 0;
+            var exitScriptLength = entryScriptOffset - exitScriptOffset;
             // 29
             var objImgOffsets = _reader.ReadUInt16s(numObjects);
             var objScriptOffsets = _reader.ReadUInt16s(numObjects);
-            _reader.BaseStream.Seek(numSounds + numScripts, System.IO.SeekOrigin.Current);
-            var scriptOffsets = ReadLocalScriptOffsets();
-            var firstScriptOffset = (scriptOffsets.Count > 0) ? scriptOffsets[scriptOffsets.Keys.First()] : offset + size;
-            var entryScriptLength = firstScriptOffset - entryScriptOffset;
+            // load sounds
+            var soundIds = _reader.ReadBytes(numSounds);
+            // load scripts
+            var scriptIds = _reader.ReadBytes(numScripts);
 
-            // read obj images
-            var objImgSizes = new ushort[objImgOffsets.Length + 1];
-            Array.Copy(objImgOffsets, objImgSizes, objScriptOffsets.Length);
-            objImgSizes[objImgOffsets.Length] = objScriptOffsets[0];
-            Array.Sort(objImgSizes);
+            // determine the entry script size
+            _reader.ReadByte();
+            var firstLocalScriptOffset = _reader.ReadUInt16();
+            _reader.BaseStream.Seek(-3, System.IO.SeekOrigin.Current);
+            var entryScriptLength = firstLocalScriptOffset - entryScriptOffset;
 
-            var room = new Room
+            ReadLocalScripts(offset, size, room);
+
+            // read exit script
+            if (exitScriptOffset > 0)
             {
-                Header = header,
-                ExitScript =
-                {
-                    Data = ReadBytes(offset + exitScriptOffset, exitScriptLength)
-                },
-                EntryScript =
-                {
-                    Data = ReadBytes(offset + entryScriptOffset, (int)entryScriptLength)
-                }
-            };
+                room.ExitScript.Data = ReadBytes(offset + exitScriptOffset, exitScriptLength);
+            }
+            else
+            {
+                room.ExitScript.Data = new byte[0];
+            }
 
-            ReadLocalScripts(offset, size, scriptOffsets, room);
+            // read entry script
+            if (entryScriptOffset > 0)
+            {
+                room.EntryScript.Data = ReadBytes(offset + entryScriptOffset, entryScriptLength);
+            }
+            else
+            {
+                room.EntryScript.Data = new byte[0];
+            }
+
+            // read room image
+            var imgLength = GetBlockSize(offset + imgOffset);
+            room.Image = new ImageData{ Data = ReadBytes(offset + imgOffset, imgLength) };
+
+            // read boxes
             ReadBoxes(offset + boxesOffset, imgOffset - boxesOffset, room);
 
-            if (exitScriptOffset == 0)
+            // read objects
+            if (numObjects > 0)
             {
-                exitScriptOffset = entryScriptOffset;
-            }
+                var firstOffset = objScriptOffsets.Min();
+                for (var i = 0; i < numObjects; i++)
+                {
+                    var objOffset = objScriptOffsets[i];
+                    var obj = ReadObject(offset + objOffset);
+                    room.Objects.Add(obj);
+                }
 
-            room.Image = new ImageData{ Data = ReadBytes(offset + imgOffset, exitScriptOffset - imgOffset) };
-
-            var objScriptSizes = new ushort[objScriptOffsets.Length + 1];
-            Array.Copy(objScriptOffsets, objScriptSizes, objScriptOffsets.Length);
-            objScriptSizes[objScriptOffsets.Length] = exitScriptOffset;
-            Array.Sort(objScriptSizes);
-
-            for (var i = 0; i < objScriptSizes.Length - 1; i++)
-            {
-                var objOffset = objScriptSizes[i];
-                var objSize = objScriptSizes[i + 1] - objOffset - HeaderSize;
-                var obj = ReadObject(offset + objOffset + HeaderSize, objSize);
-                room.Objects.Add(obj);
-            }
-
-            for (var i = 0; i < objImgSizes.Length - 1; i++)
-            {
-                var objImgOffset = objImgSizes[i];
-                var objImgSize = objImgSizes[i + 1] - objImgOffset;
-                room.Objects[i].Images.Add(new ImageData{ Data = ReadBytes(objImgOffset, objImgSize) });
+                for (var i = 0; i < numObjects; i++)
+                {
+                    var objImgOffset = objImgOffsets[i];
+                    if (firstOffset != objImgOffset)
+                    {
+                        var objImgSize = GetBlockSize(offset + objImgOffset);
+                        if (objImgSize > 0)
+                        {
+                            room.Objects[i].Images.Add(new ImageData{ Data = ReadBytes(offset + objImgOffset, objImgSize) });
+                        }
+                    }
+                }
             }
 
             return room;
         }
 
-        ObjectData ReadObject(long offset, int size)
+        void ReadLocalScripts(long offset, int size, Room room)
+        {
+            // local script offsets
+            byte id;
+            var localScriptOffsets = new List<Tuple<int, int>>();
+            while ((id = _reader.ReadByte()) != 0)
+            {
+                localScriptOffsets.Add(Tuple.Create(id - 200, (int)_reader.ReadUInt16()));
+            }
+            // local script data
+            if (localScriptOffsets.Count > 0)
+            {
+                int i;
+                for (i = 0; i < localScriptOffsets.Count - 1; i++)
+                {
+                    var localScriptInfo = localScriptOffsets[i];
+                    var localScriptId = localScriptInfo.Item1;
+                    var localScriptOffset = localScriptInfo.Item2;
+                    var nextScriptOffset = localScriptOffsets[i + 1].Item2;
+                    room.LocalScripts[localScriptId] = new ScriptData {
+                        Data = ReadBytes(offset + localScriptOffset, nextScriptOffset - localScriptOffset+HeaderSize),
+                        Offset = offset + localScriptOffset
+                    };
+                }
+                room.LocalScripts[localScriptOffsets[i].Item1] = new ScriptData {
+                    Data = ReadBytes(offset + localScriptOffsets[i].Item2, size - localScriptOffsets[i].Item2),
+                    Offset = offset + localScriptOffsets[i].Item2
+                };
+            }
+        }
+
+        ObjectData ReadObject(long offset)
         {
             _reader.BaseStream.Seek(offset, System.IO.SeekOrigin.Begin);
+            var size = (int)_reader.ReadUInt16();
+            var tmp = _reader.ReadUInt16();
             var id = _reader.ReadUInt16();
-            _reader.ReadByte();
+            var @class = _reader.ReadByte();
             var x = _reader.ReadByte() * 8;
-            var tmpY = _reader.ReadByte() * 8;
-            var y = tmpY & 0x7F * 8;
+            var tmpY = _reader.ReadByte();
+            var y = (tmpY & 0x7F) * 8;
             var parentState = ((tmpY & 0x80) == 0x80) ? 1 : 0;
             var width = _reader.ReadByte() * 8;
             var parent = _reader.ReadByte();
@@ -203,21 +249,23 @@ namespace NScumm.Core.IO
             var obj = new ObjectData
             {
                 Number = id,
-                Position = new Point((short)x, (short)y),
+                Position = new Point(x, y),
                 ParentState = (byte)parentState,
                 Width = (ushort)width,
                 Height = (ushort)height,
                 Parent = parent,
                 Walk = new Point((short)walkX, (short)walkY),
-                ActorDir = (byte)actor
+                ActorDir = actor
             };
-            _reader.ReadByte();
-            size -= 13;
+            var nameOffset = _reader.ReadByte();
+            var read = 17;
             ReadObjectScriptOffsets(obj);
-            size -= (3 * obj.ScriptOffsets.Count + 1);
+            read += (3 * obj.ScriptOffsets.Count + 1);
             ReadName(obj);
-            size -= (obj.Name.Length + 1);
+            read += (obj.Name.Length + 1);
+            size -= read;
             obj.Script.Data = _reader.ReadBytes(size);
+            obj.Script.Offset = read;
             return obj;
         }
 
@@ -251,6 +299,7 @@ namespace NScumm.Core.IO
         {
             _reader.BaseStream.Seek(offset, System.IO.SeekOrigin.Begin);
             var numBoxes = _reader.ReadByte();
+            size--;
             for (int i = 0; i < numBoxes; i++)
             {
                 var box = ReadBox(ref size);
@@ -264,46 +313,11 @@ namespace NScumm.Core.IO
             }
         }
 
-        Dictionary<byte, ushort> ReadLocalScriptOffsets()
+        int GetBlockSize(long offset)
         {
-            byte id;
-            var scriptOffsets = new Dictionary<byte, ushort>();
-            while ((id = _reader.ReadByte()) != 0)
-            {
-                scriptOffsets[id] = _reader.ReadUInt16();
-            }
-            return scriptOffsets;
-        }
-
-        void ReadLocalScripts(long offset, ushort size, Dictionary<byte, ushort> scriptOffsets, Room room)
-        {
-            if (scriptOffsets.Count > 0)
-            {
-                var enumScriptOffset = scriptOffsets.GetEnumerator();
-                enumScriptOffset.MoveNext();
-                for (var i = 0; i < scriptOffsets.Count - 1; i++)
-                {
-                    var script = enumScriptOffset.Current;
-                    enumScriptOffset.MoveNext();
-                    var scriptLen = enumScriptOffset.Current.Value - script.Value;
-                    _reader.BaseStream.Seek(offset + script.Value, System.IO.SeekOrigin.Begin);
-                    room.LocalScripts[script.Key - 200] = new ScriptData
-                    {
-                        Offset = offset + script.Value,
-                        Data = _reader.ReadBytes(scriptLen)
-                    };
-                }
-                {
-                    var script = enumScriptOffset.Current;
-                    var scriptLen = size - script.Value;
-                    _reader.BaseStream.Seek(offset + script.Value, System.IO.SeekOrigin.Begin);
-                    room.LocalScripts[script.Key - 200] = new ScriptData
-                    {
-                        Offset = offset + script.Value - HeaderSize,
-                        Data = _reader.ReadBytes(scriptLen)
-                    };
-                }
-            }
+            _reader.BaseStream.Seek(offset, System.IO.SeekOrigin.Begin);
+            var size = (int)_reader.ReadUInt16();
+            return size;
         }
 
         protected RoomHeader ReadRMHD()

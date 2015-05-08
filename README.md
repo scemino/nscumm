@@ -55,6 +55,8 @@ Loom
 
 Maniac Mansion
 
+Zak McKracken and the Alien Mindbenders
+
 Hotkeys
 -------
 
@@ -63,7 +65,7 @@ Alt-Enter              - Toggles full screen/windowed
 Known Issues
 -------------------------
 
-Only PC DOS/Windows games with Adlib and PC speaker supported
+Only PC DOS/Windows games with Adlib, PC speaker and PC junior are supported
 
 And many other things ???
 

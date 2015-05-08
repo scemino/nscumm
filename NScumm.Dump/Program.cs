@@ -16,6 +16,7 @@ namespace NScumm.Dump
             p.WriteOptionDescriptions(System.Console.Out);
             System.Console.WriteLine();
             System.Console.WriteLine("Supported engines:");
+            System.Console.WriteLine("\tv2 [only images] (Maniac Mansion/Zak)");
             System.Console.WriteLine("\tv3 old [experimental] (indy3 16 colors)");
             System.Console.WriteLine("\tv3 (indy3 256 colors)");
             System.Console.WriteLine("\tv4 (monkey island1)");

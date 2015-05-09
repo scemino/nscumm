@@ -50,6 +50,7 @@ namespace NScumm.Core
 
         void InitPalettes()
         {
+            _shadowPalette = new byte[Game.Version >= 7 ? NumShadowPalette * 256 : 256];
             if (Game.Version <= 1)
             {
                 SetPalette(Palette.V1);
@@ -58,7 +59,6 @@ namespace NScumm.Core
             }
             else
             {
-                _shadowPalette = new byte[Game.Version >= 7 ? NumShadowPalette * 256 : 256];
                 if (Game.Features.HasFlag(GameFeatures.SixteenColors))
                 {
                     Array.Copy(Palette.Ega.Colors, _currentPalette.Colors, Palette.Ega.Colors.Length);

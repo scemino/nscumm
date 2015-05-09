@@ -2366,7 +2366,7 @@ namespace NScumm.Core
                 {
                     if (Verbs[slot].Prep == 0xFF)
                     {
-                        var obj = _objs.First(o => o.Number == Variables[VariableSentenceObject1.Value]);
+                        var obj = _invData.Concat(_objs).First(o => o.Number == Variables[VariableSentenceObject1.Value]);
                         Variables[VariableSentencePreposition.Value] = obj.Preposition;
                     }
                     else

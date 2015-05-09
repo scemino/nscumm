@@ -358,6 +358,10 @@ namespace NScumm.Core
             {
                 // Setup for digital iMuse is performed in another place
             }
+            else if (Game.GameId == GameId.Maniac && Game.Version == 1)
+            {
+                MusicEngine = new Player_V1(this, Mixer, Sound.MusicType == MusicDriverTypes.PCjr);
+            }
             else if ((Sound.MusicType == MusicDriverTypes.PCSpeaker || Sound.MusicType == MusicDriverTypes.PCjr) && (Game.Version >= 2 && Game.Version <= 4))
             {
                 MusicEngine = new Player_V2(this, Mixer, Sound.MusicType == MusicDriverTypes.PCjr);

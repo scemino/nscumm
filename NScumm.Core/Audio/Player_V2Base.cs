@@ -118,12 +118,20 @@ namespace NScumm.Core.Audio
         {
         }
 
-        protected void ClearChannel(int i)
+        public virtual int GetMusicTimer()
+        {
+            if (_isV3Game)
+                return _music_timer;
+            else
+                return _channels[0].d.music_timer;
+        }
+
+        protected virtual void ClearChannel(int i)
         {
             _channels[i] = new ChannelInfo();
         }
 
-        protected void ChainSound(int nr, byte[] data)
+        protected virtual void ChainSound(int nr, byte[] data)
         {
             int offset = _header_len + (_pcjr ? 10 : 2);
 
@@ -155,14 +163,6 @@ namespace NScumm.Core.Audio
                 _next_nr = 0;
                 _next_data = null;
             }
-        }
-
-        public int GetMusicTimer()
-        {
-            if (_isV3Game)
-                return _music_timer;
-            else
-                return _channels[0].d.music_timer;
         }
 
         void ExecuteCmd(ChannelInfo channel)
@@ -425,7 +425,7 @@ namespace NScumm.Core.Audio
             }
         }
 
-        protected void NextTick()
+        protected virtual void NextTick()
         {
             for (var i = 0; i < 4; i++)
             {

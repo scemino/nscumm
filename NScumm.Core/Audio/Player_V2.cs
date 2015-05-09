@@ -205,7 +205,7 @@ namespace NScumm.Core.Audio
             }
         }
 
-        void GenerateSpkSamples(short[] data, int offset, int len)
+        protected virtual void GenerateSpkSamples(short[] data, int offset, int len)
         {
             int winning_channel = -1;
             for (int i = 0; i < 4; i++)
@@ -228,7 +228,7 @@ namespace NScumm.Core.Audio
             LowPassFilter(data, offset, len);
         }
 
-        void GeneratePCjrSamples(short[] data, int offset, int len)
+        protected virtual void GeneratePCjrSamples(short[] data, int offset, int len)
         {
             int i, j;
             int freq, vol;
@@ -294,7 +294,7 @@ namespace NScumm.Core.Audio
                 LowPassFilter(data, offset, len);
         }
 
-        void SquareGenerator(int channel, int freq, int vol, int noiseFeedback, short[] sample, int offset, int len)
+        protected void SquareGenerator(int channel, int freq, int vol, int noiseFeedback, short[] sample, int offset, int len)
         {
             int period = (int)(_update_step * freq);
             int nsample;
@@ -334,9 +334,9 @@ namespace NScumm.Core.Audio
                 if ((_timer_output & (1 << channel)) != 0)
                     duration -= (uint)_timer_count[channel];
 
-                nsample = (int)(sample[offset] +
-                (((duration - (1 << (FIXP_SHIFT - 1)))
-                * (int)_volumetable[vol]) >> FIXP_SHIFT));
+                nsample = (int)(sample[offset] + (((int)
+                (duration - (1 << (FIXP_SHIFT - 1)))
+                    * (int)_volumetable[vol]) >> FIXP_SHIFT));
                 /* overflow: clip value */
                 if (nsample > 0x7fff)
                     nsample = 0x7fff;
@@ -349,7 +349,7 @@ namespace NScumm.Core.Audio
             }
         }
 
-        void LowPassFilter(short[] sample, int offset, int len)
+        protected void LowPassFilter(short[] sample, int offset, int len)
         {
             for (var i = 0; i < len * 2; i += 2)
             {
@@ -381,13 +381,13 @@ namespace NScumm.Core.Audio
         const int FB_PNOISE = 0x08000;
 
         uint _update_step;
-        uint _decay;
-        int _level;
+        readonly uint _decay;
+        protected int _level;
         uint _RNG;
-        uint[] _volumetable = new uint[16];
+        protected uint[] _volumetable = new uint[16];
 
-        int[] _timer_count = new int[4];
-        int _timer_output;
+        protected int[] _timer_count = new int[4];
+        protected int _timer_output;
     }
 }
 

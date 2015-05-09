@@ -273,6 +273,7 @@
     <Compile Include="Audio\PCJuniorMusicPlugin.cs" />
     <Compile Include="Graphics\Gdi1.cs" />
     <Compile Include="IO\ResourceFile1.cs" />
+    <Compile Include="Audio\Player_V1.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <ItemGroup>

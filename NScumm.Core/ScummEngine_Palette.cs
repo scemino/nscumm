@@ -53,9 +53,16 @@ namespace NScumm.Core
             _shadowPalette = new byte[Game.Version >= 7 ? NumShadowPalette * 256 : 256];
             if (Game.Version <= 1)
             {
-                SetPalette(Palette.V1);
-                if (Game.GameId == GameId.Zak)
-                    SetPalColor(15, 170, 170, 170);
+                if (Game.Platform == Platform.C64)
+                {
+                    SetPalette(Palette.C64);
+                }
+                else
+                {
+                    SetPalette(Palette.V1);
+                    if (Game.GameId == GameId.Zak)
+                        SetPalColor(15, 170, 170, 170);
+                }
             }
             else
             {

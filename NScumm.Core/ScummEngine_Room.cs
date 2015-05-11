@@ -187,7 +187,7 @@ namespace NScumm.Core
 
             Array.Copy(roomData.ColorCycle, _colorCycle, roomData.ColorCycle.Length);
 
-            Gdi.RoomChanged();
+            Gdi.RoomChanged(CurrentRoomData);
         }
     }
 }

@@ -105,7 +105,26 @@ namespace NScumm.Core.Graphics
 
         #region Public Methods
 
-        public virtual void RoomChanged()
+        public static Gdi Create(ScummEngine vm, GameInfo game)
+        {
+            Gdi gdi;
+            switch (game.Version)
+            {
+                case 0:
+                case 1:
+                    gdi = new Gdi1(vm, game);
+                    break;
+                case 2:
+                    gdi = new Gdi2(vm, game);
+                    break;
+                default:
+                    gdi = new Gdi(vm, game);
+                    break;
+            }
+            return gdi;
+        }
+
+        public virtual void RoomChanged(Room room)
         {
         }
 

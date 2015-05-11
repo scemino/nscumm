@@ -70,9 +70,10 @@ namespace NScumm.Core.IO
         {
             get
             {
-                var roomIndices = (from res in Enumerable.Range(1, Index.RoomResources.Count - 1)
-                                               where Index.RoomResources[res].RoomNum != 0 && Index.RoomResources[res].Offset != 0xFFFFFFFF
-                                               select (byte)res).Distinct();
+                var roomIndices = Game.Version == 0 ? Enumerable.Range(1, 56).Select(r => (byte)r) :
+                    (from res in Enumerable.Range(1, Index.RoomResources.Count)
+                                 where Index.RoomResources[res].RoomNum != 0 && Index.RoomResources[res].Offset != 0xFFFFFFFF
+                                 select (byte)res).Distinct();
                 Room room = null;
                 foreach (var i in roomIndices)
                 {
@@ -159,6 +160,8 @@ namespace NScumm.Core.IO
         {
             switch (game.Version)
             {
+                case 0:
+                    return new ResourceManager0(game); 
                 case 1:
                 case 2:
                     return new ResourceManager2(game); 

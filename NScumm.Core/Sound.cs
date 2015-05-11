@@ -33,6 +33,8 @@ namespace NScumm.Core
 
         public int SfxMode { get { return sfxMode; } }
 
+        public int LastSound { get; private set; }
+
         public MusicDriverTypes MusicType
         {
             get;
@@ -79,6 +81,7 @@ namespace NScumm.Core
         {
             if (vm.VariableLastSound.HasValue)
                 vm.Variables[vm.VariableLastSound.Value] = sound;
+            LastSound = sound;
 
             soundQueue.Push(sound);
         }

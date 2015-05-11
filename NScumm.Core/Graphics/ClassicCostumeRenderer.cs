@@ -268,7 +268,6 @@ namespace NScumm.Core.Graphics
                 _loaded.CostumeReader.BaseStream.Seek(frameptr + code * 2, System.IO.SeekOrigin.Begin);
                 _srcptr = baseptr + _loaded.CostumeReader.ReadUInt16();
 
-
                 int xmoveCur, ymoveCur;
 
                 _loaded.CostumeReader.BaseStream.Seek(_srcptr, System.IO.SeekOrigin.Begin);
@@ -658,7 +657,7 @@ namespace NScumm.Core.Graphics
                 else
                 {
                     // Adjust for C64 version of Zak McKracken
-                    palette[1] = /*(_vm.Game.Platform == Platform.C64) ? 10 : */8;
+                    palette[1] = (byte)(_vm.Game.Platform == Platform.C64 ? 10 : 8);
                     palette[2] = (byte)_palette[actor];
                 }
             }

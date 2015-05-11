@@ -168,8 +168,12 @@ namespace NScumm.Core
 
             if (cutsceneExitKeyEnabled && _inputState.IsKeyDown(KeyCode.Escape))
             {
-                mouseAndKeyboardStat = (KeyCode)Variables[VariableCutSceneExitKey.Value];
                 AbortCutscene();
+                // VAR_CUTSCENEEXIT_KEY doesn't exist in SCUMM0
+                if (VariableCutSceneExitKey.HasValue)
+                {
+                    mouseAndKeyboardStat = (KeyCode)Variables[VariableCutSceneExitKey.Value];
+                }
             }
 
             if (mainmenuKeyEnabled && _inputState.IsKeyDown(KeyCode.F5))

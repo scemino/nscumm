@@ -52,6 +52,34 @@ namespace NScumm.Core.IO
         CurseOfMonkeyIsland
     }
 
+    public enum Platform
+    {
+        DOS,
+        Amiga,
+        AtariST,
+        Macintosh,
+        FMTowns,
+        Windows,
+        NES,
+        C64,
+        CoCo3,
+        Linux,
+        Acorn,
+        SegaCD,
+        _3DO,
+        PCEngine,
+        Apple2GS,
+        PC98,
+        Wii,
+        PSX,
+        CDi,
+        IOS,
+        OS2,
+        BeOS,
+
+        Unknown = -1
+    }
+
     public class GameSettings
     {
         public GameInfo Game { get; private set; }
@@ -67,6 +95,8 @@ namespace NScumm.Core.IO
 
     public class GameInfo
     {
+        public Platform Platform { get; set; }
+
         public string Path { get; set; }
 
         public string Id { get; set; }
@@ -132,12 +162,15 @@ namespace NScumm.Core.IO
                                         where (string)d.Attribute("gameId") == (string)gameMd5.Attribute("gameId")
                                         select (string)d.Attribute("text")).FirstOrDefault();
                 var attFeatures = gameMd5.Attribute("features");
+                var platformText = (string)gameMd5.Attribute("platform");
+                var platform = platformText != null ? (Platform?)Enum.Parse(typeof(Platform), platformText, true) : null;
                 var features = ParseFeatures((string)attFeatures);
                 var attMusic = game.Attribute("music");
                 var music = ParseMusic((string)attMusic);
                 info = new GameInfo
                 {
                     MD5 = signature,
+                    Platform = platform.HasValue ? platform.Value : Platform.DOS,
                     Path = path,
                     Id = (string)game.Attribute("id"),
                     Pattern = (string)game.Attribute("pattern"),

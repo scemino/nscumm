@@ -129,6 +129,11 @@ namespace NScumm.Core
 
         protected virtual uint ReadWord()
         {
+            return FetchScriptWord();
+        }
+
+        protected uint FetchScriptWord()
+        {
             ushort word = (ushort)(_currentScriptData[_currentPos++] | (_currentScriptData[_currentPos++] << 8));
             return word;
         }

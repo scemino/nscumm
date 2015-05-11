@@ -274,6 +274,17 @@
     <Compile Include="Graphics\Gdi1.cs" />
     <Compile Include="IO\ResourceFile1.cs" />
     <Compile Include="Audio\Player_V1.cs" />
+    <Compile Include="ScummEngine0.cs" />
+    <Compile Include="IO\ResourceIndex0.cs" />
+    <Compile Include="IO\ResourceManager0.cs" />
+    <Compile Include="IO\ResourceFile0.cs" />
+    <Compile Include="Actor0.cs" />
+    <Compile Include="IO\CostumeLoader0.cs" />
+    <Compile Include="ScummEngine0_Verb.cs" />
+    <Compile Include="ScummEngine0_Actor.cs" />
+    <Compile Include="ScummEngine0_Variable.cs" />
+    <Compile Include="Graphics\CostumeRenderer0.cs" />
+    <Compile Include="Graphics\BaseCostumeRenderer.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <ItemGroup>

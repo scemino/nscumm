@@ -65,7 +65,11 @@ namespace NScumm.Core
             Actors = new Actor[numActors];
             for (byte i = 0; i < Actors.Length; i++)
             {
-                if (Game.Version <= 2)
+                if (Game.Version == 0)
+                {
+                    Actors[i] = new Actor0(this, i);
+                }
+                else if (Game.Version <= 2)
                 {
                     Actors[i] = new Actor2(this, i);
                 }

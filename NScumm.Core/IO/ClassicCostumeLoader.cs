@@ -15,7 +15,6 @@
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-using NScumm.Core.IO;
 using System;
 using System.IO;
 
@@ -35,7 +34,7 @@ namespace NScumm.Core
         public bool Mirror;
         public BinaryReader CostumeReader;
 
-        ScummEngine _vm;
+        protected ScummEngine _vm;
 
         public ClassicCostumeLoader(ScummEngine vm)
         {
@@ -43,7 +42,7 @@ namespace NScumm.Core
             Id = -1;
         }
 
-        public void LoadCostume(int id)
+        public virtual void LoadCostume(int id)
         {
             CostumeReader = new BinaryReader(new MemoryStream(_vm.ResourceManager.GetCostumeData(id)));
 
@@ -99,7 +98,7 @@ namespace NScumm.Core
             AnimCmds = BasePtr + CostumeReader.ReadUInt16();
         }
 
-        public void CostumeDecodeData(Actor a, int frame, uint usemask)
+        public virtual void CostumeDecodeData(Actor a, int frame, uint usemask)
         {
             long r;
             long baseptr;
@@ -211,7 +210,7 @@ namespace NScumm.Core
             return cmd;
         }
 
-        public int IncreaseAnims(Actor a)
+        public virtual int IncreaseAnims(Actor a)
         {
             var r = 0;
             for (int i = 0; i != 16; i++)
@@ -222,7 +221,7 @@ namespace NScumm.Core
             return r;
         }
 
-        bool IncreaseAnim(Actor a, int slot)
+        protected bool IncreaseAnim(Actor a, int slot)
         {
             int highflag;
             int i, end;

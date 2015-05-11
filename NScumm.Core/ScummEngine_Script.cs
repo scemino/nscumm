@@ -317,8 +317,14 @@ namespace NScumm.Core
                 Variables[VariableRoomHeight.Value] = roomData.Header.Height;
             }
 
-            _variables[VariableCameraMinX.Value] = ScreenWidth / 2;
-            _variables[VariableCameraMaxX.Value] = roomData.Header.Width - (ScreenWidth / 2);
+            if (VariableCameraMinX.HasValue)
+            {
+                _variables[VariableCameraMinX.Value] = ScreenWidth / 2;
+            }
+            if (VariableCameraMaxX.HasValue)
+            {
+                _variables[VariableCameraMaxX.Value] = roomData.Header.Width - (ScreenWidth / 2);
+            }
 
             if (Game.Version >= 7)
             {
@@ -662,7 +668,7 @@ namespace NScumm.Core
             return false;
         }
 
-        void CheckAndRunSentenceScript()
+        protected virtual void CheckAndRunSentenceScript()
         {
             var sentenceScript = Game.Version <= 2 ? 2 : _variables[VariableSentenceScript.Value];
 

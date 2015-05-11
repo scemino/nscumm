@@ -18,7 +18,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Externalconsole>true</Externalconsole>
-    <Commandlineparameters>-f=/home/scemino/Games/mme/00.LFL -ra</Commandlineparameters>
+    <Commandlineparameters>-f=/home/scemino/Games/mm64/MANIAC1.D64 -ra</Commandlineparameters>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>full</DebugType>

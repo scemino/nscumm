@@ -45,11 +45,11 @@ namespace NScumm.Core
             }
             _camera.DestinationPosition.X = pos.X;
 
-            if (_camera.CurrentPosition.X < _variables[VariableCameraMinX.Value])
-                _camera.CurrentPosition.X = (short)_variables[VariableCameraMinX.Value];
+            if (VariableCameraMinX.HasValue && _camera.CurrentPosition.X < _variables[VariableCameraMinX.Value])
+                _camera.CurrentPosition.X = _variables[VariableCameraMinX.Value];
 
-            if (_camera.CurrentPosition.X > _variables[VariableCameraMaxX.Value])
-                _camera.CurrentPosition.X = (short)_variables[VariableCameraMaxX.Value];
+            if (VariableCameraMaxX.HasValue && _camera.CurrentPosition.X > _variables[VariableCameraMaxX.Value])
+                _camera.CurrentPosition.X = _variables[VariableCameraMaxX.Value];
 
             if (VariableScrollScript.HasValue && _variables[VariableScrollScript.Value] != 0)
             {
@@ -108,10 +108,10 @@ namespace NScumm.Core
                 return;
             }
 
-            if (VariableCameraMaxX.HasValue &&_camera.CurrentPosition.X > _variables[VariableCameraMaxX.Value])
+            if (VariableCameraMaxX.HasValue && _camera.CurrentPosition.X > _variables[VariableCameraMaxX.Value])
             {
                 if (snapToX)
-                    _camera.CurrentPosition.X = (short)_variables[VariableCameraMaxX.Value];
+                    _camera.CurrentPosition.X = _variables[VariableCameraMaxX.Value];
                 else
                     _camera.CurrentPosition.X -= 8;
 
@@ -131,9 +131,9 @@ namespace NScumm.Core
                     if (snapToX)
                     {
                         if (t > 40 - 5)
-                            _camera.DestinationPosition.X = (short)(actorx + 80);
+                            _camera.DestinationPosition.X = (actorx + 80);
                         if (t < 5)
-                            _camera.DestinationPosition.X = (short)(actorx - 80);
+                            _camera.DestinationPosition.X = (actorx - 80);
                     }
                     else
                         _camera.MovingToActor = true;
@@ -146,11 +146,11 @@ namespace NScumm.Core
                 _camera.DestinationPosition.X = a.Position.X;
             }
 
-            if (_camera.DestinationPosition.X < _variables[VariableCameraMinX.Value])
-                _camera.DestinationPosition.X = (short)_variables[VariableCameraMinX.Value];
+            if (VariableCameraMinX.HasValue && _camera.DestinationPosition.X < _variables[VariableCameraMinX.Value])
+                _camera.DestinationPosition.X = _variables[VariableCameraMinX.Value];
 
-            if (_camera.DestinationPosition.X > _variables[VariableCameraMaxX.Value])
-                _camera.DestinationPosition.X = (short)_variables[VariableCameraMaxX.Value];
+            if (VariableCameraMaxX.HasValue && _camera.DestinationPosition.X > _variables[VariableCameraMaxX.Value])
+                _camera.DestinationPosition.X = _variables[VariableCameraMaxX.Value];
 
             if (snapToX)
             {
@@ -185,11 +185,11 @@ namespace NScumm.Core
 
             if (_camera.CurrentPosition.X < (ScreenWidth / 2))
             {
-                _camera.CurrentPosition.X = (short)(ScreenWidth / 2);
+                _camera.CurrentPosition.X = (ScreenWidth / 2);
             }
             else if (_camera.CurrentPosition.X > (CurrentRoomData.Header.Width - (ScreenWidth / 2)))
             {
-                _camera.CurrentPosition.X = (short)(CurrentRoomData.Header.Width - (ScreenWidth / 2));
+                _camera.CurrentPosition.X = (CurrentRoomData.Header.Width - (ScreenWidth / 2));
             }
 
             _screenStartStrip = _camera.CurrentPosition.X / 8 - Gdi.NumStrips / 2;

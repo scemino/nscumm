@@ -152,7 +152,11 @@ namespace NScumm.Core
         {
             ScummEngine engine = null;
             var game = settings.Game;
-            if ((game.Version == 1) || (game.Version == 2))
+            if (game.Version == 0)
+            {
+                engine = new ScummEngine0(settings, gfxManager, inputManager, mixer);
+            }
+            else if ((game.Version == 1) || (game.Version == 2))
             {
                 engine = new ScummEngine2(settings, gfxManager, inputManager, mixer);
             }
@@ -257,20 +261,24 @@ namespace NScumm.Core
             {
                 _scaleSlots[i] = new ScaleSlot();
             }
-            switch (Game.Version)
+
+            Gdi = Gdi.Create(this, game);
+            switch (game.Version)
             {
-                case 1:
-                    Gdi = new Gdi1(this, game);
+                case 0:
+                    _costumeLoader = new CostumeLoader0(this);
+                    _costumeRenderer = new CostumeRenderer0(this);
                     break;
-                case 2:
-                    Gdi = new Gdi2(this, game);
+                case 7:
+                case 8:
+                    _costumeLoader = new AkosCostumeLoader(this);
+                    _costumeRenderer = new AkosRenderer(this);
                     break;
                 default:
-                    Gdi = new Gdi(this, game);
+                    _costumeLoader = new ClassicCostumeLoader(this);
+                    _costumeRenderer = new ClassicCostumeRenderer(this);
                     break;
             }
-            _costumeLoader = game.Version < 7 ? (ICostumeLoader)new ClassicCostumeLoader(this) : new AkosCostumeLoader(this);
-            _costumeRenderer = game.Version < 7 ? (ICostumeRenderer)new ClassicCostumeRenderer(this) : new AkosRenderer(this);
 
             CreateCharset();
             ResetCursors();
@@ -279,7 +287,11 @@ namespace NScumm.Core
             _textSurface = new Surface(ScreenWidth * _textSurfaceMultiplier, ScreenHeight * _textSurfaceMultiplier, PixelFormat.Indexed8, false);
             ClearTextSurface();
 
-            if ((Game.GameId == GameId.Maniac) && (_game.Version <= 1) /*&& !(_game.Platform == Platform.NES)*/)
+            if (Game.Version == 0)
+            {
+                InitScreens(8, 144);
+            }
+            else if ((Game.GameId == GameId.Maniac) && (_game.Version <= 1) /*&& !(_game.Platform == Platform.NES)*/)
             {
                 InitScreens(16, 152);
             }
@@ -489,14 +501,17 @@ namespace NScumm.Core
         TimeSpan GetTimeToWaitBeforeLoop(TimeSpan lastTimeLoop)
         {
             var numTicks = ScummHelper.ToTicks(timeToWait);
+
+            // Notify the script about how much time has passed, in ticks (60 ticks per second)
             if (VariableTimer.HasValue)
                 _variables[VariableTimer.Value] = numTicks;
             if (VariableTimerTotal.HasValue)
                 _variables[VariableTimerTotal.Value] += numTicks;
 
-            deltaTicks = _variables[VariableTimerNext.Value];
-            if (deltaTicks < 1)
-                deltaTicks = 1;
+            // Determine how long to wait before the next loop iteration should start
+            deltaTicks = VariableTimerNext.HasValue ? _variables[VariableTimerNext.Value] : 4;
+            if (deltaTicks < 1) // Ensure we don't get into an endless loop
+                deltaTicks = 1; // by not decreasing sleepers.
 
             timeToWait = ScummHelper.ToTimeSpan(deltaTicks);
             if (timeToWait > lastTimeLoop)
@@ -510,7 +525,7 @@ namespace NScumm.Core
             return timeToWait;
         }
 
-        public TimeSpan Loop()
+        public virtual TimeSpan Loop()
         {
             var t = DateTime.Now;
             int delta = deltaTicks;
@@ -712,7 +727,11 @@ namespace NScumm.Core
 
         protected void JumpRelative(bool condition)
         {
-            var offset = (short)ReadWord();
+            // We explicitly call ScummEngine::fetchScriptWord()
+            // to make this method work also in v0, which overloads
+            // fetchScriptWord to only read bytes (which is the right thing
+            // to do for most opcodes, but not for jump offsets).
+            var offset = (short)FetchScriptWord();
             if (!condition)
             {
                 _currentPos += offset;

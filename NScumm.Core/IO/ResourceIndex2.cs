@@ -37,9 +37,11 @@ namespace NScumm.Core
                 switch (magic)
                 {
                     case 0x0A31:
+                        // Classic V1 game detected
                         ReadClassicIndexFile(br);
                         break;
                     case 0x0100:
+                        // Enhanced V2 game detected
                         ReadEnhancedIndexFile(br);
                         break;
                     default:

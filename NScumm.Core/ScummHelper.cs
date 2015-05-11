@@ -207,6 +207,16 @@ namespace NScumm.Core
             return values;
         }
 
+        public static sbyte[] ReadSBytes(this BinaryReader reader, int count)
+        {
+            sbyte[] values = new sbyte[count];
+            for (int i = 0; i < count; i++)
+            {
+                values[i] = reader.ReadSByte();
+            }
+            return values;
+        }
+
         public static short[] ReadInt16s(this BinaryReader reader, int count)
         {
             short[] values = new short[count];
@@ -392,6 +402,14 @@ namespace NScumm.Core
             for (int i = 0; i < count; i++)
             {
                 writer.Write((byte)values[i]);
+            }
+        }
+
+        public static void WriteSBytes(this BinaryWriter writer, sbyte[] values, int count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                writer.Write(values[i]);
             }
         }
 

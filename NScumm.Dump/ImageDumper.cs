@@ -40,8 +40,7 @@ namespace NScumm.Dump
 
         Gdi CreateGdi()
         {
-            var gdi = Game.Version == 2 ? new Gdi2(null, Game) : new Gdi(null, Game);
-            return gdi;
+            return Gdi.Create(null, Game);
         }
 
         public void DumpRoomImages(ResourceManager index, IList<int> roomIds)
@@ -211,6 +210,7 @@ namespace NScumm.Dump
             gdi.IsZBufferEnabled = false;
             if (room.Header.Height > 0)
             {
+                gdi.RoomChanged(room);
                 gdi.DrawBitmap(room.Image, screen, new Point(), room.Header.Width, room.Header.Height, 0, numStrips, room.Header.Width, 0, true);
 
                 using (var bmpRoom = ToBitmap(room, screen))
@@ -318,31 +318,31 @@ namespace NScumm.Dump
             {
 //                try
 //                {
-                    var screen = new VirtScreen(0, obj.Width, obj.Height, PixelFormat.Indexed8, 2);
-                    if (img.IsBomp)
-                    {
-                        var bdd = new BompDrawData();
-                        bdd.Src = img.Data;
-                        bdd.Dst = new PixelNavigator(screen.Surfaces[0]);
-                        bdd.X = 0;
-                        bdd.Y = 0;
+                var screen = new VirtScreen(0, obj.Width, obj.Height, PixelFormat.Indexed8, 2);
+                if (img.IsBomp)
+                {
+                    var bdd = new BompDrawData();
+                    bdd.Src = img.Data;
+                    bdd.Dst = new PixelNavigator(screen.Surfaces[0]);
+                    bdd.X = 0;
+                    bdd.Y = 0;
 
-                        bdd.Width = obj.Width;
-                        bdd.Height = obj.Height;
+                    bdd.Width = obj.Width;
+                    bdd.Height = obj.Height;
 
-                        bdd.ScaleX = 255;
-                        bdd.ScaleY = 255;
-                        bdd.DrawBomp();
-                    }
-                    else
-                    {
-                        gdi.DrawBitmap(img, screen, new Point(0, 0), obj.Width, obj.Height & 0xFFF8, 0, obj.Width / 8, room.Header.Width, DrawBitmaps.None, true);
-                    }
+                    bdd.ScaleX = 255;
+                    bdd.ScaleY = 255;
+                    bdd.DrawBomp();
+                }
+                else
+                {
+                    gdi.DrawBitmap(img, screen, new Point(0, 0), obj.Width, obj.Height & 0xFFF8, 0, obj.Width / 8, room.Header.Width, DrawBitmaps.None, true);
+                }
 
-                    using (var bmp = ToBitmap(room, screen))
-                    {
-                        bmp.Save("obj_" + obj.Number + "_" + (++j) + ".png");
-                    }
+                using (var bmp = ToBitmap(room, screen))
+                {
+                    bmp.Save("obj_" + obj.Number + "_" + (++j) + ".png");
+                }
 //                }
 //                catch (Exception e)
 //                {

@@ -60,7 +60,7 @@ namespace NScumm.Core
     {
         protected FlashLight _flashlight;
 
-        internal LightModes GetCurrentLights()
+        internal virtual LightModes GetCurrentLights()
         {
             if (Game.Version >= 6)
                 return LightModes.RoomLightsOn | LightModes.ActorUseColors;

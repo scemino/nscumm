@@ -59,9 +59,9 @@ namespace NScumm.Core.Graphics
             return false;
         }
 
-        public override void RoomChanged()
+        public override void RoomChanged(Room room)
         {
-            _v1 = _vm.CurrentRoomData.Image as ImageData1;
+            _v1 = room.Image as ImageData1;
             _objectMode = true;
         }
 

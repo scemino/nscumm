@@ -47,7 +47,7 @@ namespace NScumm.Core
     }
 
     [Flags]
-    enum UserStates
+    public enum UserStates
     {
         SetFreeze = 0x01,
         // freeze scripts if FREEZE_ON is set, unfreeze otherwise
@@ -92,10 +92,10 @@ namespace NScumm.Core
         public int? VariableClickVerb;
         public int? VariableClickObject;
 
-        string _sentenceBuf;
+        protected string _sentenceBuf;
         bool _completeScreenRedraw;
         sbyte _mouseOverBoxV2;
-        ushort _inventoryOffset;
+        protected ushort _inventoryOffset;
 
         struct V2MouseoverBox
         {
@@ -775,7 +775,7 @@ namespace NScumm.Core
             SetResult(snd);
         }
 
-        protected void PrintEgo()
+        protected virtual void PrintEgo()
         {
             _actorToPrintStrFor = Variables[VariableEgo.Value];
             DecodeParseString();
@@ -962,7 +962,10 @@ namespace NScumm.Core
         protected void StartSound()
         {
             var sound = GetVarOrDirectByte(OpCodeParameter.Param1);
-            Variables[VariableMusicTimer.Value] = 0;
+            if (VariableMusicTimer.HasValue)
+            {
+                Variables[VariableMusicTimer.Value] = 0;
+            }
             Sound.AddSoundToQueue(sound);
         }
 
@@ -1099,6 +1102,12 @@ namespace NScumm.Core
             var a2 = Actors[nr2];
             if (!a2.IsInCurrentRoom)
                 return;
+        }
+
+        protected void WalkActorToActor(int actor, int toActor, int dist)
+        {
+            var a = Actors[actor];
+            var to = Actors[toActor];
 
             if (Game.Version <= 2)
             {
@@ -1107,10 +1116,10 @@ namespace NScumm.Core
             else if (dist == 0xFF)
             {
                 dist = (int)(a.ScaleX * a.Width / 0xFF);
-                dist += (int)(a2.ScaleX * a2.Width / 0xFF) / 2;
+                dist += (int)(to.ScaleX * to.Width / 0xFF) / 2;
             }
-            int x = a2.Position.X;
-            int y = a2.Position.Y;
+            int x = to.Position.X;
+            int y = to.Position.Y;
             if (x < a.Position.X)
                 x += dist;
             else
@@ -1452,12 +1461,13 @@ namespace NScumm.Core
             VerbMouseOver(0);
         }
 
-        void Restart()
+        protected void Restart()
         {
+            // TODO: restart
             //            RestartCore();
         }
 
-        void ActorFollowCamera(int act)
+        protected void ActorFollowCamera(int act)
         {
             if (Game.Version < 7)
             {
@@ -1519,15 +1529,16 @@ namespace NScumm.Core
         {
             // NES version of maniac uses this to switch between the two
             // groups of costumes it has
-            //            if (Game.Platform == Platform.NES)
-            //                NES_loadCostumeSet(ReadByte());
-            //            else if (Game.Platform == Platform.C64)
-            //                ReadByte();
-            //            else
-            Dummy();
+//            if (Game.Platform == Platform.NES)
+//                NES_loadCostumeSet(ReadByte());
+            /*else*/
+            if (Game.Platform == Platform.C64)
+                ReadByte();
+            else
+                Dummy();
         }
 
-        void Dummy()
+        protected void Dummy()
         {
             // Opcode 0xEE is used in maniac and zak but has no purpose
             //            if (_opCode != 0xEE)
@@ -1544,7 +1555,7 @@ namespace NScumm.Core
             }
         }
 
-        void IsLessEqual()
+        protected void IsLessEqual()
         {
             var a = GetVar();
             var b = GetVarOrDirectWord(OpCodeParameter.Param1);
@@ -1561,7 +1572,7 @@ namespace NScumm.Core
             }
         }
 
-        void WalkActorToObject(int actor, int obj)
+        protected void WalkActorToObject(int actor, int obj)
         {
             int dir;
             Point p;
@@ -1738,7 +1749,7 @@ namespace NScumm.Core
             }
         }
 
-        int CheckV2Inventory(int x, int y)
+        protected int CheckV2Inventory(int x, int y)
         {
             int inventoryArea = /*(_game.platform == Common::kPlatformNES) ? 48: */32;
             int obj = 0;
@@ -1779,7 +1790,7 @@ namespace NScumm.Core
             return FindInventoryCore(Variables[VariableEgo.Value], obj + 1 + _inventoryOffset);
         }
 
-        void SetCameraAt()
+        protected void SetCameraAt()
         {
             SetCameraAtEx(GetVarOrDirectByte(OpCodeParameter.Param1) * Actor2.V12_X_MULTIPLIER);
         }
@@ -1815,7 +1826,7 @@ namespace NScumm.Core
             JumpRelative((cls & clsop) == clsop);
         }
 
-        void WalkActorTo()
+        protected void WalkActorTo()
         {
             var act = GetVarOrDirectByte(OpCodeParameter.Param1);
 
@@ -1832,7 +1843,7 @@ namespace NScumm.Core
             a.StartWalk(new Point(x, y), -1);
         }
 
-        void IsLess()
+        protected void IsLess()
         {
             var a = GetVar();
             var b = GetVarOrDirectWord(OpCodeParameter.Param1);
@@ -1877,28 +1888,28 @@ namespace NScumm.Core
             Variables[_resultVarIndex] -= a;
         }
 
-        void Add()
+        protected void Add()
         {
             GetResult();
             var a = GetVarOrDirectWord(OpCodeParameter.Param1);
             Variables[_resultVarIndex] += a;
         }
 
-        void Subtract()
+        protected void Subtract()
         {
             GetResult();
             var a = GetVarOrDirectWord(OpCodeParameter.Param1);
             Variables[_resultVarIndex] -= a;
         }
 
-        void BeginOverride()
+        protected void BeginOverride()
         {
             cutScene.Data[0].Pointer = CurrentPos;
             cutScene.Data[0].Script = CurrentScript;
 
             // Skip the jump instruction following the override instruction
             ReadByte();
-            ReadWord();
+            FetchScriptWord();
         }
 
         void AssignVarByte()
@@ -1907,7 +1918,7 @@ namespace NScumm.Core
             SetResult(ReadByte());
         }
 
-        void PutActorInRoom()
+        protected void PutActorInRoom()
         {
             var act = GetVarOrDirectByte(OpCodeParameter.Param1);
             var room = GetVarOrDirectByte(OpCodeParameter.Param2);
@@ -1924,7 +1935,7 @@ namespace NScumm.Core
             }
         }
 
-        void Delay()
+        protected void Delay()
         {
             int delay = ReadByte();
             delay |= ReadByte() << 8;
@@ -1941,17 +1952,17 @@ namespace NScumm.Core
             IfStateCommon(ObjectStateV2.Pickupable);
         }
 
-        void IfState02()
+        protected void IfState02()
         {
             IfStateCommon(ObjectStateV2.Untouchable);
         }
 
-        void IfState04()
+        protected void IfState04()
         {
             IfStateCommon(ObjectStateV2.Locked);
         }
 
-        void IfState08()
+        protected void IfState08()
         {
             IfStateCommon(ObjectStateV2.State8);
         }
@@ -1961,17 +1972,17 @@ namespace NScumm.Core
             IfNotStateCommon(ObjectStateV2.Pickupable);
         }
 
-        void IfNotState02()
+        protected void IfNotState02()
         {
             IfNotStateCommon(ObjectStateV2.Untouchable);
         }
 
-        void IfNotState04()
+        protected void IfNotState04()
         {
             IfNotStateCommon(ObjectStateV2.Locked);
         }
 
-        void IfNotState08()
+        protected void IfNotState08()
         {
             IfNotStateCommon(ObjectStateV2.State8);
         }
@@ -2048,7 +2059,7 @@ namespace NScumm.Core
             _fullRedraw = true;
         }
 
-        void StopScriptCommon(int script)
+        protected void StopScriptCommon(int script)
         {
             if (Game.GameId == GameId.Maniac && _roomResource == 26 && Slots[CurrentScript].Number == 10001)
             {
@@ -2071,7 +2082,7 @@ namespace NScumm.Core
                 StopScript(script);
         }
 
-        void StopScript()
+        protected void StopScript()
         {
             StopScriptCommon(GetVarOrDirectByte(OpCodeParameter.Param1));
         }
@@ -2089,21 +2100,21 @@ namespace NScumm.Core
             SetUserState((UserStates)state);
         }
 
-        void GetActorX()
+        protected void GetActorX()
         {
             GetResult();
             var a = GetVarOrDirectByte(OpCodeParameter.Param1);
             SetResult(GetObjX(a));
         }
 
-        void GetActorY()
+        protected void GetActorY()
         {
             GetResult();
             var a = GetVarOrDirectByte(OpCodeParameter.Param1);
             SetResult(GetObjY(a));
         }
 
-        void StartScript()
+        protected void StartScript()
         {
             int script = GetVarOrDirectByte(OpCodeParameter.Param1);
 
@@ -2165,6 +2176,127 @@ namespace NScumm.Core
             RunScript(script, false, false, new int[0]);
         }
 
+        /// <summary>
+        /// Check if two boxes are neighbors.
+        /// </summary>
+        /// <param name="box1nr"></param>
+        /// <param name="box2nr"></param>
+        /// <returns></returns>
+        protected bool AreBoxesNeighbors(byte box1nr, byte box2nr)
+        {
+            Point tmp;
+
+            if (GetBoxFlags(box1nr).HasFlag(BoxFlags.Invisible) || GetBoxFlags(box2nr).HasFlag(BoxFlags.Invisible))
+                return false;
+
+            //System.Diagnostics.Debug.Assert(_game.version >= 3);
+            var box2 = GetBoxCoordinates(box1nr);
+            var box = GetBoxCoordinates(box2nr);
+
+            // Roughly, the idea of this algorithm is to search for sies of the given
+            // boxes that touch each other.
+            // In order to keep te code simple, we only match the upper sides;
+            // then, we "rotate" the box coordinates four times each, for a total
+            // of 16 comparisions.
+            for (int j = 0; j < 4; j++)
+            {
+                for (int k = 0; k < 4; k++)
+                {
+                    // Are the "upper" sides of the boxes on a single vertical line
+                    // (i.e. all share one x value) ?
+                    if (box2.UpperRight.X == box2.UpperLeft.X && box.UpperLeft.X == box2.UpperLeft.X && box.UpperRight.X == box2.UpperLeft.X)
+                    {
+                        bool swappedBox2 = false, swappedBox1 = false;
+                        if (box2.UpperRight.Y < box2.UpperLeft.Y)
+                        {
+                            swappedBox2 = true;
+                            ScummHelper.Swap(ref box2.UpperRight.Y, ref box2.UpperLeft.Y);
+                        }
+                        if (box.UpperRight.Y < box.UpperLeft.Y)
+                        {
+                            swappedBox1 = true;
+                            ScummHelper.Swap(ref box.UpperRight.Y, ref box.UpperLeft.Y);
+                        }
+                        if (box.UpperRight.Y < box2.UpperLeft.Y ||
+                            box.UpperLeft.Y > box2.UpperRight.Y ||
+                            ((box.UpperLeft.Y == box2.UpperRight.Y ||
+                                box.UpperRight.Y == box2.UpperLeft.Y) && box2.UpperRight.Y != box2.UpperLeft.Y && box.UpperLeft.Y != box.UpperRight.Y))
+                        {
+                        }
+                        else
+                        {
+                            return true;
+                        }
+
+                        // Swap back if necessary
+                        if (swappedBox2)
+                        {
+                            ScummHelper.Swap(ref box2.UpperRight.Y, ref box2.UpperLeft.Y);
+                        }
+                        if (swappedBox1)
+                        {
+                            ScummHelper.Swap(ref box.UpperRight.Y, ref box.UpperLeft.Y);
+                        }
+                    }
+
+                    // Are the "upper" sides of the boxes on a single horizontal line
+                    // (i.e. all share one y value) ?
+                    if (box2.UpperRight.Y == box2.UpperLeft.Y && box.UpperLeft.Y == box2.UpperLeft.Y && box.UpperRight.Y == box2.UpperLeft.Y)
+                    {
+                        var swappedBox2 = false;
+                        var swappedBox1 = false;
+                        if (box2.UpperRight.X < box2.UpperLeft.X)
+                        {
+                            swappedBox2 = true;
+                            ScummHelper.Swap(ref box2.UpperRight.X, ref box2.UpperLeft.X);
+                        }
+                        if (box.UpperRight.X < box.UpperLeft.X)
+                        {
+                            swappedBox1 = true;
+                            ScummHelper.Swap(ref box.UpperRight.X, ref box.UpperLeft.X);
+                        }
+                        if (box.UpperRight.X < box2.UpperLeft.X ||
+                            box.UpperLeft.X > box2.UpperRight.X ||
+                            ((box.UpperLeft.X == box2.UpperRight.X ||
+                                box.UpperRight.X == box2.UpperLeft.X) && box2.UpperRight.X != box2.UpperLeft.X && box.UpperLeft.X != box.UpperRight.X))
+                        {
+
+                        }
+                        else
+                        {
+                            return true;
+                        }
+
+                        // Swap back if necessary
+                        if (swappedBox2)
+                        {
+                            ScummHelper.Swap(ref box2.UpperRight.X, ref box2.UpperLeft.X);
+                        }
+                        if (swappedBox1)
+                        {
+                            ScummHelper.Swap(ref box.UpperRight.X, ref box.UpperLeft.X);
+                        }
+                    }
+
+                    // "Rotate" the box coordinates
+                    tmp = box2.UpperLeft;
+                    box2.UpperLeft = box2.UpperRight;
+                    box2.UpperRight = box2.LowerRight;
+                    box2.LowerRight = box2.LowerLeft;
+                    box2.LowerLeft = tmp;
+                }
+
+                // "Rotate" the box coordinates
+                tmp = box.UpperLeft;
+                box.UpperLeft = box.UpperRight;
+                box.UpperRight = box.LowerRight;
+                box.LowerRight = box.LowerLeft;
+                box.LowerLeft = tmp;
+            }
+
+            return false;
+        }
+
         void Cutscene()
         {
             cutScene.Data[0].Data = ((int)_userState | (_userPut != 0 ? 16 : 0));
@@ -2186,7 +2318,7 @@ namespace NScumm.Core
             cutScene.Data[0].Pointer = 0;
         }
 
-        void SetUserState(UserStates state)
+        protected void SetUserState(UserStates state)
         {
             if (state.HasFlag(UserStates.SetIFace))
             {          // Userface
@@ -2436,7 +2568,7 @@ namespace NScumm.Core
             DrawString(2, str);
         }
 
-        void DrawPreposition(int index)
+        protected void DrawPreposition(int index)
         {
             // The prepositions, like the fonts, were hard code in the engine. Thus
             // we have to do that, too, and provde localized versions for all the
@@ -2475,7 +2607,7 @@ namespace NScumm.Core
             _sentenceBuf += prepositions[lang, index];
         }
 
-        void ActorFromPos()
+        protected void ActorFromPos()
         {
             GetResult();
             var x = GetVarOrDirectByte(OpCodeParameter.Param1) * Actor2.V12_X_MULTIPLIER;
@@ -2529,27 +2661,27 @@ namespace NScumm.Core
             }
         }
 
-        void PanCameraTo()
+        protected void PanCameraTo()
         {
             PanCameraToCore(new Point(GetVarOrDirectByte(OpCodeParameter.Param1) * Actor2.V12_X_MULTIPLIER, 0));
         }
 
-        void SetState04()
+        protected void SetState04()
         {
             SetStateCommon(ObjectStateV2.Locked);
         }
 
-        void ClearState04()
+        protected void ClearState04()
         {
             ClearStateCommon(ObjectStateV2.Locked);
         }
 
-        void SetState02()
+        protected void SetState02()
         {
             SetStateCommon(ObjectStateV2.Untouchable);
         }
 
-        void ClearState02()
+        protected void ClearState02()
         {
             ClearStateCommon(ObjectStateV2.Untouchable);
         }
@@ -2564,7 +2696,7 @@ namespace NScumm.Core
             ClearStateCommon(ObjectStateV2.Pickupable);
         }
 
-        void ClearState08()
+        protected void ClearState08()
         {
             var obj = GetActiveObject();
             PutState(obj, GetStateCore(obj) & ~(byte)ObjectStateV2.State8);
@@ -2684,7 +2816,7 @@ namespace NScumm.Core
             SetResult(GetVarOrDirectWord(OpCodeParameter.Param1));
         }
 
-        void SetState08()
+        protected void SetState08()
         {
             int obj = GetActiveObject();
             PutState(obj, GetStateCore(obj) | (byte)ObjectStateV2.State8);
@@ -2692,7 +2824,7 @@ namespace NScumm.Core
             ClearDrawObjectQueue();
         }
 
-        int GetActiveObject()
+        protected virtual int GetActiveObject()
         {
             return GetVarOrDirectWord(OpCodeParameter.Param1);
         }
@@ -2738,21 +2870,21 @@ namespace NScumm.Core
             PutState(obj, GetStateCore(od.Number) | (byte)ObjectStateV2.State8);
         }
 
-        void IsGreater()
+        protected void IsGreater()
         {
             var a = GetVar();
             var b = GetVarOrDirectWord(OpCodeParameter.Param1);
             JumpRelative(b > a);
         }
 
-        void IsGreaterEqual()
+        protected void IsGreaterEqual()
         {
             var a = GetVar();
             var b = GetVarOrDirectWord(OpCodeParameter.Param1);
             JumpRelative(b >= a);
         }
 
-        void PutActor()
+        protected void PutActor()
         {
             int act = GetVarOrDirectByte(OpCodeParameter.Param1);
             var a = Actors[act];

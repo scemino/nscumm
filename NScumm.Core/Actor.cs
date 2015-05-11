@@ -167,6 +167,9 @@ namespace NScumm.Core
             { 
                 return _position; 
             }
+            protected set {
+                _position = value;
+            }
         }
 
         public ushort Facing { get; set; }
@@ -605,7 +608,7 @@ namespace NScumm.Core
             return abr;
         }
 
-        public void SetDirection(int direction)
+        public virtual void SetDirection(int direction)
         {
             uint aMask;
             int i;
@@ -935,7 +938,7 @@ namespace NScumm.Core
             }
         }
 
-        public void AnimateCostume()
+        public virtual void AnimateCostume()
         {
             if (Costume == 0)
                 return;
@@ -961,7 +964,7 @@ namespace NScumm.Core
                 IgnoreBoxes = value;
         }
 
-        public void SaveOrLoad(Serializer serializer)
+        public virtual void SaveOrLoad(Serializer serializer)
         {
             var actorEntries = new[]
             {
@@ -1164,7 +1167,7 @@ namespace NScumm.Core
             }
         }
 
-        public void StartAnimActor(int frame)
+        public virtual void StartAnimActor(int frame)
         {
             if (_scumm.Game.Version >= 7 && !((_scumm.Game.GameId == GameId.FullThrottle) && (_scumm.Game.Features.HasFlag(GameFeatures.Demo) /*&& (_vm.Game.Platform == Platform.DOS)*/)))
             {

@@ -66,11 +66,11 @@ namespace NScumm.Core.Graphics
         {
         }
 
-        public override void RoomChanged()
+        public override void RoomChanged(Room room)
         {
-            var roomPtr = _vm.CurrentRoomData.Image.Data;
+            var roomPtr = room.Image.Data;
             _roomStrips = GenerateStripTable(roomPtr,
-                _vm.CurrentRoomData.Header.Width, _vm.CurrentRoomData.Header.Height);
+                room.Header.Width, room.Header.Height);
         }
 
         /// <summary>

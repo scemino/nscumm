@@ -73,10 +73,19 @@ namespace NScumm.Core
             return name;
         }
 
+        protected static ObjectV0Type OBJECT_V0_TYPE(int obj)
+        {
+            return (ObjectV0Type)((obj >> 8) & 0xFF);
+        }
+
         void UpdateObjectStates()
         {
             for (int i = 1; i < _objs.Length; i++)
             {
+                // V0 MM, objects with type == 1 are room objects (room specific objects, non-pickup)
+                if (_game.Version == 0 && OBJECT_V0_TYPE(_objs[i].Number) == ObjectV0Type.Background)
+                    continue;
+
                 if (_objs[i].Number > 0)
                     _objs[i].State = GetStateCore(_objs[i].Number);
             }
@@ -148,6 +157,9 @@ namespace NScumm.Core
 
         internal bool GetClass(int obj, ObjectClass cls)
         {
+            if (Game.Version == 0)
+                return false;
+
             cls &= (ObjectClass)0x7F;
 
             if (Game.Version < 5)
@@ -226,13 +238,14 @@ namespace NScumm.Core
 
         protected WhereIsObject GetWhereIsObject(int obj)
         {
-            if (obj >= _resManager.ObjectOwnerTable.Length)
+            // Note: in MM v0 bg objects are greater _numGlobalObjects
+            if (Game.Version != 0 && obj >= _objs.Length)
                 return WhereIsObject.NotFound;
 
             if (obj < 1)
                 return WhereIsObject.NotFound;
 
-            if (_resManager.ObjectOwnerTable[obj] != OwnerRoom)
+            if ((_game.Version != 0 || OBJECT_V0_TYPE(obj) == 0) && _resManager.ObjectOwnerTable[obj] != OwnerRoom)
             {
                 for (int i = 0; i < _resManager.NumInventory; i++)
                     if (_inventory[i] == obj)

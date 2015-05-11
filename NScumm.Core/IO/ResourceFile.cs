@@ -29,12 +29,16 @@ namespace NScumm.Core.IO
     {
         #region Fields
 
-        protected readonly XorReader _reader;
+        protected XorReader _reader;
         Stream _fs;
 
         #endregion
 
         #region Constructor
+
+        protected ResourceFile()
+        {
+        }
 
         protected ResourceFile(string path, byte encByte)
         {

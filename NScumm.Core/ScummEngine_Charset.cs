@@ -52,6 +52,7 @@ namespace NScumm.Core
         {
             switch (Game.Version)
             {
+                case 0:
                 case 1:
                     _charset = new CharsetRenderer2(this);
                     break;
@@ -313,12 +314,29 @@ namespace NScumm.Core
                     _nextLeft = Game.Version >= 6 ? _string[0].Position.X : 0;
             }
 
-            bool useCJK = UseCjkMode;
-            _nextTop += _charset.GetFontHeight();
-            UseCjkMode = useCJK;
+            if (_game.Version == 0)
+            {
+                return false;
+            }
+            else if (/*!(_game.platform == Common::kPlatformFMTowns) &&*/ _string[0].Height != 0)
+            {
+                _nextTop += _charset.GetFontHeight();
+            }
+            else
+            {
+                bool useCJK = UseCjkMode;
+                // SCUMM5 FM-Towns doesn't use the height of the ROM font here.
+//                if (_game.Platform == Platform.FMTowns && Game.Version == 5)
+//                    _useCJKMode = false;
+                _nextTop += _charset.GetFontHeight();
+                UseCjkMode = useCJK;
+            }
 
-            // FIXME: is this really needed?
-            _charset.DisableOffsX = true;
+            if (_game.Version > 3)
+            {
+                // FIXME: is this really needed?
+                _charset.DisableOffsX = true;
+            }
 
             return true;
         }

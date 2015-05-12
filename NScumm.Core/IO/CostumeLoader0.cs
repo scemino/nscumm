@@ -37,39 +37,55 @@
  */
 
 using System;
-using System.IO;
 
 namespace NScumm.Core
 {
-    class CostumeLoader0: ClassicCostumeLoader
+    class CostumeLoader0: ICostumeLoader
     {
+        protected ScummEngine _vm;
+
+        public int Id { get; private set; }
+
+        public byte Format { get; private set; }
+
+        public bool Mirror { get; private set; }
+
+        public byte[] Palette { get; private set; }
+
+        public long FrameOffsets { get; private set; }
+
+        public long AnimCmds { get; private set; }
+
+        public byte[] Data { get; private set; }
+
         public CostumeLoader0(ScummEngine vm)
-            : base(vm)
         {            
+            _vm = vm;
+            Id = -1;
         }
 
-        public override void LoadCostume(int id)
+        public void LoadCostume(int id)
         {
-            var ptr = _vm.ResourceManager.GetCostumeData(id);
-            CostumeReader = new BinaryReader(new MemoryStream(ptr));
+            Data = _vm.ResourceManager.GetCostumeData(id);
 
             Id = id;
-            BasePtr = 9;
 
             Format = 0x57;
-            NumColors = 0;
-            NumAnim = 0;
             Mirror = false;
 //            Palette = &actorV0Colors[id];
             Palette = new byte[actorV0Colors.Length - id];
             Array.Copy(actorV0Colors, id, Palette, 0, Palette.Length);
 
-            FrameOffsets = BitConverter.ToUInt16(ptr, 5);
-            DataOffsets = 0;
-            AnimCmds = BitConverter.ToUInt16(ptr, 7);
+            FrameOffsets = 9 + BitConverter.ToUInt16(Data, 5);
+            AnimCmds = 9 + BitConverter.ToUInt16(Data, 7);
         }
 
-        public override void CostumeDecodeData(Actor a, int frame, uint usemask)
+        bool ICostumeLoader.HasManyDirections(int id)
+        {
+            return false;
+        }
+
+        public void CostumeDecodeData(Actor a, int frame, uint usemask)
         {
             var a0 = (Actor0)a;
 
@@ -85,7 +101,7 @@ namespace NScumm.Core
             a0.CostCommand = a0.CostCommandNew;
 
             int cmd = a0.CostCommand;
-            byte limbFrameNumber = 0;
+            byte limbFrameNumber;
 
             // Each costume-command has 8 limbs  (0x2622)
             cmd <<= 3;
@@ -93,8 +109,7 @@ namespace NScumm.Core
             for (int limb = 0; limb < 8; ++limb)
             {
                 // get the frame number for the beginning of the costume command
-                CostumeReader.BaseStream.Seek(AnimCmds + cmd + limb, SeekOrigin.Begin);
-                limbFrameNumber = CostumeReader.ReadByte();
+                limbFrameNumber = Data[AnimCmds + cmd + limb];
 
                 // Is this limb flipped?
                 if ((limbFrameNumber & 0x80) != 0)
@@ -106,7 +121,7 @@ namespace NScumm.Core
                     // Store the limb frame number (clear the flipped status)
                     a.Cost.Frame[limb] = (ushort)(limbFrameNumber & 0x7f);
 
-                    if (a0.LimbFlipped[limb] != true)
+                    if (!a0.LimbFlipped[limb])
                         a.Cost.Start[limb] = 0xFFFF;
 
                     a0.LimbFlipped[limb] = true;
@@ -132,13 +147,11 @@ namespace NScumm.Core
         {
             LoadCostume(a.Costume);
 
-            CostumeReader.BaseStream.Seek(FrameOffsets + limb, SeekOrigin.Begin);
-            CostumeReader.BaseStream.Seek(CostumeReader.BaseStream.ReadByte() + a.Cost.Start[limb], SeekOrigin.Begin);
             // Get the frame number for the current limb / Command
-            return CostumeReader.ReadByte();
+            return Data[FrameOffsets+ Data[FrameOffsets+limb] + a.Cost.Start[limb]];
         }
 
-        public override int IncreaseAnims(Actor a)
+        public int IncreaseAnims(Actor a)
         {
             var a0 = (Actor0)a;
             int r = 0;
@@ -149,6 +162,50 @@ namespace NScumm.Core
                 r += IncreaseAnim(a, i) ? 1 : 0;
             }
             return r;
+        }
+
+        bool IncreaseAnim(Actor a, int limb) {
+            var a0 = (Actor0)a;
+            var limbPrevious = a.Cost.Curpos[limb]++;
+
+            LoadCostume(a.Costume);
+
+            // 0x2543
+            byte frame = Data[FrameOffsets + a.Cost.Curpos[limb] + a.Cost.Active[limb]];
+
+            // Is this frame invalid?
+            if (frame == 0xFF) {
+
+                // Repeat timer has reached 0?
+                if (a0.LimbFrameRepeat[limb] == 0) {
+
+                    // Use the previous frame
+                    --a0.Cost.Curpos[limb];
+
+                    // Reset the comstume command
+                    a0.CostCommandNew = 0xFF;
+                    a0.CostCommand = 0xFF;
+
+                    // Set the frame/start to invalid
+                    a0.Cost.Frame[limb] = 0xFFFF;
+                    a0.Cost.Start[limb] = 0xFFFF;
+
+                } else {
+
+                    // Repeat timer enabled?
+                    if (a0.LimbFrameRepeat[limb] != -1)
+                        --a0.LimbFrameRepeat[limb];
+
+                    // No, restart at frame 0
+                    a.Cost.Curpos[limb] = 0;
+                }
+            }
+
+            // Limb frame has changed?
+            if (limbPrevious == a.Cost.Curpos[limb])
+                return false;
+
+            return true;
         }
 
         public static readonly byte[] actorV0Colors =

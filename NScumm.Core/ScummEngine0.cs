@@ -834,6 +834,34 @@ namespace NScumm.Core
             return (LightModes)_currentLights;
         }
 
+        protected override bool AreBoxesNeighbors(byte box1nr, byte box2nr)
+        {
+            var boxm = roomData.BoxMatrix;
+            // TODO: what are the first bytes for (mostly 0)?
+            var index = 4;
+            // For each box, the matrix contains an arbitrary number
+            // of box indices that are linked with the box (neighbors).
+            // Each list is separated by 0xFF (|).
+            // E.g. "1 | 0 3 | 3 | 1 2" means:
+            //   0 -> 1, 1 -> 0/3, 2 -> 3, 3 -> 1/2
+
+            // Skip up to the matrix data for box 'box1nr'
+            for (var i = 0; i < box1nr; i++) {
+                while (boxm[index] != 0xFF)
+                    index++;
+                index++;
+            }
+
+            // Now search for the entry for box 'box2nr'
+            while (boxm[index] != 0xFF) {
+                if (boxm[index] == box2nr)
+                    return true;
+                index++;
+            }
+
+            return false;
+        }
+
         internal byte WalkboxFindTarget(Actor a, int destbox, Point walkdest)
         {
             var actor = (Actor0)a;

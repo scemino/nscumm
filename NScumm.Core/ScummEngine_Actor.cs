@@ -32,12 +32,14 @@ namespace NScumm.Core
         internal protected int _actorToPrintStrFor;
         bool _useTalkAnims;
         protected bool _haveActorSpeechMsg;
-        static readonly byte[] v0MMActorTalkColor = {
-            1, 7, 2, 14, 8, 15, 3, 7, 7, 15, 1, 13, 1, 4, 5, 5, 4, 3, 1, 5, 1, 1, 1, 1, 7
-        };
-        static readonly byte[] v1MMActorTalkColor = {
-            1, 7, 2, 14, 8, 1, 3, 7, 7, 12, 1, 13, 1, 4, 5, 5, 4, 3, 1, 5, 1, 1, 1, 7, 7
-        };
+        static readonly byte[] v0MMActorTalkColor =
+            {
+                1, 7, 2, 14, 8, 15, 3, 7, 7, 15, 1, 13, 1, 4, 5, 5, 4, 3, 1, 5, 1, 1, 1, 1, 7
+            };
+        static readonly byte[] v1MMActorTalkColor =
+            {
+                1, 7, 2, 14, 8, 1, 3, 7, 7, 12, 1, 13, 1, 4, 5, 5, 4, 3, 1, 5, 1, 1, 1, 7, 7
+            };
 
         internal Actor[] Actors { get; private set; }
 
@@ -266,12 +268,19 @@ namespace NScumm.Core
 
         IEnumerable<Actor> GetOrderedActors()
         {
-            if (Game.GameId == NScumm.Core.IO.GameId.SamNMax)
+            if (Game.GameId == GameId.SamNMax)
             {
                 return from actor in Actors.Skip(1)
                                    where actor.IsInCurrentRoom
                                    where actor.Layer >= 0
                                    orderby actor.Position.Y, actor.Number
+                                   select actor;
+            }
+            else if (Game.Version == 0)
+            {
+                return from actor in Actors.Skip(1)
+                                   where actor.IsInCurrentRoom
+                                   orderby actor.Number==19? 0 : actor.Position.Y
                                    select actor;
             }
             return from actor in Actors.Skip(1)
@@ -286,10 +295,42 @@ namespace NScumm.Core
             var actors = GetOrderedActors();
             foreach (var actor in actors)
             {
+                if (_game.Version == 0)
+                {
+                    // 0x057B
+                    var a0 = (Actor0)actor;
+                    if ((a0.Speaking & 1) != 0)
+                        a0.Speaking ^= 0xFE;
+
+                    // 0x22B5
+                    if (a0.MiscFlags.HasFlag(ActorV0MiscFlags.Hide))
+                        continue;
+
+                    // Sound
+                    if (a0.Moving != MoveFlags.InLeg && CurrentRoom != 1 && CurrentRoom != 44)
+                    {
+                        if (a0.Cost.SoundPos == 0)
+                            a0.Cost.SoundCounter++;
+
+                        // Is this the correct location?
+                        // 0x073C
+                        if ((a0.Sound & 0x3F) != 0)
+                            a0.Cost.SoundPos = (byte)((a0.Cost.SoundPos + 1) % 3);
+                    }
+                }
+
                 if (actor.Costume != 0)
                 {
-                    actor.DrawCostume();
-                    actor.AnimateCostume();
+                    if (Game.Version == 0)
+                    {
+                        actor.AnimateCostume();
+                        actor.DrawCostume();
+                    }
+                    else
+                    {
+                        actor.DrawCostume();
+                        actor.AnimateCostume();
+                    }
                 }
             }
         }

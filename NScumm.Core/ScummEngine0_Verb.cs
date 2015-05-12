@@ -101,8 +101,8 @@ namespace NScumm.Core
             }
 
             var a = (Actor0)Actors[Variables[VariableEgo.Value]];
-            int x = _mousePos.X + MainVirtScreen.XStart / Actor2.V12_X_MULTIPLIER;
-            int y = _mousePos.Y - MainVirtScreen.TopLine / Actor2.V12_Y_MULTIPLIER;
+            int x = (_mousePos.X + MainVirtScreen.XStart) / Actor2.V12_X_MULTIPLIER;
+            int y = (_mousePos.Y - MainVirtScreen.TopLine) / Actor2.V12_Y_MULTIPLIER;
 
             // 0xB31
             Variables[6] = x;

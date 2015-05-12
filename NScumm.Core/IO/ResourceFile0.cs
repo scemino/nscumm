@@ -408,9 +408,21 @@ namespace NScumm.Core.IO
                     }
                 }
                 room.Boxes.Add(box);
-            }                
+            }    
 
-            var size = room.Boxes.Count * (room.Boxes.Count + 1);
+            var size = 0;
+            var pos = _reader.BaseStream.Position;
+            // Compute matrix size
+            for (var i = 0; i < room.Boxes.Count; i++)
+            {
+                while (_reader.ReadByte() != 0xFF)
+                {
+                    size++;
+                }
+                size++;
+            }
+
+            _reader.BaseStream.Position = pos;
             room.BoxMatrix.AddRange(_reader.ReadBytes(size));
         }
 

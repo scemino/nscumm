@@ -33,13 +33,21 @@ namespace NScumm.Core
 
         void PlayActorSounds()
         {
+            int sound;
             for (var i = 1; i < Actors.Length; i++)
             {
                 if (Actors[i].Cost.SoundCounter != 0 && Actors[i].IsInCurrentRoom)
                 {
                     _currentScript = 0xFF;
 
-                    var sound = Actors[i].Sound;
+                    if (Game.Version == 0)
+                    {
+                        sound = Actors[i].Sound & 0x3F;
+                    }
+                    else
+                    {
+                        sound = Actors[i].Sound;
+                    }
                     // fast mode will flood the queue with walk sounds
 //                    if (!_fastMode) {
                     Sound.AddSoundToQueue(sound);

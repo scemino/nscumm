@@ -167,7 +167,8 @@ namespace NScumm.Core
             { 
                 return _position; 
             }
-            protected set {
+            protected set
+            {
                 _position = value;
             }
         }
@@ -268,7 +269,30 @@ namespace NScumm.Core
             // TODO:
             //_vm.ensureResourceLoaded(rtCostume, _costume);
 
-            if (_scumm.Game.Version <= 2)
+            if (_scumm.Game.Version == 0)
+            {
+                var a = (Actor0)this;
+
+                a.CostCommand = a.CostCommandNew = 0xFF;
+                _walkdata.Dest = a.CurrentWalkTo;
+
+                for (int i = 0; i < 8; ++i)
+                {
+                    a.LimbFrameRepeat[i] = 0;
+                    a.LimbFrameRepeatNew[i] = 0;
+                }
+
+                Cost.Reset();
+
+                a.AnimFrameRepeat = 1;
+                a.Speaking = 0;
+
+                StartAnimActor(StandFrame);
+                IsVisible = true;
+                return;
+
+            }
+            else if (_scumm.Game.Version <= 2)
             {
                 Cost.Reset();
                 StartAnimActor(StandFrame);
@@ -448,6 +472,17 @@ namespace NScumm.Core
             {
                 if (IsInCurrentRoom)
                     Show();
+            }
+
+            // V0 always sets the actor to face the camera upon entering a room
+            if (_scumm.Game.Version == 0)
+            {
+                _walkdata.Dest = _position;
+
+                ((Actor0)this).NewWalkBoxEntered = true;
+                ((Actor0)this).CurrentWalkTo = _position;
+
+                SetDirection(ScummHelper.OldDirToNewDir(2));
             }
         }
 
@@ -848,7 +883,11 @@ namespace NScumm.Core
             _walkdata.DestBox = abr.Box;
             _walkdata.DestDir = (short)dir;
 
-            if (_scumm.Game.Version <= 2)
+            if (_scumm.Game.Version == 0)
+            {
+                ((Actor0)this).NewWalkBoxEntered = true;
+            }
+            else if (_scumm.Game.Version <= 2)
             {
                 Moving = (Moving & ~(MoveFlags.LastLeg | MoveFlags.InLeg)) | MoveFlags.NewLeg;
             }
@@ -928,6 +967,13 @@ namespace NScumm.Core
                     break;
                 case 4:				// turn to new direction
                     TurnToDirection(dir);
+                    break;
+                case 64:
+                    if (_scumm.Game.Version == 0)
+                    {
+                        Moving &= ~MoveFlags.Turn;
+                        SetDirection(dir);
+                    }
                     break;
                 default:
                     if (_scumm.Game.Version <= 2)
@@ -1243,7 +1289,15 @@ namespace NScumm.Core
             if (WalkScript != 0)
                 _scumm.StopScript(WalkScript);
 
-            Moving = MoveFlags.None;
+            if (_scumm.Game.Version == 0)
+            {
+                Moving = MoveFlags.InLeg;
+                SetDirection(Facing);
+            }
+            else
+            {
+                Moving = MoveFlags.None;
+            }
         }
 
         public void TurnToDirection(int newdir)
@@ -1254,6 +1308,12 @@ namespace NScumm.Core
             if (_scumm.Game.Version <= 6)
             {
                 _targetFacing = (ushort)newdir;
+
+                if (_scumm.Game.Version == 0)
+                {
+                    SetDirection(newdir);
+                    return;
+                }
                 Moving = MoveFlags.Turn;
             }
             else
@@ -1411,6 +1471,8 @@ namespace NScumm.Core
                 else
                 {
                     bcr.ZBuffer = (byte)_scumm.GetBoxMask(Walkbox);
+                    if (_scumm.Game.Version == 0)
+                        bcr.ZBuffer &= 0x03;
                     if (bcr.ZBuffer > _scumm.Gdi.NumZBuffer - 1)
                         bcr.ZBuffer = (byte)(_scumm.Gdi.NumZBuffer - 1);
                 }
@@ -1675,6 +1737,15 @@ namespace NScumm.Core
                         return 0;
                     case 6:
                         return 180;
+                }
+
+                // MM v0 stores flags as a part of the mask
+                if (_scumm.Game.Version == 0)
+                {
+                    var mask = _scumm.GetBoxMask(Walkbox);
+                    // face the wall if climbing/descending a ladder
+                    if ((mask & 0x8C) == 0x84)
+                        return 0;
                 }
             }
             // OR 1024 in to signal direction interpolation should be done

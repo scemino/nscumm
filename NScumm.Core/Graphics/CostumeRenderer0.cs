@@ -63,21 +63,14 @@ namespace NScumm.Core.Graphics
                 return 0;
 
             _loaded.LoadCostume(a.Costume);
-            _loaded.CostumeReader.BaseStream.Seek(_loaded.FrameOffsets + a.Cost.Curpos[limb] + a.Cost.Active[limb], System.IO.SeekOrigin.Begin);
-            byte frame = _loaded.CostumeReader.ReadByte();
+            byte frame = _loaded.Data[_loaded.FrameOffsets + a.Cost.Curpos[limb] + a.Cost.Active[limb]];
 
             // Get the frame ptr
-            _loaded.CostumeReader.BaseStream.Seek(_loaded.BasePtr + frame, System.IO.SeekOrigin.Begin);
-            byte ptrLow = _loaded.CostumeReader.ReadByte();
-            _loaded.CostumeReader.BaseStream.Seek(_loaded.DataOffsets + 4, System.IO.SeekOrigin.Begin);
-            byte ptrHigh = (byte)(ptrLow + _loaded.CostumeReader.ReadByte());
-            _loaded.CostumeReader.BaseStream.Seek(_loaded.BasePtr + ptrHigh, System.IO.SeekOrigin.Begin);
-            var high = _loaded.CostumeReader.ReadByte();
-            _loaded.CostumeReader.BaseStream.Seek(_loaded.BasePtr + ptrLow + 2, System.IO.SeekOrigin.Begin);
-            var low = _loaded.CostumeReader.ReadByte();
-            int frameOffset = (high << 8) + low;          // 0x23EF / 0x2400
+            byte ptrLow = _loaded.Data[9 + frame];
+            byte ptrHigh = (byte)(ptrLow + _loaded.Data[4]);
+            int frameOffset = (_loaded.Data[9 + ptrHigh] << 8) + _loaded.Data[9 + ptrLow + 2];          // 0x23EF / 0x2400
 
-            var data = _loaded.BasePtr + frameOffset;
+            var data = 9 + frameOffset;
 
             // Set up the palette data
             var palette = new byte[4];
@@ -91,14 +84,13 @@ namespace NScumm.Core.Graphics
                 palette[2] = 11;
                 palette[3] = 11;
             }
-            return 0;
-            _loaded.CostumeReader.BaseStream.Seek(_loaded.BasePtr + data, System.IO.SeekOrigin.Begin);
-            int width = _loaded.CostumeReader.ReadByte();
-            int height = _loaded.CostumeReader.ReadByte();
-            int offsetX = _xmove + _loaded.CostumeReader.ReadByte();
-            int offsetY = _ymove + _loaded.CostumeReader.ReadByte();
-            _xmove += _loaded.CostumeReader.ReadSByte();
-            _ymove += _loaded.CostumeReader.ReadSByte();
+
+            int width = _loaded.Data[data];
+            int height = _loaded.Data[data + 1];
+            int offsetX = _xmove + _loaded.Data[data + 2];
+            int offsetY = _ymove + _loaded.Data[data + 3];
+            _xmove += (sbyte)_loaded.Data[data + 4];
+            _ymove += (sbyte)_loaded.Data[data + 5];
             data += 6;
 
             if (width == 0 || height == 0)
@@ -114,8 +106,7 @@ namespace NScumm.Core.Graphics
             {
                 for (int x = 0; x < width; ++x)
                 {
-                    _loaded.CostumeReader.BaseStream.Seek(_loaded.BasePtr + data + y * width + x, System.IO.SeekOrigin.Begin);
-                    byte color = _loaded.CostumeReader.ReadByte();
+                    byte color = _loaded.Data[data + y * width + x];
 
                     int destX = xpos + (a0.LimbFlipped[limb] ? -(x + 1) : x) * 8;
                     int destY = ypos + y;

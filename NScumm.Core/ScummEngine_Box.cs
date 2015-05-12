@@ -115,6 +115,188 @@ namespace NScumm.Core
         }
 
         /// <summary>
+        /// Check if two boxes are neighbors.
+        /// </summary>
+        /// <param name="box1nr"></param>
+        /// <param name="box2nr"></param>
+        /// <returns></returns>
+        protected virtual bool AreBoxesNeighbors(byte box1nr, byte box2nr)
+        {
+            Point tmp;
+
+            if (GetBoxFlags(box1nr).HasFlag(BoxFlags.Invisible) || GetBoxFlags(box2nr).HasFlag(BoxFlags.Invisible))
+                return false;
+
+            //System.Diagnostics.Debug.Assert(_game.version >= 3);
+            var box2 = GetBoxCoordinates(box1nr);
+            var box = GetBoxCoordinates(box2nr);
+
+            // Roughly, the idea of this algorithm is to search for sies of the given
+            // boxes that touch each other.
+            // In order to keep te code simple, we only match the upper sides;
+            // then, we "rotate" the box coordinates four times each, for a total
+            // of 16 comparisions.
+            for (int j = 0; j < 4; j++)
+            {
+                for (int k = 0; k < 4; k++)
+                {
+                    // Are the "upper" sides of the boxes on a single vertical line
+                    // (i.e. all share one x value) ?
+                    if (box2.UpperRight.X == box2.UpperLeft.X && box.UpperLeft.X == box2.UpperLeft.X && box.UpperRight.X == box2.UpperLeft.X)
+                    {
+                        bool swappedBox2 = false, swappedBox1 = false;
+                        if (box2.UpperRight.Y < box2.UpperLeft.Y)
+                        {
+                            swappedBox2 = true;
+                            ScummHelper.Swap(ref box2.UpperRight.Y, ref box2.UpperLeft.Y);
+                        }
+                        if (box.UpperRight.Y < box.UpperLeft.Y)
+                        {
+                            swappedBox1 = true;
+                            ScummHelper.Swap(ref box.UpperRight.Y, ref box.UpperLeft.Y);
+                        }
+                        if (box.UpperRight.Y < box2.UpperLeft.Y ||
+                            box.UpperLeft.Y > box2.UpperRight.Y ||
+                            ((box.UpperLeft.Y == box2.UpperRight.Y ||
+                            box.UpperRight.Y == box2.UpperLeft.Y) && box2.UpperRight.Y != box2.UpperLeft.Y && box.UpperLeft.Y != box.UpperRight.Y))
+                        {
+                        }
+                        else
+                        {
+                            return true;
+                        }
+
+                        // Swap back if necessary
+                        if (swappedBox2)
+                        {
+                            ScummHelper.Swap(ref box2.UpperRight.Y, ref box2.UpperLeft.Y);
+                        }
+                        if (swappedBox1)
+                        {
+                            ScummHelper.Swap(ref box.UpperRight.Y, ref box.UpperLeft.Y);
+                        }
+                    }
+
+                    // Are the "upper" sides of the boxes on a single horizontal line
+                    // (i.e. all share one y value) ?
+                    if (box2.UpperRight.Y == box2.UpperLeft.Y && box.UpperLeft.Y == box2.UpperLeft.Y && box.UpperRight.Y == box2.UpperLeft.Y)
+                    {
+                        var swappedBox2 = false;
+                        var swappedBox1 = false;
+                        if (box2.UpperRight.X < box2.UpperLeft.X)
+                        {
+                            swappedBox2 = true;
+                            ScummHelper.Swap(ref box2.UpperRight.X, ref box2.UpperLeft.X);
+                        }
+                        if (box.UpperRight.X < box.UpperLeft.X)
+                        {
+                            swappedBox1 = true;
+                            ScummHelper.Swap(ref box.UpperRight.X, ref box.UpperLeft.X);
+                        }
+                        if (box.UpperRight.X < box2.UpperLeft.X ||
+                            box.UpperLeft.X > box2.UpperRight.X ||
+                            ((box.UpperLeft.X == box2.UpperRight.X ||
+                            box.UpperRight.X == box2.UpperLeft.X) && box2.UpperRight.X != box2.UpperLeft.X && box.UpperLeft.X != box.UpperRight.X))
+                        {
+
+                        }
+                        else
+                        {
+                            return true;
+                        }
+
+                        // Swap back if necessary
+                        if (swappedBox2)
+                        {
+                            ScummHelper.Swap(ref box2.UpperRight.X, ref box2.UpperLeft.X);
+                        }
+                        if (swappedBox1)
+                        {
+                            ScummHelper.Swap(ref box.UpperRight.X, ref box.UpperLeft.X);
+                        }
+                    }
+
+                    // "Rotate" the box coordinates
+                    tmp = box2.UpperLeft;
+                    box2.UpperLeft = box2.UpperRight;
+                    box2.UpperRight = box2.LowerRight;
+                    box2.LowerRight = box2.LowerLeft;
+                    box2.LowerLeft = tmp;
+                }
+
+                // "Rotate" the box coordinates
+                tmp = box.UpperLeft;
+                box.UpperLeft = box.UpperRight;
+                box.UpperRight = box.LowerRight;
+                box.LowerRight = box.LowerLeft;
+                box.LowerLeft = tmp;
+            }
+
+            return false;
+        }
+
+        protected byte[,] CalcItineraryMatrix(int num)
+        {
+            var boxSize = (_game.Version == 0) ? num : 64;
+
+            // Allocate the adjacent & itinerary matrices
+            var itineraryMatrix = new byte[boxSize, boxSize];
+            var adjacentMatrix = new byte[boxSize, boxSize];
+
+            // Initialize the adjacent matrix: each box has distance 0 to itself,
+            // and distance 1 to its direct neighbors. Initially, it has distance
+            // 255 (= infinity) to all other boxes.
+            for (byte i = 0; i < num; i++)
+            {
+                for (byte j = 0; j < num; j++)
+                {
+                    if (i == j)
+                    {
+                        adjacentMatrix[i, j] = 0;
+                        itineraryMatrix[i, j] = j;
+                    }
+                    else if (AreBoxesNeighbors(i, j))
+                    {
+                        adjacentMatrix[i, j] = 1;
+                        itineraryMatrix[i, j] = j;
+                    }
+                    else
+                    {
+                        adjacentMatrix[i, j] = 255;
+                        itineraryMatrix[i, j] = InvalidBox;
+                    }
+                }
+            }
+
+            // Compute the shortest routes between boxes via Kleene's algorithm.
+            // The original code used some kind of mangled Dijkstra's algorithm;
+            // while that might in theory be slightly faster, it was
+            // a) extremly obfuscated
+            // b) incorrect: it didn't always find the shortest paths
+            // c) not any faster in reality for our sparse & small adjacent matrices
+            for (byte k = 0; k < num; k++)
+            {
+                for (byte i = 0; i < num; i++)
+                {
+                    for (byte j = 0; j < num; j++)
+                    {
+                        if (i == j)
+                            continue;
+                        byte distIK = adjacentMatrix[i, k];
+                        byte distKJ = adjacentMatrix[k, j];
+                        if (adjacentMatrix[i, j] > distIK + distKJ)
+                        {
+                            adjacentMatrix[i, j] = (byte)(distIK + distKJ);
+                            itineraryMatrix[i, j] = itineraryMatrix[i, k];
+                        }
+                    }
+                }
+            }
+
+            return itineraryMatrix;
+        }
+
+        /// <summary>
         /// Compute if there is a way that connects box 'from' with box 'to'.
         /// </summary>
         /// <param name="from"></param>
@@ -146,7 +328,23 @@ namespace NScumm.Core
 
             var boxm = _boxMatrix;
 
-            if (Game.Version <= 2)
+            if (Game.Version == 0)
+            {
+                // calculate shortest paths
+                var itineraryMatrix = CalcItineraryMatrix(numOfBoxes);
+
+                dest = to;
+                do
+                {
+                    dest = itineraryMatrix[from, dest];
+                } while (dest != InvalidBox && !AreBoxesNeighbors(from, (byte)dest));
+
+                if (dest == InvalidBox)
+                    dest = -1;
+
+                return dest;
+            }
+            else if (Game.Version <= 2)
             {
                 // The v2 box matrix is a real matrix with numOfBoxes rows and columns.
                 // The first numOfBoxes bytes contain indices to the start of the corresponding

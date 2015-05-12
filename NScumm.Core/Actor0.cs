@@ -30,7 +30,7 @@ namespace NScumm.Core
 
         public Point NewWalkTo { get; set; }
 
-        public byte CostCommandNew { get; private set; }
+        public byte CostCommandNew { get; set; }
 
         public byte CostCommand { get; set; }
 
@@ -59,6 +59,7 @@ namespace NScumm.Core
         bool _tmp_NewWalkBoxEntered;
 
         public sbyte AnimFrameRepeat { get; set; }
+
         public sbyte[] LimbFrameRepeatNew { get; private set; }
 
         public sbyte[] LimbFrameRepeat { get; private set; }
@@ -71,6 +72,19 @@ namespace NScumm.Core
             LimbFrameRepeatNew = new sbyte[8];
             LimbFrameRepeat = new sbyte[8];
             LimbFlipped = new bool[8];
+
+            if (Number != 0)
+            {
+                switch (scumm.Game.Culture.TwoLetterISOLanguageName)
+                {
+                    case "de":
+                        Name = System.Text.Encoding.UTF8.GetBytes(v0ActorNames_German[Number - 1]);
+                        break;
+                    default:
+                        Name = System.Text.Encoding.UTF8.GetBytes(v0ActorNames_English[Number - 1]);
+                        break;
+                }
+            }
         }
 
         public override void Init(int mode)
@@ -342,280 +356,300 @@ namespace NScumm.Core
             return false;
         }
 
-        void WalkL2A33()
+        enum WalkCommand
         {
-            Moving &= (MoveFlags)0xF0;
-            _tmp_Dest = RealPosition;
-
-            var tmp = CalcWalkDistances() ? 1 : 0;
-            Moving &= (MoveFlags)0xF0;
-            Moving |= (MoveFlags)tmp;
-
-            if (_walkYCountGreaterThanXCount == 0)
-            {
-                if (_walkDirX != 0)
-                {
-                    _targetFacing = (ushort)ScummMath.GetAngleFromPos(Actor2.V12_X_MULTIPLIER * 1, Actor2.V12_Y_MULTIPLIER * 0, false);
-                }
-                else
-                {
-                    _targetFacing = (ushort)ScummMath.GetAngleFromPos(Actor2.V12_X_MULTIPLIER * -1, Actor2.V12_Y_MULTIPLIER * 0, false);
-                }
-            }
-            else
-            {
-                if (_walkDirY != 0)
-                {
-                    _targetFacing = (ushort)ScummMath.GetAngleFromPos(Actor2.V12_X_MULTIPLIER * 0, Actor2.V12_Y_MULTIPLIER * 1, false);
-                }
-                else
-                {
-                    _targetFacing = (ushort)ScummMath.GetAngleFromPos(Actor2.V12_X_MULTIPLIER * 0, Actor2.V12_Y_MULTIPLIER * -1, false);
-                }
-            }
-
-            DirectionUpdate();
-
-            if ((Moving & MoveFlags.Frozen) != 0)
-                return;
-
-            AnimateActor(ScummHelper.NewDirToOldDir(Facing));
-        }
-
-        void WalkL2C36()
-        {
-            SetTmpFromActor();
-            if (_walkDirX == 0)
-            {
-                RealPosition.X--;
-            }
-            else
-            {
-                RealPosition.X++;
-            }
-        }
-
-        void WalkL2CA3()
-        {
-            SetTmpFromActor();
-            if (_walkDirY == 0)
-            {
-                RealPosition.Y--;
-            }
-            else
-            {
-                RealPosition.Y++;
-            }
+            None,
+            L2A33,
+            _2A0A,
+            _2A9A,
+            L2C36,
+            L2CA3
         }
 
         public override void Walk()
         {
+            var cmd = WalkCommand.None;
             ActorSetWalkTo();
 
             NeedRedraw = true;
-            if (NewWalkTo != CurrentWalkTo)
+            do
             {
-                CurrentWalkTo = NewWalkTo;
-
-                L2A33:
-                ;
-                WalkL2A33();
-            }
-            else
-            {
-                // 2A0A
-                if ((Moving & (MoveFlags)0x7F) != MoveFlags.NewLeg)
+                switch (cmd)
                 {
-
-                    if (NewWalkTo == RealPosition)
-                        return;
-                }
-            }
-
-            // 2A9A
-            if (Moving == MoveFlags.InLeg)
-                return;
-
-            if ((Moving & (MoveFlags)0x0F) == MoveFlags.NewLeg)
-            {
-                StopActorMoving();
-                return;
-            }
-
-            // 2AAD
-            if (Moving.HasFlag(MoveFlags.Frozen))
-            {
-                DirectionUpdate();
-
-                if (Moving.HasFlag(MoveFlags.Frozen))
-                    return;
-
-                AnimateActor(ScummHelper.NewDirToOldDir(Facing));
-            }
-
-            if ((Moving & (MoveFlags)0x0F) == (MoveFlags)3)
-            {
-                L2C36:
-                ;
-                WalkL2C36();
-
-                // 2C51
-                if (UpdateWalkbox() != InvalidBox)
-                {
-                    SetActorFromTmp();
-                    WalkL2A33();
-                }
-
-                SetActorFromTmp();
-
-                if (CurrentWalkTo.Y == _tmp_Dest.Y)
-                {
-                    StopActorMoving();
-                    return;
-                }
-
-                if (_walkDirY == 0)
-                {
-                    _tmp_Dest.Y--;
-                }
-                else
-                {
-                    _tmp_Dest.Y++;
-                }
-
-                SetTmpFromActor();
-
-                byte A = (byte)UpdateWalkbox();
-                if (A == 0xFF)
-                {
-                    SetActorFromTmp();
-                    StopActorMoving();
-                    return;
-                }
-                // 2C98: Yes, an exact copy of what just occured.. the original does this, so im doing it...
-                //       Just to keep me sane when going over it :)
-                if (A == 0xFF)
-                {
-                    SetActorFromTmp();
-                    StopActorMoving();
-                    return;
-                }
-                return;
-            }
-
-            // 2ADA
-            if ((Moving & (MoveFlags)0x0F) == MoveFlags.Turn)
-            {
-                L2CA3:
-                ;
-                WalkL2CA3();
-
-                if (UpdateWalkbox() == InvalidBox)
-                {
-                    // 2CC7
-                    SetActorFromTmp();
-                    if (CurrentWalkTo.X == _tmp_Dest.X)
-                    {
-                        StopActorMoving();
-                        return;
-                    }
-
-                    if (_walkDirX == 0)
-                    {
-                        _tmp_Dest.X--;
-                    }
-                    else
-                    {
-                        _tmp_Dest.X++;
-                    }
-                    SetTmpFromActor();
-
-                    if (UpdateWalkbox() == InvalidBox)
-                    {
-                        SetActorFromTmp();
-                        StopActorMoving();
-                    }
-
-                    return;
-                }
-                else
-                {
-                    SetActorFromTmp();
-                    WalkL2A33();
-                }
-            }
-
-            if ((Moving & (MoveFlags)0x0F) == 0)
-            {
-                // 2AE8
-                byte A = ActorWalkX();
-
-                if (A == 1)
-                {
-                    A = ActorWalkY();
-                    if (A == 1)
-                    {
-                        Moving &= (MoveFlags)0xF0;
-                        Moving |= (MoveFlags)A;
-                    }
-                    else
-                    {
-                        if (A == 4)
-                            StopActorMoving();
-                    }
-
-                    return;
-
-                }
-                else
-                {
-                    // 2B0C
-                    if (A == 3)
-                    {
-                        Moving &= (MoveFlags)0xF0;
-                        Moving |= (MoveFlags)A;
-
-                        if (_walkDirY != 0)
+                    case WalkCommand.None:
                         {
-                            _targetFacing = (ushort)ScummMath.GetAngleFromPos(Actor2.V12_X_MULTIPLIER * 0, Actor2.V12_Y_MULTIPLIER * 1, false);
+                            if (NewWalkTo != CurrentWalkTo)
+                            {
+                                CurrentWalkTo = NewWalkTo;
+                                cmd = WalkCommand.L2A33;
+                            }
+                            else
+                            {
+                                cmd = WalkCommand._2A0A;
+                            }
+                        }
+                        break;
+                    case WalkCommand._2A0A:
+                        {
+                            if ((Moving & (MoveFlags)0x7F) != MoveFlags.NewLeg)
+                            {
+                                if (NewWalkTo == RealPosition)
+                                    return;
+                            }
+                            cmd = WalkCommand._2A9A;
+                        }
+                        break;
+                    case WalkCommand.L2A33:
+                        {
+                            Moving &= (MoveFlags)0xF0;
+                            _tmp_Dest = RealPosition;
+
+                            var tmp = CalcWalkDistances() ? 1 : 0;
+                            Moving &= (MoveFlags)0xF0;
+                            Moving |= (MoveFlags)tmp;
+
+                            if (_walkYCountGreaterThanXCount == 0)
+                            {
+                                if (_walkDirX != 0)
+                                {
+                                    _targetFacing = (ushort)ScummMath.GetAngleFromPos(Actor2.V12_X_MULTIPLIER * 1, Actor2.V12_Y_MULTIPLIER * 0, false);
+                                }
+                                else
+                                {
+                                    _targetFacing = (ushort)ScummMath.GetAngleFromPos(Actor2.V12_X_MULTIPLIER * -1, Actor2.V12_Y_MULTIPLIER * 0, false);
+                                }
+                            }
+                            else
+                            {
+                                if (_walkDirY != 0)
+                                {
+                                    _targetFacing = (ushort)ScummMath.GetAngleFromPos(Actor2.V12_X_MULTIPLIER * 0, Actor2.V12_Y_MULTIPLIER * 1, false);
+                                }
+                                else
+                                {
+                                    _targetFacing = (ushort)ScummMath.GetAngleFromPos(Actor2.V12_X_MULTIPLIER * 0, Actor2.V12_Y_MULTIPLIER * -1, false);
+                                }
+                            }
+
+                            DirectionUpdate();
+
+                            if ((Moving & MoveFlags.Frozen) != 0)
+                                return;
+
+                            AnimateActor(ScummHelper.NewDirToOldDir(Facing));
+
+                            cmd = WalkCommand._2A9A;
+                        }
+                        break;
+
+                    case WalkCommand._2A9A:
+                        {
+                            if (Moving == MoveFlags.InLeg)
+                                return;
+
+                            if ((Moving & (MoveFlags)0x0F) == MoveFlags.NewLeg)
+                            {
+                                StopActorMoving();
+                                return;
+                            }
+
+                            // 2AAD
+                            if (Moving.HasFlag(MoveFlags.Frozen))
+                            {
+                                DirectionUpdate();
+
+                                if (Moving.HasFlag(MoveFlags.Frozen))
+                                    return;
+
+                                AnimateActor(ScummHelper.NewDirToOldDir(Facing));
+                            }
+
+                            if ((Moving & (MoveFlags)0x0F) == (MoveFlags)3)
+                            {
+                                cmd = WalkCommand.L2C36;
+                                break;
+                            }
+
+                            // 2ADA
+                            if ((Moving & (MoveFlags)0x0F) == MoveFlags.Turn)
+                            {
+                                cmd = WalkCommand.L2CA3;
+                                break;
+                            }
+
+                            if ((Moving & (MoveFlags)0x0F) == 0)
+                            {
+                                // 2AE8
+                                byte A = ActorWalkX();
+
+                                if (A == 1)
+                                {
+                                    A = ActorWalkY();
+                                    if (A == 1)
+                                    {
+                                        Moving &= (MoveFlags)0xF0;
+                                        Moving |= (MoveFlags)A;
+                                    }
+                                    else
+                                    {
+                                        if (A == 4)
+                                            StopActorMoving();
+                                    }
+
+                                    return;
+                                }
+                                else
+                                {
+                                    // 2B0C
+                                    if (A == 3)
+                                    {
+                                        Moving &= (MoveFlags)0xF0;
+                                        Moving |= (MoveFlags)A;
+
+                                        if (_walkDirY != 0)
+                                        {
+                                            _targetFacing = (ushort)ScummMath.GetAngleFromPos(Actor2.V12_X_MULTIPLIER * 0, Actor2.V12_Y_MULTIPLIER * 1, false);
+                                        }
+                                        else
+                                        {
+                                            _targetFacing = (ushort)ScummMath.GetAngleFromPos(Actor2.V12_X_MULTIPLIER * 0, Actor2.V12_Y_MULTIPLIER * -1, false);
+                                        }
+
+                                        DirectionUpdate();
+                                        AnimateActor(ScummHelper.NewDirToOldDir(Facing));
+                                        cmd = WalkCommand.L2C36;
+                                        break;
+                                    }
+                                    else
+                                    {
+                                        // 2B39
+                                        A = ActorWalkY();
+                                        if (A != 4)
+                                            return;
+
+                                        Moving &= (MoveFlags)0xF0;
+                                        Moving |= (MoveFlags)A;
+
+                                        if (_walkDirX != 0)
+                                        {
+                                            _targetFacing = (ushort)ScummMath.GetAngleFromPos(Actor2.V12_X_MULTIPLIER * 1, Actor2.V12_Y_MULTIPLIER * 0, false);
+                                        }
+                                        else
+                                        {
+                                            _targetFacing = (ushort)ScummMath.GetAngleFromPos(Actor2.V12_X_MULTIPLIER * -1, Actor2.V12_Y_MULTIPLIER * 0, false);
+                                        }
+
+                                        DirectionUpdate();
+                                        AnimateActor(ScummHelper.NewDirToOldDir(Facing));
+                                        cmd = WalkCommand.L2CA3;
+                                    }
+                                }
+                            }
+                        }
+                        break;
+                    case WalkCommand.L2C36:
+                        {
+                            SetTmpFromActor();
+                            if (_walkDirX == 0)
+                            {
+                                RealPosition = new Point(RealPosition.X - 1, RealPosition.Y);
+                            }
+                            else
+                            {
+                                RealPosition = new Point(RealPosition.X + 1, RealPosition.Y);
+                            }
+
+                            // 2C51
+                            if (UpdateWalkbox() != InvalidBox)
+                            {
+                                SetActorFromTmp();
+                                cmd = WalkCommand.L2A33;
+                                break;
+                            }
+
+                            SetActorFromTmp();
+
+                            if (CurrentWalkTo.Y == _tmp_Dest.Y)
+                            {
+                                StopActorMoving();
+                                return;
+                            }
+
+                            if (_walkDirY == 0)
+                            {
+                                _tmp_Dest = new Point(_tmp_Dest.X, _tmp_Dest.Y - 1);
+                            }
+                            else
+                            {
+                                _tmp_Dest = new Point(_tmp_Dest.X, _tmp_Dest.Y + 1);
+                            }
+
+                            SetTmpFromActor();
+
+                            byte A = (byte)UpdateWalkbox();
+                            if (A == 0xFF)
+                            {
+                                SetActorFromTmp();
+                                StopActorMoving();
+                                return;
+                            }
+                            // 2C98: Yes, an exact copy of what just occured.. the original does this, so im doing it...
+                            //       Just to keep me sane when going over it :)
+                            if (A == 0xFF)
+                            {
+                                SetActorFromTmp();
+                                StopActorMoving();
+                                return;
+                            }
+                        }
+                        return;
+                    case WalkCommand.L2CA3:
+                        SetTmpFromActor();
+                        if (_walkDirY == 0)
+                        {
+                            RealPosition = new Point(RealPosition.X, RealPosition.Y - 1);
                         }
                         else
                         {
-                            _targetFacing = (ushort)ScummMath.GetAngleFromPos(Actor2.V12_X_MULTIPLIER * 0, Actor2.V12_Y_MULTIPLIER * -1, false);
+                            RealPosition = new Point(RealPosition.X, RealPosition.Y + 1);
                         }
 
-                        DirectionUpdate();
-                        AnimateActor(ScummHelper.NewDirToOldDir(Facing));
-//                        goto L2C36;
-                        WalkL2C36();
+                        if (UpdateWalkbox() == InvalidBox)
+                        {
+                            // 2CC7
+                            SetActorFromTmp();
+                            if (CurrentWalkTo.X == _tmp_Dest.X)
+                            {
+                                StopActorMoving();
+                                return;
+                            }
 
-                    }
-                    else
-                    {
-                        // 2B39
-                        A = ActorWalkY();
-                        if (A != 4)
+                            if (_walkDirX == 0)
+                            {
+                                _tmp_Dest = new Point(_tmp_Dest.X - 1, _tmp_Dest.Y);
+                            }
+                            else
+                            {
+                                _tmp_Dest = new Point(_tmp_Dest.X + 1, _tmp_Dest.Y);
+                            }
+                            SetTmpFromActor();
+
+                            if (UpdateWalkbox() == InvalidBox)
+                            {
+                                SetActorFromTmp();
+                                StopActorMoving();
+                            }
                             return;
-
-                        Moving &= (MoveFlags)0xF0;
-                        Moving |= (MoveFlags)A;
-
-                        if (_walkDirX != 0)
-                        {
-                            _targetFacing = (ushort)ScummMath.GetAngleFromPos(Actor2.V12_X_MULTIPLIER * 1, Actor2.V12_Y_MULTIPLIER * 0, false);
                         }
                         else
                         {
-                            _targetFacing = (ushort)ScummMath.GetAngleFromPos(Actor2.V12_X_MULTIPLIER * -1, Actor2.V12_Y_MULTIPLIER * 0, false);
+                            SetActorFromTmp();
+                            cmd = WalkCommand.L2A33;
                         }
-
-                        DirectionUpdate();
-                        AnimateActor(ScummHelper.NewDirToOldDir(Facing));
-//                        goto L2CA3;
-                        WalkL2CA3();
-                    }
+                        break;
                 }
-            }
+
+            } while(cmd != WalkCommand.None);
         }
 
         byte ActorWalkX()
@@ -626,11 +660,11 @@ namespace NScumm.Core
             {
                 if (_walkDirX == 0)
                 {
-                    _tmp_Dest.X--;
+                    _tmp_Dest = new Point(_tmp_Dest.X - 1, _tmp_Dest.Y);
                 }
                 else
                 {
-                    _tmp_Dest.X++;
+                    _tmp_Dest = new Point(_tmp_Dest.X + 1, _tmp_Dest.Y);
                 }
 
                 A -= _walkCountModulo;
@@ -660,11 +694,11 @@ namespace NScumm.Core
             {
                 if (_walkDirY == 0)
                 {
-                    _tmp_Dest.Y--;
+                    _tmp_Dest = new Point(_tmp_Dest.X, _tmp_Dest.Y - 1);
                 }
                 else
                 {
-                    _tmp_Dest.Y++;
+                    _tmp_Dest = new Point(_tmp_Dest.X, _tmp_Dest.Y + 1);
                 }
 
                 A -= _walkCountModulo;
@@ -824,6 +858,62 @@ namespace NScumm.Core
                 0x00, // Meteor (small, intro)
                 0x06, // Sandy (Lab)
                 0x06, // Sandy (Cut-Scene)
+            };
+
+        static readonly string[] v0ActorNames_English =
+            {
+                "Syd",
+                "Razor",
+                "Dave",
+                "Michael",
+                "Bernard",
+                "Wendy",
+                "Jeff",
+                "", // Radiation Suit
+                "Dr Fred",
+                "Nurse Edna",
+                "Weird Ed",
+                "Dead Cousin Ted",
+                "Purple Tentacle",
+                "Green Tentacle",
+                "", // Meteor Police
+                "Meteor",
+                "", // Mark Eteer
+                "", // Talkshow Host
+                "Plant",
+                "", // Meteor Radiation
+                "", // Edsel (small, outro)
+                "", // Meteor (small, intro)
+                "Sandy", // (Lab)
+                "", // Sandy (Cut-Scene)
+            };
+
+        static string[] v0ActorNames_German =
+            {
+                "Syd",
+                "Razor",
+                "Dave",
+                "Michael",
+                "Bernard",
+                "Wendy",
+                "Jeff",
+                "",
+                "Dr.Fred",
+                "Schwester Edna",
+                "Weird Ed",
+                "Ted",
+                "Lila Tentakel",
+                "Gr<nes Tentakel",
+                "",
+                "Meteor",
+                "",
+                "",
+                "Pflanze",
+                "",
+                "",
+                "",
+                "Sandy",
+                "",
             };
     }
 }

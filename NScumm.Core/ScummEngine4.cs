@@ -165,68 +165,6 @@ namespace NScumm.Core
             _boxMatrix.Clear();
             _boxMatrix.AddRange(boxMatrix);
         }
-
-
-        byte[,] CalcItineraryMatrix(int num)
-        {
-            const byte boxSize = 64;
-
-            // Allocate the adjacent & itinerary matrices
-            var itineraryMatrix = new byte[boxSize, boxSize];
-            var adjacentMatrix = new byte[boxSize, boxSize];
-
-            // Initialize the adjacent matrix: each box has distance 0 to itself,
-            // and distance 1 to its direct neighbors. Initially, it has distance
-            // 255 (= infinity) to all other boxes.
-            for (byte i = 0; i < num; i++)
-            {
-                for (byte j = 0; j < num; j++)
-                {
-                    if (i == j)
-                    {
-                        adjacentMatrix[i, j] = 0;
-                        itineraryMatrix[i, j] = j;
-                    }
-                    else if (AreBoxesNeighbors(i, j))
-                    {
-                        adjacentMatrix[i, j] = 1;
-                        itineraryMatrix[i, j] = j;
-                    }
-                    else
-                    {
-                        adjacentMatrix[i, j] = 255;
-                        itineraryMatrix[i, j] = InvalidBox;
-                    }
-                }
-            }
-
-            // Compute the shortest routes between boxes via Kleene's algorithm.
-            // The original code used some kind of mangled Dijkstra's algorithm;
-            // while that might in theory be slightly faster, it was
-            // a) extremly obfuscated
-            // b) incorrect: it didn't always find the shortest paths
-            // c) not any faster in reality for our sparse & small adjacent matrices
-            for (byte k = 0; k < num; k++)
-            {
-                for (byte i = 0; i < num; i++)
-                {
-                    for (byte j = 0; j < num; j++)
-                    {
-                        if (i == j)
-                            continue;
-                        byte distIK = adjacentMatrix[i, k];
-                        byte distKJ = adjacentMatrix[k, j];
-                        if (adjacentMatrix[i, j] > distIK + distKJ)
-                        {
-                            adjacentMatrix[i, j] = (byte)(distIK + distKJ);
-                            itineraryMatrix[i, j] = itineraryMatrix[i, k];
-                        }
-                    }
-                }
-            }
-
-            return itineraryMatrix;
-        }
     }
 }
 

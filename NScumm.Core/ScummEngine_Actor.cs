@@ -116,6 +116,11 @@ namespace NScumm.Core
             return id >= 0 && id < Actors.Length && Actors[id].Number == id;
         }
 
+        protected virtual int ActorToObj(int actor)
+        {
+            return actor;
+        }
+
         protected virtual void ActorTalk(byte[] msg)
         {
             ConvertMessageToString(msg, _charsetBuffer, 0);
@@ -431,11 +436,11 @@ namespace NScumm.Core
             Actor acta = null;
             Actor actb = null;
 
-            if (a < Actors.Length)
-                acta = Actors[a];
+            if (IsActor(a))
+                acta = Actors[ObjToActor(a)];
 
-            if (b < Actors.Length)
-                actb = Actors[b];
+            if (IsActor(b))
+                actb = Actors[ObjToActor(b)];
 
             if ((acta != null) && (actb != null) && (acta.Room == actb.Room) && (acta.Room != 0) && !acta.IsInCurrentRoom)
                 return 0;

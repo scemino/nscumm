@@ -45,7 +45,7 @@ namespace NScumm.Core
             byte[] name;
             if (IsActor(num))
             {
-                name = Actors[num].Name;
+                name = Actors[ObjToActor(num)].Name;
             }
             else if (_newNames.ContainsKey(num))
             {
@@ -203,9 +203,9 @@ namespace NScumm.Core
             if (obj < 1)
                 return 0;                                   /* fix for indy4's map */
 
-            if (obj < Actors.Length)
+            if (IsActor(obj))
             {
-                return Actors[obj].RealPosition.X;
+                return Actors[ObjToActor(obj)].RealPosition.X;
             }
 
             if (GetWhereIsObject(obj) == WhereIsObject.NotFound)
@@ -221,9 +221,9 @@ namespace NScumm.Core
             if (obj < 1)
                 return 0;                                   /* fix for indy4's map */
 
-            if (obj < Actors.Length)
+            if (IsActor(obj))
             {
-                return Actors[obj].RealPosition.Y;
+                return Actors[ObjToActor(obj)].RealPosition.Y;
             }
             if (GetWhereIsObject(obj) == WhereIsObject.NotFound)
                 return -1;

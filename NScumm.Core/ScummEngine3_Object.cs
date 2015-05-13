@@ -56,8 +56,8 @@ namespace NScumm.Core
             do
             {
                 if (_objs[i].Number != 0 &&
-                        _objs[i].Position == pos &&
-                        _objs[i].Width == w && _objs[i].Height == h)
+                    _objs[i].Position == pos &&
+                    _objs[i].Width == w && _objs[i].Height == h)
                     PutState(_objs[i].Number, 0);
             } while ((--i) != 0);
 
@@ -99,7 +99,7 @@ namespace NScumm.Core
                 {
                     // Class '0' means: clean all class data
                     ClassData[obj] = 0;
-                    if (obj < Actors.Length)
+                    if (Game.Version < 5 && IsActor(obj))
                     {
                         var a = Actors[obj];
                         a.IgnoreBoxes = false;

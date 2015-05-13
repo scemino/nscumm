@@ -188,7 +188,7 @@ namespace NScumm.Core
             SetResult(closest_act);
         }
 
-        int ActorToObj(int actor)
+        protected override int ActorToObj(int actor)
         {
             return OBJECT_V0(actor, ObjectV0Type.Actor);
         }

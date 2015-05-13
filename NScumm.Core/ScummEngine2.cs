@@ -847,7 +847,12 @@ namespace NScumm.Core
             GetResult();
             var o1 = GetVarOrDirectWord(OpCodeParameter.Param1);
             var o2 = GetVarOrDirectWord(OpCodeParameter.Param2);
-            var r = GetObjActToObjActDist(o1, o2);
+
+            int r;
+            if (Game.Version == 0) // in v0 both parameters are always actor IDs, never objects
+                r = GetObjActToObjActDist(ActorToObj(o1), ActorToObj(o2));
+            else
+                r = GetObjActToObjActDist(o1, o2);
 
             // TODO: WORKAROUND bug #795937 ?
             //if ((_game.id == GID_MONKEY_EGA || _game.id == GID_PASS) && o1 == 1 && o2 == 307 && vm.slot[_currentScript].number == 205 && r == 2)
@@ -1107,6 +1112,8 @@ namespace NScumm.Core
             var a2 = Actors[nr2];
             if (!a2.IsInCurrentRoom)
                 return;
+
+            WalkActorToActor(nr, nr2, dist);
         }
 
         protected void WalkActorToActor(int actor, int toActor, int dist)

@@ -313,7 +313,7 @@ namespace NScumm.Core
         int GetObjNewDir(int index)
         {
             int dir;
-            if (ObjIsActor(index))
+            if (IsActor(index))
             {
                 dir = Actors[ObjToActor(index)].Facing;
             }

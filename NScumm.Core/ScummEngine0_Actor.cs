@@ -26,6 +26,17 @@ namespace NScumm.Core
 {
     partial class ScummEngine0
     {
+        protected override bool IsActor(int id)
+        {
+            // object IDs < _numActors are used in v0 for objects too (e.g. hamster)
+            return OBJECT_V0_TYPE(id) == ObjectV0Type.Actor;
+        }
+
+        protected override int ObjToActor(int id)
+        {
+            return OBJECT_V0_ID(id);
+        }
+
         void SwitchActor(int slot)
         {
             ResetSentence();
@@ -147,6 +158,7 @@ namespace NScumm.Core
                 a.NewWalkBoxEntered = false;
             }
         }
+
         void GetClosestActor()
         {
             int act, check_act;

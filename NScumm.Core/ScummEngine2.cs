@@ -173,6 +173,11 @@ namespace NScumm.Core
                 Variables[VariableMachineSpeed.Value] = 0x7FFF;
         }
 
+        protected override bool IsActor(int id)
+        {
+            return id < Actors.Length;
+        }
+
         protected override void InitOpCodes()
         {
             _opCodes = new Dictionary<byte, Action>();

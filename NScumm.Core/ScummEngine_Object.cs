@@ -38,10 +38,12 @@ namespace NScumm.Core
             get { return _resManager.ClassData; }
         }
 
+        protected abstract bool IsActor(int id);
+
         protected byte[] GetObjectOrActorName(int num)
         {
             byte[] name;
-            if (num < Actors.Length)
+            if (IsActor(num))
             {
                 name = Actors[num].Name;
             }
@@ -112,7 +114,7 @@ namespace NScumm.Core
         {
             p = new Point();
 
-            if (ObjIsActor(obj))
+            if (IsActor(obj))
             {
                 var act = Actors[ObjToActor(obj)];
                 if (act != null && act.IsInCurrentRoom)
@@ -128,7 +130,7 @@ namespace NScumm.Core
                 case WhereIsObject.NotFound:
                     return false;
                 case WhereIsObject.Inventory:
-                    if (ObjIsActor(_resManager.ObjectOwnerTable[obj]))
+                    if (IsActor(_resManager.ObjectOwnerTable[obj]))
                     {
                         var act = Actors[_resManager.ObjectOwnerTable[obj]];
                         if (act != null && act.IsInCurrentRoom)
@@ -145,14 +147,9 @@ namespace NScumm.Core
             return true;
         }
 
-        protected int ObjToActor(int obj)
+        protected virtual int ObjToActor(int id)
         {
-            return obj;
-        }
-
-        protected bool ObjIsActor(int obj)
-        {
-            return obj < Actors.Length;
+            return id;
         }
 
         internal bool GetClass(int obj, ObjectClass cls)
@@ -355,7 +352,8 @@ namespace NScumm.Core
                 if ((_objs[i].Number < 1) || GetClass(_objs[i].Number, ObjectClass.Untouchable))
                     continue;
 
-                if (_game.Version > 0 && _game.Version <= 2)
+                if ((Game.Version == 0 && OBJECT_V0_TYPE(_objs[i].Number) == ObjectV0Type.Foreground) ||
+                    (Game.Version > 0 && Game.Version <= 2))
                 {
                     if ((_objs[i].State & (byte)ObjectStateV2.Untouchable) != 0)
                         continue;

@@ -21,6 +21,7 @@
 using System;
 using System.Linq;
 using NScumm.Core.Graphics;
+using NScumm.Core.Input;
 
 namespace NScumm.Core
 {
@@ -79,6 +80,29 @@ namespace NScumm.Core
             }
         }
 
+        VerbPrepsV0 ActiveVerbPrep()
+        {
+            if (_activeVerb == VerbsV0.None || _activeObject == 0)
+                return 0;
+            return GetVerbPrepId();
+        }
+
+        VerbPrepsV0 VerbPrepIdType(VerbsV0 verbid)
+        {
+            switch (verbid)
+            {
+                case VerbsV0.Use: // depends on object1
+                    return VerbPrepsV0.Object;
+                case VerbsV0.Give:
+                    return VerbPrepsV0.To;
+                case VerbsV0.Unlock:
+                case VerbsV0.Fix:
+                    return VerbPrepsV0.With;
+                default:
+                    return VerbPrepsV0.None;
+            }
+        }
+
         void VerbExec()
         {
             SentenceNum = 0;
@@ -114,26 +138,189 @@ namespace NScumm.Core
             a.StartWalk(new Point(Variables[6], Variables[7]), -1);
         }
 
-        VerbPrepsV0 ActiveVerbPrep()
+        protected override void CheckExecVerbs()
         {
-            if (_activeVerb == VerbsV0.None || _activeObject == 0)
-                return 0;
-            return GetVerbPrepId();
-        }
+            var a = (Actor0)Actors[Variables[VariableEgo.Value]];
+            var zone = FindVirtScreen(_mousePos.Y);
 
-        VerbPrepsV0 VerbPrepIdType(VerbsV0 verbid)
-        {
-            switch (verbid)
+            bool execute = false;
+
+            if ((((ScummMouseButtonState)mouseAndKeyboardStat) & ScummMouseButtonState.MouseMask) != 0)
             {
-                case VerbsV0.Use: // depends on object1
-                    return VerbPrepsV0.Object;
-                case VerbsV0.Give:
-                    return VerbPrepsV0.To;
-                case VerbsV0.Unlock:
-                case VerbsV0.Fix:
-                    return VerbPrepsV0.With;
-                default:
-                    return VerbPrepsV0.None;
+                var over = (VerbsV0)FindVerbAtPos(_mousePos);
+                // click region: verbs
+                if (over != 0)
+                {
+                    if (_activeVerb != over)
+                    { // new verb
+                        // keep first object if no preposition is used yet
+                        if (ActiveVerbPrep() != 0)
+                            _activeObject = 0;
+                        _activeObject2 = 0;
+                        _activeVerb = over;
+                        _redrawSentenceLine = true;
+                    }
+                    else
+                    {
+                        // execute sentence if complete
+                        if (CheckSentenceComplete())
+                            execute = true;
+                    }
+                }
+            }
+
+            if (a.MiscFlags.HasFlag(ActorV0MiscFlags.Hide))
+            {
+                if (_activeVerb != VerbsV0.NewKid)
+                {
+                    _activeVerb = VerbsV0.None;
+                }
+            }
+
+            if (_currentMode != Engine0Mode.Cutscene)
+            {
+                if (_currentMode == Engine0Mode.Keypad)
+                {
+                    _activeVerb = VerbsV0.Push;
+                }
+
+                if (mouseAndKeyboardStat > 0 && ((ScummMouseButtonState)mouseAndKeyboardStat) < ScummMouseButtonState.MaxKey)
+                {
+                    // keys already checked by input handler
+                }
+                else if ((((ScummMouseButtonState)mouseAndKeyboardStat) & ScummMouseButtonState.MouseMask) != 0 || _activeVerb == VerbsV0.WhatIs)
+                {
+                    // click region: sentence line
+                    if (zone == VerbVirtScreen && _mousePos.Y <= zone.TopLine + 8)
+                    {
+                        if (_activeVerb == VerbsV0.NewKid)
+                        {
+                            if (_currentMode == Engine0Mode.Normal)
+                            {
+                                int kid;
+                                int lineX = _mousePos.X >> V12_X_SHIFT;
+                                if (lineX < 11)
+                                    kid = 0;
+                                else if (lineX < 25)
+                                    kid = 1;
+                                else
+                                    kid = 2;
+                                _activeVerb = VerbsV0.WalkTo;
+                                _redrawSentenceLine = true;
+                                DrawSentenceLine();
+                                SwitchActor(kid);
+                            }
+                            _activeVerb = VerbsV0.WalkTo;
+                            _redrawSentenceLine = true;
+                            return;
+                        }
+                        else
+                        {
+                            // execute sentence if complete
+                            if (CheckSentenceComplete())
+                                execute = true;
+                        }
+                        // click region: inventory or main screen
+                    }
+                    else if ((zone == VerbVirtScreen && _mousePos.Y > zone.TopLine + 32) ||
+                        (zone == MainVirtScreen))
+                    {
+                        int obj = 0;
+
+                        // click region: inventory
+                        if (zone == VerbVirtScreen && _mousePos.Y > zone.TopLine + 32)
+                        {
+                            // click into inventory
+                            int invOff = _inventoryOffset;
+                            obj = CheckV2Inventory(_mousePos.X, _mousePos.Y);
+                            if (invOff != _inventoryOffset)
+                            {
+                                // inventory position changed (arrows pressed, do nothing)
+                                return;
+                            }
+                            // the second object of a give-to command has to be an actor
+                            if (_activeVerb == VerbsV0.Give && _activeObject != 0)
+                                obj = 0;
+                            // click region: main screen
+                        }
+                        else if (zone == MainVirtScreen)
+                        {
+                            int x = _mousePos.X + MainVirtScreen.XStart;
+                            int y = _mousePos.Y - MainVirtScreen.TopLine;
+                            // click into main screen
+                            if (_activeVerb == VerbsV0.Give && _activeObject != 0)
+                            {
+                                int actor = GetActorFromPos(new Point(x, y));
+                                if (actor != 0)
+                                    obj = OBJECT_V0(actor, ObjectV0Type.Actor);
+                            }
+                            else
+                            {
+                                obj = FindObjectCore(x, y);
+                            }
+                        }
+
+                        if (obj == 0)
+                        {
+                            if (_activeVerb == VerbsV0.WalkTo)
+                            {
+                                _activeObject = 0;
+                                _activeObject2 = 0;
+                            }
+                        }
+                        else
+                        {
+                            if (ActiveVerbPrep() == VerbPrepsV0.None)
+                            {
+                                if (obj == _activeObject)
+                                    execute = true;
+                                else
+                                    _activeObject = obj;
+                                // immediately execute action in keypad/selection mode
+                                if (_currentMode == Engine0Mode.Keypad)
+                                    execute = true;
+                            }
+                            else
+                            {
+                                if (obj == _activeObject2)
+                                    execute = true;
+                                if (obj != _activeObject)
+                                {
+                                    _activeObject2 = obj;
+                                    if (_currentMode == Engine0Mode.Keypad)
+                                        execute = true;
+                                }
+                            }
+                        }
+
+                        _redrawSentenceLine = true;
+                        if (_activeVerb == VerbsV0.WalkTo && zone == MainVirtScreen)
+                        {
+                            _walkToObjectState = WalkToObjectState.Done;
+                            execute = true;
+                        }
+                    }
+                }
+            }
+
+            //            if (_drawDemo && Game.Features.HasFlag(GameFeatures.Demo))
+            //            {
+            //                VerbDemoMode();
+            //            }
+
+            if (_redrawSentenceLine)
+                DrawSentenceLine();
+
+            if (!execute || _activeVerb == 0)
+                return;
+
+            if (_activeVerb == VerbsV0.WalkTo)
+                VerbExec();
+            else if (_activeObject != 0)
+            {
+                // execute if we have a 1st object and either have or do not need a 2nd
+                if (ActiveVerbPrep() == VerbPrepsV0.None || _activeObject2 != 0)
+                    VerbExec();
             }
         }
 

@@ -750,7 +750,7 @@ namespace NScumm.Core
             BreakHere();
         }
 
-        void Delay()
+        protected override void Delay()
         {
             uint delay = ReadByte();
             delay |= (uint)(ReadByte() << 8);

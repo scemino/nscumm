@@ -50,7 +50,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0xbd)]
-        protected virtual void Dummy()
+        protected override void Dummy()
         {
         }
 

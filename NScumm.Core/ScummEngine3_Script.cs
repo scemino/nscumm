@@ -48,7 +48,7 @@ namespace NScumm.Core
                 UnfreezeScripts();
         }
 
-        void BeginOverride()
+        protected override void BeginOverride()
         {
             if (ReadByte() != 0)
                 BeginOverrideCore();
@@ -76,7 +76,7 @@ namespace NScumm.Core
             StopObjectScriptCore((ushort)GetVarOrDirectWord(OpCodeParameter.Param1));
         }
 
-        void StartScript()
+        protected override void StartScript()
         {
             var op = _opCode;
             var script = GetVarOrDirectByte(OpCodeParameter.Param1);
@@ -92,7 +92,7 @@ namespace NScumm.Core
             RunScript(script, (op & 0x20) != 0, (op & 0x40) != 0, data);
         }
 
-        void StopScript()
+        protected override void StopScript()
         {
             var script = GetVarOrDirectByte(OpCodeParameter.Param1);
 

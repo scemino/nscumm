@@ -20,18 +20,17 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using NScumm.Core.Graphics;
-using System;
 
 namespace NScumm.Core
 {
     partial class ScummEngine3
     {
-        void PanCameraTo()
+        protected override void PanCameraTo()
         {
             PanCameraToCore(new Point((short)GetVarOrDirectWord(OpCodeParameter.Param1), (short)0));
         }
 
-        void SetCameraAt()
+        protected override void SetCameraAt()
         {
             short at = (short)GetVarOrDirectWord(OpCodeParameter.Param1);
             Camera.Mode = CameraMode.Normal;

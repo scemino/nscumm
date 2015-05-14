@@ -967,7 +967,7 @@ namespace NScumm.Core
             SetResult(result);
         }
 
-        protected void StopMusic()
+        protected virtual void StopMusic()
         {
             Sound.StopAllSounds();
         }
@@ -1025,7 +1025,7 @@ namespace NScumm.Core
             JumpRelative(a == 0);
         }
 
-        protected void BreakHere()
+        protected virtual void BreakHere()
         {
             Slots[CurrentScript].Offset = (uint)CurrentPos;
             CurrentScript = 0xFF;
@@ -1070,7 +1070,7 @@ namespace NScumm.Core
             SetResult(value);
         }
 
-        protected void Print()
+        protected virtual void Print()
         {
             _actorToPrintStrFor = GetVarOrDirectByte(OpCodeParameter.Param1);
             DecodeParseString();
@@ -1482,7 +1482,7 @@ namespace NScumm.Core
             //            RestartCore();
         }
 
-        protected void ActorFollowCamera(int act)
+        protected virtual void ActorFollowCamera(int act)
         {
             if (Game.Version < 7)
             {
@@ -1553,7 +1553,7 @@ namespace NScumm.Core
                 Dummy();
         }
 
-        protected void Dummy()
+        protected virtual void Dummy()
         {
             // Opcode 0xEE is used in maniac and zak but has no purpose
             //            if (_opCode != 0xEE)
@@ -1570,7 +1570,7 @@ namespace NScumm.Core
             }
         }
 
-        protected void IsLessEqual()
+        protected virtual void IsLessEqual()
         {
             var a = GetVar();
             var b = GetVarOrDirectWord(OpCodeParameter.Param1);
@@ -1805,7 +1805,7 @@ namespace NScumm.Core
             return FindInventoryCore(Variables[VariableEgo.Value], obj + 1 + _inventoryOffset);
         }
 
-        protected void SetCameraAt()
+        protected virtual void SetCameraAt()
         {
             SetCameraAtEx(GetVarOrDirectByte(OpCodeParameter.Param1) * Actor2.V12_X_MULTIPLIER);
         }
@@ -1841,7 +1841,7 @@ namespace NScumm.Core
             JumpRelative((cls & clsop) == clsop);
         }
 
-        protected void WalkActorTo()
+        protected virtual void WalkActorTo()
         {
             var act = GetVarOrDirectByte(OpCodeParameter.Param1);
 
@@ -1858,7 +1858,7 @@ namespace NScumm.Core
             a.StartWalk(new Point(x, y), -1);
         }
 
-        protected void IsLess()
+        protected virtual void IsLess()
         {
             var a = GetVar();
             var b = GetVarOrDirectWord(OpCodeParameter.Param1);
@@ -1903,21 +1903,21 @@ namespace NScumm.Core
             Variables[_resultVarIndex] -= a;
         }
 
-        protected void Add()
+        protected virtual void Add()
         {
             GetResult();
             var a = GetVarOrDirectWord(OpCodeParameter.Param1);
             Variables[_resultVarIndex] += a;
         }
 
-        protected void Subtract()
+        protected virtual void Subtract()
         {
             GetResult();
             var a = GetVarOrDirectWord(OpCodeParameter.Param1);
             Variables[_resultVarIndex] -= a;
         }
 
-        protected void BeginOverride()
+        protected virtual void BeginOverride()
         {
             cutScene.Data[0].Pointer = CurrentPos;
             cutScene.Data[0].Script = CurrentScript;
@@ -1933,7 +1933,7 @@ namespace NScumm.Core
             SetResult(ReadByte());
         }
 
-        protected void PutActorInRoom()
+        protected virtual void PutActorInRoom()
         {
             var act = GetVarOrDirectByte(OpCodeParameter.Param1);
             var room = GetVarOrDirectByte(OpCodeParameter.Param2);
@@ -1950,7 +1950,7 @@ namespace NScumm.Core
             }
         }
 
-        protected void Delay()
+        protected virtual void Delay()
         {
             int delay = ReadByte();
             delay |= ReadByte() << 8;
@@ -2097,7 +2097,7 @@ namespace NScumm.Core
                 StopScript(script);
         }
 
-        protected void StopScript()
+        protected virtual void StopScript()
         {
             StopScriptCommon(GetVarOrDirectByte(OpCodeParameter.Param1));
         }
@@ -2115,21 +2115,21 @@ namespace NScumm.Core
             SetUserState((UserStates)state);
         }
 
-        protected void GetActorX()
+        protected virtual void GetActorX()
         {
             GetResult();
             var a = GetVarOrDirectByte(OpCodeParameter.Param1);
             SetResult(GetObjX(a));
         }
 
-        protected void GetActorY()
+        protected virtual void GetActorY()
         {
             GetResult();
             var a = GetVarOrDirectByte(OpCodeParameter.Param1);
             SetResult(GetObjY(a));
         }
 
-        protected void StartScript()
+        protected virtual void StartScript()
         {
             int script = GetVarOrDirectByte(OpCodeParameter.Param1);
 
@@ -2555,7 +2555,7 @@ namespace NScumm.Core
             }
         }
 
-        protected void PanCameraTo()
+        protected virtual void PanCameraTo()
         {
             PanCameraToCore(new Point(GetVarOrDirectByte(OpCodeParameter.Param1) * Actor2.V12_X_MULTIPLIER, 0));
         }
@@ -2764,21 +2764,21 @@ namespace NScumm.Core
             PutState(obj, GetStateCore(od.Number) | (byte)ObjectStateV2.State8);
         }
 
-        protected void IsGreater()
+        protected virtual void IsGreater()
         {
             var a = GetVar();
             var b = GetVarOrDirectWord(OpCodeParameter.Param1);
             JumpRelative(b > a);
         }
 
-        protected void IsGreaterEqual()
+        protected virtual void IsGreaterEqual()
         {
             var a = GetVar();
             var b = GetVarOrDirectWord(OpCodeParameter.Param1);
             JumpRelative(b >= a);
         }
 
-        protected void PutActor()
+        protected virtual void PutActor()
         {
             int act = GetVarOrDirectByte(OpCodeParameter.Param1);
             var a = Actors[act];

@@ -26,7 +26,7 @@ namespace NScumm.Core
     partial class ScummEngine6
     {
         [OpCode(0x69)]
-        protected void StopMusic()
+        protected override void StopMusic()
         {
             Sound.StopAllSounds();
         }

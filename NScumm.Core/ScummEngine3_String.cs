@@ -94,7 +94,7 @@ namespace NScumm.Core
             SetResult(width);
         }
 
-        void Print()
+        protected override void Print()
         {
             _actorToPrintStrFor = GetVarOrDirectByte(OpCodeParameter.Param1);
             DecodeParseString();

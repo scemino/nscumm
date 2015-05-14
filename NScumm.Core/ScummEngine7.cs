@@ -40,7 +40,6 @@ namespace NScumm.Core
         protected int VariableRestartKey;
         protected int VariablePauseKey;
         protected int VariableVersionKey;
-        protected int VariableKeyPress;
         protected int VariableCameraSpeedX;
         protected int VariableCameraSpeedY;
         protected int VariableVideoName;

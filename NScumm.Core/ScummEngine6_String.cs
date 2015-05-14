@@ -56,7 +56,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0xb9)]
-        protected virtual void PrintEgo()
+        protected override void PrintEgo()
         {
             Push(Variables[VariableEgo.Value]);
             DecodeParseString(0, 1);

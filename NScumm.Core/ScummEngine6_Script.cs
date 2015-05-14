@@ -74,7 +74,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0x6c)]
-        protected virtual void BreakHere()
+        protected override void BreakHere()
         {
             BreakHereCore();
         }
@@ -127,7 +127,7 @@ namespace NScumm.Core
         }
 
         [OpCode(0x95)]
-        protected virtual void BeginOverride()
+        protected override void BeginOverride()
         {
             BeginOverrideCore();
             _skipVideo = false;

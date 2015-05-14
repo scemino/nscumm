@@ -56,14 +56,14 @@ namespace NScumm.Core
             actor.PutActor(p);
         }
 
-        void GetActorX()
+        protected override void GetActorX()
         {
             GetResult();
             var actorIndex = Game.GameId == NScumm.Core.IO.GameId.Indy3 ? GetVarOrDirectByte(OpCodeParameter.Param1) : GetVarOrDirectWord(OpCodeParameter.Param1);
             SetResult(GetObjX(actorIndex));
         }
 
-        void GetActorY()
+        protected override void GetActorY()
         {
             GetResult();
             var actorIndex = Game.GameId == NScumm.Core.IO.GameId.Indy3 ? GetVarOrDirectByte(OpCodeParameter.Param1) : GetVarOrDirectWord(OpCodeParameter.Param1);
@@ -95,7 +95,7 @@ namespace NScumm.Core
             SetResult(a.Walkbox);
         }
 
-        void WalkActorTo()
+        protected override void WalkActorTo()
         {
             var a = Actors[GetVarOrDirectByte(OpCodeParameter.Param1)];
             var x = (short)GetVarOrDirectWord(OpCodeParameter.Param2);
@@ -116,7 +116,7 @@ namespace NScumm.Core
             }
         }
 
-        void PutActor()
+        protected override void PutActor()
         {
             var index = GetVarOrDirectByte(OpCodeParameter.Param1);
             var actor = Actors[index];
@@ -273,7 +273,7 @@ namespace NScumm.Core
             SetResult((int)actor.Width);
         }
 
-        void PutActorInRoom()
+        protected override void PutActorInRoom()
         {
             int act = GetVarOrDirectByte(OpCodeParameter.Param1);
             byte room = (byte)GetVarOrDirectByte(OpCodeParameter.Param2);

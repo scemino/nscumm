@@ -24,7 +24,7 @@ namespace NScumm.Core
 {
     partial class ScummEngine3
     {
-        void IsLess()
+        protected override void IsLess()
         {
             var varNum = ReadWord();
             var a = (short)ReadVariable(varNum);
@@ -32,7 +32,7 @@ namespace NScumm.Core
             JumpRelative(b < a);
         }
 
-        void IsLessEqual()
+        protected override void IsLessEqual()
         {
             var varNum = ReadWord();
             var a = (short)ReadVariable(varNum);
@@ -40,14 +40,14 @@ namespace NScumm.Core
             JumpRelative(b <= a);
         }
 
-        void IsGreater()
+        protected override void IsGreater()
         {
             var a = (short)ReadVariable(ReadWord());
             var b = (short)GetVarOrDirectWord(OpCodeParameter.Param1);
             JumpRelative(b > a);
         }
 
-        void IsGreaterEqual()
+        protected override void IsGreaterEqual()
         {
             var a = (short)ReadVariable(ReadWord());
             var b = (short)GetVarOrDirectWord(OpCodeParameter.Param1);
@@ -78,7 +78,7 @@ namespace NScumm.Core
             SetResult(a & b);
         }
 
-        void Add()
+        protected override void Add()
         {
             GetResult();
             int a = GetVarOrDirectWord(OpCodeParameter.Param1);
@@ -93,7 +93,7 @@ namespace NScumm.Core
             SetResult(ReadVariable((uint)_resultVarIndex) / a);
         }
 
-        void Subtract()
+        protected override void Subtract()
         {
             GetResult();
             int a = GetVarOrDirectWord(OpCodeParameter.Param1);

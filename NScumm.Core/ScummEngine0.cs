@@ -870,7 +870,7 @@ namespace NScumm.Core
                         var a = Actors[actorId];
                         actorName = System.Text.Encoding.UTF8.GetString(a.Name);
                     }
-                    _sentenceBuf += string.Format("{0:13}", actorName);
+                    _sentenceBuf += string.Format("{0,-13}", actorName);
                 }
                 FlushSentenceLine();
                 return;

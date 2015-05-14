@@ -115,7 +115,7 @@ namespace NScumm.Core
 
         public bool NeedBackgroundReset { get; set; }
 
-        public byte Number { get; set; }
+        public byte Number { get; private set; }
 
         public byte[] Name { get; set; }
 

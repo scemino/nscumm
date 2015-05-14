@@ -72,10 +72,15 @@ namespace NScumm.Core
             LimbFrameRepeatNew = new sbyte[8];
             LimbFrameRepeat = new sbyte[8];
             LimbFlipped = new bool[8];
+        }
+
+        public override void Init(int mode)
+        {
+            base.Init(mode);
 
             if (Number != 0)
             {
-                switch (scumm.Game.Culture.TwoLetterISOLanguageName)
+                switch (_scumm.Game.Culture.TwoLetterISOLanguageName)
                 {
                     case "de":
                         Name = System.Text.Encoding.UTF8.GetBytes(v0ActorNames_German[Number - 1]);
@@ -85,11 +90,6 @@ namespace NScumm.Core
                         break;
                 }
             }
-        }
-
-        public override void Init(int mode)
-        {
-            base.Init(mode);
 
             CostCommandNew = 0xFF;
             CostCommand = 0xFF;

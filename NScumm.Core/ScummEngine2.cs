@@ -109,6 +109,9 @@ namespace NScumm.Core
         public ScummEngine2(GameSettings game, IGraphicsManager graphicsManager, IInputManager inputManager, IMixer mixer)
             : base(game, graphicsManager, inputManager, mixer)
         {
+            _flashlight.XStrips = 7;
+            _flashlight.YStrips = 7;
+
             /*if (Game.Platform == Platform.NES) {
                 InitNESMouseOver();
                 _switchRoomEffect2 = _switchRoomEffect = 6;

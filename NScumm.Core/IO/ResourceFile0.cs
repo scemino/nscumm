@@ -38,10 +38,16 @@ namespace NScumm.Core.IO
             var path = ServiceLocator.FileStorage.OpenFileRead(ScummHelper.LocatePath(directory, disk));
             var br = new BinaryReader(path);
 
+            if (index.Game.Platform == Platform.Apple2GS)
+            {
+                br.BaseStream.Seek(roomDisk == 1 ? 142080 : 143104, SeekOrigin.Begin);
+            }
+
             var signature = br.ReadUInt16();
             if (roomDisk == 1 && signature != 0x0A31)
                 throw new NotSupportedException(string.Format("Invalid signature '{0:X}' in disk 1", signature));
-            if (roomDisk == 2 && signature != 0x0132)
+            var signatureExpected = index.Game.Platform == Platform.Apple2GS ? 0x0032 : 0x0132;
+            if (roomDisk == 2 && signature != signatureExpected)
                 throw new NotSupportedException(string.Format("Invalid signature '{0:X}' in disk 2", signature));
 
             var numResources = maniacResourcesPerFile[resourceNumber];

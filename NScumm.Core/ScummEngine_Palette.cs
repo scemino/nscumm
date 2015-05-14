@@ -53,7 +53,7 @@ namespace NScumm.Core
             _shadowPalette = new byte[Game.Version >= 7 ? NumShadowPalette * 256 : 256];
             if (Game.Version <= 1)
             {
-                if (Game.Platform == Platform.C64)
+                if (Game.Platform == Platform.Apple2GS || Game.Platform == Platform.C64)
                 {
                     SetPalette(Palette.C64);
                 }

@@ -370,6 +370,10 @@ namespace NScumm.Core
             {
                 // Setup for digital iMuse is performed in another place
             }
+            else if (Game.Platform == Platform.Apple2GS && Game.Version == 0)
+            {
+                // TODO: Player_AppleII
+            }
             else if (Game.Platform == Platform.C64 && Game.Version <= 1)
             {
                 var sid = new NScumm.Core.Audio.SoftSynth.SID();

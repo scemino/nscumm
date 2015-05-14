@@ -36,6 +36,7 @@ namespace NScumm.Core
             var disk1 = string.Format(game.Pattern, 1);
             var directory = ServiceLocator.FileStorage.GetDirectoryName(game.Path);
             var path = ScummHelper.LocatePath(directory, disk1);
+            sectorOffset = game.Platform == Platform.Apple2GS ? AppleSectorOffset : C64SectorOffset;
 
             int numGlobalObjects;
             int numRooms;
@@ -72,6 +73,11 @@ namespace NScumm.Core
             using (var disk = ServiceLocator.FileStorage.OpenFileRead(path))
             using (var br = new BinaryReader(disk))
             {
+                if (Game.Platform == Platform.Apple2GS)
+                {
+                    br.BaseStream.Seek(142080, SeekOrigin.Begin);
+                }
+
                 var signature = br.ReadUInt16();
                 if (signature != 0x0A31)
                 {
@@ -112,7 +118,7 @@ namespace NScumm.Core
 
         public int GetResourceOffset(byte res)
         {
-            return (C64SectorOffset[roomTracks[res]] + roomSectors[res]) * 256;
+            return (sectorOffset[roomTracks[res]] + roomSectors[res]) * 256;
         }
 
         protected virtual Resource[] ReadResTypeList(BinaryReader br, int? numEntries = null)
@@ -133,12 +139,23 @@ namespace NScumm.Core
             return offset == 0xFFFF ? 0xFFFFFFFF : offset;
         }
 
-        static readonly int[] C64SectorOffset = {
+        int[] sectorOffset;
+
+        static readonly int[] C64SectorOffset =
+        {
             0,
             0, 21, 42, 63, 84, 105, 126, 147, 168, 189, 210, 231, 252, 273, 294, 315, 336,
             357, 376, 395, 414, 433, 452, 471,
             490, 508, 526, 544, 562, 580,
             598, 615, 632, 649, 666
+        };
+
+        static readonly int[] AppleSectorOffset =
+        {
+            0, 16, 32, 48, 64, 80, 96, 112, 128, 144, 160, 176, 192, 208, 224, 240, 256,
+            272, 288, 304, 320, 336, 352, 368,
+            384, 400, 416, 432, 448, 464,
+            480, 496, 512, 528, 544, 560
         };
     }
 }

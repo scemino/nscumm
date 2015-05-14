@@ -54,7 +54,7 @@ namespace NScumm.MonoGame
         /// </summary>
         protected override void Initialize()
         {
-            Window.Title = string.Format("NScumm - {0} [{1}]", settings.Game.Description, settings.Game.Culture.NativeName);
+            Window.Title = string.Format("NScumm - {0} [{1}/{2}]", settings.Game.Description, settings.Game.Variant, settings.Game.Culture.NativeName);
             screenManager.AddScreen(new BackgroundScreen());
             screenManager.AddScreen(new ScummScreen(this, settings));
 

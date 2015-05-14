@@ -370,6 +370,11 @@ namespace NScumm.Core
             {
                 // Setup for digital iMuse is performed in another place
             }
+            else if (Game.Platform == Platform.C64 && Game.Version <= 1)
+            {
+                var sid = new NScumm.Core.Audio.SoftSynth.SID();
+                MusicEngine = new Player_SID(this, Mixer, sid);
+            }
             else if (Game.GameId == GameId.Maniac && Game.Version == 1)
             {
                 MusicEngine = new Player_V1(this, Mixer, Sound.MusicType == MusicDriverTypes.PCjr);

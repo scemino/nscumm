@@ -285,6 +285,14 @@
     <Compile Include="ScummEngine0_Variable.cs" />
     <Compile Include="Graphics\CostumeRenderer0.cs" />
     <Compile Include="Graphics\BaseCostumeRenderer.cs" />
+    <Compile Include="Audio\Player_SID.cs" />
+    <Compile Include="Audio\SoftSynth\EnvelopeGenerator.cs" />
+    <Compile Include="Audio\SoftSynth\ExternalFilter.cs" />
+    <Compile Include="Audio\SoftSynth\Filter.cs" />
+    <Compile Include="Audio\SoftSynth\Sid.cs" />
+    <Compile Include="Audio\SoftSynth\Voice.cs" />
+    <Compile Include="Audio\SoftSynth\WaveformGenerator.cs" />
+    <Compile Include="Audio\SoftSynth\ISid.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <ItemGroup>

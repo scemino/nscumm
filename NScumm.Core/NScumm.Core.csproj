@@ -293,6 +293,15 @@
     <Compile Include="Audio\SoftSynth\Voice.cs" />
     <Compile Include="Audio\SoftSynth\WaveformGenerator.cs" />
     <Compile Include="Audio\SoftSynth\ISid.cs" />
+    <Compile Include="Audio\Player_AppleII.cs" />
+    <Compile Include="Audio\SampleBuffer.cs" />
+    <Compile Include="Audio\AppleII_SoundFunction1_FreqUpDown.cs" />
+    <Compile Include="Audio\AppleII_SoundFunction2_SymmetricWave.cs" />
+    <Compile Include="Audio\SampleConverter.cs" />
+    <Compile Include="Audio\AppleII_SoundFunction3_AsymmetricWave.cs" />
+    <Compile Include="Audio\AppleII_SoundFunction4_Polyphone.cs" />
+    <Compile Include="Audio\AppleII_SoundFunction5_Noise.cs" />
+    <Compile Include="Audio\IAppleII_SoundFunction.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <ItemGroup>

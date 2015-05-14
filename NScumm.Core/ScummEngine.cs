@@ -372,7 +372,7 @@ namespace NScumm.Core
             }
             else if (Game.Platform == Platform.Apple2GS && Game.Version == 0)
             {
-                // TODO: Player_AppleII
+                MusicEngine = new Player_AppleII(this, Mixer);
             }
             else if (Game.Platform == Platform.C64 && Game.Version <= 1)
             {

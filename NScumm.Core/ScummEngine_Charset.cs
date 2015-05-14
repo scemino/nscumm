@@ -211,15 +211,18 @@ namespace NScumm.Core
                 }
             }
 
-            int maxWidth = _charset.Right - _string[0].Position.X - 1;
-            if (_charset.Center)
+            if (Game.Version > 3)
             {
-                if (maxWidth > _nextLeft)
-                    maxWidth = _nextLeft;
-                maxWidth *= 2;
-            }
+                int maxWidth = _charset.Right - _string[0].Position.X - 1;
+                if (_charset.Center)
+                {
+                    if (maxWidth > _nextLeft)
+                        maxWidth = _nextLeft;
+                    maxWidth *= 2;
+                }
 
-            _charset.AddLinebreaks(0, _charsetBuffer, _charsetBufPos, maxWidth);
+                _charset.AddLinebreaks(0, _charsetBuffer, _charsetBufPos, maxWidth);
+            }
 
             if (_charset.Center)
             {

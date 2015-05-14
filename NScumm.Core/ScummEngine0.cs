@@ -544,6 +544,45 @@ namespace NScumm.Core
             a.Animate(anim);
         }
 
+        protected override void DecodeParseString()
+        {
+            byte[] buffer = new byte[512];
+            var ptr = 0;
+            byte c;
+            bool insertSpace;
+
+            while ((c = ReadByte()) != 0)
+            {
+                insertSpace = (c & 0x80) != 0;
+                c &= 0x7f;
+
+                if (c == '/')
+                {
+                    buffer[ptr++] = 13;
+                }
+                else
+                {
+                    buffer[ptr++] = c;
+                }
+
+                if (insertSpace)
+                    buffer[ptr++] = (byte)' ';
+
+            }
+            buffer[ptr++] = 0;
+
+            const int textSlot = 0;
+            String[textSlot].Position = new Point();
+            String[textSlot].Right = (short)(ScreenWidth - 1);
+            String[textSlot].Center = false;
+            String[textSlot].Overhead = false;
+
+            if (_actorToPrintStrFor == 0xFF)
+                String[textSlot].Color = 14;
+
+            ActorTalk(buffer);
+        }
+
         protected override void CheckAndRunSentenceScript()
         {
             if (CheckPendingWalkAction())
@@ -660,14 +699,16 @@ namespace NScumm.Core
             //   0 -> 1, 1 -> 0/3, 2 -> 3, 3 -> 1/2
 
             // Skip up to the matrix data for box 'box1nr'
-            for (var i = 0; i < box1nr; i++) {
+            for (var i = 0; i < box1nr; i++)
+            {
                 while (boxm[index] != 0xFF)
                     index++;
                 index++;
             }
 
             // Now search for the entry for box 'box2nr'
-            while (boxm[index] != 0xFF) {
+            while (boxm[index] != 0xFF)
+            {
                 if (boxm[index] == box2nr)
                     return true;
                 index++;

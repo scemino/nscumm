@@ -236,7 +236,7 @@ namespace NScumm.Core
         protected WhereIsObject GetWhereIsObject(int obj)
         {
             // Note: in MM v0 bg objects are greater _numGlobalObjects
-            if (Game.Version != 0 && obj >= _objs.Length)
+            if (Game.Version != 0 && obj >= _resManager.ObjectOwnerTable.Length)
                 return WhereIsObject.NotFound;
 
             if (obj < 1)

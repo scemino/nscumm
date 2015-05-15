@@ -107,9 +107,20 @@ namespace NScumm.Core
             if (GetWhereIsObject(obj) == WhereIsObject.NotFound)
                 return 0;
 
-            var result = (from o in _objs.Concat(_invData)
-                                   where o.Number == obj
-                                   select o).FirstOrDefault();
+            ObjectData result = null;
+
+            if ((Game.Version != 0 || OBJECT_V0_TYPE(obj) == 0) && GetOwnerCore(obj) != OwnerRoom)
+            {
+                for (int i = 0; i < _resManager.NumInventory; i++)
+                {
+                    if (_inventory[i] == obj)
+                        result = _invData[i];
+                }
+            }
+            else
+            {
+                result = _objs.FirstOrDefault(o => o.Number == obj);
+            }
 
             var FallbackEntry = Game.Version == 8 ? 0xFFFFFFFF : 0xFF;
             foreach (var key in result.ScriptOffsets.Keys)

@@ -84,7 +84,8 @@ namespace NScumm.Core
 
         void ReadEnhancedIndexFile(XorReader br)
         {
-            ReadDirectoryOfObjects(br);
+            var numGlobalObjects = br.ReadUInt16();
+            ReadDirectoryOfObjects(br, numGlobalObjects);
             RoomResources = new ReadOnlyCollection<Resource>(ReadRoomResTypeList(br));
             CostumeResources = new ReadOnlyCollection<Resource>(ReadResTypeList(br));
             ScriptResources = new ReadOnlyCollection<Resource>(ReadResTypeList(br));
@@ -117,9 +118,8 @@ namespace NScumm.Core
             return res;
         }
 
-        protected virtual void ReadDirectoryOfObjects(XorReader br, int? numEntries = null)
+        protected virtual void ReadDirectoryOfObjects(XorReader br, int num)
         {
-            var num = numEntries.HasValue ? numEntries.Value : br.ReadByte();
             ObjectOwnerTable = new byte[num];
             ObjectStateTable = new byte[num];
             ClassData = new uint[num];

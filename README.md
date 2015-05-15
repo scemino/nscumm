@@ -1,7 +1,7 @@
 NSCUMM
 ======
 
-Quick and dirty .NET port of the SCUMM engine version 1 to 8 of the project scummvm.
+Quick and dirty .NET port of the SCUMM engine  (all versions) of the project scummvm.
 
 Quick start
 -----------
@@ -13,65 +13,30 @@ Copy the original files of the game you want to play in a directory.
 Supported Games
 ---------------
 
-### SCUMM 8
-
 The Curse of Monkey Island
-
-### SCUMM 7
-
-Full Throttle
-
 The Dig
-
-### SCUMM 6
-
+Full Throttle
 Sam & Max Hit the Road
-
 Day of the Tentacle
-
-### SCUMM 5
-
-Monkey Island 2: LeChuck's revenge
-
 Indiana Jones and the Fate of Atlantis
-
-The Secret of Monkey Island (VGA CD) 
-
-### SCUMM 4
-
-The Secret of Monkey Island by LucasArts
-
-The Passport to Adventure by LucasArts (Demo)
-
+Monkey Island 2: LeChuck's revenge
+The Secret of Monkey Island
+The Passport to Adventure (Demo)
 Loom
-
-### SCUMM 3
-
 Indiana Jones and the Last Crusade
-
-Loom
-
-### SCUMM 2
-
-Maniac Mansion
-
 Zak McKracken and the Alien Mindbenders
-
-### SCUMM 1
-
 Maniac Mansion
 
 Hotkeys
 -------
 
-Alt-Enter              - Toggles full screen/windowed
+`Alt-Enter` Toggles full screen/windowed
 
-Known Issues
+`F5` Show the main menu
+
+
+Contact
 -------------------------
-
-Only PC DOS/Windows games with Adlib, PC speaker and PC junior are supported
-
-And many other things ???
 
 Missing games in your language or anything else ? Feel free to contact me at scemino74 at gmail
 
@@ -83,7 +48,7 @@ Screenshots
 Tools
 -----
 
-*nsdump* dumps all images and scripts from SCUMM 3 to SCUMM 8.
+`nsdump` dumps all images and scripts from SCUMM 3 to SCUMM 8.
 
 License
 -------

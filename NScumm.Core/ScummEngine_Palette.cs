@@ -68,8 +68,13 @@ namespace NScumm.Core
             {
                 if (Game.Features.HasFlag(GameFeatures.SixteenColors))
                 {
-                    Array.Copy(Palette.Ega.Colors, _currentPalette.Colors, Palette.Ega.Colors.Length);
-                    _gfxManager.SetPalette(_currentPalette.Colors);
+                    if ((_game.Platform == Platform.Amiga) || (_game.Platform == Platform.AtariST))
+                        SetPalette(Palette.Amiga);
+                    else
+                    {
+                        Array.Copy(Palette.Ega.Colors, _currentPalette.Colors, Palette.Ega.Colors.Length);
+                        _gfxManager.SetPalette(_currentPalette.Colors);
+                    }
                 }
                 if (Game.Features.HasFlag(GameFeatures.SixteenColors))
                 {

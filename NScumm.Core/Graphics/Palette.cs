@@ -29,6 +29,8 @@ namespace NScumm.Core.Graphics
 
         public static Palette C64 { get { return c64Palette ?? (c64Palette = CreatePalette(tableC64Palette)); } }
 
+        public static Palette Amiga { get { return amigaPalette ?? (amigaPalette = CreatePalette(tableAmigaPalette)); } }
+
         public Color[] Colors { get; private set; }
 
         public Palette()
@@ -88,9 +90,18 @@ namespace NScumm.Core.Graphics
                 Color.FromRgb(0x7F, 0x3B, 0xA6)
             };
 
+        readonly static Color[] tableAmigaPalette =
+        {
+            Color.FromRgb(0x00, 0x00, 0x00),   Color.FromRgb(0x00, 0x00, 0xBB),   Color.FromRgb(0x00, 0xBB, 0x00),   Color.FromRgb(0x00, 0xBB, 0xBB),
+            Color.FromRgb(0xBB, 0x00, 0x00),   Color.FromRgb(0xBB, 0x00, 0xBB),   Color.FromRgb(0xBB, 0x77, 0x00),   Color.FromRgb(0xBB, 0xBB, 0xBB),
+            Color.FromRgb(0x77, 0x77, 0x77),   Color.FromRgb(0x77, 0x77, 0xFF),   Color.FromRgb(0x00, 0xFF, 0x00),   Color.FromRgb(0x00, 0xFF, 0xFF),
+            Color.FromRgb(0xFF, 0x88, 0x88),   Color.FromRgb(0xFF, 0x00, 0xFF),   Color.FromRgb(0xFF, 0xFF, 0x00),   Color.FromRgb(0xFF, 0xFF, 0xFF)
+        };
+
         static Palette egaPalette;
         static Palette cgaPalette;
         static Palette v1Palette;
         static Palette c64Palette;
+        static Palette amigaPalette;
     }
 }

@@ -167,6 +167,33 @@ namespace NScumm.Core.Audio
             return ts;
         }
 
+        public int FrameDiff(Timestamp ts)
+        {
+            var delta = 0;
+            if (_secs != ts._secs)
+                delta = (_secs - ts._secs) * _framerate;
+
+            delta += _numFrames;
+
+            if (_framerate == ts._framerate)
+            {
+                delta -= ts._numFrames;
+            }
+            else
+            {
+                // We need to multiply by the quotient of the two framerates.
+                // We cancel the GCD in this fraction to reduce the risk of
+                // overflows.
+                var g = Gcd(_framerate, ts._framerate);
+                var p = _framerate / g;
+                var q = ts._framerate / g;
+
+                delta -= (int)(((long)ts._numFrames * p + q / 2) / (long)q);
+            }
+
+            return delta / _framerateFactor;
+        }
+
         /// <summary>
         /// Euclid's algorithm to compute the greatest common divisor.
         /// </summary>

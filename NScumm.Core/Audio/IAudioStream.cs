@@ -105,5 +105,47 @@ namespace NScumm.Core.Audio
         /// <returns><c>true</c> if this instance is end of stream; otherwise, <c>false</c>.</returns>
         bool IsEndOfStream { get; }
     }
+
+    /// <summary>
+    /// A rewindable audio stream. This allows for reseting the AudioStream
+    /// to its initial state. Note that rewinding itself is not required to
+    /// be working when the stream is being played by Mixer!
+    /// </summary>
+    public interface IRewindableAudioStream: IAudioStream
+    {
+        /// <summary>
+        /// Rewinds the stream to its start.
+        /// </summary>
+        /// <returns>true on success, false otherwise.</returns>
+        bool Rewind();
+    }
+
+    /// <summary>
+    /// A seekable audio stream. Subclasses of this class implement an
+    /// interface for seeking. The seeking itself is not required to be
+    /// working while the stream is being played by Mixer!
+    /// </summary>
+    public interface ISeekableAudioStream : IRewindableAudioStream
+    {
+        /// <summary>
+        /// Seeks to a given offset in the stream.
+        /// </summary>
+        /// <param name="where">where offset as timestamp.</param>
+        bool Seek(Timestamp where);
+
+        /// <summary>
+        /// Gets the length of the stream.
+        /// </summary>
+        /// <value>The length as Timestamp.</value>
+        Timestamp Length { get; }
+    }
+
+    public static class SeekableAudioStreamExtensions
+    {
+        public static bool Seek(this ISeekableAudioStream stream, int where)
+        {
+            return stream.Seek(new Timestamp(where, stream.Rate));
+        }
+    }
 }
 

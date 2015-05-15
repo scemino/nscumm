@@ -379,6 +379,11 @@ namespace NScumm.Core
                 var sid = new NScumm.Core.Audio.SoftSynth.SID();
                 MusicEngine = new Player_SID(this, Mixer, sid);
             }
+            else if (_game.Platform == Platform.Amiga && Game.Version == 2)
+            {
+                var modPlayer = new Player_MOD(Mixer);
+                MusicEngine = new Player_V2A(this, modPlayer);
+            }
             else if (Game.GameId == GameId.Maniac && Game.Version == 1)
             {
                 MusicEngine = new Player_V1(this, Mixer, Sound.MusicType == MusicDriverTypes.PCjr);

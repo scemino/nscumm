@@ -302,6 +302,27 @@
     <Compile Include="Audio\AppleII_SoundFunction4_Polyphone.cs" />
     <Compile Include="Audio\AppleII_SoundFunction5_Noise.cs" />
     <Compile Include="Audio\IAppleII_SoundFunction.cs" />
+    <Compile Include="Audio\Player_V2A.cs" />
+    <Compile Include="Audio\V2A_Sound_SingleLooped.cs" />
+    <Compile Include="Audio\V2A_Sound_Base.cs" />
+    <Compile Include="Audio\V2A_Sound_MultiLooped.cs" />
+    <Compile Include="Audio\V2A_Sound_Single.cs" />
+    <Compile Include="Audio\V2A_Sound_MultiLoopedDuration.cs" />
+    <Compile Include="Audio\V2A_Sound_SingleLoopedPitchbend.cs" />
+    <Compile Include="Audio\V2A_Sound_Special_Maniac69.cs" />
+    <Compile Include="Audio\V2A_Sound_Special_ManiacDing.cs" />
+    <Compile Include="Audio\V2A_Sound_Special_ManiacTentacle.cs" />
+    <Compile Include="Audio\V2A_Sound_Special_Maniac59.cs" />
+    <Compile Include="Audio\V2A_Sound_Special_Maniac61.cs" />
+    <Compile Include="Audio\V2A_Sound_Special_ManiacPhone.cs" />
+    <Compile Include="Audio\V2A_Sound_Special_Maniac32.cs" />
+    <Compile Include="Audio\V2A_Sound_Special_Maniac46.cs" />
+    <Compile Include="Audio\V2A_Sound_Music.cs" />
+    <Compile Include="Audio\V2A_Sound_Special_ManiacTypewriter.cs" />
+    <Compile Include="Audio\V2A_Sound_Special_Maniac44.cs" />
+    <Compile Include="Audio\Player_MOD.cs" />
+    <Compile Include="Audio\Decoders\SubLoopingAudioStream.cs" />
+    <Compile Include="Audio\IPlayerMod.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <ItemGroup>

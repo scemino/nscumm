@@ -27,7 +27,7 @@ namespace NScumm.Core.Audio.Decoders
     /// <summary>
     /// This is a stream, which allows for playing raw PCM data from a stream.
     /// </summary>
-    public class RawStream: IAudioStream
+    public class RawStream: ISeekableAudioStream
     {
         public RawStream(AudioFlags flags, int rate, bool disposeStream, Stream stream)
         {
@@ -47,7 +47,44 @@ namespace NScumm.Core.Audio.Decoders
             _playtime = new Timestamp(0, (int)_stream.Length / (_isStereo ? 2 : 1) / (_is16Bit ? 2 : 1), rate);
         }
 
-        #region IAudioStream implementation
+        public bool IsStereo
+        {
+            get { return _isStereo; }
+        }
+
+        public int Rate
+        {
+            get { return _rate; }
+        }
+
+        public bool IsEndOfData
+        {
+            get { return _endOfData; }
+        }
+
+        public bool IsEndOfStream
+        {
+            get { return IsEndOfData; }
+        }
+
+        public Timestamp Length { get { return _playtime; } }
+
+        public bool Seek(Timestamp wh)
+        {
+            _endOfData = true;
+
+            if (wh > _playtime)
+                return false;
+
+            var seekSample = AudioStreamHelper.ConvertTimeToStreamPos(wh, Rate, IsStereo).TotalNumberOfFrames;
+            _stream.Seek(seekSample * (_is16Bit ? 2 : 1), SeekOrigin.Begin);
+
+            // In case of an error we will not continue stream playback.
+            if (_stream.Position != _stream.Length)
+                _endOfData = false;
+
+            return true;
+        }
 
         public int ReadBuffer(short[] buffer)
         {
@@ -79,30 +116,6 @@ namespace NScumm.Core.Audio.Decoders
             return buffer.Length - samplesLeft;
         }
 
-        public bool IsStereo
-        {
-            get { return _isStereo; }
-        }
-
-        public int Rate
-        {
-            get { return _rate; }
-        }
-
-        public bool IsEndOfData
-        {
-            get { return _endOfData; }
-        }
-
-        public bool IsEndOfStream
-        {
-            get { return IsEndOfData; }
-        }
-
-        #endregion
-
-        #region IDisposable implementation
-
         public void Dispose()
         {
             _buffer = null;
@@ -113,7 +126,10 @@ namespace NScumm.Core.Audio.Decoders
             }
         }
 
-        #endregion
+        public bool Rewind()
+        {
+            return Seek(new Timestamp(0, Rate));
+        }
 
         short ReadEndianSample(byte[] ptr, int offset)
         {
@@ -169,23 +185,6 @@ namespace NScumm.Core.Audio.Decoders
             return bufferedSamples;
         }
 
-        bool Seek(Timestamp wh)
-        {
-            _endOfData = true;
-
-            if (wh > _playtime)
-                return false;
-
-            var seekSample = AudioStreamHelper.ConvertTimeToStreamPos(wh, Rate, IsStereo).TotalNumberOfFrames;
-            _stream.Seek(seekSample * (_is16Bit ? 2 : 1), SeekOrigin.Begin);
-
-            // In case of an error we will not continue stream playback.
-            if (_stream.Position != _stream.Length)
-                _endOfData = false;
-
-            return true;
-        }
-
         /// <summary>
         /// How many samples we can buffer at once.
         /// </summary>
@@ -195,7 +194,7 @@ namespace NScumm.Core.Audio.Decoders
         /// </remarks>
         const int SampleBufferLength = 2048;
 
-        bool _is16Bit;
+        readonly bool _is16Bit;
         bool _isLE;
         bool _isUnsigned;
 

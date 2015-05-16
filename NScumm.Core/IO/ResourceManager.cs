@@ -249,13 +249,24 @@ namespace NScumm.Core.IO
                 if (disk != null)
                 {
                     var roomOffset = GetRoomOffset(disk, resource.RoomNum);
-                    data = disk.ReadSound(music, roomOffset + resource.Offset);
-                    // For games using AD except Indy3 and Loom we are using our iMuse
-                    // implementation. See output initialization in
-                    // ScummEngine::setupMusic for more information.
-                    if (data != null && Game.Version < 5 && Game.GameId != GameId.Indy3 && Game.GameId != GameId.Loom && music == NScumm.Core.Audio.MusicDriverTypes.AdLib)
+                    if (Game.Version == 3 && Game.Platform == Platform.Amiga)
                     {
-                        data = ConvertADResource(data, sound);
+                        data = ((ResourceFile3_16)disk).ReadAmigaSound(roomOffset + resource.Offset);
+                    }
+                    else if (Game.Version == 4 && Game.Platform == Platform.Amiga)
+                    {
+                        data = ((ResourceFile4)disk).ReadAmigaSound(roomOffset + resource.Offset);
+                    }
+                    else
+                    {
+                        data = disk.ReadSound(music, roomOffset + resource.Offset);
+                        // For games using AD except Indy3 and Loom we are using our iMuse
+                        // implementation. See output initialization in
+                        // ScummEngine::setupMusic for more information.
+                        if (data != null && Game.Version < 5 && Game.GameId != GameId.Indy3 && Game.GameId != GameId.Loom && music == NScumm.Core.Audio.MusicDriverTypes.AdLib)
+                        {
+                            data = ConvertADResource(data, sound);
+                        }
                     }
                 }
             }

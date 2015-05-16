@@ -680,7 +680,10 @@ namespace NScumm.Core.Graphics
 				// Indy256
                     UnkDecode11(navDst, src, numLinesToProcess);
                     break;
-
+                case 10:
+                    // Used in Amiga version of Monkey Island 1
+                    DrawStripEGA(navDst, src, numLinesToProcess);
+                    break;
                 case 14:
                 case 15:
                 case 16:

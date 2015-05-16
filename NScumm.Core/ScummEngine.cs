@@ -384,6 +384,15 @@ namespace NScumm.Core
                 var modPlayer = new Player_MOD(Mixer);
                 MusicEngine = new Player_V2A(this, modPlayer);
             }
+            else if (Game.Platform == Platform.Amiga && Game.Version == 3)
+            {
+                var modPlayer = new Player_MOD(Mixer);
+                MusicEngine = new Player_V3A(this, modPlayer);
+            }
+            else if (Game.Platform == Platform.Amiga && Game.Version <= 4)
+            {
+//                MusicEngine = new Player_V4A(this, Mixer);
+            }
             else if (Game.GameId == GameId.Maniac && Game.Version == 1)
             {
                 MusicEngine = new Player_V1(this, Mixer, Sound.MusicType == MusicDriverTypes.PCjr);

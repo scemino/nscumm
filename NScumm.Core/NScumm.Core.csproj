@@ -323,6 +323,7 @@
     <Compile Include="Audio\Player_MOD.cs" />
     <Compile Include="Audio\Decoders\SubLoopingAudioStream.cs" />
     <Compile Include="Audio\IPlayerMod.cs" />
+    <Compile Include="Audio\Player_V3A.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <ItemGroup>

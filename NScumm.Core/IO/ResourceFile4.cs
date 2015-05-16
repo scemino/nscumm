@@ -67,6 +67,14 @@ namespace NScumm.Core.IO
             return null;
         }
 
+        public byte[] ReadAmigaSound(long offset)
+        {
+            GotoResourceHeader(offset);
+            var size = _reader.ReadInt32();
+            _reader.BaseStream.Seek(-4, SeekOrigin.Current);
+            return _reader.ReadBytes(size);
+        }
+
         protected override ZPlane ReadZPlane(BinaryReader b, int size, int numStrips)
         {
             var zPlaneData = b.ReadBytes(size);

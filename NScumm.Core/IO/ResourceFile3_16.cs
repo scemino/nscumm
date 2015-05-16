@@ -90,6 +90,14 @@ namespace NScumm.Core.IO
             return _reader.ReadBytes(size - HeaderSize);
         }
 
+        public byte[] ReadAmigaSound(long offset)
+        {
+            _reader.BaseStream.Seek(offset, System.IO.SeekOrigin.Begin);
+            var size = _reader.ReadUInt16();
+            _reader.BaseStream.Seek(-2, System.IO.SeekOrigin.Current);
+            return _reader.ReadBytes(size);
+        }
+
         public override byte[] ReadSound(NScumm.Core.Audio.MusicDriverTypes music, long offset)
         {
             _reader.BaseStream.Seek(offset, System.IO.SeekOrigin.Begin);

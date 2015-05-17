@@ -391,7 +391,7 @@ namespace NScumm.Core
             }
             else if (Game.Platform == Platform.Amiga && Game.Version <= 4)
             {
-//                MusicEngine = new Player_V4A(this, Mixer);
+                MusicEngine = new Player_V4A(this, Mixer);
             }
             else if (Game.GameId == GameId.Maniac && Game.Version == 1)
             {
@@ -490,15 +490,15 @@ namespace NScumm.Core
             _opCode = opCode;
             _slots[_currentScript].IsExecuted = true;
 
-            if (Game.Version < 6)
-            {
-                System.Diagnostics.Debug.WriteLine("Room = {1}, Script = {0}, Offset = {4}, Name = {2} [{3:X2}]", 
-                    _slots[_currentScript].Number, 
-                    _roomResource, 
-                    _opCodes.ContainsKey(_opCode) ? _opCodes[opCode].Method.Name : "Unknown", 
-                    _opCode,
-                    _currentPos - 1);
-            }
+//            if (Game.Version < 6)
+//            {
+//                System.Diagnostics.Debug.WriteLine("Room = {1}, Script = {0}, Offset = {4}, Name = {2} [{3:X2}]", 
+//                    _slots[_currentScript].Number, 
+//                    _roomResource, 
+//                    _opCodes.ContainsKey(_opCode) ? _opCodes[opCode].Method.Name : "Unknown", 
+//                    _opCode,
+//                    _currentPos - 1);
+//            }
             if (_opCodes.ContainsKey(opCode))
             {
                 _opCodes[opCode]();

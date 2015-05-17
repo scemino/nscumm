@@ -326,8 +326,8 @@ namespace NScumm.Core.Graphics
         }
 
         protected virtual void PrepareDrawBitmap(ImageData img, VirtScreen vs,
-            Point p, int width, int height,
-            int stripnr, int numstrip)
+                                                 Point p, int width, int height,
+                                                 int stripnr, int numstrip)
         {
         }
 
@@ -652,7 +652,10 @@ namespace NScumm.Core.Graphics
                 return false;
             }
 
-            paletteMod = 0;
+            if ((_vm.Game.Platform == Platform.Amiga) && (_vm.Game.Version >= 4))
+                paletteMod = 16;
+            else
+                paletteMod = 0;
 
             byte code = src.ReadByte();
             bool transpStrip = false;

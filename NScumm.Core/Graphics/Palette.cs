@@ -31,6 +31,8 @@ namespace NScumm.Core.Graphics
 
         public static Palette Amiga { get { return amigaPalette ?? (amigaPalette = CreatePalette(tableAmigaPalette)); } }
 
+        public static Palette AmigaMonkeyIsland { get { return amigaMonkeyIslandPalette ?? (amigaMonkeyIslandPalette = CreatePalette(tableAmigaMonkeyIslandPalette)); } }
+
         public Color[] Colors { get; private set; }
 
         public Palette()
@@ -91,17 +93,26 @@ namespace NScumm.Core.Graphics
             };
 
         readonly static Color[] tableAmigaPalette =
-        {
+            {
             Color.FromRgb(0x00, 0x00, 0x00),   Color.FromRgb(0x00, 0x00, 0xBB),   Color.FromRgb(0x00, 0xBB, 0x00),   Color.FromRgb(0x00, 0xBB, 0xBB),
             Color.FromRgb(0xBB, 0x00, 0x00),   Color.FromRgb(0xBB, 0x00, 0xBB),   Color.FromRgb(0xBB, 0x77, 0x00),   Color.FromRgb(0xBB, 0xBB, 0xBB),
             Color.FromRgb(0x77, 0x77, 0x77),   Color.FromRgb(0x77, 0x77, 0xFF),   Color.FromRgb(0x00, 0xFF, 0x00),   Color.FromRgb(0x00, 0xFF, 0xFF),
             Color.FromRgb(0xFF, 0x88, 0x88),   Color.FromRgb(0xFF, 0x00, 0xFF),   Color.FromRgb(0xFF, 0xFF, 0x00),   Color.FromRgb(0xFF, 0xFF, 0xFF)
         };
 
+        readonly static Color[] tableAmigaMonkeyIslandPalette =
+            {
+                Color.FromRgb(0x00, 0x00, 0x00),   Color.FromRgb(0x00, 0x00, 0xAA),   Color.FromRgb(0x00, 0x88, 0x22),   Color.FromRgb(0x00, 0x66, 0x77),
+                Color.FromRgb(0xBB, 0x66, 0x66),   Color.FromRgb(0xAA, 0x22, 0xAA),   Color.FromRgb(0x88, 0x55, 0x22),   Color.FromRgb(0x77, 0x77, 0x77),
+                Color.FromRgb(0x33, 0x33, 0x33),   Color.FromRgb(0x22, 0x55, 0xDD),   Color.FromRgb(0x22, 0xDD, 0x44),   Color.FromRgb(0x00, 0xCC, 0xFF),
+                Color.FromRgb(0xFF, 0x99, 0x99),   Color.FromRgb(0xFF, 0x55, 0xFF),   Color.FromRgb(0xFF, 0xFF, 0x77),   Color.FromRgb(0xFF, 0xFF, 0xFF)
+            };
+
         static Palette egaPalette;
         static Palette cgaPalette;
         static Palette v1Palette;
         static Palette c64Palette;
         static Palette amigaPalette;
+        static Palette amigaMonkeyIslandPalette;
     }
 }

@@ -324,6 +324,10 @@
     <Compile Include="Audio\Decoders\SubLoopingAudioStream.cs" />
     <Compile Include="Audio\IPlayerMod.cs" />
     <Compile Include="Audio\Player_V3A.cs" />
+    <Compile Include="Audio\Paula.cs" />
+    <Compile Include="Audio\FixedPointFractionHelper.cs" />
+    <Compile Include="Audio\Tfmx.cs" />
+    <Compile Include="Audio\Player_V4A.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <ItemGroup>

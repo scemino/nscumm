@@ -64,23 +64,22 @@ namespace NScumm.Core
                         SetPalColor(15, 170, 170, 170);
                 }
             }
-            else
+            else if (Game.Features.HasFlag(GameFeatures.SixteenColors))
             {
-                if (Game.Features.HasFlag(GameFeatures.SixteenColors))
+                if ((_game.Platform == Platform.Amiga) || (_game.Platform == Platform.AtariST))
+                    SetPalette(Palette.Amiga);
+                else
                 {
-                    if ((_game.Platform == Platform.Amiga) || (_game.Platform == Platform.AtariST))
-                        SetPalette(Palette.Amiga);
-                    else
-                    {
-                        Array.Copy(Palette.Ega.Colors, _currentPalette.Colors, Palette.Ega.Colors.Length);
-                        _gfxManager.SetPalette(_currentPalette.Colors);
-                    }
+                    Array.Copy(Palette.Ega.Colors, _currentPalette.Colors, Palette.Ega.Colors.Length);
+                    _gfxManager.SetPalette(_currentPalette.Colors);
                 }
-                if (Game.Features.HasFlag(GameFeatures.SixteenColors))
-                {
-                    for (int i = 0; i < 256; i++)
-                        _shadowPalette[i] = (byte)i;
-                }
+
+                for (int i = 0; i < 256; i++)
+                    _shadowPalette[i] = (byte)i;
+            }
+            else if ((Game.Platform == Platform.Amiga) && Game.Version == 4)
+            {
+                SetPalette(Palette.AmigaMonkeyIsland);
             }
 
             for (int i = 0; i < 256; i++)

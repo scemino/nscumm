@@ -15,6 +15,7 @@
   <MD5 signature="6c2bff0e327f2962e809c2e1a82d7309" gameId="monkey" variant="VGA" language="en" platform="Amiga" />
   <MD5 signature="a01fab4a64d47b96e2e58e6b0f825cc7" gameId="monkey" variant="VGA" language="fr-fr" />
   <MD5 signature="2d1e891fe52df707c30185e52c50cd92" gameId="monkey" variant="CD" language="en" />
+  <MD5 signature="c13225cb1bbd3bc9fe578301696d8021" gameId="monkey" variant="SEGA" language="en" platform="SegaCD" />
   <MD5 signature="3686cf8f89e102ececf4366e1d2c8126" gameId="monkey2" variant="" language="en" />
   <MD5 signature="8e4ee4db46954bfe2912e259a16fad82" gameId="monkey2" variant="" language="fr-fr" />
   <MD5 signature="e6cd81b25ab1453a8a6d3482118c391e" gameId="pass" variant="" language="en" features="SixteenColors" />
@@ -31,11 +32,12 @@
   <Game id="zak" gameId="Zak" variant="V2" version="2" music="PCSpeaker PCjr" />
   <Game id="indy3" gameId="Indy3" variant="VGA" version="3" music="PCSpeaker PCjr AdLib" />
   <Game id="indy3" gameId="Indy3" variant="EGA" version="3" music="PCSpeaker PCjr AdLib" />
-  <Game id="atlantis" gameId="Indy4" variant="" version="5" music="PCSpeaker PCjr AdLib" />
+  <Game id="atlantis" gameId="Indy4" variant="" version="5" music="PCSpeaker PCjr AdLib" pattern="ATLANTIS.{0:000}" />
   <Game id="loom" gameId="Loom" variant="VGA" version="4" />
   <Game id="monkey" gameId="Monkey1" variant="VGA" version="4" music="PCSpeaker PCjr AdLib" />
-  <Game id="monkey" gameId="Monkey1" variant="CD" version="5" music="AdLib" />
-  <Game id="monkey2" gameId="Monkey2" variant="" version="5" music="PCSpeaker AdLib" />
+  <Game id="monkey" gameId="Monkey1" variant="CD" version="5" music="AdLib" pattern="MONKEY.{0:000}" />
+  <Game id="monkey" gameId="Monkey1" variant="SEGA" version="5" pattern="GAME.{0:000}" />
+  <Game id="monkey2" gameId="Monkey2" variant="" version="5" music="PCSpeaker AdLib" pattern="MONKEY2.{0:000}" />
   <Game id="pass" gameId="Pass" variant="" version="4" music="PCSpeaker PCjr AdLib" />
   <Game id="tentacle" gameId="Tentacle" variant="Floppy" version="6" music="AdLib" />
   <Game id="samnmax" gameId="SamNMax" variant="Floppy" version="6" music="AdLib" />

@@ -810,12 +810,10 @@ namespace NScumm.Core.Audio
                         return;
 
                     case 0x08:  // AddNote. Parameters: Note, Finetune(W)
-                        Debug.WriteLine("0x08 AddNote");
                         SetNoteMacro(channel, channel.note + _resource.mdatAlloc[macroPtrOff + 1], _resource.mdatAlloc.ToUInt16BigEndian(macroPtrOff + 2));
                         break;
 
                     case 0x09:  // SetNote. Parameters: Note, Finetune(W)
-                        Debug.WriteLine("0x09 AddNote");
                         SetNoteMacro(channel, _resource.mdatAlloc[macroPtrOff + 1], _resource.mdatAlloc.ToUInt16BigEndian(macroPtrOff + 2));
                         break;
 
@@ -847,7 +845,6 @@ namespace NScumm.Core.Audio
                     case 0x0D:  // Add Volume. Parameters: note, addNoteFlag, volume
                         if (_resource.mdatAlloc[macroPtrOff + 2] == 0xFE)
                         {
-                            Debug.WriteLine("0x0D AddVolume");
                             SetNoteMacro(channel, channel.note + _resource.mdatAlloc[macroPtrOff + 1], 0);
                         }
                         channel.volume = (sbyte)(channel.relVol * 3 + _resource.mdatAlloc[macroPtrOff + 3]);
@@ -856,7 +853,6 @@ namespace NScumm.Core.Audio
                     case 0x0E:  // Set Volume. Parameters: note, addNoteFlag, volume
                         if (_resource.mdatAlloc[macroPtrOff + 2] == 0xFE)
                         {
-                            Debug.WriteLine("0x0E SetVolume");
                             SetNoteMacro(channel, channel.note + _resource.mdatAlloc[macroPtrOff + 1], 0);
                         }
                         channel.volume = (sbyte)_resource.mdatAlloc[macroPtrOff + 3];
@@ -960,7 +956,6 @@ namespace NScumm.Core.Audio
             continue;*/
 
                     case 0x1F:  // AddPrevNote. Parameters: Note, Finetune(W)
-                        Debug.WriteLine("0x1F AddPrevNote");
                         SetNoteMacro(channel, channel.prevNote + _resource.mdatAlloc[macroPtrOff + 1], _resource.mdatAlloc.ToUInt16BigEndian(macroPtrOff + 2));
                         break;
 
@@ -996,7 +991,6 @@ namespace NScumm.Core.Audio
 
         void SetNoteMacro(ChannelContext channel, int note, int fineTune)
         {
-            Debug.WriteLine("SetNoteMacro {0} {1}", note, fineTune);
             var noteInt = noteIntervalls[note & 0x3F];
             var finetune = (ushort)(fineTune + channel.fineTune + (1 << 8));
             channel.refPeriod = (ushort)((uint)noteInt * finetune >> 8);
@@ -1009,7 +1003,6 @@ namespace NScumm.Core.Audio
             // addBegin
             if (channel.addBeginLength != 0)
             {
-                Debug.WriteLine("Effect - addBegin");
                 channel.sampleStart += channel.addBeginDelta;
                 SetChannelSampleStart(channel.paulaChannel, GetSamplePtr(channel.sampleStart));
                 if ((--channel.addBeginCount) == 0)
@@ -1022,7 +1015,6 @@ namespace NScumm.Core.Audio
             // vibrato
             if (channel.vibLength != 0)
             {
-                Debug.WriteLine("Effect - vibrato");
                 channel.vibValue += channel.vibDelta;
                 if (--channel.vibCount == 0)
                 {
@@ -1039,7 +1031,6 @@ namespace NScumm.Core.Audio
             // portamento
             if (channel.portaDelta != 0 && (--channel.portaCount) == 0)
             {
-                Debug.WriteLine("Effect - portamento");
                 channel.portaCount = channel.portaSkip;
 
                 bool resetPorta = true;
@@ -1070,7 +1061,6 @@ namespace NScumm.Core.Audio
             // envelope
             if (channel.envSkip != 0 && channel.envCount-- == 0)
             {
-                Debug.WriteLine("Effect - envelope");
                 channel.envCount = channel.envSkip;
 
                 sbyte endVol = channel.envEndVolume;
@@ -1099,7 +1089,6 @@ namespace NScumm.Core.Audio
             // Fade
             if (_playerCtx.fadeDelta != 0 && (--_playerCtx.fadeCount) == 0)
             {
-                Debug.WriteLine("Effect - Fade");
                 _playerCtx.fadeCount = _playerCtx.fadeSkip;
 
                 _playerCtx.volume += _playerCtx.fadeDelta;
@@ -1114,7 +1103,6 @@ namespace NScumm.Core.Audio
 
         void InitFadeCommand(byte fadeTempo, sbyte endVol)
         {
-            Debug.WriteLine("InitFadeCommand {0} {1}", fadeTempo, endVol);
             _playerCtx.fadeCount = _playerCtx.fadeSkip = fadeTempo;
             _playerCtx.fadeEndVolume = endVol;
 
@@ -1132,7 +1120,6 @@ namespace NScumm.Core.Audio
 
         void NoteCommand(byte note, byte param1, byte param2, byte param3)
         {
-            Debug.WriteLine("Note {0} {1} {2} {3}", note, param1, param2, param3);
             var channel = _channelCtx[param2 & (NumVoices - 1)];
 
             if (note == 0xFC)

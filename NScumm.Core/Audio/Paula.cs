@@ -249,6 +249,7 @@ namespace NScumm.Core.Audio
 
                     var ch = _voice[voice];
                     var p = buffer;
+                    var pOff = bufOffset;
                     int neededSamples = (int)nSamples;
 
                     // NOTE: A Protracker (or other module format) player might actually
@@ -260,7 +261,7 @@ namespace NScumm.Core.Audio
                     // by the OS/2 version of Hopkins FBI.
 
                     // Mix the generated samples into the output buffer
-                    neededSamples -= MixBuffer(stereo, p, bufOffset, ch.data, ch.offset, rate, neededSamples, ch.length, ch.volume, ch.panning);
+                    neededSamples -= MixBuffer(stereo, p, ref pOff, ch.data, ch.offset, rate, neededSamples, ch.length, ch.volume, ch.panning);
 
                     // Wrap around if necessary
                     if (ch.offset.int_off >= ch.length)
@@ -285,7 +286,7 @@ namespace NScumm.Core.Audio
                         while (neededSamples > 0)
                         {
                             // Mix the generated samples into the output buffer
-                            neededSamples -= MixBuffer(stereo, p, bufOffset, ch.data, ch.offset, rate, neededSamples, ch.length, ch.volume, ch.panning);
+                            neededSamples -= MixBuffer(stereo, p, ref pOff, ch.data, ch.offset, rate, neededSamples, ch.length, ch.volume, ch.panning);
 
                             if (ch.offset.int_off >= ch.length)
                             {
@@ -304,7 +305,7 @@ namespace NScumm.Core.Audio
             return numSamples;
         }
 
-        int MixBuffer(bool stereo, short[] buf, int bufOffset, byte[] data, Offset offset, int rate, int neededSamples, int bufSize, byte volume, byte panning)
+        int MixBuffer(bool stereo, short[] buf, ref int bufOffset, byte[] data, Offset offset, int rate, int neededSamples, int bufSize, byte volume, byte panning)
         {
             int samples;
             for (samples = 0; samples < neededSamples && offset.int_off < bufSize; ++samples)

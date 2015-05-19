@@ -328,6 +328,10 @@
     <Compile Include="Audio\FixedPointFractionHelper.cs" />
     <Compile Include="Audio\Tfmx.cs" />
     <Compile Include="Audio\Player_V4A.cs" />
+    <Compile Include="Audio\Player_V2CMS.cs" />
+    <Compile Include="Audio\SoftSynth\CMSEmulator.cs" />
+    <Compile Include="Audio\CMSMusicPlugin.cs" />
+    <Compile Include="Audio\NullMidiDriver.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <ItemGroup>

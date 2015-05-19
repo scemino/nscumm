@@ -125,6 +125,11 @@ namespace NScumm.Core.IO
             return box;
         }
 
+        protected override bool ReadBlockSound()
+        {
+            return false;
+        }
+
         protected override Color[] ReadCLUT()
         {
             var numColors = _reader.ReadUInt16() / 3;

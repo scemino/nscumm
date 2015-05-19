@@ -30,15 +30,15 @@
   <Game id="maniac" gameId="Maniac" variant="V1" version="1" music="PCSpeaker PCjr" />
   <Game id="maniac" gameId="Maniac" variant="V2" version="2" music="PCSpeaker PCjr" />
   <Game id="zak" gameId="Zak" variant="V2" version="2" music="PCSpeaker PCjr" />
-  <Game id="indy3" gameId="Indy3" variant="VGA" version="3" music="PCSpeaker PCjr AdLib" />
-  <Game id="indy3" gameId="Indy3" variant="EGA" version="3" music="PCSpeaker PCjr AdLib" />
+  <Game id="indy3" gameId="Indy3" variant="VGA" version="3" music="PCSpeaker PCjr CMS AdLib" />
+  <Game id="indy3" gameId="Indy3" variant="EGA" version="3" music="PCSpeaker PCjr CMS AdLib" />
   <Game id="atlantis" gameId="Indy4" variant="" version="5" music="PCSpeaker PCjr AdLib" pattern="ATLANTIS.{0:000}" />
   <Game id="loom" gameId="Loom" variant="VGA" version="4" />
-  <Game id="monkey" gameId="Monkey1" variant="VGA" version="4" music="PCSpeaker PCjr AdLib" />
+  <Game id="monkey" gameId="Monkey1" variant="VGA" version="4" music="PCSpeaker PCjr CMS AdLib" />
   <Game id="monkey" gameId="Monkey1" variant="CD" version="5" music="AdLib" pattern="MONKEY.{0:000}" />
   <Game id="monkey" gameId="Monkey1" variant="SEGA" version="5" pattern="GAME.{0:000}" />
   <Game id="monkey2" gameId="Monkey2" variant="" version="5" music="PCSpeaker AdLib" pattern="MONKEY2.{0:000}" />
-  <Game id="pass" gameId="Pass" variant="" version="4" music="PCSpeaker PCjr AdLib" />
+  <Game id="pass" gameId="Pass" variant="" version="4" music="PCSpeaker PCjr CMS AdLib" />
   <Game id="tentacle" gameId="Tentacle" variant="Floppy" version="6" music="AdLib" />
   <Game id="samnmax" gameId="SamNMax" variant="Floppy" version="6" music="AdLib" />
   <Game id="ft" gameId="FullThrottle" variant="" version="7" pattern="ft.la{0}" />

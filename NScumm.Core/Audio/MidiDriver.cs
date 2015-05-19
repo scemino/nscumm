@@ -229,6 +229,12 @@ namespace NScumm.Core.Audio
                         result = handle;
                     }
                     break;
+                case MusicType.CMS:
+                    if (flags.HasFlag(MusicDriverTypes.CMS))
+                    {
+                        result = handle;
+                    }
+                    break;
             }
             // TODO: other music drivers
 

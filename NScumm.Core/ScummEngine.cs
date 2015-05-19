@@ -401,6 +401,10 @@ namespace NScumm.Core
             {
                 MusicEngine = new Player_V2(this, Mixer, Sound.MusicType == MusicDriverTypes.PCjr);
             }
+            else if (Sound.MusicType == MusicDriverTypes.CMS)
+            {
+                MusicEngine = new Player_V2CMS(this, Mixer);
+            }
             else if (Game.GameId == GameId.Loom || Game.GameId == GameId.Indy3)
             {
                 MusicEngine = new Player_AD(this, Mixer);

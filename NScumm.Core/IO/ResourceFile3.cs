@@ -26,6 +26,7 @@ using System.IO;
 using System;
 using System.Text;
 using System.Linq;
+using NScumm.Core.Audio;
 
 namespace NScumm.Core.IO
 {
@@ -168,36 +169,85 @@ namespace NScumm.Core.IO
             return data;
         }
 
-        public override byte[] ReadSound(NScumm.Core.Audio.MusicDriverTypes music, long offset)
+        protected virtual bool ReadBlockSound()
+        {
+            return true;
+        }
+
+        public override byte[] ReadSound(MusicDriverTypes music, long offset)
         {
             GotoResourceHeader(offset);
             var chunk = ReadChunk(_reader);
             if (chunk.Tag != "SO")
                 throw new NotSupportedException("Expected sound block.");
             var totalSize = chunk.Size - 6;
+            Dictionary<string,Chunk> offsets = new Dictionary<string, Chunk>();
             while (totalSize > 0)
             {
                 chunk = ReadChunk(_reader);
                 if (chunk.Tag == "SO")
                 {
                     totalSize -= 6;
+                    if (ReadBlockSound())
+                    {
+                        continue;
+                    }
                 }
-                else if (music == NScumm.Core.Audio.MusicDriverTypes.PCSpeaker && chunk.Tag == "WA")
+                else if (chunk.Tag == "WA")
                 {
-                    _reader.BaseStream.Seek(-6, SeekOrigin.Current);
-                    return _reader.ReadBytes((int)chunk.Size);
+                    offsets[chunk.Tag] = chunk;
                 }
-                else if (music == NScumm.Core.Audio.MusicDriverTypes.AdLib && chunk.Tag == "AD")
+                else if (chunk.Tag == "AD")
                 {
-                    return _reader.ReadBytes((int)chunk.Size - 6);
+                    offsets[chunk.Tag] = chunk;
                 }
-                else
+                else if (chunk.Tag == "AD")
                 {
-                    totalSize -= chunk.Size;
-                    _reader.BaseStream.Seek(chunk.Size - 6, SeekOrigin.Current);
+                    offsets[chunk.Tag] = chunk;
                 }
+                totalSize -= chunk.Size;
+                _reader.BaseStream.Seek(chunk.Size - 6, SeekOrigin.Current);
 
             }
+
+            if (music == MusicDriverTypes.PCSpeaker || music == MusicDriverTypes.PCjr)
+            {
+                if (offsets.ContainsKey("WA"))
+                {
+                    _reader.BaseStream.Seek(offsets["WA"].Offset - 6, SeekOrigin.Begin);
+                    return _reader.ReadBytes((int)offsets["WA"].Size + 6);
+                }
+            }
+            else if (music == MusicDriverTypes.CMS)
+            {
+                bool hasAdLibMusicTrack = false;
+
+                if (offsets.ContainsKey("AD"))
+                {
+                    _reader.BaseStream.Seek(offsets["AD"].Offset + 2, SeekOrigin.Begin);
+                    hasAdLibMusicTrack = (_reader.PeekByte() == 0x80);
+                }
+
+                if (hasAdLibMusicTrack)
+                {
+                    _reader.BaseStream.Seek(offsets["AD"].Offset - 4, SeekOrigin.Begin);
+                    return _reader.ReadBytes((int)offsets["AD"].Offset + 4);
+                }
+                else if (offsets.ContainsKey("WA"))
+                {
+                    _reader.BaseStream.Seek(offsets["WA"].Offset - 6, SeekOrigin.Begin);
+                    return _reader.ReadBytes((int)offsets["WA"].Offset + 6);
+                }
+            }
+            else if (music == MusicDriverTypes.AdLib)
+            {
+                if (offsets.ContainsKey("AD"))
+                {
+                    _reader.BaseStream.Seek(offsets["AD"].Offset, SeekOrigin.Begin);
+                    return _reader.ReadBytes((int)offsets["AD"].Size - 6);
+                }
+            }
+
             return null;
         }
 
@@ -306,10 +356,10 @@ namespace NScumm.Core.IO
                             var index = _reader.ReadByte();
                             var pos = _reader.BaseStream.Position;
                             room.LocalScripts[index - 0xC8] = new ScriptData
-                                {
-                                    Offset = pos - offset - 8,
-                                    Data = _reader.ReadBytes((int)(it.Current.Size - 7))
-                                };
+                            {
+                                Offset = pos - offset - 8,
+                                Data = _reader.ReadBytes((int)(it.Current.Size - 7))
+                            };
                         }
                         break;
                     case "OI":
@@ -480,11 +530,11 @@ namespace NScumm.Core.IO
         protected virtual RoomHeader ReadRMHD()
         {
             var header = new RoomHeader
-                {
-                    Width = _reader.ReadUInt16(),
-                    Height = _reader.ReadUInt16(),
-                    NumObjects = _reader.ReadUInt16()
-                };
+            {
+                Width = _reader.ReadUInt16(),
+                Height = _reader.ReadUInt16(),
+                NumObjects = _reader.ReadUInt16()
+            };
             return header;
         }
 

@@ -332,6 +332,10 @@
     <Compile Include="Audio\SoftSynth\CMSEmulator.cs" />
     <Compile Include="Audio\CMSMusicPlugin.cs" />
     <Compile Include="Audio\NullMidiDriver.cs" />
+    <Compile Include="Audio\Player_Mac.cs" />
+    <Compile Include="IO\MacResManager.cs" />
+    <Compile Include="Audio\Player_V3M.cs" />
+    <Compile Include="Audio\Player_V5M.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <ItemGroup>

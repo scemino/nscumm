@@ -507,6 +507,11 @@ namespace NScumm.Core.IO
                         }
                         _reader.BaseStream.Seek(size, SeekOrigin.Current);
                         break;
+                    case "Mac0":
+                        _reader.BaseStream.Seek(-12, SeekOrigin.Current);
+                        size = _reader.ReadUInt32BigEndian() - 8;
+                        return _reader.ReadBytes((int)size);
+                        break;
                     case "SOU ":
                         break;
                     default:

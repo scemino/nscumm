@@ -30,10 +30,12 @@ namespace NScumm.Core.IO
     {
         const int HeaderSize = 4;
 
-        public ResourceFile3_16(string path, byte encByte)
+        GameInfo _game;
+
+        public ResourceFile3_16(GameInfo game, string path, byte encByte)
             : base(path, encByte)
         {
-			
+            _game = game;
         }
 
         public override Dictionary<byte, long> ReadRoomOffsets()
@@ -101,11 +103,18 @@ namespace NScumm.Core.IO
         public override byte[] ReadSound(NScumm.Core.Audio.MusicDriverTypes music, long offset)
         {
             _reader.BaseStream.Seek(offset, System.IO.SeekOrigin.Begin);
-            var size = _reader.ReadUInt16(); // wa_size
-            _reader.BaseStream.Seek(size - 2, System.IO.SeekOrigin.Current);
-            size = _reader.ReadUInt16(); // ad_size
-            _reader.BaseStream.Seek(2, System.IO.SeekOrigin.Current);
-            var data = _reader.ReadBytes(size - HeaderSize);
+            var wa_offs = offset;
+            var wa_size = _reader.ReadUInt16();
+            int ad_size = 0;
+            int ad_offs = 0;
+            _reader.BaseStream.Seek(wa_size - 2, System.IO.SeekOrigin.Current);
+            if (!(_game.Platform == Platform.AtariST || _game.Platform == Platform.Macintosh))
+            {
+                ad_offs = (int)_reader.BaseStream.Position;
+                ad_size = _reader.ReadUInt16();
+            }
+            _reader.BaseStream.Seek(wa_offs, System.IO.SeekOrigin.Begin);
+            var data = _reader.ReadBytes(wa_size);
             return data;
         }
 
@@ -224,12 +233,14 @@ namespace NScumm.Core.IO
                     var localScriptId = localScriptInfo.Item1;
                     var localScriptOffset = localScriptInfo.Item2;
                     var nextScriptOffset = localScriptOffsets[i + 1].Item2;
-                    room.LocalScripts[localScriptId] = new ScriptData {
-                        Data = ReadBytes(offset + localScriptOffset, nextScriptOffset - localScriptOffset+HeaderSize),
+                    room.LocalScripts[localScriptId] = new ScriptData
+                    {
+                        Data = ReadBytes(offset + localScriptOffset, nextScriptOffset - localScriptOffset + HeaderSize),
                         Offset = offset + localScriptOffset
                     };
                 }
-                room.LocalScripts[localScriptOffsets[i].Item1] = new ScriptData {
+                room.LocalScripts[localScriptOffsets[i].Item1] = new ScriptData
+                {
                     Data = ReadBytes(offset + localScriptOffsets[i].Item2, size - localScriptOffsets[i].Item2),
                     Offset = offset + localScriptOffsets[i].Item2
                 };

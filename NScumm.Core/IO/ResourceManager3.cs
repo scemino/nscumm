@@ -38,7 +38,7 @@ namespace NScumm.Core.IO
 
             var file = Game.Features.HasFlag(GameFeatures.Old256) ? 
                 (ResourceFile)new ResourceFile3(game1Path, 0) :
-                new ResourceFile3_16(game1Path, 0xFF);
+                new ResourceFile3_16(Game, game1Path, 0xFF);
             return file;
         }
 

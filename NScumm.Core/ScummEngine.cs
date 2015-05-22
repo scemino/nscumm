@@ -393,6 +393,14 @@ namespace NScumm.Core
             {
                 MusicEngine = new Player_V4A(this, Mixer);
             }
+            else if (Game.Platform == Platform.Macintosh && Game.GameId == GameId.Loom)
+            {
+                MusicEngine = new Player_V3M(this, Mixer);
+            }
+            else if (Game.Platform == Platform.Macintosh && Game.GameId == GameId.Monkey1)
+            {
+                MusicEngine = new Player_V5M(this, Mixer);
+            }
             else if (Game.GameId == GameId.Maniac && Game.Version == 1)
             {
                 MusicEngine = new Player_V1(this, Mixer, Sound.MusicType == MusicDriverTypes.PCjr);

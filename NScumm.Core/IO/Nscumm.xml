@@ -9,6 +9,7 @@
   <MD5 signature="1875b90fade138c9253a8e967007031a" gameId="indy3" variant="VGA" language="en" features="Old256 FewLocals" />
   <MD5 signature="6b3ec67da214f558dc5ceaa2acd47453" gameId="indy3" variant="EGA" language="en" features="SixteenColors" />
   <MD5 signature="9c0fee288ad564a7d25ec3e841810d79" gameId="indy3" variant="EGA" language="en" features="SixteenColors" platform="Amiga" />
+  <MD5 signature="04687cdf7f975a89d2474929f7b80946" gameId="indy3" variant="FM-TOWNS" language="en" features="Old256 FewLocals AudioTracks" platform="FMTowns" />
   <MD5 signature="c63ee46143ba65f9ce14cf539ca51bd7" gameId="atlantis" variant="" language="en" />
   <MD5 signature="5d88b9d6a88e6f8e90cded9d01b7f082" gameId="loom" variant="VGA" language="en" />
   <MD5 signature="6f0be328c64d689bb606d22a389e1b0f" gameId="loom" variant="No AdLib" language="en" features="SixteenColors" platform="Macintosh" />
@@ -18,8 +19,10 @@
   <MD5 signature="2d1e891fe52df707c30185e52c50cd92" gameId="monkey" variant="CD" language="en" />
   <MD5 signature="c13225cb1bbd3bc9fe578301696d8021" gameId="monkey" variant="SEGA" language="en" platform="SegaCD" />
   <MD5 signature="2ccd8891ce4d3f1a334d21bff6a88ca2" gameId="monkey" variant="Mac" language="en" platform="Macintosh" />
+  <MD5 signature="8eb84cee9b429314c7f0bdcf560723eb" gameId="monkey" variant="FM-TOWNS" language="en" platform="FMTowns" />
   <MD5 signature="3686cf8f89e102ececf4366e1d2c8126" gameId="monkey2" variant="" language="en" />
   <MD5 signature="8e4ee4db46954bfe2912e259a16fad82" gameId="monkey2" variant="" language="fr-fr" />
+  <MD5 signature="da09e666fc8f5b78d7b0ac65d1a3b56e" gameId="monkey2" variant="FM-TOWNS" language="en" platform="FMTowns" />
   <MD5 signature="e6cd81b25ab1453a8a6d3482118c391e" gameId="pass" variant="" language="en" features="SixteenColors" />
   <MD5 signature="2723fea3dae0cb47768c424b145ae0e7" gameId="tentacle" variant="Floppy" language="en" />
   <MD5 signature="3b301b7892f883ce42ab4be6a274fea6" gameId="samnmax" variant="Floppy" language="en" />
@@ -34,6 +37,7 @@
   <Game id="zak" gameId="Zak" variant="V2" version="2" music="PCSpeaker PCjr" />
   <Game id="indy3" gameId="Indy3" variant="VGA" version="3" music="PCSpeaker PCjr CMS AdLib" />
   <Game id="indy3" gameId="Indy3" variant="EGA" version="3" music="PCSpeaker PCjr CMS AdLib" />
+  <Game id="indy3" gameId="Indy3" variant="FM-TOWNS" version="3" />
   <Game id="atlantis" gameId="Indy4" variant="" version="5" music="PCSpeaker PCjr AdLib" pattern="ATLANTIS.{0:000}" />
   <Game id="loom" gameId="Loom" variant="No AdLib" version="3" music="PCSpeaker PCjr CMS" />
   <Game id="loom" gameId="Loom" variant="VGA" version="4" />
@@ -42,6 +46,7 @@
   <Game id="monkey" gameId="Monkey1" variant="Mac" version="5" music="AdLib" pattern="MONKEY1.{0:000}" />
   <Game id="monkey" gameId="Monkey1" variant="SEGA" version="5" pattern="GAME.{0:000}" />
   <Game id="monkey2" gameId="Monkey2" variant="" version="5" music="PCSpeaker AdLib" pattern="MONKEY2.{0:000}" />
+  <Game id="monkey2" gameId="Monkey2" variant="FM-TOWNS" version="5" music="PCSpeaker FMTowns AdLib" pattern="MONKEY2.{0:000}" />
   <Game id="pass" gameId="Pass" variant="" version="4" music="PCSpeaker PCjr CMS AdLib" />
   <Game id="tentacle" gameId="Tentacle" variant="Floppy" version="6" music="AdLib" />
   <Game id="samnmax" gameId="SamNMax" variant="Floppy" version="6" music="AdLib" />

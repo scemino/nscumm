@@ -23,7 +23,7 @@ using NScumm.Core.Audio;
 using System.Diagnostics;
 using NScumm.Core.Audio.Decoders;
 
-namespace NScumm.Core
+namespace NScumm.Core.Audio.Decoders
 {
     /// <summary>
     /// A looping audio stream, which features looping of a nested part of the

@@ -336,6 +336,23 @@
     <Compile Include="IO\MacResManager.cs" />
     <Compile Include="Audio\Player_V3M.cs" />
     <Compile Include="Audio\Player_V5M.cs" />
+    <Compile Include="Audio\Player_Towns.cs" />
+    <Compile Include="Audio\SoftSynth\FMTownsPc98\TownsAudioInterface.cs" />
+    <Compile Include="Audio\SoftSynth\Player_Towns_v1.cs" />
+    <Compile Include="Audio\SoftSynth\FMTownsPc98\TownsEuphonyDriver.cs" />
+    <Compile Include="Audio\SoftSynth\FMTownsPc98\ITownsAudioInterfacePluginDriver.cs" />
+    <Compile Include="Audio\IAudioCDManager.cs" />
+    <Compile Include="Audio\DefaultAudioCDManager.cs" />
+    <Compile Include="Audio\LoopingAudioStream.cs" />
+    <Compile Include="Audio\SubSeekableAudioStream.cs" />
+    <Compile Include="Audio\SoftSynth\FMTownsPc98\TownsPC98_FmSynth.cs" />
+    <Compile Include="Audio\SoftSynth\FMTownsPc98\TownsPC98_FmSynthOperator.cs" />
+    <Compile Include="Audio\SoftSynth\FMTownsPc98\TownsPC98_FmSynthSquareSineSource.cs" />
+    <Compile Include="Audio\SoftSynth\FMTownsPc98\TownsPC98_FmSynthPercussionSource.cs" />
+    <Compile Include="Audio\SoftSynth\FMTownsPc98\TownsAudio_PcmChannel.cs" />
+    <Compile Include="Audio\SoftSynth\FMTownsPc98\TownsAudio_WaveTable.cs" />
+    <Compile Include="Audio\SoftSynth\FMTownsPc98\TownsAudioInterfaceInternal.cs" />
+    <Compile Include="Audio\SoftSynth\Player_Towns_v2.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <ItemGroup>
@@ -349,6 +366,7 @@
     <Folder Include="Audio\Midi\" />
     <Folder Include="Audio\OPL\" />
     <Folder Include="Smush\" />
+    <Folder Include="Audio\SoftSynth\FMTownsPc98\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="IO\Nscumm.xsd" />

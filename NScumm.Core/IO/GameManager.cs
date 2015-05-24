@@ -33,6 +33,7 @@ namespace NScumm.Core.IO
         FewLocals = 0x04,
         Demo = 0x08,
         Is16BitColor = 0x10,
+        AudioTracks = 0x20,
     }
 
     public enum GameId
@@ -123,12 +124,22 @@ namespace NScumm.Core.IO
 
         public int Width
         {
-            get{ return Version == 8 ? 640 : 320; }
+            get
+            { 
+                return Version == 8 ? 640 : 320; 
+            }
         }
 
         public int Height
         {
-            get{ return Version == 8 ? 480 : 200; }
+            get
+            { 
+                if (Platform == Platform.FMTowns && Version == 3)
+                {
+                    return 240;
+                }
+                return Version == 8 ? 480 : 200; 
+            }
         }
     }
 

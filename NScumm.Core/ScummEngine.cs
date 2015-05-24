@@ -28,6 +28,8 @@ using System.Linq;
 using NScumm.Core.Audio;
 using NScumm.Core.Audio.IMuse;
 using System.Collections;
+using System.Diagnostics;
+using NScumm.Core.Audio.SoftSynth;
 
 namespace NScumm.Core
 {
@@ -140,9 +142,17 @@ namespace NScumm.Core
 
         public IMusicEngine MusicEngine { get; protected set; }
 
+        internal Player_Towns _townsPlayer;
+
         public static ScummEngine Instance { get; private set; }
 
         public GameSettings Settings { get; private set; }
+
+        public IAudioCDManager AudioCDManager
+        {
+            get;
+            private set;
+        }
 
         #endregion Properties
 
@@ -223,6 +233,7 @@ namespace NScumm.Core
             ScreenWidth = Game.Version == 8 ? 640 : 320;
             ScreenHeight = Game.Version == 8 ? 480 : 200;
 
+            AudioCDManager = new DefaultAudioCDManager(this, mixer);
             Sound = new Sound(this, mixer);
 
             SetupMusic();
@@ -376,7 +387,7 @@ namespace NScumm.Core
             }
             else if (Game.Platform == Platform.C64 && Game.Version <= 1)
             {
-                var sid = new NScumm.Core.Audio.SoftSynth.SID();
+                var sid = new SID();
                 MusicEngine = new Player_SID(this, Mixer, sid);
             }
             else if (_game.Platform == Platform.Amiga && Game.Version == 2)
@@ -413,6 +424,12 @@ namespace NScumm.Core
             {
                 MusicEngine = new Player_V2CMS(this, Mixer);
             }
+            else if (Game.Platform == Platform.FMTowns && (Game.Version == 3 || Game.GameId == GameId.Monkey1))
+            {
+                MusicEngine = _townsPlayer = new Player_Towns_v1(this, Mixer);
+                if (!_townsPlayer.Init())
+                    Debug.WriteLine("Failed to initialize FM-Towns audio driver");
+            }
             else if (Game.GameId == GameId.Loom || Game.GameId == GameId.Indy3)
             {
                 MusicEngine = new Player_AD(this, Mixer);
@@ -424,8 +441,8 @@ namespace NScumm.Core
                 if (Sound.MusicType == MusicDriverTypes.AdLib)
                 {
                     adlibMidiDriver = (MidiDriver)MidiDriver.CreateMidi(Mixer, MidiDriver.DetectDevice(Sound.MusicType, selectedDevice));
-                    adlibMidiDriver.Property(NScumm.Core.Audio.SoftSynth.AdlibMidiDriver.PropertyOldAdLib, (Game.Version < 5) ? 1 : 0);
-                    adlibMidiDriver.Property(NScumm.Core.Audio.SoftSynth.AdlibMidiDriver.PropertyScummOPL3, (Game.GameId == GameId.SamNMax) ? 1 : 0);
+                    adlibMidiDriver.Property(AdlibMidiDriver.PropertyOldAdLib, (Game.Version < 5) ? 1 : 0);
+                    adlibMidiDriver.Property(AdlibMidiDriver.PropertyScummOPL3, (Game.GameId == GameId.SamNMax) ? 1 : 0);
                 }
                 else if (Sound.MusicType == MusicDriverTypes.PCSpeaker)
                 {
@@ -433,7 +450,17 @@ namespace NScumm.Core
                 }
 
                 IMuse = NScumm.Core.Audio.IMuse.IMuse.Create(nativeMidiDriver, adlibMidiDriver);
-                MusicEngine = IMuse;
+
+                if (Game.Platform == Platform.FMTowns)
+                {
+                    MusicEngine = _townsPlayer = new Player_Towns_v2(this, Mixer, IMuse, true);
+                    if (!_townsPlayer.Init())
+                        throw new InvalidOperationException("ScummEngine::setupMusic(): Failed to initialize FM-Towns audio driver");
+                }
+                else
+                {
+                    MusicEngine = IMuse;
+                }
 
                 if (IMuse != null)
                 {
@@ -502,15 +529,15 @@ namespace NScumm.Core
             _opCode = opCode;
             _slots[_currentScript].IsExecuted = true;
 
-//            if (Game.Version < 6)
-//            {
-//                System.Diagnostics.Debug.WriteLine("Room = {1}, Script = {0}, Offset = {4}, Name = {2} [{3:X2}]", 
-//                    _slots[_currentScript].Number, 
-//                    _roomResource, 
-//                    _opCodes.ContainsKey(_opCode) ? _opCodes[opCode].Method.Name : "Unknown", 
-//                    _opCode,
-//                    _currentPos - 1);
-//            }
+            if (Game.Version < 6)
+            {
+                Debug.WriteLine("Room = {1}, Script = {0}, Offset = {4}, Name = {2} [{3:X2}]", 
+                    _slots[_currentScript].Number, 
+                    _roomResource, 
+                    _opCodes.ContainsKey(_opCode) ? _opCodes[opCode].Method.Name : "Unknown", 
+                    _opCode,
+                    _currentPos - 1);
+            }
             if (_opCodes.ContainsKey(opCode))
             {
                 _opCodes[opCode]();
@@ -594,7 +621,11 @@ namespace NScumm.Core
 
             UpdateVariables();
 
-            if (VariableMusicTimer.HasValue)
+            if (_game.Features.HasFlag(GameFeatures.AudioTracks))
+            {
+                // Covered automatically by the Sound class
+            }
+            else if (VariableMusicTimer.HasValue)
             {
                 if (MusicEngine != null)
                 {

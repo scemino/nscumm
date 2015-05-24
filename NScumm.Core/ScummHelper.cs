@@ -458,16 +458,6 @@ namespace NScumm.Core
             writer.Write(SwapBytes(value));
         }
 
-        public static void WriteUInt16BigEndian(byte[] destinationArray, int destinationIndex, ushort value)
-        {
-            Array.Copy(GetBytesBigEndian(value), 0, destinationArray, destinationIndex, 2);
-        }
-
-        public static byte[] GetBytesBigEndian(ushort value)
-        {
-            return BitConverter.GetBytes(SwapBytes(value));
-        }
-
         public static byte[] GetBytesBigEndian(uint value)
         {
             return BitConverter.GetBytes(SwapBytes(value));
@@ -508,6 +498,12 @@ namespace NScumm.Core
             return SwapBytes(ToUInt16(value, startIndex));
         }
 
+        public static void WriteUInt16BigEndian(this byte[] array, int startIndex, ushort value)
+        {
+            var data = BitConverter.GetBytes(SwapBytes(value));
+            Array.Copy(data, 0, array, startIndex, 2);
+        }
+
         public static uint ToUInt32(this byte[] value, int startIndex = 0)
         {
             return BitConverter.ToUInt32(value, startIndex);
@@ -521,6 +517,34 @@ namespace NScumm.Core
         public static uint ToUInt32BigEndian(this byte[] value, int startIndex = 0)
         {
             return SwapBytes(ToUInt32(value, startIndex));
+        }
+
+        public static void Set(this byte[] array, int startIndex, byte value, int length)
+        {
+            for (int i = startIndex; i < startIndex + length; i++)
+            {
+                array[i] = value;
+            }
+        }
+
+        public static void Set<T>(this T[] array, int startIndex, T value, int length)
+        {
+            for (int i = startIndex; i < startIndex + length; i++)
+            {
+                array[i] = value;
+            }
+        }
+
+        public static void WriteUInt32(this byte[] array, int startIndex, uint value)
+        {
+            var data = BitConverter.GetBytes(value);
+            Array.Copy(data, 0, array, startIndex, 4);
+        }
+
+        public static void WriteUInt32BigEndian(this byte[] array, int startIndex, uint value)
+        {
+            var data = BitConverter.GetBytes(SwapBytes(value));
+            Array.Copy(data, 0, array, startIndex, 4);
         }
 
         public static int ToInt32BigEndian(this byte[] value, int startIndex = 0)

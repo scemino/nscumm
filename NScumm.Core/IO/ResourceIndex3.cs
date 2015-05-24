@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 
 namespace NScumm.Core.IO
 {
@@ -65,9 +66,13 @@ namespace NScumm.Core.IO
 
                         case 0x4F30:    // 'O0'
                             ReadDirectoryOfObjects(br);
+
+                            // Indy3 FM-TOWNS has 32 extra bytes of unknown meaning
+                            if (Game.GameId == GameId.Indy3 && Game.Platform == Platform.FMTowns)
+                                br.BaseStream.Seek(32, SeekOrigin.Current);
                             break;
                         default:
-//                            Console.WriteLine("Unknwon block {0:X2}", block);
+                            Debug.WriteLine("Unknown block {0:X2}", block);
                             break;
                     }
                 }

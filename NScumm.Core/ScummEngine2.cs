@@ -27,6 +27,7 @@ using System;
 using NScumm.Core.Audio;
 using System.Linq;
 using System.Text;
+using System.Diagnostics;
 
 namespace NScumm.Core
 {
@@ -1222,7 +1223,46 @@ namespace NScumm.Core
 
         protected void StartMusic()
         {
-            Sound.AddSoundToQueue(GetVarOrDirectByte(OpCodeParameter.Param1));
+            if (Game.Platform == Platform.FMTowns && Game.Version == 3)
+            {
+                // In FM-TOWNS games this is some kind of Audio CD status query function.
+                // See also bug #762589 (thanks to Hibernatus for providing the information).
+                GetResult();
+                int b = GetVarOrDirectByte(OpCodeParameter.Param1);
+                int result = 0;
+                switch (b)
+                {
+                    case 0:
+                        // TODO: FMTOWNS
+//                        result = Sound.PollCD() == 0;
+                        break;
+                    case 0xFC:
+                        // TODO: Unpause (resume) audio track. We'll have to extend Sound and OSystem for this.
+                        break;
+                    case 0xFD:
+                        // TODO: Pause audio track. We'll have to extend Sound and OSystem for this.
+                        break;
+                    case 0xFE:
+                        // TODO: FMTOWNS
+//                        result = Sound.GetCurrentCDSound();
+                        break;
+                    case 0xFF:
+                        // TODO: FMTOWNS
+//                        result = _townsPlayer.GetCurrentCdaVolume();
+                        break;
+                    default:
+                        // TODO: return track length in seconds. We'll have to extend Sound and OSystem for this.
+                        // To check scummvm returns the right track length you
+                        // can look at the global script #9 (0x888A in 49.LFL).
+                        break;
+                }
+                Debug.WriteLine("o5_startMusic({0})", b);
+                SetResult(result);
+            }
+            else
+            {
+                Sound.AddSoundToQueue(GetVarOrDirectByte(OpCodeParameter.Param1));
+            }
         }
 
         protected void GetActorRoom()

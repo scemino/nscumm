@@ -52,14 +52,22 @@ namespace NScumm.Core
             _mixer = mixer;
         }
 
+        public int PollCD()
+        {
+            if (!_isLoomSteam)
+                return vm.AudioCDManager.IsPlaying ? 1 : 0;
+            else
+                return _mixer.IsSoundHandleActive(_loomSteamCDAudioHandle) ? 1 : 0;
+        }
+
         public void PlayCDTrack(int track, int numLoops, int startFrame, int duration)
         {
             // Reset the music timer variable at the start of a new track
             vm.Variables[vm.VariableMusicTimer.Value] = 0;
 
             // Play it
-            //if (!SoundsPaused)
-            //    g_system->getAudioCDManager()->play(track, numLoops, startFrame, duration);
+            if (!_soundsPaused)
+                vm.AudioCDManager.Play(track, numLoops, startFrame, duration);
 
             // Start the timer after starting the track. Starting an MP3 track is
             // almost instantaneous, but a CD player may take some time. Hopefully
@@ -70,6 +78,11 @@ namespace NScumm.Core
         public void StartCDTimer()
         {
             timer.Change(TimeSpan.Zero, TimeSpan.FromMilliseconds(100.7));
+        }
+
+        public void StopCDTimer()
+        {
+            timer.Change(-1, -1);
         }
 
         public void StopCD()
@@ -549,5 +562,8 @@ namespace NScumm.Core
         bool _endOfMouthSync;
 
         bool _soundsPaused;
+
+        SoundHandle _loomSteamCDAudioHandle;
+        bool _isLoomSteam;
     }
 }

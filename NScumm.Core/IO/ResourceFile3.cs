@@ -251,6 +251,14 @@ namespace NScumm.Core.IO
             return null;
         }
 
+        public byte[] ReadAmigaSound(long offset)
+        {
+            _reader.BaseStream.Seek(offset, SeekOrigin.Begin);
+            var size = _reader.ReadInt32();
+            _reader.BaseStream.Seek(-4, SeekOrigin.Current);
+            return _reader.ReadBytes(size);
+        }
+
         public override Room ReadRoom(long offset)
         {
             GotoResourceHeader(offset);

@@ -26,6 +26,7 @@ using System.Collections.Generic;
 using System;
 using System.Linq;
 using NScumm.Core.Audio;
+using System.Diagnostics;
 
 namespace NScumm.Core
 {
@@ -199,7 +200,8 @@ namespace NScumm.Core
             if ((var & 0x8000) == 0x8000)
             {
                 //                Debug.Write(string.Format("ReadVariable({0}) => ", var));
-                if (Game.Version <= 3)
+                if (Game.Version <= 3 && !(Game.GameId == GameId.Indy3 && Game.Platform == Platform.FMTowns) &&
+                    !(Game.GameId == GameId.Loom && Game.Platform == Platform.PCEngine))
                 {
                     int bit = (int)(var & 0xF);
                     var = (var >> 4) & 0xFF;
@@ -246,7 +248,8 @@ namespace NScumm.Core
 
             if ((index & 0x8000) != 0)
             {
-                if (Game.Version <= 3)
+                if (Game.Version <= 3 && !(Game.GameId == GameId.Indy3 && Game.Platform == Platform.FMTowns) &&
+                    !(Game.GameId == GameId.Loom && Game.Platform == Platform.PCEngine))
                 {
                     var bit = (int)(index & 0xF);
                     index = (index >> 4) & 0xFF;
@@ -839,6 +842,30 @@ namespace NScumm.Core
 
                 case 20:        // SO_LOAD_OBJECT
                     LoadFlObject(GetVarOrDirectWord(OpCodeParameter.Param2), resId);
+                    break;
+
+            // TODO: For the following see also Hibarnatus' information on bug #805691.
+                case 32:
+                    // TODO (apparently never used in FM-TOWNS)
+                    Debug.WriteLine("o5_resourceRoutines {0} not yet handled (script {1})", op, Slots[CurrentScript].Number);
+                    break;
+                case 33:
+                    // TODO (apparently never used in FM-TOWNS)
+                    Debug.WriteLine("o5_resourceRoutines {0} not yet handled (script {1})", op, Slots[CurrentScript].Number);
+                    break;
+                case 35:
+                    if (_townsPlayer!=null)
+                        _townsPlayer.SetVolumeCD(GetVarOrDirectByte(OpCodeParameter.Param2), resId);
+                    break;
+                case 36:
+                    var foo = GetVarOrDirectByte(OpCodeParameter.Param2);
+                    var bar = ReadByte();
+                    if (_townsPlayer!=null)
+                        _townsPlayer.SetSoundVolume(resId, foo, bar);
+                    break;
+                case 37:
+                    if (_townsPlayer!=null)
+                        _townsPlayer.SetSoundNote(resId, GetVarOrDirectByte(OpCodeParameter.Param2));
                     break;
 
                 default:

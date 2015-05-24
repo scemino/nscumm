@@ -247,6 +247,29 @@ namespace NScumm.Core.Audio
             return t1.CompareTo(t2) != 0;
         }
 
+        public static Timestamp operator+(Timestamp ts1, Timestamp ts2)
+        {
+            var result = new Timestamp(ts1);
+            result.AddIntern(ts2);
+            return result;
+        }
+
+        public static Timestamp operator-(Timestamp ts)
+        {
+            var result = new Timestamp(ts);
+            result._secs = -result._secs;
+            result._numFrames = -result._numFrames;
+            result.Normalize();
+            return result;
+        }
+
+        public static Timestamp operator-(Timestamp ts1, Timestamp ts2)
+        {
+            var result = new Timestamp(ts1);
+            result.AddIntern(-ts2);
+            return result;
+        }
+
         public override int GetHashCode()
         {
             return _secs ^ _framerate ^ _numFrames ^ _framerateFactor;
@@ -260,6 +283,15 @@ namespace NScumm.Core.Audio
         public bool Equals(Timestamp value)
         {
             return CompareTo(value) == 0;
+        }
+
+        void AddIntern(Timestamp ts)
+        {
+            Debug.Assert(_framerate == ts._framerate);
+            _secs += ts._secs;
+            _numFrames += ts._numFrames;
+
+            Normalize();
         }
 
         #region IComparable implementation

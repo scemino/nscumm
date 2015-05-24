@@ -249,9 +249,13 @@ namespace NScumm.Core.IO
                 if (disk != null)
                 {
                     var roomOffset = GetRoomOffset(disk, resource.RoomNum);
-                    if (Game.Version == 3 && Game.Platform == Platform.Amiga)
+                    if (Game.IsOldBundle && Game.Version == 3 && Game.Platform == Platform.Amiga)
                     {
                         data = ((ResourceFile3_16)disk).ReadAmigaSound(roomOffset + resource.Offset);
+                    }
+                    else if (Game.Version == 3 && Game.Platform == Platform.Amiga || Game.Platform == Platform.FMTowns)
+                    {
+                        data = ((ResourceFile3)disk).ReadAmigaSound(roomOffset + resource.Offset);
                     }
                     else if (Game.Version == 4 && Game.Platform == Platform.Amiga)
                     {

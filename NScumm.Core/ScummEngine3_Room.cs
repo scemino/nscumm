@@ -20,6 +20,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
 using NScumm.Core.Graphics;
+using NScumm.Core.IO;
 
 namespace NScumm.Core
 {
@@ -201,6 +202,10 @@ namespace NScumm.Core
                         a = GetVarOrDirectWord(OpCodeParameter.Param1);
                         if (a != 0)
                         {
+                            if (Game.Platform == Platform.FMTowns)
+                            {
+                                return;
+                            }
                             _switchRoomEffect = (byte)(a & 0xFF);
                             _switchRoomEffect2 = (byte)(a >> 8);
                         }

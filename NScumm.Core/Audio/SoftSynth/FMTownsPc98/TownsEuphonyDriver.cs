@@ -68,6 +68,10 @@ namespace NScumm.Core.Audio.SoftSynth
             _activeChannels = new sbyte[16];
             _sustainChannels = new sbyte[16];
             _assignedChannels = new ActiveChannel[128];
+            for (int i = 0; i < _assignedChannels.Length; i++)
+            {
+                _assignedChannels[i] = new ActiveChannel();
+            }
             _eventBuffer = new DlEvent[64];
 
             _tEnable = new byte[32];
@@ -998,7 +1002,7 @@ namespace NScumm.Core.Audio.SoftSynth
         sbyte[] _activeChannels;
         sbyte[] _sustainChannels;
 
-        struct ActiveChannel
+        class ActiveChannel
         {
             public sbyte chan;
             public sbyte next;
@@ -1014,7 +1018,7 @@ namespace NScumm.Core.Audio.SoftSynth
         sbyte[] _tLevel;
         sbyte[] _tTranspose;
 
-        struct DlEvent
+        class DlEvent
         {
             public byte evt;
             public byte mode;

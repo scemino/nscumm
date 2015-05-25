@@ -37,9 +37,9 @@ namespace NScumm.Core.Audio
     {
         bool IsPlaying { get; }
 
-        int Volume { get; }
+        int Volume { get; set; }
 
-        int Balance { get; }
+        int Balance { get; set; }
 
         /// <summary>
         /// Start audio CD playback.

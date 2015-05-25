@@ -18,14 +18,21 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+using System;
 
 namespace NScumm.Core.Audio.SoftSynth
 {
-    class TownsAudioInterface
+    class TownsAudioInterface: IDisposable
     {
         public TownsAudioInterface(IMixer mixer, ITownsAudioInterfacePluginDriver driver, bool externalMutexHandling = false)
         {
             _intf = TownsAudioInterfaceInternal.AddNewRef(mixer, this, driver, externalMutexHandling);
+        }
+
+        public void Dispose()
+        {
+            TownsAudioInterfaceInternal.ReleaseRef(this);
+            _intf = null;
         }
 
         public void SetMusicVolume(int volume)
@@ -54,7 +61,7 @@ namespace NScumm.Core.Audio.SoftSynth
             _intf.SetSoundEffectChanMask(mask);
         }
 
-        readonly TownsAudioInterfaceInternal _intf;
+        TownsAudioInterfaceInternal _intf;
     }
 }
 

@@ -484,7 +484,7 @@ namespace NScumm.Core.IO
                 switch (tag)
                 {
                     case "ADL ":
-                        if (music == NScumm.Core.Audio.MusicDriverTypes.AdLib)
+                        if (music == NScumm.Core.Audio.MusicDriverTypes.AdLib|| music == NScumm.Core.Audio.MusicDriverTypes.FMTowns)
                         {
                             _reader.BaseStream.Seek(-8, SeekOrigin.Current);
                             return _reader.ReadBytes((int)size + 8);
@@ -511,7 +511,10 @@ namespace NScumm.Core.IO
                         _reader.BaseStream.Seek(-12, SeekOrigin.Current);
                         size = _reader.ReadUInt32BigEndian() - 8;
                         return _reader.ReadBytes((int)size);
-                        break;
+                    case "TOWS":
+                        _reader.BaseStream.Seek(-12, SeekOrigin.Current);
+                        size = _reader.ReadUInt32BigEndian();
+                        return _reader.ReadBytes((int)size);
                     case "SOU ":
                         break;
                     default:

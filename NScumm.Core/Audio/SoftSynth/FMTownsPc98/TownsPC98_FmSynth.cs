@@ -76,6 +76,10 @@ namespace NScumm.Core.Audio.SoftSynth
             _volumeA = 255;
             _volumeB = 255;
             _externalMutex = externalMutexHandling;
+            for (int i = 0; i < _timers.Length; i++)
+            {
+                _timers[i] = new ChipTimer();
+            }
             _timers[0].cb = _timers[1].cb = IdleTimerCallback;
             _timerbase = (uint)(_baserate * 1000000.0f);
         }
@@ -764,7 +768,7 @@ namespace NScumm.Core.Audio.SoftSynth
         object _mutex = new object();
         protected bool _externalMutex;
 
-        struct ChipTimer
+        class ChipTimer
         {
             public bool enabled;
             public ushort value;

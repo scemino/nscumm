@@ -235,6 +235,12 @@ namespace NScumm.Core.Audio
                         result = handle;
                     }
                     break;
+                case MusicType.FMTowns:
+                    if (flags.HasFlag(MusicDriverTypes.FMTowns))
+                    {
+                        result = handle;
+                    }
+                    break;
             }
             // TODO: other music drivers
 

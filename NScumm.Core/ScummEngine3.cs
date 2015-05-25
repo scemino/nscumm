@@ -88,9 +88,23 @@ namespace NScumm.Core
                         break;
                 }
 
-                Variables[VariableVideoMode.Value] = 19;
+                if (Game.Platform == Platform.FMTowns)
+                    Variables[VariableVideoMode.Value] = 42;
+                // Value only used by the Macintosh version of Indiana Jones and the Last Crusade
+                else if (Game.Platform == Platform.Macintosh && Game.Version == 3)
+                    Variables[VariableVideoMode.Value] = 50;
+                // Value only used by the Amiga version of Monkey Island 2
+                else if (Game.Platform == Platform.Amiga)
+                    Variables[VariableVideoMode.Value] = 82;
+                else
+                    Variables[VariableVideoMode.Value] = 19;
 
-                if (Game.GameId == GameId.Loom && Game.Version == 3)
+                if ((Game.Platform == Platform.Macintosh) && Game.IsOldBundle)
+                {
+                    // Set screen size for the Macintosh version of Indy3/Loom
+                    Variables[39] = 320;
+                }
+                if (Game.Platform == Platform.DOS && Game.GameId == GameId.Loom && Game.Version == 3)
                 {
                     // Set number of sound resources
                     Variables[39] = 80;
@@ -854,17 +868,17 @@ namespace NScumm.Core
                     Debug.WriteLine("o5_resourceRoutines {0} not yet handled (script {1})", op, Slots[CurrentScript].Number);
                     break;
                 case 35:
-                    if (_townsPlayer!=null)
+                    if (_townsPlayer != null)
                         _townsPlayer.SetVolumeCD(GetVarOrDirectByte(OpCodeParameter.Param2), resId);
                     break;
                 case 36:
                     var foo = GetVarOrDirectByte(OpCodeParameter.Param2);
                     var bar = ReadByte();
-                    if (_townsPlayer!=null)
+                    if (_townsPlayer != null)
                         _townsPlayer.SetSoundVolume(resId, foo, bar);
                     break;
                 case 37:
-                    if (_townsPlayer!=null)
+                    if (_townsPlayer != null)
                         _townsPlayer.SetSoundNote(resId, GetVarOrDirectByte(OpCodeParameter.Param2));
                     break;
 

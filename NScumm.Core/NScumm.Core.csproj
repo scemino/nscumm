@@ -353,6 +353,10 @@
     <Compile Include="Audio\SoftSynth\FMTownsPc98\TownsAudio_WaveTable.cs" />
     <Compile Include="Audio\SoftSynth\FMTownsPc98\TownsAudioInterfaceInternal.cs" />
     <Compile Include="Audio\SoftSynth\Player_Towns_v2.cs" />
+    <Compile Include="Audio\SoftSynth\FMTownsPc98\MidiDriver_TOWNS.cs" />
+    <Compile Include="Audio\SoftSynth\FMTownsPc98\TownsMidiInputChannel.cs" />
+    <Compile Include="Audio\SoftSynth\FMTownsPc98\TownsMidiOutputChannel.cs" />
+    <Compile Include="Audio\SoftSynth\FMTownsPc98\TownsEmuMusicPlugin.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <ItemGroup>

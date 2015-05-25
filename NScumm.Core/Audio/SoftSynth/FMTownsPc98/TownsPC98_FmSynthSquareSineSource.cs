@@ -230,7 +230,7 @@ namespace NScumm.Core.Audio.SoftSynth
 
                 finOut /= 3;
 
-                buffer[offset + i << 1] += finOut;
+                buffer[offset + (i << 1)] += finOut;
                 buffer[offset + (i << 1) + 1] += finOut;
             }
         }
@@ -284,7 +284,7 @@ namespace NScumm.Core.Audio.SoftSynth
         uint _timer;
         readonly uint _rtt;
 
-        struct Channel
+        class Channel
         {
             public int tick;
             public byte smp;

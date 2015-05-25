@@ -51,6 +51,10 @@ namespace NScumm.Core
             _state = EnvelopeState.Ready;
             _currentLevel = 1023;
 
+            fs_a = new EvpState();
+            fs_d = new EvpState();
+            fs_r = new EvpState();
+            fs_s = new EvpState();
             fs_a.rate = fs_a.shift = fs_d.rate = fs_d.shift = fs_s.rate = fs_s.shift = fs_r.rate = fs_r.shift = 0;
 
             Reset();
@@ -163,7 +167,7 @@ namespace NScumm.Core
 
         public void Detune(int value)
         {
-            _detn = i => _detnTbl[i + value << 5];
+            _detn = i => _detnTbl[i + (value << 5)];
         }
 
         public void Multiple(uint value)
@@ -351,7 +355,7 @@ namespace NScumm.Core
         readonly uint _rtt;
         int _currentLevel;
 
-        struct EvpState
+        class EvpState
         {
             public byte rate;
             public byte shift;

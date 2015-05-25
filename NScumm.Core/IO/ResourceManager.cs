@@ -253,7 +253,7 @@ namespace NScumm.Core.IO
                     {
                         data = ((ResourceFile3_16)disk).ReadAmigaSound(roomOffset + resource.Offset);
                     }
-                    else if (Game.Version == 3 && Game.Platform == Platform.Amiga || Game.Platform == Platform.FMTowns)
+                    else if (Game.Version == 3 && (Game.Platform == Platform.Amiga || Game.Platform == Platform.FMTowns))
                     {
                         data = ((ResourceFile3)disk).ReadAmigaSound(roomOffset + resource.Offset);
                     }

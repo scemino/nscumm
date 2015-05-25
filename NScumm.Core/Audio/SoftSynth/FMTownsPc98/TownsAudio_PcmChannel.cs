@@ -52,33 +52,6 @@ namespace NScumm.Core.Audio.SoftSynth
             _extData = null;
         }
 
-        public void SetInstrument(byte[] instr)
-        {
-            _curInstrument = instr;
-        }
-
-        public void SetLevel(int lvl)
-        {
-            if (_reserved)
-            {
-                _velo = (byte)lvl;
-                _tl = (byte)(lvl << 1);
-            }
-            else
-            {
-                int t = _envStep * lvl;
-                if (_level != 0)
-                    t /= _level;
-                _envStep = (short)t;
-                t = _envCurrentLevel * lvl;
-                if (_level != 0)
-                    t /= _level;
-                _envCurrentLevel = (short)t;
-                _level = (byte)lvl;
-                _tl = (byte)(_envCurrentLevel >> 8);
-            }
-        }
-
         public void LoadData(TownsAudio_WaveTable w)
         {
             _data = w.data;
@@ -201,6 +174,33 @@ namespace NScumm.Core.Audio.SoftSynth
             _tl = (byte)((_envCurrentLevel >> 8) << 1);
         }
 
+        public void SetInstrument(byte[] instr)
+        {
+            _curInstrument = instr;
+        }
+
+        public void SetLevel(int lvl)
+        {
+            if (_reserved)
+            {
+                _velo = (byte)lvl;
+                _tl = (byte)(lvl << 1);
+            }
+            else
+            {
+                int t = _envStep * lvl;
+                if (_level != 0)
+                    t /= _level;
+                _envStep = (short)t;
+                t = _envCurrentLevel * lvl;
+                if (_level != 0)
+                    t /= _level;
+                _envCurrentLevel = (short)t;
+                _level = (byte)lvl;
+                _tl = (byte)(_envCurrentLevel >> 8);
+            }
+        }
+
         public void SetPitch(uint pt)
         {
             _stepPitch = (ushort)(pt & 0xffff);
@@ -220,22 +220,35 @@ namespace NScumm.Core.Audio.SoftSynth
             _panRight = (byte)(blc >> 4);
         }
 
-        void SetVelo(byte velo)
+        public void UpdateOutput()
         {
-            if (_reserved)
+            if (_activeKey || _activeEffect)
             {
-                _velo = velo;
-                _tl = (byte)(velo << 1);
+                _pos += _step;
+
+                if ((_pos >> 11) >= _loopEnd)
+                {
+                    if (_loopLen != 0)
+                    {
+                        _pos -= _loopLen;
+                    }
+                    else
+                    {
+                        _pos = 0;
+                        _activeKey = _activeEffect = false;
+                    }
+                }
             }
-            else
-            {
-                _velo = velo;
-                uint lvl = (uint)(_level * _velo);
-                _envTotalLevel = (byte)(((_envTotalLevel * lvl) >> 14) & 0xff);
-                _envSustainLevel = (byte)(((_envSustainLevel * lvl) >> 14) & 0xff);
-                EnvAttack();
-                _tl = (byte)((_envCurrentLevel >> 8) << 1);
-            }
+        }
+
+        public int CurrentSampleLeft()
+        {
+            return (_activeOutput && _panLeft != 0) ? (((_data[_pos >> 11] * _tl) * _panLeft) >> 3) : 0;
+        }
+
+        public int CurrentSampleRight()
+        {
+            return (_activeOutput && _panRight != 0) ? (((_data[_pos >> 11] * _tl) * _panRight) >> 3) : 0;
         }
 
         void EnvAttack()
@@ -341,6 +354,24 @@ namespace NScumm.Core.Audio.SoftSynth
 
             if (stepLimit && _step > 2048)
                 _step = 2048;
+        }
+
+        void SetVelo(byte velo)
+        {
+            if (_reserved)
+            {
+                _velo = velo;
+                _tl = (byte)(velo << 1);
+            }
+            else
+            {
+                _velo = velo;
+                uint lvl = (uint)(_level * _velo);
+                _envTotalLevel = (byte)(((_envTotalLevel * lvl) >> 14) & 0xff);
+                _envSustainLevel = (byte)(((_envSustainLevel * lvl) >> 14) & 0xff);
+                EnvAttack();
+                _tl = (byte)((_envCurrentLevel >> 8) << 1);
+            }
         }
 
         public bool _keyPressed;

@@ -36,16 +36,16 @@ namespace NScumm.Core.Audio.SoftSynth
             data = null;
         }
 
-        public void ReadHeader(byte[] buffer)
+        public void ReadHeader(byte[] buffer, int offset)
         {
-            name = System.Text.Encoding.UTF8.GetString(buffer, 0, 8);
-            id = buffer.ToInt32(8);
-            size = buffer.ToInt32(12);
-            loopStart = buffer.ToUInt32(16);
-            loopLen = buffer.ToUInt32(20);
-            rate = buffer.ToUInt16(24);
-            rateOffs = buffer.ToUInt16(26);
-            baseNote = (ushort)buffer.ToUInt32(28);
+            name = System.Text.Encoding.UTF8.GetString(buffer, offset, 8);
+            id = buffer.ToInt32(offset + 8);
+            size = buffer.ToInt32(offset + 12);
+            loopStart = buffer.ToUInt32(offset + 16);
+            loopLen = buffer.ToUInt32(offset + 20);
+            rate = buffer.ToUInt16(offset + 24);
+            rateOffs = buffer.ToUInt16(offset + 26);
+            baseNote = (ushort)buffer.ToUInt32(offset + 28);
         }
 
         public void ReadData(byte[] buffer, int offset = 0)

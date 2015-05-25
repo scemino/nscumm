@@ -38,7 +38,7 @@ namespace NScumm.MonoGame
         {
             Initialize();
 
-            var musicDriver = "cms";
+            var musicDriver = "towns";
             var showVersion = false;
             var showHelp = false;
             var listAudioDevices = false;

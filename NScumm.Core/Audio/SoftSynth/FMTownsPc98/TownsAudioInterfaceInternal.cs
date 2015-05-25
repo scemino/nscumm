@@ -116,6 +116,25 @@ namespace NScumm.Core.Audio.SoftSynth
             return _refInstance;
         }
 
+        public static void ReleaseRef(TownsAudioInterface owner)
+        {
+            if (_refCount == 0)
+                return;
+
+            _refCount--;
+
+            if (_refCount != 0)
+            {
+                if (_refInstance != null)
+                    _refInstance.RemovePluginDriver(owner);
+            }
+            else if (_refInstance != null)
+            {
+                _refInstance.Dispose();
+                _refInstance = null;
+            }
+        }
+
         public override bool Init()
         {
             if (_ready)
@@ -201,6 +220,119 @@ namespace NScumm.Core.Audio.SoftSynth
             return res;
         }
 
+        protected override void NextTickEx(int[] buffer, int offset, int bufferSize)
+        {
+            if (!_ready)
+                return;
+
+            if (_updateOutputVol)
+                UpdateOutputVolumeInternal();
+
+            for (var i = 0; i < bufferSize; i++)
+            {
+                _timer += _tickLength;
+                while (_timer > 0x514767)
+                {
+                    _timer -= 0x514767;
+
+                    for (int ii = 0; ii < 8; ii++)
+                        _pcmChan[ii].UpdateOutput();
+                }
+
+                int finOutL = 0;
+                int finOutR = 0;
+
+                for (int ii = 0; ii < 8; ii++)
+                {
+                    if (_pcmChan[ii]._activeOutput)
+                    {
+                        int oL = _pcmChan[ii].CurrentSampleLeft();
+                        int oR = _pcmChan[ii].CurrentSampleRight();
+                        if (((1 << ii) & (~_pcmSfxChanMask)) != 0)
+                        {
+                            oL = (oR * _musicVolume) / Mixer.MaxMixerVolume;
+                            oR = (oR * _musicVolume) / Mixer.MaxMixerVolume;
+                        }
+                        if (((1 << ii) & _pcmSfxChanMask) != 0)
+                        {
+                            oL = (oL * _sfxVolume) / Mixer.MaxMixerVolume;
+                            oR = (oR * _sfxVolume) / Mixer.MaxMixerVolume;
+                        }
+                        finOutL += oL;
+                        finOutR += oR;
+
+                        if (!(_pcmChan[ii]._activeKey || _pcmChan[ii]._activeEffect))
+                            _pcmChan[ii]._activeOutput = false;
+                    }
+                }
+
+                buffer[offset + (i << 1)] += finOutL;
+                buffer[offset + (i << 1) + 1] += finOutR;
+            }
+        }
+
+        bool AssignPluginDriver(TownsAudioInterface owner, ITownsAudioInterfacePluginDriver driver, bool externalMutexHandling)
+        {
+            if (_refCount <= 1)
+                return true;
+
+            if (_drv != null)
+            {
+                if (driver != null && driver != _drv)
+                    return false;
+            }
+            else
+            {
+                lock (_mutex)
+                {
+                    _drv = driver;
+                    _drvOwner = owner;
+                    _externalMutex = externalMutexHandling;
+                }
+            }
+
+            return true;
+        }
+
+        void RemovePluginDriver(TownsAudioInterface owner)
+        {
+            if (_drvOwner == owner)
+            {
+                lock (_mutex)
+                {
+                    _drv = null;
+                }
+            }
+        }
+
+        void UpdateOutputVolume()
+        {
+            // Avoid calls to g_system->getAudioCDManager() functions from the main thread
+            // since this can cause mutex lockups.
+            _updateOutputVol = true;
+        }
+
+        void UpdateOutputVolumeInternal()
+        {
+            if (!_ready)
+                return;
+
+            // FM Towns seems to support volumes of 0 - 63 for each channel.
+            // We recalculate sane values for our 0 to 255 volume range and
+            // balance values for our -128 to 127 volume range
+
+            // CD-AUDIO
+            uint maxVol = (uint)Math.Max(_outputLevel[12] * (_outputMute[12] ^ 1), _outputLevel[13] * (_outputMute[13] ^ 1));
+
+            int volume = (int)(((float)(maxVol * 255) / 63.0f));
+            int balance = maxVol != 0 ? (int)((((int)_outputLevel[13] * (_outputMute[13] ^ 1) - _outputLevel[12] * (_outputMute[12] ^ 1)) * 127) / (float)maxVol) : 0;
+
+            ScummEngine.Instance.AudioCDManager.Volume = volume;
+            ScummEngine.Instance.AudioCDManager.Balance = balance;
+
+            _updateOutputVol = false;
+        }
+
         void SetVolumeChannelMasks(int channelMaskA, int channelMaskB)
         {
             lock (_mutex)
@@ -224,6 +356,13 @@ namespace NScumm.Core.Audio.SoftSynth
             int res = ProcessCommand(command, args);
             return res;
         }
+
+        void BufferedWriteReg(byte part, byte regAddress, byte value)
+        {
+            _fmSaveReg[part][regAddress] = value;
+            WriteReg(part, regAddress, value);
+        }
+
 
         int intf_reset(params object[] args)
         {
@@ -448,7 +587,7 @@ namespace NScumm.Core.Audio.SoftSynth
                 return 3;
 
             TownsAudio_WaveTable w = new TownsAudio_WaveTable();
-            w.ReadHeader(data);
+            w.ReadHeader(data, 0);
             if (w.size == 0)
                 return 6;
 
@@ -462,7 +601,7 @@ namespace NScumm.Core.Audio.SoftSynth
             }
 
             var s = _waveTables[_numWaveTables++];
-            s.ReadHeader(data);
+            s.ReadHeader(data, 0);
 
             _waveTablesTotalDataSize += (int)s.size;
             //Callback(32, _waveTablesTotalDataSize, s.size, data + 32);
@@ -513,6 +652,7 @@ namespace NScumm.Core.Audio.SoftSynth
             int note = (int)args[1];
             int velo = (int)args[2];
             var data = (byte[])args[3];
+            var dataOffset = (int)args[4];
 
             if (chan < 0x40 || chan > 0x47)
                 return 1;
@@ -529,7 +669,7 @@ namespace NScumm.Core.Audio.SoftSynth
                 return 2;
 
             var w = new TownsAudio_WaveTable();
-            w.ReadHeader(data);
+            w.ReadHeader(data, dataOffset);
 
             if (w.size < (w.loopStart + w.loopLen))
                 return 13;
@@ -539,7 +679,7 @@ namespace NScumm.Core.Audio.SoftSynth
 
             var p = _pcmChan[chan];
 
-            p.LoadData(data, 32, w.size);
+            p.LoadData(data, dataOffset + 32, w.size);
             p.KeyOn((byte)note, (byte)velo, w);
 
             return 0;
@@ -748,6 +888,7 @@ namespace NScumm.Core.Audio.SoftSynth
             return 4;
         }
 
+
         void PcmReset()
         {
             _numReservedChannels = 0;
@@ -904,6 +1045,7 @@ namespace NScumm.Core.Audio.SoftSynth
             return 0;
         }
 
+
         void FmReset()
         {
             Reset();
@@ -1035,12 +1177,6 @@ namespace NScumm.Core.Audio.SoftSynth
             BufferedWriteReg(part, reg, v);
 
             return 0;
-        }
-
-        void BufferedWriteReg(byte part, byte regAddress, byte value)
-        {
-            _fmSaveReg[part][regAddress] = value;
-            WriteReg(part, regAddress, value);
         }
 
         int FmKeyOn(int chan, int note, int velo)
@@ -1284,35 +1420,6 @@ namespace NScumm.Core.Audio.SoftSynth
             return 0;
         }
 
-        void UpdateOutputVolume()
-        {
-            // Avoid calls to g_system->getAudioCDManager() functions from the main thread
-            // since this can cause mutex lockups.
-            _updateOutputVol = true;
-        }
-
-        bool AssignPluginDriver(TownsAudioInterface owner, ITownsAudioInterfacePluginDriver driver, bool externalMutexHandling)
-        {
-            if (_refCount <= 1)
-                return true;
-
-            if (_drv != null)
-            {
-                if (driver != null && driver != _drv)
-                    return false;
-            }
-            else
-            {
-                lock (_mutex)
-                {
-                    _drv = driver;
-                    _drvOwner = owner;
-                    _externalMutex = externalMutexHandling;
-                }
-            }
-
-            return true;
-        }
 
         static int _refCount;
         static TownsAudioInterfaceInternal _refInstance;

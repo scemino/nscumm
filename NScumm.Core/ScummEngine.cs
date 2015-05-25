@@ -438,9 +438,11 @@ namespace NScumm.Core
             {
                 MidiDriver nativeMidiDriver = null;
                 MidiDriver adlibMidiDriver = null;
-                if (Sound.MusicType == MusicDriverTypes.AdLib)
+                if (Sound.MusicType == MusicDriverTypes.AdLib || Sound.MusicType == MusicDriverTypes.FMTowns)
                 {
-                    adlibMidiDriver = (MidiDriver)MidiDriver.CreateMidi(Mixer, MidiDriver.DetectDevice(Sound.MusicType, selectedDevice));
+                    adlibMidiDriver = (MidiDriver)MidiDriver.CreateMidi(Mixer, 
+                        MidiDriver.DetectDevice(Sound.MusicType == MusicDriverTypes.FMTowns
+                            ? MusicDriverTypes.FMTowns : MusicDriverTypes.AdLib, selectedDevice));
                     adlibMidiDriver.Property(AdlibMidiDriver.PropertyOldAdLib, (Game.Version < 5) ? 1 : 0);
                     adlibMidiDriver.Property(AdlibMidiDriver.PropertyScummOPL3, (Game.GameId == GameId.SamNMax) ? 1 : 0);
                 }

@@ -868,18 +868,18 @@ namespace NScumm.Core
                     Debug.WriteLine("o5_resourceRoutines {0} not yet handled (script {1})", op, Slots[CurrentScript].Number);
                     break;
                 case 35:
-                    if (_townsPlayer != null)
-                        _townsPlayer.SetVolumeCD(GetVarOrDirectByte(OpCodeParameter.Param2), resId);
+                    if (TownsPlayer != null)
+                        TownsPlayer.SetVolumeCD(GetVarOrDirectByte(OpCodeParameter.Param2), resId);
                     break;
                 case 36:
                     var foo = GetVarOrDirectByte(OpCodeParameter.Param2);
                     var bar = ReadByte();
-                    if (_townsPlayer != null)
-                        _townsPlayer.SetSoundVolume(resId, foo, bar);
+                    if (TownsPlayer != null)
+                        TownsPlayer.SetSoundVolume(resId, foo, bar);
                     break;
                 case 37:
-                    if (_townsPlayer != null)
-                        _townsPlayer.SetSoundNote(resId, GetVarOrDirectByte(OpCodeParameter.Param2));
+                    if (TownsPlayer != null)
+                        TownsPlayer.SetSoundNote(resId, GetVarOrDirectByte(OpCodeParameter.Param2));
                     break;
 
                 default:

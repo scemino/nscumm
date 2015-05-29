@@ -255,7 +255,6 @@ namespace NScumm.Core.Audio.IMuse
                 var br = new BinaryReader(ms);
                 ms.Seek(4, SeekOrigin.Current);
                 size = (int)br.ReadUInt32BigEndian();
-                ms.Seek(4, SeekOrigin.Current);
 
                 // Okay, we're looking for one of those things: either
                 // an 'MThd' tag (for SMF), or a 'FORM' tag (for XMIDI).

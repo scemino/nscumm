@@ -313,7 +313,7 @@ namespace NScumm.Core.Audio.SoftSynth
         void SetupLoop(uint loopStart, uint len)
         {
             _loopLen = len << 11;
-            _loopEnd = (int)((_loopLen == 0) ? _dataEnd : (int)(loopStart + _loopLen) >> 11);
+            _loopEnd = ((_loopLen == 0) ? _dataEnd : (int)(loopStart + _loopLen) >> 11);
             _pos = loopStart;
         }
 
@@ -403,12 +403,12 @@ namespace NScumm.Core.Audio.SoftSynth
 
         uint _pos;
 
-        byte _envTotalLevel;
-        byte _envAttackRate;
-        byte _envDecayRate;
-        byte _envSustainLevel;
-        byte _envSustainRate;
-        byte _envReleaseRate;
+        int _envTotalLevel;
+        int _envAttackRate;
+        int _envDecayRate;
+        int _envSustainLevel;
+        int _envSustainRate;
+        int _envReleaseRate;
         short _envStep;
         short _envCurrentLevel;
 

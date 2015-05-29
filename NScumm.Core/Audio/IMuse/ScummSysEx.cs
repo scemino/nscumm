@@ -22,6 +22,7 @@ using System.IO;
 using NScumm.Core.Audio.IMuse;
 using NScumm.Core.Audio.Midi;
 using System;
+using System.Diagnostics;
 
 namespace NScumm.Core.Audio.IMuse
 {
@@ -59,7 +60,7 @@ namespace NScumm.Core.Audio.IMuse
                         {
                             part.SetOnOff((buf[0] & 0x01) != 0);
                             part.EffectLevel((byte)(((buf[0] & 0x02) != 0) ? 127 : 0));
-                            part.Priority = buf[1];
+                            part.Priority = (sbyte)buf[1];
                             part.Volume = buf[2];
                             part.Pan = buf[3];
                             part.Percussion = player.SupportsPercussion && ((buf[4] & 0x80) > 0);
@@ -247,7 +248,7 @@ namespace NScumm.Core.Audio.IMuse
                     break;
 
                 default:
-//                    Console.Error.WriteLine("Unknown SysEx command {0}", (int)code);
+                    Debug.WriteLine("Unknown SysEx command {0}", (int)code);
                     break;
             }
         }

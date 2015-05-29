@@ -48,7 +48,7 @@ namespace NScumm.Core.Audio.SoftSynth
             baseNote = (ushort)buffer.ToUInt32(offset + 28);
         }
 
-        public void ReadData(byte[] buffer, int offset = 0)
+        public void ReadData(byte[] buffer, int offset)
         {
             if (size == 0)
                 return;

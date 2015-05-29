@@ -88,7 +88,7 @@ namespace NScumm.Core.Audio.SoftSynth
                 { 58,intf_fmReset },
                 // 60
                 // 64
-                { 64,intf_setOutputVolume },
+                { 67,intf_setOutputVolume },
                 // 68
                 { 68,intf_resetOutputVolume },
                 { 69,intf_getOutputVolume },
@@ -208,7 +208,7 @@ namespace NScumm.Core.Audio.SoftSynth
             if (!_ready)
                 return 1;
 
-            if (command < 0 || command > 81)
+            if (command < 0 || command > 81 || !_intfOpcodes.ContainsKey(command))
                 return 4;
 
             int res;
@@ -522,11 +522,12 @@ namespace NScumm.Core.Audio.SoftSynth
             uint dest = (uint)args[0];
             int size = (int)args[1];
             var src = (byte[])args[2];
+            var srcOffset = (int)args[3];
 
-            return intf_loadSamples(dest, size, src);
+            return intf_loadSamples(dest, size, src, srcOffset);
         }
 
-        int intf_loadSamples(uint dest, int size, byte[] src, int offset = 0)
+        int intf_loadSamples(uint dest, int size, byte[] src, int offset)
         {
             if (dest >= 65536 || size == 0 || size > 65536)
                 return 3;
@@ -538,10 +539,10 @@ namespace NScumm.Core.Audio.SoftSynth
                 t -= (uint)_waveTables[dwIndex].size;
 
             TownsAudio_WaveTable s = _waveTables[dwIndex];
-            _waveTablesTotalDataSize -= (int)s.size;
+            _waveTablesTotalDataSize -= s.size;
             s.size = size;
             s.ReadData(src, offset);
-            _waveTablesTotalDataSize += (int)s.size;
+            _waveTablesTotalDataSize += s.size;
 
             return 0;
         }
@@ -603,9 +604,8 @@ namespace NScumm.Core.Audio.SoftSynth
             var s = _waveTables[_numWaveTables++];
             s.ReadHeader(data, 0);
 
-            _waveTablesTotalDataSize += (int)s.size;
-            //Callback(32, _waveTablesTotalDataSize, s.size, data + 32);
-            intf_loadSamples((uint)_waveTablesTotalDataSize, s.size, data, 32);
+            _waveTablesTotalDataSize += s.size;
+            Callback(32, _waveTablesTotalDataSize, s.size, data, 32);
 
             return 0;
         }
@@ -630,7 +630,7 @@ namespace NScumm.Core.Audio.SoftSynth
                         if (_waveTables[i].id == id)
                         {
                             _numWaveTables--;
-                            _waveTablesTotalDataSize -= (int)_waveTables[i].size;
+                            _waveTablesTotalDataSize -= _waveTables[i].size;
                             _waveTables[i].Clear();
                             for (; i < _numWaveTables; i++)
                             {
@@ -931,7 +931,7 @@ namespace NScumm.Core.Audio.SoftSynth
             if (instrId > 31)
                 return 3;
             Debug.Assert(data != null);
-            Array.Copy(data, offset, _pcmInstruments, instrId, 128);
+            Array.Copy(data, offset, _pcmInstruments[instrId], 0, 128);
             return 0;
         }
 
@@ -1113,11 +1113,11 @@ namespace NScumm.Core.Audio.SoftSynth
                 chan -= 3;
 
             for (var reg = 0x80 + chan; reg < 0x90; reg += 4)
-                WriteReg(part, (byte)reg, (byte)(_fmSaveReg[part][reg] | 0x0f));
+                WriteReg(part, (byte)reg, (_fmSaveReg[part][reg] | 0x0f));
 
             if (part != 0)
                 chan += 4;
-            WriteReg(0, 0x28, (byte)chan);
+            WriteReg(0, 0x28, chan);
             return 0;
         }
 
@@ -1173,7 +1173,7 @@ namespace NScumm.Core.Audio.SoftSynth
             v = src[srcOffset++];
             reg += 4;
             if (v < 64)
-                v |= (byte)((_fmSaveReg[part][reg] & 0xc0));
+                v |= ((byte)(_fmSaveReg[part][reg] & 0xc0));
             BufferedWriteReg(part, reg, v);
 
             return 0;
@@ -1262,7 +1262,7 @@ namespace NScumm.Core.Audio.SoftSynth
                 v |= 4;
 
             for (var reg = 0x80 + chan; reg < 0x90; reg += 4)
-                WriteReg(part, (byte)reg, (byte)(_fmSaveReg[part][reg] | 0x0f));
+                WriteReg(part, (byte)reg, (_fmSaveReg[part][reg] | 0x0f));
 
             WriteReg(0, 0x28, v);
 
@@ -1310,7 +1310,7 @@ namespace NScumm.Core.Audio.SoftSynth
             if (chan > 5)
                 return 1;
 
-            byte bl = _fmChanNote[chan];
+            int bl = _fmChanNote[chan];
             int frq = 0;
 
             if (pitch < 0)
@@ -1322,7 +1322,7 @@ namespace NScumm.Core.Audio.SoftSynth
                     pitch *= -1;
                     pitch /= 13;
                     frq = _frequency[(bl - 1) % 12] - pitch;
-                    bl = (byte)((bl - 1) / 12);
+                    bl = ((bl - 1) / 12);
                     _fmChanPitch[chan] = (short)-pitch;
 
                     if (frq < 616)
@@ -1357,7 +1357,7 @@ namespace NScumm.Core.Audio.SoftSynth
                     if (bl != 0)
                     {
                         frq = _frequency[(bl - 1) % 12] + pitch;
-                        bl = (byte)((bl - 1) / 12);
+                        bl = ((bl - 1) / 12);
                     }
                     else
                     {
@@ -1399,7 +1399,7 @@ namespace NScumm.Core.Audio.SoftSynth
                 if (bl != 0)
                 {
                     frq = _frequency[(bl - 1) % 12];
-                    bl = (byte)((bl - 1) / 12);
+                    bl = ((bl - 1) / 12);
                 }
                 else
                 {

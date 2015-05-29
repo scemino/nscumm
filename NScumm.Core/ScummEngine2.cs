@@ -1233,8 +1233,7 @@ namespace NScumm.Core
                 switch (b)
                 {
                     case 0:
-                        // TODO: FMTOWNS
-//                        result = Sound.PollCD() == 0;
+                        result = Sound.PollCD() == 0 ? 1 : 0;
                         break;
                     case 0xFC:
                         // TODO: Unpause (resume) audio track. We'll have to extend Sound and OSystem for this.
@@ -1247,8 +1246,7 @@ namespace NScumm.Core
 //                        result = Sound.GetCurrentCDSound();
                         break;
                     case 0xFF:
-                        // TODO: FMTOWNS
-//                        result = _townsPlayer.GetCurrentCdaVolume();
+                        result = TownsPlayer.GetCurrentCdaVolume();
                         break;
                     default:
                         // TODO: return track length in seconds. We'll have to extend Sound and OSystem for this.

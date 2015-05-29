@@ -295,7 +295,17 @@ namespace NScumm.Core.Audio.SoftSynth
             public byte vol;
         }
 
-        Channel[] _channels = new Channel[3];
+        Channel[] _channels = CreateChannels();
+
+        static Channel[] CreateChannels()
+        {
+            var channels = new Channel[3];
+            for (int i = 0; i < channels.Length; i++)
+            {
+                channels[i] = new Channel();
+            }
+            return channels;
+        }
 
         byte _noiseGenerator;
         byte _chanEnable;

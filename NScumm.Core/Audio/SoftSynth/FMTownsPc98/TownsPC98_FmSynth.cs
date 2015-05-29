@@ -88,7 +88,6 @@ namespace NScumm.Core.Audio.SoftSynth
         {
             Array.Clear(buffer, 0, buffer.Length);
             var tmp = new int[buffer.Length];
-            var tmpStart = tmp;
             int samplesLeft = buffer.Length >> 1;
 
             bool locked = false;
@@ -116,7 +115,7 @@ namespace NScumm.Core.Audio.SoftSynth
                                 locked = false;
                             }
 
-                            this._timers[i].cb();
+                            _timers[i].cb();
 
                             if (!locked && _externalMutex)
                             {
@@ -176,7 +175,7 @@ namespace NScumm.Core.Audio.SoftSynth
             return buffer.Length;
         }
 
-        public void WriteReg(byte part, byte regAddress, byte value)
+        public void WriteReg(byte part, byte regAddress, int value)
         {
             if (_regProtectionFlag || !_ready)
                 return;
@@ -216,7 +215,7 @@ namespace NScumm.Core.Audio.SoftSynth
                         #if !DISABLE_PC98_RHYTHM_CHANNEL
                         // pcm rhythm channel
                         if (_prc != null)
-                            _prc.WriteReg(l, value);
+                            _prc.WriteReg(l, (byte)value);
                         #endif
                         break;
                     case 0x20:
@@ -273,7 +272,7 @@ namespace NScumm.Core.Audio.SoftSynth
                                 float spc = (float)(0x100 - _timers[1].value) * 16.0f / _baserate;
                                 if (spc < 1)
                                 {
-                                    Debug.WriteLine("TownsPC98_FmSynth: Invalid Timer B setting: %d", _timers[1].value);
+                                    Debug.WriteLine("TownsPC98_FmSynth: Invalid Timer B setting: {0}", _timers[1].value);
                                     spc = 1;
                                 }
 
@@ -361,7 +360,7 @@ namespace NScumm.Core.Audio.SoftSynth
                         {
                             c.frqTemp = (ushort)((c.frqTemp & 0xff00) | value);
                             c.updateEnvelopeParameters = true;
-                            c.fmIndex = (byte)((c.frqTemp >> 4 & 0x7f));
+                            c.fmIndex = (byte)(c.frqTemp >> 4 & 0x7f);
                             for (int i = 0; i < 4; i++)
                                 co[i].Frequency(c.frqTemp);
                         }
@@ -382,7 +381,7 @@ namespace NScumm.Core.Audio.SoftSynth
                         break;
 
                     case 0xb0:
-                        l = (byte)(l & ~4);
+                        l = (byte)(l & ~3);
                         if (l == 0)
                         {
                             // feedback, _algorithm
@@ -530,88 +529,78 @@ namespace NScumm.Core.Audio.SoftSynth
                     int phbuf1, phbuf2, output;
                     phbuf1 = phbuf2 = output = 0;
 
-                    Action<int> leftSample = v => buffer[offset + ii * 2] += v;
-                    Action<int> rightSample = v => buffer[offset + ii * 2 + 1] += v;
-                    Func<int> delr = () => _chanInternal[i].feedbuf[2];
-                    Action<int> delw = v => _chanInternal[i].feedbuf[2] = v;
-                    var feed = _chanInternal[i].feedbuf;
-
                     switch (_chanInternal[i].algorithm)
                     {
                         case 0:
                             {
-                                o[0].GenerateOutput(0, feed, ref phbuf1);
-                                o[2].GenerateOutput(delr(), null, ref phbuf2);
-                                delw(0);
-                                int tmp = delr();
-                                o[1].GenerateOutput(phbuf1, null, ref tmp);
-                                delw(tmp);
+                                o[0].GenerateOutput(0, _chanInternal[i].feedbuf, ref phbuf1);
+                                o[2].GenerateOutput(_chanInternal[i].feedbuf[2], null, ref phbuf2);
+                                _chanInternal[i].feedbuf[2] = 0;
+                                o[1].GenerateOutput(phbuf1, null, ref _chanInternal[i].feedbuf[2]);
                                 o[3].GenerateOutput(phbuf2, null, ref output);
                             }
                             break;
                         case 1:
                             {
-                                o[0].GenerateOutput(0, feed, ref phbuf1);
-                                o[2].GenerateOutput(delr(), null, ref phbuf2);
+                                o[0].GenerateOutput(0, _chanInternal[i].feedbuf, ref phbuf1);
+                                o[2].GenerateOutput(_chanInternal[i].feedbuf[2], null, ref phbuf2);
                                 o[1].GenerateOutput(0, null, ref phbuf1);
                                 o[3].GenerateOutput(phbuf2, null, ref output);
-                                delw(phbuf1);
+                                _chanInternal[i].feedbuf[2] = phbuf1;
                             }
                             break;
                         case 2:
                             {
-                                o[0].GenerateOutput(0, feed, ref phbuf2);
-                                o[2].GenerateOutput(delr(), null, ref phbuf2);
+                                o[0].GenerateOutput(0, _chanInternal[i].feedbuf, ref phbuf2);
+                                o[2].GenerateOutput(_chanInternal[i].feedbuf[2], null, ref phbuf2);
                                 o[1].GenerateOutput(0, null, ref phbuf1);
                                 o[3].GenerateOutput(phbuf2, null, ref output);
-                                delw(phbuf1);
+                                _chanInternal[i].feedbuf[2] = phbuf1;
                             }
                             break;
                         case 3:
                             {
-                                o[0].GenerateOutput(0, feed, ref phbuf2);
-                                int tmp = delr();
-                                o[2].GenerateOutput(0, null, ref tmp);
-                                delw(tmp);
+                                o[0].GenerateOutput(0, _chanInternal[i].feedbuf, ref phbuf2);
+                                o[2].GenerateOutput(0, null, ref _chanInternal[i].feedbuf[2]);
                                 o[1].GenerateOutput(phbuf2, null, ref phbuf1);
-                                o[3].GenerateOutput(delr(), null, ref output);
-                                delw(phbuf1);
+                                o[3].GenerateOutput(_chanInternal[i].feedbuf[2], null, ref output);
+                                _chanInternal[i].feedbuf[2] = phbuf1;
                             }
                             break;
                         case 4:
                             {
-                                o[0].GenerateOutput(0, feed, ref phbuf1);
+                                o[0].GenerateOutput(0, _chanInternal[i].feedbuf, ref phbuf1);
                                 o[2].GenerateOutput(0, null, ref phbuf2);
                                 o[1].GenerateOutput(phbuf1, null, ref output);
                                 o[3].GenerateOutput(phbuf2, null, ref output);
-                                delw(0);
+                                _chanInternal[i].feedbuf[2] = 0;
                             }
                             break;
                         case 5:
                             {
-                                o[0].GenerateOutput(0, feed, ref phbuf1);
-                                o[2].GenerateOutput(delr(), null, ref output);
+                                o[0].GenerateOutput(0, _chanInternal[i].feedbuf, ref phbuf1);
+                                o[2].GenerateOutput(_chanInternal[i].feedbuf[2], null, ref output);
                                 o[1].GenerateOutput(phbuf1, null, ref output);
                                 o[3].GenerateOutput(phbuf1, null, ref output);
-                                delw(phbuf1);
+                                _chanInternal[i].feedbuf[2] = phbuf1;
                             }
                             break;
                         case 6:
                             {
-                                o[0].GenerateOutput(0, feed, ref phbuf1);
+                                o[0].GenerateOutput(0, _chanInternal[i].feedbuf, ref phbuf1);
                                 o[2].GenerateOutput(0, null, ref output);
                                 o[1].GenerateOutput(phbuf1, null, ref output);
                                 o[3].GenerateOutput(0, null, ref output);
-                                delw(0);
+                                _chanInternal[i].feedbuf[2] = 0;
                             }
                             break;
                         case 7:
                             {
-                                o[0].GenerateOutput(0, feed, ref output);
+                                o[0].GenerateOutput(0, _chanInternal[i].feedbuf, ref output);
                                 o[2].GenerateOutput(0, null, ref output);
                                 o[1].GenerateOutput(0, null, ref output);
                                 o[3].GenerateOutput(0, null, ref output);
-                                delw(0);
+                                _chanInternal[i].feedbuf[2] = 0;
                             }
                             break;
                     }
@@ -625,10 +614,10 @@ namespace NScumm.Core.Audio.SoftSynth
                         finOut = (finOut * _volumeB) / Mixer.MaxMixerVolume;
 
                     if (_chanInternal[i].enableLeft)
-                        leftSample(finOut);
+                        buffer[offset + ii * 2] += finOut;
 
                     if (_chanInternal[i].enableRight)
-                        rightSample(finOut);
+                        buffer[offset + ii * 2 + 1] += finOut;
                 }
             }
         }
@@ -658,11 +647,10 @@ namespace NScumm.Core.Audio.SoftSynth
             }
 
             _oprRateshift = new byte[128];
-            Array.Clear(_oprRateshift, 0, 128);
             dst = 32;
             for (int i = 11; i != 0; i--)
             {
-                _oprRateshift.WriteUInt32BigEndian(dst + i, (uint)i);
+                _oprRateshift.Set(dst, (byte)i, 4);
                 dst += 4;
             }
 
@@ -671,7 +659,6 @@ namespace NScumm.Core.Audio.SoftSynth
                 _oprFrq[i] = (uint)(_baserate * (float)(i << 11));
 
             _oprAttackDecay = new byte[152];
-            Array.Clear(_oprAttackDecay, 0, 152);
             for (int i = 0; i < 36; i++)
             {
                 _oprAttackDecay.WriteUInt32BigEndian(i << 2, _adtStat[i]);
@@ -680,8 +667,8 @@ namespace NScumm.Core.Audio.SoftSynth
             _oprSinTbl = new uint[1024];
             for (int i = 0; i < 1024; i++)
             {
-                double val = Math.Sin((double)(((i << 1) + 1) * Math.PI / 1024.0));
-                double d_dcb = Math.Log(1.0 / (double)Math.Abs(val)) / Math.Log(2.0) * 256.0;
+                double val = Math.Sin((((i << 1) + 1) * Math.PI / 1024.0));
+                double d_dcb = Math.Log(1.0 / Math.Abs(val)) / Math.Log(2.0) * 256.0;
                 int i_dcb = (int)(2.0 * d_dcb);
                 i_dcb = ((i_dcb & 1) != 0) ? (i_dcb >> 1) + 1 : (i_dcb >> 1);
                 _oprSinTbl[i] = (uint)((i_dcb << 1) + (val >= 0.0 ? 0 : 1));
@@ -705,11 +692,15 @@ namespace NScumm.Core.Audio.SoftSynth
             dtt.Set(36, 1, 8);
             Array.Copy(_detSrc, 0, dtt, 44, 84);
 
-            _oprDetune = new int[256];
+            _oprDetune = new int[8][];
+            for (int i = 0; i < 8; i++)
+            {
+                _oprDetune[i] = new int[32];
+            }
             for (int i = 0; i < 128; i++)
             {
-                _oprDetune[i] = (int)((float)dtt[i] * _baserate * 64.0);
-                _oprDetune[i + 128] = -_oprDetune[i];
+                _oprDetune[i % 8][i / 8] = (int)((float)dtt[i] * _baserate * 64.0);
+                _oprDetune[(i + 128) % 8][(i + 128) / 8] = -_oprDetune[i % 8][i / 8];
             }
         }
 
@@ -754,7 +745,7 @@ namespace NScumm.Core.Audio.SoftSynth
         uint[] _oprFrq;
         uint[] _oprSinTbl;
         int[] _oprLevelOut;
-        int[] _oprDetune;
+        int[][] _oprDetune;
 
         bool _regProtectionFlag;
 

@@ -88,6 +88,8 @@ namespace NScumm.Core.Audio.SoftSynth
                 for (int ii = 0; ii < 32; ii++)
                     _operatorLevelTable[(i << 5) + ii] = (byte)(((i * (ii + 1)) >> 5) & 0xff);
             }
+            for (int i = 0; i < 64; i++)
+                _operatorLevelTable[i << 5] = 0;
         }
 
         public override MidiDriverError Open()
@@ -154,7 +156,7 @@ namespace NScumm.Core.Audio.SoftSynth
             if (!_isOpen)
                 return;
 
-            byte param2 = (byte)((b >> 16) & 0xFF);
+            int param2 = ((b >> 16) & 0xFF);
             byte param1 = (byte)((b >> 8) & 0xFF);
             byte cmd = (byte)(b & 0xF0);
 
@@ -167,12 +169,12 @@ namespace NScumm.Core.Audio.SoftSynth
                     break;
                 case 0x90:
                     if (param2 != 0)
-                        c.NoteOn(param1, param2);
+                        c.NoteOn(param1, (byte)param2);
                     else
                         c.NoteOff(param1);
                     break;
                 case 0xB0:
-                    c.ControlChange(param1, param2);
+                    c.ControlChange(param1, (byte)param2);
                     break;
                 case 0xC0:
                     c.ProgramChange(param1);

@@ -147,7 +147,7 @@ namespace NScumm.Core.Audio.IMuse
                     case InstrumentType.AdLib:
                         _instrument = new InstrumentAdLib(s.Reader.BaseStream);
                         break;
-                // TODO: vs: Roland, PcSpk, MacSfx
+                // TODO: vs: Roland, MacSfx
 //                    case InstrumentType.Roland:
 //                        _instrument = new InstrumentRoland(s);
 //                        break;

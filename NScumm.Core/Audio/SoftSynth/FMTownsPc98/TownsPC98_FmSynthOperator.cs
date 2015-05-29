@@ -35,7 +35,7 @@ namespace NScumm.Core
     {
         public TownsPC98_FmSynthOperator(uint timerbase, uint rtt,
                                          byte[] rateTable, byte[] shiftTable, byte[] attackDecayTable,
-                                         uint[] frqTable, uint[] sineTable, int[] tlevelOut, int[] detuneTable)
+                                         uint[] frqTable, uint[] sineTable, int[] tlevelOut, int[][] detuneTable)
         {
             _rtt = rtt;
             _rateTbl = rateTable;
@@ -145,8 +145,8 @@ namespace NScumm.Core
 
             int k = _keyScale2;
             int r = _specifiedAttackRate != 0 ? (int)((_specifiedAttackRate << 1) + 0x20) : 0;
-            fs_a.rate = ((r + k) < 94) ? (byte)_rateTbl[r + k] : (byte)136;
-            fs_a.shift = ((r + k) < 94) ? (byte)_rshiftTbl[r + k] : (byte)0;
+            fs_a.rate = ((r + k) < 94) ? _rateTbl[r + k] : (byte)136;
+            fs_a.shift = ((r + k) < 94) ? _rshiftTbl[r + k] : (byte)0;
             return false;
         }
 
@@ -167,7 +167,7 @@ namespace NScumm.Core
 
         public void Detune(int value)
         {
-            _detn = i => _detnTbl[i + (value << 5)];
+            _detn = _detnTbl[value << 5];
         }
 
         public void Multiple(uint value)
@@ -184,8 +184,8 @@ namespace NScumm.Core
         {
             int k = _keyScale2;
             int r = (_specifiedAttackRate != 0) ? (int)((_specifiedAttackRate << 1) + 0x20) : 0;
-            fs_a.rate = ((r + k) < 94) ? (byte)_rateTbl[r + k] : (byte)136;
-            fs_a.shift = ((r + k) < 94) ? (byte)_rshiftTbl[r + k] : (byte)0;
+            fs_a.rate = ((r + k) < 94) ? _rateTbl[r + k] : (byte)136;
+            fs_a.shift = ((r + k) < 94) ? _rshiftTbl[r + k] : (byte)0;
 
             r = (_specifiedDecayRate != 0) ? (int)((_specifiedDecayRate << 1) + 0x20) : 0;
             fs_d.rate = _rateTbl[r + k];
@@ -202,7 +202,7 @@ namespace NScumm.Core
 
         public void UpdatePhaseIncrement()
         {
-            _phaseIncrement = (uint)(((_frequency + _detn(_kcode)) * _multiple) >> 1);
+            _phaseIncrement = (uint)(((_frequency + _detn[_kcode]) * _multiple) >> 1);
             byte keyscale = (byte)(_kcode >> _keyScale1);
             if (_keyScale2 != keyscale)
             {
@@ -340,7 +340,7 @@ namespace NScumm.Core
         byte _kcode;
         uint _phase;
         uint _phaseIncrement;
-        Func<int,int> _detn;
+        int[] _detn;
 
         readonly byte[] _rateTbl;
         readonly byte[] _rshiftTbl;
@@ -348,7 +348,7 @@ namespace NScumm.Core
         readonly uint[] _fTbl;
         readonly uint[] _sinTbl;
         readonly int[] _tLvlTbl;
-        readonly int[] _detnTbl;
+        readonly int[][] _detnTbl;
 
         readonly uint _tickLength;
         uint _timer;

@@ -142,7 +142,7 @@ namespace NScumm.Core
 
         public IMusicEngine MusicEngine { get; protected set; }
 
-        internal Player_Towns _townsPlayer;
+        internal Player_Towns TownsPlayer { get; private set; }
 
         public static ScummEngine Instance { get; private set; }
 
@@ -426,8 +426,8 @@ namespace NScumm.Core
             }
             else if (Game.Platform == Platform.FMTowns && (Game.Version == 3 || Game.GameId == GameId.Monkey1))
             {
-                MusicEngine = _townsPlayer = new Player_Towns_v1(this, Mixer);
-                if (!_townsPlayer.Init())
+                MusicEngine = TownsPlayer = new Player_Towns_v1(this, Mixer);
+                if (!TownsPlayer.Init())
                     Debug.WriteLine("Failed to initialize FM-Towns audio driver");
             }
             else if (Game.GameId == GameId.Loom || Game.GameId == GameId.Indy3)
@@ -455,8 +455,8 @@ namespace NScumm.Core
 
                 if (Game.Platform == Platform.FMTowns)
                 {
-                    MusicEngine = _townsPlayer = new Player_Towns_v2(this, Mixer, IMuse, true);
-                    if (!_townsPlayer.Init())
+                    MusicEngine = TownsPlayer = new Player_Towns_v2(this, Mixer, IMuse, true);
+                    if (!TownsPlayer.Init())
                         throw new InvalidOperationException("ScummEngine::setupMusic(): Failed to initialize FM-Towns audio driver");
                 }
                 else
@@ -531,15 +531,15 @@ namespace NScumm.Core
             _opCode = opCode;
             _slots[_currentScript].IsExecuted = true;
 
-            if (Game.Version < 6)
-            {
-                Debug.WriteLine("Room = {1}, Script = {0}, Offset = {4}, Name = {2} [{3:X2}]", 
-                    _slots[_currentScript].Number, 
-                    _roomResource, 
-                    _opCodes.ContainsKey(_opCode) ? _opCodes[opCode].Method.Name : "Unknown", 
-                    _opCode,
-                    _currentPos - 1);
-            }
+//            if (Game.Version < 6)
+//            {
+//                Debug.WriteLine("Room = {1}, Script = {0}, Offset = {4}, Name = {2} [{3:X2}]", 
+//                    _slots[_currentScript].Number, 
+//                    _roomResource, 
+//                    _opCodes.ContainsKey(_opCode) ? _opCodes[opCode].Method.Name : "Unknown", 
+//                    _opCode,
+//                    _currentPos - 1);
+//            }
             if (_opCodes.ContainsKey(opCode))
             {
                 _opCodes[opCode]();

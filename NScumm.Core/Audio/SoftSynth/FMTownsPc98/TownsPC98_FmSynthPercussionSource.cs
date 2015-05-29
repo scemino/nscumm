@@ -100,8 +100,7 @@ namespace NScumm.Core.Audio
             for (int i = 0; i < 6; i++)
             {
                 var s = _rhChan[i];
-                s.startOffset = s.dataOffset;
-                s.posOffset = s.dataOffset;
+                s.posOffset = s.startOffset = s.dataOffset;
                 s.endOffset = (int)s.size + s.dataOffset;
                 s.active = false;
                 s.level = 0;

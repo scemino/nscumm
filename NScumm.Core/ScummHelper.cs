@@ -498,6 +498,12 @@ namespace NScumm.Core
             return SwapBytes(ToUInt16(value, startIndex));
         }
 
+        public static void WriteUInt16(this byte[] array, int startIndex, ushort value)
+        {
+            var data = BitConverter.GetBytes(value);
+            Array.Copy(data, 0, array, startIndex, 2);
+        }
+
         public static void WriteUInt16BigEndian(this byte[] array, int startIndex, ushort value)
         {
             var data = BitConverter.GetBytes(SwapBytes(value));

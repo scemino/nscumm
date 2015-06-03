@@ -22,6 +22,7 @@
 using System;
 using System.Linq;
 using NScumm.Core.Graphics;
+using NScumm.Core.IO;
 
 namespace NScumm.Core
 {
@@ -188,9 +189,13 @@ namespace NScumm.Core
         {
             var vs = Verbs[verb];
 
+            var col =
+                ((Game.Platform == Platform.FMTowns) &&
+                    (Game.GameId == GameId.Monkey2 || Game.GameId == GameId.Indy4) &&
+                    (vs.BkColor == TownsOverrideShadowColor)) ? 0 : vs.BkColor;
             if (vs.OldRect.Left != -1)
             {
-                RestoreBackground(vs.OldRect, vs.BkColor);
+                RestoreBackground(vs.OldRect, (byte)col);
                 vs.OldRect.Left = -1;
             }
         }

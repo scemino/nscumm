@@ -204,7 +204,59 @@ namespace NScumm.Core
                         {
                             if (Game.Platform == Platform.FMTowns)
                             {
-                                return;
+                                switch (a)
+                                {
+                                    case 8:
+                                        TownsDrawStripToScreen(MainVirtScreen, 0, MainVirtScreen.TopLine, 0, 0, MainVirtScreen.Width, MainVirtScreen.TopLine + MainVirtScreen.Height);
+                                        _townsScreen.Update();
+                                        return;
+                                    case 9:
+                                        _townsActiveLayerFlags = 2;
+                                        _townsScreen.ToggleLayers(_townsActiveLayerFlags);
+                                        return;
+                                    case 10:
+                                        _townsActiveLayerFlags = 3;
+                                        _townsScreen.ToggleLayers(_townsActiveLayerFlags);
+                                        return;
+                                    case 11:
+                                        _townsScreen.ClearLayer(1);
+                                        return;
+                                    case 12:
+                                        _townsActiveLayerFlags = 0;
+                                        _townsScreen.ToggleLayers(_townsActiveLayerFlags);
+                                        return;
+                                    case 13:
+                                        _townsActiveLayerFlags = 1;
+                                        _townsScreen.ToggleLayers(_townsActiveLayerFlags);
+                                        return;
+                                    case 16: // enable clearing of layer 2 buffer in drawBitmap()
+                                        TownsPaletteFlags |= 2;
+                                        return;
+                                    case 17: // disable clearing of layer 2 buffer in drawBitmap()
+                                        TownsPaletteFlags &= ~2;
+                                        return;
+                                    case 18: // clear kMainVirtScreen layer 2 buffer
+                                        Gdi.Fill(TextSurface,
+                                            new Rect(0, MainVirtScreen.TopLine * TextSurfaceMultiplier, 
+                                                TextSurface.Pitch, (MainVirtScreen.TopLine + MainVirtScreen.Height) * TextSurfaceMultiplier), 0);
+                                        TownsPaletteFlags |= 1;
+                                        return;
+                                    case 19: // enable palette operations (palManipulate(), cyclePalette() etc.)
+                                        TownsPaletteFlags |= 1;
+                                        return;
+                                    case 20: // disable palette operations
+                                        TownsPaletteFlags &= ~1;
+                                        return;
+                                    case 21: // disable clearing of layer 0 in initScreens()
+                                        _townsClearLayerFlag = 1;
+                                        return;
+                                    case 22: // enable clearing of layer 0 in initScreens()
+                                        _townsClearLayerFlag = 0;
+                                        return;
+                                    case 30:
+                                        TownsOverrideShadowColor = 3;
+                                        return;
+                                }
                             }
                             _switchRoomEffect = (byte)(a & 0xFF);
                             _switchRoomEffect2 = (byte)(a >> 8);
@@ -310,6 +362,18 @@ namespace NScumm.Core
             if ((_opCode & 0x1F) == 3)
             {
                 var a = GetVarOrDirectWord(OpCodeParameter.Param1);
+
+                if (Game.Platform == Platform.FMTowns && Game.Version == 3)
+                {
+                    if (a == 4)
+                    {
+                        Gdi.Fill(TextSurface, new Rect(0, 0, TextSurface.Width * TextSurfaceMultiplier, TextSurface.Height * TextSurfaceMultiplier), 0);
+                        if (_townsScreen != null)
+                            _townsScreen.ClearLayer(1);
+                        return;
+                    }
+                }
+
                 if (a != 0)
                 {
                     _switchRoomEffect = (byte)(a & 0xFF);

@@ -161,7 +161,7 @@ namespace NScumm.Core.Graphics
                 {
                     if (chr == '@')
                         continue;
-                    if ((chr == 255) || (chr == 254))
+                    if ((chr == 255) || (Vm.Game.Version <= 6 && chr == 254))
                     {
                         chr = str[pos++];
                         if (chr == 3) // 'Wait'

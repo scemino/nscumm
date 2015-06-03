@@ -18,16 +18,19 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+using System;
 
 namespace NScumm.Core.Graphics
 {
     public abstract class CharsetRendererCommon: CharsetRenderer
     {
         protected byte[] _fontPtr;
+        protected int _fontPos;
         protected int _fontHeight;
         protected int _bytesPerPixel;
         protected byte _shadowColor;
         protected bool _shadowMode;
+        protected bool _enableShadow;
 
         #region Properties
 
@@ -38,6 +41,36 @@ namespace NScumm.Core.Graphics
         protected CharsetRendererCommon(ScummEngine vm)
             : base(vm)
         {
+        }
+
+        public override void SetCurID(int id)
+        {
+            if (id == -1)
+                return;
+
+            CurId = id;
+
+            _fontPtr = Vm.ResourceManager.GetCharsetData((byte)id);
+            _fontPos = 0;
+            if (_fontPtr == null)
+                throw new InvalidOperationException(string.Format("CharsetRendererCommon::setCurID: charset {0} not found", id));
+
+            if (Vm.Game.Version == 4)
+                _fontPos += 17;
+            else
+                _fontPos += 29;
+
+            _bytesPerPixel = _fontPtr[_fontPos];
+            _fontHeight = _fontPtr[_fontPos + 1];
+            NumChars = _fontPtr.ToUInt16(_fontPos + 2);
+        }
+
+        public override int GetFontHeight()
+        {
+//            if (_vm->_useCJKMode)
+//                return MAX(_vm->_2byteHeight + 1, _fontHeight);
+//            else
+            return _fontHeight;
         }
     }
 }

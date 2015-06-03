@@ -41,6 +41,22 @@ namespace NScumm.Core.Graphics
             }
         }
 
+        public bool IsValid
+        {
+            get
+            {
+                return (Left <= Right && Top <= Bottom);
+            }
+        }
+
+        public Rect(int w, int h)
+        {
+            Top = 0;
+            Left = 0;
+            Bottom = h;
+            Right = w;
+        }
+
         public Rect(int x1, int y1, int x2, int y2)
         {
             Top = y1;

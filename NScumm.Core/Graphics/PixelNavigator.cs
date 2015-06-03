@@ -106,6 +106,27 @@ namespace NScumm.Core.Graphics
             _pixels[_offset] = data;
         }
 
+        public void Set(byte data, int length)
+        {
+            _pixels.Set(_offset, data, length);
+        }
+
+        public void Set(ushort data, int length)
+        {
+            for (int i = 0; i < length; i++)
+            {
+                _pixels.WriteUInt16(_offset + i * 2, data);
+            }
+        }
+
+        public void Set(uint data, int length)
+        {
+            for (int i = 0; i < length; i++)
+            {
+                _pixels.WriteUInt32(_offset + i * 4, data);
+            }
+        }
+
         public void Write(int offset, byte data)
         {
             _pixels[_offset + offset] = data;
@@ -113,8 +134,7 @@ namespace NScumm.Core.Graphics
 
         public void WriteUInt16(ushort data)
         {
-            _pixels[_offset] = (byte)(data >> 8);
-            _pixels[_offset + 1] = (byte)(data & 0x00FF);
+            _pixels.WriteUInt16(_offset, data);
         }
 
         public byte Read()

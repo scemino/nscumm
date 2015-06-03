@@ -55,4 +55,26 @@ namespace NScumm.Core.Graphics
             }    
         }
     }
+
+    public static class ColorHelper
+    {
+        public static ushort RGBToColor(byte r, byte g, byte b)
+        {
+            return
+                (ushort)(((0xFF >> 8) << 0) | ((r >> 3) << 10) | ((g >> 3) << 5) | ((b >> 3) << 0));
+        }
+
+        public static void ColorToRGB(ushort color, out byte r, out byte g, out byte b)
+        {
+            r = (byte)Expand5(color >> 10);
+            g = (byte)Expand5(color >> 5);
+            b = (byte)Expand5(color >> 0);
+        }
+
+        static int Expand5(int value)
+        {
+            value &= 31;
+            return (value << 3) | (value >> 2);
+        }
+    }
 }

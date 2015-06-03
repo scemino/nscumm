@@ -90,18 +90,7 @@ namespace NScumm.Core.Graphics
             Height = height;
             PixelFormat = format;
 
-            switch (PixelFormat)
-            {
-                case PixelFormat.Indexed8:
-                    BytesPerPixel = 1;
-                    break;
-                case PixelFormat.Rgb16:
-                    BytesPerPixel = 2;
-                    break;
-                case PixelFormat.Rgb24:
-                    BytesPerPixel = 3;
-                    break;
-            }
+            BytesPerPixel = GetBytesPerPixel(format);
 
             Pitch = width * BytesPerPixel;
             if (trick)
@@ -112,6 +101,26 @@ namespace NScumm.Core.Graphics
             {
                 _buffer = new byte[Pitch * height];
             }
+        }
+
+        public static int GetBytesPerPixel(PixelFormat pixelFormat)
+        {
+            int bytesPerPixel;
+            switch (pixelFormat)
+            {
+                case PixelFormat.Indexed8:
+                    bytesPerPixel = 1;
+                    break;
+                case PixelFormat.Rgb16:
+                    bytesPerPixel = 2;
+                    break;
+                case PixelFormat.Rgb24:
+                    bytesPerPixel = 3;
+                    break;
+                default:
+                    throw new ArgumentException(string.Format("Pixel format {0} is not supported", pixelFormat));
+            }
+            return bytesPerPixel;
         }
 
         #endregion

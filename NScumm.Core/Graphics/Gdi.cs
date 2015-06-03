@@ -161,14 +161,24 @@ namespace NScumm.Core.Graphics
 
         public void DrawBitmap(ImageData img, VirtScreen vs, Point p, int width, int height, int stripnr, int numstrip, int roomWidth, DrawBitmaps flags, bool isLightOn)
         {
+            var x = p.X;
+            var y = p.Y;
+            if ((_vm.TownsPaletteFlags & 2) != 0)
+            {
+                int cx = (x - _vm.ScreenStartStrip) << 3;
+                Gdi.Fill(_vm.TextSurface, 
+                    new Rect(cx * _vm.TextSurfaceMultiplier, y * _vm.TextSurfaceMultiplier, 
+                        (cx + width - 1) * _vm.TextSurfaceMultiplier, (y + height - 1) * _vm.TextSurfaceMultiplier), 0);
+            }
+
             _objectMode = flags.HasFlag(DrawBitmaps.ObjectMode);
             PrepareDrawBitmap(img, vs, p, width, height, stripnr, numstrip);
 
-            int sx = p.X - vs.XStart / 8;
+            int sx = x - vs.XStart / 8;
             if (sx < 0)
             {
                 numstrip -= -sx;
-                p.X += -sx;
+                x += -sx;
                 stripnr += -sx;
                 sx = 0;
             }
@@ -178,25 +188,25 @@ namespace NScumm.Core.Graphics
             // It was added as a kind of hack to fix some corner cases, but it compares
             // the room width to the virtual screen width; but the former should always
             // be bigger than the latter (except for MM NES, maybe)... strange
-            int limit = Math.Max(roomWidth, vs.Width) / 8 - p.X;
+            int limit = Math.Max(roomWidth, vs.Width) / 8 - x;
             if (limit > numstrip)
                 limit = numstrip;
             if (limit > NumStrips - sx)
                 limit = NumStrips - sx;
 
-            for (int k = 0; k < limit; ++k, ++stripnr, ++sx, ++p.X)
+            for (int k = 0; k < limit; ++k, ++stripnr, ++sx, ++x)
             {
-                if (p.Y < vs.TDirty[sx])
-                    vs.TDirty[sx] = p.Y;
+                if (y < vs.TDirty[sx])
+                    vs.TDirty[sx] = y;
 
-                if (p.Y + height > vs.BDirty[sx])
-                    vs.BDirty[sx] = p.Y + height;
+                if (y + height > vs.BDirty[sx])
+                    vs.BDirty[sx] = y + height;
 
                 // In the case of a double buffered virtual screen, we draw to
                 // the backbuffer, otherwise to the primary surface memory.
                 var surface = vs.HasTwoBuffers ? vs.Surfaces[1] : vs.Surfaces[0];
                 var navDst = new PixelNavigator(surface);
-                navDst.GoTo(p.X * 8, p.Y);
+                navDst.GoTo(x * 8, y);
 
                 bool transpStrip;
                 using (var smapReader = new BinaryReader(new MemoryStream(img.Data)))
@@ -211,14 +221,78 @@ namespace NScumm.Core.Graphics
                 if (vs.HasTwoBuffers)
                 {
                     var navFrontBuf = new PixelNavigator(vs.Surfaces[0]);
-                    navFrontBuf.GoTo(p.X * 8, p.Y);
+                    navFrontBuf.GoTo(x * 8, y);
                     if (isLightOn)
                         Copy8Col(navFrontBuf, navDst, height);
                     else
                         Clear8Col(navFrontBuf, height);
                 }
 
-                DecodeMask(p.X, p.Y, width, height, stripnr, img.ZPlanes, transpStrip, flags);
+                DecodeMask(x, y, width, height, stripnr, img.ZPlanes, transpStrip, flags);
+            }
+        }
+
+        public static void Fill(Surface surface, Rect r, int color)
+        {
+            r = new Rect(r.Left, r.Top, r.Right, r.Bottom);
+            r.Clip(surface.Width, surface.Height);
+
+            if (!r.IsValid)
+                return;
+
+            int width = r.Width;
+            int lineLen = width;
+            int height = r.Height;
+            bool useMemset = true;
+
+            var bpp = Surface.GetBytesPerPixel(surface.PixelFormat);
+            if (bpp == 2)
+            {
+                lineLen *= 2;
+                if ((ushort)color != ((color & 0xff) | (color & 0xff) << 8))
+                    useMemset = false;
+            }
+            else if (bpp == 4)
+            {
+                useMemset = false;
+            }
+            else if (bpp != 1)
+            {
+                throw new InvalidOperationException("Surface::fillRect: bytesPerPixel must be 1, 2, or 4");
+            }
+
+            if (useMemset)
+            {
+                var pn = new PixelNavigator(surface);
+                pn.GoTo(r.Left, r.Top);
+                for (int i = 0; i < height; i++)
+                {
+                    pn.Set((byte)color, lineLen);
+                    pn.OffsetY(1);
+                }
+            }
+            else
+            {
+                if (bpp == 2)
+                {
+                    var pn = new PixelNavigator(surface);
+                    pn.GoTo(r.Left, r.Top);
+                    for (int i = 0; i < height; i++)
+                    {
+                        pn.Set((ushort)color, lineLen);
+                        pn.OffsetX(surface.Width);
+                    }
+                }
+                else
+                {
+                    var pn = new PixelNavigator(surface);
+                    pn.GoTo(r.Left, r.Top);
+                    for (int i = 0; i < height; i++)
+                    {
+                        pn.Set((uint)color, lineLen);
+                        pn.OffsetX(surface.Width / 2);
+                    }
+                }
             }
         }
 
@@ -245,6 +319,32 @@ namespace NScumm.Core.Graphics
             }
         }
 
+        public static void Fill(PixelNavigator dst, byte color, int width, int height)
+        {
+            for (int h = 0; h < height; h++)
+            {
+                for (int w = 0; w < width; w++)
+                {
+                    dst.Write(color);
+                    dst.OffsetX(1);
+                }
+                dst.Offset(-width, 1);
+            }
+        }
+
+        public static void Fill(PixelNavigator dst, ushort color, int width, int height)
+        {
+            for (int h = 0; h < height; h++)
+            {
+                for (int w = 0; w < width; w++)
+                {
+                    dst.WriteUInt16(color);
+                    dst.OffsetX(1);
+                }
+                dst.Offset(-width, 1);
+            }
+        }
+
         public static void Blit(PixelNavigator dst, PixelNavigator src, int width, int height)
         {
             for (var h = 0; h < height; h++)
@@ -256,19 +356,6 @@ namespace NScumm.Core.Graphics
                     dst.OffsetX(1);
                 }
                 src.Offset(-width, 1);
-                dst.Offset(-width, 1);
-            }
-        }
-
-        public static void Fill(PixelNavigator dst, byte color, int width, int height)
-        {
-            for (int h = 0; h < height; h++)
-            {
-                for (int w = 0; w < width; w++)
-                {
-                    dst.Write(color);
-                    dst.OffsetX(1);
-                }
                 dst.Offset(-width, 1);
             }
         }

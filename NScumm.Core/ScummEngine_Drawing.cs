@@ -21,6 +21,7 @@
 using System;
 using NScumm.Core.Graphics;
 using NScumm.Core.IO;
+using System.Diagnostics;
 
 namespace NScumm.Core
 {
@@ -48,9 +49,16 @@ namespace NScumm.Core
         const int FadeDelay = 4;
         // 1/4th of a jiffie
 
+        Rect[] _cyclRects = new Rect[16];
+        int _numCyclRects;
+
+        public VirtScreen TextVirtScreen { get { return _textVirtScreen; } }
+
         public VirtScreen VerbVirtScreen { get { return _verbVirtScreen; } }
 
         internal Surface TextSurface { get { return _textSurface; } }
+
+        internal int TextSurfaceMultiplier { get { return _textSurfaceMultiplier; } }
 
         protected virtual void DrawObjectCore(out int xpos, out int ypos, out int state)
         {
@@ -83,6 +91,9 @@ namespace NScumm.Core
             int height = rect.Height;
             int width = rect.Width;
 
+            if (_game.Platform == Platform.FMTowns && Game.GameId == GameId.Monkey1 && vs == VerbVirtScreen && rect.Bottom <= 154)
+                rect.Right = 319;
+
             MarkRectAsDirty(vs, rect.Left, rect.Right, rect.Top, rect.Bottom, Gdi.UsageBitRestored);
 
             var screenBuf = new PixelNavigator(vs.Surfaces[0]);
@@ -98,14 +109,34 @@ namespace NScumm.Core
                 Gdi.Blit(screenBuf, back, width, height);
                 if (vs == MainVirtScreen && _charset.HasMask)
                 {
-                    var mask = new PixelNavigator(_textSurface);
-                    mask.GoTo(rect.Left, rect.Top - ScreenTop);
-                    Gdi.Fill(mask, CharsetMaskTransparency, width * _textSurfaceMultiplier, height * _textSurfaceMultiplier);
+                    if (_game.Platform == Platform.FMTowns)
+                    {
+                        var mask = new PixelNavigator(_textSurface);
+                        mask.GoTo(rect.Left * _textSurfaceMultiplier, (rect.Top + vs.TopLine) * _textSurfaceMultiplier);
+                        Gdi.Fill(mask, 0, width * _textSurfaceMultiplier, height * _textSurfaceMultiplier);
+                    }
+                    else
+                    {
+                        var mask = new PixelNavigator(_textSurface);
+                        mask.GoTo(rect.Left, rect.Top - ScreenTop);
+                        Gdi.Fill(mask, CharsetMaskTransparency, width * _textSurfaceMultiplier, height * _textSurfaceMultiplier);
+                    }
                 }
             }
             else
             {
-                Gdi.Fill(screenBuf, backColor, width, height);
+                if (Game.Platform == Platform.FMTowns)
+                {
+                    backColor |= (byte)(backColor << 4);
+                    var mask = new PixelNavigator(_textSurface);
+                    mask.GoTo(rect.Left * _textSurfaceMultiplier, (rect.Top + vs.TopLine) * _textSurfaceMultiplier);
+                    Gdi.Fill(mask, backColor, width * _textSurfaceMultiplier, height * _textSurfaceMultiplier);
+                }
+
+                if (Game.Features.HasFlag(GameFeatures.Is16BitColor))
+                    Gdi.Fill(screenBuf, _16BitPalette[backColor], width, height);
+                else
+                    Gdi.Fill(screenBuf, backColor, width, height);
             }
         }
 
@@ -234,7 +265,14 @@ namespace NScumm.Core
                             {
                                 _charset.Left = _charset.StartLeft;
                             }
-                            _charset.Top += fontHeight;
+                            if ((Game.Platform != Platform.FMTowns) && (_string[0].Height != 0))
+                            {
+                                _nextTop += _string[0].Height;
+                            }
+                            else
+                            {
+                                _charset.Top += fontHeight;
+                            }
                             break;
 
                         case 12:
@@ -336,26 +374,62 @@ namespace NScumm.Core
             // is definitely not capable of passing a parameter of -1 (color range is 0 - 255).
             // Just to make sure I don't break anything I restrict the code change to FM-Towns
             // version 5 games where this change is necessary to fix certain long standing bugs.
-            if (color == -1)
+            if (color == -1 || (color >= 254 && Game.Platform == Platform.FMTowns && (Game.GameId == GameId.Monkey2 || Game.GameId == GameId.Indy4)))
             {
-//                if (vs != MainVirtScreen)
-//                    Console.Error.WriteLine("can only copy bg to main window");
-
-                var bgbuff = new PixelNavigator(vs.Surfaces[1]);
-                bgbuff.GoTo(vs.XStart + x, y);
-
-                Gdi.Blit(backbuff, bgbuff, width, height);
-                if (_charset.HasMask)
+                if (_game.Platform == Platform.FMTowns)
                 {
-                    var mask = new PixelNavigator(_textSurface);
-                    mask.GoToIgnoreBytesByPixel(x * _textSurfaceMultiplier, (y - ScreenTop) * _textSurfaceMultiplier);
-                    Gdi.Fill(mask, CharsetMaskTransparency, width * _textSurfaceMultiplier, height * _textSurfaceMultiplier);
+                    if (color == 254)
+                        TownsSetupPalCycleField(x, y, x2, y2);
+                }
+                else
+                {
+                    if (vs != MainVirtScreen)
+                        Debug.WriteLine("can only copy bg to main window");
+
+                    var bgbuff = new PixelNavigator(vs.Surfaces[1]);
+                    bgbuff.GoTo(vs.XStart + x, y);
+
+                    Gdi.Blit(backbuff, bgbuff, width, height);
+                    if (_charset.HasMask)
+                    {
+                        var mask = new PixelNavigator(_textSurface);
+                        mask.GoToIgnoreBytesByPixel(x * _textSurfaceMultiplier, (y - ScreenTop) * _textSurfaceMultiplier);
+                        Gdi.Fill(mask, CharsetMaskTransparency, width * _textSurfaceMultiplier, height * _textSurfaceMultiplier);
+                    }
                 }
             }
             else
             {
-                Gdi.Fill(backbuff, (byte)color, width, height);
+                if (_game.Features.HasFlag(GameFeatures.Is16BitColor))
+                {
+                    Gdi.Fill(backbuff, _16BitPalette[color], width, height);
+                }
+                else
+                {
+                    if (_game.Platform == Platform.FMTowns)
+                    {
+                        color = ((color & 0x0f) << 4) | (color & 0x0f);
+                        var mask = new PixelNavigator(_textSurface);
+                        mask.GoTo(x * _textSurfaceMultiplier, (y - ScreenTop + vs.TopLine) * _textSurfaceMultiplier);
+                        Gdi.Fill(mask, (byte)color, width * _textSurfaceMultiplier, height * _textSurfaceMultiplier);
+
+                        if (Game.GameId == GameId.Monkey2 || Game.GameId == GameId.Indy4 || ((Game.GameId == GameId.Indy3 || Game.GameId == GameId.Zak)
+                            && vs != TextVirtScreen) || (_game.GameId == GameId.Loom && vs == MainVirtScreen))
+                            return;
+                    }
+
+                    Gdi.Fill(backbuff, (byte)color, width, height);
+                }
             }
+        }
+
+        void TownsSetupPalCycleField(int x1, int y1, int x2, int y2)
+        {
+            if (_numCyclRects >= 10)
+                return;
+            _cyclRects[_numCyclRects] = new Rect(x1, y1, x2, y2);
+            _numCyclRects++;
+            TownsPaletteFlags |= 1;
         }
 
         void UpdatePalette()
@@ -389,6 +463,16 @@ namespace NScumm.Core
             _palDirtyMax = -1;
             _palDirtyMin = 256;
 
+            if (_game.Platform == Platform.FMTowns)
+            {
+                for (int i = first; i < first + num; ++i)
+                {
+                    var c = colors[i];
+                    _16BitPalette[i] = ColorHelper.RGBToColor((byte)c.R, (byte)c.G, (byte)c.B);
+                }
+                return;
+            }
+
             _gfxManager.SetPalette(colors, first, num);
         }
 
@@ -410,7 +494,10 @@ namespace NScumm.Core
 
         void ClearTextSurface()
         {
-            Gdi.Fill(_textSurface.Pixels, _textSurface.Pitch, CharsetMaskTransparency, _textSurface.Width, _textSurface.Height);
+            if (_townsScreen != null)
+                _townsScreen.FillLayerRect(1, new Point(), _textSurface.Width, _textSurface.Height, 0);
+
+            Gdi.Fill(_textSurface.Pixels, _textSurface.Pitch, (byte)(Game.Platform == Platform.FMTowns ? 0 : CharsetMaskTransparency), _textSurface.Width, _textSurface.Height);
         }
 
         protected virtual void HandleDrawing()
@@ -619,6 +706,12 @@ namespace NScumm.Core
             byte[] src;
             if (Game.Version < 7)
             {
+                if (Game.Platform == Platform.FMTowns)
+                {
+                    TownsDrawStripToScreen(vs, x, y, x, top, width, height);
+                    return;
+                }
+
                 var srcNav = new PixelNavigator(vs.Surfaces[0]);
                 srcNav.GoTo(vs.XStart + x, top);
 
@@ -671,6 +764,111 @@ namespace NScumm.Core
 
             // Finally blit the whole thing to the screen
             _gfxManager.CopyRectToScreen(src, width * vs.BytesPerPixel, x, y, width, height);
+        }
+
+        protected void TownsDrawStripToScreen(VirtScreen vs, int dstX, int dstY, int srcX, int srcY, int width, int height)
+        {
+            if (width <= 0 || height <= 0)
+                return;
+
+            int m = _textSurfaceMultiplier;
+
+            var src1 = new PixelNavigator(vs.Surfaces[0]);
+            src1.GoTo(vs.XStart + srcX, srcY);
+            var src2 = new PixelNavigator(_textSurface);
+            src2.GoTo(srcX * m, (srcY + vs.TopLine - ScreenTop) * m);
+            var dst1 = new PixelNavigator(_townsScreen.GetLayerPixels(0, dstX, dstY).Value);
+            var dst2 = new PixelNavigator(_townsScreen.GetLayerPixels(1, dstX * m, dstY * m).Value);
+
+            int dp1 = _townsScreen.GetLayerPitch(0) - width * _townsScreen.GetLayerBpp(0);
+            int dp2 = _townsScreen.GetLayerPitch(1) - width * m * _townsScreen.GetLayerBpp(1);
+            int sp1 = vs.Pitch - (width * Surface.GetBytesPerPixel(vs.PixelFormat));
+            int sp2 = _textSurface.Pitch - width * m;
+
+            if (vs == MainVirtScreen || Game.GameId == GameId.Indy3 || Game.GameId == GameId.Zak)
+            {
+                for (int h = 0; h < height; ++h)
+                {
+                    if (Surface.GetBytesPerPixel(_gfxManager.PixelFormat) == 2)
+                    {
+                        for (int w = 0; w < width; ++w)
+                        {
+                            dst1.WriteUInt16(_16BitPalette[src1.Read()]);
+                            src1.OffsetX(1);
+                            dst1.OffsetX(1);
+                        }
+
+                        src1.OffsetX(sp1 / src1.BytesByPixel);
+                        dst1.OffsetX(dp1 / dst1.BytesByPixel);
+                    }
+                    else
+                    {
+                        for (int i = 0; i < width; i++)
+                        {
+                            dst1.Write(src1.Read());
+                            dst1.OffsetX(1);
+                            src1.OffsetX(1);
+                        }
+                    }
+
+                    for (int sH = 0; sH < m; ++sH)
+                    {
+                        for (int i = 0; i < width * m; i++)
+                        {
+                            dst2.Write(src2.Read());
+                            src2.OffsetX(1);
+                            dst2.OffsetX(1);
+                        }
+                        src2.OffsetX(_textSurface.Width - (width * m));
+                        dst2.OffsetX(dst2.Width - (width * m));
+                    }
+                }
+            }
+            else
+            {
+                dst1 = new PixelNavigator(dst2);
+                for (int h = 0; h < height; ++h)
+                {
+                    for (int w = 0; w < width; ++w)
+                    {
+                        var t = (src1.Read()) & 0x0f;
+                        src1.OffsetX(1);
+                        for (int i = 0; i < m; i++)
+                        {
+                            dst1.Write((byte)((t << 4) | t));
+                            dst1.OffsetX(1);
+                        }
+                    }
+
+                    dst1 = new PixelNavigator(dst2);
+                    var src3 = new PixelNavigator(src2);
+
+                    if (m == 2)
+                    {
+                        dst2.OffsetY(1);
+                        src3.OffsetY(1);
+                    }
+
+                    for (int w = 0; w < width * m; ++w)
+                    {
+                        dst2.Write((byte)(src3.Read() | dst1.Read() & _townsLayer2Mask[src3.Read()]));
+                        dst2.OffsetX(1);
+                        dst1.Write((byte)(src2.Read() | dst1.Read() & _townsLayer2Mask[src2.Read()]));
+                        src2.OffsetX(1);
+                        src3.OffsetX(1);
+                        dst1.OffsetX(1);
+                    }
+
+                    src1.OffsetX(sp1 / src1.BytesByPixel);
+                    src2 = new PixelNavigator(src3);
+                    src2.OffsetX(sp2 / src2.BytesByPixel);
+                    dst1 = new PixelNavigator(dst2);
+                    dst1.OffsetX(dp2 / dst1.BytesByPixel);
+                    dst2.OffsetX(dp2 / dst2.BytesByPixel);
+                }
+            }
+
+            _townsScreen.AddDirtyRect(dstX * m, dstY * m, width * m, height * m);
         }
 
         protected void MarkObjectRectAsDirty(int obj)
@@ -768,8 +966,6 @@ namespace NScumm.Core
                 return _textVirtScreen;
             if (VirtScreenContains(_verbVirtScreen, y))
                 return _verbVirtScreen;
-            if (VirtScreenContains(_unkVirtScreen, y))
-                return _unkVirtScreen;
 
             return null;
         }
@@ -800,6 +996,28 @@ namespace NScumm.Core
             }
             return numZBuffer;
         }
+
+        static readonly byte[] _townsLayer2Mask =
+            {
+                0xFF, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0,
+                0x0F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x0F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x0F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x0F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x0F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x0F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x0F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x0F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x0F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x0F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x0F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x0F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x0F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x0F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x0F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+            };
     }
+
+
 }
 

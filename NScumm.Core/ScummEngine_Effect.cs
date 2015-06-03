@@ -21,6 +21,7 @@
 using System;
 using NScumm.Core.Graphics;
 using System.Threading;
+using NScumm.Core.IO;
 
 namespace NScumm.Core
 {
@@ -106,6 +107,11 @@ namespace NScumm.Core
             if (Game.Version < 7)
                 Camera.LastPosition.X = Camera.CurrentPosition.X;
 
+            if (Game.Version == 3 && _game.Platform == Platform.FMTowns)
+                Gdi.Fill(TextSurface, 
+                    new Rect(0, MainVirtScreen.TopLine * _textSurfaceMultiplier, 
+                        _textSurface.Pitch, (MainVirtScreen.TopLine + MainVirtScreen.Height) * _textSurfaceMultiplier), 0);
+
             if ((Game.Version == 7 || _screenEffectFlag) && effect != 0)
             {
                 // Fill screen 0 with black
@@ -132,6 +138,8 @@ namespace NScumm.Core
 					// Just blit screen 0 to the display (i.e. display will be black)
                         _mainVirtScreen.SetDirtyRange(0, _mainVirtScreen.Height);
                         UpdateDirtyScreen(_mainVirtScreen);
+                        if (_townsScreen != null)
+                            _townsScreen.Update();
                         break;
 				
                     default:
@@ -196,15 +204,21 @@ namespace NScumm.Core
                         var y = 1 + step;
                         while (y < vs.Height)
                         {
-                            MoveScreen(0, -step, vs.Height);
+                            if (_townsScreen != null)
+                            {
+                                TownsDrawStripToScreen(vs, 0, vs.TopLine + vs.Height - step, 0, y - step, vs.Width, step);
+                            }
+                            else
+                            {
+                                MoveScreen(0, -step, vs.Height);
 
-                            var src = vs.Surfaces[0].Pixels;
-                            _gfxManager.CopyRectToScreen(src, vsPitch,
-                                0, y - step,
-                                0, (vs.Height - step) * m,
-                                vs.Width * m, step * m);
-                            _gfxManager.UpdateScreen();
-
+                                var src = vs.Surfaces[0].Pixels;
+                                _gfxManager.CopyRectToScreen(src, vsPitch,
+                                    0, y - step,
+                                    0, (vs.Height - step) * m,
+                                    vs.Width * m, step * m);
+                                _gfxManager.UpdateScreen();
+                            }
                             WaitForTimer(delay);
                             y += step;
                         }
@@ -217,15 +231,20 @@ namespace NScumm.Core
                         while (y < vs.Height)
                         {
                             MoveScreen(0, step, vs.Height);
-
-                            var src = vs.Surfaces[0].Pixels;
-                            _gfxManager.CopyRectToScreen(src,
-                                vsPitch,
-                                0, vs.Height - y,
-                                0, 0,
-                                vs.Width * m, step * m);
-                            _gfxManager.UpdateScreen();
-
+                            if (_townsScreen != null)
+                            {
+                                TownsDrawStripToScreen(vs, 0, vs.TopLine, 0, vs.Height - y, vs.Width, step);
+                            }
+                            else
+                            {
+                                var src = vs.Surfaces[0].Pixels;
+                                _gfxManager.CopyRectToScreen(src,
+                                    vsPitch,
+                                    0, vs.Height - y,
+                                    0, 0,
+                                    vs.Width * m, step * m);
+                                _gfxManager.UpdateScreen();
+                            }
                             WaitForTimer(delay);
                             y += step;
                         }
@@ -239,13 +258,20 @@ namespace NScumm.Core
                         {
                             MoveScreen(-step, 0, vs.Height);
 
-                            var src = vs.Surfaces[0].Pixels;
-                            _gfxManager.CopyRectToScreen(src,
-                                vsPitch,
-                                x - step, 0,
-                                (vs.Width - step) * m, 0,
-                                step * m, vs.Height * m);
-                            _gfxManager.UpdateScreen();
+                            if (_townsScreen != null)
+                            {
+                                TownsDrawStripToScreen(vs, vs.Width - step, vs.TopLine, x - step, 0, step, vs.Height);
+                            }
+                            else
+                            {
+                                var src = vs.Surfaces[0].Pixels;
+                                _gfxManager.CopyRectToScreen(src,
+                                    vsPitch,
+                                    x - step, 0,
+                                    (vs.Width - step) * m, 0,
+                                    step * m, vs.Height * m);
+                                _gfxManager.UpdateScreen();
+                            }
 
                             WaitForTimer(delay);
                             x += step;
@@ -259,7 +285,11 @@ namespace NScumm.Core
                         while (x < vs.Width)
                         {
                             MoveScreen(step, 0, vs.Height);
-
+                            if (_townsScreen != null)
+                            {
+                                TownsDrawStripToScreen(vs, 0, vs.TopLine, vs.Width - x, 0, step, vs.Height);
+                            }
+                            else
                             {
                                 var src = vs.Surfaces[0].Pixels;
                                 _gfxManager.CopyRectToScreen(src,
@@ -400,8 +430,11 @@ namespace NScumm.Core
                 x = offsets[i] % vs.Pitch;
                 y = offsets[i] / vs.Pitch;
 
-                _gfxManager.CopyRectToScreen(vs.Surfaces[0].Pixels, vs.Pitch,
-                    x, y, width, height);
+                if (_game.Platform == Platform.FMTowns)
+                    TownsDrawStripToScreen(vs, x, y + vs.TopLine, x, y, width, height);
+                else
+                    _gfxManager.CopyRectToScreen(vs.Surfaces[0].Pixels, vs.Pitch,
+                        x, y, width, height);
 
 
                 if (++blits >= blits_before_refresh)
@@ -511,6 +544,9 @@ namespace NScumm.Core
             {
                 //        _sound.updateCD(); // Loop CD Audio if needed
                 ParseEvents();
+
+                if (_townsScreen != null)
+                    _townsScreen.Update();
 
                 _gfxManager.UpdateScreen();
                 if (Environment.TickCount >= start_time + msec_delay)

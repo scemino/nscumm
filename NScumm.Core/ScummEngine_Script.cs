@@ -368,6 +368,8 @@ namespace NScumm.Core
 
             EgoPositioned = false;
 
+            TownsResetPalCycleFields();
+
             RunEntryScript();
 
             if (Game.Version >= 1 && Game.Version <= 2)

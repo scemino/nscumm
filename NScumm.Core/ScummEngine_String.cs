@@ -32,7 +32,7 @@ namespace NScumm.Core
     {
         protected byte[][] _strings;
         TextSlot[] _string = new TextSlot[6];
-
+        Rect _curStringRect=new Rect(-1,-1,-1,-1);
         internal TextSlot[] String { get { return _string; } }
 
         protected byte[] ReadCharacters()

@@ -102,7 +102,14 @@ namespace NScumm.Core.Graphics
             }
             else
                 useShadow = false;
-                
+               
+            if (Vm.Game.Platform == Platform.FMTowns)
+            {
+                Color = (byte)((Color & 0x0f) | ((Color & 0x0f) << 4));
+                if (Color == 0)
+                    Color = 0x88;
+            }
+
             EnableShadow(useShadow);
 
             //TranslateColor();
@@ -161,7 +168,7 @@ namespace NScumm.Core.Graphics
                 TextScreen = vs;
             }
 
-            if ((ignoreCharsetMask || !vs.HasTwoBuffers))
+            if ((ignoreCharsetMask || !vs.HasTwoBuffers) && (Vm.Game.Platform != Platform.FMTowns))
                 DrawBits1(vs.Surfaces[0], Left + vs.XStart, drawTop, charPtr, drawTop, origWidth, origHeight);
             else
                 DrawBits1(Vm.TextSurface, Left, Top, charPtr, drawTop, origWidth, origHeight);

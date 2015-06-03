@@ -17,30 +17,20 @@
 
 using System;
 using System.IO;
+using NScumm.Core.IO;
 
 namespace NScumm.Core.Graphics
 {
-    sealed class CharsetRendererClassic : CharsetRendererCommon
+    class CharsetRendererClassic : CharsetRendererCommon
     {
-        #region Fields
-
-        int _offsX, _offsY;
-        int _width, _height, _origWidth, _origHeight;
-        int _fontPos;
-        int _charPos;
-
-        #endregion
-
-        #region Constructor
+        protected int _offsX, _offsY;
+        protected int _width, _height, _origWidth, _origHeight;
+        protected int _charPos;
 
         public CharsetRendererClassic(ScummEngine vm)
             : base(vm)
         {
         }
-
-        #endregion
-
-        #region Methods
 
         public override void PrintChar(int chr, bool ignoreCharsetMask)
         {
@@ -100,20 +90,21 @@ namespace NScumm.Core.Graphics
 
             // This check for kPlatformFMTowns and kMainVirtScreen is at least required for the chat with
             // the navigator's head in front of the ghost ship in Monkey Island 1
-            if (!ignoreCharsetMask)
+            if (!ignoreCharsetMask || (Vm.Game.Platform == Platform.FMTowns && vs == Vm.MainVirtScreen))
             {
                 HasMask = true;
                 TextScreen = vs;
             }
 
-            var offset = (Vm.Game.Version == 4) ? 17 : 29;
-            PrintCharIntern(_fontPtr, _charPos + offset, _origWidth, _origHeight, _width, _height, vs, ignoreCharsetMask);
+            PrintCharIntern(_fontPtr, _charPos, _origWidth, _origHeight, _width, _height, vs, ignoreCharsetMask);
 
             Left += _origWidth;
 
             if (Str.Right < Left)
             {
                 Str.Right = Left;
+                if (Vm.Game.Platform != Platform.FMTowns && _enableShadow)
+                    Str.Right++;
             }
 
             if (Str.Bottom < Top + _origHeight)
@@ -128,55 +119,56 @@ namespace NScumm.Core.Graphics
                 return;
             var pn = new PixelNavigator(s);
             pn.GoTo(x, y);
-            DrawBitsN(s, pn, _fontPtr, _fontPos + _charPos, _fontPtr[_fontPos], y, _width, _height);
-        }
-
-        public override void SetCurID(int id)
-        {
-            CurId = id;
-
-            _fontPtr = Vm.ResourceManager.GetCharsetData((byte)id);
-            if (_fontPtr == null)
-                throw new NotSupportedException(string.Format("CharsetRendererCommon::setCurID: charset {0} not found", id));
-
-            if (Vm.Game.Version == 4)
-                _fontPos = 17;
-            else
-                _fontPos = 29;
-
-            _fontHeight = _fontPtr[_fontPos + 1];
-            NumChars = ((uint)_fontPtr[_fontPos + 2]) | (((uint)_fontPtr[_fontPos + 3]) << 8);
-        }
-
-        public override int GetFontHeight()
-        {
-            //if (_vm._useCJKMode)
-            //    return Math.Max(_vm._2byteHeight + 1, _fontHeight);
-            //else
-            return _fontHeight;
+            DrawBitsN(s, pn, _fontPtr, _charPos, _fontPtr[_fontPos], y, _width, _height);
         }
 
         public override int GetCharWidth(int chr)
         {
             int spacing = 0;
-            var reader = new BinaryReader(new MemoryStream(_fontPtr));
-            reader.BaseStream.Seek(_fontPos + chr * 4 + 4, SeekOrigin.Begin);
-            var offs = reader.ReadInt32();
+
+//            if (_vm->_useCJKMode && chr >= 0x80)
+//                return _vm->_2byteWidth / 2;
+
+            int offs = _fontPtr.ToInt32(_fontPos + chr * 4 + 4);
             if (offs != 0)
-            {
-                reader.BaseStream.Seek(_fontPos + offs, SeekOrigin.Begin);
-                spacing = reader.PeekChar();
-                reader.BaseStream.Seek(2, SeekOrigin.Current);
-                spacing += reader.ReadSByte();
-            }
+                spacing = _fontPtr[_fontPos + offs] + (sbyte)_fontPtr[_fontPos + offs + 2];
+
             return spacing;
         }
 
-        #endregion
+        protected virtual void DrawBitsN(Surface s, PixelNavigator dst, System.Collections.Generic.IList<byte> src, int srcPos, byte bpp, int drawTop, int width, int height)
+        {
+            if (bpp != 1 && bpp != 2 && bpp != 4 && bpp != 8)
+                throw new ArgumentException("Invalid bpp", "bpp");
 
-        #region Private Methods
+            byte bits = src[srcPos++];
+            byte numbits = 8;
+            var cmap = Vm.CharsetColorMap;
 
-        bool PrepareDraw(int chr)
+            for (int y = 0; y < height && y + drawTop < s.Height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    int color = (bits >> (8 - bpp)) & 0xFF;
+
+                    if (color != 0 && (y + drawTop >= 0))
+                    {
+                        dst.Write(cmap[color]);
+                    }
+                    dst.OffsetX(1);
+                    bits <<= bpp;
+                    numbits -= bpp;
+                    if (numbits == 0)
+                    {
+                        bits = src[srcPos++];
+                        numbits = 8;
+                    }
+                }
+                dst.Offset(-width, 1);
+            }
+        }
+
+        protected virtual bool PrepareDraw(int chr)
         {
             var reader = new BinaryReader(new MemoryStream(_fontPtr));
             reader.BaseStream.Seek(_fontPos + chr * 4 + 4, SeekOrigin.Begin);
@@ -184,9 +176,9 @@ namespace NScumm.Core.Graphics
             //assert(charOffs < 0x14000);
             if (charOffs == 0)
                 return false;
-            _charPos = charOffs;
+            _charPos = _fontPos + charOffs;
 
-            reader.BaseStream.Seek(_fontPos + _charPos, SeekOrigin.Begin);
+            reader.BaseStream.Seek(_charPos, SeekOrigin.Begin);
             _width = _origWidth = reader.ReadByte();
             _height = _origHeight = reader.ReadByte();
 
@@ -287,39 +279,5 @@ namespace NScumm.Core.Graphics
 
             }
         }
-
-        void DrawBitsN(Surface s, PixelNavigator dst, System.Collections.Generic.IList<byte> src, int srcPos, byte bpp, int drawTop, int width, int height)
-        {
-            if (bpp != 1 && bpp != 2 && bpp != 4 && bpp != 8)
-                throw new ArgumentException("Invalid bpp", "bpp");
-
-            byte bits = src[srcPos++];
-            byte numbits = 8;
-            var cmap = Vm.CharsetColorMap;
-
-            for (int y = 0; y < height && y + drawTop < s.Height; y++)
-            {
-                for (int x = 0; x < width; x++)
-                {
-                    int color = (bits >> (8 - bpp)) & 0xFF;
-
-                    if (color != 0 && (y + drawTop >= 0))
-                    {
-                        dst.Write(cmap[color]);
-                    }
-                    dst.OffsetX(1);
-                    bits <<= bpp;
-                    numbits -= bpp;
-                    if (numbits == 0)
-                    {
-                        bits = src[srcPos++];
-                        numbits = 8;
-                    }
-                }
-                dst.Offset(-width, 1);
-            }
-        }
-
-        #endregion
     }
 }

@@ -247,10 +247,28 @@ namespace NScumm.Core
             {
                 ((ScummEngine7)this).ClearSubtitleQueue();
             }
+            else if (_game.Platform == Platform.FMTowns)
+            {
+                TownsRestoreCharsetBg();
+            }
             else
             {
                 RestoreCharsetBg();
             }
+        }
+
+        void TownsRestoreCharsetBg()
+        {
+            if (_curStringRect.Left != -1)
+            {
+                RestoreBackground(_curStringRect, 0);
+                _curStringRect.Left = -1;
+                _charset.HasMask = false;
+                _nextLeft = _string[0].Position.X;
+            }
+
+            _nextLeft = _string[0].Position.X;
+            _nextTop = _string[0].Position.Y;
         }
 
         void ShowActors()

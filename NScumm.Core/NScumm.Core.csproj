@@ -357,6 +357,8 @@
     <Compile Include="Audio\SoftSynth\FMTownsPc98\TownsMidiInputChannel.cs" />
     <Compile Include="Audio\SoftSynth\FMTownsPc98\TownsMidiOutputChannel.cs" />
     <Compile Include="Audio\SoftSynth\FMTownsPc98\TownsEmuMusicPlugin.cs" />
+    <Compile Include="Graphics\TownsScreen.cs" />
+    <Compile Include="Graphics\CharsetRendererTownsClassic.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <ItemGroup>

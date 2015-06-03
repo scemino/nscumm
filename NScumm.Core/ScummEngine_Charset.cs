@@ -21,6 +21,7 @@
 
 using System;
 using NScumm.Core.Graphics;
+using NScumm.Core.IO;
 
 namespace NScumm.Core
 {
@@ -29,6 +30,10 @@ namespace NScumm.Core
         const byte CharsetMaskTransparency = 0xFD;
         protected byte[] _charsetBuffer = new byte[512];
         public byte[] CharsetColorMap = new byte[16];
+        public byte[] TownsCharsetColorMap = new byte[16];
+
+        public int TownsPaletteFlags { get; protected set; }
+
         protected byte[][] _charsetData = CreateCharsetData();
         protected int _charsetBufPos;
         protected CharsetRenderer _charset;
@@ -66,7 +71,14 @@ namespace NScumm.Core
                     _charset = new CharsetRendererNut(this);
                     break;
                 default:
-                    _charset = new CharsetRendererClassic(this);
+                    if (_game.Platform == Platform.FMTowns)
+                    {
+                        _charset = new CharsetRendererTownsClassic(this);
+                    }
+                    else
+                    {
+                        _charset = new CharsetRendererClassic(this);
+                    }
                     break;
             }
         }
@@ -178,6 +190,9 @@ namespace NScumm.Core
             if (_game.Version >= 5)
                 Array.Copy(_charsetData[_charset.GetCurId()], CharsetColorMap, 4);
 
+            if (_keepText && Game.Platform == Platform.FMTowns)
+                _charset.Str = _curStringRect;
+
             if (_talkDelay != 0)
                 return;
 
@@ -207,7 +222,10 @@ namespace NScumm.Core
                 }
                 else
                 {
-                    RestoreCharsetBg();
+                    if (_game.Platform == Platform.FMTowns)
+                        TownsRestoreCharsetBg();
+                    else
+                        RestoreCharsetBg();
                 }
             }
 
@@ -301,6 +319,9 @@ namespace NScumm.Core
                 }
             }
 
+            if (_game.Platform == Platform.FMTowns && (c == 0 || c == 2 || c == 3))
+                _curStringRect = _charset.Str;
+
             if (Game.Version >= 7 && subtitleLine != 0)
             {
                 ((ScummEngine7)this).AddSubtitleToQueue(subtitleBuffer, 0, subtitlePos, _charsetColor, (byte)_charset.GetCurId());
@@ -321,7 +342,7 @@ namespace NScumm.Core
             {
                 return false;
             }
-            else if (/*!(_game.platform == Common::kPlatformFMTowns) &&*/ _string[0].Height != 0)
+            else if (_game.Platform != Platform.FMTowns && _string[0].Height != 0)
             {
                 _nextTop += _charset.GetFontHeight();
             }

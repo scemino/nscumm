@@ -20,6 +20,8 @@ namespace NScumm.Core.Graphics
 {
     public interface IGraphicsManager
     {
+        PixelFormat PixelFormat {get;set;}
+
         void UpdateScreen();
 
         Surface Capture();

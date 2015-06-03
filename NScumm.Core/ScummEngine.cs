@@ -98,6 +98,14 @@ namespace NScumm.Core
         int deltaTicks;
         TimeSpan timeToWait;
 
+        protected TownsScreen _townsScreen;
+
+        public byte TownsOverrideShadowColor { get; protected set; }
+
+        protected byte[] _textPalette = new byte[48];
+        protected byte _townsClearLayerFlag = 1;
+        protected byte _townsActiveLayerFlags = 3;
+
         #endregion
 
         #region Properties
@@ -230,8 +238,13 @@ namespace NScumm.Core
             _invData = new ObjectData[_resManager.NumInventory];
             _currentScript = 0xFF;
             Mixer = mixer;
-            ScreenWidth = Game.Version == 8 ? 640 : 320;
-            ScreenHeight = Game.Version == 8 ? 480 : 200;
+            ScreenWidth = Game.Width;
+            ScreenHeight = Game.Height;
+
+            if (Game.Platform == Platform.FMTowns)
+            {
+                gfxManager.PixelFormat = PixelFormat.Rgb16;
+            }
 
             AudioCDManager = new DefaultAudioCDManager(this, mixer);
             Sound = new Sound(this, mixer);
@@ -295,14 +308,22 @@ namespace NScumm.Core
             ResetCursors();
 
             // Create the text surface
+            var pixelFormat = _game.Features.HasFlag(GameFeatures.Is16BitColor) ? PixelFormat.Rgb16 : PixelFormat.Indexed8;
             _textSurface = new Surface(ScreenWidth * _textSurfaceMultiplier, ScreenHeight * _textSurfaceMultiplier, PixelFormat.Indexed8, false);
             ClearTextSurface();
+
+            if (Game.Platform == Platform.FMTowns)
+            {
+                _townsScreen = new TownsScreen(_gfxManager, ScreenWidth * _textSurfaceMultiplier, ScreenHeight * _textSurfaceMultiplier, PixelFormat.Rgb16);
+                _townsScreen.SetupLayer(0, ScreenWidth, ScreenHeight, 32767);
+                _townsScreen.SetupLayer(1, ScreenWidth * _textSurfaceMultiplier, ScreenHeight * _textSurfaceMultiplier, 16, _textPalette);
+            }
 
             if (Game.Version == 0)
             {
                 InitScreens(8, 144);
             }
-            else if ((Game.GameId == GameId.Maniac) && (_game.Version <= 1) /*&& !(_game.Platform == Platform.NES)*/)
+            else if ((Game.GameId == GameId.Maniac) && (_game.Version <= 1) && _game.Platform != Platform.NES)
             {
                 InitScreens(16, 152);
             }
@@ -317,7 +338,7 @@ namespace NScumm.Core
             // Allocate gfx compositing buffer (not needed for V7/V8 games).
             if (Game.Version < 7)
             {
-                _composite = new Surface(ScreenWidth, ScreenHeight, PixelFormat.Indexed8, false);
+                _composite = new Surface(ScreenWidth, ScreenHeight, pixelFormat, false);
             }
             InitActors();
             OwnerRoom = Game.Version >= 7 ? 0x0FF : 0x0F;
@@ -488,7 +509,20 @@ namespace NScumm.Core
 
         protected void InitScreens(int b, int h)
         {
-            const PixelFormat format = PixelFormat.Indexed8;
+            if (_townsScreen != null)
+            {
+                if (_townsClearLayerFlag == 0 && MainVirtScreen != null && ((h - b) != MainVirtScreen.Height))
+                    _townsScreen.ClearLayer(0);
+
+                if (Game.GameId != GameId.Monkey1)
+                {
+                    Gdi.Fill(TextSurface, 
+                        new Rect(0, 0, _textSurface.Width * _textSurfaceMultiplier, _textSurface.Height * _textSurfaceMultiplier), 0);
+                    _townsScreen.ClearLayer(1);
+                }
+            }
+
+            var format = Game.Features.HasFlag(GameFeatures.Is16BitColor) ? PixelFormat.Rgb16 : PixelFormat.Indexed8;
 
             _mainVirtScreen = new VirtScreen(b, ScreenWidth, h - b, format, 2, true);
             _textVirtScreen = new VirtScreen(0, ScreenWidth, b, format, 1);
@@ -646,9 +680,16 @@ namespace NScumm.Core
             {
                 _charset.HasMask = false;
 
-                for (int i = 0; i < Verbs.Length; i++)
+                if (Game.Version > 3)
                 {
-                    DrawVerb(i, 0);
+                    for (int i = 0; i < Verbs.Length; i++)
+                    {
+                        DrawVerb(i, 0);
+                    }
+                }
+                else
+                {
+                    RedrawVerbs();
                 }
 
                 HandleMouseOver(false);
@@ -672,6 +713,8 @@ namespace NScumm.Core
             {
                 goto load_game;
             }
+
+            TownsProcessPalCycleField();
 
             if (_currentRoom == 0)
             {

@@ -344,31 +344,59 @@ namespace NScumm.Core
 
         protected override void SetBuiltinCursor(int idx)
         {
+            var bpp = Surface.GetBytesPerPixel(_gfxManager.PixelFormat);
             var src = _cursorImages[_currentCursor];
-            cursorColor = defaultCursorColors[idx];
+            int color;
+
+            if (bpp == 2)
+            {
+                if (Game.Platform == Platform.FMTowns)
+                {
+                    var palEntry = defaultCursorColors[idx] * 3;
+                    color = ColorHelper.RGBToColor((byte)_textPalette[palEntry], 
+                        (byte)_textPalette[palEntry + 1], (byte)_textPalette[palEntry + 2]);
+                }
+                else
+                {
+                    color = _16BitPalette[defaultCursorColors[idx]];
+                }
+            }
+            else
+            {
+                color = defaultCursorColors[idx];
+            }
 
             _cursor.Hotspot = new Point(
-                (short)(_cursorHotspots[2 * _currentCursor]),
-                (short)(_cursorHotspots[2 * _currentCursor + 1]));
-            _cursor.Width = 16;
-            _cursor.Height = 16;
+                _cursorHotspots[2 * _currentCursor] * TextSurfaceMultiplier,
+                _cursorHotspots[2 * _currentCursor + 1] * TextSurfaceMultiplier);
+            _cursor.Width = 16 * TextSurfaceMultiplier;
+            _cursor.Height = 16 * TextSurfaceMultiplier;
 
-            var pixels = new byte[_cursor.Width * _cursor.Height];
+            var pixels = new byte[_cursor.Width * _cursor.Height * bpp];
 
             int offset = 0;
             for (int w = 0; w < _cursor.Width; w++)
             {
                 for (int h = 0; h < _cursor.Height; h++)
                 {
+                    int c;
                     if ((src[w] & (1 << h)) != 0)
                     {
-                        pixels[offset] = cursorColor;
+                        c = color;
                     }
                     else
                     {
-                        pixels[offset] = 0xFF;
+                        c = 0xFF;
                     }
-                    offset++;
+                    if (bpp == 2)
+                    {
+                        pixels.WriteUInt16(offset, (ushort)c);
+                        offset += 2;
+                    }
+                    else
+                    {
+                        pixels[offset++] = (byte)c;
+                    }
                 }
             }
 
@@ -785,6 +813,15 @@ namespace NScumm.Core
             if (_opCode != 17)
             {
                 resId = GetVarOrDirectByte(OpCodeParameter.Param1);
+            }
+
+            if (Game.Platform != Platform.FMTowns)
+            {
+                // FIXME - this probably can be removed eventually, I don't think the following
+                // check will ever be triggered, but then I could be wrong and it's better
+                // to play it safe.
+                if ((_opCode & 0x3F) != (_opCode & 0x1F))
+                    Debug.WriteLine("Oops, this shouldn't happen: ResourceRoutines opcode {0}", _opCode);
             }
 
             int op = _opCode & 0x3F;

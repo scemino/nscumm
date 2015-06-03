@@ -35,6 +35,7 @@ namespace NScumm.Core
         protected int _curPalIndex;
         protected byte[] _shadowPalette;
         protected Palette _darkenPalette = new Palette();
+        protected ushort[] _16BitPalette = new ushort[512];
 
         public const int NumShadowPalette = 8;
 
@@ -79,7 +80,21 @@ namespace NScumm.Core
             }
             else if ((Game.Platform == Platform.Amiga) && Game.Version == 4)
             {
+                // if rendermode is set to EGA we use the full palette from the resources
+                // else we initialize and then lock down the first 16 colors.
                 SetPalette(Palette.AmigaMonkeyIsland);
+            }
+            else if (Game.Platform == Platform.FMTowns)
+            {
+                if (Game.GameId == GameId.Indy4 || Game.GameId == GameId.Monkey2)
+                    _townsClearLayerFlag = 0;
+                // TODO: FMTowns Loom and version 3 set palette
+//                else if (Game.GameId == GameId.Loom)
+//                    TownsSetTextPalette(tableTownsLoomPalette);
+//                else if (_game.Version == 3)
+//                    TownsSetTextPalette(tableTownsV3Palette);
+
+                _townsScreen.ToggleLayers(_townsActiveLayerFlags);
             }
 
             for (int i = 0; i < 256; i++)
@@ -88,6 +103,9 @@ namespace NScumm.Core
 
         void CyclePalette()
         {
+            if (_game.Platform == Platform.FMTowns && ((TownsPaletteFlags & 1) == 0))
+                return;
+
             var valueToAdd = _variables[VariableTimer.Value];
             if (valueToAdd < _variables[VariableTimerNext.Value])
                 valueToAdd = _variables[VariableTimerNext.Value];
@@ -125,6 +143,27 @@ namespace NScumm.Core
             }
         }
 
+        void TownsProcessPalCycleField()
+        {
+            for (int i = 0; i < _numCyclRects; i++)
+            {
+                int x1 = _cyclRects[i].Left - MainVirtScreen.XStart;
+                int x2 = _cyclRects[i].Right - MainVirtScreen.XStart;
+                if (x1 < 0)
+                    x1 = 0;
+                if (x2 > 320)
+                    x2 = 320;
+                if (x2 > 0)
+                    MarkRectAsDirty(MainVirtScreen, x1, x2, _cyclRects[i].Top, _cyclRects[i].Bottom);
+            }
+        }
+
+        void TownsResetPalCycleFields()
+        {
+            _numCyclRects = 0;
+            TownsPaletteFlags &= ~1;
+        }
+
         void MoveMemInPalRes(int start, int end, bool direction)
         {
             if (_palManipCounter == 0)
@@ -146,10 +185,52 @@ namespace NScumm.Core
         {
             _curPalIndex = palIndex;
             var palette = roomData.Palettes[palIndex];
+            if (_game.Platform == Platform.FMTowns)
+            {
+                TownsSetPalette(palette);
+            }
+            else
+            {
+                SetCurrentPalette(palette);
+            }
+        }
+
+        void TownsSetPalette(Palette palette)
+        {
+            SetCurrentPalette(palette);
+
+            if (Game.Version == 5)
+                TownsSetTextPalette(_currentPalette);
+
+            TownsOverrideShadowColor = 1;
+            int m = 48;
+            for (int i = 1; i < 16; ++i)
+            {
+                int val = _currentPalette.Colors[i].R + _currentPalette.Colors[i].G + _currentPalette.Colors[i].B;
+                if (m > val)
+                {
+                    TownsOverrideShadowColor = (byte)i;
+                    m = val;
+                }
+            }
+        }
+
+        void TownsSetTextPalette(Palette palette)
+        {
+            for (int i = 0; i < 16; i++)
+            {
+                _textPalette[i * 3] = (byte)palette.Colors[i].R;
+                _textPalette[i * 3 + 1] = (byte)palette.Colors[i].G;
+                _textPalette[i * 3 + 2] = (byte)palette.Colors[i].B;
+            }
+        }
+
+        void SetCurrentPalette(Palette palette)
+        {
             for (var i = 0; i < 256; i++)
             {
                 var color = palette.Colors[i];
-                if (Game.Version <= 6)
+                if (Game.Version >= 5 && Game.Version <= 6)
                 {
                     if (i < 15 || i == 15 || color.R < 252 || color.G < 252 || color.B < 252)
                     {
@@ -161,12 +242,10 @@ namespace NScumm.Core
                     CurrentPalette.Colors[i] = color;
                 }
             }
-
             if (Game.Version == 8)
             {
                 Array.Copy(_currentPalette.Colors, _darkenPalette.Colors, _darkenPalette.Colors.Length);
             }
-
             SetDirtyColors(0, 255);
         }
 

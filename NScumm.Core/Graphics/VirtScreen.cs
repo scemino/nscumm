@@ -97,7 +97,7 @@ namespace NScumm.Core.Graphics
             if (numBuffers <= 0)
                 throw new ArgumentOutOfRangeException("numBuffers", "The number of buffers should be positive.");
 
-            var numStrips = width / 8;
+            var numStrips = Math.Max(width / 8, 80);
             tdirty = new int[numStrips + 1];
             bdirty = new int[numStrips + 1];
             TopLine = top;

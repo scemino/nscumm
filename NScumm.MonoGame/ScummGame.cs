@@ -41,6 +41,8 @@ namespace NScumm.MonoGame
             Content.RootDirectory = "Content";
             this.settings = settings;
             GraphicsDeviceManager = new GraphicsDeviceManager(this);
+            GraphicsDeviceManager.PreferredBackBufferWidth = 800;
+            GraphicsDeviceManager.PreferredBackBufferHeight = (int)(800.0 * settings.Game.Height / settings.Game.Width);
 
             screenManager = new ScreenManager(this);
             Components.Add(screenManager);

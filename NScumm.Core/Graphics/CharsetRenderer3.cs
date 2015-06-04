@@ -74,18 +74,18 @@ namespace NScumm.Core.Graphics
             return spacing;
         }
 
-        void EnableShadow(bool enable)
+        protected virtual void EnableShadow(bool enable)
         {
             _shadowColor = 0;
             _shadowMode = enable;
         }
 
-        int GetDrawWidthIntern(int chr)
+        protected virtual int GetDrawWidthIntern(int chr)
         {
             return GetCharWidth(chr);
         }
 
-        int GetDrawHeightIntern(int chr)
+        protected virtual int GetDrawHeightIntern(int chr)
         {
             return 8;
         }
@@ -205,11 +205,11 @@ namespace NScumm.Core.Graphics
             DrawBits1(s, x, y, charPtr, y, width, height);
         }
 
-        void SetDrawCharIntern(int chr)
+        protected virtual void SetDrawCharIntern(int chr)
         {
         }
 
-        void DrawBits1(Surface surface, int x, int y, BinaryReader src, int drawTop, int width, int height)
+        protected virtual void DrawBits1(Surface surface, int x, int y, BinaryReader src, int drawTop, int width, int height)
         {
             var dst = new PixelNavigator(surface);
             dst.GoTo(x, y);

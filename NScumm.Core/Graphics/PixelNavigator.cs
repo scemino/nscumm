@@ -137,6 +137,11 @@ namespace NScumm.Core.Graphics
             _pixels.WriteUInt16(_offset, data);
         }
 
+        public void WriteUInt16(int offset, ushort data)
+        {
+            _pixels.WriteUInt16(_offset + offset, data);
+        }
+
         public byte Read()
         {
             return _pixels[_offset];

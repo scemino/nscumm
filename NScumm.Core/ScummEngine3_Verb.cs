@@ -20,6 +20,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
+using NScumm.Core.IO;
 
 namespace NScumm.Core
 {
@@ -173,6 +174,9 @@ namespace NScumm.Core
                         {
                             // SO_VERB_NEW
                             slot = GetVerbSlot(verb, 0);
+
+                            if (Game.Platform == Platform.FMTowns && Game.Version == 3 && slot != 0)
+                                continue;
 
                             if (slot == 0)
                             {

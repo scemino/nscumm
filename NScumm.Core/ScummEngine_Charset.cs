@@ -65,7 +65,10 @@ namespace NScumm.Core
                     _charset = new CharsetRenderer2(this);
                     break;
                 case 3:
-                    _charset = new CharsetRenderer3(this);
+                    if (_game.Platform == Platform.FMTowns)
+                        _charset = new CharsetRendererTowns3(this);
+                    else
+                        _charset = new CharsetRenderer3(this);
                     break;
                 case 8:
                     _charset = new CharsetRendererNut(this);

@@ -35,7 +35,7 @@ namespace NScumm.Core
         protected int _curPalIndex;
         protected byte[] _shadowPalette;
         protected Palette _darkenPalette = new Palette();
-        protected ushort[] _16BitPalette = new ushort[512];
+        public ushort[] _16BitPalette = new ushort[512];
 
         public const int NumShadowPalette = 8;
 
@@ -88,11 +88,10 @@ namespace NScumm.Core
             {
                 if (Game.GameId == GameId.Indy4 || Game.GameId == GameId.Monkey2)
                     _townsClearLayerFlag = 0;
-                // TODO: FMTowns Loom and version 3 set palette
-//                else if (Game.GameId == GameId.Loom)
-//                    TownsSetTextPalette(tableTownsLoomPalette);
-//                else if (_game.Version == 3)
-//                    TownsSetTextPalette(tableTownsV3Palette);
+                else if (Game.GameId == GameId.Loom)
+                    TownsSetTextPalette(Palette.TownsLoom);
+                else if (Game.Version == 3)
+                    TownsSetTextPalette(Palette.Towns3);
 
                 _townsScreen.ToggleLayers(_townsActiveLayerFlags);
             }

@@ -11,6 +11,7 @@
   <MD5 signature="9c0fee288ad564a7d25ec3e841810d79" gameId="indy3" variant="EGA" language="en" features="SixteenColors" platform="Amiga" />
   <MD5 signature="04687cdf7f975a89d2474929f7b80946" gameId="indy3" variant="FM-TOWNS" language="en" features="Old256 FewLocals AudioTracks" platform="FMTowns" />
   <MD5 signature="c63ee46143ba65f9ce14cf539ca51bd7" gameId="atlantis" variant="" language="en" />
+  <MD5 signature="c7be10f775404fd9785a8b92a06d240c" gameId="atlantis" variant="FM-TOWNS" language="en" platform="FMTowns" />
   <MD5 signature="5d88b9d6a88e6f8e90cded9d01b7f082" gameId="loom" variant="VGA" language="en" />
   <MD5 signature="6f0be328c64d689bb606d22a389e1b0f" gameId="loom" variant="No AdLib" language="en" features="SixteenColors" platform="Macintosh" />
   <MD5 signature="c5d10e190d4b4d59114b824f2fdbd00e" gameId="loom" variant="FM-TOWNS" language="en" features="Old256 AudioTracks" platform="FMTowns" />
@@ -40,6 +41,7 @@
   <Game id="indy3" gameId="Indy3" variant="EGA" version="3" music="PCSpeaker PCjr CMS AdLib" />
   <Game id="indy3" gameId="Indy3" variant="FM-TOWNS" version="3" />
   <Game id="atlantis" gameId="Indy4" variant="" version="5" music="PCSpeaker PCjr AdLib" pattern="ATLANTIS.{0:000}" />
+  <Game id="atlantis" gameId="Indy4" variant="FM-TOWNS" version="5" music="FMTowns AdLib" pattern="INDY4.{0:000}" />
   <Game id="loom" gameId="Loom" variant="No AdLib" version="3" music="PCSpeaker PCjr CMS" />
   <Game id="loom" gameId="Loom" variant="FM-TOWNS" version="3" />
   <Game id="loom" gameId="Loom" variant="VGA" version="4" />

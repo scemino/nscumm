@@ -974,6 +974,10 @@ namespace NScumm.Core
                         Moving &= ~MoveFlags.Turn;
                         SetDirection(dir);
                     }
+                    else if (_scumm.Game.Version <= 2)
+                        StartAnimActor(anim / 4);
+                    else
+                        StartAnimActor(anim);
                     break;
                 default:
                     if (_scumm.Game.Version <= 2)

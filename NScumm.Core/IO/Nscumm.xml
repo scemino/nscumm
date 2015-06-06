@@ -9,6 +9,7 @@
   <MD5 signature="47d3e0b8b42e6ff340c7061fba9283d2" gameId="zak" variant="V1" language="en" features="SixteenColors" platform="C64" />
   <MD5 signature="675d71151e9b5a968c8ce46d9fbf4cbf" gameId="zak" variant="V2" language="en" features="SixteenColors" />
   <MD5 signature="d55eff37c2100f5065cde9de428621fa" gameId="zak" variant="V2" language="en" features="SixteenColors" />
+  <MD5 signature="2d4536a56e01da4b02eb021e7770afa2" gameId="zak" variant="FM-TOWNS" language="en" features="Old256 AudioTracks" platform="FMTowns" />
   <MD5 signature="6b3ec67da214f558dc5ceaa2acd47453" gameId="indy3" variant="EGA" language="en" features="SixteenColors" />
   <MD5 signature="9c0fee288ad564a7d25ec3e841810d79" gameId="indy3" variant="EGA" language="en" features="SixteenColors" platform="Amiga" />
   <MD5 signature="157367c3c21e0d03a0cba44361b4cf65" gameId="indy3" variant="No AdLib" language="en" features="SixteenColors" platform="AtariST" />
@@ -47,6 +48,7 @@
   <Game id="maniac" gameId="Maniac" variant="V2" version="2" music="PCSpeaker PCjr" />
   <Game id="zak" gameId="Zak" variant="V1" version="1" music="PCSpeaker PCjr" pattern="ZAK{0}.d64" />
   <Game id="zak" gameId="Zak" variant="V2" version="2" music="PCSpeaker PCjr" />
+  <Game id="zak" gameId="Zak" variant="FM-TOWNS" version="3" />
   <Game id="loom" gameId="Loom" variant="EGA" version="3" music="PCSpeaker PCjr CMS AdLib" />
   <Game id="loom" gameId="Loom" variant="No AdLib" version="3" music="PCSpeaker PCjr CMS" />
   <Game id="loom" gameId="Loom" variant="FM-TOWNS" version="3" music="FMTowns" />

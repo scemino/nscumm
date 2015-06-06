@@ -32,37 +32,7 @@ namespace NScumm.Core.IO
 
         public ResourceFile0(ResourceIndex0 index, byte resourceNumber)
         {
-            var roomDisk = index.GetRoomDisk(resourceNumber);
-            var disk = string.Format(index.Game.Pattern, roomDisk);
-            var directory = ServiceLocator.FileStorage.GetDirectoryName(index.Game.Path);
-            var path = ServiceLocator.FileStorage.OpenFileRead(ScummHelper.LocatePath(directory, disk));
-            var br = new BinaryReader(path);
-
-            if (index.Game.Platform == Platform.Apple2GS)
-            {
-                br.BaseStream.Seek(roomDisk == 1 ? 142080 : 143104, SeekOrigin.Begin);
-            }
-
-            var signature = br.ReadUInt16();
-            if (roomDisk == 1 && signature != 0x0A31)
-                throw new NotSupportedException(string.Format("Invalid signature '{0:X}' in disk 1", signature));
-            var signatureExpected = index.Game.Platform == Platform.Apple2GS ? 0x0032 : 0x0132;
-            if (roomDisk == 2 && signature != signatureExpected)
-                throw new NotSupportedException(string.Format("Invalid signature '{0:X}' in disk 2", signature));
-
-            var numResources = maniacResourcesPerFile[resourceNumber];
-
-            // read resources
-            var ms = new MemoryStream();
-            var bw = new BinaryWriter(ms);
-            var resourceOffset = index.GetResourceOffset(resourceNumber);
-            br.BaseStream.Seek(resourceOffset, SeekOrigin.Begin);
-            for (var i = 0; i < numResources; i++)
-            {
-                var size = br.ReadUInt16();
-                bw.Write(size);
-                bw.Write(br.ReadBytes(size - 2));
-            }
+            var ms = ScummDiskImage.CreateResource(index, resourceNumber);
             _reader = new XorReader(ms, 0);
         }
 
@@ -431,16 +401,6 @@ namespace NScumm.Core.IO
             _reader.BaseStream.Position = pos;
             room.BoxMatrix.AddRange(_reader.ReadBytes(size));
         }
-
-        static readonly int[] maniacResourcesPerFile =
-            {
-                0, 11,  1,  3,  9, 12,  1, 13, 10,  6,
-                4,  1,  7,  1,  1,  2,  7,  8, 19,  9,
-                6,  9,  2,  6,  8,  4, 16,  8,  3,  3,
-                12, 12,  2,  8,  1,  1,  2,  1,  9,  1,
-                3,  7,  3,  3, 13,  5,  4,  3,  1,  1,
-                3, 10,  1,  0,  0
-            };
     }
 }
 

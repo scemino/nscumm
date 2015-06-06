@@ -6,6 +6,7 @@
   <MD5 signature="624cdb93654667c869d204a64af7e57f" gameId="maniac" variant="V2" language="en" features="SixteenColors" />
   <MD5 signature="e781230da44a44e2f0770edb2b3b3633" gameId="maniac" variant="V2" language="en" features="SixteenColors" platform="Amiga" />
   <MD5 signature="a570381b028972d891052ee1e51dc011" gameId="maniac" variant="V2" language="en" features="SixteenColors" platform="AtariST" />
+  <MD5 signature="47d3e0b8b42e6ff340c7061fba9283d2" gameId="zak" variant="V1" language="en" features="SixteenColors" platform="C64" />
   <MD5 signature="675d71151e9b5a968c8ce46d9fbf4cbf" gameId="zak" variant="V2" language="en" features="SixteenColors" />
   <MD5 signature="d55eff37c2100f5065cde9de428621fa" gameId="zak" variant="V2" language="en" features="SixteenColors" />
   <MD5 signature="1875b90fade138c9253a8e967007031a" gameId="indy3" variant="VGA" language="en" features="Old256 FewLocals" />
@@ -42,6 +43,7 @@
   <Game id="maniac" gameId="Maniac" variant="C64" version="0" pattern="maniac{0}.d64" />
   <Game id="maniac" gameId="Maniac" variant="V1" version="1" music="PCSpeaker PCjr" />
   <Game id="maniac" gameId="Maniac" variant="V2" version="2" music="PCSpeaker PCjr" />
+  <Game id="zak" gameId="Zak" variant="V1" version="1" music="PCSpeaker PCjr" pattern="ZAK{0}.d64" />
   <Game id="zak" gameId="Zak" variant="V2" version="2" music="PCSpeaker PCjr" />
   <Game id="indy3" gameId="Indy3" variant="VGA" version="3" music="PCSpeaker PCjr CMS AdLib" />
   <Game id="indy3" gameId="Indy3" variant="EGA" version="3" music="PCSpeaker PCjr CMS AdLib" />

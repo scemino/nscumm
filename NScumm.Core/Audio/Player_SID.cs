@@ -21,6 +21,7 @@
 using System;
 using NScumm.Core.IO;
 using NScumm.Core.Audio.SoftSynth;
+using System.Collections.Generic;
 
 namespace NScumm.Core.Audio
 {
@@ -58,6 +59,9 @@ namespace NScumm.Core.Audio
             // so we use the NTSC timing here as the music was composed for
             // NTSC systems (music on PAL systems is slower).
             _videoSystem = VideoStandard.Ntsc;
+
+            resStatus[1] = 0;
+            resStatus[2] = 0;
 
             InitSID();
             ResetSID();
@@ -1063,7 +1067,12 @@ namespace NScumm.Core.Audio
         void LockResource(int resIndex)
         { // $4ff4
             if (!isMusicPlaying)
+            {
+                if (!resStatus.ContainsKey(resIndex))
+                    resStatus[resIndex] = 0;
+
                 ++resStatus[resIndex];
+            }
         }
 
         byte[] GetResource(int resID)
@@ -1238,7 +1247,7 @@ namespace NScumm.Core.Audio
         // chanResIndex: 3,4,5 or 58
         void UnlockResource(int chanResIndex)
         { // $4CDA
-            if ((resStatus[chanResIndex] & 0x7F) != 0)
+            if (resStatus.ContainsKey(chanResIndex) && (resStatus[chanResIndex] & 0x7F) != 0)
                 --resStatus[chanResIndex];
         }
 
@@ -1486,7 +1495,7 @@ namespace NScumm.Core.Audio
         // resource status (never read)
         // bit7: some flag
         // bit6..0: counter (use-count?), maybe just bit0 as flag (used/unused?)
-        byte[] resStatus = new byte[70];
+        Dictionary<int,byte> resStatus = new Dictionary<int, byte>();
 
         byte[] songFileOrChanBufData;
         byte[] actSongFileData;

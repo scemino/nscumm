@@ -24,12 +24,18 @@ using NScumm.Core;
 using System;
 using System.Linq;
 using NScumm.Core.Graphics;
+using System.IO;
 
 namespace NScumm.Core.IO
 {
     public class ResourceFile1: ResourceFile
     {
         const int HeaderSize = 4;
+
+        public ResourceFile1(Stream stream, byte encByte)
+        {
+            _reader = new XorReader(stream, encByte);
+        }
 
         public ResourceFile1(string path, byte encByte)
             : base(path, encByte)

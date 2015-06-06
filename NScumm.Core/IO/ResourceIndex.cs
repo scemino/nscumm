@@ -119,6 +119,15 @@ namespace NScumm.Core.IO
                     index = new ResourceIndex0();
                     break;
                 case 1:
+                    if (game.Platform == Platform.C64)
+                    {
+                        index = new ResourceIndex0();
+                    }
+                    else
+                    {
+                        index = new ResourceIndex2();
+                    }
+                    break;
                 case 2:
                     index = new ResourceIndex2();
                     break;

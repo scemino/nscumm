@@ -35,8 +35,16 @@ namespace NScumm.Core.IO
             var diskName = string.Format("{0:00}.lfl", roomIndex);
             var game1Path = ServiceLocator.FileStorage.Combine(Directory, diskName);
 
-            var file = Game.Version == 1 ? (ResourceFile)new ResourceFile1(game1Path, 0xFF) : new ResourceFile2(game1Path, 0xFF);
-            return file;
+            if (Game.Version == 1)
+            {
+                if (Game.Platform == Platform.C64)
+                {
+                    var res = ScummDiskImage.CreateResource((ResourceIndex0)Index, roomIndex);
+                    return new ResourceFile1(res, 0);
+                }
+                return new ResourceFile1(game1Path, 0xFF);
+            }
+            return new ResourceFile2(game1Path, 0xFF);
         }
 
         protected override byte[] ReadCharset(byte id)

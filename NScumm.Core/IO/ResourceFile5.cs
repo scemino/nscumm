@@ -491,6 +491,9 @@ namespace NScumm.Core.IO
                         }
                         _reader.BaseStream.Seek(size, SeekOrigin.Current);
                         break;
+                    case "AMI ":
+                        _reader.BaseStream.Seek(-8, SeekOrigin.Current);
+                        return _reader.ReadBytes((int)size + 8);
                     case "SPK ":
                         if (music == NScumm.Core.Audio.MusicDriverTypes.PCSpeaker)
                         {

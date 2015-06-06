@@ -313,7 +313,7 @@ namespace NScumm.Core.Graphics
             var v1 = new Codec1();
 
             const int ScaletableSize = 128;
-
+            bool newAmiCost = (_vm.Game.Version == 5) && (_vm.Game.Platform == Platform.Amiga);
             v1.Scaletable = smallCostumeScaleTable;
 
             if (_loaded.NumColors == 32)
@@ -492,7 +492,7 @@ namespace NScumm.Core.Graphics
                     skip = -v1.X;
                 if (skip > 0)
                 {
-                    if (_loaded.Format != 0x57)
+                    if (!newAmiCost && _loaded.Format != 0x57)
                     {
                         v1.SkipWidth -= skip;
                         Codec1IgnorePakCols(v1, skip);
@@ -518,7 +518,7 @@ namespace NScumm.Core.Graphics
                     skip = rect.Right - _w;
                 if (skip > 0)
                 {
-                    if (_loaded.Format != 0x57)
+                    if (!newAmiCost && _loaded.Format != 0x57)
                     {
                         v1.SkipWidth -= skip;
                         Codec1IgnorePakCols(v1, skip);
@@ -575,6 +575,10 @@ namespace NScumm.Core.Graphics
                 // The v1 costume renderer needs the actor number, which is
                 // the same thing as the costume renderer's _actorID.
                 ProcC64(v1, ActorID);
+            }
+            else if (newAmiCost)
+            {
+                Proc3Amiga(v1);
             }
             else
             {
@@ -814,6 +818,89 @@ namespace NScumm.Core.Graphics
                     }
                     ehmerde = false;
                 } while ((--len) != 0);
+            } while (true);
+        }
+
+        void Proc3Amiga(Codec1 v1)
+        {
+            byte len;
+            int color;
+            bool masked;
+
+            var mask = new PixelNavigator(v1.MaskPtr);
+            mask.OffsetX(v1.X / 8);
+            var dst = new PixelNavigator(v1.DestPtr);
+            byte height = (byte)_height;
+            byte width = (byte)_width;
+            _loaded.CostumeReader.BaseStream.Seek(_srcptr, System.IO.SeekOrigin.Begin);
+            var maskbit = (byte)ScummHelper.RevBitMask(v1.X & 7);
+            var y = v1.Y;
+            var oldXpos = v1.X;
+            var oldScaleIndexX = _scaleIndexX;
+
+            // Indy4 Amiga always uses the room map to match colors to the currently
+            // setup palette in the actor code in the original, thus we need to do this
+            // mapping over here too.
+            var amigaMap = 
+                (_vm.Game.Platform == Platform.Amiga && _vm.Game.GameId == GameId.Indy4) ? _vm.Gdi.RoomPalette : null;
+
+            do
+            {
+                len = _loaded.CostumeReader.ReadByte();
+                color = len >> v1.Shr;
+                len &= v1.Mask;
+                if (len == 0)
+                    len = _loaded.CostumeReader.ReadByte();
+                do
+                {
+                    if (ScaleY == 255 || v1.Scaletable[_scaleIndexY] < ScaleY)
+                    {
+                        masked = (y < 0 || y >= _h) || (v1.X < 0 || v1.X >= _w) || ((mask.Read() & maskbit) != 0);
+
+                        if (color != 0 && !masked)
+                        {
+                            byte pcolor;
+                            if (amigaMap != null)
+                                pcolor = amigaMap[_palette[color]];
+                            else
+                                pcolor = (byte)_palette[color];
+                            dst.Write(pcolor);
+                        }
+
+                        if (ScaleX == 255 || v1.Scaletable[_scaleIndexX] < ScaleX)
+                        {
+                            v1.X += v1.ScaleXStep;
+                            dst.OffsetX(v1.ScaleXStep);
+                            maskbit = (byte)ScummHelper.RevBitMask(v1.X & 7);
+                        }
+                        _scaleIndexX += (byte)v1.ScaleXStep;
+                        mask = new PixelNavigator(v1.MaskPtr);
+                        mask.OffsetX(v1.X / 8);
+                    }
+                    if (--width == 0)
+                    {
+                        if (--height == 0)
+                            return;
+
+                        if (y >= _h)
+                            return;
+
+                        if (v1.X != oldXpos)
+                        {
+                            dst.Offset(-(v1.X - oldXpos), 1);
+                            mask = new PixelNavigator(v1.MaskPtr);
+                            mask.OffsetY(1);
+                            v1.MaskPtr = mask;
+                            mask.OffsetX(oldXpos / 8);
+                            maskbit = (byte)ScummHelper.RevBitMask(oldXpos & 7);
+                            y++;
+                        }
+                        width = (byte)_width;
+                        v1.X = oldXpos;
+                        _scaleIndexX = oldScaleIndexX;
+                        _scaleIndexY++;
+                    }
+                } while (--len != 0);
             } while (true);
         }
 

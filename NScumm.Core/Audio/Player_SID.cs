@@ -578,7 +578,7 @@ namespace NScumm.Core.Audio
                     // TODO: signed or unsigned?
                     var offset = BitConverter.ToUInt16(actSongFileData, local1 * 2 + 12);
                     l_chanFileDataPtr = actSongFileData;
-                    l_chanFileDataOffset = 0;
+                    l_chanFileDataOffset = offset;
 
                     // next five bytes: freqDelta, attack, sustain and phase bit
                     for (int i = 0; i < 5; ++i)

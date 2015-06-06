@@ -51,10 +51,10 @@ namespace NScumm.Core.Audio.SoftSynth
                 return;
             }
 
-            int accumulator_prev = accumulator;
+            uint accumulator_prev = accumulator;
 
             // Calculate new accumulator value;
-            int delta_accumulator = delta_t * freq;
+            uint delta_accumulator = (uint)(delta_t * freq);
             accumulator += delta_accumulator;
             accumulator &= 0xffffff;
 
@@ -63,7 +63,7 @@ namespace NScumm.Core.Audio.SoftSynth
 
             // Shift noise register once for each time accumulator bit 19 is set high.
             // Bit 19 is set high each time 2^20 (0x100000) is added to the accumulator.
-            int shift_period = 0x100000;
+            uint shift_period = 0x100000;
 
             while (delta_accumulator != 0)
             {
@@ -110,16 +110,13 @@ namespace NScumm.Core.Audio.SoftSynth
  */
         public void Synchronize()
         {
-            accumulator = 0;
-            shift_register = 0x7ffff8;
-            freq = 0;
-            pw = 0;
-
-            test = 0;
-            ring_mod = 0;
-            sync = 0;
-
-            msb_rising = false;
+            // A special case occurs when a sync source is synced itself on the same
+            // cycle as when its MSB is set high. In this case the destination will
+            // not be synced. This has been verified by sampling OSC3.
+            if (msb_rising && sync_dest.sync != 0 && !(sync != 0 && sync_source.msb_rising))
+            {
+                sync_dest.accumulator = 0;
+            }
         }
 
         public void Reset()
@@ -238,7 +235,7 @@ namespace NScumm.Core.Audio.SoftSynth
         // Tell whether the accumulator MSB was set high on this cycle.
         bool msb_rising;
 
-        public int accumulator{ get; private set; }
+        public uint accumulator{ get; private set; }
 
         int shift_register;
 
@@ -270,12 +267,12 @@ namespace NScumm.Core.Audio.SoftSynth
         {
             var msb = (ring_mod != 0 ? accumulator ^ sync_source.accumulator : accumulator)
                       & 0x800000;
-            return ((msb != 0 ? ~accumulator : accumulator) >> 11) & 0xfff;
+            return (int)(((msb != 0 ? ~accumulator : accumulator) >> 11) & 0xfff);
         }
         // Sawtooth:
         int output__S_()
         {
-            return accumulator >> 12;
+            return (int)(accumulator >> 12);
         }
         // Pulse:
         int output_P__()

@@ -339,13 +339,13 @@ namespace NScumm.Core.Audio.SoftSynth
                     }
 
                     int freq = wave.freq;
-                    int accumulator = wave.accumulator;
+                    uint accumulator = wave.accumulator;
 
                     // Clock on MSB off if MSB is on, clock on MSB on if MSB is off.
-                    int delta_accumulator =
-                        ((accumulator & 0x800000) != 0 ? 0x1000000 : 0x800000) - accumulator;
+                    uint delta_accumulator =
+                        (uint)(((accumulator & 0x800000) != 0 ? 0x1000000 : 0x800000) - accumulator);
 
-                    int delta_t_next = delta_accumulator / freq;
+                    int delta_t_next = (int)(delta_accumulator / freq);
                     if ((delta_accumulator % freq) != 0)
                     {
                         ++delta_t_next;

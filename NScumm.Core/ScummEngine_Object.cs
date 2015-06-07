@@ -95,17 +95,20 @@ namespace NScumm.Core
 
         protected byte GetStateCore(int obj)
         {
-            // I knew LucasArts sold cracked copies of the original Maniac Mansion,
-            // at least as part of Day of the Tentacle. Apparently they also sold
-            // cracked versions of the enhanced version. At least in Germany.
-            //
-            // This will keep the security door open at all times. I can only
-            // assume that 182 and 193 each correspond to one particular side of
-            // it. Fortunately this does not prevent frustrated players from
-            // blowing up the mansion, should they feel the urge to.
+            if (!Settings.CopyProtection)
+            {
+                // I knew LucasArts sold cracked copies of the original Maniac Mansion,
+                // at least as part of Day of the Tentacle. Apparently they also sold
+                // cracked versions of the enhanced version. At least in Germany.
+                //
+                // This will keep the security door open at all times. I can only
+                // assume that 182 and 193 each correspond to one particular side of
+                // it. Fortunately this does not prevent frustrated players from
+                // blowing up the mansion, should they feel the urge to.
 
-            if (Game.GameId == GameId.Maniac && Game.Version != 0 && (obj == 182 || obj == 193))
-                _resManager.ObjectStateTable[obj] |= (byte)ObjectStateV2.State8;
+                if (Game.GameId == GameId.Maniac && Game.Version != 0 && (obj == 182 || obj == 193))
+                    _resManager.ObjectStateTable[obj] |= (byte)ObjectStateV2.State8;
+            }
 
             return _resManager.ObjectStateTable[obj];
         }

@@ -448,11 +448,11 @@ namespace NScumm.Core
 
         public TimeSpan RunBootScript(int bootParam = 0)
         {
-            if (_game.GameId == NScumm.Core.IO.GameId.Indy4 && bootParam == 0)
+            if (!Settings.CopyProtection && _game.GameId == NScumm.Core.IO.GameId.Indy4 && bootParam == 0)
             {
                 bootParam = -7873;
             }
-            else if (_game.GameId == NScumm.Core.IO.GameId.SamNMax && bootParam == 0)
+            else if (!Settings.CopyProtection && _game.GameId == NScumm.Core.IO.GameId.SamNMax && bootParam == 0)
             {
                 bootParam = -1;
             }

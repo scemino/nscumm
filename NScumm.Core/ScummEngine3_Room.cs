@@ -60,6 +60,10 @@ namespace NScumm.Core
 
             // This is based on disassembly
             Camera.CurrentPosition.X = Camera.DestinationPosition.X = a.Position.X;
+            if ((Game.GameId == GameId.Zak || Game.GameId == GameId.Loom) && (Game.Platform == Platform.FMTowns))
+            {
+                SetCameraAt(a.Position);
+            }
             SetCameraFollows(a, false);
 
             _fullRedraw = true;

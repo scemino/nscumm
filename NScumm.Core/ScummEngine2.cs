@@ -2221,13 +2221,14 @@ namespace NScumm.Core
         {
             int script = GetVarOrDirectByte(OpCodeParameter.Param1);
 
-            //            if (!_copyProtection) {
-            //                // The enhanced version of Zak McKracken included in the
-            //                // SelectWare Classic Collection bundle used CD check instead
-            //                // of the usual key code check at airports.
-            //                if ((_game.id == GID_ZAK) && (script == 15) && (_roomResource == 45))
-            //                    return;
-            //            }
+            if (!Settings.CopyProtection)
+            {
+                // The enhanced version of Zak McKracken included in the
+                // SelectWare Classic Collection bundle used CD check instead
+                // of the usual key code check at airports.
+                if ((Game.GameId == GameId.Zak) && (script == 15) && (_roomResource == 45))
+                    return;
+            }
 
             // WORKAROUND bug #1447058: In Maniac Mansion, when the door bell
             // rings, then this normally causes Ted Edison to leave his room.

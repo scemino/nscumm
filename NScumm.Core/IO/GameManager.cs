@@ -87,6 +87,8 @@ namespace NScumm.Core.IO
 
         public string AudioDevice { get; set; }
 
+        public bool CopyProtection { get; set; }
+
         public GameSettings(GameInfo game)
         {
             Game = game;

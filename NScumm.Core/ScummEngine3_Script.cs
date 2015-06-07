@@ -20,6 +20,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
+using NScumm.Core.IO;
 
 namespace NScumm.Core
 {
@@ -82,11 +83,21 @@ namespace NScumm.Core
             var script = GetVarOrDirectByte(OpCodeParameter.Param1);
             var data = GetWordVarArgs();
 
-            // Copy protection was disabled in KIXX XL release (Amiga Disk) and
-            // in LucasArts Classic Adventures (PC Disk)
-            if (Game.GameId == NScumm.Core.IO.GameId.Monkey1 && Game.Variant == "VGA" && script == 0x98)
+            // Method used by original games to skip copy protection scheme
+            if (!Settings.CopyProtection)
             {
-                return;
+                // Copy protection was disabled in LucasArts Classic Adventures (PC Disk)
+                if (Game.GameId == GameId.Loom && Game.Platform == Platform.DOS && Game.Version == 3 && CurrentRoom == 69 && script == 201)
+                    script = 205;
+                // Copy protection was disabled in KIXX XL release (Amiga Disk) and
+                // in LucasArts Classic Adventures (PC Disk)
+                if (Game.GameId == NScumm.Core.IO.GameId.Monkey1 && Game.Variant == "VGA" && script == 0x98)
+                {
+                    return;
+                }
+                // Copy protection was disabled in LucasArts Mac CD Game Pack II (Macintosh CD)
+                if (Game.GameId == GameId.Monkey1 && Game.Platform == Platform.Macintosh && script == 155)
+                    return;
             }
 
             RunScript(script, (op & 0x20) != 0, (op & 0x40) != 0, data);

@@ -202,11 +202,12 @@ namespace NScumm.Core
 
             if ((var & 0xF000) == 0)
             {
-                //                Debug.WriteLine("ReadVariable({0}) => {1}", var, _variables[var]);
-                ScummHelper.AssertRange(0, var, _resManager.NumVariables - 1, "variable (reading)");
-                if (var == 490 && Game.GameId == GameId.Monkey2)
+                if (!Settings.CopyProtection)
                 {
-                    var = 518;
+                    if (var == 490 && Game.GameId == GameId.Monkey2)
+                    {
+                        var = 518;
+                    }
                 }
                 return Variables[var];
             }
@@ -220,10 +221,28 @@ namespace NScumm.Core
                     int bit = (int)(var & 0xF);
                     var = (var >> 4) & 0xFF;
 
+                    if (!Settings.CopyProtection)
+                    {
+                        if (Game.GameId == GameId.Loom && (Game.Platform == Platform.FMTowns) && var == 214 && bit == 15)
+                        {
+                            return 0;
+                        }
+                        else if (Game.GameId == GameId.Zak && (Game.Platform == Platform.FMTowns) && var == 151 && bit == 8)
+                        {
+                            return 0;
+                        }
+                    }
+
                     ScummHelper.AssertRange(0, var, _resManager.NumVariables - 1, "variable (reading)");
                     return (Variables[var] & (1 << bit)) > 0 ? 1 : 0;
                 }
                 var &= 0x7FFF;
+
+                if (!Settings.CopyProtection)
+                {
+                    if (Game.GameId == GameId.Indy3 && (Game.Platform == Platform.FMTowns) && var == 1508)
+                        return 0;
+                }
 
                 ScummHelper.AssertRange(0, var, _bitVars.Length - 1, "variable (reading)");
                 //                Debug.WriteLine(_bitVars[var]);

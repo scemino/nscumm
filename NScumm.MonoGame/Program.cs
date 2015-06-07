@@ -42,12 +42,14 @@ namespace NScumm.MonoGame
             var showVersion = false;
             var showHelp = false;
             var listAudioDevices = false;
+            var copyProtection = false;
             var options = new OptionSet
             {
                 { "v|version", "Display NScumm version information and exit", v => showVersion = v != null },
                 { "h|help", "Display a brief help text and exit", h => showHelp = h != null },
                 { "e|music-driver=", "Select music driver", d => musicDriver = d },
-                { "list-audio-devices", "List all available audio devices", b => listAudioDevices = b != null }
+                { "list-audio-devices", "List all available audio devices", b => listAudioDevices = b != null },
+                { "copy_protection", "Enable copy protection in SCUMM games, when NScumm disables it by default.", b => copyProtection = b != null }
             };
 
             try
@@ -77,7 +79,7 @@ namespace NScumm.MonoGame
                         }
                         else
                         {
-                            var settings = new GameSettings(info){ AudioDevice = musicDriver };
+                            var settings = new GameSettings(info){ AudioDevice = musicDriver, CopyProtection = copyProtection };
                             var game = new ScummGame(settings);
                             game.Run();
                         }

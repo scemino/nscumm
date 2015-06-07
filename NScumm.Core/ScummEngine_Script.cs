@@ -584,18 +584,20 @@ namespace NScumm.Core
 
         void RunScriptNested(int script)
         {
+            var nest = _nest[_numNestedScripts];
+
             if (_currentScript == 0xFF)
             {
-                _nest[_numNestedScripts].Number = 0xFF;
-                _nest[_numNestedScripts].Where = WhereIsObject.NotFound;
+                nest.Number = 0;
+                nest.Where = WhereIsObject.NotFound;
             }
             else
             {
                 // Store information about the currently running script
                 _slots[_currentScript].Offset = (uint)_currentPos;
-                _nest[_numNestedScripts].Number = _slots[_currentScript].Number;
-                _nest[_numNestedScripts].Where = _slots[_currentScript].Where;
-                _nest[_numNestedScripts].Slot = _currentScript;
+                nest.Number = _slots[_currentScript].Number;
+                nest.Where = _slots[_currentScript].Where;
+                nest.Slot = _currentScript;
             }
 
             _numNestedScripts++;
@@ -607,7 +609,6 @@ namespace NScumm.Core
             if (_numNestedScripts > 0)
                 _numNestedScripts--;
 
-            var nest = _nest[_numNestedScripts];
             if (nest.Number != 0 && nest.Slot < _slots.Length)
             {
                 // Try to resume the script which called us, if its status has not changed

@@ -20,6 +20,8 @@ using NScumm.Core;
 using NScumm.Core.IO;
 using System.Reflection;
 using System.IO;
+using System.Collections.Generic;
+using System.Linq;
 
 [assembly:AssemblyVersion("0.1.0.*")]
 
@@ -36,14 +38,13 @@ namespace NScumm.MonoGame
         [STAThread]
         static int Main(string[] args)
         {
-            Initialize();
-
             var musicDriver = "towns";
             var showVersion = false;
             var showHelp = false;
             var listAudioDevices = false;
             var bootParam = 0;
             var copyProtection = false;
+            string switches = null;
             var options = new OptionSet
             {
                 { "v|version", "Display NScumm version information and exit", v => showVersion = v != null },
@@ -51,12 +52,14 @@ namespace NScumm.MonoGame
                 { "e|music-driver=", "Select music driver", d => musicDriver = d },
                 { "list-audio-devices", "List all available audio devices", b => listAudioDevices = b != null },
                 { "b|boot-param=", "Pass number to the boot script (boot param)", (int b) => bootParam = b },
+                { "debugflags=", "Enable engine specific debug flags (separated by commas)", d => switches = d },
                 { "copy_protection", "Enable copy protection in SCUMM games, when NScumm disables it by default.", b => copyProtection = b != null }
             };
 
             try
             {
                 var extras = options.Parse(args);
+                Initialize(switches);
                 if (showVersion)
                 {
                     ShowVersion();
@@ -110,10 +113,12 @@ namespace NScumm.MonoGame
             return 0;
         }
 
-        static void Initialize()
+        static void Initialize(string sw)
         {
             ServiceLocator.Platform = new Platform();
             ServiceLocator.FileStorage = new FileStorage();
+            var switches = string.IsNullOrEmpty(sw) ? Enumerable.Empty<string>() : sw.Split(',');
+            ServiceLocator.TraceFatory = new TraceFactory(switches);
         }
 
         static void ShowVersion()

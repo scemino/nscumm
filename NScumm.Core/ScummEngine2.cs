@@ -2407,7 +2407,7 @@ namespace NScumm.Core
                         {
                             isBackgroundScript = (st.Verb == 250);
                             isSpecialVerb = true;
-                            st = Sentence[SentenceNum++] = new Sentence(
+                            st = Sentence[SentenceNum] = new Sentence(
                                 253,
                                 st.ObjectA,
                                 st.ObjectB);

@@ -40,7 +40,7 @@ namespace NScumm.Core
         Param3 = 0x20,
     }
 
-    public abstract partial class ScummEngine
+    public abstract partial class ScummEngine: IEnableTrace
     {
         #region Constants
 
@@ -563,17 +563,18 @@ namespace NScumm.Core
         protected void ExecuteOpCode(byte opCode)
         {
             _opCode = opCode;
-            _slots[_currentScript].IsExecuted = true;
+            if (_game.Version > 2) // V0-V2 games didn't use the didexec flag
+                _slots[_currentScript].IsExecuted = true;
 
-//            if (Game.Version < 6)
-//            {
-//                Debug.WriteLine("Room = {1}, Script = {0}, Offset = {4}, Name = {2} [{3:X2}]", 
-//                    _slots[_currentScript].Number, 
-//                    _roomResource, 
-//                    _opCodes.ContainsKey(_opCode) ? _opCodes[opCode].Method.Name : "Unknown", 
-//                    _opCode,
-//                    _currentPos - 1);
-//            }
+            if (Game.Version < 6)
+            {
+                this.Trace().Write(TraceSwitches.OpCodes, "Room = {1}, Script = {0}, Offset = {4}, Name = {2} [{3:X2}]", 
+                    _slots[_currentScript].Number, 
+                    _roomResource, 
+                    _opCodes.ContainsKey(_opCode) ? _opCodes[opCode].Method.Name : "Unknown", 
+                    _opCode,
+                    _currentPos - 1);
+            }
             if (_opCodes.ContainsKey(opCode))
             {
                 _opCodes[opCode]();

@@ -33,30 +33,44 @@ namespace NScumm.Core
     public interface IFileStorage
     {
         IEnumerable<string> EnumerateFiles(string path);
+
         IEnumerable<string> EnumerateFiles(string path, string prefix);
+
         IEnumerable<string> EnumerateFiles(string path, string prefix, SearchOption option);
 
         string Combine(string path1, string path2);
 
         string GetDirectoryName(string path);
+
         string GetFileName(string path);
+
         string GetFileNameWithoutExtension(string path);
+
         string GetExtension(string path);
+
         string ChangeExtension(string path, string newExtension);
 
         bool FileExists(string path);
 
         Stream OpenFileRead(string path);
+
         Stream OpenFileWrite(string path);
 
         byte[] ReadAllBytes(string filename);
+
         string GetSignature(string path);
     }
 
     public interface IPlatform
     {
         void Sleep(int timeInMs);
+
         object ToStructure(byte[] data, int offset, Type type);
+    }
+
+    public interface ITraceFactory
+    {
+        ITrace CreateTrace(IEnableTrace trace);
     }
 
     public static class ServiceLocator
@@ -64,6 +78,8 @@ namespace NScumm.Core
         public static IFileStorage FileStorage { get; set; }
 
         public static IPlatform Platform { get; set; }
+
+        public static ITraceFactory TraceFatory { get; set; }
     }
 }
 

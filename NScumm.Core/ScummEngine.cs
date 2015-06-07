@@ -403,9 +403,9 @@ namespace NScumm.Core
                 // Setup for digital iMuse is performed in another place
 
                 // HACK: don't know why I have to keep this to work
-//                var adlibMidiDriver = (MidiDriver)MidiDriver.CreateMidi(Mixer, MidiDriver.DetectDevice(MusicDriverTypes.AdLib, "adlib"));
+                var adlibMidiDriver = (MidiDriver)MidiDriver.CreateMidi(Mixer, MidiDriver.DetectDevice(MusicDriverTypes.AdLib, "adlib"));
                 // Setup for digital iMuse is performed in another place
-//                NScumm.Core.Audio.IMuse.IMuse.Create(null, adlibMidiDriver);
+                NScumm.Core.Audio.IMuse.IMuse.Create(null, adlibMidiDriver);
             }
             else if (Game.Platform == Platform.Apple2GS && Game.Version == 0)
             {

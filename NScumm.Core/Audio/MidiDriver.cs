@@ -204,6 +204,7 @@ namespace NScumm.Core.Audio
         /// </summary>
         /// <returns>The device handle based on the present devices and the flags parameter.</returns>
         /// <param name="flags">Flags.</param>
+        /// <param name = "selectedDevice">The selected device</param>
         public static DeviceHandle DetectDevice(MusicDriverTypes flags, string selectedDevice)
         {
             var result = new DeviceHandle();
@@ -242,7 +243,32 @@ namespace NScumm.Core.Audio
                     }
                     break;
             }
-            // TODO: other music drivers
+
+            if (!result.IsValid)
+            {
+                MusicType mt = MusicType.Null;
+                if (flags.HasFlag(MusicDriverTypes.FMTowns))
+                {
+                    mt = MusicType.FMTowns;
+                }
+                else if (flags.HasFlag(MusicDriverTypes.AdLib))
+                {
+                    mt = MusicType.AdLib;
+                }
+                else if (flags.HasFlag(MusicDriverTypes.PCjr))
+                {
+                    mt = MusicType.PCjr;
+                }
+                else if (flags.HasFlag(MusicDriverTypes.PCSpeaker))
+                {
+                    mt = MusicType.PCSpeaker;
+                }
+                var device = MusicManager.GetPlugins().SelectMany(p => p.GetDevices()).FirstOrDefault(d => d.MusicType == mt);
+                if (device != null)
+                {
+                    result = device.Handle;
+                }
+            }
 
             return result;
         }

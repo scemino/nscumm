@@ -19,11 +19,10 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
-using System.Diagnostics;
 
 namespace NScumm.Core.Audio.IMuse
 {
-    partial class IMuseDigital
+    partial class IMuseDigital: IEnableTrace
     {
         const int DigStateOffset = 11;
         const int DigSequenceOffset = (DigStateOffset + 65);
@@ -49,7 +48,7 @@ namespace NScumm.Core.Audio.IMuse
             {
                 if ((_comiStateMusicTable[l].SoundId == stateId))
                 {
-//                    Debug.WriteLine("Set music state: {0}, {1}", _comiStateMusicTable[l].Name, _comiStateMusicTable[l].Filename);
+                    this.Trace().Write(TraceSwitches.Music, "Set music state: {0}, {1}", _comiStateMusicTable[l].Name, _comiStateMusicTable[l].Filename);
                     num = l;
                     break;
                 }
@@ -83,7 +82,7 @@ namespace NScumm.Core.Audio.IMuse
             {
                 if ((_comiSeqMusicTable[l].SoundId == seqId))
                 {
-//                    Debug.WriteLine("Set music sequence: {0}, {1}", _comiSeqMusicTable[l].Name, _comiSeqMusicTable[l].Filename);
+                    this.Trace().Write(TraceSwitches.Music, "Set music sequence: {0}, {1}", _comiSeqMusicTable[l].Name, _comiSeqMusicTable[l].Filename);
                     num = l;
                     break;
                 }
@@ -97,7 +96,7 @@ namespace NScumm.Core.Audio.IMuse
 
             if (num != 0)
             {
-                if (_curMusicSeq!=0 && ((_comiSeqMusicTable[_curMusicSeq].TransitionType == 4)
+                if (_curMusicSeq != 0 && ((_comiSeqMusicTable[_curMusicSeq].TransitionType == 4)
                     || (_comiSeqMusicTable[_curMusicSeq].TransitionType == 6)))
                 {
                     _nextSeqToPlay = num;
@@ -225,7 +224,7 @@ namespace NScumm.Core.Audio.IMuse
             {
                 if ((_digStateMusicTable[l].SoundId == stateId))
                 {
-//                    Debug.WriteLine("Set music state: {0}, {1}", _digStateMusicTable[l].Name, _digStateMusicTable[l].Filename);
+                    this.Trace().Write(TraceSwitches.Music, "Set music state: {0}, {1}", _digStateMusicTable[l].Name, _digStateMusicTable[l].Filename);
                     num = l;
                     break;
                 }
@@ -268,7 +267,7 @@ namespace NScumm.Core.Audio.IMuse
                 }
             }
 
-//            Debug.WriteLine("Set music state: {0}, {1}", _digStateMusicTable[num].Name, _digStateMusicTable[num].Filename);
+            this.Trace().Write(TraceSwitches.Music, "Set music state: {0}, {1}", _digStateMusicTable[num].Name, _digStateMusicTable[num].Filename);
 
             if (_curMusicState == num)
                 return;
@@ -295,7 +294,7 @@ namespace NScumm.Core.Audio.IMuse
             {
                 if ((_digSeqMusicTable[l].SoundId == seqId))
                 {
-//                    Debug.WriteLine("Set music sequence: {0}, {1}", _digSeqMusicTable[l].Name, _digSeqMusicTable[l].Filename);
+                    this.Trace().Write(TraceSwitches.Music, "Set music sequence: {0}, {1}", _digSeqMusicTable[l].Name, _digSeqMusicTable[l].Filename);
                     num = l;
                     break;
                 }
@@ -433,7 +432,7 @@ namespace NScumm.Core.Audio.IMuse
             if (stateId > 48)
                 return;
 
-//            Debug.WriteLine("State music: {0}, {1}", _ftStateMusicTable[stateId].Name, _ftStateMusicTable[stateId].AudioName);
+            this.Trace().Write(TraceSwitches.Music, "State music: {0}, {1}", _ftStateMusicTable[stateId].Name, _ftStateMusicTable[stateId].AudioName);
 
             if (_curMusicState == stateId)
                 return;
@@ -454,7 +453,7 @@ namespace NScumm.Core.Audio.IMuse
             if (seqId > 52)
                 return;
 
-//            Debug.WriteLine("Sequence music: {0}", _ftSeqNames[seqId]);
+            this.Trace().Write(TraceSwitches.Music, "Sequence music: {0}", _ftSeqNames[seqId]);
 
             if (_curMusicSeq == seqId)
                 return;
@@ -483,7 +482,7 @@ namespace NScumm.Core.Audio.IMuse
             if (cueId > 3)
                 return;
 
-//            Debug.WriteLine("Cue point sequence: {0}", cueId);
+            this.Trace().Write(TraceSwitches.Music, "Cue point sequence: {0}", cueId);
 
             if (_curMusicSeq == 0)
                 return;

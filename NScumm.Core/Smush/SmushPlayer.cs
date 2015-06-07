@@ -50,6 +50,11 @@ namespace NScumm.Core.Smush
         {
             filename = ScummHelper.LocatePath(ServiceLocator.FileStorage.GetDirectoryName(_vm.Game.Path), filename);
             // Verify the specified file exists
+            if (filename == null)
+            {
+                //warning("SmushPlayer::play() File not found {0}", filename);
+                return;
+            }
 
             _updateNeeded = false;
             _warpNeeded = false;

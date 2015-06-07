@@ -76,13 +76,13 @@ namespace NScumm.Core.Audio.IMuse
                     }
                     break;
                 case 25: // ImuseStartStream
-                    Debug.WriteLine("ImuseStartStream ({0}, {1}, {2})", soundId, c, d);
+                    this.Trace().Write(TraceSwitches.Music, "ImuseStartStream ({0}, {1}, {2})", soundId, c, d);
                     break;
                 case 26: // ImuseSwitchStream
-                    Debug.WriteLine("ImuseSwitchStream ({0}, {1}, {2}, {3}, {4})", soundId, c, d, e, f);
+                    this.Trace().Write(TraceSwitches.Music, "ImuseSwitchStream ({0}, {1}, {2}, {3}, {4})", soundId, c, d, e, f);
                     break;
                 case 0x1000: // ImuseSetState
-//                    Debug.WriteLine("ImuseSetState ({0})", b);
+                    //                    this.Trace().Write(TraceSwitches.Music,"ImuseSetState ({0})", b);
                     if ((_vm.Game.GameId == GameId.Dig) && (_vm.Game.Features.HasFlag(GameFeatures.Demo)))
                     {
                         if (b == 1)
@@ -142,7 +142,7 @@ namespace NScumm.Core.Audio.IMuse
                     }
                     break;
                 case 0x1001: // ImuseSetSequence
-//                    Debug.WriteLine("ImuseSetSequence ({0})", b);
+                    this.Trace().Write(TraceSwitches.Music, "ImuseSetSequence ({0})", b);
                     switch (_vm.Game.GameId)
                     {
                         case GameId.Dig:
@@ -157,14 +157,14 @@ namespace NScumm.Core.Audio.IMuse
                     }
                     break;
                 case 0x1002: // ImuseSetCuePoint
-//                    Debug.WriteLine("ImuseSetCuePoint ({0})", b);
+                    this.Trace().Write(TraceSwitches.Music, "ImuseSetCuePoint ({0})", b);
                     if (_vm.Game.GameId == GameId.FullThrottle)
                     {
                         SetFtMusicCuePoint(b);
                     }
                     break;
                 case 0x1003: // ImuseSetAttribute
-//                    Debug.WriteLine("ImuseSetAttribute ({0}, {1})", b, c);
+                    this.Trace().Write(TraceSwitches.Music, "ImuseSetAttribute ({0}, {1})", b, c);
                     Debug.Assert((_vm.Game.GameId == GameId.Dig) || (_vm.Game.GameId == GameId.FullThrottle));
                     if (_vm.Game.GameId == GameId.Dig)
                     {
@@ -186,13 +186,13 @@ namespace NScumm.Core.Audio.IMuse
         {
             lock (_mutex)
             {
-//                Debug.WriteLine("flushTracks()");
+                this.Trace().Write(TraceSwitches.Music, "flushTracks()");
                 for (int l = 0; l < MaxDigitalTracks + MaxDigitalFadeTracks; l++)
                 {
                     Track track = _track[l];
                     if (track.Used && track.ToBeRemoved && !_mixer.IsSoundHandleActive(track.MixChanHandle))
                     {
-//                        Debug.WriteLine("flushTracks() - soundId:{0}", track.SoundId);
+                        this.Trace().Write(TraceSwitches.Music, "flushTracks() - soundId:{0}", track.SoundId);
                         track.Clear();
                     }
                 }
@@ -201,19 +201,19 @@ namespace NScumm.Core.Audio.IMuse
 
         public void StartVoice(int soundId, IAudioStream input)
         {
-//            Debug.WriteLine("StartVoiceStream({0})", soundId);
+            this.Trace().Write(TraceSwitches.Music, "StartVoiceStream({0})", soundId);
             StartSound(soundId, "", 0, ImuseVolumeGroupVoice, input, 0, 127, 127, null);
         }
 
         public void StartVoice(int soundId, string soundName)
         {
-//            Debug.WriteLine("startVoiceBundle({0}, {1})", soundName, soundId);
+            this.Trace().Write(TraceSwitches.Music, "startVoiceBundle({0}, {1})", soundName, soundId);
             StartSound(soundId, soundName, ImuseBundle, ImuseVolumeGroupVoice, null, 0, 127, 127, null);
         }
 
         public void StartSfx(int soundId, int priority)
         {
-//            Debug.WriteLine("startSfx({0})", soundId);
+            this.Trace().Write(TraceSwitches.Music, "startSfx({0})", soundId);
             StartSound(soundId, "", ImuseResource, ImuseVolumeGroupSfx, null, 0, 127, priority, null);
         }
 
@@ -221,7 +221,7 @@ namespace NScumm.Core.Audio.IMuse
         {
             lock (_mutex)
             {
-//                Debug.WriteLine("getSoundStatus({0})", soundId);
+                this.Trace().Write(TraceSwitches.Music, "getSoundStatus({0})", soundId);
                 for (int l = 0; l < MaxDigitalTracks; l++)
                 {
                     var track = _track[l];
@@ -244,13 +244,13 @@ namespace NScumm.Core.Audio.IMuse
         {
             lock (_mutex)
             {
-//                Debug.WriteLine("stopSound({0})", soundId);
+                this.Trace().Write(TraceSwitches.Music, "stopSound({0})", soundId);
                 for (int l = 0; l < MaxDigitalTracks; l++)
                 {
                     var track = _track[l];
                     if (track.Used && !track.ToBeRemoved && (track.SoundId == soundId))
                     {
-//                        Debug.WriteLine("stopSound({0}) - stopping sound", soundId);
+                        this.Trace().Write(TraceSwitches.Music, "stopSound({0}) - stopping sound", soundId);
                         FlushTrack(track);
                     }
                 }
@@ -273,7 +273,7 @@ namespace NScumm.Core.Audio.IMuse
                 }
 
                 int msPos = GetPosInMs(soundId);
-//                Debug.WriteLine("getCurMusicPosInMs({0}) = {1}", soundId, msPos);
+                this.Trace().Write(TraceSwitches.Music, "getCurMusicPosInMs({0}) = {1}", soundId, msPos);
                 return msPos;
             }
         }
@@ -285,7 +285,7 @@ namespace NScumm.Core.Audio.IMuse
                 int msPos = GetPosInMs(Sound.TalkSoundID) + 50;
                 int width, height;
 
-//                Debug.WriteLine("getCurVoiceLipSyncWidth({0})", Sound.TalkSoundID);
+                this.Trace().Write(TraceSwitches.Music, "getCurVoiceLipSyncWidth({0})", Sound.TalkSoundID);
                 GetLipSync(Sound.TalkSoundID, 0, msPos, out width, out height);
                 return width;
             }
@@ -298,7 +298,7 @@ namespace NScumm.Core.Audio.IMuse
                 int msPos = GetPosInMs(Sound.TalkSoundID) + 50;
                 int width, height;
 
-//                Debug.WriteLine("getCurVoiceLipSyncHeight({0})", Sound.TalkSoundID);
+                this.Trace().Write(TraceSwitches.Music, "getCurVoiceLipSyncHeight({0})", Sound.TalkSoundID);
                 GetLipSync(Sound.TalkSoundID, 0, msPos, out width, out height);
                 return height;
             }
@@ -322,7 +322,7 @@ namespace NScumm.Core.Audio.IMuse
                 int msPos = GetPosInMs(soundId) + 50;
                 int width = 0, height = 0;
 
-//                Debug.WriteLine("getCurVoiceLipSyncWidth({0}, {1})", soundId, msPos);
+                this.Trace().Write(TraceSwitches.Music, "getCurVoiceLipSyncWidth({0}, {1})", soundId, msPos);
                 GetLipSync(soundId, syncId, msPos, out width, out height);
                 return width;
             }
@@ -346,7 +346,7 @@ namespace NScumm.Core.Audio.IMuse
                 int msPos = GetPosInMs(soundId) + 50;
                 int width = 0, height = 0;
 
-//                Debug.WriteLine("getCurVoiceLipSyncHeight({0}, {1})", soundId, msPos);
+                this.Trace().Write(TraceSwitches.Music, "getCurVoiceLipSyncHeight({0}, {1})", soundId, msPos);
                 GetLipSync(soundId, syncId, msPos, out width, out height);
                 return height;
             }
@@ -356,7 +356,7 @@ namespace NScumm.Core.Audio.IMuse
         {
             lock (_mutex)
             {
-//                Debug.WriteLine("stopAllSounds");
+                this.Trace().Write(TraceSwitches.Music, "stopAllSounds");
 
                 for (int l = 0; l < MaxDigitalTracks + MaxDigitalFadeTracks; l++)
                 {
@@ -369,7 +369,7 @@ namespace NScumm.Core.Audio.IMuse
                         _mixer.StopHandle(track.MixChanHandle);
                         if (track.SoundDesc != null)
                         {
-//                            Debug.WriteLine("stopAllSounds - stopping sound({0})", track.SoundId);
+                            this.Trace().Write(TraceSwitches.Music, "stopAllSounds - stopping sound({0})", track.SoundId);
                             _sound.CloseSound(track.SoundDesc);
                         }
 
@@ -389,7 +389,7 @@ namespace NScumm.Core.Audio.IMuse
         {
             lock (_mutex)
             {
-//                Debug.WriteLine("refreshScripts()");
+                this.Trace().Write(TraceSwitches.Music, "refreshScripts()");
 
                 if (_stopingSequence != 0)
                 {
@@ -402,7 +402,7 @@ namespace NScumm.Core.Audio.IMuse
                     // small delay, it seems help for fix bug #1757010
                     if (_stopingSequence++ > 120)
                     {
-//                        Debug.WriteLine("refreshScripts() Force restore music state");
+                        this.Trace().Write(TraceSwitches.Music, "refreshScripts() Force restore music state");
                         ParseScriptCmds(0x1001, 0, 0, 0, 0, 0, 0, 0);
                         _stopingSequence = 0;
                     }
@@ -421,7 +421,7 @@ namespace NScumm.Core.Audio.IMuse
 
                 if (!found && _curMusicState != 0)
                 {
-//                    Debug.WriteLine("refreshScripts() Restore music state");
+                    this.Trace().Write(TraceSwitches.Music, "refreshScripts() Restore music state");
                     ParseScriptCmds(0x1001, 0, 0, 0, 0, 0, 0, 0);
                 }
             }
@@ -437,7 +437,7 @@ namespace NScumm.Core.Audio.IMuse
             }
             else if (track.Stream != null)
             {
-//                Debug.WriteLine("FlushTrack() - soundId:{0}", track.SoundId);
+                this.Trace().Write(TraceSwitches.Music, "FlushTrack() - soundId:{0}", track.SoundId);
                 // Finalize the appendable stream, then remove our reference to it.
                 // Note that there might still be some data left in the buffers of the
                 // appendable stream. We play it nice and wait till all of it
@@ -459,19 +459,19 @@ namespace NScumm.Core.Audio.IMuse
 
         void StartMusic(int soundId, int volume)
         {
-//            Debug.WriteLine("startMusicResource({0})", soundId);
+            this.Trace().Write(TraceSwitches.Music, "startMusicResource({0})", soundId);
             StartSound(soundId, "", ImuseResource, ImuseVolumeGroupMusic, null, 0, volume, 126, null);
         }
 
         void StartMusic(string soundName, int soundId, int hookId, int volume)
         {
-//            Debug.WriteLine("startMusicBundle({0}, soundId:{1}, hookId:{2})", soundName, soundId, hookId);
+            this.Trace().Write(TraceSwitches.Music, "startMusicBundle({0}, soundId:{1}, hookId:{2})", soundName, soundId, hookId);
             StartSound(soundId, soundName, ImuseBundle, ImuseVolumeGroupMusic, null, hookId, volume, 126, null);
         }
 
         void StartMusicWithOtherPos(string soundName, int soundId, int hookId, int volume, Track otherTrack)
         {
-//            Debug.WriteLine("startMusicWithOtherPos({0}, soundId:{1}, hookId:{2}, oldSoundId:{3})", soundName, soundId, hookId, otherTrack.SoundId);
+            this.Trace().Write(TraceSwitches.Music, "startMusicWithOtherPos({0}, soundId:{1}, hookId:{2}, oldSoundId:{3})", soundName, soundId, hookId, otherTrack.SoundId);
             StartSound(soundId, soundName, ImuseBundle, ImuseVolumeGroupMusic, null, hookId, volume, 126, otherTrack);
         }
 

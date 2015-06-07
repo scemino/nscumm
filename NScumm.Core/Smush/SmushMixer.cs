@@ -24,7 +24,7 @@ using System.Diagnostics;
 
 namespace NScumm.Core.Smush
 {
-    class SmushMixer
+    class SmushMixer: IEnableTrace
     {
         public SmushMixer(IMixer mixer)
         {
@@ -40,7 +40,7 @@ namespace NScumm.Core.Smush
 
         public bool Stop()
         {
-            Debug.WriteLine("SmushMixer::stop()");
+            this.Trace().Write(TraceSwitches.Music, "SmushMixer::stop()");
             for (int i = 0; i < NumChannels; i++)
             {
                 if (_channels[i].Id != -1)
@@ -60,7 +60,7 @@ namespace NScumm.Core.Smush
 
         public bool HandleFrame()
         {
-//            Debug.WriteLine("SmushMixer::handleFrame()");
+            this.Trace().Write(TraceSwitches.Music, "SmushMixer::handleFrame()");
             for (int i = 0; i < _channels.Length; i++)
             {
                 if (_channels[i].Id != -1)
@@ -118,7 +118,7 @@ namespace NScumm.Core.Smush
 
         public SmushChannel FindChannel(int track)
         {
-            Debug.WriteLine("SmushMixer.FindChannel({0})", track);
+            this.Trace().Write(TraceSwitches.Music, "SmushMixer.FindChannel({0})", track);
             for (var i = 0; i < _channels.Length; i++)
             {
                 if (_channels[i].Id == track)
@@ -131,12 +131,12 @@ namespace NScumm.Core.Smush
         {
             var track = c.TrackIdentifier;
 
-            Debug.WriteLine("SmushMixer.AddChannel({0})", track);
+            this.Trace().Write(TraceSwitches.Music, "SmushMixer.AddChannel({0})", track);
 
             for (var i = 0; i < _channels.Length; i++)
             {
                 if (_channels[i].Id == track)
-                    Debug.WriteLine("SmushMixer.AddChannel({0}): channel already exists", track);
+                    this.Trace().Write(TraceSwitches.Music, "SmushMixer.AddChannel({0}): channel already exists", track);
             }
 
             for (var i = 0; i < _channels.Length; i++)
@@ -151,7 +151,7 @@ namespace NScumm.Core.Smush
 
             for (var i = 0; i < _channels.Length; i++)
             {
-                Debug.WriteLine("channel {0} : {1}({2}, {3})", i, _channels[i].Chan,
+                this.Trace().Write(TraceSwitches.Music, "channel {0} : {1}({2}, {3})", i, _channels[i].Chan,
                     _channels[i].Chan != null ? _channels[i].Chan.TrackIdentifier : -1,
                     _channels[i].Chan == null || _channels[i].Chan.IsTerminated);
             }
@@ -161,7 +161,7 @@ namespace NScumm.Core.Smush
 
         public bool Flush()
         {
-//            Debug.WriteLine("SmushMixer::flush()");
+            this.Trace().Write(TraceSwitches.Music, "SmushMixer::flush()");
             for (int i = 0; i < NumChannels; i++)
             {
                 if (_channels[i].Id != -1)

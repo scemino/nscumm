@@ -103,7 +103,6 @@ namespace NScumm.Core.Audio.IMuse
         {
             lock (_mutex)
             {
-
                 for (int l = 0; l < MaxDigitalTracks + MaxDigitalFadeTracks; l++)
                 {
                     var track = _track[l];

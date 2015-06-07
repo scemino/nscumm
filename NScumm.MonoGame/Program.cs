@@ -42,6 +42,7 @@ namespace NScumm.MonoGame
             var showVersion = false;
             var showHelp = false;
             var listAudioDevices = false;
+            var bootParam = 0;
             var copyProtection = false;
             var options = new OptionSet
             {
@@ -49,6 +50,7 @@ namespace NScumm.MonoGame
                 { "h|help", "Display a brief help text and exit", h => showHelp = h != null },
                 { "e|music-driver=", "Select music driver", d => musicDriver = d },
                 { "list-audio-devices", "List all available audio devices", b => listAudioDevices = b != null },
+                { "b|boot-param=", "Pass number to the boot script (boot param)", (int b) => bootParam = b },
                 { "copy_protection", "Enable copy protection in SCUMM games, when NScumm disables it by default.", b => copyProtection = b != null }
             };
 
@@ -79,7 +81,7 @@ namespace NScumm.MonoGame
                         }
                         else
                         {
-                            var settings = new GameSettings(info){ AudioDevice = musicDriver, CopyProtection = copyProtection };
+                            var settings = new GameSettings(info){ AudioDevice = musicDriver, CopyProtection = copyProtection, BootParam = bootParam };
                             var game = new ScummGame(settings);
                             game.Run();
                         }

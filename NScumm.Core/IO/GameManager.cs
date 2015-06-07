@@ -89,6 +89,8 @@ namespace NScumm.Core.IO
 
         public bool CopyProtection { get; set; }
 
+        public int BootParam { get; set; }
+
         public GameSettings(GameInfo game)
         {
             Game = game;

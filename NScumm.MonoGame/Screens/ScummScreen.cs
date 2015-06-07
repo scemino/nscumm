@@ -144,7 +144,7 @@ namespace NScumm.MonoGame
 
         void UpdateGame()
         {
-            tsToWait = engine.RunBootScript();
+            tsToWait = engine.RunBootScript(info.BootParam);
             while (!engine.HasToQuit)
             {
                 if (!IsPaused)

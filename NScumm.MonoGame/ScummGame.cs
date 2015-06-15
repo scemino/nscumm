@@ -25,12 +25,12 @@ namespace NScumm.MonoGame
     /// <summary>
     /// This is the main type for your game
     /// </summary>
-    public class ScummGame : Game
+    class ScummGame : Game
     {
-        readonly GameSettings settings;
-        readonly ScreenManager screenManager;
+        readonly GameSettings _settings;
+        readonly ScreenManager _screenManager;
 
-        public GraphicsDeviceManager GraphicsDeviceManager{ get; private set; }
+        public GraphicsDeviceManager GraphicsDeviceManager { get; private set; }
 
         public ScummGame(GameSettings settings)
         {
@@ -39,13 +39,13 @@ namespace NScumm.MonoGame
             Window.AllowUserResizing = true;
 
             Content.RootDirectory = "Content";
-            this.settings = settings;
+            _settings = settings;
             GraphicsDeviceManager = new GraphicsDeviceManager(this);
             GraphicsDeviceManager.PreferredBackBufferWidth = 800;
             GraphicsDeviceManager.PreferredBackBufferHeight = (int)(800.0 * settings.Game.Height / settings.Game.Width);
 
-            screenManager = new ScreenManager(this);
-            Components.Add(screenManager);
+            _screenManager = new ScreenManager(this);
+            Components.Add(_screenManager);
         }
 
         /// <summary>
@@ -56,9 +56,9 @@ namespace NScumm.MonoGame
         /// </summary>
         protected override void Initialize()
         {
-            Window.Title = string.Format("NScumm - {0} [{1}/{2}]", settings.Game.Description, settings.Game.Variant, settings.Game.Culture.NativeName);
-            screenManager.AddScreen(new BackgroundScreen());
-            screenManager.AddScreen(new ScummScreen(this, settings));
+            Window.Title = string.Format("NScumm - {0} [{1}/{2}]", _settings.Game.Description, _settings.Game.Variant, _settings.Game.Culture.NativeName);
+            _screenManager.AddScreen(new BackgroundScreen());
+            _screenManager.AddScreen(new ScummScreen(this, _settings));
 
             base.Initialize();
         }

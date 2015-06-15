@@ -18,7 +18,6 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
-using OpenTK;
 using NScumm.Core;
 
 namespace NScumm.MonoGame
@@ -36,10 +35,10 @@ namespace NScumm.MonoGame
         object _gate = new object();
         Color[] _colors;
         int snapshot;
-        NativeWindow _window;
+        GameWindow _window;
         NScumm.Core.Graphics.PixelFormat _pixelFormat;
 
-        public XnaGraphicsManager(int width, int height, NativeWindow window, GraphicsDevice device)
+        public XnaGraphicsManager(int width, int height, GameWindow window, GraphicsDevice device)
         {
             if (device == null)
                 throw new ArgumentNullException("device");
@@ -197,7 +196,7 @@ namespace NScumm.MonoGame
 
         #region Cursor Methods
 
-        public Microsoft.Xna.Framework.Vector2 Hotspot { get; private set; }
+        public Vector2 Hotspot { get; private set; }
 
         public void SetCursor(byte[] pixels, int width, int height, NScumm.Core.Graphics.Point hotspot)
         {
@@ -207,7 +206,7 @@ namespace NScumm.MonoGame
                 _textureCursor = new Texture2D(_device, width, height);
             }
 
-            Hotspot = new Microsoft.Xna.Framework.Vector2(hotspot.X, hotspot.Y);
+            Hotspot = new Vector2(hotspot.X, hotspot.Y);
             var pixelsCursor = new Color[width * height];
             if (_pixelFormat == NScumm.Core.Graphics.PixelFormat.Rgb16)
             {
@@ -260,13 +259,13 @@ namespace NScumm.MonoGame
             }
         }
 
-        public void DrawCursor(SpriteBatch spriteBatch, Microsoft.Xna.Framework.Vector2 cursorPos)
+        public void DrawCursor(SpriteBatch spriteBatch, Vector2 cursorPos)
         {
             if (_cursorVisible)
             {
-                double scaleX = _window.Bounds.Width / _width;
-                double scaleY = _window.Bounds.Height / _height;
-                var rect = new Rectangle((int)(cursorPos.X - _window.Bounds.X - scaleX * Hotspot.X), (int)(cursorPos.Y - _window.Bounds.Y - scaleY * Hotspot.Y), (int)(scaleX * _textureCursor.Width), (int)(scaleY * _textureCursor.Height));
+                double scaleX = _window.ClientBounds.Width / _width;
+                double scaleY = _window.ClientBounds.Height / _height;
+                var rect = new Rectangle((int)(cursorPos.X - scaleX * Hotspot.X), (int)(cursorPos.Y - scaleY * Hotspot.Y), (int)(scaleX * _textureCursor.Width), (int)(scaleY * _textureCursor.Height));
                 spriteBatch.Draw(_textureCursor, rect, null, Color.White);
             }
         }

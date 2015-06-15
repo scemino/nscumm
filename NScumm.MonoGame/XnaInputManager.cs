@@ -20,56 +20,57 @@ using NScumm.Core.Input;
 using System.Collections.Generic;
 using NScumm.Core;
 using System.Linq;
+using Microsoft.Xna.Framework;
 
 namespace NScumm.MonoGame
 {
-    sealed class XnaInputManager : NScumm.Core.Input.IInputManager
+    sealed class XnaInputManager : IInputManager
     {
-        MouseState mouseState;
-        KeyboardState keyboardState;
-        double width; 
-        double height;
+        MouseState _mouseState;
+        KeyboardState _keyboardState;
+        double _width; 
+        double _height;
+        GameWindow _window;
+        readonly object _gate = new object();
 
-        public XnaInputManager(OpenTK.NativeWindow window, int width, int height)
+        public XnaInputManager(GameWindow window, int width, int height)
         {
-            this.window = window;
-            this.width = width;
-            this.height = height;
+            _window = window;
+            _width = width;
+            _height = height;
         }
 
         public NScumm.Core.Graphics.Point GetMousePosition()
         {
             var state = Mouse.GetState();
-            var x = state.X - window.Bounds.X;
-            var y = state.Y - window.Bounds.Y;
+            var x = state.X;
+            var y = state.Y;
 
-            var scaleX = width / window.Bounds.Width;
-            var scaleY = height / window.Bounds.Height;
+            var scaleX = _width / _window.ClientBounds.Width;
+            var scaleY = _height / _window.ClientBounds.Height;
             var pOut = new NScumm.Core.Graphics.Point((short)(x * scaleX), (short)(y * scaleY));
             return pOut;
         }
 
         public void UpdateInput(MouseState mouse, KeyboardState keyboard)
         {
-            lock (gate)
+            lock (_gate)
             {
-                mouseState = mouse;
-                keyboardState = keyboard;
+                _mouseState = mouse;
+                _keyboardState = keyboard;
             }
         }
 
         public ScummInputState GetState()
         {
-            lock (gate)
+            lock (_gate)
             {
-                var keys = keyboardState.GetPressedKeys().Where(key => keyToKeyCode.ContainsKey(key)).Select(key => keyToKeyCode[key]).ToList();
-                var inputState = new ScummInputState(keys, mouseState.LeftButton == ButtonState.Pressed, mouseState.RightButton == ButtonState.Pressed);
+                var keys = _keyboardState.GetPressedKeys().Where(keyToKeyCode.ContainsKey).Select(key => keyToKeyCode[key]).ToList();
+                var inputState = new ScummInputState(keys, _mouseState.LeftButton == ButtonState.Pressed, _mouseState.RightButton == ButtonState.Pressed);
                 return inputState;
             }
         }
 
-        OpenTK.NativeWindow window;
-        object gate = new object();
         static readonly Dictionary<Keys, KeyCode> keyToKeyCode = new Dictionary<Keys,KeyCode>
         { 
             { Keys.Back,   KeyCode.Backspace },

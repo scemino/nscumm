@@ -19,7 +19,7 @@
     <WarningLevel>4</WarningLevel>
     <ConsolePause>false</ConsolePause>
     <PlatformTarget>x86</PlatformTarget>
-    <Commandlineparameters>/home/scemino/Games/m2fm/MONKEY2.000</Commandlineparameters>
+    <Commandlineparameters>/media/scemino/1678-DDD2/Games/comi/COMI.LA0</Commandlineparameters>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <DebugType>full</DebugType>
@@ -48,10 +48,10 @@
     <Compile Include="Screens\MainMenuScreen.cs" />
     <Compile Include="Screens\ScummScreen.cs" />
     <Compile Include="Mono.Options\Options.cs" />
+    <Compile Include="DynamicSoundEffectInstance.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="SDL.dll" />
     <None Include="Content\Textures\blank.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -63,14 +63,23 @@
     </None>
     <None Include="OpenTK.dll.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Gettext-ScanForTranslations>False</Gettext-ScanForTranslations>
+    </None>
+    <None Include="Tao.Sdl.dll.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-  <Import Project="..\packages\MonoGame.Binaries.3.2.2-alpha\build\net40\MonoGame.Binaries.targets" Condition="Exists('..\packages\MonoGame.Binaries.3.2.2-alpha\build\net40\MonoGame.Binaries.targets')" />
-  <Import Project="../packages/MonoGame.Binaries.3.2.2-alpha/build/net40/MonoGame.Binaries.targets" />
   <ItemGroup>
     <Reference Include="System.Drawing" />
     <Reference Include="System" />
+    <Reference Include="MonoGame.Framework">
+      <HintPath>..\packages\MonoGame.Framework.Linux.3.4.0.459\lib\net40\MonoGame.Framework.dll</HintPath>
+    </Reference>
+    <Reference Include="OpenTK">
+      <HintPath>..\packages\MonoGame.Framework.Linux.3.4.0.459\lib\net40\OpenTK.dll</HintPath>
+    </Reference>
+    <Reference Include="Tao.Sdl">
+      <HintPath>..\packages\MonoGame.Framework.Linux.3.4.0.459\lib\net40\Tao.Sdl.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="ScreenManager\" />

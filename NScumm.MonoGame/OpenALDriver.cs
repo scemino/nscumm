@@ -16,94 +16,55 @@
  */
 
 using NScumm.Core.Audio;
-using OpenTK.Audio;
-using OpenTK.Audio.OpenAL;
 using System;
+using Microsoft.Xna.Framework.Audio;
+using System.Runtime.InteropServices;
 
 namespace NScumm.MonoGame
 {
-    public class OpenALDriver : Mixer, IDisposable
+    [StructLayout(LayoutKind.Explicit, Pack = 2)]
+    public class Buffer
     {
-        readonly AudioContext audioContext;
-        readonly int[] bufferIds;
-        readonly int sourceId;
-        short[] buffer;
-        const int NumBuffers = 2;
-        public const int Frequency = 44100;
-        public const int NumSamples = 44100;
+        [FieldOffset(0)]
+        public byte[] Bytes;
+        [FieldOffset(0)]
+        public short[] Shorts;
+    }
+
+    class OpenALDriver : Mixer
+    {
+        readonly DynamicSoundEffectInstance _dsei;
+        Buffer _buffer;
+        short[] _buf;
 
         public OpenALDriver()
-            : base(Frequency)
+            : base(44100)
         {
-            audioContext = new AudioContext();
-            buffer = new short[NumSamples / NumBuffers];
-            bufferIds = AL.GenBuffers(NumBuffers);
-            sourceId = AL.GenSource();
-            CheckError();
-
-            foreach (var bufId in bufferIds)
-            {
-                Array.Clear(buffer, 0, buffer.Length);
-                var len = MixCallback(buffer);
-                AL.BufferData(bufId, ALFormat.Stereo16, buffer, len * 2, Frequency);
-                Array.Clear(buffer, 0, buffer.Length);
-                CheckError();
-                AL.SourceQueueBuffer(sourceId, bufId);
-                CheckError();
-            }
-
-            if (AL.GetSourceState(sourceId) != ALSourceState.Playing)
-            {
-                AL.SourcePlay(sourceId);
-                CheckError();
-            }
+            _buffer = new Buffer();
+            _buf = new short[13230];
+            _buffer.Bytes = new byte[_buf.Length * 2];
+            _dsei = new DynamicSoundEffectInstance(44100, AudioChannels.Stereo);
+            _dsei.BufferNeeded += OnBufferNeeded;
+            _dsei.Play();
         }
 
-        static void CheckError()
+        void OnBufferNeeded(object sender, EventArgs e)
         {
-            var error = AL.GetError();
-            if (error != ALError.NoError)
+            Array.Clear(_buf, 0, _buf.Length);
+            var available = MixCallback(_buf);
+            if (available > 0)
             {
-                var err = AL.GetErrorString(error);
-                Console.Error.WriteLine("AL Error: {0}", err);
+                for (int i = 0; i < available * 2; i++)
+                {
+                    _buffer.Shorts[i] = _buf[i];
+                }
             }
+            _dsei.SubmitBuffer(_buffer.Bytes);
         }
-
-        public void Update()
-        {
-            int val;
-            AL.GetSource(sourceId, ALGetSourcei.BuffersProcessed, out val);
-            if (val <= 0)
-                return;
-            while (val-- != 0)
-            {
-                var len = MixCallback(buffer);
-                var bufId = AL.SourceUnqueueBuffer(sourceId);
-                AL.BufferData(bufId, ALFormat.Stereo16, buffer, len * 4, Frequency);
-                Array.Clear(buffer, 0, buffer.Length);
-                CheckError();
-                AL.SourceQueueBuffer(sourceId, bufId);
-                CheckError();
-            }
-
-            if (AL.GetSourceState(sourceId) != ALSourceState.Playing)
-            {
-                AL.SourcePlay(sourceId);
-                CheckError();
-            }
-        }
-
-        #region IDisposable implementation
 
         public void Dispose()
         {
-            AL.DeleteBuffers(bufferIds);
-            AL.DeleteSource(sourceId);
-            audioContext.Dispose();
+            _dsei.Dispose();
         }
-
-        #endregion
-
     }
-	
 }

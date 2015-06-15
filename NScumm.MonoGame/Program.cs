@@ -38,7 +38,7 @@ namespace NScumm.MonoGame
         [STAThread]
         static int Main(string[] args)
         {
-            var musicDriver = "towns";
+            var musicDriver = "adlib";
             var showVersion = false;
             var showHelp = false;
             var listAudioDevices = false;

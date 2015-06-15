@@ -66,11 +66,8 @@ namespace NScumm.MonoGame
                 contentLoaded = true;
                 spriteBatch = new SpriteBatch(ScreenManager.GraphicsDevice);
 
-                var prop = game.Window.GetType().GetProperty("Window", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                var window = (OpenTK.NativeWindow)prop.GetValue(game.Window, null);
-
-                inputManager = new XnaInputManager(window, info.Game.Width, info.Game.Height);
-                gfx = new XnaGraphicsManager(info.Game.Width, info.Game.Height, window, ScreenManager.GraphicsDevice);
+                inputManager = new XnaInputManager(game.Window, info.Game.Width, info.Game.Height);
+                gfx = new XnaGraphicsManager(info.Game.Width, info.Game.Height, game.Window, ScreenManager.GraphicsDevice);
                 audioDriver = new OpenALDriver();
 
                 // init engines
@@ -107,19 +104,6 @@ namespace NScumm.MonoGame
         {
             gfx.Dispose();
             audioDriver.Dispose();
-        }
-
-        public override void Update(GameTime gameTime, bool otherScreenHasFocus, bool coveredByOtherScreen)
-        {
-            if (!IsMenuActive())
-            {
-                if (!IsPaused)
-                {
-                    audioDriver.Update();
-                }
-            }
-
-            base.Update(gameTime, otherScreenHasFocus, false);
         }
 
         public override void HandleInput(InputState input)

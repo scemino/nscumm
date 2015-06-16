@@ -75,7 +75,7 @@ namespace NScumm.Core
             return name;
         }
 
-        protected static ObjectV0Type OBJECT_V0_TYPE(int obj)
+        internal static ObjectV0Type OBJECT_V0_TYPE(int obj)
         {
             return (ObjectV0Type)((obj >> 8) & 0xFF);
         }

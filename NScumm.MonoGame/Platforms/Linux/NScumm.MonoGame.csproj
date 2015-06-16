@@ -33,33 +33,48 @@
   </PropertyGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <Compile Include="OpenALDriver.cs">
-      <SubType>Code</SubType>
+    <Compile Include="..\..\OpenALDriver.cs" />
+    <Compile Include="..\..\ScummGame.cs" />
+    <Compile Include="..\..\XnaGraphicsManager.cs" />
+    <Compile Include="..\..\XnaInputManager.cs" />
+    <Compile Include="..\..\Program.cs" />
+    <Compile Include="..\..\ScreenManager\GameScreen.cs">
+      <Link>ScreenManager\GameScreen.cs</Link>
     </Compile>
-    <Compile Include="ScummGame.cs" />
-    <Compile Include="XnaGraphicsManager.cs" />
-    <Compile Include="XnaInputManager.cs" />
-    <Compile Include="Program.cs" />
-    <Compile Include="ScreenManager\GameScreen.cs" />
-    <Compile Include="ScreenManager\ScreenManager.cs" />
-    <Compile Include="ScreenManager\MenuScreen.cs" />
-    <Compile Include="ScreenManager\InputState.cs" />
-    <Compile Include="Screens\BackgroundScreen.cs" />
-    <Compile Include="Screens\MainMenuScreen.cs" />
-    <Compile Include="Screens\ScummScreen.cs" />
-    <Compile Include="Mono.Options\Options.cs" />
-    <Compile Include="DynamicSoundEffectInstance.cs" />
+    <Compile Include="..\..\ScreenManager\ScreenManager.cs">
+      <Link>ScreenManager\ScreenManager.cs</Link>
+    </Compile>
+    <Compile Include="..\..\ScreenManager\MenuScreen.cs">
+      <Link>ScreenManager\MenuScreen.cs</Link>
+    </Compile>
+    <Compile Include="..\..\ScreenManager\InputState.cs">
+      <Link>ScreenManager\InputState.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Screens\BackgroundScreen.cs">
+      <Link>Screens\BackgroundScreen.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Screens\MainMenuScreen.cs">
+      <Link>Screens\MainMenuScreen.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Screens\ScummScreen.cs">
+      <Link>Screens\ScummScreen.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Mono.Options\Options.cs" />
+    <Compile Include="..\..\DynamicSoundEffectInstance.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="Content\Textures\blank.png">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    <None Include="..\..\Content\Textures\blank.png">
+      <Link>Content\Textures\blank.png</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Content\Fonts\MenuFont.xnb">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    <None Include="..\..\Content\Fonts\MenuFont.xnb">
+      <Link>Content\Fonts\MenuFont.xnb</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Content\Fonts\SpriteFont.xnb">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    <None Include="..\..\Content\Fonts\SpriteFont.xnb">
+      <Link>Content\Fonts\MenuFont.xnb</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="OpenTK.dll.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -72,13 +87,13 @@
     <Reference Include="System.Drawing" />
     <Reference Include="System" />
     <Reference Include="MonoGame.Framework">
-      <HintPath>..\packages\MonoGame.Framework.Linux.3.4.0.459\lib\net40\MonoGame.Framework.dll</HintPath>
+      <HintPath>..\..\..\packages\MonoGame.Framework.Linux.3.4.0.459\lib\net40\MonoGame.Framework.dll</HintPath>
     </Reference>
     <Reference Include="OpenTK">
-      <HintPath>..\packages\MonoGame.Framework.Linux.3.4.0.459\lib\net40\OpenTK.dll</HintPath>
+      <HintPath>..\..\..\packages\MonoGame.Framework.Linux.3.4.0.459\lib\net40\OpenTK.dll</HintPath>
     </Reference>
     <Reference Include="Tao.Sdl">
-      <HintPath>..\packages\MonoGame.Framework.Linux.3.4.0.459\lib\net40\Tao.Sdl.dll</HintPath>
+      <HintPath>..\..\..\packages\MonoGame.Framework.Linux.3.4.0.459\lib\net40\Tao.Sdl.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -88,11 +103,11 @@
     <Folder Include="Screens\" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\NScumm.Core\NScumm.Core.csproj">
+    <ProjectReference Include="..\..\..\NScumm.Core\NScumm.Core.csproj">
       <Project>{8E7A9E5B-D7EB-4DA1-8EE7-A5D8DE202372}</Project>
       <Name>NScumm.Core</Name>
     </ProjectReference>
-    <ProjectReference Include="..\NScumm.Platform_Desktop\NScumm.Platform_Desktop.csproj">
+    <ProjectReference Include="..\..\..\NScumm.Platform_Desktop\NScumm.Platform_Desktop.csproj">
       <Project>{D42434C7-459D-461A-8B1D-1451F7FF4B13}</Project>
       <Name>NScumm.Platform_Desktop</Name>
     </ProjectReference>

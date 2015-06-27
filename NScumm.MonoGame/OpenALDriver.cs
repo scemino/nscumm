@@ -31,13 +31,13 @@ namespace NScumm.MonoGame
         public short[] Shorts;
     }
 
-    class OpenALDriver : Mixer
+    class XnaAudioDriver : Mixer
     {
         readonly DynamicSoundEffectInstance _dsei;
         Buffer _buffer;
         short[] _buf;
 
-        public OpenALDriver()
+        public XnaAudioDriver()
             : base(44100)
         {
             _buffer = new Buffer();

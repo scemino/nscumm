@@ -77,7 +77,9 @@ namespace NScumm.MonoGame
                     var path = ScummHelper.NormalizePath(extras[0]);
                     if (File.Exists(path))
                     {
-                        var info = GameManager.GetInfo(path);
+                        var resStream = typeof(GameManager).Assembly.GetManifestResourceStream(typeof(GameManager), "Nscumm.xml");
+                        var gm = GameManager.Create(resStream);
+                        var info = gm.GetInfo(path);
                         if (info == null)
                         {
                             Console.Error.WriteLine("This game is not supported, sorry please contact me if you want to support this game.");

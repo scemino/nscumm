@@ -43,7 +43,7 @@ namespace NScumm.Core
         }
     }
 
-    static class EnableTraceExtension
+    public static class EnableTraceExtension
     {
         public static ITrace Trace(this IEnableTrace trace)
         {

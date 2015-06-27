@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -8,8 +8,9 @@
     <OutputType>Library</OutputType>
     <RootNamespace>NScumm.Core</RootNamespace>
     <AssemblyName>NScumm.Core</AssemblyName>
-    <TargetFrameworkProfile>Profile158</TargetFrameworkProfile>
+    <TargetFrameworkProfile>Profile344</TargetFrameworkProfile>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <MinimumVisualStudioVersion>10.0</MinimumVisualStudioVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -364,19 +365,7 @@
     <Compile Include="IEnableTrace.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
-  <ItemGroup>
-    <Folder Include="Graphics\" />
-    <Folder Include="IO\" />
-    <Folder Include="Input\" />
-    <Folder Include="Audio\" />
-    <Folder Include="Insane\" />
-    <Folder Include="Audio\IMuse\" />
-    <Folder Include="Audio\Decoders\" />
-    <Folder Include="Audio\Midi\" />
-    <Folder Include="Audio\OPL\" />
-    <Folder Include="Smush\" />
-    <Folder Include="Audio\SoftSynth\FMTownsPc98\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <None Include="IO\Nscumm.xsd" />
   </ItemGroup>

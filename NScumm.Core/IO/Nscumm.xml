@@ -65,6 +65,7 @@
   <Game id="monkey" gameId="Monkey1" variant="CD" version="5" music="AdLib" pattern="MONKEY.{0:000}" />
   <Game id="monkey" gameId="Monkey1" variant="Mac" version="5" music="AdLib" pattern="MONKEY1.{0:000}" />
   <Game id="monkey" gameId="Monkey1" variant="SEGA" version="5" pattern="GAME.{0:000}" />
+  <Game id="monkey" gameId="Monkey1" variant="FM-TOWNS" version="5" music="FMTowns" />
   <Game id="monkey2" gameId="Monkey2" variant="" version="5" music="PCSpeaker AdLib" pattern="MONKEY2.{0:000}" />
   <Game id="monkey2" gameId="Monkey2" variant="FM-TOWNS" version="5" music="PCSpeaker FMTowns AdLib" pattern="MONKEY2.{0:000}" />
   <Game id="pass" gameId="Pass" variant="" version="4" music="PCSpeaker PCjr CMS AdLib" />

@@ -19,7 +19,7 @@
     <WarningLevel>4</WarningLevel>
     <ConsolePause>false</ConsolePause>
     <PlatformTarget>x86</PlatformTarget>
-    <Commandlineparameters>/media/scemino/1678-DDD2/Games/comi/COMI.LA0</Commandlineparameters>
+    <Commandlineparameters>"D:\Games\m1\000.LFL"</Commandlineparameters>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <DebugType>full</DebugType>
@@ -66,10 +66,12 @@
     <None Include="..\..\Content\Fonts\MenuFont.xnb">
       <Link>Content\Fonts\MenuFont.xnb</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Generator>MonoGameContentReference</Generator>
     </None>
     <None Include="..\..\Content\Fonts\SpriteFont.xnb">
       <Link>Content\Fonts\MenuFont.xnb</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Generator>MonoGameContentReference</Generator>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -106,6 +108,7 @@
     <None Include="..\..\Content\Textures\blank.png">
       <Link>Content\Textures\blank.png</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Generator>MonoGameContentReference</Generator>
     </None>
   </ItemGroup>
 </Project>

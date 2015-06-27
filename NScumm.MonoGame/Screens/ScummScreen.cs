@@ -27,6 +27,7 @@ using Microsoft.Xna.Framework;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace NScumm.MonoGame
 {
@@ -39,10 +40,13 @@ namespace NScumm.MonoGame
         XnaInputManager inputManager;
         TimeSpan tsToWait;
         Vector2 cursorPos;
-        OpenALDriver audioDriver;
+#if WINDOWS_UAP
+        NullMixer audioDriver;
+#else
+        XnaAudioDriver audioDriver;
+#endif
         Game game;
         bool contentLoaded;
-        Thread tg;
 
         public bool IsPaused
         {
@@ -68,15 +72,21 @@ namespace NScumm.MonoGame
 
                 inputManager = new XnaInputManager(game.Window, info.Game.Width, info.Game.Height);
                 gfx = new XnaGraphicsManager(info.Game.Width, info.Game.Height, game.Window, ScreenManager.GraphicsDevice);
-                audioDriver = new OpenALDriver();
+#if WINDOWS_UAP
+                audioDriver = new NullMixer();
+#else
+                audioDriver = new XnaAudioDriver();
+#endif
 
                 // init engines
                 engine = ScummEngine.Create(info, gfx, inputManager, audioDriver);
+                //engine = ScummEngine.Create(info, gfx, inputManager, null);
                 engine.ShowMenuDialogRequested += OnShowMenuDialogRequested;
 
-                tg = new Thread(new ThreadStart(UpdateGame));
-                tg.IsBackground = true;
-                tg.Start();
+                Task.Factory.StartNew(() =>
+                {
+                    UpdateGame();
+                });                
             }
         }
 
@@ -162,7 +172,7 @@ namespace NScumm.MonoGame
         public string[] GetSaveGames()
         {
             var dir = Path.GetDirectoryName(info.Game.Path);
-            return Directory.EnumerateFiles(dir, "*.sav").ToArray();
+            return ServiceLocator.FileStorage.EnumerateFiles(dir, "*.sav").ToArray();
         }
 
         public void LoadGame(int index)

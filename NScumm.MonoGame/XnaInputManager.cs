@@ -21,6 +21,10 @@ using System.Collections.Generic;
 using NScumm.Core;
 using System.Linq;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input.Touch;
+#if WINDOWS_UAP
+using Windows.UI.Core;
+#endif
 
 namespace NScumm.MonoGame
 {
@@ -28,27 +32,61 @@ namespace NScumm.MonoGame
     {
         MouseState _mouseState;
         KeyboardState _keyboardState;
-        double _width; 
+        TouchPanelState _touchState;
+        double _width;
         double _height;
         GameWindow _window;
         readonly object _gate = new object();
+        bool _backPressed;
+        bool _leftButtonPressed;
 
         public XnaInputManager(GameWindow window, int width, int height)
         {
             _window = window;
             _width = width;
             _height = height;
+
+#if WINDOWS_UAP
+            var view = SystemNavigationManager.GetForCurrentView();
+            view.AppViewBackButtonVisibility = AppViewBackButtonVisibility.Visible;
+            view.BackRequested += HardwareButtons_BackPressed;
+            
+            TouchPanel.EnableMouseTouchPoint = true;
+#endif
         }
 
-        public NScumm.Core.Graphics.Point GetMousePosition()
+#if WINDOWS_UAP
+        private void HardwareButtons_BackPressed(object sender, BackRequestedEventArgs e)
+        {
+            _backPressed = true;
+            e.Handled = true;
+        }
+#endif
+        public Core.Graphics.Point GetMousePosition()
         {
             var state = Mouse.GetState();
             var x = state.X;
             var y = state.Y;
 
+            _leftButtonPressed = false;
+            if (_touchState != null)
+            {
+                var locations = _touchState.GetState();
+                foreach (var touch in locations)
+                {
+                    if (touch.State == TouchLocationState.Moved || touch.State == TouchLocationState.Pressed)
+                    {
+                        var pos = locations[0].Position;
+                        x = (int)pos.X;
+                        y = (int)pos.Y;
+                        _leftButtonPressed = true;
+                    }
+                }
+            }
+
             var scaleX = _width / _window.ClientBounds.Width;
             var scaleY = _height / _window.ClientBounds.Height;
-            var pOut = new NScumm.Core.Graphics.Point((short)(x * scaleX), (short)(y * scaleY));
+            var pOut = new Core.Graphics.Point((short)(x * scaleX), (short)(y * scaleY));
             return pOut;
         }
 
@@ -58,6 +96,7 @@ namespace NScumm.MonoGame
             {
                 _mouseState = mouse;
                 _keyboardState = keyboard;
+                _touchState = TouchPanel.GetState(_window);
             }
         }
 
@@ -66,13 +105,18 @@ namespace NScumm.MonoGame
             lock (_gate)
             {
                 var keys = _keyboardState.GetPressedKeys().Where(keyToKeyCode.ContainsKey).Select(key => keyToKeyCode[key]).ToList();
-                var inputState = new ScummInputState(keys, _mouseState.LeftButton == ButtonState.Pressed, _mouseState.RightButton == ButtonState.Pressed);
+                if (_backPressed)
+                {
+                    keys.Add(KeyCode.Escape);
+                    _backPressed = false;
+                }
+                var inputState = new ScummInputState(keys, _leftButtonPressed || _mouseState.LeftButton == ButtonState.Pressed, _mouseState.RightButton == ButtonState.Pressed);
                 return inputState;
             }
         }
 
-        static readonly Dictionary<Keys, KeyCode> keyToKeyCode = new Dictionary<Keys,KeyCode>
-        { 
+        static readonly Dictionary<Keys, KeyCode> keyToKeyCode = new Dictionary<Keys, KeyCode>
+        {
             { Keys.Back,   KeyCode.Backspace },
             { Keys.Tab,    KeyCode.Tab       },
             { Keys.Enter,  KeyCode.Return    },

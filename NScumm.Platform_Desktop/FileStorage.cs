@@ -32,12 +32,12 @@ namespace NScumm
             return Directory.EnumerateFiles(path);
         }
 
-        public System.Collections.Generic.IEnumerable<string> EnumerateFiles(string path, string prefix)
+        public System.Collections.Generic.IEnumerable<string> EnumerateFiles(string path, string searchPattern)
         {
-            return Directory.EnumerateFiles(path, prefix);
+            return Directory.EnumerateFiles(path, searchPattern);
         }
 
-        public System.Collections.Generic.IEnumerable<string> EnumerateFiles(string path, string prefix, NScumm.Core.SearchOption option)
+        public System.Collections.Generic.IEnumerable<string> EnumerateFiles(string path, string searchPattern, NScumm.Core.SearchOption option)
         {
             System.IO.SearchOption sysOption = System.IO.SearchOption.TopDirectoryOnly;
             switch (option)
@@ -49,7 +49,7 @@ namespace NScumm
                     sysOption = System.IO.SearchOption.AllDirectories;
                     break;
             }
-            return Directory.EnumerateFiles(path, prefix, sysOption);
+            return Directory.EnumerateFiles(path, searchPattern, sysOption);
         }
 
         public string Combine(string path1, string path2)

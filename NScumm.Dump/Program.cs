@@ -75,7 +75,9 @@ namespace NScumm.Dump
                 return 0;
             }
 
-            var game = GameManager.GetInfo(input);
+            var resStream = typeof(GameManager).Assembly.GetManifestResourceStream(typeof(GameManager), "Nscumm.xml");
+            var gm = GameManager.Create(resStream);
+            var game = gm.GetInfo(input);
             if (game == null)
             {
                 System.Console.Error.WriteLine("This game is not supported, sorry please contact me if you want to support this game.");

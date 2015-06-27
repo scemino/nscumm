@@ -72,8 +72,8 @@ namespace NScumm.Core.IO
             {
                 var roomIndices = Game.Version == 0 ? Enumerable.Range(1, 56).Select(r => (byte)r) :
                     (from res in Enumerable.Range(1, Index.RoomResources.Count)
-                                 where Index.RoomResources[res].RoomNum != 0 && Index.RoomResources[res].Offset != 0xFFFFFFFF
-                                 select (byte)res).Distinct();
+                     where Index.RoomResources[res].RoomNum != 0 && Index.RoomResources[res].Offset != 0xFFFFFFFF
+                     select (byte)res).Distinct();
                 Room room = null;
                 foreach (var i in roomIndices)
                 {
@@ -83,9 +83,9 @@ namespace NScumm.Core.IO
                     }
                     catch (Exception e)
                     {
-//                        Console.ForegroundColor = ConsoleColor.Red;
-//                        Console.WriteLine(e);
-//                        Console.ResetColor();
+                        //                        Console.ForegroundColor = ConsoleColor.Red;
+                        //                        Console.WriteLine(e);
+                        //                        Console.ResetColor();
                     }
                     if (room != null)
                     {
@@ -156,29 +156,58 @@ namespace NScumm.Core.IO
             ArrayDefinitions = Index.ArrayDefinitions;
         }
 
+        public void LoadCostume(int resId)
+        {
+            byte[] data = null;
+            var res = Index.CostumeResources[resId];
+            if (res.RoomNum != 0)
+            {
+                var disk = OpenRoom(res.RoomNum);
+                if (disk != null)
+                {
+                    var roomOffset = GetRoomOffset(disk, res.RoomNum);
+                    data = disk.ReadCostume(roomOffset + res.Offset);
+                }
+            }
+            _costumes[resId] = data;
+        }
+
+        public void LoadScript(int resId)
+        {
+            byte[] data = null;
+            var resource = Index.ScriptResources[resId];
+            var disk = OpenRoom(resource.RoomNum);
+            if (disk != null)
+            {
+                var roomOffset = GetRoomOffset(disk, resource.RoomNum);
+                data = disk.ReadScript(roomOffset + resource.Offset);
+            }
+            _scripts[resId] = data;
+        }
+
         public static ResourceManager Load(GameInfo game)
         {
             switch (game.Version)
             {
                 case 0:
-                    return new ResourceManager0(game); 
+                    return new ResourceManager0(game);
                 case 1:
                 case 2:
-                    return new ResourceManager2(game); 
+                    return new ResourceManager2(game);
                 case 3:
-                    return new ResourceManager3(game); 
+                    return new ResourceManager3(game);
                 case 4:
-                    return new ResourceManager4(game); 
+                    return new ResourceManager4(game);
                 case 5:
-                    return new ResourceManager5(game); 
+                    return new ResourceManager5(game);
                 case 6:
-                    return new ResourceManager6(game); 
+                    return new ResourceManager6(game);
                 case 7:
-                    return new ResourceManager7(game); 
+                    return new ResourceManager7(game);
                 case 8:
-                    return new ResourceManager8(game); 
+                    return new ResourceManager8(game);
                 default:
-                    throw new NotSupportedException(string.Format("ResourceManager {0} is not supported", game.Version)); 
+                    throw new NotSupportedException(string.Format("ResourceManager {0} is not supported", game.Version));
             }
         }
 
@@ -191,55 +220,61 @@ namespace NScumm.Core.IO
 
         public Room GetRoom(byte roomNum)
         {
-            Room room = null;
-            var disk = OpenRoom(roomNum);
-            if (disk != null)
+            if (!_rooms.ContainsKey(roomNum))
             {
-                var roomOffset = GetRoomOffset(disk, roomNum);
-                room = disk.ReadRoom(roomOffset);
-                room.Number = roomNum;
-                room.Name = Index.RoomNames != null && Index.RoomNames.ContainsKey(roomNum) ? Index.RoomNames[roomNum] : null;
-            }
-
-            return room;
-        }
-
-        public byte[] GetCostumeData(int costNum)
-        {
-            byte[] data = null;
-            var res = Index.CostumeResources[costNum];
-            if (res.RoomNum != 0)
-            {
-                var disk = OpenRoom(res.RoomNum);
+                Room room = null;
+                var disk = OpenRoom(roomNum);
                 if (disk != null)
                 {
-                    var roomOffset = GetRoomOffset(disk, res.RoomNum);
-                    data = disk.ReadCostume(roomOffset + res.Offset);
+                    var roomOffset = GetRoomOffset(disk, roomNum);
+                    room = disk.ReadRoom(roomOffset);
+                    room.Number = roomNum;
+                    room.Name = Index.RoomNames != null && Index.RoomNames.ContainsKey(roomNum) ? Index.RoomNames[roomNum] : null;
                 }
+                _rooms[roomNum] = room;
             }
-            return data;
+
+            return _rooms[roomNum];
+        }
+
+        public byte[] GetCostumeData(int id)
+        {
+            if (!_costumes.ContainsKey(id))
+            {
+                LoadCostume(id);
+            }
+            return _costumes[id];
         }
 
         public byte[] GetCharsetData(byte id)
         {
-            var charset = ReadCharset(id);
-            return charset;
+            if (!_charsets.ContainsKey(id))
+            {
+                var charset = ReadCharset(id);
+                _charsets[id] = charset;
+            }
+            return _charsets[id];
         }
 
-        public byte[] GetScript(int scriptNum)
+        public byte[] GetScript(int id)
         {
-            byte[] data = null;
-            var resource = Index.ScriptResources[scriptNum];
-            var disk = OpenRoom(resource.RoomNum);
-            if (disk != null)
+            if (!_scripts.ContainsKey(id))
             {
-                var roomOffset = GetRoomOffset(disk, resource.RoomNum);
-                data = disk.ReadScript(roomOffset + resource.Offset);
+                LoadScript(id);
             }
-            return data;
+            return _scripts[id];
         }
 
         public byte[] GetSound(NScumm.Core.Audio.MusicDriverTypes music, int sound)
+        {
+            if (!_sounds.ContainsKey(sound))
+            {
+                _sounds[sound] = LoadSound(music, sound);
+            }
+            return LoadSound(music, sound);
+        }
+
+        private byte[] LoadSound(Audio.MusicDriverTypes music, int sound)
         {
             byte[] data = null;
             var resource = Index.SoundResources[sound];
@@ -320,19 +355,32 @@ namespace NScumm.Core.IO
 
         static readonly byte[] freq2note =
             {
-                /*128*/ 6, 6, 6, 6,
-                /*132*/ 7, 7, 7, 7, 7, 7, 7,
-                /*139*/ 8, 8, 8, 8, 8, 8, 8, 8, 8,
-                /*148*/ 9, 9, 9, 9, 9, 9, 9, 9, 9,
-                /*157*/ 10, 10, 10, 10, 10, 10, 10, 10, 10,
-                /*166*/ 11, 11, 11, 11, 11, 11, 11, 11, 11, 11,
-                /*176*/ 12, 12, 12, 12, 12, 12, 12, 12, 12, 12,
-                /*186*/ 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13,
-                /*197*/ 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14,
-                /*209*/ 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15,
-                /*222*/ 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16,
-                /*235*/ 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17,
-                /*249*/ 18, 18, 18, 18, 18, 18, 18
+            /*128*/
+                        6, 6, 6, 6,
+            /*132*/
+                        7, 7, 7, 7, 7, 7, 7,
+            /*139*/
+                        8, 8, 8, 8, 8, 8, 8, 8, 8,
+            /*148*/
+                        9, 9, 9, 9, 9, 9, 9, 9, 9,
+            /*157*/
+                        10, 10, 10, 10, 10, 10, 10, 10, 10,
+            /*166*/
+                        11, 11, 11, 11, 11, 11, 11, 11, 11, 11,
+            /*176*/
+                        12, 12, 12, 12, 12, 12, 12, 12, 12, 12,
+            /*186*/
+                        13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13,
+            /*197*/
+                        14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14,
+            /*209*/
+                        15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15,
+            /*222*/
+                        16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16,
+            /*235*/
+                        17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17,
+            /*249*/
+                        18, 18, 18, 18, 18, 18, 18
             };
 
         const int MIDIHeaderSize = 46;
@@ -346,15 +394,15 @@ namespace NScumm.Core.IO
             pos += 4;
             Array.Copy(System.Text.Encoding.UTF8.GetBytes("MDhd"), 0, input, pos, 4);
             pos += 4;
-            Array.Copy(new byte[]{ 0, 0, 0, 8 }, 0, input, pos, 4);
+            Array.Copy(new byte[] { 0, 0, 0, 8 }, 0, input, pos, 4);
             pos += 4;
             Array.Copy(new byte[8], 0, input, pos, 8);
             pos += 8;
             Array.Copy(System.Text.Encoding.UTF8.GetBytes("MThd"), 0, input, pos, 4);
             pos += 4;
-            Array.Copy(new byte[]{ 0, 0, 0, 6 }, 0, input, pos, 4);
+            Array.Copy(new byte[] { 0, 0, 0, 6 }, 0, input, pos, 4);
             pos += 4;
-            Array.Copy(new byte[]{ 0, 0, 0, 1 }, 0, input, pos, 4);
+            Array.Copy(new byte[] { 0, 0, 0, 1 }, 0, input, pos, 4);
             pos += 4; // MIDI format 0 with 1 track
             input[pos++] = (byte)(ppqn >> 8);
             input[pos++] = (byte)(ppqn & 0xFF);
@@ -510,7 +558,7 @@ namespace NScumm.Core.IO
                 Debug.WriteLine("  ticks = {0}, speed = {1}", ticks, dw);
 
                 // Write a tempo change Meta event
-                Array.Copy(new byte[]{ 0x00, 0xFF, 0x51, 0x03 }, 0, ptr, outPos, 4);
+                Array.Copy(new byte[] { 0x00, 0xFF, 0x51, 0x03 }, 0, ptr, outPos, 4);
                 outPos += 4;
                 ptr[outPos++] = (byte)((dw >> 16) & 0xFF);
                 ptr[outPos++] = (byte)((dw >> 8) & 0xFF);
@@ -618,16 +666,16 @@ namespace NScumm.Core.IO
 
                     const int jump_offset = ppqn / 3;
                     // maybe_jump
-                    Array.Copy(new byte[]{ 0xf0, 0x13, 0x7d, 0x30, 0x00 }, 0, ptr, outPos, 5);
+                    Array.Copy(new byte[] { 0xf0, 0x13, 0x7d, 0x30, 0x00 }, 0, ptr, outPos, 5);
                     outPos += 5;
                     // cmd -> 0 means always jump
-                    Array.Copy(new byte[]{ 0x00, 0x00 }, 0, ptr, outPos, 2);
+                    Array.Copy(new byte[] { 0x00, 0x00 }, 0, ptr, outPos, 2);
                     outPos += 2;
                     // track -> there is only one track, 0
-                    Array.Copy(new byte[]{ 0x00, 0x00, 0x00, 0x00 }, 0, ptr, outPos, 4);
+                    Array.Copy(new byte[] { 0x00, 0x00, 0x00, 0x00 }, 0, ptr, outPos, 4);
                     outPos += 4;
                     // beat -> for now, 1 (first beat)
-                    Array.Copy(new byte[]{ 0x00, 0x00, 0x00, 0x01 }, 0, ptr, outPos, 4);
+                    Array.Copy(new byte[] { 0x00, 0x00, 0x00, 0x01 }, 0, ptr, outPos, 4);
                     outPos += 4;
 
                     // Ticks
@@ -637,7 +685,7 @@ namespace NScumm.Core.IO
                     ptr[outPos++] = (byte)(jump_offset & 0x0F);
 
                     // sysex end marker
-                    Array.Copy(new byte[]{ 0x00, 0xf7 }, 0, ptr, outPos, 2);
+                    Array.Copy(new byte[] { 0x00, 0xf7 }, 0, ptr, outPos, 2);
                 }
             }
             else
@@ -659,7 +707,7 @@ namespace NScumm.Core.IO
                 // Write a tempo change Meta event
                 // 473 / 4 Hz, convert to micro seconds.
                 dw = 1000000 * ppqn * 4 / 473;
-                Array.Copy(new byte[]{ 0x00, 0xFF, 0x51, 0x03 }, 0, ptr, outPos, 4);
+                Array.Copy(new byte[] { 0x00, 0xFF, 0x51, 0x03 }, 0, ptr, outPos, 4);
                 outPos += 4;
                 ptr[outPos++] = (byte)((dw >> 16) & 0xFF);
                 ptr[outPos++] = (byte)((dw >> 8) & 0xFF);
@@ -705,7 +753,7 @@ namespace NScumm.Core.IO
                 }
 
                 int curtime = 0;
-                for (;;)
+                for (; ;)
                 {
                     int mintime = -1;
                     var ch = -1;
@@ -738,61 +786,61 @@ namespace NScumm.Core.IO
                     switch (chunk_type)
                     {
                         case 1:
-                                /* Instrument definition */
+                            /* Instrument definition */
                             current_instr[ch] = new byte[14];
                             Array.Copy(input, inputPos + 1, current_instr[ch], 0, 14);
                             inputPos += 15;
                             break;
 
                         case 2:
-                                /* tone/parammodulation */
+                            /* tone/parammodulation */
                             Array.Copy(ADLIB_INSTR_MIDI_HACK, 0, ptr, outPos, ADLIB_INSTR_MIDI_HACK.Length);
 
                             ptr[outPos + 5] += (byte)ch;
                             ptr[outPos + 28] += (byte)ch;
                             ptr[outPos + 92] += (byte)ch;
 
-                                /* mod_characteristic */
+                            /* mod_characteristic */
                             ptr[outPos + 30 + 0] = (byte)((current_instr[ch][3] >> 4) & 0xf);
                             ptr[outPos + 30 + 1] = (byte)(current_instr[ch][3] & 0xf);
 
-                                /* mod_scalingOutputLevel */
+                            /* mod_scalingOutputLevel */
                             ptr[outPos + 30 + 2] = (byte)((current_instr[ch][4] >> 4) & 0xf);
                             ptr[outPos + 30 + 3] = (byte)(current_instr[ch][4] & 0xf);
 
-                                /* mod_attackDecay */
+                            /* mod_attackDecay */
                             ptr[outPos + 30 + 4] = (byte)(((~current_instr[ch][5]) >> 4) & 0xf);
                             ptr[outPos + 30 + 5] = (byte)((~current_instr[ch][5]) & 0xf);
 
-                                /* mod_sustainRelease */
+                            /* mod_sustainRelease */
                             ptr[outPos + 30 + 6] = (byte)(((~current_instr[ch][6]) >> 4) & 0xf);
                             ptr[outPos + 30 + 7] = (byte)((~current_instr[ch][6]) & 0xf);
 
-                                /* mod_waveformSelect */
+                            /* mod_waveformSelect */
                             ptr[outPos + 30 + 8] = (byte)((current_instr[ch][7] >> 4) & 0xf);
                             ptr[outPos + 30 + 9] = (byte)(current_instr[ch][7] & 0xf);
 
-                                /* car_characteristic */
+                            /* car_characteristic */
                             ptr[outPos + 30 + 10] = (byte)((current_instr[ch][8] >> 4) & 0xf);
                             ptr[outPos + 30 + 11] = (byte)(current_instr[ch][8] & 0xf);
 
-                                /* car_scalingOutputLevel */
+                            /* car_scalingOutputLevel */
                             ptr[outPos + 30 + 12] = (byte)(((current_instr[ch][9]) >> 4) & 0xf);
                             ptr[outPos + 30 + 13] = (byte)((current_instr[ch][9]) & 0xf);
 
-                                /* car_attackDecay */
+                            /* car_attackDecay */
                             ptr[outPos + 30 + 14] = (byte)(((~current_instr[ch][10]) >> 4) & 0xf);
                             ptr[outPos + 30 + 15] = (byte)((~current_instr[ch][10]) & 0xf);
 
-                                /* car_sustainRelease */
+                            /* car_sustainRelease */
                             ptr[outPos + 30 + 16] = (byte)(((~current_instr[ch][11]) >> 4) & 0xf);
                             ptr[outPos + 30 + 17] = (byte)((~current_instr[ch][11]) & 0xf);
 
-                                /* car_waveFormSelect */
+                            /* car_waveFormSelect */
                             ptr[outPos + 30 + 18] = (byte)((current_instr[ch][12] >> 4) & 0xf);
                             ptr[outPos + 30 + 19] = (byte)(current_instr[ch][12] & 0xf);
 
-                                /* feedback */
+                            /* feedback */
                             ptr[outPos + 30 + 20] = (byte)((current_instr[ch][2] >> 4) & 0xf);
                             ptr[outPos + 30 + 21] = (byte)(current_instr[ch][2] & 0xf);
 
@@ -809,7 +857,7 @@ namespace NScumm.Core.IO
                                     delay = 0;
                             }
 
-                                /* duration */
+                            /* duration */
                             ptr[outPos + 30 + 58] = 0; // ((delay * 17 / 63) >> 4) & 0xf;
                             ptr[outPos + 30 + 59] = 0; // (delay * 17 / 63) & 0xf;
 
@@ -854,14 +902,14 @@ namespace NScumm.Core.IO
                             break;
 
                         case 0x80:
-                                // FIXME: This is incorrect. The original uses 0x80 for
-                                // looping a single channel. We currently interpret it as stop
-                                // thus we won't get looping for sound effects. It should
-                                // always jump to the start of the channel.
-                                //
-                                // Since we convert the data to MIDI and we cannot only loop a
-                                // single channel via MIDI fixing this will require some more
-                                // thought.
+                            // FIXME: This is incorrect. The original uses 0x80 for
+                            // looping a single channel. We currently interpret it as stop
+                            // thus we won't get looping for sound effects. It should
+                            // always jump to the start of the channel.
+                            //
+                            // Since we convert the data to MIDI and we cannot only loop a
+                            // single channel via MIDI fixing this will require some more
+                            // thought.
                             track_time[ch] = -1;
                             inputPos++;
                             break;
@@ -875,10 +923,16 @@ namespace NScumm.Core.IO
             }
 
             // Insert end of song sysex
-            Array.Copy(new byte[]{ 0x00, 0xff, 0x2f, 0x00, 0x00 }, 0, ptr, outPos, 5);
+            Array.Copy(new byte[] { 0x00, 0xff, 0x2f, 0x00, 0x00 }, 0, ptr, outPos, 5);
 
             return ptr;
         }
+
+        Dictionary<int, byte[]> _scripts = new Dictionary<int, byte[]>();
+        Dictionary<int, byte[]> _costumes = new Dictionary<int, byte[]>();
+        Dictionary<int, Room> _rooms = new Dictionary<int, Room>();
+        Dictionary<int, byte[]> _charsets = new Dictionary<int, byte[]>();
+        Dictionary<int, byte[]> _sounds = new Dictionary<int, byte[]>();
     }
 }
 

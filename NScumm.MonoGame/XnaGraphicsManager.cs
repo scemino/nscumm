@@ -22,7 +22,7 @@ using NScumm.Core;
 
 namespace NScumm.MonoGame
 {
-    sealed class XnaGraphicsManager : NScumm.Core.Graphics.IGraphicsManager, IDisposable
+    sealed class XnaGraphicsManager : Core.Graphics.IGraphicsManager, IDisposable
     {
         readonly Texture2D _texture;
         Texture2D _textureCursor;
@@ -36,7 +36,7 @@ namespace NScumm.MonoGame
         Color[] _colors;
         int snapshot;
         GameWindow _window;
-        NScumm.Core.Graphics.PixelFormat _pixelFormat;
+        Core.Graphics.PixelFormat _pixelFormat;
 
         public XnaGraphicsManager(int width, int height, GameWindow window, GraphicsDevice device)
         {
@@ -55,7 +55,7 @@ namespace NScumm.MonoGame
             _pixelFormat = NScumm.Core.Graphics.PixelFormat.Indexed8;
         }
 
-        public NScumm.Core.Graphics.PixelFormat PixelFormat
+        public Core.Graphics.PixelFormat PixelFormat
         {
             get{ return _pixelFormat; }
             set
@@ -104,6 +104,7 @@ namespace NScumm.MonoGame
 
         public void Snapshot()
         {
+#if !WINDOWS_UAP
             using (var bmp = new System.Drawing.Bitmap(_width, _height))
             {
                 for (int h = 0; h < _height; h++)
@@ -116,6 +117,7 @@ namespace NScumm.MonoGame
                 }
                 bmp.Save(string.Format("/tmp/frame_{0}.png", ++snapshot));
             }
+#endif
         }
 
         public void CopyRectToScreen(byte[] buffer, int sourceStride, int x, int y, int width, int height)
@@ -142,9 +144,9 @@ namespace NScumm.MonoGame
             }
         }
 
-        public NScumm.Core.Graphics.Surface Capture()
+        public Core.Graphics.Surface Capture()
         {
-            var surface = new NScumm.Core.Graphics.Surface(_width, _height, NScumm.Core.Graphics.PixelFormat.Indexed8, false);
+            var surface = new Core.Graphics.Surface(_width, _height, NScumm.Core.Graphics.PixelFormat.Indexed8, false);
             Array.Copy(_pixels, surface.Pixels, _pixels.Length);
             return surface;
         }
@@ -173,9 +175,9 @@ namespace NScumm.MonoGame
             }
         }
 
-        #region Palette Methods
+#region Palette Methods
 
-        public void SetPalette(NScumm.Core.Graphics.Color[] colors)
+        public void SetPalette(Core.Graphics.Color[] colors)
         {
             if (colors.Length > 0)
             {
@@ -183,7 +185,7 @@ namespace NScumm.MonoGame
             }
         }
 
-        public void SetPalette(NScumm.Core.Graphics.Color[] colors, int first, int num)
+        public void SetPalette(Core.Graphics.Color[] colors, int first, int num)
         {
             for (int i = 0; i < num; i++)
             {
@@ -192,13 +194,13 @@ namespace NScumm.MonoGame
             }
         }
 
-        #endregion
+#endregion
 
-        #region Cursor Methods
+#region Cursor Methods
 
         public Vector2 Hotspot { get; private set; }
 
-        public void SetCursor(byte[] pixels, int width, int height, NScumm.Core.Graphics.Point hotspot)
+        public void SetCursor(byte[] pixels, int width, int height, Core.Graphics.Point hotspot)
         {
             if (_textureCursor.Width != width || _textureCursor.Height != height)
             {
@@ -244,9 +246,9 @@ namespace NScumm.MonoGame
             return lastState;
         }
 
-        #endregion
+#endregion
 
-        #region Draw Methods
+#region Draw Methods
 
         public void DrawScreen(SpriteBatch spriteBatch)
         {
@@ -270,18 +272,18 @@ namespace NScumm.MonoGame
             }
         }
 
-        #endregion
+#endregion
 
-        #region Misc
+#region Misc
 
         public void SetShakePos(int pos)
         {
             _shakePos = pos;
         }
 
-        #endregion
+#endregion
 
-        #region Dispose
+#region Dispose
 
         ~XnaGraphicsManager ()
         {
@@ -294,6 +296,6 @@ namespace NScumm.MonoGame
             _textureCursor.Dispose();
         }
 
-        #endregion
+#endregion
     }
 }

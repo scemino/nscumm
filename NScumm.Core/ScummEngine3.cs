@@ -847,9 +847,13 @@ namespace NScumm.Core
             switch (op)
             {
                 case 1: // load script
+                    _resManager.LoadScript(resId);
+                    break;
                 case 2: // load sound
+                    // TODO: sound
+                    break;
                 case 3: // load costume
-                    // TODO: load room/sound/script
+                    _resManager.LoadCostume(resId);
                     break;
 
                 case 4: // load room

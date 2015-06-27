@@ -206,7 +206,8 @@ namespace NScumm.MonoGame
             LastGamePadState = CurrentGamePadState;
 
             CurrentKeyboardState = Keyboard.GetState();
-            CurrentGamePadState = GamePad.GetState(PlayerIndex.One);
+            // TODO: remove this
+            CurrentGamePadState = new GamePadState();
         }
 
 

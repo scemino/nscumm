@@ -16,10 +16,17 @@
  */
 using NScumm.Core.IO;
 
-#region Using Statements
+using System;
 using Microsoft.Xna.Framework;
+using System.Globalization;
+using Microsoft.Xna.Framework.Storage;
+using System.Threading.Tasks;
 
-#endregion
+#if WINDOWS_UAP
+using Windows.Storage;
+using Windows.Storage.Pickers;
+#endif
+
 namespace NScumm.MonoGame
 {
     /// <summary>
@@ -27,10 +34,16 @@ namespace NScumm.MonoGame
     /// </summary>
     class ScummGame : Game
     {
-        readonly GameSettings _settings;
         readonly ScreenManager _screenManager;
 
+        public GameSettings Settings { get; private set; }
+
         public GraphicsDeviceManager GraphicsDeviceManager { get; private set; }
+
+        public ScummGame()
+            : this(null)
+        {
+        }
 
         public ScummGame(GameSettings settings)
         {
@@ -39,11 +52,15 @@ namespace NScumm.MonoGame
             Window.AllowUserResizing = true;
 
             Content.RootDirectory = "Content";
-            _settings = settings;
-            GraphicsDeviceManager = new GraphicsDeviceManager(this);
-            GraphicsDeviceManager.PreferredBackBufferWidth = 800;
-            GraphicsDeviceManager.PreferredBackBufferHeight = (int)(800.0 * settings.Game.Height / settings.Game.Width);
 
+            GraphicsDeviceManager = new GraphicsDeviceManager(this);
+#if !WINDOWS_UAP
+            Settings = settings;
+            GraphicsDeviceManager.PreferredBackBufferWidth = 800;
+            GraphicsDeviceManager.PreferredBackBufferHeight = (int)(800.0 * Settings.Game.Height / Settings.Game.Width);
+#else
+            Settings = new GameSettings(GamePage._info);
+#endif
             _screenManager = new ScreenManager(this);
             Components.Add(_screenManager);
         }
@@ -56,9 +73,9 @@ namespace NScumm.MonoGame
         /// </summary>
         protected override void Initialize()
         {
-            Window.Title = string.Format("NScumm - {0} [{1}/{2}]", _settings.Game.Description, _settings.Game.Variant, _settings.Game.Culture.NativeName);
+            Window.Title = string.Format("NScumm - {0} [{1}/{2}]", Settings.Game.Description, Settings.Game.Variant, Settings.Game.Culture.NativeName);
             _screenManager.AddScreen(new BackgroundScreen());
-            _screenManager.AddScreen(new ScummScreen(this, _settings));
+            _screenManager.AddScreen(new ScummScreen(this, Settings));
 
             base.Initialize();
         }

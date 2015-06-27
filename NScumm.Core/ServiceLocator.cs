@@ -34,9 +34,9 @@ namespace NScumm.Core
     {
         IEnumerable<string> EnumerateFiles(string path);
 
-        IEnumerable<string> EnumerateFiles(string path, string prefix);
+        IEnumerable<string> EnumerateFiles(string path, string searchPattern);
 
-        IEnumerable<string> EnumerateFiles(string path, string prefix, SearchOption option);
+        IEnumerable<string> EnumerateFiles(string path, string searchPattern, SearchOption option);
 
         string Combine(string path1, string path2);
 

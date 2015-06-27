@@ -110,8 +110,8 @@ namespace NScumm.Core
         {
             var opcodes = (from method in GetType().GetMethods(BindingFlags.Instance | BindingFlags.NonPublic)
                                     let attributes = (OpCodeAttribute[])method.GetCustomAttributes(typeof(OpCodeAttribute), false)
-                                    where attributes.Length > 0
-                                    from id in attributes[0].Ids
+                                    from attribute in attributes
+                                    from id in attribute.Ids
                                     group method by id);
 
             //.ToDictionary(o => o.OpCode, o => o.Action);

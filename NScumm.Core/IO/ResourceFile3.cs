@@ -399,8 +399,7 @@ namespace NScumm.Core.IO
                             byte height = (byte)(tmp & 0xF8);
                             byte actordir = (byte)(tmp & 0x07);
 
-                            var data = new ObjectData();
-                            data.Number = objId;
+                            var data = new ObjectData(objId);
                             data.Position = new Point((short)(8 * x), (short)(8 * y));
                             data.Width = (ushort)(8 * width);
                             data.Height = height;

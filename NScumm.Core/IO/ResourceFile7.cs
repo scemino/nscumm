@@ -55,11 +55,11 @@ namespace NScumm.Core.IO
             return header;
         }
 
-        protected override void ReadImageHeader(ObjectData od)
+        protected override ObjectData ReadImageHeader()
         {
             // image header
             var version = _reader.ReadUInt32();
-            od.Number = _reader.ReadUInt16();
+            var od = new ObjectData(_reader.ReadUInt16());
             var numImnn = _reader.ReadUInt16();
             od.Position = new Point(_reader.ReadInt16(), _reader.ReadInt16());
             od.Width = _reader.ReadUInt16();
@@ -71,14 +71,14 @@ namespace NScumm.Core.IO
             {
                 od.Hotspots.Add(new Point(_reader.ReadInt16(), _reader.ReadInt16()));
             }
+            return od;
         }
 
         protected override ObjectData ReadCDHD()
         {
             var version = _reader.ReadUInt32();
-            var obj = new ObjectData
+            var obj = new ObjectData(_reader.ReadUInt16())
                 {
-                    Number = _reader.ReadUInt16(),
                     Parent = _reader.ReadByte(),
                     ParentState = _reader.ReadByte()
                 };

@@ -265,9 +265,8 @@ namespace NScumm.Core.IO
             var tmpActor = _reader.ReadByte();
             var actor = tmpActor & 0x7;
             var height = tmpActor & 0xF8;
-            var obj = new ObjectData
+            var obj = new ObjectData(id)
             {
-                Number = id,
                 Position = new Point(x, y),
                 ParentState = (byte)parentState,
                 Width = (ushort)width,

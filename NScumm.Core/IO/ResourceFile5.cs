@@ -214,7 +214,7 @@ namespace NScumm.Core.IO
 
         protected ObjectData ReadObjectImages(long size)
         {
-            var od = new ObjectData();
+            ObjectData od = null;
             var it = CreateChunkIterator(size);
             while (it.MoveNext())
             {
@@ -222,7 +222,7 @@ namespace NScumm.Core.IO
                 {
                     case "IMHD":
                         {
-                            ReadImageHeader(od);
+                            od = ReadImageHeader();
                         }
                         break;
                     case "IMAG":
@@ -239,9 +239,9 @@ namespace NScumm.Core.IO
             return od;
         }
 
-        protected virtual void ReadImageHeader(ObjectData od)
+        protected virtual ObjectData ReadImageHeader()
         {
-            od.Number = _reader.ReadUInt16();
+            var od = new ObjectData(_reader.ReadUInt16());
             var numImnn = _reader.ReadUInt16();
             var numZpnn = _reader.ReadUInt16();
             od.Flags = (DrawBitmaps)_reader.ReadByte();
@@ -249,13 +249,13 @@ namespace NScumm.Core.IO
             od.Position = new Point(_reader.ReadInt16(), _reader.ReadInt16());
             od.Width = _reader.ReadUInt16();
             od.Height = _reader.ReadUInt16();
+            return od;
         }
 
         protected virtual ObjectData ReadCDHD()
         {
-            var obj = new ObjectData
+            var obj = new ObjectData(_reader.ReadUInt16())
             {
-                Number = _reader.ReadUInt16(),
                 Position = new Point((short)(_reader.ReadByte() * 8), (short)(_reader.ReadByte() * 8)),
                 Width = (ushort)(_reader.ReadByte() * 8),
                 Height = (ushort)(_reader.ReadByte() * 8),

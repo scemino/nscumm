@@ -616,8 +616,7 @@ namespace NScumm.Core
                     {
                         // Removing an flObject from a room means we can nuke it
 //                        _res->nukeResource(rtFlObject, _objs[i].fl_object_index);
-                        _objs[i].Number = 0;
-                        _objs[i].FloatingObjectIndex = 0;
+                        _objs[i] = new ObjectData();
                     }
                 }
             }

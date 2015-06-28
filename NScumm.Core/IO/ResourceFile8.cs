@@ -286,16 +286,13 @@ namespace NScumm.Core.IO
             return header;
         }
 
-        protected override void ReadImageHeader(ObjectData od)
+        protected override ObjectData ReadImageHeader()
         {
             // image header
             var name = _reader.ReadBytes(40);
             var text = ResourceIndex8.DataToString(name);
-            if (ResourceIndex.ObjectIDMap.ContainsKey(text))
-            {
-                var id = ResourceIndex.ObjectIDMap[text];
-                od.Number = (ushort)id;
-            }
+            var id = ResourceIndex.ObjectIDMap[text];
+            var od = new ObjectData((ushort)id);
 
             od.Name = name;
             var version = _reader.ReadUInt32();
@@ -309,6 +306,7 @@ namespace NScumm.Core.IO
             {
                 od.Hotspots.Add(new Point(_reader.ReadInt32(), _reader.ReadInt32()));
             }
+            return od;
         }
 
         protected override ObjectData Merge(ObjectData objImg, ObjectData objCode)

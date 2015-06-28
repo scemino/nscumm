@@ -1181,7 +1181,7 @@ namespace NScumm.Core
                         {
                             var index = reader.ReadUInt16();
                             _inventory[idx] = index;
-                            _invData[idx] = new ObjectData { Number = index };
+                            _invData[idx] = new ObjectData(index);
                             var br = new BinaryReader(new MemoryStream(ptr));
                             br.BaseStream.Seek(18, SeekOrigin.Begin);
                             var offset = br.ReadByte();

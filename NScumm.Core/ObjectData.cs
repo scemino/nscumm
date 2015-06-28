@@ -15,7 +15,6 @@
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-using System;
 using System.Collections.Generic;
 using NScumm.Core.Graphics;
 using NScumm.Core.IO;
@@ -25,7 +24,7 @@ namespace NScumm.Core
     [System.Diagnostics.DebuggerDisplay("{DebuggerDisplay,nq}")]
     public class ObjectData
     {
-        public ushort Number { get; set; }
+        public ushort Number { get; private set; }
 
         public ushort Width { get; set; }
 
@@ -63,6 +62,15 @@ namespace NScumm.Core
 
         public ObjectData()
         {
+            ScriptOffsets = new Dictionary<int, int>();
+            Script = new ScriptData();
+            Images = new List<ImageData>();
+            Hotspots = new List<Point>();
+        }
+
+        public ObjectData(ushort id)
+        {
+            Number = id;
             ScriptOffsets = new Dictionary<int, int>();
             Script = new ScriptData();
             Images = new List<ImageData>();

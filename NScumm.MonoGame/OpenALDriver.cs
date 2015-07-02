@@ -66,5 +66,10 @@ namespace NScumm.MonoGame
         {
             _dsei.Dispose();
         }
+
+        public void Stop()
+        {
+            _dsei.Stop();
+        }
     }
 }

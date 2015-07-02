@@ -39,19 +39,38 @@ namespace NScumm.MonoGame
         readonly object _gate = new object();
         bool _backPressed;
         bool _leftButtonPressed;
+        bool _isMenuPressed;
+        Core.Graphics.Point _mousePosition;
+        private bool _rightButtonPressed;
+        private Vector2 _realPosition;
+
+        public Vector2 RealPosition { get { return _realPosition; } }
 
         public XnaInputManager(GameWindow window, int width, int height)
         {
             _window = window;
             _width = width;
             _height = height;
+            _mousePosition = new Core.Graphics.Point();
 
 #if WINDOWS_UAP
             var view = SystemNavigationManager.GetForCurrentView();
-            view.AppViewBackButtonVisibility = AppViewBackButtonVisibility.Visible;
             view.BackRequested += HardwareButtons_BackPressed;
-            
+
+            var touchCap = TouchPanel.GetCapabilities();
             TouchPanel.EnableMouseTouchPoint = true;
+            TouchPanel.EnableMouseGestures = true;
+            TouchPanel.EnabledGestures = GestureType.Hold | GestureType.Tap;
+
+            // note, cache the value instead of querying it more than once.
+            bool isHardwareButtonsAPIPresent = Windows.Foundation.Metadata.ApiInformation.IsTypePresent
+                (typeof(Windows.Phone.UI.Input.HardwareButtons).FullName);
+
+            if (isHardwareButtonsAPIPresent)
+            {
+                Windows.Phone.UI.Input.HardwareButtons.CameraPressed +=
+                    this.HardwareButtons_CameraPressed;
+            }
 #endif
         }
 
@@ -61,33 +80,65 @@ namespace NScumm.MonoGame
             _backPressed = true;
             e.Handled = true;
         }
+
+        private void HardwareButtons_CameraPressed(object sender, Windows.Phone.UI.Input.CameraEventArgs e)
+        {
+            _isMenuPressed = true;
+        }
 #endif
         public Core.Graphics.Point GetMousePosition()
         {
-            var state = Mouse.GetState();
-            var x = state.X;
-            var y = state.Y;
-
             _leftButtonPressed = false;
+            _rightButtonPressed = false;
+
+#if WINDOWS_UAP
             if (_touchState != null)
             {
+                if (TouchPanel.IsGestureAvailable)
+                {
+                    var gesture = _touchState.ReadGesture();
+                    if (gesture.GestureType == GestureType.Tap)
+                    {
+                        var pos = gesture.Position;
+                        UpdateMousePosition(pos.X, pos.Y);
+                        _leftButtonPressed = true;
+                    }
+                    else if (gesture.GestureType == GestureType.Hold)
+                    {
+                        var pos = gesture.Position;
+                        UpdateMousePosition(pos.X, pos.Y);
+                        _rightButtonPressed = true;
+                    }
+                }
+
                 var locations = _touchState.GetState();
                 foreach (var touch in locations)
                 {
                     if (touch.State == TouchLocationState.Moved || touch.State == TouchLocationState.Pressed)
                     {
                         var pos = locations[0].Position;
-                        x = (int)pos.X;
-                        y = (int)pos.Y;
+                        UpdateMousePosition(pos.X, pos.Y);
                         _leftButtonPressed = true;
                     }
                 }
             }
+#else
+            {
+                var state = _mouseState;
+                var x = state.X;
+                var y = state.Y;
+                UpdateMousePosition(x, y);
+            }
+#endif
+            return _mousePosition;
+        }
 
+        private void UpdateMousePosition(float x, float y)
+        {
             var scaleX = _width / _window.ClientBounds.Width;
             var scaleY = _height / _window.ClientBounds.Height;
-            var pOut = new Core.Graphics.Point((short)(x * scaleX), (short)(y * scaleY));
-            return pOut;
+            _realPosition = new Vector2(x, y);
+            _mousePosition = new Core.Graphics.Point((int)(x * scaleX), (int)(y * scaleY));
         }
 
         public void UpdateInput(MouseState mouse, KeyboardState keyboard)
@@ -110,7 +161,12 @@ namespace NScumm.MonoGame
                     keys.Add(KeyCode.Escape);
                     _backPressed = false;
                 }
-                var inputState = new ScummInputState(keys, _leftButtonPressed || _mouseState.LeftButton == ButtonState.Pressed, _mouseState.RightButton == ButtonState.Pressed);
+                if (_isMenuPressed)
+                {
+                    keys.Add(KeyCode.F5);
+                    _isMenuPressed = false;
+                }
+                var inputState = new ScummInputState(keys, _leftButtonPressed || _mouseState.LeftButton == ButtonState.Pressed, _rightButtonPressed || _mouseState.RightButton == ButtonState.Pressed);
                 return inputState;
             }
         }
@@ -190,6 +246,6 @@ namespace NScumm.MonoGame
             { Keys.PageUp, KeyCode.PageUp },
             { Keys.PageDown, KeyCode.PageDown },
             { Keys.LeftShift, KeyCode.LeftShift },
-        };
+        };        
     }
 }

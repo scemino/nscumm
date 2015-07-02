@@ -14,7 +14,7 @@ namespace NScumm.MonoGame
 {
     public sealed partial class MainPage
     {
-        static readonly HashSet<string> indexFiles = new HashSet<string>(new string[] { ".LFL", ".000", ".LA0" }, StringComparer.OrdinalIgnoreCase);
+        static readonly HashSet<string> indexFiles = new HashSet<string>(new string[] { ".D64", ".DSK,", ".LFL", ".000", ".LA0" }, StringComparer.OrdinalIgnoreCase);
 
         public MainPage()
         {
@@ -31,12 +31,13 @@ namespace NScumm.MonoGame
             if (ApplicationData.Current.LocalSettings.Containers.ContainsKey("Games"))
             {
                 var gamesContainer = ApplicationData.Current.LocalSettings.Containers["Games"];
-                var games = from gameContainer in gamesContainer.Containers.Values
-                            let path = (string)gameContainer.Values["Path"]
-                            let game = GameManager.GetInfo(path)
-                            orderby game.Description
-                            select game;
+                var games = (from gameContainer in gamesContainer.Containers.Values
+                             let path = (string)gameContainer.Values["Path"]
+                             let game = GameManager.GetInfo(path)
+                             orderby game.Description
+                             select game).ToList();
                 GameListBox.ItemsSource = games;
+                NoGameTextBlock.Visibility = games.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
             }
             else
             {
@@ -48,6 +49,7 @@ namespace NScumm.MonoGame
 
         private void Scan()
         {
+            NoGameTextBlock.Visibility = Visibility.Collapsed;
             var container = ApplicationData.Current.LocalSettings.CreateContainer("Games", ApplicationDataCreateDisposition.Always);
             ProgressPanel.Visibility = Visibility.Visible;
             var games = new ObservableCollection<GameInfo>();
@@ -69,7 +71,7 @@ namespace NScumm.MonoGame
                 foreach (var item in items)
                 {
                     var gameContainer = container.CreateContainer(item.MD5, ApplicationDataCreateDisposition.Always);
-                    gameContainer.Values["Path"] =  item.Path;
+                    gameContainer.Values["Path"] = item.Path;
                     games.Add(item);
                 }
             },
@@ -77,6 +79,7 @@ namespace NScumm.MonoGame
             {
                 // hide progression when finished
                 ProgressPanel.Visibility = Visibility.Collapsed;
+                NoGameTextBlock.Visibility = games.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
             });
         }
 

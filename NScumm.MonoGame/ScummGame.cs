@@ -15,17 +15,8 @@
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
 using NScumm.Core.IO;
-
-using System;
 using Microsoft.Xna.Framework;
-using System.Globalization;
-using Microsoft.Xna.Framework.Storage;
-using System.Threading.Tasks;
-
-#if WINDOWS_UAP
-using Windows.Storage;
-using Windows.Storage.Pickers;
-#endif
+using System;
 
 namespace NScumm.MonoGame
 {
@@ -60,6 +51,7 @@ namespace NScumm.MonoGame
             GraphicsDeviceManager.PreferredBackBufferHeight = (int)(800.0 * Settings.Game.Height / Settings.Game.Width);
 #else
             Settings = new GameSettings(GamePage._info);
+            GraphicsDeviceManager.IsFullScreen = true;
 #endif
             _screenManager = new ScreenManager(this);
             Components.Add(_screenManager);
@@ -78,6 +70,12 @@ namespace NScumm.MonoGame
             _screenManager.AddScreen(new ScummScreen(this, Settings));
 
             base.Initialize();
+        }
+
+        protected override void EndRun()
+        {
+            _screenManager.EndRun();
+            base.EndRun();
         }
     }
 }

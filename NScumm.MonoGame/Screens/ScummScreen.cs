@@ -26,12 +26,11 @@ using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace NScumm.MonoGame
 {
-    public class ScummScreen: GameScreen
+    public class ScummScreen : GameScreen
     {
         readonly GameSettings info;
         SpriteBatch spriteBatch;
@@ -86,8 +85,15 @@ namespace NScumm.MonoGame
                 Task.Factory.StartNew(() =>
                 {
                     UpdateGame();
-                });                
+                });
             }
+        }
+
+        public override void EndRun()
+        {
+            engine.HasToQuit = true;
+            audioDriver.Stop();
+            base.EndRun();
         }
 
         void OnShowMenuDialogRequested(object sender, EventArgs e)
@@ -130,8 +136,9 @@ namespace NScumm.MonoGame
             }
             else
             {
-                UpdateMouseState();
-                inputManager.UpdateInput(Mouse.GetState(), input.CurrentKeyboardState);
+                var state = Mouse.GetState();
+                inputManager.UpdateInput(state, input.CurrentKeyboardState);
+                cursorPos = inputManager.RealPosition;
                 base.HandleInput(input);
             }
         }
@@ -152,14 +159,6 @@ namespace NScumm.MonoGame
             base.ScreenManager.Game.Exit();
         }
 
-        void UpdateMouseState()
-        {
-            var state = Mouse.GetState();
-            var x = state.X;
-            var y = state.Y;
-            cursorPos = new Vector2(x, y);
-        }
-
         public override void Draw(GameTime gameTime)
         {
             spriteBatch.Begin(SpriteSortMode.BackToFront, BlendState.AlphaBlend,
@@ -171,8 +170,14 @@ namespace NScumm.MonoGame
 
         public string[] GetSaveGames()
         {
+#if WINDOWS_UAP
+            var dir = Windows.Storage.ApplicationData.Current.RoamingFolder.Path;
+            var pattern = string.Format("{0}*.sav", info.Game.Id);
+            return ServiceLocator.FileStorage.EnumerateFiles(dir, pattern).ToArray();
+#else
             var dir = Path.GetDirectoryName(info.Game.Path);
             return ServiceLocator.FileStorage.EnumerateFiles(dir, "*.sav").ToArray();
+#endif
         }
 
         public void LoadGame(int index)
@@ -189,9 +194,15 @@ namespace NScumm.MonoGame
 
         string GetSaveGamePath(int index)
         {
+#if WINDOWS_UAP
+            var dir = Windows.Storage.ApplicationData.Current.RoamingFolder.Path;
+            var filename = Path.Combine(dir, string.Format("{0}{1}.sav", info.Game.Id, (index + 1)));
+            return filename;
+#else
             var dir = Path.GetDirectoryName(info.Game.Path);
             var filename = Path.Combine(dir, string.Format("{0}{1}.sav", info.Game.Id, (index + 1)));
             return filename;
+#endif
         }
     }
 }

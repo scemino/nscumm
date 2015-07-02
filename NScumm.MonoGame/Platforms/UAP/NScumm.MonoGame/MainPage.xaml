@@ -27,6 +27,8 @@
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>
+        <TextBlock x:Name="NoGameTextBlock" Text="No games detected, insert the SD card with SCUMM games and press Refresh." 
+                   Grid.RowSpan="2" VerticalAlignment="Center" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" />
     </Grid>
     
     <Page.BottomAppBar>

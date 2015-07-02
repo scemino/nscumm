@@ -7,9 +7,9 @@ namespace NScumm
 {
     public class WindowsUAPPlatform : IPlatform
     {
-        public async void Sleep(int timeInMs)
+        public void Sleep(int timeInMs)
         {
-            await Task.Delay(TimeSpan.FromMilliseconds(timeInMs));
+            Task.Delay(TimeSpan.FromMilliseconds(timeInMs)).Wait();
         }
 
         public object ToStructure(byte[] data, int offset, Type type)

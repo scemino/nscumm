@@ -91,7 +91,6 @@ namespace NScumm.MonoGame
             get { return spriteBatch; }
         }
 
-
         /// <summary>
         /// A default font shared by all the screens. This saves
         /// each screen having to bother loading their own local copy.
@@ -308,7 +307,6 @@ namespace NScumm.MonoGame
 
         #region Public Methods
 
-
         /// <summary>
         /// Adds a new screen to the screen manager.
         /// </summary>
@@ -375,7 +373,13 @@ namespace NScumm.MonoGame
             spriteBatch.End();
         }
 
-
+        public void EndRun()
+        {
+            foreach (GameScreen screen in screens)
+            {
+                screen.EndRun();
+            }
+        }
         #endregion
     }
 }

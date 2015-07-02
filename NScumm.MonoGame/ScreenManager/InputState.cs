@@ -120,64 +120,6 @@ namespace NScumm.MonoGame
             }
         }
 
-
-        /// <summary>
-        /// Checks for a positive "ship color change" input action
-        /// </summary>
-        public bool ShipColorChangeUp
-        {
-            get
-            {
-                return IsNewKeyPress(Keys.Up) ||
-                (CurrentGamePadState.Buttons.RightShoulder == ButtonState.Pressed &&
-                LastGamePadState.Buttons.RightShoulder == ButtonState.Released);
-            }
-        }
-
-
-        /// <summary>
-        /// Checks for a negative "ship color change" input action.
-        /// </summary>
-        public bool ShipColorChangeDown
-        {
-            get
-            {
-                return IsNewKeyPress(Keys.Down) ||
-                (CurrentGamePadState.Buttons.LeftShoulder == ButtonState.Pressed &&
-                LastGamePadState.Buttons.LeftShoulder == ButtonState.Released);
-            }
-        }
-
-
-
-        /// <summary>
-        /// Checks for a positive "ship model change" input action.
-        /// </summary>
-        public bool ShipModelChangeUp
-        {
-            get
-            {
-                return IsNewKeyPress(Keys.Right) ||
-                (CurrentGamePadState.Triggers.Right >= 1f &&
-                LastGamePadState.Triggers.Right < 1f);
-            }
-        }
-
-
-        /// <summary>
-        /// Checks for a negative "ship model change" input action.
-        /// </summary>
-        public bool ShipModelChangeDown
-        {
-            get
-            {
-                return IsNewKeyPress(Keys.Left) ||
-                (CurrentGamePadState.Triggers.Left >= 1f &&
-                LastGamePadState.Triggers.Left < 1f);
-            }
-        }
-
-
         /// <summary>
         /// Checks for a "mark ready" input action (on either keyboard or gamepad).
         /// </summary>

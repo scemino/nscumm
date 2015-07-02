@@ -46,7 +46,7 @@ namespace NScumm
                 var folders = folder.GetFoldersAsync().AsTask().ConfigureAwait(false).GetAwaiter().GetResult().Select(f => f.Path);
                 var allFolders = folders.Concat(new string[] { folder.Path });
                 return allFolders.SelectMany(f => EnumerateFiles(f, searchPattern));
-            }            
+            }
         }
 
         public bool FileExists(string path)
@@ -106,7 +106,14 @@ namespace NScumm
         public Stream OpenFileWrite(string path)
         {
             this.Trace().Write("IO", "Write {0}", path);
+            if (!FileExists(path))
+            {
+                var dir = Path.GetDirectoryName(path);
+                var folder = StorageFolder.GetFolderFromPathAsync(dir).AsTask().ConfigureAwait(false).GetAwaiter().GetResult();
+                folder.CreateFileAsync(Path.GetFileName(path)).AsTask().ConfigureAwait(false).GetAwaiter().GetResult();
+            }
             var file = StorageFile.GetFileFromPathAsync(path).AsTask().ConfigureAwait(false).GetAwaiter().GetResult();
+                
             var stream = file.OpenStreamForWriteAsync().ConfigureAwait(false).GetAwaiter().GetResult();
             return stream;
         }

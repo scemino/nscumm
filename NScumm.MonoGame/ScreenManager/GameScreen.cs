@@ -323,6 +323,9 @@ namespace NScumm.MonoGame
             }
         }
 
+        public virtual void EndRun()
+        {
+        }
 
         #endregion
     }

@@ -242,6 +242,9 @@ namespace NScumm.Core.Audio
                         result = handle;
                     }
                     break;
+                case MusicType.Null:
+                    result = handle;
+                    break;
             }
 
             if (!result.IsValid)

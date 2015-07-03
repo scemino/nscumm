@@ -116,13 +116,27 @@ namespace NScumm.Core.Audio.Decoders
             return buffer.Length - samplesLeft;
         }
 
+        ~RawStream()
+        {
+            Dispose(false);
+        }
+
         public void Dispose()
         {
-            _buffer = null;
-            if (_disposeStream && _stream != null)
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
             {
-                _stream.Dispose();
-                _stream = null;
+                _buffer = null;
+                if (_disposeStream && _stream != null)
+                {
+                    _stream.Dispose();
+                    _stream = null;
+                }
             }
         }
 

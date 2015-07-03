@@ -51,7 +51,18 @@ namespace NScumm.Core.IO
 
         #region IDisposable implementation
 
+        ~ResourceFile()
+        {
+            Dispose(false);
+        }
+
         public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
         {
             if (_fs != null)
             {
@@ -59,7 +70,6 @@ namespace NScumm.Core.IO
                 _fs = null;
             }
         }
-
         #endregion
 
         #region Methods

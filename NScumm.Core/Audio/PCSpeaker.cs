@@ -54,8 +54,18 @@ namespace NScumm.Core.Audio
             get{ return false; }
         }
 
+        ~PCSpeaker()
+        {
+            Dispose(false);
+        }
 
         public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
         {
         }
 

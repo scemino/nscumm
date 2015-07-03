@@ -443,8 +443,6 @@ namespace NScumm.Core.Audio.SoftSynth
                 else
                     return _driver._operatorLevelTable[(lvl << 5) + mod];
             }
-
-            return 0;
         }
 
         void KeyOn()

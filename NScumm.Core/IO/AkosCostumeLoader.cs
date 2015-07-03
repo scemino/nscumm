@@ -99,13 +99,13 @@ namespace NScumm.Core
                                     int size = akst.Length / 8;
                                     if (size > 0)
                                     {
-                                        bool found = false;
+                                        //bool found = false;
                                         while ((size--) != 0)
                                         {
                                             if (BitConverter.ToUInt32(akst, akstPtr) == 0)
                                             {
 //                                                a.Cost.HeCondMaskTable[i] = BitConverter.ToUInt32(akst, akstPtr + 4);
-                                                found = true;
+                                                //found = true;
                                                 break;
                                             }
                                             akstPtr += 8;
@@ -136,14 +136,14 @@ namespace NScumm.Core
                                     int size = aksf.Length / 6;
                                     if (size > 0)
                                     {
-                                        bool found = false;
+                                        //bool found = false;
                                         while ((size--) != 0)
                                         {
                                             if (BitConverter.ToUInt16(aksf, aksfPtr) == start)
                                             {
 //                                                a.Cost.HeJumpOffsetTable[i] = BitConverter.ToUInt16(aksf, aksfPtr + 2);
 //                                                a.Cost.HeJumpCountTable[i] = BitConverter.ToUInt16(aksf, aksfPtr + 4);
-                                                found = true;
+                                                //found = true;
                                                 break;
                                             }
                                             aksfPtr += 6;
@@ -166,13 +166,13 @@ namespace NScumm.Core
                                     int size = akst.Length / 8;
                                     if (size > 0)
                                     {
-                                        bool found = false;
+                                        //bool found = false;
                                         while ((size--) != 0)
                                         {
                                             if (BitConverter.ToUInt32(akst, akstPtr) == start)
                                             {
 //                                                a.Cost.heCondMaskTable[i] = READ_LE_UINT32(akst + 4);
-                                                found = true;
+                                                //found = true;
                                                 break;
                                             }
                                             akstPtr += 8;

@@ -173,7 +173,7 @@ namespace NScumm.Core
 
                         method.Invoke(this, parameters);
                     }
-                    catch (Exception e)
+                    catch (Exception)
                     {
                         if (System.Diagnostics.Debugger.IsAttached)
                         {

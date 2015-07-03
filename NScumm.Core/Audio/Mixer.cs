@@ -308,7 +308,6 @@ namespace NScumm.Core.Audio
             if (index == -1)
             {
                 throw new InvalidOperationException("MixerImpl::out of mixer slots");
-                return null;
             }
 
             _channels[index] = chan;

@@ -667,7 +667,7 @@ namespace NScumm.Core
                     }
                     break;
                 default:
-                    throw new InvalidOperationException(string.Format("o8_arrayOps: default case 0x{0:X} (array {1}})", subOp, array));
+                    throw new InvalidOperationException(string.Format("o8_arrayOps: default case 0x{0:X} (array {1})", subOp, array));
             }
         }
 
@@ -1579,7 +1579,7 @@ namespace NScumm.Core
 //                            memcpy(getStringAddress(args[2]), name.c_str(), size);
 //                        }
                         throw new NotImplementedException("saveGameReadName");
-                        break;
+                        //break;
                     }
                 case 26:
                     { // saveGameWrite
@@ -1640,7 +1640,7 @@ namespace NScumm.Core
                     break;
 
                 default:
-                    throw new InvalidOperationException(string.Format("KernelSetFunctions8: default case 0x{0:X} (len = %d)", args[0], args.Length));
+                    throw new InvalidOperationException(string.Format("KernelSetFunctions8: default case 0x{0:X} (len = {1})", args[0], args.Length));
             }
         }
 

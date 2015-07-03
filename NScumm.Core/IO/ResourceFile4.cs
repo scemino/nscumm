@@ -67,7 +67,7 @@ namespace NScumm.Core.IO
             return null;
         }
 
-        public byte[] ReadAmigaSound(long offset)
+        public override byte[] ReadAmigaSound(long offset)
         {
             GotoResourceHeader(offset);
             var size = _reader.ReadInt32();

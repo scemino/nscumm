@@ -143,8 +143,8 @@ namespace NScumm.Core.Smush
         {
             TrsFile file;
             using (var f = ServiceLocator.FileStorage.OpenFileRead(filename))
-            using (var sr = new StreamReader(f, Encoding.GetEncoding("iso-8859-1")))
             {
+                var sr = new StreamReader(f, Encoding.GetEncoding("iso-8859-1"));
                 file = Load(sr);
             }
             return file;

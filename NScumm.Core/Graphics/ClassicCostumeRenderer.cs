@@ -637,7 +637,7 @@ namespace NScumm.Core.Graphics
             byte len;
             int y;
             uint height;
-            byte color, pcolor;
+            byte color;
             bool rep;
 
             y = v1.Y;

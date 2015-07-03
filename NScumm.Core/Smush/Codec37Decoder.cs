@@ -119,7 +119,7 @@ namespace NScumm.Core.Smush
 //                    break;
                 default:
                     throw new NotImplementedException();
-                    break;
+                    //break;
             }
             _prevSeqNb = seq_nb;
 

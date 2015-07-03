@@ -75,14 +75,28 @@ namespace NScumm.Core
             _isSeeking = false;
         }
 
+        ~Player_AD()
+        {
+            Dispose(false);
+        }
+
         public void Dispose()
         {
-            _mixer.StopHandle(_soundHandle);
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
 
-            StopAllSounds();
-            lock (_mutex)
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
             {
-                _opl2 = null;
+                _mixer.StopHandle(_soundHandle);
+
+                StopAllSounds();
+                lock (_mutex)
+                {
+                    _opl2 = null;
+                }
             }
         }
 

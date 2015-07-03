@@ -63,7 +63,7 @@ namespace NScumm.Dump
             {
                 options.Parse(args);
             }
-            catch (OptionException e)
+            catch (OptionException)
             {
                 System.Console.WriteLine("Try `nsdump --help' for more information.");
                 return 1;

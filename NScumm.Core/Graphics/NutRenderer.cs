@@ -172,7 +172,7 @@ namespace NScumm.Core.Graphics
 //                return _vm->_2byteHeight;
 
             if (c >= _numChars)
-                throw new InvalidOperationException(string.Format("invalid character in NutRenderer::getCharHeight : {0) ({1})", c, _numChars));
+                throw new InvalidOperationException(string.Format("invalid character in NutRenderer::getCharHeight : {0} ({1})", c, _numChars));
 
             return _chars[c].Height;
         }

@@ -2517,7 +2517,6 @@ namespace NScumm.Core
                 String[2].Color = 13;
 
             byte[] str = new byte[80];
-            var ptr = 0;
             int i = 0, len = 0;
 
             // Maximum length of printable characters

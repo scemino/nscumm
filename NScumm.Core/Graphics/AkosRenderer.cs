@@ -258,7 +258,6 @@ namespace NScumm.Core.Graphics
             if (cost.Active[limb] == 0 || ((cost.Stopped & (1 << limb)) != 0))
                 return 0;
 
-            var useCondMask = false;
             var p = cost.Curpos[limb];
 
             AkosOpcode code = (AkosOpcode)aksq[p];
@@ -269,10 +268,8 @@ namespace NScumm.Core.Graphics
             if (code == AkosOpcode.C021 || code == AkosOpcode.C022)
             {
                 ushort s = (ushort)(cost.Curpos[limb] + 4);
-                uint j = 0;
                 var extra = aksq[p + 3];
                 byte n = extra;
-                useCondMask = true;
                 p += (ushort)(extra + 2);
                 code = (code == AkosOpcode.C021) ? AkosOpcode.ComplexChan : AkosOpcode.ComplexChan2;
             }

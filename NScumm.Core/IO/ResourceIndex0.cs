@@ -71,8 +71,8 @@ namespace NScumm.Core
             }
 
             using (var disk = ServiceLocator.FileStorage.OpenFileRead(path))
-            using (var br = new BinaryReader(disk))
             {
+                var br = new BinaryReader(disk);
                 if (Game.Platform == Platform.Apple2GS)
                 {
                     br.BaseStream.Seek(142080, SeekOrigin.Begin);

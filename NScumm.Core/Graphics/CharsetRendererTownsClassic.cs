@@ -225,13 +225,13 @@ namespace NScumm.Core.Graphics
             // Some SCUMM 5 games contain hard coded logic to determine whether to use
             // the SCUMM fonts or the FM-Towns font rom to draw a character. For the other
             // games we will simply check for a character greater 127.
-            if (chr < 128)
-            {
-                if (((Vm.Game.GameId == GameId.Monkey2 && CurId != 0) || (Vm.Game.GameId == GameId.Indy4 && CurId != 3)) && (chr > 31 && chr != 94 && chr != 95 && chr != 126 && chr != 127))
-                    return true;
-                return false;
-            }
-            return true;
+            //if (chr < 128)
+            //{
+            //    if (((Vm.Game.GameId == GameId.Monkey2 && CurId != 0) || (Vm.Game.GameId == GameId.Indy4 && CurId != 3)) && (chr > 31 && chr != 94 && chr != 95 && chr != 126 && chr != 127))
+            //        return true;
+            //    return false;
+            //}
+            //return true;
         }
 
         void SetupShadowMode()

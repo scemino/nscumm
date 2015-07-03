@@ -19,6 +19,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using System;
 using System.Collections.Generic;
 using NScumm.Core.Audio.Midi;
 
@@ -37,6 +38,35 @@ namespace NScumm.Core.Audio.SoftSynth
 
         void IMidiDriver.MetaEvent(byte type, byte[] data, ushort length)
         {
+        }
+    }
+
+    class NullMusicPlugin : MusicPluginObject
+    {
+        public override string Id
+        {
+            get
+            {
+                return "null";
+            }
+        }
+
+        public override string Name
+        { 
+            get
+            {
+                return "No music";
+            }
+        }
+
+        public override IList<MusicDevice> GetDevices()
+        {
+            return new[] { new MusicDevice(this, string.Empty, MusicType.Null) };
+        }
+
+        public override IMidiDriver CreateInstance(IMixer mixer, DeviceHandle handle)
+        {
+            return new NullMidiDriver();
         }
     }
 }

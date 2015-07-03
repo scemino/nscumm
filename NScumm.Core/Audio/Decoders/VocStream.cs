@@ -60,15 +60,32 @@ namespace NScumm.Core.Audio.Decoders
 
         #region IDisposable implementation
 
+        ~VocStream()
+        {
+            Dispose(false);
+        }
+
         public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
         {
             if (_stream != null)
             {
                 _stream.Dispose();
                 _stream = null;
             }
-        }
 
+            if (_br != null)
+            {
+                _br.Dispose();
+                _br = null;
+            }
+        }
+        
         #endregion
 
         public virtual int ReadBuffer(short[] buffer)

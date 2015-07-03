@@ -100,7 +100,18 @@ namespace NScumm.Core.Audio
             _end = true;
         }
 
-        public virtual void Dispose()
+        ~Paula()
+        {
+            Dispose(false);
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
         {
         }
 

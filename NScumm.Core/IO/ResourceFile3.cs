@@ -21,7 +21,6 @@
 
 using System.Collections.Generic;
 using NScumm.Core.Graphics;
-using NScumm.Core;
 using System.IO;
 using System;
 using System.Text;
@@ -251,7 +250,7 @@ namespace NScumm.Core.IO
             return null;
         }
 
-        public byte[] ReadAmigaSound(long offset)
+        public virtual byte[] ReadAmigaSound(long offset)
         {
             _reader.BaseStream.Seek(offset, SeekOrigin.Begin);
             var size = _reader.ReadInt32();

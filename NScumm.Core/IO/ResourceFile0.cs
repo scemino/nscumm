@@ -26,14 +26,13 @@ using System.Linq;
 
 namespace NScumm.Core.IO
 {
-    class ResourceFile0: ResourceFile
+    class ResourceFile0 : ResourceFile
     {
         const int HeaderSize = 4;
 
-        public ResourceFile0(ResourceIndex0 index, byte resourceNumber)
+        public ResourceFile0(Stream stream)
+            : base(stream)
         {
-            var ms = ScummDiskImage.CreateResource(index, resourceNumber);
-            _reader = new XorReader(ms, 0);
         }
 
         public override Room ReadRoom(long offset)
@@ -137,11 +136,6 @@ namespace NScumm.Core.IO
             }
 
             return room;
-        }
-
-        public override Dictionary<byte, long> ReadRoomOffsets()
-        {
-            return new Dictionary<byte, long>();
         }
 
         public override byte[] ReadCostume(long offset)
@@ -383,7 +377,7 @@ namespace NScumm.Core.IO
                     }
                 }
                 room.Boxes.Add(box);
-            }    
+            }
 
             var size = 0;
             var pos = _reader.BaseStream.Position;

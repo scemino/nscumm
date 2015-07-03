@@ -39,7 +39,6 @@
 using System.IO;
 using NScumm.Core.IO;
 using System.Diagnostics;
-using System;
 
 namespace NScumm.Core.Graphics
 {

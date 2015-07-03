@@ -21,7 +21,6 @@
 using System;
 using System.Linq;
 using NScumm.Core.Graphics;
-using System.IO;
 
 namespace NScumm.Core
 {

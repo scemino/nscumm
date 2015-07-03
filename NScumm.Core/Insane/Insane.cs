@@ -21,7 +21,6 @@
 using System;
 using System.Diagnostics;
 using NScumm.Core.IO;
-using System.IO;
 using NScumm.Core.Smush;
 using NScumm.Core.Graphics;
 

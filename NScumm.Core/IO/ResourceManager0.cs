@@ -21,7 +21,7 @@
 
 namespace NScumm.Core.IO
 {
-    public class ResourceManager0: ResourceManager
+    class ResourceManager0: ResourceManager
     {
         public ResourceManager0(GameInfo game)
             : base(game)

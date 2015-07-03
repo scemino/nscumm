@@ -15,7 +15,6 @@
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-using System;
 using NScumm.Core.Graphics;
 using NScumm.Core.IO;
 

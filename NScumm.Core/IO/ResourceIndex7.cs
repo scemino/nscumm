@@ -22,7 +22,6 @@
 using NScumm.Core.IO;
 using System.IO;
 using System.Collections.ObjectModel;
-using System;
 
 namespace NScumm.Core
 {

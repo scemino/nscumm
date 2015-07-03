@@ -15,7 +15,6 @@
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-using NScumm.Core.IO;
 
 namespace NScumm.Core.IO
 {

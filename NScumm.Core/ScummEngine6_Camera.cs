@@ -18,7 +18,6 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-using System;
 
 namespace NScumm.Core
 {
@@ -29,7 +28,7 @@ namespace NScumm.Core
         {
             var y = (Game.Version >= 7) ? Pop() : 0;
             var x = Pop();
-            PanCameraToCore(new NScumm.Core.Graphics.Point((short)x, (short)y));
+            PanCameraToCore(new Graphics.Point((short)x, (short)y));
         }
 
         [OpCode(0x79)]
@@ -51,7 +50,7 @@ namespace NScumm.Core
 
                 var y = Pop();
                 var x = Pop();
-                SetCameraAt(new NScumm.Core.Graphics.Point((short)x, (short)y));
+                SetCameraAt(new Graphics.Point((short)x, (short)y));
             }
             else
             {

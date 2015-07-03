@@ -20,9 +20,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System.IO;
-using NScumm.Core.Audio.IMuse;
 using NScumm.Core.Audio.Midi;
-using System;
 
 namespace NScumm.Core.Audio.IMuse
 {

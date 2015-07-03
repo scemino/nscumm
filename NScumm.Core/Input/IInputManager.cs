@@ -14,14 +14,12 @@
  * You should have received a copy of the GNU General Public License
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
-using System.Collections.Generic;
 
 namespace NScumm.Core.Input
 {
-
     public interface IInputManager
     {
-        NScumm.Core.Graphics.Point GetMousePosition();
+        Graphics.Point GetMousePosition();
 
         ScummInputState GetState();
     }

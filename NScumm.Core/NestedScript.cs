@@ -16,7 +16,6 @@
  */
 
 using NScumm.Core.IO;
-using System;
 
 namespace NScumm.Core
 {

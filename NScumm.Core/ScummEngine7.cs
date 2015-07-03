@@ -23,10 +23,6 @@ using NScumm.Core.Graphics;
 using NScumm.Core.Input;
 using NScumm.Core.Audio;
 using NScumm.Core.IO;
-using System.Collections.Generic;
-using System;
-using System.Reflection;
-using System.Linq;
 using NScumm.Core.Smush;
 using NScumm.Core.Audio.IMuse;
 

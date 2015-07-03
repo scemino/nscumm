@@ -81,7 +81,7 @@ namespace NScumm.Core
                 case 65:                // SO_AT
                     var y = (short)Pop();
                     var x = (short)Pop();
-                    String[m].Position = new NScumm.Core.Graphics.Point(x, y);
+                    String[m].Position = new Graphics.Point(x, y);
                     String[m].Overhead = false;
                     break;
                 case 66:                // SO_COLOR

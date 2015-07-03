@@ -21,7 +21,6 @@
 
 using System;
 using System.Diagnostics;
-using NScumm.Core.IO;
 
 namespace NScumm.Core.Audio
 {

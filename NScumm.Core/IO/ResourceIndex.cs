@@ -15,7 +15,6 @@
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-using NScumm.Core.IO;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System;

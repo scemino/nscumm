@@ -22,7 +22,6 @@
 #define DBOPL_WAVE_EQUALS_WAVE_TABLEMUL
 
 using System;
-using NScumm.Core.Audio.OPL;
 using System.Runtime.InteropServices;
 
 namespace NScumm.Core.Audio.OPL.DosBox

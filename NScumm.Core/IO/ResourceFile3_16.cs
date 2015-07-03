@@ -100,7 +100,7 @@ namespace NScumm.Core.IO
             return _reader.ReadBytes(size);
         }
 
-        public override byte[] ReadSound(NScumm.Core.Audio.MusicDriverTypes music, long offset)
+        public override byte[] ReadSound(Audio.MusicDriverTypes music, long offset)
         {
             _reader.BaseStream.Seek(offset, System.IO.SeekOrigin.Begin);
             var wa_offs = offset;

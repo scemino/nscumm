@@ -20,15 +20,13 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System.Collections.Generic;
-using NScumm.Core;
-using System;
 using System.Linq;
 using NScumm.Core.Graphics;
 using System.IO;
 
 namespace NScumm.Core.IO
 {
-    public class ResourceFile1: ResourceFile
+    class ResourceFile1: ResourceFile
     {
         const int HeaderSize = 4;
 
@@ -299,7 +297,7 @@ namespace NScumm.Core.IO
             return data;
         }
 
-        public override byte[] ReadSound(NScumm.Core.Audio.MusicDriverTypes music, long offset)
+        public override byte[] ReadSound(Audio.MusicDriverTypes music, long offset)
         {
             _reader.BaseStream.Seek(offset, System.IO.SeekOrigin.Begin);
             var size = _reader.ReadUInt16(); // wa_size

@@ -29,7 +29,7 @@ using NScumm.Core.Audio;
 
 namespace NScumm.Core.IO
 {
-    public class ResourceFile3: ResourceFile
+    class ResourceFile3: ResourceFile
     {
         public ResourceFile3(string path, byte encByte)
             : base(path, encByte)

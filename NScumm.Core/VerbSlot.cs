@@ -17,8 +17,6 @@
 
 using NScumm.Core.Graphics;
 using NScumm.Core.IO;
-using System;
-using System.Collections.Generic;
 
 namespace NScumm.Core
 {

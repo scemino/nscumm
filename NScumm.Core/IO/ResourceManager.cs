@@ -21,7 +21,6 @@
 
 using System;
 using System.Linq;
-using System.IO;
 using System.Collections.Generic;
 using System.Diagnostics;
 
@@ -121,7 +120,7 @@ namespace NScumm.Core.IO
             }
         }
 
-        public IEnumerable<byte[]> GetSounds(NScumm.Core.Audio.MusicDriverTypes music)
+        public IEnumerable<byte[]> GetSounds(Audio.MusicDriverTypes music)
         {
             for (byte i = 0; i < Index.SoundResources.Count; i++)
             {
@@ -265,7 +264,7 @@ namespace NScumm.Core.IO
             return _scripts[id];
         }
 
-        public byte[] GetSound(NScumm.Core.Audio.MusicDriverTypes music, int sound)
+        public byte[] GetSound(Audio.MusicDriverTypes music, int sound)
         {
             if (!_sounds.ContainsKey(sound))
             {

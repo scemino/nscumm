@@ -22,7 +22,6 @@
 using System;
 using System.IO;
 using NScumm.Core.Graphics;
-using System.Runtime.InteropServices;
 
 namespace NScumm.Core.IO
 {
@@ -33,7 +32,7 @@ namespace NScumm.Core.IO
         {
         }
 
-        public override byte[] ReadSound(NScumm.Core.Audio.MusicDriverTypes music, long offset)
+        public override byte[] ReadSound(Audio.MusicDriverTypes music, long offset)
         {
             GotoResourceHeader(offset);
             var tag = ToTag(_reader.ReadBytes(4));

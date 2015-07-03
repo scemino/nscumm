@@ -57,7 +57,7 @@ namespace NScumm.MonoGame
 
         public Core.Graphics.PixelFormat PixelFormat
         {
-            get{ return _pixelFormat; }
+            get { return _pixelFormat; }
             set
             {
                 if (_pixelFormat != value)
@@ -175,7 +175,7 @@ namespace NScumm.MonoGame
             }
         }
 
-#region Palette Methods
+        #region Palette Methods
 
         public void SetPalette(Core.Graphics.Color[] colors)
         {
@@ -194,9 +194,9 @@ namespace NScumm.MonoGame
             }
         }
 
-#endregion
+        #endregion
 
-#region Cursor Methods
+        #region Cursor Methods
 
         public Vector2 Hotspot { get; private set; }
 
@@ -246,9 +246,9 @@ namespace NScumm.MonoGame
             return lastState;
         }
 
-#endregion
+        #endregion
 
-#region Draw Methods
+        #region Draw Methods
 
         public void DrawScreen(SpriteBatch spriteBatch)
         {
@@ -272,20 +272,20 @@ namespace NScumm.MonoGame
             }
         }
 
-#endregion
+        #endregion
 
-#region Misc
+        #region Misc
 
         public void SetShakePos(int pos)
         {
             _shakePos = pos;
         }
 
-#endregion
+        #endregion
 
-#region Dispose
+        #region Dispose
 
-        ~XnaGraphicsManager ()
+        ~XnaGraphicsManager()
         {
             Dispose();
         }
@@ -296,6 +296,6 @@ namespace NScumm.MonoGame
             _textureCursor.Dispose();
         }
 
-#endregion
+        #endregion
     }
 }

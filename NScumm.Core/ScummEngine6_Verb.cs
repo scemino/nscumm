@@ -30,7 +30,7 @@ namespace NScumm.Core
         [OpCode(0x94)]
         protected virtual void GetVerbFromXY(int x, int y)
         {
-            var over = FindVerbAtPos(new NScumm.Core.Graphics.Point(x, y));
+            var over = FindVerbAtPos(new Graphics.Point(x, y));
             if (over != 0)
                 over = Verbs[over].VerbId;
             Push(over);

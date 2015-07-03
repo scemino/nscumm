@@ -16,7 +16,6 @@
  */
 using NScumm.Core.IO;
 using Microsoft.Xna.Framework;
-using System;
 
 namespace NScumm.MonoGame
 {

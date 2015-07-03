@@ -21,8 +21,6 @@
 using System;
 using System.Diagnostics;
 using NScumm.Core.IO;
-using System.IO;
-using System.Runtime.InteropServices;
 using NScumm.Core.Graphics;
 
 namespace NScumm.Core

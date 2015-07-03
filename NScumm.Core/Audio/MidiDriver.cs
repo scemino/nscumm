@@ -20,7 +20,6 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
 using System.Linq;
-using System.Collections.Generic;
 using NScumm.Core.Audio.Midi;
 
 namespace NScumm.Core.Audio

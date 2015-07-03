@@ -22,9 +22,7 @@
 using NScumm.Core.IO;
 using System.IO;
 using System.Collections.ObjectModel;
-using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace NScumm.Core
 {

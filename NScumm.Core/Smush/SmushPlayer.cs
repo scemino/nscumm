@@ -21,7 +21,6 @@
 using System;
 using System.IO;
 using NScumm.Core.Audio;
-using System.Threading;
 using NScumm.Core.IO;
 using System.Diagnostics;
 using NScumm.Core.Graphics;

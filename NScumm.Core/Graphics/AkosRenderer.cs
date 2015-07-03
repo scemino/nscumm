@@ -934,7 +934,7 @@ namespace NScumm.Core.Graphics
             _pixelsNavigator = new PixelNavigator(_vm.MainVirtScreen.Surfaces[0]);
             _pixelsNavigator.GoTo(width_unk, height_unk);
 
-            Akos16Decompress(_pixelsNavigator, (int)_srcptr, cur_x, out_height, dir, numskip_before, numskip_after, 255, clip.Left, clip.Top, ZBuffer);
+            Akos16Decompress(_pixelsNavigator, _srcptr, cur_x, out_height, dir, numskip_before, numskip_after, 255, clip.Left, clip.Top, ZBuffer);
             return 0;
         }
 

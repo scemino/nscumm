@@ -23,15 +23,15 @@ using System;
 using System.Collections.Generic;
 using NScumm.Core.Graphics;
 using System.Linq;
+using System.IO;
 
 namespace NScumm.Core.IO
 {
     class ResourceFile6: ResourceFile5
     {
-        public ResourceFile6(string path, byte encByte)
-            : base(path, encByte)
+        public ResourceFile6(Stream stream)
+            : base(stream)
         {
-
         }
 
         public override Room ReadRoom(long offset)

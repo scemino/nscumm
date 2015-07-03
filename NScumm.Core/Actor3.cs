@@ -222,7 +222,7 @@ namespace NScumm.Core
                     }
                 }
                 dist[closest[j]] = 0xFFFF;
-                minDist[j] = (int)Math.Sqrt((double)minDist[j]);
+                minDist[j] = (int)Math.Sqrt(minDist[j]);
                 box[j] = (closest[j] > 3);  // Is the point on the first or on the second box?
             }
 

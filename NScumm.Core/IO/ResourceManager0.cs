@@ -30,7 +30,8 @@ namespace NScumm.Core.IO
 
         protected override ResourceFile OpenRoom(byte roomIndex)
         {
-            var file = new ResourceFile0((ResourceIndex0)Index, roomIndex);
+            var stream = ScummDiskImage.CreateResource((ResourceIndex0)Index, roomIndex);
+            var file = new ResourceFile0(stream);
             return file;
         }
 

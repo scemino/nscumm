@@ -112,7 +112,7 @@ namespace NScumm.Core.Audio.IMuse
                 _unassignedInstrument = false;
                 if (!Instrument.IsValid)
                 {
-                    Debug.WriteLine("[{0}] No instrument specified", (int)Channel);
+                    Debug.WriteLine("[{0}] No instrument specified", Channel);
                     return;
                 }
             }

@@ -63,7 +63,7 @@ namespace NScumm.Core
                 LoadAndSaveEntry.Create(reader => OldRect.Right = reader.ReadInt16(), writer => writer.WriteInt16(OldRect.Right), 8),
                 LoadAndSaveEntry.Create(reader => OldRect.Bottom = reader.ReadInt16(), writer => writer.WriteInt16(OldRect.Bottom), 8),
                                                
-                LoadAndSaveEntry.Create(reader => VerbId = reader.ReadByte(), writer => writer.WriteByte((byte)VerbId), 8, 11),
+                LoadAndSaveEntry.Create(reader => VerbId = reader.ReadByte(), writer => writer.WriteByte(VerbId), 8, 11),
                 LoadAndSaveEntry.Create(reader => VerbId = reader.ReadUInt16(), writer => writer.WriteUInt16(VerbId), 12),
                                                
                 LoadAndSaveEntry.Create(reader => Color = reader.ReadByte(), writer => writer.WriteByte(Color), 8),

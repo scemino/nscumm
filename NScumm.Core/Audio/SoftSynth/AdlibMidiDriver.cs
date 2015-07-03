@@ -786,7 +786,7 @@ namespace NScumm.Core.Audio.SoftSynth
             Debug.Assert(chan >= 0 && chan < 9);
             int code = (note << 7) + mod;
             _curNotTable[chan] = (ushort)code;
-            AdlibPlayNote(chan, (short)_channelTable2[chan] + code);
+            AdlibPlayNote(chan, _channelTable2[chan] + code);
         }
 
         void AdlibNoteOnEx(int chan, byte note, int mod)

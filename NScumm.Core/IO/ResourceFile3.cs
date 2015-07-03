@@ -31,14 +31,9 @@ namespace NScumm.Core.IO
 {
     class ResourceFile3: ResourceFile
     {
-        public ResourceFile3(string path, byte encByte)
-            : base(path, encByte)
+        public ResourceFile3(Stream stream)
+            : base(stream)
         {
-        }
-
-        public override Dictionary<byte, long> ReadRoomOffsets()
-        {
-            return new Dictionary<byte, long>();
         }
 
         protected virtual Box ReadBox()
@@ -68,81 +63,12 @@ namespace NScumm.Core.IO
             return colors;
         }
 
-        #region Chunk Class
-
-        sealed class Chunk
-        {
-            public long Size { get; set; }
-
-            public string Tag { get; set; }
-
-            public long Offset { get; set; }
-        }
-
-        #endregion
-
-        #region ChunkIterator Class
-
-        sealed class ChunkIterator : IEnumerator<Chunk>
-        {
-            readonly XorReader _reader;
-            readonly long _position;
-            readonly long _size;
-
-            public ChunkIterator(XorReader reader, long size)
-            {
-                _reader = reader;
-                _position = reader.BaseStream.Position;
-                _size = size;
-            }
-
-            public Chunk Current
-            {
-                get;
-                private set;
-            }
-
-            object System.Collections.IEnumerator.Current
-            {
-                get { return Current; }
-            }
-
-            public void Dispose()
-            {
-            }
-
-            public bool MoveNext()
-            {
-                if (Current != null)
-                {
-                    var offset = Current.Offset + Current.Size - 6;
-                    _reader.BaseStream.Seek(offset, SeekOrigin.Begin);
-                }
-                Current = null;
-                if (_reader.BaseStream.Position < (_position + _size - 6) && _reader.BaseStream.Position < _reader.BaseStream.Length)
-                {
-                    var size = _reader.ReadUInt32();
-                    var tag = Encoding.UTF8.GetString(_reader.ReadBytes(2));
-                    Current = new Chunk { Offset = _reader.BaseStream.Position, Size = size, Tag = tag };
-                }
-                return Current != null;
-            }
-
-            public void Reset()
-            {
-                _reader.BaseStream.Seek(_position, SeekOrigin.Begin);
-                Current = null;
-            }
-        }
-
-        static Chunk ReadChunk(XorReader reader)
+        static Chunk ReadChunk(BinaryReader reader)
         {
             var size = reader.ReadUInt32();
             var tag = Encoding.UTF8.GetString(reader.ReadBytes(2));
             return new Chunk { Offset = reader.BaseStream.Position, Size = size, Tag = tag };
         }
-
-        #endregion
 
         protected virtual void GotoResourceHeader(long offset)
         {
@@ -224,7 +150,7 @@ namespace NScumm.Core.IO
                 if (offsets.ContainsKey("AD"))
                 {
                     _reader.BaseStream.Seek(offsets["AD"].Offset + 2, SeekOrigin.Begin);
-                    hasAdLibMusicTrack = (_reader.PeekByte() == 0x80);
+                    hasAdLibMusicTrack = (_reader.PeekChar() == 0x80);
                 }
 
                 if (hasAdLibMusicTrack)

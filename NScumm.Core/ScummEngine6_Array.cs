@@ -45,7 +45,7 @@ namespace NScumm.Core
             get
             {
                 stream.Seek(2, SeekOrigin.Begin);
-                return (int)reader.ReadInt16();
+                return reader.ReadInt16();
             }
             set
             {
@@ -59,7 +59,7 @@ namespace NScumm.Core
             get
             {
                 stream.Seek(4, SeekOrigin.Begin);
-                return (int)reader.ReadInt16();
+                return reader.ReadInt16();
             }
             set
             {
@@ -183,7 +183,7 @@ namespace NScumm.Core
         protected ArrayHeader DefineArray(uint array, ArrayType type, int dim2, int dim1)
         {
 //            Debug.WriteLine("DefineArray: {0} {1} {2} {3}", array, type, dim2, dim1);
-            Debug.Assert(0 <= (int)type && (int)type <= 5);
+            Debug.Assert(0 <= type && (int)type <= 5);
 
             NukeArray(array);
 
@@ -263,7 +263,7 @@ namespace NScumm.Core
             int val;
             if (ah.Type != ArrayType.IntArray)
             {
-                val = (sbyte)ah.ReadByte(offset);
+                val = ah.ReadByte(offset);
             }
             else if (Game.Version == 8)
             {
@@ -271,7 +271,7 @@ namespace NScumm.Core
             }
             else
             {
-                val = (short)ah.ReadUInt16(offset);
+                val = ah.ReadUInt16(offset);
             }
             return val;
         }

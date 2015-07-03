@@ -21,6 +21,7 @@
 using System;
 using System.Diagnostics;
 using NScumm.Core.Audio.IMuse;
+using System.IO;
 
 namespace NScumm.Core.Smush
 {
@@ -33,7 +34,7 @@ namespace NScumm.Core.Smush
 
         #region implemented abstract members of SmushChannel
 
-        public override bool AppendData(NScumm.Core.IO.XorReader b, int size)
+        public override bool AppendData(BinaryReader b, int size)
         {
             if (_dataSize == -1)
             {

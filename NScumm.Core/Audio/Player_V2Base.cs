@@ -308,7 +308,7 @@ namespace NScumm.Core.Audio
                         }
 
                         Debug.WriteLine("channels[{0}]: @{1:X4} note: {2:D3}+{3:D2} len: {4:D2} hull: {5} mod: {6}/{7}/{8} {9}",
-                            Array.IndexOf(_channels, dest_channel), _current_data != null ? (uint)(script_ptr - 2) : 0,
+                            Array.IndexOf(_channels, dest_channel), _current_data != null ? script_ptr - 2 : 0,
                             note, (short)dest_channel.d.transpose, channel.d.time_left,
                             dest_channel.d.hull_curve, dest_channel.d.freqmod_table,
                             dest_channel.d.freqmod_incr, dest_channel.d.freqmod_multiplier,
@@ -381,8 +381,8 @@ namespace NScumm.Core.Audio
 //                channel.d.freqmod_offset -= channel.d.freqmod_modulo;
 
             channel.d.freq = (ushort)(
-                (int)(freqmod_table[channel.d.freqmod_table + (channel.d.freqmod_offset >> 4)])
-                * (int)channel.d.freqmod_multiplier / 256
+                freqmod_table[channel.d.freqmod_table + (channel.d.freqmod_offset >> 4)]
+                * channel.d.freqmod_multiplier / 256
                 + channel.d.base_freq);
 
             Debug.WriteLine("Freq: {0}/{1}, {2}/{3}/{4}*{5} {6}",

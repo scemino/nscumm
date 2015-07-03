@@ -43,7 +43,7 @@ namespace NScumm.Core
                     int val = 0;
                     if (chr != 1 && chr != 2 && chr != 3 && chr != 8)
                     {
-                        val = data[num++] | ((int)data[num++] << 8);
+                        val = data[num++] | data[num++] << 8;
                     }
                     switch (chr)
                     {

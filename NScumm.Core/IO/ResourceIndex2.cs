@@ -25,14 +25,13 @@ using System.Collections.ObjectModel;
 
 namespace NScumm.Core
 {
-    class ResourceIndex2: ResourceIndex
+    class ResourceIndex2 : ResourceIndex
     {
         protected override void LoadIndex(GameInfo game)
         {
             using (var file = ServiceLocator.FileStorage.OpenFileRead(game.Path))
             {
-                var brOrg = new BinaryReader(file);
-                var br = new XorReader(brOrg, 0xFF);
+                var br = new BinaryReader(new XorStream(file, 0xFF));
                 var magic = br.ReadUInt16();
                 switch (magic)
                 {
@@ -51,7 +50,7 @@ namespace NScumm.Core
             }
         }
 
-        void ReadClassicIndexFile(XorReader br)
+        void ReadClassicIndexFile(BinaryReader br)
         {
             int numGlobalObjects, numRooms, numCostumes, numScripts, numSounds;
             if (Game.GameId == GameId.Maniac)
@@ -82,7 +81,7 @@ namespace NScumm.Core
             SoundResources = new ReadOnlyCollection<Resource>(ReadResTypeList(br, numSounds));
         }
 
-        void ReadEnhancedIndexFile(XorReader br)
+        void ReadEnhancedIndexFile(BinaryReader br)
         {
             var numGlobalObjects = br.ReadUInt16();
             ReadDirectoryOfObjects(br, numGlobalObjects);
@@ -92,7 +91,7 @@ namespace NScumm.Core
             SoundResources = new ReadOnlyCollection<Resource>(ReadResTypeList(br));
         }
 
-        static Resource[] ReadRoomResTypeList(XorReader br, int? numEntries = null)
+        static Resource[] ReadRoomResTypeList(BinaryReader br, int? numEntries = null)
         {
             var num = numEntries.HasValue ? numEntries.Value : br.ReadByte();
             var rooms = new Resource[num];
@@ -100,12 +99,12 @@ namespace NScumm.Core
             for (int i = 0; i < num; i++)
             {
                 var offset = ToOffset(br.ReadUInt16());
-                rooms[i] = new Resource{ RoomNum = (byte)i, Offset = offset };
+                rooms[i] = new Resource { RoomNum = (byte)i, Offset = offset };
             }
             return rooms;
         }
 
-        protected virtual Resource[] ReadResTypeList(XorReader br, int? numEntries = null)
+        protected virtual Resource[] ReadResTypeList(BinaryReader br, int? numEntries = null)
         {
             var num = numEntries.HasValue ? numEntries.Value : br.ReadByte();
             var res = new Resource[num];
@@ -113,12 +112,12 @@ namespace NScumm.Core
             for (int i = 0; i < num; i++)
             {
                 var offset = ToOffset(br.ReadUInt16());
-                res[i] = new Resource{ RoomNum = rooms[i], Offset = offset };
+                res[i] = new Resource { RoomNum = rooms[i], Offset = offset };
             }
             return res;
         }
 
-        protected virtual void ReadDirectoryOfObjects(XorReader br, int num)
+        protected virtual void ReadDirectoryOfObjects(BinaryReader br, int num)
         {
             ObjectOwnerTable = new byte[num];
             ObjectStateTable = new byte[num];

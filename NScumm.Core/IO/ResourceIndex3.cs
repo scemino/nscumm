@@ -23,7 +23,7 @@ using System.Diagnostics;
 
 namespace NScumm.Core.IO
 {
-    class ResourceIndex3: ResourceIndex3_16
+    class ResourceIndex3 : ResourceIndex3_16
     {
         protected override void LoadIndex(GameInfo game)
         {
@@ -31,8 +31,7 @@ namespace NScumm.Core.IO
             Directory = ServiceLocator.FileStorage.GetDirectoryName(game.Path);
             using (var file = ServiceLocator.FileStorage.OpenFileRead(game.Path))
             {
-                var br1 = new BinaryReader(file);
-                var br = new XorReader(br1, encByte);
+                var br = new BinaryReader(new XorStream(file, encByte));
                 while (br.BaseStream.Position < br.BaseStream.Length)
                 {
                     br.ReadUInt32();
@@ -79,7 +78,7 @@ namespace NScumm.Core.IO
 
         #region Protected/Private Methods
 
-        protected void ReadRoomNames(XorReader reader)
+        protected void ReadRoomNames(BinaryReader reader)
         {
             var roomNames = new Dictionary<byte, string>();
             for (byte room; (room = reader.ReadByte()) != 0;)
@@ -108,7 +107,7 @@ namespace NScumm.Core.IO
             return encByte;
         }
 
-        protected override Resource[] ReadResTypeList(XorReader br)
+        protected override Resource[] ReadResTypeList(BinaryReader br)
         {
             var numEntries = br.ReadUInt16();
             var res = new Resource[numEntries];

@@ -372,8 +372,8 @@ namespace NScumm.Core
                 if (Game.Platform == Platform.FMTowns)
                 {
                     var palEntry = defaultCursorColors[idx] * 3;
-                    color = ColorHelper.RGBToColor((byte)_textPalette[palEntry], 
-                        (byte)_textPalette[palEntry + 1], (byte)_textPalette[palEntry + 2]);
+                    color = ColorHelper.RGBToColor(_textPalette[palEntry],
+                        _textPalette[palEntry + 1], _textPalette[palEntry + 2]);
                 }
                 else
                 {

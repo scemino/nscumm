@@ -27,8 +27,8 @@ namespace NScumm.Core.IO
 {
     class ResourceFile7: ResourceFile6
     {
-        public ResourceFile7(string path)
-            : base(path, 0)
+        public ResourceFile7(Stream stream)
+            : base(stream)
         {
         }
 
@@ -118,7 +118,7 @@ namespace NScumm.Core.IO
         {
             using (var ms = new MemoryStream(input))
             {
-                var reader = new XorReader(ms, 0);
+                var reader = new BinaryReader(ms);
                 var it = new ChunkIterator5(reader, input.Length);
                 while (it.MoveNext())
                 {
@@ -135,7 +135,7 @@ namespace NScumm.Core.IO
         {
             using (var ms = new MemoryStream(input))
             {
-                var reader = new XorReader(ms, 0);
+                var reader = new BinaryReader(ms);
                 var it = new ChunkIterator5(reader, input.Length);
                 while (it.MoveNext())
                 {

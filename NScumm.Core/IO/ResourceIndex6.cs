@@ -63,8 +63,7 @@ namespace NScumm.Core
             Directory = ServiceLocator.FileStorage.GetDirectoryName(game.Path);
             using (var file = ServiceLocator.FileStorage.OpenFileRead(game.Path))
             {
-                var br1 = new BinaryReader(file);
-                var br = new XorReader(br1, 0x69);
+                var br = new BinaryReader(new XorStream(file,0x69));
                 while (br.BaseStream.Position < br.BaseStream.Length)
                 {
                     var tag = System.Text.Encoding.UTF8.GetString(br.ReadBytes(4));
@@ -127,7 +126,7 @@ namespace NScumm.Core
 
         #endregion
 
-        protected virtual void ReadMaxSizes(XorReader reader)
+        protected virtual void ReadMaxSizes(BinaryReader reader)
         {
             numVariables = reader.ReadUInt16();      // 800
             reader.ReadUInt16();                      // 16
@@ -146,7 +145,7 @@ namespace NScumm.Core
             var numGlobalObjects = reader.ReadUInt16();
         }
 
-        protected virtual void ReadArrayFromIndexFile(XorReader br)
+        protected virtual void ReadArrayFromIndexFile(BinaryReader br)
         {
             uint num;
             while ((num = br.ReadUInt16()) != 0)

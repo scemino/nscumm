@@ -271,7 +271,7 @@ namespace NScumm.Core.Audio
             if (mplex == 0)
                 mplex = 65536;
             _mplex = mplex;
-            _tick_len = (uint)_mplex_step * mplex;
+            _tick_len = _mplex_step * mplex;
         }
 
         void ParseSpeakerChunk()
@@ -479,7 +479,7 @@ namespace NScumm.Core.Audio
                         SetMplex(BitConverter.ToUInt16(_current_data, _next_chunk));
                         var tmp = BitConverter.ToUInt16(_current_data, _next_chunk + 2);
                         Debug.Assert((tmp & 0xf0) == 0xe0);
-                        _channels[3].freq = (int)(tmp & 0xf);
+                        _channels[3].freq = tmp & 0xf;
                         if ((tmp & 3) == 3)
                         {
                             _next_chunk += 2;

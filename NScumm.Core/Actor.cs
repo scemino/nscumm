@@ -581,7 +581,7 @@ namespace NScumm.Core
                 if (numBoxes < firstValidBox)
                     return abr;
 
-                bestDist = (_scumm.Game.Version >= 7) ? (uint)0x7FFFFFFF : (uint)0xFFFF;
+                bestDist = (_scumm.Game.Version >= 7) ? 0x7FFFFFFF : (uint)0xFFFF;
                 bestBox = InvalidBox;
 
                 // We iterate (backwards) over all boxes, searching the one closest
@@ -1058,7 +1058,7 @@ namespace NScumm.Core
                     },
                     37, 61),
                 LoadAndSaveEntry.Create(
-                    reader => Sound = (int)reader.ReadUInt16s(32)[0],
+                    reader => Sound = reader.ReadUInt16s(32)[0],
                     writer =>
                     {
                         var sounds = new ushort[32];

@@ -161,7 +161,7 @@ namespace NScumm.Core
         {
             if (useATAN)
             {
-                double temp = Math.Atan2((double)x, (double)-y);
+                double temp = Math.Atan2(x, -y);
                 return NormalizeAngle((int)(temp * 180 / Math.PI));
             }
             if (Math.Abs(y) * 2 < Math.Abs(x))

@@ -34,7 +34,7 @@ namespace NScumm.Core
             else if (c == 1)
             {
                 _flashlight.XStrips = (ushort)a;
-                _flashlight.YStrips = (ushort)b;
+                _flashlight.YStrips = b;
             }
             _fullRedraw = true;
         }

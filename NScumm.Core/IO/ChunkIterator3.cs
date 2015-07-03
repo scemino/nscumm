@@ -1,5 +1,5 @@
-//
-//  ChunkIterator5.cs
+﻿//
+//  ChunkIterator.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -25,24 +25,13 @@ using System.Text;
 
 namespace NScumm.Core.IO
 {
-    #region Chunk Class
-    sealed class Chunk
-    {
-        public long Size { get; set; }
-
-        public string Tag { get; set; }
-
-        public long Offset { get; set; }
-    }
-    #endregion
-
-    class ChunkIterator5: IEnumerator<Chunk>
+    sealed class ChunkIterator : IEnumerator<Chunk>
     {
         readonly BinaryReader _reader;
         readonly long _position;
         readonly long _size;
 
-        public ChunkIterator5(BinaryReader reader, long size)
+        public ChunkIterator(BinaryReader reader, long size)
         {
             _reader = reader;
             _position = reader.BaseStream.Position;
@@ -68,24 +57,17 @@ namespace NScumm.Core.IO
         {
             if (Current != null)
             {
-                var offset = Current.Offset + Current.Size - 8;
+                var offset = Current.Offset + Current.Size - 6;
                 _reader.BaseStream.Seek(offset, SeekOrigin.Begin);
             }
             Current = null;
-            if (_reader.BaseStream.Position < (_position + _size - 8) && _reader.BaseStream.Position < _reader.BaseStream.Length)
+            if (_reader.BaseStream.Position < (_position + _size - 6) && _reader.BaseStream.Position < _reader.BaseStream.Length)
             {
-                var tag = Encoding.UTF8.GetString(_reader.ReadBytes(4));
-                var size = _reader.ReadUInt32BigEndian();
+                var size = _reader.ReadUInt32();
+                var tag = Encoding.UTF8.GetString(_reader.ReadBytes(2));
                 Current = new Chunk { Offset = _reader.BaseStream.Position, Size = size, Tag = tag };
             }
             return Current != null;
-        }
-
-        public static Chunk ReadChunk(BinaryReader reader)
-        {
-            var tag = Encoding.UTF8.GetString(reader.ReadBytes(4));
-            var size = reader.ReadUInt32BigEndian();
-            return new Chunk { Offset = reader.BaseStream.Position, Size = size, Tag = tag };
         }
 
         public void Reset()
@@ -93,6 +75,5 @@ namespace NScumm.Core.IO
             _reader.BaseStream.Seek(_position, SeekOrigin.Begin);
             Current = null;
         }
-    }
- 
+    }    
 }

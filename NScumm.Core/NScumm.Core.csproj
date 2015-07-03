@@ -30,6 +30,8 @@
     <ConsolePause>false</ConsolePause>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="IO\ChunkIterator3.cs" />
+    <Compile Include="IO\XorStream.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Actor.cs" />
     <Compile Include="Actor3.cs" />
@@ -167,7 +169,6 @@
     <Compile Include="IO\ResourceManager7.cs" />
     <Compile Include="IO\ResourceManager8.cs" />
     <Compile Include="IO\Serializer.cs" />
-    <Compile Include="IO\XorReader.cs" />
     <Compile Include="Audio\Channel.cs" />
     <Compile Include="Audio\DeviceHandle.cs" />
     <Compile Include="Audio\HookDatas.cs" />

@@ -2957,8 +2957,8 @@ namespace NScumm.Core
             }
             EgoPositioned = false;
 
-            x = (sbyte)ReadByte();
-            y = (sbyte)ReadByte();
+            x = ReadByte();
+            y = ReadByte();
 
             StartScene(a.Room, a, obj);
 

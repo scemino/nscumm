@@ -57,7 +57,7 @@ namespace NScumm.Core.Audio.IMuse
 
             if (!found)
             {
-                var file = new NScumm.Core.IO.XorReader(ServiceLocator.FileStorage.OpenFileRead(filename), 0);
+                var file = new BinaryReader(ServiceLocator.FileStorage.OpenFileRead(filename));
 
 //                if (freeSlot == -1)
 //                    Console.Error.WriteLine("BundleDirCache::matchFileFile() Can't find free slot for file bundle dir cache");

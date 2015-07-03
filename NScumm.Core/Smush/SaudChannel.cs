@@ -19,8 +19,8 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
-using NScumm.Core.IO;
 using System.Diagnostics;
+using System.IO;
 
 namespace NScumm.Core.Smush
 {
@@ -41,7 +41,7 @@ namespace NScumm.Core.Smush
             get{ return 22050; }
         }
 
-        public override bool AppendData(XorReader b, int size)
+        public override bool AppendData(BinaryReader b, int size)
         {
             if (_dataSize == -1)
             {

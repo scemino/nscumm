@@ -58,7 +58,7 @@ namespace NScumm.Core.Audio.IMuse
                         {
                             part.SetOnOff((buf[0] & 0x01) != 0);
                             part.EffectLevel((byte)(((buf[0] & 0x02) != 0) ? 127 : 0));
-                            part.Priority = (sbyte)buf[1];
+                            part.Priority = buf[1];
                             part.Volume = buf[2];
                             part.Pan = buf[3];
                             part.Percussion = player.SupportsPercussion && ((buf[4] & 0x80) > 0);
@@ -150,7 +150,7 @@ namespace NScumm.Core.Audio.IMuse
                         {
                             using (var br = new BinaryReader(new MemoryStream(buf)))
                             {
-                                part.SetParam((byte)br.ReadUInt16BigEndian(), (int)br.ReadUInt16BigEndian());
+                                part.SetParam((byte)br.ReadUInt16BigEndian(), br.ReadUInt16BigEndian());
                             }
                         }
                     }

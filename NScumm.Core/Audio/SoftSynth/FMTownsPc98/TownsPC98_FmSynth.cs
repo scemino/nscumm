@@ -72,7 +72,7 @@ namespace NScumm.Core.Audio.SoftSynth
             _numSSG = type == FmSynthEmuType.Towns ? 0 : 3;
             _hasPercussion = type == FmSynthEmuType._26;
             _rtt = type == FmSynthEmuType.Towns ? 0x514767 : 0x5B8D80;
-            _baserate = 55125.0f / (float)mixer.OutputRate;
+            _baserate = 55125.0f / mixer.OutputRate;
             _volumeA = 255;
             _volumeB = 255;
             _externalMutex = externalMutexHandling;
@@ -249,7 +249,7 @@ namespace NScumm.Core.Audio.SoftSynth
                         {
                             if ((value & 1) != 0)
                             {
-                                float spc = (float)(0x400 - _timers[0].value) / _baserate;
+                                float spc = (0x400 - _timers[0].value) / _baserate;
                                 if (spc < 1)
                                 {
                                     Debug.WriteLine("TownsPC98_FmSynth: Invalid Timer A setting: {0}", _timers[0].value);
@@ -257,7 +257,7 @@ namespace NScumm.Core.Audio.SoftSynth
                                 }
 
                                 _timers[0].smpPerCb = (int)spc;
-                                _timers[0].smpPerCbRem = (uint)((spc - (float)_timers[0].smpPerCb) * 1000000.0f);
+                                _timers[0].smpPerCbRem = (uint)((spc - _timers[0].smpPerCb) * 1000000.0f);
                                 _timers[0].smpTillCb = _timers[0].smpPerCb;
                                 _timers[0].smpTillCbRem = _timers[0].smpPerCbRem;
                                 _timers[0].enabled = true;
@@ -269,7 +269,7 @@ namespace NScumm.Core.Audio.SoftSynth
 
                             if ((value & 2) != 0)
                             {
-                                float spc = (float)(0x100 - _timers[1].value) * 16.0f / _baserate;
+                                float spc = (0x100 - _timers[1].value) * 16.0f / _baserate;
                                 if (spc < 1)
                                 {
                                     Debug.WriteLine("TownsPC98_FmSynth: Invalid Timer B setting: {0}", _timers[1].value);
@@ -277,7 +277,7 @@ namespace NScumm.Core.Audio.SoftSynth
                                 }
 
                                 _timers[1].smpPerCb = (int)spc;
-                                _timers[1].smpPerCbRem = (uint)((spc - (float)_timers[1].smpPerCb) * 1000000.0f);
+                                _timers[1].smpPerCbRem = (uint)((spc - _timers[1].smpPerCb) * 1000000.0f);
                                 _timers[1].smpTillCb = _timers[1].smpPerCb;
                                 _timers[1].smpTillCbRem = _timers[1].smpPerCbRem;
                                 _timers[1].enabled = true;
@@ -656,7 +656,7 @@ namespace NScumm.Core.Audio.SoftSynth
 
             _oprFrq = new uint[0x1000];
             for (int i = 0; i < 0x1000; i++)
-                _oprFrq[i] = (uint)(_baserate * (float)(i << 11));
+                _oprFrq[i] = (uint)(_baserate * (i << 11));
 
             _oprAttackDecay = new byte[152];
             for (int i = 0; i < 36; i++)
@@ -677,7 +677,7 @@ namespace NScumm.Core.Audio.SoftSynth
             _oprLevelOut = new int[0x1a00];
             for (int i = 0; i < 256; i++)
             {
-                double val = Math.Floor(65536.0 / Math.Pow(2.0, 0.00390625 * (double)(1 + i)));
+                double val = Math.Floor(65536.0 / Math.Pow(2.0, 0.00390625 * (1 + i)));
                 int val_int = ((int)val) >> 4;
                 _oprLevelOut[i << 1] = ((val_int & 1) != 0) ? ((val_int >> 1) + 1) << 2 : (val_int >> 1) << 2;
                 _oprLevelOut[(i << 1) + 1] = -_oprLevelOut[i << 1];
@@ -699,7 +699,7 @@ namespace NScumm.Core.Audio.SoftSynth
             }
             for (int i = 0; i < 128; i++)
             {
-                _oprDetune[i % 8][i / 8] = (int)((float)dtt[i] * _baserate * 64.0);
+                _oprDetune[i % 8][i / 8] = (int)(dtt[i] * _baserate * 64.0);
                 _oprDetune[(i + 128) % 8][(i + 128) / 8] = -_oprDetune[i % 8][i / 8];
             }
         }

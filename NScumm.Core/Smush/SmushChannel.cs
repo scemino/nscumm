@@ -21,7 +21,7 @@
 
 using System;
 using System.Diagnostics;
-using NScumm.Core.IO;
+using System.IO;
 
 namespace NScumm.Core.Smush
 {
@@ -35,7 +35,7 @@ namespace NScumm.Core.Smush
 
         public abstract int Rate { get; }
 
-        public abstract bool AppendData(XorReader b, int size);
+        public abstract bool AppendData(BinaryReader b, int size);
 
         public abstract bool SetParameters(int nb, int flags, int volume, int pan, int index);
 

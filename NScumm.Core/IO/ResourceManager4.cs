@@ -36,7 +36,7 @@ namespace NScumm.Core.IO
             var diskName = string.Format("disk{0:00}.lec", diskNum);
             var game1Path = ServiceLocator.FileStorage.Combine(Directory, diskName);
 
-            var file = new ResourceFile4(game1Path, 0x69);
+            var file = new ResourceFile4(new XorStream(ServiceLocator.FileStorage.OpenFileRead(game1Path), 0x69));
             return file;
         }
 

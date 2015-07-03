@@ -36,8 +36,8 @@ namespace NScumm.Core.IO
             var game1Path = ServiceLocator.FileStorage.Combine(Directory, diskName);
 
             var file = Game.Features.HasFlag(GameFeatures.Old256) ? 
-                (ResourceFile)new ResourceFile3(game1Path, 0) :
-                new ResourceFile3_16(Game, game1Path, 0xFF);
+                (ResourceFile)new ResourceFile3(ServiceLocator.FileStorage.OpenFileRead(game1Path)) :
+                new ResourceFile3_16(Game, new XorStream(ServiceLocator.FileStorage.OpenFileRead(game1Path), 0xFF));
             return file;
         }
 
@@ -49,7 +49,7 @@ namespace NScumm.Core.IO
             {
                 var reader = new BinaryReader(file);
                 var size = reader.ReadUInt16();
-                return reader.ReadBytes((int)size);
+                return reader.ReadBytes(size);
             }
         }
     }

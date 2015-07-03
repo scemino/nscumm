@@ -405,7 +405,7 @@ namespace NScumm.Core
                 // HACK: don't know why I have to keep this to work
                 var adlibMidiDriver = (MidiDriver)MidiDriver.CreateMidi(Mixer, MidiDriver.DetectDevice(MusicDriverTypes.AdLib, "adlib"));
                 // Setup for digital iMuse is performed in another place
-                NScumm.Core.Audio.IMuse.IMuse.Create(null, adlibMidiDriver);
+                Audio.IMuse.IMuse.Create(null, adlibMidiDriver);
             }
             else if (Game.Platform == Platform.Apple2GS && Game.Version == 0)
             {
@@ -477,7 +477,7 @@ namespace NScumm.Core
                     adlibMidiDriver = new PCSpeakerDriver(Mixer);
                 }
 
-                IMuse = NScumm.Core.Audio.IMuse.IMuse.Create(nativeMidiDriver, adlibMidiDriver);
+                IMuse = Audio.IMuse.IMuse.Create(nativeMidiDriver, adlibMidiDriver);
 
                 if (Game.Platform == Platform.FMTowns)
                 {

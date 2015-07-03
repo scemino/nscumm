@@ -188,16 +188,6 @@ namespace NScumm.Core
             return SwapBytes(reader.ReadUInt32());
         }
 
-        public static uint[] ReadUInt32s(this XorReader reader, int count)
-        {
-            uint[] values = new uint[count];
-            for (int i = 0; i < count; i++)
-            {
-                values[i] = reader.ReadUInt32();
-            }
-            return values;
-        }
-
         public static int[] ReadInt32s(this BinaryReader reader, int count)
         {
             int[] values = new int[count];
@@ -224,16 +214,6 @@ namespace NScumm.Core
             for (int i = 0; i < count; i++)
             {
                 values[i] = reader.ReadInt16();
-            }
-            return values;
-        }
-
-        public static ushort[] ReadUInt16s(this XorReader reader, int count)
-        {
-            ushort[] values = new ushort[count];
-            for (int i = 0; i < count; i++)
-            {
-                values[i] = reader.ReadUInt16();
             }
             return values;
         }
@@ -564,7 +544,7 @@ namespace NScumm.Core
             return System.Text.Encoding.UTF8.GetString(value, startIndex, count);
         }
 
-        public static string ReadTag(this XorReader reader)
+        public static string ReadTag(this BinaryReader reader)
         {
             return System.Text.Encoding.UTF8.GetString(reader.ReadBytes(4), 0, 4);
         }

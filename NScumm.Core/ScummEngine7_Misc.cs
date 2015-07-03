@@ -409,7 +409,7 @@ namespace NScumm.Core
             if (_actorToPrintStrFor == 0xFF)
             {
                 TalkingActor = 0xFF;
-                _charsetColor = (byte)String[0].Color;
+                _charsetColor = String[0].Color;
             }
             else
             {

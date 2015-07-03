@@ -611,7 +611,7 @@ namespace NScumm.Core.Audio
             {
                 var trackDataOff = (int)(_resource.trackstepOffset + 16 * _trackCtx.posInd - _resource.mdatOffset);
 
-                if (BitConverter.ToUInt16(_resource.mdatAlloc, trackDataOff) != ScummHelper.SwapBytes((ushort)0xEFFE))
+                if (BitConverter.ToUInt16(_resource.mdatAlloc, trackDataOff) != ScummHelper.SwapBytes(0xEFFE))
                 {
                     // 8 commands for Patterns
                     for (int i = 0; i < 8; ++i)
@@ -1140,7 +1140,7 @@ namespace NScumm.Core.Audio
                 // channel.macroIndex = param1 & (MaxMacroOffsets - 1);
                 channel.macroOffset = (_resource.macroOffset[param1 & (MaxMacroOffsets - 1)]);
                 channel.relVol = (byte)(param2 >> 4);
-                channel.fineTune = (sbyte)param3;
+                channel.fineTune = param3;
 
                 // TODO: the point where the channel gets initialized varies with the games, needs more research.
                 InitMacroProgramm(channel);

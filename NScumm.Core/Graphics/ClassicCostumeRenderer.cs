@@ -278,10 +278,10 @@ namespace NScumm.Core.Graphics
                     {
                         _width = _loaded.CostumeReader.ReadByte() * 8;
                         _height = _loaded.CostumeReader.ReadByte();
-                        xmoveCur = _xmove + (sbyte)_loaded.CostumeReader.ReadByte() * 8;
-                        ymoveCur = _ymove - (sbyte)_loaded.CostumeReader.ReadByte();
-                        _xmove += (sbyte)_loaded.CostumeReader.ReadByte() * 8;
-                        _ymove -= (sbyte)_loaded.CostumeReader.ReadByte();
+                        xmoveCur = _xmove + _loaded.CostumeReader.ReadByte() * 8;
+                        ymoveCur = _ymove - _loaded.CostumeReader.ReadByte();
+                        _xmove += _loaded.CostumeReader.ReadByte() * 8;
+                        _ymove -= _loaded.CostumeReader.ReadByte();
                         _srcptr += 6;
                     }
                     else

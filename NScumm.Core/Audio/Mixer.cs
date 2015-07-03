@@ -197,13 +197,13 @@ namespace NScumm.Core.Audio
 
         public bool IsSoundTypeMuted(SoundType type)
         {
-            Debug.Assert(0 <= (int)type && (int)type < soundTypeSettings.Length);
+            Debug.Assert(0 <= type && (int)type < soundTypeSettings.Length);
             return soundTypeSettings[(int)type].Mute;
         }
 
         public int GetVolumeForSoundType(SoundType type)
         {
-            Debug.Assert(0 <= (int)type && (int)type < soundTypeSettings.Length);
+            Debug.Assert(0 <= type && (int)type < soundTypeSettings.Length);
             return soundTypeSettings[(int)type].Volume;
         }
 

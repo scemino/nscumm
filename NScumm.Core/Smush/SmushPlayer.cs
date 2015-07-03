@@ -294,7 +294,7 @@ namespace NScumm.Core.Smush
 
                 if (!string.IsNullOrEmpty(_seekFile))
                 {
-                    _base = new XorReader(ServiceLocator.FileStorage.OpenFileRead(_seekFile), 0);
+                    _base = new BinaryReader(ServiceLocator.FileStorage.OpenFileRead(_seekFile));
                     _base.ReadUInt32BigEndian();
                     _baseSize = _base.ReadUInt32BigEndian();
 
@@ -368,7 +368,7 @@ namespace NScumm.Core.Smush
             _vm.IMuseDigital.FlushTracks();
         }
 
-        void HandleFrame(uint frameSize, XorReader b)
+        void HandleFrame(uint frameSize, BinaryReader b)
         {
 //            Debug.WriteLine("SmushPlayer.HandleFrame({0})", _frame);
             _skipNext = false;
@@ -448,14 +448,14 @@ namespace NScumm.Core.Smush
             _frame++;
         }
 
-        void HandleStore(uint subSize, XorReader b)
+        void HandleStore(uint subSize, BinaryReader b)
         {
 //            Debug.WriteLine("SmushPlayer::HandleStore()");
             Debug.Assert(subSize >= 4);
             _storeFrame = true;
         }
 
-        void HandleFetch(uint subSize, XorReader b)
+        void HandleFetch(uint subSize, BinaryReader b)
         {
 //            Debug.WriteLine("SmushPlayer::HandleFetch()");
             Debug.Assert(subSize >= 6);
@@ -466,7 +466,7 @@ namespace NScumm.Core.Smush
             }
         }
 
-        void HandleDeltaPalette(uint subSize, XorReader b)
+        void HandleDeltaPalette(uint subSize, BinaryReader b)
         {
 //            Debug.WriteLine("SmushPlayer.HandleDeltaPalette()");
 
@@ -505,7 +505,7 @@ namespace NScumm.Core.Smush
             }
         }
 
-        void HandleIACT(uint subSize, XorReader b)
+        void HandleIACT(uint subSize, BinaryReader b)
         {
 //            Debug.WriteLine("SmushPlayer::IACT()");
             Debug.Assert(subSize >= 8);
@@ -619,7 +619,7 @@ namespace NScumm.Core.Smush
                                 }
                                 else
                                 {
-                                    short val = (short)((sbyte)value << variable2);
+                                    short val = (short)(value << variable2);
                                     output_data[dst++] = (byte)(val >> 8);
                                     output_data[dst++] = (byte)val;
                                 }
@@ -631,7 +631,7 @@ namespace NScumm.Core.Smush
                                 }
                                 else
                                 {
-                                    short val = (short)((sbyte)value << variable1);
+                                    short val = (short)(value << variable1);
                                     output_data[dst++] = (byte)(val >> 8);
                                     output_data[dst++] = (byte)val;
                                 }
@@ -671,7 +671,7 @@ namespace NScumm.Core.Smush
             return (byte)ScummHelper.Clip(t, 0, 255);
         }
 
-        void HandleTextResource(string subType, uint subSize, XorReader b)
+        void HandleTextResource(string subType, uint subSize, BinaryReader b)
         {
             int pos_x = b.ReadInt16();
             int pos_y = b.ReadInt16();
@@ -836,7 +836,7 @@ namespace NScumm.Core.Smush
             }
         }
 
-        void HandleSoundFrame(uint subSize, XorReader b)
+        void HandleSoundFrame(uint subSize, BinaryReader b)
         {
 //            Debug.WriteLine("SmushPlayer.HandleSoundFrame()");
 
@@ -845,7 +845,7 @@ namespace NScumm.Core.Smush
             int max_frames = b.ReadUInt16();
             int flags = b.ReadUInt16();
             int vol = b.ReadByte();
-            int pan = (sbyte)b.ReadByte();
+            int pan = b.ReadByte();
             if (index == 0)
             {
 //                Debug.WriteLine("track_id:{0}, max_frames:{1}, flags:{2}, vol:{3}, pan:{4}", track_id, max_frames, flags, vol, pan);
@@ -854,7 +854,7 @@ namespace NScumm.Core.Smush
             HandleSoundBuffer(track_id, index, max_frames, flags, vol, pan, b, size);
         }
 
-        void HandleSoundBuffer(int track_id, int index, int max_frames, int flags, int vol, int pan, XorReader b, int size)
+        void HandleSoundBuffer(int track_id, int index, int max_frames, int flags, int vol, int pan, BinaryReader b, int size)
         {
 //            Debug.WriteLine("SmushPlayer::handleSoundBuffer({0}, {1})", track_id, index);
             //  if ((flags & 128) == 128) {
@@ -882,7 +882,7 @@ namespace NScumm.Core.Smush
             c.AppendData(b, size);
         }
 
-        void HandleNewPalette(uint subSize, XorReader b)
+        void HandleNewPalette(uint subSize, BinaryReader b)
         {
 //            Debug.WriteLine("SmushPlayer.HandleNewPalette()");
             Debug.Assert(subSize >= 0x300);
@@ -894,7 +894,7 @@ namespace NScumm.Core.Smush
             SetDirtyColors(0, 255);
         }
 
-        void HandleFrameObject(uint subSize, XorReader b)
+        void HandleFrameObject(uint subSize, BinaryReader b)
         {
             Debug.Assert(subSize >= 14);
             if (_skipNext)
@@ -1030,7 +1030,7 @@ namespace NScumm.Core.Smush
 //            Debug.WriteLine("Smush stats: updateScreen( {0} )", end_time - start_time);
         }
 
-        void HandleAnimHeader(uint subSize, XorReader b)
+        void HandleAnimHeader(uint subSize, BinaryReader b)
         {
 //            Debug.WriteLine("SmushPlayer::HandleAnimHeader()");
             Debug.Assert(subSize >= 0x300 + 6);
@@ -1047,7 +1047,7 @@ namespace NScumm.Core.Smush
             SetDirtyColors(0, 255);
         }
 
-        Palette ReadPalette(XorReader b)
+        Palette ReadPalette(BinaryReader b)
         {
             var colors = new Color[256];
             for (int i = 0; i < 256; i++)
@@ -1147,7 +1147,7 @@ namespace NScumm.Core.Smush
         TrsFile _strings;
         Codec37Decoder _codec37;
         Codec47Decoder _codec47;
-        XorReader _base;
+        BinaryReader _base;
         uint _baseSize;
         byte[] _frameBuffer;
         byte[] _specialBuffer;

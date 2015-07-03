@@ -20,13 +20,14 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using NScumm.Core.IO;
 using System.Diagnostics;
+using System.IO;
 
 namespace NScumm.Core.Insane
 {
     partial class Insane
     {
         public void ProcIACT(byte[] renderBitmap, int codecparam, int setupsan12,
-                             int setupsan13, XorReader b, int size, int flags,
+                             int setupsan13, BinaryReader b, int size, int flags,
                              int par1, int par2, int par3, int par4)
         {
             if (_keyboardDisable != 0)
@@ -61,7 +62,7 @@ namespace NScumm.Core.Insane
         }
 
         void IactScene1(byte[] renderBitmap, int codecparam, int setupsan12,
-                        int setupsan13, XorReader b, int size, int flags,
+                        int setupsan13, BinaryReader b, int size, int flags,
                         int par1, int par2, int par3, int par4)
         {
             int par5, par6, par7, par9, par11, par13;
@@ -189,7 +190,7 @@ namespace NScumm.Core.Insane
         }
 
         void IactScene3(byte[] renderBitmap, int codecparam, int setupsan12,
-                        int setupsan13, XorReader b, int size, int flags,
+                        int setupsan13, BinaryReader b, int size, int flags,
                         int command, int par1, int tmp1, int tmp2)
         {
             if (command == 6)
@@ -217,7 +218,7 @@ namespace NScumm.Core.Insane
         }
 
         void IactScene4(byte[] renderBitmap, int codecparam, int setupsan12,
-                        int setupsan13, XorReader b, int size, int flags,
+                        int setupsan13, BinaryReader b, int size, int flags,
                         int par1, int par2, int par3, int par4)
         {
             int par5;
@@ -300,7 +301,7 @@ namespace NScumm.Core.Insane
         }
 
         void IactScene6(byte[] renderBitmap, int codecparam, int setupsan12,
-            int setupsan13, XorReader b, int size, int flags,
+            int setupsan13, BinaryReader b, int size, int flags,
             int par1, int par2, int par3, int par4) {
             int par5;
 
@@ -385,7 +386,7 @@ namespace NScumm.Core.Insane
         }
 
         void IactScene17(byte[] renderBitmap, int codecparam, int setupsan12,
-            int setupsan13, XorReader b, int size, int flags,
+            int setupsan13, BinaryReader b, int size, int flags,
             int par1, int par2, int par3, int par4) {
             switch (par1) {
                 case 2:
@@ -431,7 +432,7 @@ namespace NScumm.Core.Insane
         }
 
         void IactScene21(byte[] renderBitmap, int codecparam, int setupsan12,
-            int setupsan13, XorReader b, int size, int flags,
+            int setupsan13, BinaryReader b, int size, int flags,
             int par1, int par2, int par3, int par4) {
             // void implementation
         }

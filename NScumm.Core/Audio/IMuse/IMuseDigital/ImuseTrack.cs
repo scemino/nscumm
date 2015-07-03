@@ -131,11 +131,11 @@ namespace NScumm.Core.Audio.IMuse
         {
             SoundType type;
             if (VolGroupId == 1)
-                type = NScumm.Core.Audio.SoundType.Speech;
+                type = Audio.SoundType.Speech;
             else if (VolGroupId == 2)
-                type = NScumm.Core.Audio.SoundType.SFX;
+                type = Audio.SoundType.SFX;
             else if (VolGroupId == 3)
-                type = NScumm.Core.Audio.SoundType.Music;
+                type = Audio.SoundType.Music;
             else
                 throw new InvalidOperationException("Track::GetType(): invalid sound type");
             return type;

@@ -31,8 +31,7 @@ namespace NScumm.Core
         {
             using (var file = ServiceLocator.FileStorage.OpenFileRead(game.Path))
             {
-                var brOrg = new BinaryReader(file);
-                var br = new XorReader(brOrg, 0xFF);
+                var br = new BinaryReader(new XorStream(file,0xFF));
                 var magic = br.ReadUInt16();
                 if (magic != 0x0100)
                     throw new NotSupportedException(
@@ -46,7 +45,7 @@ namespace NScumm.Core
             }
         }
 
-        protected virtual Resource[] ReadResTypeList(XorReader br)
+        protected virtual Resource[] ReadResTypeList(BinaryReader br)
         {
             var num = br.ReadByte();
             var res = new Resource[num];
@@ -59,7 +58,7 @@ namespace NScumm.Core
             return res;
         }
 
-        protected virtual void ReadDirectoryOfObjects(XorReader br)
+        protected virtual void ReadDirectoryOfObjects(BinaryReader br)
         {
             var numEntries = br.ReadUInt16();
             ObjectOwnerTable = new byte[numEntries];
@@ -78,7 +77,7 @@ namespace NScumm.Core
             }
         }
 
-        static Resource[] ReadRoomResTypeList(XorReader br)
+        static Resource[] ReadRoomResTypeList(BinaryReader br)
         {
             var num = br.ReadByte();
             var rooms = new Resource[num];

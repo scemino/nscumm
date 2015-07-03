@@ -130,7 +130,7 @@ namespace NScumm.Core.Graphics
             l.scaleW = (byte)(_width / width);
             l.scaleH = (byte)(_height / height);
 
-            if ((float)l.scaleW != ((float)_width / (float)width) || (float)l.scaleH != ((float)_height / (float)height))
+            if (l.scaleW != _width / (float)width || l.scaleH != _height / (float)height)
                 throw new InvalidOperationException("TownsScreen::setupLayer(): Layer width/height must be equal or an EXACT half, third, etc. of screen width/height.\n More complex aspect ratio scaling is not supported.");
 
             if (width <= 0 || height <= 0 || numCol < 16)

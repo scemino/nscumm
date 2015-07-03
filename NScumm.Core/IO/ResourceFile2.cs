@@ -22,6 +22,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using NScumm.Core.Graphics;
+using System.IO;
 
 namespace NScumm.Core.IO
 {
@@ -29,14 +30,9 @@ namespace NScumm.Core.IO
     {
         const int HeaderSize = 4;
 
-        public ResourceFile2(string path, byte encByte)
-            : base(path, encByte)
+        public ResourceFile2(Stream stream)
+            : base(stream)
         {
-        }
-
-        public override Dictionary<byte, long> ReadRoomOffsets()
-        {
-            return new Dictionary<byte, long>();
         }
 
         public override Room ReadRoom(long offset)
@@ -48,7 +44,7 @@ namespace NScumm.Core.IO
             // 10
             var imgOffset = _reader.ReadUInt16();
             // 12
-            _reader.BaseStream.Seek(8, System.IO.SeekOrigin.Current);
+            _reader.BaseStream.Seek(8, SeekOrigin.Current);
             // 20
             var numObjects = _reader.ReadByte();
             // 21
@@ -136,7 +132,7 @@ namespace NScumm.Core.IO
             height &= 0xFFF8;
             byte data;
             int y;
-            _reader.BaseStream.Seek(offset, System.IO.SeekOrigin.Begin);
+            _reader.BaseStream.Seek(offset, SeekOrigin.Begin);
             int run = 1;
             for (var x = 0; x < width; x++)
             {
@@ -190,7 +186,7 @@ namespace NScumm.Core.IO
 
         void ReadBoxes(long offset, Room room)
         {
-            _reader.BaseStream.Seek(offset, System.IO.SeekOrigin.Begin);
+            _reader.BaseStream.Seek(offset, SeekOrigin.Begin);
             var numBoxes = _reader.ReadByte();
             for (int i = 0; i < numBoxes; i++)
             {
@@ -222,7 +218,7 @@ namespace NScumm.Core.IO
 
         public override byte[] ReadCostume(long offset)
         {
-            _reader.BaseStream.Seek(offset, System.IO.SeekOrigin.Current);
+            _reader.BaseStream.Seek(offset, SeekOrigin.Current);
             var size = _reader.ReadUInt16();
             var tmp = _reader.ReadBytes(2);
             return _reader.ReadBytes(size - HeaderSize);
@@ -230,7 +226,7 @@ namespace NScumm.Core.IO
 
         public override byte[] ReadScript(long offset)
         {
-            _reader.BaseStream.Seek(offset, System.IO.SeekOrigin.Current);
+            _reader.BaseStream.Seek(offset, SeekOrigin.Current);
             var size = _reader.ReadUInt16();
             var tmp = _reader.ReadBytes(2);
             var data = _reader.ReadBytes(size - HeaderSize);
@@ -239,9 +235,9 @@ namespace NScumm.Core.IO
 
         public override byte[] ReadSound(Audio.MusicDriverTypes music, long offset)
         {
-            _reader.BaseStream.Seek(offset, System.IO.SeekOrigin.Begin);
+            _reader.BaseStream.Seek(offset, SeekOrigin.Begin);
             var size = _reader.ReadUInt16(); // wa_size
-            _reader.BaseStream.Seek(-2, System.IO.SeekOrigin.Current);
+            _reader.BaseStream.Seek(-2, SeekOrigin.Current);
             var data = _reader.ReadBytes(size);
             return data;
         }
@@ -259,7 +255,7 @@ namespace NScumm.Core.IO
 
         ObjectData ReadObject(long offset)
         {
-            _reader.BaseStream.Seek(offset, System.IO.SeekOrigin.Begin);
+            _reader.BaseStream.Seek(offset, SeekOrigin.Begin);
             var size = _reader.ReadUInt16();
             var tmp = _reader.ReadUInt16();
             var id = _reader.ReadUInt16();
@@ -318,7 +314,7 @@ namespace NScumm.Core.IO
 
         byte[] ReadBytes(long offset, int length)
         {
-            _reader.BaseStream.Seek(offset, System.IO.SeekOrigin.Begin);
+            _reader.BaseStream.Seek(offset, SeekOrigin.Begin);
             return _reader.ReadBytes(length);
         }
     }

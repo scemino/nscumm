@@ -50,8 +50,8 @@ namespace NScumm.Core
             Directory = ServiceLocator.FileStorage.GetDirectoryName(game.Path);
             using (var file = ServiceLocator.FileStorage.OpenFileRead(game.Path))
             {
-                var br1 = new BinaryReader(file);
-                var br = new XorReader(br1, 0);
+                var br = new BinaryReader(file);
+                
                 while (br.BaseStream.Position < br.BaseStream.Length)
                 {
                     var tag = System.Text.Encoding.UTF8.GetString(br.ReadBytes(4));
@@ -123,7 +123,7 @@ namespace NScumm.Core
             }
         }
 
-        protected override void ReadMaxSizes(XorReader reader) 
+        protected override void ReadMaxSizes(BinaryReader reader) 
         {
             reader.BaseStream.Seek(50, SeekOrigin.Current);  // Skip over SCUMM engine version
             reader.BaseStream.Seek(50, SeekOrigin.Current);  // Skip over data file version
@@ -154,7 +154,7 @@ namespace NScumm.Core
 //            _shadowPalette = (byte *)calloc(_shadowPaletteSize, 1);
         }
 
-        protected override void ReadDirectoryOfObjects(XorReader br)
+        protected override void ReadDirectoryOfObjects(BinaryReader br)
         {
             int num = br.ReadUInt16();
 

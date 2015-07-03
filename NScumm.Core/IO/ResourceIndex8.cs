@@ -42,8 +42,7 @@ namespace NScumm.Core
             Directory = ServiceLocator.FileStorage.GetDirectoryName(game.Path);
             using (var file = ServiceLocator.FileStorage.OpenFileRead(game.Path))
             {
-                var br1 = new BinaryReader(file);
-                var br = new XorReader(br1, 0);
+                var br = new BinaryReader(file);
                 while (br.BaseStream.Position < br.BaseStream.Length)
                 {
                     var tag = System.Text.Encoding.UTF8.GetString(br.ReadBytes(4));
@@ -121,7 +120,7 @@ namespace NScumm.Core
             }
         }
 
-        protected override void ReadMaxSizes(XorReader reader)
+        protected override void ReadMaxSizes(BinaryReader reader)
         {
             reader.BaseStream.Seek(50, SeekOrigin.Current);  // Skip over SCUMM engine version
             reader.BaseStream.Seek(50, SeekOrigin.Current);  // Skip over data file version
@@ -146,7 +145,7 @@ namespace NScumm.Core
             numGlobalScripts = 2000;
         }
 
-        protected override void ReadDirectoryOfObjects(XorReader br)
+        protected override void ReadDirectoryOfObjects(BinaryReader br)
         {
             var num = br.ReadInt32();
 
@@ -180,7 +179,7 @@ namespace NScumm.Core
             return System.Text.Encoding.UTF8.GetString(sb.ToArray());
         }
 
-        protected override Resource[] ReadResTypeList(XorReader br)
+        protected override Resource[] ReadResTypeList(BinaryReader br)
         {
             var numEntries = br.ReadInt32();
             var res = new Resource[numEntries];
@@ -192,7 +191,7 @@ namespace NScumm.Core
             return res;
         }
 
-        protected override void ReadArrayFromIndexFile(XorReader br)
+        protected override void ReadArrayFromIndexFile(BinaryReader br)
         {
             uint num;
             while ((num = br.ReadUInt32()) != 0)

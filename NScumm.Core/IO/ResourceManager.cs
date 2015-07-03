@@ -212,9 +212,8 @@ namespace NScumm.Core.IO
 
         static long GetRoomOffset(ResourceFile disk, byte roomNum)
         {
-            var rOffsets = disk.ReadRoomOffsets();
-            var roomOffset = rOffsets.ContainsKey(roomNum) ? rOffsets[roomNum] : 0;
-            return roomOffset;
+            var rOffset = disk.GetRoomOffset(roomNum);
+            return rOffset;
         }
 
         public Room GetRoom(byte roomNum)
@@ -301,7 +300,7 @@ namespace NScumm.Core.IO
                         // For games using AD except Indy3 and Loom we are using our iMuse
                         // implementation. See output initialization in
                         // ScummEngine::setupMusic for more information.
-                        if (data != null && Game.Version < 5 && Game.GameId != GameId.Indy3 && Game.GameId != GameId.Loom && music == NScumm.Core.Audio.MusicDriverTypes.AdLib)
+                        if (data != null && Game.Version < 5 && Game.GameId != GameId.Indy3 && Game.GameId != GameId.Loom && music == Audio.MusicDriverTypes.AdLib)
                         {
                             data = ConvertADResource(data, sound);
                         }
@@ -635,8 +634,8 @@ namespace NScumm.Core.IO
 
                 // There is a constant delay of ppqn/3 before the music starts.
                 if ((ppqn / 3) >= 128)
-                    ptr[outPos++] = (byte)(((ppqn / 3) >> 7) | 0x80);
-                ptr[outPos++] = (byte)(ppqn / 3 & 0x7f);
+                    ptr[outPos++] = ((ppqn / 3) >> 7) | 0x80;
+                ptr[outPos++] = ppqn / 3 & 0x7f;
 
                 // Now copy the actual music data
                 Array.Copy(input, trackPos, ptr, outPos, size);
@@ -678,10 +677,10 @@ namespace NScumm.Core.IO
                     outPos += 4;
 
                     // Ticks
-                    ptr[outPos++] = (byte)((jump_offset >> 12) & 0x0F);
-                    ptr[outPos++] = (byte)((jump_offset >> 8) & 0x0F);
-                    ptr[outPos++] = (byte)((jump_offset >> 4) & 0x0F);
-                    ptr[outPos++] = (byte)(jump_offset & 0x0F);
+                    ptr[outPos++] = (jump_offset >> 12) & 0x0F;
+                    ptr[outPos++] = (jump_offset >> 8) & 0x0F;
+                    ptr[outPos++] = (jump_offset >> 4) & 0x0F;
+                    ptr[outPos++] = jump_offset & 0x0F;
 
                     // sysex end marker
                     Array.Copy(new byte[] { 0x00, 0xf7 }, 0, ptr, outPos, 2);

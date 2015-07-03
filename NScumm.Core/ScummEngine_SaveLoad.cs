@@ -728,12 +728,12 @@ namespace NScumm.Core
                             var colors = reader.ReadBytes(0x300);
                             for (int i = 0; i < 0x100; i++)
                             {
-                                _palManipPalette.Colors[i] = Color.FromRgb((int)colors[i * 3], (int)colors[i * 3 + 1], (int)colors[i * 3 + 2]);    
+                                _palManipPalette.Colors[i] = Color.FromRgb(colors[i * 3], colors[i * 3 + 1], colors[i * 3 + 2]);    
                             }
                             var colors2 = reader.ReadUInt16s(0x300);
                             for (int i = 0; i < 0x100; i++)
                             {
-                                _palManipIntermediatePal.Colors[i] = Color.FromRgb((int)colors2[i * 3], (int)colors2[i * 3 + 1], (int)colors2[i * 3 + 2]);    
+                                _palManipIntermediatePal.Colors[i] = Color.FromRgb(colors2[i * 3], colors2[i * 3 + 1], colors2[i * 3 + 2]);    
                             }
                         }
                     },

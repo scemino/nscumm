@@ -50,7 +50,7 @@ namespace NScumm.Core.Audio.IMuse
                 return true;
 
             filename = ScummHelper.LocatePath(ServiceLocator.FileStorage.GetDirectoryName(ScummEngine.Instance.Game.Path), filename);
-            _file = new XorReader(ServiceLocator.FileStorage.OpenFileRead(filename), 0);
+            _file = new BinaryReader(ServiceLocator.FileStorage.OpenFileRead(filename));
 
             int slot = _cache.MatchFile(filename);
             Debug.Assert(slot != -1);
@@ -67,7 +67,7 @@ namespace NScumm.Core.Audio.IMuse
             return true;
         }
 
-        public XorReader GetFile(string filename, ref int offset, ref int size)
+        public BinaryReader GetFile(string filename, ref int offset, ref int size)
         {
             var target = new BundleDirCache.IndexNode{ Filename = filename };
             var index = Array.BinarySearch(_indexTable, target, _indexNodeComparer);
@@ -236,7 +236,7 @@ namespace NScumm.Core.Audio.IMuse
         int _numFiles;
         int _numCompItems;
         int _curSampleId;
-        XorReader _file;
+        BinaryReader _file;
         bool _compTableLoaded;
         byte[] _compOutputBuff = new byte[0x2000];
         byte[] _compInputBuff;

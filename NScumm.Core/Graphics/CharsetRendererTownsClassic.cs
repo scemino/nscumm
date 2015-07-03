@@ -60,7 +60,7 @@ namespace NScumm.Core.Graphics
             {
                 int offs = _fontPtr.ToInt32(_fontPos + chr * 4 + 4);
                 if (offs != 0)
-                    spacing = _fontPtr[_fontPos + offs] + (sbyte)_fontPtr[_fontPos + offs + 2];
+                    spacing = _fontPtr[_fontPos + offs] + _fontPtr[_fontPos + offs + 2];
             }
 
             return spacing;

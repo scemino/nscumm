@@ -24,6 +24,7 @@ using System.IO;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Text;
+using NScumm.Core.IO;
 
 namespace NScumm.Core.Smush
 {
@@ -38,101 +39,6 @@ namespace NScumm.Core.Smush
             if (texts == null)
                 throw new ArgumentNullException("texts");
             _texts = texts;
-        }
-
-        class XorStream:Stream
-        {
-            public Stream Stream { get; private set; }
-
-            public byte EncodedByte { get; private set; }
-
-            public XorStream(Stream stream, byte encodedByte)
-            {
-                Stream = stream;
-                EncodedByte = encodedByte;
-            }
-
-            #region implemented abstract members of Stream
-
-            public override void Flush()
-            {
-                Stream.Flush();
-            }
-
-            public override int Read(byte[] buffer, int offset, int count)
-            {
-                var read = Stream.Read(buffer, offset, count);
-                for (int i = 0; i < read; i++)
-                {
-                    buffer[i] ^= EncodedByte;
-                }
-                return read;
-            }
-
-            public override long Seek(long offset, SeekOrigin origin)
-            {
-                return Stream.Seek(offset, origin);
-            }
-
-            public override void SetLength(long value)
-            {
-                Stream.SetLength(value);
-            }
-
-            public override void Write(byte[] buffer, int offset, int count)
-            {
-                for (int i = 0; i < count; i++)
-                {
-                    buffer[offset + i] ^= EncodedByte;
-                }
-                Stream.Write(buffer, offset, count);
-            }
-
-            public override bool CanRead
-            {
-                get
-                {
-                    return Stream.CanRead;
-                }
-            }
-
-            public override bool CanSeek
-            {
-                get
-                {
-                    return Stream.CanSeek;
-                }
-            }
-
-            public override bool CanWrite
-            {
-                get
-                {
-                    return Stream.CanWrite;
-                }
-            }
-
-            public override long Length
-            {
-                get
-                {
-                    return Stream.Length;
-                }
-            }
-
-            public override long Position
-            {
-                get
-                {
-                    return Stream.Position;
-                }
-                set
-                {
-                    Stream.Position = value;
-                }
-            }
-
-            #endregion
         }
 
         public static TrsFile Load(string filename)
@@ -153,7 +59,7 @@ namespace NScumm.Core.Smush
             {
                 var sig = new byte[4];
                 f.Read(sig, 0, 4);
-                if (System.Text.Encoding.UTF8.GetString(sig) == "ETRS")
+                if (Encoding.UTF8.GetString(sig) == "ETRS")
                 {
                     f.Seek(16, SeekOrigin.Begin);
                     file = Load(new StreamReader(new XorStream(f, 0xCC)));
@@ -173,7 +79,7 @@ namespace NScumm.Core.Smush
             var texts = new Dictionary<int, string>();
             while ((line = reader.ReadLine()) != null)
             {
-                var m = TrsFile.DefRegex.Match(line);
+                var m = DefRegex.Match(line);
                 if (m.Success)
                 {
                     var id = int.Parse(m.Groups[1].Value);

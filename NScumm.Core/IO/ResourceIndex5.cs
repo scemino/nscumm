@@ -43,7 +43,7 @@ namespace NScumm.Core.IO
         public override int NumLocalObjects { get { return numLocalObjects; } }
 
 
-        protected override Resource[] ReadResTypeList(XorReader br)
+        protected override Resource[] ReadResTypeList(BinaryReader br)
         {
             var numEntries = br.ReadUInt16();
             var res = new Resource[numEntries];
@@ -66,8 +66,7 @@ namespace NScumm.Core.IO
             Directory = ServiceLocator.FileStorage.GetDirectoryName(game.Path);
             using (var file = ServiceLocator.FileStorage.OpenFileRead(game.Path))
             {
-                var br1 = new BinaryReader(file);
-                var br = new XorReader(br1, encByte);
+                var br = new BinaryReader(new XorStream(file,encByte));
                 while (br.BaseStream.Position < br.BaseStream.Length)
                 {
                     var block = ToTag(br.ReadBytes(4));
@@ -118,7 +117,7 @@ namespace NScumm.Core.IO
             }
         }
 
-        protected override void ReadDirectoryOfObjects(XorReader br)
+        protected override void ReadDirectoryOfObjects(BinaryReader br)
         {
             var numEntries = br.ReadUInt16();
             ObjectOwnerTable = new byte[numEntries];
@@ -132,7 +131,7 @@ namespace NScumm.Core.IO
             ClassData = br.ReadUInt32s(numEntries);
         }
 
-        void ReadMaxSizes(XorReader reader)
+        void ReadMaxSizes(BinaryReader reader)
         {
             numVariables = reader.ReadUInt16();      // 800
             reader.ReadUInt16();                      // 16

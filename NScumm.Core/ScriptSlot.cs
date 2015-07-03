@@ -121,8 +121,8 @@ namespace NScumm.Core
                 LoadAndSaveEntry.Create(reader => freezeCount = reader.ReadByte(), writer => writer.WriteByte(freezeCount), 8),
                 LoadAndSaveEntry.Create(reader => IsExecuted = reader.ReadBoolean(), writer => writer.WriteByte(IsExecuted), 8),
                 LoadAndSaveEntry.Create(reader => CutSceneOverride = reader.ReadByte(), writer => writer.WriteByte(CutSceneOverride), 8),
-                LoadAndSaveEntry.Create(reader => reader.ReadByte(), writer => writer.WriteByte((byte)0), 46),
-                LoadAndSaveEntry.Create(reader => reader.ReadByte(), writer => writer.WriteByte((byte)0), 8, 10),
+                LoadAndSaveEntry.Create(reader => reader.ReadByte(), writer => writer.WriteByte(0), 46),
+                LoadAndSaveEntry.Create(reader => reader.ReadByte(), writer => writer.WriteByte(0), 8, 10),
             };
 
             scriptSlotEntries.ForEach(e => e.Execute(serializer));

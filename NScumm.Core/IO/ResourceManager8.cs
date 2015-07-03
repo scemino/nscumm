@@ -35,7 +35,7 @@ namespace NScumm.Core
             var diskName = Game.Pattern == null ? string.Format("{0}.{1:000}", Game.Id, diskNum) : string.Format(Game.Pattern, diskNum);
             var game1Path = ScummHelper.NormalizePath(ServiceLocator.FileStorage.Combine(Directory, diskName));
 
-            var file = new ResourceFile8((ResourceIndex8)Index, game1Path);
+            var file = new ResourceFile8((ResourceIndex8)Index, ServiceLocator.FileStorage.OpenFileRead(game1Path));
             return file;
         }
     }

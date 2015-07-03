@@ -39,11 +39,11 @@ namespace NScumm.Core.IO
                 if (Game.Platform == Platform.C64)
                 {
                     var res = ScummDiskImage.CreateResource((ResourceIndex0)Index, roomIndex);
-                    return new ResourceFile1(res, 0);
+                    return new ResourceFile1(res);
                 }
-                return new ResourceFile1(game1Path, 0xFF);
+                return new ResourceFile1(new XorStream(ServiceLocator.FileStorage.OpenFileRead(game1Path), 0xFF));
             }
-            return new ResourceFile2(game1Path, 0xFF);
+            return new ResourceFile2(new XorStream(ServiceLocator.FileStorage.OpenFileRead(game1Path), 0xFF));
         }
 
         protected override byte[] ReadCharset(byte id)

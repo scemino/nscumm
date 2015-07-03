@@ -19,7 +19,6 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using System.Collections.Generic;
 using System.IO;
 using System;
 
@@ -29,22 +28,16 @@ namespace NScumm.Core.IO
     {
         #region Fields
 
-        protected XorReader _reader;
         Stream _fs;
-
+        protected BinaryReader _reader;
         #endregion
 
         #region Constructor
 
-        protected ResourceFile()
+        protected ResourceFile(Stream stream)
         {
-        }
-
-        protected ResourceFile(string path, byte encByte)
-        {
-            path = ScummHelper.NormalizePath(path);
-            _fs = ServiceLocator.FileStorage.OpenFileRead(path);
-            _reader = new XorReader(_fs, encByte);
+            _fs = stream;
+            _reader = new BinaryReader(_fs);
         }
 
         #endregion
@@ -74,8 +67,6 @@ namespace NScumm.Core.IO
 
         #region Methods
 
-        public abstract Dictionary<byte, long> ReadRoomOffsets();
-
         public abstract Room ReadRoom(long offset);
 
         public abstract byte[] ReadCostume(long offset);
@@ -83,6 +74,11 @@ namespace NScumm.Core.IO
         public abstract byte[] ReadScript(long offset);
 
         public abstract byte[] ReadSound(Audio.MusicDriverTypes music, long offset);
+
+        public virtual long GetRoomOffset(byte roomNum)
+        {
+            return 0;
+        }
 
         #endregion
 

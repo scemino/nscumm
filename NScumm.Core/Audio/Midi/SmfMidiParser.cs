@@ -232,7 +232,7 @@ namespace NScumm.Core.Audio.Midi
 
                         case 0x0: // SysEx
                             {
-                                var len = (int)ReadVLQ(input);
+                                var len = ReadVLQ(input);
                                 var br = new BinaryReader(input);
                                 info.Data = br.ReadBytes(len);
                             }
@@ -243,7 +243,7 @@ namespace NScumm.Core.Audio.Midi
 
                                 var br = new BinaryReader(input);
                                 info.MetaType = input.ReadByte();
-                                var len = (int)ReadVLQ(input);
+                                var len = ReadVLQ(input);
                                 info.Data = br.ReadBytes(len);
                             }
                             break;

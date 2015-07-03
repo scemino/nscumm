@@ -181,7 +181,7 @@ namespace NScumm.Core.Audio
 
             env.modWheelSensitivity = 31;
             if (def.useModWheel != 0)
-                env.modWheelState = (byte)(MidiChannelPcSpk.ModWheel >> 2);
+                env.modWheelState = MidiChannelPcSpk.ModWheel >> 2;
             else
                 env.modWheelState = 31;
 

@@ -35,7 +35,7 @@ namespace NScumm.Core
             var diskName = string.Format(Game.Pattern, diskNum);
             var game1Path = ScummHelper.NormalizePath(ServiceLocator.FileStorage.Combine(Directory, diskName));
 
-            var file = new ResourceFile5(game1Path, 0x69);
+            var file = new ResourceFile5(new XorStream(ServiceLocator.FileStorage.OpenFileRead(game1Path), 0x69));
             return file;
         }
 
@@ -44,8 +44,8 @@ namespace NScumm.Core
             var res = ((ResourceIndex5)Index).CharsetResources[id];
             var diskNum = res.RoomNum;
             var file = (ResourceFile5)OpenRoom(diskNum);
-            var rOffsets = file.ReadRoomOffsets();
-            return file.ReadCharset(rOffsets[diskNum] + res.Offset);
+            var rOffset = file.GetRoomOffset(diskNum);
+            return file.ReadCharset(rOffset + res.Offset);
         }
     }
 }

@@ -30,8 +30,8 @@ namespace NScumm.Core.IO
 {
     class ResourceFile5: ResourceFile4
     {
-        public ResourceFile5(string path, byte encByte)
-            : base(path, encByte)
+        public ResourceFile5(Stream stream)
+            : base(stream)
         {
 
         }
@@ -484,7 +484,7 @@ namespace NScumm.Core.IO
                 switch (tag)
                 {
                     case "ADL ":
-                        if (music == NScumm.Core.Audio.MusicDriverTypes.AdLib|| music == NScumm.Core.Audio.MusicDriverTypes.FMTowns)
+                        if (music == Audio.MusicDriverTypes.AdLib|| music == Audio.MusicDriverTypes.FMTowns)
                         {
                             _reader.BaseStream.Seek(-8, SeekOrigin.Current);
                             return _reader.ReadBytes((int)size + 8);
@@ -495,7 +495,7 @@ namespace NScumm.Core.IO
                         _reader.BaseStream.Seek(-8, SeekOrigin.Current);
                         return _reader.ReadBytes((int)size + 8);
                     case "SPK ":
-                        if (music == NScumm.Core.Audio.MusicDriverTypes.PCSpeaker)
+                        if (music == Audio.MusicDriverTypes.PCSpeaker)
                         {
                             _reader.BaseStream.Seek(-8, SeekOrigin.Current);
                             return _reader.ReadBytes((int)size + 8);
@@ -503,7 +503,7 @@ namespace NScumm.Core.IO
                         _reader.BaseStream.Seek(size, SeekOrigin.Current);
                         break;
                     case "MIDI":
-                        if (music == NScumm.Core.Audio.MusicDriverTypes.Midi)
+                        if (music == Audio.MusicDriverTypes.Midi)
                         {
                             _reader.BaseStream.Seek(-8, SeekOrigin.Current);
                             return _reader.ReadBytes((int)size + 8);
@@ -590,7 +590,7 @@ namespace NScumm.Core.IO
             return _reader.ReadBytes((int)size - 8);
         }
 
-        public override Dictionary<byte, long> ReadRoomOffsets()
+        protected override Dictionary<byte, long> ReadRoomOffsets()
         {
             var roomOffsets = new Dictionary<byte, long>();
             do

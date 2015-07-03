@@ -231,11 +231,11 @@ namespace NScumm.Core.Audio
                         // current sample rate.
                         if (_soundPlaying != -1 && _sampleRate != mixerSampleRate)
                         {
-                            double mult = (double)_sampleRate / (double)mixerSampleRate;
+                            double mult = _sampleRate / (double)mixerSampleRate;
                             for (i = 0; i < _numberOfChannels; i++)
                             {
-                                _channel[i]._pitchModifier = (int)((double)_channel[i]._pitchModifier * mult);
-                                _channel[i]._remaining = (uint)((double)_channel[i]._remaining / mult);
+                                _channel[i]._pitchModifier = (int)(_channel[i]._pitchModifier * mult);
+                                _channel[i]._remaining = (uint)(_channel[i]._remaining / mult);
                             }
                         }
                         _sampleRate = mixerSampleRate;
@@ -272,7 +272,7 @@ namespace NScumm.Core.Audio
                 // I don't want to use floating-point arithmetics here, but I
                 // ran into overflow problems with the church music in Monkey
                 // Island. It's only once per note, so it should be ok.
-                double mult = (double)instrument._rate / (double)_sampleRate;
+                double mult = instrument._rate / (double)_sampleRate;
                 return (int)(mult * _pitchTable[pitchIdx]);
             }
             else

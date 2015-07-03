@@ -76,7 +76,7 @@ namespace NScumm.Core
             GetResult();
             var act = GetVarOrDirectByte(OpCodeParameter.Param1);
             var actor = Actors[act];
-            SetResult((int)actor.ScaleX);
+            SetResult(actor.ScaleX);
         }
 
         protected void SoundKludge()

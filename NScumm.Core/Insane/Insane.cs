@@ -23,6 +23,7 @@ using System.Diagnostics;
 using NScumm.Core.IO;
 using NScumm.Core.Smush;
 using NScumm.Core.Graphics;
+using System.IO;
 
 namespace NScumm.Core.Insane
 {
@@ -221,7 +222,7 @@ namespace NScumm.Core.Insane
             }
         }
 
-        public void ProcSKIP(int subSize, XorReader b)
+        public void ProcSKIP(int subSize, BinaryReader b)
         {
             short par1, par2;
             _player._skipNext = false;
@@ -594,7 +595,7 @@ namespace NScumm.Core.Insane
 
             if (fluPtr != null)
             {
-                tmp = ((int)startFrame / 30 + 1) * 30;
+                tmp = (startFrame / 30 + 1) * 30;
                 if (tmp >= numFrames)
                     tmp = 0;
 

@@ -27,13 +27,27 @@ namespace NScumm.Core.IO
 {
     class ResourceFile4: ResourceFile3
     {
-        public ResourceFile4(string path, byte encByte)
-            : base(path, encByte)
+        public ResourceFile4(Stream stream)
+            : base(stream)
         {
 
         }
 
-        public override Dictionary<byte, long> ReadRoomOffsets()
+        public override long GetRoomOffset(byte roomNum)
+        {
+            var rOffsets = ReadRoomOffsets();
+            return rOffsets.ContainsKey(roomNum) ? rOffsets[roomNum] : 0;
+        }
+
+        public override byte[] ReadAmigaSound(long offset)
+        {
+            GotoResourceHeader(offset);
+            var size = _reader.ReadInt32();
+            _reader.BaseStream.Seek(-4, SeekOrigin.Current);
+            return _reader.ReadBytes(size);
+        }
+
+        protected virtual Dictionary<byte, long> ReadRoomOffsets()
         {
             var roomOffsets = new Dictionary<byte, long>();
             do
@@ -43,10 +57,10 @@ namespace NScumm.Core.IO
 
                 switch (blockType)
                 {
-                // *LECF* main container
+                    // *LECF* main container
                     case 0x454C:
                         break;
-                // *LOFF* room offset table
+                    // *LOFF* room offset table
                     case 0x4F46:
                         var numRooms = _reader.ReadByte();
                         while (numRooms-- != 0)
@@ -57,21 +71,13 @@ namespace NScumm.Core.IO
                         }
                         return roomOffsets;
                     default:
-					// skip
-//                        Console.WriteLine("Skip Block: 0x{0:X2}", blockType);
+                        // skip
+                        //                        Console.WriteLine("Skip Block: 0x{0:X2}", blockType);
                         _reader.BaseStream.Seek(size - 6, SeekOrigin.Current);
                         break;
                 }
             } while (_reader.BaseStream.Position < _reader.BaseStream.Length);
             return null;
-        }
-
-        public override byte[] ReadAmigaSound(long offset)
-        {
-            GotoResourceHeader(offset);
-            var size = _reader.ReadInt32();
-            _reader.BaseStream.Seek(-4, SeekOrigin.Current);
-            return _reader.ReadBytes(size);
         }
 
         protected override ZPlane ReadZPlane(BinaryReader b, int size, int numStrips)

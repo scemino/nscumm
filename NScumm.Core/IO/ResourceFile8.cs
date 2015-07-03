@@ -31,8 +31,8 @@ namespace NScumm.Core.IO
     {
         public ResourceIndex8 ResourceIndex { get; private set; }
 
-        public ResourceFile8(ResourceIndex8 resourceIndex, string path)
-            : base(path)
+        public ResourceFile8(ResourceIndex8 resourceIndex, Stream stream)
+            : base(stream)
         {
             ResourceIndex = resourceIndex;
         }

@@ -22,6 +22,7 @@ using System;
 using System.Diagnostics;
 using NScumm.Core.Audio.Decoders;
 using NScumm.Core.IO;
+using System.IO;
 
 namespace NScumm.Core.Audio.IMuse
 {
@@ -82,7 +83,7 @@ namespace NScumm.Core.Audio.IMuse
             } while (tag != "DATA");
         }
 
-        void PrepareSoundFromRMAP(XorReader file, SoundDesc sound, int offset, int size)
+        void PrepareSoundFromRMAP(BinaryReader file, SoundDesc sound, int offset, int size)
         {
             throw new NotImplementedException("PrepareSoundFromRMAP");
             // TODO: vs PrepareSoundFromRMAP

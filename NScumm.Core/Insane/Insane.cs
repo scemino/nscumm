@@ -672,15 +672,15 @@ namespace NScumm.Core.Insane
                 // overwrite
                 if (_enemy[EN_VULTM2].isEmpty != ReadArray(7))
                 {
-//                    Console.Error.WriteLine("Wrong INSANE parameters for EN_VULTM2 ({0} {1})",
-//                        _enemy[EN_VULTM2].isEmpty, ReadArray(7));
+                    //                    Console.Error.WriteLine("Wrong INSANE parameters for EN_VULTM2 ({0} {1})",
+                    //                        _enemy[EN_VULTM2].isEmpty, ReadArray(7));
                     _enemy[EN_VULTM2].isEmpty = ReadArray(7);
                 }
 
                 if ((_enemy[EN_VULTF2].isEmpty != 0) != (_actor[0].inventory[INV_CHAINSAW]))
                 {
-//                    Console.Error.WriteLine("Wrong INSANE parameters for EN_VULTF2 ({0} {1})",
-//                        _enemy[EN_VULTF2].isEmpty, _actor[0].inventory[INV_CHAINSAW]);
+                    //                    Console.Error.WriteLine("Wrong INSANE parameters for EN_VULTF2 ({0} {1})",
+                    //                        _enemy[EN_VULTF2].isEmpty, _actor[0].inventory[INV_CHAINSAW]);
                     _enemy[EN_VULTF2].isEmpty = (_actor[0].inventory[INV_CHAINSAW]) ? 1 : 0;
                 }
 
@@ -1061,7 +1061,7 @@ namespace NScumm.Core.Insane
         void smush_warpMouse(int x, int y, int buttons)
         {
             // TODO: vs
-//            _player.WarpMouse(x, y, buttons);
+            //            _player.WarpMouse(x, y, buttons);
         }
 
         void smush_setupSanFromStart(string filename, int setupsan2, int step1, int step2, int setupsan1)
@@ -1143,18 +1143,18 @@ namespace NScumm.Core.Insane
             if (phase == 1)
             {
                 if (_idx2Exceeded != 0)
-                if (_objArray2Idx >= _objArray2Idx2)
-                    return 0;
+                    if (_objArray2Idx >= _objArray2Idx2)
+                        return 0;
             }
             resid = ReadArray(id);
 
             if (resid == 0 && phase == 2)
                 return 0;
 
-//            if (phase == 2)
-//                _vm.ensureResourceLoaded(rtSound, resid);
+            if (phase == 2)
+                _vm.ResourceManager.LoadSound(_vm.Sound.MusicType, resid);
 
-//            _vm._res.setResourceCounter(rtSound, resid, 1);
+            _vm.ResourceManager.SetSoundCounter(resid, 1);
 
             if (phase == 1)
             {
@@ -1176,8 +1176,8 @@ namespace NScumm.Core.Insane
             if (resid == 0)
                 return 0;
 
-//            _vm.ensureResourceLoaded(rtCostume, resid);
-//            _vm._res.setResourceCounter(rtCostume, resid, 1);
+            _vm.ResourceManager.LoadCostume(resid);
+            _vm.ResourceManager.SetCostumeCounter(resid, 1);
 
             if (phase == 1)
             {

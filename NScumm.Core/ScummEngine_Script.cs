@@ -27,174 +27,103 @@ namespace NScumm.Core
 {
     partial class ScummEngine
     {
+        const int NumLocalScripts = 60;
+
         protected byte[] _currentScriptData;
-        byte _currentScript;
-        int _currentPos;
+        internal CutScene cutScene = new CutScene();
         int _numNestedScripts;
         NestedScript[] _nest;
         ScriptSlot[] _slots;
-        internal CutScene cutScene = new CutScene();
-        const int NumLocalScripts = 60;
-
-        protected byte CurrentScript { get { return _currentScript; } set { _currentScript = value; } }
-
-        protected int CurrentPos { get { return _currentPos; } set { _currentPos = value; } }
+        bool _ignoreEntryExitScript;
 
         internal ScriptSlot[] Slots { get { return _slots; } }
 
-        protected void UnfreezeScripts()
+        protected byte CurrentScript { get; set; }
+
+        protected int CurrentPos { get; set; }
+
+
+        public TimeSpan RunBootScript(int bootParam = 0)
         {
-            if (Game.Version <= 2)
+            if (!Settings.CopyProtection && _game.GameId == IO.GameId.Indy4 && bootParam == 0)
             {
-                for (var i = 0; i < NumScriptSlot; i++)
-                {
-                    _slots[i].Unfreeze();
-                }
-                return;
+                bootParam = -7873;
             }
+            else if (!Settings.CopyProtection && _game.GameId == IO.GameId.SamNMax && bootParam == 0)
+            {
+                bootParam = -1;
+            }
+            RunScript(1, false, false, new[] { bootParam });
+            SetDefaultCursor();
+
+            return GetTimeToWaitBeforeLoop(TimeSpan.Zero);
+        }
+
+        public void StopScript(int script)
+        {
+            if (script == 0)
+                return;
 
             for (var i = 0; i < NumScriptSlot; i++)
             {
-                _slots[i].Unfreeze();
-            }
-
-            for (var i = 0; i < _sentence.Length; i++)
-            {
-                _sentence[i].Unfreeze();
-            }
-        }
-
-        protected void BeginOverrideCore()
-        {
-            var idx = cutScene.StackPointer;
-            cutScene.Data[idx].Pointer = _currentPos;
-            cutScene.Data[idx].Script = _currentScript;
-
-            // Skip the jump instruction following the override instruction
-            // (the jump is responsible for "skipping" cutscenes, and the reason
-            // why we record the current script position in vm.cutScenePtr).
-            ReadByte();
-            ReadWord();
-
-            if (Game.Version >= 5)
-            {
-                Variables[VariableOverride.Value] = 0;
-            }
-        }
-
-        protected void EndOverrideCore()
-        {
-            var idx = cutScene.StackPointer;
-            cutScene.Data[idx].Pointer = 0;
-            cutScene.Data[idx].Script = 0;
-
-            if (Game.Version >= 4)
-            {
-                _variables[VariableOverride.Value] = 0;
-            }
-        }
-
-        protected void BeginCutscene(int[] args)
-        {
-            var scr = _currentScript;
-            _slots[scr].CutSceneOverride++;
-
-            ++cutScene.StackPointer;
-
-            cutScene.Data[cutScene.StackPointer].Data = args.Length > 0 ? args[0] : 0;
-            cutScene.Data[cutScene.StackPointer].Script = 0;
-            cutScene.Data[cutScene.StackPointer].Pointer = 0;
-
-            cutScene.ScriptIndex = scr;
-
-            if (_variables[VariableCutSceneStartScript.Value] != 0)
-                RunScript(_variables[VariableCutSceneStartScript.Value], false, false, args);
-
-            cutScene.ScriptIndex = 0xFF;
-        }
-
-        protected void AbortCutscene()
-        {
-            var idx = cutScene.StackPointer;
-            var offs = cutScene.Data[idx].Pointer;
-
-            if (offs != 0)
-            {
-                var ss = Slots[cutScene.Data[idx].Script];
-                ss.Offset = (uint)offs;
-                ss.Status = ScriptStatus.Running;
-                ss.UnfreezeAll();
-            
-                if (ss.CutSceneOverride > 0)
-                    ss.CutSceneOverride--;
-
-                _variables[VariableOverride.Value] = 1;
-                cutScene.Data[idx].Pointer = 0;
-            }
-        }
-
-        protected void EndCutsceneCore()
-        {
-            var ss = _slots[_currentScript];
-
-            if (ss.CutSceneOverride > 0)    // Only terminate if active
-                ss.CutSceneOverride--;
-
-            var args = new [] { cutScene.Data[cutScene.StackPointer].Data };
-
-            Variables[VariableOverride.Value] = 0;
-
-            if (cutScene.Data[cutScene.StackPointer].Pointer != 0 && (ss.CutSceneOverride > 0))   // Only terminate if active
-				ss.CutSceneOverride--;
-
-            cutScene.Data[cutScene.StackPointer].Script = 0;
-            cutScene.Data[cutScene.StackPointer].Pointer = 0;
-
-            cutScene.StackPointer--;
-
-            if (Variables[VariableCutSceneEndScript.Value] != 0)
-                RunScript(Variables[VariableCutSceneEndScript.Value], false, false, args);
-        }
-
-        protected void StopObjectCode()
-        {
-            var ss = _slots[_currentScript];
-            if (Game.Version <= 2)
-            {
-                if (ss.Where == WhereIsObject.Global || ss.Where == WhereIsObject.Local)
+                if (script == _slots[i].Number && _slots[i].Status != ScriptStatus.Dead &&
+                    (_slots[i].Where == WhereIsObject.Global || _slots[i].Where == WhereIsObject.Local))
                 {
-                    StopScript(ss.Number);
-                }
-                else
-                {
-                    ss.Number = 0;
-                    ss.Status = ScriptStatus.Dead;
+                    if (_slots[i].CutSceneOverride != 0 && Game.Version >= 5)
+                        throw new NotSupportedException(string.Format("Script {0} stopped with active cutscene/override", script));
+
+                    _slots[i].Number = 0;
+                    _slots[i].Status = ScriptStatus.Dead;
+
+                    if (CurrentScript == i)
+                        CurrentScript = 0xFF;
                 }
             }
-            else if (Game.Version <= 5)
+
+            for (var i = 0; i < _numNestedScripts; ++i)
             {
-                if (ss.Where != WhereIsObject.Global && ss.Where != WhereIsObject.Local)
+                if (_nest[i].Number == script &&
+                    (_nest[i].Where == WhereIsObject.Global || _nest[i].Where == WhereIsObject.Local))
                 {
-                    StopObjectScriptCore(ss.Number);
+                    _nest[i].Number = 0;
+                    _nest[i].Slot = 0xFF;
+                    _nest[i].Where = WhereIsObject.NotFound;
                 }
-                else
-                {
-                    ss.Number = 0;
-                    ss.Status = ScriptStatus.Dead;
-                }
+            }
+        }
+
+        public void RunScript(int scriptNum, bool freezeResistant, bool recursive, int[] data)
+        {
+            if (scriptNum == 0)
+                return;
+
+            if (!recursive)
+                StopScript(scriptNum);
+
+            WhereIsObject scriptType;
+            if (scriptNum < _resManager.NumGlobalScripts)
+            {
+                ResourceManager.LoadScript(scriptNum);
+                scriptType = WhereIsObject.Global;
             }
             else
             {
-                if (ss.CutSceneOverride != 0)
-                    throw new InvalidOperationException(
-                        string.Format("{0} {1} ending with active cutscene/override ({2})", 
-                            (ss.Where != WhereIsObject.Global && ss.Where != WhereIsObject.Local) ? "Object" : "Script",
-                            ss.Number, ss.CutSceneOverride));
-                ss.Number = 0;
-                ss.Status = ScriptStatus.Dead;
+                scriptType = WhereIsObject.Local;
             }
 
-            _currentScript = 0xFF;
+            var slotIndex = GetScriptSlotIndex();
+            _slots[slotIndex] = new ScriptSlot
+            {
+                Number = (ushort)scriptNum,
+                Status = ScriptStatus.Running,
+                FreezeResistant = freezeResistant,
+                Recursive = recursive,
+                Where = scriptType
+            };
+
+            UpdateScriptData(slotIndex);
+            _slots[slotIndex].InitializeLocals(data);
+            RunScriptNested(slotIndex);
         }
 
         internal void StartScene(byte room, Actor a = null, int objectNr = 0)
@@ -204,20 +133,20 @@ namespace NScumm.Core
             FadeOut(_switchRoomEffect2);
             _newEffect = _switchRoomEffect;
 
-            if (_currentScript != 0xFF)
+            if (CurrentScript != 0xFF)
             {
-                if (_slots[_currentScript].Where == WhereIsObject.Room || _slots[_currentScript].Where == WhereIsObject.FLObject)
+                if (_slots[CurrentScript].Where == WhereIsObject.Room || _slots[CurrentScript].Where == WhereIsObject.FLObject)
                 {
-                    //nukeArrays(_currentScript);
-                    _currentScript = 0xFF;
+                    //nukeArrays(CurrentScript);
+                    CurrentScript = 0xFF;
                 }
-                else if (_slots[_currentScript].Where == WhereIsObject.Local)
+                else if (_slots[CurrentScript].Where == WhereIsObject.Local)
                 {
-                    //if (slots[_currentScript].cutsceneOverride && _game.version >= 5)
-                    //    error("Script %d stopped with active cutscene/override in exit", slots[_currentScript].number);
+                    //if (slots[CurrentScript].cutsceneOverride && _game.version >= 5)
+                    //    error("Script %d stopped with active cutscene/override in exit", slots[CurrentScript].number);
 
-                    //nukeArrays(_currentScript);
-                    _currentScript = 0xFF;
+                    //nukeArrays(CurrentScript);
+                    CurrentScript = 0xFF;
                 }
             }
 
@@ -273,6 +202,9 @@ namespace NScumm.Core
             if (VariableRoomResource.HasValue)
                 Variables[VariableRoomResource.Value] = _roomResource;
 
+            if (room != 0)
+                ResourceManager.LoadRoom(room);
+
             if (room != 0 && _game.Version == 5 && room == _roomResource)
                 Variables[VariableRoomFlag.Value] = 1;
 
@@ -282,14 +214,15 @@ namespace NScumm.Core
             {
                 if (roomData != null)
                 {
-                    roomData.EntryScript.Data = new byte[0];
+                    _ignoreEntryExitScript = true;
                     roomData.ExitScript.Data = new byte[0];
-                    roomData.Objects.Clear();
+                    //roomData.Objects.Clear();
                 }
                 return;
             }
 
             roomData = _resManager.GetRoom(_roomResource);
+            _ignoreEntryExitScript = false;
             if (roomData.HasPalette)
             {
                 SetCurrentPalette(0);
@@ -357,7 +290,7 @@ namespace NScumm.Core
                 a.SetDirection(dir + 180);
                 a.StopActorMoving();
 
-                if (Game.GameId == NScumm.Core.IO.GameId.SamNMax)
+                if (Game.GameId == IO.GameId.SamNMax)
                 {
                     Camera.CurrentPosition.X = Camera.DestinationPosition.X = a.Position.X;
                     SetCameraAt(a.Position);
@@ -396,271 +329,160 @@ namespace NScumm.Core
 
             _doEffect = true;
         }
-
-        protected abstract void RunInventoryScript(int i);
-
-        protected abstract void RunInputScript(ClickArea clickArea, KeyCode code, int mode);
-
-        void RunEntryScript()
+        
+        protected void UnfreezeScripts()
         {
-            if (VariableEntryScript.HasValue && _variables[VariableEntryScript.Value] != 0)
-                RunScript(_variables[VariableEntryScript.Value], false, false, new int[0]);
-
-            if (roomData != null && roomData.EntryScript.Data != null)
+            if (Game.Version <= 2)
             {
-                int slot = GetScriptSlotIndex();
-                _slots[slot] = new ScriptSlot
+                for (var i = 0; i < NumScriptSlot; i++)
                 {
-                    Status = ScriptStatus.Running,
-                    Number = 10002,
-                    Where = WhereIsObject.Room,
-                };
-                _currentScriptData = roomData.EntryScript.Data;
-                RunScriptNested(slot);
-            }
-
-            if (VariableEntryScript2.HasValue && _variables[VariableEntryScript2.Value] != 0)
-                RunScript(_variables[VariableEntryScript2.Value], false, false, new int[0]);
-        }
-
-        void RunExitScript()
-        {
-            if (VariableExitScript.HasValue && _variables[VariableExitScript.Value] != 0)
-            {
-                RunScript(_variables[VariableExitScript.Value], false, false, new int[0]);
-            }
-
-            if (roomData != null && roomData.ExitScript.Data.Length != 0)
-            {
-                var slot = GetScriptSlotIndex();
-                _slots[slot] = new ScriptSlot
-                {
-                    Status = ScriptStatus.Running,
-                    Number = 10001,
-                    Where = WhereIsObject.Room
-                };
-                _currentScriptData = roomData.ExitScript.Data;
-                RunScriptNested(slot);
-            }
-            if (VariableExitScript2.HasValue && _variables[VariableExitScript2.Value] != 0)
-                RunScript(_variables[VariableExitScript2.Value], false, false, new int[0]);
-        }
-
-        public TimeSpan RunBootScript(int bootParam = 0)
-        {
-            if (!Settings.CopyProtection && _game.GameId == NScumm.Core.IO.GameId.Indy4 && bootParam == 0)
-            {
-                bootParam = -7873;
-            }
-            else if (!Settings.CopyProtection && _game.GameId == NScumm.Core.IO.GameId.SamNMax && bootParam == 0)
-            {
-                bootParam = -1;
-            }
-            RunScript(1, false, false, new [] { bootParam });
-            SetDefaultCursor();
-
-            return GetTimeToWaitBeforeLoop(TimeSpan.Zero);
-        }
-
-        public void StopScript(int script)
-        {
-            if (script == 0)
+                    _slots[i].Unfreeze();
+                }
                 return;
+            }
 
             for (var i = 0; i < NumScriptSlot; i++)
             {
-                if (script == _slots[i].Number && _slots[i].Status != ScriptStatus.Dead &&
-                    (_slots[i].Where == WhereIsObject.Global || _slots[i].Where == WhereIsObject.Local))
-                {
-                    if (_slots[i].CutSceneOverride != 0 && Game.Version >= 5)
-                        throw new NotSupportedException(string.Format("Script {0} stopped with active cutscene/override", script));
-
-                    _slots[i].Number = 0;
-                    _slots[i].Status = ScriptStatus.Dead;
-
-                    if (_currentScript == i)
-                        _currentScript = 0xFF;
-                }
+                _slots[i].Unfreeze();
             }
 
-            for (var i = 0; i < _numNestedScripts; ++i)
+            for (var i = 0; i < _sentence.Length; i++)
             {
-                if (_nest[i].Number == script &&
-                    (_nest[i].Where == WhereIsObject.Global || _nest[i].Where == WhereIsObject.Local))
-                {
-                    _nest[i].Number = 0;
-                    _nest[i].Slot = 0xFF;
-                    _nest[i].Where = WhereIsObject.NotFound;
-                }
+                _sentence[i].Unfreeze();
             }
         }
 
-        public void RunScript(int scriptNum, bool freezeResistant, bool recursive, int[] data)
+        protected void BeginOverrideCore()
         {
-            if (scriptNum == 0)
-                return;
+            var idx = cutScene.StackPointer;
+            cutScene.Data[idx].Pointer = CurrentPos;
+            cutScene.Data[idx].Script = CurrentScript;
 
-            if (!recursive)
-                StopScript(scriptNum);
+            // Skip the jump instruction following the override instruction
+            // (the jump is responsible for "skipping" cutscenes, and the reason
+            // why we record the current script position in vm.cutScenePtr).
+            ReadByte();
+            ReadWord();
 
-            WhereIsObject scriptType;
-            if (scriptNum < _resManager.NumGlobalScripts)
+            if (Game.Version >= 5)
             {
-                scriptType = WhereIsObject.Global;
+                Variables[VariableOverride.Value] = 0;
+            }
+        }
+
+        protected void EndOverrideCore()
+        {
+            var idx = cutScene.StackPointer;
+            cutScene.Data[idx].Pointer = 0;
+            cutScene.Data[idx].Script = 0;
+
+            if (Game.Version >= 4)
+            {
+                _variables[VariableOverride.Value] = 0;
+            }
+        }
+
+        protected void BeginCutscene(int[] args)
+        {
+            var scr = CurrentScript;
+            _slots[scr].CutSceneOverride++;
+
+            ++cutScene.StackPointer;
+
+            cutScene.Data[cutScene.StackPointer].Data = args.Length > 0 ? args[0] : 0;
+            cutScene.Data[cutScene.StackPointer].Script = 0;
+            cutScene.Data[cutScene.StackPointer].Pointer = 0;
+
+            cutScene.ScriptIndex = scr;
+
+            if (_variables[VariableCutSceneStartScript.Value] != 0)
+                RunScript(_variables[VariableCutSceneStartScript.Value], false, false, args);
+
+            cutScene.ScriptIndex = 0xFF;
+        }
+
+        protected void AbortCutscene()
+        {
+            var idx = cutScene.StackPointer;
+            var offs = cutScene.Data[idx].Pointer;
+
+            if (offs != 0)
+            {
+                var ss = Slots[cutScene.Data[idx].Script];
+                ss.Offset = (uint)offs;
+                ss.Status = ScriptStatus.Running;
+                ss.UnfreezeAll();
+
+                if (ss.CutSceneOverride > 0)
+                    ss.CutSceneOverride--;
+
+                _variables[VariableOverride.Value] = 1;
+                cutScene.Data[idx].Pointer = 0;
+            }
+        }
+
+        protected void EndCutsceneCore()
+        {
+            var ss = _slots[CurrentScript];
+
+            if (ss.CutSceneOverride > 0)    // Only terminate if active
+                ss.CutSceneOverride--;
+
+            var args = new[] { cutScene.Data[cutScene.StackPointer].Data };
+
+            Variables[VariableOverride.Value] = 0;
+
+            if (cutScene.Data[cutScene.StackPointer].Pointer != 0 && (ss.CutSceneOverride > 0))   // Only terminate if active
+                ss.CutSceneOverride--;
+
+            cutScene.Data[cutScene.StackPointer].Script = 0;
+            cutScene.Data[cutScene.StackPointer].Pointer = 0;
+
+            cutScene.StackPointer--;
+
+            if (Variables[VariableCutSceneEndScript.Value] != 0)
+                RunScript(Variables[VariableCutSceneEndScript.Value], false, false, args);
+        }
+
+        protected void StopObjectCode()
+        {
+            var ss = _slots[CurrentScript];
+            if (Game.Version <= 2)
+            {
+                if (ss.Where == WhereIsObject.Global || ss.Where == WhereIsObject.Local)
+                {
+                    StopScript(ss.Number);
+                }
+                else
+                {
+                    ss.Number = 0;
+                    ss.Status = ScriptStatus.Dead;
+                }
+            }
+            else if (Game.Version <= 5)
+            {
+                if (ss.Where != WhereIsObject.Global && ss.Where != WhereIsObject.Local)
+                {
+                    StopObjectScriptCore(ss.Number);
+                }
+                else
+                {
+                    ss.Number = 0;
+                    ss.Status = ScriptStatus.Dead;
+                }
             }
             else
             {
-                scriptType = WhereIsObject.Local;
+                if (ss.CutSceneOverride != 0)
+                    throw new InvalidOperationException(
+                        string.Format("{0} {1} ending with active cutscene/override ({2})",
+                            (ss.Where != WhereIsObject.Global && ss.Where != WhereIsObject.Local) ? "Object" : "Script",
+                            ss.Number, ss.CutSceneOverride));
+                ss.Number = 0;
+                ss.Status = ScriptStatus.Dead;
             }
 
-            var slotIndex = GetScriptSlotIndex();
-            _slots[slotIndex] = new ScriptSlot
-            {
-                Number = (ushort)scriptNum,
-                Status = ScriptStatus.Running,
-                FreezeResistant = freezeResistant,
-                Recursive = recursive,
-                Where = scriptType
-            };
-
-            UpdateScriptData(slotIndex);
-            _slots[slotIndex].InitializeLocals(data);
-            RunScriptNested(slotIndex);
-        }
-
-        void UpdateScriptData(ushort slotIndex)
-        {
-            var scriptNum = _slots[slotIndex].Number;
-            if (_slots[slotIndex].Where == WhereIsObject.Inventory)
-            {
-                var data = (from o in _invData
-                                        where o.Number == scriptNum
-                                        select o.Script.Data).FirstOrDefault();
-                _currentScriptData = data;
-            }
-            else if (_slots[slotIndex].Where == WhereIsObject.FLObject)
-            {
-                var data = (from o in _objs
-                                        where o.Number == scriptNum
-                                        let entry = (byte)_slots[slotIndex].InventoryEntry
-                                        where o.ScriptOffsets.ContainsKey(entry) || o.ScriptOffsets.ContainsKey(0xFF)
-                                        select o.Script.Data).FirstOrDefault();
-                _currentScriptData = data;
-            }
-            else if (scriptNum == 10002)
-            {
-                _currentScriptData = roomData.EntryScript.Data;
-            }
-            else if (scriptNum == 10001)
-            {
-                _currentScriptData = roomData.ExitScript.Data;
-            }
-            else if (_slots[slotIndex].Where == WhereIsObject.Room)
-            {
-                var data = (from o in roomData.Objects
-                                        where o.Number == scriptNum
-                                        select o.Script.Data).First();
-                _currentScriptData = data;
-            }
-            else if (scriptNum < _resManager.NumGlobalScripts)
-            {
-                var data = _resManager.GetScript(scriptNum);
-                _currentScriptData = data;
-            }
-            else if ((scriptNum - _resManager.NumGlobalScripts) < roomData.LocalScripts.Length)
-            {
-                _currentScriptData = roomData.LocalScripts[scriptNum - _resManager.NumGlobalScripts].Data;
-            }
-            else
-            {
-                var data = (from o in roomData.Objects
-                                        where o.Number == scriptNum
-                                        let entry = (byte)_slots[slotIndex].InventoryEntry
-                                        where o.ScriptOffsets.ContainsKey(entry) || o.ScriptOffsets.ContainsKey(0xFF)
-                                        select o.Script.Data).FirstOrDefault();
-                _currentScriptData = data;
-            }
-        }
-
-        void RunScriptNested(int script)
-        {
-            var nest = _nest[_numNestedScripts];
-
-            if (_currentScript == 0xFF)
-            {
-                nest.Number = 0;
-                nest.Where = WhereIsObject.NotFound;
-            }
-            else
-            {
-                // Store information about the currently running script
-                _slots[_currentScript].Offset = (uint)_currentPos;
-                nest.Number = _slots[_currentScript].Number;
-                nest.Where = _slots[_currentScript].Where;
-                nest.Slot = _currentScript;
-            }
-
-            _numNestedScripts++;
-
-            _currentScript = (byte)script;
-            ResetScriptPointer();
-            Run();
-
-            if (_numNestedScripts > 0)
-                _numNestedScripts--;
-
-            if (nest.Number != 0 && nest.Slot < _slots.Length)
-            {
-                // Try to resume the script which called us, if its status has not changed
-                // since it invoked us. In particular, we only resume it if it hasn't been
-                // stopped in the meantime, and if it did not already move on.
-                var slot = _slots[nest.Slot];
-                if (slot.Number == nest.Number && slot.Where == nest.Where &&
-                    slot.Status != ScriptStatus.Dead && !slot.Frozen)
-                {
-                    _currentScript = nest.Slot;
-                    UpdateScriptData(nest.Slot);
-                    ResetScriptPointer();
-                    return;
-                }
-            }
-            _currentScript = 0xFF;
-        }
-
-        void ResetScriptPointer()
-        {
-            _currentPos = (int)_slots[_currentScript].Offset;
-            if (_currentPos < 0)
-                throw new NotSupportedException("Invalid offset in reset script pointer");
-        }
-
-        byte GetScriptSlotIndex()
-        {
-            for (byte i = 1; i < NumScriptSlot; i++)
-            {
-                if (_slots[i].Status == ScriptStatus.Dead)
-                    return i;
-            }
-            return 0xFF;
-        }
-
-        void RunAllScripts()
-        {
-            for (var i = 0; i < NumScriptSlot; i++)
-                _slots[i].IsExecuted = false;
-
-            _currentScript = 0xFF;
-
-            for (var i = 0; i < NumScriptSlot; i++)
-            {
-                if (_slots[i].Status == ScriptStatus.Running && !_slots[i].IsExecuted)
-                {
-                    _currentScript = (byte)i;
-                    UpdateScriptData((ushort)i);
-                    ResetScriptPointer();
-                    Run();
-                }
-            }
+            CurrentScript = 0xFF;
         }
 
         protected bool IsScriptInUse(int script)
@@ -706,7 +528,7 @@ namespace NScumm.Core
                 data = new int[] { st.Verb, st.ObjectA, st.ObjectB };
             }
 
-            _currentScript = 0xFF;
+            CurrentScript = 0xFF;
             if (sentenceScript != 0)
             {
                 RunScript(sentenceScript, false, false, data);
@@ -725,7 +547,7 @@ namespace NScumm.Core
 
             if (where == WhereIsObject.NotFound)
             {
-//                Console.Error.WriteLine("warning: Code for object {0} not in room {1}", obj, _roomResource);
+                //                Console.Error.WriteLine("warning: Code for object {0} not in room {1}", obj, _roomResource);
                 return;
             }
 
@@ -737,18 +559,18 @@ namespace NScumm.Core
             if (roomData != null)
             {
                 objFound = (from o in roomData.Objects.Concat(_invData)
-                                        where o != null
-                                        where o.Number == obj
-                                        where o.ScriptOffsets.ContainsKey(entry) || o.ScriptOffsets.ContainsKey(0xFF)
-                                        select o).FirstOrDefault();
+                            where o != null
+                            where o.Number == obj
+                            where o.ScriptOffsets.ContainsKey(entry) || o.ScriptOffsets.ContainsKey(0xFF)
+                            select o).FirstOrDefault();
             }
 
             if (objFound == null)
             {
                 objFound = (from o in _objs
-                                        where o.Number == obj
-                                        where o.ScriptOffsets.ContainsKey(entry) || o.ScriptOffsets.ContainsKey(0xFF)
-                                        select o).FirstOrDefault();
+                            where o.Number == obj
+                            where o.ScriptOffsets.ContainsKey(entry) || o.ScriptOffsets.ContainsKey(0xFF)
+                            select o).FirstOrDefault();
             }
 
             if (objFound == null)
@@ -788,8 +610,8 @@ namespace NScumm.Core
 
                     _slots[i].Number = 0;
                     _slots[i].Status = ScriptStatus.Dead;
-                    if (_currentScript == i)
-                        _currentScript = 0xFF;
+                    if (CurrentScript == i)
+                        CurrentScript = 0xFF;
                 }
             }
 
@@ -811,7 +633,7 @@ namespace NScumm.Core
             {
                 for (var i = 0; i < NumScriptSlot; i++)
                 {
-                    if (_currentScript != i && _slots[i].Status != ScriptStatus.Dead && !_slots[i].FreezeResistant)
+                    if (CurrentScript != i && _slots[i].Status != ScriptStatus.Dead && !_slots[i].FreezeResistant)
                     {
                         _slots[i].Freeze();
                     }
@@ -821,7 +643,7 @@ namespace NScumm.Core
 
             for (var i = 0; i < NumScriptSlot; i++)
             {
-                if (_currentScript != i && _slots[i].Status != ScriptStatus.Dead && (!_slots[i].FreezeResistant || flag >= 0x80))
+                if (CurrentScript != i && _slots[i].Status != ScriptStatus.Dead && (!_slots[i].FreezeResistant || flag >= 0x80))
                 {
                     _slots[i].Freeze();
                 }
@@ -849,8 +671,192 @@ namespace NScumm.Core
 
         protected void BreakHereCore()
         {
-            _slots[_currentScript].Offset = (uint)_currentPos;
-            _currentScript = 0xFF;
+            _slots[CurrentScript].Offset = (uint)CurrentPos;
+            CurrentScript = 0xFF;
+        }
+
+        protected abstract void RunInventoryScript(int i);
+
+        protected abstract void RunInputScript(ClickArea clickArea, KeyCode code, int mode);
+
+        void RunEntryScript()
+        {
+            if (VariableEntryScript.HasValue && _variables[VariableEntryScript.Value] != 0)
+                RunScript(_variables[VariableEntryScript.Value], false, false, new int[0]);
+
+            if (!_ignoreEntryExitScript && roomData != null && roomData.EntryScript.Data != null)
+            {
+                int slot = GetScriptSlotIndex();
+                _slots[slot] = new ScriptSlot
+                {
+                    Status = ScriptStatus.Running,
+                    Number = 10002,
+                    Where = WhereIsObject.Room,
+                };
+                _currentScriptData = roomData.EntryScript.Data;
+                RunScriptNested(slot);
+            }
+
+            if (VariableEntryScript2.HasValue && _variables[VariableEntryScript2.Value] != 0)
+                RunScript(_variables[VariableEntryScript2.Value], false, false, new int[0]);
+        }
+
+        void RunExitScript()
+        {
+            if (VariableExitScript.HasValue && _variables[VariableExitScript.Value] != 0)
+            {
+                RunScript(_variables[VariableExitScript.Value], false, false, new int[0]);
+            }
+
+            if (!_ignoreEntryExitScript && roomData != null && roomData.ExitScript.Data.Length != 0)
+            {
+                var slot = GetScriptSlotIndex();
+                _slots[slot] = new ScriptSlot
+                {
+                    Status = ScriptStatus.Running,
+                    Number = 10001,
+                    Where = WhereIsObject.Room
+                };
+                _currentScriptData = roomData.ExitScript.Data;
+                RunScriptNested(slot);
+            }
+            if (VariableExitScript2.HasValue && _variables[VariableExitScript2.Value] != 0)
+                RunScript(_variables[VariableExitScript2.Value], false, false, new int[0]);
+        }
+
+        void UpdateScriptData(ushort slotIndex)
+        {
+            var scriptNum = _slots[slotIndex].Number;
+            if (_slots[slotIndex].Where == WhereIsObject.Inventory)
+            {
+                var data = (from o in _invData
+                            where o.Number == scriptNum
+                            select o.Script.Data).FirstOrDefault();
+                _currentScriptData = data;
+            }
+            else if (_slots[slotIndex].Where == WhereIsObject.FLObject)
+            {
+                var data = (from o in _objs
+                            where o.Number == scriptNum
+                            let entry = (byte)_slots[slotIndex].InventoryEntry
+                            where o.ScriptOffsets.ContainsKey(entry) || o.ScriptOffsets.ContainsKey(0xFF)
+                            select o.Script.Data).FirstOrDefault();
+                _currentScriptData = data;
+            }
+            else if (scriptNum == 10002)
+            {
+                _currentScriptData = roomData.EntryScript.Data;
+            }
+            else if (scriptNum == 10001)
+            {
+                _currentScriptData = roomData.ExitScript.Data;
+            }
+            else if (_slots[slotIndex].Where == WhereIsObject.Room)
+            {
+                var data = (from o in roomData.Objects
+                            where o.Number == scriptNum
+                            select o.Script.Data).First();
+                _currentScriptData = data;
+            }
+            else if (scriptNum < _resManager.NumGlobalScripts)
+            {
+                var data = _resManager.GetScript(scriptNum);
+                _currentScriptData = data;
+            }
+            else if ((scriptNum - _resManager.NumGlobalScripts) < roomData.LocalScripts.Length)
+            {
+                _currentScriptData = roomData.LocalScripts[scriptNum - _resManager.NumGlobalScripts].Data;
+            }
+            else
+            {
+                var data = (from o in roomData.Objects
+                            where o.Number == scriptNum
+                            let entry = (byte)_slots[slotIndex].InventoryEntry
+                            where o.ScriptOffsets.ContainsKey(entry) || o.ScriptOffsets.ContainsKey(0xFF)
+                            select o.Script.Data).FirstOrDefault();
+                _currentScriptData = data;
+            }
+        }
+
+        void RunScriptNested(int script)
+        {
+            var nest = _nest[_numNestedScripts];
+
+            if (CurrentScript == 0xFF)
+            {
+                nest.Number = 0;
+                nest.Where = WhereIsObject.NotFound;
+            }
+            else
+            {
+                // Store information about the currently running script
+                _slots[CurrentScript].Offset = (uint)CurrentPos;
+                nest.Number = _slots[CurrentScript].Number;
+                nest.Where = _slots[CurrentScript].Where;
+                nest.Slot = CurrentScript;
+            }
+
+            _numNestedScripts++;
+
+            CurrentScript = (byte)script;
+            ResetScriptPointer();
+            Run();
+
+            if (_numNestedScripts > 0)
+                _numNestedScripts--;
+
+            if (nest.Number != 0 && nest.Slot < _slots.Length)
+            {
+                // Try to resume the script which called us, if its status has not changed
+                // since it invoked us. In particular, we only resume it if it hasn't been
+                // stopped in the meantime, and if it did not already move on.
+                var slot = _slots[nest.Slot];
+                if (slot.Number == nest.Number && slot.Where == nest.Where &&
+                    slot.Status != ScriptStatus.Dead && !slot.Frozen)
+                {
+                    CurrentScript = nest.Slot;
+                    UpdateScriptData(nest.Slot);
+                    ResetScriptPointer();
+                    return;
+                }
+            }
+            CurrentScript = 0xFF;
+        }
+
+        void ResetScriptPointer()
+        {
+            CurrentPos = (int)_slots[CurrentScript].Offset;
+            if (CurrentPos < 0)
+                throw new NotSupportedException("Invalid offset in reset script pointer");
+        }
+
+        byte GetScriptSlotIndex()
+        {
+            for (byte i = 1; i < NumScriptSlot; i++)
+            {
+                if (_slots[i].Status == ScriptStatus.Dead)
+                    return i;
+            }
+            return 0xFF;
+        }
+
+        void RunAllScripts()
+        {
+            for (var i = 0; i < NumScriptSlot; i++)
+                _slots[i].IsExecuted = false;
+
+            CurrentScript = 0xFF;
+
+            for (var i = 0; i < NumScriptSlot; i++)
+            {
+                if (_slots[i].Status == ScriptStatus.Running && !_slots[i].IsExecuted)
+                {
+                    CurrentScript = (byte)i;
+                    UpdateScriptData((ushort)i);
+                    ResetScriptPointer();
+                    Run();
+                }
+            }
         }
 
         void DecreaseScriptDelay(int amount)

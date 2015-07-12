@@ -201,7 +201,7 @@ namespace NScumm.Core.IO
         Room ReadRoomCore(long offset, long chunkSize)
         {
             var objImages = new Dictionary<ushort, byte[]>();
-            var room = new Room();
+            var room = new Room { Size = (int)chunkSize };
             var it = new ChunkIterator(_reader, chunkSize);
 
             while (it.MoveNext())

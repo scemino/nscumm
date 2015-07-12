@@ -66,6 +66,7 @@ namespace NScumm.Core
 
         public void LoadCostume(int id)
         {
+            _vm.ResourceManager.LoadCostume(id);
             Data = _vm.ResourceManager.GetCostumeData(id);
 
             Id = id;

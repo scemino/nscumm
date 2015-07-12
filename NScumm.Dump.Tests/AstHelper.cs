@@ -19,7 +19,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
-using NUnit.Framework;
+using NFluent;
 
 namespace NScumm.Dump.Tests
 {
@@ -39,7 +39,7 @@ namespace NScumm.Dump.Tests
             var expectedCode = astExpected.Accept(dumper);
             var actualCode = astActual.Accept(dumper);
 
-            Assert.AreEqual(expectedCode, actualCode);
+            Check.That(actualCode).IsEqualTo(expectedCode);
             Console.WriteLine(expectedCode);
         }
     }

@@ -47,6 +47,7 @@
       <xs:enumeration value="Old256"/>
       <xs:enumeration value="FewLocals"/>
       <xs:enumeration value="AudioTracks"/>
+      <xs:enumeration value="Demo"/>
     </xs:restriction>
   </xs:simpleType>
 

@@ -11,6 +11,7 @@ namespace NScumm.Dump
         Divide,
         Multiply,
         Add,
+        AddAssignment,
         Assignment,
         And,
         BitwiseAnd,
@@ -22,7 +23,8 @@ namespace NScumm.Dump
         Inequals,
         Subtract,
         PostIncrement,
-        PostDecrement
+        PostDecrement,
+        SubtractionAssignment
     }
 
     public class BinaryExpression: Expression

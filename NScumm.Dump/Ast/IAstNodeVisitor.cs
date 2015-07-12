@@ -41,6 +41,8 @@ namespace NScumm.Dump
         void Visit(UnaryExpression node);
 
         void Visit(BinaryExpression node);
+
+        void Visit(EnumExpression enumExpression);
     }
 
     public interface IAstNodeVisitor<out T>
@@ -74,6 +76,8 @@ namespace NScumm.Dump
         T Visit(StringLiteralExpression node);
 
         T Visit(BooleanLiteralExpression node);
+
+        T Visit(EnumExpression enumExpression);
 
         T Visit(MethodInvocation node);
 

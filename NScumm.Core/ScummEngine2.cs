@@ -32,7 +32,7 @@ using System.Diagnostics;
 namespace NScumm.Core
 {
     [Flags]
-    enum ObjectStateV2: byte
+    public enum ObjectStateV2: byte
     {
         Pickupable = 1,
         Untouchable = 2,
@@ -807,12 +807,14 @@ namespace NScumm.Core
                 var = (uint)Variables[var];
 
             ScummHelper.AssertRange(0, var, Variables.Length - 1, "variable (reading)");
-            //            debugC(DEBUG_VARS, "readvar(%d) = %d", var, _scummVars[var]);
+            this.Trace().Write("VARS", "ReadVariable({0}) = {1}", var, Variables[var]);
             return Variables[var];
         }
 
         protected override void WriteVariable(uint index, int value)
         {
+            this.Trace().Write("VARS", "WriteVariable({0}) = {1}", index, value);
+
             if (VariableCutSceneExitKey.HasValue && index == VariableCutSceneExitKey.Value)
             {
                 // Remap the cutscene exit key in earlier games
@@ -848,7 +850,7 @@ namespace NScumm.Core
             SetResult((int)a.Moving);
         }
 
-        protected void SetObjectName()
+        protected virtual void SetObjectName()
         {
             var obj = GetVarOrDirectWord(OpCodeParameter.Param1);
             SetObjectNameCore(obj);
@@ -909,7 +911,7 @@ namespace NScumm.Core
                 r = GetObjActToObjActDist(o1, o2);
 
             // TODO: WORKAROUND bug #795937 ?
-            //if ((_game.id == GID_MONKEY_EGA || _game.id == GID_PASS) && o1 == 1 && o2 == 307 && vm.slot[_currentScript].number == 205 && r == 2)
+            //if ((_game.id == GID_MONKEY_EGA || _game.id == GID_PASS) && o1 == 1 && o2 == 307 && vm.slot[CurrentScript].number == 205 && r == 2)
             //    r = 3;
 
             SetResult(r);
@@ -1063,7 +1065,7 @@ namespace NScumm.Core
             BreakHere();
         }
 
-        protected void SetOwnerOf()
+        protected virtual void SetOwnerOf()
         {
             var obj = GetVarOrDirectWord(OpCodeParameter.Param1);
             var owner = GetVarOrDirectByte(OpCodeParameter.Param2);
@@ -1078,8 +1080,16 @@ namespace NScumm.Core
 
         protected virtual void BreakHere()
         {
-            Slots[CurrentScript].Offset = (uint)CurrentPos;
+            UpdateScriptPointer();
             CurrentScript = 0xFF;
+        }
+
+        private void UpdateScriptPointer()
+        {
+            if (CurrentScript == 0xFF)
+                return;
+
+            Slots[CurrentScript].Offset = (uint)CurrentPos;
         }
 
         protected void LoadRoom()
@@ -1135,7 +1145,7 @@ namespace NScumm.Core
             actor.Animate(anim);
         }
 
-        protected void GetObjectOwner()
+        protected virtual void GetObjectOwner()
         {
             GetResult();
             SetResult(GetOwnerCore(GetVarOrDirectWord(OpCodeParameter.Param1)));
@@ -2207,14 +2217,14 @@ namespace NScumm.Core
         {
             GetResult();
             var a = GetVarOrDirectByte(OpCodeParameter.Param1);
-            SetResult(GetObjX(a));
+            SetResult(GetObjX(ActorToObj(a)));
         }
 
         protected virtual void GetActorY()
         {
             GetResult();
             var a = GetVarOrDirectByte(OpCodeParameter.Param1);
-            SetResult(GetObjY(a));
+            SetResult(GetObjY(ActorToObj(a)));
         }
 
         protected virtual void StartScript()
@@ -2759,8 +2769,21 @@ namespace NScumm.Core
 
             if ((opcode & 0x0f) == 1)
             {
-                // TODO: vs ensureResourceLoaded
-                //                ensureResourceLoaded(type, resid);
+                switch (type)
+                {
+                    case ResType.Room:
+                        ResourceManager.LoadRoom(resid);
+                        break;
+                    case ResType.Script:
+                        ResourceManager.LoadScript(resid);
+                        break;
+                    case ResType.Costume:
+                        ResourceManager.LoadCostume(resid);
+                        break;
+                    case ResType.Sound:
+                        ResourceManager.LoadSound(Sound.MusicType, resid);
+                        break;
+                }
             }
             else
             {

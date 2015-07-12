@@ -32,6 +32,12 @@ namespace NScumm.Dump
             return this;
         }
 
+        public BlockStatement AddStatements(params Statement[] statements)
+        {
+            ChildrenCore.AddRange(statements);
+            return this;
+        }
+
         public BlockStatement AddStatements(IEnumerable<Statement> statements)
         {
             ChildrenCore.AddRange(statements);

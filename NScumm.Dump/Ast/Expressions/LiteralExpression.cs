@@ -32,6 +32,41 @@ namespace NScumm.Dump
     }
 
     [System.Diagnostics.DebuggerDisplay("{DebuggerDisplay,nq}")]
+    public class EnumExpression : Expression, ILiteralExpression
+    {
+        public Enum Value
+        {
+            get;
+            private set;
+        }
+
+        object ILiteralExpression.Value
+        {
+            get { return Value; }
+        }
+
+        internal override string DebuggerDisplay
+        {
+            get { return Value.ToString(); }
+        }
+
+        public EnumExpression(Enum value)
+        {
+            Value = value;
+        }
+
+        public override void Accept(IAstNodeVisitor visitor)
+        {
+            visitor.Visit(this);
+        }
+
+        public override T Accept<T>(IAstNodeVisitor<T> visitor)
+        {
+            return visitor.Visit(this);
+        }
+    }
+
+    [System.Diagnostics.DebuggerDisplay("{DebuggerDisplay,nq}")]
     public abstract class LiteralExpression<T>: Expression, ILiteralExpression
     {
         public T Value
@@ -64,6 +99,8 @@ namespace NScumm.Dump
                 throw new ArgumentException("obj");
             if (obj is int)
                 return new IntegerLiteralExpression((int)obj);
+            if (obj is Enum)
+                return new EnumExpression((Enum)obj);
             if (obj is uint)
                 return new IntegerLiteralExpression((int)(uint)obj);
             if (obj is byte[])

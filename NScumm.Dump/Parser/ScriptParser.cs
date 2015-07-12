@@ -77,6 +77,9 @@ namespace NScumm.Dump
             ScriptParser parser;
             switch (info.Version)
             {
+                case 0:
+                    parser = new ScriptParser0(info);
+                    break;
                 case 3:
                     parser = new ScriptParser3(info);
                     break;
@@ -142,7 +145,7 @@ namespace NScumm.Dump
             return (short)ReadWord();
         }
 
-        protected Expression ReadCharacters()
+        protected virtual Expression ReadCharacters()
         {
             var sb = new List<byte>();
             var character = (byte)ReadByte();
@@ -165,7 +168,7 @@ namespace NScumm.Dump
             return new StringLiteralExpression(sb.ToArray());
         }
 
-        protected Expression ReadVariable(int var)
+        protected virtual Expression ReadVariable(int var)
         {
             if ((var & 0x2000) == 0x2000)
             {

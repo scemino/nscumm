@@ -70,6 +70,7 @@ namespace NScumm.Core.IO
             var room = new Room
             {
                 Header = header,
+                Size = size
             };
 
             // read exit script

@@ -27,7 +27,7 @@ using System.Threading;
 
 namespace NScumm.Core
 {
-    class Sound: ISoundRepository
+    class Sound : ISoundRepository
     {
         public const int TalkSoundID = 10000;
 
@@ -98,6 +98,9 @@ namespace NScumm.Core
                 vm.Variables[vm.VariableLastSound.Value] = sound;
             LastSound = sound;
 
+            // HE music resources are in separate file
+            vm.ResourceManager.LoadSound(MusicType, sound);
+
             soundQueue.Push(sound);
         }
 
@@ -124,9 +127,9 @@ namespace NScumm.Core
             }
 
             // Clear the (secondary) sound queue
-//            _lastSound = 0;
-//            _soundQue2Pos = 0;
-//            memset(_soundQue2, 0, sizeof(_soundQue2));
+            //            _lastSound = 0;
+            //            _soundQue2Pos = 0;
+            //            memset(_soundQue2, 0, sizeof(_soundQue2));
             soundQueue.Clear();
 
             if (vm.MusicEngine != null)
@@ -235,10 +238,10 @@ namespace NScumm.Core
                 {
                     finished = !IsSoundRunning(TalkSoundID);
                 }
-//                else if (_vm->_game.heversion >= 60)
-//                {
-//                    finished = !isSoundRunning(1);
-//                }
+                //                else if (_vm->_game.heversion >= 60)
+                //                {
+                //                    finished = !isSoundRunning(1);
+                //                }
                 else
                 {
                     finished = !_mixer.IsSoundHandleActive(_talkChannelHandle);
@@ -290,10 +293,10 @@ namespace NScumm.Core
                 {
                     ((IMuseDigital)vm.MusicEngine).StopSound(TalkSoundID);
                 }
-//                else if (_vm->_game.heversion >= 60)
-//                {
-//                    stopSound(1);
-//                }
+                //                else if (_vm->_game.heversion >= 60)
+                //                {
+                //                    stopSound(1);
+                //                }
                 else
                 {
                     _mixer.StopHandle(_talkChannelHandle);
@@ -367,6 +370,64 @@ namespace NScumm.Core
             }
         }
 
+        /// <summary>
+        /// Check whether the sound resource with the specified ID is still
+        /// used.This is invoked by ScummEngine::isResourceInUse, to determine
+        /// which resources can be expired from memory.
+        /// Technically, this works very similar to isSoundRunning, however it
+        /// calls IMuse::get_sound_active() instead of IMuse::getSoundStatus().
+        /// The difference between those two is in how they treat sounds which
+        /// are being faded out: get_sound_active() returns true even when the
+        /// sound is being faded out, while getSoundStatus() returns false in
+        /// that case.
+        /// </summary>
+        /// <param name="sound"></param>
+        /// <returns></returns>
+        public bool IsSoundInUse(int sound)
+        {
+            var iMuseDigital = vm.MusicEngine as IMuseDigital;
+            if (iMuseDigital != null)
+                return (iMuseDigital.GetSoundStatus(sound) != 0);
+
+            if (sound == _currentCDSound)
+                return PollCD() != 0;
+
+            if (IsSoundInQueue(sound))
+                return true;
+
+            if (!vm.ResourceManager.IsSoundLoaded(sound))
+                return false;
+
+            if (vm.IMuse != null)
+                return vm.IMuse.GetSoundActive(sound);
+
+            if (vm.Mixer.IsSoundIdActive(sound))
+                return true;
+
+            return false;
+        }
+
+        bool IsSoundInQueue(int sound)
+        {
+            if (soundQueue.Any(snd => snd == sound))
+                return true;
+
+            var i = 0;
+            var soundQueue2 = soundQueueIMuse.ToArray();
+            while (i < soundQueue2.Length)
+            {
+                var num = soundQueue2[i++];
+
+                if (num > 0)
+                {
+                    if (soundQueue2[i + 0] == 0x10F && soundQueue2[i + 1] == 8 && soundQueue2[i + 2] == sound)
+                        return true;
+                    i += num;
+                }
+            }
+            return false;
+        }
+
         void ProcessSoundQueue()
         {
             while (soundQueue.Count > 0)
@@ -422,10 +483,10 @@ namespace NScumm.Core
         void SetupSfxFile()
         {
             var dir = ServiceLocator.FileStorage.GetDirectoryName(vm.Game.Path);
-            _sfxFilename = (from filename in new []{ vm.Game.Id + ".sou", "monster.sou" }
-                                     let path=ScummHelper.NormalizePath(ServiceLocator.FileStorage.Combine(dir, filename))
-                                     where path != null
-                                     select path).FirstOrDefault();
+            _sfxFilename = (from filename in new[] { vm.Game.Id + ".sou", "monster.sou" }
+                            let path = ScummHelper.NormalizePath(ServiceLocator.FileStorage.Combine(dir, filename))
+                            where path != null
+                            select path).FirstOrDefault();
         }
 
         bool IsSfxFinished()
@@ -475,7 +536,7 @@ namespace NScumm.Core
             {
                 if (_sfxFilename == null)
                 {
-//                    Console.Error.WriteLine("StartTalkSound: SFX file not found");
+                    //                    Console.Error.WriteLine("StartTalkSound: SFX file not found");
                     return handle;
                 }
 

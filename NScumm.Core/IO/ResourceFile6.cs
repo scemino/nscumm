@@ -50,7 +50,7 @@ namespace NScumm.Core.IO
 
         Room ReadRoomCore(long offset, long chunkSize)
         {
-            var room = new Room();
+            var room = new Room { Size = (int)chunkSize };
             var it = new ChunkIterator5(_reader, chunkSize);
             var images = new Dictionary<ushort, ObjectData>();
             var objCodes = new Dictionary<ushort, ObjectData>();

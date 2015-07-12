@@ -262,7 +262,7 @@ namespace NScumm.Core
                 }
 
                 ScummHelper.AssertRange(0, var, 20, "local variable (reading)");
-                //                Debug.WriteLine(_slots[_currentScript].LocalVariables[var]);
+                //                Debug.WriteLine(_slots[CurrentScript].LocalVariables[var]);
                 return Slots[CurrentScript].LocalVariables[var];
             }
 
@@ -314,7 +314,7 @@ namespace NScumm.Core
                 }
 
                 ScummHelper.AssertRange(0, index, 20, "local variable (writing)");
-                //Console.WriteLine ("SetLocalVariables(script={0},var={1},value={2})", _currentScript, index, value);
+                //Console.WriteLine ("SetLocalVariables(script={0},var={1},value={2})", CurrentScript, index, value);
                 Slots[CurrentScript].LocalVariables[index] = value;
                 return;
             }
@@ -847,17 +847,17 @@ namespace NScumm.Core
             switch (op)
             {
                 case 1: // load script
-                    _resManager.LoadScript(resId);
+                    ResourceManager.LoadScript(resId);
                     break;
                 case 2: // load sound
-                    // TODO: sound
+                    ResourceManager.LoadSound(Sound.MusicType, resId);
                     break;
                 case 3: // load costume
-                    _resManager.LoadCostume(resId);
+                    ResourceManager.LoadCostume(resId);
                     break;
 
                 case 4: // load room
-                    // TODO: load room
+                    ResourceManager.LoadRoom(resId);
                     break;
 
                 case 5:         // SO_NUKE_SCRIPT
@@ -867,41 +867,48 @@ namespace NScumm.Core
                     break;
 
                 case 9:         // SO_LOCK_SCRIPT
-                    if (resId < _resManager.NumGlobalScripts)
-                    {
-                        //_res.Sounds[resId].Lock = true;
-                    }
+                    if (resId >= ResourceManager.NumGlobalScripts)
+                        break;
+                    ResourceManager.LockScript(resId);
                     break;
-
                 case 10:
-                    // TODO: lock Sound
+                    // FIXME: Sound resources are currently missing
+                    if (Game.GameId == GameId.Loom && Game.Platform == Platform.PCEngine)
+                        break;
+                    ResourceManager.LockSound(resId);
                     break;
 
                 case 11:        // SO_LOCK_COSTUME
-                    //_res.Costumes[resId].Lock = true;
+                    ResourceManager.LockCostume(resId);
                     break;
 
                 case 12:        // SO_LOCK_ROOM
-                    // TODO: lock room
-                    // if (resid > 0x7F)
-                    //    resid = _resourceMapper[resid & 0x7F];
-                    //_res->lock(rtRoom, resid);
+                    if (resId > 0x7F)
+                        resId = _resourceMapper[resId & 0x7F];
+                    ResourceManager.LockRoom(resId);
                     break;
 
                 case 13:        // SO_UNLOCK_SCRIPT
+                    if (resId >= ResourceManager.NumGlobalScripts)
+                        break;
+                    ResourceManager.UnlockScript(resId);
                     break;
 
                 case 14:        // SO_UNLOCKSound
+                                // FIXME: Sound resources are currently missing
+                    if (Game.GameId == GameId.Loom && Game.Platform == Platform.PCEngine)
+                        break;
+                    ResourceManager.UnlockSound(resId);
                     break;
 
                 case 15:        // SO_UNLOCK_COSTUME
+                    ResourceManager.UnlockCostume(resId);
                     break;
 
                 case 16:        // SO_UNLOCK_ROOM
                     if (resId > 0x7F)
                         resId = _resourceMapper[resId & 0x7F];
-                    // TODO: unlock room
-                    //_res->unlock(rtRoom, resId);
+                    ResourceManager.UnlockRoom(resId);
                     break;
 
                 case 17:

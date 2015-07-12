@@ -61,35 +61,35 @@ namespace NScumm.Dump.Tests
         [Test]
         public void ReplaceJumpToIfWithRealExample()
         {
-// cu =
-//            [   0,   5]  Push(156)
-//            [   5,  10]  Push(108)
-//            [  10,  15]  Variables[301] = Pop()
-//            [  15,  16]  StopObjectCode()
-//            [  16,  21]  Push(Bits[563])
-//            [  21,  22]  Push(!Pop())
-//            [  22,  27]  jump 48 if !Pop()
-//            [  27,  32]  Push(972)
-//            [  32,  37]  Push(972)
-//            [  37,  42]  Push(354)
-//            [  42,  43]  LoadRoomWithEgo(Pop(), Pop(), Pop(), Pop())
-//            [  43,  48]  jump 96 if True
-//            [  48,  53]  Push(Bits[9])
-//            [  53,  54]  Push(!Pop())
-//            [  54,  59]  Push(Bits[8])
-//            [  59,  60]  Push(!Pop())
-//            [  60,  61]  Push(Pop() & Pop())
-//            [  61,  66]  jump 80 if !Pop()
-//            [  66,  71]  Push(5)
-//            [  71,  76]  Push(1)
-//            [  76,  77]  CutScene(Pop(25))
-//            [  77,  79]  WaitForCamera()
-//            [  79,  80]  EndCutScene()
-//            [  80,  85]  Push(0)
-//            [  85,  90]  Push(351)
-//            [  90,  95]  Push(0)
-//            [  95,  96]  StartScript(Pop(), Pop(), Pop(25))
-//            [  96,  97]  StopObjectCode()
+            // cu =
+            //            [   0,   5]  Push(156)
+            //            [   5,  10]  Push(108)
+            //            [  10,  15]  Variables[301] = Pop()
+            //            [  15,  16]  StopObjectCode()
+            //            [  16,  21]  Push(Bits[563])
+            //            [  21,  22]  Push(!Pop())
+            //            [  22,  27]  jump 48 if !Pop()
+            //            [  27,  32]  Push(972)
+            //            [  32,  37]  Push(972)
+            //            [  37,  42]  Push(354)
+            //            [  42,  43]  LoadRoomWithEgo(Pop(), Pop(), Pop(), Pop())
+            //            [  43,  48]  jump 96 if True
+            //            [  48,  53]  Push(Bits[9])
+            //            [  53,  54]  Push(!Pop())
+            //            [  54,  59]  Push(Bits[8])
+            //            [  59,  60]  Push(!Pop())
+            //            [  60,  61]  Push(Pop() & Pop())
+            //            [  61,  66]  jump 80 if !Pop()
+            //            [  66,  71]  Push(5)
+            //            [  71,  76]  Push(1)
+            //            [  76,  77]  CutScene(Pop(25))
+            //            [  77,  79]  WaitForCamera()
+            //            [  79,  80]  EndCutScene()
+            //            [  80,  85]  Push(0)
+            //            [  85,  90]  Push(351)
+            //            [  90,  95]  Push(0)
+            //            [  95,  96]  StartScript(Pop(), Pop(), Pop(25))
+            //            [  96,  97]  StopObjectCode()
 
             var cu = new CompilationUnit().AddStatements(new Statement[]
                 {
@@ -124,40 +124,40 @@ namespace NScumm.Dump.Tests
                 });
 
 
-// expectedCu =
-//            [   0,   5]  Push(156)
-//            [   5,  10]  Push(108)
-//            [  10,  15]  Variables[301] = Pop()
-//            [  15,  16]  StopObjectCode()
-//            [  16,  21]  Push(Bits[563])
-//            [  21,  22]  Push(!Pop())
-//            [  22,  27]  if (!Pop())
-//                         {
-//            [  27,  32]    Push(972)
-//            [  32,  37]    Push(972)
-//            [  37,  42]    Push(354)
-//            [  42,  43]    LoadRoomWithEgo(Pop(), Pop(), Pop(), Pop())
-//            [  43,  48]    goto label_96
-//                         }
-//            [  48,  53]  Push(Bits[9])
-//            [  53,  54]  Push(!Pop())
-//            [  54,  59]  Push(Bits[8])
-//            [  59,  60]  Push(!Pop())
-//            [  60,  61]  Push(Pop() & Pop())
-//            [  61,  66]  if !Pop()
-//                         {
-//            [  66,  71]    Push(5)
-//            [  71,  76]    Push(1)
-//            [  76,  77]    CutScene(Pop(25))
-//            [  77,  79]    WaitForCamera()
-//            [  79,  80]    EndCutScene()
-//                         }
-//            [  80,  85]  Push(0)
-//            [  85,  90]  Push(351)
-//            [  90,  95]  Push(0)
-//            [  95,  96]  StartScript(Pop(), Pop(), Pop(25))
-// label_96:
-//            [  96,  97]  StopObjectCode()
+            // expectedCu =
+            //            [   0,   5]  Push(156)
+            //            [   5,  10]  Push(108)
+            //            [  10,  15]  Variables[301] = Pop()
+            //            [  15,  16]  StopObjectCode()
+            //            [  16,  21]  Push(Bits[563])
+            //            [  21,  22]  Push(!Pop())
+            //            [  22,  27]  if (!Pop())
+            //                         {
+            //            [  27,  32]    Push(972)
+            //            [  32,  37]    Push(972)
+            //            [  37,  42]    Push(354)
+            //            [  42,  43]    LoadRoomWithEgo(Pop(), Pop(), Pop(), Pop())
+            //            [  43,  48]    goto label_96
+            //                         }
+            //            [  48,  53]  Push(Bits[9])
+            //            [  53,  54]  Push(!Pop())
+            //            [  54,  59]  Push(Bits[8])
+            //            [  59,  60]  Push(!Pop())
+            //            [  60,  61]  Push(Pop() & Pop())
+            //            [  61,  66]  if !Pop()
+            //                         {
+            //            [  66,  71]    Push(5)
+            //            [  71,  76]    Push(1)
+            //            [  76,  77]    CutScene(Pop(25))
+            //            [  77,  79]    WaitForCamera()
+            //            [  79,  80]    EndCutScene()
+            //                         }
+            //            [  80,  85]  Push(0)
+            //            [  85,  90]  Push(351)
+            //            [  90,  95]  Push(0)
+            //            [  95,  96]  StartScript(Pop(), Pop(), Pop(25))
+            // label_96:
+            //            [  96,  97]  StopObjectCode()
 
             var replacers = new IAstReplacer[]
             {
@@ -170,6 +170,85 @@ namespace NScumm.Dump.Tests
             Array.ForEach(replacers, r => cu = r.Replace(cu));
 
             Console.WriteLine(AstHelper.ToString(cu, true));
+        }
+
+        [Test]
+        public void ReplaceJumpToIfWithRealExample2()
+        {
+            // cu =
+            //[0,65]{
+            //[0, 3]  jump 59 if !ActiveObject.Locked
+            //[3, 7]  Variables[1] = Actors[VariableEgo].GetBitVar(1)
+            //[7,12]  jump 25 if Variables[1] != 1
+            //[12,19] PrintEgo("Easy!")
+            //[19,22] jump 59 if True
+            //[22,25] jump 56 if True
+            //[25,56] PrintEgo("I can't budge it. It's rusted shut.")
+            //[56,59] jump 64 if True
+            //[59,60] ActiveObject.State8 = True
+            //[60,62] Objects[213].State8 = True
+            //[62,64] StartSound(7)
+            //[64,65] StopObjectCode()
+            //[ 0,65]
+            //    }
+
+            var cu = new CompilationUnit().AddStatements(new Statement[]
+            {
+                new JumpStatement(new UnaryExpression(new MemberAccess("ActiveObject","Locked"),Operator.Not),59,0,3),
+                new BinaryExpression(new ElementAccess("Variables", 1), Operator.Assignment,
+                    new MethodInvocation(new MemberAccess(new ElementAccess("Actors","VariableEgo"),"GetBitVar")).AddArgument(1)).ToStatement(3, 7),
+                new JumpStatement(new BinaryExpression(new ElementAccess("Variables",1),Operator.Inequals,1.ToLiteral()),25,7,12),
+                new MethodInvocation("PrintEgo").AddArgument("Easy!").ToStatement(12, 19),
+                new JumpStatement(true.ToLiteral(),59,19,22),
+                new JumpStatement(true.ToLiteral(),56,19,22),
+                new MethodInvocation("PrintEgo").AddArgument("I can't budge it. It's rusted shut.!").ToStatement(256, 56),
+                new JumpStatement(true.ToLiteral(),64,56,59),
+                new BinaryExpression(new MemberAccess("ActiveObject","State8"),Operator.Assignment,true.ToLiteral()).ToStatement(59,60),
+                new BinaryExpression(new ElementAccess("Objects",213),Operator.Assignment,true.ToLiteral()).ToStatement(60,62),
+                new MethodInvocation("StartSound").AddArgument(7).ToStatement(62,64),
+                new MethodInvocation("StopObjectCode").ToStatement(64,65)
+            });
+
+            // expectedCu =
+            //  if ActiveObject.Locked
+            //  {
+            //      Variables[1] = Actors[VariableEgo].GetBitVar(1)
+            //      if Variables[1] == 1
+            //      {
+            //          PrintEgo("Easy!")
+            //      }
+            //      else
+            //      {
+            //          PrintEgo("I can't budge it. It's rusted shut.")
+            //          StopObjectCode();
+            //      }
+            //  }
+            //  ActiveObject.State8 = True
+            //  213.State8 = True
+            //  StartSound(7)
+            //  StopObjectCode()
+
+            var expectedCu = new CompilationUnit().AddStatements(new Statement[]
+            {
+                new IfStatement(new MemberAccess("ActiveObject","Locked")).SetTrueStatement(
+                    new BinaryExpression(new ElementAccess("Variables", 1), Operator.Assignment,
+                        new MethodInvocation(new MemberAccess(new ElementAccess("Actors","VariableEgo"),"GetBitVar")).AddArgument(1)).ToStatement(),
+                    new IfStatement(new BinaryExpression(new ElementAccess("Variables",1),Operator.Equals,1.ToLiteral()))
+                        .SetTrueStatement(new MethodInvocation("PrintEgo").AddArgument("Easy!").ToStatement())
+                        .SetFalseStatement(
+                            new MethodInvocation("PrintEgo").AddArgument("I can't budge it. It's rusted shut.!").ToStatement(),
+                            new MethodInvocation("StopObjectCode").ToStatement())),
+                new BinaryExpression(new MemberAccess("ActiveObject","State8"),Operator.Assignment,true.ToLiteral()).ToStatement(),
+                new BinaryExpression(new ElementAccess("Objects",213),Operator.Assignment,true.ToLiteral()).ToStatement(),
+                new MethodInvocation("StartSound").AddArgument(7).ToStatement(),
+                new MethodInvocation("StopObjectCode").ToStatement()
+            });
+
+            var actualCu = new ReplaceJumpToIf().Replace(cu);
+            Console.WriteLine(AstHelper.ToString(actualCu, false));
+
+            AstHelper.AstEquals(expectedCu, actualCu);
+
         }
     }
 }

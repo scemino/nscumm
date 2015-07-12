@@ -46,7 +46,22 @@ namespace NScumm.Core.IO
             if (roomDisk == 2 && signature != signatureExpected)
                 throw new NotSupportedException(string.Format("Invalid signature '{0:X}' in disk 2", signature));
 
-            var numResources = index.Game.GameId == GameId.Maniac ? maniacResourcesPerFile[resourceNumber] : zakResourcesPerFile[resourceNumber];
+            int numResources;
+            if (index.Game.GameId == GameId.Maniac)
+            {
+                if (index.Game.Features.HasFlag(GameFeatures.Demo))
+                {
+                    numResources = maniacDemoResourcesPerFile[resourceNumber];
+                }
+                else
+                {
+                    numResources = maniacResourcesPerFile[resourceNumber];
+                }
+            }
+            else
+            {
+                numResources  = zakResourcesPerFile[resourceNumber];
+            }
 
             // read resources
             var ms = new MemoryStream();
@@ -57,7 +72,10 @@ namespace NScumm.Core.IO
             {
                 var size = br.ReadUInt16();
                 bw.Write(size);
-                bw.Write(br.ReadBytes(size - 2));
+                if (size > 0)
+                {
+                    bw.Write(br.ReadBytes(size - 2));
+                }
             }
             ms.Seek(0, SeekOrigin.Begin);
             return ms;
@@ -73,6 +91,16 @@ namespace NScumm.Core.IO
                 3, 10,  1,  0,  0
             };
 
+        static readonly int[] maniacDemoResourcesPerFile = 
+            {
+                 0, 12,  0,  2,  1, 12,  1, 13,  6,  0,
+                 31, 0,  1,  0,  0,  0,  0,  1,  1,  1,
+                 0,  1,  0,  0,  2,  0,  0,  1,  0,  0,
+                 2,  7,  1, 11,  0,  0,  5,  1,  0,  0,
+                 1,  0,  1,  3,  4,  3,  1,  0,  0,  1,
+                 2,  2,  0,  0,  0
+            };
+
         static readonly int[] zakResourcesPerFile =
             {
             0, 29, 12, 14, 13,  4,  4, 10,  7,  4,
@@ -83,5 +111,5 @@ namespace NScumm.Core.IO
             3,  1,  2,  1,  2,  1, 10,  1,  1
         };
     }
-    
+
 }

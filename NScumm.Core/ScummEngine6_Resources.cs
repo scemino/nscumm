@@ -33,112 +33,111 @@ namespace NScumm.Core
                 case 100:               // SO_LOAD_SCRIPT
                     {
                         var resid = Pop();
-//                        if (Game.Version >= 7)
-//                        if (resid >= _numGlobalScripts)
-//                            break;
-//                        ensureResourceLoaded(rtScript, resid);
+                        if (Game.Version >= 7)
+                            if (resid >= ResourceManager.NumGlobalScripts)
+                                break;
+                        ResourceManager.LoadScript(resid);
                     }
                     break;
                 case 101:               // SO_LOADSound
                     {
                         var resid = Pop();
-//                        ensureResourceLoaded(rtSound, resid);
+                        ResourceManager.LoadSound(Sound.MusicType, resid);
                     }
                     break;
                 case 102:               // SO_LOAD_COSTUME
                     {
-
                         var resid = Pop();
-//                        ensureResourceLoaded(rtCostume, resid);
+                        ResourceManager.LoadCostume(resid);
                     }
                     break;
                 case 103:               // SO_LOAD_ROOM
                     {
                         var resid = Pop();
-//                        ensureResourceLoaded(rtRoom, resid);
+                        ResourceManager.LoadRoom(resid);
                     }
                     break;
                 case 104:               // SO_NUKE_SCRIPT
                     {
                         var resid = Pop();
-//                        if (_game.version >= 7)
-//                        if (resid >= _numGlobalScripts)
-//                            break;
-//                        _res->setResourceCounter(rtScript, resid, 0x7F);
+                        if (Game.Version >= 7)
+                            if (resid >= ResourceManager.NumGlobalScripts)
+                                break;
+                        ResourceManager.SetScriptCounter(resid, 0x7F);
                     }
                     break;
                 case 105:               // SO_NUKESound
                     {
                         var resid = Pop();
-//                        _res->setResourceCounter(rtSound, resid, 0x7F);
+                        ResourceManager.SetSoundCounter(resid, 0x7F);
                     }
                     break;
                 case 106:               // SO_NUKE_COSTUME
                     {
                         var resid = Pop();
-//                        _res->setResourceCounter(rtCostume, resid, 0x7F);
+                        ResourceManager.SetCostumeCounter(resid, 0x7F);
                     }
                     break;
                 case 107:               // SO_NUKE_ROOM
                     {
                         var resid = Pop();
-//                        _res->setResourceCounter(rtRoom, resid, 0x7F);
+                        ResourceManager.SetRoomCounter(resid, 0x7F);
                     }
                     break;
                 case 108:               // SO_LOCK_SCRIPT
                     {
                         var resid = Pop();
-//                    if (resid >= _numGlobalScripts)
-//                        break;
-//                    _res->lock(rtScript, resid);
+                        if (resid >= ResourceManager.NumGlobalScripts)
+                            break;
+                        ResourceManager.LockScript(resid);
                     }
                     break;
                 case 109:               // SO_LOCKSound
                     {
                         var resid = Pop();
-//                    _res->lock(rtSound, resid);
+                        ResourceManager.LockSound(resid);
                     }
                     break;
                 case 110:               // SO_LOCK_COSTUME
                     {
                         var resid = Pop();
-//                    _res->lock(rtCostume, resid);
+                        ResourceManager.LockCostume(resid);
                     }
                     break;
                 case 111:               // SO_LOCK_ROOM
                     {
                         var resid = Pop();
-//                    if (resid > 0x7F)
-//                        resid = _resourceMapper[resid & 0x7F];
-//                    _res->lock(rtRoom, resid);
+                        if (resid > 0x7F)
+                            resid = _resourceMapper[resid & 0x7F];
+                        ResourceManager.LockRoom(resid);
                     }
                     break;
                 case 112:               // SO_UNLOCK_SCRIPT
                     {
                         var resid = Pop();
-//                    if (resid >= _numGlobalScripts)
-//                        break;
-//                    _res->unlock(rtScript, resid);
+                        if (resid >= ResourceManager.NumGlobalScripts)
+                            break;
+                        ResourceManager.UnlockScript(resid);
                     }
                     break;
                 case 113:               // SO_UNLOCKSound
                     {
                         var resid = Pop();
-//                    _res->unlock(rtSound, resid);
+                        ResourceManager.UnlockSound(resid);
                     }
                     break;
                 case 114:               // SO_UNLOCK_COSTUME
                     {
                         var resid = Pop();
-//                    _res->unlock(rtCostume, resid);
+                        ResourceManager.UnlockCostume(resid);
                     }
                     break;
                 case 115:               // SO_UNLOCK_ROOM
                     {
                         var resid = Pop();
-//                    if (resid > 0x7F)
-//                        resid = _resourceMapper[resid & 0x7F];
-//                    _res->unlock(rtRoom, resid);
+                        if (resid > 0x7F)
+                            resid = _resourceMapper[resid & 0x7F];
+                        ResourceManager.UnlockRoom(resid);
                     }
                     break;
                 case 116:               // SO_CLEAR_HEAP
@@ -153,7 +152,7 @@ namespace NScumm.Core
                 case 118:               // SO_NUKE_CHARSET
                     {
                         var resid = Pop();
-//                    nukeCharset(resid);
+                        //                    nukeCharset(resid);
                     }
                     break;
                 case 119:               // SO_LOAD_OBJECT
@@ -184,7 +183,7 @@ namespace NScumm.Core
 
         }
 
-        protected int GetObjectRoom(int obj) 
+        protected int GetObjectRoom(int obj)
         {
             return _resManager.ObjectRoomTable[obj];
         }

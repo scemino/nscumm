@@ -27,7 +27,7 @@ using System.Diagnostics;
 
 namespace NScumm.Core
 {
-    partial class ScummEngine8: ScummEngine7
+    partial class ScummEngine8 : ScummEngine7
     {
         int _keyScriptKey, _keyScriptNo;
 
@@ -159,7 +159,7 @@ namespace NScumm.Core
         {
             if ((var & 0xF0000000) == 0)
             {
-//                Debug.WriteLine("ReadVar({0})", var);
+                //                Debug.WriteLine("ReadVar({0})", var);
                 ScummHelper.AssertRange(0, var, Variables.Length - 1, "variable");
                 return Variables[var];
             }
@@ -167,7 +167,7 @@ namespace NScumm.Core
             if ((var & 0x80000000) != 0)
             {
                 var &= 0x7FFFFFFF;
-//                Debug.WriteLine("Read BitVars({0})", var);
+                //                Debug.WriteLine("Read BitVars({0})", var);
                 ScummHelper.AssertRange(0, var, _bitVars.Length - 1, "bit variable (reading)");
                 return _bitVars[(int)var] ? 1 : 0;
             }
@@ -175,7 +175,7 @@ namespace NScumm.Core
             if ((var & 0x40000000) != 0)
             {
                 var &= 0xFFFFFFF;
-//                Debug.WriteLine("Read LocalVariables({0})", var);
+                //                Debug.WriteLine("Read LocalVariables({0})", var);
                 ScummHelper.AssertRange(0, var, 25, "local variable (reading)");
                 return Slots[CurrentScript].LocalVariables[var];
             }
@@ -187,26 +187,26 @@ namespace NScumm.Core
         {
             if ((index & 0xF0000000) == 0)
             {
-//                Debug.WriteLine("WriteVar({0}, {1})", var, value);
+                //                Debug.WriteLine("WriteVar({0}, {1})", var, value);
                 ScummHelper.AssertRange(0, index, Variables.Length - 1, "variable (writing)");
 
-//                if (var == VAR_CHARINC)
-//                {
-//                    // Did the user override the talkspeed manually? Then use that.
-//                    // Otherwise, use the value specified by the game script.
-//                    // Note: To determine whether there was a user override, we only
-//                    // look at the target specific settings, assuming that any global
-//                    // value is likely to be bogus. See also bug #2251765.
-//                    if (ConfMan.hasKey("talkspeed", _targetName))
-//                    {
-//                        value = getTalkSpeed();
-//                    }
-//                    else
-//                    {
-//                        // Save the new talkspeed value to ConfMan
-//                        setTalkSpeed(value);
-//                    }
-//                }
+                //                if (var == VAR_CHARINC)
+                //                {
+                //                    // Did the user override the talkspeed manually? Then use that.
+                //                    // Otherwise, use the value specified by the game script.
+                //                    // Note: To determine whether there was a user override, we only
+                //                    // look at the target specific settings, assuming that any global
+                //                    // value is likely to be bogus. See also bug #2251765.
+                //                    if (ConfMan.hasKey("talkspeed", _targetName))
+                //                    {
+                //                        value = getTalkSpeed();
+                //                    }
+                //                    else
+                //                    {
+                //                        // Save the new talkspeed value to ConfMan
+                //                        setTalkSpeed(value);
+                //                    }
+                //                }
 
                 Variables[index] = value;
 
@@ -216,7 +216,7 @@ namespace NScumm.Core
             if ((index & 0x80000000) != 0)
             {
                 index &= 0x7FFFFFFF;
-//                Debug.WriteLine("Write BitVars({0}, {1})", var, value);
+                //                Debug.WriteLine("Write BitVars({0}, {1})", var, value);
                 ScummHelper.AssertRange(0, index, _bitVars.Length - 1, "bit variable (writing)");
 
                 _bitVars[(int)index] = value != 0;
@@ -226,7 +226,7 @@ namespace NScumm.Core
             if ((index & 0x40000000) != 0)
             {
                 index &= 0xFFFFFFF;
-//                Debug.WriteLine("Write LocalVariables({0}, {1})", var, value);
+                //                Debug.WriteLine("Write LocalVariables({0}, {1})", var, value);
                 ScummHelper.AssertRange(0, index, 25, "local variable (writing)");
                 Slots[CurrentScript].LocalVariables[index] = value;
                 return;
@@ -918,7 +918,7 @@ namespace NScumm.Core
                         int x = Pop();
 
                         // TODO:
-//                        _system.warpMouse(x, y);
+                        //                        _system.warpMouse(x, y);
                     }
                     break;
                 default:
@@ -1012,7 +1012,7 @@ namespace NScumm.Core
                 case 0x3C:      // Dummy case
                     break;
                 case 0x3D:      // SO_HEAP_LOAD_COSTUME Load costume to heap
-//                    ensureResourceLoaded(rtCostume, resid);
+                    ResourceManager.LoadCostume(resid);
                     break;
                 case 0x3E:      // SO_HEAP_LOAD_OBJECT Load object to heap
                     {
@@ -1021,50 +1021,50 @@ namespace NScumm.Core
                     }
                     break;
                 case 0x3F:      // SO_HEAP_LOAD_ROOM Load room to heap
-//                    ensureResourceLoaded(rtRoom, resid);
+                    ResourceManager.LoadRoom(resid);
                     break;
                 case 0x40:      // SO_HEAP_LOAD_SCRIPT Load script to heap
-//                    ensureResourceLoaded(rtScript, resid);
+                    ResourceManager.LoadScript(resid);
                     break;
                 case 0x41:      // SO_HEAP_LOAD_SOUND Load sound to heap
-//                    ensureResourceLoaded(rtSound, resid);
+                    ResourceManager.LoadSound(Sound.MusicType, resid);
                     break;
 
                 case 0x42:      // SO_HEAP_LOCK_COSTUME Lock costume in heap
-//                    _res.lock(rtCostume, resid);
+                    ResourceManager.LockCostume(resid);
                     break;
                 case 0x43:      // SO_HEAP_LOCK_ROOM Lock room in heap
-//                    _res.lock(rtRoom, resid);
+                    ResourceManager.LockRoom(resid);
                     break;
                 case 0x44:      // SO_HEAP_LOCK_SCRIPT Lock script in heap
-//                    _res.lock(rtScript, resid);
+                    ResourceManager.LockScript(resid);
                     break;
                 case 0x45:      // SO_HEAP_LOCK_SOUND Lock sound in heap
-//                    _res.lock(rtSound, resid);
+                    ResourceManager.LockSound(resid);
                     break;
                 case 0x46:      // SO_HEAP_UNLOCK_COSTUME Unlock costume
-//                    _res.unlock(rtCostume, resid);
+                    ResourceManager.UnlockCostume(resid);
                     break;
                 case 0x47:      // SO_HEAP_UNLOCK_ROOM Unlock room
-//                    _res.unlock(rtRoom, resid);
+                    ResourceManager.UnlockRoom(resid);
                     break;
                 case 0x48:      // SO_HEAP_UNLOCK_SCRIPT Unlock script
-//                    _res.unlock(rtScript, resid);
+                    ResourceManager.UnlockScript(resid);
                     break;
                 case 0x49:      // SO_HEAP_UNLOCK_SOUND Unlock sound
-//                    _res.unlock(rtSound, resid);
+                    ResourceManager.UnlockSound(resid);
                     break;
                 case 0x4A:      // SO_HEAP_NUKE_COSTUME Remove costume from heap
-//                    _res.setResourceCounter(rtCostume, resid, 0x7F);
+                    ResourceManager.SetCostumeCounter(resid, 0x7F);
                     break;
                 case 0x4B:      // SO_HEAP_NUKE_ROOM Remove room from heap
-//                    _res.setResourceCounter(rtRoom, resid, 0x7F);
+                    ResourceManager.SetRoomCounter(resid, 0x7F);
                     break;
                 case 0x4C:      // SO_HEAP_NUKE_SCRIPT Remove script from heap
-//                    _res.setResourceCounter(rtScript, resid, 0x7F);
+                    ResourceManager.SetScriptCounter(resid, 0x7F);
                     break;
                 case 0x4D:      // SO_HEAP_NUKE_SOUND Remove sound from heap
-//                    _res.setResourceCounter(rtSound, resid, 0x7F);
+                    ResourceManager.SetSoundCounter(resid, 0x7F);
                     break;
                 default:
                     throw new InvalidOperationException(string.Format("ResourceRoutines8: default case 0x{0:X}", subOp));
@@ -1250,7 +1250,7 @@ namespace NScumm.Core
                         a.TalkPosition = new Point(x, y);
                     }
                     break;
-            //  case 0x7A:      // SO_ACTOR_INIT Set current actor (handled above)
+                //  case 0x7A:      // SO_ACTOR_INIT Set current actor (handled above)
                 case 0x7B:      // SO_ACTOR_VARIABLE Set actor variable
                     i = Pop();
                     a.SetAnimVar(Pop(), i);
@@ -1541,7 +1541,7 @@ namespace NScumm.Core
                     }
                     break;
                 case 15:    // setVideoFrameRate
-                        // not used anymore (was smush frame rate)
+                            // not used anymore (was smush frame rate)
                     break;
                 case 20:    // setBoxScaleSlot
                     SetBoxScaleSlot(args[1], args[2]);
@@ -1550,7 +1550,7 @@ namespace NScumm.Core
                     SetScaleSlot(args[1], args[2], args[3], args[4], args[5], args[6], args[7]);
                     break;
                 case 22:    // setBannerColors
-                        //      debug(0, "o8_kernelSetFunctions: setBannerColors(%d, %d, %d, %d)", args[1], args[2], args[3], args[4]);
+                            //      debug(0, "o8_kernelSetFunctions: setBannerColors(%d, %d, %d, %d)", args[1], args[2], args[3], args[4]);
                     break;
                 case 23:    // setActorChoreLimbFrame
                     {
@@ -1565,19 +1565,19 @@ namespace NScumm.Core
                     break;
                 case 25:
                     {  // saveGameReadName
-//                        string name;
-//                        if (GetSavegameName(args[1], out name))
-//                        {
-//                            int size = name.Length + 1;
-//                            _res.nukeResource(rtString, args[2]);
-//
-//                            var ah = _res.createResource(rtString, args[2], size + sizeof(ArrayHeader));
-//                            ah.type = TO_LE_16(kStringArray);
-//                            ah.dim1 = TO_LE_16(size + 1);
-//                            ah.dim2 = TO_LE_16(1);
-//
-//                            memcpy(getStringAddress(args[2]), name.c_str(), size);
-//                        }
+                       //                        string name;
+                       //                        if (GetSavegameName(args[1], out name))
+                       //                        {
+                       //                            int size = name.Length + 1;
+                       //                            _res.nukeResource(rtString, args[2]);
+                       //
+                       //                            var ah = _res.createResource(rtString, args[2], size + sizeof(ArrayHeader));
+                       //                            ah.type = TO_LE_16(kStringArray);
+                       //                            ah.dim1 = TO_LE_16(size + 1);
+                       //                            ah.dim2 = TO_LE_16(1);
+                       //
+                       //                            memcpy(getStringAddress(args[2]), name.c_str(), size);
+                       //                        }
                         throw new NotImplementedException("saveGameReadName");
                         //break;
                     }
@@ -1620,11 +1620,11 @@ namespace NScumm.Core
                     Debug.WriteLine("KernelSetFunctions8: paletteSetIntensity({0}, {1})", args[1], args[2]);
                     break;
                 case 34:    // queryQuit
-                    // TODO: query quit
-//                    if (ConfMan.getBool("confirm_exit"))
-//                        confirmExitDialog();
-//                    else
-//                        quitGame();
+                            // TODO: query quit
+                            //                    if (ConfMan.getBool("confirm_exit"))
+                            //                        confirmExitDialog();
+                            //                    else
+                            //                        quitGame();
                     break;
                 case 108:   // buildPaletteShadow
                     SetShadowPalette(args[1], args[2], args[3], args[4], args.Length < 6 ? 0 : args[5], args.Length < 7 ? 0 : args[6]);
@@ -1795,19 +1795,19 @@ namespace NScumm.Core
                         int idx = args[1];
                         var str = System.Text.Encoding.UTF8.GetString(GetStringAddress(idx));
                         // TODO:
-//                        if (str=="SFX Volume")
-//                            Push(ConfMan.getInt("sfx_volume") / 2);
-//                        else if (!strcmp(str, "Voice Volume"))
-//                            push(ConfMan.getInt("speech_volume") / 2);
-//                        else if (!strcmp(str, "Music Volume"))
-//                            push(ConfMan.getInt("music_volume") / 2);
-//                        else if (!strcmp(str, "Text Status"))
-//                            push(ConfMan.getBool("subtitles"));
-//                        else if (!strcmp(str, "Object Names"))
-//                            push(ConfMan.getBool("object_labels"));
-//                        else if (!strcmp(str, "Saveload Page"))
-//                            push(14);
-//                        else        // Use defaults
+                        //                        if (str=="SFX Volume")
+                        //                            Push(ConfMan.getInt("sfx_volume") / 2);
+                        //                        else if (!strcmp(str, "Voice Volume"))
+                        //                            push(ConfMan.getInt("speech_volume") / 2);
+                        //                        else if (!strcmp(str, "Music Volume"))
+                        //                            push(ConfMan.getInt("music_volume") / 2);
+                        //                        else if (!strcmp(str, "Text Status"))
+                        //                            push(ConfMan.getBool("subtitles"));
+                        //                        else if (!strcmp(str, "Object Names"))
+                        //                            push(ConfMan.getBool("object_labels"));
+                        //                        else if (!strcmp(str, "Saveload Page"))
+                        //                            push(14);
+                        //                        else        // Use defaults
                         Push(-1);
                         Debug.WriteLine("KernelGetFunctions8: ReadRegistryValue({0})", str);
                     }

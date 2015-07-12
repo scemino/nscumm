@@ -3,6 +3,8 @@ using Mono.Options;
 using System.Collections.Generic;
 using System.Linq;
 using NScumm.Core;
+using System.Text;
+using System;
 
 namespace NScumm.Dump
 {
@@ -103,17 +105,58 @@ namespace NScumm.Dump
                 foreach (var room in roomScripts)
                 {
                     dumper.WriteLine("Room {0}", room.Number);
-                    dumper.WriteLine("  Entry");
-                    scriptDumper.DumpScript(room.EntryScript.Data, dumper);
-                    dumper.WriteLine("  Exit");
-                    scriptDumper.DumpScript(room.ExitScript.Data, dumper);
+                    if (room.EntryScript.Data.Length > 0)
+                    {
+                        dumper.WriteLine("Entry");
+                        scriptDumper.DumpScript(room.EntryScript.Data, dumper);
+                        dumper.WriteLine();
+                    }
+                    if (room.ExitScript.Data.Length > 0)
+                    {
+                        dumper.WriteLine("Exit");
+                        scriptDumper.DumpScript(room.ExitScript.Data, dumper);
+                        dumper.WriteLine();
+                    }
                     for (int i = 0; i < room.LocalScripts.Length; i++)
                     {
                         var ls = room.LocalScripts[i];
                         if (ls != null)
                         {
-                            dumper.WriteLine("  LocalScript {0}", i);
+                            dumper.WriteLine("LocalScript {0}", i);
                             scriptDumper.DumpScript(ls.Data, dumper);
+                        }
+                    }
+                    for (int i = 0; i < room.Objects.Count; i++)
+                    {
+                        var obj = room.Objects[i];
+                        if (obj != null && obj.Script.Data.Length > 0)
+                        {
+                            var sb = new StringBuilder();
+                            var decoder = new TextDecoder(sb);
+                            var text = new ScummText(obj.Name);
+                            text.Decode(decoder);
+
+                            dumper.WriteLine("obj {0} {1}", obj.Number, sb);
+                            var tmp = obj.Script.Offset;
+                            var offsets = new long[] { 0, obj.Script.Data.Length }.Concat(obj.ScriptOffsets.Select(off => off.Value - tmp)).OrderBy(o => o).Distinct().ToList();
+                            var scr = new List<Tuple<long, byte[]>>();
+                            for (int j = 0; j < offsets.Count - 1; j++)
+                            {
+                                var len = offsets[j + 1] - offsets[j];
+                                var d = new byte[len];
+                                Array.Copy(obj.Script.Data, offsets[j], d, 0, len);
+                                scr.Add(Tuple.Create(offsets[j], d));
+                            }
+                            foreach (var s in scr)
+                            {
+                                var keys = obj.ScriptOffsets.Where(o => o.Value - tmp == s.Item1).Select(o => o.Key).ToList();
+                                foreach (var key in keys)
+                                {
+                                    dumper.WriteLine("{0}", (VerbsV0)key);
+                                }
+                                scriptDumper.DumpScript(s.Item2, dumper);
+                            }
+                            dumper.WriteLine();
                         }
                     }
                 }

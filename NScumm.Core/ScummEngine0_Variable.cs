@@ -45,6 +45,11 @@ namespace NScumm.Core
             _currentLights = (byte)(LightModes.ActorUseBasePalette | LightModes.ActorUseColors | LightModes.RoomLightsOn);
         }
 
+        protected override int GetVarOrDirectWord(OpCodeParameter param)
+        {
+            return GetVarOrDirectByte(param);
+        }
+
         void SetBitVar()
         {
             var flag = GetVarOrDirectByte(OpCodeParameter.Param1);

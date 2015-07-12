@@ -93,12 +93,13 @@ namespace NScumm.Dump
                 var compilationUnit = scriptInterpreter.Parse(data);
                 var replacers = new IAstReplacer[]
                 {
-                    new ReplacePushAndPop(),
+                    //new ReplacePushAndPop(),
                     new ResolveVariables(scriptInterpreter.KnownVariables),
-                    new ResolveAllTypesOfVariables(Game.Version),
-                    new ReplaceJumpToIf(),
-                    new ReplaceJumpToWhile(),
-                    new ReplaceJumpToGoTo()
+                    //new ResolveAllTypesOfVariables(Game.Version),
+                    // OK forget about this, I have to use structuring...
+                    //new ReplaceJumpToIf(),
+                    //new ReplaceJumpToWhile(),
+                    //new ReplaceJumpToGoTo()
                 };
                 Array.ForEach(replacers, r => compilationUnit = r.Replace(compilationUnit));
 

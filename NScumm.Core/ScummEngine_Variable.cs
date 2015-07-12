@@ -123,7 +123,7 @@ namespace NScumm.Core
 
         protected byte ReadByte()
         {
-            return _currentScriptData[_currentPos++];
+            return _currentScriptData[CurrentPos++];
         }
 
         protected virtual uint ReadWord()
@@ -133,7 +133,7 @@ namespace NScumm.Core
 
         protected uint FetchScriptWord()
         {
-            ushort word = (ushort)(_currentScriptData[_currentPos++] | (_currentScriptData[_currentPos++] << 8));
+            ushort word = (ushort)(_currentScriptData[CurrentPos++] | (_currentScriptData[CurrentPos++] << 8));
             return word;
         }
 
@@ -141,7 +141,7 @@ namespace NScumm.Core
 
         protected abstract int ReadVariable(uint var);
 
-        protected int GetVarOrDirectWord(OpCodeParameter param)
+        protected virtual int GetVarOrDirectWord(OpCodeParameter param)
         {
             if (((OpCodeParameter)_opCode).HasFlag(param))
                 return GetVar();

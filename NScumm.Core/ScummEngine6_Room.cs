@@ -87,7 +87,7 @@ namespace NScumm.Core
                     _saveTemporaryState = true;
                     _saveLoadSlot = Pop();
                     _saveLoadFlag = Pop();
-                    if (Game.GameId == NScumm.Core.IO.GameId.Tentacle)
+                    if (Game.GameId == IO.GameId.Tentacle)
                         _saveSound = (_saveLoadSlot != 0);
                     break;
                 case 181:               // SO_ROOM_FADE
@@ -161,7 +161,7 @@ namespace NScumm.Core
                         // this way, we avoid some graphics glitches that the original
                         // interpreter had.
 
-                        if (Game.GameId == NScumm.Core.IO.GameId.SamNMax && Slots[CurrentScript].Number == 64)
+                        if (Game.GameId == IO.GameId.SamNMax && Slots[CurrentScript].Number == 64)
                             SetDirtyColors(0, 255);
                         else
                             SetCurrentPalette(a);

@@ -57,6 +57,7 @@ namespace NScumm.Core.IO
             var room = new Room();
             _reader.BaseStream.Seek(offset, SeekOrigin.Begin);
             var it = CreateChunkIterator(_reader.BaseStream.Length - offset);
+            room.Size = (int)it.Current.Size;
             var images = new Dictionary<ushort, ObjectData>();
             do
             {

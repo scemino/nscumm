@@ -191,7 +191,7 @@ namespace NScumm.Core
 
         protected void SetObjectNameCore(int obj)
         {
-            if (obj < Actors.Length)
+            if (IsActor(obj))
             {
                 string msg = string.Format("Can't set actor {0} name with new name.", obj);
                 throw new NotSupportedException(msg);
@@ -580,9 +580,9 @@ namespace NScumm.Core
             {
                 ClearOwnerOf(obj);
 
-                if (_currentScript != 0xFF)
+                if (CurrentScript != 0xFF)
                 {
-                    var ss = _slots[_currentScript];
+                    var ss = _slots[CurrentScript];
                     if (ss.Where == WhereIsObject.Inventory)
                     {
                         if (ss.Number < _resManager.NumInventory && _inventory[ss.Number] == obj)

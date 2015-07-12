@@ -41,7 +41,7 @@ namespace NScumm.Core.IO
             var tmp = _reader.ReadBytes(2);
             var header = ReadRMHD();
 
-            var room = new Room { Header = header };
+            var room = new Room { Header = header, Size = size };
          
             // 6
             var img = new ImageData1();

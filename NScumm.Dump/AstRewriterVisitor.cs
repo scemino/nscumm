@@ -37,7 +37,7 @@ namespace NScumm.Dump
 
         public override IAstNode Visit(IfStatement node)
         {
-            return new IfStatement((Expression)node.Condition.Accept(this), (Statement)node.TrueStatement.Accept(this), node.StartOffset, node.EndOffset);
+            return new IfStatement((Expression)node.Condition.Accept(this), (Statement)node.TrueStatement.Accept(this), (Statement)node.FalseStatement.Accept(this), node.StartOffset, node.EndOffset);
         }
 
         public override IAstNode Visit(CaseStatement node)

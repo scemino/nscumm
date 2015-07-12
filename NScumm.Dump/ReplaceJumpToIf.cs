@@ -56,7 +56,7 @@ namespace NScumm.Dump
                     var ifStatement2 = (IfStatement)statement;
                     var b2 = ReplaceJump(jump, (BlockStatement)ifStatement2.TrueStatement);
                     var newIfStatement2 = new IfStatement(ifStatement2.Condition, new BlockStatement()){ StartOffset = ifStatement2.StartOffset, EndOffset = ifStatement2.EndOffset };
-                    ((BlockStatement)newIfStatement2.TrueStatement).AddStatements(b2);
+                    ((BlockStatement)newIfStatement2.TrueStatement).AddStatements((IEnumerable<Statement>)b2);
                     newBlock.AddStatement(newIfStatement2);
                 }
                 else if (statement.StartOffset == jump.StartOffset)

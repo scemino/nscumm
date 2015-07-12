@@ -37,7 +37,7 @@ namespace NScumm.Core
             {
                 if (Actors[i].Cost.SoundCounter != 0 && Actors[i].IsInCurrentRoom)
                 {
-                    _currentScript = 0xFF;
+                    CurrentScript = 0xFF;
 
                     if (Game.Version == 0)
                     {

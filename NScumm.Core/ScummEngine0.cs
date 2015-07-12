@@ -28,7 +28,7 @@ using System.Diagnostics;
 
 namespace NScumm.Core
 {
-    enum Engine0Mode
+    public enum Engine0Mode
     {
         /// <summary>
         /// Cutscene active.
@@ -48,7 +48,7 @@ namespace NScumm.Core
         Normal = 3
     }
 
-    enum VerbsV0
+    public enum VerbsV0
     {
         None = 0,
         Open = 1,
@@ -111,7 +111,7 @@ namespace NScumm.Core
         Actor = 2
     }
 
-    enum ActorV0MiscFlags
+    public enum ActorV0MiscFlags
     {
         Strong = 0x01,
         // Kid is strong (Hunk-O-Matic used)
@@ -131,7 +131,7 @@ namespace NScumm.Core
         // Kid is invisible (dead or in radiation suit)
     }
 
-    public partial class ScummEngine0: ScummEngine2
+    public partial class ScummEngine0 : ScummEngine2
     {
         bool _drawDemo;
         bool _redrawSentenceLine;
@@ -676,10 +676,50 @@ namespace NScumm.Core
             return ReadByte();
         }
 
+        protected override void Print()
+        {
+            _actorToPrintStrFor = ReadByte();
+            DecodeParseString();
+        }
+
         protected override void PrintEgo()
         {
             _actorToPrintStrFor = (byte)Variables[VariableEgo.Value];
             DecodeParseString();
+        }
+
+        protected override void SetObjectName()
+        {
+            int obj;
+            int objId = ReadByte();
+            if (objId == 0)
+            {
+                obj = _cmdObject;
+            }
+            else
+            {
+                if ((_opCode & 0x80) != 0)
+                    obj = OBJECT_V0(objId, ObjectV0Type.Background);
+                else
+                    obj = OBJECT_V0(objId, ObjectV0Type.Foreground);
+            }
+            SetObjectNameCore(obj);
+        }
+
+        protected override void GetObjectOwner()
+        {
+            GetResult();
+            var owner = GetVarOrDirectWord(OpCodeParameter.Param1);
+            SetResult(GetOwnerCore(owner != 0 ? owner : _cmdObject));
+        }
+
+        protected override void SetOwnerOf()
+        {
+            var obj = GetVarOrDirectWord(OpCodeParameter.Param1);
+            var owner = GetVarOrDirectByte(OpCodeParameter.Param2);
+            if (obj==0)
+                obj = _cmdObject;
+            SetOwnerOf(obj, owner);
         }
 
         internal override LightModes GetCurrentLights()
@@ -1085,19 +1125,25 @@ namespace NScumm.Core
         void LoadCostume()
         {
             int resid = GetVarOrDirectByte(OpCodeParameter.Param1);
-//            ensureResourceLoaded(rtCostume, resid);
+            ResourceManager.LoadCostume(resid);
         }
 
         void LoadRoomCore()
         {
             int resid = GetVarOrDirectByte(OpCodeParameter.Param1);
-            //            ensureResourceLoaded(rtRoom, resid);
+            ResourceManager.LoadRoom(resid);
         }
 
         void LoadScript()
         {
             int resid = GetVarOrDirectByte(OpCodeParameter.Param1);
-//            ensureResourceLoaded(rtScript, resid);
+            ResourceManager.LoadScript(resid);
+        }
+
+        void LoadSound()
+        {
+            int resid = ReadByte();
+            ResourceManager.LoadSound(Sound.MusicType, resid);
         }
 
         void Lights()
@@ -1118,12 +1164,6 @@ namespace NScumm.Core
             _fullRedraw = true;
         }
 
-        void LoadSound()
-        {
-            int resid = ReadByte();
-//            ensureResourceLoaded(rtSound, resid);
-        }
-
         void LockCostume()
         {
             int resid = ReadByte();
@@ -1142,7 +1182,7 @@ namespace NScumm.Core
         {
             int resid = ReadByte();
             // TODO: lock sound
-//            _res.lock(rtSound, resid);
+            //            _res.lock(rtSound, resid);
         }
 
         void UnlockSound()

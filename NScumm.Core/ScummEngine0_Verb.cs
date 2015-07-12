@@ -18,9 +18,11 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+using System;
 using System.Linq;
 using NScumm.Core.Graphics;
 using NScumm.Core.Input;
+using NScumm.Core.IO;
 
 namespace NScumm.Core
 {
@@ -302,10 +304,10 @@ namespace NScumm.Core
                 }
             }
 
-            //            if (_drawDemo && Game.Features.HasFlag(GameFeatures.Demo))
-            //            {
-            //                VerbDemoMode();
-            //            }
+            if (_drawDemo && Game.Features.HasFlag(GameFeatures.Demo))
+            {
+                VerbDemoMode();
+            }
 
             if (_redrawSentenceLine)
                 DrawSentenceLine();
@@ -322,6 +324,67 @@ namespace NScumm.Core
                     VerbExec();
             }
         }
+
+        private void VerbDemoMode()
+        {
+            for (var i = 1; i < 16; i++)
+                KillVerb(i);
+
+            for (var i = 0; i < 6; i++)
+            {
+                VerbDrawDemoString(i);
+            }
+        }
+
+        void VerbDrawDemoString(int VerbDemoNumber)
+        {
+            var str = new byte[80];
+            var ptr = v0DemoStr[VerbDemoNumber].Text;
+            int i = 0, len = 0;
+
+            // Maximum length of printable characters
+            int maxChars = 40;
+            foreach (var p in ptr)
+            {
+                if (p != '@')
+                    len++;
+                if (len > maxChars)
+                {
+                    break;
+                }
+
+                str[i++] = (byte)p;
+            }
+            str[i] = 0;
+
+            String[2].Charset = 1;
+            String[2].Position = new Point(0, VerbVirtScreen.TopLine + (8 * VerbDemoNumber));
+            String[2].Right = (short)(VerbVirtScreen.Width - 1);
+            String[2].Color = (byte)v0DemoStr[VerbDemoNumber].Color;
+            DrawString(2, str);
+        }
+
+        class VerbDemo
+        {
+            public int Color { get; private set; }
+            public string Text { get; private set; }
+
+            public VerbDemo(int color, string str)
+            {
+                Color = color;
+                Text = str;
+            }
+        }
+
+        static readonly VerbDemo[] v0DemoStr = new VerbDemo[]
+        {
+            new VerbDemo(7,  "        MANIAC MANSION DEMO DISK        "),
+            new VerbDemo(5,  "          from Lucasfilm Games          "),
+            new VerbDemo(5,  "    Copyright = 1987 by Lucasfilm Ltd.  "),
+            new VerbDemo(5,  "           All Rights Reserved.         "),
+            new VerbDemo(0,  "                                        "),
+            new VerbDemo(16, "       Press F7 to return to menu.      ")
+        };
 
         struct VerbSettings
         {

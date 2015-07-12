@@ -47,7 +47,7 @@ namespace NScumm.Core.IO
         }
     }
 
-    public abstract class ResourceManager
+    public abstract class ResourceManager : IEnableTrace
     {
         protected GameInfo Game { get; private set; }
 
@@ -80,11 +80,12 @@ namespace NScumm.Core.IO
                     {
                         room = GetRoom(i);
                     }
-                    catch (Exception e)
+                    catch (Exception)
                     {
                         //                        Console.ForegroundColor = ConsoleColor.Red;
                         //                        Console.WriteLine(e);
                         //                        Console.ResetColor();
+                        room = null;
                     }
                     if (room != null)
                     {
@@ -119,6 +120,7 @@ namespace NScumm.Core.IO
                 }
             }
         }
+
 
         public IEnumerable<byte[]> GetSounds(Audio.MusicDriverTypes music)
         {
@@ -155,10 +157,35 @@ namespace NScumm.Core.IO
             ArrayDefinitions = Index.ArrayDefinitions;
         }
 
-        public void LoadCostume(int resId)
+        public void LoadRoom(int id)
         {
+            if (_rooms.ContainsKey(id)) return;
+
+            NukeResource(ResType.Room, id);
+
+            Room room = null;
+            var disk = OpenRoom((byte)id);
+            if (disk != null)
+            {
+                var roomOffset = GetRoomOffset(disk, (byte)id);
+                room = disk.ReadRoom(roomOffset);
+                room.Number = id;
+                room.Name = Index.RoomNames != null && Index.RoomNames.ContainsKey((byte)id) ? Index.RoomNames[(byte)id] : null;
+            }
+            ExpireResources(room.Size);
+            _rooms[id] = room;
+            _allocatedSize += room.Size;
+            SetRoomCounter(id, 1);
+        }
+
+        public void LoadCostume(int id)
+        {
+            if (_costumes.ContainsKey(id)) return;
+
+            NukeResource(ResType.Costume, id);
+
             byte[] data = null;
-            var res = Index.CostumeResources[resId];
+            var res = Index.CostumeResources[id];
             if (res.RoomNum != 0)
             {
                 var disk = OpenRoom(res.RoomNum);
@@ -168,20 +195,340 @@ namespace NScumm.Core.IO
                     data = disk.ReadCostume(roomOffset + res.Offset);
                 }
             }
-            _costumes[resId] = data;
+            ExpireResources(data.Length);
+            _costumes[id] = data;
+            _allocatedSize += data.Length;
+            SetCostumeCounter(id, 1);
         }
 
-        public void LoadScript(int resId)
+        public void LoadScript(int id)
         {
+            if (_scripts.ContainsKey(id)) return;
+
+            NukeResource(ResType.Script, id);
+
             byte[] data = null;
-            var resource = Index.ScriptResources[resId];
+            var resource = Index.ScriptResources[id];
             var disk = OpenRoom(resource.RoomNum);
             if (disk != null)
             {
                 var roomOffset = GetRoomOffset(disk, resource.RoomNum);
                 data = disk.ReadScript(roomOffset + resource.Offset);
             }
-            _scripts[resId] = data;
+            ExpireResources(data.Length);
+            _scripts[id] = data;
+            _allocatedSize += data.Length;
+            SetScriptCounter(id, 1);
+        }
+
+        public void LoadSound(Audio.MusicDriverTypes music, int id)
+        {
+            if (_sounds.ContainsKey(id)) return;
+
+            NukeResource(ResType.Sound, id);
+
+            byte[] data = null;
+            var resource = Index.SoundResources[id];
+            if (resource.RoomNum != 0)
+            {
+                var disk = OpenRoom(resource.RoomNum);
+                if (disk != null)
+                {
+                    var roomOffset = GetRoomOffset(disk, resource.RoomNum);
+                    if (Game.IsOldBundle && Game.Version == 3 && Game.Platform == Platform.Amiga)
+                    {
+                        data = ((ResourceFile3_16)disk).ReadAmigaSound(roomOffset + resource.Offset);
+                    }
+                    else if (Game.Version == 3 && (Game.Platform == Platform.Amiga || Game.Platform == Platform.FMTowns))
+                    {
+                        data = ((ResourceFile3)disk).ReadAmigaSound(roomOffset + resource.Offset);
+                    }
+                    else if (Game.Version == 4 && Game.Platform == Platform.Amiga)
+                    {
+                        data = ((ResourceFile4)disk).ReadAmigaSound(roomOffset + resource.Offset);
+                    }
+                    else
+                    {
+                        data = disk.ReadSound(music, roomOffset + resource.Offset);
+                        // For games using AD except Indy3 and Loom we are using our iMuse
+                        // implementation. See output initialization in
+                        // ScummEngine::setupMusic for more information.
+                        if (data != null && Game.Version < 5 && Game.GameId != GameId.Indy3 && Game.GameId != GameId.Loom && music == Audio.MusicDriverTypes.AdLib)
+                        {
+                            data = ConvertADResource(data, id);
+                        }
+                    }
+                }
+            }
+            ExpireResources(data.Length);
+            _sounds[id] = data;
+            _allocatedSize += data.Length;
+            SetSoundCounter(id, 1);
+        }
+
+        public bool IsSoundLoaded(int sound)
+        {
+            return _sounds.ContainsKey(sound);
+        }
+
+        public void LockRoom(int resid)
+        {
+            _roomsLock.Add(resid);
+        }
+
+        public void UnlockRoom(int resid)
+        {
+            _roomsLock.Remove(resid);
+        }
+
+        public void LockCostume(int resid)
+        {
+            _costumesLock.Add(resid);
+        }
+
+        public void UnlockCostume(int resid)
+        {
+            _costumesLock.Remove(resid);
+        }
+
+        public void LockScript(int resid)
+        {
+            _scriptsLock.Add(resid);
+        }
+
+        public void UnlockScript(int resid)
+        {
+            _scriptsLock.Remove(resid);
+        }
+
+        public void LockSound(int resid)
+        {
+            _soundsLock.Add(resid);
+        }
+
+        public void UnlockSound(int resid)
+        {
+            _soundsLock.Remove(resid);
+        }
+
+        public void SetRoomCounter(int id, int counter)
+        {
+            _roomsCounter[id] = counter;
+        }
+
+        public int GetRoomCounter(int id)
+        {
+            return _roomsCounter[id];
+        }
+
+        public void SetCostumeCounter(int id, int counter)
+        {
+            _costumesCounter[id] = counter;
+        }
+
+        public int GetCostumeCounter(int id)
+        {
+            return _costumesCounter[id];
+        }
+
+        public void SetScriptCounter(int id, int counter)
+        {
+            _scriptsCounter[id] = counter;
+        }
+
+        public int GetScriptCounter(int id)
+        {
+            return _scriptsCounter[id];
+        }
+
+        public void SetSoundCounter(int id, int counter)
+        {
+            _soundsCounter[id] = counter;
+        }
+
+        public int GetSoundCounter(int id)
+        {
+            return _soundsCounter[id];
+        }
+
+        void ExpireResources(int size)
+        {
+            int best_counter;
+            ResType best_type;
+            int best_res = 0;
+            int oldAllocatedSize;
+
+            if (_expireCounter != 0xFF)
+            {
+                _expireCounter = 0xFF;
+                IncreaseResourceCounters();
+            }
+
+            if (size + _allocatedSize < _maxHeapThreshold)
+                return;
+
+            oldAllocatedSize = _allocatedSize;
+
+            do
+            {
+                best_type = ResType.Invalid;
+                best_counter = 2;
+
+                var types = new[] { ResType.Room, ResType.Script, ResType.Sound, ResType.Costume };
+                foreach (ResType type in types)
+                {
+                    // Resources of this type can be reloaded from the data files,
+                    // so we can potentially unload them to free memory.
+                    var typeCounter = GetCounter(type);
+                    var typeLock = GetLock(type);
+                    foreach (var pair in typeCounter)
+                    {
+                        var counter = pair.Value;
+
+                        if (!typeLock.Contains(pair.Key) && counter >= best_counter && (ScummEngine.Instance != null && !ScummEngine.Instance.IsResourceInUse(type, pair.Key)) /*&& !tmp.isOffHeap()*/)
+                        {
+                            best_counter = counter;
+                            best_type = type;
+                            best_res = pair.Key;
+                        }
+                    }
+                }
+
+                if (best_type == ResType.Invalid)
+                    break;
+                NukeResource(best_type, best_res);
+            } while (size + _allocatedSize > _minHeapThreshold);
+
+            IncreaseResourceCounters();
+
+            this.Trace().Write("resource", "Expired resources, mem {0} -> {1}", oldAllocatedSize, _allocatedSize);
+        }
+
+        void NukeResource(ResType type, int idx)
+        {
+            Dictionary<int, byte[]> res;
+            var resCounter = GetCounter(type);
+            switch (type)
+            {
+                case ResType.Room:
+                    if (_rooms.ContainsKey(idx))
+                    {
+                        var data = _rooms[idx];
+                        _allocatedSize -= data.Size;
+                        _rooms.Remove(idx);
+                        resCounter.Remove(idx);
+                    }
+                    return;
+                case ResType.Script:
+                    res = _scripts;
+                    break;
+                case ResType.Costume:
+                    res = _costumes;
+                    break;
+                case ResType.Sound:
+                    res = _sounds;
+                    break;
+                default:
+                    return;
+            }
+            if (res.ContainsKey(idx))
+            {
+                this.Trace().Write("Resource", "NukeResource({0},{1})", type, idx);
+                var data = res[idx];
+                _allocatedSize -= data.Length;
+                res.Remove(idx);
+                resCounter.Remove(idx);
+            }
+        }
+
+        IDictionary<int, int> GetCounter(ResType type)
+        {
+            Dictionary<int, int> resCounter;
+            switch (type)
+            {
+                case ResType.Room:
+                    resCounter = _roomsCounter;
+                    break;
+                case ResType.Script:
+                    resCounter = _scriptsCounter;
+                    break;
+                case ResType.Costume:
+                    resCounter = _costumesCounter;
+                    break;
+                case ResType.Sound:
+                    resCounter = _soundsCounter;
+                    break;
+                default:
+                    return null;
+            }
+            return resCounter;
+        }
+
+        IDictionary<int,byte[]> GetResources(ResType type)
+        {
+            switch (type)
+            {
+                case ResType.Script:
+                    return _scripts;
+                case ResType.Costume:
+                    return _costumes;
+                case ResType.Sound:
+                    return _sounds;
+                default:
+                    return null;
+            }
+        }
+
+        HashSet<int> GetLock(ResType type)
+        {
+            HashSet<int> resLock;
+            switch (type)
+            {
+                case ResType.Room:
+                    resLock = _roomsLock;
+                    break;
+                case ResType.Script:
+                    resLock = _scriptsLock;
+                    break;
+                case ResType.Costume:
+                    resLock = _costumesLock;
+                    break;
+                case ResType.Sound:
+                    resLock = _soundsLock;
+                    break;
+                default:
+                    return null;
+            }
+            return resLock;
+        }
+
+        void IncreaseExpireCounter()
+        {
+            ++_expireCounter;
+            if (_expireCounter == 0)
+            {   // overflow?
+                IncreaseResourceCounters();
+            }
+        }
+
+        private void IncreaseResourceCounters()
+        {
+            IncreaseResourceCounter(_costumesCounter);
+            IncreaseResourceCounter(_roomsCounter);
+            IncreaseResourceCounter(_scriptsCounter);
+            IncreaseResourceCounter(_soundsCounter);
+        }
+
+        private void IncreaseResourceCounter(IDictionary<int, int> counters)
+        {
+            foreach (var pair in counters.ToList())
+            {
+                var counter = pair.Value;
+                if (counter != 0 && counter < ResourceUsageMax)
+                {
+                    counters[pair.Key]++;
+                }
+            }
         }
 
         public static ResourceManager Load(GameInfo game)
@@ -220,16 +567,7 @@ namespace NScumm.Core.IO
         {
             if (!_rooms.ContainsKey(roomNum))
             {
-                Room room = null;
-                var disk = OpenRoom(roomNum);
-                if (disk != null)
-                {
-                    var roomOffset = GetRoomOffset(disk, roomNum);
-                    room = disk.ReadRoom(roomOffset);
-                    room.Number = roomNum;
-                    room.Name = Index.RoomNames != null && Index.RoomNames.ContainsKey(roomNum) ? Index.RoomNames[roomNum] : null;
-                }
-                _rooms[roomNum] = room;
+                LoadRoom(roomNum);
             }
 
             return _rooms[roomNum];
@@ -248,8 +586,7 @@ namespace NScumm.Core.IO
         {
             if (!_charsets.ContainsKey(id))
             {
-                var charset = ReadCharset(id);
-                _charsets[id] = charset;
+                _charsets[id] = ReadCharset(id);
             }
             return _charsets[id];
         }
@@ -263,51 +600,13 @@ namespace NScumm.Core.IO
             return _scripts[id];
         }
 
-        public byte[] GetSound(Audio.MusicDriverTypes music, int sound)
+        public byte[] GetSound(Audio.MusicDriverTypes music, int id)
         {
-            if (!_sounds.ContainsKey(sound))
+            if (!_sounds.ContainsKey(id))
             {
-                _sounds[sound] = LoadSound(music, sound);
+                LoadSound(music, id);
             }
-            return LoadSound(music, sound);
-        }
-
-        private byte[] LoadSound(Audio.MusicDriverTypes music, int sound)
-        {
-            byte[] data = null;
-            var resource = Index.SoundResources[sound];
-            if (resource.RoomNum != 0)
-            {
-                var disk = OpenRoom(resource.RoomNum);
-                if (disk != null)
-                {
-                    var roomOffset = GetRoomOffset(disk, resource.RoomNum);
-                    if (Game.IsOldBundle && Game.Version == 3 && Game.Platform == Platform.Amiga)
-                    {
-                        data = ((ResourceFile3_16)disk).ReadAmigaSound(roomOffset + resource.Offset);
-                    }
-                    else if (Game.Version == 3 && (Game.Platform == Platform.Amiga || Game.Platform == Platform.FMTowns))
-                    {
-                        data = ((ResourceFile3)disk).ReadAmigaSound(roomOffset + resource.Offset);
-                    }
-                    else if (Game.Version == 4 && Game.Platform == Platform.Amiga)
-                    {
-                        data = ((ResourceFile4)disk).ReadAmigaSound(roomOffset + resource.Offset);
-                    }
-                    else
-                    {
-                        data = disk.ReadSound(music, roomOffset + resource.Offset);
-                        // For games using AD except Indy3 and Loom we are using our iMuse
-                        // implementation. See output initialization in
-                        // ScummEngine::setupMusic for more information.
-                        if (data != null && Game.Version < 5 && Game.GameId != GameId.Indy3 && Game.GameId != GameId.Loom && music == Audio.MusicDriverTypes.AdLib)
-                        {
-                            data = ConvertADResource(data, sound);
-                        }
-                    }
-                }
-            }
-            return data;
+            return _sounds[id];
         }
 
         protected abstract ResourceFile OpenRoom(byte roomIndex);
@@ -382,6 +681,7 @@ namespace NScumm.Core.IO
             };
 
         const int MIDIHeaderSize = 46;
+        const int ResourceUsageMax = 0x7F;
 
         static void WriteMIDIHeader(byte[] input, string type, int ppqn, int totalSize)
         {
@@ -926,11 +1226,24 @@ namespace NScumm.Core.IO
             return ptr;
         }
 
+        byte _expireCounter;
+        int _allocatedSize;
+        int _maxHeapThreshold, _minHeapThreshold;
+
         Dictionary<int, byte[]> _scripts = new Dictionary<int, byte[]>();
         Dictionary<int, byte[]> _costumes = new Dictionary<int, byte[]>();
         Dictionary<int, Room> _rooms = new Dictionary<int, Room>();
         Dictionary<int, byte[]> _charsets = new Dictionary<int, byte[]>();
         Dictionary<int, byte[]> _sounds = new Dictionary<int, byte[]>();
+
+        HashSet<int> _roomsLock = new HashSet<int>();
+        HashSet<int> _costumesLock = new HashSet<int>();
+        HashSet<int> _scriptsLock = new HashSet<int>();
+        HashSet<int> _soundsLock = new HashSet<int>();
+
+        Dictionary<int, int> _roomsCounter = new Dictionary<int, int>();
+        Dictionary<int, int> _costumesCounter = new Dictionary<int, int>();
+        Dictionary<int, int> _scriptsCounter = new Dictionary<int, int>();
+        Dictionary<int, int> _soundsCounter = new Dictionary<int, int>();
     }
 }
-

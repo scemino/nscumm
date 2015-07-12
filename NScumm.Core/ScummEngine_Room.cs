@@ -41,11 +41,11 @@ namespace NScumm.Core
         protected string GetIqFilename(string filename)
         {
             var targetName = ServiceLocator.FileStorage.Combine(ServiceLocator.FileStorage.GetDirectoryName(Game.Path), Game.Id);
-            if (_game.GameId == NScumm.Core.IO.GameId.Indy4)
+            if (_game.GameId == IO.GameId.Indy4)
             {
                 filename = targetName + ".iq";
             }
-            else if (_game.GameId == NScumm.Core.IO.GameId.Monkey1 || _game.GameId == NScumm.Core.IO.GameId.Monkey2)
+            else if (_game.GameId == IO.GameId.Monkey1 || _game.GameId == IO.GameId.Monkey2)
             {
                 filename = targetName + ".cfg";
             }

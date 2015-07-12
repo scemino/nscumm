@@ -265,8 +265,7 @@ namespace NScumm.Core
 
             AdjustActorPos();
 
-            // TODO:
-            //_vm.ensureResourceLoaded(rtCostume, _costume);
+            _scumm.ResourceManager.LoadCostume(Costume);
 
             if (_scumm.Game.Version == 0)
             {

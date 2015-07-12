@@ -47,7 +47,7 @@ namespace NScumm.Core
 
             // WORKAROUND for bug #847827: This is a bug in the data files, as it also
             // occurs with the original engine. We work around it here anyway.
-            if (_game.GameId == NScumm.Core.IO.GameId.Indy4 && _currentRoom == 225 && _roomResource == 94 && boxNum == 8)
+            if (_game.GameId == IO.GameId.Indy4 && _currentRoom == 225 && _roomResource == 94 && boxNum == 8)
                 return 0;
 
             var box = GetBoxBase(boxNum);

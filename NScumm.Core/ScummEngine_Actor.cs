@@ -145,7 +145,7 @@ namespace NScumm.Core
 
                 // WORKAROUND bug #770724
                 if (_game.GameId == GameId.Loom && _roomResource == 23 &&
-                    _slots[_currentScript].Number == 232 && _actorToPrintStrFor == 0)
+                    _slots[CurrentScript].Number == 232 && _actorToPrintStrFor == 0)
                 {
                     _actorToPrintStrFor = 2;    // Could be anything from 2 to 5. Maybe compare to original?
                 }

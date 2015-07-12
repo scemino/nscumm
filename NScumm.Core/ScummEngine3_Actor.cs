@@ -28,7 +28,7 @@ namespace NScumm.Core
     {
         void WaitForActor()
         {
-            if (Game.GameId == NScumm.Core.IO.GameId.Indy3)
+            if (Game.GameId == IO.GameId.Indy3)
             {
                 var pos = CurrentPos - 1;
                 var actor = Actors[GetVarOrDirectByte(OpCodeParameter.Param1)];
@@ -59,14 +59,14 @@ namespace NScumm.Core
         protected override void GetActorX()
         {
             GetResult();
-            var actorIndex = Game.GameId == NScumm.Core.IO.GameId.Indy3 ? GetVarOrDirectByte(OpCodeParameter.Param1) : GetVarOrDirectWord(OpCodeParameter.Param1);
+            var actorIndex = Game.GameId == IO.GameId.Indy3 ? GetVarOrDirectByte(OpCodeParameter.Param1) : GetVarOrDirectWord(OpCodeParameter.Param1);
             SetResult(GetObjX(actorIndex));
         }
 
         protected override void GetActorY()
         {
             GetResult();
-            var actorIndex = Game.GameId == NScumm.Core.IO.GameId.Indy3 ? GetVarOrDirectByte(OpCodeParameter.Param1) : GetVarOrDirectWord(OpCodeParameter.Param1);
+            var actorIndex = Game.GameId == IO.GameId.Indy3 ? GetVarOrDirectByte(OpCodeParameter.Param1) : GetVarOrDirectWord(OpCodeParameter.Param1);
             SetResult(GetObjY(actorIndex));
         }
 

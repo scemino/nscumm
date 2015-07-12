@@ -228,7 +228,7 @@ namespace NScumm.Core
                     break;
                 case 114:
                     // Sam & Max film noir mode
-                    if (Game.GameId == NScumm.Core.IO.GameId.SamNMax)
+                    if (Game.GameId == IO.GameId.SamNMax)
                     {
                         // At this point ScummVM will already have set
                         // variable 0x8000 to indicate that the game is

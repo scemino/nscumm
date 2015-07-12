@@ -42,7 +42,7 @@ namespace NScumm.Core.IO
             var tmp = _reader.ReadBytes(2);
             var header = ReadRMHD();
 
-            var room = new Room { Header = header };
+            var room = new Room { Header = header, Size = size };
 
             // 6
             var img = new ImageData1();
@@ -316,6 +316,7 @@ namespace NScumm.Core.IO
             ReadName(obj);
             obj.Script.Offset = 10 + 2 * obj.ScriptOffsets.Count + 1 + obj.Name.Length + 1 + HeaderSize;
             obj.Script.Data = _reader.ReadBytes((int)(size - obj.Script.Offset));
+
             return obj;
         }
 

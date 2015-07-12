@@ -40,7 +40,7 @@ namespace NScumm.Core
         Param3 = 0x20,
     }
 
-    public abstract partial class ScummEngine: IEnableTrace
+    public abstract partial class ScummEngine : IEnableTrace
     {
         #region Constants
 
@@ -236,7 +236,7 @@ namespace NScumm.Core
             _strings = new byte[_resManager.NumArray][];
             _inventory = new ushort[_resManager.NumInventory];
             _invData = new ObjectData[_resManager.NumInventory];
-            _currentScript = 0xFF;
+            CurrentScript = 0xFF;
             Mixer = mixer;
             ScreenWidth = Game.Width;
             ScreenHeight = Game.Height;
@@ -466,7 +466,7 @@ namespace NScumm.Core
                 MidiDriver adlibMidiDriver = null;
                 if (Sound.MusicType == MusicDriverTypes.AdLib || Sound.MusicType == MusicDriverTypes.FMTowns)
                 {
-                    adlibMidiDriver = (MidiDriver)MidiDriver.CreateMidi(Mixer, 
+                    adlibMidiDriver = (MidiDriver)MidiDriver.CreateMidi(Mixer,
                         MidiDriver.DetectDevice(Sound.MusicType == MusicDriverTypes.FMTowns
                             ? MusicDriverTypes.FMTowns : MusicDriverTypes.AdLib, selectedDevice));
                     adlibMidiDriver.Property(AdlibMidiDriver.PropertyOldAdLib, (Game.Version < 5) ? 1 : 0);
@@ -494,9 +494,9 @@ namespace NScumm.Core
                 {
                     IMuse.AddSysexHandler(0x7D, Game.GameId == GameId.SamNMax ? new SysExFunc(new SamAndMaxSysEx().Do) : new SysExFunc(new ScummSysEx().Do));
                     IMuse.Property(ImuseProperty.GameId, (uint)Game.GameId);
-//                    IMuse.Property(ImuseProperty.NativeMt32, _native_mt32);
-//                    if (MidiDriver.GetMusicType(deviceHandle) != MusicType.MT32) // MT-32 Emulation shouldn't be GM/GS initialized
-//                        IMuse.Property(ImuseProperty.Gs, _enable_gs);
+                    //                    IMuse.Property(ImuseProperty.NativeMt32, _native_mt32);
+                    //                    if (MidiDriver.GetMusicType(deviceHandle) != MusicType.MT32) // MT-32 Emulation shouldn't be GM/GS initialized
+                    //                        IMuse.Property(ImuseProperty.Gs, _enable_gs);
                     if (Sound.MusicType == MusicDriverTypes.PCSpeaker)
                         IMuse.Property(ImuseProperty.PcSpeaker, 1);
                 }
@@ -521,7 +521,7 @@ namespace NScumm.Core
 
                 if (Game.GameId != GameId.Monkey1)
                 {
-                    Gdi.Fill(TextSurface, 
+                    Gdi.Fill(TextSurface,
                         new Rect(0, 0, _textSurface.Width * _textSurfaceMultiplier, _textSurface.Height * _textSurfaceMultiplier), 0);
                     _townsScreen.ClearLayer(1);
                 }
@@ -560,7 +560,7 @@ namespace NScumm.Core
 
         void Step()
         {
-            var opCode = _currentScriptData[_currentPos++];
+            var opCode = _currentScriptData[CurrentPos++];
             // execute the code
             ExecuteOpCode(opCode);
         }
@@ -569,16 +569,16 @@ namespace NScumm.Core
         {
             _opCode = opCode;
             if (_game.Version > 2) // V0-V2 games didn't use the didexec flag
-                _slots[_currentScript].IsExecuted = true;
+                _slots[CurrentScript].IsExecuted = true;
 
             if (Game.Version < 6)
             {
-                this.Trace().Write(TraceSwitches.OpCodes, "Room = {1}, Script = {0}, Offset = {4}, Name = {2} [{3:X2}]", 
-                    _slots[_currentScript].Number, 
-                    _roomResource, 
-                    _opCodes.ContainsKey(_opCode) ? _opCodes[opCode].Method.Name : "Unknown", 
+                this.Trace().Write(TraceSwitches.OpCodes, "Room = {1}, Script = {0}, Offset = {4}, Name = {2} [{3:X2}]",
+                    _slots[CurrentScript].Number,
+                    _roomResource,
+                    _opCodes.ContainsKey(_opCode) ? _opCodes[opCode].Method.Name : "Unknown",
                     _opCode,
-                    _currentPos - 1);
+                    CurrentPos - 1);
             }
             if (_opCodes.ContainsKey(opCode))
             {
@@ -592,7 +592,7 @@ namespace NScumm.Core
 
         void Run()
         {
-            while (_currentScript != 0xFF)
+            while (CurrentScript != 0xFF)
             {
                 Step();
             }
@@ -658,6 +658,11 @@ namespace NScumm.Core
             // Record the current ego actor before any scripts (including input scripts)
             // get a chance to run.
             var oldEgo = VariableEgo.HasValue ? Variables[VariableEgo.Value] : 0;
+
+            // In V1-V3 games, CHARSET_1 is called much earlier than in newer games.
+            // See also bug #770042 for a case were this makes a difference.
+            if (Game.Version <= 3)
+                Charset();
 
             ProcessInput();
 
@@ -798,8 +803,8 @@ namespace NScumm.Core
                 {
                     if (ss.CutSceneOverride != 0)
                     {
-//                        if (Game.Version >= 5)
-//                            Console.Error.WriteLine("Object {0} stopped with active cutscene/override in exit", ss.Number);
+                        //                        if (Game.Version >= 5)
+                        //                            Console.Error.WriteLine("Object {0} stopped with active cutscene/override in exit", ss.Number);
                         ss.CutSceneOverride = 0;
                     }
                     //nukeArrays(i);
@@ -809,8 +814,8 @@ namespace NScumm.Core
                 {
                     if (ss.CutSceneOverride != 0)
                     {
-//                        if (Game.Version >= 5)
-//                            Console.Error.WriteLine("Script {0} stopped with active cutscene/override in exit", ss.Number);
+                        //                        if (Game.Version >= 5)
+                        //                            Console.Error.WriteLine("Script {0} stopped with active cutscene/override in exit", ss.Number);
                         ss.CutSceneOverride = 0;
                     }
                     //nukeArrays(i);
@@ -851,10 +856,59 @@ namespace NScumm.Core
             var offset = (short)FetchScriptWord();
             if (!condition)
             {
-                _currentPos += offset;
-                if (_currentPos < 0)
+                CurrentPos += offset;
+                if (CurrentPos < 0)
                     throw new NotSupportedException("Invalid position in JumpRelative");
             }
+        }
+
+        public bool IsResourceInUse(ResType type, int idx)
+        {
+            //if (!ResourceManager.ValidateResource("isResourceInUse", type, idx))
+            //    return false;
+            switch (type)
+            {
+                case ResType.Room:
+                    return _roomResource == (byte)idx;
+                case ResType.RoomImage:
+                    return _roomResource == (byte)idx;
+                case ResType.RoomScripts:
+                    return _roomResource == (byte)idx;
+                case ResType.Script:
+                    return IsScriptInUse(idx);
+                case ResType.Costume:
+                    return IsCostumeInUse(idx);
+                case ResType.Sound:
+                    // Sound resource 1 is used for queued speech
+                    //if (_game.heversion >= 60 && idx == 1)
+                    //    return true;
+                    //else
+                        return Sound.IsSoundInUse(idx);
+                case ResType.Charset:
+                    return _charset.GetCurId() == idx;
+                /*case ResType.Image:
+                    return ResourceManager.IsModified(type, idx) != 0;*/
+                case ResType.SpoolBuffer:
+                    return Sound.IsSoundRunning(10000 + idx);
+                default:
+                    return false;
+            }
+        }
+
+        bool IsCostumeInUse(int cost)
+        {
+            int i;
+            Actor a;
+
+            if (_roomResource != 0)
+                for (i = 1; i < Actors.Length; i++)
+                {
+                    a = Actors[i];
+                    if (a.IsInCurrentRoom && a.Costume == cost)
+                        return true;
+                }
+
+            return false;
         }
     }
 }

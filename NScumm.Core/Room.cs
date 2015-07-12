@@ -36,6 +36,8 @@ namespace NScumm.Core
 
     public class Room
     {
+        public int Size { get; set; }
+
         public RoomHeader Header { get; set; }
 
         public Palette Palette { get { return Palettes[0]; } }

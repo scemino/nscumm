@@ -438,7 +438,7 @@ namespace NScumm.Core.Audio.IMuse
                 case IMuseDigital.ImuseResource:
                     Debug.Assert(string.IsNullOrEmpty(soundName));  // Paranoia check
 
-//                    _vm.ensureResourceLoaded(rtSound, soundId);
+                    _vm.ResourceManager.LoadSound(_vm.Sound.MusicType, soundId);
                     // TODO: lock
 //                    _vm._res.lock(rtSound, soundId);
                     ptr = _vm.ResourceManager.GetSound(_vm.Sound.MusicType, soundId);

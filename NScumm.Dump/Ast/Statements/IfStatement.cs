@@ -21,30 +21,43 @@
 
 namespace NScumm.Dump
 {
-    public class IfStatement: Statement
+    public class IfStatement : Statement
     {
         public Expression Condition { get; private set; }
 
         public Statement TrueStatement { get; private set; }
 
-        public IfStatement(Expression condition)
-            : this(condition, new BlockStatement())
-        {
-        }
+        public Statement FalseStatement { get; private set; }
 
-        public IfStatement(Expression condition, Statement trueStatement, long? startOffset = null, long? endOffset = null)
+        public IfStatement(Expression condition, Statement trueStatement = null, Statement falseStatement = null, long? startOffset = null, long? endOffset = null)
         {
             StartOffset = startOffset;
             EndOffset = endOffset;
             Condition = condition;
-            TrueStatement = trueStatement;
+            TrueStatement = trueStatement ?? new BlockStatement();
+            FalseStatement = falseStatement ?? new BlockStatement();
             ChildrenCore.Add(Condition);
             ChildrenCore.Add(TrueStatement);
+        }
+
+        public IfStatement SetTrueStatement(params Statement[] trueStatements)
+        {
+            return new IfStatement(Condition, new BlockStatement().AddStatements(trueStatements));
         }
 
         public IfStatement SetTrueStatement(Statement trueStatement)
         {
             return new IfStatement(Condition, trueStatement);
+        }
+
+        public IfStatement SetFalseStatement(Statement falseStatement)
+        {
+            return new IfStatement(Condition, falseStatement: falseStatement);
+        }
+
+        public IfStatement SetFalseStatement(params Statement[] falseStatements)
+        {
+            return new IfStatement(Condition, falseStatement: new BlockStatement().AddStatements(falseStatements));
         }
 
         public override void Accept(IAstNodeVisitor visitor)

@@ -625,7 +625,7 @@ namespace NScumm.Core.Audio.SoftSynth
             {
                 if (_waveTables != null)
                 {
-                    for (int i = 0; i < _numWaveTables; i++)
+                    for (int i = 0; i < _numWaveTables;)
                     {
                         if (_waveTables[i].id == id)
                         {

@@ -133,6 +133,11 @@ namespace NScumm.Dump
             {
                 text.Append(node.TrueStatement.Accept(this));
             }
+            if (node.FalseStatement != null)
+            {
+                text.Append(Indentation(node.FalseStatement, "else"));
+                text.Append(node.FalseStatement.Accept(this));
+            }
             return text.ToString();
         }
 
@@ -181,9 +186,10 @@ namespace NScumm.Dump
 
         public override string Visit(StringLiteralExpression node)
         {
-            var text = new StringBuilder();
-            var decoder = new TextDecoder(text);
-            new NScumm.Core.ScummText(node.Value).Decode(decoder);
+            //var text = new StringBuilder();
+            //var decoder = new TextDecoder(text);
+            //new NScumm.Core.ScummText(node.Value).Decode(decoder);
+            var text = System.Text.Encoding.ASCII.GetString(node.Value);
             return string.Format("\"{0}\"", text);
         }
 
@@ -193,6 +199,11 @@ namespace NScumm.Dump
         }
 
         public override string Visit(IntegerLiteralExpression node)
+        {
+            return node.Value.ToString();
+        }
+
+        public override string Visit(EnumExpression node)
         {
             return node.Value.ToString();
         }
@@ -262,8 +273,12 @@ namespace NScumm.Dump
                     return "!=";
                 case Operator.Add:
                     return "+";
+                case Operator.AddAssignment:
+                    return "+=";
                 case Operator.Subtract:
                     return "-";
+                case Operator.SubtractionAssignment:
+                    return "-=";
                 case Operator.Multiply:
                     return "*";
                 case Operator.Divide:

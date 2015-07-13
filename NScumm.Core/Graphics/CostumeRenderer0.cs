@@ -89,8 +89,8 @@ namespace NScumm.Core.Graphics
             int height = _loaded.Data[data + 1];
             int offsetX = _xmove + _loaded.Data[data + 2];
             int offsetY = _ymove + _loaded.Data[data + 3];
-            _xmove += _loaded.Data[data + 4];
-            _ymove += _loaded.Data[data + 5];
+            _xmove += (sbyte)_loaded.Data[data + 4];
+            _ymove += (sbyte)_loaded.Data[data + 5];
             data += 6;
 
             if (width == 0 || height == 0)

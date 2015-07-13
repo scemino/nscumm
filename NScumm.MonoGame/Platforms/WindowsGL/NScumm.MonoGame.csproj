@@ -75,6 +75,10 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\..\Content\Textures\blank.xnb">
+      <Link>Content\Textures\blank.xnb</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="packages.config" />
     <None Include="OpenTK.dll.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -103,12 +107,5 @@
       <Project>{D42434C7-459D-461A-8B1D-1451F7FF4B13}</Project>
       <Name>NScumm.Platform_Desktop</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\..\Content\Textures\blank.png">
-      <Link>Content\Textures\blank.png</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Generator>MonoGameContentReference</Generator>
-    </None>
   </ItemGroup>
 </Project>

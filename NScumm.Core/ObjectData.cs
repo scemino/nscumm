@@ -86,7 +86,7 @@ namespace NScumm.Core
             {
                 obj.ScriptOffsets.Add(item.Key, item.Value);
             }
-            obj.Images.Clear();
+            obj.Images = new List<ImageData>();
             foreach (var img in Images)
             {
                 obj.Images.Add(img.Clone());
@@ -136,9 +136,9 @@ namespace NScumm.Core
         internal string DebuggerDisplay
         {
             get
-            { 
+            {
                 return Number != 0 ? string.Format("(Number: {0}, Name = {1})", Number, System.Text.Encoding.UTF8.GetString(Name)) : "Number 0";
-            }    
+            }
         }
     }
 }

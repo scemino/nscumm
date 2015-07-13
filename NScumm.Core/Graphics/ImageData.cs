@@ -33,6 +33,25 @@ namespace NScumm.Core.Graphics
         public byte[] ColorMap = new byte[4096];
         public byte[] MaskMap = new byte[4096];
         public byte[] MaskChar = new byte[4096];
+
+        public override ImageData Clone()
+        {
+            var data = new ImageData1 { IsBomp = IsBomp };
+            data.Data = new byte[Data.Length];
+            Array.Copy(Data, data.Data, Data.Length);
+            foreach (var zplane in ZPlanes)
+            {
+                data.ZPlanes.Add(zplane.Clone());
+            }
+            Array.Copy(Colors, data.Colors, Colors.Length);
+            Array.Copy(CharMap, data.CharMap, CharMap.Length);
+            Array.Copy(ObjectMap, data.ObjectMap, ObjectMap.Length);
+            Array.Copy(PicMap, data.PicMap, PicMap.Length);
+            Array.Copy(ColorMap, data.ColorMap, ColorMap.Length);
+            Array.Copy(MaskMap, data.MaskMap, MaskMap.Length);
+            Array.Copy(MaskChar, data.MaskChar, MaskChar.Length);
+            return data;
+        }
     }
 
     public class ImageData
@@ -53,7 +72,7 @@ namespace NScumm.Core.Graphics
             Data = new byte[0];
         }
 
-        public ImageData Clone()
+        public virtual ImageData Clone()
         {
             var data = new ImageData{ IsBomp = IsBomp };
             data.Data = new byte[Data.Length];

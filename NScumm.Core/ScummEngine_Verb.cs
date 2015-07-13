@@ -37,19 +37,6 @@ namespace NScumm.Core
 
         internal Sentence[] Sentence { get { return _sentence; } }
 
-        void InitializeVerbs()
-        {
-            Verbs = new VerbSlot[_resManager.NumVerbs];
-            for (int i = 0; i < Verbs.Length; i++)
-            {
-                Verbs[i] = new VerbSlot();
-                Verbs[i].CurRect.Right = ScreenWidth - 1;
-                Verbs[i].OldRect.Left = -1;
-                Verbs[i].Color = 2;
-                Verbs[i].CharsetNr = 1;
-            }
-        }
-
         protected void SetVerbObject(byte room, int obj, int verb)
         {
             ObjectData o = null;
@@ -83,7 +70,7 @@ namespace NScumm.Core
             if (Game.Version <= 2 && !(_userState.HasFlag(UserStates.IFaceVerbs)))
                 return;
 
-            if (Game.GameId == NScumm.Core.IO.GameId.FullThrottle)
+            if (Game.GameId == GameId.FullThrottle)
                 return;
 
             if (_verbMouseOver != verb)
@@ -178,24 +165,9 @@ namespace NScumm.Core
                 vs.OldRect = _charset.Str;
                 _charset.Str.Left = _charset.Str.Right;
             }
-            else if (Game.GameId != NScumm.Core.IO.GameId.FullThrottle)
+            else if (Game.GameId != GameId.FullThrottle)
             {
                 RestoreVerbBG(verb);
-            }
-        }
-
-        void RestoreVerbBG(int verb)
-        {
-            var vs = Verbs[verb];
-
-            var col =
-                ((Game.Platform == Platform.FMTowns) &&
-                    (Game.GameId == GameId.Monkey2 || Game.GameId == GameId.Indy4) &&
-                    (vs.BkColor == TownsOverrideShadowColor)) ? 0 : vs.BkColor;
-            if (vs.OldRect.Left != -1)
-            {
-                RestoreBackground(vs.OldRect, (byte)col);
-                vs.OldRect.Left = -1;
             }
         }
 
@@ -253,16 +225,6 @@ namespace NScumm.Core
             return 0;
         }
 
-        static Sentence[] InitSentences()
-        {
-            var sentences = new Sentence[6];
-            for (int i = 0; i < sentences.Length; i++)
-            {
-                sentences[i] = new Sentence();
-            }
-            return sentences;
-        }
-
         protected void DoSentence(byte verb, ushort objectA, ushort objectB)
         {
             if (Game.Version >= 7)
@@ -308,6 +270,44 @@ namespace NScumm.Core
                     DrawVerb(i, 0);
             }
             _verbMouseOver = verb;
+        }
+
+        void InitializeVerbs()
+        {
+            Verbs = new VerbSlot[_resManager.NumVerbs];
+            for (int i = 0; i < Verbs.Length; i++)
+            {
+                Verbs[i] = new VerbSlot();
+                Verbs[i].CurRect.Right = ScreenWidth - 1;
+                Verbs[i].OldRect.Left = -1;
+                Verbs[i].Color = 2;
+                Verbs[i].CharsetNr = 1;
+            }
+        }
+
+        void RestoreVerbBG(int verb)
+        {
+            var vs = Verbs[verb];
+
+            var col =
+                ((Game.Platform == Platform.FMTowns) &&
+                    (Game.GameId == GameId.Monkey2 || Game.GameId == GameId.Indy4) &&
+                    (vs.BkColor == TownsOverrideShadowColor)) ? 0 : vs.BkColor;
+            if (vs.OldRect.Left != -1)
+            {
+                RestoreBackground(vs.OldRect, (byte)col);
+                vs.OldRect.Left = -1;
+            }
+        }
+
+        static Sentence[] InitSentences()
+        {
+            var sentences = new Sentence[6];
+            for (int i = 0; i < sentences.Length; i++)
+            {
+                sentences[i] = new Sentence();
+            }
+            return sentences;
         }
     }
 }

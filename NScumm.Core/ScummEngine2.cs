@@ -32,7 +32,7 @@ using System.Diagnostics;
 namespace NScumm.Core
 {
     [Flags]
-    public enum ObjectStateV2: byte
+    public enum ObjectStateV2 : byte
     {
         Pickupable = 1,
         Untouchable = 2,
@@ -69,7 +69,7 @@ namespace NScumm.Core
         IFaceAll = (IFaceSentence | IFaceInventory | IFaceVerbs)
     }
 
-    public partial class ScummEngine2: ScummEngine
+    public partial class ScummEngine2 : ScummEngine
     {
         const int SENTENCE_SCRIPT = 2;
         const int InventoryUpArrow = 4;
@@ -780,7 +780,7 @@ namespace NScumm.Core
                     break;
             }
 
-            var args = new []{ (int)clickArea, (int)code, mode };
+            var args = new[] { (int)clickArea, (int)code, mode };
 
             if (verbScript != 0)
                 RunScript(verbScript, false, false, args);
@@ -1013,8 +1013,8 @@ namespace NScumm.Core
                         }
                     }
                     break;
-            //                default:
-            //                    error("o4_saveLoadGame: unknown subopcode %d", _opcode);
+                    //                default:
+                    //                    error("o4_saveLoadGame: unknown subopcode %d", _opcode);
             }
 
             SetResult(result);
@@ -1253,7 +1253,7 @@ namespace NScumm.Core
                         break;
                     case 0xFE:
                         // TODO: FMTOWNS
-//                        result = Sound.GetCurrentCDSound();
+                        //                        result = Sound.GetCurrentCDSound();
                         break;
                     case 0xFF:
                         result = TownsPlayer.GetCurrentCdaVolume();
@@ -1642,8 +1642,8 @@ namespace NScumm.Core
         {
             // NES version of maniac uses this to switch between the two
             // groups of costumes it has
-//            if (Game.Platform == Platform.NES)
-//                NES_loadCostumeSet(ReadByte());
+            //            if (Game.Platform == Platform.NES)
+            //                NES_loadCostumeSet(ReadByte());
             /*else*/
             if (Game.Platform == Platform.C64)
                 ReadByte();
@@ -1754,6 +1754,7 @@ namespace NScumm.Core
                                 dst.Write(_mouseOverBoxesV2[_mouseOverBoxV2].color);
                             dst.OffsetX(1);
                         }
+                        dst.Offset(-rect.Width, 1);
                     }
 
                     MarkRectAsDirty(VerbVirtScreen, rect);
@@ -1775,6 +1776,7 @@ namespace NScumm.Core
                                 dst.Write(_mouseOverBoxesV2[new_box].hicolor);
                             dst.OffsetX(1);
                         }
+                        dst.Offset(-rect.Width, 1);
                     }
 
                     MarkRectAsDirty(VerbVirtScreen, rect);
@@ -1844,7 +1846,7 @@ namespace NScumm.Core
                 /*if (_game.platform == Common::kPlatformNES)
                     drawString(1, (const byte *)"\x7E");
                 else*/
-                DrawString(1, new byte[]{ (byte)' ', 1, 2 });
+                DrawString(1, new byte[] { (byte)' ', 1, 2 });
             }
 
             // If necessary, draw "down" arrow
@@ -1858,7 +1860,7 @@ namespace NScumm.Core
                 /*if (Game.Platform == Platform.NES)
                     DrawString(1, "\x7F");/
                 else*/
-                DrawString(1, new byte[]{ (byte)' ', 3, 4 });
+                DrawString(1, new byte[] { (byte)' ', 3, 4 });
             }
         }
 
@@ -2485,8 +2487,8 @@ namespace NScumm.Core
                     _sentenceBuf += Encoding.UTF8.GetString(temp);
                 }
 
-//                 For V1 games, the engine must compute the preposition.
-//                 In all other Scumm versions, this is done by the sentence script.
+                //                 For V1 games, the engine must compute the preposition.
+                //                 In all other Scumm versions, this is done by the sentence script.
                 if ((Game.GameId == GameId.Maniac && Game.Version == 1 /*&& !(Game.Platform == Platform.NES)*/) && (Variables[VariableSentencePreposition.Value] == 0))
                 {
                     if (Verbs[slot].Prep == 0xFF)

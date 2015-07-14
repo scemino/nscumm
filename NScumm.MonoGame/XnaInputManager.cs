@@ -146,6 +146,12 @@ namespace NScumm.MonoGame
             lock (_gate)
             {
                 _mouseState = mouse;
+#if !WINDOWS_UAP
+                var state = _mouseState;
+                var x = state.X;
+                var y = state.Y;
+                UpdateMousePosition(x, y);
+#endif
                 _keyboardState = keyboard;
                 _touchState = TouchPanel.GetState(_window);
             }

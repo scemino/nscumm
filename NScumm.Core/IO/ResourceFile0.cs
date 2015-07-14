@@ -122,7 +122,7 @@ namespace NScumm.Core.IO
                     room.Objects.Add(obj);
                 }
 
-                for (var i = 0; i < numObjects - 1; i++)
+                for (var i = 0; i < numObjects; i++)
                 {
                     var objImgOffset = objImgOffsets[i];
                     if (firstOffset != objImgOffset)

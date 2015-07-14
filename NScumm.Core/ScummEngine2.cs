@@ -1928,7 +1928,7 @@ namespace NScumm.Core
             var obj = GetVarOrDirectWord(OpCodeParameter.Param1);
             var clsop = GetVarOrDirectByte(OpCodeParameter.Param2);
 
-            var ob = _objs.FirstOrDefault(o => o.Number == obj);
+            var ob = _objs.Concat(_invData).FirstOrDefault(o => o.Number == obj);
             var obcd = ob.Script.Data;
 
             if (obcd == null)
@@ -1937,7 +1937,7 @@ namespace NScumm.Core
                 return;
             }
 
-            var cls = obcd[6];
+            var cls = obcd.Length < 7 ? 0 : obcd[6];
             JumpRelative((cls & clsop) == clsop);
         }
 

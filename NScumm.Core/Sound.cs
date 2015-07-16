@@ -31,11 +31,10 @@ namespace NScumm.Core
     {
         public const int TalkSoundID = 10000;
 
+
         public int SfxMode { get { return sfxMode; } }
 
         public int LastSound { get; private set; }
-
-        int _currentCDSound;
 
         public MusicDriverTypes MusicType
         {
@@ -43,12 +42,13 @@ namespace NScumm.Core
             set;
         }
 
+
         public Sound(ScummEngine vm, IMixer mixer)
         {
-            this.vm = vm;
-            soundQueue = new Stack<int>();
-            soundQueueIMuse = new Queue<int>();
-            timer = new Timer(OnCDTimer, this, -1, -1);
+            this._vm = vm;
+            _soundQueue = new Stack<int>();
+            _soundQueueIMuse = new Queue<int>();
+            _timer = new Timer(OnCDTimer, this, -1, -1);
 
             // initialize output & player
             _mixer = mixer;
@@ -57,7 +57,7 @@ namespace NScumm.Core
         public int PollCD()
         {
             if (!_isLoomSteam)
-                return vm.AudioCDManager.IsPlaying ? 1 : 0;
+                return _vm.AudioCDManager.IsPlaying ? 1 : 0;
             else
                 return _mixer.IsSoundHandleActive(_loomSteamCDAudioHandle) ? 1 : 0;
         }
@@ -65,11 +65,11 @@ namespace NScumm.Core
         public void PlayCDTrack(int track, int numLoops, int startFrame, int duration)
         {
             // Reset the music timer variable at the start of a new track
-            vm.Variables[vm.VariableMusicTimer.Value] = 0;
+            _vm.Variables[_vm.VariableMusicTimer.Value] = 0;
 
             // Play it
             if (!_soundsPaused)
-                vm.AudioCDManager.Play(track, numLoops, startFrame, duration);
+                _vm.AudioCDManager.Play(track, numLoops, startFrame, duration);
 
             // Start the timer after starting the track. Starting an MP3 track is
             // almost instantaneous, but a CD player may take some time. Hopefully
@@ -79,34 +79,34 @@ namespace NScumm.Core
 
         public void StartCDTimer()
         {
-            timer.Change(TimeSpan.Zero, TimeSpan.FromMilliseconds(100.7));
+            _timer.Change(TimeSpan.Zero, TimeSpan.FromMilliseconds(100.7));
         }
 
         public void StopCDTimer()
         {
-            timer.Change(-1, -1);
+            _timer.Change(-1, -1);
         }
 
         public void StopCD()
         {
-            timer.Change(-1, -1);
+            _timer.Change(-1, -1);
         }
 
         public void AddSoundToQueue(int sound)
         {
-            if (vm.VariableLastSound.HasValue)
-                vm.Variables[vm.VariableLastSound.Value] = sound;
+            if (_vm.VariableLastSound.HasValue)
+                _vm.Variables[_vm.VariableLastSound.Value] = sound;
             LastSound = sound;
 
             // HE music resources are in separate file
-            vm.ResourceManager.LoadSound(MusicType, sound);
+            _vm.ResourceManager.LoadSound(MusicType, sound);
 
-            soundQueue.Push(sound);
+            _soundQueue.Push(sound);
         }
 
         public void ProcessSound()
         {
-            if (vm.Game.Version >= 7)
+            if (_vm.Game.Version >= 7)
             {
                 ProcessSfxQueues();
             }
@@ -130,15 +130,15 @@ namespace NScumm.Core
             //            _lastSound = 0;
             //            _soundQue2Pos = 0;
             //            memset(_soundQue2, 0, sizeof(_soundQue2));
-            soundQueue.Clear();
+            _soundQueue.Clear();
 
-            if (vm.MusicEngine != null)
+            if (_vm.MusicEngine != null)
             {
-                vm.MusicEngine.StopAllSounds();
+                _vm.MusicEngine.StopAllSounds();
             }
 
             // Stop all SFX
-            if (!(vm.MusicEngine is IMuseDigital))
+            if (!(_vm.MusicEngine is IMuseDigital))
             {
                 _mixer.StopAll();
             }
@@ -152,18 +152,18 @@ namespace NScumm.Core
             if (_mixer.IsSoundIdActive(snd))
                 return true;
 
-            if (soundQueue.Contains(snd))
+            if (_soundQueue.Contains(snd))
                 return true;
 
-            if (vm.MusicEngine != null)
-                return vm.MusicEngine.GetSoundStatus(snd) != 0;
+            if (_vm.MusicEngine != null)
+                return _vm.MusicEngine.GetSoundStatus(snd) != 0;
 
             return false;
         }
 
         public void SoundKludge(int[] items)
         {
-            var imuseDigital = vm.MusicEngine as IMuseDigital;
+            var imuseDigital = _vm.MusicEngine as IMuseDigital;
             if (imuseDigital != null)
             {
                 var param = new int[8];
@@ -178,17 +178,12 @@ namespace NScumm.Core
             }
             else
             {
-                soundQueueIMuse.Enqueue(items.Length);
+                _soundQueueIMuse.Enqueue(items.Length);
                 foreach (var item in items)
                 {
-                    soundQueueIMuse.Enqueue(item);
+                    _soundQueueIMuse.Enqueue(item);
                 }
             }
-        }
-
-        byte[] ISoundRepository.GetSound(int id)
-        {
-            return vm.ResourceManager.GetSound(MusicType, id);
         }
 
         public void TalkSound(int a, int b, int mode, int channel = 0)
@@ -212,9 +207,9 @@ namespace NScumm.Core
         {
             SetupSfxFile();
 
-            if (vm.Game.GameId == GameId.FullThrottle)
+            if (_vm.Game.GameId == GameId.FullThrottle)
             {
-                vm.Variables[vm.VariableVoiceBundleLoaded.Value] = string.IsNullOrEmpty(_sfxFilename) ? 0 : 1;
+                _vm.Variables[_vm.VariableVoiceBundleLoaded.Value] = string.IsNullOrEmpty(_sfxFilename) ? 0 : 1;
             }
         }
 
@@ -229,12 +224,12 @@ namespace NScumm.Core
                 _talkSoundMode = 0;
             }
 
-            int act = vm.TalkingActor;
+            int act = _vm.TalkingActor;
             if ((SfxMode & 2) != 0 && act != 0)
             {
                 bool finished;
 
-                if (vm.MusicEngine is IMuseDigital)
+                if (_vm.MusicEngine is IMuseDigital)
                 {
                     finished = !IsSoundRunning(TalkSoundID);
                 }
@@ -247,9 +242,9 @@ namespace NScumm.Core
                     finished = !_mixer.IsSoundHandleActive(_talkChannelHandle);
                 }
 
-                if ((uint)act < 0x80 && ((vm.Game.Version == 8) || (vm.Game.Version <= 7 && !vm.String[0].NoTalkAnim)))
+                if ((uint)act < 0x80 && ((_vm.Game.Version == 8) || (_vm.Game.Version <= 7 && !_vm.String[0].NoTalkAnim)))
                 {
-                    var a = vm.Actors[act];
+                    var a = _vm.Actors[act];
                     if (a.IsInCurrentRoom)
                     {
                         if (IsMouthSyncOff(_curSoundPos) && !_mouthSyncMode)
@@ -264,15 +259,15 @@ namespace NScumm.Core
                             _mouthSyncMode = true;
                         }
 
-                        if (vm.Game.Version <= 6 && finished)
+                        if (_vm.Game.Version <= 6 && finished)
                             a.RunTalkScript(a.TalkStopFrame);
                     }
                 }
 
-                if (finished && vm.TalkDelay == 0)
+                if (finished && _vm.TalkDelay == 0)
                 {
-                    if (!(vm.Game.Version == 8 && vm.Variables[vm.VariableHaveMessage.Value] == 0))
-                        vm.StopTalk();
+                    if (!(_vm.Game.Version == 8 && _vm.Variables[_vm.VariableHaveMessage.Value] == 0))
+                        _vm.StopTalk();
                 }
             }
 
@@ -289,9 +284,9 @@ namespace NScumm.Core
         {
             if ((sfxMode & 2) != 0)
             {
-                if (vm.MusicEngine is IMuseDigital)
+                if (_vm.MusicEngine is IMuseDigital)
                 {
-                    ((IMuseDigital)vm.MusicEngine).StopSound(TalkSoundID);
+                    ((IMuseDigital)_vm.MusicEngine).StopSound(TalkSoundID);
                 }
                 //                else if (_vm->_game.heversion >= 60)
                 //                {
@@ -315,17 +310,17 @@ namespace NScumm.Core
                 StopCDTimer();
             }
 
-            if (vm.Game.Version < 7)
+            if (_vm.Game.Version < 7)
                 _mixer.StopID(sound);
 
-            if (vm.MusicEngine != null)
-                vm.MusicEngine.StopSound(sound);
+            if (_vm.MusicEngine != null)
+                _vm.MusicEngine.StopSound(sound);
 
-            if (soundQueue.Count > 0)
+            if (_soundQueue.Count > 0)
             {
-                var sounds = soundQueue.ToList();
+                var sounds = _soundQueue.ToList();
                 sounds.RemoveAll(obj => obj == sound);
-                soundQueue = new Stack<int>(sounds);
+                _soundQueue = new Stack<int>(sounds);
             }
         }
 
@@ -343,25 +338,25 @@ namespace NScumm.Core
 
         public void PauseSounds(bool pause)
         {
-            if (vm.IMuse != null)
-                vm.IMuse.Pause(pause);
+            if (_vm.IMuse != null)
+                _vm.IMuse.Pause(pause);
 
             // Don't pause sounds if the game isn't active
             // FIXME - this is quite a nasty hack, replace with something cleaner, and w/o
             // having to access member vars directly!
-            if (vm.CurrentRoomData == null)
+            if (_vm.CurrentRoomData == null)
                 return;
 
             _soundsPaused = pause;
 
-            if (vm.MusicEngine is IMuseDigital)
+            if (_vm.MusicEngine is IMuseDigital)
             {
-                ((IMuseDigital)vm.MusicEngine).Pause(pause);
+                ((IMuseDigital)_vm.MusicEngine).Pause(pause);
             }
 
             _mixer.PauseAll(pause);
 
-            if (vm.Game.Features.HasFlag(GameFeatures.AudioTracks) && vm.Variables[vm.VariableMusicTimer.Value] > 0)
+            if (_vm.Game.Features.HasFlag(GameFeatures.AudioTracks) && _vm.Variables[_vm.VariableMusicTimer.Value] > 0)
             {
                 if (pause)
                     StopCDTimer();
@@ -385,7 +380,7 @@ namespace NScumm.Core
         /// <returns></returns>
         public bool IsSoundInUse(int sound)
         {
-            var iMuseDigital = vm.MusicEngine as IMuseDigital;
+            var iMuseDigital = _vm.MusicEngine as IMuseDigital;
             if (iMuseDigital != null)
                 return (iMuseDigital.GetSoundStatus(sound) != 0);
 
@@ -395,25 +390,30 @@ namespace NScumm.Core
             if (IsSoundInQueue(sound))
                 return true;
 
-            if (!vm.ResourceManager.IsSoundLoaded(sound))
+            if (!_vm.ResourceManager.IsSoundLoaded(sound))
                 return false;
 
-            if (vm.IMuse != null)
-                return vm.IMuse.GetSoundActive(sound);
+            if (_vm.IMuse != null)
+                return _vm.IMuse.GetSoundActive(sound);
 
-            if (vm.Mixer.IsSoundIdActive(sound))
+            if (_vm.Mixer.IsSoundIdActive(sound))
                 return true;
 
             return false;
         }
 
+        byte[] ISoundRepository.GetSound(int id)
+        {
+            return _vm.ResourceManager.GetSound(MusicType, id);
+        }
+
         bool IsSoundInQueue(int sound)
         {
-            if (soundQueue.Any(snd => snd == sound))
+            if (_soundQueue.Any(snd => snd == sound))
                 return true;
 
             var i = 0;
-            var soundQueue2 = soundQueueIMuse.ToArray();
+            var soundQueue2 = _soundQueueIMuse.ToArray();
             while (i < soundQueue2.Length)
             {
                 var num = soundQueue2[i++];
@@ -430,60 +430,60 @@ namespace NScumm.Core
 
         void ProcessSoundQueue()
         {
-            while (soundQueue.Count > 0)
+            while (_soundQueue.Count > 0)
             {
-                var sound = soundQueue.Pop();
+                var sound = _soundQueue.Pop();
                 if (sound != 0)
                     PlaySound(sound);
             }
 
-            if (soundQueueIMuse.Count > 0)
+            if (_soundQueueIMuse.Count > 0)
             {
-                var num = soundQueueIMuse.Dequeue();
+                var num = _soundQueueIMuse.Dequeue();
                 var args = new int[16];
                 for (int i = 0; i < num; i++)
                 {
-                    args[i] = soundQueueIMuse.Dequeue();
+                    args[i] = _soundQueueIMuse.Dequeue();
                 }
-                if (vm.TownsPlayer != null)
-                    vm.Variables[vm.VariableSoundResult.Value] = (short)vm.TownsPlayer.DoCommand(num, args);
-                else if (vm.IMuse != null)
-                    vm.Variables[vm.VariableSoundResult.Value] = vm.IMuse.DoCommand(num, args);
+                if (_vm.TownsPlayer != null)
+                    _vm.Variables[_vm.VariableSoundResult.Value] = (short)_vm.TownsPlayer.DoCommand(num, args);
+                else if (_vm.IMuse != null)
+                    _vm.Variables[_vm.VariableSoundResult.Value] = _vm.IMuse.DoCommand(num, args);
             }
         }
 
         void PlaySound(int soundID)
         {
-            var res = vm.ResourceManager.GetSound(MusicType, soundID);
+            var res = _vm.ResourceManager.GetSound(MusicType, soundID);
             if (res == null)
                 return;
 
-            if (vm.Game.GameId == GameId.Monkey1)
+            if (_vm.Game.GameId == GameId.Monkey1)
             {
                 // Works around the fact that in some places in MonkeyEGA/VGA,
                 // the music is never explicitly stopped.
                 // Rather it seems that starting a new music is supposed to
                 // automatically stop the old song.
-                if (vm.IMuse != null)
+                if (_vm.IMuse != null)
                 {
                     if (System.Text.Encoding.UTF8.GetString(res, 0, 4) != "ASFX")
-                        vm.IMuse.StopAllSounds();
+                        _vm.IMuse.StopAllSounds();
                 }
             }
 
-            if (vm.MusicEngine != null)
+            if (_vm.MusicEngine != null)
             {
-                vm.MusicEngine.StartSound(soundID);
+                _vm.MusicEngine.StartSound(soundID);
             }
 
-            if (vm.TownsPlayer != null)
-                _currentCDSound = vm.TownsPlayer.GetCurrentCdaSound();
+            if (_vm.TownsPlayer != null)
+                _currentCDSound = _vm.TownsPlayer.GetCurrentCdaSound();
         }
 
         void SetupSfxFile()
         {
-            var dir = ServiceLocator.FileStorage.GetDirectoryName(vm.Game.Path);
-            _sfxFilename = (from filename in new[] { vm.Game.Id + ".sou", "monster.sou" }
+            var dir = ServiceLocator.FileStorage.GetDirectoryName(_vm.Game.Path);
+            _sfxFilename = (from filename in new[] { _vm.Game.Id + ".sou", "monster.sou" }
                             let path = ScummHelper.NormalizePath(ServiceLocator.FileStorage.Combine(dir, filename))
                             where path != null
                             select path).FirstOrDefault();
@@ -520,15 +520,15 @@ namespace NScumm.Core
             SoundHandle handle = null;
             var id = -1;
 
-            if (vm.Game.GameId == GameId.CurseOfMonkeyIsland)
+            if (_vm.Game.GameId == GameId.CurseOfMonkeyIsland)
             {
                 sfxMode |= mode;
                 return null;
             }
-            else if (vm.Game.GameId == GameId.Dig)
+            else if (_vm.Game.GameId == GameId.Dig)
             {
                 sfxMode |= mode;
-                if (!(vm.Game.Features.HasFlag(GameFeatures.Demo)))
+                if (!(_vm.Game.Features.HasFlag(GameFeatures.Demo)))
                     return null;
                 throw new NotImplementedException();
             }
@@ -543,7 +543,7 @@ namespace NScumm.Core
                 // Some games frequently assume that starting one sound effect will
                 // automatically stop any other that may be playing at that time. So
                 // that is what we do here, but we make an exception for speech.
-                if (mode == 1 && (vm.Game.GameId == GameId.Tentacle || vm.Game.GameId == GameId.SamNMax))
+                if (mode == 1 && (_vm.Game.GameId == GameId.Tentacle || _vm.Game.GameId == GameId.SamNMax))
                 {
                     id = 777777 + _talkSoundChannel;
                     _mixer.StopID(id);
@@ -583,7 +583,7 @@ namespace NScumm.Core
 
             var input = new VocStream(file, true);
 
-            var iMuseDigital = vm.MusicEngine as IMuseDigital;
+            var iMuseDigital = _vm.MusicEngine as IMuseDigital;
             if (iMuseDigital != null)
             {
                 iMuseDigital.StartVoice(TalkSoundID, input);
@@ -608,15 +608,15 @@ namespace NScumm.Core
             // should be possible to check with pollCD(), but since CD sound isn't
             // properly restarted when reloading a saved game, I don't dare to.
 
-            vm.Variables[vm.VariableMusicTimer.Value] += 6;
+            _vm.Variables[_vm.VariableMusicTimer.Value] += 6;
         }
 
-        readonly ScummEngine vm;
+        readonly ScummEngine _vm;
         readonly IMixer _mixer;
 
-        Timer timer;
-        Stack<int> soundQueue;
-        Queue<int> soundQueueIMuse;
+        Timer _timer;
+        Stack<int> _soundQueue;
+        Queue<int> _soundQueueIMuse;
 
         string _sfxFilename;
         int _talkSoundA1;
@@ -631,6 +631,7 @@ namespace NScumm.Core
         bool _mouthSyncMode;
         SoundHandle _talkChannelHandle;
         bool _endOfMouthSync;
+        int _currentCDSound;
 
         bool _soundsPaused;
 

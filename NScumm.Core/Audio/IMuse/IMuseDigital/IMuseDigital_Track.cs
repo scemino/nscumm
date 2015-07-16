@@ -137,9 +137,9 @@ namespace NScumm.Core.Audio.IMuse
                         if (_vm._actorToPrintStrFor != 0xFF && _vm._actorToPrintStrFor != 0)
                         {
                             var a = _vm.Actors[_vm._actorToPrintStrFor];
-                            freq = (freq * a._talkFrequency) / 256;
-                            track.pan = (sbyte)a._talkPan;
-                            track.vol = a._talkVolume * 1000;
+                            freq = (freq * a.TalkFrequency) / 256;
+                            track.pan = (sbyte)a.TalkPan;
+                            track.vol = a.TalkVolume * 1000;
                         }
 
                         // The volume is set to zero, when using subtitles only setting in COMI

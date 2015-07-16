@@ -364,6 +364,8 @@
     <Compile Include="Graphics\CharsetRendererTowns3.cs" />
     <Compile Include="IO\ScummDiskImage.cs" />
     <Compile Include="IEnableTrace.cs" />
+    <Compile Include="ObjectClass.cs" />
+    <Compile Include="AdjustBoxResult.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <ItemGroup />

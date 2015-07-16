@@ -72,6 +72,18 @@ namespace NScumm.Core.Graphics
             return false;
         }
 
+        public Point OffsetX(int x)
+        {
+            X += x;
+            return this;
+        }
+
+        public Point OffsetY(int y)
+        {
+            Y += y;
+            return this;
+        }
+
         public Point Offset(int x, int y)
         {
             X += x;

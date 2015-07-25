@@ -349,7 +349,7 @@ namespace NScumm.Core
                 // The v2 box matrix is a real matrix with numOfBoxes rows and columns.
                 // The first numOfBoxes bytes contain indices to the start of the corresponding
                 // row (although that seems unnecessary to me - the value is easily computable.
-                return boxm[numOfBoxes + boxm[from] + to];
+                return (sbyte)boxm[numOfBoxes + boxm[from] + to];
             }
 
             // WORKAROUND #1: It seems that in some cases, the box matrix is corrupt
@@ -377,7 +377,7 @@ namespace NScumm.Core
             while (boxmIndex < boxm.Count && boxm[boxmIndex] != 0xFF)
             {
                 if (boxm[boxmIndex] <= to && to <= boxm[boxmIndex + 1])
-                    dest = boxm[boxmIndex + 2];
+                    dest = (sbyte)boxm[boxmIndex + 2];
                 boxmIndex += 3;
             }
 

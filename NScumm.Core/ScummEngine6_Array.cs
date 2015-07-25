@@ -263,7 +263,7 @@ namespace NScumm.Core
             int val;
             if (ah.Type != ArrayType.IntArray)
             {
-                val = ah.ReadByte(offset);
+                val = (sbyte)ah.ReadByte(offset);
             }
             else if (Game.Version == 8)
             {
@@ -271,7 +271,7 @@ namespace NScumm.Core
             }
             else
             {
-                val = ah.ReadUInt16(offset);
+                val = (short)ah.ReadUInt16(offset);
             }
             return val;
         }

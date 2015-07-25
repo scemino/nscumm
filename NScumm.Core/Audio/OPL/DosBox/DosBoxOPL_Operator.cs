@@ -155,7 +155,7 @@ namespace NScumm.Core.Audio.OPL.DosBox
 
             public void Write80(Chip chip, byte val)
             {
-                var change = reg80 ^ val;
+                var change = ((int)reg80 ^ val);
                 if (change == 0)
                     return;
                 reg80 = val;
@@ -365,7 +365,7 @@ namespace NScumm.Core.Audio.OPL.DosBox
             /// <param name="chip">Chip.</param>
             void UpdateAttack(Chip chip)
             {
-                byte rate = (byte)(reg60 >> 4);
+                byte rate = (byte)((int)reg60 >> 4);
                 if (rate != 0)
                 {
                     byte val = (byte)((rate << 2) + ksr);

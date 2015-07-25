@@ -39,8 +39,8 @@ namespace NScumm.Core.Graphics
 
         public void DrawFrame(byte[] dst, int c, int x, int y)
         {
-            var width = Math.Min(_chars[c].Width, _vm.ScreenWidth - x);
-            var height = Math.Min(_chars[c].Height, _vm.ScreenHeight - y);
+            var width = Math.Min((int)_chars[c].Width, _vm.ScreenWidth - x);
+            var height = Math.Min((int)_chars[c].Height, _vm.ScreenHeight - y);
             var src = UnpackChar((char)c);
             var srcPitch = _chars[c].Width;
 
@@ -79,8 +79,8 @@ namespace NScumm.Core.Graphics
 
         public void DrawChar(PixelNavigator dst, char c, int x, int y, byte color)
         {
-            var width = Math.Min(_chars[c].Width, dst.Width - x);
-            var height = Math.Min(_chars[c].Height, dst.Height - y);
+            var width = Math.Min((int)_chars[c].Width, dst.Width - x);
+            var height = Math.Min((int)_chars[c].Height, dst.Height - y);
             var src = UnpackChar(c);
             var srcPitch = _chars[c].Width;
             var srcPos = 0;

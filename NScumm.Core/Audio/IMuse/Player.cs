@@ -144,7 +144,7 @@ namespace NScumm.Core.Audio.IMuse
             if (cmd != 0 && cmd < 0x80)
                 _hook.Transpose = 0;
 
-            SetTranspose(data[1], data[2]);
+            SetTranspose(data[1], (sbyte)data[2]);
         }
 
         public void MaybePartOnOff(byte[] data)
@@ -303,7 +303,7 @@ namespace NScumm.Core.Audio.IMuse
                 ptr.CurrentTime += advance;
                 if (ptr.CurrentTime > ptr.TotalTime)
                     ptr.CurrentTime = ptr.TotalTime;
-                value = ptr.Start + (ptr.End - ptr.Start) * (int)ptr.CurrentTime / (int)ptr.TotalTime;
+                value = (int)ptr.Start + (int)(ptr.End - ptr.Start) * (int)ptr.CurrentTime / (int)ptr.TotalTime;
 
                 switch (ptr.Param)
                 {

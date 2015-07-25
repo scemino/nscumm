@@ -1140,7 +1140,7 @@ namespace NScumm.Core.Audio
                 // channel.macroIndex = param1 & (MaxMacroOffsets - 1);
                 channel.macroOffset = (_resource.macroOffset[param1 & (MaxMacroOffsets - 1)]);
                 channel.relVol = (byte)(param2 >> 4);
-                channel.fineTune = param3;
+                channel.fineTune = (sbyte)param3;
 
                 // TODO: the point where the channel gets initialized varies with the games, needs more research.
                 InitMacroProgramm(channel);

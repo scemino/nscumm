@@ -580,7 +580,7 @@ namespace NScumm.Core.Audio.IMuse
                     destPos += channels << 1;
 
                     // Adjust the curTablePos
-                    curTablePos += imxOtherTable[curTableEntryBitCount - 2][data];
+                    curTablePos += (sbyte)imxOtherTable[curTableEntryBitCount - 2][data];
                     curTablePos = ScummHelper.Clip(curTablePos, 0, Ima_ADPCMStream._imaTable.Length - 1);
                 }
             }

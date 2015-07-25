@@ -188,7 +188,7 @@ namespace NScumm.Core.Audio
                 var p = _framerate / g;
                 var q = ts._framerate / g;
 
-                delta -= (int)(((long)ts._numFrames * p + q / 2) / q);
+                delta -= (int)(((long)ts._numFrames * p + q / 2) / (long)q);
             }
 
             return delta / _framerateFactor;

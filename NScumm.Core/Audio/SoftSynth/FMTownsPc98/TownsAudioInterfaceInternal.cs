@@ -324,8 +324,8 @@ namespace NScumm.Core.Audio.SoftSynth
             // CD-AUDIO
             uint maxVol = (uint)Math.Max(_outputLevel[12] * (_outputMute[12] ^ 1), _outputLevel[13] * (_outputMute[13] ^ 1));
 
-            int volume = (int)(maxVol * 255 / 63.0f);
-            int balance = maxVol != 0 ? (int)((_outputLevel[13] * (_outputMute[13] ^ 1) - _outputLevel[12] * (_outputMute[12] ^ 1)) * 127 / (float)maxVol) : 0;
+            int volume = (int)(((float)(maxVol * 255) / 63.0f));
+            int balance = maxVol != 0 ? (int)((((int)_outputLevel[13] * (_outputMute[13] ^ 1) - _outputLevel[12] * (_outputMute[12] ^ 1)) * 127) / (float)maxVol) : 0;
 
             ScummEngine.Instance.AudioCDManager.Volume = volume;
             ScummEngine.Instance.AudioCDManager.Balance = balance;

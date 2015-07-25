@@ -595,7 +595,7 @@ namespace NScumm.Core.Insane
 
             if (fluPtr != null)
             {
-                tmp = (startFrame / 30 + 1) * 30;
+                tmp = ((int)startFrame / 30 + 1) * 30;
                 if (tmp >= numFrames)
                     tmp = 0;
 

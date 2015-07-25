@@ -619,7 +619,7 @@ namespace NScumm.Core.Smush
                                 }
                                 else
                                 {
-                                    short val = (short)(value << variable2);
+                                    short val = (short)((sbyte)value << variable2);
                                     output_data[dst++] = (byte)(val >> 8);
                                     output_data[dst++] = (byte)val;
                                 }
@@ -631,7 +631,7 @@ namespace NScumm.Core.Smush
                                 }
                                 else
                                 {
-                                    short val = (short)(value << variable1);
+                                    short val = (short)((sbyte)value << variable1);
                                     output_data[dst++] = (byte)(val >> 8);
                                     output_data[dst++] = (byte)val;
                                 }
@@ -845,7 +845,7 @@ namespace NScumm.Core.Smush
             int max_frames = b.ReadUInt16();
             int flags = b.ReadUInt16();
             int vol = b.ReadByte();
-            int pan = b.ReadByte();
+            int pan = (sbyte)b.ReadByte();
             if (index == 0)
             {
 //                Debug.WriteLine("track_id:{0}, max_frames:{1}, flags:{2}, vol:{3}, pan:{4}", track_id, max_frames, flags, vol, pan);

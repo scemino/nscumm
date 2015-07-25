@@ -315,7 +315,7 @@ namespace NScumm.Core.Audio.OPL.DosBox
                     }
 
                     //Do unsigned shift so we can shift out all bits but still stay in 10 bit range otherwise
-                    int mod = (old[0] + old[1]) >> feedback;
+                    int mod = (int)((old[0] + old[1]) >> feedback);
                     old[0] = old[1];
                     old[1] = Op(0).GetSample(mod);
                     int sample = 0;
@@ -485,7 +485,7 @@ namespace NScumm.Core.Audio.OPL.DosBox
                 Channel chan = this;
 
                 //BassDrum
-                int mod = (old[0] + old[1]) >> feedback;
+                int mod = (int)((old[0] + old[1])) >> feedback;
                 old[0] = old[1];
                 old[1] = Op(0).GetSample(mod);
 
@@ -505,7 +505,7 @@ namespace NScumm.Core.Audio.OPL.DosBox
                 uint noiseBit = chip.ForwardNoise() & 0x1;
                 int c2 = Op(2).ForwardWave();
                 int c5 = Op(5).ForwardWave();
-                int phaseBit = (((c2 & 0x88) ^ ((c2 << 5) & 0x80)) | ((c5 ^ (c5 << 2)) & 0x20)) != 0 ? 0x02 : 0x00;
+                int phaseBit = (int)((((c2 & 0x88) ^ ((c2 << 5) & 0x80)) | ((c5 ^ (c5 << 2)) & 0x20)) != 0 ? 0x02 : 0x00);
 
                 //Hi-Hat
                 uint hhVol = Op(2).ForwardVolume();

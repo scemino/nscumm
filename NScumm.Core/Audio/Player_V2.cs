@@ -334,9 +334,9 @@ namespace NScumm.Core.Audio
                 if ((_timer_output & (1 << channel)) != 0)
                     duration -= (uint)_timer_count[channel];
 
-                nsample = sample[offset] + (((int)
+                nsample = (int)(sample[offset] + (((int)
                 (duration - (1 << (FIXP_SHIFT - 1)))
-                    * (int)_volumetable[vol]) >> FIXP_SHIFT);
+                    * (int)_volumetable[vol]) >> FIXP_SHIFT));
                 /* overflow: clip value */
                 if (nsample > 0x7fff)
                     nsample = 0x7fff;

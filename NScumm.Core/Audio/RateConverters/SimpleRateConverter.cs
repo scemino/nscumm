@@ -105,10 +105,10 @@ namespace NScumm.Core.Audio
                 opos += oposInc;
 
                 // output left channel
-                RateHelper.ClampedAdd(ref obuf[reverseStereo ? 1 : 0], (out0 * volLeft) / Mixer.MaxMixerVolume);
+                RateHelper.ClampedAdd(ref obuf[reverseStereo ? 1 : 0], (out0 * (int)volLeft) / Mixer.MaxMixerVolume);
 
                 // output right channel
-                RateHelper.ClampedAdd(ref obuf[(reverseStereo ? 1 : 0) ^ 1], (out1 * volRight) / Mixer.MaxMixerVolume);
+                RateHelper.ClampedAdd(ref obuf[(reverseStereo ? 1 : 0) ^ 1], (out1 * (int)volRight) / Mixer.MaxMixerVolume);
 
                 pos += 2;
             }

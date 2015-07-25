@@ -213,7 +213,7 @@ namespace NScumm.Core.Audio.OPL.DosBox
 
             public void Setup(int rate)
             {
-                double scale = OPLRATE / rate;
+                double scale = OPLRATE / (double)rate;
 
                 //Noise counter is run at the same precision as general waves
                 noiseAdd = (uint)(0.5 + scale * (1 << LfoShift));

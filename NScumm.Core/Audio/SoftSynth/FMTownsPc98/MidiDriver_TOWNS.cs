@@ -217,7 +217,7 @@ namespace NScumm.Core.Audio.SoftSynth
 
                 if (s != (int)CheckPriorityStatus.HighPriority)
                 {
-                    pri = s;
+                    pri = (int)s;
                     res = _out[_allocCurPos];
                 }
             }

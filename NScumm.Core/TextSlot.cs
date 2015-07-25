@@ -30,15 +30,11 @@ namespace NScumm.Core
 
         public byte Charset { get; set; }
 
-        public int Height { get; set; }
-
-        public bool Center { get; set; }
-
-        public bool Overhead { get; set; }
-
-        public bool NoTalkAnim { get; set; }
-
-        public bool Wrapping { get; set; }
+        public int Height;
+        public bool Center;
+        public bool Overhead;
+        public bool NoTalkAnim;
+        public bool Wrapping;
 
         public Slot()
         {
@@ -63,7 +59,7 @@ namespace NScumm.Core
 
     class TextSlot : Slot
     {
-        readonly Slot _default = new Slot();
+        Slot _default = new Slot();
 
         public Slot Default
         {

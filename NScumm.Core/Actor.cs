@@ -34,21 +34,64 @@ namespace NScumm.Core
         Frozen = 0x80
     }
 
+    [Flags]
+    enum ObjectClass
+    {
+        NeverClip = 20,
+        AlwaysClip = 21,
+        IgnoreBoxes = 22,
+        YFlip = 29,
+        XFlip = 30,
+        // Actor is controlled by the player
+        Player = 31,
+        Untouchable = 32
+    }
+
+    struct AdjustBoxResult
+    {
+        public Point Position;
+        public byte Box;
+    }
+
     [System.Diagnostics.DebuggerDisplay("{DebuggerDisplay,nq}")]
-    class Actor
+    internal class Actor
     {
         #region Private Fields
+
+        /// <summary>
+        /// The position of the actor inside the virtual screen.
+        /// </summary>
+        Point _position;
+
         protected ScummEngine _scumm;
         protected ushort _targetFacing;
         protected ActorWalkData _walkdata;
-        protected uint _speedx, _speedy;
 
         ushort[] _palette = new ushort[256];
         int _elevation;
+        protected uint _speedx, _speedy;
         byte _animProgress, _animSpeed;
         bool _costumeNeedsInit;
         short[] _animVariable = new short[27];
+        internal int _talkFrequency;
+        internal byte _talkVolume;
+        internal byte _talkPan;
         int _frame;
+
+        #endregion
+
+        #region Public Fields
+
+        public int Top, Bottom;
+        public uint Width;
+
+        public ushort BoxScale;
+        public byte ScaleX, ScaleY;
+        public byte Charset;
+        public byte ForceClip;
+
+        public CostumeData Cost;
+
         #endregion
 
         #region Properties
@@ -60,19 +103,6 @@ namespace NScumm.Core
                 return string.Format("Name: {0}, IsInCurrentRoom: {1}, Visible: {2}", Name != null ? System.Text.Encoding.UTF8.GetString(Name) : null, IsInCurrentRoom, IsVisible);
             }    
         }
-
-        public int Top { get; private set; }
-        public int Bottom { get; private set; }
-        public uint Width { get; set; }
-
-        public ushort BoxScale { get; set; }
-        public byte ScaleX { get; set; }
-        public byte ScaleY { get; set; }
-        public byte ForceClip { get; set; }
-
-        public byte Charset { get; private set; }
-
-        public CostumeData Cost { get; private set; }
 
         public bool DrawToBackBuf { get; set; }
 
@@ -100,7 +130,11 @@ namespace NScumm.Core
 
         public byte StandFrame { get; set; }
 
+        public byte TalkStartFrame { get; set; }
 
+        public byte TalkStopFrame { get; set; }
+
+        public ushort TalkScript { get; set; }
 
         public ushort WalkScript { get; set; }
 
@@ -116,7 +150,7 @@ namespace NScumm.Core
         {
             get
             { 
-                var pos = new Point(RealPosition);
+                Point pos = new Point(_position);
                 if (_scumm.Game.Version <= 2)
                 {
                     pos.X *= Actor2.V12_X_MULTIPLIER;
@@ -128,8 +162,14 @@ namespace NScumm.Core
 
         public Point RealPosition
         {
-            get;
-            protected set;
+            get
+            { 
+                return _position; 
+            }
+            protected set
+            {
+                _position = value;
+            }
         }
 
         public ushort Facing { get; set; }
@@ -170,12 +210,6 @@ namespace NScumm.Core
         {
             get{ return IsInClass(ObjectClass.Player); }
         }
-
-        public byte TalkStartFrame { get; set; }
-
-        public byte TalkStopFrame { get; set; }
-
-        public ushort TalkScript { get; set; }
 
         public int TalkVolume { get; set; }
 
@@ -224,10 +258,81 @@ namespace NScumm.Core
 
         #region Public Methods
 
+        public void Show()
+        {
+            if (_scumm.CurrentRoom == 0 || IsVisible)
+                return;
+
+            AdjustActorPos();
+
+            _scumm.ResourceManager.LoadCostume(Costume);
+
+            if (_scumm.Game.Version == 0)
+            {
+                var a = (Actor0)this;
+
+                a.CostCommand = a.CostCommandNew = 0xFF;
+                _walkdata.Dest = a.CurrentWalkTo;
+
+                for (int i = 0; i < 8; ++i)
+                {
+                    a.LimbFrameRepeat[i] = 0;
+                    a.LimbFrameRepeatNew[i] = 0;
+                }
+
+                Cost.Reset();
+
+                a.AnimFrameRepeat = 1;
+                a.Speaking = 0;
+
+                StartAnimActor(StandFrame);
+                IsVisible = true;
+                return;
+
+            }
+            else if (_scumm.Game.Version <= 2)
+            {
+                Cost.Reset();
+                StartAnimActor(StandFrame);
+                StartAnimActor(InitFrame);
+                StartAnimActor(TalkStopFrame);
+            }
+            else
+            {
+                if (_costumeNeedsInit)
+                {
+                    StartAnimActor(InitFrame);
+                    _costumeNeedsInit = false;
+                }
+            }
+
+            StopActorMoving();
+            IsVisible = true;
+            NeedRedraw = true;
+        }
+
+        public void Hide()
+        {
+            if (!IsVisible)
+                return;
+
+            if (Moving != MoveFlags.None)
+            {
+                StopActorMoving();
+                StartAnimActor(StandFrame);
+            }
+
+            IsVisible = false;
+            Cost.SoundCounter = 0;
+            Cost.SoundPos = 0;
+            NeedRedraw = false;
+            NeedBackgroundReset = true;
+        }
+
         public virtual void Init(int mode)
         {
             Name = null;
-
+        
             if (mode == -1)
             {
                 Top = Bottom = 0;
@@ -255,7 +360,8 @@ namespace NScumm.Core
             {
                 Costume = 0;
                 Room = 0;
-                RealPosition = new Point();
+                _position.X = 0;
+                _position.Y = 0;
                 Facing = 180;
                 if (_scumm.Game.Version >= 7)
                     IsVisible = false;
@@ -292,9 +398,9 @@ namespace NScumm.Core
             ForceClip = (_scumm.Game.Version >= 7) ? (byte)100 : (byte)0;
             IgnoreTurns = false;
 
-            TalkFrequency = 256;
-            TalkPan = 64;
-            TalkVolume = 127;
+            _talkFrequency = 256;
+            _talkPan = 64;
+            _talkVolume = 127;
 
             ResetFrames();
 
@@ -302,6 +408,151 @@ namespace NScumm.Core
             TalkScript = 0;
 
             _scumm.ClassData[Number] = (_scumm.Game.Version >= 7) ? _scumm.ClassData[0] : 0;
+        }
+
+        public void ResetFrames()
+        {
+            InitFrame = 1;
+            WalkFrame = 2;
+            StandFrame = 3;
+            TalkStartFrame = 4;
+            TalkStopFrame = 5;
+        }
+
+        public void PutActor()
+        {
+            PutActor(_position, Room);
+        }
+
+        public void PutActor(byte room)
+        {
+            PutActor(_position, room);
+        }
+
+        public void PutActor(Point pos)
+        {
+            PutActor(pos, Room);
+        }
+
+        public void PutActor(Point pos, byte newRoom)
+        {
+            if (IsVisible && _scumm.CurrentRoom != newRoom && _scumm.TalkingActor == Number)
+            {
+                _scumm.StopTalk();
+            }
+
+            _position = pos;
+            Room = newRoom;
+            NeedRedraw = true;
+
+            if (_scumm.Variables[_scumm.VariableEgo.Value] == Number)
+            {
+                _scumm.EgoPositioned = true;
+            }
+
+            if (IsVisible)
+            {
+                if (IsInCurrentRoom)
+                {
+                    if (Moving != MoveFlags.None)
+                    {
+                        StopActorMoving();
+                        StartAnimActor(StandFrame);
+                    }
+                    AdjustActorPos();
+                }
+                else
+                {
+                    Hide();
+                }
+            }
+            else
+            {
+                if (IsInCurrentRoom)
+                    Show();
+            }
+
+            // V0 always sets the actor to face the camera upon entering a room
+            if (_scumm.Game.Version == 0)
+            {
+                _walkdata.Dest = _position;
+
+                ((Actor0)this).NewWalkBoxEntered = true;
+                ((Actor0)this).CurrentWalkTo = _position;
+
+                SetDirection(ScummHelper.OldDirToNewDir(2));
+            }
+        }
+
+        public void SetActorCostume(ushort costume)
+        {
+            _costumeNeedsInit = true;
+
+            if (_scumm.Game.Version >= 7)
+            {
+                Array.Clear(_animVariable, 0, _animVariable.Length);
+
+                Costume = costume;
+                Cost.Reset();
+
+                if (IsVisible)
+                {
+                    StartAnimActor(InitFrame);
+                }
+            }
+            else
+            {
+
+                if (IsVisible)
+                {
+                    Hide();
+                    Cost.Reset();
+                    Costume = costume;
+                    Show();
+                }
+                else
+                {
+                    Costume = costume;
+                    Cost.Reset();
+                }
+            }
+
+            // V1 zak uses palette[] as a dynamic costume color array.
+            if (_scumm.Game.Version <= 1)
+                return;
+
+            if (_scumm.Game.Version >= 7)
+            {
+                for (var i = 0; i < 256; i++)
+                    _palette[i] = 0xFF;
+            }
+            else if (_scumm.Game.IsOldBundle)
+            {
+                for (var i = 0; i < 16; i++)
+                    _palette[i] = (byte)i;
+            }
+            else
+            {
+                for (var i = 0; i < 32; i++)
+                    _palette[i] = 0xFF;
+            }
+        }
+
+        public void SetActorWalkSpeed(uint newSpeedX, uint newSpeedY)
+        {
+            if (newSpeedX == _speedx && newSpeedY == _speedy)
+                return;
+
+            _speedx = newSpeedX;
+            _speedy = newSpeedY;
+
+            if (Moving != MoveFlags.None)
+            {
+                if (_scumm.Game.Version == 8 && !Moving.HasFlag(MoveFlags.InLeg))
+                    return;
+
+                CalcMovementFactor(_walkdata.Next);
+            }
         }
 
         public virtual AdjustBoxResult AdjustXYToBeInBox(Point dst)
@@ -420,6 +671,19 @@ namespace NScumm.Core
             NeedRedraw = true;
         }
 
+        public void FaceToObject(int obj)
+        {
+            if (!IsInCurrentRoom)
+                return;
+
+            Point p;
+            if (!_scumm.GetObjectOrActorXY(obj, out p))
+                return;
+
+            var dir = (p.X > _position.X) ? 90 : 270;
+            TurnToDirection(dir);
+        }
+
         public virtual void Walk()
         {
             int new_dir, next_box;
@@ -516,514 +780,6 @@ namespace NScumm.Core
             CalcMovementFactor(_walkdata.Dest);
         }
 
-        public virtual void AnimateCostume()
-        {
-            if (Costume == 0)
-                return;
-
-            _animProgress++;
-            if (_animProgress >= _animSpeed)
-            {
-                _animProgress = 0;
-
-                _scumm.CostumeLoader.LoadCostume(Costume);
-                if (_scumm.CostumeLoader.IncreaseAnims(this) != 0)
-                {
-                    NeedRedraw = true;
-                }
-            }
-        }
-
-        public virtual void SaveOrLoad(Serializer serializer)
-        {
-            var actorEntries = new[]
-                {
-                    LoadAndSaveEntry.Create(reader => RealPosition = new Point(reader.ReadInt16(), reader.ReadInt16()), 
-                        writer =>
-                        {
-                            writer.WriteInt16(RealPosition.X);
-                            writer.WriteInt16(RealPosition.Y);
-                        }, 8),
-                    LoadAndSaveEntry.Create(reader => reader.ReadInt16(), writer => writer.WriteInt16(0xCDCD), 32),
-                    LoadAndSaveEntry.Create(reader => reader.ReadInt16(), writer => writer.WriteInt16(0xCDCD), 32),
-                    LoadAndSaveEntry.Create(reader => Top = reader.ReadInt16(), writer => writer.WriteInt16(Top), 8),
-                    LoadAndSaveEntry.Create(reader => Bottom = reader.ReadInt16(), writer => writer.WriteInt16(Bottom), 8),
-                    LoadAndSaveEntry.Create(reader => _elevation = reader.ReadInt16(), writer => writer.WriteInt16(_elevation), 8),
-                    LoadAndSaveEntry.Create(reader => Width = reader.ReadUInt16(), writer => writer.WriteUInt16(Width), 8),
-                    LoadAndSaveEntry.Create(reader => Facing = reader.ReadUInt16(), writer => writer.WriteUInt16(Facing), 8),
-                    LoadAndSaveEntry.Create(reader => Costume = reader.ReadUInt16(), writer => writer.WriteUInt16(Costume), 8),
-                    LoadAndSaveEntry.Create(reader => Room = reader.ReadByte(), writer => writer.WriteByte(Room), 8),
-                    LoadAndSaveEntry.Create(reader => TalkColor = reader.ReadByte(), writer => writer.WriteByte(TalkColor), 8),
-                    LoadAndSaveEntry.Create(reader => TalkFrequency = reader.ReadInt16(), writer => writer.WriteInt16(TalkFrequency), 16),
-                    LoadAndSaveEntry.Create(reader => TalkPan = (byte)reader.ReadInt16(), writer => writer.WriteInt16(TalkPan), 24),
-                    LoadAndSaveEntry.Create(reader => TalkVolume = (byte)reader.ReadInt16(), writer => writer.WriteInt16(TalkVolume), 29),
-                    LoadAndSaveEntry.Create(reader => BoxScale = reader.ReadUInt16(), writer => writer.WriteUInt16(BoxScale), 34),
-                    LoadAndSaveEntry.Create(reader => ScaleX = reader.ReadByte(), writer => writer.WriteByte(ScaleX), 8),
-                    LoadAndSaveEntry.Create(reader => ScaleY = reader.ReadByte(), writer => writer.WriteByte(ScaleY), 8),
-                    LoadAndSaveEntry.Create(reader => Charset = reader.ReadByte(), writer => writer.WriteByte(Charset), 8),
-
-                    // Actor sound grew from 8 to 32 bytes and switched to uint16 in HE games
-                    LoadAndSaveEntry.Create(
-                        reader => Sound = reader.ReadBytes(8).ToArray()[0],
-                        writer =>
-                        {
-                            var sounds = new byte[8];
-                            sounds[0] = (byte)Sound;
-                            writer.Write(sounds);
-                        },
-                        8, 36),
-                    LoadAndSaveEntry.Create(
-                        reader => Sound = reader.ReadBytes(32).ToArray()[0],
-                        writer =>
-                        {
-                            var sounds = new byte[32];
-                            sounds[0] = (byte)Sound;
-                            writer.Write(sounds);
-                        },
-                        37, 61),
-                    LoadAndSaveEntry.Create(
-                        reader => Sound = reader.ReadUInt16s(32)[0],
-                        writer =>
-                        {
-                            var sounds = new ushort[32];
-                            sounds[0] = (ushort)Sound;
-                            writer.WriteUInt16s(sounds, 32);
-                        },
-                        62),
-
-                    // Actor animVariable grew from 8 to 27
-                    LoadAndSaveEntry.Create(reader => _animVariable = reader.ReadInt16s(8), writer => writer.WriteInt16s(_animVariable, 8), 8, 40),
-                    LoadAndSaveEntry.Create(reader => _animVariable = reader.ReadInt16s(27), writer => writer.WriteInt16s(_animVariable, 27), 41),
-
-                    LoadAndSaveEntry.Create(reader => _targetFacing = reader.ReadUInt16(), writer => writer.WriteUInt16(_targetFacing), 8),
-                    LoadAndSaveEntry.Create(reader => Moving = (MoveFlags)reader.ReadByte(), writer => writer.WriteByte((byte)Moving), 8),
-                    LoadAndSaveEntry.Create(reader => IgnoreBoxes = reader.ReadByte() != 0, writer => writer.WriteByte(IgnoreBoxes), 8),
-                    LoadAndSaveEntry.Create(reader => ForceClip = reader.ReadByte(), writer => writer.WriteByte(ForceClip), 8),
-                    LoadAndSaveEntry.Create(reader => InitFrame = reader.ReadByte(), writer => writer.WriteByte(InitFrame), 8),
-                    LoadAndSaveEntry.Create(reader => WalkFrame = reader.ReadByte(), writer => writer.WriteByte(WalkFrame), 8),
-                    LoadAndSaveEntry.Create(reader => StandFrame = reader.ReadByte(), writer => writer.WriteByte(StandFrame), 8),
-                    LoadAndSaveEntry.Create(reader => TalkStartFrame = reader.ReadByte(), writer => writer.WriteByte(TalkStartFrame), 8),
-                    LoadAndSaveEntry.Create(reader => TalkStopFrame = reader.ReadByte(), writer => writer.WriteByte(TalkStopFrame), 8),
-                    LoadAndSaveEntry.Create(reader => _speedx = reader.ReadUInt16(), writer => writer.WriteUInt16(_speedx), 8),
-                    LoadAndSaveEntry.Create(reader => _speedy = reader.ReadUInt16(), writer => writer.WriteUInt16(_speedy), 8),
-                    LoadAndSaveEntry.Create(reader => Cost.AnimCounter = reader.ReadUInt16(), writer => writer.WriteUInt16(Cost.AnimCounter), 8),
-                    LoadAndSaveEntry.Create(reader => Cost.SoundCounter = reader.ReadByte(), writer => writer.WriteByte(Cost.SoundCounter), 8),
-                    LoadAndSaveEntry.Create(reader => DrawToBackBuf = reader.ReadByte() != 0, writer => writer.WriteByte(DrawToBackBuf), 32),
-                    LoadAndSaveEntry.Create(reader => Flip = reader.ReadByte() != 0, writer => writer.WriteByte(Flip), 32),
-                    LoadAndSaveEntry.Create(reader => reader.ReadByte(), writer => writer.WriteByte(0xCD), 32),
-
-                    // Actor palette grew from 64 to 256 bytes and switched to uint16 in HE games
-                    LoadAndSaveEntry.Create(
-                        reader => _palette = reader.ReadBytes(64).Cast<ushort>().ToArray(),
-                        writer => writer.WriteBytes(_palette, 64),
-                        8, 9),
-                    LoadAndSaveEntry.Create(
-                        reader => _palette = reader.ReadBytes(256).Cast<ushort>().ToArray(),
-                        writer => writer.WriteBytes(_palette, 256),
-                        10, 79),
-                    LoadAndSaveEntry.Create(
-                        reader => _palette = reader.ReadUInt16s(256),
-                        writer => writer.WriteUInt16s(_palette, 256)
-                        , 80),
-
-                    LoadAndSaveEntry.Create(reader => reader.ReadByte(), writer => writer.WriteByte(0), 8, 9),
-                    LoadAndSaveEntry.Create(reader => ShadowMode = reader.ReadByte(), writer => writer.WriteByte(ShadowMode), 8),
-                    LoadAndSaveEntry.Create(reader => IsVisible = reader.ReadByte() != 0, writer => writer.WriteByte(IsVisible), 8),
-                    LoadAndSaveEntry.Create(reader => _frame = reader.ReadByte(), writer => writer.WriteByte(_frame), 8),
-                    LoadAndSaveEntry.Create(reader => _animSpeed = reader.ReadByte(), writer => writer.WriteByte(_animSpeed), 8),
-                    LoadAndSaveEntry.Create(reader => _animProgress = reader.ReadByte(), writer => writer.WriteByte(_animProgress), 8),
-                    LoadAndSaveEntry.Create(reader => Walkbox = reader.ReadByte(), writer => writer.WriteByte(Walkbox), 8),
-                    LoadAndSaveEntry.Create(reader => NeedRedraw = reader.ReadByte() != 0, writer => writer.WriteByte(NeedRedraw), 8),
-                    LoadAndSaveEntry.Create(reader => NeedBackgroundReset = reader.ReadByte() != 0, writer => writer.WriteByte(NeedBackgroundReset), 8),
-                    LoadAndSaveEntry.Create(reader => _costumeNeedsInit = reader.ReadByte() != 0, writer => writer.WriteByte(_costumeNeedsInit), 8),
-                    LoadAndSaveEntry.Create(reader => reader.ReadUInt32(), writer => writer.WriteUInt32(0xCDCDCDCD), 38),
-                    LoadAndSaveEntry.Create(reader => reader.ReadUInt32(), writer => writer.WriteUInt32(0xCDCDCDCD), 59),
-                    LoadAndSaveEntry.Create(reader => reader.ReadUInt32(), writer => writer.WriteUInt32(0xCDCDCDCD), 59),
-
-                    LoadAndSaveEntry.Create(reader =>
-                        {
-                            TalkPosition = new Point(reader.ReadInt16(), reader.ReadInt16());
-                        }, writer =>
-                        {
-                            writer.WriteInt16(TalkPosition.X);
-                            writer.WriteInt16(TalkPosition.Y);
-                        }, 8),
-                    LoadAndSaveEntry.Create(reader => IgnoreTurns = reader.ReadByte() != 0, writer => writer.WriteByte(IgnoreTurns), 8),
-
-                    // Actor layer switched to int32 in HE games
-                    LoadAndSaveEntry.Create(reader => Layer = reader.ReadByte(), writer => writer.WriteByte(Layer), 8, 57),
-                    LoadAndSaveEntry.Create(reader => Layer = reader.ReadInt32(), writer => writer.WriteInt32(Layer), 58),
-
-                    LoadAndSaveEntry.Create(reader => TalkScript = reader.ReadUInt16(), writer => writer.WriteUInt16(TalkScript), 8),
-                    LoadAndSaveEntry.Create(reader => WalkScript = reader.ReadUInt16(), writer => writer.WriteUInt16(WalkScript), 8),
-
-                    LoadAndSaveEntry.Create(reader => _walkdata.Dest.X = reader.ReadInt16(), writer => writer.WriteInt16(_walkdata.Dest.X), 8),
-                    LoadAndSaveEntry.Create(reader => _walkdata.Dest.Y = reader.ReadInt16(), writer => writer.WriteInt16(_walkdata.Dest.Y), 8),
-                    LoadAndSaveEntry.Create(reader => _walkdata.DestBox = reader.ReadByte(), writer => writer.WriteByte(_walkdata.DestBox), 8),
-                    LoadAndSaveEntry.Create(reader => _walkdata.DestDir = reader.ReadInt16(), writer => writer.WriteInt16(_walkdata.DestDir), 8),
-                    LoadAndSaveEntry.Create(reader => _walkdata.CurBox = reader.ReadByte(), writer => writer.WriteByte(_walkdata.CurBox), 8),
-                    LoadAndSaveEntry.Create(reader => _walkdata.Cur.X = reader.ReadInt16(), writer => writer.WriteInt16(_walkdata.Cur.X), 8),
-                    LoadAndSaveEntry.Create(reader => _walkdata.Cur.Y = reader.ReadInt16(), writer => writer.WriteInt16(_walkdata.Cur.Y), 8),
-                    LoadAndSaveEntry.Create(reader => _walkdata.Next.X = reader.ReadInt16(), writer => writer.WriteInt16(_walkdata.Next.X), 8),
-                    LoadAndSaveEntry.Create(reader => _walkdata.Next.Y = reader.ReadInt16(), writer => writer.WriteInt16(_walkdata.Next.Y), 8),
-                    LoadAndSaveEntry.Create(reader => _walkdata.DeltaXFactor = reader.ReadInt32(), writer => writer.WriteInt32(_walkdata.DeltaXFactor), 8),
-                    LoadAndSaveEntry.Create(reader => _walkdata.DeltaYFactor = reader.ReadInt32(), writer => writer.WriteInt32(_walkdata.DeltaYFactor), 8),
-                    LoadAndSaveEntry.Create(reader => _walkdata.XFrac = reader.ReadUInt16(), writer => writer.WriteUInt16(_walkdata.XFrac), 8),
-                    LoadAndSaveEntry.Create(reader => _walkdata.YFrac = reader.ReadUInt16(), writer => writer.WriteUInt16(_walkdata.YFrac), 8),
-
-                    LoadAndSaveEntry.Create(reader => _walkdata.Point3.X = reader.ReadInt16(), writer => writer.WriteInt16(_walkdata.Point3.X), 42),
-                    LoadAndSaveEntry.Create(reader => _walkdata.Point3.Y = reader.ReadInt16(), writer => writer.WriteInt16(_walkdata.Point3.Y), 42),
-
-                    LoadAndSaveEntry.Create(reader => Cost.Active = reader.ReadBytes(16), writer => writer.WriteBytes(Cost.Active, 16), 8),
-                    LoadAndSaveEntry.Create(reader => Cost.Stopped = reader.ReadUInt16(), writer => writer.WriteUInt16(Cost.Stopped), 8),
-                    LoadAndSaveEntry.Create(reader => Cost.Curpos = reader.ReadUInt16s(16), writer => writer.WriteUInt16s(Cost.Curpos, 16), 8),
-                    LoadAndSaveEntry.Create(reader => Cost.Start = reader.ReadUInt16s(16), writer => writer.WriteUInt16s(Cost.Start, 16), 8),
-                    LoadAndSaveEntry.Create(reader => Cost.End = reader.ReadUInt16s(16), writer => writer.WriteUInt16s(Cost.End, 16), 8),
-                    LoadAndSaveEntry.Create(reader => Cost.Frame = reader.ReadUInt16s(16), writer => writer.WriteUInt16s(Cost.Frame, 16), 8),
-
-                    LoadAndSaveEntry.Create(reader => reader.ReadUInt16s(16), writer => writer.WriteUInt16s(new ushort[16], 16), 65),
-                    LoadAndSaveEntry.Create(reader => reader.ReadUInt16s(16), writer => writer.WriteUInt16s(new ushort[16], 16), 65),
-                    LoadAndSaveEntry.Create(reader => reader.ReadUInt32s(16), writer => writer.WriteUInt32s(new uint[16], 16), 65),
-                };
-
-            if (serializer.IsLoading)
-            {
-                // Not all actor data is saved; so when loading, we first reset
-                // the actor, to ensure completely reproducible behavior (else,
-                // some not saved value in the actor class can cause odd things)
-                Init(-1);
-            }
-
-            actorEntries.ForEach(e => e.Execute(serializer));
-
-            if (serializer.IsLoading && _scumm.Game.Version <= 2 && serializer.Version < 70)
-            {
-                RealPosition = new Point(RealPosition.X >> ScummEngine.V12_X_SHIFT, RealPosition.Y >> ScummEngine.V12_Y_SHIFT);
-
-                _speedx >>= ScummEngine.V12_X_SHIFT;
-                _speedy >>= ScummEngine.V12_Y_SHIFT;
-                _elevation >>= ScummEngine.V12_Y_SHIFT;
-
-                if (_walkdata.Dest.X != -1)
-                {
-                    _walkdata.Dest.X >>= ScummEngine.V12_X_SHIFT;
-                    _walkdata.Dest.Y >>= ScummEngine.V12_Y_SHIFT;
-                }
-
-                _walkdata.Cur.X >>= ScummEngine.V12_X_SHIFT;
-                _walkdata.Cur.Y >>= ScummEngine.V12_Y_SHIFT;
-
-                _walkdata.Next.X >>= ScummEngine.V12_X_SHIFT;
-                _walkdata.Next.Y >>= ScummEngine.V12_Y_SHIFT;
-
-                if (_walkdata.Point3.X != 32000)
-                {
-                    _walkdata.Point3.X >>= ScummEngine.V12_X_SHIFT;
-                    _walkdata.Point3.Y >>= ScummEngine.V12_Y_SHIFT;
-                }
-            }
-        }
-
-        public virtual void StartAnimActor(int frame)
-        {
-            if (_scumm.Game.Version >= 7 && !((_scumm.Game.GameId == GameId.FullThrottle) && (_scumm.Game.Features.HasFlag(GameFeatures.Demo) /*&& (_vm.Game.Platform == Platform.DOS)*/)))
-            {
-                switch (frame)
-                {
-                    case 1001:
-                        frame = InitFrame;
-                        break;
-                    case 1002:
-                        frame = WalkFrame;
-                        break;
-                    case 1003:
-                        frame = StandFrame;
-                        break;
-                    case 1004:
-                        frame = TalkStartFrame;
-                        break;
-                    case 1005:
-                        frame = TalkStopFrame;
-                        break;
-                }
-
-                if (Costume != 0)
-                {
-                    _animProgress = 0;
-                    NeedRedraw = true;
-                    if (frame == InitFrame)
-                        Cost.Reset();
-                    _scumm.CostumeLoader.CostumeDecodeData(this, frame, uint.MaxValue);
-                    _frame = frame;
-                }
-            }
-            else
-            {
-                switch (frame)
-                {
-                    case 0x38:
-                        frame = InitFrame;
-                        break;
-                    case 0x39:
-                        frame = WalkFrame;
-                        break;
-                    case 0x3A:
-                        frame = StandFrame;
-                        break;
-                    case 0x3B:
-                        frame = TalkStartFrame;
-                        break;
-                    case 0x3C:
-                        frame = TalkStopFrame;
-                        break;
-                }
-
-                if (IsInCurrentRoom && Costume != 0)
-                {
-                    _animProgress = 0;
-                    NeedRedraw = true;
-                    Cost.AnimCounter = 0;
-                    // V1 - V2 games don't seem to need a _cost.reset() at this point.
-                    // Causes Zak to lose his body in several scenes, see bug #771508
-                    if (_scumm.Game.Version >= 3 && frame == InitFrame)
-                    {
-                        Cost.Reset();
-                    }
-                    _scumm.CostumeLoader.CostumeDecodeData(this, frame, uint.MaxValue);
-                    _frame = frame;
-                }
-            }
-        }
-
-        public void Show()
-        {
-            if (_scumm.CurrentRoom == 0 || IsVisible)
-                return;
-
-            AdjustActorPos();
-
-            _scumm.ResourceManager.LoadCostume(Costume);
-
-            if (_scumm.Game.Version == 0)
-            {
-                var a = (Actor0)this;
-
-                a.CostCommand = a.CostCommandNew = 0xFF;
-                _walkdata.Dest = a.CurrentWalkTo;
-
-                for (int i = 0; i < 8; ++i)
-                {
-                    a.LimbFrameRepeat[i] = 0;
-                    a.LimbFrameRepeatNew[i] = 0;
-                }
-
-                Cost.Reset();
-
-                a.AnimFrameRepeat = 1;
-                a.Speaking = 0;
-
-                StartAnimActor(StandFrame);
-                IsVisible = true;
-                return;
-
-            }
-            else if (_scumm.Game.Version <= 2)
-            {
-                Cost.Reset();
-                StartAnimActor(StandFrame);
-                StartAnimActor(InitFrame);
-                StartAnimActor(TalkStopFrame);
-            }
-            else
-            {
-                if (_costumeNeedsInit)
-                {
-                    StartAnimActor(InitFrame);
-                    _costumeNeedsInit = false;
-                }
-            }
-
-            StopActorMoving();
-            IsVisible = true;
-            NeedRedraw = true;
-        }
-
-        public void Hide()
-        {
-            if (!IsVisible)
-                return;
-
-            if (Moving != MoveFlags.None)
-            {
-                StopActorMoving();
-                StartAnimActor(StandFrame);
-            }
-
-            IsVisible = false;
-            Cost.SoundCounter = 0;
-            Cost.SoundPos = 0;
-            NeedRedraw = false;
-            NeedBackgroundReset = true;
-        }
-
-        public void ResetFrames()
-        {
-            InitFrame = 1;
-            WalkFrame = 2;
-            StandFrame = 3;
-            TalkStartFrame = 4;
-            TalkStopFrame = 5;
-        }
-
-        public void PutActor()
-        {
-            PutActor(RealPosition, Room);
-        }
-
-        public void PutActor(byte room)
-        {
-            PutActor(RealPosition, room);
-        }
-
-        public void PutActor(Point pos)
-        {
-            PutActor(pos, Room);
-        }
-
-        public void PutActor(Point pos, byte newRoom)
-        {
-            if (IsVisible && _scumm.CurrentRoom != newRoom && _scumm.TalkingActor == Number)
-            {
-                _scumm.StopTalk();
-            }
-
-            RealPosition = pos;
-            Room = newRoom;
-            NeedRedraw = true;
-
-            if (_scumm.Variables[_scumm.VariableEgo.Value] == Number)
-            {
-                _scumm.EgoPositioned = true;
-            }
-
-            if (IsVisible)
-            {
-                if (IsInCurrentRoom)
-                {
-                    if (Moving != MoveFlags.None)
-                    {
-                        StopActorMoving();
-                        StartAnimActor(StandFrame);
-                    }
-                    AdjustActorPos();
-                }
-                else
-                {
-                    Hide();
-                }
-            }
-            else
-            {
-                if (IsInCurrentRoom)
-                    Show();
-            }
-
-            // V0 always sets the actor to face the camera upon entering a room
-            if (_scumm.Game.Version == 0)
-            {
-                _walkdata.Dest = RealPosition;
-
-                ((Actor0)this).NewWalkBoxEntered = true;
-                ((Actor0)this).CurrentWalkTo = RealPosition;
-
-                SetDirection(ScummHelper.OldDirToNewDir(2));
-            }
-        }
-
-        public void SetActorCostume(ushort costume)
-        {
-            _costumeNeedsInit = true;
-
-            if (_scumm.Game.Version >= 7)
-            {
-                Array.Clear(_animVariable, 0, _animVariable.Length);
-
-                Costume = costume;
-                Cost.Reset();
-
-                if (IsVisible)
-                {
-                    StartAnimActor(InitFrame);
-                }
-            }
-            else
-            {
-
-                if (IsVisible)
-                {
-                    Hide();
-                    Cost.Reset();
-                    Costume = costume;
-                    Show();
-                }
-                else
-                {
-                    Costume = costume;
-                    Cost.Reset();
-                }
-            }
-
-            // V1 zak uses palette[] as a dynamic costume color array.
-            if (_scumm.Game.Version <= 1)
-                return;
-
-            if (_scumm.Game.Version >= 7)
-            {
-                for (var i = 0; i < 256; i++)
-                    _palette[i] = 0xFF;
-            }
-            else if (_scumm.Game.IsOldBundle)
-            {
-                for (var i = 0; i < 16; i++)
-                    _palette[i] = (byte)i;
-            }
-            else
-            {
-                for (var i = 0; i < 32; i++)
-                    _palette[i] = 0xFF;
-            }
-        }
-
-        public void SetActorWalkSpeed(uint newSpeedX, uint newSpeedY)
-        {
-            if (newSpeedX == _speedx && newSpeedY == _speedy)
-                return;
-
-            _speedx = newSpeedX;
-            _speedy = newSpeedY;
-
-            if (Moving != MoveFlags.None)
-            {
-                if (_scumm.Game.Version == 8 && !Moving.HasFlag(MoveFlags.InLeg))
-                    return;
-
-                CalcMovementFactor(_walkdata.Next);
-            }
-        }
-
-        public void FaceToObject(int obj)
-        {
-            if (!IsInCurrentRoom)
-                return;
-
-            Point p;
-            if (!_scumm.GetObjectOrActorXY(obj, out p))
-                return;
-
-            var dir = (p.X > RealPosition.X) ? 90 : 270;
-            TurnToDirection(dir);
-        }
-
         public void DrawCostume(bool hitTestMode = false)
         {
             if (Costume == 0)
@@ -1077,7 +833,7 @@ namespace NScumm.Core
 
             if (!IsInCurrentRoom && _scumm.Game.Version <= 6)
             {
-                RealPosition = abr.Position;
+                _position = abr.Position;
                 if (!IgnoreTurns && dir != -1)
                     Facing = (ushort)dir;
                 return;
@@ -1086,7 +842,7 @@ namespace NScumm.Core
             if (_scumm.Game.Version <= 2)
             {
                 abr = AdjustXYToBeInBox(abr.Position);
-                if (RealPosition.X == abr.Position.X && RealPosition.Y == abr.Position.Y && (dir == -1 || Facing == dir))
+                if (_position.X == abr.Position.X && _position.Y == abr.Position.Y && (dir == -1 || Facing == dir))
                     return;
             }
             else
@@ -1113,7 +869,7 @@ namespace NScumm.Core
                 }
             }
 
-            if (RealPosition == abr.Position)
+            if (_position == abr.Position)
             {
                 if (dir != Facing)
                     TurnToDirection(dir);
@@ -1230,12 +986,218 @@ namespace NScumm.Core
             }
         }
 
+        public virtual void AnimateCostume()
+        {
+            if (Costume == 0)
+                return;
+
+            _animProgress++;
+            if (_animProgress >= _animSpeed)
+            {
+                _animProgress = 0;
+
+                _scumm.CostumeLoader.LoadCostume(Costume);
+                if (_scumm.CostumeLoader.IncreaseAnims(this) != 0)
+                {
+                    NeedRedraw = true;
+                }
+            }
+        }
+
         public void ClassChanged(ObjectClass cls, bool value)
         {
             if (cls == ObjectClass.AlwaysClip)
                 ForceClip = value ? (byte)1 : (byte)0;
             if (cls == ObjectClass.IgnoreBoxes)
                 IgnoreBoxes = value;
+        }
+
+        public virtual void SaveOrLoad(Serializer serializer)
+        {
+            var actorEntries = new[]
+            {
+                LoadAndSaveEntry.Create(reader => _position.X = reader.ReadInt16(), writer => writer.WriteInt16(_position.X), 8),
+                LoadAndSaveEntry.Create(reader => _position.Y = reader.ReadInt16(), writer => writer.WriteInt16(_position.Y), 8),
+                                                    
+                LoadAndSaveEntry.Create(reader => reader.ReadInt16(), writer => writer.WriteInt16(0xCDCD), 32),
+                LoadAndSaveEntry.Create(reader => reader.ReadInt16(), writer => writer.WriteInt16(0xCDCD), 32),
+                LoadAndSaveEntry.Create(reader => Top = reader.ReadInt16(), writer => writer.WriteInt16(Top), 8),
+                LoadAndSaveEntry.Create(reader => Bottom = reader.ReadInt16(), writer => writer.WriteInt16(Bottom), 8),
+                LoadAndSaveEntry.Create(reader => _elevation = reader.ReadInt16(), writer => writer.WriteInt16(_elevation), 8),
+                LoadAndSaveEntry.Create(reader => Width = reader.ReadUInt16(), writer => writer.WriteUInt16(Width), 8),
+                LoadAndSaveEntry.Create(reader => Facing = reader.ReadUInt16(), writer => writer.WriteUInt16(Facing), 8),
+                LoadAndSaveEntry.Create(reader => Costume = reader.ReadUInt16(), writer => writer.WriteUInt16(Costume), 8),
+                LoadAndSaveEntry.Create(reader => Room = reader.ReadByte(), writer => writer.WriteByte(Room), 8),
+                LoadAndSaveEntry.Create(reader => TalkColor = reader.ReadByte(), writer => writer.WriteByte(TalkColor), 8),
+                LoadAndSaveEntry.Create(reader => _talkFrequency = reader.ReadInt16(), writer => writer.WriteInt16(_talkFrequency), 16),
+                LoadAndSaveEntry.Create(reader => _talkPan = (byte)reader.ReadInt16(), writer => writer.WriteInt16(_talkPan), 24),
+                LoadAndSaveEntry.Create(reader => _talkVolume = (byte)reader.ReadInt16(), writer => writer.WriteInt16(_talkVolume), 29),
+                LoadAndSaveEntry.Create(reader => BoxScale = reader.ReadUInt16(), writer => writer.WriteUInt16(BoxScale), 34),
+                LoadAndSaveEntry.Create(reader => ScaleX = reader.ReadByte(), writer => writer.WriteByte(ScaleX), 8),
+                LoadAndSaveEntry.Create(reader => ScaleY = reader.ReadByte(), writer => writer.WriteByte(ScaleY), 8),
+                LoadAndSaveEntry.Create(reader => Charset = reader.ReadByte(), writer => writer.WriteByte(Charset), 8),
+		            
+                // Actor sound grew from 8 to 32 bytes and switched to uint16 in HE games
+                LoadAndSaveEntry.Create(
+                    reader => Sound = reader.ReadBytes(8).ToArray()[0],
+                    writer =>
+                    {
+                        var sounds = new byte[8];
+                        sounds[0] = (byte)Sound;
+                        writer.Write(sounds);
+                    },
+                    8, 36),
+                LoadAndSaveEntry.Create(
+                    reader => Sound = reader.ReadBytes(32).ToArray()[0],
+                    writer =>
+                    {
+                        var sounds = new byte[32];
+                        sounds[0] = (byte)Sound;
+                        writer.Write(sounds);
+                    },
+                    37, 61),
+                LoadAndSaveEntry.Create(
+                    reader => Sound = reader.ReadUInt16s(32)[0],
+                    writer =>
+                    {
+                        var sounds = new ushort[32];
+                        sounds[0] = (ushort)Sound;
+                        writer.WriteUInt16s(sounds, 32);
+                    },
+                    62),
+                    
+                // Actor animVariable grew from 8 to 27
+                LoadAndSaveEntry.Create(reader => _animVariable = reader.ReadInt16s(8), writer => writer.WriteInt16s(_animVariable, 8), 8, 40),
+                LoadAndSaveEntry.Create(reader => _animVariable = reader.ReadInt16s(27), writer => writer.WriteInt16s(_animVariable, 27), 41),
+                                                   
+                LoadAndSaveEntry.Create(reader => _targetFacing = reader.ReadUInt16(), writer => writer.WriteUInt16(_targetFacing), 8),
+                LoadAndSaveEntry.Create(reader => Moving = (MoveFlags)reader.ReadByte(), writer => writer.WriteByte((byte)Moving), 8),
+                LoadAndSaveEntry.Create(reader => IgnoreBoxes = reader.ReadByte() != 0, writer => writer.WriteByte(IgnoreBoxes), 8),
+                LoadAndSaveEntry.Create(reader => ForceClip = reader.ReadByte(), writer => writer.WriteByte(ForceClip), 8),
+                LoadAndSaveEntry.Create(reader => InitFrame = reader.ReadByte(), writer => writer.WriteByte(InitFrame), 8),
+                LoadAndSaveEntry.Create(reader => WalkFrame = reader.ReadByte(), writer => writer.WriteByte(WalkFrame), 8),
+                LoadAndSaveEntry.Create(reader => StandFrame = reader.ReadByte(), writer => writer.WriteByte(StandFrame), 8),
+                LoadAndSaveEntry.Create(reader => TalkStartFrame = reader.ReadByte(), writer => writer.WriteByte(TalkStartFrame), 8),
+                LoadAndSaveEntry.Create(reader => TalkStopFrame = reader.ReadByte(), writer => writer.WriteByte(TalkStopFrame), 8),
+                LoadAndSaveEntry.Create(reader => _speedx = reader.ReadUInt16(), writer => writer.WriteUInt16(_speedx), 8),
+                LoadAndSaveEntry.Create(reader => _speedy = reader.ReadUInt16(), writer => writer.WriteUInt16(_speedy), 8),
+                LoadAndSaveEntry.Create(reader => Cost.AnimCounter = reader.ReadUInt16(), writer => writer.WriteUInt16(Cost.AnimCounter), 8),
+                LoadAndSaveEntry.Create(reader => Cost.SoundCounter = reader.ReadByte(), writer => writer.WriteByte(Cost.SoundCounter), 8),
+                LoadAndSaveEntry.Create(reader => DrawToBackBuf = reader.ReadByte() != 0, writer => writer.WriteByte(DrawToBackBuf), 32),
+                LoadAndSaveEntry.Create(reader => Flip = reader.ReadByte() != 0, writer => writer.WriteByte(Flip), 32),
+                LoadAndSaveEntry.Create(reader => reader.ReadByte(), writer => writer.WriteByte(0xCD), 32),
+
+                // Actor palette grew from 64 to 256 bytes and switched to uint16 in HE games
+                LoadAndSaveEntry.Create(
+                    reader => _palette = reader.ReadBytes(64).Cast<ushort>().ToArray(),
+                    writer => writer.WriteBytes(_palette, 64),
+                    8, 9),
+                LoadAndSaveEntry.Create(
+                    reader => _palette = reader.ReadBytes(256).Cast<ushort>().ToArray(),
+                    writer => writer.WriteBytes(_palette, 256),
+                    10, 79),
+                LoadAndSaveEntry.Create(
+                    reader => _palette = reader.ReadUInt16s(256),
+                    writer => writer.WriteUInt16s(_palette, 256)
+                        , 80),
+
+                LoadAndSaveEntry.Create(reader => reader.ReadByte(), writer => writer.WriteByte(0), 8, 9),
+                LoadAndSaveEntry.Create(reader => ShadowMode = reader.ReadByte(), writer => writer.WriteByte(ShadowMode), 8),
+                LoadAndSaveEntry.Create(reader => IsVisible = reader.ReadByte() != 0, writer => writer.WriteByte(IsVisible), 8),
+                LoadAndSaveEntry.Create(reader => _frame = reader.ReadByte(), writer => writer.WriteByte(_frame), 8),
+                LoadAndSaveEntry.Create(reader => _animSpeed = reader.ReadByte(), writer => writer.WriteByte(_animSpeed), 8),
+                LoadAndSaveEntry.Create(reader => _animProgress = reader.ReadByte(), writer => writer.WriteByte(_animProgress), 8),
+                LoadAndSaveEntry.Create(reader => Walkbox = reader.ReadByte(), writer => writer.WriteByte(Walkbox), 8),
+                LoadAndSaveEntry.Create(reader => NeedRedraw = reader.ReadByte() != 0, writer => writer.WriteByte(NeedRedraw), 8),
+                LoadAndSaveEntry.Create(reader => NeedBackgroundReset = reader.ReadByte() != 0, writer => writer.WriteByte(NeedBackgroundReset), 8),
+                LoadAndSaveEntry.Create(reader => _costumeNeedsInit = reader.ReadByte() != 0, writer => writer.WriteByte(_costumeNeedsInit), 8),
+                LoadAndSaveEntry.Create(reader => reader.ReadUInt32(), writer => writer.WriteUInt32(0xCDCDCDCD), 38),
+                LoadAndSaveEntry.Create(reader => reader.ReadUInt32(), writer => writer.WriteUInt32(0xCDCDCDCD), 59),
+                LoadAndSaveEntry.Create(reader => reader.ReadUInt32(), writer => writer.WriteUInt32(0xCDCDCDCD), 59),
+
+                LoadAndSaveEntry.Create(reader =>
+                    {
+                        TalkPosition = new Point(reader.ReadInt16(), reader.ReadInt16());
+                    }, writer =>
+                    {
+                        writer.WriteInt16(TalkPosition.X);
+                        writer.WriteInt16(TalkPosition.Y);
+                    }, 8),
+                LoadAndSaveEntry.Create(reader => IgnoreTurns = reader.ReadByte() != 0, writer => writer.WriteByte(IgnoreTurns), 8),
+
+                // Actor layer switched to int32 in HE games
+                LoadAndSaveEntry.Create(reader => Layer = reader.ReadByte(), writer => writer.WriteByte(Layer), 8, 57),
+                LoadAndSaveEntry.Create(reader => Layer = reader.ReadInt32(), writer => writer.WriteInt32(Layer), 58),
+                                             
+                LoadAndSaveEntry.Create(reader => TalkScript = reader.ReadUInt16(), writer => writer.WriteUInt16(TalkScript), 8),
+                LoadAndSaveEntry.Create(reader => WalkScript = reader.ReadUInt16(), writer => writer.WriteUInt16(WalkScript), 8),
+
+                LoadAndSaveEntry.Create(reader => _walkdata.Dest.X = reader.ReadInt16(), writer => writer.WriteInt16(_walkdata.Dest.X), 8),
+                LoadAndSaveEntry.Create(reader => _walkdata.Dest.Y = reader.ReadInt16(), writer => writer.WriteInt16(_walkdata.Dest.Y), 8),
+                LoadAndSaveEntry.Create(reader => _walkdata.DestBox = reader.ReadByte(), writer => writer.WriteByte(_walkdata.DestBox), 8),
+                LoadAndSaveEntry.Create(reader => _walkdata.DestDir = reader.ReadInt16(), writer => writer.WriteInt16(_walkdata.DestDir), 8),
+                LoadAndSaveEntry.Create(reader => _walkdata.CurBox = reader.ReadByte(), writer => writer.WriteByte(_walkdata.CurBox), 8),
+                LoadAndSaveEntry.Create(reader => _walkdata.Cur.X = reader.ReadInt16(), writer => writer.WriteInt16(_walkdata.Cur.X), 8),
+                LoadAndSaveEntry.Create(reader => _walkdata.Cur.Y = reader.ReadInt16(), writer => writer.WriteInt16(_walkdata.Cur.Y), 8),
+                LoadAndSaveEntry.Create(reader => _walkdata.Next.X = reader.ReadInt16(), writer => writer.WriteInt16(_walkdata.Next.X), 8),
+                LoadAndSaveEntry.Create(reader => _walkdata.Next.Y = reader.ReadInt16(), writer => writer.WriteInt16(_walkdata.Next.Y), 8),
+                LoadAndSaveEntry.Create(reader => _walkdata.DeltaXFactor = reader.ReadInt32(), writer => writer.WriteInt32(_walkdata.DeltaXFactor), 8),
+                LoadAndSaveEntry.Create(reader => _walkdata.DeltaYFactor = reader.ReadInt32(), writer => writer.WriteInt32(_walkdata.DeltaYFactor), 8),
+                LoadAndSaveEntry.Create(reader => _walkdata.XFrac = reader.ReadUInt16(), writer => writer.WriteUInt16(_walkdata.XFrac), 8),
+                LoadAndSaveEntry.Create(reader => _walkdata.YFrac = reader.ReadUInt16(), writer => writer.WriteUInt16(_walkdata.YFrac), 8),
+
+                LoadAndSaveEntry.Create(reader => _walkdata.Point3.X = reader.ReadInt16(), writer => writer.WriteInt16(_walkdata.Point3.X), 42),
+                LoadAndSaveEntry.Create(reader => _walkdata.Point3.Y = reader.ReadInt16(), writer => writer.WriteInt16(_walkdata.Point3.Y), 42),
+
+                LoadAndSaveEntry.Create(reader => Cost.Active = reader.ReadBytes(16), writer => writer.WriteBytes(Cost.Active, 16), 8),
+                LoadAndSaveEntry.Create(reader => Cost.Stopped = reader.ReadUInt16(), writer => writer.WriteUInt16(Cost.Stopped), 8),
+                LoadAndSaveEntry.Create(reader => Cost.Curpos = reader.ReadUInt16s(16), writer => writer.WriteUInt16s(Cost.Curpos, 16), 8),
+                LoadAndSaveEntry.Create(reader => Cost.Start = reader.ReadUInt16s(16), writer => writer.WriteUInt16s(Cost.Start, 16), 8),
+                LoadAndSaveEntry.Create(reader => Cost.End = reader.ReadUInt16s(16), writer => writer.WriteUInt16s(Cost.End, 16), 8),
+                LoadAndSaveEntry.Create(reader => Cost.Frame = reader.ReadUInt16s(16), writer => writer.WriteUInt16s(Cost.Frame, 16), 8),
+                                             
+                LoadAndSaveEntry.Create(reader => reader.ReadUInt16s(16), writer => writer.WriteUInt16s(new ushort[16], 16), 65),
+                LoadAndSaveEntry.Create(reader => reader.ReadUInt16s(16), writer => writer.WriteUInt16s(new ushort[16], 16), 65),
+                LoadAndSaveEntry.Create(reader => reader.ReadUInt32s(16), writer => writer.WriteUInt32s(new uint[16], 16), 65),
+            };
+
+            if (serializer.IsLoading)
+            {
+                // Not all actor data is saved; so when loading, we first reset
+                // the actor, to ensure completely reproducible behavior (else,
+                // some not saved value in the actor class can cause odd things)
+                Init(-1);
+            }
+
+            actorEntries.ForEach(e => e.Execute(serializer));
+
+            if (serializer.IsLoading && _scumm.Game.Version <= 2 && serializer.Version < 70)
+            {
+                _position.X >>= ScummEngine.V12_X_SHIFT;
+                _position.Y >>= ScummEngine.V12_Y_SHIFT;
+
+                _speedx >>= ScummEngine.V12_X_SHIFT;
+                _speedy >>= ScummEngine.V12_Y_SHIFT;
+                _elevation >>= ScummEngine.V12_Y_SHIFT;
+
+                if (_walkdata.Dest.X != -1)
+                {
+                    _walkdata.Dest.X >>= ScummEngine.V12_X_SHIFT;
+                    _walkdata.Dest.Y >>= ScummEngine.V12_Y_SHIFT;
+                }
+
+                _walkdata.Cur.X >>= ScummEngine.V12_X_SHIFT;
+                _walkdata.Cur.Y >>= ScummEngine.V12_Y_SHIFT;
+
+                _walkdata.Next.X >>= ScummEngine.V12_X_SHIFT;
+                _walkdata.Next.Y >>= ScummEngine.V12_Y_SHIFT;
+
+                if (_walkdata.Point3.X != 32000)
+                {
+                    _walkdata.Point3.X >>= ScummEngine.V12_X_SHIFT;
+                    _walkdata.Point3.Y >>= ScummEngine.V12_Y_SHIFT;
+                }
+            }
         }
 
         public void RunTalkScript(int frame)
@@ -1250,6 +1212,77 @@ namespace NScumm.Core
             else
             {
                 StartAnimActor(frame);
+            }
+        }
+
+        public virtual void StartAnimActor(int frame)
+        {
+            if (_scumm.Game.Version >= 7 && !((_scumm.Game.GameId == GameId.FullThrottle) && (_scumm.Game.Features.HasFlag(GameFeatures.Demo) /*&& (_vm.Game.Platform == Platform.DOS)*/)))
+            {
+                switch (frame)
+                {
+                    case 1001:
+                        frame = InitFrame;
+                        break;
+                    case 1002:
+                        frame = WalkFrame;
+                        break;
+                    case 1003:
+                        frame = StandFrame;
+                        break;
+                    case 1004:
+                        frame = TalkStartFrame;
+                        break;
+                    case 1005:
+                        frame = TalkStopFrame;
+                        break;
+                }
+
+                if (Costume != 0)
+                {
+                    _animProgress = 0;
+                    NeedRedraw = true;
+                    if (frame == InitFrame)
+                        Cost.Reset();
+                    _scumm.CostumeLoader.CostumeDecodeData(this, frame, uint.MaxValue);
+                    _frame = frame;
+                }
+            }
+            else
+            {
+                switch (frame)
+                {
+                    case 0x38:
+                        frame = InitFrame;
+                        break;
+                    case 0x39:
+                        frame = WalkFrame;
+                        break;
+                    case 0x3A:
+                        frame = StandFrame;
+                        break;
+                    case 0x3B:
+                        frame = TalkStartFrame;
+                        break;
+                    case 0x3C:
+                        frame = TalkStopFrame;
+                        break;
+                }
+
+                if (IsInCurrentRoom && Costume != 0)
+                {
+                    _animProgress = 0;
+                    NeedRedraw = true;
+                    Cost.AnimCounter = 0;
+                    // V1 - V2 games don't seem to need a _cost.reset() at this point.
+                    // Causes Zak to lose his body in several scenes, see bug #771508
+                    if (_scumm.Game.Version >= 3 && frame == InitFrame)
+                    {
+                        Cost.Reset();
+                    }
+                    _scumm.CostumeLoader.CostumeDecodeData(this, frame, uint.MaxValue);
+                    _frame = frame;
+                }
             }
         }
 
@@ -1390,42 +1423,6 @@ namespace NScumm.Core
             return ar.ActorHitResult;
         }
 
-        public void AnimateLimb(int limb, int f)
-        {
-            // This methods is very similiar to animateCostume().
-            // However, instead of animating *all* the limbs, it only animates
-            // the specified limb to be at the frame specified by "f".
-
-            if (f == 0)
-                return;
-
-            _animProgress++;
-            if (_animProgress >= _animSpeed)
-            {
-                _animProgress = 0;
-
-                if (Costume == 0)
-                    return;
-
-                var akos = _scumm.ResourceManager.GetCostumeData(Costume);
-                Debug.Assert(akos != null);
-
-                var aksq = ResourceFile7.ReadData(akos, "AKSQ");
-                var akfo = ResourceFile7.ReadData(akos, "AKFO");
-
-                var size = akfo.Length / 2;
-
-                while ((f--) != 0)
-                {
-                    if (Cost.Active[limb] != 0)
-                        AkosCostumeLoader.IncreaseAnim(this, limb, aksq, akfo, size, _scumm);
-                }
-
-                //      _needRedraw = true;
-                //      _needBgReset = true;
-            }
-        }
-
         #endregion
 
         #region Private Methods
@@ -1433,12 +1430,12 @@ namespace NScumm.Core
         protected virtual void PrepareDrawActorCostume(ICostumeRenderer bcr)
         {
             bcr.ActorID = Number;
-            bcr.ActorX = RealPosition.X - _scumm.MainVirtScreen.XStart;
-            bcr.ActorY = RealPosition.Y - _elevation;
+            bcr.ActorX = _position.X - _scumm.MainVirtScreen.XStart;
+            bcr.ActorY = _position.Y - _elevation;
 
             if (_scumm.Game.Version == 4 && (BoxScale & 0x8000) != 0)
             {
-                bcr.ScaleX = bcr.ScaleY = (byte)_scumm.GetScaleFromSlot((BoxScale & 0x7fff) + 1, RealPosition.X, RealPosition.Y);
+                bcr.ScaleX = bcr.ScaleY = (byte)_scumm.GetScaleFromSlot((BoxScale & 0x7fff) + 1, _position.X, _position.Y);
             }
             else
             {
@@ -1487,13 +1484,43 @@ namespace NScumm.Core
             bcr.DrawBottom = 0;
         }
 
+        bool IsInClass(ObjectClass cls)
+        {
+            return _scumm.GetClass(Number, cls);
+        }
+
+        void AdjustActorPos()
+        {
+            var abr = AdjustXYToBeInBox(_position);
+
+            _position = abr.Position;
+            _walkdata.DestBox = abr.Box;
+
+            SetBox(abr.Box);
+
+            _walkdata.Dest.X = -1;
+
+            StopActorMoving();
+            Cost.SoundCounter = 0;
+            Cost.SoundPos = 0;
+
+            if (Walkbox != InvalidBox)
+            {
+                int flags = (int)_scumm.GetBoxFlags(Walkbox);
+                if ((flags & 7) != 0)
+                {
+                    TurnToDirection(Facing);
+                }
+            }
+        }
+
         protected bool CalcMovementFactor(Point next)
         {
-            if (RealPosition == next)
+            if (_position == next)
                 return false;
 
-            int diffX = next.X - RealPosition.X;
-            int diffY = next.Y - RealPosition.Y;
+            int diffX = next.X - _position.X;
+            int diffY = next.Y - _position.Y;
             int deltaYFactor = (int)_speedy << 16;
 
             if (diffY < 0)
@@ -1526,7 +1553,7 @@ namespace NScumm.Core
                 }
             }
 
-            _walkdata.Cur = RealPosition;
+            _walkdata.Cur = _position;
             _walkdata.Next = next;
             _walkdata.DeltaXFactor = deltaXFactor;
             _walkdata.DeltaYFactor = deltaYFactor;
@@ -1556,7 +1583,7 @@ namespace NScumm.Core
             }
 
             if (Walkbox != _walkdata.CurBox &&
-                _scumm.CheckXYInBoxBounds(_walkdata.CurBox, RealPosition))
+                _scumm.CheckXYInBoxBounds(_walkdata.CurBox, _position))
             {
                 SetBox(_walkdata.CurBox);
             }
@@ -1564,7 +1591,7 @@ namespace NScumm.Core
             int distX = Math.Abs(_walkdata.Next.X - _walkdata.Cur.X);
             int distY = Math.Abs(_walkdata.Next.Y - _walkdata.Cur.Y);
 
-            if (Math.Abs(RealPosition.X - _walkdata.Cur.X) >= distX && Math.Abs(RealPosition.Y - _walkdata.Cur.Y) >= distY)
+            if (Math.Abs(_position.X - _walkdata.Cur.X) >= distX && Math.Abs(_position.Y - _walkdata.Cur.Y) >= distY)
             {
                 Moving &= ~MoveFlags.InLeg;
                 return false;
@@ -1575,148 +1602,45 @@ namespace NScumm.Core
                 if (_walkdata.DeltaXFactor != 0)
                 {
                     if (_walkdata.DeltaXFactor > 0)
-                        RealPosition.OffsetX(1);
+                        _position.X += 1;
                     else
-                        RealPosition.OffsetX(-1);
+                        _position.X -= 1;
                 }
                 if (_walkdata.DeltaYFactor != 0)
                 {
                     if (_walkdata.DeltaYFactor > 0)
-                        RealPosition.OffsetY(1);
+                        _position.Y += 1;
                     else
-                        RealPosition.OffsetY(-1);
+                        _position.Y -= 1;
                 }
             }
             else
             {
-                int tmpX = (RealPosition.X << 16) + _walkdata.XFrac + (_walkdata.DeltaXFactor >> 8) * ScaleX;
+                int tmpX = (_position.X << 16) + _walkdata.XFrac + (_walkdata.DeltaXFactor >> 8) * ScaleX;
                 _walkdata.XFrac = (ushort)tmpX;
-                RealPosition.OffsetX(tmpX >> 16);
+                _position.X = (tmpX >> 16);
 
-                int tmpY = (RealPosition.Y << 16) + _walkdata.YFrac + (_walkdata.DeltaYFactor >> 8) * ScaleY;
+                int tmpY = (_position.Y << 16) + _walkdata.YFrac + (_walkdata.DeltaYFactor >> 8) * ScaleY;
                 _walkdata.YFrac = (ushort)tmpY;
-                RealPosition.OffsetY(tmpY >> 16);
+                _position.Y = (tmpY >> 16);
             }
 
-            if (Math.Abs(RealPosition.X - _walkdata.Cur.X) > distX)
+            if (Math.Abs(_position.X - _walkdata.Cur.X) > distX)
             {
-                RealPosition.OffsetX(_walkdata.Next.X);
+                _position.X = _walkdata.Next.X;
             }
 
-            if (Math.Abs(RealPosition.Y - _walkdata.Cur.Y) > distY)
+            if (Math.Abs(_position.Y - _walkdata.Cur.Y) > distY)
             {
-                RealPosition.OffsetY(_walkdata.Next.Y);
+                _position.Y = _walkdata.Next.Y;
             }
 
-            if ((_scumm.Game.Version <= 2 || (_scumm.Game.Version >= 4 && _scumm.Game.Version <= 6)) && RealPosition == _walkdata.Next)
+            if ((_scumm.Game.Version <= 2 || (_scumm.Game.Version >= 4 && _scumm.Game.Version <= 6)) && _position == _walkdata.Next)
             {
                 Moving &= ~MoveFlags.InLeg;
                 return false;
             }
             return true;
-        }
-
-        protected virtual void SetupActorScale()
-        {
-            if (IgnoreBoxes)
-                return;
-
-            // For some boxes, we ignore the scaling and use whatever values the
-            // scripts set. This is used e.g. in the Mystery Vortex in Sam&Max.
-            // Older games used the flag 0x20 differently, though.
-            if (_scumm.Game.GameId == GameId.SamNMax && (_scumm.GetBoxFlags(Walkbox).HasFlag(BoxFlags.IgnoreScale)))
-                return;
-
-            BoxScale = (ushort)_scumm.GetBoxScale(Walkbox);
-
-            var scale = _scumm.GetScale(Walkbox, RealPosition.X, RealPosition.Y);
-
-            ScaleX = ScaleY = (byte)scale;
-        }
-
-        protected void SetBox(byte box)
-        {
-            Walkbox = box;
-            SetupActorScale();
-        }
-
-        protected int UpdateActorDirection(bool isWalking)
-        {
-            if ((_scumm.Game.Version == 6) && IgnoreTurns)
-                return Facing;
-
-            var dirType = (_scumm.Game.Version >= 7) && _scumm.CostumeLoader.HasManyDirections(Costume);
-
-            var from = ScummMath.ToSimpleDir(dirType, Facing);
-            var dir = RemapDirection(_targetFacing, isWalking);
-
-            bool shouldInterpolate;
-            if (_scumm.Game.Version >= 7)
-            {
-                // Direction interpolation interfers with walk scripts in Dig; they perform
-                // (much better) interpolation themselves.
-                shouldInterpolate = false;
-            }
-            else
-            {
-                shouldInterpolate = (dir & 1024) != 0;
-            }
-
-            dir &= 1023;
-
-            if (shouldInterpolate)
-            {
-                int to = ScummMath.ToSimpleDir(false, dir);
-                int num = dirType ? 8 : 4;
-
-                // Turn left or right, depending on which is shorter.
-                int diff = to - from;
-                if (Math.Abs(diff) > (num >> 1))
-                    diff = -diff;
-
-                if (diff > 0)
-                {
-                    to = from + 1;
-                }
-                else if (diff < 0)
-                {
-                    to = from - 1;
-                }
-
-                dir = ScummMath.FromSimpleDirection((to + num) % num);
-            }
-
-            return dir;
-        }
-
-        bool IsInClass(ObjectClass cls)
-        {
-            return _scumm.GetClass(Number, cls);
-        }
-
-        void AdjustActorPos()
-        {
-            var abr = AdjustXYToBeInBox(RealPosition);
-
-            RealPosition = abr.Position;
-            _walkdata.DestBox = abr.Box;
-
-            SetBox(abr.Box);
-
-            _walkdata.Dest.X = -1;
-
-            StopActorMoving();
-            Cost.SoundCounter = 0;
-            Cost.SoundPos = 0;
-
-            if (Walkbox != InvalidBox)
-            {
-                int flags = (int)_scumm.GetBoxFlags(Walkbox);
-                if ((flags & 7) != 0)
-                {
-                    TurnToDirection(Facing);
-                }
-            }
         }
 
         int RemapDirection(int dir, bool isWalking)
@@ -1830,6 +1754,79 @@ namespace NScumm.Core
             return ScummMath.NormalizeAngle(dir) | 1024;
         }
 
+        protected virtual void SetupActorScale()
+        {
+            if (IgnoreBoxes)
+                return;
+
+            // For some boxes, we ignore the scaling and use whatever values the
+            // scripts set. This is used e.g. in the Mystery Vortex in Sam&Max.
+            // Older games used the flag 0x20 differently, though.
+            if (_scumm.Game.GameId == GameId.SamNMax && (_scumm.GetBoxFlags(Walkbox).HasFlag(BoxFlags.IgnoreScale)))
+                return;
+
+            BoxScale = (ushort)_scumm.GetBoxScale(Walkbox);
+
+            var scale = _scumm.GetScale(Walkbox, _position.X, _position.Y);
+
+            ScaleX = ScaleY = (byte)scale;
+        }
+
+        protected void SetBox(byte box)
+        {
+            Walkbox = box;
+            SetupActorScale();
+        }
+
+        protected int UpdateActorDirection(bool isWalking)
+        {
+            if ((_scumm.Game.Version == 6) && IgnoreTurns)
+                return Facing;
+
+            var dirType = (_scumm.Game.Version >= 7) && _scumm.CostumeLoader.HasManyDirections(Costume);
+
+            var from = ScummMath.ToSimpleDir(dirType, Facing);
+            var dir = RemapDirection(_targetFacing, isWalking);
+
+            bool shouldInterpolate;
+            if (_scumm.Game.Version >= 7)
+            {
+                // Direction interpolation interfers with walk scripts in Dig; they perform
+                // (much better) interpolation themselves.
+                shouldInterpolate = false;
+            }
+            else
+            {
+                shouldInterpolate = (dir & 1024) != 0;
+            }
+
+            dir &= 1023;
+
+            if (shouldInterpolate)
+            {
+                int to = ScummMath.ToSimpleDir(false, dir);
+                int num = dirType ? 8 : 4;
+
+                // Turn left or right, depending on which is shorter.
+                int diff = to - from;
+                if (Math.Abs(diff) > (num >> 1))
+                    diff = -diff;
+
+                if (diff > 0)
+                {
+                    to = from + 1;
+                }
+                else if (diff < 0)
+                {
+                    to = from - 1;
+                }
+
+                dir = ScummMath.FromSimpleDirection((to + num) % num);
+            }
+
+            return dir;
+        }
+
         void StartWalkAnim(int cmd, int angle)
         {
             if (angle == -1)
@@ -1901,12 +1898,12 @@ namespace NScumm.Core
                         }
                         else
                         {
-                            pos = RealPosition.Y;
+                            pos = _position.Y;
                             if (box2nr == box3nr)
                             {
-                                int diffX = _walkdata.Dest.X - RealPosition.X;
-                                int diffY = _walkdata.Dest.Y - RealPosition.Y;
-                                int boxDiffX = box1.UpperLeft.X - RealPosition.X;
+                                int diffX = _walkdata.Dest.X - _position.X;
+                                int diffY = _walkdata.Dest.Y - _position.Y;
+                                int boxDiffX = box1.UpperLeft.X - _position.X;
 
                                 if (diffX != 0)
                                 {
@@ -1915,7 +1912,7 @@ namespace NScumm.Core
                                     if (t == 0 && (diffY <= 0 || diffX <= 0)
                                         && (diffY >= 0 || diffX >= 0))
                                         t = -1;
-                                    pos = RealPosition.Y + t;
+                                    pos = _position.Y + t;
                                 }
                             }
 
@@ -1965,11 +1962,11 @@ namespace NScumm.Core
 
                             if (box2nr == box3nr)
                             {
-                                int diffX = _walkdata.Dest.X - RealPosition.X;
-                                int diffY = _walkdata.Dest.Y - RealPosition.Y;
-                                int boxDiffY = box1.UpperLeft.Y - RealPosition.Y;
+                                int diffX = _walkdata.Dest.X - _position.X;
+                                int diffY = _walkdata.Dest.Y - _position.Y;
+                                int boxDiffY = box1.UpperLeft.Y - _position.Y;
 
-                                pos = RealPosition.X;
+                                pos = _position.X;
                                 if (diffY != 0)
                                 {
                                     pos += diffX * boxDiffY / diffY;
@@ -1977,7 +1974,7 @@ namespace NScumm.Core
                             }
                             else
                             {
-                                pos = RealPosition.X;
+                                pos = _position.X;
                             }
 
                             q = pos;
@@ -2009,6 +2006,42 @@ namespace NScumm.Core
                 box2.LowerLeft = tmp;
             }
             return false;
+        }
+
+        public void AnimateLimb(int limb, int f)
+        {
+            // This methods is very similiar to animateCostume().
+            // However, instead of animating *all* the limbs, it only animates
+            // the specified limb to be at the frame specified by "f".
+
+            if (f == 0)
+                return;
+
+            _animProgress++;
+            if (_animProgress >= _animSpeed)
+            {
+                _animProgress = 0;
+
+                if (Costume == 0)
+                    return;
+
+                var akos = _scumm.ResourceManager.GetCostumeData(Costume);
+                Debug.Assert(akos != null);
+
+                var aksq = ResourceFile7.ReadData(akos, "AKSQ");
+                var akfo = ResourceFile7.ReadData(akos, "AKFO");
+
+                var size = akfo.Length / 2;
+
+                while ((f--) != 0)
+                {
+                    if (Cost.Active[limb] != 0)
+                        AkosCostumeLoader.IncreaseAnim(this, limb, aksq, akfo, size, _scumm);
+                }
+
+                //      _needRedraw = true;
+                //      _needBgReset = true;
+            }
         }
 
         #endregion

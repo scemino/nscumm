@@ -29,34 +29,16 @@ namespace NScumm.Core
     class VerbSlot
     {
         public Rect CurRect;
-
         public Rect OldRect;
-
-        public ushort VerbId { get; set; }
-
-        public byte Color { get; set; }
-
-        public byte HiColor { get; set; }
-
-        public byte DimColor { get; set; }
-
-        public byte BkColor { get; set; }
-
-        public VerbType Type { get; set; }
-
-        public byte CharsetNr { get; set; } 
-
-        public byte CurMode { get; set; }
-
-        public ushort SaveId { get; set; }
-
-        public byte Key { get; set; }
-
-        public bool Center { get; set; }
-
-        public byte Prep { get; set; }
-
-        public ushort ImgIndex { get; set; }
+        public ushort VerbId;
+        public byte Color, HiColor, DimColor, BkColor;
+        public VerbType Type;
+        public byte CharsetNr, CurMode;
+        public ushort SaveId;
+        public byte Key;
+        public bool Center;
+        public byte Prep;
+        public ushort ImgIndex;
 
         public byte[] Text { get; set; }
 

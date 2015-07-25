@@ -37,7 +37,25 @@ namespace NScumm.Core
 
         public byte Speaking { get; set; }
 
+        byte _walkCountModulo;
+
         public bool NewWalkBoxEntered { get; set; }
+
+        byte _walkDirX;
+        byte _walkDirY;
+
+        byte _walkYCountGreaterThanXCount;
+        byte _walkXCount;
+        byte _walkXCountInc;
+        byte _walkYCount;
+        byte _walkYCountInc;
+
+        byte _walkMaxXYCountInc;
+
+        Point _tmp_Pos;
+        Point _tmp_Dest;
+        byte _tmp_WalkBox;
+        bool _tmp_NewWalkBoxEntered;
 
         public sbyte AnimFrameRepeat { get; set; }
 
@@ -151,12 +169,92 @@ namespace NScumm.Core
             actorEntries.ForEach(e => e.Execute(serializer));
         }
 
+        void AnimateActor(int anim)
+        {
+            int dir = -1;
+
+            switch (anim)
+            {
+                case 0x00:
+                case 0x04:
+                    dir = 0;
+                    break;
+
+                case 0x01:
+                case 0x05:
+                    dir = 1;
+                    break;
+
+                case 0x02:
+                case 0x06:
+                    dir = 2;
+                    break;
+
+                case 0x03:
+                case 0x07:
+                    dir = 3;
+                    break;
+            }
+
+            if (IsInCurrentRoom)
+            {
+                CostCommandNew = (byte)anim;
+                _scumm.CostumeLoader.CostumeDecodeData(this, 0, 0);
+
+                if (dir == -1)
+                    return;
+
+                Facing = (ushort)ScummMath.NormalizeAngle(ScummHelper.OldDirToNewDir(dir));
+            }
+            else
+            {
+                if (anim > 4 && anim <= 7)
+                    Facing = (ushort)ScummMath.NormalizeAngle(ScummHelper.OldDirToNewDir(dir));
+            }
+        }
+
         public override void AnimateCostume()
         {
             SpeakCheck();
 
             if (_scumm.CostumeLoader.IncreaseAnims(this) != 0)
                 NeedRedraw = true;
+        }
+
+        void SpeakCheck()
+        {
+            if ((Sound & 0x80) != 0)
+                return;
+
+            int cmd = ScummHelper.NewDirToOldDir(Facing);
+
+            if ((Speaking & 0x80) != 0)
+                cmd += 0x0C;
+            else
+                cmd += 0x10;
+
+            AnimFrameRepeat = -1;
+            AnimateActor(cmd);
+        }
+
+        public void LimbFrameCheck(int limb)
+        {
+            if (Cost.Frame[limb] == 0xFFFF)
+                return;
+
+            if (Cost.Start[limb] == Cost.Frame[limb])
+                return;
+
+            // 0x25A4
+            Cost.Start[limb] = Cost.Frame[limb];
+
+            LimbFrameRepeat[limb] = LimbFrameRepeatNew[limb];
+
+            // 0x25C3
+            Cost.Active[limb] = ((CostumeLoader0)_scumm.CostumeLoader).GetFrame(this, limb);
+            Cost.Curpos[limb] = 0;
+
+            NeedRedraw = true;
         }
 
         public override void SetDirection(int direction)
@@ -206,6 +304,65 @@ namespace NScumm.Core
 
             if (frame == StandFrame)
                 SetDirection(Facing);
+        }
+
+        bool CalcWalkDistances()
+        {
+            _walkDirX = 0;
+            _walkDirY = 0;
+            _walkYCountGreaterThanXCount = 0;
+            ushort A = 0;
+
+            if (CurrentWalkTo.X >= _tmp_Dest.X)
+            {
+                A = (ushort)(CurrentWalkTo.X - _tmp_Dest.X);
+                _walkDirX = 1;
+            }
+            else
+            {
+                A = (ushort)(_tmp_Dest.X - CurrentWalkTo.X);
+            }
+
+            _walkXCountInc = (byte)A;
+
+            if (CurrentWalkTo.Y >= _tmp_Dest.Y)
+            {
+                A = (ushort)(CurrentWalkTo.Y - _tmp_Dest.Y);
+                _walkDirY = 1;
+            }
+            else
+            {
+                A = (ushort)(_tmp_Dest.Y - CurrentWalkTo.Y);
+            }
+
+            _walkYCountInc = (byte)A;
+            if (_walkXCountInc == 0 && _walkYCountInc == 0)
+                return true;
+
+            if (_walkXCountInc <= _walkYCountInc)
+                _walkYCountGreaterThanXCount = 1;
+
+            // 2FCC
+            A = _walkXCountInc;
+            if (A <= _walkYCountInc)
+                A = _walkYCountInc;
+
+            _walkMaxXYCountInc = (byte)A;
+            _walkXCount = _walkXCountInc;
+            _walkYCount = _walkYCountInc;
+            _walkCountModulo = _walkMaxXYCountInc;
+
+            return false;
+        }
+
+        enum WalkCommand
+        {
+            None,
+            L2A33,
+            _2A0A,
+            _2A9A,
+            L2C36,
+            L2CA3
         }
 
         public override void Walk()
@@ -494,135 +651,6 @@ namespace NScumm.Core
             } while(cmd != WalkCommand.None);
         }
 
-        public void LimbFrameCheck(int limb)
-        {
-            if (Cost.Frame[limb] == 0xFFFF)
-                return;
-
-            if (Cost.Start[limb] == Cost.Frame[limb])
-                return;
-
-            // 0x25A4
-            Cost.Start[limb] = Cost.Frame[limb];
-
-            LimbFrameRepeat[limb] = LimbFrameRepeatNew[limb];
-
-            // 0x25C3
-            Cost.Active[limb] = ((CostumeLoader0)_scumm.CostumeLoader).GetFrame(this, limb);
-            Cost.Curpos[limb] = 0;
-
-            NeedRedraw = true;
-        }
-
-        void AnimateActor(int anim)
-        {
-            int dir = -1;
-
-            switch (anim)
-            {
-                case 0x00:
-                case 0x04:
-                    dir = 0;
-                    break;
-
-                case 0x01:
-                case 0x05:
-                    dir = 1;
-                    break;
-
-                case 0x02:
-                case 0x06:
-                    dir = 2;
-                    break;
-
-                case 0x03:
-                case 0x07:
-                    dir = 3;
-                    break;
-            }
-
-            if (IsInCurrentRoom)
-            {
-                CostCommandNew = (byte)anim;
-                _scumm.CostumeLoader.CostumeDecodeData(this, 0, 0);
-
-                if (dir == -1)
-                    return;
-
-                Facing = (ushort)ScummMath.NormalizeAngle(ScummHelper.OldDirToNewDir(dir));
-            }
-            else
-            {
-                if (anim > 4 && anim <= 7)
-                    Facing = (ushort)ScummMath.NormalizeAngle(ScummHelper.OldDirToNewDir(dir));
-            }
-        }
-
-        void SpeakCheck()
-        {
-            if ((Sound & 0x80) != 0)
-                return;
-
-            int cmd = ScummHelper.NewDirToOldDir(Facing);
-
-            if ((Speaking & 0x80) != 0)
-                cmd += 0x0C;
-            else
-                cmd += 0x10;
-
-            AnimFrameRepeat = -1;
-            AnimateActor(cmd);
-        }
-
-        bool CalcWalkDistances()
-        {
-            _walkDirX = 0;
-            _walkDirY = 0;
-            _walkYCountGreaterThanXCount = 0;
-            ushort A = 0;
-
-            if (CurrentWalkTo.X >= _tmp_Dest.X)
-            {
-                A = (ushort)(CurrentWalkTo.X - _tmp_Dest.X);
-                _walkDirX = 1;
-            }
-            else
-            {
-                A = (ushort)(_tmp_Dest.X - CurrentWalkTo.X);
-            }
-
-            _walkXCountInc = (byte)A;
-
-            if (CurrentWalkTo.Y >= _tmp_Dest.Y)
-            {
-                A = (ushort)(CurrentWalkTo.Y - _tmp_Dest.Y);
-                _walkDirY = 1;
-            }
-            else
-            {
-                A = (ushort)(_tmp_Dest.Y - CurrentWalkTo.Y);
-            }
-
-            _walkYCountInc = (byte)A;
-            if (_walkXCountInc == 0 && _walkYCountInc == 0)
-                return true;
-
-            if (_walkXCountInc <= _walkYCountInc)
-                _walkYCountGreaterThanXCount = 1;
-
-            // 2FCC
-            A = _walkXCountInc;
-            if (A <= _walkYCountInc)
-                A = _walkYCountInc;
-
-            _walkMaxXYCountInc = (byte)A;
-            _walkXCount = _walkXCountInc;
-            _walkYCount = _walkYCountInc;
-            _walkCountModulo = _walkMaxXYCountInc;
-
-            return false;
-        }
-
         byte ActorWalkX()
         {
             byte A = _walkXCount;
@@ -773,23 +801,6 @@ namespace NScumm.Core
             }
         }
 
-        byte _walkCountModulo;
-        byte _walkDirX;
-        byte _walkDirY;
-
-        byte _walkYCountGreaterThanXCount;
-        byte _walkXCount;
-        byte _walkXCountInc;
-        byte _walkYCount;
-        byte _walkYCountInc;
-
-        byte _walkMaxXYCountInc;
-
-        Point _tmp_Pos;
-        Point _tmp_Dest;
-        byte _tmp_WalkBox;
-        bool _tmp_NewWalkBoxEntered;
-
         static readonly byte[] v0ActorDemoTalk =
             {
                 0x00,
@@ -903,16 +914,6 @@ namespace NScumm.Core
                 "Sandy",
                 "",
             };
-
-        enum WalkCommand
-        {
-            None,
-            L2A33,
-            _2A0A,
-            _2A9A,
-            L2C36,
-            L2CA3
-        }
     }
 }
 

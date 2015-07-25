@@ -31,6 +31,13 @@ namespace NScumm.Core
         {
         }
 
+        protected override void SetupActorScale()
+        {
+            // TODO: The following could probably be removed
+            ScaleX = 0xFF;
+            ScaleY = 0xFF;
+        }
+
         public override void Walk()
         {
             Point p2, p3;   // Gate locations
@@ -131,13 +138,6 @@ namespace NScumm.Core
             CalcMovementFactor(_walkdata.Dest);
         }
 
-        protected override void SetupActorScale()
-        {
-            // TODO: The following could probably be removed
-            ScaleX = 0xFF;
-            ScaleY = 0xFF;
-        }
-
         void FindPathTowardsOld(byte box1, byte box2, byte finalBox, out Point p2, out Point p3)
         {
             var gateA = new Point[2];
@@ -177,7 +177,7 @@ namespace NScumm.Core
             }
         }
 
-        static void GetGates(BoxCoords box1, BoxCoords box2, Point[] gateA, Point[] gateB)
+        void GetGates(BoxCoords box1, BoxCoords box2, Point[] gateA, Point[] gateB)
         {
             int i, j;
             var dist = new int[8];
@@ -295,5 +295,6 @@ namespace NScumm.Core
                 gateB[0] = closestPoint[line2];
             }
         }
+
     }
 }

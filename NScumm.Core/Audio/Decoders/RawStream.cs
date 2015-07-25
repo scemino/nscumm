@@ -85,9 +85,9 @@ namespace NScumm.Core.Audio.Decoders
             return true;
         }
 
-        public int ReadBuffer(short[] buffer)
+        public int ReadBuffer(short[] buffer, int count)
         {
-            int samplesLeft = buffer.Length;
+            int samplesLeft = count;
 
             while (samplesLeft > 0)
             {
@@ -112,7 +112,7 @@ namespace NScumm.Core.Audio.Decoders
                 }
             }
 
-            return buffer.Length - samplesLeft;
+            return count - samplesLeft;
         }
 
         ~RawStream()

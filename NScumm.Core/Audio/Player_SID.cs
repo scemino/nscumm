@@ -145,9 +145,9 @@ namespace NScumm.Core.Audio
             return result;
         }
 
-        public int ReadBuffer(short[] buffer)
+        public int ReadBuffer(short[] buffer, int count)
         {
-            int samplesLeft = buffer.Length;
+            int samplesLeft = count;
             int offset = 0;
             lock (_mutex)
             {
@@ -166,7 +166,7 @@ namespace NScumm.Core.Audio
                 }
             }
 
-            return buffer.Length;
+            return count;
         }
 
         public void Dispose()

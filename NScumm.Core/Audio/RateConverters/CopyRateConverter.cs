@@ -37,11 +37,11 @@ namespace NScumm.Core.Audio
             _bufferSize = 0; 
         }
 
-        public int Flow(IAudioStream input, short[] obuf, int volLeft, int volRight)
+        public int Flow(IAudioStream input, short[] obuf, int count, int volLeft, int volRight)
         {
             Debug.Assert(input.IsStereo == stereo);
 
-            var osamp = obuf.Length / 2;
+            var osamp = count / 2;
 
             if (stereo)
                 osamp *= 2;
@@ -54,7 +54,7 @@ namespace NScumm.Core.Audio
             }
 
             // Read up to 'osamp' samples into our temporary buffer
-            var len = input.ReadBuffer(_buffer);
+            var len = input.ReadBuffer(_buffer, _bufferSize);
 
             int iPos = 0;
             var oPos = 0;

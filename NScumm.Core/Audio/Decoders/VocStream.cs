@@ -88,10 +88,10 @@ namespace NScumm.Core.Audio.Decoders
         
         #endregion
 
-        public virtual int ReadBuffer(short[] buffer)
+        public virtual int ReadBuffer(short[] buffer, int count)
         {
             int pos = 0;
-            var samplesLeft = buffer.Length;
+            var samplesLeft = count;
             while (samplesLeft > 0)
             {
                 // Try to read up to "samplesLeft" samples.
@@ -113,7 +113,7 @@ namespace NScumm.Core.Audio.Decoders
                 }
             }
 
-            return buffer.Length - samplesLeft;
+            return count - samplesLeft;
         }
 
         int FillBuffer(int maxSamples)

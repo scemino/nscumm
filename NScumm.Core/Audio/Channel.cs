@@ -63,7 +63,7 @@ namespace NScumm.Core.Audio
          *             16 bits, for a total of 40 bytes.
          * @return number of sample pairs processed (which can still be silence!)
          */
-        public int Mix(short[] data)
+        public int Mix(short[] data, int count)
         {
             Debug.Assert(_stream != null);
 
@@ -78,7 +78,7 @@ namespace NScumm.Core.Audio
                 _samplesConsumed = _samplesDecoded;
                 _mixerTimeStamp = Environment.TickCount;
                 _pauseTime = 0;
-                res = _converter.Flow(_stream, data, _volL, _volR);
+                res = _converter.Flow(_stream, data, count, _volL, _volR);
                 _samplesDecoded += res;
             }
 

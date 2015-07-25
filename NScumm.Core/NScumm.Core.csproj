@@ -364,6 +364,13 @@
     <Compile Include="Graphics\CharsetRendererTowns3.cs" />
     <Compile Include="IO\ScummDiskImage.cs" />
     <Compile Include="IEnableTrace.cs" />
+    <Compile Include="Audio\AudioFormat.cs" />
+    <Compile Include="Audio\Buffer.cs" />
+    <Compile Include="Audio\IAudioOutput.cs" />
+    <Compile Include="Audio\SampleProviders\AudioStreamToAudioSampleProvider.cs" />
+    <Compile Include="Audio\SampleProviders\IAudioSampleProvider.cs" />
+    <Compile Include="Audio\SampleProviders\AudioSampleProvider16.cs" />
+    <Compile Include="Audio\WaveStreamWriter.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <ItemGroup />
@@ -372,5 +379,8 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="IO\Nscumm.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Audio\SampleProviders\" />
   </ItemGroup>
 </Project>

@@ -27,6 +27,7 @@ using Microsoft.Xna.Framework;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using NScumm.Core.Audio;
 
 namespace NScumm.MonoGame
 {
@@ -42,7 +43,7 @@ namespace NScumm.MonoGame
 #if WINDOWS_UAP
         NullMixer audioDriver;
 #else
-        XnaAudioDriver audioDriver;
+        IAudioOutput audioDriver;
 #endif
         Game game;
         bool contentLoaded;
@@ -82,6 +83,7 @@ namespace NScumm.MonoGame
                 //engine = ScummEngine.Create(info, gfx, inputManager, null);
                 engine.ShowMenuDialogRequested += OnShowMenuDialogRequested;
 
+                audioDriver.Play();
                 Task.Factory.StartNew(() =>
                 {
                     UpdateGame();

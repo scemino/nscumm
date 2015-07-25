@@ -206,13 +206,13 @@ namespace NScumm.Core.Audio
             return (_current_nr == nr || _next_nr == nr || _loadedMidiSong == nr) ? 1 : 0;
         }
 
-        public override int ReadBuffer(short[] buffer)
+        public override int ReadBuffer(short[] buffer, int count)
         {
             lock (_mutex)
             {
                 int step = 1;
                 var offset = 0;
-                var numSamples = buffer.Length;
+                var numSamples = count;
                 int len = numSamples / 2;
 
                 // maybe this needs a complete rewrite

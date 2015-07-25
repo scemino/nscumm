@@ -18,48 +18,26 @@
 using NScumm.Core.Audio;
 using System;
 using Microsoft.Xna.Framework.Audio;
-using System.Runtime.InteropServices;
+using NScumm.Core.Audio.SampleProviders;
 
 namespace NScumm.MonoGame
 {
-    [StructLayout(LayoutKind.Explicit, Pack = 2)]
-    public class Buffer
-    {
-        [FieldOffset(0)]
-        public byte[] Bytes;
-        [FieldOffset(0)]
-        public short[] Shorts;
-    }
-
-    class XnaAudioDriver : Mixer
+    class XnaAudioDriver: IAudioOutput
     {
         readonly DynamicSoundEffectInstance _dsei;
-        Buffer _buffer;
-        short[] _buf;
+        readonly NScumm.Core.Audio.Buffer _buffer;
+        IAudioSampleProvider _audioSampleProvider;
 
         public XnaAudioDriver()
-            : base(44100)
         {
-            _buffer = new Buffer();
-            _buf = new short[13230];
-            _buffer.Bytes = new byte[_buf.Length * 2];
+            _buffer = new NScumm.Core.Audio.Buffer(13230 * 2);
             _dsei = new DynamicSoundEffectInstance(44100, AudioChannels.Stereo);
             _dsei.BufferNeeded += OnBufferNeeded;
-            _dsei.Play();
         }
 
-        void OnBufferNeeded(object sender, EventArgs e)
+        public void SetSampleProvider(IAudioSampleProvider audioSampleProvider)
         {
-            Array.Clear(_buf, 0, _buf.Length);
-            var available = MixCallback(_buf);
-            if (available > 0)
-            {
-                for (int i = 0; i < available * 2; i++)
-                {
-                    _buffer.Shorts[i] = _buf[i];
-                }
-            }
-            _dsei.SubmitBuffer(_buffer.Bytes);
+            _audioSampleProvider = audioSampleProvider;
         }
 
         public void Dispose()
@@ -67,9 +45,26 @@ namespace NScumm.MonoGame
             _dsei.Dispose();
         }
 
+        public void Play()
+        {
+            _dsei.Play();
+        }
+
+        public void Pause()
+        {
+            _dsei.Pause();
+        }
+
         public void Stop()
         {
             _dsei.Stop();
+        }
+
+        void OnBufferNeeded(object sender, EventArgs e)
+        {
+            Array.Clear(_buffer.Bytes, 0, _buffer.Bytes.Length);
+            var available = _audioSampleProvider != null ? _audioSampleProvider.Read(_buffer.Bytes, _buffer.Bytes.Length) : 0;
+            _dsei.SubmitBuffer(_buffer.Bytes);
         }
     }
 }

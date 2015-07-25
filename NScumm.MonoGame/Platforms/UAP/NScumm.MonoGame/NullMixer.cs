@@ -1,24 +1,39 @@
-﻿using System;
-using NScumm.Core.Audio;
+﻿using NScumm.Core.Audio;
 using System.Threading;
+using NScumm.Core.Audio.SampleProviders;
+using System;
 
 namespace NScumm.MonoGame
 {
-    class NullMixer : Mixer, IDisposable
+    class NullMixer : IAudioOutput
     {
-        private readonly Timer timer;
-        private short[] samples;
+        readonly Timer timer;
+        byte[] samples;
+        IAudioSampleProvider _audioSampleProvider;
 
         public NullMixer() 
-            : base(44100)
         {
-            timer = new Timer(OnTimer, this, 0, 1000);
-            samples = new short[2048 * 4];
+            timer = new Timer(OnTimer);
         }
 
-        private void OnTimer(object state)
+        public void Play()
         {
-            MixCallback(samples);
+            timer.Change(TimeSpan.Zero, TimeSpan.FromSeconds(1.0));
+        }
+
+        public void Pause()
+        {
+        }
+
+        public void SetSampleProvider(IAudioSampleProvider audioSampleProvider)
+        {
+            _audioSampleProvider = audioSampleProvider;
+            samples = new byte[_audioSampleProvider.AudioFormat.AverageBytesPerSecond];
+        }
+
+        void OnTimer(object state)
+        {
+            _audioSampleProvider.Read(samples, samples.Length);
         }
 
         public void Dispose()

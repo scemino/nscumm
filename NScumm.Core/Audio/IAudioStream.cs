@@ -68,9 +68,10 @@ namespace NScumm.Core.Audio
         /// stream, you will get a total of two left channel and two right channel
         /// samples.
         /// </summary>
-        /// <returns>The buffer.</returns>
         /// <param name="buffer">Buffer.</param>
-        int ReadBuffer(short[] buffer);
+        /// <param name="numSamples">The number of samples to read.</param>
+        /// <returns>The number of samples read.</returns>
+        int ReadBuffer(short[] buffer, int numSamples);
 
         /// <summary>
         /// Is this a stereo stream?

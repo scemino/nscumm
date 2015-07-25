@@ -120,14 +120,14 @@ namespace NScumm.Core.Audio
             }
         }
 
-        public int ReadBuffer(short[] data)
+        public int ReadBuffer(short[] data, int count)
         {
             lock (_mutex)
             {
-                Array.Clear(data, 0, data.Length);
+                Array.Clear(data, 0, count);
                 if (_soundPlaying == -1)
                 {
-                    return data.Length;
+                    return count;
                 }
 
                 bool notesLeft = false;
@@ -139,7 +139,7 @@ namespace NScumm.Core.Audio
                         continue;
                     }
 
-                    uint samplesLeft = (uint)data.Length;
+                    uint samplesLeft = (uint)count;
                     var ptr = data;
                     var offset = 0;
 
@@ -186,7 +186,7 @@ namespace NScumm.Core.Audio
                     StopAllSounds_Internal();
                 }
 
-                return data.Length;
+                return count;
             }
         }
 

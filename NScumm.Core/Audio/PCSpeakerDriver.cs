@@ -97,7 +97,7 @@ namespace NScumm.Core.Audio
         {
             // TODO: vs: do better than this, don't use an intermediate buffer
             var tmp = new short[len];
-            _pcSpk.ReadBuffer(tmp);
+            _pcSpk.ReadBuffer(tmp, len);
             Array.Copy(tmp, 0, buf, pos, len);
         }
 

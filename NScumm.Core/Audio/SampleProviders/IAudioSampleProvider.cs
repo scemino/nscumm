@@ -1,10 +1,10 @@
-﻿//
-//  rate.cs
+//
+//  IAudioSampleProvider.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
 //
-//  Copyright (c) 2014 
+//  Copyright (c) 2015 
 //
 //  This program is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -19,13 +19,12 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace NScumm.Core.Audio
+namespace NScumm.Core.Audio.SampleProviders
 {
-    public interface IRateConverter
+    public interface IAudioSampleProvider
     {
-        int Flow(IAudioStream input, short[] obuf, int count, int volLeft, int volRight);
+        AudioFormat AudioFormat { get; }
 
-        int Drain(short[] obuf, int vol);
+        int Read(byte[] samples, int count);
     }
 }
-

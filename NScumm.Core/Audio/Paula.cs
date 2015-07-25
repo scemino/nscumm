@@ -115,21 +115,20 @@ namespace NScumm.Core.Audio
         {
         }
 
-        public int ReadBuffer(short[] buffer)
+        public int ReadBuffer(short[] buffer, int count)
         {
-            var numSamples = buffer.Length;
             lock (_mutex)
             {
-                Array.Clear(buffer, 0, buffer.Length);
+                Array.Clear(buffer, 0, count);
                 if (!IsPlaying)
                 {
-                    return numSamples;
+                    return count;
                 }
 
                 if (_stereo)
-                    return ReadBufferIntern(true, buffer);
+                    return ReadBufferIntern(true, buffer, count);
                 else
-                    return ReadBufferIntern(false, buffer);
+                    return ReadBufferIntern(false, buffer, count);
             }
         }
 
@@ -221,10 +220,10 @@ namespace NScumm.Core.Audio
             // TODO: implement
         }
 
-        int ReadBufferIntern(bool stereo, short[] buffer)
+        int ReadBufferIntern(bool stereo, short[] buffer, int count)
         {
             var bufOffset = 0;
-            var numSamples = buffer.Length;
+            var numSamples = count;
             int samples = _stereo ? numSamples / 2 : numSamples;
             while (samples > 0)
             {

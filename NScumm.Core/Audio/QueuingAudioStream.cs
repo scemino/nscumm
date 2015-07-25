@@ -118,7 +118,7 @@ namespace NScumm.Core
             return _queue.Count;
         }
 
-        public int ReadBuffer(short[] buffer)
+        public int ReadBuffer(short[] buffer, int count)
         {
             int samplesDecoded = 0;
             lock (_mutex)
@@ -126,8 +126,8 @@ namespace NScumm.Core
                 while (samplesDecoded < buffer.Length && _queue.Count != 0)
                 {
                     var stream = _queue.Peek().Stream;
-                    var buf = new short[buffer.Length - samplesDecoded];
-                    var read = stream.ReadBuffer(buf);
+                    var buf = new short[count - samplesDecoded];
+                    var read = stream.ReadBuffer(buf, count - samplesDecoded);
                     Array.Copy(buf, 0, buffer, samplesDecoded, read);
                     samplesDecoded += read;
 

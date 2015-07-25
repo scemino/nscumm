@@ -111,12 +111,12 @@ namespace NScumm.Core.Audio
             }
         }
 
-        public int ReadBuffer(short[] buffer)
+        public int ReadBuffer(short[] buffer, int count)
         {
-            if ((_loops != 0 && _completeIterations == _loops) || buffer.Length == 0)
+            if ((_loops != 0 && _completeIterations == _loops) || count == 0)
                 return 0;
 
-            int samplesRead = _parent.ReadBuffer(buffer);
+            int samplesRead = _parent.ReadBuffer(buffer, count);
 
             if (_parent.IsEndOfStream)
             {
@@ -124,7 +124,7 @@ namespace NScumm.Core.Audio
                 if (_completeIterations == _loops)
                     return samplesRead;
 
-                int remainingSamples = buffer.Length - samplesRead;
+                int remainingSamples = count - samplesRead;
 
                 if (!_parent.Rewind())
                 {
@@ -139,7 +139,7 @@ namespace NScumm.Core.Audio
                 }
 
                 var tmp = new short[remainingSamples];
-                var read = ReadBuffer(tmp);
+                var read = ReadBuffer(tmp, remainingSamples);
                 Array.Copy(tmp, 0, buffer, samplesRead, remainingSamples);
                 return samplesRead + read;
             }

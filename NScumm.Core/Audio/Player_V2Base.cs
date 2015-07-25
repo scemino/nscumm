@@ -68,7 +68,7 @@ namespace NScumm.Core.Audio
 
         #region IAudioStream implementation
 
-        public abstract int ReadBuffer(short[] buffer);
+        public abstract int ReadBuffer(short[] buffer, int count);
 
         public bool IsStereo
         {

@@ -1,10 +1,10 @@
-﻿//
-//  rate.cs
+//
+//  AudioSampleProvider16.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
 //
-//  Copyright (c) 2014 
+//  Copyright (c) 2015 
 //
 //  This program is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -19,13 +19,21 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace NScumm.Core.Audio
+namespace NScumm.Core.Audio.SampleProviders
 {
-    public interface IRateConverter
+    public abstract class AudioSampleProvider16: IAudioSampleProvider
     {
-        int Flow(IAudioStream input, short[] obuf, int count, int volLeft, int volRight);
+        public abstract AudioFormat AudioFormat
+        {
+            get;
+        }
 
-        int Drain(short[] obuf, int vol);
+        public abstract int Read(short[] samples, int count);
+
+        public int Read(byte[] samples, int count)
+        {
+            var buffer = new Buffer(samples);
+            return Read(buffer.Shorts, count / 2);
+        }
     }
 }
-

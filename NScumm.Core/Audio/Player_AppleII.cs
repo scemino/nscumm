@@ -134,9 +134,9 @@ namespace NScumm.Core.Audio
             return 0;
         }
 
-        public int ReadBuffer(short[] buffer)
+        public int ReadBuffer(short[] buffer, int count)
         {
-            var numSamples = buffer.Length;
+            var numSamples = count;
             lock (_mutex)
             {
                 if (_soundNr == 0)

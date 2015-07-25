@@ -85,7 +85,7 @@ namespace NScumm.Core.Audio
         /// Get approximation of for how long the channel has been playing.
         /// </summary>
         /// <returns>The sound elapsed time.</returns>
-        /// <param name="_compressedFileSoundHandle">Compressed file sound handle.</param>
+        /// <param name="handle">Compressed file sound handle.</param>
         int GetSoundElapsedTime(SoundHandle handle);
 
         /// <summary>

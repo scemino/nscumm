@@ -75,10 +75,10 @@ namespace NScumm.Core.Audio
             }
         }
 
-        public int ReadBuffer(short[] buffer)
+        public int ReadBuffer(short[] buffer, int count)
         {
-            do_mix(buffer, buffer.Length / 2);
-            return buffer.Length;
+            do_mix(buffer, count / 2);
+            return count;
         }
 
         public void SetMusicVolume(int vol)
@@ -134,7 +134,7 @@ namespace NScumm.Core.Audio
 
             // read the first sample
             var sample = new short[1];
-            _channels[i].input.ReadBuffer(sample);
+            _channels[i].input.ReadBuffer(sample,1);
             _channels[i].pos = sample[0];
         }
 
@@ -258,7 +258,7 @@ namespace NScumm.Core.Audio
                             while (_channels[i].ctr >= 0x10000)
                             {
                                 var sample = new short[1];
-                                if (_channels[i].input.ReadBuffer(sample) != 1)
+                                if (_channels[i].input.ReadBuffer(sample, len) != 1)
                                 {    // out of data
                                     StopChannel(_channels[i].id);
                                     goto skipchan;  // exit 2 loops at once

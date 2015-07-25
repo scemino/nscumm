@@ -61,10 +61,10 @@ namespace NScumm.Core.Audio.SoftSynth
 
         #region IMixerAudioStream implementation
 
-        public int ReadBuffer(short[] data)
+        public int ReadBuffer(short[] data, int count)
         {
             int stereoFactor = IsStereo ? 2 : 1;
-            int len = data.Length / stereoFactor;
+            int len = count / stereoFactor;
             int step;
             int pos = 0;
 
@@ -91,7 +91,7 @@ namespace NScumm.Core.Audio.SoftSynth
                 len -= step;
             } while (len != 0);
 
-            return data.Length;
+            return count;
         }
 
         public abstract bool IsStereo

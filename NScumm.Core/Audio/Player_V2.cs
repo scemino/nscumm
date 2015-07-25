@@ -173,13 +173,13 @@ namespace NScumm.Core.Audio
             return _current_nr == nr || _next_nr == nr ? 1 : 0;
         }
 
-        public override int ReadBuffer(short[] data)
+        public override int ReadBuffer(short[] data, int count)
         {
             lock (_mutex)
             {
 
                 int step;
-                int len = data.Length / 2;
+                int len = count / 2;
                 int offset = 0;
 
                 do

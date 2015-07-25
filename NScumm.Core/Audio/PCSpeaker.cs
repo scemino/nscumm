@@ -128,12 +128,12 @@ namespace NScumm.Core.Audio
             }
         }
 
-        public int ReadBuffer(short[] buffer)
+        public int ReadBuffer(short[] buffer, int count)
         {
             lock (_mutex)
             {
                 int i;
-                for (i = 0; _remainingSamples != 0 && (i < buffer.Length); i++)
+                for (i = 0; _remainingSamples != 0 && (i < count); i++)
                 {
                     buffer[i] = (short)(generateWave[_wave](_oscSamples, _oscLength) * Volume);
                     if (_oscSamples++ >= _oscLength)
@@ -144,12 +144,12 @@ namespace NScumm.Core.Audio
                 }
 
                 // Clear the rest of the buffer
-                if (i < buffer.Length)
+                if (i < count)
                 {
-                    Array.Clear(buffer, i, (buffer.Length - i));
+                    Array.Clear(buffer, i, (count - i));
                 }
 
-                return buffer.Length;
+                return count;
             }
         }
 

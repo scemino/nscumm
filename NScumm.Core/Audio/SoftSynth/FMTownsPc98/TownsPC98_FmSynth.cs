@@ -84,11 +84,11 @@ namespace NScumm.Core.Audio.SoftSynth
             _timerbase = (uint)(_baserate * 1000000.0f);
         }
 
-        public int ReadBuffer(short[] buffer)
+        public int ReadBuffer(short[] buffer, int count)
         {
-            Array.Clear(buffer, 0, buffer.Length);
-            var tmp = new int[buffer.Length];
-            int samplesLeft = buffer.Length >> 1;
+            Array.Clear(buffer, 0, count);
+            var tmp = new int[count];
+            int samplesLeft = count >> 1;
 
             bool locked = false;
             if (_ready)
@@ -172,7 +172,7 @@ namespace NScumm.Core.Audio.SoftSynth
             if (locked)
                 Monitor.Exit(_mutex);
 
-            return buffer.Length;
+            return count;
         }
 
         public void WriteReg(byte part, byte regAddress, int value)

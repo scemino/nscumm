@@ -164,12 +164,11 @@ namespace NScumm.Core
             }
         }
 
-        public int ReadBuffer(short[] buffer)
+        public int ReadBuffer(short[] buffer, int len)
         {
             lock (_mutex)
             {
 
-                int len = buffer.Length;
                 int pos = 0;
 
                 while (len > 0)
@@ -200,7 +199,7 @@ namespace NScumm.Core
                     _samplesTillCallback -= samplesToRead;
                 }
 
-                return buffer.Length;
+                return len;
             }
         }
 

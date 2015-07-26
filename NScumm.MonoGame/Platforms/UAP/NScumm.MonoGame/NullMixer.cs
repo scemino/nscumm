@@ -33,7 +33,10 @@ namespace NScumm.MonoGame
 
         void OnTimer(object state)
         {
-            _audioSampleProvider.Read(samples, samples.Length);
+            if (_audioSampleProvider != null)
+            {
+                _audioSampleProvider.Read(samples, samples.Length);
+            }
         }
 
         public void Dispose()

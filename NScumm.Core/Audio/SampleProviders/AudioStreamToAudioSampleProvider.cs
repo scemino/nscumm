@@ -45,7 +45,7 @@ namespace NScumm.Core.Audio.SampleProviders
 
         public override int Read(short[] samples, int count)
         {
-            return _stream.ReadBuffer(samples, count) / 2;
+            return _stream.ReadBuffer(samples, count);
         }
     }    
 }

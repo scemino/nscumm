@@ -1,5 +1,5 @@
 ﻿//
-//  IPlayer.cs
+//  ISoundRepository.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -21,43 +21,6 @@
 
 namespace NScumm.Core.Audio
 {
-    public interface IPlayer
-    {
-        bool IsNativeMT32 { get; }
-
-        bool IsMidi { get; }
-
-        int Priority { get; set; }
-
-        int EffectiveVolume { get; }
-
-        int Transpose { get; }
-
-        int Pan { get; set; }
-
-        int Detune { get; set; }
-
-        int Id { get; }
-
-        bool IsActive { get; }
-
-        bool IsFadingOut { get; }
-
-        int OffsetNote { get; set; }
-
-        float GetMusicTimer();
-
-        bool StartSound(int sound);
-
-        bool Update();
-
-        void Clear();
-
-        int GetParam(int param, int chan);
-
-        int SetHook(int cls, int value, int chan);
-    }
-
     public interface ISoundRepository
     {
         byte[] GetSound(int id);

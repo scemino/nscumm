@@ -75,15 +75,16 @@ namespace NScumm.MonoGame
 #if WINDOWS_UAP
                 audioDriver = new NullMixer();
 #else
-                audioDriver = new XnaAudioDriver();
+               audioDriver = new XnaAudioDriver();
+                //audioDriver = new NullMixer();
 #endif
+                audioDriver.Play();
 
                 // init engines
                 engine = ScummEngine.Create(info, gfx, inputManager, audioDriver);
                 //engine = ScummEngine.Create(info, gfx, inputManager, null);
                 engine.ShowMenuDialogRequested += OnShowMenuDialogRequested;
 
-                audioDriver.Play();
                 Task.Factory.StartNew(() =>
                 {
                     UpdateGame();

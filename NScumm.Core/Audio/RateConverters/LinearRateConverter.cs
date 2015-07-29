@@ -22,7 +22,7 @@ using System;
 
 namespace NScumm.Core.Audio
 {
-    public class LinearRateConverter:IRateConverter
+    public class LinearRateConverter : IRateConverter
     {
         const int FracBits = 16;
         const long FracOne = (1L << FracBits);
@@ -55,7 +55,7 @@ namespace NScumm.Core.Audio
             }
 
             opos = FracOne;
-            inBuf = new short[RateHelper.IntermediateBufferSize];
+            inBuf = new Buffer(RateHelper.IntermediateBufferSize * 2).Shorts;
             // Compute the linear interpolation increment.
             // This will overflow if inrate >= 2^16, and underflow if outrate >= 2^16.
             // Also, if the quotient of the two rate becomes too small / too big, that
@@ -120,7 +120,7 @@ namespace NScumm.Core.Audio
                     opos += oposInc;
                 }
             }
-            return obufPos / 2;
+            return obufPos;
 
         }
 

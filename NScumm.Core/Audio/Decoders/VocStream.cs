@@ -212,7 +212,7 @@ namespace NScumm.Core.Audio.Decoders
             var bufferedSamples = 0;
             int dst = 0;
 
-            // We can only read up to "kSampleBufferLength" samples
+            // We can only read up to "SampleBufferLength" samples
             // so we take this into consideration, when trying to
             // read up to maxSamples.
             maxSamples = Math.Min(SampleBufferLength, maxSamples);
@@ -307,8 +307,7 @@ namespace NScumm.Core.Audio.Decoders
                 //   resulting in a sample (127) to be read as block code.
                 if (block.Code > 9)
                 {
-                    //                    Console.Error.WriteLine("VocStream::preProcess: Caught {0} as terminator", block.Code);
-                    break;
+                    throw new NotSupportedException(string.Format("VocStream.PreProcess: Caught {0} as terminator", block.Code));
                 }
 
                 block.Length = _stream.ReadByte();
@@ -318,8 +317,7 @@ namespace NScumm.Core.Audio.Decoders
                 // Premature end of stream => error!
                 if (IsAtEndOfStream)
                 {
-                    //                    Console.Error.WriteLine("VocStream::preProcess: Reading failed");
-                    return;
+                    throw new InvalidOperationException("VocStream.PreProcess: Reading failed");
                 }
 
                 int skip = 0;
@@ -334,8 +332,7 @@ namespace NScumm.Core.Audio.Decoders
                         {
                             if (block.Length < 2)
                             {
-                                //                                Console.Error.WriteLine("Invalid sound data block length {0} in VOC file", block.Length);
-                                return;
+                                throw new InvalidOperationException(string.Format("Invalid sound data block length {0} in VOC file", block.Length));
                             }
 
                             // Read header data
@@ -343,8 +340,7 @@ namespace NScumm.Core.Audio.Decoders
                             // Prevent division through 0
                             if (freqDiv == 256)
                             {
-                                //                                Console.Error.WriteLine("Invalid frequency divisor 256 in VOC file");
-                                return;
+                                throw new InvalidOperationException("Invalid frequency divisor 256 in VOC file");
                             }
                             block.Rate = GetSampleRateFromVOCRate(freqDiv);
 
@@ -352,8 +348,7 @@ namespace NScumm.Core.Audio.Decoders
                             // We only support 8bit PCM
                             if (codec != 0)
                             {
-                                //                                Console.Error.WriteLine("Unhandled codec {0} in VOC file", codec);
-                                return;
+                                throw new NotSupportedException(string.Format("Unhandled codec {0} in VOC file", codec));
                             }
 
                             block.Samples = skip = block.Length - 2;
@@ -378,8 +373,7 @@ namespace NScumm.Core.Audio.Decoders
                         {
                             if (block.Length < 12)
                             {
-                                //                                Console.Error.WriteLine("Invalid sound data (wew format) block length {0} in VOC file", block.Length);
-                                return;
+                                throw new InvalidOperationException(string.Format("Invalid sound data (wew format) block length {0} in VOC file", block.Length));
                             }
 
                             block.Rate = _br.ReadInt32();
@@ -387,22 +381,19 @@ namespace NScumm.Core.Audio.Decoders
                             // We only support 8bit PCM
                             if (bitsPerSample != 8)
                             {
-                                //                                Console.Error.WriteLine("Unhandled bits per sample {0} in VOC file", bitsPerSample);
-                                return;
+                                throw new NotSupportedException(string.Format("Unhandled bits per sample {0} in VOC file", bitsPerSample));
                             }
                             int channels = _stream.ReadByte();
                             // We only support mono
                             if (channels != 1)
                             {
-                                //                                Console.Error.WriteLine("Unhandled channel count {0} in VOC file", channels);
-                                return;
+                                throw new NotSupportedException(string.Format("Unhandled channel count {0} in VOC file", channels));
                             }
                             int codec = _br.ReadInt16();
                             // We only support 8bit PCM
                             if (codec != 0)
                             {
-                                //                                Console.Error.WriteLine("Unhandled codec {0} in VOC file", codec);
-                                return;
+                                throw new NotSupportedException(string.Format("Unhandled codec {0} in VOC file", codec));
                             }
                             /*uint32 reserved = */
                             _br.ReadInt32();
@@ -420,8 +411,7 @@ namespace NScumm.Core.Audio.Decoders
                         {
                             if (block.Length != 3)
                             {
-                                //                                Console.Error.WriteLine("Invalid silence block length {0} in VOC file", block.Length);
-                                return;
+                                throw new InvalidOperationException(string.Format("Invalid silence block length {0} in VOC file", block.Length));
                             }
 
                             block.Offset = 0;
@@ -431,8 +421,7 @@ namespace NScumm.Core.Audio.Decoders
                             // Prevent division through 0
                             if (freqDiv == 256)
                             {
-                                //                                Console.Error.WriteLine("Invalid frequency divisor 256 in VOC file");
-                                return;
+                                throw new InvalidOperationException("Invalid frequency divisor 256 in VOC file");
                             }
                             block.Rate = GetSampleRateFromVOCRate(freqDiv);
                         }
@@ -442,8 +431,7 @@ namespace NScumm.Core.Audio.Decoders
                     case 6:
                         if (block.Length != 2)
                         {
-                            //                            Console.Error.WriteLine("Invalid repeat start block length {0} in VOC file", block.Length);
-                            return;
+                            throw new InvalidOperationException(string.Format("Invalid repeat start block length {0} in VOC file", block.Length));
                         }
 
                         block.Count = _br.ReadInt16() + 1;
@@ -463,24 +451,21 @@ namespace NScumm.Core.Audio.Decoders
                             // Prevent division through 0
                             if (freqDiv == 65536)
                             {
-                                //                                Console.Error.WriteLine("Invalid frequency divisor 65536 in VOC file");
-                                return;
+                                throw new InvalidOperationException("Invalid frequency divisor 65536 in VOC file");
                             }
 
                             int codec = _stream.ReadByte();
                             // We only support RAW 8bit PCM.
                             if (codec != 0)
                             {
-                                //                                Console.Error.WriteLine("Unhandled codec {0} in VOC file", codec);
-                                return;
+                                throw new NotSupportedException(string.Format("Unhandled codec {0} in VOC file", codec));
                             }
 
                             int channels = _stream.ReadByte() + 1;
                             // We only support mono sound right now
                             if (channels != 1)
                             {
-                                //                                Console.Error.WriteLine("Unhandled channel count {0} in VOC file", channels);
-                                return;
+                                throw new NotSupportedException(string.Format("Unhandled channel count {0} in VOC file", channels));
                             }
 
                             block.Offset = 0;
@@ -499,8 +484,7 @@ namespace NScumm.Core.Audio.Decoders
                 // Premature end of stream => error!
                 if (IsAtEndOfStream)
                 {
-                    //                    Console.Error.WriteLine("VocStream::preProcess: Reading failed");
-                    return;
+                    throw new InvalidOperationException("VocStream::preProcess: Reading failed");
                 }
 
                 // Skip the rest of the block
@@ -521,8 +505,7 @@ namespace NScumm.Core.Audio.Decoders
                 // allowed to happen!
                 if (i.Code == 8)
                 {
-                    //                    Console.Error.WriteLine("VOC file contains unused block 8");
-                    return;
+                    throw new InvalidOperationException("VOC file contains unused block 8");
                 }
                 // For now only use blocks with actual samples
                 if (i.Code != 1 && i.Code != 9)
@@ -531,8 +514,7 @@ namespace NScumm.Core.Audio.Decoders
                 // Check the sample rate
                 if (i.Rate != _rate)
                 {
-                    //                    Console.Error.WriteLine("VOC file contains chunks with different sample rates ({0} != {1})", _rate, i.Rate);
-                    return;
+                    throw new InvalidOperationException(string.Format("VOC file contains chunks with different sample rates ({0} != {1})", _rate, i.Rate));
                 }
 
                 _length = _length.AddFrames(i.Samples);

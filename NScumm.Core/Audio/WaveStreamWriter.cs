@@ -139,13 +139,13 @@ namespace NScumm.Core.Audio
         void UpdateDataChunk()
         {
             _writer.Seek((int)_dataSizePos, SeekOrigin.Begin);
-            _writer.Write((UInt32)_dataChunkSize);
+            _writer.Write((uint)_dataChunkSize);
         }
 
         void UpdateRiffChunk()
         {
             _writer.Seek(4, SeekOrigin.Begin);
-            _writer.Write((UInt32)(_writer.BaseStream.Length - 8));
+            _writer.Write((uint)(_writer.BaseStream.Length - 8));
         }
     }
 }

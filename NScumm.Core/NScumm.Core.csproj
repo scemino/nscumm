@@ -31,6 +31,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Audio\ISoundRepository.cs" />
+    <Compile Include="Audio\SampleProviders\AudioSampleProviderToAudioStream.cs" />
+    <Compile Include="Audio\SampleProviders\MonoToStereoAudioSampleProvider16.cs" />
+    <Compile Include="Audio\SampleProviders\ResampleAudioSampleProvider.cs" />
     <Compile Include="IO\ChunkIterator3.cs" />
     <Compile Include="IO\XorStream.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

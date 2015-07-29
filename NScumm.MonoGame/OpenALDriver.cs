@@ -22,22 +22,33 @@ using NScumm.Core.Audio.SampleProviders;
 
 namespace NScumm.MonoGame
 {
-    class XnaAudioDriver: IAudioOutput
+    class XnaAudioDriver : IAudioOutput
     {
         readonly DynamicSoundEffectInstance _dsei;
-        readonly NScumm.Core.Audio.Buffer _buffer;
+        readonly Core.Audio.Buffer _buffer;
         IAudioSampleProvider _audioSampleProvider;
+        AudioFormat _audioFormat;
 
         public XnaAudioDriver()
         {
-            _buffer = new NScumm.Core.Audio.Buffer(13230 * 2);
-            _dsei = new DynamicSoundEffectInstance(44100, AudioChannels.Stereo);
+            _audioFormat = new AudioFormat(44100);
+
+            _buffer = new Core.Audio.Buffer(13230 * 2);
+            _dsei = new DynamicSoundEffectInstance(_audioFormat.SampleRate, _audioFormat.Channels == 2 ? AudioChannels.Stereo : AudioChannels.Mono);
             _dsei.BufferNeeded += OnBufferNeeded;
         }
 
         public void SetSampleProvider(IAudioSampleProvider audioSampleProvider)
         {
             _audioSampleProvider = audioSampleProvider;
+            if (_audioSampleProvider.AudioFormat.SampleRate != _audioFormat.SampleRate)
+            {
+                _audioSampleProvider = new ResampleAudioSampleProvider(audioSampleProvider, _audioFormat.SampleRate);
+            }
+            if (_audioSampleProvider.AudioFormat.Channels == 1 && _audioFormat.Channels == 2)
+            {
+                _audioSampleProvider = new MonoToStereoAudioSampleProvider16(_audioSampleProvider);
+            }
         }
 
         public void Dispose()
@@ -64,7 +75,7 @@ namespace NScumm.MonoGame
         {
             Array.Clear(_buffer.Bytes, 0, _buffer.Bytes.Length);
             var available = _audioSampleProvider != null ? _audioSampleProvider.Read(_buffer.Bytes, _buffer.Bytes.Length) : 0;
-            _dsei.SubmitBuffer(_buffer.Bytes);
+            _dsei.SubmitBuffer(_buffer.Bytes, 0, available);
         }
     }
 }

@@ -21,7 +21,7 @@
 
 namespace NScumm.Core.Audio.SampleProviders
 {
-    public abstract class AudioSampleProvider16: IAudioSampleProvider
+    public abstract class AudioSampleProvider16 : IAudioSampleProvider
     {
         public abstract AudioFormat AudioFormat
         {
@@ -33,7 +33,7 @@ namespace NScumm.Core.Audio.SampleProviders
         public int Read(byte[] samples, int count)
         {
             var buffer = new Buffer(samples);
-            return Read(buffer.Shorts, count / 2);
+            return Read(buffer.Shorts, count / 2) * 2;
         }
     }
 }

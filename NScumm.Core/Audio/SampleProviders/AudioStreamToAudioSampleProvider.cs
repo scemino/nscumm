@@ -27,14 +27,14 @@ namespace NScumm.Core.Audio.SampleProviders
     /// <description>>An IAudioStream is always a stream of 16 bits samples,
     /// but the rate and the number of channels can be variable.
     /// </description>
-    public class AudioStreamToAudioSampleProvider: AudioSampleProvider16
+    public class AudioStreamToAudioSampleProvider : AudioSampleProvider16
     {
         readonly IAudioStream _stream;
         readonly AudioFormat _format;
 
         public override AudioFormat AudioFormat
         {
-            get{ return _format; }
+            get { return _format; }
         }
 
         public AudioStreamToAudioSampleProvider(IAudioStream stream)
@@ -47,5 +47,5 @@ namespace NScumm.Core.Audio.SampleProviders
         {
             return _stream.ReadBuffer(samples, count);
         }
-    }    
+    }
 }

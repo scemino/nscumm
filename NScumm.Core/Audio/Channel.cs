@@ -51,7 +51,7 @@ namespace NScumm.Core.Audio
             Id = id;
             _permanent = permanent;
             _volume = MaxChannelVolume;
-            _converter = MakeRateConverter(_stream.Rate, _mixer.OutputRate, _stream.IsStereo, reverseStereo);
+            _converter = RateHelper.MakeRateConverter(_stream.Rate, _mixer.OutputRate, _stream.IsStereo, reverseStereo);
         }
 
         /**
@@ -217,26 +217,7 @@ namespace NScumm.Core.Audio
             {
                 _volL = _volR = 0;
             }
-        }
-
-        static IRateConverter MakeRateConverter(int inrate, int outrate, bool stereo, bool reverseStereo)
-        {
-            if (inrate != outrate)
-            {
-                if ((inrate % outrate) == 0)
-                {
-                    return new SimpleRateConverter(inrate, outrate, stereo, reverseStereo);
-                }
-                else
-                {
-                    return new LinearRateConverter(inrate, outrate, stereo, reverseStereo);
-                }
-            }
-            else
-            {
-                return new CopyRateConverter(stereo, reverseStereo);
-            }
-        }
+        }        
     }
     
 }

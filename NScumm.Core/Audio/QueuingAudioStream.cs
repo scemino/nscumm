@@ -126,9 +126,9 @@ namespace NScumm.Core
                 while (samplesDecoded < buffer.Length && _queue.Count != 0)
                 {
                     var stream = _queue.Peek().Stream;
-                    var buf = new short[count - samplesDecoded];
-                    var read = stream.ReadBuffer(buf, count - samplesDecoded);
-                    Array.Copy(buf, 0, buffer, samplesDecoded, read);
+                    var buf = new Audio.Buffer(count - samplesDecoded);
+                    var read = stream.ReadBuffer(buf.Shorts, count - samplesDecoded);
+                    Array.Copy(buf.Shorts, 0, buffer, samplesDecoded, read);
                     samplesDecoded += read;
 
                     if (stream.IsEndOfData)

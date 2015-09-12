@@ -39,13 +39,14 @@ namespace NScumm.MonoGame
         XnaInputManager inputManager;
         TimeSpan tsToWait;
         Vector2 cursorPos;
-#if WINDOWS_UAP
+#if WINDOWS_UWP
         NullMixer audioDriver;
 #else
         XnaAudioDriver audioDriver;
 #endif
         Game game;
         bool contentLoaded;
+        private SpriteFont font;
 
         public bool IsPaused
         {
@@ -69,9 +70,10 @@ namespace NScumm.MonoGame
                 contentLoaded = true;
                 spriteBatch = new SpriteBatch(ScreenManager.GraphicsDevice);
 
+                font = ScreenManager.Content.Load<SpriteFont>("Fonts/MenuFont");
                 inputManager = new XnaInputManager(game.Window, info.Game.Width, info.Game.Height);
                 gfx = new XnaGraphicsManager(info.Game.Width, info.Game.Height, game.Window, ScreenManager.GraphicsDevice);
-#if WINDOWS_UAP
+#if WINDOWS_UWP
                 audioDriver = new NullMixer();
 #else
                 audioDriver = new XnaAudioDriver();
@@ -124,7 +126,7 @@ namespace NScumm.MonoGame
 
         public override void HandleInput(InputState input)
         {
-            if (input.CurrentKeyboardState.IsKeyDown(Keys.LeftAlt) && input.IsNewKeyPress(Keys.Enter))
+            if (input.IsNewKeyPress(Keys.F))
             {
                 var gdm = ((ScummGame)game).GraphicsDeviceManager;
                 gdm.ToggleFullScreen();
@@ -136,8 +138,7 @@ namespace NScumm.MonoGame
             }
             else
             {
-                var state = Mouse.GetState();
-                inputManager.UpdateInput(state, input.CurrentKeyboardState);
+                inputManager.UpdateInput(input.CurrentKeyboardState);
                 cursorPos = inputManager.RealPosition;
                 base.HandleInput(input);
             }
@@ -165,12 +166,15 @@ namespace NScumm.MonoGame
                 SamplerState.AnisotropicClamp, DepthStencilState.Default, RasterizerState.CullNone);
             gfx.DrawScreen(spriteBatch);
             gfx.DrawCursor(spriteBatch, cursorPos);
+            spriteBatch.DrawString(font, string.Format("x: {0:F2} y: {1:F2}", cursorPos.X, cursorPos.Y), new Vector2(10, 20), Color.White);
+            spriteBatch.DrawString(font, ScreenManager.Game.Window.CurrentOrientation.ToString(), new Vector2(10, 40), Color.White);
+            spriteBatch.DrawString(font, ScreenManager.Game.Window.ClientBounds.ToString(), new Vector2(10, 60), Color.White);
             spriteBatch.End();
         }
 
         public string[] GetSaveGames()
         {
-#if WINDOWS_UAP
+#if WINDOWS_UWP
             var dir = Windows.Storage.ApplicationData.Current.RoamingFolder.Path;
             var pattern = string.Format("{0}*.sav", info.Game.Id);
             return ServiceLocator.FileStorage.EnumerateFiles(dir, pattern).ToArray();
@@ -194,7 +198,7 @@ namespace NScumm.MonoGame
 
         string GetSaveGamePath(int index)
         {
-#if WINDOWS_UAP
+#if WINDOWS_UWP
             var dir = Windows.Storage.ApplicationData.Current.RoamingFolder.Path;
             var filename = Path.Combine(dir, string.Format("{0}{1}.sav", info.Game.Id, (index + 1)));
             return filename;

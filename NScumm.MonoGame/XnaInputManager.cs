@@ -1,19 +1,24 @@
-﻿/*
- * This file is part of NScumm.
- * 
- * NScumm is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- * 
- * NScumm is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
- */
+﻿//
+//  XnaInputManager.cs
+//
+//  Author:
+//       scemino <scemino74@gmail.com>
+//
+//  Copyright (c) 2015 
+//
+//  This program is free software: you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation, either version 3 of the License, or
+//  (at your option) any later version.
+//
+//  This program is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+//
+//  You should have received a copy of the GNU General Public License
+//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 
 using Microsoft.Xna.Framework.Input;
 using NScumm.Core.Input;
@@ -22,7 +27,7 @@ using NScumm.Core;
 using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input.Touch;
-#if WINDOWS_UAP
+#if WINDOWS_UWP
 using Windows.UI.Core;
 #endif
 
@@ -30,9 +35,7 @@ namespace NScumm.MonoGame
 {
     sealed class XnaInputManager : IInputManager
     {
-        MouseState _mouseState;
         KeyboardState _keyboardState;
-        TouchPanelState _touchState;
         double _width;
         double _height;
         GameWindow _window;
@@ -53,28 +56,25 @@ namespace NScumm.MonoGame
             _height = height;
             _mousePosition = new Core.Graphics.Point();
 
-#if WINDOWS_UAP
+            TouchPanel.EnableMouseGestures = true;
+            TouchPanel.EnabledGestures = GestureType.Hold | GestureType.Tap;
+            TouchPanel.EnableMouseTouchPoint = true;
+
+#if WINDOWS_UWP
             var view = SystemNavigationManager.GetForCurrentView();
             view.BackRequested += HardwareButtons_BackPressed;
 
-            var touchCap = TouchPanel.GetCapabilities();
-            TouchPanel.EnableMouseTouchPoint = true;
-            TouchPanel.EnableMouseGestures = true;
-            TouchPanel.EnabledGestures = GestureType.Hold | GestureType.Tap;
-
-            // note, cache the value instead of querying it more than once.
             bool isHardwareButtonsAPIPresent = Windows.Foundation.Metadata.ApiInformation.IsTypePresent
                 (typeof(Windows.Phone.UI.Input.HardwareButtons).FullName);
 
             if (isHardwareButtonsAPIPresent)
             {
-                Windows.Phone.UI.Input.HardwareButtons.CameraPressed +=
-                    this.HardwareButtons_CameraPressed;
+                Windows.Phone.UI.Input.HardwareButtons.CameraPressed += HardwareButtons_CameraPressed;
             }
 #endif
         }
 
-#if WINDOWS_UAP
+#if WINDOWS_UWP
         private void HardwareButtons_BackPressed(object sender, BackRequestedEventArgs e)
         {
             _backPressed = true;
@@ -88,72 +88,55 @@ namespace NScumm.MonoGame
 #endif
         public Core.Graphics.Point GetMousePosition()
         {
-            _leftButtonPressed = false;
-            _rightButtonPressed = false;
+            return _mousePosition;
+        }
 
-#if WINDOWS_UAP
-            if (_touchState != null)
+        private void UpdateMousePosition(Vector2 pos)
+        {
+            var scaleX = _width / _window.ClientBounds.Width;
+            var scaleY = _height / _window.ClientBounds.Height;
+            _realPosition = pos;
+            _mousePosition = new Core.Graphics.Point((int)(pos.X * scaleX), (int)(pos.Y * scaleY));
+        }
+
+        public void UpdateInput(KeyboardState keyboard)
+        {
+            lock (_gate)
             {
+                _leftButtonPressed = false;
+                _rightButtonPressed = false;
+
                 if (TouchPanel.IsGestureAvailable)
                 {
-                    var gesture = _touchState.ReadGesture();
+                    var gesture = TouchPanel.ReadGesture();
                     if (gesture.GestureType == GestureType.Tap)
                     {
-                        var pos = gesture.Position;
-                        UpdateMousePosition(pos.X, pos.Y);
                         _leftButtonPressed = true;
                     }
                     else if (gesture.GestureType == GestureType.Hold)
                     {
-                        var pos = gesture.Position;
-                        UpdateMousePosition(pos.X, pos.Y);
                         _rightButtonPressed = true;
                     }
                 }
 
-                var locations = _touchState.GetState();
+                var locations = TouchPanel.GetState();
                 foreach (var touch in locations)
                 {
                     if (touch.State == TouchLocationState.Moved || touch.State == TouchLocationState.Pressed)
                     {
-                        var pos = locations[0].Position;
-                        UpdateMousePosition(pos.X, pos.Y);
+                        var pos = touch.Position;
+                        UpdateMousePosition(pos);
+                        Mouse.SetPosition((int)pos.X, (int)pos.Y);
                         _leftButtonPressed = true;
                     }
                 }
-            }
-#else
-            {
-                var state = _mouseState;
-                var x = state.X;
-                var y = state.Y;
-                UpdateMousePosition(x, y);
-            }
-#endif
-            return _mousePosition;
-        }
 
-        private void UpdateMousePosition(float x, float y)
-        {
-            var scaleX = _width / _window.ClientBounds.Width;
-            var scaleY = _height / _window.ClientBounds.Height;
-            _realPosition = new Vector2(x, y);
-            _mousePosition = new Core.Graphics.Point((int)(x * scaleX), (int)(y * scaleY));
-        }
+                var state = Mouse.GetState();
+                _leftButtonPressed |= state.LeftButton == ButtonState.Pressed;
+                _rightButtonPressed |= state.RightButton == ButtonState.Pressed;
+                UpdateMousePosition(state.Position.ToVector2());
 
-        public void UpdateInput(MouseState mouse, KeyboardState keyboard)
-        {
-            lock (_gate)
-            {
-                _mouseState = mouse;
-#if !WINDOWS_UAP
-                var state = _mouseState;
-                var x = state.X;
-                var y = state.Y;
-                UpdateMousePosition(x, y);
-#endif
                 _keyboardState = keyboard;
-                _touchState = TouchPanel.GetState(_window);
             }
         }
 
@@ -172,7 +155,7 @@ namespace NScumm.MonoGame
                     keys.Add(KeyCode.F5);
                     _isMenuPressed = false;
                 }
-                var inputState = new ScummInputState(keys, _leftButtonPressed || _mouseState.LeftButton == ButtonState.Pressed, _rightButtonPressed || _mouseState.RightButton == ButtonState.Pressed);
+                var inputState = new ScummInputState(keys, _leftButtonPressed, _rightButtonPressed);
                 return inputState;
             }
         }
@@ -252,6 +235,6 @@ namespace NScumm.MonoGame
             { Keys.PageUp, KeyCode.PageUp },
             { Keys.PageDown, KeyCode.PageDown },
             { Keys.LeftShift, KeyCode.LeftShift },
-        };        
+        };
     }
 }

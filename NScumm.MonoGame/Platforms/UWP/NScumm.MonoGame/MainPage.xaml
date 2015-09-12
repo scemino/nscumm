@@ -1,0 +1,39 @@
+﻿<Page
+    x:Class="NScumm.MonoGame.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:NScumm.MonoGame"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <StackPanel x:Name="ProgressPanel" Orientation="Vertical" Margin="5" Visibility="Collapsed">
+            <ProgressBar IsIndeterminate="True" />
+            <TextBlock Text="Scanning games..." />
+        </StackPanel>
+        <ListBox x:Name="GameListBox" Tapped="GameListBox_Tapped" Grid.Row="1">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Vertical" >
+                        <TextBlock Text="{Binding Path=Description}" FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding Path=Platform}" />
+                        <TextBlock Text="{Binding Path=Culture}" />
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+        <TextBlock x:Name="NoGameTextBlock" Text="No games detected, insert the SD card with SCUMM games and press Refresh." 
+                   Grid.RowSpan="2" VerticalAlignment="Center" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" />
+    </Grid>
+
+    <Page.BottomAppBar>
+        <CommandBar>
+            <AppBarButton Icon="Refresh" Label="Refresh" Click="PickAFileButton_Click"/>
+        </CommandBar>
+    </Page.BottomAppBar>
+</Page>

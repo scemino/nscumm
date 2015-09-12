@@ -44,7 +44,7 @@ namespace NScumm.MonoGame
             Content.RootDirectory = "Content";
 
             GraphicsDeviceManager = new GraphicsDeviceManager(this);
-#if !WINDOWS_UAP
+#if !WINDOWS_UWP
             Settings = settings;
             GraphicsDeviceManager.PreferredBackBufferWidth = 800;
             GraphicsDeviceManager.PreferredBackBufferHeight = (int)(800.0 * Settings.Game.Height / Settings.Game.Width);

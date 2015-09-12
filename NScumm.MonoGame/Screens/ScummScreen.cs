@@ -166,9 +166,6 @@ namespace NScumm.MonoGame
                 SamplerState.AnisotropicClamp, DepthStencilState.Default, RasterizerState.CullNone);
             gfx.DrawScreen(spriteBatch);
             gfx.DrawCursor(spriteBatch, cursorPos);
-            spriteBatch.DrawString(font, string.Format("x: {0:F2} y: {1:F2}", cursorPos.X, cursorPos.Y), new Vector2(10, 20), Color.White);
-            spriteBatch.DrawString(font, ScreenManager.Game.Window.CurrentOrientation.ToString(), new Vector2(10, 40), Color.White);
-            spriteBatch.DrawString(font, ScreenManager.Game.Window.ClientBounds.ToString(), new Vector2(10, 60), Color.White);
             spriteBatch.End();
         }
 

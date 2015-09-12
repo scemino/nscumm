@@ -172,6 +172,7 @@ namespace NScumm.Core.IO
                 room.Number = id;
                 room.Name = Index.RoomNames != null && Index.RoomNames.ContainsKey((byte)id) ? Index.RoomNames[(byte)id] : null;
             }
+
             ExpireResources(room.Size);
             _rooms[id] = room;
             _allocatedSize += room.Size;
@@ -195,10 +196,14 @@ namespace NScumm.Core.IO
                     data = disk.ReadCostume(roomOffset + res.Offset);
                 }
             }
-            ExpireResources(data.Length);
-            _costumes[id] = data;
-            _allocatedSize += data.Length;
-            SetCostumeCounter(id, 1);
+
+            if (data != null)
+            {
+                ExpireResources(data.Length);
+                _costumes[id] = data;
+                _allocatedSize += data.Length;
+                SetCostumeCounter(id, 1);
+            }
         }
 
         public void LoadScript(int id)
@@ -215,10 +220,14 @@ namespace NScumm.Core.IO
                 var roomOffset = GetRoomOffset(disk, resource.RoomNum);
                 data = disk.ReadScript(roomOffset + resource.Offset);
             }
-            ExpireResources(data.Length);
-            _scripts[id] = data;
-            _allocatedSize += data.Length;
-            SetScriptCounter(id, 1);
+
+            if (data != null)
+            {
+                ExpireResources(data.Length);
+                _scripts[id] = data;
+                _allocatedSize += data.Length;
+                SetScriptCounter(id, 1);
+            }
         }
 
         public void LoadSound(Audio.MusicDriverTypes music, int id)
@@ -260,10 +269,14 @@ namespace NScumm.Core.IO
                     }
                 }
             }
-            ExpireResources(data.Length);
-            _sounds[id] = data;
-            _allocatedSize += data.Length;
-            SetSoundCounter(id, 1);
+
+            if (data != null)
+            {
+                ExpireResources(data.Length);
+                _sounds[id] = data;
+                _allocatedSize += data.Length;
+                SetSoundCounter(id, 1);
+            }
         }
 
         public bool IsSoundLoaded(int sound)

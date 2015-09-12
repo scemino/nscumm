@@ -60,7 +60,8 @@ namespace NScumm.Core.Smush
             _palDirtyMin = 256;
             _palDirtyMax = -1;
 
-            bool oldMouseState = _vm._gfxManager.ShowCursor(false);
+            bool oldMouseState = _vm._gfxManager.IsCursorVisible;
+            _vm._gfxManager.IsCursorVisible = false;
 
             // Load the video
             _seekFile = filename;
@@ -178,7 +179,7 @@ namespace NScumm.Core.Smush
             Release();
 
             // Reset mouse state
-            _vm._gfxManager.ShowCursor(oldMouseState);
+            _vm._gfxManager.IsCursorVisible = oldMouseState;
         }
 
         public void SeekSan(string filename, int pos, int contFrame)

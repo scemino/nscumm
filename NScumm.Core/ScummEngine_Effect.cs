@@ -160,7 +160,7 @@ namespace NScumm.Core
 
             _shakeEnabled = enabled;
             _shakeFrame = 0;
-            _gfxManager.SetShakePos(0);
+            _gfxManager.ShakePosition = 0;
         }
 
         void HandleEffects()

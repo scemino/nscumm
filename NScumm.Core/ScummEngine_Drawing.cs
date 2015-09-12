@@ -18,6 +18,7 @@
 //
 //  You should have received a copy of the GNU Lesser General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 using System;
 using NScumm.Core.Graphics;
 using NScumm.Core.IO;
@@ -605,12 +606,12 @@ namespace NScumm.Core
             if (_shakeEnabled)
             {
                 _shakeFrame = (_shakeFrame + 1) % ShakePositions.Length;
-                _gfxManager.SetShakePos(ShakePositions[_shakeFrame]);
+                _gfxManager.ShakePosition = ShakePositions[_shakeFrame];
             }
             else if (!_shakeEnabled && _shakeFrame != 0)
             {
                 _shakeFrame = 0;
-                _gfxManager.SetShakePos(0);
+                _gfxManager.ShakePosition = 0;
             }
         }
 

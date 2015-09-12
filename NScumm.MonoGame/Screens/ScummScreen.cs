@@ -72,7 +72,7 @@ namespace NScumm.MonoGame
 
                 font = ScreenManager.Content.Load<SpriteFont>("Fonts/MenuFont");
                 inputManager = new XnaInputManager(game.Window, info.Game.Width, info.Game.Height);
-                gfx = new XnaGraphicsManager(info.Game.Width, info.Game.Height, game.Window, ScreenManager.GraphicsDevice);
+                gfx = new XnaGraphicsManager(info.Game.Width, info.Game.Height, info.Game.PixelFormat, game.Window, ScreenManager.GraphicsDevice);
 #if WINDOWS_UWP
                 audioDriver = new NullMixer();
 #else

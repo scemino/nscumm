@@ -241,11 +241,6 @@ namespace NScumm.Core
             ScreenWidth = Game.Width;
             ScreenHeight = Game.Height;
 
-            if (Game.Platform == Platform.FMTowns)
-            {
-                gfxManager.PixelFormat = PixelFormat.Rgb16;
-            }
-
             AudioCDManager = new DefaultAudioCDManager(this, mixer);
             Sound = new Sound(this, mixer);
 
@@ -775,7 +770,7 @@ namespace NScumm.Core
             AnimateCursor();
 
             // show or hide mouse
-            _gfxManager.ShowCursor(_cursor.State > 0);
+            _gfxManager.IsCursorVisible = _cursor.State > 0;
 
             return GetTimeToWaitBeforeLoop(DateTime.Now - t);
         }

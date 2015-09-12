@@ -21,6 +21,7 @@ using System.IO;
 using System.Linq;
 using System.Xml.Linq;
 using NScumm.Core.Audio;
+using NScumm.Core.Graphics;
 
 namespace NScumm.Core.IO
 {
@@ -129,20 +130,29 @@ namespace NScumm.Core.IO
         public int Width
         {
             get
-            { 
-                return Version == 8 ? 640 : 320; 
+            {
+                return Version == 8 ? 640 : 320;
             }
         }
 
         public int Height
         {
             get
-            { 
+            {
                 if (Platform == Platform.FMTowns && Version == 3)
                 {
                     return 240;
                 }
-                return Version == 8 ? 480 : 200; 
+                return Version == 8 ? 480 : 200;
+            }
+        }
+
+        public PixelFormat PixelFormat
+        {
+            get
+            {
+                var format = Platform == Platform.FMTowns ? PixelFormat.Rgb16 : PixelFormat.Indexed8;
+                return format;
             }
         }
     }

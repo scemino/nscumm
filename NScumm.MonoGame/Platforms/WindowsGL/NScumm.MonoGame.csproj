@@ -31,6 +31,9 @@
     <PlatformTarget>x86</PlatformTarget>
     <Commandlineparameters>/home/scemino/Games/comi/COMI.LA0</Commandlineparameters>
   </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>App.ico</ApplicationIcon>
+  </PropertyGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
     <Compile Include="..\..\OpenALDriver.cs" />
@@ -61,6 +64,7 @@
     </Compile>
     <Compile Include="..\..\Mono.Options\Options.cs" />
     <Compile Include="..\..\DynamicSoundEffectInstance.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\Content\Fonts\MenuFont.xnb">
@@ -97,7 +101,9 @@
       <HintPath>..\..\..\packages\MonoGame.Framework.WindowsGL.3.4.0.459\lib\net40\OpenTK.dll</HintPath>
     </Reference>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Content Include="App.ico" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\NScumm.Core\NScumm.Core.csproj">
       <Project>{8E7A9E5B-D7EB-4DA1-8EE7-A5D8DE202372}</Project>

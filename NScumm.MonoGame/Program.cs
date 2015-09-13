@@ -20,10 +20,7 @@ using NScumm.Core;
 using NScumm.Core.IO;
 using System.Reflection;
 using System.IO;
-using System.Collections.Generic;
 using System.Linq;
-
-[assembly:AssemblyVersion("0.1.0.*")]
 
 namespace NScumm.MonoGame
 {

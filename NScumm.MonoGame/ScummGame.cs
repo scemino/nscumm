@@ -50,7 +50,6 @@ namespace NScumm.MonoGame
             GraphicsDeviceManager.PreferredBackBufferHeight = (int)(800.0 * Settings.Game.Height / Settings.Game.Width);
 #else
             Settings = new GameSettings(GamePage._info);
-            GraphicsDeviceManager.IsFullScreen = true;
 #endif
             _screenManager = new ScreenManager(this);
             Components.Add(_screenManager);
@@ -64,7 +63,7 @@ namespace NScumm.MonoGame
         /// </summary>
         protected override void Initialize()
         {
-            Window.Title = string.Format("NScumm - {0} [{1}/{2}]", Settings.Game.Description, Settings.Game.Variant, Settings.Game.Culture.NativeName);
+            Window.Title = string.Format("nSCUMM - {0} [{1}/{2}]", Settings.Game.Description, Settings.Game.Variant, Settings.Game.Culture.NativeName);
             _screenManager.AddScreen(new BackgroundScreen());
             _screenManager.AddScreen(new ScummScreen(this, Settings));
 

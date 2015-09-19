@@ -1,0 +1,48 @@
+﻿<Page
+    x:Class="NScumm.MonoGame.GameLibraryPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:NScumm.MonoGame"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Page.Resources>
+        <DataTemplate x:Name="GameTemplate">
+            <StackPanel Orientation="Vertical" Margin="4" >
+                <TextBlock Text="{Binding Path=Description}" Style="{StaticResource BaseTextBlockStyle}" />
+                <TextBlock Text="{Binding Path=Platform}" Style="{StaticResource BodyTextBlockStyle}" TextWrapping="NoWrap" />
+                <TextBlock Text="{Binding Path=Culture}" Style="{StaticResource BodyTextBlockStyle}" />
+            </StackPanel>
+        </DataTemplate>
+    </Page.Resources>
+    
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" RequestedTheme="Default">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <!-- Title -->
+        <TextBlock Grid.Row="0" Text="Game Library" Style="{ThemeResource HeaderTextBlockStyle}" Margin="8 0" />
+        <!-- Status -->
+        <StackPanel Grid.Row="1" x:Name="ProgressPanel" Orientation="Vertical" Margin="4" Visibility="Collapsed">
+            <ProgressBar IsIndeterminate="True" />
+            <TextBlock Text="Scanning games..." />
+        </StackPanel>
+        <!-- Game list -->
+        <ListView Grid.Row="2" x:Name="GameListBox" ItemClick="OnLaunchGame" IsItemClickEnabled="True" 
+                  ItemsSource="{Binding Path=Games}" ItemTemplate="{StaticResource GameTemplate}" />
+        <!-- NoGame message -->
+        <TextBlock x:Name="NoGameTextBlock" Text="There is no game in your library.&#xD;Press Add button to add your games SCUMM games." 
+                   Grid.Row="2" VerticalAlignment="Center" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" Margin="4" />
+    </Grid>
+
+    <Page.BottomAppBar>
+        <CommandBar x:Name="BottomBar">
+            <CommandBar.PrimaryCommands>
+                <AppBarButton Icon="Add" Label="Add" Command="{Binding Path=AddCommand}"/>
+            </CommandBar.PrimaryCommands>
+        </CommandBar>
+    </Page.BottomAppBar>
+</Page>

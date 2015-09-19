@@ -17,7 +17,11 @@
     <EnableDotNetNativeCompatibleProfile>true</EnableDotNetNativeCompatibleProfile>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{A5A43C5B-DE2A-4C0C-9213-0A381AF9435A};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
-    <PackageCertificateKeyFile>NScumm.MonoGame_TemporaryKey.pfx</PackageCertificateKeyFile>
+    <PackageCertificateKeyFile>NScumm.MonoGame_StoreKey.pfx</PackageCertificateKeyFile>
+    <PackageCertificateThumbprint>BD492D41897CAA7A6BAF8248F98A664D606F4C5D</PackageCertificateThumbprint>
+    <AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
+    <AppxBundlePlatforms>x86|x64|arm</AppxBundlePlatforms>
+    <AppxBundle>Always</AppxBundle>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|ARM'">
     <DebugSymbols>true</DebugSymbols>
@@ -110,7 +114,9 @@
     </Content>
     <Content Include="Assets\Square150x150Logo.scale-100.png" />
     <Content Include="Assets\StoreLogo.scale-100.png" />
+    <Content Include="Assets\StoreLogo.scale-200.png" />
     <Content Include="Content\NScumm.mgcb" />
+    <None Include="NScumm.MonoGame_StoreKey.pfx" />
     <None Include="project.json" />
   </ItemGroup>
   <ItemGroup>
@@ -147,15 +153,20 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
-    <Compile Include="GamePage.xaml.cs">
+    <Compile Include="Converters\GameCountToVisibilityConverter.cs" />
+    <Compile Include="Converters\IsScanningToVisibilityConverter.cs" />
+    <Compile Include="Pages\GamePage.xaml.cs">
       <DependentUpon>GamePage.xaml</DependentUpon>
     </Compile>
-    <Compile Include="MainPage.xaml.cs">
-      <DependentUpon>MainPage.xaml</DependentUpon>
+    <Compile Include="Pages\GameLibraryPage.xaml.cs">
+      <DependentUpon>GameLibraryPage.xaml</DependentUpon>
     </Compile>
     <Compile Include="NullMixer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TraceFactory.cs" />
+    <Compile Include="ViewModels\DelegateCommand.cs" />
+    <Compile Include="ViewModels\GameLibraryViewModel.cs" />
+    <Compile Include="ViewModels\ViewModel.cs" />
   </ItemGroup>
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest">
@@ -164,6 +175,7 @@
     <None Include="NScumm.MonoGame_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Package.StoreAssociation.xml" />
     <Content Include="Properties\Default.rd.xml" />
     <Content Include="Assets\LockScreenLogo.scale-200.png" />
     <Content Include="Assets\SplashScreen.scale-200.png" />
@@ -177,11 +189,11 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Page Include="GamePage.xaml">
+    <Page Include="Pages\GamePage.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="MainPage.xaml">
+    <Page Include="Pages\GameLibraryPage.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

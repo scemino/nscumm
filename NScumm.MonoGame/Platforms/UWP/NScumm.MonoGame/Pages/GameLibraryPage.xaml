@@ -1,4 +1,4 @@
-﻿<Page
+﻿<Page xmlns:Universal="using:Microsoft.AdMediator.Universal" 
     x:Class="NScumm.MonoGame.GameLibraryPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -22,6 +22,7 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <!-- Title -->
         <TextBlock Grid.Row="0" Text="Game Library" Style="{ThemeResource HeaderTextBlockStyle}" Margin="8 0" />
@@ -36,8 +37,9 @@
         <!-- NoGame message -->
         <TextBlock x:Name="NoGameTextBlock" Text="There is no game in your library.&#xD;Press Add button to add your games SCUMM games." 
                    Grid.Row="2" VerticalAlignment="Center" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" Margin="4" />
-    </Grid>
+        <Universal:AdMediatorControl x:Name="AdMediator_BF1FAD" Id="AdMediator-Id-00E0ED82-7500-43AA-9D71-4A33D02832FB" Grid.Row="3" Height="80"/>
 
+    </Grid>
     <Page.BottomAppBar>
         <CommandBar x:Name="BottomBar">
             <CommandBar.PrimaryCommands>

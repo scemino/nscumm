@@ -43,8 +43,6 @@ namespace NScumm.Core
 
         public override byte[] ObjectRoomTable { get { return objectRoomTable; } }
 
-        public override string[] AudioNames { get { return audioNames; } }
-
         protected override void LoadIndex(GameInfo game)
         {
             Directory = ServiceLocator.FileStorage.GetDirectoryName(game.Path);
@@ -107,7 +105,7 @@ namespace NScumm.Core
                         case "ANAM":        // Used by: The Dig, FT
                             {
                                 var num = br.ReadUInt16();
-                                audioNames = new string[num];
+                                AudioNames = new string[num];
                                 for (int i = 0; i < num; i++)
                                 {
                                     AudioNames[i] = System.Text.Encoding.UTF8.GetString(br.ReadBytes(9));
@@ -184,6 +182,5 @@ namespace NScumm.Core
         protected int numGlobalScripts;
         protected int numArray;
         protected byte[] objectRoomTable;
-        protected string[] audioNames;
     }
 }

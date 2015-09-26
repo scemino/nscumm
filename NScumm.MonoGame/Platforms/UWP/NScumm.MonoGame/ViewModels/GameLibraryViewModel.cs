@@ -1,4 +1,6 @@
-﻿using NScumm.Core;
+﻿//#define CLEAN_GAMELIST
+
+using NScumm.Core;
 using NScumm.Core.IO;
 using System;
 using System.Collections.Generic;
@@ -27,7 +29,7 @@ namespace NScumm.MonoGame.ViewModels
 
     class GameLibraryViewModel : ViewModel, IGameLibraryViewModel
     {
-        static readonly HashSet<string> indexFiles = new HashSet<string>(new string[] { ".D64", ".DSK,", ".LFL", ".000", ".LA0" }, StringComparer.OrdinalIgnoreCase);
+        static readonly HashSet<string> indexFiles = new HashSet<string>(new string[] { ".D64", ".DSK,", ".LFL", ".000", ".LA0", ".SM0" }, StringComparer.OrdinalIgnoreCase);
         private ObservableCollection<GameInfo> _games;
         private HashSet<string> _folders;
         private bool _isScanning;
@@ -82,6 +84,9 @@ namespace NScumm.MonoGame.ViewModels
 
         private void LoadGames()
         {
+#if CLEAN_GAMELIST && DEBUG
+            ApplicationData.Current.LocalSettings.DeleteContainer("Games");
+#endif
             if (ApplicationData.Current.LocalSettings.Containers.ContainsKey("Games"))
             {
                 _gamesContainer = ApplicationData.Current.LocalSettings.Containers["Games"];
@@ -91,6 +96,7 @@ namespace NScumm.MonoGame.ViewModels
                 var games = (from path in paths
                              where File.Exists(path)
                              let game = GameManager.GetInfo(path)
+                             where game != null
                              orderby game.Description
                              select game).ToObservable();
                 games
@@ -116,6 +122,9 @@ namespace NScumm.MonoGame.ViewModels
         private void LoadGameFolders()
         {
             IEnumerable<string> folders = Enumerable.Empty<string>();
+#if CLEAN_GAMELIST && DEBUG
+            ApplicationData.Current.LocalSettings.DeleteContainer("Folders");
+#endif
             if (ApplicationData.Current.LocalSettings.Containers.ContainsKey("Folders"))
             {
                 _foldersContainer = ApplicationData.Current.LocalSettings.Containers["Folders"];

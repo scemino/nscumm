@@ -34,7 +34,7 @@ namespace NScumm.Core
 
         public ResourceIndex8()
         {
-            audioNames = new string[0];
+            AudioNames = new string[0];
         }
 
         protected override void LoadIndex(GameInfo game)
@@ -104,7 +104,7 @@ namespace NScumm.Core
                         case "ANAM":        // Used by: The Dig, FT
                             {
                                 var num = br.ReadUInt16();
-                                audioNames = new string[num];
+                                AudioNames = new string[num];
                                 for (int i = 0; i < num; i++)
                                 {
                                     AudioNames[i] = System.Text.Encoding.UTF8.GetString(br.ReadBytes(9));

@@ -51,6 +51,7 @@
   <MD5 signature="17b5d5e6af4ae89d62631641d66d5a05" gameId="indy3" variant="VGA" language="it" features="Old256 FewLocals" />
   <MD5 signature="04687cdf7f975a89d2474929f7b80946" gameId="indy3" variant="FM-TOWNS" language="en" features="Old256 FewLocals AudioTracks" platform="FMTowns" />
   <MD5 signature="c63ee46143ba65f9ce14cf539ca51bd7" gameId="atlantis" variant="" language="en" />
+  <MD5 signature="182344899c2e2998fca0bebcd82aa81a" gameId="atlantis" variant="CD" language="en" />
   <MD5 signature="1fbebd7b2b692df5297870447a80cfed" gameId="atlantis" variant="" language="de" />
   <MD5 signature="4f267a901719623de7dde83e47d5b474" gameId="atlantis" variant="" language="de" />
   <MD5 signature="edfdb24a499d92c59f824c52987c0eec" gameId="atlantis" variant="" language="fr" />
@@ -157,6 +158,7 @@
   <Game id="indy3" gameId="Indy3" variant="No AdLib" version="3" music="PCSpeaker PCjr" />
   <Game id="indy3" gameId="Indy3" variant="FM-TOWNS" version="3" music="FMTowns" />
   <Game id="atlantis" gameId="Indy4" variant="" version="5" music="PCSpeaker PCjr AdLib" pattern="ATLANTIS.{0:000}" />
+  <Game id="atlantis" gameId="Indy4" variant="CD" version="5" music="PCSpeaker PCjr AdLib" pattern="ATLANTIS.{0:000}" />
   <Game id="atlantis" gameId="Indy4" variant="Demo" version="5" music="PCSpeaker PCjr AdLib" pattern="PLAYFATE.{0:000}" />
   <Game id="atlantis" gameId="Indy4" variant="FM-TOWNS" version="5" music="FMTowns AdLib" pattern="INDY4.{0:000}" />
   <Game id="monkey" gameId="Monkey1" variant="EGA" version="4" music="PCSpeaker PCjr CMS AdLib" />

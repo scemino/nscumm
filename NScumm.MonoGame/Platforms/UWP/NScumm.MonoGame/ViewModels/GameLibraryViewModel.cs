@@ -1,7 +1,7 @@
 ﻿//#define CLEAN_GAMELIST
+//#define WP_COMI
 
 using NScumm.Core;
-using NScumm.Core.IO;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -22,7 +22,7 @@ namespace NScumm.MonoGame.ViewModels
     {
         bool IsScanning { get; }
         bool ShowNoGameMessage { get; }
-        IEnumerable<GameInfo> Games { get; }
+        IEnumerable<GameViewModel> Games { get; }
 
         ICommand AddCommand { get; }
     }
@@ -30,7 +30,8 @@ namespace NScumm.MonoGame.ViewModels
     class GameLibraryViewModel : ViewModel, IGameLibraryViewModel
     {
         static readonly HashSet<string> indexFiles = new HashSet<string>(new string[] { ".D64", ".DSK,", ".LFL", ".000", ".LA0", ".SM0" }, StringComparer.OrdinalIgnoreCase);
-        private ObservableCollection<GameInfo> _games;
+        private ObservableCollection<GameViewModel> _games;
+        private HashSet<string> _gameSignatures;
         private HashSet<string> _folders;
         private bool _isScanning;
         private bool _showNoGameMessage;
@@ -38,7 +39,7 @@ namespace NScumm.MonoGame.ViewModels
         private ApplicationDataContainer _gamesContainer;
         private ApplicationDataContainer _foldersContainer;
 
-        public IEnumerable<GameInfo> Games { get { return _games; } }
+        public IEnumerable<GameViewModel> Games { get { return _games; } }
 
         public GameManager GameManager { get; private set; }
 
@@ -62,7 +63,9 @@ namespace NScumm.MonoGame.ViewModels
 
         public GameLibraryViewModel()
         {
-            _games = new ObservableCollection<GameInfo>();
+            _showNoGameMessage = true;
+            _gameSignatures = new HashSet<string>();
+            _games = new ObservableCollection<GameViewModel>();
             _addCommand = new DelegateCommand(Scan);
 
             // get the nscumm.xml
@@ -76,7 +79,7 @@ namespace NScumm.MonoGame.ViewModels
             LoadGameLibrary();
         }
 
-        private void LoadGameLibrary()
+        private async void LoadGameLibrary()
         {
             LoadGameFolders();
             LoadGames();
@@ -97,6 +100,7 @@ namespace NScumm.MonoGame.ViewModels
                              where File.Exists(path)
                              let game = GameManager.GetInfo(path)
                              where game != null
+                             where !_gameSignatures.Contains(game.MD5)
                              orderby game.Description
                              select game).ToObservable();
                 games
@@ -107,7 +111,8 @@ namespace NScumm.MonoGame.ViewModels
                     {
                         foreach (var item in items)
                         {
-                            _games.Add(item);
+                            _gameSignatures.Add(item.MD5);
+                            _games.Add(new GameViewModel(item));
                         }
                     },
                     e => MessageBox.Show("nSCUMM", e.Message, new[] { "OK" }),
@@ -121,7 +126,7 @@ namespace NScumm.MonoGame.ViewModels
 
         private void LoadGameFolders()
         {
-            IEnumerable<string> folders = Enumerable.Empty<string>();
+            var folders = Enumerable.Empty<string>();
 #if CLEAN_GAMELIST && DEBUG
             ApplicationData.Current.LocalSettings.DeleteContainer("Folders");
 #endif
@@ -157,6 +162,7 @@ namespace NScumm.MonoGame.ViewModels
                           where indexFiles.Contains(Path.GetExtension(item.Path))
                           let g = GameManager.GetInfo(item.Path)
                           where g != null
+                          where !_gameSignatures.Contains(g.MD5)
                           select g;
 
             // add games every 200 ms
@@ -170,7 +176,7 @@ namespace NScumm.MonoGame.ViewModels
                         var name = string.Format("Game{0}", _gamesContainer.Containers.Count + 1);
                         var gameContainer = _gamesContainer.CreateContainer(name, ApplicationDataCreateDisposition.Always);
                         gameContainer.Values["Path"] = item.Path;
-                        _games.Add(item);
+                        _games.Add(new GameViewModel(item));
                     }
                 },
             () =>
@@ -208,21 +214,28 @@ namespace NScumm.MonoGame.ViewModels
         private async System.Threading.Tasks.Task<StorageFolder> PickFolder()
         {
             StorageFolder folder = null;
+#if WP_COMI
+            try
+            {
+                folder = await StorageFolder.GetFolderFromPathAsync(@"d:\Downloads\comi");
+                AddFolder(folder);
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+#else
             var folderPicker = new FolderPicker();
             indexFiles.ToList().ForEach(folderPicker.FileTypeFilter.Add);
             folderPicker.SuggestedStartLocation = PickerLocationId.ComputerFolder;
             try
             {
                 folder = await folderPicker.PickSingleFolderAsync();
-                if (folder != null && _folders.Contains(folder.Path))
-                {
-                    folder = null;
-                }
                 AddFolder(folder);
             }
             catch (UnauthorizedAccessException)
             {
             }
+#endif
             return folder;
         }
 

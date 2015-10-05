@@ -19,7 +19,7 @@
     <ProjectTypeGuids>{A5A43C5B-DE2A-4C0C-9213-0A381AF9435A};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <PackageCertificateKeyFile>NScumm.MonoGame_StoreKey.pfx</PackageCertificateKeyFile>
     <PackageCertificateThumbprint>BD492D41897CAA7A6BAF8248F98A664D606F4C5D</PackageCertificateThumbprint>
-    <AppxAutoIncrementPackageRevision>False</AppxAutoIncrementPackageRevision>
+    <AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
     <AppxBundlePlatforms>x86|x64|arm</AppxBundlePlatforms>
     <AppxBundle>Always</AppxBundle>
   </PropertyGroup>
@@ -116,7 +116,9 @@
     <Content Include="Assets\StoreLogo.scale-100.png" />
     <Content Include="Assets\StoreLogo.scale-200.png" />
     <Content Include="Content\NScumm.mgcb" />
-    <Content Include="AdMediator.config" />
+    <Content Include="AdMediator.config">
+      <SubType>Designer</SubType>
+    </Content>
     <None Include="NScumm.MonoGame_StoreKey.pfx" />
     <None Include="project.json" />
   </ItemGroup>
@@ -167,6 +169,7 @@
     <Compile Include="TraceFactory.cs" />
     <Compile Include="ViewModels\DelegateCommand.cs" />
     <Compile Include="ViewModels\GameLibraryViewModel.cs" />
+    <Compile Include="ViewModels\GameViewModel.cs" />
     <Compile Include="ViewModels\ViewModel.cs" />
   </ItemGroup>
   <ItemGroup>

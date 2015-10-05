@@ -1,5 +1,4 @@
-﻿using NScumm.Core.IO;
-using NScumm.MonoGame.Converters;
+﻿using NScumm.MonoGame.Converters;
 using NScumm.MonoGame.ViewModels;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Data;
@@ -25,10 +24,10 @@ namespace NScumm.MonoGame
         private void OnLaunchGame(object sender, Windows.UI.Xaml.Controls.ItemClickEventArgs e)
         {
             // navigate to the game
-            var info = e.ClickedItem as GameInfo;
-            if (info != null)
+            var vm = e.ClickedItem as GameViewModel;
+            if (vm != null)
             {
-                Frame.Navigate(typeof(GamePage), info);
+                Frame.Navigate(typeof(GamePage), vm.Game);
             }
         }
     }    

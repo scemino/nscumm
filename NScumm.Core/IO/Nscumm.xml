@@ -20,6 +20,12 @@
   <MD5 signature="15240c59d3681ed53f714f8d925cb2d6" gameId="maniac" variant="V2" language="es" features="SixteenColors" platform="AtariST" />
   <MD5 signature="47d3e0b8b42e6ff340c7061fba9283d2" gameId="zak" variant="V1" language="en" features="SixteenColors" platform="C64" />
   <MD5 signature="4973bbc3899e3826dbf316e1d7271ec7" gameId="zak" variant="V1" language="de" features="SixteenColors" platform="C64" />
+  <MD5 signature="e94c7cc3686fce406d3c91b5eae5a72d" gameId="zak" variant="V2" language="en" features="SixteenColors" platform="Amiga" />
+  <MD5 signature="6027e9ca9c35746d95dee2068cec17e5" gameId="zak" variant="V2" language="de" features="SixteenColors" platform="Amiga" />
+  <MD5 signature="91469353f7be1b122fa88d23480a1320" gameId="zak" variant="V2" language="fr" features="SixteenColors" platform="Amiga" />
+  <MD5 signature="d55eff37c2100f5065cde9de428621fa" gameId="zak" variant="V2" language="en" features="SixteenColors" platform="AtariST" />
+  <MD5 signature="ff05c07990061d97647f059c48c1d05a" gameId="zak" variant="V2" language="de" features="SixteenColors" platform="AtariST" />
+  <MD5 signature="613f64f78ea26c7353b2a5940eb61d6a" gameId="zak" variant="V2" language="fr" features="SixteenColors" platform="AtariST" />
   <MD5 signature="675d71151e9b5a968c8ce46d9fbf4cbf" gameId="zak" variant="V2" language="en" features="SixteenColors" />
   <MD5 signature="d55eff37c2100f5065cde9de428621fa" gameId="zak" variant="V2" language="en" features="SixteenColors" />
   <MD5 signature="cdd760228cf1010c2903f37e788ea31c" gameId="zak" variant="V2" language="de" features="SixteenColors" />
@@ -57,6 +63,12 @@
   <MD5 signature="edfdb24a499d92c59f824c52987c0eec" gameId="atlantis" variant="" language="fr" />
   <MD5 signature="8f3758ff98c9c5d78e5d635222cad026" gameId="atlantis" variant="" language="it" />
   <MD5 signature="9bd2a8f72613e715c199246dd511e10f" gameId="atlantis" variant="" language="es" />
+  <MD5 signature="3a03dab514e4038df192d8a8de469788" gameId="atlantis" variant="" language="en" platform="Amiga" />
+  <MD5 signature="15f588e887e857e8c56fe6ade4956168" gameId="atlantis" variant="" language="es" platform="Amiga" />
+  <MD5 signature="20da6fce37805423966aaa8f3c2426aa" gameId="atlantis" variant="" language="fr" platform="Amiga" />
+  <MD5 signature="4f267a901719623de7dde83e47d5b474" gameId="atlantis" variant="" language="de" platform="Amiga" />
+  <MD5 signature="e534d29afb3c6e0ee9dc3d53c5956714" gameId="atlantis" variant="" language="de" platform="Amiga" />
+  <MD5 signature="5798972220cd458be2626d54c80f71d7" gameId="atlantis" variant="" language="it" platform="Amiga" />
   <MD5 signature="c7be10f775404fd9785a8b92a06d240c" gameId="atlantis" variant="FM-TOWNS" language="en" platform="FMTowns" />
   <MD5 signature="98744fe66ff730e8c2b3b1f58803ab0b" gameId="atlantis" variant="Demo" features="Demo" language="en" />
   <MD5 signature="37f56ceb13e401a7ac7d9e6b37fecaf7" gameId="loom" variant="EGA" language="en" features="SixteenColors" />
@@ -68,6 +80,7 @@
   <MD5 signature="0be88565f734b1e9e77ccaaf3bb14b29" gameId="loom" variant="EGA" language="es" features="SixteenColors" />
   <MD5 signature="2a208ffbcd0e83e86f4356e6f64aa6e1" gameId="loom" variant="EGA" language="es" features="SixteenColors" />
   <MD5 signature="5d88b9d6a88e6f8e90cded9d01b7f082" gameId="loom" variant="VGA" language="en" />
+  <MD5 signature="4dc780f1bc587a193ce8a97652791438" gameId="loom" variant="EGA" language="en" features="SixteenColors" platform="Amiga" />
   <MD5 signature="a0a7dea72003933b8b3f8b99b9f7ddeb" gameId="loom" variant="No AdLib" language="en" features="SixteenColors" platform="AtariST" />
   <MD5 signature="c24c490373aeb48fbd54caa8e7ae376d" gameId="loom" variant="No AdLib" language="de" features="SixteenColors" platform="AtariST" />
   <MD5 signature="0e9b01430e31d9fcd94071d433bbc6bf" gameId="loom" variant="No AdLib" language="fr" features="SixteenColors" platform="AtariST" />
@@ -126,12 +139,23 @@
   <MD5 signature="50fcdc982a25063b78ad46bf389b8e8d" gameId="tentacle" variant="Floppy" language="it" />
   <MD5 signature="ae94f110a14ce71fc515d5b648827a8f" gameId="tentacle" variant="Floppy" language="es" />
   <MD5 signature="c83079157ec765a28de445aec9768d60" gameId="tentacle" variant="Demo" language="en" features="Demo" />
+  <MD5 signature="4167a92a1d46baa4f4127d918d561f88" gameId="tentacle" variant="CD" language="en" />
+  <MD5 signature="4fbbe9f64b8bc547503a379a301183ce" gameId="tentacle" variant="CD" language="it" />
+  <MD5 signature="6e959d65358eedf9b68b81e304b97fa4" gameId="tentacle" variant="CD" language="de" />
+  <MD5 signature="883af4b0af4f77a92f1dcf1d0a283140" gameId="tentacle" variant="CD" language="es" />
+  <MD5 signature="8aa05d3cdb0e795436043f0546af2da2" gameId="tentacle" variant="CD" language="fr" />
   <MD5 signature="3b301b7892f883ce42ab4be6a274fea6" gameId="samnmax" variant="Floppy" language="en" />
   <MD5 signature="f27b1ba0eadaf2a6617b2b58192d1dbf" gameId="samnmax" variant="Floppy" language="de" />
   <MD5 signature="ef347474f3c7be3b29584eaa133cca05" gameId="samnmax" variant="Floppy" language="fr" />
   <MD5 signature="b289a2a8cbedbf45786e0b4ad2f510f1" gameId="samnmax" variant="Floppy" language="it" />
   <MD5 signature="fc53ce0e5f6562b1c1e1b4b8203acafb" gameId="samnmax" variant="Floppy" language="es" />
   <MD5 signature="c3196c5349e53e387aaff1533d95e53a" gameId="samnmax" variant="Demo" language="en" features="Demo" />
+  <MD5 signature="d917f311a448e3cc7239c31bddb00dd2" gameId="samnmax" variant="CD" language="en" />
+  <MD5 signature="0f6f2e716ba896a44e5059bba1de7ca9" gameId="samnmax" variant="CD" language="it" />
+  <MD5 signature="0fb73eddfcf584c02ba097984df131ba" gameId="samnmax" variant="CD" language="de" />
+  <MD5 signature="3a5d13675e9a23aedac0bac7730f0ac1" gameId="samnmax" variant="CD" language="fr" />
+  <MD5 signature="7edd665bbede7ea8b7233f8e650be6f8" gameId="samnmax" variant="CD" language="fr" />
+  <MD5 signature="4ba7fb331296c283e73d8f5b2096e551" gameId="samnmax" variant="CD" language="es" />
   <MD5 signature="4bedb49943df95a9c900a5a82ccbe9de" gameId="ft" variant="" language="fr" />
   <MD5 signature="09820417db26687bb7fe0c83cc4c553b" gameId="ft" variant="" language="en" />
   <MD5 signature="8bdb0bf87b5e303dd35693afb9351215" gameId="ft" variant="" language="de" />
@@ -172,8 +196,10 @@
   <Game id="monkey2" gameId="Monkey2" variant="FM-TOWNS" version="5" music="PCSpeaker FMTowns AdLib" pattern="MONKEY2.{0:000}" />
   <Game id="pass" gameId="Pass" variant="" version="4" music="PCSpeaker PCjr CMS AdLib" />
   <Game id="tentacle" gameId="Tentacle" variant="Floppy" version="6" music="AdLib" />
+  <Game id="tentacle" gameId="Tentacle" variant="CD" version="6" music="AdLib" />
   <Game id="tentacle" gameId="Tentacle" variant="Demo" version="6" music="AdLib" pattern="DOTTDEMO.{0:000}" />
   <Game id="samnmax" gameId="SamNMax" variant="Floppy" version="6" music="AdLib" />
+  <Game id="samnmax" gameId="SamNMax" variant="CD" version="6" music="AdLib" />
   <Game id="samnmax" gameId="SamNMax" variant="Demo" version="6" music="AdLib" pattern="SNMDEMO.SM{0}" />
   <Game id="ft" gameId="FullThrottle" variant="" version="7" pattern="ft.la{0}" />
   <Game id="ft" gameId="FullThrottle" variant="Demo" version="7" pattern="ft.{0:000}" />

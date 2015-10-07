@@ -68,15 +68,15 @@ namespace NScumm.Core.Audio.Decoders
         {
         }
 
-        public int ReadBuffer(short[] buffer)
+        public int ReadBuffer(short[] buffer, int count)
         {
             if (_done)
                 return 0;
 
-            var numSamples = buffer.Length;
+            var numSamples = count;
             int framesLeft = Math.Min(_loopEnd.FrameDiff(_pos), numSamples);
             var tmp = new short[framesLeft];
-            int framesRead = _parent.ReadBuffer(tmp);
+            int framesRead = _parent.ReadBuffer(tmp, framesLeft);
             Array.Copy(tmp, 0, buffer, 0, tmp.Length);
             _pos = _pos.AddFrames(framesRead);
 
@@ -108,7 +108,7 @@ namespace NScumm.Core.Audio.Decoders
                 _pos = _loopStart;
                 framesLeft = numSamples - framesLeft;
                 tmp = new short[framesLeft];
-                var numRead = ReadBuffer(tmp);
+                var numRead = ReadBuffer(tmp, framesLeft);
                 Array.Copy(tmp, 0, buffer, framesRead, tmp.Length);
                 return framesRead + numRead;
             }

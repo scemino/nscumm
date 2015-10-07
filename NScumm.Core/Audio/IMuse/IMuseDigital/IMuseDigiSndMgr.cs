@@ -788,7 +788,7 @@ namespace NScumm.Core.Audio.IMuse
                     soundDesc.LastFileName = fileName;
                 }
                 var tmpBuf = new short[size / 2];
-                size = soundDesc.CompressedStream.ReadBuffer(tmpBuf) * 2;
+                size = soundDesc.CompressedStream.ReadBuffer(tmpBuf, size / 2) * 2;
                 // TODO: vs check this
                 for (int i = 0; i < size / 2; i++)
                 {

@@ -105,11 +105,11 @@ namespace NScumm.Core.Audio
             return Seek(new Timestamp(0, Rate));
         }
 
-        public int ReadBuffer(short[] buffer)
+        public int ReadBuffer(short[] buffer, int count)
         {
-            int framesLeft = Math.Min(_length.FrameDiff(_pos), buffer.Length);
+            int framesLeft = Math.Min(_length.FrameDiff(_pos), count);
             var tmp = new short[framesLeft];
-            int framesRead = _parent.ReadBuffer(tmp);
+            int framesRead = _parent.ReadBuffer(tmp, framesLeft);
             Array.Copy(tmp, buffer, framesLeft);
             _pos = _pos.AddFrames(framesRead);
             return framesRead;

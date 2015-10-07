@@ -23,7 +23,7 @@ using System.Diagnostics;
 
 namespace NScumm.Core.Audio
 {
-    class CopyRateConverter: IRateConverter
+    class CopyRateConverter : IRateConverter
     {
         bool stereo;
         bool reverseStereo;
@@ -31,17 +31,17 @@ namespace NScumm.Core.Audio
         int _bufferSize;
 
         public CopyRateConverter(bool stereo, bool reverseStereo)
-        { 
+        {
             this.stereo = stereo;
             this.reverseStereo = reverseStereo;
-            _bufferSize = 0; 
+            _bufferSize = 0;
         }
 
-        public int Flow(IAudioStream input, short[] obuf, int volLeft, int volRight)
+        public int Flow(IAudioStream input, short[] obuf, int count, int volLeft, int volRight)
         {
             Debug.Assert(input.IsStereo == stereo);
 
-            var osamp = obuf.Length / 2;
+            var osamp = count / 2;
 
             if (stereo)
                 osamp *= 2;
@@ -49,12 +49,12 @@ namespace NScumm.Core.Audio
             // Reallocate temp buffer, if necessary
             if (osamp > _bufferSize)
             {
-                _buffer = new short[osamp];
+                _buffer = new Buffer(osamp * 2).Shorts;
                 _bufferSize = osamp;
             }
 
             // Read up to 'osamp' samples into our temporary buffer
-            var len = input.ReadBuffer(_buffer);
+            var len = input.ReadBuffer(_buffer, _bufferSize);
 
             int iPos = 0;
             var oPos = 0;
@@ -73,7 +73,7 @@ namespace NScumm.Core.Audio
 
                 oPos += 2;
             }
-            return oPos / 2;
+            return oPos;
         }
 
         public int Drain(short[] obuf, int vol)
@@ -81,5 +81,5 @@ namespace NScumm.Core.Audio
             return 0;
         }
     }
-    
+
 }

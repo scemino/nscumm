@@ -51,7 +51,7 @@ namespace NScumm.Core.Audio
             Id = id;
             _permanent = permanent;
             _volume = MaxChannelVolume;
-            _converter = MakeRateConverter(_stream.Rate, _mixer.OutputRate, _stream.IsStereo, reverseStereo);
+            _converter = RateHelper.MakeRateConverter(_stream.Rate, _mixer.OutputRate, _stream.IsStereo, reverseStereo);
         }
 
         /**
@@ -63,7 +63,7 @@ namespace NScumm.Core.Audio
          *             16 bits, for a total of 40 bytes.
          * @return number of sample pairs processed (which can still be silence!)
          */
-        public int Mix(short[] data)
+        public int Mix(short[] data, int count)
         {
             Debug.Assert(_stream != null);
 
@@ -78,7 +78,7 @@ namespace NScumm.Core.Audio
                 _samplesConsumed = _samplesDecoded;
                 _mixerTimeStamp = Environment.TickCount;
                 _pauseTime = 0;
-                res = _converter.Flow(_stream, data, _volL, _volR);
+                res = _converter.Flow(_stream, data, count, _volL, _volR);
                 _samplesDecoded += res;
             }
 
@@ -217,26 +217,7 @@ namespace NScumm.Core.Audio
             {
                 _volL = _volR = 0;
             }
-        }
-
-        static IRateConverter MakeRateConverter(int inrate, int outrate, bool stereo, bool reverseStereo)
-        {
-            if (inrate != outrate)
-            {
-                if ((inrate % outrate) == 0)
-                {
-                    return new SimpleRateConverter(inrate, outrate, stereo, reverseStereo);
-                }
-                else
-                {
-                    return new LinearRateConverter(inrate, outrate, stereo, reverseStereo);
-                }
-            }
-            else
-            {
-                return new CopyRateConverter(stereo, reverseStereo);
-            }
-        }
+        }        
     }
     
 }

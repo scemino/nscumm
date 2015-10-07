@@ -22,7 +22,7 @@
 
 namespace NScumm.Core.Audio
 {
-    static class RateHelper
+    public static class RateHelper
     {
         public const int IntermediateBufferSize = 512;
         public const long SampleMax = 0x7fffL;
@@ -38,6 +38,25 @@ namespace NScumm.Core.Audio
                 val = SampleMin;
 
             a = (short)val;
+        }
+
+        public static IRateConverter MakeRateConverter(int inrate, int outrate, bool stereo, bool reverseStereo)
+        {
+            if (inrate != outrate)
+            {
+                if ((inrate % outrate) == 0)
+                {
+                    return new SimpleRateConverter(inrate, outrate, stereo, reverseStereo);
+                }
+                else
+                {
+                    return new LinearRateConverter(inrate, outrate, stereo, reverseStereo);
+                }
+            }
+            else
+            {
+                return new CopyRateConverter(stereo, reverseStereo);
+            }
         }
     }
 }

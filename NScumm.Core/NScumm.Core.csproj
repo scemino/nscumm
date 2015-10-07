@@ -30,6 +30,10 @@
     <ConsolePause>false</ConsolePause>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Audio\ISoundRepository.cs" />
+    <Compile Include="Audio\SampleProviders\AudioSampleProviderToAudioStream.cs" />
+    <Compile Include="Audio\SampleProviders\MonoToStereoAudioSampleProvider16.cs" />
+    <Compile Include="Audio\SampleProviders\ResampleAudioSampleProvider.cs" />
     <Compile Include="IO\ChunkIterator3.cs" />
     <Compile Include="IO\XorStream.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -171,12 +175,11 @@
     <Compile Include="IO\Serializer.cs" />
     <Compile Include="Audio\Channel.cs" />
     <Compile Include="Audio\DeviceHandle.cs" />
-    <Compile Include="Audio\HookDatas.cs" />
+    <Compile Include="Audio\IMuse\HookDatas.cs" />
     <Compile Include="Audio\IAudioStream.cs" />
     <Compile Include="Audio\IMixer.cs" />
     <Compile Include="Audio\IMusicEngine.cs" />
     <Compile Include="Audio\IMusicPluginObject.cs" />
-    <Compile Include="Audio\IPlayer.cs" />
     <Compile Include="Audio\MidiChannel.cs" />
     <Compile Include="Audio\MidiDriver.cs" />
     <Compile Include="Audio\Mixer.cs" />
@@ -186,9 +189,9 @@
     <Compile Include="Audio\PCSpeaker.cs" />
     <Compile Include="Audio\PCSpeakerDriver.cs" />
     <Compile Include="Audio\PCSpeakerMusicPlugin.cs" />
-    <Compile Include="Audio\Player_AD.cs" />
-    <Compile Include="Audio\Player_V2.cs" />
-    <Compile Include="Audio\Player_V2Base.cs" />
+    <Compile Include="Audio\Players\Player_AD.cs" />
+    <Compile Include="Audio\Players\Player_V2.cs" />
+    <Compile Include="Audio\Players\Player_V2Base.cs" />
     <Compile Include="Audio\QueuingAudioStream.cs" />
     <Compile Include="Audio\SoundHandle.cs" />
     <Compile Include="Audio\Timestamp.cs" />
@@ -275,7 +278,7 @@
     <Compile Include="Audio\PCJuniorMusicPlugin.cs" />
     <Compile Include="Graphics\Gdi1.cs" />
     <Compile Include="IO\ResourceFile1.cs" />
-    <Compile Include="Audio\Player_V1.cs" />
+    <Compile Include="Audio\Players\Player_V1.cs" />
     <Compile Include="ScummEngine0.cs" />
     <Compile Include="IO\ResourceIndex0.cs" />
     <Compile Include="IO\ResourceManager0.cs" />
@@ -287,7 +290,7 @@
     <Compile Include="ScummEngine0_Variable.cs" />
     <Compile Include="Graphics\CostumeRenderer0.cs" />
     <Compile Include="Graphics\BaseCostumeRenderer.cs" />
-    <Compile Include="Audio\Player_SID.cs" />
+    <Compile Include="Audio\Players\Player_SID.cs" />
     <Compile Include="Audio\SoftSynth\EnvelopeGenerator.cs" />
     <Compile Include="Audio\SoftSynth\ExternalFilter.cs" />
     <Compile Include="Audio\SoftSynth\Filter.cs" />
@@ -295,50 +298,50 @@
     <Compile Include="Audio\SoftSynth\Voice.cs" />
     <Compile Include="Audio\SoftSynth\WaveformGenerator.cs" />
     <Compile Include="Audio\SoftSynth\ISid.cs" />
-    <Compile Include="Audio\Player_AppleII.cs" />
+    <Compile Include="Audio\Players\Player_AppleII.cs" />
     <Compile Include="Audio\SampleBuffer.cs" />
-    <Compile Include="Audio\AppleII_SoundFunction1_FreqUpDown.cs" />
-    <Compile Include="Audio\AppleII_SoundFunction2_SymmetricWave.cs" />
+    <Compile Include="Audio\AppleII\AppleII_SoundFunction1_FreqUpDown.cs" />
+    <Compile Include="Audio\AppleII\AppleII_SoundFunction2_SymmetricWave.cs" />
     <Compile Include="Audio\SampleConverter.cs" />
-    <Compile Include="Audio\AppleII_SoundFunction3_AsymmetricWave.cs" />
-    <Compile Include="Audio\AppleII_SoundFunction4_Polyphone.cs" />
-    <Compile Include="Audio\AppleII_SoundFunction5_Noise.cs" />
-    <Compile Include="Audio\IAppleII_SoundFunction.cs" />
-    <Compile Include="Audio\Player_V2A.cs" />
-    <Compile Include="Audio\V2A_Sound_SingleLooped.cs" />
-    <Compile Include="Audio\V2A_Sound_Base.cs" />
-    <Compile Include="Audio\V2A_Sound_MultiLooped.cs" />
-    <Compile Include="Audio\V2A_Sound_Single.cs" />
-    <Compile Include="Audio\V2A_Sound_MultiLoopedDuration.cs" />
-    <Compile Include="Audio\V2A_Sound_SingleLoopedPitchbend.cs" />
-    <Compile Include="Audio\V2A_Sound_Special_Maniac69.cs" />
-    <Compile Include="Audio\V2A_Sound_Special_ManiacDing.cs" />
-    <Compile Include="Audio\V2A_Sound_Special_ManiacTentacle.cs" />
-    <Compile Include="Audio\V2A_Sound_Special_Maniac59.cs" />
-    <Compile Include="Audio\V2A_Sound_Special_Maniac61.cs" />
-    <Compile Include="Audio\V2A_Sound_Special_ManiacPhone.cs" />
-    <Compile Include="Audio\V2A_Sound_Special_Maniac32.cs" />
-    <Compile Include="Audio\V2A_Sound_Special_Maniac46.cs" />
-    <Compile Include="Audio\V2A_Sound_Music.cs" />
-    <Compile Include="Audio\V2A_Sound_Special_ManiacTypewriter.cs" />
-    <Compile Include="Audio\V2A_Sound_Special_Maniac44.cs" />
-    <Compile Include="Audio\Player_MOD.cs" />
+    <Compile Include="Audio\AppleII\AppleII_SoundFunction3_AsymmetricWave.cs" />
+    <Compile Include="Audio\AppleII\AppleII_SoundFunction4_Polyphone.cs" />
+    <Compile Include="Audio\AppleII\AppleII_SoundFunction5_Noise.cs" />
+    <Compile Include="Audio\AppleII\IAppleII_SoundFunction.cs" />
+    <Compile Include="Audio\Players\Player_V2A.cs" />
+    <Compile Include="Audio\Amiga\V2A_Sound_SingleLooped.cs" />
+    <Compile Include="Audio\Amiga\V2A_Sound_Base.cs" />
+    <Compile Include="Audio\Amiga\V2A_Sound_MultiLooped.cs" />
+    <Compile Include="Audio\Amiga\V2A_Sound_Single.cs" />
+    <Compile Include="Audio\Amiga\V2A_Sound_MultiLoopedDuration.cs" />
+    <Compile Include="Audio\Amiga\V2A_Sound_SingleLoopedPitchbend.cs" />
+    <Compile Include="Audio\Amiga\V2A_Sound_Special_Maniac69.cs" />
+    <Compile Include="Audio\Amiga\V2A_Sound_Special_ManiacDing.cs" />
+    <Compile Include="Audio\Amiga\V2A_Sound_Special_ManiacTentacle.cs" />
+    <Compile Include="Audio\Amiga\V2A_Sound_Special_Maniac59.cs" />
+    <Compile Include="Audio\Amiga\V2A_Sound_Special_Maniac61.cs" />
+    <Compile Include="Audio\Amiga\V2A_Sound_Special_ManiacPhone.cs" />
+    <Compile Include="Audio\Amiga\V2A_Sound_Special_Maniac32.cs" />
+    <Compile Include="Audio\Amiga\V2A_Sound_Special_Maniac46.cs" />
+    <Compile Include="Audio\Amiga\V2A_Sound_Music.cs" />
+    <Compile Include="Audio\Amiga\V2A_Sound_Special_ManiacTypewriter.cs" />
+    <Compile Include="Audio\Amiga\V2A_Sound_Special_Maniac44.cs" />
+    <Compile Include="Audio\Players\Player_MOD.cs" />
     <Compile Include="Audio\Decoders\SubLoopingAudioStream.cs" />
-    <Compile Include="Audio\IPlayerMod.cs" />
-    <Compile Include="Audio\Player_V3A.cs" />
-    <Compile Include="Audio\Paula.cs" />
+    <Compile Include="Audio\Amiga\IPlayerMod.cs" />
+    <Compile Include="Audio\Players\Player_V3A.cs" />
+    <Compile Include="Audio\Amiga\Paula.cs" />
     <Compile Include="Audio\FixedPointFractionHelper.cs" />
-    <Compile Include="Audio\Tfmx.cs" />
-    <Compile Include="Audio\Player_V4A.cs" />
-    <Compile Include="Audio\Player_V2CMS.cs" />
+    <Compile Include="Audio\Amiga\Tfmx.cs" />
+    <Compile Include="Audio\Players\Player_V4A.cs" />
+    <Compile Include="Audio\Players\Player_V2CMS.cs" />
     <Compile Include="Audio\SoftSynth\CMSEmulator.cs" />
     <Compile Include="Audio\CMSMusicPlugin.cs" />
     <Compile Include="Audio\NullMidiDriver.cs" />
-    <Compile Include="Audio\Player_Mac.cs" />
+    <Compile Include="Audio\Players\Player_Mac.cs" />
     <Compile Include="IO\MacResManager.cs" />
-    <Compile Include="Audio\Player_V3M.cs" />
-    <Compile Include="Audio\Player_V5M.cs" />
-    <Compile Include="Audio\Player_Towns.cs" />
+    <Compile Include="Audio\Players\Player_V3M.cs" />
+    <Compile Include="Audio\Players\Player_V5M.cs" />
+    <Compile Include="Audio\Players\Player_Towns.cs" />
     <Compile Include="Audio\SoftSynth\FMTownsPc98\TownsAudioInterface.cs" />
     <Compile Include="Audio\SoftSynth\Player_Towns_v1.cs" />
     <Compile Include="Audio\SoftSynth\FMTownsPc98\TownsEuphonyDriver.cs" />
@@ -364,6 +367,13 @@
     <Compile Include="Graphics\CharsetRendererTowns3.cs" />
     <Compile Include="IO\ScummDiskImage.cs" />
     <Compile Include="IEnableTrace.cs" />
+    <Compile Include="Audio\AudioFormat.cs" />
+    <Compile Include="Audio\Buffer.cs" />
+    <Compile Include="Audio\IAudioOutput.cs" />
+    <Compile Include="Audio\SampleProviders\AudioStreamToAudioSampleProvider.cs" />
+    <Compile Include="Audio\SampleProviders\IAudioSampleProvider.cs" />
+    <Compile Include="Audio\SampleProviders\AudioSampleProvider16.cs" />
+    <Compile Include="Audio\WaveStreamWriter.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <ItemGroup />
@@ -373,4 +383,5 @@
   <ItemGroup>
     <EmbeddedResource Include="IO\Nscumm.xml" />
   </ItemGroup>
+  <ItemGroup />
 </Project>

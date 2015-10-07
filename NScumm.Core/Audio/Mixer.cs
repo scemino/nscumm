@@ -20,10 +20,11 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
 using System.Diagnostics;
+using NScumm.Core.Audio.SampleProviders;
 
 namespace NScumm.Core.Audio
 {
-    public class Mixer: IMixer
+    class Mixer: AudioSampleProvider16, IMixer
     {
         const int NumChannels = 16;
         public const int MaxMixerVolume = 256;
@@ -42,6 +43,7 @@ namespace NScumm.Core.Audio
         }
 
         readonly Channel[] _channels;
+        readonly AudioFormat _format;
         SoundTypeSettings[] soundTypeSettings;
         bool _mixerReady;
         object _gate = new object();
@@ -51,6 +53,11 @@ namespace NScumm.Core.Audio
         public int OutputRate { get { return _sampleRate; } }
 
         public bool IsReady { get { return _mixerReady; } }
+
+        public override AudioFormat AudioFormat
+        {
+            get{ return _format; }
+        }
 
         public Mixer(int sampleRate)
         {
@@ -62,6 +69,7 @@ namespace NScumm.Core.Audio
                 soundTypeSettings[i] = new SoundTypeSettings(MaxMixerVolume);
             }
             _sampleRate = sampleRate;
+            _format = new AudioFormat(_sampleRate);
         }
 
         public SoundHandle PlayStream(SoundType type, IAudioStream stream, int id = -1, int volume = 255, int balance = 0, bool autofreeStream = true, bool permanent = false, bool reverseStereo = false)
@@ -130,14 +138,14 @@ namespace NScumm.Core.Audio
             }
         }
 
-        public int MixCallback(short[] samples)
+        public override int Read(short[] samples, int count)
         {
             Debug.Assert(samples != null);
 
             lock (_gate)
             {
                 // we store stereo, 16-bit samples
-                Debug.Assert(samples.Length % 2 == 0);
+                Debug.Assert(count % 2 == 0);
 
                 // Since the mixer callback has been called, the mixer must be ready...
                 _mixerReady = true;
@@ -153,7 +161,7 @@ namespace NScumm.Core.Audio
                         }
                         else if (!_channels[i].IsPaused)
                         {
-                            tmp = _channels[i].Mix(samples);
+                            tmp = _channels[i].Mix(samples, count);
 
                             if (tmp > res)
                                 res = tmp;
@@ -266,7 +274,7 @@ namespace NScumm.Core.Audio
             {
 
                 var index = handle.Value % NumChannels;
-                if (_channels[index]==null || _channels[index].Handle.Value != handle.Value)
+                if (_channels[index] == null || _channels[index].Handle.Value != handle.Value)
                     return;
 
                 _channels[index].Balance = balance;
@@ -276,7 +284,7 @@ namespace NScumm.Core.Audio
         public int GetChannelBalance(SoundHandle handle)
         {
             var index = handle.Value % NumChannels;
-            if (_channels[index]==null || _channels[index].Handle.Value != handle.Value)
+            if (_channels[index] == null || _channels[index].Handle.Value != handle.Value)
                 return 0;
 
             return _channels[index].Balance;

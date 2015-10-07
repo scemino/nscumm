@@ -79,7 +79,7 @@ namespace NScumm.MonoGame.ViewModels
             LoadGameLibrary();
         }
 
-        private async void LoadGameLibrary()
+        private void LoadGameLibrary()
         {
             LoadGameFolders();
             LoadGames();

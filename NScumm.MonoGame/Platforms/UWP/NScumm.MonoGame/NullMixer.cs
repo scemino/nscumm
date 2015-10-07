@@ -1,35 +1,59 @@
-﻿using System;
-using NScumm.Core.Audio;
+﻿using NScumm.Core.Audio;
 using System.Threading;
+using NScumm.Core.Audio.SampleProviders;
+using System;
 
 namespace NScumm.MonoGame
 {
-    class NullMixer : Mixer, IDisposable
+    class NullMixer : IAudioOutput
     {
-        private readonly Timer timer;
-        private short[] samples;
+        readonly Timer _timer;
+        byte[] _samples;
+        IAudioSampleProvider _audioSampleProvider;
 
         public NullMixer() 
-            : base(44100)
         {
-            timer = new Timer(OnTimer, this, 0, 1000);
-            samples = new short[2048 * 4];
+            _timer = new Timer(OnTimer, null, Timeout.Infinite, Timeout.Infinite);
         }
 
-        private void OnTimer(object state)
+        public void Play()
         {
-            MixCallback(samples);
+            _timer.Change(TimeSpan.Zero, TimeSpan.FromSeconds(1.0));
         }
 
-        public void Dispose()
+        public void Pause()
         {
-            Stop();
-            timer.Dispose();
+            _timer.Change(Timeout.Infinite, Timeout.Infinite);
+        }
+
+        public void SetSampleProvider(IAudioSampleProvider audioSampleProvider)
+        {
+            _audioSampleProvider = audioSampleProvider;
+            _samples = new byte[_audioSampleProvider.AudioFormat.AverageBytesPerSecond];
+            ReadSamples();
         }
 
         public void Stop()
         {
-            timer.Change(Timeout.Infinite, Timeout.Infinite);
+            _timer.Change(Timeout.Infinite, Timeout.Infinite);
+        }
+
+        public void Dispose()
+        {
+            _timer.Dispose();
+        }
+
+        private void OnTimer(object state)
+        {
+            if (_audioSampleProvider != null)
+            {
+                ReadSamples();
+            }
+        }
+
+        private void ReadSamples()
+        {
+            _audioSampleProvider.Read(_samples, _samples.Length);
         }
     }
 }

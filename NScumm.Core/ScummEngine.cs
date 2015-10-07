@@ -166,10 +166,13 @@ namespace NScumm.Core
 
         #region Constructor
 
-        public static ScummEngine Create(GameSettings settings, IGraphicsManager gfxManager, IInputManager inputManager, IMixer mixer, bool debugMode = false)
+        public static ScummEngine Create(GameSettings settings, IGraphicsManager gfxManager, IInputManager inputManager, IAudioOutput output, bool debugMode = false)
         {
             ScummEngine engine = null;
             var game = settings.Game;
+            var mixer = new Mixer(44100);
+            output.SetSampleProvider(mixer);
+
             if (game.Version == 0)
             {
                 engine = new ScummEngine0(settings, gfxManager, inputManager, mixer);
@@ -398,9 +401,9 @@ namespace NScumm.Core
                 // Setup for digital iMuse is performed in another place
 
                 // HACK: don't know why I have to keep this to work
-                var adlibMidiDriver = (MidiDriver)MidiDriver.CreateMidi(Mixer, MidiDriver.DetectDevice(MusicDriverTypes.AdLib, "adlib"));
+//                var adlibMidiDriver = (MidiDriver)MidiDriver.CreateMidi(Mixer, MidiDriver.DetectDevice(MusicDriverTypes.AdLib, "adlib"));
                 // Setup for digital iMuse is performed in another place
-                Audio.IMuse.IMuse.Create(null, adlibMidiDriver);
+//                Audio.IMuse.IMuse.Create(null, adlibMidiDriver);
             }
             else if (Game.Platform == Platform.Apple2GS && Game.Version == 0)
             {

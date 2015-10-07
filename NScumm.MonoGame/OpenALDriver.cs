@@ -18,48 +18,37 @@
 using NScumm.Core.Audio;
 using System;
 using Microsoft.Xna.Framework.Audio;
-using System.Runtime.InteropServices;
+using NScumm.Core.Audio.SampleProviders;
 
 namespace NScumm.MonoGame
 {
-    [StructLayout(LayoutKind.Explicit, Pack = 2)]
-    public class Buffer
-    {
-        [FieldOffset(0)]
-        public byte[] Bytes;
-        [FieldOffset(0)]
-        public short[] Shorts;
-    }
-
-    class XnaAudioDriver : Mixer
+    class XnaAudioDriver : IAudioOutput
     {
         readonly DynamicSoundEffectInstance _dsei;
-        Buffer _buffer;
-        short[] _buf;
+        readonly Core.Audio.Buffer _buffer;
+        IAudioSampleProvider _audioSampleProvider;
+        AudioFormat _audioFormat;
 
         public XnaAudioDriver()
-            : base(44100)
         {
-            _buffer = new Buffer();
-            _buf = new short[13230];
-            _buffer.Bytes = new byte[_buf.Length * 2];
-            _dsei = new DynamicSoundEffectInstance(44100, AudioChannels.Stereo);
+            _audioFormat = new AudioFormat(44100);
+
+            _buffer = new Core.Audio.Buffer(13230 * 2);
+            _dsei = new DynamicSoundEffectInstance(_audioFormat.SampleRate, _audioFormat.Channels == 2 ? AudioChannels.Stereo : AudioChannels.Mono);
             _dsei.BufferNeeded += OnBufferNeeded;
-            _dsei.Play();
         }
 
-        void OnBufferNeeded(object sender, EventArgs e)
+        public void SetSampleProvider(IAudioSampleProvider audioSampleProvider)
         {
-            Array.Clear(_buf, 0, _buf.Length);
-            var available = MixCallback(_buf);
-            if (available > 0)
+            _audioSampleProvider = audioSampleProvider;
+            if (_audioSampleProvider.AudioFormat.SampleRate != _audioFormat.SampleRate)
             {
-                for (int i = 0; i < available * 2; i++)
-                {
-                    _buffer.Shorts[i] = _buf[i];
-                }
+                _audioSampleProvider = new ResampleAudioSampleProvider(audioSampleProvider, _audioFormat.SampleRate);
             }
-            _dsei.SubmitBuffer(_buffer.Bytes);
+            if (_audioSampleProvider.AudioFormat.Channels == 1 && _audioFormat.Channels == 2)
+            {
+                _audioSampleProvider = new MonoToStereoAudioSampleProvider16(_audioSampleProvider);
+            }
         }
 
         public void Dispose()
@@ -67,9 +56,26 @@ namespace NScumm.MonoGame
             _dsei.Dispose();
         }
 
+        public void Play()
+        {
+            _dsei.Play();
+        }
+
+        public void Pause()
+        {
+            _dsei.Pause();
+        }
+
         public void Stop()
         {
             _dsei.Stop();
+        }
+
+        void OnBufferNeeded(object sender, EventArgs e)
+        {
+            Array.Clear(_buffer.Bytes, 0, _buffer.Bytes.Length);
+            var available = _audioSampleProvider != null ? _audioSampleProvider.Read(_buffer.Bytes, _buffer.Bytes.Length) : 0;
+            _dsei.SubmitBuffer(_buffer.Bytes, 0, available);
         }
     }
 }

@@ -71,10 +71,10 @@ namespace NScumm.Core.Audio
             inLen = 0;
         }
 
-        public int Flow(IAudioStream input, short[] obuf, int volLeft, int volRight)
+        public int Flow(IAudioStream input, short[] obuf, int count, int volLeft, int volRight)
         {
             int pos = 0;
-            int oend = obuf.Length * 2;
+            int oend = count * 2;
 
             while (pos < oend)
             {
@@ -85,7 +85,7 @@ namespace NScumm.Core.Audio
                     if (inLen == 0)
                     {
                         inPtr = 0;
-                        inLen = input.ReadBuffer(inBuf);
+                        inLen = input.ReadBuffer(inBuf, RateHelper.IntermediateBufferSize);
                         if (inLen <= 0)
                             return pos / 2;
                     }

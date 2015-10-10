@@ -159,7 +159,7 @@ namespace NScumm.Core.IO
 
         public void LoadRoom(int id)
         {
-            if (_rooms.ContainsKey(id)) return;
+            if (id == 0 || _rooms.ContainsKey(id)) return;
 
             NukeResource(ResType.Room, id);
 
@@ -181,7 +181,7 @@ namespace NScumm.Core.IO
 
         public void LoadCostume(int id)
         {
-            if (_costumes.ContainsKey(id)) return;
+            if (id == 0 || _costumes.ContainsKey(id)) return;
 
             NukeResource(ResType.Costume, id);
 
@@ -208,7 +208,7 @@ namespace NScumm.Core.IO
 
         public void LoadScript(int id)
         {
-            if (_scripts.ContainsKey(id)) return;
+            if (id == 0 || _scripts.ContainsKey(id)) return;
 
             NukeResource(ResType.Script, id);
 
@@ -232,7 +232,7 @@ namespace NScumm.Core.IO
 
         public void LoadSound(Audio.MusicDriverTypes music, int id)
         {
-            if (_sounds.ContainsKey(id)) return;
+            if (id == 0 || _sounds.ContainsKey(id)) return;
 
             NukeResource(ResType.Sound, id);
 
@@ -477,7 +477,7 @@ namespace NScumm.Core.IO
             return resCounter;
         }
 
-        IDictionary<int,byte[]> GetResources(ResType type)
+        IDictionary<int, byte[]> GetResources(ResType type)
         {
             switch (type)
             {
@@ -619,7 +619,7 @@ namespace NScumm.Core.IO
             {
                 LoadSound(music, id);
             }
-            return _sounds[id];
+            return _sounds.ContainsKey(id) ? _sounds[id] : null;
         }
 
         protected abstract ResourceFile OpenRoom(byte roomIndex);
@@ -1064,7 +1064,7 @@ namespace NScumm.Core.IO
                 }
 
                 int curtime = 0;
-                for (; ;)
+                for (;;)
                 {
                     int mintime = -1;
                     var ch = -1;

@@ -90,57 +90,42 @@ namespace NScumm.MonoGame.ViewModels
 #if CLEAN_GAMELIST && DEBUG
             ApplicationData.Current.LocalSettings.DeleteContainer("Games");
 #endif
-            if (ApplicationData.Current.LocalSettings.Containers.ContainsKey("Games"))
-            {
-                _gamesContainer = ApplicationData.Current.LocalSettings.Containers["Games"];
-                var paths = (from gameContainer in _gamesContainer.Containers.Values
-                             let path = (string)gameContainer.Values["Path"]
-                             select path).ToList();
-                var games = (from path in paths
-                             where File.Exists(path)
-                             let game = GameManager.GetInfo(path)
-                             where game != null
-                             where !_gameSignatures.Contains(game.MD5)
-                             orderby game.Description
-                             select game).ToObservable();
-                games
-                    .Buffer(TimeSpan.FromMilliseconds(200))
-                    .SubscribeOn(Scheduler.Default)
-                    .ObserveOnDispatcher()
-                    .Subscribe(items =>
+            _gamesContainer = ApplicationData.Current.LocalSettings.CreateContainer("Games", ApplicationDataCreateDisposition.Always);
+            var paths = (from gameContainer in _gamesContainer.Containers.Values
+                         let path = (string)gameContainer.Values["Path"]
+                         select path).ToList();
+            var games = (from path in paths
+                         where File.Exists(path)
+                         let game = GameManager.GetInfo(path)
+                         where game != null
+                         where !_gameSignatures.Contains(game.MD5)
+                         orderby game.Description
+                         select game).ToObservable();
+            games
+                .Buffer(TimeSpan.FromMilliseconds(200))
+                .SubscribeOn(Scheduler.Default)
+                .ObserveOnDispatcher()
+                .Subscribe(items =>
+                {
+                    foreach (var item in items)
                     {
-                        foreach (var item in items)
-                        {
-                            _gameSignatures.Add(item.MD5);
-                            _games.Add(new GameViewModel(item));
-                        }
-                    },
-                    e => MessageBox.Show("nSCUMM", e.Message, new[] { "OK" }),
-                    () => UpdateShowNoGameMessage());
-            }
-            else
-            {
-                _gamesContainer = ApplicationData.Current.LocalSettings.CreateContainer("Games", ApplicationDataCreateDisposition.Always);
-            }
+                        _gameSignatures.Add(item.MD5);
+                        _games.Add(new GameViewModel(item));
+                    }
+                },
+                e => MessageBox.Show("nSCUMM", e.Message, new[] { "OK" }),
+                () => UpdateShowNoGameMessage());
         }
 
         private void LoadGameFolders()
         {
-            var folders = Enumerable.Empty<string>();
 #if CLEAN_GAMELIST && DEBUG
             ApplicationData.Current.LocalSettings.DeleteContainer("Folders");
 #endif
-            if (ApplicationData.Current.LocalSettings.Containers.ContainsKey("Folders"))
-            {
-                _foldersContainer = ApplicationData.Current.LocalSettings.Containers["Folders"];
-                folders = from folderContainer in _foldersContainer.Containers.Values
+            _foldersContainer = ApplicationData.Current.LocalSettings.CreateContainer("Folders", ApplicationDataCreateDisposition.Always);
+            var folders = from folderContainer in _foldersContainer.Containers.Values
                           let path = (string)folderContainer.Values["Path"]
                           select path;
-            }
-            else
-            {
-                _foldersContainer = ApplicationData.Current.LocalSettings.CreateContainer("Folders", ApplicationDataCreateDisposition.Always);
-            }
             _folders = new HashSet<string>(folders, StringComparer.OrdinalIgnoreCase);
         }
 

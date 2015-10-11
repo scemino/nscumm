@@ -258,7 +258,7 @@ namespace NScumm.Core.Audio
                             while (_channels[i].ctr >= 0x10000)
                             {
                                 var sample = new short[1];
-                                if (_channels[i].input.ReadBuffer(sample, len) != 1)
+                                if (_channels[i].input.ReadBuffer(sample, 1) != 1)
                                 {    // out of data
                                     StopChannel(_channels[i].id);
                                     goto skipchan;  // exit 2 loops at once

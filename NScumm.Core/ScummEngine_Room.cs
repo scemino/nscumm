@@ -67,6 +67,8 @@ namespace NScumm.Core
                         break;
                 }
                 _objs[j] = roomData.Objects[i];
+                // HACK: This is done since an angle doesn't fit into a byte (360 > 256)
+                _objs[j].ActorDir = Game.Version == 8 ? (byte)ScummMath.ToSimpleDir(true, roomData.Objects[i].ActorDir) : roomData.Objects[i].ActorDir;
                 j++;
             }
             for (int i = j; i < _objs.Length; i++)

@@ -121,6 +121,8 @@
     </Content>
     <None Include="NScumm.MonoGame_StoreKey.pfx" />
     <None Include="project.json" />
+    <PRIResource Include="Strings\fr-FR\Resources.resw" />
+    <PRIResource Include="Strings\en-US\Resources.resw" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\..\..\screenmanager\GameScreen.cs">

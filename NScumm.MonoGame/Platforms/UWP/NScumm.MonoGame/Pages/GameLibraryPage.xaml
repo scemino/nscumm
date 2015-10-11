@@ -20,7 +20,7 @@
 
     <Page.BottomAppBar>
         <CommandBar x:Name="BottomBar">
-            <AppBarButton Icon="Add" Label="Add" Command="{Binding AddCommand}"/>
+            <AppBarButton Icon="Add" x:Uid="AddGameButton" Label="Add" Command="{Binding AddCommand}"/>
         </CommandBar>
     </Page.BottomAppBar>
 
@@ -36,18 +36,18 @@
             <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
         <!-- Title -->
-        <TextBlock Grid.Row="0" Text="Game Library" Style="{ThemeResource HeaderTextBlockStyle}" Margin="8 0" />
+        <TextBlock x:Name="GameLibraryTextBlock" x:Uid="GameLibraryTextBlock" Grid.Row="0" Text="Game Library" Style="{ThemeResource HeaderTextBlockStyle}" Margin="8 0" />
         
         <!-- Status -->
         <StackPanel Grid.Row="1" x:Name="ProgressPanel" Orientation="Vertical" Margin="4" Visibility="Collapsed">
             <ProgressBar IsIndeterminate="True" />
-            <TextBlock Text="Scanning games..." />
+            <TextBlock x:Uid="ScanningGamesTextBlock" Text="Scanning games..." />
         </StackPanel>
         <!-- Game list -->
         <ListView Grid.Row="2" x:Name="GameListBox" ItemClick="OnLaunchGame" IsItemClickEnabled="True" 
 			ItemsSource="{Binding Games}" ItemTemplate="{StaticResource GameTemplate}" />
         <!-- NoGame message -->
-        <TextBlock x:Name="NoGameTextBlock" Text="There is no game in your library.&#xA;Press Add button to add your SCUMM games." 
+        <TextBlock x:Name="NoGameTextBlock" x:Uid="NoGameTextBlock" Text="There is no game in your library.&#xA;Press Add button to add your SCUMM games." 
 			Grid.Row="2" VerticalAlignment="Center" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" Margin="4" />
         <!-- AdMediator -->
         <Universal:AdMediatorControl x:Name="AdMediator_0A5E56" Id="AdMediator-Id-0F3177E7-6EEB-43B3-84B0-CDC87AC71902" />

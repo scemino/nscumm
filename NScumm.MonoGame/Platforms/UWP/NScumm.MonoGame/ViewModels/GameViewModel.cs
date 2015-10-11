@@ -1,5 +1,4 @@
 ﻿using NScumm.Core.IO;
-using System.Text;
 
 namespace NScumm.MonoGame.ViewModels
 {
@@ -20,12 +19,13 @@ namespace NScumm.MonoGame.ViewModels
 
         private string GetDescription(GameInfo info)
         {
-            var sbDescription = new StringBuilder(info.Description);
             if (info.Features.HasFlag(GameFeatures.Demo))
             {
-                sbDescription.Append(" (Demo)");
+                var loader = new Windows.ApplicationModel.Resources.ResourceLoader();
+                var description = string.Format(loader.GetString("GameInfoDemo"), info.Description);
+                return description;
             }
-            return sbDescription.ToString();
+            return info.Description;
         }
     }
 }

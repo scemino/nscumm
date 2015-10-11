@@ -75,7 +75,7 @@ namespace NScumm.MonoGame
         {
             Array.Clear(_buffer.Bytes, 0, _buffer.Bytes.Length);
             var available = _audioSampleProvider != null ? _audioSampleProvider.Read(_buffer.Bytes, _buffer.Bytes.Length) : 0;
-            _dsei.SubmitBuffer(_buffer.Bytes, 0, available);
+            _dsei.SubmitBuffer(_buffer.Bytes);
         }
     }
 }

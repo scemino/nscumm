@@ -49,7 +49,7 @@ namespace NScumm.Core.Audio
             // Reallocate temp buffer, if necessary
             if (osamp > _bufferSize)
             {
-                _buffer = new Buffer(osamp * 2).Shorts;
+                _buffer = new short[osamp];
                 _bufferSize = osamp;
             }
 
@@ -73,7 +73,7 @@ namespace NScumm.Core.Audio
 
                 oPos += 2;
             }
-            return oPos;
+            return oPos / 2;
         }
 
         public int Drain(short[] obuf, int vol)

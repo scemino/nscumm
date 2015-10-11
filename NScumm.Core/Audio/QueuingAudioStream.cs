@@ -90,7 +90,7 @@ namespace NScumm.Core
             _stereo = stereo;
         }
 
-        public void QueueAudioStream(IAudioStream stream, bool  disposeAfterUse)
+        public void QueueAudioStream(IAudioStream stream, bool disposeAfterUse)
         {
             Debug.Assert(!_finished);
             if ((stream.Rate != Rate) || (stream.IsStereo != IsStereo))
@@ -126,9 +126,9 @@ namespace NScumm.Core
                 while (samplesDecoded < buffer.Length && _queue.Count != 0)
                 {
                     var stream = _queue.Peek().Stream;
-                    var buf = new Audio.Buffer(count - samplesDecoded);
-                    var read = stream.ReadBuffer(buf.Shorts, count - samplesDecoded);
-                    Array.Copy(buf.Shorts, 0, buffer, samplesDecoded, read);
+                    var buf = new short[count - samplesDecoded];
+                    var read = stream.ReadBuffer(buf, count - samplesDecoded);
+                    Array.Copy(buf, 0, buffer, samplesDecoded, read);
                     samplesDecoded += read;
 
                     if (stream.IsEndOfData)
@@ -144,7 +144,7 @@ namespace NScumm.Core
 
         public bool IsStereo
         {
-            get{ return _stereo; }
+            get { return _stereo; }
         }
 
         public int Rate
@@ -165,7 +165,7 @@ namespace NScumm.Core
 
         public bool IsEndOfStream
         {
-            get{ return _finished && _queue.Count == 0; }
+            get { return _finished && _queue.Count == 0; }
         }
 
         public void Dispose()

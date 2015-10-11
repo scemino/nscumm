@@ -55,7 +55,7 @@ namespace NScumm.Core.Audio
             }
 
             opos = FracOne;
-            inBuf = new Buffer(RateHelper.IntermediateBufferSize * 2).Shorts;
+            inBuf = new short[RateHelper.IntermediateBufferSize];
             // Compute the linear interpolation increment.
             // This will overflow if inrate >= 2^16, and underflow if outrate >= 2^16.
             // Also, if the quotient of the two rate becomes too small / too big, that
@@ -120,7 +120,7 @@ namespace NScumm.Core.Audio
                     opos += oposInc;
                 }
             }
-            return obufPos;
+            return obufPos / 2;
 
         }
 

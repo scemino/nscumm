@@ -11,7 +11,8 @@
     "Rx-WinRT": "2.3.0-beta2",
     "Rx-WPF": "2.3.0-beta2",
     "SharpDX.Direct2D1": "3.0.0-alpha02",
-    "SharpDX.Direct3D11": "3.0.0-alpha02"
+    "SharpDX.Direct3D11": "3.0.0-alpha02",
+    "SharpDX.XAudio2": "3.0.0-beta01"
   },
   "frameworks": {
     "uap10.0": {}

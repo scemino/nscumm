@@ -40,11 +40,7 @@ namespace NScumm.MonoGame
         XnaInputManager inputManager;
         TimeSpan tsToWait;
         Vector2 cursorPos;
-#if WINDOWS_UWP
-        NullMixer audioDriver;
-#else
         IAudioOutput audioDriver;
-#endif
         Game game;
         bool contentLoaded;
         private SpriteFont font;
@@ -75,10 +71,9 @@ namespace NScumm.MonoGame
                 inputManager = new XnaInputManager(game.Window, info.Game.Width, info.Game.Height);
                 gfx = new XnaGraphicsManager(info.Game.Width, info.Game.Height, info.Game.PixelFormat, game.Window, ScreenManager.GraphicsDevice);
 #if WINDOWS_UWP
-                audioDriver = new NullMixer();
+                audioDriver = new XAudio2Mixer();
 #else
                 audioDriver = new XnaAudioDriver();
-                //audioDriver = new NullMixer();
 #endif
                 audioDriver.Play();
 

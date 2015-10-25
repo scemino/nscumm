@@ -61,13 +61,15 @@
                         <Setter Target="AdMediator_0A5E56.(Grid.Row)" Value="2"/>
                         <Setter Target="AdMediator_0A5E56.(Grid.Column)" Value="1"/>
                         <Setter Target="AdMediator_0A5E56.(Control.Width)" Value="300"/>
+                        <Setter Target="AdMediator_0A5E56.(Control.Height)" Value="250"/>
                     </VisualState.Setters>
                 </VisualState>
                 <VisualState x:Name="narrowView">
                     <VisualState.Setters>
                         <Setter Target="AdMediator_0A5E56.(Grid.Row)" Value="3"/>
                         <Setter Target="AdMediator_0A5E56.(Grid.Column)" Value="0"/>
-                        <Setter Target="AdMediator_0A5E56.(Control.Height)" Value="80"/>
+                        <Setter Target="AdMediator_0A5E56.(Control.Width)" Value="300"/>
+                        <Setter Target="AdMediator_0A5E56.(Control.Height)" Value="50"/>
                     </VisualState.Setters>
                     <VisualState.StateTriggers>
                         <AdaptiveTrigger MinWindowWidth="0" />

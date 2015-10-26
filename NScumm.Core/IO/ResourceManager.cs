@@ -582,44 +582,36 @@ namespace NScumm.Core.IO
             {
                 LoadRoom(roomNum);
             }
-
-            return _rooms[roomNum];
+            return _rooms.ContainsKey(roomNum) ? _rooms[roomNum] : null;
         }
 
         public byte[] GetCostumeData(int id)
         {
-            if (!_costumes.ContainsKey(id))
-            {
-                LoadCostume(id);
-            }
-            return _costumes[id];
+            return GetResource(_costumes, id, () => LoadCostume(id));
         }
 
         public byte[] GetCharsetData(byte id)
         {
-            if (!_charsets.ContainsKey(id))
-            {
-                _charsets[id] = ReadCharset(id);
-            }
-            return _charsets[id];
+            return GetResource(_charsets, id, () => _charsets[id] = ReadCharset(id));
         }
 
         public byte[] GetScript(int id)
         {
-            if (!_scripts.ContainsKey(id))
-            {
-                LoadScript(id);
-            }
-            return _scripts[id];
+            return GetResource(_scripts, id, () => LoadScript(id));
         }
 
         public byte[] GetSound(Audio.MusicDriverTypes music, int id)
         {
-            if (!_sounds.ContainsKey(id))
+            return GetResource(_sounds, id, () => LoadSound(music, id));
+        }
+
+        byte[] GetResource(Dictionary<int, byte[]> resources, int id, Action loadResource)
+        {
+            if (!resources.ContainsKey(id))
             {
-                LoadSound(music, id);
+                loadResource();
             }
-            return _sounds.ContainsKey(id) ? _sounds[id] : null;
+            return resources.ContainsKey(id) ? resources[id] : null;
         }
 
         protected abstract ResourceFile OpenRoom(byte roomIndex);

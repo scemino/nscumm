@@ -24,6 +24,7 @@ using NScumm.Core.Audio;
 using NScumm.Core.IO;
 using System.Diagnostics;
 using NScumm.Core.Graphics;
+using System.Linq;
 
 namespace NScumm.Core.Smush
 {
@@ -31,12 +32,12 @@ namespace NScumm.Core.Smush
     {
         public int Width
         {
-            get{ return _width; }
+            get { return _width; }
         }
 
         public int Height
         {
-            get{ return _height; }
+            get { return _height; }
         }
 
         public SmushPlayer(ScummEngine7 scumm)
@@ -125,7 +126,7 @@ namespace NScumm.Core.Smush
                 if (_warpNeeded)
                 {
                     // TODO: vs
-//                    _vm._gfxManager.WarpMouse(_warpX, _warpY);
+                    //                    _vm._gfxManager.WarpMouse(_warpX, _warpY);
                     _warpNeeded = false;
                 }
 
@@ -219,7 +220,7 @@ namespace NScumm.Core.Smush
             {
                 if (!(_vm.Game.Features.HasFlag(GameFeatures.Demo) /*&& (_vm._game.platform == Common::kPlatformDOS)*/))
                 {
-                    var ft_fonts = new []
+                    var ft_fonts = new[]
                     {
                         "scummfnt.nut",
                         "techfnt.nut",
@@ -246,7 +247,7 @@ namespace NScumm.Core.Smush
             {
                 int numFonts = _vm.Game.Features.HasFlag(GameFeatures.Demo) ? 4 : 5;
                 Debug.Assert(font >= 0 && font < numFonts);
-            
+
                 var file_font = string.Format("font{0}.nut", font);
                 _sf[font] = new SmushFont(_vm, file_font, false, true);
             }
@@ -303,7 +304,7 @@ namespace NScumm.Core.Smush
                     {
                         Debug.Assert(_seekPos > 8);
                         // In this case we need to get palette and number of frames
-                        subType = System.Text.Encoding.UTF8.GetString(_base.ReadBytes(4));
+                        subType = _base.ReadBytes(4).ToText();
                         subSize = _base.ReadUInt32BigEndian();
                         subOffset = _base.BaseStream.Position;
                         Debug.Assert(subType == "AHDR");
@@ -343,11 +344,11 @@ namespace NScumm.Core.Smush
                 return;
             }
 
-            subType = System.Text.Encoding.UTF8.GetString(_base.ReadBytes(4));
+            subType = _base.ReadBytes(4).ToText();
             subSize = _base.ReadUInt32BigEndian();
             subOffset = _base.BaseStream.Position;
 
-//            Debug.WriteLine("Chunk: {0} at {1}", subType, subOffset);
+            //            Debug.WriteLine("Chunk: {0} at {1}", subType, subOffset);
 
             switch (subType)
             {
@@ -371,7 +372,7 @@ namespace NScumm.Core.Smush
 
         void HandleFrame(uint frameSize, BinaryReader b)
         {
-//            Debug.WriteLine("SmushPlayer.HandleFrame({0})", _frame);
+            //            Debug.WriteLine("SmushPlayer.HandleFrame({0})", _frame);
             _skipNext = false;
 
             if (_insanity)
@@ -381,7 +382,7 @@ namespace NScumm.Core.Smush
 
             while (frameSize > 0)
             {
-                var subType = System.Text.Encoding.UTF8.GetString(_base.ReadBytes(4));
+                var subType = _base.ReadBytes(4).ToText();
                 var subSize = b.ReadUInt32BigEndian();
                 var subOffset = b.BaseStream.Position;
                 switch (subType)
@@ -451,14 +452,14 @@ namespace NScumm.Core.Smush
 
         void HandleStore(uint subSize, BinaryReader b)
         {
-//            Debug.WriteLine("SmushPlayer::HandleStore()");
+            //            Debug.WriteLine("SmushPlayer::HandleStore()");
             Debug.Assert(subSize >= 4);
             _storeFrame = true;
         }
 
         void HandleFetch(uint subSize, BinaryReader b)
         {
-//            Debug.WriteLine("SmushPlayer::HandleFetch()");
+            //            Debug.WriteLine("SmushPlayer::HandleFetch()");
             Debug.Assert(subSize >= 6);
 
             if (_frameBuffer != null)
@@ -469,7 +470,7 @@ namespace NScumm.Core.Smush
 
         void HandleDeltaPalette(uint subSize, BinaryReader b)
         {
-//            Debug.WriteLine("SmushPlayer.HandleDeltaPalette()");
+            //            Debug.WriteLine("SmushPlayer.HandleDeltaPalette()");
 
             if (subSize == 0x300 * 3 + 4)
             {
@@ -508,7 +509,7 @@ namespace NScumm.Core.Smush
 
         void HandleIACT(uint subSize, BinaryReader b)
         {
-//            Debug.WriteLine("SmushPlayer::IACT()");
+            //            Debug.WriteLine("SmushPlayer::IACT()");
             Debug.Assert(subSize >= 8);
 
             int code = b.ReadUInt16();
@@ -561,11 +562,11 @@ namespace NScumm.Core.Smush
                 {
                     track = track_id + 600;
                 }
-//                else
-//                {
-//                    Debug.Fail(string.Format("SmushPlayer::handleIACT(): bad track_flags: {0}", track_flags));
-//                }
-//                Debug.WriteLine("SmushPlayer::handleIACT(): {0}, {1}, {2}", track, index, track_flags);
+                //                else
+                //                {
+                //                    Debug.Fail(string.Format("SmushPlayer::handleIACT(): bad track_flags: {0}", track_flags));
+                //                }
+                //                Debug.WriteLine("SmushPlayer::handleIACT(): {0}, {1}, {2}", track, index, track_flags);
 
                 var c = _smixer.FindChannel(track);
                 if (c == null)
@@ -688,7 +689,7 @@ namespace NScumm.Core.Smush
             string str;
             if (subType == "TEXT")
             {
-                str = System.Text.Encoding.UTF8.GetString(b.ReadBytes((int)(subSize - 16)));
+                str = b.ReadBytes((int)(subSize - 16)).ToWin1252String();
             }
             else
             {
@@ -703,28 +704,16 @@ namespace NScumm.Core.Smush
             // Query ConfMan here. However it may be slower, but
             // player may want to switch the subtitles on or off during the
             // playback. This fixes bug #1550974
-//            if ((!ConfMan.getBool("subtitles")) && ((flags & 8) == 8))
-//                return;
+            //            if ((!ConfMan.getBool("subtitles")) && ((flags & 8) == 8))
+            //                return;
 
-            // TODO: vs
             var sf = GetFont(0);
             int color = 15;
-//            while (*str == '/') {
-//                str++; // For Full Throttle text resources
-//            }
-//
+
             if (_vm.Game.GameId == GameId.CurseOfMonkeyIsland)
             {
                 var transBuf = _vm.TranslateText(System.Text.Encoding.UTF8.GetBytes(str));
-//                while (*str++ != '/')
-//                    ;
                 str = System.Text.Encoding.UTF8.GetString(transBuf);
-
-                // If string2 contains formatting information there probably
-                // wasn't any translation for it in the language.tab file. In
-                // that case, pretend there is no string2.
-//                if (string2[0] == '^')
-//                    string2 = null;
             }
 
             if (str.Length > 0)
@@ -768,39 +757,39 @@ namespace NScumm.Core.Smush
             // We just strip that off and assume that neither font
             // nor font color was altered. Proper fix would be to feed
             // drawString() with each line sequentally
-//            char *string3 = NULL, *sptr2;
-//            const char *sptr;
-//
-//            if (strchr(str, '^')) {
-//                string3 = (char *)malloc(strlen(str) + 1);
-//
-//                for (sptr = str, sptr2 = string3; *sptr;) {
-//                    if (*sptr == '^') {
-//                        switch (sptr[1]) {
-//                            case 'f':
-//                                sptr += 4;
-//                                break;
-//                            case 'c':
-//                                sptr += 5;
-//                                break;
-//                            default:
-//                                error("invalid escape code in text string");
-//                        }
-//                    } else {
-//                        *sptr2++ = *sptr++;
-//                    }
-//                }
-//                *sptr2++ = *sptr++; // copy zero character
-//                str = string3;
-//            }
-//
+            //            char *string3 = NULL, *sptr2;
+            //            const char *sptr;
+            //
+            //            if (strchr(str, '^')) {
+            //                string3 = (char *)malloc(strlen(str) + 1);
+            //
+            //                for (sptr = str, sptr2 = string3; *sptr;) {
+            //                    if (*sptr == '^') {
+            //                        switch (sptr[1]) {
+            //                            case 'f':
+            //                                sptr += 4;
+            //                                break;
+            //                            case 'c':
+            //                                sptr += 5;
+            //                                break;
+            //                            default:
+            //                                error("invalid escape code in text string");
+            //                        }
+            //                    } else {
+            //                        *sptr2++ = *sptr++;
+            //                    }
+            //                }
+            //                *sptr2++ = *sptr++; // copy zero character
+            //                str = string3;
+            //            }
+            //
             Debug.Assert(sf != null);
             sf.Color = (byte)color;
 
-//            if (_vm.Game.GameId == GameId.CurseOfMonkeyIsland && string2 != null)
-//            {
-//                str = System.Text.Encoding.UTF8.GetString(string2);
-//            }
+            //            if (_vm.Game.GameId == GameId.CurseOfMonkeyIsland && string2 != null)
+            //            {
+            //                str = System.Text.Encoding.UTF8.GetString(string2);
+            //            }
 
             // flags:
             // bit 0 - center       1
@@ -839,7 +828,7 @@ namespace NScumm.Core.Smush
 
         void HandleSoundFrame(uint subSize, BinaryReader b)
         {
-//            Debug.WriteLine("SmushPlayer.HandleSoundFrame()");
+            //            Debug.WriteLine("SmushPlayer.HandleSoundFrame()");
 
             int track_id = b.ReadUInt16();
             int index = b.ReadUInt16();
@@ -849,7 +838,7 @@ namespace NScumm.Core.Smush
             int pan = (sbyte)b.ReadByte();
             if (index == 0)
             {
-//                Debug.WriteLine("track_id:{0}, max_frames:{1}, flags:{2}, vol:{3}, pan:{4}", track_id, max_frames, flags, vol, pan);
+                //                Debug.WriteLine("track_id:{0}, max_frames:{1}, flags:{2}, vol:{3}, pan:{4}", track_id, max_frames, flags, vol, pan);
             }
             int size = (int)(subSize - 10);
             HandleSoundBuffer(track_id, index, max_frames, flags, vol, pan, b, size);
@@ -857,7 +846,7 @@ namespace NScumm.Core.Smush
 
         void HandleSoundBuffer(int track_id, int index, int max_frames, int flags, int vol, int pan, BinaryReader b, int size)
         {
-//            Debug.WriteLine("SmushPlayer::handleSoundBuffer({0}, {1})", track_id, index);
+            //            Debug.WriteLine("SmushPlayer::handleSoundBuffer({0}, {1})", track_id, index);
             //  if ((flags & 128) == 128) {
             //      return;
             //  }
@@ -885,7 +874,7 @@ namespace NScumm.Core.Smush
 
         void HandleNewPalette(uint subSize, BinaryReader b)
         {
-//            Debug.WriteLine("SmushPlayer.HandleNewPalette()");
+            //            Debug.WriteLine("SmushPlayer.HandleNewPalette()");
             Debug.Assert(subSize >= 0x300);
 
             if (_skipPalette)
@@ -1028,12 +1017,12 @@ namespace NScumm.Core.Smush
             int end_time, start_time = Environment.TickCount;
             _updateNeeded = true;
             end_time = Environment.TickCount;
-//            Debug.WriteLine("Smush stats: updateScreen( {0} )", end_time - start_time);
+            //            Debug.WriteLine("Smush stats: updateScreen( {0} )", end_time - start_time);
         }
 
         void HandleAnimHeader(uint subSize, BinaryReader b)
         {
-//            Debug.WriteLine("SmushPlayer::HandleAnimHeader()");
+            //            Debug.WriteLine("SmushPlayer::HandleAnimHeader()");
             Debug.Assert(subSize >= 0x300 + 6);
 
             /* _version = */
@@ -1133,7 +1122,7 @@ namespace NScumm.Core.Smush
 
         TrsFile GetStrings(ScummEngine vm, string file, bool isEncoded)
         {
-//            Debug.WriteLine("trying to read text resources from {0}", file);
+            //            Debug.WriteLine("trying to read text resources from {0}", file);
             var filename = ScummHelper.LocatePath(ServiceLocator.FileStorage.GetDirectoryName(_vm.Game.Path), ServiceLocator.FileStorage.GetFileName(file));
             return filename != null ? isEncoded ? TrsFile.LoadEncoded(filename) : TrsFile.Load(filename) : null;
         }

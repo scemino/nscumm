@@ -33,6 +33,14 @@ namespace NScumm.Core
             return encoding.GetString(bytes, 0, bytes.Length);
         }
 
+        public static string ToWin1252String(this byte[] bytes)
+        {
+            if (bytes == null)
+                return null;
+            var chars = bytes.Select(c => (char)c).ToArray();
+            return new string(chars);
+        }
+
         public static void ForEach<T>(this T[] array, Action<T> action)
         {
             foreach (var item in array)

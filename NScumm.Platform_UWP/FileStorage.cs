@@ -30,6 +30,7 @@ namespace NScumm
 
         public IEnumerable<string> EnumerateFiles(string path, string searchPattern)
         {
+            if (path == "$plugins") return new[] { "$sky" };
             var regex = new Regex(WildcardToRegex(searchPattern));
             return EnumerateFiles(path).Where(f => regex.IsMatch(Path.GetFileName(f)));
         }
@@ -52,6 +53,12 @@ namespace NScumm
         public bool FileExists(string path)
         {
             return EnumerateFiles(GetDirectoryName(path)).Any(f => StringComparer.OrdinalIgnoreCase.Equals(f, path));
+        }
+
+        public bool DirectoryExists(string path)
+        {
+            if (path == "$plugins") return true;
+            return Directory.Exists(path);
         }
 
         public string GetDirectoryName(string path)
@@ -113,7 +120,7 @@ namespace NScumm
                 folder.CreateFileAsync(Path.GetFileName(path)).AsTask().ConfigureAwait(false).GetAwaiter().GetResult();
             }
             var file = StorageFile.GetFileFromPathAsync(path).AsTask().ConfigureAwait(false).GetAwaiter().GetResult();
-                
+
             var stream = file.OpenStreamForWriteAsync().ConfigureAwait(false).GetAwaiter().GetResult();
             return stream;
         }

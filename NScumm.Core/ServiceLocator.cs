@@ -21,6 +21,7 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace NScumm.Core
 {
@@ -52,6 +53,8 @@ namespace NScumm.Core
 
         bool FileExists(string path);
 
+        bool DirectoryExists(string path);
+
         Stream OpenFileRead(string path);
 
         Stream OpenFileWrite(string path);
@@ -66,6 +69,16 @@ namespace NScumm.Core
         void Sleep(int timeInMs);
 
         object ToStructure(byte[] data, int offset, Type type);
+
+        Assembly LoadAssembly(string dll);
+    }
+
+    public static class PlatformExtension
+    {
+        public static T ToStructure<T>(this IPlatform platform, byte[] data, int offset)
+        {
+            return (T)platform.ToStructure(data, offset, typeof(T));
+        }
     }
 
     public interface ITraceFactory

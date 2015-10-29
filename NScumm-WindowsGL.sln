@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.22823.1
+VisualStudioVersion = 14.0.23107.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NScumm.Core", "NScumm.Core\NScumm.Core.csproj", "{8E7A9E5B-D7EB-4DA1-8EE7-A5D8DE202372}"
 EndProject
@@ -19,6 +19,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NScumm.MonoGame", "NScumm.MonoGame\Platforms\WindowsGL\NScumm.MonoGame.csproj", "{B1F1416B-C52A-4CE5-AF06-C960F5165784}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NScumm.Core.Tests", "NScumm.Core.Tests\NScumm.Core.Tests.csproj", "{2F99D225-624B-43E1-9758-C8B19E5BE6F9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NScumm.Sky", "NScumm.Sky\NScumm.Sky\NScumm.Sky.csproj", "{8740A0CD-2613-4354-9506-35035A735962}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -100,6 +102,18 @@ Global
 		{2F99D225-624B-43E1-9758-C8B19E5BE6F9}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{2F99D225-624B-43E1-9758-C8B19E5BE6F9}.Release|x86.ActiveCfg = Release|Any CPU
 		{2F99D225-624B-43E1-9758-C8B19E5BE6F9}.Release|x86.Build.0 = Release|Any CPU
+		{8740A0CD-2613-4354-9506-35035A735962}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8740A0CD-2613-4354-9506-35035A735962}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8740A0CD-2613-4354-9506-35035A735962}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{8740A0CD-2613-4354-9506-35035A735962}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{8740A0CD-2613-4354-9506-35035A735962}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{8740A0CD-2613-4354-9506-35035A735962}.Debug|x86.Build.0 = Debug|Any CPU
+		{8740A0CD-2613-4354-9506-35035A735962}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8740A0CD-2613-4354-9506-35035A735962}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8740A0CD-2613-4354-9506-35035A735962}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{8740A0CD-2613-4354-9506-35035A735962}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{8740A0CD-2613-4354-9506-35035A735962}.Release|x86.ActiveCfg = Release|Any CPU
+		{8740A0CD-2613-4354-9506-35035A735962}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

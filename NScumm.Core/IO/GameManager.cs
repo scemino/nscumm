@@ -22,6 +22,7 @@ using System.Linq;
 using System.Xml.Linq;
 using NScumm.Core.Audio;
 using NScumm.Core.Graphics;
+using NScumm.Core.Input;
 
 namespace NScumm.Core.IO
 {
@@ -82,9 +83,32 @@ namespace NScumm.Core.IO
         Unknown = -1
     }
 
+    public class ScummMetaEngine : IMetaEngine
+    {
+        private GameManager _gm;
+
+        public ScummMetaEngine()
+        {
+            var resStream = typeof(GameManager).Assembly.GetManifestResourceStream(typeof(GameManager), "Nscumm.xml");
+            _gm = GameManager.Create(resStream);
+        }
+
+        public IEngine Create(GameSettings settings, IGraphicsManager gfxManager, IInputManager inputManager, IAudioOutput output, bool debugMode = false)
+        {
+            return ScummEngine.Create(settings, gfxManager, inputManager, output, debugMode);
+        }
+
+        public GameDetected DetectGame(string path)
+        {
+            return new GameDetected(_gm.GetInfo(path), this);
+        }
+    }
+
     public class GameSettings
     {
-        public GameInfo Game { get; private set; }
+        public IGameDescriptor Game { get; private set; }
+
+        public IMetaEngine MetaEngine { get; private set; }
 
         public string AudioDevice { get; set; }
 
@@ -92,14 +116,15 @@ namespace NScumm.Core.IO
 
         public int BootParam { get; set; }
 
-        public GameSettings(GameInfo game)
+        public GameSettings(IGameDescriptor game, IMetaEngine engine)
         {
             Game = game;
             AudioDevice = "adlib";
+            MetaEngine = engine;
         }
     }
 
-    public class GameInfo
+    public class GameInfo : IGameDescriptor
     {
         public Platform Platform { get; set; }
 

@@ -125,6 +125,10 @@
       <Project>{8e7a9e5b-d7eb-4da1-8ee7-a5d8de202372}</Project>
       <Name>NScumm.Core</Name>
     </ProjectReference>
+    <ProjectReference Include="..\NScumm.Sky\NScumm.Sky\NScumm.Sky.csproj">
+      <Project>{8740a0cd-2613-4354-9506-35035a735962}</Project>
+      <Name>NScumm.Sky</Name>
+    </ProjectReference>
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>

@@ -180,7 +180,7 @@ namespace NScumm.Core
             ResetVerbs();
         }
 
-        public override TimeSpan Loop()
+        protected override TimeSpan Loop()
         {
             Variables[VariableIsSoundRunning.Value] = (Sound.LastSound != 0) && Sound.IsSoundRunning(Sound.LastSound) ? 1 : 0;
 

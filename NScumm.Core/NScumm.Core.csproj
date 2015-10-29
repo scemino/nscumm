@@ -35,6 +35,7 @@
     <Compile Include="Audio\SampleProviders\MonoToStereoAudioSampleProvider16.cs" />
     <Compile Include="Audio\SampleProviders\ResampleAudioSampleProvider.cs" />
     <Compile Include="IO\ChunkIterator3.cs" />
+    <Compile Include="IO\GameDetector.cs" />
     <Compile Include="IO\XorStream.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Actor.cs" />

@@ -24,6 +24,11 @@ namespace NScumm.Core.Tests.IO
                 throw new NotImplementedException();
             }
 
+            public bool DirectoryExists(string path)
+            {
+                throw new NotImplementedException();
+            }
+
             public IEnumerable<string> EnumerateFiles(string path)
             {
                 throw new NotImplementedException();

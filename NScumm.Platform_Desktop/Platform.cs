@@ -22,11 +22,17 @@ using System;
 using System.Threading;
 using NScumm.Core;
 using System.Runtime.InteropServices;
+using System.Reflection;
 
 namespace NScumm
 {
     public class Platform: IPlatform
     {
+        public Assembly LoadAssembly(string dll)
+        {
+            return Assembly.LoadFile(dll);
+        }
+
         public void Sleep(int timeInMs)
         {
             Thread.Sleep(timeInMs);

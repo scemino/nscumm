@@ -74,16 +74,18 @@ namespace NScumm.MonoGame
                     var path = ScummHelper.NormalizePath(extras[0]);
                     if (File.Exists(path))
                     {
-                        var resStream = typeof(GameManager).Assembly.GetManifestResourceStream(typeof(GameManager), "Nscumm.xml");
-                        var gm = GameManager.Create(resStream);
-                        var info = gm.GetInfo(path);
+                        var gd = new GameDetector(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "plugins"));
+                        var info = gd.DetectGame(path);
+                        //var resStream = typeof(GameManager).Assembly.GetManifestResourceStream(typeof(GameManager), "Nscumm.xml");
+                        //var gm = GameManager.Create(resStream);
+                        //var info = gm.GetInfo(path);
                         if (info == null)
                         {
                             Console.Error.WriteLine("This game is not supported, sorry please contact me if you want to support this game.");
                         }
                         else
                         {
-                            var settings = new GameSettings(info){ AudioDevice = musicDriver, CopyProtection = copyProtection, BootParam = bootParam };
+                            var settings = new GameSettings(info.Game, info.Engine) { AudioDevice = musicDriver, CopyProtection = copyProtection, BootParam = bootParam };
                             var game = new ScummGame(settings);
                             game.Run();
                         }

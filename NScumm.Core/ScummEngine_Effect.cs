@@ -52,7 +52,7 @@ namespace NScumm.Core
             switch (effect)
             {
                 case 0:
-				// seems to do nothing
+                    // seems to do nothing
                     break;
 
                 case 1:
@@ -61,12 +61,12 @@ namespace NScumm.Core
                 case 4:
                 case 5:
                 case 6:
-				// Some of the transition effects won't work properly unless
-				// the screen is marked as clean first. At first I thought I
-				// could safely do this every time fadeIn() was called, but
-				// that broke the FOA intro. Probably other things as well.
-				//
-				// Hopefully it's safe to do it at this point, at least.
+                    // Some of the transition effects won't work properly unless
+                    // the screen is marked as clean first. At first I thought I
+                    // could safely do this every time fadeIn() was called, but
+                    // that broke the FOA intro. Probably other things as well.
+                    //
+                    // Hopefully it's safe to do it at this point, at least.
                     MainVirtScreen.SetDirtyRange(0, 0);
                     DoTransitionEffect(effect - 1);
                     break;
@@ -107,8 +107,8 @@ namespace NScumm.Core
                 Camera.LastPosition.X = Camera.CurrentPosition.X;
 
             if (Game.Version == 3 && _game.Platform == Platform.FMTowns)
-                Gdi.Fill(TextSurface, 
-                    new Rect(0, MainVirtScreen.TopLine * _textSurfaceMultiplier, 
+                Gdi.Fill(TextSurface,
+                    new Rect(0, MainVirtScreen.TopLine * _textSurfaceMultiplier,
                         _textSurface.Pitch, (MainVirtScreen.TopLine + MainVirtScreen.Height) * _textSurfaceMultiplier), 0);
 
             if ((Game.Version == 7 || _screenEffectFlag) && effect != 0)
@@ -134,13 +134,13 @@ namespace NScumm.Core
                         break;
 
                     case 129:
-					// Just blit screen 0 to the display (i.e. display will be black)
+                        // Just blit screen 0 to the display (i.e. display will be black)
                         _mainVirtScreen.SetDirtyRange(0, _mainVirtScreen.Height);
                         UpdateDirtyScreen(_mainVirtScreen);
                         if (_townsScreen != null)
                             _townsScreen.Update();
                         break;
-				
+
                     default:
                         throw new NotImplementedException(string.Format("fadeOut: case {0}", effect));
                 }
@@ -530,7 +530,7 @@ namespace NScumm.Core
             }
         }
 
-        public void WaitForTimer(int msec_delay)
+        void WaitForTimer(int msec_delay)
         {
             //            if (_fastMode & 2)
             //                msec_delay = 0;

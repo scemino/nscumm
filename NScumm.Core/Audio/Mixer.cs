@@ -24,7 +24,7 @@ using NScumm.Core.Audio.SampleProviders;
 
 namespace NScumm.Core.Audio
 {
-    class Mixer: AudioSampleProvider16, IMixer
+    public class Mixer: AudioSampleProvider16, IMixer
     {
         const int NumChannels = 16;
         public const int MaxMixerVolume = 256;

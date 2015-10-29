@@ -168,7 +168,6 @@ namespace NScumm.MonoGame
 
         public override void ExitScreen()
         {
-            screen.IsPaused = false;
             base.ExitScreen();
         }
 

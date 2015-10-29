@@ -40,7 +40,20 @@ namespace NScumm.Core
         Param3 = 0x20,
     }
 
-    public abstract partial class ScummEngine : IEnableTrace
+    public interface IEngine
+    {
+        event EventHandler ShowMenuDialogRequested;
+        bool HasToQuit { get; set; }
+        bool IsPaused { get; set; }
+
+        void Run();
+
+        // TODO: remove this
+        void Load(string filename);
+        void Save(string filename);
+    }
+
+    public abstract partial class ScummEngine : IEnableTrace, IEngine
     {
         #region Constants
 
@@ -162,6 +175,8 @@ namespace NScumm.Core
             private set;
         }
 
+        public bool IsPaused { get; set; }
+
         #endregion Properties
 
         #region Constructor
@@ -169,7 +184,7 @@ namespace NScumm.Core
         public static ScummEngine Create(GameSettings settings, IGraphicsManager gfxManager, IInputManager inputManager, IAudioOutput output, bool debugMode = false)
         {
             ScummEngine engine = null;
-            var game = settings.Game;
+            var game = (GameInfo)settings.Game;
             var mixer = new Mixer(44100);
             output.SetSampleProvider(mixer);
 
@@ -227,7 +242,7 @@ namespace NScumm.Core
         protected ScummEngine(GameSettings settings, IGraphicsManager gfxManager, IInputManager inputManager, IMixer mixer)
         {
             Settings = settings;
-            var game = settings.Game;
+            var game = (GameInfo)settings.Game;
             _resManager = ResourceManager.Load(game);
 
             _game = game;
@@ -588,7 +603,7 @@ namespace NScumm.Core
             }
         }
 
-        void Run()
+        void RunCurrentScript()
         {
             while (CurrentScript != 0xFF)
             {
@@ -597,6 +612,21 @@ namespace NScumm.Core
         }
 
         #endregion Execution
+
+        public void Run()
+        {
+            var tsToWait = RunBootScript(Settings.BootParam);
+            while (!HasToQuit)
+            {
+                if (!IsPaused)
+                {
+                    // Wait...
+                    WaitForTimer((int)tsToWait.TotalMilliseconds);
+                    tsToWait = Loop();
+                    _gfxManager.UpdateScreen();
+                }
+            }
+        }
 
         protected abstract void InitOpCodes();
 
@@ -627,7 +657,7 @@ namespace NScumm.Core
             return timeToWait;
         }
 
-        public virtual TimeSpan Loop()
+        protected virtual TimeSpan Loop()
         {
             var t = DateTime.Now;
             int delta = deltaTicks;

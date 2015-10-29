@@ -35,21 +35,14 @@ namespace NScumm.MonoGame
     {
         readonly GameSettings info;
         SpriteBatch spriteBatch;
-        ScummEngine engine;
+        IEngine engine;
         XnaGraphicsManager gfx;
         XnaInputManager inputManager;
-        TimeSpan tsToWait;
         Vector2 cursorPos;
         IAudioOutput audioDriver;
         Game game;
         bool contentLoaded;
         private SpriteFont font;
-
-        public bool IsPaused
-        {
-            get;
-            set;
-        }
 
         public ScummScreen(Game game, GameSettings info)
         {
@@ -78,7 +71,7 @@ namespace NScumm.MonoGame
                 audioDriver.Play();
 
                 // init engines
-                engine = ScummEngine.Create(info, gfx, inputManager, audioDriver);
+                engine = info.MetaEngine.Create(info, gfx, inputManager, audioDriver);
                 engine.ShowMenuDialogRequested += OnShowMenuDialogRequested;
 
                 Task.Factory.StartNew(() =>
@@ -100,12 +93,12 @@ namespace NScumm.MonoGame
             var isMenuActive = IsMenuActive();
             if (!isMenuActive)
             {
-                IsPaused = true;
+                engine.IsPaused = true;
                 ScreenManager.AddScreen(new MainMenuScreen(this));
             }
             else
             {
-                IsPaused = false;
+                engine.IsPaused = false;
             }
         }
 
@@ -131,7 +124,7 @@ namespace NScumm.MonoGame
             }
             else if (input.IsNewKeyPress(Keys.Space))
             {
-                IsPaused = !IsPaused;
+                engine.IsPaused = !engine.IsPaused;
             }
             else
             {
@@ -143,24 +136,13 @@ namespace NScumm.MonoGame
 
         void UpdateGame()
         {
-            tsToWait = engine.RunBootScript(info.BootParam);
-            while (!engine.HasToQuit)
-            {
-                if (!IsPaused)
-                {
-                    // Wait...
-                    engine.WaitForTimer((int)tsToWait.TotalMilliseconds);
-                    tsToWait = engine.Loop();
-                    gfx.UpdateScreen();
-                }
-            }
+            engine.Run();
             base.ScreenManager.Game.Exit();
         }
 
         public override void Draw(GameTime gameTime)
         {
-            spriteBatch.Begin(SpriteSortMode.BackToFront, BlendState.AlphaBlend,
-                SamplerState.AnisotropicClamp, DepthStencilState.Default, RasterizerState.CullNone);
+            spriteBatch.Begin();
             gfx.DrawScreen(spriteBatch);
             gfx.DrawCursor(spriteBatch, cursorPos);
             spriteBatch.End();

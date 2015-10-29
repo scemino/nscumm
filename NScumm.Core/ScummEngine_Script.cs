@@ -800,7 +800,7 @@ namespace NScumm.Core
 
             CurrentScript = (byte)script;
             ResetScriptPointer();
-            Run();
+            RunCurrentScript();
 
             if (_numNestedScripts > 0)
                 _numNestedScripts--;
@@ -854,7 +854,7 @@ namespace NScumm.Core
                     CurrentScript = (byte)i;
                     UpdateScriptData((ushort)i);
                     ResetScriptPointer();
-                    Run();
+                    RunCurrentScript();
                 }
             }
         }

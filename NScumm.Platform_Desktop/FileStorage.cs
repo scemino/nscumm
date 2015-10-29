@@ -87,6 +87,11 @@ namespace NScumm
             return File.Exists(path);
         }
 
+        public bool DirectoryExists(string path)
+        {
+            return Directory.Exists(path);
+        }
+
         public Stream OpenFileRead(string path)
         {
             return File.OpenRead(path);

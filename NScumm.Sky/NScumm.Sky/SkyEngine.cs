@@ -3,87 +3,13 @@ using NScumm.Core.Audio;
 using NScumm.Core.Graphics;
 using NScumm.Core.Input;
 using NScumm.Core.IO;
+using NScumm.Sky.Music;
 using System;
 
 namespace NScumm.Sky
 {
-    [Flags]
-    enum SystemFlags
+    class SkyEngine : IEngine, IDisposable
     {
-        TIMER = (1 << 0),   // set if timer interrupt redirected
-        GRAPHICS = (1 << 1),    // set if screen is in graphics mode
-        MOUSE = (1 << 2),   // set if mouse handler installed
-        KEYBOARD = (1 << 3),    // set if keyboard interrupt redirected
-        MUSIC_BOARD = (1 << 4), // set if a music board detected
-        ROLAND = (1 << 5),  // set if roland board present
-        ADLIB = (1 << 6),   // set if adlib board present
-        SBLASTER = (1 << 7),    // set if sblaster present
-        TANDY = (1 << 8),   // set if tandy present
-        MUSIC_BIN = (1 << 9),   // set if music driver is loaded
-        PLUS_FX = (1 << 10),    // set if extra fx module needed
-        FX_OFF = (1 << 11), // set if fx disabled
-        MUS_OFF = (1 << 12),    // set if music disabled
-        TIMER_TICK = (1 << 13), // set every timer interupt
-
-        //Status flags
-        CHOOSING = (1 << 14),   // set when choosing text
-        NO_SCROLL = (1 << 15),  // when set don't scroll
-        SPEED = (1 << 16),  // when set allow speed options
-        GAME_RESTORED = (1 << 17),  // set when game restored or restarted
-        REPLAY_RST = (1 << 18), // set when loading restart data (used to stop rewriting of replay file)
-        SPEECH_FILE = (1 << 19),    // set when loading speech file
-        VOC_PLAYING = (1 << 20),    // set when a voc file is playing
-        PlayVocs = (1 << 21),  // set when we want speech instead of text
-        CRIT_ERR = (1 << 22),   // set when critical error routine trapped
-        ALLOW_SPEECH = (1 << 23),   // speech allowes on cd sblaster version
-        AllowText = (1 << 24), // text allowed on cd sblaster version
-        ALLOW_QUICK = (1 << 25),    // when set allow speed playing
-        TEST_DISK = (1 << 26),  // set when loading files
-        MOUSE_LOCKED = (1 << 27)	// set if coordinates are locked
-    }
-
-    class SystemVars
-    {
-        public SystemFlags SystemFlags;
-        public SkyGameVersion GameVersion;
-        public uint MouseFlag;
-        public ushort Language;
-        public uint CurrentPalette;
-        public ushort GameSpeed;
-        public ushort CurrentMusic;
-        public bool PastIntro;
-        public bool Paused;
-
-        private static SystemVars _instance;
-
-        public static SystemVars Instance { get { return _instance ?? (_instance = new SystemVars()); } }
-    }
-
-    interface ISystem
-    {
-        IGraphicsManager GraphicsManager { get; }
-        IInputManager InputManager { get; }
-    }
-
-    class SkySystem : ISystem
-    {
-        public IGraphicsManager GraphicsManager { get; private set; }
-        public IInputManager InputManager { get; private set; }
-
-        public SkySystem(IGraphicsManager graphicsManager, IInputManager inputManager)
-        {
-            GraphicsManager = graphicsManager;
-            InputManager = inputManager;
-        }
-    }
-
-    class SkyEngine : IEngine
-    {
-        private Disk _skyDisk;
-        private SkyCompact _skyCompact;
-        private Screen _skyScreen;
-        private SkySystem _system;
-
         public bool HasToQuit
         {
             get;
@@ -96,17 +22,33 @@ namespace NScumm.Sky
             set;
         }
 
+        private bool IsDemo
+        {
+            get
+            {
+                return SystemVars.Instance.GameVersion.Type.HasFlag(SkyGameType.Demo);
+            }
+        }
+
+        public static byte[][] ItemList
+        {
+            get { return _itemList; }
+            private set { _itemList = value; }
+        }
+
         public event EventHandler ShowMenuDialogRequested;
+
 
         public SkyEngine(GameSettings settings, IGraphicsManager gfxManager, IInputManager inputManager, IAudioOutput output, bool debugMode = false)
         {
             _system = new SkySystem(gfxManager, inputManager);
-            var mixer = new Mixer(44100);
-            output.SetSampleProvider(mixer);
+            _mixer = new Mixer(44100);
+            _mixer.Read(new byte[0], 0);
+            output.SetSampleProvider(_mixer);
 
             var directory = ServiceLocator.FileStorage.GetDirectoryName(settings.Game.Path);
             _skyDisk = new Disk(directory);
-            //_skySound = new Sound(_mixer, _skyDisk, Mixer.MaxChannelVolume);
+            _skySound = new Sound(_mixer, _skyDisk, Mixer.MaxChannelVolume);
 
             SystemVars.Instance.GameVersion = _skyDisk.DetermineGameVersion();
 
@@ -114,7 +56,7 @@ namespace NScumm.Sky
             //if (MidiDriver::getMusicType(dev) == MT_ADLIB)
             //{
             //    _systemVars.systemFlags |= SF_SBLASTER;
-            //    _skyMusic = new AdLibMusic(_mixer, _skyDisk);
+                _skyMusic = new AdLibMusic(_mixer, _skyDisk);
             //}
             //else
             //{
@@ -148,16 +90,62 @@ namespace NScumm.Sky
             SystemVars.Instance.GameSpeed = 80;
 
             _skyCompact = new SkyCompact();
-            //_skyText = new Text(_skyDisk, _skyCompact);
+            _skyText = new Text(_skyDisk, _skyCompact);
             //_skyMouse = new Mouse(_system, _skyDisk, _skyCompact);
             _skyScreen = new Screen(_system, _skyDisk, _skyCompact);
 
             InitVirgin();
+            InitItemList();
+            LoadFixedItems();
+        }
+
+        ~SkyEngine()
+        {
+            Dispose();
+        }
+
+
+        public void Dispose()
+        {
+            if (_skyMusic != null)
+            {
+                _skyMusic.Dispose();
+                _skyMusic = null;
+            }
+            if (_skyDisk != null)
+            {
+                _skyDisk.Dispose();
+                _skyDisk = null;
+            }
         }
 
         public void Run()
         {
-            while (true)
+            //_keyPressed.Reset();
+
+            //ushort result = 0;
+            //if (ConfMan.hasKey("save_slot"))
+            //{
+            //    var saveSlot = (int)ConfigurationManager["save_slot"];
+            //    if (saveSlot >= 0 && saveSlot <= 999)
+            //        result = _skyControl.QuickXRestore((int)ConfigurationManager["save_slot"]);
+            //}
+
+            //if (result != GAME_RESTORED)
+            {
+                bool introSkipped = false;
+                if (SystemVars.Instance.GameVersion.Version.Minor > 272)
+                {
+                    // don't do intro for floppydemos
+                    using (var skyIntro = new Intro(_skyDisk, _skyScreen, _skyMusic, _skySound, _skyText, _mixer, _system))
+                    {
+                        //var floppyIntro = (bool)ConfigurationManager["alt_intro"];
+                        var floppyIntro = false;
+                        introSkipped = !skyIntro.DoIntro(floppyIntro);
+                    }
+                }
+            }
+            while (!HasToQuit)
             {
                 // TODO:
             }
@@ -173,10 +161,52 @@ namespace NScumm.Sky
             throw new NotImplementedException();
         }
 
+
         private void InitVirgin()
         {
             _skyScreen.SetPalette(60111);
             _skyScreen.ShowScreen(60110);
         }
+
+        private void InitItemList()
+        {
+            //See List.asm for (cryptic) item # descriptions
+
+            for (int i = 0; i < 300; i++)
+                ItemList[i] = null;
+        }
+
+        private void LoadFixedItems()
+        {
+            ItemList[49] = _skyDisk.LoadFile(49);
+            ItemList[50] = _skyDisk.LoadFile(50);
+            ItemList[73] = _skyDisk.LoadFile(73);
+            ItemList[262] = _skyDisk.LoadFile(262);
+
+            if (!IsDemo)
+            {
+                ItemList[36] = _skyDisk.LoadFile(36);
+                ItemList[263] = _skyDisk.LoadFile(263);
+                ItemList[264] = _skyDisk.LoadFile(264);
+                ItemList[265] = _skyDisk.LoadFile(265);
+                ItemList[266] = _skyDisk.LoadFile(266);
+                ItemList[267] = _skyDisk.LoadFile(267);
+                ItemList[269] = _skyDisk.LoadFile(269);
+                ItemList[271] = _skyDisk.LoadFile(271);
+                ItemList[272] = _skyDisk.LoadFile(272);
+            }
+        }
+
+
+        private Disk _skyDisk;
+        private SkyCompact _skyCompact;
+        private Screen _skyScreen;
+        private SkySystem _system;
+        private Text _skyText;
+        private MusicBase _skyMusic;
+        private Mixer _mixer;
+        private Sound _skySound;
+
+        static byte[][] _itemList = new byte[300][];
     }
 }

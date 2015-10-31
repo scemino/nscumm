@@ -28,6 +28,7 @@ namespace NScumm.Core.Graphics
         bool IsCursorVisible { get; set; }
 
         Surface Capture();
+        void CopyRectToScreen(byte[] buffer, int startOffset, int sourceStride, int x, int y, int width, int height);
         void CopyRectToScreen(byte[] buffer, int sourceStride, int x, int y, int width, int height);
         void CopyRectToScreen(byte[] buffer, int sourceStride, int x, int y, int dstX, int dstY, int width, int height);
         void UpdateScreen();

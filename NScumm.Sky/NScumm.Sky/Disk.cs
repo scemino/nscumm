@@ -40,7 +40,7 @@ namespace NScumm.Sky
     }
 
     [StructLayout(LayoutKind.Explicit)]
-    struct DataFileHeader
+    class DataFileHeader
     {
         [FieldOffset(0)]
         public ushort flag; // bit 0: set for color data, clear for not

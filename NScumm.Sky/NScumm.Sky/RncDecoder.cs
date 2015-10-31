@@ -5,17 +5,17 @@ namespace NScumm.Sky
 {
     class RncDecoder
     {
-        const uint RNC_SIGNATURE = 0x524E4301; // "RNC\001"
+        const uint RncSignature = 0x524E4301; // "RNC\001"
 
         //other defines
-        const int TABLE_SIZE = (16 * 8);
-        const int MIN_LENGTH = 2;
-        const int HEADER_LEN = 18;
+        const int TableSize = (16 * 8);
+        const int MinLength = 2;
+        const int HeaderLen = 18;
 
         //return codes
-        const int NOT_PACKED = 0;
-        const int PACKED_CRC = -1;
-        const int UNPACKED_CRC = -2;
+        const int NotPacked = 0;
+        const int PackedCrc = -1;
+        const int UnpackedCrc = -2;
 
         ushort[] _rawTable = new ushort[64];
         ushort[] _posTable = new ushort[64];
@@ -49,8 +49,8 @@ namespace NScumm.Sky
             _bitCount = 0;
 
             //Check for "RNC "
-            if (input.ToUInt32BigEndian(inputptr) != RNC_SIGNATURE)
-                return NOT_PACKED;
+            if (input.ToUInt32BigEndian(inputptr) != RncSignature)
+                return NotPacked;
 
             inputptr += 4;
 
@@ -63,12 +63,12 @@ namespace NScumm.Sky
             //read CRC's
             crcUnpacked = input.ToUInt16BigEndian(inputptr); inputptr += 2;
             crcPacked = input.ToUInt16BigEndian(inputptr); inputptr += 2;
-            inputptr = (inputptr + HEADER_LEN - 16);
+            inputptr = (inputptr + HeaderLen - 16);
 
             if (CrcBlock(input, inputptr, packLen) != crcPacked)
-                return PACKED_CRC;
+                return PackedCrc;
 
-            inputptr = offset + HEADER_LEN;
+            inputptr = offset + HeaderLen;
             _src = input;
             _srcPtr = inputptr;
             _dst = output;
@@ -121,7 +121,7 @@ namespace NScumm.Sky
                     if (counts > 1)
                     {
                         inputOffset = InputValue(_posTable) + 1;
-                        inputLength = InputValue(_lenTable) + MIN_LENGTH;
+                        inputLength = InputValue(_lenTable) + MinLength;
 
                         // Don't use Array.Copy here! because input and output overlap.
                         var tmpPtr = (_dstPtr - inputOffset);
@@ -132,7 +132,7 @@ namespace NScumm.Sky
             } while ((--blocks) != 0);
 
             if (CrcBlock(output, outputOffset, unpackLen) != crcUnpacked)
-                return UNPACKED_CRC;
+                return UnpackedCrc;
 
             // all is done..return the amount of unpacked bytes
             return unpackLen;

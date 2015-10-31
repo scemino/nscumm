@@ -79,7 +79,7 @@ namespace NScumm.Core.Audio
                 if (stream == null)
                 {
 //                    Console.Error.WriteLine("stream is null");
-                    return null;
+                    return new SoundHandle();
                 }
 
                 Debug.Assert(_mixerReady);
@@ -98,7 +98,7 @@ namespace NScumm.Core.Audio
                             // try to play QueuingAudioStreams with a sound id.
                             if (autofreeStream)
                                 stream.Dispose();
-                            return null;
+                            return new SoundHandle();
                         }
                 }
 

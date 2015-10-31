@@ -64,20 +64,65 @@ namespace NScumm.Core
         string GetSignature(string path);
     }
 
+    public interface IWrappedObject : IDisposable
+    {
+        object Object { get; }
+    }
+
+    public interface IWrappedObject<T> : IDisposable
+    {
+        T Object { get; }
+    }
+
     public interface IPlatform
     {
         void Sleep(int timeInMs);
 
+        int SizeOf(Type type);
         object ToStructure(byte[] data, int offset, Type type);
+        IWrappedObject WriteStructure(byte[] data, int offset, Type type);
 
         Assembly LoadAssembly(string dll);
     }
 
+    public class WrappedObject<T> : IWrappedObject<T>
+    {
+        private IWrappedObject _wrap;
+
+        public WrappedObject(IWrappedObject wrap)
+        {
+            _wrap = wrap;
+        }
+
+        public T Object
+        {
+            get
+            {
+                return (T)_wrap.Object;
+            }
+        }
+
+        public void Dispose()
+        {
+            _wrap.Dispose();
+        }
+    }
+
     public static class PlatformExtension
     {
+        public static int SizeOf<T>(this IPlatform platform)
+        {
+            return platform.SizeOf(typeof(T));
+        }
+
         public static T ToStructure<T>(this IPlatform platform, byte[] data, int offset)
         {
             return (T)platform.ToStructure(data, offset, typeof(T));
+        }
+
+        public static IWrappedObject<T> WriteStructure<T>(this IPlatform platform, byte[] data, int offset)
+        {
+            return new WrappedObject<T>(platform.WriteStructure(data, offset, typeof(T)));
         }
     }
 

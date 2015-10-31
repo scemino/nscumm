@@ -517,19 +517,19 @@ namespace NScumm.Core
         SoundHandle StartTalkSound(int offset, int b, int mode)
         {
             Stream file;
-            SoundHandle handle = null;
+            SoundHandle handle = new SoundHandle();
             var id = -1;
 
             if (vm.Game.GameId == GameId.CurseOfMonkeyIsland)
             {
                 sfxMode |= mode;
-                return null;
+                return handle;
             }
             else if (vm.Game.GameId == GameId.Dig)
             {
                 sfxMode |= mode;
                 if (!(vm.Game.Features.HasFlag(GameFeatures.Demo)))
-                    return null;
+                    return handle;
                 throw new NotImplementedException();
             }
             else

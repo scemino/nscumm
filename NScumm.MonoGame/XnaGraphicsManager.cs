@@ -59,6 +59,11 @@ namespace NScumm.MonoGame
             }
         }
 
+        public void CopyRectToScreen(byte[] buffer, int startOffset, int sourceStride, int x, int y, int width, int height)
+        {
+            _colorGraphicsManager.CopyRectToScreen(buffer, startOffset, sourceStride, x, y, width, height);
+        }
+
         public void CopyRectToScreen(byte[] buffer, int sourceStride, int x, int y, int width, int height)
         {
             _colorGraphicsManager.CopyRectToScreen(buffer, sourceStride, x, y, width, height);
@@ -153,6 +158,7 @@ namespace NScumm.MonoGame
         interface IColorGraphicsManager
         {
             void UpdateScreen();
+            void CopyRectToScreen(byte[] buffer, int startOffset, int sourceStride, int x, int y, int width, int height);
             void CopyRectToScreen(byte[] buffer, int sourceStride, int x, int y, int width, int height);
             void CopyRectToScreen(byte[] buffer, int sourceStride, int x, int y, int dstX, int dstY, int width, int height);
             void SetCursor(byte[] pixels, int width, int height, Core.Graphics.Point hotspot);
@@ -177,6 +183,17 @@ namespace NScumm.MonoGame
                         var c = _gfxManager._pixels.ToUInt16(w * 2 + h * _gfxManager._width * 2);
                         NScumm.Core.Graphics.ColorHelper.ColorToRGB(c, out r, out g, out b);
                         _gfxManager._colors[w + h * _gfxManager._width] = new Color(r, g, b);
+                    }
+                }
+            }
+
+            public void CopyRectToScreen(byte[] buffer, int startOffset, int sourceStride, int x, int y, int width, int height)
+            {
+                for (int h = 0; h < height; h++)
+                {
+                    for (int w = 0; w < width; w++)
+                    {
+                        _gfxManager._pixels.WriteUInt16(w * 2 + h * _gfxManager._width * 2, buffer.ToUInt16(startOffset + (x + w) * 2 + (h + y) * sourceStride));
                     }
                 }
             }
@@ -251,6 +268,17 @@ namespace NScumm.MonoGame
                 }
             }
 
+            public void CopyRectToScreen(byte[] buffer, int startOffset, int sourceStride, int x, int y, int width, int height)
+            {
+                for (int h = 0; h < height; h++)
+                {
+                    for (int w = 0; w < width; w++)
+                    {
+                        _gfxManager._pixels[x + w + (y + h) * _gfxManager._width] = buffer[startOffset + w + h * sourceStride];
+                    }
+                }
+            }
+
             public void CopyRectToScreen(byte[] buffer, int sourceStride, int x, int y, int width, int height)
             {
                 for (int h = 0; h < height; h++)
@@ -309,7 +337,7 @@ namespace NScumm.MonoGame
         object _gate = new object();
         Color[] _colors;
         GameWindow _window;
-        IColorGraphicsManager _colorGraphicsManager; 
+        IColorGraphicsManager _colorGraphicsManager;
         #endregion
     }
 }

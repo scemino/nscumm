@@ -4,6 +4,7 @@ using System;
 using NScumm.Core.Audio;
 using NScumm.Core.Audio.Decoders;
 using System.IO;
+using NScumm.Core.Input;
 
 namespace NScumm.Sky
 {
@@ -29,7 +30,7 @@ namespace NScumm.Sky
         {
             if (_skyScreen.SequenceRunning())
                 _skyScreen.StopSequence();
-            //_mixer.StopID(SOUND_BG);
+            _mixer.StopID(Sound.SOUND_BG);
         }
 
         public bool DoIntro(bool floppyIntro)
@@ -56,10 +57,7 @@ namespace NScumm.Sky
                     return false;
             }
 
-            if (floppyIntro)
-                seqData = _floppyIntroSeq;
-            //else
-            //    seqData = _cdIntroSeq;
+            seqData = floppyIntro ? _floppyIntroSeq : _cdIntroSeq;
 
             i = 0;
             while (seqData[i] != SEQEND)
@@ -307,25 +305,19 @@ namespace NScumm.Sky
 
         private bool EscDelay(int msecs)
         {
-            //Common::EventManager* eventMan = _system->getEventManager();
-            //Common::Event event;
-
+            var im = _system.InputManager;
+            
             if (_relDelay == 0) // first call, init with system time
                 _relDelay = Environment.TickCount;
 
             _relDelay += msecs; // now wait until Environment.TickCount >= _relDelay
 
-            int nDelay = 0;
+            int nDelay;
             do
             {
-                //           while (eventMan->pollEvent(event)) {
-                //       if (event.type == Common::EVENT_KEYDOWN) {
-                //       if (event.kbd.keycode == Common::KEYCODE_ESCAPE)
-                //return false;
-                //   } else if (event.type == Common::EVENT_QUIT || event.type == Common::EVENT_RTL) {
-                //       return false;
-                //   }
-                //   }
+                if (im.GetState().IsKeyDown(KeyCode.Escape))
+                    return false;
+
                 nDelay = _relDelay - Environment.TickCount;
                 if (nDelay < 0)
                     nDelay = 0;

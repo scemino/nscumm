@@ -1,4 +1,5 @@
 ﻿using NScumm.Core;
+using System;
 
 namespace NScumm.Sky
 {
@@ -11,6 +12,12 @@ namespace NScumm.Sky
         {
             get { return _data[_offset]; }
             set { _data[_offset] = value; }
+        }
+
+        public int Offset
+        {
+            get { return _offset; }
+            set { _offset = value; }
         }
 
         public byte this[int index]
@@ -33,20 +40,26 @@ namespace NScumm.Sky
 
         public ushort Value
         {
-            get { return _data.ToUInt16(_offset); }
-            set { _data.WriteUInt16(_offset, value); }
+            get { return _data.ToUInt16(Offset); }
+            set { _data.WriteUInt16(Offset, value); }
+        }
+
+        public int Offset
+        {
+            get { return _offset; }
+            set { _offset = value; }
         }
 
         public ushort this[int index]
         {
-            get { return _data.ToUInt16(_offset + index * 2); }
-            set { _data.WriteUInt16(_offset + index * 2, value); }
+            get { return _data.ToUInt16(Offset + index * 2); }
+            set { _data.WriteUInt16(Offset + index * 2, value); }
         }
 
         public UShortAccess(byte[] data, int offset)
         {
             _data = data;
-            _offset = offset;
+            Offset = offset;
         }
     }
 
@@ -71,6 +84,24 @@ namespace NScumm.Sky
             _size = ServiceLocator.Platform.SizeOf<T>();
             _data = data;
             _offset = offset;
+        }
+    }
+
+    class FieldAccess<T>
+    {
+        private Func<T> _getField;
+        private Action<T> _setField;
+
+        public T Field
+        {
+            get { return _getField(); }
+            set { _setField(value); }
+        }
+
+        public FieldAccess(Func<T> get, Action<T> set)
+        {
+            _getField = get;
+            _setField = set;
         }
     }
 }

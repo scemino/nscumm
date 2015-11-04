@@ -22,7 +22,7 @@ namespace NScumm.Sky
             set;
         }
 
-        private bool IsDemo
+        public static bool IsDemo
         {
             get
             {
@@ -56,7 +56,7 @@ namespace NScumm.Sky
             //if (MidiDriver::getMusicType(dev) == MT_ADLIB)
             //{
             //    _systemVars.systemFlags |= SF_SBLASTER;
-                _skyMusic = new AdLibMusic(_mixer, _skyDisk);
+            _skyMusic = new AdLibMusic(_mixer, _skyDisk);
             //}
             //else
             //{
@@ -91,12 +91,26 @@ namespace NScumm.Sky
 
             _skyCompact = new SkyCompact();
             _skyText = new Text(_skyDisk, _skyCompact);
-            //_skyMouse = new Mouse(_system, _skyDisk, _skyCompact);
+            _skyMouse = new Mouse(_system, _skyDisk, _skyCompact);
             _skyScreen = new Screen(_system, _skyDisk, _skyCompact);
 
             InitVirgin();
             InitItemList();
             LoadFixedItems();
+            _skyLogic = new Logic(_skyCompact, _skyScreen, _skyDisk, _skyText, _skyMusic, _skyMouse, _skySound);
+            _skyMouse.Logic = _skyLogic;
+            _skyScreen.Logic = _skyLogic;
+
+            _skyControl = new Control(/*_saveFileMan,*/ _skyScreen, _skyDisk, _skyMouse, _skyText, _skyMusic, _skyLogic, _skySound, _skyCompact, _system);
+            _skyLogic.Control = _skyControl;
+
+            // TODO: language
+
+            // TODO: Setup mixer
+            //SyncSoundSettings();
+
+            // TODO: debugger
+            //_debugger = new Debugger(_skyLogic, _skyMouse, _skyScreen, _skyCompact);
         }
 
         ~SkyEngine()
@@ -123,7 +137,7 @@ namespace NScumm.Sky
         {
             //_keyPressed.Reset();
 
-            //ushort result = 0;
+            ushort result = 0;
             //if (ConfMan.hasKey("save_slot"))
             //{
             //    var saveSlot = (int)ConfigurationManager["save_slot"];
@@ -131,7 +145,7 @@ namespace NScumm.Sky
             //        result = _skyControl.QuickXRestore((int)ConfigurationManager["save_slot"]);
             //}
 
-            //if (result != GAME_RESTORED)
+            if (result != Control.GameRestored)
             {
                 bool introSkipped = false;
                 if (SystemVars.Instance.GameVersion.Version.Minor > 272)
@@ -144,21 +158,148 @@ namespace NScumm.Sky
                         introSkipped = !skyIntro.DoIntro(floppyIntro);
                     }
                 }
+
+                if (!HasToQuit)
+                {
+                    // restartGame() takes us to the first scene, without showing the
+                    // initial animation where Foster is being chased. initScreen0()
+                    // shows the first scene together with that animation. We can't
+                    // call both, as they both load the same scene.
+                    if (introSkipped)
+                        _skyControl.RestartGame();
+                    else
+                        _skyLogic.InitScreen0();
+                }
             }
+
+            _lastSaveTime = Environment.TickCount;
+
+            var delayCount = Environment.TickCount;
             while (!HasToQuit)
             {
-                // TODO:
+                // TODO: _debugger->onFrame();
+
+                // TODO: autosave
+                //if (shouldPerformAutoSave(_lastSaveTime))
+                //{
+                //    if (_skyControl->loadSaveAllowed())
+                //    {
+                //        _lastSaveTime = _system->getMillis();
+                //        _skyControl->doAutoSave();
+                //    }
+                //    else
+                //        _lastSaveTime += 30 * 1000; // try again in 30 secs
+                //}
+                _skySound.CheckFxQueue();
+                _skyMouse.MouseEngine();
+                HandleKey();
+                if (SystemVars.Instance.Paused)
+                {
+                    do
+                    {
+                        _system.GraphicsManager.UpdateScreen();
+                        Delay(50);
+                        HandleKey();
+                    } while (SystemVars.Instance.Paused);
+                    delayCount = Environment.TickCount;
+                }
+
+                _skyLogic.Engine();
+                _skyScreen.ProcessSequence();
+                _skyScreen.Recreate();
+                _skyScreen.SpriteEngine();
+
+                //if (_debugger->showGrid())
+                //{
+                //    uint8* grid = _skyLogic->_skyGrid->giveGrid(Logic::_scriptVariables[SCREEN]);
+                //    if (grid)
+                //    {
+                //        _skyScreen->showGrid(grid);
+                //        _skyScreen->forceRefresh();
+                //    }
+                //}
+                _skyScreen.Flip();
+
+                //if (_fastMode & 2)
+                //    Delay(0);
+                //else if (_fastMode & 1)
+                //    Delay(10);
+                //else
+                {
+                    delayCount += SystemVars.Instance.GameSpeed;
+                    int needDelay = delayCount - Environment.TickCount;
+                    if ((needDelay < 0) || (needDelay > SystemVars.Instance.GameSpeed))
+                    {
+                        needDelay = 0;
+                        delayCount = Environment.TickCount;
+                    }
+                    Delay(needDelay);
+                }
             }
+
+            _skyControl.ShowGameQuitMsg();
+            _skyMusic.StopMusic();
+            //ConfMan.flushToDisk();
+            //delay(1500);
+        }
+
+        private void Delay(int amount)
+        {
+            //Common::Event event;
+
+            int start = Environment.TickCount;
+            //_keyPressed.reset();
+
+            if (amount < 0)
+                amount = 0;
+
+            do
+            {
+                //           while (_eventMan->pollEvent(event)) {
+                //           switch (event.type) {
+                //		case Common::EVENT_KEYDOWN:
+                //			_keyPressed = event.kbd;
+                //			break;
+                //		case Common::EVENT_MOUSEMOVE:
+                //			if (!(_systemVars.systemFlags & SF_MOUSE_LOCKED))
+                //				_skyMouse->mouseMoved(event.mouse.x, event.mouse.y);
+                //			break;
+                //		case Common::EVENT_LBUTTONDOWN:
+                //			if (!(_systemVars.systemFlags & SF_MOUSE_LOCKED))
+                //				_skyMouse->mouseMoved(event.mouse.x, event.mouse.y);
+                //       _skyMouse->buttonPressed(2);
+                //			break;
+                //		case Common::EVENT_RBUTTONDOWN:
+                //			if (!(_systemVars.systemFlags & SF_MOUSE_LOCKED))
+                //				_skyMouse->mouseMoved(event.mouse.x, event.mouse.y);
+                //       _skyMouse->buttonPressed(1);
+                //			break;
+                //		default:
+                //			break;
+                //       }
+                //   }
+
+                _system.GraphicsManager.UpdateScreen();
+
+                if (amount > 0)
+                    ServiceLocator.Platform.Sleep((amount > 10) ? 10 : amount);
+
+            } while (Environment.TickCount < start + amount);
+        }
+
+        private void HandleKey()
+        {
+            // TODO: HandleKey
         }
 
         public void Load(string filename)
         {
-            throw new NotImplementedException();
+            throw new NotImplementedException("Load game not implemented");
         }
 
         public void Save(string filename)
         {
-            throw new NotImplementedException();
+            throw new NotImplementedException("Save game not implemented");
         }
 
 
@@ -206,7 +347,11 @@ namespace NScumm.Sky
         private MusicBase _skyMusic;
         private Mixer _mixer;
         private Sound _skySound;
+        private Control _skyControl;
+        private Logic _skyLogic;
 
         static byte[][] _itemList = new byte[300][];
+        private Mouse _skyMouse;
+        private int _lastSaveTime;
     }
 }

@@ -1,15 +1,13 @@
-﻿using NScumm.Core;
-using NScumm.Core.IO;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
+using NScumm.Core;
 
 namespace NScumm.Sky
 {
     [Flags]
-    enum SkyGameType
+    internal enum SkyGameType
     {
         PcGamer = 0x01,
         Floppy = 0x02,
@@ -19,66 +17,69 @@ namespace NScumm.Sky
         German = 0x20
     }
 
-    class SkyGameVersion
+    internal class SkyGameVersion
     {
-        public SkyGameType Type { get; private set; }
-        public Version Version { get; private set; }
-
         public SkyGameVersion(SkyGameType type, Version version)
         {
             Type = type;
             Version = version;
         }
+
+        public SkyGameType Type { get; private set; }
+        public Version Version { get; }
     }
 
-    class DiskEntry
+    internal class DiskEntry
     {
-        public int Offset;
         public bool HasHeader;
         public bool IsCompressed;
+        public int Offset;
         public int Size;
     }
 
     [StructLayout(LayoutKind.Explicit)]
-    class DataFileHeader
+    internal class DataFileHeader
     {
-        [FieldOffset(0)]
-        public ushort flag; // bit 0: set for color data, clear for not
-                            // bit 1: set for compressed, clear for uncompressed
-                            // bit 2: set for 32 colors, clear for 16 colors
-        [FieldOffset(2)]
-        public ushort s_x;
-        [FieldOffset(4)]
-        public ushort s_y;
-        [FieldOffset(6)]
-        public ushort s_width;
-        [FieldOffset(8)]
-        public ushort s_height;
-        [FieldOffset(10)]
-        public ushort s_sp_size;
-        [FieldOffset(12)]
-        public ushort s_tot_size;
-        [FieldOffset(14)]
-        public ushort s_n_sprites;
-        [FieldOffset(16)]
-        public short s_offset_x;
-        [FieldOffset(18)]
-        public short s_offset_y;
-        [FieldOffset(20)]
-        public ushort s_compressed_size;
+        [FieldOffset(0)] public ushort flag; // bit 0: set for color data, clear for not
+
+        [FieldOffset(20)] public ushort s_compressed_size;
+
+        [FieldOffset(8)] public ushort s_height;
+
+        [FieldOffset(14)] public ushort s_n_sprites;
+
+        [FieldOffset(16)] public short s_offset_x;
+
+        [FieldOffset(18)] public short s_offset_y;
+
+        [FieldOffset(10)] public ushort s_sp_size;
+
+        [FieldOffset(12)] public ushort s_tot_size;
+
+        [FieldOffset(6)] public ushort s_width;
+
+        // bit 1: set for compressed, clear for uncompressed
+        // bit 2: set for 32 colors, clear for 16 colors
+        [FieldOffset(2)] public ushort s_x;
+
+        [FieldOffset(4)] public ushort s_y;
     }
 
-    class Disk : IDisposable
+    internal class Disk : IDisposable
     {
-        const string dataFilename = "sky.dsk";
-        const string dinnerFilename = "sky.dnr";
+        private const string DataFilename = "sky.dsk";
+        private const string DinnerFilename = "sky.dnr";
+        private const int MaxFilesInList = 60;
 
-        private Stream _dataDiskFile;
-        private int _dinnerTableEntries;
+        private readonly ushort[] _buildList = new ushort[MaxFilesInList];
+        private readonly Stream _dataDiskFile;
+        private readonly IFileStorage _fileStorage;
+        private readonly uint[] _loadedFilesList = new uint[MaxFilesInList];
+        private readonly IPlatform _platform;
+        private readonly RncDecoder _rncDecoder;
+
         private Dictionary<int, DiskEntry> _entries;
-        private RncDecoder _rncDecoder;
-        private IFileStorage _fileStorage;
-        private IPlatform _platform;
+        private int _dinnerTableEntries;
 
         public Disk(string directory)
         {
@@ -86,10 +87,15 @@ namespace NScumm.Sky
 
             _fileStorage = ServiceLocator.FileStorage;
             _platform = ServiceLocator.Platform;
-            var dataPath = _fileStorage.Combine(directory, dataFilename);
+            var dataPath = _fileStorage.Combine(directory, DataFilename);
             _dataDiskFile = _fileStorage.OpenFileRead(dataPath);
 
             ReadEntries(directory);
+        }
+
+        public void Dispose()
+        {
+            _dataDiskFile.Dispose();
         }
 
         public SkyGameVersion DetermineGameVersion()
@@ -99,13 +105,15 @@ namespace NScumm.Sky
             {
                 case 232:
                     // German floppy demo (v0.0272)
-                    return new SkyGameVersion(SkyGameType.German | SkyGameType.Floppy | SkyGameType.Demo, new Version(0, 0272));
+                    return new SkyGameVersion(SkyGameType.German | SkyGameType.Floppy | SkyGameType.Demo,
+                        new Version(0, 0272));
                 case 243:
                     // pc gamer demo (v0.0109)
                     return new SkyGameVersion(SkyGameType.PcGamer | SkyGameType.Demo, new Version(0, 0109));
                 case 247:
                     // English floppy demo (v0.0267)
-                    return new SkyGameVersion(SkyGameType.English | SkyGameType.Floppy | SkyGameType.Demo, new Version(0, 0267));
+                    return new SkyGameVersion(SkyGameType.English | SkyGameType.Floppy | SkyGameType.Demo,
+                        new Version(0, 0267));
                 case 1404:
                     //floppy (v0.0288)
                     return new SkyGameVersion(SkyGameType.Floppy, new Version(0, 0288));
@@ -116,8 +124,7 @@ namespace NScumm.Sky
                     //floppy (v0.0331 or v0.0348)
                     if (_dataDiskFile.Length == 8830435)
                         return new SkyGameVersion(SkyGameType.Floppy, new Version(0, 0348));
-                    else
-                        return new SkyGameVersion(SkyGameType.Floppy, new Version(0, 0331));
+                    return new SkyGameVersion(SkyGameType.Floppy, new Version(0, 0331));
                 case 1711:
                     //cd demo (v0.0365)
                     return new SkyGameVersion(SkyGameType.Cd | SkyGameType.Demo, new Version(0, 0365));
@@ -167,20 +174,151 @@ namespace NScumm.Sky
             return uncompDest;
         }
 
-        public void Dispose()
+        public byte[] LoadScriptFile(ushort fileNr)
         {
-            _dataDiskFile.Dispose();
+            // TODO: SCUMM_BIG_ENDIAN
+            return LoadFile(fileNr);
+        }
+
+        public void RefreshFilesList(uint[] list)
+        {
+            byte cnt = 0;
+            while (list[cnt] != 0)
+            {
+                _loadedFilesList[cnt] = list[cnt];
+                SkyEngine.ItemList[_loadedFilesList[cnt] & 2047] = LoadFile((ushort) (_loadedFilesList[cnt] & 0x7FFF));
+                cnt++;
+            }
+            _loadedFilesList[cnt] = 0;
+        }
+
+        public void FnCacheChip(byte[] data)
+        {
+            // fnCacheChip is called after fnCacheFast
+            ushort cnt = 0;
+            while (_buildList[cnt] != 0)
+                cnt++;
+            ushort fCnt = 0;
+            do
+            {
+                _buildList[cnt + fCnt] = (ushort) (data.ToUInt16(fCnt*2) & 0x7FFFU);
+                fCnt++;
+            } while (data.ToUInt16((fCnt - 1)*2) != 0);
+            FnCacheFiles();
+        }
+
+        public void FnCacheFast(byte[] data)
+        {
+            if (data != null)
+            {
+                byte cnt = 0;
+                do
+                {
+                    _buildList[cnt] = (ushort) (data.ToUInt16(cnt*2) & 0x7FFFU);
+                    cnt++;
+                } while (data.ToUInt16((cnt - 1)*2) != 0);
+            }
+        }
+
+        public void FnMiniLoad(ushort fileNum)
+        {
+            ushort cnt = 0;
+            while (_loadedFilesList[cnt] != 0)
+            {
+                if (_loadedFilesList[cnt] == fileNum)
+                    return;
+                cnt++;
+            }
+            _loadedFilesList[cnt] = fileNum & 0x7FFFU;
+            _loadedFilesList[cnt + 1] = 0;
+            SkyEngine.ItemList[fileNum & 2047] = LoadFile(fileNum);
+        }
+
+        public void FnFlushBuffers()
+        {
+            // dump all loaded sprites
+            byte lCnt = 0;
+            while (_loadedFilesList[lCnt] != 0)
+            {
+                SkyEngine.ItemList[_loadedFilesList[lCnt] & 2047] = null;
+                lCnt++;
+            }
+            _loadedFilesList[0] = 0;
+        }
+
+        private void FnCacheFiles()
+        {
+            ushort lCnt, bCnt, targCnt;
+            targCnt = lCnt = 0;
+            bool found;
+            while (_loadedFilesList[lCnt] != 0)
+            {
+                bCnt = 0;
+                found = false;
+                while (_buildList[bCnt] != 0 && !found)
+                {
+                    if ((_buildList[bCnt] & 0x7FFFU) == _loadedFilesList[lCnt])
+                        found = true;
+                    else
+                        bCnt++;
+                }
+                if (found)
+                {
+                    _loadedFilesList[targCnt] = _loadedFilesList[lCnt];
+                    targCnt++;
+                }
+                else
+                {
+                    SkyEngine.ItemList[_loadedFilesList[lCnt] & 2047] = null;
+                }
+                lCnt++;
+            }
+            _loadedFilesList[targCnt] = 0; // mark end of list
+            bCnt = 0;
+            while (_buildList[bCnt] != 0)
+            {
+                if ((_buildList[bCnt] & 0x7FF) == 0x7FF)
+                {
+                    // amiga dummy files
+                    bCnt++;
+                    continue;
+                }
+                lCnt = 0;
+                found = false;
+                while (_loadedFilesList[lCnt] != 0 && !found)
+                {
+                    if (_loadedFilesList[lCnt] == (_buildList[bCnt] & 0x7FFFU))
+                        found = true;
+                    lCnt++;
+                }
+                if (found)
+                {
+                    bCnt++;
+                    continue;
+                }
+                // ok, we really have to load the file.
+                _loadedFilesList[targCnt] = _buildList[bCnt] & 0x7FFFU;
+                targCnt++;
+                _loadedFilesList[targCnt] = 0;
+                SkyEngine.ItemList[_buildList[bCnt] & 2047] = LoadFile(_buildList[bCnt] & 0x7FFF);
+                if (SkyEngine.ItemList[_buildList[bCnt] & 2047] == null)
+                {
+                    // TODO: warning("fnCacheFiles: Disk::loadFile() returned null for file {0}", _buildList[bCnt] & 0x7FFF);
+                }
+                bCnt++;
+            }
+            _buildList[0] = 0;
         }
 
         private void ReadEntries(string directory)
         {
-            var dinnerPath = _fileStorage.Combine(directory, dinnerFilename);
+            var dinnerPath = _fileStorage.Combine(directory, DinnerFilename);
             using (var dinnerFile = _fileStorage.OpenFileRead(dinnerPath))
             {
                 var dinnerReader = new BinaryReader(dinnerFile);
                 _dinnerTableEntries = dinnerReader.ReadInt32();
                 _entries = new Dictionary<int, DiskEntry>();
-                for (int i = 0; i < _dinnerTableEntries; i++)
+                for (var i = 0; i < _dinnerTableEntries; i++)
                 {
                     var id = (int)dinnerReader.ReadUInt16();
                     var tmp = dinnerReader.ReadUInt32();
@@ -200,7 +338,8 @@ namespace NScumm.Sky
                     var hasHeader = ((flags >> 22) & 0x1) == 1;
                     var isCompressed = ((flags >> 23) & 0x1) == 0;
                     var size = (int)(flags & 0x03fffff);
-                    _entries.Add(id, new DiskEntry { Offset = offset, HasHeader = hasHeader, IsCompressed = isCompressed, Size = size });
+                    _entries.Add(id,
+                        new DiskEntry { Offset = offset, HasHeader = hasHeader, IsCompressed = isCompressed, Size = size });
                 }
             }
         }

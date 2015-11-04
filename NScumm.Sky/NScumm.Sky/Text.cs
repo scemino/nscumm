@@ -1,11 +1,83 @@
 ﻿using System;
-using NScumm.Core;
 using System.Text;
+using NScumm.Core;
 
 namespace NScumm.Sky
 {
-    partial class Text
+    internal partial class Text
     {
+        private const int MAIN_CHAR_HEIGHT = 12;
+
+        private const int FIRST_TEXT_SEC = 77;
+        private const int FIRST_TEXT_BUFFER = 274;
+        private const int LAST_TEXT_BUFFER = 284;
+        private const int NO_OF_TEXT_SECTIONS = 8; // 8 sections per language
+        private const int CHAR_SET_FILE = 60150;
+        private const int MAX_SPEECH_SECTION = 7;
+        private const int CHAR_SET_HEADER = 128;
+        private const int MAX_NO_LINES = 10;
+
+        private const int HufftreeLeftChild = 0;
+        private const int HufftreeRightChild = 1;
+        private const int HufftreeValue = 2;
+
+        private static readonly PatchMessage[] PatchedMessages =
+        {
+            new PatchMessage(28724, "Testo e Parlato"), // - italian
+            new PatchMessage(28707, "Solo Testo"),
+            new PatchMessage(28693, "Solo Parlato"),
+            new PatchMessage(28724, "Text och tal"), // - swedish
+            new PatchMessage(28707, "Endast text"),
+            new PatchMessage(28693, "Endast tal"),
+            new PatchMessage(28686, "Musikvolym"),
+            new PatchMessage(4336, "Wir befinden uns EINHUNDERTZWANZIG METER #ber dem ERBODEN!"), // - german
+            new PatchMessage(28686, "Volume de musique") // - french
+        };
+
+
+        private static readonly ushort[] PatchLangIdx =
+        {
+            0xFFFF, // SKY_ENGLISH
+            7, // SKY_GERMAN
+            8, // SKY_FRENCH
+            0xFFFF, // SKY_USA
+            3, // SKY_SWEDISH
+            0, // SKY_ITALIAN
+            0xFFFF, // SKY_PORTUGUESE
+            0xFFFF // SKY_SPANISH
+        };
+
+        private static readonly ushort[] PatchLangNum =
+        {
+            0, // SKY_ENGLISH
+            1, // SKY_GERMAN
+            1, // SKY_FRENCH
+            0, // SKY_USA
+            4, // SKY_SWEDISH
+            3, // SKY_ITALIAN
+            0, // SKY_PORTUGUESE
+            0 // SKY_SPANISH
+        };
+
+        private byte[] _characterSet;
+        private byte _charHeight;
+
+        private uint _curCharSet;
+
+        private uint _dtCharSpacing; //character separation adjustment
+
+        private byte[,] _huffTree;
+        private readonly CharSet _mainCharacterSet;
+        private readonly CharSet _linkCharacterSet;
+        private readonly CharSet _controlCharacterSet;
+
+        private uint _numLetters; //no of chars in message
+        private SkyCompact _skyCompact;
+
+        private readonly Disk _skyDisk;
+        private StringBuilder _textBuffer = new StringBuilder();
+        private uint _mouseOfsX, _mouseOfsY;
+
         public Text(Disk disk, SkyCompact skyCompact)
         {
             _skyDisk = disk;
@@ -43,10 +115,10 @@ namespace NScumm.Sky
             return DisplayText(_textBuffer.ToString(), dest, center, pixelWidth, color);
         }
 
-        private DisplayedText DisplayText(string text, byte[] dest, bool center, ushort pixelWidth, byte color)
+        public DisplayedText DisplayText(string text, byte[] dest, bool center, ushort pixelWidth, byte color)
         {
             //Render text pointed to by *textPtr in buffer *dest
-            uint[] centerTable = new uint[10];
+            var centerTable = new uint[10];
             ushort lineWidth = 0;
 
             uint numLines = 0;
@@ -76,8 +148,8 @@ namespace NScumm.Sky
                     centerTable[numLines] = lineWidth;
                 }
 
-                lineWidth += _characterSet[textChar];   //add character width
-                lineWidth += (ushort)_dtCharSpacing;    //include character spacing
+                lineWidth += _characterSet[textChar]; //add character width
+                lineWidth += (ushort)_dtCharSpacing; //include character spacing
 
                 if (pixelWidth <= lineWidth)
                 {
@@ -101,9 +173,9 @@ namespace NScumm.Sky
             if (numLines > MAX_NO_LINES)
                 throw new InvalidOperationException("Maximum no. of lines exceeded");
 
-            int dtLineSize = pixelWidth * _charHeight;
+            var dtLineSize = pixelWidth * _charHeight;
             var sizeOfDataFileHeader = 22;
-            int numBytes = (int)((dtLineSize * numLines) + sizeOfDataFileHeader + 4);
+            var numBytes = (int)(dtLineSize * numLines + sizeOfDataFileHeader + 4);
 
             if (dest == null)
                 dest = new byte[numBytes];
@@ -132,7 +204,7 @@ namespace NScumm.Sky
             {
                 if (center)
                 {
-                    int width = (int)(pixelWidth - centerTable[centerTblPtr]) >> 1;
+                    var width = (int)(pixelWidth - centerTable[centerTblPtr]) >> 1;
                     centerTblPtr++;
                     curDest += width;
                 }
@@ -145,24 +217,103 @@ namespace NScumm.Sky
                 }
 
                 prevDest = curDest = prevDest + dtLineSize; //start of last line + start of next
-
             } while (textChar >= 10 && curPos != textBytes.Length);
 
-            DisplayedText ret = new DisplayedText();
+            var ret = new DisplayedText();
             ret.textData = dest;
             ret.textWidth = dtLastWidth;
             return ret;
         }
 
-        private void MakeGameCharacter(byte textChar, byte[] charSetPtr, byte[] dest, ref int dstPtr, byte color, ushort bufPitch)
+        public void FnSetFont(uint fontNr)
+        {
+            CharSet newCharSet;
+
+            switch (fontNr)
+            {
+                case 0:
+                    newCharSet = _mainCharacterSet;
+                    break;
+                case 1:
+                    newCharSet = _linkCharacterSet;
+                    break;
+                case 2:
+                    newCharSet = _controlCharacterSet;
+                    break;
+                default:
+                    throw new InvalidOperationException(string.Format("Tried to set invalid font ({0})", fontNr));
+            }
+
+            _curCharSet = fontNr;
+            _characterSet = newCharSet.addr;
+            _charHeight = (byte)newCharSet.charHeight;
+            _dtCharSpacing = newCharSet.charSpacing;
+        }
+
+        public void ChangeTextSpriteColor(byte[] sprData, byte newCol)
+        {
+            throw new NotImplementedException();
+            //DataFileHeader* header = (DataFileHeader*)sprData;
+            //sprData += sizeof(DataFileHeader);
+            //for (uint16 cnt = 0; cnt < header.s_sp_size; cnt++)
+            //    if (sprData[cnt] >= 241)
+            //        sprData[cnt] = newCol;
+        }
+
+        public void FnPointerText(uint pointedId, ushort mouseX, ushort mouseY)
+        {
+            //Compact ptrComp = _skyCompact.FetchCpt((ushort)pointedId);
+            //DisplayedText text = LowTextManager(ptrComp.Core.cursorText, TEXT_MOUSE_WIDTH, L_CURSOR, 242, false);
+            //Logic.ScriptVariables[CURSOR_ID] = text.compactNum;
+            //if (Logic.ScriptVariables[MENU]!=0)
+            //{
+            //    _mouseOfsY = TOP_LEFT_Y - 2;
+            //    if (mouseX < 150)
+            //        _mouseOfsX = TOP_LEFT_X + 24;
+            //    else
+            //        _mouseOfsX = TOP_LEFT_X - 8 - text.textWidth;
+            //}
+            //else
+            //{
+            //    _mouseOfsY = TOP_LEFT_Y - 10;
+            //    if (mouseX < 150)
+            //        _mouseOfsX = TOP_LEFT_X + 13;
+            //    else
+            //        _mouseOfsX = TOP_LEFT_X - 8 - text.textWidth;
+            //}
+            //Compact textCompact = _skyCompact.FetchCpt(text.compactNum);
+            //LogicCursor(textCompact, mouseX, mouseY);
+            throw new NotImplementedException();
+        }
+
+        public DisplayedText LowTextManager(uint textNum, ushort width, ushort logicNum, byte color, bool center)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void LogicCursor(Compact textCompact, ushort mouseX, ushort mouseY)
+        {
+            textCompact.Core.xcood = (ushort)(mouseX + _mouseOfsX);
+            textCompact.Core.ycood = (ushort)(mouseY + _mouseOfsY);
+            if (textCompact.Core.ycood < Logic.TOP_LEFT_Y)
+                textCompact.Core.ycood = Logic.TOP_LEFT_Y;
+        }
+
+        public void FnTextModule(uint a, uint b)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void MakeGameCharacter(byte textChar, byte[] charSetPtr, byte[] dest, ref int dstPtr, byte color,
+            ushort bufPitch)
         {
             bool maskBit, dataBit;
-            byte charWidth = (byte)(charSetPtr[textChar] + 1 - _dtCharSpacing);
+            var charWidth = (byte)(charSetPtr[textChar] + 1 - _dtCharSpacing);
             ushort data, mask;
-            var charSpritePtr = CHAR_SET_HEADER + ((_charHeight << 2) * textChar);
+            var charSpritePtr = CHAR_SET_HEADER + (_charHeight << 2) * textChar;
             var curPos = 0;
 
-            for (int i = 0; i < _charHeight; i++)
+            for (var i = 0; i < _charHeight; i++)
             {
                 var prevPos = curPos;
 
@@ -170,7 +321,7 @@ namespace NScumm.Sky
                 mask = charSetPtr.ToUInt16BigEndian(charSpritePtr + 2);
                 charSpritePtr += 4;
 
-                for (int j = 0; j < charWidth; j++)
+                for (var j = 0; j < charWidth; j++)
                 {
                     maskBit = (mask & 0x8000) != 0; //check mask
                     mask <<= 1;
@@ -223,42 +374,45 @@ namespace NScumm.Sky
                     _huffTree = _huffTree_00372;
                     break;
                 default:
-                    throw new NotSupportedException(string.Format("Unknown game version {0}", SystemVars.Instance.GameVersion.Version.Minor));
+                    throw new NotSupportedException(string.Format("Unknown game version {0}",
+                        SystemVars.Instance.GameVersion.Version.Minor));
             }
         }
 
         private void GetText(uint textNr)
-        { //load text #"textNr" into textBuffer
+        {
+            //load text #"textNr" into textBuffer
             if (DoPatchMessage(textNr))
                 return;
 
-            uint sectionNo = (textNr & 0x0F000) >> 12;
+            var sectionNo = (textNr & 0x0F000) >> 12;
 
             if (SkyEngine.ItemList[FIRST_TEXT_SEC + sectionNo] == null)
-            { //check if already loaded
+            {
+                //check if already loaded
                 //debug(5, "Loading Text item(s) for Section %d", (sectionNo >> 2));
 
-                uint fileNo = sectionNo + (uint)((SystemVars.Instance.Language * NO_OF_TEXT_SECTIONS) + 60600);
+                var fileNo = sectionNo + (uint)(SystemVars.Instance.Language * NO_OF_TEXT_SECTIONS + 60600);
                 SkyEngine.ItemList[FIRST_TEXT_SEC + sectionNo] = _skyDisk.LoadFile((ushort)fileNo);
             }
             var textData = SkyEngine.ItemList[FIRST_TEXT_SEC + sectionNo];
             var textDataPtr = 0;
 
-            int offset = 0;
+            var offset = 0;
 
-            uint blockNr = textNr & 0xFE0;
+            var blockNr = textNr & 0xFE0;
             textNr &= 0x1F;
 
             if (blockNr != 0)
             {
                 var blockPtr = 4;
-                uint nr32MsgBlocks = blockNr >> 5;
+                var nr32MsgBlocks = blockNr >> 5;
 
                 do
                 {
                     offset += textData.ToUInt16(textDataPtr + blockPtr);
                     blockPtr += 2;
-                } while ((--nr32MsgBlocks) != 0);
+                } while (--nr32MsgBlocks != 0);
             }
 
             if (textNr != 0)
@@ -273,10 +427,10 @@ namespace NScumm.Sky
                         skipBytes <<= 3;
                     }
                     offset += skipBytes;
-                } while ((--textNr) != 0);
+                } while (--textNr != 0);
             }
 
-            int bitPos = offset & 3;
+            var bitPos = offset & 3;
             offset >>= 2;
             offset += textData.ToUInt16(textDataPtr + 2);
 
@@ -302,7 +456,7 @@ namespace NScumm.Sky
 
         private char GetTextChar(byte[] data, ref int dataPtr, ref int bitPos)
         {
-            int pos = 0;
+            var pos = 0;
             while (true)
             {
                 if (GetTextBit(data, ref dataPtr, ref bitPos))
@@ -334,60 +488,20 @@ namespace NScumm.Sky
 
         private bool DoPatchMessage(uint textNum)
         {
-            ushort patchIdx = _patchLangIdx[SystemVars.Instance.Language];
-            ushort patchNum = _patchLangNum[SystemVars.Instance.Language];
+            var patchIdx = PatchLangIdx[SystemVars.Instance.Language];
+            var patchNum = PatchLangNum[SystemVars.Instance.Language];
             for (ushort cnt = 0; cnt < patchNum; cnt++)
             {
-                if (_patchedMessages[cnt + patchIdx].TextNr == textNum)
+                if (PatchedMessages[cnt + patchIdx].TextNr == textNum)
                 {
-                    _textBuffer = new StringBuilder(_patchedMessages[cnt + patchIdx].Text);
+                    _textBuffer = new StringBuilder(PatchedMessages[cnt + patchIdx].Text);
                     return true;
                 }
             }
             return false;
         }
 
-        private void FnSetFont(uint fontNr)
-        {
-            CharSet newCharSet;
-
-            switch (fontNr)
-            {
-                case 0:
-                    newCharSet = _mainCharacterSet;
-                    break;
-                case 1:
-                    newCharSet = _linkCharacterSet;
-                    break;
-                case 2:
-                    newCharSet = _controlCharacterSet;
-                    break;
-                default:
-                    throw new InvalidOperationException(string.Format("Tried to set invalid font ({0})", fontNr));
-            }
-
-            _curCharSet = fontNr;
-            _characterSet = newCharSet.addr;
-            _charHeight = (byte)newCharSet.charHeight;
-            _dtCharSpacing = newCharSet.charSpacing;
-        }
-
-        const int MAIN_CHAR_HEIGHT = 12;
-
-        const int FIRST_TEXT_SEC = 77;
-        const int FIRST_TEXT_BUFFER = 274;
-        const int LAST_TEXT_BUFFER = 284;
-        const int NO_OF_TEXT_SECTIONS = 8;  // 8 sections per language
-        const int CHAR_SET_FILE = 60150;
-        const int MAX_SPEECH_SECTION = 7;
-        const int CHAR_SET_HEADER = 128;
-        const int MAX_NO_LINES = 10;
-
-        const int HufftreeLeftChild = 0;
-        const int HufftreeRightChild = 1;
-        const int HufftreeValue = 2;
-
-        struct PatchMessage
+        private struct PatchMessage
         {
             public PatchMessage(uint textNr, string text)
             {
@@ -395,69 +509,19 @@ namespace NScumm.Sky
                 Text = text;
             }
 
-            public uint TextNr;
-            public string Text;
+            public readonly uint TextNr;
+            public readonly string Text;
         }
 
-        static readonly PatchMessage[] _patchedMessages = {
-            new PatchMessage(28724, "Testo e Parlato"), // - italian
-	        new PatchMessage(28707, "Solo Testo"),
-            new PatchMessage(28693, "Solo Parlato"),
-            new PatchMessage(28724, "Text och tal"), // - swedish
-	        new PatchMessage(28707, "Endast text"),
-            new PatchMessage(28693, "Endast tal"),
-            new PatchMessage(28686, "Musikvolym"),
-            new PatchMessage(4336, "Wir befinden uns EINHUNDERTZWANZIG METER #ber dem ERBODEN!"), // - german
-	        new PatchMessage(28686, "Volume de musique"), // - french
-        };
-
-
-        static readonly ushort[] _patchLangIdx = {
-            0xFFFF, // SKY_ENGLISH
-	        7,		// SKY_GERMAN
-	        8,		// SKY_FRENCH
-	        0xFFFF, // SKY_USA
-	        3,		// SKY_SWEDISH
-	        0,		// SKY_ITALIAN
-	        0xFFFF, // SKY_PORTUGUESE
-	        0xFFFF  // SKY_SPANISH
-        };
-
-        static readonly ushort[] _patchLangNum = {
-            0, // SKY_ENGLISH
-	        1, // SKY_GERMAN
-	        1, // SKY_FRENCH
-	        0, // SKY_USA
-	        4, // SKY_SWEDISH
-	        3, // SKY_ITALIAN
-	        0, // SKY_PORTUGUESE
-	        0  // SKY_SPANISH
-        };
-
-        private Disk _skyDisk;
-        private SkyCompact _skyCompact;
-
-        struct CharSet
+        private struct CharSet
         {
             public byte[] addr;
             public uint charHeight;
             public uint charSpacing;
         }
-        private CharSet _mainCharacterSet, _linkCharacterSet, _controlCharacterSet;
-
-        private uint _curCharSet;
-        private byte[] _characterSet;
-        private byte _charHeight;
-
-        private uint _dtCharSpacing;    //character separation adjustment
-        private StringBuilder _textBuffer = new StringBuilder();
-
-        private uint _numLetters;	//no of chars in message
-        
-        private byte[,] _huffTree;
     }
 
-    struct DisplayedText
+    internal struct DisplayedText
     {
         public byte[] textData;
         public uint textWidth;

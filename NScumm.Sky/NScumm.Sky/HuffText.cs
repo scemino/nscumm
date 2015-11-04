@@ -1,4 +1,6 @@
-﻿namespace NScumm.Sky
+﻿using System;
+
+namespace NScumm.Sky
 {
     partial class Text
     {

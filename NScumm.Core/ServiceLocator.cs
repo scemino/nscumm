@@ -79,6 +79,8 @@ namespace NScumm.Core
         void Sleep(int timeInMs);
 
         int SizeOf(Type type);
+        IntPtr OffsetOf(Type type, string fieldName);
+
         object ToStructure(byte[] data, int offset, Type type);
         IWrappedObject WriteStructure(byte[] data, int offset, Type type);
 
@@ -123,6 +125,14 @@ namespace NScumm.Core
         public static IWrappedObject<T> WriteStructure<T>(this IPlatform platform, byte[] data, int offset)
         {
             return new WrappedObject<T>(platform.WriteStructure(data, offset, typeof(T)));
+        }
+
+        public static void WriteStructure<T>(this IPlatform platform, byte[] data, int offset, Action<T> action)
+        {
+            using (var obj = new WrappedObject<T>(platform.WriteStructure(data, offset, typeof(T))))
+            {
+                action(obj.Object);
+            }
         }
     }
 

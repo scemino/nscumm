@@ -203,6 +203,21 @@ namespace NScumm.Core.Audio
             }
         }
 
+        public void PauseId(int id, bool paused)
+        {
+            lock (_gate)
+            {
+                for (int i = 0; i != NumChannels; i++)
+                {
+                    if (_channels[i] != null && _channels[i].Id == id)
+                    {
+                        _channels[i].Pause(paused);
+                        return;
+                    }
+                }
+            }
+        }
+
         public bool IsSoundTypeMuted(SoundType type)
         {
             Debug.Assert(0 <= type && (int)type < soundTypeSettings.Length);

@@ -41,7 +41,11 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Control.cs" />
+    <Compile Include="Grid.cs" />
     <Compile Include="IntroSequences.cs" />
+    <Compile Include="Logic.cs" />
+    <Compile Include="Mouse.cs" />
     <Compile Include="RawAccess.cs" />
     <Compile Include="Disk.cs" />
     <Compile Include="HuffText.cs" />
@@ -53,11 +57,30 @@
     <Compile Include="RncDecoder.cs" />
     <Compile Include="Screen.cs" />
     <Compile Include="Compact.cs" />
+    <Compile Include="SkyDefines.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>SkyDefines.tt</DependentUpon>
+    </Compile>
     <Compile Include="SkyEngine.cs" />
     <Compile Include="SkyMetaEngine.cs" />
     <Compile Include="SkySystem.cs" />
     <Compile Include="Sound.cs" />
     <Compile Include="Text.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="sky.cpt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="SkyDefines.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>SkyDefines.cs</LastGenOutput>
+    </Content>
+    <None Include="project.json" />
+    <None Include="skydefs.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

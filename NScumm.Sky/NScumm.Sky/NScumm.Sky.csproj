@@ -66,6 +66,7 @@
     <Compile Include="SkyMetaEngine.cs" />
     <Compile Include="SkySystem.cs" />
     <Compile Include="Sound.cs" />
+    <Compile Include="Sound.Data.cs" />
     <Compile Include="Text.cs" />
   </ItemGroup>
   <ItemGroup>

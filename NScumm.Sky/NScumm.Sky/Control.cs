@@ -145,8 +145,8 @@ namespace NScumm.Sky
                 }
                 SystemVars.Instance.SystemFlags |= SystemFlags.GAME_RESTORED;
 
-                _skySound._saveSounds[0] = reader.ReadUInt16();
-                _skySound._saveSounds[1] = reader.ReadUInt16();
+                _skySound.SaveSounds[0] = reader.ReadUInt16();
+                _skySound.SaveSounds[1] = reader.ReadUInt16();
                 _skySound.RestoreSfx();
 
                 var music = reader.ReadUInt32();

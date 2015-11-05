@@ -100,6 +100,7 @@ namespace NScumm.Sky
             _skyLogic = new Logic(_skyCompact, _skyScreen, _skyDisk, _skyText, _skyMusic, _skyMouse, _skySound);
             _skyMouse.Logic = _skyLogic;
             _skyScreen.Logic = _skyLogic;
+            _skySound.Logic = _skyLogic;
 
             _skyControl = new Control(/*_saveFileMan,*/ _skyScreen, _skyDisk, _skyMouse, _skyText, _skyMusic, _skyLogic, _skySound, _skyCompact, _system);
             _skyLogic.Control = _skyControl;

@@ -30,7 +30,7 @@ namespace NScumm.Sky
         {
             if (_skyScreen.SequenceRunning())
                 _skyScreen.StopSequence();
-            _mixer.StopID(Sound.SOUND_BG);
+            _mixer.StopID(Sound.SoundBg);
         }
 
         public bool DoIntro(bool floppyIntro)
@@ -139,25 +139,25 @@ namespace NScumm.Sky
                             return false;
                     return true;
                 case LOADBG:
-                    _mixer.StopID(Sound.SOUND_BG);
+                    _mixer.StopID(Sound.SoundBg);
                     _bgBuf = _skyDisk.LoadFile(data[i++]);
                     return true;
                 case LOOPBG:
                     {
-                        _mixer.StopID(Sound.SOUND_BG);
+                        _mixer.StopID(Sound.SoundBg);
                         var stream = new RawStream(AudioFlags.Unsigned, 11025, false, new MemoryStream(_bgBuf, 256, _bgBuf.Length - 768));
-                        _bgSfx = _mixer.PlayStream(SoundType.SFX, new LoopingAudioStream(stream, 0), Sound.SOUND_BG);
+                        _bgSfx = _mixer.PlayStream(SoundType.SFX, new LoopingAudioStream(stream, 0), Sound.SoundBg);
                     }
                     return true;
                 case PLAYBG:
                     {
-                        _mixer.StopID(Sound.SOUND_BG);
+                        _mixer.StopID(Sound.SoundBg);
                         var stream = new RawStream(AudioFlags.Unsigned, 11025, false, new MemoryStream(_bgBuf, 256, _bgBuf.Length - 768));
-                        _bgSfx = _mixer.PlayStream(SoundType.SFX, stream, Sound.SOUND_BG);
+                        _bgSfx = _mixer.PlayStream(SoundType.SFX, stream, Sound.SoundBg);
                     }
                     return true;
                 case STOPBG:
-                    _mixer.StopID(Sound.SOUND_BG);
+                    _mixer.StopID(Sound.SoundBg);
                     return true;
                 default:
                     throw new NotSupportedException(string.Format("Unknown intro command {0:X2}", command));

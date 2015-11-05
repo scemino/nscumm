@@ -101,6 +101,7 @@ namespace NScumm.Sky
             _skyMouse.Logic = _skyLogic;
             _skyScreen.Logic = _skyLogic;
             _skySound.Logic = _skyLogic;
+            _skyText.Logic = _skyLogic;
 
             _skyControl = new Control(/*_saveFileMan,*/ _skyScreen, _skyDisk, _skyMouse, _skyText, _skyMusic, _skyLogic, _skySound, _skyCompact, _system);
             _skyLogic.Control = _skyControl;
@@ -246,39 +247,28 @@ namespace NScumm.Sky
 
         private void Delay(int amount)
         {
-            //Common::Event event;
-
             int start = Environment.TickCount;
-            //_keyPressed.reset();
 
             if (amount < 0)
                 amount = 0;
 
             do
             {
-                //           while (_eventMan->pollEvent(event)) {
-                //           switch (event.type) {
+                var im = _system.InputManager.GetState();
+                var mousePos = _system.InputManager.GetMousePosition();
+                if (!SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.MOUSE_LOCKED))
+                    _skyMouse.MouseMoved((ushort)mousePos.X, (ushort)mousePos.Y);
+
+                if (im.IsLeftButtonDown)
+                    _skyMouse.ButtonPressed(2);
+
+                if (im.IsRightButtonDown)
+                    _skyMouse.ButtonPressed(1);
+
+                // TODO: keyboard
                 //		case Common::EVENT_KEYDOWN:
                 //			_keyPressed = event.kbd;
                 //			break;
-                //		case Common::EVENT_MOUSEMOVE:
-                //			if (!(_systemVars.systemFlags & SF_MOUSE_LOCKED))
-                //				_skyMouse->mouseMoved(event.mouse.x, event.mouse.y);
-                //			break;
-                //		case Common::EVENT_LBUTTONDOWN:
-                //			if (!(_systemVars.systemFlags & SF_MOUSE_LOCKED))
-                //				_skyMouse->mouseMoved(event.mouse.x, event.mouse.y);
-                //       _skyMouse->buttonPressed(2);
-                //			break;
-                //		case Common::EVENT_RBUTTONDOWN:
-                //			if (!(_systemVars.systemFlags & SF_MOUSE_LOCKED))
-                //				_skyMouse->mouseMoved(event.mouse.x, event.mouse.y);
-                //       _skyMouse->buttonPressed(1);
-                //			break;
-                //		default:
-                //			break;
-                //       }
-                //   }
 
                 _system.GraphicsManager.UpdateScreen();
 

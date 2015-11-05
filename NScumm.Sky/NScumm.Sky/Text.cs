@@ -108,6 +108,8 @@ namespace NScumm.Sky
             }
         }
 
+        public Logic Logic { get; internal set; }
+
         public DisplayedText DisplayText(ushort textNum, byte[] dest, bool center, ushort pixelWidth, byte color)
         {
             //Render text into buffer *dest
@@ -252,43 +254,61 @@ namespace NScumm.Sky
 
         public void ChangeTextSpriteColor(byte[] sprData, byte newCol)
         {
-            throw new NotImplementedException();
-            //DataFileHeader* header = (DataFileHeader*)sprData;
-            //sprData += sizeof(DataFileHeader);
-            //for (uint16 cnt = 0; cnt < header.s_sp_size; cnt++)
-            //    if (sprData[cnt] >= 241)
-            //        sprData[cnt] = newCol;
+            var header = ServiceLocator.Platform.ToStructure<DataFileHeader>(sprData, 0);
+            var offset = ServiceLocator.Platform.SizeOf<DataFileHeader>();
+            for (ushort cnt = 0; cnt < header.s_sp_size; cnt++)
+                if (sprData[offset + cnt] >= 241)
+                    sprData[offset + cnt] = newCol;
         }
 
         public void FnPointerText(uint pointedId, ushort mouseX, ushort mouseY)
         {
-            //Compact ptrComp = _skyCompact.FetchCpt((ushort)pointedId);
-            //DisplayedText text = LowTextManager(ptrComp.Core.cursorText, TEXT_MOUSE_WIDTH, L_CURSOR, 242, false);
-            //Logic.ScriptVariables[CURSOR_ID] = text.compactNum;
-            //if (Logic.ScriptVariables[MENU]!=0)
-            //{
-            //    _mouseOfsY = TOP_LEFT_Y - 2;
-            //    if (mouseX < 150)
-            //        _mouseOfsX = TOP_LEFT_X + 24;
-            //    else
-            //        _mouseOfsX = TOP_LEFT_X - 8 - text.textWidth;
-            //}
-            //else
-            //{
-            //    _mouseOfsY = TOP_LEFT_Y - 10;
-            //    if (mouseX < 150)
-            //        _mouseOfsX = TOP_LEFT_X + 13;
-            //    else
-            //        _mouseOfsX = TOP_LEFT_X - 8 - text.textWidth;
-            //}
-            //Compact textCompact = _skyCompact.FetchCpt(text.compactNum);
-            //LogicCursor(textCompact, mouseX, mouseY);
-            throw new NotImplementedException();
+            var ptrComp = _skyCompact.FetchCpt((ushort)pointedId);
+            var text = LowTextManager(ptrComp.Core.cursorText, Logic.TEXT_MOUSE_WIDTH, Logic.L_CURSOR, 242, false);
+            Logic.ScriptVariables[Logic.CURSOR_ID] = text.compactNum;
+            if (Logic.ScriptVariables[Logic.MENU] != 0)
+            {
+                _mouseOfsY = Logic.TOP_LEFT_Y - 2;
+                if (mouseX < 150)
+                    _mouseOfsX = Logic.TOP_LEFT_X + 24;
+                else
+                    _mouseOfsX = Logic.TOP_LEFT_X - 8 - text.textWidth;
+            }
+            else
+            {
+                _mouseOfsY = Logic.TOP_LEFT_Y - 10;
+                if (mouseX < 150)
+                    _mouseOfsX = Logic.TOP_LEFT_X + 13;
+                else
+                    _mouseOfsX = Logic.TOP_LEFT_X - 8 - text.textWidth;
+            }
+            Compact textCompact = _skyCompact.FetchCpt(text.compactNum);
+            LogicCursor(textCompact, mouseX, mouseY);
         }
 
         public DisplayedText LowTextManager(uint textNum, ushort width, ushort logicNum, byte color, bool center)
         {
-            throw new NotImplementedException();
+            GetText(textNum);
+            DisplayedText textInfo = DisplayText(_textBuffer.ToString(), null, center, width, color);
+
+            uint compactNum = Logic.FIRST_TEXT_COMPACT;
+            Compact cpt = _skyCompact.FetchCpt((ushort)compactNum);
+            while (cpt.Core.status != 0)
+            {
+                compactNum++;
+                cpt = _skyCompact.FetchCpt((ushort)compactNum);
+            }
+
+            cpt.Core.flag = (ushort)((ushort)(compactNum - Logic.FIRST_TEXT_COMPACT) + FIRST_TEXT_BUFFER);
+
+            SkyEngine.ItemList[cpt.Core.flag] = textInfo.textData;
+
+            cpt.Core.logic = logicNum;
+            cpt.Core.status = Logic.ST_LOGIC | Logic.ST_FOREGROUND | Logic.ST_RECREATE;
+            cpt.Core.screen = (ushort)Logic.ScriptVariables[Logic.SCREEN];
+
+            textInfo.compactNum = (ushort)compactNum;
+            return textInfo;
         }
 
         public void LogicCursor(Compact textCompact, ushort mouseX, ushort mouseY)

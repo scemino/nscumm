@@ -290,6 +290,26 @@ namespace NScumm.Sky
             } while (CheckProtection());
         }
 
+        public ushort MouseScript(uint scrNum, Compact scriptComp)
+        {
+            var tmpComp = _compact;
+            _compact = scriptComp;
+            var retVal = Script((ushort)(scrNum & 0xFFFF), (ushort)(scrNum >> 16));
+            _compact = tmpComp;
+
+            if (scrNum == MENU_SELECT || (scrNum >= LINC_MENU_SELECT && scrNum <= DOC_MENU_SELECT))
+            {
+                // HACK: See patch #1689516 for details. The short story:
+                // The user has clicked on an inventory item.  We update the
+                // mouse cursor instead of waiting for the script to update it.
+                // In the original game the cursor is just updated when the mouse
+                // moves away the item, but it's unintuitive.
+                FnCrossMouse(0, 0, 0);
+            }
+
+            return retVal;
+        }
+
         private bool CheckProtection()
         {
             if (ScriptVariables[ENTER_DIGITS] != 0)

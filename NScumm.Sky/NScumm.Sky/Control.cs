@@ -2,18 +2,85 @@
 using System.Diagnostics;
 using System.IO;
 using NScumm.Core;
+using NScumm.Core.Input;
 using NScumm.Sky.Music;
 
 namespace NScumm.Sky
 {
     internal class Control
     {
+        private const int MAX_SAVE_GAMES = 999;
+
+        private const int PanLineWidth = 184;
+
         private const int SaveFileRevision = 6;
         private const int OldSaveGameType = 5;
         private const int PanCharHeight = 12;
 
+        private const int Mainpanel = 0;
+        private const int Savepanel = 1;
+
+        const bool NoMask = false;
+        const bool WithMask = true;
+
+        const SystemFlags TextFlagMask = SystemFlags.ALLOW_SPEECH | SystemFlags.AllowText;
+
+        const int GAME_NAME_X = (SpnlX + 18);				// x coordinate of game names
+        const int GAME_NAME_Y = (SpnlY + SpTopGap);	// start y coord of game names
+        const int MAX_ON_SCREEN = ((SpHeight - SpTopGap - SpBotGap) / PanCharHeight); // no of save games on screen
+        const int CP_PANEL = 60400; // main panel sprite
+
+
+        private const int SpeedMultiply = 12;
+
+        // resource's onClick routines
+        private const int DoNothing = 0;
+        private const int RestGamePanel = 1;
+        private const int SaveGamePanel = 2;
+        private const int SaveAGame = 3;
+        private const int RestoreAGame = 4;
+        private const int SpCancel = 5;
+        private const int ShiftDownFast = 6;
+        private const int ShiftDownSlow = 7;
+        private const int ShiftUpFast = 8;
+        private const int ShiftUpSlow = 9;
+        private const int SpeedSlide = 10;
+        private const int MusicSlide = 11;
+        private const int ToggleFx = 12;
+        private const int ToggleMs = 13;
+        private const int ToggleText = 14;
+        private const int Exit = 15;
+        private const int Restart = 16;
+        private const int QuitToDos = 17;
+        private const int RestoreAuto = 18;
+
+        // onClick return codes
+        const int CancelPressed = 100;
+        const int NameTooShort = 101;
+        const int GameSaved = 102;
+        const int Shifted = 103;
+        const int Toggled = 104;
+        const int Restarted = 105;
         public const int GameRestored = 106;
-        private const int RestoreFailed = 107;
+        const int RestoreFailed = 107;
+        const int NoDiskSpace = 108;
+        const int SpeedChanged = 109;
+        const int QuitPanel = 110;
+
+        const int Slow = 0;
+        const int Fast = 1;
+
+        private const int MpnlX = 60; // Main Panel
+        private const int MpnlY = 10;
+
+        private const int SpnlX = 20; // Save Panel
+        private const int SpnlY = 20;
+        const int SpHeight = 149;
+        const int SpTopGap = 12;
+        const int SpBotGap = 27;
+        const int CrossSzX = 27;
+        const int CrossSzY = 22;
+
 
         private static readonly string[] QuitTexts =
         {
@@ -35,7 +102,47 @@ namespace NScumm.Sky
             "BE VIGILANT"
         };
 
-        private ushort _savedMouse;
+        static readonly byte[] CrossImg = {
+            0xFF, 0xFF, 0xFF, 0xFF, 0x09, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x0B, 0x61, 0xFF, 0xFF, 0xFF, 0xFF, 0x4F, 0x4D, 0x61,
+    0x01, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+    0x08, 0x4E, 0x53, 0x50, 0x4F, 0x0C, 0x4D, 0x4E, 0x51, 0x58, 0x58, 0x54, 0x4E, 0x08, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x4E, 0x54, 0x58, 0x50, 0x4E, 0xFF,
+    0xFF, 0xFF, 0xFF, 0x50, 0x4E, 0x54, 0x58, 0x58, 0x54, 0x4E, 0x0C, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0x61, 0x53, 0x58, 0x54, 0x4E, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+    0x50, 0x4E, 0x55, 0x58, 0x58, 0x53, 0x4E, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x51, 0x58, 0x58,
+    0x51, 0x50, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x4F, 0x51, 0x58,
+    0x59, 0x58, 0x51, 0x61, 0xFF, 0xFF, 0x61, 0x54, 0x58, 0x58, 0x4F, 0x52, 0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x4E, 0x55, 0x58, 0x58, 0x57, 0x4E,
+    0x4F, 0x56, 0x58, 0x57, 0x61, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x4F, 0x51, 0x58, 0x58, 0x58, 0x58, 0x58, 0x54, 0x4E, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0x6A, 0x4F, 0x58, 0x58, 0x58, 0x58, 0x52, 0x06, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x04, 0x54, 0x58,
+    0x58, 0x58, 0x58, 0x57, 0x53, 0x61, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x04, 0x09, 0x58, 0x58, 0x58, 0x57, 0x56, 0x58, 0x58, 0x58,
+    0x57, 0x4F, 0x0A, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+    0x61, 0x55, 0x58, 0x58, 0x58, 0x58, 0x4E, 0x64, 0x57, 0x58, 0x58, 0x58, 0x58, 0x53, 0x61, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x61, 0x57, 0x58, 0x58, 0x58, 0x58,
+    0x50, 0xFF, 0xFF, 0x4E, 0x57, 0x58, 0x58, 0x58, 0x58, 0x56, 0x61, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF, 0x61, 0x58, 0x58, 0x58, 0x58, 0x58, 0x53, 0x09, 0xFF, 0xFF, 0xFF, 0x4E,
+    0x57, 0x58, 0x58, 0x58, 0x58, 0x58, 0x0B, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x61, 0x57,
+    0x58, 0x58, 0x58, 0x58, 0x56, 0x4E, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x61, 0x58, 0x58, 0x58, 0x58,
+    0x58, 0x57, 0x61, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x04, 0x55, 0x58, 0x58, 0x58, 0x58, 0x58, 0x4E,
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x4F, 0x58, 0x58, 0x58, 0x58, 0x4E, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0x06, 0x58, 0x58, 0x58, 0x58, 0x58, 0x52, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0x0C, 0x52, 0x58, 0x58, 0x51, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x61, 0x56, 0x58,
+    0x58, 0x58, 0x58, 0x56, 0x61, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x61, 0x56,
+    0x58, 0x61, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x0F, 0x4D, 0x4D, 0x51, 0x56, 0x58, 0x58, 0x50, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x4F, 0x54, 0x09, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x4E, 0x50, 0x54, 0x61, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x06, 0x50, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0x61, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0x61, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x61, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x61, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF
+};
+
 
         private readonly SkyCompact _skyCompact;
         private readonly Disk _skyDisk;
@@ -45,7 +152,46 @@ namespace NScumm.Sky
         private readonly Screen _skyScreen;
         private readonly Sound _skySound;
         private readonly Text _skyText;
+        private ConResource _autoSaveButton;
+        private ConResource _bodge;
+        private ConResource _controlPanel;
+        private ConResource[] _controlPanLookList;
+        private int _curButtonText;
+        private ConResource _dosPanButton;
+        private ConResource _downFastButton;
+        private ConResource _downSlowButton;
+
+        private ConResource _exitButton;
+        private ConResource _fxPanButton;
+        private int _lastButton;
+        private ConResource _musicPanButton;
+        private ConResource _quitButton;
+        private ConResource _restartPanButton;
+        private ConResource _restoreButton;
+        private ConResource _restorePanButton;
+        private ConResource[] _restorePanLookList;
+        private ConResource _saveButton;
+        private uint _savedCharSet;
+
+        private ushort _savedMouse;
+        private ConResource _savePanButton;
+        private ConResource _savePanel;
+        private ConResource[] _savePanLookList;
+        private byte[] _screenBuf;
+        private ConResource _slide;
+        private ConResource _slide2;
+        private ConResource _slode;
+        private Sprites _sprites;
+        private ControlStatus _statusBar;
         private ISystem _system;
+        private TextResource _text;
+        private byte[] _textSprite;
+        private ConResource _upFastButton;
+        private ConResource _upSlowButton;
+        private ConResource _yesNo;
+        private bool _mouseClicked;
+        private ScummInputState _keyPressed;
+        private ushort _firstText;
 
         public Control( /*SaveFileManager saveFileMan,*/
             Screen screen, Disk disk, Mouse mouse, Text text, MusicBase music, Logic logic, Sound sound,
@@ -69,14 +215,14 @@ namespace NScumm.Sky
             if (SystemVars.Instance.GameVersion.Version.Minor <= 267)
                 return; // no restart for floppy demo
 
-            var resetData = _skyCompact.CreateResetData((ushort) SystemVars.Instance.GameVersion.Version.Minor);
+            var resetData = _skyCompact.CreateResetData((ushort)SystemVars.Instance.GameVersion.Version.Minor);
             ParseSaveData(resetData);
 
             _skyScreen.ForceRefresh();
 
-            Array.Clear(_skyScreen.Current, 0, Screen.GameScreenWidth*Screen.FullScreenHeight);
+            Array.Clear(_skyScreen.Current, 0, Screen.GameScreenWidth * Screen.FullScreenHeight);
             _skyScreen.ShowScreen(_skyScreen.Current);
-            _skyScreen.SetPaletteEndian(_skyCompact.FetchCptRaw((ushort) SystemVars.Instance.CurrentPalette));
+            _skyScreen.SetPaletteEndian(_skyCompact.FetchCptRaw((ushort)SystemVars.Instance.CurrentPalette));
             _skyMouse.SpriteMouse(_savedMouse, 0, 0);
             SystemVars.Instance.PastIntro = true;
         }
@@ -85,18 +231,18 @@ namespace NScumm.Sky
         {
             _skyText.FnSetFont(0);
             var sizeofDataFileHeader = ServiceLocator.Platform.SizeOf<DataFileHeader>();
-            var textBuf1 = new byte[Screen.GameScreenWidth*14 + sizeofDataFileHeader];
-            var textBuf2 = new byte[Screen.GameScreenWidth*14 + sizeofDataFileHeader];
+            var textBuf1 = new byte[Screen.GameScreenWidth * 14 + sizeofDataFileHeader];
+            var textBuf2 = new byte[Screen.GameScreenWidth * 14 + sizeofDataFileHeader];
             if (_skyScreen.SequenceRunning())
                 _skyScreen.StopSequence();
 
             var screenData = _skyScreen.Current;
 
-            _skyText.DisplayText(QuitTexts[SystemVars.Instance.Language*2 + 0], textBuf1, true, 320, 255);
-            _skyText.DisplayText(QuitTexts[SystemVars.Instance.Language*2 + 1], textBuf2, true, 320, 255);
+            _skyText.DisplayText(QuitTexts[SystemVars.Instance.Language * 2 + 0], textBuf1, true, 320, 255);
+            _skyText.DisplayText(QuitTexts[SystemVars.Instance.Language * 2 + 1], textBuf2, true, 320, 255);
             var curLine1 = sizeofDataFileHeader;
             var curLine2 = sizeofDataFileHeader;
-            var targetLine = Screen.GameScreenWidth*80;
+            var targetLine = Screen.GameScreenWidth * 80;
             for (byte cnty = 0; cnty < PanCharHeight; cnty++)
             {
                 for (ushort cntx = 0; cntx < Screen.GameScreenWidth; cntx++)
@@ -104,7 +250,7 @@ namespace NScumm.Sky
                     if (textBuf1[curLine1 + cntx] != 0)
                         screenData[targetLine + cntx] = textBuf1[curLine1 + cntx];
                     if (textBuf2[curLine2 + cntx] != 0)
-                        screenData[targetLine + 24*Screen.GameScreenWidth + cntx] = textBuf2[curLine2 + cntx];
+                        screenData[targetLine + 24 * Screen.GameScreenWidth + cntx] = textBuf2[curLine2 + cntx];
                 }
                 curLine1 += Screen.GameScreenWidth;
                 curLine2 += Screen.GameScreenWidth;
@@ -112,6 +258,93 @@ namespace NScumm.Sky
             }
             _skyScreen.HalvePalette();
             _skyScreen.ShowScreen(screenData);
+        }
+
+        public void DoControlPanel()
+        {
+            if (SkyEngine.IsDemo)
+            {
+                return;
+            }
+
+            InitPanel();
+
+            _savedCharSet = _skyText.CurrentCharSet;
+            _skyText.FnSetFont(2);
+
+            _skyScreen.ClearScreen();
+            if (SystemVars.Instance.GameVersion.Version.Minor < 331)
+                _skyScreen.SetPalette(60509);
+            else
+                _skyScreen.SetPalette(60510);
+
+            // Set initial button lights
+            _fxPanButton.CurSprite = (uint)(SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.FX_OFF) ? 0 : 2);
+
+            // music button only available in floppy version
+            if (!SkyEngine.IsCDVersion)
+            {
+                _musicPanButton.CurSprite = (uint)(SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.MUS_OFF) ? 0 : 2);
+            }
+
+            DrawMainPanel();
+
+            _savedMouse = _skyMouse.CurrentMouseType;
+
+            _skyMouse.SpriteMouse(Logic.MOUSE_NORMAL, 0, 0);
+            bool quitPanel = false;
+            _lastButton = -1;
+            _curButtonText = 0;
+            ushort clickRes = 0;
+
+            while (!quitPanel && !SkyEngine.ShouldQuit)
+            {
+                _text.DrawToScreen(WithMask);
+                _system.GraphicsManager.UpdateScreen();
+                _mouseClicked = false;
+                Delay(50);
+                if (_controlPanel == null)
+                    return;
+                if (_keyPressed.IsKeyDown(KeyCode.Escape))
+                { // escape pressed
+                    _mouseClicked = false;
+                    quitPanel = true;
+                }
+                bool haveButton = false;
+                var mouse = _system.InputManager.GetMousePosition();
+                for (byte lookCnt = 0; lookCnt < 9; lookCnt++)
+                {
+                    if (_controlPanLookList[lookCnt].IsMouseOver((uint)mouse.X, (uint)mouse.Y))
+                    {
+                        haveButton = true;
+                        ButtonControl(_controlPanLookList[lookCnt]);
+                        if (_mouseClicked && _controlPanLookList[lookCnt].OnClick != 0)
+                        {
+                            clickRes = HandleClick(_controlPanLookList[lookCnt]);
+                            if (_controlPanel == null) //game state was destroyed
+                                return;
+                            _text.FlushForRedraw();
+                            DrawMainPanel();
+                            _text.DrawToScreen(WithMask);
+                            if ((clickRes == QuitPanel) || (clickRes == GameSaved) ||
+                                (clickRes == GameRestored))
+                                quitPanel = true;
+                        }
+                        _mouseClicked = false;
+                    }
+                }
+                if (!haveButton)
+                    ButtonControl(null);
+            }
+            Array.Clear(_screenBuf, 0, Screen.GameScreenWidth * Screen.FullScreenHeight);
+            _system.GraphicsManager.CopyRectToScreen(_screenBuf, Screen.GameScreenWidth, 0, 0, Screen.GameScreenWidth, Screen.FullScreenHeight);
+            if (!SkyEngine.ShouldQuit)
+                _system.GraphicsManager.UpdateScreen();
+            _skyScreen.ForceRefresh();
+            _skyScreen.SetPaletteEndian(_skyCompact.FetchCptRaw((ushort)SystemVars.Instance.CurrentPalette));
+            RemovePanel();
+            _skyMouse.SpriteMouse(_savedMouse, 0, 0);
+            _skyText.FnSetFont(_savedCharSet);
         }
 
         private ushort ParseSaveData(byte[] src)
@@ -133,7 +366,7 @@ namespace NScumm.Sky
                 var gameVersion = reader.ReadUInt32();
                 if (gameVersion != SystemVars.Instance.GameVersion.Version.Minor)
                 {
-                    if (!SystemVars.Instance.GameVersion.Type.HasFlag(SkyGameType.Cd) || (gameVersion < 365))
+                    if (!SkyEngine.IsCDVersion || (gameVersion < 365))
                     {
                         // cd versions are compatible
                         // TODO: displayMessage(NULL, "This savegame was created by\n"
@@ -150,11 +383,11 @@ namespace NScumm.Sky
                 _skySound.RestoreSfx();
 
                 var music = reader.ReadUInt32();
-                var _savedCharSet = reader.ReadUInt32();
+                _savedCharSet = reader.ReadUInt32();
                 var mouseType = reader.ReadUInt32();
                 var palette = reader.ReadUInt32();
 
-                _skyLogic.ParseSaveData(reader.ReadBytes(Logic.NumSkyScriptVars*4));
+                _skyLogic.ParseSaveData(reader.ReadBytes(Logic.NumSkyScriptVars * 4));
 
                 var reloadList = reader.ReadUInt32s(60);
 
@@ -178,22 +411,22 @@ namespace NScumm.Sky
                         }
                         else if (cptEntry.Type == CptTypeId.RouteBuf)
                         {
-                            Debug.Assert(cptEntry.Size == 32*2);
+                            Debug.Assert(cptEntry.Size == 32 * 2);
                             cptEntry.Patch(reader.ReadBytes(cptEntry.Size));
                         }
                     }
                     {
                         var cptEntry = _skyCompact.FetchCptEntry(0xBF);
-                        cptEntry.Patch(reader.ReadBytes(3*2));
+                        cptEntry.Patch(reader.ReadBytes(3 * 2));
                         cptEntry = _skyCompact.FetchCptEntry(0xC2);
-                        cptEntry.Patch(reader.ReadBytes(13*2));
+                        cptEntry.Patch(reader.ReadBytes(13 * 2));
                     }
                 }
 
                 // make sure all text compacts are off
                 for (var cnt = CptIds.Text1; cnt <= CptIds.Text11; cnt++)
                 {
-                    var c = _skyCompact.FetchCpt((ushort) cnt);
+                    var c = _skyCompact.FetchCpt((ushort)cnt);
                     c.Core.status = 0;
                 }
 
@@ -203,10 +436,10 @@ namespace NScumm.Sky
                             reader.BaseStream.Position, size));
 
                 _skyDisk.RefreshFilesList(reloadList);
-                SystemVars.Instance.CurrentMusic = (ushort) music;
+                SystemVars.Instance.CurrentMusic = (ushort)music;
                 if (!SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.MUS_OFF))
-                    _skyMusic.StartMusic((ushort) music);
-                _savedMouse = (ushort) mouseType;
+                    _skyMusic.StartMusic((ushort)music);
+                _savedMouse = (ushort)mouseType;
                 SystemVars.Instance.CurrentPalette = palette; // will be set when doControlPanel ends
 
                 return GameRestored;
@@ -219,40 +452,916 @@ namespace NScumm.Sky
             throw new NotImplementedException();
         }
 
-        public void DoLoadSavePanel()
+        private void Delay(int amount)
+        {
+            var start = Environment.TickCount;
+            var cur = start;
+            do
+            {
+                _keyPressed = _system.InputManager.GetState();
+                var mousePos = _system.InputManager.GetMousePosition();
+
+                if (!SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.MOUSE_LOCKED))
+                    _skyMouse.MouseMoved((ushort)mousePos.X, (ushort)mousePos.Y);
+
+                _mouseClicked = _keyPressed.IsLeftButtonDown;
+
+                // TODO: mouse wheel ?
+                //case Common::EVENT_WHEELUP:
+                //	_mouseWheel = -1;
+                //	break;
+                //case Common::EVENT_WHEELDOWN:
+                //	_mouseWheel = 1;
+                //	break;
+
+                int thisDelay = 20; // 1?
+#if _WIN32_WCE
+    this_delay = 10;
+#endif
+                if (thisDelay > amount)
+                    thisDelay = amount;
+
+                if (thisDelay > 0) ServiceLocator.Platform.Sleep(thisDelay);
+
+                cur = Environment.TickCount;
+            } while (cur < start + amount);
+        }
+
+        private ushort HandleClick(ConResource pButton)
+        {
+            string quitDos = "Quit to DOS?";
+            string restart = "Restart?";
+
+            switch (pButton.OnClick)
+            {
+                case DoNothing:
+                    return 0;
+                case RestGamePanel:
+                    if (!LoadSaveAllowed())
+                        return CancelPressed; // can't save/restore while choosing
+                    AnimClick(pButton);
+                    return SaveRestorePanel(false); // texts can't be edited
+                case SaveGamePanel:
+                    if (!LoadSaveAllowed())
+                        return CancelPressed; // can't save/restore while choosing
+                    AnimClick(pButton);
+                    return SaveRestorePanel(true); // texts can be edited
+                case SaveAGame:
+                    AnimClick(pButton);
+                    return SaveGameToFile(true);
+                case RestoreAGame:
+                    AnimClick(pButton);
+                    return RestoreGameFromFile(false);
+                case RestoreAuto:
+                    AnimClick(pButton);
+                    return RestoreGameFromFile(true);
+                case SpCancel:
+                    AnimClick(pButton);
+                    return CancelPressed;
+                case ShiftDownFast:
+                    AnimClick(pButton);
+                    return ShiftDown(Fast);
+                case ShiftDownSlow:
+                    AnimClick(pButton);
+                    return ShiftDown(Slow);
+                case ShiftUpFast:
+                    AnimClick(pButton);
+                    return ShiftUp(Fast);
+                case ShiftUpSlow:
+                    AnimClick(pButton);
+                    return ShiftUp(Slow);
+                case SpeedSlide:
+                    _mouseClicked = true;
+                    return DoSpeedSlide();
+                case MusicSlide:
+                    _mouseClicked = true;
+                    return DoMusicSlide();
+                case ToggleFx:
+                    DoToggleFx(pButton);
+                    return Toggled;
+                case ToggleMs:
+                    ToggleMusic(pButton);
+                    return Toggled;
+                case ToggleText:
+                    AnimClick(pButton);
+                    return DoToggleText();
+                case Exit:
+                    AnimClick(pButton);
+                    return QuitPanel;
+                case Restart:
+                    AnimClick(pButton);
+                    if (GetYesNo(restart))
+                    {
+                        RestartGame();
+                        return GameRestored;
+                    }
+                    return 0;
+                case QuitToDos:
+                    AnimClick(pButton);
+                    if (GetYesNo(quitDos))
+                        SkyEngine.QuitGame();
+                    return 0;
+                default:
+                    throw new InvalidOperationException(string.Format("Control::handleClick: unknown routine: {0:X2}", pButton.OnClick));
+            }
+        }
+
+        private ushort DoToggleText()
+        {
+            SystemFlags flags = SystemVars.Instance.SystemFlags & TextFlagMask;
+            SystemVars.Instance.SystemFlags &= ~TextFlagMask;
+
+            if (flags == SystemFlags.AllowText)
+            {
+                flags = SystemFlags.ALLOW_SPEECH;
+                _statusBar.SetToText(0x7000 + 21); // speech only
+            }
+            else if (flags == SystemFlags.ALLOW_SPEECH)
+            {
+                flags = SystemFlags.ALLOW_SPEECH | SystemFlags.AllowText;
+                _statusBar.SetToText(0x7000 + 52); // text and speech
+            }
+            else
+            {
+                flags = SystemFlags.AllowText;
+                _statusBar.SetToText(0x7000 + 35); // text only
+            }
+
+            // TODO: configuration
+            //ConfMan.setBool("subtitles", (flags & SystemFlags.AllowText) != 0);
+            //ConfMan.setBool("speech_mute", (flags & SystemFlags.ALLOW_SPEECH) == 0);
+
+            SystemVars.Instance.SystemFlags |= flags;
+
+            DrawTextCross(flags);
+
+            _system.GraphicsManager.UpdateScreen();
+            return Toggled;
+        }
+
+        private void DoToggleFx(ConResource pButton)
+        {
+            SystemVars.Instance.SystemFlags ^= SystemFlags.FX_OFF;
+            if (SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.FX_OFF))
+            {
+                pButton.CurSprite = 0;
+                _statusBar.SetToText(0x7000 + 87);
+            }
+            else
+            {
+                pButton.CurSprite = 2;
+                _statusBar.SetToText(0x7000 + 86);
+            }
+
+            // TODO: configuration
+            //ConfMan.setBool("sfx_mute", SystemVars.SystemFlags.HasFlag(SystemFlags.FX_OFF) != 0);
+
+            pButton.DrawToScreen(WithMask);
+            _system.GraphicsManager.UpdateScreen();
+        }
+
+        private void ToggleMusic(ConResource pButton)
+        {
+            SystemVars.Instance.SystemFlags ^= SystemFlags.MUS_OFF;
+            if (SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.MUS_OFF))
+            {
+                _skyMusic.StartMusic(0);
+                pButton.CurSprite = 0;
+                _statusBar.SetToText(0x7000 + 89);
+            }
+            else
+            {
+                _skyMusic.StartMusic(SystemVars.Instance.CurrentMusic);
+                pButton.CurSprite = 2;
+                _statusBar.SetToText(0x7000 + 88);
+            }
+
+            // TODO: configuration 
+            // ConfMan.setBool("music_mute", (SkyEngine::_systemVars.systemFlags & SF_MUS_OFF) != 0);
+
+            pButton.DrawToScreen(WithMask);
+            _system.GraphicsManager.UpdateScreen();
+        }
+
+        private ushort DoMusicSlide()
+        {
+            var mouse = _system.InputManager.GetMousePosition();
+            int ofsY = _slide2.Y - mouse.Y;
+            while (_mouseClicked)
+            {
+                Delay(50);
+                if (_controlPanel == null)
+                    return 0;
+                mouse = _system.InputManager.GetMousePosition();
+                int newY = ofsY + mouse.Y;
+                if (newY < 59) newY = 59;
+                if (newY > 91) newY = 91;
+                if (newY != _slide2.Y)
+                {
+                    _slode.DrawToScreen(NoMask);
+                    _slide2.SetXy(_slide2.X, (ushort)newY);
+                    _slide2.DrawToScreen(WithMask);
+                    _slide.DrawToScreen(WithMask);
+                    var volume = (byte)((newY - 59) * 4);
+                    if (volume >= 128) volume = 0;
+                    else volume = (byte)(127 - volume);
+                    _skyMusic.Volume = volume;
+                }
+                ButtonControl(_slide2);
+                _text.DrawToScreen(WithMask);
+                _system.GraphicsManager.UpdateScreen();
+            }
+            return 0;
+        }
+
+        private ushort DoSpeedSlide()
+        {
+            var mouse = _system.InputManager.GetMousePosition();
+            int ofsY = _slide.Y - mouse.Y;
+            ushort speedDelay = (ushort)(_slide.Y - (MpnlY + 93));
+            speedDelay *= SpeedMultiply;
+            speedDelay += 2;
+            while (_mouseClicked)
+            {
+                Delay(50);
+                if (_controlPanel == null)
+                    return SpeedChanged;
+                mouse = _system.InputManager.GetMousePosition();
+                int newY = ofsY + mouse.Y;
+                if (newY < MpnlY + 93) newY = MpnlY + 93;
+                if (newY > MpnlY + 104) newY = MpnlY + 104;
+                if ((newY == 110) || (newY == 108)) newY = 109;
+                if (newY != _slide.Y)
+                {
+                    _slode.DrawToScreen(NoMask);
+                    _slide.SetXy(_slide.X, (ushort)newY);
+                    _slide.DrawToScreen(WithMask);
+                    _slide2.DrawToScreen(WithMask);
+                    speedDelay = (ushort)(newY - (MpnlY + 93));
+                    speedDelay *= SpeedMultiply;
+                    speedDelay += 2;
+                }
+                ButtonControl(_slide);
+                _text.DrawToScreen(WithMask);
+                _system.GraphicsManager.UpdateScreen();
+            }
+            SystemVars.Instance.GameSpeed = speedDelay;
+            return SpeedChanged;
+        }
+
+        private ushort ShiftUp(byte speed)
+        {
+            if (speed == Slow)
+            {
+                if (_firstText > 0)
+                    _firstText--;
+                else
+                    return 0;
+            }
+            else
+            {
+                if (_firstText >= MAX_ON_SCREEN)
+                    _firstText -= MAX_ON_SCREEN;
+                else if (_firstText > 0)
+                    _firstText = 0;
+                else
+                    return 0;
+            }
+            return Shifted;
+        }
+
+        private ushort ShiftDown(byte speed)
+        {
+            if (speed == Slow)
+            {
+                if (_firstText >= MAX_SAVE_GAMES - MAX_ON_SCREEN)
+                    return 0;
+                _firstText++;
+            }
+            else
+            {
+                if (_firstText <= MAX_SAVE_GAMES - 2 * MAX_ON_SCREEN)
+                    _firstText += MAX_ON_SCREEN;
+                else if (_firstText < MAX_SAVE_GAMES - MAX_ON_SCREEN)
+                    _firstText = MAX_SAVE_GAMES - MAX_ON_SCREEN;
+                else
+                    return 0;
+            }
+
+            return Shifted;
+        }
+
+        private ushort RestoreGameFromFile(bool p0)
         {
             throw new NotImplementedException();
-            //if (SkyEngine.IsDemo)
-            //    return; // I don't think this can even happen
-            //InitPanel();
-            //_skyScreen.ClearScreen();
-            //if (SystemVars.Instance.GameVersion.Version.Minor < 331)
-            //    _skyScreen.SetPalette(60509);
-            //else
-            //    _skyScreen.SetPalette(60510);
+        }
 
-            //_savedMouse = _skyMouse.CurrentMouseType;
-            //_savedCharSet = _skyText.CurrentCharSet;
-            //_skyText.FnSetFont(2);
-            //_skyMouse.SpriteMouse(MOUSE_NORMAL, 0, 0);
-            //_lastButton = -1;
-            //_curButtonText = 0;
+        private ushort SaveGameToFile(bool b)
+        {
+            throw new NotImplementedException();
+        }
 
-            //SaveRestorePanel(false);
+        private bool GetYesNo(string text)
+        {
+            bool retVal = false;
+            bool quitPanel = false;
+            byte mouseType = Logic.MOUSE_NORMAL;
+            byte wantMouse = Logic.MOUSE_NORMAL;
+            ushort textY = MpnlY;
+            byte[] dlgTextDat;
 
-            //memset(_screenBuf, 0, GAME_SCREEN_WIDTH * FULL_SCREEN_HEIGHT);
-            //_system.GraphicsManager.CopyRectToScreen(_screenBuf, GAME_SCREEN_WIDTH, 0, 0, GAME_SCREEN_WIDTH, FULL_SCREEN_HEIGHT);
-            //_system.GraphicsManager.UpdateScreen();
-            //_skyScreen.ForceRefresh();
-            //_skyScreen.SetPaletteEndian(_skyCompact.FetchCptRaw((ushort)SystemVars.Instance.CurrentPalette));
-            //RemovePanel();
-            //_skyMouse.SpriteMouse(_savedMouse, 0, 0);
-            //_skyText.FnSetFont(_savedCharSet);
+            _yesNo.DrawToScreen(WithMask);
+            if (text != null)
+            {
+                DisplayedText dlgLtm = _skyText.DisplayText(text, null, true, (ushort)(ServiceLocator.Platform.ToStructure<DataFileHeader>(_yesNo.SpriteData, 0).s_width - 8), (byte)37);
+                dlgTextDat = dlgLtm.TextData;
+                textY = (ushort)(MpnlY + 44 + (28 - ServiceLocator.Platform.ToStructure<DataFileHeader>(dlgTextDat, 0).s_height) / 2);
+            }
+            else
+                dlgTextDat = null;
+
+            TextResource dlgText = new TextResource(dlgTextDat, 1, 0, MpnlX + 2, textY, 0, DoNothing, _system, _screenBuf);
+            dlgText.DrawToScreen(WithMask);
+
+            while (!quitPanel)
+            {
+                if (mouseType != wantMouse)
+                {
+                    mouseType = wantMouse;
+                    _skyMouse.SpriteMouse(mouseType, 0, 0);
+                }
+                _system.GraphicsManager.UpdateScreen();
+                Delay(50);
+                if (_controlPanel == null)
+                {
+                    return retVal;
+                }
+                var mouse = _system.InputManager.GetMousePosition();
+                if ((mouse.Y >= 83) && (mouse.Y <= 110))
+                {
+                    if ((mouse.X >= 77) && (mouse.X <= 114))
+                    { // over 'yes'
+                        wantMouse = Logic.MOUSE_CROSS;
+                        if (_mouseClicked)
+                        {
+                            quitPanel = true;
+                            retVal = true;
+                        }
+                    }
+                    else if ((mouse.X >= 156) && (mouse.X <= 193))
+                    { // over 'no'
+                        wantMouse = Logic.MOUSE_CROSS;
+                        if (_mouseClicked)
+                        {
+                            quitPanel = true;
+                            retVal = false;
+                        }
+                    }
+                    else
+                        wantMouse = Logic.MOUSE_NORMAL;
+                }
+                else
+                    wantMouse = Logic.MOUSE_NORMAL;
+            }
+            _mouseClicked = false;
+            _skyMouse.SpriteMouse(Logic.MOUSE_NORMAL, 0, 0);
+            return retVal;
+        }
+
+        private bool LoadSaveAllowed()
+        {
+            throw new NotImplementedException();
+        }
+
+        private void AnimClick(ConResource pButton)
+        {
+            if (pButton.CurSprite != pButton.NumSprites - 1)
+            {
+                pButton.CurSprite++;
+                _text.FlushForRedraw();
+                pButton.DrawToScreen(NoMask);
+                _text.DrawToScreen(WithMask);
+                _system.GraphicsManager.UpdateScreen();
+                Delay(150);
+                if (_controlPanel == null)
+                    return;
+                pButton.CurSprite--;
+                _text.FlushForRedraw();
+                pButton.DrawToScreen(NoMask);
+                _text.DrawToScreen(WithMask);
+                _system.GraphicsManager.UpdateScreen();
+            }
+        }
+
+        private void DrawMainPanel()
+        {
+            Array.Clear(_screenBuf, 0, Screen.GameScreenWidth * Screen.FullScreenHeight);
+            _system.GraphicsManager.CopyRectToScreen(_screenBuf, Screen.GameScreenWidth, 0, 0, Screen.GameScreenWidth, Screen.FullScreenHeight);
+            _controlPanel.DrawToScreen(NoMask);
+            _exitButton.DrawToScreen(NoMask);
+            _savePanButton.DrawToScreen(NoMask);
+            _restorePanButton.DrawToScreen(NoMask);
+            _dosPanButton.DrawToScreen(NoMask);
+            _restartPanButton.DrawToScreen(NoMask);
+            _fxPanButton.DrawToScreen(NoMask);
+            _musicPanButton.DrawToScreen(NoMask);
+            _slode.DrawToScreen(WithMask);
+            _slide.DrawToScreen(WithMask);
+            _slide2.DrawToScreen(WithMask);
+            _bodge.DrawToScreen(WithMask);
+            if (SkyEngine.IsCDVersion)
+                DrawTextCross(SystemVars.Instance.SystemFlags & TextFlagMask);
+            _statusBar.DrawToScreen();
+        }
+
+        private void DrawTextCross(SystemFlags flags)
+        {
+            _bodge.DrawToScreen(NoMask);
+            if (!flags.HasFlag(SystemFlags.ALLOW_SPEECH))
+                DrawCross(151, 124);
+            if (!flags.HasFlag(SystemFlags.AllowText))
+                DrawCross(173, 124);
+        }
+
+        private void DrawCross(ushort x, ushort y)
+        {
+            _text.FlushForRedraw();
+            var bufPos = y * Screen.GameScreenWidth + x;
+            var crossPos = 0;
+            for (ushort cnty = 0; cnty < CrossSzY; cnty++)
+            {
+                for (ushort cntx = 0; cntx < CrossSzX; cntx++)
+                    if (CrossImg[crossPos + cntx] != 0xFF)
+                        _screenBuf[bufPos + cntx] = CrossImg[crossPos + cntx];
+                bufPos += Screen.GameScreenWidth;
+                crossPos += CrossSzX;
+            }
+            bufPos = y * Screen.GameScreenWidth + x;
+            _system.GraphicsManager.CopyRectToScreen(_screenBuf, bufPos, Screen.GameScreenWidth, x, y, CrossSzX, CrossSzY);
+            _text.DrawToScreen(WithMask);
+        }
+
+        private void ButtonControl(ConResource pButton)
+        {
+            if (pButton == null)
+            {
+                _textSprite = null;
+                _curButtonText = 0;
+                _text.SetSprite(null);
+                return;
+            }
+            if (_curButtonText != pButton.Text)
+            {
+                _textSprite = null;
+                _curButtonText = (int)pButton.Text;
+                if (pButton.Text != 0)
+                {
+                    DisplayedText textRes;
+                    if (pButton.Text == 0xFFFF) // text for autosave button
+                        textRes = _skyText.DisplayText("Restore Autosave", null, false, PanLineWidth, 255);
+                    else
+                        textRes = _skyText.DisplayText((ushort)pButton.Text, null, false, PanLineWidth, 255);
+                    _textSprite = textRes.TextData;
+                    _text.SetSprite(_textSprite);
+                }
+                else
+                    _text.SetSprite(null);
+            }
+            var mouse = _system.InputManager.GetMousePosition();
+            int destY = (mouse.X - 16 >= 0) ? mouse.Y - 16 : 0;
+            _text.SetXy((ushort)(mouse.X + 12), (ushort)destY);
+        }
+
+        public void DoLoadSavePanel()
+        {
+            if (SkyEngine.IsDemo)
+                return; // I don't think this can even happen
+            InitPanel();
+            _skyScreen.ClearScreen();
+            if (SystemVars.Instance.GameVersion.Version.Minor < 331)
+                _skyScreen.SetPalette(60509);
+            else
+                _skyScreen.SetPalette(60510);
+
+            _savedMouse = _skyMouse.CurrentMouseType;
+            _savedCharSet = _skyText.CurrentCharSet;
+            _skyText.FnSetFont(2);
+            _skyMouse.SpriteMouse(Logic.MOUSE_NORMAL, 0, 0);
+            _lastButton = -1;
+            _curButtonText = 0;
+
+            SaveRestorePanel(false);
+
+            Array.Clear(_screenBuf, 0, Screen.GameScreenWidth * Screen.FullScreenHeight);
+            _system.GraphicsManager.CopyRectToScreen(_screenBuf, Screen.GameScreenWidth, 0, 0, Screen.GameScreenWidth,
+                Screen.FullScreenHeight);
+            _system.GraphicsManager.UpdateScreen();
+            _skyScreen.ForceRefresh();
+            _skyScreen.SetPaletteEndian(_skyCompact.FetchCptRaw((ushort)SystemVars.Instance.CurrentPalette));
+            RemovePanel();
+            _skyMouse.SpriteMouse(_savedMouse, 0, 0);
+            _skyText.FnSetFont(_savedCharSet);
+        }
+
+        private ushort SaveRestorePanel(bool b)
+        {
+            _keyPressed = new ScummInputState();
+            _system.InputManager.ResetKeys();
+            throw new NotImplementedException();
         }
 
         private void InitPanel()
         {
-            throw new NotImplementedException();
+            _screenBuf = new byte[Screen.GameScreenWidth * Screen.FullScreenHeight];
+
+            var volY = (ushort)((127 - _skyMusic.Volume) / 4 + 59 - MpnlY); // volume slider's Y coordinate
+            var spdY = (ushort)((SystemVars.Instance.GameSpeed - 2) / SpeedMultiply);
+            spdY += MpnlY + 83; // speed slider's initial position
+
+            _sprites.ControlPanel = _skyDisk.LoadFile(60500);
+            _sprites.Button = _skyDisk.LoadFile(60501);
+            _sprites.ButtonDown = _skyDisk.LoadFile(60502);
+            _sprites.SavePanel = _skyDisk.LoadFile(60503);
+            _sprites.YesNo = _skyDisk.LoadFile(60504);
+            _sprites.Slide = _skyDisk.LoadFile(60505);
+            _sprites.Slode = _skyDisk.LoadFile(60506);
+            _sprites.Slode2 = _skyDisk.LoadFile(60507);
+            _sprites.Slide2 = _skyDisk.LoadFile(60508);
+            if (SystemVars.Instance.GameVersion.Version.Minor < 368)
+                _sprites.MusicBodge = null;
+            else
+                _sprites.MusicBodge = _skyDisk.LoadFile(60509);
+
+            //Main control panel:                                            X    Y Text       OnClick
+            _controlPanel = CreateResource(_sprites.ControlPanel, 1, 0, 0, 0, 0, DoNothing, Mainpanel);
+            _exitButton = CreateResource(_sprites.Button, 3, 0, 16, 125, 50, Exit, Mainpanel);
+            _slide = CreateResource(_sprites.Slide2, 1, 0, 19, (short)spdY, 95, SpeedSlide, Mainpanel);
+            _slide2 = CreateResource(_sprites.Slide2, 1, 0, 19, (short)volY, 14, MusicSlide, Mainpanel);
+            _slode = CreateResource(_sprites.Slode2, 1, 0, 9, 49, 0, DoNothing, Mainpanel);
+            _restorePanButton = CreateResource(_sprites.Button, 3, 0, 58, 19, 51, RestGamePanel, Mainpanel);
+            _savePanButton = CreateResource(_sprites.Button, 3, 0, 58, 39, 48, SaveGamePanel, Mainpanel);
+            _dosPanButton = CreateResource(_sprites.Button, 3, 0, 58, 59, 93, QuitToDos, Mainpanel);
+            _restartPanButton = CreateResource(_sprites.Button, 3, 0, 58, 79, 94, Restart, Mainpanel);
+            _fxPanButton = CreateResource(_sprites.Button, 3, 0, 58, 99, 90, ToggleFx, Mainpanel);
+
+            if (SkyEngine.IsCDVersion)
+            {
+                // CD Version: Toggle text/speech
+                _musicPanButton = CreateResource(_sprites.Button, 3, 0, 58, 119, 52, ToggleText, Mainpanel);
+            }
+            else
+            {
+                // disk version: toggle music on/off
+                _musicPanButton = CreateResource(_sprites.Button, 3, 0, 58, 119, 91, ToggleMs, Mainpanel);
+            }
+            _bodge = CreateResource(_sprites.MusicBodge, 2, 1, 98, 115, 0, DoNothing, Mainpanel);
+            _yesNo = CreateResource(_sprites.YesNo, 1, 0, -2, 40, 0, DoNothing, Mainpanel);
+
+            _text = new TextResource(null, 1, 0, 15, 137, 0, DoNothing, _system, _screenBuf);
+            _controlPanLookList = new[]
+            {
+                _exitButton,
+                _restorePanButton,
+                _savePanButton,
+                _dosPanButton,
+                _restartPanButton,
+                _fxPanButton,
+                _musicPanButton,
+                _slide,
+                _slide2
+            };
+
+
+            // save/restore panel
+            _savePanel = CreateResource(_sprites.SavePanel, 1, 0, 0, 0, 0, DoNothing, Savepanel);
+            _saveButton = CreateResource(_sprites.Button, 3, 0, 29, 129, 48, SaveAGame, Savepanel);
+            _downFastButton = CreateResource(_sprites.ButtonDown, 1, 0, 212, 114, 0, ShiftDownFast, Savepanel);
+            _downSlowButton = CreateResource(_sprites.ButtonDown, 1, 0, 212, 104, 0, ShiftDownSlow, Savepanel);
+            _upFastButton = CreateResource(_sprites.ButtonDown, 1, 0, 212, 10, 0, ShiftUpFast, Savepanel);
+            _upSlowButton = CreateResource(_sprites.ButtonDown, 1, 0, 212, 21, 0, ShiftUpSlow, Savepanel);
+            _quitButton = CreateResource(_sprites.Button, 3, 0, 72, 129, 49, SpCancel, Savepanel);
+            _restoreButton = CreateResource(_sprites.Button, 3, 0, 29, 129, 51, RestoreAGame, Savepanel);
+            _autoSaveButton = CreateResource(_sprites.Button, 3, 0, 115, 129, 0x8FFF, RestoreAuto, Savepanel);
+
+            _savePanLookList = new[]
+            {
+                _saveButton,
+                _downSlowButton,
+                _downFastButton,
+                _upFastButton,
+                _upSlowButton,
+                _quitButton
+            };
+            _restorePanLookList = new[]
+            {
+                _restoreButton,
+                _downSlowButton,
+                _downFastButton,
+                _upFastButton,
+                _upSlowButton,
+                _quitButton,
+                _autoSaveButton
+            };
+
+            _statusBar = new ControlStatus(_skyText, _system, _screenBuf);
+
+            _textSprite = null;
+        }
+
+        private void RemovePanel()
+        {
+            _screenBuf = null;
+            _sprites.ControlPanel = null;
+            _sprites.Button = null;
+            _sprites.ButtonDown = null;
+            _sprites.SavePanel = null;
+            _sprites.YesNo = null;
+            _sprites.Slide = null;
+            _sprites.Slide2 = null;
+            _sprites.Slode = null;
+            _sprites.Slode2 = null;
+            _sprites.MusicBodge = null;
+            _controlPanel = null;
+            _exitButton = null;
+            _controlPanel = null;
+            _slide = null;
+            _slide2 = null;
+            _slode = null;
+            _restorePanButton = null;
+            _savePanel = null;
+            _saveButton = null;
+            _downFastButton = null;
+            _downSlowButton = null;
+            _upFastButton = null;
+            _upSlowButton = null;
+            _quitButton = null;
+            _autoSaveButton = null;
+            _savePanButton = null;
+            _dosPanButton = null;
+            _restartPanButton = null;
+            _fxPanButton = null;
+            _musicPanButton = null;
+            _bodge = null;
+            _yesNo = null;
+            _text = null;
+            _statusBar = null;
+            _restoreButton = null;
+            _textSprite = null;
+        }
+
+        private ConResource CreateResource(byte[] pSpData, uint pNSprites, uint pCurSprite, short pX, short pY,
+            uint pText, byte pOnClick, byte panelType)
+        {
+            if (pText != 0) pText += 0x7000;
+            if (panelType == Mainpanel)
+            {
+                pX += MpnlX;
+                pY += MpnlY;
+            }
+            else
+            {
+                pX += SpnlX;
+                pY += SpnlY;
+            }
+            return new ConResource(pSpData, pNSprites, pCurSprite, (ushort)pX, (ushort)pY, pText, pOnClick, _system,
+                _screenBuf);
+        }
+
+        private struct Sprites
+        {
+            public byte[] ControlPanel;
+            public byte[] Button;
+            public byte[] ButtonDown;
+            public byte[] SavePanel;
+            public byte[] YesNo;
+            public byte[] Slide;
+            public byte[] Slode;
+            public byte[] Slode2;
+            public byte[] Slide2;
+            public byte[] MusicBodge;
+        }
+
+        private class ConResource
+        {
+            public uint NumSprites;
+            public uint CurSprite;
+            public byte OnClick;
+            public readonly byte[] Screen;
+
+            public byte[] SpriteData;
+            public readonly ISystem System;
+            public uint Text;
+            public ushort X, Y;
+
+            public ConResource(byte[] pSpData, uint pNSprites, uint pCurSprite, ushort pX, ushort pY, uint pText,
+                byte pOnClick, ISystem system, byte[] screen)
+            {
+                SpriteData = pSpData;
+                NumSprites = pNSprites;
+                CurSprite = pCurSprite;
+                X = pX;
+                Y = pY;
+                Text = pText;
+                OnClick = pOnClick;
+                System = system;
+                Screen = screen;
+            }
+
+            public void SetSprite(byte[] pSpData)
+            {
+                SpriteData = pSpData;
+            }
+
+            public void SetText(uint pText)
+            {
+                if (pText != 0) Text = pText + 0x7000;
+                else Text = 0;
+            }
+
+            public void SetXy(ushort x, ushort y)
+            {
+                X = x;
+                Y = y;
+            }
+
+            public bool IsMouseOver(uint mouseX, uint mouseY)
+            {
+                var header = ServiceLocator.Platform.ToStructure<DataFileHeader>(SpriteData, 0);
+                return (mouseX >= X) && (mouseY >= Y) && ((ushort)mouseX <= X + header.s_width) &&
+                       ((ushort)mouseY <= Y + header.s_height);
+            }
+
+            public virtual void DrawToScreen(bool doMask)
+            {
+                var screenPos = Y * Sky.Screen.GameScreenWidth + X;
+                var updatePos = screenPos;
+
+                if (SpriteData == null)
+                    return;
+
+                var spriteDataPos = ServiceLocator.Platform.SizeOf<DataFileHeader>();
+                var header = ServiceLocator.Platform.ToStructure<DataFileHeader>(SpriteData, 0);
+                spriteDataPos += (int)(header.s_sp_size * CurSprite);
+                if (doMask)
+                {
+                    for (ushort cnty = 0; cnty < header.s_height; cnty++)
+                    {
+                        for (ushort cntx = 0; cntx < header.s_width; cntx++)
+                        {
+                            if (SpriteData[spriteDataPos + cntx] != 0)
+                                Screen[screenPos + cntx] = SpriteData[spriteDataPos + cntx];
+                        }
+                        screenPos += Sky.Screen.GameScreenWidth;
+                        spriteDataPos += header.s_width;
+                    }
+                }
+                else
+                {
+                    for (ushort cnty = 0; cnty < header.s_height; cnty++)
+                    {
+                        Array.Copy(SpriteData, spriteDataPos, Screen, screenPos, header.s_width);
+                        screenPos += Sky.Screen.GameScreenWidth;
+                        spriteDataPos += header.s_width;
+                    }
+                }
+                System.GraphicsManager.CopyRectToScreen(Screen, updatePos, Sky.Screen.GameScreenWidth, X, Y,
+                    header.s_width, header.s_height);
+            }
+        }
+
+        private class TextResource : ConResource
+        {
+            private const int PanLineWidth = 184;
+            private const int PAN_CHAR_HEIGHT = 12;
+            private readonly byte[] _oldScreen;
+
+            private ushort _oldX, _oldY;
+
+            public TextResource(byte[] pSpData, uint pNSprites, uint pCurSprite, ushort pX, ushort pY, uint pText,
+                byte pOnClick, ISystem system, byte[] screen)
+                : base(pSpData, pNSprites, pCurSprite, pX, pY, pText, pOnClick, system, screen)
+            {
+                _oldScreen = new byte[PAN_CHAR_HEIGHT * 3 * PanLineWidth];
+                _oldY = 0;
+                _oldX = Sky.Screen.GameScreenWidth;
+            }
+
+            public override void DrawToScreen(bool doMask)
+            {
+                ushort cnty;
+                ushort cpWidth, cpHeight;
+                if ((_oldX == X) && (_oldY == Y) && SpriteData != null)
+                    return;
+                var spriteData = SpriteData != null
+                    ? ServiceLocator.Platform.ToStructure<DataFileHeader>(SpriteData, 0)
+                    : null;
+                if (_oldX < Sky.Screen.GameScreenWidth)
+                {
+                    cpWidth =
+                        (ushort)
+                            (PanLineWidth > Sky.Screen.GameScreenWidth - _oldX
+                                ? Sky.Screen.GameScreenWidth - _oldX
+                                : PanLineWidth);
+                    if (spriteData != null && (cpWidth > spriteData.s_width))
+                        cpWidth = spriteData.s_width;
+                    if (spriteData != null)
+                        cpHeight =
+                            (ushort)
+                                (spriteData.s_height > Sky.Screen.GameScreenHeight - _oldY
+                                    ? Sky.Screen.GameScreenHeight - _oldY
+                                    : spriteData.s_height);
+                    else
+                        cpHeight = PAN_CHAR_HEIGHT;
+                    for (cnty = 0; cnty < cpHeight; cnty++)
+                    {
+                        Array.Copy(_oldScreen, cnty * PanLineWidth, Screen,
+                            (cnty + _oldY) * Sky.Screen.GameScreenWidth + _oldX, cpWidth);
+                    }
+                    System.GraphicsManager.CopyRectToScreen(Screen, _oldY * Sky.Screen.GameScreenWidth + _oldX,
+                        Sky.Screen.GameScreenWidth, _oldX, _oldY, cpWidth, PAN_CHAR_HEIGHT);
+                }
+                if (spriteData == null)
+                {
+                    _oldX = Sky.Screen.GameScreenWidth;
+                    return;
+                }
+                _oldX = X;
+                _oldY = Y;
+                cpWidth =
+                    (ushort)
+                        (PanLineWidth > Sky.Screen.GameScreenWidth - X ? Sky.Screen.GameScreenWidth - X : PanLineWidth);
+                if (cpWidth > spriteData.s_width)
+                    cpWidth = spriteData.s_width;
+                cpHeight =
+                    (ushort)
+                        (spriteData.s_height > Sky.Screen.GameScreenHeight - Y
+                            ? Sky.Screen.GameScreenHeight - Y
+                            : spriteData.s_height);
+
+                var screenPos = Y * Sky.Screen.GameScreenWidth + X;
+                var copyDest = 0;
+                var copySrc = ServiceLocator.Platform.SizeOf<DataFileHeader>();
+                for (cnty = 0; cnty < cpHeight; cnty++)
+                {
+                    Array.Copy(Screen, screenPos, _oldScreen, copyDest, cpWidth);
+                    for (ushort cntx = 0; cntx < cpWidth; cntx++)
+                    {
+                        if (SpriteData[copySrc + cntx] != 0)
+                        {
+                            Screen[screenPos + cntx] = SpriteData[copySrc + cntx];
+                        }
+                    }
+                    copySrc += spriteData.s_width;
+                    copyDest += PanLineWidth;
+                    screenPos += Sky.Screen.GameScreenWidth;
+                }
+                System.GraphicsManager.CopyRectToScreen(Screen, Y * Sky.Screen.GameScreenWidth + X, Sky.Screen.GameScreenWidth,
+                    X, Y, cpWidth, cpHeight);
+            }
+
+            public void FlushForRedraw()
+            {
+                if (_oldX < Sky.Screen.GameScreenWidth)
+                {
+                    var cpWidth =
+                        (ushort)
+                            (PanLineWidth > Sky.Screen.GameScreenWidth - _oldX
+                                ? Sky.Screen.GameScreenWidth - _oldX
+                                : PanLineWidth);
+                    for (byte cnty = 0; cnty < PAN_CHAR_HEIGHT; cnty++)
+                    {
+                        Array.Copy(_oldScreen, cnty * PanLineWidth, Screen,
+                            (cnty + _oldY) * Sky.Screen.GameScreenWidth + _oldX, cpWidth);
+                    }
+                }
+                _oldX = Sky.Screen.GameScreenWidth;
+            }
+        }
+
+        private class ControlStatus
+        {
+            private byte[] _screenBuf;
+            private Text _skyText;
+
+            private TextResource _statusText;
+            private ISystem _system;
+            private byte[] _textData;
+
+            public ControlStatus(Text skyText, ISystem system, byte[] scrBuf)
+            {
+            }
+
+            public void SetToText(string newText)
+            {
+            }
+
+            public void SetToText(ushort textNum)
+            {
+            }
+
+            public void DrawToScreen()
+            {
+            }
         }
     }
 }

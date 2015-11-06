@@ -38,6 +38,11 @@ namespace NScumm.Sky
         private byte[] _data;
         private int _offset;
 
+        public byte[] Data
+        {
+            get { return _data; }
+        }
+
         public ushort Value
         {
             get { return _data.ToUInt16(Offset); }

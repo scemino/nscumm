@@ -29,11 +29,16 @@ namespace NScumm.Core
 
     public enum KeyCode
     {
+        None = 0,
+
+        LeftControl = 1,
+
         Backspace = 8,
         Tab = 9,
         Return = 13,
         Escape = 27,
         Space = 32,
+        OemPeriod = 46,
 
         F1 = 315,
         F2 = 316,
@@ -99,16 +104,16 @@ namespace NScumm.Core
         NumPad9 = 265,
 
         // Arrows + Home/End pad
-        Up          = 273,
-        Down        = 274,
-        Right       = 275,
-        Left        = 276,
-        Insert      = 277,
-        Home        = 278,
-        End         = 279,
-        PageUp      = 280,
-        PageDown    = 281,
+        Up = 273,
+        Down = 274,
+        Right = 275,
+        Left = 276,
+        Insert = 277,
+        Home = 278,
+        End = 279,
+        PageUp = 280,
+        PageDown = 281,
 
-        LeftShift   = 304,
+        LeftShift = 304,
     }
 }

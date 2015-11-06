@@ -36,12 +36,20 @@ namespace NScumm.Sky
             private set { _itemList = value; }
         }
 
+        public static bool IsCDVersion
+        {
+            get { return SystemVars.Instance.GameVersion.Type.HasFlag(SkyGameType.Cd); }
+        }
+
+        public static bool ShouldQuit { get; set; }
+
         public event EventHandler ShowMenuDialogRequested;
 
 
         public SkyEngine(GameSettings settings, IGraphicsManager gfxManager, IInputManager inputManager, IAudioOutput output, bool debugMode = false)
         {
             _system = new SkySystem(gfxManager, inputManager);
+
             _mixer = new Mixer(44100);
             _mixer.Read(new byte[0], 0);
             output.SetSampleProvider(_mixer);
@@ -52,6 +60,7 @@ namespace NScumm.Sky
 
             SystemVars.Instance.GameVersion = _skyDisk.DetermineGameVersion();
 
+            // TODO: music
             //MidiDriver::DeviceHandle dev = MidiDriver::detectDevice(MDT_ADLIB | MDT_MIDI | MDT_PREFER_MT32);
             //if (MidiDriver::getMusicType(dev) == MT_ADLIB)
             //{
@@ -67,8 +76,9 @@ namespace NScumm.Sky
             //        _skyMusic = new GmMusic(MidiDriver::createMidi(dev), _mixer, _skyDisk);
             //}
 
-            if (SystemVars.Instance.GameVersion.Type.HasFlag(SkyGameType.Cd))
+            if (IsCDVersion)
             {
+                // TODO: configuration
                 //if (ConfMan.hasKey("nosubtitles"))
                 //{
                 //    warning("Configuration key 'nosubtitles' is deprecated. Use 'subtitles' instead");
@@ -120,6 +130,10 @@ namespace NScumm.Sky
             Dispose();
         }
 
+        public static void QuitGame()
+        {
+            throw new NotImplementedException();
+        }
 
         public void Dispose()
         {
@@ -137,9 +151,10 @@ namespace NScumm.Sky
 
         public void Run()
         {
-            //_keyPressed.Reset();
+            _keyPressed = new ScummInputState();
 
             ushort result = 0;
+            // TODO: configuration
             //if (ConfMan.hasKey("save_slot"))
             //{
             //    var saveSlot = (int)ConfigurationManager["save_slot"];
@@ -179,15 +194,15 @@ namespace NScumm.Sky
             var delayCount = Environment.TickCount;
             while (!HasToQuit)
             {
-                // TODO: _debugger->onFrame();
+                // TODO: _debugger.onFrame();
 
                 // TODO: autosave
                 //if (shouldPerformAutoSave(_lastSaveTime))
                 //{
-                //    if (_skyControl->loadSaveAllowed())
+                //    if (_skyControl.loadSaveAllowed())
                 //    {
-                //        _lastSaveTime = _system->getMillis();
-                //        _skyControl->doAutoSave();
+                //        _lastSaveTime = _system.getMillis();
+                //        _skyControl.doAutoSave();
                 //    }
                 //    else
                 //        _lastSaveTime += 30 * 1000; // try again in 30 secs
@@ -211,22 +226,23 @@ namespace NScumm.Sky
                 _skyScreen.Recreate();
                 _skyScreen.SpriteEngine();
 
-                //if (_debugger->showGrid())
+                // TODO: debugger
+                //if (_debugger.showGrid())
                 //{
-                //    uint8* grid = _skyLogic->_skyGrid->giveGrid(Logic::_scriptVariables[SCREEN]);
+                //    uint8* grid = _skyLogic._skyGrid.giveGrid(Logic::_scriptVariables[SCREEN]);
                 //    if (grid)
                 //    {
-                //        _skyScreen->showGrid(grid);
-                //        _skyScreen->forceRefresh();
+                //        _skyScreen.showGrid(grid);
+                //        _skyScreen.forceRefresh();
                 //    }
                 //}
                 _skyScreen.Flip();
 
-                //if (_fastMode & 2)
-                //    Delay(0);
-                //else if (_fastMode & 1)
-                //    Delay(10);
-                //else
+                if ((_fastMode & 2) != 0)
+                    Delay(0);
+                else if ((_fastMode & 1) != 0)
+                    Delay(10);
+                else
                 {
                     delayCount += SystemVars.Instance.GameSpeed;
                     int needDelay = delayCount - Environment.TickCount;
@@ -241,8 +257,9 @@ namespace NScumm.Sky
 
             _skyControl.ShowGameQuitMsg();
             _skyMusic.StopMusic();
+            // TODO: configuration
             //ConfMan.flushToDisk();
-            //delay(1500);
+            Delay(1500);
         }
 
         private void Delay(int amount)
@@ -254,42 +271,85 @@ namespace NScumm.Sky
 
             do
             {
-                var im = _system.InputManager.GetState();
+                _keyPressed = _system.InputManager.GetState();
                 var mousePos = _system.InputManager.GetMousePosition();
                 if (!SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.MOUSE_LOCKED))
                     _skyMouse.MouseMoved((ushort)mousePos.X, (ushort)mousePos.Y);
 
-                if (im.IsLeftButtonDown)
+                if (_keyPressed.IsLeftButtonDown)
                     _skyMouse.ButtonPressed(2);
 
-                if (im.IsRightButtonDown)
+                if (_keyPressed.IsRightButtonDown)
                     _skyMouse.ButtonPressed(1);
-
-                // TODO: keyboard
-                //		case Common::EVENT_KEYDOWN:
-                //			_keyPressed = event.kbd;
-                //			break;
 
                 _system.GraphicsManager.UpdateScreen();
 
                 if (amount > 0)
-                    ServiceLocator.Platform.Sleep((amount > 10) ? 10 : amount);
+                    ServiceLocator.Platform.Sleep(amount > 10 ? 10 : amount);
 
             } while (Environment.TickCount < start + amount);
         }
 
         private void HandleKey()
         {
-            // TODO: HandleKey
+            if (_keyPressed.GetKeys().Count > 0 && SystemVars.Instance.Paused)
+            {
+                _skySound.FnUnPauseFx();
+                SystemVars.Instance.Paused = false;
+                _skyScreen.SetPaletteEndian(_skyCompact.FetchCptRaw((ushort)SystemVars.Instance.CurrentPalette));
+            }
+            else if (_keyPressed.IsKeyDown(KeyCode.LeftControl))
+            {
+                if (_keyPressed.IsKeyDown(KeyCode.F))
+                    _fastMode ^= 1;
+                else if (_keyPressed.IsKeyDown(KeyCode.G))
+                    _fastMode ^= 2;
+                // TODO: debugger
+                //else if (_keyPressed.keycode == Common::KEYCODE_d)
+                //    _debugger.attach();
+            }
+            else
+            {
+
+                // TODO: debugger
+                //case Common::KEYCODE_BACKQUOTE:
+                //case Common::KEYCODE_HASH:
+                //    _debugger.attach();
+                //    break;
+                if (_keyPressed.IsKeyDown(KeyCode.F5))
+                {
+                    _skyControl.DoControlPanel();
+                }
+
+                if (_keyPressed.IsKeyDown(KeyCode.Escape))
+                {
+                    if (!SystemVars.Instance.PastIntro)
+                        _skyControl.RestartGame();
+                }
+                if (_keyPressed.IsKeyDown(KeyCode.OemPeriod))
+                {
+                    _skyMouse.LogicClick();
+                }
+                if (_keyPressed.IsKeyDown(KeyCode.P))
+                {
+                    _skyScreen.HalvePalette();
+                    _skySound.FnPauseFx();
+                    SystemVars.Instance.Paused = true;
+                }
+            }
+            _keyPressed = new ScummInputState();
+            _system.InputManager.ResetKeys();
         }
 
         public void Load(string filename)
         {
+            // TODO: remove this
             throw new NotImplementedException("Load game not implemented");
         }
 
         public void Save(string filename)
         {
+            // TODO: remove this
             throw new NotImplementedException("Save game not implemented");
         }
 
@@ -331,18 +391,20 @@ namespace NScumm.Sky
 
 
         private Disk _skyDisk;
-        private SkyCompact _skyCompact;
-        private Screen _skyScreen;
-        private SkySystem _system;
-        private Text _skyText;
+        private readonly SkyCompact _skyCompact;
+        private readonly Screen _skyScreen;
+        private readonly SkySystem _system;
+        private readonly Text _skyText;
         private MusicBase _skyMusic;
-        private Mixer _mixer;
-        private Sound _skySound;
-        private Control _skyControl;
-        private Logic _skyLogic;
+        private readonly Mixer _mixer;
+        private readonly Sound _skySound;
+        private readonly Control _skyControl;
+        private readonly Logic _skyLogic;
 
         static byte[][] _itemList = new byte[300][];
-        private Mouse _skyMouse;
+        private readonly Mouse _skyMouse;
         private int _lastSaveTime;
+        private ScummInputState _keyPressed;
+        private int _fastMode;
     }
 }

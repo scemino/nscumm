@@ -41,6 +41,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AutoRoute.cs" />
     <Compile Include="Control.cs" />
     <Compile Include="Grid.cs" />
     <Compile Include="IntroSequences.cs" />

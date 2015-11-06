@@ -4,7 +4,6 @@ using System;
 using NScumm.Core.Audio;
 using NScumm.Core.Audio.Decoders;
 using System.IO;
-using NScumm.Core.Input;
 
 namespace NScumm.Sky
 {
@@ -35,7 +34,7 @@ namespace NScumm.Sky
 
         public bool DoIntro(bool floppyIntro)
         {
-            if (!SystemVars.Instance.GameVersion.Type.HasFlag(SkyGameType.Cd))
+            if (!SkyEngine.IsCDVersion)
             {
                 floppyIntro = true;
             }
@@ -306,7 +305,7 @@ namespace NScumm.Sky
         private bool EscDelay(int msecs)
         {
             var im = _system.InputManager;
-            
+
             if (_relDelay == 0) // first call, init with system time
                 _relDelay = Environment.TickCount;
 
@@ -333,16 +332,16 @@ namespace NScumm.Sky
             return true;
         }
 
-        private byte[] _saveBuf;
-        private Disk _skyDisk;
-        private Screen _skyScreen;
-        private SkySystem _system;
-        private byte[] _textBuf;
+        private readonly byte[] _saveBuf;
+        private readonly Disk _skyDisk;
+        private readonly Screen _skyScreen;
+        private readonly SkySystem _system;
+        private readonly byte[] _textBuf;
         private int _relDelay;
-        private Text _skyText;
-        private MusicBase _skyMusic;
-        private Sound _skySound;
-        private Mixer _mixer;
+        private readonly Text _skyText;
+        private readonly MusicBase _skyMusic;
+        private readonly Sound _skySound;
+        private readonly Mixer _mixer;
         private SoundHandle _voice;
         private byte[] _bgBuf;
         private SoundHandle _bgSfx;

@@ -40,29 +40,40 @@ namespace NScumm.Sky
     [StructLayout(LayoutKind.Explicit)]
     internal class DataFileHeader
     {
-        [FieldOffset(0)] public ushort flag; // bit 0: set for color data, clear for not
+        [FieldOffset(0)]
+        public ushort flag; // bit 0: set for color data, clear for not
+                            // bit 1: set for compressed, clear for uncompressed
+                            // bit 2: set for 32 colors, clear for 16 colors
 
-        [FieldOffset(20)] public ushort s_compressed_size;
+        [FieldOffset(2)]
+        public ushort s_x;
 
-        [FieldOffset(8)] public ushort s_height;
+        [FieldOffset(4)]
+        public ushort s_y;
 
-        [FieldOffset(14)] public ushort s_n_sprites;
+        [FieldOffset(6)]
+        public ushort s_width;
 
-        [FieldOffset(16)] public short s_offset_x;
+        [FieldOffset(8)]
+        public ushort s_height;
 
-        [FieldOffset(18)] public short s_offset_y;
+        [FieldOffset(10)]
+        public ushort s_sp_size;
 
-        [FieldOffset(10)] public ushort s_sp_size;
+        [FieldOffset(12)]
+        public ushort s_tot_size;
 
-        [FieldOffset(12)] public ushort s_tot_size;
+        [FieldOffset(14)]
+        public ushort s_n_sprites;
 
-        [FieldOffset(6)] public ushort s_width;
+        [FieldOffset(16)]
+        public short s_offset_x;
 
-        // bit 1: set for compressed, clear for uncompressed
-        // bit 2: set for 32 colors, clear for 16 colors
-        [FieldOffset(2)] public ushort s_x;
+        [FieldOffset(18)]
+        public short s_offset_y;
 
-        [FieldOffset(4)] public ushort s_y;
+        [FieldOffset(20)]
+        public ushort s_compressed_size;
     }
 
     internal class Disk : IDisposable

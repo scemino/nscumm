@@ -97,6 +97,12 @@ namespace NScumm.Sky
         }
 
         public ushort MouseY { get; private set; }
+        public ushort CurrentMouseType { get; set; }
+
+        public void LogicClick()
+        {
+            _logicClick = true;
+        }
 
         public void SpriteMouse(ushort frameNum, byte mouseX, byte mouseY)
         {

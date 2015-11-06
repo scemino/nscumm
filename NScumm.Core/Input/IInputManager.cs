@@ -22,5 +22,7 @@ namespace NScumm.Core.Input
         Graphics.Point GetMousePosition();
 
         ScummInputState GetState();
+
+        void ResetKeys();
     }
 }

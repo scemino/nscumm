@@ -52,7 +52,7 @@ namespace NScumm.Sky
         private int _maskX2;
         private Color[] _palette;
         private byte[] _scrollScreen;
-        private readonly byte[] _seqGrid = new byte[20*12];
+        private readonly byte[] _seqGrid = new byte[20 * 12];
 
         private SequenceIntro _seqInfo;
         private readonly SkyCompact _skyCompact;
@@ -70,7 +70,7 @@ namespace NScumm.Sky
             _skyDisk = disk;
             _skyCompact = skyCompact;
 
-            _gameGrid = new byte[GridX*GridY*2];
+            _gameGrid = new byte[GridX * GridY * 2];
             ForceRefresh();
 
             //blank the first 240 colors of the palette
@@ -138,7 +138,7 @@ namespace NScumm.Sky
             // This is only used for static images in the floppy and cd intro
             Current = _skyDisk.LoadFile(fileNum);
             // make sure the last 8 lines are forced to black.
-            Array.Clear(Current, GameScreenHeight*GameScreenWidth, (FullScreenHeight - GameScreenHeight)*GameScreenWidth);
+            Array.Clear(Current, GameScreenHeight * GameScreenWidth, (FullScreenHeight - GameScreenHeight) * GameScreenWidth);
 
             ShowScreen(Current);
         }
@@ -191,7 +191,7 @@ namespace NScumm.Sky
 
             _seqInfo.NextFrame += 60;
 
-            Array.Clear(_seqGrid, 0, 12*20);
+            Array.Clear(_seqGrid, 0, 12 * 20);
 
             var screenPos = 0;
 
@@ -211,22 +211,22 @@ namespace NScumm.Sky
                     nrToDo = _seqInfo.SeqData[_seqInfo.SeqDataPos];
                     _seqInfo.SeqDataPos++;
 
-                    var gridSta = (byte) (screenPos/(GameScreenWidth*16)*20 + ((screenPos%GameScreenWidth) >> 4));
+                    var gridSta = (byte)(screenPos / (GameScreenWidth * 16) * 20 + ((screenPos % GameScreenWidth) >> 4));
                     var gridEnd =
                         (byte)
-                            ((screenPos + nrToDo)/(GameScreenWidth*16)*20 +
-                             (((screenPos + nrToDo)%GameScreenWidth) >> 4));
-                    gridSta = Math.Min(gridSta, (byte) (12*20 - 1));
-                    gridEnd = Math.Min(gridEnd, (byte) (12*20 - 1));
+                            ((screenPos + nrToDo) / (GameScreenWidth * 16) * 20 +
+                             (((screenPos + nrToDo) % GameScreenWidth) >> 4));
+                    gridSta = Math.Min(gridSta, (byte)(12 * 20 - 1));
+                    gridEnd = Math.Min(gridEnd, (byte)(12 * 20 - 1));
                     byte cnt;
                     if (gridEnd >= gridSta)
                         for (cnt = gridSta; cnt <= gridEnd; cnt++)
                             _seqGrid[cnt] = 1;
                     else
                     {
-                        for (cnt = gridSta; cnt < (gridSta/20 + 1)*20; cnt++)
+                        for (cnt = gridSta; cnt < (gridSta / 20 + 1) * 20; cnt++)
                             _seqGrid[cnt] = 1;
-                        for (cnt = (byte) (gridEnd/20*20); cnt <= gridEnd; cnt++)
+                        for (cnt = (byte)(gridEnd / 20 * 20); cnt <= gridEnd; cnt++)
                             _seqGrid[cnt] = 1;
                     }
 
@@ -237,7 +237,7 @@ namespace NScumm.Sky
                         screenPos++;
                     }
                 } while (nrToDo == 0xFF);
-            } while (screenPos < GameScreenWidth*GameScreenHeight);
+            } while (screenPos < GameScreenWidth * GameScreenHeight);
             var gridPtr = 0;
             var scrPtr = 0;
             var rectPtr = 0;
@@ -271,7 +271,7 @@ namespace NScumm.Sky
                         rectWid << 4, 16);
                     rectWid = 0;
                 }
-                scrPtr += 15*GameScreenWidth;
+                scrPtr += 15 * GameScreenWidth;
             }
             _system.GraphicsManager.UpdateScreen();
             _seqInfo.FramesLeft--;
@@ -289,7 +289,7 @@ namespace NScumm.Sky
         //- regular screen.asm routines
         public void ForceRefresh()
         {
-            _gameGrid.Set(0, 0x80, GridX*GridY);
+            _gameGrid.Set(0, 0x80, GridX * GridY);
         }
 
         public void FnFadeDown(uint scroll)
@@ -313,7 +313,7 @@ namespace NScumm.Sky
             {
                 // scrolling is performed by fnFadeUp. It's just prepared here
                 _scrollScreen = Current;
-                Current = new byte[FullScreenWidth*FullScreenHeight];
+                Current = new byte[FullScreenWidth * FullScreenHeight];
                 // the game will draw the new room into _currentScreen which
                 // will be scrolled into the visible screen by fnFadeUp
                 // fnFadeUp also frees the _scrollScreen
@@ -340,7 +340,7 @@ namespace NScumm.Sky
 
             if ((scroll == 0) || SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.NO_SCROLL))
             {
-                var palette = _skyCompact.FetchCptRaw((ushort) palNum);
+                var palette = _skyCompact.FetchCptRaw((ushort)palNum);
                 if (palette == null)
                     throw new NotSupportedException(string.Format("Screen::fnFadeUp: can't fetch compact {0:X2}", palNum));
                 //# ifdef SCUMM_BIG_ENDIAN
@@ -356,9 +356,9 @@ namespace NScumm.Sky
             {
                 // scroll left (going right)
                 Debug.Assert(Current != null && _scrollScreen != null);
-                for (var scrollCnt = 0; scrollCnt < GameScreenWidth/ScrollJump - 1; scrollCnt++)
+                for (var scrollCnt = 0; scrollCnt < GameScreenWidth / ScrollJump - 1; scrollCnt++)
                 {
-                    var scrNewPtr = scrollCnt*ScrollJump;
+                    var scrNewPtr = scrollCnt * ScrollJump;
                     var scrOldPtr = 0;
                     for (var lineCnt = 0; lineCnt < GameScreenHeight; lineCnt++)
                     {
@@ -378,9 +378,9 @@ namespace NScumm.Sky
             {
                 // scroll right (going left)
                 Debug.Assert(Current != null && _scrollScreen != null);
-                for (var scrollCnt = 0; scrollCnt < GameScreenWidth/ScrollJump - 1; scrollCnt++)
+                for (var scrollCnt = 0; scrollCnt < GameScreenWidth / ScrollJump - 1; scrollCnt++)
                 {
-                    var scrNewPtr = GameScreenWidth - (scrollCnt + 1)*ScrollJump;
+                    var scrNewPtr = GameScreenWidth - (scrollCnt + 1) * ScrollJump;
                     var scrOldPtr = 0;
                     for (var lineCnt = 0; lineCnt < GameScreenHeight; lineCnt++)
                     {
@@ -407,27 +407,27 @@ namespace NScumm.Sky
             {
                 for (byte cntx = 0; cntx < GridX; cntx++)
                 {
-                    if ((_gameGrid[cnty*GridX + cntx] & 1) != 0)
+                    if ((_gameGrid[cnty * GridX + cntx] & 1) != 0)
                     {
                         unchecked
                         {
-                            _gameGrid[cnty*GridX + cntx] &= (byte) ~1;
+                            _gameGrid[cnty * GridX + cntx] &= (byte)~1;
                         }
                         if (copyWidth == 0)
-                            copyX = cntx*GridW;
+                            copyX = cntx * GridW;
                         copyWidth += GridW;
                     }
                     else if (copyWidth != 0)
                     {
-                        _system.GraphicsManager.CopyRectToScreen(Current, cnty*GridH*GameScreenWidth + copyX,
-                            GameScreenWidth, copyX, cnty*GridH, copyWidth, GridH);
+                        _system.GraphicsManager.CopyRectToScreen(Current, cnty * GridH * GameScreenWidth + copyX,
+                            GameScreenWidth, copyX, cnty * GridH, copyWidth, GridH);
                         copyWidth = 0;
                     }
                 }
                 if (copyWidth != 0)
                 {
-                    _system.GraphicsManager.CopyRectToScreen(Current, cnty*GridH*GameScreenWidth + copyX,
-                        GameScreenWidth, copyX, cnty*GridH, copyWidth, GridH);
+                    _system.GraphicsManager.CopyRectToScreen(Current, cnty * GridH * GameScreenWidth + copyX,
+                        GameScreenWidth, copyX, cnty * GridH, copyWidth, GridH);
                     copyWidth = 0;
                 }
             }
@@ -452,7 +452,7 @@ namespace NScumm.Sky
             var screenData = SkyEngine.ItemList[Logic.ScriptVariables[Logic.LAYER_0_ID]];
             if (screenData == null)
             {
-                // TODO: error("Screen::recreate():\nSkyEngine::fetchItem(Logic::_scriptVariables[LAYER_0_ID](%X)) returned null", Logic.ScriptVariables[LAYER_0_ID]);
+                throw new InvalidOperationException(string.Format("Screen::recreate():\nSkyEngine::fetchItem(Logic::_scriptVariables[LAYER_0_ID]({0:X})) returned null", Logic.ScriptVariables[Logic.LAYER_0_ID]));
             }
             var screenDataPos = 0;
             var screenPos = 0;
@@ -477,11 +477,11 @@ namespace NScumm.Sky
                     else
                     {
                         screenPos += GridW;
-                        screenDataPos += GridW*GridH;
+                        screenDataPos += GridW * GridH;
                     }
                     gridPos++;
                 }
-                screenPos += (GridH - 1)*GameScreenWidth;
+                screenPos += (GridH - 1) * GameScreenWidth;
             }
         }
 
@@ -496,7 +496,7 @@ namespace NScumm.Sky
 
         public void ClearScreen()
         {
-            Array.Clear(Current, 0, FullScreenWidth*FullScreenHeight);
+            Array.Clear(Current, 0, FullScreenWidth * FullScreenHeight);
             _system.GraphicsManager.CopyRectToScreen(Current, GameScreenWidth, 0, 0, GameScreenWidth, GameScreenHeight);
             _system.GraphicsManager.UpdateScreen();
         }
@@ -505,7 +505,7 @@ namespace NScumm.Sky
         {
             _seqInfo.SeqData = SkyEngine.ItemList[itemNum];
             _seqInfo.NextFrame = Environment.TickCount + 60;
-            _seqInfo.FramesLeft = (uint) (_seqInfo.SeqData[0] - 1);
+            _seqInfo.FramesLeft = (uint)(_seqInfo.SeqData[0] - 1);
             _seqInfo.SeqDataPos = 1;
             _seqInfo.Running = true;
             _seqInfo.RunningItem = true;
@@ -523,8 +523,8 @@ namespace NScumm.Sky
 
                 for (var colCnt = 0; colCnt < GameColors; colCnt++)
                 {
-                    _palette[colCnt] = Color.FromRgb((tmpPal[colCnt].R*cnt) >> 5, (tmpPal[colCnt].G*cnt) >> 5,
-                        (tmpPal[colCnt].B*cnt) >> 5);
+                    _palette[colCnt] = Color.FromRgb((tmpPal[colCnt].R * cnt) >> 5, (tmpPal[colCnt].G * cnt) >> 5,
+                        (tmpPal[colCnt].B * cnt) >> 5);
                 }
 
                 _system.GraphicsManager.SetPalette(_palette, 0, GameColors);
@@ -554,9 +554,9 @@ namespace NScumm.Sky
             for (var i = 0; i < VgaColors; i++)
             {
                 colors[i] = Color.FromRgb(
-                    (pal[3*i + 0] << 2) + (pal[3*i + 0] >> 4),
-                    (pal[3*i + 1] << 2) + (pal[3*i + 1] >> 4),
-                    (pal[3*i + 2] << 2) + (pal[3*i + 2] >> 4));
+                    (pal[3 * i + 0] << 2) + (pal[3 * i + 0] >> 4),
+                    (pal[3 * i + 1] << 2) + (pal[3 * i + 1] >> 4),
+                    (pal[3 * i + 2] << 2) + (pal[3 * i + 2] >> 4));
             }
             return colors;
         }
@@ -585,7 +585,7 @@ namespace NScumm.Sky
         private void WaitForTick()
         {
             var start = Environment.TickCount;
-            var end = start + 20 - start%20;
+            var end = start + 20 - start % 20;
             int remain;
 
             //           Common::EventManager* eventMan = _system.getEventManager();
@@ -626,7 +626,7 @@ namespace NScumm.Sky
                 do
                 {
                     // a_new_draw_list:
-                    var drawListData = new UShortAccess(_skyCompact.FetchCptRaw((ushort) loadDrawList), 0);
+                    var drawListData = new UShortAccess(_skyCompact.FetchCptRaw((ushort)loadDrawList), 0);
                     nextDrawList = false;
                     while (!nextDrawList && (drawListData[0] != 0))
                     {
@@ -705,7 +705,7 @@ namespace NScumm.Sky
                 var idNum = Logic.ScriptVariables[drawListNum];
                 drawListNum++;
 
-                var drawList = new UShortAccess(_skyCompact.FetchCptRaw((ushort) idNum), 0);
+                var drawList = new UShortAccess(_skyCompact.FetchCptRaw((ushort)idNum), 0);
                 while (drawList[0] != 0)
                 {
                     // new_draw_list:
@@ -746,7 +746,7 @@ namespace NScumm.Sky
         {
             if (_sprWidth == 0)
                 return;
-            var trgGrid = _sprY*GridX + _sprX;
+            var trgGrid = _sprY * GridX + _sprX;
             for (var cnty = 0; cnty < _sprHeight; cnty++)
             {
                 for (var cntx = 0; cntx < _sprWidth; cntx++)
@@ -767,19 +767,19 @@ namespace NScumm.Sky
             _sprWidth = sprDataFile.s_width;
             _sprHeight = sprDataFile.s_height;
             _maskX1 = _maskX2 = 0;
-            var spriteData = (sprCompact.Core.frame & 0x3F)*sprDataFile.s_sp_size;
+            var spriteData = (sprCompact.Core.frame & 0x3F) * sprDataFile.s_sp_size;
             spriteData += ServiceLocator.Platform.SizeOf<DataFileHeader>();
             var spriteY = sprCompact.Core.ycood + sprDataFile.s_offset_y - TopLeftY;
             if (spriteY < 0)
             {
                 spriteY = -spriteY;
-                if (_sprHeight <= (uint) spriteY)
+                if (_sprHeight <= (uint)spriteY)
                 {
                     _sprWidth = 0;
                     return;
                 }
-                _sprHeight -= (ushort) spriteY;
-                spriteData += sprDataFile.s_width*spriteY;
+                _sprHeight -= (ushort)spriteY;
+                spriteData += sprDataFile.s_width * spriteY;
                 spriteY = 0;
             }
             else
@@ -788,25 +788,25 @@ namespace NScumm.Sky
                 if (botClip < 0)
                 {
                     botClip = -botClip;
-                    if (_sprHeight <= (uint) botClip)
+                    if (_sprHeight <= (uint)botClip)
                     {
                         _sprWidth = 0;
                         return;
                     }
-                    _sprHeight -= (ushort) botClip;
+                    _sprHeight -= (ushort)botClip;
                 }
             }
-            _sprY = (uint) spriteY;
+            _sprY = (uint)spriteY;
             var spriteX = sprCompact.Core.xcood + sprDataFile.s_offset_x - TopLeftX;
             if (spriteX < 0)
             {
                 spriteX = -spriteX;
-                if (_sprWidth <= (uint) spriteX)
+                if (_sprWidth <= (uint)spriteX)
                 {
                     _sprWidth = 0;
                     return;
                 }
-                _sprWidth -= (ushort) spriteX;
+                _sprWidth -= (ushort)spriteX;
                 _maskX1 = spriteX;
                 spriteX = 0;
             }
@@ -816,17 +816,17 @@ namespace NScumm.Sky
                 if (rightClip < 0)
                 {
                     rightClip = -rightClip + 1;
-                    if (_sprWidth <= (uint) rightClip)
+                    if (_sprWidth <= (uint)rightClip)
                     {
                         _sprWidth = 0;
                         return;
                     }
-                    _sprWidth -= (ushort) rightClip;
+                    _sprWidth -= (ushort)rightClip;
                     _maskX2 = rightClip;
                 }
             }
-            _sprX = (uint) spriteX;
-            var screenPtr = _sprY*GameScreenWidth + _sprX;
+            _sprX = (uint)spriteX;
+            var screenPtr = _sprY * GameScreenWidth + _sprX;
             if ((_sprHeight > 192) || (_sprY > 192))
             {
                 _sprWidth = 0;
@@ -848,24 +848,24 @@ namespace NScumm.Sky
                 screenPtr += GameScreenWidth;
             }
             // Convert the sprite coordinate/size values to blocks for vertical mask and/or vector to game
-            _sprWidth += (ushort) (_sprX + GridW - 1);
-            _sprHeight += (ushort) (_sprY + GridH - 1);
+            _sprWidth += (ushort)(_sprX + GridW - 1);
+            _sprHeight += (ushort)(_sprY + GridH - 1);
 
             _sprX >>= GridWShift;
             _sprWidth >>= GridWShift;
             _sprY >>= GridHShift;
             _sprHeight >>= GridHShift;
 
-            _sprWidth -= (ushort) _sprX;
-            _sprHeight -= (ushort) _sprY;
+            _sprWidth -= (ushort)_sprX;
+            _sprHeight -= (ushort)_sprY;
         }
 
         private void VerticalMask()
         {
             if (_sprWidth == 0)
                 return;
-            var startGridOfs = (int) ((_sprY + _sprHeight - 1)*GridX + _sprX);
-            var startScreenPtr = (int) ((_sprY + _sprHeight - 1)*GridH*GameScreenWidth + _sprX*GridW);
+            var startGridOfs = (int)((_sprY + _sprHeight - 1) * GridX + _sprX);
+            var startScreenPtr = (int)((_sprY + _sprHeight - 1) * GridH * GameScreenWidth + _sprX * GridW);
 
             for (uint layerCnt = Logic.LAYER_1_ID; layerCnt <= Logic.LAYER_3_ID; layerCnt++)
             {
@@ -902,7 +902,7 @@ namespace NScumm.Sky
                     if ((grid[gridOfs] & 0x8000) == 0)
                     {
                         var gridVal = grid[gridOfs] - 1;
-                        gridVal *= GridW*GridH;
+                        gridVal *= GridW * GridH;
                         var dataSrc = new ByteAccess(SkyEngine.ItemList[Logic.ScriptVariables[layerId]], gridVal);
                         var dataTrg = screenPtr;
                         for (var grdCntY = 0; grdCntY < GridH; grdCntY++)
@@ -914,7 +914,7 @@ namespace NScumm.Sky
                             dataTrg += GameScreenWidth;
                         }
                     } // dummy_end:
-                    screenPtr -= GridH*GameScreenWidth;
+                    screenPtr -= GridH * GameScreenWidth;
                     gridOfs -= GridX;
                 }
                 else

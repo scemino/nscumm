@@ -21,7 +21,6 @@ using NScumm.Core.IO;
 using System.Reflection;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 
 namespace NScumm.MonoGame
 {
@@ -30,40 +29,12 @@ namespace NScumm.MonoGame
     /// </summary>
     public static class Program
     {
-        //[StructLayout(LayoutKind.Explicit, Pack = 1)]
-        //unsafe struct Foo
-        //{
-        //    [FieldOffset(0)]
-        //    public ushort x;
-        //    [FieldOffset(2)]
-        //    public ushort y;
-
-        //    [FieldOffset(0)]
-        //    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
-        //    public fixed byte Data[4];
-        //}
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
         static int Main(string[] args)
         {
-            //unsafe
-            //{
-            //    var foo = new Foo();
-            //    Array.Copy(new byte[] { 0, 2, 0, 4 }, foo.Data, 4);
-            //    foo.x = 10;
-            //}
-            //var handle = GCHandle.Alloc(data, GCHandleType.Pinned);
-            //var ptr = handle.AddrOfPinnedObject();
-
-            //var ptr = GCHandle.ToIntPtr(handle);
-            //Marshal..GetObjectForIUnknown()
-            //var ptr = Marshal.UnsafeAddrOfPinnedArrayElement(data, 0);
-            //var foo = (Foo)Marshal.PtrToStructure(ptr, typeof(Foo));
-
-            //return 0;
-
             var musicDriver = "adlib";
             var showVersion = false;
             var showHelp = false;

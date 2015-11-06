@@ -9,24 +9,25 @@ namespace NScumm.Sky
     partial class Logic
     {
         public const int NumSkyScriptVars = 838;
-        private SkyCompact _skyCompact;
-        private Screen _skyScreen;
-        private Disk _skyDisk;
-        private Text _skyText;
-        private MusicBase _skyMusic;
-        private Sound _skySound;
-        private Mouse _skyMouse;
-        private uint[] _scriptVariables = new uint[NumSkyScriptVars];
+        private readonly SkyCompact _skyCompact;
+        private readonly Screen _skyScreen;
+        private readonly Disk _skyDisk;
+        private readonly Text _skyText;
+        private readonly MusicBase _skyMusic;
+        private readonly Sound _skySound;
+        private readonly Mouse _skyMouse;
+        private readonly uint[] _scriptVariables = new uint[NumSkyScriptVars];
         private uint _currentSection;
         private Action[] _logicTable;
         private Compact _compact;
-        private Grid _skyGrid;
-        private byte[][] _moduleList = new byte[16][];
-        private uint[] _stack = new uint[20];
+        private readonly Grid _skyGrid;
+        private readonly byte[][] _moduleList = new byte[16][];
+        private readonly uint[] _stack = new uint[20];
         private int _stackPtr;
         private Func<uint, uint, uint, bool>[] _mcodeTable;
-        private uint[] _objectList = new uint[30];
-        private Random _rnd = new Random(Environment.TickCount);
+        private readonly uint[] _objectList = new uint[30];
+        private readonly Random _rnd = new Random(Environment.TickCount);
+        private readonly AutoRoute _skyAutoRoute;
 
         public Control Control { get; internal set; }
 
@@ -46,8 +47,7 @@ namespace NScumm.Sky
             _skyMouse = skyMouse;
 
             _skyGrid = new Grid(this, _skyDisk, _skyCompact);
-            // TODO:
-            //_skyAutoRoute = new AutoRoute(_skyGrid, _skyCompact);
+            _skyAutoRoute = new AutoRoute(_skyGrid, _skyCompact);
 
             SetupLogicTable();
             SetupMcodeTable();
@@ -336,7 +336,7 @@ namespace NScumm.Sky
             if (sectionNo == 5) //linc section - has different mouse icons
                 _skyMouse.ReplaceMouseCursors(60302);
 
-            if ((sectionNo != _currentSection) || (SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.GAME_RESTORED)))
+            if ((sectionNo != _currentSection) || SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.GAME_RESTORED))
             {
                 _currentSection = sectionNo;
 
@@ -388,7 +388,7 @@ namespace NScumm.Sky
 
         private void SimpleAnim()
         {
-            /// follow an animation sequence module whilst ignoring the coordinate data
+            // follow an animation sequence module whilst ignoring the coordinate data
 
             var grafixProg = _skyCompact.GetGrafixPtr(_compact);
 
@@ -450,22 +450,65 @@ namespace NScumm.Sky
 
         private void Frames()
         {
-            throw new NotImplementedException();
+            if (_compact.Core.sync == 0)
+                SimpleAnim();
+            else
+            {
+                _compact.Core.downFlag = 0; // return 'ok' to script
+                _compact.Core.logic = L_SCRIPT;
+                LogicScript();
+            }
         }
 
         private void Choose()
         {
-            throw new NotImplementedException();
+            // Remain in this mode until player selects some text
+            if (_scriptVariables[THE_CHOSEN_ONE] == 0)
+                return;
+
+            FnNoHuman(0, 0, 0); // kill mouse again
+
+            SystemVars.Instance.SystemFlags &= ~SystemFlags.CHOOSING; // restore save/restore
+
+            _compact.Core.logic = L_SCRIPT; // and continue script
+            LogicScript();
         }
 
         private void Stopped()
         {
-            throw new NotImplementedException();
+            // waiting for another mega to move or give-up trying
+            //
+            // this mode will always be set up from a special script
+            // that will be one level higher than the script we
+            // would wish to restart from
+
+            Compact cpt = _skyCompact.FetchCpt(_compact.Core.waitingFor);
+
+            if (cpt != null)
+                if (cpt.Core.mood == 0 && Collide(cpt))
+                    return;
+
+            // we are free, continue processing the script
+
+            // restart script one level below
+            SkyCompact.GetSub(_compact, _compact.Core.mode - 2).Field = 0;
+            _compact.Core.waitingFor = 0xffff;
+
+            _compact.Core.logic = L_SCRIPT;
+            LogicScript();
         }
 
         private void Listen()
         {
-            throw new NotImplementedException();
+            // Stay in this mode until id in getToFlag leaves L_TALK mode
+
+            Compact cpt = _skyCompact.FetchCpt(_compact.Core.flag);
+
+            if (cpt.Core.logic == L_TALK)
+                return;
+
+            _compact.Core.logic = L_SCRIPT;
+            LogicScript();
         }
 
         private void Talk()
@@ -475,12 +518,24 @@ namespace NScumm.Sky
 
         private void Turn()
         {
-            throw new NotImplementedException();
+            var turnData = new UShortAccess(_skyCompact.FetchCptRaw(_compact.Core.turnProgId), _compact.Core.turnProgPos * 2);
+            if (turnData[0] != 0)
+            {
+                _compact.Core.frame = turnData[0];
+                _compact.Core.turnProgPos++;
+                return;
+            }
+
+            // turn_to_script:
+            _compact.Core.arAnimIndex = 0;
+            _compact.Core.logic = L_SCRIPT;
+
+            LogicScript();
         }
 
         private void Anim()
         {
-            /// Follow an animation sequence
+            // Follow an animation sequence
             var grafixProg = _skyCompact.GetGrafixPtr(_compact);
 
             while (grafixProg.Value != 0)
@@ -520,22 +575,338 @@ namespace NScumm.Sky
 
         private void Alt()
         {
-            throw new NotImplementedException();
+            // change the current script
+            _compact.Core.logic = L_SCRIPT;
+            SkyCompact.GetSub(_compact, _compact.Core.mode).Field = _compact.Core.alt;
+            SkyCompact.GetSub(_compact, _compact.Core.mode + 2).Field = 0;
+            LogicScript();
         }
 
         private void ArTurn()
         {
-            throw new NotImplementedException();
+            var turnData = new UShortAccess(_skyCompact.FetchCptRaw(_compact.Core.turnProgId), _compact.Core.turnProgPos * 2);
+            _compact.Core.frame = turnData[0];
+            turnData.Offset += 2;
+            _compact.Core.turnProgPos++;
+
+            if (turnData[0] == 0)
+            { // turn done?
+              // Back to ar mode
+                _compact.Core.arAnimIndex = 0;
+                _compact.Core.logic = L_AR_ANIM;
+            }
         }
 
         private void ArAnim()
         {
-            throw new NotImplementedException();
+            // Follow a route
+            // Mega should be in getToMode
+
+            // only check collisions on character boundaries
+            if (((_compact.Core.xcood & 7) != 0) || ((_compact.Core.ycood & 7) != 0))
+            {
+                MainAnim();
+                return;
+            }
+
+            // On character boundary. Have we been told to wait?
+            // if not - are WE colliding?
+
+            if (_compact.Core.waitingFor == 0xffff)
+            { // 1st cycle of re-route does not require collision checks
+                MainAnim();
+                return;
+            }
+
+            if (_compact.Core.waitingFor != 0)
+            {
+                // ok, we've been told we've hit someone
+                // we will wait until we are no longer colliding
+                // with them. here we check to see if we are (still) colliding.
+                // if we are then run the stop script. if not clear the flag
+                // and continue.
+
+                // remember - this could be the first ar cycle for some time,
+                // we might have been told to wait months ago. if we are
+                // waiting for one person then another hits us then
+                // c_waiting_for will be replaced by the new mega - this is
+                // fine because the later collision will almost certainly
+                // take longer to clear than the earlier one.
+
+                if (Collide(_skyCompact.FetchCpt(_compact.Core.waitingFor)))
+                {
+                    StopAndWait();
+                    return;
+                }
+
+                // we are not in fact hitting this person so clr & continue
+                // it must have registered some time ago
+
+                _compact.Core.waitingFor = 0; // clear id flag
+            }
+
+            // ok, our turn to check for collisions
+
+            var logicList = new UShortAccess(_skyCompact.FetchCptRaw((ushort)_scriptVariables[LOGIC_LIST_NO]), 0);
+            ushort id;
+
+            while ((id = logicList[0]) != 0)
+            { // get an id
+
+                logicList.Offset += 2;
+                if (id == 0xffff)
+                { // address change?
+                    logicList = new UShortAccess(_skyCompact.FetchCptRaw(logicList[0]), 0); // get new logic list
+                    continue;
+                }
+
+                if (id == (ushort)(_scriptVariables[CUR_ID] & 0xffff)) // is it us?
+                    continue;
+
+                _scriptVariables[HIT_ID] = id; // save target id for any possible c_mini_bump
+                var cpt = _skyCompact.FetchCpt(id);
+
+                if ((cpt.Core.status & (1 << ST_COLLISION_BIT)) == 0) // can it collide?
+                    continue;
+
+                if (cpt.Core.screen != _compact.Core.screen) // is it on our screen?
+                    continue;
+
+                if (Collide(cpt))
+                { // check for a hit
+                  // ok, we've hit a mega
+                  // is it moving... or something else?
+
+                    if (cpt.Core.logic != L_AR_ANIM)
+                    { // check for following route
+                      // it is doing something else
+                      // we restart our get-to script
+                      // first tell it to wait for us - in case it starts moving
+                      // ( *it may have already hit us and stopped to wait )
+
+                        _compact.Core.waitingFor = 0xffff; // effect 1 cycle collision skip
+                                                           // tell it it is waiting for us
+                        cpt.Core.waitingFor = (ushort)(_scriptVariables[CUR_ID] & 0xffff);
+                        // restart current script
+                        SkyCompact.GetSub(_compact, _compact.Core.mode + 2).Field = 0;
+                        _compact.Core.logic = L_SCRIPT;
+                        LogicScript();
+                        return;
+                    }
+
+                    Script(_compact.Core.miniBump, 0);
+                    return;
+                }
+            }
+            logicList.Offset += 2;
+
+            // ok, there was no collisions
+            // now check for interaction request
+            // *note: the interaction is always set up as an action script
+
+            if (_compact.Core.request != 0)
+            {
+                _compact.Core.mode = C_ACTION_MODE; // put into action mode
+                _compact.Core.actionSub = _compact.Core.request;
+                _compact.Core.actionSub_off = 0;
+                _compact.Core.request = 0; // trash request
+                _compact.Core.logic = L_SCRIPT;
+                LogicScript();
+                return;
+            }
+
+            // any flag? - or any change?
+            // if change then re-run the current script, which must be
+            // a position independent get-to		 ----
+
+            if (_compact.Core.atWatch == 0)
+            { // any flag set?
+                MainAnim();
+                return;
+            }
+
+            // ok, there is an at watch - see if it's changed
+
+            if (_compact.Core.atWas == _scriptVariables[_compact.Core.atWatch / 4])
+            { // still the same?
+                MainAnim();
+                return;
+            }
+
+            // changed so restart the current script
+            // *not suitable for base initiated ARing
+            SkyCompact.GetSub(_compact, _compact.Core.mode + 2).Field = 0;
+
+            _compact.Core.logic = L_SCRIPT;
+            LogicScript();
+        }
+
+        private bool Collide(Compact cpt)
+        {
+            MegaSet m1 = SkyCompact.GetMegaSet(_compact);
+            MegaSet m2 = SkyCompact.GetMegaSet(cpt);
+
+            // target's base coordinates
+            ushort x = (ushort)(cpt.Core.xcood & 0xfff8);
+            ushort y = (ushort)(cpt.Core.ycood & 0xfff8);
+
+            // The collision is direction dependent
+            switch (_compact.Core.dir)
+            {
+                case 0: // looking up
+                    x -= m1.colOffset; // compensate for inner x offsets
+                    x += m2.colOffset;
+
+                    if (x + m2.colWidth < _compact.Core.xcood) // their rightmost
+                        return false;
+
+                    x -= m1.colWidth; // our left, their right
+                    if (x >= _compact.Core.xcood)
+                        return false;
+
+                    y += 8; // bring them down a line
+                    if (y == _compact.Core.ycood)
+                        return true;
+
+                    y += 8; // bring them down a line
+                    if (y == _compact.Core.ycood)
+                        return true;
+
+                    return false;
+                case 1: // looking down
+                    x -= m1.colOffset; // compensate for inner x offsets
+                    x += m2.colOffset;
+
+                    if (x + m2.colWidth < _compact.Core.xcood) // their rightmoast
+                        return false;
+
+                    x -= m1.colWidth; // our left, their right
+                    if (x >= _compact.Core.xcood)
+                        return false;
+
+                    y -= 8; // bring them up a line
+                    if (y == _compact.Core.ycood)
+                        return true;
+
+                    y -= 8; // bring them up a line
+                    if (y == _compact.Core.ycood)
+                        return true;
+
+                    return false;
+                case 2: // looking left
+
+                    if (y != _compact.Core.ycood)
+                        return false;
+
+                    x += m2.lastChr;
+                    if (x == _compact.Core.xcood)
+                        return true;
+
+                    x -= 8; // out another one
+                    if (x == _compact.Core.xcood)
+                        return true;
+
+                    return false;
+                case 3: // looking right
+                case 4: // talking (not sure if this makes sense...)
+
+                    if (y != _compact.Core.ycood)
+                        return false;
+
+                    x -= m1.lastChr; // last block
+                    if (x == _compact.Core.xcood)
+                        return true;
+
+                    x -= 8; // out another block
+                    if (x != _compact.Core.xcood)
+                        return false;
+
+                    return true;
+                default:
+                    throw new InvalidOperationException(string.Format("Unknown Direction: {0}", _compact.Core.dir));
+            }
+        }
+
+        private void MainAnim()
+        {
+            // Extension of arAnim()
+            _compact.Core.waitingFor = 0; // clear possible zero-zero skip
+
+            var sequence = _skyCompact.GetGrafixPtr(_compact);
+            if (sequence[0] == 0)
+            {
+                // ok, move to new anim segment
+                sequence.Offset += 4;
+                _compact.Core.grafixProgPos += 2;
+                if (sequence[0] == 0)
+                { // end of route?
+                  // ok, sequence has finished
+
+                    // will start afresh if new sequence continues in last direction
+                    _compact.Core.arAnimIndex = 0;
+
+                    _compact.Core.downFlag = 0; // pass back ok to script
+                    _compact.Core.logic = L_SCRIPT;
+                    LogicScript();
+                    return;
+                }
+
+                _compact.Core.arAnimIndex = 0; // reset position
+            }
+
+            ushort dir;
+            while ((dir = _compact.Core.dir) != sequence[1])
+            {
+                // ok, setup turning
+                _compact.Core.dir = sequence[1];
+
+                var tt = _skyCompact.GetTurnTable(_compact, dir);
+                if (tt[_compact.Core.dir] != 0)
+                {
+                    _compact.Core.turnProgId = tt[_compact.Core.dir];
+                    _compact.Core.turnProgPos = 0;
+                    _compact.Core.logic = L_AR_TURNING;
+                    ArTurn();
+                    return;
+                }
+            };
+
+            var animId = _skyCompact.GetCompactElem(_compact, (ushort)(C_ANIM_UP + _compact.Core.megaSet + dir * 4)).Field;
+            var animList = new UShortAccess(_skyCompact.FetchCptRaw(animId), 0);
+
+            ushort arAnimIndex = _compact.Core.arAnimIndex;
+            if (animList[arAnimIndex / 2] == 0)
+            {
+                arAnimIndex = 0;
+                _compact.Core.arAnimIndex = 0; // reset
+            }
+
+            _compact.Core.arAnimIndex += S_LENGTH;
+
+            sequence[0] -= animList[(S_COUNT + arAnimIndex) / 2]; // reduce the distance to travel
+            _compact.Core.frame = animList[(S_FRAME + arAnimIndex) / 2]; // new graphic frame
+            _compact.Core.xcood += animList[(S_AR_X + arAnimIndex) / 2]; // update x coordinate
+            _compact.Core.ycood += animList[(S_AR_Y + arAnimIndex) / 2]; // update y coordinate
         }
 
         private void AutoRoute()
         {
-            throw new NotImplementedException();
+            _compact.Core.downFlag = _skyAutoRoute.DoAutoRoute(_compact);
+            if ((_compact.Core.downFlag == 2) && _skyCompact.CptIsId(_compact, (ushort)CptIds.Joey) &&
+               (_compact.Core.mode == 0) && (_compact.Core.baseSub == JOEY_OUT_OF_LIFT))
+            {
+                // workaround for script bug #1064113. Details unclear...
+                _compact.Core.downFlag = 0;
+            }
+            if (_compact.Core.downFlag != 1)
+            { // route ok
+                _compact.Core.grafixProgId = _compact.Core.animScratchId;
+                _compact.Core.grafixProgPos = 0;
+            }
+
+            _compact.Core.logic = L_SCRIPT; // continue the script
+
+            LogicScript();
         }
 
         /// <summary>
@@ -553,9 +924,9 @@ namespace NScumm.Sky
                 var scriptNo = SkyCompact.GetSub(_compact, mode);
                 var offset = SkyCompact.GetSub(_compact, (ushort)(mode + 2));
 
-                offset.Field = Script((ushort)scriptNo.Field, (ushort)offset.Field);
+                offset.Field = Script(scriptNo.Field, offset.Field);
 
-                if ((ushort)offset.Field == 0) // script finished
+                if (offset.Field == 0) // script finished
                     _compact.Core.mode -= 4;
                 else if (_compact.Core.mode == mode)
                     return;
@@ -568,8 +939,8 @@ namespace NScumm.Sky
             {
                 bool restartScript = false;
 
-                /// process a script
-                /// low level interface to interpreter
+                // process a script
+                // low level interface to interpreter
 
                 ushort moduleNo = (ushort)(scriptNo >> 12);
                 var data = _moduleList[moduleNo]; // get module address
@@ -600,17 +971,18 @@ namespace NScumm.Sky
                 if (offset != 0)
                     scriptData = new UShortAccess(data, offset * 2);
                 else
-                    scriptData.Offset += (scriptData[scriptNo & 0x0FFF] * 2);
+                    scriptData.Offset += scriptData[scriptNo & 0x0FFF] * 2;
 
-                uint a = 0, b = 0, c = 0;
-                ushort command, s;
+                uint b = 0, c = 0;
 
                 while (!restartScript)
                 {
-                    command = scriptData.Value; scriptData.Offset += 2; // get a command
+                    var command = scriptData.Value; scriptData.Offset += 2; // get a command
                     // TODO: debug
                     //Debug::script(command, scriptData);
 
+                    uint a;
+                    ushort s;
                     switch (command)
                     {
                         case 0: // push_variable
@@ -730,7 +1102,7 @@ namespace NScumm.Sky
                                     break;
                                 }
                                 scriptData.Offset += 2;
-                            } while ((--s) != 0);
+                            } while (--s != 0);
 
                             if (s == 0)
                                 scriptData.Offset += scriptData.Value; // use the default
@@ -1014,7 +1386,7 @@ namespace NScumm.Sky
 
         private bool FnTurnTo(uint dir, uint b, uint c)
         {
-            /// turn compact to direction dir
+            // turn compact to direction dir
 
             ushort curDir = _compact.Core.dir; // get current direction
             _compact.Core.dir = (ushort)(dir & 0xffff); // set new direction
@@ -1093,7 +1465,10 @@ namespace NScumm.Sky
 
         private void RunGetOff()
         {
-            throw new NotImplementedException();
+            uint getOff = _scriptVariables[GET_OFF];
+            _scriptVariables[GET_OFF] = 0;
+            if (getOff != 0)
+                Script((ushort)(getOff & 0xffff), (ushort)(getOff >> 16));
         }
 
         private bool FnAddHuman(uint a, uint b, uint c)
@@ -1205,63 +1580,62 @@ namespace NScumm.Sky
 
         private bool FnChooser(uint a, uint b, uint c)
         {
-            throw new NotImplementedException();
-
             // setup the text questions to be clicked on
             // read from TEXT1 until 0
 
-            //SystemVars.Instance.SystemFlags |= SystemFlags.CHOOSING; // can't save/restore while choosing
+            SystemVars.Instance.SystemFlags |= SystemFlags.CHOOSING; // can't save/restore while choosing
 
-            //_scriptVariables[THE_CHOSEN_ONE] = 0; // clear result
+            _scriptVariables[THE_CHOSEN_ONE] = 0; // clear result
 
-            //int p = TEXT1;
-            //ushort ycood = TOP_LEFT_Y; // rolling coordinate
+            int p = TEXT1;
+            ushort ycood = TOP_LEFT_Y; // rolling coordinate
 
-            //while (_scriptVariables[p] != 0)
-            //{
-            //    uint textNum = _scriptVariables[p++];
+            while (_scriptVariables[p] != 0)
+            {
+                uint textNum = _scriptVariables[p++];
 
-            //    DisplayedText lowText = _skyText.LowTextManager(textNum, GAME_SCREEN_WIDTH, 0, 241, 0);
+                DisplayedText lowText = _skyText.LowTextManager(textNum, GAME_SCREEN_WIDTH, 0, 241, false);
 
-            //    byte[] data = lowText.textData;
+                byte[] data = lowText.TextData;
+                var header = ServiceLocator.Platform.ToStructure<DataFileHeader>(data, 0);
 
-            //    // stipple the text
+                // stipple the text
 
-            //    uint size = ((DataFileHeader*)data).s_height * ((DataFileHeader*)data).s_width;
-            //    uint index = 0;
-            //    uint width = ((DataFileHeader*)data).s_width;
-            //    uint height = ((DataFileHeader*)data).s_height;
+                uint size = (uint)(header.s_height * header.s_width);
+                uint index = 0;
+                uint width = header.s_width;
+                uint height = header.s_height;
 
-            //    data += sizeof(DataFileHeader);
+                var dataPos = ServiceLocator.Platform.SizeOf<DataFileHeader>();
 
-            //    while (index < size)
-            //    {
-            //        if (index % width <= 1)
-            //            index ^= 1; //index++;
-            //        if (!data[index])
-            //            data[index] = 1;
-            //        index += 2;
-            //    }
+                while (index < size)
+                {
+                    if (index % width <= 1)
+                        index ^= 1; //index++;
+                    if (data[dataPos + index] == 0)
+                        data[index] = 1;
+                    index += 2;
+                }
 
-            //    Compact textCompact = _skyCompact.FetchCpt(lowText.compactNum);
+                Compact textCompact = _skyCompact.FetchCpt(lowText.CompactNum);
 
-            //    textCompact.getToFlag = (ushort)textNum;
-            //    textCompact.downFlag = (ushort)_scriptVariables[p++]; // get animation number
+                textCompact.Core.getToFlag = (ushort)textNum;
+                textCompact.Core.downFlag = (ushort)_scriptVariables[p++]; // get animation number
 
-            //    textCompact.status |= ST_MOUSE; // mouse detects
+                textCompact.Core.status |= ST_MOUSE; // mouse detects
 
-            //    textCompact.xcood = TOP_LEFT_X; // set coordinates
-            //    textCompact.ycood = ycood;
-            //    ycood += (ushort)height;
-            //}
+                textCompact.Core.xcood = TOP_LEFT_X; // set coordinates
+                textCompact.Core.ycood = ycood;
+                ycood += (ushort)height;
+            }
 
-            //if (p == TEXT1)
-            //    return true;
+            if (p == TEXT1)
+                return true;
 
-            //_compact.Core.logic = L_CHOOSE; // player frozen until choice made
-            //FnAddHuman(0, 0, 0); // bring back mouse
+            _compact.Core.logic = L_CHOOSE; // player frozen until choice made
+            FnAddHuman(0, 0, 0); // bring back mouse
 
-            //return false;
+            return false;
         }
 
         private bool FnHighlight(uint itemNo, uint pen, uint c)
@@ -1393,7 +1767,7 @@ namespace NScumm.Sky
             for (i = 0; i < _objectList.Length; i++)
             {
                 if (_objectList[i] != 0)
-                    (_skyCompact.FetchCpt((ushort)_objectList[i])).Core.status = ST_LOGIC;
+                    _skyCompact.FetchCpt((ushort)_objectList[i]).Core.status = ST_LOGIC;
                 else break;
             }
 
@@ -1409,7 +1783,7 @@ namespace NScumm.Sky
             ushort rollingX = TOP_LEFT_X + 28;
             for (i = 0; i < 11; i++)
             {
-                cpt = _skyCompact.FetchCpt((ushort)(_objectList[_scriptVariables[SCROLL_OFFSET] + i]));
+                cpt = _skyCompact.FetchCpt((ushort)_objectList[_scriptVariables[SCROLL_OFFSET] + i]);
 
                 cpt.Core.status = ST_MOUSE + ST_FOREGROUND + ST_LOGIC + ST_RECREATE;
                 cpt.Core.screen = (ushort)(_scriptVariables[SCREEN] & 0xffff);
@@ -1529,29 +1903,33 @@ namespace NScumm.Sky
 
         private bool FnResetId(uint id, uint resetBlock, uint c)
         {
-            throw new NotImplementedException();
-            /// used when a mega is to be restarted
-            /// eg - when a smaller mega turn to larger
-            /// - a mega changes rooms...
+            // used when a mega is to be restarted
+            // eg - when a smaller mega turn to larger
+            // - a mega changes rooms...
 
-            //Compact cpt = _skyCompact.FetchCpt((ushort)id);
-            //Compact rst = _skyCompact.FetchCpt((ushort)resetBlock);
+            var cpt = _skyCompact.FetchCpt((ushort)id);
+            var rst = new UShortAccess(_skyCompact.FetchCptRaw((ushort)resetBlock), 0);
 
-            //if (cpt == null)
-            //{
-            //    // TODO: warning("fnResetId(): Compact %d (id) == NULL", id);
-            //    return true;
-            //}
-            //if (rst == null)
-            //{
-            //    // TODO: warning("fnResetId(): Compact %d (resetBlock) == NULL", resetBlock);
-            //    return true;
-            //}
+            if (cpt == null)
+            {
+                // TODO: warning("fnResetId(): Compact %d (id) == NULL", id);
+                return true;
+            }
 
-            //ushort off;
-            //while ((off = *rst++) != 0xffff)
-            //    *(uint16*)_skyCompact.GetCompactElem(cpt, off) = *rst++;
-            //return true;
+            if (rst == null)
+            {
+                // TODO: warning("fnResetId(): Compact %d (resetBlock) == NULL", resetBlock);
+                return true;
+            }
+
+            ushort off;
+            while ((off = rst[0]) != 0xffff)
+            {
+                rst.Offset += 2;
+                _skyCompact.GetCompactElem(cpt, off).Field = rst[0];
+                rst.Offset += 2;
+            }
+            return true;
         }
 
         private bool FnToggleGrid(uint a, uint b, uint c)
@@ -1728,7 +2106,7 @@ namespace NScumm.Sky
             {
                 if ((x >= list[0]) && (x < list[1]) && (y >= list[2]) && (y < list[3]))
                     _scriptVariables[RESULT] = list[4];
-                list.Offset += (5 * 2);
+                list.Offset += 5 * 2;
             }
             return true;
         }
@@ -1878,20 +2256,20 @@ namespace NScumm.Sky
         private bool FnPrintCredit(uint a, uint b, uint c)
         {
             DisplayedText creditText = _skyText.LowTextManager(a, 240, 0, 248, true);
-            Compact credCompact = _skyCompact.FetchCpt(creditText.compactNum);
+            Compact credCompact = _skyCompact.FetchCpt(creditText.CompactNum);
             credCompact.Core.xcood = 168;
             if ((a == 558) && (c == 215))
                 credCompact.Core.ycood = 211;
             else
                 credCompact.Core.ycood = (ushort)c;
-            _scriptVariables[RESULT] = creditText.compactNum;
+            _scriptVariables[RESULT] = creditText.CompactNum;
             return true;
         }
 
         private bool FnLookAt(uint a, uint b, uint c)
         {
             DisplayedText textInfo = _skyText.LowTextManager(a, 240, 0, 248, true);
-            Compact textCpt = _skyCompact.FetchCpt(textInfo.compactNum);
+            Compact textCpt = _skyCompact.FetchCpt(textInfo.CompactNum);
             textCpt.Core.xcood = 168;
             textCpt.Core.ycood = (ushort)c;
 
@@ -1923,7 +2301,7 @@ namespace NScumm.Sky
 
             DisplayedText text = _skyText.LowTextManager(textNo, 220, 0, 215, false);
 
-            Compact textCpt = _skyCompact.FetchCpt(text.compactNum);
+            Compact textCpt = _skyCompact.FetchCpt(text.CompactNum);
 
             if (textPos < 20)
             { // line number (for text)
@@ -1978,7 +2356,7 @@ namespace NScumm.Sky
 
         private bool FnStartMusic(uint a, uint b, uint c)
         {
-            if (!(SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.MUS_OFF)))
+            if (!SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.MUS_OFF))
                 _skyMusic.StartMusic((ushort)a);
             SystemVars.Instance.CurrentMusic = (ushort)a;
             return true;
@@ -2041,7 +2419,16 @@ namespace NScumm.Sky
 
         private void StopAndWait()
         {
-            throw new NotImplementedException();
+            _compact.Core.mode += 4;
+
+            var scriptNo = SkyCompact.GetSub(_compact, _compact.Core.mode);
+            var offset = SkyCompact.GetSub(_compact, _compact.Core.mode + 2);
+
+            scriptNo.Field = _compact.Core.stopScript;
+            offset.Field = 0;
+
+            _compact.Core.logic = L_SCRIPT;
+            LogicScript();
         }
 
         static readonly uint[] forwardList1b = {

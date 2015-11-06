@@ -6,16 +6,14 @@ namespace NScumm.Sky
 {
     internal partial class Text
     {
-        private const int MAIN_CHAR_HEIGHT = 12;
+        private const int MainCharHeight = 12;
 
-        private const int FIRST_TEXT_SEC = 77;
-        private const int FIRST_TEXT_BUFFER = 274;
-        private const int LAST_TEXT_BUFFER = 284;
-        private const int NO_OF_TEXT_SECTIONS = 8; // 8 sections per language
-        private const int CHAR_SET_FILE = 60150;
-        private const int MAX_SPEECH_SECTION = 7;
-        private const int CHAR_SET_HEADER = 128;
-        private const int MAX_NO_LINES = 10;
+        private const int FirstTextSec = 77;
+        private const int FirstTextBuffer = 274;
+        private const int NoOfTextSections = 8; // 8 sections per language
+        private const int CharSetFile = 60150;
+        private const int CharSetHeader = 128;
+        private const int MaxNoLines = 10;
 
         private const int HufftreeLeftChild = 0;
         private const int HufftreeRightChild = 1;
@@ -71,8 +69,7 @@ namespace NScumm.Sky
         private readonly CharSet _linkCharacterSet;
         private readonly CharSet _controlCharacterSet;
 
-        private uint _numLetters; //no of chars in message
-        private SkyCompact _skyCompact;
+        private readonly SkyCompact _skyCompact;
 
         private readonly Disk _skyDisk;
         private StringBuilder _textBuffer = new StringBuilder();
@@ -85,30 +82,35 @@ namespace NScumm.Sky
 
             InitHuffTree();
 
-            _mainCharacterSet.addr = _skyDisk.LoadFile(CHAR_SET_FILE);
-            _mainCharacterSet.charHeight = MAIN_CHAR_HEIGHT;
-            _mainCharacterSet.charSpacing = 0;
+            _mainCharacterSet.Addr = _skyDisk.LoadFile(CharSetFile);
+            _mainCharacterSet.CharHeight = MainCharHeight;
+            _mainCharacterSet.CharSpacing = 0;
 
             FnSetFont(0);
 
             if (!SystemVars.Instance.GameVersion.Type.HasFlag(SkyGameType.Demo))
             {
-                _controlCharacterSet.addr = _skyDisk.LoadFile(60520);
-                _controlCharacterSet.charHeight = 12;
-                _controlCharacterSet.charSpacing = 0;
+                _controlCharacterSet.Addr = _skyDisk.LoadFile(60520);
+                _controlCharacterSet.CharHeight = 12;
+                _controlCharacterSet.CharSpacing = 0;
 
-                _linkCharacterSet.addr = _skyDisk.LoadFile(60521);
-                _linkCharacterSet.charHeight = 12;
-                _linkCharacterSet.charSpacing = 1;
+                _linkCharacterSet.Addr = _skyDisk.LoadFile(60521);
+                _linkCharacterSet.CharHeight = 12;
+                _linkCharacterSet.CharSpacing = 1;
             }
             else
             {
-                _controlCharacterSet.addr = null;
-                _linkCharacterSet.addr = null;
+                _controlCharacterSet.Addr = null;
+                _linkCharacterSet.Addr = null;
             }
         }
 
         public Logic Logic { get; internal set; }
+
+        public uint CurrentCharSet
+        {
+            get { return _curCharSet; }
+        }
 
         public DisplayedText DisplayText(ushort textNum, byte[] dest, bool center, ushort pixelWidth, byte color)
         {
@@ -124,7 +126,6 @@ namespace NScumm.Sky
             ushort lineWidth = 0;
 
             uint numLines = 0;
-            _numLetters = 2;
 
             // work around bug #778105 (line width exceeded)
             text = text.Replace("MUND-BEATMUNG!", "MUND BEATMUNG!");
@@ -165,14 +166,13 @@ namespace NScumm.Sky
                 }
 
                 textChar = textBytes[curPos++];
-                _numLetters++;
             }
 
             uint dtLastWidth = lineWidth; //save width of last line
             centerTable[numLines] = lineWidth; //and update centering table
             numLines++;
 
-            if (numLines > MAX_NO_LINES)
+            if (numLines > MaxNoLines)
                 throw new InvalidOperationException("Maximum no. of lines exceeded");
 
             var dtLineSize = pixelWidth * _charHeight;
@@ -221,9 +221,11 @@ namespace NScumm.Sky
                 prevDest = curDest = prevDest + dtLineSize; //start of last line + start of next
             } while (textChar >= 10 && curPos != textBytes.Length);
 
-            var ret = new DisplayedText();
-            ret.textData = dest;
-            ret.textWidth = dtLastWidth;
+            var ret = new DisplayedText
+            {
+                TextData = dest,
+                TextWidth = dtLastWidth
+            };
             return ret;
         }
 
@@ -247,9 +249,9 @@ namespace NScumm.Sky
             }
 
             _curCharSet = fontNr;
-            _characterSet = newCharSet.addr;
-            _charHeight = (byte)newCharSet.charHeight;
-            _dtCharSpacing = newCharSet.charSpacing;
+            _characterSet = newCharSet.Addr;
+            _charHeight = (byte)newCharSet.CharHeight;
+            _dtCharSpacing = newCharSet.CharSpacing;
         }
 
         public void ChangeTextSpriteColor(byte[] sprData, byte newCol)
@@ -265,14 +267,14 @@ namespace NScumm.Sky
         {
             var ptrComp = _skyCompact.FetchCpt((ushort)pointedId);
             var text = LowTextManager(ptrComp.Core.cursorText, Logic.TEXT_MOUSE_WIDTH, Logic.L_CURSOR, 242, false);
-            Logic.ScriptVariables[Logic.CURSOR_ID] = text.compactNum;
+            Logic.ScriptVariables[Logic.CURSOR_ID] = text.CompactNum;
             if (Logic.ScriptVariables[Logic.MENU] != 0)
             {
                 _mouseOfsY = Logic.TOP_LEFT_Y - 2;
                 if (mouseX < 150)
                     _mouseOfsX = Logic.TOP_LEFT_X + 24;
                 else
-                    _mouseOfsX = Logic.TOP_LEFT_X - 8 - text.textWidth;
+                    _mouseOfsX = Logic.TOP_LEFT_X - 8 - text.TextWidth;
             }
             else
             {
@@ -280,9 +282,9 @@ namespace NScumm.Sky
                 if (mouseX < 150)
                     _mouseOfsX = Logic.TOP_LEFT_X + 13;
                 else
-                    _mouseOfsX = Logic.TOP_LEFT_X - 8 - text.textWidth;
+                    _mouseOfsX = Logic.TOP_LEFT_X - 8 - text.TextWidth;
             }
-            Compact textCompact = _skyCompact.FetchCpt(text.compactNum);
+            Compact textCompact = _skyCompact.FetchCpt(text.CompactNum);
             LogicCursor(textCompact, mouseX, mouseY);
         }
 
@@ -299,15 +301,15 @@ namespace NScumm.Sky
                 cpt = _skyCompact.FetchCpt((ushort)compactNum);
             }
 
-            cpt.Core.flag = (ushort)((ushort)(compactNum - Logic.FIRST_TEXT_COMPACT) + FIRST_TEXT_BUFFER);
+            cpt.Core.flag = (ushort)((ushort)(compactNum - Logic.FIRST_TEXT_COMPACT) + FirstTextBuffer);
 
-            SkyEngine.ItemList[cpt.Core.flag] = textInfo.textData;
+            SkyEngine.ItemList[cpt.Core.flag] = textInfo.TextData;
 
             cpt.Core.logic = logicNum;
             cpt.Core.status = Logic.ST_LOGIC | Logic.ST_FOREGROUND | Logic.ST_RECREATE;
             cpt.Core.screen = (ushort)Logic.ScriptVariables[Logic.SCREEN];
 
-            textInfo.compactNum = (ushort)compactNum;
+            textInfo.CompactNum = (ushort)compactNum;
             return textInfo;
         }
 
@@ -319,33 +321,38 @@ namespace NScumm.Sky
                 textCompact.Core.ycood = Logic.TOP_LEFT_Y;
         }
 
-        public void FnTextModule(uint a, uint b)
+        public void FnTextModule(uint textInfoId, uint textNo)
         {
-            throw new NotImplementedException();
+            FnSetFont(1);
+            var msgData = new UShortAccess(_skyCompact.FetchCptRaw((ushort)textInfoId), 0);
+            var textId = LowTextManager(textNo, msgData[1], msgData[2], 209, false);
+            Logic.ScriptVariables[Logic.RESULT] = textId.CompactNum;
+            var textCompact = _skyCompact.FetchCpt(textId.CompactNum);
+            textCompact.Core.xcood = msgData[3];
+            textCompact.Core.ycood = msgData[4];
+            FnSetFont(0);
         }
 
         private void MakeGameCharacter(byte textChar, byte[] charSetPtr, byte[] dest, ref int dstPtr, byte color,
             ushort bufPitch)
         {
-            bool maskBit, dataBit;
             var charWidth = (byte)(charSetPtr[textChar] + 1 - _dtCharSpacing);
-            ushort data, mask;
-            var charSpritePtr = CHAR_SET_HEADER + (_charHeight << 2) * textChar;
+            var charSpritePtr = CharSetHeader + (_charHeight << 2) * textChar;
             var curPos = 0;
 
             for (var i = 0; i < _charHeight; i++)
             {
                 var prevPos = curPos;
 
-                data = charSetPtr.ToUInt16BigEndian(charSpritePtr);
-                mask = charSetPtr.ToUInt16BigEndian(charSpritePtr + 2);
+                var data = charSetPtr.ToUInt16BigEndian(charSpritePtr);
+                var mask = charSetPtr.ToUInt16BigEndian(charSpritePtr + 2);
                 charSpritePtr += 4;
 
                 for (var j = 0; j < charWidth; j++)
                 {
-                    maskBit = (mask & 0x8000) != 0; //check mask
+                    var maskBit = (mask & 0x8000) != 0;
                     mask <<= 1;
-                    dataBit = (data & 0x8000) != 0; //check data
+                    var dataBit = (data & 0x8000) != 0;
                     data <<= 1;
 
                     if (maskBit)
@@ -407,15 +414,15 @@ namespace NScumm.Sky
 
             var sectionNo = (textNr & 0x0F000) >> 12;
 
-            if (SkyEngine.ItemList[FIRST_TEXT_SEC + sectionNo] == null)
+            if (SkyEngine.ItemList[FirstTextSec + sectionNo] == null)
             {
                 //check if already loaded
                 //debug(5, "Loading Text item(s) for Section %d", (sectionNo >> 2));
 
-                var fileNo = sectionNo + (uint)(SystemVars.Instance.Language * NO_OF_TEXT_SECTIONS + 60600);
-                SkyEngine.ItemList[FIRST_TEXT_SEC + sectionNo] = _skyDisk.LoadFile((ushort)fileNo);
+                var fileNo = sectionNo + (uint)(SystemVars.Instance.Language * NoOfTextSections + 60600);
+                SkyEngine.ItemList[FirstTextSec + sectionNo] = _skyDisk.LoadFile((ushort)fileNo);
             }
-            var textData = SkyEngine.ItemList[FIRST_TEXT_SEC + sectionNo];
+            var textData = SkyEngine.ItemList[FirstTextSec + sectionNo];
             var textDataPtr = 0;
 
             var offset = 0;
@@ -535,16 +542,16 @@ namespace NScumm.Sky
 
         private struct CharSet
         {
-            public byte[] addr;
-            public uint charHeight;
-            public uint charSpacing;
+            public byte[] Addr;
+            public uint CharHeight;
+            public uint CharSpacing;
         }
     }
 
     internal struct DisplayedText
     {
-        public byte[] textData;
-        public uint textWidth;
-        public ushort compactNum;
+        public byte[] TextData;
+        public uint TextWidth;
+        public ushort CompactNum;
     }
 }

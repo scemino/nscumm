@@ -1,5 +1,4 @@
-﻿using System;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 
 namespace NScumm.Sky
 {
@@ -156,7 +155,7 @@ namespace NScumm.Sky
                 // Reloading the grids can sometimes cause problems eg when reichs door is
                 // open the door grid bit gets replaced so you can't get back in (or out)
                 if (_skyLogic.ScriptVariables[Logic.REICH_DOOR_FLAG] != 0)
-                    RemoveGrid(256, 280, 1, _skyCompact.FetchCpt((ushort) CptIds.ReichDoor20));
+                    RemoveGrid(256, 280, 1, _skyCompact.FetchCpt((ushort)CptIds.ReichDoor20));
                 //removeGrid(256, 280, 1, &SkyCompact::reich_door_20);
             }
         }
@@ -179,11 +178,20 @@ namespace NScumm.Sky
                 ObjectToWalk(resGridIdx, resBitPos, resWidth);
         }
 
+        public byte[] GiveGrid(uint screen)
+        {
+            if ((_gridConvertTable[screen] >= 0) && (_gridConvertTable[screen] < Logic.TOT_NO_GRIDS))
+            {
+                return _gameGrids[_gridConvertTable[screen]];
+            }
+            return null;
+        }
+
         private void ObjectToWalk(byte gridIdx, int bitNum, uint width)
         {
             for (uint cnt = 0; cnt < width; cnt++)
             {
-                _gameGrids[gridIdx][bitNum >> 3] |= (byte) (1 << (bitNum & 0x7));
+                _gameGrids[gridIdx][bitNum >> 3] |= (byte)(1 << (bitNum & 0x7));
                 if ((bitNum & 0x1F) == 0)
                     bitNum += 0x3F;
                 else
@@ -195,7 +203,7 @@ namespace NScumm.Sky
         {
             for (uint cnt = 0; cnt < width; cnt++)
             {
-                _gameGrids[gridIdx][bitNum >> 3] &= (byte) ~(1 << (bitNum & 0x7));
+                _gameGrids[gridIdx][bitNum >> 3] &= (byte)~(1 << (bitNum & 0x7));
                 if ((bitNum & 0x1F) == 0)
                     bitNum += 0x3F;
                 else
@@ -221,7 +229,7 @@ namespace NScumm.Sky
             y >>= 3; // convert to blocks
             if (y >= Screen.GameScreenHeight >> 3)
                 return false; // off screen
-            bitPos = (int) (y*40);
+            bitPos = (int)(y * 40);
             width++;
             x >>= 3; // convert to blocks
 
@@ -241,9 +249,9 @@ namespace NScumm.Sky
             if (Screen.GameScreenWidth >> 3 < x + width) // partially off screen
                 width = (Screen.GameScreenWidth >> 3) - x;
 
-            bitPos += (int) x;
+            bitPos += (int)x;
             Debug.Assert((_gridConvertTable[cpt.Core.screen] >= 0) && (_gridConvertTable[cpt.Core.screen] < TotNoGrids));
-            resGrid = (byte) _gridConvertTable[cpt.Core.screen];
+            resGrid = (byte)_gridConvertTable[cpt.Core.screen];
 
             var tmpBits = 0x1F - (bitPos & 0x1F);
             bitPos &= ~0x1F; // divide into dword address and bit number
@@ -252,5 +260,6 @@ namespace NScumm.Sky
             resWidth = width;
             return true;
         }
+
     }
 }

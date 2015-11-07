@@ -40,7 +40,7 @@
         const ushort CDV_04 = 59508;
         const ushort CD_3 = 59509;
         const ushort CDV_05 = 59510;
-        const ushort CDV_06 = 5951;
+        const ushort CDV_06 = 59511;
         const ushort CD_5 = 59512;
         const ushort CDV_07 = 59513;
         const ushort CDV_08 = 59514;

@@ -1338,7 +1338,7 @@ namespace NScumm.Sky
 
         private bool FnQuitToDos(uint a, uint b, uint c)
         {
-            QuitGame();
+            SkyEngine.QuitGame();
             return false;
         }
 

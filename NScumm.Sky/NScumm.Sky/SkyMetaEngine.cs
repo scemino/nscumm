@@ -88,9 +88,9 @@ namespace NScumm.Sky
 
     public class SkyMetaEngine : IMetaEngine
     {
-        public IEngine Create(GameSettings settings, IGraphicsManager gfxManager, IInputManager inputManager, IAudioOutput output, bool debugMode = false)
+        public IEngine Create(GameSettings settings, IGraphicsManager gfxManager, IInputManager inputManager, IAudioOutput output, ISaveFileManager saveFileManager, bool debugMode = false)
         {
-            return new SkyEngine(settings, gfxManager, inputManager, output, debugMode);
+            return new SkyEngine(settings, gfxManager, inputManager, output, saveFileManager, debugMode);
         }
 
         public GameDetected DetectGame(string path)

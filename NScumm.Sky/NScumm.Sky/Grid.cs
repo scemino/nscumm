@@ -250,7 +250,7 @@ namespace NScumm.Sky
                 width = (Screen.GameScreenWidth >> 3) - x;
 
             bitPos += (int)x;
-            Debug.Assert((_gridConvertTable[cpt.Core.screen] >= 0) && (_gridConvertTable[cpt.Core.screen] < TotNoGrids));
+            System.Diagnostics.Debug.Assert((_gridConvertTable[cpt.Core.screen] >= 0) && (_gridConvertTable[cpt.Core.screen] < TotNoGrids));
             resGrid = (byte)_gridConvertTable[cpt.Core.screen];
 
             var tmpBits = 0x1F - (bitPos & 0x1F);

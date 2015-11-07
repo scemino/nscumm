@@ -43,6 +43,7 @@
   <ItemGroup>
     <Compile Include="AutoRoute.cs" />
     <Compile Include="Control.cs" />
+    <Compile Include="Debug.cs" />
     <Compile Include="Grid.cs" />
     <Compile Include="Intro.Sequences.cs" />
     <Compile Include="Logic.cs" />

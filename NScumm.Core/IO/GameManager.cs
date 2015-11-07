@@ -93,7 +93,7 @@ namespace NScumm.Core.IO
             _gm = GameManager.Create(resStream);
         }
 
-        public IEngine Create(GameSettings settings, IGraphicsManager gfxManager, IInputManager inputManager, IAudioOutput output, bool debugMode = false)
+        public IEngine Create(GameSettings settings, IGraphicsManager gfxManager, IInputManager inputManager, IAudioOutput output, ISaveFileManager saveFileManager, bool debugMode = false)
         {
             return ScummEngine.Create(settings, gfxManager, inputManager, output, debugMode);
         }

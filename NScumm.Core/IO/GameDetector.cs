@@ -58,7 +58,7 @@ namespace NScumm.Core.IO
     {
         GameDetected DetectGame(string path);
 
-        IEngine Create(GameSettings settings, IGraphicsManager gfxManager, IInputManager inputManager, IAudioOutput output, bool debugMode = false);
+        IEngine Create(GameSettings settings, IGraphicsManager gfxManager, IInputManager inputManager, IAudioOutput output, ISaveFileManager saveFileManager, bool debugMode = false);
     }
 
     public class GameDetector

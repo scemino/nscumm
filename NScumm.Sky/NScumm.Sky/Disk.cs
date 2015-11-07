@@ -151,6 +151,11 @@ namespace NScumm.Sky
             }
         }
 
+        public uint[] LoadedFilesList
+        {
+            get { return _loadedFilesList; }
+        }
+
         public byte[] LoadFile(int id)
         {
             // goto entry offset
@@ -197,7 +202,7 @@ namespace NScumm.Sky
             while (list[cnt] != 0)
             {
                 _loadedFilesList[cnt] = list[cnt];
-                SkyEngine.ItemList[_loadedFilesList[cnt] & 2047] = LoadFile((ushort) (_loadedFilesList[cnt] & 0x7FFF));
+                SkyEngine.ItemList[_loadedFilesList[cnt] & 2047] = LoadFile((ushort)(_loadedFilesList[cnt] & 0x7FFF));
                 cnt++;
             }
             _loadedFilesList[cnt] = 0;
@@ -212,9 +217,9 @@ namespace NScumm.Sky
             ushort fCnt = 0;
             do
             {
-                _buildList[cnt + fCnt] = (ushort) (data.ToUInt16(fCnt*2) & 0x7FFFU);
+                _buildList[cnt + fCnt] = (ushort)(data.ToUInt16(fCnt * 2) & 0x7FFFU);
                 fCnt++;
-            } while (data.ToUInt16((fCnt - 1)*2) != 0);
+            } while (data.ToUInt16((fCnt - 1) * 2) != 0);
             FnCacheFiles();
         }
 
@@ -225,9 +230,9 @@ namespace NScumm.Sky
                 byte cnt = 0;
                 do
                 {
-                    _buildList[cnt] = (ushort) (data.ToUInt16(cnt*2) & 0x7FFFU);
+                    _buildList[cnt] = (ushort)(data.ToUInt16(cnt * 2) & 0x7FFFU);
                     cnt++;
-                } while (data.ToUInt16((cnt - 1)*2) != 0);
+                } while (data.ToUInt16((cnt - 1) * 2) != 0);
             }
         }
 

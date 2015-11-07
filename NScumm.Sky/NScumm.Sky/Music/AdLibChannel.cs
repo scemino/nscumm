@@ -231,7 +231,7 @@ namespace NScumm.Sky.Music
             resVol &= 0xFFFF;
             resVol *= (_channelData.channelVolume + 1) << 1;
             resVol >>= 16;
-            Debug.Assert(resVol < 0x81);
+            System.Diagnostics.Debug.Assert(resVol < 0x81);
             resultOp = (byte)(((_channelData.instrumentData.scalingLevel << 6) & 0xC0) | _opOutputTable[resVol]);
             SetRegister((byte)(0x40 | _channelData.adlibReg2), resultOp);
             if ((_channelData.instrumentData.feedBack & 1) != 0)
@@ -243,7 +243,7 @@ namespace NScumm.Sky.Music
             }
             else
                 resVol = _channelData.instrumentData.totOutLev_Op1;
-            Debug.Assert(resVol < 0x81);
+            System.Diagnostics.Debug.Assert(resVol < 0x81);
             resultOp = (byte)(((_channelData.instrumentData.scalingLevel << 2) & 0xC0) | _opOutputTable[resVol]);
             SetRegister((byte)(0x40 | _channelData.adlibReg1), resultOp);
         }

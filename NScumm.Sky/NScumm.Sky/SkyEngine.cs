@@ -46,9 +46,9 @@ namespace NScumm.Sky
         public event EventHandler ShowMenuDialogRequested;
 
 
-        public SkyEngine(GameSettings settings, IGraphicsManager gfxManager, IInputManager inputManager, IAudioOutput output, bool debugMode = false)
+        public SkyEngine(GameSettings settings, IGraphicsManager gfxManager, IInputManager inputManager, IAudioOutput output, ISaveFileManager saveFileManager, bool debugMode = false)
         {
-            _system = new SkySystem(gfxManager, inputManager);
+            _system = new SkySystem(gfxManager, inputManager, saveFileManager);
 
             _mixer = new Mixer(44100);
             _mixer.Read(new byte[0], 0);
@@ -170,6 +170,7 @@ namespace NScumm.Sky
                     // don't do intro for floppydemos
                     using (var skyIntro = new Intro(_skyDisk, _skyScreen, _skyMusic, _skySound, _skyText, _mixer, _system))
                     {
+                        // TODO: configuration
                         //var floppyIntro = (bool)ConfigurationManager["alt_intro"];
                         var floppyIntro = false;
                         introSkipped = !skyIntro.DoIntro(floppyIntro);
@@ -196,17 +197,16 @@ namespace NScumm.Sky
             {
                 // TODO: _debugger.onFrame();
 
-                // TODO: autosave
-                //if (shouldPerformAutoSave(_lastSaveTime))
-                //{
-                //    if (_skyControl.loadSaveAllowed())
-                //    {
-                //        _lastSaveTime = _system.getMillis();
-                //        _skyControl.doAutoSave();
-                //    }
-                //    else
-                //        _lastSaveTime += 30 * 1000; // try again in 30 secs
-                //}
+                if (ShouldPerformAutoSave(_lastSaveTime))
+                {
+                    if (_skyControl.LoadSaveAllowed())
+                    {
+                        _lastSaveTime = Environment.TickCount;
+                        _skyControl.DoAutoSave();
+                    }
+                    else
+                        _lastSaveTime += 30 * 1000; // try again in 30 secs
+                }
                 _skySound.CheckFxQueue();
                 _skyMouse.MouseEngine();
                 HandleKey();
@@ -229,11 +229,11 @@ namespace NScumm.Sky
                 // TODO: debugger
                 //if (_debugger.showGrid())
                 //{
-                //    uint8* grid = _skyLogic._skyGrid.giveGrid(Logic::_scriptVariables[SCREEN]);
-                //    if (grid)
+                //    var grid = _skyLogic.Grid.GiveGrid(_skyLogic.ScriptVariables[Logic.SCREEN]);
+                //    if (grid != null)
                 //    {
-                //        _skyScreen.showGrid(grid);
-                //        _skyScreen.forceRefresh();
+                //        _skyScreen.ShowGrid(grid);
+                //        _skyScreen.ForceRefresh();
                 //    }
                 //}
                 _skyScreen.Flip();
@@ -260,6 +260,14 @@ namespace NScumm.Sky
             // TODO: configuration
             //ConfMan.flushToDisk();
             Delay(1500);
+        }
+
+        private bool ShouldPerformAutoSave(int lastSaveTime)
+        {
+            int diff = Environment.TickCount - lastSaveTime;
+            // TODO: configuration: int autosavePeriod = ConfMan.getInt("autosave_period");
+            var autosavePeriod = 300;
+            return autosavePeriod != 0 && diff > autosavePeriod * 1000;
         }
 
         private void Delay(int amount)
@@ -344,13 +352,11 @@ namespace NScumm.Sky
         public void Load(string filename)
         {
             // TODO: remove this
-            throw new NotImplementedException("Load game not implemented");
         }
 
         public void Save(string filename)
         {
             // TODO: remove this
-            throw new NotImplementedException("Save game not implemented");
         }
 
 

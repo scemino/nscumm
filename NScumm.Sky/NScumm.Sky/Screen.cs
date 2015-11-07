@@ -355,7 +355,7 @@ namespace NScumm.Sky
             else if (scroll == 123)
             {
                 // scroll left (going right)
-                Debug.Assert(Current != null && _scrollScreen != null);
+                System.Diagnostics.Debug.Assert(Current != null && _scrollScreen != null);
                 for (var scrollCnt = 0; scrollCnt < GameScreenWidth / ScrollJump - 1; scrollCnt++)
                 {
                     var scrNewPtr = scrollCnt * ScrollJump;
@@ -377,7 +377,7 @@ namespace NScumm.Sky
             else if (scroll == 321)
             {
                 // scroll right (going left)
-                Debug.Assert(Current != null && _scrollScreen != null);
+                System.Diagnostics.Debug.Assert(Current != null && _scrollScreen != null);
                 for (var scrollCnt = 0; scrollCnt < GameScreenWidth / ScrollJump - 1; scrollCnt++)
                 {
                     var scrNewPtr = GameScreenWidth - (scrollCnt + 1) * ScrollJump;
@@ -511,6 +511,47 @@ namespace NScumm.Sky
             _seqInfo.RunningItem = true;
         }
 
+        public void SetFocusRectangle(Rect rect)
+        {
+            // TODO: _system.SetFocusRectangle(rect);
+            //_system.SetFocusRectangle(rect);
+        }
+
+        public void ShowGrid(byte[] grid)
+        {
+            uint gridData = 0;
+            byte bitsLeft = 0;
+            var gridBuf = 0;
+            for (ushort cnty = 0; cnty < GameScreenHeight >> 3; cnty++)
+            {
+                for (ushort cntx = 0; cntx < GameScreenWidth >> 3; cntx++)
+                {
+                    if (bitsLeft == 0)
+                    {
+                        bitsLeft = 32;
+                        gridData = grid.ToUInt32(gridBuf);
+                        gridBuf += 4;
+                    }
+                    if ((gridData & 0x80000000) != 0)
+                        PaintBox((ushort)(cntx << 3), (ushort)(cnty << 3));
+                    bitsLeft--;
+                    gridData <<= 1;
+                }
+            }
+            _system.GraphicsManager.CopyRectToScreen(Current, GameScreenWidth, 0, 0, GameScreenWidth, GameScreenHeight);
+        }
+
+        private void PaintBox(ushort x, ushort y)
+        {
+            var screenPos = y * GameScreenWidth + x;
+            Current.Set(screenPos, 255, 8);
+            for (var cnt = 1; cnt < 8; cnt++)
+            {
+                Current[screenPos + cnt * GameScreenWidth] = 255;
+                Current[screenPos + cnt * GameScreenWidth + 7] = 255;
+            }
+            Current.Set(screenPos + 7 * GameScreenWidth, 255, 7);
+        }
 
         private void PaletteFadeUp(byte[] pal)
         {
@@ -920,12 +961,6 @@ namespace NScumm.Sky
                 else
                     return;
             } // next_x
-        }
-
-        public void SetFocusRectangle(Rect rect)
-        {
-            // TODO: _system.SetFocusRectangle(rect);
-            //_system.SetFocusRectangle(rect);
         }
 
         private struct SequenceIntro

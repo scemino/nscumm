@@ -148,6 +148,8 @@ namespace NScumm.Core
         public static IPlatform Platform { get; set; }
 
         public static ITraceFactory TraceFatory { get; set; }
+
+        public static ISaveFileManager SaveFileManager { get; set; }
     }
 }
 

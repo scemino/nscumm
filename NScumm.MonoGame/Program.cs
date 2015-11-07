@@ -118,6 +118,7 @@ namespace NScumm.MonoGame
         {
             ServiceLocator.Platform = new Platform();
             ServiceLocator.FileStorage = new FileStorage();
+            ServiceLocator.SaveFileManager = new SaveFileManager(ServiceLocator.FileStorage);
             var switches = string.IsNullOrEmpty(sw) ? Enumerable.Empty<string>() : sw.Split(',');
             ServiceLocator.TraceFatory = new TraceFactory(switches);
         }

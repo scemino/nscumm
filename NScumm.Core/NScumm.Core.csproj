@@ -37,6 +37,7 @@
     <Compile Include="IO\ChunkIterator3.cs" />
     <Compile Include="IO\GameDetector.cs" />
     <Compile Include="IO\XorStream.cs" />
+    <Compile Include="ISaveFileManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Actor.cs" />
     <Compile Include="Actor3.cs" />

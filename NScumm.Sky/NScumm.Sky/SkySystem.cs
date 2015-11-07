@@ -1,6 +1,7 @@
 ﻿using NScumm.Core.Graphics;
 using NScumm.Core.Input;
 using System;
+using NScumm.Core;
 
 namespace NScumm.Sky
 {
@@ -59,17 +60,20 @@ namespace NScumm.Sky
     {
         IGraphicsManager GraphicsManager { get; }
         IInputManager InputManager { get; }
+        ISaveFileManager SaveFileManager { get; }
     }
 
     class SkySystem : ISystem
     {
         public IGraphicsManager GraphicsManager { get; private set; }
         public IInputManager InputManager { get; private set; }
+        public ISaveFileManager SaveFileManager { get; private set; }
 
-        public SkySystem(IGraphicsManager graphicsManager, IInputManager inputManager)
+        public SkySystem(IGraphicsManager graphicsManager, IInputManager inputManager, ISaveFileManager saveFileManager)
         {
             GraphicsManager = graphicsManager;
             InputManager = inputManager;
+            SaveFileManager = saveFileManager;
         }
     }
 }

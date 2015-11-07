@@ -63,6 +63,7 @@ namespace NScumm.MonoGame
                 font = ScreenManager.Content.Load<SpriteFont>("Fonts/MenuFont");
                 inputManager = new XnaInputManager(game.Window, info.Game.Width, info.Game.Height);
                 gfx = new XnaGraphicsManager(info.Game.Width, info.Game.Height, info.Game.PixelFormat, game.Window, ScreenManager.GraphicsDevice);
+                var saveFileManager = ServiceLocator.SaveFileManager;
 #if WINDOWS_UWP
                 audioDriver = new XAudio2Mixer();
 #else
@@ -71,7 +72,7 @@ namespace NScumm.MonoGame
                 audioDriver.Play();
 
                 // init engines
-                engine = info.MetaEngine.Create(info, gfx, inputManager, audioDriver);
+                engine = info.MetaEngine.Create(info, gfx, inputManager, audioDriver, saveFileManager);
                 engine.ShowMenuDialogRequested += OnShowMenuDialogRequested;
 
                 Task.Factory.StartNew(() =>

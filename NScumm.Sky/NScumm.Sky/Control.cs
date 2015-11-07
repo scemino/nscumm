@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Text;
 using NScumm.Core;
 using NScumm.Core.Input;
 using NScumm.Sky.Music;
@@ -10,6 +13,7 @@ namespace NScumm.Sky
     internal class Control
     {
         private const int MaxSaveGames = 999;
+        private const int MaxTextLen = 80;
 
         private const int PanLineWidth = 184;
 
@@ -192,12 +196,15 @@ namespace NScumm.Sky
         private ConResource _upFastButton;
         private ConResource _upSlowButton;
         private ConResource _yesNo;
+        private int _mouseWheel;
+        private ushort _selectedGame;
+        private ushort _enteredTextWidth;
+        private ISaveFileManager _saveFileMan;
 
-        public Control( /*SaveFileManager saveFileMan,*/
-            Screen screen, Disk disk, Mouse mouse, Text text, MusicBase music, Logic logic, Sound sound,
+        public Control(Screen screen, Disk disk, Mouse mouse, Text text, MusicBase music, Logic logic, Sound sound,
             SkyCompact skyCompact, ISystem system)
         {
-            //_saveFileMan = saveFileMan;
+            _saveFileMan = system.SaveFileManager;
 
             _skyScreen = screen;
             _skyDisk = disk;
@@ -348,6 +355,36 @@ namespace NScumm.Sky
             _skyText.FnSetFont(_savedCharSet);
         }
 
+        public bool LoadSaveAllowed()
+        {
+            if (SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.CHOOSING))
+                return false; // texts get lost during load/save, so don't allow it during choosing
+            if (_skyLogic.ScriptVariables[Logic.SCREEN] >= 101)
+                return false; // same problem with LINC terminals
+            if ((_skyLogic.ScriptVariables[Logic.SCREEN] >= 82) &&
+                (_skyLogic.ScriptVariables[Logic.SCREEN] != 85) &&
+                (_skyLogic.ScriptVariables[Logic.SCREEN] < 90))
+                return false; // don't allow saving in final rooms
+
+            return true;
+        }
+
+        public void DoAutoSave()
+        {
+            string fName;
+            if (SkyEngine.IsCDVersion)
+                fName="SKY-VM-CD.ASD";
+            else
+                fName= string.Format("SKY-VM{0:D3}.ASD", SystemVars.Instance.GameVersion.Version.Minor);
+
+            ushort res = SaveGameToFile(false, fName);
+            if (res != GameSaved)
+            {
+                // TODO: DisplayMessage(0, "Unable to perform autosave to '%s'. (%s)", fName, _saveFileMan->popErrorDesc().c_str());
+            }
+        }
+
+
         private ushort ParseSaveData(byte[] src)
         {
             using (var reader = new BinaryReader(new MemoryStream(src)))
@@ -412,7 +449,7 @@ namespace NScumm.Sky
                         }
                         else if (cptEntry.Type == CptTypeId.RouteBuf)
                         {
-                            Debug.Assert(cptEntry.Size == 32 * 2);
+                            System.Diagnostics.Debug.Assert(cptEntry.Size == 32 * 2);
                             cptEntry.Patch(reader.ReadBytes(cptEntry.Size));
                         }
                     }
@@ -753,14 +790,120 @@ namespace NScumm.Sky
             return Shifted;
         }
 
-        private ushort RestoreGameFromFile(bool p0)
+        private ushort RestoreGameFromFile(bool autoSave)
         {
-            throw new NotImplementedException();
+            string fName;
+            if (autoSave)
+            {
+                if (SkyEngine.IsCDVersion)
+                    fName = "SKY-VM-CD.ASD";
+                else
+                    fName = string.Format("SKY-VM{0:D3}.ASD", SystemVars.Instance.GameVersion.Version);
+            }
+            else
+                fName = string.Format("SKY-VM.{0:D3}", _selectedGame);
+
+            try
+            {
+                using (var inf = (Stream)_saveFileMan.OpenForLoading(fName))
+                {
+                    var br = new BinaryReader(inf);
+                    int infSize = br.ReadInt32();
+                    if (infSize < 4) infSize = 4;
+                    var saveData = new byte[infSize];
+                    saveData.WriteUInt32(0, (uint)infSize);
+
+                    if (inf.Read(saveData, 4, infSize - 4) != infSize - 4)
+                    {
+                        // TODO: DisplayMessage(null, "Can't read from file '%s'", fName);
+                        return RestoreFailed;
+                    }
+
+                    ushort res = ParseSaveData(saveData);
+                    SystemVars.Instance.PastIntro = true;
+                    return res;
+                }
+            }
+            catch (Exception)
+            {
+                return RestoreFailed;
+            }
         }
 
-        private ushort SaveGameToFile(bool b)
+        private ushort SaveGameToFile(bool fromControlPanel, string filename = null)
         {
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
+            if (filename == null)
+            {
+                filename = string.Format("SKY-VM.{0:D3}", _selectedGame);
+            }
+
+            ushort writeOk;
+            using (var outf = _saveFileMan.OpenForSaving(filename))
+            {
+                if (outf == null)
+                    return NoDiskSpace;
+
+                if (!fromControlPanel)
+                {
+                    // These variables are usually set when entering the control panel,
+                    // but not when using the GMM.
+                    _savedCharSet = _skyText.CurrentCharSet;
+                    _savedMouse = _skyMouse.CurrentMouseType;
+                }
+
+                var saveData = new byte[0x20000];
+                int fSize = PrepareSaveData(saveData);
+                try
+                {
+                    outf.Write(saveData, 0, fSize);
+                    writeOk = GameSaved;
+                }
+                catch (Exception)
+                {
+                    writeOk = NoDiskSpace;
+                }
+            }
+
+            return writeOk;
+        }
+
+        private int PrepareSaveData(byte[] destBuf)
+        {
+            using (var stream = new MemoryStream(destBuf))
+            {
+                var bw = new BinaryWriter(stream);
+                bw.BaseStream.Seek(4, SeekOrigin.Begin);
+                bw.WriteUInt32(SaveFileRevision);
+                bw.WriteUInt32((uint)SystemVars.Instance.GameVersion.Version.Minor);
+
+                bw.WriteUInt16(_skySound.SaveSounds[0]);
+                bw.WriteUInt16(_skySound.SaveSounds[1]);
+
+                bw.WriteUInt32(_skyMusic.CurrentMusic);
+                bw.WriteUInt32(_savedCharSet);
+                bw.WriteUInt32(_savedMouse);
+                bw.WriteUInt32(SystemVars.Instance.CurrentPalette);
+                for (var cnt = 0; cnt < Logic.NumSkyScriptVars; cnt++)
+                    bw.WriteUInt32(_skyLogic.ScriptVariables[cnt]);
+                var loadedFilesList = _skyDisk.LoadedFilesList;
+
+                for (var cnt = 0; cnt < 60; cnt++)
+                    bw.WriteUInt32(loadedFilesList[cnt]);
+
+                for (var cnt = 0; cnt < _skyCompact.SaveIds.Length; cnt++)
+                {
+                    var rawCpt = _skyCompact.FetchCptRaw(_skyCompact.SaveIds[cnt]);
+
+                    for (var elemCnt = 0; elemCnt < rawCpt.Length / 2; elemCnt++)
+                        bw.WriteUInt16(rawCpt[elemCnt]);
+                }
+
+                var length = bw.BaseStream.Position;
+                bw.BaseStream.Seek(0, SeekOrigin.Begin);
+                bw.WriteUInt32((uint)length);
+                return (int)length;
+            }
         }
 
         private bool GetYesNo(string text)
@@ -834,20 +977,6 @@ namespace NScumm.Sky
             _mouseClicked = false;
             _skyMouse.SpriteMouse(Logic.MOUSE_NORMAL, 0, 0);
             return retVal;
-        }
-
-        private bool LoadSaveAllowed()
-        {
-            if (SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.CHOOSING))
-                return false; // texts get lost during load/save, so don't allow it during choosing
-            if (_skyLogic.ScriptVariables[Logic.SCREEN] >= 101)
-                return false; // same problem with LINC terminals
-            if ((_skyLogic.ScriptVariables[Logic.SCREEN] >= 82) &&
-                (_skyLogic.ScriptVariables[Logic.SCREEN] != 85) &&
-                (_skyLogic.ScriptVariables[Logic.SCREEN] < 90))
-                return false; // don't allow saving in final rooms
-
-            return true;
         }
 
         private void AnimClick(ConResource pButton)
@@ -981,11 +1110,345 @@ namespace NScumm.Sky
             _skyText.FnSetFont(_savedCharSet);
         }
 
-        private ushort SaveRestorePanel(bool b)
+        private ushort SaveRestorePanel(bool allowSave)
         {
             _keyPressed = new ScummInputState();
             _system.InputManager.ResetKeys();
-            throw new NotImplementedException();
+            _mouseWheel = 0;
+            ButtonControl(null);
+            _text.DrawToScreen(WithMask); // flush text restore buffer
+
+            ConResource[] lookList;
+            ushort cnt;
+            byte lookListLen;
+            if (allowSave)
+            {
+                lookList = _savePanLookList;
+                lookListLen = 6;
+                // TODO: virtual keyboard
+                //_system.SetFeatureState(OSystem::kFeatureVirtualKeyboard, true);
+            }
+            else
+            {
+                lookList = _restorePanLookList;
+                if (AutoSaveExists())
+                    lookListLen = 7;
+                else
+                    lookListLen = 6;
+            }
+            bool withAutoSave = lookListLen == 7;
+
+            var textSprites = new byte[MaxOnScreen + 1][];
+            _firstText = 0;
+
+            var saveGameTexts = LoadDescriptions().Select(s => new StringBuilder(s)).ToArray();
+            _selectedGame = 0;
+
+            bool quitPanel = false;
+            bool refreshNames = true;
+            bool refreshAll = true;
+            ushort clickRes = 0;
+            while (!quitPanel && !SkyEngine.ShouldQuit)
+            {
+                clickRes = 0;
+                if (refreshNames || refreshAll)
+                {
+                    if (refreshAll)
+                    {
+                        _text.FlushForRedraw();
+                        _savePanel.DrawToScreen(NoMask);
+                        _quitButton.DrawToScreen(NoMask);
+                        if (withAutoSave)
+                            _autoSaveButton.DrawToScreen(NoMask);
+                        refreshAll = false;
+                    }
+                    for (cnt = 0; cnt < MaxOnScreen; cnt++)
+                        if (textSprites[cnt] != null)
+                            textSprites[cnt] = null;
+                    SetUpGameSprites(saveGameTexts, textSprites, _firstText, _selectedGame);
+                    ShowSprites(textSprites, allowSave);
+                    refreshNames = false;
+                }
+
+                _text.DrawToScreen(WithMask);
+                _system.GraphicsManager.UpdateScreen();
+                _mouseClicked = false;
+                Delay(50);
+                if (_controlPanel == null)
+                    return clickRes;
+                if (_keyPressed.IsKeyDown(KeyCode.Escape))
+                { // escape pressed
+                    _mouseClicked = false;
+                    clickRes = CancelPressed;
+                    quitPanel = true;
+                }
+                else if (_keyPressed.IsKeyDown(KeyCode.Return)) // TODO: || _keyPressed.IsKeyDown(KeyCode.Enter)
+                {
+                    clickRes = HandleClick(lookList[0]);
+                    if (_controlPanel == null) //game state was destroyed
+                        return clickRes;
+                    if (clickRes == GameSaved)
+                        SaveDescriptions(saveGameTexts);
+                    else if (clickRes == NoDiskSpace)
+                    {
+                        // TODO: DisplayMessage(0, "Could not save the game. (%s)", _saveFileMan.popErrorDesc().c_str());
+                    }
+                    quitPanel = true;
+                    _mouseClicked = false;
+                    _keyPressed = new ScummInputState();
+                    _system.InputManager.ResetKeys();
+                }
+                if (allowSave && _keyPressed.GetKeys().Count > 0)
+                {
+                    HandleKeyPress(_keyPressed, saveGameTexts[_selectedGame]);
+                    refreshNames = true;
+                    _keyPressed = new ScummInputState();
+                    _system.InputManager.ResetKeys();
+                }
+
+                if (_mouseWheel != 0)
+                {
+                    if (_mouseWheel < 0)
+                        clickRes = ShiftUp(Slow);
+                    else if (_mouseWheel > 0)
+                        clickRes = ShiftDown(Slow);
+                    _mouseWheel = 0;
+                    if (clickRes == Shifted)
+                    {
+                        _selectedGame = _firstText;
+                        refreshNames = true;
+                    }
+                }
+
+                bool haveButton = false;
+                var mouse = _system.InputManager.GetMousePosition();
+                for (cnt = 0; cnt < lookListLen; cnt++)
+                    if (lookList[cnt].IsMouseOver((uint)mouse.X, (uint)mouse.Y))
+                    {
+                        ButtonControl(lookList[cnt]);
+                        haveButton = true;
+
+                        if (_mouseClicked && lookList[cnt].OnClick != 0)
+                        {
+                            _mouseClicked = false;
+
+                            clickRes = HandleClick(lookList[cnt]);
+                            if (_controlPanel == null) //game state was destroyed
+                                return clickRes;
+
+                            if (clickRes == Shifted)
+                            {
+                                _selectedGame = _firstText;
+                                refreshNames = true;
+                            }
+                            if (clickRes == NoDiskSpace)
+                            {
+                                // TODO: DisplayMessage(0, "Could not save the game. (%s)", _saveFileMan.popErrorDesc().c_str());
+                                quitPanel = true;
+                            }
+                            if ((clickRes == CancelPressed) || (clickRes == GameRestored))
+                                quitPanel = true;
+
+                            if (clickRes == GameSaved)
+                            {
+                                SaveDescriptions(saveGameTexts);
+                                quitPanel = true;
+                            }
+                            if (clickRes == RestoreFailed)
+                                refreshAll = true;
+                        }
+                    }
+
+                if (_mouseClicked)
+                {
+                    if ((mouse.X >= GameNameX) && (mouse.X <= GameNameX + PanLineWidth) &&
+                        (mouse.Y >= GameNameY) && (mouse.Y <= GameNameY + PanCharHeight * MaxOnScreen))
+                    {
+
+                        _selectedGame = (ushort)((mouse.Y - GameNameY) / PanCharHeight + _firstText);
+                        refreshNames = true;
+                    }
+                }
+                if (!haveButton)
+                    ButtonControl(null);
+            }
+
+            for (cnt = 0; cnt < MaxOnScreen + 1; cnt++)
+                textSprites[cnt] = null;
+
+            if (allowSave)
+            {
+                // TODO: virtual keyboard
+                // _system.SetFeatureState(OSystem::kFeatureVirtualKeyboard, false);
+            }
+
+            return clickRes;
+        }
+
+        private void HandleKeyPress(ScummInputState kbd, StringBuilder textBuf)
+        {
+            if (kbd.IsKeyDown(KeyCode.Backspace))
+            { // backspace
+                if (textBuf.Length > 0)
+                    textBuf.Remove(textBuf.Length - 1, 1);
+            }
+            else
+            {
+                // TODO: do this in ScummInputState ?
+                var key = (char?)kbd.GetKeys().Where(k => k >= (KeyCode)32 && k <= (KeyCode)126).Select(k => (KeyCode?)k).FirstOrDefault();
+                if (!key.HasValue)
+                    return;
+
+                // Cannot enter text wider than the save/load panel
+                if (_enteredTextWidth >= PanLineWidth - 10)
+                    return;
+
+                // Cannot enter text longer than MaxTextLen-1 chars, since
+                // the storage is only so big. Note: The code used to incorrectly
+                // allow up to MaxTextLen, which caused an out of bounds access,
+                // overwriting the next entry in the list of savegames partially.
+                // This could be triggered by e.g. entering lots of periods ".".
+                if (textBuf.Length >= MaxTextLen - 1)
+                    return;
+
+                // Allow the key only if is a letter, a digit, or one of a selected
+                // list of extra characters
+
+                if (char.IsLetterOrDigit(key.Value) || " ,().='-&+!?\"".Contains(key.Value.ToString()))
+                {
+                    textBuf.Append(key);
+                }
+            }
+        }
+
+        private void SaveDescriptions(StringBuilder[] list)
+        {
+            try
+            {
+                using (var outf = _saveFileMan.OpenForSaving("SKY-VM.SAV"))
+                {
+                    for (ushort cnt = 0; cnt < MaxSaveGames; cnt++)
+                    {
+                        if (list[cnt].Length != 0)
+                        {
+                            byte[] data = list[cnt].ToString().ToCharArray().Select(c => (byte) c).ToArray();
+                            outf.Write(data, 0, data.Length);
+                        }
+                        outf.WriteByte(0);
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                // TODO: DisplayMessage(null, "Unable to store Savegame names to file SKY-VM.SAV. (%s)", _saveFileMan.PopErrorDesc());
+            }
+        }
+
+        private void ShowSprites(byte[][] nameSprites, bool allowSave)
+        {
+            var drawResource = new ConResource(null, 1, 0, 0, 0, 0, 0, _system, _screenBuf);
+            for (ushort cnt = 0; cnt < MaxOnScreen; cnt++)
+            {
+                drawResource.SetSprite(nameSprites[cnt]);
+                drawResource.SetXy(GameNameX, (ushort)(GameNameY + cnt * PanCharHeight));
+                if (ServiceLocator.Platform.ToStructure<DataFileHeader>(nameSprites[cnt], 0).flag != 0)
+                { // name is highlighted
+                    for (ushort cnty = (ushort)(GameNameY + cnt * PanCharHeight); cnty < GameNameY + (cnt + 1) * PanCharHeight - 1; cnty++)
+                    {
+                        _screenBuf.Set(cnty * Screen.GameScreenWidth + GameNameX, 37, PanLineWidth);
+                    }
+                    drawResource.DrawToScreen(WithMask);
+                    if (allowSave)
+                    {
+                        drawResource.SetSprite(nameSprites[MaxOnScreen]);
+                        drawResource.SetXy((ushort)(GameNameX + _enteredTextWidth + 1), (ushort)(GameNameY + cnt * PanCharHeight + 4));
+                        drawResource.DrawToScreen(WithMask);
+                    }
+                    _system.GraphicsManager.CopyRectToScreen(_screenBuf, (GameNameY + cnt * PanCharHeight) * Screen.GameScreenWidth + GameNameX, Screen.GameScreenWidth, GameNameX, GameNameY + cnt * PanCharHeight, PanLineWidth, PanCharHeight);
+                }
+                else
+                    drawResource.DrawToScreen(NoMask);
+            }
+        }
+
+        private void SetUpGameSprites(StringBuilder[] saveGameNames, byte[][] nameSprites, ushort firstNum, ushort selectedGame)
+        {
+            DisplayedText textSpr;
+            if (nameSprites[MaxOnScreen] == null)
+            {
+                textSpr = _skyText.DisplayText("-", null, false, 15, 0);
+                nameSprites[MaxOnScreen] = textSpr.TextData;
+            }
+            for (ushort cnt = 0; cnt < MaxOnScreen; cnt++)
+            {
+                var nameBuf = string.Format("{0,3}: {1}", firstNum + cnt + 1, saveGameNames[firstNum + cnt]);
+
+                if (firstNum + cnt == selectedGame)
+                    textSpr = _skyText.DisplayText(nameBuf, null, false, PanLineWidth, 0);
+                else
+                    textSpr = _skyText.DisplayText(nameBuf, null, false, PanLineWidth, 37);
+                nameSprites[cnt] = textSpr.TextData;
+                if (firstNum + cnt == selectedGame)
+                {
+                    ServiceLocator.Platform.WriteStructure<DataFileHeader>(nameSprites[cnt], 0, h => h.flag = 1);
+                    _enteredTextWidth = (ushort)textSpr.TextWidth;
+                }
+                else
+                {
+                    ServiceLocator.Platform.WriteStructure<DataFileHeader>(nameSprites[cnt], 0, h => h.flag = 0);
+                }
+            }
+        }
+
+        private string[] LoadDescriptions()
+        {
+            var savenames = new string[MaxSaveGames];
+            try
+            {
+                using (var inf = _saveFileMan.OpenForLoading("SKY-VM.SAV"))
+                {
+                    var br = new BinaryReader(inf);
+                    for (int i = 0; i < MaxSaveGames; ++i)
+                    {
+                        savenames[i] = ReadName(br);
+                    }
+                }
+            }
+            catch (Exception)
+            {
+            }
+            return savenames;
+        }
+
+        private string ReadName(BinaryReader reader)
+        {
+            var name = new List<byte>();
+            byte c;
+            while ((c = reader.ReadByte()) != 0)
+            {
+                name.Add(c);
+            }
+            return Encoding.UTF8.GetString(name.ToArray());
+        }
+
+        private bool AutoSaveExists()
+        {
+            string fName;
+            bool test = false;
+            if (SkyEngine.IsCDVersion)
+                fName = "SKY-VM-CD.ASD";
+            else
+                fName = string.Format("SKY-VM{0:D3}.ASD", SystemVars.Instance.GameVersion.Version.Minor);
+
+            try
+            {
+                using (var f = _saveFileMan.OpenForLoading(fName))
+                {
+                    test = f != null;
+                }
+            }
+            catch (Exception) { }
+            return test;
         }
 
         private void InitPanel()
@@ -1392,7 +1855,7 @@ namespace NScumm.Sky
 
             public void SetToText(ushort textNum)
             {
-                _textData=null;
+                _textData = null;
                 DisplayedText disText = _skyText.DisplayText(textNum, null, true, StatusWidth, 255);
                 _textData = disText.TextData;
                 _statusText.SetSprite(_textData);

@@ -37,6 +37,11 @@ namespace NScumm.Sky
             get { return _scriptVariables; }
         }
 
+        public Grid Grid
+        {
+            get { return _skyGrid; }
+        }
+
         public Logic(SkyCompact skyCompact, Screen skyScreen, Disk skyDisk, Text skyText, MusicBase skyMusic, Mouse skyMouse, Sound skySound)
         {
             _skyCompact = skyCompact;
@@ -151,7 +156,7 @@ namespace NScumm.Sky
                     if ((_compact.Core.status & (1 << 7)) != 0)
                         _skyGrid.RemoveObjectFromWalk(_compact);
 
-                    //TODO: Debug::logic(_compact.Core.logic);
+                    Debug.Instance.Logic(_compact.Core.logic);
                     _logicTable[_compact.Core.logic]();
 
                     if ((_compact.Core.status & (1 << 7)) != 0)
@@ -233,7 +238,7 @@ namespace NScumm.Sky
         {
             if (SkyEngine.IsDemo)
             {
-                // TODO: Engine.QuitGame();
+                SkyEngine.QuitGame();
             }
 
             if (sectionNo == 5) //linc section - has different mouse icons
@@ -410,8 +415,7 @@ namespace NScumm.Sky
 
                 var scriptData = new UShortAccess(data, 0);
 
-                // TODO: debug
-                //debug(3, "Doing Script: %d:%d:%x", moduleNo, scriptNo & 0xFFF, offset ? (offset - moduleStart[scriptNo & 0xFFF]) : 0);
+                Debug.Instance.Write("Doing Script: {0}:{1}:{2:X}", moduleNo, scriptNo & 0xFFF, offset != 0 ? offset - scriptData[scriptNo & 0xFFF] : 0);
 
                 // WORKAROUND for bug #3149412: "Invalid Mode when giving shades to travel agent"
                 // Using the dark glasses on Trevor (travel agent) multiple times in succession would
@@ -507,7 +511,7 @@ namespace NScumm.Sky
                         case 11: // call_mcode
                             {
                                 a = scriptData.Value; scriptData.Offset += 2;
-                                Debug.Assert(a <= 3);
+                                System.Diagnostics.Debug.Assert(a <= 3);
                                 switch (a)
                                 {
                                     case 3:
@@ -526,8 +530,7 @@ namespace NScumm.Sky
 
                                 ushort mcode = (ushort)(scriptData.Value / 4); scriptData.Offset += 2; // get mcode number 
 
-                                // TODO: debug
-                                //Debug::mcode(mcode, a, b, c);
+                                Debug.Instance.Mcode(mcode, a, b, c);
 
                                 var saveCpt = _compact;
                                 bool ret = _mcodeTable[mcode](a, b, c);
@@ -715,11 +718,6 @@ namespace NScumm.Sky
                 target.Core.spTextId = 0;
             }
             target.Core.logic = L_TALK;
-        }
-
-        private void QuitGame()
-        {
-            throw new NotImplementedException();
         }
 
         private void StopAndWait()

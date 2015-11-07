@@ -27,6 +27,19 @@ namespace NScumm.Sky
             }
         }
 
+        public byte[] Bytes
+        {
+            get
+            {
+                if (Type == CptTypeId.Compact)
+                {
+                    return ((Compact)Data).Bytes;
+                }
+                var destBuf = (byte[])Data;
+                return destBuf;
+            }
+        }
+
         public void Patch(byte[] data)
         {
             Patch(data, 0, 0, data.Length);
@@ -272,9 +285,11 @@ namespace NScumm.Sky
             get { return _data.Length; }
         }
 
+        public byte[] Bytes { get { return _data; } }
+
         public void Patch(byte[] data, int offset, int destOffset, int length)
         {
-            for (int i = 0; i < length; i+=2)
+            for (int i = 0; i < length; i += 2)
             {
                 _data.WriteUInt16(destOffset + i, data.ToUInt16(offset + i));
             }
@@ -543,7 +558,7 @@ namespace NScumm.Sky
                         cpt.Patch(diffBuf, diffPos, offset * 2, len * 2);
                         diffPos += len * 2;
                     }
-                    Debug.Assert(diffPos == diffSize);
+                    System.Diagnostics.Debug.Assert(diffPos == diffSize);
                 }
 
                 // these are the IDs that have to be saved into savegame files.
@@ -627,7 +642,7 @@ namespace NScumm.Sky
 
         public byte[] FetchCptRaw(ushort cptId)
         {
-            return (byte[])FetchCptEntry(cptId).Data;
+            return FetchCptEntry(cptId).Bytes;
         }
 
         /// <summary>

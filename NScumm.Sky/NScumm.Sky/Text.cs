@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Text;
 using NScumm.Core;
 
@@ -82,26 +83,30 @@ namespace NScumm.Sky
 
             InitHuffTree();
 
-            _mainCharacterSet.Addr = _skyDisk.LoadFile(CharSetFile);
-            _mainCharacterSet.CharHeight = MainCharHeight;
-            _mainCharacterSet.CharSpacing = 0;
+            _mainCharacterSet = new CharSet
+            {
+                Addr = _skyDisk.LoadFile(CharSetFile),
+                CharHeight = MainCharHeight,
+                CharSpacing = 0
+            };
 
             FnSetFont(0);
 
             if (!SystemVars.Instance.GameVersion.Type.HasFlag(SkyGameType.Demo))
             {
-                _controlCharacterSet.Addr = _skyDisk.LoadFile(60520);
-                _controlCharacterSet.CharHeight = 12;
-                _controlCharacterSet.CharSpacing = 0;
+                _controlCharacterSet = new CharSet
+                {
+                    Addr = _skyDisk.LoadFile(60520),
+                    CharHeight = 12,
+                    CharSpacing = 0
+                };
 
-                _linkCharacterSet.Addr = _skyDisk.LoadFile(60521);
-                _linkCharacterSet.CharHeight = 12;
-                _linkCharacterSet.CharSpacing = 1;
-            }
-            else
-            {
-                _controlCharacterSet.Addr = null;
-                _linkCharacterSet.Addr = null;
+                _linkCharacterSet = new CharSet
+                {
+                    Addr = _skyDisk.LoadFile(60521),
+                    CharHeight = 12,
+                    CharSpacing = 1
+                };
             }
         }
 
@@ -133,18 +138,18 @@ namespace NScumm.Sky
             // work around bug #1151924 (line width exceeded when talking to gardener using spanish text)
             // This text apparently only is broken in the floppy versions, the CD versions contain
             // the correct string "MANIFESTACION - ARTISTICA.", which doesn't break the algorithm/game.
-            var textBytes = text.Replace("MANIFESTACION-ARTISTICA.", "MANIFESTACION ARTISTICA.").ToCharArray();
+            var textBytes = text.Replace("MANIFESTACION-ARTISTICA.", "MANIFESTACION ARTISTICA.").ToCharArray().Select(c => (byte)c).ToArray();
 
             var curPos = 0;
             var lastSpace = 0;
             var textChar = textBytes[curPos++];
 
-            while (textChar >= 0x20 && curPos != textBytes.Length)
+            while (textChar >= 0x20 && curPos <= textBytes.Length)
             {
                 if ((_curCharSet == 1) && (textChar >= 0x80))
-                    textChar = (char)0x20;
+                    textChar = 0x20;
 
-                textChar -= (char)0x20;
+                textChar -= 0x20;
                 if (textChar == 0)
                 {
                     lastSpace = curPos; //keep track of last space
@@ -159,13 +164,13 @@ namespace NScumm.Sky
                     if (textBytes[lastSpace - 1] == 10)
                         throw new InvalidOperationException("line width exceeded");
 
-                    textBytes[lastSpace - 1] = (char)10;
+                    textBytes[lastSpace - 1] = 10;
                     lineWidth = 0;
                     numLines++;
                     curPos = lastSpace; //go back for new count
                 }
 
-                textChar = textBytes[curPos++];
+                textChar = textBytes.Length == curPos ? (byte)0 : textBytes[curPos++];
             }
 
             uint dtLastWidth = lineWidth; //save width of last line
@@ -176,7 +181,7 @@ namespace NScumm.Sky
                 throw new InvalidOperationException("Maximum no. of lines exceeded");
 
             var dtLineSize = pixelWidth * _charHeight;
-            var sizeOfDataFileHeader = 22;
+            var sizeOfDataFileHeader = ServiceLocator.Platform.SizeOf<DataFileHeader>();
             var numBytes = (int)(dtLineSize * numLines + sizeOfDataFileHeader + 4);
 
             if (dest == null)
@@ -211,15 +216,15 @@ namespace NScumm.Sky
                     curDest += width;
                 }
 
-                textChar = text[curPos++];
-                while (textChar >= 0x20 && curPos != textBytes.Length)
+                textChar = textBytes[curPos++];
+                while (textChar >= 0x20)
                 {
                     MakeGameCharacter((byte)(textChar - 0x20), _characterSet, dest, ref curDest, color, pixelWidth);
-                    textChar = text[curPos++];
+                    textChar = textBytes.Length == curPos ? (byte)0 : textBytes[curPos++];
                 }
 
                 prevDest = curDest = prevDest + dtLineSize; //start of last line + start of next
-            } while (textChar >= 10 && curPos != textBytes.Length);
+            } while (textChar >= 10);
 
             var ret = new DisplayedText
             {
@@ -373,32 +378,32 @@ namespace NScumm.Sky
             switch (SystemVars.Instance.GameVersion.Version.Minor)
             {
                 case 109:
-                    _huffTree = _huffTree_00109;
+                    _huffTree = HuffTree00109;
                     break;
                 case 272: // FIXME: Extract data
                 case 267:
-                    _huffTree = _huffTree_00267;
+                    _huffTree = HuffTree00267;
                     break;
                 case 288:
-                    _huffTree = _huffTree_00288;
+                    _huffTree = HuffTree00288;
                     break;
                 case 303:
-                    _huffTree = _huffTree_00303;
+                    _huffTree = HuffTree00303;
                     break;
                 case 331:
-                    _huffTree = _huffTree_00331;
+                    _huffTree = HuffTree00331;
                     break;
                 case 348:
-                    _huffTree = _huffTree_00348;
+                    _huffTree = HuffTree00348;
                     break;
                 case 365:
-                    _huffTree = _huffTree_00365;
+                    _huffTree = HuffTree00365;
                     break;
                 case 368:
-                    _huffTree = _huffTree_00368;
+                    _huffTree = HuffTree00368;
                     break;
                 case 372:
-                    _huffTree = _huffTree_00372;
+                    _huffTree = HuffTree00372;
                     break;
                 default:
                     throw new NotSupportedException(string.Format("Unknown game version {0}",
@@ -540,7 +545,7 @@ namespace NScumm.Sky
             public readonly string Text;
         }
 
-        private struct CharSet
+        private class CharSet
         {
             public byte[] Addr;
             public uint CharHeight;
@@ -548,7 +553,7 @@ namespace NScumm.Sky
         }
     }
 
-    internal struct DisplayedText
+    internal class DisplayedText
     {
         public byte[] TextData;
         public uint TextWidth;

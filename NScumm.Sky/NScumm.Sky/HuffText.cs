@@ -1,10 +1,8 @@
-﻿using System;
-
-namespace NScumm.Sky
+﻿namespace NScumm.Sky
 {
     partial class Text
     {
-        static readonly byte[,] _huffTree_00109 = new byte[,] {
+        static readonly byte[,] HuffTree00109 = {
             { 1, 22, 0 },
             { 2, 9, 0 },
             { 3, 6, 0 },
@@ -174,7 +172,7 @@ namespace NScumm.Sky
             { 0, 0, 0x7C }
         };
 
-        static readonly byte[,] _huffTree_00267 = {
+        static readonly byte[,] HuffTree00267 = {
             { 1, 20, 0 },
             { 2, 7, 0 },
             { 3, 6, 0 },
@@ -364,7 +362,7 @@ namespace NScumm.Sky
             { 0, 0, 0x7c },
         };
 
-        static readonly byte[,] _huffTree_00288 = {
+        static readonly byte[,] HuffTree00288 = {
             { 1, 20, 0 },
             { 2, 7, 0 },
             { 3, 4, 0 },
@@ -556,7 +554,7 @@ namespace NScumm.Sky
             { 0, 0, 0x7c },
         };
 
-        static readonly byte[,] _huffTree_00303 = {
+        static readonly byte[,] HuffTree00303 = {
             { 1, 22, 0 },
             { 2, 9, 0 },
             { 3, 6, 0 },
@@ -758,7 +756,7 @@ namespace NScumm.Sky
             { 0, 0, 0x7c },
         };
 
-        static readonly byte[,] _huffTree_00331 = {
+        static readonly byte[,] HuffTree00331 = {
             { 1, 20, 0 },
             { 2, 7, 0 },
             { 3, 4, 0 },
@@ -990,7 +988,7 @@ namespace NScumm.Sky
             { 0, 0, 0x7c },
         };
 
-        static readonly byte[,] _huffTree_00348 = {
+        static readonly byte[,] HuffTree00348 = {
             { 1, 20, 0 },
             { 2, 7, 0 },
             { 3, 4, 0 },
@@ -1238,7 +1236,7 @@ namespace NScumm.Sky
             { 0, 0, 0x7C },
         };
 
-        static readonly byte[,] _huffTree_00365 = {
+        static readonly byte[,] HuffTree00365 = {
             { 1, 20, 0 },
             { 2, 7, 0 },
             { 3, 4, 0 },
@@ -1486,7 +1484,7 @@ namespace NScumm.Sky
             { 0, 0, 0x7C },
         };
 
-        static readonly byte[,] _huffTree_00368 = {
+        static readonly byte[,] HuffTree00368 = {
             { 1, 20, 0 },
             { 2, 7, 0 },
             { 3, 4, 0 },
@@ -1734,7 +1732,7 @@ namespace NScumm.Sky
             { 0, 0, 0x7C },
         };
 
-        static readonly byte[,] _huffTree_00372 = {
+        static readonly byte[,] HuffTree00372 = {
             { 1, 20, 0 },
             { 2, 7, 0 },
             { 3, 4, 0 },

@@ -3,46 +3,44 @@ using System;
 
 namespace NScumm.Sky
 {
-    class RncDecoder
+    internal class RncDecoder
     {
-        const uint RncSignature = 0x524E4301; // "RNC\001"
+        private const uint RncSignature = 0x524E4301; // "RNC\001"
 
         //other defines
-        const int TableSize = (16 * 8);
-        const int MinLength = 2;
-        const int HeaderLen = 18;
+        private const int MinLength = 2;
+        private const int HeaderLen = 18;
 
         //return codes
-        const int NotPacked = 0;
-        const int PackedCrc = -1;
-        const int UnpackedCrc = -2;
+        private const int NotPacked = 0;
+        private const int PackedCrc = -1;
+        private const int UnpackedCrc = -2;
 
-        ushort[] _rawTable = new ushort[64];
-        ushort[] _posTable = new ushort[64];
-        ushort[] _lenTable = new ushort[64];
-        ushort[] _crcTable = new ushort[256];
+        private readonly ushort[] _rawTable = new ushort[64];
+        private readonly ushort[] _posTable = new ushort[64];
+        private readonly ushort[] _lenTable = new ushort[64];
+        private readonly ushort[] _crcTable = new ushort[256];
 
-        ushort _bitBuffl;
-        ushort _bitBuffh;
-        byte _bitCount;
-        int _srcPtr;
-        byte[] _src;
-        int _dstPtr;
-        byte[] _dst;
+        private ushort _bitBuffl;
+        private ushort _bitBuffh;
+        private byte _bitCount;
+        private int _srcPtr;
+        private byte[] _src;
+        private int _dstPtr;
+        private byte[] _dst;
 
         public RncDecoder()
         {
             InitCrc();
         }
 
-        public int UnpackM1(byte[] input, int offset, byte[] output, int outputOffset, ushort key)
+        public int UnpackM1(byte[] input, int offset, byte[] output, int outputOffset)
         {
-            int inputptr = offset;
-            int unpackLen = 0;
-            int packLen = 0;
-            ushort counts = 0;
-            ushort crcUnpacked = 0;
-            ushort crcPacked = 0;
+            var inputptr = offset;
+            int unpackLen;
+            int packLen;
+            ushort crcUnpacked;
+            ushort crcPacked;
 
             _bitBuffl = 0;
             _bitBuffh = 0;
@@ -63,7 +61,7 @@ namespace NScumm.Sky
             //read CRC's
             crcUnpacked = input.ToUInt16BigEndian(inputptr); inputptr += 2;
             crcPacked = input.ToUInt16BigEndian(inputptr); inputptr += 2;
-            inputptr = (inputptr + HeaderLen - 16);
+            inputptr = inputptr + HeaderLen - 16;
 
             if (CrcBlock(input, inputptr, packLen) != crcPacked)
                 return PackedCrc;
@@ -98,12 +96,11 @@ namespace NScumm.Sky
                 MakeHufftable(_posTable);
                 MakeHufftable(_lenTable);
 
-                counts = InputBits(16);
+                var counts = InputBits(16);
 
                 do
                 {
                     int inputLength = InputValue(_rawTable);
-                    int inputOffset;
 
                     if (inputLength != 0)
                     {
@@ -120,16 +117,16 @@ namespace NScumm.Sky
 
                     if (counts > 1)
                     {
-                        inputOffset = InputValue(_posTable) + 1;
+                        var inputOffset = InputValue(_posTable) + 1;
                         inputLength = InputValue(_lenTable) + MinLength;
 
                         // Don't use Array.Copy here! because input and output overlap.
-                        var tmpPtr = (_dstPtr - inputOffset);
-                        while ((inputLength--) != 0)
+                        var tmpPtr = _dstPtr - inputOffset;
+                        while (inputLength-- != 0)
                             _dst[_dstPtr++] = _dst[tmpPtr++];
                     }
-                } while ((--counts) != 0);
-            } while ((--blocks) != 0);
+                } while (--counts != 0);
+            } while (--blocks != 0);
 
             if (CrcBlock(output, outputOffset, unpackLen) != crcUnpacked)
                 return UnpackedCrc;
@@ -138,17 +135,16 @@ namespace NScumm.Sky
             return unpackLen;
         }
 
-        void InitCrc()
+        private void InitCrc()
         {
-            ushort tmp1 = 0;
-            ushort tmp2 = 0;
+            ushort tmp2;
 
             for (tmp2 = 0; tmp2 < 0x100; tmp2++)
             {
-                tmp1 = tmp2;
+                var tmp1 = tmp2;
                 for (var cnt = 8; cnt > 0; cnt--)
                 {
-                    if ((tmp1 % 2) != 0)
+                    if (tmp1 % 2 != 0)
                     {
                         tmp1 >>= 1;
                         tmp1 ^= 0x0a001;
@@ -163,7 +159,7 @@ namespace NScumm.Sky
         /// <summary>
         /// Calculates 16 bit crc of a block of memory.
         /// </summary>
-        ushort CrcBlock(byte[] block, int offset, int size)
+        private ushort CrcBlock(byte[] block, int offset, int size)
         {
             ushort crc = 0;
 
@@ -180,14 +176,14 @@ namespace NScumm.Sky
             return crc;
         }
 
-        ushort InputBits(byte amount)
+        private ushort InputBits(byte amount)
         {
-            ushort newBitBuffh = _bitBuffh;
-            ushort newBitBuffl = _bitBuffl;
+            var newBitBuffh = _bitBuffh;
+            var newBitBuffl = _bitBuffl;
             short newBitCount = _bitCount;
             ushort remBits;
 
-            ushort returnVal = (ushort)(((1 << amount) - 1) & newBitBuffl);
+            var returnVal = (ushort)(((1 << amount) - 1) & newBitBuffl);
             newBitCount -= amount;
 
             if (newBitCount < 0)
@@ -210,9 +206,9 @@ namespace NScumm.Sky
             return returnVal;
         }
 
-        void MakeHufftable(ushort[] table)
+        private void MakeHufftable(ushort[] table)
         {
-            int offset = 0;
+            var offset = 0;
             var numCodes = InputBits(5);
 
             if (numCodes == 0)
@@ -232,7 +228,7 @@ namespace NScumm.Sky
                     {
                         table[offset++] = (ushort)((1 << bitLength) - 1);
 
-                        ushort b = (ushort)(huffCode >> (16 - bitLength));
+                        var b = (ushort)(huffCode >> (16 - bitLength));
                         ushort a = 0;
 
                         for (var j = 0; j < bitLength; j++)
@@ -246,9 +242,9 @@ namespace NScumm.Sky
             }
         }
 
-        ushort InputValue(ushort[] table)
+        private ushort InputValue(ushort[] table)
         {
-            int offset = 0;
+            var offset = 0;
             ushort valOne, valTwo, value = _bitBuffl;
 
             do

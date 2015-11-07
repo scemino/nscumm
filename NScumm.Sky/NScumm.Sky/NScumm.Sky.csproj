@@ -44,12 +44,13 @@
     <Compile Include="AutoRoute.cs" />
     <Compile Include="Control.cs" />
     <Compile Include="Grid.cs" />
-    <Compile Include="IntroSequences.cs" />
+    <Compile Include="Intro.Sequences.cs" />
     <Compile Include="Logic.cs" />
+    <Compile Include="Logic.Logic.cs" />
     <Compile Include="Mouse.cs" />
     <Compile Include="RawAccess.cs" />
     <Compile Include="Disk.cs" />
-    <Compile Include="HuffText.cs" />
+    <Compile Include="Text.HuffTree.cs" />
     <Compile Include="Intro.cs" />
     <Compile Include="Music\AdLibChannel.cs" />
     <Compile Include="Music\AdLibMusic.cs" />
@@ -78,6 +79,7 @@
       <Generator>TextTemplatingFileGenerator</Generator>
       <LastGenOutput>SkyDefines.cs</LastGenOutput>
     </Content>
+    <Compile Include="Logic.Mcode.cs" />
     <None Include="project.json" />
     <None Include="skydefs.h" />
   </ItemGroup>

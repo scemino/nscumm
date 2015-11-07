@@ -922,6 +922,11 @@ namespace NScumm.Sky
             } // next_x
         }
 
+        public void SetFocusRectangle(Rect rect)
+        {
+            // TODO: _system.SetFocusRectangle(rect);
+            //_system.SetFocusRectangle(rect);
+        }
 
         private struct SequenceIntro
         {

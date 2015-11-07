@@ -43,7 +43,6 @@ namespace NScumm.Sky
     {
         public SystemFlags SystemFlags;
         public SkyGameVersion GameVersion;
-        public uint MouseFlag;
         public ushort Language;
         public uint CurrentPalette;
         public ushort GameSpeed;

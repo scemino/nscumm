@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using NScumm.Core;
 
 namespace NScumm.Sky
@@ -9,15 +8,15 @@ namespace NScumm.Sky
         private const int RouteGridWidth = Screen.GameScreenWidth / 8 + 2;
         private const int RouteGridHeight = Screen.GameScreenHeight / 8 + 2;
         private const int RouteGridSize = RouteGridWidth * RouteGridHeight * 2;
-        private const int WalkJump = 8;      // walk in blocks of 8
+        private const int WalkJump = 8; // walk in blocks of 8
 
         private static readonly short[] RouteDirections = { -1, 1, -RouteGridWidth, RouteGridWidth };
         private static readonly ushort[] LogicCommands = { Logic.RIGHTY, Logic.LEFTY, Logic.DOWNY, Logic.UPY };
 
         private readonly Grid _grid;
-        private readonly SkyCompact _skyCompact;
-        private readonly byte[] _routeGrid;
         private readonly byte[] _routeBuf;
+        private readonly byte[] _routeGrid;
+        private readonly SkyCompact _skyCompact;
 
         public AutoRoute(Grid skyGrid, SkyCompact skyCompact)
         {
@@ -29,8 +28,8 @@ namespace NScumm.Sky
 
         public ushort DoAutoRoute(Compact cpt)
         {
-            byte cptScreen = (byte)cpt.Core.screen;
-            byte cptWidth = (byte)SkyCompact.GetMegaSet(cpt).gridWidth;
+            var cptScreen = (byte)cpt.Core.screen;
+            var cptWidth = (byte)SkyCompact.GetMegaSet(cpt).gridWidth;
             InitWalkGrid(cptScreen, cptWidth);
 
             byte startX, startY, destX, destY;
@@ -51,7 +50,8 @@ namespace NScumm.Sky
             if (routeGrid[(destY + 1) * RouteGridWidth + destX + 1] != 0)
             {
                 //if ((cpt == &Sky::SkyCompact::foster) && (cptScreen == 12) && (destX == 2) && (destY == 14)) {
-                if (_skyCompact.CptIsId(cpt, (ushort)CptIds.Foster) && (cptScreen == 12) && (destX == 2) && (destY == 14))
+                if (_skyCompact.CptIsId(cpt, (ushort)CptIds.Foster) && (cptScreen == 12) && (destX == 2) &&
+                    (destY == 14))
                 {
                     /* workaround for Scriptbug #1043047
                        In screen 12 (the pipe factory) Joey can block Foster's target
@@ -83,14 +83,14 @@ namespace NScumm.Sky
             return 0;
         }
 
-        private ushort CheckBlock(byte[] block, int blockPos)
+        private static ushort CheckBlock(byte[] block, int blockPos)
         {
             var b = new UShortAccess(block, blockPos);
             ushort retVal = 0xFFFF;
 
             for (byte cnt = 0; cnt < 4; cnt++)
             {
-                ushort fieldVal = b[RouteDirections[cnt]];
+                var fieldVal = b[RouteDirections[cnt]];
                 if (fieldVal != 0 && (fieldVal < retVal))
                     retVal = fieldVal;
             }
@@ -116,7 +116,7 @@ namespace NScumm.Sky
             }
         }
 
-        private void ClipCoordY(ushort y, out byte blkY, out short initY)
+        private static void ClipCoordY(ushort y, out byte blkY, out short initY)
         {
             if (y < Logic.TOP_LEFT_Y)
             {
@@ -138,12 +138,13 @@ namespace NScumm.Sky
         private void InitWalkGrid(byte screen, byte width)
         {
             byte stretch = 0;
-            byte[] screenGrid = _grid.GiveGrid(screen);
+            var screenGrid = _grid.GiveGrid(screen);
             var screenGridPos = Logic.GRID_SIZE;
             var wGridPos = new UShortAccess(_routeGrid, ((RouteGridSize >> 1) - RouteGridWidth - 2) * 2);
 
             Array.Clear(_routeGrid, 0, _routeGrid.Length);
-            byte bitsLeft = 0; uint gridData = 0;
+            byte bitsLeft = 0;
+            uint gridData = 0;
             for (byte gridCntY = 0; gridCntY < RouteGridHeight - 2; gridCntY++)
             {
                 for (byte gridCntX = 0; gridCntX < RouteGridWidth - 2; gridCntX++)
@@ -211,8 +212,8 @@ namespace NScumm.Sky
             if (roiX < RouteGridWidth - 2)
                 walkStart -= directionX;
 
-            bool gridChanged = true;
-            bool foundRoute = false;
+            var gridChanged = true;
+            var foundRoute = false;
 
             while (!foundRoute && gridChanged)
             {
@@ -224,8 +225,9 @@ namespace NScumm.Sky
                     for (byte cntx = 0; cntx < roiX; cntx++)
                     {
                         if (routeGrid[xWalkCalc] == 0)
-                        { // block wasn't done, yet
-                            ushort blockRet = CheckBlock(_routeGrid, routeGrid.Offset + xWalkCalc * 2);
+                        {
+                            // block wasn't done, yet
+                            var blockRet = CheckBlock(_routeGrid, routeGrid.Offset + xWalkCalc * 2);
                             if (blockRet < 0xFFFF)
                             {
                                 routeGrid[xWalkCalc] = (ushort)(blockRet + 1);
@@ -237,11 +239,13 @@ namespace NScumm.Sky
                     yWalkCalc += directionY;
                 }
                 if (routeGrid[walkDest] != 0)
-                { // okay, finished
+                {
+                    // okay, finished
                     foundRoute = true;
                 }
                 else
-                { // we couldn't find the route, let's extend the ROI
+                {
+                    // we couldn't find the route, let's extend the ROI
                     if (roiY < RouteGridHeight - 4)
                     {
                         walkStart -= directionY;
@@ -266,9 +270,10 @@ namespace NScumm.Sky
             var routePos = (destY + 1) * RouteGridWidth + destX + 1;
             var dataTrg = (Logic.ROUTE_SPACE >> 1) - 2;
 
-            ushort lastVal = (ushort)(routeGrid[routePos] - 1);
+            var lastVal = (ushort)(routeGrid[routePos] - 1);
             while (lastVal != 0)
-            { // lastVal == 0 means route is done.
+            {
+                // lastVal == 0 means route is done.
                 dataTrg -= 2;
 
                 short walkDirection = 0;
@@ -281,7 +286,8 @@ namespace NScumm.Sky
                     }
 
                 if (walkDirection == 0)
-                    throw new InvalidOperationException(string.Format("makeRouteData:: can't find way through walkGrid (pos {0})", lastVal));
+                    throw new InvalidOperationException(
+                        string.Format("makeRouteData:: can't find way through walkGrid (pos {0})", lastVal));
 
                 while (lastVal != 0 && (lastVal == routeGrid[routePos + walkDirection]))
                 {
@@ -293,7 +299,7 @@ namespace NScumm.Sky
             return new UShortAccess(routeBuf.Data, routeBuf.Offset + dataTrg * 2);
         }
 
-        private UShortAccess CheckInitMove(UShortAccess data, short initStaX)
+        private static UShortAccess CheckInitMove(UShortAccess data, short initStaX)
         {
             var index = 0;
             if (initStaX < 0)

@@ -5,7 +5,7 @@ namespace NScumm.Sky
 {
     class ByteAccess
     {
-        private byte[] _data;
+        private readonly byte[] _data;
         private int _offset;
 
         public byte Value
@@ -35,7 +35,7 @@ namespace NScumm.Sky
 
     class UShortAccess
     {
-        private byte[] _data;
+        private readonly byte[] _data;
         private int _offset;
 
         public byte[] Data
@@ -70,9 +70,9 @@ namespace NScumm.Sky
 
     class StructAccess<T>
     {
-        private byte[] _data;
-        private int _offset;
-        private int _size;
+        private readonly byte[] _data;
+        private readonly int _offset;
+        private readonly int _size;
 
         public T Value
         {
@@ -94,8 +94,8 @@ namespace NScumm.Sky
 
     class FieldAccess<T>
     {
-        private Func<T> _getField;
-        private Action<T> _setField;
+        private readonly Func<T> _getField;
+        private readonly Action<T> _setField;
 
         public T Field
         {

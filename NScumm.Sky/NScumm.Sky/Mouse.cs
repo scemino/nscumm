@@ -97,7 +97,23 @@ namespace NScumm.Sky
         }
 
         public ushort MouseY { get; private set; }
+
         public ushort CurrentMouseType { get; set; }
+
+        public bool WasClicked
+        {
+            get
+            {
+                if (_logicClick)
+                {
+                    _logicClick = false;
+                    return true;
+                }
+                else
+                    return false;
+            }
+        }
+
 
         public void LogicClick()
         {

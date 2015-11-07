@@ -27,16 +27,29 @@ namespace NScumm.Sky
 
         private const int SoundSpeech = 4;
 
-        public readonly ushort[] SaveSounds = new ushort[2];
-
         private static readonly SfxQueue[] SfxQueue = new SfxQueue[MaxQueuedFx];
 
         private readonly byte _mainSfxVolume;
         private readonly Mixer _mixer;
         private readonly Disk _skyDisk;
 
+        private readonly ushort[] _speechConvertTable =
+        {
+            0, //;Text numbers to file numbers
+            600, //; 553 lines in section 0
+            600 + 500, //; 488 lines in section 1
+            600 + 500 + 1330, //;1303 lines in section 2
+            600 + 500 + 1330 + 950, //; 922 lines in section 3
+            600 + 500 + 1330 + 950 + 1150, //;1140 lines in section 4
+            600 + 500 + 1330 + 950 + 1150 + 550, //; 531 lines in section 5
+            600 + 500 + 1330 + 950 + 1150 + 550 + 150 //; 150 lines in section 6
+        };
+
+        public readonly ushort[] SaveSounds = new ushort[2];
+
         private SoundHandle _ingameSound0;
         private SoundHandle _ingameSound1;
+        private SoundHandle _ingameSpeech;
         private bool _isPaused;
         private UShortAccess _sampleRates;
         private ushort _sfxBaseOfs;
@@ -54,6 +67,11 @@ namespace NScumm.Sky
 
 
         public Logic Logic { get; internal set; }
+
+        public bool SpeechFinished
+        {
+            get { return !_mixer.IsSoundHandleActive(_ingameSpeech); }
+        }
 
         public void Dispose()
         {
@@ -123,7 +141,7 @@ namespace NScumm.Sky
             var stream = new RawStream(AudioFlags.Unsigned, sampleRate, false,
                 new MemoryStream(_soundData, dataOfs, dataSize));
 
-            IAudioStream output = null;
+            IAudioStream output;
             if (dataLoop != 0)
             {
                 var loopSta = dataSize - dataLoop;
@@ -303,6 +321,41 @@ namespace NScumm.Sky
                 SaveSounds[channel] = (ushort) (sfx.SoundNo | (volume << 8));
 
             PlaySound(sfx.SoundNo, volume, channel);
+        }
+
+        public bool StartSpeech(ushort textNum)
+        {
+            if (!SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.ALLOW_SPEECH))
+                return false;
+            var speechFileNum = (ushort) (_speechConvertTable[textNum >> 12] + (textNum & 0xFFF));
+
+            var speechData = _skyDisk.LoadFile(speechFileNum + 50000);
+            if (speechData == null)
+            {
+                // TODO: debug(9, "File %d (speechFile %d from section %d) wasn't found", speechFileNum + 50000, textNum & 0xFFF, textNum >> 12);
+                return false;
+            }
+
+            var header = ServiceLocator.Platform.ToStructure<DataFileHeader>(speechData, 0);
+            var speechSize = header.s_tot_size - ServiceLocator.Platform.SizeOf<DataFileHeader>();
+            var playBuffer = new byte[speechSize];
+            Array.Copy(speechData, ServiceLocator.Platform.SizeOf<DataFileHeader>(), playBuffer, 0, speechSize);
+
+            // Workaround for BASS bug #897775 - some voice-overs are played at
+            // half speed in 0.0368 (the freeware CD version), in 0.0372 they sound
+            // just fine.
+
+            int rate;
+            if (_skyDisk.DetermineGameVersion().Version.Minor == 368 && (textNum == 20905 || textNum == 20906))
+                rate = 22050;
+            else
+                rate = 11025;
+
+            _mixer.StopID(SoundSpeech);
+
+            var stream = new RawStream(AudioFlags.Unsigned, rate, true, new MemoryStream(playBuffer, 0, speechSize));
+            _ingameSpeech = _mixer.PlayStream(SoundType.Speech, stream, SoundSpeech);
+            return true;
         }
 
         private struct Room

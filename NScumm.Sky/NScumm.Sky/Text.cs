@@ -117,6 +117,8 @@ namespace NScumm.Sky
             get { return _curCharSet; }
         }
 
+        public uint NumLetters { get; private set; }
+
         public DisplayedText DisplayText(ushort textNum, byte[] dest, bool center, ushort pixelWidth, byte color)
         {
             //Render text into buffer *dest
@@ -131,6 +133,7 @@ namespace NScumm.Sky
             ushort lineWidth = 0;
 
             uint numLines = 0;
+            NumLetters = 2;
 
             // work around bug #778105 (line width exceeded)
             text = text.Replace("MUND-BEATMUNG!", "MUND BEATMUNG!");
@@ -171,6 +174,7 @@ namespace NScumm.Sky
                 }
 
                 textChar = textBytes.Length == curPos ? (byte)0 : textBytes[curPos++];
+                NumLetters++;
             }
 
             uint dtLastWidth = lineWidth; //save width of last line

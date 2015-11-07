@@ -9,7 +9,7 @@ namespace NScumm.Sky
 {
     internal class Control
     {
-        private const int MAX_SAVE_GAMES = 999;
+        private const int MaxSaveGames = 999;
 
         private const int PanLineWidth = 184;
 
@@ -20,15 +20,15 @@ namespace NScumm.Sky
         private const int Mainpanel = 0;
         private const int Savepanel = 1;
 
-        const bool NoMask = false;
-        const bool WithMask = true;
+        private const bool NoMask = false;
+        private const bool WithMask = true;
 
-        const SystemFlags TextFlagMask = SystemFlags.ALLOW_SPEECH | SystemFlags.AllowText;
+        private const SystemFlags TextFlagMask = SystemFlags.ALLOW_SPEECH | SystemFlags.AllowText;
 
-        const int GAME_NAME_X = (SpnlX + 18);				// x coordinate of game names
-        const int GAME_NAME_Y = (SpnlY + SpTopGap);	// start y coord of game names
-        const int MAX_ON_SCREEN = ((SpHeight - SpTopGap - SpBotGap) / PanCharHeight); // no of save games on screen
-        const int CP_PANEL = 60400; // main panel sprite
+        private const int GameNameX = SpnlX + 18; // x coordinate of game names
+        private const int GameNameY = SpnlY + SpTopGap; // start y coord of game names
+        private const int MaxOnScreen = (SpHeight - SpTopGap - SpBotGap) / PanCharHeight; // no of save games on screen
+        private const int CpPanel = 60400; // main panel sprite
 
 
         private const int SpeedMultiply = 12;
@@ -55,31 +55,31 @@ namespace NScumm.Sky
         private const int RestoreAuto = 18;
 
         // onClick return codes
-        const int CancelPressed = 100;
-        const int NameTooShort = 101;
-        const int GameSaved = 102;
-        const int Shifted = 103;
-        const int Toggled = 104;
-        const int Restarted = 105;
+        private const int CancelPressed = 100;
+        private const int NameTooShort = 101;
+        private const int GameSaved = 102;
+        private const int Shifted = 103;
+        private const int Toggled = 104;
+        private const int Restarted = 105;
         public const int GameRestored = 106;
-        const int RestoreFailed = 107;
-        const int NoDiskSpace = 108;
-        const int SpeedChanged = 109;
-        const int QuitPanel = 110;
+        private const int RestoreFailed = 107;
+        private const int NoDiskSpace = 108;
+        private const int SpeedChanged = 109;
+        private const int QuitPanel = 110;
 
-        const int Slow = 0;
-        const int Fast = 1;
+        private const int Slow = 0;
+        private const int Fast = 1;
 
         private const int MpnlX = 60; // Main Panel
         private const int MpnlY = 10;
 
         private const int SpnlX = 20; // Save Panel
         private const int SpnlY = 20;
-        const int SpHeight = 149;
-        const int SpTopGap = 12;
-        const int SpBotGap = 27;
-        const int CrossSzX = 27;
-        const int CrossSzY = 22;
+        private const int SpHeight = 149;
+        private const int SpTopGap = 12;
+        private const int SpBotGap = 27;
+        private const int CrossSzX = 27;
+        private const int CrossSzY = 22;
 
 
         private static readonly string[] QuitTexts =
@@ -102,46 +102,47 @@ namespace NScumm.Sky
             "BE VIGILANT"
         };
 
-        static readonly byte[] CrossImg = {
+        private static readonly byte[] CrossImg =
+        {
             0xFF, 0xFF, 0xFF, 0xFF, 0x09, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x0B, 0x61, 0xFF, 0xFF, 0xFF, 0xFF, 0x4F, 0x4D, 0x61,
-    0x01, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-    0x08, 0x4E, 0x53, 0x50, 0x4F, 0x0C, 0x4D, 0x4E, 0x51, 0x58, 0x58, 0x54, 0x4E, 0x08, 0xFF, 0xFF,
-    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x4E, 0x54, 0x58, 0x50, 0x4E, 0xFF,
-    0xFF, 0xFF, 0xFF, 0x50, 0x4E, 0x54, 0x58, 0x58, 0x54, 0x4E, 0x0C, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-    0xFF, 0xFF, 0xFF, 0x61, 0x53, 0x58, 0x54, 0x4E, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-    0x50, 0x4E, 0x55, 0x58, 0x58, 0x53, 0x4E, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x51, 0x58, 0x58,
-    0x51, 0x50, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x4F, 0x51, 0x58,
-    0x59, 0x58, 0x51, 0x61, 0xFF, 0xFF, 0x61, 0x54, 0x58, 0x58, 0x4F, 0x52, 0xFF, 0xFF, 0xFF, 0xFF,
-    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x4E, 0x55, 0x58, 0x58, 0x57, 0x4E,
-    0x4F, 0x56, 0x58, 0x57, 0x61, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x4F, 0x51, 0x58, 0x58, 0x58, 0x58, 0x58, 0x54, 0x4E, 0xFF,
-    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-    0xFF, 0xFF, 0x6A, 0x4F, 0x58, 0x58, 0x58, 0x58, 0x52, 0x06, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x04, 0x54, 0x58,
-    0x58, 0x58, 0x58, 0x57, 0x53, 0x61, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x04, 0x09, 0x58, 0x58, 0x58, 0x57, 0x56, 0x58, 0x58, 0x58,
-    0x57, 0x4F, 0x0A, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-    0x61, 0x55, 0x58, 0x58, 0x58, 0x58, 0x4E, 0x64, 0x57, 0x58, 0x58, 0x58, 0x58, 0x53, 0x61, 0xFF,
-    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x61, 0x57, 0x58, 0x58, 0x58, 0x58,
-    0x50, 0xFF, 0xFF, 0x4E, 0x57, 0x58, 0x58, 0x58, 0x58, 0x56, 0x61, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-    0xFF, 0xFF, 0xFF, 0xFF, 0x61, 0x58, 0x58, 0x58, 0x58, 0x58, 0x53, 0x09, 0xFF, 0xFF, 0xFF, 0x4E,
-    0x57, 0x58, 0x58, 0x58, 0x58, 0x58, 0x0B, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x61, 0x57,
-    0x58, 0x58, 0x58, 0x58, 0x56, 0x4E, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x61, 0x58, 0x58, 0x58, 0x58,
-    0x58, 0x57, 0x61, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x04, 0x55, 0x58, 0x58, 0x58, 0x58, 0x58, 0x4E,
-    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x4F, 0x58, 0x58, 0x58, 0x58, 0x4E, 0xFF, 0xFF, 0xFF,
-    0xFF, 0xFF, 0xFF, 0x06, 0x58, 0x58, 0x58, 0x58, 0x58, 0x52, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-    0xFF, 0xFF, 0x0C, 0x52, 0x58, 0x58, 0x51, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x61, 0x56, 0x58,
-    0x58, 0x58, 0x58, 0x56, 0x61, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x61, 0x56,
-    0x58, 0x61, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x0F, 0x4D, 0x4D, 0x51, 0x56, 0x58, 0x58, 0x50, 0xFF,
-    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x4F, 0x54, 0x09, 0xFF, 0xFF, 0xFF,
-    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x4E, 0x50, 0x54, 0x61, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x06, 0x50, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-    0xFF, 0xFF, 0xFF, 0x61, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-    0xFF, 0x61, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x61, 0xFF,
-    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x61, 0xFF, 0xFF, 0xFF,
-    0xFF, 0xFF
-};
+            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x0B, 0x61, 0xFF, 0xFF, 0xFF, 0xFF, 0x4F, 0x4D, 0x61,
+            0x01, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+            0x08, 0x4E, 0x53, 0x50, 0x4F, 0x0C, 0x4D, 0x4E, 0x51, 0x58, 0x58, 0x54, 0x4E, 0x08, 0xFF, 0xFF,
+            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x4E, 0x54, 0x58, 0x50, 0x4E, 0xFF,
+            0xFF, 0xFF, 0xFF, 0x50, 0x4E, 0x54, 0x58, 0x58, 0x54, 0x4E, 0x0C, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+            0xFF, 0xFF, 0xFF, 0x61, 0x53, 0x58, 0x54, 0x4E, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+            0x50, 0x4E, 0x55, 0x58, 0x58, 0x53, 0x4E, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x05, 0x51, 0x58, 0x58,
+            0x51, 0x50, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x4F, 0x51, 0x58,
+            0x59, 0x58, 0x51, 0x61, 0xFF, 0xFF, 0x61, 0x54, 0x58, 0x58, 0x4F, 0x52, 0xFF, 0xFF, 0xFF, 0xFF,
+            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x4E, 0x55, 0x58, 0x58, 0x57, 0x4E,
+            0x4F, 0x56, 0x58, 0x57, 0x61, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x4F, 0x51, 0x58, 0x58, 0x58, 0x58, 0x58, 0x54, 0x4E, 0xFF,
+            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+            0xFF, 0xFF, 0x6A, 0x4F, 0x58, 0x58, 0x58, 0x58, 0x52, 0x06, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x04, 0x54, 0x58,
+            0x58, 0x58, 0x58, 0x57, 0x53, 0x61, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x04, 0x09, 0x58, 0x58, 0x58, 0x57, 0x56, 0x58, 0x58, 0x58,
+            0x57, 0x4F, 0x0A, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+            0x61, 0x55, 0x58, 0x58, 0x58, 0x58, 0x4E, 0x64, 0x57, 0x58, 0x58, 0x58, 0x58, 0x53, 0x61, 0xFF,
+            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x61, 0x57, 0x58, 0x58, 0x58, 0x58,
+            0x50, 0xFF, 0xFF, 0x4E, 0x57, 0x58, 0x58, 0x58, 0x58, 0x56, 0x61, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+            0xFF, 0xFF, 0xFF, 0xFF, 0x61, 0x58, 0x58, 0x58, 0x58, 0x58, 0x53, 0x09, 0xFF, 0xFF, 0xFF, 0x4E,
+            0x57, 0x58, 0x58, 0x58, 0x58, 0x58, 0x0B, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x61, 0x57,
+            0x58, 0x58, 0x58, 0x58, 0x56, 0x4E, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x61, 0x58, 0x58, 0x58, 0x58,
+            0x58, 0x57, 0x61, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x04, 0x55, 0x58, 0x58, 0x58, 0x58, 0x58, 0x4E,
+            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x4F, 0x58, 0x58, 0x58, 0x58, 0x4E, 0xFF, 0xFF, 0xFF,
+            0xFF, 0xFF, 0xFF, 0x06, 0x58, 0x58, 0x58, 0x58, 0x58, 0x52, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+            0xFF, 0xFF, 0x0C, 0x52, 0x58, 0x58, 0x51, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x61, 0x56, 0x58,
+            0x58, 0x58, 0x58, 0x56, 0x61, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x61, 0x56,
+            0x58, 0x61, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x0F, 0x4D, 0x4D, 0x51, 0x56, 0x58, 0x58, 0x50, 0xFF,
+            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x4F, 0x54, 0x09, 0xFF, 0xFF, 0xFF,
+            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x4E, 0x50, 0x54, 0x61, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x06, 0x50, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+            0xFF, 0xFF, 0xFF, 0x61, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+            0xFF, 0x61, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x61, 0xFF,
+            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x61, 0xFF, 0xFF, 0xFF,
+            0xFF, 0xFF
+        };
 
 
         private readonly SkyCompact _skyCompact;
@@ -152,6 +153,7 @@ namespace NScumm.Sky
         private readonly Screen _skyScreen;
         private readonly Sound _skySound;
         private readonly Text _skyText;
+        private readonly ISystem _system;
         private ConResource _autoSaveButton;
         private ConResource _bodge;
         private ConResource _controlPanel;
@@ -162,8 +164,10 @@ namespace NScumm.Sky
         private ConResource _downSlowButton;
 
         private ConResource _exitButton;
+        private ushort _firstText;
         private ConResource _fxPanButton;
-        private int _lastButton;
+        private ScummInputState _keyPressed;
+        private bool _mouseClicked;
         private ConResource _musicPanButton;
         private ConResource _quitButton;
         private ConResource _restartPanButton;
@@ -183,15 +187,11 @@ namespace NScumm.Sky
         private ConResource _slode;
         private Sprites _sprites;
         private ControlStatus _statusBar;
-        private ISystem _system;
         private TextResource _text;
         private byte[] _textSprite;
         private ConResource _upFastButton;
         private ConResource _upSlowButton;
         private ConResource _yesNo;
-        private bool _mouseClicked;
-        private ScummInputState _keyPressed;
-        private ushort _firstText;
 
         public Control( /*SaveFileManager saveFileMan,*/
             Screen screen, Disk disk, Mouse mouse, Text text, MusicBase music, Logic logic, Sound sound,
@@ -284,7 +284,8 @@ namespace NScumm.Sky
             // music button only available in floppy version
             if (!SkyEngine.IsCDVersion)
             {
-                _musicPanButton.CurSprite = (uint)(SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.MUS_OFF) ? 0 : 2);
+                _musicPanButton.CurSprite =
+                    (uint)(SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.MUS_OFF) ? 0 : 2);
             }
 
             DrawMainPanel();
@@ -292,10 +293,8 @@ namespace NScumm.Sky
             _savedMouse = _skyMouse.CurrentMouseType;
 
             _skyMouse.SpriteMouse(Logic.MOUSE_NORMAL, 0, 0);
-            bool quitPanel = false;
-            _lastButton = -1;
+            var quitPanel = false;
             _curButtonText = 0;
-            ushort clickRes = 0;
 
             while (!quitPanel && !SkyEngine.ShouldQuit)
             {
@@ -306,11 +305,12 @@ namespace NScumm.Sky
                 if (_controlPanel == null)
                     return;
                 if (_keyPressed.IsKeyDown(KeyCode.Escape))
-                { // escape pressed
+                {
+                    // escape pressed
                     _mouseClicked = false;
                     quitPanel = true;
                 }
-                bool haveButton = false;
+                var haveButton = false;
                 var mouse = _system.InputManager.GetMousePosition();
                 for (byte lookCnt = 0; lookCnt < 9; lookCnt++)
                 {
@@ -320,7 +320,7 @@ namespace NScumm.Sky
                         ButtonControl(_controlPanLookList[lookCnt]);
                         if (_mouseClicked && _controlPanLookList[lookCnt].OnClick != 0)
                         {
-                            clickRes = HandleClick(_controlPanLookList[lookCnt]);
+                            var clickRes = HandleClick(_controlPanLookList[lookCnt]);
                             if (_controlPanel == null) //game state was destroyed
                                 return;
                             _text.FlushForRedraw();
@@ -337,7 +337,8 @@ namespace NScumm.Sky
                     ButtonControl(null);
             }
             Array.Clear(_screenBuf, 0, Screen.GameScreenWidth * Screen.FullScreenHeight);
-            _system.GraphicsManager.CopyRectToScreen(_screenBuf, Screen.GameScreenWidth, 0, 0, Screen.GameScreenWidth, Screen.FullScreenHeight);
+            _system.GraphicsManager.CopyRectToScreen(_screenBuf, Screen.GameScreenWidth, 0, 0, Screen.GameScreenWidth,
+                Screen.FullScreenHeight);
             if (!SkyEngine.ShouldQuit)
                 _system.GraphicsManager.UpdateScreen();
             _skyScreen.ForceRefresh();
@@ -474,7 +475,7 @@ namespace NScumm.Sky
                 //	_mouseWheel = 1;
                 //	break;
 
-                int thisDelay = 20; // 1?
+                var thisDelay = 20; // 1?
 #if _WIN32_WCE
     this_delay = 10;
 #endif
@@ -489,8 +490,8 @@ namespace NScumm.Sky
 
         private ushort HandleClick(ConResource pButton)
         {
-            string quitDos = "Quit to DOS?";
-            string restart = "Restart?";
+            var quitDos = "Quit to DOS?";
+            var restart = "Restart?";
 
             switch (pButton.OnClick)
             {
@@ -562,13 +563,14 @@ namespace NScumm.Sky
                         SkyEngine.QuitGame();
                     return 0;
                 default:
-                    throw new InvalidOperationException(string.Format("Control::handleClick: unknown routine: {0:X2}", pButton.OnClick));
+                    throw new InvalidOperationException(string.Format("Control::handleClick: unknown routine: {0:X2}",
+                        pButton.OnClick));
             }
         }
 
         private ushort DoToggleText()
         {
-            SystemFlags flags = SystemVars.Instance.SystemFlags & TextFlagMask;
+            var flags = SystemVars.Instance.SystemFlags & TextFlagMask;
             SystemVars.Instance.SystemFlags &= ~TextFlagMask;
 
             if (flags == SystemFlags.AllowText)
@@ -646,14 +648,14 @@ namespace NScumm.Sky
         private ushort DoMusicSlide()
         {
             var mouse = _system.InputManager.GetMousePosition();
-            int ofsY = _slide2.Y - mouse.Y;
+            var ofsY = _slide2.Y - mouse.Y;
             while (_mouseClicked)
             {
                 Delay(50);
                 if (_controlPanel == null)
                     return 0;
                 mouse = _system.InputManager.GetMousePosition();
-                int newY = ofsY + mouse.Y;
+                var newY = ofsY + mouse.Y;
                 if (newY < 59) newY = 59;
                 if (newY > 91) newY = 91;
                 if (newY != _slide2.Y)
@@ -677,8 +679,8 @@ namespace NScumm.Sky
         private ushort DoSpeedSlide()
         {
             var mouse = _system.InputManager.GetMousePosition();
-            int ofsY = _slide.Y - mouse.Y;
-            ushort speedDelay = (ushort)(_slide.Y - (MpnlY + 93));
+            var ofsY = _slide.Y - mouse.Y;
+            var speedDelay = (ushort)(_slide.Y - (MpnlY + 93));
             speedDelay *= SpeedMultiply;
             speedDelay += 2;
             while (_mouseClicked)
@@ -687,7 +689,7 @@ namespace NScumm.Sky
                 if (_controlPanel == null)
                     return SpeedChanged;
                 mouse = _system.InputManager.GetMousePosition();
-                int newY = ofsY + mouse.Y;
+                var newY = ofsY + mouse.Y;
                 if (newY < MpnlY + 93) newY = MpnlY + 93;
                 if (newY > MpnlY + 104) newY = MpnlY + 104;
                 if ((newY == 110) || (newY == 108)) newY = 109;
@@ -720,8 +722,8 @@ namespace NScumm.Sky
             }
             else
             {
-                if (_firstText >= MAX_ON_SCREEN)
-                    _firstText -= MAX_ON_SCREEN;
+                if (_firstText >= MaxOnScreen)
+                    _firstText -= MaxOnScreen;
                 else if (_firstText > 0)
                     _firstText = 0;
                 else
@@ -734,16 +736,16 @@ namespace NScumm.Sky
         {
             if (speed == Slow)
             {
-                if (_firstText >= MAX_SAVE_GAMES - MAX_ON_SCREEN)
+                if (_firstText >= MaxSaveGames - MaxOnScreen)
                     return 0;
                 _firstText++;
             }
             else
             {
-                if (_firstText <= MAX_SAVE_GAMES - 2 * MAX_ON_SCREEN)
-                    _firstText += MAX_ON_SCREEN;
-                else if (_firstText < MAX_SAVE_GAMES - MAX_ON_SCREEN)
-                    _firstText = MAX_SAVE_GAMES - MAX_ON_SCREEN;
+                if (_firstText <= MaxSaveGames - 2 * MaxOnScreen)
+                    _firstText += MaxOnScreen;
+                else if (_firstText < MaxSaveGames - MaxOnScreen)
+                    _firstText = MaxSaveGames - MaxOnScreen;
                 else
                     return 0;
             }
@@ -763,8 +765,8 @@ namespace NScumm.Sky
 
         private bool GetYesNo(string text)
         {
-            bool retVal = false;
-            bool quitPanel = false;
+            var retVal = false;
+            var quitPanel = false;
             byte mouseType = Logic.MOUSE_NORMAL;
             byte wantMouse = Logic.MOUSE_NORMAL;
             ushort textY = MpnlY;
@@ -773,14 +775,18 @@ namespace NScumm.Sky
             _yesNo.DrawToScreen(WithMask);
             if (text != null)
             {
-                DisplayedText dlgLtm = _skyText.DisplayText(text, null, true, (ushort)(ServiceLocator.Platform.ToStructure<DataFileHeader>(_yesNo.SpriteData, 0).s_width - 8), (byte)37);
+                var dlgLtm = _skyText.DisplayText(text, null, true,
+                    (ushort)(ServiceLocator.Platform.ToStructure<DataFileHeader>(_yesNo.SpriteData, 0).s_width - 8), 37);
                 dlgTextDat = dlgLtm.TextData;
-                textY = (ushort)(MpnlY + 44 + (28 - ServiceLocator.Platform.ToStructure<DataFileHeader>(dlgTextDat, 0).s_height) / 2);
+                textY =
+                    (ushort)
+                        (MpnlY + 44 +
+                         (28 - ServiceLocator.Platform.ToStructure<DataFileHeader>(dlgTextDat, 0).s_height) / 2);
             }
             else
                 dlgTextDat = null;
 
-            TextResource dlgText = new TextResource(dlgTextDat, 1, 0, MpnlX + 2, textY, 0, DoNothing, _system, _screenBuf);
+            var dlgText = new TextResource(dlgTextDat, 1, 0, MpnlX + 2, textY, 0, DoNothing, _system, _screenBuf);
             dlgText.DrawToScreen(WithMask);
 
             while (!quitPanel)
@@ -800,7 +806,8 @@ namespace NScumm.Sky
                 if ((mouse.Y >= 83) && (mouse.Y <= 110))
                 {
                     if ((mouse.X >= 77) && (mouse.X <= 114))
-                    { // over 'yes'
+                    {
+                        // over 'yes'
                         wantMouse = Logic.MOUSE_CROSS;
                         if (_mouseClicked)
                         {
@@ -809,7 +816,8 @@ namespace NScumm.Sky
                         }
                     }
                     else if ((mouse.X >= 156) && (mouse.X <= 193))
-                    { // over 'no'
+                    {
+                        // over 'no'
                         wantMouse = Logic.MOUSE_CROSS;
                         if (_mouseClicked)
                         {
@@ -830,7 +838,16 @@ namespace NScumm.Sky
 
         private bool LoadSaveAllowed()
         {
-            throw new NotImplementedException();
+            if (SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.CHOOSING))
+                return false; // texts get lost during load/save, so don't allow it during choosing
+            if (_skyLogic.ScriptVariables[Logic.SCREEN] >= 101)
+                return false; // same problem with LINC terminals
+            if ((_skyLogic.ScriptVariables[Logic.SCREEN] >= 82) &&
+                (_skyLogic.ScriptVariables[Logic.SCREEN] != 85) &&
+                (_skyLogic.ScriptVariables[Logic.SCREEN] < 90))
+                return false; // don't allow saving in final rooms
+
+            return true;
         }
 
         private void AnimClick(ConResource pButton)
@@ -856,7 +873,8 @@ namespace NScumm.Sky
         private void DrawMainPanel()
         {
             Array.Clear(_screenBuf, 0, Screen.GameScreenWidth * Screen.FullScreenHeight);
-            _system.GraphicsManager.CopyRectToScreen(_screenBuf, Screen.GameScreenWidth, 0, 0, Screen.GameScreenWidth, Screen.FullScreenHeight);
+            _system.GraphicsManager.CopyRectToScreen(_screenBuf, Screen.GameScreenWidth, 0, 0, Screen.GameScreenWidth,
+                Screen.FullScreenHeight);
             _controlPanel.DrawToScreen(NoMask);
             _exitButton.DrawToScreen(NoMask);
             _savePanButton.DrawToScreen(NoMask);
@@ -897,7 +915,8 @@ namespace NScumm.Sky
                 crossPos += CrossSzX;
             }
             bufPos = y * Screen.GameScreenWidth + x;
-            _system.GraphicsManager.CopyRectToScreen(_screenBuf, bufPos, Screen.GameScreenWidth, x, y, CrossSzX, CrossSzY);
+            _system.GraphicsManager.CopyRectToScreen(_screenBuf, bufPos, Screen.GameScreenWidth, x, y, CrossSzX,
+                CrossSzY);
             _text.DrawToScreen(WithMask);
         }
 
@@ -928,7 +947,7 @@ namespace NScumm.Sky
                     _text.SetSprite(null);
             }
             var mouse = _system.InputManager.GetMousePosition();
-            int destY = (mouse.X - 16 >= 0) ? mouse.Y - 16 : 0;
+            var destY = mouse.X - 16 >= 0 ? mouse.Y - 16 : 0;
             _text.SetXy((ushort)(mouse.X + 12), (ushort)destY);
         }
 
@@ -947,7 +966,6 @@ namespace NScumm.Sky
             _savedCharSet = _skyText.CurrentCharSet;
             _skyText.FnSetFont(2);
             _skyMouse.SpriteMouse(Logic.MOUSE_NORMAL, 0, 0);
-            _lastButton = -1;
             _curButtonText = 0;
 
             SaveRestorePanel(false);
@@ -1143,13 +1161,13 @@ namespace NScumm.Sky
 
         private class ConResource
         {
-            public uint NumSprites;
-            public uint CurSprite;
-            public byte OnClick;
+            public readonly uint NumSprites;
+            public readonly byte OnClick;
             public readonly byte[] Screen;
+            public readonly ISystem System;
+            public uint CurSprite;
 
             public byte[] SpriteData;
-            public readonly ISystem System;
             public uint Text;
             public ushort X, Y;
 
@@ -1315,7 +1333,8 @@ namespace NScumm.Sky
                     copyDest += PanLineWidth;
                     screenPos += Sky.Screen.GameScreenWidth;
                 }
-                System.GraphicsManager.CopyRectToScreen(Screen, Y * Sky.Screen.GameScreenWidth + X, Sky.Screen.GameScreenWidth,
+                System.GraphicsManager.CopyRectToScreen(Screen, Y * Sky.Screen.GameScreenWidth + X,
+                    Sky.Screen.GameScreenWidth,
                     X, Y, cpWidth, cpHeight);
             }
 
@@ -1340,27 +1359,50 @@ namespace NScumm.Sky
 
         private class ControlStatus
         {
-            private byte[] _screenBuf;
-            private Text _skyText;
+            const int StatusWidth = 146;
 
-            private TextResource _statusText;
-            private ISystem _system;
+            private readonly byte[] _screenBuf;
+            private readonly Text _skyText;
+
+            private readonly TextResource _statusText;
+            private readonly ISystem _system;
             private byte[] _textData;
 
             public ControlStatus(Text skyText, ISystem system, byte[] scrBuf)
             {
+                _skyText = skyText;
+                _system = system;
+                _screenBuf = scrBuf;
+                _textData = null;
+                _statusText = new TextResource(null, 2, 1, 64, 163, 0, DoNothing, _system, _screenBuf);
             }
 
             public void SetToText(string newText)
             {
+                if (_textData != null)
+                {
+                    _statusText.FlushForRedraw();
+                    _textData = null;
+                }
+                DisplayedText disText = _skyText.DisplayText(newText, null, true, StatusWidth, 255);
+                _textData = disText.TextData;
+                _statusText.SetSprite(_textData);
+                _statusText.DrawToScreen(WithMask);
             }
 
             public void SetToText(ushort textNum)
             {
+                _textData=null;
+                DisplayedText disText = _skyText.DisplayText(textNum, null, true, StatusWidth, 255);
+                _textData = disText.TextData;
+                _statusText.SetSprite(_textData);
+                _statusText.DrawToScreen(WithMask);
             }
 
             public void DrawToScreen()
             {
+                _statusText.FlushForRedraw();
+                _statusText.DrawToScreen(WithMask);
             }
         }
     }

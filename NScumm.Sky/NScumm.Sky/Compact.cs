@@ -41,7 +41,10 @@ namespace NScumm.Sky
             else
             {
                 var destBuf = (byte[])Data;
-                Array.Copy(data, offset, destBuf, destOffset, length);
+                for (int i = 0; i < length; i += 2)
+                {
+                    destBuf.WriteUInt16(destOffset + i, data.ToUInt16(offset + i));
+                }
             }
         }
     }
@@ -271,7 +274,10 @@ namespace NScumm.Sky
 
         public void Patch(byte[] data, int offset, int destOffset, int length)
         {
-            Array.Copy(data, offset, _data, destOffset, length);
+            for (int i = 0; i < length; i+=2)
+            {
+                _data.WriteUInt16(destOffset + i, data.ToUInt16(offset + i));
+            }
             Core = ServiceLocator.Platform.ToStructure<CompactCore>(_data, 0);
         }
     }
@@ -484,21 +490,20 @@ namespace NScumm.Sky
                     {
                         var size = srcBuf.ToUInt16(srcPos);
                         srcPos += 2;
-                        if (size != 0)
+                        if (size == 0) continue;
+
+                        var type = (CptTypeId)srcBuf.ToUInt16(srcPos);
+                        srcPos += 2;
+                        var name = ReadName(ref asciiPos);
+                        var raw = new byte[size * 2];
+                        Array.Copy(srcBuf, srcPos, raw, 0, size * 2);
+                        _compacts[lcnt][ecnt] = new CompactEntry
                         {
-                            var type = (CptTypeId)srcBuf.ToUInt16(srcPos);
-                            srcPos += 2;
-                            var name = ReadName(ref asciiPos);
-                            var raw = new byte[size * 2];
-                            Array.Copy(srcBuf, srcPos, raw, 0, size * 2);
-                            _compacts[lcnt][ecnt] = new CompactEntry
-                            {
-                                Type = type,
-                                Name = name,
-                                Data = type == CptTypeId.Compact ? (object)new Compact(raw) : raw
-                            };
-                            srcPos += size * 2;
-                        }
+                            Type = type,
+                            Name = name,
+                            Data = type == CptTypeId.Compact ? (object)new Compact(raw) : raw
+                        };
+                        srcPos += size * 2;
                     }
                 }
 
@@ -649,8 +654,8 @@ namespace NScumm.Sky
 
         public FieldAccess<ushort> GetCompactElem(Compact cpt, ushort off)
         {
-            ushort compactSize = (ushort) GetCompactField.Length;
-            ushort megasetSize = (ushort) GetMegaSetField.Length;
+            ushort compactSize = (ushort)GetCompactField.Length;
+            ushort megasetSize = (ushort)GetMegaSetField.Length;
             ushort turntableSize = 100;
 
             if (off < compactSize)
@@ -663,7 +668,7 @@ namespace NScumm.Sky
 
             off -= megasetSize;
             if (off < turntableSize)
-                return new FieldAccess<ushort>(() => FetchCptRaw(cpt.Core.megaSet0.turnTableId).ToUInt16(off/2),
+                return new FieldAccess<ushort>(() => FetchCptRaw(cpt.Core.megaSet0.turnTableId).ToUInt16(off / 2),
                     v => FetchCptRaw(cpt.Core.megaSet0.turnTableId).WriteUInt16(off / 2, v));
 
             off -= turntableSize;
@@ -712,6 +717,8 @@ namespace NScumm.Sky
 
         public UShortAccess GetTurnTable(Compact cpt, ushort dir)
         {
+            if (dir > 4) throw new ArgumentOutOfRangeException("dir", string.Format("No TurnTable ({0}) in MegaSet ({1})", dir, cpt.Core.megaSet));
+
             var m = GetMegaSet(cpt);
             var turnTable = FetchCptRaw(m.turnTableId);
             return new UShortAccess(turnTable, 10 * dir);

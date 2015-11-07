@@ -175,12 +175,12 @@ namespace NScumm.Sky
             var sizeOfDataFileHeader = 22;
             if (entry.HasHeader)
             {
-                unpackLen = _rncDecoder.UnpackM1(data, sizeOfDataFileHeader, uncompDest, 0, 0);
+                unpackLen = _rncDecoder.UnpackM1(data, sizeOfDataFileHeader, uncompDest, 0);
             }
             else
             {
                 Array.Copy(data, uncompDest, sizeOfDataFileHeader);
-                unpackLen = _rncDecoder.UnpackM1(data, sizeOfDataFileHeader, uncompDest, sizeOfDataFileHeader, 0);
+                unpackLen = _rncDecoder.UnpackM1(data, sizeOfDataFileHeader, uncompDest, sizeOfDataFileHeader);
             }
             return uncompDest;
         }

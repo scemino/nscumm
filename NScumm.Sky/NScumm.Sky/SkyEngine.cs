@@ -10,10 +10,17 @@ namespace NScumm.Sky
 {
     class SkyEngine : IEngine, IDisposable
     {
+        static bool _hasToQuit;
+
         public bool HasToQuit
         {
-            get;
-            set;
+            get { return _hasToQuit; }
+            set { _hasToQuit = value; }
+        }
+
+        public static bool ShouldQuit
+        {
+            get { return _hasToQuit; }
         }
 
         public bool IsPaused
@@ -40,8 +47,6 @@ namespace NScumm.Sky
         {
             get { return SystemVars.Instance.GameVersion.Type.HasFlag(SkyGameType.Cd); }
         }
-
-        public static bool ShouldQuit { get; set; }
 
         public event EventHandler ShowMenuDialogRequested;
 
@@ -132,7 +137,7 @@ namespace NScumm.Sky
 
         public static void QuitGame()
         {
-            throw new NotImplementedException();
+            _hasToQuit = true;
         }
 
         public void Dispose()

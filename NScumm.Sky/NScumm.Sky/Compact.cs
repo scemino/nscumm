@@ -54,12 +54,45 @@ namespace NScumm.Sky
             else
             {
                 var destBuf = (byte[])Data;
-                for (int i = 0; i < length; i += 2)
-                {
-                    destBuf.WriteUInt16(destOffset + i, data.ToUInt16(offset + i));
-                }
+                Array.Copy(data, offset, destBuf, destOffset, length);
             }
         }
+
+        public override string ToString()
+        {
+            if (Type == CptTypeId.Compact)
+            {
+                var c = (Compact)Data;
+                StringBuilder sb = new StringBuilder();
+                var noYes = new[] { "no", "yes" };
+                sb.AppendFormat("Compact {0}", Name).AppendLine();
+                sb.AppendFormat("logic      : {0:X4}: {1}", c.Core.logic, c.Core.logic <= 16 ? LogicTypes[c.Core.logic] : "unknown").AppendLine();
+                sb.AppendFormat("status     : {0:X4}", c.Core.status).AppendLine();
+                sb.AppendFormat("           : background  : {0}", noYes[(c.Core.status & Logic.ST_BACKGROUND) >> 0]).AppendLine();
+                sb.AppendFormat("           : foreground  : {0}", noYes[(c.Core.status & Logic.ST_FOREGROUND) >> 1]).AppendLine();
+                sb.AppendFormat("           : sort list   : {0}", noYes[(c.Core.status & Logic.ST_SORT) >> 2]).AppendLine();
+                sb.AppendFormat("           : recreate    : {0}", noYes[(c.Core.status & Logic.ST_RECREATE) >> 3]).AppendLine();
+                sb.AppendFormat("           : mouse       : {0}", noYes[(c.Core.status & Logic.ST_MOUSE) >> 4]).AppendLine();
+                sb.AppendFormat("           : collision   : {0}", noYes[(c.Core.status & Logic.ST_COLLISION) >> 5]).AppendLine();
+                sb.AppendFormat("           : logic       : {0}", noYes[(c.Core.status & Logic.ST_LOGIC) >> 6]).AppendLine();
+                sb.AppendFormat("           : on grid     : {0}", noYes[(c.Core.status & Logic.ST_GRID_PLOT) >> 7]).AppendLine();
+                sb.AppendFormat("           : ar priority : {0}", noYes[(c.Core.status & Logic.ST_AR_PRIORITY) >> 8]).AppendLine();
+                sb.AppendFormat("sync       : {0:X4}", c.Core.sync).AppendLine();
+                sb.AppendFormat("screen     : {0}", c.Core.screen).AppendLine();
+                //_skyCompact->fetchCptInfo(c.Core.place, null, null, name);
+                //sb.AppendFormat("place      : {0:X4}: {1}\n", c.Core.place, name).AppendLine(); 
+                //_skyCompact->fetchCptInfo(c.Core.getToTableId, null, null, name);
+                //sb.AppendFormat("get to tab : %04X: %s\n", c.Core.getToTableId, name).AppendLine();
+                //sb.AppendFormat("x/y        : %d/%d\n", c.Core.xcood, c.Core.ycood).AppendLine();
+                return sb.ToString();
+            }
+            return string.Format("({0}) {1}", Type, Name);
+        }
+
+        static readonly string[] LogicTypes = {
+            "(none)", "SCRIPT", "AUTOROUTE", "AR_ANIM", "AR_TURNING", "ALT", "MOD_ANIM", "TURNING", "CURSOR", "TALK", "LISTEN",
+            "STOPPED", "CHOOSE", "FRAMES", "PAUSE", "WAIT_SYNC", "SIMPLE MOD"
+        };
     }
 
     internal enum CptIds : ushort
@@ -259,13 +292,13 @@ namespace NScumm.Sky
         [FieldOffset(108)]
         public ushort megaSet; // 54
 
-        [FieldOffset(110 + 28 * 1)]
+        [FieldOffset(110 + 28 * 0)]
         public MegaSet megaSet0; // 55
-        [FieldOffset(110 + 28 * 2)]
+        [FieldOffset(110 + 28 * 1)]
         public MegaSet megaSet1; //
-        [FieldOffset(110 + 28 * 3)]
+        [FieldOffset(110 + 28 * 2)]
         public MegaSet megaSet2; //
-        [FieldOffset(110 + 28 * 4)]
+        [FieldOffset(110 + 28 * 3)]
         public MegaSet megaSet3; //
     }
 
@@ -289,10 +322,7 @@ namespace NScumm.Sky
 
         public void Patch(byte[] data, int offset, int destOffset, int length)
         {
-            for (int i = 0; i < length; i += 2)
-            {
-                _data.WriteUInt16(destOffset + i, data.ToUInt16(offset + i));
-            }
+            Array.Copy(data, offset, _data, destOffset, length);
             Core = ServiceLocator.Platform.ToStructure<CompactCore>(_data, 0);
         }
     }
@@ -642,7 +672,8 @@ namespace NScumm.Sky
 
         public byte[] FetchCptRaw(ushort cptId)
         {
-            return FetchCptEntry(cptId).Bytes;
+            var entry = FetchCptEntry(cptId);
+            return entry?.Bytes;
         }
 
         /// <summary>

@@ -14,6 +14,11 @@ namespace NScumm.Sky
             set { _data[_offset] = value; }
         }
 
+        public byte[] Data
+        {
+            get { return _data; }
+        }
+
         public int Offset
         {
             get { return _offset; }

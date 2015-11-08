@@ -60,11 +60,6 @@ namespace NScumm
             Thread.Sleep(timeInMs);
         }
 
-        public IntPtr OffsetOf(Type type, string fieldName)
-        {
-            return Marshal.OffsetOf(type, fieldName);
-        }
-
         public int SizeOf(Type type)
         {
             return Marshal.SizeOf(type);
@@ -89,16 +84,6 @@ namespace NScumm
         {
             var handle = GCHandle.Alloc(data, GCHandleType.Pinned);
             return new WrappedObject(handle, Marshal.PtrToStructure(handle.AddrOfPinnedObject() + offset, type));
-        }
-
-        public short ReadInt16(object obj, int offset)
-        {
-            return Marshal.ReadInt16(obj, offset);
-        }
-
-        public void WriteInt16(object obj, int offset, short value)
-        {
-            Marshal.WriteInt16(obj, offset, value);
         }
     }
 }

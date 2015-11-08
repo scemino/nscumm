@@ -79,7 +79,6 @@ namespace NScumm.Core
         void Sleep(int timeInMs);
 
         int SizeOf(Type type);
-        IntPtr OffsetOf(Type type, string fieldName);
 
         object ToStructure(byte[] data, int offset, Type type);
         IWrappedObject WriteStructure(byte[] data, int offset, Type type);

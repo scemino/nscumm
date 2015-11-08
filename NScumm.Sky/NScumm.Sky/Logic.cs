@@ -561,7 +561,7 @@ namespace NScumm.Sky
                                     scriptData.Offset += 2;
                                     break;
                                 }
-                                scriptData.Offset += 2;
+                                scriptData.Offset += 4;
                             } while (--s != 0);
 
                             if (s == 0)

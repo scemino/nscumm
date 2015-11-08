@@ -653,7 +653,7 @@ namespace NScumm.Sky
         private void SortSprites()
         {
             var sortList = new StSortList[30];
-            uint currDrawList = Logic.DRAW_LIST_NO;
+            int currDrawList = Logic.DRAW_LIST_NO;
 
             while (Logic.ScriptVariables[currDrawList] != 0)
             {
@@ -915,9 +915,9 @@ namespace NScumm.Sky
                 {
                     // x_loop
                     var nLayerCnt = layerCnt;
-                    while (Logic.ScriptVariables[nLayerCnt + 3] != 0)
+                    while (Logic.ScriptVariables[(int) (nLayerCnt + 3)] != 0)
                     {
-                        var scrGrid = new UShortAccess(SkyEngine.ItemList[Logic.ScriptVariables[layerCnt + 3]], 0);
+                        var scrGrid = new UShortAccess(SkyEngine.ItemList[Logic.ScriptVariables[(int) (layerCnt + 3)]], 0);
                         if (scrGrid[gridOfs] != 0)
                         {
                             VertMaskSub(scrGrid, gridOfs, screenPtr, layerCnt);
@@ -943,7 +943,7 @@ namespace NScumm.Sky
                     {
                         var gridVal = grid[gridOfs] - 1;
                         gridVal *= GridW * GridH;
-                        var dataSrc = new ByteAccess(SkyEngine.ItemList[Logic.ScriptVariables[layerId]], gridVal);
+                        var dataSrc = new ByteAccess(SkyEngine.ItemList[Logic.ScriptVariables[(int) layerId]], gridVal);
                         var dataTrg = screenPtr;
                         for (var grdCntY = 0; grdCntY < GridH; grdCntY++)
                         {

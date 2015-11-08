@@ -199,6 +199,12 @@ namespace NScumm.Sky
         public void RefreshFilesList(uint[] list)
         {
             byte cnt = 0;
+            while (_loadedFilesList[cnt] != 0)
+            {
+                SkyEngine.ItemList[_loadedFilesList[cnt] & 2047] = null;
+                cnt++;
+            }
+            cnt = 0;
             while (list[cnt] != 0)
             {
                 _loadedFilesList[cnt] = list[cnt];

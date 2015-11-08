@@ -318,7 +318,15 @@ namespace NScumm.Sky
             get { return _data.Length; }
         }
 
-        public byte[] Bytes { get { return _data; } }
+        public byte[] Bytes
+        {
+            get
+            {
+                var data = ServiceLocator.Platform.FromStructure(Core);
+                Array.Copy(data, 0, _data, 0, _data.Length);
+                return _data;
+            }
+        }
 
         public void Patch(byte[] data, int offset, int destOffset, int length)
         {

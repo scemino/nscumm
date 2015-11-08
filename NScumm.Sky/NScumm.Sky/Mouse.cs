@@ -64,7 +64,6 @@ namespace NScumm.Sky
         };
 
         private readonly SkyCompact _skyCompact;
-        private ushort _currentCursor;
 
         private bool _logicClick;
         private readonly byte[] _miceData;
@@ -79,7 +78,7 @@ namespace NScumm.Sky
             _skyDisk = skyDisk;
             _skyCompact = skyCompact;
 
-            _currentCursor = 6;
+            CurrentMouseType = 6;
             MouseX = Screen.GameScreenWidth / 2;
             MouseY = Screen.GameScreenHeight / 2;
 
@@ -98,7 +97,7 @@ namespace NScumm.Sky
 
         public ushort MouseY { get; private set; }
 
-        public ushort CurrentMouseType { get; set; }
+        public ushort CurrentMouseType { get; private set; }
 
         public bool WasClicked
         {
@@ -122,7 +121,7 @@ namespace NScumm.Sky
 
         public void SpriteMouse(ushort frameNum, byte mouseX, byte mouseY)
         {
-            _currentCursor = frameNum;
+            CurrentMouseType = frameNum;
 
             var newCursor = 0;
             var header = ServiceLocator.Platform.ToStructure<DataFileHeader>(_miceData, 0);

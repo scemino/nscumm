@@ -373,9 +373,9 @@ namespace NScumm.Sky
         {
             string fName;
             if (SkyEngine.IsCDVersion)
-                fName="SKY-VM-CD.ASD";
+                fName = "SKY-VM-CD.ASD";
             else
-                fName= string.Format("SKY-VM{0:D3}.ASD", SystemVars.Instance.GameVersion.Version.Minor);
+                fName = string.Format("SKY-VM{0:D3}.ASD", SystemVars.Instance.GameVersion.Version.Minor);
 
             ushort res = SaveGameToFile(false, fName);
             if (res != GameSaved)
@@ -872,37 +872,37 @@ namespace NScumm.Sky
         {
             using (var stream = new MemoryStream(destBuf))
             {
-                var bw = new BinaryWriter(stream);
-                bw.BaseStream.Seek(4, SeekOrigin.Begin);
-                bw.WriteUInt32(SaveFileRevision);
-                bw.WriteUInt32((uint)SystemVars.Instance.GameVersion.Version.Minor);
-
-                bw.WriteUInt16(_skySound.SaveSounds[0]);
-                bw.WriteUInt16(_skySound.SaveSounds[1]);
-
-                bw.WriteUInt32(_skyMusic.CurrentMusic);
-                bw.WriteUInt32(_savedCharSet);
-                bw.WriteUInt32(_savedMouse);
-                bw.WriteUInt32(SystemVars.Instance.CurrentPalette);
-                for (var cnt = 0; cnt < Logic.NumSkyScriptVars; cnt++)
-                    bw.WriteUInt32(_skyLogic.ScriptVariables[cnt]);
-                var loadedFilesList = _skyDisk.LoadedFilesList;
-
-                for (var cnt = 0; cnt < 60; cnt++)
-                    bw.WriteUInt32(loadedFilesList[cnt]);
-
-                for (var cnt = 0; cnt < _skyCompact.SaveIds.Length; cnt++)
+                using (var bw = new BinaryWriter(stream))
                 {
-                    var rawCpt = _skyCompact.FetchCptRaw(_skyCompact.SaveIds[cnt]);
+                    bw.BaseStream.Seek(4, SeekOrigin.Begin);
+                    bw.WriteUInt32(SaveFileRevision);
+                    bw.WriteUInt32((uint) SystemVars.Instance.GameVersion.Version.Minor);
 
-                    for (var elemCnt = 0; elemCnt < rawCpt.Length / 2; elemCnt++)
-                        bw.WriteUInt16(rawCpt[elemCnt]);
+                    bw.WriteUInt16(_skySound.SaveSounds[0]);
+                    bw.WriteUInt16(_skySound.SaveSounds[1]);
+
+                    bw.WriteUInt32(_skyMusic.CurrentMusic);
+                    bw.WriteUInt32(_savedCharSet);
+                    bw.WriteUInt32(_savedMouse);
+                    bw.WriteUInt32(SystemVars.Instance.CurrentPalette);
+                    for (var cnt = 0; cnt < Logic.NumSkyScriptVars; cnt++)
+                        bw.WriteUInt32(_skyLogic.ScriptVariables[cnt]);
+                    var loadedFilesList = _skyDisk.LoadedFilesList;
+
+                    for (var cnt = 0; cnt < 60; cnt++)
+                        bw.WriteUInt32(loadedFilesList[cnt]);
+
+                    for (var cnt = 0; cnt < _skyCompact.SaveIds.Length; cnt++)
+                    {
+                        var rawCpt = _skyCompact.FetchCptRaw(_skyCompact.SaveIds[cnt]);
+                        bw.WriteBytes(rawCpt, rawCpt.Length);
+                    }
+
+                    var length = bw.BaseStream.Position;
+                    bw.BaseStream.Seek(0, SeekOrigin.Begin);
+                    bw.WriteUInt32((uint) length);
+                    return (int) length;
                 }
-
-                var length = bw.BaseStream.Position;
-                bw.BaseStream.Seek(0, SeekOrigin.Begin);
-                bw.WriteUInt32((uint)length);
-                return (int)length;
             }
         }
 
@@ -1331,7 +1331,7 @@ namespace NScumm.Sky
                     {
                         if (list[cnt].Length != 0)
                         {
-                            byte[] data = list[cnt].ToString().ToCharArray().Select(c => (byte) c).ToArray();
+                            byte[] data = list[cnt].ToString().ToCharArray().Select(c => (byte)c).ToArray();
                             outf.Write(data, 0, data.Length);
                         }
                         outf.WriteByte(0);

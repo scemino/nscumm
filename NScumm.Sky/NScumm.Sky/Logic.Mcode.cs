@@ -362,7 +362,7 @@ namespace NScumm.Sky
         private bool FnArrived(uint scriptVar, uint b, uint c)
         {
             _compact.Core.leaving = (ushort)(scriptVar & 0xffff);
-            _scriptVariables[scriptVar / 4]++;
+            _scriptVariables[(int) (scriptVar / 4)]++;
             return true;
         }
 
@@ -704,8 +704,8 @@ namespace NScumm.Sky
             uint menuLength = 0;
             for (i = firstObject; i < firstObject + _objectList.Length; i++)
             {
-                if (_scriptVariables[i] != 0)
-                    _objectList[menuLength++] = _scriptVariables[i];
+                if (_scriptVariables[(int) i] != 0)
+                    _objectList[menuLength++] = _scriptVariables[(int) i];
             }
             _scriptVariables[MENU_LENGTH] = menuLength;
 
@@ -1251,7 +1251,7 @@ namespace NScumm.Sky
                     _scriptVariables[cnt] = 0;
             buttonAction &= 0x7FFF;
             if (buttonAction < 10)
-                _scriptVariables[LINC_DIGIT_0 + buttonAction] = textNo;
+                _scriptVariables[(int) (LINC_DIGIT_0 + buttonAction)] = textNo;
 
             DisplayedText text = _skyText.LowTextManager(textNo, 220, 0, 215, false);
 

@@ -1,6 +1,8 @@
 ﻿using NScumm.Core;
 using NScumm.Sky.Music;
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using NScumm.Core.Graphics;
@@ -9,6 +11,76 @@ namespace NScumm.Sky
 {
     partial class Logic
     {
+        class VariableCollection : IList<uint>
+        {
+            public uint[] Variables { get; } = new uint[NumSkyScriptVars];
+
+            public IEnumerator<uint> GetEnumerator()
+            {
+                return (IEnumerator<uint>)Variables.GetEnumerator();
+            }
+
+            IEnumerator IEnumerable.GetEnumerator()
+            {
+                return Variables.GetEnumerator();
+            }
+
+            void ICollection<uint>.Add(uint item)
+            {
+                throw new InvalidOperationException();
+            }
+
+            public void Clear()
+            {
+                throw new InvalidOperationException();
+            }
+
+            public bool Contains(uint item)
+            {
+                return Array.IndexOf(Variables, item) != -1;
+            }
+
+            public void CopyTo(uint[] array, int arrayIndex)
+            {
+                Variables.CopyTo(array, arrayIndex);
+            }
+
+            public bool Remove(uint item)
+            {
+                throw new InvalidOperationException();
+            }
+
+            public int Count
+            {
+                get { return Variables.Length; }
+            }
+
+            public bool IsReadOnly
+            {
+                get { return true; }
+            }
+
+            public int IndexOf(uint item)
+            {
+                return Array.IndexOf(Variables, item);
+            }
+
+            public void Insert(int index, uint item)
+            {
+                throw new InvalidOperationException();
+            }
+
+            public void RemoveAt(int index)
+            {
+                throw new InvalidOperationException();
+            }
+
+            public uint this[int index]
+            {
+                get { return Variables[index]; }
+                set { Variables[index] = value; }
+            }
+        }
         public const int NumSkyScriptVars = 838;
         private readonly SkyCompact _skyCompact;
         private readonly Screen _skyScreen;
@@ -17,7 +89,7 @@ namespace NScumm.Sky
         private readonly MusicBase _skyMusic;
         private readonly Sound _skySound;
         private readonly Mouse _skyMouse;
-        private readonly uint[] _scriptVariables = new uint[NumSkyScriptVars];
+        private readonly VariableCollection _scriptVariables = new VariableCollection();
         private uint _currentSection;
         private Action[] _logicTable;
         private Compact _compact;
@@ -32,7 +104,7 @@ namespace NScumm.Sky
 
         public Control Control { get; internal set; }
 
-        public uint[] ScriptVariables
+        public IList<uint> ScriptVariables
         {
             get { return _scriptVariables; }
         }
@@ -67,56 +139,56 @@ namespace NScumm.Sky
             using (var reader = new BinaryReader(new MemoryStream(data)))
             {
                 if (!SkyEngine.IsDemo)
-                    FnLeaveSection(ScriptVariables[CUR_SECTION], 0, 0);
+                    FnLeaveSection(_scriptVariables[CUR_SECTION], 0, 0);
                 for (ushort cnt = 0; cnt < NumSkyScriptVars; cnt++)
-                    ScriptVariables[cnt] = reader.ReadUInt32();
-                FnEnterSection(ScriptVariables[CUR_SECTION], 0, 0);
+                    _scriptVariables[cnt] = reader.ReadUInt32();
+                FnEnterSection(_scriptVariables[CUR_SECTION], 0, 0);
             }
         }
 
         private void InitScriptVariables()
         {
-            ScriptVariables[LOGIC_LIST_NO] = 141;
-            ScriptVariables[LAMB_GREET] = 62;
-            ScriptVariables[JOEY_SECTION] = 1;
-            ScriptVariables[LAMB_SECTION] = 2;
-            ScriptVariables[S15_FLOOR] = 8371;
-            ScriptVariables[GUARDIAN_THERE] = 1;
-            ScriptVariables[DOOR_67_68_FLAG] = 1;
-            ScriptVariables[SC70_IRIS_FLAG] = 3;
-            ScriptVariables[DOOR_73_75_FLAG] = 1;
-            ScriptVariables[SC76_CABINET1_FLAG] = 1;
-            ScriptVariables[SC76_CABINET2_FLAG] = 1;
-            ScriptVariables[SC76_CABINET3_FLAG] = 1;
-            ScriptVariables[DOOR_77_78_FLAG] = 1;
-            ScriptVariables[SC80_EXIT_FLAG] = 1;
-            ScriptVariables[SC31_LIFT_FLAG] = 1;
-            ScriptVariables[SC32_LIFT_FLAG] = 1;
-            ScriptVariables[SC33_SHED_DOOR_FLAG] = 1;
-            ScriptVariables[BAND_PLAYING] = 1;
-            ScriptVariables[COLSTON_AT_TABLE] = 1;
-            ScriptVariables[SC36_NEXT_DEALER] = 16731;
-            ScriptVariables[SC36_DOOR_FLAG] = 1;
-            ScriptVariables[SC37_DOOR_FLAG] = 2;
-            ScriptVariables[SC40_LOCKER_1_FLAG] = 1;
-            ScriptVariables[SC40_LOCKER_2_FLAG] = 1;
-            ScriptVariables[SC40_LOCKER_3_FLAG] = 1;
-            ScriptVariables[SC40_LOCKER_4_FLAG] = 1;
-            ScriptVariables[SC40_LOCKER_5_FLAG] = 1;
+            _scriptVariables[LOGIC_LIST_NO] = 141;
+            _scriptVariables[LAMB_GREET] = 62;
+            _scriptVariables[JOEY_SECTION] = 1;
+            _scriptVariables[LAMB_SECTION] = 2;
+            _scriptVariables[S15_FLOOR] = 8371;
+            _scriptVariables[GUARDIAN_THERE] = 1;
+            _scriptVariables[DOOR_67_68_FLAG] = 1;
+            _scriptVariables[SC70_IRIS_FLAG] = 3;
+            _scriptVariables[DOOR_73_75_FLAG] = 1;
+            _scriptVariables[SC76_CABINET1_FLAG] = 1;
+            _scriptVariables[SC76_CABINET2_FLAG] = 1;
+            _scriptVariables[SC76_CABINET3_FLAG] = 1;
+            _scriptVariables[DOOR_77_78_FLAG] = 1;
+            _scriptVariables[SC80_EXIT_FLAG] = 1;
+            _scriptVariables[SC31_LIFT_FLAG] = 1;
+            _scriptVariables[SC32_LIFT_FLAG] = 1;
+            _scriptVariables[SC33_SHED_DOOR_FLAG] = 1;
+            _scriptVariables[BAND_PLAYING] = 1;
+            _scriptVariables[COLSTON_AT_TABLE] = 1;
+            _scriptVariables[SC36_NEXT_DEALER] = 16731;
+            _scriptVariables[SC36_DOOR_FLAG] = 1;
+            _scriptVariables[SC37_DOOR_FLAG] = 2;
+            _scriptVariables[SC40_LOCKER_1_FLAG] = 1;
+            _scriptVariables[SC40_LOCKER_2_FLAG] = 1;
+            _scriptVariables[SC40_LOCKER_3_FLAG] = 1;
+            _scriptVariables[SC40_LOCKER_4_FLAG] = 1;
+            _scriptVariables[SC40_LOCKER_5_FLAG] = 1;
 
             if (SystemVars.Instance.GameVersion.Version.Minor == 288)
             {
-                Array.Copy(forwardList1b288, 0, ScriptVariables, 352, forwardList1b288.Length);
+                forwardList1b288.CopyTo(_scriptVariables.Variables, 352);
             }
             else
             {
-                Array.Copy(forwardList1b, 0, ScriptVariables, 352, forwardList1b.Length);
+                forwardList1b.CopyTo(_scriptVariables.Variables, 352);
             }
 
-            Array.Copy(forwardList2b, 0, ScriptVariables, 656, forwardList2b.Length);
-            Array.Copy(forwardList3b, 0, ScriptVariables, 721, forwardList3b.Length);
-            Array.Copy(forwardList4b, 0, ScriptVariables, 663, forwardList4b.Length);
-            Array.Copy(forwardList5b, 0, ScriptVariables, 505, forwardList5b.Length);
+            forwardList2b.CopyTo(_scriptVariables.Variables, 656);
+            forwardList3b.CopyTo(_scriptVariables.Variables, 721);
+            forwardList4b.CopyTo(_scriptVariables.Variables, 663);
+            forwardList5b.CopyTo(_scriptVariables.Variables, 505);
         }
 
         public void InitScreen0()
@@ -130,7 +202,7 @@ namespace NScumm.Sky
         {
             do
             {
-                var raw = _skyCompact.FetchCptRaw((ushort)ScriptVariables[LOGIC_LIST_NO]);
+                var raw = _skyCompact.FetchCptRaw((ushort)_scriptVariables[LOGIC_LIST_NO]);
                 var logicList = new UShortAccess(raw, 0);
                 var i = 0;
                 ushort id;
@@ -144,7 +216,7 @@ namespace NScumm.Sky
                         continue;
                     }
 
-                    ScriptVariables[CUR_ID] = id;
+                    _scriptVariables[CUR_ID] = id;
                     _compact = _skyCompact.FetchCpt(id);
 
                     // check the id actually wishes to be processed
@@ -196,17 +268,16 @@ namespace NScumm.Sky
 
         private bool CheckProtection()
         {
-            if (ScriptVariables[ENTER_DIGITS] != 0)
+            if (_scriptVariables[ENTER_DIGITS] != 0)
             {
-                if (ScriptVariables[CONSOLE_TYPE] == 5) // reactor code
-                    ScriptVariables[FS_COMMAND] = 240;
+                if (_scriptVariables[CONSOLE_TYPE] == 5) // reactor code
+                    _scriptVariables[FS_COMMAND] = 240;
                 else                                     // copy protection
-                    ScriptVariables[FS_COMMAND] = 337;
-                ScriptVariables[ENTER_DIGITS] = 0;
+                    _scriptVariables[FS_COMMAND] = 337;
+                _scriptVariables[ENTER_DIGITS] = 0;
                 return true;
             }
-            else
-                return false;
+            return false;
         }
 
         private bool FnEnterSection(uint sectionNo, uint b, uint c)
@@ -214,7 +285,7 @@ namespace NScumm.Sky
             if (SkyEngine.IsDemo && (sectionNo > 2))
                 Control.ShowGameQuitMsg();
 
-            ScriptVariables[CUR_SECTION] = sectionNo;
+            _scriptVariables[CUR_SECTION] = sectionNo;
             SystemVars.Instance.CurrentMusic = 0;
 
             if (sectionNo == 5) //linc section - has different mouse icons

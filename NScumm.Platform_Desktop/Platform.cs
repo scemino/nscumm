@@ -65,6 +65,23 @@ namespace NScumm
             return Marshal.SizeOf(type);
         }
 
+        public byte[] FromStructure(object obj)
+        {
+            var size = Marshal.SizeOf(obj);
+            var data = new byte[size];
+            var handle = Marshal.AllocHGlobal(size);
+            try
+            {
+                Marshal.StructureToPtr(obj, handle, true);
+            }
+            finally
+            {
+                Marshal.Copy(handle, data, 0, size);
+                Marshal.FreeHGlobal(handle);
+            }
+            return data;
+        }
+
         public object ToStructure(byte[] data, int offset, Type type)
         {
             object obj;

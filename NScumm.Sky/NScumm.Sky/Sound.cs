@@ -51,7 +51,7 @@ namespace NScumm.Sky
         private SoundHandle _ingameSound1;
         private SoundHandle _ingameSpeech;
         private bool _isPaused;
-        private UShortAccess _sampleRates;
+        private ByteAccess _sampleRates;
         private ushort _sfxBaseOfs;
         private UShortAccess _sfxInfo;
         private byte[] _soundData;
@@ -124,18 +124,18 @@ namespace NScumm.Sky
                 return;
             }
 
-            volume = (ushort) ((volume & 0x7F) << 1);
+            volume = (ushort)((volume & 0x7F) << 1);
             sound &= 0xFF;
 
             // Note: All those tables are big endian. Don't ask me why. *sigh*
 
             // Use the sample rate from game data, see bug #1507757.
-            var sampleRate = ScummHelper.SwapBytes(_sampleRates[sound << 2]);
+            var sampleRate = _sampleRates.Data.ToUInt16BigEndian(_sampleRates.Offset + (sound << 2));
             if (sampleRate > 11025)
                 sampleRate = 11025;
-            var dataOfs = ScummHelper.SwapBytes(_sfxInfo[((sound << 3) + 0)/2]) << 4;
-            int dataSize = ScummHelper.SwapBytes(_sfxInfo[((sound << 3) + 2)/2]);
-            int dataLoop = ScummHelper.SwapBytes(_sfxInfo[((sound << 3) + 6)/2]);
+            var dataOfs = ScummHelper.SwapBytes(_sfxInfo[((sound << 3) + 0) / 2]) << 4;
+            int dataSize = ScummHelper.SwapBytes(_sfxInfo[((sound << 3) + 2) / 2]);
+            int dataLoop = ScummHelper.SwapBytes(_sfxInfo[((sound << 3) + 6) / 2]);
             dataOfs += _sfxBaseOfs;
 
             var stream = new RawStream(AudioFlags.Unsigned, sampleRate, false,
@@ -168,16 +168,16 @@ namespace NScumm.Sky
             byte queueSlot = 0;
             if (SaveSounds[0] != 0xFFFF)
             {
-                SfxQueue[queueSlot].FxNo = (byte) SaveSounds[0];
-                SfxQueue[queueSlot].Vol = (byte) (SaveSounds[0] >> 8);
+                SfxQueue[queueSlot].FxNo = (byte)SaveSounds[0];
+                SfxQueue[queueSlot].Vol = (byte)(SaveSounds[0] >> 8);
                 SfxQueue[queueSlot].Chan = 0;
                 SfxQueue[queueSlot].Count = 1;
                 queueSlot++;
             }
             if (SaveSounds[1] != 0xFFFF)
             {
-                SfxQueue[queueSlot].FxNo = (byte) SaveSounds[1];
-                SfxQueue[queueSlot].Vol = (byte) (SaveSounds[1] >> 8);
+                SfxQueue[queueSlot].FxNo = (byte)SaveSounds[1];
+                SfxQueue[queueSlot].Vol = (byte)(SaveSounds[1] >> 8);
                 SfxQueue[queueSlot].Chan = 1;
                 SfxQueue[queueSlot].Count = 1;
             }
@@ -188,7 +188,7 @@ namespace NScumm.Sky
             FnStopFx();
             _mixer.StopAll();
 
-            _soundData = _skyDisk.LoadFile(section*4 + SoundFileBase);
+            _soundData = _skyDisk.LoadFile(section * 4 + SoundFileBase);
             ushort asmOfs;
             if (SystemVars.Instance.GameVersion.Version.Minor == 109)
             {
@@ -208,7 +208,7 @@ namespace NScumm.Sky
             _soundsTotal = _soundData[asmOfs + 1];
             var sRateTabOfs = _soundData.ToUInt16(asmOfs + 0x29);
             _sfxBaseOfs = _soundData.ToUInt16(asmOfs + 0x31);
-            _sampleRates = new UShortAccess(_soundData, sRateTabOfs);
+            _sampleRates = new ByteAccess(_soundData, sRateTabOfs);
 
             _sfxInfo = new UShortAccess(_soundData, _sfxBaseOfs);
             // if we just restored a savegame, the sfxqueue holds the sound we need to restart
@@ -268,13 +268,13 @@ namespace NScumm.Sky
             if (sound < 256 || sound > MaxFxNumber || SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.FX_OFF))
                 return;
 
-            var screen = (byte) (Logic.ScriptVariables[Logic.SCREEN] & 0xff);
+            var screen = (byte)(Logic.ScriptVariables[Logic.SCREEN] & 0xff);
             if (sound == 278 && screen == 25) // is this weld in room 25
                 sound = 394;
 
             unchecked
             {
-                sound &= (uint) ~(1 << 8);
+                sound &= (uint)~(1 << 8);
             }
 
             var sfx = MusicList[sound];
@@ -298,7 +298,7 @@ namespace NScumm.Sky
                 volume = roomList[i].AdlibVolume;
             if (SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.ROLAND))
                 volume = roomList[i].RolandVolume;
-            volume = (byte) ((volume*_mainSfxVolume) >> 8);
+            volume = (byte)((volume * _mainSfxVolume) >> 8);
 
             // Check the flags, the sound may come on after a delay.
             if ((sfx.Flags & SfxfStartDelay) != 0)
@@ -310,7 +310,7 @@ namespace NScumm.Sky
                         SfxQueue[cnt].Chan = channel;
                         SfxQueue[cnt].FxNo = sfx.SoundNo;
                         SfxQueue[cnt].Vol = volume;
-                        SfxQueue[cnt].Count = (byte) (sfx.Flags & 0x7F);
+                        SfxQueue[cnt].Count = (byte)(sfx.Flags & 0x7F);
                         return;
                     }
                 }
@@ -318,7 +318,7 @@ namespace NScumm.Sky
             }
 
             if ((sfx.Flags & SfxfSave) != 0)
-                SaveSounds[channel] = (ushort) (sfx.SoundNo | (volume << 8));
+                SaveSounds[channel] = (ushort)(sfx.SoundNo | (volume << 8));
 
             PlaySound(sfx.SoundNo, volume, channel);
         }
@@ -327,7 +327,7 @@ namespace NScumm.Sky
         {
             if (!SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.ALLOW_SPEECH))
                 return false;
-            var speechFileNum = (ushort) (_speechConvertTable[textNum >> 12] + (textNum & 0xFFF));
+            var speechFileNum = (ushort)(_speechConvertTable[textNum >> 12] + (textNum & 0xFFF));
 
             var speechData = _skyDisk.LoadFile(speechFileNum + 50000);
             if (speechData == null)

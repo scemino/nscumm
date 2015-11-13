@@ -164,7 +164,12 @@ namespace NScumm.Sky
             // read data
             var br = new BinaryReader(_dataDiskFile);
             var data = new byte[entry.Size + 4];
-            br.Read(data, 0, entry.Size);
+            var read = br.Read(data, 0, entry.Size);
+            if (read != entry.Size)
+            {
+                throw new InvalidOperationException(
+                    string.Format("Unable to read {0} bytes from datadisk ({1} bytes read)", entry.Size, read));
+            }
 
             // check header if compressed or not
             var header = _platform.ToStructure<DataFileHeader>(data, 0);

@@ -627,8 +627,8 @@ namespace NScumm.Sky
 
         private bool FnWeWait(uint id, uint b, uint c)
         {
-            /// We have hit another mega
-            /// we are going to wait for it to move
+            // We have hit another mega
+            // we are going to wait for it to move
 
             _compact.Core.waitingFor = (ushort)id;
             StopAndWait();

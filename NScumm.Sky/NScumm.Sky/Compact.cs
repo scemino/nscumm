@@ -40,6 +40,8 @@ namespace NScumm.Sky
             }
         }
 
+        public int Id { get; private set; }
+
         public void Patch(byte[] data)
         {
             Patch(data, 0, 0, data.Length);
@@ -93,6 +95,11 @@ namespace NScumm.Sky
             "(none)", "SCRIPT", "AUTOROUTE", "AR_ANIM", "AR_TURNING", "ALT", "MOD_ANIM", "TURNING", "CURSOR", "TALK", "LISTEN",
             "STOPPED", "CHOOSE", "FRAMES", "PAUSE", "WAIT_SYNC", "SIMPLE MOD"
         };
+
+        public CompactEntry(int id)
+        {
+            Id = id;
+        }
     }
 
     internal enum CptIds : ushort
@@ -304,7 +311,7 @@ namespace NScumm.Sky
 
     internal class Compact
     {
-        private readonly byte[] _data;
+        private byte[] _data;
         public CompactCore Core;
 
         public Compact(byte[] data)
@@ -330,6 +337,7 @@ namespace NScumm.Sky
 
         public void Patch(byte[] data, int offset, int destOffset, int length)
         {
+            _data = Bytes;
             Array.Copy(data, offset, _data, destOffset, length);
             Core = ServiceLocator.Platform.ToStructure<CompactCore>(_data, 0);
         }
@@ -550,7 +558,7 @@ namespace NScumm.Sky
                         var name = ReadName(ref asciiPos);
                         var raw = new byte[size * 2];
                         Array.Copy(srcBuf, srcPos, raw, 0, size * 2);
-                        _compacts[lcnt][ecnt] = new CompactEntry
+                        _compacts[lcnt][ecnt] = new CompactEntry((lcnt << 12) | ecnt)
                         {
                             Type = type,
                             Name = name,
@@ -569,7 +577,7 @@ namespace NScumm.Sky
                     var destId = dlincBuf[i * 2 + 1];
                     var name = ReadName(ref asciiPos);
                     var cDest = _compacts[destId >> 12][destId & 0xFFF];
-                    _compacts[dlincId >> 12][dlincId & 0xFFF] = new CompactEntry
+                    _compacts[dlincId >> 12][dlincId & 0xFFF] = new CompactEntry(dlincId)
                     {
                         Name = name,
                         Data = cDest != null ? cDest.Data : null
@@ -684,6 +692,23 @@ namespace NScumm.Sky
             return entry?.Bytes;
         }
 
+        public ushort GetId(Compact cpt)
+        {
+            var len = _compacts.GetLength(0);
+            for (int i = 0; i < len; i++)
+            {
+                var len2 = _compacts[i].Length;
+                for (int j = 0; j < len2; j++)
+                {
+                    if (Equals(_compacts[i][j]?.Data, cpt))
+                    {
+                        return (ushort)((i << 12) | j);
+                    }
+                }
+            }
+            return 0;
+        }
+
         /// <summary>
         ///     Gets the n'th mega set specified by a megaSet from a Compact object.
         /// </summary>
@@ -762,11 +787,11 @@ namespace NScumm.Sky
 
         public UShortAccess GetGrafixPtr(Compact cpt)
         {
-            var gfxBaseEntry = FetchCptEntry(cpt.Core.grafixProgId);
-            if (gfxBaseEntry == null)
+            var gfxBase = FetchCptRaw(cpt.Core.grafixProgId);
+            if (gfxBase == null)
                 return null;
 
-            return new UShortAccess((byte[])gfxBaseEntry.Data, cpt.Core.grafixProgPos * 2);
+            return new UShortAccess(gfxBase, cpt.Core.grafixProgPos * 2);
         }
 
         public UShortAccess GetTurnTable(Compact cpt, ushort dir)

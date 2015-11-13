@@ -69,7 +69,7 @@ namespace NScumm.Sky
             //MidiDriver::DeviceHandle dev = MidiDriver::detectDevice(MDT_ADLIB | MDT_MIDI | MDT_PREFER_MT32);
             //if (MidiDriver::getMusicType(dev) == MT_ADLIB)
             //{
-            //    _systemVars.systemFlags |= SF_SBLASTER;
+            SystemVars.Instance.SystemFlags |= SystemFlags.SBLASTER;
             _skyMusic = new AdLibMusic(_mixer, _skyDisk);
             //}
             //else
@@ -118,7 +118,7 @@ namespace NScumm.Sky
             _skySound.Logic = _skyLogic;
             _skyText.Logic = _skyLogic;
 
-            _skyControl = new Control(/*_saveFileMan,*/ _skyScreen, _skyDisk, _skyMouse, _skyText, _skyMusic, _skyLogic, _skySound, _skyCompact, _system);
+            _skyControl = new Control(_skyScreen, _skyDisk, _skyMouse, _skyText, _skyMusic, _skyLogic, _skySound, _skyCompact, _system);
             _skyLogic.Control = _skyControl;
 
             // TODO: language
@@ -287,18 +287,22 @@ namespace NScumm.Sky
                 _keyPressed = _system.InputManager.GetState();
                 var mousePos = _system.InputManager.GetMousePosition();
                 if (!SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.MOUSE_LOCKED))
+                {
                     _skyMouse.MouseMoved((ushort)mousePos.X, (ushort)mousePos.Y);
+                }
 
-                if (_keyPressed.IsLeftButtonDown)
+                if (!_lastInput.IsLeftButtonDown && _keyPressed.IsLeftButtonDown)
                     _skyMouse.ButtonPressed(2);
 
-                if (_keyPressed.IsRightButtonDown)
+                if (!_lastInput.IsRightButtonDown && _keyPressed.IsRightButtonDown)
                     _skyMouse.ButtonPressed(1);
 
                 _system.GraphicsManager.UpdateScreen();
 
                 if (amount > 0)
                     ServiceLocator.Platform.Sleep(amount > 10 ? 10 : amount);
+
+                _lastInput = _keyPressed;
 
             } while (Environment.TickCount < start + amount);
         }
@@ -417,5 +421,6 @@ namespace NScumm.Sky
         private int _lastSaveTime;
         private ScummInputState _keyPressed;
         private int _fastMode;
+        private ScummInputState _lastInput;
     }
 }

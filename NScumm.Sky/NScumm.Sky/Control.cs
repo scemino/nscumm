@@ -527,9 +527,6 @@ namespace NScumm.Sky
 
         private ushort HandleClick(ConResource pButton)
         {
-            var quitDos = "Quit to DOS?";
-            var restart = "Restart?";
-
             switch (pButton.OnClick)
             {
                 case DoNothing:
@@ -588,7 +585,7 @@ namespace NScumm.Sky
                     return QuitPanel;
                 case Restart:
                     AnimClick(pButton);
-                    if (GetYesNo(restart))
+                    if (GetYesNo("Restart?"))
                     {
                         RestartGame();
                         return GameRestored;
@@ -596,7 +593,7 @@ namespace NScumm.Sky
                     return 0;
                 case QuitToDos:
                     AnimClick(pButton);
-                    if (GetYesNo(quitDos))
+                    if (GetYesNo("Quit to DOS?"))
                         SkyEngine.QuitGame();
                     return 0;
                 default:
@@ -832,7 +829,6 @@ namespace NScumm.Sky
 
         private ushort SaveGameToFile(bool fromControlPanel, string filename = null)
         {
-            //throw new NotImplementedException();
             if (filename == null)
             {
                 filename = string.Format("SKY-VM.{0:D3}", _selectedGame);
@@ -943,7 +939,7 @@ namespace NScumm.Sky
                 Delay(50);
                 if (_controlPanel == null)
                 {
-                    return retVal;
+                    return false;
                 }
                 var mouse = _system.InputManager.GetMousePosition();
                 if ((mouse.Y >= 83) && (mouse.Y <= 110))
@@ -965,7 +961,6 @@ namespace NScumm.Sky
                         if (_mouseClicked)
                         {
                             quitPanel = true;
-                            retVal = false;
                         }
                     }
                     else

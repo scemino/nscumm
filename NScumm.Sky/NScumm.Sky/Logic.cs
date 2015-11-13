@@ -3,7 +3,6 @@ using NScumm.Sky.Music;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using NScumm.Core.Graphics;
 
@@ -81,6 +80,7 @@ namespace NScumm.Sky
                 set { Variables[index] = value; }
             }
         }
+
         public const int NumSkyScriptVars = 838;
         private readonly SkyCompact _skyCompact;
         private readonly Screen _skyScreen;
@@ -204,14 +204,15 @@ namespace NScumm.Sky
             {
                 var raw = _skyCompact.FetchCptRaw((ushort)_scriptVariables[LOGIC_LIST_NO]);
                 var logicList = new UShortAccess(raw, 0);
-                var i = 0;
                 ushort id;
-                while ((id = logicList[i++]) != 0)
-                { // 0 means end of list
+                while ((id = logicList[0]) != 0)
+                {
+                    logicList.Offset += 2;
+                    // 0 means end of list
                     if (id == 0xffff)
                     {
                         // Change logic data address
-                        raw = _skyCompact.FetchCptRaw(logicList[i]);
+                        raw = _skyCompact.FetchCptRaw(logicList[0]);
                         logicList = new UShortAccess(raw, 0);
                         continue;
                     }
@@ -510,8 +511,7 @@ namespace NScumm.Sky
                 while (!restartScript)
                 {
                     var command = scriptData.Value; scriptData.Offset += 2; // get a command
-                    // TODO: debug
-                    //Debug::script(command, scriptData);
+                    Debug.Instance.Script(command, scriptData);
 
                     uint a;
                     ushort s;
@@ -523,7 +523,7 @@ namespace NScumm.Sky
                         case 1: // less_than
                             a = Pop();
                             b = Pop();
-                            if (a > b)
+                            if (b < a)
                                 Push(1);
                             else
                                 Push(0);
@@ -614,7 +614,7 @@ namespace NScumm.Sky
                         case 12: // more_than
                             a = Pop();
                             b = Pop();
-                            if (a < b)
+                            if (b > a)
                                 Push(1);
                             else
                                 Push(0);

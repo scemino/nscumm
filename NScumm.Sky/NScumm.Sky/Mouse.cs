@@ -231,7 +231,7 @@ namespace NScumm.Sky
         }
 
         public void ButtonPressed(ushort button)
-        {
+        {   
             _mouseB = button;
         }
 
@@ -242,12 +242,11 @@ namespace NScumm.Sky
             var inputMan = _system.InputManager;
             while (mousePressed || Environment.TickCount < now + minDelay)
             {
-                // TODO: shouldQuit
-                //if (eventMan->shouldQuit())
-                //{
-                //    minDelay = 0;
-                //    mousePressed = false;
-                //}
+                if (SkyEngine.ShouldQuit)
+                {
+                    minDelay = 0;
+                    mousePressed = false;
+                }
 
                 var state = inputMan.GetState();
                 if (!state.IsLeftButtonDown && !state.IsRightButtonDown)
@@ -258,7 +257,6 @@ namespace NScumm.Sky
                     minDelay = 0;
                     mousePressed = false;
                 }
-                break;
             }
             _system.GraphicsManager.UpdateScreen();
             ServiceLocator.Platform.Sleep(20);

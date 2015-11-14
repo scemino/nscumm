@@ -1,42 +1,45 @@
-NSCUMM
-======
+# NSCUMM
 
-Quick and dirty .NET port of the SCUMM engine  (all versions) of the project scummvm.
+Quick and dirty .NET port of the SCUMM and Virtual Theatre engines of the project scummvm.
 
-Quick start
------------
+## Quick start
 
 Copy the original files of the game you want to play in a directory.
 
 `NScumm.MonoGame.exe [game]`
 
-Supported Games
----------------
+## Supported Games
 
-The Curse of Monkey Island
-The Dig
-Full Throttle
-Sam & Max Hit the Road
-Day of the Tentacle
-Indiana Jones and the Fate of Atlantis
-Monkey Island 2: LeChuck's revenge
-The Secret of Monkey Island
-The Passport to Adventure (Demo)
-Loom
-Indiana Jones and the Last Crusade
-Zak McKracken and the Alien Mindbenders
-Maniac Mansion
+### SCUMM Games by LucasArts
+    The Curse of Monkey Island
+    The Dig
+    Full Throttle
+    Sam & Max Hit the Road
+    Day of the Tentacle
+    Indiana Jones and the Fate of Atlantis
+    Monkey Island 2: LeChuck's revenge
+    The Secret of Monkey Island
+    The Passport to Adventure (Demo)
+    Loom
+    Indiana Jones and the Last Crusade
+    Zak McKracken and the Alien Mindbenders
+    Maniac Mansion
 
-Hotkeys
--------
+### Others
+    Beneath a Steel Sky by Revolution Software
 
-`Alt-Enter` Toggles full screen/windowed
+## Hotkeys
 
-`F5` Show the main menu
+### SCUMM
+    F5                     - Show the main menu
+### Beneath a Steel Sky
+    Ctrl-f                 - Toggle fast mode
+    Ctrl-g                 - Runs in really REALLY fast mode
+    F5                     - Displays a save/load box
+    Escape                 - Skips the game intro
+    p                      - Pauses the game
 
-
-Contact
--------------------------
+## Contact
 
 Missing games in your language or anything else ? Feel free to contact me at scemino74 at gmail
 
@@ -45,13 +48,11 @@ Screenshots
 
 ![nscumm screenshot](https://raw.github.com/scemino/nscumm/master/Doc/Images/nscumm.png)
 
-Tools
------
+## Tools
 
 `nsdump` dumps all images and scripts from SCUMM 3 to SCUMM 8.
 
-License
--------
+## License
 
 Copyright (C) 2012-2015  Valéry Sablonnière
 

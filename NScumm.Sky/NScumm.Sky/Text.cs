@@ -310,7 +310,7 @@ namespace NScumm.Sky
                 cpt = _skyCompact.FetchCpt((ushort)compactNum);
             }
 
-            cpt.Core.flag = (ushort)((ushort)(compactNum - Logic.FIRST_TEXT_COMPACT) + FirstTextBuffer);
+            cpt.Core.flag = (ushort)(compactNum - Logic.FIRST_TEXT_COMPACT + FirstTextBuffer);
 
             SkyEngine.ItemList[cpt.Core.flag] = textInfo.TextData;
 

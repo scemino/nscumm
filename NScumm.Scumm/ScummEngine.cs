@@ -40,19 +40,6 @@ namespace NScumm.Core
         Param3 = 0x20,
     }
 
-    public interface IEngine
-    {
-        event EventHandler ShowMenuDialogRequested;
-        bool HasToQuit { get; set; }
-        bool IsPaused { get; set; }
-
-        void Run();
-
-        // TODO: remove this
-        void Load(string filename);
-        void Save(string filename);
-    }
-
     public abstract partial class ScummEngine : IEnableTrace, IEngine
     {
         #region Constants

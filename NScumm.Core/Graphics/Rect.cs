@@ -108,5 +108,10 @@ namespace NScumm.Core.Graphics
         {
             return Contains(p.X, p.Y);
         }
+
+        public override string ToString()
+        {
+            return DebuggerDisplay;
+        }
     }
 }

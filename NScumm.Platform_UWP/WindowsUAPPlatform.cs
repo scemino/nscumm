@@ -3,6 +3,7 @@ using NScumm.Core;
 using System.Threading.Tasks;
 using System.Runtime.InteropServices;
 using System.Reflection;
+using NScumm.Scumm.IO;
 using NScumm.Sky;
 
 namespace NScumm
@@ -39,7 +40,15 @@ namespace NScumm
 
         public Assembly LoadAssembly(string dll)
         {
-            var asmName = typeof(SkyMetaEngine).AssemblyQualifiedName.Split(new[] { ',' }, 2)[1].Remove(0, 1);
+            string asmName;
+            if (dll == "$sky")
+            {
+                asmName = typeof (SkyMetaEngine).AssemblyQualifiedName.Split(new[] {','}, 2)[1].Remove(0, 1);
+            }
+            else
+            {
+                asmName = typeof (ScummMetaEngine).AssemblyQualifiedName.Split(new[] {','}, 2)[1].Remove(0, 1);
+            }
             return Assembly.Load(new AssemblyName(asmName));
         }
 

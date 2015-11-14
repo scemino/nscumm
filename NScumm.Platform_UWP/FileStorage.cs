@@ -30,7 +30,7 @@ namespace NScumm
 
         public IEnumerable<string> EnumerateFiles(string path, string searchPattern)
         {
-            if (path == "$plugins") return new[] { "$sky" };
+            if (path == "$plugins") return new[] { "$sky", "$scumm" };
             var regex = new Regex(WildcardToRegex(searchPattern));
             return EnumerateFiles(path).Where(f => regex.IsMatch(Path.GetFileName(f)));
         }

@@ -42,7 +42,7 @@ namespace NScumm.Core
         {
             get
             { 
-                return string.Format("Id={0}, Rec={1}]", Number, Rect.DebuggerDisplay);
+                return string.Format("Id={0}, Rec={1}]", Number, Rect);
             }
         }
     }

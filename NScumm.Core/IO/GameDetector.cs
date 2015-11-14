@@ -89,7 +89,7 @@ namespace NScumm.Core.IO
 
         public GameDetected DetectGame(string path)
         {
-            return _engines.Select(e => e.DetectGame(path)).FirstOrDefault(o => o.Game != null);
+            return _engines.Select(e => e.DetectGame(path)).FirstOrDefault(o => o != null && o.Game != null);
         }
 
         private IEnumerable<IMetaEngine> GetEngines(Assembly asm)

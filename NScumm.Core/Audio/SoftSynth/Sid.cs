@@ -26,7 +26,7 @@
 
 namespace NScumm.Core.Audio.SoftSynth
 {
-    class SID : ISid
+    public class SID : ISid
     {
         // Fixpoint constants (16.16 bits).
         const int FIXP_SHIFT = 16;

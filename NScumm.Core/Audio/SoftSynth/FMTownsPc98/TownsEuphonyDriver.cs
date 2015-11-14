@@ -23,7 +23,7 @@ using System.Diagnostics;
 
 namespace NScumm.Core.Audio.SoftSynth
 {
-    class TownsEuphonyDriver: ITownsAudioInterfacePluginDriver
+    public class TownsEuphonyDriver: ITownsAudioInterfacePluginDriver
     {
         public TownsAudioInterface Interface { get { return _intf; } }
 

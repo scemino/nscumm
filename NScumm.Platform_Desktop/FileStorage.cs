@@ -22,6 +22,7 @@ using System;
 using System.IO;
 using NScumm.Core;
 using System.Text;
+using System.Xml.Linq;
 
 namespace NScumm
 {

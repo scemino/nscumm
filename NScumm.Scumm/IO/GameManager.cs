@@ -1,13 +1,11 @@
-﻿using NScumm.Core;
-using NScumm.Core.Audio;
-using NScumm.Core.IO;
-using System;
+﻿using System;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Xml.Linq;
+using NScumm.Core.Audio;
 
-namespace NScumm
+namespace NScumm.Core.IO
 {
     public class GameManager
     {
@@ -16,8 +14,7 @@ namespace NScumm
 
         public static GameManager Create(Stream stream)
         {
-            var gm = new GameManager();
-            gm.doc = XDocument.Load(stream);
+            var gm = new GameManager { doc = XDocument.Load(stream) };
             return gm;
         }
 

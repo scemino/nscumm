@@ -124,5 +124,9 @@
       <Project>{D42434C7-459D-461A-8B1D-1451F7FF4B13}</Project>
       <Name>NScumm.Platform_Desktop</Name>
     </ProjectReference>
+    <ProjectReference Include="..\NScumm.Scumm\NScumm.Scumm.csproj">
+      <Project>{97342112-448a-4636-827f-8d47b226d86f}</Project>
+      <Name>NScumm.Scumm</Name>
+    </ProjectReference>
   </ItemGroup>
 </Project>

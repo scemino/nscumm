@@ -52,7 +52,7 @@ namespace NScumm.Core.Graphics
         {
             get
             { 
-                return string.Format("Rect={0}]", new Rect(X, Y, X + Width, Y + Height).DebuggerDisplay);
+                return string.Format("Rect={0}]", new Rect(X, Y, X + Width, Y + Height));
             }
         }
 

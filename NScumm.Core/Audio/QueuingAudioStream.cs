@@ -68,7 +68,7 @@ namespace NScumm.Core
         int NumQueuedStreams();
     }
 
-    class QueuingAudioStream : IQueuingAudioStream
+    public class QueuingAudioStream : IQueuingAudioStream
     {
         struct StreamHolder
         {

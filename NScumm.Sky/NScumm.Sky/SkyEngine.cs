@@ -66,20 +66,20 @@ namespace NScumm.Sky
             SystemVars.Instance.GameVersion = _skyDisk.DetermineGameVersion();
 
             // TODO: music
-            //MidiDriver::DeviceHandle dev = MidiDriver::detectDevice(MDT_ADLIB | MDT_MIDI | MDT_PREFER_MT32);
-            //if (MidiDriver::getMusicType(dev) == MT_ADLIB)
-            //{
-            SystemVars.Instance.SystemFlags |= SystemFlags.SBLASTER;
-            _skyMusic = new AdLibMusic(_mixer, _skyDisk);
-            //}
-            //else
-            //{
-            //    _systemVars.systemFlags |= SF_ROLAND;
-            //    if ((MidiDriver::getMusicType(dev) == MT_MT32) || ConfMan.getBool("native_mt32"))
-            //        _skyMusic = new MT32Music(MidiDriver::createMidi(dev), _mixer, _skyDisk);
-            //    else
-            //        _skyMusic = new GmMusic(MidiDriver::createMidi(dev), _mixer, _skyDisk);
-            //}
+            var dev = MidiDriver.DetectDevice(MusicDriverTypes.AdLib | MusicDriverTypes.Midi /*| MDT_PREFER_MT32*/, settings.AudioDevice);
+            if (MidiDriver.GetMusicType(dev) == MusicType.AdLib)
+            {
+                SystemVars.Instance.SystemFlags |= SystemFlags.Sblaster;
+                _skyMusic = new AdLibMusic(_mixer, _skyDisk);
+            }
+            else
+            {
+                SystemVars.Instance.SystemFlags |= SystemFlags.Roland;
+                if ((MidiDriver.GetMusicType(dev) == MusicType.MT32)/* || ConfMan.getBool("native_mt32")*/)
+                    _skyMusic = new Mt32Music((MidiDriver)MidiDriver.CreateMidi(_mixer, dev), _mixer, _skyDisk);
+                else
+                    _skyMusic = new GmMusic((MidiDriver)MidiDriver.CreateMidi(_mixer, dev), _mixer, _skyDisk);
+            }
 
             if (IsCDVersion)
             {
@@ -286,7 +286,7 @@ namespace NScumm.Sky
             {
                 _keyPressed = _system.InputManager.GetState();
                 var mousePos = _system.InputManager.GetMousePosition();
-                if (!SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.MOUSE_LOCKED))
+                if (!SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.MouseLocked))
                 {
                     _skyMouse.MouseMoved((ushort)mousePos.X, (ushort)mousePos.Y);
                 }

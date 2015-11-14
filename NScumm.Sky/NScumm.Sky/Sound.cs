@@ -212,7 +212,7 @@ namespace NScumm.Sky
 
             _sfxInfo = new UShortAccess(_soundData, _sfxBaseOfs);
             // if we just restored a savegame, the sfxqueue holds the sound we need to restart
-            if (!SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.GAME_RESTORED))
+            if (!SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.GameRestored))
                 for (var cnt = 0; cnt < MaxQueuedFx; cnt++)
                     SfxQueue[cnt].Count = 0;
         }
@@ -265,7 +265,7 @@ namespace NScumm.Sky
         public void FnStartFx(uint sound, byte channel)
         {
             SaveSounds[channel] = 0xFFFF;
-            if (sound < 256 || sound > MaxFxNumber || SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.FX_OFF))
+            if (sound < 256 || sound > MaxFxNumber || SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.FxOff))
                 return;
 
             var screen = (byte)(Logic.ScriptVariables[Logic.SCREEN] & 0xff);
@@ -294,9 +294,9 @@ namespace NScumm.Sky
 
             var volume = _mainSfxVolume; // start with standard vol
 
-            if (SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.SBLASTER))
+            if (SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.Sblaster))
                 volume = roomList[i].AdlibVolume;
-            if (SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.ROLAND))
+            if (SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.Roland))
                 volume = roomList[i].RolandVolume;
             volume = (byte)((volume * _mainSfxVolume) >> 8);
 
@@ -325,7 +325,7 @@ namespace NScumm.Sky
 
         public bool StartSpeech(ushort textNum)
         {
-            if (!SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.ALLOW_SPEECH))
+            if (!SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.AllowSpeech))
                 return false;
             var speechFileNum = (ushort)(_speechConvertTable[textNum >> 12] + (textNum & 0xFFF));
 

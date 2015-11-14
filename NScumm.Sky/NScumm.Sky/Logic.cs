@@ -292,7 +292,7 @@ namespace NScumm.Sky
             if (sectionNo == 5) //linc section - has different mouse icons
                 _skyMouse.ReplaceMouseCursors(60302);
 
-            if ((sectionNo != _currentSection) || SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.GAME_RESTORED))
+            if ((sectionNo != _currentSection) || SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.GameRestored))
             {
                 _currentSection = sectionNo;
 
@@ -300,7 +300,7 @@ namespace NScumm.Sky
                 _skyMusic.LoadSection((byte)sectionNo);
                 _skySound.LoadSection((byte)sectionNo);
                 _skyGrid.LoadGrids();
-                SystemVars.Instance.SystemFlags &= ~SystemFlags.GAME_RESTORED;
+                SystemVars.Instance.SystemFlags &= ~SystemFlags.GameRestored;
             }
 
             return true;

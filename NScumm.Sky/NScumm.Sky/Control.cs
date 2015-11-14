@@ -27,7 +27,7 @@ namespace NScumm.Sky
         private const bool NoMask = false;
         private const bool WithMask = true;
 
-        private const SystemFlags TextFlagMask = SystemFlags.ALLOW_SPEECH | SystemFlags.AllowText;
+        private const SystemFlags TextFlagMask = SystemFlags.AllowSpeech | SystemFlags.AllowText;
 
         private const int GameNameX = SpnlX + 18; // x coordinate of game names
         private const int GameNameY = SpnlY + SpTopGap; // start y coord of game names
@@ -286,13 +286,13 @@ namespace NScumm.Sky
                 _skyScreen.SetPalette(60510);
 
             // Set initial button lights
-            _fxPanButton.CurSprite = (uint)(SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.FX_OFF) ? 0 : 2);
+            _fxPanButton.CurSprite = (uint)(SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.FxOff) ? 0 : 2);
 
             // music button only available in floppy version
             if (!SkyEngine.IsCDVersion)
             {
                 _musicPanButton.CurSprite =
-                    (uint)(SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.MUS_OFF) ? 0 : 2);
+                    (uint)(SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.MusOff) ? 0 : 2);
             }
 
             DrawMainPanel();
@@ -357,7 +357,7 @@ namespace NScumm.Sky
 
         public bool LoadSaveAllowed()
         {
-            if (SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.CHOOSING))
+            if (SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.Choosing))
                 return false; // texts get lost during load/save, so don't allow it during choosing
             if (_skyLogic.ScriptVariables[Logic.SCREEN] >= 101)
                 return false; // same problem with LINC terminals
@@ -414,7 +414,7 @@ namespace NScumm.Sky
                         return RestoreFailed;
                     }
                 }
-                SystemVars.Instance.SystemFlags |= SystemFlags.GAME_RESTORED;
+                SystemVars.Instance.SystemFlags |= SystemFlags.GameRestored;
 
                 _skySound.SaveSounds[0] = reader.ReadUInt16();
                 _skySound.SaveSounds[1] = reader.ReadUInt16();
@@ -475,7 +475,7 @@ namespace NScumm.Sky
 
                 _skyDisk.RefreshFilesList(reloadList);
                 SystemVars.Instance.CurrentMusic = (ushort)music;
-                if (!SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.MUS_OFF))
+                if (!SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.MusOff))
                     _skyMusic.StartMusic((ushort)music);
                 _savedMouse = (ushort)mouseType;
                 SystemVars.Instance.CurrentPalette = palette; // will be set when doControlPanel ends
@@ -499,7 +499,7 @@ namespace NScumm.Sky
                 _keyPressed = _system.InputManager.GetState();
                 var mousePos = _system.InputManager.GetMousePosition();
 
-                if (!SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.MOUSE_LOCKED))
+                if (!SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.MouseLocked))
                     _skyMouse.MouseMoved((ushort)mousePos.X, (ushort)mousePos.Y);
 
                 _mouseClicked = _keyPressed.IsLeftButtonDown;
@@ -609,12 +609,12 @@ namespace NScumm.Sky
 
             if (flags == SystemFlags.AllowText)
             {
-                flags = SystemFlags.ALLOW_SPEECH;
+                flags = SystemFlags.AllowSpeech;
                 _statusBar.SetToText(0x7000 + 21); // speech only
             }
-            else if (flags == SystemFlags.ALLOW_SPEECH)
+            else if (flags == SystemFlags.AllowSpeech)
             {
-                flags = SystemFlags.ALLOW_SPEECH | SystemFlags.AllowText;
+                flags = SystemFlags.AllowSpeech | SystemFlags.AllowText;
                 _statusBar.SetToText(0x7000 + 52); // text and speech
             }
             else
@@ -637,8 +637,8 @@ namespace NScumm.Sky
 
         private void DoToggleFx(ConResource pButton)
         {
-            SystemVars.Instance.SystemFlags ^= SystemFlags.FX_OFF;
-            if (SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.FX_OFF))
+            SystemVars.Instance.SystemFlags ^= SystemFlags.FxOff;
+            if (SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.FxOff))
             {
                 pButton.CurSprite = 0;
                 _statusBar.SetToText(0x7000 + 87);
@@ -658,8 +658,8 @@ namespace NScumm.Sky
 
         private void ToggleMusic(ConResource pButton)
         {
-            SystemVars.Instance.SystemFlags ^= SystemFlags.MUS_OFF;
-            if (SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.MUS_OFF))
+            SystemVars.Instance.SystemFlags ^= SystemFlags.MusOff;
+            if (SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.MusOff))
             {
                 _skyMusic.StartMusic(0);
                 pButton.CurSprite = 0;
@@ -1019,7 +1019,7 @@ namespace NScumm.Sky
         private void DrawTextCross(SystemFlags flags)
         {
             _bodge.DrawToScreen(NoMask);
-            if (!flags.HasFlag(SystemFlags.ALLOW_SPEECH))
+            if (!flags.HasFlag(SystemFlags.AllowSpeech))
                 DrawCross(151, 124);
             if (!flags.HasFlag(SystemFlags.AllowText))
                 DrawCross(173, 124);

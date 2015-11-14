@@ -8,36 +8,36 @@ namespace NScumm.Sky
     [Flags]
     enum SystemFlags
     {
-        TIMER = (1 << 0),   // set if timer interrupt redirected
-        GRAPHICS = (1 << 1),    // set if screen is in graphics mode
-        MOUSE = (1 << 2),   // set if mouse handler installed
-        KEYBOARD = (1 << 3),    // set if keyboard interrupt redirected
-        MUSIC_BOARD = (1 << 4), // set if a music board detected
-        ROLAND = (1 << 5),  // set if roland board present
-        ADLIB = (1 << 6),   // set if adlib board present
-        SBLASTER = (1 << 7),    // set if sblaster present
-        TANDY = (1 << 8),   // set if tandy present
-        MUSIC_BIN = (1 << 9),   // set if music driver is loaded
-        PLUS_FX = (1 << 10),    // set if extra fx module needed
-        FX_OFF = (1 << 11), // set if fx disabled
-        MUS_OFF = (1 << 12),    // set if music disabled
-        TIMER_TICK = (1 << 13), // set every timer interupt
+        Timer = 1 << 0,   // set if timer interrupt redirected
+        Graphics = 1 << 1,    // set if screen is in graphics mode
+        Mouse = 1 << 2,   // set if mouse handler installed
+        Keyboard = 1 << 3,    // set if keyboard interrupt redirected
+        MusicBoard = 1 << 4, // set if a music board detected
+        Roland = 1 << 5,  // set if roland board present
+        Adlib = 1 << 6,   // set if adlib board present
+        Sblaster = 1 << 7,    // set if sblaster present
+        Tandy = 1 << 8,   // set if tandy present
+        MusicBin = 1 << 9,   // set if music driver is loaded
+        PlusFx = 1 << 10,    // set if extra fx module needed
+        FxOff = 1 << 11, // set if fx disabled
+        MusOff = 1 << 12,    // set if music disabled
+        TimerTick = 1 << 13, // set every timer interupt
 
         //Status flags
-        CHOOSING = (1 << 14),   // set when choosing text
-        NO_SCROLL = (1 << 15),  // when set don't scroll
-        SPEED = (1 << 16),  // when set allow speed options
-        GAME_RESTORED = (1 << 17),  // set when game restored or restarted
-        REPLAY_RST = (1 << 18), // set when loading restart data (used to stop rewriting of replay file)
-        SPEECH_FILE = (1 << 19),    // set when loading speech file
-        VOC_PLAYING = (1 << 20),    // set when a voc file is playing
-        PlayVocs = (1 << 21),  // set when we want speech instead of text
-        CRIT_ERR = (1 << 22),   // set when critical error routine trapped
-        ALLOW_SPEECH = (1 << 23),   // speech allowes on cd sblaster version
-        AllowText = (1 << 24), // text allowed on cd sblaster version
-        ALLOW_QUICK = (1 << 25),    // when set allow speed playing
-        TEST_DISK = (1 << 26),  // set when loading files
-        MOUSE_LOCKED = (1 << 27)	// set if coordinates are locked
+        Choosing = 1 << 14,   // set when choosing text
+        NoScroll = 1 << 15,  // when set don't scroll
+        Speed = 1 << 16,  // when set allow speed options
+        GameRestored = 1 << 17,  // set when game restored or restarted
+        ReplayRst = 1 << 18, // set when loading restart data (used to stop rewriting of replay file)
+        SpeechFile = 1 << 19,    // set when loading speech file
+        VocPlaying = 1 << 20,    // set when a voc file is playing
+        PlayVocs = 1 << 21,  // set when we want speech instead of text
+        CritErr = 1 << 22,   // set when critical error routine trapped
+        AllowSpeech = 1 << 23,   // speech allowes on cd sblaster version
+        AllowText = 1 << 24, // text allowed on cd sblaster version
+        AllowQuick = 1 << 25,    // when set allow speed playing
+        TestDisk = 1 << 26,  // set when loading files
+        MouseLocked = 1 << 27	// set if coordinates are locked
     }
 
     class SystemVars

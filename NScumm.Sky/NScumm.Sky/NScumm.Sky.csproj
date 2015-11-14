@@ -49,6 +49,9 @@
     <Compile Include="Logic.cs" />
     <Compile Include="Logic.Logic.cs" />
     <Compile Include="Mouse.cs" />
+    <Compile Include="Music\GmChannel.cs" />
+    <Compile Include="Music\GmMusic.cs" />
+    <Compile Include="Music\Mt32Music.cs" />
     <Compile Include="RawAccess.cs" />
     <Compile Include="Disk.cs" />
     <Compile Include="Text.HuffTree.cs" />

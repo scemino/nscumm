@@ -92,7 +92,7 @@ namespace NScumm.Core.Audio
         // Real MIDI
     }
 
-    abstract class MidiDriverBase : IMidiDriver
+    public abstract class MidiDriverBase : IMidiDriver
     {
         /// <summary>
         /// Output a packed midi command to the midi stream.
@@ -138,7 +138,7 @@ namespace NScumm.Core.Audio
         }
     }
 
-    enum MidiDriverError
+    public enum MidiDriverError
     {
         None = 0,
         CannotConnect = 1,
@@ -147,7 +147,7 @@ namespace NScumm.Core.Audio
         AlreadyOpen = 4
     }
 
-    abstract class MidiDriver: MidiDriverBase
+    public abstract class MidiDriver : MidiDriverBase, IDisposable
     {
         /// <summary>
         /// Create music driver matching the given device handle, or NULL if there is no match.
@@ -363,6 +363,34 @@ namespace NScumm.Core.Audio
         public abstract MidiChannel AllocateChannel();
 
         public abstract MidiChannel GetPercussionChannel();
+
+        public void SendMt32Reset()
+        {
+            byte[] resetSysEx = { 0x41, 0x10, 0x16, 0x12, 0x7F, 0x00, 0x00, 0x01, 0x00 };
+            SysEx(resetSysEx, (ushort)resetSysEx.Length);
+            ServiceLocator.Platform.Sleep(100);
+        }
+
+        public void SendGmReset()
+        {
+            byte[] resetSysEx = { 0x7E, 0x7F, 0x09, 0x01 };
+            SysEx(resetSysEx, (ushort)resetSysEx.Length);
+            ServiceLocator.Platform.Sleep(100);
+        }
+
+        public virtual void Dispose() { }
+
+        public static readonly byte[] Mt32ToGm = {
+        //	  0    1    2    3    4    5    6    7    8    9    A    B    C    D    E    F
+	            0,   1,   0,   2,   4,   4,   5,   3,  16,  17,  18,  16,  16,  19,  20,  21, // 0x
+	            6,   6,   6,   7,   7,   7,   8, 112,  62,  62,  63,  63,  38,  38,  39,  39, // 1x
+	            88,  95,  52,  98,  97,  99,  14,  54, 102,  96,  53, 102,  81, 100,  14,  80, // 2x
+	            48,  48,  49,  45,  41,  40,  42,  42,  43,  46,  45,  24,  25,  28,  27, 104, // 3x
+	            32,  32,  34,  33,  36,  37,  35,  35,  79,  73,  72,  72,  74,  75,  64,  65, // 4x
+	            66,  67,  71,  71,  68,  69,  70,  22,  56,  59,  57,  57,  60,  60,  58,  61, // 5x
+	            61,  11,  11,  98,  14,   9,  14,  13,  12, 107, 107,  77,  78,  78,  76,  76, // 6x
+	            47, 117, 127, 118, 118, 116, 115, 119, 115, 112,  55, 124, 123,   0,  14, 117  // 7x
+        };
     }
 }
 

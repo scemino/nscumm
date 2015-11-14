@@ -537,7 +537,7 @@ namespace NScumm.Sky
             // setup the text questions to be clicked on
             // read from TEXT1 until 0
 
-            SystemVars.Instance.SystemFlags |= SystemFlags.CHOOSING; // can't save/restore while choosing
+            SystemVars.Instance.SystemFlags |= SystemFlags.Choosing; // can't save/restore while choosing
 
             _scriptVariables[THE_CHOSEN_ONE] = 0; // clear result
 
@@ -1310,7 +1310,7 @@ namespace NScumm.Sky
 
         private bool FnStartMusic(uint a, uint b, uint c)
         {
-            if (!SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.MUS_OFF))
+            if (!SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.MusOff))
                 _skyMusic.StartMusic((ushort)a);
             SystemVars.Instance.CurrentMusic = (ushort)a;
             return true;

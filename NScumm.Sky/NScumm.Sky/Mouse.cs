@@ -216,12 +216,12 @@ namespace NScumm.Sky
 
         public void LockMouse()
         {
-            SystemVars.Instance.SystemFlags |= SystemFlags.MOUSE_LOCKED;
+            SystemVars.Instance.SystemFlags |= SystemFlags.MouseLocked;
         }
 
         public void UnlockMouse()
         {
-            SystemVars.Instance.SystemFlags &= ~SystemFlags.MOUSE_LOCKED;
+            SystemVars.Instance.SystemFlags &= ~SystemFlags.MouseLocked;
         }
 
         public void MouseMoved(ushort x, ushort y)

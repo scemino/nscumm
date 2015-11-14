@@ -108,7 +108,7 @@ namespace NScumm.Sky
 
             FnNoHuman(0, 0, 0); // kill mouse again
 
-            SystemVars.Instance.SystemFlags &= ~SystemFlags.CHOOSING; // restore save/restore
+            SystemVars.Instance.SystemFlags &= ~SystemFlags.Choosing; // restore save/restore
 
             _compact.Core.logic = L_SCRIPT; // and continue script
             LogicScript();
@@ -167,7 +167,7 @@ namespace NScumm.Sky
                 for (int i = 0; i < ClickTable.Length; i++)
                     if (ClickTable[i] == (ushort)_scriptVariables[CUR_ID])
                     {
-                        if (SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.ALLOW_SPEECH) && !_skySound.SpeechFinished)
+                        if (SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.AllowSpeech) && !_skySound.SpeechFinished)
                             _skySound.StopSpeech();
                         if ((_compact.Core.spTextId > 0) &&
                             (_compact.Core.spTextId < 0xFFFF))

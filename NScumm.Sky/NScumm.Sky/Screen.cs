@@ -293,7 +293,7 @@ namespace NScumm.Sky
 
         public void FnFadeDown(uint scroll)
         {
-            if (((scroll != 123) && (scroll != 321)) || SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.NO_SCROLL))
+            if (((scroll != 123) && (scroll != 321)) || SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.NoScroll))
             {
                 var delayTime = Environment.TickCount;
                 for (var cnt = 0; cnt < 32; cnt++)
@@ -337,7 +337,7 @@ namespace NScumm.Sky
             if ((scroll != 123) && (scroll != 321))
                 scroll = 0;
 
-            if ((scroll == 0) || SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.NO_SCROLL))
+            if ((scroll == 0) || SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.NoScroll))
             {
                 var palette = _skyCompact.FetchCptRaw((ushort)palNum);
                 if (palette == null)

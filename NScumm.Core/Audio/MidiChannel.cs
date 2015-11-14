@@ -21,7 +21,7 @@
 
 namespace NScumm.Core.Audio
 {
-    abstract class MidiChannel
+    public abstract class MidiChannel
     {
         public abstract MidiDriver Device { get; }
 

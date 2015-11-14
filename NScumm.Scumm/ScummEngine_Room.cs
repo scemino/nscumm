@@ -18,10 +18,11 @@
 //
 //  You should have received a copy of the GNU Lesser General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-using System;
-using NScumm.Core.Graphics;
 
-namespace NScumm.Core
+using System;
+using NScumm.Core;
+
+namespace NScumm.Scumm
 {
     partial class ScummEngine
     {
@@ -41,11 +42,11 @@ namespace NScumm.Core
         protected string GetIqFilename(string filename)
         {
             var targetName = ServiceLocator.FileStorage.Combine(ServiceLocator.FileStorage.GetDirectoryName(Game.Path), Game.Id);
-            if (_game.GameId == IO.GameId.Indy4)
+            if (_game.GameId == Scumm.IO.GameId.Indy4)
             {
                 filename = targetName + ".iq";
             }
-            else if (_game.GameId == IO.GameId.Monkey1 || _game.GameId == IO.GameId.Monkey2)
+            else if (_game.GameId == Scumm.IO.GameId.Monkey1 || _game.GameId == Scumm.IO.GameId.Monkey2)
             {
                 filename = targetName + ".cfg";
             }

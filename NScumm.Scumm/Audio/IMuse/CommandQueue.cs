@@ -20,9 +20,10 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System.Linq;
-using NScumm.Core.IO;
+using NScumm.Core;
+using NScumm.Scumm.IO;
 
-namespace NScumm.Core.Audio.IMuse
+namespace NScumm.Scumm.Audio.IMuse
 {
     class CommandQueue
     {

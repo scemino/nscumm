@@ -21,9 +21,11 @@
 
 using System;
 using System.Linq;
+using NScumm.Core;
 using NScumm.Core.Graphics;
+using NScumm.Scumm.Graphics;
 
-namespace NScumm.Core
+namespace NScumm.Scumm
 {
     partial class ScummEngine
     {
@@ -45,11 +47,11 @@ namespace NScumm.Core
 
         public TimeSpan RunBootScript(int bootParam = 0)
         {
-            if (!Settings.CopyProtection && _game.GameId == IO.GameId.Indy4 && bootParam == 0)
+            if (!Settings.CopyProtection && _game.GameId == Scumm.IO.GameId.Indy4 && bootParam == 0)
             {
                 bootParam = -7873;
             }
-            else if (!Settings.CopyProtection && _game.GameId == IO.GameId.SamNMax && bootParam == 0)
+            else if (!Settings.CopyProtection && _game.GameId == Scumm.IO.GameId.SamNMax && bootParam == 0)
             {
                 bootParam = -1;
             }
@@ -290,7 +292,7 @@ namespace NScumm.Core
                 a.SetDirection(dir + 180);
                 a.StopActorMoving();
 
-                if (Game.GameId == IO.GameId.SamNMax)
+                if (Game.GameId == Scumm.IO.GameId.SamNMax)
                 {
                     Camera.CurrentPosition.X = Camera.DestinationPosition.X = a.Position.X;
                     SetCameraAt(a.Position);

@@ -18,11 +18,14 @@
 //
 //  You should have received a copy of the GNU Lesser General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 using System;
+using NScumm.Core;
 using NScumm.Core.Graphics;
 using NScumm.Core.IO;
+using NScumm.Scumm.Graphics;
 
-namespace NScumm.Core
+namespace NScumm.Scumm
 {
     partial class ScummEngine
     {
@@ -421,7 +424,7 @@ namespace NScumm.Core
             // Speed up the effect for CD Loom since it uses it so often. I don't
             // think the original had any delay at all, so on modern hardware it
             // wasn't even noticeable.
-            if (_game.GameId == NScumm.Core.IO.GameId.Loom)
+            if (_game.GameId == Scumm.IO.GameId.Loom)
                 blits_before_refresh *= 2;
 
             for (i = 0; i < w * h; i++)

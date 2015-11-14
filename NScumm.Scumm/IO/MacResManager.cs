@@ -20,8 +20,9 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System.IO;
 using System.Diagnostics;
+using NScumm.Core;
 
-namespace NScumm.Core
+namespace NScumm.Scumm.IO
 {
     /// <summary>
     /// Class for handling Mac data and resource forks.

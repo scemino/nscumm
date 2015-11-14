@@ -20,7 +20,10 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-namespace NScumm.Core.IO
+using NScumm.Core;
+using NScumm.Core.IO;
+
+namespace NScumm.Scumm.IO
 {
     class ResourceManager2: ResourceManager
     {

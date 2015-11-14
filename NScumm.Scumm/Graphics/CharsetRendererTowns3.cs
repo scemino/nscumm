@@ -18,9 +18,12 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-using System.IO;
 
-namespace NScumm.Core.Graphics
+using System.IO;
+using NScumm.Core;
+using NScumm.Core.Graphics;
+
+namespace NScumm.Scumm.Graphics
 {
     public class CharsetRendererTowns3: CharsetRenderer3
     {

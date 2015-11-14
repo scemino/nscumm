@@ -18,12 +18,14 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 using System;
+using System.Diagnostics;
 using System.Linq;
 using NScumm.Core.Graphics;
-using System.Diagnostics;
+using NScumm.Scumm.Graphics;
 
-namespace NScumm.Core
+namespace NScumm.Scumm
 {
     partial class ScummEngine6
     {
@@ -228,7 +230,7 @@ namespace NScumm.Core
                     break;
                 case 114:
                     // Sam & Max film noir mode
-                    if (Game.GameId == IO.GameId.SamNMax)
+                    if (Game.GameId == Scumm.IO.GameId.SamNMax)
                     {
                         // At this point ScummVM will already have set
                         // variable 0x8000 to indicate that the game is

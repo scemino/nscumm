@@ -38,7 +38,7 @@
 
 using System;
 
-namespace NScumm.Core
+namespace NScumm.Scumm.IO
 {
     class CostumeLoader0: ICostumeLoader
     {

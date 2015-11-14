@@ -22,7 +22,7 @@
 using System;
 using System.Linq;
 
-namespace NScumm.Core
+namespace NScumm.Scumm
 {
     partial class ScummEngine
     {

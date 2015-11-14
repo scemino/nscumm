@@ -22,7 +22,7 @@
 using System;
 using System.Diagnostics;
 
-namespace NScumm.Core.Audio
+namespace NScumm.Scumm.Audio.Amiga
 {
     // plays two looped waveforms pitch bending up at various predefined rates
     // used for some sort of siren-like noise in Maniac Mansion

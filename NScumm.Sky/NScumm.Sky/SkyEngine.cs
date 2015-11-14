@@ -2,9 +2,9 @@
 using NScumm.Core.Audio;
 using NScumm.Core.Graphics;
 using NScumm.Core.Input;
-using NScumm.Core.IO;
 using NScumm.Sky.Music;
 using System;
+using NScumm.Core.IO;
 
 namespace NScumm.Sky
 {

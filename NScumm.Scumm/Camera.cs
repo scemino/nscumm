@@ -17,7 +17,7 @@
 
 using NScumm.Core.Graphics;
 
-namespace NScumm.Core
+namespace NScumm.Scumm
 {
 	/// <summary>
 	/// Camera mode.

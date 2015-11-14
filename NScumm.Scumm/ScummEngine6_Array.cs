@@ -18,11 +18,13 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-using System;
-using System.IO;
-using System.Diagnostics;
 
-namespace NScumm.Core
+using System;
+using System.Diagnostics;
+using System.IO;
+using NScumm.Core;
+
+namespace NScumm.Scumm
 {
     class ArrayHeader
     {
@@ -247,7 +249,7 @@ namespace NScumm.Core
             // ...
             // So it checks for invalid array indices only *after* using them to access
             // the array. Ouch.
-            if (Game.GameId == IO.GameId.FullThrottle && array == 447 && CurrentRoom == 95 && Slots[CurrentScript].Number == 2010 && idx == -1 && @base == -1)
+            if (Game.GameId == Scumm.IO.GameId.FullThrottle && array == 447 && CurrentRoom == 95 && Slots[CurrentScript].Number == 2010 && idx == -1 && @base == -1)
             {
                 return 0;
             }

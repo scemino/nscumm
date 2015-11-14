@@ -23,8 +23,11 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Diagnostics;
+using NScumm.Core;
+using NScumm.Core.Audio;
+using NScumm.Core.IO;
 
-namespace NScumm.Core.IO
+namespace NScumm.Scumm.IO
 {
     public class Script
     {
@@ -122,7 +125,7 @@ namespace NScumm.Core.IO
         }
 
 
-        public IEnumerable<byte[]> GetSounds(Audio.MusicDriverTypes music)
+        public IEnumerable<byte[]> GetSounds(MusicDriverTypes music)
         {
             for (byte i = 0; i < Index.SoundResources.Count; i++)
             {
@@ -230,7 +233,7 @@ namespace NScumm.Core.IO
             }
         }
 
-        public void LoadSound(Audio.MusicDriverTypes music, int id)
+        public void LoadSound(MusicDriverTypes music, int id)
         {
             if (id == 0 || _sounds.ContainsKey(id)) return;
 
@@ -262,7 +265,7 @@ namespace NScumm.Core.IO
                         // For games using AD except Indy3 and Loom we are using our iMuse
                         // implementation. See output initialization in
                         // ScummEngine::setupMusic for more information.
-                        if (data != null && Game.Version < 5 && Game.GameId != GameId.Indy3 && Game.GameId != GameId.Loom && music == Audio.MusicDriverTypes.AdLib)
+                        if (data != null && Game.Version < 5 && Game.GameId != GameId.Indy3 && Game.GameId != GameId.Loom && music == MusicDriverTypes.AdLib)
                         {
                             data = ConvertADResource(data, id);
                         }
@@ -600,7 +603,7 @@ namespace NScumm.Core.IO
             return GetResource(_scripts, id, () => LoadScript(id));
         }
 
-        public byte[] GetSound(Audio.MusicDriverTypes music, int id)
+        public byte[] GetSound(MusicDriverTypes music, int id)
         {
             return GetResource(_sounds, id, () => LoadSound(music, id));
         }

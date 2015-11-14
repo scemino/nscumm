@@ -21,10 +21,11 @@
 
 using System;
 using System.Linq;
+using NScumm.Core;
 using NScumm.Core.Input;
-using NScumm.Core.IO;
+using NScumm.Scumm.IO;
 
-namespace NScumm.Core
+namespace NScumm.Scumm
 {
     partial class ScummEngine
     {
@@ -223,7 +224,7 @@ namespace NScumm.Core
                 mouseAndKeyboardStat = KeyCode.Space;
             }
 
-            if ((Game.GameId == NScumm.Core.IO.GameId.Indy4 || Game.GameId == NScumm.Core.IO.GameId.Pass))
+            if ((Game.GameId == Scumm.IO.GameId.Indy4 || Game.GameId == Scumm.IO.GameId.Pass))
             {
                 var numpad = new int[]
                 {

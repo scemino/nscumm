@@ -22,7 +22,8 @@
 using System;
 using System.Collections.Generic;
 using NScumm.Core;
-using NScumm.Core.IO;
+using NScumm.Scumm;
+using NScumm.Scumm.IO;
 
 namespace NScumm.Dump
 {

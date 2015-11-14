@@ -22,7 +22,7 @@
 using System;
 using System.Diagnostics;
 
-namespace NScumm.Core.Audio
+namespace NScumm.Scumm.Audio.Amiga
 {
     // plays a single looped waveform
     class V2A_Sound_SingleLooped : V2A_Sound_Base

@@ -19,7 +19,6 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
-using NScumm.Core.IO;
 using NScumm.Core;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -28,6 +27,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using NScumm.Core.Audio;
+using NScumm.Core.IO;
 
 namespace NScumm.MonoGame
 {

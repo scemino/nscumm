@@ -17,9 +17,11 @@
 
 using System;
 using System.IO;
+using NScumm.Core;
+using NScumm.Core.Graphics;
 using NScumm.Core.IO;
 
-namespace NScumm.Core.Graphics
+namespace NScumm.Scumm.Graphics
 {
     class CharsetRendererClassic : CharsetRendererCommon
     {

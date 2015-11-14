@@ -19,7 +19,9 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace NScumm.Core.Audio
+using NScumm.Scumm.Audio.Players;
+
+namespace NScumm.Scumm.Audio.AppleII
 {
     interface IAppleII_SoundFunction
     {

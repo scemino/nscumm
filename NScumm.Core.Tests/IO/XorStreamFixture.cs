@@ -1,5 +1,5 @@
 ﻿using NFluent;
-using NScumm.Core.IO;
+using NScumm.Scumm.IO;
 using NUnit.Framework;
 using System;
 using System.IO;

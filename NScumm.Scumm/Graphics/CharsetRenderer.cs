@@ -15,7 +15,9 @@
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-namespace NScumm.Core.Graphics
+using NScumm.Core.Graphics;
+
+namespace NScumm.Scumm.Graphics
 {
     public abstract class CharsetRenderer
     {

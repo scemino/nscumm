@@ -18,7 +18,7 @@
 using System;
 using NScumm.Core.Graphics;
 
-namespace NScumm.Core
+namespace NScumm.Scumm
 {
     static class ScummMath
     {

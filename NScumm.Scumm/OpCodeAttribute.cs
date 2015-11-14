@@ -21,7 +21,7 @@
 
 using System;
 
-namespace NScumm.Core
+namespace NScumm.Scumm
 {
     [AttributeUsage(AttributeTargets.All, Inherited = false, AllowMultiple = true)]
     public sealed class OpCodeAttribute: Attribute

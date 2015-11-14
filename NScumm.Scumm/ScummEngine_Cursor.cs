@@ -18,10 +18,12 @@
 //
 //  You should have received a copy of the GNU Lesser General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 using System;
 using NScumm.Core.Graphics;
+using NScumm.Scumm.Graphics;
 
-namespace NScumm.Core
+namespace NScumm.Scumm
 {
     partial class ScummEngine
     {
@@ -104,7 +106,7 @@ namespace NScumm.Core
         {
             // Cursor image in both Loom versions are based on images from charset.
             // This function is *only* supported for Loom!
-            if (_game.GameId != IO.GameId.Loom)
+            if (_game.GameId != Scumm.IO.GameId.Loom)
                 throw new NotSupportedException("RedefineBuiltinCursorFromChar is *only* supported for Loom!");
             if (index < 0 || index >= 4)
                 throw new ArgumentException("index");
@@ -148,7 +150,7 @@ namespace NScumm.Core
         {
             // Cursor image in both Looms are based on images from charset.
             // This function is *only* supported for Loom!
-            if (_game.GameId != IO.GameId.Loom)
+            if (_game.GameId != Scumm.IO.GameId.Loom)
                 throw new NotSupportedException("RedefineBuiltinCursorHotspot is *only* supported for Loom!");
             if (index < 0 || index >= 4)
                 throw new ArgumentException("index");

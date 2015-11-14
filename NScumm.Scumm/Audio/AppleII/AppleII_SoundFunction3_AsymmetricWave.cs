@@ -20,8 +20,9 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System.Diagnostics;
+using NScumm.Scumm.Audio.Players;
 
-namespace NScumm.Core.Audio
+namespace NScumm.Scumm.Audio.AppleII
 {
     class AppleII_SoundFunction3_AsymmetricWave : IAppleII_SoundFunction
     {

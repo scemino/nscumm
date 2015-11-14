@@ -21,6 +21,7 @@
 
 using System;
 using NScumm.Core;
+using NScumm.Scumm;
 
 namespace NScumm.Dump
 {

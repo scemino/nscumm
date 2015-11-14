@@ -19,14 +19,15 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using NScumm.Core.Audio;
 using NScumm.Core.Graphics;
 using NScumm.Core.Input;
-using NScumm.Core.Audio;
 using NScumm.Core.IO;
-using NScumm.Core.Smush;
-using NScumm.Core.Audio.IMuse;
+using NScumm.Scumm.Audio.IMuse.IMuseDigital;
+using NScumm.Scumm.IO;
+using NScumm.Scumm.Smush;
 
-namespace NScumm.Core
+namespace NScumm.Scumm
 {
     partial class ScummEngine7: ScummEngine6
     {

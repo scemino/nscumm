@@ -20,7 +20,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
 using NScumm.Core;
-using NScumm.Core.IO;
+using NScumm.Scumm.IO;
 
 namespace NScumm.Dump
 {

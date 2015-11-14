@@ -19,12 +19,14 @@
 //  You should have received a copy of the GNU Lesser General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using System.Collections.Generic;
 using System.Linq;
 using NScumm.Core.Graphics;
-using System.Collections.Generic;
 using NScumm.Core.IO;
+using NScumm.Scumm.Graphics;
+using NScumm.Scumm.IO;
 
-namespace NScumm.Core
+namespace NScumm.Scumm
 {
     partial class ScummEngine
     {

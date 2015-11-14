@@ -18,11 +18,14 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 using System;
 using System.Diagnostics;
-using NScumm.Core.IO;
+using NScumm.Core;
+using NScumm.Core.Graphics;
+using NScumm.Scumm.IO;
 
-namespace NScumm.Core.Graphics
+namespace NScumm.Scumm.Graphics
 {
     enum AkosOpcode: ushort
     {
@@ -378,7 +381,7 @@ namespace NScumm.Core.Graphics
             Rect rect;
             int step;
             byte drawFlag = 1;
-            var v1 = new NScumm.Core.Graphics.Codec1();
+            var v1 = new Codec1();
 
             int scaletableSize = 384;
 

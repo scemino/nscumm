@@ -18,10 +18,11 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 using System;
 using System.Linq;
 
-namespace NScumm.Core
+namespace NScumm.Scumm
 {
     partial class ScummEngine6
     {
@@ -143,7 +144,7 @@ namespace NScumm.Core
             // WORKAROUND bug #2826144: Talking to the guard at the bigfoot party, after
             // he's let you inside, will cause the game to hang, if you end the conversation.
             // This is a script bug, due to a missing jump in one segment of the script.
-            if (Game.GameId == IO.GameId.SamNMax && Slots[CurrentScript].Number == 101 && ReadVariable(0x8000 + 97) == 1 && offset == 1)
+            if (Game.GameId == Scumm.IO.GameId.SamNMax && Slots[CurrentScript].Number == 101 && ReadVariable(0x8000 + 97) == 1 && offset == 1)
             {
                 offset = -18;
             }

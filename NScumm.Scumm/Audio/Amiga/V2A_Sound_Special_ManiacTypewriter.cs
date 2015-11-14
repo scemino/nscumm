@@ -22,7 +22,7 @@
 using System;
 using System.Diagnostics;
 
-namespace NScumm.Core.Audio
+namespace NScumm.Scumm.Audio.Amiga
 {
     // plays a single waveform at irregular intervals for a specified number of frames, possibly looped
     // used for typewriter noises, as well as tapping on the bus in Zak McKracken

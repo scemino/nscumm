@@ -17,7 +17,7 @@
 
 using System;
 
-namespace NScumm.Core
+namespace NScumm.Scumm
 {
     [Flags]
     public enum BoxFlags

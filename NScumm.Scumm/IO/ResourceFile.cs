@@ -21,8 +21,10 @@
 
 using System.IO;
 using System;
+using NScumm.Core;
+using NScumm.Core.Audio;
 
-namespace NScumm.Core.IO
+namespace NScumm.Scumm.IO
 {
     public abstract class ResourceFile: IDisposable
     {
@@ -73,7 +75,7 @@ namespace NScumm.Core.IO
 
         public abstract byte[] ReadScript(long offset);
 
-        public abstract byte[] ReadSound(Audio.MusicDriverTypes music, long offset);
+        public abstract byte[] ReadSound(MusicDriverTypes music, long offset);
 
         public virtual long GetRoomOffset(byte roomNum)
         {

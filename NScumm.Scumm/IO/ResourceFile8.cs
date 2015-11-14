@@ -24,8 +24,10 @@ using System.Collections.Generic;
 using System.IO;
 using NScumm.Core.Graphics;
 using System.Linq;
+using NScumm.Core;
+using NScumm.Scumm.Graphics;
 
-namespace NScumm.Core.IO
+namespace NScumm.Scumm.IO
 {
     class ResourceFile8: ResourceFile7
     {

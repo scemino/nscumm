@@ -18,12 +18,14 @@
 //
 //  You should have received a copy of the GNU Lesser General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 using System;
-using NScumm.Core.IO;
 using System.Diagnostics;
 using NScumm.Core.Graphics;
+using NScumm.Scumm.Graphics;
+using NScumm.Scumm.IO;
 
-namespace NScumm.Core
+namespace NScumm.Scumm
 {
     [Flags]
     enum LightModes
@@ -82,11 +84,11 @@ namespace NScumm.Core
             if (_flashlight.IsDrawn)
             {
                 MarkRectAsDirty(MainVirtScreen, _flashlight.X, _flashlight.X + _flashlight.W,
-                    _flashlight.Y, _flashlight.Y + _flashlight.H, NScumm.Core.Graphics.Gdi.UsageBitDirty);
+                    _flashlight.Y, _flashlight.Y + _flashlight.H, Gdi.UsageBitDirty);
 
                 if (_flashlight.PixelNavigator.HasValue)
                 {
-                    NScumm.Core.Graphics.Gdi.Fill(_flashlight.PixelNavigator.Value, 0, _flashlight.W, _flashlight.H);
+                    Gdi.Fill(_flashlight.PixelNavigator.Value, 0, _flashlight.W, _flashlight.H);
                 }
                 _flashlight.IsDrawn = false;
             }

@@ -18,12 +18,15 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-using System;
-using NScumm.Core.IO;
-using NScumm.Core.Audio.SoftSynth;
-using System.Collections.Generic;
 
-namespace NScumm.Core.Audio
+using System;
+using System.Collections.Generic;
+using NScumm.Core;
+using NScumm.Core.Audio;
+using NScumm.Core.Audio.SoftSynth;
+using NScumm.Scumm.IO;
+
+namespace NScumm.Scumm.Audio.Players
 {
     enum VideoStandard
     {

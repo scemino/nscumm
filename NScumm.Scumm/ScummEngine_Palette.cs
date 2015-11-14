@@ -15,11 +15,14 @@
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-using NScumm.Core.Graphics;
 using System;
+using NScumm.Core;
+using NScumm.Core.Graphics;
 using NScumm.Core.IO;
+using NScumm.Scumm.Graphics;
+using NScumm.Scumm.IO;
 
-namespace NScumm.Core
+namespace NScumm.Scumm
 {
     partial class ScummEngine
     {
@@ -327,7 +330,7 @@ namespace NScumm.Core
             // from within Room 23 (the big machine), as it has no shadow effects
             // and thus doesn't result in any visual differences.
 
-            if (Game.GameId == NScumm.Core.IO.GameId.SamNMax)
+            if (Game.GameId == Scumm.IO.GameId.SamNMax)
             {
                 for (var i = 0; i < 256; i++)
                     _shadowPalette[i] = (byte)i;

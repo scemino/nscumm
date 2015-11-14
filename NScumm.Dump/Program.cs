@@ -1,10 +1,11 @@
-using NScumm.Core.IO;
+using NScumm.Scumm.IO;
 using Mono.Options;
 using System.Collections.Generic;
 using System.Linq;
 using NScumm.Core;
 using System.Text;
 using System;
+using NScumm.Scumm;
 
 namespace NScumm.Dump
 {

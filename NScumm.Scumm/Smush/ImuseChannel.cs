@@ -18,12 +18,14 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 using System;
 using System.Diagnostics;
-using NScumm.Core.Audio.IMuse;
 using System.IO;
+using NScumm.Core;
+using NScumm.Scumm.Audio.IMuse.IMuseDigital;
 
-namespace NScumm.Core.Smush
+namespace NScumm.Scumm.Smush
 {
     class ImuseChannel: SmushChannel
     {

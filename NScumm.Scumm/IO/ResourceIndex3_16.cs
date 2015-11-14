@@ -18,12 +18,13 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-using System;
-using NScumm.Core.IO;
-using System.IO;
-using System.Collections.ObjectModel;
 
-namespace NScumm.Core
+using System;
+using System.Collections.ObjectModel;
+using System.IO;
+using NScumm.Core;
+
+namespace NScumm.Scumm.IO
 {
     class ResourceIndex3_16: ResourceIndex
     {

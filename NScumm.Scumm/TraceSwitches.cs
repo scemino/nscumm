@@ -1,4 +1,4 @@
-﻿namespace NScumm.Core
+﻿namespace NScumm.Scumm
 {
     static class TraceSwitches
     {

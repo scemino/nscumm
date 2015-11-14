@@ -22,7 +22,7 @@
 using System;
 using System.Diagnostics;
 
-namespace NScumm.Core.Audio
+namespace NScumm.Scumm.Audio.Amiga
 {
     // intermittently plays a single waveform for a specified duration
     // used when applying a wrench to a pipe

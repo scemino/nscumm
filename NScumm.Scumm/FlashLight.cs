@@ -14,10 +14,11 @@
  * You should have received a copy of the GNU General Public License
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 using NScumm.Core.Graphics;
+using NScumm.Scumm.Graphics;
 
-
-namespace NScumm.Core
+namespace NScumm.Scumm
 {
     public struct FlashLight
     {

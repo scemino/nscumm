@@ -1,10 +1,10 @@
 ﻿using NScumm.Core;
-using NScumm.Core.IO;
 using System;
 using System.Globalization;
 using NScumm.Core.Graphics;
 using NScumm.Core.Audio;
 using NScumm.Core.Input;
+using NScumm.Core.IO;
 
 namespace NScumm.Sky
 {

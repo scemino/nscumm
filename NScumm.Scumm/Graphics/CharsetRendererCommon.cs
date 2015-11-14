@@ -18,9 +18,11 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-using System;
 
-namespace NScumm.Core.Graphics
+using System;
+using NScumm.Core;
+
+namespace NScumm.Scumm.Graphics
 {
     public abstract class CharsetRendererCommon: CharsetRenderer
     {

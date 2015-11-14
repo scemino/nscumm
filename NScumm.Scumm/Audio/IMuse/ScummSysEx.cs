@@ -18,11 +18,12 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-using System.IO;
-using NScumm.Core.Audio.Midi;
-using System.Diagnostics;
 
-namespace NScumm.Core.Audio.IMuse
+using System.Diagnostics;
+using System.IO;
+using NScumm.Core;
+
+namespace NScumm.Scumm.Audio.IMuse
 {
     class ScummSysEx: ISysEx
     {

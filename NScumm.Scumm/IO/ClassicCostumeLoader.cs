@@ -17,8 +17,9 @@
 
 using System;
 using System.IO;
+using NScumm.Core;
 
-namespace NScumm.Core
+namespace NScumm.Scumm.IO
 {
     class ClassicCostumeLoader : ICostumeLoader
     {

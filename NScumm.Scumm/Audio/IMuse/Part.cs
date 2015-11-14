@@ -18,11 +18,14 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 using System;
 using System.Diagnostics;
-using NScumm.Core.IO;
+using NScumm.Core;
+using NScumm.Core.Audio;
+using NScumm.Scumm.IO;
 
-namespace NScumm.Core.Audio.IMuse
+namespace NScumm.Scumm.Audio.IMuse
 {
     class Part
     {
@@ -303,7 +306,7 @@ namespace NScumm.Core.Audio.IMuse
                 // Sam&Max does not have detune, so we just ignore this here. We still get
                 // this called, since Sam&Max uses the same controller for a different
                 // purpose.
-                if (Se.GameId == NScumm.Core.IO.GameId.SamNMax)
+                if (Se.GameId == Scumm.IO.GameId.SamNMax)
                 {
                     #if false
                                         if (MidiChannel) {

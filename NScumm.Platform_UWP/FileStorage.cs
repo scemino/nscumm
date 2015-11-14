@@ -6,6 +6,7 @@ using System.Text;
 using System.IO;
 using Windows.Storage;
 using System.Text.RegularExpressions;
+using System.Xml.Linq;
 
 namespace NScumm
 {
@@ -100,6 +101,11 @@ namespace NScumm
                 }
             }
             return signature;
+        }
+
+        public XDocument LoadDocument(Stream stream)
+        {
+            return XDocument.Load(stream);
         }
 
         public Stream OpenFileRead(string path)

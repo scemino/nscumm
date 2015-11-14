@@ -15,17 +15,18 @@
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-using NScumm.Core.Audio;
 using System;
-using System.Linq;
 using System.Collections.Generic;
 using System.IO;
-using NScumm.Core.Audio.Decoders;
-using NScumm.Core.IO;
-using NScumm.Core.Audio.IMuse;
+using System.Linq;
 using System.Threading;
+using NScumm.Core;
+using NScumm.Core.Audio;
+using NScumm.Core.Audio.Decoders;
+using NScumm.Scumm.Audio.IMuse.IMuseDigital;
+using NScumm.Scumm.IO;
 
-namespace NScumm.Core
+namespace NScumm.Scumm
 {
     class Sound : ISoundRepository
     {

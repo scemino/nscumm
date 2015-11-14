@@ -22,7 +22,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace NScumm.Core
+namespace NScumm.Scumm
 {
     partial class ScummEngine6
     {

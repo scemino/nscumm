@@ -18,13 +18,15 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 using System;
 using System.Diagnostics;
-using NScumm.Core.Audio.Decoders;
-using NScumm.Core.IO;
 using System.IO;
+using NScumm.Core;
+using NScumm.Core.Audio.Decoders;
+using NScumm.Scumm.IO;
 
-namespace NScumm.Core.Audio.IMuse
+namespace NScumm.Scumm.Audio.IMuse.IMuseDigital
 {
     class ImuseDigiSndMgr
     {

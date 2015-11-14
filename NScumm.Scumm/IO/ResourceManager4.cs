@@ -20,8 +20,9 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System.IO;
+using NScumm.Core;
 
-namespace NScumm.Core.IO
+namespace NScumm.Scumm.IO
 {
     class ResourceManager4: ResourceManager
     {

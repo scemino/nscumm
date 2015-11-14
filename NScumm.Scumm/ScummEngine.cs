@@ -19,19 +19,24 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using NScumm.Core;
+using NScumm.Core.Audio;
+using NScumm.Core.Audio.SoftSynth;
 using NScumm.Core.Graphics;
 using NScumm.Core.Input;
 using NScumm.Core.IO;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using NScumm.Core.Audio;
-using NScumm.Core.Audio.IMuse;
-using System.Collections;
-using System.Diagnostics;
-using NScumm.Core.Audio.SoftSynth;
+using NScumm.Scumm.Audio;
+using NScumm.Scumm.Audio.IMuse;
+using NScumm.Scumm.Audio.Players;
+using NScumm.Scumm.Graphics;
+using NScumm.Scumm.IO;
 
-namespace NScumm.Core
+namespace NScumm.Scumm
 {
     public enum OpCodeParameter : byte
     {

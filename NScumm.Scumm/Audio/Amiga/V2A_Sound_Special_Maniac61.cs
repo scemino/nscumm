@@ -22,7 +22,7 @@
 using System;
 using System.Diagnostics;
 
-namespace NScumm.Core.Audio
+namespace NScumm.Scumm.Audio.Amiga
 {
     // plays a single looped waveform, simultaneously bending the frequency downward and slowly fading volume to zero
     // don't remember where this one is used

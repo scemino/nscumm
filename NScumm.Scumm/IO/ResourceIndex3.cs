@@ -20,8 +20,10 @@ using System.IO;
 using System.Text;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using NScumm.Core;
+using NScumm.Core.IO;
 
-namespace NScumm.Core.IO
+namespace NScumm.Scumm.IO
 {
     class ResourceIndex3 : ResourceIndex3_16
     {

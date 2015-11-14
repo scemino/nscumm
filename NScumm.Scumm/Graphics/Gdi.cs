@@ -18,9 +18,12 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using NScumm.Core;
+using NScumm.Core.Graphics;
 using NScumm.Core.IO;
+using NScumm.Scumm.IO;
 
-namespace NScumm.Core.Graphics
+namespace NScumm.Scumm.Graphics
 {
     [Flags]
     public enum DrawBitmaps

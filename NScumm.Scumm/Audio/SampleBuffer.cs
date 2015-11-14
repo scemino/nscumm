@@ -21,7 +21,7 @@
 
 using System;
 
-namespace NScumm.Core.Audio
+namespace NScumm.Scumm.Audio
 {
 
     /// <summary>

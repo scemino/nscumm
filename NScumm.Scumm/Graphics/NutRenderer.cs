@@ -18,12 +18,15 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 using System;
-using NScumm.Core.IO;
 using System.Diagnostics;
 using System.IO;
+using NScumm.Core;
+using NScumm.Core.Graphics;
+using NScumm.Scumm.Smush;
 
-namespace NScumm.Core.Graphics
+namespace NScumm.Scumm.Graphics
 {
     public class NutRenderer
     {
@@ -426,7 +429,7 @@ namespace NScumm.Core.Graphics
 
         void Codec1(byte[] dst, int dstPos, byte[] src, int srcfOffset, int width, int height, int pitch)
         {
-            Smush.SmushPlayer.SmushDecodeCodec1(dst, dstPos, src, srcfOffset, 0, 0, width, height, pitch);
+            SmushPlayer.SmushDecodeCodec1(dst, dstPos, src, srcfOffset, 0, 0, width, height, pitch);
             for (var i = 0; i < width * height; i++)
                 _paletteMap[dst[dstPos + i]] = 1;
         }

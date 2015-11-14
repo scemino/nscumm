@@ -18,11 +18,15 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-using NScumm.Core.Audio.IMuse;
-using System;
-using NScumm.Core.IO;
 
-namespace NScumm.Core.Audio.SoftSynth
+using System;
+using NScumm.Core;
+using NScumm.Core.Audio;
+using NScumm.Core.Audio.SoftSynth;
+using NScumm.Scumm.Audio.IMuse;
+using NScumm.Scumm.IO;
+
+namespace NScumm.Scumm.Audio.Players
 {
     class Player_Towns_v2: Player_Towns
     {

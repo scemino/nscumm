@@ -21,7 +21,7 @@
 
 using NScumm.Core.Graphics;
 
-namespace NScumm.Core
+namespace NScumm.Scumm
 {
     class BlastText : TextObject
     {

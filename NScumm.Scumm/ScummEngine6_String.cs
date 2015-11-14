@@ -18,9 +18,10 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 using System;
 
-namespace NScumm.Core
+namespace NScumm.Scumm
 {
     partial class ScummEngine6
     {
@@ -81,7 +82,7 @@ namespace NScumm.Core
                 case 65:                // SO_AT
                     var y = (short)Pop();
                     var x = (short)Pop();
-                    String[m].Position = new Graphics.Point(x, y);
+                    String[m].Position = new Core.Graphics.Point(x, y);
                     String[m].Overhead = false;
                     break;
                 case 66:                // SO_COLOR

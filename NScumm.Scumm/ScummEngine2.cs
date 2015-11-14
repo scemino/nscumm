@@ -19,17 +19,20 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Text;
+using NScumm.Core;
+using NScumm.Core.Audio;
 using NScumm.Core.Graphics;
 using NScumm.Core.Input;
 using NScumm.Core.IO;
-using System.Collections.Generic;
-using System;
-using NScumm.Core.Audio;
-using System.Linq;
-using System.Text;
-using System.Diagnostics;
+using NScumm.Scumm.Graphics;
+using NScumm.Scumm.IO;
 
-namespace NScumm.Core
+namespace NScumm.Scumm
 {
     [Flags]
     public enum ObjectStateV2 : byte

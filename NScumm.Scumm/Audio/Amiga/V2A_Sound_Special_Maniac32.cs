@@ -22,7 +22,7 @@
 using System;
 using System.Diagnostics;
 
-namespace NScumm.Core.Audio
+namespace NScumm.Scumm.Audio.Amiga
 {
     // plays 4 looped waveforms, each at modulating frequencies
     // used for the siren noise in Maniac Mansion

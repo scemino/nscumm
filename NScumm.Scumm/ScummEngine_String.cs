@@ -21,12 +21,13 @@
 
 using System;
 using System.Collections.Generic;
-using NScumm.Core.Graphics;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
-using System.Diagnostics;
+using NScumm.Core;
+using NScumm.Core.Graphics;
 
-namespace NScumm.Core
+namespace NScumm.Scumm
 {
     partial class ScummEngine
     {
@@ -105,7 +106,7 @@ namespace NScumm.Core
 
                 // Sam and Max uses a caching system, printing empty messages
                 // and setting VAR_V6SoundMODE beforehand. See patch 609791.
-                if (_game.GameId == IO.GameId.SamNMax)
+                if (_game.GameId == Scumm.IO.GameId.SamNMax)
                     channel = Variables[VariableV6SoundMode.Value];
 
                 if (channel != 2)

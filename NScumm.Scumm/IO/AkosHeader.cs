@@ -20,7 +20,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System.Runtime.InteropServices;
 
-namespace NScumm.Core.IO
+namespace NScumm.Scumm.IO
 {
     struct AkosHeader
     {
@@ -35,10 +35,10 @@ namespace NScumm.Core.IO
     [StructLayout(LayoutKind.Explicit)]
     struct AkosOffset
     {
-        [FieldOffsetAttribute(0)]
+        [FieldOffset(0)]
         public uint akcd;
         // offset into the akcd data
-        [FieldOffsetAttribute(4)]
+        [FieldOffset(4)]
         public ushort akci;
         // offset into the akci data
     }

@@ -22,7 +22,7 @@
 using System;
 using System.Diagnostics;
 
-namespace NScumm.Core.Audio
+namespace NScumm.Scumm.Audio.Amiga
 {
     // plays a single looped waveform which starts at one frequency and bends to another frequency, where it remains until stopped
     class V2A_Sound_SingleLoopedPitchbend : V2A_Sound_Base

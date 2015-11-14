@@ -20,8 +20,9 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using NScumm.Core.IO;
+using NScumm.Scumm.IO;
 
-namespace NScumm.Core
+namespace NScumm.Scumm
 {
     partial class ScummEngine3
     {
@@ -90,7 +91,7 @@ namespace NScumm.Core
                     script = 205;
                 // Copy protection was disabled in KIXX XL release (Amiga Disk) and
                 // in LucasArts Classic Adventures (PC Disk)
-                if (Game.GameId == NScumm.Core.IO.GameId.Monkey1 && Game.Variant == "VGA" && script == 0x98)
+                if (Game.GameId == Scumm.IO.GameId.Monkey1 && Game.Variant == "VGA" && script == 0x98)
                 {
                     return;
                 }

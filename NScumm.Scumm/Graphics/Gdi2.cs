@@ -36,11 +36,12 @@
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-using System.IO;
-using NScumm.Core.IO;
 using System.Diagnostics;
+using System.IO;
+using NScumm.Core.Graphics;
+using NScumm.Scumm.IO;
 
-namespace NScumm.Core.Graphics
+namespace NScumm.Scumm.Graphics
 {
     class StripTable
     {

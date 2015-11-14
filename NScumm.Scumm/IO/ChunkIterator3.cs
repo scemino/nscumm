@@ -22,8 +22,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using NScumm.Core;
 
-namespace NScumm.Core.IO
+namespace NScumm.Scumm.IO
 {
     sealed class ChunkIterator : IEnumerator<Chunk>
     {

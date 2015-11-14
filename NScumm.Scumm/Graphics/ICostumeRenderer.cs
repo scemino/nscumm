@@ -15,7 +15,7 @@
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-namespace NScumm.Core.Graphics
+namespace NScumm.Scumm.Graphics
 {
     interface ICostumeRenderer
     {

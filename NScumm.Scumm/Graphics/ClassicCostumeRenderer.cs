@@ -14,10 +14,14 @@
  * You should have received a copy of the GNU General Public License
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
-using System;
-using NScumm.Core.IO;
 
-namespace NScumm.Core.Graphics
+using System;
+using NScumm.Core;
+using NScumm.Core.Graphics;
+using NScumm.Core.IO;
+using NScumm.Scumm.IO;
+
+namespace NScumm.Scumm.Graphics
 {
     class Codec1
     {

@@ -2,8 +2,9 @@ using System;
 using System.Globalization;
 using NScumm.Core.Audio;
 using NScumm.Core.Graphics;
+using NScumm.Core.IO;
 
-namespace NScumm.Core.IO
+namespace NScumm.Scumm.IO
 {
     [Flags]
     public enum GameFeatures

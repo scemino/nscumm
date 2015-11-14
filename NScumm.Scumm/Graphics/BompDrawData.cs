@@ -22,8 +22,10 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using NScumm.Core;
+using NScumm.Core.Graphics;
 
-namespace NScumm.Core.Graphics
+namespace NScumm.Scumm.Graphics
 {
     [System.Diagnostics.DebuggerDisplay("{DebuggerDisplay,nq}")]
     public class BompDrawData

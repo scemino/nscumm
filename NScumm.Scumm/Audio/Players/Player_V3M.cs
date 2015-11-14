@@ -20,8 +20,11 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System.Diagnostics;
+using NScumm.Core;
+using NScumm.Core.Audio;
+using NScumm.Scumm.IO;
 
-namespace NScumm.Core.Audio
+namespace NScumm.Scumm.Audio.Players
 {
     /**
  * Scumm V3 Macintosh music driver.

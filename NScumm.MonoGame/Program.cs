@@ -17,10 +17,10 @@
 using System;
 using Mono.Options;
 using NScumm.Core;
-using NScumm.Core.IO;
 using System.Reflection;
 using System.IO;
 using System.Linq;
+using NScumm.Core.IO;
 
 namespace NScumm.MonoGame
 {

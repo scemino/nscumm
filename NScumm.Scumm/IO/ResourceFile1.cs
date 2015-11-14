@@ -23,8 +23,11 @@ using System.Collections.Generic;
 using System.Linq;
 using NScumm.Core.Graphics;
 using System.IO;
+using NScumm.Core;
+using NScumm.Core.Audio;
+using NScumm.Scumm.Graphics;
 
-namespace NScumm.Core.IO
+namespace NScumm.Scumm.IO
 {
     class ResourceFile1: ResourceFile
     {
@@ -287,7 +290,7 @@ namespace NScumm.Core.IO
             return data;
         }
 
-        public override byte[] ReadSound(Audio.MusicDriverTypes music, long offset)
+        public override byte[] ReadSound(MusicDriverTypes music, long offset)
         {
             _reader.BaseStream.Seek(offset, SeekOrigin.Begin);
             var size = _reader.ReadUInt16(); // wa_size

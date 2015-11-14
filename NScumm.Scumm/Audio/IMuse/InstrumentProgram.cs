@@ -19,9 +19,11 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using NScumm.Core.IO;
+using NScumm.Core;
+using NScumm.Core.Audio;
+using NScumm.Scumm.IO;
 
-namespace NScumm.Core.Audio.IMuse
+namespace NScumm.Scumm.Audio.IMuse
 {
     class InstrumentProgram: IInstrumentInternal
     {

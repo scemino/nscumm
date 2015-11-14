@@ -21,8 +21,10 @@
 
 using System;
 using System.Diagnostics;
+using NScumm.Core;
+using NScumm.Scumm.Audio.Players;
 
-namespace NScumm.Core.Audio
+namespace NScumm.Scumm.Audio.Amiga
 {
     // plays a music track
     class V2A_Sound_Music : IV2A_Sound

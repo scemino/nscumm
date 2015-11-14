@@ -18,11 +18,12 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-using NScumm.Core.IO;
+
 using System.Diagnostics;
 using System.IO;
+using NScumm.Scumm.IO;
 
-namespace NScumm.Core.Insane
+namespace NScumm.Scumm.Insane
 {
     partial class Insane
     {

@@ -20,15 +20,17 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
-using System.Linq;
-using NScumm.Core.IO;
-using System.IO;
-using NScumm.Core.Graphics;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Text;
+using NScumm.Core;
+using NScumm.Core.Graphics;
+using NScumm.Scumm.Graphics;
+using NScumm.Scumm.IO;
 
-namespace NScumm.Core
+namespace NScumm.Scumm
 {
     public enum ResType
     {
@@ -109,7 +111,7 @@ namespace NScumm.Core
                 // update IQ points after loading
                 if (_saveLoadFlag == 2)
                 {
-                    if (_game.GameId == NScumm.Core.IO.GameId.Indy4)
+                    if (_game.GameId == Scumm.IO.GameId.Indy4)
                         RunScript(145, false, false, new int[0]);
                 }
 
@@ -234,7 +236,7 @@ namespace NScumm.Core
                 // Restore the virtual screens and force a fade to black.
                 InitScreens(0, ScreenHeight);
 
-                Graphics.Gdi.Fill(MainVirtScreen.Surfaces[0].Pixels, MainVirtScreen.Pitch, 0, MainVirtScreen.Width, MainVirtScreen.Height);
+                Gdi.Fill(MainVirtScreen.Surfaces[0].Pixels, MainVirtScreen.Pitch, 0, MainVirtScreen.Width, MainVirtScreen.Height);
                 MainVirtScreen.SetDirtyRange(0, MainVirtScreen.Height);
                 UpdateDirtyScreen(MainVirtScreen);
                 //UpdatePalette();

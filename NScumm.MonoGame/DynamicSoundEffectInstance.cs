@@ -2,9 +2,6 @@
 // this code is from: http://stackoverflow.com/questions/15959903/xna-monogame-dynamicsoundeffectinstance-buffer-already-full-exception
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 #if MONOMAC
 using MonoMac.OpenAL;
 #else

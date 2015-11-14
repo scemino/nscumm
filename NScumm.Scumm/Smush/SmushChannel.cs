@@ -23,7 +23,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 
-namespace NScumm.Core.Smush
+namespace NScumm.Scumm.Smush
 {
     abstract class SmushChannel
     {

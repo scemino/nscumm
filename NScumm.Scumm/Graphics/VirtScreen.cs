@@ -17,8 +17,9 @@
 
 using System;
 using System.Collections.ObjectModel;
+using NScumm.Core.Graphics;
 
-namespace NScumm.Core.Graphics
+namespace NScumm.Scumm.Graphics
 {
     public class VirtScreen
     {

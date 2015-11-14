@@ -22,7 +22,7 @@
 using System;
 using System.Diagnostics;
 
-namespace NScumm.Core.Audio
+namespace NScumm.Scumm.Audio.Amiga
 {
     // plays a single looped waveform starting at a specific frequency/volume, dropping in frequency and fading volume to zero
     // used when Maniac Mansion explodes

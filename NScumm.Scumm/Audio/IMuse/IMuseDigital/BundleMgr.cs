@@ -18,13 +18,14 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-using System;
-using System.IO;
-using System.Diagnostics;
-using System.Collections.Generic;
-using NScumm.Core.IO;
 
-namespace NScumm.Core.Audio.IMuse
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using NScumm.Core;
+
+namespace NScumm.Scumm.Audio.IMuse.IMuseDigital
 {
     class IndexNodeComparer: Comparer<BundleDirCache.IndexNode>
     {

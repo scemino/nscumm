@@ -14,10 +14,11 @@
  * You should have received a copy of the GNU General Public License
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 using System;
+using NScumm.Core.Graphics;
 
-
-namespace NScumm.Core.Graphics
+namespace NScumm.Scumm.Graphics
 {
     public class Palette
     {

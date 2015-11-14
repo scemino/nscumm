@@ -25,9 +25,11 @@ using System.IO;
 using System;
 using System.Text;
 using System.Linq;
+using NScumm.Core;
 using NScumm.Core.Audio;
+using NScumm.Scumm.Graphics;
 
-namespace NScumm.Core.IO
+namespace NScumm.Scumm.IO
 {
     class ResourceFile3: ResourceFile
     {

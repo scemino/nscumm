@@ -1,4 +1,4 @@
-//
+﻿//
 //  CutScene.cs
 //
 //  Author:
@@ -18,9 +18,11 @@
 //
 //  You should have received a copy of the GNU Lesser General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-using NScumm.Core.IO;
 
-namespace NScumm.Core
+using NScumm.Core;
+using NScumm.Scumm.IO;
+
+namespace NScumm.Scumm
 {
     class CutSceneData
     {

@@ -18,9 +18,12 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-using System;
 
-namespace NScumm.Core.Audio.IMuse
+using System;
+using NScumm.Core;
+using NScumm.Core.Audio;
+
+namespace NScumm.Scumm.Audio.IMuse.IMuseDigital
 {
     [System.Diagnostics.DebuggerDisplay("{DebuggerDisplay,nq}")]
     class Track
@@ -131,11 +134,11 @@ namespace NScumm.Core.Audio.IMuse
         {
             SoundType type;
             if (VolGroupId == 1)
-                type = Audio.SoundType.Speech;
+                type = Core.Audio.SoundType.Speech;
             else if (VolGroupId == 2)
-                type = Audio.SoundType.SFX;
+                type = Core.Audio.SoundType.SFX;
             else if (VolGroupId == 3)
-                type = Audio.SoundType.Music;
+                type = Core.Audio.SoundType.Music;
             else
                 throw new InvalidOperationException("Track::GetType(): invalid sound type");
             return type;

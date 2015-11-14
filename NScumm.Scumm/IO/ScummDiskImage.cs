@@ -21,8 +21,10 @@
 
 using System.IO;
 using System;
+using NScumm.Core;
+using NScumm.Core.IO;
 
-namespace NScumm.Core.IO
+namespace NScumm.Scumm.IO
 {
     static class ScummDiskImage
     {

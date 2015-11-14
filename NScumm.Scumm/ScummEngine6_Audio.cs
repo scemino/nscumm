@@ -18,10 +18,10 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-using NScumm.Core.Audio.IMuse;
 
+using NScumm.Scumm.Audio.IMuse.IMuseDigital;
 
-namespace NScumm.Core
+namespace NScumm.Scumm
 {
     partial class ScummEngine6
     {

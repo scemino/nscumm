@@ -20,8 +20,9 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System.Diagnostics;
+using NScumm.Scumm.Audio.Players;
 
-namespace NScumm.Core.Audio
+namespace NScumm.Scumm.Audio.Amiga
 {
     abstract class V2A_Sound_Base : IV2A_Sound
     {

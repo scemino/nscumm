@@ -63,6 +63,8 @@ namespace NScumm.Core
         byte[] ReadAllBytes(string filename);
 
         string GetSignature(string path);
+
+        XDocument LoadDocument(Stream stream);
     }
 
     public interface IWrappedObject : IDisposable

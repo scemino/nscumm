@@ -19,10 +19,10 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using NScumm.Core.Graphics;
 using System;
+using NScumm.Core.Graphics;
 
-namespace NScumm.Core
+namespace NScumm.Scumm
 {
     class Actor3: Actor
     {

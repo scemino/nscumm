@@ -19,13 +19,13 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using System;
+using NScumm.Core.Audio;
 using NScumm.Core.Graphics;
 using NScumm.Core.Input;
-using NScumm.Core.Audio;
-using System;
 using NScumm.Core.IO;
 
-namespace NScumm.Core
+namespace NScumm.Scumm
 {
     public class ScummEngine5: ScummEngine4
     {

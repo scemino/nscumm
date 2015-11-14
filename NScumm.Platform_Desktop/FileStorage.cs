@@ -18,7 +18,7 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-using System;
+
 using System.IO;
 using NScumm.Core;
 using System.Text;
@@ -128,6 +128,11 @@ namespace NScumm
                 }
             }
             return signature;
+        }
+
+        public XDocument LoadDocument(Stream stream)
+        {
+            return XDocument.Load(stream);
         }
     }
 }

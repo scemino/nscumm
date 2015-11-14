@@ -19,12 +19,14 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using NScumm.Core.Audio.SoftSynth;
-using NScumm.Core.IO;
 using System.Diagnostics;
 using System.IO;
+using NScumm.Core;
+using NScumm.Core.Audio;
+using NScumm.Core.Audio.SoftSynth;
+using NScumm.Scumm.IO;
 
-namespace NScumm.Core.Audio.IMuse
+namespace NScumm.Scumm.Audio.IMuse
 {
     class InstrumentAdLib : IInstrumentInternal
     {

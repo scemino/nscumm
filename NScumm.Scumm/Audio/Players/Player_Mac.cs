@@ -18,12 +18,15 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 using System;
 using System.Diagnostics;
 using System.IO;
-using NScumm.Core.IO;
+using NScumm.Core;
+using NScumm.Core.Audio;
+using NScumm.Scumm.IO;
 
-namespace NScumm.Core.Audio
+namespace NScumm.Scumm.Audio.Players
 {
     /// <summary>
     /// Scumm Macintosh music driver, base class.
@@ -198,7 +201,7 @@ namespace NScumm.Core.Audio
                 {
                     if (_vm.Game.GameId == GameId.Monkey1 && ser.IsLoading)
                     {
-                        var dummyImuse = NScumm.Core.Audio.IMuse.IMuse.Create(null, null);
+                        var dummyImuse = IMuse.IMuse.Create(null, null);
                         dummyImuse.SaveOrLoad(ser);
                     }
                 }

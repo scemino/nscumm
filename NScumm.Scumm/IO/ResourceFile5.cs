@@ -25,8 +25,11 @@ using System.IO;
 using System.Text;
 using NScumm.Core.Graphics;
 using System.Linq;
+using NScumm.Core;
+using NScumm.Core.Audio;
+using NScumm.Scumm.Graphics;
 
-namespace NScumm.Core.IO
+namespace NScumm.Scumm.IO
 {
     class ResourceFile5: ResourceFile4
     {
@@ -467,7 +470,7 @@ namespace NScumm.Core.IO
             return name.ToArray();
         }
 
-        public override byte[] ReadSound(Audio.MusicDriverTypes music, long offset)
+        public override byte[] ReadSound(MusicDriverTypes music, long offset)
         {
             GotoResourceHeader(offset);
             var tag = ToTag(_reader.ReadBytes(4));
@@ -484,7 +487,7 @@ namespace NScumm.Core.IO
                 switch (tag)
                 {
                     case "ADL ":
-                        if (music == Audio.MusicDriverTypes.AdLib|| music == Audio.MusicDriverTypes.FMTowns)
+                        if (music == MusicDriverTypes.AdLib|| music == MusicDriverTypes.FMTowns)
                         {
                             _reader.BaseStream.Seek(-8, SeekOrigin.Current);
                             return _reader.ReadBytes((int)size + 8);
@@ -495,7 +498,7 @@ namespace NScumm.Core.IO
                         _reader.BaseStream.Seek(-8, SeekOrigin.Current);
                         return _reader.ReadBytes((int)size + 8);
                     case "SPK ":
-                        if (music == Audio.MusicDriverTypes.PCSpeaker)
+                        if (music == MusicDriverTypes.PCSpeaker)
                         {
                             _reader.BaseStream.Seek(-8, SeekOrigin.Current);
                             return _reader.ReadBytes((int)size + 8);
@@ -503,7 +506,7 @@ namespace NScumm.Core.IO
                         _reader.BaseStream.Seek(size, SeekOrigin.Current);
                         break;
                     case "MIDI":
-                        if (music == Audio.MusicDriverTypes.Midi)
+                        if (music == MusicDriverTypes.Midi)
                         {
                             _reader.BaseStream.Seek(-8, SeekOrigin.Current);
                             return _reader.ReadBytes((int)size + 8);

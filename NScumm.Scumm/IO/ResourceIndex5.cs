@@ -18,8 +18,9 @@
 using System.IO;
 using System.Text;
 using System.Collections.ObjectModel;
+using NScumm.Core;
 
-namespace NScumm.Core.IO
+namespace NScumm.Scumm.IO
 {
     class ResourceIndex5: ResourceIndex4
     {

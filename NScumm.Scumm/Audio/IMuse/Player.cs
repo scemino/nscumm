@@ -21,11 +21,13 @@
 
 using System;
 using System.Diagnostics;
-using System.Text;
 using System.IO;
-using NScumm.Core.IO;
+using System.Text;
+using NScumm.Core;
+using NScumm.Core.Audio;
+using NScumm.Scumm.IO;
 
-namespace NScumm.Core.Audio.IMuse
+namespace NScumm.Scumm.Audio.IMuse
 {
     class Player : MidiDriverBase
     {

@@ -22,7 +22,7 @@
 using System;
 using System.Diagnostics;
 
-namespace NScumm.Core.Audio
+namespace NScumm.Scumm.Audio.Amiga
 {
     // plays a single looped waveform, fading the volume from zero to maximum at one rate, then back to zero at another rate
     // used when a microwave oven goes 'Ding'

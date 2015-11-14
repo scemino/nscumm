@@ -21,7 +21,7 @@
 
 using NScumm.Core.Graphics;
 
-namespace NScumm.Core
+namespace NScumm.Scumm
 {
     [System.Diagnostics.DebuggerDisplay("{DebuggerDisplay,nq}")]
     class BlastObject

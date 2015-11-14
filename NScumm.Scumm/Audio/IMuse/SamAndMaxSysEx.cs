@@ -20,9 +20,9 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System.IO;
-using NScumm.Core.Audio.Midi;
+using NScumm.Core;
 
-namespace NScumm.Core.Audio.IMuse
+namespace NScumm.Scumm.Audio.IMuse
 {
     class SamAndMaxSysEx: ISysEx
     {

@@ -18,15 +18,17 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-using System;
-using System.IO;
-using NScumm.Core.Audio;
-using NScumm.Core.IO;
-using System.Diagnostics;
-using NScumm.Core.Graphics;
-using System.Linq;
 
-namespace NScumm.Core.Smush
+using System;
+using System.Diagnostics;
+using System.IO;
+using NScumm.Core;
+using NScumm.Core.Audio;
+using NScumm.Core.Graphics;
+using NScumm.Scumm.Graphics;
+using NScumm.Scumm.IO;
+
+namespace NScumm.Scumm.Smush
 {
     class SmushPlayer
     {

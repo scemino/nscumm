@@ -20,7 +20,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-namespace NScumm.Core
+namespace NScumm.Scumm
 {
     partial class ScummEngine3
     {

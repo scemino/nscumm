@@ -20,8 +20,9 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System.Diagnostics;
+using NScumm.Scumm.Audio.Players;
 
-namespace NScumm.Core.Audio
+namespace NScumm.Scumm.Audio.AppleII
 {
     /// <summary>
     /// SoundFunction1: frequency up/down

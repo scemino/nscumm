@@ -22,7 +22,7 @@
 using System;
 using System.Diagnostics;
 
-namespace NScumm.Core.Audio
+namespace NScumm.Scumm.Audio.Amiga
 {
     // plays a single looped waveform, starting at one frequency and at full volume, bending down to another frequency, and then fading volume to zero
     // used in Maniac Mansion for the tentacle sounds

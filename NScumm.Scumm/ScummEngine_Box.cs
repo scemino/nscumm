@@ -18,12 +18,14 @@
 //
 //  You should have received a copy of the GNU Lesser General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 using System;
 using System.Collections.Generic;
-using NScumm.Core.Graphics;
 using System.Diagnostics;
+using NScumm.Core;
+using NScumm.Core.Graphics;
 
-namespace NScumm.Core
+namespace NScumm.Scumm
 {
     partial class ScummEngine
     {
@@ -47,7 +49,7 @@ namespace NScumm.Core
 
             // WORKAROUND for bug #847827: This is a bug in the data files, as it also
             // occurs with the original engine. We work around it here anyway.
-            if (_game.GameId == IO.GameId.Indy4 && _currentRoom == 225 && _roomResource == 94 && boxNum == 8)
+            if (_game.GameId == Scumm.IO.GameId.Indy4 && _currentRoom == 225 && _roomResource == 94 && boxNum == 8)
                 return 0;
 
             var box = GetBoxBase(boxNum);

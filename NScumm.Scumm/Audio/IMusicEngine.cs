@@ -18,9 +18,10 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-using NScumm.Core.IO;
 
-namespace NScumm.Core.Audio
+using NScumm.Scumm.IO;
+
+namespace NScumm.Scumm.Audio
 {
     public interface IMusicEngine
     {

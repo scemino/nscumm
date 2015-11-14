@@ -18,11 +18,15 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-using NScumm.Core.IO;
-using System.Diagnostics;
-using System.Collections.Generic;
 
-namespace NScumm.Core.Graphics
+using System.Collections.Generic;
+using System.Diagnostics;
+using NScumm.Core;
+using NScumm.Core.Graphics;
+using NScumm.Core.IO;
+using NScumm.Scumm.IO;
+
+namespace NScumm.Scumm.Graphics
 {
     class CharsetRendererTownsClassic: CharsetRendererClassic
     {

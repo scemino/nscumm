@@ -21,7 +21,7 @@
 
 using System.Diagnostics;
 
-namespace NScumm.Core.Audio
+namespace NScumm.Scumm.Audio.Amiga
 {
     // plays two looped waveforms for a fixed number of frames
     class V2A_Sound_MultiLoopedDuration : V2A_Sound_MultiLooped

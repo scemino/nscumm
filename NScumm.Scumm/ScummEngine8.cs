@@ -18,14 +18,16 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-using NScumm.Core.IO;
-using NScumm.Core.Graphics;
-using NScumm.Core.Input;
-using NScumm.Core.Audio;
+
 using System;
 using System.Diagnostics;
+using NScumm.Core;
+using NScumm.Core.Audio;
+using NScumm.Core.Graphics;
+using NScumm.Core.Input;
+using NScumm.Core.IO;
 
-namespace NScumm.Core
+namespace NScumm.Scumm
 {
     partial class ScummEngine8 : ScummEngine7
     {

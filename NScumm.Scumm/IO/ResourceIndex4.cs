@@ -16,7 +16,7 @@
  */
 
 
-namespace NScumm.Core.IO
+namespace NScumm.Scumm.IO
 {
     class ResourceIndex4: ResourceIndex3
     {

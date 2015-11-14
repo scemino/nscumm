@@ -20,9 +20,10 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
+using NScumm.Core;
 using NScumm.Core.IO;
 
-namespace NScumm.Core
+namespace NScumm.Scumm
 {
     partial class ScummEngine3
     {
@@ -125,7 +126,7 @@ namespace NScumm.Core
                         var top = GetVarOrDirectWord(OpCodeParameter.Param2);
                         vs.CurRect.Left = left;
                         vs.CurRect.Top = top;
-                        if (Game.GameId == NScumm.Core.IO.GameId.Loom && Game.Version == 4)
+                        if (Game.GameId == Scumm.IO.GameId.Loom && Game.Version == 4)
                         {
                             // FIXME: hack loom notes into right spot
                             if ((verb >= 90) && (verb <= 97))

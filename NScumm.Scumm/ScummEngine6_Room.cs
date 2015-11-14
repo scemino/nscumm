@@ -18,9 +18,11 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-using System;
 
-namespace NScumm.Core
+using System;
+using NScumm.Core;
+
+namespace NScumm.Scumm
 {
     partial class ScummEngine6
     {
@@ -87,7 +89,7 @@ namespace NScumm.Core
                     _saveTemporaryState = true;
                     _saveLoadSlot = Pop();
                     _saveLoadFlag = Pop();
-                    if (Game.GameId == IO.GameId.Tentacle)
+                    if (Game.GameId == Scumm.IO.GameId.Tentacle)
                         _saveSound = (_saveLoadSlot != 0);
                     break;
                 case 181:               // SO_ROOM_FADE
@@ -161,7 +163,7 @@ namespace NScumm.Core
                         // this way, we avoid some graphics glitches that the original
                         // interpreter had.
 
-                        if (Game.GameId == IO.GameId.SamNMax && Slots[CurrentScript].Number == 64)
+                        if (Game.GameId == Scumm.IO.GameId.SamNMax && Slots[CurrentScript].Number == 64)
                             SetDirtyColors(0, 255);
                         else
                             SetCurrentPalette(a);

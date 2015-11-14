@@ -21,10 +21,12 @@
 
 using System;
 using System.Diagnostics;
-using NScumm.Core.Audio.Decoders;
 using System.IO;
+using NScumm.Core.Audio;
+using NScumm.Core.Audio.Decoders;
+using NScumm.Scumm.Audio.Amiga;
 
-namespace NScumm.Core.Audio
+namespace NScumm.Scumm.Audio.Players
 {
 
     /// <summary>

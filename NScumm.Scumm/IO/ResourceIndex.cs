@@ -18,8 +18,10 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System;
+using NScumm.Core;
+using NScumm.Core.IO;
 
-namespace NScumm.Core.IO
+namespace NScumm.Scumm.IO
 {
     public struct Resource
     {

@@ -22,7 +22,7 @@
 using System;
 using NScumm.Core.Graphics;
 
-namespace NScumm.Core
+namespace NScumm.Scumm
 {
     partial class ScummEngine3
     {
@@ -170,7 +170,7 @@ namespace NScumm.Core
                             var offset = (ushort)GetVarOrDirectWord(OpCodeParameter.Param1);
                             var delay = (ushort)GetVarOrDirectWord(OpCodeParameter.Param2);
 
-                            if (Game.GameId == IO.GameId.Loom && Game.Version == 4)
+                            if (Game.GameId == Scumm.IO.GameId.Loom && Game.Version == 4)
                             {
                                 if (offset == 0 && delay == 0)
                                 {

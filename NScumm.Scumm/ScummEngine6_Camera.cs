@@ -19,7 +19,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace NScumm.Core
+namespace NScumm.Scumm
 {
     partial class ScummEngine6
     {
@@ -28,7 +28,7 @@ namespace NScumm.Core
         {
             var y = (Game.Version >= 7) ? Pop() : 0;
             var x = Pop();
-            PanCameraToCore(new Graphics.Point((short)x, (short)y));
+            PanCameraToCore(new Core.Graphics.Point((short)x, (short)y));
         }
 
         [OpCode(0x79)]
@@ -50,7 +50,7 @@ namespace NScumm.Core
 
                 var y = Pop();
                 var x = Pop();
-                SetCameraAt(new Graphics.Point((short)x, (short)y));
+                SetCameraAt(new Core.Graphics.Point((short)x, (short)y));
             }
             else
             {

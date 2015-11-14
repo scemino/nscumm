@@ -22,7 +22,7 @@
 using System;
 using System.Diagnostics;
 
-namespace NScumm.Core.Audio
+namespace NScumm.Scumm.Audio.Amiga
 {
     // plays a single looped waveform, starting at one frequency, bending down to another frequency, and then back up to the original frequency
     // used for electronic noises

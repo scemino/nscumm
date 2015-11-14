@@ -18,11 +18,13 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 using System;
 using System.Diagnostics;
-using NScumm.Core.IO;
+using NScumm.Core;
+using NScumm.Scumm.IO;
 
-namespace NScumm.Core.Insane
+namespace NScumm.Scumm.Insane
 {
     partial class Insane
     {
@@ -424,7 +426,7 @@ namespace NScumm.Core.Insane
                     _actor[1].weaponClass = 1;
                     _actor[1].act[2].state = 3;
                     _actor[1].act[2].tilt = CalcTilt(_actor[1].tilt);
-                    if (!((_vm.Game.Features.HasFlag(NScumm.Core.IO.GameFeatures.Demo)) /*&& (_vm._game.platform == Common::kPlatformDOS)*/))
+                    if (!((_vm.Game.Features.HasFlag(Scumm.IO.GameFeatures.Demo)) /*&& (_vm._game.platform == Common::kPlatformDOS)*/))
                         smlayer_startSfx(63);
                     break;
                 case 3:
@@ -433,7 +435,7 @@ namespace NScumm.Core.Insane
                     if (_actor[1].act[2].frame >= 6)
                     {
                         tmp = CalcBenDamage(true, true);
-                        if ((_vm.Game.Features.HasFlag(NScumm.Core.IO.GameFeatures.Demo)) /*&& (_vm._game.platform == Common::kPlatformDOS)*/)
+                        if ((_vm.Game.Features.HasFlag(Scumm.IO.GameFeatures.Demo)) /*&& (_vm._game.platform == Common::kPlatformDOS)*/)
                         {
                             if (tmp == 1)
                                 smlayer_startSfx(50);
@@ -623,7 +625,7 @@ namespace NScumm.Core.Insane
                     smlayer_setActorFacing(1, 2, 19, 180);
                     _actor[1].act[2].state = 19;
                     _actor[1].act[2].tilt = CalcTilt(_actor[1].tilt);
-                    if (!((_vm.Game.Features.HasFlag(NScumm.Core.IO.GameFeatures.Demo)) /*&& (_vm._game.platform == Common::kPlatformDOS)*/))
+                    if (!((_vm.Game.Features.HasFlag(Scumm.IO.GameFeatures.Demo)) /*&& (_vm._game.platform == Common::kPlatformDOS)*/))
                     {
                         smlayer_startSfx(69);
                         if (_actor[1].field_54 == 0)
@@ -703,7 +705,7 @@ namespace NScumm.Core.Insane
                             case INV_2X4:
                             case INV_BOOT:
                                 tmp = CalcBenDamage(true, true);
-                                if ((_vm.Game.Features.HasFlag(NScumm.Core.IO.GameFeatures.Demo)) /*&& (_vm._game.platform == Common::kPlatformDOS)*/)
+                                if ((_vm.Game.Features.HasFlag(Scumm.IO.GameFeatures.Demo)) /*&& (_vm._game.platform == Common::kPlatformDOS)*/)
                                 {
                                     if (tmp == 1)
                                         smlayer_startSfx(52);
@@ -836,7 +838,7 @@ namespace NScumm.Core.Insane
                     if (_actor[1].act[2].frame >= 3)
                     {
                         tmp = CalcBenDamage(true, true);
-                        if ((_vm.Game.Features.HasFlag(NScumm.Core.IO.GameFeatures.Demo)) /*&& (_vm._game.platform == Common::kPlatformDOS)*/)
+                        if ((_vm.Game.Features.HasFlag(Scumm.IO.GameFeatures.Demo)) /*&& (_vm._game.platform == Common::kPlatformDOS)*/)
                         {
                             if (tmp == 1)
                                 smlayer_startSfx(57);
@@ -894,7 +896,7 @@ namespace NScumm.Core.Insane
                     smlayer_setActorLayer(1, 2, 25);
                     _actor[1].act[2].state = 37;
 
-                    if (!((_vm.Game.Features.HasFlag(NScumm.Core.IO.GameFeatures.Demo)) /*&& (_vm._game.platform == Common::kPlatformDOS)*/))
+                    if (!((_vm.Game.Features.HasFlag(Scumm.IO.GameFeatures.Demo)) /*&& (_vm._game.platform == Common::kPlatformDOS)*/))
                     {
                         smlayer_startSfx(96);
                         switch (_currEnemy)

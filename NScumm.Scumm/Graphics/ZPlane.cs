@@ -21,7 +21,7 @@
 
 using System.Collections.Generic;
 
-namespace NScumm.Core.Graphics
+namespace NScumm.Scumm.Graphics
 {
     public class ZPlane
     {

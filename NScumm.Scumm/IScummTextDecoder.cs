@@ -1,4 +1,4 @@
-//
+﻿//
 //  IScummTextDecoder.cs
 //
 //  Author:
@@ -36,7 +36,7 @@
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-namespace NScumm.Core
+namespace NScumm.Scumm
 {
     public interface IScummTextDecoder
     {

@@ -21,7 +21,7 @@
 
 using System.IO;
 
-namespace NScumm.Core.IO
+namespace NScumm.Scumm.IO
 {
     public class XorStream : Stream
     {

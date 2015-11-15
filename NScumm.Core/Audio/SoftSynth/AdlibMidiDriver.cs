@@ -153,7 +153,7 @@ namespace NScumm.Core.Audio.SoftSynth
         public Struct10 S10;
     }
 
-    partial class AdlibMidiDriver: EmulatedMidiDriver
+    public partial class AdlibMidiDriver: EmulatedMidiDriver
     {
         public override bool IsStereo { get { return _opl.IsStereo; } }
 

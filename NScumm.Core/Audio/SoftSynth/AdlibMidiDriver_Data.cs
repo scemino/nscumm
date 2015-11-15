@@ -21,7 +21,7 @@
 
 namespace NScumm.Core.Audio.SoftSynth
 {
-    partial class AdlibMidiDriver
+    public partial class AdlibMidiDriver
     {
         static readonly byte[] gmPercussionInstrumentMap =
         {

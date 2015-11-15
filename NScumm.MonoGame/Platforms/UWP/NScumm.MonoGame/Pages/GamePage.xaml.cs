@@ -9,7 +9,7 @@ namespace NScumm.MonoGame
     {
         private ScummGame _game;
 
-        internal static GameInfo _info;
+        internal static GameDetected _info;
 
         public GamePage()
         {
@@ -18,7 +18,7 @@ namespace NScumm.MonoGame
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
-            var info = e.Parameter as GameInfo;
+            var info = e.Parameter as GameDetected;
             _info = info;
             _game = XamlGame<ScummGame>.Create("", Window.Current.CoreWindow, GamePanel);
         }

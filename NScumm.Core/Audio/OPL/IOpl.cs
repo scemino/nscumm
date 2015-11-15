@@ -17,7 +17,7 @@
 
 namespace NScumm.Core.Audio.OPL
 {
-    enum OplType
+    public enum OplType
     {
         Opl2,
         DualOpl2,

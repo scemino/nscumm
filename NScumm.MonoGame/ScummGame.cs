@@ -14,8 +14,9 @@
  * You should have received a copy of the GNU General Public License
  * along with NScumm.  If not, see <http://www.gnu.org/licenses/>.
  */
-using NScumm.Core.IO;
+
 using Microsoft.Xna.Framework;
+using NScumm.Core.IO;
 
 namespace NScumm.MonoGame
 {
@@ -49,7 +50,7 @@ namespace NScumm.MonoGame
             GraphicsDeviceManager.PreferredBackBufferWidth = 800;
             GraphicsDeviceManager.PreferredBackBufferHeight = (int)(800.0 * Settings.Game.Height / Settings.Game.Width);
 #else
-            Settings = new GameSettings(GamePage._info);
+            Settings = new GameSettings(GamePage._info.Game,GamePage._info.Engine);
 #endif
             _screenManager = new ScreenManager(this);
             Components.Add(_screenManager);
@@ -63,7 +64,7 @@ namespace NScumm.MonoGame
         /// </summary>
         protected override void Initialize()
         {
-            Window.Title = string.Format("nSCUMM - {0} [{1}/{2}]", Settings.Game.Description, Settings.Game.Variant, Settings.Game.Culture.NativeName);
+            Window.Title = string.Format("nSCUMM - {0} [{1}]", Settings.Game.Description, Settings.Game.Culture.NativeName);
             _screenManager.AddScreen(new BackgroundScreen());
             _screenManager.AddScreen(new ScummScreen(this, Settings));
 

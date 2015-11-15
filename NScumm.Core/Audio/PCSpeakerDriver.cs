@@ -24,7 +24,7 @@ using System;
 
 namespace NScumm.Core.Audio
 {
-    class PCSpeakerDriver: EmulatedMidiDriver
+    public class PCSpeakerDriver: EmulatedMidiDriver
     {
         public override bool IsStereo
         {

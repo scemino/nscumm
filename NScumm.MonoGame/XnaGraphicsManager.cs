@@ -23,6 +23,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using NScumm.Core;
+using Point = NScumm.Core.Graphics.Point;
 
 namespace NScumm.MonoGame
 {
@@ -57,6 +58,11 @@ namespace NScumm.MonoGame
             {
                 _colorGraphicsManager.UpdateScreen();
             }
+        }
+
+        public void CopyRectToScreen(byte[] buffer, int startOffset, int sourceStride, int x, int y, int width, int height)
+        {
+            _colorGraphicsManager.CopyRectToScreen(buffer, startOffset, sourceStride, x, y, width, height);
         }
 
         public void CopyRectToScreen(byte[] buffer, int sourceStride, int x, int y, int width, int height)
@@ -106,6 +112,11 @@ namespace NScumm.MonoGame
             _colorGraphicsManager.SetCursor(pixels, width, height, hotspot);
         }
 
+        public void SetCursor(byte[] pixels, int offset, int width, int height, Point hotspot, int keyColor)
+        {
+            _colorGraphicsManager.SetCursor(pixels, offset, width, height, hotspot, keyColor);
+        }
+
         #endregion
 
         #region Draw Methods
@@ -153,9 +164,11 @@ namespace NScumm.MonoGame
         interface IColorGraphicsManager
         {
             void UpdateScreen();
+            void CopyRectToScreen(byte[] buffer, int startOffset, int sourceStride, int x, int y, int width, int height);
             void CopyRectToScreen(byte[] buffer, int sourceStride, int x, int y, int width, int height);
             void CopyRectToScreen(byte[] buffer, int sourceStride, int x, int y, int dstX, int dstY, int width, int height);
             void SetCursor(byte[] pixels, int width, int height, Core.Graphics.Point hotspot);
+            void SetCursor(byte[] pixels, int offset, int width, int height, Core.Graphics.Point hotspot, int keyColor);
         }
 
         class Rgb16GraphicsManager : IColorGraphicsManager
@@ -177,6 +190,17 @@ namespace NScumm.MonoGame
                         var c = _gfxManager._pixels.ToUInt16(w * 2 + h * _gfxManager._width * 2);
                         NScumm.Core.Graphics.ColorHelper.ColorToRGB(c, out r, out g, out b);
                         _gfxManager._colors[w + h * _gfxManager._width] = new Color(r, g, b);
+                    }
+                }
+            }
+
+            public void CopyRectToScreen(byte[] buffer, int startOffset, int sourceStride, int x, int y, int width, int height)
+            {
+                for (int h = 0; h < height; h++)
+                {
+                    for (int w = 0; w < width; w++)
+                    {
+                        _gfxManager._pixels.WriteUInt16(w * 2 + h * _gfxManager._width * 2, buffer.ToUInt16(startOffset + (x + w) * 2 + (h + y) * sourceStride));
                     }
                 }
             }
@@ -205,6 +229,11 @@ namespace NScumm.MonoGame
 
             public void SetCursor(byte[] pixels, int width, int height, Core.Graphics.Point hotspot)
             {
+                SetCursor(pixels, 0, width, height, hotspot, 0xFF);
+            }
+
+            public void SetCursor(byte[] pixels, int offset, int width, int height, Point hotspot, int keyColor)
+            {
                 if (_gfxManager._textureCursor.Width != width || _gfxManager._textureCursor.Height != height)
                 {
                     _gfxManager._textureCursor.Dispose();
@@ -219,9 +248,9 @@ namespace NScumm.MonoGame
                 {
                     for (int w = 0; w < width; w++)
                     {
-                        var palColor = pixels.ToUInt16(w * 2 + h * width * 2);
+                        var palColor = pixels.ToUInt16(offset + w * 2 + h * width * 2);
                         NScumm.Core.Graphics.ColorHelper.ColorToRGB(palColor, out r, out g, out b);
-                        var color = palColor == 0xFF ? Color.Transparent : new Color(r, g, b);
+                        var color = palColor == keyColor ? Color.Transparent : new Color(r, g, b);
                         pixelsCursor[w + h * width] = color;
                     }
                 }
@@ -251,6 +280,17 @@ namespace NScumm.MonoGame
                 }
             }
 
+            public void CopyRectToScreen(byte[] buffer, int startOffset, int sourceStride, int x, int y, int width, int height)
+            {
+                for (int h = 0; h < height; h++)
+                {
+                    for (int w = 0; w < width; w++)
+                    {
+                        _gfxManager._pixels[x + w + (y + h) * _gfxManager._width] = buffer[startOffset + w + h * sourceStride];
+                    }
+                }
+            }
+
             public void CopyRectToScreen(byte[] buffer, int sourceStride, int x, int y, int width, int height)
             {
                 for (int h = 0; h < height; h++)
@@ -275,6 +315,11 @@ namespace NScumm.MonoGame
 
             public void SetCursor(byte[] pixels, int width, int height, Core.Graphics.Point hotspot)
             {
+                SetCursor(pixels, 0, width, height, hotspot, 0xFF);
+            }
+
+            public void SetCursor(byte[] pixels, int offset, int width, int height, Point hotspot, int keyColor)
+            {
                 if (_gfxManager._textureCursor.Width != width || _gfxManager._textureCursor.Height != height)
                 {
                     _gfxManager._textureCursor.Dispose();
@@ -288,8 +333,8 @@ namespace NScumm.MonoGame
                 {
                     for (int w = 0; w < width; w++)
                     {
-                        var palColor = pixels[w + h * width];
-                        var color = palColor == 0xFF ? Color.Transparent : _gfxManager._palColors[palColor];
+                        var palColor = pixels[offset + w + h * width];
+                        var color = palColor == keyColor ? Color.Transparent : _gfxManager._palColors[palColor];
                         pixelsCursor[w + h * width] = color;
                     }
                 }
@@ -309,7 +354,7 @@ namespace NScumm.MonoGame
         object _gate = new object();
         Color[] _colors;
         GameWindow _window;
-        IColorGraphicsManager _colorGraphicsManager; 
+        IColorGraphicsManager _colorGraphicsManager;
         #endregion
     }
 }

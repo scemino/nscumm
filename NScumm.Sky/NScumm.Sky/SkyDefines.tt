@@ -1,0 +1,29 @@
+﻿<#@ template debug="false" hostspecific="true" language="C#" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="System.IO" #>
+<#@ output extension=".cs" #>
+<#
+var content=new StringBuilder();
+var lines = File.ReadAllLines(this.Host.ResolvePath("skydefs.h"));
+var regex = new System.Text.RegularExpressions.Regex(@"define\s+(?<name>\w+)\s+(?<value>[^/]+)");
+foreach(var line in lines)
+{
+	var m = regex.Match(line);
+	if (m.Success)
+	{
+		var name = m.Groups["name"].Value;
+		var value = m.Groups["value"].Value.Trim();
+		content.AppendFormat("\t\tpublic const int {0} = {1};", name, value).AppendLine();
+	}
+}
+#>
+namespace NScumm.Sky
+{
+	partial class Logic
+	{
+<#= content.ToString() #>
+	}
+}

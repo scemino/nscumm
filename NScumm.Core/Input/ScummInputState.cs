@@ -48,7 +48,7 @@ namespace NScumm.Core.Input
 
         public bool IsKeyDown(KeyCode code)
         {
-            return keys != null && keys.Contains(code);
+            return _keys != null && _keys.Contains(code);
         }
 
         public bool IsKeyUp(KeyCode code)
@@ -56,10 +56,15 @@ namespace NScumm.Core.Input
             return !IsKeyDown(code);
         }
 
+        public HashSet<KeyCode> GetKeys()
+        {
+            return GetKeys(this);
+        }
+
         public ScummInputState(IList<KeyCode> keys, bool isMouseLeftDown, bool isMouseRightDown)
             : this()
         {
-            this.keys = new HashSet<KeyCode>(keys);   
+            _keys = new HashSet<KeyCode>(keys);   
             IsLeftButtonDown = isMouseLeftDown;
             IsRightButtonDown = isMouseRightDown;
         }
@@ -86,9 +91,9 @@ namespace NScumm.Core.Input
             return equals;
         }
 
-        private HashSet<KeyCode> GetKeys(ScummInputState state)
+        private static HashSet<KeyCode> GetKeys(ScummInputState state)
         {
-            return state.keys ?? new HashSet<KeyCode>();
+            return state._keys ?? new HashSet<KeyCode>();
         }
 
         public static bool operator ==(ScummInputState a, ScummInputState b)
@@ -101,7 +106,7 @@ namespace NScumm.Core.Input
             return !(a == b);
         }
 
-        HashSet<KeyCode> keys;
+        readonly HashSet<KeyCode> _keys;
     }
     
 }

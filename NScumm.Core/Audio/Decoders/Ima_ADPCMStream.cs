@@ -21,12 +21,12 @@
 
 namespace NScumm.Core.Audio.Decoders
 {
-    class Ima_ADPCMStream
+    public class Ima_ADPCMStream
     {
         /// <summary>
         /// This table is used by decodeIMA.
         /// </summary>
-        internal static readonly short[] _imaTable = 
+        public static readonly short[] _imaTable = 
         {
             7,    8,    9,   10,   11,   12,   13,   14,
             16,   17,   19,   21,   23,   25,   28,   31,

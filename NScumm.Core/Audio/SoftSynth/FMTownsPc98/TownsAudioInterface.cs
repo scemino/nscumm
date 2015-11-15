@@ -22,7 +22,7 @@ using System;
 
 namespace NScumm.Core.Audio.SoftSynth
 {
-    class TownsAudioInterface: IDisposable
+    public class TownsAudioInterface: IDisposable
     {
         public TownsAudioInterface(IMixer mixer, ITownsAudioInterfacePluginDriver driver, bool externalMutexHandling = false)
         {

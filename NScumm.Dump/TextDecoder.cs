@@ -1,5 +1,6 @@
 using NScumm.Core;
 using System.Text;
+using NScumm.Scumm;
 
 namespace NScumm.Dump
 {

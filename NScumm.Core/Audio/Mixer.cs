@@ -24,7 +24,7 @@ using NScumm.Core.Audio.SampleProviders;
 
 namespace NScumm.Core.Audio
 {
-    class Mixer: AudioSampleProvider16, IMixer
+    public class Mixer: AudioSampleProvider16, IMixer
     {
         const int NumChannels = 16;
         public const int MaxMixerVolume = 256;
@@ -79,7 +79,7 @@ namespace NScumm.Core.Audio
                 if (stream == null)
                 {
 //                    Console.Error.WriteLine("stream is null");
-                    return null;
+                    return new SoundHandle();
                 }
 
                 Debug.Assert(_mixerReady);
@@ -98,7 +98,7 @@ namespace NScumm.Core.Audio
                             // try to play QueuingAudioStreams with a sound id.
                             if (autofreeStream)
                                 stream.Dispose();
-                            return null;
+                            return new SoundHandle();
                         }
                 }
 
@@ -200,6 +200,21 @@ namespace NScumm.Core.Audio
                     if (_channels[i] != null && _channels[i].Type == type)
                         return true;
                 return false;
+            }
+        }
+
+        public void PauseId(int id, bool paused)
+        {
+            lock (_gate)
+            {
+                for (int i = 0; i != NumChannels; i++)
+                {
+                    if (_channels[i] != null && _channels[i].Id == id)
+                    {
+                        _channels[i].Pause(paused);
+                        return;
+                    }
+                }
             }
         }
 

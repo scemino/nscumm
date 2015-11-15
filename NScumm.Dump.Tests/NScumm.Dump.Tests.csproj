@@ -48,13 +48,13 @@
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <ProjectReference Include="..\NScumm.Dump\NScumm.Dump.csproj">
-      <Project>{D53EB07B-F186-4281-A225-2C3DC5850148}</Project>
-      <Name>NScumm.Dump</Name>
-    </ProjectReference>
     <ProjectReference Include="..\NScumm.Core\NScumm.Core.csproj">
       <Project>{8E7A9E5B-D7EB-4DA1-8EE7-A5D8DE202372}</Project>
       <Name>NScumm.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\NScumm.Dump\NScumm.Dump.csproj">
+      <Project>{d53eb07b-f186-4281-a225-2c3dc5850148}</Project>
+      <Name>NScumm.Dump</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

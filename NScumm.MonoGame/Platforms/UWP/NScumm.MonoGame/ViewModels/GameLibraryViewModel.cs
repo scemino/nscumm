@@ -15,6 +15,8 @@ using Windows.Storage.Pickers;
 using System.Reactive.Concurrency;
 using System.Windows.Input;
 using Microsoft.Xna.Framework.Input;
+using NScumm.Core.IO;
+using System.Reflection;
 
 namespace NScumm.MonoGame.ViewModels
 {
@@ -29,7 +31,7 @@ namespace NScumm.MonoGame.ViewModels
 
     class GameLibraryViewModel : ViewModel, IGameLibraryViewModel
     {
-        static readonly HashSet<string> indexFiles = new HashSet<string>(new string[] { ".D64", ".DSK,", ".LFL", ".000", ".LA0", ".SM0" }, StringComparer.OrdinalIgnoreCase);
+        static readonly HashSet<string> indexFiles = new HashSet<string>(new string[] { ".D64", ".DSK,", ".LFL", ".000", ".LA0", ".SM0", ".DNR" }, StringComparer.OrdinalIgnoreCase);
         private ObservableCollection<GameViewModel> _games;
         private HashSet<string> _gameSignatures;
         private HashSet<string> _folders;
@@ -40,8 +42,6 @@ namespace NScumm.MonoGame.ViewModels
         private ApplicationDataContainer _foldersContainer;
 
         public IEnumerable<GameViewModel> Games { get { return _games; } }
-
-        public GameManager GameManager { get; private set; }
 
         public bool IsScanning
         {
@@ -60,6 +60,7 @@ namespace NScumm.MonoGame.ViewModels
             get { return _addCommand; }
         }
 
+        public GameDetector GameDetector { get; private set; }
 
         public GameLibraryViewModel()
         {
@@ -68,13 +69,7 @@ namespace NScumm.MonoGame.ViewModels
             _games = new ObservableCollection<GameViewModel>();
             _addCommand = new DelegateCommand(Scan);
 
-            // get the nscumm.xml
-            var gamesInfoFile = Path.Combine(
-                Windows.ApplicationModel.Package.Current.InstalledLocation.Path,
-                "Content", "Nscumm.xml");
-
-            var gmInfo = ServiceLocator.FileStorage.OpenFileRead(gamesInfoFile);
-            GameManager = GameManager.Create(gmInfo);
+            GameDetector = new GameDetector("$plugins");
 
             LoadGameLibrary();
         }
@@ -96,10 +91,10 @@ namespace NScumm.MonoGame.ViewModels
                          select path).ToList();
             var games = (from path in paths
                          where File.Exists(path)
-                         let game = GameManager.GetInfo(path)
+                         let game = GameDetector.DetectGame(path)
                          where game != null
-                         where !_gameSignatures.Contains(game.MD5)
-                         orderby game.Description
+                         where !_gameSignatures.Contains(game.Game.Path)
+                         orderby game.Game.Description
                          select game).ToObservable();
             games
                 .Buffer(TimeSpan.FromMilliseconds(200))
@@ -109,7 +104,7 @@ namespace NScumm.MonoGame.ViewModels
                 {
                     foreach (var item in items)
                     {
-                        _gameSignatures.Add(item.MD5);
+                        _gameSignatures.Add(item.Game.Path);
                         _games.Add(new GameViewModel(item));
                     }
                 },
@@ -145,9 +140,9 @@ namespace NScumm.MonoGame.ViewModels
             var obsItems = GetFilesAsync(folder);
             var indexes = from item in obsItems
                           where indexFiles.Contains(Path.GetExtension(item.Path))
-                          let g = GameManager.GetInfo(item.Path)
+                          let g = GameDetector.DetectGame(item.Path)
                           where g != null
-                          where !_gameSignatures.Contains(g.MD5)
+                          where !_gameSignatures.Contains(g.Game.Path)
                           select g;
 
             // add games every 200 ms
@@ -160,7 +155,7 @@ namespace NScumm.MonoGame.ViewModels
                     {
                         var name = string.Format("Game{0}", _gamesContainer.Containers.Count + 1);
                         var gameContainer = _gamesContainer.CreateContainer(name, ApplicationDataCreateDisposition.Always);
-                        gameContainer.Values["Path"] = item.Path;
+                        gameContainer.Values["Path"] = item.Game.Path;
                         _games.Add(new GameViewModel(item));
                     }
                 },

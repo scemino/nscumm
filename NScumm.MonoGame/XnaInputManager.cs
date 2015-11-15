@@ -160,8 +160,18 @@ namespace NScumm.MonoGame
             }
         }
 
+        public void ResetKeys()
+        {
+            lock (_gate)
+            {
+                _keyboardState = new KeyboardState();
+            }
+        }
+
         static readonly Dictionary<Keys, KeyCode> keyToKeyCode = new Dictionary<Keys, KeyCode>
         {
+            { Keys.LeftControl,   KeyCode.LeftControl },
+            { Keys.OemPeriod,   KeyCode.OemPeriod },
             { Keys.Back,   KeyCode.Backspace },
             { Keys.Tab,    KeyCode.Tab       },
             { Keys.Enter,  KeyCode.Return    },

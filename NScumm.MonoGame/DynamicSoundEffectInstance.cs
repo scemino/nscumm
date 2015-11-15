@@ -2,9 +2,6 @@
 // this code is from: http://stackoverflow.com/questions/15959903/xna-monogame-dynamicsoundeffectinstance-buffer-already-full-exception
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 #if MONOMAC
 using MonoMac.OpenAL;
 #else
@@ -33,8 +30,9 @@ namespace Microsoft.Xna.Framework.Audio
 		private bool isDisposed = false;
 		private bool hasSourceId = false;
 		private Thread bufferFillerThread = null;
+	    private bool _done;
 
-		// Events
+	    // Events
 		public event EventHandler<EventArgs> BufferNeeded;
 
 		internal void OnBufferNeeded(EventArgs args)
@@ -221,20 +219,18 @@ namespace Microsoft.Xna.Framework.Audio
 		{
 			if (hasSourceId)
 			{
-				AL.SourceStop(sourceId);
+                _done = true;
+                AL.SourceStop(sourceId);
 				int pendingBuffers = PendingBufferCount;
 				if(pendingBuffers > 0)
 					AL.SourceUnqueueBuffers(sourceId, PendingBufferCount);
-				if (bufferFillerThread != null)
-					bufferFillerThread.Abort();
-				bufferFillerThread = null;
-			}
-			soundState = SoundState.Stopped;
+            }
+            soundState = SoundState.Stopped;
 		}
 
 		public void Stop(bool immediate)
 		{
-			Stop();
+            Stop();
 		}
 
 		public TimeSpan GetSampleDuration(int sizeInBytes)
@@ -270,9 +266,7 @@ namespace Microsoft.Xna.Framework.Audio
 
 		private void BufferFiller()
 		{
-			bool done = false;
-
-			while (!done)
+			while (!_done)
 			{
 				var state = AL.GetSourceState(sourceId);
 				if (state == ALSourceState.Stopped || state == ALSourceState.Initial)

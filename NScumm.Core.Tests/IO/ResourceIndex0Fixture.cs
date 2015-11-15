@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using NScumm.Core.IO;
+using NScumm.Scumm.IO;
 using NUnit.Framework;
 using NScumm.Core.Tests.Properties;
 using NFluent;
 using System.Linq;
+using System.Xml.Linq;
 
 namespace NScumm.Core.Tests.IO
 {
@@ -20,6 +21,11 @@ namespace NScumm.Core.Tests.IO
             }
 
             public string Combine(string path1, string path2)
+            {
+                throw new NotImplementedException();
+            }
+
+            public bool DirectoryExists(string path)
             {
                 throw new NotImplementedException();
             }
@@ -67,6 +73,11 @@ namespace NScumm.Core.Tests.IO
             public string GetSignature(string path)
             {
                 return "942398bfac774bd3f0830ff614b46db9";
+            }
+
+            public XDocument LoadDocument(Stream stream)
+            {
+                throw new NotImplementedException();
             }
 
             public Stream OpenFileRead(string path)

@@ -21,7 +21,7 @@
 
 namespace NScumm.Core.Audio.SoftSynth
 {
-    interface ITownsAudioInterfacePluginDriver
+    public interface ITownsAudioInterfacePluginDriver
     {
         void TimerCallback(int timerId);
     }    

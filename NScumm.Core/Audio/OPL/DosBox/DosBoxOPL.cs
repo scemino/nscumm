@@ -26,7 +26,7 @@ using System.Runtime.InteropServices;
 
 namespace NScumm.Core.Audio.OPL.DosBox
 {
-    partial class DosBoxOPL: IOpl
+    public partial class DosBoxOPL: IOpl
     {
         [StructLayout(LayoutKind.Explicit)]
         struct Reg

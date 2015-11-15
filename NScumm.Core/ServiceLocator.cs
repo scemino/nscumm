@@ -21,6 +21,8 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
+using System.Reflection;
+using System.Xml.Linq;
 
 namespace NScumm.Core
 {
@@ -52,6 +54,8 @@ namespace NScumm.Core
 
         bool FileExists(string path);
 
+        bool DirectoryExists(string path);
+
         Stream OpenFileRead(string path);
 
         Stream OpenFileWrite(string path);
@@ -59,13 +63,80 @@ namespace NScumm.Core
         byte[] ReadAllBytes(string filename);
 
         string GetSignature(string path);
+
+        XDocument LoadDocument(Stream stream);
+    }
+
+    public interface IWrappedObject : IDisposable
+    {
+        object Object { get; }
+    }
+
+    public interface IWrappedObject<T> : IDisposable
+    {
+        T Object { get; }
     }
 
     public interface IPlatform
     {
         void Sleep(int timeInMs);
 
+        int SizeOf(Type type);
+
+        byte[] FromStructure(object obj);
         object ToStructure(byte[] data, int offset, Type type);
+        IWrappedObject WriteStructure(byte[] data, int offset, Type type);
+
+        Assembly LoadAssembly(string dll);
+    }
+
+    public class WrappedObject<T> : IWrappedObject<T>
+    {
+        private IWrappedObject _wrap;
+
+        public WrappedObject(IWrappedObject wrap)
+        {
+            _wrap = wrap;
+        }
+
+        public T Object
+        {
+            get
+            {
+                return (T)_wrap.Object;
+            }
+        }
+
+        public void Dispose()
+        {
+            _wrap.Dispose();
+        }
+    }
+
+    public static class PlatformExtension
+    {
+        public static int SizeOf<T>(this IPlatform platform)
+        {
+            return platform.SizeOf(typeof(T));
+        }
+
+        public static T ToStructure<T>(this IPlatform platform, byte[] data, int offset)
+        {
+            return (T)platform.ToStructure(data, offset, typeof(T));
+        }
+
+        public static IWrappedObject<T> WriteStructure<T>(this IPlatform platform, byte[] data, int offset)
+        {
+            return new WrappedObject<T>(platform.WriteStructure(data, offset, typeof(T)));
+        }
+
+        public static void WriteStructure<T>(this IPlatform platform, byte[] data, int offset, Action<T> action)
+        {
+            using (var obj = new WrappedObject<T>(platform.WriteStructure(data, offset, typeof(T))))
+            {
+                action(obj.Object);
+            }
+        }
     }
 
     public interface ITraceFactory
@@ -80,6 +151,8 @@ namespace NScumm.Core
         public static IPlatform Platform { get; set; }
 
         public static ITraceFactory TraceFatory { get; set; }
+
+        public static ISaveFileManager SaveFileManager { get; set; }
     }
 }
 

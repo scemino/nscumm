@@ -22,7 +22,7 @@
 using System.IO;
 using System.Collections.Generic;
 using System;
-using NScumm.Core.IO;
+using NScumm.Scumm.IO;
 using System.Linq;
 
 namespace NScumm.Dump

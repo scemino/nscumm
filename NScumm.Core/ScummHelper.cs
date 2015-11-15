@@ -18,7 +18,6 @@
 using System;
 using System.Linq;
 using System.IO;
-using NScumm.Core.IO;
 using System.Collections.Generic;
 using System.Collections;
 

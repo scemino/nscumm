@@ -94,9 +94,6 @@
   </PropertyGroup>
   <ItemGroup>
     <!-- A reference to the entire .Net Framework and Windows SDK are automatically included -->
-    <Content Include="..\..\..\..\nscumm.core\io\Nscumm.xml">
-      <Link>Content\Nscumm.xml</Link>
-    </Content>
     <Content Include="..\..\..\content\textures\blank.png">
       <Link>Content\Textures\blank.png</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

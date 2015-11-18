@@ -117,6 +117,11 @@ namespace NScumm.MonoGame
             _colorGraphicsManager.SetCursor(pixels, offset, width, height, hotspot, keyColor);
         }
 
+        public void FillScreen(int color)
+        {
+            _colorGraphicsManager.FillScreen(color);
+        }
+
         #endregion
 
         #region Draw Methods
@@ -169,6 +174,7 @@ namespace NScumm.MonoGame
             void CopyRectToScreen(byte[] buffer, int sourceStride, int x, int y, int dstX, int dstY, int width, int height);
             void SetCursor(byte[] pixels, int width, int height, Core.Graphics.Point hotspot);
             void SetCursor(byte[] pixels, int offset, int width, int height, Core.Graphics.Point hotspot, int keyColor);
+            void FillScreen(int color);
         }
 
         class Rgb16GraphicsManager : IColorGraphicsManager
@@ -257,6 +263,17 @@ namespace NScumm.MonoGame
 
                 _gfxManager._textureCursor.SetData(pixelsCursor);
             }
+
+            public void FillScreen(int color)
+            {
+                for (int h = 0; h < _gfxManager._height; h++)
+                {
+                    for (int w = 0; w < _gfxManager._width; w++)
+                    {
+                        _gfxManager._pixels.WriteUInt16(w * 2 + h * _gfxManager._width * 2, (ushort)color);
+                    }
+                }
+            }
         }
 
         class RgbIndexed8GraphicsManager : IColorGraphicsManager
@@ -340,6 +357,11 @@ namespace NScumm.MonoGame
                 }
 
                 _gfxManager._textureCursor.SetData(pixelsCursor);
+            }
+
+            public void FillScreen(int color)
+            {
+                _gfxManager._pixels.Set(0, (byte)color, _gfxManager._width * _gfxManager._height);
             }
         }
         #endregion

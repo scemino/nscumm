@@ -56,13 +56,6 @@ namespace NScumm.Sky
         public static SystemVars Instance { get { return _instance ?? (_instance = new SystemVars()); } }
     }
 
-    interface ISystem
-    {
-        IGraphicsManager GraphicsManager { get; }
-        IInputManager InputManager { get; }
-        ISaveFileManager SaveFileManager { get; }
-    }
-
     class SkySystem : ISystem
     {
         public IGraphicsManager GraphicsManager { get; private set; }

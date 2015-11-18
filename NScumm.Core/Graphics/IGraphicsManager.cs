@@ -38,5 +38,6 @@ namespace NScumm.Core.Graphics
 
         void SetCursor(byte[] pixels, int width, int height, Point hotspot);
         void SetCursor(byte[] pixels, int offset, int width, int height, Point hotspot, int keyColor);
+        void FillScreen(int color);
     }
 }

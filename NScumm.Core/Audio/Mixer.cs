@@ -18,76 +18,60 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 using System;
 using System.Diagnostics;
 using NScumm.Core.Audio.SampleProviders;
 
 namespace NScumm.Core.Audio
 {
-    public class Mixer: AudioSampleProvider16, IMixer
+    public class Mixer : AudioSampleProvider16, IMixer
     {
-        const int NumChannels = 16;
+        private const int NumChannels = 16;
         public const int MaxMixerVolume = 256;
         public const int MaxChannelVolume = 255;
 
-        struct SoundTypeSettings
-        {
-            public SoundTypeSettings(int volume)
-                : this()
-            {
-                Volume = volume;
-            }
-
-            public bool Mute;
-            public int Volume;
-        }
-
-        readonly Channel[] _channels;
-        readonly AudioFormat _format;
-        SoundTypeSettings[] soundTypeSettings;
-        bool _mixerReady;
-        object _gate = new object();
-        int _handleSeed;
-        int _sampleRate;
-
-        public int OutputRate { get { return _sampleRate; } }
-
-        public bool IsReady { get { return _mixerReady; } }
-
-        public override AudioFormat AudioFormat
-        {
-            get{ return _format; }
-        }
+        private readonly Channel[] _channels;
+        private readonly object _gate = new object();
+        private int _handleSeed;
+        private readonly SoundTypeSettings[] soundTypeSettings;
 
         public Mixer(int sampleRate)
         {
             Debug.Assert(sampleRate > 0);
             _channels = new Channel[NumChannels];
             soundTypeSettings = new SoundTypeSettings[4];
-            for (int i = 0; i < soundTypeSettings.Length; i++)
+            for (var i = 0; i < soundTypeSettings.Length; i++)
             {
                 soundTypeSettings[i] = new SoundTypeSettings(MaxMixerVolume);
             }
-            _sampleRate = sampleRate;
-            _format = new AudioFormat(_sampleRate);
+            OutputRate = sampleRate;
+            AudioFormat = new AudioFormat(OutputRate);
         }
 
-        public SoundHandle PlayStream(SoundType type, IAudioStream stream, int id = -1, int volume = 255, int balance = 0, bool autofreeStream = true, bool permanent = false, bool reverseStereo = false)
+        public override AudioFormat AudioFormat { get; }
+
+        public int OutputRate { get; }
+
+        public bool IsReady { get; private set; }
+
+        public SoundHandle PlayStream(SoundType type, IAudioStream stream, int id = -1, int volume = 255,
+            int balance = 0, bool autofreeStream = true, bool permanent = false, bool reverseStereo = false)
         {
             lock (_gate)
             {
                 if (stream == null)
                 {
-//                    Console.Error.WriteLine("stream is null");
+                    //                    Console.Error.WriteLine("stream is null");
                     return new SoundHandle();
                 }
 
-                Debug.Assert(_mixerReady);
+                Debug.Assert(IsReady);
 
                 // Prevent duplicate sounds
                 if (id != -1)
                 {
-                    for (int i = 0; i != NumChannels; i++)
+                    for (var i = 0; i != NumChannels; i++)
                         if (_channels[i] != null && _channels[i].Id == id)
                         {
                             // Delete the stream if were asked to auto-dispose it.
@@ -103,9 +87,11 @@ namespace NScumm.Core.Audio
                 }
 
                 // Create the channel
-                var chan = new Channel(this, type, stream, autofreeStream, reverseStereo, id, permanent);
-                chan.Volume = volume;
-                chan.Balance = balance;
+                var chan = new Channel(this, type, stream, autofreeStream, reverseStereo, id, permanent)
+                {
+                    Volume = volume,
+                    Balance = balance
+                };
                 return InsertChannel(chan);
             }
         }
@@ -114,7 +100,7 @@ namespace NScumm.Core.Audio
         {
             lock (_gate)
             {
-                for (int i = 0; i != NumChannels; i++)
+                for (var i = 0; i != NumChannels; i++)
                 {
                     if (_channels[i] != null && _channels[i].Id == id)
                     {
@@ -128,47 +114,12 @@ namespace NScumm.Core.Audio
         {
             lock (_gate)
             {
-
                 // Simply ignore stop requests for handles of sounds that already terminated
-                int index = handle.Value % NumChannels;
+                var index = handle.Value % NumChannels;
                 if (_channels[index] == null || _channels[index].Handle.Value != handle.Value)
                     return;
 
                 _channels[index] = null;
-            }
-        }
-
-        public override int Read(short[] samples, int count)
-        {
-            Debug.Assert(samples != null);
-
-            lock (_gate)
-            {
-                // we store stereo, 16-bit samples
-                Debug.Assert(count % 2 == 0);
-
-                // Since the mixer callback has been called, the mixer must be ready...
-                _mixerReady = true;
-
-                // mix all channels
-                int res = 0, tmp;
-                for (var i = 0; i != NumChannels; i++)
-                    if (_channels[i] != null)
-                    {
-                        if (_channels[i].IsFinished)
-                        {
-                            _channels[i] = null;
-                        }
-                        else if (!_channels[i].IsPaused)
-                        {
-                            tmp = _channels[i].Mix(samples, count);
-
-                            if (tmp > res)
-                                res = tmp;
-                        }
-                    }
-
-                return res;
             }
         }
 
@@ -185,7 +136,7 @@ namespace NScumm.Core.Audio
         {
             lock (_gate)
             {
-                for (int i = 0; i != NumChannels; i++)
+                for (var i = 0; i != NumChannels; i++)
                     if (_channels[i] != null && _channels[i].Id == id)
                         return true;
                 return false;
@@ -196,32 +147,11 @@ namespace NScumm.Core.Audio
         {
             lock (_gate)
             {
-                for (int i = 0; i != NumChannels; i++)
+                for (var i = 0; i != NumChannels; i++)
                     if (_channels[i] != null && _channels[i].Type == type)
                         return true;
                 return false;
             }
-        }
-
-        public void PauseId(int id, bool paused)
-        {
-            lock (_gate)
-            {
-                for (int i = 0; i != NumChannels; i++)
-                {
-                    if (_channels[i] != null && _channels[i].Id == id)
-                    {
-                        _channels[i].Pause(paused);
-                        return;
-                    }
-                }
-            }
-        }
-
-        public bool IsSoundTypeMuted(SoundType type)
-        {
-            Debug.Assert(0 <= type && (int)type < soundTypeSettings.Length);
-            return soundTypeSettings[(int)type].Mute;
         }
 
         public int GetVolumeForSoundType(SoundType type)
@@ -230,11 +160,24 @@ namespace NScumm.Core.Audio
             return soundTypeSettings[(int)type].Volume;
         }
 
+        public void PauseHandle(SoundHandle handle, bool paused)
+        {
+            lock (_gate)
+            {
+                // Simply ignore (un)pause requests for sounds that already terminated
+                var index = handle.Value % NumChannels;
+                if (_channels[index] == null || _channels[index].Handle.Value != handle.Value)
+                    return;
+
+                _channels[index].Pause(paused);
+            }
+        }
+
         public void PauseAll(bool pause)
         {
             lock (_gate)
             {
-                for (int i = 0; i != _channels.Length; i++)
+                for (var i = 0; i != _channels.Length; i++)
                 {
                     if (_channels[i] != null)
                     {
@@ -248,7 +191,7 @@ namespace NScumm.Core.Audio
         {
             lock (_gate)
             {
-                for (int i = 0; i != _channels.Length; i++)
+                for (var i = 0; i != _channels.Length; i++)
                 {
                     if (_channels[i] != null && !_channels[i].IsPermanent)
                     {
@@ -287,7 +230,6 @@ namespace NScumm.Core.Audio
         {
             lock (_gate)
             {
-
                 var index = handle.Value % NumChannels;
                 if (_channels[index] == null || _channels[index].Handle.Value != handle.Value)
                     return;
@@ -305,22 +247,77 @@ namespace NScumm.Core.Audio
             return _channels[index].Balance;
         }
 
-        Timestamp GetElapsedTime(SoundHandle handle)
+        public override int Read(short[] samples, int count)
+        {
+            Debug.Assert(samples != null);
+
+            lock (_gate)
+            {
+                // we store stereo, 16-bit samples
+                Debug.Assert(count % 2 == 0);
+
+                // Since the mixer callback has been called, the mixer must be ready...
+                IsReady = true;
+
+                // mix all channels
+                int res = 0, tmp;
+                for (var i = 0; i != NumChannels; i++)
+                    if (_channels[i] != null)
+                    {
+                        if (_channels[i].IsFinished)
+                        {
+                            _channels[i] = null;
+                        }
+                        else if (!_channels[i].IsPaused)
+                        {
+                            tmp = _channels[i].Mix(samples, count);
+
+                            if (tmp > res)
+                                res = tmp;
+                        }
+                    }
+
+                return res;
+            }
+        }
+
+        public void PauseId(int id, bool paused)
+        {
+            lock (_gate)
+            {
+                for (var i = 0; i != NumChannels; i++)
+                {
+                    if (_channels[i] != null && _channels[i].Id == id)
+                    {
+                        _channels[i].Pause(paused);
+                        return;
+                    }
+                }
+            }
+        }
+
+        public bool IsSoundTypeMuted(SoundType type)
+        {
+            Debug.Assert(0 <= type && (int)type < soundTypeSettings.Length);
+            return soundTypeSettings[(int)type].Mute;
+        }
+
+        private Timestamp GetElapsedTime(SoundHandle handle)
         {
             lock (_gate)
             {
                 var index = handle.Value % NumChannels;
                 if (_channels[index] == null || _channels[index].Handle.Value != handle.Value)
-                    return new Timestamp(0, _sampleRate);
+                    return new Timestamp(0, OutputRate);
 
                 return _channels[index].GetElapsedTime();
             }
         }
 
-        SoundHandle InsertChannel(Channel chan)
+        private SoundHandle InsertChannel(Channel chan)
         {
-            int index = -1;
-            for (int i = 0; i != NumChannels; i++)
+            var index = -1;
+            for (var i = 0; i != NumChannels; i++)
             {
                 if (_channels[i] == null)
                 {
@@ -337,12 +334,23 @@ namespace NScumm.Core.Audio
 
             var chanHandle = new SoundHandle
             {
-                Value = index + (_handleSeed * NumChannels),
+                Value = index + _handleSeed * NumChannels
             };
             chan.Handle = chanHandle;
             _handleSeed++;
             return chanHandle;
         }
+
+        private struct SoundTypeSettings
+        {
+            public SoundTypeSettings(int volume)
+                : this()
+            {
+                Volume = volume;
+            }
+
+            public bool Mute;
+            public readonly int Volume;
+        }
     }
 }
-

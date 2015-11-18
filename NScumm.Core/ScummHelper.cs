@@ -48,7 +48,7 @@ namespace NScumm.Core
             }
         }
 
-        public static TOut[] ConvertAll<TIn,TOut>(this TIn[] array, Func<TIn,TOut> action)
+        public static TOut[] ConvertAll<TIn, TOut>(this TIn[] array, Func<TIn, TOut> action)
         {
             var results = new TOut[array.Length];
             for (var i = 0; i < array.Length; i++)
@@ -73,17 +73,17 @@ namespace NScumm.Core
         {
             var dir = ServiceLocator.FileStorage.GetDirectoryName(path);
             return path = (from file in ServiceLocator.FileStorage.EnumerateFiles(dir)
-                                    where string.Equals(file, path, StringComparison.OrdinalIgnoreCase)
-                                    select file).FirstOrDefault();
+                           where string.Equals(file, path, StringComparison.OrdinalIgnoreCase)
+                           select file).FirstOrDefault();
         }
 
         public static string LocatePath(string directory, string filename)
         {
-            filename = filename.TrimEnd(new char[]{ '\0' });
+            filename = filename.TrimEnd(new char[] { '\0' });
             return (from file in ServiceLocator.FileStorage.EnumerateFiles(directory, "*.*", SearchOption.AllDirectories)
-                             let fn = ServiceLocator.FileStorage.GetFileName(file)
-                             where string.Equals(fn, filename, StringComparison.OrdinalIgnoreCase)
-                             select file).FirstOrDefault();
+                    let fn = ServiceLocator.FileStorage.GetFileName(file)
+                    where string.Equals(fn, filename, StringComparison.OrdinalIgnoreCase)
+                    select file).FirstOrDefault();
         }
 
         public static byte[] ToByteArray(this BitArray bits)
@@ -484,6 +484,11 @@ namespace NScumm.Core
         public static ushort ToUInt16BigEndian(this byte[] value, int startIndex = 0)
         {
             return SwapBytes(ToUInt16(value, startIndex));
+        }
+
+        public static uint ToUInt24(this byte[] value, int startIndex = 0)
+        {
+            return (uint) ((value[startIndex + 2] << 16) | (value[startIndex + 1] << 8) | (value[startIndex]));
         }
 
         public static void WriteUInt16(this byte[] array, int startIndex, ushort value)

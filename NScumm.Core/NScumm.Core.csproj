@@ -34,12 +34,14 @@
     <Compile Include="Audio\SampleProviders\AudioSampleProviderToAudioStream.cs" />
     <Compile Include="Audio\SampleProviders\MonoToStereoAudioSampleProvider16.cs" />
     <Compile Include="Audio\SampleProviders\ResampleAudioSampleProvider.cs" />
+    <Compile Include="BitStream.cs" />
     <Compile Include="IEnableTrace.cs" />
     <Compile Include="IEngine.cs" />
     <Compile Include="IO\GameDetector.cs" />
     <Compile Include="IO\GameSettings.cs" />
     <Compile Include="IO\Platform.cs" />
     <Compile Include="ISaveFileManager.cs" />
+    <Compile Include="ISystem.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Graphics\Color.cs" />
     <Compile Include="Graphics\IGraphicsManager.cs" />
@@ -132,8 +134,20 @@
     <Compile Include="Audio\SampleProviders\IAudioSampleProvider.cs" />
     <Compile Include="Audio\SampleProviders\AudioSampleProvider16.cs" />
     <Compile Include="Audio\WaveStreamWriter.cs" />
+    <Compile Include="Rational.cs" />
     <Compile Include="ScummHelper.cs" />
     <Compile Include="ServiceLocator.cs" />
+    <Compile Include="Video\AudioTrack.cs" />
+    <Compile Include="Video\BigHuffmanTree.cs" />
+    <Compile Include="Video\FixedRateVideoTrack.cs" />
+    <Compile Include="Video\ITrack.cs" />
+    <Compile Include="Video\SmackerAudioTrack.cs" />
+    <Compile Include="Video\SmackerDecoder.cs" />
+    <Compile Include="Video\SmackerVideoTrack.cs" />
+    <Compile Include="Video\SmallHuffmanTree.cs" />
+    <Compile Include="Video\Track.cs" />
+    <Compile Include="Video\VideoDecoder.cs" />
+    <Compile Include="Video\VideoTrack.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <ItemGroup />

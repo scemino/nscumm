@@ -73,6 +73,41 @@ namespace NScumm.Sword1
         }
     }
 
+    class UIntAccess
+    {
+        private readonly byte[] _data;
+        private int _offset;
+
+        public byte[] Data
+        {
+            get { return _data; }
+        }
+
+        public uint Value
+        {
+            get { return _data.ToUInt32(Offset); }
+            set { _data.WriteUInt32(Offset, value); }
+        }
+
+        public int Offset
+        {
+            get { return _offset; }
+            set { _offset = value; }
+        }
+
+        public uint this[int index]
+        {
+            get { return _data.ToUInt32(Offset + index * 4); }
+            set { _data.WriteUInt32(Offset + index * 4, value); }
+        }
+
+        public UIntAccess(byte[] data, int offset)
+        {
+            _data = data;
+            Offset = offset;
+        }
+    }
+
     class StructAccess<T>
     {
         private readonly byte[] _data;

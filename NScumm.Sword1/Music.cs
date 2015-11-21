@@ -21,5 +21,10 @@ namespace NScumm.Sword1
         {
             throw new NotImplementedException();
         }
+
+        public void FadeDown()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

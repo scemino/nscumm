@@ -6,7 +6,7 @@ using NScumm.Core;
 
 namespace NScumm.Sword1
 {
-    class MemHandle
+    internal class MemHandle
     {
         public byte[] data;
         public uint size;
@@ -15,7 +15,7 @@ namespace NScumm.Sword1
         public MemHandle next, prev;
     }
 
-    class Grp
+    internal class Grp
     {
         public uint noRes;
         public MemHandle[] resHandle;
@@ -23,7 +23,7 @@ namespace NScumm.Sword1
         public uint[] length;
     }
 
-    class Clu
+    internal class Clu
     {
         public uint refCount;
         public Stream file;
@@ -33,28 +33,28 @@ namespace NScumm.Sword1
         public Clu nextOpen;
     }
 
-    class Prj
+    internal class Prj
     {
         public uint noClu;
         public Clu[] clu;
     }
 
-    class ResMan
+    internal class ResMan
     {
-        const int MAX_LABEL_SIZE = 31 + 1;
+        private const int MAX_LABEL_SIZE = 31 + 1;
 
 #if __PSP__
 const int MAX_OPEN_CLUS =4; // the PSP can't have more than 8 files open simultaneously
                         // since we also need filehandles for music and sometimes savegames
                         // set the maximum number of open clusters to 4.
 #else
-        const int MAX_OPEN_CLUS = 8; // don't open more than 8 files at once
+        private const int MAX_OPEN_CLUS = 8; // don't open more than 8 files at once
 #endif
 
         private bool _isBigEndian;
         private Prj _prj;
 
-        uint[] _srIdList = { // the file numbers differ for the control panel file IDs, so we need this array
+        private uint[] _srIdList = { // the file numbers differ for the control panel file IDs, so we need this array
             Sword1Res.OTHER_SR_FONT,      // SR_FONT
 	        0x04050000,         // SR_BUTTON
 	        Sword1Res.OTHER_SR_REDFONT,   // SR_REDFONT
@@ -88,7 +88,8 @@ const int MAX_OPEN_CLUS =4; // the PSP can't have more than 8 files open simulta
 
         private readonly MemMan _memMan;
         private int _openClus;
-        Clu _openCluStart, _openCluEnd;
+        private Clu _openCluStart;
+        private Clu _openCluEnd;
         private string _directory;
 
         public ResMan(string directory, string fileName, bool isMacFile)
@@ -98,6 +99,117 @@ const int MAX_OPEN_CLUS =4; // the PSP can't have more than 8 files open simulta
             _memMan = new MemMan();
             LoadCluDescript(fileName);
         }
+
+        public byte[] OpenFetchRes(uint id)
+        {
+            ResOpen(id);
+            return FetchRes(id);
+        }
+
+        public void ResOpen(uint id)
+        {  // load resource ID into memory
+            MemHandle memHandle = ResHandle(id);
+            if (memHandle == null)
+                return;
+            if (memHandle.cond == MemMan.MEM_FREED)
+            { // memory has been freed
+                uint size = ResLength(id);
+                _memMan.Alloc(memHandle, size);
+                var clusFile = ResFile(id);
+                Debug.Assert(clusFile != null);
+                clusFile.Seek(ResOffset(id), SeekOrigin.Begin);
+                clusFile.Read(memHandle.data, 0, (int)size);
+            }
+            else
+                _memMan.SetCondition(memHandle, MemMan.MEM_DONT_FREE);
+
+            memHandle.refCount++;
+            if (memHandle.refCount > 20)
+            {
+                // TODO: debug(1, "%d references to id %d. Guess there's something wrong.", memHandle.refCount, id);
+            }
+        }
+
+        public byte[] CptResOpen(uint id)
+        {
+#if SCUMM_BIG_ENDIAN
+            openCptResourceBigEndian(id);
+#else
+            OpenCptResourceLittleEndian(id);
+#endif
+            MemHandle handle = ResHandle(id);
+            return handle?.data;
+        }
+
+        public void ResClose(uint id)
+        {
+            MemHandle handle = ResHandle(id);
+            if (handle == null)
+                return;
+            if (handle.refCount == 0)
+            {
+                // TODO: warning("Resource Manager fail: unlocking object with refCount 0. Id: %d", id);
+            }
+            else
+            {
+                handle.refCount--;
+                if (handle.refCount == 0)
+                {
+                    _memMan.SetCondition(handle, MemMan.MEM_CAN_FREE);
+                }
+            }
+        }
+
+        public ByteAccess FetchFrame(byte[] resourceData, uint frameNo)
+        {
+            uint frameFile = 0;
+            var idxData = Screen.Header.Size;
+            if (_isBigEndian)
+            {
+                if (frameNo >= resourceData.ToUInt32BigEndian(idxData))
+                    throw new InvalidOperationException($"fetchFrame:: frame {frameNo} doesn't exist in resource.");
+                frameFile += resourceData.ToUInt32BigEndian((int) (idxData + (frameNo + 1) * 4));
+            }
+            else
+            {
+                if (frameNo >= resourceData.ToUInt32(idxData))
+                    throw new InvalidOperationException($"fetchFrame:: frame {frameNo} doesn't exist in resource.");
+                frameFile += resourceData.ToUInt32((int) (idxData + (frameNo + 1) * 4));
+            }
+            return new ByteAccess(resourceData, (int)frameFile);
+        }
+
+        public ushort ReadUInt16(ushort value)
+        {
+            return _isBigEndian ? ScummHelper.SwapBytes(value) : value;
+        }
+
+        public uint ReadUInt32(uint value)
+        {
+            return _isBigEndian ? ScummHelper.SwapBytes(value) : value;
+        }
+
+        public Screen.Header LockScript(uint scrId)
+        {
+            if (_scriptList[scrId / ObjectMan.ITM_PER_SEC] == 0)
+                throw new InvalidOperationException($"Script id {scrId} not found");
+            scrId = _scriptList[scrId / ObjectMan.ITM_PER_SEC];
+# if SCUMM_BIG_ENDIAN
+            OpenScriptResourceBigEndian(scrId);
+#else
+            OpenScriptResourceLittleEndian(scrId);
+#endif
+            MemHandle handle = ResHandle(scrId);
+            if (handle == null)
+                throw new InvalidOperationException($"Script resource handle {scrId} not found");
+            return new Screen.Header(handle.data);
+        }
+
+        public void UnlockScript(uint scrId)
+        {
+            ResClose(_scriptList[scrId / ObjectMan.ITM_PER_SEC]);
+        }
+
 
         private void LoadCluDescript(string fileName)
         {
@@ -160,37 +272,75 @@ const int MAX_OPEN_CLUS =4; // the PSP can't have more than 8 files open simulta
             }
         }
 
-        public byte[] OpenFetchRes(uint id)
+        private void OpenScriptResourceLittleEndian(uint id)
         {
-            ResOpen(id);
-            return FetchRes(id);
-        }
-
-        void ResOpen(uint id)
-        {  // load resource ID into memory
-            MemHandle memHandle = ResHandle(id);
-            if (memHandle == null)
-                return;
-            if (memHandle.cond == MemMan.MEM_FREED)
-            { // memory has been freed
-                uint size = ResLength(id);
-                _memMan.Alloc(memHandle, size);
-                var clusFile = ResFile(id);
-                Debug.Assert(clusFile != null);
-                clusFile.Seek(ResOffset(id), SeekOrigin.Begin);
-                clusFile.Read(memHandle.data, 0, (int)size);
-            }
-            else
-                _memMan.SetCondition(memHandle, MemMan.MEM_DONT_FREE);
-
-            memHandle.refCount++;
-            if (memHandle.refCount > 20)
+            bool needByteSwap = false;
+            if (_isBigEndian)
             {
-                // TODO: debug(1, "%d references to id %d. Guess there's something wrong.", memHandle.refCount, id);
+                // Cluster files are in big endian fomat.
+                // If the resource are not in memory anymore, and therefore will be read
+                // from disk, they will need to be byte swaped.
+                MemHandle memHandle = ResHandle(id);
+                if (memHandle != null)
+                    needByteSwap = (memHandle.cond == MemMan.MEM_FREED);
+            }
+            ResOpen(id);
+            if (needByteSwap)
+            {
+                MemHandle handle = ResHandle(id);
+                if (handle==null)
+                    return;
+                // uint32 totSize = handle.size;
+                Screen.Header head = new Screen.Header(handle.data);
+                head.comp_length = ScummHelper.SwapBytes(head.comp_length);
+                head.decomp_length = ScummHelper.SwapBytes(head.decomp_length);
+                head.version = ScummHelper.SwapBytes(head.version);
+                UIntAccess data = new UIntAccess(handle.data, Screen.Header.Size);
+                uint size = handle.size - Screen.Header.Size;
+                if ((size & 3) != 0)
+                    throw new InvalidOperationException($"Odd size during script endian conversion. Resource ID ={id}, size = {size}");
+                size >>= 2;
+                for (uint cnt = 0; cnt < size; cnt++)
+                {
+                    data[0] = ScummHelper.SwapBytes(data[0]);
+                    data.Offset += 4;
+                }
             }
         }
 
-        byte[] FetchRes(uint id)
+        private void OpenCptResourceLittleEndian(uint id)
+        {
+            bool needByteSwap = false;
+            if (_isBigEndian)
+            {
+                // Cluster files are in big endian fomat.
+                // If the resource are not in memory anymore, and therefore will be read
+                // from disk, they will need to be byte swaped.
+                MemHandle memHandle = ResHandle(id);
+                if (memHandle != null)
+                    needByteSwap = (memHandle.cond == MemMan.MEM_FREED);
+            }
+            ResOpen(id);
+            if (needByteSwap)
+            {
+                MemHandle handle = ResHandle(id);
+                if (handle == null)
+                    return;
+                uint totSize = handle.size;
+                var data = Screen.Header.Size;
+                totSize -= Screen.Header.Size;
+                if ((totSize & 3) != 0)
+                    throw new InvalidOperationException($"Illegal compact size for id {id}: {totSize}");
+                totSize /= 4;
+                for (uint cnt = 0; cnt < totSize; cnt++)
+                {
+                    handle.data.WriteUInt32(data, handle.data.ToUInt32BigEndian(data));
+                    data++;
+                }
+            }
+        }
+
+        private byte[] FetchRes(uint id)
         {
             MemHandle memHandle = ResHandle(id);
             if (memHandle == null)
@@ -203,7 +353,7 @@ const int MAX_OPEN_CLUS =4; // the PSP can't have more than 8 files open simulta
             return memHandle.data;
         }
 
-        MemHandle ResHandle(uint id)
+        private MemHandle ResHandle(uint id)
         {
             if ((id >> 16) == 0x0405)
                 id = _srIdList[id & 0xFFFF];
@@ -219,7 +369,7 @@ const int MAX_OPEN_CLUS =4; // the PSP can't have more than 8 files open simulta
             return _prj.clu[cluster].grp[group].resHandle[id & 0xFFFF];
         }
 
-        uint ResLength(uint id)
+        private uint ResLength(uint id)
         {
             if ((id >> 16) == 0x0405)
                 id = _srIdList[id & 0xFFFF];
@@ -232,7 +382,7 @@ const int MAX_OPEN_CLUS =4; // the PSP can't have more than 8 files open simulta
             return _prj.clu[cluster].grp[group].length[id & 0xFFFF];
         }
 
-        uint ResOffset(uint id)
+        private uint ResOffset(uint id)
         {
             if ((id >> 16) == 0x0405)
                 id = _srIdList[id & 0xFFFF];
@@ -245,7 +395,7 @@ const int MAX_OPEN_CLUS =4; // the PSP can't have more than 8 files open simulta
             return _prj.clu[cluster].grp[group].offset[id & 0xFFFF];
         }
 
-        Stream ResFile(uint id)
+        private Stream ResFile(uint id)
         {
             Clu cluster = _prj.clu[((id >> 24) - 1)];
             if (cluster.file == null)
@@ -288,47 +438,169 @@ const int MAX_OPEN_CLUS =4; // the PSP can't have more than 8 files open simulta
             return cluster.file;
         }
 
-        public byte[] CptResOpen(uint id)
-        {
-#if SCUMM_BIG_ENDIAN
-            openCptResourceBigEndian(id);
-#else
-            OpenCptResourceLittleEndian(id);
-#endif
-            MemHandle handle = ResHandle(id);
-            return handle?.data;
-        }
+        private static readonly uint[] _scriptList = { //a table of resource tags
+            Sword1Res.SCRIPT0,		// 0		STANDARD SCRIPTS
 
-        private void OpenCptResourceLittleEndian(uint id)
-        {
-            bool needByteSwap = false;
-            if (_isBigEndian)
-            {
-                // Cluster files are in big endian fomat.
-                // If the resource are not in memory anymore, and therefore will be read
-                // from disk, they will need to be byte swaped.
-                MemHandle memHandle = ResHandle(id);
-                if (memHandle != null)
-                    needByteSwap = (memHandle.cond == MemMan.MEM_FREED);
-            }
-            ResOpen(id);
-            if (needByteSwap)
-            {
-                MemHandle handle = ResHandle(id);
-                if (handle == null)
-                    return;
-                uint totSize = handle.size;
-                var data = Screen.Header.Size;
-                totSize -= Screen.Header.Size;
-                if ((totSize & 3) != 0)
-                    throw new InvalidOperationException($"Illegal compact size for id {id}: {totSize}");
-                totSize /= 4;
-                for (uint cnt = 0; cnt < totSize; cnt++)
-                {
-                    handle.data.WriteUInt32(data, handle.data.ToUInt32BigEndian(data));
-                    data++;
-                }
-            }
-        }
+	        Sword1Res.SCRIPT1,		// 1		PARIS 1
+	        Sword1Res.SCRIPT2,		// 2
+	        Sword1Res.SCRIPT3,		// 3
+	        Sword1Res.SCRIPT4,		// 4
+	        Sword1Res.SCRIPT5,		// 5
+	        Sword1Res.SCRIPT6,		// 6
+	        Sword1Res.SCRIPT7,		// 7
+	        Sword1Res.SCRIPT8,		// 8
+
+	        Sword1Res.SCRIPT9,		// 9		PARIS 2
+	        Sword1Res.SCRIPT10,		// 10
+	        Sword1Res.SCRIPT11,		// 11
+	        Sword1Res.SCRIPT12,		// 12
+	        Sword1Res.SCRIPT13,		// 13
+	        Sword1Res.SCRIPT14,		// 14
+	        Sword1Res.SCRIPT15,		// 15
+	        Sword1Res.SCRIPT16,		// 16
+	        Sword1Res.SCRIPT17,		// 17
+	        Sword1Res.SCRIPT18,		// 18
+
+	        Sword1Res.SCRIPT19,		// 19		IRELAND
+	        Sword1Res.SCRIPT20,		// 20
+	        Sword1Res.SCRIPT21,		// 21
+	        Sword1Res.SCRIPT22,		// 22
+	        Sword1Res.SCRIPT23,		// 23
+	        Sword1Res.SCRIPT24,		// 24
+	        Sword1Res.SCRIPT25,		// 25
+	        Sword1Res.SCRIPT26,		// 26
+
+	        Sword1Res.SCRIPT27,		// 27		PARIS 3
+	        Sword1Res.SCRIPT28,		// 28
+	        Sword1Res.SCRIPT29,		// 29
+	        0,					// 30
+	        Sword1Res.SCRIPT31,		// 31
+	        Sword1Res.SCRIPT32,		// 32
+	        Sword1Res.SCRIPT33,		// 33
+	        Sword1Res.SCRIPT34,		// 34
+	        Sword1Res.SCRIPT35,		// 35
+
+	        Sword1Res.SCRIPT36,		// 36		PARIS 4
+	        Sword1Res.SCRIPT37,		// 37
+	        Sword1Res.SCRIPT38,		// 38
+	        Sword1Res.SCRIPT39,		// 39
+	        Sword1Res.SCRIPT40,		// 40
+	        Sword1Res.SCRIPT41,		// 41
+	        Sword1Res.SCRIPT42,		// 42
+	        Sword1Res.SCRIPT43,		// 43
+	        0,					// 44
+
+	        Sword1Res.SCRIPT45,		// 45		SYRIA
+	        Sword1Res.SCRIPT46,		// 46		PARIS 4
+	        Sword1Res.SCRIPT47,		// 47
+	        Sword1Res.SCRIPT48,		// 48		PARIS 4
+	        Sword1Res.SCRIPT49,		// 49
+	        Sword1Res.SCRIPT50,		// 50
+	        0,					// 51
+	        0,					// 52
+	        0,					// 53
+	        Sword1Res.SCRIPT54,		// 54
+	        Sword1Res.SCRIPT55,		// 55
+
+	        Sword1Res.SCRIPT56,		// 56		SPAIN
+	        Sword1Res.SCRIPT57,		// 57
+	        Sword1Res.SCRIPT58,		// 58
+	        Sword1Res.SCRIPT59,		// 59
+	        Sword1Res.SCRIPT60,		// 60
+	        Sword1Res.SCRIPT61,		// 61
+	        Sword1Res.SCRIPT62,		// 62
+
+	        Sword1Res.SCRIPT63,		// 63		NIGHT TRAIN
+	        0,					// 64
+	        Sword1Res.SCRIPT65,		// 65
+	        Sword1Res.SCRIPT66,		// 66
+	        Sword1Res.SCRIPT67,		// 67
+	        0,					// 68
+	        Sword1Res.SCRIPT69,		// 69
+	        0,					// 70
+
+	        Sword1Res.SCRIPT71,		// 71		SCOTLAND
+	        Sword1Res.SCRIPT72,		// 72
+	        Sword1Res.SCRIPT73,		// 73
+	        Sword1Res.SCRIPT74,		// 74
+
+	        0,					// 75
+	        0,					// 76
+	        0,					// 77
+	        0,					// 78
+	        0,					// 79
+	        Sword1Res.SCRIPT80,		// 80
+	        0,					// 81
+	        0,					// 82
+	        0,					// 83
+	        0,					// 84
+	        0,					// 85
+	        Sword1Res.SCRIPT86,		// 86
+	        0,					// 87
+	        0,					// 88
+	        0,					// 89
+	        Sword1Res.SCRIPT90,		// 90
+	        0,					// 91
+	        0,					// 92
+	        0,					// 93
+	        0,					// 94
+	        0,					// 95
+	        0,					// 96
+	        0,					// 97
+	        0,					// 98
+	        0,					// 99
+	        0,					// 100
+	        0,					// 101
+	        0,					// 102
+	        0,					// 103
+	        0,					// 104
+	        0,					// 105
+	        0,					// 106
+	        0,					// 107
+	        0,					// 108
+	        0,					// 109
+	        0,					// 110
+	        0,					// 111
+	        0,					// 112
+	        0,					// 113
+	        0,					// 114
+	        0,					// 115
+	        0,					// 116
+	        0,					// 117
+	        0,					// 118
+	        0,					// 119
+	        0,					// 120
+	        0,					// 121
+	        0,					// 122
+	        0,					// 123
+	        0,					// 124
+	        0,					// 125
+	        0,					// 126
+	        0,					// 127
+	        Sword1Res.SCRIPT128,	// 128
+
+	        Sword1Res.SCRIPT129,	// 129
+	        Sword1Res.SCRIPT130,	// 130
+	        Sword1Res.SCRIPT131,	// 131
+	        0,					// 132
+	        Sword1Res.SCRIPT133,	// 133
+	        Sword1Res.SCRIPT134,	// 134
+	        0,					// 135
+	        0,					// 136
+	        0,					// 137
+	        0,					// 138
+	        0,					// 139
+	        0,					// 140
+	        0,					// 141
+	        0,					// 142
+	        0,					// 143
+	        0,					// 144
+	        Sword1Res.SCRIPT145,	// 145
+	        Sword1Res.SCRIPT146,	// 146
+	        0,					// 147
+	        0,					// 148
+	        0					// 149
+        };
+
     }
 }

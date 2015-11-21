@@ -35,22 +35,55 @@ namespace NScumm.Sword1
 
         public void Engine()
         {
-            throw new System.NotImplementedException();
+            // TODO:
         }
 
         public void QuitScreen()
         {
-            throw new System.NotImplementedException();
+            // TODO:
         }
 
         public void CloseCowSystem()
         {
-            throw new System.NotImplementedException();
+            // TODO:
         }
 
         public void CheckSpeechFileEndianness()
         {
-            throw new System.NotImplementedException();
+            // TODO:
+        }
+
+        public bool StartSpeech(int i, int i1)
+        {
+            // TODO:
+            return true;
+        }
+
+        public uint AddToQueue(int fxNo)
+        {
+            // TODO:
+            return 1;
+        }
+
+        public void FnStopFx(int fxNo)
+        {
+            // TODO:
+        }
+
+        public bool SpeechFinished()
+        {
+            // TODO:
+            return true;
+        }
+
+        public void StopSpeech()
+        {
+            // TODO:
+        }
+
+        public int AmISpeaking()
+        {
+            return 0;
         }
     }
 }

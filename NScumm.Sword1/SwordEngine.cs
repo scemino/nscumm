@@ -10,7 +10,7 @@ namespace NScumm.Sword1
     class SwordEngine : IEngine
     {
         // number of frames per second (max rate)
-        const int FRAME_RATE = 12;
+        public const int FRAME_RATE = 12;
 
         uint _features;
         private ResMan _resMan;
@@ -69,14 +69,14 @@ namespace NScumm.Sword1
 
             // TODO:
             _objectMan = new ObjectMan(_resMan);
-            //_mouse = new Mouse(_system, _resMan, _objectMan);
+            _mouse = new Mouse(System, _resMan, _objectMan);
             _screen = new Screen(System, _resMan, _objectMan);
             _music = new Music(Mixer);
             _sound = new Sound(_mixer, _resMan);
-            //_menu = new Menu(_screen, _mouse);
-            _logic = new Logic(this, _objectMan, _music, Mixer, _sound);
+            _menu = new Menu(_screen, _mouse);
+            _logic = new Logic(this, _objectMan, _resMan, _screen, _mouse, _music, Mixer, _sound);
             //_logic = new Logic(this, _objectMan, _resMan, _screen, _mouse, _sound, _music, _menu, _system, _mixer);
-            //_mouse.useLogicAndMenu(_logic, _menu);
+            _mouse.UseLogicAndMenu(_logic, _menu);
 
             //SyncSoundSettings();
 
@@ -124,7 +124,7 @@ namespace NScumm.Sword1
 
             _logic.Initialize();
             _objectMan.Initialize();
-            //_mouse.Initialize();
+            _mouse.Initialize();
             //_control = new Control(_saveFileMan, _resMan, _objectMan, _system, _mouse, _sound, _music);
         }
 
@@ -244,7 +244,7 @@ namespace NScumm.Sword1
                         _screen.UpdateScreen();
                     Delay(1000 / FRAME_RATE - (Environment.TickCount - frameTime));
 
-                    _mouse.Engine(_mouseCoord.X, _mouseCoord.Y, _mouseState);
+                    _mouse.Engine((ushort) _mouseCoord.X, (ushort) _mouseCoord.Y, _mouseState);
 
                     if (SystemVars.ForceRestart)
                         retCode = Control.CONTROL_RESTART_GAME;
@@ -291,7 +291,23 @@ namespace NScumm.Sword1
 
         private void Delay(int delayInMs)
         {
-            throw new NotImplementedException();
+
+            int start = Environment.TickCount;
+
+            do
+            {
+                var inputState = System.InputManager.GetState();
+                _mouseCoord = System.InputManager.GetMousePosition();
+                _keyPressed = inputState;
+                _mouseState |= (ushort)(inputState.IsLeftButtonDown ? Mouse.BS1L_BUTTON_DOWN : Mouse.BS1L_BUTTON_UP);
+                _mouseState |= (ushort)(inputState.IsRightButtonDown ? Mouse.BS1R_BUTTON_DOWN : Mouse.BS1R_BUTTON_UP);
+
+                System.GraphicsManager.UpdateScreen();
+
+                if (delayInMs > 0)
+                    ServiceLocator.Platform.Sleep(10);
+
+            } while (Environment.TickCount < start + delayInMs);
         }
 
         private void CheckCd()
@@ -493,5 +509,9 @@ namespace NScumm.Sword1
 	        1,		// 146	ALBERT'S TEXT	- on CD1
         };
 
+        public static void QuitGame()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

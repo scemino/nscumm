@@ -1,30 +1,24 @@
-using System;
 using NScumm.Core.Audio;
 
 namespace NScumm.Sword1
 {
     internal class Music
     {
-        private IMixer mixer;
+        private IMixer _mixer;
 
         public Music(IMixer mixer)
         {
-            this.mixer = mixer;
+            _mixer = mixer;
         }
 
-        public void StartMusic(int i, int i1)
+        public void StartMusic(int tuneId, int loopFlag)
         {
-            throw new System.NotImplementedException();
-        }
-
-        internal void StartMusic(uint v1, int v2)
-        {
-            throw new NotImplementedException();
+            // TODO: StartMusic
         }
 
         public void FadeDown()
         {
-            throw new NotImplementedException();
+            // TODO: FadeDown
         }
     }
 }

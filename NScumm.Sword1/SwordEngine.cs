@@ -67,17 +67,16 @@ namespace NScumm.Sword1
             _resMan = new ResMan(directory, path, SystemVars.Platform == Platform.Macintosh);
             // TODO: debug(5, "Starting object manager");
 
-            // TODO:
             _objectMan = new ObjectMan(_resMan);
             _mouse = new Mouse(System, _resMan, _objectMan);
             _screen = new Screen(System, _resMan, _objectMan);
             _music = new Music(Mixer);
             _sound = new Sound(_mixer, _resMan);
             _menu = new Menu(_screen, _mouse);
-            _logic = new Logic(this, _objectMan, _resMan, _screen, _mouse, _music, Mixer, _sound);
-            //_logic = new Logic(this, _objectMan, _resMan, _screen, _mouse, _sound, _music, _menu, _system, _mixer);
+            _logic = new Logic(this, _objectMan, _resMan, _screen, _mouse, _sound, _music, _menu, Mixer);
             _mouse.UseLogicAndMenu(_logic, _menu);
 
+            // TODO:
             //SyncSoundSettings();
 
             SystemVars.JustRestoredGame = 0;
@@ -244,7 +243,7 @@ namespace NScumm.Sword1
                         _screen.UpdateScreen();
                     Delay(1000 / FRAME_RATE - (Environment.TickCount - frameTime));
 
-                    _mouse.Engine((ushort) _mouseCoord.X, (ushort) _mouseCoord.Y, _mouseState);
+                    _mouse.Engine((ushort)_mouseCoord.X, (ushort)_mouseCoord.Y, _mouseState);
 
                     if (SystemVars.ForceRestart)
                         retCode = Control.CONTROL_RESTART_GAME;

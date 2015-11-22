@@ -164,7 +164,7 @@ namespace NScumm.Sword1
         private ObjectMan _objMan;
         private Music _music;
 
-        public Logic(SwordEngine vm, ObjectMan objectMan, ResMan resMan, Screen screen, Mouse mouse, Music music, IMixer mixer, Sound sound)
+        public Logic(SwordEngine vm, ObjectMan objectMan, ResMan resMan, Screen screen, Mouse mouse, Sound sound, Music music, Menu menu, IMixer mixer)
         {
             _vm = vm;
             _objMan = objectMan;
@@ -173,7 +173,9 @@ namespace NScumm.Sword1
             _mouse = mouse;
             _music = music;
             _sound = sound;
+            _menu = menu;
             _mixer = mixer;
+            _router = new Router(_objMan, _resMan);
 
             SetupMcodeTable();
         }
@@ -371,7 +373,7 @@ namespace NScumm.Sword1
                                 _screen.AddToGraphicList(2, currentId);
 
                             if ((compact.status & STAT_MOUSE) != 0)
-                                _mouse.AddToList((int) currentId, compact);
+                                _mouse.AddToList((int)currentId, compact);
                         }
                     }
                 }
@@ -414,7 +416,7 @@ namespace NScumm.Sword1
                     ScriptVars[(int)ScriptVariableNames.GEORGE_WALKING] = 0;
                 }
                 SystemVars.JustRestoredGame = 0;
-                _music.StartMusic(ScriptVars[(int)ScriptVariableNames.CURRENT_MUSIC], 1);
+                _music.StartMusic((int) ScriptVars[(int)ScriptVariableNames.CURRENT_MUSIC], 1);
             }
             else
             { // if we haven't just restored a game, set George to stand, etc
@@ -596,35 +598,35 @@ namespace NScumm.Sword1
                         compact.logic = LOGIC_script;
                         logicRet = 1;
                         break;
-                    //case LOGIC_AR_animate:
-                    //    logicRet = LogicArAnimate(compact, id);
-                    //    break;
+                    case LOGIC_AR_animate:
+                        logicRet = LogicArAnimate(compact, id);
+                        break;
                     case LOGIC_restart:
                         compact.tree.script_pc[compact.tree.script_level] = compact.tree.script_id[compact.tree.script_level];
                         compact.logic = LOGIC_script;
                         logicRet = 1;
                         break;
-                    //case LOGIC_bookmark:
-                    //    memcpy(&(compact.tree.o_script_level), &(compact.bookmark.o_script_level), sizeof(ScriptTree));
-                    //    if (id == GMASTER_79)
-                    //    {
-                    //        // workaround for ending script.
-                    //        // GMASTER_79 is not prepared for mega_interact receiving INS_quit
-                    //        fnSuicide(compact, id, 0, 0, 0, 0, 0, 0);
-                    //        logicRet = 0;
-                    //    }
-                    //    else
-                    //    {
-                    //        compact.logic = LOGIC_script;
-                    //        logicRet = 1;
-                    //    }
-                    //    break;
+                    case LOGIC_bookmark:
+                        compact.tree.CopyFrom(compact.bookmark);
+                        if (id == GMASTER_79)
+                        {
+                            // workaround for ending script.
+                            // GMASTER_79 is not prepared for mega_interact receiving INS_quit
+                            fnSuicide(compact, (int)id, 0, 0, 0, 0, 0, 0);
+                            logicRet = 0;
+                        }
+                        else
+                        {
+                            compact.logic = LOGIC_script;
+                            logicRet = 1;
+                        }
+                        break;
                     case LOGIC_speech:
                         logicRet = SpeechDriver(compact);
                         break;
-                    //case LOGIC_full_anim:
-                    //    logicRet = fullAnimDriver(compact);
-                    //    break;
+                    case LOGIC_full_anim:
+                        logicRet = FullAnimDriver(compact);
+                        break;
                     case LOGIC_anim:
                         logicRet = AnimDriver(compact);
                         break;
@@ -633,6 +635,86 @@ namespace NScumm.Sword1
                 }
 
             } while (logicRet != 0);
+        }
+
+        private int LogicArAnimate(SwordObject compact, uint id)
+        {
+            WalkData[] route;
+            int walkPc;
+            if ((ScriptVars[(int)ScriptVariableNames.GEORGE_WALKING] == 0) && (id == PLAYER))
+                ScriptVars[(int)ScriptVariableNames.GEORGE_WALKING] = 1;
+
+            compact.resource = compact.walk_resource;
+            compact.status |= STAT_SHRINK;
+            route = compact.route;
+
+            walkPc = compact.walk_pc;
+            compact.frame = route[walkPc].frame;
+            compact.dir = route[walkPc].dir;
+            compact.xcoord = route[walkPc].x;
+            compact.ycoord = route[walkPc].y;
+            compact.anim_x = compact.xcoord;
+            compact.anim_y = compact.ycoord;
+
+            if (((ScriptVars[(int)ScriptVariableNames.GEORGE_WALKING] == 2) && (walkPc > 5) && (id == PLAYER) &&
+                    (route[walkPc - 1].step == 5) && (route[walkPc].step == 0)) ||
+                    ((ScriptVars[(int)ScriptVariableNames.GEORGE_WALKING] == 3) && (id == PLAYER)))
+            {
+
+                compact.frame = 96 + compact.dir;                     //reset
+                if ((compact.dir != 2) && (compact.dir != 6))
+                {  // on verticals and diagonals stand where george is
+                    compact.xcoord = route[walkPc - 1].x;
+                    compact.ycoord = route[walkPc - 1].y;
+                    compact.anim_x = compact.xcoord;
+                    compact.anim_y = compact.ycoord;
+                }
+                compact.logic = LOGIC_script;
+                compact.down_flag = 0;       //0 means error
+                ScriptVars[(int)ScriptVariableNames.GEORGE_WALKING] = 0;
+                route[compact.walk_pc + 1].frame = 512;                  //end of sequence
+                if (ScriptVars[(int)ScriptVariableNames.MEGA_ON_GRID] == 2)
+                    ScriptVars[(int)ScriptVariableNames.MEGA_ON_GRID] = 0;
+            }
+            compact.walk_pc++;
+
+            if (route[compact.walk_pc].frame == 512)
+            {                   //end of sequence
+                compact.logic = LOGIC_script;
+                if (((ScriptVars[(int)ScriptVariableNames.GEORGE_WALKING] == 2) || (ScriptVars[(int)ScriptVariableNames.GEORGE_WALKING] == 1)) &&
+                        (id == PLAYER))
+                {
+                    ScriptVars[(int)ScriptVariableNames.GEORGE_WALKING] = 0;
+                    if (ScriptVars[(int)ScriptVariableNames.MEGA_ON_GRID] == 2)
+                        ScriptVars[(int)ScriptVariableNames.MEGA_ON_GRID] = 0;
+                }
+            }
+            return 0;
+        }
+
+        private int FullAnimDriver(SwordObject compact)
+        {
+            if (compact.sync != 0)
+            { // return to script immediately if we've received a sync
+                compact.logic = LOGIC_script;
+                return 1;
+            }
+            var data = _resMan.OpenFetchRes((uint)compact.anim_resource);
+            var dataOff = Screen.Header.Size;
+            uint numFrames = _resMan.ReadUInt32(data.ToUInt32(dataOff));
+            dataOff += 4;
+            AnimUnit animPtr = new AnimUnit(data, dataOff + compact.anim_pc * AnimUnit.Size);
+
+            compact.anim_x = compact.xcoord = (int)_resMan.ReadUInt32(animPtr.animX);
+            compact.anim_y = compact.ycoord = (int)_resMan.ReadUInt32(animPtr.animY);
+            compact.frame = (int)_resMan.ReadUInt32(animPtr.animFrame);
+
+            compact.anim_pc++;
+            if (compact.anim_pc == (int)numFrames)
+                compact.logic = LOGIC_script;
+
+            _resMan.ResClose((uint)compact.anim_resource);
+            return 0;
         }
 
         int SpeechDriver(SwordObject compact)
@@ -680,13 +762,13 @@ namespace NScumm.Sword1
                     compact.anim_pc = 0; //set to frame 0, closed mouth
 
                 AnimUnit animPtr = new AnimUnit(animData, animOff + AnimUnit.Size * compact.anim_pc);
-                if ((compact.status & STAT_SHRINK)==0)
+                if ((compact.status & STAT_SHRINK) == 0)
                 {
-                    compact.anim_x = (int) _resMan.ReadUInt32(animPtr.animX);
-                    compact.anim_y = (int) _resMan.ReadUInt32(animPtr.animY);
+                    compact.anim_x = (int)_resMan.ReadUInt32(animPtr.animX);
+                    compact.anim_y = (int)_resMan.ReadUInt32(animPtr.animY);
                 }
-                compact.frame = (int) _resMan.ReadUInt32(animPtr.animFrame);
-                _resMan.ResClose((uint) compact.anim_resource);
+                compact.frame = (int)_resMan.ReadUInt32(animPtr.animFrame);
+                _resMan.ResClose((uint)compact.anim_resource);
             }
             return 0;
         }
@@ -1068,22 +1150,22 @@ namespace NScumm.Sword1
 
         private int FnFullSetFrame(SwordObject cpt, int id, int cdt, int spr, int frameNo, int f, int z, int x)
         {
-            var data = _resMan.OpenFetchRes((uint) cdt);
+            var data = _resMan.OpenFetchRes((uint)cdt);
             var dataOff = Screen.Header.Size;
 
             if (frameNo == LAST_FRAME)
-                frameNo = (int) (_resMan.ReadUInt32(data.ToUInt32(dataOff)) - 1);
+                frameNo = (int)(_resMan.ReadUInt32(data.ToUInt32(dataOff)) - 1);
             dataOff += 4;
 
             AnimUnit animPtr = new AnimUnit(data, dataOff + AnimUnit.Size * frameNo);
-            cpt.anim_x = cpt.xcoord = (int) _resMan.ReadUInt32(animPtr.animX);
-            cpt.anim_y = cpt.ycoord = (int) _resMan.ReadUInt32(animPtr.animY);
-            cpt.frame = (int) _resMan.ReadUInt32(animPtr.animFrame);
+            cpt.anim_x = cpt.xcoord = (int)_resMan.ReadUInt32(animPtr.animX);
+            cpt.anim_y = cpt.ycoord = (int)_resMan.ReadUInt32(animPtr.animY);
+            cpt.frame = (int)_resMan.ReadUInt32(animPtr.animFrame);
 
             cpt.resource = spr;
             cpt.status &= ~STAT_SHRINK;
 
-            _resMan.ResClose((uint) cdt);
+            _resMan.ResClose((uint)cdt);
             return SCRIPT_CONT;
         }
 
@@ -1106,15 +1188,15 @@ namespace NScumm.Sword1
 
         public void RunMouseScript(SwordObject cpt, int scriptId)
         {
-            Screen.Header script = _resMan.LockScript((uint) scriptId);
+            Screen.Header script = _resMan.LockScript((uint)scriptId);
             // TODO: debug(9, "running mouse script %d", scriptId);
-            InterpretScript(cpt, ScriptVars[(int) ScriptVariableNames.SPECIAL_ITEM], script, (uint) scriptId, scriptId);
-            _resMan.UnlockScript((uint) scriptId);
+            InterpretScript(cpt, ScriptVars[(int)ScriptVariableNames.SPECIAL_ITEM], script, (uint)scriptId, scriptId);
+            _resMan.UnlockScript((uint)scriptId);
         }
 
         public int CfnPresetScript(SwordObject cpt, int id, int target, int script, int e, int f, int z, int x)
         {
-            var tar = _objMan.FetchObject((uint) target);
+            var tar = _objMan.FetchObject((uint)target);
             tar.tree.script_level = 0;
             tar.tree.script_pc[0] = script;
             tar.tree.script_id[0] = script;
@@ -1127,7 +1209,7 @@ namespace NScumm.Sword1
         {
             int count = 0;
             int i = text.Offset;
-            while(text.Data[i]!=0)
+            while (text.Data[i] != 0)
             {
                 count++;
             }
@@ -1242,6 +1324,8 @@ namespace NScumm.Sword1
 
     internal class WalkData
     {
+        public const int Size = 20;
+
         public int frame
         {
             get { return (int)Data.ToUInt32(Offset); }

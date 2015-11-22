@@ -200,9 +200,9 @@ namespace NScumm.Sword1
             set { Data.WriteUInt32(Offset + 228, (uint)value); }
         }                      // 228
 
-        public TalkOffset[] talk_table { get; private set; } // 232  size = 6*8 bytes = 48
+        public TalkOffset[] talk_table { get; } // 232  size = 6*8 bytes = 48
 
-        public OEventSlot[] event_list { get; private set; }   // 280  size = 5*8 bytes = 40
+        public OEventSlot[] event_list { get; }   // 280  size = 5*8 bytes = 40
 
         public int ins1
         {
@@ -231,7 +231,7 @@ namespace NScumm.Sword1
             set { Data.WriteUInt32(Offset + 336, (uint)value); }
         }                // 336
 
-        public WalkData[] route { get; private set; }   // 340  size = 600*20 bytes = 12000
+        public WalkData[] route { get; }   // 340  size = 600*20 bytes = 12000
 
         public byte[] Data { get; }
         public int Offset { get; }
@@ -255,10 +255,8 @@ namespace NScumm.Sword1
             route = new WalkData[O_WALKANIM_SIZE];
             for (int i = 0; i < O_WALKANIM_SIZE; i++)
             {
-                route[i] = new WalkData(data, offset + 280 + i * 8);
+                route[i] = new WalkData(data, offset + 340 + i * WalkData.Size);
             }
-
-            // TODO: route
         }
         // mega size = 12340 bytes (+ 8 byte offset table + 20 byte header = 12368)
 

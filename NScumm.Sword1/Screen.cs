@@ -1280,7 +1280,7 @@ namespace NScumm.Sword1
         private bool _isBlack;
         private int _fadingStep;
         private sbyte _fadingDirection;
-        private Color[] _currentPalette;
+        private Color[] _currentPalette = new Color[256];
         private Color[] _targetPalette = new Color[256];
         private Text _textMan;
 

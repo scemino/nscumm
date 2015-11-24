@@ -42,10 +42,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Control.cs" />
+    <Compile Include="ControlButton.cs" />
     <Compile Include="EventManager.cs" />
     <Compile Include="Logic.cs" />
     <Compile Include="MemMan.cs" />
     <Compile Include="Menu.cs" />
+    <Compile Include="MenuIcon.cs" />
     <Compile Include="Mouse.cs" />
     <Compile Include="MoviePlayer.cs" />
     <Compile Include="Music.cs" />
@@ -57,6 +59,7 @@
     <Compile Include="Screen.cs" />
     <Compile Include="ScriptVariableNames.cs" />
     <Compile Include="Sound.cs" />
+    <Compile Include="Sound.Defines.cs" />
     <Compile Include="StaticRes.cs" />
     <Compile Include="SwordObject.cs" />
     <Compile Include="swordres.cs">
@@ -71,6 +74,7 @@
     <Compile Include="Text.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Sound.Fx.cs" />
     <Content Include="swordres.tt">
       <Generator>TextTemplatingFileGenerator</Generator>
       <LastGenOutput>swordres.cs</LastGenOutput>

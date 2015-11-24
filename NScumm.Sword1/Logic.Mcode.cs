@@ -1106,7 +1106,7 @@ namespace NScumm.Sword1
 
         private int fnSetParallax(SwordObject cpt, int id, int screen, int resId, int c, int d, int z, int x)
         {
-            _screen.FnSetParallax(screen, resId);
+            _screen.FnSetParallax((uint) screen, (uint) resId);
             return SCRIPT_CONT;
         }
 

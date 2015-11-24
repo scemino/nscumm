@@ -61,7 +61,7 @@ namespace NScumm.Sword1
         public ByteAccess Data { get; }
 
         public FrameHeader(byte[] data)
-            : this(new ByteAccess(data, 0))
+            : this(new ByteAccess(data))
         {
         }
 
@@ -98,7 +98,7 @@ namespace NScumm.Sword1
         }
     }
 
-    struct SortSpr
+    class SortSpr
     {
         public int id, y;
     }
@@ -117,7 +117,7 @@ namespace NScumm.Sword1
         public const int BORDER_PURPLE = 4;
         public const int BORDER_BLACK = 5;
 
-        const int SCREEN_WIDTH = 640;
+        public const int SCREEN_WIDTH = 640;
         const int SCREEN_DEPTH = 400;
         public const int SCREEN_LEFT_EDGE = 128;
         public const int SCREEN_RIGHT_EDGE = 128 + SCREEN_WIDTH - 1;
@@ -172,7 +172,11 @@ namespace NScumm.Sword1
         private byte _foreLength, _backLength, _sortLength;
         private ushort _scrnSizeX, _scrnSizeY, _gridSizeX, _gridSizeY;
 
-        public Text TextManager { get; set; }
+        public Text TextManager
+        {
+            get { return _textMan; }
+            set { _textMan = value; }
+        }
 
         public Screen(ISystem system, ResMan resMan, ObjectMan objMan)
         {
@@ -180,6 +184,10 @@ namespace NScumm.Sword1
             _resMan = resMan;
             _objMan = objMan;
             _currentScreen = 0xFFFF;
+            for (int i = 0; i < _sortList.Length; i++)
+            {
+                _sortList[i] = new SortSpr();
+            }
         }
 
         public void SetScrolling(short offsetX, short offsetY)
@@ -470,14 +478,14 @@ namespace NScumm.Sword1
             for (var cnt = 0; cnt < RoomDefTable[_currentScreen].totalLayers; cnt++)
             {
                 // open and lock all resources, will be closed in quitScreen()
-                _layerBlocks[cnt] = new ByteAccess(_resMan.OpenFetchRes(RoomDefTable[_currentScreen].layers[cnt]), 0);
+                _layerBlocks[cnt] = new ByteAccess(_resMan.OpenFetchRes(RoomDefTable[_currentScreen].layers[cnt]));
                 if (cnt > 0)
                     _layerBlocks[cnt].Offset += Header.Size;
             }
             for (var cnt = 0; cnt < RoomDefTable[_currentScreen].totalLayers - 1; cnt++)
             {
                 // there's no grid for the background layer, so it's totalLayers - 1
-                _layerGrid[cnt] = new UShortAccess(_resMan.OpenFetchRes(RoomDefTable[_currentScreen].grids[cnt]), 0);
+                _layerGrid[cnt] = new UShortAccess(_resMan.OpenFetchRes(RoomDefTable[_currentScreen].grids[cnt]));
                 _layerGrid[cnt].Offset += 14 * 2;
             }
             _parallax[0] = _parallax[1] = null;
@@ -661,8 +669,6 @@ namespace NScumm.Sword1
             else
                 frameHead = new FrameHeader(_resMan.FetchFrame(_resMan.OpenFetchRes((uint)compact.resource), (uint)compact.frame));
 
-            var sprData = FrameHeader.Size;
-
             ushort spriteX = (ushort)compact.anim_x;
             ushort spriteY = (ushort)compact.anim_y;
 
@@ -670,43 +676,41 @@ namespace NScumm.Sword1
             if ((compact.status & STAT_SHRINK) != 0)
             {
                 scale = (compact.scale_a * compact.ycoord + compact.scale_b) / 256;
-                spriteX = (ushort)(spriteX + (short)(_resMan.ReadUInt16((ushort)frameHead.offsetX) * scale / 256));
-                spriteY = (ushort)(spriteY + (short)(_resMan.ReadUInt16((ushort)frameHead.offsetY) * scale / 256));
+                spriteX = (ushort)(spriteX + ((short)((short)_resMan.ReadUInt16((ushort)frameHead.offsetX) * scale) / 256));
+                spriteY = (ushort)(spriteY + ((short)((short)_resMan.ReadUInt16((ushort)frameHead.offsetY) * scale )/ 256));
             }
             else
             {
                 scale = 256;
-                spriteX = (ushort)(spriteX + _resMan.ReadUInt16((ushort)frameHead.offsetX));
-                spriteY = (ushort)(spriteY + _resMan.ReadUInt16((ushort)frameHead.offsetY));
+                spriteX = (ushort)(spriteX + ((short)_resMan.ReadUInt16((ushort)frameHead.offsetX)));
+                spriteY = (ushort)(spriteY + ((short)_resMan.ReadUInt16((ushort)frameHead.offsetY)));
             }
 
-            byte[] tonyBuf = null;
-            byte[] hifBuf = null;
-            byte[] sprData2 = null;
+            var sprData = new ByteAccess(frameHead.Data.Data, frameHead.Data.Offset + FrameHeader.Size);
             if (SystemVars.Platform == Platform.PSX && compact.type != TYPE_TEXT)
             {
                 // TODO: PSX sprites are compressed with HIF
                 throw new NotImplementedException();
-                //hifBuf = (uint8*)malloc(_resMan.readUint16(&frameHead.width) * _resMan.readUint16(&frameHead.height) / 2);
+                //var hifBuf = (uint8*)malloc(_resMan.readUint16(&frameHead.width) * _resMan.readUint16(&frameHead.height) / 2);
                 //memset(hifBuf, 0x00, (_resMan.readUint16(&frameHead.width) * _resMan.readUint16(&frameHead.height) / 2));
                 //decompressHIF(sprData, hifBuf);
                 //sprData = hifBuf;
             }
             else if (frameHead.runTimeComp[3] == '7')
             { // RLE7 encoded?
-                DecompressRLE7(frameHead.Data.Data, frameHead.Data.Offset + sprData, _resMan.ReadUInt32(frameHead.compSize), _rleBuffer);
-                sprData2 = _rleBuffer;
+                DecompressRLE7(sprData.Data, sprData.Offset, _resMan.ReadUInt32(frameHead.compSize), _rleBuffer);
+                sprData = new ByteAccess(_rleBuffer);
             }
             else if (frameHead.runTimeComp[3] == '0')
             { // RLE0 encoded?
-                DecompressRLE0(frameHead.Data.Data, frameHead.Data.Offset + sprData, _resMan.ReadUInt32(frameHead.compSize), _rleBuffer);
-                sprData2 = _rleBuffer;
+                DecompressRLE0(sprData.Data, sprData.Offset, _resMan.ReadUInt32(frameHead.compSize), _rleBuffer);
+                sprData = new ByteAccess(_rleBuffer);
             }
             else if (frameHead.runTimeComp[1] == 'I')
             { // new type
-                tonyBuf = new byte[_resMan.ReadUInt32(frameHead.width) * _resMan.ReadUInt16(frameHead.height)];
-                DecompressTony(frameHead.Data.Data, frameHead.Data.Offset + sprData, _resMan.ReadUInt32(frameHead.compSize), tonyBuf);
-                sprData2 = tonyBuf;
+                var tonyBuf = new byte[_resMan.ReadUInt32(frameHead.width) * _resMan.ReadUInt16(frameHead.height)];
+                DecompressTony(sprData.Data, sprData.Offset, _resMan.ReadUInt32(frameHead.compSize), tonyBuf);
+                sprData = new ByteAccess(tonyBuf);
             }
 
             ushort sprSizeX, sprSizeY;
@@ -732,9 +736,9 @@ namespace NScumm.Sword1
                 {
                     sprSizeX = (ushort)(scale * _resMan.ReadUInt16(frameHead.width) / 256);
                     sprSizeY = (ushort)(scale * _resMan.ReadUInt16(frameHead.height) / 256);
-                    FastShrink(sprData2, _resMan.ReadUInt16(frameHead.width), _resMan.ReadUInt16(frameHead.height), (uint)scale, _shrinkBuffer);
+                    FastShrink(sprData, _resMan.ReadUInt16(frameHead.width), _resMan.ReadUInt16(frameHead.height), (uint)scale, _shrinkBuffer);
                 }
-                sprData2 = _shrinkBuffer;
+                sprData = new ByteAccess(_shrinkBuffer);
             }
             else
             {
@@ -776,9 +780,10 @@ namespace NScumm.Sword1
             if ((sprSizeX > 0) && (sprSizeY > 0))
             {
                 if (SystemVars.Platform != Platform.PSX || (compact.type == TYPE_TEXT)
-                    || (compact.resource == Sword1Res.LVSFLY) || (!(compact.resource == Sword1Res.GEORGE_MEGA) && (sprSizeX < 260)))
+                    || (compact.resource == Sword1Res.LVSFLY) || (compact.resource != Sword1Res.GEORGE_MEGA && (sprSizeX < 260)))
                 {
-                    DrawSprite(sprData2, incr, spriteX, spriteY, sprSizeX, sprSizeY, sprPitch);
+                    sprData.Offset += incr;
+                    DrawSprite(sprData, spriteX, spriteY, sprSizeX, sprSizeY, sprPitch);
                 }
                 else if (((sprSizeX >= 260) && (sprSizeX < 450)) || ((compact.resource == Sword1Res.GMWRITH) && (sprSizeX < 515))
                          // a psx shrinked sprite (1/2 width)
@@ -807,26 +812,26 @@ namespace NScumm.Sword1
                 _resMan.ResClose((uint)compact.resource);
         }
 
-        private void DrawSprite(byte[] sprData, int offset, ushort sprX, ushort sprY, ushort sprWidth, ushort sprHeight, ushort sprPitch)
+        private void DrawSprite(ByteAccess sprData, ushort sprX, ushort sprY, ushort sprWidth, ushort sprHeight, ushort sprPitch)
         {
-            var dest = sprY * _scrnSizeX + sprX;
+            var dest = new ByteAccess(_screenBuf, sprY * _scrnSizeX + sprX);
 
             for (ushort cnty = 0; cnty < sprHeight; cnty++)
             {
                 for (ushort cntx = 0; cntx < sprWidth; cntx++)
-                    if (sprData[offset + cntx] != 0)
-                        _screenBuf[dest + cntx] = sprData[offset + cntx];
+                    if (sprData[cntx] != 0)
+                        dest[cntx] = sprData[cntx];
 
                 if (SystemVars.Platform == Platform.PSX)
                 { //On PSX version we need to double horizontal lines
-                    dest += _scrnSizeX;
+                    dest.Offset += _scrnSizeX;
                     for (ushort cntx = 0; cntx < sprWidth; cntx++)
-                        if (sprData[offset + cntx] != 0)
-                            _screenBuf[dest + cntx] = sprData[offset + cntx];
+                        if (sprData[cntx] != 0)
+                            dest[cntx] = sprData[cntx];
                 }
 
-                offset += sprPitch;
-                dest += _scrnSizeX;
+                sprData.Offset += sprPitch;
+                dest.Offset += _scrnSizeX;
             }
         }
 
@@ -984,7 +989,7 @@ namespace NScumm.Sword1
             }
         }
 
-        private void FastShrink(byte[] src, ushort width, ushort height, uint scale, byte[] dest)
+        private void FastShrink(ByteAccess src, ushort width, ushort height, uint scale, byte[] dest)
         {
             uint resHeight = (height * scale) >> 8;
             uint resWidth = (width * scale) >> 8;
@@ -1272,6 +1277,76 @@ namespace NScumm.Sword1
 		        palettes=new uint[]{ Sword1Res.room1_PAL, Sword1Res.PARIS1_PAL },								//palettes
 		        parallax =new uint[]{ Sword1Res.room1_plx,0},												//parallax layers
 	        },
+            new RoomDef {
+                totalLayers=3,													//total_layers		//room 2
+		        sizeX=640,												//size_x
+		        sizeY=400,												//size_y
+		        gridWidth=56,													//grid_width
+		        layers=new uint[]{ Sword1Res.room2_l0, Sword1Res.room2_l1, Sword1Res.room2_l2,0},						//layers
+		        grids=new uint[]{ Sword1Res.room2_gd1, Sword1Res.room2_gd2,0},							//grids
+		        palettes=new uint[]{ Sword1Res.room2_PAL, Sword1Res.PARIS1_PAL },								//palettes
+		        parallax =new uint[]{0,0},												//parallax layers
+	        },
+            new RoomDef {
+                totalLayers=3,													//total_layers		//room 3
+		        sizeX=640,												//size_x
+		        sizeY=400,												//size_y
+		        gridWidth=56,													//grid_width
+		        layers=new uint[]{ Sword1Res.room3_l0, Sword1Res.room3_l1, Sword1Res.room3_l2,0},						//layers
+		        grids=new uint[]{ Sword1Res.room3_gd1, Sword1Res.room3_gd2,0},							//grids
+		        palettes=new uint[]{ Sword1Res.room3_PAL, Sword1Res.PARIS1_PAL },								//palettes
+		        parallax =new uint[]{0,0},												//parallax layers
+	        },
+            new RoomDef {
+                totalLayers=3,																			//total_layers		//room 4
+		        sizeX=640,																		//size_x
+		        sizeY=400,																		//size_y
+		        gridWidth=56,																			//grid_width
+		        layers=new uint[]{ Sword1Res.room4_l0, Sword1Res.room4_l1, Sword1Res.room4_l2,0},					//layers
+		        grids=new uint[]{ Sword1Res.room4_gd1, Sword1Res.room4_gd2,0},								//grids
+		        palettes=new uint[]{ Sword1Res.room4_PAL, Sword1Res.PARIS1_PAL },									//palettes
+		        parallax =new uint[]{0,0},																	//parallax layers
+	        },
+            new RoomDef {
+                totalLayers=3,																			//total_layers		//room 5
+		        sizeX=640,																		//size_x
+		        sizeY=400,																		//size_y
+		        gridWidth=56,																			//grid_width
+		        layers=new uint[]{ Sword1Res.room5_l0, Sword1Res.room5_l1, Sword1Res.room5_l2,0},					//layers
+		        grids=new uint[]{ Sword1Res.room5_gd1, Sword1Res.room5_gd2,0},								//grids
+		        palettes=new uint[]{ Sword1Res.room5_PAL, Sword1Res.PARIS1_PAL },									//palettes
+		        parallax =new uint[]{0,0},																	//parallax layers
+	        },
+            new RoomDef {
+                totalLayers=2,																			//total_layers		//room 6
+		        sizeX=640,																		//size_x
+		        sizeY=400,																		//size_y
+		        gridWidth=56,																			//grid_width
+		        layers=new uint[]{ Sword1Res.room6_l0, Sword1Res.room6_l1,0,0},								//layers
+		        grids=new uint[]{ Sword1Res.room6_gd1,0,0},												//grids
+		        palettes=new uint[]{ Sword1Res.room6_PAL, Sword1Res.SEWER_PAL },									//palettes
+		        parallax =new uint[]{0,0},																	//parallax layers
+	        },
+            new RoomDef {
+                totalLayers=3,																			//total_layers		//room 7
+		        sizeX=640,																		//size_x
+		        sizeY=400,																		//size_y
+		        gridWidth=56,																			//grid_width
+		        layers=new uint[]{ Sword1Res.room7_l0, Sword1Res.room7_l1, Sword1Res.room7_l2,0},					//layers
+		        grids=new uint[]{ Sword1Res.room7_gd1, Sword1Res.room7_gd2,0},								//grids
+		        palettes=new uint[]{ Sword1Res.room7_PAL, Sword1Res.SEWER_PAL },									//palettes
+		        parallax =new uint[]{0,0},																	//parallax layers
+	        },
+            new RoomDef {
+                totalLayers=3,																			//total_layers		//room 8
+		        sizeX=784,																		//size_x
+		        sizeY=400,																		//size_y
+		        gridWidth=65,																			//grid_width
+		        layers=new uint[]{ Sword1Res.room8_l0, Sword1Res.room8_l1, Sword1Res.room8_l2,0},					//layers
+		        grids=new uint[]{ Sword1Res.room8_gd1, Sword1Res.room8_gd2,0},								//grids
+		        palettes=new uint[]{ Sword1Res.room8_PAL, Sword1Res.PARIS1_PAL },									//palettes
+		        parallax =new uint[]{ Sword1Res.room8_plx,0},													//parallax layers
+	        },
         };
 
         private UShortAccess[] _layerGrid = new UShortAccess[4];
@@ -1324,14 +1399,14 @@ namespace NScumm.Sword1
             public byte[] Data { get; }
         }
 
-        public void FnSetParallax(int screen, int resId)
+        public void FnSetParallax(uint screen, uint resId)
         {
-            throw new NotImplementedException();
+            RoomDefTable[screen].parallax[0] = resId;
         }
 
-        public void FnFlash(object flashRed)
+        public void FnFlash(byte color)
         {
-            throw new NotImplementedException();
+            // TODO: warning("stub: Screen::fnFlash(%d)", color);
         }
 
         public static void DecompressHIF(byte[] src, int srcOff, byte[] dest)
@@ -1363,6 +1438,66 @@ namespace NScumm.Sword1
                     controlByte <<= 1; //Shifting left the control code one bit
                 }
             }
+        }
+
+        public void ShowFrame(ushort x, ushort y, uint resId, uint frameNo, byte[] fadeMask = null, sbyte fadeStatus = 0)
+        {
+            byte[] frame = new byte[40 * 40];
+            int i, j;
+
+            // PSX top menu is black
+            if (Sword1.SystemVars.Platform != Platform.PSX)
+            {
+                // Dark gray background
+                frame.Set(0, 199, frame.Length);
+            }
+
+            if (resId != 0xffffffff)
+            {
+                FrameHeader frameHead = new FrameHeader(_resMan.FetchFrame(_resMan.OpenFetchRes(resId), frameNo));
+                var frameData = new ByteAccess(frameHead.Data.Data, frameHead.Data.Offset + FrameHeader.Size);
+
+                if (Sword1.SystemVars.Platform == Platform.PSX)
+                { //We need to decompress PSX frames
+                    // TODO: psx
+                    //uint8* frameBufferPSX = (uint8*)malloc(_resMan.getUint16(frameHead.width) * _resMan.getUint16(frameHead.height) / 2);
+                    //decompressHIF(frameData, frameBufferPSX);
+
+                    //for (i = 0; i < _resMan.getUint16(frameHead.height) / 2; i++)
+                    //{
+                    //    for (j = 0; j < _resMan.getUint16(frameHead.width); j++)
+                    //    {
+                    //        uint8 data = frameBufferPSX[i * _resMan.getUint16(frameHead.width) + j];
+                    //        frame[(i * 2 + 4) * 40 + j + 2] = data;
+                    //        frame[(i * 2 + 1 + 4) * 40 + j + 2] = data; //Linedoubling the sprite
+                    //    }
+                    //}
+
+                    //free(frameBufferPSX);
+                }
+                else
+                {
+                    for (i = 0; i < _resMan.ReadUInt16(frameHead.height); i++)
+                        for (j = 0; j < _resMan.ReadUInt16(frameHead.height); j++)
+                            frame[(i + 4) * 40 + j + 2] = frameData[i * _resMan.ReadUInt16(frameHead.width) + j];
+                }
+
+                _resMan.ResClose(resId);
+            }
+
+            if (fadeMask != null)
+            {
+                for (i = 0; i < 40; i++)
+                {
+                    for (j = 0; j < 40; j++)
+                    {
+                        if (fadeMask[((i % 8) * 8) + (j % 8)] >= fadeStatus)
+                            frame[i * 40 + j] = 0;
+                    }
+                }
+            }
+
+            _system.GraphicsManager.CopyRectToScreen(frame, 40, x, y, 40, 40);
         }
     }
 }

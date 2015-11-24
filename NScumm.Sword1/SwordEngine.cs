@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using NScumm.Core;
 using NScumm.Core.Audio;
 using NScumm.Core.Graphics;
@@ -71,7 +72,7 @@ namespace NScumm.Sword1
             _mouse = new Mouse(System, _resMan, _objectMan);
             _screen = new Screen(System, _resMan, _objectMan);
             _music = new Music(Mixer);
-            _sound = new Sound(_mixer, _resMan);
+            _sound = new Sound(settings, _mixer, _resMan);
             _menu = new Menu(_screen, _mouse);
             _logic = new Logic(this, _objectMan, _resMan, _screen, _mouse, _sound, _music, _menu, Mixer);
             _mouse.UseLogicAndMenu(_logic, _menu);
@@ -85,6 +86,7 @@ namespace NScumm.Sword1
             SystemVars.ForceRestart = false;
             SystemVars.WantFade = true;
             //_systemVars.realLanguage = Common::parseLanguage(ConfMan.get("language"));
+            SystemVars.RealLanguage = new CultureInfo("en-GB");
 
             //switch (SystemVars.RealLanguage.TwoLetterISOLanguageName)
             //{
@@ -124,39 +126,43 @@ namespace NScumm.Sword1
             _logic.Initialize();
             _objectMan.Initialize();
             _mouse.Initialize();
-            //_control = new Control(_saveFileMan, _resMan, _objectMan, _system, _mouse, _sound, _music);
+            _control = new Control(saveFileManager, _resMan, _objectMan, System, _mouse, _sound, _music);
         }
 
         public void Run()
         {
             // TODO: run
-            //_control.checkForOldSaveGames();
-            //setTotalPlayTime(0);
+            //_control.CheckForOldSaveGames();
+            //SetTotalPlayTime(0);
 
+            // TODO: configuration
             //uint16 startPos = ConfMan.getInt("boot_param");
-            //_control.readSavegameDescriptions();
-            //if (startPos)
-            //{
-            //    _logic.startPositions(startPos);
-            //}
-            //else
+            ushort startPos = 0;
+            _control.ReadSavegameDescriptions();
+            if (startPos != 0)
             {
+                _logic.StartPositions(startPos);
+            }
+            else
+            {
+                // TODO: configuration
                 //int saveSlot = ConfMan.getInt("save_slot");
+                int saveSlot =-1;
                 // Savegames are numbered starting from 1 in the dialog window,
                 // but their filenames are numbered starting from 0.
-                //if (saveSlot >= 0 && _control.savegamesExist() && _control.restoreGameFromFile(saveSlot))
-                //{
-                //    _control.doRestore();
-                //}
-                //else if (_control.savegamesExist())
-                //{
-                //    _systemVars.controlPanelMode = CP_NEWGAME;
-                //    if (_control.runPanel() == CONTROL_GAME_RESTORED)
-                //        _control.doRestore();
-                //    else if (!shouldQuit())
-                //        _logic.startPositions(0);
-                //}
-                //else
+                if (saveSlot >= 0 && _control.SavegamesExist() && _control.RestoreGameFromFile((byte) saveSlot))
+                {
+                    _control.DoRestore();
+                }
+                else if (_control.SavegamesExist())
+                {
+                    SystemVars.ControlPanelMode = ControlPanelMode.CP_NEWGAME;
+                    if (_control.RunPanel() == Control.CONTROL_GAME_RESTORED)
+                        _control.DoRestore();
+                    else if (!ShouldQuit())
+                        _logic.StartPositions(0);
+                }
+                else
                 {
                     // no savegames, start new game.
                     _logic.StartPositions(0);
@@ -168,27 +174,18 @@ namespace NScumm.Sword1
             {
                 byte action = MainLoop();
 
-                // TODO:
-                //if (!HasToQuit)
-                //{
-                //    // the mainloop was left, we have to reinitialize.
-                //    Reinitialize();
-                //    if (action == CONTROL_GAME_RESTORED)
-                //        _control.doRestore();
-                //    else if (action == CONTROL_RESTART_GAME)
-                //        _logic.startPositions(1);
-                //    _systemVars.forceRestart = false;
-                //    _systemVars.controlPanelMode = CP_NORMAL;
-                //}
+                if (!HasToQuit)
+                {
+                    // the mainloop was left, we have to reinitialize.
+                    Reinitialize();
+                    if (action == Control.CONTROL_GAME_RESTORED)
+                        _control.DoRestore();
+                    else if (action == Control.CONTROL_RESTART_GAME)
+                        _logic.StartPositions(1);
+                    SystemVars.ForceRestart = false;
+                    SystemVars.ControlPanelMode = ControlPanelMode.CP_NORMAL;
+                }
             }
-
-            // TODO: remove
-            //var player = new MoviePlayer(this, _mixer);
-            _screen.ClearScreen();
-
-            //var sequenceId = 4;
-            //player.Load(sequenceId);
-            //player.Play();
         }
 
         public void Load(string filename)
@@ -199,6 +196,18 @@ namespace NScumm.Sword1
         public void Save(string filename)
         {
             throw new NotImplementedException();
+        }
+
+        void Reinitialize()
+        {
+            _sound.QuitScreen();
+            _resMan.Flush(); // free everything that's currently alloced and opened. (*evil*)
+
+            _logic.Initialize();     // now reinitialize these objects as they (may) have locked
+            _objectMan.Initialize(); // resources which have just been wiped.
+            _mouse.Initialize();
+            // TODO: _system.WwarpMouse(320, 240);
+            SystemVars.WantFade = true;
         }
 
         private byte MainLoop()
@@ -511,6 +520,12 @@ namespace NScumm.Sword1
         public static void QuitGame()
         {
             throw new NotImplementedException();
+        }
+
+        public static bool ShouldQuit()
+        {
+            // TODO: ShouldQuit
+            return false;
         }
     }
 }

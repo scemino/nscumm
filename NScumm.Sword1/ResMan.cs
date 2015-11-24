@@ -168,13 +168,13 @@ const int MAX_OPEN_CLUS =4; // the PSP can't have more than 8 files open simulta
             {
                 if (frameNo >= resourceData.ToUInt32BigEndian(idxData))
                     throw new InvalidOperationException($"fetchFrame:: frame {frameNo} doesn't exist in resource.");
-                frameFile += resourceData.ToUInt32BigEndian((int) (idxData + (frameNo + 1) * 4));
+                frameFile += resourceData.ToUInt32BigEndian((int)(idxData + (frameNo + 1) * 4));
             }
             else
             {
                 if (frameNo >= resourceData.ToUInt32(idxData))
                     throw new InvalidOperationException($"fetchFrame:: frame {frameNo} doesn't exist in resource.");
-                frameFile += resourceData.ToUInt32((int) (idxData + (frameNo + 1) * 4));
+                frameFile += resourceData.ToUInt32((int)(idxData + (frameNo + 1) * 4));
             }
             return new ByteAccess(resourceData, (int)frameFile);
         }
@@ -288,7 +288,7 @@ const int MAX_OPEN_CLUS =4; // the PSP can't have more than 8 files open simulta
             if (needByteSwap)
             {
                 MemHandle handle = ResHandle(id);
-                if (handle==null)
+                if (handle == null)
                     return;
                 // uint32 totSize = handle.size;
                 Screen.Header head = new Screen.Header(handle.data);
@@ -340,7 +340,7 @@ const int MAX_OPEN_CLUS =4; // the PSP can't have more than 8 files open simulta
             }
         }
 
-        private byte[] FetchRes(uint id)
+        public byte[] FetchRes(uint id)
         {
             MemHandle memHandle = ResHandle(id);
             if (memHandle == null)
@@ -602,5 +602,32 @@ const int MAX_OPEN_CLUS =4; // the PSP can't have more than 8 files open simulta
 	        0					// 149
         };
 
+        public void Flush()
+        {
+            for (uint clusCnt = 0; clusCnt < _prj.noClu; clusCnt++)
+            {
+                Clu cluster = _prj.clu[clusCnt];
+                for (uint grpCnt = 0; grpCnt < cluster.noGrp; grpCnt++)
+                {
+                    Grp group = cluster.grp[grpCnt];
+                    for (uint resCnt = 0; resCnt < group.noRes; resCnt++)
+                        if (group.resHandle[resCnt].cond != MemMan.MEM_FREED)
+                        {
+                            _memMan.SetCondition(group.resHandle[resCnt], MemMan.MEM_CAN_FREE);
+                            group.resHandle[resCnt].refCount = 0;
+                        }
+                }
+                if (cluster.file != null)
+                {
+                    cluster.file.Dispose();
+                    cluster.file = null;
+                    cluster.refCount = 0;
+                }
+            }
+            _openClus = 0;
+            _openCluStart = _openCluEnd = null;
+            // the memory manager cached the blocks we asked it to free, so explicitly make it free them
+            _memMan.Flush();
+        }
     }
 }

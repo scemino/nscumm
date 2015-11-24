@@ -90,5 +90,18 @@ namespace NScumm.Sword1
                 RemoveFromFreeList(_memListFreeEnd);
             }
         }
+
+        public void Flush()
+        {
+            while (_memListFree!=null)
+            {
+                _memListFreeEnd.data = null;
+                _memListFreeEnd.cond = MEM_FREED;
+                _alloced -= _memListFreeEnd.size;
+                RemoveFromFreeList(_memListFreeEnd);
+            }
+            //TODO: if (_alloced!=0)
+                // TODO: warning("MemMan::flush: Something's wrong: still %d bytes alloced", _alloced);
+        }
     }
 }

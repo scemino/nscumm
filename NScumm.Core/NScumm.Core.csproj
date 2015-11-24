@@ -35,6 +35,7 @@
     <Compile Include="Audio\SampleProviders\MonoToStereoAudioSampleProvider16.cs" />
     <Compile Include="Audio\SampleProviders\ResampleAudioSampleProvider.cs" />
     <Compile Include="BitStream.cs" />
+    <Compile Include="Graphics\ThumbnailHeader.cs" />
     <Compile Include="IEnableTrace.cs" />
     <Compile Include="IEngine.cs" />
     <Compile Include="IO\GameDetector.cs" />

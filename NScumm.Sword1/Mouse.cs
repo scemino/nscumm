@@ -308,7 +308,7 @@ namespace NScumm.Sword1
                     Logic.ScriptVars[(int)ScriptVariableNames.SPECIAL_ITEM] = (uint)touchedId;
                     if (_getOff != 0)
                     { // there was something else selected before, run its get-off script
-                        _logic.RunMouseScript(null, (int) _getOff);
+                        _logic.RunMouseScript(null, (int)_getOff);
                         _getOff = 0;
                     }
                     if (touchedId != 0)
@@ -327,7 +327,7 @@ namespace NScumm.Sword1
                 if (_inTopMenu)
                 {
                     if (Logic.ScriptVars[(int)ScriptVariableNames.SECOND_ITEM] != 0)
-                        _logic.RunMouseScript(null, (int) Menu._objectDefs[Logic.ScriptVars[(int)ScriptVariableNames.SECOND_ITEM]].useScript);
+                        _logic.RunMouseScript(null, (int)Menu._objectDefs[Logic.ScriptVars[(int)ScriptVariableNames.SECOND_ITEM], MenuObject.useScript]);
                     if (Logic.ScriptVars[(int)ScriptVariableNames.MENU_LOOKING] != 0)
                         _logic.CfnPresetScript(null, -1, Logic.PLAYER, Logic.SCR_menu_look, 0, 0, 0, 0);
                 }
@@ -425,6 +425,32 @@ namespace NScumm.Sword1
         {
             _logic = logic;
             _menu = menu;
+        }
+
+        uint savedPtrId = 0;
+
+        public void ControlPanel(bool on)
+        {
+            if (on)
+            {
+                savedPtrId = _currentPtrId;
+                _mouseOverride = true;
+                SetLuggage(0, 0);
+                SetPointer(Sword1Res.MSE_POINTER, 0);
+            }
+            else
+            {
+                _currentPtrId = savedPtrId;
+                _mouseOverride = false;
+                SetLuggage(_currentLuggageId, 0);
+                SetPointer(_currentPtrId, 0);
+            }
+        }
+
+        public void GiveCoords(out ushort x, out ushort y)
+        {
+            x = (ushort) _mouse.X;
+            y = (ushort) _mouse.Y;
         }
     }
 }

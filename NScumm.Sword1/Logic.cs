@@ -25,10 +25,10 @@ namespace NScumm.Sword1
         private const int SCRIPT_VERSION = 13;
 
         private const int NON_ZERO_SCRIPT_VARS = 95;
-        private const int NUM_SCRIPT_VARS = 1179;
+        public const int NUM_SCRIPT_VARS = 1179;
 
-        private const int SCRIPT_CONT = 1;
-        private const int SCRIPT_STOP = 0;
+        public const int SCRIPT_CONT = 1;
+        public const int SCRIPT_STOP = 0;
 
         public const int SAM = 2162689;
         public const int PLAYER = 8388608;
@@ -76,7 +76,7 @@ namespace NScumm.Sword1
         public const int STAT_OVERRIDE = 512;
 
         private const int LOGIC_idle = 0;
-        private const int LOGIC_script = 1;
+        public const int LOGIC_script = 1;
         private const int LOGIC_AR_animate = 2;
         private const int LOGIC_interaction = 3;
         private const int LOGIC_speech = 4;
@@ -89,9 +89,9 @@ namespace NScumm.Sword1
         private const int LOGIC_bookmark = 11;
         private const int LOGIC_wait_for_talk = 12;
         private const int LOGIC_start_talk = 13;
-        private const int LOGIC_choose = 14;
+        public const int LOGIC_choose = 14;
         private const int LOGIC_new_script = 15;
-        private const int LOGIC_pause_for_event = 16;
+        public const int LOGIC_pause_for_event = 16;
 
         private const int IT_MCODE = 1;               // Call an mcode routine
         private const int IT_PUSHNUMBER = 2;               // push a number on the stack
@@ -175,6 +175,7 @@ namespace NScumm.Sword1
             _sound = sound;
             _menu = menu;
             _mixer = mixer;
+
             _router = new Router(_objMan, _resMan);
 
             SetupMcodeTable();
@@ -295,7 +296,6 @@ namespace NScumm.Sword1
             if (SystemVars.IsDemo)
                 ScriptVars[(int)ScriptVariableNames.PLAYINGDEMO] = 1;
 
-            // TODO:
             _eventMan = new EventManager();
             _textMan = new Text(_objMan, _resMan, SystemVars.Language == Language.BS1_CZECH);
             _screen.TextManager = _textMan;
@@ -416,7 +416,7 @@ namespace NScumm.Sword1
                     ScriptVars[(int)ScriptVariableNames.GEORGE_WALKING] = 0;
                 }
                 SystemVars.JustRestoredGame = 0;
-                _music.StartMusic((int) ScriptVars[(int)ScriptVariableNames.CURRENT_MUSIC], 1);
+                _music.StartMusic((int)ScriptVars[(int)ScriptVariableNames.CURRENT_MUSIC], 1);
             }
             else
             { // if we haven't just restored a game, set George to stand, etc
@@ -578,16 +578,16 @@ namespace NScumm.Sword1
                         else
                             logicRet = 0;
                         break;
-                    //case LOGIC_choose:
-                    //    ScriptVars[(int)ScriptVariableNames.CUR_ID] = id;
-                    //    logicRet = _menu.LogicChooser(compact);
-                    //    break;
-                    //case LOGIC_wait_for_talk:
-                    //    logicRet = LogicWaitTalk(compact);
-                    //    break;
-                    //case LOGIC_start_talk:
-                    //    logicRet = LogicStartTalk(compact);
-                    //    break;
+                    case LOGIC_choose:
+                        ScriptVars[(int)ScriptVariableNames.CUR_ID] = id;
+                        logicRet = _menu.LogicChooser(compact);
+                        break;
+                    case LOGIC_wait_for_talk:
+                        logicRet = LogicWaitTalk(compact);
+                        break;
+                    case LOGIC_start_talk:
+                        logicRet = LogicStartTalk(compact);
+                        break;
                     case LOGIC_script:
                         ScriptVars[(int)ScriptVariableNames.CUR_ID] = id;
                         logicRet = ScriptManager(compact, id);
@@ -631,22 +631,52 @@ namespace NScumm.Sword1
                         logicRet = AnimDriver(compact);
                         break;
                     default:
-                        throw new NotImplementedException();
+                        throw new InvalidOperationException($"Fatal error: compact {id}'s logic == {compact.logic:X}");
                 }
 
             } while (logicRet != 0);
         }
 
+        int LogicWaitTalk(SwordObject compact)
+        {
+            var target = _objMan.FetchObject((uint) compact.down_flag);
+
+            if ((target.status & STAT_TALK_WAIT) != 0)
+            {
+                compact.logic = LOGIC_script;
+                return 1;
+            }
+            else
+            {
+                return 0;
+            }
+        }
+
+        int LogicStartTalk(SwordObject compact)
+        {
+            var target = _objMan.FetchObject((uint) compact.down_flag); //holds id of person we're waiting for
+            if ((target.status & STAT_TALK_WAIT) != 0)
+            { //response?
+                compact.logic = LOGIC_script; //back to script again
+                return SCRIPT_CONT;
+            }
+            if (_eventMan.EventValid(compact.down_flag))
+                return SCRIPT_STOP; //event still valid - keep waiting
+                                    //the event has gone - so back to script with error code
+            compact.down_flag = 0;
+            compact.logic = LOGIC_script;
+            return SCRIPT_CONT;
+        }
+
         private int LogicArAnimate(SwordObject compact, uint id)
         {
-            WalkData[] route;
             int walkPc;
             if ((ScriptVars[(int)ScriptVariableNames.GEORGE_WALKING] == 0) && (id == PLAYER))
                 ScriptVars[(int)ScriptVariableNames.GEORGE_WALKING] = 1;
 
             compact.resource = compact.walk_resource;
             compact.status |= STAT_SHRINK;
-            route = compact.route;
+            var route = compact.route;
 
             walkPc = compact.walk_pc;
             compact.frame = route[walkPc].frame;
@@ -1209,7 +1239,7 @@ namespace NScumm.Sword1
         {
             int count = 0;
             int i = text.Offset;
-            while (text.Data[i] != 0)
+            while (text.Data[i++] != 0)
             {
                 count++;
             }
@@ -1298,7 +1328,7 @@ namespace NScumm.Sword1
         public byte[] Data { get; }
     }
 
-    internal struct OEventSlot
+    internal class OEventSlot
     {
         public int o_event
         {

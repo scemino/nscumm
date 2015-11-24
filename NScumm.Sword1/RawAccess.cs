@@ -31,7 +31,12 @@ namespace NScumm.Sword1
             set { _data[_offset + index] = value; }
         }
 
-        public ByteAccess(byte[] data, int offset)
+        public ByteAccess(ByteAccess data)
+            : this(data.Data, data.Offset)
+        {
+        }
+
+        public ByteAccess(byte[] data, int offset = 0)
         {
             _data = data;
             _offset = offset;
@@ -66,7 +71,7 @@ namespace NScumm.Sword1
             set { _data.WriteUInt16(Offset + index * 2, value); }
         }
 
-        public UShortAccess(byte[] data, int offset)
+        public UShortAccess(byte[] data, int offset = 0)
         {
             _data = data;
             Offset = offset;
@@ -101,7 +106,7 @@ namespace NScumm.Sword1
             set { _data.WriteUInt32(Offset + index * 4, value); }
         }
 
-        public UIntAccess(byte[] data, int offset)
+        public UIntAccess(byte[] data, int offset = 0)
         {
             _data = data;
             Offset = offset;

@@ -441,6 +441,11 @@ namespace NScumm.Core
             }
         }
 
+        public static void WriteUInt16BigEndian(this BinaryWriter writer, ushort value)
+        {
+            writer.Write(SwapBytes(value));
+        }
+
         public static void WriteUInt32BigEndian(this BinaryWriter writer, uint value)
         {
             writer.Write(SwapBytes(value));

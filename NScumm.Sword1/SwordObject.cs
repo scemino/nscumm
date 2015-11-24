@@ -4,8 +4,10 @@ namespace NScumm.Sword1
 {
     internal class SwordObject
     {
-        private const int O_TOTAL_EVENTS = 5;
+        public const int O_TOTAL_EVENTS = 5;
         private const int O_WALKANIM_SIZE = 600;         //max number of nodes in router output
+
+        public const int Size = 12340; // mega size = 12340 bytes (+ 8 byte offset table + 20 byte header = 12368)
 
         /// <summary>
         /// 0 broad description of type - object, floor, etc.
@@ -258,8 +260,5 @@ namespace NScumm.Sword1
                 route[i] = new WalkData(data, offset + 340 + i * WalkData.Size);
             }
         }
-        // mega size = 12340 bytes (+ 8 byte offset table + 20 byte header = 12368)
-
-
     }
 }

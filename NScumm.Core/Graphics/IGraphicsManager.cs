@@ -34,6 +34,7 @@ namespace NScumm.Core.Graphics
         void UpdateScreen();
 
         void SetPalette(Color[] color);
+        Color[] GetPalette();
         void SetPalette(Color[] color, int first, int num);
 
         void SetCursor(byte[] pixels, int width, int height, Point hotspot);

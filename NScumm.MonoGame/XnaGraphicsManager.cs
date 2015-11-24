@@ -22,6 +22,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
+using System.Linq;
 using NScumm.Core;
 using Point = NScumm.Core.Graphics.Point;
 
@@ -90,6 +91,17 @@ namespace NScumm.MonoGame
             {
                 SetPalette(colors, 0, colors.Length);
             }
+        }
+
+        public Core.Graphics.Color[] GetPalette()
+        {
+            var colors = new Core.Graphics.Color[256];
+            for (int i = 0; i < 256; i++)
+            {
+                var c = _palColors[i];
+                colors[i] = Core.Graphics.Color.FromRgb(c.R, c.G, c.B);
+            }
+            return colors;
         }
 
         public void SetPalette(Core.Graphics.Color[] colors, int first, int num)

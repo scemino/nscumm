@@ -88,15 +88,6 @@ namespace NScumm.Scumm.IO
         public uint PlayTime;
     }
 
-    class ThumbnailHeader
-    {
-        public uint Type;
-        public uint Size;
-        public byte Version;
-        public ushort Width, Height;
-        public byte Bpp;
-    }
-
     class SaveInfoSection
     {
         public uint Type;

@@ -530,5 +530,24 @@ namespace NScumm.Sword1
 	{0,0,0,0,0,0,0},																																							// 149							-
 };
 
+        public void SaveLiveList(ushort[] liveBuf)
+        {
+            Array.Copy(_liveList, liveBuf, TOTAL_SECTIONS);
+        }
+
+        public void LoadLiveList(UShortAccess src)
+        {
+            for (var cnt = 0; cnt < TOTAL_SECTIONS; cnt++)
+            {
+                if (_liveList[cnt] != 0)
+                {
+                    _resMan.ResClose(_objectList[cnt]);
+                    _cptData[cnt] = null;
+                }
+                _liveList[cnt] = src[cnt];
+                if (_liveList[cnt] != 0)
+                    _cptData[cnt] = new ByteAccess(_resMan.CptResOpen(_objectList[cnt]), Screen.Header.Size);
+            }
+        }
     }
 }

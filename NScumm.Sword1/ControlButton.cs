@@ -56,7 +56,7 @@ namespace NScumm.Sword1
                         dst.Offset += Screen.SCREEN_WIDTH;
                         src.Offset += _resMan.ReadUInt16(fHead.width);
                     }
-                else if (_resId == Sword1Res.SR_DEATHPANEL)
+                else if (_resId == SwordRes.SR_DEATHPANEL)
                 { // Check for death panel psx version (which is 1/3 of original width)
                     for (var cnt = 0; cnt < _resMan.ReadUInt16(fHead.height) / 2; cnt++)
                     {
@@ -135,7 +135,7 @@ namespace NScumm.Sword1
 
         public bool IsSaveslot()
         {
-            return ((_resId >= Sword1Res.SR_SLAB1) && (_resId <= Sword1Res.SR_SLAB4));
+            return ((_resId >= SwordRes.SR_SLAB1) && (_resId <= SwordRes.SR_SLAB4));
         }
 
         public ButtonIds _id;

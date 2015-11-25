@@ -428,8 +428,8 @@ namespace NScumm.Sword1
             _speechClickDelay = 3;
             if (((textNo & ~1) == 0x3f0012) && (cdt == 0) && (spr == 0))
             {
-                cdt = Sword1Res.GEOSTDLCDT; // workaround for missing animation when examining
-                spr = Sword1Res.GEOSTDL;    // the conductor on the train roof
+                cdt = SwordRes.GEOSTDLCDT; // workaround for missing animation when examining
+                spr = SwordRes.GEOSTDL;    // the conductor on the train roof
             }
             cpt.logic = LOGIC_speech;
 

@@ -22,7 +22,7 @@ foreach(var line in lines)
 #>
 namespace NScumm.Sword1
 {
-	class Sword1Res
+	static partial class SwordRes
 	{
 <#= content.ToString() #>
 	}

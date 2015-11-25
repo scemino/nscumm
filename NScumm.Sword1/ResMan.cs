@@ -55,9 +55,9 @@ const int MAX_OPEN_CLUS =4; // the PSP can't have more than 8 files open simulta
         private Prj _prj;
 
         private uint[] _srIdList = { // the file numbers differ for the control panel file IDs, so we need this array
-            Sword1Res.OTHER_SR_FONT,      // SR_FONT
+            SwordRes.OTHER_SR_FONT,      // SR_FONT
 	        0x04050000,         // SR_BUTTON
-	        Sword1Res.OTHER_SR_REDFONT,   // SR_REDFONT
+	        SwordRes.OTHER_SR_REDFONT,   // SR_REDFONT
 	        0x04050001,         // SR_PALETTE
 	        0x04050002,         // SR_PANEL_ENGLISH
 	        0x04050003,         // SR_PANEL_FRENCH
@@ -439,107 +439,107 @@ const int MAX_OPEN_CLUS =4; // the PSP can't have more than 8 files open simulta
         }
 
         private static readonly uint[] _scriptList = { //a table of resource tags
-            Sword1Res.SCRIPT0,		// 0		STANDARD SCRIPTS
+            SwordRes.SCRIPT0,		// 0		STANDARD SCRIPTS
 
-	        Sword1Res.SCRIPT1,		// 1		PARIS 1
-	        Sword1Res.SCRIPT2,		// 2
-	        Sword1Res.SCRIPT3,		// 3
-	        Sword1Res.SCRIPT4,		// 4
-	        Sword1Res.SCRIPT5,		// 5
-	        Sword1Res.SCRIPT6,		// 6
-	        Sword1Res.SCRIPT7,		// 7
-	        Sword1Res.SCRIPT8,		// 8
+	        SwordRes.SCRIPT1,		// 1		PARIS 1
+	        SwordRes.SCRIPT2,		// 2
+	        SwordRes.SCRIPT3,		// 3
+	        SwordRes.SCRIPT4,		// 4
+	        SwordRes.SCRIPT5,		// 5
+	        SwordRes.SCRIPT6,		// 6
+	        SwordRes.SCRIPT7,		// 7
+	        SwordRes.SCRIPT8,		// 8
 
-	        Sword1Res.SCRIPT9,		// 9		PARIS 2
-	        Sword1Res.SCRIPT10,		// 10
-	        Sword1Res.SCRIPT11,		// 11
-	        Sword1Res.SCRIPT12,		// 12
-	        Sword1Res.SCRIPT13,		// 13
-	        Sword1Res.SCRIPT14,		// 14
-	        Sword1Res.SCRIPT15,		// 15
-	        Sword1Res.SCRIPT16,		// 16
-	        Sword1Res.SCRIPT17,		// 17
-	        Sword1Res.SCRIPT18,		// 18
+	        SwordRes.SCRIPT9,		// 9		PARIS 2
+	        SwordRes.SCRIPT10,		// 10
+	        SwordRes.SCRIPT11,		// 11
+	        SwordRes.SCRIPT12,		// 12
+	        SwordRes.SCRIPT13,		// 13
+	        SwordRes.SCRIPT14,		// 14
+	        SwordRes.SCRIPT15,		// 15
+	        SwordRes.SCRIPT16,		// 16
+	        SwordRes.SCRIPT17,		// 17
+	        SwordRes.SCRIPT18,		// 18
 
-	        Sword1Res.SCRIPT19,		// 19		IRELAND
-	        Sword1Res.SCRIPT20,		// 20
-	        Sword1Res.SCRIPT21,		// 21
-	        Sword1Res.SCRIPT22,		// 22
-	        Sword1Res.SCRIPT23,		// 23
-	        Sword1Res.SCRIPT24,		// 24
-	        Sword1Res.SCRIPT25,		// 25
-	        Sword1Res.SCRIPT26,		// 26
+	        SwordRes.SCRIPT19,		// 19		IRELAND
+	        SwordRes.SCRIPT20,		// 20
+	        SwordRes.SCRIPT21,		// 21
+	        SwordRes.SCRIPT22,		// 22
+	        SwordRes.SCRIPT23,		// 23
+	        SwordRes.SCRIPT24,		// 24
+	        SwordRes.SCRIPT25,		// 25
+	        SwordRes.SCRIPT26,		// 26
 
-	        Sword1Res.SCRIPT27,		// 27		PARIS 3
-	        Sword1Res.SCRIPT28,		// 28
-	        Sword1Res.SCRIPT29,		// 29
+	        SwordRes.SCRIPT27,		// 27		PARIS 3
+	        SwordRes.SCRIPT28,		// 28
+	        SwordRes.SCRIPT29,		// 29
 	        0,					// 30
-	        Sword1Res.SCRIPT31,		// 31
-	        Sword1Res.SCRIPT32,		// 32
-	        Sword1Res.SCRIPT33,		// 33
-	        Sword1Res.SCRIPT34,		// 34
-	        Sword1Res.SCRIPT35,		// 35
+	        SwordRes.SCRIPT31,		// 31
+	        SwordRes.SCRIPT32,		// 32
+	        SwordRes.SCRIPT33,		// 33
+	        SwordRes.SCRIPT34,		// 34
+	        SwordRes.SCRIPT35,		// 35
 
-	        Sword1Res.SCRIPT36,		// 36		PARIS 4
-	        Sword1Res.SCRIPT37,		// 37
-	        Sword1Res.SCRIPT38,		// 38
-	        Sword1Res.SCRIPT39,		// 39
-	        Sword1Res.SCRIPT40,		// 40
-	        Sword1Res.SCRIPT41,		// 41
-	        Sword1Res.SCRIPT42,		// 42
-	        Sword1Res.SCRIPT43,		// 43
+	        SwordRes.SCRIPT36,		// 36		PARIS 4
+	        SwordRes.SCRIPT37,		// 37
+	        SwordRes.SCRIPT38,		// 38
+	        SwordRes.SCRIPT39,		// 39
+	        SwordRes.SCRIPT40,		// 40
+	        SwordRes.SCRIPT41,		// 41
+	        SwordRes.SCRIPT42,		// 42
+	        SwordRes.SCRIPT43,		// 43
 	        0,					// 44
 
-	        Sword1Res.SCRIPT45,		// 45		SYRIA
-	        Sword1Res.SCRIPT46,		// 46		PARIS 4
-	        Sword1Res.SCRIPT47,		// 47
-	        Sword1Res.SCRIPT48,		// 48		PARIS 4
-	        Sword1Res.SCRIPT49,		// 49
-	        Sword1Res.SCRIPT50,		// 50
+	        SwordRes.SCRIPT45,		// 45		SYRIA
+	        SwordRes.SCRIPT46,		// 46		PARIS 4
+	        SwordRes.SCRIPT47,		// 47
+	        SwordRes.SCRIPT48,		// 48		PARIS 4
+	        SwordRes.SCRIPT49,		// 49
+	        SwordRes.SCRIPT50,		// 50
 	        0,					// 51
 	        0,					// 52
 	        0,					// 53
-	        Sword1Res.SCRIPT54,		// 54
-	        Sword1Res.SCRIPT55,		// 55
+	        SwordRes.SCRIPT54,		// 54
+	        SwordRes.SCRIPT55,		// 55
 
-	        Sword1Res.SCRIPT56,		// 56		SPAIN
-	        Sword1Res.SCRIPT57,		// 57
-	        Sword1Res.SCRIPT58,		// 58
-	        Sword1Res.SCRIPT59,		// 59
-	        Sword1Res.SCRIPT60,		// 60
-	        Sword1Res.SCRIPT61,		// 61
-	        Sword1Res.SCRIPT62,		// 62
+	        SwordRes.SCRIPT56,		// 56		SPAIN
+	        SwordRes.SCRIPT57,		// 57
+	        SwordRes.SCRIPT58,		// 58
+	        SwordRes.SCRIPT59,		// 59
+	        SwordRes.SCRIPT60,		// 60
+	        SwordRes.SCRIPT61,		// 61
+	        SwordRes.SCRIPT62,		// 62
 
-	        Sword1Res.SCRIPT63,		// 63		NIGHT TRAIN
+	        SwordRes.SCRIPT63,		// 63		NIGHT TRAIN
 	        0,					// 64
-	        Sword1Res.SCRIPT65,		// 65
-	        Sword1Res.SCRIPT66,		// 66
-	        Sword1Res.SCRIPT67,		// 67
+	        SwordRes.SCRIPT65,		// 65
+	        SwordRes.SCRIPT66,		// 66
+	        SwordRes.SCRIPT67,		// 67
 	        0,					// 68
-	        Sword1Res.SCRIPT69,		// 69
+	        SwordRes.SCRIPT69,		// 69
 	        0,					// 70
 
-	        Sword1Res.SCRIPT71,		// 71		SCOTLAND
-	        Sword1Res.SCRIPT72,		// 72
-	        Sword1Res.SCRIPT73,		// 73
-	        Sword1Res.SCRIPT74,		// 74
+	        SwordRes.SCRIPT71,		// 71		SCOTLAND
+	        SwordRes.SCRIPT72,		// 72
+	        SwordRes.SCRIPT73,		// 73
+	        SwordRes.SCRIPT74,		// 74
 
 	        0,					// 75
 	        0,					// 76
 	        0,					// 77
 	        0,					// 78
 	        0,					// 79
-	        Sword1Res.SCRIPT80,		// 80
+	        SwordRes.SCRIPT80,		// 80
 	        0,					// 81
 	        0,					// 82
 	        0,					// 83
 	        0,					// 84
 	        0,					// 85
-	        Sword1Res.SCRIPT86,		// 86
+	        SwordRes.SCRIPT86,		// 86
 	        0,					// 87
 	        0,					// 88
 	        0,					// 89
-	        Sword1Res.SCRIPT90,		// 90
+	        SwordRes.SCRIPT90,		// 90
 	        0,					// 91
 	        0,					// 92
 	        0,					// 93
@@ -577,14 +577,14 @@ const int MAX_OPEN_CLUS =4; // the PSP can't have more than 8 files open simulta
 	        0,					// 125
 	        0,					// 126
 	        0,					// 127
-	        Sword1Res.SCRIPT128,	// 128
+	        SwordRes.SCRIPT128,	// 128
 
-	        Sword1Res.SCRIPT129,	// 129
-	        Sword1Res.SCRIPT130,	// 130
-	        Sword1Res.SCRIPT131,	// 131
+	        SwordRes.SCRIPT129,	// 129
+	        SwordRes.SCRIPT130,	// 130
+	        SwordRes.SCRIPT131,	// 131
 	        0,					// 132
-	        Sword1Res.SCRIPT133,	// 133
-	        Sword1Res.SCRIPT134,	// 134
+	        SwordRes.SCRIPT133,	// 133
+	        SwordRes.SCRIPT134,	// 134
 	        0,					// 135
 	        0,					// 136
 	        0,					// 137
@@ -595,8 +595,8 @@ const int MAX_OPEN_CLUS =4; // the PSP can't have more than 8 files open simulta
 	        0,					// 142
 	        0,					// 143
 	        0,					// 144
-	        Sword1Res.SCRIPT145,	// 145
-	        Sword1Res.SCRIPT146,	// 146
+	        SwordRes.SCRIPT145,	// 145
+	        SwordRes.SCRIPT146,	// 146
 	        0,					// 147
 	        0,					// 148
 	        0					// 149

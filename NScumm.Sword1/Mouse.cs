@@ -102,7 +102,7 @@ namespace NScumm.Sword1
             _currentPtrId = _currentLuggageId = 0;
 
             for (byte cnt = 0; cnt < 17; cnt++)     // force res manager to keep mouse
-                _resMan.ResOpen((uint)(Sword1Res.MSE_POINTER + cnt)); // cursors in memory all the time
+                _resMan.ResOpen((uint)(SwordRes.MSE_POINTER + cnt)); // cursors in memory all the time
 
             _system.GraphicsManager.IsCursorVisible = false;
             CreatePointer(0, 0);
@@ -262,7 +262,7 @@ namespace NScumm.Sword1
                     { // are we just entering it?
                         if (Logic.ScriptVars[(int)ScriptVariableNames.OBJECT_HELD] == 0)
                             _menu.FnStartMenu();
-                        SetPointer(Sword1Res.MSE_POINTER, 0);
+                        SetPointer(SwordRes.MSE_POINTER, 0);
                     }
                     _menu.CheckTopMenu();
                     _inTopMenu = true;
@@ -374,7 +374,7 @@ namespace NScumm.Sword1
             Logic.ScriptVars[(int)ScriptVariableNames.MOUSE_STATUS] = 1;
             Logic.ScriptVars[(int)ScriptVariableNames.SPECIAL_ITEM] = 0;
             _getOff = Logic.SCR_std_off;
-            SetPointer(Sword1Res.MSE_POINTER, 0);
+            SetPointer(SwordRes.MSE_POINTER, 0);
         }
 
         public void FnBlankMouse()
@@ -384,7 +384,7 @@ namespace NScumm.Sword1
 
         public void FnNormalMouse()
         {
-            SetPointer(Sword1Res.MSE_POINTER, 0);
+            SetPointer(SwordRes.MSE_POINTER, 0);
         }
 
         public void FnLockMouse()
@@ -436,7 +436,7 @@ namespace NScumm.Sword1
                 savedPtrId = _currentPtrId;
                 _mouseOverride = true;
                 SetLuggage(0, 0);
-                SetPointer(Sword1Res.MSE_POINTER, 0);
+                SetPointer(SwordRes.MSE_POINTER, 0);
             }
             else
             {

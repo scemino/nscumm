@@ -1,6 +1,6 @@
 ﻿namespace NScumm.Sword1
 {
-	class Sword1Res
+	static partial class SwordRes
 	{
 		public const int SCRIPT0 = 0x01000000;
 		public const int SCRIPT128 = 0x01010000;

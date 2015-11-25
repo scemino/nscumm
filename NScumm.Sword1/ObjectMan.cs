@@ -67,118 +67,118 @@ namespace NScumm.Sword1
         static readonly uint[] _objectList = { //a table of pointers to object files
 	        0,			// 0
 
-	        Sword1Res.COMP1,		// 1		PARIS 1
-	        Sword1Res.COMP2,		// 2
-	        Sword1Res.COMP3,		// 3
-	        Sword1Res.COMP4,		// 4
-	        Sword1Res.COMP5,		// 5
-	        Sword1Res.COMP6,		// 6
-	        Sword1Res.COMP7,		// 7
-	        Sword1Res.COMP8,		// 8
+	        SwordRes.COMP1,		// 1		PARIS 1
+	        SwordRes.COMP2,		// 2
+	        SwordRes.COMP3,		// 3
+	        SwordRes.COMP4,		// 4
+	        SwordRes.COMP5,		// 5
+	        SwordRes.COMP6,		// 6
+	        SwordRes.COMP7,		// 7
+	        SwordRes.COMP8,		// 8
 
-	        Sword1Res.COMP9,		// 9		PARIS 2
-	        Sword1Res.COMP10,		// 10
-	        Sword1Res.COMP11,		// 11
-	        Sword1Res.COMP12,		// 12
-	        Sword1Res.COMP13,		// 13
-	        Sword1Res.COMP14,		// 14
-	        Sword1Res.COMP15,		// 15
-	        Sword1Res.COMP16,		// 16
-	        Sword1Res.COMP17,		// 17
-	        Sword1Res.COMP18,		// 18
+	        SwordRes.COMP9,		// 9		PARIS 2
+	        SwordRes.COMP10,		// 10
+	        SwordRes.COMP11,		// 11
+	        SwordRes.COMP12,		// 12
+	        SwordRes.COMP13,		// 13
+	        SwordRes.COMP14,		// 14
+	        SwordRes.COMP15,		// 15
+	        SwordRes.COMP16,		// 16
+	        SwordRes.COMP17,		// 17
+	        SwordRes.COMP18,		// 18
 
-	        Sword1Res.COMP19,		// 19		IRELAND
-	        Sword1Res.COMP20,		// 20
-	        Sword1Res.COMP21,		// 21
-	        Sword1Res.COMP22,		// 22
-	        Sword1Res.COMP23,		// 23
-	        Sword1Res.COMP24,		// 24
-	        Sword1Res.COMP25,		// 25
-	        Sword1Res.COMP26,		// 26
+	        SwordRes.COMP19,		// 19		IRELAND
+	        SwordRes.COMP20,		// 20
+	        SwordRes.COMP21,		// 21
+	        SwordRes.COMP22,		// 22
+	        SwordRes.COMP23,		// 23
+	        SwordRes.COMP24,		// 24
+	        SwordRes.COMP25,		// 25
+	        SwordRes.COMP26,		// 26
 
-	        Sword1Res.COMP27,		// 27		PARIS 3
-	        Sword1Res.COMP28,		// 28
-	        Sword1Res.COMP29,		// 29
-	        Sword1Res.COMP30,		// 30 - Heart Monitor
-	        Sword1Res.COMP31,		// 31
-	        Sword1Res.COMP32,		// 32
-	        Sword1Res.COMP33,		// 33
-	        Sword1Res.COMP34,		// 34
-	        Sword1Res.COMP35,		// 35
+	        SwordRes.COMP27,		// 27		PARIS 3
+	        SwordRes.COMP28,		// 28
+	        SwordRes.COMP29,		// 29
+	        SwordRes.COMP30,		// 30 - Heart Monitor
+	        SwordRes.COMP31,		// 31
+	        SwordRes.COMP32,		// 32
+	        SwordRes.COMP33,		// 33
+	        SwordRes.COMP34,		// 34
+	        SwordRes.COMP35,		// 35
 
-	        Sword1Res.COMP36,		// 36		PARIS 4
-	        Sword1Res.COMP37,		// 37
-	        Sword1Res.COMP38,		// 38
-	        Sword1Res.COMP39,		// 39
-	        Sword1Res.COMP40,		// 40
-	        Sword1Res.COMP41,		// 41
-	        Sword1Res.COMP42,		// 42
-	        Sword1Res.COMP43,		// 43
+	        SwordRes.COMP36,		// 36		PARIS 4
+	        SwordRes.COMP37,		// 37
+	        SwordRes.COMP38,		// 38
+	        SwordRes.COMP39,		// 39
+	        SwordRes.COMP40,		// 40
+	        SwordRes.COMP41,		// 41
+	        SwordRes.COMP42,		// 42
+	        SwordRes.COMP43,		// 43
 	        0,				// 44
 
-	        Sword1Res.COMP45,		// 45		SYRIA
-	        Sword1Res.COMP46,		// 46		PARIS 4
-	        Sword1Res.COMP47,		// 47
-	        Sword1Res.COMP48,		// 48		PARIS 4
-	        Sword1Res.COMP49,		// 49
-	        Sword1Res.COMP50,		// 50
+	        SwordRes.COMP45,		// 45		SYRIA
+	        SwordRes.COMP46,		// 46		PARIS 4
+	        SwordRes.COMP47,		// 47
+	        SwordRes.COMP48,		// 48		PARIS 4
+	        SwordRes.COMP49,		// 49
+	        SwordRes.COMP50,		// 50
 	        0,				// 51
 	        0,				// 52
-	        Sword1Res.COMP53,		// 53
-	        Sword1Res.COMP54,		// 54
-	        Sword1Res.COMP55,		// 55
+	        SwordRes.COMP53,		// 53
+	        SwordRes.COMP54,		// 54
+	        SwordRes.COMP55,		// 55
 
-	        Sword1Res.COMP56,		// 56		SPAIN
-	        Sword1Res.COMP57,		// 57
-	        Sword1Res.COMP58,		// 58
-	        Sword1Res.COMP59,		// 59
-	        Sword1Res.COMP60,		// 60
-	        Sword1Res.COMP61,		// 61
-	        Sword1Res.COMP62,		// 62
+	        SwordRes.COMP56,		// 56		SPAIN
+	        SwordRes.COMP57,		// 57
+	        SwordRes.COMP58,		// 58
+	        SwordRes.COMP59,		// 59
+	        SwordRes.COMP60,		// 60
+	        SwordRes.COMP61,		// 61
+	        SwordRes.COMP62,		// 62
 
-	        Sword1Res.COMP63,		// 63		NIGHT TRAIN
+	        SwordRes.COMP63,		// 63		NIGHT TRAIN
 	        0,				// 64
-	        Sword1Res.COMP65,		// 65
-	        Sword1Res.COMP66,		// 66
-	        Sword1Res.COMP67,		// 67
+	        SwordRes.COMP65,		// 65
+	        SwordRes.COMP66,		// 66
+	        SwordRes.COMP67,		// 67
 	        0,				// 68
-	        Sword1Res.COMP69,		// 69
+	        SwordRes.COMP69,		// 69
 	        0,				// 70
 
-	        Sword1Res.COMP71,		// 71		SCOTLAND
-	        Sword1Res.COMP72,		// 72
-	        Sword1Res.COMP73,		// 73
-	        Sword1Res.COMP74,		// 74		END SEQUENCE IN SECRET_CRYPT
-	        Sword1Res.COMP75,		// 75
-	        Sword1Res.COMP76,		// 76
-	        Sword1Res.COMP77,		// 77
-	        Sword1Res.COMP78,		// 78
-	        Sword1Res.COMP79,		// 79
+	        SwordRes.COMP71,		// 71		SCOTLAND
+	        SwordRes.COMP72,		// 72
+	        SwordRes.COMP73,		// 73
+	        SwordRes.COMP74,		// 74		END SEQUENCE IN SECRET_CRYPT
+	        SwordRes.COMP75,		// 75
+	        SwordRes.COMP76,		// 76
+	        SwordRes.COMP77,		// 77
+	        SwordRes.COMP78,		// 78
+	        SwordRes.COMP79,		// 79
 
-	        Sword1Res.COMP80,		// 80		PARIS MAP
+	        SwordRes.COMP80,		// 80		PARIS MAP
 
-	        Sword1Res.COMP81,		// 81	Full-screen for "Asstair" in Paris2
+	        SwordRes.COMP81,		// 81	Full-screen for "Asstair" in Paris2
 
-	        Sword1Res.COMP55,		// 82	Full-screen BRITMAP in sc55 (Syrian Cave)
+	        SwordRes.COMP55,		// 82	Full-screen BRITMAP in sc55 (Syrian Cave)
 	        0,				// 83
 	        0,				// 84
 	        0,				// 85
 
-	        Sword1Res.COMP86,		// 86		EUROPE MAP
-	        Sword1Res.COMP48,		// 87		fudged in for normal window (sc48)
-	        Sword1Res.COMP48,		// 88		fudged in for filtered window (sc48)
+	        SwordRes.COMP86,		// 86		EUROPE MAP
+	        SwordRes.COMP48,		// 87		fudged in for normal window (sc48)
+	        SwordRes.COMP48,		// 88		fudged in for filtered window (sc48)
 	        0,				// 89
 
-	        Sword1Res.COMP90,		// 90		PHONE SCREEN
-	        Sword1Res.COMP91,		// 91		ENVELOPE SCREEN
-	        Sword1Res.COMP17,		// 92		fudged in for George close-up surprised in sc17 wardrobe
-	        Sword1Res.COMP17,		// 93		fudged in for George close-up inquisitive in sc17 wardrobe
-	        Sword1Res.COMP29,		// 94		fudged in for George close-up in sc29 sarcophagus
-	        Sword1Res.COMP38,		// 95		fudged in for George close-up in sc29 sarcophagus
-	        Sword1Res.COMP42,		// 96		fudged in for chalice close-up from sc42
+	        SwordRes.COMP90,		// 90		PHONE SCREEN
+	        SwordRes.COMP91,		// 91		ENVELOPE SCREEN
+	        SwordRes.COMP17,		// 92		fudged in for George close-up surprised in sc17 wardrobe
+	        SwordRes.COMP17,		// 93		fudged in for George close-up inquisitive in sc17 wardrobe
+	        SwordRes.COMP29,		// 94		fudged in for George close-up in sc29 sarcophagus
+	        SwordRes.COMP38,		// 95		fudged in for George close-up in sc29 sarcophagus
+	        SwordRes.COMP42,		// 96		fudged in for chalice close-up from sc42
 	        0,				// 97
 	        0,				// 98
-	        Sword1Res.COMP99,		// 99		MESSAGE SCREEN (BLANK)
+	        SwordRes.COMP99,		// 99		MESSAGE SCREEN (BLANK)
 
 	        0,				// 100
 	        0,				// 101
@@ -212,13 +212,13 @@ namespace NScumm.Sword1
 	        0,				// 127
 
         //mega sections
-	        Sword1Res.MEGA_GEO,		// 128 mega_one the player
-	        Sword1Res.MEGA_NICO,		// 129 mega_two
-	        Sword1Res.MEGA_MUS,		// 130
-	        Sword1Res.MEGA_BENOIR,	// 131
+	        SwordRes.MEGA_GEO,		// 128 mega_one the player
+	        SwordRes.MEGA_NICO,		// 129 mega_two
+	        SwordRes.MEGA_MUS,		// 130
+	        SwordRes.MEGA_BENOIR,	// 131
 	        0,				// 132
-	        Sword1Res.MEGA_ROSSO,		// 133
-	        Sword1Res.MEGA_DUANE,		// 134
+	        SwordRes.MEGA_ROSSO,		// 133
+	        SwordRes.MEGA_DUANE,		// 134
         // james megas
 	        0,					// 135
 	        0,					// 136
@@ -232,11 +232,11 @@ namespace NScumm.Sword1
 
         // jeremy megas
 	        0,					// 144 mega_phone
-	        Sword1Res.MEGA_MOUE,			// 145 mega_moue
-	        Sword1Res.MEGA_ALBERT,		// 146 mega_albert
+	        SwordRes.MEGA_MOUE,			// 145 mega_moue
+	        SwordRes.MEGA_ALBERT,		// 146 mega_albert
 	        0,					// 147
 	        0,					// 148
-	        Sword1Res.TEXT_OBS,			// 149
+	        SwordRes.TEXT_OBS,			// 149
         };
 
 
@@ -378,81 +378,81 @@ namespace NScumm.Sword1
         }
 
         static readonly uint[,] _textList = new uint[TOTAL_SECTIONS, 7] {
-    {Sword1Res.ENGLISH0,        Sword1Res.FRENCH0,      Sword1Res.GERMAN0,      Sword1Res.ITALIAN0,     Sword1Res.SPANISH0,     Sword1Res.CZECH0,       Sword1Res.PORT0},		// 0		INVENTORY		BOTH CD'S - used in almost all locations
-	{Sword1Res.ENGLISH1,        Sword1Res.FRENCH1,      Sword1Res.GERMAN1,      Sword1Res.ITALIAN1,     Sword1Res.SPANISH1,     Sword1Res.CZECH1,       Sword1Res.PORT1},		// 1		PARIS 1			CD1
-	{Sword1Res.ENGLISH2,        Sword1Res.FRENCH2,      Sword1Res.GERMAN2,      Sword1Res.ITALIAN2,     Sword1Res.SPANISH2,     Sword1Res.CZECH2,       Sword1Res.PORT2},		// 2								CD1
-	{Sword1Res.ENGLISH3,        Sword1Res.FRENCH3,      Sword1Res.GERMAN3,      Sword1Res.ITALIAN3,     Sword1Res.SPANISH3,     Sword1Res.CZECH3,       Sword1Res.PORT3},		// 3								CD1
-	{Sword1Res.ENGLISH4,        Sword1Res.FRENCH4,      Sword1Res.GERMAN4,      Sword1Res.ITALIAN4,     Sword1Res.SPANISH4,     Sword1Res.CZECH4,       Sword1Res.PORT4},		// 4								CD1
-	{Sword1Res.ENGLISH5,        Sword1Res.FRENCH5,      Sword1Res.GERMAN5,      Sword1Res.ITALIAN5,     Sword1Res.SPANISH5,     Sword1Res.CZECH5,       Sword1Res.PORT5},		// 5								CD1
-	{Sword1Res.ENGLISH6,        Sword1Res.FRENCH6,      Sword1Res.GERMAN6,      Sword1Res.ITALIAN6,     Sword1Res.SPANISH6,     Sword1Res.CZECH6,       Sword1Res.PORT6},		// 6								CD1
-	{Sword1Res.ENGLISH7,        Sword1Res.FRENCH7,      Sword1Res.GERMAN7,      Sword1Res.ITALIAN7,     Sword1Res.SPANISH7,     Sword1Res.CZECH7,       Sword1Res.PORT7},		// 7								CD1
+    {SwordRes.ENGLISH0,        SwordRes.FRENCH0,      SwordRes.GERMAN0,      SwordRes.ITALIAN0,     SwordRes.SPANISH0,     SwordRes.CZECH0,       SwordRes.PORT0},		// 0		INVENTORY		BOTH CD'S - used in almost all locations
+	{SwordRes.ENGLISH1,        SwordRes.FRENCH1,      SwordRes.GERMAN1,      SwordRes.ITALIAN1,     SwordRes.SPANISH1,     SwordRes.CZECH1,       SwordRes.PORT1},		// 1		PARIS 1			CD1
+	{SwordRes.ENGLISH2,        SwordRes.FRENCH2,      SwordRes.GERMAN2,      SwordRes.ITALIAN2,     SwordRes.SPANISH2,     SwordRes.CZECH2,       SwordRes.PORT2},		// 2								CD1
+	{SwordRes.ENGLISH3,        SwordRes.FRENCH3,      SwordRes.GERMAN3,      SwordRes.ITALIAN3,     SwordRes.SPANISH3,     SwordRes.CZECH3,       SwordRes.PORT3},		// 3								CD1
+	{SwordRes.ENGLISH4,        SwordRes.FRENCH4,      SwordRes.GERMAN4,      SwordRes.ITALIAN4,     SwordRes.SPANISH4,     SwordRes.CZECH4,       SwordRes.PORT4},		// 4								CD1
+	{SwordRes.ENGLISH5,        SwordRes.FRENCH5,      SwordRes.GERMAN5,      SwordRes.ITALIAN5,     SwordRes.SPANISH5,     SwordRes.CZECH5,       SwordRes.PORT5},		// 5								CD1
+	{SwordRes.ENGLISH6,        SwordRes.FRENCH6,      SwordRes.GERMAN6,      SwordRes.ITALIAN6,     SwordRes.SPANISH6,     SwordRes.CZECH6,       SwordRes.PORT6},		// 6								CD1
+	{SwordRes.ENGLISH7,        SwordRes.FRENCH7,      SwordRes.GERMAN7,      SwordRes.ITALIAN7,     SwordRes.SPANISH7,     SwordRes.CZECH7,       SwordRes.PORT7},		// 7								CD1
 	{0,                         0,                      0,                      0,                      0,                      0,                      0              },    	// 8								-
-	{Sword1Res.ENGLISH9,        Sword1Res.FRENCH9,      Sword1Res.GERMAN9,      Sword1Res.ITALIAN9,     Sword1Res.SPANISH9,     Sword1Res.CZECH9,       Sword1Res.PORT9},		// 9		PARIS 2			CD1
+	{SwordRes.ENGLISH9,        SwordRes.FRENCH9,      SwordRes.GERMAN9,      SwordRes.ITALIAN9,     SwordRes.SPANISH9,     SwordRes.CZECH9,       SwordRes.PORT9},		// 9		PARIS 2			CD1
 	{0,0,0,0,0,0,0},																																							// 10								-
-	{Sword1Res.ENGLISH11,       Sword1Res.FRENCH11,     Sword1Res.GERMAN11,     Sword1Res.ITALIAN11,    Sword1Res.SPANISH11,    Sword1Res.CZECH11,  Sword1Res.PORT11},	// 11								CD1
-	{Sword1Res.ENGLISH12,       Sword1Res.FRENCH12,     Sword1Res.GERMAN12,     Sword1Res.ITALIAN12,    Sword1Res.SPANISH12,    Sword1Res.CZECH12,  Sword1Res.PORT12},	// 12								CD1
-	{Sword1Res.ENGLISH13,       Sword1Res.FRENCH13,     Sword1Res.GERMAN13,     Sword1Res.ITALIAN13,    Sword1Res.SPANISH13,    Sword1Res.CZECH13,  Sword1Res.PORT13},	// 13								CD1
-	{Sword1Res.ENGLISH14,       Sword1Res.FRENCH14,     Sword1Res.GERMAN14,     Sword1Res.ITALIAN14,    Sword1Res.SPANISH14,    Sword1Res.CZECH14,  Sword1Res.PORT14},	// 14								CD1
-	{Sword1Res.ENGLISH15,       Sword1Res.FRENCH15,     Sword1Res.GERMAN15,     Sword1Res.ITALIAN15,    Sword1Res.SPANISH15,    Sword1Res.CZECH15,  Sword1Res.PORT15},	// 15								CD1
-	{Sword1Res.ENGLISH16,       Sword1Res.FRENCH16,     Sword1Res.GERMAN16,     Sword1Res.ITALIAN16,    Sword1Res.SPANISH16,    Sword1Res.CZECH16,  Sword1Res.PORT16},	// 16								CD1
-	{Sword1Res.ENGLISH17,       Sword1Res.FRENCH17,     Sword1Res.GERMAN17,     Sword1Res.ITALIAN17,    Sword1Res.SPANISH17,    Sword1Res.CZECH17,  Sword1Res.PORT17},	// 17								CD1
-	{Sword1Res.ENGLISH18,       Sword1Res.FRENCH18,     Sword1Res.GERMAN18,     Sword1Res.ITALIAN18,    Sword1Res.SPANISH18,    Sword1Res.CZECH18,  Sword1Res.PORT18},	// 18								CD1
-	{Sword1Res.ENGLISH19,       Sword1Res.FRENCH19,     Sword1Res.GERMAN19,     Sword1Res.ITALIAN19,    Sword1Res.SPANISH19,    Sword1Res.CZECH19,  Sword1Res.PORT19},	// 19		IRELAND			CD2
-	{Sword1Res.ENGLISH20,       Sword1Res.FRENCH20,     Sword1Res.GERMAN20,     Sword1Res.ITALIAN20,    Sword1Res.SPANISH20,    Sword1Res.CZECH20,  Sword1Res.PORT20},	// 20								CD2
-	{Sword1Res.ENGLISH21,       Sword1Res.FRENCH21,     Sword1Res.GERMAN21,     Sword1Res.ITALIAN21,    Sword1Res.SPANISH21,    Sword1Res.CZECH21,  Sword1Res.PORT21},	// 21								CD2
-	{Sword1Res.ENGLISH22,       Sword1Res.FRENCH22,     Sword1Res.GERMAN22,     Sword1Res.ITALIAN22,    Sword1Res.SPANISH22,    Sword1Res.CZECH22,  Sword1Res.PORT22},	// 22								CD2
-	{Sword1Res.ENGLISH23,       Sword1Res.FRENCH23,     Sword1Res.GERMAN23,     Sword1Res.ITALIAN23,    Sword1Res.SPANISH23,    Sword1Res.CZECH23,  Sword1Res.PORT23},	// 23								CD2
-	{Sword1Res.ENGLISH24,       Sword1Res.FRENCH24,     Sword1Res.GERMAN24,     Sword1Res.ITALIAN24,    Sword1Res.SPANISH24,    Sword1Res.CZECH24,  Sword1Res.PORT24},	// 24								CD2
-	{Sword1Res.ENGLISH25,       Sword1Res.FRENCH25,     Sword1Res.GERMAN25,     Sword1Res.ITALIAN25,    Sword1Res.SPANISH25,    Sword1Res.CZECH25,  Sword1Res.PORT25},	// 25								CD2
+	{SwordRes.ENGLISH11,       SwordRes.FRENCH11,     SwordRes.GERMAN11,     SwordRes.ITALIAN11,    SwordRes.SPANISH11,    SwordRes.CZECH11,  SwordRes.PORT11},	// 11								CD1
+	{SwordRes.ENGLISH12,       SwordRes.FRENCH12,     SwordRes.GERMAN12,     SwordRes.ITALIAN12,    SwordRes.SPANISH12,    SwordRes.CZECH12,  SwordRes.PORT12},	// 12								CD1
+	{SwordRes.ENGLISH13,       SwordRes.FRENCH13,     SwordRes.GERMAN13,     SwordRes.ITALIAN13,    SwordRes.SPANISH13,    SwordRes.CZECH13,  SwordRes.PORT13},	// 13								CD1
+	{SwordRes.ENGLISH14,       SwordRes.FRENCH14,     SwordRes.GERMAN14,     SwordRes.ITALIAN14,    SwordRes.SPANISH14,    SwordRes.CZECH14,  SwordRes.PORT14},	// 14								CD1
+	{SwordRes.ENGLISH15,       SwordRes.FRENCH15,     SwordRes.GERMAN15,     SwordRes.ITALIAN15,    SwordRes.SPANISH15,    SwordRes.CZECH15,  SwordRes.PORT15},	// 15								CD1
+	{SwordRes.ENGLISH16,       SwordRes.FRENCH16,     SwordRes.GERMAN16,     SwordRes.ITALIAN16,    SwordRes.SPANISH16,    SwordRes.CZECH16,  SwordRes.PORT16},	// 16								CD1
+	{SwordRes.ENGLISH17,       SwordRes.FRENCH17,     SwordRes.GERMAN17,     SwordRes.ITALIAN17,    SwordRes.SPANISH17,    SwordRes.CZECH17,  SwordRes.PORT17},	// 17								CD1
+	{SwordRes.ENGLISH18,       SwordRes.FRENCH18,     SwordRes.GERMAN18,     SwordRes.ITALIAN18,    SwordRes.SPANISH18,    SwordRes.CZECH18,  SwordRes.PORT18},	// 18								CD1
+	{SwordRes.ENGLISH19,       SwordRes.FRENCH19,     SwordRes.GERMAN19,     SwordRes.ITALIAN19,    SwordRes.SPANISH19,    SwordRes.CZECH19,  SwordRes.PORT19},	// 19		IRELAND			CD2
+	{SwordRes.ENGLISH20,       SwordRes.FRENCH20,     SwordRes.GERMAN20,     SwordRes.ITALIAN20,    SwordRes.SPANISH20,    SwordRes.CZECH20,  SwordRes.PORT20},	// 20								CD2
+	{SwordRes.ENGLISH21,       SwordRes.FRENCH21,     SwordRes.GERMAN21,     SwordRes.ITALIAN21,    SwordRes.SPANISH21,    SwordRes.CZECH21,  SwordRes.PORT21},	// 21								CD2
+	{SwordRes.ENGLISH22,       SwordRes.FRENCH22,     SwordRes.GERMAN22,     SwordRes.ITALIAN22,    SwordRes.SPANISH22,    SwordRes.CZECH22,  SwordRes.PORT22},	// 22								CD2
+	{SwordRes.ENGLISH23,       SwordRes.FRENCH23,     SwordRes.GERMAN23,     SwordRes.ITALIAN23,    SwordRes.SPANISH23,    SwordRes.CZECH23,  SwordRes.PORT23},	// 23								CD2
+	{SwordRes.ENGLISH24,       SwordRes.FRENCH24,     SwordRes.GERMAN24,     SwordRes.ITALIAN24,    SwordRes.SPANISH24,    SwordRes.CZECH24,  SwordRes.PORT24},	// 24								CD2
+	{SwordRes.ENGLISH25,       SwordRes.FRENCH25,     SwordRes.GERMAN25,     SwordRes.ITALIAN25,    SwordRes.SPANISH25,    SwordRes.CZECH25,  SwordRes.PORT25},	// 25								CD2
 	{0,0,0,0,0,0,0},																																							// 26								-
-	{Sword1Res.ENGLISH27,       Sword1Res.FRENCH27,     Sword1Res.GERMAN27,     Sword1Res.ITALIAN27,    Sword1Res.SPANISH27,    Sword1Res.CZECH27,  Sword1Res.PORT27},	// 27		PARIS 3			CD1
-	{Sword1Res.ENGLISH28,       Sword1Res.FRENCH28,     Sword1Res.GERMAN28,     Sword1Res.ITALIAN28,    Sword1Res.SPANISH28,    Sword1Res.CZECH28,  Sword1Res.PORT28},	// 28								CD1
-	{Sword1Res.ENGLISH29,       Sword1Res.FRENCH29,     Sword1Res.GERMAN29,     Sword1Res.ITALIAN29,    Sword1Res.SPANISH29,    Sword1Res.CZECH29,  Sword1Res.PORT29},	// 29								CD1
+	{SwordRes.ENGLISH27,       SwordRes.FRENCH27,     SwordRes.GERMAN27,     SwordRes.ITALIAN27,    SwordRes.SPANISH27,    SwordRes.CZECH27,  SwordRes.PORT27},	// 27		PARIS 3			CD1
+	{SwordRes.ENGLISH28,       SwordRes.FRENCH28,     SwordRes.GERMAN28,     SwordRes.ITALIAN28,    SwordRes.SPANISH28,    SwordRes.CZECH28,  SwordRes.PORT28},	// 28								CD1
+	{SwordRes.ENGLISH29,       SwordRes.FRENCH29,     SwordRes.GERMAN29,     SwordRes.ITALIAN29,    SwordRes.SPANISH29,    SwordRes.CZECH29,  SwordRes.PORT29},	// 29								CD1
 	{0,0,0,0,0,0,0},																																							// 30								-
-	{Sword1Res.ENGLISH31,       Sword1Res.FRENCH31,     Sword1Res.GERMAN31,     Sword1Res.ITALIAN31,    Sword1Res.SPANISH31,    Sword1Res.CZECH31,  Sword1Res.PORT31},	// 31								CD1
-	{Sword1Res.ENGLISH32,       Sword1Res.FRENCH32,     Sword1Res.GERMAN32,     Sword1Res.ITALIAN32,    Sword1Res.SPANISH32,    Sword1Res.CZECH32,  Sword1Res.PORT32},	// 32								CD1
-	{Sword1Res.ENGLISH33,       Sword1Res.FRENCH33,     Sword1Res.GERMAN33,     Sword1Res.ITALIAN33,    Sword1Res.SPANISH33,    Sword1Res.CZECH33,  Sword1Res.PORT33},	// 33								CD1
-	{Sword1Res.ENGLISH34,       Sword1Res.FRENCH34,     Sword1Res.GERMAN34,     Sword1Res.ITALIAN34,    Sword1Res.SPANISH34,    Sword1Res.CZECH34,  Sword1Res.PORT34},	// 34								CD1
-	{Sword1Res.ENGLISH35,       Sword1Res.FRENCH35,     Sword1Res.GERMAN35,     Sword1Res.ITALIAN35,    Sword1Res.SPANISH35,    Sword1Res.CZECH35,  Sword1Res.PORT35},	// 35								CD1
-	{Sword1Res.ENGLISH36,       Sword1Res.FRENCH36,     Sword1Res.GERMAN36,     Sword1Res.ITALIAN36,    Sword1Res.SPANISH36,    Sword1Res.CZECH36,  Sword1Res.PORT36},	// 36		PARIS 4			CD1
-	{Sword1Res.ENGLISH37,       Sword1Res.FRENCH37,     Sword1Res.GERMAN37,     Sword1Res.ITALIAN37,    Sword1Res.SPANISH37,    Sword1Res.CZECH37,  Sword1Res.PORT37},	// 37								CD1
-	{Sword1Res.ENGLISH38,       Sword1Res.FRENCH38,     Sword1Res.GERMAN38,     Sword1Res.ITALIAN38,    Sword1Res.SPANISH38,    Sword1Res.CZECH38,  Sword1Res.PORT38},	// 38								CD1
-	{Sword1Res.ENGLISH39,       Sword1Res.FRENCH39,     Sword1Res.GERMAN39,     Sword1Res.ITALIAN39,    Sword1Res.SPANISH39,    Sword1Res.CZECH39,  Sword1Res.PORT39},	// 39								CD1
-	{Sword1Res.ENGLISH40,       Sword1Res.FRENCH40,     Sword1Res.GERMAN40,     Sword1Res.ITALIAN40,    Sword1Res.SPANISH40,    Sword1Res.CZECH40,  Sword1Res.PORT40},	// 40								CD1
-	{Sword1Res.ENGLISH41,       Sword1Res.FRENCH41,     Sword1Res.GERMAN41,     Sword1Res.ITALIAN41,    Sword1Res.SPANISH41,    Sword1Res.CZECH41,  Sword1Res.PORT41},	// 41								CD1
-	{Sword1Res.ENGLISH42,       Sword1Res.FRENCH42,     Sword1Res.GERMAN42,     Sword1Res.ITALIAN42,    Sword1Res.SPANISH42,    Sword1Res.CZECH42,  Sword1Res.PORT42},	// 42								CD1
-	{Sword1Res.ENGLISH43,       Sword1Res.FRENCH43,     Sword1Res.GERMAN43,     Sword1Res.ITALIAN43,    Sword1Res.SPANISH43,    Sword1Res.CZECH43,  Sword1Res.PORT43},	// 43								CD1
+	{SwordRes.ENGLISH31,       SwordRes.FRENCH31,     SwordRes.GERMAN31,     SwordRes.ITALIAN31,    SwordRes.SPANISH31,    SwordRes.CZECH31,  SwordRes.PORT31},	// 31								CD1
+	{SwordRes.ENGLISH32,       SwordRes.FRENCH32,     SwordRes.GERMAN32,     SwordRes.ITALIAN32,    SwordRes.SPANISH32,    SwordRes.CZECH32,  SwordRes.PORT32},	// 32								CD1
+	{SwordRes.ENGLISH33,       SwordRes.FRENCH33,     SwordRes.GERMAN33,     SwordRes.ITALIAN33,    SwordRes.SPANISH33,    SwordRes.CZECH33,  SwordRes.PORT33},	// 33								CD1
+	{SwordRes.ENGLISH34,       SwordRes.FRENCH34,     SwordRes.GERMAN34,     SwordRes.ITALIAN34,    SwordRes.SPANISH34,    SwordRes.CZECH34,  SwordRes.PORT34},	// 34								CD1
+	{SwordRes.ENGLISH35,       SwordRes.FRENCH35,     SwordRes.GERMAN35,     SwordRes.ITALIAN35,    SwordRes.SPANISH35,    SwordRes.CZECH35,  SwordRes.PORT35},	// 35								CD1
+	{SwordRes.ENGLISH36,       SwordRes.FRENCH36,     SwordRes.GERMAN36,     SwordRes.ITALIAN36,    SwordRes.SPANISH36,    SwordRes.CZECH36,  SwordRes.PORT36},	// 36		PARIS 4			CD1
+	{SwordRes.ENGLISH37,       SwordRes.FRENCH37,     SwordRes.GERMAN37,     SwordRes.ITALIAN37,    SwordRes.SPANISH37,    SwordRes.CZECH37,  SwordRes.PORT37},	// 37								CD1
+	{SwordRes.ENGLISH38,       SwordRes.FRENCH38,     SwordRes.GERMAN38,     SwordRes.ITALIAN38,    SwordRes.SPANISH38,    SwordRes.CZECH38,  SwordRes.PORT38},	// 38								CD1
+	{SwordRes.ENGLISH39,       SwordRes.FRENCH39,     SwordRes.GERMAN39,     SwordRes.ITALIAN39,    SwordRes.SPANISH39,    SwordRes.CZECH39,  SwordRes.PORT39},	// 39								CD1
+	{SwordRes.ENGLISH40,       SwordRes.FRENCH40,     SwordRes.GERMAN40,     SwordRes.ITALIAN40,    SwordRes.SPANISH40,    SwordRes.CZECH40,  SwordRes.PORT40},	// 40								CD1
+	{SwordRes.ENGLISH41,       SwordRes.FRENCH41,     SwordRes.GERMAN41,     SwordRes.ITALIAN41,    SwordRes.SPANISH41,    SwordRes.CZECH41,  SwordRes.PORT41},	// 41								CD1
+	{SwordRes.ENGLISH42,       SwordRes.FRENCH42,     SwordRes.GERMAN42,     SwordRes.ITALIAN42,    SwordRes.SPANISH42,    SwordRes.CZECH42,  SwordRes.PORT42},	// 42								CD1
+	{SwordRes.ENGLISH43,       SwordRes.FRENCH43,     SwordRes.GERMAN43,     SwordRes.ITALIAN43,    SwordRes.SPANISH43,    SwordRes.CZECH43,  SwordRes.PORT43},	// 43								CD1
 	{0,0,0,0,0,0,0},																																							// 44								-
-	{Sword1Res.ENGLISH45,       Sword1Res.FRENCH45,     Sword1Res.GERMAN45,     Sword1Res.ITALIAN45,    Sword1Res.SPANISH45,    Sword1Res.CZECH45,  Sword1Res.PORT45},	// 45		SYRIA				CD2
+	{SwordRes.ENGLISH45,       SwordRes.FRENCH45,     SwordRes.GERMAN45,     SwordRes.ITALIAN45,    SwordRes.SPANISH45,    SwordRes.CZECH45,  SwordRes.PORT45},	// 45		SYRIA				CD2
 	{0,0,0,0,0,0,0},																																							// 46		(PARIS 4)		-
-	{Sword1Res.ENGLISH47,       Sword1Res.FRENCH47,     Sword1Res.GERMAN47,     Sword1Res.ITALIAN47,    Sword1Res.SPANISH47,    Sword1Res.CZECH47,  Sword1Res.PORT47},	// 47								CD2
-	{Sword1Res.ENGLISH48,       Sword1Res.FRENCH48,     Sword1Res.GERMAN48,     Sword1Res.ITALIAN48,    Sword1Res.SPANISH48,    Sword1Res.CZECH48,  Sword1Res.PORT48},	// 48		(PARIS 4)		CD1
-	{Sword1Res.ENGLISH49,       Sword1Res.FRENCH49,     Sword1Res.GERMAN49,     Sword1Res.ITALIAN49,    Sword1Res.SPANISH49,    Sword1Res.CZECH49,  Sword1Res.PORT49},	// 49								CD2
-	{Sword1Res.ENGLISH50,       Sword1Res.FRENCH50,     Sword1Res.GERMAN50,     Sword1Res.ITALIAN50,    Sword1Res.SPANISH50,    Sword1Res.CZECH50,  Sword1Res.PORT50},	// 50								CD2
+	{SwordRes.ENGLISH47,       SwordRes.FRENCH47,     SwordRes.GERMAN47,     SwordRes.ITALIAN47,    SwordRes.SPANISH47,    SwordRes.CZECH47,  SwordRes.PORT47},	// 47								CD2
+	{SwordRes.ENGLISH48,       SwordRes.FRENCH48,     SwordRes.GERMAN48,     SwordRes.ITALIAN48,    SwordRes.SPANISH48,    SwordRes.CZECH48,  SwordRes.PORT48},	// 48		(PARIS 4)		CD1
+	{SwordRes.ENGLISH49,       SwordRes.FRENCH49,     SwordRes.GERMAN49,     SwordRes.ITALIAN49,    SwordRes.SPANISH49,    SwordRes.CZECH49,  SwordRes.PORT49},	// 49								CD2
+	{SwordRes.ENGLISH50,       SwordRes.FRENCH50,     SwordRes.GERMAN50,     SwordRes.ITALIAN50,    SwordRes.SPANISH50,    SwordRes.CZECH50,  SwordRes.PORT50},	// 50								CD2
 	{0,0,0,0,0,0,0},																																							// 51								-
 	{0,0,0,0,0,0,0},																																							// 52								-
 	{0,0,0,0,0,0,0},																																							// 53								-
-	{Sword1Res.ENGLISH54,       Sword1Res.FRENCH54,     Sword1Res.GERMAN54,     Sword1Res.ITALIAN54,    Sword1Res.SPANISH54,    Sword1Res.CZECH54,  Sword1Res.PORT54},	// 54								CD2
-	{Sword1Res.ENGLISH55,       Sword1Res.FRENCH55,     Sword1Res.GERMAN55,     Sword1Res.ITALIAN55,    Sword1Res.SPANISH55,    Sword1Res.CZECH55,  Sword1Res.PORT55},	// 55								CD2
-	{Sword1Res.ENGLISH56,       Sword1Res.FRENCH56,     Sword1Res.GERMAN56,     Sword1Res.ITALIAN56,    Sword1Res.SPANISH56,    Sword1Res.CZECH56,  Sword1Res.PORT56},	// 56		SPAIN				CD2
-	{Sword1Res.ENGLISH57,       Sword1Res.FRENCH57,     Sword1Res.GERMAN57,     Sword1Res.ITALIAN57,    Sword1Res.SPANISH57,    Sword1Res.CZECH57,  Sword1Res.PORT57},	// 57								CD2
-	{Sword1Res.ENGLISH58,       Sword1Res.FRENCH58,     Sword1Res.GERMAN58,     Sword1Res.ITALIAN58,    Sword1Res.SPANISH58,    Sword1Res.CZECH58,  Sword1Res.PORT58},	// 58								CD2
-	{Sword1Res.ENGLISH59,       Sword1Res.FRENCH59,     Sword1Res.GERMAN59,     Sword1Res.ITALIAN59,    Sword1Res.SPANISH59,    Sword1Res.CZECH59,  Sword1Res.PORT59},	// 59								CD2
-	{Sword1Res.ENGLISH60,       Sword1Res.FRENCH60,     Sword1Res.GERMAN60,     Sword1Res.ITALIAN60,    Sword1Res.SPANISH60,    Sword1Res.CZECH60,  Sword1Res.PORT60},	// 60								CD2
-	{Sword1Res.ENGLISH61,       Sword1Res.FRENCH61,     Sword1Res.GERMAN61,     Sword1Res.ITALIAN61,    Sword1Res.SPANISH61,    Sword1Res.CZECH61,  Sword1Res.PORT61},	// 61								CD2
+	{SwordRes.ENGLISH54,       SwordRes.FRENCH54,     SwordRes.GERMAN54,     SwordRes.ITALIAN54,    SwordRes.SPANISH54,    SwordRes.CZECH54,  SwordRes.PORT54},	// 54								CD2
+	{SwordRes.ENGLISH55,       SwordRes.FRENCH55,     SwordRes.GERMAN55,     SwordRes.ITALIAN55,    SwordRes.SPANISH55,    SwordRes.CZECH55,  SwordRes.PORT55},	// 55								CD2
+	{SwordRes.ENGLISH56,       SwordRes.FRENCH56,     SwordRes.GERMAN56,     SwordRes.ITALIAN56,    SwordRes.SPANISH56,    SwordRes.CZECH56,  SwordRes.PORT56},	// 56		SPAIN				CD2
+	{SwordRes.ENGLISH57,       SwordRes.FRENCH57,     SwordRes.GERMAN57,     SwordRes.ITALIAN57,    SwordRes.SPANISH57,    SwordRes.CZECH57,  SwordRes.PORT57},	// 57								CD2
+	{SwordRes.ENGLISH58,       SwordRes.FRENCH58,     SwordRes.GERMAN58,     SwordRes.ITALIAN58,    SwordRes.SPANISH58,    SwordRes.CZECH58,  SwordRes.PORT58},	// 58								CD2
+	{SwordRes.ENGLISH59,       SwordRes.FRENCH59,     SwordRes.GERMAN59,     SwordRes.ITALIAN59,    SwordRes.SPANISH59,    SwordRes.CZECH59,  SwordRes.PORT59},	// 59								CD2
+	{SwordRes.ENGLISH60,       SwordRes.FRENCH60,     SwordRes.GERMAN60,     SwordRes.ITALIAN60,    SwordRes.SPANISH60,    SwordRes.CZECH60,  SwordRes.PORT60},	// 60								CD2
+	{SwordRes.ENGLISH61,       SwordRes.FRENCH61,     SwordRes.GERMAN61,     SwordRes.ITALIAN61,    SwordRes.SPANISH61,    SwordRes.CZECH61,  SwordRes.PORT61},	// 61								CD2
 	{0,0,0,0,0,0,0},																																							// 62								-
-	{Sword1Res.ENGLISH63,       Sword1Res.FRENCH63,     Sword1Res.GERMAN63,     Sword1Res.ITALIAN63,    Sword1Res.SPANISH63,    Sword1Res.CZECH63,  Sword1Res.PORT63},	// 63		TRAIN				CD2
+	{SwordRes.ENGLISH63,       SwordRes.FRENCH63,     SwordRes.GERMAN63,     SwordRes.ITALIAN63,    SwordRes.SPANISH63,    SwordRes.CZECH63,  SwordRes.PORT63},	// 63		TRAIN				CD2
 	{0,0,0,0,0,0,0},																																							// 64								-
-	{Sword1Res.ENGLISH65,       Sword1Res.FRENCH65,     Sword1Res.GERMAN65,     Sword1Res.ITALIAN65,    Sword1Res.SPANISH65,    Sword1Res.CZECH65,  Sword1Res.PORT65},	// 65								CD2
-	{Sword1Res.ENGLISH66,       Sword1Res.FRENCH66,     Sword1Res.GERMAN66,     Sword1Res.ITALIAN66,    Sword1Res.SPANISH66,    Sword1Res.CZECH66,  Sword1Res.PORT66},	// 66								CD2
+	{SwordRes.ENGLISH65,       SwordRes.FRENCH65,     SwordRes.GERMAN65,     SwordRes.ITALIAN65,    SwordRes.SPANISH65,    SwordRes.CZECH65,  SwordRes.PORT65},	// 65								CD2
+	{SwordRes.ENGLISH66,       SwordRes.FRENCH66,     SwordRes.GERMAN66,     SwordRes.ITALIAN66,    SwordRes.SPANISH66,    SwordRes.CZECH66,  SwordRes.PORT66},	// 66								CD2
 	{0,0,0,0,0,0,0},																																							// 67								-
 	{0,0,0,0,0,0,0},																																							// 68								-
-	{Sword1Res.ENGLISH69,       Sword1Res.FRENCH69,      Sword1Res.GERMAN69,      Sword1Res.ITALIAN69, Sword1Res.SPANISH69, Sword1Res.CZECH69,   Sword1Res.PORT69},	// 69								CD2
+	{SwordRes.ENGLISH69,       SwordRes.FRENCH69,      SwordRes.GERMAN69,      SwordRes.ITALIAN69, SwordRes.SPANISH69, SwordRes.CZECH69,   SwordRes.PORT69},	// 69								CD2
 	{0,0,0,0,0,0,0},																																							// 70								-
-	{Sword1Res.ENGLISH71,       Sword1Res.FRENCH71,     Sword1Res.GERMAN71,     Sword1Res.ITALIAN71,    Sword1Res.SPANISH71,    Sword1Res.CZECH71,  Sword1Res.PORT71},	// 71		SCOTLAND		CD2
-	{Sword1Res.ENGLISH72,       Sword1Res.FRENCH72,     Sword1Res.GERMAN72,     Sword1Res.ITALIAN72,    Sword1Res.SPANISH72,    Sword1Res.CZECH72,  Sword1Res.PORT72},	// 72								CD2
-	{Sword1Res.ENGLISH73,       Sword1Res.FRENCH73,     Sword1Res.GERMAN73,     Sword1Res.ITALIAN73,    Sword1Res.SPANISH73,    Sword1Res.CZECH73,  Sword1Res.PORT73},	// 73								CD2
-	{Sword1Res.ENGLISH74,       Sword1Res.FRENCH74,     Sword1Res.GERMAN74,     Sword1Res.ITALIAN74,    Sword1Res.SPANISH74,    Sword1Res.CZECH74,  Sword1Res.PORT74},	// 74								CD2
+	{SwordRes.ENGLISH71,       SwordRes.FRENCH71,     SwordRes.GERMAN71,     SwordRes.ITALIAN71,    SwordRes.SPANISH71,    SwordRes.CZECH71,  SwordRes.PORT71},	// 71		SCOTLAND		CD2
+	{SwordRes.ENGLISH72,       SwordRes.FRENCH72,     SwordRes.GERMAN72,     SwordRes.ITALIAN72,    SwordRes.SPANISH72,    SwordRes.CZECH72,  SwordRes.PORT72},	// 72								CD2
+	{SwordRes.ENGLISH73,       SwordRes.FRENCH73,     SwordRes.GERMAN73,     SwordRes.ITALIAN73,    SwordRes.SPANISH73,    SwordRes.CZECH73,  SwordRes.PORT73},	// 73								CD2
+	{SwordRes.ENGLISH74,       SwordRes.FRENCH74,     SwordRes.GERMAN74,     SwordRes.ITALIAN74,    SwordRes.SPANISH74,    SwordRes.CZECH74,  SwordRes.PORT74},	// 74								CD2
 	{0,0,0,0,0,0,0},																																							// 75								-
 	{0,0,0,0,0,0,0},																																							// 76								-
 	{0,0,0,0,0,0,0},																																							// 77								-
@@ -468,7 +468,7 @@ namespace NScumm.Sword1
 	{0,0,0,0,0,0,0},																																							// 87								-
 	{0,0,0,0,0,0,0},																																							// 88								-
 	{0,0,0,0,0,0,0},																																							// 89								-
-	{Sword1Res.ENGLISH90,     Sword1Res.FRENCH90,       Sword1Res.GERMAN90,       Sword1Res.ITALIAN90,  Sword1Res.SPANISH90,  Sword1Res.CZECH90,    Sword1Res.PORT90},	// 90		PHONE				BOTH CD'S (NICO & TODRYK PHONE TEXT - can phone nico from a number of sections
+	{SwordRes.ENGLISH90,     SwordRes.FRENCH90,       SwordRes.GERMAN90,       SwordRes.ITALIAN90,  SwordRes.SPANISH90,  SwordRes.CZECH90,    SwordRes.PORT90},	// 90		PHONE				BOTH CD'S (NICO & TODRYK PHONE TEXT - can phone nico from a number of sections
 	{0,0,0,0,0,0,0},																																							// 91								-
 	{0,0,0,0,0,0,0},																																							// 92								-
 	{0,0,0,0,0,0,0},																																							// 93								-
@@ -477,7 +477,7 @@ namespace NScumm.Sword1
 	{0,0,0,0,0,0,0},																																							// 96								-
 	{0,0,0,0,0,0,0},																																							// 97								-
 	{0,0,0,0,0,0,0},																																							// 98								-
-	{Sword1Res.ENGLISH99,     Sword1Res.FRENCH99,       Sword1Res.GERMAN99,       Sword1Res.ITALIAN99,  Sword1Res.SPANISH99,  Sword1Res.CZECH99,    Sword1Res.PORT99},	// 99		MESSAGES		BOTH CD'S - contains general text, most not requiring samples, but includes demo samples
+	{SwordRes.ENGLISH99,     SwordRes.FRENCH99,       SwordRes.GERMAN99,       SwordRes.ITALIAN99,  SwordRes.SPANISH99,  SwordRes.CZECH99,    SwordRes.PORT99},	// 99		MESSAGES		BOTH CD'S - contains general text, most not requiring samples, but includes demo samples
 	{0,0,0,0,0,0,0},																																							// 100							-
 	{0,0,0,0,0,0,0},																																							// 101							-
 	{0,0,0,0,0,0,0},																																							// 102							-
@@ -507,11 +507,11 @@ namespace NScumm.Sword1
 	{0,0,0,0,0,0,0},																																							// 126							-
 	{0,0,0,0,0,0,0},																																							// 127							-
 	{0,0,0,0,0,0,0},																																							// 128							-
-	{Sword1Res.ENGLISH129,    Sword1Res.FRENCH129,  Sword1Res.GERMAN129,  Sword1Res.ITALIAN129, Sword1Res.SPANISH129, Sword1Res.CZECH129,   Sword1Res.PORT129},	// 129	NICO				BOTH CD'S	- used in screens 1,10,71,72,73
+	{SwordRes.ENGLISH129,    SwordRes.FRENCH129,  SwordRes.GERMAN129,  SwordRes.ITALIAN129, SwordRes.SPANISH129, SwordRes.CZECH129,   SwordRes.PORT129},	// 129	NICO				BOTH CD'S	- used in screens 1,10,71,72,73
 	{0,0,0,0,0,0,0},																																							// 130							-
-	{Sword1Res.ENGLISH131,    Sword1Res.FRENCH131,  Sword1Res.GERMAN131,  Sword1Res.ITALIAN131, Sword1Res.SPANISH131, Sword1Res.CZECH131,   Sword1Res.PORT131},	// 131	BENOIR			CD1				- used in screens 31..35
+	{SwordRes.ENGLISH131,    SwordRes.FRENCH131,  SwordRes.GERMAN131,  SwordRes.ITALIAN131, SwordRes.SPANISH131, SwordRes.CZECH131,   SwordRes.PORT131},	// 131	BENOIR			CD1				- used in screens 31..35
 	{0,0,0,0,0,0,0},																																							// 132							-
-	{Sword1Res.ENGLISH133,    Sword1Res.FRENCH133,  Sword1Res.GERMAN133,  Sword1Res.ITALIAN133, Sword1Res.SPANISH133, Sword1Res.CZECH133,   Sword1Res.PORT133},	// 133	ROSSO				CD1				- used in screen 18
+	{SwordRes.ENGLISH133,    SwordRes.FRENCH133,  SwordRes.GERMAN133,  SwordRes.ITALIAN133, SwordRes.SPANISH133, SwordRes.CZECH133,   SwordRes.PORT133},	// 133	ROSSO				CD1				- used in screen 18
 	{0,0,0,0,0,0,0},																																							// 134							-
 	{0,0,0,0,0,0,0},																																							// 135							-
 	{0,0,0,0,0,0,0},																																							// 136							-
@@ -523,8 +523,8 @@ namespace NScumm.Sword1
 	{0,0,0,0,0,0,0},																																							// 142							-
 	{0,0,0,0,0,0,0},																																							// 143							-
 	{0,0,0,0,0,0,0},																																							// 144							-
-	{Sword1Res.ENGLISH145,    Sword1Res.FRENCH145,  Sword1Res.GERMAN145,  Sword1Res.ITALIAN145, Sword1Res.SPANISH145, Sword1Res.CZECH145,   Sword1Res.PORT145},	// 145	MOUE				CD1				- used in screens 1 & 18
-	{Sword1Res.ENGLISH146,    Sword1Res.FRENCH146,  Sword1Res.GERMAN146,  Sword1Res.ITALIAN146, Sword1Res.SPANISH146, Sword1Res.CZECH146,   Sword1Res.PORT146},	// 146	ALBERT			CD1				- used in screens 4 & 5
+	{SwordRes.ENGLISH145,    SwordRes.FRENCH145,  SwordRes.GERMAN145,  SwordRes.ITALIAN145, SwordRes.SPANISH145, SwordRes.CZECH145,   SwordRes.PORT145},	// 145	MOUE				CD1				- used in screens 1 & 18
+	{SwordRes.ENGLISH146,    SwordRes.FRENCH146,  SwordRes.GERMAN146,  SwordRes.ITALIAN146, SwordRes.SPANISH146, SwordRes.CZECH146,   SwordRes.PORT146},	// 146	ALBERT			CD1				- used in screens 4 & 5
 	{0,0,0,0,0,0,0},																																							// 147							-
 	{0,0,0,0,0,0,0},																																							// 148							-
 	{0,0,0,0,0,0,0},																																							// 149							-

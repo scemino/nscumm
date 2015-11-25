@@ -145,23 +145,23 @@ namespace NScumm.Sword1
             _system.GraphicsManager.CopyRectToScreen(_screenBuf, 640, 0, 0, 640, 480);
             _sound.QuitScreen();
 
-            uint fontId = Sword1Res.SR_FONT, redFontId = Sword1Res.SR_REDFONT;
+            uint fontId = SwordRes.SR_FONT, redFontId = SwordRes.SR_REDFONT;
             if (SystemVars.Language == Language.BS1_CZECH)
             {
-                fontId = Sword1Res.CZECH_SR_FONT;
-                redFontId = Sword1Res.CZECH_SR_REDFONT;
+                fontId = SwordRes.CZECH_SR_FONT;
+                redFontId = SwordRes.CZECH_SR_REDFONT;
             }
             _font = _resMan.OpenFetchRes(fontId);
             _redFont = _resMan.OpenFetchRes(redFontId);
 
-            var pal = _resMan.OpenFetchRes(Sword1Res.SR_PALETTE);
+            var pal = _resMan.OpenFetchRes(SwordRes.SR_PALETTE);
             var palOut = new Color[256];
             for (ushort cnt = 1; cnt < 256; cnt++)
             {
                 palOut[cnt] = Color.FromRgb(pal[cnt * 3 + 0] << 2, pal[cnt * 3 + 1] << 2, pal[cnt * 3 + 2] << 2);
             }
             palOut[0] = Color.FromRgb(0, 0, 0);
-            _resMan.ResClose(Sword1Res.SR_PALETTE);
+            _resMan.ResClose(SwordRes.SR_PALETTE);
             _system.GraphicsManager.SetPalette(palOut, 0, 256);
             ButtonIds mode = 0;
             ButtonIds newMode = ButtonIds.BUTTON_MAIN_PANEL;
@@ -273,18 +273,18 @@ namespace NScumm.Sword1
         public void AskForCd()
         {
             _screenBuf = new byte[640 * 480];
-            uint fontId = Sword1Res.SR_FONT;
+            uint fontId = SwordRes.SR_FONT;
             if (Sword1.SystemVars.Language == Language.BS1_CZECH)
-                fontId = Sword1Res.CZECH_SR_FONT;
+                fontId = SwordRes.CZECH_SR_FONT;
             _font = _resMan.OpenFetchRes(fontId);
-            var pal = _resMan.OpenFetchRes(Sword1Res.SR_PALETTE);
+            var pal = _resMan.OpenFetchRes(SwordRes.SR_PALETTE);
             var palOut = new Color[256];
             for (var cnt = 1; cnt < 256; cnt++)
             {
                 palOut[cnt] = Color.FromRgb(pal[cnt * 3 + 0] << 2, pal[cnt * 3 + 1] << 2, pal[cnt * 3 + 2] << 2);
             }
             palOut[0] = Color.FromRgb(0, 0, 0);
-            _resMan.ResClose(Sword1Res.SR_PALETTE);
+            _resMan.ResClose(SwordRes.SR_PALETTE);
             _system.GraphicsManager.SetPalette(palOut, 0, 256);
 
             var fName = $"cd{Sword1.SystemVars.CurrentCd}.id";
@@ -499,7 +499,7 @@ namespace NScumm.Sword1
             for (var chCnt = 0; chCnt < 2; chCnt++)
             {
                 byte vol = (chCnt == 0) ? volL : volR;
-                FrameHeader frHead = new FrameHeader(_resMan.FetchFrame(_resMan.OpenFetchRes(Sword1Res.SR_VLIGHT), (uint)((vol + 15) >> 4)));
+                FrameHeader frHead = new FrameHeader(_resMan.FetchFrame(_resMan.OpenFetchRes(SwordRes.SR_VLIGHT), (uint)((vol + 15) >> 4)));
                 var destMem = new ByteAccess(_screenBuf, destY * Screen.SCREEN_WIDTH + destX);
                 var srcMem = new ByteAccess(frHead.Data.Data, frHead.Data.Offset + FrameHeader.Size);
                 ushort barHeight = _resMan.ReadUInt16(frHead.height);
@@ -531,7 +531,7 @@ namespace NScumm.Sword1
                 }
 
                 _system.GraphicsManager.CopyRectToScreen(_screenBuf, destY * Screen.SCREEN_WIDTH + destX, Screen.SCREEN_WIDTH, destX, destY, _resMan.ReadUInt16(frHead.width), _resMan.ReadUInt16(frHead.height));
-                _resMan.ResClose(Sword1Res.SR_VLIGHT);
+                _resMan.ResClose(SwordRes.SR_VLIGHT);
                 destX += 32;
             }
         }
@@ -1153,14 +1153,14 @@ namespace NScumm.Sword1
 
         private bool GetConfirm(string title)
         {
-            var panel = new ControlButton(0, 0, Sword1Res.SR_CONFIRM, 0, 0, _resMan, _screenBuf, _system);
+            var panel = new ControlButton(0, 0, SwordRes.SR_CONFIRM, 0, 0, _resMan, _screenBuf, _system);
             panel.Draw();
 
             RenderText(title, 320, 160, TextModes.TEXT_CENTER);
             ControlButton[] buttons = new ControlButton[2];
-            buttons[0] = new ControlButton(260, 192 + 40, Sword1Res.SR_BUTTON, 0, 0, _resMan, _screenBuf, _system);
+            buttons[0] = new ControlButton(260, 192 + 40, SwordRes.SR_BUTTON, 0, 0, _resMan, _screenBuf, _system);
             RenderText(_lStrings[(int)LangStrings.STR_OK], 640 - 260, 192 + 40, TextModes.TEXT_RIGHT_ALIGN);
-            buttons[1] = new ControlButton(260, 256 + 40, Sword1Res.SR_BUTTON, 0, 0, _resMan, _screenBuf, _system);
+            buttons[1] = new ControlButton(260, 256 + 40, SwordRes.SR_BUTTON, 0, 0, _resMan, _screenBuf, _system);
             RenderText(_lStrings[(int)LangStrings.STR_CANCEL], 640 - 260, 256 + 40, TextModes.TEXT_RIGHT_ALIGN);
             byte retVal = 0;
             byte clickVal = 0;
@@ -1294,7 +1294,7 @@ namespace NScumm.Sword1
 
         private void SetupVolumePanel()
         {
-            ControlButton panel = new ControlButton(0, 0, Sword1Res.SR_VOLUME, 0, 0, _resMan, _screenBuf, _system);
+            ControlButton panel = new ControlButton(0, 0, SwordRes.SR_VOLUME, 0, 0, _resMan, _screenBuf, _system);
             panel.Draw();
 
             RenderText(_lStrings[(int)LangStrings.STR_MUSIC], 149, 39 + 40, TextModes.TEXT_LEFT_ALIGN);
@@ -1379,12 +1379,12 @@ namespace NScumm.Sword1
         {
             ReadSavegameDescriptions();
 
-            FrameHeader savePanel = new FrameHeader(_resMan.FetchFrame(_resMan.OpenFetchRes(Sword1Res.SR_WINDOW), 0));
+            FrameHeader savePanel = new FrameHeader(_resMan.FetchFrame(_resMan.OpenFetchRes(SwordRes.SR_WINDOW), 0));
             short panelX = (short)((640 - _resMan.ReadUInt16(savePanel.width)) / 2);
             short panelY = (short)((480 - _resMan.ReadUInt16(savePanel.height)) / 2);
-            ControlButton panel = new ControlButton((ushort)panelX, (ushort)panelY, Sword1Res.SR_WINDOW, 0, 0, _resMan, _screenBuf, _system);
+            ControlButton panel = new ControlButton((ushort)panelX, (ushort)panelY, SwordRes.SR_WINDOW, 0, 0, _resMan, _screenBuf, _system);
             panel.Draw();
-            _resMan.ResClose(Sword1Res.SR_WINDOW);
+            _resMan.ResClose(SwordRes.SR_WINDOW);
             CreateButtons(_saveButtons, 14);
             RenderText(_lStrings[(int)LangStrings.STR_CANCEL], _saveButtons[13].x - 10, _saveButtons[13].y, TextModes.TEXT_RIGHT_ALIGN);
             if (saving)
@@ -1450,15 +1450,15 @@ namespace NScumm.Sword1
             uint panelId;
 
             if (SystemVars.ControlPanelMode == ControlPanelMode.CP_DEATHSCREEN)
-                panelId = Sword1Res.SR_DEATHPANEL;
+                panelId = SwordRes.SR_DEATHPANEL;
             else
             {
                 if (SystemVars.RealLanguage.TwoLetterISOLanguageName == "en-US")
-                    panelId = Sword1Res.SR_PANEL_AMERICAN;
+                    panelId = SwordRes.SR_PANEL_AMERICAN;
                 else if (SystemVars.Language <= Language.BS1_SPANISH)
-                    panelId = (uint)(Sword1Res.SR_PANEL_ENGLISH + SystemVars.Language);
+                    panelId = (uint)(SwordRes.SR_PANEL_ENGLISH + SystemVars.Language);
                 else
-                    panelId = Sword1Res.SR_PANEL_ENGLISH;
+                    panelId = SwordRes.SR_PANEL_ENGLISH;
             }
 
             ControlButton panel = new ControlButton(0, 0, panelId, 0, 0, _resMan, _screenBuf, _system);
@@ -1676,45 +1676,45 @@ namespace NScumm.Sword1
         }
 
         static readonly ButtonInfo[] _deathButtons = {
-            new ButtonInfo {x=250, y=224 + 40, resId = Sword1Res.SR_BUTTON, id=(uint) ButtonIds.BUTTON_RESTORE_PANEL, flag=0 },
-            new ButtonInfo {x=250, y=260 + 40, resId = Sword1Res.SR_BUTTON, id=(uint) ButtonIds.BUTTON_RESTART, flag=kButtonOk },
-            new ButtonInfo {x=250, y=296 + 40, resId = Sword1Res.SR_BUTTON, id=(uint) ButtonIds.BUTTON_QUIT, flag=kButtonCancel }
+            new ButtonInfo {x=250, y=224 + 40, resId = SwordRes.SR_BUTTON, id=(uint) ButtonIds.BUTTON_RESTORE_PANEL, flag=0 },
+            new ButtonInfo {x=250, y=260 + 40, resId = SwordRes.SR_BUTTON, id=(uint) ButtonIds.BUTTON_RESTART, flag=kButtonOk },
+            new ButtonInfo {x=250, y=296 + 40, resId = SwordRes.SR_BUTTON, id=(uint) ButtonIds.BUTTON_QUIT, flag=kButtonCancel }
         };
 
         static readonly ButtonInfo[] _panelButtons = {
-            new ButtonInfo {x=145, y=188 + 40, resId = Sword1Res.SR_BUTTON, id=(uint) ButtonIds.BUTTON_SAVE_PANEL, flag=0 },
-            new ButtonInfo {x=145, y=224 + 40, resId = Sword1Res.SR_BUTTON, id=(uint) ButtonIds.BUTTON_RESTORE_PANEL, flag=0 },
-            new ButtonInfo {x=145, y=260 + 40, resId = Sword1Res.SR_BUTTON, id=(uint) ButtonIds.BUTTON_RESTART, flag=0 },
-            new ButtonInfo {x=145, y=296 + 40, resId = Sword1Res.SR_BUTTON, id=(uint) ButtonIds.BUTTON_QUIT, flag=kButtonCancel },
-            new ButtonInfo {x=475, y=188 + 40, resId = Sword1Res.SR_BUTTON, id=(uint) ButtonIds.BUTTON_VOLUME_PANEL, flag=0 },
-            new ButtonInfo {x=475, y=224 + 40, resId = Sword1Res.SR_TEXT_BUTTON, id=(uint) ButtonIds.BUTTON_TEXT, flag=0 },
-            new ButtonInfo {x=475, y=332 + 40, resId = Sword1Res.SR_BUTTON, id=(uint) ButtonIds.BUTTON_DONE, flag=kButtonOk }
+            new ButtonInfo {x=145, y=188 + 40, resId = SwordRes.SR_BUTTON, id=(uint) ButtonIds.BUTTON_SAVE_PANEL, flag=0 },
+            new ButtonInfo {x=145, y=224 + 40, resId = SwordRes.SR_BUTTON, id=(uint) ButtonIds.BUTTON_RESTORE_PANEL, flag=0 },
+            new ButtonInfo {x=145, y=260 + 40, resId = SwordRes.SR_BUTTON, id=(uint) ButtonIds.BUTTON_RESTART, flag=0 },
+            new ButtonInfo {x=145, y=296 + 40, resId = SwordRes.SR_BUTTON, id=(uint) ButtonIds.BUTTON_QUIT, flag=kButtonCancel },
+            new ButtonInfo {x=475, y=188 + 40, resId = SwordRes.SR_BUTTON, id=(uint) ButtonIds.BUTTON_VOLUME_PANEL, flag=0 },
+            new ButtonInfo {x=475, y=224 + 40, resId = SwordRes.SR_TEXT_BUTTON, id=(uint) ButtonIds.BUTTON_TEXT, flag=0 },
+            new ButtonInfo {x=475, y=332 + 40, resId = SwordRes.SR_BUTTON, id=(uint) ButtonIds.BUTTON_DONE, flag=kButtonOk }
         };
 
         static readonly ButtonInfo[] _volumeButtons = {
-            new ButtonInfo { x=478, y=338 + 40, resId = Sword1Res.SR_BUTTON, id=(uint) ButtonIds.BUTTON_MAIN_PANEL, flag=kButtonOk},
-            new ButtonInfo { x=138, y=135, resId = Sword1Res.SR_VKNOB, id=0, flag=0},
-            new ButtonInfo { x=273, y=135, resId = Sword1Res.SR_VKNOB, id=0, flag=0},
-            new ButtonInfo { x=404, y=135, resId = Sword1Res.SR_VKNOB, id=0, flag=0},
+            new ButtonInfo { x=478, y=338 + 40, resId = SwordRes.SR_BUTTON, id=(uint) ButtonIds.BUTTON_MAIN_PANEL, flag=kButtonOk},
+            new ButtonInfo { x=138, y=135, resId = SwordRes.SR_VKNOB, id=0, flag=0},
+            new ButtonInfo { x=273, y=135, resId = SwordRes.SR_VKNOB, id=0, flag=0},
+            new ButtonInfo { x=404, y=135, resId = SwordRes.SR_VKNOB, id=0, flag=0},
         };
 
         static readonly ButtonInfo[] _saveButtons = {
-            new ButtonInfo {x=114, y= 32 + 40, resId = Sword1Res.SR_SLAB1, id=(uint) ButtonIds.BUTTON_SAVE_SELECT1, flag=0 },
-            new ButtonInfo {x=114, y= 68 + 40, resId = Sword1Res.SR_SLAB2, id=(uint) ButtonIds.BUTTON_SAVE_SELECT2, flag=0 },
-            new ButtonInfo {x=114, y=104 + 40, resId = Sword1Res.SR_SLAB3, id=(uint) ButtonIds.BUTTON_SAVE_SELECT3, flag=0 },
-            new ButtonInfo {x=114, y=140 + 40, resId = Sword1Res.SR_SLAB4, id=(uint) ButtonIds.BUTTON_SAVE_SELECT4, flag=0 },
-            new ButtonInfo {x=114, y=176 + 40, resId = Sword1Res.SR_SLAB1, id=(uint) ButtonIds.BUTTON_SAVE_SELECT5, flag=0 },
-            new ButtonInfo {x=114, y=212 + 40, resId = Sword1Res.SR_SLAB2, id=(uint) ButtonIds.BUTTON_SAVE_SELECT6, flag=0 },
-            new ButtonInfo {x=114, y=248 + 40, resId = Sword1Res.SR_SLAB3, id=(uint) ButtonIds.BUTTON_SAVE_SELECT7, flag=0 },
-            new ButtonInfo {x=114, y=284 + 40, resId = Sword1Res.SR_SLAB4, id=(uint) ButtonIds.BUTTON_SAVE_SELECT8, flag=0 },
+            new ButtonInfo {x=114, y= 32 + 40, resId = SwordRes.SR_SLAB1, id=(uint) ButtonIds.BUTTON_SAVE_SELECT1, flag=0 },
+            new ButtonInfo {x=114, y= 68 + 40, resId = SwordRes.SR_SLAB2, id=(uint) ButtonIds.BUTTON_SAVE_SELECT2, flag=0 },
+            new ButtonInfo {x=114, y=104 + 40, resId = SwordRes.SR_SLAB3, id=(uint) ButtonIds.BUTTON_SAVE_SELECT3, flag=0 },
+            new ButtonInfo {x=114, y=140 + 40, resId = SwordRes.SR_SLAB4, id=(uint) ButtonIds.BUTTON_SAVE_SELECT4, flag=0 },
+            new ButtonInfo {x=114, y=176 + 40, resId = SwordRes.SR_SLAB1, id=(uint) ButtonIds.BUTTON_SAVE_SELECT5, flag=0 },
+            new ButtonInfo {x=114, y=212 + 40, resId = SwordRes.SR_SLAB2, id=(uint) ButtonIds.BUTTON_SAVE_SELECT6, flag=0 },
+            new ButtonInfo {x=114, y=248 + 40, resId = SwordRes.SR_SLAB3, id=(uint) ButtonIds.BUTTON_SAVE_SELECT7, flag=0 },
+            new ButtonInfo {x=114, y=284 + 40, resId = SwordRes.SR_SLAB4, id=(uint) ButtonIds.BUTTON_SAVE_SELECT8, flag=0 },
 
-            new ButtonInfo {x=516,y=  25 + 40, resId = Sword1Res.SR_BUTUF, id=(uint) ButtonIds.BUTTON_SCROLL_UP_FAST, flag=0 },
-            new ButtonInfo {x=516,y=  45 + 40, resId = Sword1Res.SR_BUTUS, id=(uint) ButtonIds.BUTTON_SCROLL_UP_SLOW, flag=0 },
-            new ButtonInfo {x=516,y= 289 + 40, resId = Sword1Res.SR_BUTDS, id=(uint) ButtonIds.BUTTON_SCROLL_DOWN_SLOW, flag=0 },
-            new ButtonInfo {x=516,y= 310 + 40, resId = Sword1Res.SR_BUTDF, id=(uint) ButtonIds.BUTTON_SCROLL_DOWN_FAST, flag=0 },
+            new ButtonInfo {x=516,y=  25 + 40, resId = SwordRes.SR_BUTUF, id=(uint) ButtonIds.BUTTON_SCROLL_UP_FAST, flag=0 },
+            new ButtonInfo {x=516,y=  45 + 40, resId = SwordRes.SR_BUTUS, id=(uint) ButtonIds.BUTTON_SCROLL_UP_SLOW, flag=0 },
+            new ButtonInfo {x=516,y= 289 + 40, resId = SwordRes.SR_BUTDS, id=(uint) ButtonIds.BUTTON_SCROLL_DOWN_SLOW, flag=0 },
+            new ButtonInfo {x=516,y= 310 + 40, resId = SwordRes.SR_BUTDF, id=(uint) ButtonIds.BUTTON_SCROLL_DOWN_FAST, flag=0 },
 
-            new ButtonInfo {x=125, y=338 + 40, resId = Sword1Res.SR_BUTTON, id=(uint) ButtonIds.BUTTON_SAVE_RESTORE_OKAY, flag=kButtonOk},
-            new ButtonInfo {x=462, y=338 + 40, resId = Sword1Res.SR_BUTTON, id=(uint) ButtonIds.BUTTON_SAVE_CANCEL, flag=kButtonCancel }
+            new ButtonInfo {x=125, y=338 + 40, resId = SwordRes.SR_BUTTON, id=(uint) ButtonIds.BUTTON_SAVE_RESTORE_OKAY, flag=kButtonOk},
+            new ButtonInfo {x=462, y=338 + 40, resId = SwordRes.SR_BUTTON, id=(uint) ButtonIds.BUTTON_SAVE_CANCEL, flag=kButtonCancel }
         };
 
         private byte[] _font;

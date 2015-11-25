@@ -217,9 +217,9 @@ namespace NScumm.Sword1
             LOGIC_SET_VAR8(ScriptVariableNames.FOUND_WARD_FLAG, 1)).Concat(
             LOGIC_SET_VAR8(ScriptVariableNames.CONSULTANT_HERE, 1)).Concat(
 
-            LOGIC_CALL_FN_LONG(StartPosOpcodes.opcMegaSet, Logic.PLAYER, Sword1Res.GEORGE_WLK, Sword1Res.MEGA_WHITE)).Concat(
+            LOGIC_CALL_FN_LONG(StartPosOpcodes.opcMegaSet, Logic.PLAYER, SwordRes.GEORGE_WLK, SwordRes.MEGA_WHITE)).Concat(
 
-            LOGIC_SET_VAR32(ScriptVariableNames.GEORGE_CDT_FLAG, Sword1Res.WHT_TLK_TABLE)).Concat(
+            LOGIC_SET_VAR32(ScriptVariableNames.GEORGE_CDT_FLAG, SwordRes.WHT_TLK_TABLE)).Concat(
             LOGIC_SET_VAR8(ScriptVariableNames.GEORGE_TALK_FLAG, 0)).Concat(
             LOGIC_SET_VAR8(ScriptVariableNames.WHITE_COAT_FLAG, 1)).Concat(
             LOGIC_SET_VAR8(ScriptVariableNames.GEORGE_ALLOWED_REST_ANIMS, 0)).Concat(

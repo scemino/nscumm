@@ -36,7 +36,7 @@ namespace NScumm.Sword1
             _objMan = objMan;
             _resMan = resMan;
             _textCount = 0;
-            _fontId = (uint)(czechVersion ? Sword1Res.CZECH_GAME_FONT : Sword1Res.GAME_FONT);
+            _fontId = (uint)(czechVersion ? SwordRes.CZECH_GAME_FONT : SwordRes.GAME_FONT);
             _font = _resMan.OpenFetchRes(_fontId);
 
             _joinWidth = (ushort)(CharWidth((byte)' ') - 2 * Overlap);
@@ -193,7 +193,7 @@ namespace NScumm.Sword1
             if (SystemVars.Platform == Platform.PSX)
             {
                 frameHeight = (ushort)(_resMan.ReadUInt16(chFrame.height) / 2);
-                if (_fontId == Sword1Res.CZECH_GAME_FONT)
+                if (_fontId == SwordRes.CZECH_GAME_FONT)
                 { //Czech game fonts are compressed
                     var decBuf = new byte[_resMan.ReadUInt16(chFrame.width) * (_resMan.ReadUInt16(chFrame.height) / 2)];
                     Screen.DecompressHIF(chFrame.Data.Data, chFrame.Data.Offset + chData, decBuf);

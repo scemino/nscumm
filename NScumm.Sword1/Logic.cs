@@ -315,7 +315,7 @@ namespace NScumm.Sword1
                 throw new InvalidOperationException($"Starting in Section {pos} is not supported");
 
             ScriptVars[(int)ScriptVariableNames.CHANGE_STANCE] = StaticRes.STAND;
-            ScriptVars[(int)ScriptVariableNames.GEORGE_CDT_FLAG] = Sword1Res.GEO_TLK_TABLE;
+            ScriptVars[(int)ScriptVariableNames.GEORGE_CDT_FLAG] = SwordRes.GEO_TLK_TABLE;
 
             RunStartScript(_startData[pos]);
             if (spainVisit2)
@@ -397,9 +397,9 @@ namespace NScumm.Sword1
                 var cpt = _objMan.FetchObject(Logic.SAND_25);
                 var george = _objMan.FetchObject(PLAYER);
                 if (george.place == HOLDING_REPLICA_25) // is george holding the replica in his hands?
-                    FnFullSetFrame(cpt, SAND_25, Sword1Res.IMPFLRCDT, Sword1Res.IMPFLR, 0, 0, 0, 0); // empty impression in floor
+                    FnFullSetFrame(cpt, SAND_25, SwordRes.IMPFLRCDT, SwordRes.IMPFLR, 0, 0, 0, 0); // empty impression in floor
                 else
-                    FnFullSetFrame(cpt, SAND_25, Sword1Res.IMPPLSCDT, Sword1Res.IMPPLS, 0, 0, 0, 0); // impression filled with plaster
+                    FnFullSetFrame(cpt, SAND_25, SwordRes.IMPPLSCDT, SwordRes.IMPPLS, 0, 0, 0, 0); // impression filled with plaster
             }
 
             // work around, at screen 69 in psx version TOP menu gets stuck at disabled, fix it at next screen (71)

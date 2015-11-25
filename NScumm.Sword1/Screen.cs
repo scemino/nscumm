@@ -7,7 +7,7 @@ using NScumm.Core.IO;
 
 namespace NScumm.Sword1
 {
-    struct RoomDef
+    class RoomDef
     {
         public int totalLayers;
         public int sizeX;
@@ -17,6 +17,22 @@ namespace NScumm.Sword1
         public uint[] grids;
         public uint[] palettes;
         public uint[] parallax;
+
+        public RoomDef()
+        {
+        }
+
+        public RoomDef(int totalLayers, int sizeX, int sizeY, int gridWidth, uint[] layers, uint[] grids, uint[] palettes, uint[] parallax)
+        {
+            this.totalLayers = totalLayers;
+            this.sizeX =sizeX;
+            this.sizeY = sizeY;
+            this.gridWidth = sizeX;
+            this.layers = layers;
+            this.grids = grids;
+            this.palettes = palettes;
+            this.parallax = parallax;
+        }
     }
 
     class FrameHeader
@@ -103,7 +119,7 @@ namespace NScumm.Sword1
         public int id, y;
     }
 
-    internal class Screen
+    internal partial class Screen
     {
         const int SCRNGRID_X = 16;
         const int SCRNGRID_Y = 8;
@@ -321,8 +337,8 @@ namespace NScumm.Sword1
             }
             if (_updatePalette)
             {
-                FnSetPalette(0, 184, RoomDefTable[_currentScreen].palettes[0], false);
-                FnSetPalette(184, 72, RoomDefTable[_currentScreen].palettes[1], false);
+                FnSetPalette(0, 184, SwordRes.RoomDefTable[_currentScreen].palettes[0], false);
+                FnSetPalette(184, 72, SwordRes.RoomDefTable[_currentScreen].palettes[1], false);
                 _updatePalette = false;
             }
             if (_fadingStep != 0)
@@ -448,8 +464,8 @@ namespace NScumm.Sword1
         {
             // set sizes and scrolling, initialize/load screengrid, force screen refresh
             _currentScreen = (ushort)screen;
-            _scrnSizeX = (ushort)RoomDefTable[screen].sizeX;
-            _scrnSizeY = (ushort)RoomDefTable[screen].sizeY;
+            _scrnSizeX = (ushort)SwordRes.RoomDefTable[screen].sizeX;
+            _scrnSizeY = (ushort)SwordRes.RoomDefTable[screen].sizeY;
             _gridSizeX = (ushort)(_scrnSizeX / SCRNGRID_X);
             _gridSizeY = (ushort)(_scrnSizeY / SCRNGRID_Y);
             if (_scrnSizeX % SCRNGRID_X != 0 || _scrnSizeY % SCRNGRID_Y != 0)
@@ -475,24 +491,24 @@ namespace NScumm.Sword1
             _screenBuf = new byte[_scrnSizeX * _scrnSizeY];
             _screenGrid = new byte[_gridSizeX * _gridSizeY];
 
-            for (var cnt = 0; cnt < RoomDefTable[_currentScreen].totalLayers; cnt++)
+            for (var cnt = 0; cnt < SwordRes.RoomDefTable[_currentScreen].totalLayers; cnt++)
             {
                 // open and lock all resources, will be closed in quitScreen()
-                _layerBlocks[cnt] = new ByteAccess(_resMan.OpenFetchRes(RoomDefTable[_currentScreen].layers[cnt]));
+                _layerBlocks[cnt] = new ByteAccess(_resMan.OpenFetchRes(SwordRes.RoomDefTable[_currentScreen].layers[cnt]));
                 if (cnt > 0)
                     _layerBlocks[cnt].Offset += Header.Size;
             }
-            for (var cnt = 0; cnt < RoomDefTable[_currentScreen].totalLayers - 1; cnt++)
+            for (var cnt = 0; cnt < SwordRes.RoomDefTable[_currentScreen].totalLayers - 1; cnt++)
             {
                 // there's no grid for the background layer, so it's totalLayers - 1
-                _layerGrid[cnt] = new UShortAccess(_resMan.OpenFetchRes(RoomDefTable[_currentScreen].grids[cnt]));
+                _layerGrid[cnt] = new UShortAccess(_resMan.OpenFetchRes(SwordRes.RoomDefTable[_currentScreen].grids[cnt]));
                 _layerGrid[cnt].Offset += 14 * 2;
             }
             _parallax[0] = _parallax[1] = null;
-            if (RoomDefTable[_currentScreen].parallax[0] != 0)
-                _parallax[0] = _resMan.OpenFetchRes(RoomDefTable[_currentScreen].parallax[0]);
-            if (RoomDefTable[_currentScreen].parallax[1] != 0)
-                _parallax[1] = _resMan.OpenFetchRes(RoomDefTable[_currentScreen].parallax[1]);
+            if (SwordRes.RoomDefTable[_currentScreen].parallax[0] != 0)
+                _parallax[0] = _resMan.OpenFetchRes(SwordRes.RoomDefTable[_currentScreen].parallax[0]);
+            if (SwordRes.RoomDefTable[_currentScreen].parallax[1] != 0)
+                _parallax[1] = _resMan.OpenFetchRes(SwordRes.RoomDefTable[_currentScreen].parallax[1]);
 
             _updatePalette = true;
             _fullRefresh = true;
@@ -503,14 +519,14 @@ namespace NScumm.Sword1
             byte cnt;
             if (SystemVars.Platform == Platform.PSX)
                 FlushPsxCache();
-            for (cnt = 0; cnt < RoomDefTable[_currentScreen].totalLayers; cnt++)
-                _resMan.ResClose(RoomDefTable[_currentScreen].layers[cnt]);
-            for (cnt = 0; cnt < RoomDefTable[_currentScreen].totalLayers - 1; cnt++)
-                _resMan.ResClose(RoomDefTable[_currentScreen].grids[cnt]);
-            if (RoomDefTable[_currentScreen].parallax[0] != 0)
-                _resMan.ResClose(RoomDefTable[_currentScreen].parallax[0]);
-            if (RoomDefTable[_currentScreen].parallax[1] != 0)
-                _resMan.ResClose(RoomDefTable[_currentScreen].parallax[1]);
+            for (cnt = 0; cnt < SwordRes.RoomDefTable[_currentScreen].totalLayers; cnt++)
+                _resMan.ResClose(SwordRes.RoomDefTable[_currentScreen].layers[cnt]);
+            for (cnt = 0; cnt < SwordRes.RoomDefTable[_currentScreen].totalLayers - 1; cnt++)
+                _resMan.ResClose(SwordRes.RoomDefTable[_currentScreen].grids[cnt]);
+            if (SwordRes.RoomDefTable[_currentScreen].parallax[0] != 0)
+                _resMan.ResClose(SwordRes.RoomDefTable[_currentScreen].parallax[0]);
+            if (SwordRes.RoomDefTable[_currentScreen].parallax[1] != 0)
+                _resMan.ResClose(SwordRes.RoomDefTable[_currentScreen].parallax[1]);
             _currentScreen = 0xFFFF;
         }
 
@@ -718,7 +734,7 @@ namespace NScumm.Sword1
             {
                 //Clean shrink buffer to avoid corruption
                 Array.Clear(_shrinkBuffer, 0, SHRINK_BUFFER_SIZE);
-                if (SystemVars.Platform == Platform.PSX && (compact.resource != Sword1Res.GEORGE_MEGA))
+                if (SystemVars.Platform == Platform.PSX && (compact.resource != SwordRes.GEORGE_MEGA))
                 { //TODO: PSX Height shrinked sprites
                     throw new NotImplementedException();
                     //sprSizeX = (scale * _resMan.readUint16(&frameHead.width)) / 256;
@@ -780,14 +796,14 @@ namespace NScumm.Sword1
             if ((sprSizeX > 0) && (sprSizeY > 0))
             {
                 if (SystemVars.Platform != Platform.PSX || (compact.type == TYPE_TEXT)
-                    || (compact.resource == Sword1Res.LVSFLY) || (compact.resource != Sword1Res.GEORGE_MEGA && (sprSizeX < 260)))
+                    || (compact.resource == SwordRes.LVSFLY) || (compact.resource != SwordRes.GEORGE_MEGA && (sprSizeX < 260)))
                 {
                     sprData.Offset += incr;
                     DrawSprite(sprData, spriteX, spriteY, sprSizeX, sprSizeY, sprPitch);
                 }
-                else if (((sprSizeX >= 260) && (sprSizeX < 450)) || ((compact.resource == Sword1Res.GMWRITH) && (sprSizeX < 515))
+                else if (((sprSizeX >= 260) && (sprSizeX < 450)) || ((compact.resource == SwordRes.GMWRITH) && (sprSizeX < 515))
                          // a psx shrinked sprite (1/2 width)
-                         || ((compact.resource == Sword1Res.GMPOWER) && (sprSizeX < 515)))
+                         || ((compact.resource == SwordRes.GMPOWER) && (sprSizeX < 515)))
                 {
                     // some needs to be hardcoded, headers don't give useful infos
                     // TODO: DrawPsxHalfShrinkedSprite(sprData2 + incr, spriteX, spriteY, sprSizeX / 2, sprSizeY, sprPitch / 2);
@@ -801,7 +817,7 @@ namespace NScumm.Sword1
                     // TODO: DrawPsxHalfShrinkedSprite(sprData2 + incr, spriteX, spriteY, sprSizeX, sprSizeY, sprPitch);
                 }
                 if ((compact.status & STAT_FORE) == 0 &&
-                    !(SystemVars.Platform == Platform.PSX && (compact.resource == Sword1Res.MOUBUSY)))
+                    !(SystemVars.Platform == Platform.PSX && (compact.resource == SwordRes.MOUBUSY)))
                 // Check fixes moue sprite being masked by layer, happens only on psx
                 {
                     VerticalMask(spriteX, spriteY, sprSizeX, sprSizeY);
@@ -837,7 +853,7 @@ namespace NScumm.Sword1
 
         private void VerticalMask(ushort x, ushort y, ushort bWidth, ushort bHeight)
         {
-            if (RoomDefTable[_currentScreen].totalLayers <= 1)
+            if (SwordRes.RoomDefTable[_currentScreen].totalLayers <= 1)
                 return;
 
             if (SystemVars.Platform == Platform.PSX)
@@ -865,7 +881,7 @@ namespace NScumm.Sword1
             {
                 // A sprite can be masked by several layers at the same time,
                 // so we have to check them all. See bug #917427.
-                for (short level = (short)(RoomDefTable[_currentScreen].totalLayers - 2); level >= 0; level--)
+                for (short level = (short)(SwordRes.RoomDefTable[_currentScreen].totalLayers - 2); level >= 0; level--)
                 {
                     if (_layerGrid[level][gridX + blkx + gridY * lGridSizeX] != 0)
                     {
@@ -1251,103 +1267,7 @@ namespace NScumm.Sword1
             throw new NotImplementedException();
         }
 
-        public static RoomDef[] RoomDefTable =
-        {
-            // these are NOT const
-            new RoomDef {
-                totalLayers = 0, //total_layers  --- room 0 NOT USED
-                sizeX = 0, //size_x			= width
-                sizeY = 0, //size_y			= height
-                gridWidth = 0, //grid_width	= width/16 + 16
-                layers = new uint[]{0, 0, 0, 0}, //layers
-                grids = new uint[] {0, 0, 0}, //grids
-                palettes = new uint[] {0, 0}, //palettes		{ background palette [0..183], sprite palette [184..255] }
-                parallax = new uint[] {0, 0}, //parallax layers
-            },
-            //------------------------------------------------------------------------
-	        // PARIS 1
-
-	        new RoomDef {
-                totalLayers =3,													//total_layers		//room 1
-		        sizeX= 784,												//size_x
-		        sizeY= 400,												//size_y
-		        gridWidth=65,													//grid_width
-		        layers=new uint[]{ Sword1Res.room1_l0, Sword1Res.room1_l1, Sword1Res.room1_l2 },						//layers
-		        grids=new uint[]{ Sword1Res.room1_gd1, Sword1Res.room1_gd2 },								//grids
-		        palettes=new uint[]{ Sword1Res.room1_PAL, Sword1Res.PARIS1_PAL },								//palettes
-		        parallax =new uint[]{ Sword1Res.room1_plx,0},												//parallax layers
-	        },
-            new RoomDef {
-                totalLayers=3,													//total_layers		//room 2
-		        sizeX=640,												//size_x
-		        sizeY=400,												//size_y
-		        gridWidth=56,													//grid_width
-		        layers=new uint[]{ Sword1Res.room2_l0, Sword1Res.room2_l1, Sword1Res.room2_l2,0},						//layers
-		        grids=new uint[]{ Sword1Res.room2_gd1, Sword1Res.room2_gd2,0},							//grids
-		        palettes=new uint[]{ Sword1Res.room2_PAL, Sword1Res.PARIS1_PAL },								//palettes
-		        parallax =new uint[]{0,0},												//parallax layers
-	        },
-            new RoomDef {
-                totalLayers=3,													//total_layers		//room 3
-		        sizeX=640,												//size_x
-		        sizeY=400,												//size_y
-		        gridWidth=56,													//grid_width
-		        layers=new uint[]{ Sword1Res.room3_l0, Sword1Res.room3_l1, Sword1Res.room3_l2,0},						//layers
-		        grids=new uint[]{ Sword1Res.room3_gd1, Sword1Res.room3_gd2,0},							//grids
-		        palettes=new uint[]{ Sword1Res.room3_PAL, Sword1Res.PARIS1_PAL },								//palettes
-		        parallax =new uint[]{0,0},												//parallax layers
-	        },
-            new RoomDef {
-                totalLayers=3,																			//total_layers		//room 4
-		        sizeX=640,																		//size_x
-		        sizeY=400,																		//size_y
-		        gridWidth=56,																			//grid_width
-		        layers=new uint[]{ Sword1Res.room4_l0, Sword1Res.room4_l1, Sword1Res.room4_l2,0},					//layers
-		        grids=new uint[]{ Sword1Res.room4_gd1, Sword1Res.room4_gd2,0},								//grids
-		        palettes=new uint[]{ Sword1Res.room4_PAL, Sword1Res.PARIS1_PAL },									//palettes
-		        parallax =new uint[]{0,0},																	//parallax layers
-	        },
-            new RoomDef {
-                totalLayers=3,																			//total_layers		//room 5
-		        sizeX=640,																		//size_x
-		        sizeY=400,																		//size_y
-		        gridWidth=56,																			//grid_width
-		        layers=new uint[]{ Sword1Res.room5_l0, Sword1Res.room5_l1, Sword1Res.room5_l2,0},					//layers
-		        grids=new uint[]{ Sword1Res.room5_gd1, Sword1Res.room5_gd2,0},								//grids
-		        palettes=new uint[]{ Sword1Res.room5_PAL, Sword1Res.PARIS1_PAL },									//palettes
-		        parallax =new uint[]{0,0},																	//parallax layers
-	        },
-            new RoomDef {
-                totalLayers=2,																			//total_layers		//room 6
-		        sizeX=640,																		//size_x
-		        sizeY=400,																		//size_y
-		        gridWidth=56,																			//grid_width
-		        layers=new uint[]{ Sword1Res.room6_l0, Sword1Res.room6_l1,0,0},								//layers
-		        grids=new uint[]{ Sword1Res.room6_gd1,0,0},												//grids
-		        palettes=new uint[]{ Sword1Res.room6_PAL, Sword1Res.SEWER_PAL },									//palettes
-		        parallax =new uint[]{0,0},																	//parallax layers
-	        },
-            new RoomDef {
-                totalLayers=3,																			//total_layers		//room 7
-		        sizeX=640,																		//size_x
-		        sizeY=400,																		//size_y
-		        gridWidth=56,																			//grid_width
-		        layers=new uint[]{ Sword1Res.room7_l0, Sword1Res.room7_l1, Sword1Res.room7_l2,0},					//layers
-		        grids=new uint[]{ Sword1Res.room7_gd1, Sword1Res.room7_gd2,0},								//grids
-		        palettes=new uint[]{ Sword1Res.room7_PAL, Sword1Res.SEWER_PAL },									//palettes
-		        parallax =new uint[]{0,0},																	//parallax layers
-	        },
-            new RoomDef {
-                totalLayers=3,																			//total_layers		//room 8
-		        sizeX=784,																		//size_x
-		        sizeY=400,																		//size_y
-		        gridWidth=65,																			//grid_width
-		        layers=new uint[]{ Sword1Res.room8_l0, Sword1Res.room8_l1, Sword1Res.room8_l2,0},					//layers
-		        grids=new uint[]{ Sword1Res.room8_gd1, Sword1Res.room8_gd2,0},								//grids
-		        palettes=new uint[]{ Sword1Res.room8_PAL, Sword1Res.PARIS1_PAL },									//palettes
-		        parallax =new uint[]{ Sword1Res.room8_plx,0},													//parallax layers
-	        },
-        };
+        
 
         private UShortAccess[] _layerGrid = new UShortAccess[4];
         private ushort _oldScrollX;
@@ -1401,7 +1321,7 @@ namespace NScumm.Sword1
 
         public void FnSetParallax(uint screen, uint resId)
         {
-            RoomDefTable[screen].parallax[0] = resId;
+            SwordRes.RoomDefTable[screen].parallax[0] = resId;
         }
 
         public void FnFlash(byte color)

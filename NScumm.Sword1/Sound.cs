@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq.Expressions;
 using NScumm.Core;
@@ -64,6 +65,9 @@ namespace NScumm.Sword1
         private const int TOTAL_ROOMS = 100; //total number of rooms
         public const int MAX_ROOMS_PER_FX = 7; // max no. of rooms in the fx's room,vol list
         private const int MAX_FXQ_LENGTH = 32;      // max length of sound queue - ie. max number of fx that can be stored up/playing together
+        private const int SOUND_SPEECH_ID = 1;
+        private const int WAVE_VOL_TAB_LENGTH = 480;
+        private const int WAVE_VOL_THRESHOLD = 190000; //120000;
 
         private BinaryReader _cowFile;
         private UIntAccess _cowHeader;
@@ -76,6 +80,8 @@ namespace NScumm.Sword1
         private readonly QueueElement[] _fxQueue = new QueueElement[MAX_FXQ_LENGTH];
         private byte _endOfQueue;
         private readonly Random _rnd = new Random(Environment.TickCount);
+        private ushort _waveVolPos;
+        private bool[] _waveVolume = new bool[WAVE_VOL_TAB_LENGTH];
 
         public Sound(GameSettings settings, Mixer mixer, ResMan resMan)
         {
@@ -172,17 +178,278 @@ namespace NScumm.Sword1
 
         public void QuitScreen()
         {
-            // TODO:
+            // stop all running SFX
+            while (_endOfQueue != 0)
+                FnStopFx((int)_fxQueue[0].id);
         }
 
         public void CloseCowSystem()
         {
-            // TODO:
+            _cowFile.Dispose();
+            _cowHeader = null;
+            _currentCowFile = 0;
         }
 
         public void CheckSpeechFileEndianness()
         {
-            // TODO:
+            // Some mac versions (not all of them) use big endian wav, although
+            // the wav header doesn't indicate it.
+            // Use heuristic to determine endianness of speech.
+            // The heuristic consist in computing the sum of the absolute difference for
+            // every two consecutive samples. This is done both with a big endian and a
+            // little endian assumption. The one with the smallest sum should be the
+            // correct one (the sound wave is supposed to be relatively smooth).
+            // It needs at least 1000 samples to get stable result (the code below is
+            // using the first 2000 samples of the wav sound).
+
+            // Init speech file if not already done.
+            if (_currentCowFile == 0)
+            {
+                // Open one of the speech files. It uses SwordEngine::_systemVars.currentCD
+                // to decide which file to open, therefore if it is currently set to zero
+                // we have to set it to either 1 or 2 (I decided to set it to 1 as this is
+                // more likely to be the first file that will be needed).
+                bool no_current_cd = false;
+                if (SystemVars.CurrentCd == 0)
+                {
+                    SystemVars.CurrentCd = 1;
+                    no_current_cd = true;
+                }
+                InitCowSystem();
+                if (no_current_cd)
+                {
+                    // In case it fails with CD1 retry with CD2
+                    if (_currentCowFile == 0)
+                    {
+                        SystemVars.CurrentCd = 2;
+                        InitCowSystem();
+                    }
+                    // Reset currentCD flag
+                    SystemVars.CurrentCd = 0;
+                }
+            }
+
+            // Testing for endianness makes sense only if using the uncompressed files.
+            if (_cowHeader == null || (_cowMode != CowMode.CowWave && _cowMode != CowMode.CowDemo))
+                return;
+
+            // I picked the sample to use randomly (I just made sure it is long enough so that there is
+            // a fair chance of the heuristic to have a stable result and work for every language).
+            int roomNo = _currentCowFile == 1 ? 1 : 129;
+            int localNo = _currentCowFile == 1 ? 2 : 933;
+            // Get the speech data and apply the heuristic
+            uint locIndex = _cowHeader[roomNo] >> 2;
+            var sampleSize = _cowHeader[(int)(locIndex + (localNo * 2))];
+            var index = _cowHeader[(int)(locIndex + (localNo * 2) - 1)];
+            if (sampleSize != 0)
+            {
+                uint size;
+                // Compute average of difference between two consecutive samples for both BE and LE
+                _bigEndianSpeech = false;
+                var data = UncompressSpeech(index + _cowHeaderSize, sampleSize, out size);
+                uint maxSamples = size > 2000 ? 2000 : size;
+                double le_diff = EndiannessHeuristicValue(data, size, ref maxSamples);
+
+                _bigEndianSpeech = true;
+                data = UncompressSpeech(index + _cowHeaderSize, sampleSize, out size);
+                double be_diff = EndiannessHeuristicValue(data, size, ref maxSamples);
+
+                // Set the big endian flag
+                _bigEndianSpeech = (be_diff < le_diff);
+                if (_bigEndianSpeech)
+                {
+                    // TODO: debug(6, "Mac version: using big endian speech file");
+                }
+                else
+                {
+                    // TODO: debug(6, "Mac version: using little endian speech file");
+                }
+                // TODO: debug(8, "Speech endianness heuristic: average = %f for BE and %f for LE (%d samples)", be_diff, le_diff, maxSamples);
+            }
+        }
+
+        private double EndiannessHeuristicValue(UShortAccess data, uint dataSize,ref uint maxSamples)
+        {
+            if (data == null)
+                return 50000; // the heuristic value for the wrong endianess is about 21000 (1/3rd of the 16 bits range)
+
+            double diff_sum = 0;
+            uint cpt = 0;
+            short prev_value = (short)data[0];
+            for (int i = 1; i < dataSize && cpt < maxSamples; ++i)
+            {
+                short value = (short)data[i];
+                if (value != prev_value)
+                {
+                    diff_sum += Math.Abs((double)(value - prev_value));
+                    ++cpt;
+                    prev_value = value;
+                }
+            }
+            if (cpt == 0)
+                return 50000;
+            maxSamples = cpt;
+            return diff_sum / cpt;
+        }
+
+        private UShortAccess UncompressSpeech(uint index, uint cSize, out uint size)
+        {
+            _cowFile.BaseStream.Seek(index, SeekOrigin.Begin);
+            var fBuf = _cowFile.ReadBytes((int)cSize);
+            uint headerPos = 0;
+
+            while ((fBuf.ToUInt32BigEndian((int)headerPos) != ScummHelper.MakeTag('d', 'a', 't', 'a')) && (headerPos < 100))
+                headerPos++;
+
+            UShortAccess srcData;
+            if (headerPos < 100)
+            {
+                int resSize;
+                uint srcPos;
+                short length;
+                cSize /= 2;
+                headerPos += 4; // skip 'data' tag
+                if (_cowMode != CowMode.CowDemo)
+                {
+                    resSize = (int)(fBuf.ToUInt32((int)headerPos) >> 1);
+                    headerPos += 4;
+                }
+                else
+                {
+                    // the demo speech files have the uncompressed size
+                    // embedded in the compressed stream *sigh*
+                    //
+                    // But not always, apparently. See bug #2182450. Is
+                    // there any way to figure out the size other than
+                    // decoding the sound in that case?
+
+                    if (fBuf[headerPos + 1] == 0)
+                    {
+                        if (fBuf.ToInt16((int)headerPos) == 1)
+                        {
+                            resSize = fBuf.ToInt16((int)(headerPos + 2));
+                            resSize |= fBuf.ToInt16((int)(headerPos + 6)) << 16;
+                        }
+                        else
+                            resSize = fBuf.ToInt32((int)(headerPos + 2));
+                        resSize >>= 1;
+                    }
+                    else
+                    {
+                        resSize = 0;
+                        srcData = new UShortAccess(fBuf);
+                        srcPos = headerPos >> 1;
+                        while (srcPos < cSize)
+                        {
+                            length = (short)srcData[(int)srcPos];
+                            srcPos++;
+                            if (length < 0)
+                            {
+                                resSize -= length;
+                                srcPos++;
+                            }
+                            else
+                            {
+                                resSize += length;
+                                srcPos = (uint)(srcPos + length);
+                            }
+                        }
+                    }
+                }
+                Debug.Assert((headerPos & 1) == 0);
+                srcData = new UShortAccess(fBuf);
+                srcPos = headerPos >> 1;
+                uint dstPos = 0;
+                var dstData = new UShortAccess(new byte[resSize * 2]);
+                int samplesLeft = resSize;
+                while (srcPos < cSize && samplesLeft > 0)
+                {
+                    length = (short)(_bigEndianSpeech ? ScummHelper.SwapBytes(srcData[(int)srcPos]) : srcData[(int)srcPos]);
+                    srcPos++;
+                    if (length < 0)
+                    {
+                        length = (short)-length;
+                        if (length > samplesLeft)
+                            length = (short)samplesLeft;
+                        short value;
+                        if (_bigEndianSpeech)
+                        {
+                            value = (short)ScummHelper.SwapBytes(srcData[(int)srcPos]);
+                        }
+                        else
+                        {
+                            value = (short)srcData[(int)srcPos];
+                        }
+                        for (ushort cnt = 0; cnt < (ushort)length; cnt++)
+                            dstData[(int)dstPos++] = (ushort)value;
+                        srcPos++;
+                    }
+                    else
+                    {
+                        if (length > samplesLeft)
+                            length = (short)samplesLeft;
+                        if (_bigEndianSpeech)
+                        {
+                            for (ushort cnt = 0; cnt < length; cnt++)
+                                dstData[(int)dstPos++] = ScummHelper.SwapBytes(srcData[(int)srcPos++]);
+                        }
+                        else
+                        {
+                            Array.Copy(srcData.Data, (int)(srcData.Offset + srcPos * 2), dstData.Data, (int)(dstData.Offset + dstPos * 2), length * 2);
+                            dstPos = (uint)(dstPos + length);
+                            srcPos = (uint)(srcPos + length);
+                        }
+                    }
+                    samplesLeft -= length;
+                }
+                if (samplesLeft > 0)
+                {
+                    dstData.Data.Set((int)(dstData.Offset + dstPos), 0, samplesLeft * 2);
+                }
+                if (_cowMode == CowMode.CowDemo) // demo has wave output size embedded in the compressed data
+                {
+                    dstData.Data.WriteUInt32(dstData.Offset, 0);
+                }
+                size = (uint)(resSize * 2);
+                CalcWaveVolume(dstData, resSize);
+                return dstData;
+            }
+            else
+            {
+                // TODO: warning("Sound::uncompressSpeech(): DATA tag not found in wave header");
+                size = 0;
+                return null;
+            }
+        }
+
+        private void CalcWaveVolume(UShortAccess data, int length)
+        {
+            var blkPos = new UShortAccess(data.Data, data.Offset + 918 * 2);
+            uint cnt;
+            for (cnt = 0; cnt < WAVE_VOL_TAB_LENGTH; cnt++)
+                _waveVolume[cnt] = false;
+            _waveVolPos = 0;
+            for (uint blkCnt = 1; blkCnt < length / 918; blkCnt++)
+            {
+                if (blkCnt >= WAVE_VOL_TAB_LENGTH)
+                {
+                    // TODO: warning("Wave vol tab too small");
+                    return;
+                }
+                int average = 0;
+                for (cnt = 0; cnt < 918; cnt++)
+                    average += blkPos[(int)cnt];
+                average /= 918;
+                uint diff = 0;
+                for (cnt = 0; cnt < 918; cnt++)
+                {
+                    short smpDiff = (short)(blkPos[0] - average);
+                    diff += (uint)Math.Abs(smpDiff);
+                    blkPos.Offset += 2;
+                }
+                if (diff > WAVE_VOL_THRESHOLD)
+                    _waveVolume[blkCnt - 1] = true;
+            }
         }
 
         public bool StartSpeech(int i, int i1)
@@ -193,8 +460,6 @@ namespace NScumm.Sword1
 
         public uint AddToQueue(int fxNo)
         {
-            // TODO:
-            return 0;
             bool alreadyInQueue = false;
             for (var cnt = 0; (cnt < _endOfQueue) && (!alreadyInQueue); cnt++)
                 if (_fxQueue[cnt].id == (uint)fxNo)
@@ -210,7 +475,7 @@ namespace NScumm.Sword1
                 if ((sampleId & 0xFF) != 0xFF)
                 {
                     _resMan.ResOpen(sampleId);
-                    _fxQueue[_endOfQueue].id = (uint) fxNo;
+                    _fxQueue[_endOfQueue].id = (uint)fxNo;
                     if (_fxList[fxNo].type == FX_SPOT)
                         _fxQueue[_endOfQueue].delay = _fxList[fxNo].delay + 1;
                     else
@@ -225,23 +490,34 @@ namespace NScumm.Sword1
 
         public void FnStopFx(int fxNo)
         {
-            // TODO:
+            _mixer.StopID(fxNo);
+            for (var cnt = 0; cnt < _endOfQueue; cnt++)
+                if (_fxQueue[cnt].id == (uint)fxNo)
+                {
+                    if (_fxQueue[cnt].delay == 0) // sound was started
+                        _resMan.ResClose(GetSampleId((int)_fxQueue[cnt].id));
+                    if (cnt != _endOfQueue - 1)
+                        _fxQueue[cnt] = _fxQueue[_endOfQueue - 1];
+                    _endOfQueue--;
+                    return;
+                }
+            // TODO: debug(8, "fnStopFx: id not found in queue");
         }
 
         public bool SpeechFinished()
         {
-            // TODO:
-            return true;
+            return !_mixer.IsSoundHandleActive(_speechHandle);
         }
 
         public void StopSpeech()
         {
-            // TODO:
+            _mixer.StopID(SOUND_SPEECH_ID);
         }
 
-        public int AmISpeaking()
+        public bool AmISpeaking()
         {
-            return 0;
+            _waveVolPos++;
+            return _waveVolume[_waveVolPos - 1];
         }
 
 
@@ -517,5 +793,6 @@ namespace NScumm.Sword1
         private byte _sfxVolR;
         private byte _speechVolL;
         private byte _speechVolR;
+        private bool _bigEndianSpeech;
     }
 }

@@ -788,7 +788,7 @@ namespace NScumm.Sword1
                 compact.anim_pc++; // go to next frame of anim
 
                 if (_speechFinished || (compact.anim_pc >= numFrames) ||
-                        (_speechRunning && (_sound.AmISpeaking() == 0)))
+                        (_speechRunning && !_sound.AmISpeaking()))
                     compact.anim_pc = 0; //set to frame 0, closed mouth
 
                 AnimUnit animPtr = new AnimUnit(animData, animOff + AnimUnit.Size * compact.anim_pc);

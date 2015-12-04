@@ -65,6 +65,7 @@
     </Compile>
     <Compile Include="..\..\Mono.Options\Options.cs" />
     <Compile Include="..\..\DynamicSoundEffectInstance.cs" />
+    <Compile Include="GameDetectorExtension.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

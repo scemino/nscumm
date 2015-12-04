@@ -2,9 +2,6 @@
 using NScumm.Core;
 using System.Threading.Tasks;
 using System.Runtime.InteropServices;
-using System.Reflection;
-using NScumm.Scumm.IO;
-using NScumm.Sky;
 
 namespace NScumm
 {
@@ -36,20 +33,6 @@ namespace NScumm
         {
             var handle = GCHandle.Alloc(data, GCHandleType.Pinned);
             return new WrappedObject(handle, Marshal.PtrToStructure(handle.AddrOfPinnedObject() + offset, type));
-        }
-
-        public Assembly LoadAssembly(string dll)
-        {
-            string asmName;
-            if (dll == "$sky")
-            {
-                asmName = typeof (SkyMetaEngine).AssemblyQualifiedName.Split(new[] {','}, 2)[1].Remove(0, 1);
-            }
-            else
-            {
-                asmName = typeof (ScummMetaEngine).AssemblyQualifiedName.Split(new[] {','}, 2)[1].Remove(0, 1);
-            }
-            return Assembly.Load(new AssemblyName(asmName));
         }
 
         public async void Sleep(int timeInMs)

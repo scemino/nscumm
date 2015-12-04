@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Directives xmlns="http://schemas.microsoft.com/netfx/2013/01/metadata">
+  <Library Name="NScumm.Sky">
+    <Namespace Name ="NScumm.Sky">
+      <Type Name="DataFileHeader" MarshalStructure="Required All" />
+      <Type Name="MegaSet" MarshalStructure="Required All" />
+      <Type Name="CompactCore" MarshalStructure="Required All" />
+    </Namespace>
+    <Namespace Name="NScumm.Sky.Music">
+      <Type Name="InstrumentStruct" MarshalStructure="Required All" />
+    </Namespace>
+  </Library>
+</Directives>

@@ -29,6 +29,13 @@
     <WarningLevel>4</WarningLevel>
     <ConsolePause>false</ConsolePause>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug .NET Native|AnyCPU'">
+    <OutputPath>bin\Debug .NET Native\</OutputPath>
+    <Optimize>false</Optimize>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
   <ItemGroup>
     <Compile Include="Audio\ISoundRepository.cs" />
     <Compile Include="Audio\SampleProviders\AudioSampleProviderToAudioStream.cs" />
@@ -36,10 +43,16 @@
     <Compile Include="Audio\SampleProviders\ResampleAudioSampleProvider.cs" />
     <Compile Include="IEnableTrace.cs" />
     <Compile Include="IEngine.cs" />
+    <Compile Include="IFileStorage.cs" />
+    <Compile Include="IO\GameDetected.cs" />
     <Compile Include="IO\GameDetector.cs" />
     <Compile Include="IO\GameSettings.cs" />
+    <Compile Include="IO\IGameDescriptor.cs" />
+    <Compile Include="IO\IMetaEngine.cs" />
     <Compile Include="IO\Platform.cs" />
+    <Compile Include="IPlatform.cs" />
     <Compile Include="ISaveFileManager.cs" />
+    <Compile Include="ITraceFactory.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Graphics\Color.cs" />
     <Compile Include="Graphics\IGraphicsManager.cs" />

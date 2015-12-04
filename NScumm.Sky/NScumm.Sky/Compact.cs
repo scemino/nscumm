@@ -5,6 +5,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 using NScumm.Core;
+using NScumm.Core.IO;
 
 namespace NScumm.Sky
 {
@@ -343,7 +344,7 @@ namespace NScumm.Sky
         }
     }
 
-    internal class SkyCompact
+    class SkyCompact
     {
         private const int SkyCptSize = 419427;
         private const int CGridWidth = 114;
@@ -816,7 +817,8 @@ namespace NScumm.Sky
 
         private static Stream OpenCompactStream()
         {
-            return typeof(SkyCompact).Assembly.GetManifestResourceStream(typeof(SkyCompact), "sky.cpt");
+            var stream = ServiceLocator.FileStorage.OpenContent("sky.cpt");
+            return stream;
         }
 
         private string ReadName(ref int asciiPos)

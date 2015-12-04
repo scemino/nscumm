@@ -16,7 +16,6 @@ namespace NScumm.Scumm.IO
 
         public static GameManager Create(Stream stream)
         {
-            //var gm = new GameManager { _doc = XDocument.Load(stream) };
             var gm = new GameManager { _doc = ServiceLocator.FileStorage.LoadDocument(stream) };
             return gm;
         }

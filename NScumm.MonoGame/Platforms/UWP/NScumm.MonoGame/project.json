@@ -1,18 +1,16 @@
 ﻿{
   "dependencies": {
-    "Microsoft.ApplicationInsights": "1.0.0",
-    "Microsoft.ApplicationInsights.PersistenceChannel": "1.0.0",
-    "Microsoft.ApplicationInsights.WindowsApps": "1.0.0",
     "Microsoft.NETCore.UniversalWindowsPlatform": "5.0.0",
     "MonoGame.Framework.WindowsUAP": "3.4.0.459",
-    "Rx-Core": "2.3.0-beta2",
-    "Rx-Linq": "2.3.0-beta2",
-    "Rx-Main": "2.3.0-beta2",
-    "Rx-WinRT": "2.3.0-beta2",
-    "Rx-WPF": "2.3.0-beta2",
-    "SharpDX.Direct2D1": "3.0.0-alpha02",
-    "SharpDX.Direct3D11": "3.0.0-alpha02",
-    "SharpDX.XAudio2": "3.0.0-beta01"
+    "Rx-Main": "2.2.5",
+    "Rx-WinRT": "2.2.5",
+    "Rx-WPF": "2.2.5",
+    "SharpDX": "3.0.0-beta01",
+    "SharpDX.Direct2D1": "3.0.0-beta01",
+    "SharpDX.Direct3D11": "3.0.0-beta01",
+    "SharpDX.MediaFoundation": "3.0.0-beta01",
+    "SharpDX.XAudio2": "3.0.0-beta01",
+    "SharpDX.XInput": "3.0.0-beta01"
   },
   "frameworks": {
     "uap10.0": {}

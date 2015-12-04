@@ -31,7 +31,6 @@ namespace NScumm
 
         public IEnumerable<string> EnumerateFiles(string path, string searchPattern)
         {
-            if (path == "$plugins") return new[] { "$sky", "$scumm" };
             var regex = new Regex(WildcardToRegex(searchPattern));
             return EnumerateFiles(path).Where(f => regex.IsMatch(Path.GetFileName(f)));
         }
@@ -58,7 +57,6 @@ namespace NScumm
 
         public bool DirectoryExists(string path)
         {
-            if (path == "$plugins") return true;
             return Directory.Exists(path);
         }
 
@@ -106,6 +104,13 @@ namespace NScumm
         public XDocument LoadDocument(Stream stream)
         {
             return XDocument.Load(stream);
+        }
+
+        public Stream OpenContent(string path)
+        {
+            var installedLocation = Windows.ApplicationModel.Package.Current.InstalledLocation;
+            var fullPath = ScummHelper.LocatePath(installedLocation.Path, path);
+            return OpenFileRead(fullPath);
         }
 
         public Stream OpenFileRead(string path)

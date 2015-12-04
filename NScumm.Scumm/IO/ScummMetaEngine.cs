@@ -1,3 +1,4 @@
+using System.IO;
 using NScumm.Core;
 using NScumm.Core.Audio;
 using NScumm.Core.Graphics;
@@ -8,12 +9,16 @@ namespace NScumm.Scumm.IO
 {
     public class ScummMetaEngine : IMetaEngine
     {
-        private GameManager _gm;
+        private readonly GameManager _gm;
 
         public ScummMetaEngine()
+            : this(ServiceLocator.FileStorage.OpenContent("Nscumm.xml"))
         {
-            var resStream = typeof(ScummMetaEngine).Assembly.GetManifestResourceStream(typeof(ScummMetaEngine), "Nscumm.xml");
-            _gm = GameManager.Create(resStream);
+        }
+
+        public ScummMetaEngine(Stream stream)
+        {
+            _gm = GameManager.Create(stream);
         }
 
         public IEngine Create(GameSettings settings, IGraphicsManager gfxManager, IInputManager inputManager, IAudioOutput output, ISaveFileManager saveFileManager, bool debugMode = false)

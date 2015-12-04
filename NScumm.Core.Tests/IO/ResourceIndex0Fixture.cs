@@ -80,6 +80,11 @@ namespace NScumm.Core.Tests.IO
                 throw new NotImplementedException();
             }
 
+            public Stream OpenContent(string path)
+            {
+                throw new NotImplementedException();
+            }
+
             public Stream OpenFileRead(string path)
             {
                 return new MemoryStream(Resources.maniacdemo);

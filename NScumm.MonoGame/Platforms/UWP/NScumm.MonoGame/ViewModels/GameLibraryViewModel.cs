@@ -16,7 +16,8 @@ using System.Reactive.Concurrency;
 using System.Windows.Input;
 using Microsoft.Xna.Framework.Input;
 using NScumm.Core.IO;
-using System.Reflection;
+using NScumm.Scumm.IO;
+using NScumm.Sky;
 
 namespace NScumm.MonoGame.ViewModels
 {
@@ -69,7 +70,9 @@ namespace NScumm.MonoGame.ViewModels
             _games = new ObservableCollection<GameViewModel>();
             _addCommand = new DelegateCommand(Scan);
 
-            GameDetector = new GameDetector("$plugins");
+            GameDetector = new GameDetector();
+            GameDetector.Add(new ScummMetaEngine());
+            GameDetector.Add(new SkyMetaEngine());
 
             LoadGameLibrary();
         }

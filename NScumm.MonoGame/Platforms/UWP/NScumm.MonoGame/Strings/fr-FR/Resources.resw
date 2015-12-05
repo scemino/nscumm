@@ -126,6 +126,33 @@
   <data name="GameLibraryTextBlock.Text" xml:space="preserve">
     <value>Bibliothèque</value>
   </data>
+  <data name="MainMenuBackButton.Content" xml:space="preserve">
+    <value>Retour</value>
+  </data>
+  <data name="MainMenuExitButton.Content" xml:space="preserve">
+    <value>Quitter</value>
+  </data>
+  <data name="MainMenuLoadButton.Content" xml:space="preserve">
+    <value>Charger</value>
+  </data>
+  <data name="MainMenuResumeButton.Content" xml:space="preserve">
+    <value>Reprendre</value>
+  </data>
+  <data name="MainMenuSaveButton.Content" xml:space="preserve">
+    <value>Enregistrer</value>
+  </data>
+  <data name="MainMenu_LoadTitle" xml:space="preserve">
+    <value>Charger</value>
+  </data>
+  <data name="MainMenu_SaveTitle" xml:space="preserve">
+    <value>Enregistrer</value>
+  </data>
+  <data name="MainMenu_Title" xml:space="preserve">
+    <value>Menu Principal</value>
+  </data>
+  <data name="New Entry" xml:space="preserve">
+    <value>Nouvelle sauvergarde</value>
+  </data>
   <data name="NoGameTextBlock.Text" xml:space="preserve">
     <value>Il n'y a aucun jeu dans votre bibliothèque.
 Appuyez sur le bouton Ajouter pour ajouter des jeux SCUMM à votre librairie.</value>

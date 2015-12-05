@@ -143,14 +143,14 @@
     <Compile Include="..\..\..\Screens\BackgroundScreen.cs">
       <Link>Screens\BackgroundScreen.cs</Link>
     </Compile>
-    <Compile Include="..\..\..\Screens\MainMenuScreen.cs">
-      <Link>Screens\MainMenuScreen.cs</Link>
-    </Compile>
     <Compile Include="..\..\..\Screens\ScummScreen.cs">
       <Link>Screens\ScummScreen.cs</Link>
     </Compile>
     <Compile Include="..\..\..\ScummGame.cs">
       <Link>ScummGame.cs</Link>
+    </Compile>
+    <Compile Include="..\..\..\Services\IMenuService.cs">
+      <Link>Services\IMenuService.cs</Link>
     </Compile>
     <Compile Include="..\..\..\XnaGraphicsManager.cs">
       <Link>XnaGraphicsManager.cs</Link>
@@ -169,6 +169,10 @@
     <Compile Include="Pages\GameLibraryPage.xaml.cs">
       <DependentUpon>GameLibraryPage.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Pages\MainMenu.xaml.cs">
+      <DependentUpon>MainMenu.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Services\MenuService.cs" />
     <Compile Include="XAudio2Mixer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TraceFactory.cs" />
@@ -205,6 +209,10 @@
     <Page Include="Pages\GameLibraryPage.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Pages\MainMenu.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
   <ItemGroup>

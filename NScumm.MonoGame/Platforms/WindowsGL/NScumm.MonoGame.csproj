@@ -39,6 +39,9 @@
   <ItemGroup>
     <Compile Include="..\..\OpenALDriver.cs" />
     <Compile Include="..\..\ScummGame.cs" />
+    <Compile Include="..\..\Services\IMenuService.cs">
+      <Link>Services\IMenuService.cs</Link>
+    </Compile>
     <Compile Include="..\..\XnaGraphicsManager.cs" />
     <Compile Include="..\..\XnaInputManager.cs" />
     <Compile Include="..\..\Program.cs" />
@@ -67,6 +70,7 @@
     <Compile Include="..\..\DynamicSoundEffectInstance.cs" />
     <Compile Include="GameDetectorExtension.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Services\MenuService.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\Content\Fonts\MenuFont.xnb">

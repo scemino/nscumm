@@ -1,15 +1,14 @@
 ﻿using System;
 using Microsoft.Xna.Framework;
 using System.IO;
+using NScumm.Core;
+using System.Linq;
 
 namespace NScumm.MonoGame
 {
-    /// <summary>
-    /// The main menu screen is the first thing displayed when the game starts up.
-    /// </summary>
     public class MainMenuScreen : MenuScreen
     {
-        ScummScreen screen;
+        private ScummScreen _screen;
 
         enum MenuState
         {
@@ -37,7 +36,7 @@ namespace NScumm.MonoGame
         /// </summary>
         public MainMenuScreen(ScummScreen screen)
         {
-            this.screen = screen;
+            this._screen = screen;
             // set the transition times
             TransitionOnTime = TimeSpan.FromSeconds(1.0);
             TransitionOffTime = TimeSpan.FromSeconds(1.0);
@@ -87,7 +86,7 @@ namespace NScumm.MonoGame
                 case MenuState.Load:
                     if (entryIndex != MenuEntries.Count - 1)
                     {
-                        screen.LoadGame(entryIndex);
+                        LoadGame(entryIndex);
                         ExitScreen();
                     }
                     else
@@ -98,7 +97,7 @@ namespace NScumm.MonoGame
                 case MenuState.Save:
                     if (entryIndex != MenuEntries.Count - 1)
                     {
-                        screen.SaveGame(entryIndex);
+                        SaveGame(entryIndex);
                         ExitScreen();
                     }
                     else
@@ -109,7 +108,7 @@ namespace NScumm.MonoGame
             }
         }
 
-        void UpdateMenus()
+        private void UpdateMenus()
         {
             switch (State)
             {
@@ -122,7 +121,7 @@ namespace NScumm.MonoGame
                     break;
                 case MenuState.Load:
                     MenuEntries.Clear();
-                    foreach (var game in screen.GetSaveGames())
+                    foreach (var game in GetSaveGames())
                     {
                         MenuEntries.Add(Path.GetFileNameWithoutExtension(game));
                     }
@@ -130,7 +129,7 @@ namespace NScumm.MonoGame
                     break;
                 case MenuState.Save:
                     MenuEntries.Clear();
-                    foreach (var game in screen.GetSaveGames())
+                    foreach (var game in GetSaveGames())
                     {
                         MenuEntries.Add(Path.GetFileNameWithoutExtension(game));
                     }
@@ -148,8 +147,7 @@ namespace NScumm.MonoGame
             ScreenManager.DrawRectangle(rectangle, new Color(Color.Black, 0.7f), Microsoft.Xna.Framework.Graphics.BlendState.AlphaBlend);
             base.Draw(gameTime);
         }
-
-
+        
         /// <summary>
         /// When the user cancels the main menu, ask if they want to exit the sample.
         /// </summary>
@@ -168,12 +166,54 @@ namespace NScumm.MonoGame
 
         public override void ExitScreen()
         {
+            var engine = GetEngine();
+            engine.IsPaused = false;
             base.ExitScreen();
         }
 
-        void OnExitGame()
+
+        private void OnExitGame()
         {
             ScreenManager.Game.Exit();
+        }
+
+        private string[] GetSaveGames()
+        {
+            var game = GetGame();
+            var dir = Path.GetDirectoryName(game.Path);
+            return ServiceLocator.FileStorage.EnumerateFiles(dir, "*.sav").ToArray();
+        }
+
+        private Core.IO.IGameDescriptor GetGame()
+        {
+            return ((ScummGame)ScreenManager.Game).Settings.Game;
+        }
+
+        private IEngine GetEngine()
+        {
+            return ScreenManager.Game.Services.GetService<IEngine>();
+        }
+
+        private void LoadGame(int index)
+        {
+            var engine = GetEngine();
+            var filename = GetSaveGamePath(index);
+            engine.Load(filename);
+        }
+
+        private void SaveGame(int index)
+        {
+            var engine = GetEngine();
+            var filename = GetSaveGamePath(index);
+            engine.Save(filename);
+        }
+
+        private string GetSaveGamePath(int index)
+        {
+            var game = GetGame();
+            var dir = Path.GetDirectoryName(game.Path);
+            var filename = Path.Combine(dir, string.Format("{0}{1}.sav", game.Id, (index + 1)));
+            return filename;
         }
     }
 }

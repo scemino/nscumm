@@ -21,6 +21,7 @@ using System.Reflection;
 using System.IO;
 using System.Linq;
 using NScumm.Core.IO;
+using NScumm.MonoGame.Services;
 
 namespace NScumm.MonoGame
 {
@@ -86,6 +87,7 @@ namespace NScumm.MonoGame
                         {
                             var settings = new GameSettings(info.Game, info.Engine) { AudioDevice = musicDriver, CopyProtection = copyProtection, BootParam = bootParam };
                             var game = new ScummGame(settings);
+                            game.Services.AddService<IMenuService>(new MenuService(game));
                             game.Run();
                         }
                     }

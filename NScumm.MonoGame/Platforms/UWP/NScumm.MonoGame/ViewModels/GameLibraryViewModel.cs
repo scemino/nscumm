@@ -1,7 +1,6 @@
 ﻿//#define CLEAN_GAMELIST
-//#define WP_COMI
+#define WP_GAMES
 
-using NScumm.Core;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -11,9 +10,9 @@ using System.Reactive.Windows.Foundation;
 using System.Reactive.Linq;
 using Windows.Storage;
 using Windows.Storage.AccessCache;
-using Windows.Storage.Pickers;
 using System.Reactive.Concurrency;
 using System.Windows.Input;
+using Windows.Storage.Pickers;
 using Microsoft.Xna.Framework.Input;
 using NScumm.Core.IO;
 using NScumm.Scumm.IO;
@@ -32,13 +31,13 @@ namespace NScumm.MonoGame.ViewModels
 
     class GameLibraryViewModel : ViewModel, IGameLibraryViewModel
     {
-        static readonly HashSet<string> indexFiles = new HashSet<string>(new string[] { ".D64", ".DSK,", ".LFL", ".000", ".LA0", ".SM0", ".DNR" }, StringComparer.OrdinalIgnoreCase);
-        private ObservableCollection<GameViewModel> _games;
-        private HashSet<string> _gameSignatures;
+        static readonly HashSet<string> IndexFiles = new HashSet<string>(new[] { ".D64", ".DSK,", ".LFL", ".000", ".LA0", ".SM0", ".DNR" }, StringComparer.OrdinalIgnoreCase);
+        private readonly ObservableCollection<GameViewModel> _games;
+        private readonly HashSet<string> _gameSignatures;
         private HashSet<string> _folders;
         private bool _isScanning;
         private bool _showNoGameMessage;
-        private DelegateCommand _addCommand;
+        private readonly DelegateCommand _addCommand;
         private ApplicationDataContainer _gamesContainer;
         private ApplicationDataContainer _foldersContainer;
 
@@ -61,7 +60,7 @@ namespace NScumm.MonoGame.ViewModels
             get { return _addCommand; }
         }
 
-        public GameDetector GameDetector { get; private set; }
+        public GameDetector GameDetector { get; }
 
         public GameLibraryViewModel()
         {
@@ -142,7 +141,7 @@ namespace NScumm.MonoGame.ViewModels
             // scan for games
             var obsItems = GetFilesAsync(folder);
             var indexes = from item in obsItems
-                          where indexFiles.Contains(Path.GetExtension(item.Path))
+                          where IndexFiles.Contains(Path.GetExtension(item.Path))
                           let g = GameDetector.DetectGame(item.Path)
                           where g != null
                           where !_gameSignatures.Contains(g.Game.Path)
@@ -197,10 +196,11 @@ namespace NScumm.MonoGame.ViewModels
         private async System.Threading.Tasks.Task<StorageFolder> PickFolder()
         {
             StorageFolder folder = null;
-#if WP_COMI
+#if WP_GAMES && DEBUG
             try
             {
-                folder = await StorageFolder.GetFolderFromPathAsync(@"d:\Downloads\comi");
+                folder = await KnownFolders.DocumentsLibrary.GetFolderAsync("games");
+                //folder = await StorageFolder.GetFolderFromPathAsync(@"D:\Documents\games");
                 AddFolder(folder);
             }
             catch (UnauthorizedAccessException)
@@ -208,7 +208,7 @@ namespace NScumm.MonoGame.ViewModels
             }
 #else
             var folderPicker = new FolderPicker();
-            indexFiles.ToList().ForEach(folderPicker.FileTypeFilter.Add);
+            IndexFiles.ToList().ForEach(folderPicker.FileTypeFilter.Add);
             folderPicker.SuggestedStartLocation = PickerLocationId.ComputerFolder;
             try
             {

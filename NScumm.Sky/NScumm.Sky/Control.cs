@@ -1120,8 +1120,7 @@ namespace NScumm.Sky
             {
                 lookList = _savePanLookList;
                 lookListLen = 6;
-                // TODO: virtual keyboard
-                //_system.SetFeatureState(OSystem::kFeatureVirtualKeyboard, true);
+                _system.InputManager.ShowVirtualKeyboard();
             }
             else
             {
@@ -1273,8 +1272,7 @@ namespace NScumm.Sky
 
             if (allowSave)
             {
-                // TODO: virtual keyboard
-                // _system.SetFeatureState(OSystem::kFeatureVirtualKeyboard, false);
+                _system.InputManager.HideVirtualKeyboard();
             }
 
             return clickRes;

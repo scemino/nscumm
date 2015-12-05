@@ -28,26 +28,33 @@ using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input.Touch;
 #if WINDOWS_UWP
+using Windows.UI.ViewManagement;
 using Windows.UI.Core;
 #endif
 
 namespace NScumm.MonoGame
 {
-    sealed class XnaInputManager : IInputManager
+    internal sealed class XnaInputManager : IInputManager
     {
-        KeyboardState _keyboardState;
-        double _width;
-        double _height;
-        GameWindow _window;
-        readonly object _gate = new object();
-        bool _backPressed;
-        bool _leftButtonPressed;
-        bool _isMenuPressed;
-        Core.Graphics.Point _mousePosition;
+        private readonly object _gate = new object();
+        private readonly double _width;
+        private readonly double _height;
+        private readonly GameWindow _window;
+        private readonly List<Keys> _virtualKeysDown = new List<Keys>();
+        private readonly List<Keys> _virtualKeysUp = new List<Keys>();
+        private List<KeyCode> _keysPressed = new List<KeyCode>();
+        private KeyboardState _keyboardState;
+        private bool _backPressed;
+        private bool _leftButtonPressed;
+        private bool _isMenuPressed;
+        private Core.Graphics.Point _mousePosition;
         private bool _rightButtonPressed;
-        private Vector2 _realPosition;
-
-        public Vector2 RealPosition { get { return _realPosition; } }
+        private bool _showKeyboard;
+#if WINDOWS_UWP
+        private InputPane _inputPane;
+        private CoreWindow _currentWindow;
+#endif
+        public Vector2 RealPosition { get; private set; }
 
         public XnaInputManager(GameWindow window, int width, int height)
         {
@@ -64,20 +71,48 @@ namespace NScumm.MonoGame
             var view = SystemNavigationManager.GetForCurrentView();
             view.BackRequested += HardwareButtons_BackPressed;
 
-            bool isHardwareButtonsAPIPresent = Windows.Foundation.Metadata.ApiInformation.IsTypePresent
+            bool isHardwareButtonsApiPresent = Windows.Foundation.Metadata.ApiInformation.IsTypePresent
                 (typeof(Windows.Phone.UI.Input.HardwareButtons).FullName);
 
-            if (isHardwareButtonsAPIPresent)
+            if (isHardwareButtonsApiPresent)
             {
                 Windows.Phone.UI.Input.HardwareButtons.CameraPressed += HardwareButtons_CameraPressed;
             }
+
+            _inputPane = InputPane.GetForCurrentView();
+            _currentWindow = CoreWindow.GetForCurrentThread();
+            _currentWindow.KeyDown += XnaInputManager_KeyDown;
+            _currentWindow.KeyUp += XnaInputManager_KeyUp;
 #endif
         }
 
 #if WINDOWS_UWP
+        private void XnaInputManager_KeyUp(CoreWindow sender, KeyEventArgs args)
+        {
+            if (_currentWindow.IsInputEnabled)
+            {
+                lock (_gate)
+                {
+                    _virtualKeysUp.Add((Keys)args.VirtualKey);
+                }
+            }
+        }
+
+        private void XnaInputManager_KeyDown(CoreWindow sender, KeyEventArgs args)
+        {
+            if (_currentWindow.IsInputEnabled)
+            {
+                lock (_gate)
+                {
+                    _virtualKeysDown.Add((Keys)args.VirtualKey);
+                }
+            }
+        }
+
         private void HardwareButtons_BackPressed(object sender, BackRequestedEventArgs e)
         {
             _backPressed = true;
+            _showKeyboard = false;
             e.Handled = true;
         }
 
@@ -95,7 +130,7 @@ namespace NScumm.MonoGame
         {
             var scaleX = _width / _window.ClientBounds.Width;
             var scaleY = _height / _window.ClientBounds.Height;
-            _realPosition = pos;
+            RealPosition = pos;
             _mousePosition = new Core.Graphics.Point((int)(pos.X * scaleX), (int)(pos.Y * scaleY));
         }
 
@@ -103,6 +138,17 @@ namespace NScumm.MonoGame
         {
             lock (_gate)
             {
+#if WINDOWS_UWP
+                if (_showKeyboard)
+                {
+                    _inputPane.TryShow();
+                }
+                else
+                {
+                    _inputPane.TryHide();
+                }
+#endif
+
                 _leftButtonPressed = false;
                 _rightButtonPressed = false;
 
@@ -137,6 +183,34 @@ namespace NScumm.MonoGame
                 UpdateMousePosition(state.Position.ToVector2());
 
                 _keyboardState = keyboard;
+
+                _keysPressed = _keyboardState.GetPressedKeys().Where(KeyToKeyCode.ContainsKey).Select(key => KeyToKeyCode[key]).ToList();
+                if (_virtualKeysDown.Count > 0)
+                {
+                    _virtualKeysDown.ForEach(k =>
+                    {
+                        if (KeyToKeyCode.ContainsKey(k))
+                        {
+                            _keysPressed.Add(KeyToKeyCode[k]);
+                        }
+                    });
+
+                    _virtualKeysUp.ForEach(k =>
+                    {
+                        _virtualKeysDown.Remove(k);
+                    });
+                    _virtualKeysUp.Clear();
+                }
+                if (_backPressed)
+                {
+                    _keysPressed.Add(KeyCode.Escape);
+                    _backPressed = false;
+                }
+                if (_isMenuPressed)
+                {
+                    _keysPressed.Add(KeyCode.F5);
+                    _isMenuPressed = false;
+                }
             }
         }
 
@@ -144,18 +218,7 @@ namespace NScumm.MonoGame
         {
             lock (_gate)
             {
-                var keys = _keyboardState.GetPressedKeys().Where(keyToKeyCode.ContainsKey).Select(key => keyToKeyCode[key]).ToList();
-                if (_backPressed)
-                {
-                    keys.Add(KeyCode.Escape);
-                    _backPressed = false;
-                }
-                if (_isMenuPressed)
-                {
-                    keys.Add(KeyCode.F5);
-                    _isMenuPressed = false;
-                }
-                var inputState = new ScummInputState(keys, _leftButtonPressed, _rightButtonPressed);
+                var inputState = new ScummInputState(_keysPressed, _leftButtonPressed, _rightButtonPressed);
                 return inputState;
             }
         }
@@ -165,10 +228,22 @@ namespace NScumm.MonoGame
             lock (_gate)
             {
                 _keyboardState = new KeyboardState();
+                _virtualKeysDown.Clear();
+                _virtualKeysUp.Clear();
             }
         }
 
-        static readonly Dictionary<Keys, KeyCode> keyToKeyCode = new Dictionary<Keys, KeyCode>
+        public void ShowVirtualKeyboard()
+        {
+            _showKeyboard = true;
+        }
+
+        public void HideVirtualKeyboard()
+        {
+            _showKeyboard = false;
+        }
+
+        private static readonly Dictionary<Keys, KeyCode> KeyToKeyCode = new Dictionary<Keys, KeyCode>
         {
             { Keys.LeftControl,   KeyCode.LeftControl },
             { Keys.OemPeriod,   KeyCode.OemPeriod },

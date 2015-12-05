@@ -24,6 +24,7 @@ using System.Linq;
 using NScumm.Core;
 using NScumm.Core.Graphics;
 using NScumm.Scumm.Graphics;
+using NScumm.Scumm.IO;
 
 namespace NScumm.Scumm
 {
@@ -330,8 +331,24 @@ namespace NScumm.Scumm
             }
 
             _doEffect = true;
+
+            // Hint the backend about the virtual keyboard during copy protection screens
+            if (_game.GameId == GameId.Monkey2)
+            {
+                if (room == 108)
+                    _inputManager.ShowVirtualKeyboard();
+                else
+                    _inputManager.HideVirtualKeyboard();
+            }
+            else if (_game.GameId == GameId.Monkey1 && _game.Variant == "ega")
+            {   // this is my estimation that the room code is 90 (untested)
+                if (room == 90)
+                    _inputManager.ShowVirtualKeyboard();
+                else
+                    _inputManager.HideVirtualKeyboard();
+            }
         }
-        
+
         protected void UnfreezeScripts()
         {
             if (Game.Version <= 2)

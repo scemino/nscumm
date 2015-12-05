@@ -24,5 +24,9 @@ namespace NScumm.Core.Input
         ScummInputState GetState();
 
         void ResetKeys();
+
+        void ShowVirtualKeyboard();
+
+        void HideVirtualKeyboard();
     }
 }

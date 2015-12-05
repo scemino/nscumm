@@ -167,6 +167,13 @@
             </uap:SupportedFileTypes>
           </uap:FileTypeAssociation>
         </uap:Extension>
+        <uap:Extension Category="windows.fileTypeAssociation">
+          <uap:FileTypeAssociation Name="sou">
+            <uap:SupportedFileTypes>
+              <uap:FileType>.sou</uap:FileType>
+            </uap:SupportedFileTypes>
+          </uap:FileTypeAssociation>
+        </uap:Extension>        
       </Extensions>
     </Application>
   </Applications>

@@ -1,4 +1,5 @@
 ﻿using NScumm.Core;
+using NScumm.Platform_UWP;
 using System;
 using System.Diagnostics;
 using System.Xml;
@@ -38,6 +39,7 @@ namespace NScumm.MonoGame
             ServiceLocator.Platform = new WindowsUAPPlatform();
             ServiceLocator.FileStorage = new FileStorage();
             ServiceLocator.TraceFatory = new TraceFactory("IO");
+            ServiceLocator.SaveFileManager = new SaveFileManager(ServiceLocator.FileStorage);
 #if DEBUG
             if (Debugger.IsAttached)
             {

@@ -173,7 +173,14 @@
               <uap:FileType>.sou</uap:FileType>
             </uap:SupportedFileTypes>
           </uap:FileTypeAssociation>
-        </uap:Extension>        
+        </uap:Extension>
+        <uap:Extension Category="windows.fileTypeAssociation">
+          <uap:FileTypeAssociation Name="dnr">
+            <uap:SupportedFileTypes>
+              <uap:FileType>.dnr</uap:FileType>
+            </uap:SupportedFileTypes>
+          </uap:FileTypeAssociation>
+        </uap:Extension>
       </Extensions>
     </Application>
   </Applications>

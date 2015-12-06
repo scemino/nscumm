@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using Windows.UI.Xaml.Controls;
 using Windows.ApplicationModel.Resources;
-using System;
 
 namespace NScumm.MonoGame.Pages
 {

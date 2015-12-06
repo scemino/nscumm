@@ -116,6 +116,7 @@
     <Compile Include="FileStorage.cs" />
     <Compile Include="MD5.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SaveFileManager.cs" />
     <Compile Include="WindowsUAPPlatform.cs" />
     <Content Include="Properties\NScumm.Platform_UWP.rd.xml" />
   </ItemGroup>

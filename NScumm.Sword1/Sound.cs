@@ -53,7 +53,7 @@ namespace NScumm.Sword1
         }
     }
 
-    internal struct QueueElement
+    internal class QueueElement
     {
         public uint id, delay;
         public SoundHandle handle;
@@ -77,7 +77,7 @@ namespace NScumm.Sword1
         private SoundHandle _speechHandle;
         private SoundHandle _fxHandle;
 
-        private readonly QueueElement[] _fxQueue = new QueueElement[MAX_FXQ_LENGTH];
+        private readonly QueueElement[] _fxQueue;
         private byte _endOfQueue;
         private readonly Random _rnd = new Random(Environment.TickCount);
         private ushort _waveVolPos;
@@ -90,6 +90,11 @@ namespace NScumm.Sword1
             _settings = settings;
 
             _speechVolL = _speechVolR = _sfxVolL = _sfxVolR = 192;
+            _fxQueue = new QueueElement[MAX_FXQ_LENGTH];
+            for (int i = 0; i < _fxQueue.Length; i++)
+            {
+                _fxQueue[i] = new QueueElement();
+            }
         }
 
         public void NewScreen(uint screen)

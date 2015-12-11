@@ -502,6 +502,12 @@ namespace NScumm.Core
             Array.Copy(data, 0, array, startIndex, 2);
         }
 
+        public static void WriteInt16(this byte[] array, int startIndex, short value)
+        {
+            var data = BitConverter.GetBytes(value);
+            Array.Copy(data, 0, array, startIndex, 2);
+        }
+
         public static void WriteUInt16BigEndian(this byte[] array, int startIndex, ushort value)
         {
             var data = BitConverter.GetBytes(SwapBytes(value));

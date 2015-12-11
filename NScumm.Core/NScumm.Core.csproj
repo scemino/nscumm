@@ -129,7 +129,6 @@
     <Compile Include="Audio\SoftSynth\FMTownsPc98\TownsMidiOutputChannel.cs" />
     <Compile Include="Audio\SoftSynth\FMTownsPc98\TownsEmuMusicPlugin.cs" />
     <Compile Include="Audio\AudioFormat.cs" />
-    <Compile Include="Audio\Buffer.cs" />
     <Compile Include="Audio\IAudioOutput.cs" />
     <Compile Include="Audio\SampleProviders\AudioStreamToAudioSampleProvider.cs" />
     <Compile Include="Audio\SampleProviders\IAudioSampleProvider.cs" />

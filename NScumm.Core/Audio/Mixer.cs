@@ -277,7 +277,7 @@ namespace NScumm.Core.Audio
                         }
                     }
 
-                return res;
+                return res * 2;
             }
         }
 

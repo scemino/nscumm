@@ -25,13 +25,13 @@ namespace NScumm.Core.Audio
     public static class RateHelper
     {
         public const int IntermediateBufferSize = 512;
-        public const long SampleMax = 0x7fffL;
-        public const long SampleMin = (-SampleMax - 1L);
+        public const int SampleMax = short.MaxValue;
+        public const int SampleMin = short.MinValue;
 
         public static void ClampedAdd(ref short a, int b)
         {
-            long val = a + b;
-
+            int val = a + b;
+            
             if (val > SampleMax)
                 val = SampleMax;
             else if (val < SampleMin)

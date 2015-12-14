@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
-using System.Linq.Expressions;
 using NScumm.Core;
 using NScumm.Core.Audio;
 using NScumm.Core.Audio.Decoders;
@@ -61,13 +60,14 @@ namespace NScumm.Sword1
 
     internal partial class Sound
     {
+        public const int MAX_ROOMS_PER_FX = 7; // max no. of rooms in the fx's room,vol list
         private const int TOTAL_FX_PER_ROOM = 7; // total loop & random fx per room (see fx_list.c)
         private const int TOTAL_ROOMS = 100; //total number of rooms
-        public const int MAX_ROOMS_PER_FX = 7; // max no. of rooms in the fx's room,vol list
         private const int MAX_FXQ_LENGTH = 32;      // max length of sound queue - ie. max number of fx that can be stored up/playing together
         private const int SOUND_SPEECH_ID = 1;
         private const int WAVE_VOL_TAB_LENGTH = 480;
         private const int WAVE_VOL_THRESHOLD = 190000; //120000;
+        private const AudioFlags SPEECH_FLAGS = AudioFlags.Is16Bits | AudioFlags.LittleEndian;
 
         private BinaryReader _cowFile;
         private UIntAccess _cowHeader;
@@ -75,7 +75,6 @@ namespace NScumm.Sword1
         private byte _currentCowFile;
         private CowMode _cowMode;
         private SoundHandle _speechHandle;
-        private SoundHandle _fxHandle;
 
         private readonly QueueElement[] _fxQueue;
         private byte _endOfQueue;
@@ -273,7 +272,230 @@ namespace NScumm.Sword1
             }
         }
 
-        private double EndiannessHeuristicValue(UShortAccess data, uint dataSize,ref uint maxSamples)
+        public bool StartSpeech(ushort roomNo, ushort localNo)
+        {
+            if (_cowHeader == null || ServiceLocator.AudioManager == null)
+            {
+                // TODO: warning("Sound::startSpeech: COW file isn't open");
+                return false;
+            }
+
+            uint locIndex = 0xFFFFFFFF;
+            int sampleSize = 0;
+            uint index = 0;
+
+            //            if (_cowMode == CowPSX)
+            //            {
+            //                Common::File file;
+            //                uint16 i;
+
+            //                if (!file.open("speech.lis"))
+            //                {
+            //                    warning("Could not open speech.lis");
+            //                    return false;
+            //                }
+
+            //                for (i = 0; !file.eos() && !file.err(); i++)
+            //                    if (file.readUint16LE() == roomNo)
+            //                    {
+            //                        locIndex = i;
+            //                        break;
+            //                    }
+            //                file.close();
+
+            //                if (locIndex == 0xFFFFFFFF)
+            //                {
+            //                    warning("Could not find room %d in speech.lis", roomNo);
+            //                    return false;
+            //                }
+
+            //                if (!file.open("speech.inf"))
+            //                {
+            //                    warning("Could not open speech.inf");
+            //                    return false;
+            //                }
+
+            //                uint16 numRooms = file.readUint16LE(); // Read number of rooms referenced in this file
+
+            //                file.seek(locIndex * 4 + 2); // 4 bytes per room, skip first 2 bytes
+
+            //                uint16 numLines = file.readUint16LE();
+            //                uint16 roomOffset = file.readUint16LE();
+
+            //                file.seek(2 + numRooms * 4 + roomOffset * 2); // The offset is in terms of uint16's, so multiply by 2. Skip the room indexes too.
+
+            //                locIndex = 0xFFFFFFFF;
+
+            //                for (i = 0; i < numLines; i++)
+            //                    if (file.readUint16LE() == localNo)
+            //                    {
+            //                        locIndex = i;
+            //                        break;
+            //                    }
+
+            //                if (locIndex == 0xFFFFFFFF)
+            //                {
+            //                    warning("Could not find local number %d in room %d in speech.inf", roomNo, localNo);
+            //                    return false;
+            //                }
+
+            //                file.close();
+
+            //                index = _cowHeader[(roomOffset + locIndex) * 2];
+            //                sampleSize = _cowHeader[(roomOffset + locIndex) * 2 + 1];
+            //            }
+            //            else {
+            locIndex = _cowHeader[roomNo] >> 2;
+            sampleSize = (int)_cowHeader[(int)(locIndex + (localNo * 2))];
+            index = _cowHeader[(int)(locIndex + (localNo * 2) - 1)];
+            //            }
+
+            //            debug(6, "startSpeech(%d, %d): locIndex %d, sampleSize %d, index %d", roomNo, localNo, locIndex, sampleSize, index);
+
+            IAudioStream stream = null;
+
+            if (sampleSize != 0)
+            {
+                byte speechVol = (byte)((_speechVolR + _speechVolL) / 2);
+                sbyte speechPan = (sbyte)((_speechVolR - _speechVolL) / 2);
+                if ((_cowMode == CowMode.CowWave) || (_cowMode == CowMode.CowDemo))
+                {
+                    uint size;
+                    var data = UncompressSpeech(index + _cowHeaderSize, (uint)sampleSize, out size);
+                    if (data != null)
+                    {
+                        stream = new RawStream(SPEECH_FLAGS, 11025, true, new MemoryStream(data.Data, data.Offset, (int)size));
+                        _speechHandle = _mixer.PlayStream(SoundType.Speech, stream, SOUND_SPEECH_ID, speechVol, speechPan);
+                    }
+                }
+                //                else if (_cowMode == CowPSX && sampleSize != 0xffffffff)
+                //                {
+                //                    _cowFile.seek(index * 2048);
+                //                    Common::SeekableReadStream* tmp = _cowFile.readStream(sampleSize);
+                //                    assert(tmp);
+                //                    stream = Audio::makeXAStream(tmp, 11025);
+                //                    _mixer->playStream(Audio::Mixer::kSpeechSoundType, &_speechHandle, stream, SOUND_SPEECH_ID, speechVol, speechPan);
+                //                    // with compressed audio, we can't calculate the wave volume.
+                //                    // so default to talking.
+                //                    for (int cnt = 0; cnt < 480; cnt++)
+                //                        _waveVolume[cnt] = true;
+                //                    _waveVolPos = 0;
+                //                }
+                else if (_cowMode == CowMode.CowFLAC)
+                {
+                    _cowFile.BaseStream.Seek(index, SeekOrigin.Begin);
+                    var tmp = _cowFile.ReadBytes(sampleSize);
+                    stream = ServiceLocator.AudioManager.MakeFlacStream(new MemoryStream(tmp));
+                    if (stream != null)
+                    {
+                        _speechHandle = _mixer.PlayStream(SoundType.Speech, stream, SOUND_SPEECH_ID, speechVol, speechPan);
+                        // with compressed audio, we can't calculate the wave volume.
+                        // so default to talking.
+                        for (int cnt = 0; cnt < 480; cnt++)
+                            _waveVolume[cnt] = true;
+                        _waveVolPos = 0;
+                    }
+                }
+                else if (_cowMode == CowMode.CowVorbis)
+                {
+                    _cowFile.BaseStream.Seek(index, SeekOrigin.Begin);
+                    var tmp = _cowFile.ReadBytes(sampleSize);
+                    stream = ServiceLocator.AudioManager.MakeVorbisStream(new MemoryStream(tmp));
+                    if (stream != null)
+                    {
+                        _speechHandle = _mixer.PlayStream(SoundType.Speech, stream, SOUND_SPEECH_ID, speechVol, speechPan);
+                        // with compressed audio, we can't calculate the wave volume.
+                        // so default to talking.
+                        for (int cnt = 0; cnt < 480; cnt++)
+                            _waveVolume[cnt] = true;
+                        _waveVolPos = 0;
+                    }
+                }
+                else if (_cowMode == CowMode.CowMP3)
+                {
+                    _cowFile.BaseStream.Seek(index, SeekOrigin.Begin);
+                    var tmp = _cowFile.ReadBytes(sampleSize);
+                    stream = ServiceLocator.AudioManager.MakeMp3Stream(new MemoryStream(tmp));
+                    if (stream != null)
+                    {
+                        _speechHandle = _mixer.PlayStream(SoundType.Speech, stream, SOUND_SPEECH_ID, speechVol, speechPan);
+                        // with compressed audio, we can't calculate the wave volume.
+                        // so default to talking.
+                        for (int cnt = 0; cnt < 480; cnt++)
+                            _waveVolume[cnt] = true;
+                        _waveVolPos = 0;
+                    }
+                }
+                return true;
+            }
+            else
+                return false;
+        }
+
+        public uint AddToQueue(int fxNo)
+        {
+            bool alreadyInQueue = false;
+            for (var cnt = 0; (cnt < _endOfQueue) && (!alreadyInQueue); cnt++)
+                if (_fxQueue[cnt].id == (uint)fxNo)
+                    alreadyInQueue = true;
+            if (!alreadyInQueue)
+            {
+                if (_endOfQueue == MAX_FXQ_LENGTH)
+                {
+                    // TODO: warning("Sound queue overflow");
+                    return 0;
+                }
+                uint sampleId = GetSampleId(fxNo);
+                if ((sampleId & 0xFF) != 0xFF)
+                {
+                    _resMan.ResOpen(sampleId);
+                    _fxQueue[_endOfQueue].id = (uint)fxNo;
+                    if (_fxList[fxNo].type == FX_SPOT)
+                        _fxQueue[_endOfQueue].delay = _fxList[fxNo].delay + 1;
+                    else
+                        _fxQueue[_endOfQueue].delay = 1;
+                    _endOfQueue++;
+                    return 1;
+                }
+                return 0;
+            }
+            return 0;
+        }
+
+        public void FnStopFx(int fxNo)
+        {
+            _mixer.StopID(fxNo);
+            for (var cnt = 0; cnt < _endOfQueue; cnt++)
+                if (_fxQueue[cnt].id == (uint)fxNo)
+                {
+                    if (_fxQueue[cnt].delay == 0) // sound was started
+                        _resMan.ResClose(GetSampleId((int)_fxQueue[cnt].id));
+                    if (cnt != _endOfQueue - 1)
+                        _fxQueue[cnt] = _fxQueue[_endOfQueue - 1];
+                    _endOfQueue--;
+                    return;
+                }
+            // TODO: debug(8, "fnStopFx: id not found in queue");
+        }
+
+        public bool SpeechFinished()
+        {
+            return !_mixer.IsSoundHandleActive(_speechHandle);
+        }
+
+        public void StopSpeech()
+        {
+            _mixer.StopID(SOUND_SPEECH_ID);
+        }
+
+        public bool AmISpeaking()
+        {
+            _waveVolPos++;
+            return _waveVolume[_waveVolPos - 1];
+        }
+
+
+        private double EndiannessHeuristicValue(UShortAccess data, uint dataSize, ref uint maxSamples)
         {
             if (data == null)
                 return 50000; // the heuristic value for the wrong endianess is about 21000 (1/3rd of the 16 bits range)
@@ -457,75 +679,6 @@ namespace NScumm.Sword1
             }
         }
 
-        public bool StartSpeech(int i, int i1)
-        {
-            // TODO:
-            return false;
-        }
-
-        public uint AddToQueue(int fxNo)
-        {
-            bool alreadyInQueue = false;
-            for (var cnt = 0; (cnt < _endOfQueue) && (!alreadyInQueue); cnt++)
-                if (_fxQueue[cnt].id == (uint)fxNo)
-                    alreadyInQueue = true;
-            if (!alreadyInQueue)
-            {
-                if (_endOfQueue == MAX_FXQ_LENGTH)
-                {
-                    // TODO: warning("Sound queue overflow");
-                    return 0;
-                }
-                uint sampleId = GetSampleId(fxNo);
-                if ((sampleId & 0xFF) != 0xFF)
-                {
-                    _resMan.ResOpen(sampleId);
-                    _fxQueue[_endOfQueue].id = (uint)fxNo;
-                    if (_fxList[fxNo].type == FX_SPOT)
-                        _fxQueue[_endOfQueue].delay = _fxList[fxNo].delay + 1;
-                    else
-                        _fxQueue[_endOfQueue].delay = 1;
-                    _endOfQueue++;
-                    return 1;
-                }
-                return 0;
-            }
-            return 0;
-        }
-
-        public void FnStopFx(int fxNo)
-        {
-            _mixer.StopID(fxNo);
-            for (var cnt = 0; cnt < _endOfQueue; cnt++)
-                if (_fxQueue[cnt].id == (uint)fxNo)
-                {
-                    if (_fxQueue[cnt].delay == 0) // sound was started
-                        _resMan.ResClose(GetSampleId((int)_fxQueue[cnt].id));
-                    if (cnt != _endOfQueue - 1)
-                        _fxQueue[cnt] = _fxQueue[_endOfQueue - 1];
-                    _endOfQueue--;
-                    return;
-                }
-            // TODO: debug(8, "fnStopFx: id not found in queue");
-        }
-
-        public bool SpeechFinished()
-        {
-            return !_mixer.IsSoundHandleActive(_speechHandle);
-        }
-
-        public void StopSpeech()
-        {
-            _mixer.StopID(SOUND_SPEECH_ID);
-        }
-
-        public bool AmISpeaking()
-        {
-            _waveVolPos++;
-            return _waveVolume[_waveVolPos - 1];
-        }
-
-
         private uint GetSampleId(int fxNo)
         {
             byte cluster = _fxList[fxNo].sampleId.cluster;
@@ -601,6 +754,18 @@ namespace NScumm.Sword1
         {
             if (SystemVars.CurrentCd == 0)
                 return;
+
+            if (_cowFile == null)
+            {
+                var cowName = $"SPEECH{SystemVars.CurrentCd}.CLF";
+                _cowFile = TryToOpen(cowName);
+                //if (_cowFile.isOpen())
+                //{
+                //    debug(1, "Using FLAC compressed Speech Cluster");
+                //}
+                _cowMode = CowMode.CowFLAC;
+            }
+
             if (_cowFile == null)
             {
                 var cowName = $"SPEECH{SystemVars.CurrentCd}.CLU";
@@ -613,7 +778,7 @@ namespace NScumm.Sword1
                 _cowMode = CowMode.CowWave;
             }
 
-            if (Sword1.SystemVars.Platform == Platform.PSX)
+            if (SystemVars.Platform == Platform.PSX)
             {
                 // There's only one file on the PSX, so set it to the current disc.
                 _currentCowFile = (byte)SystemVars.CurrentCd;

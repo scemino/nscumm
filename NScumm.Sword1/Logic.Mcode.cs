@@ -469,7 +469,7 @@ namespace NScumm.Sword1
                 _resMan.ResClose((uint)cpt.resource);
             }
             if (SystemVars.PlaySpeech != 0)
-                _speechRunning = _sound.StartSpeech(textNo >> 16, textNo & 0xFFFF);
+                _speechRunning = _sound.StartSpeech((ushort)(textNo >> 16), (ushort)(textNo & 0xFFFF));
             else
                 _speechRunning = false;
             _speechFinished = false;

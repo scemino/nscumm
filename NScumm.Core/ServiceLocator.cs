@@ -23,6 +23,7 @@ using System.IO;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Xml.Linq;
+using NScumm.Core.Audio;
 
 namespace NScumm.Core
 {
@@ -144,6 +145,14 @@ namespace NScumm.Core
         ITrace CreateTrace(IEnableTrace trace);
     }
 
+    public interface IAudioManager
+    {
+        IRewindableAudioStream MakeStream(string filename);
+        IAudioStream MakeFlacStream(Stream stream);
+        IAudioStream MakeVorbisStream(Stream stream);
+        IAudioStream MakeMp3Stream(Stream stream);
+    }
+
     public static class ServiceLocator
     {
         public static IFileStorage FileStorage { get; set; }
@@ -153,6 +162,8 @@ namespace NScumm.Core
         public static ITraceFactory TraceFatory { get; set; }
 
         public static ISaveFileManager SaveFileManager { get; set; }
+
+        public static IAudioManager AudioManager { get; set; }
     }
 }
 

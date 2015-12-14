@@ -50,16 +50,15 @@ namespace NScumm.Core.Audio.SampleProviders
 
         public int Read(byte[] samples, int count)
         {
-            var monoBuffer = new Buffer(count / 2);
-            var stereoBuffer = new Buffer(samples);
-            var numBytes = _audioSampleProvider.Read(monoBuffer.Bytes, count / 2);
-            var numSamples = numBytes / 2;
+            var numSamples = count / 2;
+            var monoBuffer = new byte[numSamples];
+            var numBytes = _audioSampleProvider.Read(monoBuffer, numSamples);
             int offs = 0;
-            for (int i = 0; i < numSamples; i++)
+            for (int i = 0; i < numBytes; i += 2)
             {
-                var value = monoBuffer.Shorts[i];
-                stereoBuffer.Shorts[offs++] = value;
-                stereoBuffer.Shorts[offs++] = value;
+                var value = monoBuffer.ToInt16(i);
+                samples.WriteInt16(offs += 2, value);
+                samples.WriteInt16(offs += 2, value);
             }
             return numBytes * 2;
         }

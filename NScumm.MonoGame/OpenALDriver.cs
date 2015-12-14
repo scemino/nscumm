@@ -25,7 +25,7 @@ namespace NScumm.MonoGame
     class XnaAudioDriver : IAudioOutput
     {
         readonly DynamicSoundEffectInstance _dsei;
-        readonly Core.Audio.Buffer _buffer;
+        readonly byte[] _buffer;
         IAudioSampleProvider _audioSampleProvider;
         AudioFormat _audioFormat;
 
@@ -33,7 +33,7 @@ namespace NScumm.MonoGame
         {
             _audioFormat = new AudioFormat(44100);
 
-            _buffer = new Core.Audio.Buffer(13230 * 2);
+            _buffer = new byte[13230 * 2];
             _dsei = new DynamicSoundEffectInstance(_audioFormat.SampleRate, _audioFormat.Channels == 2 ? AudioChannels.Stereo : AudioChannels.Mono);
             _dsei.BufferNeeded += OnBufferNeeded;
         }
@@ -71,11 +71,11 @@ namespace NScumm.MonoGame
             _dsei.Stop();
         }
 
-        void OnBufferNeeded(object sender, EventArgs e)
+        private void OnBufferNeeded(object sender, EventArgs e)
         {
-            Array.Clear(_buffer.Bytes, 0, _buffer.Bytes.Length);
-            var available = _audioSampleProvider != null ? _audioSampleProvider.Read(_buffer.Bytes, _buffer.Bytes.Length) : 0;
-            _dsei.SubmitBuffer(_buffer.Bytes);
+            Array.Clear(_buffer, 0, _buffer.Length);
+            var available = _audioSampleProvider != null ? _audioSampleProvider.Read(_buffer, _buffer.Length) : 0;
+            _dsei.SubmitBuffer(_buffer, available);
         }
     }
 }

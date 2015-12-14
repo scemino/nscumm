@@ -73,10 +73,14 @@ namespace NScumm.Core.Audio.SampleProviders
 
         public int ReadBuffer(short[] samples, int numSamples)
         {
-            var buffer = new Buffer(numSamples * 2);
-            var numBytes = _audioSampleProvider.Read(buffer.Bytes, numSamples * 2);
-            Array.Copy(buffer.Shorts, samples, numBytes);
-            return numBytes / 2;
+            var buffer = new byte[numSamples * 2];
+            var numBytes = _audioSampleProvider.Read(buffer, buffer.Length);
+            var numSamplesRead = numBytes / 2;
+            for (int i = 0; i < numSamplesRead; i++)
+            {
+                samples[i] = buffer.ToInt16(i * 2);
+            }
+            return numSamplesRead;
         }
 
         public void Dispose()

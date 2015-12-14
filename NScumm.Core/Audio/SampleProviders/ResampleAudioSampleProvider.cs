@@ -34,14 +34,14 @@ namespace NScumm.Core.Audio.SampleProviders
 
         public ResampleAudioSampleProvider(IAudioSampleProvider source, int newSampleRate)
         {
-            _outFormat = new AudioFormat(newSampleRate, 2, source.AudioFormat.BitsPerSample);
-            _converter = RateHelper.MakeRateConverter(source.AudioFormat.SampleRate, newSampleRate, false, false);
+            _outFormat = new AudioFormat(newSampleRate, 2, 16);
+            _converter = RateHelper.MakeRateConverter(source.AudioFormat.SampleRate, newSampleRate, source.AudioFormat.Channels == 2, false);
             _stream = new AudioSampleProviderToAudioStream(source);
         }
 
         public override int Read(short[] samples, int count)
         {
-            return _converter.Flow(_stream, samples, count, Mixer.MaxMixerVolume, Mixer.MaxMixerVolume);
+            return _converter.Flow(_stream, samples, count, Mixer.MaxMixerVolume, Mixer.MaxMixerVolume) * 2;
         }
     }
 }

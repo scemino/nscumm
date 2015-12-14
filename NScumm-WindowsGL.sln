@@ -28,6 +28,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Engines", "Engines", "{9B77
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{B84C5097-1512-40BB-92FE-E40B2912A214}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NScumm.Sword1", "NScumm.Sword1\NScumm.Sword1.csproj", "{EF539A3F-0672-412C-B9D0-38DCD3622D99}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -132,6 +134,18 @@ Global
 		{97342112-448A-4636-827F-8D47B226D86F}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{97342112-448A-4636-827F-8D47B226D86F}.Release|x86.ActiveCfg = Release|Any CPU
 		{97342112-448A-4636-827F-8D47B226D86F}.Release|x86.Build.0 = Release|Any CPU
+		{EF539A3F-0672-412C-B9D0-38DCD3622D99}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EF539A3F-0672-412C-B9D0-38DCD3622D99}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EF539A3F-0672-412C-B9D0-38DCD3622D99}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{EF539A3F-0672-412C-B9D0-38DCD3622D99}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{EF539A3F-0672-412C-B9D0-38DCD3622D99}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{EF539A3F-0672-412C-B9D0-38DCD3622D99}.Debug|x86.Build.0 = Debug|Any CPU
+		{EF539A3F-0672-412C-B9D0-38DCD3622D99}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EF539A3F-0672-412C-B9D0-38DCD3622D99}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EF539A3F-0672-412C-B9D0-38DCD3622D99}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{EF539A3F-0672-412C-B9D0-38DCD3622D99}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{EF539A3F-0672-412C-B9D0-38DCD3622D99}.Release|x86.ActiveCfg = Release|Any CPU
+		{EF539A3F-0672-412C-B9D0-38DCD3622D99}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -141,6 +155,7 @@ Global
 		{388CB59D-3D62-4C0A-8182-C3A1ADF317F3} = {B84C5097-1512-40BB-92FE-E40B2912A214}
 		{8740A0CD-2613-4354-9506-35035A735962} = {9B771F1E-F987-4C8D-927F-827E00924949}
 		{97342112-448A-4636-827F-8D47B226D86F} = {9B771F1E-F987-4C8D-927F-827E00924949}
+		{EF539A3F-0672-412C-B9D0-38DCD3622D99} = {9B771F1E-F987-4C8D-927F-827E00924949}
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		BaseDirectory = .

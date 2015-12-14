@@ -56,6 +56,7 @@ namespace NScumm.Sky
             _system = new SkySystem(gfxManager, inputManager, saveFileManager);
 
             _mixer = new Mixer(44100);
+            // HACK:
             _mixer.Read(new byte[0], 0);
             output.SetSampleProvider(_mixer);
 

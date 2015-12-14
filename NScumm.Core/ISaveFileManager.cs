@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 
 namespace NScumm.Core
 {
@@ -6,5 +7,6 @@ namespace NScumm.Core
     {
         Stream OpenForLoading(string fileName);
         Stream OpenForSaving(string fileName, bool compress = true);
+        string[] ListSavefiles(string pattern);
     }
 }

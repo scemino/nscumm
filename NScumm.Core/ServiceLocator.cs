@@ -18,7 +18,6 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-using System;
 
 namespace NScumm.Core
 {
@@ -31,6 +30,8 @@ namespace NScumm.Core
         public static ITraceFactory TraceFatory { get; set; }
 
         public static ISaveFileManager SaveFileManager { get; set; }
+
+        public static IAudioManager AudioManager { get; set; }
     }
 }
 

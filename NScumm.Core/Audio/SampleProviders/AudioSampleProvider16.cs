@@ -19,6 +19,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
 namespace NScumm.Core.Audio.SampleProviders
 {
     public abstract class AudioSampleProvider16 : IAudioSampleProvider
@@ -32,8 +33,15 @@ namespace NScumm.Core.Audio.SampleProviders
 
         public int Read(byte[] samples, int count)
         {
-            var buffer = new Buffer(samples);
-            return Read(buffer.Shorts, count / 2) * 2;
+            var buffer = new short[count / 2];
+            var numRead = Read(buffer, count / 2);
+            var offs = 0;
+            for (int i = 0; i < numRead; i++)
+            {
+                samples[offs++] = (byte)(buffer[i] & 0xFF);
+                samples[offs++] = (byte)((buffer[i] >> 8) & 0xFF);
+            }
+            return numRead * 2;
         }
     }
 }

@@ -23,7 +23,7 @@ using System.Diagnostics;
 
 namespace NScumm.Core.Audio
 {
-    public class Timestamp: IComparable<Timestamp>, IEquatable<Timestamp>
+    public class Timestamp : IComparable<Timestamp>, IEquatable<Timestamp>
     {
         int _secs;
         int _framerate;
@@ -78,7 +78,7 @@ namespace NScumm.Core.Audio
             _framerateFactor = ts._framerateFactor;
         }
 
-        public Timestamp(int ms, int fr)
+        public Timestamp(int ms, int fr = 1)
         {
             Debug.Assert(fr > 0);
 
@@ -247,14 +247,14 @@ namespace NScumm.Core.Audio
             return t1.CompareTo(t2) != 0;
         }
 
-        public static Timestamp operator+(Timestamp ts1, Timestamp ts2)
+        public static Timestamp operator +(Timestamp ts1, Timestamp ts2)
         {
             var result = new Timestamp(ts1);
             result.AddIntern(ts2);
             return result;
         }
 
-        public static Timestamp operator-(Timestamp ts)
+        public static Timestamp operator -(Timestamp ts)
         {
             var result = new Timestamp(ts);
             result._secs = -result._secs;
@@ -263,7 +263,7 @@ namespace NScumm.Core.Audio
             return result;
         }
 
-        public static Timestamp operator-(Timestamp ts1, Timestamp ts2)
+        public static Timestamp operator -(Timestamp ts1, Timestamp ts2)
         {
             var result = new Timestamp(ts1);
             result.AddIntern(-ts2);

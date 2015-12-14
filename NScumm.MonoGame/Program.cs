@@ -22,6 +22,7 @@ using System.IO;
 using System.Linq;
 using NScumm.Core.IO;
 using NScumm.MonoGame.Services;
+using NScumm.Platform_Desktop;
 
 namespace NScumm.MonoGame
 {
@@ -85,6 +86,7 @@ namespace NScumm.MonoGame
                         }
                         else
                         {
+                            ((AudioManager)ServiceLocator.AudioManager).Directory = Path.GetDirectoryName(info.Game.Path);
                             var settings = new GameSettings(info.Game, info.Engine) { AudioDevice = musicDriver, CopyProtection = copyProtection, BootParam = bootParam };
                             var game = new ScummGame(settings);
                             game.Services.AddService<IMenuService>(new MenuService(game));
@@ -120,6 +122,7 @@ namespace NScumm.MonoGame
             ServiceLocator.Platform = new Platform();
             ServiceLocator.FileStorage = new FileStorage();
             ServiceLocator.SaveFileManager = new SaveFileManager(ServiceLocator.FileStorage);
+            ServiceLocator.AudioManager = new AudioManager();
             var switches = string.IsNullOrEmpty(sw) ? Enumerable.Empty<string>() : sw.Split(',');
             ServiceLocator.TraceFatory = new TraceFactory(switches);
         }

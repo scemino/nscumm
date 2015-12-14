@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using NScumm.Core;
 
 namespace NScumm
@@ -25,6 +26,13 @@ namespace NScumm
             var path = GetSavePath();
             EnsureSavePathExists(path);
             return File.OpenWrite(Path.Combine(path,fileName));
+        }
+
+        public string[] ListSavefiles(string pattern)
+        {
+            var path = GetSavePath();
+            EnsureSavePathExists(path);
+            return Directory.EnumerateFiles(path, pattern).Select(Path.GetFileName).ToArray();
         }
 
         private static void EnsureSavePathExists(string path)

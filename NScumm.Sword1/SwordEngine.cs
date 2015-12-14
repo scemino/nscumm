@@ -30,12 +30,26 @@ namespace NScumm.Sword1
         public GameSettings Settings { get; }
         public IGraphicsManager GraphicsManager { get; }
 
-        public event EventHandler ShowMenuDialogRequested;
+        event EventHandler IEngine.ShowMenuDialogRequested
+        {
+            add { }
+            remove { }
+        }
+
+        bool IEngine.HasToQuit
+        {
+            get { return ShouldQuit; }
+            set { ShouldQuit = value; }
+        }
 
         public IMixer Mixer => _mixer;
-        public bool HasToQuit { get; set; }
+        
         public bool IsPaused { get; set; }
-        public ISystem System { get; set; }
+
+        public ISystem System { get; private set; }
+
+        public static bool ShouldQuit { get; set; }
+
 
         public SwordEngine(GameSettings settings, IGraphicsManager gfxManager, IInputManager inputManager,
             IAudioOutput output, ISaveFileManager saveFileManager, bool debugMode)
@@ -147,10 +161,10 @@ namespace NScumm.Sword1
             {
                 // TODO: configuration
                 //int saveSlot = ConfMan.getInt("save_slot");
-                int saveSlot =-1;
+                int saveSlot = -1;
                 // Savegames are numbered starting from 1 in the dialog window,
                 // but their filenames are numbered starting from 0.
-                if (saveSlot >= 0 && _control.SavegamesExist() && _control.RestoreGameFromFile((byte) saveSlot))
+                if (saveSlot >= 0 && _control.SavegamesExist() && _control.RestoreGameFromFile((byte)saveSlot))
                 {
                     _control.DoRestore();
                 }
@@ -159,7 +173,7 @@ namespace NScumm.Sword1
                     SystemVars.ControlPanelMode = ControlPanelMode.CP_NEWGAME;
                     if (_control.RunPanel() == Control.CONTROL_GAME_RESTORED)
                         _control.DoRestore();
-                    else if (!ShouldQuit())
+                    else if (!ShouldQuit)
                         _logic.StartPositions(0);
                 }
                 else
@@ -170,11 +184,11 @@ namespace NScumm.Sword1
             }
             SystemVars.ControlPanelMode = ControlPanelMode.CP_NORMAL;
 
-            while (!HasToQuit)
+            while (!ShouldQuit)
             {
                 byte action = MainLoop();
 
-                if (!HasToQuit)
+                if (!ShouldQuit)
                 {
                     // the mainloop was left, we have to reinitialize.
                     Reinitialize();
@@ -198,7 +212,8 @@ namespace NScumm.Sword1
             throw new NotImplementedException();
         }
 
-        void Reinitialize()
+
+        private void Reinitialize()
         {
             _sound.QuitScreen();
             _resMan.Flush(); // free everything that's currently alloced and opened. (*evil*)
@@ -215,7 +230,7 @@ namespace NScumm.Sword1
             byte retCode = 0;
             System.InputManager.ResetKeys();
 
-            while ((retCode == 0) && !HasToQuit)
+            while ((retCode == 0) && !ShouldQuit)
             {
                 // do we need the section45-hack from sword.c here?
                 CheckCd();
@@ -276,9 +291,9 @@ namespace NScumm.Sword1
 
                     _mouseState = 0;
                     _keyPressed = new ScummInputState();
-                } while ((Logic.ScriptVars[(int)ScriptVariableNames.SCREEN] == Logic.ScriptVars[(int)ScriptVariableNames.NEW_SCREEN]) && (retCode == 0) && !HasToQuit);
+                } while ((Logic.ScriptVars[(int)ScriptVariableNames.SCREEN] == Logic.ScriptVars[(int)ScriptVariableNames.NEW_SCREEN]) && (retCode == 0) && !ShouldQuit);
 
-                if ((retCode == 0) && (Logic.ScriptVars[(int)ScriptVariableNames.SCREEN] != 53) && SystemVars.WantFade && !HasToQuit)
+                if ((retCode == 0) && (Logic.ScriptVars[(int)ScriptVariableNames.SCREEN] != 53) && SystemVars.WantFade && !ShouldQuit)
                 {
                     _screen.FadeDownPalette();
                     int relDelay = Environment.TickCount;
@@ -515,17 +530,6 @@ namespace NScumm.Sword1
 	        0,		// 144
 	        1,		// 145	MOUE'S TEXT		- on CD1
 	        1,		// 146	ALBERT'S TEXT	- on CD1
-        };
-
-        public static void QuitGame()
-        {
-            throw new NotImplementedException();
-        }
-
-        public static bool ShouldQuit()
-        {
-            // TODO: ShouldQuit
-            return false;
-        }
+        };        
     }
 }

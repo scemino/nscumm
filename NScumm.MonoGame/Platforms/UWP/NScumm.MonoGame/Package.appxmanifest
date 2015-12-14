@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10" xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest" xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10" IgnorableNamespaces="uap mp">
-  <Identity Name="51560FunPixel.nSCUMM" Publisher="CN=A36FFAB6-4663-4F63-AA43-83D65839652F" Version="1.1.11.0" />
+  <Identity Name="51560FunPixel.nSCUMM" Publisher="CN=A36FFAB6-4663-4F63-AA43-83D65839652F" Version="1.1.12.0" />
   <mp:PhoneIdentity PhoneProductId="b1aac8f5-189c-42ba-a130-8c78b81892d9" PhonePublisherId="00000000-0000-0000-0000-000000000000" />
   <Properties>
     <DisplayName>nSCUMM</DisplayName>

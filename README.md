@@ -1,6 +1,6 @@
 # NSCUMM
 
-Quick and dirty .NET port of the SCUMM and Virtual Theatre engines of the project scummvm.
+Quick and dirty .NET rewrite of the SCUMM and Virtual Theatre engines of the project scummvm.
 
 ## Quick start
 
@@ -27,6 +27,7 @@ Copy the original files of the game you want to play in a directory.
 
 ### Others
     Beneath a Steel Sky by Revolution Software
+    Broken Sword: The Shadow of the Templars by Revolution Software
 
 ## Hotkeys
 
@@ -38,6 +39,9 @@ Copy the original files of the game you want to play in a directory.
     F5                     - Displays a save/load box
     Escape                 - Skips the game intro
     p                      - Pauses the game
+
+### Broken Sword
+    F5 or Escape           - Displays a save/load box
 
 ## Contact
 

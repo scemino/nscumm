@@ -232,6 +232,10 @@
       <Project>{8740a0cd-2613-4354-9506-35035a735962}</Project>
       <Name>NScumm.Sky</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\..\..\NScumm.Sword1\NScumm.Sword1.csproj">
+      <Project>{ef539a3f-0672-412c-b9d0-38dcd3622d99}</Project>
+      <Name>NScumm.Sword1</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <SDKReference Include="Microsoft.AdMediator.Universal, Version=1.0">

@@ -131,7 +131,7 @@ namespace NScumm.MonoGame
                     e.Handled = true;
                     return;
                 }
-                else if ((exception is NullReferenceException || exception is XamlParseException) && exception.ToString().ToUpper().Contains("MICROSOFT.ADVERTISING"))
+                else if ((exception is NullReferenceException || exception is XamlParseException || exception is TypeLoadException) && exception.ToString().ToUpper().Contains("MICROSOFT.ADVERTISING"))
                 {
                     Debug.WriteLine("Handled Microsoft.Advertising exception {0}", exception);
                     e.Handled = true;

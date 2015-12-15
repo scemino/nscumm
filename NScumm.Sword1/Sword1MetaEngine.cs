@@ -121,7 +121,7 @@ namespace NScumm.Sword1
         }
     }
 
-    class Sword1MetaEngine : IMetaEngine
+    public class Sword1MetaEngine : IMetaEngine
     {
         public IEngine Create(GameSettings settings, IGraphicsManager gfxManager, IInputManager inputManager, IAudioOutput output, ISaveFileManager saveFileManager, bool debugMode = false)
         {

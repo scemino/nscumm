@@ -78,6 +78,8 @@ namespace NScumm.Sword1
             // I.e.:
             //_audioSource = Audio::AudioStream::openStreamFile(fileBase, 0, 0, loop ? 0 : 1);
 
+            if (ServiceLocator.AudioManager == null) return false;
+
             IRewindableAudioStream stream = ServiceLocator.AudioManager.MakeStream(filename);
 
             if (stream == null)

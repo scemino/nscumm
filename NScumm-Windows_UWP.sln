@@ -20,6 +20,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NScumm.Scumm", "NScumm.Scum
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Engines", "Engines", "{EBE085A5-E2E4-451D-B31F-4C3FA57857A8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NScumm.Sword1", "NScumm.Sword1\NScumm.Sword1.csproj", "{EF539A3F-0672-412C-B9D0-38DCD3622D99}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug .NET Native|ARM = Debug .NET Native|ARM
@@ -132,6 +134,24 @@ Global
 		{97342112-448A-4636-827F-8D47B226D86F}.Release|x64.Build.0 = Release|Any CPU
 		{97342112-448A-4636-827F-8D47B226D86F}.Release|x86.ActiveCfg = Release|Any CPU
 		{97342112-448A-4636-827F-8D47B226D86F}.Release|x86.Build.0 = Release|Any CPU
+		{EF539A3F-0672-412C-B9D0-38DCD3622D99}.Debug .NET Native|ARM.ActiveCfg = Debug|Any CPU
+		{EF539A3F-0672-412C-B9D0-38DCD3622D99}.Debug .NET Native|ARM.Build.0 = Debug|Any CPU
+		{EF539A3F-0672-412C-B9D0-38DCD3622D99}.Debug .NET Native|x64.ActiveCfg = Debug|Any CPU
+		{EF539A3F-0672-412C-B9D0-38DCD3622D99}.Debug .NET Native|x64.Build.0 = Debug|Any CPU
+		{EF539A3F-0672-412C-B9D0-38DCD3622D99}.Debug .NET Native|x86.ActiveCfg = Debug|Any CPU
+		{EF539A3F-0672-412C-B9D0-38DCD3622D99}.Debug .NET Native|x86.Build.0 = Debug|Any CPU
+		{EF539A3F-0672-412C-B9D0-38DCD3622D99}.Debug|ARM.ActiveCfg = Debug|Any CPU
+		{EF539A3F-0672-412C-B9D0-38DCD3622D99}.Debug|ARM.Build.0 = Debug|Any CPU
+		{EF539A3F-0672-412C-B9D0-38DCD3622D99}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{EF539A3F-0672-412C-B9D0-38DCD3622D99}.Debug|x64.Build.0 = Debug|Any CPU
+		{EF539A3F-0672-412C-B9D0-38DCD3622D99}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{EF539A3F-0672-412C-B9D0-38DCD3622D99}.Debug|x86.Build.0 = Debug|Any CPU
+		{EF539A3F-0672-412C-B9D0-38DCD3622D99}.Release|ARM.ActiveCfg = Release|Any CPU
+		{EF539A3F-0672-412C-B9D0-38DCD3622D99}.Release|ARM.Build.0 = Release|Any CPU
+		{EF539A3F-0672-412C-B9D0-38DCD3622D99}.Release|x64.ActiveCfg = Release|Any CPU
+		{EF539A3F-0672-412C-B9D0-38DCD3622D99}.Release|x64.Build.0 = Release|Any CPU
+		{EF539A3F-0672-412C-B9D0-38DCD3622D99}.Release|x86.ActiveCfg = Release|Any CPU
+		{EF539A3F-0672-412C-B9D0-38DCD3622D99}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -139,6 +159,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{8740A0CD-2613-4354-9506-35035A735962} = {EBE085A5-E2E4-451D-B31F-4C3FA57857A8}
 		{97342112-448A-4636-827F-8D47B226D86F} = {EBE085A5-E2E4-451D-B31F-4C3FA57857A8}
+		{EF539A3F-0672-412C-B9D0-38DCD3622D99} = {EBE085A5-E2E4-451D-B31F-4C3FA57857A8}
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		BaseDirectory = .

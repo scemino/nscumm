@@ -1,6 +1,6 @@
 ﻿using NScumm.Core;
-using System;
 using System.IO;
+using System.Linq;
 using Windows.Storage;
 
 namespace NScumm.Platform_UWP
@@ -12,6 +12,12 @@ namespace NScumm.Platform_UWP
         public SaveFileManager(IFileStorage fileStorage)
         {
             _fileStorage = fileStorage;
+        }
+
+        public string[] ListSavefiles(string pattern)
+        {
+            var path = GetSavePath();
+            return Directory.EnumerateFiles(path, pattern).Select(Path.GetFileName).ToArray();
         }
 
         public Stream OpenForLoading(string fileName)

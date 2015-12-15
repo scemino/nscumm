@@ -31,7 +31,7 @@ namespace NScumm.MonoGame.ViewModels
 
     class GameLibraryViewModel : ViewModel, IGameLibraryViewModel
     {
-        static readonly HashSet<string> IndexFiles = new HashSet<string>(new[] { ".D64", ".DSK,", ".LFL", ".000", ".LA0", ".SM0", ".DNR" }, StringComparer.OrdinalIgnoreCase);
+        static readonly HashSet<string> IndexFiles = new HashSet<string>(new[] { ".D64", ".DSK,", ".LFL", ".000", ".LA0", ".SM0", ".DNR", ".RIF" }, StringComparer.OrdinalIgnoreCase);
         private readonly ObservableCollection<GameViewModel> _games;
         private readonly HashSet<string> _gameSignatures;
         private HashSet<string> _folders;
@@ -72,6 +72,7 @@ namespace NScumm.MonoGame.ViewModels
             GameDetector = new GameDetector();
             GameDetector.Add(new ScummMetaEngine());
             GameDetector.Add(new SkyMetaEngine());
+            GameDetector.Add(new Sword1.Sword1MetaEngine());
 
             LoadGameLibrary();
         }

@@ -4,6 +4,7 @@ using NScumm.MonoGame.ViewModels;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Data;
 using Microsoft.AdMediator.Core.Events;
+using System;
 
 namespace NScumm.MonoGame
 {
@@ -19,6 +20,7 @@ namespace NScumm.MonoGame
         {
             InitializeComponent();
 
+            Loaded += GameLibraryPage_Loaded;
             AdMediator_0A5E56.AdSdkError += OnAdSdkError;
             AdMediator_0A5E56.AdMediatorFilled += OnAdFilled;
             AdMediator_0A5E56.AdMediatorError += OnAdMediatorError;
@@ -27,6 +29,19 @@ namespace NScumm.MonoGame
             DataContext = new GameLibraryViewModel();
             NoGameTextBlock.SetBinding(VisibilityProperty, new Binding { Path = new PropertyPath("ShowNoGameMessage"), Converter = new ShowNoGameMessageToVisibilityConverter() });
             ProgressPanel.SetBinding(VisibilityProperty, new Binding { Path = new PropertyPath("IsScanning"), Converter = new IsScanningToVisibilityConverter() });
+        }
+
+        private void GameLibraryPage_Loaded(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // HACK: OK this is another workaround for this f*** AdMediator
+                AdMediator_0A5E56.Id = "AdMediator-Id-0F3177E7-6EEB-43B3-84B0-CDC87AC71902";
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
         }
 
         private void OnLaunchGame(object sender, Windows.UI.Xaml.Controls.ItemClickEventArgs e)
@@ -60,5 +75,5 @@ namespace NScumm.MonoGame
         {
             Debug.WriteLine("AdSdkError by {0} ErrorCode: {1} ErrorDescription: {2} Error: {3}", e.Name, e.ErrorCode, e.ErrorDescription, e.Error);
         }
-    }    
+    }
 }

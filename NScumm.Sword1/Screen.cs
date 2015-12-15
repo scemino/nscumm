@@ -25,7 +25,7 @@ namespace NScumm.Sword1
         public RoomDef(int totalLayers, int sizeX, int sizeY, int gridWidth, uint[] layers, uint[] grids, uint[] palettes, uint[] parallax)
         {
             this.totalLayers = totalLayers;
-            this.sizeX =sizeX;
+            this.sizeX = sizeX;
             this.sizeY = sizeY;
             this.gridWidth = sizeX;
             this.layers = layers;
@@ -692,14 +692,14 @@ namespace NScumm.Sword1
             if ((compact.status & STAT_SHRINK) != 0)
             {
                 scale = (compact.scale_a * compact.ycoord + compact.scale_b) / 256;
-                spriteX = (ushort)(spriteX + ((short)((short)_resMan.ReadUInt16((ushort)frameHead.offsetX) * scale) / 256));
-                spriteY = (ushort)(spriteY + ((short)((short)_resMan.ReadUInt16((ushort)frameHead.offsetY) * scale )/ 256));
+                spriteX = (ushort)(spriteX + (_resMan.ReadInt16(frameHead.offsetX) * scale) / 256);
+                spriteY = (ushort)(spriteY + (_resMan.ReadInt16(frameHead.offsetY) * scale) / 256);
             }
             else
             {
                 scale = 256;
-                spriteX = (ushort)(spriteX + ((short)_resMan.ReadUInt16((ushort)frameHead.offsetX)));
-                spriteY = (ushort)(spriteY + ((short)_resMan.ReadUInt16((ushort)frameHead.offsetY)));
+                spriteX = (ushort)(spriteX + _resMan.ReadInt16(frameHead.offsetX));
+                spriteY = (ushort)(spriteY + _resMan.ReadInt16(frameHead.offsetY));
             }
 
             var sprData = new ByteAccess(frameHead.Data.Data, frameHead.Data.Offset + FrameHeader.Size);
@@ -1267,7 +1267,7 @@ namespace NScumm.Sword1
             throw new NotImplementedException();
         }
 
-        
+
 
         private UShortAccess[] _layerGrid = new UShortAccess[4];
         private ushort _oldScrollX;

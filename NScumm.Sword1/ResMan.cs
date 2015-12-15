@@ -184,6 +184,11 @@ const int MAX_OPEN_CLUS =4; // the PSP can't have more than 8 files open simulta
             return _isBigEndian ? ScummHelper.SwapBytes(value) : value;
         }
 
+        public short ReadInt16(short value)
+        {
+            return _isBigEndian ? ScummHelper.SwapBytes(value) : value;
+        }
+
         public uint ReadUInt32(uint value)
         {
             return _isBigEndian ? ScummHelper.SwapBytes(value) : value;

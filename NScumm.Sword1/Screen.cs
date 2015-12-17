@@ -289,7 +289,7 @@ namespace NScumm.Sword1
             {
                 _fadingStep = 1;
                 _fadingDirection = FADE_UP;
-                Array.Clear(_currentPalette, 0, 256 * 3);
+                Array.Clear(_currentPalette, 0, 256);
                 _system.GraphicsManager.SetPalette(_currentPalette, 0, 256);
             }
             else

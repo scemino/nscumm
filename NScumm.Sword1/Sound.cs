@@ -190,6 +190,7 @@ namespace NScumm.Sword1
         public void CloseCowSystem()
         {
             _cowFile.Dispose();
+            _cowFile = null;
             _cowHeader = null;
             _currentCowFile = 0;
         }

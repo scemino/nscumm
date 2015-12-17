@@ -42,7 +42,7 @@ namespace NScumm.MonoGame
         private readonly GameWindow _window;
         private readonly List<Keys> _virtualKeysDown = new List<Keys>();
         private readonly List<Keys> _virtualKeysUp = new List<Keys>();
-        private List<KeyCode> _keysPressed = new List<KeyCode>();
+        private HashSet<KeyCode> _keysPressed = new HashSet<KeyCode>();
         private KeyboardState _keyboardState;
         private bool _backPressed;
         private bool _leftButtonPressed;
@@ -184,7 +184,7 @@ namespace NScumm.MonoGame
 
                 _keyboardState = keyboard;
 
-                _keysPressed = _keyboardState.GetPressedKeys().Where(KeyToKeyCode.ContainsKey).Select(key => KeyToKeyCode[key]).ToList();
+                _keysPressed = new HashSet<KeyCode>(_keyboardState.GetPressedKeys().Where(KeyToKeyCode.ContainsKey).Select(key => KeyToKeyCode[key]));
                 if (_virtualKeysDown.Count > 0)
                 {
                     _virtualKeysDown.ForEach(k =>
@@ -218,7 +218,7 @@ namespace NScumm.MonoGame
         {
             lock (_gate)
             {
-                var inputState = new ScummInputState(_keysPressed, _leftButtonPressed, _rightButtonPressed);
+                var inputState = new ScummInputState(_keysPressed.ToList(), _leftButtonPressed, _rightButtonPressed);
                 return inputState;
             }
         }
@@ -228,6 +228,7 @@ namespace NScumm.MonoGame
             lock (_gate)
             {
                 _keyboardState = new KeyboardState();
+                _keysPressed.Clear();
                 _virtualKeysDown.Clear();
                 _virtualKeysUp.Clear();
             }

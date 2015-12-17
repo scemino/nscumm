@@ -194,7 +194,7 @@ namespace NScumm.Sword1
                         }
                         if (_selectedSavegame < 255)
                         {
-                            // TODO: _system.SetFeatureState(OSystem::kFeatureVirtualKeyboard, true);
+                            _system.InputManager.ShowVirtualKeyboard();
                             bool visible = _cursorVisible;
                             _cursorTick++;
                             if (_cursorTick == 7)
@@ -205,13 +205,17 @@ namespace NScumm.Sword1
                                 _cursorTick = 0;
                             }
                             if (_keyPressed.GetKeys().Count > 0)
+                            {
                                 HandleSaveKey(_keyPressed);
+                                _keyPressed = new ScummInputState();
+                                _system.InputManager.ResetKeys();
+                            }
                             else if (_cursorVisible != visible)
                                 ShowSavegameNames();
                         }
                         else
                         {
-                            // TODO: _system.SetFeatureState(OSystem::kFeatureVirtualKeyboard, false);
+                            _system.InputManager.HideVirtualKeyboard();
                         }
                         break;
                     case ButtonIds.BUTTON_RESTORE_PANEL:
@@ -576,7 +580,7 @@ namespace NScumm.Sword1
                     {
                         if (mode == ButtonIds.BUTTON_SAVE_PANEL)
                         {
-                            // TODO/ _system.setFeatureState(OSystem::kFeatureVirtualKeyboard, false);
+                            _system.InputManager.HideVirtualKeyboard();
                             if (SaveToFile()) // don't go back to main panel if save fails.
                                 return ButtonIds.BUTTON_DONE;
                         }
@@ -591,7 +595,7 @@ namespace NScumm.Sword1
                     }
                     else if (id == ButtonIds.BUTTON_SAVE_CANCEL)
                     {
-                        // TODO: _system.setFeatureState(OSystem::kFeatureVirtualKeyboard, false);
+                        _system.InputManager.HideVirtualKeyboard();
                         return ButtonIds.BUTTON_MAIN_PANEL; // mode down to main panel
                     }
                     break;

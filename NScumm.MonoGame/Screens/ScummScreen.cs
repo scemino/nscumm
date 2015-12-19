@@ -32,15 +32,15 @@ namespace NScumm.MonoGame
 {
     public class ScummScreen : GameScreen
     {
-        readonly GameSettings info;
-        SpriteBatch spriteBatch;
-        IEngine engine;
-        XnaGraphicsManager gfx;
-        XnaInputManager inputManager;
-        Vector2 cursorPos;
-        IAudioOutput audioDriver;
-        Game game;
-        bool contentLoaded;
+        private readonly GameSettings info;
+        private SpriteBatch spriteBatch;
+        private IEngine engine;
+        private XnaGraphicsManager gfx;
+        private XnaInputManager inputManager;
+        private Vector2 cursorPos;
+        private IAudioOutput audioDriver;
+        private Game game;
+        private bool contentLoaded;
         private SpriteFont font;
 
         public ScummScreen(Game game, GameSettings info)
@@ -60,8 +60,9 @@ namespace NScumm.MonoGame
                 spriteBatch = new SpriteBatch(ScreenManager.GraphicsDevice);
 
                 font = ScreenManager.Content.Load<SpriteFont>("Fonts/MenuFont");
-                inputManager = new XnaInputManager(game.Window, info.Game.Width, info.Game.Height);
+                inputManager = new XnaInputManager(ScreenManager.Game, info.Game);
                 gfx = new XnaGraphicsManager(info.Game.Width, info.Game.Height, info.Game.PixelFormat, game.Window, ScreenManager.GraphicsDevice);
+                ScreenManager.Game.Services.AddService<Core.Graphics.IGraphicsManager>(gfx);
                 var saveFileManager = ServiceLocator.SaveFileManager;
 #if WINDOWS_UWP
                 audioDriver = new XAudio2Mixer();
@@ -89,16 +90,6 @@ namespace NScumm.MonoGame
             base.EndRun();
         }
 
-        void OnShowMenuDialogRequested(object sender, EventArgs e)
-        {
-            if (!engine.IsPaused)
-            {
-                engine.IsPaused = true;
-                var page = game.Services.GetService<IMenuService>();
-                page.ShowMenu();
-            }
-        }
-
         public override void UnloadContent()
         {
             gfx.Dispose();
@@ -107,7 +98,7 @@ namespace NScumm.MonoGame
 
         public override void HandleInput(InputState input)
         {
-            if (input.IsNewKeyPress(Keys.F))
+            if (input.IsNewKeyPress(Keys.Enter) && input.CurrentKeyboardState.IsKeyDown(Keys.LeftControl))
             {
                 var gdm = ((ScummGame)game).GraphicsDeviceManager;
                 gdm.ToggleFullScreen();
@@ -125,19 +116,30 @@ namespace NScumm.MonoGame
             }
         }
 
-        void UpdateGame()
-        {
-            engine.Run();
-            base.ScreenManager.Game.Exit();
-        }
-
         public override void Draw(GameTime gameTime)
         {
             spriteBatch.Begin();
             gfx.DrawScreen(spriteBatch);
             gfx.DrawCursor(spriteBatch, cursorPos);
             spriteBatch.End();
-        }        
+        }
+
+        private void UpdateGame()
+        {
+            engine.Run();
+            ScreenManager.Game.Exit();
+        }
+
+        private void OnShowMenuDialogRequested(object sender, EventArgs e)
+        {
+            if (!engine.IsPaused)
+            {
+                engine.IsPaused = true;
+                var page = game.Services.GetService<IMenuService>();
+                page.ShowMenu();
+            }
+        }
+
     }
 }
 

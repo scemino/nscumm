@@ -52,7 +52,9 @@ namespace NScumm.MonoGame
             GraphicsDeviceManager.PreferredBackBufferWidth = 800;
             GraphicsDeviceManager.PreferredBackBufferHeight = (int)(800.0 * Settings.Game.Height / Settings.Game.Width);
 #else
-            Settings = new GameSettings(GamePage.Info.Game,GamePage.Info.Engine);
+            Settings = new GameSettings(GamePage.Info.Game, GamePage.Info.Engine);
+            GraphicsDeviceManager.PreferredBackBufferWidth = Settings.Game.Width;
+            GraphicsDeviceManager.PreferredBackBufferHeight = Settings.Game.Height;
 #endif
             _screenManager = new ScreenManager(this);
             Components.Add(_screenManager);

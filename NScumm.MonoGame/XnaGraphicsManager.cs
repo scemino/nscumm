@@ -22,32 +22,33 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
-using System.Linq;
 using NScumm.Core;
 using Point = NScumm.Core.Graphics.Point;
+using Rect = NScumm.Core.Graphics.Rect;
 
 namespace NScumm.MonoGame
 {
     sealed class XnaGraphicsManager : Core.Graphics.IGraphicsManager, IDisposable
     {
-        Core.Graphics.PixelFormat _pixelFormat;
-
         public Core.Graphics.PixelFormat PixelFormat
         {
             get { return _pixelFormat; }
             set
             {
                 _pixelFormat = value;
-                var pixelSize = _pixelFormat == NScumm.Core.Graphics.PixelFormat.Rgb16 ? 2 : 1;
-                _colorGraphicsManager = _pixelFormat == NScumm.Core.Graphics.PixelFormat.Rgb16 ? (IColorGraphicsManager)new Rgb16GraphicsManager(this) : new RgbIndexed8GraphicsManager(this);
+                var pixelSize = _pixelFormat == Core.Graphics.PixelFormat.Rgb16 ? 2 : 1;
+                _colorGraphicsManager = _pixelFormat == Core.Graphics.PixelFormat.Rgb16 ? (IColorGraphicsManager)new Rgb16GraphicsManager(this) : new RgbIndexed8GraphicsManager(this);
                 _pixels = new byte[_width * _height * pixelSize];
             }
         }
 
         public int ShakePosition { get; set; }
+
         public bool IsCursorVisible { get; set; }
 
-        public XnaGraphicsManager(int width, int height, NScumm.Core.Graphics.PixelFormat format, GameWindow window, GraphicsDevice device)
+        public Rect Bounds { get { return new Rect(_rect.Left, _rect.Top, _rect.Right, _rect.Bottom); } }
+
+        public XnaGraphicsManager(int width, int height, Core.Graphics.PixelFormat format, GameWindow window, GraphicsDevice device)
         {
             if (device == null)
                 throw new ArgumentNullException("device");
@@ -57,11 +58,12 @@ namespace NScumm.MonoGame
             _width = width;
             _height = height;
             PixelFormat = format;
-            
+
             _texture = new Texture2D(device, _width, _height);
             _textureCursor = new Texture2D(device, 16, 16);
             _palColors = new Color[256];
             _colors = new Color[_width * _height];
+            _preferredAspect = (float)_width / _height;
         }
 
         public void UpdateScreen()
@@ -89,7 +91,7 @@ namespace NScumm.MonoGame
 
         public Core.Graphics.Surface Capture()
         {
-            var surface = new Core.Graphics.Surface(_width, _height, NScumm.Core.Graphics.PixelFormat.Indexed8, false);
+            var surface = new Core.Graphics.Surface(_width, _height, Core.Graphics.PixelFormat.Indexed8, false);
             Array.Copy(_pixels, surface.Pixels, _pixels.Length);
             return surface;
         }
@@ -130,7 +132,7 @@ namespace NScumm.MonoGame
 
         public Vector2 Hotspot { get; private set; }
 
-        public void SetCursor(byte[] pixels, int width, int height, Core.Graphics.Point hotspot)
+        public void SetCursor(byte[] pixels, int width, int height, Point hotspot)
         {
             _colorGraphicsManager.SetCursor(pixels, width, height, hotspot);
         }
@@ -151,12 +153,28 @@ namespace NScumm.MonoGame
 
         public void DrawScreen(SpriteBatch spriteBatch)
         {
+            float outputAspect = (float)spriteBatch.GraphicsDevice.PresentationParameters.Bounds.Width / spriteBatch.GraphicsDevice.PresentationParameters.Bounds.Height;
+
+            if (outputAspect <= _preferredAspect)
+            {
+                // output is taller than it is wider, bars on top/bottom
+                int presentHeight = (int)((spriteBatch.GraphicsDevice.PresentationParameters.Bounds.Width / _preferredAspect) + 0.5f);
+                int barHeight = (spriteBatch.GraphicsDevice.PresentationParameters.Bounds.Height - presentHeight) / 2;
+                _rect = new Rectangle(0, barHeight, spriteBatch.GraphicsDevice.PresentationParameters.Bounds.Width, presentHeight);
+            }
+            else
+            {
+                // output is wider than it is tall, bars left/right
+                int presentWidth = (int)((spriteBatch.GraphicsDevice.PresentationParameters.Bounds.Height * _preferredAspect) + 0.5f);
+                int barWidth = (spriteBatch.GraphicsDevice.PresentationParameters.Bounds.Width - presentWidth) / 2;
+                _rect = new Rectangle(barWidth, 0, presentWidth, spriteBatch.GraphicsDevice.PresentationParameters.Bounds.Height);
+            }
+            _rect.Offset(0, ShakePosition);
+
             lock (_gate)
             {
-                var rect = spriteBatch.GraphicsDevice.Viewport.Bounds;
-                rect.Offset(0, ShakePosition);
                 _texture.SetData(_colors);
-                spriteBatch.Draw(_texture, rect, null, Color.White);
+                spriteBatch.Draw(_texture, _rect, null, Color.White);
             }
         }
 
@@ -164,8 +182,8 @@ namespace NScumm.MonoGame
         {
             if (IsCursorVisible)
             {
-                double scaleX = _window.ClientBounds.Width / _width;
-                double scaleY = _window.ClientBounds.Height / _height;
+                double scaleX = _rect.Width / _width;
+                double scaleY = _rect.Height / _height;
                 var rect = new Rectangle((int)(cursorPos.X - scaleX * Hotspot.X), (int)(cursorPos.Y - scaleY * Hotspot.Y), (int)(scaleX * _textureCursor.Width), (int)(scaleY * _textureCursor.Height));
                 spriteBatch.Draw(_textureCursor, rect, null, Color.White);
             }
@@ -195,8 +213,8 @@ namespace NScumm.MonoGame
             void CopyRectToScreen(byte[] buffer, int startOffset, int sourceStride, int x, int y, int width, int height);
             void CopyRectToScreen(byte[] buffer, int sourceStride, int x, int y, int width, int height);
             void CopyRectToScreen(byte[] buffer, int sourceStride, int x, int y, int dstX, int dstY, int width, int height);
-            void SetCursor(byte[] pixels, int width, int height, Core.Graphics.Point hotspot);
-            void SetCursor(byte[] pixels, int offset, int width, int height, Core.Graphics.Point hotspot, int keyColor);
+            void SetCursor(byte[] pixels, int width, int height, Point hotspot);
+            void SetCursor(byte[] pixels, int offset, int width, int height, Point hotspot, int keyColor);
             void FillScreen(int color);
         }
 
@@ -217,7 +235,7 @@ namespace NScumm.MonoGame
                     for (int w = 0; w < _gfxManager._width; w++)
                     {
                         var c = _gfxManager._pixels.ToUInt16(w * 2 + h * _gfxManager._width * 2);
-                        NScumm.Core.Graphics.ColorHelper.ColorToRGB(c, out r, out g, out b);
+                        Core.Graphics.ColorHelper.ColorToRGB(c, out r, out g, out b);
                         _gfxManager._colors[w + h * _gfxManager._width] = new Color(r, g, b);
                     }
                 }
@@ -256,7 +274,7 @@ namespace NScumm.MonoGame
                 }
             }
 
-            public void SetCursor(byte[] pixels, int width, int height, Core.Graphics.Point hotspot)
+            public void SetCursor(byte[] pixels, int width, int height, Point hotspot)
             {
                 SetCursor(pixels, 0, width, height, hotspot, 0xFF);
             }
@@ -278,7 +296,7 @@ namespace NScumm.MonoGame
                     for (int w = 0; w < width; w++)
                     {
                         var palColor = pixels.ToUInt16(offset + w * 2 + h * width * 2);
-                        NScumm.Core.Graphics.ColorHelper.ColorToRGB(palColor, out r, out g, out b);
+                        Core.Graphics.ColorHelper.ColorToRGB(palColor, out r, out g, out b);
                         var color = palColor == keyColor ? Color.Transparent : new Color(r, g, b);
                         pixelsCursor[w + h * width] = color;
                     }
@@ -310,13 +328,10 @@ namespace NScumm.MonoGame
 
             public void UpdateScreen()
             {
-                for (int h = 0; h < _gfxManager._height; h++)
+                var length = _gfxManager._height * _gfxManager._width;
+                for (int i = 0; i < length; i++)
                 {
-                    for (int w = 0; w < _gfxManager._width; w++)
-                    {
-                        var color = _gfxManager._palColors[_gfxManager._pixels[w + h * _gfxManager._width]];
-                        _gfxManager._colors[w + h * _gfxManager._width] = color;
-                    }
+                    _gfxManager._colors[i] = _gfxManager._palColors[_gfxManager._pixels[i]];
                 }
             }
 
@@ -324,10 +339,7 @@ namespace NScumm.MonoGame
             {
                 for (int h = 0; h < height; h++)
                 {
-                    for (int w = 0; w < width; w++)
-                    {
-                        _gfxManager._pixels[x + w + (y + h) * _gfxManager._width] = buffer[startOffset + w + h * sourceStride];
-                    }
+                    Array.Copy(buffer, startOffset + h * sourceStride, _gfxManager._pixels, x + (y + h) * _gfxManager._width, width);
                 }
             }
 
@@ -335,10 +347,7 @@ namespace NScumm.MonoGame
             {
                 for (int h = 0; h < height; h++)
                 {
-                    for (int w = 0; w < width; w++)
-                    {
-                        _gfxManager._pixels[x + w + (y + h) * _gfxManager._width] = buffer[w + h * sourceStride];
-                    }
+                    Array.Copy(buffer, h * sourceStride, _gfxManager._pixels, x + (y + h) * _gfxManager._width, width);
                 }
             }
 
@@ -346,14 +355,11 @@ namespace NScumm.MonoGame
             {
                 for (int h = 0; h < height; h++)
                 {
-                    for (int w = 0; w < width; w++)
-                    {
-                        _gfxManager._pixels[dstX + w + (dstY + h) * _gfxManager._width] = buffer[x + w + (h + y) * sourceStride];
-                    }
+                    Array.Copy(buffer, x + (h + y) * sourceStride, _gfxManager._pixels, dstX + (dstY + h) * _gfxManager._width, width);
                 }
             }
 
-            public void SetCursor(byte[] pixels, int width, int height, Core.Graphics.Point hotspot)
+            public void SetCursor(byte[] pixels, int width, int height, Point hotspot)
             {
                 SetCursor(pixels, 0, width, height, hotspot, 0xFF);
             }
@@ -390,16 +396,19 @@ namespace NScumm.MonoGame
         #endregion
 
         #region Fields
-        readonly Texture2D _texture;
-        Texture2D _textureCursor;
-        byte[] _pixels;
-        Color[] _palColors;
-        GraphicsDevice _device;
-        int _width, _height;
-        object _gate = new object();
-        Color[] _colors;
-        GameWindow _window;
-        IColorGraphicsManager _colorGraphicsManager;
+        private Core.Graphics.PixelFormat _pixelFormat;
+        private readonly Texture2D _texture;
+        private Texture2D _textureCursor;
+        private byte[] _pixels;
+        private Color[] _palColors;
+        private GraphicsDevice _device;
+        private int _width, _height;
+        private object _gate = new object();
+        private Color[] _colors;
+        private GameWindow _window;
+        private IColorGraphicsManager _colorGraphicsManager;
+        private float _preferredAspect;
+        private Rectangle _rect;
         #endregion
     }
 }

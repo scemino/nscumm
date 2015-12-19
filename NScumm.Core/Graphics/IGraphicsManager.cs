@@ -26,6 +26,7 @@ namespace NScumm.Core.Graphics
         PixelFormat PixelFormat { get; set; }
         int ShakePosition { get; set; }
         bool IsCursorVisible { get; set; }
+        Rect Bounds { get; }
 
         Surface Capture();
         void CopyRectToScreen(byte[] buffer, int startOffset, int sourceStride, int x, int y, int width, int height);

@@ -27,6 +27,7 @@ using NScumm.Core;
 using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input.Touch;
+using NScumm.Core.Graphics;
 #if WINDOWS_UWP
 using Windows.UI.ViewManagement;
 using Windows.UI.Core;
@@ -37,8 +38,6 @@ namespace NScumm.MonoGame
     internal sealed class XnaInputManager : IInputManager
     {
         private readonly object _gate = new object();
-        private readonly double _width;
-        private readonly double _height;
         private readonly GameWindow _window;
         private readonly List<Keys> _virtualKeysDown = new List<Keys>();
         private readonly List<Keys> _virtualKeysUp = new List<Keys>();
@@ -50,17 +49,22 @@ namespace NScumm.MonoGame
         private Core.Graphics.Point _mousePosition;
         private bool _rightButtonPressed;
         private bool _showKeyboard;
+        private Game _game;
+        private int _width;
+        private int _height;
+
 #if WINDOWS_UWP
         private InputPane _inputPane;
         private CoreWindow _currentWindow;
 #endif
         public Vector2 RealPosition { get; private set; }
 
-        public XnaInputManager(GameWindow window, int width, int height)
+        public XnaInputManager(Game game, Core.IO.IGameDescriptor gameDesc)
         {
-            _window = window;
-            _width = width;
-            _height = height;
+            _game = game;
+            _width = gameDesc.Width;
+            _height = gameDesc.Height;
+            _window = game.Window;
             _mousePosition = new Core.Graphics.Point();
 
             TouchPanel.EnableMouseGestures = true;
@@ -128,10 +132,13 @@ namespace NScumm.MonoGame
 
         private void UpdateMousePosition(Vector2 pos)
         {
-            var scaleX = _width / _window.ClientBounds.Width;
-            var scaleY = _height / _window.ClientBounds.Height;
+            var rect = _game.Services.GetService<IGraphicsManager>().Bounds;
+            if (rect.Width == 0 || rect.Height == 0) return;
+
+            var scaleX = (float)_width / rect.Width;
+            var scaleY = (float)_height / rect.Height;
             RealPosition = pos;
-            _mousePosition = new Core.Graphics.Point((int)(pos.X * scaleX), (int)(pos.Y * scaleY));
+            _mousePosition = new Core.Graphics.Point((int)((pos.X - rect.Left) * scaleX), (int)((pos.Y - rect.Top) * scaleY));
         }
 
         public void UpdateInput(KeyboardState keyboard)
@@ -322,5 +329,6 @@ namespace NScumm.MonoGame
             { Keys.PageDown, KeyCode.PageDown },
             { Keys.LeftShift, KeyCode.LeftShift },
         };
+
     }
 }

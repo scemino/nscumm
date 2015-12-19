@@ -12,21 +12,9 @@ namespace NScumm.MonoGame.ViewModels
         public GameViewModel(GameDetected info)
         {
             Game = info;
-            //Description = info.Game is GameInfo ? GetDescription((GameInfo)info.Game) : info.Game.Description;
             Description = info.Game.Description;
             Platform = info.Game.Platform.ToString();
             Culture = info.Game.Culture.DisplayName;
         }
-
-        //private string GetDescription(GameInfo info)
-        //{
-        //    if (info.Features.HasFlag(GameFeatures.Demo))
-        //    {
-        //        var loader = new Windows.ApplicationModel.Resources.ResourceLoader();
-        //        var description = string.Format(loader.GetString("GameInfoDemo"), info.Description);
-        //        return description;
-        //    }
-        //    return info.Description;
-        //}
     }
 }

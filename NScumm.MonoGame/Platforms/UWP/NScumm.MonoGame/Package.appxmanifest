@@ -229,6 +229,5 @@
   <Capabilities>
     <Capability Name="internetClient" />
     <uap:Capability Name="removableStorage" />
-    <uap:Capability Name="documentsLibrary" />
   </Capabilities>
 </Package>

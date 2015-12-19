@@ -96,19 +96,14 @@
       <HintPath>..\..\..\packages\MonoGame.Framework.Linux.3.4.0.459\lib\net40\Tao.Sdl.dll</HintPath>
     </Reference>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="ScreenManager\" />
-    <Folder Include="Content\Textures\" />
-    <Folder Include="Content\Fonts\" />
-    <Folder Include="Screens\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <ProjectReference Include="..\..\..\NScumm.Core\NScumm.Core.csproj">
       <Project>{8E7A9E5B-D7EB-4DA1-8EE7-A5D8DE202372}</Project>
       <Name>NScumm.Core</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\NScumm.Platform_Desktop\NScumm.Platform_Desktop.csproj">
-      <Project>{D42434C7-459D-461A-8B1D-1451F7FF4B13}</Project>
+    <ProjectReference Include="..\..\..\Platforms\NScumm.Platform_Desktop\NScumm.Platform_Desktop.csproj">
+      <Project>{d42434c7-459d-461a-8b1d-1451f7ff4b13}</Project>
       <Name>NScumm.Platform_Desktop</Name>
     </ProjectReference>
   </ItemGroup>

@@ -1,0 +1,132 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{D53EB07B-F186-4281-A225-2C3DC5850148}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>NScumm.Dump</RootNamespace>
+    <AssemblyName>nsdump</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug</OutputPath>
+    <DefineConstants>DEBUG;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Externalconsole>true</Externalconsole>
+    <Commandlineparameters>-f=/home/scemino/Games/mm64/MANIAC1.D64 -ra</Commandlineparameters>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>full</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Externalconsole>true</Externalconsole>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Drawing" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Parser\ScriptParser0.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TextDecoder.cs" />
+    <Compile Include="DumpAstVisitor.cs" />
+    <Compile Include="IDumper.cs" />
+    <Compile Include="ImageDumper.cs" />
+    <Compile Include="ScriptDumper.cs" />
+    <Compile Include="ResolveVariablesAstVisitor.cs" />
+    <Compile Include="Parser\ScriptParser.cs" />
+    <Compile Include="Parser\ScriptParser3.cs" />
+    <Compile Include="Parser\ScriptParser4.cs" />
+    <Compile Include="Parser\ScriptParser5.cs" />
+    <Compile Include="JumpAstVisitor.cs" />
+    <Compile Include="Ast\DefaultVisitor.cs" />
+    <Compile Include="Ast\IAstNode.cs" />
+    <Compile Include="Ast\AstNodeBase.cs" />
+    <Compile Include="Ast\CompilationUnit.cs" />
+    <Compile Include="Ast\Expressions\BinaryExpression.cs" />
+    <Compile Include="Ast\Expressions\Expression.cs" />
+    <Compile Include="Ast\Expressions\ElementAccess.cs" />
+    <Compile Include="Ast\Expressions\MemberAccess.cs" />
+    <Compile Include="Ast\Expressions\LiteralExpression.cs" />
+    <Compile Include="Ast\Expressions\MethodInvocation.cs" />
+    <Compile Include="Ast\Expressions\UnaryExpression.cs" />
+    <Compile Include="Ast\Expressions\SimpleName.cs" />
+    <Compile Include="Ast\Statements\JumpStatement.cs" />
+    <Compile Include="Ast\Statements\Statement.cs" />
+    <Compile Include="Ast\Expressions\StringLiteralExpression.cs" />
+    <Compile Include="Ast\Expressions\IntegerLiteralExpression.cs" />
+    <Compile Include="Ast\Expressions\BooleanLiteralExpression.cs" />
+    <Compile Include="Ast\IAstNodeVisitor.cs" />
+    <Compile Include="Ast\Statements\IfStatement.cs" />
+    <Compile Include="Ast\Statements\ExpressionStatement.cs" />
+    <Compile Include="Ast\Statements\BlockStatement.cs" />
+    <Compile Include="ReplaceJumpToWhile.cs" />
+    <Compile Include="Ast\Statements\DoWhileStatement.cs" />
+    <Compile Include="Ast\Statements\LabelStatement.cs" />
+    <Compile Include="Ast\Statements\GoToStatement.cs" />
+    <Compile Include="ReplaceJumpToGoTo.cs" />
+    <Compile Include="AstRewriterVisitor.cs" />
+    <Compile Include="Parser\ScriptParser6.cs" />
+    <Compile Include="Parser\ScriptParser3_OpCode.cs" />
+    <Compile Include="Parser\ScriptParser3_Variable.cs" />
+    <Compile Include="Parser\ScriptParser3_Actor.cs" />
+    <Compile Include="Parser\ScriptParser3_Audio.cs" />
+    <Compile Include="Parser\ScriptParser3_Camera.cs" />
+    <Compile Include="Parser\ScriptParser3_Expression.cs" />
+    <Compile Include="Parser\ScriptParser3_Inventory.cs" />
+    <Compile Include="Parser\ScriptParser3_Object.cs" />
+    <Compile Include="Parser\ScriptParser3_Room.cs" />
+    <Compile Include="Parser\ScriptParser3_Scripts.cs" />
+    <Compile Include="Parser\ScriptParser3_Strings.cs" />
+    <Compile Include="Parser\ScriptParser3_Verb.cs" />
+    <Compile Include="Parser\ScriptParser6_Audio.cs" />
+    <Compile Include="Parser\ScriptParser6_Script.cs" />
+    <Compile Include="Parser\ScriptParser6_Graphics.cs" />
+    <Compile Include="Parser\ScriptParser6_Resources.cs" />
+    <Compile Include="Parser\ScriptParser6_Room.cs" />
+    <Compile Include="Parser\ScriptParser6_Actor.cs" />
+    <Compile Include="Parser\ScriptParser6_Expression.cs" />
+    <Compile Include="Parser\ScriptParser6_Variables.cs" />
+    <Compile Include="Parser\ScriptParser6_Misc.cs" />
+    <Compile Include="Parser\ScriptParser6_Object.cs" />
+    <Compile Include="Parser\ScriptParser6_Inventory.cs" />
+    <Compile Include="Parser\ScriptParser6_Verb.cs" />
+    <Compile Include="Parser\ScriptParser6_Camera.cs" />
+    <Compile Include="Ast\Statements\SwitchStatement.cs" />
+    <Compile Include="Ast\Statements\CaseStatement.cs" />
+    <Compile Include="Parser\ScriptParser8.cs" />
+    <Compile Include="ReplacePushAndPop.cs" />
+    <Compile Include="Ast\Expressions\ArrayLiteralExpression.cs" />
+    <Compile Include="ReplaceJumpToIf.cs" />
+    <Compile Include="ResolveAllTypesOfVariables.cs" />
+    <Compile Include="Mono.Options\Options.cs" />
+    <Compile Include="Parser\ScriptParser7.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <ItemGroup />
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\NScumm.Core\NScumm.Core.csproj">
+      <Project>{8E7A9E5B-D7EB-4DA1-8EE7-A5D8DE202372}</Project>
+      <Name>NScumm.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Engines\NScumm.Scumm\NScumm.Scumm.csproj">
+      <Project>{97342112-448a-4636-827f-8d47b226d86f}</Project>
+      <Name>NScumm.Scumm</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Platforms\NScumm.Platform_Desktop\NScumm.Platform_Desktop.csproj">
+      <Project>{d42434c7-459d-461a-8b1d-1451f7ff4b13}</Project>
+      <Name>NScumm.Platform_Desktop</Name>
+    </ProjectReference>
+  </ItemGroup>
+</Project>

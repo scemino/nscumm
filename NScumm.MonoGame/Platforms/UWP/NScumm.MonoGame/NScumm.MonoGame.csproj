@@ -94,7 +94,7 @@
   </PropertyGroup>
   <ItemGroup>
     <!-- A reference to the entire .Net Framework and Windows SDK are automatically included -->
-    <Content Include="..\..\..\..\NScumm.Scumm\IO\Nscumm.xml">
+    <Content Include="..\..\..\..\Engines\NScumm.Scumm\IO\Nscumm.xml">
       <Link>Content\Nscumm.xml</Link>
     </Content>
     <Content Include="..\..\..\content\textures\blank.png">
@@ -216,25 +216,25 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\Engines\NScumm.Scumm\NScumm.Scumm.csproj">
+      <Project>{97342112-448a-4636-827f-8d47b226d86f}</Project>
+      <Name>NScumm.Scumm</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\Engines\NScumm.Sky\NScumm.Sky.csproj">
+      <Project>{8740a0cd-2613-4354-9506-35035a735962}</Project>
+      <Name>NScumm.Sky</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\Engines\NScumm.Sword1\NScumm.Sword1.csproj">
+      <Project>{ef539a3f-0672-412c-b9d0-38dcd3622d99}</Project>
+      <Name>NScumm.Sword1</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\..\..\NScumm.Core\NScumm.Core.csproj">
       <Project>{8e7a9e5b-d7eb-4da1-8ee7-a5d8de202372}</Project>
       <Name>NScumm.Core</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\NScumm.Platform_UWP\NScumm.Platform_UWP.csproj">
+    <ProjectReference Include="..\..\..\..\Platforms\NScumm.Platform_UWP\NScumm.Platform_UWP.csproj">
       <Project>{f8002a61-23cf-4b47-9561-830f18aff6f1}</Project>
       <Name>NScumm.Platform_UWP</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\..\NScumm.Scumm\NScumm.Scumm.csproj">
-      <Project>{97342112-448a-4636-827f-8d47b226d86f}</Project>
-      <Name>NScumm.Scumm</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\..\NScumm.Sky\NScumm.Sky\NScumm.Sky.csproj">
-      <Project>{8740a0cd-2613-4354-9506-35035a735962}</Project>
-      <Name>NScumm.Sky</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\..\NScumm.Sword1\NScumm.Sword1.csproj">
-      <Project>{ef539a3f-0672-412c-b9d0-38dcd3622d99}</Project>
-      <Name>NScumm.Sword1</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

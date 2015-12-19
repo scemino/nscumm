@@ -1,0 +1,82 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xs:schema id="Nscumm"
+    targetNamespace="http://schemas.scemino.com/nscumm/2012/"
+    elementFormDefault="qualified"
+    xmlns="http://schemas.scemino.com/nscumm/2012/"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+>
+  <xs:element name="NScumm" type="NScumm" />
+
+  <xs:complexType name="NScumm">
+    <xs:sequence>
+      <xs:element name="MD5" type="MD5" maxOccurs="unbounded" />
+      <xs:element name="Game" type="Game" maxOccurs="unbounded" />
+      <xs:element name="Description" type="Description" maxOccurs="unbounded" />
+    </xs:sequence>
+  </xs:complexType>
+  
+  <xs:complexType name="MD5">
+    <xs:attribute name="signature" type="xs:string" />
+    <xs:attribute name="gameId" type="xs:string" id="gameId" />
+    <xs:attribute name="variant" type="xs:string" />
+    <xs:attribute name="language" type="xs:language" />
+    <xs:attribute name="features" type="Features" use="optional" />
+    <xs:attribute name="platform" type="Platform" use="optional" default="DOS" />
+  </xs:complexType>
+
+  <xs:simpleType name="Platform">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Apple2GS"/>
+      <xs:enumeration value="C64"/>
+      <xs:enumeration value="Amiga"/>
+      <xs:enumeration value="AtariST"/>
+      <xs:enumeration value="FMTowns"/>
+      <xs:enumeration value="Macintosh"/>
+      <xs:enumeration value="SegaCD"/>
+      <xs:enumeration value="DOS"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="Features">
+    <xs:list itemType="Feature"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="Feature">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="SixteenColors"/>
+      <xs:enumeration value="Old256"/>
+      <xs:enumeration value="FewLocals"/>
+      <xs:enumeration value="AudioTracks"/>
+      <xs:enumeration value="Demo"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="MusicItems">
+    <xs:list itemType="MusicItem"/>
+  </xs:simpleType>
+
+  <xs:simpleType name="MusicItem">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="PCSpeaker"/>
+      <xs:enumeration value="PCjr"/>
+      <xs:enumeration value="CMS"/>
+      <xs:enumeration value="AdLib"/>
+      <xs:enumeration value="FMTowns"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="Game">
+    <xs:attribute name="id" type="xs:string" />
+    <xs:attribute name="gameId" type="xs:string" />
+    <xs:attribute name="variant" type="xs:string" />
+    <xs:attribute name="version" type="xs:nonNegativeInteger" />
+    <xs:attribute name="music" type="MusicItems" />
+    <xs:attribute name="pattern" type="xs:string" />
+  </xs:complexType>
+
+  <xs:complexType name="Description">
+    <xs:attribute name="gameId" type="xs:string" />
+    <xs:attribute name="text" type="xs:string" />
+  </xs:complexType>
+  
+</xs:schema>

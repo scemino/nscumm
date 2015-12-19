@@ -1,0 +1,322 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <MinimumVisualStudioVersion>10.0</MinimumVisualStudioVersion>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{97342112-448A-4636-827F-8D47B226D86F}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>NScumm.Scumm</RootNamespace>
+    <AssemblyName>NScumm.Scumm</AssemblyName>
+    <DefaultLanguage>en-US</DefaultLanguage>
+    <FileAlignment>512</FileAlignment>
+    <ProjectTypeGuids>{786C830F-07A1-408B-BD7F-6EE04809D6DB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <TargetFrameworkProfile>Profile344</TargetFrameworkProfile>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\NScumm.MonoGame\Platforms\WindowsGL\bin\Debug\plugins\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\NScumm.MonoGame\Platforms\WindowsGL\bin\Release\plugins\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug .NET Native|AnyCPU'">
+    <OutputPath>bin\Debug .NET Native\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>false</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- A reference to the entire .NET Framework is automatically included -->
+    <Content Include="IO\Nscumm.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Actor.cs" />
+    <Compile Include="Actor0.cs" />
+    <Compile Include="Actor2.cs" />
+    <Compile Include="Actor3.cs" />
+    <Compile Include="Audio\Amiga\IPlayerMod.cs" />
+    <Compile Include="Audio\Amiga\V2A_Sound_Base.cs" />
+    <Compile Include="Audio\Amiga\V2A_Sound_MultiLooped.cs" />
+    <Compile Include="Audio\Amiga\V2A_Sound_MultiLoopedDuration.cs" />
+    <Compile Include="Audio\Amiga\V2A_Sound_Music.cs" />
+    <Compile Include="Audio\Amiga\V2A_Sound_Single.cs" />
+    <Compile Include="Audio\Amiga\V2A_Sound_SingleLooped.cs" />
+    <Compile Include="Audio\Amiga\V2A_Sound_SingleLoopedPitchbend.cs" />
+    <Compile Include="Audio\Amiga\V2A_Sound_Special_Maniac32.cs" />
+    <Compile Include="Audio\Amiga\V2A_Sound_Special_Maniac44.cs" />
+    <Compile Include="Audio\Amiga\V2A_Sound_Special_Maniac46.cs" />
+    <Compile Include="Audio\Amiga\V2A_Sound_Special_Maniac59.cs" />
+    <Compile Include="Audio\Amiga\V2A_Sound_Special_Maniac61.cs" />
+    <Compile Include="Audio\Amiga\V2A_Sound_Special_Maniac69.cs" />
+    <Compile Include="Audio\Amiga\V2A_Sound_Special_ManiacDing.cs" />
+    <Compile Include="Audio\Amiga\V2A_Sound_Special_ManiacPhone.cs" />
+    <Compile Include="Audio\Amiga\V2A_Sound_Special_ManiacTentacle.cs" />
+    <Compile Include="Audio\Amiga\V2A_Sound_Special_ManiacTypewriter.cs" />
+    <Compile Include="Audio\AppleII\AppleII_SoundFunction1_FreqUpDown.cs" />
+    <Compile Include="Audio\AppleII\AppleII_SoundFunction2_SymmetricWave.cs" />
+    <Compile Include="Audio\AppleII\AppleII_SoundFunction3_AsymmetricWave.cs" />
+    <Compile Include="Audio\AppleII\AppleII_SoundFunction4_Polyphone.cs" />
+    <Compile Include="Audio\AppleII\AppleII_SoundFunction5_Noise.cs" />
+    <Compile Include="Audio\AppleII\IAppleII_SoundFunction.cs" />
+    <Compile Include="Audio\DefaultAudioCDManager.cs" />
+    <Compile Include="Audio\IMuse\CommandQueue.cs" />
+    <Compile Include="Audio\IMuse\DeferredCommand.cs" />
+    <Compile Include="Audio\IMuse\HookDatas.cs" />
+    <Compile Include="Audio\IMuse\IImuse.cs" />
+    <Compile Include="Audio\IMuse\IInstrumentInternal.cs" />
+    <Compile Include="Audio\IMuse\ImTrigger.cs" />
+    <Compile Include="Audio\IMuse\IMuseDigital\BundleCodecs.cs" />
+    <Compile Include="Audio\IMuse\IMuseDigital\BundleDirCache.cs" />
+    <Compile Include="Audio\IMuse\IMuseDigital\BundleMgr.cs" />
+    <Compile Include="Audio\IMuse\IMuseDigital\IMuseDigiSndMgr.cs" />
+    <Compile Include="Audio\IMuse\IMuseDigital\IMuseDigital.cs" />
+    <Compile Include="Audio\IMuse\IMuseDigital\IMuseDigital_Music.cs" />
+    <Compile Include="Audio\IMuse\IMuseDigital\IMuseDigital_Script.cs" />
+    <Compile Include="Audio\IMuse\IMuseDigital\IMuseDigital_Tables.cs" />
+    <Compile Include="Audio\IMuse\IMuseDigital\IMuseDigital_Track.cs" />
+    <Compile Include="Audio\IMuse\IMuseDigital\ImuseTrack.cs" />
+    <Compile Include="Audio\IMuse\IMuseDigital\SoundDesc.cs" />
+    <Compile Include="Audio\IMuse\IMuseInternal.cs" />
+    <Compile Include="Audio\IMuse\Instrument.cs" />
+    <Compile Include="Audio\IMuse\InstrumentAdLib.cs" />
+    <Compile Include="Audio\IMuse\InstrumentPcSpk.cs" />
+    <Compile Include="Audio\IMuse\InstrumentProgram.cs" />
+    <Compile Include="Audio\IMuse\ISysEx.cs" />
+    <Compile Include="Audio\IMuse\ParameterFader.cs" />
+    <Compile Include="Audio\IMuse\Part.cs" />
+    <Compile Include="Audio\IMuse\Player.cs" />
+    <Compile Include="Audio\IMuse\SamAndMaxSysEx.cs" />
+    <Compile Include="Audio\IMuse\ScummSysEx.cs" />
+    <Compile Include="Audio\IMuse\TimerCallbackInfo.cs" />
+    <Compile Include="Audio\IMusicEngine.cs" />
+    <Compile Include="Audio\Players\Player_AD.cs" />
+    <Compile Include="Audio\Players\Player_AppleII.cs" />
+    <Compile Include="Audio\Players\Player_Mac.cs" />
+    <Compile Include="Audio\Players\Player_MOD.cs" />
+    <Compile Include="Audio\Players\Player_SID.cs" />
+    <Compile Include="Audio\Players\Player_Towns.cs" />
+    <Compile Include="Audio\Players\Player_Towns_v1.cs" />
+    <Compile Include="Audio\Players\Player_Towns_v2.cs" />
+    <Compile Include="Audio\Players\Player_V1.cs" />
+    <Compile Include="Audio\Players\Player_V2.cs" />
+    <Compile Include="Audio\Players\Player_V2A.cs" />
+    <Compile Include="Audio\Players\Player_V2Base.cs" />
+    <Compile Include="Audio\Players\Player_V2CMS.cs" />
+    <Compile Include="Audio\Players\Player_V3A.cs" />
+    <Compile Include="Audio\Players\Player_V3M.cs" />
+    <Compile Include="Audio\Players\Player_V4A.cs" />
+    <Compile Include="Audio\Players\Player_V5M.cs" />
+    <Compile Include="Audio\SampleBuffer.cs" />
+    <Compile Include="Audio\SampleConverter.cs" />
+    <Compile Include="BlastObject.cs" />
+    <Compile Include="BlastText.cs" />
+    <Compile Include="Box.cs" />
+    <Compile Include="BoxCoords.cs" />
+    <Compile Include="Camera.cs" />
+    <Compile Include="ClickArea.cs" />
+    <Compile Include="ColorCycle.cs" />
+    <Compile Include="CostumeData.cs" />
+    <Compile Include="Cursor.cs" />
+    <Compile Include="CutScene.cs" />
+    <Compile Include="FlashLight.cs" />
+    <Compile Include="Graphics\AkosRenderer.cs" />
+    <Compile Include="Graphics\BaseCostumeRenderer.cs" />
+    <Compile Include="Graphics\BompDrawData.cs" />
+    <Compile Include="Graphics\CharsetRenderer.cs" />
+    <Compile Include="Graphics\CharsetRenderer2.cs" />
+    <Compile Include="Graphics\CharsetRenderer3.cs" />
+    <Compile Include="Graphics\CharsetRendererClassic.cs" />
+    <Compile Include="Graphics\CharsetRendererCommon.cs" />
+    <Compile Include="Graphics\CharsetRendererNut.cs" />
+    <Compile Include="Graphics\CharsetRendererTowns3.cs" />
+    <Compile Include="Graphics\CharsetRendererTownsClassic.cs" />
+    <Compile Include="Graphics\ClassicCostumeRenderer.cs" />
+    <Compile Include="Graphics\CostumeRenderer0.cs" />
+    <Compile Include="Graphics\Gdi.cs" />
+    <Compile Include="Graphics\Gdi1.cs" />
+    <Compile Include="Graphics\Gdi2.cs" />
+    <Compile Include="Graphics\ICostumeRenderer.cs" />
+    <Compile Include="Graphics\ImageData.cs" />
+    <Compile Include="Graphics\NutRenderer.cs" />
+    <Compile Include="Graphics\Palette.cs" />
+    <Compile Include="Graphics\PixelNavigator.cs" />
+    <Compile Include="Graphics\TownsScreen.cs" />
+    <Compile Include="Graphics\VirtScreen.cs" />
+    <Compile Include="Graphics\ZPlane.cs" />
+    <Compile Include="Insane\Insane.cs" />
+    <Compile Include="Insane\Insane_Ben.cs" />
+    <Compile Include="Insane\Insane_Enemy.cs" />
+    <Compile Include="Insane\Insane_Iact.cs" />
+    <Compile Include="Insane\Insane_Scenes.cs" />
+    <Compile Include="IO\AkosCostumeLoader.cs" />
+    <Compile Include="IO\AkosHeader.cs" />
+    <Compile Include="IO\ChunkIterator3.cs" />
+    <Compile Include="IO\ChunkIterator5.cs" />
+    <Compile Include="IO\ClassicCostumeLoader.cs" />
+    <Compile Include="IO\CostumeLoader0.cs" />
+    <Compile Include="IO\GameInfo.cs" />
+    <Compile Include="IO\GameManager.cs" />
+    <Compile Include="IO\ICostumeLoader.cs" />
+    <Compile Include="IO\MacResManager.cs" />
+    <Compile Include="IO\ResourceFile.cs" />
+    <Compile Include="IO\ResourceFile0.cs" />
+    <Compile Include="IO\ResourceFile1.cs" />
+    <Compile Include="IO\ResourceFile2.cs" />
+    <Compile Include="IO\ResourceFile3.cs" />
+    <Compile Include="IO\ResourceFile3_16.cs" />
+    <Compile Include="IO\ResourceFile4.cs" />
+    <Compile Include="IO\ResourceFile5.cs" />
+    <Compile Include="IO\ResourceFile6.cs" />
+    <Compile Include="IO\ResourceFile7.cs" />
+    <Compile Include="IO\ResourceFile8.cs" />
+    <Compile Include="IO\ResourceIndex.cs" />
+    <Compile Include="IO\ResourceIndex0.cs" />
+    <Compile Include="IO\ResourceIndex2.cs" />
+    <Compile Include="IO\ResourceIndex3.cs" />
+    <Compile Include="IO\ResourceIndex3_16.cs" />
+    <Compile Include="IO\ResourceIndex4.cs" />
+    <Compile Include="IO\ResourceIndex5.cs" />
+    <Compile Include="IO\ResourceIndex6.cs" />
+    <Compile Include="IO\ResourceIndex7.cs" />
+    <Compile Include="IO\ResourceIndex8.cs" />
+    <Compile Include="IO\ResourceManager.cs" />
+    <Compile Include="IO\ResourceManager0.cs" />
+    <Compile Include="IO\ResourceManager2.cs" />
+    <Compile Include="IO\ResourceManager3.cs" />
+    <Compile Include="IO\ResourceManager4.cs" />
+    <Compile Include="IO\ResourceManager5.cs" />
+    <Compile Include="IO\ResourceManager6.cs" />
+    <Compile Include="IO\ResourceManager7.cs" />
+    <Compile Include="IO\ResourceManager8.cs" />
+    <Compile Include="IO\ScummDiskImage.cs" />
+    <Compile Include="IO\ScummMetaEngine.cs" />
+    <Compile Include="IO\Serializer.cs" />
+    <Compile Include="IO\XorStream.cs" />
+    <Compile Include="IScummTextDecoder.cs" />
+    <Compile Include="NestedScript.cs" />
+    <Compile Include="ObjectData.cs" />
+    <Compile Include="OpCodeAttribute.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Room.cs" />
+    <Compile Include="ScaleSlot.cs" />
+    <Compile Include="ScriptData.cs" />
+    <Compile Include="ScriptSlot.cs" />
+    <Compile Include="ScummEngine.cs" />
+    <Compile Include="ScummEngine0.cs" />
+    <Compile Include="ScummEngine0_Actor.cs" />
+    <Compile Include="ScummEngine0_Variable.cs" />
+    <Compile Include="ScummEngine0_Verb.cs" />
+    <Compile Include="ScummEngine2.cs" />
+    <Compile Include="ScummEngine3.cs" />
+    <Compile Include="ScummEngine3_Actor.cs" />
+    <Compile Include="ScummEngine3_Camera.cs" />
+    <Compile Include="ScummEngine3_Cursor.cs" />
+    <Compile Include="ScummEngine3_Drawing.cs" />
+    <Compile Include="ScummEngine3_Expression.cs" />
+    <Compile Include="ScummEngine3_Inventory.cs" />
+    <Compile Include="ScummEngine3_Light.cs" />
+    <Compile Include="ScummEngine3_Object.cs" />
+    <Compile Include="ScummEngine3_Room.cs" />
+    <Compile Include="ScummEngine3_SaveLoad.cs" />
+    <Compile Include="ScummEngine3_Script.cs" />
+    <Compile Include="ScummEngine3_String.cs" />
+    <Compile Include="ScummEngine3_Verb.cs" />
+    <Compile Include="ScummEngine4.cs" />
+    <Compile Include="ScummEngine5.cs" />
+    <Compile Include="ScummEngine6.cs" />
+    <Compile Include="ScummEngine6_Actor.cs" />
+    <Compile Include="ScummEngine6_Array.cs" />
+    <Compile Include="ScummEngine6_Audio.cs" />
+    <Compile Include="ScummEngine6_Camera.cs" />
+    <Compile Include="ScummEngine6_Cursor.cs" />
+    <Compile Include="ScummEngine6_Expression.cs" />
+    <Compile Include="ScummEngine6_Inventory.cs" />
+    <Compile Include="ScummEngine6_Misc.cs" />
+    <Compile Include="ScummEngine6_Object.cs" />
+    <Compile Include="ScummEngine6_Resources.cs" />
+    <Compile Include="ScummEngine6_Room.cs" />
+    <Compile Include="ScummEngine6_Script.cs" />
+    <Compile Include="ScummEngine6_String.cs" />
+    <Compile Include="ScummEngine6_Variable.cs" />
+    <Compile Include="ScummEngine6_Verb.cs" />
+    <Compile Include="ScummEngine7.cs" />
+    <Compile Include="ScummEngine7_Misc.cs" />
+    <Compile Include="ScummEngine8.cs" />
+    <Compile Include="ScummEngine_Actor.cs" />
+    <Compile Include="ScummEngine_Audio.cs" />
+    <Compile Include="ScummEngine_Box.cs" />
+    <Compile Include="ScummEngine_Camera.cs" />
+    <Compile Include="ScummEngine_Charset.cs" />
+    <Compile Include="ScummEngine_Cursor.cs" />
+    <Compile Include="ScummEngine_Drawing.cs" />
+    <Compile Include="ScummEngine_Effect.cs" />
+    <Compile Include="ScummEngine_Input.cs" />
+    <Compile Include="ScummEngine_Inventory.cs" />
+    <Compile Include="ScummEngine_Light.cs" />
+    <Compile Include="ScummEngine_Object.cs" />
+    <Compile Include="ScummEngine_Palette.cs" />
+    <Compile Include="ScummEngine_Room.cs" />
+    <Compile Include="ScummEngine_SaveLoad.cs" />
+    <Compile Include="ScummEngine_Script.cs" />
+    <Compile Include="ScummEngine_String.cs" />
+    <Compile Include="ScummEngine_Variable.cs" />
+    <Compile Include="ScummEngine_Verb.cs" />
+    <Compile Include="ScummMath.cs" />
+    <Compile Include="ScummText.cs" />
+    <Compile Include="Sentence.cs" />
+    <Compile Include="Smush\Codec37Decoder.cs" />
+    <Compile Include="Smush\Codec47Decoder.cs" />
+    <Compile Include="Smush\ImuseChannel.cs" />
+    <Compile Include="Smush\SaudChannel.cs" />
+    <Compile Include="Smush\SmushChannel.cs" />
+    <Compile Include="Smush\SmushFont.cs" />
+    <Compile Include="Smush\SmushMixer.cs" />
+    <Compile Include="Smush\SmushPlayer.cs" />
+    <Compile Include="Smush\TrsFile.cs" />
+    <Compile Include="Sound.cs" />
+    <Compile Include="SubtitleText.cs" />
+    <Compile Include="TextObject.cs" />
+    <Compile Include="TextSlot.cs" />
+    <Compile Include="TraceSwitches.cs" />
+    <Compile Include="VerbSlot.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="IO\Nscumm.xsd">
+      <SubType>Designer</SubType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\NScumm.Core\NScumm.Core.csproj">
+      <Project>{8e7a9e5b-d7eb-4da1-8ee7-a5d8de202372}</Project>
+      <Name>NScumm.Core</Name>
+      <Private>False</Private>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

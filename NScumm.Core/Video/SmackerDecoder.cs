@@ -59,7 +59,7 @@ namespace NScumm.Core.Video
             _soundType = soundType;
         }
 
-        public bool LoadStream(Stream stream)
+        public override bool LoadStream(Stream stream)
         {
             Close();
 
@@ -182,6 +182,21 @@ namespace NScumm.Core.Video
             return true;
         }
 
+        public override void Close()
+        {
+            base.Close();
+
+            if (_fileStream != null)
+            {
+                _fileStream.Dispose();
+                _fileStream = null;
+            }
+
+            _frameTypes = null;
+            _frameSizes = null;
+        }
+
+
         protected override void ReadNextPacket()
         {
             var videoTrack = (SmackerVideoTrack)GetTrack(0);
@@ -291,20 +306,6 @@ namespace NScumm.Core.Video
         private SmackerVideoTrack CreateVideoTrack(uint width, uint height, uint frameCount, Rational frameRate, uint flags, uint signature)
         {
             return new SmackerVideoTrack(width, height, frameCount, frameRate, flags, signature);
-        }
-
-        private void Close()
-        {
-            // TODO: base.Close();
-
-            if (_fileStream != null)
-            {
-                _fileStream.Dispose();
-                _fileStream = null;
-            }
-
-            _frameTypes = null;
-            _frameSizes = null;
         }
     }
 }

@@ -30,7 +30,20 @@ namespace NScumm.MonoGame
 {
     sealed class XnaGraphicsManager : Core.Graphics.IGraphicsManager, IDisposable
     {
-        public Core.Graphics.PixelFormat PixelFormat { get; private set; }
+        Core.Graphics.PixelFormat _pixelFormat;
+
+        public Core.Graphics.PixelFormat PixelFormat
+        {
+            get { return _pixelFormat; }
+            set
+            {
+                _pixelFormat = value;
+                var pixelSize = _pixelFormat == NScumm.Core.Graphics.PixelFormat.Rgb16 ? 2 : 1;
+                _colorGraphicsManager = _pixelFormat == NScumm.Core.Graphics.PixelFormat.Rgb16 ? (IColorGraphicsManager)new Rgb16GraphicsManager(this) : new RgbIndexed8GraphicsManager(this);
+                _pixels = new byte[_width * _height * pixelSize];
+            }
+        }
+
         public int ShakePosition { get; set; }
         public bool IsCursorVisible { get; set; }
 
@@ -44,9 +57,7 @@ namespace NScumm.MonoGame
             _width = width;
             _height = height;
             PixelFormat = format;
-            var pixelSize = PixelFormat == NScumm.Core.Graphics.PixelFormat.Rgb16 ? 2 : 1;
-            _colorGraphicsManager = PixelFormat == NScumm.Core.Graphics.PixelFormat.Rgb16 ? (IColorGraphicsManager)new Rgb16GraphicsManager(this) : new RgbIndexed8GraphicsManager(this);
-            _pixels = new byte[_width * _height * pixelSize];
+            
             _texture = new Texture2D(device, _width, _height);
             _textureCursor = new Texture2D(device, 16, 16);
             _palColors = new Color[256];

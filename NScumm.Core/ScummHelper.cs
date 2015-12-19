@@ -69,6 +69,16 @@ namespace NScumm.Core
                 return value;
         }
 
+        public static T Clip<T>(T value, T min, T max) where T : IComparable
+        {
+            if (value.CompareTo(min) < 0)
+                return min;
+            else if (value.CompareTo(max) > 0)
+                return max;
+            else
+                return value;
+        }
+
         public static string NormalizePath(string path)
         {
             var dir = ServiceLocator.FileStorage.GetDirectoryName(path);
@@ -497,7 +507,7 @@ namespace NScumm.Core
 
         public static uint ToUInt24(this byte[] value, int startIndex = 0)
         {
-            return (uint) ((value[startIndex + 2] << 16) | (value[startIndex + 1] << 8) | (value[startIndex]));
+            return (uint)((value[startIndex + 2] << 16) | (value[startIndex + 1] << 8) | (value[startIndex]));
         }
 
         public static void WriteUInt16(this byte[] array, int startIndex, ushort value)

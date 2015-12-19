@@ -84,8 +84,8 @@ namespace NScumm.Sword1
 
             _objectMan = new ObjectMan(_resMan);
             _mouse = new Mouse(System, _resMan, _objectMan);
-            _screen = new Screen(System, _resMan, _objectMan);
-            _music = new Music(Mixer);
+            _screen = new Screen(directory, System, _resMan, _objectMan);
+            _music = new Music(Mixer, directory);
             _sound = new Sound(settings, _mixer, _resMan);
             _menu = new Menu(_screen, _mouse);
             _logic = new Logic(this, _objectMan, _resMan, _screen, _mouse, _sound, _music, _menu, Mixer);

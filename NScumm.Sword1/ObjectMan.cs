@@ -33,7 +33,7 @@ namespace NScumm.Sword1
             for (cnt = 0; cnt < TOTAL_SECTIONS; cnt++)
             {
                 if (_liveList[cnt] != 0)
-                    _cptData[cnt] = new ByteAccess(_resMan.CptResOpen(_objectList[cnt]), Screen.Header.Size);
+                    _cptData[cnt] = new ByteAccess(_resMan.CptResOpen(_objectList[cnt]), Header.Size);
                 else
                     _cptData[cnt] = null;
             }
@@ -61,7 +61,7 @@ namespace NScumm.Sword1
         {
             _liveList[section]++;
             if (_liveList[section] == 1)
-                _cptData[section] = new ByteAccess(_resMan.CptResOpen(_objectList[section]), Screen.Header.Size);
+                _cptData[section] = new ByteAccess(_resMan.CptResOpen(_objectList[section]), Header.Size);
         }
 
         static readonly uint[] _objectList = { //a table of pointers to object files
@@ -277,7 +277,7 @@ namespace NScumm.Sword1
             var addr = _resMan.OpenFetchRes(_textList[(int)(textId / ObjectMan.ITM_PER_SEC), (int)lang]);
             if (addr == null)
                 return null;
-            var addrOff = Screen.Header.Size;
+            var addrOff = Header.Size;
             // TODO:
             //if ((textId & ITM_ID) >= _resMan->readUint32(addr))
             //{
@@ -352,7 +352,7 @@ namespace NScumm.Sword1
                 return 0; // section does not exist
 
             byte lang = (byte)SystemVars.Language;
-            var textData = new UIntAccess(_resMan.OpenFetchRes(_textList[textId / ITM_PER_SEC, lang]), Screen.Header.Size);
+            var textData = new UIntAccess(_resMan.OpenFetchRes(_textList[textId / ITM_PER_SEC, lang]), Header.Size);
             if ((textId & ITM_ID) < _resMan.ReadUInt32(textData[0]))
             {
                 textData.Offset += 4;
@@ -546,7 +546,7 @@ namespace NScumm.Sword1
                 }
                 _liveList[cnt] = src[cnt];
                 if (_liveList[cnt] != 0)
-                    _cptData[cnt] = new ByteAccess(_resMan.CptResOpen(_objectList[cnt]), Screen.Header.Size);
+                    _cptData[cnt] = new ByteAccess(_resMan.CptResOpen(_objectList[cnt]), Header.Size);
             }
         }
     }

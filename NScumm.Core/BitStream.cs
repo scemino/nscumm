@@ -50,6 +50,14 @@ namespace NScumm.Core
             }
         }
 
+        public bool IsEndOfStream
+        {
+            get
+            {
+                return _br.BaseStream.Position >= _br.BaseStream.Length || (Position >= Size);
+            }
+        }
+
         public BitStream(Stream stream, BitStreamType type, bool isLittleEdian, bool isMsb2Lsb)
         {
             _br = new BinaryReader(stream);
@@ -107,6 +115,31 @@ namespace NScumm.Core
             return new BitStream(stream, BitStreamType.EightBits, false, false);
         }
 
+        /// <summary>
+        /// Add a bit to the value x, making it an n+1-bit value.
+        /// </summary>
+        /// <remarks>
+        /// The current value is shifted and the bit is added to the
+        /// appropriate place, dependant on the stream's bitorder.
+        /// </remarks>
+        /// <example>
+        /// A bit y is added to the value 00001100 with size 4.
+        /// If the stream's bitorder is MSB2LSB, the resulting value is 0001100y.
+        /// If the stream's bitorder is LSB2MSB, the resulting value is 000y1100.
+        /// </example>
+        /// <param name="x"></param>
+        /// <param name="n"></param>
+        public void AddBit(ref uint x, int n)
+        {
+            if (n >= 32)
+                throw new InvalidOperationException("BitStreamImpl.AddBit(): Too many bits requested to be read");
+
+            if (_isMsb2Lsb)
+                x = (x << 1) | GetBit();
+            else
+                x = (uint)((x & ~(1 << n)) | (GetBit() << n));
+        }
+
         public uint GetBit()
         {
             // Check if we need the next value
@@ -159,25 +192,13 @@ namespace NScumm.Core
             return v;
         }
 
-        private void ReadValue()
-        {
-            if (Size - Position < _valueBits)
-                throw new InvalidOperationException("BitStreamImpl::readValue(): End of bit stream reached");
-
-            _value = ReadData();
-
-            // If we're reading the bits MSB first, we need to shift the value to that position
-            if (_isMsb2Lsb)
-                _value <<= 32 - _valueBits;
-        }
-
         public uint PeekBits(uint n)
         {
             uint value = _value;
             byte inValue = _inValue;
-            uint curPos = (uint) _br.BaseStream.Position;
+            uint curPos = (uint)_br.BaseStream.Position;
 
-            uint v = GetBits((int) n);
+            uint v = GetBits((int)n);
 
             _br.BaseStream.Seek(curPos, SeekOrigin.Begin);
             _inValue = inValue;
@@ -190,6 +211,19 @@ namespace NScumm.Core
         {
             while (n-- > 0)
                 GetBit();
+        }
+
+
+        private void ReadValue()
+        {
+            if (Size - Position < _valueBits)
+                throw new InvalidOperationException("BitStreamImpl::readValue(): End of bit stream reached");
+
+            _value = ReadData();
+
+            // If we're reading the bits MSB first, we need to shift the value to that position
+            if (_isMsb2Lsb)
+                _value <<= 32 - _valueBits;
         }
     }
 }

@@ -511,12 +511,10 @@ namespace NScumm.Sword1
 
                 if (SystemVars.Platform == Platform.PSX)
                 {
-                    // TODO: psx
-                    //psxVolBuf = (uint8*)malloc(_resMan.getUint16(frHead.height) / 2 * _resMan.getUint16(frHead.width));
-                    //memset(psxVolBuf, 0, _resMan.getUint16(frHead.height) / 2 * _resMan.getUint16(frHead.width));
-                    //Sword1.Screen::decompressHIF(srcMem, psxVolBuf);
-                    //srcMem = psxVolBuf;
-                    //barHeight /= 2;
+                    psxVolBuf = new byte[_resMan.ReadUInt16(frHead.height) / 2 * _resMan.ReadUInt16(frHead.width)];
+                    Screen.DecompressHIF(srcMem.Data, srcMem.Offset, psxVolBuf);
+                    srcMem = new ByteAccess(psxVolBuf);
+                    barHeight /= 2;
                 }
 
                 for (ushort cnty = 0; cnty < barHeight; cnty++)
@@ -524,10 +522,10 @@ namespace NScumm.Sword1
                     Array.Copy(srcMem.Data, srcMem.Offset, destMem.Data, destMem.Offset, _resMan.ReadUInt16(frHead.width));
 
                     if (SystemVars.Platform == Platform.PSX)
-                    { //linedoubling
-                        // TODO: psx
-                        //destMem += SCREEN_WIDTH;
-                        //memcpy(destMem, srcMem, _resMan.getUint16(frHead.width));
+                    { 
+                        //linedoubling
+                        destMem.Offset += Screen.SCREEN_WIDTH;
+                        Array.ConstrainedCopy(srcMem.Data, srcMem.Offset, destMem.Data, destMem.Offset, _resMan.ReadUInt16(frHead.width));
                     }
 
                     srcMem.Offset += _resMan.ReadUInt16(frHead.width);
@@ -666,13 +664,13 @@ namespace NScumm.Sword1
                 }
 
                 _restoreBuf = new byte[
-                    ObjectMan.TOTAL_SECTIONS*2 +
-                    Logic.NUM_SCRIPT_VARS*4 +
+                    ObjectMan.TOTAL_SECTIONS * 2 +
+                    Logic.NUM_SCRIPT_VARS * 4 +
                     (SwordObject.Size - 12000)];
 
                 var liveBuf = new UShortAccess(_restoreBuf);
-                var scriptBuf = new UIntAccess(_restoreBuf, 2*ObjectMan.TOTAL_SECTIONS);
-                var playerBuf = new UIntAccess(_restoreBuf, 2*ObjectMan.TOTAL_SECTIONS + 4*Logic.NUM_SCRIPT_VARS);
+                var scriptBuf = new UIntAccess(_restoreBuf, 2 * ObjectMan.TOTAL_SECTIONS);
+                var playerBuf = new UIntAccess(_restoreBuf, 2 * ObjectMan.TOTAL_SECTIONS + 4 * Logic.NUM_SCRIPT_VARS);
 
                 for (cnt = 0; cnt < ObjectMan.TOTAL_SECTIONS; cnt++)
                     liveBuf[cnt] = inf.ReadUInt16();
@@ -680,7 +678,7 @@ namespace NScumm.Sword1
                 for (cnt = 0; cnt < Logic.NUM_SCRIPT_VARS; cnt++)
                     scriptBuf[cnt] = inf.ReadUInt32();
 
-                uint playerSize = (SwordObject.Size - 12000)/4;
+                uint playerSize = (SwordObject.Size - 12000) / 4;
                 for (var cnt2 = 0; cnt2 < playerSize; cnt2++)
                     playerBuf[cnt2] = inf.ReadUInt32();
 
@@ -1223,13 +1221,12 @@ namespace NScumm.Sword1
                 FrameHeader chSpr = new FrameHeader(_resMan.FetchFrame(font, (uint)(str[i] - 32)));
                 var sprData = new ByteAccess(chSpr.Data.Data, chSpr.Data.Offset + FrameHeader.Size);
 
-                if (Sword1.SystemVars.Platform == Platform.PSX)
-                { //Text fonts are compressed in psx version
-                  // TODO: psx
-                  //HIFbuf = (uint8*)malloc(_resMan.getUint16(chSpr.height) * _resMan.getUint16(chSpr.width));
-                  //memset(HIFbuf, 0, _resMan.getUint16(chSpr.height) * _resMan.getUint16(chSpr.width));
-                  //Screen::decompressHIF(sprData, HIFbuf);
-                  //sprData = HIFbuf;
+                if (SystemVars.Platform == Platform.PSX)
+                {
+                    //Text fonts are compressed in psx version
+                    var HIFbuf = new byte[_resMan.ReadUInt16(chSpr.height) * _resMan.ReadUInt16(chSpr.width)];
+                    Screen.DecompressHIF(sprData.Data, sprData.Offset, HIFbuf);
+                    sprData = new ByteAccess(HIFbuf);
                 }
 
                 for (ushort cnty = 0; cnty < _resMan.ReadUInt16(chSpr.height); cnty++)
@@ -1240,7 +1237,7 @@ namespace NScumm.Sword1
                             dst[cntx] = sprData[cntx];
                     }
 
-                    if (Sword1.SystemVars.Platform == Platform.PSX)
+                    if (SystemVars.Platform == Platform.PSX)
                     { //On PSX version we need to double horizontal lines
                         dst.Offset += Screen.SCREEN_WIDTH;
                         for (ushort cntx = 0; cntx < _resMan.ReadUInt16(chSpr.width); cntx++)

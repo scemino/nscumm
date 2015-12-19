@@ -114,7 +114,7 @@ namespace NScumm.Sword1
             if (cdt != 0 && (spr == 0))
             {
                 var animTab = _resMan.OpenFetchRes((uint)cdt);
-                var animOffset = Screen.Header.Size + cpt.dir * AnimSet.Size;
+                var animOffset = Header.Size + cpt.dir * AnimSet.Size;
                 var anim = new AnimSet(animTab, animOffset);
                 cpt.anim_resource = (int)_resMan.ReadUInt32(anim.cdt);
                 cpt.resource = (int)_resMan.ReadUInt32(anim.spr);
@@ -154,7 +154,7 @@ namespace NScumm.Sword1
             AnimUnit animPtr;
 
             var data = _resMan.OpenFetchRes((uint)cdt);
-            var dataOffs = Screen.Header.Size;
+            var dataOffs = Header.Size;
             if (frameNo == LAST_FRAME)
                 frameNo = (int)(_resMan.ReadUInt32(data.ToUInt32(dataOffs)) - 1);
 
@@ -186,7 +186,7 @@ namespace NScumm.Sword1
         private int fnFullSetFrame(SwordObject cpt, int id, int cdt, int spr, int frameNo, int f, int z, int x)
         {
             var data = _resMan.OpenFetchRes((uint)cdt);
-            var dataOff = Screen.Header.Size;
+            var dataOff = Header.Size;
 
             if (frameNo == LAST_FRAME)
                 frameNo = (int)(_resMan.ReadUInt32(data.ToUInt32(dataOff)) - 1);
@@ -437,7 +437,7 @@ namespace NScumm.Sword1
             if (cdt != 0 && (spr == 0))
             { // if 'cdt' is non-zero but 'spr' is zero - 'cdt' is an anim table tag
                 var animTabData = _resMan.OpenFetchRes((uint)cdt);
-                var anim = new AnimSet(animTabData, Screen.Header.Size + cpt.dir * AnimSet.Size);
+                var anim = new AnimSet(animTabData, Header.Size + cpt.dir * AnimSet.Size);
 
                 cpt.anim_resource = (int)_resMan.ReadUInt32(anim.cdt);
                 if (anim.cdt != 0)

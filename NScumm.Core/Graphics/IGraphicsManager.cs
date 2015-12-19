@@ -23,7 +23,7 @@ namespace NScumm.Core.Graphics
 {
     public interface IGraphicsManager
     {
-        PixelFormat PixelFormat { get; }
+        PixelFormat PixelFormat { get; set; }
         int ShakePosition { get; set; }
         bool IsCursorVisible { get; set; }
 

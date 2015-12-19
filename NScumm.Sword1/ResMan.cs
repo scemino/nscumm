@@ -163,7 +163,7 @@ const int MAX_OPEN_CLUS =4; // the PSP can't have more than 8 files open simulta
         public ByteAccess FetchFrame(byte[] resourceData, uint frameNo)
         {
             uint frameFile = 0;
-            var idxData = Screen.Header.Size;
+            var idxData = Header.Size;
             if (_isBigEndian)
             {
                 if (frameNo >= resourceData.ToUInt32BigEndian(idxData))
@@ -194,7 +194,7 @@ const int MAX_OPEN_CLUS =4; // the PSP can't have more than 8 files open simulta
             return _isBigEndian ? ScummHelper.SwapBytes(value) : value;
         }
 
-        public Screen.Header LockScript(uint scrId)
+        public Header LockScript(uint scrId)
         {
             if (_scriptList[scrId / ObjectMan.ITM_PER_SEC] == 0)
                 throw new InvalidOperationException($"Script id {scrId} not found");
@@ -207,7 +207,7 @@ const int MAX_OPEN_CLUS =4; // the PSP can't have more than 8 files open simulta
             MemHandle handle = ResHandle(scrId);
             if (handle == null)
                 throw new InvalidOperationException($"Script resource handle {scrId} not found");
-            return new Screen.Header(handle.data);
+            return new Header(handle.data);
         }
 
         public void UnlockScript(uint scrId)
@@ -296,12 +296,12 @@ const int MAX_OPEN_CLUS =4; // the PSP can't have more than 8 files open simulta
                 if (handle == null)
                     return;
                 // uint32 totSize = handle.size;
-                Screen.Header head = new Screen.Header(handle.data);
+                Header head = new Header(handle.data);
                 head.comp_length = ScummHelper.SwapBytes(head.comp_length);
                 head.decomp_length = ScummHelper.SwapBytes(head.decomp_length);
                 head.version = ScummHelper.SwapBytes(head.version);
-                UIntAccess data = new UIntAccess(handle.data, Screen.Header.Size);
-                uint size = handle.size - Screen.Header.Size;
+                UIntAccess data = new UIntAccess(handle.data, Header.Size);
+                uint size = handle.size - Header.Size;
                 if ((size & 3) != 0)
                     throw new InvalidOperationException($"Odd size during script endian conversion. Resource ID ={id}, size = {size}");
                 size >>= 2;
@@ -332,8 +332,8 @@ const int MAX_OPEN_CLUS =4; // the PSP can't have more than 8 files open simulta
                 if (handle == null)
                     return;
                 uint totSize = handle.size;
-                var data = Screen.Header.Size;
-                totSize -= Screen.Header.Size;
+                var data = Header.Size;
+                totSize -= Header.Size;
                 if ((totSize & 3) != 0)
                     throw new InvalidOperationException($"Illegal compact size for id {id}: {totSize}");
                 totSize /= 4;

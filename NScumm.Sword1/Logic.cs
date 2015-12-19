@@ -730,7 +730,7 @@ namespace NScumm.Sword1
                 return 1;
             }
             var data = _resMan.OpenFetchRes((uint)compact.anim_resource);
-            var dataOff = Screen.Header.Size;
+            var dataOff = Header.Size;
             uint numFrames = _resMan.ReadUInt32(data.ToUInt32(dataOff));
             dataOff += 4;
             AnimUnit animPtr = new AnimUnit(data, dataOff + compact.anim_pc * AnimUnit.Size);
@@ -782,7 +782,7 @@ namespace NScumm.Sword1
             if (compact.anim_resource != 0)
             {
                 var animData = _resMan.OpenFetchRes((uint)compact.anim_resource);
-                var animOff = Screen.Header.Size;
+                var animOff = Header.Size;
                 int numFrames = (int)_resMan.ReadUInt32(animData.ToUInt32(animOff));
                 animOff += 4;
                 compact.anim_pc++; // go to next frame of anim
@@ -811,7 +811,7 @@ namespace NScumm.Sword1
                 return 1;
             }
             var data = _resMan.OpenFetchRes((uint)compact.anim_resource);
-            var dataOff = Screen.Header.Size;
+            var dataOff = Header.Size;
             var numFrames = _resMan.ReadUInt32(data.ToUInt32(dataOff));
             AnimUnit animPtr = new AnimUnit(data, dataOff + 4 + compact.anim_pc * AnimUnit.Size);
 
@@ -860,10 +860,10 @@ namespace NScumm.Sword1
             //an FN_quit becomes slightly more convoluted, but so what you might ask.
         }
 
-        private int InterpretScript(SwordObject compact, uint id, Screen.Header scriptModule, uint scriptBase,
+        private int InterpretScript(SwordObject compact, uint id, Header scriptModule, uint scriptBase,
             int scriptNum)
         {
-            var scriptCode = new UIntAccess(scriptModule.Data, Screen.Header.Size);
+            var scriptCode = new UIntAccess(scriptModule.Data, Header.Size);
             int[] stack = new int[MAX_STACK_SIZE];
             int stackIdx = 0;
             int offset;
@@ -1181,7 +1181,7 @@ namespace NScumm.Sword1
         private int FnFullSetFrame(SwordObject cpt, int id, int cdt, int spr, int frameNo, int f, int z, int x)
         {
             var data = _resMan.OpenFetchRes((uint)cdt);
-            var dataOff = Screen.Header.Size;
+            var dataOff = Header.Size;
 
             if (frameNo == LAST_FRAME)
                 frameNo = (int)(_resMan.ReadUInt32(data.ToUInt32(dataOff)) - 1);
@@ -1218,7 +1218,7 @@ namespace NScumm.Sword1
 
         public void RunMouseScript(SwordObject cpt, int scriptId)
         {
-            Screen.Header script = _resMan.LockScript((uint)scriptId);
+            Header script = _resMan.LockScript((uint)scriptId);
             // TODO: debug(9, "running mouse script %d", scriptId);
             InterpretScript(cpt, ScriptVars[(int)ScriptVariableNames.SPECIAL_ITEM], script, (uint)scriptId, scriptId);
             _resMan.UnlockScript((uint)scriptId);

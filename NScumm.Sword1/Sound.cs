@@ -713,11 +713,9 @@ namespace NScumm.Sword1
 
                         if (SystemVars.Platform == Platform.PSX)
                         {
-                            // TODO: PSX
-                            throw new NotImplementedException();
-                            //uint size = sampleData.ToUInt32(0);
-                            //var audStream = new LoopingAudioStream(new XAStream(new MemoryStream(sampleData, 4, size - 4), 11025), (_fxList[elem.id].type == FX_LOOP) ? 0 : 1);
-                            //elem.handle = _mixer.PlayStream(SoundType.SFX, audStream, (int) elem.id, volume, pan);
+                            int size = sampleData.ToInt32(0);
+                            var audStream = new LoopingAudioStream(new XAStream(new MemoryStream(sampleData, 4, size - 4), 11025), (_fxList[elem.id].type == FX_LOOP) ? 0 : 1);
+                            elem.handle = _mixer.PlayStream(SoundType.SFX, audStream, (int)elem.id, volume, pan);
                         }
                         else
                         {

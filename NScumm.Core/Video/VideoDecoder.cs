@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using NScumm.Core.Audio;
 using NScumm.Core.Graphics;
+using System.IO;
 
 namespace NScumm.Core.Video
 {
@@ -14,13 +15,13 @@ namespace NScumm.Core.Video
         Audio
     }
 
-    public class VideoDecoder
+    public abstract class VideoDecoder
     {
         private readonly List<ITrack> _tracks = new List<ITrack>();
         private readonly List<ITrack> _internalTracks = new List<ITrack>();
         private readonly List<ITrack> _externalTracks = new List<ITrack>();
         private AudioTrack _mainAudioTrack;
-        private readonly byte _audioVolume = Mixer.MaxChannelVolume;
+        private byte _audioVolume = Mixer.MaxChannelVolume;
         private sbyte _audioBalance;
         private VideoTrack _nextVideoTrack;
         private uint _pauseLevel;
@@ -31,6 +32,8 @@ namespace NScumm.Core.Video
         private uint _pauseStartTime;
         private bool _endTimeSet;
         private Timestamp _endTime;
+        private bool _dirtyPalette;
+        private byte[] _palette;
 
         public bool IsPaused { get { return _pauseLevel != 0; } }
 
@@ -45,11 +48,6 @@ namespace NScumm.Core.Video
         public bool IsVideoLoaded
         {
             get { return _tracks.Count != 0; }
-        }
-
-        public bool HasAudio()
-        {
-            return _tracks.OfType<AudioTrack>().Any();
         }
 
         public virtual bool UseAudioSync
@@ -92,6 +90,7 @@ namespace NScumm.Core.Video
             }
         }
 
+
         public void Start()
         {
             if (!IsPlaying)
@@ -110,6 +109,33 @@ namespace NScumm.Core.Video
             return (ushort)(track == null ? 0 : track.Height);
         }
 
+        public virtual void Close()
+        {
+            if (IsPlaying)
+                Stop();
+
+            for (int i = 0; i < _tracks.Count; i++)
+            {
+                // TODO: ? _tracks[i].Dispose();
+                _tracks[i] = null;
+            }
+
+            _tracks.Clear();
+            _internalTracks.Clear();
+            _externalTracks.Clear();
+            _dirtyPalette = false;
+            _palette = null;
+            _startTime = 0;
+            _audioVolume = Mixer.MaxChannelVolume;
+            _audioBalance = 0;
+            _pauseLevel = 0;
+            _needsUpdate = false;
+            _lastTimeChange = new Timestamp(0);
+            _endTime = new Timestamp(0);
+            _endTimeSet = false;
+            _nextVideoTrack = null;
+            _mainAudioTrack = null;
+        }
 
         public virtual bool Rewind()
         {
@@ -136,6 +162,39 @@ namespace NScumm.Core.Video
             return true;
         }
 
+        public abstract bool LoadStream(Stream stream);
+
+        public bool HasAudio()
+        {
+            return _tracks.OfType<AudioTrack>().Any();
+        }
+
+        public virtual Surface DecodeNextFrame()
+        {
+            _needsUpdate = false;
+
+            ReadNextPacket();
+
+            // If we have no next video track at this point, there shouldn't be
+            // any frame available for us to display.
+            if (_nextVideoTrack == null)
+                return null;
+
+            Surface frame = _nextVideoTrack.DecodeNextFrame();
+
+            if (_nextVideoTrack.HasDirtyPalette())
+            {
+                Palette = _nextVideoTrack.GetPalette();
+                HasDirtyPalette = true;
+            }
+
+            // Look for the next video track here for the next decode.
+            FindNextVideoTrack();
+
+            return frame;
+        }
+
+
         protected void ResetPauseStartTime()
         {
             if (IsPaused)
@@ -149,6 +208,59 @@ namespace NScumm.Core.Video
 
             return _internalTracks[track];
         }
+
+        protected void AddTrack(ITrack track, bool isExternal = false)
+        {
+            _tracks.Add(track);
+
+            if (isExternal)
+                _externalTracks.Add(track);
+            else
+                _internalTracks.Add(track);
+
+            if (track.TrackType == TrackType.Audio)
+            {
+                // Update volume settings if it's an audio track
+                ((AudioTrack)track).Volume = _audioVolume;
+                ((AudioTrack)track).Balance = _audioBalance;
+
+                if (!isExternal && SupportsAudioTrackSwitching())
+                {
+                    if (_mainAudioTrack != null)
+                    {
+                        // The main audio track has already been found
+                        ((AudioTrack)track).Mute = true;
+                    }
+                    else
+                    {
+                        // First audio track found . now the main one
+                        _mainAudioTrack = (AudioTrack)track;
+                        _mainAudioTrack.Mute = false;
+                    }
+                }
+            }
+            else if (track.TrackType == TrackType.Video)
+            {
+                // If this track has a better time, update _nextVideoTrack
+                if (_nextVideoTrack == null || ((VideoTrack)track).GetNextFrameStartTime() < _nextVideoTrack.GetNextFrameStartTime())
+                    _nextVideoTrack = (VideoTrack)track;
+            }
+
+            // Keep the track paused if we're paused
+            if (IsPaused)
+                track.Pause(true);
+
+            // Start the track if we're playing
+            if (IsPlaying && track.TrackType == TrackType.Audio)
+                ((AudioTrack)track).Start();
+        }
+
+        protected virtual bool SupportsAudioTrackSwitching()
+        {
+            return false;
+        }
+
+        protected virtual void ReadNextPacket() { }
 
         private uint GetTimeToNextFrame()
         {
@@ -340,84 +452,6 @@ namespace NScumm.Core.Video
 
             return (uint)Math.Max(_playbackRate * (Environment.TickCount - _startTime), 0);
         }
-
-        protected void AddTrack(ITrack track, bool isExternal = false)
-        {
-            _tracks.Add(track);
-
-            if (isExternal)
-                _externalTracks.Add(track);
-            else
-                _internalTracks.Add(track);
-
-            if (track.TrackType == TrackType.Audio)
-            {
-                // Update volume settings if it's an audio track
-                ((AudioTrack)track).Volume = _audioVolume;
-                ((AudioTrack)track).Balance = _audioBalance;
-
-                if (!isExternal && SupportsAudioTrackSwitching())
-                {
-                    if (_mainAudioTrack != null)
-                    {
-                        // The main audio track has already been found
-                        ((AudioTrack)track).Mute = true;
-                    }
-                    else
-                    {
-                        // First audio track found . now the main one
-                        _mainAudioTrack = (AudioTrack)track;
-                        _mainAudioTrack.Mute = false;
-                    }
-                }
-            }
-            else if (track.TrackType == TrackType.Video)
-            {
-                // If this track has a better time, update _nextVideoTrack
-                if (_nextVideoTrack == null || ((VideoTrack)track).GetNextFrameStartTime() < _nextVideoTrack.GetNextFrameStartTime())
-                    _nextVideoTrack = (VideoTrack)track;
-            }
-
-            // Keep the track paused if we're paused
-            if (IsPaused)
-                track.Pause(true);
-
-            // Start the track if we're playing
-            if (IsPlaying && track.TrackType == TrackType.Audio)
-                ((AudioTrack)track).Start();
-        }
-
-        protected virtual bool SupportsAudioTrackSwitching()
-        {
-            return false;
-        }
-
-        public virtual Surface DecodeNextFrame()
-        {
-            _needsUpdate = false;
-
-            ReadNextPacket();
-
-            // If we have no next video track at this point, there shouldn't be
-            // any frame available for us to display.
-            if (_nextVideoTrack == null)
-                return null;
-
-            Surface frame = _nextVideoTrack.DecodeNextFrame();
-
-            if (_nextVideoTrack.HasDirtyPalette())
-            {
-                Palette = _nextVideoTrack.GetPalette();
-                HasDirtyPalette = true;
-            }
-
-            // Look for the next video track here for the next decode.
-            FindNextVideoTrack();
-
-            return frame;
-        }
-
-        protected virtual void ReadNextPacket() { }
 
         private VideoTrack FindNextVideoTrack()
         {

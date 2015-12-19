@@ -30,7 +30,7 @@ namespace NScumm.Core.Video
 
         public abstract Surface DecodeNextFrame();
 
-        public abstract byte[] GetPalette();
+        public virtual byte[] GetPalette() { return null; }
 
         public virtual bool HasDirtyPalette()
         {

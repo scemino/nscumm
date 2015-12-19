@@ -1,5 +1,6 @@
 using NScumm.Core;
 using NScumm.Core.Audio;
+using NScumm.Core.Audio.Decoders;
 using System;
 using System.IO;
 
@@ -8,16 +9,18 @@ namespace NScumm.Sword1
     class MusicHandle : IAudioStream
     {
         // This means fading takes 3 seconds.
-        const int FADE_LENGTH = 3;
+        private const int FADE_LENGTH = 3;
 
-        Stream _file;
-        int _fading;
-        int _fadeSamples;
-        IAudioStream _audioSource;
+        private Stream _file;
+        private int _fading;
+        private int _fadeSamples;
+        private IAudioStream _audioSource;
         private short[] _data;
+        private string _directory;
 
-        public MusicHandle()
+        public MusicHandle(string directory)
         {
+            _directory = directory;
             _data = new short[4096];
         }
 
@@ -91,7 +94,50 @@ namespace NScumm.Sword1
             return true;
         }
 
-        // TODO: public bool playPSX(uint16 id, bool loop);
+        public bool PlayPsx(ushort id, bool loop)
+        {
+            Stop();
+
+            string path;
+            if (_file == null)
+            {
+                path = ScummHelper.LocatePath(_directory, "tunes.dat");
+                if (path == null)
+                    return false;
+                _file = ServiceLocator.FileStorage.OpenFileRead(path);
+            }
+
+            path = ScummHelper.LocatePath(_directory, "tunes.tab");
+            if (path == null)
+                return false;
+
+            uint offset;
+            int size;
+            using (var tableFile = ServiceLocator.FileStorage.OpenFileRead(path))
+            {
+                var br = new BinaryReader(tableFile);
+                tableFile.Seek((id - 1) * 8, SeekOrigin.Begin);
+                offset = br.ReadUInt32() * 0x800;
+                size = br.ReadInt32();
+            }
+
+            // Because of broken tunes.dat/tab in psx demo, also check that tune offset is
+            // not over file size
+            if ((size != 0) && (size != int.MaxValue) && ((int)(offset + size) <= _file.Length))
+            {
+                _file.Seek(offset, SeekOrigin.Begin);
+                var br = new BinaryReader(_file);
+                var ms = new MemoryStream(br.ReadBytes(size));
+                _audioSource = new LoopingAudioStream(new XAStream(ms, 11025), loop ? 0 : 1);
+                FadeUp();
+            }
+            else {
+                _audioSource = null;
+                return false;
+            }
+
+            return true;
+        }
 
         public void Stop()
         {
@@ -168,7 +214,7 @@ namespace NScumm.Sword1
         public bool IsEndOfStream { get { return false; } }
         public int Rate { get { return _sampleRate; } }
 
-        public Music(IMixer mixer)
+        public Music(IMixer mixer, string directory)
         {
             _mixer = mixer;
             _sampleRate = mixer.OutputRate;
@@ -177,7 +223,7 @@ namespace NScumm.Sword1
             _handles = new MusicHandle[2];
             for (int i = 0; i < _handles.Length; i++)
             {
-                _handles[i] = new MusicHandle();
+                _handles[i] = new MusicHandle(directory);
             }
         }
 
@@ -245,19 +291,17 @@ namespace NScumm.Sword1
                 /* The handle will load the music file now. It can take a while, so unlock
                    the mutex before, to have the soundthread playing normally.
                    As the corresponding _converter is NULL, the handle will be ignored by the playing thread */
-                // TODO: PSX
-                /*if (SwordEngine::isPsx())
+                if (SystemVars.Platform == Core.IO.Platform.PSX)
                 {
-                    if (_handles[newStream].playPSX(tuneId, loopFlag != 0))
+                    if (_handles[newStream].PlayPsx((ushort)tuneId, loopFlag != 0))
                     {
                         lock (_gate)
                         {
-                            _converter[newStream] = Audio::makeRateConverter(_handles[newStream].getRate(), _mixer->getOutputRate(), _handles[newStream].isStereo(), false);
+                            _converter[newStream] = RateHelper.MakeRateConverter(_handles[newStream].Rate, _mixer.OutputRate, _handles[newStream].IsStereo, false);
                         }
                     }
                 }
-                else*/
-                if (_handles[newStream].Play(_tuneList[tuneId], loopFlag != 0))
+                else if (_handles[newStream].Play(_tuneList[tuneId], loopFlag != 0))
                 {
                     lock (_gate)
                     {

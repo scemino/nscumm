@@ -4,6 +4,7 @@ using System.Linq;
 using NScumm.Core;
 using NScumm.Core.Graphics;
 using NScumm.Core.IO;
+using System.IO;
 
 namespace NScumm.Sword1
 {
@@ -119,12 +120,59 @@ namespace NScumm.Sword1
         public int id, y;
     }
 
+    class PSXDataCache
+    {
+        // Cache for PSX screen, to avoid decompressing background at every screen update
+        public byte[] decodedBackground;
+        public byte[] extPlxCache; // If this screen requires an external parallax, save it here
+    }
+
+    class Header
+    {
+        public string type
+        {
+            get { return new string(Data.Take(6).Select(b => (char)b).ToArray()); }
+        }
+
+        public ushort version
+        {
+            get { return Data.ToUInt16(6); }
+            set { Data.WriteUInt16(6, value); }
+        }
+
+        public uint comp_length
+        {
+            get { return Data.ToUInt32(8); }
+            set { Data.WriteUInt32(8, value); }
+        }
+
+        public string compression
+        {
+            get { return new string(Data.Skip(12).Take(4).Select(b => (char)b).ToArray()); }
+        }
+
+        public uint decomp_length
+        {
+            get { return Data.ToUInt32(16); }
+            set { Data.WriteUInt32(16, value); }
+        }
+
+        public const int Size = 20;
+
+        public Header(byte[] data)
+        {
+            Data = data;
+        }
+
+        public byte[] Data { get; }
+    }
+
     internal partial class Screen
     {
-        const int SCRNGRID_X = 16;
-        const int SCRNGRID_Y = 8;
-        const int SHRINK_BUFFER_SIZE = 50000;
-        const int RLE_BUFFER_SIZE = 50000;
+        private const int SCRNGRID_X = 16;
+        private const int SCRNGRID_Y = 8;
+        private const int SHRINK_BUFFER_SIZE = 50000;
+        private const int RLE_BUFFER_SIZE = 50000;
 
         public const int FLASH_RED = 0;
         public const int FLASH_BLUE = 1;
@@ -134,39 +182,39 @@ namespace NScumm.Sword1
         public const int BORDER_BLACK = 5;
 
         public const int SCREEN_WIDTH = 640;
-        const int SCREEN_DEPTH = 400;
+        private const int SCREEN_DEPTH = 400;
         public const int SCREEN_LEFT_EDGE = 128;
         public const int SCREEN_RIGHT_EDGE = 128 + SCREEN_WIDTH - 1;
         public const int SCREEN_TOP_EDGE = 128;
         public const int SCREEN_BOTTOM_EDGE = 128 + SCREEN_DEPTH - 1;
 
+        private const int SCROLL_FRACTION = 16;
+        private const int MAX_SCROLL_DISTANCE = 8;
+        private const int FADE_UP = 1;
+        private const int FADE_DOWN = -1;
 
-        const int SCROLL_FRACTION = 16;
-        const int MAX_SCROLL_DISTANCE = 8;
-        const int FADE_UP = 1;
-        const int FADE_DOWN = -1;
+        private const int MAX_FORE = 20;
+        private const int MAX_BACK = 20;
+        private const int MAX_SORT = 20;
 
-        const int MAX_FORE = 20;
-        const int MAX_BACK = 20;
-        const int MAX_SORT = 20;
-
-        const int TYPE_FLOOR = 1;
-        const int TYPE_MOUSE = 2;
-        const int TYPE_SPRITE = 3;
-        const int TYPE_NON_MEGA = 4;
+        private const int TYPE_FLOOR = 1;
+        private const int TYPE_MOUSE = 2;
+        private const int TYPE_SPRITE = 3;
+        private const int TYPE_NON_MEGA = 4;
         public const int TYPE_MEGA = 5;
         public const int TYPE_PLAYER = 6;
-        const int TYPE_TEXT = 7;
-        const int STAT_MOUSE = 1;
-        const int STAT_LOGIC = 2;
-        const int STAT_EVENTS = 4;
-        const int STAT_FORE = 8;
-        const int STAT_BACK = 16;
-        const int STAT_SORT = 32;
-        const int STAT_SHRINK = 64;
-        const int STAT_BOOKMARK = 128;
-        const int STAT_TALK_WAIT = 256;
-        const int STAT_OVERRIDE = 512;
+        private const int TYPE_TEXT = 7;
+
+        private const int STAT_MOUSE = 1;
+        private const int STAT_LOGIC = 2;
+        private const int STAT_EVENTS = 4;
+        private const int STAT_FORE = 8;
+        private const int STAT_BACK = 16;
+        private const int STAT_SORT = 32;
+        private const int STAT_SHRINK = 64;
+        private const int STAT_BOOKMARK = 128;
+        private const int STAT_TALK_WAIT = 256;
+        private const int STAT_OVERRIDE = 512;
 
 
         private ISystem _system;
@@ -182,11 +230,24 @@ namespace NScumm.Sword1
         private byte[] _shrinkBuffer = new byte[SHRINK_BUFFER_SIZE];
         private bool _updatePalette;
 
-        uint[] _foreList = new uint[MAX_FORE];
-        uint[] _backList = new uint[MAX_BACK];
-        SortSpr[] _sortList = new SortSpr[MAX_SORT];
+        private uint[] _foreList = new uint[MAX_FORE];
+        private uint[] _backList = new uint[MAX_BACK];
+        private SortSpr[] _sortList = new SortSpr[MAX_SORT];
         private byte _foreLength, _backLength, _sortLength;
         private ushort _scrnSizeX, _scrnSizeY, _gridSizeX, _gridSizeY;
+        private readonly PSXDataCache _psxCache; // Cache used for PSX backgrounds
+        private string _directory;
+
+        private UShortAccess[] _layerGrid = new UShortAccess[4];
+        private ushort _oldScrollX;
+        private ushort _oldScrollY;
+        private bool _isBlack;
+        private int _fadingStep;
+        private sbyte _fadingDirection;
+        private Color[] _currentPalette = new Color[256];
+        private Color[] _targetPalette = new Color[256];
+        private Text _textMan;
+
 
         public Text TextManager
         {
@@ -194,8 +255,9 @@ namespace NScumm.Sword1
             set { _textMan = value; }
         }
 
-        public Screen(ISystem system, ResMan resMan, ObjectMan objMan)
+        public Screen(string directory, ISystem system, ResMan resMan, ObjectMan objMan)
         {
+            _directory = directory;
             _system = system;
             _resMan = resMan;
             _objMan = objMan;
@@ -204,6 +266,7 @@ namespace NScumm.Sword1
             {
                 _sortList[i] = new SortSpr();
             }
+            _psxCache = new PSXDataCache();
         }
 
         public void SetScrolling(short offsetX, short offsetY)
@@ -546,10 +609,9 @@ namespace NScumm.Sword1
 
                 if (SystemVars.Platform == Platform.PSX)
                 {
-                    // TODO: psx
-                    //if (!_psxCache.decodedBackground)
-                    //    _psxCache.decodedBackground = psxShrinkedBackgroundToIndexed(_layerBlocks[0], _scrnSizeX, _scrnSizeY);
-                    //memcpy(_screenBuf, _psxCache.decodedBackground, _scrnSizeX * _scrnSizeY);
+                    if (_psxCache.decodedBackground == null)
+                        _psxCache.decodedBackground = PsxShrinkedBackgroundToIndexed(_layerBlocks[0].Data, _layerBlocks[0].Offset, _scrnSizeX, _scrnSizeY);
+                    Array.Copy(_psxCache.decodedBackground, _screenBuf, _scrnSizeX * _scrnSizeY);
                 }
                 else
                 {
@@ -578,20 +640,20 @@ namespace NScumm.Sword1
             }
             else
             {
-                // TODO: psx
-                //We are using PSX version
-                //if (_currentScreen == 45 || _currentScreen == 55 ||
-                //        _currentScreen == 57 || _currentScreen == 63 || _currentScreen == 71)
-                //{ // Width shrinked backgrounds
-                //    if (!_psxCache.decodedBackground)
-                //        _psxCache.decodedBackground = psxShrinkedBackgroundToIndexed(_layerBlocks[0], _scrnSizeX, _scrnSizeY);
-                //}
-                //else
-                //{
-                //    if (!_psxCache.decodedBackground)
-                //        _psxCache.decodedBackground = psxBackgroundToIndexed(_layerBlocks[0], _scrnSizeX, _scrnSizeY);
-                //}
-                //memcpy(_screenBuf, _psxCache.decodedBackground, _scrnSizeX * _scrnSizeY);
+                // We are using PSX version
+                if (_currentScreen == 45 || _currentScreen == 55 ||
+                        _currentScreen == 57 || _currentScreen == 63 || _currentScreen == 71)
+                {
+                    // Width shrinked backgrounds
+                    if (_psxCache.decodedBackground == null)
+                        _psxCache.decodedBackground = PsxShrinkedBackgroundToIndexed(_layerBlocks[0].Data, _layerBlocks[0].Offset, _scrnSizeX, _scrnSizeY);
+                }
+                else
+                {
+                    if (_psxCache.decodedBackground == null)
+                        _psxCache.decodedBackground = PsxBackgroundToIndexed(_layerBlocks[0].Data, _layerBlocks[0].Offset, _scrnSizeX, _scrnSizeY);
+                }
+                Array.Copy(_psxCache.decodedBackground, _screenBuf, _scrnSizeX * _scrnSizeY);
             }
 
             for (cnt = 0; cnt < _backLength; cnt++)
@@ -603,6 +665,7 @@ namespace NScumm.Sword1
                     {
                         ScummHelper.Swap(ref _sortList[sCnt], ref _sortList[sCnt + 1]);
                     }
+
             for (cnt = 0; cnt < _sortLength; cnt++)
                 ProcessImage((uint)_sortList[cnt].id);
 
@@ -614,17 +677,16 @@ namespace NScumm.Sword1
             // PSX version has parallax layer for this room in an external file (TRAIN.PLX)
             if (SystemVars.Platform == Platform.PSX && _currentScreen == 63)
             {
-                // TODO: psx
-                //// FIXME: this should be handled in a cleaner way...
-                //if (!_psxCache.extPlxCache)
-                //{
-                //    Common::File parallax;
-                //    parallax.open("TRAIN.PLX");
-                //    _psxCache.extPlxCache = (byte*)malloc(parallax.size());
-                //    parallax.read(_psxCache.extPlxCache, parallax.size());
-                //    parallax.close();
-                //}
-                //RenderParallax(_psxCache.extPlxCache);
+                // FIXME: this should be handled in a cleaner way...
+                if (_psxCache.extPlxCache == null)
+                {
+                    var path = ScummHelper.LocatePath(_directory, "TRAIN.PLX");
+                    using (var parallax = new BinaryReader(ServiceLocator.FileStorage.OpenFileRead(path)))
+                    {
+                        _psxCache.extPlxCache = parallax.ReadBytes((int)parallax.BaseStream.Length);
+                    }
+                }
+                RenderParallax(_psxCache.extPlxCache);
             }
 
             for (cnt = 0; cnt < _foreLength; cnt++)
@@ -672,6 +734,105 @@ namespace NScumm.Sword1
             }
         }
 
+        public void FnSetParallax(uint screen, uint resId)
+        {
+            SwordRes.RoomDefTable[screen].parallax[0] = resId;
+        }
+
+        public void FnFlash(byte color)
+        {
+            // TODO: warning("stub: Screen::fnFlash(%d)", color);
+        }
+
+        public void ShowFrame(ushort x, ushort y, uint resId, uint frameNo, byte[] fadeMask = null, sbyte fadeStatus = 0)
+        {
+            byte[] frame = new byte[40 * 40];
+            int i, j;
+
+            // PSX top menu is black
+            if (SystemVars.Platform != Platform.PSX)
+            {
+                // Dark gray background
+                frame.Set(0, 199, frame.Length);
+            }
+
+            if (resId != 0xffffffff)
+            {
+                FrameHeader frameHead = new FrameHeader(_resMan.FetchFrame(_resMan.OpenFetchRes(resId), frameNo));
+                var frameData = new ByteAccess(frameHead.Data.Data, frameHead.Data.Offset + FrameHeader.Size);
+
+                if (SystemVars.Platform == Platform.PSX)
+                {
+                    //We need to decompress PSX frames
+                    var frameBufferPSX = new byte[_resMan.ReadUInt16(frameHead.width) * _resMan.ReadUInt16(frameHead.height) / 2];
+                    DecompressHIF(frameData.Data, frameData.Offset, frameBufferPSX);
+
+                    for (i = 0; i < _resMan.ReadUInt16(frameHead.height) / 2; i++)
+                    {
+                        for (j = 0; j < _resMan.ReadUInt16(frameHead.width); j++)
+                        {
+                            var data = frameBufferPSX[i * _resMan.ReadUInt16(frameHead.width) + j];
+                            frame[(i * 2 + 4) * 40 + j + 2] = data;
+                            frame[(i * 2 + 1 + 4) * 40 + j + 2] = data; //Linedoubling the sprite
+                        }
+                    }
+                }
+                else
+                {
+                    for (i = 0; i < _resMan.ReadUInt16(frameHead.height); i++)
+                        for (j = 0; j < _resMan.ReadUInt16(frameHead.height); j++)
+                            frame[(i + 4) * 40 + j + 2] = frameData[i * _resMan.ReadUInt16(frameHead.width) + j];
+                }
+
+                _resMan.ResClose(resId);
+            }
+
+            if (fadeMask != null)
+            {
+                for (i = 0; i < 40; i++)
+                {
+                    for (j = 0; j < 40; j++)
+                    {
+                        if (fadeMask[((i % 8) * 8) + (j % 8)] >= fadeStatus)
+                            frame[i * 40 + j] = 0;
+                    }
+                }
+            }
+
+            _system.GraphicsManager.CopyRectToScreen(frame, 40, x, y, 40, 40);
+        }
+
+        public static void DecompressHIF(byte[] src, int srcOff, byte[] dest)
+        {
+            var dstOff = 0;
+            for (;;)
+            { //Main loop
+                byte controlByte = src[srcOff++];
+                uint byteCount = 0;
+                while (byteCount < 8)
+                {
+                    if ((controlByte & 0x80) != 0)
+                    {
+                        ushort infoWord = src.ToUInt16BigEndian(srcOff); //Read the info word
+                        srcOff += 2;
+                        if (infoWord == 0xFFFF) return; //Got 0xFFFF code, finished.
+
+                        int repeatCount = (infoWord >> 12) + 2; //How many time data needs to be refetched
+                        while (repeatCount >= 0)
+                        {
+                            var oldDataSrc = dstOff - ((infoWord & 0xFFF) + 1);
+                            dest[dstOff++] = dest[oldDataSrc];
+                            repeatCount--;
+                        }
+                    }
+                    else
+                        dest[dstOff++] = src[srcOff++];
+                    byteCount++;
+                    controlByte <<= 1; //Shifting left the control code one bit
+                }
+            }
+        }
+
 
         private void ProcessImage(uint id)
         {
@@ -705,12 +866,10 @@ namespace NScumm.Sword1
             var sprData = new ByteAccess(frameHead.Data.Data, frameHead.Data.Offset + FrameHeader.Size);
             if (SystemVars.Platform == Platform.PSX && compact.type != TYPE_TEXT)
             {
-                // TODO: PSX sprites are compressed with HIF
-                throw new NotImplementedException();
-                //var hifBuf = (uint8*)malloc(_resMan.readUint16(&frameHead.width) * _resMan.readUint16(&frameHead.height) / 2);
-                //memset(hifBuf, 0x00, (_resMan.readUint16(&frameHead.width) * _resMan.readUint16(&frameHead.height) / 2));
-                //decompressHIF(sprData, hifBuf);
-                //sprData = hifBuf;
+                // PSX sprites are compressed with HIF
+                var hifBuf = new byte[_resMan.ReadUInt16(frameHead.width) * _resMan.ReadUInt16(frameHead.height) / 2];
+                DecompressHIF(sprData.Data, sprData.Offset, hifBuf);
+                sprData = new ByteAccess(hifBuf);
             }
             else if (frameHead.runTimeComp[3] == '7')
             { // RLE7 encoded?
@@ -735,18 +894,18 @@ namespace NScumm.Sword1
                 //Clean shrink buffer to avoid corruption
                 Array.Clear(_shrinkBuffer, 0, SHRINK_BUFFER_SIZE);
                 if (SystemVars.Platform == Platform.PSX && (compact.resource != SwordRes.GEORGE_MEGA))
-                { //TODO: PSX Height shrinked sprites
-                    throw new NotImplementedException();
-                    //sprSizeX = (scale * _resMan.readUint16(&frameHead.width)) / 256;
-                    //sprSizeY = (scale * (_resMan.readUint16(&frameHead.height))) / 256 / 2;
-                    //fastShrink(sprData, _resMan.readUint16(&frameHead.width), (_resMan.readUint16(&frameHead.height)) / 2, scale, _shrinkBuffer);
+                {
+                    // PSX Height shrinked sprites
+                    sprSizeX = (ushort)((scale * _resMan.ReadUInt16(frameHead.width)) / 256);
+                    sprSizeY = (ushort)((scale * (_resMan.ReadUInt16(frameHead.height))) / 256 / 2);
+                    FastShrink(sprData, _resMan.ReadUInt16(frameHead.width), (ushort)((_resMan.ReadUInt16(frameHead.height)) / 2), (uint)scale, _shrinkBuffer);
                 }
                 else if (SystemVars.Platform == Platform.PSX)
-                { //TODO: PSX width/height shrinked sprites
-                    throw new NotImplementedException();
-                    //sprSizeX = (scale * _resMan.readUint16(&frameHead.width)) / 256 / 2;
-                    //sprSizeY = (scale * _resMan.readUint16(&frameHead.height)) / 256 / 2;
-                    //fastShrink(sprData, _resMan.readUint16(&frameHead.width) / 2, _resMan.readUint16(&frameHead.height) / 2, scale, _shrinkBuffer);
+                {
+                    // PSX width/height shrinked sprites
+                    sprSizeX = (ushort)((scale * _resMan.ReadUInt16(frameHead.width)) / 256 / 2);
+                    sprSizeY = (ushort)((scale * _resMan.ReadUInt16(frameHead.height)) / 256 / 2);
+                    FastShrink(sprData, (ushort)(_resMan.ReadUInt16(frameHead.width) / 2), (ushort)(_resMan.ReadUInt16(frameHead.height) / 2), (uint)scale, _shrinkBuffer);
                 }
                 else
                 {
@@ -760,9 +919,9 @@ namespace NScumm.Sword1
             {
                 sprSizeX = _resMan.ReadUInt16(frameHead.width);
                 if (SystemVars.Platform == Platform.PSX)
-                { //TODO: PSX sprites are half height
-                    throw new NotImplementedException();
-                    //sprSizeY = _resMan.readUint16(&frameHead.height) / 2;
+                {
+                    // PSX sprites are half height
+                    sprSizeY = (ushort)(_resMan.ReadUInt16(frameHead.height) / 2);
                 }
                 else
                     sprSizeY = _resMan.ReadUInt16(frameHead.height);
@@ -806,15 +965,15 @@ namespace NScumm.Sword1
                          || ((compact.resource == SwordRes.GMPOWER) && (sprSizeX < 515)))
                 {
                     // some needs to be hardcoded, headers don't give useful infos
-                    // TODO: DrawPsxHalfShrinkedSprite(sprData2 + incr, spriteX, spriteY, sprSizeX / 2, sprSizeY, sprPitch / 2);
+                    DrawPsxHalfShrinkedSprite(sprData.Data, sprData.Offset + incr, spriteX, spriteY, (ushort)(sprSizeX / 2), sprSizeY, (ushort)(sprPitch / 2));
                 }
                 else if (sprSizeX >= 450) // A PSX double shrinked sprite (1/3 width)
                 {
-                    // TODO: DrawPsxFullShrinkedSprite(sprData2 + incr, spriteX, spriteY, sprSizeX / 3, sprSizeY, sprPitch / 3);
+                    DrawPsxFullShrinkedSprite(sprData.Data, sprData.Offset + incr, spriteX, spriteY, (ushort)(sprSizeX / 3), sprSizeY, (ushort)(sprPitch / 3));
                 }
                 else // This is for psx half shrinked, walking george and remaining sprites
                 {
-                    // TODO: DrawPsxHalfShrinkedSprite(sprData2 + incr, spriteX, spriteY, sprSizeX, sprSizeY, sprPitch);
+                    DrawPsxHalfShrinkedSprite(sprData.Data, sprData.Offset + incr, spriteX, spriteY, sprSizeX, sprSizeY, sprPitch);
                 }
                 if ((compact.status & STAT_FORE) == 0 &&
                     !(SystemVars.Platform == Platform.PSX && (compact.resource == SwordRes.MOUBUSY)))
@@ -1126,7 +1285,7 @@ namespace NScumm.Sword1
             ParallaxHeader header = null;
             UIntAccess lineIndexes = null;
 
-            if (Sword1.SystemVars.Platform == Platform.PSX) //Parallax headers are different in PSX version
+            if (SystemVars.Platform == Platform.PSX) //Parallax headers are different in PSX version
                 FetchPsxParallaxSize(data, out paraSizeX, out paraSizeY);
             else
             {
@@ -1161,10 +1320,9 @@ namespace NScumm.Sword1
             else
                 paraScrlY = 0;
 
-            if (Sword1.SystemVars.Platform == Platform.PSX)
+            if (SystemVars.Platform == Platform.PSX)
             {
-                // TODO: DrawPsxParallax(data, paraScrlX, scrnScrlX, scrnWidth);
-                throw new NotImplementedException();
+                DrawPsxParallax(data, paraScrlX, scrnScrlX, scrnWidth);
             }
             else
             {
@@ -1228,11 +1386,6 @@ namespace NScumm.Sword1
             }
         }
 
-        private void FetchPsxParallaxSize(byte[] data, out ushort paraSizeX, out ushort paraSizeY)
-        {
-            throw new NotImplementedException();
-        }
-
         private void FadePalette()
         {
             if (_fadingStep == 16)
@@ -1262,162 +1415,290 @@ namespace NScumm.Sword1
                 _isBlack = true;
         }
 
-        private void FlushPsxCache()
+
+        // Used to draw psx sprites which are 1/2 of original width
+        private void DrawPsxHalfShrinkedSprite(byte[] sprData, int offset, ushort sprX, ushort sprY, ushort sprWidth, ushort sprHeight, ushort sprPitch)
         {
-            throw new NotImplementedException();
-        }
+            var dest = new ByteAccess(_screenBuf, (sprY * _scrnSizeX) + sprX);
+            var data = new ByteAccess(sprData, offset);
 
-
-
-        private UShortAccess[] _layerGrid = new UShortAccess[4];
-        private ushort _oldScrollX;
-        private ushort _oldScrollY;
-        private bool _isBlack;
-        private int _fadingStep;
-        private sbyte _fadingDirection;
-        private Color[] _currentPalette = new Color[256];
-        private Color[] _targetPalette = new Color[256];
-        private Text _textMan;
-
-        public class Header
-        {
-            public string type
+            for (ushort cnty = 0; cnty < sprHeight; cnty++)
             {
-                get { return new string(Data.Take(6).Select(b => (char)b).ToArray()); }
-            }
-
-            public ushort version
-            {
-                get { return Data.ToUInt16(6); }
-                set { Data.WriteUInt16(6, value); }
-            }
-
-            public uint comp_length
-            {
-                get { return Data.ToUInt32(8); }
-                set { Data.WriteUInt32(8, value); }
-            }
-
-            public string compression
-            {
-                get { return new string(Data.Skip(12).Take(4).Select(b => (char)b).ToArray()); }
-            }
-
-            public uint decomp_length
-            {
-                get { return Data.ToUInt32(16); }
-                set { Data.WriteUInt32(16, value); }
-            }
-
-            public const int Size = 20;
-
-            public Header(byte[] data)
-            {
-                Data = data;
-            }
-
-            public byte[] Data { get; }
-        }
-
-        public void FnSetParallax(uint screen, uint resId)
-        {
-            SwordRes.RoomDefTable[screen].parallax[0] = resId;
-        }
-
-        public void FnFlash(byte color)
-        {
-            // TODO: warning("stub: Screen::fnFlash(%d)", color);
-        }
-
-        public static void DecompressHIF(byte[] src, int srcOff, byte[] dest)
-        {
-            var dstOff = 0;
-            for (;;)
-            { //Main loop
-                byte controlByte = src[srcOff++];
-                uint byteCount = 0;
-                while (byteCount < 8)
-                {
-                    if ((controlByte & 0x80) != 0)
+                for (ushort cntx = 0; cntx < sprWidth; cntx++)
+                    if (data[cntx] != 0)
                     {
-                        ushort infoWord = src.ToUInt16BigEndian(srcOff); //Read the info word
-                        srcOff += 2;
-                        if (infoWord == 0xFFFF) return; //Got 0xFFFF code, finished.
+                        dest[cntx * 2] = data[cntx]; //In these sprites we need to double vetical lines too...
+                        dest[cntx * 2 + 1] = data[cntx];
+                    }
 
-                        int repeatCount = (infoWord >> 12) + 2; //How many time data needs to be refetched
-                        while (repeatCount >= 0)
-                        {
-                            var oldDataSrc = dstOff - ((infoWord & 0xFFF) + 1);
-                            dest[dstOff++] = dest[oldDataSrc];
-                            repeatCount--;
+                dest.Offset += _scrnSizeX;
+                for (ushort cntx = 0; cntx < sprWidth; cntx++)
+                    if (data[cntx] != 0)
+                    {
+                        dest[cntx * 2] = data[cntx];
+                        dest[cntx * 2 + 1] = data[cntx];
+                    }
+
+                data.Offset += sprPitch;
+                dest.Offset += _scrnSizeX;
+            }
+        }
+
+        // Used to draw psx sprites which are 1/3 of original width
+        private void DrawPsxFullShrinkedSprite(byte[] sprData, int offset, ushort sprX, ushort sprY, ushort sprWidth, ushort sprHeight, ushort sprPitch)
+        {
+            var dest = new ByteAccess(_screenBuf, (sprY * _scrnSizeX) + sprX);
+            var data = new ByteAccess(sprData, offset);
+
+            for (ushort cnty = 0; cnty < sprHeight; cnty++)
+            {
+                for (ushort cntx = 0; cntx < sprWidth; cntx++)
+                    if (data[cntx] != 0)
+                    {
+                        dest[cntx * 3] = data[cntx]; //In these sprites we need to double vertical lines too...
+                        dest[cntx * 3 + 1] = data[cntx];
+                        dest[cntx * 3 + 2] = data[cntx];
+                    }
+
+                dest.Offset += _scrnSizeX;
+                for (ushort cntx = 0; cntx < sprWidth; cntx++)
+                    if (data[cntx] != 0)
+                    {
+                        dest[cntx * 3] = data[cntx];
+                        dest[cntx * 3 + 1] = data[cntx];
+                        dest[cntx * 3 + 2] = data[cntx];
+                    }
+
+                data.Offset += sprPitch;
+                dest.Offset += _scrnSizeX;
+            }
+        }
+
+        private void DrawPsxParallax(byte[] psxParallax, ushort paraScrlX, ushort scrnScrlX, ushort scrnWidth)
+        {
+            ushort totTiles = psxParallax.ToUInt16(14); // Total tiles
+
+            ushort skipRow = (ushort)(paraScrlX / 16); // Rows of tiles we have to skip
+            byte leftPixelSkip = (byte)(paraScrlX % 16); // Pixel columns we have to skip while drawing the first row
+
+            var plxPos = new ByteAccess(psxParallax, 16); // Pointer to tile position header section
+            var plxOff = new ByteAccess(psxParallax, 16 + totTiles * 2); // Pointer to tile relative offsets section
+            var plxData = new ByteAccess(psxParallax, 16 + totTiles * 2 + totTiles * 4); //Pointer to beginning of tiles data section
+
+            var tile_buffer = new byte[16 * 16]; // Buffer for 16x16 pix tile
+
+            /* For parallax rendering we should check both horizontal and vertical scrolling,
+             * but in PSX edition of the game, the only vertical scrolling parallax is disabled.
+             * So, in this function i'll only check for horizontal scrolling.
+             */
+
+            for (ushort currentTile = 0; currentTile < totTiles - 1; currentTile++)
+            {
+                byte tileXpos = plxPos[2 * currentTile]; // Fetch tile X and Y position in the grid
+                byte tileYpos = (byte)(plxPos[2 * currentTile + 1] * 2);
+                int tileBegin = (tileXpos * 16) - paraScrlX;
+                tileBegin = (tileBegin < 0) ? 0 : tileBegin;
+                ushort currentLine = (ushort)(tileYpos * 16); //Current line of the image we are drawing upon, used to avoid going out of screen
+
+                if (tileXpos >= skipRow)
+                { // Tiles not needed in the screen buffer are not uncompressed
+                    int tileOffset = plxOff.Data.ToInt32(plxOff.Offset + 4 * currentTile);
+                    ushort rightScreenLimit = (ushort)(_scrnSizeX - scrnScrlX); // Do not write over and beyond this limit, lest we get memory corruption
+                    var dest = new ByteAccess(_screenBuf, (tileYpos * 16 * _scrnSizeX) + tileBegin + scrnScrlX);
+                    var src = new ByteAccess(tile_buffer);
+
+                    DecompressHIF(plxData.Data, plxData.Offset + tileOffset, tile_buffer); // Decompress the tile
+
+                    if (tileXpos != skipRow)
+                    { // This tile will surely be drawn fully in the buffer
+                        for (byte tileLine = 0; (tileLine < 16) && (currentLine < SCREEN_DEPTH); tileLine++)
+                        { // Check that we are not going outside the bottom screen part
+                            for (byte tileColumn = 0; (tileColumn < 16) && (tileBegin + tileColumn) < rightScreenLimit; tileColumn++)
+                                if (src[tileColumn] != 0)
+                                    dest[tileColumn] = src[tileColumn];
+                            dest.Offset += _scrnSizeX;
+                            currentLine++;
+
+                            if (currentLine < SCREEN_DEPTH)
+                            {
+                                for (byte tileColumn = 0; (tileColumn < 16) && (tileBegin + tileColumn) < rightScreenLimit; tileColumn++)
+                                    if (src[tileColumn] != 0)
+                                        dest[tileColumn] = src[tileColumn];
+                                dest.Offset += _scrnSizeX;
+                                currentLine++;
+                            }
+                            src.Offset += 16; // get to next line of decoded tile
                         }
                     }
-                    else
-                        dest[dstOff++] = src[srcOff++];
-                    byteCount++;
-                    controlByte <<= 1; //Shifting left the control code one bit
+                    else { // This tile may be drawn only partially
+                        src.Offset += leftPixelSkip; //Skip hidden pixels
+                        for (byte tileLine = 0; (tileLine < 16) && (currentLine < SCREEN_DEPTH); tileLine++)
+                        {
+                            for (byte tileColumn = 0; tileColumn < (16 - leftPixelSkip); tileColumn++)
+                                if (src[tileColumn] != 0)
+                                    dest[tileColumn] = src[tileColumn];
+                            dest.Offset += _scrnSizeX;
+                            currentLine++;
+
+                            if (currentLine < SCREEN_DEPTH)
+                            {
+                                for (byte tileColumn = 0; tileColumn < (16 - leftPixelSkip); tileColumn++)
+                                    if (src[tileColumn] != 0)
+                                        dest[tileColumn] = src[tileColumn];
+                                dest.Offset += _scrnSizeX;
+                                currentLine++;
+                            }
+                            src.Offset += 16;
+                        }
+                    }
                 }
             }
         }
 
-        public void ShowFrame(ushort x, ushort y, uint resId, uint frameNo, byte[] fadeMask = null, sbyte fadeStatus = 0)
+        // needed because some psx backgrounds are half width and half height
+        private byte[] PsxShrinkedBackgroundToIndexed(byte[] psxBackground, int offset, int bakXres, int bakYres)
         {
-            byte[] frame = new byte[40 * 40];
-            int i, j;
+            int xresInTiles = ((bakXres / 2) % 16) != 0 ? (bakXres / 32) + 1 : (bakXres / 32);
+            int yresInTiles = ((bakYres / 2) % 16) != 0 ? (bakYres / 32) + 1 : (bakYres / 32);
+            int totTiles = xresInTiles * yresInTiles;
+            int tileYpos = 0; //tile position in a virtual xresInTiles * yresInTiles grid
+            int tileXpos = 0;
+            uint dataBegin = psxBackground.ToUInt32(offset + 4);
 
-            // PSX top menu is black
-            if (Sword1.SystemVars.Platform != Platform.PSX)
+            var decomp_tile = new byte[16 * 16]; //Tiles are always 16 * 16
+            var fullres_buffer = new byte[bakXres * (yresInTiles + 1) * 32];
+
+            bool isCompressed = (psxBackground.ToUInt32(offset) == ScummHelper.MakeTag('C', 'O', 'M', 'P'));
+
+            totTiles -= xresInTiles;
+            var b = offset + 4; //We skip the id tag
+
+            int currentTile;
+            for (currentTile = 0; currentTile < totTiles; currentTile++)
             {
-                // Dark gray background
-                frame.Set(0, 199, frame.Length);
-            }
+                int tileOffset = psxBackground.ToInt32(b + 4 * currentTile);
 
-            if (resId != 0xffffffff)
-            {
-                FrameHeader frameHead = new FrameHeader(_resMan.FetchFrame(_resMan.OpenFetchRes(resId), frameNo));
-                var frameData = new ByteAccess(frameHead.Data.Data, frameHead.Data.Offset + FrameHeader.Size);
-
-                if (Sword1.SystemVars.Platform == Platform.PSX)
-                { //We need to decompress PSX frames
-                    // TODO: psx
-                    //uint8* frameBufferPSX = (uint8*)malloc(_resMan.getUint16(frameHead.width) * _resMan.getUint16(frameHead.height) / 2);
-                    //decompressHIF(frameData, frameBufferPSX);
-
-                    //for (i = 0; i < _resMan.getUint16(frameHead.height) / 2; i++)
-                    //{
-                    //    for (j = 0; j < _resMan.getUint16(frameHead.width); j++)
-                    //    {
-                    //        uint8 data = frameBufferPSX[i * _resMan.getUint16(frameHead.width) + j];
-                    //        frame[(i * 2 + 4) * 40 + j + 2] = data;
-                    //        frame[(i * 2 + 1 + 4) * 40 + j + 2] = data; //Linedoubling the sprite
-                    //    }
-                    //}
-
-                    //free(frameBufferPSX);
-                }
-                else
+                if (isCompressed)
                 {
-                    for (i = 0; i < _resMan.ReadUInt16(frameHead.height); i++)
-                        for (j = 0; j < _resMan.ReadUInt16(frameHead.height); j++)
-                            frame[(i + 4) * 40 + j + 2] = frameData[i * _resMan.ReadUInt16(frameHead.width) + j];
+                    DecompressHIF(psxBackground, b + tileOffset - 4, decomp_tile); //Decompress the tile into decomp_tile
+                }
+                else {
+                    Array.Copy(psxBackground, b + tileOffset - 4, decomp_tile, 0, 16 * 16);
                 }
 
-                _resMan.ResClose(resId);
-            }
+                if (currentTile > 0 && (currentTile % xresInTiles) == 0)
+                { //Finished a line of tiles, going down
+                    tileYpos++;
+                    tileXpos = 0;
+                }
 
-            if (fadeMask != null)
-            {
-                for (i = 0; i < 40; i++)
+                for (byte tileLine = 0; tileLine < 16; tileLine++)
                 {
-                    for (j = 0; j < 40; j++)
+                    var dest = new ByteAccess(fullres_buffer, tileLine * bakXres * 2 + tileXpos * 32 + tileYpos * bakXres * 16 * 2);
+                    for (byte tileColumn = 0; tileColumn < 16; tileColumn++)
                     {
-                        if (fadeMask[((i % 8) * 8) + (j % 8)] >= fadeStatus)
-                            frame[i * 40 + j] = 0;
+                        byte pixData = decomp_tile[tileColumn + tileLine * 16];
+                        dest[tileColumn * 2] = pixData;
+                        dest[tileColumn * 2 + 1] = pixData;
                     }
+                    dest.Offset += bakXres;
+                    for (byte tileColumn = 0; tileColumn < 16; tileColumn++)
+                    {
+                        var pixData = decomp_tile[tileColumn + tileLine * 16];
+                        dest[tileColumn * 2] = pixData;
+                        dest[tileColumn * 2 + 1] = pixData;
+                    }
+
                 }
+                tileXpos++;
             }
 
-            _system.GraphicsManager.CopyRectToScreen(frame, 40, x, y, 40, 40);
+            //Calculate number of remaining tiles
+            uint remainingTiles = (uint)((dataBegin - (currentTile * 4 + 4)) / 4);
+
+            // Last line of tiles is full width!
+            uint tileHeight = (remainingTiles == xresInTiles * 2) ? 16U : 8;
+
+            tileXpos = 0;
+            for (; currentTile < totTiles + remainingTiles; currentTile++)
+            {
+                int tileOffset = psxBackground.ToInt32(b + 4 * currentTile);
+
+                if (isCompressed)
+                {
+                    DecompressHIF(psxBackground, b + tileOffset - 4, decomp_tile); //Decompress the tile into decomp_tile
+                }
+                else {
+                    Array.Copy(psxBackground, b + tileOffset - 4, decomp_tile, 0, 256);
+                }
+
+                for (byte tileLine = 0; tileLine < tileHeight; tileLine++)
+                { // Write the decoded tiles into last lines of background
+                    Array.Copy(decomp_tile, tileLine * 16, fullres_buffer, tileXpos * 16 + (tileLine + (yresInTiles - 1) * 16) * bakXres * 2, 16);
+                    Array.Copy(decomp_tile, tileLine * 16, fullres_buffer, tileXpos * 16 + (tileLine + (yresInTiles - 1) * 16) * bakXres * 2 + bakXres, 16);
+                }
+                tileXpos++;
+            }
+
+            return fullres_buffer;
+        }
+
+        private byte[] PsxBackgroundToIndexed(byte[] psxBackground, int offset, int bakXres, int bakYres)
+        {
+            int xresInTiles = bakXres / 16;
+            int yresInTiles = ((bakYres / 2) % 16) != 0 ? (bakYres / 32) + 1 : (bakYres / 32);
+            int totTiles = xresInTiles * yresInTiles;
+            int tileYpos = 0; //tile position in a virtual xresInTiles * yresInTiles grid
+            int tileXpos = 0;
+            uint tag = psxBackground.ToUInt32(offset);
+
+            var decomp_tile = new byte[16 * 16]; //Tiles are always 16 * 16
+            var fullres_buffer = new byte[bakXres * yresInTiles * 32];
+
+            bool isCompressed = (tag == 0x434F4D50);
+
+            offset += 4; //We skip the id tag
+
+            for (var currentTile = 0; currentTile < totTiles; currentTile++)
+            {
+                int tileOffset = psxBackground.ToInt32(offset + 4 * currentTile);
+
+                if (isCompressed)
+                    DecompressHIF(psxBackground, offset + tileOffset - 4, decomp_tile); //Decompress the tile into decomp_tile
+                else
+                    Array.ConstrainedCopy(psxBackground, offset + tileOffset - 4, decomp_tile, 0, 16 * 16);
+
+                if (currentTile > 0 && (currentTile % xresInTiles) == 0)
+                { //Finished a line of tiles, going down
+                    tileYpos++;
+                    tileXpos = 0;
+                }
+
+                for (byte tileLine = 0; tileLine < 16; tileLine++)
+                {
+                    // Copy data to destination buffer
+                    Array.Copy(decomp_tile, tileLine * 16, fullres_buffer, tileLine * bakXres * 2 + tileXpos * 16 + tileYpos * bakXres * 16 * 2, 16);
+                    Array.Copy(decomp_tile, tileLine * 16, fullres_buffer, tileLine * bakXres * 2 + bakXres + tileXpos * 16 + tileYpos * bakXres * 16 * 2, 16);
+                }
+                tileXpos++;
+            }
+
+            return fullres_buffer;
+        }
+
+        private void FetchPsxParallaxSize(byte[] psxParallax, out ushort paraSizeX, out ushort paraSizeY)
+        {
+            ushort xresInTiles = psxParallax.ToUInt16(10);
+            ushort yresInTiles = psxParallax.ToUInt16(12);
+
+            paraSizeX = (ushort)(xresInTiles * 16);
+            paraSizeY = (ushort)(yresInTiles * 32); // Vertical resolution needs to be doubled
+        }
+
+        private void FlushPsxCache()
+        {
+            _psxCache.decodedBackground = null;
+            _psxCache.extPlxCache = null;
         }
     }
 }

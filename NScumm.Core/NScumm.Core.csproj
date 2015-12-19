@@ -37,12 +37,15 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Audio\Decoders\XAStream.cs" />
     <Compile Include="Audio\ISoundRepository.cs" />
     <Compile Include="Audio\SampleProviders\AudioSampleProviderToAudioStream.cs" />
     <Compile Include="Audio\SampleProviders\MonoToStereoAudioSampleProvider16.cs" />
     <Compile Include="Audio\SampleProviders\ResampleAudioSampleProvider.cs" />
     <Compile Include="BitStream.cs" />
+    <Compile Include="Common\Huffman.cs" />
     <Compile Include="Graphics\ThumbnailHeader.cs" />
+    <Compile Include="Graphics\YUVToRGBManager.cs" />
     <Compile Include="IAudioManager.cs" />
     <Compile Include="IEnableTrace.cs" />
     <Compile Include="IEngine.cs" />
@@ -155,6 +158,7 @@
     <Compile Include="Video\BigHuffmanTree.cs" />
     <Compile Include="Video\FixedRateVideoTrack.cs" />
     <Compile Include="Video\ITrack.cs" />
+    <Compile Include="Video\PsxStreamDecoder.cs" />
     <Compile Include="Video\SmackerAudioTrack.cs" />
     <Compile Include="Video\SmackerDecoder.cs" />
     <Compile Include="Video\SmackerVideoTrack.cs" />
@@ -164,6 +168,10 @@
     <Compile Include="Video\VideoTrack.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
-  <ItemGroup />
-  <ItemGroup />
+  <ItemGroup>
+    <Compile Include="Video\PsxStreamDecoder.Audio.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Video\PsxStreamDecoder.Video.cs" />
+  </ItemGroup>
 </Project>

@@ -1,5 +1,5 @@
 ﻿//#define CLEAN_GAMELIST
-#define WP_GAMES
+//#define WP_GAMES
 
 using System;
 using System.Collections.Generic;

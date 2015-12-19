@@ -2140,7 +2140,7 @@ namespace NScumm.Sword1
             var fPolygrid = _resMan.OpenFetchRes((uint)walkGridResourceId);
 
 
-            var fPolygridOff = Screen.Header.Size;
+            var fPolygridOff = Header.Size;
             Array.Copy(fPolygrid, fPolygridOff, floorHeader.Data, floorHeader.Offset, WalkGridHeader.Size);
             fPolygridOff += WalkGridHeader.Size;
             _nBars = (int)_resMan.ReadUInt32((uint)floorHeader.numBars);

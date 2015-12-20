@@ -90,6 +90,19 @@ namespace NScumm.Core.Video
             }
         }
 
+        public int CurrentFrame
+        {
+            get
+            {
+                int frame = -1;
+                var tracks = _tracks.OfType<VideoTrack>();
+                foreach (var track in tracks)
+                {
+                    frame += track.CurrentFrame + 1;
+                }
+                return frame;
+            }
+        }
 
         public void Start()
         {

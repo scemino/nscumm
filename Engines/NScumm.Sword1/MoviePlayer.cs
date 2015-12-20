@@ -4,12 +4,13 @@ using NScumm.Core.Graphics;
 using NScumm.Core.Input;
 using NScumm.Core.Video;
 using System.Collections.Generic;
+using System.IO;
+using System.Text.RegularExpressions;
 
 namespace NScumm.Sword1
 {
-    class MovieText
+    internal class MovieText
     {
-
         public ushort _startFrame;
         public ushort _endFrame;
         public ushort _color;
@@ -30,10 +31,24 @@ namespace NScumm.Sword1
         private readonly SwordEngine _vm;
         private VideoDecoder _decoder;
         private List<MovieText> _movieTexts = new List<MovieText>();
+        private string _directory;
+        private Text _textMan;
+        private ResMan _resMan;
+        private uint _black;
+        private uint _c1Color, _c2Color, _c3Color, _c4Color;
+        private ushort _textWidth;
+        private ushort _textHeight;
+        private int _textX;
+        private int _textY;
+        private ushort _textColor;
+        private static readonly Regex _regex = new Regex(@"(\d+)\s+(\d+)\s+@(\d+)\s+(.*)", RegexOptions.Singleline);
 
-        public MoviePlayer(SwordEngine vm)
+        public MoviePlayer(SwordEngine vm, Text textMan, ResMan resMan)
         {
             _vm = vm;
+            _textMan = textMan;
+            _resMan = resMan;
+            _directory = ServiceLocator.FileStorage.GetDirectoryName(_vm.Settings.Game.Path);
         }
 
         public void Load(int id)
@@ -42,62 +57,7 @@ namespace NScumm.Sword1
 
             var directory = ServiceLocator.FileStorage.GetDirectoryName(_vm.Settings.Game.Path);
 
-            //if (SystemVars.ShowText != 0)
-            //{
-            //    filename = $"{SequenceList[id]}.txt";
-            //    path = ScummHelper.LocatePath(directory, filename);
-            //    if (path != null)
-            //    {
-            //        var f = new StreamReader(ServiceLocator.FileStorage.OpenFileRead(path));
-            //        string line;
-            //        int lineNo = 0;
-            //        int lastEnd = -1;
-
-            //        _movieTexts.Clear();
-            //        while (f.BaseStream.Position < f.BaseStream.Length)
-            //        {
-            //            line = f.ReadLine();
-            //            lineNo++;
-            //            if (line == null || line[0] == '#')
-            //            {
-            //                continue;
-            //            }
-
-            //            const char* ptr = line.c_str();
-
-            //            // TODO: Better error handling
-            //            int startFrame = strtoul(ptr, const_cast<char**>(&ptr), 10);
-            //            int endFrame = strtoul(ptr, const_cast<char**>(&ptr), 10);
-
-            //            while (*ptr && Common::isSpace(*ptr))
-            //                ptr++;
-
-            //            if (startFrame > endFrame)
-            //            {
-            //                warning("%s:%d: startFrame (%d) > endFrame (%d)", filename.c_str(), lineNo, startFrame, endFrame);
-            //                continue;
-            //            }
-
-            //            if (startFrame <= lastEnd)
-            //            {
-            //                warning("%s:%d startFrame (%d) <= lastEnd (%d)", filename.c_str(), lineNo, startFrame, lastEnd);
-            //                continue;
-            //            }
-
-            //            int color = 0;
-            //            if (*ptr == '@')
-            //            {
-            //                ++ptr;
-            //                color = strtoul(ptr, const_cast<char**>(&ptr), 10);
-            //                while (*ptr && Common::isSpace(*ptr))
-            //                    ptr++;
-            //            }
-
-            //            _movieTexts.push_back(MovieText(startFrame, endFrame, ptr, color));
-            //            lastEnd = endFrame;
-            //        }
-            //    }
-            //}
+            LoadSubtitles(id);
 
             // For the PSX version, we'll try the PlayStation stream files
             if (SystemVars.Platform == Core.IO.Platform.PSX)
@@ -144,8 +104,13 @@ namespace NScumm.Sword1
                     {
                         var palette = ToPalette(_decoder.Palette);
                         _vm.GraphicsManager.SetPalette(palette, 0, 256);
+
+                        UpdateColors();
                     }
 
+                    var pixels = _vm.GraphicsManager.Pixels;
+                    PerformPostProcessing(pixels);
+                    _vm.GraphicsManager.CopyRectToScreen(pixels, _vm.Settings.Game.Width * Surface.GetBytesPerPixel(_vm.GraphicsManager.PixelFormat), 0, 0, _vm.Settings.Game.Width, _vm.Settings.Game.Height);
                     _vm.GraphicsManager.UpdateScreen();
 
                 }
@@ -170,93 +135,260 @@ namespace NScumm.Sword1
                 _vm.GraphicsManager.PixelFormat = PixelFormat.Indexed8;
         }
 
+        private void LoadSubtitles(int id)
+        {
+            if (SystemVars.ShowText != 0)
+            {
+                var filename = $"{SequenceList[id]}.txt";
+                var path = ScummHelper.LocatePath(_directory, filename);
+                if (path != null)
+                {
+                    using (var f = new StreamReader(ServiceLocator.FileStorage.OpenFileRead(path)))
+                    {
+                        string line;
+                        while ((line = f.ReadLine()) != null)
+                        {
+                            var m = _regex.Match(line);
+                            if (m.Success)
+                            {
+                                var start = ushort.Parse(m.Groups[1].Value);
+                                var end = ushort.Parse(m.Groups[2].Value);
+                                var color = ushort.Parse(m.Groups[3].Value);
+                                var text = m.Groups[4].Value;
+                                _movieTexts.Add(new MovieText(start, end, text, color));
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
-        // TODO:
-        //void PerformPostProcessing(byte[] screen)
-        //{
-        //    // TODO: We don't support displaying these in true color yet,
-        //    // nor using the PSX fonts to display subtitles.
-        //    if (SystemVars.Platform == Core.IO.Platform.PSX /* || _decoderType == kVideoDecoderMP2*/)
-        //        return;
+        private void UpdateColors()
+        {
+            if (_movieTexts.Count > 0)
+            {
+                // Look for the best color indexes to use to display the subtitles
+                uint minWeight = 0xFFFFFFFF;
+                uint weight;
+                float c1Weight = 1e+30f;
+                float c2Weight = 1e+30f;
+                float c3Weight = 1e+30f;
+                float c4Weight = 1e+30f;
+                byte r, g, b;
+                float h, s, v, hd, hsvWeight;
 
-        //    if (!_movieTexts.empty())
-        //    {
-        //        if (_decoder.getCurFrame() == _movieTexts.front()._startFrame)
-        //        {
-        //            _textMan.makeTextSprite(2, (const uint8*)_movieTexts.front()._text.c_str(), 600, LETTER_COL);
+                var palette = _decoder.Palette;
+                var p = 0;
 
-        //            FrameHeader* frame = _textMan.giveSpriteData(2);
-        //            _textWidth = _resMan.toUint16(frame.width);
-        //            _textHeight = _resMan.toUint16(frame.height);
-        //            _textX = 320 - _textWidth / 2;
-        //            _textY = 420 - _textHeight;
-        //            _textColor = _movieTexts.front()._color;
-        //        }
-        //        if (_decoder.getCurFrame() == _movieTexts.front()._endFrame)
-        //        {
-        //            _textMan.releaseText(2, false);
-        //            _movieTexts.pop_front();
-        //        }
-        //    }
+                // Color comparaison for the subtitles colors is done in HSL
+                // C1 color is used for George and is almost white (R = 248, G = 252, B = 248)
+                const float h1 = 0.333333f, s1 = 0.02f, v1 = 0.99f;
 
-        //    byte* src, *dst;
-        //    int x, y;
+                // C2 color is used for George as a narrator and is grey (R = 184, G = 188, B = 184)
+                const float h2 = 0.333333f, s2 = 0.02f, v2 = 0.74f;
 
-        //    if (_textMan.giveSpriteData(2))
-        //    {
-        //        src = (byte*)_textMan.giveSpriteData(2) + sizeof(FrameHeader);
-        //        dst = screen + _textY * SCREEN_WIDTH + _textX * 1;
+                // C3 color is used for Nicole and is rose (R = 200, G = 120, B = 184)
+                const float h3 = 0.866667f, s3 = 0.4f, v3 = 0.78f;
 
-        //        for (y = 0; y < _textHeight; y++)
-        //        {
-        //            for (x = 0; x < _textWidth; x++)
-        //            {
-        //                switch (src[x])
-        //                {
-        //                    case BORDER_COL:
-        //                        dst[x] = getBlackColor();
-        //                        break;
-        //                    case LETTER_COL:
-        //                        dst[x] = findTextColor();
-        //                        break;
-        //                }
-        //            }
-        //            src += _textWidth;
-        //            dst += SCREEN_WIDTH;
-        //        }
-        //    }
-        //    else if (_textX && _textY)
-        //    {
-        //        // If the frame doesn't cover the entire screen, we have to
-        //        // erase the subtitles manually.
+                // C4 color is used for Maguire and is blue (R = 80, G = 152, B = 184)
+                const float h4 = 0.55f, s4 = 0.57f, v4 = 0.72f;
 
-        //        int frameWidth = _decoder.getWidth();
-        //        int frameHeight = _decoder.getHeight();
-        //        int frameX = (_system.getWidth() - frameWidth) / 2;
-        //        int frameY = (_system.getHeight() - frameHeight) / 2;
+                for (uint i = 0; i < 256; i++)
+                {
+                    r = palette[p++];
+                    g = palette[p++];
+                    b = palette[p++];
 
-        //        dst = screen + _textY * _system.getWidth();
+                    weight = (uint)(3 * r * r + 6 * g * g + 2 * b * b);
 
-        //        for (y = 0; y < _textHeight; y++)
-        //        {
-        //            if (_textY + y < frameY || _textY + y >= frameY + frameHeight)
-        //            {
-        //                memset(dst + _textX, getBlackColor(), _textWidth);
-        //            }
-        //            else {
-        //                if (frameX > _textX)
-        //                    memset(dst + _textX, getBlackColor(), frameX - _textX);
-        //                if (frameX + frameWidth < _textX + _textWidth)
-        //                    memset(dst + frameX + frameWidth, getBlackColor(), _textX + _textWidth - (frameX + frameWidth));
-        //            }
+                    if (weight <= minWeight)
+                    {
+                        minWeight = weight;
+                        _black = i;
+                    }
 
-        //            dst += _system.getWidth();
-        //        }
+                    ConvertColor(r, g, b, out h, out s, out v);
 
-        //        _textX = 0;
-        //        _textY = 0;
-        //    }
-        //}
+                    // C1 color
+                    // It is almost achromatic (very low saturation) so the hue as litle impact on the color.
+                    // Therefore use a low weight on hue and high weight on saturation.
+                    hd = h - h1;
+                    hd += hd < -0.5f ? 1.0f : hd > 0.5f ? -1.0f : 0.0f;
+                    hsvWeight = 1.0f * hd * hd + 4.0f * (s - s1) * (s - s1) + 3.0f * (v - v1) * (v - v1);
+                    if (hsvWeight <= c1Weight)
+                    {
+                        c1Weight = hsvWeight;
+                        _c1Color = i;
+                    }
+
+                    // C2 color
+                    // Also an almost achromatic color so use the same weights as for C1 color.
+                    hd = h - h2;
+                    hd += hd < -0.5f ? 1.0f : hd > 0.5f ? -1.0f : 0.0f;
+                    hsvWeight = 1.0f * hd * hd + 4.0f * (s - s2) * (s - s2) + 3.0f * (v - v2) * (v - v2);
+                    if (hsvWeight <= c2Weight)
+                    {
+                        c2Weight = hsvWeight;
+                        _c2Color = i;
+                    }
+
+                    // C3 color
+                    // A light rose. Use a high weight on the hue to get a rose.
+                    // The color is a bit gray and the saturation has not much impact so use a low weight.
+                    hd = h - h3;
+                    hd += hd < -0.5f ? 1.0f : hd > 0.5f ? -1.0f : 0.0f;
+                    hsvWeight = 4.0f * hd * hd + 1.0f * (s - s3) * (s - s3) + 2.0f * (v - v3) * (v - v3);
+                    if (hsvWeight <= c3Weight)
+                    {
+                        c3Weight = hsvWeight;
+                        _c3Color = i;
+                    }
+
+                    // C4 color
+                    // Blue. Use a hight weight on the hue to get a blue.
+                    // The color is darker and more saturated than C3 and the saturation has more impact.
+                    hd = h - h4;
+                    hd += hd < -0.5f ? 1.0f : hd > 0.5f ? -1.0f : 0.0f;
+                    hsvWeight = 5.0f * hd * hd + 3.0f * (s - s4) * (s - s4) + 2.0f * (v - v4) * (v - v4);
+                    if (hsvWeight <= c4Weight)
+                    {
+                        c4Weight = hsvWeight;
+                        _c4Color = i;
+                    }
+                }
+            }
+        }
+
+        private void PerformPostProcessing(byte[] screen)
+        {
+            // TODO: We don't support displaying these in true color yet,
+            // nor using the PSX fonts to display subtitles.
+            if (SystemVars.Platform == Core.IO.Platform.PSX /* || _decoderType == kVideoDecoderMP2*/)
+                return;
+
+            if (_movieTexts.Count > 0)
+            {
+                if (_decoder.CurrentFrame == _movieTexts[0]._startFrame)
+                {
+                    var text = new ByteAccess(System.Text.Encoding.UTF8.GetBytes(_movieTexts[0]._text));
+                    _textMan.MakeTextSprite(2, text, 600, Text.LetterCol);
+
+                    var frame = new FrameHeader(_textMan.GiveSpriteData(2));
+                    _textWidth = _resMan.ReadUInt16(frame.width);
+                    _textHeight = _resMan.ReadUInt16(frame.height);
+                    _textX = 320 - _textWidth / 2;
+                    _textY = 420 - _textHeight;
+                    _textColor = _movieTexts[0]._color;
+                }
+                if (_decoder.CurrentFrame == _movieTexts[0]._endFrame)
+                {
+                    _textMan.ReleaseText(2, false);
+                    _movieTexts.RemoveAt(0);
+                }
+            }
+
+            ByteAccess src, dst;
+            int x, y;
+
+            if (_textMan.GiveSpriteData(2) != null)
+            {
+                src = new ByteAccess(_textMan.GiveSpriteData(2));
+                src.Offset += FrameHeader.Size;
+                dst = new ByteAccess(screen, _textY * Screen.SCREEN_WIDTH + _textX * 1);
+
+                for (y = 0; y < _textHeight; y++)
+                {
+                    for (x = 0; x < _textWidth; x++)
+                    {
+                        switch (src[x])
+                        {
+                            case Text.BorderCol:
+                                dst[x] = (byte)GetBlackColor();
+                                break;
+                            case Text.LetterCol:
+                                dst[x] = (byte)FindTextColor();
+                                break;
+                        }
+                    }
+                    src.Offset += _textWidth;
+                    dst.Offset += Screen.SCREEN_WIDTH;
+                }
+            }
+            else if (_textX != 0 && _textY != 0)
+            {
+                // If the frame doesn't cover the entire screen, we have to
+                // erase the subtitles manually.
+
+                int frameWidth = _decoder.GetWidth();
+                int frameHeight = _decoder.GetHeight();
+                int frameX = (_vm.Settings.Game.Width - frameWidth) / 2;
+                int frameY = (_vm.Settings.Game.Height - frameHeight) / 2;
+
+                dst = new ByteAccess(screen, _textY * _vm.Settings.Game.Width);
+
+                for (y = 0; y < _textHeight; y++)
+                {
+                    if (_textY + y < frameY || _textY + y >= frameY + frameHeight)
+                    {
+                        dst.Data.Set(dst.Offset + _textX, (byte)GetBlackColor(), _textWidth);
+                    }
+                    else {
+                        if (frameX > _textX)
+                        {
+                            dst.Data.Set(dst.Offset + _textX, (byte)GetBlackColor(), frameX - _textX);
+                        }
+                        if (frameX + frameWidth < _textX + _textWidth)
+                        {
+                            dst.Data.Set(dst.Offset + frameX + frameWidth, (byte)GetBlackColor(), _textX + _textWidth - (frameX + frameWidth));
+                        }
+                    }
+
+                    dst.Offset += _vm.Settings.Game.Width;
+                }
+
+                _textX = 0;
+                _textY = 0;
+            }
+        }
+
+        private uint GetBlackColor()
+        {
+            return (SystemVars.Platform == Core.IO.Platform.PSX/* || _decoderType == kVideoDecoderMP2*/) ? ColorHelper.RGBToColor(0x00, 0x00, 0x00) : _black;
+        }
+
+        private uint FindTextColor()
+        {
+            if (SystemVars.Platform == Core.IO.Platform.PSX /*|| _decoderType == kVideoDecoderMP2*/)
+            {
+                // We're in true color mode, so return the actual colors
+                switch (_textColor)
+                {
+                    case 1:
+                        return ColorHelper.RGBToColor(248, 252, 248);
+                    case 2:
+                        return ColorHelper.RGBToColor(184, 188, 184);
+                    case 3:
+                        return ColorHelper.RGBToColor(200, 120, 184);
+                    case 4:
+                        return ColorHelper.RGBToColor(80, 152, 184);
+                }
+
+                return ColorHelper.RGBToColor(0xFF, 0xFF, 0xFF);
+            }
+
+            switch (_textColor)
+            {
+                case 1:
+                    return _c1Color;
+                case 2:
+                    return _c2Color;
+                case 3:
+                    return _c3Color;
+                case 4:
+                    return _c4Color;
+            }
+            return _c1Color;
+        }
 
         private void DrawFramePSX(Surface frame)
         {
@@ -272,6 +404,34 @@ namespace NScumm.Sword1
                 ushort y = (ushort)((_vm.Settings.Game.Height - scaledFrame.Height) / 2);
 
                 _vm.GraphicsManager.CopyRectToScreen(scaledFrame.Pixels, scaledFrame.Pitch, 0, 0, x, y, scaledFrame.Width, scaledFrame.Height);
+            }
+        }
+
+        private static void ConvertColor(byte r, byte g, byte b, out float h, out float s, out float v)
+        {
+            float varR = r / 255.0f;
+            float varG = g / 255.0f;
+            float varB = b / 255.0f;
+
+            float min = Math.Min(varR, Math.Min(varG, varB));
+            float max = Math.Max(varR, Math.Max(varG, varB));
+
+            v = max;
+            float d = max - min;
+            s = max == 0.0f ? 0.0f : d / max;
+
+            if (min == max)
+            {
+                h = 0.0f; // achromatic
+            }
+            else {
+                if (max == varR)
+                    h = (varG - varB) / d + (varG < varB ? 6.0f : 0.0f);
+                else if (max == varG)
+                    h = (varB - varR) / d + 2.0f;
+                else
+                    h = (varR - varG) / d + 4.0f;
+                h /= 6.0f;
             }
         }
 
@@ -331,6 +491,6 @@ namespace NScumm.Sword1
             "vulture1",
             "", // demo video not present
 	        ""  // credits are not a video
-        };
+        };        
     }
 }

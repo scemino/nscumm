@@ -18,9 +18,9 @@ namespace NScumm.Sword1
         private const int NoCol = 0;   // sprite background - 0 for transparency
         private const int MaxLines = 30;
 
-        private const int BorderCol = 200;
+        public const int BorderCol = 200;
         private const int BorderColPsx = 199;
-        private const int LetterCol = 193;
+        public const int LetterCol = 193;
 
         private readonly ObjectMan _objMan;
         private readonly ResMan _resMan;
@@ -50,7 +50,7 @@ namespace NScumm.Sword1
             textTarget &= ObjectMan.ITM_ID;
             Debug.Assert(textTarget < MaxTextObs);
 
-            return _textBlocks[textTarget].Data;
+            return _textBlocks[textTarget]?.Data;
         }
 
         public uint LowTextManager(ByteAccess ascii, int width, byte pen)
@@ -90,7 +90,7 @@ namespace NScumm.Sword1
             return _resMan.ReadUInt16(new FrameHeader(_resMan.FetchFrame(_font, (uint)(ch - ' '))).width);
         }
 
-        private void MakeTextSprite(byte slot, ByteAccess text, ushort maxWidth, byte pen)
+        public void MakeTextSprite(byte slot, ByteAccess text, ushort maxWidth, byte pen)
         {
             var lines = new LineInfo[MaxLines];
             var numLines = AnalyzeSentence(text, maxWidth, lines);
@@ -136,18 +136,18 @@ namespace NScumm.Sword1
             ushort lineNo = 0;
             var text = new ByteAccess(textSrc.Data, textSrc.Offset);
             var firstWord = true;
-            while (text[0] != 0)
+            while (text.Offset < text.Data.Length && text[0] != 0)
             {
                 ushort wordWidth = 0;
                 ushort wordLength = 0;
 
-                while ((text[0] != ' ') && text[0] != 0)
+                while (text.Offset < text.Data.Length && (text[0] != ' ') && text[0] != 0)
                 {
                     wordWidth = (ushort)(wordWidth + CharWidth(text[0]) - Overlap);
                     wordLength++;
                     text.Offset++;
                 }
-                if (text[0] == ' ')
+                if (text.Offset < text.Data.Length && text[0] == ' ')
                     text.Offset++;
 
                 wordWidth += Overlap; // no overlap on final letter of word!

@@ -258,8 +258,7 @@ namespace NScumm.Sword1
             // meantime, we don't want any looping sound effects still playing.
             _sound.QuitScreen();
 
-            MoviePlayer player = new MoviePlayer(_vm);
-
+            var player = new MoviePlayer(_vm,_textMan,_resMan);
             _screen.ClearScreen();
             player.Load(sequenceId);
             player.Play();

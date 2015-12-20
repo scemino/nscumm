@@ -42,6 +42,11 @@ namespace NScumm.MonoGame
             }
         }
 
+        public byte[] Pixels
+        {
+            get { return _pixels; }
+        }
+
         public int ShakePosition { get; set; }
 
         public bool IsCursorVisible { get; set; }

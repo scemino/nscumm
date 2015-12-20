@@ -1,7 +1,4 @@
-﻿//
-//  ServiceLocator.cs
-//
-//  Author:
+﻿//  Author:
 //       scemino <scemino74@gmail.com>
 //
 //  Copyright (c) 2015 

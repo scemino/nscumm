@@ -155,7 +155,7 @@
   </data>
   <data name="NoGameTextBlock.Text" xml:space="preserve">
     <value>Il n'y a aucun jeu dans votre bibliothèque.
-Appuyez sur le bouton Ajouter pour ajouter des jeux SCUMM à votre librairie.</value>
+Appuyez sur le bouton Ajouter pour ajouter des jeux à votre librairie.</value>
   </data>
   <data name="ScanningGamesTextBlock.Text" xml:space="preserve">
     <value>Détection des jeux...</value>

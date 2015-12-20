@@ -64,7 +64,6 @@ namespace NScumm.MonoGame.ViewModels
 
         public GameLibraryViewModel()
         {
-            _showNoGameMessage = true;
             _gameSignatures = new HashSet<string>();
             _games = new ObservableCollection<GameViewModel>();
             _addCommand = new DelegateCommand(Scan);

@@ -158,7 +158,7 @@
   </data>
   <data name="NoGameTextBlock.Text" xml:space="preserve">
     <value>There is no game in your library.
-Press Add button to add your SCUMM games.</value>
+Press Add button to add your games.</value>
   </data>
   <data name="ScanningGamesTextBlock.Text" xml:space="preserve">
     <value>Scanning games...</value>

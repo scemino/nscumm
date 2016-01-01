@@ -16,20 +16,26 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using System.Globalization;
-using NScumm.Core.Graphics;
+using NScumm.Sci.Engine;
 
-namespace NScumm.Core.IO
+namespace NScumm.Sci.Graphics
 {
-    public interface IGameDescriptor
+    /// <summary>
+    /// Compare class, handles compare operations graphic-wise (like when checking control screen for a pattern etc.)
+    /// </summary>
+    internal class GfxCompare
     {
-        string Id { get; }
-        string Description { get; }
-        CultureInfo Culture { get; }
-        Platform Platform { get; }
-        int Width { get; }
-        int Height { get; }
-        PixelFormat PixelFormat { get; }
-        string Path { get; }
-    }    
+        private GfxCache _cache;
+        private GfxCoordAdjuster _coordAdjuster;
+        private GfxScreen _screen;
+        private SegManager _segMan;
+
+        public GfxCompare(SegManager segMan, GfxCache cache, GfxScreen screen, GfxCoordAdjuster coordAdjuster)
+        {
+            _segMan = segMan;
+            _cache = cache;
+            _screen = screen;
+            _coordAdjuster = coordAdjuster;
+        }
+    }
 }

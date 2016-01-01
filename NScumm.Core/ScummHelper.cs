@@ -589,12 +589,17 @@ namespace NScumm.Core
 
         public static string GetText(this byte[] value, int startIndex = 0)
         {
+            return System.Text.Encoding.UTF8.GetString(GetByteText(value, startIndex));
+        }
+
+        public static byte[] GetByteText(this byte[] value, int startIndex = 0)
+        {
             var data = new List<byte>();
             for (int i = startIndex; i < value.Length && value[i] != 0; i++)
             {
                 data.Add(value[i]);
             }
-            return System.Text.Encoding.UTF8.GetString(data.ToArray());
+            return data.ToArray();
         }
 
         public static int GetTextLength(this byte[] value, int startIndex = 0)

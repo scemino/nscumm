@@ -60,6 +60,11 @@ namespace NScumm
             return Path.Combine(path1, path2);
         }
 
+        public string GetPath(Stream file)
+        {
+            return ((FileStream)file).Name;
+        }
+
         public string GetDirectoryName(string path)
         {
             return Path.GetDirectoryName(path);
@@ -110,7 +115,7 @@ namespace NScumm
             return File.ReadAllBytes(path);
         }
 
-        public string GetSignature(string path)
+        public string GetSignature(string path, int size = 1024*1024)
         {
             string signature;
             using (var md5 = System.Security.Cryptography.MD5.Create())
@@ -119,7 +124,7 @@ namespace NScumm
                 using (var file = File.OpenRead(path))
                 {
                     var br = new BinaryReader(file);
-                    var data = br.ReadBytes(1024 * 1024);
+                    var data = br.ReadBytes(size);
                     var md5Key = md5.ComputeHash(data, 0, data.Length);
                     var md5Text = new StringBuilder();
                     for (int i = 0; i < 16; i++)
@@ -142,6 +147,16 @@ namespace NScumm
             var dir = new Uri(Path.GetDirectoryName(Assembly.GetExecutingAssembly().GetName().CodeBase)).AbsolutePath;
             var fullPath = ScummHelper.LocatePath(dir, path);
             return OpenFileRead(fullPath);
+        }
+
+        public int GetSize(string path)
+        {
+            int length = 0;
+            using (var stream = File.OpenRead(path))
+            {
+                length = (int)stream.Length;
+            }
+            return length;
         }
     }
 }

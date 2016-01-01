@@ -1,0 +1,110 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <MinimumVisualStudioVersion>10.0</MinimumVisualStudioVersion>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{FEF9CB20-5EBA-4FEC-9998-75FFCE0EAEE4}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>NScumm.Sci</RootNamespace>
+    <AssemblyName>NScumm.Sci</AssemblyName>
+    <DefaultLanguage>en-US</DefaultLanguage>
+    <FileAlignment>512</FileAlignment>
+    <ProjectTypeGuids>{786C830F-07A1-408B-BD7F-6EE04809D6DB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <TargetFrameworkProfile>Profile344</TargetFrameworkProfile>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\..\NScumm.MonoGame\Platforms\WindowsGL\bin\Debug\plugins\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\..\NScumm.MonoGame\Platforms\WindowsGL\bin\Release\plugins\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- A reference to the entire .NET Framework is automatically included -->
+    <ProjectReference Include="..\..\NScumm.Core\NScumm.Core.csproj">
+      <Project>{8e7a9e5b-d7eb-4da1-8ee7-a5d8de202372}</Project>
+      <Name>NScumm.Core</Name>
+      <Private>False</Private>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Debug.cs" />
+    <Compile Include="Decompressor.cs" />
+    <Compile Include="Engine\File.cs" />
+    <Compile Include="Engine\GameFeatures.cs" />
+    <Compile Include="Engine\Gc.cs" />
+    <Compile Include="Engine\Kernel.cs" />
+    <Compile Include="Engine\KFile.cs" />
+    <Compile Include="Engine\KMath.cs" />
+    <Compile Include="Engine\KScripts.cs" />
+    <Compile Include="Engine\Message.cs" />
+    <Compile Include="Engine\Object.cs" />
+    <Compile Include="Engine\Script.cs" />
+    <Compile Include="Engine\ScriptPatcher.cs" />
+    <Compile Include="Engine\SegManager.cs" />
+    <Compile Include="Engine\Segment.cs" />
+    <Compile Include="Engine\Selector.cs" />
+    <Compile Include="Engine\State.cs" />
+    <Compile Include="Engine\StaticSelectors.cs" />
+    <Compile Include="Engine\Vm.cs" />
+    <Compile Include="Engine\VmTypes.cs" />
+    <Compile Include="Engine\Workarounds.cs" />
+    <Compile Include="Event.cs" />
+    <Compile Include="Graphics\Animate.cs" />
+    <Compile Include="Graphics\Cache.cs" />
+    <Compile Include="Graphics\Compare.cs" />
+    <Compile Include="Graphics\Controls32.cs" />
+    <Compile Include="Graphics\Controls16.cs" />
+    <Compile Include="Graphics\Font.cs" />
+    <Compile Include="Graphics\Fontsjis.cs" />
+    <Compile Include="Graphics\Helpers.cs" />
+    <Compile Include="Graphics\MacIconBar.cs" />
+    <Compile Include="Graphics\View.cs" />
+    <Compile Include="Graphics\Transitions.cs" />
+    <Compile Include="Graphics\Text32.cs" />
+    <Compile Include="Graphics\Text16.cs" />
+    <Compile Include="Graphics\Paint32.cs" />
+    <Compile Include="Graphics\Paint16.cs" />
+    <Compile Include="Graphics\Paint.cs" />
+    <Compile Include="Graphics\Palette.cs" />
+    <Compile Include="Graphics\Menu.cs" />
+    <Compile Include="Graphics\CoordAdjuster.cs" />
+    <Compile Include="Graphics\Cursor.cs" />
+    <Compile Include="Graphics\Ports.cs" />
+    <Compile Include="Graphics\Screen.cs" />
+    <Compile Include="Parser\Grammar.cs" />
+    <Compile Include="Parser\Vocabulary.cs" />
+    <Compile Include="ResourceId.cs" />
+    <Compile Include="ResourceManager.cs" />
+    <Compile Include="ResourceManager.ResourceSource.cs" />
+    <Compile Include="SciEngine.cs" />
+    <Compile Include="SciMetaEngine.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Sound\Audio.cs" />
+    <Compile Include="Sound\SoundCommandParser.cs" />
+    <Compile Include="Util.cs" />
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

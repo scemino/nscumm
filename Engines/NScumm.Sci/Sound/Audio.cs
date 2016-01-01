@@ -16,20 +16,24 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using System.Globalization;
-using NScumm.Core.Graphics;
+using NScumm.Core.Audio;
 
-namespace NScumm.Core.IO
+namespace NScumm.Sci.Sound
 {
-    public interface IGameDescriptor
+    internal class AudioPlayer
     {
-        string Id { get; }
-        string Description { get; }
-        CultureInfo Culture { get; }
-        Platform Platform { get; }
-        int Width { get; }
-        int Height { get; }
-        PixelFormat PixelFormat { get; }
-        string Path { get; }
-    }    
+        private int _audioRate;
+        private IMixer _mixer;
+        private ResourceManager _resMan;
+        private bool _wPlayFlag;
+
+        public AudioPlayer(ResourceManager resMan)
+        {
+            _resMan = resMan;
+            _audioRate = 11025;
+
+            // TODO: _mixer = g_system->getMixer();
+            _wPlayFlag = false;
+        }
+    }
 }

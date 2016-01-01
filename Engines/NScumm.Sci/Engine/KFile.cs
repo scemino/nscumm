@@ -16,20 +16,22 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using System.Globalization;
-using NScumm.Core.Graphics;
 
-namespace NScumm.Core.IO
+namespace NScumm.Sci.Engine
 {
-    public interface IGameDescriptor
+    partial class Kernel
     {
-        string Id { get; }
-        string Description { get; }
-        CultureInfo Culture { get; }
-        Platform Platform { get; }
-        int Width { get; }
-        int Height { get; }
-        PixelFormat PixelFormat { get; }
-        string Path { get; }
-    }    
+        private static Register kGetSaveDir(EngineState s, int argc, StackPtr argv)
+        {
+# if ENABLE_SCI32
+            // SCI32 uses a parameter here. It is used to modify a string, stored in a
+            // global variable, so that game scripts store the save directory. We
+            // don't really set a save game directory, thus not setting the string to
+            // anything is the correct thing to do here.
+            //if (argc > 0)
+            //	warning("kGetSaveDir called with %d parameter(s): %04x:%04x", argc, PRINT_REG(argv[0]));
+#endif
+            return s._segMan.SaveDirPtr;
+        }
+    }
 }

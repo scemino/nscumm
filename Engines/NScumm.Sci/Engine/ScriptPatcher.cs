@@ -16,20 +16,16 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using System.Globalization;
-using NScumm.Core.Graphics;
 
-namespace NScumm.Core.IO
+using System;
+
+namespace NScumm.Sci.Engine
 {
-    public interface IGameDescriptor
+    class ScriptPatcher
     {
-        string Id { get; }
-        string Description { get; }
-        CultureInfo Culture { get; }
-        Platform Platform { get; }
-        int Width { get; }
-        int Height { get; }
-        PixelFormat PixelFormat { get; }
-        string Path { get; }
-    }    
+        public void ProcessScript(ushort scriptNr, byte[] scriptData, int scriptSize)
+        {
+            // TODO: ProcessScript
+        }
+    }
 }

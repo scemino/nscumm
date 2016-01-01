@@ -16,20 +16,12 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using System.Globalization;
-using NScumm.Core.Graphics;
-
-namespace NScumm.Core.IO
+namespace NScumm.Sci.Graphics
 {
-    public interface IGameDescriptor
+    /// <summary>
+    /// Text32 class, handles text calculation and displaying of text for SCI2, SCI21 and SCI3 games
+    /// </summary>
+    internal class GfxText32
     {
-        string Id { get; }
-        string Description { get; }
-        CultureInfo Culture { get; }
-        Platform Platform { get; }
-        int Width { get; }
-        int Height { get; }
-        PixelFormat PixelFormat { get; }
-        string Path { get; }
-    }    
+    }
 }

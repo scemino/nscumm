@@ -16,6 +16,8 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using System;
+
 namespace NScumm.Core.Graphics
 {
     [System.Diagnostics.DebuggerDisplay("{DebuggerDisplay,nq}")]
@@ -37,7 +39,7 @@ namespace NScumm.Core.Graphics
         internal string DebuggerDisplay
         {
             get
-            { 
+            {
                 return string.Format("[{0},{1},{2},{3}]", Left, Top, Right, Bottom);
             }
         }
@@ -47,6 +49,14 @@ namespace NScumm.Core.Graphics
             get
             {
                 return (Left <= Right && Top <= Bottom);
+            }
+        }
+
+        public bool IsEmpty
+        {
+            get
+            {
+                return (Left >= Right || Top >= Bottom);
             }
         }
 
@@ -113,6 +123,31 @@ namespace NScumm.Core.Graphics
         public override string ToString()
         {
             return DebuggerDisplay;
+        }
+
+        public void MoveTo(int x, int y)
+        {
+            Bottom += y - Top;
+            Right += x - Left;
+            Top = y;
+            Left = x;
+        }
+
+        /// <summary>
+        /// Extend this rectangle in all four directions by the given number of pixels
+        /// </summary>
+        /// <param name="offset">the size to grow by</param>
+        public void Grow(int offset)
+        {
+            Top -= offset;
+            Left -= offset;
+            Bottom += offset;
+            Right += offset;
+        }
+
+        public void Translate(int v1, int v2)
+        {
+            throw new NotImplementedException();
         }
     }
 }

@@ -16,20 +16,24 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using System.Globalization;
-using NScumm.Core.Graphics;
-
-namespace NScumm.Core.IO
+namespace NScumm.Sci.Graphics
 {
-    public interface IGameDescriptor
+    /// <summary>
+    /// CoordAdjuster class, does coordinate adjustment as need by various functions
+    ///  most of the time sci32 doesn't do any coordinate adjustment at all
+    ///  sci16 does a lot of port adjustment on given coordinates
+    /// </summary>
+    internal class GfxCoordAdjuster
     {
-        string Id { get; }
-        string Description { get; }
-        CultureInfo Culture { get; }
-        Platform Platform { get; }
-        int Width { get; }
-        int Height { get; }
-        PixelFormat PixelFormat { get; }
-        string Path { get; }
-    }    
+    }
+
+    internal class GfxCoordAdjuster16 : GfxCoordAdjuster
+    {
+        private GfxPorts _ports;
+
+        public GfxCoordAdjuster16(GfxPorts ports)
+        {
+            _ports = ports;
+        }
+    }
 }

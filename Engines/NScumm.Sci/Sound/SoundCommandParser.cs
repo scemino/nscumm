@@ -16,20 +16,14 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using System.Globalization;
-using NScumm.Core.Graphics;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
-namespace NScumm.Core.IO
+namespace NScumm.Sci.Sound
 {
-    public interface IGameDescriptor
+    class SoundCommandParser
     {
-        string Id { get; }
-        string Description { get; }
-        CultureInfo Culture { get; }
-        Platform Platform { get; }
-        int Width { get; }
-        int Height { get; }
-        PixelFormat PixelFormat { get; }
-        string Path { get; }
-    }    
+    }
 }

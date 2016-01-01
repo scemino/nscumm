@@ -16,20 +16,21 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using System.Globalization;
-using NScumm.Core.Graphics;
-
-namespace NScumm.Core.IO
+namespace NScumm.Sci.Graphics
 {
-    public interface IGameDescriptor
+    enum Sci32ViewNativeResolution
     {
-        string Id { get; }
-        string Description { get; }
-        CultureInfo Culture { get; }
-        Platform Platform { get; }
-        int Width { get; }
-        int Height { get; }
-        PixelFormat PixelFormat { get; }
-        string Path { get; }
-    }    
+        NONE = -1,
+        R320x200 = 0,
+        R640x480 = 1,
+        R640x400 = 2
+    }
+
+    /// <summary>
+    /// View class, handles loading of view resources and drawing contained cels to screen
+    ///  every view resource has its own instance of this class
+    /// </summary>
+    internal class GfxView
+    {
+    }
 }

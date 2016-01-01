@@ -38,6 +38,8 @@ namespace NScumm.Core
 
         string Combine(string path1, string path2);
 
+        string GetPath(Stream file);
+
         string GetDirectoryName(string path);
 
         string GetFileName(string path);
@@ -58,12 +60,13 @@ namespace NScumm.Core
 
         byte[] ReadAllBytes(string filename);
 
-        string GetSignature(string path);
+        string GetSignature(string path, int size = 1024 * 1024);
 
         Stream OpenContent(string path);
 
         // warning: don't remove this or you will have a TypeInitializationException
         XDocument LoadDocument(Stream stream);
+        int GetSize(string p);
     }
 
     public static class FileStorageExtension

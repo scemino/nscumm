@@ -59,7 +59,8 @@ namespace NScumm.MonoGame
 
         private static IEnumerable<IMetaEngine> GetEngines(Assembly asm)
         {
-            return asm.GetTypes().Where(t => t.GetInterfaces().Contains(typeof(IMetaEngine))).Select(t => Activator.CreateInstance(t) as IMetaEngine);
+            var types = asm.GetExportedTypes();
+            return types.Where(t => t.GetInterfaces().Contains(typeof(IMetaEngine))).Select(t => Activator.CreateInstance(t) as IMetaEngine);
         }
     }
 }

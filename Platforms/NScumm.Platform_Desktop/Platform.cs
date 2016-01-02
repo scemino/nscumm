@@ -102,6 +102,11 @@ namespace NScumm
             var handle = GCHandle.Alloc(data, GCHandleType.Pinned);
             return new WrappedObject(handle, Marshal.PtrToStructure(handle.AddrOfPinnedObject() + offset, type));
         }
+
+        public void Debug(string text)
+        {
+            System.Diagnostics.Debug.WriteLine(text);
+        }
     }
 }
 

@@ -17,6 +17,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
+using System.Linq;
 
 namespace NScumm.Sci.Engine
 {
@@ -24,10 +25,10 @@ namespace NScumm.Sci.Engine
     {
         // Loads arbitrary resources of type 'restype' with resource numbers 'resnrs'
         // This implementation ignores all resource numbers except the first one.
-        private static Register kLoad(EngineState s, int argc, StackPtr argv)
+        private static Register kLoad(EngineState s, int argc, StackPtr? argv)
         {
-            ResourceType restype = SciEngine.Instance.ResMan.ConvertResType(argv[0].ToUInt16());
-            int resnr = argv[1].ToUInt16();
+            ResourceType restype = SciEngine.Instance.ResMan.ConvertResType(argv.Value[0].ToUInt16());
+            int resnr = argv.Value[1].ToUInt16();
 
             // Request to dynamically allocate hunk memory for later use
             if (restype == ResourceType.Memory)
@@ -39,12 +40,12 @@ namespace NScumm.Sci.Engine
         // Unloads an arbitrary resource of type 'restype' with resource numbber 'resnr'
         //  behavior of this call didn't change between sci0.sci1.1 parameter wise, which means getting called with
         //  1 or 3+ parameters is not right according to sierra sci
-        private static Register kUnLoad(EngineState s, int argc, Register[] argv)
+        private static Register kUnLoad(EngineState s, int argc, StackPtr? argv)
         {
             if (argc >= 2)
             {
-                ResourceType restype = SciEngine.Instance.ResMan.ConvertResType(argv[0].ToUInt16());
-                Register resnr = argv[1];
+                ResourceType restype = SciEngine.Instance.ResMan.ConvertResType(argv.Value[0].ToUInt16());
+                Register resnr = argv.Value[1];
 
                 if (restype == ResourceType.Memory)
                     s._segMan.FreeHunkEntry(resnr);
@@ -54,22 +55,22 @@ namespace NScumm.Sci.Engine
         }
 
         // Returns script dispatch address index in the supplied script
-        private static Register kScriptID(EngineState s, int argc, Register[] argv)
+        private static Register kScriptID(EngineState s, int argc, StackPtr? argv)
         {
-            int script = argv[0].ToUInt16();
-            ushort index = (argc > 1) ? argv[1].ToUInt16() : (ushort)0;
+            int script = argv.Value[0].ToUInt16();
+            ushort index = (argc > 1) ? argv.Value[1].ToUInt16() : (ushort)0;
 
-            if (argv[0].Segment!=0)
-                return argv[0];
+            if (argv.Value[0].Segment != 0)
+                return argv.Value[0];
 
             var scriptSeg = s._segMan.GetScriptSegment(script, ScriptLoadType.LOAD);
 
-            if (scriptSeg==0)
+            if (scriptSeg == 0)
                 return Register.NULL_REG;
 
             Script scr = s._segMan.GetScript(scriptSeg);
 
-            if (!scr.ExportsNr)
+            if (scr.ExportsNr == 0)
             {
                 // This is normal. Some scripts don't have a dispatch (exports) table,
                 // and this call is probably used to load them in memory, ignoring
@@ -101,7 +102,54 @@ namespace NScumm.Sci.Engine
             return Register.Make(scriptSeg, address);
         }
 
-        internal void SignatureDebug(ushort[] signature, int argc, StackPtr argv)
+        private static Register kDisposeClone(EngineState s, int argc, StackPtr? argv)
+        {
+            Register obj = argv.Value[0];
+            var @object = s._segMan.GetObject(obj);
+
+            if (@object == null)
+            {
+                throw new InvalidOperationException($"Attempt to dispose non-class/object at {obj}");
+            }
+
+            // SCI uses this technique to find out, if it's a clone and if it's supposed to get freed
+            //  At least kq4early relies on this behavior. The scripts clone "Sound", then set bit 1 manually
+            //  and call kDisposeClone later. In that case we may not free it, otherwise we will run into issues
+            //  later, because kIsObject would then return false and Sound object wouldn't get checked.
+            ushort infoSelector = (ushort)@object.InfoSelector.Offset;
+            if ((infoSelector & 3) == SciObject.InfoFlagClone)
+                @object.MarkAsFreed();
+
+            return s.r_acc;
+        }
+
+        private static Register kDisposeScript(EngineState s, int argc, StackPtr? argv)
+        {
+            int script = (int)argv.Value[0].Offset;
+
+            ushort id = s._segMan.GetScriptSegment(script);
+            Script scr = s._segMan.GetScriptIfLoaded(id);
+            if (scr != null && !scr.IsMarkedAsDeleted)
+            {
+                if (s._executionStack.Last().pc.Segment != id)
+                    scr.Lockers = 1;
+            }
+
+            s._segMan.UninstantiateScript(script);
+
+            if (argc != 2)
+            {
+                return s.r_acc;
+            }
+            else {
+                // This exists in the KQ5CD and GK1 interpreter. We know it is used
+                // when GK1 starts up, before the Sierra logo.
+                // TODO: warning("kDisposeScript called with 2 parameters, still untested");
+                return argv.Value[1];
+            }
+        }
+
+        internal void SignatureDebug(ushort[] signature, int argc, StackPtr? argv)
         {
             throw new NotImplementedException();
         }

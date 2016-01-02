@@ -18,11 +18,47 @@
 
 using NScumm.Core.Graphics;
 using System.Collections.Generic;
+using System;
 
 namespace NScumm.Sci
 {
     internal class SciEvent
     {
+        public const int SCI_KEYMOD_RSHIFT = (1 << 0);
+        public const int SCI_KEYMOD_LSHIFT = (1 << 1);
+        public const int SCI_KEYMOD_CTRL = (1 << 2);
+        public const int SCI_KEYMOD_ALT = (1 << 3);
+        public const int SCI_KEYMOD_SCRLOCK = (1 << 4);
+        public const int SCI_KEYMOD_NUMLOCK = (1 << 5);
+        public const int SCI_KEYMOD_CAPSLOCK = (1 << 6);
+        public const int SCI_KEYMOD_INSERT = (1 << 7);
+
+        public const int SCI_KEYMOD_NO_FOOLOCK = (~(SCI_KEYMOD_SCRLOCK | SCI_KEYMOD_NUMLOCK | SCI_KEYMOD_CAPSLOCK | SCI_KEYMOD_INSERT));
+        public const int SCI_KEYMOD_ALL = 0xFF;
+
+        public const int SCI_KEY_F1 = (59 << 8);
+        public const int SCI_KEY_F2 = (60 << 8);
+        public const int SCI_KEY_F3 = (61 << 8);
+        public const int SCI_KEY_F4 = (62 << 8);
+        public const int SCI_KEY_F5 = (63 << 8);
+        public const int SCI_KEY_F6 = (64 << 8);
+        public const int SCI_KEY_F7 = (65 << 8);
+        public const int SCI_KEY_F8 = (66 << 8);
+        public const int SCI_KEY_F9 = (67 << 8);
+        public const int SCI_KEY_F10 = (68 << 8);
+
+        /*Values for type*/
+        public const int SCI_EVENT_NONE = 0;
+        public const int SCI_EVENT_MOUSE_PRESS = (1 << 0);
+        public const int SCI_EVENT_MOUSE_RELEASE = (1 << 1);
+        public const int SCI_EVENT_KEYBOARD = (1 << 2);
+        public const int SCI_EVENT_DIRECTION = (1 << 6);
+        public const int SCI_EVENT_SAID = (1 << 7);
+        /*Fake values for other events*/
+        public const int SCI_EVENT_QUIT = (1 << 11);
+        public const int SCI_EVENT_PEEK = (1 << 15);
+        public const int SCI_EVENT_ANY = 0x7fff;
+
         public short type;
         public short data;
         public short modifiers;
@@ -56,6 +92,16 @@ namespace NScumm.Sci
         {
             _fontIsExtended = fontIsExtended;
             _events = new List<SciEvent>();
+        }
+
+        internal void GetSciEvent(int sCI_EVENT_PEEK)
+        {
+            throw new NotImplementedException();
+        }
+
+        internal void UpdateScreen()
+        {
+            throw new NotImplementedException();
         }
     }
 }

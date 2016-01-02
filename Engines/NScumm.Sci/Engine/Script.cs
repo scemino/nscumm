@@ -125,12 +125,13 @@ namespace NScumm.Sci.Engine
 
         public ushort LocalsSegment { get { return _localsSegment; } }
 
-        public StackPtr LocalsBegin { get { return _localsBlock != null ? new StackPtr(_localsBlock._locals, 0) : null; } }
+        public StackPtr LocalsBegin { get { return _localsBlock != null ? new StackPtr(_localsBlock._locals, 0) : new StackPtr(); } }
 
-        internal ushort ValidateExportFunc(ushort index, bool v)
-        {
-            throw new NotImplementedException();
-        }
+        /// <summary>
+        /// Gets an offset to the beginning of the code block in a SCI3 script
+        /// </summary>
+        /// <returns></returns>
+        public int CodeBlockOffsetSci3 { get { return (int)_buf.ReadSci11EndianUInt32(0); } }
 
         public int ScriptNumber
         {
@@ -141,6 +142,59 @@ namespace NScumm.Sci.Engine
             : base(SegmentType.SCRIPT)
         {
             _objects = new ObjMap();
+        }
+
+        public ushort ValidateExportFunc(ushort pubfunct, bool relocSci3)
+        {
+            bool exportsAreWide = (SciEngine.Instance.Features.DetectLofsType() == SciVersion.V1_MIDDLE);
+
+            if (_numExports <= pubfunct)
+            {
+                throw new InvalidOperationException("validateExportFunc(): pubfunct is invalid");
+                return 0;
+            }
+
+            if (exportsAreWide)
+                pubfunct *= 2;
+
+            uint offset;
+
+            if (ResourceManager.GetSciVersion() != SciVersion.V3)
+            {
+                offset = _exportTable.Data.ReadSci11EndianUInt16(_exportTable.Offset + pubfunct);
+            }
+            else {
+                if (!relocSci3)
+                    offset = (uint)(_exportTable.Data.ReadSci11EndianUInt16(_exportTable.Offset + pubfunct) + CodeBlockOffsetSci3);
+                else
+                    offset = RelocateOffsetSci3(pubfunct * 2 + 22);
+            }
+
+            // Check if the offset found points to a second export table (e.g. script 912
+            // in Camelot and script 306 in KQ4). Such offsets are usually small (i.e. < 10),
+            // thus easily distinguished from actual code offsets.
+            // This only makes sense for SCI0-SCI1, as the export table in SCI1.1+ games
+            // is located at a specific address, thus findBlockSCI0() won't work.
+            // Fixes bugs #3039785 and #3037595.
+            if (offset < 10 && ResourceManager.GetSciVersion() <= SciVersion.V1_LATE)
+            {
+                var secondExportTable = FindBlockSCI0(ScriptObjectTypes.EXPORTS, 0);
+
+                if (secondExportTable != null)
+                {
+                    secondExportTable.Offset += 3 * 2; // skip header plus 2 bytes (secondExportTable is a uint16 pointer)
+                    offset = secondExportTable.Data.ReadSci11EndianUInt16(secondExportTable.Offset + pubfunct);
+                }
+            }
+
+            // Note that it's perfectly normal to return a zero offset, especially in
+            // SCI1.1 and newer games. Examples include script 64036 in Torin's Passage,
+            // script 64908 in the demo of RAMA and script 1013 in KQ6 floppy.
+
+            if (offset >= _bufSize)
+                throw new InvalidOperationException("Invalid export function pointer");
+
+            return (ushort)offset;
         }
 
         public override bool IsValidOffset(ushort offset)
@@ -160,6 +214,12 @@ namespace NScumm.Sci.Engine
             ret.maxSize = (int)(_bufSize - pointer.Offset);
             ret.raw = new ByteAccess(_buf, (int)pointer.Offset);
             return ret;
+        }
+
+        public void DecrementLockers()
+        {
+            if (_lockers > 0)
+                _lockers--;
         }
 
         public void InitializeClasses(SegManager segMan)
@@ -713,14 +773,23 @@ namespace NScumm.Sci.Engine
         /// Gets a value indicationg whether the script is marked as being deleted.
         /// </summary>
         public bool IsMarkedAsDeleted { get; private set; }
-        public bool ExportsNr { get { throw new NotImplementedException(); } }
+        
+        /// <summary>
+        /// Retrieves the number of exports of script.
+        /// the number of exports of this script
+        /// </summary>
+        public ushort ExportsNr { get { return _numExports; } }
 
         public ushort ScriptSize
         {
             get { return (ushort)_scriptSize; }
         }
 
-        public int Lockers { get { return _lockers; } }
+        public int Lockers
+        {
+            get { return _lockers; }
+            set { _lockers = value; }
+        }
 
         /// <summary>
         /// Marks the script as deleted.
@@ -790,5 +859,9 @@ namespace NScumm.Sci.Engine
             }
         }
 
+        internal ushort RelocateOffsetSci3(int v)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

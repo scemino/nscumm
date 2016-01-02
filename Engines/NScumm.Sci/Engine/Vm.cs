@@ -17,8 +17,10 @@
 //  along with this program.  If not; see <http://www.gnu.org/licenses/>.
 
 
+using NScumm.Core;
 using NScumm.Core.Common;
 using System;
+using System.Diagnostics;
 using System.Linq;
 
 namespace NScumm.Sci.Engine
@@ -43,7 +45,7 @@ namespace NScumm.Sci.Engine
         public Register GetPointer(SegManager segMan)
         {
             SciObject o = segMan.GetObject(obj);
-            return o != null ? o.GetVariableRef(varindex) : null;
+            return o != null ? o.GetVariableRef(varindex) : Register.NULL_REG;
         }
     }
 
@@ -54,7 +56,7 @@ namespace NScumm.Sci.Engine
         VARSELECTOR = 2
     }
 
-    internal class StackPtr : IComparable<StackPtr>, IComparable
+    internal struct StackPtr : IEquatable<StackPtr>, IComparable<StackPtr>, IComparable
     {
         private int _index;
         private Register[] _entries;
@@ -63,6 +65,12 @@ namespace NScumm.Sci.Engine
         {
             get { return _entries[_index + index]; }
             set { _entries[_index + index] = value; }
+        }
+
+        public StackPtr(StackPtr ptr)
+        {
+            _entries = ptr._entries;
+            _index = ptr._index;
         }
 
         public StackPtr(Register[] entries, int index)
@@ -135,10 +143,35 @@ namespace NScumm.Sci.Engine
             return ptr1._index >= ptr2._index;
         }
 
+        public override int GetHashCode()
+        {
+            return _entries == null ? 0 : _entries.GetHashCode() ^ _index.GetHashCode();
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (!(obj is StackPtr)) return false;
+            return Equals((StackPtr)obj);
+        }
+
+        public bool Equals(StackPtr other)
+        {
+            return other._entries == _entries && other._index == _index;
+        }
+
+        public static bool operator ==(StackPtr ptr1, StackPtr ptr2)
+        {
+            return Equals(ptr1, ptr2);
+        }
+
+        public static bool operator !=(StackPtr ptr1, StackPtr ptr2)
+        {
+            return !Equals(ptr1, ptr2);
+        }
+
         int IComparable.CompareTo(object obj)
         {
-            var other = obj as StackPtr;
-            if (other == null) return -1;
+            var other = (StackPtr)obj;
             return CompareTo(other);
         }
 
@@ -219,7 +252,7 @@ namespace NScumm.Sci.Engine
         /// <summary>
         /// Stack pointer value: Use predecessor's value
         /// </summary>
-        public const StackPtr CALL_SP_CARRY = null;
+        public static readonly StackPtr CALL_SP_CARRY = new StackPtr();
 
 
         /// <summary>
@@ -365,7 +398,7 @@ namespace NScumm.Sci.Engine
         public const int op_minussti = 0x7e; // 126
         public const int op_minusspi = 0x7f;  // 127
 
-        public static int SendSelector(EngineState s, Register send_obj, Register work_obj, StackPtr sp, int framesize, StackPtr argp)
+        public static ExecStack SendSelector(EngineState s, Register send_obj, Register work_obj, StackPtr sp, int framesize, StackPtr argp)
         {
             // send_obj and work_obj are equal for anything but 'super'
             // Returns a pointer to the TOS exec_stack element
@@ -393,7 +426,7 @@ namespace NScumm.Sci.Engine
                     throw new InvalidOperationException($"Send to invalid selector 0x{0xffff & selector:X} of object at {send_obj}");
 
                 ExecStackType stackType = ExecStackType.VARSELECTOR;
-                StackPtr curSP = null;
+                StackPtr curSP = new StackPtr();
                 Register32 curFP = Register32.Make(0, 0);
                 if (selectorType == SelectorType.Method)
                 {
@@ -429,13 +462,13 @@ namespace NScumm.Sci.Engine
 
             _exec_varselectors(s);
 
-            return s._executionStack.Count;
+            return s._executionStack.LastOrDefault();
         }
 
         public static void Run(EngineState s)
         {
             int temp;
-            Register r_temp; // Temporary register
+            Register r_temp = new Register(); // Temporary register
             StackPtr s_temp; // Temporary stack pointer
             short[] opparams = new short[4]; // opcode parameters
 
@@ -455,7 +488,8 @@ namespace NScumm.Sci.Engine
             s.executionStackBase = s._executionStack.Count - 1;
 
             s.variablesSegment[VAR_TEMP] = s.variablesSegment[VAR_PARAM] = s._segMan.FindSegmentByType(SegmentType.STACK);
-            s.variablesBase[VAR_TEMP] = s.variablesBase[VAR_PARAM] = s.stack_base;
+            s.variablesBase[VAR_TEMP] = new StackPtr(s.stack_base);
+            s.variablesBase[VAR_PARAM] = new StackPtr(s.stack_base);
 
             s._executionStackPosChanged = true; // Force initialization
 
@@ -524,9 +558,11 @@ namespace NScumm.Sci.Engine
                 byte extOpcode;
                 s.xs.pc.IncOffset(ReadPMachineInstruction(scr.GetBuf(s.xs.pc.Offset), out extOpcode, opparams));
                 byte opcode = (byte)(extOpcode >> 1);
-                //debug("%s: %d, %d, %d, %d, acc = %04x:%04x, script %d, local script %d", opcodeNames[opcode], opparams[0], opparams[1], opparams[2], opparams[3], PRINT_REG(s.r_acc), scr.getScriptNumber(), local_script.getScriptNumber());
+#if DEBUG
+                ServiceLocator.Platform.Debug($"{opcodeNames[opcode]}: {opparams[0]}, {opparams[1]}, {opparams[2]}, {opparams[3]}, acc = {s.r_acc}, script {scr.ScriptNumber}, local script {local_script.ScriptNumber}");
+#endif
 
-# if ABORT_ON_INFINITE_LOOP
+#if ABORT_ON_INFINITE_LOOP
                 if (prevOpcode != 0xFF)
                 {
                     if (prevOpcode == op_eq_ || prevOpcode == op_ne_ ||
@@ -559,192 +595,190 @@ namespace NScumm.Sci.Engine
                         s.r_acc = POP32() - s.r_acc;
                         break;
 
-                    //case op_mul: // 0x03 (03)
-                    //    s.r_acc = POP32() * s.r_acc;
-                    //    break;
+                    case op_mul: // 0x03 (03)
+                        s.r_acc = POP32() * s.r_acc;
+                        break;
 
-                    //case op_div: // 0x04 (04)
-                    //             // we check for division by 0 inside the custom reg_t division operator
-                    //    s.r_acc = POP32() / s.r_acc;
-                    //    break;
+                    case op_div: // 0x04 (04)
+                                 // we check for division by 0 inside the custom reg_t division operator
+                        s.r_acc = POP32() / s.r_acc;
+                        break;
 
-                    //case op_mod: // 0x05 (05)
-                    //             // we check for division by 0 inside the custom reg_t modulo operator
-                    //    s.r_acc = POP32() % s.r_acc;
-                    //    break;
+                    case op_mod: // 0x05 (05)
+                                 // we check for division by 0 inside the custom reg_t modulo operator
+                        s.r_acc = POP32() % s.r_acc;
+                        break;
 
-                    //case op_shr: // 0x06 (06)
-                    //             // Shift right logical
-                    //    s.r_acc = POP32() >> s.r_acc;
-                    //    break;
+                    case op_shr: // 0x06 (06)
+                                 // Shift right logical
+                        s.r_acc = POP32().ShiftRight(s.r_acc);
+                        break;
 
-                    //case op_shl: // 0x07 (07)
-                    //             // Shift left logical
-                    //    s.r_acc = POP32() << s.r_acc;
-                    //    break;
+                    case op_shl: // 0x07 (07)
+                                 // Shift left logical
+                        s.r_acc = POP32().ShiftLeft(s.r_acc);
+                        break;
 
-                    //case op_xor: // 0x08 (08)
-                    //    s.r_acc = POP32() ^ s.r_acc;
-                    //    break;
+                    case op_xor: // 0x08 (08)
+                        s.r_acc = POP32() ^ s.r_acc;
+                        break;
 
-                    //case op_and: // 0x09 (09)
-                    //    s.r_acc = POP32() & s.r_acc;
-                    //    break;
+                    case op_and: // 0x09 (09)
+                        s.r_acc = POP32() & s.r_acc;
+                        break;
 
-                    //case op_or: // 0x0a (10)
-                    //    s.r_acc = POP32() | s.r_acc;
-                    //    break;
+                    case op_or: // 0x0a (10)
+                        s.r_acc = POP32() | s.r_acc;
+                        break;
 
-                    //case op_neg:    // 0x0b (11)
-                    //    s.r_acc = Register.Make(0, -s.r_acc.requireSint16());
-                    //    break;
+                    case op_neg:    // 0x0b (11)
+                        s.r_acc = Register.Make(0, (ushort)(-s.r_acc.RequireInt16()));
+                        break;
 
-                    //case op_not: // 0x0c (12)
-                    //    s.r_acc = Register.Make(0, !(s.r_acc.getOffset() || s.r_acc.getSegment()));
-                    //    // Must allow pointers to be negated, as this is used for checking whether objects exist
-                    //    break;
+                    case op_not: // 0x0c (12)
+                        s.r_acc = Register.Make(0, !(s.r_acc.Offset != 0 || s.r_acc.Segment != 0));
+                        // Must allow pointers to be negated, as this is used for checking whether objects exist
+                        break;
 
-                    //case op_eq_: // 0x0d (13)
-                    //    s.r_prev = s.r_acc;
-                    //    s.r_acc = Register.Make(0, POP32() == s.r_acc);
-                    //    break;
+                    case op_eq_: // 0x0d (13)
+                        s.r_prev = s.r_acc;
+                        s.r_acc = Register.Make(0, POP32() == s.r_acc);
+                        break;
 
-                    //case op_ne_: // 0x0e (14)
-                    //    s.r_prev = s.r_acc;
-                    //    s.r_acc = Register.Make(0, POP32() != s.r_acc);
-                    //    break;
+                    case op_ne_: // 0x0e (14)
+                        s.r_prev = s.r_acc;
+                        s.r_acc = Register.Make(0, POP32() != s.r_acc);
+                        break;
 
-                    //case op_gt_: // 0x0f (15)
-                    //    s.r_prev = s.r_acc;
-                    //    s.r_acc = Register.Make(0, POP32() > s.r_acc);
-                    //    break;
+                    case op_gt_: // 0x0f (15)
+                        s.r_prev = s.r_acc;
+                        s.r_acc = Register.Make(0, POP32() > s.r_acc);
+                        break;
 
-                    //case op_ge_: // 0x10 (16)
-                    //    s.r_prev = s.r_acc;
-                    //    s.r_acc = Register.Make(0, POP32() >= s.r_acc);
-                    //    break;
+                    case op_ge_: // 0x10 (16)
+                        s.r_prev = s.r_acc;
+                        s.r_acc = Register.Make(0, POP32() >= s.r_acc);
+                        break;
 
-                    //case op_lt_: // 0x11 (17)
-                    //    s.r_prev = s.r_acc;
-                    //    s.r_acc = Register.Make(0, POP32() < s.r_acc);
-                    //    break;
+                    case op_lt_: // 0x11 (17)
+                        s.r_prev = s.r_acc;
+                        s.r_acc = Register.Make(0, POP32() < s.r_acc);
+                        break;
 
-                    //case op_le_: // 0x12 (18)
-                    //    s.r_prev = s.r_acc;
-                    //    s.r_acc = Register.Make(0, POP32() <= s.r_acc);
-                    //    break;
+                    case op_le_: // 0x12 (18)
+                        s.r_prev = s.r_acc;
+                        s.r_acc = Register.Make(0, POP32() <= s.r_acc);
+                        break;
 
-                    //case op_ugt_: // 0x13 (19)
-                    //              // > (unsigned)
-                    //    s.r_prev = s.r_acc;
-                    //    s.r_acc = Register.Make(0, POP32().gtU(s.r_acc));
-                    //    break;
+                    case op_ugt_: // 0x13 (19)
+                                  // > (unsigned)
+                        s.r_prev = s.r_acc;
+                        s.r_acc = Register.Make(0, POP32().GreaterThanUnsigned(s.r_acc));
+                        break;
 
-                    //case op_uge_: // 0x14 (20)
-                    //              // >= (unsigned)
-                    //    s.r_prev = s.r_acc;
-                    //    s.r_acc = Register.Make(0, POP32().geU(s.r_acc));
-                    //    break;
+                    case op_uge_: // 0x14 (20)
+                                  // >= (unsigned)
+                        s.r_prev = s.r_acc;
+                        s.r_acc = Register.Make(0, POP32().GreaterOrEqualsUnsigned(s.r_acc));
+                        break;
 
-                    //case op_ult_: // 0x15 (21)
-                    //              // < (unsigned)
-                    //    s.r_prev = s.r_acc;
-                    //    s.r_acc = Register.Make(0, POP32().ltU(s.r_acc));
-                    //    break;
+                    case op_ult_: // 0x15 (21)
+                                  // < (unsigned)
+                        s.r_prev = s.r_acc;
+                        s.r_acc = Register.Make(0, POP32().LowerThanUnsigned(s.r_acc));
+                        break;
 
-                    //case op_ule_: // 0x16 (22)
-                    //              // <= (unsigned)
-                    //    s.r_prev = s.r_acc;
-                    //    s.r_acc = Register.Make(0, POP32().leU(s.r_acc));
-                    //    break;
+                    case op_ule_: // 0x16 (22)
+                                  // <= (unsigned)
+                        s.r_prev = s.r_acc;
+                        s.r_acc = Register.Make(0, POP32().LowerOrEqualsUnsigned(s.r_acc));
+                        break;
 
-                    //case op_bt: // 0x17 (23)
-                    //            // Branch relative if true
-                    //    if (s.r_acc.Offset != 0 || s.r_acc.Segment != 0)
-                    //        s.xs.pc.IncOffset(opparams[0]);
+                    case op_bt: // 0x17 (23)
+                                // Branch relative if true
+                        if (s.r_acc.Offset != 0 || s.r_acc.Segment != 0)
+                            s.xs.pc.IncOffset(opparams[0]);
 
-                    //    if (s.xs.pc.Offset >= local_script.ScriptSize)
-                    //        throw new InvalidOperationException($"[VM] op_bt: request to jump past the end of script {local_script.ScriptNumber} (offset {s.xs.pc.Offset}, script is {local_script.ScriptSize} bytes)");
-                    //    break;
+                        if (s.xs.pc.Offset >= local_script.ScriptSize)
+                            throw new InvalidOperationException($"[VM] op_bt: request to jump past the end of script {local_script.ScriptNumber} (offset {s.xs.pc.Offset}, script is {local_script.ScriptSize} bytes)");
+                        break;
 
-                    //case op_bnt: // 0x18 (24)
-                    //             // Branch relative if not true
-                    //    if (!(s.r_acc.Offset != 0 || s.r_acc.Segment != 0))
-                    //        s.xs.pc.IncOffset(opparams[0]);
+                    case op_bnt: // 0x18 (24)
+                                 // Branch relative if not true
+                        if (!(s.r_acc.Offset != 0 || s.r_acc.Segment != 0))
+                            s.xs.pc.IncOffset(opparams[0]);
 
-                    //    if (s.xs.pc.Offset >= local_script.ScriptSize)
-                    //        throw new InvalidOperationException("[VM] op_bnt: request to jump past the end of script %d (offset %d, script is %d bytes)",
-                    //            local_script.ScriptNumber, s.xs.pc.Offset, local_script.ScriptSize);
-                    //    break;
+                        if (s.xs.pc.Offset >= local_script.ScriptSize)
+                            throw new InvalidOperationException($"[VM] op_bnt: request to jump past the end of script {local_script.ScriptNumber} (offset {s.xs.pc.Offset}, script is {local_script.ScriptSize} bytes)");
+                        break;
 
-                    //case op_jmp: // 0x19 (25)
-                    //    s.xs.pc.IncOffset(opparams[0]);
+                    case op_jmp: // 0x19 (25)
+                        s.xs.pc.IncOffset(opparams[0]);
 
-                    //    if (s.xs.pc.Offset >= local_script.ScriptSize)
-                    //        throw new InvalidOperationException("[VM] op_jmp: request to jump past the end of script %d (offset %d, script is %d bytes)",
-                    //            local_script.ScriptNumber, s.xs.pc.Offset, local_script.ScriptSize);
-                    //    break;
+                        if (s.xs.pc.Offset >= local_script.ScriptSize)
+                            throw new InvalidOperationException($"[VM] op_jmp: request to jump past the end of script {local_script.ScriptNumber} (offset {s.xs.pc.Offset}, script is {local_script.ScriptSize} bytes)");
+                        break;
 
-                    //case op_ldi: // 0x1a (26)
-                    //             // Load data immediate
-                    //    s.r_acc = Register.Make(0, opparams[0]);
-                    //    break;
+                    case op_ldi: // 0x1a (26)
+                                 // Load data immediate
+                        s.r_acc = Register.Make(0, (ushort)opparams[0]);
+                        break;
 
-                    //case op_push: // 0x1b (27)
-                    //              // Push to stack
-                    //    PUSH32(s.r_acc);
-                    //    break;
+                    case op_push: // 0x1b (27)
+                                  // Push to stack
+                        PUSH32(s.r_acc);
+                        break;
 
-                    //case op_pushi: // 0x1c (28)
-                    //               // Push immediate
-                    //    PUSH(opparams[0]);
-                    //    break;
+                    case op_pushi: // 0x1c (28)
+                                   // Push immediate
+                        PUSH(opparams[0]);
+                        break;
 
-                    //case op_toss: // 0x1d (29)
-                    //              // TOS (Top Of Stack) subtract
-                    //    s.xs.sp--;
-                    //    break;
+                    case op_toss: // 0x1d (29)
+                                  // TOS (Top Of Stack) subtract
+                        s.xs.sp--;
+                        break;
 
-                    //case op_dup: // 0x1e (30)
-                    //             // Duplicate TOD (Top Of Stack) element
-                    //    r_temp = s.xs.sp[-1];
-                    //    PUSH32(r_temp);
-                    //    break;
+                    case op_dup: // 0x1e (30)
+                                 // Duplicate TOD (Top Of Stack) element
+                        r_temp = Register.Make(s.xs.sp[-1]);
+                        PUSH32(r_temp);
+                        break;
 
-                    //case op_link: // 0x1f (31)
-                    //              // We shouldn't initialize temp variables at all
-                    //              //  We put special segment 0xFFFF in there, so that uninitialized reads can get detected
-                    //    for (int i = 0; i < opparams[0]; i++)
-                    //        s.xs.sp[i] = Register.Make(0xffff, 0);
+                    case op_link: // 0x1f (31)
+                                  // We shouldn't initialize temp variables at all
+                                  //  We put special segment 0xFFFF in there, so that uninitialized reads can get detected
+                        for (int i = 0; i < opparams[0]; i++)
+                            s.xs.sp[i] = Register.Make(0xffff, 0);
 
-                    //    s.xs.sp += opparams[0];
-                    //    break;
+                        s.xs.sp += opparams[0];
+                        break;
 
-                    //case op_call:
-                    //    { // 0x20 (32)
-                    //      // Call a script subroutine
-                    //        int argc = (opparams[1] >> 1) // Given as offset, but we need count
-                    //                   + 1 + s.r_rest;
-                    //        StackPtr call_base = s.xs.sp - argc;
-                    //        s.xs.sp[1].incOffset(s.r_rest);
+                    case op_call:
+                        { // 0x20 (32)
+                          // Call a script subroutine
+                            int argc = (opparams[1] >> 1) // Given as offset, but we need count
+                                       + 1 + s.r_rest;
+                            StackPtr call_base = s.xs.sp - argc;
+                            s.xs.sp[1].IncOffset(s.r_rest);
 
-                    //        uint localCallOffset = s.xs.addr.pc.getOffset() + opparams[0];
+                            int localCallOffset = s.xs.pc.Offset + opparams[0];
 
-                    //        ExecStack xstack(s.xs.objp, s.xs.objp, s.xs.sp,
-                    //                        (call_base.requireUint16()) + s.r_rest, call_base,
-                    //                        s.xs.local_segment, make_reg32(s.xs.addr.pc.getSegment(), localCallOffset),
-                    //                        NULL_SELECTOR, -1, localCallOffset, s._executionStack.size() - 1,
-                    //                        EXEC_STACK_TYPE_CALL);
+                            ExecStack xstack = new ExecStack(s.xs.objp, s.xs.objp, s.xs.sp,
+                                            (call_base[0].RequireUInt16()) + s.r_rest, call_base,
+                                            s.xs.local_segment, Register32.Make(s.xs.pc.Segment, localCallOffset),
+                                            -1, -1, localCallOffset, s._executionStack.Count - 1,
+                                            ExecStackType.CALL);
 
-                    //        s._executionStack.push_back(xstack);
-                    //        xs_new = &(s._executionStack.back());
+                            s._executionStack.Add(xstack);
+                            xs_new = s._executionStack.Last();
 
-                    //        s.r_rest = 0; // Used up the &rest adjustment
-                    //        s.xs.sp = call_base;
+                            s.r_rest = 0; // Used up the &rest adjustment
+                            s.xs.sp = call_base;
 
-                    //        s._executionStackPosChanged = true;
-                    //        break;
-                    //    }
+                            s._executionStackPosChanged = true;
+                            break;
+                        }
 
                     case op_callk:
                         { // 0x21 (33)
@@ -785,192 +819,186 @@ namespace NScumm.Sci.Engine
                             break;
                         }
 
-                    //case op_callb: // 0x22 (34)
-                    //               // Call base script
-                    //    temp = ((opparams[1] >> 1) + s.r_rest + 1);
-                    //    s_temp = s.xs.sp;
-                    //    s.xs.sp -= temp;
+                    case op_callb: // 0x22 (34)
+                                   // Call base script
+                        temp = ((opparams[1] >> 1) + s.r_rest + 1);
+                        s_temp = s.xs.sp;
+                        s.xs.sp -= temp;
 
-                    //    s.xs.sp[0].incOffset(s.r_rest);
-                    //    xs_new = execute_method(s, 0, opparams[0], s_temp, s.xs.objp,
-                    //                            s.xs.sp[0].getOffset(), s.xs.sp);
-                    //    s.r_rest = 0; // Used up the &rest adjustment
-                    //    if (xs_new)    // in case of error, keep old stack
-                    //        s._executionStackPosChanged = true;
-                    //    break;
+                        s.xs.sp[0].IncOffset(s.r_rest);
+                        xs_new = execute_method(s, 0, (ushort)opparams[0], s_temp, s.xs.objp, (ushort)s.xs.sp[0].Offset, s.xs.sp);
+                        s.r_rest = 0; // Used up the &rest adjustment
+                        if (xs_new != null)    // in case of error, keep old stack
+                            s._executionStackPosChanged = true;
+                        break;
 
-                    //case op_calle: // 0x23 (35)
-                    //               // Call external script
-                    //    temp = ((opparams[2] >> 1) + s.r_rest + 1);
-                    //    s_temp = s.xs.sp;
-                    //    s.xs.sp -= temp;
+                    case op_calle: // 0x23 (35)
+                                   // Call external script
+                        temp = ((opparams[2] >> 1) + s.r_rest + 1);
+                        s_temp = s.xs.sp;
+                        s.xs.sp -= temp;
 
-                    //    s.xs.sp[0].incOffset(s.r_rest);
-                    //    xs_new = execute_method(s, opparams[0], opparams[1], s_temp, s.xs.objp,
-                    //                            s.xs.sp[0].getOffset(), s.xs.sp);
-                    //    s.r_rest = 0; // Used up the &rest adjustment
-                    //    if (xs_new)  // in case of error, keep old stack
-                    //        s._executionStackPosChanged = true;
-                    //    break;
+                        s.xs.sp[0].IncOffset(s.r_rest);
+                        xs_new = execute_method(s, (ushort)opparams[0], (ushort)opparams[1], s_temp, s.xs.objp, (ushort)s.xs.sp[0].Offset, s.xs.sp);
+                        s.r_rest = 0; // Used up the &rest adjustment
+                        if (xs_new != null)  // in case of error, keep old stack
+                            s._executionStackPosChanged = true;
+                        break;
 
-                    //case op_ret: // 0x24 (36)
-                    //             // Return from an execution loop started by call, calle, callb, send, self or super
-                    //    do
-                    //    {
-                    //        StackPtr old_sp2 = s.xs.sp;
-                    //        StackPtr old_fp = s.xs.fp;
-                    //        ExecStack* old_xs = &(s._executionStack.back());
+                    case op_ret: // 0x24 (36)
+                                 // Return from an execution loop started by call, calle, callb, send, self or super
+                        do
+                        {
+                            StackPtr old_sp2 = s.xs.sp;
+                            StackPtr old_fp = s.xs.fp;
+                            ExecStack old_xs = s._executionStack.Last();
 
-                    //        if ((int)s._executionStack.size() - 1 == s.executionStackBase)
-                    //        { // Have we reached the base?
-                    //            s.executionStackBase = old_executionStackBase; // Restore stack base
+                            if (s._executionStack.Count() - 1 == s.executionStackBase)
+                            { // Have we reached the base?
+                                s.executionStackBase = old_executionStackBase; // Restore stack base
+                                s._executionStack.Remove(old_xs);
+                                s._executionStackPosChanged = true;
+                                return; // "Hard" return
+                            }
 
-                    //            s._executionStack.pop_back();
+                            if (old_xs.type == ExecStackType.VARSELECTOR)
+                            {
+                                // varselector access?
+                                Register var = old_xs.GetVarPointer(s._segMan);
+                                if (old_xs.argc != 0) // write?
+                                    var.Set(old_xs.variables_argp[1]);
+                                else // No, read
+                                    s.r_acc.Set(var);
+                            }
 
-                    //            s._executionStackPosChanged = true;
-                    //            return; // "Hard" return
-                    //        }
+                            // Not reached the base, so let's do a soft return
+                            s._executionStack.RemoveAt(s._executionStack.Count - 1);
+                            s._executionStackPosChanged = true;
+                            s.xs = s._executionStack.Last();
 
-                    //        if (old_xs.type == EXEC_STACK_TYPE_VARSELECTOR)
-                    //        {
-                    //            // varselector access?
-                    //            reg_t* var = old_xs.getVarPointer(s._segMan);
-                    //            if (old_xs.argc) // write?
-                    //                *var = old_xs.variables_argp[1];
-                    //            else // No, read
-                    //                s.r_acc = *var;
-                    //        }
+                            if (s.xs.sp == CALL_SP_CARRY // Used in sends to 'carry' the stack pointer
+                                    || s.xs.type != ExecStackType.CALL)
+                            {
+                                s.xs.sp = old_sp2;
+                                s.xs.fp = old_fp;
+                            }
 
-                    //        // Not reached the base, so let's do a soft return
-                    //        s._executionStack.pop_back();
-                    //        s._executionStackPosChanged = true;
-                    //        s.xs = &(s._executionStack.back());
+                        } while (s.xs.type == ExecStackType.VARSELECTOR);
+                        // Iterate over all varselector accesses
+                        s._executionStackPosChanged = true;
+                        xs_new = s.xs;
 
-                    //        if (s.xs.sp == CALL_SP_CARRY // Used in sends to 'carry' the stack pointer
-                    //                || s.xs.type != EXEC_STACK_TYPE_CALL)
-                    //        {
-                    //            s.xs.sp = old_sp2;
-                    //            s.xs.fp = old_fp;
-                    //        }
+                        break;
 
-                    //    } while (s.xs.type == EXEC_STACK_TYPE_VARSELECTOR);
-                    //    // Iterate over all varselector accesses
-                    //    s._executionStackPosChanged = true;
-                    //    xs_new = s.xs;
+                    case op_send: // 0x25 (37)
+                                  // Send for one or more selectors
+                        s_temp = s.xs.sp;
+                        s.xs.sp -= ((opparams[0] >> 1) + s.r_rest); // Adjust stack
 
-                    //    break;
+                        s.xs.sp[1].IncOffset(s.r_rest);
+                        xs_new = SendSelector(s, s.r_acc, s.r_acc, s_temp,
+                                                (opparams[0] >> 1) + (ushort)s.r_rest, s.xs.sp);
 
-                    //case op_send: // 0x25 (37)
-                    //              // Send for one or more selectors
-                    //    s_temp = s.xs.sp;
-                    //    s.xs.sp -= ((opparams[0] >> 1) + s.r_rest); // Adjust stack
+                        if (xs_new != null && xs_new != s.xs)
+                            s._executionStackPosChanged = true;
 
-                    //    s.xs.sp[1].incOffset(s.r_rest);
-                    //    xs_new = send_selector(s, s.r_acc, s.r_acc, s_temp,
-                    //                            (int)(opparams[0] >> 1) + (uint16)s.r_rest, s.xs.sp);
+                        s.r_rest = 0;
 
-                    //    if (xs_new && xs_new != s.xs)
-                    //        s._executionStackPosChanged = true;
+                        break;
 
-                    //    s.r_rest = 0;
+                    case 0x26: // (38)
+                    case 0x27: // (39)
+                        if (ResourceManager.GetSciVersion() == SciVersion.V3)
+                        {
+                            if (extOpcode == 0x4c)
+                                s.r_acc = obj.InfoSelector;
+                            else if (extOpcode == 0x4d)
+                                PUSH32(obj.InfoSelector);
+                            else if (extOpcode == 0x4e)
+                                s.r_acc = obj.SuperClassSelector;    // TODO: is this correct?
+                                                                     // TODO: There are also opcodes in
+                                                                     // here to get the superclass, and possibly the species too.
+                            else
+                                throw new InvalidOperationException($"Dummy opcode 0x{opcode:X} called");  // should never happen
+                        }
+                        else
+                            throw new InvalidOperationException($"Dummy opcode 0x{opcode:X} called");  // should never happen
+                        break;
 
-                    //    break;
+                    case op_class: // 0x28 (40)
+                                   // Get class address
+                        s.r_acc = s._segMan.GetClassAddress((ushort)opparams[0], ScriptLoadType.LOCK, (ushort)s.xs.pc.Segment);
+                        break;
 
-                    //case 0x26: // (38)
-                    //case 0x27: // (39)
-                    //    if (getSciVersion() == SCI_VERSION_3)
-                    //    {
-                    //        if (extOpcode == 0x4c)
-                    //            s.r_acc = obj.getInfoSelector();
-                    //        else if (extOpcode == 0x4d)
-                    //            PUSH32(obj.getInfoSelector());
-                    //        else if (extOpcode == 0x4e)
-                    //            s.r_acc = obj.getSuperClassSelector();    // TODO: is this correct?
-                    //                                                      // TODO: There are also opcodes in
-                    //                                                      // here to get the superclass, and possibly the species too.
-                    //        else
-                    //            throw new InvalidOperationException("Dummy opcode 0x%x called", opcode);  // should never happen
-                    //    }
-                    //    else
-                    //        throw new InvalidOperationException("Dummy opcode 0x%x called", opcode);  // should never happen
-                    //    break;
+                    case 0x29: // (41)
+                        throw new InvalidOperationException($"Dummy opcode 0x{opcode:X} called");  // should never happen
 
-                    //case op_class: // 0x28 (40)
-                    //               // Get class address
-                    //    s.r_acc = s._segMan.getClassAddress((unsigned)opparams[0], SCRIPT_GET_LOCK,
-                    //                                    s.xs.addr.pc.getSegment());
-                    //    break;
+                    case op_self: // 0x2a (42)
+                                  // Send to self
+                        s_temp = s.xs.sp;
+                        s.xs.sp -= ((opparams[0] >> 1) + s.r_rest); // Adjust stack
 
-                    //case 0x29: // (41)
-                    //    throw new InvalidOperationException("Dummy opcode 0x%x called", opcode);  // should never happen
-                    //    break;
+                        s.xs.sp[1].IncOffset(s.r_rest);
+                        xs_new = SendSelector(s, s.xs.objp, s.xs.objp,
+                                                s_temp, (int)(opparams[0] >> 1) + (ushort)s.r_rest,
+                                                s.xs.sp);
 
-                    //case op_self: // 0x2a (42)
-                    //              // Send to self
-                    //    s_temp = s.xs.sp;
-                    //    s.xs.sp -= ((opparams[0] >> 1) + s.r_rest); // Adjust stack
+                        if (xs_new != null && xs_new != s.xs)
+                            s._executionStackPosChanged = true;
 
-                    //    s.xs.sp[1].incOffset(s.r_rest);
-                    //    xs_new = send_selector(s, s.xs.objp, s.xs.objp,
-                    //                            s_temp, (int)(opparams[0] >> 1) + (uint16)s.r_rest,
-                    //                            s.xs.sp);
+                        s.r_rest = 0;
+                        break;
 
-                    //    if (xs_new && xs_new != s.xs)
-                    //        s._executionStackPosChanged = true;
+                    case op_super: // 0x2b (43)
+                                   // Send to any class
+                        r_temp = Register.Make(s._segMan.GetClassAddress((ushort)opparams[0], ScriptLoadType.LOAD, (ushort)s.xs.pc.Segment));
 
-                    //    s.r_rest = 0;
-                    //    break;
+                        if (!r_temp.IsPointer)
+                            throw new InvalidOperationException("[VM]: Invalid superclass in object");
+                        else {
+                            s_temp = s.xs.sp;
+                            s.xs.sp -= ((opparams[1] >> 1) + s.r_rest); // Adjust stack
 
-                    //case op_super: // 0x2b (43)
-                    //               // Send to any class
-                    //    r_temp = s._segMan.getClassAddress(opparams[0], SCRIPT_GET_LOAD, s.xs.addr.pc.getSegment());
+                            s.xs.sp[1].IncOffset(s.r_rest);
+                            xs_new = SendSelector(s, r_temp, s.xs.objp, s_temp,
+                                                    (int)(opparams[1] >> 1) + (ushort)s.r_rest,
+                                                    s.xs.sp);
 
-                    //    if (!r_temp.isPointer())
-                    //        throw new InvalidOperationException("[VM]: Invalid superclass in object");
-                    //    else {
-                    //        s_temp = s.xs.sp;
-                    //        s.xs.sp -= ((opparams[1] >> 1) + s.r_rest); // Adjust stack
+                            if (xs_new != null && xs_new != s.xs)
+                                s._executionStackPosChanged = true;
 
-                    //        s.xs.sp[1].incOffset(s.r_rest);
-                    //        xs_new = send_selector(s, r_temp, s.xs.objp, s_temp,
-                    //                                (int)(opparams[1] >> 1) + (uint16)s.r_rest,
-                    //                                s.xs.sp);
+                            s.r_rest = 0;
+                        }
 
-                    //        if (xs_new && xs_new != s.xs)
-                    //            s._executionStackPosChanged = true;
+                        break;
 
-                    //        s.r_rest = 0;
-                    //    }
+                    case op_rest: // 0x2c (44)
+                                  // Pushes all or part of the parameter variable list on the stack
+                        temp = (ushort)opparams[0]; // First argument
+                        s.r_rest = (short)Math.Max(s.xs.argc - temp + 1, 0); // +1 because temp counts the paramcount while argc doesn't
 
-                    //    break;
+                        for (; temp <= s.xs.argc; temp++)
+                            PUSH32(s.xs.variables_argp[temp]);
 
-                    //case op_rest: // 0x2c (44)
-                    //              // Pushes all or part of the parameter variable list on the stack
-                    //    temp = (uint16)opparams[0]; // First argument
-                    //    s.r_rest = MAX<int16>(s.xs.argc - temp + 1, 0); // +1 because temp counts the paramcount while argc doesn't
+                        break;
 
-                    //    for (; temp <= s.xs.argc; temp++)
-                    //        PUSH32(s.xs.variables_argp[temp]);
+                    case op_lea: // 0x2d (45)
+                                 // Load Effective Address
+                        temp = (ushort)opparams[0] >> 1;
+                        var_number = temp & 0x03; // Get variable type
 
-                    //    break;
+                        // Get variable block offset
+                        r_temp.SetSegment((ushort)(s.variablesSegment[var_number]));
+                        r_temp.SetOffset((ushort)(s.variables[var_number] - s.variablesBase[var_number]));
 
-                    //case op_lea: // 0x2d (45)
-                    //             // Load Effective Address
-                    //    temp = (uint16)opparams[0] >> 1;
-                    //    var_number = temp & 0x03; // Get variable type
+                        if ((temp & 0x08) != 0)  // Add accumulator offset if requested
+                            r_temp.IncOffset(s.r_acc.RequireInt16());
 
-                    //    // Get variable block offset
-                    //    r_temp.setSegment(s.variablesSegment[var_number]);
-                    //    r_temp.setOffset(s.variables[var_number] - s.variablesBase[var_number]);
-
-                    //    if (temp & 0x08)  // Add accumulator offset if requested
-                    //        r_temp.incOffset(s.r_acc.requireSint16());
-
-                    //    r_temp.incOffset(opparams[1]);  // Add index
-                    //    r_temp.setOffset(r_temp.getOffset() * 2); // variables are 16 bit
-                    //                                              // That's the immediate address now
-                    //    s.r_acc = r_temp;
-                    //    break;
+                        r_temp.IncOffset(opparams[1]);  // Add index
+                        r_temp.SetOffset((ushort)(r_temp.Offset * 2)); // variables are 16 bit
+                                                                       // That's the immediate address now
+                        s.r_acc = Register.Make(r_temp);
+                        break;
 
 
                     case op_selfID: // 0x2e (46)
@@ -981,88 +1009,85 @@ namespace NScumm.Sci.Engine
                     case 0x2f: // (47)
                         throw new InvalidOperationException($"Dummy opcode 0x{opcode:x} called");  // should never happen
 
-                    //case op_pprev: // 0x30 (48)
-                    //               // Pushes the value of the prev register, set by the last comparison
-                    //               // bytecode (eq?, lt?, etc.), on the stack
-                    //    PUSH32(s.r_prev);
-                    //    break;
+                    case op_pprev: // 0x30 (48)
+                                   // Pushes the value of the prev register, set by the last comparison
+                                   // bytecode (eq?, lt?, etc.), on the stack
+                        PUSH32(s.r_prev);
+                        break;
 
-                    //case op_pToa: // 0x31 (49)
-                    //              // Property To Accumulator
-                    //    s.r_acc = validate_property(s, obj, opparams[0]);
-                    //    break;
+                    case op_pToa: // 0x31 (49)
+                                  // Property To Accumulator
+                        s.r_acc = validate_property(s, obj, opparams[0]);
+                        break;
 
-                    //case op_aTop: // 0x32 (50)
-                    //              // Accumulator To Property
-                    //    validate_property(s, obj, opparams[0]) = s.r_acc;
-                    //    break;
+                    case op_aTop: // 0x32 (50)
+                                  // Accumulator To Property
+                        validate_property(s, obj, opparams[0]).Set(s.r_acc);
+                        break;
 
-                    //case op_pTos: // 0x33 (51)
-                    //              // Property To Stack
-                    //    PUSH32(validate_property(s, obj, opparams[0]));
-                    //    break;
+                    case op_pTos: // 0x33 (51)
+                                  // Property To Stack
+                        PUSH32(validate_property(s, obj, opparams[0]));
+                        break;
 
-                    //case op_sTop: // 0x34 (52)
-                    //              // Stack To Property
-                    //    validate_property(s, obj, opparams[0]) = POP32();
-                    //    break;
+                    case op_sTop: // 0x34 (52)
+                                  // Stack To Property
+                        validate_property(s, obj, opparams[0]).Set(POP32());
+                        break;
 
-                    //case op_ipToa: // 0x35 (53)
-                    //case op_dpToa: // 0x36 (54)
-                    //case op_ipTos: // 0x37 (55)
-                    //case op_dpTos: // 0x38 (56)
-                    //    {
-                    //        // Increment/decrement a property and copy to accumulator,
-                    //        // or push to stack
-                    //        reg_t & opProperty = validate_property(s, obj, opparams[0]);
-                    //        if (opcode & 1)
-                    //            opProperty += 1;
-                    //        else
-                    //            opProperty -= 1;
+                    case op_ipToa: // 0x35 (53)
+                    case op_dpToa: // 0x36 (54)
+                    case op_ipTos: // 0x37 (55)
+                    case op_dpTos: // 0x38 (56)
+                        {
+                            // Increment/decrement a property and copy to accumulator,
+                            // or push to stack
+                            Register opProperty = validate_property(s, obj, opparams[0]);
+                            if ((opcode & 1) != 0)
+                                opProperty += 1;
+                            else
+                                opProperty -= 1;
 
-                    //        if (opcode == op_ipToa || opcode == op_dpToa)
-                    //            s.r_acc = opProperty;
-                    //        else
-                    //            PUSH32(opProperty);
-                    //        break;
-                    //    }
+                            if (opcode == op_ipToa || opcode == op_dpToa)
+                                s.r_acc = Register.Make(opProperty);
+                            else
+                                PUSH32(Register.Make(opProperty));
+                            break;
+                        }
 
-                    //case op_lofsa: // 0x39 (57)
-                    //case op_lofss: // 0x3a (58)
-                    //               // Load offset to accumulator or push to stack
-                    //    r_temp.setSegment(s.xs.addr.pc.getSegment());
+                    case op_lofsa: // 0x39 (57)
+                    case op_lofss: // 0x3a (58)
+                                   // Load offset to accumulator or push to stack
+                        r_temp.SetSegment((ushort)s.xs.pc.Segment);
 
-                    //    switch (SciEngine.Instance._features.detectLofsType())
-                    //    {
-                    //        case SCI_VERSION_0_EARLY:
-                    //            r_temp.setOffset((uint16)s.xs.addr.pc.getOffset() + opparams[0]);
-                    //            break;
-                    //        case SCI_VERSION_1_MIDDLE:
-                    //            r_temp.setOffset(opparams[0]);
-                    //            break;
-                    //        case SCI_VERSION_1_1:
-                    //            r_temp.setOffset(opparams[0] + local_script.getScriptSize());
-                    //            break;
-                    //        case SCI_VERSION_3:
-                    //            // In theory this can break if the variant with a one-byte argument is
-                    //            // used. For now, assume it doesn't happen.
-                    //            r_temp.setOffset(local_script.relocateOffsetSci3(s.xs.addr.pc.getOffset() - 2));
-                    //            break;
-                    //        default:
-                    //            throw new InvalidOperationException("Unknown lofs type");
-                    //    }
+                        switch (SciEngine.Instance.Features.DetectLofsType())
+                        {
+                            case SciVersion.V0_EARLY:
+                                r_temp.SetOffset((ushort)(s.xs.pc.Offset + opparams[0]));
+                                break;
+                            case SciVersion.V1_MIDDLE:
+                                r_temp.SetOffset((ushort)opparams[0]);
+                                break;
+                            case SciVersion.V1_1:
+                                r_temp.SetOffset((ushort)(opparams[0] + local_script.ScriptSize));
+                                break;
+                            case SciVersion.V3:
+                                // In theory this can break if the variant with a one-byte argument is
+                                // used. For now, assume it doesn't happen.
+                                r_temp.SetOffset(local_script.RelocateOffsetSci3(s.xs.pc.Offset - 2));
+                                break;
+                            default:
+                                throw new InvalidOperationException("Unknown lofs type");
+                        }
 
-                    //    if (r_temp.getOffset() >= scr.getBufSize())
-                    //        throw new InvalidOperationException("VM: lofsa/lofss operation overflowed: %04x:%04x beyond end"
+                        if (r_temp.Offset >= scr.BufSize)
+                            throw new InvalidOperationException($"VM: lofsa/lofss operation overflowed: {r_temp} beyond end of script (at {scr.BufSize:X4})");
 
-
-                    //                  " of script (at %04x)", PRINT_REG(r_temp), scr.getBufSize());
-
-                    //    if (opcode == op_lofsa)
-                    //        s.r_acc = r_temp;
-                    //    else
-                    //        PUSH32(r_temp);
-                    //    break;
+                        if (opcode == op_lofsa)
+                            s.r_acc = Register.Make(r_temp);
+                        else
+                            PUSH32(Register.Make(r_temp));
+                        break;
 
                     case op_push0: // 0x3b (59)
                         PUSH(0);
@@ -1076,58 +1101,58 @@ namespace NScumm.Sci.Engine
                         PUSH(2);
                         break;
 
-                    //case op_pushSelf: // 0x3e (62)
-                    //                  // Compensate for a bug in non-Sierra compilers, which seem to generate
-                    //                  // pushSelf instructions with the low bit set. This makes the following
-                    //                  // heuristic fail and leads to endless loops and crashes. Our
-                    //                  // interpretation of this seems correct, as other SCI tools, like for
-                    //                  // example SCI Viewer, have issues with these scripts (e.g. script 999
-                    //                  // in Circus Quest). Fixes bug #3038686.
-                    //    if (!(extOpcode & 1) || SciEngine.Instance.GameId == SciGameId.FANMADE)
-                    //    {
-                    //        PUSH32(s.xs.objp);
-                    //    }
-                    //    else {
-                    //        // Debug opcode op_file
-                    //    }
-                    //    break;
+                    case op_pushSelf: // 0x3e (62)
+                                      // Compensate for a bug in non-Sierra compilers, which seem to generate
+                                      // pushSelf instructions with the low bit set. This makes the following
+                                      // heuristic fail and leads to endless loops and crashes. Our
+                                      // interpretation of this seems correct, as other SCI tools, like for
+                                      // example SCI Viewer, have issues with these scripts (e.g. script 999
+                                      // in Circus Quest). Fixes bug #3038686.
+                        if (0 == (extOpcode & 1) || SciEngine.Instance.GameId == SciGameId.FANMADE)
+                        {
+                            PUSH32(s.xs.objp);
+                        }
+                        else {
+                            // Debug opcode op_file
+                        }
+                        break;
 
-                    //case op_line: // 0x3f (63)
-                    //              // Debug opcode (line number)
-                    //              //debug("Script %d, line %d", scr.getScriptNumber(), opparams[0]);
-                    //    break;
+                    case op_line: // 0x3f (63)
+                                  // Debug opcode (line number)
+                                  //debug("Script %d, line %d", scr.getScriptNumber(), opparams[0]);
+                        break;
 
-                    //case op_lag: // 0x40 (64)
-                    //case op_lal: // 0x41 (65)
-                    //case op_lat: // 0x42 (66)
-                    //case op_lap: // 0x43 (67)
-                    //             // Load global, local, temp or param variable into the accumulator
-                    //case op_lagi: // 0x48 (72)
-                    //case op_lali: // 0x49 (73)
-                    //case op_lati: // 0x4a (74)
-                    //case op_lapi: // 0x4b (75)
-                    //              // Same as the 4 ones above, except that the accumulator is used as
-                    //              // an additional index
-                    //    var_type = opcode & 0x3; // Gets the variable type: g, l, t or p
-                    //    var_number = opparams[0] + (opcode >= op_lagi ? s.r_acc.requireSint16() : 0);
-                    //    s.r_acc = read_var(s, var_type, var_number);
-                    //    break;
+                    case op_lag: // 0x40 (64)
+                    case op_lal: // 0x41 (65)
+                    case op_lat: // 0x42 (66)
+                    case op_lap: // 0x43 (67)
+                                 // Load global, local, temp or param variable into the accumulator
+                    case op_lagi: // 0x48 (72)
+                    case op_lali: // 0x49 (73)
+                    case op_lati: // 0x4a (74)
+                    case op_lapi: // 0x4b (75)
+                                  // Same as the 4 ones above, except that the accumulator is used as
+                                  // an additional index
+                        var_type = opcode & 0x3; // Gets the variable type: g, l, t or p
+                        var_number = opparams[0] + (opcode >= op_lagi ? s.r_acc.RequireInt16() : 0);
+                        s.r_acc = Register.Make(read_var(s, var_type, var_number));
+                        break;
 
-                    //case op_lsg: // 0x44 (68)
-                    //case op_lsl: // 0x45 (69)
-                    //case op_lst: // 0x46 (70)
-                    //case op_lsp: // 0x47 (71)
-                    //             // Load global, local, temp or param variable into the stack
-                    //case op_lsgi: // 0x4c (76)
-                    //case op_lsli: // 0x4d (77)
-                    //case op_lsti: // 0x4e (78)
-                    //case op_lspi: // 0x4f (79)
-                    //              // Same as the 4 ones above, except that the accumulator is used as
-                    //              // an additional index
-                    //    var_type = opcode & 0x3; // Gets the variable type: g, l, t or p
-                    //    var_number = opparams[0] + (opcode >= op_lsgi ? s.r_acc.requireSint16() : 0);
-                    //    PUSH32(read_var(s, var_type, var_number));
-                    //    break;
+                    case op_lsg: // 0x44 (68)
+                    case op_lsl: // 0x45 (69)
+                    case op_lst: // 0x46 (70)
+                    case op_lsp: // 0x47 (71)
+                                 // Load global, local, temp or param variable into the stack
+                    case op_lsgi: // 0x4c (76)
+                    case op_lsli: // 0x4d (77)
+                    case op_lsti: // 0x4e (78)
+                    case op_lspi: // 0x4f (79)
+                                  // Same as the 4 ones above, except that the accumulator is used as
+                                  // an additional index
+                        var_type = opcode & 0x3; // Gets the variable type: g, l, t or p
+                        var_number = opparams[0] + (opcode >= op_lsgi ? s.r_acc.RequireInt16() : 0);
+                        PUSH32(Register.Make(read_var(s, var_type, var_number)));
+                        break;
 
                     case op_sag: // 0x50 (80)
                     case op_sal: // 0x51 (81)
@@ -1143,99 +1168,99 @@ namespace NScumm.Sci.Engine
                         var_type = opcode & 0x3; // Gets the variable type: g, l, t or p
                         var_number = opparams[0] + (opcode >= op_sagi ? s.r_acc.RequireInt16() : 0);
                         if (opcode >= op_sagi)  // load the actual value to store in the accumulator
-                            s.r_acc = POP32();
+                            s.r_acc = Register.Make(POP32());
                         write_var(s, var_type, var_number, s.r_acc);
                         break;
 
-                    //case op_ssg: // 0x54 (84)
-                    //case op_ssl: // 0x55 (85)
-                    //case op_sst: // 0x56 (86)
-                    //case op_ssp: // 0x57 (87)
-                    //             // Save the stack into the global, local, temp or param variable
-                    //case op_ssgi: // 0x5c (92)
-                    //case op_ssli: // 0x5d (93)
-                    //case op_ssti: // 0x5e (94)
-                    //case op_sspi: // 0x5f (95)
-                    //              // Same as the 4 ones above, except that the accumulator is used as
-                    //              // an additional index
-                    //    var_type = opcode & 0x3; // Gets the variable type: g, l, t or p
-                    //    var_number = opparams[0] + (opcode >= op_ssgi ? s.r_acc.requireSint16() : 0);
-                    //    write_var(s, var_type, var_number, POP32());
-                    //    break;
+                    case op_ssg: // 0x54 (84)
+                    case op_ssl: // 0x55 (85)
+                    case op_sst: // 0x56 (86)
+                    case op_ssp: // 0x57 (87)
+                                 // Save the stack into the global, local, temp or param variable
+                    case op_ssgi: // 0x5c (92)
+                    case op_ssli: // 0x5d (93)
+                    case op_ssti: // 0x5e (94)
+                    case op_sspi: // 0x5f (95)
+                                  // Same as the 4 ones above, except that the accumulator is used as
+                                  // an additional index
+                        var_type = opcode & 0x3; // Gets the variable type: g, l, t or p
+                        var_number = opparams[0] + (opcode >= op_ssgi ? s.r_acc.RequireInt16() : 0);
+                        write_var(s, var_type, var_number, POP32());
+                        break;
 
-                    //case op_plusag: // 0x60 (96)
-                    //case op_plusal: // 0x61 (97)
-                    //case op_plusat: // 0x62 (98)
-                    //case op_plusap: // 0x63 (99)
-                    //                // Increment the global, local, temp or param variable and save it
-                    //                // to the accumulator
-                    //case op_plusagi: // 0x68 (104)
-                    //case op_plusali: // 0x69 (105)
-                    //case op_plusati: // 0x6a (106)
-                    //case op_plusapi: // 0x6b (107)
-                    //                 // Same as the 4 ones above, except that the accumulator is used as
-                    //                 // an additional index
-                    //    var_type = opcode & 0x3; // Gets the variable type: g, l, t or p
-                    //    var_number = opparams[0] + (opcode >= op_plusagi ? s.r_acc.requireSint16() : 0);
-                    //    s.r_acc = read_var(s, var_type, var_number) + 1;
-                    //    write_var(s, var_type, var_number, s.r_acc);
-                    //    break;
+                    case op_plusag: // 0x60 (96)
+                    case op_plusal: // 0x61 (97)
+                    case op_plusat: // 0x62 (98)
+                    case op_plusap: // 0x63 (99)
+                                    // Increment the global, local, temp or param variable and save it
+                                    // to the accumulator
+                    case op_plusagi: // 0x68 (104)
+                    case op_plusali: // 0x69 (105)
+                    case op_plusati: // 0x6a (106)
+                    case op_plusapi: // 0x6b (107)
+                                     // Same as the 4 ones above, except that the accumulator is used as
+                                     // an additional index
+                        var_type = opcode & 0x3; // Gets the variable type: g, l, t or p
+                        var_number = opparams[0] + (opcode >= op_plusagi ? s.r_acc.RequireInt16() : 0);
+                        s.r_acc = Register.Make(read_var(s, var_type, var_number) + 1);
+                        write_var(s, var_type, var_number, s.r_acc);
+                        break;
 
-                    //case op_plussg: // 0x64 (100)
-                    //case op_plussl: // 0x65 (101)
-                    //case op_plusst: // 0x66 (102)
-                    //case op_plussp: // 0x67 (103)
-                    //                // Increment the global, local, temp or param variable and save it
-                    //                // to the stack
-                    //case op_plussgi: // 0x6c (108)
-                    //case op_plussli: // 0x6d (109)
-                    //case op_plussti: // 0x6e (110)
-                    //case op_plusspi: // 0x6f (111)
-                    //                 // Same as the 4 ones above, except that the accumulator is used as
-                    //                 // an additional index
-                    //    var_type = opcode & 0x3; // Gets the variable type: g, l, t or p
-                    //    var_number = opparams[0] + (opcode >= op_plussgi ? s.r_acc.requireSint16() : 0);
-                    //    r_temp = read_var(s, var_type, var_number) + 1;
-                    //    PUSH32(r_temp);
-                    //    write_var(s, var_type, var_number, r_temp);
-                    //    break;
+                    case op_plussg: // 0x64 (100)
+                    case op_plussl: // 0x65 (101)
+                    case op_plusst: // 0x66 (102)
+                    case op_plussp: // 0x67 (103)
+                                    // Increment the global, local, temp or param variable and save it
+                                    // to the stack
+                    case op_plussgi: // 0x6c (108)
+                    case op_plussli: // 0x6d (109)
+                    case op_plussti: // 0x6e (110)
+                    case op_plusspi: // 0x6f (111)
+                                     // Same as the 4 ones above, except that the accumulator is used as
+                                     // an additional index
+                        var_type = opcode & 0x3; // Gets the variable type: g, l, t or p
+                        var_number = opparams[0] + (opcode >= op_plussgi ? s.r_acc.RequireInt16() : 0);
+                        r_temp = Register.Make(read_var(s, var_type, var_number) + 1);
+                        PUSH32(r_temp);
+                        write_var(s, var_type, var_number, r_temp);
+                        break;
 
-                    //case op_minusag: // 0x70 (112)
-                    //case op_minusal: // 0x71 (113)
-                    //case op_minusat: // 0x72 (114)
-                    //case op_minusap: // 0x73 (115)
-                    //                 // Decrement the global, local, temp or param variable and save it
-                    //                 // to the accumulator
-                    //case op_minusagi: // 0x78 (120)
-                    //case op_minusali: // 0x79 (121)
-                    //case op_minusati: // 0x7a (122)
-                    //case op_minusapi: // 0x7b (123)
-                    //                  // Same as the 4 ones above, except that the accumulator is used as
-                    //                  // an additional index
-                    //    var_type = opcode & 0x3; // Gets the variable type: g, l, t or p
-                    //    var_number = opparams[0] + (opcode >= op_minusagi ? s.r_acc.requireSint16() : 0);
-                    //    s.r_acc = read_var(s, var_type, var_number) - 1;
-                    //    write_var(s, var_type, var_number, s.r_acc);
-                    //    break;
+                    case op_minusag: // 0x70 (112)
+                    case op_minusal: // 0x71 (113)
+                    case op_minusat: // 0x72 (114)
+                    case op_minusap: // 0x73 (115)
+                                     // Decrement the global, local, temp or param variable and save it
+                                     // to the accumulator
+                    case op_minusagi: // 0x78 (120)
+                    case op_minusali: // 0x79 (121)
+                    case op_minusati: // 0x7a (122)
+                    case op_minusapi: // 0x7b (123)
+                                      // Same as the 4 ones above, except that the accumulator is used as
+                                      // an additional index
+                        var_type = opcode & 0x3; // Gets the variable type: g, l, t or p
+                        var_number = opparams[0] + (opcode >= op_minusagi ? s.r_acc.RequireInt16() : 0);
+                        s.r_acc = Register.Make(read_var(s, var_type, var_number) - 1);
+                        write_var(s, var_type, var_number, s.r_acc);
+                        break;
 
-                    //case op_minussg: // 0x74 (116)
-                    //case op_minussl: // 0x75 (117)
-                    //case op_minusst: // 0x76 (118)
-                    //case op_minussp: // 0x77 (119)
-                    //                 // Decrement the global, local, temp or param variable and save it
-                    //                 // to the stack
-                    //case op_minussgi: // 0x7c (124)
-                    //case op_minussli: // 0x7d (125)
-                    //case op_minussti: // 0x7e (126)
-                    //case op_minusspi: // 0x7f (127)
-                    //                  // Same as the 4 ones above, except that the accumulator is used as
-                    //                  // an additional index
-                    //    var_type = opcode & 0x3; // Gets the variable type: g, l, t or p
-                    //    var_number = opparams[0] + (opcode >= op_minussgi ? s.r_acc.requireSint16() : 0);
-                    //    r_temp = read_var(s, var_type, var_number) - 1;
-                    //    PUSH32(r_temp);
-                    //    write_var(s, var_type, var_number, r_temp);
-                    //    break;
+                    case op_minussg: // 0x74 (116)
+                    case op_minussl: // 0x75 (117)
+                    case op_minusst: // 0x76 (118)
+                    case op_minussp: // 0x77 (119)
+                                     // Decrement the global, local, temp or param variable and save it
+                                     // to the stack
+                    case op_minussgi: // 0x7c (124)
+                    case op_minussli: // 0x7d (125)
+                    case op_minussti: // 0x7e (126)
+                    case op_minusspi: // 0x7f (127)
+                                      // Same as the 4 ones above, except that the accumulator is used as
+                                      // an additional index
+                        var_type = opcode & 0x3; // Gets the variable type: g, l, t or p
+                        var_number = opparams[0] + (opcode >= op_minussgi ? s.r_acc.RequireInt16() : 0);
+                        r_temp = Register.Make(read_var(s, var_type, var_number) - 1);
+                        PUSH32(r_temp);
+                        write_var(s, var_type, var_number, r_temp);
+                        break;
 
                     default:
                         throw new InvalidOperationException($"run_vm(): illegal opcode 0x{opcode:X}");
@@ -1323,7 +1348,7 @@ namespace NScumm.Sci.Engine
             }
 
             // Special handling of the op_line opcode
-            if (opcode == Vm.op_pushSelf)
+            if (opcode == op_pushSelf)
             {
                 // Compensate for a bug in non-Sierra compilers, which seem to generate
                 // pushSelf instructions with the low bit set. This makes the following
@@ -1355,7 +1380,7 @@ namespace NScumm.Sci.Engine
             var argv = s.xs.sp + 1;
 
             if (kernelCall.signature != null
-                    && !kernel.SignatureMatch(kernelCall.signature, argc, argv))
+                    && !kernel.SignatureMatch(kernelCall.signature, argc, new StackPtr(argv)))
             {
                 // signature mismatch, check if a workaround is available
                 SciTrackOriginReply originReply;
@@ -1363,7 +1388,7 @@ namespace NScumm.Sci.Engine
                 switch (solution.type)
                 {
                     case SciWorkaroundType.NONE:
-                        kernel.SignatureDebug(kernelCall.signature, argc, argv);
+                        kernel.SignatureDebug(kernelCall.signature, argc, new StackPtr(argv));
                         throw new InvalidOperationException($"[VM] k{kernelCall.name}[{kernelCallNr:X}]: signature mismatch via method {originReply.objectName}::{originReply.methodName} (room {s.CurrentRoomNumber}, script {originReply.scriptNr}, localCall 0x{originReply.localCallOffset:X})");
                     case SciWorkaroundType.IGNORE: // don't do kernel call, leave acc alone
                         return;
@@ -1381,11 +1406,11 @@ namespace NScumm.Sci.Engine
             // Call kernel function
             if (kernelCall.subFunctionCount == 0)
             {
-                AddKernelCallToExecStack(s, kernelCallNr, argc, argv);
-                s.r_acc = kernelCall.function(s, argc, argv);
+                AddKernelCallToExecStack(s, kernelCallNr, argc, new StackPtr(argv));
+                s.r_acc = Register.Make(kernelCall.function(s, argc, new StackPtr(argv)));
 
                 if (kernelCall.debugLogging)
-                    LogKernelCall(kernelCall, null, s, argc, argv, s.r_acc);
+                    LogKernelCall(kernelCall, null, s, argc, new StackPtr(argv), s.r_acc);
                 if (kernelCall.debugBreakpoint)
                 {
                     // TODO: debugN("Break on k%s\n", kernelCall.name);
@@ -1406,7 +1431,7 @@ namespace NScumm.Sci.Engine
                 if (subId >= kernelCall.subFunctionCount)
                     throw new InvalidOperationException($"[VM] k%{kernelCall.name}: subfunction ID {subId} requested, but not available");
                 KernelSubFunction kernelSubCall = kernelCall.subFunctions[subId];
-                if (kernelSubCall.signature != null && !kernel.SignatureMatch(kernelSubCall.signature, argc, argv))
+                if (kernelSubCall.signature != null && !kernel.SignatureMatch(kernelSubCall.signature, argc, new StackPtr(argv)))
                 {
                     // Signature mismatch
                     SciTrackOriginReply originReply;
@@ -1415,7 +1440,7 @@ namespace NScumm.Sci.Engine
                     {
                         case SciWorkaroundType.NONE:
                             {
-                                kernel.SignatureDebug(kernelSubCall.signature, argc, argv);
+                                kernel.SignatureDebug(kernelSubCall.signature, argc, new StackPtr(argv));
                                 int callNameLen = kernelCall.name.Length;
                                 if (string.CompareOrdinal(kernelCall.name, 0, kernelSubCall.name, 0, callNameLen) == 0)
                                 {
@@ -1437,11 +1462,11 @@ namespace NScumm.Sci.Engine
                 }
                 if (kernelSubCall.function == null)
                     throw new InvalidOperationException("[VM] k{kernelCall.name}: subfunction ID {subId} requested, but not available");
-                AddKernelCallToExecStack(s, kernelCallNr, argc, argv);
-                s.r_acc = kernelSubCall.function(s, argc, argv);
+                AddKernelCallToExecStack(s, kernelCallNr, argc, new StackPtr(argv));
+                s.r_acc = Register.Make(kernelSubCall.function(s, argc, new StackPtr(argv)));
 
                 if (kernelSubCall.debugLogging)
-                    LogKernelCall(kernelCall, kernelSubCall, s, argc, argv, s.r_acc);
+                    LogKernelCall(kernelCall, kernelSubCall, s, argc, new StackPtr(argv), s.r_acc);
                 if (kernelSubCall.debugBreakpoint)
                 {
                     // TODO: debugN("Break on k%s\n", kernelSubCall.name);
@@ -1466,9 +1491,58 @@ namespace NScumm.Sci.Engine
             // Add stack frame to indicate we're executing a callk.
             // This is useful in debugger backtraces if this
             // kernel function calls a script itself.
-            ExecStack xstack = new ExecStack(Register.NULL_REG, Register.NULL_REG, null, argc, argv - 1, 0xFFFF, Register32.Make(0, 0),
+            ExecStack xstack = new ExecStack(Register.NULL_REG, Register.NULL_REG, new StackPtr(), argc, argv - 1, 0xFFFF, Register32.Make(0, 0),
                                 kernelCallNr, -1, -1, s._executionStack.Count - 1, ExecStackType.KERNEL);
             s._executionStack.Add(xstack);
+        }
+
+        private static Register read_var(EngineState s, int type, int index)
+        {
+            if (validate_variable(s.variables[type], s.stack_base, type, s.variablesMax[type], index))
+            {
+                if (s.variables[type][index].Segment == 0xffff)
+                {
+                    switch (type)
+                    {
+                        case VAR_TEMP:
+                            {
+                                // Uninitialized read on a temp
+                                //  We need to find correct replacements for each situation manually
+                                SciTrackOriginReply originReply;
+                                // TODO: SciWorkaroundSolution solution = Workarounds.TrackOriginAndFindWorkaround(index, Workarounds.uninitializedReadWorkarounds, out originReply);
+                                throw new NotImplementedException();
+                                SciWorkaroundSolution solution;
+                                if (solution.type == SciWorkaroundType.NONE)
+                                {
+# if RELEASE_BUILD
+                                    // If we are running an official ScummVM release . fake 0 in unknown cases
+                                    warning("Uninitialized read for temp %d from method %s::%s (room %d, script %d, localCall %x)",
+                                    index, originReply.objectName.c_str(), originReply.methodName.c_str(), s.currentRoomNumber(),
+                                    originReply.scriptNr, originReply.localCallOffset);
+
+                                    s.variables[type][index] = NULL_REG;
+                                    break;
+#else
+                                    throw new InvalidOperationException("Uninitialized read for temp {index} from method {originReply.objectName}::{originReply.methodName} (room {s.CurrentRoomNumber}, script {originReply.scriptNr}, localCall {originReply.localCallOffset:X})");
+#endif
+                                }
+                                //assert(solution.type == WORKAROUND_FAKE);
+                                s.variables[type][index] = Register.Make(0, solution.value);
+                                break;
+                            }
+                        case VAR_PARAM:
+                            // Out-of-bounds read for a parameter that goes onto stack and hits an uninitialized temp
+                            //  We return 0 currently in that case
+                            // TODO: debugC(kDebugLevelVM, "[VM] Read for a parameter goes out-of-bounds, onto the stack and gets uninitialized temp");
+                            return Register.NULL_REG;
+                        default:
+                            break;
+                    }
+                }
+                return s.variables[type][index];
+            }
+            else
+                return Register.Make(s.r_acc);
         }
 
         private static void write_var(EngineState s, int type, int index, Register value)
@@ -1594,6 +1668,30 @@ namespace NScumm.Sci.Engine
             }
         }
 
+        private static ExecStack execute_method(EngineState s, ushort script, ushort pubfunct, StackPtr sp, Register calling_obj, ushort argc, StackPtr argp)
+        {
+            int seg = s._segMan.GetScriptSegment(script);
+            Script scr = s._segMan.GetScriptIfLoaded((ushort)seg);
+
+            if (scr == null || scr.IsMarkedAsDeleted)
+            { // Script not present yet?
+                seg = s._segMan.InstantiateScript(script);
+                scr = s._segMan.GetScript(seg);
+            }
+
+            uint exportAddr = scr.ValidateExportFunc(pubfunct, false);
+            if (exportAddr == 0)
+                return null;
+
+            // Check if a breakpoint is set on this method
+            // TODO: SciEngine.Instance.CheckExportBreakpoint(script, pubfunct);
+
+            ExecStack xstack = new ExecStack(calling_obj, calling_obj, sp, argc, argp, (ushort)seg, Register32.Make(seg, (ushort)exportAddr), -1, pubfunct, -1,
+                                s._executionStack.Count - 1, ExecStackType.CALL);
+            s._executionStack.Add(xstack);
+            return s._executionStack.Last();
+        }
+
         // Operating on the stack
         // 16 bit:
         private static void PUSH(int v)
@@ -1605,7 +1703,9 @@ namespace NScumm.Sci.Engine
         private static void PUSH32(Register a)
         {
             var s = SciEngine.Instance.EngineState;
-            validate_stack_addr(s, (s.xs.sp)++)[0].Set(a);
+            var sp = validate_stack_addr(s, s.xs.sp);
+            sp[0] = a;
+            s.xs.sp++;
         }
 
         public static Register POP32()
@@ -1614,12 +1714,73 @@ namespace NScumm.Sci.Engine
             return validate_stack_addr(s, --(s.xs.sp))[0];
         }
 
-        static StackPtr validate_stack_addr(EngineState s, StackPtr sp)
+        private static StackPtr validate_stack_addr(EngineState s, StackPtr sp)
         {
             if (sp >= s.stack_base && sp < s.stack_top)
                 return sp;
             else
                 throw new InvalidOperationException("[VM] Stack index {sp - s.stack_base} out of valid range [0..{s.stack_top - s.stack_base - 1}]");
         }
+
+        static Register dummyReg = Register.NULL_REG;
+
+        private static Register validate_property(EngineState s, SciObject obj, int index)
+        {
+            // A static dummy reg_t, which we return if obj or index turn out to be
+            // invalid. Note that we cannot just return NULL_REG, because client code
+            // may modify the value of the returned reg_t.
+
+            // If this occurs, it means there's probably something wrong with the garbage
+            // collector, so don't hide it with fake return values
+            if (obj == null)
+                throw new InvalidOperationException("validate_property: Sending to disposed object");
+
+            if (ResourceManager.GetSciVersion() == SciVersion.V3)
+                index = obj.LocateVarSelector(s._segMan, index);
+            else
+                index >>= 1;
+
+            if (index < 0 || (uint)index >= obj.VarCount)
+            {
+                // This is same way sierra does it and there are some games, that contain such scripts like
+                //  iceman script 998 (fred::canBeHere, executed right at the start)
+                // TODO: debugC(kDebugLevelVM, "[VM] Invalid property #%d (out of [0..%d]) requested from object %04x:%04x (%s)",
+                //        index, obj.getVarCount(), PRINT_REG(obj.getPos()), s._segMan.getObjectName(obj.getPos()));
+                return dummyReg;
+            }
+
+            return obj.GetVariableRef(index);
+        }
+
+#if DEBUG
+        private static readonly string[] opcodeNames = {
+               "bnot",       "add",      "sub",      "mul",      "div",
+                "mod",       "shr",      "shl",      "xor",      "and",
+                 "or",       "neg",      "not",      "eq?",      "ne?",
+                "gt?",       "ge?",      "lt?",      "le?",     "ugt?",
+               "uge?",      "ult?",     "ule?",       "bt",      "bnt",
+                "jmp",       "ldi",     "push",    "pushi",     "toss",
+                "dup",      "link",     "call",    "callk",    "callb",
+              "calle",       "ret",     "send",    "dummy",    "dummy",
+              "class",     "dummy",     "self",    "super",    "&rest",
+                "lea",    "selfID",    "dummy",    "pprev",     "pToa",
+               "aTop",      "pTos",     "sTop",    "ipToa",    "dpToa",
+              "ipTos",     "dpTos",    "lofsa",    "lofss",    "push0",
+              "push1",     "push2", "pushSelf",     "line",      "lag",
+                "lal",       "lat",      "lap",      "lsg",      "lsl",
+                "lst",       "lsp",     "lagi",     "lali",     "lati",
+               "lapi",      "lsgi",     "lsli",     "lsti",     "lspi",
+                "sag",       "sal",      "sat",      "sap",      "ssg",
+                "ssl",       "sst",      "ssp",     "sagi",     "sali",
+               "sati",      "sapi",     "ssgi",     "ssli",     "ssti",
+               "sspi",       "+ag",      "+al",      "+at",      "+ap",
+                "+sg",       "+sl",      "+st",      "+sp",     "+agi",
+               "+ali",      "+ati",     "+api",     "+sgi",     "+sli",
+               "+sti",      "+spi",      "-ag",      "-al",      "-at",
+                "-ap",       "-sg",      "-sl",      "-st",      "-sp",
+               "-agi",      "-ali",     "-ati",     "-api",     "-sgi",
+               "-sli",      "-sti",     "-spi"
+        };
+#endif
     }
 }

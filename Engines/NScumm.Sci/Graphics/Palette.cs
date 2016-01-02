@@ -35,7 +35,7 @@ namespace NScumm.Sci.Graphics
     {
         // Special flag implemented by us for optimization in palette merge
         private const int SCI_PALETTE_MATCH_PERFECT = 0x8000;
-        private const int SCI_PALETTE_MATCH_COLORMASK = 0xFF;
+        public const int SCI_PALETTE_MATCH_COLORMASK = 0xFF;
 
         public Palette _sysPalette;
 
@@ -67,6 +67,8 @@ namespace NScumm.Sci.Graphics
 
         private byte[] _macClut;
         private ISystem _system;
+
+        public ushort TotalColorCount { get { return _totalScreenColors; } }
 
         public GfxPalette(ISystem system, ResourceManager resMan, GfxScreen screen)
         {
@@ -151,6 +153,11 @@ namespace NScumm.Sci.Graphics
 
             _remapOn = false;
             ResetRemapping();
+        }
+
+        internal void PalVaryUpdate()
+        {
+            throw new NotImplementedException();
         }
 
         private void PalVaryInit()
@@ -336,7 +343,7 @@ namespace NScumm.Sci.Graphics
             return (short)(MatchColor(r, g, b) & SCI_PALETTE_MATCH_COLORMASK);
         }
 
-        private ushort MatchColor(byte matchRed, byte matchGreen, byte matchBlue)
+        public ushort MatchColor(byte matchRed, byte matchGreen, byte matchBlue)
         {
             short colorNr;
             short differenceRed, differenceGreen, differenceBlue;

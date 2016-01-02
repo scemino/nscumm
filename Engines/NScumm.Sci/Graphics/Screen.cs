@@ -185,7 +185,7 @@ namespace NScumm.Sci.Graphics
         private bool _unditheringEnabled;
         private short[] _ditheredPicColors = new short[DITHERED_BG_COLORS_SIZE];
 
-        private int _picNotValid; // possible values 0, 1 and 2
+        public int _picNotValid; // possible values 0, 1 and 2
         private int _picNotValidSci11; // another variable that is used by kPicNotValid in sci1.1
 
         /// <summary>

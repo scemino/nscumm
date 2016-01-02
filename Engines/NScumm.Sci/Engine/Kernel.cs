@@ -35,6 +35,11 @@ namespace NScumm.Sci.Engine
 
         public string signature;
         public SciWorkaroundEntry[] workarounds;
+
+        public static SciKernelMapSubEntry Make(SciVersionRange range, int id, KernelFunctionCall call, string signature, SciWorkaroundEntry[] workarounds)
+        {
+            return new SciKernelMapSubEntry { fromVersion = range.fromVersion, toVersion = range.toVersion, id = (ushort)id, function = call, signature = signature, workarounds = workarounds };
+        }
     }
 
     class SciVersionRange
@@ -45,9 +50,49 @@ namespace NScumm.Sci.Engine
 
         public static readonly SciVersionRange SIG_EVERYWHERE = new SciVersionRange { forPlatform = Kernel.SIGFOR_ALL };
 
+        public static SciVersionRange SIG_SCI11(byte platform)
+        {
+            return new SciVersionRange { fromVersion = SciVersion.V1_1, toVersion = SciVersion.V1_1, forPlatform = platform };
+        }
+
+        public static SciVersionRange SIG_SCI21(byte platform)
+        {
+            return new SciVersionRange { fromVersion = SciVersion.V2_1, toVersion = SciVersion.V3, forPlatform = platform };
+        }
+
         public static SciVersionRange SIG_SCI32(byte platform)
         {
             return new SciVersionRange { fromVersion = SciVersion.V2, toVersion = SciVersion.NONE, forPlatform = platform };
+        }
+
+        public static SciVersionRange SIG_SCIALL(byte platform)
+        {
+            return new SciVersionRange { fromVersion = SciVersion.NONE, toVersion = SciVersion.NONE, forPlatform = platform };
+        }
+
+        public static SciVersionRange SIG_SINCE_SCI11(byte platform)
+        {
+            return new SciVersionRange { fromVersion = SciVersion.V1_1, toVersion = SciVersion.NONE, forPlatform = platform };
+        }
+
+        public static SciVersionRange SIG_SOUNDSCI0(byte platform)
+        {
+            return new SciVersionRange { fromVersion = SciVersion.V0_EARLY, toVersion = SciVersion.V0_LATE, forPlatform = platform };
+        }
+
+        public static SciVersionRange SIG_SOUNDSCI1EARLY(byte platform)
+        {
+            return new SciVersionRange { fromVersion = SciVersion.V1_EARLY, toVersion = SciVersion.V1_EARLY, forPlatform = platform };
+        }
+
+        public static SciVersionRange SIG_SOUNDSCI1LATE(byte platform)
+        {
+            return new SciVersionRange { fromVersion = SciVersion.V1_LATE, toVersion = SciVersion.V1_LATE, forPlatform = platform };
+        }
+
+        public static SciVersionRange SIG_SOUNDSCI21(byte platform)
+        {
+            return new SciVersionRange { fromVersion = SciVersion.V2_1, toVersion = SciVersion.V3, forPlatform = platform };
         }
     }
 
@@ -63,6 +108,11 @@ namespace NScumm.Sci.Engine
         public string signature;
         public SciKernelMapSubEntry[] subFunctions;
         public SciWorkaroundEntry[] workarounds;
+
+        public static SciKernelMapEntry Make(string name, KernelFunctionCall function, SciVersionRange range, string signature, SciKernelMapSubEntry[] subSignatures = null, SciWorkaroundEntry[] workarounds = null)
+        {
+            return new SciKernelMapEntry { name = name, function = function, fromVersion = range.fromVersion, toVersion = range.toVersion, forPlatform = range.forPlatform, signature = signature, subFunctions = subSignatures, workarounds = workarounds };
+        }
 
         public static SciKernelMapEntry Make(KernelFunctionCall function, SciVersionRange range, string signature, SciKernelMapSubEntry[] subSignatures = null, SciWorkaroundEntry[] workarounds = null)
         {
@@ -80,7 +130,7 @@ namespace NScumm.Sci.Engine
         public bool debugBreakpoint;
     }
 
-    delegate Register KernelFunctionCall(EngineState s, int argc, StackPtr argv);
+    delegate Register KernelFunctionCall(EngineState s, int argc, StackPtr? argv);
 
     class KernelFunction
     {
@@ -326,22 +376,174 @@ namespace NScumm.Sci.Engine
 	        /*0x88*/ "DbugStr"          // for debugging
         };
 
-        static readonly SciKernelMapEntry[] s_kernelMap =
+        static readonly SciKernelMapSubEntry[] kDoSound_subops =
         {
-            SciKernelMapEntry.Make(kAbs,SciVersionRange.SIG_EVERYWHERE,"i",null,kAbs_workarounds),
-            SciKernelMapEntry.Make(kLoad,SciVersionRange.SIG_EVERYWHERE,"ii(i*)",null,null),
-            SciKernelMapEntry.Make(kGetSaveDir,SciVersionRange.SIG_SCI32(SIGFOR_ALL),"(r*)",null,null),
-            SciKernelMapEntry.Make(kGetSaveDir,SciVersionRange.SIG_EVERYWHERE,"",null,null),
-            new SciKernelMapEntry()
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI0(0),       0, kDoSoundInit,               "o",                    null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI0(0),       1, kDoSoundPlay,               "o",                    null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI0(0),       2, kDoSoundRestore,            "(o)",                  null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI0(0),       3, kDoSoundDispose,            "o",                    null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI0(0),       4, kDoSoundMute,               "(i)",                  null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI0(0),       5, kDoSoundStop,               "o",                    null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI0(0),       6, kDoSoundPause,              "i",                    null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI0(0),       7, kDoSoundResumeAfterRestore, "",                     null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI0(0),       8, kDoSoundMasterVolume,       "(i)",                  null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI0(0),       9, kDoSoundUpdate,             "o",                    null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI0(0),      10, kDoSoundFade,               "[o0]",                 Workarounds.kDoSoundFade_workarounds),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI0(0),      11, kDoSoundGetPolyphony,       "",                     null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI0(0),      12, kDoSoundStopAll,            "",                     null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI1EARLY(0),  0, kDoSoundMasterVolume,       null,                   null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI1EARLY(0),  1, kDoSoundMute,               null,                   null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI1EARLY(0),  2, kDoSoundRestore,            null,                   null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI1EARLY(0),  3, kDoSoundGetPolyphony,       null,                   null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI1EARLY(0),  4, kDoSoundUpdate,             null,                   null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI1EARLY(0),  5, kDoSoundInit,               null,                   null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI1EARLY(0),  6, kDoSoundDispose,            null,                   null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI1EARLY(0),  7, kDoSoundPlay,               "oi",                   null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI1EARLY(0),  8, kDoSoundStop,               null,                   null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI1EARLY(0),  9, kDoSoundPause,              "[o0]i",                null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI1EARLY(0), 10, kDoSoundFade,               "oiiii",                Workarounds.kDoSoundFade_workarounds),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI1EARLY(0), 11, kDoSoundUpdateCues,         "o",                    null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI1EARLY(0), 12, kDoSoundSendMidi,           "oiii",                 null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI1EARLY(0), 13, kDoSoundGlobalReverb,       "(i)",                  null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI1EARLY(0), 14, kDoSoundSetHold,            "oi",                   null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI1EARLY(0), 15, kDoSoundDummy,              "",                     null),
+	        //  ^^ Longbow demo
+	        SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI1LATE(0),   0, kDoSoundMasterVolume,       null,                   null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI1LATE(0),   1, kDoSoundMute,               null,                   null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI1LATE(0),   2, kDoSoundRestore,            "",                     null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI1LATE(0),   3, kDoSoundGetPolyphony,       null,                   null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI1LATE(0),   4, kDoSoundGetAudioCapability, "",                     null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI1LATE(0),   5, kDoSoundSuspend,            "i",                    null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI1LATE(0),   6, kDoSoundInit,               null,                   null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI1LATE(0),   7, kDoSoundDispose,            null,                   null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI1LATE(0),   8, kDoSoundPlay,               null,                   null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI1LATE(0),   9, kDoSoundStop,               null,                   null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI1LATE(0),  10, kDoSoundPause,              null,                   null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI1LATE(0),  11, kDoSoundFade,               "oiiii(i)",             Workarounds.kDoSoundFade_workarounds),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI1LATE(0),  12, kDoSoundSetHold,            null,                   null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI1LATE(0),  13, kDoSoundDummy,              null,                   null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI1LATE(0),  14, kDoSoundSetVolume,          "oi",                   null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI1LATE(0),  15, kDoSoundSetPriority,        "oi",                   null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI1LATE(0),  16, kDoSoundSetLoop,            "oi",                   null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI1LATE(0),  17, kDoSoundUpdateCues,         null,                   null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI1LATE(0),  18, kDoSoundSendMidi,           "oiii(i)",              null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI1LATE(0),  19, kDoSoundGlobalReverb,       null,                   null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SOUNDSCI1LATE(0),  20, kDoSoundUpdate,             null,                   null),
+#if ENABLE_SCI32
+	        { SIG_SOUNDSCI21,      0, MAP_CALL(DoSoundMasterVolume),       NULL,                   NULL },
+            { SIG_SOUNDSCI21,      1, MAP_CALL(DoSoundMute),               NULL,                   NULL },
+            { SIG_SOUNDSCI21,      2, MAP_CALL(DoSoundRestore),            NULL,                   NULL },
+            { SIG_SOUNDSCI21,      3, MAP_CALL(DoSoundGetPolyphony),       NULL,                   NULL },
+            { SIG_SOUNDSCI21,      4, MAP_CALL(DoSoundGetAudioCapability), NULL,                   NULL },
+            { SIG_SOUNDSCI21,      5, MAP_CALL(DoSoundSuspend),            NULL,                   NULL },
+            { SIG_SOUNDSCI21,      6, MAP_CALL(DoSoundInit),               NULL,                   NULL },
+            { SIG_SOUNDSCI21,      7, MAP_CALL(DoSoundDispose),            NULL,                   NULL },
+            { SIG_SOUNDSCI21,      8, MAP_CALL(DoSoundPlay),               "o(i)",                 NULL },
+	        // ^^ TODO: if this is really the only change between SCI1LATE AND SCI21, we could rename the
+	        //     SIG_SOUNDSCI1LATE #define to SIG_SINCE_SOUNDSCI1LATE and make it being SCI1LATE+. Although
+	        //     I guess there are many more changes somewhere
+	        // TODO: Quest for Glory 4 (SCI2.1) uses the old scheme, we need to detect it accordingly
+	        //        signature for SCI21 should be "o"
+	        { SIG_SOUNDSCI21,      9, MAP_CALL(DoSoundStop),               NULL,                   NULL },
+            { SIG_SOUNDSCI21,     10, MAP_CALL(DoSoundPause),              NULL,                   NULL },
+            { SIG_SOUNDSCI21,     11, MAP_CALL(DoSoundFade),               NULL,                   kDoSoundFade_workarounds },
+            { SIG_SOUNDSCI21,     12, MAP_CALL(DoSoundSetHold),            NULL,                   NULL },
+            { SIG_SOUNDSCI21,     13, MAP_CALL(DoSoundDummy),              NULL,                   NULL },
+            { SIG_SOUNDSCI21,     14, MAP_CALL(DoSoundSetVolume),          NULL,                   NULL },
+            { SIG_SOUNDSCI21,     15, MAP_CALL(DoSoundSetPriority),        NULL,                   NULL },
+            { SIG_SOUNDSCI21,     16, MAP_CALL(DoSoundSetLoop),            NULL,                   NULL },
+            { SIG_SOUNDSCI21,     17, MAP_CALL(DoSoundUpdateCues),         NULL,                   NULL },
+            { SIG_SOUNDSCI21,     18, MAP_CALL(DoSoundSendMidi),           NULL,                   NULL },
+            { SIG_SOUNDSCI21,     19, MAP_CALL(DoSoundGlobalReverb),       NULL,                   NULL },
+            { SIG_SOUNDSCI21,     20, MAP_CALL(DoSoundUpdate),             NULL,                   NULL },
+#endif
         };
 
-        //    gameID,           room,script,lvl,          object-name, method-name,    call,index,                workaround
-        static readonly SciWorkaroundEntry[] kAbs_workarounds = {
-            new SciWorkaroundEntry { gameId = SciGameId.HOYLE1,  roomNr =  1, scriptNr =  1, inheritanceLevel = 0, objectName = "room1", methodName = "doit", localCallOffset = -1, index = 0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.FAKE, value = 0x3e9 } }, // crazy eights - called with objects instead of integers
-	        new SciWorkaroundEntry { gameId = SciGameId.HOYLE1,  roomNr =  2, scriptNr =  2, inheritanceLevel = 0, objectName = "room2", methodName = "doit", localCallOffset = -1, index = 0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.FAKE, value = 0x3e9 } }, // old maid - called with objects instead of integers
-	        new SciWorkaroundEntry { gameId = SciGameId.HOYLE1,  roomNr =  3, scriptNr =  3, inheritanceLevel = 0, objectName = "room3", methodName = "doit", localCallOffset = -1, index = 0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.FAKE, value = 0x3e9 } }, // hearts - called with objects instead of integers
-	        new SciWorkaroundEntry { gameId = SciGameId.QFG1VGA, roomNr = -1, scriptNr = -1, inheritanceLevel = 0, objectName =    null, methodName = "doit", localCallOffset = -1, index = 0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.FAKE, value = 0x3e9 } }, // when the game is patched with the NRS patch
-	        new SciWorkaroundEntry { gameId = SciGameId.QFG3   , roomNr = -1, scriptNr = -1, inheritanceLevel = 0, objectName =    null, methodName = "doit", localCallOffset = -1, index = 0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.FAKE, value = 0x3e9 } }, // when the game is patched with the NRS patch - bugs #6042, #6043
+        static readonly SciKernelMapSubEntry[] kFileIO_subops =
+        {
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCI32(0),           0, kFileIOOpen,         "r(i)",null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCIALL(0),          0, kFileIOOpen,         "ri",  null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCIALL(0),          1, kFileIOClose,        "i",   null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCIALL(0),          2, kFileIOReadRaw,      "iri", null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCIALL(0),          3, kFileIOWriteRaw,     "iri", null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCIALL(0),          4, kFileIOUnlink,       "r",   null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCIALL(0),          5, kFileIOReadString,   "rii", null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCIALL(0),          6, kFileIOWriteString,  "ir",  null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCIALL(0),          7, kFileIOSeek,         "iii", null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCIALL(0),          8, kFileIOFindFirst,    "rri", null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCIALL(0),          9, kFileIOFindNext,     "r",   null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCIALL(0),         10, kFileIOExists,       "r",   null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SINCE_SCI11(0),    11, kFileIORename,       "rr",  null),
+        #if ENABLE_SCI32
+	        { SIG_SCI32,          13, MAP_CALL(FileIOReadByte),            "i",                    NULL },
+            { SIG_SCI32,          14, MAP_CALL(FileIOWriteByte),           "ii",                   NULL },
+            { SIG_SCI32,          15, MAP_CALL(FileIOReadWord),            "i",                    NULL },
+            { SIG_SCI32,          16, MAP_CALL(FileIOWriteWord),           "ii",                   NULL },
+            { SIG_SCI32,          17, MAP_CALL(FileIOCreateSaveSlot),      "ir",                   NULL },
+            { SIG_SCI32,          18, MAP_EMPTY(FileIOChangeDirectory),    "r",                    NULL }, // for SQ6, when changing the savegame directory in the save/load dialog
+	        { SIG_SCI32,          19, MAP_CALL(FileIOIsValidDirectory),    "r",                    NULL }, // for Torin / Torin demo
+        #endif
+        };
+
+
+        //    version,         subId, function-mapping,                    signature,              workarounds
+        static readonly SciKernelMapSubEntry[] kGraph_subops = {
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCI32(0),1,kStubNull,"",null), // called by gk1 sci32 right at the start
+	        SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCIALL(0),2,kGraphGetColorCount,"",null),
+            // 3 - set palette via resource
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCIALL(0),4, kGraphDrawLine,"iiiii(i)(i)",Workarounds.kGraphDrawLine_workarounds),
+	        // 5 - nop
+	        // 6 - draw pattern
+	        SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCIALL(0),7, kGraphSaveBox,              "iiiii",                Workarounds.kGraphSaveBox_workarounds),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCIALL(0),8, kGraphRestoreBox,           "[r0!]",                Workarounds.kGraphRestoreBox_workarounds),
+	        // ^ this may get called with invalid references, we check them within restoreBits() and sierra sci behaves the same
+	        SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCIALL(0), 9,kGraphFillBoxBackground,    "iiii",                 null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCIALL(0),10,kGraphFillBoxForeground,    "iiii",                 Workarounds.kGraphFillBoxForeground_workarounds),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCIALL(0),11,kGraphFillBoxAny,           "iiiiii(i)(i)",         Workarounds.kGraphFillBoxAny_workarounds),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCI11(0), 12,kGraphUpdateBox,            "iiii(i)(r0)",          Workarounds.kGraphUpdateBox_workarounds ), // kq6 hires
+	        SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCIALL(0),12,kGraphUpdateBox,            "iiii(i)",              Workarounds.kGraphUpdateBox_workarounds ),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCIALL(0),13,kGraphRedrawBox,            "iiii",                 Workarounds.kGraphRedrawBox_workarounds ),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCIALL(0),14,kGraphAdjustPriority,       "ii",                   null),
+            SciKernelMapSubEntry.Make(SciVersionRange.SIG_SCI11(0), 15,kGraphSaveUpscaledHiresBox, "iiii",                 null), // kq6 hires
+        };
+
+        static readonly SciKernelMapEntry[] s_kernelMap =
+        {
+            SciKernelMapEntry.Make(kAbs,SciVersionRange.SIG_EVERYWHERE,"i",null,Workarounds.kAbs_workarounds),
+            SciKernelMapEntry.Make(kAddMenu,SciVersionRange.SIG_EVERYWHERE,"rr",null,null),
+            SciKernelMapEntry.Make(kAddToEnd,SciVersionRange.SIG_EVERYWHERE,"ln",null,null),
+            SciKernelMapEntry.Make(kAddToFront,SciVersionRange.SIG_EVERYWHERE,"ln",null,null),
+            SciKernelMapEntry.Make(kAnimate, SciVersionRange.SIG_EVERYWHERE,"(l0)(i)",null,null),
+            SciKernelMapEntry.Make(kDisposeClone,SciVersionRange.SIG_EVERYWHERE,"o",null,null),
+            SciKernelMapEntry.Make(kDisposeList,SciVersionRange.SIG_EVERYWHERE,"l",null,null),
+            SciKernelMapEntry.Make(kDisposeScript,SciVersionRange.SIG_EVERYWHERE,"i(i*)",null,Workarounds.kDisposeScript_workarounds),
+            SciKernelMapEntry.Make(kDoSound,SciVersionRange.SIG_EVERYWHERE,"i(.*)",kDoSound_subops,null),
+            SciKernelMapEntry.Make("FClose",kFileIOClose,SciVersionRange.SIG_EVERYWHERE,"i",null,null),
+            SciKernelMapEntry.Make("FGets",kFileIOReadString,SciVersionRange.SIG_EVERYWHERE,"rii",null,null),
+            SciKernelMapEntry.Make("FOpen",kFileIOOpen,SciVersionRange.SIG_EVERYWHERE,"ri",null,null),
+            SciKernelMapEntry.Make("FPuts",kFileIOWriteString,SciVersionRange.SIG_EVERYWHERE,"ir",null,null),
+            SciKernelMapEntry.Make(kFileIO,SciVersionRange.SIG_EVERYWHERE,"i(.*)",kFileIO_subops,null),
+            SciKernelMapEntry.Make(kFindKey,SciVersionRange.SIG_EVERYWHERE,"l.",null,Workarounds.kFindKey_workarounds),
+            SciKernelMapEntry.Make(kFirstNode,SciVersionRange.SIG_EVERYWHERE,"[l0]",null,null),
+            SciKernelMapEntry.Make(kFlushResources,SciVersionRange.SIG_EVERYWHERE,"i",null,null),
+            SciKernelMapEntry.Make(kGetCWD,SciVersionRange.SIG_EVERYWHERE,"r",null,null),
+            SciKernelMapEntry.Make(kGetSaveDir,SciVersionRange.SIG_SCI32(SIGFOR_ALL),"(r*)",null,null),
+            SciKernelMapEntry.Make(kGetSaveDir,SciVersionRange.SIG_EVERYWHERE,"",null,null),
+            SciKernelMapEntry.Make(kGameIsRestarting,SciVersionRange.SIG_EVERYWHERE,"(i)",null,null),
+            SciKernelMapEntry.Make(kGraph,SciVersionRange.SIG_EVERYWHERE,null,kGraph_subops,null),
+            SciKernelMapEntry.Make(kHaveMouse,SciVersionRange.SIG_EVERYWHERE,"",null,null),
+            SciKernelMapEntry.Make(kLastNode,SciVersionRange.SIG_EVERYWHERE,"l",null,null),
+            SciKernelMapEntry.Make(kLoad,SciVersionRange.SIG_EVERYWHERE,"ii(i*)",null,null),
+            SciKernelMapEntry.Make(kMemoryInfo,SciVersionRange.SIG_EVERYWHERE,"i",null,null),
+            SciKernelMapEntry.Make(kNewList,SciVersionRange.SIG_EVERYWHERE,"",null,null),
+            SciKernelMapEntry.Make(kNewNode,SciVersionRange.SIG_EVERYWHERE,"..",null,null),
+            SciKernelMapEntry.Make(kScriptID,SciVersionRange.SIG_EVERYWHERE,"[io](i)",null,null),
+            SciKernelMapEntry.Make(kSetCursor,SciVersionRange.SIG_SCI21(SIGFOR_ALL),"i(i)([io])(i*)",null,null),
+	        // TODO: SCI2.1 may supply an object optionally (mother goose sci21 right on startup) - find out why
+	        SciKernelMapEntry.Make(kSetCursor,SciVersionRange.SIG_SCI11(SIGFOR_ALL),"i(i)(i)(i)(iiiiii)",null,null),
+            SciKernelMapEntry.Make(kSetCursor,SciVersionRange.SIG_EVERYWHERE,"i(i)(i)(i)(i)",null,Workarounds.kSetCursor_workarounds),
+            SciKernelMapEntry.Make(kSetMenu,SciVersionRange.SIG_EVERYWHERE,"i(.*)",null,null),
+            new SciKernelMapEntry()
         };
 
         public KernelFunction[] _kernelFuncs;
@@ -483,7 +685,7 @@ namespace NScumm.Sci.Engine
             _selectorCache.iconIndex = FindSelector("iconIndex");
             _selectorCache.select = FindSelector("select");
 
-# if ENABLE_SCI32
+#if ENABLE_SCI32
             FIND_SELECTOR(data);
             FIND_SELECTOR(picture);
             FIND_SELECTOR(bitmap);
@@ -579,7 +781,7 @@ namespace NScumm.Sci.Engine
                         _kernelNames[0x7c] = "Message";
                     break;
 
-# if ENABLE_SCI32
+#if ENABLE_SCI32
                 case SciVersion.V2:
                     _kernelNames = Common::StringArray(sci2_default_knames, kKernelEntriesSci2);
                     break;
@@ -695,7 +897,7 @@ namespace NScumm.Sci.Engine
                     continue;
                 }
 
-# if ENABLE_SCI32
+#if ENABLE_SCI32
                 // HACK: Phantasmagoria Mac uses a modified kDoSound (which *nothing*
                 // else seems to use)!
                 if (g_sci.getPlatform() == Common::kPlatformMacintosh && g_sci.getGameId() == GID_PHANTASMAGORIA && kernelName == "DoSound")
@@ -751,6 +953,10 @@ namespace NScumm.Sci.Engine
                         // Now allocate required memory and go through it again
                         _kernelFuncs[id].subFunctionCount = subFunctionCount;
                         var subFunctions = new KernelSubFunction[subFunctionCount];
+                        for (int i = 0; i < subFunctionCount; i++)
+                        {
+                            subFunctions[i] = new KernelSubFunction();
+                        }
                         _kernelFuncs[id].subFunctions = subFunctions;
                         // And fill this info out
                         uint kernelSubNr = 0;
@@ -1029,6 +1235,23 @@ namespace NScumm.Sci.Engine
                 curPos++;
             }
 
+            // and we also got some signature pending?
+            if (signature != 0)
+            {
+                if ((signature & SIG_MAYBE_ANY) == 0)
+                    throw new InvalidOperationException($"signature for k{kernelName}: invalid ('!') may only get used in combination with a real type");
+                if (((signature & SIG_IS_INVALID) != 0) && ((signature & SIG_MAYBE_ANY) == (SIG_TYPE_NULL | SIG_TYPE_INTEGER)))
+                    throw new InvalidOperationException($"signature for k{kernelName}: invalid ('!') should not be used on exclusive null/integer type");
+                if (optional)
+                {
+                    signature |= SIG_IS_OPTIONAL;
+                    signature |= SIG_NEEDS_MORE;
+                }
+                result[writePos] = signature;
+                writePos++;
+                signature = 0;
+            }
+
             // Write terminator
             result[writePos] = 0;
 
@@ -1288,17 +1511,6 @@ namespace NScumm.Sci.Engine
 
             //// Reset the segment manager
             //_segMan.ResetSegMan();
-        }
-
-        private Register kDummy(EngineState s, int argc, StackPtr argv)
-        {
-            kStub(s, argc, argv);
-            throw new InvalidOperationException("Kernel function was called, which was considered to be unused - see log for details");
-        }
-
-        private Register kStub(EngineState s, int argc, StackPtr argv)
-        {
-            throw new NotImplementedException();
         }
     }
 }

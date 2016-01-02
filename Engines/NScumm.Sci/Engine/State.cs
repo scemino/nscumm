@@ -19,6 +19,7 @@
 using NScumm.Core.Graphics;
 using System.Collections.Generic;
 using System;
+using NScumm.Core;
 
 namespace NScumm.Sci.Engine
 {
@@ -87,7 +88,7 @@ namespace NScumm.Sci.Engine
         /// <summary>
         /// last time kAnimate was invoked
         /// </summary>
-        public uint _throttleLastTime;
+        public int _throttleLastTime;
         public bool _throttleTrigger;
         public bool _gameIsBenchmarking;
 
@@ -159,6 +160,7 @@ namespace NScumm.Sci.Engine
         /// Pointer to the least stack element
         /// </summary>
         public StackPtr stack_base;
+
         /// <summary>
         /// First invalid stack element
         /// </summary>
@@ -223,6 +225,25 @@ namespace NScumm.Sci.Engine
             Reset(false);
         }
 
+        public void SpeedThrottler(int neededSleep)
+        {
+            if (_throttleTrigger)
+            {
+                var curTime = Environment.TickCount;
+                var duration = curTime - _throttleLastTime;
+
+                if (duration < neededSleep)
+                {
+                    ServiceLocator.Platform.Sleep(neededSleep - duration);
+                    _throttleLastTime = Environment.TickCount;
+                }
+                else {
+                    _throttleLastTime = curTime;
+                }
+                _throttleTrigger = false;
+            }
+        }
+
         /// <summary>
         /// Resets the engine state.
         /// </summary>
@@ -242,8 +263,8 @@ namespace NScumm.Sci.Engine
 
             executionStackBase = 0;
             _executionStackPosChanged = false;
-            stack_base = null;
-            stack_top = null;
+            stack_base = new StackPtr();
+            stack_top = new StackPtr();
 
             r_acc = Register.NULL_REG;
             r_prev = Register.NULL_REG;
@@ -285,7 +306,8 @@ namespace NScumm.Sci.Engine
             //          error("Script 0 has no locals block");
 
             variablesSegment[Vm.VAR_GLOBAL] = script_000.LocalsSegment;
-            variablesBase[Vm.VAR_GLOBAL] = variables[Vm.VAR_GLOBAL] = script_000.LocalsBegin;
+            variablesBase[Vm.VAR_GLOBAL] = script_000.LocalsBegin;
+            variables[Vm.VAR_GLOBAL] = script_000.LocalsBegin;
             variablesMax[Vm.VAR_GLOBAL] = script_000.LocalsCount;
         }
     }

@@ -22,12 +22,12 @@ namespace NScumm.Sci.Engine
 {
     partial class Kernel
     {
-        private static Register kAbs(EngineState s, int argc, StackPtr argv)
+        private static Register kAbs(EngineState s, int argc, StackPtr? argv)
         {
-            return Register.Make(0, (ushort)Math.Abs(argv[0].ToInt16()));
+            return Register.Make(0, (ushort)Math.Abs(argv.Value[0].ToInt16()));
         }
 
-        public bool SignatureMatch(ushort[] signature, int argc, StackPtr argv)
+        public bool SignatureMatch(ushort[] signature, int argc, StackPtr? argv)
         {
             var sig = 0;
             var nextSig = 0;
@@ -35,7 +35,7 @@ namespace NScumm.Sci.Engine
             while (nextSig < signature.Length && argc != 0)
             {
                 curSig = nextSig;
-                int type = FindRegType(argv[0]);
+                int type = FindRegType(argv.Value[0]);
 
                 if ((type & SIG_IS_INVALID) != 0 && (0 == (signature[curSig] & SIG_IS_INVALID)))
                     return false; // pointer is invalid and signature doesn't allow that?

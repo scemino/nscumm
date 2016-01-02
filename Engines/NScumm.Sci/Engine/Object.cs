@@ -37,6 +37,8 @@ namespace NScumm.Sci.Engine
         public const int OffsetInfoSelectorSci11 = 14;
         public const int OffsetNamePointerSci11 = 16;
 
+        private const int OBJECT_FLAG_FREED = (1 << 0);
+
         /// <summary>
         /// Object offset within its script; for clones, this is their base
         /// </summary>
@@ -68,6 +70,7 @@ namespace NScumm.Sci.Engine
         /// Pointer to the method selector area for this object
         /// </summary>
         private List<ushort> _baseMethod;
+        private int _flags;
 
         public Register Pos { get { return _pos; } }
 
@@ -93,10 +96,14 @@ namespace NScumm.Sci.Engine
 
         public int VarCount { get { return _variables.Length; } }
 
-
         public SciObject()
         {
             _baseMethod = new List<ushort>();
+        }
+
+        public void MarkAsFreed()
+        {
+            _flags |= SciObject.OBJECT_FLAG_FREED;
         }
 
         public Register GetVariable(int var) { return _variables[var]; }
@@ -170,6 +177,17 @@ namespace NScumm.Sci.Engine
         }
 
         public uint MethodCount { get { return _methodCount; } }
+
+        public Register InfoSelector
+        {
+            get
+            {
+                if (ResourceManager.GetSciVersion() <= SciVersion.V2_1)
+                    return _variables[_offset + 2];
+                else    // SCI3
+                    return _infoSelectorSci3;
+            }
+        }
 
         public void Init(byte[] buf, Register obj_pos, bool initVariables)
         {

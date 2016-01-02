@@ -29,6 +29,7 @@ namespace NScumm.Core
         byte[] FromStructure(object obj);
         object ToStructure(byte[] data, int offset, Type type);
         IWrappedObject WriteStructure(byte[] data, int offset, Type type);
+        void Debug(string v);
     }
 
     public static class PlatformExtension

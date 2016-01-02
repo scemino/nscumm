@@ -19,11 +19,16 @@
 using System;
 using NScumm.Core.Graphics;
 using NScumm.Core;
+using NScumm.Core.Common;
 
 namespace NScumm.Sci.Graphics
 {
     internal class GfxCursor
     {
+        private const int SCI_CURSOR_SCI0_HEIGHTWIDTH = 16;
+        private const int SCI_CURSOR_SCI0_RESOURCESIZE = 68;
+        private const int SCI_CURSOR_SCI0_TRANSPARENCYCOLOR = 1;
+
         struct SciCursorSetPositionWorkarounds
         {
             public SciGameId gameId;
@@ -56,9 +61,121 @@ namespace NScumm.Sci.Graphics
         private byte _zoomMultiplier;
         private byte[] _cursorSurface;
 
+        internal void KernelSetPos(Point pos)
+        {
+            throw new NotImplementedException();
+        }
+
         //private CursorCache _cachedCursors;
 
         private bool _isVisible;
+
+        public void KernelSetShape(int resourceId)
+        {
+            ResourceManager.ResourceSource.Resource resource;
+            ByteAccess resourceData;
+            Point hotspot = new Point(0, 0);
+            byte[] colorMapping = new byte[4];
+            short x, y;
+            byte color;
+            short maskA, maskB;
+            ByteAccess pOut;
+            byte[] rawBitmap = new byte[SCI_CURSOR_SCI0_HEIGHTWIDTH * SCI_CURSOR_SCI0_HEIGHTWIDTH];
+            short heightWidth;
+
+            if (resourceId == -1)
+            {
+                // no resourceId given, so we actually hide the cursor
+                KernelHide();
+                return;
+            }
+
+            // Load cursor resource...
+            resource = _resMan.FindResource(new ResourceId(ResourceType.Cursor, (ushort)resourceId), false);
+            if (resource == null)
+                throw new InvalidOperationException($"cursor resource {resourceId} not found");
+            if (resource.size != SCI_CURSOR_SCI0_RESOURCESIZE)
+                throw new InvalidOperationException($"cursor resource {resourceId} has invalid size");
+
+            resourceData = new ByteAccess(resource.data);
+
+            if (ResourceManager.GetSciVersion() <= SciVersion.V01)
+            {
+                // SCI0 cursors contain hotspot flags, not actual hotspot coordinates.
+                // If bit 0 of resourceData[3] is set, the hotspot should be centered,
+                // otherwise it's in the top left of the mouse cursor.
+                hotspot.X = hotspot.Y = resourceData[3] != 0 ? SCI_CURSOR_SCI0_HEIGHTWIDTH / 2 : 0;
+            }
+            else {
+                // Cursors in newer SCI versions contain actual hotspot coordinates.
+                hotspot.X = resourceData.ReadUInt16();
+                hotspot.Y = resourceData.ReadUInt16(2);
+            }
+
+            // Now find out what colors we are supposed to use
+            colorMapping[0] = 0; // Black is hardcoded
+            colorMapping[1] = _screen.ColorWhite; // White is also hardcoded
+            colorMapping[2] = SCI_CURSOR_SCI0_TRANSPARENCYCOLOR;
+            colorMapping[3] = (byte)(_palette.MatchColor(170, 170, 170) & GfxPalette.SCI_PALETTE_MATCH_COLORMASK); // Grey
+                                                                                                                   // TODO: Figure out if the grey color is hardcoded
+                                                                                                                   // HACK for the magnifier cursor in LB1, fixes its color (bug #3487092)
+            if (SciEngine.Instance.GameId == SciGameId.LAURABOW && resourceId == 1)
+                colorMapping[3] = _screen.ColorWhite;
+            // HACK for Longbow cursors, fixes the shade of grey they're using (bug #3489101)
+            if (SciEngine.Instance.GameId == SciGameId.LONGBOW)
+                colorMapping[3] = (byte)(_palette.MatchColor(223, 223, 223) & GfxPalette.SCI_PALETTE_MATCH_COLORMASK); // Light Grey
+
+            // Seek to actual data
+            resourceData.Offset += 4;
+
+            pOut = new ByteAccess(rawBitmap);
+            for (y = 0; y < SCI_CURSOR_SCI0_HEIGHTWIDTH; y++)
+            {
+                maskA = resourceData.ReadInt16(y << 1);
+                maskB = resourceData.ReadInt16(32 + (y << 1));
+
+                for (x = 0; x < SCI_CURSOR_SCI0_HEIGHTWIDTH; x++)
+                {
+                    color = (byte)((((maskA << x) & 0x8000) | (((maskB << x) >> 1) & 0x4000)) >> 14);
+                    pOut[0] = colorMapping[color];
+                    pOut.Offset++;
+                }
+            }
+
+            heightWidth = SCI_CURSOR_SCI0_HEIGHTWIDTH;
+
+            if (_upscaledHires != GfxScreenUpscaledMode.DISABLED)
+            {
+                // Scale cursor by 2x - note: sierra didn't do this, but it looks much better
+                heightWidth *= 2;
+                hotspot.X *= 2;
+                hotspot.Y *= 2;
+                byte[] upscaledBitmap = new byte[heightWidth * heightWidth];
+                throw new NotImplementedException();
+                //_screen.Scale2x(rawBitmap, upscaledBitmap, SCI_CURSOR_SCI0_HEIGHTWIDTH, SCI_CURSOR_SCI0_HEIGHTWIDTH);
+                //rawBitmap = upscaledBitmap;
+            }
+
+            if (hotspot.X >= heightWidth || hotspot.Y >= heightWidth)
+            {
+                throw new InvalidOperationException($"cursor {resourceId}'s hotspot ({hotspot.X}, {hotspot.Y}) is out of range of the cursor's dimensions ({heightWidth}x{heightWidth})");
+            }
+
+            _system.GraphicsManager.SetCursor(rawBitmap, 0, heightWidth, heightWidth, hotspot, SCI_CURSOR_SCI0_TRANSPARENCYCOLOR);
+            KernelShow();
+        }
+
+        public void KernelShow()
+        {
+            _system.GraphicsManager.IsCursorVisible = true;
+            _isVisible = true;
+        }
+
+        public void KernelHide()
+        {
+            _system.GraphicsManager.IsCursorVisible = false;
+            _isVisible = false;
+        }
 
         // KQ6 Windows has different black and white cursors. If this is true (set
         // from the windows_cursors ini setting), then we use these and don't scale
@@ -83,6 +200,8 @@ namespace NScumm.Sci.Graphics
 	        new SciCursorSetPositionWorkarounds { gameId = SciGameId.QFG1VGA,     newPositionY =  64, newPositionX = 174, rectTop = 40, rectLeft =  37, rectBottom =  74, rectRight = 284 },  // Quest For Glory 1 VGA, run/walk/sleep sub-menu
 	        new SciCursorSetPositionWorkarounds { gameId = SciGameId.QFG3,        newPositionY =  70, newPositionX = 170, rectTop = 40, rectLeft =  61, rectBottom =  81, rectRight = 258 },  // Quest For Glory 3, run/walk/sleep sub-menu
         };
+
+        public bool IsVisible { get { return _isVisible; } }
 
         public GfxCursor(ISystem system, ResourceManager resMan, GfxPalette palette, GfxScreen screen)
         {
@@ -129,6 +248,12 @@ namespace NScumm.Sci.Graphics
             // _coordAdjuster and _event will be initialized later on
             _coordAdjuster = null;
             _event = null;
+        }
+
+        public void Init(GfxCoordAdjuster coordAdjuster, EventManager eventMan)
+        {
+            _coordAdjuster = coordAdjuster;
+            _event = eventMan;
         }
 
         private void SetPosition(Point pos)
@@ -182,12 +307,6 @@ namespace NScumm.Sci.Graphics
                     return;
                 }
             }
-        }
-
-        public void Init(GfxCoordAdjuster coordAdjuster, EventManager eventMan)
-        {
-            _coordAdjuster = coordAdjuster;
-            _event = eventMan;
         }
     }
 }

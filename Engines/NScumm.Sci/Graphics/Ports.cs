@@ -185,6 +185,21 @@ namespace NScumm.Sci.Graphics
             KernelInitPriorityBands();
         }
 
+        internal void BeginUpdate(Window _picWind)
+        {
+            throw new NotImplementedException();
+        }
+
+        internal void EndUpdate(Window _picWind)
+        {
+            throw new NotImplementedException();
+        }
+
+        internal void KernelGraphAdjustPriority(ushort v1, ushort v2)
+        {
+            throw new NotImplementedException();
+        }
+
         public void ProcessEngineHunkList(WorklistManager wm)
         {
             foreach (var wnd in _windowList.OfType<Window>())
@@ -516,7 +531,7 @@ namespace NScumm.Sci.Graphics
             _curPort.top = top;
         }
 
-        private Port SetPort(Port newPort)
+        public Port SetPort(Port newPort)
         {
             Port oldPort = _curPort;
             _curPort = newPort;

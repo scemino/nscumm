@@ -126,6 +126,38 @@ namespace NScumm.Sci
 
         public DebugState _debugState;
 
+        // Maps half-width single-byte SJIS to full-width double-byte SJIS
+        // Note: SSCI maps 0x5C (the Yen symbol) to 0x005C, which terminates
+        // the string with the leading 0x00 byte. We map Yen to 0x818F.
+        private static readonly ushort[] s_halfWidthSJISMap = {
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x81A8, 0x81A9, 0x81AA, 0x81AB,
+            0x8140, 0x8149, 0x818D, 0x8194, 0x8190, 0x8193, 0x8195, 0x818C,
+            0x8169, 0x816A, 0x8196, 0x817B, 0x8143, 0x817C, 0x8144, 0x815E,
+            0x824F, 0x8250, 0x8251, 0x8252, 0x8253, 0x8254, 0x8255, 0x8256,
+            0x8257, 0x8258, 0x8146, 0x8147, 0x8183, 0x8181, 0x8184, 0x8148,
+            0x8197, 0x8260, 0x8261, 0x8262, 0x8263, 0x8264, 0x8265, 0x8266,
+            0x8267, 0x8268, 0x8269, 0x826A, 0x826B, 0x826C, 0x826D, 0x826E,
+            0x826F, 0x8270, 0x8271, 0x8272, 0x8273, 0x8274, 0x8275, 0x8276,
+            0x8277, 0x8278, 0x8279, 0x816D, 0x818F /* 0x005C */, 0x816E, 0x814F, 0x8151,
+            0x8280, 0x8281, 0x8282, 0x8283, 0x8284, 0x8285, 0x8286, 0x8287,
+            0x8288, 0x8289, 0x828A, 0x828B, 0x828C, 0x828D, 0x828E, 0x828F,
+            0x8290, 0x8291, 0x8292, 0x8293, 0x8294, 0x8295, 0x8296, 0x8297,
+            0x8298, 0x8299, 0x829A, 0x816F, 0x8162, 0x8170, 0x8160, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0x8140, 0x8142, 0x8175, 0x8176, 0x8141, 0x8145, 0x8392, 0x8340,
+            0x8342, 0x8344, 0x8346, 0x8348, 0x8383, 0x8385, 0x8387, 0x8362,
+            0x815C, 0x8341, 0x8343, 0x8345, 0x8347, 0x8349, 0x834A, 0x834C,
+            0x834E, 0x8350, 0x8352, 0x8354, 0x8356, 0x8358, 0x835A, 0x835C,
+            0x835E, 0x8360, 0x8363, 0x8365, 0x8367, 0x8369, 0x836A, 0x836B,
+            0x836C, 0x836D, 0x836E, 0x8371, 0x8374, 0x8377, 0x837A, 0x837D,
+            0x837E, 0x8380, 0x8381, 0x8382, 0x8384, 0x8386, 0x8388, 0x8389,
+            0x838A, 0x838B, 0x838C, 0x838D, 0x838F, 0x8393, 0x814A, 0x814B,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+        };
+
         public SciEngine(ISystem system, SciGameDescriptor desc, SciGameId id)
         {
             _system = system;
@@ -138,100 +170,129 @@ namespace NScumm.Sci
 
         public string GetSciLanguageString(string str, Language requestedLanguage, Language? secondaryLanguage = null, ushort? languageSplitter = null)
         {
-            throw new NotImplementedException();
-            //Language foundLanguage = Sci.Language.NONE;
+            var textPtr = 0;
+            Language foundLanguage = Sci.Language.NONE;
+            char curChar = '\0';
+            char curChar2 = '\0';
+            int i;
+            for (i = 0; i < str.Length; i++)
+            {
+                curChar = str[i];
 
-            //for (int i = 0; i < str.Length; i++)
-            //{
-            //    var curChar = str[i];
+                if ((curChar == '%') || (curChar == '#'))
+                {
+                    curChar2 = str[i + 1];
+                    foundLanguage = CharToLanguage(curChar2);
 
-            //    if ((curChar == '%') || (curChar == '#'))
-            //    {
-            //        var curChar2 = str[i + 1];
-            //        foundLanguage = CharToLanguage(curChar2);
+                    if (foundLanguage != Sci.Language.NONE)
+                    {
+                        // Return language splitter
+                        if (languageSplitter.HasValue)
+                            languageSplitter = (ushort)(curChar | (curChar2 << 8));
+                        // Return the secondary language found in the string
+                        if (secondaryLanguage.HasValue)
+                            secondaryLanguage = foundLanguage;
+                        break;
+                    }
+                }
+            }
 
-            //        if (foundLanguage != Sci.Language.NONE)
-            //        {
-            //            // Return language splitter
-            //            if (languageSplitter)
-            //                *languageSplitter = curChar | (curChar2 << 8);
-            //            // Return the secondary language found in the string
-            //            if (secondaryLanguage)
-            //                *secondaryLanguage = foundLanguage;
-            //            break;
-            //        }
-            //    }
-            //}
+            if (i == str.Length)
+            {
+                curChar = '\0';
+            }
 
-            //if (foundLanguage == requestedLanguage)
-            //{
-            //    if (curChar2 == 'J')
-            //    {
-            //        // Japanese including Kanji, displayed with system font
-            //        // Convert half-width characters to full-width equivalents
-            //        Common::String fullWidth;
-            //        uint16 mappedChar;
+            if (foundLanguage == requestedLanguage)
+            {
+                if (curChar2 == 'J')
+                {
+                    // Japanese including Kanji, displayed with system font
+                    // Convert half-width characters to full-width equivalents
+                    string fullWidth = string.Empty;
+                    ushort mappedChar;
 
-            //        textPtr += 2; // skip over language splitter
+                    textPtr += 2; // skip over language splitter
 
-            //        while (1)
-            //        {
-            //            curChar = *textPtr;
+                    while (true)
+                    {
+                        curChar = str[textPtr];
 
-            //            switch (curChar)
-            //            {
-            //                case 0: // Terminator NUL
-            //                    return fullWidth;
-            //                case '\\':
-            //                    // "\n", "\N", "\r" and "\R" were overwritten with SPACE + 0x0D in PC-9801 SSCI
-            //                    //  inside GetLongest() (text16). We do it here, because it's much cleaner and
-            //                    //  we have to process the text here anyway.
-            //                    //  Occurs for example in Police Quest 2 intro
-            //                    curChar2 = *(textPtr + 1);
-            //                    switch (curChar2)
-            //                    {
-            //                        case 'n':
-            //                        case 'N':
-            //                        case 'r':
-            //                        case 'R':
-            //                            fullWidth += ' ';
-            //                            fullWidth += 0x0D; // CR
-            //                            textPtr += 2;
-            //                            continue;
-            //                    }
-            //            }
+                        switch (curChar)
+                        {
+                            case '\0': // Terminator NUL
+                                return fullWidth;
+                            case '\\':
+                                // "\n", "\N", "\r" and "\R" were overwritten with SPACE + 0x0D in PC-9801 SSCI
+                                //  inside GetLongest() (text16). We do it here, because it's much cleaner and
+                                //  we have to process the text here anyway.
+                                //  Occurs for example in Police Quest 2 intro
+                                curChar2 = str[textPtr + 1];
+                                switch (curChar2)
+                                {
+                                    case 'n':
+                                    case 'N':
+                                    case 'r':
+                                    case 'R':
+                                        fullWidth += ' ';
+                                        fullWidth += 0x0D; // CR
+                                        textPtr += 2;
+                                        continue;
+                                }
+                                break;
+                        }
 
-            //            textPtr++;
+                        textPtr++;
 
-            //            mappedChar = s_halfWidthSJISMap[curChar];
-            //            if (mappedChar)
-            //            {
-            //                fullWidth += mappedChar >> 8;
-            //                fullWidth += mappedChar & 0xFF;
-            //            }
-            //            else {
-            //                // Copy double-byte character
-            //                curChar2 = *(textPtr++);
-            //                if (!curChar)
-            //                {
-            //                    error("SJIS character %02X is missing second byte", curChar);
-            //                    break;
-            //                }
-            //                fullWidth += curChar;
-            //                fullWidth += curChar2;
-            //            }
-            //        }
+                        mappedChar = s_halfWidthSJISMap[curChar];
+                        if (mappedChar != 0)
+                        {
+                            fullWidth += mappedChar >> 8;
+                            fullWidth += mappedChar & 0xFF;
+                        }
+                        else {
+                            // Copy double-byte character
+                            curChar2 = str[textPtr++];
+                            if (curChar == 0)
+                            {
+                                throw new InvalidOperationException("SJIS character {curChar:X2} is missing second byte");
+                            }
+                            fullWidth += curChar;
+                            fullWidth += curChar2;
+                        }
+                    }
 
-            //    }
-            //    else {
-            //        return Common::String((const char*)(textPtr + 2));
-            //    }
-            //}
+                }
+                else {
+                    return str.Substring(textPtr + 2);
+                }
+            }
 
-            //if (curChar)
-            //    return Common::String(str.c_str(), (const char*)textPtr - str.c_str());
+            if (curChar != 0)
+                return str.Substring(0, textPtr);
 
-            //return str;
+            return str;
+        }
+
+        private static Language CharToLanguage(char c)
+        {
+            switch (c)
+            {
+                case 'F':
+                    return Sci.Language.FRENCH;
+                case 'S':
+                    return Sci.Language.SPANISH;
+                case 'I':
+                    return Sci.Language.ITALIAN;
+                case 'G':
+                    return Sci.Language.GERMAN;
+                case 'J':
+                case 'j':
+                    return Sci.Language.JAPANESE;
+                case 'P':
+                    return Sci.Language.PORTUGUESE;
+                default:
+                    return Sci.Language.NONE;
+            }
         }
 
         public static SciEngine Instance
@@ -243,6 +304,14 @@ namespace NScumm.Sci
         {
             get;
             set;
+        }
+
+        public string FilePrefix
+        {
+            get
+            {
+                return _gameDescription.gameid;
+            }
         }
 
         public bool IsPaused
@@ -263,6 +332,30 @@ namespace NScumm.Sci
         public EngineState EngineState { get { return _gamestate; } }
 
         public Register GameObject { get { return _gameObjectAddress; } }
+
+        public GameFeatures Features { get { return _features; } }
+
+        public int InQfGImportRoom
+        {
+            get
+            {
+                if (_gameId == SciGameId.QFG2 && _gamestate.CurrentRoomNumber == 805)
+                {
+                    // QFG2 character import screen
+                    return 2;
+                }
+                else if (_gameId == SciGameId.QFG3 && _gamestate.CurrentRoomNumber == 54)
+                {
+                    // QFG3 character import screen
+                    return 3;
+                }
+                else if (_gameId == SciGameId.QFG4 && _gamestate.CurrentRoomNumber == 54)
+                {
+                    return 4;
+                }
+                return 0;
+            }
+        }
 
         public bool HasMacIconBar
         {
@@ -289,9 +382,35 @@ namespace NScumm.Sci
             }
         }
 
+        public bool IsBE
+        {
+            get
+            {
+                switch (_gameDescription.platform)
+                {
+                    case Platform.Amiga:
+                    case Platform.Macintosh:
+                        return true;
+                    default:
+                        return false;
+                }
+            }
+        }
+
         public ResourceManager ResMan { get { return _resMan; } }
 
         public Kernel Kernel { get { return _kernel; } }
+
+        public ISaveFileManager SaveFileManager { get { return _system.SaveFileManager; } }
+
+        public string Directory { get { return _directory; } }
+
+        public EventManager EventManager { get { return _eventMan; } }
+
+        public string WrapFilename(string name)
+        {
+            return FilePrefix + "-" + name;
+        }
 
         public void Run()
         {
@@ -570,7 +689,7 @@ namespace NScumm.Sci
             _gamestate.stack_base[1] = Register.NULL_REG;
 
             // Register the first element on the execution stack
-            if (Vm.SendSelector(_gamestate, _gameObjectAddress, _gameObjectAddress, _gamestate.stack_base, 2, _gamestate.stack_base) == 0)
+            if (Vm.SendSelector(_gamestate, _gameObjectAddress, _gameObjectAddress, new StackPtr(_gamestate.stack_base), 2, new StackPtr(_gamestate.stack_base)) == null)
             {
                 // TODO: _console.printObject(_gameObjectAddress);
                 // error("initStackBaseWithSelector: error while registering the first selector in the call stack");
@@ -817,12 +936,12 @@ namespace NScumm.Sci
             return lang;
         }
 
-        private static uint ReadSelectorValue(SegManager segMan, Register obj, int selectorId)
+        public static uint ReadSelectorValue(SegManager segMan, Register obj, int selectorId)
         {
             return ReadSelector(segMan, obj, selectorId).Offset;
         }
 
-        private static Register ReadSelector(SegManager segMan, Register obj, int selectorId)
+        public static Register ReadSelector(SegManager segMan, Register obj, int selectorId)
         {
             ObjVarRef address = new ObjVarRef();
             Register fptr;
@@ -834,7 +953,7 @@ namespace NScumm.Sci
 
         public static SelectorType LookupSelector(SegManager segMan, Register obj_location, int selectorId, ObjVarRef varp, out Register fptr)
         {
-            fptr = null;
+            fptr = Register.NULL_REG;
             SciObject obj = segMan.GetObject(obj_location);
             int index;
             bool oldScriptHeader = (ResourceManager.GetSciVersion() == SciVersion.V0_EARLY);
@@ -883,13 +1002,50 @@ namespace NScumm.Sci
             //	return _lookupSelector_function(segMan, obj, selectorId, fptr);
         }
 
+        public static void InvokeSelector(EngineState s, Register @object, int selectorId, int k_argc, StackPtr? k_argp, int argc, StackPtr? argv = null)
+        {
+            int i;
+            int framesize = 2 + 1 * argc;
+            StackPtr stackframe = k_argp.Value + k_argc;
+
+            stackframe[0] = Register.Make(0, (ushort)selectorId);  // The selector we want to call
+            stackframe[1] = Register.Make(0, (ushort)argc); // Argument count
+
+            Register tmp;
+            var slc_type = LookupSelector(s._segMan, @object, selectorId, null, out tmp);
+
+            if (slc_type == SelectorType.None)
+            {
+                throw new InvalidOperationException($"Selector '{Instance.Kernel.GetSelectorName(selectorId)}' of object at {@object} could not be invoked");
+            }
+            if (slc_type == SelectorType.Variable)
+            {
+                throw new InvalidOperationException($"Attempting to invoke variable selector {Instance.Kernel.GetSelectorName(selectorId)} of object {@object}");
+            }
+
+            for (i = 0; i < argc; i++)
+                stackframe[2 + i] = argv.Value[i]; // Write each argument
+
+            ExecStack xstack;
+
+            // Now commit the actual function:
+            xstack = Vm.SendSelector(s, @object, @object, stackframe, framesize, stackframe);
+
+            xstack.sp += argc + 2;
+            xstack.fp += argc + 2;
+
+
+            Vm.Run(s); // Start a new vm
+        }
+
+
         private void SetSciLanguage(Language lang)
         {
             if (Selector(s => s.printLang) != -1)
                 WriteSelectorValue(_gamestate._segMan, _gameObjectAddress, Selector(s => s.printLang), (ushort)lang);
         }
 
-        private static void WriteSelectorValue(SegManager segMan, Register obj, int selectorId, ushort value)
+        public static void WriteSelectorValue(SegManager segMan, Register obj, int selectorId, ushort value)
         {
             WriteSelector(segMan, obj, selectorId, Register.Make(0, value));
         }

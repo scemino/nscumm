@@ -49,8 +49,13 @@
     <Compile Include="Engine\Gc.cs" />
     <Compile Include="Engine\Kernel.cs" />
     <Compile Include="Engine\KFile.cs" />
+    <Compile Include="Engine\KGraphics.cs" />
+    <Compile Include="Engine\KLists.cs" />
     <Compile Include="Engine\KMath.cs" />
+    <Compile Include="Engine\KMenu.cs" />
+    <Compile Include="Engine\KMisc.cs" />
     <Compile Include="Engine\KScripts.cs" />
+    <Compile Include="Engine\KSound.cs" />
     <Compile Include="Engine\Message.cs" />
     <Compile Include="Engine\Object.cs" />
     <Compile Include="Engine\Script.cs" />

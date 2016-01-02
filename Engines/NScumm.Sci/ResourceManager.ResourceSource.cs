@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using NScumm.Sci.Engine;
+using NScumm.Core;
 
 namespace NScumm.Sci
 {
@@ -464,6 +465,21 @@ namespace NScumm.Sci
             {
                 throw new NotImplementedException();
             }
+        }
+
+        public bool DetectEarlySound()
+        {
+            var res = FindResource(new ResourceId(ResourceType.Sound, 1), false);
+            if (res != null)
+            {
+                if (res.size >= 0x22)
+                {
+                    if (res.data.ToUInt16(0x1f) == 0) // channel 15 voice count + play mask is 0 in SCI0LATE
+                        if (res.data[0x21] == 0) // last byte right before actual data is 0 as well
+                            return false;
+                }
+            }
+            return true;
         }
     }
 }

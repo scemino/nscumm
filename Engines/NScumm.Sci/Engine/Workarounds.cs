@@ -157,10 +157,13 @@ namespace NScumm.Sci.Engine
             }
 
             // give caller origin data
-            trackOrigin.objectName = curObjectName;
-            trackOrigin.methodName = curMethodName;
-            trackOrigin.scriptNr = curScriptNr;
-            trackOrigin.localCallOffset = lastCall.debugLocalCallOffset;
+            trackOrigin = new SciTrackOriginReply
+            {
+                objectName = curObjectName,
+                methodName = curMethodName,
+                scriptNr = curScriptNr,
+                localCallOffset = lastCall.debugLocalCallOffset
+            };
 
             SciWorkaroundSolution noneFound = new SciWorkaroundSolution
             {
@@ -189,5 +192,89 @@ namespace NScumm.Sci.Engine
 	        new SciWorkaroundEntry { gameId = SciGameId.QFG4,          roomNr = 710,scriptNr =64941,  inheritanceLevel =0,  objectName=        "RandCycle",methodName= "doit",       localCallOffset=    -1,index=    0,newValue = new SciWorkaroundSolution{ type = SciWorkaroundType.FAKE, value =   1 } }, // op_gt: when the tentacle appears in the third room of the caves
         };
 
+        public static readonly SciWorkaroundEntry[] kGraphDrawLine_workarounds = {
+            new SciWorkaroundEntry { gameId = SciGameId.ISLANDBRAIN,roomNr =   300, scriptNr =   300, inheritanceLevel = 0, objectName =   "dudeViewer", methodName = "show",        localCallOffset =   -1, index =   0, newValue = new SciWorkaroundSolution{ type = SciWorkaroundType.STILLCALL, value = 0 } }, // when looking at the gene explanation chart, gets called with 1 extra parameter
+	        new SciWorkaroundEntry { gameId = SciGameId.SQ1,        roomNr =    43, scriptNr =    43, inheritanceLevel = 0, objectName =  "someoneDied", methodName = "changeState", localCallOffset =   -1, index =   0, newValue = new SciWorkaroundSolution{ type = SciWorkaroundType.STILLCALL, value = 0 } }, // when ordering beer, gets called with 1 extra parameter
+	        new SciWorkaroundEntry { gameId = SciGameId.SQ1,        roomNr =    71, scriptNr =    71, inheritanceLevel = 0, objectName = "destroyXenon", methodName = "changeState", localCallOffset =   -1, index =   0, newValue = new SciWorkaroundSolution{ type = SciWorkaroundType.STILLCALL, value = 0 } }, // during the Xenon destruction cutscene (which results in death), gets called with 1 extra parameter - bug #5176
+	        new SciWorkaroundEntry { gameId = SciGameId.SQ1,        roomNr =    53, scriptNr =    53, inheritanceLevel = 0, objectName =     "blastEgo", methodName = "changeState", localCallOffset =   -1, index =   0, newValue = new SciWorkaroundSolution{ type = SciWorkaroundType.STILLCALL, value = 0 } }, // when Roger is found and zapped by the cleaning robot, gets called with 1 extra parameter - bug #5177
+        };
+
+        public static readonly SciWorkaroundEntry[] kSetCursor_workarounds = {
+            new SciWorkaroundEntry { gameId = SciGameId.KQ5, roomNr =-1,scriptNr = 768, inheritanceLevel = 0, objectName = "KQCursor", methodName = "init", localCallOffset = -1, index = 0, newValue = new SciWorkaroundSolution { type=SciWorkaroundType.STILLCALL,value = 0 } }, // CD: gets called with 4 additional "900d" parameters
+        };
+
+        public static readonly SciWorkaroundEntry[] kAbs_workarounds = {
+            new SciWorkaroundEntry { gameId = SciGameId.HOYLE1,  roomNr =  1, scriptNr =  1, inheritanceLevel = 0, objectName = "room1", methodName = "doit", localCallOffset = -1, index = 0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.FAKE, value = 0x3e9 } }, // crazy eights - called with objects instead of integers
+	        new SciWorkaroundEntry { gameId = SciGameId.HOYLE1,  roomNr =  2, scriptNr =  2, inheritanceLevel = 0, objectName = "room2", methodName = "doit", localCallOffset = -1, index = 0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.FAKE, value = 0x3e9 } }, // old maid - called with objects instead of integers
+	        new SciWorkaroundEntry { gameId = SciGameId.HOYLE1,  roomNr =  3, scriptNr =  3, inheritanceLevel = 0, objectName = "room3", methodName = "doit", localCallOffset = -1, index = 0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.FAKE, value = 0x3e9 } }, // hearts - called with objects instead of integers
+	        new SciWorkaroundEntry { gameId = SciGameId.QFG1VGA, roomNr = -1, scriptNr = -1, inheritanceLevel = 0, objectName =    null, methodName = "doit", localCallOffset = -1, index = 0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.FAKE, value = 0x3e9 } }, // when the game is patched with the NRS patch
+	        new SciWorkaroundEntry { gameId = SciGameId.QFG3   , roomNr = -1, scriptNr = -1, inheritanceLevel = 0, objectName =    null, methodName = "doit", localCallOffset = -1, index = 0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.FAKE, value = 0x3e9 } }, // when the game is patched with the NRS patch - bugs #6042, #6043
+        };
+
+        public static readonly SciWorkaroundEntry[] kGraphSaveBox_workarounds = {
+            new SciWorkaroundEntry { gameId = SciGameId.CASTLEBRAIN, roomNr =    420, scriptNr =   427, inheritanceLevel =  0, objectName =         "alienIcon", methodName = "select",      localCallOffset =     -1, index = 0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.STILLCALL, value = 0 } }, // when selecting a card during the alien card game, gets called with 1 extra parameter
+	        new SciWorkaroundEntry { gameId = SciGameId.ISLANDBRAIN, roomNr =    290, scriptNr =   291, inheritanceLevel =  0, objectName =        "upElevator", methodName = "changeState", localCallOffset = 0x201f, index = 0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.STILLCALL, value = 0 } }, // when testing in the elevator puzzle, gets called with 1 argument less - 15 is on stack - bug #4943
+	        new SciWorkaroundEntry { gameId = SciGameId.ISLANDBRAIN, roomNr =    290, scriptNr =   291, inheritanceLevel =  0, objectName =      "downElevator", methodName = "changeState", localCallOffset = 0x201f, index = 0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.STILLCALL, value = 0 } }, // see above
+	        new SciWorkaroundEntry { gameId = SciGameId.ISLANDBRAIN, roomNr =    290, scriptNr =   291, inheritanceLevel =  0, objectName =   "correctElevator", methodName = "changeState", localCallOffset = 0x201f, index = 0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.STILLCALL, value = 0 } }, // see above (when testing the correct solution)
+	        new SciWorkaroundEntry { gameId = SciGameId.PQ3,         roomNr =    202, scriptNr =   202, inheritanceLevel =  0, objectName =           "MapEdit", methodName = "movePt",      localCallOffset =     -1, index = 0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.STILLCALL, value = 0 } }, // when plotting crimes, gets called with 2 extra parameters - bug #5099
+        };
+
+        public static SciWorkaroundEntry[] kGraphRestoreBox_workarounds =
+        {
+            new SciWorkaroundEntry { gameId = SciGameId.LSL6, roomNr = -1, scriptNr = 86, inheritanceLevel = 0, objectName = "LL6Inv", methodName = "hide", localCallOffset = -1, index = 0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.STILLCALL, value = 0 } }, // happens during the game, gets called with 1 extra parameter
+        };
+
+        public static readonly SciWorkaroundEntry[] kGraphFillBoxForeground_workarounds =
+        {
+            new SciWorkaroundEntry { gameId = SciGameId.LSL6, roomNr = -1, scriptNr = 0, inheritanceLevel = 0, objectName = "LSL6", methodName = "hideControls", localCallOffset = -1, index = 0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.STILLCALL, value = 0 } }, // happens when giving the bungee key to merrily (room 240) and at least in room 650 too - gets called with additional 5th parameter
+        };
+
+        public static readonly SciWorkaroundEntry[] kGraphFillBoxAny_workarounds =
+        {
+            new SciWorkaroundEntry { gameId = SciGameId.ECOQUEST2, roomNr =    100, scriptNr =   333, inheritanceLevel =  0, objectName =       "showEcorder", methodName = "changeState", localCallOffset =    -1, index =    0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.STILLCALL, value = 0 } }, // necessary workaround for our ecorder script patch, because there isn't enough space to patch the function
+	        new SciWorkaroundEntry { gameId = SciGameId.SQ4,       roomNr =     -1, scriptNr =   818, inheritanceLevel =  0, objectName =    "iconTextSwitch", methodName = "show",        localCallOffset =    -1, index =    0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.STILLCALL, value = 0 } }, // CD: game menu "text/speech" display - parameter 5 is missing, but the right color number is on the stack
+        };
+        public static readonly SciWorkaroundEntry[] kGraphUpdateBox_workarounds =
+        {
+            new SciWorkaroundEntry { gameId = SciGameId.ECOQUEST2, roomNr =    100, scriptNr =  333, inheritanceLevel =  0, objectName =       "showEcorder", methodName = "changeState", localCallOffset =   -1, index =   0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.STILLCALL, value = 0 } }, // necessary workaround for our ecorder script patch, because there isn't enough space to patch the function
+	        new SciWorkaroundEntry { gameId = SciGameId.PQ3,       roomNr =    202, scriptNr =  202, inheritanceLevel =  0, objectName =           "MapEdit", methodName = "addPt",       localCallOffset =   -1, index =   0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.STILLCALL, value = 0 } }, // when plotting crimes, gets called with 2 extra parameters - bug #5099
+	        new SciWorkaroundEntry { gameId = SciGameId.PQ3,       roomNr =    202, scriptNr =  202, inheritanceLevel =  0, objectName =           "MapEdit", methodName = "movePt",      localCallOffset =   -1, index =   0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.STILLCALL, value = 0 } }, // when plotting crimes, gets called with 2 extra parameters - bug #5099
+	        new SciWorkaroundEntry { gameId = SciGameId.PQ3,       roomNr =    202, scriptNr =  202, inheritanceLevel =  0, objectName =           "MapEdit", methodName = "dispose",     localCallOffset =   -1, index =   0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.STILLCALL, value = 0 } }, // when plotting crimes, gets called with 2 extra parameters
+        };
+        public static readonly SciWorkaroundEntry[] kGraphRedrawBox_workarounds =
+        {
+            new SciWorkaroundEntry { gameId = SciGameId.SQ4,       roomNr =    405, scriptNr =  405, inheritanceLevel = 0, objectName =      "swimAfterEgo", methodName = "changeState",  localCallOffset =   -1, index =   0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.STILLCALL, value = 0 } }, // skateOrama when "swimming" in the air - accidental additional parameter specified
+	        new SciWorkaroundEntry { gameId = SciGameId.SQ4,       roomNr =    406, scriptNr =  406, inheritanceLevel = 0, objectName =       "egoFollowed", methodName = "changeState",  localCallOffset =   -1, index =   0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.STILLCALL, value = 0 } }, // FLOPPY: when getting shot by the police - accidental additional parameter specified
+	        new SciWorkaroundEntry { gameId = SciGameId.SQ4,       roomNr =    406, scriptNr =  406, inheritanceLevel = 0, objectName =      "swimAndShoot", methodName = "changeState",  localCallOffset =   -1, index =   0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.STILLCALL, value = 0 } }, // skateOrama when "swimming" in the air - accidental additional parameter specified
+	        new SciWorkaroundEntry { gameId = SciGameId.SQ4,       roomNr =    410, scriptNr =  410, inheritanceLevel = 0, objectName =      "swimAfterEgo", methodName = "changeState",  localCallOffset =   -1, index =   0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.STILLCALL, value = 0 } }, // skateOrama when "swimming" in the air - accidental additional parameter specified
+	        new SciWorkaroundEntry { gameId = SciGameId.SQ4,       roomNr =    411, scriptNr =  411, inheritanceLevel = 0, objectName =      "swimAndShoot", methodName = "changeState",  localCallOffset =   -1, index =   0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.STILLCALL, value = 0 } }, // skateOrama when "swimming" in the air - accidental additional parameter specified
+	        new SciWorkaroundEntry { gameId = SciGameId.SQ4,       roomNr =    150, scriptNr =  150, inheritanceLevel = 0, objectName =       "laserScript", methodName = "changeState",  localCallOffset = 0xb2, index =   0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.STILLCALL, value = 0 } }, // when visiting the pedestral where Roger Jr. is trapped, before trashing the brain icon in the programming chapter, accidental additional parameter specified - bug #5479
+	        new SciWorkaroundEntry { gameId = SciGameId.SQ4,       roomNr =    150, scriptNr =  150, inheritanceLevel = 0, objectName =       "laserScript", methodName = "changeState",  localCallOffset = 0x16, index =   0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.STILLCALL, value = 0 } }, // same as above, for the German version - bug #5527
+	        new SciWorkaroundEntry { gameId = SciGameId.SQ4,       roomNr =     -1, scriptNr =  704, inheritanceLevel = 0, objectName =          "shootEgo", methodName = "changeState",  localCallOffset =   -1, index =   0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.STILLCALL, value = 0 } }, // When shot by Droid in Super Computer Maze (Rooms 500, 505, 510...) - accidental additional parameter specified
+	        new SciWorkaroundEntry { gameId = SciGameId.KQ5,       roomNr =     -1, scriptNr =  981, inheritanceLevel = 0, objectName =          "myWindow", methodName =     "dispose",  localCallOffset =   -1, index =   0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.STILLCALL, value = 0 } }, // Happens in the floppy version, when closing any dialog box, accidental additional parameter specified - bug #5031
+	        new SciWorkaroundEntry { gameId = SciGameId.KQ5,       roomNr =     -1, scriptNr =  995, inheritanceLevel = 0, objectName =              "invW", methodName =        "doit",  localCallOffset =   -1, index =   0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.STILLCALL, value = 0 } }, // Happens in the floppy version, when closing the inventory window, accidental additional parameter specified
+	        new SciWorkaroundEntry { gameId = SciGameId.KQ5,       roomNr =     -1, scriptNr =  995, inheritanceLevel = 0, objectName =                  "", methodName =    "export 0",  localCallOffset =   -1, index =   0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.STILLCALL, value = 0 } }, // Happens in the floppy version, when opening the gem pouch, accidental additional parameter specified - bug #5138
+	        new SciWorkaroundEntry { gameId = SciGameId.KQ5,       roomNr =     -1, scriptNr =  403, inheritanceLevel = 0, objectName =         "KQ5Window", methodName =     "dispose",  localCallOffset =   -1, index =   0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.STILLCALL, value = 0 } }, // Happens in the FM Towns version when closing any dialog box, accidental additional parameter specified
+        };
+        public static readonly SciWorkaroundEntry[] kDoSoundFade_workarounds =
+        {
+            new SciWorkaroundEntry { gameId = SciGameId.KQ5,       roomNr =        213, scriptNr =   989, inheritanceLevel =  0, objectName =      "globalSound3", methodName = "fade",  localCallOffset =        -1, index =    0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.STILLCALL, value = 0 } }, // english floppy: when bandits leave the secret temple, parameter 4 is an object - bug #5078
+	        new SciWorkaroundEntry { gameId = SciGameId.KQ6,       roomNr =        105, scriptNr =   989, inheritanceLevel =  0, objectName =       "globalSound", methodName = "fade",  localCallOffset =        -1, index =    0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.STILLCALL, value = 0 } }, // floppy: during intro, parameter 4 is an object
+	        new SciWorkaroundEntry { gameId = SciGameId.KQ6,       roomNr =        460, scriptNr =   989, inheritanceLevel =  0, objectName =      "globalSound2", methodName = "fade",  localCallOffset =        -1, index =    0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.STILLCALL, value = 0 } }, // after pulling the black widow's web on the isle of wonder, parameter 4 is an object - bug #4954
+	        new SciWorkaroundEntry { gameId = SciGameId.QFG4,      roomNr =         -1, scriptNr = 64989, inheritanceLevel =  0, objectName =          "longSong", methodName = "fade",  localCallOffset =        -1, index =    0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.STILLCALL, value = 0 } }, // CD version: many places, parameter 4 is an object (longSong)
+	        new SciWorkaroundEntry { gameId = SciGameId.SQ5,       roomNr =        800, scriptNr =   989, inheritanceLevel =  0, objectName =         "sq5Music1", methodName = "fade",  localCallOffset =        -1, index =    0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.STILLCALL, value = 0 } }, // when cutting the wrong part of Goliath with the laser - bug #6341
+        };
+        internal static readonly SciWorkaroundEntry[] kFindKey_workarounds =
+        {
+            new SciWorkaroundEntry { gameId = SciGameId.ECOQUEST2, roomNr =     100, scriptNr =  999, inheritanceLevel = 0, objectName =           "myList", methodName = "contains", localCallOffset =       -1, index =   0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.FAKE, value = 0 } }, // When Noah Greene gives Adam the Ecorder, and just before the game gives a demonstration, a null reference to a list is passed - bug #4987
+	        new SciWorkaroundEntry { gameId = SciGameId.HOYLE4,    roomNr =     300, scriptNr =  999, inheritanceLevel = 0, objectName =            "Piles", methodName = "contains", localCallOffset =       -1, index =   0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.FAKE, value = 0 } }, // When passing the three cards in Hearts, a null reference to a list is passed - bug #5664
+        };
+        internal static readonly SciWorkaroundEntry[] kDisposeScript_workarounds =
+        {
+            new SciWorkaroundEntry { gameId = SciGameId.LAURABOW, roomNr =     777, scriptNr =  777, inheritanceLevel = 0, objectName =             "myStab", methodName = "changeState", localCallOffset =   -1, index =   0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.IGNORE, value = 0 } }, // DEMO: after the will is signed, parameter 0 is an object - bug #4967
+	        new SciWorkaroundEntry { gameId = SciGameId.QFG1,     roomNr =      -1, scriptNr =   64, inheritanceLevel = 0, objectName =              "rm64", methodName = "dispose",      localCallOffset =   -1, index =   0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.IGNORE, value = 0 } }, // when leaving graveyard, parameter 0 is an object
+	        new SciWorkaroundEntry { gameId = SciGameId.SQ4,      roomNr =     150, scriptNr =  151, inheritanceLevel = 0, objectName =       "fightScript", methodName = "dispose",      localCallOffset =   -1, index =   0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.IGNORE, value = 0 } }, // during fight with Vohaul, parameter 0 is an object
+	        new SciWorkaroundEntry { gameId = SciGameId.SQ4,      roomNr =     150, scriptNr =  152, inheritanceLevel = 0, objectName =      "driveCloseUp", methodName = "dispose",      localCallOffset =   -1, index =   0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.IGNORE, value = 0 } }, // when choosing "beam download", parameter 0 is an object
+        };
     }
 }

@@ -19,6 +19,7 @@
 using NScumm.Core.Common;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace NScumm.Sci.Engine
 {
@@ -155,6 +156,17 @@ namespace NScumm.Sci.Engine
             ret.reg = _entries[pointer.Offset / 2];
             return ret;
         }
+
+        public override Register FindCanonicAddress(SegManager segMan, Register addr)
+        {
+            return Register.Make(addr.Segment, 0);
+        }
+
+        public override List<Register> ListAllOutgoingReferences(Register obj)
+        {
+            var tmp = _entries.ToList();
+            return tmp;
+        }
     }
 
     internal class Clone : SciObject
@@ -185,9 +197,20 @@ namespace NScumm.Sci.Engine
             ret.raw = new ByteAccess(_buf, (int)pointer.Offset);
             return ret;
         }
+
+        public override Register FindCanonicAddress(SegManager segMan, Register addr)
+        {
+            return Register.Make(addr.Segment, 0);
+        }
+
+        public override List<Register> ListAllDeallocatable(ushort segId)
+        {
+            Register r = Register.Make(segId, 0);
+            return new List<Register> { r };
+        }
     }
 
-    internal class SegmentObjTable<T> : SegmentObj where T : class
+    internal class SegmentObjTable<T> : SegmentObj where T : class, new()
     {
         private const int HEAPENTRY_INVALID = -1;
 
@@ -211,6 +234,7 @@ namespace NScumm.Sci.Engine
         public SegmentObjTable(SegmentType type)
             : base(type)
         {
+            _table = new Entry[0];
             InitTable();
         }
 
@@ -228,6 +252,16 @@ namespace NScumm.Sci.Engine
                     tmp.Add(Register.Make(segId, (ushort)i));
             }
             return tmp;
+        }
+
+        public virtual void FreeEntry(int idx)
+        {
+            if (idx < 0 || idx >= _table.Length)
+                throw new ArgumentOutOfRangeException("idx", $"Table::freeEntry: Attempt to release invalid table index {idx}");
+
+            _table[idx].next_free = first_free;
+            first_free = idx;
+            entries_used--;
         }
 
         public bool IsValidEntry(int idx)
@@ -250,6 +284,7 @@ namespace NScumm.Sci.Engine
                 int newIdx = _table.Length;
                 Array.Resize(ref _table, _table.Length + 1);
                 _table[newIdx] = new Entry();
+                _table[newIdx].Item = new T();
                 _table[newIdx].next_free = newIdx;  // Tag as 'valid'
                 return newIdx;
             }
@@ -269,6 +304,125 @@ namespace NScumm.Sci.Engine
             : base(SegmentType.CLONES)
         {
         }
+
+        public override void FreeAtAddress(SegManager segMan, Register addr)
+        {
+# if GC_DEBUG
+            Object* victim_obj = &(_table[addr.getOffset()]);
+
+            if (!(victim_obj->_flags & OBJECT_FLAG_FREED))
+                warning("[GC] Clone %04x:%04x not reachable and not freed (freeing now)", PRINT_REG(addr));
+# if GC_DEBUG_VERBOSE
+            else
+                warning("[GC-DEBUG] Clone %04x:%04x: Freeing", PRINT_REG(addr));
+
+            warning("[GC] Clone had pos %04x:%04x", PRINT_REG(victim_obj->pos));
+#endif
+#endif
+
+            FreeEntry((ushort)addr.Offset);
+        }
+
+        public override List<Register> ListAllOutgoingReferences(Register addr)
+        {
+            List<Register> tmp = new List<Register>();
+            //	assert(addr.segment == _segId);
+
+            if (!IsValidEntry((int)addr.Offset))
+            {
+                throw new InvalidOperationException($"Unexpected request for outgoing references from clone at {addr}");
+            }
+
+            Clone clone = _table[addr.Offset].Item;
+
+            // Emit all member variables (including references to the 'super' delegate)
+            for (var i = 0; i < clone.VarCount; i++)
+                tmp.Add(clone.GetVariable(i));
+
+            // Note that this also includes the 'base' object, which is part of the script and therefore also emits the locals.
+            tmp.Add(clone.Pos);
+            //debugC(kDebugLevelGC, "[GC] Reporting clone-pos %04x:%04x", PRINT_REG(clone->pos));
+
+            return tmp;
+        }
+    }
+
+    internal class List
+    {
+        public Register first;
+        public Register last;
+    }
+
+    internal class ListTable : SegmentObjTable<List>
+    {
+        public ListTable() : base(SegmentType.LISTS) { }
+
+        public override void FreeAtAddress(SegManager segMan, Register sub_addr)
+        {
+            FreeEntry((int)sub_addr.Offset);
+        }
+
+        public override List<Register> ListAllOutgoingReferences(Register addr)
+        {
+            List<Register> tmp = new List<Register>();
+            if (!IsValidEntry((int)addr.Offset))
+            {
+                throw new InvalidOperationException($"Invalid list referenced for outgoing references: {addr}");
+            }
+
+            List list = _table[(int)addr.Offset].Item;
+
+            tmp.Add(list.first);
+            tmp.Add(list.last);
+            // We could probably get away with just one of them, but
+            // let's be conservative here.
+
+            return tmp;
+        }
+    }
+
+    internal class Node
+    {
+        /// <summary>
+        /// Predecessor node
+        /// </summary>
+        public Register pred;
+        /// <summary>
+        /// Successor node
+        /// </summary>
+        public Register succ;
+        public Register key;
+        public Register value;
+    }
+
+    internal class NodeTable : SegmentObjTable<Node>
+    {
+        public NodeTable() : base(SegmentType.NODES) { }
+
+        public override void FreeAtAddress(SegManager segMan, Register sub_addr)
+        {
+            FreeEntry((int)sub_addr.Offset);
+        }
+
+        public override List<Register> ListAllOutgoingReferences(Register addr)
+        {
+            List<Register> tmp = new List<Register>();
+            if (!IsValidEntry((int)addr.Offset))
+            {
+                throw new InvalidOperationException($"Invalid node referenced for outgoing references: {addr}");
+            }
+
+            Node node = _table[(int)addr.Offset].Item;
+
+            // We need all four here. Can't just stick with 'pred' OR 'succ' because node operations allow us
+            // to walk around from any given node
+            tmp.Add(node.pred);
+            tmp.Add(node.succ);
+            tmp.Add(node.key);
+            tmp.Add(node.value);
+
+            return tmp;
+        }
     }
 
     internal class Hunk
@@ -287,6 +441,17 @@ namespace NScumm.Sci.Engine
         internal void FreeEntryContents(int idx)
         {
             _table[idx].Item.mem = null;
+        }
+
+        public override void FreeEntry(int idx)
+        {
+            base.FreeEntry(idx);
+            FreeEntryContents(idx);
+        }
+
+        public override void FreeAtAddress(SegManager segMan, Register sub_addr)
+        {
+            FreeEntry((int)sub_addr.Offset);
         }
     }
 
@@ -339,9 +504,22 @@ namespace NScumm.Sci.Engine
                 else {
                     throw new System.InvalidOperationException($"LocalVariables::dereference: Offset at end or out of bounds {pointer}");
                 }
-                ret.reg = null;
+                ret.reg = Register.NULL_REG;
             }
             return ret;
+        }
+
+        public override Register FindCanonicAddress(SegManager segMan, Register sub_addr)
+        {
+            // Reference the owning script
+            ushort owner_seg = segMan.GetScriptSegment(script_id);
+            //assert(owner_seg > 0);
+            return Register.Make(owner_seg, 0);
+        }
+
+        public override List<Register> ListAllOutgoingReferences(Register obj)
+        {
+            return new List<Register>(_locals);
         }
     }
 

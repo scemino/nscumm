@@ -40,6 +40,126 @@ namespace NScumm.Sci.Engine
         private bool _usesCdTrack;
         private bool _forceDOSTracks;
 
+        public SciVersion DetectDoSoundType()
+        {
+            if (_doSoundType == SciVersion.NONE)
+            {
+                if (ResourceManager.GetSciVersion() == SciVersion.V0_EARLY)
+                {
+                    // Almost all of the SCI0EARLY games use different sound resources than
+                    //  SCI0LATE. Although the last SCI0EARLY game (lsl2) uses SCI0LATE resources
+                    _doSoundType = SciEngine.Instance.ResMan.DetectEarlySound() ? SciVersion.V0_EARLY : SciVersion.V0_LATE;
+# if ENABLE_SCI32
+                }
+                else if (getSciVersion() >= SciVersion.V2_1)
+                {
+                    _doSoundType = SciVersion.V2_1;
+#endif
+                }
+                else if (SciEngine.Selector(s => s.nodePtr) == -1)
+                {
+                    // No nodePtr selector, so this game is definitely using newer
+                    // SCI0 sound code (i.e. SciVersion.V0_LATE)
+                    _doSoundType = SciVersion.V0_LATE;
+                }
+                else if (ResourceManager.GetSciVersion() >= SciVersion.V1_LATE)
+                {
+                    // All SCI1 late games use the newer doSound semantics
+                    _doSoundType = SciVersion.V1_LATE;
+                }
+                else {
+                    if (!AutoDetectSoundType())
+                    {
+                        // TODO: warning("DoSound detection failed, taking an educated guess");
+
+                        if (ResourceManager.GetSciVersion() >= SciVersion.V1_MIDDLE)
+                            _doSoundType = SciVersion.V1_LATE;
+                        else if (ResourceManager.GetSciVersion() > SciVersion.V01)
+                            _doSoundType = SciVersion.V1_EARLY;
+                    }
+                }
+
+                // TODO: debugC(1, kDebugLevelSound, "Detected DoSound type: %s", getSciVersionDesc(_doSoundType));
+            }
+
+            return _doSoundType;
+        }
+
+        private bool AutoDetectSoundType()
+        {
+            // Look up the script address
+            Register addr = GetDetectionAddr("Sound", SciEngine.Selector(s => s.play));
+
+            if (addr.Segment == 0)
+                return false;
+
+            ushort offset = (ushort)addr.Offset;
+            Script script = _segMan.GetScript(addr.Segment);
+            ushort intParam = 0xFFFF;
+            bool foundTarget = false;
+
+            while (true)
+            {
+                short[] opparams = new short[4];
+                byte extOpcode;
+                byte opcode;
+                offset += (ushort)Vm.ReadPMachineInstruction(script.GetBuf(offset), out extOpcode, opparams);
+                opcode = (byte)(extOpcode >> 1);
+
+                // Check for end of script
+                if (opcode == Vm.op_ret || offset >= script.BufSize)
+                    break;
+
+                // The play method of the Sound object pushes the DoSound command that
+                // it will use just before it calls DoSound. We intercept that here in
+                // order to check what sound semantics are used, cause the position of
+                // the sound commands has changed at some point during SCI1 middle.
+                if (opcode == Vm.op_pushi)
+                {
+                    // Load the pushi parameter
+                    intParam = (ushort)opparams[0];
+                }
+                else if (opcode == Vm.op_callk)
+                {
+                    ushort kFuncNum = (ushort)opparams[0];
+
+                    // Late SCI1 games call kIsObject before kDoSound
+                    if (kFuncNum == 6)
+                    {   // kIsObject (SCI0-SCI11)
+                        foundTarget = true;
+                    }
+                    else if (kFuncNum == 45)
+                    {   // kDoSound (SCI1)
+                        // First, check which DoSound function is called by the play
+                        // method of the Sound object
+                        switch (intParam)
+                        {
+                            case 1:
+                                _doSoundType = SciVersion.V0_EARLY;
+                                break;
+                            case 7:
+                                _doSoundType = SciVersion.V1_EARLY;
+                                break;
+                            case 8:
+                                _doSoundType = SciVersion.V1_LATE;
+                                break;
+                            default:
+                                // Unknown case... should never happen. We fall back to
+                                // alternative detection here, which works in general, apart
+                                // from some transitive games like Jones CD
+                                _doSoundType = foundTarget ? SciVersion.V1_LATE : SciVersion.V1_EARLY;
+                                break;
+                        }
+
+                        if (_doSoundType != SciVersion.NONE)
+                            return true;
+                    }
+                }
+            }
+
+            return false;	// not found
+        }
+
         public GameFeatures(SegManager segMan, Kernel kernel)
         {
             _segMan = segMan;
@@ -175,9 +295,9 @@ namespace NScumm.Sci.Engine
             return false;   // not found
         }
 
-        
 
-        private Register GetDetectionAddr(string objName, int slc, int methodNum)
+
+        private Register GetDetectionAddr(string objName, int slc, int methodNum = -1)
         {
             // Get address of target object
             Register objAddr = _segMan.FindObjectByName(objName, 0);
@@ -335,6 +455,61 @@ namespace NScumm.Sci.Engine
             }
 
             return false;   // not found
+        }
+
+        public SciVersion DetectSetCursorType()
+        {
+            if (_setCursorType == SciVersion.NONE)
+            {
+                if (ResourceManager.GetSciVersion() <= SciVersion.V1_MIDDLE)
+                {
+                    // SCI1 middle and older games never use cursor views
+                    _setCursorType = SciVersion.V0_EARLY;
+                }
+                else if (ResourceManager.GetSciVersion() >= SciVersion.V1_1)
+                {
+                    // SCI1.1 games always use cursor views
+                    _setCursorType = SciVersion.V1_1;
+                }
+                else {  // SCI1 late game, detect cursor semantics
+                        // If the Cursor object doesn't exist, we're using the SCI0 early
+                        // kSetCursor semantics.
+                    if (_segMan.FindObjectByName("Cursor") == Register.NULL_REG)
+                    {
+                        _setCursorType = SciVersion.V0_EARLY;
+                        //TODO: debugC(1, kDebugLevelGraphics, "Detected SetCursor type: %s", getSciVersionDesc(_setCursorType));
+                        return _setCursorType;
+                    }
+
+                    // Check for the existence of the handCursor object (first found).
+                    // This is based on KQ5.
+                    Register objAddr = _segMan.FindObjectByName("handCursor", 0);
+
+                    // If that doesn't exist, we assume it uses SCI1.1 kSetCursor semantics
+                    if (objAddr == Register.NULL_REG)
+                    {
+                        _setCursorType = SciVersion.V1_1;
+                        //TODO: debugC(1, kDebugLevelGraphics, "Detected SetCursor type: %s", getSciVersionDesc(_setCursorType));
+                        return _setCursorType;
+                    }
+
+                    // Now we check what the number variable holds in the handCursor
+                    // object.
+                    ushort number = (ushort)SciEngine.ReadSelectorValue(_segMan, objAddr, SciEngine.Selector(s => s.number));
+
+                    // If the number is 0, it uses views and therefore the SCI1.1
+                    // kSetCursor semantics, otherwise it uses the SCI0 early kSetCursor
+                    // semantics.
+                    if (number == 0)
+                        _setCursorType = SciVersion.V1_1;
+                    else
+                        _setCursorType = SciVersion.V0_EARLY;
+                }
+
+                //TODO: debugC(1, kDebugLevelGraphics, "Detected SetCursor type: %s", getSciVersionDesc(_setCursorType));
+            }
+
+            return _setCursorType;
         }
     }
 }

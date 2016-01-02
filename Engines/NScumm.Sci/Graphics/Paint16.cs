@@ -96,6 +96,31 @@ namespace NScumm.Sci.Graphics
             return memoryId;
         }
 
+        internal Register KernelGraphSaveBox(Rect rect, ushort screenMask)
+        {
+            throw new NotImplementedException();
+        }
+
+        internal void KernelGraphRestoreBox(Register register)
+        {
+            throw new NotImplementedException();
+        }
+
+        internal void KernelGraphDrawLine(Point point1, Point point2, short color, short priority, short control)
+        {
+            throw new NotImplementedException();
+        }
+
+        internal void KernelGraphFillBoxBackground(Rect rect)
+        {
+            throw new NotImplementedException();
+        }
+
+        internal void KernelGraphFillBoxForeground(Rect rect)
+        {
+            throw new NotImplementedException();
+        }
+
         public void FillRect(Rect rect, GfxScreenMasks drawFlags, int color, int priority = 0)
         {
             throw new NotImplementedException();
@@ -120,6 +145,31 @@ namespace NScumm.Sci.Graphics
             workerRect.Right = (workerRect.Right + 1) & 0xFFFE; // round up
 
             _screen.CopyRectToScreen(workerRect);
+        }
+
+        internal void KernelGraphFillBox(Rect rect, short colorMask, short color, short priority, short control)
+        {
+            throw new NotImplementedException();
+        }
+
+        internal Register KernelGraphSaveUpscaledHiresBox(Rect rect)
+        {
+            throw new NotImplementedException();
+        }
+
+        internal void KernelGraphRedrawBox(Rect rect)
+        {
+            throw new NotImplementedException();
+        }
+
+        internal void KernelGraphUpdateBox(Rect rect, bool hiresMode)
+        {
+            throw new NotImplementedException();
+        }
+
+        internal void BitsRestore(Register register)
+        {
+            throw new NotImplementedException();
         }
     }
 }

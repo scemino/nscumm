@@ -60,6 +60,14 @@ namespace NScumm.Core.Graphics
             }
         }
 
+        public bool IsValidRect
+        {
+            get
+            {
+                return (Left <= Right && Top <= Bottom);
+            }
+        }
+
         public Rect(int w, int h)
         {
             Top = 0;
@@ -145,9 +153,22 @@ namespace NScumm.Core.Graphics
             Right += offset;
         }
 
-        public void Translate(int v1, int v2)
+        public void Translate(int dx, int dy)
         {
-            throw new NotImplementedException();
+            Left += dx; Right += dx;
+            Top += dy; Bottom += dy;
+        }
+
+        /// <summary>
+        /// Extend this rectangle so that it contains r
+        /// </summary>
+        /// <param name="r">the rectangle to extend by</param>
+        public void Extend(Rect r)
+        {
+            Left = Math.Min(Left, r.Left);
+            Right = Math.Max(Right, r.Right);
+            Top = Math.Min (Top, r.Top);
+            Bottom = Math.Max(Bottom, r.Bottom);
         }
     }
 }

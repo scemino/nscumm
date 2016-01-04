@@ -16,6 +16,9 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using System;
+using NScumm.Core.Graphics;
+
 namespace NScumm.Sci.Graphics
 {
     /// <summary>
@@ -25,6 +28,10 @@ namespace NScumm.Sci.Graphics
     /// </summary>
     internal class GfxCoordAdjuster
     {
+        public virtual Rect OnControl(Rect rect)
+        {
+            return rect;
+        }
     }
 
     internal class GfxCoordAdjuster16 : GfxCoordAdjuster
@@ -34,6 +41,17 @@ namespace NScumm.Sci.Graphics
         public GfxCoordAdjuster16(GfxPorts ports)
         {
             _ports = ports;
+        }
+
+        public override Rect OnControl(Rect rect)
+        {
+            Port oldPort = _ports.SetPort(_ports._picWind);
+            Rect adjustedRect=new Rect(rect.Left, rect.Top, rect.Right, rect.Bottom);
+
+            adjustedRect.Clip(_ports.Port.rect);
+            _ports.OffsetRect(adjustedRect);
+            _ports.SetPort(oldPort);
+            return adjustedRect;
         }
     }
 }

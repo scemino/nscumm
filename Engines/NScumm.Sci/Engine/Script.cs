@@ -141,6 +141,7 @@ namespace NScumm.Sci.Engine
         public Script()
             : base(SegmentType.SCRIPT)
         {
+            _lockers = 1;
             _objects = new ObjMap();
         }
 
@@ -161,11 +162,11 @@ namespace NScumm.Sci.Engine
 
             if (ResourceManager.GetSciVersion() != SciVersion.V3)
             {
-                offset = _exportTable.Data.ReadSci11EndianUInt16(_exportTable.Offset + pubfunct);
+                offset = _exportTable.Data.ReadSci11EndianUInt16(_exportTable.Offset + pubfunct*2);
             }
             else {
                 if (!relocSci3)
-                    offset = (uint)(_exportTable.Data.ReadSci11EndianUInt16(_exportTable.Offset + pubfunct) + CodeBlockOffsetSci3);
+                    offset = (uint)(_exportTable.Data.ReadSci11EndianUInt16(_exportTable.Offset + pubfunct * 2) + CodeBlockOffsetSci3);
                 else
                     offset = RelocateOffsetSci3(pubfunct * 2 + 22);
             }

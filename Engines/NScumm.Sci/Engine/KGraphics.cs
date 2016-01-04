@@ -19,12 +19,16 @@
 
 using NScumm.Core;
 using NScumm.Core.Graphics;
+using NScumm.Sci.Graphics;
 using System;
 
 namespace NScumm.Sci.Engine
 {
     partial class Kernel
     {
+        const int K_DRAWPIC_FLAGS_MIRRORED = (1 << 14);
+        const int K_DRAWPIC_FLAGS_ANIMATIONBLACKOUT = (1 << 15);
+
         private static Register kAnimate(EngineState s, int argc, StackPtr? argv)
         {
             Register castListReference = (argc > 0) ? argv.Value[0] : Register.NULL_REG;
@@ -43,6 +47,79 @@ namespace NScumm.Sci.Engine
             return s.r_acc;
         }
 
+        private static Register kBaseSetter(EngineState s, int argc, StackPtr? argv)
+        {
+            Register @object = argv.Value[0];
+
+            SciEngine.Instance._gfxCompare.KernelBaseSetter(@object);
+            return s.r_acc;
+        }
+
+        private static Register kCanBeHere(EngineState s, int argc, StackPtr? argv)
+        {
+            Register curObject = argv.Value[0];
+            Register listReference = (argc > 1) ? argv.Value[1] : Register.NULL_REG;
+
+            Register canBeHere = SciEngine.Instance._gfxCompare.KernelCanBeHere(curObject, listReference);
+            return Register.Make(0, (ushort)(canBeHere.IsNull ? 1 : 0));
+        }
+
+        private static Register kDirLoop(EngineState s, int argc, StackPtr? argv)
+        {
+            kDirLoopWorker(argv.Value[0], argv.Value[1].ToUInt16(), s, argc, argv);
+
+            return s.r_acc;
+        }
+
+        private static void kDirLoopWorker(Register @object, ushort angle, EngineState s, int argc, StackPtr? argv)
+        {
+            int viewId = (int)SciEngine.ReadSelectorValue(s._segMan, @object, SciEngine.Selector(o => o.view));
+            ViewSignals signal = (ViewSignals)SciEngine.ReadSelectorValue(s._segMan, @object, SciEngine.Selector(o => o.signal));
+
+            if (signal.HasFlag(ViewSignals.DoesntTurn))
+                return;
+
+            short useLoop = -1;
+            if (ResourceManager.GetSciVersion() > SciVersion.V0_EARLY)
+            {
+                if ((angle > 315) || (angle < 45))
+                {
+                    useLoop = 3;
+                }
+                else if ((angle > 135) && (angle < 225))
+                {
+                    useLoop = 2;
+                }
+            }
+            else {
+                // SCI0EARLY
+                if ((angle > 330) || (angle < 30))
+                {
+                    useLoop = 3;
+                }
+                else if ((angle > 150) && (angle < 210))
+                {
+                    useLoop = 2;
+                }
+            }
+            if (useLoop == -1)
+            {
+                if (angle >= 180)
+                {
+                    useLoop = 1;
+                }
+                else {
+                    useLoop = 0;
+                }
+            }
+            else {
+                short loopCount = SciEngine.Instance._gfxCache.KernelViewGetLoopCount(viewId);
+                if (loopCount < 4)
+                    return;
+            }
+
+            SciEngine.WriteSelectorValue(s._segMan, @object, SciEngine.Selector(o => o.loop), (ushort)useLoop);
+        }
 
         private static Register kSetCursor(EngineState s, int argc, StackPtr? argv)
         {
@@ -62,7 +139,7 @@ namespace NScumm.Sci.Engine
             throw new NotImplementedException();
         }
 
-        static Register kSetCursorSci0(EngineState s, int argc, StackPtr? argv)
+        private static Register kSetCursorSci0(EngineState s, int argc, StackPtr? argv)
         {
             Point pos = new Point();
             int cursorId = argv.Value[0].ToInt16();
@@ -174,6 +251,40 @@ namespace NScumm.Sci.Engine
         {
             Rect rect = GetGraphRect(argv.Value);
             return SciEngine.Instance._gfxPaint16.KernelGraphSaveUpscaledHiresBox(rect);
+        }
+
+        private static Register kDrawPic(EngineState s, int argc, StackPtr? argv)
+        {
+            int pictureId = argv.Value[0].ToUInt16();
+            ushort flags = 0;
+            short animationNr = -1;
+            bool animationBlackoutFlag = false;
+            bool mirroredFlag = false;
+            bool addToFlag = false;
+            short EGApaletteNo = 0; // default needs to be 0
+
+            if (argc >= 2)
+            {
+                flags = argv.Value[1].ToUInt16();
+                if ((flags & K_DRAWPIC_FLAGS_ANIMATIONBLACKOUT) != 0)
+                    animationBlackoutFlag = true;
+                animationNr = (short)(flags & 0xFF);
+                if ((flags & K_DRAWPIC_FLAGS_MIRRORED) != 0)
+                    mirroredFlag = true;
+            }
+            if (argc >= 3)
+            {
+                if (!argv.Value[2].IsNull)
+                    addToFlag = true;
+                if (!SciEngine.Instance.Features.UsesOldGfxFunctions())
+                    addToFlag = !addToFlag;
+            }
+            if (argc >= 4)
+                EGApaletteNo = argv.Value[3].ToInt16();
+
+            SciEngine.Instance._gfxPaint16.KernelDrawPicture(pictureId, animationNr, animationBlackoutFlag, mirroredFlag, addToFlag, EGApaletteNo);
+
+            return s.r_acc;
         }
 
         private static short AdjustGraphColor(short color)

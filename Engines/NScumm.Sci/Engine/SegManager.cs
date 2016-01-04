@@ -701,7 +701,7 @@ namespace NScumm.Sci.Engine
             if (obj == null)
                 return "<no such object>";
 
-            var nameReg = obj.GetNameSelector();
+            var nameReg = obj.NameSelector;
             if (nameReg.IsNull)
                 return "<no name>";
 

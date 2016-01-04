@@ -18,6 +18,7 @@
 
 using NScumm.Core;
 using System;
+using NScumm.Core.Common;
 
 namespace NScumm.Sci.Graphics
 {
@@ -36,6 +37,9 @@ namespace NScumm.Sci.Graphics
         // Special flag implemented by us for optimization in palette merge
         private const int SCI_PALETTE_MATCH_PERFECT = 0x8000;
         public const int SCI_PALETTE_MATCH_COLORMASK = 0xFF;
+
+        private const int SCI_PAL_FORMAT_CONSTANT = 1;
+        private const int SCI_PAL_FORMAT_VARIABLE = 0;
 
         public Palette _sysPalette;
 
@@ -67,6 +71,7 @@ namespace NScumm.Sci.Graphics
 
         private byte[] _macClut;
         private ISystem _system;
+        private GfxScreen _screen;
 
         public ushort TotalColorCount { get { return _totalScreenColors; } }
 
@@ -155,9 +160,323 @@ namespace NScumm.Sci.Graphics
             ResetRemapping();
         }
 
-        internal void PalVaryUpdate()
+        public void Set(Palette newPalette, bool force, bool forceRealMerge = false)
+        {
+            int systime = _sysPalette.timestamp;
+
+            if (force || newPalette.timestamp != systime)
+            {
+                // SCI1.1+ doesnt do real merging anymore, but simply copying over the used colors from other palettes
+                //  There are some games with inbetween SCI1.1 interpreters, use real merging for them (e.g. laura bow 2 demo)
+                if ((forceRealMerge) || (_useMerging))
+                    _sysPaletteChanged |= Merge(newPalette, force, forceRealMerge);
+                else
+                    _sysPaletteChanged |= Insert(newPalette, _sysPalette);
+
+                // Adjust timestamp on newPalette, so it wont get merged/inserted w/o need
+                newPalette.timestamp = _sysPalette.timestamp;
+
+                bool updatePalette = _sysPaletteChanged && _screen._picNotValid == 0;
+
+                if (_palVaryResourceId != -1)
+                {
+                    // Pal-vary currently active, we don't set at any time, but also insert into origin palette
+                    Insert(newPalette, _palVaryOriginPalette);
+                    PalVaryProcess(0, updatePalette);
+                    return;
+                }
+
+                if (updatePalette)
+                {
+                    SetOnScreen();
+                    _sysPaletteChanged = false;
+                }
+            }
+        }
+
+        // Processes pal vary updates
+        private void PalVaryProcess(int signal, bool setPalette)
+        {
+            short stepChange = (short)(signal * _palVaryDirection);
+
+            _palVaryStep += stepChange;
+            if (stepChange > 0)
+            {
+                if (_palVaryStep > _palVaryStepStop)
+                    _palVaryStep = _palVaryStepStop;
+            }
+            else {
+                if (_palVaryStep < _palVaryStepStop)
+                {
+                    if (signal != 0)
+                        _palVaryStep = _palVaryStepStop;
+                }
+            }
+
+            // We don't need updates anymore, if we reached end-position
+            if (_palVaryStep == _palVaryStepStop)
+                PalVaryRemoveTimer();
+            if (_palVaryStep == 0)
+                _palVaryResourceId = -1;
+
+            // Calculate inbetween palette
+            Color inbetween = new Color();
+            short color;
+            for (int colorNr = 1; colorNr < 255; colorNr++)
+            {
+                inbetween.used = _sysPalette.colors[colorNr].used;
+                color = (short)(_palVaryTargetPalette.colors[colorNr].r - _palVaryOriginPalette.colors[colorNr].r);
+                inbetween.r = (byte)(((color * _palVaryStep) / 64) + _palVaryOriginPalette.colors[colorNr].r);
+                color = (short)(_palVaryTargetPalette.colors[colorNr].g - _palVaryOriginPalette.colors[colorNr].g);
+                inbetween.g = (byte)(((color * _palVaryStep) / 64) + _palVaryOriginPalette.colors[colorNr].g);
+                color = (short)(_palVaryTargetPalette.colors[colorNr].b - _palVaryOriginPalette.colors[colorNr].b);
+                inbetween.b = (byte)(((color * _palVaryStep) / 64) + _palVaryOriginPalette.colors[colorNr].b);
+
+                if (inbetween == _sysPalette.colors[colorNr])
+                {
+                    _sysPalette.colors[colorNr] = inbetween;
+                    _sysPaletteChanged = true;
+                }
+            }
+
+            if ((_sysPaletteChanged) && (setPalette) && (_screen._picNotValid == 0))
+            {
+                SetOnScreen();
+                _sysPaletteChanged = false;
+            }
+        }
+
+        private void PalVaryRemoveTimer()
         {
             throw new NotImplementedException();
+        }
+
+        private bool Insert(Palette newPalette, Palette destPalette)
+        {
+            bool paletteChanged = false;
+
+            for (int i = 1; i < 255; i++)
+            {
+                if (newPalette.colors[i].used != 0)
+                {
+                    if ((newPalette.colors[i].r != destPalette.colors[i].r) ||
+                        (newPalette.colors[i].g != destPalette.colors[i].g) ||
+                        (newPalette.colors[i].b != destPalette.colors[i].b))
+                    {
+                        destPalette.colors[i].r = newPalette.colors[i].r;
+                        destPalette.colors[i].g = newPalette.colors[i].g;
+                        destPalette.colors[i].b = newPalette.colors[i].b;
+                        paletteChanged = true;
+                    }
+                    destPalette.colors[i].used = newPalette.colors[i].used;
+                    newPalette.mapping[i] = (byte)i;
+                }
+            }
+
+            // We don't update the timestamp for SCI1.1, it's only updated on kDrawPic calls
+            return paletteChanged;
+        }
+
+        private bool Merge(Palette newPalette, bool force, bool forceRealMerge)
+        {
+            ushort res;
+            bool paletteChanged = false;
+
+            for (int i = 1; i < 255; i++)
+            {
+                // skip unused colors
+                if (newPalette.colors[i].used == 0)
+                    continue;
+
+                // forced palette merging or dest color is not used yet
+                if (force || (_sysPalette.colors[i].used == 0))
+                {
+                    _sysPalette.colors[i].used = newPalette.colors[i].used;
+                    if ((newPalette.colors[i].r != _sysPalette.colors[i].r) ||
+                        (newPalette.colors[i].g != _sysPalette.colors[i].g) ||
+                        (newPalette.colors[i].b != _sysPalette.colors[i].b))
+                    {
+                        _sysPalette.colors[i].r = newPalette.colors[i].r;
+                        _sysPalette.colors[i].g = newPalette.colors[i].g;
+                        _sysPalette.colors[i].b = newPalette.colors[i].b;
+                        paletteChanged = true;
+                    }
+                    newPalette.mapping[i] = (byte)i;
+                    continue;
+                }
+
+                // is the same color already at the same position? . match it directly w/o lookup
+                //  this fixes games like lsl1demo/sq5 where the same rgb color exists multiple times and where we would
+                //  otherwise match the wrong one (which would result into the pixels affected (or not) by palette changes)
+                if ((_sysPalette.colors[i].r == newPalette.colors[i].r) &&
+                    (_sysPalette.colors[i].g == newPalette.colors[i].g) &&
+                    (_sysPalette.colors[i].b == newPalette.colors[i].b))
+                {
+                    newPalette.mapping[i] = (byte)i;
+                    continue;
+                }
+
+                // check if exact color could be matched
+                res = MatchColor(newPalette.colors[i].r, newPalette.colors[i].g, newPalette.colors[i].b);
+                if ((res & SCI_PALETTE_MATCH_PERFECT) != 0)
+                { // exact match was found
+                    newPalette.mapping[i] = (byte)(res & SCI_PALETTE_MATCH_COLORMASK);
+                    continue;
+                }
+
+                int j = 1;
+
+                // no exact match - see if there is an unused color
+                for (; j < 256; j++)
+                {
+                    if (_sysPalette.colors[j].used == 0)
+                    {
+                        _sysPalette.colors[j].used = newPalette.colors[i].used;
+                        _sysPalette.colors[j].r = newPalette.colors[i].r;
+                        _sysPalette.colors[j].g = newPalette.colors[i].g;
+                        _sysPalette.colors[j].b = newPalette.colors[i].b;
+                        newPalette.mapping[i] = (byte)j;
+                        paletteChanged = true;
+                        break;
+                    }
+                }
+
+                // if still no luck - set an approximate color
+                if (j == 256)
+                {
+                    newPalette.mapping[i] = (byte)(res & SCI_PALETTE_MATCH_COLORMASK);
+                    _sysPalette.colors[res & SCI_PALETTE_MATCH_COLORMASK].used |= 0x10;
+                }
+            }
+
+            if (!forceRealMerge)
+                _sysPalette.timestamp = Environment.TickCount * 60 / 1000;
+
+            return paletteChanged;
+        }
+
+        public void PalVaryPrepareForTransition()
+        {
+            if (_palVaryResourceId != -1)
+            {
+                // Before doing transitions, we have to prepare palette
+                PalVaryProcess(0, false);
+            }
+        }
+
+        // This is called for SCI1.1, when kDrawPic got done. We update sysPalette timestamp this way for SCI1.1 and also load
+        //  target-palette, if palvary is active
+        public void DrewPicture(int pictureId)
+        {
+            if (!_useMerging) // Don't do this on inbetween SCI1.1 games
+                _sysPalette.timestamp++;
+
+            if (_palVaryResourceId != -1)
+            {
+                if (SciEngine.Instance.EngineState.gameIsRestarting == 0) // only if not restored nor restarted
+                    PalVaryLoadTargetPalette(pictureId);
+            }
+        }
+
+        private bool PalVaryLoadTargetPalette(int resourceId)
+        {
+            _palVaryResourceId = (resourceId != 65535) ? resourceId : -1;
+            var palResource = _resMan.FindResource(new ResourceId(ResourceType.Palette, (ushort)resourceId), false);
+            if (palResource!=null)
+            {
+                // Load and initialize destination palette
+                _palVaryTargetPalette = CreateFromData(new ByteAccess(palResource.data), palResource.size);
+                return true;
+            }
+            return false;
+        }
+
+        // Actually do the pal vary processing
+        public void PalVaryUpdate()
+        {
+            if (_palVarySignal!=0)
+            {
+                PalVaryProcess(_palVarySignal, true);
+                _palVarySignal = 0;
+            }
+        }
+
+        public Palette CreateFromData(ByteAccess data, int bytesLeft)
+        {
+            int palFormat = 0;
+            int palOffset = 0;
+            int palColorStart = 0;
+            int palColorCount = 0;
+            int colorNo = 0;
+            Palette paletteOut = new Palette();
+
+            // Setup 1:1 mapping
+            for (colorNo = 0; colorNo < 256; colorNo++)
+            {
+                paletteOut.mapping[colorNo] = (byte)colorNo;
+            }
+
+            if (bytesLeft < 37)
+            {
+                // This happens when loading palette of picture 0 in sq5 - the resource is broken and doesn't contain a full
+                //  palette
+                // TODO: debugC(kDebugLevelResMan, "GfxPalette::createFromData() - not enough bytes in resource (%d), expected palette header", bytesLeft);
+                return paletteOut;
+            }
+
+            // palette formats in here are not really version exclusive, we can not use sci-version to differentiate between them
+            //  they were just called that way, because they started appearing in sci1.1 for example
+            if ((data[0] == 0 && data[1] == 1) || (data[0] == 0 && data[1] == 0 && data.Data.ReadSci11EndianUInt16(data.Offset + 29) == 0))
+            {
+                // SCI0/SCI1 palette
+                palFormat = SCI_PAL_FORMAT_VARIABLE; // CONSTANT;
+                palOffset = 260;
+                palColorStart = 0; palColorCount = 256;
+                //memcpy(&paletteOut.mapping, data, 256);
+            }
+            else {
+                // SCI1.1 palette
+                palFormat = data[32];
+                palOffset = 37;
+                palColorStart = data[25];
+                palColorCount = data.Data.ReadSci11EndianUInt16(data.Offset + 29);
+            }
+
+            switch (palFormat)
+            {
+                case SCI_PAL_FORMAT_CONSTANT:
+                    // Check, if enough bytes left
+                    if (bytesLeft < palOffset + (3 * palColorCount))
+                    {
+                        // TODO: warning("GfxPalette::createFromData() - not enough bytes in resource, expected palette colors");
+                        return paletteOut;
+                    }
+
+                    for (colorNo = palColorStart; colorNo < palColorStart + palColorCount; colorNo++)
+                    {
+                        paletteOut.colors[colorNo].used = 1;
+                        paletteOut.colors[colorNo].r = data[palOffset++];
+                        paletteOut.colors[colorNo].g = data[palOffset++];
+                        paletteOut.colors[colorNo].b = data[palOffset++];
+                    }
+                    break;
+                case SCI_PAL_FORMAT_VARIABLE:
+                    if (bytesLeft < palOffset + (4 * palColorCount))
+                    {
+                        // TODO: warning("GfxPalette::createFromData() - not enough bytes in resource, expected palette colors");
+                        return paletteOut;
+                    }
+
+                    for (colorNo = palColorStart; colorNo < palColorStart + palColorCount; colorNo++)
+                    {
+                        paletteOut.colors[colorNo].used = data[palOffset++];
+                        paletteOut.colors[colorNo].r = data[palOffset++];
+                        paletteOut.colors[colorNo].g = data[palOffset++];
+                        paletteOut.colors[colorNo].b = data[palOffset++];
+                    }
+                    break;
+            }
+            return paletteOut;
         }
 
         private void PalVaryInit()
@@ -195,24 +514,24 @@ namespace NScumm.Sci.Graphics
             //if (!clutStream)
             //    error("Could not find clut 150 for the Mac icon bar");
 
-            //clutStream->readUint32BE(); // seed
-            //clutStream->readUint16BE(); // flags
-            //uint16 colorCount = clutStream->readUint16BE() + 1;
+            //clutStream.readUint32BE(); // seed
+            //clutStream.readUint16BE(); // flags
+            //uint16 colorCount = clutStream.readUint16BE() + 1;
             //assert(colorCount == 256);
 
             //_macClut = new byte[256 * 3];
 
             //for (uint16 i = 0; i < colorCount; i++)
             //{
-            //    clutStream->readUint16BE();
-            //    _macClut[i * 3] = clutStream->readUint16BE() >> 8;
-            //    _macClut[i * 3 + 1] = clutStream->readUint16BE() >> 8;
-            //    _macClut[i * 3 + 2] = clutStream->readUint16BE() >> 8;
+            //    clutStream.readUint16BE();
+            //    _macClut[i * 3] = clutStream.readUint16BE() >> 8;
+            //    _macClut[i * 3 + 1] = clutStream.readUint16BE() >> 8;
+            //    _macClut[i * 3 + 2] = clutStream.readUint16BE() >> 8;
             //}
 
             //// Adjust bounds on the KQ6 palette
             //// We don't use all of it for the icon bar
-            //if (g_sci->getGameId() == GID_KQ6)
+            //if (g_sci.getGameId() == GID_KQ6)
             //    memset(_macClut + 32 * 3, 0, (256 - 32) * 3);
 
             //// Force black/white
@@ -297,7 +616,12 @@ namespace NScumm.Sci.Graphics
             return (byte)(0.5 + (Math.Pow(0.5 * t / 255.0, 1.0 / 2.2) * 255.0));
         }
 
-        private void SetOnScreen()
+        internal void ModifyAmigaPalette(ByteAccess byteAccess)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void SetOnScreen()
         {
             CopySysPaletteToScreen();
         }

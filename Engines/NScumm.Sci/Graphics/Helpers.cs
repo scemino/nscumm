@@ -18,13 +18,39 @@
 
 using NScumm.Core.Graphics;
 using NScumm.Sci.Engine;
+using System;
 
 namespace NScumm.Sci.Graphics
 {
-    public class Color
+    public class Color : IEquatable<Color>
     {
         public byte used;
         public byte r, g, b;
+
+        public override int GetHashCode()
+        {
+            return r ^ g ^ b;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is Color && Equals((Color)obj);
+        }
+
+        public bool Equals(Color other)
+        {
+            return other.r == r && other.g == g && other.b == b;
+        }
+
+        public static bool operator ==(Color c1, Color c2)
+        {
+            return c1.Equals(c2);
+        }
+
+        public static bool operator !=(Color c1, Color c2)
+        {
+            return !(c1 == c2);
+        }
     }
 
     internal class Palette
@@ -58,7 +84,7 @@ namespace NScumm.Sci.Graphics
         public bool IsWindow { get { return id >= PORTS_FIRSTWINDOWID && id != 0xFFFF; } }
     }
 
-    internal class Window: Port
+    internal class Window : Port
     {
         public Rect dims; // client area of window
         public Rect restoreRect; // total area of window including borders
@@ -70,7 +96,7 @@ namespace NScumm.Sci.Graphics
         public bool bDrawn;
 
         public Window(ushort theId) : base(theId)
-        { 
+        {
         }
     }
 }

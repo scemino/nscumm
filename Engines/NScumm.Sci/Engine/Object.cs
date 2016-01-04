@@ -72,16 +72,16 @@ namespace NScumm.Sci.Engine
         private List<ushort> _baseMethod;
         private int _flags;
 
-        public Register Pos { get { return _pos; } }
+        public Register Pos { get { return Register.Make(_pos); } }
 
         public Register SpeciesSelector
         {
             get
             {
                 if (ResourceManager.GetSciVersion() <= SciVersion.V2_1)
-                    return _variables[_offset];
+                    return Register.Make(_variables[_offset]);
                 else    // SCI3
-                    return _speciesSelectorSci3;
+                    return Register.Make(_speciesSelectorSci3);
             }
             set
             {
@@ -92,14 +92,66 @@ namespace NScumm.Sci.Engine
             }
         }
 
-        public bool IsClass { get { return (GetInfoSelector().Offset & InfoFlagClass) != 0; } }
+        public Register SuperClassSelector
+        {
+            get
+            {
+                if (ResourceManager.GetSciVersion() <= SciVersion.V2_1)
+                    return Register.Make(_variables[_offset + 1]);
+                else    // SCI3
+                    return Register.Make(_superClassPosSci3);
+            }
+            set
+            {
+                if (ResourceManager.GetSciVersion() <= SciVersion.V2_1)
+                    _variables[_offset + 1] = value;
+                else    // SCI3
+                    _superClassPosSci3 = value;
+            }
+        }
+
+        public Register InfoSelector
+        {
+            get
+            {
+                if (ResourceManager.GetSciVersion() <= SciVersion.V2_1)
+                    return Register.Make(_variables[_offset + 2]);
+                else    // SCI3
+                    return Register.Make(_infoSelectorSci3);
+            }
+            set
+            {
+                if (ResourceManager.GetSciVersion() <= SciVersion.V2_1)
+                    _variables[_offset + 2] = value;
+                else    // SCI3
+                    _infoSelectorSci3 = value;
+            }
+        }
+
+        public Register NameSelector
+        {
+            get
+            {
+                if (ResourceManager.GetSciVersion() <= SciVersion.V2_1)
+                    return _offset + 3 < (ushort)_variables.Length ? Register.Make(_variables[_offset + 3]) : Register.NULL_REG;
+                else    // SCI3
+                    return _variables.Length != 0 ? Register.Make(_variables[0]) : Register.NULL_REG;
+            }
+        }
+
+
+
+        public bool IsClass { get { return (InfoSelector.Offset & InfoFlagClass) != 0; } }
 
         public bool IsFreed { get { return (_flags & OBJECT_FLAG_FREED) != 0; } }
 
         public int VarCount { get { return _variables.Length; } }
 
+        public uint MethodCount { get { return _methodCount; } }
+
         public SciObject()
         {
+            _offset = ResourceManager.GetSciVersion() < SciVersion.V1_1 ? (ushort)0 : (ushort)5;
             _baseMethod = new List<ushort>();
         }
 
@@ -108,7 +160,7 @@ namespace NScumm.Sci.Engine
             _flags |= SciObject.OBJECT_FLAG_FREED;
         }
 
-        public Register GetVariable(int var) { return _variables[var]; }
+        public Register GetVariable(int var) { return Register.Make(_variables[var]); }
 
         public Register GetVariableRef(int var)
         {
@@ -118,14 +170,6 @@ namespace NScumm.Sci.Engine
         public void SetVariableRef(int var, Register value)
         {
             _variables[var] = value;
-        }
-
-        public Register GetNameSelector()
-        {
-            if (ResourceManager.GetSciVersion() <= SciVersion.V2_1)
-                return _offset + 3 < (ushort)_variables.Length ? _variables[_offset + 3] : Register.NULL_REG;
-            else    // SCI3
-                return _variables.Length != 0 ? _variables[0] : Register.NULL_REG;
         }
 
         public SciObject GetClass(SegManager segMan)
@@ -155,52 +199,6 @@ namespace NScumm.Sci.Engine
                     return i; // report success
 
             return -1; // Failed
-        }
-
-        private Register GetInfoSelector()
-        {
-            if (ResourceManager.GetSciVersion() <= SciVersion.V2_1)
-                return _variables[_offset + 2];
-            else    // SCI3
-                return _infoSelectorSci3;
-        }
-
-        public Register SuperClassSelector
-        {
-            get
-            {
-                if (ResourceManager.GetSciVersion() <= SciVersion.V2_1)
-                    return _variables[_offset + 1];
-                else    // SCI3
-                    return _superClassPosSci3;
-            }
-            set
-            {
-                if (ResourceManager.GetSciVersion() <= SciVersion.V2_1)
-                    _variables[_offset + 1] = value;
-                else    // SCI3
-                    _superClassPosSci3 = value;
-            }
-        }
-
-        public uint MethodCount { get { return _methodCount; } }
-
-        public Register InfoSelector
-        {
-            get
-            {
-                if (ResourceManager.GetSciVersion() <= SciVersion.V2_1)
-                    return _variables[_offset + 2];
-                else    // SCI3
-                    return _infoSelectorSci3;
-            }
-            set
-            {
-                if (ResourceManager.GetSciVersion() <= SciVersion.V2_1)
-                    _variables[_offset + 2] = value;
-                else    // SCI3
-                    _infoSelectorSci3 = value;
-            }
         }
 
         public void Init(byte[] buf, Register obj_pos, bool initVariables)
@@ -291,7 +289,7 @@ namespace NScumm.Sci.Engine
 
                     // We have to do a little bit of work to get the name of the object
                     // before any relocations are done.
-                    Register nameReg = GetNameSelector();
+                    Register nameReg = NameSelector;
                     string name;
                     if (nameReg.IsNull)
                     {

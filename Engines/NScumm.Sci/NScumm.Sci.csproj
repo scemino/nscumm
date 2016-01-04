@@ -79,6 +79,7 @@
     <Compile Include="Graphics\Fontsjis.cs" />
     <Compile Include="Graphics\Helpers.cs" />
     <Compile Include="Graphics\MacIconBar.cs" />
+    <Compile Include="Graphics\Picture.cs" />
     <Compile Include="Graphics\View.cs" />
     <Compile Include="Graphics\Transitions.cs" />
     <Compile Include="Graphics\Text32.cs" />

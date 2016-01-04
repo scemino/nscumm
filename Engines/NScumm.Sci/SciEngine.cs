@@ -422,6 +422,10 @@ namespace NScumm.Sci
 
         public IMixer Mixer { get { return _mixer; } }
 
+        public ISystem System { get { return _system; } }
+
+        public bool ShouldQuit { get; internal set; }
+
         public string WrapFilename(string name)
         {
             return FilePrefix + "-" + name;
@@ -922,7 +926,7 @@ namespace NScumm.Sci
             if (_vocabulary != null)
                 _vocabulary.Reset();
 
-            _gamestate.lastWaitTime = _gamestate._screenUpdateTime = (uint)Environment.TickCount;
+            _gamestate.lastWaitTime = _gamestate._screenUpdateTime = Environment.TickCount;
 
             // Load game language into printLang property of game object
             SetSciLanguage();

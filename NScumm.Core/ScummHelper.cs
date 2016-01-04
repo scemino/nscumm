@@ -21,6 +21,7 @@ using System.Linq;
 using System.IO;
 using System.Collections.Generic;
 using System.Collections;
+using NScumm.Core.Common;
 
 namespace NScumm.Core
 {
@@ -273,6 +274,16 @@ namespace NScumm.Core
                 }
             }
             return values;
+        }
+
+        public static bool ArrayEquals(byte[] src, int srcOffset, byte[] src2, int src2Offset, int length)
+        {
+            for (int i = 0; i < length; i++)
+            {
+                if (src[srcOffset + i] != src2[src2Offset + i])
+                    return false;
+            }
+            return true;
         }
 
         public static byte[][] ReadMatrixBytes(this BinaryReader reader, int count1, int count2)

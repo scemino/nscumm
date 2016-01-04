@@ -59,6 +59,16 @@ namespace NScumm.Core.Common
             _offset = offset;
         }
 
+        public uint ReadUInt32(int offset = 0)
+        {
+            return _data.ToUInt32(_offset + offset);
+        }
+
+        public int ReadInt32(int offset = 0)
+        {
+            return _data.ToInt32(_offset + offset);
+        }
+
         public ushort ReadUInt16(int offset = 0)
         {
             return _data.ToUInt16(_offset + offset);

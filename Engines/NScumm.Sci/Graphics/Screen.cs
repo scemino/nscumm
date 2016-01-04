@@ -20,6 +20,7 @@ using NScumm.Core.IO;
 using System;
 using NScumm.Core.Graphics;
 using NScumm.Core;
+using NScumm.Core.Common;
 
 namespace NScumm.Sci.Graphics
 {
@@ -220,6 +221,10 @@ namespace NScumm.Sci.Graphics
         public int Height { get { return _height; } }
 
         public byte ColorWhite { get { return _colorWhite; } }
+
+        public bool IsUnditheringEnabled { get { return _unditheringEnabled; } }
+
+        public byte ColorDefaultVectorData { get { return _colorDefaultVectorData; } }
 
         public GfxScreen(ISystem system, ResourceManager resMan)
         {
@@ -448,6 +453,11 @@ namespace NScumm.Sci.Graphics
             }
         }
 
+        internal void DrawLine(Point startPoint, Point endPoint, byte pic_color, byte pic_priority, byte pic_control)
+        {
+            throw new NotImplementedException();
+        }
+
         public byte GetVisual(short x, short y)
         {
             return _getPixelPtr(_visualScreen, x, y);
@@ -669,6 +679,90 @@ namespace NScumm.Sci.Graphics
             } while (heightOffset != heightOffsetBreak);
         }
 
+        public void Dither(bool addToFlag)
+        {
+            int y, x;
+            byte color, ditheredColor;
+            var visualPtr = new ByteAccess(_visualScreen);
+            var displayPtr = new ByteAccess(_displayScreen);
+
+            if (!_unditheringEnabled)
+            {
+                // Do dithering on visual and display-screen
+                for (y = 0; y < _height; y++)
+                {
+                    for (x = 0; x < _width; x++)
+                    {
+                        color = visualPtr[0];
+                        if ((color & 0xF0) != 0)
+                        {
+                            color ^= (byte)(color << 4);
+                            color = ((x ^ y) & 1) != 0 ? (byte)(color >> 4) : (byte)(color & 0x0F);
+                            switch (_upscaledHires)
+                            {
+                                case GfxScreenUpscaledMode.DISABLED:
+                                case GfxScreenUpscaledMode.S480x300:
+                                    displayPtr[0] = color;
+                                    break;
+                                default:
+                                    PutScaledPixelOnScreen(_displayScreen, (short)x, (short)y, color);
+                                    break;
+                            }
+                            visualPtr[0] = color;
+                        }
+                        visualPtr.Offset++; displayPtr.Offset++;
+                    }
+                }
+            }
+            else {
+                if (!addToFlag)
+                {
+                    Array.Clear(_ditheredPicColors, 0, _ditheredPicColors.Length);
+                }
+                // Do dithering on visual screen and put decoded but undithered byte onto display-screen
+                for (y = 0; y < _height; y++)
+                {
+                    for (x = 0; x < _width; x++)
+                    {
+                        color = visualPtr[0];
+                        if ((color & 0xF0) != 0)
+                        {
+                            color ^= (byte)(color << 4);
+                            // remember dither combination for cel-undithering
+                            _ditheredPicColors[color]++;
+                            // if decoded color wants do dither with black on left side, we turn it around
+                            //  otherwise the normal ega color would get used for display
+                            if ((color & 0xF0) != 0)
+                            {
+                                ditheredColor = color;
+                            }
+                            else {
+                                ditheredColor = (byte)(color << 4);
+                            }
+                            switch (_upscaledHires)
+                            {
+                                case GfxScreenUpscaledMode.DISABLED:
+                                case GfxScreenUpscaledMode.S480x300:
+                                    displayPtr[0] = ditheredColor;
+                                    break;
+                                default:
+                                    PutScaledPixelOnScreen(_displayScreen, (short)x, (short)y, ditheredColor);
+                                    break;
+                            }
+                            color = ((x ^ y) & 1) != 0 ? (byte)(color >> 4) : (byte)(color & 0x0F);
+                            visualPtr[0] = color;
+                        }
+                        visualPtr.Offset++; displayPtr.Offset++;
+                    }
+                }
+            }
+        }
+
+        internal void DitherForceDitheredColor(int v)
+        {
+            throw new NotImplementedException();
+        }
+
         private GfxScreenMasks VectorIsFillMatchNormal(short x, short y, GfxScreenMasks screenMask, byte checkForColor, byte checkForPriority, byte checkForControl, bool isEGA)
         {
             int offset = y * _width + x;
@@ -701,6 +795,62 @@ namespace NScumm.Sci.Graphics
             if (screenMask.HasFlag(GfxScreenMasks.CONTROL) && _controlScreen[offset] == checkForControl)
                 match |= GfxScreenMasks.CONTROL;
             return match;
+        }
+
+        internal void CopyToScreen()
+        {
+            throw new NotImplementedException();
+        }
+
+        public GfxScreenMasks GetDrawingMask(byte color, byte priority, byte control)
+        {
+            GfxScreenMasks flag = 0;
+            if (color != 255)
+                flag |= GfxScreenMasks.VISUAL;
+            if (priority != 255)
+                flag |= GfxScreenMasks.PRIORITY;
+            if (control != 255)
+                flag |= GfxScreenMasks.CONTROL;
+            return flag;
+        }
+
+        public void VectorAdjustCoordinate(ref short x, ref short y)
+        {
+            _vectorAdjustCoordinatePtr.Execute(ref x, ref y);
+        }
+
+        public byte VectorGetVisual(short x, short y)
+        {
+            return _vectorGetPixelPtr(_visualScreen, x, y);
+        }
+
+        public byte VectorGetControl(short x, short y)
+        {
+            return _vectorGetPixelPtr(_controlScreen, x, y);
+        }
+
+        public byte VectorGetPriority(short x, short y)
+        {
+            return _vectorGetPixelPtr(_priorityScreen, x, y);
+        }
+
+        public void VectorAdjustCoordinate(ref int x, ref int y)
+        {
+            short tmpx = (short)x;
+            short tmpy = (short)y;
+            _vectorAdjustCoordinatePtr.Execute(ref tmpx, ref tmpy);
+            x = tmpx;
+            y = tmpy;
+        }
+
+        public GfxScreenMasks VectorIsFillMatch(short x, short y, GfxScreenMasks screenMask, byte color, byte priority, byte control, bool isEGA)
+        {
+            return _vectorIsFillMatchPtr(x, y, screenMask, color, priority, control, isEGA);
+        }
+
+        public void VectorPutPixel(short x, short y, GfxScreenMasks drawMask, byte color, byte priority, byte control)
+        {
+            _vectorPutPixelPtr(x, y, drawMask, color, priority, control);
         }
     }
 }

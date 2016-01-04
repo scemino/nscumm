@@ -240,5 +240,62 @@ namespace NScumm.Sci.Graphics
         {
             throw new NotImplementedException();
         }
+
+        public void KernelDrawPicture(int pictureId, short animationNr, bool animationBlackoutFlag, bool mirroredFlag, bool addToFlag, short EGApaletteNo)
+        {
+            Port oldPort = _ports.SetPort(_ports._picWind);
+
+            if (_ports.IsFrontWindow(_ports._picWind))
+            {
+                _screen._picNotValid = 1;
+                DrawPicture(pictureId, animationNr, mirroredFlag, addToFlag, EGApaletteNo);
+                _transitions.Setup(animationNr, animationBlackoutFlag);
+            }
+            else {
+                // We need to set it for SCI1EARLY+ (sierra sci also did so), otherwise we get at least the following issues:
+                //  LSL5 (english) - last wakeup (taj mahal flute dream)
+                //  SQ5 (english v1.03) - during the scene following the scrubbing
+                //   in both situations a window is shown when kDrawPic is called, which would result otherwise in
+                //   no showpic getting called from kAnimate and we would get graphic corruption
+                // XMAS1990 EGA did not set it in this case, VGA did
+                if (ResourceManager.GetSciVersion() >= SciVersion.V1_EARLY)
+                    _screen._picNotValid = 1;
+                _ports.BeginUpdate(_ports._picWind);
+                DrawPicture(pictureId, animationNr, mirroredFlag, addToFlag, EGApaletteNo);
+                _ports.EndUpdate(_ports._picWind);
+            }
+            _ports.SetPort(oldPort);
+        }
+
+        internal void BitsFree(Register bitsHandle)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void DrawPicture(int pictureId, short animationNr, bool mirroredFlag, bool addToFlag, int paletteId)
+        {
+            GfxPicture picture = new GfxPicture(_resMan, _coordAdjuster, _ports, _screen, _palette, pictureId, _EGAdrawingVisualize);
+
+            // do we add to a picture? if not -> clear screen with white
+            if (!addToFlag)
+                ClearScreen(_screen.ColorWhite);
+
+            picture.Draw(animationNr, mirroredFlag, addToFlag, (short)paletteId);
+
+            // We make a call to SciPalette here, for increasing sys timestamp and also loading targetpalette, if palvary active
+            //  (SCI1.1 only)
+            if (ResourceManager.GetSciVersion() == SciVersion.V1_1)
+                _palette.DrewPicture(pictureId);
+        }
+
+        internal void DrawCel(int viewId, short loopNo, short celNo, Rect celRect, short priority, short paletteNo, short scaleX, short scaleY)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void ClearScreen(byte color)
+        {
+            FillRect(_ports._curPort.rect, GfxScreenMasks.ALL, color, 0, 0);
+        }
     }
 }

@@ -282,5 +282,15 @@ namespace NScumm.Sci.Engine
 	        new SciWorkaroundEntry { gameId = SciGameId.ISLANDBRAIN, roomNr =  -1, scriptNr =  999, inheritanceLevel = 0, objectName =               "List", methodName = "eachElementDo", localCallOffset = -1, index =   0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.FAKE, value = 0 } }, // when going to the game options, choosing "Info" and selecting anything from the list, gets called with an invalid parameter (type "error") - bug #4989
 	        new SciWorkaroundEntry { gameId = SciGameId.QFG3,        roomNr =  -1, scriptNr =  999, inheritanceLevel = 0, objectName =               "List", methodName = "eachElementDo", localCallOffset = -1, index =   0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.FAKE, value = 0 } }, // when asking for something, gets called with type error parameter
         };
+        public static readonly SciWorkaroundEntry[] kGetAngle_workarounds =
+        {
+            new SciWorkaroundEntry { gameId = SciGameId.FANMADE,  roomNr =   516, scriptNr =  992, inheritanceLevel = 0,   objectName =          "Motion", methodName = "init",         localCallOffset  = -1,  index =  0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.FAKE,      value = 0 } }, // The Legend of the Lost Jewel Demo (fan made): called with third/fourth parameters as objects
+	        new SciWorkaroundEntry { gameId = SciGameId.KQ6,      roomNr =    -1, scriptNr =  752, inheritanceLevel = 0,   objectName =     "throwDazzle", methodName = "changeState",  localCallOffset  = -1,  index =  0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.STILLCALL, value = 0 } }, // room 740/790 after the Genie is exposed in the Palace (short and long ending), it starts shooting lightning bolts around. An extra 5th parameter is passed - bug #4959 & #5203
+	        new SciWorkaroundEntry { gameId = SciGameId.SQ1,      roomNr =    -1, scriptNr =  927, inheritanceLevel = 0,   objectName =        "PAvoider", methodName = "doit",         localCallOffset  = -1,  index =  0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.FAKE,      value = 0 } }, // all rooms in Ulence Flats after getting the Pilot Droid: called with a single parameter when the droid is in Roger's path - bug #6016
+        };
+        public static readonly SciWorkaroundEntry[] kDirLoop_workarounds =
+        {
+            new SciWorkaroundEntry { gameId = SciGameId.KQ4,      roomNr =    4, scriptNr =  992, inheritanceLevel = 0,   objectName =        "Avoid", methodName = "doit",         localCallOffset  = -1,  index =  0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.IGNORE,      value = 0 } }, // when the ogre catches you in front of his house, second parameter points to the same object as the first parameter, instead of being an integer (the angle) - bug #5217
+        };
     }
 }

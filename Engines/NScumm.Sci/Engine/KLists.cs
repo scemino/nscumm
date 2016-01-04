@@ -145,6 +145,45 @@ namespace NScumm.Sci.Engine
             return s.r_acc;
         }
 
+        private static Register kNextNode(EngineState s, int argc, StackPtr? argv)
+        {
+            Node n = s._segMan.LookupNode(argv.Value[0]);
+
+# if CHECK_LISTS
+            if (!isSaneNodePointer(s._segMan, argv[0]))
+                return NULL_REG;
+#endif
+
+            return n.succ;
+        }
+
+        private static Register kPrevNode(EngineState s, int argc, StackPtr? argv)
+        {
+            Node n = s._segMan.LookupNode(argv.Value[0]);
+
+# if CHECK_LISTS
+            if (!isSaneNodePointer(s._segMan, argv[0]))
+                return NULL_REG;
+#endif
+
+            return n.pred;
+        }
+
+        private static Register kNodeValue(EngineState s, int argc, StackPtr? argv)
+        {
+            Node n = s._segMan.LookupNode(argv.Value[0]);
+
+# if CHECK_LISTS
+            if (!isSaneNodePointer(s._segMan, argv[0]))
+                return NULL_REG;
+#endif
+
+            // ICEMAN: when plotting a course in room 40, unDrawLast is called by
+            // startPlot::changeState, but there is no previous entry, so we get 0 here
+            return n != null ? n.value : Register.NULL_REG;
+        }
+
+
         static void AddToFront(EngineState s, Register listRef, Register nodeRef)
         {
             List list = s._segMan.LookupList(listRef);
@@ -152,7 +191,7 @@ namespace NScumm.Sci.Engine
 
             // TODO: debugC(kDebugLevelNodes, "Adding node %04x:%04x to end of list %04x:%04x", PRINT_REG(nodeRef), PRINT_REG(listRef));
 
-            if (newNode==null)
+            if (newNode == null)
                 throw new InvalidOperationException("Attempt to add non-node ({nodeRef}) to list at {listRef}");
 
 # if CHECK_LISTS

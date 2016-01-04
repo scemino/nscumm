@@ -16,6 +16,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using NScumm.Core.Common;
 using System;
 
 namespace NScumm.Core.Graphics
@@ -222,6 +223,71 @@ namespace NScumm.Core.Graphics
                     dstPos += Pitch - (Pitch + dx * BytesPerPixel);
                 }
             }
+        }
+
+        public void FillRect(Rect r, uint color)
+        {
+            r.Clip(Width, Height);
+
+            if (!r.IsValidRect)
+                return;
+
+            int width = r.Width;
+            int lineLen = width;
+            int height = r.Height;
+            bool useMemset = true;
+
+            var bpp = GetBytesPerPixel(PixelFormat);
+            if (bpp == 2)
+            {
+                lineLen *= 2;
+                if ((ushort)color != ((color & 0xff) | (color & 0xff) << 8))
+                    useMemset = false;
+            }
+            else if (bpp == 4)
+            {
+                useMemset = false;
+            }
+            else if (bpp != 1)
+            {
+                throw new InvalidOperationException("Surface::fillRect: bytesPerPixel must be 1, 2, or 4");
+            }
+
+            if (useMemset)
+            {
+                var ptr = GetBasePtr(r.Left, r.Top);
+                while ((height--) != 0)
+                {
+                    ptr.Data.Set(ptr.Offset, (byte)color, lineLen);
+                    ptr.Offset += Pitch;
+                }
+            }
+            else {
+                if (bpp == 2)
+                {
+                    throw new NotImplementedException();
+                    //var ptr = GetBasePtr(r.Left, r.Top).ToUInt16();
+                    //while ((height--)!=0)
+                    //{
+                    //    Fill(ptr, ptr + width, (ushort)color);
+                    //    ptr.Offset += Pitch;
+                    //}
+                }
+                else {
+                    throw new NotImplementedException();
+                    //var ptr = GetBasePtr(r.Left, r.Top).ToUInt32();
+                    //while (height--)
+                    //{
+                    //    Common::fill(ptr, ptr + width, color);
+                    //    ptr += pitch / 4;
+                    //}
+                }
+            }
+        }
+
+        private ByteAccess GetBasePtr(int x, int y)
+        {
+            return new ByteAccess(Pixels, y * Pitch + x * GetBytesPerPixel(PixelFormat));
         }
     }
 }

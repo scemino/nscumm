@@ -21,6 +21,7 @@ using System.Linq;
 using NScumm.Sci.Engine;
 using NScumm.Core.Graphics;
 using System.Collections.Generic;
+using NScumm.Core;
 
 namespace NScumm.Sci.Graphics
 {
@@ -45,6 +46,12 @@ namespace NScumm.Sci.Graphics
         DisposeMe = 0x8000
     }
 
+    enum ViewScaleSignals
+    {
+        DoScaling = 0x0001, // enables scaling when drawing that cel (involves scaleX and scaleY)
+        GlobalScaling = 0x0002, // means that global scaling shall get applied on that cel (sets scaleX/scaleY)
+        Hoyle4SpecialHandling = 0x0004  // HOYLE4-exclusive: special handling inside kAnimate, is used when giving out cards
+    }
 
     struct AnimateEntry
     {
@@ -56,8 +63,8 @@ namespace NScumm.Sci.Graphics
         public short paletteNo;
         public short x, y, z;
         public short priority;
-        public ushort signal;
-        public ushort scaleSignal;
+        public ViewSignals signal;
+        public ViewScaleSignals scaleSignal;
         public short scaleX;
         public short scaleY;
         public Rect celRect;
@@ -78,7 +85,7 @@ namespace NScumm.Sci.Graphics
         private GfxPorts _ports;
         private GfxScreen _screen;
         private GfxTransitions _transitions;
-        private AnimateEntry[] _lastCastData;
+        private List<AnimateEntry> _lastCastData;
         private bool _ignoreFastCast;
         private List<AnimateEntry> _list;
 
@@ -94,13 +101,14 @@ namespace NScumm.Sci.Graphics
             _transitions = transitions;
 
             _list = new List<AnimateEntry>();
-            
+            _lastCastData = new List<AnimateEntry>();
+
             Init();
         }
 
         private void Init()
         {
-            _lastCastData = new AnimateEntry[0];
+            _lastCastData.Clear();
 
             _ignoreFastCast = false;
             // fastCast object is not found in any SCI games prior SCI1
@@ -179,6 +187,33 @@ namespace NScumm.Sci.Graphics
             ThrottleSpeed();
         }
 
+        private void DrawCels()
+        {
+            Register bitsHandle;
+            _lastCastData.Clear();
+
+            for (int i = 0; i < _list.Count; i++)
+            {
+                var it = _list[i];
+                if (!it.signal.HasFlag(ViewSignals.NoUpdate | ViewSignals.Hidden | ViewSignals.AlwaysUpdate))
+                {
+                    // Save background
+                    bitsHandle = _paint16.BitsSave(it.celRect, GfxScreenMasks.ALL);
+                    SciEngine.WriteSelector(_s._segMan, it.@object, SciEngine.Selector(s => s.underBits), bitsHandle);
+
+                    // draw corresponding cel
+                    _paint16.DrawCel(it.viewId, it.loopNo, it.celNo, it.celRect, it.priority, it.paletteNo, it.scaleX, it.scaleY);
+                    it.showBitsFlag = true;
+
+                    if (it.signal.HasFlag(ViewSignals.RemoveView))
+                        it.signal &= ~ViewSignals.RemoveView;
+
+                    // Remember that entry in lastCast
+                    _lastCastData.Add(it);
+                }
+            }
+        }
+
         private void RestoreAndDelete(int argc, StackPtr? argv)
         {
             // This has to be done in a separate loop. At least in sq1 some .dispose
@@ -187,7 +222,7 @@ namespace NScumm.Sci.Graphics
             foreach (var it in _list)
             {
                 // Finally update signal
-                SciEngine.WriteSelectorValue(_s._segMan, it.@object, SciEngine.Selector(s => s.signal), it.signal);
+                SciEngine.WriteSelectorValue(_s._segMan, it.@object, SciEngine.Selector(s => s.signal), (ushort)it.signal);
             }
 
             for (int i = _list.Count - 1; i > 0; i--)
@@ -195,15 +230,15 @@ namespace NScumm.Sci.Graphics
                 var it = _list[i];
                 // We read out signal here again, this is not by accident but to ensure
                 // that we got an up-to-date signal
-                it.signal = (ushort)SciEngine.ReadSelectorValue(_s._segMan, it.@object, SciEngine.Selector(s => s.signal));
+                it.signal = (ViewSignals)SciEngine.ReadSelectorValue(_s._segMan, it.@object, SciEngine.Selector(s => s.signal));
 
-                if ((it.signal & (ushort)(ViewSignals.NoUpdate | ViewSignals.RemoveView)) == 0)
+                if ((it.signal & (ViewSignals.NoUpdate | ViewSignals.RemoveView)) == 0)
                 {
                     _paint16.BitsRestore(SciEngine.ReadSelector(_s._segMan, it.@object, SciEngine.Selector(s => s.underBits)));
                     SciEngine.WriteSelectorValue(_s._segMan, it.@object, SciEngine.Selector(s => s.underBits), 0);
                 }
 
-                if ((it.signal & (ushort)ViewSignals.DisposeMe)!=0)
+                if ((it.signal & ViewSignals.DisposeMe) != 0)
                 {
                     // Call .delete_ method of that object
                     SciEngine.InvokeSelector(_s, it.@object, SciEngine.Selector(s => s.delete_), argc, argv, 0);
@@ -211,34 +246,363 @@ namespace NScumm.Sci.Graphics
             }
         }
 
-        private void UpdateScreen(byte old_picNotValid)
+        private void UpdateScreen(byte oldPicNotValid)
         {
-            throw new NotImplementedException();
-        }
+            Rect lsRect;
+            Rect workerRect;
 
-        private void Update()
-        {
-            throw new NotImplementedException();
+            for (int i = 0; i < _list.Count; i++)
+            {
+                var it = _list[i];
+                if (it.showBitsFlag || !(it.signal.HasFlag((ViewSignals.RemoveView | ViewSignals.NoUpdate)) ||
+                                                (!(it.signal.HasFlag(ViewSignals.RemoveView)) && (it.signal.HasFlag(ViewSignals.NoUpdate)) && oldPicNotValid != 0)))
+                {
+                    lsRect.Left = (int)SciEngine.ReadSelectorValue(_s._segMan, it.@object, SciEngine.Selector(s => s.lsLeft));
+                    lsRect.Top = (int)SciEngine.ReadSelectorValue(_s._segMan, it.@object, SciEngine.Selector(s => s.lsTop));
+                    lsRect.Right = (int)SciEngine.ReadSelectorValue(_s._segMan, it.@object, SciEngine.Selector(s => s.lsRight));
+                    lsRect.Bottom = (int)SciEngine.ReadSelectorValue(_s._segMan, it.@object, SciEngine.Selector(s => s.lsBottom));
+
+                    workerRect = lsRect;
+                    workerRect.Clip(it.celRect);
+
+                    if (!workerRect.IsEmpty)
+                    {
+                        workerRect = lsRect;
+                        workerRect.Extend(it.celRect);
+                    }
+                    else {
+                        _paint16.BitsShow(lsRect);
+                        workerRect = it.celRect;
+                    }
+                    SciEngine.WriteSelectorValue(_s._segMan, it.@object, SciEngine.Selector(s => s.lsLeft), (ushort)it.celRect.Left);
+                    SciEngine.WriteSelectorValue(_s._segMan, it.@object, SciEngine.Selector(s => s.lsTop), (ushort)it.celRect.Top);
+                    SciEngine.WriteSelectorValue(_s._segMan, it.@object, SciEngine.Selector(s => s.lsRight), (ushort)it.celRect.Right);
+                    SciEngine.WriteSelectorValue(_s._segMan, it.@object, SciEngine.Selector(s => s.lsBottom), (ushort)it.celRect.Bottom);
+                    // may get used for debugging
+                    //_paint16.frameRect(workerRect);
+                    _paint16.BitsShow(workerRect);
+
+                    if (it.signal.HasFlag(ViewSignals.Hidden))
+                        it.signal |= ViewSignals.RemoveView;
+                }
+            }
+            // use this for debug purposes
+            // _screen.copyToScreen();
         }
 
         private void ThrottleSpeed()
         {
-            throw new NotImplementedException();
+            switch (_lastCastData.Count)
+            {
+                case 0:
+                    // No entries drawn . no speed throttler triggering
+                    break;
+                case 1:
+                    {
+
+                        // One entry drawn . check if that entry was a speed benchmark view, if not enable speed throttler
+                        AnimateEntry onlyCast = _lastCastData[0];
+                        if ((onlyCast.viewId == 0) && (onlyCast.loopNo == 13) && (onlyCast.celNo == 0))
+                        {
+                            // this one is used by jones talkie
+                            if ((onlyCast.celRect.Height == 8) && (onlyCast.celRect.Width == 8))
+                            {
+                                _s._gameIsBenchmarking = true;
+                                return;
+                            }
+                        }
+                        // first loop and first cel used?
+                        if ((onlyCast.loopNo == 0) && (onlyCast.celNo == 0))
+                        {
+                            // and that cel has a known speed benchmark resolution
+                            short onlyHeight = (short)onlyCast.celRect.Height;
+                            short onlyWidth = (short)onlyCast.celRect.Width;
+                            if (((onlyWidth == 12) && (onlyHeight == 35)) || // regular benchmark view ("fred", "Speedy", "ego")
+                                ((onlyWidth == 29) && (onlyHeight == 45)) || // King's Quest 5 french "fred"
+                                ((onlyWidth == 1) && (onlyHeight == 5)) || // Freddy Pharkas "fred"
+                                ((onlyWidth == 1) && (onlyHeight == 1)))
+                            { // Laura Bow 2 Talkie
+                              // check further that there is only one cel in that view
+                                GfxView onlyView = _cache.GetView(onlyCast.viewId);
+                                if ((onlyView.LoopCount == 1) && (onlyView.GetCelCount(0) != 0))
+                                {
+                                    _s._gameIsBenchmarking = true;
+                                    return;
+                                }
+                            }
+                        }
+                        _s._gameIsBenchmarking = false;
+                        _s._throttleTrigger = true;
+                        break;
+                    }
+                default:
+                    // More than 1 entry drawn . time for speed throttling
+                    _s._gameIsBenchmarking = false;
+                    _s._throttleTrigger = true;
+                    break;
+            }
         }
 
-        private void DrawCels()
+        private void Update()
+        {
+            Register bitsHandle;
+            Rect rect;
+
+            // Remove all no-update cels, if requested
+            for (int i = _list.Count - 1; i >= 0; i--)
+            {
+                var it = _list[i];
+                if (it.signal.HasFlag(ViewSignals.NoUpdate))
+                {
+                    if (!it.signal.HasFlag(ViewSignals.RemoveView))
+                    {
+                        bitsHandle = SciEngine.ReadSelector(_s._segMan, it.@object, SciEngine.Selector(s => s.underBits));
+                        if (_screen._picNotValid != 1)
+                        {
+                            _paint16.BitsRestore(bitsHandle);
+                            it.showBitsFlag = true;
+                        }
+                        else {
+                            _paint16.BitsFree(bitsHandle);
+                        }
+                        SciEngine.WriteSelectorValue(_s._segMan, it.@object, SciEngine.Selector(s => s.underBits), 0);
+                    }
+                    it.signal &= ~ViewSignals.ForceUpdate;
+                    if (it.signal.HasFlag(ViewSignals.ViewUpdated))
+                        it.signal &= ~(ViewSignals.ViewUpdated | ViewSignals.NoUpdate);
+                }
+                else if (it.signal.HasFlag(ViewSignals.StopUpdate))
+                {
+                    it.signal &= ~ViewSignals.StopUpdate;
+                    it.signal |= ViewSignals.NoUpdate;
+                }
+            }
+
+            // Draw always-update cels
+            for (int i = 0; i < _list.Count; i++)
+            {
+                var it = _list[i];
+                if (it.signal.HasFlag(ViewSignals.AlwaysUpdate))
+                {
+                    // draw corresponding cel
+                    _paint16.DrawCel(it.viewId, it.loopNo, it.celNo, it.celRect, it.priority, it.paletteNo, it.scaleX, it.scaleY);
+                    it.showBitsFlag = true;
+
+                    it.signal &= ~(ViewSignals.StopUpdate | ViewSignals.ViewUpdated | ViewSignals.NoUpdate | ViewSignals.ForceUpdate);
+                    if (!(it.signal.HasFlag(ViewSignals.IgnoreActor)))
+                    {
+                        rect = it.celRect;
+                        rect.Top = ScummHelper.Clip(_ports.KernelPriorityToCoordinate(it.priority) - 1, rect.Top, rect.Bottom - 1);
+                        _paint16.FillRect(rect, GfxScreenMasks.CONTROL, 0, 0, 15);
+                    }
+                }
+            }
+
+            // Saving background for all NoUpdate-cels
+            for (int i = 0; i < _list.Count; i++)
+            {
+                var it = _list[i];
+                if (it.signal.HasFlag(ViewSignals.NoUpdate))
+                {
+                    if (it.signal.HasFlag(ViewSignals.Hidden))
+                    {
+                        it.signal |= ViewSignals.RemoveView;
+                    }
+                    else {
+                        it.signal &= ~ViewSignals.RemoveView;
+                        if (it.signal.HasFlag(ViewSignals.IgnoreActor))
+                            bitsHandle = _paint16.BitsSave(it.celRect, GfxScreenMasks.VISUAL | GfxScreenMasks.PRIORITY);
+                        else
+                            bitsHandle = _paint16.BitsSave(it.celRect, GfxScreenMasks.ALL);
+                        SciEngine.WriteSelector(_s._segMan, it.@object, SciEngine.Selector(s => s.underBits), bitsHandle);
+                    }
+                }
+            }
+
+            // Draw NoUpdate cels
+            for (int i = 0; i < _list.Count; i++)
+            {
+                var it = _list[i];
+                if (it.signal.HasFlag(ViewSignals.NoUpdate) && !(it.signal.HasFlag(ViewSignals.Hidden)))
+                {
+                    // draw corresponding cel
+                    _paint16.DrawCel(it.viewId, it.loopNo, it.celNo, it.celRect, it.priority, it.paletteNo, it.scaleX, it.scaleY);
+                    it.showBitsFlag = true;
+
+                    if (!(it.signal.HasFlag(ViewSignals.IgnoreActor)))
+                    {
+                        rect = it.celRect;
+                        rect.Top = ScummHelper.Clip(_ports.KernelPriorityToCoordinate(it.priority) - 1, rect.Top, rect.Bottom - 1);
+                        _paint16.FillRect(rect, GfxScreenMasks.CONTROL, 0, 0, 15);
+                    }
+                }
+            }
+        }
+
+        private void Fill(byte old_picNotValid)
+        {
+            GfxView view = null;
+
+            for (int i = 0; i < _list.Count; i++)
+            {
+                var it = _list[i];
+                // Get the corresponding view
+                view = _cache.GetView(it.viewId);
+
+                AdjustInvalidCels(view, it);
+                ProcessViewScaling(view, it);
+                SetNsRect(view, it);
+
+                //warning("%s view %d, loop %d, cel %d, signal %x", _s._segMan.getObjectName(curObject), it.viewId, it.loopNo, it.celNo, it.signal);
+
+                // Calculate current priority according to y-coordinate
+                if (!it.signal.HasFlag(ViewSignals.FixedPriority))
+                {
+                    it.priority = _ports.KernelCoordinateToPriority(it.y);
+                    SciEngine.WriteSelectorValue(_s._segMan, it.@object, SciEngine.Selector(s => s.priority), (ushort)it.priority);
+                }
+
+                if (it.signal.HasFlag(ViewSignals.NoUpdate))
+                {
+                    if ((it.signal & (ViewSignals.ForceUpdate | ViewSignals.ViewUpdated)) != 0
+                        || (it.signal & ViewSignals.Hidden) != 0 && (it.signal & ViewSignals.RemoveView) == 0
+                        || 0 == (it.signal & ViewSignals.Hidden) && (it.signal & ViewSignals.RemoveView) != 0
+                        || (it.signal & ViewSignals.AlwaysUpdate) != 0)
+                        old_picNotValid++;
+                    it.signal &= ~ViewSignals.StopUpdate;
+                }
+                else {
+                    if ((it.signal & ViewSignals.StopUpdate) != 0 || (it.signal & ViewSignals.AlwaysUpdate) != 0)
+                        old_picNotValid++;
+                    it.signal &= ~ViewSignals.ForceUpdate;
+                }
+            }
+        }
+
+        private void SetNsRect(GfxView view, AnimateEntry it)
+        {
+            bool shouldSetNsRect = true;
+
+            // Create rect according to coordinates and given cel
+            if (it.scaleSignal.HasFlag(ViewScaleSignals.DoScaling))
+            {
+                view.GetCelScaledRect(it.loopNo, it.celNo, it.x, it.y, it.z, it.scaleX, it.scaleY, it.celRect);
+                // when being scaled, only set nsRect, if object will get drawn
+                if (it.signal.HasFlag(ViewSignals.Hidden) && !it.signal.HasFlag(ViewSignals.AlwaysUpdate))
+                    shouldSetNsRect = false;
+            }
+            else {
+                //  This special handling is not included in the other SCI1.1 interpreters and MUST NOT be
+                //  checked in those cases, otherwise we will break games (e.g. EcoQuest 2, room 200)
+                if ((SciEngine.Instance.GameId == SciGameId.HOYLE4) && it.scaleSignal.HasFlag(ViewScaleSignals.Hoyle4SpecialHandling))
+                {
+                    it.celRect = SciEngine.Instance._gfxCompare.GetNSRect(it.@object);
+                    view.GetCelSpecialHoyle4Rect(it.loopNo, it.celNo, it.x, it.y, it.z, it.celRect);
+                    shouldSetNsRect = false;
+                }
+                else {
+                    view.GetCelRect(it.loopNo, it.celNo, it.x, it.y, it.z, it.celRect);
+                }
+            }
+
+            if (shouldSetNsRect)
+            {
+                SciEngine.Instance._gfxCompare.SetNSRect(it.@object, it.celRect);
+            }
+        }
+
+        private void ProcessViewScaling(GfxView view, AnimateEntry it)
         {
             throw new NotImplementedException();
         }
 
-        private void Fill(byte old_picNotValid)
+        private void AdjustInvalidCels(GfxView view, AnimateEntry it)
         {
             throw new NotImplementedException();
         }
 
         private void MakeSortedList(List list)
         {
-            throw new NotImplementedException();
+            Register curAddress = list.first;
+            Node curNode = _s._segMan.LookupNode(curAddress);
+            short listNr;
+
+            // Clear lists
+            _list.Clear();
+            _lastCastData.Clear();
+
+            // Fill the list
+            for (listNr = 0; curNode != null; listNr++)
+            {
+                AnimateEntry listEntry = new AnimateEntry();
+                Register curObject = curNode.value;
+                listEntry.@object = curObject;
+                listEntry.castHandle = Register.NULL_REG;
+
+                // Get data from current object
+                listEntry.givenOrderNo = listNr;
+                listEntry.viewId = (int)SciEngine.ReadSelectorValue(_s._segMan, curObject, SciEngine.Selector(s => s.view));
+                listEntry.loopNo = (short)SciEngine.ReadSelectorValue(_s._segMan, curObject, SciEngine.Selector(s => s.loop));
+                listEntry.celNo = (short)SciEngine.ReadSelectorValue(_s._segMan, curObject, SciEngine.Selector(s => s.cel));
+                listEntry.paletteNo = (short)SciEngine.ReadSelectorValue(_s._segMan, curObject, SciEngine.Selector(s => s.palette));
+                listEntry.x = (short)SciEngine.ReadSelectorValue(_s._segMan, curObject, SciEngine.Selector(s => s.x));
+                listEntry.y = (short)SciEngine.ReadSelectorValue(_s._segMan, curObject, SciEngine.Selector(s => s.y));
+                listEntry.z = (short)SciEngine.ReadSelectorValue(_s._segMan, curObject, SciEngine.Selector(s => s.z));
+                listEntry.priority = (short)SciEngine.ReadSelectorValue(_s._segMan, curObject, SciEngine.Selector(s => s.priority));
+                listEntry.signal = (ViewSignals)SciEngine.ReadSelectorValue(_s._segMan, curObject, SciEngine.Selector(s => s.signal));
+                if (ResourceManager.GetSciVersion() >= SciVersion.V1_1)
+                {
+                    // Cel scaling
+                    listEntry.scaleSignal = (ViewScaleSignals)SciEngine.ReadSelectorValue(_s._segMan, curObject, SciEngine.Selector(s => s.scaleSignal));
+                    if (listEntry.scaleSignal.HasFlag(ViewScaleSignals.DoScaling))
+                    {
+                        listEntry.scaleX = (short)SciEngine.ReadSelectorValue(_s._segMan, curObject, SciEngine.Selector(s => s.scaleX));
+                        listEntry.scaleY = (short)SciEngine.ReadSelectorValue(_s._segMan, curObject, SciEngine.Selector(s => s.scaleY));
+                    }
+                    else {
+                        listEntry.scaleX = 128;
+                        listEntry.scaleY = 128;
+                    }
+                }
+                else {
+                    listEntry.scaleSignal = 0;
+                    listEntry.scaleX = 128;
+                    listEntry.scaleY = 128;
+                }
+                // listEntry.celRect is filled in AnimateFill()
+                listEntry.showBitsFlag = false;
+
+                _list.Add(listEntry);
+
+                curAddress = curNode.succ;
+                curNode = _s._segMan.LookupNode(curAddress);
+            }
+
+            // Possible TODO: As noted in the comment in sortHelper we actually
+            // require a stable sorting algorithm here. Since Common::sort is not stable
+            // at the time of writing this comment, we work around that in our ordering
+            // comparator. If that changes in the future or we want to use some
+            // stable sorting algorithm here, we should change that.
+            // In that case we should test such changes intensively. A good place to test stable sort
+            // is iceman, cupboard within the submarine. If sort isn't stable, the cupboard will be
+            // half-open, half-closed. Of course that's just one of many special cases.
+
+            // Now sort the list according y and z (descending)
+            _list.Sort(SortHelper);
+        }
+
+        private int SortHelper(AnimateEntry entry1, AnimateEntry entry2)
+        {
+            if (entry1.y == entry2.y)
+            {
+                // if both y and z are the same, use the order we were given originally
+                //  this is needed for special cases like iceman room 35
+                if (entry1.z == entry2.z)
+                    return entry2.givenOrderNo.CompareTo(entry1.givenOrderNo);
+                else
+                    return entry2.z.CompareTo(entry1.z);
+            }
+            return entry2.y.CompareTo(entry1.y);
         }
 
         private bool Invoke(List list, int argc, StackPtr? argv)
@@ -263,7 +627,7 @@ namespace NScumm.Sci.Graphics
 
         private void DisposeLastCast()
         {
-            Array.Clear(_lastCastData,0, _lastCastData.Length);
+            _lastCastData.Clear();
         }
     }
 }

@@ -30,6 +30,14 @@ namespace NScumm.Sci.Engine
         TOTAL_HUNK = 4 // Total amount of hunk memory (SCI01)
     }
 
+    enum GetTimeMode
+    {
+        TICKS = 0,
+        TIME_12HOUR = 1,
+        TIME_24HOUR = 2,
+        DATE = 3
+    }
+
     partial class Kernel
     {
         /// <summary>
@@ -44,9 +52,9 @@ namespace NScumm.Sci.Engine
         {
             s.r_acc = Register.Make(0, (ushort)s.gameIsRestarting);
 
-            if (argc!=0)
+            if (argc != 0)
             { // Only happens during replay
-                if (argv.Value[0].ToUInt16()==0) // Set restarting flag
+                if (argv.Value[0].ToUInt16() == 0) // Set restarting flag
                     s.gameIsRestarting = GameIsRestarting.NONE;
             }
 
@@ -147,6 +155,47 @@ namespace NScumm.Sci.Engine
                 default:
                     throw new InvalidOperationException($"Unknown MemoryInfo operation: {argv.Value[0].Offset:X4}");
             }
+        }
+
+        private static Register kGetTime(EngineState s, int argc, StackPtr? argv)
+        {
+            // TODO: g_engine->getTotalPlayTime();
+            int elapsedTime = 0;
+            int retval = 0; // Avoid spurious warning
+
+            var loc_time = DateTime.Now;
+
+            GetTimeMode mode = (argc > 0) ? (GetTimeMode)argv.Value[0].ToUInt16() : 0;
+
+            // Modes 2 and 3 are supported since 0.629.
+            // This condition doesn't check that exactly, but close enough.
+            if (ResourceManager.GetSciVersion() == SciVersion.V0_EARLY && mode > GetTimeMode.TIME_12HOUR)
+                throw new InvalidOperationException($"kGetTime called in SCI0 with mode {mode} (expected 0 or 1)");
+
+            switch (mode)
+            {
+                case GetTimeMode.TICKS:
+                    retval = elapsedTime * 60 / 1000;
+                    // TODO: debugC(kDebugLevelTime, "GetTime(elapsed) returns %d", retval);
+                    break;
+                case GetTimeMode.TIME_12HOUR:
+                    retval = ((loc_time.Hour % 12) << 12) | (loc_time.Minute << 6) | (loc_time.Second);
+                    // TODO: debugC(kDebugLevelTime, "GetTime(12h) returns %d", retval);
+                    break;
+                case GetTimeMode.TIME_24HOUR:
+                    retval = (loc_time.Hour << 11) | (loc_time.Minute << 5) | (loc_time.Second >> 1);
+                    // TODO: debugC(kDebugLevelTime, "GetTime(24h) returns %d", retval);
+                    break;
+                case GetTimeMode.DATE:
+                    // Year since 1980 (0 = 1980, 1 = 1981, etc.)
+                    retval = loc_time.Day | ((loc_time.Month + 1) << 5) | (((loc_time.Year - 80) & 0x7f) << 9);
+                    // TODO: debugC(kDebugLevelTime, "GetTime(date) returns %d", retval);
+                    break;
+                default:
+                    throw new InvalidOperationException($"Attempt to use unknown GetTime mode {mode}");
+            }
+
+            return Register.Make(0, (ushort)retval);
         }
 
         private static Register kStub(EngineState s, int argc, StackPtr? argv)

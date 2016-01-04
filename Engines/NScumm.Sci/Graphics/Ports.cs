@@ -22,6 +22,7 @@ using NScumm.Core.Graphics;
 using System.Collections.Generic;
 using NScumm.Core;
 using System.Linq;
+using NScumm.Core.Common;
 
 namespace NScumm.Sci.Graphics
 {
@@ -185,6 +186,11 @@ namespace NScumm.Sci.Graphics
             KernelInitPriorityBands();
         }
 
+        internal void PriorityBandsInitSci11(ByteAccess byteAccess)
+        {
+            throw new NotImplementedException();
+        }
+
         internal void BeginUpdate(Window _picWind)
         {
             throw new NotImplementedException();
@@ -231,7 +237,7 @@ namespace NScumm.Sci.Graphics
             }
         }
 
-        private void PriorityBandsInit(short bandCount, short top, short bottom)
+        public void PriorityBandsInit(short bandCount, short top, short bottom)
         {
             short y;
             int bandSize;
@@ -265,6 +271,21 @@ namespace NScumm.Sci.Graphics
             //  sierra sci also adjust accordingly
             if (_priorityBottom == 200)
                 _priorityBottom--;
+        }
+
+        internal short KernelCoordinateToPriority(short y)
+        {
+            throw new NotImplementedException();
+        }
+
+        internal void PriorityBandsInit(object p)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool IsFrontWindow(Window pWnd)
+        {
+            return _windowList.LastOrDefault() == pWnd;
         }
 
         private Window AddWindow(Rect dims, Rect? restoreRect, string title, WindowManagerStyle style, int priority, bool draw)
@@ -443,6 +464,16 @@ namespace NScumm.Sci.Graphics
             SetOrigin((short)pwnd.rect.Left, (short)(pwnd.rect.Top + _wmgrPort.top));
             pwnd.rect.MoveTo(0, 0);
             return pwnd;
+        }
+
+        internal int KernelPriorityToCoordinate(short priority)
+        {
+            throw new NotImplementedException();
+        }
+
+        internal void OffsetLine(Point startPoint, Point endPoint)
+        {
+            throw new NotImplementedException();
         }
 
         public void MoveTo(short left, short top)

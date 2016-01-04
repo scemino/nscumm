@@ -75,11 +75,11 @@ namespace NScumm.Sci.Engine
         /// <summary>
         /// The last time the game invoked Wait() 
         /// </summary>
-        public uint lastWaitTime;
+        public int lastWaitTime;
         /// <summary>
         /// The last time the game updated the screen
         /// </summary>
-        public uint _screenUpdateTime;
+        public int _screenUpdateTime;
 
         /// <summary>
         /// total times kAnimate was invoked

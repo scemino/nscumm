@@ -418,7 +418,6 @@ namespace NScumm.Sci.Engine
             int argc;
             int origin = s._executionStack.Count - 1; // Origin: Used for debugging
             int activeBreakpointTypes = SciEngine.Instance._debugState._activeBreakpointTypes;
-            ObjVarRef varp = new ObjVarRef();
 
             var prevElementIterator = s._executionStack.Count;
 
@@ -431,6 +430,7 @@ namespace NScumm.Sci.Engine
                 if (argc > 0x800)   // More arguments than the stack could possibly accomodate for
                     throw new InvalidOperationException("send_selector(): More than 0x800 arguments to function call");
 
+                ObjVarRef varp = new ObjVarRef();
                 SelectorType selectorType = SciEngine.LookupSelector(s._segMan, send_obj, selector, varp, out funcp);
                 if (selectorType == SelectorType.None)
                     throw new InvalidOperationException($"Send to invalid selector 0x{0xffff & selector:X} of object at {send_obj}");
@@ -1026,7 +1026,7 @@ namespace NScumm.Sci.Engine
 
                     case op_pToa: // 0x31 (49)
                                   // Property To Accumulator
-                        s.r_acc = Register.Make(validate_property(s, obj, opparams[0]));
+                        s.r_acc = validate_property(s, obj, opparams[0]);
                         break;
 
                     case op_aTop: // 0x32 (50)
@@ -1178,7 +1178,7 @@ namespace NScumm.Sci.Engine
                         var_type = opcode & 0x3; // Gets the variable type: g, l, t or p
                         var_number = opparams[0] + (opcode >= op_sagi ? s.r_acc.RequireInt16() : 0);
                         if (opcode >= op_sagi)  // load the actual value to store in the accumulator
-                            s.r_acc = Register.Make(POP32());
+                            s.r_acc = POP32();
                         write_var(s, var_type, var_number, s.r_acc);
                         break;
 

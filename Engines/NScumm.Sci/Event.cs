@@ -99,9 +99,23 @@ namespace NScumm.Sci
             throw new NotImplementedException();
         }
 
-        internal void UpdateScreen()
+        public void UpdateScreen()
         {
-            throw new NotImplementedException();
+            // Update the screen here, since it's called very often.
+            // Throttle the screen update rate to 60fps.
+            var s = SciEngine.Instance.EngineState;
+            if (Environment.TickCount - s._screenUpdateTime >= 1000 / 60)
+            {
+                SciEngine.Instance.System.GraphicsManager.UpdateScreen();
+                s._screenUpdateTime = Environment.TickCount;
+                // Throttle the checking of shouldQuit() to 60fps as well, since
+                // Engine::shouldQuit() invokes 2 virtual functions
+                // (EventManager::shouldQuit() and EventManager::shouldRTL()),
+                // which is very expensive to invoke constantly without any
+                // throttling at all.
+                if (SciEngine.Instance.ShouldQuit)
+                    s.abortScriptProcessing = Engine.AbortGameState.QuitGame;
+            }
         }
     }
 }

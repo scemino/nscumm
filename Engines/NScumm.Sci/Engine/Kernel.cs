@@ -118,6 +118,11 @@ namespace NScumm.Sci.Engine
         {
             return new SciKernelMapEntry { name = function.Method.Name.Remove(0, 1), function = function, fromVersion = range.fromVersion, toVersion = range.toVersion, forPlatform = range.forPlatform, signature = signature, subFunctions = subSignatures, workarounds = workarounds };
         }
+
+        internal static SciKernelMapEntry Make(Func<EngineState, int, StackPtr?, Register> kGetAngle, SciVersionRange sIG_EVERYWHERE, string v, object p, object kGetAngle_workarounds)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     class KernelSubFunction
@@ -514,12 +519,16 @@ namespace NScumm.Sci.Engine
             SciKernelMapEntry.Make(kAddToEnd,SciVersionRange.SIG_EVERYWHERE,"ln",null,null),
             SciKernelMapEntry.Make(kAddToFront,SciVersionRange.SIG_EVERYWHERE,"ln",null,null),
             SciKernelMapEntry.Make(kAnimate,SciVersionRange.SIG_EVERYWHERE,"(l0)(i)",null,null),
+            SciKernelMapEntry.Make(kBaseSetter,SciVersionRange.SIG_EVERYWHERE,"o",null,null),
+            SciKernelMapEntry.Make(kCanBeHere,SciVersionRange.SIG_EVERYWHERE,"o(l)",null,null),
             SciKernelMapEntry.Make(kClone,SciVersionRange.SIG_EVERYWHERE,"o",null,null),
+            SciKernelMapEntry.Make(kDirLoop,SciVersionRange.SIG_EVERYWHERE,"oi",null,Workarounds.kDirLoop_workarounds),
             SciKernelMapEntry.Make(kDisposeClone,SciVersionRange.SIG_EVERYWHERE,"o",null,null),
             SciKernelMapEntry.Make(kDisposeList,SciVersionRange.SIG_EVERYWHERE,"l",null,null),
             SciKernelMapEntry.Make(kDisposeScript,SciVersionRange.SIG_EVERYWHERE,"i(i*)",null,Workarounds.kDisposeScript_workarounds),
             SciKernelMapEntry.Make(kDoSound,SciVersionRange.SIG_EVERYWHERE,"i(.*)",kDoSound_subops,null),
             SciKernelMapEntry.Make(kDrawMenuBar,SciVersionRange.SIG_EVERYWHERE,"i",null,null),
+            SciKernelMapEntry.Make(kDrawPic,SciVersionRange.SIG_EVERYWHERE,"i(i)(i)(i)",null,null),
             SciKernelMapEntry.Make(kDrawStatus,SciVersionRange.SIG_EVERYWHERE,"[r0](i)(i)",null,null),
             SciKernelMapEntry.Make("FClose",kFileIOClose,SciVersionRange.SIG_EVERYWHERE,"i",null,null),
             SciKernelMapEntry.Make("FGets",kFileIOReadString,SciVersionRange.SIG_EVERYWHERE,"rii",null,null),
@@ -530,9 +539,12 @@ namespace NScumm.Sci.Engine
             SciKernelMapEntry.Make(kFirstNode,SciVersionRange.SIG_EVERYWHERE,"[l0]",null,null),
             SciKernelMapEntry.Make(kFlushResources,SciVersionRange.SIG_EVERYWHERE,"i",null,null),
             SciKernelMapEntry.Make(kFormat,SciVersionRange.SIG_EVERYWHERE,"r[ri](.*)",null,null),
+            SciKernelMapEntry.Make(kGetAngle,SciVersionRange.SIG_EVERYWHERE,"iiii",null,Workarounds.kGetAngle_workarounds),
             SciKernelMapEntry.Make(kGetCWD,SciVersionRange.SIG_EVERYWHERE,"r",null,null),
+            SciKernelMapEntry.Make(kGetDistance,SciVersionRange.SIG_EVERYWHERE,"ii(i)(i)(i)(i)",null,null),
             SciKernelMapEntry.Make(kGetSaveDir,SciVersionRange.SIG_SCI32(SIGFOR_ALL),"(r*)",null,null),
             SciKernelMapEntry.Make(kGetSaveDir,SciVersionRange.SIG_EVERYWHERE,"",null,null),
+            SciKernelMapEntry.Make(kGetTime,SciVersionRange.SIG_EVERYWHERE,"(i)",null,null),
             SciKernelMapEntry.Make(kGameIsRestarting,SciVersionRange.SIG_EVERYWHERE,"(i)",null,null),
             SciKernelMapEntry.Make(kGraph,SciVersionRange.SIG_EVERYWHERE,null,kGraph_subops,null),
             SciKernelMapEntry.Make(kHaveMouse,SciVersionRange.SIG_EVERYWHERE,"",null,null),
@@ -542,6 +554,9 @@ namespace NScumm.Sci.Engine
             SciKernelMapEntry.Make(kMemoryInfo,SciVersionRange.SIG_EVERYWHERE,"i",null,null),
             SciKernelMapEntry.Make(kNewList,SciVersionRange.SIG_EVERYWHERE,"",null,null),
             SciKernelMapEntry.Make(kNewNode,SciVersionRange.SIG_EVERYWHERE,"..",null,null),
+            SciKernelMapEntry.Make(kNextNode,SciVersionRange.SIG_EVERYWHERE,"n",null,null),
+            SciKernelMapEntry.Make(kNodeValue,SciVersionRange.SIG_EVERYWHERE,"[n0]",null,null),
+            SciKernelMapEntry.Make(kPrevNode,SciVersionRange.SIG_EVERYWHERE,"n",null,null),
             SciKernelMapEntry.Make(kScriptID,SciVersionRange.SIG_EVERYWHERE,"[io](i)",null,null),
             SciKernelMapEntry.Make(kSetCursor,SciVersionRange.SIG_SCI21(SIGFOR_ALL),"i(i)([io])(i*)",null,null),
 	        // TODO: SCI2.1 may supply an object optionally (mother goose sci21 right on startup) - find out why

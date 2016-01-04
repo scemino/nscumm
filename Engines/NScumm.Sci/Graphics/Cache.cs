@@ -30,6 +30,7 @@ namespace NScumm.Sci.Graphics
     internal class GfxCache
     {
         private const int MAX_CACHED_FONTS = 20;
+        private const int MAX_CACHED_VIEWS = 50;
 
         private GfxPalette _palette;
         private GfxScreen _screen;
@@ -67,6 +68,27 @@ namespace NScumm.Sci.Graphics
         private void PurgeFontCache()
         {
             throw new NotImplementedException();
+        }
+
+        public GfxView GetView(int viewId)
+        {
+            if (_cachedViews.Count >= MAX_CACHED_VIEWS)
+                PurgeViewCache();
+
+            if (!_cachedViews.ContainsKey(viewId))
+                _cachedViews[viewId] = new GfxView(_resMan, _screen, _palette, viewId);
+
+            return _cachedViews[viewId];
+        }
+
+        private void PurgeViewCache()
+        {
+            throw new NotImplementedException();
+        }
+
+        public short KernelViewGetLoopCount(int viewId)
+        {
+            return (short)GetView(viewId).LoopCount;
         }
     }
 }

@@ -121,9 +121,78 @@ namespace NScumm.Sci.Graphics
             throw new NotImplementedException();
         }
 
-        public void FillRect(Rect rect, GfxScreenMasks drawFlags, int color, int priority = 0)
+        public void FillRect(Rect rect, GfxScreenMasks drawFlags, byte color, byte priority = 0, byte control = 0)
         {
-            throw new NotImplementedException();
+            Rect r = rect;
+            r.Clip(_ports._curPort.rect);
+            if (r.IsEmpty) // nothing to fill
+                return;
+
+            short oldPenMode = _ports._curPort.penMode;
+            _ports.OffsetRect(r);
+            short x, y;
+            byte curVisual;
+
+            // Doing visual first
+            if (drawFlags.HasFlag(GfxScreenMasks.VISUAL))
+            {
+                if (oldPenMode == 2)
+                { // invert mode
+                    for (y = (short)r.Top; y < r.Bottom; y++)
+                    {
+                        for (x = (short)r.Left; x < r.Right; x++)
+                        {
+                            curVisual = _screen.GetVisual(x, y);
+                            if (curVisual == color)
+                            {
+                                _screen.PutPixel(x, y, GfxScreenMasks.VISUAL, priority, 0, 0);
+                            }
+                            else if (curVisual == priority)
+                            {
+                                _screen.PutPixel(x, y, GfxScreenMasks.VISUAL, color, 0, 0);
+                            }
+                        }
+                    }
+                }
+                else { // just fill rect with color
+                    for (y = (short)r.Top; y < r.Bottom; y++)
+                    {
+                        for (x = (short)r.Left; x < r.Right; x++)
+                        {
+                            _screen.PutPixel(x, y, GfxScreenMasks.VISUAL, color, 0, 0);
+                        }
+                    }
+                }
+            }
+
+            if (drawFlags < GfxScreenMasks.PRIORITY)
+                return;
+            drawFlags &= GfxScreenMasks.PRIORITY | GfxScreenMasks.CONTROL;
+
+            // we need to isolate the bits, sierra sci saved priority and control inside one byte, we don't
+            priority &= 0x0f;
+            control &= 0x0f;
+
+            if (oldPenMode != 2)
+            {
+                for (y = (short)r.Top; y < r.Bottom; y++)
+                {
+                    for (x = (short)r.Left; x < r.Right; x++)
+                    {
+                        _screen.PutPixel(x, y, drawFlags, 0, priority, control);
+                    }
+                }
+            }
+            else {
+                for (y = (short)r.Top; y < r.Bottom; y++)
+                {
+                    for (x = (short)r.Left; x < r.Right; x++)
+                    {
+                        // TODO: check this
+                        _screen.PutPixel(x, y, drawFlags, 0, (byte)(_screen.GetPriority(x, y) == 0 ? 1 : 0), (byte)(_screen.GetControl(x, y) == 0 ? 1 : 0));
+                    }
+                }
+            }
         }
 
         public void FrameRect(Rect r)

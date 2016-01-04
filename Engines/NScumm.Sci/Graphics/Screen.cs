@@ -448,6 +448,21 @@ namespace NScumm.Sci.Graphics
             }
         }
 
+        public byte GetVisual(short x, short y)
+        {
+            return _getPixelPtr(_visualScreen, x, y);
+        }
+
+        public byte GetControl(short x, short y)
+        {
+            return _getPixelPtr(_controlScreen, x, y);
+        }
+
+        public byte GetPriority(short x, short y)
+        {
+            return _getPixelPtr(_priorityScreen, x, y);
+        }
+
         public void BitsSave(Rect rect, GfxScreenMasks mask, byte[] memoryPtr)
         {
             throw new NotImplementedException();
@@ -556,7 +571,7 @@ namespace NScumm.Sci.Graphics
             return screen[mappedY * _width + mappedX];
         }
 
-        private void PutPixel(short x, short y, GfxScreenMasks drawMask, byte color, byte priority, byte control)
+        public void PutPixel(short x, short y, GfxScreenMasks drawMask, byte color, byte priority, byte control)
         {
             _putPixelPtr(x, y, drawMask, color, priority, control);
         }

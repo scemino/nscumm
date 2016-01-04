@@ -445,6 +445,12 @@ namespace NScumm.Sci.Graphics
             return pwnd;
         }
 
+        public void MoveTo(short left, short top)
+        {
+            _curPort.curTop = top;
+            _curPort.curLeft = left;
+        }
+
         private void DrawWindow(Window pWnd)
         {
             if (pWnd.bDrawn)
@@ -508,14 +514,14 @@ namespace NScumm.Sci.Graphics
                 }
 
                 if (!wndStyle.HasFlag(WindowManagerStyle.TRANSPARENT))
-                    _paint16.FillRect(r, GfxScreenMasks.VISUAL, pWnd.backClr);
+                    _paint16.FillRect(r, GfxScreenMasks.VISUAL, (byte)pWnd.backClr);
 
                 _paint16.BitsShow(pWnd.dims);
             }
             SetPort(oldport);
         }
 
-        private void PenColor(short color)
+        public void PenColor(short color)
         {
             _curPort.penClr = color;
         }

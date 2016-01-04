@@ -266,8 +266,8 @@ namespace NScumm.Sci.Engine
             stack_base = new StackPtr();
             stack_top = new StackPtr();
 
-            r_acc = Register.NULL_REG;
-            r_prev = Register.NULL_REG;
+            r_acc = Register.Make(Register.NULL_REG);
+            r_prev = Register.Make(Register.NULL_REG);
             r_rest = 0;
 
             lastWaitTime = 0;

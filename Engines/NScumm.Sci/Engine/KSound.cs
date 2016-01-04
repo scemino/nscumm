@@ -38,7 +38,8 @@ namespace NScumm.Sci.Engine
 
         private static Register kDoSoundInit(EngineState s, int argc, StackPtr? argv)
         {
-            throw new NotImplementedException();
+            SciEngine.Instance._soundCmd.kDoSoundInit(argc, argv);
+            return s.r_acc;
         }
         private static Register kDoSoundPlay(EngineState s, int argc, StackPtr? argv)
         {
@@ -54,8 +55,7 @@ namespace NScumm.Sci.Engine
         }
         private static Register kDoSoundMute(EngineState s, int argc, StackPtr? argv)
         {
-            // TODO: return SciEngine.Instance._soundCmd.kDoSoundMute(s, argc, argv);
-            return Register.NULL_REG;
+            return SciEngine.Instance._soundCmd.kDoSoundMute(argc, argv);
         }
         private static Register kDoSoundStop(EngineState s, int argc, StackPtr? argv)
         {

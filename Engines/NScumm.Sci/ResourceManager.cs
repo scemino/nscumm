@@ -23,6 +23,7 @@ using System.IO;
 using NScumm.Core.IO;
 using System.Linq;
 using NScumm.Sci.Engine;
+using NScumm.Core.Common;
 
 namespace NScumm.Sci
 {
@@ -261,7 +262,7 @@ namespace NScumm.Sci
             if ((res != null) && (res.size > 30))
             {
                 var data = res.data;
-                // Old palette format used in palette resource? -> it's merging
+                // Old palette format used in palette resource? . it's merging
                 if ((data[0] == 0 && data[1] == 1) || (data[0] == 0 && data[1] == 0 && data.ToUInt16(29) == 0))
                     return true;
                 // Hardcoded: Laura Bow 2 floppy uses new palette resource, but still palette merging + 16 bit color matching
@@ -571,7 +572,7 @@ namespace NScumm.Sci
         {
             if (res._status != ResourceStatus.Locked)
             {
-                // TODO: debugC(kDebugLevelResMan, 2, "[resMan] Attempt to unlock unlocked resource %s", res->_id.toString().c_str());
+                // TODO: debugC(kDebugLevelResMan, 2, "[resMan] Attempt to unlock unlocked resource %s", res._id.toString().c_str());
                 return;
             }
 
@@ -598,11 +599,11 @@ namespace NScumm.Sci
 
                 if (res)
                 {
-                    if (READ_SCI11ENDIAN_UINT16(res->data) == 0x0e)
+                    if (READ_SCI11ENDIAN_UINT16(res.data) == 0x0e)
                     {
                         // SCI32 picture
-                        uint16 width = READ_SCI11ENDIAN_UINT16(res->data + 10);
-                        uint16 height = READ_SCI11ENDIAN_UINT16(res->data + 12);
+                        uint16 width = READ_SCI11ENDIAN_UINT16(res.data + 10);
+                        uint16 height = READ_SCI11ENDIAN_UINT16(res.data + 12);
                         // Surely lowres (e.g. QFG4CD)
                         if ((width == 320) && ((height == 190) || (height == 200)))
                             return false;
@@ -1221,7 +1222,7 @@ namespace NScumm.Sci
             if (viewCompression != ResourceCompression.LZW)
             {
                 // If it's a different compression type from kCompLZW, the game is probably
-                // SCI_VERSION_1_EGA_ONLY or later. If the views are uncompressed, it is
+                // SciVersion.V1_EGA_ONLY or later. If the views are uncompressed, it is
                 // likely not an early disk game.
                 s_sciVersion = SciVersion.V1_EGA_ONLY;
                 oldDecompressors = false;
@@ -1331,7 +1332,7 @@ namespace NScumm.Sci
 
                     if (oldDecompressors)
                     {
-                        // It's either SCI_VERSION_0_LATE or SCI_VERSION_01
+                        // It's either SciVersion.V0_LATE or SciVersion.V01
 
                         // We first check for SCI1 vocab.999
                         if (TestResource(new ResourceId(ResourceType.Vocab, 999)) != null)
@@ -1355,19 +1356,19 @@ namespace NScumm.Sci
                         }
 
                         // TODO: error("Failed to accurately determine SCI version");
-                        // No parser, we assume SCI_VERSION_01.
+                        // No parser, we assume SciVersion.V01.
                         s_sciVersion = SciVersion.V01;
                         return;
                     }
 
-                    // New decompressors. It's either SCI_VERSION_1_EGA_ONLY or SCI_VERSION_1_EARLY.
+                    // New decompressors. It's either SciVersion.V1_EGA_ONLY or SciVersion.V1_EARLY.
                     if (HasSci1Voc900())
                     {
                         s_sciVersion = SciVersion.V1_EGA_ONLY;
                         return;
                     }
 
-                    // SCI_VERSION_1_EARLY EGA versions lack the parser vocab
+                    // SciVersion.V1_EARLY EGA versions lack the parser vocab
                     s_sciVersion = SciVersion.V1_EARLY;
                     return;
                 case ResVersion.Sci1Middle:
@@ -1980,6 +1981,333 @@ namespace NScumm.Sci
             ResourceSource newsrc = new ExtMapResourceSource(filename, volume_nr);
             _sources.Add(newsrc);
             return newsrc;
+        }
+    }
+
+    internal class SoundResource
+    {
+        public class Channel
+        {
+            public byte number;
+            public byte flags;
+            public byte poly;
+            public ushort prio;
+            public ushort size;
+            public ByteAccess data;
+            public ushort curPos;
+            public long time;
+            public byte prev;
+        }
+
+        public class Track
+        {
+            public byte type;
+            public byte channelCount;
+            public Channel[] channels;
+            public short digitalChannelNr;
+            public ushort digitalSampleRate;
+            public ushort digitalSampleSize;
+            public ushort digitalSampleStart;
+            public ushort digitalSampleEnd;
+        }
+
+        private SciVersion _soundVersion;
+        private int _trackCount;
+        private Track[] _tracks;
+        private ResourceManager.ResourceSource.Resource _innerResource;
+        private ResourceManager _resMan;
+        private byte _soundPriority;
+
+        public Track DigitalTrack
+        {
+            get
+            {
+                for (int trackNr = 0; trackNr < _trackCount; trackNr++)
+                {
+                    if (_tracks[trackNr].digitalChannelNr != -1)
+                        return _tracks[trackNr];
+                }
+                return null;
+            }
+        }
+
+        public SoundResource(uint resourceNr, ResourceManager resMan, SciVersion soundVersion)
+        {
+            _resMan = resMan;
+            _soundVersion = soundVersion;
+
+            var resource = _resMan.FindResource(new ResourceId(ResourceType.Sound, (ushort)resourceNr), true);
+            int trackNr, channelNr;
+            if (resource == null)
+                return;
+
+            _innerResource = resource;
+            _soundPriority = 0xFF;
+
+            ByteAccess data;
+            ByteAccess data2;
+            ByteAccess dataEnd;
+            Channel channel, sampleChannel;
+
+            switch (_soundVersion)
+            {
+                case SciVersion.V0_EARLY:
+                case SciVersion.V0_LATE:
+                    // SCI0 only has a header of 0x11/0x21 byte length and the actual midi track follows afterwards
+                    _trackCount = 1;
+                    _tracks = new Track[_trackCount];
+                    for (int i = 0; i < _tracks.Length; i++)
+                    {
+                        _tracks[i] = new Track();
+                    }
+                    _tracks[0].digitalChannelNr = -1;
+                    _tracks[0].type = 0; // Not used for SCI0
+                    _tracks[0].channelCount = 1;
+                    // Digital sample data included? . Add an additional channel
+                    if (resource.data[0] == 2)
+                        _tracks[0].channelCount++;
+                    _tracks[0].channels = new Channel[_tracks[0].channelCount];
+                    for (int i = 0; i < _tracks[0].channels.Length; i++)
+                    {
+                        _tracks[0].channels[i] = new Channel();
+                    }
+                    channel = _tracks[0].channels[0];
+                    channel.flags |= 2; // don't remap (SCI0 doesn't have remapping)
+                    if (_soundVersion == SciVersion.V0_EARLY)
+                    {
+                        channel.data = new ByteAccess(resource.data, 0x11);
+                        channel.size = (ushort)(resource.size - 0x11);
+                    }
+                    else {
+                        channel.data = new ByteAccess(resource.data, 0x21);
+                        channel.size = (ushort)(resource.size - 0x21);
+                    }
+                    if (_tracks[0].channelCount == 2)
+                    {
+                        // Digital sample data included
+                        _tracks[0].digitalChannelNr = 1;
+                        sampleChannel = _tracks[0].channels[1];
+                        // we need to find 0xFC (channel terminator) within the data
+                        data = new ByteAccess(channel.data);
+                        dataEnd = new ByteAccess(channel.data, channel.size);
+                        while ((data.Offset < dataEnd.Offset) && (data[0] != 0xfc))
+                            data.Offset++;
+                        // Skip any following 0xFCs as well
+                        while ((data.Offset < dataEnd.Offset) && (data[0] == 0xfc))
+                            data.Offset++;
+                        // Now adjust channels accordingly
+                        sampleChannel.data = data;
+                        sampleChannel.size = (ushort)(channel.size - (data.Offset - channel.data.Offset));
+                        channel.size = (ushort)(data.Offset - channel.data.Offset);
+                        // Read sample header information
+                        //Offset 14 in the header contains the frequency as a short integer. Offset 32 contains the sample length, also as a short integer.
+                        _tracks[0].digitalSampleRate = sampleChannel.data.ReadUInt16(14);
+                        _tracks[0].digitalSampleSize = sampleChannel.data.ReadUInt16(32);
+                        _tracks[0].digitalSampleStart = 0;
+                        _tracks[0].digitalSampleEnd = 0;
+                        sampleChannel.data.Offset += 44; // Skip over header
+                        sampleChannel.size -= 44;
+                    }
+                    break;
+
+                case SciVersion.V1_EARLY:
+                case SciVersion.V1_LATE:
+                case SciVersion.V2_1:
+                    data = new ByteAccess(resource.data);
+                    // Count # of tracks
+                    _trackCount = 0;
+                    while ((data.Increment()) != 0xFF)
+                    {
+                        _trackCount++;
+                        while (data.Value != 0xFF)
+                            data.Offset += 6;
+                        data.Offset++;
+                    }
+                    _tracks = new Track[_trackCount];
+                    data = new ByteAccess(resource.data);
+
+                    byte channelCount;
+
+                    for (trackNr = 0; trackNr < _trackCount; trackNr++)
+                    {
+                        // Track info starts with track type:BYTE
+                        // Then the channel information gets appended Unknown:WORD, ChannelOffset:WORD, ChannelSize:WORD
+                        // 0xFF:BYTE as terminator to end that track and begin with another track type
+                        // Track type 0xFF is the marker signifying the end of the tracks
+
+                        _tracks[trackNr].type = data.Increment();
+                        // Counting # of channels used
+                        data2 = new ByteAccess(data);
+                        channelCount = 0;
+                        while (data2.Value != 0xFF)
+                        {
+                            data2.Offset += 6;
+                            channelCount++;
+                            _tracks[trackNr].channelCount++;
+                        }
+                        _tracks[trackNr].channels = new Channel[channelCount];
+                        _tracks[trackNr].channelCount = 0;
+                        _tracks[trackNr].digitalChannelNr = -1; // No digital sound associated
+                        _tracks[trackNr].digitalSampleRate = 0;
+                        _tracks[trackNr].digitalSampleSize = 0;
+                        _tracks[trackNr].digitalSampleStart = 0;
+                        _tracks[trackNr].digitalSampleEnd = 0;
+                        if (_tracks[trackNr].type != 0xF0)
+                        { // Digital track marker - not supported currently
+                            channelNr = 0;
+                            while ((channelCount--) != 0)
+                            {
+                                channel = _tracks[trackNr].channels[channelNr];
+                                uint dataOffset = data.ReadUInt16(2);
+
+                                if (dataOffset >= resource.size)
+                                {
+                                    // TODO: warning("Invalid offset inside sound resource %d: track %d, channel %d", resourceNr, trackNr, channelNr);
+                                    data.Offset += 6;
+                                    continue;
+                                }
+
+                                channel.data = new ByteAccess(resource.data, (int)dataOffset);
+                                channel.size = data.ReadUInt16(4);
+                                channel.curPos = 0;
+                                channel.number = channel.data[0];
+
+                                channel.poly = (byte)(channel.data[1] & 0x0F);
+                                channel.prio = (ushort)(channel.data[1] >> 4);
+                                channel.time = channel.prev = 0;
+                                channel.data.Offset += 2; // skip over header
+                                channel.size -= 2; // remove header size
+                                if (channel.number == 0xFE)
+                                { // Digital channel
+                                    _tracks[trackNr].digitalChannelNr = (short)channelNr;
+                                    _tracks[trackNr].digitalSampleRate = channel.data.ReadUInt16();
+                                    _tracks[trackNr].digitalSampleSize = channel.data.ReadUInt16(2);
+                                    _tracks[trackNr].digitalSampleStart = channel.data.ReadUInt16(4);
+                                    _tracks[trackNr].digitalSampleEnd = channel.data.ReadUInt16(6);
+                                    channel.data.Offset += 8; // Skip over header
+                                    channel.size -= 8;
+                                    channel.flags = 0;
+                                }
+                                else {
+                                    channel.flags = (byte)(channel.number >> 4);
+                                    channel.number = (byte)(channel.number & 0x0F);
+
+                                    // 0x20 is set on rhythm channels to prevent remapping
+                                    // CHECKME: Which SCI versions need that set manually?
+                                    if (channel.number == 9)
+                                        channel.flags |= 2;
+                                    // Note: flag 1: channel start offset is 0 instead of 10
+                                    //               (currently: everything 0)
+                                    //               also: don't map the channel to device
+                                    //       flag 2: don't remap
+                                    //       flag 4: start muted
+                                    // QfG2 lacks flags 2 and 4, and uses (flags >= 1) as
+                                    // the condition for starting offset 0, without the "don't map"
+                                }
+                                _tracks[trackNr].channelCount++;
+                                channelNr++;
+                                data.Offset += 6;
+                            }
+                        }
+                        else {
+                            // The first byte of the 0xF0 track's channel list is priority
+                            _soundPriority = data.Value;
+
+                            // Skip over digital track
+                            data.Offset += 6;
+                        }
+                        data.Offset++; // Skipping 0xFF that closes channels list
+                    }
+                    break;
+
+                default:
+                    throw new InvalidOperationException("SoundResource: SCI version {_soundVersion} is unsupported");
+            }
+        }
+
+        public Track GetTrackByType(byte type)
+        {
+            if (_soundVersion <= SciVersion.V0_LATE)
+                return _tracks[0];
+
+            for (int trackNr = 0; trackNr < _tracks.Length; trackNr++)
+            {
+                if (_tracks[trackNr].type == type)
+                    return _tracks[trackNr];
+            }
+            return null;
+        }
+
+        // Gets the filter mask for SCI0 sound resources
+        public int GetChannelFilterMask(int hardwareMask, bool wantsRhythm)
+        {
+            var data = new ByteAccess(_innerResource.data);
+            int channelMask = 0;
+
+            if (_soundVersion > SciVersion.V0_LATE)
+                return 0;
+
+            data.Offset++; // Skip over digital sample flag
+
+            for (int channelNr = 0; channelNr < 16; channelNr++)
+            {
+                channelMask = channelMask >> 1;
+
+                byte flags;
+
+                if (_soundVersion == SciVersion.V0_EARLY)
+                {
+                    // Each channel is specified by a single byte
+                    // Upper 4 bits of the byte is a voices count
+                    // Lower 4 bits . bit 0 set: use for AdLib
+                    //				   bit 1 set: use for PCjr
+                    //				   bit 2 set: use for PC speaker
+                    //				   bit 3 set and bit 0 clear: control channel (15)
+                    //				   bit 3 set and bit 0 set: rhythm channel (9)
+                    // Note: control channel is dynamically assigned inside the drivers,
+                    // but seems to be fixed at 15 in the song data.
+                    flags = data.Increment();
+
+                    // Get device bits
+                    flags &= 0x7;
+                }
+                else {
+                    // Each channel is specified by 2 bytes
+                    // 1st byte is voices count
+                    // 2nd byte is play mask, which specifies if the channel is supposed to be played
+                    // by the corresponding hardware
+
+                    // Skip voice count
+                    data.Offset++;
+
+                    flags = data.Increment();
+                }
+
+                bool play;
+                switch (channelNr)
+                {
+                    case 15:
+                        // Always play control channel
+                        play = true;
+                        break;
+                    case 9:
+                        // Play rhythm channel when requested
+                        play = wantsRhythm;
+                        break;
+                    default:
+                        // Otherwise check for flag
+                        play = (flags & hardwareMask) != 0;
+                        break;
+                }
+
+                if (play)
+                {
+                    // This Channel is supposed to be played by the hardware
+                    channelMask |= 0x8000;
+                }
+            }
+
+            return channelMask;
         }
     }
 }

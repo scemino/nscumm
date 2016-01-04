@@ -47,9 +47,9 @@ namespace NScumm.Sci.Engine
         ///  Special reg_t 'offset' used to indicate an error, or that an operation has
         ///  finished (depending on the case).
         /// </summary>
-        const ushort SIGNAL_OFFSET = ushort.MaxValue;
+        public const ushort SIGNAL_OFFSET = ushort.MaxValue;
 
-        public static readonly Register NULL_REG = Make(0, 0);
+        public static Register NULL_REG { get { return Make(0, 0); } }
         public static readonly Register SIGNAL_REG = Make(0, SIGNAL_OFFSET);
         public static readonly Register TRUE_REG = Make(0, 1);
 
@@ -108,6 +108,14 @@ namespace NScumm.Sci.Engine
             get { return Segment != 0 && Segment != 0xFFFF; }
         }
 
+        public bool IsInitialized
+        {
+            get
+            {
+                return Segment != 0xFFFF;
+            }
+        }
+
         public void SetSegment(ushort segment)
         {
             if (ResourceManager.GetSciVersion() <= SciVersion.V2_1)
@@ -141,12 +149,6 @@ namespace NScumm.Sci.Engine
                 _offset = (ushort)(offset & 0xFFFF);
                 _segment = (ushort)(((offset & 0x30000) >> 2) | (_segment & 0x3FFF));
             }
-        }
-
-        public void Set(Register other)
-        {
-            _segment = other._segment;
-            _offset = other._offset;
         }
 
         public static Register Make(Register reg)

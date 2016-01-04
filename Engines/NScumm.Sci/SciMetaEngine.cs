@@ -180,7 +180,7 @@ namespace NScumm.Sci
 
         public override IEngine Create(GameSettings settings, IGraphicsManager gfxManager, IInputManager inputManager, IAudioOutput output, ISaveFileManager saveFileManager, bool debugMode = false)
         {
-            return new SciEngine(new SciSystem(gfxManager, inputManager, saveFileManager), (SciGameDescriptor)settings.Game, s_gameIdStrToEnum[settings.Game.Id]);
+            return new SciEngine(new SciSystem(gfxManager, inputManager, saveFileManager), output, (SciGameDescriptor)settings.Game, s_gameIdStrToEnum[settings.Game.Id]);
         }
 
         protected override GameDetected CreateGameDetected(string path, ADGameDescription desc)

@@ -16,6 +16,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using System;
 using NScumm.Core.Audio;
 
 namespace NScumm.Sci.Sound
@@ -34,6 +35,11 @@ namespace NScumm.Sci.Sound
 
             // TODO: _mixer = g_system->getMixer();
             _wPlayFlag = false;
+        }
+
+        internal IRewindableAudioStream GetAudioStream(ushort resourceId, int v, out int sampleLen)
+        {
+            throw new NotImplementedException();
         }
     }
 }

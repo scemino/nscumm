@@ -513,11 +513,14 @@ namespace NScumm.Sci.Engine
             SciKernelMapEntry.Make(kAddMenu,SciVersionRange.SIG_EVERYWHERE,"rr",null,null),
             SciKernelMapEntry.Make(kAddToEnd,SciVersionRange.SIG_EVERYWHERE,"ln",null,null),
             SciKernelMapEntry.Make(kAddToFront,SciVersionRange.SIG_EVERYWHERE,"ln",null,null),
-            SciKernelMapEntry.Make(kAnimate, SciVersionRange.SIG_EVERYWHERE,"(l0)(i)",null,null),
+            SciKernelMapEntry.Make(kAnimate,SciVersionRange.SIG_EVERYWHERE,"(l0)(i)",null,null),
+            SciKernelMapEntry.Make(kClone,SciVersionRange.SIG_EVERYWHERE,"o",null,null),
             SciKernelMapEntry.Make(kDisposeClone,SciVersionRange.SIG_EVERYWHERE,"o",null,null),
             SciKernelMapEntry.Make(kDisposeList,SciVersionRange.SIG_EVERYWHERE,"l",null,null),
             SciKernelMapEntry.Make(kDisposeScript,SciVersionRange.SIG_EVERYWHERE,"i(i*)",null,Workarounds.kDisposeScript_workarounds),
             SciKernelMapEntry.Make(kDoSound,SciVersionRange.SIG_EVERYWHERE,"i(.*)",kDoSound_subops,null),
+            SciKernelMapEntry.Make(kDrawMenuBar,SciVersionRange.SIG_EVERYWHERE,"i",null,null),
+            SciKernelMapEntry.Make(kDrawStatus,SciVersionRange.SIG_EVERYWHERE,"[r0](i)(i)",null,null),
             SciKernelMapEntry.Make("FClose",kFileIOClose,SciVersionRange.SIG_EVERYWHERE,"i",null,null),
             SciKernelMapEntry.Make("FGets",kFileIOReadString,SciVersionRange.SIG_EVERYWHERE,"rii",null,null),
             SciKernelMapEntry.Make("FOpen",kFileIOOpen,SciVersionRange.SIG_EVERYWHERE,"ri",null,null),
@@ -526,12 +529,14 @@ namespace NScumm.Sci.Engine
             SciKernelMapEntry.Make(kFindKey,SciVersionRange.SIG_EVERYWHERE,"l.",null,Workarounds.kFindKey_workarounds),
             SciKernelMapEntry.Make(kFirstNode,SciVersionRange.SIG_EVERYWHERE,"[l0]",null,null),
             SciKernelMapEntry.Make(kFlushResources,SciVersionRange.SIG_EVERYWHERE,"i",null,null),
+            SciKernelMapEntry.Make(kFormat,SciVersionRange.SIG_EVERYWHERE,"r[ri](.*)",null,null),
             SciKernelMapEntry.Make(kGetCWD,SciVersionRange.SIG_EVERYWHERE,"r",null,null),
             SciKernelMapEntry.Make(kGetSaveDir,SciVersionRange.SIG_SCI32(SIGFOR_ALL),"(r*)",null,null),
             SciKernelMapEntry.Make(kGetSaveDir,SciVersionRange.SIG_EVERYWHERE,"",null,null),
             SciKernelMapEntry.Make(kGameIsRestarting,SciVersionRange.SIG_EVERYWHERE,"(i)",null,null),
             SciKernelMapEntry.Make(kGraph,SciVersionRange.SIG_EVERYWHERE,null,kGraph_subops,null),
             SciKernelMapEntry.Make(kHaveMouse,SciVersionRange.SIG_EVERYWHERE,"",null,null),
+            SciKernelMapEntry.Make(kIsObject,SciVersionRange.SIG_EVERYWHERE,".",null,Workarounds.kIsObject_workarounds),
             SciKernelMapEntry.Make(kLastNode,SciVersionRange.SIG_EVERYWHERE,"l",null,null),
             SciKernelMapEntry.Make(kLoad,SciVersionRange.SIG_EVERYWHERE,"ii(i*)",null,null),
             SciKernelMapEntry.Make(kMemoryInfo,SciVersionRange.SIG_EVERYWHERE,"i",null,null),
@@ -1511,6 +1516,33 @@ namespace NScumm.Sci.Engine
 
             //// Reset the segment manager
             //_segMan.ResetSegMan();
+        }
+
+        private string LookupText(Register address, int index)
+        {
+            if (address.Segment != 0)
+                return _segMan.GetString(address);
+
+            int _index = index;
+            var textres = _resMan.FindResource(new ResourceId(ResourceType.Text, (ushort)address.Offset), false);
+
+            if (textres == null)
+            {
+                throw new InvalidOperationException($"text.{address.Offset} not found");
+            }
+
+            var textlen = textres.size;
+            var seeker = textres.data;
+            var i = 0;
+
+            while ((index--) != 0)
+                while (((textlen--) != 0) && (seeker[i++] != 0))
+                    ;
+
+            if (textlen != 0)
+                return ScummHelper.GetText(seeker, i);
+
+            throw new InvalidOperationException("Index {_index} out of bounds in text.{address.Offset}");
         }
     }
 }

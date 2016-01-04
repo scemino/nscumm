@@ -40,6 +40,25 @@ namespace NScumm.Sci.Engine
         private bool _usesCdTrack;
         private bool _forceDOSTracks;
 
+        public bool UseAltWinGMSound
+        {
+            get
+            {
+                if (SciEngine.Instance != null && SciEngine.Instance.Platform == Core.IO.Platform.Windows && SciEngine.Instance.IsCD && !_forceDOSTracks)
+                {
+                    SciGameId id = SciEngine.Instance.GameId;
+                    return (id == SciGameId.ECOQUEST ||
+                            id == SciGameId.JONES ||
+                            id == SciGameId.KQ5 ||
+                            //id == SciGameId.FREDDYPHARKAS ||	// Has alternate tracks, but handles them differently
+                            id == SciGameId.SQ4);
+                }
+                else {
+                    return false;
+                }
+            }
+        }
+
         public SciVersion DetectDoSoundType()
         {
             if (_doSoundType == SciVersion.NONE)
@@ -83,6 +102,11 @@ namespace NScumm.Sci.Engine
             }
 
             return _doSoundType;
+        }
+
+        internal void ForceDOSTracks()
+        {
+            throw new NotImplementedException();
         }
 
         private bool AutoDetectSoundType()

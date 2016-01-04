@@ -48,8 +48,8 @@ namespace NScumm.Core.Common
             set { _data[_offset + index] = value; }
         }
 
-        public ByteAccess(ByteAccess data)
-            : this(data.Data, data.Offset)
+        public ByteAccess(ByteAccess data, int offset = 0)
+            : this(data.Data, data.Offset + offset)
         {
         }
 
@@ -72,6 +72,13 @@ namespace NScumm.Core.Common
         public UShortAccess ToUInt16()
         {
             return new UShortAccess(_data, _offset);
+        }
+
+        public byte Increment()
+        {
+            var ret = Value;
+            _offset++;
+            return ret;
         }
     }
 

@@ -24,6 +24,7 @@ using NScumm.Sci.Sound;
 using NScumm.Sci.Engine;
 using NScumm.Sci.Graphics;
 using NScumm.Sci.Parser;
+using NScumm.Core.Audio;
 
 namespace NScumm.Sci
 {
@@ -95,7 +96,7 @@ namespace NScumm.Sci
         private string _directory;
         private ADGameDescription _gameDescription;
         private SciGameId _gameId;
-        private SoundCommandParser _soundCmd;
+        public SoundCommandParser _soundCmd;
         private Register _gameObjectAddress;
         private ScriptPatcher _scriptPatcher;
         private Kernel _kernel;
@@ -158,9 +159,13 @@ namespace NScumm.Sci
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
         };
 
-        public SciEngine(ISystem system, SciGameDescriptor desc, SciGameId id)
+        public SciEngine(ISystem system, IAudioOutput output, SciGameDescriptor desc, SciGameId id)
         {
             _system = system;
+            _mixer = new Mixer(44100);
+            // HACK:
+            _mixer.Read(new byte[0], 0);
+            output.SetSampleProvider(_mixer);
             _instance = this;
             _gameId = id;
             _gameDescription = desc.GameDescription;
@@ -168,8 +173,18 @@ namespace NScumm.Sci
             _debugState = new DebugState();
         }
 
-        public string GetSciLanguageString(string str, Language requestedLanguage, Language? secondaryLanguage = null, ushort? languageSplitter = null)
+        public string GetSciLanguageString(string str, Language requestedLanguage)
         {
+            Language secondaryLanguage;
+            ushort languageSplitter;
+            return GetSciLanguageString(str, requestedLanguage, out secondaryLanguage, out languageSplitter);
+        }
+
+        public string GetSciLanguageString(string str, Language requestedLanguage, out Language secondaryLanguage, out ushort languageSplitter)
+        {
+            secondaryLanguage = Sci.Language.NONE;
+            languageSplitter = 0;
+
             var textPtr = 0;
             Language foundLanguage = Sci.Language.NONE;
             char curChar = '\0';
@@ -187,11 +202,9 @@ namespace NScumm.Sci
                     if (foundLanguage != Sci.Language.NONE)
                     {
                         // Return language splitter
-                        if (languageSplitter.HasValue)
-                            languageSplitter = (ushort)(curChar | (curChar2 << 8));
+                        languageSplitter = (ushort)(curChar | (curChar2 << 8));
                         // Return the secondary language found in the string
-                        if (secondaryLanguage.HasValue)
-                            secondaryLanguage = foundLanguage;
+                        secondaryLanguage = foundLanguage;
                         break;
                     }
                 }
@@ -407,6 +420,8 @@ namespace NScumm.Sci
 
         public EventManager EventManager { get { return _eventMan; } }
 
+        public IMixer Mixer { get { return _mixer; } }
+
         public string WrapFilename(string name)
         {
             return FilePrefix + "-" + name;
@@ -481,7 +496,7 @@ namespace NScumm.Sci
 
             // Must be called after game_init(), as they use _features
             _kernel.LoadKernelNames(_features);
-            // TODO: _soundCmd = new SoundCommandParser(_resMan, segMan, _kernel, _audio, _features.detectDoSoundType());
+            _soundCmd = new SoundCommandParser(_mixer, _resMan, segMan, _kernel, _audio, _features.DetectDoSoundType());
 
             // TODO: SyncSoundSettings();
             // TODO: SyncIngameAudioOptions();
@@ -612,6 +627,46 @@ namespace NScumm.Sci
             // TODO: ConfMan.flushToDisk();
         }
 
+        public string StrSplit(string text, string sep = "\r----------\r")
+        {
+            ushort tmp;
+            return StrSplitLanguage(text, out tmp, sep);
+        }
+
+        /// <summary>
+        /// Processes a multilanguage string based on the current language settings and
+        /// returns a string that is ready to be displayed.
+        /// </summary>
+        /// <param name="str">the multilanguage string</param>
+        /// <param name="languageSplitter"></param>
+        /// <param name="sep">optional seperator between main language and subtitle language,if NULL is passed no subtitle will be added to the returned string</param>
+        /// <returns>processed string</returns>
+        private string StrSplitLanguage(string str, out ushort languageSplitter, string sep = "\r----------\r")
+        {
+            Language activeLanguage = GetSciLanguage();
+            Language subtitleLanguage = Sci.Language.NONE;
+
+            if (Selector(s => s.subtitleLang) != -1)
+                subtitleLanguage = (Language)ReadSelectorValue(_gamestate._segMan, _gameObjectAddress, Selector(s => s.subtitleLang));
+
+            Language foundLanguage;
+            string retval = GetSciLanguageString(str, activeLanguage, out foundLanguage, out languageSplitter);
+
+            // Don't add subtitle when separator is not set, subtitle language is not set, or
+            // string contains only one language
+            if ((sep == null) || (subtitleLanguage == Sci.Language.NONE) || (foundLanguage == Sci.Language.NONE))
+                return retval;
+
+            // Add subtitle, unless the subtitle language doesn't match the languages in the string
+            if ((subtitleLanguage == Sci.Language.ENGLISH) || (subtitleLanguage == foundLanguage))
+            {
+                retval += sep;
+                retval += GetSciLanguageString(str, subtitleLanguage);
+            }
+
+            return retval;
+        }
+
         private void RunGame()
         {
             // TODO: SetTotalPlayTime(0);
@@ -689,7 +744,7 @@ namespace NScumm.Sci
             _gamestate.stack_base[1] = Register.NULL_REG;
 
             // Register the first element on the execution stack
-            if (Vm.SendSelector(_gamestate, _gameObjectAddress, _gameObjectAddress, new StackPtr(_gamestate.stack_base), 2, new StackPtr(_gamestate.stack_base)) == null)
+            if (Vm.SendSelector(_gamestate, _gameObjectAddress, _gameObjectAddress, _gamestate.stack_base, 2, _gamestate.stack_base) == null)
             {
                 // TODO: _console.printObject(_gameObjectAddress);
                 // error("initStackBaseWithSelector: error while registering the first selector in the call stack");
@@ -845,7 +900,8 @@ namespace NScumm.Sci
             _gamestate.InitGlobals();
             _gamestate._segMan.InitSysStrings();
 
-            _gamestate.r_acc = _gamestate.r_prev = Register.NULL_REG;
+            _gamestate.r_acc = Register.Make(Register.NULL_REG);
+            _gamestate.r_prev = Register.Make(Register.NULL_REG);
 
             _gamestate._executionStack.Clear();    // Start without any execution stack
             _gamestate.executionStackBase = -1; // No vm is running yet
@@ -1050,7 +1106,7 @@ namespace NScumm.Sci
             WriteSelector(segMan, obj, selectorId, Register.Make(0, value));
         }
 
-        private static void WriteSelector(SegManager segMan, Register obj, int selectorId, Register value)
+        public static void WriteSelector(SegManager segMan, Register obj, int selectorId, Register value)
         {
             ObjVarRef address = new ObjVarRef();
 
@@ -1063,7 +1119,7 @@ namespace NScumm.Sci
             if (LookupSelector(segMan, obj, selectorId, address, out tmp) != SelectorType.Variable)
                 throw new InvalidOperationException($"Selector '{Instance._kernel.GetSelectorName(selectorId)}' of object at {obj} could not be written to");
             else
-                address.GetPointer(segMan).Set(value);
+                address.SetPointer(segMan, value);
         }
 
         event EventHandler IEngine.ShowMenuDialogRequested
@@ -1156,5 +1212,6 @@ namespace NScumm.Sci
         };
         private AudioPlayer _audio;
         private ISystem _system;
+        private Mixer _mixer;
     }
 }

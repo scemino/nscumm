@@ -773,7 +773,7 @@ namespace NScumm.Sci.Engine
         /// Gets a value indicationg whether the script is marked as being deleted.
         /// </summary>
         public bool IsMarkedAsDeleted { get; private set; }
-        
+
         /// <summary>
         /// Retrieves the number of exports of script.
         /// the number of exports of this script
@@ -857,6 +857,56 @@ namespace NScumm.Sci.Engine
 
                 return locals;
             }
+        }
+
+        public override List<Register> ListAllOutgoingReferences(Register addr)
+        {
+            List<Register> tmp = new List<Register>();
+            if (addr.Offset <= _bufSize && addr.Offset >= (uint)-SCRIPT_OBJECT_MAGIC_OFFSET && OffsetIsObject((int)addr.Offset))
+            {
+                SciObject obj = GetObject((ushort)addr.Offset);
+                if (obj != null)
+                {
+                    // Note all local variables, if we have a local variable environment
+                    if (_localsSegment != 0)
+                        tmp.Add(Register.Make(_localsSegment, 0));
+
+                    for (var i = 0; i < obj.VarCount; i++)
+                        tmp.Add(obj.GetVariable(i));
+                }
+                else {
+                    throw new InvalidOperationException("Request for outgoing script-object reference at {addr} failed");
+                }
+            }
+            else {
+                /*		warning("Unexpected request for outgoing script-object references at %04x:%04x", PRINT_REG(addr));*/
+                /* Happens e.g. when we're looking into strings */
+            }
+            return tmp;
+        }
+
+        public override List<Register> ListAllDeallocatable(ushort segId)
+        {
+            Register r = Register.Make(segId, 0);
+            return new List<Register> { r };
+        }
+
+        public override Register FindCanonicAddress(SegManager segMan, Register addr)
+        {
+            addr.SetOffset(0);
+            return addr;
+        }
+
+        public override void FreeAtAddress(SegManager segMan, Register addr)
+        {
+            /*
+		debugC(kDebugLevelGC, "[GC] Freeing script %04x:%04x", PRINT_REG(addr));
+		if (_localsSegment)
+			debugC(kDebugLevelGC, "[GC] Freeing locals %04x:0000", _localsSegment);
+	*/
+
+            if (_markedAsDeleted)
+                segMan.DeallocateScript(_nr);
         }
 
         internal ushort RelocateOffsetSci3(int v)

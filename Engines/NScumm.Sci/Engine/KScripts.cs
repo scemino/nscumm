@@ -149,6 +149,65 @@ namespace NScumm.Sci.Engine
             }
         }
 
+        private static Register kIsObject(EngineState s, int argc, StackPtr? argv)
+        {
+            if (argv.Value[0].Offset == Register.SIGNAL_OFFSET) // Treated specially
+                return Register.NULL_REG;
+            else
+                return Register.Make(0, s._segMan.IsHeapObject(argv.Value[0]));
+        }
+
+        private static Register kClone(EngineState s, int argc, StackPtr? argv)
+        {
+            Register parentAddr = argv.Value[0];
+            SciObject parentObj = s._segMan.GetObject(parentAddr);
+            Register cloneAddr;
+
+            if (parentObj == null)
+            {
+                throw new InvalidOperationException($"Attempt to clone non-object/class at {parentAddr} failed");
+            }
+
+            //debugC(kDebugLevelMemory, "Attempting to clone from %04x:%04x", PRINT_REG(parentAddr));
+
+            ushort infoSelector = (ushort)parentObj.InfoSelector.Offset;
+            var cloneObj = s._segMan.AllocateClone(out cloneAddr);
+
+            if (cloneObj.Item == null)
+            {
+                throw new InvalidOperationException($"Cloning {parentAddr} failed-- internal error");
+            }
+
+            // In case the parent object is a clone itself we need to refresh our
+            // pointer to it here. This is because calling allocateClone might
+            // invalidate all pointers, references and iterators to data in the clones
+            // segment.
+            //
+            // The reason why it might invalidate those is, that the segment code
+            // (Table) uses Common::Array for internal storage. Common::Array now
+            // might invalidate references to its contained data, when it has to
+            // extend the internal storage size.
+            if ((infoSelector & SciObject.InfoFlagClone)!=0)
+                parentObj = s._segMan.GetObject(parentAddr);
+
+            cloneObj.Item = parentObj;
+
+            // Mark as clone
+            unchecked
+            {
+                infoSelector &= (ushort)(~SciObject.InfoFlagClone); // remove class bit
+            }
+            cloneObj.Item.InfoSelector = Register.Make(0, (ushort)(infoSelector | SciObject.InfoFlagClone));
+
+            cloneObj.Item.SpeciesSelector = cloneObj.Item.Pos;
+            if (parentObj.IsClass)
+                cloneObj.Item.SuperClassSelector = parentObj.Pos;
+            s._segMan.GetScript(parentObj.Pos.Segment).IncrementLockers();
+            s._segMan.GetScript(cloneObj.Item.Pos.Segment).IncrementLockers();
+
+            return cloneAddr;
+        }
+
         internal void SignatureDebug(ushort[] signature, int argc, StackPtr? argv)
         {
             throw new NotImplementedException();

@@ -28,7 +28,7 @@ namespace NScumm.Sci.Engine
             string title = s._segMan.GetString(argv.Value[0]);
             string content = s._segMan.GetString(argv.Value[1]);
 
-            SciEngine.Instance._gfxMenu.KernelAddEntry(title, content, argv.Value[1]);
+            SciEngine.Instance._gfxMenu.KernelAddEntry(title, content, Register.Make(argv.Value[1]));
             return s.r_acc;
         }
 
@@ -47,6 +47,37 @@ namespace NScumm.Sci.Engine
                 value = (argPos + 1 < argc) ? argv.Value[argPos + 1] : Register.NULL_REG;
                 SciEngine.Instance._gfxMenu.KernelSetAttribute(menuId, itemId, attributeId, value);
                 argPos += 2;
+            }
+            return s.r_acc;
+        }
+
+        private static Register kDrawMenuBar(EngineState s, int argc, StackPtr? argv)
+        {
+            bool clear = argv.Value[0].IsNull ? true : false;
+
+            SciEngine.Instance._gfxMenu.KernelDrawMenuBar(clear);
+            return s.r_acc;
+        }
+
+        private static Register kDrawStatus(EngineState s, int argc, StackPtr? argv)
+        {
+            Register textReference = argv.Value[0];
+            string text;
+            short colorPen = (argc > 1) ? argv.Value[1].ToInt16() : (short)0;
+            short colorBack = (argc > 2) ? argv.Value[2].ToInt16() : SciEngine.Instance._gfxScreen.ColorWhite;
+
+            if (!textReference.IsNull)
+            {
+                // Sometimes this is called without giving text, if thats the case dont process it.
+                text = s._segMan.GetString(textReference);
+
+                if (text == "Replaying sound")
+                {
+                    // Happens in the fanmade game Cascade Quest when loading - ignore it
+                    return s.r_acc;
+                }
+
+                SciEngine.Instance._gfxMenu.KernelDrawStatus(SciEngine.Instance.StrSplit(text, null), colorPen, colorBack);
             }
             return s.r_acc;
         }

@@ -225,7 +225,7 @@ namespace NScumm.Sci.Engine
             var scr = GetScriptIfLoaded(segmentId);
             if (scr != null)
             {
-                if (scr.IsMarkedAsDeleted)
+                if (!scr.IsMarkedAsDeleted)
                 {
                     scr.IncrementLockers();
                     return segmentId;
@@ -278,6 +278,31 @@ namespace NScumm.Sci.Engine
                 scr.MarkDeleted();
                 // TODO: debugC(kDebugLevelScripts, "Unloaded script 0x%x.", script_nr);
             }
+        }
+
+        public SegmentObjTable<SciObject>.Entry AllocateClone(out Register addr)
+        {
+            CloneTable table;
+            int offset;
+
+            if (_clonesSegId==0)
+                table = (CloneTable)AllocSegment(new CloneTable(), ref _clonesSegId);
+            else
+                table = (CloneTable)_heap[_clonesSegId];
+
+            offset = table.AllocEntry();
+
+            addr = Register.Make(_clonesSegId, (ushort)offset);
+            return table._table[offset];
+        }
+
+        public bool IsHeapObject(Register pos)
+        {
+            SciObject obj = GetObject(pos);
+            if (obj == null || (obj != null && obj.IsFreed))
+                return false;
+            Script scr = GetScriptIfLoaded(pos.Segment);
+            return !(scr != null && scr.IsMarkedAsDeleted);
         }
 
         public Class GetClass(int i)
@@ -888,7 +913,7 @@ namespace NScumm.Sci.Engine
             }
             else {
                 // raw . non-raw
-                for (var i = 0; i < n; i++)
+                for (var i = 0; i < n && i < src.Length; i++)
                 {
                     SetChar(dest_r, (uint)i, (byte)src[i]);
                     if (src[i] == 0)
@@ -987,18 +1012,18 @@ namespace NScumm.Sci.Engine
             if (@ref.skipByte)
                 offset++;
 
-            Register val = @ref.reg + (int)offset / 2;
+            StackPtr val = @ref.reg + (int)offset / 2;
 
-            val.SetSegment(0);
+            val[0].SetSegment(0);
 
             bool oddOffset = (offset & 1) != 0;
             if (SciEngine.Instance.IsBE)
                 oddOffset = !oddOffset;
 
             if (oddOffset)
-                val.SetOffset((ushort)((val.Offset & 0x00ff) | (value << 8)));
+                val[0].SetOffset((ushort)((val[0].Offset & 0x00ff) | (value << 8)));
             else
-                val.SetOffset((ushort)((val.Offset & 0xff00) | value));
+                val[0].SetOffset((ushort)((val[0].Offset & 0xff00) | value));
         }
 
         public List AllocateList(out Register addr)
@@ -1099,6 +1124,11 @@ namespace NScumm.Sci.Engine
             }
 
             return nt._table[addr.Offset].Item;
+        }
+
+        internal void DeallocateScript(int _nr)
+        {
+            throw new NotImplementedException();
         }
 
         public Register NewNode(Register value, Register key)

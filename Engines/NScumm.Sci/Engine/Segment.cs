@@ -153,7 +153,7 @@ namespace NScumm.Sci.Engine
                 ret.skipByte = true;
             }
 
-            ret.reg = _entries[pointer.Offset / 2];
+            ret.reg = new StackPtr(_entries, (int)(pointer.Offset / 2));
             return ret;
         }
 
@@ -167,10 +167,6 @@ namespace NScumm.Sci.Engine
             var tmp = _entries.ToList();
             return tmp;
         }
-    }
-
-    internal class Clone : SciObject
-    {
     }
 
     // Free-style memory
@@ -294,11 +290,11 @@ namespace NScumm.Sci.Engine
         {
             entries_used = 0;
             first_free = HEAPENTRY_INVALID;
-            Array.Clear(_table, 0, _table.Length);
+            _table = new Entry[0];
         }
     }
 
-    internal class CloneTable : SegmentObjTable<Clone>
+    internal class CloneTable : SegmentObjTable<SciObject>
     {
         public CloneTable()
             : base(SegmentType.CLONES)
@@ -333,7 +329,7 @@ namespace NScumm.Sci.Engine
                 throw new InvalidOperationException($"Unexpected request for outgoing references from clone at {addr}");
             }
 
-            Clone clone = _table[addr.Offset].Item;
+            var clone = _table[addr.Offset].Item;
 
             // Emit all member variables (including references to the 'super' delegate)
             for (var i = 0; i < clone.VarCount; i++)
@@ -487,7 +483,7 @@ namespace NScumm.Sci.Engine
 
             if (ret.maxSize > 0)
             {
-                ret.reg = _locals[pointer.Offset / 2];
+                ret.reg = new StackPtr(_locals, (int)(pointer.Offset / 2));
             }
             else {
                 if ((SciEngine.Instance.EngineState.CurrentRoomNumber == 160 ||
@@ -504,7 +500,7 @@ namespace NScumm.Sci.Engine
                 else {
                     throw new System.InvalidOperationException($"LocalVariables::dereference: Offset at end or out of bounds {pointer}");
                 }
-                ret.reg = Register.NULL_REG;
+                ret.reg = new StackPtr();
             }
             return ret;
         }
@@ -534,7 +530,7 @@ namespace NScumm.Sci.Engine
         /// number of available bytes
         /// </summary>
         public int maxSize;
-        public Register reg;
+        public StackPtr reg;
         // FIXME: Perhaps a generic 'offset' is more appropriate here
         /// <summary>
         /// true if referencing the 2nd data byte of *reg, false otherwise
@@ -550,7 +546,7 @@ namespace NScumm.Sci.Engine
 
         public bool IsValid
         {
-            get { return (isRaw ? raw != null : !reg.IsNull); }
+            get { return (isRaw ? raw != null : !reg[0].IsNull); }
         }
     }
 }

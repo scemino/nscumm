@@ -147,8 +147,6 @@ namespace NScumm.Sci.Engine
                 default:
                     throw new InvalidOperationException($"Unknown MemoryInfo operation: {argv.Value[0].Offset:X4}");
             }
-
-            return Register.NULL_REG;
         }
 
         private static Register kStub(EngineState s, int argc, StackPtr? argv)

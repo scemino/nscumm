@@ -405,5 +405,69 @@ namespace NScumm.Sci.Graphics
         {
             return _itemList.FirstOrDefault(m => m.menuId == menuId && m.id == itemId);
         }
+
+        public void KernelDrawMenuBar(bool clear)
+        {
+            if (!clear)
+            {
+                Port oldPort = _ports.SetPort(_ports._menuPort);
+                CalculateMenuWidth();
+                DrawBar();
+                _paint16.BitsShow(_ports._menuBarRect);
+                _ports.SetPort(oldPort);
+            }
+            else {
+                KernelDrawStatus("", 0, 0);
+            }
+        }
+
+        public void KernelDrawStatus(string text, short colorPen, short colorBack)
+        {
+            Port oldPort = _ports.SetPort(_ports._menuPort);
+
+            _paint16.FillRect(_ports._menuBarRect, GfxScreenMasks.VISUAL, (byte)colorBack);
+            _ports.PenColor(colorPen);
+            _ports.MoveTo(0, 1);
+            _text16.DrawStatus(text);
+            _paint16.BitsShow(_ports._menuBarRect);
+            // Also draw the line under the status bar. Normally, this is never drawn,
+            // but we need it to be drawn because Dr. Brain 1 Mac draws over it when
+            // it displays the icon bar. SSCI used negative rectangles to erase the
+            // area after drawing the icon bar, but this is a much cleaner way of
+            // achieving the same effect.
+            _paint16.FillRect(_ports._menuLine, GfxScreenMasks.VISUAL, 0);
+            _paint16.BitsShow(_ports._menuLine);
+            _ports.SetPort(oldPort);
+        }
+
+        private void DrawBar()
+        {
+            // Hardcoded black on white and a black line afterwards
+            _paint16.FillRect(_ports._menuBarRect, GfxScreenMasks.VISUAL, _screen.ColorWhite);
+            _paint16.FillRect(_ports._menuLine, GfxScreenMasks.VISUAL, 0);
+            _ports.PenColor(0);
+            _ports.MoveTo(8, 1);
+
+            for (int i = 0; i < _list.Count; i++)
+            {
+                var listEntry = _list[i];
+                _text16.DrawString(listEntry.textSplit);
+            }
+        }
+
+        /// <summary>
+        /// This helper calculates all text widths for all menus (only)
+        /// </summary>
+        private void CalculateMenuWidth()
+        {
+            short dummyHeight;
+
+            for (int i = 0; i < _list.Count; i++)
+            {
+                var menuEntry = _list[i];
+                menuEntry.textSplit = SciEngine.Instance.StrSplit(menuEntry.text, null);
+                _text16.StringWidth(menuEntry.textSplit, 0, out menuEntry.textWidth, out dummyHeight);
+            }
+        }
     }
 }

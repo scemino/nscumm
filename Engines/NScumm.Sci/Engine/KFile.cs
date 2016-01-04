@@ -282,34 +282,33 @@ namespace NScumm.Sci.Engine
 
         private static Register kFileIOClose(EngineState s, int argc, StackPtr? argv)
         {
-            throw new NotImplementedException();
-            //            debugC(kDebugLevelFile, "kFileIO(close): %d", argv[0].toUint16());
+            // TODO: debugC(kDebugLevelFile, "kFileIO(close): %d", argv[0].toUint16());
 
-            //            if (argv[0] == SIGNAL_REG)
-            //                return s.r_acc;
+            if (argv.Value[0] == Register.SIGNAL_REG)
+                return s.r_acc;
 
-            //            uint16 handle = argv[0].toUint16();
+            ushort handle = argv.Value[0].ToUInt16();
 
-            //# if ENABLE_SCI32
-            //            if (handle == VIRTUALFILE_HANDLE)
-            //            {
-            //                s._virtualIndexFile.close();
-            //                return SIGNAL_REG;
-            //            }
-            //#endif
+#if ENABLE_SCI32
+                        if (handle == VIRTUALFILE_HANDLE)
+                        {
+                            s._virtualIndexFile.close();
+                            return SIGNAL_REG;
+                        }
+#endif
 
-            //            FileHandle* f = getFileFromHandle(s, handle);
-            //            if (f)
-            //            {
-            //                f.close();
-            //                if (getSciVersion() <= SCI_VERSION_0_LATE)
-            //                    return s.r_acc;    // SCI0 semantics: no value returned
-            //                return SIGNAL_REG;
-            //            }
+            FileHandle f = GetFileFromHandle(s, handle);
+            if (f!=null)
+            {
+                f.Close();
+                if (ResourceManager.GetSciVersion() <= SciVersion.V0_LATE)
+                    return s.r_acc;    // SCI0 semantics: no value returned
+                return Register.SIGNAL_REG;
+            }
 
-            //            if (getSciVersion() <= SCI_VERSION_0_LATE)
-            //                return s.r_acc;    // SCI0 semantics: no value returned
-            //            return NULL_REG;
+            if (ResourceManager.GetSciVersion() <= SciVersion.V0_LATE)
+                return s.r_acc;    // SCI0 semantics: no value returned
+            return Register.NULL_REG;
         }
 
         private static Register kFileIOReadRaw(EngineState s, int argc, StackPtr? argv)

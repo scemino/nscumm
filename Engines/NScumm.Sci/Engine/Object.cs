@@ -94,6 +94,8 @@ namespace NScumm.Sci.Engine
 
         public bool IsClass { get { return (GetInfoSelector().Offset & InfoFlagClass) != 0; } }
 
+        public bool IsFreed { get { return (_flags & OBJECT_FLAG_FREED) != 0; } }
+
         public int VarCount { get { return _variables.Length; } }
 
         public SciObject()
@@ -111,6 +113,11 @@ namespace NScumm.Sci.Engine
         public Register GetVariableRef(int var)
         {
             return _variables[var];
+        }
+
+        public void SetVariableRef(int var, Register value)
+        {
+            _variables[var] = value;
         }
 
         public Register GetNameSelector()
@@ -186,6 +193,13 @@ namespace NScumm.Sci.Engine
                     return _variables[_offset + 2];
                 else    // SCI3
                     return _infoSelectorSci3;
+            }
+            set
+            {
+                if (ResourceManager.GetSciVersion() <= SciVersion.V2_1)
+                    _variables[_offset + 2] = value;
+                else    // SCI3
+                    _infoSelectorSci3 = value;
             }
         }
 

@@ -264,17 +264,23 @@ namespace NScumm.Sci.Engine
 	        new SciWorkaroundEntry { gameId = SciGameId.QFG4,      roomNr =         -1, scriptNr = 64989, inheritanceLevel =  0, objectName =          "longSong", methodName = "fade",  localCallOffset =        -1, index =    0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.STILLCALL, value = 0 } }, // CD version: many places, parameter 4 is an object (longSong)
 	        new SciWorkaroundEntry { gameId = SciGameId.SQ5,       roomNr =        800, scriptNr =   989, inheritanceLevel =  0, objectName =         "sq5Music1", methodName = "fade",  localCallOffset =        -1, index =    0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.STILLCALL, value = 0 } }, // when cutting the wrong part of Goliath with the laser - bug #6341
         };
-        internal static readonly SciWorkaroundEntry[] kFindKey_workarounds =
+        public static readonly SciWorkaroundEntry[] kFindKey_workarounds =
         {
             new SciWorkaroundEntry { gameId = SciGameId.ECOQUEST2, roomNr =     100, scriptNr =  999, inheritanceLevel = 0, objectName =           "myList", methodName = "contains", localCallOffset =       -1, index =   0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.FAKE, value = 0 } }, // When Noah Greene gives Adam the Ecorder, and just before the game gives a demonstration, a null reference to a list is passed - bug #4987
 	        new SciWorkaroundEntry { gameId = SciGameId.HOYLE4,    roomNr =     300, scriptNr =  999, inheritanceLevel = 0, objectName =            "Piles", methodName = "contains", localCallOffset =       -1, index =   0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.FAKE, value = 0 } }, // When passing the three cards in Hearts, a null reference to a list is passed - bug #5664
         };
-        internal static readonly SciWorkaroundEntry[] kDisposeScript_workarounds =
+        public static readonly SciWorkaroundEntry[] kDisposeScript_workarounds =
         {
             new SciWorkaroundEntry { gameId = SciGameId.LAURABOW, roomNr =     777, scriptNr =  777, inheritanceLevel = 0, objectName =             "myStab", methodName = "changeState", localCallOffset =   -1, index =   0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.IGNORE, value = 0 } }, // DEMO: after the will is signed, parameter 0 is an object - bug #4967
 	        new SciWorkaroundEntry { gameId = SciGameId.QFG1,     roomNr =      -1, scriptNr =   64, inheritanceLevel = 0, objectName =              "rm64", methodName = "dispose",      localCallOffset =   -1, index =   0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.IGNORE, value = 0 } }, // when leaving graveyard, parameter 0 is an object
 	        new SciWorkaroundEntry { gameId = SciGameId.SQ4,      roomNr =     150, scriptNr =  151, inheritanceLevel = 0, objectName =       "fightScript", methodName = "dispose",      localCallOffset =   -1, index =   0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.IGNORE, value = 0 } }, // during fight with Vohaul, parameter 0 is an object
 	        new SciWorkaroundEntry { gameId = SciGameId.SQ4,      roomNr =     150, scriptNr =  152, inheritanceLevel = 0, objectName =      "driveCloseUp", methodName = "dispose",      localCallOffset =   -1, index =   0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.IGNORE, value = 0 } }, // when choosing "beam download", parameter 0 is an object
+        };
+        public static readonly SciWorkaroundEntry[] kIsObject_workarounds =
+        {
+            new SciWorkaroundEntry { gameId = SciGameId.GK1,         roomNr =  50, scriptNr =  999, inheritanceLevel = 0, objectName =               "List", methodName = "eachElementDo", localCallOffset = -1, index =   0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.FAKE, value = 0 } }, // GK1 demo, when asking Grace for messages it gets called with an invalid parameter (type "error") - bug #4950
+	        new SciWorkaroundEntry { gameId = SciGameId.ISLANDBRAIN, roomNr =  -1, scriptNr =  999, inheritanceLevel = 0, objectName =               "List", methodName = "eachElementDo", localCallOffset = -1, index =   0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.FAKE, value = 0 } }, // when going to the game options, choosing "Info" and selecting anything from the list, gets called with an invalid parameter (type "error") - bug #4989
+	        new SciWorkaroundEntry { gameId = SciGameId.QFG3,        roomNr =  -1, scriptNr =  999, inheritanceLevel = 0, objectName =               "List", methodName = "eachElementDo", localCallOffset = -1, index =   0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.FAKE, value = 0 } }, // when asking for something, gets called with type error parameter
         };
     }
 }

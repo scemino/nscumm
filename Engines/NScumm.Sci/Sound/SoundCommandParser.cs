@@ -88,6 +88,86 @@ namespace NScumm.Sci.Sound
             ProcessInitSound(argv.Value[0]);
         }
 
+        public void kDoSoundPlay(int argc, StackPtr? argv)
+        {
+            // TODO: debugC(kDebugLevelSound, "kDoSound(play): %04x:%04x", PRINT_REG(argv[0]));
+
+            bool playBed = false;
+            if (argc >= 2 && !argv.Value[1].IsNull)
+                playBed = true;
+            ProcessPlaySound(argv.Value[0], playBed);
+        }
+
+        private void ProcessPlaySound(Register obj, bool playBed)
+        {
+            MusicEntry musicSlot = _music.GetSlot(obj);
+            if (musicSlot == null)
+            {
+                // TODO: warning("kDoSound(play): Slot not found (%04x:%04x), initializing it manually", PRINT_REG(obj));
+                // The sound hasn't been initialized for some reason, so initialize it
+                // here. Happens in KQ6, room 460, when giving the creature (child) to
+                // the bookworm. Fixes bugs #3413301 and #3421098.
+                ProcessInitSound(obj);
+                musicSlot = _music.GetSlot(obj);
+                if (musicSlot == null)
+                    throw new InvalidOperationException("Failed to initialize uninitialized sound slot");
+            }
+
+            int resourceId = GetSoundResourceId(obj);
+
+            if (musicSlot.resourceId != resourceId)
+            { // another sound loaded into struct
+                ProcessDisposeSound(obj);
+                ProcessInitSound(obj);
+                // Find slot again :)
+                musicSlot = _music.GetSlot(obj);
+            }
+
+            SciEngine.WriteSelector(_segMan, obj, s => s.handle, obj);
+
+            if (_soundVersion >= SciVersion.V1_EARLY)
+            {
+                SciEngine.WriteSelector(_segMan, obj, s => s.nodePtr, obj);
+                SciEngine.WriteSelectorValue(_segMan, obj, s => s.min, 0);
+                SciEngine.WriteSelectorValue(_segMan, obj, s => s.sec, 0);
+                SciEngine.WriteSelectorValue(_segMan, obj, s => s.frame, 0);
+                SciEngine.WriteSelectorValue(_segMan, obj, s => s.signal, 0);
+            }
+            else {
+                SciEngine.WriteSelectorValue(_segMan, obj, s => s.state, (ushort)SoundStatus.Playing);
+            }
+
+            musicSlot.loop = (ushort)SciEngine.ReadSelectorValue(_segMan, obj, s => s.loop);
+
+            // Get song priority from either obj or soundRes
+            byte resourcePriority = 0xFF;
+            if (musicSlot.soundRes != null)
+                resourcePriority = musicSlot.soundRes.SoundPriority;
+            if (!musicSlot.overridePriority && resourcePriority != 0xFF)
+            {
+                musicSlot.priority = resourcePriority;
+            }
+            else {
+                musicSlot.priority = (short)SciEngine.ReadSelectorValue(_segMan, obj, s => s.priority);
+            }
+
+            // Reset hold when starting a new song. kDoSoundSetHold is always called after
+            // kDoSoundPlay to set it properly, if needed. Fixes bug #3413589.
+            musicSlot.hold = -1;
+            musicSlot.playBed = playBed;
+            if (_soundVersion >= SciVersion.V1_EARLY)
+                musicSlot.volume = (short)SciEngine.ReadSelectorValue(_segMan, obj, s => s.vol);
+
+            // TODO: debugC(kDebugLevelSound, "kDoSound(play): %04x:%04x number %d, loop %d, prio %d, vol %d, bed %d", PRINT_REG(obj),
+            //        resourceId, musicSlot.loop, musicSlot.priority, musicSlot.volume, playBed ? 1 : 0);
+
+            _music.SoundPlay(musicSlot);
+
+            // Reset any left-over signals
+            musicSlot.signal = 0;
+            musicSlot.fadeStep = 0;
+        }
+
         private int GetSoundResourceId(Register obj)
         {
             int resourceId = obj.Segment != 0 ? (int)SciEngine.ReadSelectorValue(_segMan, obj, SciEngine.Selector(s => s.number)) : -1;
@@ -142,6 +222,11 @@ namespace NScumm.Sci.Sound
             }
         }
 
+        public void PauseAll(bool pause)
+        {
+            _music.PauseAll(pause);
+        }
+
         private void InitSoundResource(MusicEntry newSound)
         {
             if (newSound.resourceId != 0 && _resMan.TestResource(new ResourceId(ResourceType.Sound, newSound.resourceId)) != null)
@@ -177,7 +262,91 @@ namespace NScumm.Sci.Sound
 
         private void ProcessDisposeSound(Register obj)
         {
-            throw new NotImplementedException();
+            MusicEntry musicSlot = _music.GetSlot(obj);
+            if (musicSlot == null)
+            {
+                // TODO: warning("kDoSound(dispose): Slot not found (%04x:%04x)", PRINT_REG(obj));
+                return;
+            }
+
+            ProcessStopSound(obj, false);
+
+            _music.SoundKill(musicSlot);
+            SciEngine.WriteSelectorValue(_segMan, obj, SciEngine.Selector(s => s.handle), 0);
+            if (_soundVersion >= SciVersion.V1_EARLY)
+                SciEngine.WriteSelector(_segMan, obj, SciEngine.Selector(s => s.nodePtr), Register.NULL_REG);
+            else
+                SciEngine.WriteSelectorValue(_segMan, obj, SciEngine.Selector(s => s.state), (ushort)SoundStatus.Stopped);
+        }
+
+        private void ProcessStopSound(Register obj, bool sampleFinishedPlaying)
+        {
+            MusicEntry musicSlot = _music.GetSlot(obj);
+            if (musicSlot == null)
+            {
+                // TODO: warning("kDoSound(stop): Slot not found (%04x:%04x)", PRINT_REG(obj));
+                return;
+            }
+
+            if (_soundVersion <= SciVersion.V0_LATE)
+            {
+                SciEngine.WriteSelectorValue(_segMan, obj, SciEngine.Selector(s => s.state), (ushort)SoundStatus.Stopped);
+            }
+            else {
+                SciEngine.WriteSelectorValue(_segMan, obj, SciEngine.Selector(s => s.handle), 0);
+            }
+
+            // Set signal selector in sound SCI0 games only, when the sample has
+            // finished playing. If we don't set it at all, we get a problem when using
+            // vaporizer on the 2 guys. If we set it all the time, we get no music in
+            // sq3new and kq1.
+            // FIXME: This *may* be wrong, it's impossible to find out in Sierra DOS
+            //        SCI, because SCI0 under DOS didn't have sfx drivers included.
+            // We need to set signal in sound SCI1+ games all the time.
+            if ((_soundVersion > SciVersion.V0_LATE) || sampleFinishedPlaying)
+                SciEngine.WriteSelectorValue(_segMan, obj, SciEngine.Selector(s => s.signal), Register.SIGNAL_OFFSET);
+
+            musicSlot.dataInc = 0;
+            musicSlot.signal = Register.SIGNAL_OFFSET;
+            _music.SoundStop(musicSlot);
+        }
+
+        public void UpdateSci0Cues()
+        {
+            bool noOnePlaying = true;
+            MusicEntry pWaitingForPlay = null;
+
+            foreach (var i in _music.PlayList)
+            {
+                // Is the sound stopped, and the sound object updated too? If yes, skip
+                // this sound, as SCI0 only allows one active song.
+                if (i.isQueued)
+                {
+                    pWaitingForPlay = i;
+                    // FIXME(?): In iceman 2 songs are queued when playing the door
+                    // sound - if we use the first song for resuming then it's the wrong
+                    // one. Both songs have same priority. Maybe the new sound function
+                    // in sci0 is somehow responsible.
+                    continue;
+                }
+                if (i.signal == 0 && i.status != SoundStatus.Playing)
+                    continue;
+
+                ProcessUpdateCues(i.soundObj);
+                noOnePlaying = false;
+            }
+
+            if (noOnePlaying && pWaitingForPlay != null)
+            {
+                // If there is a queued entry, play it now - check SciMusic::soundPlay()
+                pWaitingForPlay.isQueued = false;
+                _music.SoundPlay(pWaitingForPlay);
+            }
+        }
+
+        private void ProcessUpdateCues(Register soundObj)
+        {
+            // TODO: ProcessUpdateCues
         }
     }
 }

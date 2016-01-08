@@ -246,6 +246,11 @@ namespace NScumm.Sci.Engine
             return segmentId;
         }
 
+        public ByteAccess DerefBulkPtr(Register pointer, int entries)
+        {
+            return (ByteAccess)DerefPtr(this, pointer, entries, true);
+        }
+
         public void UninstantiateScript(int script_nr)
         {
             ushort segmentId = GetScriptSegment(script_nr);
@@ -285,7 +290,7 @@ namespace NScumm.Sci.Engine
             CloneTable table;
             int offset;
 
-            if (_clonesSegId==0)
+            if (_clonesSegId == 0)
                 table = (CloneTable)AllocSegment(new CloneTable(), ref _clonesSegId);
             else
                 table = (CloneTable)_heap[_clonesSegId];
@@ -449,6 +454,11 @@ namespace NScumm.Sci.Engine
             _classTable[index].reg = offset;
         }
 
+        public StackPtr DerefRegPtr(Register pointer, int entries)
+        {
+            return (StackPtr)DerefPtr(this, pointer, 2 * entries, false);
+        }
+
         public Register GetClassAddress(ushort classnr, ScriptLoadType loadType, ushort callerSegment)
         {
             if (classnr == 0xffff)
@@ -477,7 +487,7 @@ namespace NScumm.Sci.Engine
             }
         }
 
-        private byte[] AllocDynmem(int size, string descr, out Register addr)
+        public byte[] AllocDynmem(int size, string descr, out Register addr)
         {
             ushort seg = 0;
             SegmentObj mobj = AllocSegment(new DynMem(), ref seg);
@@ -989,22 +999,21 @@ namespace NScumm.Sci.Engine
             if (@ref.skipByte)
                 offset++;
 
-            throw new NotImplementedException();
-            //Register val = @ref.reg[offset / 2];
+            Register val = @ref.reg[offset / 2];
 
-            //// segment 0xFFFF means that the scripts are using uninitialized temp-variable space
-            ////  we can safely ignore this, if it isn't one of the first 2 chars.
-            ////  foreign lsl3 uses kFileIO(readraw) and then immediately uses kReadNumber right at the start
-            //// TODO: 
-            ////if (val.Segment != 0)
-            ////    if (!((val.Segment == 0xFFFF) && (offset > 1)))
-            ////        warning("Attempt to read character from non-raw data");
+            // segment 0xFFFF means that the scripts are using uninitialized temp-variable space
+            //  we can safely ignore this, if it isn't one of the first 2 chars.
+            //  foreign lsl3 uses kFileIO(readraw) and then immediately uses kReadNumber right at the start
+            // TODO: warning
+            //if (val.Segment != 0)
+            //    if (!((val.Segment == 0xFFFF) && (offset > 1)))
+            //        warning("Attempt to read character from non-raw data");
 
-            //bool oddOffset = (offset & 1) != 0;
-            //if (SciEngine.Instance.IsBE)
-            //    oddOffset = !oddOffset;
+            bool oddOffset = (offset & 1) != 0;
+            if (SciEngine.Instance.IsBE)
+                oddOffset = !oddOffset;
 
-            //return (char)(oddOffset ? val.Offset >> 8 : val.Offset & 0xff);
+            return (char)(oddOffset ? val.Offset >> 8 : val.Offset & 0xff);
         }
 
         private static void SetChar(SegmentRef @ref, uint offset, byte value)
@@ -1039,6 +1048,30 @@ namespace NScumm.Sci.Engine
 
             addr = Register.Make(_listsSegId, (ushort)offset);
             return table._table[offset].Item;
+        }
+
+        public int Strlen(Register str)
+        {
+            if (str.IsNull)
+                return 0;   // empty text
+
+            SegmentRef str_r = Dereference(str);
+            if (!str_r.IsValid)
+            {
+                // TODO: warning("Attempt to call strlen on invalid pointer %04x:%04x", PRINT_REG(str));
+                return 0;
+            }
+
+            if (str_r.isRaw)
+            {
+                return ScummHelper.GetTextLength(str_r.raw.Data, str_r.raw.Offset);
+            }
+            else {
+                int i = 0;
+                while (GetChar(str_r, i) != 0)
+                    i++;
+                return i;
+            }
         }
 
         /// <summary>
@@ -1126,9 +1159,39 @@ namespace NScumm.Sci.Engine
             return nt._table[addr.Offset].Item;
         }
 
-        internal void DeallocateScript(int _nr)
+        public void DeallocateScript(int script_nr)
         {
-            throw new NotImplementedException();
+            Deallocate(GetScriptSegment(script_nr));
+        }
+
+        private void Deallocate(ushort seg)
+        {
+            if (seg < 1 || seg >= _heap.Count)
+                throw new ArgumentOutOfRangeException("seg", "Attempt to deallocate an invalid segment ID");
+
+            SegmentObj mobj = _heap[seg];
+            if (mobj == null)
+                throw new InvalidOperationException("Attempt to deallocate an already freed segment");
+
+            if (mobj.Type == SegmentType.SCRIPT)
+            {
+                Script scr = (Script)mobj;
+                _scriptSegMap.Remove(scr.ScriptNumber);
+                if (scr.LocalsSegment != 0)
+                {
+                    // Check if the locals segment has already been deallocated.
+                    // If the locals block has been stored in a segment with an ID
+                    // smaller than the segment ID of the script itself, it will be
+                    // already freed at this point. This can happen when scripts are
+                    // uninstantiated and instantiated again: they retain their own
+                    // segment ID, but are allocated a new locals segment, which can
+                    // have an ID smaller than the segment of the script itself.
+                    if (_heap[scr.LocalsSegment] != null)
+                        Deallocate(scr.LocalsSegment);
+                }
+            }
+
+            _heap[seg] = null;
         }
 
         public Register NewNode(Register value, Register key)

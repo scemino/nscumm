@@ -16,6 +16,8 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using System;
+
 namespace NScumm.Sci.Engine
 {
     enum SciWorkaroundType
@@ -192,6 +194,11 @@ namespace NScumm.Sci.Engine
 	        new SciWorkaroundEntry { gameId = SciGameId.QFG4,          roomNr = 710,scriptNr =64941,  inheritanceLevel =0,  objectName=        "RandCycle",methodName= "doit",       localCallOffset=    -1,index=    0,newValue = new SciWorkaroundSolution{ type = SciWorkaroundType.FAKE, value =   1 } }, // op_gt: when the tentacle appears in the third room of the caves
         };
 
+        internal static SciWorkaroundSolution TrackOriginAndFindWorkaround(int v, object kDisplay_workarounds, out SciTrackOriginReply originReply)
+        {
+            throw new NotImplementedException();
+        }
+
         public static readonly SciWorkaroundEntry[] kGraphDrawLine_workarounds = {
             new SciWorkaroundEntry { gameId = SciGameId.ISLANDBRAIN,roomNr =   300, scriptNr =   300, inheritanceLevel = 0, objectName =   "dudeViewer", methodName = "show",        localCallOffset =   -1, index =   0, newValue = new SciWorkaroundSolution{ type = SciWorkaroundType.STILLCALL, value = 0 } }, // when looking at the gene explanation chart, gets called with 1 extra parameter
 	        new SciWorkaroundEntry { gameId = SciGameId.SQ1,        roomNr =    43, scriptNr =    43, inheritanceLevel = 0, objectName =  "someoneDied", methodName = "changeState", localCallOffset =   -1, index =   0, newValue = new SciWorkaroundSolution{ type = SciWorkaroundType.STILLCALL, value = 0 } }, // when ordering beer, gets called with 1 extra parameter
@@ -291,6 +298,49 @@ namespace NScumm.Sci.Engine
         public static readonly SciWorkaroundEntry[] kDirLoop_workarounds =
         {
             new SciWorkaroundEntry { gameId = SciGameId.KQ4,      roomNr =    4, scriptNr =  992, inheritanceLevel = 0,   objectName =        "Avoid", methodName = "doit",         localCallOffset  = -1,  index =  0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.IGNORE,      value = 0 } }, // when the ogre catches you in front of his house, second parameter points to the same object as the first parameter, instead of being an integer (the angle) - bug #5217
+        };
+        public static readonly SciWorkaroundEntry[] kDeleteKey_workarounds =
+        {
+            new SciWorkaroundEntry { gameId = SciGameId.HOYLE4,    roomNr = 300,  scriptNr = 999, inheritanceLevel =  0, objectName = "handleEventList", methodName = "delete",   localCallOffset  =     -1, index =   0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.IGNORE, value = 0 } }, // restarting hearts, while tray is shown - bug #6604
+	        new SciWorkaroundEntry { gameId = SciGameId.HOYLE4,    roomNr = 500,  scriptNr = 999, inheritanceLevel =  0, objectName = "handleEventList", methodName = "delete",   localCallOffset  =     -1, index =   0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.IGNORE, value = 0 } }, // restarting cribbage, while tray is shown - bug #6604
+	        new SciWorkaroundEntry { gameId = SciGameId.HOYLE4,    roomNr = 975,  scriptNr = 999, inheritanceLevel =  0, objectName = "handleEventList", methodName = "delete",   localCallOffset  =     -1, index =   0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.IGNORE, value = 0 } }, // going back to gamelist from hearts/cribbage, while tray is shown - bug #6604
+        };
+        public static readonly SciWorkaroundEntry[] kDisplay_workarounds =
+        {
+            new SciWorkaroundEntry { gameId = SciGameId.ISLANDBRAIN,  roomNr =  300, scriptNr =  300, inheritanceLevel = 0, objectName =   "geneDude", methodName = "show",        localCallOffset  =    -1, index = 0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.IGNORE, value = 0 } }, // when looking at the gene explanation chart - a parameter is an object
+	        new SciWorkaroundEntry { gameId = SciGameId.PQ2,          roomNr =   23, scriptNr =   23, inheritanceLevel = 0, objectName = "rm23Script", methodName = "elements",    localCallOffset  = 0x4ae, index = 0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.IGNORE, value = 0 } }, // when looking at the 2nd page of pate's file - 0x75 as id
+	        new SciWorkaroundEntry { gameId = SciGameId.PQ2,          roomNr =   23, scriptNr =   23, inheritanceLevel = 0, objectName = "rm23Script", methodName = "elements",    localCallOffset  = 0x4c1, index = 0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.IGNORE, value = 0 } }, // when looking at the 2nd page of pate's file - 0x75 as id (another pq2 version, bug #5223)
+	        new SciWorkaroundEntry { gameId = SciGameId.QFG1,         roomNr =   11, scriptNr =   11, inheritanceLevel = 0, objectName =     "battle", methodName = "<noname90>",  localCallOffset  =    -1, index = 0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.IGNORE, value = 0 } }, // DEMO: When entering battle, 0x75 as id
+	        new SciWorkaroundEntry { gameId = SciGameId.SQ4,          roomNr =  397, scriptNr =    0, inheritanceLevel = 0, objectName =           "", methodName = "export 12",   localCallOffset  =    -1, index = 0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.IGNORE, value = 0 } }, // FLOPPY: when going into the computer store - bug #5227
+	        new SciWorkaroundEntry { gameId = SciGameId.SQ4,          roomNr =  391, scriptNr =  391, inheritanceLevel = 0, objectName =  "doCatalog", methodName = "mode",        localCallOffset  =  0x84, index = 0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.IGNORE, value = 0 } }, // CD: clicking on catalog in roboter sale - a parameter is an object
+	        new SciWorkaroundEntry { gameId = SciGameId.SQ4,          roomNr =  391, scriptNr =  391, inheritanceLevel = 0, objectName = "choosePlug", methodName = "changeState", localCallOffset  =    -1, index = 0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.IGNORE, value = 0 } }, // CD: ordering connector in roboter sale - a parameter is an object
+        };
+        public static readonly SciWorkaroundEntry[] kCelWide_workarounds =
+        {
+            new SciWorkaroundEntry { gameId = SciGameId.KQ5,     roomNr = -1, scriptNr = 255, inheritanceLevel = 0, objectName = "deathIcon", methodName = "setSize", localCallOffset = -1, index = 0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.STILLCALL, value = 0 } }, // english floppy: when getting beaten up in the inn and probably more, called with 2nd parameter as object - bug #5049
+	        new SciWorkaroundEntry { gameId = SciGameId.PQ2,     roomNr = -1, scriptNr = 255, inheritanceLevel = 0, objectName =     "DIcon", methodName = "setSize", localCallOffset = -1, index = 0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.STILLCALL, value = 0 } }, // when showing picture within windows, called with 2nd/3rd parameters as objects
+	        new SciWorkaroundEntry { gameId = SciGameId.SQ1,     roomNr =  1, scriptNr = 255, inheritanceLevel = 0, objectName =     "DIcon", methodName = "setSize", localCallOffset = -1, index = 0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.STILLCALL, value = 0 } }, // DEMO: Called with 2nd/3rd parameters as objects when clicking on the menu - bug #5012
+	        new SciWorkaroundEntry { gameId = SciGameId.FANMADE, roomNr = -1, scriptNr = 979, inheritanceLevel = 0, objectName =     "DIcon", methodName = "setSize", localCallOffset = -1, index = 0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.STILLCALL, value = 0 } }, // In The Gem Scenario and perhaps other fanmade games, this is called with 2nd/3rd parameters as objects - bug #5144
+        };
+        public static readonly SciWorkaroundEntry[] kCelHigh_workarounds =
+        {
+            new SciWorkaroundEntry { gameId = SciGameId.KQ5,     roomNr = -1, scriptNr = 255, inheritanceLevel = 0, objectName = "deathIcon", methodName = "setSize", localCallOffset = -1, index = 0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.STILLCALL, value = 0 } }, // english floppy: when getting beaten up in the inn and probably more, called with 2nd parameter as object - bug #5049
+	        new SciWorkaroundEntry { gameId = SciGameId.PQ2,     roomNr = -1, scriptNr = 255, inheritanceLevel = 0, objectName =     "DIcon", methodName = "setSize", localCallOffset = -1, index = 0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.STILLCALL, value = 0 } }, // when showing picture within windows, called with 2nd/3rd parameters as objects
+	        new SciWorkaroundEntry { gameId = SciGameId.SQ1,     roomNr =  1, scriptNr = 255, inheritanceLevel = 0, objectName =     "DIcon", methodName = "setSize", localCallOffset = -1, index = 0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.STILLCALL, value = 0 } }, // DEMO: Called with 2nd/3rd parameters as objects when clicking on the menu - bug #5012
+	        new SciWorkaroundEntry { gameId = SciGameId.FANMADE, roomNr = -1, scriptNr = 979, inheritanceLevel = 0, objectName =     "DIcon", methodName = "setSize", localCallOffset = -1, index = 0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.STILLCALL, value = 0 } }, // In The Gem Scenario and perhaps other fanmade games, this is called with 2nd/3rd parameters as objects - bug #5144
+        };
+        public static readonly SciWorkaroundEntry[] kSetPort_workarounds =
+        {
+            new SciWorkaroundEntry { gameId = SciGameId.LSL6, roomNr = 740, scriptNr =  740, inheritanceLevel = 0, objectName =              "rm740", methodName = "drawPic",    localCallOffset =    -1, index =   0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.IGNORE, value = 0 } }, // ending scene, is called with additional 3 (!) parameters
+	        new SciWorkaroundEntry { gameId = SciGameId.QFG3, roomNr = 830, scriptNr =  830, inheritanceLevel = 0, objectName =        "portalOpens", methodName = "changeState",localCallOffset =    -1, index =   0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.IGNORE, value = 0 } }, // when the portal appears during the end, gets called with 4 parameters - bug #5174
+        };
+        public static readonly SciWorkaroundEntry[] kNewWindow_workarounds =
+        {
+            new SciWorkaroundEntry { gameId = SciGameId.ECOQUEST, roomNr = -1, scriptNr = 981, inheritanceLevel = 0, objectName = "SysWindow", methodName = "open", localCallOffset = -1, index = 0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.STILLCALL, value = 0 } }, // EcoQuest 1 demo uses an in-between interpreter from SCI1 to SCI1.1. It's SCI1.1, but uses the SCI1 semantics for this call - bug #4976
+        };
+        public static readonly SciWorkaroundEntry[] kMoveCursor_workarounds =
+        {
+            new SciWorkaroundEntry { gameId = SciGameId.KQ5, roomNr =-1, scriptNr = 937, inheritanceLevel = 0, objectName = "IconBar", methodName = "handleEvent", localCallOffset = -1, index = 0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.IGNORE, value = 0 } }, // when pressing escape to open the menu, gets called with one parameter instead of 2 - bug #5575
         };
     }
 }

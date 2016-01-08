@@ -162,7 +162,7 @@ namespace NScumm.Sci.Engine
 
             if (ResourceManager.GetSciVersion() != SciVersion.V3)
             {
-                offset = _exportTable.Data.ReadSci11EndianUInt16(_exportTable.Offset + pubfunct*2);
+                offset = _exportTable.Data.ReadSci11EndianUInt16(_exportTable.Offset + pubfunct * 2);
             }
             else {
                 if (!relocSci3)
@@ -791,6 +791,13 @@ namespace NScumm.Sci.Engine
             get { return _lockers; }
             set { _lockers = value; }
         }
+
+        public ByteAccess Synonyms { get { return new ByteAccess(_synonyms); } }
+
+        /// <summary>
+        /// Retrieves the number of synonyms associated with this script.
+        /// </summary>
+        public int SynonymsNr { get { return _numSynonyms; } }
 
         /// <summary>
         /// Marks the script as deleted.

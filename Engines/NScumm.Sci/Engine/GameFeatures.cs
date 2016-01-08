@@ -59,6 +59,80 @@ namespace NScumm.Sci.Engine
             }
         }
 
+        public bool HandleMoveCount { get { return DetectMoveCountType() == MoveCountType.Increment; } }
+
+        private MoveCountType DetectMoveCountType()
+        {
+            if (_moveCountType == MoveCountType.Uninitialized)
+            {
+                // SCI0/SCI01 games always increment move count
+                if (ResourceManager.GetSciVersion() <= SciVersion.V01)
+                {
+                    _moveCountType = MoveCountType.Increment;
+                }
+                else if (ResourceManager.GetSciVersion() >= SciVersion.V1_1)
+                {
+                    // SCI1.1 and newer games always ignore move count
+                    _moveCountType = MoveCountType.Ignore;
+                }
+                else {
+                    if (!AutoDetectMoveCountType())
+                    {
+                        throw new InvalidOperationException("Move count autodetection failed");
+                        _moveCountType = MoveCountType.Increment;   // Most games do this, so best guess
+                    }
+                }
+
+                // TODO: debugC(1, kDebugLevelVM, "Detected move count handling: %s", (_moveCountType == kIncrementMoveCount) ? "increment" : "ignore");
+            }
+
+            return _moveCountType;
+        }
+
+        private bool AutoDetectMoveCountType()
+        {
+            // Look up the script address
+            Register addr = GetDetectionAddr("Motion", SciEngine.Selector(s => s.doit));
+
+            if (addr.Segment == 0)
+                return false;
+
+            ushort offset = (ushort)addr.Offset;
+            Script script = _segMan.GetScript(addr.Segment);
+            bool foundTarget = false;
+
+            while (true)
+            {
+                short[] opparams = new short[4];
+                byte extOpcode;
+                byte opcode;
+                offset += (ushort)Vm.ReadPMachineInstruction(script.GetBuf(offset), out extOpcode, opparams);
+                opcode = (byte)(extOpcode >> 1);
+
+                // Check for end of script
+                if (opcode == Vm.op_ret || offset >= script.BufSize)
+                    break;
+
+                if (opcode == Vm.op_callk)
+                {
+                    ushort kFuncNum = (ushort)opparams[0];
+
+                    // Games which ignore move count call kAbs before calling kDoBresen
+                    if (_kernel.GetKernelName(kFuncNum) == "Abs")
+                    {
+                        foundTarget = true;
+                    }
+                    else if (_kernel.GetKernelName(kFuncNum) == "DoBresen")
+                    {
+                        _moveCountType = foundTarget ? MoveCountType.Ignore : MoveCountType.Increment;
+                        return true;
+                    }
+                }
+            }
+
+            return false;	// not found
+        }
+
         public SciVersion DetectDoSoundType()
         {
             if (_doSoundType == SciVersion.NONE)

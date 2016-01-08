@@ -60,15 +60,116 @@ namespace NScumm.Sci.Graphics
         private byte _zoomColor;
         private byte _zoomMultiplier;
         private byte[] _cursorSurface;
+        //private CursorCache _cachedCursors;
+        private bool _isVisible;
 
-        internal void KernelSetPos(Point pos)
+        // KQ6 Windows has different black and white cursors. If this is true (set
+        // from the windows_cursors ini setting), then we use these and don't scale
+        // them by 2x like the rest of the graphics, like SSCI did. These look very
+        // ugly, which is why they aren't enabled by default.
+        private bool _useOriginalKQ6WinCursors;
+
+        // The CD version of SQ4 contains a complete set of silver mouse cursors.
+        // If this is true (set from the silver_cursors ini setting), then we use
+        // these instead and replace the game's gold cursors with their silver
+        // equivalents.
+        private bool _useSilverSQ4CDCursors;
+        private ISystem _system;
+
+        // This list contains all mandatory set cursor changes, that need special handling
+        // Refer to GfxCursor::setPosition() below
+        //    Game,            newPosition,  validRect
+        private static readonly SciCursorSetPositionWorkarounds[] setPositionWorkarounds = {
+            new SciCursorSetPositionWorkarounds { gameId = SciGameId.ISLANDBRAIN, newPositionY =  84, newPositionX = 109, rectTop = 46, rectLeft =  76, rectBottom = 174, rectRight = 243 },  // Island of Dr. Brain, game menu
+	        new SciCursorSetPositionWorkarounds { gameId = SciGameId.ISLANDBRAIN, newPositionY = 143, newPositionX = 135, rectTop = 57, rectLeft = 102, rectBottom = 163, rectRight = 218 },  // Island of Dr. Brain, pause menu within copy protection
+	        new SciCursorSetPositionWorkarounds { gameId = SciGameId.LSL5,        newPositionY =  23, newPositionX = 171, rectTop =  0, rectLeft =   0, rectBottom =  26, rectRight = 320 },  // Larry 5, skip forward helper pop-up
+	        new SciCursorSetPositionWorkarounds { gameId = SciGameId.QFG1VGA,     newPositionY =  64, newPositionX = 174, rectTop = 40, rectLeft =  37, rectBottom =  74, rectRight = 284 },  // Quest For Glory 1 VGA, run/walk/sleep sub-menu
+	        new SciCursorSetPositionWorkarounds { gameId = SciGameId.QFG3,        newPositionY =  70, newPositionX = 170, rectTop = 40, rectLeft =  61, rectBottom =  81, rectRight = 258 },  // Quest For Glory 3, run/walk/sleep sub-menu
+        };
+
+        public bool IsVisible { get { return _isVisible; } }
+
+        public Point Position
         {
-            throw new NotImplementedException();
+            get
+            {
+                Point mousePos = SciEngine.Instance.System.InputManager.GetMousePosition();
+
+                if (_upscaledHires != GfxScreenUpscaledMode.DISABLED)
+                    _screen.AdjustBackUpscaledCoordinates(ref mousePos.Y, ref mousePos.X);
+
+                return mousePos;
+            }
         }
 
-        //private CursorCache _cachedCursors;
+        public GfxCursor(ISystem system, ResourceManager resMan, GfxPalette palette, GfxScreen screen)
+        {
+            _system = system;
+            _resMan = resMan;
+            _palette = palette;
+            _screen = screen;
 
-        private bool _isVisible;
+            _upscaledHires = _screen.UpscaledHires;
+            _isVisible = true;
+
+            // center mouse cursor
+            SetPosition(new Point(_screen.ScriptWidth / 2, _screen.ScriptHeight / 2));
+            _moveZoneActive = false;
+
+            _zoomZoneActive = false;
+            _zoomZone = new Rect();
+            _zoomCursorView = null;
+            _zoomCursorLoop = 0;
+            _zoomCursorCel = 0;
+            _zoomPicView = null;
+            _zoomColor = 0;
+            _zoomMultiplier = 0;
+            _cursorSurface = null;
+
+            if (SciEngine.Instance != null && SciEngine.Instance.GameId == SciGameId.KQ6 && SciEngine.Instance.Platform == Core.IO.Platform.Windows)
+            {
+                // TODO: _useOriginalKQ6WinCursors = ConfMan.getBool("windows_cursors");
+                _useOriginalKQ6WinCursors = true;
+            }
+            else {
+                _useOriginalKQ6WinCursors = false;
+            }
+
+            if (SciEngine.Instance != null && SciEngine.Instance.GameId == SciGameId.SQ4 && ResourceManager.GetSciVersion() == SciVersion.V1_1)
+            {
+                // TODO: _useSilverSQ4CDCursors = ConfMan.getBool("silver_cursors");
+                _useSilverSQ4CDCursors = true;
+            }
+            else {
+                _useSilverSQ4CDCursors = false;
+            }
+
+            // _coordAdjuster and _event will be initialized later on
+            _coordAdjuster = null;
+            _event = null;
+        }
+
+        public void KernelSetPos(Point pos)
+        {
+            _coordAdjuster.SetCursorPos(ref pos);
+            KernelMoveCursor(pos);
+        }
+
+        private void KernelMoveCursor(Point pos)
+        {
+            _coordAdjuster.MoveCursor(pos);
+            if (pos.X > _screen.ScriptWidth || pos.Y > _screen.ScriptHeight)
+            {
+                // TODO: warning("attempt to place cursor at invalid coordinates (%d, %d)", pos.y, pos.x);
+                return;
+            }
+
+            SetPosition(pos);
+
+            // Trigger event reading to make sure the mouse coordinates will
+            // actually have changed the next time we read them.
+            _event.GetSciEvent(SciEvent.SCI_EVENT_PEEK);
+        }
 
         public void KernelSetShape(int resourceId)
         {
@@ -165,6 +266,94 @@ namespace NScumm.Sci.Graphics
             KernelShow();
         }
 
+        public void RefreshPosition()
+        {
+            Point mousePoint = Position;
+
+            if (_moveZoneActive)
+            {
+                bool clipped = false;
+
+                if (mousePoint.X < _moveZone.Left)
+                {
+                    mousePoint.X = _moveZone.Left;
+                    clipped = true;
+                }
+                else if (mousePoint.X >= _moveZone.Right)
+                {
+                    mousePoint.X = _moveZone.Right - 1;
+                    clipped = true;
+                }
+
+                if (mousePoint.Y < _moveZone.Top)
+                {
+                    mousePoint.Y = _moveZone.Top;
+                    clipped = true;
+                }
+                else if (mousePoint.Y >= _moveZone.Bottom)
+                {
+                    mousePoint.Y = _moveZone.Bottom - 1;
+                    clipped = true;
+                }
+
+                // FIXME: Do this only when mouse is grabbed?
+                if (clipped)
+                    SetPosition(mousePoint);
+            }
+
+            if (_zoomZoneActive)
+            {
+                // Cursor
+                CelInfo cursorCelInfo = _zoomCursorView.GetCelInfo(_zoomCursorLoop, _zoomCursorCel);
+                var cursorBitmap = _zoomCursorView.GetBitmap(_zoomCursorLoop, _zoomCursorCel);
+                // Pic
+                CelInfo picCelInfo = _zoomPicView.GetCelInfo(0, 0);
+                var rawPicBitmap = _zoomPicView.GetBitmap(0, 0);
+
+                // Compute hotspot of cursor
+                Point cursorHotspot = new Point((cursorCelInfo.width >> 1) - cursorCelInfo.displaceX, cursorCelInfo.height - cursorCelInfo.displaceY - 1);
+
+                short targetX = (short)(((mousePoint.X - _moveZone.Left) * _zoomMultiplier));
+                short targetY = (short)(((mousePoint.Y - _moveZone.Top) * _zoomMultiplier));
+                if (targetX < 0)
+                    targetX = 0;
+                if (targetY < 0)
+                    targetY = 0;
+
+                targetX -= (short)cursorHotspot.X;
+                targetY -= (short)cursorHotspot.Y;
+
+                // Sierra SCI actually drew only within zoom area, thus removing the need to fill any other pixels with upmost/left
+                //  color of the picture cel. This also made the cursor not appear on top of everything. They actually drew the
+                //  cursor manually within kAnimate processing and used a hidden cursor for moving.
+                //  TODO: we should also do this
+
+                // Replace the special magnifier color with the associated magnified pixels
+                for (int x = 0; x < cursorCelInfo.width; x++)
+                {
+                    for (int y = 0; y < cursorCelInfo.height; y++)
+                    {
+                        int curPos = cursorCelInfo.width * y + x;
+                        if (cursorBitmap[curPos] == _zoomColor)
+                        {
+                            short rawY = (short)(targetY + y);
+                            short rawX = (short)(targetX + x);
+                            if ((rawY >= 0) && (rawY < picCelInfo.height) && (rawX >= 0) && (rawX < picCelInfo.width))
+                            {
+                                int rawPos = picCelInfo.width * rawY + rawX;
+                                _cursorSurface[curPos] = rawPicBitmap[rawPos];
+                            }
+                            else {
+                                _cursorSurface[curPos] = rawPicBitmap[0]; // use left and upmost pixel color
+                            }
+                        }
+                    }
+                }
+
+                SciEngine.Instance.System.GraphicsManager.SetCursor(_cursorSurface, 0, cursorCelInfo.width, cursorCelInfo.height, cursorHotspot, cursorCelInfo.clearKey);
+            }
+        }
+
         public void KernelShow()
         {
             _system.GraphicsManager.IsCursorVisible = true;
@@ -175,79 +364,6 @@ namespace NScumm.Sci.Graphics
         {
             _system.GraphicsManager.IsCursorVisible = false;
             _isVisible = false;
-        }
-
-        // KQ6 Windows has different black and white cursors. If this is true (set
-        // from the windows_cursors ini setting), then we use these and don't scale
-        // them by 2x like the rest of the graphics, like SSCI did. These look very
-        // ugly, which is why they aren't enabled by default.
-        private bool _useOriginalKQ6WinCursors;
-
-        // The CD version of SQ4 contains a complete set of silver mouse cursors.
-        // If this is true (set from the silver_cursors ini setting), then we use
-        // these instead and replace the game's gold cursors with their silver
-        // equivalents.
-        private bool _useSilverSQ4CDCursors;
-        private ISystem _system;
-
-        // This list contains all mandatory set cursor changes, that need special handling
-        // Refer to GfxCursor::setPosition() below
-        //    Game,            newPosition,  validRect
-        private static readonly SciCursorSetPositionWorkarounds[] setPositionWorkarounds = {
-            new SciCursorSetPositionWorkarounds { gameId = SciGameId.ISLANDBRAIN, newPositionY =  84, newPositionX = 109, rectTop = 46, rectLeft =  76, rectBottom = 174, rectRight = 243 },  // Island of Dr. Brain, game menu
-	        new SciCursorSetPositionWorkarounds { gameId = SciGameId.ISLANDBRAIN, newPositionY = 143, newPositionX = 135, rectTop = 57, rectLeft = 102, rectBottom = 163, rectRight = 218 },  // Island of Dr. Brain, pause menu within copy protection
-	        new SciCursorSetPositionWorkarounds { gameId = SciGameId.LSL5,        newPositionY =  23, newPositionX = 171, rectTop =  0, rectLeft =   0, rectBottom =  26, rectRight = 320 },  // Larry 5, skip forward helper pop-up
-	        new SciCursorSetPositionWorkarounds { gameId = SciGameId.QFG1VGA,     newPositionY =  64, newPositionX = 174, rectTop = 40, rectLeft =  37, rectBottom =  74, rectRight = 284 },  // Quest For Glory 1 VGA, run/walk/sleep sub-menu
-	        new SciCursorSetPositionWorkarounds { gameId = SciGameId.QFG3,        newPositionY =  70, newPositionX = 170, rectTop = 40, rectLeft =  61, rectBottom =  81, rectRight = 258 },  // Quest For Glory 3, run/walk/sleep sub-menu
-        };
-
-        public bool IsVisible { get { return _isVisible; } }
-
-        public GfxCursor(ISystem system, ResourceManager resMan, GfxPalette palette, GfxScreen screen)
-        {
-            _system = system;
-            _resMan = resMan;
-            _palette = palette;
-            _screen = screen;
-
-            _upscaledHires = _screen.UpscaledHires;
-            _isVisible = true;
-
-            // center mouse cursor
-            SetPosition(new Point(_screen.ScriptWidth / 2, _screen.ScriptHeight / 2));
-            _moveZoneActive = false;
-
-            _zoomZoneActive = false;
-            _zoomZone = new Rect();
-            _zoomCursorView = null;
-            _zoomCursorLoop = 0;
-            _zoomCursorCel = 0;
-            _zoomPicView = null;
-            _zoomColor = 0;
-            _zoomMultiplier = 0;
-            _cursorSurface = null;
-
-            if (SciEngine.Instance != null && SciEngine.Instance.GameId == SciGameId.KQ6 && SciEngine.Instance.Platform == Core.IO.Platform.Windows)
-            {
-                // TODO: _useOriginalKQ6WinCursors = ConfMan.getBool("windows_cursors");
-                _useOriginalKQ6WinCursors = true;
-            }
-            else {
-                _useOriginalKQ6WinCursors = false;
-            }
-
-            if (SciEngine.Instance != null && SciEngine.Instance.GameId == SciGameId.SQ4 && ResourceManager.GetSciVersion() == SciVersion.V1_1)
-            {
-                // TODO: _useSilverSQ4CDCursors = ConfMan.getBool("silver_cursors");
-                _useSilverSQ4CDCursors = true;
-            }
-            else {
-                _useSilverSQ4CDCursors = false;
-            }
-
-            // _coordAdjuster and _event will be initialized later on
-            _coordAdjuster = null;
-            _event = null;
         }
 
         public void Init(GfxCoordAdjuster coordAdjuster, EventManager eventMan)

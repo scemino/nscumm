@@ -223,8 +223,8 @@ namespace NScumm.Sci.Engine
                 int debugExportId_, int debugLocalCallOffset_, int debugOrigin_,
                 ExecStackType type_)
         {
-            objp = objp_;
-            sendp = sendp_;
+            objp = Register.Make(objp_);
+            sendp = Register.Make(sendp_);
             // varp is set separately for varselector calls
             pc = pc_;
             fp = sp = sp_;
@@ -568,9 +568,9 @@ namespace NScumm.Sci.Engine
                 byte extOpcode;
                 s.xs.pc.IncOffset(ReadPMachineInstruction(scr.GetBuf(s.xs.pc.Offset), out extOpcode, opparams));
                 byte opcode = (byte)(extOpcode >> 1);
-#if DEBUG
-                ServiceLocator.Platform.Debug($"{opcodeNames[opcode]}: {opparams[0]}, {opparams[1]}, {opparams[2]}, {opparams[3]}, acc = {s.r_acc}, script {scr.ScriptNumber}, local script {local_script.ScriptNumber}");
-#endif
+//#if DEBUG
+//                ServiceLocator.Platform.Debug($"{opcodeNames[opcode]}: {opparams[0]}, {opparams[1]}, {opparams[2]}, {opparams[3]}, acc = {s.r_acc}, script {scr.ScriptNumber}, local script {local_script.ScriptNumber}");
+//#endif
 
 #if ABORT_ON_INFINITE_LOOP
                 if (prevOpcode != 0xFF)
@@ -1120,7 +1120,7 @@ namespace NScumm.Sci.Engine
                                       // in Circus Quest). Fixes bug #3038686.
                         if (0 == (extOpcode & 1) || SciEngine.Instance.GameId == SciGameId.FANMADE)
                         {
-                            PUSH32(s.xs.objp);
+                            PUSH32(Register.Make(s.xs.objp));
                         }
                         else {
                             // Debug opcode op_file

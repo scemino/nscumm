@@ -187,7 +187,7 @@ namespace NScumm.Sci.Graphics
         private short[] _ditheredPicColors = new short[DITHERED_BG_COLORS_SIZE];
 
         public int _picNotValid; // possible values 0, 1 and 2
-        private int _picNotValidSci11; // another variable that is used by kPicNotValid in sci1.1
+        public int _picNotValidSci11; // another variable that is used by kPicNotValid in sci1.1
 
         /// <summary>
         /// This defines whether or not the font we're drawing is already scaled
@@ -214,17 +214,210 @@ namespace NScumm.Sci.Graphics
 
         public ushort ScriptHeight { get { return _scriptHeight; } }
 
-        public int DisplayHeight { get { return _displayHeight; } }
+        public ushort DisplayHeight { get { return _displayHeight; } }
 
-        public int DisplayWidth { get { return _displayWidth; } }
+        public ushort DisplayWidth { get { return _displayWidth; } }
 
-        public int Height { get { return _height; } }
+        public ushort Width { get { return _width; } }
+
+        public ushort Height { get { return _height; } }
 
         public byte ColorWhite { get { return _colorWhite; } }
 
         public bool IsUnditheringEnabled { get { return _unditheringEnabled; } }
 
         public byte ColorDefaultVectorData { get { return _colorDefaultVectorData; } }
+
+        public short[] UnditherGetDitheredBgColors
+        {
+            get
+            {
+                if (_unditheringEnabled)
+                    return _ditheredPicColors;
+                else
+                    return null;
+            }
+        }
+
+        public bool FontIsUpscaled { get { return _fontIsUpscaled; } }
+
+        /// <summary>
+        /// This is used to put font pixels onto the screen - we adjust differently, so that we won't
+        ///  do triple pixel lines in any case on upscaled hires. That way the font will not get distorted
+        ///  Sierra SCI didn't do this
+        /// </summary>
+        /// <param name="top"></param>
+        /// <param name="v"></param>
+        /// <param name="y"></param>
+        /// <param name="color"></param>
+        public void PutFontPixel(short startingY, short x, short y, byte color)
+        {
+            short actualY = (short)(startingY + y);
+            if (_fontIsUpscaled)
+            {
+                // Do not scale ourselves, but put it on the display directly
+                PutPixelOnDisplay(x, actualY, color);
+            }
+            else {
+                int offset = actualY * _width + x;
+
+                _visualScreen[offset] = color;
+                switch (_upscaledHires)
+                {
+                    case GfxScreenUpscaledMode.DISABLED:
+                        _displayScreen[offset] = color;
+                        break;
+                    case GfxScreenUpscaledMode.S640x400:
+                    case GfxScreenUpscaledMode.S640x440:
+                    case GfxScreenUpscaledMode.S640x480:
+                        {
+                            // to 1-> 4 pixels upscaling for all of those, so that fonts won't look weird
+                            int displayOffset = (_upscaledHeightMapping[startingY] + y * 2) * _displayWidth + x * 2;
+                            _displayScreen[displayOffset] = color;
+                            _displayScreen[displayOffset + 1] = color;
+                            displayOffset += _displayWidth;
+                            _displayScreen[displayOffset] = color;
+                            _displayScreen[displayOffset + 1] = color;
+                            break;
+                        }
+                    default:
+                        PutScaledPixelOnScreen(_displayScreen, x, actualY, color);
+                        break;
+                }
+            }
+        }
+
+        public void BitsRestore(byte[] memoryPtr)
+        {
+            var rect = new Rect
+            {
+                Top = memoryPtr.ToInt16(),
+                Left = memoryPtr.ToInt16(2),
+                Bottom = memoryPtr.ToInt16(4),
+                Right = memoryPtr.ToInt16(6)
+            };
+            var mask = (GfxScreenMasks)memoryPtr[8];
+            var memPtr = new ByteAccess(memoryPtr, 9);
+
+            if ((mask & GfxScreenMasks.VISUAL) != 0)
+            {
+                BitsRestoreScreen(rect, memPtr, _visualScreen, _width);
+                BitsRestoreDisplayScreen(rect, memPtr);
+            }
+            if ((mask & GfxScreenMasks.PRIORITY) != 0)
+            {
+                BitsRestoreScreen(rect, memPtr, _priorityScreen, _width);
+            }
+            if ((mask & GfxScreenMasks.CONTROL) != 0)
+            {
+                BitsRestoreScreen(rect, memPtr, _controlScreen, _width);
+            }
+            if ((mask & GfxScreenMasks.DISPLAY) != 0)
+            {
+                if (_upscaledHires == GfxScreenUpscaledMode.DISABLED)
+                    throw new InvalidOperationException("bitsRestore() called w/o being in upscaled hires mode");
+                BitsRestoreScreen(rect, memPtr, _displayScreen, _displayWidth);
+                // WORKAROUND - we are not sure what sierra is doing. If we don't do this here, portraits won't get fully removed
+                //  from screen. Some lowres showBits() call is used for that and it's not covering the whole area
+                //  We would need to find out inside the kq6 windows interpreter, but this here works already and seems not to have
+                //  any side-effects. The whole hires is hacked into the interpreter, so maybe this is even right.
+                CopyDisplayRectToScreen(rect);
+            }
+        }
+
+        public short KernelPicNotValid(short newPicNotValid)
+        {
+            short oldPicNotValid;
+
+            if (ResourceManager.GetSciVersion() >= SciVersion.V1_1)
+            {
+                oldPicNotValid = (short)_picNotValidSci11;
+
+                if (newPicNotValid != -1)
+                    _picNotValidSci11 = newPicNotValid;
+            }
+            else {
+                oldPicNotValid = (short)_picNotValid;
+
+                if (newPicNotValid != -1)
+                    _picNotValid = newPicNotValid;
+            }
+
+            return oldPicNotValid;
+        }
+
+        /// <summary>
+        /// This copies a rect to screen w/o scaling adjustment and is only meant to be
+        /// used on hires graphics used in upscaled hires mode.
+        /// </summary>
+        public void CopyDisplayRectToScreen(Rect rect)
+        {
+            if (_upscaledHires == GfxScreenUpscaledMode.DISABLED)
+                throw new InvalidOperationException("copyDisplayRectToScreen: not in upscaled hires mode");
+            SciEngine.Instance.System.GraphicsManager.CopyRectToScreen(_activeScreen, rect.Top * _displayWidth + rect.Left, _displayWidth, rect.Left, rect.Top, rect.Width, rect.Height);
+        }
+
+        private void BitsRestoreDisplayScreen(Rect rect, ByteAccess memoryPtr)
+        {
+            ByteAccess screen = new ByteAccess(_displayScreen);
+            int width;
+            int y;
+
+            if (_upscaledHires == GfxScreenUpscaledMode.DISABLED)
+            {
+                screen.Offset += (rect.Top * _displayWidth) + rect.Left;
+                width = rect.Width;
+            }
+            else {
+                screen.Offset += (_upscaledHeightMapping[rect.Top] * _displayWidth) + _upscaledWidthMapping[rect.Left];
+                width = _upscaledWidthMapping[rect.Right] - _upscaledWidthMapping[rect.Left];
+                rect.Top = _upscaledHeightMapping[rect.Top];
+                rect.Bottom = _upscaledHeightMapping[rect.Bottom];
+            }
+
+            for (y = rect.Top; y < rect.Bottom; y++)
+            {
+                Array.Copy(memoryPtr.Data, memoryPtr.Offset, screen.Data, screen.Offset, width);
+                memoryPtr.Offset += width;
+                screen.Offset += _displayWidth;
+            }
+        }
+
+        public void CopyFromScreen(byte[] buffer)
+        {
+            // TODO this ignores the pitch
+            Surface screen = SciEngine.Instance.System.GraphicsManager.Capture();
+            Array.Copy(screen.Pixels, buffer, (int)_displayPixels);
+        }
+
+        private void BitsRestoreScreen(Rect rect, ByteAccess memPtr, byte[] screen, ushort screenWidth)
+        {
+            int width = rect.Width;
+            int y;
+            var scr = new ByteAccess(screen);
+            scr.Offset += (rect.Top * screenWidth) + rect.Left;
+
+            for (y = rect.Top; y < rect.Bottom; y++)
+            {
+                Array.Copy(memPtr.Data, memPtr.Offset, scr.Data, scr.Offset, width);
+                memPtr.Offset += width;
+                scr.Offset += screenWidth;
+            }
+        }
+
+        public void CopyRectToScreen(Rect rect, int x, int y)
+        {
+            if (_upscaledHires == GfxScreenUpscaledMode.DISABLED)
+            {
+                SciEngine.Instance.System.GraphicsManager.CopyRectToScreen(_activeScreen, rect.Top * _displayWidth + rect.Left, _displayWidth, x, y, rect.Width, rect.Height);
+            }
+            else {
+                int rectHeight = _upscaledHeightMapping[rect.Bottom] - _upscaledHeightMapping[rect.Top];
+                int rectWidth = _upscaledWidthMapping[rect.Right] - _upscaledWidthMapping[rect.Left];
+
+                SciEngine.Instance.System.GraphicsManager.CopyRectToScreen(_activeScreen, _upscaledHeightMapping[rect.Top] * _displayWidth + _upscaledWidthMapping[rect.Left], _displayWidth, _upscaledWidthMapping[x], _upscaledHeightMapping[y], rectWidth, rectHeight);
+            }
+        }
 
         public GfxScreen(ISystem system, ResourceManager resMan)
         {
@@ -453,9 +646,152 @@ namespace NScumm.Sci.Graphics
             }
         }
 
-        internal void DrawLine(Point startPoint, Point endPoint, byte pic_color, byte pic_priority, byte pic_control)
+        public Rect BitsGetRect(byte[] memoryPtr)
         {
-            throw new NotImplementedException();
+            Rect rect = new Rect();
+            rect.Top = memoryPtr.ToInt16();
+            rect.Left = memoryPtr.ToInt16(2);
+            rect.Bottom = memoryPtr.ToInt16(4);
+            rect.Right = memoryPtr.ToInt16(6);
+            return rect;
+        }
+
+        /// <summary>
+        /// This will just change a pixel directly on displayscreen. It is supposed to be
+        /// only used on upscaled-Hires games where hires content needs to get drawn ONTO
+        /// the upscaled display screen (like japanese fonts, hires portraits, etc.).
+        /// </summary>
+        public void PutPixelOnDisplay(int x, int y, byte color)
+        {
+            int offset = y * _displayWidth + x;
+            _displayScreen[offset] = color;
+        }
+
+        public void AdjustBackUpscaledCoordinates(ref int y, ref int x, Sci32ViewNativeResolution viewNativeRes = Sci32ViewNativeResolution.NONE)
+        {
+            for (int i = 0; i < s_upscaledAdjustTable.Length; i++)
+            {
+                if (s_upscaledAdjustTable[i].gameHiresMode == _upscaledHires &&
+                        s_upscaledAdjustTable[i].viewNativeRes == viewNativeRes)
+                {
+                    y = (y * s_upscaledAdjustTable[i].denominator) / s_upscaledAdjustTable[i].numerator;
+                    break;
+                }
+            }
+
+            switch (_upscaledHires)
+            {
+                case GfxScreenUpscaledMode.S480x300:
+                    x = (x * 4) / 6;
+                    y = (y * 4) / 6;
+                    break;
+                case GfxScreenUpscaledMode.S640x400:
+                    x /= 2;
+                    y /= 2;
+                    break;
+                case GfxScreenUpscaledMode.S640x440:
+                    x /= 2;
+                    y = (y * 5) / 11;
+                    break;
+                case GfxScreenUpscaledMode.S640x480:
+                    x /= 2;
+                    y = (y * 5) / 12;
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        public void DrawLine(short left, short top, short right, short bottom, byte color, byte prio, byte control)
+        {
+            DrawLine(new Point(left, top), new Point(right, bottom), color, prio, control);
+        }
+
+        /// <summary>
+        /// Sierra's Bresenham line drawing.
+        /// WARNING: Do not replace this with Graphics::drawLine(), as this causes issues
+        /// with flood fill, due to small difference in the Bresenham logic.
+        /// </summary>
+        public void DrawLine(Point startPoint, Point endPoint, byte color, byte priority, byte control)
+        {
+            short maxWidth = (short)(_width - 1);
+            short maxHeight = (short)(_height - 1);
+            // we need to clip values here, lsl3 room 620 background picture draws a line from 0, 199 t 320, 199
+            //  otherwise we would get heap corruption.
+            short left = (short)ScummHelper.Clip(startPoint.X, 0, maxWidth);
+            short top = (short)ScummHelper.Clip(startPoint.Y, 0, maxHeight);
+            short right = (short)ScummHelper.Clip(endPoint.X, 0, maxWidth);
+            short bottom = (short)ScummHelper.Clip(endPoint.Y, 0, maxHeight);
+
+            //set_drawing_flag
+            var drawMask = GetDrawingMask(color, priority, control);
+
+            VectorAdjustLineCoordinates(ref left, ref top, ref right, ref bottom, drawMask, color, priority, control);
+
+            // horizontal line
+            if (top == bottom)
+            {
+                if (right < left)
+                    ScummHelper.Swap(ref right, ref left);
+                for (int i = left; i <= right; i++)
+                    VectorPutLinePixel((short)i, top, drawMask, color, priority, control);
+                return;
+            }
+            // vertical line
+            if (left == right)
+            {
+                if (top > bottom)
+                    ScummHelper.Swap(ref top, ref bottom);
+                for (int i = top; i <= bottom; i++)
+                    VectorPutLinePixel(left, (short)i, drawMask, color, priority, control);
+                return;
+            }
+            // sloped line - draw with Bresenham algorithm
+            short dy = (short)(bottom - top);
+            short dx = (short)(right - left);
+            short stepy = (short)(dy < 0 ? -1 : 1);
+            short stepx = (short)(dx < 0 ? -1 : 1);
+            dy = (short)(Math.Abs(dy) << 1);
+            dx = (short)(Math.Abs(dx) << 1);
+
+            // setting the 1st and last pixel
+            VectorPutLinePixel(left, top, drawMask, color, priority, control);
+            VectorPutLinePixel(right, bottom, drawMask, color, priority, control);
+            // drawing the line
+            if (dx > dy)
+            { // going horizontal
+                int fraction = dy - (dx >> 1);
+                while (left != right)
+                {
+                    if (fraction >= 0)
+                    {
+                        top += stepy;
+                        fraction -= dx;
+                    }
+                    left += stepx;
+                    fraction += dy;
+                    VectorPutLinePixel(left, top, drawMask, color, priority, control);
+                }
+            }
+            else { // going vertical
+                int fraction = dx - (dy >> 1);
+                while (top != bottom)
+                {
+                    if (fraction >= 0)
+                    {
+                        left += stepx;
+                        fraction -= dy;
+                    }
+                    top += stepy;
+                    fraction += dx;
+                    VectorPutLinePixel(left, top, drawMask, color, priority, control);
+                }
+            }
+        }
+
+        private void VectorAdjustLineCoordinates(ref short left, ref short top, ref short right, ref short bottom, GfxScreenMasks drawMask, byte color, byte priority, byte control)
+        {
+            _vectorAdjustLineCoordinatesPtr.Execute(ref left, ref top, ref right, ref bottom, drawMask, color, priority, control);
         }
 
         public byte GetVisual(short x, short y)
@@ -475,29 +811,74 @@ namespace NScumm.Sci.Graphics
 
         public void BitsSave(Rect rect, GfxScreenMasks mask, byte[] memoryPtr)
         {
-            throw new NotImplementedException();
-            //memcpy(memoryPtr, (void*)&rect, sizeof(rect)); memoryPtr += sizeof(rect);
-            //memcpy(memoryPtr, (void*)&mask, sizeof(mask)); memoryPtr += sizeof(mask);
+            memoryPtr.WriteInt16(0, (short)rect.Top);
+            memoryPtr.WriteInt16(2, (short)rect.Left);
+            memoryPtr.WriteInt16(4, (short)rect.Bottom);
+            memoryPtr.WriteInt16(6, (short)rect.Right);
+            memoryPtr[8] = (byte)mask;
+            var memPtr = new ByteAccess(memoryPtr, 9);
 
-            //if (mask.HasFlag(GfxScreenMasks.VISUAL))
-            //{
-            //    BitsSaveScreen(rect, _visualScreen, _width, memoryPtr);
-            //    BitsSaveDisplayScreen(rect, memoryPtr);
-            //}
-            //if (mask.HasFlag(GfxScreenMasks.PRIORITY))
-            //{
-            //    BitsSaveScreen(rect, _priorityScreen, _width, memoryPtr);
-            //}
-            //if (mask.HasFlag(GfxScreenMasks.CONTROL))
-            //{
-            //    BitsSaveScreen(rect, _controlScreen, _width, memoryPtr);
-            //}
-            //if (mask.HasFlag(GfxScreenMasks.DISPLAY))
-            //{
-            //    if (_upscaledHires == GfxScreenUpscaledMode.DISABLED)
-            //        throw new InvalidOperationException("bitsSave() called w/o being in upscaled hires mode");
-            //    BitsSaveScreen(rect, _displayScreen, _displayWidth, memoryPtr);
-            //}
+            if (mask.HasFlag(GfxScreenMasks.VISUAL))
+            {
+                BitsSaveScreen(rect, _visualScreen, _width, memPtr);
+                BitsSaveDisplayScreen(rect, memPtr);
+            }
+            if (mask.HasFlag(GfxScreenMasks.PRIORITY))
+            {
+                BitsSaveScreen(rect, _priorityScreen, _width, memPtr);
+            }
+            if (mask.HasFlag(GfxScreenMasks.CONTROL))
+            {
+                BitsSaveScreen(rect, _controlScreen, _width, memPtr);
+            }
+            if (mask.HasFlag(GfxScreenMasks.DISPLAY))
+            {
+                if (_upscaledHires == GfxScreenUpscaledMode.DISABLED)
+                    throw new InvalidOperationException("bitsSave() called w/o being in upscaled hires mode");
+                BitsSaveScreen(rect, _displayScreen, _displayWidth, memPtr);
+            }
+        }
+
+        private void BitsSaveDisplayScreen(Rect rect, ByteAccess memPtr)
+        {
+            var screen = new ByteAccess(_displayScreen);
+            int width;
+            int y;
+
+            if (_upscaledHires == GfxScreenUpscaledMode.DISABLED)
+            {
+                width = rect.Width;
+                screen.Offset += (rect.Top * _displayWidth) + rect.Left;
+            }
+            else {
+                screen.Offset += (_upscaledHeightMapping[rect.Top] * _displayWidth) + _upscaledWidthMapping[rect.Left];
+                width = _upscaledWidthMapping[rect.Right] - _upscaledWidthMapping[rect.Left];
+                rect.Top = _upscaledHeightMapping[rect.Top];
+                rect.Bottom = _upscaledHeightMapping[rect.Bottom];
+            }
+
+            for (y = rect.Top; y < rect.Bottom; y++)
+            {
+                Array.Copy(screen.Data, screen.Offset, memPtr.Data, memPtr.Offset, width);
+                memPtr.Offset += width;
+                screen.Offset += _displayWidth;
+            }
+        }
+
+        private void BitsSaveScreen(Rect rect, byte[] screen, ushort screenWidth, ByteAccess memoryPtr)
+        {
+            int width = rect.Width;
+            int y;
+            var scr = new ByteAccess(screen);
+
+            scr.Offset += (rect.Top * screenWidth) + rect.Left;
+
+            for (y = rect.Top; y < rect.Bottom; y++)
+            {
+                Array.Copy(scr.Data, scr.Offset, memoryPtr.Data, memoryPtr.Offset, width);
+                memoryPtr.Offset += width;
+                scr.Offset += screenWidth;
+            }
         }
 
         public void CopyRectToScreen(Rect rect)
@@ -515,7 +896,7 @@ namespace NScumm.Sci.Graphics
 
         public int BitsGetDataSize(Rect rect, GfxScreenMasks mask)
         {
-            int byteCount = ServiceLocator.Platform.SizeOf<Rect>() + ServiceLocator.Platform.SizeOf<GfxScreenMasks>();
+            int byteCount = 8 + 1; // sizeof(rect) + sizeof(mask);
             int pixels = rect.Width * rect.Height;
             if (mask.HasFlag(GfxScreenMasks.VISUAL))
             {

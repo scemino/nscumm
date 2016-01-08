@@ -25,6 +25,7 @@ using NScumm.Sci.Engine;
 using NScumm.Sci.Graphics;
 using NScumm.Sci.Parser;
 using NScumm.Core.Audio;
+using NScumm.Core.Common;
 
 namespace NScumm.Sci
 {
@@ -92,6 +93,7 @@ namespace NScumm.Sci
     {
         private static SciEngine _instance;
 
+        private RandomSource _rng;
         private ResourceManager _resMan;
         private string _directory;
         private ADGameDescription _gameDescription;
@@ -167,10 +169,48 @@ namespace NScumm.Sci
             _mixer.Read(new byte[0], 0);
             output.SetSampleProvider(_mixer);
             _instance = this;
+            _rng = new RandomSource("sci");
             _gameId = id;
             _gameDescription = desc.GameDescription;
             _directory = ServiceLocator.FileStorage.GetDirectoryName(desc.Path);
             _debugState = new DebugState();
+        }
+
+        /// <summary>
+        /// Processes a multilanguage string based on the current language settings and
+        /// returns a string that is ready to be displayed.
+        /// </summary>
+        /// <param name="str">the multilanguage string</param>
+        /// <param name="languageSplitter"></param>
+        /// <param name="sep">
+        /// optional seperator between main language and subtitle language,
+        /// if NULL is passed no subtitle will be added to the returned string
+        /// </param>
+        /// <returns>processed string</returns>
+        public string StrSplitLanguage(string str, ushort languageSplitter, string sep = "\r----------\r")
+        {
+            Language activeLanguage = GetSciLanguage();
+            Language subtitleLanguage = Sci.Language.NONE;
+
+            if (Selector(s => s.subtitleLang) != -1)
+                subtitleLanguage = (Language)ReadSelectorValue(_gamestate._segMan, _gameObjectAddress, Selector(s => s.subtitleLang));
+
+            Language foundLanguage;
+            string retval = GetSciLanguageString(str, activeLanguage, out foundLanguage, out languageSplitter);
+
+            // Don't add subtitle when separator is not set, subtitle language is not set, or
+            // string contains only one language
+            if ((sep == null) || (subtitleLanguage == Sci.Language.NONE) || (foundLanguage == Sci.Language.NONE))
+                return retval;
+
+            // Add subtitle, unless the subtitle language doesn't match the languages in the string
+            if ((subtitleLanguage == Sci.Language.ENGLISH) || (subtitleLanguage == foundLanguage))
+            {
+                retval += sep;
+                retval += GetSciLanguageString(str, subtitleLanguage);
+            }
+
+            return retval;
         }
 
         public string GetSciLanguageString(string str, Language requestedLanguage)
@@ -284,6 +324,29 @@ namespace NScumm.Sci
                 return str.Substring(0, textPtr);
 
             return str;
+        }
+
+        public void Sleep(int msecs)
+        {
+            int time;
+            int wakeup_time = Environment.TickCount + msecs;
+
+            while (true)
+            {
+                // let backend process events and update the screen
+                _eventMan.GetSciEvent(SciEvent.SCI_EVENT_PEEK);
+                time = Environment.TickCount;
+                if (time + 10 < wakeup_time)
+                {
+                    ServiceLocator.Platform.Sleep(10);
+                }
+                else {
+                    if (time < wakeup_time)
+                        ServiceLocator.Platform.Sleep(wakeup_time - time);
+                    break;
+                }
+
+            }
         }
 
         private static Language CharToLanguage(char c)
@@ -410,6 +473,8 @@ namespace NScumm.Sci
             }
         }
 
+        public RandomSource Rng { get { return _rng; } }
+
         public ResourceManager ResMan { get { return _resMan; } }
 
         public Kernel Kernel { get { return _kernel; } }
@@ -425,6 +490,7 @@ namespace NScumm.Sci
         public ISystem System { get { return _system; } }
 
         public bool ShouldQuit { get; internal set; }
+        public Vocabulary Vocabulary { get { return _vocabulary; } }
 
         public string WrapFilename(string name)
         {
@@ -1001,6 +1067,16 @@ namespace NScumm.Sci
             return ReadSelector(segMan, obj, selectorId).Offset;
         }
 
+        public static uint ReadSelectorValue(SegManager segMan, Register obj, Func<SelectorCache, int> func)
+        {
+            return ReadSelector(segMan, obj, Selector(func)).Offset;
+        }
+
+        public static Register ReadSelector(SegManager segMan, Register obj, Func<SelectorCache, int> func)
+        {
+            return ReadSelector(segMan, obj, Selector(func));
+        }
+
         public static Register ReadSelector(SegManager segMan, Register obj, int selectorId)
         {
             ObjVarRef address = new ObjVarRef();
@@ -1009,6 +1085,11 @@ namespace NScumm.Sci
                 return Register.NULL_REG;
             else
                 return address.GetPointer(segMan);
+        }
+
+        public static SelectorType LookupSelector(SegManager segMan, Register obj_location, Func<SelectorCache, int> func, ObjVarRef varp, out Register fptr)
+        {
+            return LookupSelector(segMan, obj_location, Selector(func), varp, out fptr);
         }
 
         public static SelectorType LookupSelector(SegManager segMan, Register obj_location, int selectorId, ObjVarRef varp, out Register fptr)
@@ -1035,7 +1116,7 @@ namespace NScumm.Sci
                 // Found it as a variable
                 if (varp != null)
                 {
-                    varp.obj = obj_location;
+                    varp.obj = Register.Make(obj_location);
                     varp.varindex = index;
                 }
                 return SelectorType.Variable;
@@ -1062,7 +1143,7 @@ namespace NScumm.Sci
             //	return _lookupSelector_function(segMan, obj, selectorId, fptr);
         }
 
-        public static void InvokeSelector(EngineState s, Register @object, int selectorId, int k_argc, StackPtr? k_argp, int argc, StackPtr? argv = null)
+        public static void InvokeSelector(EngineState s, Register @object, int selectorId, int k_argc, StackPtr? k_argp, int argc = 0, StackPtr? argv = null)
         {
             int i;
             int framesize = 2 + 1 * argc;
@@ -1105,9 +1186,19 @@ namespace NScumm.Sci
                 WriteSelectorValue(_gamestate._segMan, _gameObjectAddress, Selector(s => s.printLang), (ushort)lang);
         }
 
+        public static void WriteSelectorValue(SegManager segMan, Register obj, Func<SelectorCache, int> func, ushort value)
+        {
+            WriteSelectorValue(segMan, obj, Selector(func), value);
+        }
+
         public static void WriteSelectorValue(SegManager segMan, Register obj, int selectorId, ushort value)
         {
             WriteSelector(segMan, obj, selectorId, Register.Make(0, value));
+        }
+
+        public static void WriteSelector(SegManager segMan, Register obj, Func<SelectorCache, int> func, Register value)
+        {
+            WriteSelector(segMan, obj, Selector(func), value);
         }
 
         public static void WriteSelector(SegManager segMan, Register obj, int selectorId, Register value)

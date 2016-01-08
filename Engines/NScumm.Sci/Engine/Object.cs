@@ -245,6 +245,26 @@ namespace NScumm.Sci.Engine
             }
         }
 
+        public SciObject Clone()
+        {
+            var clone = new SciObject
+            {
+                _pos = Register.Make(_pos),
+                _offset = _offset,
+                _superClassPosSci3 = _superClassPosSci3,
+                _speciesSelectorSci3 = _speciesSelectorSci3,
+                _infoSelectorSci3 = _infoSelectorSci3,
+                _baseObj = new ByteAccess(_baseObj),
+                _baseVars = new UShortAccess(_baseVars),
+                _methodCount = _methodCount,
+                _flags = _flags
+            };
+            clone._variables = new Register[_variables.Length];
+            Array.Copy(_variables, clone._variables, clone._variables.Length);
+            clone._baseMethod.AddRange(_baseMethod);
+            return clone;
+        }
+
         private void InitSelectorsSci3(byte[] buf)
         {
             throw new NotImplementedException();

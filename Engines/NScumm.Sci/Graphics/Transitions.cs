@@ -19,6 +19,7 @@
 using System;
 using NScumm.Core.Graphics;
 using NScumm.Core;
+using NScumm.Core.Common;
 
 namespace NScumm.Sci.Graphics
 {
@@ -244,7 +245,7 @@ namespace NScumm.Sci.Graphics
                 case SciTransition.SCROLL_LEFT:
                 case SciTransition.SCROLL_UP:
                 case SciTransition.SCROLL_DOWN:
-                    Scroll(number);
+                    Scroll((SciTransition)number);
                     break;
 
                 case SciTransition.NONE_LONGBOW:
@@ -259,9 +260,128 @@ namespace NScumm.Sci.Graphics
             }
         }
 
-        private void Scroll(short number)
+        // Scroll old screen (up/down/left/right) and insert new screen that way - works
+        // on _picRect area only.
+        private void Scroll(SciTransition number)
         {
-            throw new NotImplementedException();
+            short stepNr = 0;
+            Rect oldMoveRect = _picRect;
+            Rect oldScreenRect = _picRect;
+            Rect newMoveRect = _picRect;
+            Rect newScreenRect = _picRect;
+            var msecCount = 0;
+
+            _screen.CopyFromScreen(_oldScreen);
+
+            switch (number)
+            {
+                case SciTransition.SCROLL_LEFT:
+                    newScreenRect.Right = newScreenRect.Left;
+                    newMoveRect.Left = newMoveRect.Right;
+                    while (oldMoveRect.Left < oldMoveRect.Right)
+                    {
+                        oldMoveRect.Right--; oldScreenRect.Left++;
+                        newScreenRect.Right++; newMoveRect.Left--;
+                        if ((stepNr & 1) == 0)
+                        {
+                            msecCount += 5;
+                            if (DoCreateFrame(msecCount))
+                            {
+                                if (oldMoveRect.Right > oldMoveRect.Left)
+                                    ScrollCopyOldToScreen(oldScreenRect, oldMoveRect.Left, oldMoveRect.Top);
+                                _screen.CopyRectToScreen(newScreenRect, newMoveRect.Left, newMoveRect.Top);
+                                UpdateScreenAndWait(msecCount);
+                            }
+                        }
+                        stepNr++;
+                    }
+                    break;
+
+                case SciTransition.SCROLL_RIGHT:
+                    newScreenRect.Left = newScreenRect.Right;
+                    while (oldMoveRect.Left < oldMoveRect.Right)
+                    {
+                        oldMoveRect.Left++; oldScreenRect.Right--;
+                        newScreenRect.Left--;
+                        if ((stepNr & 1) == 0)
+                        {
+                            msecCount += 5;
+                            if (DoCreateFrame(msecCount))
+                            {
+                                if (oldMoveRect.Right > oldMoveRect.Left)
+                                    ScrollCopyOldToScreen(oldScreenRect, oldMoveRect.Left, oldMoveRect.Top);
+                                _screen.CopyRectToScreen(newScreenRect, newMoveRect.Left, newMoveRect.Top);
+                                UpdateScreenAndWait(msecCount);
+                            }
+                        }
+                        stepNr++;
+                    }
+                    break;
+
+                case SciTransition.SCROLL_UP:
+                    newScreenRect.Bottom = newScreenRect.Top;
+                    newMoveRect.Top = newMoveRect.Bottom;
+                    while (oldMoveRect.Top < oldMoveRect.Bottom)
+                    {
+                        oldMoveRect.Top++; oldScreenRect.Top++;
+                        newScreenRect.Bottom++; newMoveRect.Top--;
+
+                        msecCount += 5;
+                        if (DoCreateFrame(msecCount))
+                        {
+                            if (oldMoveRect.Top < oldMoveRect.Bottom)
+                                ScrollCopyOldToScreen(oldScreenRect, _picRect.Left, _picRect.Top);
+                            _screen.CopyRectToScreen(newScreenRect, newMoveRect.Left, newMoveRect.Top);
+                            UpdateScreenAndWait(msecCount);
+                        }
+                    }
+                    break;
+
+                case SciTransition.SCROLL_DOWN:
+                    newScreenRect.Top = newScreenRect.Bottom;
+                    while (oldMoveRect.Top < oldMoveRect.Bottom)
+                    {
+                        oldMoveRect.Top++; oldScreenRect.Bottom--;
+                        newScreenRect.Top--;
+
+                        msecCount += 5;
+                        if (DoCreateFrame(msecCount))
+                        {
+                            if (oldMoveRect.Top < oldMoveRect.Bottom)
+                                ScrollCopyOldToScreen(oldScreenRect, oldMoveRect.Left, oldMoveRect.Top);
+                            _screen.CopyRectToScreen(newScreenRect, _picRect.Left, _picRect.Top);
+                            UpdateScreenAndWait(msecCount);
+                        }
+                    }
+                    break;
+            }
+
+            // Copy over final position just in case
+            _screen.CopyRectToScreen(newScreenRect);
+            SciEngine.Instance.System.GraphicsManager.UpdateScreen();
+        }
+
+        private void ScrollCopyOldToScreen(Rect screenRect, int x, int y)
+        {
+            var oldScreenPtr = new ByteAccess(_oldScreen);
+            short screenWidth = (short)_screen.DisplayWidth;
+            if (_screen.UpscaledHires != GfxScreenUpscaledMode.DISABLED)
+            {
+                _screen.AdjustToUpscaledCoordinates(ref screenRect.Top, ref screenRect.Left);
+                _screen.AdjustToUpscaledCoordinates(ref screenRect.Bottom, ref screenRect.Right);
+                _screen.AdjustToUpscaledCoordinates(ref y, ref x);
+            }
+            oldScreenPtr.Offset += screenRect.Left + screenRect.Top * screenWidth;
+            SciEngine.Instance.System.GraphicsManager.CopyRectToScreen(oldScreenPtr.Data, oldScreenPtr.Offset, screenWidth, x, y, screenRect.Width, screenRect.Height);
+        }
+
+        private bool DoCreateFrame(int shouldBeAtMsec)
+        {
+            var msecPos = Environment.TickCount - _transitionStartTime;
+
+            if (shouldBeAtMsec > msecPos)
+                return true;
+            return false;
         }
 
         private void FadeIn()
@@ -294,9 +414,42 @@ namespace NScumm.Sci.Graphics
             throw new NotImplementedException();
         }
 
+        // Diagonally displays new screen starting from center - works on _picRect area
+        // only. Assumes that height of rect is larger than width.
         private void DiagonalRollFromCenter(bool blackoutFlag)
         {
-            throw new NotImplementedException();
+            short halfHeight = (short)(_picRect.Height / 2);
+            Rect upperRect = new Rect(_picRect.Left + halfHeight - 2, _picRect.Top + halfHeight, _picRect.Right - halfHeight + 1, _picRect.Top + halfHeight + 1);
+            Rect lowerRect = new Rect(upperRect.Left, upperRect.Top, upperRect.Right, upperRect.Bottom);
+            Rect leftRect = new Rect(upperRect.Left, upperRect.Top, upperRect.Left + 1, lowerRect.Bottom);
+            Rect rightRect = new Rect(upperRect.Right, upperRect.Top, upperRect.Right + 1, lowerRect.Bottom);
+            int msecCount = 0;
+
+            while ((upperRect.Top >= _picRect.Top) || (lowerRect.Bottom <= _picRect.Bottom))
+            {
+                if (upperRect.Top < _picRect.Top)
+                {
+                    upperRect.Translate(0, 1); leftRect.Top++; rightRect.Top++;
+                }
+                if (lowerRect.Bottom > _picRect.Bottom)
+                {
+                    lowerRect.Translate(0, -1); leftRect.Bottom--; rightRect.Bottom--;
+                }
+                if (leftRect.Left < _picRect.Left)
+                {
+                    leftRect.Translate(1, 0); upperRect.Left++; lowerRect.Left++;
+                }
+                if (rightRect.Right > _picRect.Right)
+                {
+                    rightRect.Translate(-1, 0); upperRect.Right--; lowerRect.Right--;
+                }
+                CopyRectToScreen(upperRect, blackoutFlag); upperRect.Translate(0, -1); upperRect.Left--; upperRect.Right++;
+                CopyRectToScreen(lowerRect, blackoutFlag); lowerRect.Translate(0, 1); lowerRect.Left--; lowerRect.Right++;
+                CopyRectToScreen(leftRect, blackoutFlag); leftRect.Translate(-1, 0); leftRect.Top--; leftRect.Bottom++;
+                CopyRectToScreen(rightRect, blackoutFlag); rightRect.Translate(1, 0); rightRect.Top--; rightRect.Bottom++;
+                msecCount += 4;
+                UpdateScreenAndWait(msecCount);
+            }
         }
 
         // Diagonally displays new screen starting from edges - works on _picRect area
@@ -324,7 +477,7 @@ namespace NScumm.Sci.Graphics
         {
             // Common::Event ev;
 
-            // TODO: while (g_system->getEventManager()->pollEvent(ev)) { }  // discard all events
+            // TODO: while (g_system.getEventManager().pollEvent(ev)) { }  // discard all events
 
             SciEngine.Instance.System.GraphicsManager.UpdateScreen();
             // if we have still some time left, delay accordingly
@@ -355,24 +508,80 @@ namespace NScumm.Sci.Graphics
             }
         }
 
+        // Horizontally displays new screen starting from upper and lower edge - works
+        // on _picRect area only
         private void HorizontalRollToCenter(bool blackoutFlag)
         {
-            throw new NotImplementedException();
+            Rect upperRect = new Rect(_picRect.Left, _picRect.Top, _picRect.Right, _picRect.Top + 1);
+            Rect lowerRect = new Rect(upperRect.Left, _picRect.Bottom - 1, upperRect.Right, _picRect.Bottom);
+            var msecCount = 0;
+
+            while (upperRect.Top < lowerRect.Bottom)
+            {
+                CopyRectToScreen(upperRect, blackoutFlag); upperRect.Translate(0, 1);
+                CopyRectToScreen(lowerRect, blackoutFlag); lowerRect.Translate(0, -1);
+                msecCount += 4;
+                UpdateScreenAndWait(msecCount);
+            }
         }
 
+        // Horizontally displays new screen starting from center - works on _picRect
+        // area only
         private void HorizontalRollFromCenter(bool blackoutFlag)
         {
-            throw new NotImplementedException();
+            Rect upperRect = new Rect(_picRect.Left, _picRect.Top + (_picRect.Height / 2) - 1, _picRect.Right, _picRect.Top + (_picRect.Height / 2));
+            Rect lowerRect = new Rect(upperRect.Left, upperRect.Bottom, upperRect.Right, upperRect.Bottom + 1);
+            var msecCount = 0;
+
+            while ((upperRect.Top >= _picRect.Top) || (lowerRect.Bottom <= _picRect.Bottom))
+            {
+                if (upperRect.Top < _picRect.Top)
+                    upperRect.Translate(0, 1);
+                if (lowerRect.Bottom > _picRect.Bottom)
+                    lowerRect.Translate(0, -1);
+                CopyRectToScreen(upperRect, blackoutFlag); upperRect.Translate(0, -1);
+                CopyRectToScreen(lowerRect, blackoutFlag); lowerRect.Translate(0, 1);
+                msecCount += 4;
+                UpdateScreenAndWait(msecCount);
+            }
         }
 
+        // Vertically displays new screen starting from edges - works on _picRect area
+        // only
         private void VerticalRollToCenter(bool blackoutFlag)
         {
-            throw new NotImplementedException();
+            Rect leftRect = new Rect(_picRect.Left, _picRect.Top, _picRect.Left + 1, _picRect.Bottom);
+            Rect rightRect = new Rect(_picRect.Right - 1, _picRect.Top, _picRect.Right, _picRect.Bottom);
+            var msecCount = 0;
+
+            while (leftRect.Left < rightRect.Right)
+            {
+                CopyRectToScreen(leftRect, blackoutFlag); leftRect.Translate(1, 0);
+                CopyRectToScreen(rightRect, blackoutFlag); rightRect.Translate(-1, 0);
+                msecCount += 3;
+                UpdateScreenAndWait(msecCount);
+            }
         }
 
+        // Vertically displays new screen starting from center - works on _picRect area
+        // only
         private void VerticalRollFromCenter(bool blackoutFlag)
         {
-            throw new NotImplementedException();
+            Rect leftRect = new Rect(_picRect.Left + (_picRect.Width / 2) - 1, _picRect.Top, _picRect.Left + (_picRect.Width / 2), _picRect.Bottom);
+            Rect rightRect = new Rect(leftRect.Right, _picRect.Top, leftRect.Right + 1, _picRect.Bottom);
+            var msecCount = 0;
+
+            while ((leftRect.Left >= _picRect.Left) || (rightRect.Right <= _picRect.Right))
+            {
+                if (leftRect.Left < _picRect.Left)
+                    leftRect.Translate(1, 0);
+                if (rightRect.Right > _picRect.Right)
+                    rightRect.Translate(-1, 0);
+                CopyRectToScreen(leftRect, blackoutFlag); leftRect.Translate(-1, 0);
+                CopyRectToScreen(rightRect, blackoutFlag); rightRect.Translate(1, 0);
+                msecCount += 3;
+                UpdateScreenAndWait(msecCount);
+            }
         }
 
         private void SetNewPalette(bool blackoutFlag)

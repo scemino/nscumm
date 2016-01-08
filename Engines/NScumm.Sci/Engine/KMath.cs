@@ -49,65 +49,52 @@ namespace NScumm.Sci.Engine
             return Register.Make(0, (ushort)(short)Math.Sqrt((float)xrel * xrel + yrel * yrel));
         }
 
-        public bool SignatureMatch(ushort[] signature, int argc, StackPtr? argv)
+        private static Register kRandom(EngineState s, int argc, StackPtr? argv)
         {
-            var sig = 0;
-            var nextSig = 0;
-            var curSig = nextSig;
-            while (nextSig < signature.Length && argc != 0)
+            switch (argc)
             {
-                curSig = nextSig;
-                int type = FindRegType(argv.Value[0]);
+                case 1: // set seed to argv[0]
+                        // SCI0/SCI01 just reset the seed to 0 instead of using argv[0] at all
+                    return Register.NULL_REG;
 
-                if ((type & SIG_IS_INVALID) != 0 && (0 == (signature[curSig] & SIG_IS_INVALID)))
-                    return false; // pointer is invalid and signature doesn't allow that?
+                case 2:
+                    { // get random number
+                      // numbers are definitely unsigned, for example lsl5 door code in k rap radio is random
+                      //  and 5-digit - we get called kRandom(10000, 65000)
+                      //  some codes in sq4 are also random and 5 digit (if i remember correctly)
+                        ushort fromNumber = argv.Value[0].ToUInt16();
+                        ushort toNumber = argv.Value[1].ToUInt16();
+                        // Some scripts may request a range in the reverse order (from largest
+                        // to smallest). An example can be found in Longbow, room 710, where a
+                        // random number is requested from 119 to 83. In this case, we're
+                        // supposed to return toNumber (determined by the KQ5CD disasm).
+                        // Fixes bug #3413020.
+                        if (fromNumber > toNumber)
+                            return Register.Make(0, toNumber);
 
-                if (0 == ((type & ~SIG_IS_INVALID) & signature[curSig]))
-                {
-                    if ((type & ~SIG_IS_INVALID) == SIG_TYPE_ERROR && (signature[curSig] & SIG_IS_INVALID) != 0)
-                    {
-                        // Type is unknown (error - usually because of a deallocated object or
-                        // stale pointer) and the signature allows invalid pointers. In this case,
-                        // ignore the invalid pointer.
+                        ushort range = (ushort)(toNumber - fromNumber + 1);
+                        // calculating range is exactly how sierra sci did it and is required for hoyle 4
+                        //  where we get called with kRandom(0, -1) and we are supposed to give back values from 0 to 0
+                        //  the returned value will be used as displace-offset for a background cel
+                        //  note: i assume that the hoyle4 code is actually buggy and it was never fixed because of
+                        //         the way sierra sci handled it - "it just worked". It should have called kRandom(0, 0)
+                        if (range != 0)
+                            range--; // the range value was never returned, our random generator gets 0->range, so fix it
+
+                        int randomNumber = fromNumber + (int)SciEngine.Instance.Rng.GetRandomNumber(range);
+                        return Register.Make(0, (ushort)randomNumber);
                     }
-                    else {
-                        return false; // type mismatch
-                    }
-                }
 
-                if (0 == (signature[curSig] & SIG_MORE_MAY_FOLLOW))
-                {
-                    sig++;
-                    nextSig = sig;
-                }
-                else {
-                    signature[nextSig] |= SIG_IS_OPTIONAL; // more may follow . assumes followers are optional
-                }
-                argv++;
-                argc--;
-            }
+                case 3: // get seed
+                        // SCI0/01 did not support this at all
+                        // Actually we would have to return the previous seed
+                    throw new InvalidOperationException("kRandom: scripts asked for previous seed");
 
-            // Too many arguments?
-            if (argc != 0)
-                return false;
-            // Signature end reached?
-            if (signature[nextSig] == 0)
-                return true;
-            // current parameter is optional?
-            if ((signature[curSig] & SIG_IS_OPTIONAL) != 0)
-            {
-                // yes, check if nothing more is required
-                if (0 == (signature[curSig] & SIG_NEEDS_MORE))
-                    return true;
+                default:
+                    throw new InvalidOperationException("kRandom: unsupported argc");
             }
-            else {
-                // no, check if next parameter is optional
-                if ((signature[nextSig] & SIG_IS_OPTIONAL) != 0)
-                    return true;
-            }
-            // Too few arguments or more optional arguments required
-            return false;
         }
+
 
         private static ushort kGetAngle_SCI0(short x1, short y1, short x2, short y2)
         {
@@ -214,6 +201,66 @@ namespace NScumm.Sci.Engine
                 // tan'(0) = 1, so in degrees the slope of atan is 180/pi = 57.29...
                 return (57 * y + x / 2) / x;
             }
+        }
+
+        public bool SignatureMatch(ushort[] signature, int argc, StackPtr? argv)
+        {
+            var sig = 0;
+            var nextSig = 0;
+            var curSig = nextSig;
+            while (nextSig < signature.Length && argc != 0)
+            {
+                curSig = nextSig;
+                int type = FindRegType(argv.Value[0]);
+
+                if ((type & SIG_IS_INVALID) != 0 && (0 == (signature[curSig] & SIG_IS_INVALID)))
+                    return false; // pointer is invalid and signature doesn't allow that?
+
+                if (0 == ((type & ~SIG_IS_INVALID) & signature[curSig]))
+                {
+                    if ((type & ~SIG_IS_INVALID) == SIG_TYPE_ERROR && (signature[curSig] & SIG_IS_INVALID) != 0)
+                    {
+                        // Type is unknown (error - usually because of a deallocated object or
+                        // stale pointer) and the signature allows invalid pointers. In this case,
+                        // ignore the invalid pointer.
+                    }
+                    else {
+                        return false; // type mismatch
+                    }
+                }
+
+                if (0 == (signature[curSig] & SIG_MORE_MAY_FOLLOW))
+                {
+                    sig++;
+                    nextSig = sig;
+                }
+                else {
+                    signature[nextSig] |= SIG_IS_OPTIONAL; // more may follow . assumes followers are optional
+                }
+                argv++;
+                argc--;
+            }
+
+            // Too many arguments?
+            if (argc != 0)
+                return false;
+            // Signature end reached?
+            if (signature[nextSig] == 0)
+                return true;
+            // current parameter is optional?
+            if ((signature[curSig] & SIG_IS_OPTIONAL) != 0)
+            {
+                // yes, check if nothing more is required
+                if (0 == (signature[curSig] & SIG_NEEDS_MORE))
+                    return true;
+            }
+            else {
+                // no, check if next parameter is optional
+                if ((signature[nextSig] & SIG_IS_OPTIONAL) != 0)
+                    return true;
+            }
+            // Too few arguments or more optional arguments required
+            return false;
         }
 
         private int FindRegType(Register reg)

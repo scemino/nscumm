@@ -412,10 +412,10 @@ namespace NScumm.Sci.Engine
 
             // We need all four here. Can't just stick with 'pred' OR 'succ' because node operations allow us
             // to walk around from any given node
-            tmp.Add(node.pred);
-            tmp.Add(node.succ);
-            tmp.Add(node.key);
-            tmp.Add(node.value);
+            tmp.Add(Register.Make(node.pred));
+            tmp.Add(Register.Make(node.succ));
+            tmp.Add(Register.Make(node.key));
+            tmp.Add(Register.Make(node.value));
 
             return tmp;
         }

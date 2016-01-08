@@ -90,5 +90,20 @@ namespace NScumm.Sci.Graphics
         {
             return (short)GetView(viewId).LoopCount;
         }
+
+        public short KernelViewGetCelCount(int viewId, short loopNo)
+        {
+            return (short)GetView(viewId).GetCelCount(loopNo);
+        }
+
+        public short KernelViewGetCelWidth(int viewId, short loopNo, short celNo)
+        {
+            return GetView(viewId).GetCelInfo(loopNo, celNo).scriptWidth;
+        }
+
+        public short KernelViewGetCelHeight(int viewId, short loopNo, short celNo)
+        {
+            return GetView(viewId).GetCelInfo(loopNo, celNo).scriptHeight;
+        }
     }
 }

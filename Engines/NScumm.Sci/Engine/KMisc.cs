@@ -157,10 +157,12 @@ namespace NScumm.Sci.Engine
             }
         }
 
+        // TODO: remove this
+        private static int _elapsedTime = 0;
         private static Register kGetTime(EngineState s, int argc, StackPtr? argv)
         {
             // TODO: g_engine->getTotalPlayTime();
-            int elapsedTime = 0;
+            int elapsedTime = _elapsedTime += 1800;
             int retval = 0; // Avoid spurious warning
 
             var loc_time = DateTime.Now;

@@ -79,6 +79,51 @@ namespace NScumm.Sci.Engine
             return s.r_acc;
         }
 
+        private static Register kAddAfter(EngineState s, int argc, StackPtr? argv)
+        {
+            List list = s._segMan.LookupList(argv.Value[0]);
+            Node firstnode = argv.Value[1].IsNull ? null : s._segMan.LookupNode(argv.Value[1]);
+            Node newnode = s._segMan.LookupNode(argv.Value[2]);
+
+# if CHECK_LISTS
+            checkListPointer(s._segMan, argv.Value[0]);
+#endif
+
+            if (newnode == null)
+            {
+                throw new InvalidOperationException($"New 'node' {argv.Value[2]} is not a node");
+            }
+
+            if (argc != 3 && argc != 4)
+            {
+                throw new InvalidOperationException("kAddAfter: Haven't got 3 or 4 arguments, aborting");
+            }
+
+            if (argc == 4)
+                newnode.key = argv.Value[3];
+
+            if (firstnode != null)
+            { // We're really appending after
+                Register oldnext = firstnode.succ;
+
+                newnode.pred = argv.Value[1];
+                firstnode.succ = argv.Value[2];
+                newnode.succ = oldnext;
+
+                if (oldnext.IsNull)  // Appended after last node?
+                                     // Set new node as last list node
+                    list.last = argv.Value[2];
+                else
+                    s._segMan.LookupNode(oldnext).pred = argv.Value[2];
+
+            }
+            else { // !firstnode
+                AddToFront(s, argv.Value[0], argv.Value[2]); // Set as initial list node
+            }
+
+            return s.r_acc;
+        }
+
         private static Register kAddToEnd(EngineState s, int argc, StackPtr? argv)
         {
             AddToEnd(s, argv.Value[0], argv.Value[1]);
@@ -183,6 +228,34 @@ namespace NScumm.Sci.Engine
             return n != null ? n.value : Register.NULL_REG;
         }
 
+        private static Register kDeleteKey(EngineState s, int argc, StackPtr? argv)
+        {
+            Register node_pos = kFindKey(s, 2, argv);
+            Node n;
+            List list = s._segMan.LookupList(argv.Value[0]);
+
+            if (node_pos.IsNull)
+                return Register.NULL_REG; // Signal failure
+
+            n = s._segMan.LookupNode(node_pos);
+            if (list.first == node_pos)
+                list.first = n.succ;
+            if (list.last == node_pos)
+                list.last = n.pred;
+
+            if (!n.pred.IsNull)
+                s._segMan.LookupNode(n.pred).succ = n.succ;
+            if (!n.succ.IsNull)
+                s._segMan.LookupNode(n.succ).pred = n.pred;
+
+            // Erase references to the predecessor and successor nodes, as the game
+            // scripts could reference the node itself again.
+            // Happens in the intro of QFG1 and in Longbow, when exiting the cave.
+            n.pred = Register.NULL_REG;
+            n.succ = Register.NULL_REG;
+
+            return Register.Make(0, 1); // Signal success
+        }
 
         static void AddToFront(EngineState s, Register listRef, Register nodeRef)
         {

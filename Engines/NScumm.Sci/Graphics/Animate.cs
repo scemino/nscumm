@@ -155,7 +155,7 @@ namespace NScumm.Sci.Graphics
             DisposeLastCast();
 
             MakeSortedList(list);
-            Fill(old_picNotValid);
+            Fill(ref old_picNotValid);
 
             if (old_picNotValid != 0)
             {
@@ -202,7 +202,7 @@ namespace NScumm.Sci.Graphics
                     SciEngine.WriteSelector(_s._segMan, it.@object, SciEngine.Selector(s => s.underBits), bitsHandle);
 
                     // draw corresponding cel
-                    _paint16.DrawCel(it.viewId, it.loopNo, it.celNo, it.celRect, it.priority, it.paletteNo, it.scaleX, it.scaleY);
+                    _paint16.DrawCel(it.viewId, it.loopNo, it.celNo, it.celRect, (byte)it.priority, (ushort)it.paletteNo, (ushort)it.scaleX, (ushort)it.scaleY);
                     it.showBitsFlag = true;
 
                     if (it.signal.HasFlag(ViewSignals.RemoveView))
@@ -385,14 +385,14 @@ namespace NScumm.Sci.Graphics
                 if (it.signal.HasFlag(ViewSignals.AlwaysUpdate))
                 {
                     // draw corresponding cel
-                    _paint16.DrawCel(it.viewId, it.loopNo, it.celNo, it.celRect, it.priority, it.paletteNo, it.scaleX, it.scaleY);
+                    _paint16.DrawCel(it.viewId, it.loopNo, it.celNo, it.celRect, (byte)it.priority, (ushort)it.paletteNo, (ushort)it.scaleX, (ushort)it.scaleY);
                     it.showBitsFlag = true;
 
                     it.signal &= ~(ViewSignals.StopUpdate | ViewSignals.ViewUpdated | ViewSignals.NoUpdate | ViewSignals.ForceUpdate);
                     if (!(it.signal.HasFlag(ViewSignals.IgnoreActor)))
                     {
                         rect = it.celRect;
-                        rect.Top = ScummHelper.Clip(_ports.KernelPriorityToCoordinate(it.priority) - 1, rect.Top, rect.Bottom - 1);
+                        rect.Top = ScummHelper.Clip(_ports.KernelPriorityToCoordinate((byte)it.priority) - 1, rect.Top, rect.Bottom - 1);
                         _paint16.FillRect(rect, GfxScreenMasks.CONTROL, 0, 0, 15);
                     }
                 }
@@ -426,20 +426,44 @@ namespace NScumm.Sci.Graphics
                 if (it.signal.HasFlag(ViewSignals.NoUpdate) && !(it.signal.HasFlag(ViewSignals.Hidden)))
                 {
                     // draw corresponding cel
-                    _paint16.DrawCel(it.viewId, it.loopNo, it.celNo, it.celRect, it.priority, it.paletteNo, it.scaleX, it.scaleY);
+                    _paint16.DrawCel(it.viewId, it.loopNo, it.celNo, it.celRect, (byte)it.priority, (ushort)it.paletteNo, (ushort)it.scaleX, (ushort)it.scaleY);
                     it.showBitsFlag = true;
 
                     if (!(it.signal.HasFlag(ViewSignals.IgnoreActor)))
                     {
                         rect = it.celRect;
-                        rect.Top = ScummHelper.Clip(_ports.KernelPriorityToCoordinate(it.priority) - 1, rect.Top, rect.Bottom - 1);
+                        rect.Top = ScummHelper.Clip(_ports.KernelPriorityToCoordinate((byte)it.priority) - 1, rect.Top, rect.Bottom - 1);
                         _paint16.FillRect(rect, GfxScreenMasks.CONTROL, 0, 0, 15);
                     }
                 }
             }
         }
 
-        private void Fill(byte old_picNotValid)
+        public void ReAnimate(Rect rect)
+        {
+            if (_lastCastData.Count != 0)
+            {
+                for (int i = 0; i < _lastCastData.Count; i++)
+                {
+                    var it = _lastCastData[i];
+                    it.castHandle = _paint16.BitsSave(it.celRect, GfxScreenMasks.VISUAL | GfxScreenMasks.PRIORITY);
+                    _paint16.DrawCel(it.viewId, it.loopNo, it.celNo, it.celRect, (byte)it.priority, (ushort)it.paletteNo, (ushort)it.scaleX, (ushort)it.scaleY);
+                }
+                _paint16.BitsShow(rect);
+                // restoring
+                for (int i = _lastCastData.Count - 1; i >= 0; i--)
+                {
+                    var it = _lastCastData[i];
+                    _paint16.BitsRestore(it.castHandle);
+                }
+            }
+            else
+            {
+                _paint16.BitsShow(rect);
+            }
+        }
+
+        private void Fill(ref byte old_picNotValid)
         {
             GfxView view = null;
 
@@ -501,7 +525,7 @@ namespace NScumm.Sci.Graphics
                     shouldSetNsRect = false;
                 }
                 else {
-                    view.GetCelRect(it.loopNo, it.celNo, it.x, it.y, it.z, it.celRect);
+                    it.celRect = view.GetCelRect(it.loopNo, it.celNo, it.x, it.y, it.z);
                 }
             }
 
@@ -513,12 +537,84 @@ namespace NScumm.Sci.Graphics
 
         private void ProcessViewScaling(GfxView view, AnimateEntry it)
         {
-            throw new NotImplementedException();
+            if (!view.IsScaleable)
+            {
+                // Laura Bow 2 (especially floppy) depends on this, some views are not supposed to be scaleable
+                //  this "feature" was removed in later versions of SCI1.1
+                it.scaleSignal = 0;
+                it.scaleY = it.scaleX = 128;
+            }
+            else {
+                // Process global scaling, if needed
+                if (it.scaleSignal.HasFlag(ViewScaleSignals.DoScaling))
+                {
+                    if (it.scaleSignal.HasFlag(ViewScaleSignals.GlobalScaling))
+                    {
+                        ApplyGlobalScaling(it, view);
+                    }
+                }
+            }
+        }
+
+        private void ApplyGlobalScaling(AnimateEntry entry, GfxView view)
+        {
+            // Global scaling uses global var 2 and some other stuff to calculate scaleX/scaleY
+            short maxScale = (short)SciEngine.ReadSelectorValue(_s._segMan, entry.@object, SciEngine.Selector(s => s.maxScale));
+            short celHeight = view.GetHeight(entry.loopNo, entry.celNo);
+            short maxCelHeight = (short)((maxScale * celHeight) >> 7);
+            Register globalVar2 = _s.variables[Vm.VAR_GLOBAL][2]; // current room object
+            short vanishingY = (short)SciEngine.ReadSelectorValue(_s._segMan, globalVar2, SciEngine.Selector(s => s.vanishingY));
+
+            short fixedPortY = (short)(_ports.Port.rect.Bottom - vanishingY);
+            short fixedEntryY = (short)(entry.y - vanishingY);
+            if (fixedEntryY == 0)
+                fixedEntryY = 1;
+
+            if ((celHeight == 0) || (fixedPortY == 0))
+                throw new InvalidOperationException("global scaling panic");
+
+            entry.scaleY = (short)((maxCelHeight * fixedEntryY) / fixedPortY);
+            entry.scaleY = (short)((entry.scaleY * 128) / celHeight);
+
+            entry.scaleX = entry.scaleY;
+
+            // and set objects scale selectors
+            SciEngine.WriteSelectorValue(_s._segMan, entry.@object, SciEngine.Selector(s => s.scaleX), (ushort)entry.scaleX);
+            SciEngine.WriteSelectorValue(_s._segMan, entry.@object, SciEngine.Selector(s => s.scaleY), (ushort)entry.scaleY);
         }
 
         private void AdjustInvalidCels(GfxView view, AnimateEntry it)
         {
-            throw new NotImplementedException();
+            // adjust loop and cel, if any of those is invalid
+            //  this seems to be completely crazy code
+            //  sierra sci checked signed int16 to be above or equal the counts and reseted to 0 in those cases
+            //  later during view processing those are compared unsigned again and then set to maximum count - 1
+            //  Games rely on this behavior. For example laura bow 1 has a knight standing around in room 37
+            //   which has cel set to 3. This cel does not exist and the actual knight is 0
+            //   In kq5 on the other hand during the intro, when the trunk is opened, cel is set to some real
+            //   high number, which is negative when considered signed. This actually requires to get fixed to
+            //   maximum cel, otherwise the trunk would be closed.
+            short viewLoopCount = (short)view.LoopCount;
+            if (it.loopNo >= viewLoopCount)
+            {
+                it.loopNo = 0;
+                SciEngine.WriteSelectorValue(_s._segMan, it.@object, SciEngine.Selector(s => s.loop), (ushort)it.loopNo);
+            }
+            else if (it.loopNo < 0)
+            {
+                it.loopNo = (short)(viewLoopCount - 1);
+                // not setting selector is right, sierra sci didn't do it during view processing as well
+            }
+            short viewCelCount = (short)view.GetCelCount(it.loopNo);
+            if (it.celNo >= viewCelCount)
+            {
+                it.celNo = 0;
+                SciEngine.WriteSelectorValue(_s._segMan, it.@object, SciEngine.Selector(s => s.cel), (ushort)it.celNo);
+            }
+            else if (it.celNo < 0)
+            {
+                it.celNo = (short)(viewCelCount - 1);
+            }
         }
 
         private void MakeSortedList(List list)
@@ -536,7 +632,7 @@ namespace NScumm.Sci.Graphics
             {
                 AnimateEntry listEntry = new AnimateEntry();
                 Register curObject = curNode.value;
-                listEntry.@object = curObject;
+                listEntry.@object = Register.Make(curObject);
                 listEntry.castHandle = Register.NULL_REG;
 
                 // Get data from current object
@@ -607,7 +703,51 @@ namespace NScumm.Sci.Graphics
 
         private bool Invoke(List list, int argc, StackPtr? argv)
         {
-            throw new NotImplementedException();
+            Register curAddress = list.first;
+            Node curNode = _s._segMan.LookupNode(curAddress);
+            Register curObject;
+            ViewSignals signal;
+
+            while (curNode != null)
+            {
+                curObject = curNode.value;
+
+                if (!_ignoreFastCast)
+                {
+                    // Check if the game has a fastCast object set
+                    //  if we don't abort kAnimate processing, at least in kq5 there will be animation cels drawn into speech boxes.
+                    if (!_s.variables[Vm.VAR_GLOBAL][84].IsNull)
+                    {
+                        if (_s._segMan.GetObjectName(_s.variables[Vm.VAR_GLOBAL][84]) == "fastCast")
+                            return false;
+                    }
+                }
+
+                signal = (ViewSignals)SciEngine.ReadSelectorValue(_s._segMan, curObject, SciEngine.Selector(s => s.signal));
+                if ((signal & ViewSignals.Frozen) == 0)
+                {
+                    // Call .doit method of that object
+                    SciEngine.InvokeSelector(_s, curObject, SciEngine.Selector(s => s.doit), argc, argv, 0);
+
+                    // If a game is being loaded, stop processing
+                    if (_s.abortScriptProcessing != AbortGameState.None)
+                        return true; // Stop processing
+
+                    // Lookup node again, since the nodetable it was in may have been reallocated.
+                    // The node might have been deallocated at this point (e.g. LSL2, room 42),
+                    // in which case the node reference will be null and the loop will stop below.
+                    // If the node is deleted from kDeleteKey, it won't have a successor node, thus
+                    // list processing will stop here (which is what SSCI does).
+                    curNode = _s._segMan.LookupNode(curAddress, false);
+                }
+
+                if (curNode != null)
+                {
+                    curAddress = curNode.succ;
+                    curNode = _s._segMan.LookupNode(curAddress);
+                }
+            }
+            return true;
         }
 
         private void AnimateShowPic()
@@ -628,6 +768,106 @@ namespace NScumm.Sci.Graphics
         private void DisposeLastCast()
         {
             _lastCastData.Clear();
+        }
+
+        public void KernelAddToPicList(Register listReference, int argc, StackPtr? argv)
+        {
+            List list;
+
+            _ports.SetPort(_ports._picWind);
+
+            list = _s._segMan.LookupList(listReference);
+            if (list == null)
+                throw new InvalidOperationException("kAddToPic called with non-list as parameter");
+
+            MakeSortedList(list);
+            AddToPicDrawCels();
+
+            AddToPicSetPicNotValid();
+        }
+
+        private void AddToPicSetPicNotValid()
+        {
+            if (ResourceManager.GetSciVersion() <= SciVersion.V1_EARLY)
+                _screen._picNotValid = 1;
+            else
+                _screen._picNotValid = 2;
+        }
+
+
+        private void AddToPicDrawCels()
+        {
+            Register curObject;
+            GfxView view = null;
+
+            for (int i = 0; i < _list.Count; i++)
+            {
+                var it = _list[i];
+                curObject = it.@object;
+
+                // Get the corresponding view
+                view = _cache.GetView(it.viewId);
+
+                // kAddToPic does not do loop/cel-number fixups
+
+                if (it.priority == -1)
+                    it.priority = _ports.KernelCoordinateToPriority(it.y);
+
+                if (!view.IsScaleable)
+                {
+                    // Laura Bow 2 specific - Check fill() below
+                    it.scaleSignal = 0;
+                    it.scaleY = it.scaleX = 128;
+                }
+
+                // Create rect according to coordinates and given cel
+                if (it.scaleSignal.HasFlag(ViewScaleSignals.DoScaling))
+                {
+                    if (it.scaleSignal.HasFlag(ViewScaleSignals.GlobalScaling))
+                    {
+                        ApplyGlobalScaling(it, view);
+                    }
+                    view.GetCelScaledRect(it.loopNo, it.celNo, it.x, it.y, it.z, it.scaleX, it.scaleY, it.celRect);
+                    SciEngine.Instance._gfxCompare.SetNSRect(curObject, it.celRect);
+                }
+                else {
+                    it.celRect = view.GetCelRect(it.loopNo, it.celNo, it.x, it.y, it.z);
+                }
+
+                // draw corresponding cel
+                _paint16.DrawCel(view, it.loopNo, it.celNo, it.celRect, (byte)it.priority, (ushort)it.paletteNo, (ushort)it.scaleX, (ushort)it.scaleY);
+                if (!it.signal.HasFlag(ViewSignals.IgnoreActor))
+                {
+                    it.celRect.Top = ScummHelper.Clip(_ports.KernelPriorityToCoordinate((byte)it.priority) - 1, it.celRect.Top, it.celRect.Bottom - 1);
+                    _paint16.FillRect(it.celRect, GfxScreenMasks.CONTROL, 0, 0, 15);
+                }
+            }
+        }
+
+        public void KernelAddToPicView(int viewId, short loopNo, short celNo, short x, short y, short priority, short control)
+        {
+            _ports.SetPort(_ports._picWind);
+            AddToPicDrawView(viewId, loopNo, celNo, x, y, priority, control);
+            AddToPicSetPicNotValid();
+        }
+
+        private void AddToPicDrawView(int viewId, short loopNo, short celNo, short x, short y, short priority, short control)
+        {
+            GfxView view = _cache.GetView(viewId);
+            Rect celRect;
+
+            if (priority == -1)
+                priority = _ports.KernelCoordinateToPriority(y);
+
+            // Create rect according to coordinates and given cel
+            celRect = view.GetCelRect(loopNo, celNo, x, y, 0);
+            _paint16.DrawCel(view, loopNo, celNo, celRect, (byte)priority, 0);
+
+            if (control != -1)
+            {
+                celRect.Top = ScummHelper.Clip(_ports.KernelPriorityToCoordinate((byte)priority) - 1, celRect.Top, celRect.Bottom - 1);
+                _paint16.FillRect(celRect, GfxScreenMasks.CONTROL, 0, 0, (byte)control);
+            }
         }
     }
 }

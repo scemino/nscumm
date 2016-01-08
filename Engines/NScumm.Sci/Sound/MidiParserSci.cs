@@ -77,7 +77,7 @@ namespace NScumm.Sci.Sound
             public sbyte _voices;
         }
 
-        private ChannelState[] _channelState = new ChannelState[16];
+        private ChannelState[] _channelState;
         private int _numTracks;
 
         private static readonly int[] nMidiParams = { 2, 2, 2, 2, 1, 1, 2, 0 };
@@ -107,6 +107,11 @@ namespace NScumm.Sci.Sound
         {
             this._soundVersion = _soundVersion;
             this.sciMusic = sciMusic;
+            _channelState = new ChannelState[16];
+            for (int i = 0; i < _channelState.Length; i++)
+            {
+                _channelState[i] = new ChannelState();
+            }
         }
 
         public void SetMasterVolume(byte masterVolume)
@@ -391,6 +396,70 @@ namespace NScumm.Sci.Sound
         {
             //assert(_mainThreadCalled);
             _mainThreadCalled = false;
+        }
+
+        public void SendInitCommands()
+        {
+            ResetStateTracking();
+
+            // reset our "global" volume
+            _volume = 127;
+
+            // Set initial voice count
+            if (_pSnd != null)
+            {
+                if (_soundVersion <= SciVersion.V0_LATE)
+                {
+                    for (int i = 0; i < 15; ++i)
+                    {
+                        byte voiceCount = 0;
+                        if (_channelUsed[i])
+                        {
+                            voiceCount = _pSnd.soundRes.GetInitialVoiceCount(i);
+                            SendToDriver(0xB0 | i, 0x4B, voiceCount);
+                        }
+                    }
+                }
+                else {
+                    for (int i = 0; i < _track.channelCount; ++i)
+                    {
+                        byte voiceCount = _track.channels[i].poly;
+                        byte num = _track.channels[i].number;
+                        // TODO: Should we skip the control channel?
+                        SendToDriver(0xB0 | num, 0x4B, voiceCount);
+                    }
+                }
+            }
+
+            // Reset all the parameters of the channels used by this song
+            for (int i = 0; i < 16; ++i)
+            {
+                if (_channelUsed[i])
+                {
+                    SendToDriver(0xB0 | i, 0x07, 127);  // Reset volume to maximum
+                    SendToDriver(0xB0 | i, 0x0A, 64);   // Reset panning to center
+                    SendToDriver(0xB0 | i, 0x40, 0);    // Reset hold pedal to none
+                    SendToDriver(0xB0 | i, 0x4E, 0);    // Reset velocity to none
+                    SendToDriver(0xE0 | i, 0, 64);  // Reset pitch wheel to center
+                }
+            }
+        }
+
+        private void ResetStateTracking()
+        {
+            for (int i = 0; i < 16; ++i)
+            {
+                ChannelState s = _channelState[i];
+                s._modWheel = 0;
+                s._pan = 64;
+                s._patch = 0; // TODO: Initialize properly (from data in LoadMusic?)
+                s._note = -1;
+                s._sustain = false;
+                s._pitchWheel = 0x2000;
+                s._voices = 0;
+
+                _channelVolume[i] = 127;
+            }
         }
     }
 }

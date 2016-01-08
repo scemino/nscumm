@@ -50,9 +50,24 @@ namespace NScumm.Sci.Engine
 
         public static readonly SciVersionRange SIG_EVERYWHERE = new SciVersionRange { forPlatform = Kernel.SIGFOR_ALL };
 
+        public static SciVersionRange SIG_SCI0(byte platform)
+        {
+            return new SciVersionRange { fromVersion = SciVersion.NONE, toVersion = SciVersion.V01, forPlatform = platform };
+        }
+
+        public static SciVersionRange SIG_SCI1(byte platform)
+        {
+            return new SciVersionRange { fromVersion = SciVersion.V1_EGA_ONLY, toVersion = SciVersion.V1_LATE, forPlatform = platform };
+        }
+
         public static SciVersionRange SIG_SCI11(byte platform)
         {
             return new SciVersionRange { fromVersion = SciVersion.V1_1, toVersion = SciVersion.V1_1, forPlatform = platform };
+        }
+
+        public static SciVersionRange SIG_SINCE_SCI11(byte platform)
+        {
+            return new SciVersionRange { fromVersion = SciVersion.V1_1, toVersion = SciVersion.NONE, forPlatform = platform };
         }
 
         public static SciVersionRange SIG_SCI21(byte platform)
@@ -68,11 +83,6 @@ namespace NScumm.Sci.Engine
         public static SciVersionRange SIG_SCIALL(byte platform)
         {
             return new SciVersionRange { fromVersion = SciVersion.NONE, toVersion = SciVersion.NONE, forPlatform = platform };
-        }
-
-        public static SciVersionRange SIG_SINCE_SCI11(byte platform)
-        {
-            return new SciVersionRange { fromVersion = SciVersion.V1_1, toVersion = SciVersion.NONE, forPlatform = platform };
         }
 
         public static SciVersionRange SIG_SOUNDSCI0(byte platform)
@@ -117,11 +127,6 @@ namespace NScumm.Sci.Engine
         public static SciKernelMapEntry Make(KernelFunctionCall function, SciVersionRange range, string signature, SciKernelMapSubEntry[] subSignatures = null, SciWorkaroundEntry[] workarounds = null)
         {
             return new SciKernelMapEntry { name = function.Method.Name.Remove(0, 1), function = function, fromVersion = range.fromVersion, toVersion = range.toVersion, forPlatform = range.forPlatform, signature = signature, subFunctions = subSignatures, workarounds = workarounds };
-        }
-
-        internal static SciKernelMapEntry Make(Func<EngineState, int, StackPtr?, Register> kGetAngle, SciVersionRange sIG_EVERYWHERE, string v, object p, object kGetAngle_workarounds)
-        {
-            throw new NotImplementedException();
         }
     }
 
@@ -515,21 +520,53 @@ namespace NScumm.Sci.Engine
         static readonly SciKernelMapEntry[] s_kernelMap =
         {
             SciKernelMapEntry.Make(kAbs,SciVersionRange.SIG_EVERYWHERE,"i",null,Workarounds.kAbs_workarounds),
+            SciKernelMapEntry.Make(kAddAfter,SciVersionRange.SIG_EVERYWHERE,"lnn",null,null),
             SciKernelMapEntry.Make(kAddMenu,SciVersionRange.SIG_EVERYWHERE,"rr",null,null),
             SciKernelMapEntry.Make(kAddToEnd,SciVersionRange.SIG_EVERYWHERE,"ln",null,null),
             SciKernelMapEntry.Make(kAddToFront,SciVersionRange.SIG_EVERYWHERE,"ln",null,null),
+            SciKernelMapEntry.Make(kAddToPic,SciVersionRange.SIG_EVERYWHERE,"[il](iiiiii)",null,null),
             SciKernelMapEntry.Make(kAnimate,SciVersionRange.SIG_EVERYWHERE,"(l0)(i)",null,null),
+            //SciKernelMapEntry.Make(kAssertPalette,SciVersionRange.SIG_EVERYWHERE,           "i",                     NULL,            NULL },
+            //SciKernelMapEntry.Make(kAvoidPath,SciVersionRange.    SIG_EVERYWHERE,           "ii(.*)",                NULL,            NULL },
             SciKernelMapEntry.Make(kBaseSetter,SciVersionRange.SIG_EVERYWHERE,"o",null,null),
             SciKernelMapEntry.Make(kCanBeHere,SciVersionRange.SIG_EVERYWHERE,"o(l)",null,null),
+#if ENABLE_SCI32
+	        //{ "CantBeHere", kCantBeHere32, SIG_SCI32, SIGFOR_ALL,    "ol",                    NULL,            NULL },
+#endif
+            //SciKernelMapEntry.Make(kCantBeHere,SciVersionRange.   SIG_EVERYWHERE,           "o(l)",                  NULL,            NULL },
+            SciKernelMapEntry.Make(kCelHigh,SciVersionRange.SIG_EVERYWHERE,"ii(i)",null,Workarounds.kCelHigh_workarounds),
+            SciKernelMapEntry.Make(kCelWide,SciVersionRange.SIG_EVERYWHERE,"ii(i)",null,Workarounds.kCelWide_workarounds),
+            //SciKernelMapEntry.Make(kCheckFreeSpace),    SIG_SCI32, SIGFOR_ALL,    "r.*",                   NULL,            NULL },
+            //SciKernelMapEntry.Make(kCheckFreeSpace),    SIG_SCI11, SIGFOR_ALL,    "r(i)",                  NULL,            NULL },
+            //SciKernelMapEntry.Make(kCheckFreeSpace),    SIG_EVERYWHERE,           "r",                     NULL,            NULL },
+            //SciKernelMapEntry.Make(kCheckSaveGame,SciVersionRange.SIG_EVERYWHERE,           ".*",                    NULL,            NULL },
             SciKernelMapEntry.Make(kClone,SciVersionRange.SIG_EVERYWHERE,"o",null,null),
+            //SciKernelMapEntry.Make(kCoordPri,SciVersionRange.     SIG_EVERYWHERE,           "i(i)",                  NULL,            NULL },
+            //SciKernelMapEntry.Make(kCosDiv,SciVersionRange.       SIG_EVERYWHERE,           "ii",                    NULL,            NULL },
+            SciKernelMapEntry.Make(kDeleteKey,SciVersionRange.SIG_EVERYWHERE,"l.",null,Workarounds.kDeleteKey_workarounds),
+            //SciKernelMapEntry.Make(kDeviceInfo,SciVersionRange.   SIG_EVERYWHERE,           "i(r)(r)(i)",            NULL,            kDeviceInfo_workarounds }, // subop
             SciKernelMapEntry.Make(kDirLoop,SciVersionRange.SIG_EVERYWHERE,"oi",null,Workarounds.kDirLoop_workarounds),
             SciKernelMapEntry.Make(kDisposeClone,SciVersionRange.SIG_EVERYWHERE,"o",null,null),
             SciKernelMapEntry.Make(kDisposeList,SciVersionRange.SIG_EVERYWHERE,"l",null,null),
             SciKernelMapEntry.Make(kDisposeScript,SciVersionRange.SIG_EVERYWHERE,"i(i*)",null,Workarounds.kDisposeScript_workarounds),
+             SciKernelMapEntry.Make(kDisposeWindow,SciVersionRange.SIG_EVERYWHERE,"i(i)",null,null),
+            SciKernelMapEntry.Make(kDisplay,SciVersionRange.SIG_EVERYWHERE,"[ir]([ir!]*)",null,Workarounds.kDisplay_workarounds),
+	        // ^ we allow invalid references here, because kDisplay gets called with those in e.g. pq3 during intro
+	        //    restoreBits() checks and skips invalid handles, so that's fine. Sierra SCI behaved the same
+            //SciKernelMapEntry.Make(kDoAudio,SciVersionRange.      SIG_EVERYWHERE,           "i(.*)",                 NULL,            NULL }, // subop
+        	//SciKernelMapEntry.Make(kDoAvoider,SciVersionRange.    SIG_EVERYWHERE,           "o(i)",                  NULL,            NULL },
+            SciKernelMapEntry.Make(kDoBresen,SciVersionRange.SIG_EVERYWHERE,"o",null,null),
             SciKernelMapEntry.Make(kDoSound,SciVersionRange.SIG_EVERYWHERE,"i(.*)",kDoSound_subops,null),
+            //SciKernelMapEntry.Make(kDoSync,SciVersionRange.       SIG_EVERYWHERE,           "i(.*)",                 NULL,            NULL }, // subop
+            SciKernelMapEntry.Make(kDrawCel,SciVersionRange.SIG_SCI11(SIGFOR_PC),"iiiii(i)(i)([ri])",null,null), // reference for kq6 hires
+	        SciKernelMapEntry.Make(kDrawCel, SciVersionRange.SIG_EVERYWHERE,"iiiii(i)(i)",null,null),
+            SciKernelMapEntry.Make(kDrawControl,SciVersionRange.SIG_EVERYWHERE,"o",null,null),
             SciKernelMapEntry.Make(kDrawMenuBar,SciVersionRange.SIG_EVERYWHERE,"i",null,null),
             SciKernelMapEntry.Make(kDrawPic,SciVersionRange.SIG_EVERYWHERE,"i(i)(i)(i)",null,null),
             SciKernelMapEntry.Make(kDrawStatus,SciVersionRange.SIG_EVERYWHERE,"[r0](i)(i)",null,null),
+            SciKernelMapEntry.Make(kEditControl,SciVersionRange.SIG_EVERYWHERE,"[o0][o0]",null,null),
+            //SciKernelMapEntry.Make(kEmpty,SciVersionRange.        SIG_EVERYWHERE,           "(.*)",                  NULL,            NULL },
+            //SciKernelMapEntry.Make(kEmptyList,SciVersionRange.    SIG_EVERYWHERE,           "l",                     NULL,            NULL },
             SciKernelMapEntry.Make("FClose",kFileIOClose,SciVersionRange.SIG_EVERYWHERE,"i",null,null),
             SciKernelMapEntry.Make("FGets",kFileIOReadString,SciVersionRange.SIG_EVERYWHERE,"rii",null,null),
             SciKernelMapEntry.Make("FOpen",kFileIOOpen,SciVersionRange.SIG_EVERYWHERE,"ri",null,null),
@@ -539,30 +576,127 @@ namespace NScumm.Sci.Engine
             SciKernelMapEntry.Make(kFirstNode,SciVersionRange.SIG_EVERYWHERE,"[l0]",null,null),
             SciKernelMapEntry.Make(kFlushResources,SciVersionRange.SIG_EVERYWHERE,"i",null,null),
             SciKernelMapEntry.Make(kFormat,SciVersionRange.SIG_EVERYWHERE,"r[ri](.*)",null,null),
+            SciKernelMapEntry.Make(kGameIsRestarting,SciVersionRange.SIG_EVERYWHERE,"(i)",null,null),
             SciKernelMapEntry.Make(kGetAngle,SciVersionRange.SIG_EVERYWHERE,"iiii",null,Workarounds.kGetAngle_workarounds),
             SciKernelMapEntry.Make(kGetCWD,SciVersionRange.SIG_EVERYWHERE,"r",null,null),
             SciKernelMapEntry.Make(kGetDistance,SciVersionRange.SIG_EVERYWHERE,"ii(i)(i)(i)(i)",null,null),
+            SciKernelMapEntry.Make(kGetEvent,SciVersionRange.SIG_SCIALL(SIGFOR_MAC),"io(i*)",null,null),
+            SciKernelMapEntry.Make(kGetEvent,SciVersionRange.SIG_EVERYWHERE,"io",null,null),
+            SciKernelMapEntry.Make(kGetFarText,SciVersionRange.SIG_EVERYWHERE,"ii[r0]",null,null),
+            //SciKernelMapEntry.Make(kGetMenu,SciVersionRange.      SIG_EVERYWHERE,           "i.",                    NULL,            NULL },
+            //SciKernelMapEntry.Make(kGetMessage,SciVersionRange.   SIG_EVERYWHERE,           "iiir",                  NULL,            NULL },
+            SciKernelMapEntry.Make(kGetPort,SciVersionRange.SIG_EVERYWHERE,"",null,null),
             SciKernelMapEntry.Make(kGetSaveDir,SciVersionRange.SIG_SCI32(SIGFOR_ALL),"(r*)",null,null),
             SciKernelMapEntry.Make(kGetSaveDir,SciVersionRange.SIG_EVERYWHERE,"",null,null),
             SciKernelMapEntry.Make(kGetTime,SciVersionRange.SIG_EVERYWHERE,"(i)",null,null),
-            SciKernelMapEntry.Make(kGameIsRestarting,SciVersionRange.SIG_EVERYWHERE,"(i)",null,null),
+            SciKernelMapEntry.Make(kGlobalToLocal,SciVersionRange.SIG_SCI32(SIGFOR_ALL),"oo",null,null),
+            SciKernelMapEntry.Make(kGlobalToLocal,SciVersionRange.SIG_EVERYWHERE,"o", null, null),
             SciKernelMapEntry.Make(kGraph,SciVersionRange.SIG_EVERYWHERE,null,kGraph_subops,null),
             SciKernelMapEntry.Make(kHaveMouse,SciVersionRange.SIG_EVERYWHERE,"",null,null),
+            //SciKernelMapEntry.Make(kHiliteControl,SciVersionRange.SIG_EVERYWHERE,           "o",                     NULL,            NULL },
+            SciKernelMapEntry.Make(kInitBresen,SciVersionRange.SIG_EVERYWHERE,"o(i)",null,null),
+            //SciKernelMapEntry.Make(kIntersections,SciVersionRange.SIG_EVERYWHERE,           "iiiiriiiri",            NULL,            NULL },
+            //SciKernelMapEntry.Make(kIsItSkip,SciVersionRange.     SIG_EVERYWHERE,           "iiiii",                 NULL,            NULL },
             SciKernelMapEntry.Make(kIsObject,SciVersionRange.SIG_EVERYWHERE,".",null,Workarounds.kIsObject_workarounds),
+            SciKernelMapEntry.Make(kJoystick,SciVersionRange.SIG_EVERYWHERE,"i(.*)",null,null), // subop
             SciKernelMapEntry.Make(kLastNode,SciVersionRange.SIG_EVERYWHERE,"l",null,null),
             SciKernelMapEntry.Make(kLoad,SciVersionRange.SIG_EVERYWHERE,"ii(i*)",null,null),
+            //SciKernelMapEntry.Make(kLocalToGlobal,SciVersionRange.SIG_SCI32, SIGFOR_ALL,    "oo",                    NULL,            NULL },
+            //SciKernelMapEntry.Make(kLocalToGlobal,SciVersionRange.SIG_EVERYWHERE,           "o",                     NULL,            NULL },
+            //SciKernelMapEntry.Make(kLock,SciVersionRange.         SIG_EVERYWHERE,           "ii(i)",                 NULL,            NULL },
+            SciKernelMapEntry.Make(kMapKeyToDir,SciVersionRange.SIG_EVERYWHERE,"o",null,null),
+            //SciKernelMapEntry.Make(kMemory,SciVersionRange.     SIG_EVERYWHERE,           "i(.*)",                 NULL,            kMemory_workarounds }, // subop
             SciKernelMapEntry.Make(kMemoryInfo,SciVersionRange.SIG_EVERYWHERE,"i",null,null),
+            //SciKernelMapEntry.Make(kMemorySegment,SciVersionRange.SIG_EVERYWHERE,           "ir(i)",                 NULL,            NULL }, // subop
+	        SciKernelMapEntry.Make(kMenuSelect,SciVersionRange. SIG_EVERYWHERE,"o(i)",null,null),
+            //SciKernelMapEntry.Make(kMergePoly,SciVersionRange.  SIG_EVERYWHERE,           "rli",                   NULL,            NULL },
+            //SciKernelMapEntry.Make(kMessage,SciVersionRange.    SIG_EVERYWHERE,           "i(.*)",                 NULL,            NULL }, // subop
+	        SciKernelMapEntry.Make(kMoveCursor,SciVersionRange.SIG_EVERYWHERE,"ii",null,Workarounds.kMoveCursor_workarounds),
             SciKernelMapEntry.Make(kNewList,SciVersionRange.SIG_EVERYWHERE,"",null,null),
             SciKernelMapEntry.Make(kNewNode,SciVersionRange.SIG_EVERYWHERE,"..",null,null),
-            SciKernelMapEntry.Make(kNextNode,SciVersionRange.SIG_EVERYWHERE,"n",null,null),
+            SciKernelMapEntry.Make(kNewWindow,SciVersionRange.SIG_SCIALL(SIGFOR_MAC),".*",null,null),
+            SciKernelMapEntry.Make(kNewWindow,SciVersionRange.SIG_SCI0(SIGFOR_ALL),"iiii[r0]i(i)(i)(i)",null,null),
+            SciKernelMapEntry.Make(kNewWindow,SciVersionRange.SIG_SCI1(SIGFOR_ALL),"iiii[ir]i(i)(i)([ir])(i)(i)(i)(i)",null,null),
+            SciKernelMapEntry.Make(kNewWindow,SciVersionRange.SIG_SCI11(SIGFOR_ALL),"iiiiiiii[r0]i(i)(i)(i)",null,Workarounds.kNewWindow_workarounds),
+            SciKernelMapEntry.Make(kNextNode, SciVersionRange.SIG_EVERYWHERE,"n",null,null),
             SciKernelMapEntry.Make(kNodeValue,SciVersionRange.SIG_EVERYWHERE,"[n0]",null,null),
+            SciKernelMapEntry.Make(kNumCels,SciVersionRange.SIG_EVERYWHERE,"o",null,null),
+            //SciKernelMapEntry.Make(kNumLoops,SciVersionRange.   SIG_EVERYWHERE,           "o",                     NULL,            NULL },
+            SciKernelMapEntry.Make(kOnControl,SciVersionRange.SIG_EVERYWHERE,"ii(i)(i)(i)",null,null),
+            //SciKernelMapEntry.Make(kPalVary,SciVersionRange.    SIG_EVERYWHERE,           "i(i*)",                 kPalVary_subops, NULL },
+            //SciKernelMapEntry.Make(kPalette,SciVersionRange.    SIG_EVERYWHERE,           "i(.*)",                 kPalette_subops, NULL },
+            //SciKernelMapEntry.Make(kParse,SciVersionRange.      SIG_EVERYWHERE,           "ro",                    NULL,            NULL },
+            SciKernelMapEntry.Make(kPicNotValid,SciVersionRange.SIG_EVERYWHERE,"(i)",null,null),
+            //SciKernelMapEntry.Make(kPlatform,SciVersionRange.SIG_EVERYWHERE,"(.*)",null,null),
+            //SciKernelMapEntry.Make(kPortrait,SciVersionRange.SIG_EVERYWHERE,"i(.*)",null,null), // subop
             SciKernelMapEntry.Make(kPrevNode,SciVersionRange.SIG_EVERYWHERE,"n",null,null),
+            //SciKernelMapEntry.Make(kPriCoord),SciVersionRange.SIG_EVERYWHERE,           "i",                     NULL,            NULL },
+            SciKernelMapEntry.Make(kRandom,SciVersionRange.SIG_EVERYWHERE,"i(i)(i)",null,null),
+            //SciKernelMapEntry.Make(kReadNumber,SciVersionRange. SIG_EVERYWHERE,           "r",                     NULL,            kReadNumber_workarounds },
+            //SciKernelMapEntry.Make(kRemapColors,SciVersionRange.SIG_SCI11, SIGFOR_ALL,    "i(i)(i)(i)(i)",         NULL,            NULL },
+#if ENABLE_SCI32
+	        //{ "RemapColors", kRemapColors32, SIG_SCI32, SIGFOR_ALL,  "i(i)(i)(i)(i)(i)",      NULL,            NULL },
+#endif
+	        //SciKernelMapEntry.Make(kResCheck,SciVersionRange.   SIG_EVERYWHERE,           "ii(iiii)",              NULL,            NULL },
+            SciKernelMapEntry.Make(kRespondsTo,SciVersionRange.SIG_EVERYWHERE,".i",null,null),
+            //SciKernelMapEntry.Make(kRestartGame,SciVersionRange.SIG_EVERYWHERE,           "",                      NULL,            NULL },
+            //SciKernelMapEntry.Make(kRestoreGame,SciVersionRange.SIG_EVERYWHERE,           "[r0]i[r0]",             NULL,            NULL },
+            //SciKernelMapEntry.Make(kSaid,SciVersionRange.       SIG_EVERYWHERE,           "[r0]",                  NULL,            NULL },
+            //SciKernelMapEntry.Make(kSaveGame,SciVersionRange.   SIG_EVERYWHERE,           "[r0]i[r0](r0)",         NULL,            NULL },
             SciKernelMapEntry.Make(kScriptID,SciVersionRange.SIG_EVERYWHERE,"[io](i)",null,null),
             SciKernelMapEntry.Make(kSetCursor,SciVersionRange.SIG_SCI21(SIGFOR_ALL),"i(i)([io])(i*)",null,null),
 	        // TODO: SCI2.1 may supply an object optionally (mother goose sci21 right on startup) - find out why
 	        SciKernelMapEntry.Make(kSetCursor,SciVersionRange.SIG_SCI11(SIGFOR_ALL),"i(i)(i)(i)(iiiiii)",null,null),
             SciKernelMapEntry.Make(kSetCursor,SciVersionRange.SIG_EVERYWHERE,"i(i)(i)(i)(i)",null,Workarounds.kSetCursor_workarounds),
+            //SciKernelMapEntry.Make(kSetDebug,SciVersionRange.SIG_EVERYWHERE,           "(i*)",                  NULL,            NULL },
+            //SciKernelMapEntry.Make(kSetJump,SciVersionRange.SIG_EVERYWHERE,           "oiii",                  NULL,            NULL },
             SciKernelMapEntry.Make(kSetMenu,SciVersionRange.SIG_EVERYWHERE,"i(.*)",null,null),
+            SciKernelMapEntry.Make(kSetNowSeen,SciVersionRange.SIG_EVERYWHERE,"o(i)",null,null),
+            SciKernelMapEntry.Make(kSetPort,SciVersionRange.SIG_EVERYWHERE,"i(iiiii)(i)",null,Workarounds.kSetPort_workarounds),
+            //SciKernelMapEntry.Make(kSetQuitStr,SciVersionRange. SIG_EVERYWHERE,           "r",                     NULL,            NULL },
+            SciKernelMapEntry.Make(kSetSynonyms,SciVersionRange.SIG_EVERYWHERE,"o",null,null),
+            //SciKernelMapEntry.Make(kSetVideoMode,SciVersionRange. SIG_EVERYWHERE,           "i",                     NULL,            NULL },
+            //SciKernelMapEntry.Make(kShakeScreen,SciVersionRange.SIG_EVERYWHERE,           "(i)(i)",                NULL,            NULL },
+            //SciKernelMapEntry.Make(kShowMovie,SciVersionRange.SIG_EVERYWHERE,           "(.*)",                  NULL,            NULL },
+            //SciKernelMapEntry.Make(kShow,SciVersionRange.SIG_EVERYWHERE,           "i",                     NULL,            NULL },
+            //SciKernelMapEntry.Make(kSinDiv,SciVersionRange.SIG_EVERYWHERE,           "ii",                    NULL,            NULL },
+            //SciKernelMapEntry.Make(kSort,SciVersionRange.SIG_EVERYWHERE,           "ooo",                   NULL,            NULL },
+            //SciKernelMapEntry.Make(kSqrt,SciVersionRange.SIG_EVERYWHERE,           "i",                     NULL,            NULL },
+            //SciKernelMapEntry.Make(kStrAt,SciVersionRange.SIG_EVERYWHERE,           "ri(i)",                 NULL,            kStrAt_workarounds },
+            //SciKernelMapEntry.Make(kStrCat,SciVersionRange.SIG_EVERYWHERE,           "rr",                    NULL,            NULL },
+            //SciKernelMapEntry.Make(kStrCmp,SciVersionRange.SIG_EVERYWHERE,           "rr(i)",                 NULL,            NULL },
+            //SciKernelMapEntry.Make(kStrCpy,SciVersionRange.SIG_EVERYWHERE,           "r[r0](i)",              NULL,            kStrCpy_workarounds },
+            //SciKernelMapEntry.Make(kStrEnd,SciVersionRange.SIG_EVERYWHERE,           "r",                     NULL,            NULL },
+            //SciKernelMapEntry.Make(kStrLen,SciVersionRange.SIG_EVERYWHERE,           "[r0]",                  NULL,            kStrLen_workarounds },
+            //SciKernelMapEntry.Make(kStrSplit,SciVersionRange.SIG_EVERYWHERE,           "rr[r0]",                NULL,            NULL },
+            //SciKernelMapEntry.Make(kTextColors,SciVersionRange.SIG_EVERYWHERE,           "(i*)",                  NULL,            NULL },
+            //SciKernelMapEntry.Make(kTextFonts,SciVersionRange.SIG_EVERYWHERE,           "(i*)",                  NULL,            NULL },
+            SciKernelMapEntry.Make(kTextSize,SciVersionRange.SIG_SCIALL(SIGFOR_MAC),"r[r0]i(i)(r0)(i)",null,null),
+            SciKernelMapEntry.Make(kTextSize,SciVersionRange.SIG_EVERYWHERE,"r[r0]i(i)(r0)",null,null),
+            //SciKernelMapEntry.Make(kTimesCos,SciVersionRange.SIG_EVERYWHERE,           "ii",                    NULL,            NULL },
+            //{ "CosMult", kTimesCos,        SIG_EVERYWHERE,           "ii",                    NULL,            NULL },
+            //SciKernelMapEntry.Make(kTimesCot,SciVersionRange.   SIG_EVERYWHERE,           "ii",                    NULL,            NULL },
+            //SciKernelMapEntry.Make(kTimesSin,SciVersionRange.   SIG_EVERYWHERE,           "ii",                    NULL,            NULL },
+            //{ "SinMult", kTimesSin,        SIG_EVERYWHERE,           "ii",                    NULL,            NULL },
+            //SciKernelMapEntry.Make(kTimesTan,SciVersionRange.   SIG_EVERYWHERE,           "ii",                    NULL,            NULL },
+            //SciKernelMapEntry.Make(kUnLoad,SciVersionRange.     SIG_EVERYWHERE,           "i[ir!]",                NULL,            kUnLoad_workarounds },
+	        // ^ We allow invalid references here (e.g. bug #6600), since they will be invalidated anyway by the call itself
+	        //SciKernelMapEntry.Make(kValidPath,SciVersionRange.  SIG_EVERYWHERE,           "r",                     NULL,            NULL },
+            SciKernelMapEntry.Make(kWait,SciVersionRange.SIG_EVERYWHERE,"i",null,null),
+            // Unimplemented SCI0-SCI1.1 unused functions, always mapped to kDummy
+	        //{ MAP_DUMMY(InspectObj,SciVersionRange. SIG_EVERYWHERE,           "(.*)",                  NULL,            NULL },
+            //{ MAP_DUMMY(ShowSends,SciVersionRange.SIG_EVERYWHERE,           "(.*)",                  NULL,            NULL },
+            //{ MAP_DUMMY(ShowObjs,SciVersionRange. SIG_EVERYWHERE,           "(.*)",                  NULL,            NULL },
+            //{ MAP_DUMMY(ShowFree,SciVersionRange. SIG_EVERYWHERE,           "(.*)",                  NULL,            NULL },
+            //{ MAP_DUMMY(StackUsage,SciVersionRange. SIG_EVERYWHERE,           "(.*)",                  NULL,            NULL },
+            //{ MAP_DUMMY(Profiler,SciVersionRange. SIG_EVERYWHERE,           "(.*)",                  NULL,            NULL },
+            //{ MAP_DUMMY(ShiftScreen,SciVersionRange.SIG_EVERYWHERE,           "(.*)",                  NULL,            NULL },
+            //{ MAP_DUMMY(ListOps,SciVersionRange.  SIG_EVERYWHERE,           "(.*)",                  NULL,            NULL },
+	        //// Used by the sysLogger class (e.g. script 952 in GK1CD), a class used to report bugs by Sierra's testers
+	        //{ MAP_DUMMY(ATan,SciVersionRange.     SIG_EVERYWHERE,           "(.*)",                  NULL,            NULL },
+            //{ MAP_DUMMY(Record,SciVersionRange.   SIG_EVERYWHERE,           "(.*)",                  NULL,            NULL },
+            //{ MAP_DUMMY(PlayBack,SciVersionRange. SIG_EVERYWHERE,           "(.*)",                  NULL,            NULL },
+            //{ MAP_DUMMY(DbugStr,SciVersionRange.  SIG_EVERYWHERE,           "(.*)",                  NULL,            NULL },
             new SciKernelMapEntry()
         };
 
@@ -635,7 +769,7 @@ namespace NScumm.Sci.Engine
             _selectorCache.client = FindSelector("client");
             _selectorCache.dx = FindSelector("dx");
             _selectorCache.dy = FindSelector("dy");
-            _selectorCache.b_movCnt = FindSelector("b -moveCnt");
+            _selectorCache.b_movCnt = FindSelector("b-moveCnt");
             _selectorCache.b_i1 = FindSelector("b-i1");
             _selectorCache.b_i2 = FindSelector("b-i2");
             _selectorCache.b_di = FindSelector("b-di");

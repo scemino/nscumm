@@ -16,9 +16,16 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using System;
+using NScumm.Sci.Engine;
+
 namespace NScumm.Sci.Graphics
 {
     internal class GfxMacIconBar
     {
+        internal Register HandleEvents()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

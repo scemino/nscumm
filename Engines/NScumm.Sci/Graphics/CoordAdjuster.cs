@@ -18,6 +18,8 @@
 
 using System;
 using NScumm.Core.Graphics;
+using NScumm.Sci.Engine;
+using NScumm.Core;
 
 namespace NScumm.Sci.Graphics
 {
@@ -32,6 +34,31 @@ namespace NScumm.Sci.Graphics
         {
             return rect;
         }
+
+        public void KernelLocalToGlobal(ref int x, ref int y, Register planeObject = null)
+        {
+            short xs = (short)x;
+            short ys = (short)y;
+            KernelLocalToGlobal(ref xs, ref ys, planeObject);
+            x = xs;
+            y = ys;
+        }
+
+        public virtual void KernelLocalToGlobal(ref short x, ref short y, Register planeObject = null)
+        {
+        }
+
+        public virtual void KernelGlobalToLocal(ref int x, ref int y, Register planeObject = null)
+        {
+        }
+
+        public virtual void SetCursorPos(ref Point pos)
+        {
+        }
+
+        public virtual void MoveCursor(Point pos)
+        {
+        }
     }
 
     internal class GfxCoordAdjuster16 : GfxCoordAdjuster
@@ -43,15 +70,44 @@ namespace NScumm.Sci.Graphics
             _ports = ports;
         }
 
+        public override void KernelLocalToGlobal(ref short x, ref short y, Register planeObject = null)
+        {
+            Port curPort = _ports.Port;
+            x += curPort.left;
+            y += curPort.top;
+        }
+
+        public override void KernelGlobalToLocal(ref int x, ref int y, Register planeObject = null)
+        {
+            Port curPort = _ports.Port;
+            x -= curPort.left;
+            y -= curPort.top;
+        }
+
         public override Rect OnControl(Rect rect)
         {
             Port oldPort = _ports.SetPort(_ports._picWind);
-            Rect adjustedRect=new Rect(rect.Left, rect.Top, rect.Right, rect.Bottom);
+            Rect adjustedRect = new Rect(rect.Left, rect.Top, rect.Right, rect.Bottom);
 
             adjustedRect.Clip(_ports.Port.rect);
-            _ports.OffsetRect(adjustedRect);
+            _ports.OffsetRect(ref adjustedRect);
             _ports.SetPort(oldPort);
             return adjustedRect;
+        }
+
+        public override void SetCursorPos(ref Point pos)
+        {
+            pos.Y += _ports.Port.top;
+            pos.X += _ports.Port.left;
+        }
+
+        public override void MoveCursor(Point pos)
+        {
+            pos.Y += _ports._picWind.rect.Top;
+            pos.X += _ports._picWind.rect.Left;
+
+            pos.Y = ScummHelper.Clip(pos.Y, _ports._picWind.rect.Top, _ports._picWind.rect.Bottom - 1);
+            pos.X = ScummHelper.Clip(pos.X, _ports._picWind.rect.Left, _ports._picWind.rect.Right - 1);
         }
     }
 }

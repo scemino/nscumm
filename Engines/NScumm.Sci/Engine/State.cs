@@ -155,6 +155,7 @@ namespace NScumm.Sci.Engine
         /// current &rest register
         /// </summary>
         public short r_rest;
+        private int g_debug_sleeptime_factor = 1;
 
         /// <summary>
         /// Pointer to the least stack element
@@ -309,6 +310,16 @@ namespace NScumm.Sci.Engine
             variablesBase[Vm.VAR_GLOBAL] = script_000.LocalsBegin;
             variables[Vm.VAR_GLOBAL] = script_000.LocalsBegin;
             variablesMax[Vm.VAR_GLOBAL] = script_000.LocalsCount;
+        }
+
+        public void Wait(int ticks)
+        {
+            var time = Environment.TickCount;
+            r_acc = Register.Make(0, (ushort)((time - lastWaitTime) * 60 / 1000));
+            lastWaitTime = time;
+
+            ticks *= g_debug_sleeptime_factor;
+            SciEngine.Instance.Sleep(ticks * 1000 / 60);
         }
     }
 }

@@ -190,7 +190,7 @@ namespace NScumm.Sci.Engine
             if ((infoSelector & SciObject.InfoFlagClone)!=0)
                 parentObj = s._segMan.GetObject(parentAddr);
 
-            cloneObj.Item = parentObj;
+            cloneObj.Item = parentObj.Clone();
 
             // Mark as clone
             unchecked
@@ -206,6 +206,15 @@ namespace NScumm.Sci.Engine
             s._segMan.GetScript(cloneObj.Item.Pos.Segment).IncrementLockers();
 
             return cloneAddr;
+        }
+
+        private static Register kRespondsTo(EngineState s, int argc, StackPtr? argv)
+        {
+            Register obj = argv.Value[0];
+            int selector = argv.Value[1].ToUInt16();
+
+            Register tmp;
+            return Register.Make(0, s._segMan.IsHeapObject(obj) && SciEngine.LookupSelector(s._segMan, obj, selector, null, out tmp) != SelectorType.None);
         }
 
         internal void SignatureDebug(ushort[] signature, int argc, StackPtr? argv)

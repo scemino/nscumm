@@ -81,5 +81,13 @@ namespace NScumm.Sci.Engine
             }
             return s.r_acc;
         }
+
+        private static Register kMenuSelect(EngineState s, int argc, StackPtr? argv)
+        {
+            Register eventObject = argv.Value[0];
+            bool pauseSound = argc <= 1 || !argv.Value[1].IsNull;
+
+            return SciEngine.Instance._gfxMenu.KernelSelect(eventObject, pauseSound);
+        }
     }
 }

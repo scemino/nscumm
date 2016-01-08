@@ -85,12 +85,19 @@ namespace NScumm.Sci.Graphics
 
         public Port Port { get { return _curPort; } }
 
+        public short PointSize { get { return _curPort.fontHeight; } }
+
         public GfxPorts(SegManager segMan, GfxScreen screen)
         {
             _segMan = segMan;
             _screen = screen;
 
             _windowList = new List<Port>();
+        }
+
+        public void BackColor(short color)
+        {
+            _curPort.backClr = color;
         }
 
         public void Init(bool usesOldGfxFunctions, GfxPaint16 paint16, GfxText16 text16)
@@ -186,6 +193,57 @@ namespace NScumm.Sci.Graphics
             KernelInitPriorityBands();
         }
 
+        public void KernelDisposeWindow(ushort windowId, bool reanimate)
+        {
+            Window wnd = (Window)GetPortById(windowId);
+            if (wnd!=null)
+            {
+                if (wnd.counterTillFree==0)
+                {
+                    RemoveWindow(wnd, reanimate);
+                }
+                else {
+                    throw new InvalidOperationException($"kDisposeWindow: used already disposed window id {windowId}");
+                }
+            }
+            else {
+                throw new InvalidOperationException($"kDisposeWindow: used unknown window id {windowId}");
+            }
+        }
+
+        private void RemoveWindow(Window pWnd, bool reanimate)
+        {
+            SetPort(_wmgrPort);
+            _paint16.BitsRestore(pWnd.hSaved1);
+            pWnd.hSaved1 = Register.NULL_REG;
+            _paint16.BitsRestore(pWnd.hSaved2);
+            pWnd.hSaved2 = Register.NULL_REG;
+            if (!reanimate)
+                _paint16.BitsShow(pWnd.restoreRect);
+            else
+                _paint16.KernelGraphRedrawBox(pWnd.restoreRect);
+            _windowList.Remove(pWnd);
+            SetPort(_windowList.Last());
+            // We will actually free this window after 15 kSetPort-calls
+            // Sierra sci freed the pointer immediately, but pointer to that port
+            //  still worked till the memory got overwritten. Some games depend
+            //  on this (dispose a window and then kSetPort to it again for once)
+            //  Those are actually script bugs, but patching all of those out
+            //  would be quite a hassle and this just keeps compatibility
+            //  (examples: hoyle 4 game menu and sq4cd inventory)
+            //  sq4cd gum wrapper requires more than 10
+            pWnd.counterTillFree = 15;
+            _freeCounter++;
+        }
+
+        public void ClipLine(ref Point start, ref Point end)
+        {
+            start.Y = ScummHelper.Clip(start.Y, _curPort.rect.Top, _curPort.rect.Bottom - 1);
+            start.X = ScummHelper.Clip(start.X, _curPort.rect.Left, _curPort.rect.Right - 1);
+            end.Y = ScummHelper.Clip(end.Y, _curPort.rect.Top, _curPort.rect.Bottom - 1);
+            end.X = ScummHelper.Clip(end.X, _curPort.rect.Left, _curPort.rect.Right - 1);
+        }
+
         internal void PriorityBandsInitSci11(ByteAccess byteAccess)
         {
             throw new NotImplementedException();
@@ -201,9 +259,20 @@ namespace NScumm.Sci.Graphics
             throw new NotImplementedException();
         }
 
-        internal void KernelGraphAdjustPriority(ushort v1, ushort v2)
+        public Register KernelGetActive()
         {
-            throw new NotImplementedException();
+            return Register.Make(0, Port.id);
+        }
+
+        public void KernelGraphAdjustPriority(int top, int bottom)
+        {
+            if (_usesOldGfxFunctions)
+            {
+                PriorityBandsInit(15, (short)top, (short)bottom);
+            }
+            else {
+                PriorityBandsInit(14, (short)top, (short)bottom);
+            }
         }
 
         public void ProcessEngineHunkList(WorklistManager wm)
@@ -215,7 +284,17 @@ namespace NScumm.Sci.Graphics
             }
         }
 
-        public void OffsetRect(Rect r)
+        public void PenMode(short mode)
+        {
+            _curPort.penMode = mode;
+        }
+
+        public void TextGreyedOutput(bool state)
+        {
+            _curPort.greyedOutput = state;
+        }
+
+        public void OffsetRect(ref Rect r)
         {
             r.Top += _curPort.top;
             r.Bottom += _curPort.top;
@@ -273,14 +352,28 @@ namespace NScumm.Sci.Graphics
                 _priorityBottom--;
         }
 
-        internal short KernelCoordinateToPriority(short y)
+        public short KernelCoordinateToPriority(short y)
         {
-            throw new NotImplementedException();
+            if (y < _priorityTop)
+                return _priorityBands[_priorityTop];
+            if (y > _priorityBottom)
+                return _priorityBands[_priorityBottom];
+            return _priorityBands[y];
         }
 
-        internal void PriorityBandsInit(object p)
+        public void PriorityBandsInit(ByteAccess data)
         {
-            throw new NotImplementedException();
+            int i = 0, inx;
+            byte priority = 0;
+
+            for (inx = 0; inx < 14; inx++)
+            {
+                priority = data.Increment();
+                while (i < priority)
+                    _priorityBands[i++] = (byte)inx;
+            }
+            while (i < 200)
+                _priorityBands[i++] = (byte)inx;
         }
 
         public bool IsFrontWindow(Window pWnd)
@@ -466,14 +559,102 @@ namespace NScumm.Sci.Graphics
             return pwnd;
         }
 
-        internal int KernelPriorityToCoordinate(short priority)
+        public Register KernelNewWindow(Rect dims, Rect restoreRect, ushort style, short priority, short colorPen, short colorBack, string title)
         {
-            throw new NotImplementedException();
+            Window wnd = null;
+
+            if (restoreRect.Bottom != 0 && restoreRect.Right != 0)
+                wnd = AddWindow(dims, restoreRect, title, (WindowManagerStyle)style, priority, false);
+            else
+                wnd = AddWindow(dims, null, title, (WindowManagerStyle)style, priority, false);
+            wnd.penClr = colorPen;
+            wnd.backClr = colorBack;
+            DrawWindow(wnd);
+
+            return Register.Make(0, wnd.id);
         }
 
-        internal void OffsetLine(Point startPoint, Point endPoint)
+        public void KernelSetPicWindow(Rect rect, short picTop, short picLeft, bool initPriorityBandsFlag)
         {
-            throw new NotImplementedException();
+            _picWind.rect = rect;
+            _picWind.top = picTop;
+            _picWind.left = picLeft;
+            if (initPriorityBandsFlag)
+                KernelInitPriorityBands();
+        }
+
+        public void KernelSetActive(ushort portId)
+        {
+            if (_freeCounter != 0)
+            {
+                // Windows waiting to get freed
+                for (var id = PORTS_FIRSTSCRIPTWINDOWID; id < _windowsById.Count; id++)
+                {
+                    Window window = (Window)_windowsById[id];
+                    if (window != null)
+                    {
+                        if (window.counterTillFree != 0)
+                        {
+                            window.counterTillFree--;
+                            if (window.counterTillFree == 0)
+                            {
+                                FreeWindow(window);
+                                _freeCounter--;
+                            }
+                        }
+                    }
+                }
+            }
+
+            switch (portId)
+            {
+                case 0:
+                    SetPort(_wmgrPort);
+                    break;
+                case 0xFFFF:
+                    SetPort(_menuPort);
+                    break;
+                default:
+                    {
+                        Port newPort = GetPortById(portId);
+                        if (newPort != null)
+                            SetPort(newPort);
+                        else
+                            throw new InvalidOperationException($"GfxPorts::kernelSetActive was requested to set invalid port id {portId}");
+                    }
+                    break;
+            }
+        }
+
+        private Port GetPortById(ushort id)
+        {
+            return (id < _windowsById.Count) ? _windowsById[id] : null;
+        }
+
+        public void Move(short left, short top)
+        {
+            _curPort.curTop += top;
+            _curPort.curLeft += left;
+        }
+
+        public short KernelPriorityToCoordinate(byte priority)
+        {
+            short y;
+            if (priority <= _priorityBandCount)
+            {
+                for (y = 0; y <= _priorityBottom; y++)
+                    if (_priorityBands[y] == priority)
+                        return y;
+            }
+            return _priorityBottom;
+        }
+
+        public void OffsetLine(ref Point start, ref Point end)
+        {
+            start.X += _curPort.left;
+            start.Y += _curPort.top;
+            end.X += _curPort.left;
+            end.Y += _curPort.top;
         }
 
         public void MoveTo(short left, short top)
@@ -557,9 +738,13 @@ namespace NScumm.Sci.Graphics
             _curPort.penClr = color;
         }
 
-        private void FreeWindow(Window window)
+        private void FreeWindow(Window pWnd)
         {
-            throw new NotImplementedException();
+            if (!pWnd.hSaved1.IsNull)
+                _segMan.FreeHunkEntry(pWnd.hSaved1);
+            if (!pWnd.hSaved2.IsNull)
+                _segMan.FreeHunkEntry(pWnd.hSaved2);
+            _windowsById[pWnd.id] = null;
         }
 
         private void SetOrigin(short left, short top)

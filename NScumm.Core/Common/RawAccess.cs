@@ -74,9 +74,19 @@ namespace NScumm.Core.Common
             return _data.ToUInt16(_offset + offset);
         }
 
+        public ushort ReadUInt16BigEndian(int offset = 0)
+        {
+            return _data.ToUInt16BigEndian(_offset + offset);
+        }
+
         public short ReadInt16(int offset = 0)
         {
             return _data.ToInt16(_offset + offset);
+        }
+
+        public void WriteUInt16(int offset, ushort value)
+        {
+            _data.WriteUInt16(_offset + offset, value);
         }
 
         public UShortAccess ToUInt16()
@@ -118,6 +128,11 @@ namespace NScumm.Core.Common
         {
             get { return _data.ToUInt16(Offset + index * 2); }
             set { _data.WriteUInt16(Offset + index * 2, value); }
+        }
+
+        public UShortAccess(UShortAccess data, int offset = 0)
+            : this(data.Data, data.Offset + offset)
+        {
         }
 
         public UShortAccess(ByteAccess data, int offset = 0)

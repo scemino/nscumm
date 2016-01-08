@@ -17,10 +17,8 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using NScumm.Core;
+using NScumm.Core.Common;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace NScumm.Sci.Engine
 {
@@ -299,6 +297,41 @@ namespace NScumm.Sci.Engine
             s._segMan.Strcpy(dest, new string(targetbuf, 0, target));
 
             return dest; /* Return target addr */
+        }
+
+        private static Register kGetFarText(EngineState s, int argc, StackPtr? argv)
+        {
+            var textres = SciEngine.Instance.ResMan.FindResource(new ResourceId(ResourceType.Text, argv.Value[0].ToUInt16()), false);
+            int counter = argv.Value[1].ToUInt16();
+
+            if (textres == null)
+            {
+                throw new InvalidOperationException($"text.{argv.Value[0].ToUInt16()} does not exist");
+            }
+
+            var seeker = new ByteAccess(textres.data);
+
+            // The second parameter (counter) determines the number of the string
+            // inside the text resource.
+            while ((counter--) != 0)
+            {
+                while (seeker.Increment() != 0)
+                    ;
+            }
+
+            // If the third argument is NULL, allocate memory for the destination. This
+            // occurs in SCI1 Mac games. The memory will later be freed by the game's
+            // scripts.
+            if (argv.Value[2] == Register.NULL_REG)
+            {
+                Register temp;
+                s._segMan.AllocDynmem(ScummHelper.GetTextLength(seeker.Data, seeker.Offset) + 1, "Mac FarText", out temp);
+                StackPtr ptr = argv.Value;
+                ptr[2] = temp;
+            }
+
+            s._segMan.Strcpy(argv.Value[2], ScummHelper.GetText(seeker.Data, seeker.Offset)); // Copy the string and get return value
+            return argv.Value[2];
         }
     }
 }

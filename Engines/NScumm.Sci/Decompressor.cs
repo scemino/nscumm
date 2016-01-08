@@ -17,6 +17,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using NScumm.Core.Common;
 using System;
 using System.IO;
 
@@ -113,7 +114,7 @@ namespace NScumm.Sci
                 FetchBitsLSB();
             uint ret = (uint)(_dwBits & ~((~0) << n));
             _dwBits >>= n;
-            _nBits = (byte)(_nBits-n);
+            _nBits = (byte)(_nBits - n);
             return ret;
         }
 
@@ -124,6 +125,32 @@ namespace NScumm.Sci
         protected virtual void PutByte(byte b)
         {
             _dest[_dwWrote++] = b;
+        }
+
+        protected uint GetBitsMSB(int n)
+        {
+            // fetching more data to buffer if needed
+            if (_nBits < n)
+                FetchBitsMSB();
+            uint ret = _dwBits >> (32 - n);
+            _dwBits <<= n;
+            _nBits = (byte)(_nBits - n);
+            return ret;
+        }
+
+        protected byte GetByteMSB()
+        {
+            return (byte)GetBitsMSB(8);
+        }
+
+        private void FetchBitsMSB()
+        {
+            while (_nBits <= 24)
+            {
+                _dwBits |= ((uint)_src.ReadByte()) << (24 - _nBits);
+                _nBits += 8;
+                _dwRead++;
+            }
         }
     }
 
@@ -191,7 +218,7 @@ namespace NScumm.Sci
 
             var tokenlist = new ushort[4096]; // pointers to dest[]
             var tokenlengthlist = new ushort[4096]; // char length of each token
-            
+
             while (!IsFinished)
             {
                 token = (ushort)GetBitsLSB(_numbits);
@@ -220,7 +247,7 @@ namespace NScumm.Sci
                         {
                             // For me this seems a normal situation, It's necessary to handle it
                             // TODO: warning("unpackLZW: Trying to write beyond the end of array(len=%d, destctr=%d, tok_len=%d)",
-                                    //_szUnpacked, _dwWrote, tokenlastlength);
+                            //_szUnpacked, _dwWrote, tokenlastlength);
                             for (int i = 0; _dwWrote < _szUnpacked; i++)
                                 PutByte(dest[tokenlist[token] + i]);
                         }
@@ -262,6 +289,52 @@ namespace NScumm.Sci
             _numbits = 9;
             _curtoken = 0x102;
             _endtoken = 0x1ff;
-        }        
+        }
+    }
+
+    /// <summary>
+    /// Huffman decompressor
+    /// </summary>
+    internal class DecompressorHuffman : Decompressor
+    {
+        private byte[] _nodes;
+
+        public override ResourceErrorCodes Unpack(Stream src, byte[] dest, int nPacked, int nUnpacked)
+        {
+            Init(src, dest, nPacked, nUnpacked);
+            byte numnodes;
+            short c;
+            ushort terminator;
+
+            numnodes = (byte)_src.ReadByte();
+            terminator = (ushort)(_src.ReadByte() | 0x100);
+            _nodes = new byte[numnodes << 1];
+            _src.Read(_nodes, 0, numnodes << 1);
+
+            while ((c = Getc2()) != terminator && (c >= 0) && !IsFinished)
+                PutByte((byte)c);
+
+            _nodes = null;
+            return _dwWrote == _szUnpacked ? ResourceErrorCodes.NONE : ResourceErrorCodes.IO_ERROR;
+        }
+
+        private short Getc2()
+        {
+            var node = new ByteAccess(_nodes);
+            short next;
+            while (node[1] != 0)
+            {
+                if (GetBitsMSB(1) != 0)
+                {
+                    next = (short)(node[1] & 0x0F); // use lower 4 bits
+                    if (next == 0)
+                        return (short)(GetByteMSB() | 0x100);
+                }
+                else
+                    next = (short)(node[1] >> 4); // use higher 4 bits
+                node.Offset += next << 1;
+            }
+            return (short)(node.Value | (node[1] << 8));
+        }
     }
 }

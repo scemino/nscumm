@@ -81,6 +81,11 @@ namespace NScumm.Sci.Graphics
         private const int PIC_EGAPALETTE_TOTALSIZE = PIC_EGAPALETTE_COUNT * PIC_EGAPALETTE_SIZE;
         private const int PIC_EGAPRIORITY_SIZE = PIC_EGAPALETTE_SIZE;
 
+        private const int SCI_PATTERN_CODE_RECTANGLE = 0x10;
+        private const int SCI_PATTERN_CODE_USE_TEXTURE = 0x20;
+        private const int SCI_PATTERN_CODE_PENSIZE = 0x07;
+
+
         private const PictureOperation PIC_OP_FIRST = PictureOperation.SET_COLOR;
 
         private ResourceManager _resMan;
@@ -116,6 +121,117 @@ namespace NScumm.Sci.Graphics
             0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
             0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
             0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07
+        };
+
+        // This table is bitwise upwards (from bit0 to bit7), sierras original table went down the bits (bit7 to bit0)
+        //  this was done to simplify things, so we can just run through the table w/o worrying too much about clipping
+        static readonly bool[] vectorPatternTextures = {
+            false, false,  true, false, false, false, false, false, // 0x04
+	         true, false, false,  true, false,  true, false, false, // 0x29
+	        false, false, false, false, false, false,  true, false, // 0x40
+	        false, false,  true, false, false,  true, false, false, // 0x24
+	         true, false, false,  true, false, false, false, false, // 0x09
+	         true, false, false, false, false, false,  true, false, // 0x41
+	         true, false,  true, false, false,  true, false, false, // 0x25
+	         true, false,  true, false, false, false,  true, false, // 0x45
+	         true, false, false, false, false, false,  true, false, // 0x41
+	        false, false, false, false,  true, false, false,  true, // 0x90
+	        false, false, false, false,  true, false,  true, false, // 0x50
+	        false, false,  true, false, false, false,  true, false, // 0x44
+	        false, false, false,  true, false, false,  true, false, // 0x48
+	        false, false, false,  true, false, false, false, false, // 0x08
+	        false,  true, false, false, false, false,  true, false, // 0x42
+	        false, false, false,  true, false,  true, false, false, // 0x28
+	         true, false, false,  true, false, false, false,  true, // 0x89
+	        false,  true, false, false,  true, false,  true, false, // 0x52
+	         true, false, false,  true, false, false, false,  true, // 0x89
+	        false, false, false,  true, false, false, false,  true, // 0x88
+	        false, false, false, false,  true, false, false, false, // 0x10
+	        false, false, false,  true, false, false,  true, false, // 0x48
+	        false, false,  true, false, false,  true, false,  true, // 0xA4
+	        false, false, false,  true, false, false, false, false, // 0x08
+	        false, false,  true, false, false, false,  true, false, // 0x44
+	         true, false,  true, false,  true, false, false, false, // 0x15
+	        false, false, false,  true, false,  true, false, false, // 0x28
+	        false, false,  true, false, false,  true, false, false, // 0x24
+	        false, false, false, false, false, false, false, false, // 0x00
+	        false,  true, false,  true, false, false, false, false, // 0x0A
+	        false, false,  true, false, false,  true, false, false, // 0x24
+	        false, false, false, false, false,  true, false,        // 0x20 (last bit is not mentioned cause original interpreter also ignores that bit)
+	        // Now the table is actually duplicated, so we won't need to wrap around
+	        false, false,  true, false, false, false, false, false, // 0x04
+	         true, false, false,  true, false,  true, false, false, // 0x29
+	        false, false, false, false, false, false,  true, false, // 0x40
+	        false, false,  true, false, false,  true, false, false, // 0x24
+	         true, false, false,  true, false, false, false, false, // 0x09
+	         true, false, false, false, false, false,  true, false, // 0x41
+	         true, false,  true, false, false,  true, false, false, // 0x25
+	         true, false,  true, false, false, false,  true, false, // 0x45
+	         true, false, false, false, false, false,  true, false, // 0x41
+	        false, false, false, false,  true, false, false,  true, // 0x90
+	        false, false, false, false,  true, false,  true, false, // 0x50
+	        false, false,  true, false, false, false,  true, false, // 0x44
+	        false, false, false,  true, false, false,  true, false, // 0x48
+	        false, false, false,  true, false, false, false, false, // 0x08
+	        false,  true, false, false, false, false,  true, false, // 0x42
+	        false, false, false,  true, false,  true, false, false, // 0x28
+	         true, false, false,  true, false, false, false,  true, // 0x89
+	        false,  true, false, false,  true, false,  true, false, // 0x52
+	         true, false, false,  true, false, false, false,  true, // 0x89
+	        false, false, false,  true, false, false, false,  true, // 0x88
+	        false, false, false, false,  true, false, false, false, // 0x10
+	        false, false, false,  true, false, false,  true, false, // 0x48
+	        false, false,  true, false, false,  true, false,  true, // 0xA4
+	        false, false, false,  true, false, false, false, false, // 0x08
+	        false, false,  true, false, false, false,  true, false, // 0x44
+	         true, false,  true, false,  true, false, false, false, // 0x15
+	        false, false, false,  true, false,  true, false, false, // 0x28
+	        false, false,  true, false, false,  true, false, false, // 0x24
+	        false, false, false, false, false, false, false, false, // 0x00
+	        false,  true, false,  true, false, false, false, false, // 0x0A
+	        false, false,  true, false, false,  true, false, false, // 0x24
+	        false, false, false, false, false,  true, false,        // 0x20 (last bit is not mentioned cause original interpreter also ignores that bit)
+        };
+
+        // Bit offsets into pattern_textures
+        static readonly byte[] vectorPatternTextureOffset = {
+            0x00, 0x18, 0x30, 0xc4, 0xdc, 0x65, 0xeb, 0x48,
+            0x60, 0xbd, 0x89, 0x05, 0x0a, 0xf4, 0x7d, 0x7d,
+            0x85, 0xb0, 0x8e, 0x95, 0x1f, 0x22, 0x0d, 0xdf,
+            0x2a, 0x78, 0xd5, 0x73, 0x1c, 0xb4, 0x40, 0xa1,
+            0xb9, 0x3c, 0xca, 0x58, 0x92, 0x34, 0xcc, 0xce,
+            0xd7, 0x42, 0x90, 0x0f, 0x8b, 0x7f, 0x32, 0xed,
+            0x5c, 0x9d, 0xc8, 0x99, 0xad, 0x4e, 0x56, 0xa6,
+            0xf7, 0x68, 0xb7, 0x25, 0x82, 0x37, 0x3a, 0x51,
+            0x69, 0x26, 0x38, 0x52, 0x9e, 0x9a, 0x4f, 0xa7,
+            0x43, 0x10, 0x80, 0xee, 0x3d, 0x59, 0x35, 0xcf,
+            0x79, 0x74, 0xb5, 0xa2, 0xb1, 0x96, 0x23, 0xe0,
+            0xbe, 0x05, 0xf5, 0x6e, 0x19, 0xc5, 0x66, 0x49,
+            0xf0, 0xd1, 0x54, 0xa9, 0x70, 0x4b, 0xa4, 0xe2,
+            0xe6, 0xe5, 0xab, 0xe4, 0xd2, 0xaa, 0x4c, 0xe3,
+            0x06, 0x6f, 0xc6, 0x4a, 0xa4, 0x75, 0x97, 0xe1
+        };
+
+        // Bitmap for drawing sierra circles
+        static readonly byte[][] vectorPatternCircles = new byte[8][] {
+            new byte[]{ 0x01 },
+            new byte[]{ 0x72, 0x02 },
+            new byte[]{ 0xCE, 0xF7, 0x7D, 0x0E },
+            new byte[]{ 0x1C, 0x3E, 0x7F, 0x7F, 0x7F, 0x3E, 0x1C, 0x00 },
+            new byte[]{ 0x38, 0xF8, 0xF3, 0xDF, 0x7F, 0xFF, 0xFD, 0xF7, 0x9F, 0x3F, 0x38 },
+            new byte[]{ 0x70, 0xC0, 0x1F, 0xFE, 0xE3, 0x3F, 0xFF, 0xF7, 0x7F, 0xFF, 0xE7, 0x3F, 0xFE, 0xC3, 0x1F, 0xF8, 0x00 },
+            new byte[]{ 0xF0, 0x01, 0xFF, 0xE1, 0xFF, 0xF8, 0x3F, 0xFF, 0xDF, 0xFF, 0xF7, 0xFF, 0xFD, 0x7F, 0xFF, 0x9F, 0xFF,
+                        0xE3, 0xFF, 0xF0, 0x1F, 0xF0, 0x01 },
+            new byte[]{ 0xE0, 0x03, 0xF8, 0x0F, 0xFC, 0x1F, 0xFE, 0x3F, 0xFE, 0x3F, 0xFF, 0x7F, 0xFF, 0x7F, 0xFF, 0x7F, 0xFF,
+                0x7F, 0xFF, 0x7F, 0xFE, 0x3F, 0xFE, 0x3F, 0xFC, 0x1F, 0xF8, 0x0F, 0xE0, 0x03 }
+        //  { 0x01 };
+        //	{ 0x03, 0x03, 0x03 },
+        //	{ 0x02, 0x07, 0x07, 0x07, 0x02 },
+        //	{ 0x06, 0x06, 0x0F, 0x0F, 0x0F, 0x06, 0x06 },
+        //	{ 0x04, 0x0E, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x0E, 0x04 },
+        //	{ 0x0C, 0x1E, 0x1E, 0x1E, 0x3F, 0x3F, 0x3F, 0x1E, 0x1E, 0x1E, 0x0C },
+        //	{ 0x1C, 0x3E, 0x3E, 0x3E, 0x7F, 0x7F, 0x7F, 0x7F, 0x7F, 0x3E, 0x3E, 0x3E, 0x1C },
+        //	{ 0x18, 0x3C, 0x7E, 0x7E, 0x7E, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x7E, 0x7E, 0x7E, 0x3C, 0x18 }
         };
 
         public GfxPicture(ResourceManager resMan, GfxCoordAdjuster coordAdjuster, GfxPorts ports, GfxScreen screen, GfxPalette palette, int resourceId, bool EGAdrawingVisualize = false)
@@ -323,10 +439,10 @@ namespace NScumm.Sci.Graphics
                         while (VectorIsNonOpcode(data[curPos]))
                         {
                             oldx = x; oldy = y;
-                            VectorGetRelCoords(data, curPos, x, y);
+                            VectorGetRelCoords(data, ref curPos, ref x, ref y);
                             Point startPoint = new Point(oldx, oldy);
                             Point endPoint = new Point(x, y);
-                            _ports.OffsetLine(startPoint, endPoint);
+                            _ports.OffsetLine(ref startPoint, ref endPoint);
                             _screen.DrawLine(startPoint, endPoint, pic_color, pic_priority, pic_control);
                         }
                         break;
@@ -347,10 +463,10 @@ namespace NScumm.Sci.Graphics
                         while (VectorIsNonOpcode(data[curPos]))
                         {
                             oldx = x; oldy = y;
-                            VectorGetRelCoordsMed(data, curPos, x, y);
+                            VectorGetRelCoordsMed(data, ref curPos, ref x, ref y);
                             Point startPoint = new Point(oldx, oldy);
                             Point endPoint = new Point(x, y);
-                            _ports.OffsetLine(startPoint, endPoint);
+                            _ports.OffsetLine(ref startPoint, ref endPoint);
                             _screen.DrawLine(startPoint, endPoint, pic_color, pic_priority, pic_control);
                         }
                         break;
@@ -362,7 +478,7 @@ namespace NScumm.Sci.Graphics
                             VectorGetAbsCoords(data, ref curPos, out x, out y);
                             Point startPoint = new Point(oldx, oldy);
                             Point endPoint = new Point(x, y);
-                            _ports.OffsetLine(startPoint, endPoint);
+                            _ports.OffsetLine(ref startPoint, ref endPoint);
                             _screen.DrawLine(startPoint, endPoint, pic_color, pic_priority, pic_control);
                         }
                         break;
@@ -412,7 +528,7 @@ namespace NScumm.Sci.Graphics
                         while (VectorIsNonOpcode(data[curPos]))
                         {
                             VectorGetPatternTexture(data, curPos, pattern_Code, pattern_Texture);
-                            VectorGetRelCoords(data, curPos, x, y);
+                            VectorGetRelCoords(data, ref curPos, ref x, ref y);
                             VectorPattern(x, y, pic_color, pic_priority, pic_control, pattern_Code, pattern_Texture);
                         }
                         break;
@@ -425,7 +541,7 @@ namespace NScumm.Sci.Graphics
                         while (VectorIsNonOpcode(data[curPos]))
                         {
                             VectorGetPatternTexture(data, curPos, pattern_Code, pattern_Texture);
-                            VectorGetRelCoordsMed(data, curPos, x, y);
+                            VectorGetRelCoordsMed(data, ref curPos, ref x, ref y);
                             VectorPattern(x, y, pic_color, pic_priority, pic_control, pattern_Code, pattern_Texture);
                         }
                         break;
@@ -612,14 +728,147 @@ namespace NScumm.Sci.Graphics
             throw new NotImplementedException();
         }
 
-        private void VectorPattern(short x, short y, byte pic_color, byte pic_priority, byte pic_control, short pattern_Code, short pattern_Texture)
+        private void VectorPattern(short x, short y, byte color, byte priority, byte control, short code, short texture)
         {
-            throw new NotImplementedException();
+            byte size = (byte)(code & SCI_PATTERN_CODE_PENSIZE);
+
+            // We need to adjust the given coordinates, because the ones given us do not define upper left but somewhat middle
+            y -= size; if (y < 0) y = 0;
+            x -= size; if (x < 0) x = 0;
+
+            var rect = new Rect();
+            rect.Top = y; rect.Left = x;
+            rect.Height = (size * 2) + 1; rect.Width = (size * 2) + 2;
+            _ports.OffsetRect(ref rect);
+            rect.Clip(_screen.ScriptWidth, _screen.ScriptHeight);
+
+            _screen.VectorAdjustCoordinate(ref rect.Left, ref rect.Top);
+            _screen.VectorAdjustCoordinate(ref rect.Right, ref rect.Bottom);
+
+            if ((code & SCI_PATTERN_CODE_RECTANGLE) != 0)
+            {
+                // Rectangle
+                if ((code & SCI_PATTERN_CODE_USE_TEXTURE) != 0)
+                {
+                    VectorPatternTexturedBox(rect, color, priority, control, texture);
+                }
+                else {
+                    VectorPatternBox(rect, color, priority, control);
+                }
+
+            }
+            else {
+                // Circle
+                if ((code & SCI_PATTERN_CODE_USE_TEXTURE) != 0)
+                {
+                    VectorPatternTexturedCircle(rect, size, color, priority, control, texture);
+                }
+                else {
+                    VectorPatternCircle(rect, size, color, priority, control);
+                }
+            }
+        }
+
+        private void VectorPatternCircle(Rect box, byte size, byte color, byte prio, byte control)
+        {
+            var flag = _screen.GetDrawingMask(color, prio, control);
+            var circleData = new ByteAccess(vectorPatternCircles[size]);
+            var bitmap = circleData.Value;
+            byte bitNo = 0;
+            int y, x;
+
+            for (y = box.Top; y < box.Bottom; y++)
+            {
+                for (x = box.Left; x < box.Right; x++)
+                {
+                    if ((bitmap & 1) != 0)
+                    {
+                        _screen.VectorPutPixel((short)x, (short)y, flag, color, prio, control);
+                    }
+                    bitNo++;
+                    if (bitNo == 8)
+                    {
+                        circleData.Offset++; bitmap = circleData.Value; bitNo = 0;
+                    }
+                    else {
+                        bitmap = (byte)(bitmap >> 1);
+                    }
+                }
+            }
+        }
+
+        private void VectorPatternTexturedCircle(Rect box, byte size, byte color, byte prio, byte control, short texture)
+        {
+            var flag = _screen.GetDrawingMask(color, prio, control);
+            var circleData = new ByteAccess(vectorPatternCircles[size]);
+            byte bitmap = circleData.Value;
+            byte bitNo = 0;
+            var offset = vectorPatternTextureOffset[texture];
+            int y, x;
+
+            for (y = box.Top; y < box.Bottom; y++)
+            {
+                for (x = box.Left; x < box.Right; x++)
+                {
+                    if ((bitmap & 1) != 0)
+                    {
+                        if (vectorPatternTextures[offset])
+                        {
+                            _screen.VectorPutPixel((short)x, (short)y, flag, color, prio, control);
+                        }
+                        offset++;
+                    }
+                    bitNo++;
+                    if (bitNo == 8)
+                    {
+                        circleData.Offset++; bitmap = circleData.Value; bitNo = 0;
+                    }
+                    else {
+                        bitmap = (byte)(bitmap >> 1);
+                    }
+                }
+            }
+        }
+
+        private void VectorPatternBox(Rect box, byte color, byte prio, byte control)
+        {
+            var flag = _screen.GetDrawingMask(color, prio, control);
+            int y, x;
+
+            for (y = box.Top; y < box.Bottom; y++)
+            {
+                for (x = box.Left; x < box.Right; x++)
+                {
+                    _screen.VectorPutPixel((short)x, (short)y, flag, color, prio, control);
+                }
+            }
+        }
+
+        private void VectorPatternTexturedBox(Rect box, byte color, byte prio, byte control, short texture)
+        {
+            var flag = _screen.GetDrawingMask(color, prio, control);
+            var offset = vectorPatternTextureOffset[texture];
+            int y, x;
+
+            for (y = box.Top; y < box.Bottom; y++)
+            {
+                for (x = box.Left; x < box.Right; x++)
+                {
+                    if (vectorPatternTextures[offset])
+                    {
+                        _screen.VectorPutPixel((short)x, (short)y, flag, color, prio, control);
+                    }
+                    offset++;
+                }
+            }
         }
 
         private void VectorGetPatternTexture(ByteAccess data, int curPos, short pattern_Code, short pattern_Texture)
         {
-            throw new NotImplementedException();
+            if ((pattern_Code & SCI_PATTERN_CODE_USE_TEXTURE) != 0)
+            {
+                pattern_Texture = (short)((data[curPos++] >> 1) & 0x7f);
+            }
         }
 
         // WARNING: Do not replace the following code with something else, like generic
@@ -764,14 +1013,43 @@ namespace NScumm.Sci.Graphics
             }
         }
 
-        private void VectorGetRelCoordsMed(ByteAccess data, int curPos, short x, short y)
+        private void VectorGetRelCoordsMed(ByteAccess data, ref int curPos, ref short x, ref short y)
         {
-            throw new NotImplementedException();
+            byte pixel = data[curPos++];
+            if ((pixel & 0x80) != 0)
+            {
+                y -= (short)(pixel & 0x7F);
+            }
+            else {
+                y += pixel;
+            }
+            pixel = data[curPos++];
+            if ((pixel & 0x80) != 0)
+            {
+                x -= (short)((128 - (pixel & 0x7F)) * (_mirroredFlag ? -1 : 1));
+            }
+            else {
+                x += (short)(pixel * (_mirroredFlag ? -1 : 1));
+            }
         }
 
-        private void VectorGetRelCoords(ByteAccess data, int curPos, short x, short y)
+        private void VectorGetRelCoords(ByteAccess data, ref int curPos, ref short x, ref short y)
         {
-            throw new NotImplementedException();
+            byte pixel = data[curPos++];
+            if ((pixel & 0x80) != 0)
+            {
+                x -= (short)(((pixel >> 4) & 7) * (_mirroredFlag ? -1 : 1));
+            }
+            else {
+                x += (short)((pixel >> 4) * (_mirroredFlag ? -1 : 1));
+            }
+            if ((pixel & 0x08) != 0)
+            {
+                y -= (short)(pixel & 7);
+            }
+            else {
+                y += (short)(pixel & 7);
+            }
         }
 
         private bool VectorIsNonOpcode(byte pixel)

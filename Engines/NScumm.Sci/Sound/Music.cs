@@ -25,6 +25,7 @@ using System.Collections.Generic;
 using NScumm.Sci.Sound.Drivers;
 using NScumm.Core.Audio.Decoders;
 using System.IO;
+using System.Threading;
 
 namespace NScumm.Sci.Sound
 {
@@ -75,6 +76,8 @@ namespace NScumm.Sci.Sound
         public uint fadeTickerStep;
         public bool fadeCompleted;
         public bool fadeSetVolume;
+        public bool isQueued; // for SCI0 only!
+        internal int dataInc;
 
         public MusicEntry()
         {
@@ -128,7 +131,7 @@ namespace NScumm.Sci.Sound
                 }
 
                 // Only process MIDI streams in this thread, not digital sound effects
-                if (pMidiParser!=null)
+                if (pMidiParser != null)
                 {
                     pMidiParser.SetVolume((byte)volume);
                 }
@@ -161,7 +164,7 @@ namespace NScumm.Sci.Sound
         private int _driverFirstChannel;
         private int _driverLastChannel;
         private sbyte _globalReverb;
-        private object _currentlyPlayingSample;
+        private MusicEntry _currentlyPlayingSample;
         private List<int> _queuedCommands;
         private byte _masterVolume;
         private bool _soundOn;
@@ -182,6 +185,8 @@ namespace NScumm.Sci.Sound
                 }
             }
         }
+
+        public IList<MusicEntry> PlayList { get { return _playList; } }
 
         public SciMusic(IMixer mixer, SciVersion soundVersion, bool useDigitalSFX)
         {
@@ -294,6 +299,293 @@ namespace NScumm.Sci.Sound
             _needsRemap = false;
         }
 
+        internal void PauseAll(bool pause)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void SoundStop(MusicEntry pSnd)
+        {
+            SoundStatus previousStatus = pSnd.status;
+            pSnd.status = SoundStatus.Stopped;
+            if (_soundVersion <= SciVersion.V0_LATE)
+                pSnd.isQueued = false;
+            if (pSnd.pStreamAud != null)
+            {
+                if (_currentlyPlayingSample == pSnd)
+                    _currentlyPlayingSample = null;
+                _mixer.StopHandle(pSnd.hCurrentAud);
+            }
+
+            if (pSnd.pMidiParser != null)
+            {
+                lock (_mutex)
+                {
+                    pSnd.pMidiParser.MainThreadBegin();
+                    // We shouldn't call stop in case it's paused, otherwise we would send
+                    // allNotesOff() again
+                    if (previousStatus == SoundStatus.Playing)
+                        pSnd.pMidiParser.Stop();
+                    pSnd.pMidiParser.MainThreadEnd();
+                    RemapChannels();
+                }
+            }
+
+            pSnd.fadeStep = 0; // end fading, if fading was in progress
+        }
+
+        public void SoundKill(MusicEntry pSnd)
+        {
+            pSnd.status = SoundStatus.Stopped;
+
+            lock (_mutex)
+            {
+                RemapChannels();
+
+                if (pSnd.pMidiParser != null)
+                {
+                    pSnd.pMidiParser.MainThreadBegin();
+                    pSnd.pMidiParser.UnloadMusic();
+                    pSnd.pMidiParser.MainThreadEnd();
+                    pSnd.pMidiParser = null;
+                }
+
+            }
+
+            if (pSnd.pStreamAud != null)
+            {
+                if (_currentlyPlayingSample == pSnd)
+                {
+                    // Forget about this sound, in case it was currently playing
+                    _currentlyPlayingSample = null;
+                }
+                _mixer.StopHandle(pSnd.hCurrentAud);
+                pSnd.pStreamAud.Dispose();
+                pSnd.pStreamAud = null;
+                pSnd.pLoopStream.Dispose();
+                pSnd.pLoopStream = null;
+            }
+
+            lock (_mutex)
+            {
+                int sz = _playList.Count, i;
+                // Remove sound from playlist
+                for (i = 0; i < sz; i++)
+                {
+                    if (_playList[i] == pSnd)
+                    {
+                        _playList.RemoveAt(i);
+                        break;
+                    }
+                }
+            }
+        }
+
+        public void SoundPlay(MusicEntry pSnd)
+        {
+            Monitor.Enter(_mutex);
+
+            int playListCount;
+            if (_soundVersion <= SciVersion.V1_EARLY && pSnd.playBed)
+            {
+                // If pSnd.playBed, and version <= SCI1_EARLY, then kill
+                // existing sounds with playBed enabled.
+
+                playListCount = _playList.Count;
+                for (var i = 0; i < playListCount; i++)
+                {
+                    if (_playList[i] != pSnd && _playList[i].playBed)
+                    {
+                        // TODO: debugC(2, kDebugLevelSound, "Automatically stopping old playBed song from soundPlay");
+                        MusicEntry old = _playList[i];
+                        Monitor.Exit(_mutex);
+                        SoundStop(old);
+                        Monitor.Enter(_mutex);
+                        break;
+                    }
+                }
+            }
+
+            playListCount = _playList.Count;
+            int playListNo = playListCount;
+            MusicEntry alreadyPlaying = null;
+
+            // searching if sound is already in _playList
+            for (var i = 0; i < playListCount; i++)
+            {
+                if (_playList[i] == pSnd)
+                    playListNo = i;
+                if ((_playList[i].status == SoundStatus.Playing) && (_playList[i].pMidiParser != null))
+                    alreadyPlaying = _playList[i];
+            }
+            if (playListNo == playListCount)
+            { // not found
+                _playList.Add(pSnd);
+            }
+
+            pSnd.time = ++_timeCounter;
+            SortPlayList();
+
+            Monitor.Exit(_mutex);    // unlock to perform mixer-related calls
+
+            if (pSnd.pMidiParser != null)
+            {
+                if ((_soundVersion <= SciVersion.V0_LATE) && (alreadyPlaying != null))
+                {
+                    // Music already playing in SCI0?
+                    if (pSnd.priority > alreadyPlaying.priority)
+                    {
+                        // And new priority higher? pause previous music and play new one immediately.
+                        // Example of such case: lsl3, when getting points (jingle is played then)
+                        SoundPause(alreadyPlaying);
+                        alreadyPlaying.isQueued = true;
+                    }
+                    else {
+                        // And new priority equal or lower? queue up music and play it afterwards done by
+                        //  SoundCommandParser::updateSci0Cues()
+                        // Example of such case: iceman room 14
+                        pSnd.isQueued = true;
+                        pSnd.status = SoundStatus.Paused;
+                        return;
+                    }
+                }
+            }
+
+            if (pSnd.pStreamAud != null)
+            {
+                if (!_mixer.IsSoundHandleActive(pSnd.hCurrentAud))
+                {
+                    if ((_currentlyPlayingSample != null) && (_mixer.IsSoundHandleActive(_currentlyPlayingSample.hCurrentAud)))
+                    {
+                        // Another sample is already playing, we have to stop that one
+                        // SSCI is only able to play 1 sample at a time
+                        // In Space Quest 5 room 250 the player is able to open the air-hatch and kill himself.
+                        //  In that situation the scripts are playing 2 samples at the same time and the first sample
+                        //  is not supposed to play.
+                        // TODO: SSCI actually calls kDoAudio(play) internally, which stops other samples from being played
+                        //        but such a change isn't trivial, because we also handle Sound resources in here, that contain samples
+                        _mixer.StopHandle(_currentlyPlayingSample.hCurrentAud);
+                        // TODO: warning("kDoSound: sample already playing, old resource %d, new resource %d", _currentlyPlayingSample.resourceId, pSnd.resourceId);
+                    }
+                    // Sierra SCI ignores volume set when playing samples via kDoSound
+                    //  At least freddy pharkas/CD has a script bug that sets volume to 0
+                    //  when playing the "score" sample
+                    if (pSnd.loop > 1)
+                    {
+                        pSnd.pLoopStream = new LoopingAudioStream(pSnd.pStreamAud, pSnd.loop, false);
+                        pSnd.hCurrentAud = _mixer.PlayStream(pSnd.soundType,
+                                                pSnd.pLoopStream, -1, Mixer.MaxChannelVolume, 0,
+                                                false);
+                    }
+                    else {
+                        // Rewind in case we play the same sample multiple times
+                        // (non-looped) like in pharkas right at the start
+                        pSnd.pStreamAud.Rewind();
+                        pSnd.hCurrentAud = _mixer.PlayStream(pSnd.soundType,
+                                                pSnd.pStreamAud, -1, Mixer.MaxChannelVolume, 0,
+                                                false);
+                    }
+                    // Remember the sample, that is now playing
+                    _currentlyPlayingSample = pSnd;
+                }
+            }
+            else {
+                if (pSnd.pMidiParser != null)
+                {
+                    lock (_mutex)
+                    {
+                        pSnd.pMidiParser.MainThreadBegin();
+
+                        if (pSnd.status != SoundStatus.Paused)
+                            pSnd.pMidiParser.SendInitCommands();
+                        pSnd.pMidiParser.SetVolume((byte)pSnd.volume);
+
+                        // Disable sound looping and hold before jumpToTick is called,
+                        // otherwise the song may keep looping forever when it ends in jumpToTick.
+                        // This is needed when loading saved games, or when a game
+                        // stops the same sound twice (e.g. LSL3 Amiga, going left from
+                        // room 210 to talk with Kalalau). Fixes bugs #3083151 and #3106107.
+                        ushort prevLoop = pSnd.loop;
+                        short prevHold = pSnd.hold;
+                        pSnd.loop = 0;
+                        pSnd.hold = -1;
+
+                        if (pSnd.status == SoundStatus.Stopped)
+                            pSnd.pMidiParser.JumpToTick(0);
+                        else {
+                            // Fast forward to the last position and perform associated events when loading
+                            pSnd.pMidiParser.JumpToTick(pSnd.ticker, true, true, true);
+                        }
+
+                        // Restore looping and hold
+                        pSnd.loop = prevLoop;
+                        pSnd.hold = prevHold;
+                        pSnd.pMidiParser.MainThreadEnd();
+                    }
+                }
+            }
+
+            pSnd.status = SoundStatus.Playing;
+
+            lock (_mutex)
+            {
+                RemapChannels();
+            }
+        }
+
+        private void SoundPause(MusicEntry pSnd)
+        {
+            // SCI seems not to be pausing samples played back by kDoSound at all
+            //  It only stops looping samples (actually doesn't loop them again before they are unpaused)
+            //  Examples: Space Quest 1 death by acid drops (pause is called even specifically for the sample, see bug #3038048)
+            //             Eco Quest 1 during the intro when going to the abort-menu
+            //             In both cases sierra sci keeps playing
+            //            Leisure Suit Larry 1 doll scene - it seems that pausing here actually just stops
+            //             further looping from happening
+            //  This is a somewhat bigger change, I'm leaving in the old code in here just in case
+            //  I'm currently pausing looped sounds directly, non-looped sounds won't get paused
+            if ((pSnd.pStreamAud != null) && (pSnd.pLoopStream == null))
+                return;
+            pSnd.pauseCounter++;
+            if (pSnd.status != SoundStatus.Playing)
+                return;
+            pSnd.status = SoundStatus.Paused;
+            if (pSnd.pStreamAud != null)
+            {
+                _mixer.PauseHandle(pSnd.hCurrentAud, true);
+            }
+            else {
+                if (pSnd.pMidiParser != null)
+                {
+                    lock (_mutex)
+                    {
+                        pSnd.pMidiParser.MainThreadBegin();
+                        pSnd.pMidiParser.Pause();
+                        pSnd.pMidiParser.MainThreadEnd();
+                        RemapChannels();
+                    }
+                }
+            }
+        }
+
+        private void SortPlayList()
+        {
+            // Sort the play list in descending priority order
+            _playList.Sort(MusicEntryCompare);
+        }
+
+        // A larger priority value has higher priority. For equal priority values,
+        // songs that have been added later have higher priority.
+        private static int MusicEntryCompare(MusicEntry l, MusicEntry r)
+        {
+            var ret = r.priority.CompareTo(l.priority);
+            if (ret == 0)
+            {
+                ret = r.time.CompareTo(l.time);
+            }
+            return ret;
+        }
+
         private void MiditimerCallback(object p)
         {
             SciMusic sciMusic = (SciMusic)p;
@@ -320,9 +612,9 @@ namespace NScumm.Sci.Sound
             }
         }
 
-        private void RemapChannels(bool v)
+        private void RemapChannels(bool mainThread = true)
         {
-            throw new NotImplementedException();
+            // TODO:RemapChannels
         }
 
         // This sends the stored commands from queue to driver (is supposed to get
@@ -398,7 +690,10 @@ namespace NScumm.Sci.Sound
                 if (track.digitalChannelNr != -1)
                 {
                     var channelData = track.channels[track.digitalChannelNr].data;
-                    pSnd.pStreamAud.Dispose();
+                    if (pSnd.pStreamAud != null)
+                    {
+                        pSnd.pStreamAud.Dispose();
+                    }
                     var flags = AudioFlags.Unsigned;
                     // Amiga SCI1 games had signed sound data
                     if (_soundVersion >= SciVersion.V1_EARLY && SciEngine.Instance.Platform == Core.IO.Platform.Amiga)
@@ -477,6 +772,6 @@ namespace NScumm.Sci.Sound
             }
         }
 
-        
+
     }
 }

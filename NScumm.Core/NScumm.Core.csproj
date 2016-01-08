@@ -45,6 +45,7 @@
     <Compile Include="BitStream.cs" />
     <Compile Include="Common\Huffman.cs" />
     <Compile Include="Common\Language.cs" />
+    <Compile Include="Common\RandomSource.cs" />
     <Compile Include="Common\RawAccess.cs" />
     <Compile Include="Engines\ADGameDescription.cs" />
     <Compile Include="Graphics\ThumbnailHeader.cs" />

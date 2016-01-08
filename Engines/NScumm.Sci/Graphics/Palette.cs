@@ -479,6 +479,24 @@ namespace NScumm.Sci.Graphics
             return paletteOut;
         }
 
+        public byte RemapColor(byte remappedColor, byte screenColor)
+        {
+            //assert(_remapOn);
+            if (_remappingType[remappedColor] == ColorRemappingType.ByRange)
+                return _remappingByRange[screenColor];
+            else if (_remappingType[remappedColor] == ColorRemappingType.ByPercent)
+                return _remappingByPercent[screenColor];
+            else
+                throw new InvalidOperationException("remapColor(): Color {remappedColor} isn't remapped");
+
+            return 0;	// should never reach here
+        }
+
+        public bool IsRemapped(byte color)
+        {
+            return _remapOn && (_remappingType[color] != ColorRemappingType.None);
+        }
+
         private void PalVaryInit()
         {
             _palVaryResourceId = -1;

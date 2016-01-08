@@ -2031,6 +2031,8 @@ namespace NScumm.Sci
             }
         }
 
+        public byte SoundPriority { get { return _soundPriority; } }
+
         public SoundResource(uint resourceNr, ResourceManager resMan, SciVersion soundVersion)
         {
             _resMan = resMan;
@@ -2308,6 +2310,21 @@ namespace NScumm.Sci
             }
 
             return channelMask;
+        }
+
+        public byte GetInitialVoiceCount(int channel)
+        {
+            ByteAccess data = new ByteAccess(_innerResource.data);
+
+            if (_soundVersion > SciVersion.V0_LATE)
+                return 0; // TODO
+
+            data.Offset++; // Skip over digital sample flag
+
+            if (_soundVersion == SciVersion.V0_EARLY)
+                return (byte)(data[channel] >> 4);
+            else
+                return data[channel * 2];
         }
     }
 }

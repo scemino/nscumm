@@ -230,8 +230,7 @@ namespace NScumm.Sci
                             dec = new Decompressor();
                             break;
                         case ResourceCompression.Huffman:
-                            throw new NotImplementedException();
-                            //dec = new DecompressorHuffman();
+                            dec = new DecompressorHuffman();
                             break;
                         case ResourceCompression.LZW:
                         case ResourceCompression.LZW1:

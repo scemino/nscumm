@@ -171,11 +171,11 @@ namespace NScumm.Sci.Parser
         /// <summary>
         /// The word group to replace
         /// </summary>
-        ushort replaceant;
+        public ushort replaceant;
         /// <summary>
         /// The replacement word group for this one
         /// </summary>
-        ushort replacement;
+        public ushort replacement;
     }
 
     internal class Suffix
@@ -264,6 +264,11 @@ namespace NScumm.Sci.Parser
         private const int VOCAB_RESOURCE_ALT_INPUTS = 913;
 
         private const int VOCAB_MAX_WORDLENGTH = 256;
+
+        /* There was no 'last matching word': */
+        public const int SAID_FULL_MATCH = 0xffff;
+        public const int SAID_NO_MATCH = 0xfffe;
+        public const int SAID_PARTIAL_MATCH = 0xfffd;
 
         /// <summary>
         /// The parse tree
@@ -538,6 +543,11 @@ namespace NScumm.Sci.Parser
             }
 
             return rule;
+        }
+
+        public bool CheckAltInput(string text, ushort cursorPos)
+        {
+            throw new NotImplementedException();
         }
 
         private static int _vocab_rule_list_length(ParseRuleList list)
@@ -845,6 +855,16 @@ namespace NScumm.Sci.Parser
             }
 
             return true;
+        }
+
+        public void ClearSynonyms()
+        {
+            _synonyms.Clear();
+        }
+
+        public void AddSynonym(Synonym syn)
+        {
+            _synonyms.Add(syn);
         }
     }
 }

@@ -20,6 +20,10 @@ using NScumm.Sci.Engine;
 using System.Collections.Generic;
 using System;
 using System.Linq;
+using NScumm.Core.Graphics;
+using NScumm.Core;
+using NScumm.Core.Common;
+using NScumm.Sci.Parser;
 
 namespace NScumm.Sci.Graphics
 {
@@ -32,7 +36,7 @@ namespace NScumm.Sci.Graphics
         TAG = 0x71
     }
 
-    struct GuiMenuEntry
+    class GuiMenuEntry
     {
         public ushort id;
         public string text;
@@ -40,7 +44,6 @@ namespace NScumm.Sci.Graphics
         public short textWidth;
 
         public GuiMenuEntry(ushort curId)
-            : this()
         {
             id = curId;
             textWidth = 0;
@@ -88,7 +91,7 @@ namespace NScumm.Sci.Graphics
         private const char SCI_MENU_REPLACE_ONALT = '\x2';
         private const char SCI_MENU_REPLACE_ONFUNCTION = 'F';
 
-        private EventManager _eventMan;
+        private EventManager _event;
         private GfxCursor _cursor;
         private GfxPaint16 _paint16;
         private GfxPorts _ports;
@@ -111,7 +114,7 @@ namespace NScumm.Sci.Graphics
 
         public GfxMenu(EventManager eventMan, SegManager segMan, GfxPorts ports, GfxPaint16 paint16, GfxText16 text16, GfxScreen screen, GfxCursor cursor)
         {
-            _eventMan = eventMan;
+            _event = eventMan;
             _segMan = segMan;
             _ports = ports;
             _paint16 = paint16;
@@ -127,6 +130,507 @@ namespace NScumm.Sci.Graphics
             _mouseOldState = false;
 
             Reset();
+        }
+
+        public Register KernelSelect(Register eventObject, bool pauseSound)
+        {
+            short eventType = (short)SciEngine.ReadSelectorValue(_segMan, eventObject, o => o.type);
+            short keyPress, keyModifier;
+            GuiMenuItemEntry itemEntry = null;
+            int i;
+            bool forceClaimed = false;
+
+            switch (eventType)
+            {
+                case SciEvent.SCI_EVENT_KEYBOARD:
+                    keyPress = (short)SciEngine.ReadSelectorValue(_segMan, eventObject, o => o.message);
+                    keyModifier = (short)SciEngine.ReadSelectorValue(_segMan, eventObject, o => o.modifiers);
+                    // If tab got pressed, handle it here as if it was Ctrl-I - at least
+                    // sci0 also did it that way
+                    if (keyPress == SciEvent.SCI_KEY_TAB)
+                    {
+                        keyModifier = SciEvent.SCI_KEYMOD_CTRL;
+                        keyPress = (short)'i';
+                    }
+                    switch (keyPress)
+                    {
+                        case 0:
+                            break;
+                        case SciEvent.SCI_KEY_ESC:
+                            InteractiveStart(pauseSound);
+                            itemEntry = InteractiveWithKeyboard();
+                            InteractiveEnd(pauseSound);
+                            forceClaimed = true;
+                            break;
+                        default:
+                            for (i = 0; i < _itemList.Count; i++)
+                            {
+                                itemEntry = _itemList[i];
+                                if (itemEntry.keyPress == keyPress &&
+                                    itemEntry.keyModifier == keyModifier &&
+                                    itemEntry.enabled)
+                                    break;
+                            }
+                            if (i == _itemList.Count)
+                                itemEntry = null;
+                            break;
+                    }
+                    break;
+
+                case SciEvent.SCI_EVENT_SAID:
+                    for (i = 0; i < _itemList.Count; i++)
+                    {
+                        itemEntry = _itemList[i];
+
+                        if (!itemEntry.saidVmPtr.IsNull)
+                        {
+                            var saidSpec = _segMan.DerefBulkPtr(itemEntry.saidVmPtr, 0);
+
+                            if (saidSpec == null)
+                            {
+                                // TODO: warning("Could not dereference saidSpec");
+                                continue;
+                            }
+
+                            if (Said(saidSpec, 0) != Vocabulary.SAID_NO_MATCH)
+                                break;
+                        }
+                    }
+                    if (i == _itemList.Count)
+                        itemEntry = null;
+                    break;
+
+                case SciEvent.SCI_EVENT_MOUSE_PRESS:
+                    {
+                        Point mousePosition = new Point();
+                        mousePosition.X = (int)SciEngine.ReadSelectorValue(_segMan, eventObject, o => o.x);
+                        mousePosition.Y = (int)SciEngine.ReadSelectorValue(_segMan, eventObject, o => o.y);
+                        if (mousePosition.Y < 10)
+                        {
+                            InteractiveStart(pauseSound);
+                            itemEntry = InteractiveWithMouse();
+                            InteractiveEnd(pauseSound);
+                            forceClaimed = true;
+                        }
+                    }
+                    break;
+            }
+
+            if (!_menuSaveHandle.IsNull)
+            {
+                _paint16.BitsRestore(_menuSaveHandle);
+                // Display line inbetween menubar and actual menu
+                Rect menuLine = _menuRect;
+                menuLine.Bottom = menuLine.Top + 1;
+                _paint16.BitsShow(menuLine);
+                _paint16.KernelGraphRedrawBox(_menuRect);
+                _menuSaveHandle = Register.NULL_REG;
+            }
+            if (!_barSaveHandle.IsNull)
+            {
+                _paint16.BitsRestore(_barSaveHandle);
+                _paint16.BitsShow(_ports._menuRect);
+                _barSaveHandle = Register.NULL_REG;
+            }
+            if (_oldPort != null)
+            {
+                _ports.SetPort(_oldPort);
+                _oldPort = null;
+            }
+
+            if ((itemEntry != null) || (forceClaimed))
+                SciEngine.WriteSelector(_segMan, eventObject, o => o.claimed, Register.Make(0, 1));
+            if (null != itemEntry)
+                return Register.Make(0, (ushort)((itemEntry.menuId << 8) | (itemEntry.id)));
+            return Register.NULL_REG;
+        }
+
+        private int Said(ByteAccess saidSpec, int v)
+        {
+            throw new NotImplementedException();
+        }
+
+        private GuiMenuItemEntry InteractiveWithMouse()
+        {
+            throw new NotImplementedException();
+        }
+
+        public GuiMenuItemEntry InteractiveWithKeyboard()
+        {
+            SciEvent curEvent;
+            ushort newMenuId = _curMenuId;
+            ushort newItemId = _curItemId;
+            GuiMenuItemEntry curItemEntry = FindItem(_curMenuId, _curItemId);
+            GuiMenuItemEntry newItemEntry = curItemEntry;
+
+            // We don't 100% follow Sierra here: we select last item instead of
+            // selecting first item of first menu every time. Also sierra sci didn't
+            // allow mouse interaction, when menu was activated via keyboard.
+
+            _oldPort = _ports.SetPort(_ports._menuPort);
+            CalculateMenuAndItemWidth();
+            _barSaveHandle = _paint16.BitsSave(_ports._menuRect, GfxScreenMasks.VISUAL);
+
+            _ports.PenColor(0);
+            _ports.BackColor(_screen.ColorWhite);
+
+            DrawBar();
+            DrawMenu(0, curItemEntry.menuId);
+            InvertMenuSelection(curItemEntry.id);
+            _paint16.BitsShow(_ports._menuRect);
+            _paint16.BitsShow(_menuRect);
+
+            while (true)
+            {
+                curEvent = _event.GetSciEvent(SciEvent.SCI_EVENT_ANY);
+
+                switch (curEvent.type)
+                {
+                    case SciEvent.SCI_EVENT_KEYBOARD:
+                        // We don't 100% follow sierra here:
+                        // - sierra didn't wrap around when changing item id
+                        // - sierra allowed item id to be 0, which didn't make any sense
+                        do
+                        {
+                            switch (curEvent.data)
+                            {
+                                case SciEvent.SCI_KEY_ESC:
+                                    _curMenuId = curItemEntry.menuId; _curItemId = curItemEntry.id;
+                                    return null;
+                                case SciEvent.SCI_KEY_ENTER:
+                                    if (curItemEntry.enabled)
+                                    {
+                                        _curMenuId = curItemEntry.menuId; _curItemId = curItemEntry.id;
+                                        return curItemEntry;
+                                    }
+                                    break;
+                                case SciEvent.SCI_KEY_LEFT:
+                                    newMenuId--; newItemId = 1;
+                                    break;
+                                case SciEvent.SCI_KEY_RIGHT:
+                                    newMenuId++; newItemId = 1;
+                                    break;
+                                case SciEvent.SCI_KEY_UP:
+                                    newItemId--;
+                                    break;
+                                case SciEvent.SCI_KEY_DOWN:
+                                    newItemId++;
+                                    break;
+                            }
+                            if ((newMenuId != curItemEntry.menuId) || (newItemId != curItemEntry.id))
+                            {
+                                // Selection changed, fix up new selection if required
+                                newItemEntry = InteractiveGetItem(newMenuId, newItemId, newMenuId != curItemEntry.menuId);
+                                newMenuId = newItemEntry.menuId; newItemId = newItemEntry.id;
+
+                                // if we do this step again because of a separator line . don't repeat left/right, but go down
+                                switch (curEvent.data)
+                                {
+                                    case SciEvent.SCI_KEY_LEFT:
+                                    case SciEvent.SCI_KEY_RIGHT:
+                                        curEvent.data = SciEvent.SCI_KEY_DOWN;
+                                        break;
+                                }
+                            }
+                        } while (newItemEntry.separatorLine);
+                        if ((newMenuId != curItemEntry.menuId) || (newItemId != curItemEntry.id))
+                        {
+                            // paint old and new
+                            if (newMenuId != curItemEntry.menuId)
+                            {
+                                // Menu changed, remove cur menu and paint new menu
+                                DrawMenu(curItemEntry.menuId, newMenuId);
+                            }
+                            else {
+                                InvertMenuSelection(curItemEntry.id);
+                            }
+                            InvertMenuSelection(newItemId);
+
+                            curItemEntry = newItemEntry;
+                        }
+                        break;
+
+                    case SciEvent.SCI_EVENT_MOUSE_PRESS:
+                        {
+                            Point mousePosition = curEvent.mousePos;
+                            if (mousePosition.Y < 10)
+                            {
+                                // Somewhere on the menubar
+                                newMenuId = MouseFindMenuSelection(mousePosition);
+                                if (newMenuId != 0)
+                                {
+                                    newItemId = 1;
+                                    newItemEntry = InteractiveGetItem(newMenuId, newItemId, newMenuId != curItemEntry.menuId);
+                                    if (newMenuId != curItemEntry.menuId)
+                                    {
+                                        DrawMenu(curItemEntry.menuId, newMenuId);
+                                    }
+                                    else {
+                                        InvertMenuSelection(curItemEntry.id);
+                                    }
+                                    InvertMenuSelection(newItemId);
+                                    curItemEntry = newItemEntry;
+                                }
+                                else {
+                                    newMenuId = curItemEntry.menuId;
+                                }
+                            }
+                            else {
+                                // Somewhere below menubar
+                                newItemId = MouseFindMenuItemSelection(mousePosition, newMenuId);
+                                if (newItemId != 0)
+                                {
+                                    newItemEntry = InteractiveGetItem(newMenuId, newItemId, false);
+                                    if ((newItemEntry.enabled) && (!newItemEntry.separatorLine))
+                                    {
+                                        _curMenuId = newItemEntry.menuId; _curItemId = newItemEntry.id;
+                                        return newItemEntry;
+                                    }
+                                    newItemEntry = curItemEntry;
+                                }
+                                newItemId = curItemEntry.id;
+                            }
+                        }
+                        break;
+
+                    case SciEvent.SCI_EVENT_NONE:
+                        ServiceLocator.Platform.Sleep(2500 / 1000);
+                        break;
+                }
+            }
+        }
+
+        private ushort MouseFindMenuSelection(Point mousePosition)
+        {
+            GuiMenuEntry listEntry;
+            ushort curXstart = 8;
+
+            for (int i = 0; i < _list.Count; i++)
+            {
+                listEntry = _list[i];
+                if (mousePosition.X >= curXstart && mousePosition.X < curXstart + listEntry.textWidth)
+                {
+                    return listEntry.id;
+                }
+                curXstart += (ushort)listEntry.textWidth;
+            }
+            return 0;
+        }
+
+        private ushort MouseFindMenuItemSelection(Point mousePosition, ushort menuId)
+        {
+            GuiMenuItemEntry listItemEntry;
+            ushort curYstart = 10;
+            ushort itemId = 0;
+
+            if (menuId == 0)
+                return 0;
+
+            if ((mousePosition.X < _menuRect.Left) || (mousePosition.X >= _menuRect.Right))
+                return 0;
+
+            for (int i = 0; i < _itemList.Count; i++)
+            {
+                listItemEntry = _itemList[i];
+                if (listItemEntry.menuId == menuId)
+                {
+                    curYstart += (ushort)_ports._curPort.fontHeight;
+                    // Found it
+                    if ((itemId == 0) && (curYstart > mousePosition.Y))
+                        itemId = listItemEntry.id;
+                }
+            }
+            return itemId;
+        }
+
+        private void InvertMenuSelection(ushort itemId)
+        {
+            Rect itemRect = _menuRect;
+
+            if (itemId == 0)
+                return;
+
+            itemRect.Top += (itemId - 1) * _ports._curPort.fontHeight + 1;
+            itemRect.Bottom = itemRect.Top + _ports._curPort.fontHeight;
+            itemRect.Left++; itemRect.Right--;
+
+            _paint16.InvertRect(itemRect);
+            _paint16.BitsShow(itemRect);
+        }
+
+        private void DrawMenu(int oldMenuId, ushort newMenuId)
+        {
+            GuiMenuEntry listEntry;
+            GuiMenuItemEntry listItemEntry;
+            Rect menuTextRect;
+            ushort listNr = 0;
+            short maxTextWidth = 0, maxTextRightAlignedWidth = 0;
+            short topPos;
+            Point pixelPos;
+
+            // Remove menu, if one is displayed
+            if (!_menuSaveHandle.IsNull)
+            {
+                _paint16.BitsRestore(_menuSaveHandle);
+                // Display line inbetween menubar and actual menu
+                Rect menuLine = _menuRect;
+                menuLine.Bottom = menuLine.Top + 1;
+                _paint16.BitsShow(menuLine);
+                _paint16.KernelGraphRedrawBox(_menuRect);
+            }
+
+            // First calculate rect of menu and also invert old and new menu text
+            _menuRect.Top = _ports._menuBarRect.Bottom;
+            menuTextRect.Top = _ports._menuBarRect.Top;
+            menuTextRect.Bottom = _ports._menuBarRect.Bottom;
+            menuTextRect.Left = menuTextRect.Right = 7;
+            for (int i = 0; i < _list.Count; i++)
+            {
+                listEntry = _list[i];
+                listNr++;
+                menuTextRect.Left = menuTextRect.Right;
+                menuTextRect.Right += listEntry.textWidth;
+                if (listNr == newMenuId)
+                    _menuRect.Left = menuTextRect.Left;
+                if ((listNr == newMenuId) || (listNr == oldMenuId))
+                {
+                    menuTextRect.Translate(1, 0);
+                    _paint16.InvertRect(menuTextRect);
+                    menuTextRect.Translate(-1, 0);
+                }
+            }
+            _paint16.BitsShow(_ports._menuBarRect);
+
+            _menuRect.Bottom = _menuRect.Top + 2;
+            for (int i = 0; i < _itemList.Count; i++)
+            {
+                listItemEntry = _itemList[i];
+                if (listItemEntry.menuId == newMenuId)
+                {
+                    _menuRect.Bottom += _ports._curPort.fontHeight;
+                    maxTextWidth = Math.Max(maxTextWidth, listItemEntry.textWidth);
+                    maxTextRightAlignedWidth = Math.Max(maxTextRightAlignedWidth, listItemEntry.textRightAlignedWidth);
+                }
+            }
+            _menuRect.Right = _menuRect.Left + 16 + 4 + 2;
+            _menuRect.Right += maxTextWidth + maxTextRightAlignedWidth;
+            if (maxTextRightAlignedWidth == 0)
+                _menuRect.Right -= 5;
+
+            // If part of menu window is outside the screen, move it into the screen
+            // (this happens in multilingual sq3 and lsl3).
+            if (_menuRect.Right > _screen.Width)
+            {
+                _menuRect.Translate(-(_menuRect.Right - _screen.Width), 0);
+            }
+
+            // Save background
+            _menuSaveHandle = _paint16.BitsSave(_menuRect, GfxScreenMasks.VISUAL);
+
+            // Do the drawing
+            _paint16.FillRect(_menuRect, GfxScreenMasks.VISUAL, 0);
+            _menuRect.Left++; _menuRect.Right--; _menuRect.Bottom--;
+            _paint16.FillRect(_menuRect, GfxScreenMasks.VISUAL, _screen.ColorWhite);
+
+            _menuRect.Left += 8;
+            topPos = (short)(_menuRect.Top + 1);
+            for (int i = 0; i < _itemList.Count; i++)
+            {
+                listItemEntry = _itemList[i];
+                if (listItemEntry.menuId == newMenuId)
+                {
+                    if (!listItemEntry.separatorLine)
+                    {
+                        _ports.TextGreyedOutput(!listItemEntry.enabled);
+                        _ports.MoveTo((short)_menuRect.Left, topPos);
+                        _text16.DrawString(listItemEntry.textSplit);
+                        _ports.MoveTo((short)(_menuRect.Right - listItemEntry.textRightAlignedWidth - 5), topPos);
+                        _text16.DrawString(listItemEntry.textRightAligned);
+                    }
+                    else {
+                        // We dont 100% follow sierra here, we draw the line from left to right. Looks better
+                        // BTW. SCI1.1 seems to put 2 pixels and then skip one, we don't do this at all (lsl6)
+                        pixelPos.Y = topPos + (_ports._curPort.fontHeight >> 1) - 1;
+                        pixelPos.X = _menuRect.Left - 7;
+                        while (pixelPos.X < (_menuRect.Right - 1))
+                        {
+                            _screen.PutPixel((short)pixelPos.X, (short)pixelPos.Y, GfxScreenMasks.VISUAL, 0, 0, 0);
+                            pixelPos.X += 2;
+                        }
+                    }
+                    topPos += _ports._curPort.fontHeight;
+                }
+            }
+            _ports.TextGreyedOutput(false);
+
+            // Draw the black line again
+            _paint16.FillRect(_ports._menuLine, GfxScreenMasks.VISUAL, 0);
+
+            _menuRect.Left -= 8;
+            _menuRect.Left--; _menuRect.Right++; _menuRect.Bottom++;
+            _paint16.BitsShow(_menuRect);
+        }
+
+        private void CalculateMenuAndItemWidth()
+        {
+            GuiMenuItemEntry itemEntry;
+            short dummyHeight;
+
+            CalculateMenuWidth();
+
+            for (int i = 0; i < _itemList.Count; i++)
+            {
+                itemEntry = _itemList[i];
+                // Split the text now for multilingual SCI01 games
+                itemEntry.textSplit = SciEngine.Instance.StrSplit(itemEntry.text, null);
+                _text16.StringWidth(itemEntry.textSplit, 0, out itemEntry.textWidth, out dummyHeight);
+                _text16.StringWidth(itemEntry.textRightAligned, 0, out itemEntry.textRightAlignedWidth, out dummyHeight);
+            }
+        }
+
+        private GuiMenuItemEntry InteractiveGetItem(ushort menuId, ushort itemId, bool menuChanged)
+        {
+            GuiMenuItemEntry itemEntry;
+            GuiMenuItemEntry firstItemEntry = null;
+            GuiMenuItemEntry lastItemEntry = null;
+
+            // Fixup menuId if needed
+            if (menuId > _list.Count)
+                menuId = 1;
+            if (menuId == 0)
+                menuId = (ushort)_list.Count;
+            for (int i = 0; i < _itemList.Count; i++)
+            {
+                itemEntry = _itemList[i];
+                if (itemEntry.menuId == menuId)
+                {
+                    if (itemEntry.id == itemId)
+                        return itemEntry;
+                    if (firstItemEntry == null)
+                        firstItemEntry = itemEntry;
+                    if ((lastItemEntry == null) || (itemEntry.id > lastItemEntry.id))
+                        lastItemEntry = itemEntry;
+                }
+            }
+            if ((itemId == 0) || (menuChanged))
+                return lastItemEntry;
+            return firstItemEntry;
+        }
+
+        private void InteractiveStart(bool pauseSound)
+        {
+            _mouseOldState = _cursor.IsVisible;
+            _cursor.KernelShow();
+            if (pauseSound)
+                SciEngine.Instance._soundCmd.PauseAll(true);
+        }
+
+        private void InteractiveEnd(bool pauseSound)
+        {
+            if (pauseSound)
+                SciEngine.Instance._soundCmd.PauseAll(false);
+            if (!_mouseOldState)
+                _cursor.KernelHide();
         }
 
         public void Reset()

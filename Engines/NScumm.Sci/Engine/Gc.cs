@@ -152,8 +152,8 @@ namespace NScumm.Sci.Engine
             {
                 if (es.type != ExecStackType.KERNEL)
                 {
-                    wm.Push(es.objp);
-                    wm.Push(es.sendp);
+                    wm.Push(Register.Make(es.objp)); // this is important to make a copy of the register
+                    wm.Push(Register.Make(es.sendp));
                     if (es.type == ExecStackType.VARSELECTOR)
                         wm.Push(es.GetVarPointer(s._segMan));
                 }

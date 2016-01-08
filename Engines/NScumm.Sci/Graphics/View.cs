@@ -135,9 +135,107 @@ namespace NScumm.Sci.Graphics
             0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10
         };
 
-        internal void GetCelRect(short loopNo, short celNo, short x, short y, short z, Rect celRect)
+        internal void DrawScaled(Rect celRect, Rect clipRect, Rect clipRectTranslated, short loopNo, short celNo, byte priority, ushort scaleX, ushort scaleY)
         {
             throw new NotImplementedException();
+        }
+
+        internal void Draw(Rect rect, Rect clipRect, Rect clipRectTranslated, short loopNo, short celNo, byte priority, ushort EGAmappingNr, bool upscaledHires)
+        {
+            Palette palette = _embeddedPal ? _viewPalette : _palette._sysPalette;
+            CelInfo celInfo = GetCelInfo(loopNo, celNo);
+            var bitmap = new ByteAccess(GetBitmap(loopNo, celNo));
+            short celHeight = celInfo.height;
+            short celWidth = celInfo.width;
+            byte clearKey = celInfo.clearKey;
+            GfxScreenMasks drawMask = priority > 15 ? GfxScreenMasks.VISUAL : GfxScreenMasks.VISUAL | GfxScreenMasks.PRIORITY;
+            int x, y;
+
+            if (_embeddedPal)
+                // Merge view palette in...
+                _palette.Set(_viewPalette, false);
+
+            short width = (short)Math.Min(clipRect.Width, celWidth);
+            short height = (short)Math.Min(clipRect.Height, celHeight);
+
+            bitmap.Offset += (clipRect.Top - rect.Top) * celWidth + (clipRect.Left - rect.Left);
+
+            // WORKAROUND: EcoQuest French and German draw the fish and anemone sprites
+            // with priority 15 in scene 440. Afterwards, a dialog is shown on top of
+            // these sprites with priority 15 as well. This is undefined behavior
+            // actually, as the sprites and dialog share the same priority, so in our
+            // implementation the sprites get drawn incorrectly on top of the dialog.
+            // Perhaps this worked by mistake in SSCI because of subtle differences in
+            // how sprites are drawn. We compensate for this by resetting the priority
+            // of all sprites that have a priority of 15 in scene 440 to priority 14,
+            // so that the speech bubble can be drawn correctly on top of them. Fixes
+            // bug #3040625.
+            if (SciEngine.Instance.GameId == SciGameId.ECOQUEST && SciEngine.Instance.EngineState.CurrentRoomNumber == 440 && priority == 15)
+                priority = 14;
+
+            if (_EGAmapping == null)
+            {
+                for (y = 0; y < height; y++, bitmap.Offset += celWidth)
+                {
+                    for (x = 0; x < width; x++)
+                    {
+                        byte color = bitmap[x];
+                        if (color != clearKey)
+                        {
+                            int x2 = clipRectTranslated.Left + x;
+                            int y2 = clipRectTranslated.Top + y;
+                            if (!upscaledHires)
+                            {
+                                if (priority >= _screen.GetPriority((short)x2, (short)y2))
+                                {
+                                    if (!_palette.IsRemapped(palette.mapping[color]))
+                                    {
+                                        _screen.PutPixel((short)x2, (short)y2, drawMask, palette.mapping[color], priority, 0);
+                                    }
+                                    else {
+                                        byte remappedColor = _palette.RemapColor(palette.mapping[color], _screen.GetVisual((short)x2, (short)y2));
+                                        _screen.PutPixel((short)x2, (short)y2, drawMask, remappedColor, priority, 0);
+                                    }
+                                }
+                            }
+                            else {
+                                // UpscaledHires means view is hires and is supposed to
+                                // get drawn onto lowres screen.
+                                // FIXME(?): we can't read priority directly with the
+                                // hires coordinates. May not be needed at all in kq6
+                                // FIXME: Handle proper aspect ratio. Some GK1 hires images
+                                // are in 640x400 instead of 640x480
+                                _screen.PutPixelOnDisplay(x2, y2, palette.mapping[color]);
+                            }
+                        }
+                    }
+                }
+            }
+            else {
+                ByteAccess EGAmapping = new ByteAccess(_EGAmapping, (EGAmappingNr * SCI_VIEW_EGAMAPPING_SIZE));
+                for (y = 0; y < height; y++, bitmap.Offset += celWidth)
+                {
+                    for (x = 0; x < width; x++)
+                    {
+                        byte color = EGAmapping[bitmap[x]];
+                        int x2 = clipRectTranslated.Left + x;
+                        int y2 = clipRectTranslated.Top + y;
+                        if (color != clearKey && priority >= _screen.GetPriority((short)x2, (short)y2))
+                            _screen.PutPixel((short)x2, (short)y2, drawMask, color, priority, 0);
+                    }
+                }
+            }
+        }
+
+        public Rect GetCelRect(short loopNo, short celNo, short x, short y, short z)
+        {
+            CelInfo celInfo = GetCelInfo(loopNo, celNo);
+            var outRect = new Rect();
+            outRect.Left = x + celInfo.displaceX - (celInfo.width >> 1);
+            outRect.Right = outRect.Left + celInfo.width;
+            outRect.Bottom = y + celInfo.displaceY - z + 1 + _adjustForSci0Early;
+            outRect.Top = outRect.Bottom - celInfo.height;
+            return outRect;
         }
 
         internal void GetCelSpecialHoyle4Rect(short loopNo, short celNo, short x, short y, short z, Rect celRect)
@@ -543,28 +641,376 @@ namespace NScumm.Sci.Graphics
             }
         }
 
-        internal void AdjustToUpscaledCoordinates(short y, short x)
+        public short GetWidth(short loopNo, short celNo)
         {
-            throw new NotImplementedException();
+            return (short)(_loopCount != 0 ? GetCelInfo(loopNo, celNo).width : 0);
         }
 
-        public Rect GetCelRect(short loopNo, short celNo, short x, short y, short z)
+        public short GetHeight(short loopNo, short celNo)
+        {
+            return (short)(_loopCount != 0 ? GetCelInfo(loopNo, celNo).height : 0);
+        }
+
+        public byte[] GetBitmap(short loopNo, short celNo)
+        {
+            loopNo = (short)ScummHelper.Clip(loopNo, 0, _loopCount - 1);
+            celNo = (short)ScummHelper.Clip(celNo, 0, _loop[loopNo].celCount - 1);
+            if (_loop[loopNo].cel[celNo].rawBitmap != null)
+                return _loop[loopNo].cel[celNo].rawBitmap;
+
+            ushort width = (ushort)_loop[loopNo].cel[celNo].width;
+            ushort height = (ushort)_loop[loopNo].cel[celNo].height;
+            // allocating memory to store cel's bitmap
+            int pixelCount = width * height;
+            _loop[loopNo].cel[celNo].rawBitmap = new byte[pixelCount];
+            var pBitmap = _loop[loopNo].cel[celNo].rawBitmap;
+
+            // unpack the actual cel bitmap data
+            UnpackCel(loopNo, celNo, pBitmap, pixelCount);
+
+            if (_resMan.ViewType == ViewType.Ega)
+                UnditherBitmap(pBitmap, (short)width, (short)height, _loop[loopNo].cel[celNo].clearKey);
+
+            // mirroring the cel if needed
+            if (_loop[loopNo].mirrorFlag)
+            {
+                int off = 0;
+                for (int i = 0; i < height; i++, off += width)
+                    for (int j = 0; j < width / 2; j++)
+                        ScummHelper.Swap(ref pBitmap[off + j], ref pBitmap[off + width - j - 1]);
+            }
+            return _loop[loopNo].cel[celNo].rawBitmap;
+        }
+
+        /// <summary>
+        /// Called after unpacking an EGA cel, this will try to undither (parts) of the
+        /// cel if the dithering in here matches dithering used by the current picture.
+        /// </summary>
+        private void UnditherBitmap(byte[] bitmapPtr, short width, short height, byte clearKey)
+        {
+            var ditheredPicColors = _screen.UnditherGetDitheredBgColors;
+
+            // It makes no sense to go further, if there isn't any dithered color data
+            // available for the current picture
+            if (ditheredPicColors == null)
+                return;
+
+            // We need at least a 4x2 bitmap for this algorithm to work
+            if (width < 4 || height < 2)
+                return;
+
+            // If EGA mapping is used for this view, dont do undithering as well
+            if (_EGAmapping != null)
+                return;
+
+            // Walk through the bitmap and remember all combinations of colors
+            short[] ditheredBitmapColors = new short[GfxScreen.DITHERED_BG_COLORS_SIZE];
+            byte color1, color2;
+            byte nextColor1, nextColor2;
+            short y, x;
+
+            // Count all seemingly dithered pixel-combinations as soon as at least 4
+            // pixels are adjacent and check pixels in the following line as well to
+            // be the reverse pixel combination
+            short checkHeight = (short)(height - 1);
+            var curPtr = new ByteAccess(bitmapPtr);
+            var nextPtr = new ByteAccess(curPtr, width);
+            for (y = 0; y < checkHeight; y++)
+            {
+                color1 = curPtr[0]; color2 = (byte)((curPtr[1] << 4) | curPtr[2]);
+                nextColor1 = (byte)(nextPtr[0] << 4); nextColor2 = (byte)((nextPtr[2] << 4) | nextPtr[1]);
+                curPtr.Offset += 3;
+                nextPtr.Offset += 3;
+                for (x = 3; x < width; x++)
+                {
+                    color1 = (byte)((color1 << 4) | (color2 >> 4));
+                    color2 = (byte)((color2 << 4) | curPtr.Increment());
+                    nextColor1 = (byte)((nextColor1 >> 4) | (nextColor2 << 4));
+                    nextColor2 = (byte)((nextColor2 >> 4) | nextPtr.Increment() << 4);
+                    if ((color1 == color2) && (color1 == nextColor1) && (color1 == nextColor2))
+                        ditheredBitmapColors[color1]++;
+                }
+            }
+
+            // Now compare both dither color tables to find out matching dithered color
+            // combinations
+            bool[] unditherTable = new bool[GfxScreen.DITHERED_BG_COLORS_SIZE];
+            byte color, unditherCount = 0;
+            for (color = 0; color < 255; color++)
+            {
+                if ((ditheredBitmapColors[color] > 5) && (ditheredPicColors[color] > 200))
+                {
+                    // match found, check if colorKey is contained . if so, we ignore
+                    // of course
+                    color1 = (byte)(color & 0x0F); color2 = (byte)(color >> 4);
+                    if ((color1 != clearKey) && (color2 != clearKey) && (color1 != color2))
+                    {
+                        // so set this and the reversed color-combination for undithering
+                        unditherTable[color] = true;
+                        unditherTable[(color1 << 4) | color2] = true;
+                        unditherCount++;
+                    }
+                }
+            }
+
+            // Nothing found to undither . exit straight away
+            if (unditherCount == 0)
+                return;
+
+            // We now need to replace color-combinations
+            curPtr = new ByteAccess(bitmapPtr);
+            for (y = 0; y < height; y++)
+            {
+                color = curPtr.Value;
+                for (x = 1; x < width; x++)
+                {
+                    color = (byte)((color << 4) | curPtr[1]);
+                    if (unditherTable[color])
+                    {
+                        // Some color with black? Turn colors around, otherwise it won't
+                        // be the right color at all.
+                        byte unditheredColor = color;
+                        if ((color & 0xF0) == 0)
+                            unditheredColor = (byte)((color << 4) | (color >> 4));
+                        curPtr[0] = unditheredColor; curPtr[1] = unditheredColor;
+                    }
+                    curPtr.Offset++;
+                }
+                curPtr.Offset++;
+            }
+        }
+
+        private void UnpackCel(short loopNo, short celNo, byte[] outPtr, int pixelCount)
         {
             CelInfo celInfo = GetCelInfo(loopNo, celNo);
-            Rect outRect = new Rect();
-            outRect.Left = x + celInfo.displaceX - (celInfo.width >> 1);
-            outRect.Right = outRect.Left + celInfo.width;
-            outRect.Bottom = y + celInfo.displaceY - z + 1 + _adjustForSci0Early;
-            outRect.Top = outRect.Bottom - celInfo.height;
-            return outRect;
+
+            if (celInfo.offsetEGA != 0)
+            {
+                // decompression for EGA views
+                UnpackCelData(_resourceData, outPtr, 0, pixelCount, celInfo.offsetEGA, 0, _resMan.ViewType, (ushort)celInfo.width, false);
+            }
+            else {
+                // We fill the buffer with transparent pixels, so that we can later skip
+                //  over pixels to automatically have them transparent
+                // Also some RLE compressed cels are possibly ending with the last
+                // non-transparent pixel (is this even possible with the current code?)
+                byte clearColor = _loop[loopNo].cel[celNo].clearKey;
+
+                // Since Mac OS required palette index 0 to be white and 0xff to be black, the
+                // Mac SCI devs decided that rather than change scripts and various pieces of
+                // code, that they would just put a little snippet of code to swap these colors
+                // in various places around the SCI codebase. We figured that it would be less
+                // hacky to swap pixels instead and run the Mac games with a PC palette.
+                if (SciEngine.Instance.Platform == Core.IO.Platform.Macintosh && ResourceManager.GetSciVersion() >= SciVersion.V1_1)
+                {
+                    // clearColor is based on PC palette, but the literal data is not.
+                    // We flip clearColor here to make it match the literal data. All
+                    // these pixels will be flipped back again below.
+                    if (clearColor == 0)
+                        clearColor = 0xff;
+                    else if (clearColor == 0xff)
+                        clearColor = 0;
+                }
+
+                bool isMacSci11ViewData = SciEngine.Instance.Platform == Core.IO.Platform.Macintosh && ResourceManager.GetSciVersion() == SciVersion.V1_1;
+                UnpackCelData(_resourceData, outPtr, clearColor, pixelCount, (int)celInfo.offsetRLE, (int)celInfo.offsetLiteral, _resMan.ViewType, (ushort)celInfo.width, isMacSci11ViewData);
+
+                // Swap 0 and 0xff pixels for Mac SCI1.1+ games (see above)
+                if (SciEngine.Instance.Platform == Core.IO.Platform.Macintosh && ResourceManager.GetSciVersion() >= SciVersion.V1_1)
+                {
+                    for (var i = 0; i < pixelCount; i++)
+                    {
+                        if (outPtr[i] == 0)
+                            outPtr[i] = 0xff;
+                        else if (outPtr[i] == 0xff)
+                            outPtr[i] = 0;
+                    }
+                }
+            }
         }
 
-        private CelInfo GetCelInfo(short loopNo, short celNo)
+        private void UnpackCelData(byte[] inBuffer, byte[] celBitmap, byte clearColor, int pixelCount, int rlePos, int literalPos, ViewType viewType, ushort width, bool isMacSci11ViewData)
+        {
+            var outPtr = new ByteAccess(celBitmap);
+            byte curByte, runLength;
+            var rlePtr = new ByteAccess(inBuffer, rlePos);
+            // The existence of a literal position pointer signifies data with two
+            // separate streams, most likely a SCI1.1 view
+            var literalPtr = new ByteAccess(inBuffer, literalPos);
+            int pixelNr = 0;
+
+            celBitmap.Set(0, clearColor, pixelCount);
+
+            // View unpacking:
+            //
+            // EGA:
+            // Each byte is like XXXXYYYY (XXXX: 0 - 15, YYYY: 0 - 15)
+            // Set the next XXXX pixels to YYYY
+            //
+            // Amiga:
+            // Each byte is like XXXXXYYY (XXXXX: 0 - 31, YYY: 0 - 7)
+            // - Case A: YYY != 0
+            //   Set the next YYY pixels to XXXXX
+            // - Case B: YYY == 0
+            //   Skip the next XXXXX pixels (i.e. transparency)
+            //
+            // Amiga 64:
+            // Each byte is like XXYYYYYY (XX: 0 - 3, YYYYYY: 0 - 63)
+            // - Case A: XX != 0
+            //   Set the next XX pixels to YYYYYY
+            // - Case B: XX == 0
+            //   Skip the next YYYYYY pixels (i.e. transparency)
+            //
+            // VGA:
+            // Each byte is like XXYYYYYY (YYYYY: 0 - 63)
+            // - Case A: XX == 00 (binary)
+            //   Copy next YYYYYY bytes as-is
+            // - Case B: XX == 01 (binary)
+            //   Same as above, copy YYYYYY + 64 bytes as-is
+            // - Case C: XX == 10 (binary)
+            //   Set the next YYYYY pixels to the next byte value
+            // - Case D: XX == 11 (binary)
+            //   Skip the next YYYYY pixels (i.e. transparency)
+
+            if (literalPos != 0 && isMacSci11ViewData)
+            {
+                // KQ6/Freddy Pharkas/Slater use byte lengths, all others use uint16
+                // The SCI devs must have realized that a max of 255 pixels wide
+                // was not very good for 320 or 640 width games.
+                bool hasByteLengths = (SciEngine.Instance.GameId == SciGameId.KQ6 || SciEngine.Instance.GameId == SciGameId.FREDDYPHARKAS
+                        || SciEngine.Instance.GameId == SciGameId.SLATER);
+
+                // compression for SCI1.1+ Mac
+                while (pixelNr < pixelCount)
+                {
+                    var pixelLine = pixelNr;
+
+                    if (hasByteLengths)
+                    {
+                        pixelNr += rlePtr.Increment();
+                        runLength = rlePtr.Increment();
+                    }
+                    else {
+                        pixelNr += rlePtr.ReadUInt16BigEndian();
+                        runLength = (byte)rlePtr.ReadUInt16BigEndian(2);
+                        rlePtr.Offset += 4;
+                    }
+
+                    while (runLength-- != 0 && pixelNr < pixelCount)
+                        outPtr[pixelNr++] = literalPtr.Increment();
+
+                    pixelNr = pixelLine + width;
+                }
+                return;
+            }
+
+            switch (viewType)
+            {
+                case ViewType.Ega:
+                    while (pixelNr < pixelCount)
+                    {
+                        curByte = rlePtr.Increment();
+                        runLength = (byte)(curByte >> 4);
+                        outPtr.Data.Set(outPtr.Offset + pixelNr, (byte)(curByte & 0x0F), Math.Min(runLength, pixelCount - pixelNr));
+                        pixelNr += runLength;
+                    }
+                    break;
+                case ViewType.Amiga:
+                    while (pixelNr < pixelCount)
+                    {
+                        curByte = rlePtr.Increment();
+                        if ((curByte & 0x07) != 0)
+                        { // fill with color
+                            runLength = (byte)(curByte & 0x07);
+                            curByte = (byte)(curByte >> 3);
+                            outPtr.Data.Set(outPtr.Offset + pixelNr, curByte, Math.Min(runLength, pixelCount - pixelNr));
+                        }
+                        else { // skip the next pixels (transparency)
+                            runLength = (byte)(curByte >> 3);
+                        }
+                        pixelNr += runLength;
+                    }
+                    break;
+                case ViewType.Amiga64:
+                    while (pixelNr < pixelCount)
+                    {
+                        curByte = rlePtr.Increment();
+                        if ((curByte & 0xC0) != 0)
+                        { // fill with color
+                            runLength = (byte)(curByte >> 6);
+                            curByte = (byte)(curByte & 0x3F);
+                            outPtr.Data.Set(outPtr.Offset + pixelNr, curByte, Math.Min(runLength, pixelCount - pixelNr));
+                        }
+                        else { // skip the next pixels (transparency)
+                            runLength = (byte)(curByte & 0x3F);
+                        }
+                        pixelNr += runLength;
+                    }
+                    break;
+                case ViewType.Vga:
+                case ViewType.Vga11:
+                    // If we have no RLE data, the image is just uncompressed
+                    if (rlePos == 0)
+                    {
+                        Array.Copy(literalPtr.Data, literalPtr.Offset, outPtr.Data, outPtr.Offset, pixelCount);
+                        break;
+                    }
+
+                    while (pixelNr < pixelCount)
+                    {
+                        curByte = rlePtr.Increment();
+                        runLength = (byte)(curByte & 0x3F);
+
+                        switch (curByte & 0xC0)
+                        {
+                            case 0x40: // copy bytes as is (In copy case, runLength can go up to 127 i.e. pixel & 0x40). Fixes bug #3135872.
+                            case 0x00: // copy bytes as-is
+                                if ((curByte & 0xC0) == 0x40)
+                                {
+                                    runLength += 64;
+                                }
+                                if (literalPos == 0)
+                                {
+                                    Array.Copy(rlePtr.Data, rlePtr.Offset, outPtr.Data, outPtr.Offset + pixelNr, Math.Min(runLength, pixelCount - pixelNr));
+                                    rlePtr.Offset += runLength;
+                                }
+                                else {
+                                    Array.Copy(literalPtr.Data, literalPtr.Offset, outPtr.Data, outPtr.Offset + pixelNr, Math.Min(runLength, pixelCount - pixelNr));
+                                    literalPtr.Offset += runLength;
+                                }
+                                break;
+                            case 0x80: // fill with color
+                                if (literalPos == 0)
+                                {
+                                    outPtr.Data.Set(outPtr.Offset + pixelNr, rlePtr.Increment(), Math.Min(runLength, pixelCount - pixelNr));
+                                }
+                                else {
+                                    outPtr.Data.Set(outPtr.Offset + pixelNr, literalPtr.Increment(), Math.Min(runLength, pixelCount - pixelNr));
+                                }
+                                break;
+                            case 0xC0: // skip the next pixels (transparency)
+                                break;
+                        }
+
+                        pixelNr += runLength;
+                    }
+                    break;
+                default:
+                    throw new InvalidOperationException("Unsupported picture viewtype");
+            }
+        }
+
+        public CelInfo GetCelInfo(short loopNo, short celNo)
         {
             //assert(_loopCount);
             loopNo = (short)ScummHelper.Clip(loopNo, 0, _loopCount - 1);
             celNo = (short)ScummHelper.Clip(celNo, 0, _loop[loopNo].celCount - 1);
             return _loop[loopNo].cel[celNo];
+        }
+
+        internal void AdjustToUpscaledCoordinates(short y, short x)
+        {
+            throw new NotImplementedException();
         }
 
         internal void AdjustBackUpscaledCoordinates(int top, int left)

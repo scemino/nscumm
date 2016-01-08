@@ -43,7 +43,8 @@ namespace NScumm.Sci.Engine
         }
         private static Register kDoSoundPlay(EngineState s, int argc, StackPtr? argv)
         {
-            throw new NotImplementedException();
+            SciEngine.Instance._soundCmd.kDoSoundPlay(argc, argv);
+            return s.r_acc;
         }
         private static Register kDoSoundRestore(EngineState s, int argc, StackPtr? argv)
         {
@@ -59,7 +60,8 @@ namespace NScumm.Sci.Engine
         }
         private static Register kDoSoundStop(EngineState s, int argc, StackPtr? argv)
         {
-            throw new NotImplementedException();
+            // TODO: sound
+            return s.r_acc;
         }
         private static Register kDoSoundPause(EngineState s, int argc, StackPtr? argv)
         {
@@ -79,7 +81,8 @@ namespace NScumm.Sci.Engine
         }
         private static Register kDoSoundFade(EngineState s, int argc, StackPtr? argv)
         {
-            throw new NotImplementedException();
+            // TODO: sound
+            return s.r_acc;
         }
         private static Register kDoSoundGetPolyphony(EngineState s, int argc, StackPtr? argv)
         {
@@ -113,6 +116,16 @@ namespace NScumm.Sci.Engine
         {
             throw new NotImplementedException();
         }
+
+        public string GetKernelName(ushort number)
+        {
+            // FIXME: The following check is a temporary workaround for an issue
+            // leading to crashes when using the debugger's backtrace command.
+            if (number >= _kernelNames.Count)
+                return _invalid;
+            return _kernelNames[number];
+        }
+
         private static Register kDoSoundSuspend(EngineState s, int argc, StackPtr? argv)
         {
             throw new NotImplementedException();

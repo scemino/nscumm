@@ -29,11 +29,13 @@ namespace NScumm.Core.Graphics
         public int Height
         {
             get { return Bottom - Top; }
+            set { Bottom = Top + value; }
         }
 
         public int Width
         {
             get { return Right - Left; }
+            set { Right = Left + value; }
         }
 
         internal string DebuggerDisplay
@@ -167,7 +169,7 @@ namespace NScumm.Core.Graphics
         {
             Left = Math.Min(Left, r.Left);
             Right = Math.Max(Right, r.Right);
-            Top = Math.Min (Top, r.Top);
+            Top = Math.Min(Top, r.Top);
             Bottom = Math.Max(Bottom, r.Bottom);
         }
     }

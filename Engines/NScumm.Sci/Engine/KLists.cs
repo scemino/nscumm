@@ -18,11 +18,30 @@
 
 
 using System;
+using System.Collections.Generic;
 
 namespace NScumm.Sci.Engine
 {
+    class sort_temp_t
+    {
+        public Register key, value;
+        public Register order;
+    }
+
     partial class Kernel
     {
+        private static Register kEmptyList(EngineState s, int argc, StackPtr? argv)
+        {
+            if (argv.Value[0].IsNull)
+                return Register.NULL_REG;
+
+            List list = s._segMan.LookupList(argv.Value[0]);
+# if CHECK_LISTS
+            checkListPointer(s._segMan, argv.Value[0]);
+#endif
+            return Register.Make(0, ((list != null) ? list.first.IsNull : false));
+        }
+
         private static Register kNewList(EngineState s, int argc, StackPtr? argv)
         {
             Register listRef;
@@ -255,6 +274,77 @@ namespace NScumm.Sci.Engine
             n.succ = Register.NULL_REG;
 
             return Register.Make(0, 1); // Signal success
+        }
+
+        private static Register kSort(EngineState s, int argc, StackPtr? argv)
+        {
+            SegManager segMan = s._segMan;
+            Register source = argv.Value[0];
+            Register dest = argv.Value[1];
+            Register order_func = argv.Value[2];
+
+            int input_size = (short)SciEngine.ReadSelectorValue(segMan, source, o => o.size);
+            Register input_data = SciEngine.ReadSelector(segMan, source, o => o.elements);
+            Register output_data = SciEngine.ReadSelector(segMan, dest, o => o.elements);
+
+            List list;
+            Node node;
+
+            if (input_size == 0)
+                return s.r_acc;
+
+            if (output_data.IsNull)
+            {
+                list = s._segMan.AllocateList(out output_data);
+                list.first = list.last = Register.NULL_REG;
+                SciEngine.WriteSelector(segMan, dest, o => o.elements, output_data);
+            }
+
+            SciEngine.WriteSelectorValue(segMan, dest, o => o.size, (ushort)input_size);
+
+            list = s._segMan.LookupList(input_data);
+            node = s._segMan.LookupNode(list.first);
+
+            var temp_array = new List<sort_temp_t>();
+
+            int i = 0;
+            while (node != null)
+            {
+                Register[] @params = { node.value };
+
+                SciEngine.InvokeSelector(s, order_func, o => o.doit, argc, argv.Value, 1, new StackPtr(@params, 0));
+                temp_array[i].key = node.key;
+                temp_array[i].value = node.value;
+                temp_array[i].order = s.r_acc;
+                i++;
+                node = s._segMan.LookupNode(node.succ);
+            }
+
+            temp_array.Sort(sort_temp_cmp);
+
+            for (i = 0; i < input_size; i++)
+            {
+                Register lNode = s._segMan.NewNode(temp_array[i].value, temp_array[i].key);
+
+                AddToEnd(s, output_data, lNode);
+            }
+
+            return s.r_acc;
+        }
+
+        private static int sort_temp_cmp(sort_temp_t st1, sort_temp_t st2)
+        {
+            if (st1.order.Segment < st2.order.Segment ||
+                (st1.order.Segment == st2.order.Segment &&
+                st1.order.Offset < st2.order.Offset))
+                return -1;
+
+            if (st1.order.Segment > st2.order.Segment ||
+                (st1.order.Segment == st2.order.Segment &&
+                st1.order.Offset > st2.order.Offset))
+                return 1;
+
+            return 0;
         }
 
         static void AddToFront(EngineState s, Register listRef, Register nodeRef)

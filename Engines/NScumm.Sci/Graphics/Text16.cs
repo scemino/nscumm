@@ -684,5 +684,27 @@ namespace NScumm.Sci.Graphics
             }
             return Register.NULL_REG;
         }
+
+        // Used SCI1+ for text codes
+        public void KernelTextFonts(int argc, StackPtr? argv)
+        {
+            _codeFontsCount = argc;
+            _codeFonts = new int[argc];
+            for (var i = 0; i < argc; i++)
+            {
+                _codeFonts[i] = argv.Value[i].ToUInt16();
+            }
+        }
+
+        // Used SCI1+ for text codes
+        public void KernelTextColors(int argc, StackPtr? argv)
+        {
+            _codeColorsCount = argc;
+            _codeColors = new ushort[argc];
+            for (var i = 0; i < argc; i++)
+            {
+                _codeColors[i] = argv.Value[i].ToUInt16();
+            }
+        }
     }
 }

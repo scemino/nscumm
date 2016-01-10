@@ -58,7 +58,7 @@ namespace NScumm.Sci.Engine
         /// MemorySegment provides access to a 256-byte block of memory that remains
         /// intact across restarts and restores
         /// </summary>
-        private const int MemorySegmentMax = 256;
+        public const int MemorySegmentMax = 256;
 
         // We assume that scripts give us savegameId 0.99 for creating a new save slot
         //  and savegameId 100.199 for existing save slots. Refer to kfile.cpp
@@ -320,6 +320,16 @@ namespace NScumm.Sci.Engine
 
             ticks *= g_debug_sleeptime_factor;
             SciEngine.Instance.Sleep(ticks * 1000 / 60);
+        }
+
+        public void ShrinkStackToBase()
+        {
+            if (_executionStack.Count > 0)
+            {
+                int index = executionStackBase + 1;
+                var count = _executionStack.Count - index;
+                _executionStack.RemoveRange(index, count);
+            }
         }
     }
 }

@@ -119,7 +119,7 @@ namespace NScumm.Sci.Engine
         /// <returns></returns>
         public virtual Register FindCanonicAddress(SegManager segMan, Register sub_addr)
         {
-            return sub_addr;
+            return Register.Make(sub_addr);
         }
     }
 
@@ -336,7 +336,7 @@ namespace NScumm.Sci.Engine
                 tmp.Add(clone.GetVariable(i));
 
             // Note that this also includes the 'base' object, which is part of the script and therefore also emits the locals.
-            tmp.Add(clone.Pos);
+            tmp.Add(Register.Make(clone.Pos));
             //debugC(kDebugLevelGC, "[GC] Reporting clone-pos %04x:%04x", PRINT_REG(clone->pos));
 
             return tmp;
@@ -368,8 +368,8 @@ namespace NScumm.Sci.Engine
 
             List list = _table[(int)addr.Offset].Item;
 
-            tmp.Add(list.first);
-            tmp.Add(list.last);
+            tmp.Add(Register.Make(list.first));
+            tmp.Add(Register.Make(list.last));
             // We could probably get away with just one of them, but
             // let's be conservative here.
 
@@ -515,7 +515,7 @@ namespace NScumm.Sci.Engine
 
         public override List<Register> ListAllOutgoingReferences(Register obj)
         {
-            return new List<Register>(_locals);
+            return new List<Register>(_locals.Select(r => Register.Make(r)));
         }
     }
 

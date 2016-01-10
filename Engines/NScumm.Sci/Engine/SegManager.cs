@@ -285,6 +285,16 @@ namespace NScumm.Sci.Engine
             }
         }
 
+        public bool FreeDynmem(Register addr)
+        {
+            if (addr.Segment < 1 || addr.Segment >= _heap.Count || _heap[addr.Segment] == null || _heap[addr.Segment].Type != SegmentType.DYNMEM)
+                return false; // error
+
+            Deallocate(addr.Segment);
+
+            return true; // OK
+        }
+
         public SegmentObjTable<SciObject>.Entry AllocateClone(out Register addr)
         {
             CloneTable table;
@@ -629,7 +639,52 @@ namespace NScumm.Sci.Engine
             return retval;
         }
 
-        public void Memcpy(Register dest, byte[] src, ushort n)
+        public void Memcpy(Register dest, Register src, int n)
+        {
+            SegmentRef dest_r = Dereference(dest);
+            SegmentRef src_r = Dereference(src);
+            if (!dest_r.IsValid)
+            {
+                // TODO: warning("Attempt to memcpy to invalid pointer %04x:%04x", PRINT_REG(dest));
+                return;
+            }
+            if (n > dest_r.maxSize)
+            {
+                // TODO: warning("Trying to dereference pointer %04x:%04x beyond end of segment", PRINT_REG(dest));
+                return;
+            }
+            if (!src_r.IsValid)
+            {
+                // TODO: warning("Attempt to memcpy from invalid pointer %04x:%04x", PRINT_REG(src));
+                return;
+            }
+            if (n > src_r.maxSize)
+            {
+                // TODO: warning("Trying to dereference pointer %04x:%04x beyond end of segment", PRINT_REG(src));
+                return;
+            }
+
+            if (src_r.isRaw)
+            {
+                // raw -> *
+                Memcpy(dest, src_r.raw, n);
+            }
+            else if (dest_r.isRaw)
+            {
+                // * -> raw
+                Memcpy(dest_r.raw, src, n);
+            }
+            else {
+                // non-raw -> non-raw
+                for (var i = 0; i < n; i++)
+                {
+                    char c = GetChar(src_r, i);
+                    SetChar(dest_r, (uint)i, (byte)c);
+                }
+            }
+        }
+
+        public void Memcpy(Register dest, ByteAccess src, int n)
         {
             SegmentRef dest_r = Dereference(dest);
             if (!dest_r.IsValid)
@@ -646,12 +701,42 @@ namespace NScumm.Sci.Engine
             if (dest_r.isRaw)
             {
                 // raw . raw
-                Array.Copy(src, 0, dest_r.raw.Data, dest_r.raw.Offset, n);
+                Array.Copy(src.Data, src.Offset, dest_r.raw.Data, dest_r.raw.Offset, n);
             }
             else {
                 // raw . non-raw
-                for (uint i = 0; i < n; i++)
-                    SetChar(dest_r, i, src[i]);
+                for (var i = 0; i < n; i++)
+                    SetChar(dest_r, (uint)i, src[i]);
+            }
+        }
+
+        public void Memcpy(ByteAccess dest, Register src, int n)
+        {
+            SegmentRef src_r = Dereference(src);
+            if (!src_r.IsValid)
+            {
+                // TODO: warning("Attempt to memcpy from invalid pointer %04x:%04x", PRINT_REG(src));
+                return;
+            }
+            if (n > src_r.maxSize)
+            {
+                // TODO: warning("Trying to dereference pointer %04x:%04x beyond end of segment", PRINT_REG(src));
+                return;
+            }
+
+            if (src_r.isRaw)
+            {
+                // raw -> raw
+                //::memcpy(dest, src_r.raw, n);
+                Array.Copy(src_r.raw.Data, src_r.raw.Offset, dest.Data, dest.Offset, n);
+            }
+            else {
+                // non-raw -> raw
+                for (var i = 0; i < n; i++)
+                {
+                    char c = GetChar(src_r, i);
+                    dest[i] = (byte)c;
+                }
             }
         }
 
@@ -743,7 +828,7 @@ namespace NScumm.Sci.Engine
             return ScummHelper.GetText(data.Data, data.Offset);
         }
 
-        private SegmentRef Dereference(Register pointer)
+        public SegmentRef Dereference(Register pointer)
         {
             SegmentRef ret = new SegmentRef();
 
@@ -900,6 +985,11 @@ namespace NScumm.Sci.Engine
             Strncpy(dest, src, 0xFFFFFFFFU);
         }
 
+        public void Strcpy(Register dest, Register src)
+        {
+            Strncpy(dest, src, 0xFFFFFFFFU);
+        }
+
         public void Strncpy(Register dest, string src, uint n)
         {
             SegmentRef dest_r = Dereference(dest);
@@ -935,7 +1025,7 @@ namespace NScumm.Sci.Engine
             }
         }
 
-        private void Strncpy(Register dest, Register src, uint n)
+        public void Strncpy(Register dest, Register src, uint n)
         {
             if (src.IsNull)
             {

@@ -53,7 +53,7 @@ namespace NScumm.Sci.Graphics
         Hoyle4SpecialHandling = 0x0004  // HOYLE4-exclusive: special handling inside kAnimate, is used when giving out cards
     }
 
-    struct AnimateEntry
+    internal struct AnimateEntry
     {
         public short givenOrderNo;
         public Register @object;
@@ -446,7 +446,7 @@ namespace NScumm.Sci.Graphics
                 for (int i = 0; i < _lastCastData.Count; i++)
                 {
                     var it = _lastCastData[i];
-                    it.castHandle = _paint16.BitsSave(it.celRect, GfxScreenMasks.VISUAL | GfxScreenMasks.PRIORITY);
+                    it.castHandle = Register.Make(_paint16.BitsSave(it.celRect, GfxScreenMasks.VISUAL | GfxScreenMasks.PRIORITY));
                     _paint16.DrawCel(it.viewId, it.loopNo, it.celNo, it.celRect, (byte)it.priority, (ushort)it.paletteNo, (ushort)it.scaleX, (ushort)it.scaleY);
                 }
                 _paint16.BitsShow(rect);
@@ -454,7 +454,7 @@ namespace NScumm.Sci.Graphics
                 for (int i = _lastCastData.Count - 1; i >= 0; i--)
                 {
                     var it = _lastCastData[i];
-                    _paint16.BitsRestore(it.castHandle);
+                    _paint16.BitsRestore(Register.Make(it.castHandle));
                 }
             }
             else
@@ -803,7 +803,7 @@ namespace NScumm.Sci.Graphics
             for (int i = 0; i < _list.Count; i++)
             {
                 var it = _list[i];
-                curObject = it.@object;
+                curObject = Register.Make(it.@object);
 
                 // Get the corresponding view
                 view = _cache.GetView(it.viewId);

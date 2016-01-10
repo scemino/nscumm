@@ -17,6 +17,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace NScumm.Sci.Engine
@@ -187,7 +188,7 @@ namespace NScumm.Sci.Engine
             // (Table) uses Common::Array for internal storage. Common::Array now
             // might invalidate references to its contained data, when it has to
             // extend the internal storage size.
-            if ((infoSelector & SciObject.InfoFlagClone)!=0)
+            if ((infoSelector & SciObject.InfoFlagClone) != 0)
                 parentObj = s._segMan.GetObject(parentAddr);
 
             cloneObj.Item = parentObj.Clone();
@@ -206,6 +207,54 @@ namespace NScumm.Sci.Engine
             s._segMan.GetScript(cloneObj.Item.Pos.Segment).IncrementLockers();
 
             return cloneAddr;
+        }
+
+        private static Register kLock(EngineState s, int argc, StackPtr? argv)
+        {
+            int state = argc > 2 ? argv.Value[2].ToUInt16() : 1;
+            ResourceType type = SciEngine.Instance.ResMan.ConvertResType(argv.Value[0].ToUInt16());
+            ResourceId id = new ResourceId(type, argv.Value[1].ToUInt16());
+
+            ResourceManager.ResourceSource.Resource which;
+
+            switch (state)
+            {
+                case 1:
+                    SciEngine.Instance.ResMan.FindResource(id, true);
+                    break;
+                case 0:
+                    if (id.Number == 0xFFFF)
+                    {
+                        // Unlock all resources of the requested type
+                        List<ResourceId> resources = SciEngine.Instance.ResMan.ListResources(type);
+                        foreach (var i in resources)
+                        {
+                            var res = SciEngine.Instance.ResMan.TestResource(i);
+                            if (res.IsLocked)
+                                SciEngine.Instance.ResMan.UnlockResource(res);
+                        }
+                    }
+                    else {
+                        which = SciEngine.Instance.ResMan.FindResource(id, false);
+
+                        if (which != null)
+                            SciEngine.Instance.ResMan.UnlockResource(which);
+                        else {
+                            if (id.Type == ResourceType.Invalid)
+                            {
+                                // TODO: warning("[resMan] Attempt to unlock resource %i of invalid type %i", id.getNumber(), argv[0].toUint16());
+                            }
+                            else {
+                                // Happens in CD games (e.g. LSL6CD) with the message
+                                // resource. It isn't fatal, and it's usually caused
+                                // by leftover scripts.
+                                // TODO: debugC(kDebugLevelResMan, "[resMan] Attempt to unlock non-existant resource %s", id.toString().c_str());
+                            }
+                        }
+                    }
+                    break;
+            }
+            return s.r_acc;
         }
 
         private static Register kRespondsTo(EngineState s, int argc, StackPtr? argv)

@@ -22,6 +22,19 @@ using System;
 
 namespace NScumm.Sci.Engine
 {
+    enum MessageFunction
+    {
+        GET,
+        NEXT,
+        SIZE,
+        REFNOUN,
+        REFVERB,
+        REFCOND,
+        PUSH,
+        POP,
+        LASTMESSAGE
+    }
+
     partial class Kernel
     {
         private const int ALIGN_NONE = 0;
@@ -333,5 +346,316 @@ namespace NScumm.Sci.Engine
             s._segMan.Strcpy(argv.Value[2], ScummHelper.GetText(seeker.Data, seeker.Offset)); // Copy the string and get return value
             return argv.Value[2];
         }
+
+        private static Register kGetMessage(EngineState s, int argc, StackPtr? argv)
+        {
+            var tuple = new MessageTuple((byte)argv.Value[0].ToUInt16(), (byte)argv.Value[2].ToUInt16());
+
+            s._msgState.GetMessage(argv.Value[1].ToUInt16(), tuple, argv.Value[3]);
+
+            return argv.Value[3];
+        }
+
+        private static Register kMessage(EngineState s, int argc, StackPtr? argv)
+        {
+            uint func = argv.Value[0].ToUInt16();
+            ushort module = (ushort)((argc >= 2) ? argv.Value[1].ToUInt16() : 0);
+
+# if ENABLE_SCI32
+            if (getSciVersion() >= SCI_VERSION_2)
+            {
+                // In complete weirdness, SCI32 bumps up subops 3-8 to 4-9 and stubs off subop 3.
+                if (func == 3)
+                    error("SCI32 kMessage(3)");
+                else if (func > 3)
+                    func--;
+            }
+#endif
+
+            //	TODO: Perhaps fix this check, currently doesn't work with PUSH and POP subfunctions
+            //	Pepper uses them to to handle the glossary
+            //	if ((func != K_MESSAGE_NEXT) && (argc < 2)) {
+            //		warning("Message: not enough arguments passed to subfunction %d", func);
+            //		return NULL_REG;
+            //	}
+
+            MessageTuple tuple = new MessageTuple();
+
+            if (argc >= 6)
+                tuple = new MessageTuple((byte)argv.Value[2].ToUInt16(), (byte)argv.Value[3].ToUInt16(), (byte)argv.Value[4].ToUInt16(), (byte)argv.Value[5].ToUInt16());
+
+            // WORKAROUND for a script bug in Pepper. When using objects together,
+            // there is code inside script 894 that shows appropriate messages.
+            // In the case of the jar of cabbage (noun 26), the relevant message
+            // shown when using any object with it is missing. This leads to the
+            // script code being triggered, which modifies the jar's noun and
+            // message selectors, and renders it useless. Thus, when using any
+            // object with the jar of cabbage, it's effectively corrupted, and
+            // can't be used on the goat to empty it, therefore the game reaches
+            // an unsolvable state. It's almost impossible to patch the offending
+            // script, as it is used in many cases. But we can prevent the
+            // corruption of the jar here: if the message is found, the offending
+            // code is never reached and the jar is never corrupted. To do this,
+            // we substitute all verbs on the cabbage jar with the default verb,
+            // which shows the "Cannot use this object with the jar" message, and
+            // never triggers the offending script code that corrupts the object.
+            // This only affects the jar of cabbage - any other object, including
+            // the empty jar has a different noun, thus it's unaffected.
+            // Fixes bug #3601090.
+            // NOTE: To fix a corrupted jar object, type "send Glass_Jar message 52"
+            // in the debugger.
+            if (SciEngine.Instance.GameId == SciGameId.PEPPER && func == 0 && argc >= 6 && module == 894 &&
+                tuple.noun == 26 && tuple.cond == 0 && tuple.seq == 1 &&
+                s._msgState.GetMessage(module, tuple, Register.NULL_REG) == 0)
+                tuple.verb = 0;
+
+            switch ((MessageFunction)func)
+            {
+                case MessageFunction.GET:
+                    return Register.Make(0, (ushort)s._msgState.GetMessage(module, tuple, (argc == 7 ? argv.Value[6] : Register.NULL_REG)));
+                case MessageFunction.NEXT:
+                    return Register.Make(0, s._msgState.NextMessage((argc == 2 ? argv.Value[1] : Register.NULL_REG)));
+                case MessageFunction.SIZE:
+                    return Register.Make(0, s._msgState.MessageSize(module, tuple));
+                case MessageFunction.REFCOND:
+                case MessageFunction.REFVERB:
+                case MessageFunction.REFNOUN:
+                    {
+                        MessageTuple t;
+
+                        if (s._msgState.MessageRef(module, tuple, out t))
+                        {
+                            switch ((MessageFunction)func)
+                            {
+                                case MessageFunction.REFCOND:
+                                    return Register.Make(0, t.cond);
+                                case MessageFunction.REFVERB:
+                                    return Register.Make(0, t.verb);
+                                case MessageFunction.REFNOUN:
+                                    return Register.Make(0, t.noun);
+                            }
+                        }
+
+                        return Register.SIGNAL_REG;
+                    }
+                case MessageFunction.LASTMESSAGE:
+                    {
+                        MessageTuple msg;
+                        int lastModule;
+
+                        s._msgState.LastQuery(out lastModule, out msg);
+
+                        bool ok = false;
+
+                        if (s._segMan.Dereference(argv.Value[1]).isRaw)
+                        {
+                            var buffer = s._segMan.DerefBulkPtr(argv.Value[1], 10);
+
+                            if (buffer != null)
+                            {
+                                ok = true;
+                                buffer.WriteUInt16(0, (ushort)lastModule);
+                                buffer.WriteUInt16(2, msg.noun);
+                                buffer.WriteUInt16(4, msg.verb);
+                                buffer.WriteUInt16(6, msg.cond);
+                                buffer.WriteUInt16(8, msg.seq);
+                            }
+                        }
+                        else {
+                            var buffer = s._segMan.DerefRegPtr(argv.Value[1], 5);
+
+                            if (buffer != null)
+                            {
+                                ok = true;
+                                buffer[0] = Register.Make(0, (ushort)lastModule);
+                                buffer[1] = Register.Make(0, msg.noun);
+                                buffer[2] = Register.Make(0, msg.verb);
+                                buffer[3] = Register.Make(0, msg.cond);
+                                buffer[4] = Register.Make(0, msg.seq);
+                            }
+                        }
+
+                        // TODO:
+                        //if (!ok)
+                        //    warning("Message: buffer %04x:%04x invalid or too small to hold the tuple", PRINT_REG(argv.Value[1]));
+
+                        return Register.NULL_REG;
+                    }
+                case MessageFunction.PUSH:
+                    s._msgState.PushCursorStack();
+                    break;
+                case MessageFunction.POP:
+                    s._msgState.PopCursorStack();
+                    break;
+                default:
+                    // TODO: warning("Message: subfunction %i invoked (not implemented)", func);
+                    break;
+            }
+
+            return Register.NULL_REG;
+        }
+
+        private static Register kStrAt(EngineState s, int argc, StackPtr? argv)
+        {
+            if (argv.Value[0] == Register.SIGNAL_REG)
+            {
+                // TOO: warning("Attempt to perform kStrAt() on a signal reg");
+                return Register.NULL_REG;
+            }
+
+            SegmentRef dest_r = s._segMan.Dereference(argv.Value[0]);
+            if (!dest_r.IsValid)
+            {
+                // TODO: warning($"Attempt to StrAt at invalid pointer {argv.Value[0]}");
+                return Register.NULL_REG;
+            }
+
+            byte value;
+            byte newvalue = 0;
+            ushort offset = argv.Value[1].ToUInt16();
+            if (argc > 2)
+                newvalue = (byte)argv.Value[2].ToInt16();
+
+            // in kq5 this here gets called with offset 0xFFFF
+            //  (in the desert wheng getting the staff)
+            if ((int)offset >= dest_r.maxSize)
+            {
+                // TOO: warning("kStrAt offset %X exceeds maxSize", offset);
+                return s.r_acc;
+            }
+
+            // FIXME: Move this to segman
+            if (dest_r.isRaw)
+            {
+                value = dest_r.raw[offset];
+                if (argc > 2) /* Request to modify this char */
+                    dest_r.raw[offset] = newvalue;
+            }
+            else {
+                if (dest_r.skipByte)
+                    offset++;
+
+                Register tmp = dest_r.reg[offset / 2];
+
+                bool oddOffset = (offset & 1) != 0;
+                if (SciEngine.Instance.IsBE)
+                    oddOffset = !oddOffset;
+
+                if (!oddOffset)
+                {
+                    value = (byte)(tmp.Offset & 0x00ff);
+                    if (argc > 2)
+                    { /* Request to modify this char */
+                        ushort tmpOffset = tmp.ToUInt16();
+                        tmpOffset &= 0xff00;
+                        tmpOffset |= newvalue;
+                        tmp.SetOffset(tmpOffset);
+                        tmp.SetSegment(0);
+                    }
+                }
+                else {
+                    value = (byte)(tmp.Offset >> 8);
+                    if (argc > 2)
+                    { /* Request to modify this char */
+                        ushort tmpOffset = tmp.ToUInt16();
+                        tmpOffset &= 0x00ff;
+                        tmpOffset |= (ushort)(newvalue << 8);
+                        tmp.SetOffset(tmpOffset);
+                        tmp.SetSegment(0);
+                    }
+                }
+            }
+
+            return Register.Make(0, value);
+
+        }
+
+        private static Register kStrCat(EngineState s, int argc, StackPtr? argv)
+        {
+            string s1 = s._segMan.GetString(argv.Value[0]);
+            string s2 = s._segMan.GetString(argv.Value[1]);
+
+            // Japanese PC-9801 interpreter splits strings here
+            //  see bug #5834
+            //  Verified for Police Quest 2 + Quest For Glory 1
+            //  However Space Quest 4 PC-9801 doesn't
+            if ((SciEngine.Instance.Language == Core.Common.Language.JA_JPN)
+                && (ResourceManager.GetSciVersion() <= SciVersion.V01))
+            {
+                s1 = SciEngine.Instance.StrSplit(s1, null);
+                s2 = SciEngine.Instance.StrSplit(s2, null);
+            }
+
+            s1 += s2;
+            s._segMan.Strcpy(argv.Value[0], s1);
+            return argv.Value[0];
+        }
+
+        private static Register kStrCmp(EngineState s, int argc, StackPtr? argv)
+        {
+            string s1 = s._segMan.GetString(argv.Value[0]);
+            string s2 = s._segMan.GetString(argv.Value[1]);
+
+            if (argc > 2)
+                return Register.Make(0, (ushort)string.CompareOrdinal(s1, 0, s2, 0, argv.Value[2].ToUInt16()));
+            else
+                return Register.Make(0, (ushort)string.CompareOrdinal(s1, s2));
+        }
+
+        private static Register kStrCpy(EngineState s, int argc, StackPtr? argv)
+        {
+            if (argc > 2)
+            {
+                int length = argv.Value[2].ToInt16();
+
+                if (length >= 0)
+                    s._segMan.Strncpy(argv.Value[0], argv.Value[1], (uint)length);
+                else
+                    s._segMan.Memcpy(argv.Value[0], argv.Value[1], -length);
+            }
+            else {
+                s._segMan.Strcpy(argv.Value[0], argv.Value[1]);
+            }
+
+            return argv.Value[0];
+        }
+
+        private static Register kStrEnd(EngineState s, int argc, StackPtr? argv)
+        {
+            Register address = argv.Value[0];
+            address.IncOffset((short)s._segMan.Strlen(address));
+
+            return address;
+        }
+
+        private static Register kStrLen(EngineState s, int argc, StackPtr? argv)
+        {
+            return Register.Make(0, (ushort)s._segMan.Strlen(argv.Value[0]));
+        }
+
+        private static Register kStrSplit(EngineState s, int argc, StackPtr? argv)
+        {
+            string format = s._segMan.GetString(argv.Value[1]);
+            string sep_str;
+            string sep = null;
+            if (!argv.Value[2].IsNull)
+            {
+                sep_str = s._segMan.GetString(argv.Value[2]);
+                sep = sep_str;
+            }
+            string str = SciEngine.Instance.StrSplit(format, sep);
+
+            // Make sure target buffer is large enough
+            SegmentRef buf_r = s._segMan.Dereference(argv.Value[0]);
+            if (!buf_r.IsValid || buf_r.maxSize < (int)str.Length + 1)
+            {
+                //TODO: warning("StrSplit: buffer %04x:%04x invalid or too small to hold the following text of %i bytes: '%s'",
+                //                PRINT_REG(argv.Value[0]), str.Length + 1, str);
+                return Register.NULL_REG;
+            }
+            s._segMan.Strcpy(argv.Value[0], str);
+            return argv.Value[0];
+        }
+
     }
 }

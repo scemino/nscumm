@@ -90,6 +90,7 @@ namespace NScumm.Sci
 
                 public ResourceType ResourceType { get { return _id.Type; } }
                 public ushort Number { get { return _id.Number; } }
+                public bool IsLocked { get { return _status == ResourceStatus.Locked; } }
 
                 public Resource(ResourceManager resMan, ResourceId id)
                 {

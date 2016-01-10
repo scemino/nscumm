@@ -1679,7 +1679,7 @@ namespace NScumm.Sci
         /// <param name="type">The resource type to look for</param>
         /// <param name="mapNumber">For audio36 and sync36, limit search to this map</param>
         /// <returns>The resource list</returns>
-        private List<ResourceId> ListResources(ResourceType type, int mapNumber = -1)
+        public List<ResourceId> ListResources(ResourceType type, int mapNumber = -1)
         {
             var resources = new List<ResourceId>();
             foreach (var itr in _resMap)

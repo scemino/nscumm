@@ -32,6 +32,15 @@ namespace NScumm.Sci.Engine
             return s.r_acc;
         }
 
+        private static Register kGetMenu(EngineState s, int argc, StackPtr? argv)
+        {
+            ushort menuId = (ushort)(argv.Value[0].ToUInt16() >> 8);
+            ushort itemId = (ushort)(argv.Value[0].ToUInt16() & 0xFF);
+            MenuAttribute attributeId = (MenuAttribute)argv.Value[1].ToUInt16();
+
+            return SciEngine.Instance._gfxMenu.KernelGetAttribute(menuId, itemId, attributeId);
+        }
+
         private static Register kSetMenu(EngineState s, int argc, StackPtr? argv)
         {
             ushort menuId = (ushort)(argv.Value[0].ToUInt16() >> 8);

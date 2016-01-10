@@ -20,6 +20,8 @@ using System;
 using NScumm.Core.Graphics;
 using NScumm.Core;
 using NScumm.Core.Common;
+using NScumm.Sci.Engine;
+using System.Collections.Generic;
 
 namespace NScumm.Sci.Graphics
 {
@@ -76,6 +78,9 @@ namespace NScumm.Sci.Graphics
         private bool _useSilverSQ4CDCursors;
         private ISystem _system;
 
+        // Mac versions of games use a remap list to remap their cursors
+        private List<ushort> _macCursorRemap;
+
         // This list contains all mandatory set cursor changes, that need special handling
         // Refer to GfxCursor::setPosition() below
         //    Game,            newPosition,  validRect
@@ -108,6 +113,7 @@ namespace NScumm.Sci.Graphics
             _resMan = resMan;
             _palette = palette;
             _screen = screen;
+            _macCursorRemap = new List<ushort>();
 
             _upscaledHires = _screen.UpscaledHires;
             _isVisible = true;
@@ -157,7 +163,7 @@ namespace NScumm.Sci.Graphics
 
         private void KernelMoveCursor(Point pos)
         {
-            _coordAdjuster.MoveCursor(pos);
+            _coordAdjuster.MoveCursor(ref pos);
             if (pos.X > _screen.ScriptWidth || pos.Y > _screen.ScriptHeight)
             {
                 // TODO: warning("attempt to place cursor at invalid coordinates (%d, %d)", pos.y, pos.x);
@@ -423,6 +429,12 @@ namespace NScumm.Sci.Graphics
                     return;
                 }
             }
+        }
+
+        public void SetMacCursorRemapList(int cursorCount, StackPtr cursors)
+        {
+            for (int i = 0; i < cursorCount; i++)
+                _macCursorRemap.Add(cursors[i].ToUInt16());
         }
     }
 }

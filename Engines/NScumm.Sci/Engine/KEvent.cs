@@ -248,6 +248,27 @@ namespace NScumm.Sci.Engine
             return Register.NULL_REG;
         }
 
+        private static Register kLocalToGlobal(EngineState s, int argc, StackPtr? argv)
+        {
+            Register obj = argv.Value[0];
+            Register planeObject = argc > 1 ? argv.Value[1] : Register.NULL_REG; // SCI32
+            SegManager segMan = s._segMan;
+
+            if (obj.Segment != 0)
+            {
+                short x = (short)SciEngine.ReadSelectorValue(segMan, obj, o => o.x);
+                short y = (short)SciEngine.ReadSelectorValue(segMan, obj, o => o.y);
+
+                SciEngine.Instance._gfxCoordAdjuster.KernelLocalToGlobal(ref x, ref y, planeObject);
+
+                SciEngine.WriteSelectorValue(segMan, obj, o => o.x, (ushort)x);
+                SciEngine.WriteSelectorValue(segMan, obj, o => o.y, (ushort)y);
+            }
+
+            return s.r_acc;
+        }
+
+
         private static Register kMapKeyToDir(EngineState s, int argc, StackPtr? argv)
         {
             Register obj = argv.Value[0];

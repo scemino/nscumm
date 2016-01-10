@@ -342,5 +342,50 @@ namespace NScumm.Sci.Engine
         {
             new SciWorkaroundEntry { gameId = SciGameId.KQ5, roomNr =-1, scriptNr = 937, inheritanceLevel = 0, objectName = "IconBar", methodName = "handleEvent", localCallOffset = -1, index = 0, newValue = new SciWorkaroundSolution { type = SciWorkaroundType.IGNORE, value = 0 } }, // when pressing escape to open the menu, gets called with one parameter instead of 2 - bug #5575
         };
+        public static readonly SciWorkaroundEntry[] kDeviceInfo_workarounds =
+        {
+            new SciWorkaroundEntry { gameId = SciGameId.FANMADE, roomNr =       -1, scriptNr =  994, inheritanceLevel = 1, objectName =              "Game", methodName = "save",    localCallOffset =    0xd1c, index =   0, newValue = { type = SciWorkaroundType.STILLCALL, value = 0 } }, // In fanmade games, this is called with one parameter for CurDevice (Cascade Quest)
+            new SciWorkaroundEntry { gameId = SciGameId.FANMADE, roomNr =       -1, scriptNr =  994, inheritanceLevel = 1, objectName =              "Game", methodName = "save",    localCallOffset =    0xe55, index =   0, newValue = { type = SciWorkaroundType.STILLCALL, value = 0 } }, // In fanmade games, this is called with one parameter for CurDevice (Demo Quest)
+            new SciWorkaroundEntry { gameId = SciGameId.FANMADE, roomNr =       -1, scriptNr =  994, inheritanceLevel = 1, objectName =              "Game", methodName = "save",    localCallOffset =    0xe57, index =   0, newValue = { type = SciWorkaroundType.STILLCALL, value = 0 } }, // In fanmade games, this is called with one parameter for CurDevice (I Want My C64 Back)
+            new SciWorkaroundEntry { gameId = SciGameId.FANMADE, roomNr =       -1, scriptNr =  994, inheritanceLevel = 0, objectName =             "Black", methodName = "save",    localCallOffset =      0xa, index =   0, newValue = { type = SciWorkaroundType.IGNORE,    value = 0 } }, // In fanmade games, this is called with one parameter for CurDevice (Black Cauldron Remake)
+            new SciWorkaroundEntry { gameId = SciGameId.FANMADE, roomNr =       -1, scriptNr =  994, inheritanceLevel = 1, objectName =              "Game", methodName = "save",    localCallOffset =    0xe5c, index =   0, newValue = { type = SciWorkaroundType.STILLCALL, value = 0 } }, // In fanmade games, this is called with one parameter for CurDevice (Most of them)
+            new SciWorkaroundEntry { gameId = SciGameId.FANMADE, roomNr =       -1, scriptNr =  994, inheritanceLevel = 1, objectName =              "Game", methodName = "restore", localCallOffset =    0xd1c, index =   0, newValue = { type = SciWorkaroundType.STILLCALL, value = 0 } }, // In fanmade games, this is called with one parameter for CurDevice (Cascade Quest)
+            new SciWorkaroundEntry { gameId = SciGameId.FANMADE, roomNr =       -1, scriptNr =  994, inheritanceLevel = 1, objectName =              "Game", methodName = "restore", localCallOffset =    0xe55, index =   0, newValue = { type = SciWorkaroundType.STILLCALL, value = 0 } }, // In fanmade games, this is called with one parameter for CurDevice (Demo Quest)
+            new SciWorkaroundEntry { gameId = SciGameId.FANMADE, roomNr =       -1, scriptNr =  994, inheritanceLevel = 1, objectName =              "Game", methodName = "restore", localCallOffset =    0xe57, index =   0, newValue = { type = SciWorkaroundType.STILLCALL, value = 0 } }, // In fanmade games, this is called with one parameter for CurDevice (I Want My C64 Back)
+            new SciWorkaroundEntry { gameId = SciGameId.FANMADE, roomNr =       -1, scriptNr =  994, inheritanceLevel = 1, objectName =              "Game", methodName = "restore", localCallOffset =    0xe5c, index =   0, newValue = { type = SciWorkaroundType.STILLCALL, value = 0 } }, // In fanmade games, this is called with one parameter for CurDevice (Most of them)
+        };
+        public static SciWorkaroundEntry[] kStrCpy_workarounds =
+        {
+            new SciWorkaroundEntry { gameId = SciGameId.MOTHERGOOSE, roomNr=  23, scriptNr =   23, inheritanceLevel=   0, objectName =          "talkScript", methodName = "changeState", localCallOffset =    -1, index =    0, newValue = { type = SciWorkaroundType.FAKE, value =   0 } }, // when talking to the girl in scene 23, there's no destination parameter (script bug - wrong instruction order). The original source is used directly afterwards in kDisplay, to show the girl's text - bug #6485
+        };
+        public static readonly SciWorkaroundEntry[] kMemory_workarounds =
+        {
+            new SciWorkaroundEntry { gameId = SciGameId.LAURABOW2, roomNr =     -1, scriptNr =  999, inheritanceLevel = 0, objectName =                  "", methodName = "export 6", localCallOffset =      -1, index =   0, newValue = { type = SciWorkaroundType.FAKE, value = 0 } }, // during the intro, when exiting the train (room 160), talking to Mr. Augustini, etc. - bug #4944
+	        new SciWorkaroundEntry { gameId = SciGameId.SQ1,       roomNr =     -1, scriptNr =  999, inheritanceLevel = 0, objectName =                  "", methodName = "export 6", localCallOffset =      -1, index =   0, newValue = { type = SciWorkaroundType.FAKE, value = 0 } }, // during walking Roger around Ulence Flats - bug #6017
+        };
+        public static readonly SciWorkaroundEntry[] kPaletteUnsetFlag_workarounds =
+        {
+            new SciWorkaroundEntry { gameId = SciGameId.QFG4, roomNr =          100, scriptNr =   100, inheritanceLevel =  0, objectName =            "doMovie", methodName = "changeState", localCallOffset =    -1, index =    0, newValue = { type = SciWorkaroundType.IGNORE,  value =   0 } }, // after the Sierra logo, no flags are passed, thus the call is meaningless - bug #4947
+        };
+        public static readonly SciWorkaroundEntry[] kStrAt_workarounds =
+        {
+            new SciWorkaroundEntry { gameId = SciGameId.CASTLEBRAIN, roomNr =   220, scriptNr =  220, inheritanceLevel = 0, objectName =        "robotJokes", methodName = "animateOnce",localCallOffset =     -1, index =   0, newValue = { type = SciWorkaroundType.FAKE, value = 0 } }, // when trying to view the terminal at the end of the maze without having collected any robot jokes - bug #5127
+	        new SciWorkaroundEntry { gameId = SciGameId.ISLANDBRAIN, roomNr =   300, scriptNr =  310, inheritanceLevel = 0, objectName =        "childBreed", methodName = "changeState",localCallOffset = 0x1c7c, index =   0, newValue = { type = SciWorkaroundType.FAKE, value = 0 } }, // when clicking Breed to get the second-generation cyborg hybrid (Standard difficulty), the two parameters are swapped - bug #5088
+        };
+        public static readonly SciWorkaroundEntry[] kStrLen_workarounds =
+        {
+            new SciWorkaroundEntry { gameId = SciGameId.QFG2, roomNr = 210, scriptNr = 2, inheritanceLevel = 0, objectName = "", methodName = "export 21", localCallOffset = 0xdeb, index = 0, newValue = { type =SciWorkaroundType.FAKE,  value = 0 } }, // When saying something incorrect at the WIT, an integer is passed instead of a reference - bug #5489
+        };
+        public static readonly SciWorkaroundEntry[] kUnLoad_workarounds =
+        {
+            new SciWorkaroundEntry { gameId = SciGameId.ECOQUEST,  roomNr =    380, scriptNr =   61, inheritanceLevel = 0, objectName =             "gotIt", methodName = "changeState", localCallOffset =   -1, index =   0, newValue = { type = SciWorkaroundType.IGNORE, value = 0 } }, // CD version: after talking to the dolphin the first time, a 3rd parameter is passed by accident
+	        new SciWorkaroundEntry { gameId = SciGameId.ECOQUEST,  roomNr =    380, scriptNr =   69, inheritanceLevel = 0, objectName =  "lookAtBlackBoard", methodName = "changeState", localCallOffset =   -1, index =   0, newValue = { type = SciWorkaroundType.IGNORE, value = 0 } }, // German version, when closing the blackboard closeup in the dolphin room, a 3rd parameter is passed by accident - bug #5483
+	        new SciWorkaroundEntry { gameId = SciGameId.LAURABOW2, roomNr =     -1, scriptNr =   -1, inheritanceLevel = 0, objectName =          "sCartoon", methodName = "changeState", localCallOffset =   -1, index =   0, newValue = { type = SciWorkaroundType.IGNORE, value = 0 } }, // DEMO: during the intro, a 3rd parameter is passed by accident - bug #4966
+	        new SciWorkaroundEntry { gameId = SciGameId.LSL6,      roomNr =    130, scriptNr =  130, inheritanceLevel = 0, objectName =   "recruitLarryScr", methodName = "changeState", localCallOffset =   -1, index =   0, newValue = { type = SciWorkaroundType.IGNORE, value = 0 } }, // during intro, a 3rd parameter is passed by accident
+	        new SciWorkaroundEntry { gameId = SciGameId.LSL6,      roomNr =    740, scriptNr =  740, inheritanceLevel = 0, objectName =       "showCartoon", methodName = "changeState", localCallOffset =   -1, index =   0, newValue = { type = SciWorkaroundType.IGNORE, value = 0 } }, // during ending, 4 additional parameters are passed by accident
+	        new SciWorkaroundEntry { gameId = SciGameId.LSL6HIRES, roomNr =    130, scriptNr =  130, inheritanceLevel = 0, objectName =   "recruitLarryScr", methodName = "changeState", localCallOffset =   -1, index =   0, newValue = { type = SciWorkaroundType.IGNORE, value = 0 } }, // during intro, a 3rd parameter is passed by accident
+	        new SciWorkaroundEntry { gameId = SciGameId.SQ1,       roomNr =     43, scriptNr =  303, inheritanceLevel = 0, objectName =           "slotGuy", methodName = "dispose",     localCallOffset =   -1, index =   0, newValue = { type = SciWorkaroundType.IGNORE, value = 0 } }, // when leaving ulence flats bar, parameter 1 is not passed - script error
+	        new SciWorkaroundEntry { gameId = SciGameId.QFG4,      roomNr =     -1, scriptNr =  110, inheritanceLevel = 0, objectName =           "dreamer", methodName = "dispose",     localCallOffset =   -1, index =   0, newValue = { type = SciWorkaroundType.IGNORE, value = 0 } }, // during the dream sequence, a 3rd parameter is passed by accident
+        };
     }
 }

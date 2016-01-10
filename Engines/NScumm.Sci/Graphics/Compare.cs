@@ -19,6 +19,7 @@
 using System;
 using NScumm.Sci.Engine;
 using NScumm.Core.Graphics;
+using NScumm.Core;
 
 namespace NScumm.Sci.Graphics
 {
@@ -202,10 +203,10 @@ namespace NScumm.Sci.Graphics
         public Rect GetNSRect(Register @object)
         {
             Rect nsRect = new Rect();
-            nsRect.Top = (int)SciEngine.ReadSelectorValue(_segMan, @object, SciEngine.Selector(s => s.nsTop));
-            nsRect.Left = (int)SciEngine.ReadSelectorValue(_segMan, @object, SciEngine.Selector(s => s.nsLeft));
-            nsRect.Bottom = (int)SciEngine.ReadSelectorValue(_segMan, @object, SciEngine.Selector(s => s.nsBottom));
-            nsRect.Right = (int)SciEngine.ReadSelectorValue(_segMan, @object, SciEngine.Selector(s => s.nsRight));
+            nsRect.Top = (short)SciEngine.ReadSelectorValue(_segMan, @object, SciEngine.Selector(s => s.nsTop));
+            nsRect.Left = (short)SciEngine.ReadSelectorValue(_segMan, @object, SciEngine.Selector(s => s.nsLeft));
+            nsRect.Bottom = (short)SciEngine.ReadSelectorValue(_segMan, @object, SciEngine.Selector(s => s.nsBottom));
+            nsRect.Right = (short)SciEngine.ReadSelectorValue(_segMan, @object, SciEngine.Selector(s => s.nsRight));
 
             return nsRect;
         }
@@ -272,6 +273,17 @@ namespace NScumm.Sci.Graphics
             Rect adjustedRect = _coordAdjuster.OnControl(rect);
 
             ushort result = IsOnControl(screenMask, adjustedRect);
+            return result;
+        }
+
+        public bool KernelIsItSkip(int viewId, short loopNo, short celNo, Point position)
+        {
+            GfxView tmpView = _cache.GetView(viewId);
+            CelInfo celInfo = tmpView.GetCelInfo(loopNo, celNo);
+            position.X = ScummHelper.Clip(position.X, 0, celInfo.width - 1);
+            position.Y = ScummHelper.Clip(position.Y, 0, celInfo.height - 1);
+            var celData = tmpView.GetBitmap(loopNo, celNo);
+            bool result = (celData[position.Y * celInfo.width + position.X] == celInfo.clearKey);
             return result;
         }
     }

@@ -522,12 +522,12 @@ namespace NScumm.Sci.Graphics
                     case PictureOperation.SHORT_PATTERNS:
                         if (_resourceType >= PictureType.SCI11)
                             throw new InvalidOperationException("pic-operation short pattern inside sci1.1+ vector data");
-                        VectorGetPatternTexture(data, curPos, pattern_Code, pattern_Texture);
+                        VectorGetPatternTexture(data, ref curPos, pattern_Code, ref pattern_Texture);
                         VectorGetAbsCoords(data, ref curPos, out x, out y);
                         VectorPattern(x, y, pic_color, pic_priority, pic_control, pattern_Code, pattern_Texture);
                         while (VectorIsNonOpcode(data[curPos]))
                         {
-                            VectorGetPatternTexture(data, curPos, pattern_Code, pattern_Texture);
+                            VectorGetPatternTexture(data, ref curPos, pattern_Code, ref pattern_Texture);
                             VectorGetRelCoords(data, ref curPos, ref x, ref y);
                             VectorPattern(x, y, pic_color, pic_priority, pic_control, pattern_Code, pattern_Texture);
                         }
@@ -535,12 +535,12 @@ namespace NScumm.Sci.Graphics
                     case PictureOperation.MEDIUM_PATTERNS:
                         if (_resourceType >= PictureType.SCI11)
                             throw new InvalidOperationException("pic-operation medium pattern inside sci1.1+ vector data");
-                        VectorGetPatternTexture(data, curPos, pattern_Code, pattern_Texture);
+                        VectorGetPatternTexture(data, ref curPos, pattern_Code, ref pattern_Texture);
                         VectorGetAbsCoords(data, ref curPos, out x, out y);
                         VectorPattern(x, y, pic_color, pic_priority, pic_control, pattern_Code, pattern_Texture);
                         while (VectorIsNonOpcode(data[curPos]))
                         {
-                            VectorGetPatternTexture(data, curPos, pattern_Code, pattern_Texture);
+                            VectorGetPatternTexture(data, ref curPos, pattern_Code, ref pattern_Texture);
                             VectorGetRelCoordsMed(data, ref curPos, ref x, ref y);
                             VectorPattern(x, y, pic_color, pic_priority, pic_control, pattern_Code, pattern_Texture);
                         }
@@ -550,7 +550,7 @@ namespace NScumm.Sci.Graphics
                             throw new InvalidOperationException("pic-operation absolute pattern inside sci1.1+ vector data");
                         while (VectorIsNonOpcode(data[curPos]))
                         {
-                            VectorGetPatternTexture(data, curPos, pattern_Code, pattern_Texture);
+                            VectorGetPatternTexture(data, ref curPos, pattern_Code, ref pattern_Texture);
                             VectorGetAbsCoords(data, ref curPos, out x, out y);
                             VectorPattern(x, y, pic_color, pic_priority, pic_control, pattern_Code, pattern_Texture);
                         }
@@ -599,7 +599,7 @@ namespace NScumm.Sci.Graphics
                                 case PictureOperationEx.EGA_MONO4:
                                     break;
                                 case PictureOperationEx.EGA_EMBEDDED_VIEW:
-                                    VectorGetAbsCoordsNoMirror(data, curPos, x, y);
+                                    VectorGetAbsCoordsNoMirror(data, ref curPos, ref x, ref y);
                                     size = data.ReadUInt16(curPos); curPos += 2;
                                     // hardcoded in SSCI, 16 for SCI1early excluding Space Quest 4, 0 for anything else
                                     //  fixes sq4 pictures 546+547 (Vohaul's head and Roger Jr trapped). Bug #5250
@@ -660,7 +660,7 @@ namespace NScumm.Sci.Graphics
                                     }
                                     break;
                                 case PictureOperationEx.VGA_EMBEDDED_VIEW: // draw cel
-                                    VectorGetAbsCoordsNoMirror(data, curPos, x, y);
+                                    VectorGetAbsCoordsNoMirror(data, ref curPos, ref x, ref y);
                                     size = data.ReadUInt16(curPos); curPos += 2;
                                     if (ResourceManager.GetSciVersion() <= SciVersion.V1_EARLY)
                                     {
@@ -723,7 +723,7 @@ namespace NScumm.Sci.Graphics
             throw new InvalidOperationException("picture vector data without terminator");
         }
 
-        private void VectorGetAbsCoordsNoMirror(ByteAccess data, int curPos, short x, short y)
+        private void VectorGetAbsCoordsNoMirror(ByteAccess data, ref int curPos, ref short x, ref short y)
         {
             throw new NotImplementedException();
         }
@@ -863,7 +863,7 @@ namespace NScumm.Sci.Graphics
             }
         }
 
-        private void VectorGetPatternTexture(ByteAccess data, int curPos, short pattern_Code, short pattern_Texture)
+        private void VectorGetPatternTexture(ByteAccess data, ref int curPos, short pattern_Code, ref short pattern_Texture)
         {
             if ((pattern_Code & SCI_PATTERN_CODE_USE_TEXTURE) != 0)
             {

@@ -28,6 +28,13 @@ namespace NScumm.Sci
         public ResourceType Type { get { return _type; } }
         public ushort Number { get { return _number; } }
         public uint Tuple { get { return _tuple; } }
+        internal string DebuggerDisplay
+        {
+            get
+            {
+                return $"({Type}, {Number}, {Tuple})";
+            }
+        }
 
         public ResourceId()
         {
@@ -53,14 +60,6 @@ namespace NScumm.Sci
             if (type >= ResourceType.Invalid)
                 return ResourceType.Invalid;
             return type;
-        }
-
-        internal string DebuggerDisplay
-        {
-            get
-            {
-                return $"({Type}, {Number}, {Tuple})";
-            }
         }
 
         public override int GetHashCode()

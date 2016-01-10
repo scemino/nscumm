@@ -140,7 +140,7 @@ namespace NScumm.Sci.Graphics
             throw new NotImplementedException();
         }
 
-        internal void Draw(Rect rect, Rect clipRect, Rect clipRectTranslated, short loopNo, short celNo, byte priority, ushort EGAmappingNr, bool upscaledHires)
+        public void Draw(Rect rect, Rect clipRect, Rect clipRectTranslated, short loopNo, short celNo, byte priority, ushort EGAmappingNr, bool upscaledHires)
         {
             Palette palette = _embeddedPal ? _viewPalette : _palette._sysPalette;
             CelInfo celInfo = GetCelInfo(loopNo, celNo);
@@ -231,10 +231,10 @@ namespace NScumm.Sci.Graphics
         {
             CelInfo celInfo = GetCelInfo(loopNo, celNo);
             var outRect = new Rect();
-            outRect.Left = x + celInfo.displaceX - (celInfo.width >> 1);
-            outRect.Right = outRect.Left + celInfo.width;
-            outRect.Bottom = y + celInfo.displaceY - z + 1 + _adjustForSci0Early;
-            outRect.Top = outRect.Bottom - celInfo.height;
+            outRect.Left = (short)(x + celInfo.displaceX - (celInfo.width >> 1));
+            outRect.Right = (short)(outRect.Left + celInfo.width);
+            outRect.Bottom = (short)(y + celInfo.displaceY - z + 1 + _adjustForSci0Early);
+            outRect.Top = (short)(outRect.Bottom - celInfo.height);
             return outRect;
         }
 
@@ -259,6 +259,8 @@ namespace NScumm.Sci.Graphics
         public bool IsSci2Hires { get { return _sci2ScaleRes > Sci32ViewNativeResolution.R320x200; } }
 
         public ushort LoopCount { get { return _loopCount; } }
+
+        public Palette Palette { get { return _embeddedPal ? _viewPalette : null; } }
 
         public GfxView()
         {

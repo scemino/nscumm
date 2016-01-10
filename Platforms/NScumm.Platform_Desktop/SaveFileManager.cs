@@ -24,7 +24,7 @@ using NScumm.Core;
 
 namespace NScumm
 {
-    public class SaveFileManager: ISaveFileManager
+    public class SaveFileManager : ISaveFileManager
     {
         private IFileStorage _fileStorage;
 
@@ -45,7 +45,7 @@ namespace NScumm
         {
             var path = GetSavePath();
             EnsureSavePathExists(path);
-            return File.OpenWrite(Path.Combine(path,fileName));
+            return File.OpenWrite(Path.Combine(path, fileName));
         }
 
         public string[] ListSavefiles(string pattern)
@@ -53,6 +53,13 @@ namespace NScumm
             var path = GetSavePath();
             EnsureSavePathExists(path);
             return Directory.EnumerateFiles(path, pattern).Select(Path.GetFileName).ToArray();
+        }
+
+        public void RemoveSavefile(string filename)
+        {
+            string path = GetSavePath();
+            var fullPath = Path.Combine(path, filename);
+            File.Delete(fullPath);
         }
 
         private static void EnsureSavePathExists(string path)

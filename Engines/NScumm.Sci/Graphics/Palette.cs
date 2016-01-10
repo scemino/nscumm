@@ -19,6 +19,8 @@
 using NScumm.Core;
 using System;
 using NScumm.Core.Common;
+using System.Threading;
+using NScumm.Sci.Engine;
 
 namespace NScumm.Sci.Graphics
 {
@@ -43,7 +45,6 @@ namespace NScumm.Sci.Graphics
 
         public Palette _sysPalette;
 
-        private GfxScreen _gfxScreen;
         private ResourceManager _resMan;
 
         private bool _sysPaletteChanged;
@@ -70,16 +71,15 @@ namespace NScumm.Sci.Graphics
         private ushort _remappingPercentToSet;
 
         private byte[] _macClut;
-        private ISystem _system;
         private GfxScreen _screen;
+        private Timer _timerPalette;
 
         public ushort TotalColorCount { get { return _totalScreenColors; } }
 
-        public GfxPalette(ISystem system, ResourceManager resMan, GfxScreen screen)
+        public GfxPalette(ResourceManager resMan, GfxScreen screen)
         {
-            _system = system;
             _resMan = resMan;
-            _gfxScreen = screen;
+            _screen = screen;
 
             _sysPalette = new Palette();
             _sysPalette.timestamp = 0;
@@ -158,6 +158,17 @@ namespace NScumm.Sci.Graphics
 
             _remapOn = false;
             ResetRemapping();
+        }
+
+        public void KernelAssertPalette(int resourceId)
+        {
+            GfxView view = SciEngine.Instance._gfxCache.GetView(resourceId);
+            Palette viewPalette = view.Palette;
+            if (viewPalette != null)
+            {
+                // merge/insert this palette
+                Set(viewPalette, true);
+            }
         }
 
         public void Set(Palette newPalette, bool force, bool forceRealMerge = false)
@@ -248,7 +259,7 @@ namespace NScumm.Sci.Graphics
 
         private void PalVaryRemoveTimer()
         {
-            throw new NotImplementedException();
+            _timerPalette.Change(0, 0);
         }
 
         private bool Insert(Palette newPalette, Palette destPalette)
@@ -382,7 +393,7 @@ namespace NScumm.Sci.Graphics
         {
             _palVaryResourceId = (resourceId != 65535) ? resourceId : -1;
             var palResource = _resMan.FindResource(new ResourceId(ResourceType.Palette, (ushort)resourceId), false);
-            if (palResource!=null)
+            if (palResource != null)
             {
                 // Load and initialize destination palette
                 _palVaryTargetPalette = CreateFromData(new ByteAccess(palResource.data), palResource.size);
@@ -394,7 +405,7 @@ namespace NScumm.Sci.Graphics
         // Actually do the pal vary processing
         public void PalVaryUpdate()
         {
-            if (_palVarySignal!=0)
+            if (_palVarySignal != 0)
             {
                 PalVaryProcess(_palVarySignal, true);
                 _palVarySignal = 0;
@@ -508,7 +519,7 @@ namespace NScumm.Sci.Graphics
             _palVaryTicks = 0;
         }
 
-        private void ResetRemapping()
+        public void ResetRemapping()
         {
             _remapOn = false;
             _remappingPercentToSet = 0;
@@ -574,11 +585,6 @@ namespace NScumm.Sci.Graphics
                 KernelSetFromResource(999, true);
         }
 
-        private void KernelSetFromResource(int v1, bool v2)
-        {
-            throw new NotImplementedException();
-        }
-
         private void SetAmiga()
         {
             throw new NotImplementedException();
@@ -623,6 +629,253 @@ namespace NScumm.Sci.Graphics
             SetOnScreen();
         }
 
+        public bool KernelSetFromResource(int resourceId, bool force)
+        {
+            var palResource = _resMan.FindResource(new ResourceId(ResourceType.Palette, (ushort)resourceId), false);
+            Palette palette;
+
+            if (palResource != null)
+            {
+                palette = CreateFromData(new ByteAccess(palResource.data), palResource.size);
+                Set(palette, force);
+                return true;
+            }
+
+            return false;
+        }
+
+        public void KernelSetFlag(ushort fromColor, ushort toColor, ushort flag)
+        {
+            ushort colorNr;
+            for (colorNr = fromColor; colorNr < toColor; colorNr++)
+            {
+                _sysPalette.colors[colorNr].used |= (byte)flag;
+            }
+        }
+
+        public void KernelUnsetFlag(ushort fromColor, ushort toColor, ushort flag)
+        {
+            ushort colorNr;
+            for (colorNr = fromColor; colorNr < toColor; colorNr++)
+            {
+                _sysPalette.colors[colorNr].used &= (byte)~flag;
+            }
+        }
+
+        public void KernelSetIntensity(ushort fromColor, ushort toColor, ushort intensity, bool setPalette)
+        {
+            _sysPalette.intensity.Set(fromColor, (byte)intensity, toColor - fromColor);
+            if (setPalette)
+            {
+                SetOnScreen();
+                EngineState state = SciEngine.Instance.EngineState;
+                // Call speed throttler from here as well just in case we need it
+                //  At least in kq6 intro the scripts call us in a tight loop for fadein/fadeout
+                state.SpeedThrottler(30);
+                state._throttleTrigger = true;
+            }
+        }
+
+        public void KernelPalVaryPause(bool pause)
+        {
+            if (_palVaryResourceId == -1)
+                return;
+            // this call is actually counting states, so calling this 3 times with true will require calling it later
+            // 3 times with false to actually remove pause
+            if (pause)
+            {
+                _palVaryPaused++;
+            }
+            else {
+                if (_palVaryPaused != 0)
+                    _palVaryPaused--;
+            }
+        }
+
+        public short KernelFindColor(ushort r, ushort g, ushort b)
+        {
+            return (short)(MatchColor((byte)r, (byte)g, (byte)b) & SCI_PALETTE_MATCH_COLORMASK);
+        }
+
+        public void KernelPalVaryChangeTicks(ushort ticks)
+        {
+            _palVaryTicks = ticks;
+            if ((_palVaryStep - _palVaryStepStop) != 0)
+            {
+                PalVaryRemoveTimer();
+                PalVaryInstallTimer();
+            }
+        }
+
+        public short KernelPalVaryChangeTarget(int resourceId)
+        {
+            if (_palVaryResourceId != -1)
+            {
+                var palResource = _resMan.FindResource(new ResourceId(ResourceType.Palette, (ushort)resourceId), false);
+                if (palResource != null)
+                {
+                    Palette insertPalette = CreateFromData(new ByteAccess(palResource.data), palResource.size);
+                    // insert new palette into target
+                    Insert(insertPalette, _palVaryTargetPalette);
+                    // update palette and set on screen
+                    PalVaryProcess(0, true);
+                }
+            }
+            return KernelPalVaryGetCurrentStep();
+        }
+
+        internal bool KernelAnimate(ushort fromColor, ushort toColor, short speed)
+        {
+            throw new NotImplementedException();
+        }
+
+        internal void KernelAnimateSet()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void KernelPalVaryDeinit()
+        {
+            PalVaryRemoveTimer();
+
+            _palVaryResourceId = -1;	// invalidate the target palette
+        }
+
+        public short KernelPalVaryGetCurrentStep()
+        {
+            if (_palVaryDirection >= 0)
+                return _palVaryStep;
+            return (short)-_palVaryStep;
+        }
+
+        public short KernelPalVaryReverse(short ticks, short stepStop, short direction)
+        {
+            if (_palVaryResourceId == -1)
+                return 0;
+
+            if (_palVaryStep > 64)
+                _palVaryStep = 64;
+            if (ticks != -1)
+                _palVaryTicks = (ushort)ticks;
+            _palVaryStepStop = stepStop;
+            _palVaryDirection = (short)(direction != -1 ? -direction : -_palVaryDirection);
+
+            if (_palVaryTicks == 0)
+            {
+                _palVaryDirection = (short)(_palVaryStepStop - _palVaryStep);
+                // see palVaryInit above, we fix the code here as well
+                //  just in case
+                PalVaryProcess(1, true);
+            }
+            else {
+                PalVaryInstallTimer();
+            }
+            return KernelPalVaryGetCurrentStep();
+        }
+
+        internal Register KernelSave()
+        {
+            throw new NotImplementedException();
+        }
+
+        internal void KernelRestore(Register register)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool KernelPalVaryInit(int resourceId, ushort ticks, ushort stepStop, ushort direction)
+        {
+            if (_palVaryResourceId != -1)   // another palvary is taking place, return
+                return false;
+
+            if (PalVaryLoadTargetPalette(resourceId))
+            {
+                // Save current palette
+                _palVaryOriginPalette = _sysPalette;
+
+                _palVarySignal = 0;
+                _palVaryTicks = ticks;
+                _palVaryStep = 1;
+                _palVaryStepStop = (short)stepStop;
+                _palVaryDirection = (short)direction;
+                // if no ticks are given, jump directly to destination
+                if (_palVaryTicks == 0)
+                {
+                    _palVaryDirection = (short)stepStop;
+                    // sierra sci set the timer to 1 tick instead of calling it directly
+                    //  we have to change this to prevent a race condition to happen in
+                    //  at least freddy pharkas during nighttime. In that case kPalVary is
+                    //  called right before a transition and because we load pictures much
+                    //  faster, the 1 tick won't pass sometimes resulting in the palette
+                    //  being daytime instead of nighttime during the transition.
+                    PalVaryProcess(1, true);
+                }
+                else {
+                    PalVaryInstallTimer();
+                }
+                return true;
+            }
+            return false;
+        }
+
+        public void SetRemappingPercent(byte color, byte percent)
+        {
+            _remapOn = true;
+
+            // We need to defer the setup of the remapping table every time the screen
+            // palette is changed, so that kernelFindColor() can find the correct
+            // colors. Set it once here, in case the palette stays the same and update
+            // it on each palette change by copySysPaletteToScreen().
+            _remappingPercentToSet = percent;
+
+            for (int i = 0; i < 256; i++)
+            {
+                byte r = (byte)(_sysPalette.colors[i].r * _remappingPercentToSet / 100);
+                byte g = (byte)(_sysPalette.colors[i].g * _remappingPercentToSet / 100);
+                byte b = (byte)(_sysPalette.colors[i].b * _remappingPercentToSet / 100);
+                _remappingByPercent[i] = (byte)KernelFindColor(r, g, b);
+            }
+
+            _remappingType[color] = ColorRemappingType.ByPercent;
+        }
+
+        public void SetRemappingRange(byte color, byte from, byte to, byte @base)
+        {
+            _remapOn = true;
+
+            for (int i = from; i <= to; i++)
+            {
+                _remappingByRange[i] = (byte)(i + @base);
+            }
+
+            _remappingType[color] = ColorRemappingType.ByRange;
+        }
+
+        private void PalVaryInstallTimer()
+        {
+            // Remove any possible leftover palVary timer callbacks.
+            // This happens for example in QFG1VGA, when sleeping at Erana's place
+            // (bug #3439240) - the nighttime to daytime effect clashes with the
+            // scene transition effect, as we load scene images too quickly for
+            // the SCI scripts in that case (also refer to kernelPalVaryInit).
+            PalVaryRemoveTimer();
+
+            short ticks = (short)(_palVaryTicks > 0 ? _palVaryTicks : 1);
+            // Call signal increase every [ticks]
+            _timerPalette = new Timer(PalVaryCallback, this, 0, 1000000 / 60 * ticks);
+        }
+
+        private void PalVaryCallback(object state)
+        {
+            PalVaryIncreaseSignal();
+        }
+
+        private void PalVaryIncreaseSignal()
+        {
+            if (_palVaryPaused == 0)
+                _palVarySignal++;
+        }
+
         private static byte BlendColors(byte c1, byte c2)
         {
             // linear
@@ -647,7 +900,7 @@ namespace NScumm.Sci.Graphics
         private void CopySysPaletteToScreen()
         {
             // Get current palette, update it and put back
-            var bpal = _system.GraphicsManager.GetPalette();
+            var bpal = SciEngine.Instance.System.GraphicsManager.GetPalette();
 
             for (var i = 0; i < 256; i++)
             {
@@ -677,7 +930,7 @@ namespace NScumm.Sci.Graphics
                 }
             }
 
-            _system.GraphicsManager.SetPalette(bpal, 0, 256);
+            SciEngine.Instance.System.GraphicsManager.SetPalette(bpal, 0, 256);
         }
 
         private short KernelFindColor(byte r, byte g, byte b)

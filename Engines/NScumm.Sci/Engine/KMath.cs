@@ -27,6 +27,20 @@ namespace NScumm.Sci.Engine
             return Register.Make(0, (ushort)Math.Abs(argv.Value[0].ToInt16()));
         }
 
+        private static Register kCosDiv(EngineState s, int argc, StackPtr? argv)
+        {
+            int angle = argv.Value[0].ToInt16();
+            int value = argv.Value[1].ToInt16();
+            double cosval = Math.Cos(angle * Math.PI / 180.0);
+
+            if ((cosval < 0.0001) && (cosval > -0.0001))
+            {
+                throw new InvalidOperationException("kCosDiv: Attempted division by zero");
+            }
+            else
+                return Register.Make(0, (ushort)(value / cosval));
+        }
+
         private static Register kGetAngle(EngineState s, int argc, StackPtr? argv)
         {
             // Based on behavior observed with a test program created with
@@ -93,6 +107,68 @@ namespace NScumm.Sci.Engine
                 default:
                     throw new InvalidOperationException("kRandom: unsupported argc");
             }
+        }
+
+        private static Register kSinDiv(EngineState s, int argc, StackPtr? argv)
+        {
+            int angle = argv.Value[0].ToInt16();
+            int value = argv.Value[1].ToInt16();
+            double sinval = Math.Sin(angle * Math.PI / 180.0);
+
+            if ((sinval < 0.0001) && (sinval > -0.0001))
+            {
+                throw new InvalidOperationException("kSinDiv: Attempted division by zero");
+            }
+            else
+                return Register.Make(0, (ushort)(value / sinval));
+        }
+
+        private static Register kSqrt(EngineState s, int argc, StackPtr? argv)
+        {
+            return Register.Make(0, (ushort)Math.Sqrt(Math.Abs(argv.Value[0].ToInt16())));
+        }
+
+        private static Register kTimesCos(EngineState s, int argc, StackPtr? argv)
+        {
+            int angle = argv.Value[0].ToInt16();
+            int factor = argv.Value[1].ToInt16();
+
+            return Register.Make(0, (ushort)(factor * Math.Cos(angle * Math.PI / 180.0)));
+        }
+
+        private static Register kTimesCot(EngineState s, int argc, StackPtr? argv)
+        {
+            int param = argv.Value[0].ToInt16();
+            int scale = (argc > 1) ? argv.Value[1].ToInt16() : 1;
+
+            if ((param % 90) == 0)
+            {
+                throw new InvalidOperationException("kTimesCot: Attempted tan(pi/2)");
+            }
+            else
+                return Register.Make(0, (ushort)(Math.Tan(param * Math.PI / 180.0) * scale));
+        }
+
+        private static Register kTimesSin(EngineState s, int argc, StackPtr? argv)
+        {
+            int angle = argv.Value[0].ToInt16();
+            int factor = argv.Value[1].ToInt16();
+
+            return Register.Make(0, (ushort)(factor * Math.Sin(angle * Math.PI / 180.0)));
+        }
+
+        private static Register kTimesTan(EngineState s, int argc, StackPtr? argv)
+        {
+            int param = argv.Value[0].ToInt16();
+            int scale = (argc > 1) ? argv.Value[1].ToInt16() : 1;
+
+            param -= 90;
+            if ((param % 90) == 0)
+            {
+                throw new InvalidOperationException("kTimesTan: Attempted tan(pi/2)");
+            }
+            else
+                return Register.Make(0, (ushort)-(Math.Tan(param * Math.PI / 180.0) * scale));
         }
 
 

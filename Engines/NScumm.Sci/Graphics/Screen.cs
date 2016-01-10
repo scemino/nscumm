@@ -138,6 +138,10 @@ namespace NScumm.Sci.Graphics
 
         public const int DITHERED_BG_COLORS_SIZE = 256;
 
+        private const int SCI_SHAKE_DIRECTION_VERTICAL = 1;
+        private const int SCI_SHAKE_DIRECTION_HORIZONTAL = 2;
+
+
         private ResourceManager _resMan;
         private GfxScreenUpscaledMode _upscaledHires;
 
@@ -927,6 +931,32 @@ namespace NScumm.Sci.Graphics
             }
 
             return byteCount;
+        }
+
+        public void KernelShakeScreen(short shakeCount, short directions)
+        {
+            while ((shakeCount--) != 0)
+            {
+                if ((directions & SCI_SHAKE_DIRECTION_VERTICAL) != 0)
+                    SetVerticalShakePos(10);
+                // TODO: horizontal shakes
+                SciEngine.Instance.System.GraphicsManager.UpdateScreen();
+                SciEngine.Instance.EngineState.Wait(3);
+
+                if ((directions & SCI_SHAKE_DIRECTION_VERTICAL) != 0)
+                    SetVerticalShakePos(0);
+
+                SciEngine.Instance.System.GraphicsManager.UpdateScreen();
+                SciEngine.Instance.EngineState.Wait(3);
+            }
+        }
+
+        private void SetVerticalShakePos(int shakePos)
+        {
+            if (_upscaledHires == GfxScreenUpscaledMode.DISABLED)
+                SciEngine.Instance.System.GraphicsManager.ShakePosition = shakePos;
+            else
+                SciEngine.Instance.System.GraphicsManager.ShakePosition = _upscaledHeightMapping[shakePos];
         }
 
         public void AdjustToUpscaledCoordinates(ref int y, ref int x, Sci32ViewNativeResolution viewNativeRes = Sci32ViewNativeResolution.NONE)

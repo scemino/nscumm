@@ -56,7 +56,7 @@ namespace NScumm.Sci.Graphics
         {
         }
 
-        public virtual void MoveCursor(Point pos)
+        public virtual void MoveCursor(ref Point pos)
         {
         }
     }
@@ -101,7 +101,7 @@ namespace NScumm.Sci.Graphics
             pos.X += _ports.Port.left;
         }
 
-        public override void MoveCursor(Point pos)
+        public override void MoveCursor(ref Point pos)
         {
             pos.Y += _ports._picWind.rect.Top;
             pos.X += _ports._picWind.rect.Left;

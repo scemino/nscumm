@@ -18,6 +18,7 @@
 
 
 using NScumm.Core;
+using NScumm.Core.Common;
 using System;
 using System.IO;
 
@@ -29,7 +30,147 @@ namespace NScumm.Sci.Engine
         private const int _K_FILE_MODE_OPEN_OR_FAIL = 1;
         private const int _K_FILE_MODE_CREATE = 2;
 
+        // We assume that scripts give us savegameId 0.99 for creating a new save slot
+        //  and savegameId 100.199 for existing save slots. Refer to kfile.cpp
+        private const int SAVEGAMEID_OFFICIALRANGE_START = 100;
+        private const int SAVEGAMEID_OFFICIALRANGE_END = 199;
+
+
         private const int VIRTUALFILE_HANDLE = 200;
+
+        enum DeviceInfo
+        {
+            GET_DEVICE = 0,
+            GET_CURRENT_DEVICE = 1,
+            PATHS_EQUAL = 2,
+            IS_FLOPPY = 3,
+            GET_CONFIG_PATH = 5,
+            GET_SAVECAT_NAME = 7,
+            GET_SAVEFILE_NAME = 8
+        }
+
+        private static Register kCheckFreeSpace(EngineState s, int argc, StackPtr? argv)
+        {
+            if (argc > 1)
+            {
+                // SCI1.1/SCI32
+                // TODO: don't know if those are right for SCI32 as well
+                // Please note that sierra sci supported both calls either w/ or w/o opcode in SCI1.1
+                switch (argv.Value[1].ToUInt16())
+                {
+                    case 0: // return saved game size
+                        return Register.Make(0, 0); // we return 0
+
+                    case 1: // return free harddisc space (shifted right somehow)
+                        return Register.Make(0, 0x7fff); // we return maximum
+
+                    case 2: // same as call w/o opcode
+                        break;
+
+                    default:
+                        throw new InvalidOperationException("kCheckFreeSpace: called with unknown sub-op {argv.Value[1].ToUInt16()}");
+                }
+            }
+
+            string path = s._segMan.GetString(argv.Value[0]);
+
+            // TODO: debug(3, "kCheckFreeSpace(%s)", path.c_str());
+            // We simply always pretend that there is enough space. The alternative
+            // would be to write a big test file, which is not nice on systems where
+            // doing so is very slow.
+            return Register.Make(0, 1);
+        }
+
+        private static Register kDeviceInfo(EngineState s, int argc, StackPtr? argv)
+        {
+            if (SciEngine.Instance.GameId == SciGameId.FANMADE && argc == 1)
+            {
+                // WORKAROUND: The fan game script library calls kDeviceInfo with one parameter.
+                // According to the scripts, it wants to call CurDevice. However, it fails to
+                // provide the subop to the function.
+                s._segMan.Strcpy(argv.Value[0], "/");
+                return s.r_acc;
+            }
+
+            var mode = (DeviceInfo)argv.Value[0].ToUInt16();
+
+            switch (mode)
+            {
+                case DeviceInfo.GET_DEVICE:
+                    {
+                        string input_str = s._segMan.GetString(argv.Value[1]);
+
+                        s._segMan.Strcpy(argv.Value[2], "/");
+                        // TODO: debug(3, "DeviceInfo.GET_DEVICE(%s) . %s", input_str.c_str(), "/");
+                        break;
+                    }
+                case DeviceInfo.GET_CURRENT_DEVICE:
+                    s._segMan.Strcpy(argv.Value[1], "/");
+                    // TODO: debug(3, "DeviceInfo.GET_CURRENT_DEVICE() . %s", "/");
+                    break;
+
+                case DeviceInfo.PATHS_EQUAL:
+                    {
+                        string path1_s = s._segMan.GetString(argv.Value[1]);
+                        string path2_s = s._segMan.GetString(argv.Value[2]);
+                        // TODO: debug(3, "DeviceInfo.PATHS_EQUAL(%s,%s)", path1_s.c_str(), path2_s.c_str());
+
+                        // TODO: check this:
+                        Register.Make(0, string.Equals(path2_s, path1_s, StringComparison.Ordinal));
+                        // return Register.Make(0, Common::matchString(path2_s, path1_s, false, true));
+                    }
+                    break;
+
+                case DeviceInfo.IS_FLOPPY:
+                    {
+                        string input_str = s._segMan.GetString(argv.Value[1]);
+                        // TODO: debug(3, "DeviceInfo.IS_FLOPPY(%s)", input_str.c_str());
+                        return Register.NULL_REG; /* Never */
+                    }
+                case DeviceInfo.GET_CONFIG_PATH:
+                    {
+                        // Early versions return drive letter, later versions a path string
+                        // FIXME: Implement if needed, for now return NULL_REG
+                        return Register.NULL_REG;
+                    }
+                /* SCI uses these in a less-than-portable way to delete savegames.
+                ** Read http://www-plan.cs.colorado.edu/creichen/freesci-logs/2005.10/log20051019.html
+                ** for more information on our workaround for this.
+                */
+                case DeviceInfo.GET_SAVECAT_NAME:
+                    {
+                        string game_prefix = s._segMan.GetString(argv.Value[2]);
+                        s._segMan.Strcpy(argv.Value[1], "__throwaway");
+                        // TODO: debug(3, "DeviceInfo.GET_SAVECAT_NAME(%s) . %s", game_prefix.c_str(), "__throwaway");
+                    }
+
+                    break;
+                case DeviceInfo.GET_SAVEFILE_NAME:
+                    {
+                        string game_prefix = s._segMan.GetString(argv.Value[2]);
+                        int virtualId = argv.Value[3].ToUInt16();
+                        s._segMan.Strcpy(argv.Value[1], "__throwaway");
+                        // TODO: debug(3, "DeviceInfo.GET_SAVEFILE_NAME(%s,%d) . %s", game_prefix.c_str(), virtualId, "__throwaway");
+                        if ((virtualId < SAVEGAMEID_OFFICIALRANGE_START) || (virtualId > SAVEGAMEID_OFFICIALRANGE_END))
+                            throw new InvalidOperationException("kDeviceInfo(deleteSave): invalid savegame ID specified");
+                        int savegameId = virtualId - SAVEGAMEID_OFFICIALRANGE_START;
+                        var saves = File.ListSavegames();
+                        if (File.FindSavegame(saves, (short)savegameId) != -1)
+                        {
+                            // Confirmed that this id still lives...
+                            string filename = SciEngine.Instance.GetSavegameName(savegameId);
+                            ISaveFileManager saveFileMan = SciEngine.Instance.SaveFileManager;
+                            saveFileMan.RemoveSavefile(filename);
+                        }
+                        break;
+                    }
+
+                default:
+                    throw new InvalidOperationException($"Unknown DeviceInfo() sub-command: {mode}");
+            }
+
+            return s.r_acc;
+        }
 
         private static Register kGetSaveDir(EngineState s, int argc, StackPtr? argv)
         {
@@ -298,7 +439,7 @@ namespace NScumm.Sci.Engine
 #endif
 
             FileHandle f = GetFileFromHandle(s, handle);
-            if (f!=null)
+            if (f != null)
             {
                 f.Close();
                 if (ResourceManager.GetSciVersion() <= SciVersion.V0_LATE)
@@ -337,7 +478,7 @@ namespace NScumm.Sci.Engine
             // been requested? (i.e. if bytesRead is non-zero, but still
             // less than size)
             if (bytesRead > 0)
-                s._segMan.Memcpy(argv.Value[1], buf, size);
+                s._segMan.Memcpy(argv.Value[1], new ByteAccess(buf), size);
 
             return Register.Make(0, (ushort)bytesRead);
         }
@@ -662,5 +803,16 @@ namespace NScumm.Sci.Engine
             //else
             //    return Register.SIGNAL_REG;
         }
+
+        private static Register kValidPath(EngineState s, int argc, StackPtr? argv)
+        {
+            string path = s._segMan.GetString(argv.Value[0]);
+
+            // TODO: debug(3, "kValidPath(%s) . %d", path.c_str(), s.r_acc.getOffset());
+
+            // Always return true
+            return Register.Make(0, 1);
+        }
+
     }
 }

@@ -163,6 +163,7 @@ namespace NScumm.Sci
 
         public SciEngine(ISystem system, IAudioOutput output, SciGameDescriptor desc, SciGameId id)
         {
+            _engineStartTime = Environment.TickCount;
             _system = system;
             _mixer = new Mixer(44100);
             // HACK:
@@ -174,6 +175,11 @@ namespace NScumm.Sci
             _gameDescription = desc.GameDescription;
             _directory = ServiceLocator.FileStorage.GetDirectoryName(desc.Path);
             _debugState = new DebugState();
+        }
+
+        public string GetSavegameName(int nr)
+        {
+            return $"{_gameDescription.gameid}.{nr:D3}";
         }
 
         /// <summary>
@@ -491,6 +497,33 @@ namespace NScumm.Sci
 
         public bool ShouldQuit { get; internal set; }
         public Vocabulary Vocabulary { get { return _vocabulary; } }
+
+        /// <summary>
+        /// Gets or sets the total play time.
+        /// </summary>
+        public int TotalPlaytime
+        {
+            get
+            {
+                if (_pauseLevel == 0)
+                    return Environment.TickCount - _engineStartTime;
+                else
+                    return _pauseStartTime - _engineStartTime;
+            }
+            set
+            {
+                var currentTime = Environment.TickCount;
+
+                // We need to reset the pause start time here in case the engine is already
+                // paused to avoid any incorrect play time counting.
+                if (_pauseLevel > 0)
+                    _pauseStartTime = currentTime;
+
+                _engineStartTime = currentTime - value;
+            }
+        }
+
+        public string SavegamePattern { get { return _gameDescription.gameid + ".???"; } }
 
         public string WrapFilename(string name)
         {
@@ -865,7 +898,7 @@ namespace NScumm.Sci
             if (HasMacIconBar)
                 _gfxMacIconBar = new GfxMacIconBar();
 
-            _gfxPalette = new GfxPalette(_system, _resMan, _gfxScreen);
+            _gfxPalette = new GfxPalette(_resMan, _gfxScreen);
             _gfxCache = new GfxCache(_resMan, _gfxScreen, _gfxPalette);
             _gfxCursor = new GfxCursor(_system, _resMan, _gfxPalette, _gfxScreen);
 
@@ -1143,6 +1176,11 @@ namespace NScumm.Sci
             //	return _lookupSelector_function(segMan, obj, selectorId, fptr);
         }
 
+        public static void InvokeSelector(EngineState s, Register @object, Func<SelectorCache, int> func, int k_argc, StackPtr? k_argp, int argc = 0, StackPtr? argv = null)
+        {
+            InvokeSelector(s, @object, Selector(func), k_argc, k_argp, argc, argv);
+        }
+
         public static void InvokeSelector(EngineState s, Register @object, int selectorId, int k_argc, StackPtr? k_argp, int argc = 0, StackPtr? argv = null)
         {
             int i;
@@ -1308,5 +1346,24 @@ namespace NScumm.Sci
         private AudioPlayer _audio;
         private ISystem _system;
         private Mixer _mixer;
+
+        /// <summary>
+        /// The pause level, 0 means 'running', a positive value indicates
+        /// how often the engine has been paused (and hence how often it has
+        /// to be un-paused before it resumes running). This makes it possible
+        /// to nest code which pauses the engine.
+        /// </summary>
+        private int _pauseLevel;
+
+        /// <summary>
+        /// The time when the engine was started. This value is used to calculate
+        /// the current play time of the game running.
+        /// </summary>
+        private int _engineStartTime;
+
+        /// <summary>
+        /// The time when the pause was started.
+        /// </summary>
+        private int _pauseStartTime;
     }
 }

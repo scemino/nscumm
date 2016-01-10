@@ -62,6 +62,7 @@
     <Compile Include="Engine\KString.cs" />
     <Compile Include="Engine\Message.cs" />
     <Compile Include="Engine\Object.cs" />
+    <Compile Include="Engine\Savegame.cs" />
     <Compile Include="Engine\Script.cs" />
     <Compile Include="Engine\ScriptPatcher.cs" />
     <Compile Include="Engine\SegManager.cs" />

@@ -17,6 +17,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+using NScumm.Core.Common;
 using System;
 
 namespace NScumm.Sci.Engine
@@ -38,8 +39,48 @@ namespace NScumm.Sci.Engine
         DATE = 3
     }
 
+    enum MemoryFunction
+    {
+        ALLOCATE_CRITICAL = 1,
+        ALLOCATE_NONCRITICAL = 2,
+        FREE = 3,
+        MEMCPY = 4,
+        PEEK = 5,
+        POKE = 6
+    }
+
+    enum MemorySegmentFunction
+    {
+        SAVE_DATA = 0,
+        RESTORE_DATA = 1
+    }
+
+    enum PlatformOps
+    {
+        Unk0 = 0,
+        CDSpeed = 1,
+        Unk2 = 2,
+        CDCheck = 3,
+        GetPlatform = 4,
+        Unk5 = 5,
+        IsHiRes = 6,
+        IsItWindows = 7
+    }
+
     partial class Kernel
     {
+        private const int SciPlatformDOS = 1;
+        private const int SciPlatformWindows = 2;
+
+        private static Register kEmpty(EngineState s, int argc, StackPtr? argv)
+        {
+            // Placeholder for empty kernel functions which are still called from the
+            // engine scripts (like the empty kSetSynonyms function in SCI1.1). This
+            // differs from dummy functions because it does nothing and never throws a
+            // warning when it is called.
+            return s.r_acc;
+        }
+
         /// <summary>
         /// kGameIsRestarting():
         /// Returns the restarting_flag in acc
@@ -132,6 +173,105 @@ namespace NScumm.Sci.Engine
             return s.r_acc;
         }
 
+        private static Register kMemory(EngineState s, int argc, StackPtr? argv)
+        {
+            switch ((MemoryFunction)argv.Value[0].ToUInt16())
+            {
+                case MemoryFunction.ALLOCATE_CRITICAL:
+                    {
+                        int byteCount = argv.Value[1].ToUInt16();
+                        // WORKAROUND:
+                        //  - pq3 (multilingual) room 202
+                        //     when plotting crimes, allocates the returned bytes from kStrLen
+                        //     on "W" and "E" and wants to put a string in there, which doesn't
+                        //     fit of course.
+                        //  - lsl5 (multilingual) room 280
+                        //     allocates memory according to a previous kStrLen for the name of
+                        //     the airport ladies (bug #3093818), which isn't enough
+
+                        // We always allocate 1 byte more, because of this
+                        byteCount++;
+
+                        if (s._segMan.AllocDynmem(byteCount, "kMemory() critical", out s.r_acc) == null)
+                        {
+                            throw new InvalidOperationException("Critical heap allocation failed");
+                        }
+                        break;
+                    }
+                case MemoryFunction.ALLOCATE_NONCRITICAL:
+                    s._segMan.AllocDynmem(argv.Value[1].ToUInt16(), "kMemory() non-critical", out s.r_acc);
+                    break;
+                case MemoryFunction.FREE:
+                    if (!s._segMan.FreeDynmem(argv.Value[1]))
+                    {
+                        if (SciEngine.Instance.GameId == SciGameId.QFG1VGA)
+                        {
+                            // Ignore script bug in QFG1VGA, when closing any conversation dialog with esc
+                        }
+                        else {
+                            // Usually, the result of a script bug. Non-critical
+                            // TODO: warning("Attempt to kMemory::free() non-dynmem pointer %04x:%04x", PRINT_REG(argv.Value[1]));
+                        }
+                    }
+                    break;
+                case MemoryFunction.MEMCPY:
+                    {
+                        int size = argv.Value[3].ToUInt16();
+                        s._segMan.Memcpy(argv.Value[1], argv.Value[2], size);
+                        break;
+                    }
+                case MemoryFunction.PEEK:
+                    {
+                        if (argv.Value[1].Segment == 0)
+                        {
+                            // This occurs in KQ5CD when interacting with certain objects
+                            // TODO: warning("Attempt to peek invalid memory at %04x:%04x", PRINT_REG(argv.Value[1]));
+                            return s.r_acc;
+                        }
+
+                        SegmentRef @ref = s._segMan.Dereference(argv.Value[1]);
+
+                        if (!@ref.IsValid || @ref.maxSize < 2)
+                        {
+                            throw new InvalidOperationException($"Attempt to peek invalid memory at {argv.Value[1]}");
+                        }
+                        if (@ref.isRaw)
+                            return Register.Make(0, @ref.raw.Data.ReadSci11EndianUInt16(@ref.raw.Offset));
+                        else {
+                            if (@ref.skipByte)
+                                throw new InvalidOperationException($"Attempt to peek memory at odd offset {argv.Value[1]}");
+                            return @ref.reg[0];
+                        }
+                    }
+                case MemoryFunction.POKE:
+                    {
+                        SegmentRef @ref = s._segMan.Dereference(argv.Value[1]);
+
+                        if (!@ref.IsValid || @ref.maxSize < 2)
+                        {
+                            throw new InvalidOperationException($"Attempt to poke invalid memory at {argv.Value[1]}");
+                        }
+
+                        if (@ref.isRaw)
+                        {
+                            if (argv.Value[2].Segment != 0)
+                            {
+                                throw new InvalidOperationException($"Attempt to poke memory reference {argv.Value[2]} to {argv.Value[1]}");
+                            }
+                            @ref.raw.Data.WriteSciEndianUInt16(@ref.raw.Offset, (ushort)argv.Value[2].Offset);       // Amiga versions are BE
+                        }
+                        else {
+                            if (@ref.skipByte)
+                                throw new InvalidOperationException($"Attempt to poke memory at odd offset {argv.Value[1]}");
+                            @ref.reg[0] = argv.Value[2];
+                        }
+                        break;
+                    }
+            }
+
+            return s.r_acc;
+        }
+
         private static Register kMemoryInfo(EngineState s, int argc, StackPtr? argv)
         {
             // The free heap size returned must not be 0xffff, or some memory
@@ -157,12 +297,191 @@ namespace NScumm.Sci.Engine
             }
         }
 
-        // TODO: remove this
-        private static int _elapsedTime = 0;
+        private static Register kMemorySegment(EngineState s, int argc, StackPtr? argv)
+        {
+            // MemorySegment provides access to a 256-byte block of memory that remains
+            // intact across restarts and restores
+
+            switch ((MemorySegmentFunction)argv.Value[0].ToUInt16())
+            {
+                case MemorySegmentFunction.SAVE_DATA:
+                    {
+                        if (argc < 3)
+                            throw new InvalidOperationException("Insufficient number of arguments passed to MemorySegment");
+                        ushort size = argv.Value[2].ToUInt16();
+
+                        if (size == 0)
+                            size = (ushort)(s._segMan.Strlen(argv.Value[1]) + 1);
+
+                        if (size > EngineState.MemorySegmentMax)
+                        {
+                            // This was set to cut the block to 256 bytes. This should be an
+                            // error, as we won't restore the full block that the game scripts
+                            // request, thus error out instead.
+                            //size = EngineState::kMemorySegmentMax;
+                            throw new InvalidOperationException($"kMemorySegment: Requested to save more than 256 bytes ({size})");
+                        }
+
+                        s._memorySegmentSize = size;
+
+                        // We assume that this won't be called on pointers
+                        s._segMan.Memcpy(new ByteAccess(s._memorySegment), argv.Value[1], size);
+                        break;
+                    }
+                case MemorySegmentFunction.RESTORE_DATA:
+                    s._segMan.Memcpy(argv.Value[1], new ByteAccess(s._memorySegment), s._memorySegmentSize);
+                    break;
+                default:
+                    throw new InvalidOperationException($"Unknown MemorySegment operation {argv.Value[0].ToUInt16():X4}");
+            }
+
+            return argv.Value[1];
+        }
+
+        private static Register kPlatform(EngineState s, int argc, StackPtr? argv)
+        {
+            bool isWindows = SciEngine.Instance.Platform == Core.IO.Platform.Windows;
+
+            if (argc == 0 && ResourceManager.GetSciVersion() < SciVersion.V2)
+            {
+                // This is called in KQ5CD with no parameters, where it seems to do some
+                // graphics driver check. This kernel function didn't have subfunctions
+                // then. If 0 is returned, the game functions normally, otherwise all
+                // the animations show up like a slideshow (e.g. in the intro). So we
+                // return 0. However, the behavior changed for kPlatform with no
+                // parameters in SCI32.
+                return Register.NULL_REG;
+            }
+
+            PlatformOps operation = (PlatformOps)((argc == 0) ? 0 : argv.Value[0].ToUInt16());
+
+            switch (operation)
+            {
+                case PlatformOps.CDSpeed:
+                    // TODO: Returns CD Speed?
+                    // TODO: warning("STUB: kPlatform(CDSpeed)");
+                    break;
+                case PlatformOps.Unk2:
+                    // Always returns 2
+                    return Register.Make(0, 2);
+                case PlatformOps.CDCheck:
+                    // TODO: Some sort of CD check?
+                    // TODO: warning("STUB: PlatformOps.(CDCheck)");
+                    break;
+                case PlatformOps.Unk0:
+                case PlatformOps.GetPlatform:
+                    // For Mac versions, PlatformOps.(0) with other args has more functionality
+                    if (operation == PlatformOps.Unk0 && SciEngine.Instance.Platform == Core.IO.Platform.Macintosh && argc > 1)
+                        return kMacPlatform(s, argc - 1, argv + 1);
+                    return Register.Make(0, (ushort)(isWindows ? SciPlatformWindows : SciPlatformDOS));
+                case PlatformOps.Unk5:
+                    // This case needs to return the opposite of case 6 to get hires graphics
+                    return Register.Make(0, !isWindows);
+                case PlatformOps.IsHiRes:
+                    return Register.Make(0, isWindows);
+                case PlatformOps.IsItWindows:
+                    return Register.Make(0, isWindows);
+                default:
+                    throw new InvalidOperationException($"Unsupported kPlatform operation {operation}");
+            }
+
+            return Register.NULL_REG;
+        }
+
+        private static Register kRestartGame(EngineState s, int argc, StackPtr? argv)
+        {
+            s.ShrinkStackToBase();
+
+            s.abortScriptProcessing = AbortGameState.RestartGame; // Force vm to abort ASAP
+            return Register.NULL_REG;
+        }
+
+        // kMacPlatform is really a subop of kPlatform for SCI1.1+ Mac
+        private static Register kMacPlatform(EngineState s, int argc, StackPtr? argv)
+        {
+            // Mac versions use their own secondary platform functions
+            // to do various things. Why didn't they just declare a new
+            // kernel function?
+
+            switch (argv.Value[0].ToUInt16())
+            {
+                case 0:
+                    // Subop 0 has changed a few times
+                    // In SCI1, its usage is still unknown
+                    // In SCI1.1, it's NOP
+                    // In SCI32, it's used for remapping cursor ID's
+                    if (ResourceManager.GetSciVersion() >= SciVersion.V2_1) // Set Mac cursor remap
+                        SciEngine.Instance._gfxCursor.SetMacCursorRemapList(argc - 1, argv.Value + 1);
+                    else if (ResourceManager.GetSciVersion() != SciVersion.V1_1)
+                    {
+                        // TODO: warning("Unknown SCI1 kMacPlatform(0) call");
+                    }
+                    break;
+                case 4: // Handle icon bar code
+                    return kIconBar(s, argc - 1, argv + 1);
+                case 7: // Unknown, but always return -1
+                    return Register.SIGNAL_REG;
+                case 1: // Unknown, calls QuickDraw region functions (KQ5, QFG1VGA, Dr. Brain 1)
+                    break;  // removed warning, as it produces a lot of spam in the console
+                case 2: // Unknown, "UseNextWaitEvent" (Various)
+                case 3: // Unknown, "ProcessOpenDocuments" (Various)
+                case 5: // Unknown, plays a sound (KQ7)
+                case 6: // Unknown, menu-related (Unused?)
+                    // TODO: warning("Unhandled kMacPlatform(%d)", argv[0].toUint16());
+                    break;
+                default:
+                    throw new InvalidOperationException($"Unknown kMacPlatform({argv.Value[0].ToUInt16()})");
+            }
+
+            return s.r_acc;
+        }
+
+        // kIconBar is really a subop of kMacPlatform for SCI1.1 Mac
+        private static Register kIconBar(EngineState s, int argc, StackPtr? argv)
+        {
+            // Mac versions use their own tertiary platform functions
+            // to handle the outside-of-the-screen icon bar.
+
+            // QFG1 Mac calls this function to load the Mac icon bar (of which
+            // the resources do exist), but the game completely ignores it and
+            // uses the standard icon bar for the game. We do the same.
+            if (!SciEngine.Instance.HasMacIconBar)
+                return Register.NULL_REG;
+
+            switch (argv.Value[0].ToUInt16())
+            {
+                case 0: // InitIconBar
+                    for (int i = 0; i < argv.Value[1].ToUInt16(); i++)
+                        SciEngine.Instance._gfxMacIconBar.AddIcon(argv.Value[i + 2]);
+                    break;
+                case 1: // DisposeIconBar
+                    // TODO: warning("kIconBar(Dispose)");
+                    break;
+                case 2: // EnableIconBar (-1 = all)
+                    // TODO: debug(0, "kIconBar(Enable, %i)", argv.Value[1].ToInt16());
+                    SciEngine.Instance._gfxMacIconBar.SetIconEnabled(argv.Value[1].ToInt16(), true);
+                    break;
+                case 3: // DisableIconBar (-1 = all)
+                    // TODO: debug(0, "kIconBar(Disable, %i)", argv.Value[1].ToInt16());
+                    SciEngine.Instance._gfxMacIconBar.SetIconEnabled(argv.Value[1].ToInt16(), false);
+                    break;
+                case 4: // SetIconBarIcon
+                    // TODO: debug(0, "kIconBar(SetIcon, %d, %d)", argv.Value[1].ToUInt16(), argv.Value[2].ToUInt16());
+                    if (argv.Value[2].ToInt16() == -1)
+                        SciEngine.Instance._gfxMacIconBar.SetInventoryIcon(argv.Value[2].ToInt16());
+                    break;
+                default:
+                    throw new InvalidOperationException($"Unknown kIconBar({argv.Value[0].ToUInt16()})");
+            }
+
+            SciEngine.Instance._gfxMacIconBar.DrawIcons();
+
+            return Register.NULL_REG;
+        }
+
         private static Register kGetTime(EngineState s, int argc, StackPtr? argv)
         {
-            // TODO: g_engine->getTotalPlayTime();
-            int elapsedTime = _elapsedTime += 1800;
+            int elapsedTime = SciEngine.Instance.TotalPlaytime;
             int retval = 0; // Avoid spurious warning
 
             var loc_time = DateTime.Now;

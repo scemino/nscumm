@@ -20,6 +20,7 @@
 using NScumm.Core;
 using NScumm.Core.Common;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
@@ -568,9 +569,9 @@ namespace NScumm.Sci.Engine
                 byte extOpcode;
                 s.xs.pc.IncOffset(ReadPMachineInstruction(scr.GetBuf(s.xs.pc.Offset), out extOpcode, opparams));
                 byte opcode = (byte)(extOpcode >> 1);
-//#if DEBUG
-//                ServiceLocator.Platform.Debug($"{opcodeNames[opcode]}: {opparams[0]}, {opparams[1]}, {opparams[2]}, {opparams[3]}, acc = {s.r_acc}, script {scr.ScriptNumber}, local script {local_script.ScriptNumber}");
-//#endif
+#if DEBUG
+                ServiceLocator.Platform.Debug($"{opcodeNames[opcode]}: {opparams[0]}, {opparams[1]}, {opparams[2]}, {opparams[3]}, acc = {s.r_acc}, script {scr.ScriptNumber}, local script {local_script.ScriptNumber}");
+#endif
 
 #if ABORT_ON_INFINITE_LOOP
                 if (prevOpcode != 0xFF)

@@ -27,5 +27,49 @@ namespace NScumm.Sci.Graphics
         {
             throw new NotImplementedException();
         }
+
+        public void AddIcon(Register obj)
+        {
+            throw new NotImplementedException();
+            //IconBarItem item;
+            //uint32 iconIndex = readSelectorValue(g_sci->getEngineState()->_segMan, obj, SELECTOR(iconIndex));
+
+            //item.object = obj;
+            //item.nonSelectedImage = createImage(iconIndex, false);
+
+            //if (iconIndex != _inventoryIndex)
+            //    item.selectedImage = createImage(iconIndex, true);
+            //else
+            //    item.selectedImage = 0;
+
+            //item.enabled = true;
+
+            //// Start after the main viewing window and add a two pixel buffer
+            //uint16 y = g_sci->_gfxScreen->getHeight() + 2;
+
+            //if (item.nonSelectedImage)
+            //    item.rect = Common::Rect(_lastX, y, MIN<uint32>(_lastX + item.nonSelectedImage->w, 320), y + item.nonSelectedImage->h);
+            //else
+            //    error("Could not find a non-selected image for icon %d", iconIndex);
+
+            //_lastX += item.rect.width();
+
+            //_iconBarItems.push_back(item);
+        }
+
+        internal void SetIconEnabled(short v1, bool v2)
+        {
+            throw new NotImplementedException();
+        }
+
+        internal void SetInventoryIcon(short v)
+        {
+            throw new NotImplementedException();
+        }
+
+        internal void DrawIcons()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

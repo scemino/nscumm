@@ -79,6 +79,9 @@ namespace NScumm.Sci.Graphics
             textRightAlignedWidth = 0;
             saidVmPtr = Register.NULL_REG;
             textVmPtr = Register.NULL_REG;
+            text = string.Empty;
+            textSplit = string.Empty;
+            textRightAligned = string.Empty;
         }
     }
 
@@ -250,9 +253,86 @@ namespace NScumm.Sci.Graphics
             throw new NotImplementedException();
         }
 
+        /// <summary>
+        /// Mouse button is currently pressed - we are now interpreting mouse coordinates
+        /// till mouse button is released. The menu item that is selected at that time is
+        /// chosen. If no menu item is selected we cancel. No keyboard interaction is
+        /// allowed, cause that wouldnt make any sense at all.
+        /// </summary>
+        /// <returns></returns>
         private GuiMenuItemEntry InteractiveWithMouse()
         {
-            throw new NotImplementedException();
+            SciEvent curEvent;
+            ushort newMenuId = 0, newItemId = 0;
+            ushort curMenuId = 0, curItemId = 0;
+            bool firstMenuChange = true;
+            GuiMenuItemEntry curItemEntry = null;
+
+            _oldPort = _ports.SetPort(_ports._menuPort);
+            CalculateMenuAndItemWidth();
+            _barSaveHandle = _paint16.BitsSave(_ports._menuRect, GfxScreenMasks.VISUAL);
+
+            _ports.PenColor(0);
+            _ports.BackColor(_screen.ColorWhite);
+
+            DrawBar();
+            _paint16.BitsShow(_ports._menuRect);
+
+            while (true)
+            {
+                curEvent = _event.GetSciEvent(SciEvent.SCI_EVENT_ANY);
+
+                switch (curEvent.type)
+                {
+                    case SciEvent.SCI_EVENT_MOUSE_RELEASE:
+                        if ((curMenuId == 0) || (curItemId == 0))
+                            return null;
+                        if ((!curItemEntry.enabled) || (curItemEntry.separatorLine))
+                            return null;
+                        return curItemEntry;
+
+                    case SciEvent.SCI_EVENT_NONE:
+                        SciEngine.Instance.Sleep(2500 / 1000);
+                        break;
+                }
+
+                // Find out where mouse is currently pointing to
+                Point mousePosition = curEvent.mousePos;
+                if (mousePosition.Y < 10)
+                {
+                    // Somewhere on the menubar
+                    newMenuId = MouseFindMenuSelection(mousePosition);
+                    newItemId = 0;
+                }
+                else {
+                    // Somewhere below menubar
+                    newItemId = MouseFindMenuItemSelection(mousePosition, newMenuId);
+                    curItemEntry = InteractiveGetItem(curMenuId, newItemId, false);
+                }
+
+                if (newMenuId != curMenuId)
+                {
+                    // Menu changed, remove cur menu and paint new menu
+                    DrawMenu(curMenuId, newMenuId);
+                    if (firstMenuChange)
+                    {
+                        _paint16.BitsShow(_ports._menuBarRect);
+                        firstMenuChange = false;
+                    }
+                    curMenuId = newMenuId;
+                }
+                else {
+                    if (newItemId != curItemId)
+                    {
+                        // Item changed
+                        InvertMenuSelection(curItemId);
+                        InvertMenuSelection(newItemId);
+                        curItemId = newItemId;
+                    }
+                }
+
+            }
+            return null;
         }
 
         public GuiMenuItemEntry InteractiveWithKeyboard()
@@ -972,6 +1052,32 @@ namespace NScumm.Sci.Graphics
                 menuEntry.textSplit = SciEngine.Instance.StrSplit(menuEntry.text, null);
                 _text16.StringWidth(menuEntry.textSplit, 0, out menuEntry.textWidth, out dummyHeight);
             }
+        }
+
+        public Register KernelGetAttribute(ushort menuId, ushort itemId, MenuAttribute attributeId)
+        {
+            GuiMenuItemEntry itemEntry = FindItem(menuId, itemId);
+            if (itemEntry == null)
+                throw new InvalidOperationException($"Tried to getAttribute() on non-existent menu-item {menuId}:{itemId}");
+            switch (attributeId)
+            {
+                case MenuAttribute.ENABLED:
+                    if (itemEntry.enabled)
+                        return Register.Make(0, 1);
+                    break;
+                case MenuAttribute.SAID:
+                    return itemEntry.saidVmPtr;
+                case MenuAttribute.TEXT:
+                    return itemEntry.textVmPtr;
+                case MenuAttribute.KEYPRESS:
+                    // TODO: Find out how modifier is handled
+                    return Register.Make(0, itemEntry.keyPress);
+                case MenuAttribute.TAG:
+                    return Register.Make(0, itemEntry.tag);
+                default:
+                    throw new InvalidOperationException($"getAttribute() called with unsupported attributeId {attributeId:X}");
+            }
+            return Register.NULL_REG;
         }
     }
 }

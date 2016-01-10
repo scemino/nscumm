@@ -38,5 +38,13 @@ namespace NScumm.Sci
             else
                 return ptr.ToUInt16(offset);
         }
+
+        public static void WriteSciEndianUInt16(this byte[] ptr, int offset, ushort val)
+        {
+            if (SciEngine.Instance.Platform == Platform.Macintosh && ResourceManager.GetSciVersion() >= SciVersion.V1_1)
+                ptr.WriteUInt16BigEndian(offset, val);
+            else
+                ptr.WriteUInt16(offset, val);
+        }
     }
 }

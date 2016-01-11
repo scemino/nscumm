@@ -98,6 +98,7 @@
     <Compile Include="Graphics\Ports.cs" />
     <Compile Include="Graphics\Screen.cs" />
     <Compile Include="Parser\Grammar.cs" />
+    <Compile Include="Parser\Said.cs" />
     <Compile Include="Parser\Vocabulary.cs" />
     <Compile Include="ResourceId.cs" />
     <Compile Include="ResourceManager.cs" />

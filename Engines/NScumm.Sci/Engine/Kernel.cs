@@ -181,13 +181,13 @@ namespace NScumm.Sci.Engine
 
         public const int SIG_TYPE_NULL = 0x01; // may be 0:0       [0]
         public const int SIG_TYPE_INTEGER = 0x02; // may be 0:*       [i], automatically also allows null
-        public const int SIG_TYPE_UNINITIALIZED = 0x04; // may be FFFF:*    -> not allowable, only used for comparison
+        public const int SIG_TYPE_UNINITIALIZED = 0x04; // may be FFFF:*    . not allowable, only used for comparison
         public const int SIG_TYPE_OBJECT = 0x08; // may be object    [o]
         public const int SIG_TYPE_REFERENCE = 0x10; // may be reference [r]
         public const int SIG_TYPE_LIST = 0x20; // may be list      [l]
         public const int SIG_TYPE_NODE = 0x40; // may be node      [n]
         public const int SIG_TYPE_ERROR = 0x80; // happens, when there is a identification error - only used for comparison
-        public const int SIG_IS_INVALID = 0x100; // ptr is invalid   [!] -> invalid offset
+        public const int SIG_IS_INVALID = 0x100; // ptr is invalid   [!] . invalid offset
         public const int SIG_IS_OPTIONAL = 0x200; // is optional
         public const int SIG_NEEDS_MORE = 0x400; // needs at least one additional parameter following
         public const int SIG_MORE_MAY_FOLLOW = 0x800;  // may have more parameters of the same type following
@@ -565,7 +565,7 @@ namespace NScumm.Sci.Engine
             SciKernelMapEntry.Make(kCheckFreeSpace,SciVersionRange.SIG_SCI32(SIGFOR_ALL),"r.*",null,null),
             SciKernelMapEntry.Make(kCheckFreeSpace,SciVersionRange.SIG_SCI11(SIGFOR_ALL),"r(i)",null,null),
             SciKernelMapEntry.Make(kCheckFreeSpace,SciVersionRange.SIG_EVERYWHERE,"r",null,null),
-            //SciKernelMapEntry.Make(kCheckSaveGame,SciVersionRange.SIG_EVERYWHERE,           ".*",                    NULL,            NULL },
+            SciKernelMapEntry.Make(kCheckSaveGame,SciVersionRange.SIG_EVERYWHERE,".*",null,null),
             SciKernelMapEntry.Make(kClone,SciVersionRange.SIG_EVERYWHERE,"o",null,null),
             SciKernelMapEntry.Make(kCoordPri,SciVersionRange.SIG_EVERYWHERE,"i(i)",null,null),
             SciKernelMapEntry.Make(kCosDiv,SciVersionRange.SIG_EVERYWHERE,"ii",null,null),
@@ -583,7 +583,7 @@ namespace NScumm.Sci.Engine
         	//SciKernelMapEntry.Make(kDoAvoider,SciVersionRange.    SIG_EVERYWHERE,           "o(i)",                  NULL,            NULL },
             SciKernelMapEntry.Make(kDoBresen,SciVersionRange.SIG_EVERYWHERE,"o",null,null),
             SciKernelMapEntry.Make(kDoSound,SciVersionRange.SIG_EVERYWHERE,"i(.*)",kDoSound_subops,null),
-            //SciKernelMapEntry.Make(kDoSync,SciVersionRange.       SIG_EVERYWHERE,           "i(.*)",                 NULL,            NULL }, // subop
+            SciKernelMapEntry.Make(kDoSync,SciVersionRange.SIG_EVERYWHERE,"i(.*)",null,null), // subop
             SciKernelMapEntry.Make(kDrawCel,SciVersionRange.SIG_SCI11(SIGFOR_PC),"iiiii(i)(i)([ri])",null,null), // reference for kq6 hires
 	        SciKernelMapEntry.Make(kDrawCel, SciVersionRange.SIG_EVERYWHERE,"iiiii(i)(i)",null,null),
             SciKernelMapEntry.Make(kDrawControl,SciVersionRange.SIG_EVERYWHERE,"o",null,null),
@@ -651,24 +651,24 @@ namespace NScumm.Sci.Engine
             SciKernelMapEntry.Make(kOnControl,SciVersionRange.SIG_EVERYWHERE,"ii(i)(i)(i)",null,null),
             SciKernelMapEntry.Make(kPalVary,SciVersionRange.SIG_EVERYWHERE,"i(i*)",kPalVary_subops,null),
             SciKernelMapEntry.Make(kPalette,SciVersionRange.SIG_EVERYWHERE,"i(.*)",kPalette_subops,null),
-            //SciKernelMapEntry.Make(kParse,SciVersionRange.      SIG_EVERYWHERE,           "ro",                    NULL,            NULL },
+            SciKernelMapEntry.Make(kParse,SciVersionRange.SIG_EVERYWHERE,"ro",null,null),
             SciKernelMapEntry.Make(kPicNotValid,SciVersionRange.SIG_EVERYWHERE,"(i)",null,null),
             SciKernelMapEntry.Make(kPlatform,SciVersionRange.SIG_EVERYWHERE,"(.*)",null,null),
             //SciKernelMapEntry.Make(kPortrait,SciVersionRange.SIG_EVERYWHERE,"i(.*)",null,null), // subop
             SciKernelMapEntry.Make(kPrevNode,SciVersionRange.SIG_EVERYWHERE,"n",null,null),
             SciKernelMapEntry.Make(kPriCoord,SciVersionRange.SIG_EVERYWHERE,"i",null,null),
             SciKernelMapEntry.Make(kRandom,SciVersionRange.SIG_EVERYWHERE,"i(i)(i)",null,null),
-            //SciKernelMapEntry.Make(kReadNumber,SciVersionRange. SIG_EVERYWHERE,           "r",                     NULL,            kReadNumber_workarounds },
+            SciKernelMapEntry.Make(kReadNumber,SciVersionRange. SIG_EVERYWHERE,"r",null,Workarounds.kReadNumber_workarounds),
             SciKernelMapEntry.Make(kRemapColors,SciVersionRange.SIG_SCI11(SIGFOR_ALL),"i(i)(i)(i)(i)",null,null),
 #if ENABLE_SCI32
 	        //{ "RemapColors", kRemapColors32, SIG_SCI32, SIGFOR_ALL,  "i(i)(i)(i)(i)(i)",      NULL,            NULL },
 #endif
-	        //SciKernelMapEntry.Make(kResCheck,SciVersionRange.   SIG_EVERYWHERE,           "ii(iiii)",              NULL,            NULL },
+	        SciKernelMapEntry.Make(kResCheck,SciVersionRange.SIG_EVERYWHERE,"ii(iiii)",null,null),
             SciKernelMapEntry.Make(kRespondsTo,SciVersionRange.SIG_EVERYWHERE,".i",null,null),
             SciKernelMapEntry.Make(kRestartGame,SciVersionRange.SIG_EVERYWHERE,"",null,null),
-            //SciKernelMapEntry.Make(kRestoreGame,SciVersionRange.SIG_EVERYWHERE,           "[r0]i[r0]",             NULL,            NULL },
-            //SciKernelMapEntry.Make(kSaid,SciVersionRange.       SIG_EVERYWHERE,           "[r0]",                  NULL,            NULL },
-            //SciKernelMapEntry.Make(kSaveGame,SciVersionRange.   SIG_EVERYWHERE,           "[r0]i[r0](r0)",         NULL,            NULL },
+            SciKernelMapEntry.Make(kRestoreGame,SciVersionRange.SIG_EVERYWHERE,"[r0]i[r0]",null,null),
+            SciKernelMapEntry.Make(kSaid,SciVersionRange.SIG_EVERYWHERE,"[r0]",null,null),
+            SciKernelMapEntry.Make(kSaveGame,SciVersionRange.SIG_EVERYWHERE,"[r0]i[r0](r0)",null,null),
             SciKernelMapEntry.Make(kScriptID,SciVersionRange.SIG_EVERYWHERE,"[io](i)",null,null),
             SciKernelMapEntry.Make(kSetCursor,SciVersionRange.SIG_SCI21(SIGFOR_ALL),"i(i)([io])(i*)",null,null),
 	        // TODO: SCI2.1 may supply an object optionally (mother goose sci21 right on startup) - find out why
@@ -679,12 +679,12 @@ namespace NScumm.Sci.Engine
             SciKernelMapEntry.Make(kSetMenu,SciVersionRange.SIG_EVERYWHERE,"i(.*)",null,null),
             SciKernelMapEntry.Make(kSetNowSeen,SciVersionRange.SIG_EVERYWHERE,"o(i)",null,null),
             SciKernelMapEntry.Make(kSetPort,SciVersionRange.SIG_EVERYWHERE,"i(iiiii)(i)",null,Workarounds.kSetPort_workarounds),
-            //SciKernelMapEntry.Make(kSetQuitStr,SciVersionRange. SIG_EVERYWHERE,           "r",                     NULL,            NULL },
+            SciKernelMapEntry.Make(kSetQuitStr,SciVersionRange.SIG_EVERYWHERE,"r",null,null),
             SciKernelMapEntry.Make(kSetSynonyms,SciVersionRange.SIG_EVERYWHERE,"o",null,null),
             SciKernelMapEntry.Make(kSetVideoMode,SciVersionRange.SIG_EVERYWHERE,"i",null,null),
             SciKernelMapEntry.Make(kShakeScreen,SciVersionRange.SIG_EVERYWHERE,"(i)(i)",null,null),
             //SciKernelMapEntry.Make(kShowMovie,SciVersionRange.SIG_EVERYWHERE,           "(.*)",                  NULL,            NULL },
-            //SciKernelMapEntry.Make(kShow,SciVersionRange.SIG_EVERYWHERE,           "i",                     NULL,            NULL },
+            SciKernelMapEntry.Make(kShow,SciVersionRange.SIG_EVERYWHERE,"i",null,null),
             SciKernelMapEntry.Make(kSinDiv,SciVersionRange.SIG_EVERYWHERE,"ii",null,null),
             SciKernelMapEntry.Make(kSort,SciVersionRange.SIG_EVERYWHERE,"ooo",null,null),
             SciKernelMapEntry.Make(kSqrt,SciVersionRange.SIG_EVERYWHERE,"i",null,null),
@@ -1080,7 +1080,7 @@ namespace NScumm.Sci.Engine
 #if ENABLE_SCI32
                 // HACK: Phantasmagoria Mac uses a modified kDoSound (which *nothing*
                 // else seems to use)!
-                if (g_sci.getPlatform() == Common::kPlatformMacintosh && g_sci.getGameId() == GID_PHANTASMAGORIA && kernelName == "DoSound")
+                if (g_sci.getPlatform() == Common::kPlatformMacintosh && g_sci.getGameId() == SciGameId.PHANTASMAGORIA && kernelName == "DoSound")
                 {
                     _kernelFuncs[id].function = kDoSoundPhantasmagoriaMac;
                     _kernelFuncs[id].signature = parseKernelSignature("DoSoundPhantasmagoriaMac", "i.*");
@@ -1201,12 +1201,12 @@ namespace NScumm.Sci.Engine
 
         /// <summary>
         /// this parses a written kernel signature into an internal memory format
-        /// [io] -> either integer or object
-        /// (io) -> optionally integer AND an object
-        /// (i) -> optional integer
-        /// . -> any type
-        /// i* -> optional multiple integers
-        /// .* -> any parameters afterwards (or none)
+        /// [io] . either integer or object
+        /// (io) . optionally integer AND an object
+        /// (i) . optional integer
+        /// . . any type
+        /// i* . optional multiple integers
+        /// .* . any parameters afterwards (or none)
         /// </summary>
         /// <param name="name"></param>
         /// <param name="signature"></param>

@@ -933,6 +933,11 @@ namespace NScumm.Sci.Graphics
             return byteCount;
         }
 
+        internal void DebugShowMap(int v)
+        {
+            throw new NotImplementedException();
+        }
+
         public void KernelShakeScreen(short shakeCount, short directions)
         {
             while ((shakeCount--) != 0)

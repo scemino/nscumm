@@ -81,6 +81,44 @@ namespace NScumm.Sci.Engine
             return Register.Make(0, 1);
         }
 
+        private static Register kCheckSaveGame(EngineState s, int argc, StackPtr? argv)
+        {
+            string game_id = s._segMan.GetString(argv.Value[0]);
+            ushort virtualId = argv.Value[1].ToUInt16();
+
+            // TODO: debug(3, "kCheckSaveGame(%s, %d)", game_id.c_str(), virtualId);
+
+            var saves = File.ListSavegames();
+
+            // we allow 0 (happens in QfG2 when trying to restore from an empty saved game list) and return false in that case
+            if (virtualId == 0)
+                return Register.NULL_REG;
+
+            int savegameId = 0;
+            if (SciEngine.Instance.GameId == SciGameId.JONES)
+            {
+                // Jones has one save slot only
+            }
+            else {
+                // Find saved game
+                if ((virtualId < SAVEGAMEID_OFFICIALRANGE_START) || (virtualId > SAVEGAMEID_OFFICIALRANGE_END))
+                    throw new InvalidOperationException($"kCheckSaveGame: called with invalid savegame ID ({virtualId})");
+                savegameId = virtualId - SAVEGAMEID_OFFICIALRANGE_START;
+            }
+
+            int savegameNr = File.FindSavegame(saves, (short)savegameId);
+            if (savegameNr == -1)
+                return Register.NULL_REG;
+
+            // Check for compatible savegame version
+            int ver = saves[savegameNr].version;
+            if (ver < Savegame.MINIMUM_SAVEGAME_VERSION || ver > Savegame.CURRENT_SAVEGAME_VERSION)
+                return Register.NULL_REG;
+
+            // Otherwise we assume the savegame is OK
+            return Register.TRUE_REG;
+        }
+
         private static Register kDeviceInfo(EngineState s, int argc, StackPtr? argv)
         {
             if (SciEngine.Instance.GameId == SciGameId.FANMADE && argc == 1)
@@ -185,6 +223,240 @@ namespace NScumm.Sci.Engine
             return s._segMan.SaveDirPtr;
         }
 
+        private static Register kRestoreGame(EngineState s, int argc, StackPtr? argv)
+        {
+            string game_id = !argv.Value[0].IsNull ? s._segMan.GetString(argv.Value[0]) : "";
+            short savegameId = argv.Value[1].ToInt16();
+            bool pausedMusic = false;
+
+            // TODO: debug(3, "kRestoreGame(%s,%d)", game_id.c_str(), savegameId);
+
+            if (argv.Value[0].IsNull)
+            {
+                // Direct call, either from launcher or from a patched Game::restore
+                if (savegameId == -1)
+                {
+                    // we are supposed to show a dialog for the user and let him choose a saved game
+                    SciEngine.Instance._soundCmd.PauseAll(true); // pause music
+                    throw new NotImplementedException("SaveLoadChooser not implemented.");
+                    //using (var dialog = new GUI::SaveLoadChooser(_("Restore game:"), _("Restore"), false))
+                    //{
+                    //    savegameId = dialog.runModalWithCurrentTarget();
+                    //}
+                    if (savegameId < 0)
+                    {
+                        SciEngine.Instance._soundCmd.PauseAll(false); // unpause music
+                        return s.r_acc;
+                    }
+                    pausedMusic = true;
+                }
+                // don't adjust ID of the saved game, it's already correct
+            }
+            else {
+                if (SciEngine.Instance.GameId == SciGameId.JONES)
+                {
+                    // Jones has one save slot only
+                    savegameId = 0;
+                }
+                else {
+                    // Real call from script, we need to adjust ID
+                    if ((savegameId < SAVEGAMEID_OFFICIALRANGE_START) || (savegameId > SAVEGAMEID_OFFICIALRANGE_END))
+                    {
+                        // TODO: warning("Savegame ID %d is not allowed", savegameId);
+                        return Register.TRUE_REG;
+                    }
+                    savegameId -= SAVEGAMEID_OFFICIALRANGE_START;
+                }
+            }
+
+            s.r_acc = Register.NULL_REG; // signals success
+
+            var saves = File.ListSavegames();
+            if (File.FindSavegame(saves, savegameId) == -1)
+            {
+                s.r_acc = Register.TRUE_REG;
+                // TODO: warning("Savegame ID %d not found", savegameId);
+            }
+            else {
+                ISaveFileManager saveFileMan = SciEngine.Instance.SaveFileManager;
+                string filename = SciEngine.Instance.GetSavegameName(savegameId);
+
+                using (var @in = saveFileMan.OpenForLoading(filename))
+                {
+                    // found a savegame file
+                    Savegame.gamestate_restore(s, @in);
+                }
+
+                switch (SciEngine.Instance.GameId)
+                {
+                    case SciGameId.MOTHERGOOSE:
+                        // WORKAROUND: Mother Goose SCI0
+                        //  Script 200 / rm200::newRoom will set global C5h directly right after creating a child to the
+                        //   current number of children plus 1.
+                        //  We can't trust that global, that's why we set the actual savedgame id right here directly after
+                        //   restoring a saved game.
+                        //  If we didn't, the game would always save to a new slot
+                        s.variables[Vm.VAR_GLOBAL][0xC5].SetOffset((ushort)(SAVEGAMEID_OFFICIALRANGE_START + savegameId));
+                        break;
+                    case SciGameId.MOTHERGOOSE256:
+                        // WORKAROUND: Mother Goose SCI1/SCI1.1 does some weird things for
+                        //  saving a previously restored game.
+                        // We set the current savedgame-id directly and remove the script
+                        //  code concerning this via script patch.
+                        s.variables[Vm.VAR_GLOBAL][0xB3].SetOffset((ushort)(SAVEGAMEID_OFFICIALRANGE_START + savegameId));
+                        break;
+                    case SciGameId.JONES:
+                        // HACK: The code that enables certain menu items isn't called when a game is restored from the
+                        // launcher, or the "Restore game" option in the game's main menu - bugs #6537 and #6723.
+                        // These menu entries are disabled when the game is launched, and are enabled when a new game is
+                        // started. The code for enabling these entries is is all in script 1, room1::init, but that code
+                        // path is never followed in these two cases (restoring game from the menu, or restoring a game
+                        // from the ScummVM launcher). Thus, we perform the calls to enable the menus ourselves here.
+                        // These two are needed when restoring from the launcher
+                        // FIXME: The original interpreter saves and restores the menu state, so these attributes
+                        // are automatically reset there. We may want to do the same.
+                        SciEngine.Instance._gfxMenu.KernelSetAttribute(257 >> 8, 257 & 0xFF, Graphics.MenuAttribute.ENABLED, Register.TRUE_REG);    // Sierra . About Jones
+                        SciEngine.Instance._gfxMenu.KernelSetAttribute(258 >> 8, 258 & 0xFF, Graphics.MenuAttribute.ENABLED, Register.TRUE_REG);    // Sierra . Help
+                                                                                                                                                    // The rest are normally enabled from room1::init
+                        SciEngine.Instance._gfxMenu.KernelSetAttribute(769 >> 8, 769 & 0xFF, Graphics.MenuAttribute.ENABLED, Register.TRUE_REG);    // Options . Delete current player
+                        SciEngine.Instance._gfxMenu.KernelSetAttribute(513 >> 8, 513 & 0xFF, Graphics.MenuAttribute.ENABLED, Register.TRUE_REG);    // Game . Save Game
+                        SciEngine.Instance._gfxMenu.KernelSetAttribute(515 >> 8, 515 & 0xFF, Graphics.MenuAttribute.ENABLED, Register.TRUE_REG);    // Game . Restore Game
+                        SciEngine.Instance._gfxMenu.KernelSetAttribute(1025 >> 8, 1025 & 0xFF, Graphics.MenuAttribute.ENABLED, Register.TRUE_REG);  // Status . Statistics
+                        SciEngine.Instance._gfxMenu.KernelSetAttribute(1026 >> 8, 1026 & 0xFF, Graphics.MenuAttribute.ENABLED, Register.TRUE_REG);  // Status . Goals
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            if (!s.r_acc.IsNull)
+            {
+                // no success?
+                if (pausedMusic)
+                    SciEngine.Instance._soundCmd.PauseAll(false); // unpause music
+            }
+
+            return s.r_acc;
+        }
+
+        private static Register kSaveGame(EngineState s, int argc, StackPtr? argv)
+        {
+            string game_id;
+            short virtualId = argv.Value[1].ToInt16();
+            short savegameId = -1;
+            string game_description;
+            string version = string.Empty;
+
+            if (argc > 3)
+                version = s._segMan.GetString(argv.Value[3]);
+
+            // We check here, we don't want to delete a users save in case we are within a kernel function
+            if (s.executionStackBase != 0)
+            {
+                // TODO: warning("kSaveGame - won't save from within kernel function");
+                return Register.NULL_REG;
+            }
+
+            if (argv.Value[0].IsNull)
+            {
+                // Direct call, from a patched Game::save
+                if ((argv.Value[1] != Register.SIGNAL_REG) || (!argv.Value[2].IsNull))
+                    throw new InvalidOperationException("kSaveGame: assumed patched call isn't accurate");
+
+                // we are supposed to show a dialog for the user and let him choose where to save
+                SciEngine.Instance._soundCmd.PauseAll(true); // pause music
+                throw new NotImplementedException("SaveLoadChooser not implemented.");
+                //using (var dialog = new GUI::SaveLoadChooser(_("Save game:"), _("Save"), true))
+                //{
+                //    savegameId = dialog.runModalWithCurrentTarget();
+                //    game_description = dialog.getResultString();
+                //    if (string.IsNullOrEmpty(game_description))
+                //    {
+                //        // create our own description for the saved game, the user didn't enter it
+                //        game_description = dialog.createDefaultSaveDescription(savegameId);
+                //    }
+                //}
+                SciEngine.Instance._soundCmd.PauseAll(false); // unpause music (we can't have it paused during save)
+                if (savegameId < 0)
+                    return Register.NULL_REG;
+
+            }
+            else {
+                // Real call from script
+                game_id = s._segMan.GetString(argv.Value[0]);
+                if (argv.Value[2].IsNull)
+                    throw new InvalidOperationException("kSaveGame: called with description being NULL");
+                game_description = s._segMan.GetString(argv.Value[2]);
+
+                // TODO: debug(3, "kSaveGame(%s,%d,%s,%s)", game_id.c_str(), virtualId, game_description.c_str(), version.c_str());
+
+                var saves = File.ListSavegames();
+
+                if ((virtualId >= SAVEGAMEID_OFFICIALRANGE_START) && (virtualId <= SAVEGAMEID_OFFICIALRANGE_END))
+                {
+                    // savegameId is an actual Id, so search for it just to make sure
+                    savegameId = (short)(virtualId - SAVEGAMEID_OFFICIALRANGE_START);
+                    if (File.FindSavegame(saves, savegameId) == -1)
+                        return Register.NULL_REG;
+                }
+                else if (virtualId < SAVEGAMEID_OFFICIALRANGE_START)
+                {
+                    // virtualId is low, we assume that scripts expect us to create new slot
+                    if (SciEngine.Instance.GameId == SciGameId.JONES)
+                    {
+                        // Jones has one save slot only
+                        savegameId = 0;
+                    }
+                    else if (virtualId == s._lastSaveVirtualId)
+                    {
+                        // if last virtual id is the same as this one, we assume that caller wants to overwrite last save
+                        savegameId = s._lastSaveNewId;
+                    }
+                    else {
+                        int savegameNr;
+                        // savegameId is in lower range, scripts expect us to create a new slot
+                        for (savegameId = 0; savegameId < SAVEGAMEID_OFFICIALRANGE_START; savegameId++)
+                        {
+                            for (savegameNr = 0; savegameNr < saves.Count; savegameNr++)
+                            {
+                                if (savegameId == saves[savegameNr].id)
+                                    break;
+                            }
+                            if (savegameNr == saves.Count)
+                                break;
+                        }
+                        if (savegameId == SAVEGAMEID_OFFICIALRANGE_START)
+                            throw new InvalidOperationException("kSavegame: no more savegame slots available");
+                    }
+                }
+                else {
+                    throw new InvalidOperationException("kSaveGame: invalid savegameId used");
+                }
+
+                // Save in case caller wants to overwrite last newly created save
+                s._lastSaveVirtualId = virtualId;
+                s._lastSaveNewId = savegameId;
+            }
+
+            s.r_acc = Register.NULL_REG;
+
+            string filename = SciEngine.Instance.GetSavegameName(savegameId);
+            var saveFileMan = SciEngine.Instance.SaveFileManager;
+
+            using (var @out = saveFileMan.OpenForSaving(filename))
+            {
+                if (!Savegame.gamestate_save(s, @out, game_description, version))
+                {
+                    // TODO: warning("Saving the game failed");
+                }
+                else {
+                    s.r_acc = Register.TRUE_REG; // save successful
+                }
+            }
+
+            return s.r_acc;
+        }
+
         /// <summary>
         /// Writes the cwd to the supplied address and returns the address in acc.
         /// </summary>
@@ -244,7 +516,7 @@ namespace NScumm.Sci.Engine
             }
             // TODO: debugC(kDebugLevelFile, "kFileIO(open): %s, 0x%x", name.c_str(), mode);
 
-# if ENABLE_SCI32
+#if ENABLE_SCI32
             if (name == PHANTASMAGORIA_SAVEGAME_INDEX)
             {
                 if (s._virtualIndexFile)
@@ -252,9 +524,9 @@ namespace NScumm.Sci.Engine
                     return make_reg(0, VIRTUALFILE_HANDLE);
                 }
                 else {
-                    Common::String englishName = g_sci.getSciLanguageString(name, K_LANG_ENGLISH);
-                    Common::String wrappedName = g_sci.wrapFilename(englishName);
-                    if (!g_sci.getSaveFileManager().listSavefiles(wrappedName).empty())
+                    Common::String englishName = SciEngine.Instance.getSciLanguageString(name, K_LANG_ENGLISH);
+                    Common::String wrappedName = SciEngine.Instance.wrapFilename(englishName);
+                    if (!SciEngine.Instance.getSaveFileManager().listSavefiles(wrappedName).empty())
                     {
                         s._virtualIndexFile = new VirtualIndexFile(wrappedName);
                         return make_reg(0, VIRTUALFILE_HANDLE);
@@ -283,7 +555,7 @@ namespace NScumm.Sci.Engine
             //
             // Future TODO: maintain spot descriptions and show them too, ideally without
             // having to return to this logic of extra hardcoded files.
-            if (g_sci.getGameId() == SciGameId.SHIVERS && name.hasSuffix(".SG"))
+            if (SciEngine.Instance.getGameId() == SciGameId.SHIVERS && name.hasSuffix(".SG"))
             {
                 if (mode == _K_FILE_MODE_OPEN_OR_CREATE || mode == _K_FILE_MODE_CREATE)
                 {
@@ -398,7 +670,7 @@ namespace NScumm.Sci.Engine
 
             if (inFile == null && outFile == null)
             { // Failed
-                // TODO: debugC(kDebugLevelFile, "  . file_open() failed");
+              // TODO: debugC(kDebugLevelFile, "  . file_open() failed");
                 return Register.SIGNAL_REG;
             }
 
@@ -537,7 +809,7 @@ namespace NScumm.Sci.Engine
         {
             throw new NotImplementedException();
             //            Common::String name = s._segMan.getString(argv[0]);
-            //            Common::SaveFileManager* saveFileMan = g_sci.getSaveFileManager();
+            //            Common::SaveFileManager* saveFileMan = SciEngine.Instance.getSaveFileManager();
             //            bool result;
 
             //            // SQ4 floppy prepends /\ to the filenames
@@ -559,7 +831,7 @@ namespace NScumm.Sci.Engine
             //                Common::Array<SavegameDesc> saves;
             //                listSavegames(saves);
             //                int savedir_nr = saves[slotNum].id;
-            //                name = g_sci.getSavegameName(savedir_nr);
+            //                name = SciEngine.Instance.getSavegameName(savedir_nr);
             //                result = saveFileMan.removeSavefile(name);
             //            }
             //            else if (getSciVersion() >= SCI_VERSION_2)
@@ -568,7 +840,7 @@ namespace NScumm.Sci.Engine
             //                result = saveFileMan.removeSavefile(name);
             //                if (!result)
             //                {
-            //                    const Common::String wrappedName = g_sci.wrapFilename(name);
+            //                    const Common::String wrappedName = SciEngine.Instance.wrapFilename(name);
             //                    result = saveFileMan.removeSavefile(wrappedName);
             //                }
 
@@ -581,7 +853,7 @@ namespace NScumm.Sci.Engine
             //#endif
             //            }
             //            else {
-            //                const Common::String wrappedName = g_sci.wrapFilename(name);
+            //                const Common::String wrappedName = SciEngine.Instance.wrapFilename(name);
             //                result = saveFileMan.removeSavefile(wrappedName);
             //            }
 
@@ -631,7 +903,7 @@ namespace NScumm.Sci.Engine
             //                Common::List<ExecStack>::const_iterator iter = s._executionStack.reverse_begin();
             //                iter--; // sciAudio
             //                iter--; // sciAudio child
-            //                g_sci._audio.handleFanmadeSciAudio(iter.sendp, s._segMan);
+            //                SciEngine.Instance._audio.handleFanmadeSciAudio(iter.sendp, s._segMan);
             //                return NULL_REG;
             //            }
 
@@ -733,12 +1005,12 @@ namespace NScumm.Sci.Engine
             //            exists = Common::File::exists(name);
 
             //            // Check for a savegame with the name
-            //            Common::SaveFileManager* saveFileMan = g_sci.getSaveFileManager();
+            //            Common::SaveFileManager* saveFileMan = SciEngine.Instance.getSaveFileManager();
             //            if (!exists)
             //                exists = !saveFileMan.listSavefiles(name).empty();
 
             //            // Try searching for the file prepending "target-"
-            //            const Common::String wrappedName = g_sci.wrapFilename(name);
+            //            const Common::String wrappedName = SciEngine.Instance.wrapFilename(name);
             //            if (!exists)
             //            {
             //                exists = !saveFileMan.listSavefiles(wrappedName).empty();
@@ -782,7 +1054,7 @@ namespace NScumm.Sci.Engine
             //            // if they exist before it plays them. Since we support multiple naming
             //            // schemes for resource fork files, we also need to support that here in
             //            // case someone has a "HalfDome.bin" file, etc.
-            //            if (!exists && g_sci.getGameId() == SciGameId.KQ6 && g_sci.getPlatform() == Common::kPlatformMacintosh &&
+            //            if (!exists && SciEngine.Instance.getGameId() == SciGameId.KQ6 && SciEngine.Instance.getPlatform() == Common::kPlatformMacintosh &&
             //                    (name == "HalfDome" || name == "Kq6Movie"))
             //                exists = Common::MacResManager::exists(name);
 

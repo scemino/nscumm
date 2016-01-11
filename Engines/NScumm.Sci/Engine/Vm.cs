@@ -570,7 +570,7 @@ namespace NScumm.Sci.Engine
                 s.xs.pc.IncOffset(ReadPMachineInstruction(scr.GetBuf(s.xs.pc.Offset), out extOpcode, opparams));
                 byte opcode = (byte)(extOpcode >> 1);
 #if DEBUG
-                //ServiceLocator.Platform.Debug($"{opcodeNames[opcode]}: {opparams[0]}, {opparams[1]}, {opparams[2]}, {opparams[3]}, acc = {s.r_acc}, script {scr.ScriptNumber}, local script {local_script.ScriptNumber}");
+                ServiceLocator.Platform.Debug($"{opcodeNames[opcode]}: {opparams[0]}, {opparams[1]}, {opparams[2]}, {opparams[3]}, acc = {s.r_acc}, script {scr.ScriptNumber}, local script {local_script.ScriptNumber}");
 #endif
 
 #if ABORT_ON_INFINITE_LOOP

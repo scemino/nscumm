@@ -495,6 +495,71 @@ namespace NScumm.Sci.Engine
             return Register.NULL_REG;
         }
 
+        private static Register kReadNumber(EngineState s, int argc, StackPtr? argv)
+        {
+            string source_str = s._segMan.GetString(argv.Value[0]);
+            var source = 0;
+
+            while (char.IsWhiteSpace(source_str[source]))
+                source++; /* Skip whitespace */
+
+            short result = 0;
+            short sign = 1;
+
+            if (source_str[source] == '-')
+            {
+                sign = -1;
+                source++;
+            }
+            if (source_str[source] == '$')
+            {
+                // Hexadecimal input
+                source++;
+                char c;
+                while ((c = source_str[source++]) != 0)
+                {
+                    short x = 0;
+                    if ((c >= '0') && (c <= '9'))
+                        x = (short)(c - '0');
+                    else if ((c >= 'a') && (c <= 'f'))
+                        x = (short)(c - 'a' + 10);
+                    else if ((c >= 'A') && (c <= 'F'))
+                        x = (short)(c - 'A' + 10);
+                    else
+                        // Stop if we encounter anything other than a digit (like atoi)
+                        break;
+                    result *= 16;
+                    result += x;
+                }
+            }
+            else {
+                // Decimal input. We can not use strtol/atoi in here, because while
+                // Sierra used atoi, it was a non standard compliant atoi, that didn't
+                // do clipping. In SQ4 we get the door code in here and that's even
+                // larger than uint32!
+                char c;
+                while ((c = source_str[source++]) != 0)
+                {
+                    if ((c < '0') || (c > '9'))
+                        // Stop if we encounter anything other than a digit (like atoi)
+                        break;
+                    result *= 10;
+                    result += (short)(c - '0');
+                }
+            }
+
+            result *= sign;
+
+            return Register.Make(0, (ushort)result);
+        }
+
+        private static Register kSetQuitStr(EngineState s, int argc, StackPtr? argv)
+        {
+            //Common::String quitStr = s._segMan.getString(argv[0]);
+            //debug("Setting quit string to '%s'", quitStr.c_str());
+            return s.r_acc;
+        }
+
         private static Register kStrAt(EngineState s, int argc, StackPtr? argv)
         {
             if (argv.Value[0] == Register.SIGNAL_REG)

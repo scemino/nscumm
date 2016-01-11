@@ -19,11 +19,148 @@
 
 using NScumm.Sci.Parser;
 using System;
+using System.Collections.Generic;
 
 namespace NScumm.Sci.Engine
 {
     partial class Kernel
     {
+        private static Register kParse(EngineState s, int argc, StackPtr? argv)
+        {
+            SegManager segMan = s._segMan;
+            Register stringpos = argv.Value[0];
+            string @string = s._segMan.GetString(stringpos);
+            string error;
+            Register @event = argv.Value[1];
+            SciEngine.Instance.CheckVocabularySwitch();
+            Vocabulary voc = SciEngine.Instance.Vocabulary;
+            voc.parser_event = @event;
+            Register[] @params = new[] { s._segMan.ParserPtr, stringpos };
+
+            var words = new List<ResultWordList>();
+
+            bool res = voc.TokenizeString(words, @string, out error);
+            voc.parserIsValid = false; /* not valid */
+
+            if (res && words.Count != 0)
+            {
+                voc.SynonymizeTokens(words);
+
+                s.r_acc = Register.Make(0, 1);
+
+#if DEBUG_PARSER
+        debugC(kDebugLevelParser, "Parsed to the following blocks:");
+
+		for (ResultWordListList::const_iterator i = words.begin(); i != words.end(); ++i) {
+
+            debugCN(2, kDebugLevelParser, "   ");
+			for (ResultWordList::const_iterator j = i.begin(); j != i.end(); ++j) {
+
+                debugCN(2, kDebugLevelParser, "%sType[%04x] Group[%04x]", j == i.begin() ? "" : " / ", j._class, j._group);
+			}
+
+            debugCN(2, kDebugLevelParser, "\n");
+}
+#endif
+
+                int syntax_fail = voc.ParseGNF(words);
+
+                if (syntax_fail != 0)
+                {
+                    s.r_acc = Register.Make(0, 1);
+
+                    SciEngine.WriteSelectorValue(segMan, @event, o => o.claimed, 1);
+
+                    SciEngine.InvokeSelector(s, SciEngine.Instance.GameObject, o => o.syntaxFail, argc, argv, 2, new StackPtr(@params, 0));
+                    /* Issue warning */
+
+                    // TODO: debugC(kDebugLevelParser, "Tree building failed");
+
+                }
+                else {
+                    voc.parserIsValid = true;
+
+                    SciEngine.WriteSelectorValue(segMan, @event, o => o.claimed, 0);
+
+#if DEBUG_PARSER
+			voc.dumpParseTree();
+#endif
+                }
+
+            }
+            else {
+
+                s.r_acc = Register.Make(0, 0);
+
+                SciEngine.WriteSelectorValue(segMan, @event, o => o.claimed, 1);
+
+                if (!string.IsNullOrEmpty(error))
+                {
+                    s._segMan.Strcpy(s._segMan.ParserPtr, error);
+
+                    // TODO: debugC(kDebugLevelParser, "Word unknown: %s", error);
+                    /* Issue warning: */
+
+                    SciEngine.InvokeSelector(s, SciEngine.Instance.GameObject, o => o.wordFail, argc, argv, 2, new StackPtr(@params, 0));
+
+                    return Register.Make(0, 1); /* Tell them that it didn't work */
+                }
+            }
+
+            return s.r_acc;
+        }
+
+        private static Register kSaid(EngineState s, int argc, StackPtr? argv)
+        {
+            Register heap_said_block = argv.Value[0];
+            Vocabulary voc = SciEngine.Instance.Vocabulary;
+#if DEBUG_PARSER
+            const bool debug_parser = true;
+#else
+            const bool debug_parser = false;
+#endif
+
+            if (heap_said_block.Segment == 0)
+                return Register.NULL_REG;
+
+            var said_block = s._segMan.DerefBulkPtr(heap_said_block, 0);
+
+            if (said_block == null)
+            {
+                // TODO: warning("Said on non-string, pointer %04x:%04x", PRINT_REG(heap_said_block));
+                return Register.NULL_REG;
+            }
+
+#if DEBUG_PARSER
+            debugN("Said block: ");
+            SciEngine.Instance.Vocabulary.DebugDecipherSaidBlock(said_block);
+#endif
+
+            if (voc.parser_event.IsNull || (SciEngine.ReadSelectorValue(s._segMan, voc.parser_event, o => o.claimed) != 0))
+            {
+                return Register.NULL_REG;
+            }
+
+            var new_lastmatch = Said.said(said_block, debug_parser);
+            if (new_lastmatch != Vocabulary.SAID_NO_MATCH)
+            { /* Build and possibly display a parse tree */
+
+#if DEBUG_PARSER
+                debugN("kSaid: Match.\n");
+#endif
+
+                s.r_acc = Register.Make(0, 1);
+
+                if (new_lastmatch != Vocabulary.SAID_PARTIAL_MATCH)
+                    SciEngine.WriteSelectorValue(s._segMan, voc.parser_event, o => o.claimed, 1);
+
+            }
+            else {
+                return Register.NULL_REG;
+            }
+            return s.r_acc;
+        }
+
         private static Register kSetSynonyms(EngineState s, int argc, StackPtr? argv)
         {
             SegManager segMan = s._segMan;

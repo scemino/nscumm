@@ -63,8 +63,8 @@ namespace NScumm.Sci.Engine
 
     internal static class Savegame
     {
-        private const int CURRENT_SAVEGAME_VERSION = 33;
-        private const int MINIMUM_SAVEGAME_VERSION = 14;
+        public const int CURRENT_SAVEGAME_VERSION = 33;
+        public const int MINIMUM_SAVEGAME_VERSION = 14;
 
         public static bool get_savegame_metadata(Stream stream, out SavegameMetadata meta)
         {
@@ -83,7 +83,7 @@ namespace NScumm.Sci.Engine
                     // TODO: warning("Old savegame version detected- can't load");
                 }
                 else {
-                    // TODO: warning("Savegame version is %d- maximum supported is %0d", meta->version, CURRENT_SAVEGAME_VERSION);
+                    // TODO: warning("Savegame version is %d- maximum supported is %0d", meta.version, CURRENT_SAVEGAME_VERSION);
                 }
                 return false;
             }
@@ -123,6 +123,16 @@ namespace NScumm.Sci.Engine
                 obj.playTime = SciEngine.Instance.TotalPlaytime / 1000;
                 s.SyncAsInt32LE(ref obj.playTime);
             }
+        }
+
+        internal static bool gamestate_save(EngineState s, Stream @out, string game_description, string version)
+        {
+            throw new NotImplementedException();
+        }
+
+        internal static void gamestate_restore(EngineState s, Stream @in)
+        {
+            throw new NotImplementedException();
         }
     }
 

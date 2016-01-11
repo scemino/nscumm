@@ -21,10 +21,10 @@ using NScumm.Sci.Engine;
 using System.Collections.Generic;
 using System;
 using NScumm.Core;
-using System.Text;
 using System.Collections;
 using NScumm.Core.Common;
 using System.Linq;
+using System.Text;
 
 namespace NScumm.Sci.Parser
 {
@@ -41,7 +41,7 @@ namespace NScumm.Sci.Parser
         SCI1 = 1
     }
 
-    internal struct ResultWord
+    internal class ResultWord
     {
         /// <summary>
         /// Word class
@@ -247,7 +247,7 @@ namespace NScumm.Sci.Parser
         /// <summary>
         /// Number of nodes for each ParseTreeNode structure 
         /// </summary>
-        private const int VOCAB_TREE_NODES = 500;
+        public const int VOCAB_TREE_NODES = 500;
 
         private const int VOCAB_TREE_NODE_LAST_WORD_STORAGE = 0x140;
         private const int VOCAB_TREE_NODE_COMPARE_TYPE = 0x146;
@@ -264,6 +264,35 @@ namespace NScumm.Sci.Parser
         private const int VOCAB_RESOURCE_ALT_INPUTS = 913;
 
         private const int VOCAB_MAX_WORDLENGTH = 256;
+
+        private const int VOCAB_CLASS_PREPOSITION = 0x01;
+        private const int VOCAB_CLASS_ARTICLE = 0x02;
+        private const int VOCAB_CLASS_ADJECTIVE = 0x04;
+        private const int VOCAB_CLASS_PRONOUN = 0x08;
+        private const int VOCAB_CLASS_NOUN = 0x10;
+        private const int VOCAB_CLASS_INDICATIVE_VERB = 0x20;
+        private const int VOCAB_CLASS_ADVERB = 0x40;
+        private const int VOCAB_CLASS_IMPERATIVE_VERB = 0x80;
+        private const int VOCAB_CLASS_NUMBER = 0x001;
+
+        /* This word class is used for numbers */
+        private const int VOCAB_MAGIC_NUMBER_GROUP = 0xffd; /* 0xffe ? */
+        private const int VOCAB_MAGIC_NOTHING_GROUP = 0xffe;
+
+
+        public const int SAID_COMMA = 0xf0;
+        public const int SAID_AMP = 0xf1;
+        public const int SAID_SLASH = 0xf2;
+        public const int SAID_PARENO = 0xf3;
+        public const int SAID_PARENC = 0xf4;
+        public const int SAID_BRACKO = 0xf5;
+        public const int SAID_BRACKC = 0xf6;
+        public const int SAID_HASH = 0xf7;
+        public const int SAID_LT = 0xf8;
+        public const int SAID_GT = 0xf9;
+        public const int SAID_TERM = 0xff;
+
+        public const int SAID_FIRST = SAID_COMMA;
 
         /* There was no 'last matching word': */
         public const int SAID_FULL_MATCH = 0xffff;
@@ -307,6 +336,27 @@ namespace NScumm.Sci.Parser
         private List<Synonym> _synonyms;
         private List<List<AltInput>> _altInputs;
 
+        private static readonly byte[] lowerCaseMap = {
+            0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, // 0x00
+	        0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, // 0x10
+	        0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f, // 0x20
+	        0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, 0x3f, // 0x30
+	        0x40,  (byte)'a',  (byte)'b',  (byte)'c',  (byte)'d',  (byte)'e',  (byte)'f',  (byte)'g',  (byte)'h',  (byte)'i',  (byte)'j',  (byte)'k',  (byte)'l',  (byte)'m',  (byte)'n',  (byte)'o', // 0x40
+	         (byte)'p',  (byte)'q',  (byte)'r',  (byte)'s',  (byte)'t',  (byte)'u',  (byte)'v',  (byte)'w',  (byte)'x',  (byte)'y',  (byte)'z', 0x5b, 0x5c, 0x5d, 0x5e, 0x5f, // 0x50
+	        0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0x6a, 0x6b, 0x6c, 0x6d, 0x6e, 0x6f, // 0x60
+	        0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x7a, 0x7b, 0x7c, 0x7d, 0x7e, 0x7f, // 0x70
+	        0x87, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88, 0x89, 0x8a, 0x8b, 0x8c, 0x8d, 0x84, 0x86, // 0x80
+	        //^^                                                                                ^^^^  ^^^^
+	        0x82, 0x91, 0x91, 0x93, 0x94, 0x95, 0x96, 0x97, 0x98, 0x94, 0x81, 0x9b, 0x9c, 0x9d, 0x9e, 0x9f, // 0x90
+	        //^^        ^^^^                                      ^^^^  ^^^^
+	        0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa4, 0xa6, 0xa7, 0xa8, 0xa9, 0xaa, 0xab, 0xac, 0xad, 0xae, 0xaf, // 0xa0
+	        //                            ^^^^
+	        0xb0, 0xb1, 0xb2, 0xb3, 0xb4, 0xb5, 0xb6, 0xb7, 0xb8, 0xb9, 0xba, 0xbb, 0xbc, 0xbd, 0xbe, 0xbf, // 0xb0
+	        0xc0, 0xc1, 0xc2, 0xc3, 0xc4, 0xc5, 0xc6, 0xc7, 0xc8, 0xc9, 0xca, 0xcb, 0xcc, 0xcd, 0xce, 0xcf, // 0xc0
+	        0xd0, 0xd1, 0xd2, 0xd3, 0xd4, 0xd5, 0xd6, 0xd7, 0xd8, 0xd9, 0xda, 0xdb, 0xdc, 0xdd, 0xde, 0xdf, // 0xd0
+	        0xe0, 0xe1, 0xe2, 0xe3, 0xe4, 0xe5, 0xe6, 0xe7, 0xe8, 0xe9, 0xea, 0xeb, 0xec, 0xed, 0xee, 0xef, // 0xe0
+	        0xf0, 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7, 0xf8, 0xf9, 0xfa, 0xfb, 0xfc, 0xfd, 0xfe, 0xff  // 0xf0
+        };
 
         public Vocabulary(ResourceManager resMan, bool foreign)
         {
@@ -368,6 +418,11 @@ namespace NScumm.Sci.Parser
 
             parser_event = Register.NULL_REG;
             parserIsValid = false;
+        }
+
+        public static int SAID_LONG(int x)
+        {
+            return x << 8;
         }
 
         public void Reset()
@@ -515,14 +570,14 @@ namespace NScumm.Sci.Parser
 
         private static ParseRule _vinsert(ParseRule turkey, ParseRule stuffing)
         {
-            uint firstnt = turkey._firstSpecial;
+            int firstnt = turkey._firstSpecial;
 
             // Search for first TOKEN_NON_NT in 'turkey'
-            while ((firstnt < turkey._data.Length) && (turkey._data[firstnt] & ParseRuleList.TOKEN_NON_NT) != 0)
+            while ((firstnt < turkey._data.Count) && (turkey._data[firstnt] & ParseRuleList.TOKEN_NON_NT) != 0)
                 firstnt++;
 
             // If no TOKEN_NON_NT found, or if it doesn't match the id of 'stuffing', abort.
-            if ((firstnt == turkey._data.Length) || (turkey._data[firstnt] != stuffing._id))
+            if ((firstnt == turkey._data.Count) || (turkey._data[firstnt] != stuffing._id))
                 return null;
 
             // Create a new rule as a copy of 'turkey', where the token firstnt has been substituted
@@ -532,15 +587,17 @@ namespace NScumm.Sci.Parser
             var rule = new ParseRule(turkey);
             rule._numSpecials += stuffing._numSpecials - 1;
             rule._firstSpecial = firstnt + stuffing._firstSpecial;
-            rule._data = new int[turkey._data.Length - 1 + stuffing._data.Length];
+            var tmp = new int[turkey._data.Count - 1 + stuffing._data.Count];
 
             // Replace rule._data[firstnt] by all of stuffing._data
-            Array.Copy(stuffing._data, 0, rule._data, (int)firstnt, stuffing._data.Length);
+            Array.Copy(stuffing._data.ToArray(), 0, tmp, (int)firstnt, stuffing._data.Count);
 
-            if (firstnt < turkey._data.Length - 1)
+            if (firstnt < turkey._data.Count - 1)
             {
-                Array.Copy(turkey._data, (int)(firstnt + 1), rule._data, (int)(firstnt + stuffing._data.Length), (int)(turkey._data.Length - (firstnt + 1)));
+                Array.Copy(turkey._data.ToArray(), (int)(firstnt + 1), tmp, (int)(firstnt + stuffing._data.Count), (int)(turkey._data.Count - (firstnt + 1)));
             }
+
+            rule._data = tmp.ToList();
 
             return rule;
         }
@@ -571,7 +628,7 @@ namespace NScumm.Sci.Parser
         {
             if (rule == null)
                 return list;
-            if (rule._data.Length == 0)
+            if (rule._data.Count == 0)
             {
                 // Special case for qfg2 demo
                 // TODO: warning("no rule contents on _vocab_add_rule()");
@@ -640,7 +697,7 @@ namespace NScumm.Sci.Parser
             ++ParseRule._allocd_rules;
             rule._id = branch.id;
             rule._numSpecials = (uint)tokenpos >> 1;
-            rule._data = new int[tokens];
+            rule._data = new int[tokens].ToList();
             rule._firstSpecial = 0;
 
             tokens = 0;
@@ -664,7 +721,7 @@ namespace NScumm.Sci.Parser
                     rule._data[tokens++] = value | ParseRuleList.TOKEN_STUFFING_LEAF;
 
                     if (i == 0)
-                        rule._firstSpecial = (uint)tokens;
+                        rule._firstSpecial = tokens;
 
                     rule._data[tokens++] = value; // The non-terminal
                     unchecked
@@ -838,9 +895,11 @@ namespace NScumm.Sci.Parser
 
                 // Now decode class and group:
                 c = resource.data[seeker + 1];
-                ResultWord newWord;
-                newWord._class = ((resource.data[seeker]) << 4) | ((c & 0xf0) >> 4);
-                newWord._group = (resource.data[seeker + 2]) | ((c & 0x0f) << 8);
+                var newWord = new ResultWord
+                {
+                    _class = ((resource.data[seeker]) << 4) | ((c & 0xf0) >> 4),
+                    _group = (resource.data[seeker + 2]) | ((c & 0x0f) << 8)
+                };
 
                 // SCI01 was the first version to support multiple class/group pairs
                 // per word, so we clear the list in earlier versions
@@ -865,6 +924,282 @@ namespace NScumm.Sci.Parser
         public void AddSynonym(Synonym syn)
         {
             _synonyms.Add(syn);
+        }
+
+        public bool TokenizeString(List<ResultWordList> retval, string sentence, out string error)
+        {
+            char[] currentWord = new char[VOCAB_MAX_WORDLENGTH];
+            int pos_in_sentence = 0;
+            char c;
+            int wordLen = 0;
+
+            error = null;
+
+            do
+            {
+                c = sentence[pos_in_sentence++];
+
+                if (char.IsLetterOrDigit(c) || (c == '-' && wordLen != 0) || (c >= 0x80))
+                {
+                    currentWord[wordLen] = (char)lowerCaseMap[c];
+                    ++wordLen;
+                }
+                else if (c == ' ' || c == '\0')
+                {
+                    // Continue on this word. Words may contain a '-', but may not start with
+                    // one.
+
+                    if (wordLen != 0)
+                    { // Finished a word?
+                        var lookup_result = new ResultWordList();
+
+                        // Look it up
+                        LookupWord(lookup_result, new string(currentWord), wordLen);
+
+                        if (lookup_result.Count == 0)
+                        { // Not found?
+                            error = new string(currentWord, 0, wordLen); // Set the offending word
+                            retval.Clear();
+                            return false; // And return with error
+                        }
+
+                        // Copy into list
+                        retval.Add(lookup_result);
+                    }
+
+                    wordLen = 0;
+                }
+
+            } while (pos_in_sentence < sentence.Length); // Until terminator is hit
+
+            return true;
+        }
+
+        // we assume that *word points to an already lowercased word
+        private void LookupWord(ResultWordList retval, string word, int word_len)
+        {
+            retval.Clear();
+
+            var tempword = new StringBuilder(word.Substring(0, word_len));
+
+            // Remove all dashes from tempword
+            for (var i = 0; i < tempword.Length;)
+            {
+                if (tempword[i] == '-')
+                    tempword.Remove(i, 1);
+                else
+                    ++i;
+            }
+
+            ResultWordList dict_words;
+
+            // Look it up:
+            // Match found? Return it!
+            if (_parserWords.TryGetValue(tempword.ToString(), out dict_words))
+            {
+                retval.AddRange(dict_words);
+
+                // SCI01 was the first version to support
+                // multiple matches, so no need to look further
+                // in earlier versions.
+
+                // In versions that do support multiple matches, it seems
+                // that SSCI also aborts early when it finds an exact match in the
+                // dictionary.
+                return;
+            }
+
+            // Now try all suffixes
+            foreach (var suffix in _parserSuffixes)
+            {
+                if (suffix.alt_suffix_length <= word_len)
+                {
+
+                    int suff_index = word_len - suffix.alt_suffix_length;
+                    // Offset of the start of the suffix
+
+                    if (string.CompareOrdinal(suffix.alt_suffix, 0, word.Substring(suff_index), 0, suffix.alt_suffix_length) == 0)
+                    { // Suffix matched!
+                      // Terminate word at suffix start position...:
+                        string tempword2 = word.Substring(Math.Min(word_len, suff_index));
+
+                        // ...and append "correct" suffix
+                        tempword2 += suffix.word_suffix.Substring(suffix.word_suffix_length);
+
+                        if (_parserWords.TryGetValue(tempword2, out dict_words))
+                        {
+                            foreach (var j in dict_words)
+                            {
+                                if (j._class != 0 & suffix.class_mask != 0)
+                                { // Found it?
+                                  // Use suffix class
+                                    ResultWord tmp = j;
+                                    tmp._class = suffix.result_class;
+                                    retval.Add(tmp);
+
+                                    // SCI01 was the first version to support
+                                    // multiple matches, so no need to look further
+                                    // in earlier versions.
+                                    if (ResourceManager.GetSciVersion() < SciVersion.V01)
+                                        return;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (retval.Count != 0)
+                return;
+
+            int number;
+            // No match so far? Check if it's a number.
+            if (int.TryParse(tempword.ToString(), out number) && number >= 0)
+            {
+                // Do we have a complete number here?
+                ResultWord tmp = new ResultWord { _class = VOCAB_CLASS_NUMBER, _group = VOCAB_MAGIC_NUMBER_GROUP };
+                retval.Add(tmp);
+            }
+        }
+
+        public void SynonymizeTokens(List<ResultWordList> words)
+        {
+            if (_synonyms.Count == 0)
+                return; // No synonyms: Nothing to check
+
+            for (var i = 0; i < words.Count; i++)
+                for (var j = 0; j < words[i].Count; j++)
+                    foreach (var sync in _synonyms)
+                        if (words[i][j]._group == sync.replaceant)
+                            words[i][j]._group = sync.replacement;
+        }
+
+        /// <summary>
+        /// Builds a parse tree from a list of words, using a set of Greibach Normal
+        /// Form rules.
+        /// </summary>
+        /// <param name="words">The words to build the tree from</param>
+        /// <param name="verbose">Set to true for debugging</param>
+        /// <returns>
+        /// 0 on success, 1 if the tree couldn't be built in VOCAB_TREE_NODES
+        /// nodes or if the sentence structure in 'words' is not part of the
+        /// language described by the grammar passed in 'rules'.
+        /// </returns>
+        public int ParseGNF(List<ResultWordList> words, bool verbose = false)
+        {
+            // TODO: Console* con = g_sci.getSciDebugger();
+            // Get the start rules:
+            ParseRuleList work = ParseRule._vocab_clone_rule_list_by_id(_parserRules, _parserBranches[0].data[1]);
+            ParseRuleList results = null;
+            uint word = 0;
+            var words_nr = words.Count;
+            foreach (var words_iter in words)
+            {
+                ParseRuleList new_work = null;
+                ParseRuleList reduced_rules = null;
+                ParseRuleList seeker, subseeker;
+
+                //if (verbose)
+                //    con.debugPrintf("Adding word %d...\n", word);
+
+                seeker = work;
+                while (seeker != null)
+                {
+                    if (seeker.rule._numSpecials <= (words_nr - word))
+                    {
+                        reduced_rules = _vocab_add_rule(reduced_rules, ParseRule._vsatisfy_rule(seeker.rule, words_iter));
+                    }
+
+                    seeker = seeker.next;
+                }
+
+                if (reduced_rules == null)
+                {
+
+                    //freeRuleList(work);
+                    //if (verbose)
+                    //    con.debugPrintf("No results.\n");
+                    return 1;
+                }
+
+
+                //freeRuleList(work);
+
+                if (word + 1 < words_nr)
+                {
+                    seeker = reduced_rules;
+
+                    while (seeker != null)
+                    {
+                        if (seeker.rule._numSpecials != 0)
+                        {
+                            int my_id = seeker.rule._data[seeker.rule._firstSpecial];
+
+                            subseeker = _parserRules;
+                            while (subseeker != null)
+                            {
+                                if (subseeker.rule._id == my_id)
+                                    new_work = _vocab_add_rule(new_work, _vinsert(seeker.rule, subseeker.rule));
+
+                                subseeker = subseeker.next;
+                            }
+                        }
+
+                        seeker = seeker.next;
+                    }
+
+                    //freeRuleList(reduced_rules);
+                }
+                else // last word
+                    new_work = reduced_rules;
+
+                work = new_work;
+                //if (verbose)
+                //    con.debugPrintf("Now at %d candidates\n", _vocab_rule_list_length(work));
+                if (work == null)
+                {
+                    //if (verbose)
+                    //    con.debugPrintf("No results.\n");
+                    return 1;
+                }
+            }
+
+            results = work;
+
+            //if (verbose)
+            //{
+            //    con.debugPrintf("All results (excluding the surrounding '(141 %03x' and ')'):\n", _parserBranches[0].id);
+            //    results.print();
+            //    con.debugPrintf("\n");
+            //}
+
+            // now use the first result
+            {
+                int temp, pos;
+
+                _parserNodes[0].type = ParseTypes.BranchNode;
+                _parserNodes[0].left = _parserNodes[1];
+                _parserNodes[0].right = _parserNodes[2];
+
+                _parserNodes[1].type = ParseTypes.LeafNode;
+                _parserNodes[1].value = 0x141;
+                _parserNodes[1].right = null;
+
+                _parserNodes[2].type = ParseTypes.BranchNode;
+                _parserNodes[2].left = null;
+                _parserNodes[2].right = null;
+
+                pos = 2;
+
+                temp = ParseRule._vbpt_append(_parserNodes, ref pos, 2, _parserBranches[0].id);
+                //_vbpt_write_subexpression(nodes, &pos, results[_vocab_rule_list_length(results)].rule, 0, temp);
+                ParseRule._vbpt_write_subexpression(_parserNodes, ref pos, results.rule, 0, temp);
+            }
+
+
+            //freeRuleList(results);
+
+            return 0;
         }
     }
 }

@@ -387,5 +387,10 @@ namespace NScumm.Sci.Engine
 	        new SciWorkaroundEntry { gameId = SciGameId.SQ1,       roomNr =     43, scriptNr =  303, inheritanceLevel = 0, objectName =           "slotGuy", methodName = "dispose",     localCallOffset =   -1, index =   0, newValue = { type = SciWorkaroundType.IGNORE, value = 0 } }, // when leaving ulence flats bar, parameter 1 is not passed - script error
 	        new SciWorkaroundEntry { gameId = SciGameId.QFG4,      roomNr =     -1, scriptNr =  110, inheritanceLevel = 0, objectName =           "dreamer", methodName = "dispose",     localCallOffset =   -1, index =   0, newValue = { type = SciWorkaroundType.IGNORE, value = 0 } }, // during the dream sequence, a 3rd parameter is passed by accident
         };
+        public static readonly SciWorkaroundEntry[] kReadNumber_workarounds =
+        {
+            new SciWorkaroundEntry { gameId = SciGameId.CNICK_LAURABOW,roomNr = 100, scriptNr =  101, inheritanceLevel = 0, objectName =         "dominoes.opt", methodName = "doit", localCallOffset =       -1, index =   0, newValue = { type = SciWorkaroundType.STILLCALL, value = 0 } }, // When dominoes.opt is present, the game scripts call kReadNumber with an extra integer parameter - bug #6425
+	        new SciWorkaroundEntry { gameId = SciGameId.HOYLE3,        roomNr = 100, scriptNr =  101, inheritanceLevel = 0, objectName =         "dominoes.opt", methodName = "doit", localCallOffset =       -1, index =   0, newValue = { type = SciWorkaroundType.STILLCALL, value = 0 } }, // When dominoes.opt is present, the game scripts call kReadNumber with an extra integer parameter - bug #6425
+        };
     }
 }

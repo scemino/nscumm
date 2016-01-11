@@ -868,6 +868,37 @@ namespace NScumm.Sci.Engine
             return s.r_acc;
         }
 
+        /// <summary>
+        /// Debug command, used by the SCI builtin debugger
+        /// </summary>
+        /// <param name="s"></param>
+        /// <param name="argc"></param>
+        /// <param name="argv"></param>
+        /// <returns></returns>
+        private static Register kShow(EngineState s, int argc, StackPtr? argv)
+        {
+            ushort map = argv.Value[0].ToUInt16();
+
+            switch (map)
+            {
+                case 1: // Visual, substituted by display for us
+                    SciEngine.Instance._gfxScreen.DebugShowMap(3);
+                    break;
+                case 2: // Priority
+                    SciEngine.Instance._gfxScreen.DebugShowMap(1);
+                    break;
+                case 3: // Control
+                case 4: // Control
+                    SciEngine.Instance._gfxScreen.DebugShowMap(2);
+                    break;
+                default:
+                    // TODO: warning("Map %d is not available", map);
+                    break;
+            }
+
+            return s.r_acc;
+        }
+
         private static Register kTextColors(EngineState s, int argc, StackPtr? argv)
         {
             SciEngine.Instance._gfxText16.KernelTextColors(argc, argv);

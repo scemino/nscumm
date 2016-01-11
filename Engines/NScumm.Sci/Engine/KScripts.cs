@@ -16,6 +16,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using NScumm.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -255,6 +256,36 @@ namespace NScumm.Sci.Engine
                     break;
             }
             return s.r_acc;
+        }
+
+        private static Register kResCheck(EngineState s, int argc, StackPtr? argv)
+        {
+            ResourceManager.ResourceSource.Resource res = null;
+            ResourceType restype = SciEngine.Instance.ResMan.ConvertResType(argv.Value[0].ToUInt16());
+
+            if (restype == ResourceType.VMD)
+            {
+                var fileName = $"{argv.Value[1].ToUInt16()}.vmd";
+                return Register.Make(0, ScummHelper.LocatePath(SciEngine.Instance.Directory, fileName) != null);
+            }
+
+            if ((restype == ResourceType.Audio36) || (restype == ResourceType.Sync36))
+            {
+                if (argc >= 6)
+                {
+                    uint noun = (uint)(argv.Value[2].ToUInt16() & 0xff);
+                    uint verb = (uint)(argv.Value[3].ToUInt16() & 0xff);
+                    uint cond = (uint)(argv.Value[4].ToUInt16() & 0xff);
+                    uint seq = (uint)(argv.Value[5].ToUInt16() & 0xff);
+
+                    res = SciEngine.Instance.ResMan.TestResource(new ResourceId(restype, argv.Value[1].ToUInt16(), (byte)noun, (byte)verb, (byte)cond, (byte)seq));
+                }
+            }
+            else {
+                res = SciEngine.Instance.ResMan.TestResource(new ResourceId(restype, argv.Value[1].ToUInt16()));
+            }
+
+            return Register.Make(0, res != null);
         }
 
         private static Register kRespondsTo(EngineState s, int argc, StackPtr? argv)

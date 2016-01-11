@@ -204,7 +204,9 @@ namespace NScumm.Sci.Engine
 
         public List<SegmentObj> Segments { get { return _heap; } }
 
-        public Register SaveDirPtr { get { return _saveDirPtr; } }
+        public Register SaveDirPtr { get { return Register.Make(_saveDirPtr); } }
+
+        public Register ParserPtr { get { return Register.Make(_parserPtr); } }
 
         public SegManager(ResourceManager resMan, ScriptPatcher scriptPatcher)
         {

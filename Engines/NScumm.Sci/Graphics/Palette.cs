@@ -558,7 +558,7 @@ namespace NScumm.Sci.Graphics
 
             //// Adjust bounds on the KQ6 palette
             //// We don't use all of it for the icon bar
-            //if (g_sci.getGameId() == GID_KQ6)
+            //if (g_sci.getGameId() == SciGameId.KQ6)
             //    memset(_macClut + 32 * 3, 0, (256 - 32) * 3);
 
             //// Force black/white
@@ -986,7 +986,7 @@ namespace NScumm.Sci.Graphics
             return bestColorNr;
         }
 
-        private bool ColorIsFromMacClut(int index)
+        public bool ColorIsFromMacClut(int index)
         {
             return index != 0 && _macClut != null && (_macClut[index * 3] != 0 || _macClut[index * 3 + 1] != 0 || _macClut[index * 3 + 2] != 0);
         }

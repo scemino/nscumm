@@ -16,6 +16,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using NScumm.Sci.Sound;
 using System;
 
 namespace NScumm.Sci.Engine
@@ -83,6 +84,7 @@ namespace NScumm.Sci.Engine
             //  we don't need this at all, so we don't do anything here
             return s.r_acc;
         }
+
         private static Register kDoSoundMasterVolume(EngineState s, int argc, StackPtr? argv)
         {
             return SciEngine.Instance._soundCmd.kDoSoundMasterVolume(argc, argv);
@@ -145,15 +147,6 @@ namespace NScumm.Sci.Engine
             return SciEngine.Instance._soundCmd.kDoSoundGetAudioCapability(argc, argv);
         }
 
-        public string GetKernelName(ushort number)
-        {
-            // FIXME: The following check is a temporary workaround for an issue
-            // leading to crashes when using the debugger's backtrace command.
-            if (number >= _kernelNames.Count)
-                return _invalid;
-            return _kernelNames[number];
-        }
-
         private static Register kDoSoundSuspend(EngineState s, int argc, StackPtr? argv)
         {
             // TODO: warning("kDoSound(suspend): STUB");
@@ -178,5 +171,55 @@ namespace NScumm.Sci.Engine
             return s.r_acc;
         }
 
+        private static Register kDoSync(EngineState s, int argc, StackPtr? argv)
+        {
+            SegManager segMan = s._segMan;
+            switch ((AudioSyncCommands)argv.Value[0].ToUInt16())
+            {
+                case AudioSyncCommands.Start:
+                    {
+                        ResourceId id;
+
+                        SciEngine.Instance._audio.StopSoundSync();
+
+                        // Load sound sync resource and lock it
+                        if (argc == 3)
+                        {
+                            id = new ResourceId(ResourceType.Sync, argv.Value[2].ToUInt16());
+                        }
+                        else if (argc == 7)
+                        {
+                            id = new ResourceId(ResourceType.Sync36, argv.Value[2].ToUInt16(), (byte)argv.Value[3].ToUInt16(), (byte)argv.Value[4].ToUInt16(),
+                                            (byte)argv.Value[5].ToUInt16(), (byte)argv.Value[6].ToUInt16());
+                        }
+                        else {
+                            // TODO: warning("kDoSync: Start called with an unknown number of parameters (%d)", argc);
+                            return s.r_acc;
+                        }
+
+                        SciEngine.Instance._audio.SetSoundSync(id, argv.Value[1], segMan);
+                        break;
+                    }
+                case AudioSyncCommands.Next:
+                    SciEngine.Instance._audio.DoSoundSync(argv.Value[1], segMan);
+                    break;
+                case AudioSyncCommands.Stop:
+                    SciEngine.Instance._audio.StopSoundSync();
+                    break;
+                default:
+                    throw new InvalidOperationException($"DoSync: Unhandled subfunction {argv.Value[0].ToUInt16()}");
+            }
+
+            return s.r_acc;
+        }
+
+        public string GetKernelName(ushort number)
+        {
+            // FIXME: The following check is a temporary workaround for an issue
+            // leading to crashes when using the debugger's backtrace command.
+            if (number >= _kernelNames.Count)
+                return _invalid;
+            return _kernelNames[number];
+        }
     }
 }

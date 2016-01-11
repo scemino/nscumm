@@ -384,19 +384,61 @@ namespace NScumm.Sci.Graphics
             return false;
         }
 
+        // Note: don't do too many steps in here, otherwise cpu will crap out because of
+        // the load
         private void FadeIn()
         {
-            throw new NotImplementedException();
+            short stepNr;
+            // Sierra did not fade in/out color 255 for sci1.1, but they used it in
+            //  several pictures (e.g. qfg3 demo/intro), so the fading looked weird
+            short tillColorNr = (short)(ResourceManager.GetSciVersion() >= SciVersion.V1_1 ? 255 : 254);
+
+            for (stepNr = 0; stepNr <= 100; stepNr += 10)
+            {
+                _palette.KernelSetIntensity(1, (ushort)(tillColorNr + 1), (ushort)stepNr, true);
+                SciEngine.Instance.EngineState.Wait(2);
+            }
         }
 
         private void SetNewScreen(bool blackoutFlag)
         {
-            throw new NotImplementedException();
+            if (!blackoutFlag)
+            {
+                _screen.CopyRectToScreen(_picRect);
+                SciEngine.Instance.System.GraphicsManager.UpdateScreen();
+            }
         }
 
+        // Note: don't do too many steps in here, otherwise cpu will crap out because of
+        // the load
         private void FadeOut()
         {
-            throw new NotImplementedException();
+            var workPalette = new Core.Graphics.Color[256];
+            short stepNr, colorNr;
+            // Sierra did not fade in/out color 255 for sci1.1, but they used it in
+            //  several pictures (e.g. qfg3 demo/intro), so the fading looked weird
+            short tillColorNr = (short)(ResourceManager.GetSciVersion() >= SciVersion.V1_1 ? 255 : 254);
+
+            var oldPalette = SciEngine.Instance.System.GraphicsManager.GetPalette();
+
+            for (stepNr = 100; stepNr >= 0; stepNr -= 10)
+            {
+                for (colorNr = 1; colorNr <= tillColorNr; colorNr++)
+                {
+                    if (_palette.ColorIsFromMacClut(colorNr))
+                    {
+                        workPalette[colorNr] = oldPalette[colorNr];
+                    }
+                    else {
+                        workPalette[colorNr] = Core.Graphics.Color.FromRgb(
+                            oldPalette[colorNr].R * stepNr / 100,
+                            oldPalette[colorNr + 1].G * stepNr / 100,
+                            oldPalette[colorNr + 2].B * stepNr / 100);
+                    }
+                }
+                SciEngine.Instance.System.GraphicsManager.SetPalette(workPalette, 1, tillColorNr);
+                SciEngine.Instance.EngineState.Wait(2);
+            }
         }
 
         // Like pixelation but uses 8x8 blocks - works against the whole screen.
@@ -426,14 +468,97 @@ namespace NScumm.Sci.Graphics
             } while (mask != 0x40);
         }
 
+        // Pixelates the new picture over the old one - works against the whole screen.
+        // TODO: it seems this needs to get applied on _picRect only if possible
         private void Pixelation(bool blackoutFlag)
         {
-            throw new NotImplementedException();
+            ushort mask = 0x40, stepNr = 0;
+            Rect pixelRect;
+            int msecCount = 0;
+
+            do
+            {
+                mask = (ushort)((mask & 1) != 0 ? (mask >> 1) ^ 0xB400 : mask >> 1);
+                if (mask >= _screen.ScriptWidth * _screen.ScriptHeight)
+                    continue;
+                pixelRect.Left = mask % _screen.ScriptWidth; pixelRect.Right = pixelRect.Left + 1;
+                pixelRect.Top = mask / _screen.ScriptWidth; pixelRect.Bottom = pixelRect.Top + 1;
+                pixelRect.Clip(_picRect);
+                if (!pixelRect.IsEmpty)
+                    CopyRectToScreen(pixelRect, blackoutFlag);
+                if ((stepNr & 0x3FF) == 0)
+                {
+                    msecCount += 9;
+                    UpdateScreenAndWait(msecCount);
+                }
+                stepNr++;
+            } while (mask != 0x40);
         }
 
+        // Directly shows new screen starting up/down/left/right and going to the
+        // opposite direction - works on _picRect area only
         private void Straight(short number, bool blackoutFlag)
         {
-            throw new NotImplementedException();
+            short stepNr = 0;
+            Rect newScreenRect = _picRect;
+            int msecCount = 0;
+
+            switch ((SciTransition)number)
+            {
+                case SciTransition.STRAIGHT_FROM_RIGHT:
+                    newScreenRect.Left = newScreenRect.Right - 1;
+                    while (newScreenRect.Left >= _picRect.Left)
+                    {
+                        CopyRectToScreen(newScreenRect, blackoutFlag);
+                        if ((stepNr & 1) == 0)
+                        {
+                            msecCount += 2;
+                            UpdateScreenAndWait(msecCount);
+                        }
+                        stepNr++;
+                        newScreenRect.Translate(-1, 0);
+                    }
+                    break;
+
+                case SciTransition.STRAIGHT_FROM_LEFT:
+                    newScreenRect.Right = newScreenRect.Left + 1;
+                    while (newScreenRect.Right <= _picRect.Right)
+                    {
+                        CopyRectToScreen(newScreenRect, blackoutFlag);
+                        if ((stepNr & 1) == 0)
+                        {
+                            msecCount += 2;
+                            UpdateScreenAndWait(msecCount);
+                        }
+                        stepNr++;
+                        newScreenRect.Translate(1, 0);
+                    }
+                    break;
+
+                case SciTransition.STRAIGHT_FROM_BOTTOM:
+                    newScreenRect.Top = newScreenRect.Bottom - 1;
+                    while (newScreenRect.Top >= _picRect.Top)
+                    {
+                        CopyRectToScreen(newScreenRect, blackoutFlag);
+                        msecCount += 4;
+                        UpdateScreenAndWait(msecCount);
+                        stepNr++;
+                        newScreenRect.Translate(0, -1);
+                    }
+                    break;
+
+                case SciTransition.STRAIGHT_FROM_TOP:
+                    newScreenRect.Bottom = newScreenRect.Top + 1;
+                    while (newScreenRect.Bottom <= _picRect.Bottom)
+                    {
+                        CopyRectToScreen(newScreenRect, blackoutFlag);
+                        msecCount += 4;
+                        UpdateScreenAndWait(msecCount);
+                        stepNr++;
+                        newScreenRect.Translate(0, 1);
+                    }
+                    break;
+            }
         }
 
         // Diagonally displays new screen starting from center - works on _picRect area

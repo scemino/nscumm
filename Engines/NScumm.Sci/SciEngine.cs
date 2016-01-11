@@ -627,7 +627,7 @@ namespace NScumm.Sci
 
             //    // Jones only initializes its menus when restarting/restoring, thus set
             //    // the gameIsRestarting flag here before initializing. Fixes bug #6536.
-            //    if (g_sci.getGameId() == GID_JONES)
+            //    if (g_sci.getGameId() == SciGameId.JONES)
             //        _gamestate.gameIsRestarting = GAMEISRESTARTING_RESTORE;
 
             //    _gamestate._executionStackPosChanged = false;
@@ -677,14 +677,14 @@ namespace NScumm.Sci
             //    {
             //        switch (getGameId())
             //        {
-            //            case GID_ECOQUEST:
-            //            case GID_HOYLE3:
-            //            case GID_LSL1:
-            //            case GID_LSL5:
-            //            case GID_LONGBOW:
-            //            case GID_SQ1:
-            //            case GID_SQ4:
-            //            case GID_FAIRYTALES:
+            //            case SciGameId.ECOQUEST:
+            //            case SciGameId.HOYLE3:
+            //            case SciGameId.LSL1:
+            //            case SciGameId.LSL5:
+            //            case SciGameId.LONGBOW:
+            //            case SciGameId.SQ1:
+            //            case SciGameId.SQ4:
+            //            case SciGameId.FAIRYTALES:
             //                showScummVMDialog("You have selected General MIDI as a sound device. Sierra "
 
             //                                  "has provided after-market support for General MIDI for this "
@@ -1273,6 +1273,20 @@ namespace NScumm.Sci
             throw new NotImplementedException();
         }
 
+        public void CheckVocabularySwitch()
+        {
+            ushort parserLanguage = 1;
+            if (Selector(o => o.parseLang) != -1)
+                parserLanguage = (ushort)ReadSelectorValue(_gamestate._segMan, _gameObjectAddress, o => o.parseLang);
+
+            if (parserLanguage != _vocabularyLanguage)
+            {
+                _vocabulary = new Vocabulary(_resMan, parserLanguage > 1 ? true : false);
+                _vocabulary.Reset();
+                _vocabularyLanguage = parserLanguage;
+            }
+        }
+
         // Base set of opcode formats. They're copied and adjusted slightly in
         // script_adjust_opcode_format depending on SCI version.
         static readonly opcode_format[][] g_base_opcode_formats = new opcode_format[128][] {
@@ -1345,7 +1359,7 @@ namespace NScumm.Sci
 	        // 7C - 7F / minussgi, minussli, minussti, minusspi
 	        new opcode_format[]{opcode_format.Script_Global}, new opcode_format[]{opcode_format.Script_Local}, new opcode_format[]{opcode_format.Script_Temp}, new opcode_format[]{opcode_format.Script_Param}
         };
-        private AudioPlayer _audio;
+        public AudioPlayer _audio;
         private ISystem _system;
         private Mixer _mixer;
 
@@ -1367,5 +1381,6 @@ namespace NScumm.Sci
         /// The time when the pause was started.
         /// </summary>
         private int _pauseStartTime;
+        private ushort _vocabularyLanguage;
     }
 }

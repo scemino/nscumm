@@ -152,7 +152,6 @@ namespace NScumm.Sci.Engine
             if (_numExports <= pubfunct)
             {
                 throw new InvalidOperationException("validateExportFunc(): pubfunct is invalid");
-                return 0;
             }
 
             if (exportsAreWide)

@@ -332,7 +332,6 @@ namespace NScumm.Sci.Graphics
                 }
 
             }
-            return null;
         }
 
         public GuiMenuItemEntry InteractiveWithKeyboard()

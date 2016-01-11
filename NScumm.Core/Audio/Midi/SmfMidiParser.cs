@@ -19,60 +19,56 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using NScumm.Core.Common;
 using System;
 using System.IO;
 using System.Text;
 
 namespace NScumm.Core.Audio.Midi
 {
-    public class SmfMidiParser: MidiParser
+    public class SmfMidiParser : MidiParser
     {
         protected bool MalformedPitchBends { get; set; }
 
         #region implemented abstract members of MidiParser
 
-        MemoryStream input;
-
         public override void LoadMusic(byte[] data)
         {
-            input = new MemoryStream(data);
             UnloadMusic();
+            var pos = new ByteAccess(data);
 
             int midiType;
             var isGmf = false;
-            var br = new BinaryReader(input);
-            var sig = br.ReadBytes(4);
-            input.Seek(0, SeekOrigin.Begin);
 
-            if (AreEquals(sig, "RIFF"))
+            if (ScummHelper.ToText(data) == "RIFF")
             {
                 // Skip the outer RIFF header.
-                input.Seek(8, SeekOrigin.Current);
+                pos.Offset += 8;
             }
 
-            if (AreEquals(sig, "MThd"))
+            if (ScummHelper.ToText(pos.Data, pos.Offset) == "MThd")
             {
                 // SMF with MTHd information.
-                input.Seek(4, SeekOrigin.Current);
-                var len = br.ReadUInt32BigEndian();
+                pos.Offset += 4;
+                var len = (int)Read4high(pos);
                 if (len != 6)
                 {
-                    throw new InvalidOperationException(string.Format("MThd length 6 expected but found {0}", len));
+                    throw new InvalidOperationException($"MThd length 6 expected but found {len}");
                 }
-                br.ReadByte(); //?
-                midiType = br.ReadByte();
+
                 // Verify that this MIDI either is a Type 2
                 // or has only 1 track. We do not support
                 // multitrack Type 1 files.
-                NumTracks = br.ReadUInt16BigEndian();
-                
+                NumTracks = pos[2] << 8 | pos[3];
+                midiType = pos[1];
                 if (midiType > 2 /*|| (midiType < 2 && _numTracks > 1)*/)
                 {
-                    throw new InvalidOperationException(string.Format("No support for a Type {0} MIDI with {1} tracks", midiType, NumTracks));
+                    throw new InvalidOperationException($"No support for a Type {midiType} MIDI with {NumTracks} tracks");
                 }
-                PulsesPerQuarterNote = br.ReadUInt16BigEndian();
+                PulsesPerQuarterNote = pos[4] << 8 | pos[5];
+                pos.Offset += len;
             }
-            else if (AreEquals(sig, "GMF\x1"))
+            else if (ScummHelper.ToText(pos.Data, pos.Offset) == "GMF\x1")
             {
                 // Older GMD/MUS file with no header info.
                 // Assume 1 track, 192 PPQN, and no MTrk headers.
@@ -80,12 +76,11 @@ namespace NScumm.Core.Audio.Midi
                 midiType = 0;
                 NumTracks = 1;
                 PulsesPerQuarterNote = 192;
-                // 'GMD\x1' + 3 bytes of useless (translate: unknown) information
-                input.Seek(7, SeekOrigin.Current);
+                pos.Offset += 7; // 'GMD\x1' + 3 bytes of useless (translate: unknown) information
             }
             else
             {
-                throw new InvalidOperationException(string.Format("Expected MThd or GMD header but found '{0}{1}{2}{3}' instead", sig[0], sig[1], sig[2], sig[3]));
+                throw new InvalidOperationException(string.Format("Expected MThd or GMD header but found '{0}{1}{2}{3}' instead", pos[0], pos[1], pos[2], pos[3]));
             }
 
             // Now we identify and store the location for each track.
@@ -94,35 +89,35 @@ namespace NScumm.Core.Audio.Midi
                 throw new InvalidOperationException(string.Format("Can only handle {0} tracks but was handed {1}", Tracks.Length, NumTracks));
             }
 
-            uint totalSize = 0;
+            int totalSize = 0;
             var tracksRead = 0;
             while (tracksRead < NumTracks)
             {
-                sig = br.ReadBytes(4);
-                if (!AreEquals(sig, "MTrk") && !isGmf)
+                if (ScummHelper.ToText(pos.Data, pos.Offset) != "MTrk" && !isGmf)
                 {
                     var msg = new StringBuilder();
-                    msg.AppendFormat("Position: {0} ('{1}')", input.Position - 4, (char)sig[0]).AppendLine();
-                    msg.AppendFormat("Hit invalid block '{0}{1}{2}{3}' while scanning for track locations", sig[0], sig[1], sig[2], sig[3]);
+                    msg.AppendFormat("Position: {0} ('{1}')", pos.Offset - 4, (char)pos[0]).AppendLine();
+                    msg.AppendFormat("Hit invalid block '{0}{1}{2}{3}' while scanning for track locations", pos[0], pos[1], pos[2], pos[3]);
                     throw new InvalidOperationException(msg.ToString());
                 }
 
                 // If needed, skip the MTrk and length bytes
-                Tracks[tracksRead] = new Track{ Position = input.Position + (isGmf ? -4 : 4) };
+                Tracks[tracksRead] = new ByteAccess(pos, (isGmf ? 0 : 8));
                 if (!isGmf)
                 {
-                    var len = br.ReadUInt32BigEndian();
+                    pos.Offset += 4;
+                    var len = (int)Read4high(pos);
                     totalSize += len;
-                    input.Seek(len, SeekOrigin.Current);
+                    pos.Offset += len;
                 }
                 else
                 {
                     // TODO: vs An SMF End of Track meta event must be placed
                     // at the end of the stream.
-//                    data[size++] = 0xFF;
-//                    data[size++] = 0x2F;
-//                    data[size++] = 0x00;
-//                    data[size++] = 0x00;
+                    //                    data[size++] = 0xFF;
+                    //                    data[size++] = 0x2F;
+                    //                    data[size++] = 0x00;
+                    //                    data[size++] = 0x00;
                     throw new NotImplementedException("Gmf not implemented");
                 }
                 ++tracksRead;
@@ -137,10 +132,10 @@ namespace NScumm.Core.Audio.Midi
                 // FIXME: Doubled the buffer size to prevent crashes with the
                 // Inherit the Earth MIDIs. Jamieson630 said something about a
                 // better fix, but this will have to do in the meantime.
-//                _buffer = (byte*)malloc(size * 2);
-//                compressToType0();
-//                _numTracks = 1;
-//                _tracks[0] = _buffer;
+                //                _buffer = (byte*)malloc(size * 2);
+                //                compressToType0();
+                //                _numTracks = 1;
+                //                _tracks[0] = _buffer;
                 throw new NotImplementedException("MidiType 1 not yet implemented.");
             }
 
@@ -154,9 +149,8 @@ namespace NScumm.Core.Audio.Midi
 
         protected override void ParseNextEvent(EventInfo info)
         {
-            info.Start = Position.PlayPos;
-            input.Seek(Position.PlayPos, SeekOrigin.Begin);
-            info.Delta = ReadVLQ(input);
+            info.Start = new ByteAccess(Position.PlayPos);
+            info.Delta = ReadVLQ(Position.PlayPos);
 
             // Process the next info. If mpMalformedPitchBends
             // was set, we must skip over any pitch bend events
@@ -165,17 +159,11 @@ namespace NScumm.Core.Audio.Midi
             // prefixes before the real info.
             do
             {
-                var data = input.ReadByte();
-                if ((data & 0xF0) >= 0x80)
-                {                    
-                    info.Event = data;
-                }
+                if ((Position.PlayPos[0] & 0xF0) >= 0x80)
+                    info.Event = Position.PlayPos.Increment();
                 else
-                {
                     info.Event = Position.RunningStatus;
-                    input.Position--;
-                }
-            } while (MalformedPitchBends && (info.Event & 0xF0) == 0xE0 && input.Position++ < input.Length);
+            } while (MalformedPitchBends && (info.Event & 0xF0) == 0xE0 && Position.PlayPos.Increment() != 0);
             if (info.Event < 0x80)
                 return;
 
@@ -183,41 +171,41 @@ namespace NScumm.Core.Audio.Midi
             switch (info.Command)
             {
                 case 0x9: // Note On
-                    info.Param1 = input.ReadByte();
-                    info.Param2 = input.ReadByte();
+                    info.Param1 = Position.PlayPos.Increment();
+                    info.Param2 = Position.PlayPos.Increment();
                     if (info.Param2 == 0)
                         info.Event = info.Channel | 0x80;
-                    info.Data = new byte[0];
-//                    Debug.WriteLine("MidiParser_SMF::ParseNextEvent NoteOn({0},{1},{2})", info.Event, info.Param1, info.Param2);
+                    info.Length = 0;
+                    //                    Debug.WriteLine("MidiParser_SMF::ParseNextEvent NoteOn({0},{1},{2})", info.Event, info.Param1, info.Param2);
                     break;
 
                 case 0xC:
                 case 0xD:
-                    info.Param1 = input.ReadByte();
+                    info.Param1 = Position.PlayPos.Increment();
                     info.Param2 = 0;
-//                    Debug.WriteLine("MidiParser_SMF::ParseNextEvent Param1 = {0}", info.Param1);
+                    //                    Debug.WriteLine("MidiParser_SMF::ParseNextEvent Param1 = {0}", info.Param1);
                     break;
 
                 case 0x8:
                 case 0xA:
                 case 0xB:
                 case 0xE:
-                    info.Param1 = input.ReadByte();
-                    info.Param2 = input.ReadByte();
-                    info.Data = new byte[0];
-//                    Debug.WriteLine("MidiParser_SMF::ParseNextEvent Param1 = {0}, Param2 = {1}", info.Param1, info.Param2);
+                    info.Param1 = Position.PlayPos.Increment();
+                    info.Param2 = Position.PlayPos.Increment();
+                    info.Length = 0;
+                    //                    Debug.WriteLine("MidiParser_SMF::ParseNextEvent Param1 = {0}, Param2 = {1}", info.Param1, info.Param2);
                     break;
 
                 case 0xF: // System Common, Meta or SysEx event
                     switch (info.Event & 0x0F)
                     {
                         case 0x2: // Song Position Pointer
-                            info.Param1 = input.ReadByte();
-                            info.Param2 = input.ReadByte();
+                            info.Param1 = Position.PlayPos.Increment();
+                            info.Param2 = Position.PlayPos.Increment();
                             break;
 
                         case 0x3: // Song Select
-                            info.Param1 = input.ReadByte();
+                            info.Param1 = Position.PlayPos.Increment();
                             info.Param2 = 0;
                             break;
 
@@ -232,49 +220,44 @@ namespace NScumm.Core.Audio.Midi
 
                         case 0x0: // SysEx
                             {
-                                var len = ReadVLQ(input);
-                                var br = new BinaryReader(input);
-                                info.Data = br.ReadBytes(len);
+                                var len = ReadVLQ(Position.PlayPos);
+                                info.Data = new ByteAccess(Position.PlayPos);
+                                Position.PlayPos.Offset += info.Length;
                             }
                             break;
 
                         case 0xF: // META event
                             {
-
-                                var br = new BinaryReader(input);
-                                info.MetaType = input.ReadByte();
-                                var len = ReadVLQ(input);
-                                info.Data = br.ReadBytes(len);
+                                info.MetaType = Position.PlayPos.Increment();
+                                info.Length = ReadVLQ(Position.PlayPos);
+                                info.Data = new ByteAccess(Position.PlayPos);
+                                Position.PlayPos.Offset += info.Length;
                             }
                             break;
                         default:
-//                            Console.Error.WriteLine("MidiParser_SMF::parseNextEvent: Unsupported event code {0:X}", info.Event);
+                            //                            Console.Error.WriteLine("MidiParser_SMF::parseNextEvent: Unsupported event code {0:X}", info.Event);
                             break;
                     }
                     break;
             }
-            Position.PlayPos = input.Position;
         }
 
         #endregion
 
-        static bool AreEquals(byte[] data1, string data2)
-        {
-            return AreEquals(data1, Encoding.UTF8.GetBytes(data2));
-        }
 
-        static bool AreEquals(byte[] data1, byte[] data2)
+        /// <summary>
+        /// Platform independent BE uint32 read-and-advance.
+        /// This helper function reads Big Endian 32-bit numbers
+        /// from a memory pointer, at the same time advancing
+        /// the pointer.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        protected uint Read4high(ByteAccess data)
         {
-            if (data1.Length == data2.Length)
-            {
-                for (int i = 0; i < data1.Length; i++)
-                {
-                    if (data1[i] != data2[i])
-                        return false;
-                }
-                return true;
-            }
-            return false;
+            uint val = data.ReadUInt32BigEndian();
+            data.Offset += 4;
+            return val;
         }
     }
 }

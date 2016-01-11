@@ -94,10 +94,5 @@ namespace NScumm.Sci.Sound.Drivers
                     _driver.Send((byte)(0xb0 + i), MidiDriver_AdLib.SCI_MIDI_CHANNEL_NOTES_OFF, 0);
             }
         }
-
-        internal object getPlayId()
-        {
-            throw new NotImplementedException();
-        }
     }
 }

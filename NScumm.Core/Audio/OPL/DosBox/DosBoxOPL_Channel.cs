@@ -235,7 +235,7 @@ namespace NScumm.Core.Audio.OPL.DosBox
                         if (Op(1).Silent())
                         {
                             old[0] = old[1] = 0;
-                            return Chip.Channels[ChannelNum + 1];
+                            return (ChannelNum < Chip.Channels.Length - 1) ? Chip.Channels[ChannelNum + 1] : null;
                         }
                         break;
                     case SynthMode.Sm3FMFM:

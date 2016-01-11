@@ -20,14 +20,16 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+using NScumm.Core.Common;
+
 namespace NScumm.Core.Audio.Midi
 {
     public interface IMidiDriver
     {
         void Send(int data);
 
-        void SysEx(byte[] msg, ushort length);
+        void SysEx(ByteAccess msg, ushort length);
 
-        void MetaEvent(byte type, byte[] data, ushort length);
+        void MetaEvent(byte type, ByteAccess data, ushort length);
     }
 }

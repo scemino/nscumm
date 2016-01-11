@@ -79,7 +79,6 @@ namespace NScumm.Sci.Engine
                     if (!AutoDetectMoveCountType())
                     {
                         throw new InvalidOperationException("Move count autodetection failed");
-                        _moveCountType = MoveCountType.Increment;   // Most games do this, so best guess
                     }
                 }
 

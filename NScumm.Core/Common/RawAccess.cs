@@ -64,6 +64,11 @@ namespace NScumm.Core.Common
             return _data.ToUInt32(_offset + offset);
         }
 
+        public uint ReadUInt32BigEndian(int offset = 0)
+        {
+            return _data.ToUInt32BigEndian(_offset + offset);
+        }
+
         public int ReadInt32(int offset = 0)
         {
             return _data.ToInt32(_offset + offset);

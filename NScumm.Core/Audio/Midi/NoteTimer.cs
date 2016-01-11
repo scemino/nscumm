@@ -21,7 +21,7 @@
 
 namespace NScumm.Core
 {
-    class NoteTimer
+    public class NoteTimer
     {
         /// <summary>
         /// Gets or sets the MIDI channel on which the note was played.

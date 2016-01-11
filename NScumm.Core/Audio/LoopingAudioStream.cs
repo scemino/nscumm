@@ -23,16 +23,16 @@ using System.Diagnostics;
 
 namespace NScumm.Core.Audio
 {
-    public class LoopingAudioStream: IAudioStream
+    public class LoopingAudioStream : IAudioStream
     {
         public bool IsStereo
         {
-            get{ return _parent.IsStereo; }
+            get { return _parent.IsStereo; }
         }
 
         public int Rate
         {
-            get{ return _parent.Rate; }
+            get { return _parent.Rate; }
         }
 
         public bool IsEndOfData
@@ -50,6 +50,11 @@ namespace NScumm.Core.Audio
                 return _loops != 0 && _completeIterations == _loops;
             }
         }
+
+        /// <summary>
+        /// Gets the number of loops the stream has played.
+        /// </summary>
+        public int CompleteIterations { get { return _completeIterations; } }
 
         public static LoopingAudioStream Create(ISeekableAudioStream stream, Timestamp start, Timestamp end, int loops)
         {

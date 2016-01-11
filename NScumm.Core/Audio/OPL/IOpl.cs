@@ -28,6 +28,7 @@ namespace NScumm.Core.Audio.OPL
     {
         void Init(int rate);
 
+        void Write(int a, int v);
         void WriteReg(int r, int v);
 
         void ReadBuffer(short[] buffer, int pos, int length);

@@ -399,9 +399,31 @@ namespace NScumm.Sci.Graphics
             throw new NotImplementedException();
         }
 
+        // Like pixelation but uses 8x8 blocks - works against the whole screen.
+        // TODO: it seems this needs to get applied on _picRect only if possible
         private void Blocks(bool blackoutFlag)
         {
-            throw new NotImplementedException();
+            ushort mask = 0x40, stepNr = 0;
+            Rect blockRect;
+            int msecCount = 0;
+
+            do
+            {
+                mask = (ushort)((mask & 1) != 0 ? (mask >> 1) ^ 0x240 : mask >> 1);
+                if (mask >= 40 * 25)
+                    continue;
+                blockRect.Left = (mask % 40) << 3; blockRect.Right = blockRect.Left + 8;
+                blockRect.Top = (mask / 40) << 3; blockRect.Bottom = blockRect.Top + 8;
+                blockRect.Clip(_picRect);
+                if (!blockRect.IsEmpty)
+                    CopyRectToScreen(blockRect, blackoutFlag);
+                if ((stepNr & 7) == 0)
+                {
+                    msecCount += 5;
+                    UpdateScreenAndWait(msecCount);
+                }
+                stepNr++;
+            } while (mask != 0x40);
         }
 
         private void Pixelation(bool blackoutFlag)

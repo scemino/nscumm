@@ -21,6 +21,7 @@
 
 using System.Collections.Generic;
 using NScumm.Core.Audio.Midi;
+using NScumm.Core.Common;
 
 namespace NScumm.Core.Audio.SoftSynth
 {
@@ -31,11 +32,11 @@ namespace NScumm.Core.Audio.SoftSynth
         {
         }
 
-        void IMidiDriver.SysEx(byte[] msg, ushort length)
+        void IMidiDriver.SysEx(ByteAccess msg, ushort length)
         {
         }
 
-        void IMidiDriver.MetaEvent(byte type, byte[] data, ushort length)
+        void IMidiDriver.MetaEvent(byte type, ByteAccess data, ushort length)
         {
         }
     }

@@ -19,14 +19,16 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using NScumm.Core.Common;
+
 namespace NScumm.Core.Audio.Midi
 {
-    class Tracker
+    public class Tracker
     {
         /// <summary>
         /// A pointer to the next event to be parsed
         /// </summary>
-        public long PlayPos { get; set; }
+        public ByteAccess PlayPos { get; set; }
 
         /// <summary>
         /// Current time in microseconds; may be in between event times
@@ -61,7 +63,7 @@ namespace NScumm.Core.Audio.Midi
         /// Copy constructor for each duplication of Tracker information.
         public Tracker(Tracker copy)
         {
-            PlayPos = copy.PlayPos;
+            PlayPos = new ByteAccess(copy.PlayPos);
             PlayTime = copy.PlayTime;
             PlayTick = copy.PlayTick;
             LastEventTime = copy.LastEventTime;
@@ -72,7 +74,7 @@ namespace NScumm.Core.Audio.Midi
         /// Clears all data; used by the constructor for initialization.
         public void Clear()
         {
-            PlayPos = 0;
+            PlayPos = null;
             PlayTime = 0;
             PlayTick = 0;
             LastEventTime = 0;

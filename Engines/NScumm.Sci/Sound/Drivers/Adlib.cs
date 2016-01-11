@@ -201,6 +201,8 @@ namespace NScumm.Sci.Sound.Drivers
             }
         }
 
+        public bool UseRhythmChannel { get { return _rhythmKeyMap != null; } }
+
         protected override void GenerateSamples(short[] data, int pos, int len)
         {
             if (IsStereo)
@@ -340,8 +342,7 @@ namespace NScumm.Sci.Sound.Drivers
             // TODO: debug(3, "ADLIB: Starting driver in %s mode", (isSCI0 ? "SCI0" : "SCI1"));
             _isSCI0 = isSCI0;
 
-            // TODO:
-            //_opl = new DosBoxOPL(IsStereo ? OplType.DualOpl2 : OplType.Opl2);
+            _opl = new DosBoxOPL(IsStereo ? OplType.DualOpl2 : OplType.Opl2);
 
             // Try falling back to mono, thus plain OPL2 emualtor, when no Dual OPL2 is available.
             if (_opl == null && _stereo)
@@ -364,6 +365,12 @@ namespace NScumm.Sci.Sound.Drivers
             _mixerSoundHandle = _mixer.PlayStream(SoundType.Plain, this, -1, Mixer.MaxChannelVolume, 0, false);
 
             return 0;
+        }
+
+        public void SetVolume(byte volume)
+        {
+            _masterVolume = volume;
+            RenewNotes(-1, true);
         }
 
         private void NoteOff(int channel, int note)
@@ -446,7 +453,7 @@ namespace NScumm.Sci.Sound.Drivers
                 oct = 7;
 
             SetRegister(0xA0 + voice, fre & 0xff);
-            SetRegister(0xB0 + voice, (key ? 1 : 0 << 5) | (oct << 2) | (fre >> 8));
+            SetRegister(0xB0 + voice, (key ? 1 << 5 : 0) | (oct << 2) | (fre >> 8));
 
             SetVelocity(voice);
         }
@@ -546,8 +553,8 @@ namespace NScumm.Sci.Sound.Drivers
             SetRegister(0x40 + reg, (op.kbScaleLevel << 6) | op.totalLevel);
             SetRegister(0x60 + reg, (op.attackRate << 4) | op.decayRate);
             SetRegister(0x80 + reg, (op.sustainLevel << 4) | op.releaseRate);
-            SetRegister(0x20 + reg, (op.amplitudeMod ? 1 : 0 << 7) | (op.vibrato ? 1 : 0 << 6)
-                        | (op.envelopeType ? 1 : 0 << 5) | (op.kbScaleRate ? 1 : 0 << 4) | op.frequencyMult);
+            SetRegister(0x20 + reg, (op.amplitudeMod ? 1 << 7 : 0) | (op.vibrato ? 1 << 6 : 0)
+                        | (op.envelopeType ? 1 << 5 : 0) | (op.kbScaleRate ? 1 << 4 : 0) | op.frequencyMult);
             SetRegister(0xE0 + reg, op.waveForm);
         }
 
@@ -555,21 +562,21 @@ namespace NScumm.Sci.Sound.Drivers
         {
             if ((channels & LeftChannel) != 0)
             {
-                _opl.WriteReg(0x220, reg);
-                _opl.WriteReg(0x221, value);
+                _opl.Write(0x220, reg);
+                _opl.Write(0x221, value);
             }
 
             if (IsStereo)
             {
                 if ((channels & RightChannel) != 0)
                 {
-                    _opl.WriteReg(0x222, reg);
-                    _opl.WriteReg(0x223, value);
+                    _opl.Write(0x222, reg);
+                    _opl.Write(0x223, value);
                 }
             }
         }
 
-        private void PlaySwitch(bool play)
+        public void PlaySwitch(bool play)
         {
             _playSwitch = play;
             RenewNotes(-1, play);
@@ -915,6 +922,14 @@ namespace NScumm.Sci.Sound.Drivers
             }
         }
 
+        public override int LastChannel
+        {
+            get
+            {
+                return ((MidiDriver_AdLib)_driver).UseRhythmChannel ? 8 : 15;
+            }
+        }
+
         public MidiPlayer_AdLib(SciVersion soundVersion)
             : base(soundVersion)
         {
@@ -965,6 +980,23 @@ namespace NScumm.Sci.Sound.Drivers
             }
 
             return (MidiDriverError)((MidiDriver_AdLib)_driver).OpenAdLib(_version <= SciVersion.V0_LATE);
+        }
+
+        public override void PlaySwitch(bool play)
+        {
+            ((MidiDriver_AdLib)_driver).PlaySwitch(play);
+        }
+
+        public override byte Volume
+        {
+            get
+            {
+                return base.Volume;
+            }
+            set
+            {
+                ((MidiDriver_AdLib)_driver).SetVolume(value);
+            }
         }
     }
 }

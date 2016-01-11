@@ -499,8 +499,6 @@ namespace NScumm.Sci.Graphics
                 return _remappingByPercent[screenColor];
             else
                 throw new InvalidOperationException("remapColor(): Color {remappedColor} isn't remapped");
-
-            return 0;	// should never reach here
         }
 
         public bool IsRemapped(byte color)

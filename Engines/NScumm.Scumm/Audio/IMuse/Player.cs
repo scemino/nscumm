@@ -26,6 +26,7 @@ using System.Text;
 using NScumm.Core;
 using NScumm.Core.Audio;
 using NScumm.Scumm.IO;
+using NScumm.Core.Common;
 
 namespace NScumm.Scumm.Audio.IMuse
 {
@@ -248,12 +249,12 @@ namespace NScumm.Scumm.Audio.IMuse
                         case 15:
                             return part.Volume;
                         case 16:
-                                    // FIXME: Need to know where this occurs...
-//                            Console.Error.WriteLine("Trying to cast instrument ({0}, {1}) -- please tell Fingolfin", param, chan);
-                    // In old versions of the code, this used to return part->_program.
-                    // This was changed in revision 2.29 of imuse.cpp (where this code used
-                    // to reside).
-                    //              return (int)part->_instrument;
+                            // FIXME: Need to know where this occurs...
+                            //                            Console.Error.WriteLine("Trying to cast instrument ({0}, {1}) -- please tell Fingolfin", param, chan);
+                            // In old versions of the code, this used to return part->_program.
+                            // This was changed in revision 2.29 of imuse.cpp (where this code used
+                            // to reside).
+                            //              return (int)part->_instrument;
                             return part.Transpose;
                         case 17:
                             return part.Transpose;
@@ -310,7 +311,7 @@ namespace NScumm.Scumm.Audio.IMuse
                 switch (ptr.Param)
                 {
                     case ParameterFaderType.Volume:
-                            // Volume.
+                        // Volume.
                         if (value == 0 && ptr.End == 0)
                         {
                             Clear();
@@ -320,13 +321,13 @@ namespace NScumm.Scumm.Audio.IMuse
                         break;
 
                     case ParameterFaderType.Transpose:
-                            // FIXME: Is this really transpose?
+                        // FIXME: Is this really transpose?
                         SetTranspose(0, value / 100);
                         SetDetune(value % 100);
                         break;
 
                     case ParameterFaderType.Speed: // impSpeed:
-                            // Speed.
+                                                   // Speed.
                         SetSpeed((byte)value);
                         break;
 
@@ -600,7 +601,7 @@ namespace NScumm.Scumm.Audio.IMuse
             return (_parser != null ? (uint)(_parser.Tick / TicksPerBeat + 1) : 0);
         }
 
-        public sbyte Detune{ get { return _detune; } }
+        public sbyte Detune { get { return _detune; } }
 
         public byte GetEffectiveVolume()
         {
@@ -754,12 +755,12 @@ namespace NScumm.Scumm.Audio.IMuse
 
         public bool IsMIDI
         {
-            get{ return _isMIDI; }
+            get { return _isMIDI; }
         }
 
         public bool IsMT32
         {
-            get{ return _isMT32; }
+            get { return _isMT32; }
         }
 
         public bool Jump(uint track, uint beat, uint tick)
@@ -849,7 +850,7 @@ namespace NScumm.Scumm.Audio.IMuse
 
         public void SaveOrLoad(Serializer ser)
         {
-            var playerEntries = new []
+            var playerEntries = new[]
             {
                 LoadAndSaveEntry.Create(r => _active = r.ReadBoolean(), w => w.Write(_active), 8),
                 LoadAndSaveEntry.Create(r => _id = r.ReadUInt16(), w => w.WriteUInt16(_id), 8),
@@ -1007,7 +1008,7 @@ namespace NScumm.Scumm.Audio.IMuse
             var ptr = _se.FindStartOfSound(sound);
             if (ptr == null)
             {
-//                Console.Error.WriteLine("Player::startSound(): Couldn't find start of sound {0}", sound);
+                //                Console.Error.WriteLine("Player::startSound(): Couldn't find start of sound {0}", sound);
                 return false;
             }
 
@@ -1129,7 +1130,7 @@ namespace NScumm.Scumm.Audio.IMuse
                             part.AllNotesOff();
                             break;
                         default:
-//                            Console.Error.WriteLine("Player::send(): Invalid control change {0}", param1);
+                            //                            Console.Error.WriteLine("Player::send(): Invalid control change {0}", param1);
                             break;
                     }
                     break;
@@ -1165,7 +1166,7 @@ namespace NScumm.Scumm.Audio.IMuse
                 default:
                     if (!_scanning)
                     {
-//                        Console.Error.WriteLine("Player::send(): Invalid command {0}", cmd);
+                        //                        Console.Error.WriteLine("Player::send(): Invalid command {0}", cmd);
                         Clear();
                     }
                     break;
@@ -1177,14 +1178,14 @@ namespace NScumm.Scumm.Audio.IMuse
         const int IMuseSysExId = 0x7D;
         const int RolandSysExId = 0x41;
 
-        static byte[] Extract(byte[] msg, int offset)
+        static byte[] Extract(ByteAccess msg, int offset)
         {
-            var tmp = new byte[msg.Length - offset];
-            Array.Copy(msg, offset, tmp, 0, tmp.Length);
+            var tmp = new byte[msg.Data.Length - (msg.Offset + offset)];
+            Array.Copy(msg.Data, msg.Offset + offset, tmp, 0, tmp.Length);
             return tmp;
         }
 
-        public override void SysEx(byte[] msg, ushort length)
+        public override void SysEx(ByteAccess msg, ushort length)
         {
             int p = 0;
             byte a;
@@ -1222,10 +1223,10 @@ namespace NScumm.Scumm.Audio.IMuse
                     // fatal error. See bug #1481383.
                     // The Macintosh version of Monkey Island 2 simply
                     // ignores these SysEx events too.
-//                    if (a == 0)
-//                        Console.Error.WriteLine("Unknown SysEx manufacturer 0x00 0x{0:X2} 0x{1:X2}", msg[p], msg[p + 1]);
-//                    else
-//                        Console.Error.WriteLine("Unknown SysEx manufacturer 0x{0:X2}", (int)a);
+                    //                    if (a == 0)
+                    //                        Console.Error.WriteLine("Unknown SysEx manufacturer 0x00 0x{0:X2} 0x{1:X2}", msg[p], msg[p + 1]);
+                    //                    else
+                    //                        Console.Error.WriteLine("Unknown SysEx manufacturer 0x{0:X2}", (int)a);
                 }
                 return;
             }
@@ -1239,11 +1240,11 @@ namespace NScumm.Scumm.Audio.IMuse
                 _se.Sysex(this, Extract(msg, p), length);
         }
 
-        public override void MetaEvent(byte type, byte[] data, ushort length)
+        public override void MetaEvent(byte type, ByteAccess data, ushort length)
         {
             if (type == 0x2F)
                 Clear();
         }
     }
-    
+
 }

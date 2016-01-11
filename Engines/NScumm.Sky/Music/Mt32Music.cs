@@ -119,7 +119,7 @@ namespace NScumm.Sky.Music
                 } while (dataLen > 0);
                 sendBuf[len] = (byte)(crc & 0x7F);
                 len++;
-                _midiDrv.SysEx(sendBuf, len);
+                _midiDrv.SysEx(new Core.Common.ByteAccess(sendBuf), len);
                 // We delay the time it takes to send the sysEx plus an
                 // additional 40ms, which is required for MT-32 rev00,
                 // to assure no buffer overflow or missing bytes
@@ -139,7 +139,7 @@ namespace NScumm.Sky.Music
             for (byte cnt = 4; cnt < 8; cnt++)
                 sysEx[8] -= sysEx[cnt];
             sysEx[8] &= 0x7F;
-            _midiDrv.SysEx(sysEx, 9);
+            _midiDrv.SysEx(new Core.Common.ByteAccess(sysEx), 9);
         }
 
         private bool ProcessPatchSysEx(ByteAccess sysExData)
@@ -167,7 +167,7 @@ namespace NScumm.Sky.Music
             for (byte cnt = 4; cnt < 14; cnt++)
                 crc -= sysExBuf[cnt];
             sysExBuf[14] = (byte)(crc & 0x7F);                  // crc
-            _midiDrv.SysEx(sysExBuf, 15);
+            _midiDrv.SysEx(new Core.Common.ByteAccess(sysExBuf), 15);
             // We delay the time it takes to send the sysEx plus an
             // additional 40ms, which is required for MT-32 rev00,
             // to assure no buffer overflow or missing bytes

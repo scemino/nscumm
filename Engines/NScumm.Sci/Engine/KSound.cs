@@ -41,80 +41,108 @@ namespace NScumm.Sci.Engine
             SciEngine.Instance._soundCmd.kDoSoundInit(argc, argv);
             return s.r_acc;
         }
+
         private static Register kDoSoundPlay(EngineState s, int argc, StackPtr? argv)
         {
             SciEngine.Instance._soundCmd.kDoSoundPlay(argc, argv);
             return s.r_acc;
         }
+
         private static Register kDoSoundRestore(EngineState s, int argc, StackPtr? argv)
         {
-            throw new NotImplementedException();
+            SciEngine.Instance._soundCmd.kDoSoundRestore(argc, argv);
+            return s.r_acc;
         }
+
         private static Register kDoSoundDispose(EngineState s, int argc, StackPtr? argv)
         {
-            throw new NotImplementedException();
+            SciEngine.Instance._soundCmd.kDoSoundDispose(argc, argv);
+            return s.r_acc;
         }
+
         private static Register kDoSoundMute(EngineState s, int argc, StackPtr? argv)
         {
             return SciEngine.Instance._soundCmd.kDoSoundMute(argc, argv);
         }
+
         private static Register kDoSoundStop(EngineState s, int argc, StackPtr? argv)
         {
-            // TODO: sound
+            SciEngine.Instance._soundCmd.kDoSoundStop(argc, argv);
             return s.r_acc;
         }
+
         private static Register kDoSoundPause(EngineState s, int argc, StackPtr? argv)
         {
-            throw new NotImplementedException();
+            return SciEngine.Instance._soundCmd.kDoSoundPause(argc, argv, s.r_acc);
         }
+
         private static Register kDoSoundResumeAfterRestore(EngineState s, int argc, StackPtr? argv)
         {
-            throw new NotImplementedException();
+            // SCI0 only command
+            //  It's called right after restoring a game - it's responsible to kick off playing music again
+            //  we don't need this at all, so we don't do anything here
+            return s.r_acc;
         }
         private static Register kDoSoundMasterVolume(EngineState s, int argc, StackPtr? argv)
         {
-            throw new NotImplementedException();
+            return SciEngine.Instance._soundCmd.kDoSoundMasterVolume(argc, argv);
         }
+
         private static Register kDoSoundUpdate(EngineState s, int argc, StackPtr? argv)
         {
-            throw new NotImplementedException();
-        }
-        private static Register kDoSoundFade(EngineState s, int argc, StackPtr? argv)
-        {
-            // TODO: sound
+            SciEngine.Instance._soundCmd.kDoSoundUpdate(argc, argv);
             return s.r_acc;
         }
+
+        private static Register kDoSoundFade(EngineState s, int argc, StackPtr? argv)
+        {
+            SciEngine.Instance._soundCmd.kDoSoundFade(argc, argv);
+            return s.r_acc;
+        }
+
         private static Register kDoSoundGetPolyphony(EngineState s, int argc, StackPtr? argv)
         {
-            throw new NotImplementedException();
+            return SciEngine.Instance._soundCmd.kDoSoundGetPolyphony(argc, argv);
         }
+
         private static Register kDoSoundStopAll(EngineState s, int argc, StackPtr? argv)
         {
-            throw new NotImplementedException();
+            SciEngine.Instance._soundCmd.kDoSoundStopAll(argc, argv);
+            return s.r_acc;
         }
+
         private static Register kDoSoundUpdateCues(EngineState s, int argc, StackPtr? argv)
         {
-            throw new NotImplementedException();
+            SciEngine.Instance._soundCmd.kDoSoundUpdateCues(argc, argv);
+            return s.r_acc;
         }
+
         private static Register kDoSoundSendMidi(EngineState s, int argc, StackPtr? argv)
         {
-            throw new NotImplementedException();
+            SciEngine.Instance._soundCmd.kDoSoundSendMidi(argc, argv);
+            return s.r_acc;
         }
+
         private static Register kDoSoundGlobalReverb(EngineState s, int argc, StackPtr? argv)
         {
-            throw new NotImplementedException();
+            return SciEngine.Instance._soundCmd.kDoSoundGlobalReverb(argc, argv);
         }
+
         private static Register kDoSoundSetHold(EngineState s, int argc, StackPtr? argv)
         {
-            throw new NotImplementedException();
+            SciEngine.Instance._soundCmd.kDoSoundSetHold(argc, argv);
+            return s.r_acc;
         }
+
         private static Register kDoSoundDummy(EngineState s, int argc, StackPtr? argv)
         {
-            throw new NotImplementedException();
+            // TODO: warning("cmdDummy invoked");    // not supposed to occur
+            return s.r_acc;
         }
+
         private static Register kDoSoundGetAudioCapability(EngineState s, int argc, StackPtr? argv)
         {
-            throw new NotImplementedException();
+            return SciEngine.Instance._soundCmd.kDoSoundGetAudioCapability(argc, argv);
         }
 
         public string GetKernelName(ushort number)
@@ -128,19 +156,26 @@ namespace NScumm.Sci.Engine
 
         private static Register kDoSoundSuspend(EngineState s, int argc, StackPtr? argv)
         {
-            throw new NotImplementedException();
+            // TODO: warning("kDoSound(suspend): STUB");
+            return s.r_acc;
         }
+
         private static Register kDoSoundSetVolume(EngineState s, int argc, StackPtr? argv)
         {
-            throw new NotImplementedException();
+            SciEngine.Instance._soundCmd.kDoSoundSetVolume(argc, argv);
+            return s.r_acc;
         }
+
         private static Register kDoSoundSetPriority(EngineState s, int argc, StackPtr? argv)
         {
-            throw new NotImplementedException();
+            SciEngine.Instance._soundCmd.kDoSoundSetPriority(argc, argv);
+            return s.r_acc;
         }
+
         private static Register kDoSoundSetLoop(EngineState s, int argc, StackPtr? argv)
         {
-            throw new NotImplementedException();
+            SciEngine.Instance._soundCmd.kDoSoundSetLoop(argc, argv);
+            return s.r_acc;
         }
 
     }

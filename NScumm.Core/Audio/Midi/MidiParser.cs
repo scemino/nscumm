@@ -23,6 +23,7 @@ using System;
 using System.Linq;
 using NScumm.Core.Audio.Midi;
 using System.Diagnostics;
+using NScumm.Core.Common;
 
 namespace NScumm.Core
 {
@@ -65,18 +66,13 @@ namespace NScumm.Core
         SendSustainOffOnNotesOff = 5
     }
 
-    public class Track
-    {
-        public long Position { get; set; }
-    }
-
     public class EventInfo
     {
         /// <summary>
         /// Position in the MIDI stream where the event starts.
         /// For delta-based MIDI streams (e.g. SMF and XMIDI), this points to the delta.
         /// </summary>
-        public long Start { get; set; }
+        public ByteAccess Start { get; set; }
 
         /// <summary>
         /// The number of ticks after the previous event that this event should occur.
@@ -116,7 +112,7 @@ namespace NScumm.Core
         /// </summary>
         /// <value>The data.</value>
         /// <remarks>For META and SysEx events, this points to the start of the data.</remarks>
-        public byte[] Data { get; set; }
+        public ByteAccess Data { get; set; }
 
         /// <summary>
         /// Gets the the MIDI channel.
@@ -130,19 +126,21 @@ namespace NScumm.Core
         /// <value>The command.</value>
         public int Command { get { return Event >> 4; } }
 
+        public int Length { get; set; }
+
         public EventInfo()
         {
         }
 
         public EventInfo(EventInfo info)
         {
-            Start = info.Start;
+            Start = info.Start != null ? new ByteAccess(info.Start) : null;
             Delta = info.Delta;
             Event = info.Event;
             Param1 = info.Param1;
             Param2 = info.Param2;
             MetaType = info.MetaType;
-            Data = info.Data;
+            Data = info.Data != null ? new ByteAccess(info.Data) : null;
         }
     }
 
@@ -178,7 +176,7 @@ namespace NScumm.Core
 
         public abstract void LoadMusic(byte[] data);
 
-        public void UnloadMusic()
+        public virtual void UnloadMusic()
         {
             ResetTracking();
             AllNotesOff();
@@ -232,11 +230,11 @@ namespace NScumm.Core
         /// <summary>
         /// True if currently inside jumpToTick.
         /// </summary>
-        bool _jumpingToTick;
+        protected bool _jumpingToTick;
 
         public int Tempo
         {
-            get{ return tempo; }
+            get { return tempo; }
             set
             {
                 tempo = value;
@@ -253,7 +251,7 @@ namespace NScumm.Core
             set;
         }
 
-        public bool IsPlaying { get { return (Position.PlayPos != 0); } }
+        public bool IsPlaying { get { return (Position.PlayPos != null); } }
 
         public uint PPQN { get { return _ppqn; } }
 
@@ -267,7 +265,7 @@ namespace NScumm.Core
         /// <value>The active track.</value>
         public int ActiveTrack
         {
-            get{ return activeTrack; }
+            get { return activeTrack; }
             set
             {
 
@@ -296,7 +294,7 @@ namespace NScumm.Core
                 ResetTracking();
                 Array.Clear(ActiveNotes, 0, ActiveNotes.Length);
                 activeTrack = value;
-                Position.PlayPos = Tracks[value].Position;
+                Position.PlayPos = new ByteAccess(Tracks[value]);
                 ParseNextEvent(NextEvent);
             }
         }
@@ -313,7 +311,7 @@ namespace NScumm.Core
             var currentEvent = new EventInfo(_nextEvent);
 
             ResetTracking();
-            Position.PlayPos = Tracks[ActiveTrack].Position;
+            Position.PlayPos = new ByteAccess(Tracks[ActiveTrack]);
             ParseNextEvent(_nextEvent);
             if (tick > 0)
             {
@@ -358,7 +356,7 @@ namespace NScumm.Core
 
             if (stopNotes)
             {
-                if (_smartJump || currentPos.PlayPos == 0)
+                if (!_smartJump || currentPos.PlayPos == null)
                 {
                     AllNotesOff();
                 }
@@ -381,7 +379,7 @@ namespace NScumm.Core
             return true;
         }
 
-        bool ProcessEvent(EventInfo info, bool fireEvents = true)
+        protected virtual bool ProcessEvent(EventInfo info, bool fireEvents = true)
         {
             if (info.Event == 0xF0)
             {
@@ -389,10 +387,10 @@ namespace NScumm.Core
                 // Check for trailing 0xF7 -- if present, remove it.
                 if (fireEvents)
                 {
-                    if (info.Data[info.Data.Length - 1] == 0xF7)
-                        MidiDriver.SysEx(info.Data, (ushort)(info.Data.Length - 1));
+                    if (info.Data[info.Length - 1] == 0xF7)
+                        MidiDriver.SysEx(info.Data, (ushort)(info.Length - 1));
                     else
-                        MidiDriver.SysEx(info.Data, (ushort)info.Data.Length);
+                        MidiDriver.SysEx(info.Data, (ushort)info.Length);
                 }
             }
             else if (info.Event == 0xFF)
@@ -411,19 +409,19 @@ namespace NScumm.Core
                     {
                         StopPlaying();
                         if (fireEvents)
-                            MidiDriver.MetaEvent((byte)info.MetaType, info.Data, (ushort)info.Data.Length);
+                            MidiDriver.MetaEvent((byte)info.MetaType, info.Data, (ushort)info.Length);
                     }
                     return false;
                 }
                 else if (info.MetaType == 0x51)
                 {
-                    if (info.Data.Length >= 3)
+                    if (info.Length >= 3)
                     {
                         Tempo = (info.Data[0] << 16 | info.Data[1] << 8 | info.Data[2]);
                     }
                 }
                 if (fireEvents)
-                    MidiDriver.MetaEvent((byte)info.MetaType, info.Data, (ushort)info.Data.Length);
+                    MidiDriver.MetaEvent((byte)info.MetaType, info.Data, (ushort)info.Length);
             }
             else
             {
@@ -503,7 +501,7 @@ namespace NScumm.Core
 
             if (HangingNotesCount >= HangingNotes.Length)
             {
-//                Console.Error.WriteLine("MidiParser::hangingNote(): Exceeded polyphony");
+                //                Console.Error.WriteLine("MidiParser::hangingNote(): Exceeded polyphony");
                 return;
             }
 
@@ -545,7 +543,7 @@ namespace NScumm.Core
             else
             {
                 // We checked this up top. We should never get here!
-//                Console.Error.WriteLine("MidiParser::hangingNote(): Internal error");
+                //                Console.Error.WriteLine("MidiParser::hangingNote(): Internal error");
             }
         }
 
@@ -605,14 +603,14 @@ namespace NScumm.Core
         /// <value><c>true</c> if center pitch wheel on unload; otherwise, <c>false</c>.</value>
         protected bool CenterPitchWheelOnUnload { get; set; }
 
-        internal Tracker Position { get; set; }
+        protected Tracker Position { get; set; }
 
         /// <summary>
         /// Each uint16 is a bit mask for channels that have that note on.
         /// </summary>
         protected ushort[] ActiveNotes { get; private set; }
 
-        internal NoteTimer[] HangingNotes { get; private set; }
+        protected NoteTimer[] HangingNotes { get; private set; }
 
         /// <summary>
         /// Gets or sets the count of hanging notes, used to optimize expiration.
@@ -626,7 +624,7 @@ namespace NScumm.Core
         /// <value><c>true</c> if send sustain off on notes off; otherwise, <c>false</c>.</value>
         protected bool SendSustainOffOnNotesOff { get; set; }
 
-        protected Track[] Tracks { get; private set; }
+        protected ByteAccess[] Tracks { get; private set; }
 
         protected MidiParser()
         {
@@ -636,14 +634,14 @@ namespace NScumm.Core
             {
                 HangingNotes[i] = new NoteTimer();
             }
-            Tracks = new Track[120];
+            Tracks = new ByteAccess[120];
 
             TimerRate = 0x4A0000;
             _ppqn = 96;
             tempo = 500000;
             _psecPerTick = 5208;// 500000 / 96
             _nextEvent = new EventInfo();
-            _nextEvent.Start = 0;
+            _nextEvent.Start = null;
             _nextEvent.Delta = 0;
             _nextEvent.Event = 0;
             Position = new Tracker();
@@ -713,13 +711,16 @@ namespace NScumm.Core
             Array.Clear(ActiveNotes, 0, ActiveNotes.Length);
         }
 
-        protected static int ReadVLQ(Stream input)
+        protected static int ReadVLQ(ByteAccess data)
         {
-            int value = 0;
+            byte str;
+            var value = 0;
+            int i;
 
-            for (var i = 0; i < 4; ++i)
+            for (i = 0; i < 4; ++i)
             {
-                var str = input.ReadByte();
+                str = data[0];
+                data.Offset++;
                 value = (value << 7) | (str & 0x7F);
                 if ((str & 0x80) == 0)
                     break;
@@ -732,7 +733,7 @@ namespace NScumm.Core
             uint endTime;
             uint eventTime;
 
-            if (Position.PlayPos == 0 || MidiDriver == null)
+            if (Position.PlayPos == null || MidiDriver == null)
                 return;
 
             AbortParse = false;
@@ -772,8 +773,8 @@ namespace NScumm.Core
                 Position.LastEventTick += info.Delta;
                 if (info.Event < 0x80)
                 {
-//                    Console.Error.WriteLine("Bad command or running status {0:X2}", info.Event);
-                    Position.PlayPos = 0;
+                    //                    Console.Error.WriteLine("Bad command or running status {0:X2}", info.Event);
+                    Position.PlayPos = null;
                     return;
                 }
 
@@ -783,8 +784,8 @@ namespace NScumm.Core
                 }
                 else if (info.Command == 0x9)
                 {
-                    if (info.Data.Length > 0)
-                        HangingNote(info.Channel, info.Param1, (int)(info.Data.Length * _psecPerTick - (endTime - eventTime)));
+                    if (info.Length > 0)
+                        HangingNote(info.Channel, info.Param1, (int)(info.Length * _psecPerTick - (endTime - eventTime)));
                     else
                         ActiveNote(info.Channel, info.Param1, true);
                 }

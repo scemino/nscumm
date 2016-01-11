@@ -21,6 +21,7 @@
 using System;
 using System.Linq;
 using NScumm.Core.Audio.Midi;
+using NScumm.Core.Common;
 
 namespace NScumm.Core.Audio
 {
@@ -128,12 +129,12 @@ namespace NScumm.Core.Audio
         /// is 264 bytes. Passing longer buffers can lead to
         /// undefined behavior (most likely, a crash).
         /// </summary>
-        public virtual void SysEx(byte[] msg, ushort length)
+        public virtual void SysEx(ByteAccess msg, ushort length)
         {
         }
 
         // TODO: Document this.
-        public virtual void MetaEvent(byte type, byte[] data, ushort length)
+        public virtual void MetaEvent(byte type, ByteAccess data, ushort length)
         {
         }
     }
@@ -367,14 +368,14 @@ namespace NScumm.Core.Audio
         public void SendMt32Reset()
         {
             byte[] resetSysEx = { 0x41, 0x10, 0x16, 0x12, 0x7F, 0x00, 0x00, 0x01, 0x00 };
-            SysEx(resetSysEx, (ushort)resetSysEx.Length);
+            SysEx(new ByteAccess(resetSysEx), (ushort)resetSysEx.Length);
             ServiceLocator.Platform.Sleep(100);
         }
 
         public void SendGmReset()
         {
             byte[] resetSysEx = { 0x7E, 0x7F, 0x09, 0x01 };
-            SysEx(resetSysEx, (ushort)resetSysEx.Length);
+            SysEx(new ByteAccess(resetSysEx), (ushort)resetSysEx.Length);
             ServiceLocator.Platform.Sleep(100);
         }
 

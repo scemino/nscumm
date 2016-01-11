@@ -533,7 +533,7 @@ namespace NScumm.Scumm.Audio.IMuse
                 message[1] = MidiChannel.Number;
                 message[7] = (byte)((value == 127) ? 1 : 0);
                 message[8] = (byte)(128 - (6 + message[7]));
-                Player.MidiDriver.SysEx(message, 9);
+                Player.MidiDriver.SysEx(new Core.Common.ByteAccess(message), 9);
             }
             else
             {

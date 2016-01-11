@@ -41,6 +41,8 @@ namespace NScumm.Sci.Sound
 
     internal class MusicEntry
     {
+        private const int MUSIC_VOLUME_DEFAULT = 127;
+
         // Do not get these directly for the sound objects!
         // It's a bad idea, as the sound code (i.e. the SciMusic
         // class) should be as separate as possible from the rest
@@ -77,15 +79,33 @@ namespace NScumm.Sci.Sound
         public bool fadeCompleted;
         public bool fadeSetVolume;
         public bool isQueued; // for SCI0 only!
-        internal int dataInc;
+        public int dataInc;
+        public int sampleLoopCounter;
+        public bool stopAfterFading;
 
         public MusicEntry()
         {
+            soundObj = Register.NULL_REG;
+            volume = MUSIC_VOLUME_DEFAULT;
+            hold = -1;
+            reverb = -1;
+            status = SoundStatus.Stopped;
+            soundType = SoundType.Music;
+
             signalQueue = new List<ushort>();
             _chan = new MusicEntryChannel[16];
             for (int i = 0; i < _chan.Length; i++)
             {
                 _chan[i] = new MusicEntryChannel();
+            }
+
+            for (int i = 0; i < 16; ++i)
+            {
+                _usedChannels[i] = 0xFF;
+                _chan[i]._prio = 127;
+                _chan[i]._voices = 0;
+                _chan[i]._dontRemap = false;
+                _chan[i]._mute = false;
             }
         }
 
@@ -139,6 +159,30 @@ namespace NScumm.Sci.Sound
                 fadeSetVolume = true; // set flag so that SoundCommandParser::cmdUpdateCues will set the volume of the stream
             }
         }
+
+        public void SetSignal(int newSignal)
+        {
+            // For SCI0, we cache the signals to set, as some songs might
+            // update their signal faster than kGetEvent is called (which is where
+            // we manually invoke kDoSoundUpdateCues for SCI0 games). SCI01 and
+            // newer handle signalling inside kDoSoundUpdateCues. Refer to bug #3042981
+            if (SciEngine.Instance.Features.DetectDoSoundType() <= SciVersion.V0_LATE)
+            {
+                if (signal == 0)
+                {
+                    signal = (ushort)newSignal;
+                }
+                else {
+                    // signal already set and waiting for getting to scripts, queue new one
+                    signalQueue.Add((ushort)newSignal);
+                }
+            }
+            else {
+                // Set the signal directly for newer games, otherwise the sound
+                // object might be deleted already later on (refer to bug #3045913)
+                signal = (ushort)newSignal;
+            }
+        }
     }
 
     class DeviceChannelUsage
@@ -186,11 +230,89 @@ namespace NScumm.Sci.Sound
             }
         }
 
+        internal void SendMidiCommand(MusicEntry musicSlot, uint midiCommand)
+        {
+            throw new NotImplementedException();
+        }
+
         public IList<MusicEntry> PlayList { get { return _playList; } }
 
-        public SciMusic(IMixer mixer, SciVersion soundVersion, bool useDigitalSFX)
+        public sbyte GlobalReverb
         {
-            _mixer = mixer;
+            get { return _globalReverb; }
+            set
+            {
+                lock (_mutex)
+                {
+                    if (value != 127)
+                    {
+                        // Set global reverb normally
+                        _globalReverb = value;
+
+                        // Check the reverb of the active song...
+                        foreach (var item in _playList)
+                        {
+                            if (item.status == SoundStatus.Playing)
+                            {
+                                if (item.reverb == 127)            // Active song has no reverb
+                                    _pMidiDrv.Reverb = value;   // Set the global reverb
+                                break;
+                            }
+                        }
+                    }
+                    else {
+                        // Set reverb of the active song
+                        foreach (var item in _playList)
+                        {
+                            if (item.status == SoundStatus.Playing)
+                            {
+                                _pMidiDrv.Reverb = item.reverb; // Set the song's reverb
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        public uint SoundGetTempo { get { return _dwTempo; } }
+
+        public MusicEntry ActiveSci0MusicSlot
+        {
+            get
+            {
+                MusicEntry highestPrioritySlot = null;
+                foreach (var playSlot in _playList)
+                {
+                    if (playSlot.pMidiParser != null)
+                    {
+                        if (playSlot.status == SoundStatus.Playing)
+                            return playSlot;
+                        if (playSlot.status == SoundStatus.Paused)
+                        {
+                            if ((highestPrioritySlot == null) || (highestPrioritySlot.priority < playSlot.priority))
+                                highestPrioritySlot = playSlot;
+                        }
+                    }
+                }
+                return highestPrioritySlot;
+            }
+        }
+
+        public byte CurrentReverb
+        {
+            get
+            {
+                lock (_mutex)
+                {
+                    return (byte)_pMidiDrv.Reverb;
+                }
+            }
+        }
+
+        public SciMusic(SciVersion soundVersion, bool useDigitalSFX)
+        {
+            _masterVolume = 15;
             _soundVersion = soundVersion;
             _useDigitalSFX = useDigitalSFX;
             _soundOn = true;
@@ -206,6 +328,7 @@ namespace NScumm.Sci.Sound
         public void Init()
         {
             // system init
+            _mixer = SciEngine.Instance.Mixer;
             // SCI sound init
             _dwTempo = 0;
 
@@ -299,9 +422,22 @@ namespace NScumm.Sci.Sound
             _needsRemap = false;
         }
 
-        internal void PauseAll(bool pause)
+        public void SoundSetPriority(MusicEntry pSnd, byte prio)
         {
-            throw new NotImplementedException();
+            lock (_mutex)
+            {
+                pSnd.priority = prio;
+                pSnd.time = ++_timeCounter;
+                SortPlayList();
+            }
+        }
+
+        public void PauseAll(bool pause)
+        {
+            foreach (var i in _playList)
+            {
+                SoundToggle(i, pause);
+            }
         }
 
         public void SoundStop(MusicEntry pSnd)
@@ -533,7 +669,27 @@ namespace NScumm.Sci.Sound
             }
         }
 
-        private void SoundPause(MusicEntry pSnd)
+        // // this is used to set volume of the sample, used for fading only!
+        public void SoundSetSampleVolume(MusicEntry pSnd, short volume)
+        {
+            //assert(volume <= MUSIC_VOLUME_MAX);
+            //assert(pSnd.pStreamAud);
+            _mixer.SetChannelVolume(pSnd.hCurrentAud, volume * 2); // Mixer is 0-255, SCI is 0-127
+        }
+
+        public void UpdateAudioStreamTicker(MusicEntry pSnd)
+        {
+            // assert(pSnd.pStreamAud != 0);
+            pSnd.ticker = (ushort)(_mixer.GetSoundElapsedTime(pSnd.hCurrentAud) * 0.06);
+        }
+
+        public bool SoundIsActive(MusicEntry pSnd)
+        {
+            //assert(pSnd.pStreamAud != 0);
+            return _mixer.IsSoundHandleActive(pSnd.hCurrentAud);
+        }
+
+        public void SoundPause(MusicEntry pSnd)
         {
             // SCI seems not to be pausing samples played back by kDoSound at all
             //  It only stops looping samples (actually doesn't loop them again before they are unpaused)
@@ -564,6 +720,21 @@ namespace NScumm.Sci.Sound
                         pSnd.pMidiParser.MainThreadEnd();
                         RemapChannels();
                     }
+                }
+            }
+        }
+
+        public void SoundSetMasterVolume(ushort vol)
+        {
+            _masterVolume = (byte)vol;
+
+            lock (_mutex)
+            {
+
+                foreach (var item in PlayList)
+                {
+                    if (item.pMidiParser != null)
+                        item.pMidiParser.SetMasterVolume((byte)vol);
                 }
             }
         }
@@ -772,6 +943,77 @@ namespace NScumm.Sci.Sound
             }
         }
 
+        public void NeedsRemap()
+        {
+            _needsRemap = true;
+        }
 
+        public void PutMidiCommandInQueue(int midi)
+        {
+            _queuedCommands.Add(midi);
+        }
+
+        private void PutMidiCommandInQueue(byte status, byte firstOp, byte secondOp)
+        {
+            PutMidiCommandInQueue(status | (firstOp << 8) | (secondOp << 16));
+        }
+
+        public void SoundResume(MusicEntry pSnd)
+        {
+            if (pSnd.pauseCounter > 0)
+                pSnd.pauseCounter--;
+            if (pSnd.pauseCounter != 0)
+                return;
+            if (pSnd.status != SoundStatus.Paused)
+                return;
+            if (pSnd.pStreamAud != null)
+            {
+                _mixer.PauseHandle(pSnd.hCurrentAud, false);
+                pSnd.status = SoundStatus.Playing;
+            }
+            else {
+                SoundPlay(pSnd);
+            }
+        }
+
+        public void SoundToggle(MusicEntry pSnd, bool pause)
+        {
+            if (pause)
+                SoundPause(pSnd);
+            else
+                SoundResume(pSnd);
+        }
+
+        public ushort SoundGetMasterVolume()
+        {
+            return _masterVolume;
+        }
+
+        public void SoundSetVolume(MusicEntry pSnd, byte volume)
+        {
+            //assert(volume <= MUSIC_VOLUME_MAX);
+            if (pSnd.pStreamAud != null)
+            {
+                // we simply ignore volume changes for samples, because sierra sci also
+                //  doesn't support volume for samples via kDoSound
+            }
+            else if (pSnd.pMidiParser != null)
+            {
+                lock (_mutex)
+                {
+                    pSnd.pMidiParser.MainThreadBegin();
+                    pSnd.pMidiParser.SetVolume(volume);
+                    pSnd.pMidiParser.MainThreadEnd();
+                }
+            }
+        }
+
+        public ushort SoundGetVoices()
+        {
+            lock (_mutex)
+            {
+                return (ushort)_pMidiDrv.Polyphony;
+            }
+        }
     }
 }

@@ -47,7 +47,7 @@ namespace NScumm.Sci.Sound
         private bool _useDigitalSFX;
         private SciMusic _music;
 
-        public SoundCommandParser(IMixer mixer, ResourceManager resMan, SegManager segMan, Kernel kernel, AudioPlayer audio, SciVersion soundVersion)
+        public SoundCommandParser(ResourceManager resMan, SegManager segMan, Kernel kernel, AudioPlayer audio, SciVersion soundVersion)
         {
             _resMan = resMan;
             _segMan = segMan;
@@ -66,8 +66,291 @@ namespace NScumm.Sci.Sound
             // TODO: Check the QFG4 demo
             _useDigitalSFX = (ResourceManager.GetSciVersion() >= SciVersion.V2 || SciEngine.Instance.GameId == SciGameId.GK1 /*|| ConfMan.getBool("prefer_digitalsfx")*/); //TODO: ConfMan
 
-            _music = new SciMusic(mixer, _soundVersion, _useDigitalSFX);
+            _music = new SciMusic(_soundVersion, _useDigitalSFX);
             _music.Init();
+        }
+
+        public void kDoSoundStop(int argc, StackPtr? argv)
+        {
+            // TODO: debugC(kDebugLevelSound, "kDoSound(stop): %04x:%04x", PRINT_REG(argv[0]));
+            ProcessStopSound(argv.Value[0], false);
+        }
+
+        public Register kDoSoundPause(int argc, StackPtr? argv, Register acc)
+        {
+            // TODO: if (argc == 1)
+            //debugC(kDebugLevelSound, "kDoSound(pause): %04x:%04x", PRINT_REG(argv[0]));
+            //else
+            //    debugC(kDebugLevelSound, "kDoSound(pause): %04x:%04x, %04x:%04x", PRINT_REG(argv[0]), PRINT_REG(argv[1]));
+
+            if (_soundVersion <= SciVersion.V0_LATE)
+            {
+                // SCI0 games give us 0/1 for either resuming or pausing the current music
+                //  this one doesn't count, so pausing 2 times and resuming once means here that we are supposed to resume
+                ushort value = argv.Value[0].ToUInt16();
+                MusicEntry musicSlot = _music.ActiveSci0MusicSlot;
+                switch (value)
+                {
+                    case 1:
+                        if ((musicSlot != null) && (musicSlot.status == SoundStatus.Playing))
+                        {
+                            _music.SoundPause(musicSlot);
+                            SciEngine.WriteSelectorValue(_segMan, musicSlot.soundObj, o => o.state, (ushort)SoundStatus.Paused);
+                        }
+                        return Register.Make(0, 0);
+                    case 0:
+                        if ((musicSlot != null) && (musicSlot.status == SoundStatus.Paused))
+                        {
+                            _music.SoundResume(musicSlot);
+                            SciEngine.WriteSelectorValue(_segMan, musicSlot.soundObj, o => o.state, (ushort)SoundStatus.Playing);
+                            return Register.Make(0, 1);
+                        }
+                        return Register.Make(0, 0);
+                    default:
+                        throw new InvalidOperationException("kDoSound(pause): parameter 0 is invalid for sound-sci0");
+                }
+            }
+
+            {
+                Register obj = argv.Value[0];
+                ushort value = (ushort)(argc > 1 ? argv.Value[1].ToUInt16() : 0);
+                if (obj.Segment == 0)
+                {       // pause the whole playlist
+                    _music.PauseAll(value != 0);
+                }
+                else {  // pause a playlist slot
+                    MusicEntry musicSlot = _music.GetSlot(obj);
+                    if (musicSlot == null)
+                    {
+                        // This happens quite frequently
+                        // TODO: debugC(kDebugLevelSound, "kDoSound(pause): Slot not found (%04x:%04x)", PRINT_REG(obj));
+                        return acc;
+                    }
+
+                    _music.SoundToggle(musicSlot, value != 0);
+                }
+            }
+            return acc;
+        }
+
+        public Register kDoSoundGetAudioCapability(int argc, StackPtr? argv)
+        {
+            // Tests for digital audio support
+            return Register.Make(0, 1);
+        }
+
+        public void kDoSoundSetHold(int argc, StackPtr? argv)
+        {
+            Register obj = argv.Value[0];
+
+            // TODO: debugC(kDebugLevelSound, "doSoundSetHold: %04x:%04x, %d", PRINT_REG(argv[0]), argv[1].toUint16());
+
+            MusicEntry musicSlot = _music.GetSlot(obj);
+            if (musicSlot == null)
+            {
+                // TODO: warning("kDoSound(setHold): Slot not found (%04x:%04x)", PRINT_REG(obj));
+                return;
+            }
+
+            // Set the special hold marker ID where the song should be looped at.
+            musicSlot.hold = argv.Value[1].ToInt16();
+            return;
+        }
+
+        public void kDoSoundSetPriority(int argc, StackPtr? argv)
+        {
+            Register obj = argv.Value[0];
+            short value = argv.Value[1].ToInt16();
+
+            // TODO: debugC(kDebugLevelSound, "kDoSound(setPriority): %04x:%04x, %d", PRINT_REG(obj), value);
+
+            MusicEntry musicSlot = _music.GetSlot(obj);
+            if (musicSlot == null)
+            {
+                // TODO: debugC(kDebugLevelSound, "kDoSound(setPriority): Slot not found (%04x:%04x)", PRINT_REG(obj));
+                return;
+            }
+
+            if (value == -1)
+            {
+                musicSlot.overridePriority = false;
+                musicSlot.priority = 0;
+
+                // NB: It seems SSCI doesn't actually reset the priority here.
+
+                SciEngine.WriteSelectorValue(_segMan, obj, o => o.flags, (ushort)(SciEngine.ReadSelectorValue(_segMan, obj, o => o.flags) & 0xFD));
+            }
+            else {
+                // Scripted priority
+                musicSlot.overridePriority = true;
+
+                SciEngine.WriteSelectorValue(_segMan, obj, o => o.flags, (ushort)(SciEngine.ReadSelectorValue(_segMan, obj, o => o.flags) | 2));
+
+                _music.SoundSetPriority(musicSlot, (byte)value);
+            }
+        }
+
+        public void kDoSoundSetLoop(int argc, StackPtr? argv)
+        {
+            Register obj = argv.Value[0];
+            short value = argv.Value[1].ToInt16();
+
+            // TODO: debugC(kDebugLevelSound, "kDoSound(setLoop): %04x:%04x, %d", PRINT_REG(obj), value);
+
+            MusicEntry musicSlot = _music.GetSlot(obj);
+            if (musicSlot == null)
+            {
+                // Apparently, it's perfectly normal for a game to call cmdSetSoundLoop
+                // before actually initializing the sound and adding it to the playlist
+                // with cmdInitSound. Usually, it doesn't matter if the game doesn't
+                // request to loop the sound, so in this case, don't throw any warning,
+                // otherwise do, because the sound won't be looped.
+                if (value == -1)
+                {
+                    // TODO: warning("kDoSound(setLoop): Slot not found (%04x:%04x) and the song was requested to be looped", PRINT_REG(obj));
+                }
+                else {
+                    // Doesn't really matter
+                }
+                return;
+            }
+            if (value == -1)
+            {
+                musicSlot.loop = 0xFFFF;
+            }
+            else {
+                musicSlot.loop = 1; // actually plays the music once
+            }
+
+            SciEngine.WriteSelectorValue(_segMan, obj, o => o.loop, musicSlot.loop);
+        }
+
+        public void kDoSoundSetVolume(int argc, StackPtr? argv)
+        {
+            Register obj = argv.Value[0];
+            short value = argv.Value[1].ToInt16();
+
+            MusicEntry musicSlot = _music.GetSlot(obj);
+            if (musicSlot == null)
+            {
+                // Do not throw a warning if the sound can't be found, as in some games
+                // this is called before the actual sound is loaded (e.g. SQ4CD, with
+                // the drum sounds of the energizer bunny at the beginning), so this is
+                // normal behavior.
+                //warning("cmdSetSoundVolume: Slot not found (%04x:%04x)", PRINT_REG(obj));
+                return;
+            }
+
+            // TODO: debugC(kDebugLevelSound, "kDoSound(setVolume): %d", value);
+
+            value = (short)ScummHelper.Clip(value, 0, MUSIC_VOLUME_MAX);
+
+            if (musicSlot.volume != value)
+            {
+                musicSlot.volume = value;
+                _music.SoundSetVolume(musicSlot, (byte)value);
+                SciEngine.WriteSelectorValue(_segMan, obj, o => o.vol, (ushort)value);
+            }
+        }
+
+        public Register kDoSoundGlobalReverb(int argc, StackPtr? argv)
+        {
+            byte prevReverb = _music.CurrentReverb;
+            byte reverb = (byte)(argv.Value[0].ToUInt16() & 0xF);
+
+            if (argc == 1)
+            {
+                // TODO: debugC(kDebugLevelSound, "doSoundGlobalReverb: %d", argv[0].toUint16() & 0xF);
+                if (reverb <= 10)
+                    _music.GlobalReverb = (sbyte)reverb;
+            }
+
+            return Register.Make(0, prevReverb);
+        }
+
+        public void kDoSoundSendMidi(int argc, StackPtr? argv)
+        {
+            // The 4 parameter variant of this call is used in at least LSL1VGA, room
+            // 110 (Lefty's bar), to distort the music when Larry is drunk and stands
+            // up - bug #3614447.
+            Register obj = argv.Value[0];
+            byte channel = (byte)(argv.Value[1].ToUInt16() & 0xf);
+            byte midiCmd = (byte)((argc == 5) ? argv.Value[2].ToUInt16() & 0xff : 0xB0);  // 0xB0: controller
+            ushort controller = (argc == 5) ? argv.Value[3].ToUInt16() : argv.Value[2].ToUInt16();
+            ushort param = (argc == 5) ? argv.Value[4].ToUInt16() : argv.Value[3].ToUInt16();
+
+            if (argc == 4 && controller == 0xFF)
+            {
+                midiCmd = 0xE0; // 0xE0: pitch wheel
+                ushort pitch = (ushort)ScummHelper.Clip(argv.Value[3].ToInt16() + 0x2000, 0x0000, 0x3FFF);
+                controller = (ushort)(pitch & 0x7F);
+                param = (ushort)(pitch >> 7);
+            }
+
+            // TODO: debugC(kDebugLevelSound, "kDoSound(sendMidi): %04x:%04x, %d, %d, %d, %d", PRINT_REG(obj), channel, midiCmd, controller, param);
+            if (channel != 0)
+                channel--; // channel is given 1-based, we are using 0-based
+
+            uint midiCommand = (uint)((channel | midiCmd) | ((uint)controller << 8) | ((uint)param << 16));
+
+            MusicEntry musicSlot = _music.GetSlot(obj);
+            if (musicSlot == null)
+            {
+                // TODO: maybe it's possible to call this with obj == 0:0 and send directly?!
+                // if so, allow it
+                //_music.sendMidiCommand(_midiCommand);
+                // TODO: warning("kDoSound(sendMidi): Slot not found (%04x:%04x)", PRINT_REG(obj));
+                return;
+            }
+            _music.SendMidiCommand(musicSlot, midiCommand);
+        }
+
+        public void kDoSoundUpdateCues(int argc, StackPtr? argv)
+        {
+            ProcessUpdateCues(argv.Value[0]);
+        }
+
+        public Register kDoSoundGetPolyphony(int argc, StackPtr? argv)
+        {
+            return Register.Make(0, _music.SoundGetVoices());	// Get the number of voices
+        }
+
+        public void kDoSoundUpdate(int argc, StackPtr? argv)
+        {
+            Register obj = argv.Value[0];
+
+            // TODO: debugC(kDebugLevelSound, "kDoSound(update): %04x:%04x", PRINT_REG(argv[0]));
+
+            MusicEntry musicSlot = _music.GetSlot(obj);
+            if (musicSlot == null)
+            {
+                // TODO: warning("kDoSound(update): Slot not found (%04x:%04x)", PRINT_REG(obj));
+                return;
+            }
+
+            musicSlot.loop = (ushort)SciEngine.ReadSelectorValue(_segMan, obj, o => o.loop);
+            short objVol = (short)ScummHelper.Clip((int)SciEngine.ReadSelectorValue(_segMan, obj, o => o.vol), 0, 255);
+            if (objVol != musicSlot.volume)
+                _music.SoundSetVolume(musicSlot, (byte)objVol);
+            short objPrio = (short)SciEngine.ReadSelectorValue(_segMan, obj, o => o.priority);
+            if (objPrio != musicSlot.priority)
+                _music.SoundSetPriority(musicSlot, (byte)objPrio);
+        }
+
+        public Register kDoSoundMasterVolume(int argc, StackPtr? argv)
+        {
+            var acc = Register.Make(0, _music.SoundGetMasterVolume());
+
+            if (argc > 0)
+            {
+                // TODO: debugC(kDebugLevelSound, "kDoSound(masterVolume): %d", argv[0].ToInt16());
+                int vol = (short)ScummHelper.Clip(argv.Value[0].ToInt16(), 0, MUSIC_MASTERVOLUME_MAX);
+                vol = vol * Mixer.MaxMixerVolume / MUSIC_MASTERVOLUME_MAX;
+                // TODO: ConfMan.setInt("music_volume", vol);
+                // TODO: ConfMan.setInt("sfx_volume", vol);
+                // TODO: g_engine.syncSoundSettings();
+            }
+            return acc;
         }
 
         public Register kDoSoundMute(int argc, StackPtr? argv)
@@ -88,6 +371,86 @@ namespace NScumm.Sci.Sound
             ProcessInitSound(argv.Value[0]);
         }
 
+        public void kDoSoundFade(int argc, StackPtr? argv)
+        {
+            Register obj = argv.Value[0];
+
+            // The object can be null in several SCI0 games (e.g. Camelot, KQ1, KQ4, MUMG).
+            // Check bugs #3035149, #3036942 and #3578335.
+            // In this case, we just ignore the call.
+            if (obj.IsNull && argc == 1)
+                return;
+
+            MusicEntry musicSlot = _music.GetSlot(obj);
+            if (musicSlot == null)
+            {
+                // TODO: debugC(kDebugLevelSound, "kDoSound(fade): Slot not found (%04x:%04x)", PRINT_REG(obj));
+                return;
+            }
+
+            int volume = musicSlot.volume;
+
+            // If sound is not playing currently, set signal directly
+            if (musicSlot.status != SoundStatus.Playing)
+            {
+                // TODO: debugC(kDebugLevelSound, "kDoSound(fade): %04x:%04x fading requested, but sound is currently not playing", PRINT_REG(obj));
+                SciEngine.WriteSelectorValue(_segMan, obj, o => o.signal, Register.SIGNAL_OFFSET);
+                return;
+            }
+
+            switch (argc)
+            {
+                case 1: // SCI0
+                        // SCI0 fades out all the time and when fadeout is done it will also
+                        // stop the music from playing
+                    musicSlot.fadeTo = 0;
+                    musicSlot.fadeStep = -5;
+                    musicSlot.fadeTickerStep = 10 * 16667 / _music.SoundGetTempo;
+                    musicSlot.fadeTicker = 0;
+                    break;
+
+                case 4: // SCI01+
+                case 5: // SCI1+ (SCI1 late sound scheme), with fade and continue
+                    musicSlot.fadeTo = (byte)ScummHelper.Clip(argv.Value[1].ToUInt16(), 0, MUSIC_VOLUME_MAX);
+                    // Check if the song is already at the requested volume. If it is, don't
+                    // perform any fading. Happens for example during the intro of Longbow.
+                    if (musicSlot.fadeTo == musicSlot.volume)
+                        return;
+
+                    // Sometimes we get objects in that position, so fix the value (refer to workarounds.cpp)
+                    if (argv.Value[1].Segment == 0)
+                        musicSlot.fadeStep = (short)(volume > musicSlot.fadeTo ? -argv.Value[3].ToUInt16() : argv.Value[3].ToUInt16());
+                    else
+                        musicSlot.fadeStep = (short)(volume > musicSlot.fadeTo ? -5 : 5);
+                    musicSlot.fadeTickerStep = (uint)(argv.Value[2].ToUInt16() * 16667 / _music.SoundGetTempo);
+                    musicSlot.fadeTicker = 0;
+
+                    // argv[4] is a boolean. Scripts sometimes pass strange values,
+                    // but SSCI only checks for zero/non-zero. (Verified in KQ6.)
+                    // KQ6 room 460 even passes an object, but treating this as 'true'
+                    // seems fine in that case.
+                    if (argc == 5)
+                        musicSlot.stopAfterFading = !argv.Value[4].IsNull;
+                    else
+                        musicSlot.stopAfterFading = false;
+                    break;
+
+                default:
+                    throw new InvalidOperationException($"kDoSound(fade): unsupported argc {argc}");
+            }
+
+            // TODO: debugC(kDebugLevelSound, "kDoSound(fade): %04x:%04x to %d, step %d, ticker %d", PRINT_REG(obj), musicSlot.fadeTo, musicSlot.fadeStep, musicSlot.fadeTickerStep);
+            return;
+        }
+
+        public void kDoSoundStopAll(int argc, StackPtr? argv)
+        {
+            // TODO: this can't be right, this gets called in kq1 - e.g. being in witch house, getting the note
+            //  now the point jingle plays and after a messagebox they call this - and would stop the background effects with it
+            //  this doesn't make sense, so i disable it for now
+            return;
+        }
+
         public void kDoSoundPlay(int argc, StackPtr? argv)
         {
             // TODO: debugC(kDebugLevelSound, "kDoSound(play): %04x:%04x", PRINT_REG(argv[0]));
@@ -96,6 +459,18 @@ namespace NScumm.Sci.Sound
             if (argc >= 2 && !argv.Value[1].IsNull)
                 playBed = true;
             ProcessPlaySound(argv.Value[0], playBed);
+        }
+
+        public void kDoSoundRestore(int argc, StackPtr? argv)
+        {
+            // Called after loading, to restore the playlist
+            // We don't really use or need this
+        }
+
+        public void kDoSoundDispose(int argc, StackPtr? argv)
+        {
+            // debugC(kDebugLevelSound, "kDoSound(dispose): %04x:%04x", PRINT_REG(argv[0]));
+            ProcessDisposeSound(argv.Value[0]);
         }
 
         private void ProcessPlaySound(Register obj, bool playBed)
@@ -344,9 +719,129 @@ namespace NScumm.Sci.Sound
             }
         }
 
-        private void ProcessUpdateCues(Register soundObj)
+        private void ProcessUpdateCues(Register obj)
         {
-            // TODO: ProcessUpdateCues
+            MusicEntry musicSlot = _music.GetSlot(obj);
+            if (musicSlot == null)
+            {
+                // TODO: warning("kDoSound(updateCues): Slot not found (%04x:%04x)", PRINT_REG(obj));
+                return;
+            }
+
+            if (musicSlot.pStreamAud != null)
+            {
+                // Update digital sound effect slots
+                int currentLoopCounter = 0;
+
+                if (musicSlot.pLoopStream != null)
+                    currentLoopCounter = musicSlot.pLoopStream.CompleteIterations;
+
+                if (currentLoopCounter != musicSlot.sampleLoopCounter)
+                {
+                    // during last time we looped at least one time, update loop accordingly
+                    musicSlot.loop -= (ushort)(currentLoopCounter - musicSlot.sampleLoopCounter);
+                    musicSlot.sampleLoopCounter = currentLoopCounter;
+                }
+                if (musicSlot.status == SoundStatus.Playing)
+                {
+                    if (!_music.SoundIsActive(musicSlot))
+                    {
+                        ProcessStopSound(obj, true);
+                    }
+                    else {
+                        _music.UpdateAudioStreamTicker(musicSlot);
+                    }
+                }
+                else if (musicSlot.status == SoundStatus.Paused)
+                {
+                    _music.UpdateAudioStreamTicker(musicSlot);
+                }
+                // We get a flag from MusicEntry::doFade() here to set volume for the stream
+                if (musicSlot.fadeSetVolume)
+                {
+                    _music.SoundSetSampleVolume(musicSlot, musicSlot.volume);
+                    musicSlot.fadeSetVolume = false;
+                }
+            }
+            else if (musicSlot.pMidiParser != null)
+            {
+                // Update MIDI slots
+                if (musicSlot.signal == 0)
+                {
+                    if (musicSlot.dataInc != SciEngine.ReadSelectorValue(_segMan, obj, o => o.dataInc))
+                    {
+                        if (SciEngine.Selector(o => o.dataInc) > -1)
+                            SciEngine.WriteSelectorValue(_segMan, obj, o => o.dataInc, (ushort)musicSlot.dataInc);
+                        SciEngine.WriteSelectorValue(_segMan, obj, o => o.signal, (ushort)(musicSlot.dataInc + 127));
+                    }
+                }
+                else {
+                    // Sync the signal of the sound object
+                    SciEngine.WriteSelectorValue(_segMan, obj, o => o.signal, musicSlot.signal);
+                    // We need to do this especially because state selector needs to get updated
+                    if (musicSlot.signal == Register.SIGNAL_OFFSET)
+                        ProcessStopSound(obj, false);
+                }
+            }
+            else {
+                // The sound slot has no data for the currently selected sound card.
+                // An example can be found during the mud wrestling scene in LSL5, room
+                // 730: sound 744 (a splat sound heard when Lana Luscious jumps in the
+                // mud) only contains MIDI channel data. If a non-MIDI sound card is
+                // selected (like Adlib), then the scene freezes. We also need to stop
+                // the sound at this point, otherwise KQ6 Mac breaks because the rest
+                // of the object needs to be reset to avoid a continuous stream of
+                // sound cues.
+                ProcessStopSound(obj, true);    // this also sets the signal selector
+            }
+
+            if (musicSlot.fadeCompleted)
+            {
+                musicSlot.fadeCompleted = false;
+                // We need signal for sci0 at least in iceman as well (room 14,
+                // fireworks).
+                // It is also needed in other games, e.g. LSL6 when talking to the
+                // receptionist (bug #3192166).
+                // TODO: More thorougly check the different SCI version:
+                // * SCI1late sets signal to 0xFE here. (With signal 0xFF
+                //       duplicate music plays in LauraBow2CD - bug #6462)
+                //   SCI1middle LSL1 1.000.510 does not have the 0xFE;
+                //   SCI1late CastleDrBrain demo 1.000.005 does have the 0xFE.
+                // * Other SCI1 games seem to rely on processStopSound to set the signal
+                // * Need to check SCI0 behaviour.
+                ushort sig;
+                if (ResourceManager.GetSciVersion() >= SciVersion.V1_LATE)
+                    sig = 0xFFFE;
+                else
+                    sig = Register.SIGNAL_OFFSET;
+                SciEngine.WriteSelectorValue(_segMan, obj, o => o.signal, sig);
+                if (_soundVersion <= SciVersion.V0_LATE)
+                {
+                    ProcessStopSound(obj, false);
+                }
+                else {
+                    if (musicSlot.stopAfterFading)
+                        ProcessStopSound(obj, false);
+                }
+            }
+
+            // Sync loop selector for SCI0
+            if (_soundVersion <= SciVersion.V0_LATE)
+                SciEngine.WriteSelectorValue(_segMan, obj, o => o.loop, musicSlot.loop);
+
+            musicSlot.signal = 0;
+
+            if (_soundVersion >= SciVersion.V1_EARLY)
+            {
+                SciEngine.WriteSelectorValue(_segMan, obj, o => o.min, (ushort)(musicSlot.ticker / 3600));
+                SciEngine.WriteSelectorValue(_segMan, obj, o => o.sec, (ushort)(musicSlot.ticker % 3600 / 60));
+                SciEngine.WriteSelectorValue(_segMan, obj, o => o.frame, (ushort)(musicSlot.ticker % 60 / 2));
+            }
+        }
+
+        public void SetMasterVolume(int vol)
+        {
+            _music.SoundSetMasterVolume((ushort)vol);
         }
     }
 }

@@ -461,7 +461,7 @@ namespace NScumm.Sci
                 //    delete fileStream;
             }
 
-            public virtual void LoadResource(ResourceManager resMan, Resource res)
+            public override void LoadResource(ResourceManager resMan, Resource res)
             {
                 throw new NotImplementedException();
             }

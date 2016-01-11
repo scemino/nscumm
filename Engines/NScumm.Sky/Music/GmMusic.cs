@@ -89,7 +89,7 @@ namespace NScumm.Sky.Music
         {
             // Send GM System On to reset channel parameters etc.
             byte[] sysEx = { 0x7e, 0x7f, 0x09, 0x01 };
-            _midiDrv.SysEx(sysEx, (ushort)sysEx.Length);
+            _midiDrv.SysEx(new NScumm.Core.Common.ByteAccess(sysEx), (ushort)sysEx.Length);
             //_midiDrv->send(0xFF);  //ALSA can't handle this.
             // skip all sysEx as it can't be handled anyways.
         }

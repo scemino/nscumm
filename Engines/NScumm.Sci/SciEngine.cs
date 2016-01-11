@@ -496,6 +496,7 @@ namespace NScumm.Sci
         public ISystem System { get { return _system; } }
 
         public bool ShouldQuit { get; internal set; }
+
         public Vocabulary Vocabulary { get { return _vocabulary; } }
 
         /// <summary>
@@ -599,9 +600,10 @@ namespace NScumm.Sci
 
             // Must be called after game_init(), as they use _features
             _kernel.LoadKernelNames(_features);
-            _soundCmd = new SoundCommandParser(_mixer, _resMan, segMan, _kernel, _audio, _features.DetectDoSoundType());
+            _soundCmd = new SoundCommandParser(_resMan, segMan, _kernel, _audio, _features.DetectDoSoundType());
 
             // TODO: SyncSoundSettings();
+            _soundCmd.SetMasterVolume(11);
             // TODO: SyncIngameAudioOptions();
 
             // Load our Mac executable here for icon bar palettes and high-res fonts

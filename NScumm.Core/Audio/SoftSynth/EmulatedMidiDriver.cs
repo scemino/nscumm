@@ -113,25 +113,21 @@ namespace NScumm.Core.Audio.SoftSynth
         {
             get{ return false; }
         }
-
-        public virtual void Dispose()
-        {
-        }
-
+                
         #endregion
 
-        const int FixpShift = 16;
+        private const int FixpShift = 16;
 
         protected bool _isOpen;
         protected IMixer _mixer;
         protected SoundHandle _mixerSoundHandle;
         protected int _baseFreq;
 
-        object _timerParam;
-        TimerProc _timerProc;
+        private object _timerParam;
+        private TimerProc _timerProc;
 
-        int _nextTick;
-        int _samplesPerTick;
+        private int _nextTick;
+        private int _samplesPerTick;
     }
 }
 

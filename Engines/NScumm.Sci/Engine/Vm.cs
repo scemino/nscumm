@@ -43,16 +43,10 @@ namespace NScumm.Sci.Engine
         public Register obj;
         public int varindex;
 
-        public Register GetPointer(SegManager segMan)
+        public StackPtr GetPointer(SegManager segMan)
         {
             SciObject o = segMan.GetObject(obj);
-            return o != null ? o.GetVariableRef(varindex) : Register.NULL_REG;
-        }
-
-        public void SetPointer(SegManager segMan, Register value)
-        {
-            SciObject o = segMan.GetObject(obj);
-            o.SetVariableRef(varindex, value);
+            return o != null ? o.GetVariableRef(varindex) : StackPtr.Null;
         }
     }
 
@@ -67,6 +61,8 @@ namespace NScumm.Sci.Engine
     {
         private int _index;
         private Register[] _entries;
+
+        public static readonly StackPtr Null = new StackPtr(null, -1);
 
         public Register this[int index]
         {
@@ -243,14 +239,9 @@ namespace NScumm.Sci.Engine
             type = type_;
         }
 
-        public Register GetVarPointer(SegManager segMan)
+        public StackPtr GetVarPointer(SegManager segMan)
         {
             return varp.GetPointer(segMan);
-        }
-
-        public void SetVarPointer(SegManager segMan, Register value)
-        {
-            varp.SetPointer(segMan, value);
         }
     }
 
@@ -264,7 +255,7 @@ namespace NScumm.Sci.Engine
         /// <summary>
         /// Stack pointer value: Use predecessor's value
         /// </summary>
-        public static readonly StackPtr CALL_SP_CARRY = new StackPtr();
+        public static readonly StackPtr CALL_SP_CARRY = StackPtr.Null;
 
         /// <summary>
         /// Number of kernel calls in between gcs; should be &lt; 50000
@@ -570,7 +561,7 @@ namespace NScumm.Sci.Engine
                 s.xs.pc.IncOffset(ReadPMachineInstruction(scr.GetBuf(s.xs.pc.Offset), out extOpcode, opparams));
                 byte opcode = (byte)(extOpcode >> 1);
 #if DEBUG
-                ServiceLocator.Platform.Debug($"{opcodeNames[opcode]}: {opparams[0]}, {opparams[1]}, {opparams[2]}, {opparams[3]}, acc = {s.r_acc}, script {scr.ScriptNumber}, local script {local_script.ScriptNumber}");
+                //ServiceLocator.Platform.Debug($"{opcodeNames[opcode]}: {opparams[0]}, {opparams[1]}, {opparams[2]}, {opparams[3]}, acc = {s.r_acc}, script {scr.ScriptNumber}, local script {local_script.ScriptNumber}");
 #endif
 
 #if ABORT_ON_INFINITE_LOOP
@@ -696,7 +687,9 @@ namespace NScumm.Sci.Engine
                     case op_ult_: // 0x15 (21)
                                   // < (unsigned)
                         s.r_prev = Register.Make(s.r_acc);
-                        s.r_acc = Register.Make(0, POP32().LowerThanUnsigned(s.r_acc));
+                        var t = POP32();
+                        ServiceLocator.Platform.Debug($"op_ult: {t} < {s.r_acc} = {t.LowerThanUnsigned(s.r_acc)}");
+                        s.r_acc = Register.Make(0, t.LowerThanUnsigned(s.r_acc));
                         break;
 
                     case op_ule_: // 0x16 (22)
@@ -875,10 +868,11 @@ namespace NScumm.Sci.Engine
                             if (old_xs.type == ExecStackType.VARSELECTOR)
                             {
                                 // varselector access?
+                                StackPtr var = old_xs.GetVarPointer(s._segMan);
                                 if (old_xs.argc != 0) // write?
-                                    old_xs.SetVarPointer(s._segMan, old_xs.variables_argp[1]);
+                                    var[0] = old_xs.variables_argp[1];
                                 else // No, read
-                                    s.r_acc = Register.Make(old_xs.GetVarPointer(s._segMan));
+                                    s.r_acc = var[0];
                             }
 
                             // Not reached the base, so let's do a soft return
@@ -1027,22 +1021,28 @@ namespace NScumm.Sci.Engine
 
                     case op_pToa: // 0x31 (49)
                                   // Property To Accumulator
-                        s.r_acc = validate_property(s, obj, opparams[0]);
+                        s.r_acc = Register.Make(validate_property(s, obj, opparams[0])[0]);
                         break;
 
                     case op_aTop: // 0x32 (50)
                                   // Accumulator To Property
-                        SetProperty(s, obj, opparams[0], s.r_acc);
+                        {
+                            var prop = validate_property(s, obj, opparams[0]);
+                            prop[0] = Register.Make(s.r_acc);
+                        }
                         break;
 
                     case op_pTos: // 0x33 (51)
                                   // Property To Stack
-                        PUSH32(validate_property(s, obj, opparams[0]));
+                        PUSH32(Register.Make(validate_property(s, obj, opparams[0])[0]));
                         break;
 
                     case op_sTop: // 0x34 (52)
                                   // Stack To Property
-                        SetProperty(s, obj, opparams[0], POP32());
+                        {
+                            var prop = validate_property(s, obj, opparams[0]);
+                            prop[0] = POP32();
+                        }
                         break;
 
                     case op_ipToa: // 0x35 (53)
@@ -1052,17 +1052,16 @@ namespace NScumm.Sci.Engine
                         {
                             // Increment/decrement a property and copy to accumulator,
                             // or push to stack
-                            Register opProperty = validate_property(s, obj, opparams[0]);
+                            StackPtr opProperty = validate_property(s, obj, opparams[0]);
                             if ((opcode & 1) != 0)
-                                opProperty += 1;
+                                opProperty[0] += 1;
                             else
-                                opProperty -= 1;
+                                opProperty[0] -= 1;
 
-                            SetProperty(s, obj, opparams[0], opProperty);
                             if (opcode == op_ipToa || opcode == op_dpToa)
-                                s.r_acc = opProperty;
+                                s.r_acc = Register.Make(opProperty[0]);
                             else
-                                PUSH32(opProperty);
+                                PUSH32(Register.Make(opProperty[0]));
                             break;
                         }
 
@@ -1418,6 +1417,7 @@ namespace NScumm.Sci.Engine
             if (kernelCall.subFunctionCount == 0)
             {
                 AddKernelCallToExecStack(s, kernelCallNr, argc, argv);
+                ServiceLocator.Platform.Debug($"Call {kernelCall.name}");
                 s.r_acc = Register.Make(kernelCall.function(s, argc, argv));
 
                 if (kernelCall.debugLogging)
@@ -1590,7 +1590,8 @@ namespace NScumm.Sci.Engine
                         Register tmp;
                         if (SciEngine.LookupSelector(s._segMan, stopGroopPos, SciEngine.Selector(o => o.client), varp, out tmp) == SelectorType.Variable)
                         {
-                            varp.SetPointer(s._segMan, value);
+                            StackPtr clientVar = varp.GetPointer(s._segMan);
+                            clientVar[0] = value;
                         }
                     }
                 }
@@ -1662,7 +1663,7 @@ namespace NScumm.Sci.Engine
             {
                 ExecStack xs = s._executionStack.Last();
                 var var = xs.GetVarPointer(s._segMan);
-                if (var == null)
+                if (var == StackPtr.Null)
                 {
                     throw new InvalidOperationException("Invalid varselector exec stack entry");
                 }
@@ -1670,11 +1671,12 @@ namespace NScumm.Sci.Engine
                     // varselector access?
                     if (xs.argc != 0)
                     { // write?
-                        xs.SetVarPointer(s._segMan, xs.variables_argp[1]);
-
+                        var[0] = xs.variables_argp[1];
                     }
                     else // No, read
-                        s.r_acc = Register.Make(var);
+                    {
+                        s.r_acc = var[0];
+                    }
                 }
                 s._executionStack.Remove(xs);
             }
@@ -1722,7 +1724,7 @@ namespace NScumm.Sci.Engine
         public static Register POP32()
         {
             var s = SciEngine.Instance.EngineState;
-            return validate_stack_addr(s, --(s.xs.sp))[0];
+            return Register.Make(validate_stack_addr(s, --(s.xs.sp))[0]);
         }
 
         private static StackPtr validate_stack_addr(EngineState s, StackPtr sp)
@@ -1730,12 +1732,12 @@ namespace NScumm.Sci.Engine
             if (sp >= s.stack_base && sp < s.stack_top)
                 return sp;
             else
-                throw new InvalidOperationException("[VM] Stack index {sp - s.stack_base} out of valid range [0..{s.stack_top - s.stack_base - 1}]");
+                throw new InvalidOperationException($"[VM] Stack index {sp - s.stack_base} out of valid range [0..{s.stack_top - s.stack_base - 1}]");
         }
 
-        private static Register validate_property(EngineState s, SciObject obj, int index)
+        private static StackPtr validate_property(EngineState s, SciObject obj, int index)
         {
-            Register dummyReg = Register.Make(Register.NULL_REG);
+            Register[] dummyReg = new[] { Register.Make(Register.NULL_REG) };
 
             // A static dummy reg_t, which we return if obj or index turn out to be
             // invalid. Note that we cannot just return NULL_REG, because client code
@@ -1757,29 +1759,10 @@ namespace NScumm.Sci.Engine
                 //  iceman script 998 (fred::canBeHere, executed right at the start)
                 // TODO: debugC(kDebugLevelVM, "[VM] Invalid property #%d (out of [0..%d]) requested from object %04x:%04x (%s)",
                 //        index, obj.getVarCount(), PRINT_REG(obj.getPos()), s._segMan.getObjectName(obj.getPos()));
-                return dummyReg;
+                return new StackPtr(dummyReg, 0);
             }
 
             return obj.GetVariableRef(index);
-        }
-
-        private static void SetProperty(EngineState s, SciObject obj, int index, Register value)
-        {
-            // A static dummy reg_t, which we return if obj or index turn out to be
-            // invalid. Note that we cannot just return NULL_REG, because client code
-            // may modify the value of the returned reg_t.
-
-            // If this occurs, it means there's probably something wrong with the garbage
-            // collector, so don't hide it with fake return values
-            if (obj == null)
-                throw new InvalidOperationException("validate_property: Sending to disposed object");
-
-            if (ResourceManager.GetSciVersion() == SciVersion.V3)
-                index = obj.LocateVarSelector(s._segMan, index);
-            else
-                index >>= 1;
-
-            obj.SetVariableRef(index, value);
         }
 
 #if DEBUG

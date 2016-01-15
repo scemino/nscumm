@@ -17,6 +17,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+using NScumm.Core;
 using NScumm.Core.Common;
 using System;
 
@@ -236,7 +237,7 @@ namespace NScumm.Sci.Engine
                             throw new InvalidOperationException($"Attempt to peek invalid memory at {argv.Value[1]}");
                         }
                         if (@ref.isRaw)
-                            return Register.Make(0, @ref.raw.Data.ReadSci11EndianUInt16(@ref.raw.Offset));
+                            return Register.Make(0, @ref.raw.Data.ReadSciEndianUInt16(@ref.raw.Offset));
                         else {
                             if (@ref.skipByte)
                                 throw new InvalidOperationException($"Attempt to peek memory at odd offset {argv.Value[1]}");
@@ -481,7 +482,7 @@ namespace NScumm.Sci.Engine
 
         private static Register kGetTime(EngineState s, int argc, StackPtr? argv)
         {
-            int elapsedTime = SciEngine.Instance.TotalPlaytime;
+            long elapsedTime = SciEngine.Instance.TotalPlaytime;
             int retval = 0; // Avoid spurious warning
 
             var loc_time = DateTime.Now;
@@ -496,7 +497,7 @@ namespace NScumm.Sci.Engine
             switch (mode)
             {
                 case GetTimeMode.TICKS:
-                    retval = elapsedTime * 60 / 1000;
+                    retval = (int)(elapsedTime * 60 / 1000);
                     // TODO: debugC(kDebugLevelTime, "GetTime(elapsed) returns %d", retval);
                     break;
                 case GetTimeMode.TIME_12HOUR:
@@ -509,13 +510,14 @@ namespace NScumm.Sci.Engine
                     break;
                 case GetTimeMode.DATE:
                     // Year since 1980 (0 = 1980, 1 = 1981, etc.)
-                    retval = loc_time.Day | ((loc_time.Month + 1) << 5) | (((loc_time.Year - 80) & 0x7f) << 9);
+                    retval = loc_time.Day | ((loc_time.Month + 1) << 5) | (((loc_time.Year - 1980) & 0x7f) << 9);
                     // TODO: debugC(kDebugLevelTime, "GetTime(date) returns %d", retval);
                     break;
                 default:
                     throw new InvalidOperationException($"Attempt to use unknown GetTime mode {mode}");
             }
 
+            ServiceLocator.Platform.Debug($"GetTime=>{retval}");
             return Register.Make(0, (ushort)retval);
         }
 

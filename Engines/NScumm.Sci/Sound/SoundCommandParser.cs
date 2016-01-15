@@ -839,6 +839,11 @@ namespace NScumm.Sci.Sound
             }
         }
 
+        public void ClearPlayList()
+        {
+            _music.ClearPlayList();
+        }
+
         public void SetMasterVolume(int vol)
         {
             _music.SoundSetMasterVolume((ushort)vol);

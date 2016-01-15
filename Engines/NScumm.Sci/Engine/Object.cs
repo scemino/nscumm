@@ -162,14 +162,9 @@ namespace NScumm.Sci.Engine
 
         public Register GetVariable(int var) { return Register.Make(_variables[var]); }
 
-        public Register GetVariableRef(int var)
+        public StackPtr GetVariableRef(int var)
         {
-            return _variables[var];
-        }
-
-        public void SetVariableRef(int var, Register value)
-        {
-            _variables[var] = value;
+            return new StackPtr(_variables, var);
         }
 
         public SciObject GetClass(SegManager segMan)

@@ -53,7 +53,7 @@ namespace NScumm.Sci.Graphics
         private SegManager _segMan;
 
         // Textedit-Control related
-        private Core.Graphics.Rect _texteditCursorRect;
+        private Rect _texteditCursorRect;
         private bool _texteditCursorVisible;
         private int _texteditBlinkTime;
 

@@ -76,7 +76,6 @@ namespace NScumm.Sci.Graphics
         // these instead and replace the game's gold cursors with their silver
         // equivalents.
         private bool _useSilverSQ4CDCursors;
-        private ISystem _system;
 
         // Mac versions of games use a remap list to remap their cursors
         private List<ushort> _macCursorRemap;
@@ -107,9 +106,8 @@ namespace NScumm.Sci.Graphics
             }
         }
 
-        public GfxCursor(ISystem system, ResourceManager resMan, GfxPalette palette, GfxScreen screen)
+        public GfxCursor(ResourceManager resMan, GfxPalette palette, GfxScreen screen)
         {
-            _system = system;
             _resMan = resMan;
             _palette = palette;
             _screen = screen;
@@ -268,7 +266,7 @@ namespace NScumm.Sci.Graphics
                 throw new InvalidOperationException($"cursor {resourceId}'s hotspot ({hotspot.X}, {hotspot.Y}) is out of range of the cursor's dimensions ({heightWidth}x{heightWidth})");
             }
 
-            _system.GraphicsManager.SetCursor(rawBitmap, 0, heightWidth, heightWidth, hotspot, SCI_CURSOR_SCI0_TRANSPARENCYCOLOR);
+            SciEngine.Instance.System.GraphicsManager.SetCursor(rawBitmap, 0, heightWidth, heightWidth, hotspot, SCI_CURSOR_SCI0_TRANSPARENCYCOLOR);
             KernelShow();
         }
 
@@ -362,13 +360,13 @@ namespace NScumm.Sci.Graphics
 
         public void KernelShow()
         {
-            _system.GraphicsManager.IsCursorVisible = true;
+            SciEngine.Instance.System.GraphicsManager.IsCursorVisible = true;
             _isVisible = true;
         }
 
         public void KernelHide()
         {
-            _system.GraphicsManager.IsCursorVisible = false;
+            SciEngine.Instance.System.GraphicsManager.IsCursorVisible = false;
             _isVisible = false;
         }
 

@@ -121,6 +121,7 @@ namespace NScumm.Sci
     {
         private readonly bool _fontIsExtended;
         private List<SciEvent> _events;
+        private ScummInputState _oldState;
 
         public EventManager(bool fontIsExtended)
         {
@@ -166,8 +167,6 @@ namespace NScumm.Sci
 
             return @event;
         }
-
-        ScummInputState _oldState;
 
         private SciEvent GetScummVMEvent()
         {

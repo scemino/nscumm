@@ -67,7 +67,7 @@ namespace NScumm.Sci.Graphics
 
         public ushort id;
         public short top, left;
-        public Core.Graphics.Rect rect;
+        public Rect rect;
         public short curTop, curLeft;
         public short fontHeight;
         public int fontId;

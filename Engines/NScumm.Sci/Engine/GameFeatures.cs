@@ -397,7 +397,7 @@ namespace NScumm.Sci.Engine
         private Register GetDetectionAddr(string objName, int slc, int methodNum = -1)
         {
             // Get address of target object
-            Register objAddr = _segMan.FindObjectByName(objName, 0);
+            Register objAddr = Register.Make(_segMan.FindObjectByName(objName, 0));
             Register addr;
 
             if (objAddr.IsNull)
@@ -421,7 +421,42 @@ namespace NScumm.Sci.Engine
 
         public SciVersion DetectMessageFunctionType()
         {
-            throw new NotImplementedException();
+            if (_messageFunctionType != SciVersion.NONE)
+                return _messageFunctionType;
+
+            if (ResourceManager.GetSciVersion() > SciVersion.V1_1)
+            {
+                _messageFunctionType = SciVersion.V1_1;
+                return _messageFunctionType;
+            }
+            else if (ResourceManager.GetSciVersion() < SciVersion.V1_1)
+            {
+                _messageFunctionType = SciVersion.V1_LATE;
+                return _messageFunctionType;
+            }
+
+            var resources = SciEngine.Instance.ResMan.ListResources(ResourceType.Message, -1);
+
+            if (resources.Count == 0)
+            {
+                // No messages found, so this doesn't really matter anyway...
+                _messageFunctionType = SciVersion.V1_1;
+                return _messageFunctionType;
+            }
+
+            var res = SciEngine.Instance.ResMan.FindResource(resources[0], false);
+            //assert(res);
+
+            // Only v2 Message resources use the kGetMessage kernel function.
+            // v3-v5 use the kMessage kernel function.
+
+            if (res.data.ReadSci11EndianUInt32() / 1000 == 2)
+                _messageFunctionType = SciVersion.V1_LATE;
+            else
+                _messageFunctionType = SciVersion.V1_1;
+
+            // TODO: debugC(1, kDebugLevelVM, "Detected message function type: %s", getSciVersionDesc(_messageFunctionType));
+            return _messageFunctionType;
         }
 
         public bool UsesOldGfxFunctions()
@@ -446,7 +481,7 @@ namespace NScumm.Sci.Engine
                 else {  // SCI0 late
                         // Check if the game is using an overlay
                     bool searchRoomObj = false;
-                    Register rmObjAddr = _segMan.FindObjectByName("Rm");
+                    Register rmObjAddr = Register.Make(_segMan.FindObjectByName("Rm"));
 
                     if (SciEngine.Selector(s => s.overlay) != -1)
                     {

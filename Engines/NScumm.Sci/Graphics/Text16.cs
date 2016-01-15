@@ -20,7 +20,6 @@ using NScumm.Core.Graphics;
 using System;
 using System.Collections.Generic;
 using NScumm.Sci.Engine;
-using NScumm.Core;
 using NScumm.Core.Common;
 
 namespace NScumm.Sci.Graphics

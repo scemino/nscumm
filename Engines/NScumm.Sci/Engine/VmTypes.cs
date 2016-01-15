@@ -171,14 +171,14 @@ namespace NScumm.Sci.Engine
 
         public override int GetHashCode()
         {
-            return _segment ^ _offset;
+            return Segment.GetHashCode() ^ Offset.GetHashCode();
         }
 
         public override bool Equals(object obj)
         {
             if (!(obj is Register)) return false;
             var other = (Register)obj;
-            return _offset == other._offset && _segment == other._segment;
+            return Offset == other.Offset && Segment == other.Segment;
         }
 
         public static bool operator ==(Register r1, Register r2)

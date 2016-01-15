@@ -179,7 +179,7 @@ namespace NScumm.Sci.Engine
                 for (var i = 0; i < clientVarNum; ++i)
                     clientBackup[i] = clientObject.GetVariable(i);
 
-                if (mover_xAxis!=0)
+                if (mover_xAxis != 0)
                 {
                     if (Math.Abs(mover_x - client_x) < Math.Abs(mover_dx))
                         completed = true;
@@ -238,7 +238,10 @@ namespace NScumm.Sci.Engine
                 {
                     // We restore the backup of the client variables
                     for (var i = 0; i < clientVarNum; ++i)
-                        clientObject.SetVariableRef(i, clientBackup[i]);
+                    {
+                        var var = clientObject.GetVariableRef(i);
+                        var[0] = clientBackup[i];
+                    }
 
                     mover_i1 = mover_org_i1;
                     mover_i2 = mover_org_i2;

@@ -28,7 +28,6 @@ namespace NScumm.Sci.Graphics
     /// </summary>
     internal class GfxCompare
     {
-        private ushort kScaleSignalDoScaling;
         private GfxCache _cache;
         private GfxCoordAdjuster _coordAdjuster;
         private GfxScreen _screen;
@@ -59,10 +58,10 @@ namespace NScumm.Sci.Graphics
                 if (viewId == 0xFFFF)   // invalid view
                     return;
 
-                ushort scaleSignal = 0;
+                ViewScaleSignals scaleSignal = 0;
                 if (ResourceManager.GetSciVersion() >= SciVersion.V1_1)
                 {
-                    scaleSignal = (ushort)SciEngine.ReadSelectorValue(_segMan, @object, SciEngine.Selector(s => s.scaleSignal));
+                    scaleSignal = (ViewScaleSignals)SciEngine.ReadSelectorValue(_segMan, @object, SciEngine.Selector(s => s.scaleSignal));
                 }
 
                 Rect celRect = new Rect();
@@ -71,7 +70,7 @@ namespace NScumm.Sci.Graphics
                 if (!tmpView.IsScaleable)
                     scaleSignal = 0;
 
-                if ((scaleSignal & kScaleSignalDoScaling) != 0)
+                if ((scaleSignal & ViewScaleSignals.DoScaling) != 0)
                 {
                     celRect = GetNSRect(@object);
                 }

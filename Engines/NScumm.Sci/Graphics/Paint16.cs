@@ -107,7 +107,7 @@ namespace NScumm.Sci.Graphics
             memoryPtr = _segMan.GetHunkPointer(memoryId);
             if (memoryPtr != null)
                 _screen.BitsSave(workerRect, screenMask, memoryPtr);
-            return memoryId;
+            return Register.Make(memoryId);
         }
 
         public void InvertRect(Rect rect)

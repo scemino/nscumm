@@ -164,7 +164,7 @@ namespace NScumm.Sci.Engine
 
         public override List<Register> ListAllOutgoingReferences(Register obj)
         {
-            var tmp = _entries.ToList();
+            var tmp = _entries.Select(Register.Make).ToList();
             return tmp;
         }
     }
@@ -206,7 +206,7 @@ namespace NScumm.Sci.Engine
         }
     }
 
-    internal class SegmentObjTable<T> : SegmentObj where T : class, new()
+    internal class SegmentObjTable<T> : SegmentObj where T : new()
     {
         private const int HEAPENTRY_INVALID = -1;
 
@@ -333,7 +333,7 @@ namespace NScumm.Sci.Engine
 
             // Emit all member variables (including references to the 'super' delegate)
             for (var i = 0; i < clone.VarCount; i++)
-                tmp.Add(clone.GetVariable(i));
+                tmp.Add(Register.Make(clone.GetVariable(i)));
 
             // Note that this also includes the 'base' object, which is part of the script and therefore also emits the locals.
             tmp.Add(Register.Make(clone.Pos));
@@ -500,7 +500,7 @@ namespace NScumm.Sci.Engine
                 else {
                     throw new System.InvalidOperationException($"LocalVariables::dereference: Offset at end or out of bounds {pointer}");
                 }
-                ret.reg = new StackPtr();
+                ret.reg = StackPtr.Null;
             }
             return ret;
         }

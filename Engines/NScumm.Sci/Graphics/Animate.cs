@@ -53,7 +53,7 @@ namespace NScumm.Sci.Graphics
         Hoyle4SpecialHandling = 0x0004  // HOYLE4-exclusive: special handling inside kAnimate, is used when giving out cards
     }
 
-    internal struct AnimateEntry
+    internal class AnimateEntry
     {
         public short givenOrderNo;
         public Register @object;
@@ -446,7 +446,7 @@ namespace NScumm.Sci.Graphics
                 for (int i = 0; i < _lastCastData.Count; i++)
                 {
                     var it = _lastCastData[i];
-                    it.castHandle = Register.Make(_paint16.BitsSave(it.celRect, GfxScreenMasks.VISUAL | GfxScreenMasks.PRIORITY));
+                    it.castHandle = _paint16.BitsSave(it.celRect, GfxScreenMasks.VISUAL | GfxScreenMasks.PRIORITY);
                     _paint16.DrawCel(it.viewId, it.loopNo, it.celNo, it.celRect, (byte)it.priority, (ushort)it.paletteNo, (ushort)it.scaleX, (ushort)it.scaleY);
                 }
                 _paint16.BitsShow(rect);
@@ -483,20 +483,20 @@ namespace NScumm.Sci.Graphics
                 if (!it.signal.HasFlag(ViewSignals.FixedPriority))
                 {
                     it.priority = _ports.KernelCoordinateToPriority(it.y);
-                    SciEngine.WriteSelectorValue(_s._segMan, it.@object, SciEngine.Selector(s => s.priority), (ushort)it.priority);
+                    SciEngine.WriteSelectorValue(_s._segMan, it.@object, s => s.priority, (ushort)it.priority);
                 }
 
                 if (it.signal.HasFlag(ViewSignals.NoUpdate))
                 {
-                    if ((it.signal & (ViewSignals.ForceUpdate | ViewSignals.ViewUpdated)) != 0
-                        || (it.signal & ViewSignals.Hidden) != 0 && (it.signal & ViewSignals.RemoveView) == 0
-                        || 0 == (it.signal & ViewSignals.Hidden) && (it.signal & ViewSignals.RemoveView) != 0
-                        || (it.signal & ViewSignals.AlwaysUpdate) != 0)
+                    if (it.signal.HasFlag(ViewSignals.ForceUpdate | ViewSignals.ViewUpdated)
+                        || (it.signal.HasFlag(ViewSignals.Hidden) && !it.signal.HasFlag(ViewSignals.RemoveView))
+                        || (!it.signal.HasFlag(ViewSignals.Hidden) && it.signal.HasFlag(ViewSignals.RemoveView))
+                        || it.signal.HasFlag(ViewSignals.AlwaysUpdate))
                         old_picNotValid++;
                     it.signal &= ~ViewSignals.StopUpdate;
                 }
                 else {
-                    if ((it.signal & ViewSignals.StopUpdate) != 0 || (it.signal & ViewSignals.AlwaysUpdate) != 0)
+                    if (it.signal.HasFlag(ViewSignals.StopUpdate) || it.signal.HasFlag(ViewSignals.AlwaysUpdate))
                         old_picNotValid++;
                     it.signal &= ~ViewSignals.ForceUpdate;
                 }
@@ -510,7 +510,7 @@ namespace NScumm.Sci.Graphics
             // Create rect according to coordinates and given cel
             if (it.scaleSignal.HasFlag(ViewScaleSignals.DoScaling))
             {
-                view.GetCelScaledRect(it.loopNo, it.celNo, it.x, it.y, it.z, it.scaleX, it.scaleY, it.celRect);
+                it.celRect = view.GetCelScaledRect(it.loopNo, it.celNo, it.x, it.y, it.z, it.scaleX, it.scaleY);
                 // when being scaled, only set nsRect, if object will get drawn
                 if (it.signal.HasFlag(ViewSignals.Hidden) && !it.signal.HasFlag(ViewSignals.AlwaysUpdate))
                     shouldSetNsRect = false;
@@ -521,10 +521,11 @@ namespace NScumm.Sci.Graphics
                 if ((SciEngine.Instance.GameId == SciGameId.HOYLE4) && it.scaleSignal.HasFlag(ViewScaleSignals.Hoyle4SpecialHandling))
                 {
                     it.celRect = SciEngine.Instance._gfxCompare.GetNSRect(it.@object);
-                    view.GetCelSpecialHoyle4Rect(it.loopNo, it.celNo, it.x, it.y, it.z, it.celRect);
+                    view.GetCelSpecialHoyle4Rect(it.loopNo, it.celNo, it.x, it.y, it.z, ref it.celRect);
                     shouldSetNsRect = false;
                 }
-                else {
+                else
+                {
                     it.celRect = view.GetCelRect(it.loopNo, it.celNo, it.x, it.y, it.z);
                 }
             }
@@ -598,7 +599,7 @@ namespace NScumm.Sci.Graphics
             if (it.loopNo >= viewLoopCount)
             {
                 it.loopNo = 0;
-                SciEngine.WriteSelectorValue(_s._segMan, it.@object, SciEngine.Selector(s => s.loop), (ushort)it.loopNo);
+                SciEngine.WriteSelectorValue(_s._segMan, it.@object, s => s.loop, (ushort)it.loopNo);
             }
             else if (it.loopNo < 0)
             {
@@ -609,7 +610,7 @@ namespace NScumm.Sci.Graphics
             if (it.celNo >= viewCelCount)
             {
                 it.celNo = 0;
-                SciEngine.WriteSelectorValue(_s._segMan, it.@object, SciEngine.Selector(s => s.cel), (ushort)it.celNo);
+                SciEngine.WriteSelectorValue(_s._segMan, it.@object, s => s.cel, (ushort)it.celNo);
             }
             else if (it.celNo < 0)
             {
@@ -631,29 +632,29 @@ namespace NScumm.Sci.Graphics
             for (listNr = 0; curNode != null; listNr++)
             {
                 AnimateEntry listEntry = new AnimateEntry();
-                Register curObject = curNode.value;
-                listEntry.@object = Register.Make(curObject);
+                Register curObject = Register.Make(curNode.value);
+                listEntry.@object = curObject;
                 listEntry.castHandle = Register.NULL_REG;
 
                 // Get data from current object
                 listEntry.givenOrderNo = listNr;
-                listEntry.viewId = (int)SciEngine.ReadSelectorValue(_s._segMan, curObject, SciEngine.Selector(s => s.view));
-                listEntry.loopNo = (short)SciEngine.ReadSelectorValue(_s._segMan, curObject, SciEngine.Selector(s => s.loop));
-                listEntry.celNo = (short)SciEngine.ReadSelectorValue(_s._segMan, curObject, SciEngine.Selector(s => s.cel));
-                listEntry.paletteNo = (short)SciEngine.ReadSelectorValue(_s._segMan, curObject, SciEngine.Selector(s => s.palette));
-                listEntry.x = (short)SciEngine.ReadSelectorValue(_s._segMan, curObject, SciEngine.Selector(s => s.x));
-                listEntry.y = (short)SciEngine.ReadSelectorValue(_s._segMan, curObject, SciEngine.Selector(s => s.y));
-                listEntry.z = (short)SciEngine.ReadSelectorValue(_s._segMan, curObject, SciEngine.Selector(s => s.z));
-                listEntry.priority = (short)SciEngine.ReadSelectorValue(_s._segMan, curObject, SciEngine.Selector(s => s.priority));
-                listEntry.signal = (ViewSignals)SciEngine.ReadSelectorValue(_s._segMan, curObject, SciEngine.Selector(s => s.signal));
+                listEntry.viewId = (int)SciEngine.ReadSelectorValue(_s._segMan, curObject, s => s.view);
+                listEntry.loopNo = (short)SciEngine.ReadSelectorValue(_s._segMan, curObject, s => s.loop);
+                listEntry.celNo = (short)SciEngine.ReadSelectorValue(_s._segMan, curObject, s => s.cel);
+                listEntry.paletteNo = (short)SciEngine.ReadSelectorValue(_s._segMan, curObject, s => s.palette);
+                listEntry.x = (short)SciEngine.ReadSelectorValue(_s._segMan, curObject, s => s.x);
+                listEntry.y = (short)SciEngine.ReadSelectorValue(_s._segMan, curObject, s => s.y);
+                listEntry.z = (short)SciEngine.ReadSelectorValue(_s._segMan, curObject, s => s.z);
+                listEntry.priority = (short)SciEngine.ReadSelectorValue(_s._segMan, curObject, s => s.priority);
+                listEntry.signal = (ViewSignals)SciEngine.ReadSelectorValue(_s._segMan, curObject, s => s.signal);
                 if (ResourceManager.GetSciVersion() >= SciVersion.V1_1)
                 {
                     // Cel scaling
-                    listEntry.scaleSignal = (ViewScaleSignals)SciEngine.ReadSelectorValue(_s._segMan, curObject, SciEngine.Selector(s => s.scaleSignal));
+                    listEntry.scaleSignal = (ViewScaleSignals)SciEngine.ReadSelectorValue(_s._segMan, curObject, s => s.scaleSignal);
                     if (listEntry.scaleSignal.HasFlag(ViewScaleSignals.DoScaling))
                     {
-                        listEntry.scaleX = (short)SciEngine.ReadSelectorValue(_s._segMan, curObject, SciEngine.Selector(s => s.scaleX));
-                        listEntry.scaleY = (short)SciEngine.ReadSelectorValue(_s._segMan, curObject, SciEngine.Selector(s => s.scaleY));
+                        listEntry.scaleX = (short)SciEngine.ReadSelectorValue(_s._segMan, curObject, s => s.scaleX);
+                        listEntry.scaleY = (short)SciEngine.ReadSelectorValue(_s._segMan, curObject, s => s.scaleY);
                     }
                     else {
                         listEntry.scaleX = 128;
@@ -772,11 +773,9 @@ namespace NScumm.Sci.Graphics
 
         public void KernelAddToPicList(Register listReference, int argc, StackPtr? argv)
         {
-            List list;
-
             _ports.SetPort(_ports._picWind);
 
-            list = _s._segMan.LookupList(listReference);
+            var list = _s._segMan.LookupList(listReference);
             if (list == null)
                 throw new InvalidOperationException("kAddToPic called with non-list as parameter");
 
@@ -793,8 +792,7 @@ namespace NScumm.Sci.Graphics
             else
                 _screen._picNotValid = 2;
         }
-
-
+        
         private void AddToPicDrawCels()
         {
             Register curObject;
@@ -827,7 +825,7 @@ namespace NScumm.Sci.Graphics
                     {
                         ApplyGlobalScaling(it, view);
                     }
-                    view.GetCelScaledRect(it.loopNo, it.celNo, it.x, it.y, it.z, it.scaleX, it.scaleY, it.celRect);
+                    it.celRect = view.GetCelScaledRect(it.loopNo, it.celNo, it.x, it.y, it.z, it.scaleX, it.scaleY);
                     SciEngine.Instance._gfxCompare.SetNSRect(curObject, it.celRect);
                 }
                 else {

@@ -785,6 +785,10 @@ namespace NScumm.Sci.Sound
 
         private void RemapChannels(bool mainThread = true)
         {
+            if (_soundVersion <= SciVersion.V0_LATE)
+                return;
+
+            throw new NotImplementedException();
             // TODO:RemapChannels
         }
 
@@ -973,6 +977,19 @@ namespace NScumm.Sci.Sound
             }
             else {
                 SoundPlay(pSnd);
+            }
+        }
+
+        public void ClearPlayList()
+        {
+            // we must NOT lock our mutex here. Playlist is modified inside soundKill() which will lock the mutex
+            //  during deletion. If we lock it here, a deadlock may occur within soundStop() because that one
+            //  calls the mixer, which will also lock the mixer mutex and if the mixer thread is active during
+            //  that time, we will get a deadlock.
+            while (_playList.Count > 0)
+            {
+                SoundStop(_playList[0]);
+                SoundKill(_playList[0]);
             }
         }
 

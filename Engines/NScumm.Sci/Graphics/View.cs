@@ -238,14 +238,34 @@ namespace NScumm.Sci.Graphics
             return outRect;
         }
 
-        internal void GetCelSpecialHoyle4Rect(short loopNo, short celNo, short x, short y, short z, Rect celRect)
+        public void GetCelSpecialHoyle4Rect(short loopNo, short celNo, short x, short y, short z, ref Rect outRect)
         {
-            throw new NotImplementedException();
+            CelInfo celInfo = GetCelInfo(loopNo, celNo);
+            short adjustY = (short)(y + celInfo.displaceY - celInfo.height + 1);
+            short adjustX = (short)(x + celInfo.displaceX - ((celInfo.width - 1) >> 1));
+            outRect.Translate(adjustX, adjustY);
         }
 
-        internal void GetCelScaledRect(short loopNo, short celNo, short x, short y, short z, short scaleX, short scaleY, Rect celRect)
+        public Rect GetCelScaledRect(short loopNo, short celNo, short x, short y, short z, short scaleX, short scaleY)
         {
-            throw new NotImplementedException();
+            short scaledDisplaceX, scaledDisplaceY;
+            short scaledWidth, scaledHeight;
+            CelInfo celInfo = GetCelInfo(loopNo, celNo);
+
+            // Scaling displaceX/Y, Width/Height
+            scaledDisplaceX = (short)((celInfo.displaceX * scaleX) >> 7);
+            scaledDisplaceY = (short)((celInfo.displaceY * scaleY) >> 7);
+            scaledWidth = (short)((celInfo.width * scaleX) >> 7);
+            scaledHeight = (short)((celInfo.height * scaleY) >> 7);
+            scaledWidth = (short)ScummHelper.Clip(scaledWidth, 0, _screen.Width);
+            scaledHeight = (short)ScummHelper.Clip(scaledHeight, 0, _screen.Height);
+
+            var outRect = new Rect();
+            outRect.Left = x + scaledDisplaceX - (scaledWidth >> 1);
+            outRect.Right = outRect.Left + scaledWidth;
+            outRect.Bottom = y + scaledDisplaceY - z + 1;
+            outRect.Top = outRect.Bottom - scaledHeight;
+            return outRect;
         }
 
         public ushort GetCelCount(int loopNo)

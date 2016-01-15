@@ -17,6 +17,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+using NScumm.Core;
 using System;
 using System.Collections.Generic;
 
@@ -58,7 +59,7 @@ namespace NScumm.Sci.Engine
             Register key = argv.Value[1];
             Register list_pos = argv.Value[0];
 
-            // TODO: debugC(kDebugLevelNodes, "Looking for key %04x:%04x in list %04x:%04x", PRINT_REG(key), PRINT_REG(list_pos));
+            ServiceLocator.Platform.Debug($"Looking for key {key} in list {list_pos}");
 
 # if CHECK_LISTS
             checkListPointer(s._segMan, argv[0]);
@@ -66,22 +67,22 @@ namespace NScumm.Sci.Engine
 
             node_pos = s._segMan.LookupList(list_pos).first;
 
-            // TODO: debugC(kDebugLevelNodes, "First node at %04x:%04x", PRINT_REG(node_pos));
+            ServiceLocator.Platform.Debug($"First node at {node_pos}");
 
             while (!node_pos.IsNull)
             {
                 Node n = s._segMan.LookupNode(node_pos);
                 if (n.key == key)
                 {
-                    // TODO: debugC(kDebugLevelNodes, " Found key at %04x:%04x", PRINT_REG(node_pos));
-                    return node_pos;
+                    ServiceLocator.Platform.Debug($" Found key at {node_pos}");
+                    return Register.Make(node_pos);
                 }
 
                 node_pos = n.succ;
-                // TODO: debugC(kDebugLevelNodes, "NextNode at %04x:%04x", PRINT_REG(node_pos));
+                ServiceLocator.Platform.Debug($"NextNode at {node_pos}");
             }
 
-            // TODO: debugC(kDebugLevelNodes, "Looking for key without success");
+            ServiceLocator.Platform.Debug($"Looking for key without success");
             return Register.NULL_REG;
         }
 
@@ -250,13 +251,12 @@ namespace NScumm.Sci.Engine
         private static Register kDeleteKey(EngineState s, int argc, StackPtr? argv)
         {
             Register node_pos = kFindKey(s, 2, argv);
-            Node n;
             List list = s._segMan.LookupList(argv.Value[0]);
 
             if (node_pos.IsNull)
                 return Register.NULL_REG; // Signal failure
 
-            n = s._segMan.LookupNode(node_pos);
+            var n = s._segMan.LookupNode(node_pos);
             if (list.first == node_pos)
                 list.first = n.succ;
             if (list.last == node_pos)
@@ -366,12 +366,12 @@ namespace NScumm.Sci.Engine
 
             // Set node to be the first and last node if it's the only node of the list
             if (list.first.IsNull)
-                list.last = nodeRef;
+                list.last = Register.Make(nodeRef);
             else {
                 Node oldNode = s._segMan.LookupNode(list.first);
-                oldNode.pred = nodeRef;
+                oldNode.pred = Register.Make(nodeRef);
             }
-            list.first = nodeRef;
+            list.first = Register.Make(nodeRef);
         }
 
         private static void AddToEnd(EngineState s, Register listRef, Register nodeRef)
@@ -393,12 +393,12 @@ namespace NScumm.Sci.Engine
 
             // Set node to be the first and last node if it's the only node of the list
             if (list.last.IsNull)
-                list.first = nodeRef;
+                list.first = Register.Make(nodeRef);
             else {
                 Node old_n = s._segMan.LookupNode(list.last);
-                old_n.succ = nodeRef;
+                old_n.succ = Register.Make(nodeRef);
             }
-            list.last = nodeRef;
+            list.last = Register.Make(nodeRef);
         }
     }
 }

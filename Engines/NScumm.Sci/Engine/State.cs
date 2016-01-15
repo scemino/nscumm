@@ -303,8 +303,8 @@ namespace NScumm.Sci.Engine
         {
             Script script_000 = _segMan.GetScript(1);
 
-            // TODO: if (script_000.LocalsCount == 0)
-            //          error("Script 0 has no locals block");
+            if (script_000.LocalsCount == 0)
+                throw new InvalidOperationException("Script 0 has no locals block");
 
             variablesSegment[Vm.VAR_GLOBAL] = script_000.LocalsSegment;
             variablesBase[Vm.VAR_GLOBAL] = script_000.LocalsBegin;
@@ -315,13 +315,17 @@ namespace NScumm.Sci.Engine
         public void Wait(int ticks)
         {
             var time = Environment.TickCount;
-            r_acc = Register.Make(0, (ushort)((time - lastWaitTime) * 60 / 1000));
+            r_acc = Register.Make(0, (ushort)((((long)time) - ((long)lastWaitTime)) * 60 / 1000));
             lastWaitTime = time;
 
             ticks *= g_debug_sleeptime_factor;
             SciEngine.Instance.Sleep(ticks * 1000 / 60);
         }
 
+        /// <summary>
+        /// Shrink execution stack to size.
+        /// Contains an assert if it is not already smaller.
+        /// </summary>
         public void ShrinkStackToBase()
         {
             if (_executionStack.Count > 0)

@@ -206,7 +206,6 @@ namespace NScumm.Sci.Graphics
         private Action<short, short, GfxScreenMasks, byte, byte, byte> _putPixelPtr;
         private Func<byte[], short, short, byte> _vectorGetPixelPtr;
         private Func<byte[], short, short, byte> _getPixelPtr;
-        private ISystem _system;
 
         private static readonly UpScaledAdjust[] s_upscaledAdjustTable = {
             new UpScaledAdjust { gameHiresMode = GfxScreenUpscaledMode.S640x480, viewNativeRes = Sci32ViewNativeResolution.R640x400, numerator = 5, denominator = 6 }
@@ -228,7 +227,11 @@ namespace NScumm.Sci.Graphics
 
         public byte ColorWhite { get { return _colorWhite; } }
 
-        public bool IsUnditheringEnabled { get { return _unditheringEnabled; } }
+        public bool IsUnditheringEnabled
+        {
+            get { return _unditheringEnabled; }
+            set { _unditheringEnabled = value; }
+        }
 
         public byte ColorDefaultVectorData { get { return _colorDefaultVectorData; } }
 
@@ -423,9 +426,8 @@ namespace NScumm.Sci.Graphics
             }
         }
 
-        public GfxScreen(ISystem system, ResourceManager resMan)
+        public GfxScreen(ResourceManager resMan)
         {
-            _system = system;
             _resMan = resMan;
 
             // Scale the screen, if needed
@@ -889,12 +891,12 @@ namespace NScumm.Sci.Graphics
         {
             if (_upscaledHires == GfxScreenUpscaledMode.DISABLED)
             {
-                _system.GraphicsManager.CopyRectToScreen(_activeScreen, rect.Top * _displayWidth + rect.Left, _displayWidth, rect.Left, rect.Top, rect.Width, rect.Height);
+                SciEngine.Instance.System.GraphicsManager.CopyRectToScreen(_activeScreen, rect.Top * _displayWidth + rect.Left, _displayWidth, rect.Left, rect.Top, rect.Width, rect.Height);
             }
             else {
                 int rectHeight = _upscaledHeightMapping[rect.Bottom] - _upscaledHeightMapping[rect.Top];
                 int rectWidth = _upscaledWidthMapping[rect.Right] - _upscaledWidthMapping[rect.Left];
-                _system.GraphicsManager.CopyRectToScreen(_activeScreen, _upscaledHeightMapping[rect.Top] * _displayWidth + _upscaledWidthMapping[rect.Left], _displayWidth, _upscaledWidthMapping[rect.Left], _upscaledHeightMapping[rect.Top], rectWidth, rectHeight);
+                SciEngine.Instance.System.GraphicsManager.CopyRectToScreen(_activeScreen, _upscaledHeightMapping[rect.Top] * _displayWidth + _upscaledWidthMapping[rect.Left], _displayWidth, _upscaledWidthMapping[rect.Left], _upscaledHeightMapping[rect.Top], rectWidth, rectHeight);
             }
         }
 

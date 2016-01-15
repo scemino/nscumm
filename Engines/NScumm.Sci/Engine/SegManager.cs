@@ -1291,8 +1291,8 @@ namespace NScumm.Sci.Engine
             Register nodeRef;
             Node n = AllocateNode(out nodeRef);
             n.pred = n.succ = Register.NULL_REG;
-            n.key = key;
-            n.value = value;
+            n.key = Register.Make(key);
+            n.value = Register.Make(value);
 
             return nodeRef;
         }

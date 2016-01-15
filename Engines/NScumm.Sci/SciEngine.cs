@@ -557,7 +557,8 @@ namespace NScumm.Sci
             SegManager segMan = new SegManager(_resMan, _scriptPatcher);
 
             // Initialize the game screen
-            _gfxScreen = new GfxScreen(_system, _resMan);
+            _gfxScreen = new GfxScreen(_resMan);
+            _gfxScreen.IsUnditheringEnabled = false;
             // TODO: _gfxScreen.EnableUndithering(ConfMan.getBool("disable_dithering"));
 
             _kernel = new Kernel(_resMan, segMan);
@@ -774,7 +775,7 @@ namespace NScumm.Sci
 
         private void RunGame()
         {
-            // TODO: SetTotalPlayTime(0);
+            TotalPlaytime = 0;
 
             InitStackBaseWithSelector(Selector(s => s.play)); // Call the play selector
 
@@ -813,7 +814,7 @@ namespace NScumm.Sci
                     InitStackBaseWithSelector(Selector(s => s.replay));
                     // TODO: PatchGameSaveRestore();
                     SetLauncherLanguage();
-                    // TODO: _gamestate.ShrinkStackToBase();
+                    _gamestate.ShrinkStackToBase();
                     _gamestate.abortScriptProcessing = AbortGameState.None;
 
                     // TODO: SyncSoundSettings();
@@ -831,8 +832,8 @@ namespace NScumm.Sci
             if (_gamestate.abortScriptProcessing != AbortGameState.LoadGame)
             {
                 _gamestate._executionStack.Clear();
-                // TODO: _audio.StopAllAudio();
-                // TODO: _soundCmd.ClearPlayList();
+                _audio.StopAllAudio();
+                _soundCmd.ClearPlayList();
             }
 
             // TODO Free parser segment here
@@ -902,7 +903,7 @@ namespace NScumm.Sci
 
             _gfxPalette = new GfxPalette(_resMan, _gfxScreen);
             _gfxCache = new GfxCache(_resMan, _gfxScreen, _gfxPalette);
-            _gfxCursor = new GfxCursor(_system, _resMan, _gfxPalette, _gfxScreen);
+            _gfxCursor = new GfxCursor(_resMan, _gfxPalette, _gfxScreen);
 
 #if ENABLE_SCI32
             if (getSciVersion() >= SCI_VERSION_2)
@@ -1119,7 +1120,7 @@ namespace NScumm.Sci
             if (LookupSelector(segMan, obj, selectorId, address, out fptr) != SelectorType.Variable)
                 return Register.NULL_REG;
             else
-                return address.GetPointer(segMan);
+                return address.GetPointer(segMan)[0];
         }
 
         public static SelectorType LookupSelector(SegManager segMan, Register obj_location, Func<SelectorCache, int> func, ObjVarRef varp, out Register fptr)
@@ -1254,7 +1255,10 @@ namespace NScumm.Sci
             if (LookupSelector(segMan, obj, selectorId, address, out tmp) != SelectorType.Variable)
                 throw new InvalidOperationException($"Selector '{Instance._kernel.GetSelectorName(selectorId)}' of object at {obj} could not be written to");
             else
-                address.SetPointer(segMan, value);
+            {
+                var ptr = address.GetPointer(segMan);
+                ptr[0] = value;
+            }
         }
 
         event EventHandler IEngine.ShowMenuDialogRequested

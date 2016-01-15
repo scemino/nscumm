@@ -40,6 +40,8 @@ namespace NScumm.Sci.Sound
         /// </summary>
         private ResourceManager.ResourceSource.Resource _syncResource;
         private int _syncOffset;
+        private uint _audioCdStart;
+        private SoundHandle _audioHandle;
 
         public AudioPlayer(ResourceManager resMan)
         {
@@ -98,6 +100,26 @@ namespace NScumm.Sci.Sound
                 SciEngine.WriteSelectorValue(segMan, syncObjAddr, o => o.syncTime, (ushort)syncTime);
                 SciEngine.WriteSelectorValue(segMan, syncObjAddr, o => o.syncCue, (ushort)syncCue);
             }
+        }
+
+        public void StopAllAudio()
+        {
+            StopSoundSync();
+            StopAudio();
+            if (_audioCdStart > 0)
+                AudioCdStop();
+        }
+
+        private void AudioCdStop()
+        {
+            throw new NotImplementedException();
+            //_audioCdStart = 0;
+            //g_system->getAudioCDManager()->stop();
+        }
+
+        private void StopAudio()
+        {
+            _mixer.StopHandle(_audioHandle);
         }
     }
 }

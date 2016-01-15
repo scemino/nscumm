@@ -91,13 +91,13 @@ namespace NScumm.Sci.Graphics
             }
             _resourceData = _resource.data;
 
-            _numChars = _resourceData.ReadSci11EndianUInt16(2);
-            _fontHeight = (byte)_resourceData.ReadSci11EndianUInt16(4);
+            _numChars = _resourceData.ReadSci32EndianUInt16(2);
+            _fontHeight = (byte)_resourceData.ReadSci32EndianUInt16(4);
             _chars = new Charinfo[_numChars];
             // filling info for every char
             for (var i = 0; i < _numChars; i++)
             {
-                _chars[i].offset = (short)_resourceData.ReadSci11EndianUInt16(6 + i * 2);
+                _chars[i].offset = (short)_resourceData.ReadSci32EndianUInt16(6 + i * 2);
                 _chars[i].width = _resourceData[_chars[i].offset];
                 _chars[i].height = _resourceData[_chars[i].offset + 1];
             }
@@ -146,7 +146,5 @@ namespace NScumm.Sci.Graphics
         {
             return chr < _numChars ? new ByteAccess(_resourceData, _chars[chr].offset + 2) : null;
         }
-
-
     }
 }

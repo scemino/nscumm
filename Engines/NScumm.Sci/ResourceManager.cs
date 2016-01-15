@@ -295,7 +295,10 @@ namespace NScumm.Sci
 #endif
 
             }
-            // TODO: else ...
+            else
+            {
+                throw new NotImplementedException();
+            }
 
             AddPatchDir(".");
 

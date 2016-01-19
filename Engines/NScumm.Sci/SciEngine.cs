@@ -1006,8 +1006,8 @@ namespace NScumm.Sci
             _gamestate.InitGlobals();
             _gamestate._segMan.InitSysStrings();
 
-            _gamestate.r_acc = Register.Make(Register.NULL_REG);
-            _gamestate.r_prev = Register.Make(Register.NULL_REG);
+            _gamestate.r_acc = Register.NULL_REG;
+            _gamestate.r_prev = Register.NULL_REG;
 
             _gamestate._executionStack.Clear();    // Start without any execution stack
             _gamestate.executionStackBase = -1; // No vm is running yet
@@ -1152,7 +1152,7 @@ namespace NScumm.Sci
                 // Found it as a variable
                 if (varp != null)
                 {
-                    varp.obj = Register.Make(obj_location);
+                    varp.obj = obj_location;
                     varp.varindex = index;
                 }
                 return SelectorType.Variable;

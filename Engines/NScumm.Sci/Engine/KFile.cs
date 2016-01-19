@@ -296,14 +296,14 @@ namespace NScumm.Sci.Engine
                         //  We can't trust that global, that's why we set the actual savedgame id right here directly after
                         //   restoring a saved game.
                         //  If we didn't, the game would always save to a new slot
-                        s.variables[Vm.VAR_GLOBAL][0xC5].SetOffset((ushort)(SAVEGAMEID_OFFICIALRANGE_START + savegameId));
+                        s.variables[Vm.VAR_GLOBAL][0xC5] = Register.SetOffset(s.variables[Vm.VAR_GLOBAL][0xC5], (ushort)(SAVEGAMEID_OFFICIALRANGE_START + savegameId));
                         break;
                     case SciGameId.MOTHERGOOSE256:
                         // WORKAROUND: Mother Goose SCI1/SCI1.1 does some weird things for
                         //  saving a previously restored game.
                         // We set the current savedgame-id directly and remove the script
                         //  code concerning this via script patch.
-                        s.variables[Vm.VAR_GLOBAL][0xB3].SetOffset((ushort)(SAVEGAMEID_OFFICIALRANGE_START + savegameId));
+                        s.variables[Vm.VAR_GLOBAL][0xB3] = Register.SetOffset(s.variables[Vm.VAR_GLOBAL][0xB3], (ushort)(SAVEGAMEID_OFFICIALRANGE_START + savegameId));
                         break;
                     case SciGameId.JONES:
                         // HACK: The code that enables certain menu items isn't called when a game is restored from the

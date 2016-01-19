@@ -41,7 +41,7 @@ namespace NScumm.Sci.Engine
         Script_End
     }
 
-    internal class Register
+    internal struct Register
     {
         /// <summary>
         ///  Special reg_t 'offset' used to indicate an error, or that an operation has
@@ -49,13 +49,20 @@ namespace NScumm.Sci.Engine
         /// </summary>
         public const ushort SIGNAL_OFFSET = ushort.MaxValue;
 
-        public static Register NULL_REG { get { return Make(0, 0); } }
+        public static Register NULL_REG = Make(0, 0);
         public static readonly Register SIGNAL_REG = Make(0, SIGNAL_OFFSET);
         public static readonly Register TRUE_REG = Make(0, 1);
 
         // Segment and offset. These should never be accessed directly
-        ushort _segment;
-        ushort _offset;
+        private readonly ushort _segment;
+        private readonly ushort _offset;
+
+        private Register(ushort segment, ushort offset)
+            : this()
+        {
+            _segment = segment;
+            _offset = offset;
+        }
 
         public uint Offset
         {
@@ -116,16 +123,18 @@ namespace NScumm.Sci.Engine
             }
         }
 
-        public void SetSegment(ushort segment)
+        public static Register SetSegment(Register reg, ushort segment)
         {
+            ushort seg;
             if (ResourceManager.GetSciVersion() <= SciVersion.V2_1)
             {
-                _segment = segment;
+                seg = segment;
             }
             else {
                 // Set the lower 14 bits of the segment, and preserve the upper 2 ones for the offset
-                _segment = (ushort)((_segment & 0xC000) | (segment & 0x3FFF));
+                seg = (ushort)((reg._segment & 0xC000) | (segment & 0x3FFF));
             }
+            return Make(seg, reg._offset);
         }
 
         public ushort ToUInt16()
@@ -138,29 +147,26 @@ namespace NScumm.Sci.Engine
             return (short)Offset;
         }
 
-        public void SetOffset(ushort offset)
+        public static Register SetOffset(Register reg, ushort offset)
         {
+            ushort off;
+            ushort seg;
             if (ResourceManager.GetSciVersion() <= SciVersion.V2_1)
             {
-                _offset = offset;
+                seg = reg.Segment;
+                off = offset;
             }
             else {
                 // Store the lower 16 bits in the offset, and the 17th and 18th bits in the segment
-                _offset = (ushort)(offset & 0xFFFF);
-                _segment = (ushort)(((offset & 0x30000) >> 2) | (_segment & 0x3FFF));
+                off = (ushort)(offset & 0xFFFF);
+                seg = (ushort)(((offset & 0x30000) >> 2) | (reg._segment & 0x3FFF));
             }
-        }
-
-        public static Register Make(Register reg)
-        {
-            return new Register { _segment = reg._segment, _offset = reg._offset };
+            return Make(seg, off);
         }
 
         public static Register Make(ushort segment, ushort offset)
         {
-            Register r = new Register();
-            r.SetSegment(segment);
-            r.SetOffset(offset);
+            Register r = new Register(segment, offset);
             return r;
         }
 
@@ -306,6 +312,11 @@ namespace NScumm.Sci.Engine
                 return LookForWorkaround(right, "shift left");
         }
 
+        public static Register IncOffset(Register reg, short offset)
+        {
+            return Make(reg.Segment, (ushort)(reg.Offset + offset));
+        }
+
         public static Register operator &(Register left, Register right)
         {
             if (left.IsNumber && right.IsNumber)
@@ -370,11 +381,6 @@ namespace NScumm.Sci.Engine
         public bool LowerOrEqualsUnsigned(Register right)
         {
             return Compare(right, true) <= 0;
-        }
-
-        public void IncOffset(short offset)
-        {
-            SetOffset((ushort)(Offset + offset));
         }
 
         public override string ToString()

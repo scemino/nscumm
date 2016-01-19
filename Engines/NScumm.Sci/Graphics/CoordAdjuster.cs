@@ -35,7 +35,7 @@ namespace NScumm.Sci.Graphics
             return rect;
         }
 
-        public void KernelLocalToGlobal(ref int x, ref int y, Register planeObject = null)
+        public void KernelLocalToGlobal(ref int x, ref int y, Register? planeObject = null)
         {
             short xs = (short)x;
             short ys = (short)y;
@@ -44,11 +44,11 @@ namespace NScumm.Sci.Graphics
             y = ys;
         }
 
-        public virtual void KernelLocalToGlobal(ref short x, ref short y, Register planeObject = null)
+        public virtual void KernelLocalToGlobal(ref short x, ref short y, Register? planeObject = null)
         {
         }
 
-        public virtual void KernelGlobalToLocal(ref int x, ref int y, Register planeObject = null)
+        public virtual void KernelGlobalToLocal(ref int x, ref int y, Register? planeObject = null)
         {
         }
 
@@ -70,14 +70,14 @@ namespace NScumm.Sci.Graphics
             _ports = ports;
         }
 
-        public override void KernelLocalToGlobal(ref short x, ref short y, Register planeObject = null)
+        public override void KernelLocalToGlobal(ref short x, ref short y, Register? planeObject = null)
         {
             Port curPort = _ports.Port;
             x += curPort.left;
             y += curPort.top;
         }
 
-        public override void KernelGlobalToLocal(ref int x, ref int y, Register planeObject = null)
+        public override void KernelGlobalToLocal(ref int x, ref int y, Register? planeObject = null)
         {
             Port curPort = _ports.Port;
             x -= curPort.left;

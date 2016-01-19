@@ -107,7 +107,7 @@ namespace NScumm.Sci.Graphics
             memoryPtr = _segMan.GetHunkPointer(memoryId);
             if (memoryPtr != null)
                 _screen.BitsSave(workerRect, screenMask, memoryPtr);
-            return Register.Make(memoryId);
+            return memoryId;
         }
 
         public void InvertRect(Rect rect)
@@ -362,7 +362,7 @@ namespace NScumm.Sci.Graphics
             {
                 displayArg = argv.Value[0];
                 if (displayArg.Segment != 0)
-                    displayArg.SetOffset(0xFFFF);
+                    displayArg= Register.SetOffset(displayArg, 0xFFFF);
                 argc--; argv++;
                 switch (displayArg.Offset)
                 {

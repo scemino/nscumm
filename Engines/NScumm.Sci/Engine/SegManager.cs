@@ -204,9 +204,9 @@ namespace NScumm.Sci.Engine
 
         public List<SegmentObj> Segments { get { return _heap; } }
 
-        public Register SaveDirPtr { get { return Register.Make(_saveDirPtr); } }
+        public Register SaveDirPtr { get { return _saveDirPtr; } }
 
-        public Register ParserPtr { get { return Register.Make(_parserPtr); } }
+        public Register ParserPtr { get { return _parserPtr; } }
 
         public SegManager(ResourceManager resMan, ScriptPatcher scriptPatcher)
         {
@@ -339,7 +339,7 @@ namespace NScumm.Sci.Engine
 
             do
             {
-                reg.IncOffset((short)objLength); // Step over the last checked object
+                reg = Register.IncOffset(reg, (short)objLength); // Step over the last checked object
 
                 var tmp = scr.GetBuf((int)(reg.Offset));
                 objType = (ScriptObjectTypes)tmp.Data.ReadSci11EndianUInt16(tmp.Offset);
@@ -348,11 +348,11 @@ namespace NScumm.Sci.Engine
                 tmp = scr.GetBuf((int)(reg.Offset + 2));
                 objLength = (ScriptObjectTypes)tmp.Data.ReadSci11EndianUInt16(tmp.Offset);
 
-                reg.IncOffset(4); // Step over header
+                reg = Register.IncOffset(reg, 4); // Step over header
 
                 if ((objType == ScriptObjectTypes.OBJECT) || (objType == ScriptObjectTypes.CLASS))
                 { // object or class?
-                    reg.IncOffset(8);   // magic offset (SCRIPT_OBJECT_MAGIC_OFFSET)
+                    reg = Register.IncOffset(reg, 8);   // magic offset (SCRIPT_OBJECT_MAGIC_OFFSET)
                     tmp = scr.GetBuf((int)(reg.Offset + 2));
                     short superclass = (short)tmp.Data.ReadSci11EndianUInt16(tmp.Offset);
 
@@ -371,10 +371,10 @@ namespace NScumm.Sci.Engine
                         // Recurse to assure that the superclass lockers number gets decreased
                     }
 
-                    reg.IncOffset((short)Script.SCRIPT_OBJECT_MAGIC_OFFSET);
+                    reg = Register.IncOffset(reg, (short)Script.SCRIPT_OBJECT_MAGIC_OFFSET);
                 } // if object or class
 
-                reg.IncOffset(-4); // Step back on header
+                reg = Register.IncOffset(reg, -4); // Step back on header
 
             } while (objType != 0);
         }
@@ -585,7 +585,7 @@ namespace NScumm.Sci.Engine
                     var objects = scr.ObjectMap;
                     foreach (var it in objects)
                     {
-                        objpos.SetOffset((ushort)it.Value.Pos.Offset);
+                        objpos = Register.SetOffset(objpos, (ushort)it.Value.Pos.Offset);
                         if (name == GetObjectName(objpos))
                             result.Add(objpos);
                     }
@@ -599,7 +599,7 @@ namespace NScumm.Sci.Engine
                         if (!ct.IsValidEntry((ushort)idx))
                             continue;
 
-                        objpos.SetOffset((ushort)idx);
+                        objpos = Register.SetOffset(objpos, (ushort)idx);
                         if (name == GetObjectName(objpos))
                             result.Add(objpos);
                     }
@@ -1115,16 +1115,16 @@ namespace NScumm.Sci.Engine
 
             StackPtr val = @ref.reg + (int)offset / 2;
 
-            val[0].SetSegment(0);
+            val[0] = Register.SetSegment(val[0], 0);
 
             bool oddOffset = (offset & 1) != 0;
             if (SciEngine.Instance.IsBE)
                 oddOffset = !oddOffset;
 
             if (oddOffset)
-                val[0].SetOffset((ushort)((val[0].Offset & 0x00ff) | (value << 8)));
+                val[0] = Register.SetOffset(val[0], (ushort)((val[0].Offset & 0x00ff) | (value << 8)));
             else
-                val[0].SetOffset((ushort)((val[0].Offset & 0xff00) | value));
+                val[0] = Register.SetOffset(val[0], (ushort)((val[0].Offset & 0xff00) | value));
         }
 
         public List AllocateList(out Register addr)
@@ -1291,8 +1291,8 @@ namespace NScumm.Sci.Engine
             Register nodeRef;
             Node n = AllocateNode(out nodeRef);
             n.pred = n.succ = Register.NULL_REG;
-            n.key = Register.Make(key);
-            n.value = Register.Make(value);
+            n.key = key;
+            n.value = value;
 
             return nodeRef;
         }

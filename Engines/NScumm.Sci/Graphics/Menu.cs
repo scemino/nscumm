@@ -221,7 +221,7 @@ namespace NScumm.Sci.Graphics
 
             if (!_menuSaveHandle.IsNull)
             {
-                _paint16.BitsRestore(Register.Make(_menuSaveHandle));
+                _paint16.BitsRestore(_menuSaveHandle);
                 // Display line inbetween menubar and actual menu
                 Rect menuLine = _menuRect;
                 menuLine.Bottom = menuLine.Top + 1;
@@ -231,7 +231,7 @@ namespace NScumm.Sci.Graphics
             }
             if (!_barSaveHandle.IsNull)
             {
-                _paint16.BitsRestore(Register.Make(_barSaveHandle));
+                _paint16.BitsRestore(_barSaveHandle);
                 _paint16.BitsShow(_ports._menuRect);
                 _barSaveHandle = Register.NULL_REG;
             }
@@ -550,7 +550,7 @@ namespace NScumm.Sci.Graphics
             // Remove menu, if one is displayed
             if (!_menuSaveHandle.IsNull)
             {
-                _paint16.BitsRestore(Register.Make(_menuSaveHandle));
+                _paint16.BitsRestore(_menuSaveHandle);
                 // Display line inbetween menubar and actual menu
                 Rect menuLine = _menuRect;
                 menuLine.Bottom = menuLine.Top + 1;
@@ -885,8 +885,8 @@ namespace NScumm.Sci.Graphics
                         itemEntry.keyPress = char.ToLower(itemEntry.text[tempPtr + 5]);
                     }
                 }
-                itemEntry.textVmPtr = Register.Make(contentVmPtr);
-                itemEntry.textVmPtr.IncOffset((short)beginPos);
+                itemEntry.textVmPtr = contentVmPtr;
+                itemEntry.textVmPtr = Register.IncOffset(itemEntry.textVmPtr, (short)beginPos);
 
                 if (rightAlignedPos != 0)
                 {
@@ -961,11 +961,11 @@ namespace NScumm.Sci.Graphics
                     itemEntry.enabled = !value.IsNull;
                     break;
                 case MenuAttribute.SAID:
-                    itemEntry.saidVmPtr = Register.Make(value);
+                    itemEntry.saidVmPtr = value;
                     break;
                 case MenuAttribute.TEXT:
                     itemEntry.text = _segMan.GetString(value);
-                    itemEntry.textVmPtr = Register.Make(value);
+                    itemEntry.textVmPtr = value;
                     // We assume here that no script ever creates a separatorLine dynamically
                     break;
                 case MenuAttribute.KEYPRESS:
@@ -1065,9 +1065,9 @@ namespace NScumm.Sci.Graphics
                         return Register.Make(0, 1);
                     break;
                 case MenuAttribute.SAID:
-                    return Register.Make(itemEntry.saidVmPtr);
+                    return itemEntry.saidVmPtr;
                 case MenuAttribute.TEXT:
-                    return Register.Make(itemEntry.textVmPtr);
+                    return itemEntry.textVmPtr;
                 case MenuAttribute.KEYPRESS:
                     // TODO: Find out how modifier is handled
                     return Register.Make(0, itemEntry.keyPress);

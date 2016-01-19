@@ -19,6 +19,7 @@
 using NScumm.Core.Common;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace NScumm.Sci.Engine
 {
@@ -72,16 +73,16 @@ namespace NScumm.Sci.Engine
         private List<ushort> _baseMethod;
         private int _flags;
 
-        public Register Pos { get { return Register.Make(_pos); } }
+        public Register Pos { get { return _pos; } }
 
         public Register SpeciesSelector
         {
             get
             {
                 if (ResourceManager.GetSciVersion() <= SciVersion.V2_1)
-                    return Register.Make(_variables[_offset]);
+                    return _variables[_offset];
                 else    // SCI3
-                    return Register.Make(_speciesSelectorSci3);
+                    return _speciesSelectorSci3;
             }
             set
             {
@@ -97,9 +98,9 @@ namespace NScumm.Sci.Engine
             get
             {
                 if (ResourceManager.GetSciVersion() <= SciVersion.V2_1)
-                    return Register.Make(_variables[_offset + 1]);
+                    return _variables[_offset + 1];
                 else    // SCI3
-                    return Register.Make(_superClassPosSci3);
+                    return _superClassPosSci3;
             }
             set
             {
@@ -115,9 +116,9 @@ namespace NScumm.Sci.Engine
             get
             {
                 if (ResourceManager.GetSciVersion() <= SciVersion.V2_1)
-                    return Register.Make(_variables[_offset + 2]);
+                    return _variables[_offset + 2];
                 else    // SCI3
-                    return Register.Make(_infoSelectorSci3);
+                    return _infoSelectorSci3;
             }
             set
             {
@@ -133,9 +134,9 @@ namespace NScumm.Sci.Engine
             get
             {
                 if (ResourceManager.GetSciVersion() <= SciVersion.V2_1)
-                    return _offset + 3 < (ushort)_variables.Length ? Register.Make(_variables[_offset + 3]) : Register.NULL_REG;
+                    return _offset + 3 < (ushort)_variables.Length ? _variables[_offset + 3] : Register.NULL_REG;
                 else    // SCI3
-                    return _variables.Length != 0 ? Register.Make(_variables[0]) : Register.NULL_REG;
+                    return _variables.Length != 0 ? _variables[0] : Register.NULL_REG;
             }
         }
 
@@ -160,7 +161,7 @@ namespace NScumm.Sci.Engine
             _flags |= SciObject.OBJECT_FLAG_FREED;
         }
 
-        public Register GetVariable(int var) { return Register.Make(_variables[var]); }
+        public Register GetVariable(int var) { return _variables[var]; }
 
         public StackPtr GetVariableRef(int var)
         {
@@ -244,7 +245,7 @@ namespace NScumm.Sci.Engine
         {
             var clone = new SciObject
             {
-                _pos = Register.Make(_pos),
+                _pos = _pos,
                 _offset = _offset,
                 _superClassPosSci3 = _superClassPosSci3,
                 _speciesSelectorSci3 = _speciesSelectorSci3,
@@ -254,8 +255,7 @@ namespace NScumm.Sci.Engine
                 _methodCount = _methodCount,
                 _flags = _flags
             };
-            clone._variables = new Register[_variables.Length];
-            Array.Copy(_variables, clone._variables, clone._variables.Length);
+            clone._variables = _variables.ToArray();
             clone._baseMethod.AddRange(_baseMethod);
             return clone;
         }
@@ -311,7 +311,7 @@ namespace NScumm.Sci.Engine
                         name = "<no name>";
                     }
                     else {
-                        nameReg.SetSegment(_pos.Segment);
+                        nameReg = Register.SetSegment(nameReg, _pos.Segment);
                         name = segMan.DerefString(nameReg);
                         if (name == null)
                             name = "<invalid name>";
@@ -391,9 +391,9 @@ namespace NScumm.Sci.Engine
             {
                 throw new InvalidOperationException($"Attempt to relocate odd variable #{idx}.5e (relative to {block_location:X4})");
             }
-            block[idx].SetSegment(segment); // Perform relocation
+            block[idx]= Register.SetSegment(block[idx], segment); // Perform relocation
             if (ResourceManager.GetSciVersion() >= SciVersion.V1_1 && ResourceManager.GetSciVersion() <= SciVersion.V2_1)
-                block[idx].IncOffset((short)scriptSize);
+                block[idx] = Register.IncOffset(block[idx], (short)scriptSize);
 
             return true;
         }

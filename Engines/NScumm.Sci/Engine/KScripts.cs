@@ -197,7 +197,7 @@ namespace NScumm.Sci.Engine
             // Mark as clone
             unchecked
             {
-                infoSelector &= (ushort)(~SciObject.InfoFlagClone); // remove class bit
+                infoSelector &= (ushort)(~SciObject.InfoFlagClass); // remove class bit
             }
             cloneObj.Item.InfoSelector = Register.Make(0, (ushort)(infoSelector | SciObject.InfoFlagClone));
 

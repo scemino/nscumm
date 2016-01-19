@@ -105,7 +105,7 @@ namespace NScumm.Sci.Engine
                 short[] opparams = new short[4];
                 byte extOpcode;
                 byte opcode;
-                offset += (ushort)Vm.ReadPMachineInstruction(script.GetBuf(offset), out extOpcode, opparams);
+                offset = (ushort)(offset + Vm.ReadPMachineInstruction(script.GetBuf(offset), out extOpcode, opparams));
                 opcode = (byte)(extOpcode >> 1);
 
                 // Check for end of script
@@ -200,7 +200,7 @@ namespace NScumm.Sci.Engine
                 short[] opparams = new short[4];
                 byte extOpcode;
                 byte opcode;
-                offset += (ushort)Vm.ReadPMachineInstruction(script.GetBuf(offset), out extOpcode, opparams);
+                offset = (ushort)(offset + Vm.ReadPMachineInstruction(script.GetBuf(offset), out extOpcode, opparams));
                 opcode = (byte)(extOpcode >> 1);
 
                 // Check for end of script
@@ -359,7 +359,7 @@ namespace NScumm.Sci.Engine
                 short[] opparams = new short[4];
                 byte extOpcode;
                 byte opcode;
-                offset += Vm.ReadPMachineInstruction(script.GetBuf(offset), out extOpcode, opparams);
+                offset = (ushort)(offset + Vm.ReadPMachineInstruction(script.GetBuf(offset), out extOpcode, opparams));
                 opcode = (byte)(extOpcode >> 1);
 
                 // Check for end of script
@@ -397,7 +397,7 @@ namespace NScumm.Sci.Engine
         private Register GetDetectionAddr(string objName, int slc, int methodNum = -1)
         {
             // Get address of target object
-            Register objAddr = Register.Make(_segMan.FindObjectByName(objName, 0));
+            Register objAddr = _segMan.FindObjectByName(objName, 0);
             Register addr;
 
             if (objAddr.IsNull)
@@ -481,7 +481,7 @@ namespace NScumm.Sci.Engine
                 else {  // SCI0 late
                         // Check if the game is using an overlay
                     bool searchRoomObj = false;
-                    Register rmObjAddr = Register.Make(_segMan.FindObjectByName("Rm"));
+                    Register rmObjAddr = _segMan.FindObjectByName("Rm");
 
                     if (SciEngine.Selector(s => s.overlay) != -1)
                     {
@@ -562,7 +562,7 @@ namespace NScumm.Sci.Engine
                 short[] opparams = new short[4];
                 byte extOpcode;
                 byte opcode;
-                offset += Vm.ReadPMachineInstruction(script.GetBuf((ushort)offset), out extOpcode, opparams);
+                offset = (ushort)(offset + Vm.ReadPMachineInstruction(script.GetBuf((ushort)offset), out extOpcode, opparams));
                 opcode = (byte)(extOpcode >> 1);
 
                 // Check for end of script

@@ -34,7 +34,7 @@ namespace NScumm.Sci.Engine
             Register @event = argv.Value[1];
             SciEngine.Instance.CheckVocabularySwitch();
             Vocabulary voc = SciEngine.Instance.Vocabulary;
-            voc.parser_event = Register.Make(@event);
+            voc.parser_event = @event;
             Register[] @params = new[] { s._segMan.ParserPtr, stringpos };
 
             var words = new List<ResultWordList>();

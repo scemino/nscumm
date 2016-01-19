@@ -87,7 +87,7 @@ namespace NScumm.Sci.Engine
             if (lastCall.debugLocalCallOffset != -1)
             {
                 // if lastcall was actually a local call search back for a real call
-                for (int i = state._executionStack.Count - 1; i > 0; i--)
+                for (int i = state._executionStack.Count - 1; i >= 0; i--)
                 {
                     ExecStack loopCall = state._executionStack[i];
                     if ((loopCall.debugSelector != -1) || (loopCall.debugExportId != -1))

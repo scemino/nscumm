@@ -28,7 +28,7 @@ namespace NScumm.Sci.Engine
             string title = s._segMan.GetString(argv.Value[0]);
             string content = s._segMan.GetString(argv.Value[1]);
 
-            SciEngine.Instance._gfxMenu.KernelAddEntry(title, content, Register.Make(argv.Value[1]));
+            SciEngine.Instance._gfxMenu.KernelAddEntry(title, content, argv.Value[1]);
             return s.r_acc;
         }
 

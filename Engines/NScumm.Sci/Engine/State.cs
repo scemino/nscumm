@@ -264,11 +264,11 @@ namespace NScumm.Sci.Engine
 
             executionStackBase = 0;
             _executionStackPosChanged = false;
-            stack_base = new StackPtr();
-            stack_top = new StackPtr();
+            stack_base = StackPtr.Null;
+            stack_top = StackPtr.Null;
 
-            r_acc = Register.Make(Register.NULL_REG);
-            r_prev = Register.Make(Register.NULL_REG);
+            r_acc = Register.NULL_REG;
+            r_prev = Register.NULL_REG;
             r_rest = 0;
 
             lastWaitTime = 0;

@@ -125,7 +125,7 @@ namespace NScumm.Sci.Engine
 
         public ushort LocalsSegment { get { return _localsSegment; } }
 
-        public StackPtr LocalsBegin { get { return _localsBlock != null ? new StackPtr(_localsBlock._locals, 0) : new StackPtr(); } }
+        public StackPtr LocalsBegin { get { return _localsBlock != null ? new StackPtr(_localsBlock._locals, 0) : StackPtr.Null; } }
 
         /// <summary>
         /// Gets an offset to the beginning of the code block in a SCI3 script
@@ -490,9 +490,9 @@ namespace NScumm.Sci.Engine
             {
                 throw new InvalidOperationException($"Attempt to relocate odd variable #{idx}.5e (relative to {block_location:X4})");
             }
-            block[idx].SetSegment(segment); // Perform relocation
+            block[idx] = Register.SetSegment(block[idx], segment); // Perform relocation
             if (ResourceManager.GetSciVersion() >= SciVersion.V1_1 && ResourceManager.GetSciVersion() <= SciVersion.V2_1)
-                block[idx].IncOffset((short)scriptSize);
+                block[idx] = Register.IncOffset(block[idx], (short)scriptSize);
 
             return true;
         }
@@ -671,7 +671,7 @@ namespace NScumm.Sci.Engine
         private SciObject ScriptObjInit(Register obj_pos, bool fullObjectInit = true)
         {
             if (ResourceManager.GetSciVersion() < SciVersion.V1_1 && fullObjectInit)
-                obj_pos.IncOffset(8);   // magic offset (SCRIPT_OBJECT_MAGIC_OFFSET)
+                obj_pos = Register.IncOffset(obj_pos, 8);   // magic offset (SCRIPT_OBJECT_MAGIC_OFFSET)
 
             if (obj_pos.Offset >= _bufSize)
                 throw new InvalidOperationException("Attempt to initialize object beyond end of script");
@@ -900,7 +900,7 @@ namespace NScumm.Sci.Engine
 
         public override Register FindCanonicAddress(SegManager segMan, Register addr)
         {
-            addr.SetOffset(0);
+            addr = Register.SetOffset(addr, 0);
             return addr;
         }
 

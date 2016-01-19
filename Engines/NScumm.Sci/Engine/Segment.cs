@@ -119,7 +119,7 @@ namespace NScumm.Sci.Engine
         /// <returns></returns>
         public virtual Register FindCanonicAddress(SegManager segMan, Register sub_addr)
         {
-            return Register.Make(sub_addr);
+            return sub_addr;
         }
     }
 
@@ -164,7 +164,7 @@ namespace NScumm.Sci.Engine
 
         public override List<Register> ListAllOutgoingReferences(Register obj)
         {
-            var tmp = _entries.Select(Register.Make).ToList();
+            var tmp = _entries.ToList();
             return tmp;
         }
     }
@@ -333,10 +333,10 @@ namespace NScumm.Sci.Engine
 
             // Emit all member variables (including references to the 'super' delegate)
             for (var i = 0; i < clone.VarCount; i++)
-                tmp.Add(Register.Make(clone.GetVariable(i)));
+                tmp.Add(clone.GetVariable(i));
 
             // Note that this also includes the 'base' object, which is part of the script and therefore also emits the locals.
-            tmp.Add(Register.Make(clone.Pos));
+            tmp.Add(clone.Pos);
             //debugC(kDebugLevelGC, "[GC] Reporting clone-pos %04x:%04x", PRINT_REG(clone->pos));
 
             return tmp;
@@ -368,8 +368,8 @@ namespace NScumm.Sci.Engine
 
             List list = _table[(int)addr.Offset].Item;
 
-            tmp.Add(Register.Make(list.first));
-            tmp.Add(Register.Make(list.last));
+            tmp.Add(list.first);
+            tmp.Add(list.last);
             // We could probably get away with just one of them, but
             // let's be conservative here.
 
@@ -412,10 +412,10 @@ namespace NScumm.Sci.Engine
 
             // We need all four here. Can't just stick with 'pred' OR 'succ' because node operations allow us
             // to walk around from any given node
-            tmp.Add(Register.Make(node.pred));
-            tmp.Add(Register.Make(node.succ));
-            tmp.Add(Register.Make(node.key));
-            tmp.Add(Register.Make(node.value));
+            tmp.Add(node.pred);
+            tmp.Add(node.succ);
+            tmp.Add(node.key);
+            tmp.Add(node.value);
 
             return tmp;
         }
@@ -515,7 +515,7 @@ namespace NScumm.Sci.Engine
 
         public override List<Register> ListAllOutgoingReferences(Register obj)
         {
-            return new List<Register>(_locals.Select(r => Register.Make(r)));
+            return _locals.ToList();
         }
     }
 

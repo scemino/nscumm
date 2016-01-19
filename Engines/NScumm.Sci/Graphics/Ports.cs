@@ -279,8 +279,8 @@ namespace NScumm.Sci.Graphics
         {
             foreach (var wnd in _windowList.OfType<Window>())
             {
-                wm.Push(Register.Make(wnd.hSaved1));
-                wm.Push(Register.Make(wnd.hSaved2));
+                wm.Push(wnd.hSaved1);
+                wm.Push(wnd.hSaved2);
             }
         }
 

@@ -70,10 +70,10 @@ namespace NScumm.Sci.Engine
             set { _entries[_index + index] = value; }
         }
 
-        public StackPtr(StackPtr ptr)
+        public StackPtr(StackPtr ptr, int index = 0)
         {
             _entries = ptr._entries;
-            _index = ptr._index;
+            _index = ptr._index + index;
         }
 
         public StackPtr(Register[] entries, int index)
@@ -182,6 +182,11 @@ namespace NScumm.Sci.Engine
         {
             return _index.CompareTo(other._index);
         }
+
+        public void IncOffset(int index, short offset)
+        {
+            _entries[_index + index] = Register.IncOffset(_entries[_index + index], offset);
+        }
     }
 
     internal class ExecStack
@@ -220,8 +225,8 @@ namespace NScumm.Sci.Engine
                 int debugExportId_, int debugLocalCallOffset_, int debugOrigin_,
                 ExecStackType type_)
         {
-            objp = Register.Make(objp_);
-            sendp = Register.Make(sendp_);
+            objp = objp_;
+            sendp = sendp_;
             // varp is set separately for varselector calls
             pc = pc_;
             fp = sp = sp_;
@@ -428,7 +433,7 @@ namespace NScumm.Sci.Engine
                     throw new InvalidOperationException($"Send to invalid selector 0x{0xffff & selector:X} of object at {send_obj}");
 
                 ExecStackType stackType = ExecStackType.VARSELECTOR;
-                StackPtr curSP = new StackPtr();
+                StackPtr curSP = StackPtr.Null;
                 Register32 curFP = Register32.Make(0, 0);
                 if (selectorType == SelectorType.Method)
                 {
@@ -561,7 +566,8 @@ namespace NScumm.Sci.Engine
                 s.xs.pc.IncOffset(ReadPMachineInstruction(scr.GetBuf(s.xs.pc.Offset), out extOpcode, opparams));
                 byte opcode = (byte)(extOpcode >> 1);
 #if DEBUG
-                //ServiceLocator.Platform.Debug($"{opcodeNames[opcode]}: {opparams[0]}, {opparams[1]}, {opparams[2]}, {opparams[3]}, acc = {s.r_acc}, script {scr.ScriptNumber}, local script {local_script.ScriptNumber}");
+                //var method = s.xs.debugSelector != -1 ? SciEngine.Instance.Kernel.GetSelectorName(s.xs.debugSelector) : "N/A";
+                ServiceLocator.Platform.Debug($"{opcodeNames[opcode]}: {opparams[0]}, {opparams[1]}, {opparams[2]}, {opparams[3]}, acc = {s.r_acc}, script {scr.ScriptNumber}, local script {local_script.ScriptNumber}");
 #endif
 
 #if ABORT_ON_INFINITE_LOOP
@@ -643,50 +649,50 @@ namespace NScumm.Sci.Engine
                         break;
 
                     case op_eq_: // 0x0d (13)
-                        s.r_prev = Register.Make(s.r_acc);
+                        s.r_prev = s.r_acc;
                         s.r_acc = Register.Make(0, POP32() == s.r_acc);
                         break;
 
                     case op_ne_: // 0x0e (14)
-                        s.r_prev = Register.Make(s.r_acc);
+                        s.r_prev = s.r_acc;
                         s.r_acc = Register.Make(0, POP32() != s.r_acc);
                         break;
 
                     case op_gt_: // 0x0f (15)
-                        s.r_prev = Register.Make(s.r_acc);
+                        s.r_prev = s.r_acc;
                         s.r_acc = Register.Make(0, POP32() > s.r_acc);
                         break;
 
                     case op_ge_: // 0x10 (16)
-                        s.r_prev = Register.Make(s.r_acc);
+                        s.r_prev = s.r_acc;
                         s.r_acc = Register.Make(0, POP32() >= s.r_acc);
                         break;
 
                     case op_lt_: // 0x11 (17)
-                        s.r_prev = Register.Make(s.r_acc);
+                        s.r_prev = s.r_acc;
                         s.r_acc = Register.Make(0, POP32() < s.r_acc);
                         break;
 
                     case op_le_: // 0x12 (18)
-                        s.r_prev = Register.Make(s.r_acc);
+                        s.r_prev = s.r_acc;
                         s.r_acc = Register.Make(0, POP32() <= s.r_acc);
                         break;
 
                     case op_ugt_: // 0x13 (19)
                                   // > (unsigned)
-                        s.r_prev = Register.Make(s.r_acc);
+                        s.r_prev = s.r_acc;
                         s.r_acc = Register.Make(0, POP32().GreaterThanUnsigned(s.r_acc));
                         break;
 
                     case op_uge_: // 0x14 (20)
                                   // >= (unsigned)
-                        s.r_prev = Register.Make(s.r_acc);
+                        s.r_prev = s.r_acc;
                         s.r_acc = Register.Make(0, POP32().GreaterOrEqualsUnsigned(s.r_acc));
                         break;
 
                     case op_ult_: // 0x15 (21)
                                   // < (unsigned)
-                        s.r_prev = Register.Make(s.r_acc);
+                        s.r_prev = s.r_acc;
                         var t = POP32();
                         ServiceLocator.Platform.Debug($"op_ult: {t} < {s.r_acc} = {t.LowerThanUnsigned(s.r_acc)}");
                         s.r_acc = Register.Make(0, t.LowerThanUnsigned(s.r_acc));
@@ -694,7 +700,7 @@ namespace NScumm.Sci.Engine
 
                     case op_ule_: // 0x16 (22)
                                   // <= (unsigned)
-                        s.r_prev = Register.Make(s.r_acc);
+                        s.r_prev = s.r_acc;
                         s.r_acc = Register.Make(0, POP32().LowerOrEqualsUnsigned(s.r_acc));
                         break;
 
@@ -745,7 +751,7 @@ namespace NScumm.Sci.Engine
 
                     case op_dup: // 0x1e (30)
                                  // Duplicate TOD (Top Of Stack) element
-                        r_temp = Register.Make(s.xs.sp[-1]);
+                        r_temp = s.xs.sp[-1];
                         PUSH32(r_temp);
                         break;
 
@@ -764,7 +770,7 @@ namespace NScumm.Sci.Engine
                             int argc = (opparams[1] >> 1) // Given as offset, but we need count
                                        + 1 + s.r_rest;
                             StackPtr call_base = s.xs.sp - argc;
-                            s.xs.sp[1].IncOffset(s.r_rest);
+                            s.xs.sp[1] = Register.IncOffset(s.xs.sp[1], s.r_rest);
 
                             int localCallOffset = s.xs.pc.Offset + opparams[0];
 
@@ -829,7 +835,7 @@ namespace NScumm.Sci.Engine
                         s_temp = s.xs.sp;
                         s.xs.sp -= temp;
 
-                        s.xs.sp[0].IncOffset(s.r_rest);
+                        s.xs.sp.IncOffset(0, s.r_rest);
                         xs_new = execute_method(s, 0, (ushort)opparams[0], s_temp, s.xs.objp, (ushort)s.xs.sp[0].Offset, s.xs.sp);
                         s.r_rest = 0; // Used up the &rest adjustment
                         if (xs_new != null)    // in case of error, keep old stack
@@ -842,7 +848,7 @@ namespace NScumm.Sci.Engine
                         s_temp = s.xs.sp;
                         s.xs.sp -= temp;
 
-                        s.xs.sp[0].IncOffset(s.r_rest);
+                        s.xs.sp.IncOffset(0, s.r_rest);
                         xs_new = execute_method(s, (ushort)opparams[0], (ushort)opparams[1], s_temp, s.xs.objp, (ushort)s.xs.sp[0].Offset, s.xs.sp);
                         s.r_rest = 0; // Used up the &rest adjustment
                         if (xs_new != null)  // in case of error, keep old stack
@@ -899,7 +905,7 @@ namespace NScumm.Sci.Engine
                         s_temp = s.xs.sp;
                         s.xs.sp -= ((opparams[0] >> 1) + s.r_rest); // Adjust stack
 
-                        s.xs.sp[1].IncOffset(s.r_rest);
+                        s.xs.sp.IncOffset(1, s.r_rest);
                         xs_new = SendSelector(s, s.r_acc, s.r_acc, s_temp,
                                                 (opparams[0] >> 1) + (ushort)s.r_rest, s.xs.sp);
 
@@ -915,11 +921,11 @@ namespace NScumm.Sci.Engine
                         if (ResourceManager.GetSciVersion() == SciVersion.V3)
                         {
                             if (extOpcode == 0x4c)
-                                s.r_acc = Register.Make(obj.InfoSelector);
+                                s.r_acc = obj.InfoSelector;
                             else if (extOpcode == 0x4d)
                                 PUSH32(obj.InfoSelector);
                             else if (extOpcode == 0x4e)
-                                s.r_acc = Register.Make(obj.SuperClassSelector);    // TODO: is this correct?
+                                s.r_acc = obj.SuperClassSelector;    // TODO: is this correct?
                                                                                     // TODO: There are also opcodes in
                                                                                     // here to get the superclass, and possibly the species too.
                             else
@@ -931,7 +937,7 @@ namespace NScumm.Sci.Engine
 
                     case op_class: // 0x28 (40)
                                    // Get class address
-                        s.r_acc = Register.Make(s._segMan.GetClassAddress((ushort)opparams[0], ScriptLoadType.LOCK, (ushort)s.xs.pc.Segment));
+                        s.r_acc = s._segMan.GetClassAddress((ushort)opparams[0], ScriptLoadType.LOCK, (ushort)s.xs.pc.Segment);
                         break;
 
                     case 0x29: // (41)
@@ -942,7 +948,7 @@ namespace NScumm.Sci.Engine
                         s_temp = s.xs.sp;
                         s.xs.sp -= ((opparams[0] >> 1) + s.r_rest); // Adjust stack
 
-                        s.xs.sp[1].IncOffset(s.r_rest);
+                        s.xs.sp.IncOffset(1, s.r_rest);
                         xs_new = SendSelector(s, s.xs.objp, s.xs.objp,
                                                 s_temp, (int)(opparams[0] >> 1) + (ushort)s.r_rest,
                                                 s.xs.sp);
@@ -955,7 +961,7 @@ namespace NScumm.Sci.Engine
 
                     case op_super: // 0x2b (43)
                                    // Send to any class
-                        r_temp = Register.Make(s._segMan.GetClassAddress((ushort)opparams[0], ScriptLoadType.LOAD, (ushort)s.xs.pc.Segment));
+                        r_temp = s._segMan.GetClassAddress((ushort)opparams[0], ScriptLoadType.LOAD, (ushort)s.xs.pc.Segment);
 
                         if (!r_temp.IsPointer)
                             throw new InvalidOperationException("[VM]: Invalid superclass in object");
@@ -963,7 +969,7 @@ namespace NScumm.Sci.Engine
                             s_temp = s.xs.sp;
                             s.xs.sp -= ((opparams[1] >> 1) + s.r_rest); // Adjust stack
 
-                            s.xs.sp[1].IncOffset(s.r_rest);
+                            s.xs.sp.IncOffset(1, s.r_rest);
                             xs_new = SendSelector(s, r_temp, s.xs.objp, s_temp,
                                                     (int)(opparams[1] >> 1) + (ushort)s.r_rest,
                                                     s.xs.sp);
@@ -992,22 +998,22 @@ namespace NScumm.Sci.Engine
                         var_number = temp & 0x03; // Get variable type
 
                         // Get variable block offset
-                        r_temp.SetSegment((ushort)(s.variablesSegment[var_number]));
-                        r_temp.SetOffset((ushort)(s.variables[var_number] - s.variablesBase[var_number]));
+                        r_temp = Register.SetSegment(r_temp, (ushort)(s.variablesSegment[var_number]));
+                        r_temp = Register.SetOffset(r_temp, (ushort)(s.variables[var_number] - s.variablesBase[var_number]));
 
                         if ((temp & 0x08) != 0)  // Add accumulator offset if requested
-                            r_temp.IncOffset(s.r_acc.RequireInt16());
+                            r_temp = Register.IncOffset(r_temp, s.r_acc.RequireInt16());
 
-                        r_temp.IncOffset(opparams[1]);  // Add index
-                        r_temp.SetOffset((ushort)(r_temp.Offset * 2)); // variables are 16 bit
-                                                                       // That's the immediate address now
-                        s.r_acc = Register.Make(r_temp);
+                        r_temp = Register.IncOffset(r_temp, opparams[1]);  // Add index
+                        r_temp = Register.SetOffset(r_temp, (ushort)(r_temp.Offset * 2)); // variables are 16 bit
+                                                                                          // That's the immediate address now
+                        s.r_acc = r_temp;
                         break;
 
 
                     case op_selfID: // 0x2e (46)
                                     // Get 'self' identity
-                        s.r_acc = Register.Make(s.xs.objp);
+                        s.r_acc = s.xs.objp;
                         break;
 
                     case 0x2f: // (47)
@@ -1016,25 +1022,25 @@ namespace NScumm.Sci.Engine
                     case op_pprev: // 0x30 (48)
                                    // Pushes the value of the prev register, set by the last comparison
                                    // bytecode (eq?, lt?, etc.), on the stack
-                        PUSH32(Register.Make(s.r_prev));
+                        PUSH32(s.r_prev);
                         break;
 
                     case op_pToa: // 0x31 (49)
                                   // Property To Accumulator
-                        s.r_acc = Register.Make(validate_property(s, obj, opparams[0])[0]);
+                        s.r_acc = validate_property(s, obj, opparams[0])[0];
                         break;
 
                     case op_aTop: // 0x32 (50)
                                   // Accumulator To Property
                         {
                             var prop = validate_property(s, obj, opparams[0]);
-                            prop[0] = Register.Make(s.r_acc);
+                            prop[0] = s.r_acc;
                         }
                         break;
 
                     case op_pTos: // 0x33 (51)
                                   // Property To Stack
-                        PUSH32(Register.Make(validate_property(s, obj, opparams[0])[0]));
+                        PUSH32(validate_property(s, obj, opparams[0])[0]);
                         break;
 
                     case op_sTop: // 0x34 (52)
@@ -1059,32 +1065,32 @@ namespace NScumm.Sci.Engine
                                 opProperty[0] -= 1;
 
                             if (opcode == op_ipToa || opcode == op_dpToa)
-                                s.r_acc = Register.Make(opProperty[0]);
+                                s.r_acc = opProperty[0];
                             else
-                                PUSH32(Register.Make(opProperty[0]));
+                                PUSH32(opProperty[0]);
                             break;
                         }
 
                     case op_lofsa: // 0x39 (57)
                     case op_lofss: // 0x3a (58)
                                    // Load offset to accumulator or push to stack
-                        r_temp.SetSegment((ushort)s.xs.pc.Segment);
+                        r_temp = Register.SetSegment(r_temp, (ushort)s.xs.pc.Segment);
 
                         switch (SciEngine.Instance.Features.DetectLofsType())
                         {
                             case SciVersion.V0_EARLY:
-                                r_temp.SetOffset((ushort)(s.xs.pc.Offset + opparams[0]));
+                                r_temp = Register.SetOffset(r_temp, (ushort)(s.xs.pc.Offset + opparams[0]));
                                 break;
                             case SciVersion.V1_MIDDLE:
-                                r_temp.SetOffset((ushort)opparams[0]);
+                                r_temp = Register.SetOffset(r_temp, (ushort)opparams[0]);
                                 break;
                             case SciVersion.V1_1:
-                                r_temp.SetOffset((ushort)(opparams[0] + local_script.ScriptSize));
+                                r_temp = Register.SetOffset(r_temp, (ushort)(opparams[0] + local_script.ScriptSize));
                                 break;
                             case SciVersion.V3:
                                 // In theory this can break if the variant with a one-byte argument is
                                 // used. For now, assume it doesn't happen.
-                                r_temp.SetOffset(local_script.RelocateOffsetSci3(s.xs.pc.Offset - 2));
+                                r_temp = Register.SetOffset(r_temp, local_script.RelocateOffsetSci3(s.xs.pc.Offset - 2));
                                 break;
                             default:
                                 throw new InvalidOperationException("Unknown lofs type");
@@ -1094,9 +1100,9 @@ namespace NScumm.Sci.Engine
                             throw new InvalidOperationException($"VM: lofsa/lofss operation overflowed: {r_temp} beyond end of script (at {scr.BufSize:X4})");
 
                         if (opcode == op_lofsa)
-                            s.r_acc = Register.Make(r_temp);
+                            s.r_acc = r_temp;
                         else
-                            PUSH32(Register.Make(r_temp));
+                            PUSH32(r_temp);
                         break;
 
                     case op_push0: // 0x3b (59)
@@ -1120,7 +1126,7 @@ namespace NScumm.Sci.Engine
                                       // in Circus Quest). Fixes bug #3038686.
                         if (0 == (extOpcode & 1) || SciEngine.Instance.GameId == SciGameId.FANMADE)
                         {
-                            PUSH32(Register.Make(s.xs.objp));
+                            PUSH32(s.xs.objp);
                         }
                         else {
                             // Debug opcode op_file
@@ -1145,7 +1151,7 @@ namespace NScumm.Sci.Engine
                                   // an additional index
                         var_type = opcode & 0x3; // Gets the variable type: g, l, t or p
                         var_number = opparams[0] + (opcode >= op_lagi ? s.r_acc.RequireInt16() : 0);
-                        s.r_acc = Register.Make(read_var(s, var_type, var_number));
+                        s.r_acc = read_var(s, var_type, var_number);
                         break;
 
                     case op_lsg: // 0x44 (68)
@@ -1161,7 +1167,7 @@ namespace NScumm.Sci.Engine
                                   // an additional index
                         var_type = opcode & 0x3; // Gets the variable type: g, l, t or p
                         var_number = opparams[0] + (opcode >= op_lsgi ? s.r_acc.RequireInt16() : 0);
-                        PUSH32(Register.Make(read_var(s, var_type, var_number)));
+                        PUSH32(read_var(s, var_type, var_number));
                         break;
 
                     case op_sag: // 0x50 (80)
@@ -1212,7 +1218,7 @@ namespace NScumm.Sci.Engine
                                      // an additional index
                         var_type = opcode & 0x3; // Gets the variable type: g, l, t or p
                         var_number = opparams[0] + (opcode >= op_plusagi ? s.r_acc.RequireInt16() : 0);
-                        s.r_acc = Register.Make(read_var(s, var_type, var_number) + 1);
+                        s.r_acc = read_var(s, var_type, var_number) + 1;
                         write_var(s, var_type, var_number, s.r_acc);
                         break;
 
@@ -1230,7 +1236,7 @@ namespace NScumm.Sci.Engine
                                      // an additional index
                         var_type = opcode & 0x3; // Gets the variable type: g, l, t or p
                         var_number = opparams[0] + (opcode >= op_plussgi ? s.r_acc.RequireInt16() : 0);
-                        r_temp = Register.Make(read_var(s, var_type, var_number) + 1);
+                        r_temp = read_var(s, var_type, var_number) + 1;
                         PUSH32(r_temp);
                         write_var(s, var_type, var_number, r_temp);
                         break;
@@ -1249,7 +1255,7 @@ namespace NScumm.Sci.Engine
                                       // an additional index
                         var_type = opcode & 0x3; // Gets the variable type: g, l, t or p
                         var_number = opparams[0] + (opcode >= op_minusagi ? s.r_acc.RequireInt16() : 0);
-                        s.r_acc = Register.Make(read_var(s, var_type, var_number) - 1);
+                        s.r_acc = read_var(s, var_type, var_number) - 1;
                         write_var(s, var_type, var_number, s.r_acc);
                         break;
 
@@ -1267,7 +1273,7 @@ namespace NScumm.Sci.Engine
                                       // an additional index
                         var_type = opcode & 0x3; // Gets the variable type: g, l, t or p
                         var_number = opparams[0] + (opcode >= op_minussgi ? s.r_acc.RequireInt16() : 0);
-                        r_temp = Register.Make(read_var(s, var_type, var_number) - 1);
+                        r_temp = read_var(s, var_type, var_number) - 1;
                         PUSH32(r_temp);
                         write_var(s, var_type, var_number, r_temp);
                         break;
@@ -1418,7 +1424,7 @@ namespace NScumm.Sci.Engine
             {
                 AddKernelCallToExecStack(s, kernelCallNr, argc, argv);
                 ServiceLocator.Platform.Debug($"Call {kernelCall.name}");
-                s.r_acc = Register.Make(kernelCall.function(s, argc, argv));
+                s.r_acc = kernelCall.function(s, argc, argv);
 
                 if (kernelCall.debugLogging)
                     LogKernelCall(kernelCall, null, s, argc, argv, s.r_acc);
@@ -1472,9 +1478,9 @@ namespace NScumm.Sci.Engine
                     }
                 }
                 if (kernelSubCall.function == null)
-                    throw new InvalidOperationException("[VM] k{kernelCall.name}: subfunction ID {subId} requested, but not available");
+                    throw new InvalidOperationException($"[VM] k{kernelCall.name}: subfunction ID {subId} requested, but not available");
                 AddKernelCallToExecStack(s, kernelCallNr, argc, argv);
-                s.r_acc = Register.Make(kernelSubCall.function(s, argc, argv));
+                s.r_acc = kernelSubCall.function(s, argc, argv);
 
                 if (kernelSubCall.debugLogging)
                     LogKernelCall(kernelCall, kernelSubCall, s, argc, argv, s.r_acc);
@@ -1601,7 +1607,7 @@ namespace NScumm.Sci.Engine
                 //  those parameters are taken from uninitialized stack and afterwards they are copied back into temps
                 //  if we don't remove the segment, we would get false-positive uninitialized reads later
                 if (type == VAR_TEMP && value.Segment == 0xffff)
-                    value.SetSegment(0);
+                    value = Register.SetSegment(value, 0);
 
                 s.variables[type][index] = value;
 
@@ -1724,7 +1730,7 @@ namespace NScumm.Sci.Engine
         public static Register POP32()
         {
             var s = SciEngine.Instance.EngineState;
-            return Register.Make(validate_stack_addr(s, --(s.xs.sp))[0]);
+            return validate_stack_addr(s, --(s.xs.sp))[0];
         }
 
         private static StackPtr validate_stack_addr(EngineState s, StackPtr sp)
@@ -1737,7 +1743,7 @@ namespace NScumm.Sci.Engine
 
         private static StackPtr validate_property(EngineState s, SciObject obj, int index)
         {
-            Register[] dummyReg = new[] { Register.Make(Register.NULL_REG) };
+            Register[] dummyReg = new[] { Register.NULL_REG };
 
             // A static dummy reg_t, which we return if obj or index turn out to be
             // invalid. Note that we cannot just return NULL_REG, because client code

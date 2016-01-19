@@ -195,11 +195,11 @@ namespace NScumm.Sci.Graphics
             for (int i = 0; i < _list.Count; i++)
             {
                 var it = _list[i];
-                if (!it.signal.HasFlag(ViewSignals.NoUpdate | ViewSignals.Hidden | ViewSignals.AlwaysUpdate))
+                if ((it.signal & (ViewSignals.NoUpdate | ViewSignals.Hidden | ViewSignals.AlwaysUpdate)) == 0)
                 {
                     // Save background
                     bitsHandle = _paint16.BitsSave(it.celRect, GfxScreenMasks.ALL);
-                    SciEngine.WriteSelector(_s._segMan, it.@object, SciEngine.Selector(s => s.underBits), bitsHandle);
+                    SciEngine.WriteSelector(_s._segMan, it.@object, s => s.underBits, bitsHandle);
 
                     // draw corresponding cel
                     _paint16.DrawCel(it.viewId, it.loopNo, it.celNo, it.celRect, (byte)it.priority, (ushort)it.paletteNo, (ushort)it.scaleX, (ushort)it.scaleY);
@@ -225,7 +225,7 @@ namespace NScumm.Sci.Graphics
                 SciEngine.WriteSelectorValue(_s._segMan, it.@object, SciEngine.Selector(s => s.signal), (ushort)it.signal);
             }
 
-            for (int i = _list.Count - 1; i > 0; i--)
+            for (int i = _list.Count - 1; i >= 0; i--)
             {
                 var it = _list[i];
                 // We read out signal here again, this is not by accident but to ensure
@@ -454,7 +454,7 @@ namespace NScumm.Sci.Graphics
                 for (int i = _lastCastData.Count - 1; i >= 0; i--)
                 {
                     var it = _lastCastData[i];
-                    _paint16.BitsRestore(Register.Make(it.castHandle));
+                    _paint16.BitsRestore(it.castHandle);
                 }
             }
             else
@@ -632,7 +632,7 @@ namespace NScumm.Sci.Graphics
             for (listNr = 0; curNode != null; listNr++)
             {
                 AnimateEntry listEntry = new AnimateEntry();
-                Register curObject = Register.Make(curNode.value);
+                Register curObject = curNode.value;
                 listEntry.@object = curObject;
                 listEntry.castHandle = Register.NULL_REG;
 
@@ -792,7 +792,7 @@ namespace NScumm.Sci.Graphics
             else
                 _screen._picNotValid = 2;
         }
-        
+
         private void AddToPicDrawCels()
         {
             Register curObject;
@@ -801,7 +801,7 @@ namespace NScumm.Sci.Graphics
             for (int i = 0; i < _list.Count; i++)
             {
                 var it = _list[i];
-                curObject = Register.Make(it.@object);
+                curObject = it.@object;
 
                 // Get the corresponding view
                 view = _cache.GetView(it.viewId);

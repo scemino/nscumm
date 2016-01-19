@@ -26,6 +26,7 @@ using NScumm.Sci.Sound.Drivers;
 using NScumm.Core.Audio.Decoders;
 using System.IO;
 using System.Threading;
+using NScumm.Core.Common;
 
 namespace NScumm.Sci.Sound
 {
@@ -496,9 +497,9 @@ namespace NScumm.Sci.Sound
                     _currentlyPlayingSample = null;
                 }
                 _mixer.StopHandle(pSnd.hCurrentAud);
-                pSnd.pStreamAud.Dispose();
+                pSnd.pStreamAud.DisposeIfNotNull();
                 pSnd.pStreamAud = null;
-                pSnd.pLoopStream.Dispose();
+                pSnd.pLoopStream.DisposeIfNotNull();
                 pSnd.pLoopStream = null;
             }
 
@@ -867,7 +868,7 @@ namespace NScumm.Sci.Sound
                     var channelData = track.channels[track.digitalChannelNr].data;
                     if (pSnd.pStreamAud != null)
                     {
-                        pSnd.pStreamAud.Dispose();
+                        pSnd.pStreamAud.DisposeIfNotNull();
                     }
                     var flags = AudioFlags.Unsigned;
                     // Amiga SCI1 games had signed sound data
@@ -876,7 +877,7 @@ namespace NScumm.Sci.Sound
                     int endPart = track.digitalSampleEnd > 0 ? (track.digitalSampleSize - track.digitalSampleEnd) : 0;
                     pSnd.pStreamAud = new RawStream(flags, track.digitalSampleRate, false,
                         new MemoryStream(channelData.Data, channelData.Offset + track.digitalSampleStart, track.digitalSampleSize - track.digitalSampleStart - endPart));
-                    pSnd.pLoopStream.Dispose();
+                    pSnd.pLoopStream.DisposeIfNotNull();
                     pSnd.pLoopStream = null;
                     pSnd.soundType = SoundType.SFX;
                     pSnd.hCurrentAud = new SoundHandle();

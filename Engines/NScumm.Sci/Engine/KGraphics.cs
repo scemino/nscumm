@@ -922,7 +922,7 @@ namespace NScumm.Sci.Engine
             int maxwidth = (argc > 3) ? argv.Value[3].ToUInt16() : 0;
             int font_nr = argv.Value[2].ToUInt16();
 
-            if (dest == null)
+            if (dest == StackPtr.Null)
             {
                 // TODO: debugC(kDebugLevelStrings, "GetTextSize: Empty destination");
                 return s.r_acc;
@@ -1196,7 +1196,7 @@ namespace NScumm.Sci.Engine
                     while (s._segMan.Strlen(listSeeker) > 0)
                     {
                         listCount++;
-                        listSeeker.IncOffset(maxChars);
+                        listSeeker = Register.IncOffset(listSeeker, maxChars);
                     }
 
                     // TODO: This is rather convoluted... It would be a lot cleaner
@@ -1217,7 +1217,7 @@ namespace NScumm.Sci.Engine
                                 upperPos = i;
                             if (listSeeker.Offset == cursorOffset)
                                 cursorPos = i;
-                            listSeeker.IncOffset(maxChars);
+                            listSeeker = Register.IncOffset(listSeeker, maxChars);
                         }
                     }
 

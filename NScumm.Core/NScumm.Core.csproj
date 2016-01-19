@@ -43,6 +43,7 @@
     <Compile Include="Audio\SampleProviders\MonoToStereoAudioSampleProvider16.cs" />
     <Compile Include="Audio\SampleProviders\ResampleAudioSampleProvider.cs" />
     <Compile Include="BitStream.cs" />
+    <Compile Include="Common\Disposable.cs" />
     <Compile Include="Common\Huffman.cs" />
     <Compile Include="Common\Language.cs" />
     <Compile Include="Common\RandomSource.cs" />

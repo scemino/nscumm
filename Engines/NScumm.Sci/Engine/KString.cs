@@ -600,7 +600,7 @@ namespace NScumm.Sci.Engine
                 if (dest_r.skipByte)
                     offset++;
 
-                Register tmp = dest_r.reg[offset / 2];
+                var tmp = new StackPtr(dest_r.reg, offset / 2);
 
                 bool oddOffset = (offset & 1) != 0;
                 if (SciEngine.Instance.IsBE)
@@ -608,25 +608,25 @@ namespace NScumm.Sci.Engine
 
                 if (!oddOffset)
                 {
-                    value = (byte)(tmp.Offset & 0x00ff);
+                    value = (byte)(tmp[0].Offset & 0x00ff);
                     if (argc > 2)
                     { /* Request to modify this char */
-                        ushort tmpOffset = tmp.ToUInt16();
+                        ushort tmpOffset = tmp[0].ToUInt16();
                         tmpOffset &= 0xff00;
                         tmpOffset |= newvalue;
-                        tmp.SetOffset(tmpOffset);
-                        tmp.SetSegment(0);
+                        tmp[0] = Register.SetOffset(tmp[0], tmpOffset);
+                        tmp[0] = Register.SetSegment(tmp[0], 0);
                     }
                 }
                 else {
-                    value = (byte)(tmp.Offset >> 8);
+                    value = (byte)(tmp[0].Offset >> 8);
                     if (argc > 2)
                     { /* Request to modify this char */
-                        ushort tmpOffset = tmp.ToUInt16();
+                        ushort tmpOffset = tmp[0].ToUInt16();
                         tmpOffset &= 0x00ff;
                         tmpOffset |= (ushort)(newvalue << 8);
-                        tmp.SetOffset(tmpOffset);
-                        tmp.SetSegment(0);
+                        tmp[0] = Register.SetOffset(tmp[0], tmpOffset);
+                        tmp[0] = Register.SetSegment(tmp[0], 0);
                     }
                 }
             }
@@ -688,8 +688,7 @@ namespace NScumm.Sci.Engine
         private static Register kStrEnd(EngineState s, int argc, StackPtr? argv)
         {
             Register address = argv.Value[0];
-            address.IncOffset((short)s._segMan.Strlen(address));
-
+            address = Register.IncOffset(address, (short)s._segMan.Strlen(address));
             return address;
         }
 

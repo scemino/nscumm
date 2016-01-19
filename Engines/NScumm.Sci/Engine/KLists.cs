@@ -75,7 +75,7 @@ namespace NScumm.Sci.Engine
                 if (n.key == key)
                 {
                     ServiceLocator.Platform.Debug($" Found key at {node_pos}");
-                    return Register.Make(node_pos);
+                    return node_pos;
                 }
 
                 node_pos = n.succ;
@@ -347,7 +347,7 @@ namespace NScumm.Sci.Engine
             return 0;
         }
 
-        static void AddToFront(EngineState s, Register listRef, Register nodeRef)
+        private static void AddToFront(EngineState s, Register listRef, Register nodeRef)
         {
             List list = s._segMan.LookupList(listRef);
             Node newNode = s._segMan.LookupNode(nodeRef);
@@ -366,12 +366,12 @@ namespace NScumm.Sci.Engine
 
             // Set node to be the first and last node if it's the only node of the list
             if (list.first.IsNull)
-                list.last = Register.Make(nodeRef);
+                list.last = nodeRef;
             else {
                 Node oldNode = s._segMan.LookupNode(list.first);
-                oldNode.pred = Register.Make(nodeRef);
+                oldNode.pred = nodeRef;
             }
-            list.first = Register.Make(nodeRef);
+            list.first = nodeRef;
         }
 
         private static void AddToEnd(EngineState s, Register listRef, Register nodeRef)
@@ -393,12 +393,12 @@ namespace NScumm.Sci.Engine
 
             // Set node to be the first and last node if it's the only node of the list
             if (list.last.IsNull)
-                list.first = Register.Make(nodeRef);
+                list.first = nodeRef;
             else {
                 Node old_n = s._segMan.LookupNode(list.last);
-                old_n.succ = Register.Make(nodeRef);
+                old_n.succ = nodeRef;
             }
-            list.last = Register.Make(nodeRef);
+            list.last = nodeRef;
         }
     }
 }

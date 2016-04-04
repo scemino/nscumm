@@ -730,6 +730,8 @@ namespace NScumm.Sci.Engine
 
         public int SelectorNamesSize { get { return _selectorNames.Count; } }
 
+		public int KernelNamesSize { get { return _kernelNames.Count; } }
+
         public Kernel(ResourceManager resMan, SegManager segMan)
         {
             _resMan = resMan;
@@ -1024,7 +1026,6 @@ namespace NScumm.Sci.Engine
         private void MapFunctions()
         {
             int mapped = 0;
-            int ignored = 0;
             int functionCount = _kernelNames.Count;
             byte platformMask = 0;
             SciVersion myVersion = ResourceManager.GetSciVersion();
@@ -1558,17 +1559,16 @@ namespace NScumm.Sci.Engine
 
             FindSpecificSelectors(names);
 
-            throw new NotImplementedException();
-            //foreach (var selectorRemap in Selectors.sciSelectorRemap)
-            //{
-            //    if (ResourceManager.GetSciVersion() >= selectorRemap.minVersion && ResourceManager.GetSciVersion() <= selectorRemap.maxVersion)
-            //    {
-            //        var slot = selectorRemap.slot;
-            //        if (slot >= names.Length)
-            //            names.resize(slot + 1);
-            //        names[slot] = selectorRemap.name;
-            //    }
-            //}
+            foreach (var selectorRemap in Selectors.sciSelectorRemap)
+            {
+                if (ResourceManager.GetSciVersion() >= selectorRemap.minVersion && ResourceManager.GetSciVersion() <= selectorRemap.maxVersion)
+                {
+                    var slot = selectorRemap.slot;
+                    if (slot >= names.Length)
+						Array.Resize(ref names,(int)slot + 1);
+                    names[slot] = selectorRemap.name;
+                }
+            }
 
             return names;
         }
@@ -1717,7 +1717,7 @@ namespace NScumm.Sci.Engine
             if (textlen != 0)
                 return ScummHelper.GetText(seeker, i);
 
-            throw new InvalidOperationException("Index {_index} out of bounds in text.{address.Offset}");
+            throw new InvalidOperationException($"Index {_index} out of bounds in text.{address.Offset}");
         }
     }
 }

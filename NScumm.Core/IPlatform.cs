@@ -29,11 +29,16 @@ namespace NScumm.Core
         byte[] FromStructure(object obj);
         object ToStructure(byte[] data, int offset, Type type);
         IWrappedObject WriteStructure(byte[] data, int offset, Type type);
-        void Debug(string v);
+        void Debug(int level, string message);
     }
 
     public static class PlatformExtension
     {
+		public static void Debug(this IPlatform platform, string message)
+		{
+			platform.Debug (-1, message);
+		}
+
         public static int SizeOf<T>(this IPlatform platform)
         {
             return platform.SizeOf(typeof(T));

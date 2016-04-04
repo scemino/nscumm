@@ -423,7 +423,7 @@ namespace NScumm.Sci.Engine
             return -1;
         }
 
-        private int GetFuncSelector(int i)
+		public int GetFuncSelector(int i)
         {
             int offset = (ResourceManager.GetSciVersion() < SciVersion.V1_1) ? i : i * 2 + 1;
             if (ResourceManager.GetSciVersion() == SciVersion.V3)

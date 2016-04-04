@@ -46,8 +46,8 @@ namespace NScumm.Sci.Graphics
             Register tmp;
             if (SciEngine.LookupSelector(_segMan, @object, SciEngine.Selector(s => s.brLeft), null, out tmp) == SelectorType.Variable)
             {
-                short x = (short)SciEngine.ReadSelectorValue(_segMan, @object, SciEngine.Selector(s => s.x));
-                short y = (short)SciEngine.ReadSelectorValue(_segMan, @object, SciEngine.Selector(s => s.y));
+                int x = (short)SciEngine.ReadSelectorValue(_segMan, @object, SciEngine.Selector(s => s.x));
+                int y = (short)SciEngine.ReadSelectorValue(_segMan, @object, SciEngine.Selector(s => s.y));
                 short z = (short)((SciEngine.Selector(s => s.z) > -1) ? SciEngine.ReadSelectorValue(_segMan, @object, SciEngine.Selector(s => s.z)) : 0);
                 short yStep = (short)SciEngine.ReadSelectorValue(_segMan, @object, SciEngine.Selector(s => s.yStep));
                 int viewId = (short)SciEngine.ReadSelectorValue(_segMan, @object, SciEngine.Selector(s => s.view));
@@ -76,14 +76,14 @@ namespace NScumm.Sci.Graphics
                 }
                 else {
                     if (tmpView.IsSci2Hires)
-                        tmpView.AdjustToUpscaledCoordinates(y, x);
+						tmpView.AdjustToUpscaledCoordinates(ref y,ref  x);
 
-                    celRect = tmpView.GetCelRect(loopNo, celNo, x, y, z);
+					celRect = tmpView.GetCelRect(loopNo, celNo, (short)x, (short)y, z);
 
                     if (tmpView.IsSci2Hires)
                     {
-                        tmpView.AdjustBackUpscaledCoordinates(celRect.Top, celRect.Left);
-                        tmpView.AdjustBackUpscaledCoordinates(celRect.Bottom, celRect.Right);
+						tmpView.AdjustBackUpscaledCoordinates(ref celRect.Top, ref celRect.Left);
+						tmpView.AdjustBackUpscaledCoordinates(ref celRect.Bottom, ref celRect.Right);
                     }
                 }
 

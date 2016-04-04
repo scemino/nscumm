@@ -72,7 +72,6 @@ namespace NScumm.Sci.Graphics
         private LoopInfo[] _loop;
         // this is set for sci0early to adjust for the getCelRect() change
         private short _adjustForSci0Early;
-        private int _resourceId;
         private GfxCoordAdjuster _coordAdjuster;
         private ResourceManager.ResourceSource.Resource _resource;
         private byte[] _resourceData;
@@ -291,7 +290,6 @@ namespace NScumm.Sci.Graphics
             _resMan = resMan;
             _screen = screen;
             _palette = palette;
-            _resourceId = resourceId;
             _coordAdjuster = SciEngine.Instance._gfxCoordAdjuster;
 
             InitData(resourceId);
@@ -1030,14 +1028,14 @@ namespace NScumm.Sci.Graphics
             return _loop[loopNo].cel[celNo];
         }
 
-        internal void AdjustToUpscaledCoordinates(short y, short x)
+		public void AdjustToUpscaledCoordinates(ref int y, ref int x)
         {
-            throw new NotImplementedException();
+			_screen.AdjustToUpscaledCoordinates(ref y, ref x, _sci2ScaleRes);
         }
 
-        internal void AdjustBackUpscaledCoordinates(int top, int left)
+		public void AdjustBackUpscaledCoordinates(ref int y, ref int x)
         {
-            throw new NotImplementedException();
+			_screen.AdjustBackUpscaledCoordinates(ref y, ref x, _sci2ScaleRes);
         }
     }
 }

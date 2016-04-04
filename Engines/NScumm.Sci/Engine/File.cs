@@ -70,14 +70,46 @@ namespace NScumm.Sci.Engine
 
     internal class DirSeeker
     {
-        internal Register NextFile(SegManager _segMan)
+		protected Register _outbuffer;
+		protected List<string> _files;
+		protected List<string> _virtualFiles;
+		protected int _iter;
+
+		public DirSeeker ()
+		{
+			_outbuffer = Register.NULL_REG;
+			_files = new List<string> ();
+			_virtualFiles = new List<string> ();
+		}
+
+        public Register NextFile(SegManager segMan)
         {
-            throw new NotImplementedException();
+			if (_iter == _files.Count) {
+				return Register.NULL_REG;
+			}
+
+			string @string;
+
+			if (_virtualFiles.Count==0) {
+				// Strip the prefix, if we don't got a virtual filelisting
+				string wrappedString = _files[_iter];
+				@string = SciEngine.Instance.UnwrapFilename(wrappedString);
+			} else {
+				@string = _files[_iter];
+			}
+
+			if (@string.Length > 12)
+				@string = @string.Substring(0,12);
+			segMan.Strcpy(_outbuffer, @string);
+
+			// Return the result and advance the list iterator :)
+			++_iter;
+			return _outbuffer;
         }
 
-        internal string GetVirtualFilename(uint _chosenQfGImportItem)
+		public string GetVirtualFilename(int fileNumber)
         {
-            throw new NotImplementedException();
+			return _virtualFiles[fileNumber];
         }
     }
 

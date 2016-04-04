@@ -1,4 +1,4 @@
-﻿//  Author:
+//  Author:
 //       scemino <scemino74@gmail.com>
 //
 //  Copyright (c) 2015 
@@ -65,7 +65,7 @@ namespace NScumm.Sci.Engine
         private static Register kAnimate(EngineState s, int argc, StackPtr? argv)
         {
             Register castListReference = (argc > 0) ? argv.Value[0] : Register.NULL_REG;
-            bool cycle = (argc > 1) ? ((argv.Value[1].ToUInt16() != 0) ? true : false) : false;
+            bool cycle = (argc > 1) && ((argv.Value [1].ToUInt16 () != 0));
 
             SciEngine.Instance._gfxAnimate.KernelAnimate(castListReference, cycle, argc, argv);
 
@@ -286,7 +286,7 @@ namespace NScumm.Sci.Engine
                 }
 
                 // For the SCI32 version of this, check kListAt().
-                s._chosenQfGImportItem = SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.mark);
+				s._chosenQfGImportItem = (int)SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.mark);
             }
 
             _k_GenericDrawControl(s, controlObject, false);
@@ -922,7 +922,7 @@ namespace NScumm.Sci.Engine
             int maxwidth = (argc > 3) ? argv.Value[3].ToUInt16() : 0;
             int font_nr = argv.Value[2].ToUInt16();
 
-            if (dest == StackPtr.Null)
+			if (dest == StackPtr.Null)
             {
                 // TODO: debugC(kDebugLevelStrings, "GetTextSize: Empty destination");
                 return s.r_acc;

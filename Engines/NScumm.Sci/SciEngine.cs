@@ -161,6 +161,36 @@ namespace NScumm.Sci
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
         };
 
+		private static readonly byte[] patchGameRestoreSave = {
+			0x39, 0x03,        // pushi 03
+			0x76,              // push0
+			0x38, 0xff, 0xff,  // pushi -1
+			0x76,              // push0
+			0x43, 0xff, 0x06,  // callk kRestoreGame/kSaveGame (will get changed afterwards)
+			0x48,              // ret
+		};
+
+		// SCI2 version: Same as above, but the second parameter to callk is a word
+		private static readonly byte[] patchGameRestoreSaveSci2 = {
+			0x39, 0x03,        // pushi 03
+			0x76,              // push0
+			0x38, 0xff, 0xff,  // pushi -1
+			0x76,              // push0
+			0x43, 0xff, 0x06, 0x00, // callk kRestoreGame/kSaveGame (will get changed afterwards)
+			0x48,              // ret
+		};
+
+		// SCI21 version: Same as above, but the second parameter to callk is a word
+		private static readonly byte[] patchGameRestoreSaveSci21 = {
+			0x39, 0x04,        // pushi 04
+			0x76,              // push0	// 0: save, 1: restore (will get changed afterwards)
+			0x76,              // push0
+			0x38, 0xff, 0xff,  // pushi -1
+			0x76,              // push0
+			0x43, 0xff, 0x08, 0x00, // callk kSave (will get changed afterwards)
+			0x48,              // ret
+		};
+
         public SciEngine(ISystem system, IAudioOutput output, SciGameDescriptor desc, SciGameId id)
         {
             _engineStartTime = Environment.TickCount;
@@ -181,6 +211,14 @@ namespace NScumm.Sci
         {
             return $"{_gameDescription.gameid}.{nr:D3}";
         }
+
+		public string UnwrapFilename(string name)
+		{
+			string prefix = FilePrefix + "-";
+			if (name.StartsWith(prefix))
+				return name.Substring(0,prefix.Length);
+			return name;
+		}
 
         /// <summary>
         /// Processes a multilanguage string based on the current language settings and
@@ -601,7 +639,7 @@ namespace NScumm.Sci
 
             // Must be called after game_init(), as they use _features
             _kernel.LoadKernelNames(_features);
-            _soundCmd = new SoundCommandParser(_resMan, segMan, _kernel, _audio, _features.DetectDoSoundType());
+            _soundCmd = new SoundCommandParser(_resMan, segMan, _audio, _features.DetectDoSoundType());
 
             // TODO: SyncSoundSettings();
             _soundCmd.SetMasterVolume(11);
@@ -614,7 +652,7 @@ namespace NScumm.Sci
             InitGraphics();
 
             // Patch in our save/restore code, so that dialogs are replaced
-            // TODO: PatchGameSaveRestore();
+            PatchGameSaveRestore();
             SetLauncherLanguage();
 
             // TODO: Check whether loading a savestate was requested
@@ -732,6 +770,119 @@ namespace NScumm.Sci
 
             // TODO: ConfMan.flushToDisk();
         }
+
+		private void PatchGameSaveRestore()
+		{
+			SegManager segMan = _gamestate._segMan;
+			var gameObject = segMan.GetObject(_gameObjectAddress);
+			var gameSuperObject = segMan.GetObject(gameObject.SuperClassSelector);
+			if (gameSuperObject==null)
+				gameSuperObject = gameObject;	// happens in KQ5CD, when loading saved games before r54510
+			byte kernelIdRestore = 0;
+			byte kernelIdSave = 0;
+
+			switch (GameId) {
+			case SciGameId.HOYLE1: // gets confused, although the game doesnt support saving/restoring at all
+			case SciGameId.HOYLE2: // gets confused, see hoyle1
+			case SciGameId.JONES: // gets confused, when we patch us in, the game is only able to save to 1 slot, so hooking is not required
+			case SciGameId.MOTHERGOOSE: // mother goose EGA saves/restores directly and has no save/restore dialogs
+			case SciGameId.MOTHERGOOSE256: // mother goose saves/restores directly and has no save/restore dialogs
+			case SciGameId.PHANTASMAGORIA: // has custom save/load code
+			case SciGameId.SHIVERS: // has custom save/load code
+				return;
+			default:
+				break;
+			}
+
+			// TODO: if (ConfMan.getBool("originalsaveload"))
+				//return;
+
+			ushort kernelNamesSize = (ushort)_kernel.KernelNamesSize;
+			for (ushort kernelNr = 0; kernelNr < kernelNamesSize; kernelNr++) {
+				string kernelName = _kernel.GetKernelName(kernelNr);
+				if (kernelName == "RestoreGame")
+					kernelIdRestore = (byte)kernelNr;
+				if (kernelName == "SaveGame")
+					kernelIdSave = (byte)kernelNr;
+				if (kernelName == "Save")
+					kernelIdSave = kernelIdRestore = (byte)kernelNr;
+			}
+
+			// Search for gameobject superclass ::restore
+			ushort gameSuperObjectMethodCount = (ushort)gameSuperObject.MethodCount;
+			for (ushort methodNr = 0; methodNr < gameSuperObjectMethodCount; methodNr++) {
+				ushort selectorId = (ushort)gameSuperObject.GetFuncSelector(methodNr);
+				string methodName = _kernel.GetSelectorName(selectorId);
+				if (methodName == "restore") {
+					if (kernelIdSave != kernelIdRestore)
+						PatchGameSaveRestoreCode(segMan, gameSuperObject.GetFunction(methodNr), kernelIdRestore);
+					else
+						PatchGameSaveRestoreCodeSci21(segMan, gameSuperObject.GetFunction(methodNr), kernelIdRestore, true);
+				}
+				else if (methodName == "save") {
+					if (_gameId != SciGameId.FAIRYTALES) {	// Fairy Tales saves automatically without a dialog
+						if (kernelIdSave != kernelIdRestore)
+							PatchGameSaveRestoreCode(segMan, gameSuperObject.GetFunction(methodNr), kernelIdSave);
+						else
+							PatchGameSaveRestoreCodeSci21(segMan, gameSuperObject.GetFunction(methodNr), kernelIdSave, false);
+					}
+				}
+			}
+
+			// Search for gameobject ::save, if there is one patch that one too
+			ushort gameObjectMethodCount = (ushort)gameObject.MethodCount;
+			for (ushort methodNr = 0; methodNr < gameObjectMethodCount; methodNr++) {
+				ushort selectorId = (ushort)gameObject.GetFuncSelector(methodNr);
+				string methodName = _kernel.GetSelectorName(selectorId);
+				if (methodName == "save") {
+					if (_gameId != SciGameId.FAIRYTALES) {	// Fairy Tales saves automatically without a dialog
+						if (kernelIdSave != kernelIdRestore)
+							PatchGameSaveRestoreCode(segMan, gameObject.GetFunction(methodNr), kernelIdSave);
+						else
+							PatchGameSaveRestoreCodeSci21(segMan, gameObject.GetFunction(methodNr), kernelIdSave, false);
+					}
+					break;
+				}
+			}
+		}
+
+		private static void PatchGameSaveRestoreCode(SegManager segMan, Register methodAddress, byte id) {
+			Script script = segMan.GetScript(methodAddress.Segment);
+			var patchPtr = script.GetBuf((int)methodAddress.Offset);
+
+			if (ResourceManager.GetSciVersion() <= SciVersion.V1_1)
+			{
+				Array.Copy(patchGameRestoreSave,0,patchPtr.Data,patchPtr.Offset,patchGameRestoreSave.Length);
+			} else 
+			{	// SCI2+
+				Array.Copy(patchGameRestoreSaveSci2,0,patchPtr.Data,patchPtr.Offset,patchGameRestoreSaveSci2.Length);
+
+				if (SciEngine.Instance.IsBE) {
+					// LE -> BE
+					patchPtr[9] = 0x00;
+					patchPtr[10] = 0x06;
+				}
+			}
+
+			patchPtr[8] = id;
+		}
+
+		private static void PatchGameSaveRestoreCodeSci21(SegManager segMan, Register methodAddress, byte id, bool doRestore) {
+			Script script = segMan.GetScript(methodAddress.Segment);
+			var patchPtr = script.GetBuf((int)methodAddress.Offset);
+			Array.Copy(patchGameRestoreSaveSci21,0,patchPtr.Data,patchPtr.Offset,patchGameRestoreSaveSci21.Length);
+
+			if (doRestore)
+				patchPtr[2] = 0x78;	// push1
+
+			if (SciEngine.Instance.IsBE) {
+				// LE -> BE
+				patchPtr[10] = 0x00;
+				patchPtr[11] = 0x08;
+			}
+
+			patchPtr[9] = id;
+		}
 
         public string StrSplit(string text, string sep = "\r----------\r")
         {

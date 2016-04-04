@@ -213,7 +213,7 @@ namespace NScumm.Sci.Graphics
         };
 
         // Bitmap for drawing sierra circles
-        static readonly byte[][] vectorPatternCircles = new byte[8][] {
+        static readonly byte[][] vectorPatternCircles = {
             new byte[]{ 0x01 },
             new byte[]{ 0x72, 0x02 },
             new byte[]{ 0xCE, 0xF7, 0x7D, 0x0E },

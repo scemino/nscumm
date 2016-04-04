@@ -420,6 +420,11 @@ namespace NScumm.Sci.Parser
             parserIsValid = false;
         }
 
+		public void SaveLoadWithSerializer (Serializer ser)
+		{
+			throw new NotImplementedException ();
+		}
+
         public static int SAID_LONG(int x)
         {
             return x << 8;

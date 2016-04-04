@@ -95,6 +95,11 @@ namespace NScumm.Sci.Graphics
             _windowList = new List<Port>();
         }
 
+		public void SaveLoadWithSerializer (Serializer ser)
+		{
+			throw new NotImplementedException ();
+		}
+
         public void BackColor(short color)
         {
             _curPort.backClr = color;

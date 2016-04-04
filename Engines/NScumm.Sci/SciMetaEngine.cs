@@ -195,11 +195,25 @@ namespace NScumm.Sci
 	        // SCI interpreter version 0.000.453
 	        new ADGameDescription {
                 gameid = "astrochicken", extra= "",
-                filesDescriptions =new ADGameFileDescription[] {
+                filesDescriptions =new []{
                     new ADGameFileDescription { fileName = "resource.map", fileType = 0, md5 = "f3d1be7752d30ba60614533d531e2e98", fileSize = 474 },
                     new ADGameFileDescription { fileName = "resource.001", fileType = 0, md5 = "6fd05926c2199af0af6f72f90d0d7260", fileSize = 126895 },
                 }, language = Core.Common.Language.EN_ANY, platform = Platform.DOS
             },
+
+			// Castle of Dr. Brain - English Amiga (from www.back2roots.org)
+			// Executable scanning reports "1.005.000"
+			// SCI interpreter version 1.000.510
+			new ADGameDescription { gameid= "castlebrain", extra= "",
+				filesDescriptions =new [] {
+					new ADGameFileDescription { fileName = "resource.map", fileType = 0, md5 = "9f9fb826aa7e944b95eadbf568244a68", fileSize = 2766},
+					new ADGameFileDescription { fileName = "resource.000", fileType = 0, md5 = "0efa8409c43d42b32642f96652d3230d", fileSize = 314773},
+					new ADGameFileDescription { fileName = "resource.001", fileType = 0, md5 = "3fb02ce493f6eacdcc3713851024f80e", fileSize = 559540},
+					new ADGameFileDescription { fileName = "resource.002", fileType = 0, md5 = "d226d7d3b4f77c4a566913fc310487fc", fileSize = 792380},
+					new ADGameFileDescription { fileName = "resource.003", fileType = 0, md5 = "d226d7d3b4f77c4a566913fc310487fc", fileSize = 464348},
+				},
+				language = NScumm.Core.Common.Language.EN_ANY, platform =  Platform.Amiga
+			},
 
             // King's Quest 1 SCI Remake - English DOS (from the King's Quest Collection)
 	        // Executable scanning reports "S.old.010", VERSION file reports "1.000.051"

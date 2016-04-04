@@ -234,14 +234,14 @@ namespace NScumm.Sci.Graphics
 
                 if ((it.signal & (ViewSignals.NoUpdate | ViewSignals.RemoveView)) == 0)
                 {
-                    _paint16.BitsRestore(SciEngine.ReadSelector(_s._segMan, it.@object, SciEngine.Selector(s => s.underBits)));
-                    SciEngine.WriteSelectorValue(_s._segMan, it.@object, SciEngine.Selector(s => s.underBits), 0);
+                    _paint16.BitsRestore(SciEngine.ReadSelector(_s._segMan, it.@object, s => s.underBits));
+                    SciEngine.WriteSelectorValue(_s._segMan, it.@object, s => s.underBits, 0);
                 }
 
                 if ((it.signal & ViewSignals.DisposeMe) != 0)
                 {
                     // Call .delete_ method of that object
-                    SciEngine.InvokeSelector(_s, it.@object, SciEngine.Selector(s => s.delete_), argc, argv, 0);
+                    SciEngine.InvokeSelector(_s, it.@object, s => s.delete_, argc, argv, 0);
                 }
             }
         }

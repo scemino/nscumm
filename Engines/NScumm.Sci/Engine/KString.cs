@@ -278,13 +278,11 @@ namespace NScumm.Sci.Engine
                         {
                             if (align > 0)
                             {
-                                throw new NotImplementedException();
-                                //memmove(writestart + padding, writestart, written);
-                                //memset(writestart, fillchar, padding);
+								Array.Copy (targetbuf, writestart, targetbuf, writestart + padding, written);
+								targetbuf.Set (writestart, fillchar, padding);
                             }
                             else {
-                                throw new NotImplementedException();
-                                //memset(target, ' ', padding);
+                                targetbuf.Set (target, ' ', padding);
                             }
                             target += padding;
                         }
@@ -464,7 +462,7 @@ namespace NScumm.Sci.Engine
                         else {
                             var buffer = s._segMan.DerefRegPtr(argv.Value[1], 5);
 
-                            if (buffer != null)
+						if (buffer != StackPtr.Null)
                             {
                                 ok = true;
                                 buffer[0] = Register.Make(0, (ushort)lastModule);

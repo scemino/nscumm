@@ -116,7 +116,7 @@ namespace NScumm.Sci.Engine
         /// <summary>
         /// Remembers the item selected in QfG import rooms
         /// </summary>
-        public uint _chosenQfGImportItem;
+        public int _chosenQfGImportItem;
 
         /// <summary>
         /// Refer to GfxCursor::setPosition()
@@ -225,6 +225,11 @@ namespace NScumm.Sci.Engine
 
             Reset(false);
         }
+
+		public void SaveLoadWithSerializer (Serializer ser)
+		{
+			throw new NotImplementedException ();
+		}
 
         public void SpeedThrottler(int neededSleep)
         {

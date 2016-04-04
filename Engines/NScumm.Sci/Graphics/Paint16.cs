@@ -286,8 +286,8 @@ namespace NScumm.Sci.Graphics
                 // adjust curPort to upscaled hires
                 clipRect = celRect;
                 curPortRect = _ports._curPort.rect;
-                view.AdjustToUpscaledCoordinates((short)curPortRect.Top, (short)curPortRect.Left);
-                view.AdjustToUpscaledCoordinates((short)curPortRect.Bottom, (short)curPortRect.Right);
+				view.AdjustToUpscaledCoordinates(ref curPortRect.Top, ref curPortRect.Left);
+				view.AdjustToUpscaledCoordinates(ref curPortRect.Bottom, ref curPortRect.Right);
                 curPortRect.Bottom++;
                 curPortRect.Right++;
                 clipRect.Clip(curPortRect);
@@ -298,7 +298,7 @@ namespace NScumm.Sci.Graphics
                 if (!upscaledHiresHack)
                 {
                     curPortPos.X = _ports._curPort.left; curPortPos.Y = _ports._curPort.top;
-                    view.AdjustToUpscaledCoordinates((short)curPortPos.Y, (short)curPortPos.X);
+					view.AdjustToUpscaledCoordinates(ref curPortPos.Y, ref curPortPos.X);
                     clipRectTranslated.Top += curPortPos.Y; clipRectTranslated.Bottom += curPortPos.Y;
                     clipRectTranslated.Left += curPortPos.X; clipRectTranslated.Right += curPortPos.X;
                 }

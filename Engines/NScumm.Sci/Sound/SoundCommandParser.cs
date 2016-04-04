@@ -42,16 +42,14 @@ namespace NScumm.Sci.Sound
         private SciVersion _soundVersion;
         private SegManager _segMan;
         private AudioPlayer _audio;
-        private Kernel _kernel;
         private ResourceManager _resMan;
         private bool _useDigitalSFX;
         private SciMusic _music;
 
-        public SoundCommandParser(ResourceManager resMan, SegManager segMan, Kernel kernel, AudioPlayer audio, SciVersion soundVersion)
+        public SoundCommandParser(ResourceManager resMan, SegManager segMan, AudioPlayer audio, SciVersion soundVersion)
         {
             _resMan = resMan;
             _segMan = segMan;
-            _kernel = kernel;
             _audio = audio;
             _soundVersion = soundVersion;
 

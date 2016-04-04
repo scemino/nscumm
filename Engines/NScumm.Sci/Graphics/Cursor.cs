@@ -256,9 +256,8 @@ namespace NScumm.Sci.Graphics
                 hotspot.X *= 2;
                 hotspot.Y *= 2;
                 byte[] upscaledBitmap = new byte[heightWidth * heightWidth];
-                throw new NotImplementedException();
-                //_screen.Scale2x(rawBitmap, upscaledBitmap, SCI_CURSOR_SCI0_HEIGHTWIDTH, SCI_CURSOR_SCI0_HEIGHTWIDTH);
-                //rawBitmap = upscaledBitmap;
+                _screen.Scale2x(rawBitmap, upscaledBitmap, SCI_CURSOR_SCI0_HEIGHTWIDTH, SCI_CURSOR_SCI0_HEIGHTWIDTH);
+                rawBitmap = upscaledBitmap;
             }
 
             if (hotspot.X >= heightWidth || hotspot.Y >= heightWidth)

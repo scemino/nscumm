@@ -198,7 +198,6 @@ namespace NScumm.Sci.Sound
         private IMixer _mixer;
         private MusicType _musicType;
         private SciVersion _soundVersion;
-        private ISystem _system;
         private bool _useDigitalSFX;
         private object _mutex = new object();
         private List<MusicEntry> _playList;

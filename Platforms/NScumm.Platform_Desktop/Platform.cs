@@ -103,7 +103,7 @@ namespace NScumm
             return new WrappedObject(handle, Marshal.PtrToStructure(handle.AddrOfPinnedObject() + offset, type));
         }
 
-        public void Debug(string text)
+        public void Debug(int level, string text)
         {
             System.Diagnostics.Debug.WriteLine(text);
         }

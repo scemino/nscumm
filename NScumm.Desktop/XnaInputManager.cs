@@ -185,7 +185,7 @@ namespace NScumm
                 var state = Mouse.GetState();
                 _leftButtonPressed |= state.LeftButton == ButtonState.Pressed;
                 _rightButtonPressed |= state.RightButton == ButtonState.Pressed;
-                UpdateMousePosition(state.Position.ToVector2());
+                UpdateMousePosition(state.Position.ToVector2()*2);
 
                 _keyboardState = keyboard;
 

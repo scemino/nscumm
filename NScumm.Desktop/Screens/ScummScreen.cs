@@ -30,116 +30,107 @@ using NScumm.Core.IO;
 
 namespace NScumm
 {
-    public class ScummScreen : GameScreen
-    {
-        private readonly GameSettings info;
-        private SpriteBatch spriteBatch;
-        private IEngine engine;
-        private XnaGraphicsManager gfx;
-        private XnaInputManager inputManager;
-        private Vector2 cursorPos;
-        private IAudioOutput audioDriver;
-        private Game game;
-        private bool contentLoaded;
-        private SpriteFont font;
+	public class ScummScreen : GameScreen
+	{
+		private readonly GameSettings info;
+		private SpriteBatch spriteBatch;
+		private IEngine engine;
+		private XnaGraphicsManager gfx;
+		private XnaInputManager inputManager;
+		private IAudioOutput audioDriver;
+		private Game game;
+		private bool contentLoaded;
+//		private SpriteFont font;
 
-        public ScummScreen(Game game, GameSettings info)
-        {
-            TransitionOnTime = TimeSpan.FromSeconds(1.0);
-            TransitionOffTime = TimeSpan.FromSeconds(1.0);
+		public ScummScreen (Game game, GameSettings info)
+		{
+			TransitionOnTime = TimeSpan.FromSeconds (1.0);
+			TransitionOffTime = TimeSpan.FromSeconds (1.0);
 
-            this.game = game;
-            this.info = info;
-        }
+			this.game = game;
+			this.info = info;
+		}
 
-        public override void LoadContent()
-        {
-            if (!contentLoaded)
-            {
-                contentLoaded = true;
-                spriteBatch = new SpriteBatch(ScreenManager.GraphicsDevice);
+		public override void LoadContent ()
+		{
+			if (!contentLoaded) {
+				contentLoaded = true;
+				spriteBatch = new SpriteBatch (ScreenManager.GraphicsDevice);
 
-                font = ScreenManager.Content.Load<SpriteFont>("Fonts/MenuFont");
-                inputManager = new XnaInputManager(ScreenManager.Game, info.Game);
-                gfx = new XnaGraphicsManager(info.Game.Width, info.Game.Height, info.Game.PixelFormat, game.Window, ScreenManager.GraphicsDevice);
-                ScreenManager.Game.Services.AddService<Core.Graphics.IGraphicsManager>(gfx);
-                var saveFileManager = ServiceLocator.SaveFileManager;
+//				font = ScreenManager.Content.Load<SpriteFont> ("Fonts/MenuFont");
+				inputManager = new XnaInputManager (ScreenManager.Game, info.Game);
+				gfx = new XnaGraphicsManager (info.Game.Width, info.Game.Height, info.Game.PixelFormat, ScreenManager.GraphicsDevice);
+				ScreenManager.Game.Services.AddService<Core.Graphics.IGraphicsManager> (gfx);
+				var saveFileManager = ServiceLocator.SaveFileManager;
 #if WINDOWS_UWP
                 audioDriver = new XAudio2Mixer();
 #else
-                audioDriver = new XnaAudioDriver();
+				audioDriver = new XnaAudioDriver ();
 #endif
-                audioDriver.Play();
+				audioDriver.Play ();
 
-                // init engines
-                engine = info.MetaEngine.Create(info, gfx, inputManager, audioDriver, saveFileManager);
-                engine.ShowMenuDialogRequested += OnShowMenuDialogRequested;
-                game.Services.AddService(engine);
+				// init engines
+				engine = info.MetaEngine.Create (info, gfx, inputManager, audioDriver, saveFileManager);
+				engine.ShowMenuDialogRequested += OnShowMenuDialogRequested;
+				game.Services.AddService (engine);
 
-                Task.Factory.StartNew(() =>
-                {
-                    UpdateGame();
-                });
-            }
-        }
+				Task.Factory.StartNew (() => {
+					UpdateGame ();
+				});
+			}
+		}
 
-        public override void EndRun()
-        {
-            engine.HasToQuit = true;
-            audioDriver.Stop();
-            base.EndRun();
-        }
+		public override void EndRun ()
+		{
+			engine.HasToQuit = true;
+			audioDriver.Stop ();
+			base.EndRun ();
+		}
 
-        public override void UnloadContent()
-        {
-            gfx.Dispose();
-            audioDriver.Dispose();
-        }
+		public override void UnloadContent ()
+		{
+			gfx.Dispose ();
+			audioDriver.Dispose ();
+		}
 
-        public override void HandleInput(InputState input)
-        {
-            if (input.IsNewKeyPress(Keys.Enter) && input.CurrentKeyboardState.IsKeyDown(Keys.LeftControl))
-            {
-                var gdm = ((ScummGame)game).GraphicsDeviceManager;
-                gdm.ToggleFullScreen();
-                gdm.ApplyChanges();
-            }
-            else if (input.IsNewKeyPress(Keys.Space))
-            {
-                engine.IsPaused = !engine.IsPaused;
-            }
-            else
-            {
-                inputManager.UpdateInput(input.CurrentKeyboardState);
-                cursorPos = inputManager.RealPosition;
-                base.HandleInput(input);
-            }
-        }
+		public override void HandleInput (InputState input)
+		{
+			if (input.IsNewKeyPress (Keys.Enter) && input.CurrentKeyboardState.IsKeyDown (Keys.LeftControl)) {
+				var gdm = ((ScummGame)game).GraphicsDeviceManager;
+				gdm.ToggleFullScreen ();
+				gdm.ApplyChanges ();
+			} else if (input.IsNewKeyPress (Keys.Space)) {
+				engine.IsPaused = !engine.IsPaused;
+			} else {
+				inputManager.UpdateInput (input.CurrentKeyboardState);
+				base.HandleInput (input);
+			}
+		}
 
-        public override void Draw(GameTime gameTime)
-        {
-            spriteBatch.Begin();
-            gfx.DrawScreen(spriteBatch);
-            gfx.DrawCursor(spriteBatch, cursorPos);
-            spriteBatch.End();
-        }
+		public override void Draw (GameTime gameTime)
+		{
+			spriteBatch.Begin ();
+			gfx.DrawScreen (spriteBatch);
+			gfx.DrawCursor (spriteBatch);
+			spriteBatch.End ();
+		}
 
-        private void UpdateGame()
-        {
-            engine.Run();
-            ScreenManager.Game.Exit();
-        }
+		private void UpdateGame ()
+		{
+			engine.Run ();
+			ScreenManager.Game.Exit ();
+		}
 
-        private void OnShowMenuDialogRequested(object sender, EventArgs e)
-        {
-            if (!engine.IsPaused)
-            {
-                engine.IsPaused = true;
-                var page = game.Services.GetService<IMenuService>();
-                page.ShowMenu();
-            }
-        }
+		private void OnShowMenuDialogRequested (object sender, EventArgs e)
+		{
+			if (!engine.IsPaused) {
+				engine.IsPaused = true;
+				var page = game.Services.GetService<IMenuService> ();
+				page.ShowMenu ();
+			}
+		}
 
-    }
+	}
+
 }
 

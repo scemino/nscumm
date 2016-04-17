@@ -25,7 +25,7 @@ using System.IO;
 using System.Reflection;
 using System.Collections.Generic;
 
-namespace NScumm.Desktop
+namespace NScumm
 {
 	public class ScummOptionSet:OptionSet
 	{

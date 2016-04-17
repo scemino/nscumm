@@ -26,8 +26,6 @@ using System.IO;
 using System.Linq;
 using NScumm.Core.IO;
 using NScumm.Services;
-using NScumm.Platform_Desktop;
-using NScumm.Desktop;
 
 namespace NScumm
 {

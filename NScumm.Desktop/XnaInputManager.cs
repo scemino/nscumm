@@ -38,7 +38,6 @@ namespace NScumm
     internal sealed class XnaInputManager : IInputManager
     {
         private readonly object _gate = new object();
-        private readonly GameWindow _window;
         private readonly List<Keys> _virtualKeysDown = new List<Keys>();
         private readonly List<Keys> _virtualKeysUp = new List<Keys>();
         private HashSet<KeyCode> _keysPressed = new HashSet<KeyCode>();
@@ -48,12 +47,12 @@ namespace NScumm
         private bool _isMenuPressed;
         private Core.Graphics.Point _mousePosition;
         private bool _rightButtonPressed;
-        private bool _showKeyboard;
         private Game _game;
         private int _width;
         private int _height;
 
 #if WINDOWS_UWP
+		private bool _showKeyboard;
         private InputPane _inputPane;
         private CoreWindow _currentWindow;
 #endif
@@ -64,7 +63,6 @@ namespace NScumm
             _game = game;
             _width = gameDesc.Width;
             _height = gameDesc.Height;
-            _window = game.Window;
             _mousePosition = new Core.Graphics.Point();
 
             TouchPanel.EnableMouseGestures = true;
@@ -243,12 +241,16 @@ namespace NScumm
 
         public void ShowVirtualKeyboard()
         {
-            _showKeyboard = true;
+			#if WINDOWS_UWP
+			_showKeyboard = true;
+			#endif
         }
 
         public void HideVirtualKeyboard()
         {
-            _showKeyboard = false;
+			#if WINDOWS_UWP
+			_showKeyboard = false;
+			#endif
         }
 
         private static readonly Dictionary<Keys, KeyCode> KeyToKeyCode = new Dictionary<Keys, KeyCode>

@@ -19,13 +19,12 @@
 
 using NScumm.Core;
 using NScumm.Core.Audio;
-using NScumm.MonoGame;
 using System.IO;
 using System.Linq;
 using System;
 using FlacBox;
 
-namespace NScumm.Platform_Desktop
+namespace NScumm
 {
     public class AudioManager : IAudioManager
     {

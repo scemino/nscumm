@@ -22,7 +22,7 @@ using System.IO;
 using System;
 using NScumm.Core;
 
-namespace NScumm.MonoGame
+namespace NScumm
 {
     class WaveAudioStream : IRewindableAudioStream
     {

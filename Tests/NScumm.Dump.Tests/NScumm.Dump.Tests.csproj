@@ -52,14 +52,6 @@
       <Project>{8E7A9E5B-D7EB-4DA1-8EE7-A5D8DE202372}</Project>
       <Name>NScumm.Core</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\Platforms\NScumm.Platform_Desktop\NScumm.Platform_Desktop.csproj">
-      <Project>{d42434c7-459d-461a-8b1d-1451f7ff4b13}</Project>
-      <Name>NScumm.Platform_Desktop</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Tools\NScumm.Dump\NScumm.Dump.csproj">
-      <Project>{d53eb07b-f186-4281-a225-2c3dc5850148}</Project>
-      <Name>NScumm.Dump</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

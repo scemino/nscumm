@@ -1,5 +1,5 @@
-﻿//
-//  FilePickerActivity.cs
+//
+//  MainActivity.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -22,24 +22,26 @@
 
 using Android.App;
 using Android.OS;
-using Android.Support.V4.App;
-using Android.Widget;
+using ReactiveUI;
+using Xamarin.Forms.Platform.Android;
+using Android.Content.PM;
+using NScumm.Mobile.ViewModels;
 
 namespace NScumm.Mobile.Droid
 {
-	[Activity(Label = "NScumm.FilePicker")]
-	public class FilePickerActivity : FragmentActivity
+	[Activity (Label = "nScumm", Icon = "@drawable/icon", MainLauncher = true, 
+		ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation)]
+	public class MainActivity : AndroidActivity
 	{
-		protected override void OnCreate(Bundle bundle)
+		protected override void OnCreate (Bundle bundle)
 		{
-			base.OnCreate(bundle);
-			SetContentView(Resource.Layout.Main);
-		}
+			base.OnCreate (bundle);
+			Xamarin.Forms.Forms.Init (this, bundle);
 
-		public override void OnBackPressed ()
-		{
-			Toast.MakeText (this, "Back", ToastLength.Long);
-			base.OnBackPressed ();
+			var view = RxApp.SuspensionHost.GetAppState<AppBootstrapper> ().CreateMainView ();
+			SetPage (view);
+
+
 		}
 	}
 }

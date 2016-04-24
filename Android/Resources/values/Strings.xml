@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="UTF-8" ?>
 <resources>
+	<string name="title">nScumm</string>
     <string name="no_game_selected">No game selected.</string>
     <string name="game_not_supported">This game is not supported, sorry please contact me if you want to support this game.</string>
     <string name="no_files_or_directories">No files or directories</string>

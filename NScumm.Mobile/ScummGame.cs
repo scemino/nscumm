@@ -110,7 +110,9 @@ namespace NScumm
 		private void UpdateGame ()
 		{
 			engine.Run ();
+			#if __ANDROID__
 			Exit ();
+			#endif
 		}
 
 		protected override void Draw (GameTime gameTime)

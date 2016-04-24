@@ -1,5 +1,5 @@
 ﻿//
-//  Main.cs
+//  AppBootstrapper.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -18,21 +18,32 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-using UIKit;
-using NScumm.Core;
 
-namespace NScumm.Mobile.iOS
+using ReactiveUI;
+using Splat;
+using Xamarin.Forms;
+using NScumm.Mobile.Views;
+
+namespace NScumm.Mobile.ViewModels
 {
-	public class Application
+	public class AppBootstrapper : ReactiveObject, IScreen
 	{
-		// This is the main entry point of the application.
-		static void Main (string[] args)
-		{
-			ServiceLocator.FileStorage = new FileStorage ();
+		public RoutingState Router { get; protected set; }
 
-			// if you want to use a different Application Delegate class from "AppDelegate"
-			// you can specify it here.
-			UIApplication.Main (args, null, "AppDelegate");
+		public AppBootstrapper ()
+		{
+			Router = new RoutingState ();
+
+			Locator.CurrentMutable.RegisterConstant (this, typeof(IScreen));
+			Locator.CurrentMutable.Register (() => new GameLibraryView (), typeof(IViewFor<GameLibraryViewModel>));
+			Locator.CurrentMutable.Register (() => new GameView (), typeof(IViewFor<GameViewModel>));
+
+			Router.Navigate.Execute (new GameLibraryViewModel (this));
+		}
+
+		public Page CreateMainView ()
+		{
+			return new ReactiveUI.XamForms.RoutedViewHost ();
 		}
 	}
 }

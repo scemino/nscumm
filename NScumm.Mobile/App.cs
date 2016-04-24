@@ -1,5 +1,5 @@
 ﻿//
-//  Main.cs
+//  App.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -18,21 +18,31 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-using UIKit;
-using NScumm.Core;
+using Xamarin.Forms;
+using NScumm.Mobile.Views;
 
-namespace NScumm.Mobile.iOS
+namespace NScumm.Mobile
 {
-	public class Application
+	public class App : Application
 	{
-		// This is the main entry point of the application.
-		static void Main (string[] args)
-		{
-			ServiceLocator.FileStorage = new FileStorage ();
+		public static Page GetMainPage ()
+		{	
+			return new GameLibraryView ();
+		}
 
-			// if you want to use a different Application Delegate class from "AppDelegate"
-			// you can specify it here.
-			UIApplication.Main (args, null, "AppDelegate");
+		protected override void OnStart ()
+		{
+			// Handle when your app starts
+		}
+
+		protected override void OnSleep ()
+		{
+			// Handle when your app sleeps
+		}
+
+		protected override void OnResume ()
+		{
+			// Handle when your app resumes
 		}
 	}
 }

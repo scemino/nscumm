@@ -26,13 +26,6 @@ namespace NScumm
 {
     public class SaveFileManager: ISaveFileManager
     {
-        private IFileStorage _fileStorage;
-
-        public SaveFileManager(IFileStorage fileStorage)
-        {
-            _fileStorage = fileStorage;
-        }
-
         public Stream OpenForLoading(string fileName)
         {
             var path = GetSavePath();

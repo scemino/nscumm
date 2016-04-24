@@ -1,5 +1,5 @@
 ﻿//
-//  Main.cs
+//  GameViewModel.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -18,21 +18,45 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-using UIKit;
-using NScumm.Core;
 
-namespace NScumm.Mobile.iOS
+using ReactiveUI;
+
+namespace NScumm.Mobile.ViewModels
 {
-	public class Application
+	public class GameLibrary
 	{
-		// This is the main entry point of the application.
-		static void Main (string[] args)
-		{
-			ServiceLocator.FileStorage = new FileStorage ();
+		public Game[] Games { get; set; }
+	}
 
-			// if you want to use a different Application Delegate class from "AppDelegate"
-			// you can specify it here.
-			UIApplication.Main (args, null, "AppDelegate");
+	public class Game
+	{
+		public string Description {
+			get;
+			set;
+		}
+
+		public string Path {
+			get;
+			set;
+		}
+	}
+
+	public class GameViewModel: ReactiveObject
+	{
+		public string Description {
+			get;
+			set;
+		}
+
+		public string Path {
+			get;
+			set;
+		}
+
+		public GameViewModel (string description = null, string path = null)
+		{
+			Description = description;
+			Path = path;
 		}
 	}
 }

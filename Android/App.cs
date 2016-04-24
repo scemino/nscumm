@@ -1,5 +1,5 @@
-﻿//
-//  Main.cs
+//
+//  App.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -18,22 +18,37 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-using UIKit;
+
+using Android.App;
 using NScumm.Core;
+using ReactiveUI;
+using System;
+using Android.Runtime;
+using NScumm.Mobile.ViewModels;
 
-namespace NScumm.Mobile.iOS
+namespace NScumm.Mobile.Droid
 {
-	public class Application
+	[Application (Label = "AndroidPlayground")]
+	public class App : Application
 	{
-		// This is the main entry point of the application.
-		static void Main (string[] args)
-		{
-			ServiceLocator.FileStorage = new FileStorage ();
+		App (IntPtr handle, JniHandleOwnership owner) : base (handle, owner)
+		{ 
+		}
 
-			// if you want to use a different Application Delegate class from "AppDelegate"
-			// you can specify it here.
-			UIApplication.Main (args, null, "AppDelegate");
+		public override void OnCreate ()
+		{
+			base.OnCreate ();
+
+			ServiceLocator.FileStorage = new FileStorage (Assets);
+
+			var suspendHelper = new AutoSuspendHelper (this);
+
+			RxApp.SuspensionHost.CreateNewAppState = () => {
+				Console.WriteLine ("Creating app state");
+				return new AppBootstrapper ();
+			};
+
+			RxApp.SuspensionHost.SetupDefaultSuspendResume ();
 		}
 	}
 }
-

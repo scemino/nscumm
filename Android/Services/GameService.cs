@@ -1,5 +1,5 @@
-﻿//
-//  Main.cs
+//
+//  GameService.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -18,22 +18,23 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-using UIKit;
-using NScumm.Core;
 
-namespace NScumm.Mobile.iOS
+namespace NScumm.Mobile.Services
 {
-	public class Application
+	public class GameService: IGameService
 	{
-		// This is the main entry point of the application.
-		static void Main (string[] args)
+		public string GetDirectory ()
 		{
-			ServiceLocator.FileStorage = new FileStorage ();
+			string directory;
+			directory = Android.OS.Environment.ExternalStorageDirectory.AbsolutePath;
+			return directory;
+		}
 
-			// if you want to use a different Application Delegate class from "AppDelegate"
-			// you can specify it here.
-			UIApplication.Main (args, null, "AppDelegate");
+		public void StartGame (string path)
+		{
+			var intent = new Android.Content.Intent (Xamarin.Forms.Forms.Context, typeof(NScumm.Mobile.Droid.ScummActivity));
+			intent.PutExtra ("Game", path);
+			Xamarin.Forms.Forms.Context.StartActivity (intent);
 		}
 	}
 }
-

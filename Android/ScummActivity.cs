@@ -13,10 +13,11 @@ using NScumm.Sky;
 using NScumm.Core;
 using NScumm.Services;
 using System.Linq;
+using NScumm.Sword1;
 
 namespace NScumm.Mobile.Droid
 {
-	[Activity (Label = "NScumm.Mobile.Droid", 
+	[Activity (Label = "nScumm", 
 		Icon = "@drawable/icon",
 		Theme = "@style/Theme.Splash",
 		AlwaysRetainTaskState = true,
@@ -33,6 +34,7 @@ namespace NScumm.Mobile.Droid
 			base.OnCreate (bundle);
 
 			Initialize ();
+
 			var path = Intent.GetStringExtra ("Game");
 			if (path == null) {
 				Toast.MakeText (this, Resources.GetText (Resource.String.no_game_selected), ToastLength.Short).Show ();
@@ -41,6 +43,7 @@ namespace NScumm.Mobile.Droid
 
 			var gd = new GameDetector ();
 			gd.Add(new SkyMetaEngine());
+			gd.Add(new Sword1MetaEngine());
 
 			var info = gd.DetectGame (path);
 			if (info == null) {
@@ -65,7 +68,7 @@ namespace NScumm.Mobile.Droid
 		{
 			ServiceLocator.Platform = new Platform ();
 			ServiceLocator.FileStorage = new FileStorage (Assets);
-			ServiceLocator.SaveFileManager = new SaveFileManager (ServiceLocator.FileStorage);
+			ServiceLocator.SaveFileManager = new SaveFileManager ();
 			ServiceLocator.AudioManager = new AudioManager ();
 			var switches = Enumerable.Empty<string> ();
 			ServiceLocator.TraceFatory = new TraceFactory (switches);

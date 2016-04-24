@@ -1,5 +1,5 @@
 ﻿//
-//  Main.cs
+//  IGameService.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -18,22 +18,14 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-using UIKit;
-using NScumm.Core;
 
-namespace NScumm.Mobile.iOS
+namespace NScumm.Mobile
 {
-	public class Application
+	public interface IGameService
 	{
-		// This is the main entry point of the application.
-		static void Main (string[] args)
-		{
-			ServiceLocator.FileStorage = new FileStorage ();
+		void StartGame (string path);
 
-			// if you want to use a different Application Delegate class from "AppDelegate"
-			// you can specify it here.
-			UIApplication.Main (args, null, "AppDelegate");
-		}
+		string GetDirectory ();
 	}
 }
 

@@ -28,6 +28,7 @@ using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input.Touch;
 using NScumm.Core.Graphics;
+using NScumm.Services;
 
 #if WINDOWS_UWP
 using Windows.UI.ViewManagement;
@@ -38,33 +39,40 @@ namespace NScumm
 {
 	internal sealed class XnaInputManager : IInputManager
 	{
-		private readonly object _gate = new object ();
-		private readonly List<Keys> _virtualKeysDown = new List<Keys> ();
-		private readonly List<Keys> _virtualKeysUp = new List<Keys> ();
-		private HashSet<KeyCode> _keysPressed = new HashSet<KeyCode> ();
+		private readonly object _gate = new object();
+		private readonly List<Keys> _virtualKeysDown = new List<Keys>();
+		private readonly List<Keys> _virtualKeysUp = new List<Keys>();
+		private HashSet<KeyCode> _keysPressed = new HashSet<KeyCode>();
 		private KeyboardState _keyboardState;
 		private bool _backPressed;
 		private bool _leftButtonPressed;
-		private bool _isMenuPressed;
+		internal bool _isMenuPressed;
 		private Core.Graphics.Point _mousePosition;
 		private bool _rightButtonPressed;
 		private Game _game;
 		private int _width;
 		private int _height;
 
-		#if WINDOWS_UWP
+		ScummInputState _inputState;
+
+#if WINDOWS_UWP
 		private bool _showKeyboard;
         private InputPane _inputPane;
         private CoreWindow _currentWindow;
+
+
+#elif __ANDROID__
+		private bool _showKeyboard;
+		private bool _showKeyboardShown;
 #endif
 		public Vector2 RealPosition { get; private set; }
 
-		public XnaInputManager (Game game, Core.IO.IGameDescriptor gameDesc)
+		public XnaInputManager(Game game, Core.IO.IGameDescriptor gameDesc)
 		{
 			_game = game;
 			_width = gameDesc.Width;
 			_height = gameDesc.Height;
-			_mousePosition = new Core.Graphics.Point ();
+			_mousePosition = new Core.Graphics.Point();
 
 			TouchPanel.EnableMouseGestures = true;
 			TouchPanel.EnabledGestures = GestureType.Hold | GestureType.Tap;
@@ -87,9 +95,10 @@ namespace NScumm
             _currentWindow.KeyDown += XnaInputManager_KeyDown;
             _currentWindow.KeyUp += XnaInputManager_KeyUp;
 #endif
+			game.Services.AddService(this);
 		}
 
-		#if WINDOWS_UWP
+#if WINDOWS_UWP
         private void XnaInputManager_KeyUp(CoreWindow sender, KeyEventArgs args)
         {
             if (_currentWindow.IsInputEnabled)
@@ -124,33 +133,35 @@ namespace NScumm
             _isMenuPressed = true;
         }
 #endif
-		public Core.Graphics.Point GetMousePosition ()
+		public Core.Graphics.Point GetMousePosition()
 		{
 			return _mousePosition;
 		}
 
-		private void UpdateMousePosition (Vector2 pos)
+		private void UpdateMousePosition(Vector2 pos)
 		{
-			var rect = _game.Services.GetService<IGraphicsManager> ().Bounds;
+			var rect = _game.Services.GetService<IGraphicsManager>().Bounds;
 			if (rect.Width == 0 || rect.Height == 0)
 				return;
 
 			var scaleX = (float)_width / rect.Width;
 			var scaleY = (float)_height / rect.Height;
 			RealPosition = pos;
-			_mousePosition = new Core.Graphics.Point ((int)((pos.X - rect.Left) * scaleX), (int)((pos.Y - rect.Top) * scaleY));
+			_mousePosition = new Core.Graphics.Point((int)((pos.X - rect.Left) * scaleX), (int)((pos.Y - rect.Top) * scaleY));
 		}
 
-		IEnumerable<GestureSample> GetGestures ()
+		private IEnumerable<GestureSample> GetGestures()
 		{
-			while (TouchPanel.IsGestureAvailable) {
-				yield return TouchPanel.ReadGesture ();
+			while (TouchPanel.IsGestureAvailable)
+			{
+				yield return TouchPanel.ReadGesture();
 			}
 		}
 
-		public void UpdateInput (KeyboardState keyboard)
+		public void UpdateInput(KeyboardState keyboard)
 		{
-			lock (_gate) {
+			lock (_gate)
+			{
 #if WINDOWS_UWP
                 if (_showKeyboard)
                 {
@@ -160,109 +171,147 @@ namespace NScumm
                 {
                     _inputPane.TryHide();
                 }
+#elif __ANDROID__
+				var view = _game.Services.GetService<Android.Views.View>();
+				var imm = (Android.Views.InputMethods.InputMethodManager)Game.Activity.GetSystemService(Android.Content.Context.InputMethodService);
+				if (_showKeyboard && !_showKeyboardShown)
+				{
+					imm.ShowSoftInput(view, Android.Views.InputMethods.ShowFlags.Forced);
+					_showKeyboardShown = true;
+				}
+				else if (!_showKeyboard)
+				{
+					imm.HideSoftInputFromWindow(view.WindowToken, Android.Views.InputMethods.HideSoftInputFlags.ImplicitOnly);
+					_showKeyboardShown = false;
+				}
 #endif
 
-				_leftButtonPressed = false;
-				_rightButtonPressed = false;
-
-//				if (TouchPanel.IsGestureAvailable) {
-//					var gesture = TouchPanel.ReadGesture ();
-//					if (gesture.GestureType == GestureType.Tap) {
-//						_leftButtonPressed = true;
-//					} else if (gesture.GestureType == GestureType.Hold) {
-//						_rightButtonPressed = true;
-//					}
-//				}
-
-				var gestures = GetGestures ().ToList ();
-				if (gestures.Count > 1) {
-					if (gestures [0].GestureType == GestureType.Tap &&
-					    gestures [1].GestureType == GestureType.Tap) {
+				var gestures = GetGestures().ToList();
+				if (gestures.Count > 1)
+				{
+					if (gestures[0].GestureType == GestureType.Tap || gestures[0].GestureType == GestureType.Hold &&
+						gestures[1].GestureType == GestureType.Tap || gestures[1].GestureType == GestureType.Hold)
+					{
+						_leftButtonPressed = false;
+						_rightButtonPressed = true;
+					} else {
+						_leftButtonPressed = false;
+						_rightButtonPressed = false;
+					}
+				} else if (gestures.Count > 0)
+				{
+					if (gestures[0].GestureType == GestureType.Tap)
+					{
+						if (!_inputState.IsRightButtonDown)
+						{
+							_leftButtonPressed = true;
+							_rightButtonPressed = false;
+						}
+						else {
+							_leftButtonPressed = false;
+							_rightButtonPressed = true;
+						}
+					}
+					else if (gestures[0].GestureType == GestureType.Hold)
+					{
+						_leftButtonPressed = false;
 						_rightButtonPressed = true;
 					}
-				} else if (gestures.Count > 0) {
-					if (gestures[0].GestureType == GestureType.Tap) {
-						_leftButtonPressed = true;
-					} else if (gestures[0].GestureType == GestureType.Hold) {
-						_rightButtonPressed = true;
+					else {
+						_leftButtonPressed = false;
+						_rightButtonPressed = false;
 					}
 				}
+				else {
+					_leftButtonPressed = false;
+					_rightButtonPressed = false;
+				}
 
-				var locations = TouchPanel.GetState ();
-				foreach (var touch in locations) {
+				var locations = TouchPanel.GetState();
+				foreach (var touch in locations)
+				{
 					var pos = touch.Position;
-					UpdateMousePosition (pos);
-					Mouse.SetPosition ((int)pos.X, (int)pos.Y);
-					_leftButtonPressed = touch.State == TouchLocationState.Pressed |
-					touch.State == TouchLocationState.Moved;
+					UpdateMousePosition(pos);
+					Mouse.SetPosition((int)pos.X, (int)pos.Y);
 				}
 
-				var gamePadState = GamePad.GetState (PlayerIndex.One);
-				if (gamePadState.Buttons.Back == ButtonState.Pressed) {
+				var gamePadState = GamePad.GetState(PlayerIndex.One);
+				if (gamePadState.Buttons.Back == ButtonState.Pressed)
+				{
 					_backPressed = true;
 				}
 
-				if (_game.IsMouseVisible) {
-					var state = Mouse.GetState ();
+				if (_game.IsMouseVisible)
+				{
+					var state = Mouse.GetState();
 					_leftButtonPressed |= state.LeftButton == ButtonState.Pressed;
 					_rightButtonPressed |= state.RightButton == ButtonState.Pressed;
-					UpdateMousePosition (state.Position.ToVector2 () * 2);
+					UpdateMousePosition(state.Position.ToVector2() * 2);
 				}
 
 				_keyboardState = keyboard;
 
-				_keysPressed = new HashSet<KeyCode> (_keyboardState.GetPressedKeys ().Where (KeyToKeyCode.ContainsKey).Select (key => KeyToKeyCode [key]));
-				if (_virtualKeysDown.Count > 0) {
-					_virtualKeysDown.ForEach (k => {
-						if (KeyToKeyCode.ContainsKey (k)) {
-							_keysPressed.Add (KeyToKeyCode [k]);
+				_keysPressed = new HashSet<KeyCode>(_keyboardState.GetPressedKeys().Where(KeyToKeyCode.ContainsKey).Select(key => KeyToKeyCode[key]));
+				if (_virtualKeysDown.Count > 0)
+				{
+					_virtualKeysDown.ForEach(k =>
+					{
+						if (KeyToKeyCode.ContainsKey(k))
+						{
+							_keysPressed.Add(KeyToKeyCode[k]);
 						}
 					});
 
-					_virtualKeysUp.ForEach (k => _virtualKeysDown.Remove (k));
-					_virtualKeysUp.Clear ();
+					_virtualKeysUp.ForEach(k => _virtualKeysDown.Remove(k));
+					_virtualKeysUp.Clear();
 				}
-				if (_backPressed) {
-					_keysPressed.Add (KeyCode.Escape);
+				if (_backPressed)
+				{
+					_keysPressed.Add(KeyCode.Escape);
 					_backPressed = false;
 				}
-				if (_isMenuPressed) {
-					_keysPressed.Add (KeyCode.F5);
+				if (_isMenuPressed)
+				{
+					_keysPressed.Add(KeyCode.F5);
 					_isMenuPressed = false;
 				}
+
+				_inputState = new ScummInputState(_keysPressed.ToList(), _leftButtonPressed, _rightButtonPressed);
 			}
 		}
 
-		public ScummInputState GetState ()
+		public ScummInputState GetState()
 		{
-			lock (_gate) {
-				var inputState = new ScummInputState (_keysPressed.ToList (), _leftButtonPressed, _rightButtonPressed);
-				return inputState;
+			return _inputState;
+		}
+
+		public void ResetKeys()
+		{
+			lock (_gate)
+			{
+				_keyboardState = new KeyboardState();
+				_keysPressed.Clear();
+				_virtualKeysDown.Clear();
+				_virtualKeysUp.Clear();
 			}
 		}
 
-		public void ResetKeys ()
+		public void ShowVirtualKeyboard()
 		{
-			lock (_gate) {
-				_keyboardState = new KeyboardState ();
-				_keysPressed.Clear ();
-				_virtualKeysDown.Clear ();
-				_virtualKeysUp.Clear ();
-			}
-		}
-
-		public void ShowVirtualKeyboard ()
-		{
-			#if WINDOWS_UWP
+#if WINDOWS_UWP
 			_showKeyboard = true;
-			#endif
+#elif __ANDROID__
+			_showKeyboard = true;
+#endif
 		}
 
-		public void HideVirtualKeyboard ()
+		public void HideVirtualKeyboard()
 		{
-			#if WINDOWS_UWP
+#if WINDOWS_UWP
 			_showKeyboard = false;
-			#endif
+#elif __ANDROID__
+			_showKeyboard = false;
+#endif
 		}
 
 		private static readonly Dictionary<Keys, KeyCode> KeyToKeyCode = new Dictionary<Keys, KeyCode> {

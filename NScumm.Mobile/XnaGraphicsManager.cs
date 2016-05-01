@@ -25,7 +25,6 @@ using System;
 using NScumm.Core;
 using Point = NScumm.Core.Graphics.Point;
 using Rect = NScumm.Core.Graphics.Rect;
-using Microsoft.Xna.Framework.Input;
 
 namespace NScumm
 {

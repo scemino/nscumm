@@ -36,7 +36,6 @@ namespace NScumm.Mobile.ViewModels
 
 			Locator.CurrentMutable.RegisterConstant (this, typeof(IScreen));
 			Locator.CurrentMutable.Register (() => new GameLibraryView (), typeof(IViewFor<GameLibraryViewModel>));
-			Locator.CurrentMutable.Register (() => new GameView (), typeof(IViewFor<GameViewModel>));
 
 			Router.Navigate.Execute (new GameLibraryViewModel (this));
 		}

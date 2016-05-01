@@ -18,7 +18,7 @@
     <AssemblyName>NScumm</AssemblyName>
     <MonoGamePlatform>Android</MonoGamePlatform>
     <AndroidManifest>Properties\AndroidManifest.xml</AndroidManifest>
-    <TargetFrameworkVersion>v5.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v6.0</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -125,7 +125,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="FileStorage.cs" />
     <Compile Include="ScummActivity.cs" />
-    <Compile Include="Helpers.cs" />
     <Compile Include="App.cs" />
     <Compile Include="MainActivity.cs" />
     <Compile Include="Services\GameService.cs" />
@@ -139,12 +138,7 @@
     <AndroidResource Include="Resources\drawable\Icon.png" />
     <AndroidResource Include="Resources\drawable\Splash.png" />
     <AndroidResource Include="Resources\values\Styles.xml" />
-    <AndroidResource Include="Resources\layout\TextViewItem.axml" />
     <AndroidResource Include="Resources\values\Strings.xml" />
-    <AndroidResource Include="Resources\layout\file_picker_list_item.axml" />
-    <AndroidResource Include="Resources\drawable\file.png" />
-    <AndroidResource Include="Resources\drawable\folder.png" />
-    <AndroidResource Include="Resources\layout\Main.axml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\AboutAssets.txt" />

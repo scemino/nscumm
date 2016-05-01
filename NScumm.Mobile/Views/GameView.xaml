@@ -1,7 +1,0 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
-<ViewCell xmlns="http://xamarin.com/schemas/2014/forms" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" x:Class="NScumm.Mobile.Views.GameView">
-	<StackLayout Orientation="Horizontal">
-		<Label x:Name="IdLabel" />
-<!--		<Label x:Name="PathLabel" HorizontalOptions="EndAndExpand" />-->
-	</StackLayout>
-</ViewCell>

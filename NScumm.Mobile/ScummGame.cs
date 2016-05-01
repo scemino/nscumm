@@ -38,17 +38,18 @@ namespace NScumm
 		IEngine engine;
 		SpriteBatch spriteBatch;
 		InputState input = new InputState();
+		SpriteFont font;
 
 		public GameSettings Settings { get; private set; }
 
 		public GraphicsDeviceManager GraphicsDeviceManager { get; private set; }
 
-		public ScummGame ()
-			: this (null)
+		public ScummGame()
+			: this(null)
 		{
 		}
 
-		public ScummGame (GameSettings settings)
+		public ScummGame(GameSettings settings)
 		{
 			IsMouseVisible = false;
 			IsFixedTimeStep = false;
@@ -56,16 +57,17 @@ namespace NScumm
 
 			Content.RootDirectory = "Content";
 
-			GraphicsDeviceManager = new GraphicsDeviceManager (this);
+			GraphicsDeviceManager = new GraphicsDeviceManager(this);
 #if !WINDOWS_UWP
 			Settings = settings;
-			GraphicsDeviceManager.PreferredBackBufferWidth = 800;
-			GraphicsDeviceManager.PreferredBackBufferHeight = (int)(800.0 * Settings.Game.Height / Settings.Game.Width);
+			//			GraphicsDeviceManager.PreferredBackBufferWidth = 800;
+			//			GraphicsDeviceManager.PreferredBackBufferHeight = (int)(800.0 * Settings.Game.Height / Settings.Game.Width);
 #else
             Settings = new GameSettings(GamePage.Info.Game, GamePage.Info.Engine);
             GraphicsDeviceManager.PreferredBackBufferWidth = Settings.Game.Width;
             GraphicsDeviceManager.PreferredBackBufferHeight = Settings.Game.Height;
 #endif
+			GraphicsDeviceManager.IsFullScreen = true;
 		}
 
 		/// <summary>
@@ -74,82 +76,105 @@ namespace NScumm
 		/// related content.  Calling base.Initialize will enumerate through any components
 		/// and initialize them as well.
 		/// </summary>
-		protected override void Initialize ()
+		protected override void Initialize()
 		{
-			Window.Title = string.Format ("nSCUMM - {0} [{1}]", Settings.Game.Description, Settings.Game.Culture.NativeName);
-			base.Initialize ();
-			spriteBatch = new SpriteBatch (GraphicsDevice);
-			inputManager = new XnaInputManager (this, Settings.Game);
-			gfx = new XnaGraphicsManager (Settings.Game.Width, Settings.Game.Height, Settings.Game.PixelFormat, GraphicsDevice);
-			Services.AddService<Core.Graphics.IGraphicsManager> (gfx);
+			Window.Title = string.Format("nSCUMM - {0} [{1}]", Settings.Game.Description, Settings.Game.Culture.NativeName);
+			base.Initialize();
+
+			font = Content.Load<SpriteFont>("Fonts/MenuFont");
+			spriteBatch = new SpriteBatch(GraphicsDevice);
+			inputManager = new XnaInputManager(this, Settings.Game);
+			gfx = new XnaGraphicsManager(Settings.Game.Width, Settings.Game.Height, Settings.Game.PixelFormat, GraphicsDevice);
+			Services.AddService<Core.Graphics.IGraphicsManager>(gfx);
 			var saveFileManager = ServiceLocator.SaveFileManager;
-			#if WINDOWS_UWP
+
+#if WINDOWS_UWP
 			audioDriver = new XAudio2Mixer();
-			#else
-			audioDriver = new XnaAudioDriver ();
-			#endif
-			audioDriver.Play ();
+#else
+			audioDriver = new XnaAudioDriver();
+#endif
+			audioDriver.Play();
 
 			// init engines
-			engine = Settings.MetaEngine.Create (Settings, gfx, inputManager, audioDriver, saveFileManager);
+			engine = Settings.MetaEngine.Create(Settings, gfx, inputManager, audioDriver, saveFileManager);
 			engine.ShowMenuDialogRequested += OnShowMenuDialogRequested;
-			Services.AddService (engine);
+			Services.AddService(engine);
 
+#if WINDOWS_UWP
 			Task.Factory.StartNew (() => {
 				UpdateGame ();
 			});
+#else
+			var thread = new System.Threading.Thread(new System.Threading.ThreadStart(UpdateGame));
+			thread.IsBackground = true;
+			thread.Start();
+#endif
 		}
 
-		protected override void UnloadContent ()
+		protected override void UnloadContent()
 		{
-			gfx.Dispose ();
-			audioDriver.Dispose ();
-			base.UnloadContent ();
+			gfx.Dispose();
+			audioDriver.Dispose();
+			base.UnloadContent();
 		}
 
-		private void UpdateGame ()
+		private void UpdateGame()
 		{
-			engine.Run ();
-			#if __ANDROID__
-			Exit ();
-			#endif
+			engine.Run();
+#if __ANDROID__
+			Exit();
+#endif
 		}
 
-		protected override void Draw (GameTime gameTime)
+		protected override void Draw(GameTime gameTime)
 		{
-			GraphicsDevice.Clear (Color.Black);
+			GraphicsDevice.Clear(Color.Black);
 
-			spriteBatch.Begin ();
-			gfx.DrawScreen (spriteBatch);
-			gfx.DrawCursor (spriteBatch, inputManager.RealPosition);
-			spriteBatch.End ();
+			spriteBatch.Begin();
+			gfx.DrawScreen(spriteBatch);
+#if DEBUG
+			var state = inputManager.GetState();
+			spriteBatch.DrawString(font,
+				string.Format("Left: {0:3}, Right {1:3}",
+					state.IsLeftButtonDown ? "on" : "off",
+					state.IsRightButtonDown ? "on" : "off"),
+				new Vector2(10, 10),
+				Color.White);
+#endif
+			gfx.DrawCursor(spriteBatch, inputManager.RealPosition);
+			spriteBatch.End();
 
-			base.Draw (gameTime);
+			base.Draw(gameTime);
 		}
 
-		protected override void Update (GameTime gameTime)
+		protected override void Update(GameTime gameTime)
 		{
 			// Read the keyboard and gamepad.
 			input.Update();
 
-			if (input.IsNewKeyPress (Keys.Enter) && input.CurrentKeyboardState.IsKeyDown (Keys.LeftControl)) {
+			if (input.IsNewKeyPress(Keys.Enter) && input.CurrentKeyboardState.IsKeyDown(Keys.LeftControl))
+			{
 				var gdm = GraphicsDeviceManager;
-				gdm.ToggleFullScreen ();
-				gdm.ApplyChanges ();
-			} else if (input.IsNewKeyPress (Keys.Space)) {
-				engine.IsPaused = !engine.IsPaused;
-			} else {
-				inputManager.UpdateInput (input.CurrentKeyboardState);
+				gdm.ToggleFullScreen();
+				gdm.ApplyChanges();
 			}
-			base.Update (gameTime);
+			else if (input.IsNewKeyPress(Keys.Space))
+			{
+				engine.IsPaused = !engine.IsPaused;
+			}
+			else {
+				inputManager.UpdateInput(input.CurrentKeyboardState);
+			}
+			base.Update(gameTime);
 		}
 
-		private void OnShowMenuDialogRequested (object sender, EventArgs e)
+		private void OnShowMenuDialogRequested(object sender, EventArgs e)
 		{
-			if (!engine.IsPaused) {
+			if (!engine.IsPaused)
+			{
 				engine.IsPaused = true;
-				var page = Services.GetService<IMenuService> ();
-				page.ShowMenu ();
+				var page = Services.GetService<IMenuService>();
+				page.ShowMenu();
 			}
 		}
 	}

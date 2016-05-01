@@ -25,38 +25,37 @@ using System.Collections.Generic;
 
 namespace NScumm
 {
-    class Trace: ITrace
-    {
-        readonly IEnableTrace _source;
-        readonly HashSet<string> _switches;
+	class Trace: ITrace
+	{
+		readonly IEnableTrace _source;
+		readonly HashSet<string> _switches;
 
-        public Trace(IEnableTrace trace, IEnumerable<string> switches)
-        {
-            _source = trace;
-            _switches = new HashSet<string>(switches, StringComparer.OrdinalIgnoreCase);
-        }
+		public Trace (IEnableTrace trace, IEnumerable<string> switches)
+		{
+			_source = trace;
+			_switches = new HashSet<string> (switches, StringComparer.OrdinalIgnoreCase);
+		}
 
-        public void Write(string traceName, string format, params object[] args)
-        {
-            if (_switches.Contains(traceName))
-            {
-                Console.WriteLine("{0,-16} {1}", _source.GetType().Name, string.Format(format, args));
-            }
-        }
-    }
+		public void Write (string traceName, string format, params object[] args)
+		{
+			if (_switches.Contains (traceName)) {
+				Console.WriteLine ("{0,-16} {1}", _source.GetType ().Name, string.Format (format, args));
+			}
+		}
+	}
 
-    public class TraceFactory: ITraceFactory
-    {
-        readonly IEnumerable<string> _switches;
+	public class TraceFactory: ITraceFactory
+	{
+		readonly IEnumerable<string> _switches;
 
-        public TraceFactory(IEnumerable<string> switches)
-        {
-            _switches = switches;
-        }
+		public TraceFactory (IEnumerable<string> switches = null)
+		{
+			_switches = switches ?? new string[0];
+		}
 
-        public ITrace CreateTrace(IEnableTrace trace)
-        {
-            return new Trace(trace, _switches);
-        }
-    }
+		public ITrace CreateTrace (IEnableTrace trace)
+		{
+			return new Trace (trace, _switches);
+		}
+	}
 }

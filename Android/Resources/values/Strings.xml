@@ -1,7 +1,12 @@
-﻿<?xml version="1.0" encoding="UTF-8" ?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <resources>
-	<string name="title">nScumm</string>
-    <string name="no_game_selected">No game selected.</string>
-    <string name="game_not_supported">This game is not supported, sorry please contact me if you want to support this game.</string>
-    <string name="no_files_or_directories">No files or directories</string>
+	<string name="app_name">nScumm</string>
+	<string name="app_desc">Graphic adventure game engine</string>
+	<string name="quit">Quit</string>
+	<string name="no_sdcard_title">No SD card detected</string>
+	<string name="no_sdcard">Unable to read your SD card. This usually
+  means you still have it mounted on your PC. Unmount, reinsert,
+  whatever and then try again.</string>
+	<string name="no_game_selected">No game selected.</string>
+	<string name="game_not_supported">This game is not supported, sorry please contact me if you want to support this game.</string>
 </resources>

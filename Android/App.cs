@@ -28,7 +28,7 @@ using NScumm.Mobile.ViewModels;
 
 namespace NScumm.Mobile.Droid
 {
-	[Application (Label = "AndroidPlayground")]
+	[Application (Label = "@string/app_name")]
 	public class App : Application
 	{
 		App (IntPtr handle, JniHandleOwnership owner) : base (handle, owner)

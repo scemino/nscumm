@@ -1,15 +1,15 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
-<ContentPage xmlns="http://xamarin.com/schemas/2014/forms" 
-			 xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" 
-			 x:Class="NScumm.Mobile.Views.GameLibraryView" 
-			 xmlns:views="clr-namespace:NScumm.Mobile.Views">
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" x:Class="NScumm.Mobile.Views.GameLibraryView" xmlns:views="clr-namespace:NScumm.Mobile.Views">
 	<ContentPage.Content>
 		<StackLayout HorizontalOptions="CenterAndExpand" VerticalOptions="CenterAndExpand">
-			<ActivityIndicator x:Name="ActivityIndicator" />
 			<ListView x:Name="FileLisView" VerticalOptions="Fill">
 				<ListView.ItemTemplate>
 					<DataTemplate>
-						<views:GameView ViewModel="{Binding}" />
+						<TextCell Text="{Binding Description}">
+							<TextCell.ContextActions>
+								<MenuItem Clicked="OnDelete" CommandParameter="{Binding}" Text="Delete" IsDestructive="True" />
+							</TextCell.ContextActions>
+						</TextCell>
 					</DataTemplate>
 				</ListView.ItemTemplate>
 			</ListView>

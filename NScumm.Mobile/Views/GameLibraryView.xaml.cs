@@ -22,6 +22,9 @@
 using Xamarin.Forms;
 using ReactiveUI;
 using NScumm.Mobile.ViewModels;
+using System;
+using System.Reactive.Threading.Tasks;
+using System.Reactive.Linq;
 
 namespace NScumm.Mobile.Views
 {
@@ -33,13 +36,25 @@ namespace NScumm.Mobile.Views
 
 			this.OneWayBind (ViewModel, vm => vm.Games, v => v.FileLisView.ItemsSource);
 			this.WhenAnyObservable (v => v.ViewModel.Scan.IsExecuting)
-				.BindTo (this, v => v.ActivityIndicator.IsRunning);
-			this.WhenAnyObservable (v => v.ViewModel.Scan.IsExecuting)
-				.BindTo (this, v => v.IsBusy);
+				.BindTo (this, v => v.FileLisView.IsRefreshing);
 
 			this.BindCommand (ViewModel, vm => vm.Scan, v => v.ScanToolbarItem);
+			this.BindCommand (ViewModel, vm => vm.Scan, v => v.FileLisView.RefreshCommand);
 
 			FileLisView.ItemTapped += OnItemTapped;
+		}
+
+		private void OnDelete (object sender, EventArgs e)
+		{
+			var menuItem = (MenuItem)sender;
+			var game = (GameViewModel)menuItem.CommandParameter;
+			string msg = $"The Game '{game.Description}' will be removed.";
+			DisplayAlert ("Remove game", msg, "OK", "Cancel")
+				.ToObservable ()
+				.Where (o => o)
+				.Subscribe (result => {
+					ViewModel.Delete.Execute (menuItem.CommandParameter);
+			});
 		}
 
 		private void OnItemTapped (object sender, ItemTappedEventArgs e)

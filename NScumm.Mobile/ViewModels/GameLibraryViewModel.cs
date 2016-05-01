@@ -49,6 +49,7 @@ namespace NScumm.Mobile.ViewModels
 		public IScreen HostScreen { get; protected set; }
 
 		public IReactiveCommand<string> Scan { get; private set; }
+		public IReactiveCommand<Unit> Delete { get; private set; }
 
 		public IReactiveCommand LaunchGame { get; private set; }
 
@@ -65,6 +66,8 @@ namespace NScumm.Mobile.ViewModels
 			var games = gamesLibrary.Games.Select (g => new GameViewModel (g.Description, g.Path));
 			_games = new ReactiveList<GameViewModel> (games);
 
+			// create commands
+			Delete = ReactiveCommand.CreateAsyncObservable(DeleteImpl);
 			Scan = ReactiveCommand.CreateAsyncObservable <string> (ScanImpl);
 			Scan.ThrownExceptions.Subscribe (e => this.Log ().ErrorException ("Scan", e));
 				
@@ -80,7 +83,7 @@ namespace NScumm.Mobile.ViewModels
 				.Select (g => CreateGameViewModel (g.Game))
 				.Subscribe (_games.Add);
 			
-
+			// auto save
 			this.AutoPersist (x => {
 				var library = new GameLibrary {
 					Games = x.Games.Select (g => new Game{ Description = g.Description, Path = g.Path }).ToArray ()
@@ -99,6 +102,13 @@ namespace NScumm.Mobile.ViewModels
 		private static GameViewModel CreateGameViewModel (IGameDescriptor game)
 		{
 			return new GameViewModel (game.Description, game.Path);
+		}
+
+		private IObservable<Unit> DeleteImpl(object parameter)
+		{
+			var game = (GameViewModel)parameter;
+			_games.Remove (game);
+			return Observable.Return (Unit.Default);
 		}
 
 		private IObservable<string> ScanImpl (object parameter)

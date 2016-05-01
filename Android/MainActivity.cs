@@ -29,7 +29,7 @@ using NScumm.Mobile.ViewModels;
 
 namespace NScumm.Mobile.Droid
 {
-	[Activity (Label = "nScumm", Icon = "@drawable/icon", MainLauncher = true, 
+	[Activity (Label = "@string/app_name", Icon = "@drawable/icon", MainLauncher = true,
 		ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation)]
 	public class MainActivity : AndroidActivity
 	{
@@ -41,7 +41,17 @@ namespace NScumm.Mobile.Droid
 			var view = RxApp.SuspensionHost.GetAppState<AppBootstrapper> ().CreateMainView ();
 			SetPage (view);
 
-
+			// This is a common enough error that we should warn about it
+			// explicitly.
+			if (!Environment.ExternalStorageDirectory.CanRead ()) {
+				new AlertDialog.Builder (this)
+					.SetTitle (Resource.String.no_sdcard_title)
+					.SetIcon (Android.Resource.Drawable.IcDialogAlert)
+					.SetMessage (Resource.String.no_sdcard)
+					.SetNegativeButton (Resource.String.quit, (o, e) => {
+					Finish ();
+				}).Show ();
+			}
 		}
 	}
 }

@@ -1,4 +1,23 @@
-﻿using System;
+﻿//
+//  ScummActivity.cs
+//
+//  Author:
+//       scemino <scemino74@gmail.com>
+//
+//  Copyright (c) 2016 scemino
+//
+//  This program is free software: you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation, either version 3 of the License, or
+//  (at your option) any later version.
+//
+//  This program is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+//
+//  You should have received a copy of the GNU General Public License
+//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using Android.App;
 using Android.Content.PM;
@@ -12,7 +31,6 @@ using NScumm.Core.IO;
 using NScumm.Sky;
 using NScumm.Core;
 using NScumm.Services;
-using System.Linq;
 using NScumm.Sword1;
 
 namespace NScumm.Mobile.Droid
@@ -37,7 +55,7 @@ namespace NScumm.Mobile.Droid
 
 			var path = Intent.GetStringExtra ("Game");
 			if (path == null) {
-				Toast.MakeText (this, Resources.GetText (Resource.String.no_game_selected), ToastLength.Short).Show ();
+				Toast.MakeText (this, Resource.String.no_game_selected, ToastLength.Short).Show ();
 				return;
 			}
 
@@ -47,7 +65,7 @@ namespace NScumm.Mobile.Droid
 
 			var info = gd.DetectGame (path);
 			if (info == null) {
-				Toast.MakeText (this, Resources.GetText (Resource.String.game_not_supported), ToastLength.Short).Show ();
+				Toast.MakeText (this, Resource.String.game_not_supported, ToastLength.Short).Show ();
 				return;
 			}
 
@@ -62,6 +80,7 @@ namespace NScumm.Mobile.Droid
 			game.Services.AddService<IMenuService> (new MenuService (game));
 			SetContentView (game.Services.GetService<View> ());
 			game.Run ();
+
 		}
 
 		private void Initialize ()
@@ -70,8 +89,7 @@ namespace NScumm.Mobile.Droid
 			ServiceLocator.FileStorage = new FileStorage (Assets);
 			ServiceLocator.SaveFileManager = new SaveFileManager ();
 			ServiceLocator.AudioManager = new AudioManager ();
-			var switches = Enumerable.Empty<string> ();
-			ServiceLocator.TraceFatory = new TraceFactory (switches);
+			ServiceLocator.TraceFatory = new TraceFactory ();
 		}
 	}
 }

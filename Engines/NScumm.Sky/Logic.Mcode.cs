@@ -17,7 +17,6 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
-using NScumm.Core;
 
 namespace NScumm.Sky
 {
@@ -568,8 +567,8 @@ namespace NScumm.Sky
 
                 DisplayedText lowText = _skyText.LowTextManager(textNum, GAME_SCREEN_WIDTH, 0, 241, false);
 
-                byte[] data = lowText.TextData;
-                var header = ServiceLocator.Platform.ToStructure<DataFileHeader>(data, 0);
+                var data = lowText.TextData;
+				var header = data;
 
                 // stipple the text
 
@@ -578,14 +577,14 @@ namespace NScumm.Sky
                 uint width = header.s_width;
                 uint height = header.s_height;
 
-                var dataPos = ServiceLocator.Platform.SizeOf<DataFileHeader>();
+				var dataPos = DataFileHeader.Size;
 
                 while (index < size)
                 {
                     if (index % width <= 1)
                         index ^= 1; //index++;
-                    if (data[dataPos + index] == 0)
-                        data[dataPos + index] = 1;
+					if (data.Data[dataPos + index] == 0)
+						data.Data[dataPos + index] = 1;
                     index += 2;
                 }
 

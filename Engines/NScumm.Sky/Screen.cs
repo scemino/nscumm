@@ -821,12 +821,12 @@ namespace NScumm.Sky
                 sprCompact.Core.status = 0;
                 return;
             }
-            var sprDataFile = ServiceLocator.Platform.ToStructure<DataFileHeader>(spriteInfo, 0);
+			var sprDataFile = new DataFileHeader(spriteInfo);
             _sprWidth = sprDataFile.s_width;
             _sprHeight = sprDataFile.s_height;
             _maskX1 = _maskX2 = 0;
             var spriteData = (sprCompact.Core.frame & 0x3F) * sprDataFile.s_sp_size;
-            spriteData += ServiceLocator.Platform.SizeOf<DataFileHeader>();
+			spriteData += DataFileHeader.Size;
             var spriteY = sprCompact.Core.ycood + sprDataFile.s_offset_y - TopLeftY;
             if (spriteY < 0)
             {

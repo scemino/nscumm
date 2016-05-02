@@ -17,7 +17,6 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using NScumm.Core;
-using System;
 
 namespace NScumm.Sword1
 {
@@ -128,48 +127,6 @@ namespace NScumm.Sword1
         {
             _data = data;
             Offset = offset;
-        }
-    }
-
-    class StructAccess<T>
-    {
-        private readonly byte[] _data;
-        private readonly int _offset;
-        private readonly int _size;
-
-        public T Value
-        {
-            get { return ServiceLocator.Platform.ToStructure<T>(_data, _offset); }
-        }
-
-        public T this[int index]
-        {
-            get { return ServiceLocator.Platform.ToStructure<T>(_data, _offset + index * _size); }
-        }
-
-        public StructAccess(byte[] data, int offset)
-        {
-            _size = ServiceLocator.Platform.SizeOf<T>();
-            _data = data;
-            _offset = offset;
-        }
-    }
-
-    class FieldAccess<T>
-    {
-        private readonly Func<T> _getField;
-        private readonly Action<T> _setField;
-
-        public T Field
-        {
-            get { return _getField(); }
-            set { _setField(value); }
-        }
-
-        public FieldAccess(Func<T> get, Action<T> set)
-        {
-            _getField = get;
-            _setField = set;
         }
     }
 }

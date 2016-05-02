@@ -142,9 +142,9 @@ namespace NScumm.Sky
             CurrentMouseType = frameNum;
 
             var newCursor = 0;
-            var header = ServiceLocator.Platform.ToStructure<DataFileHeader>(_miceData, 0);
+			var header = new DataFileHeader(_miceData);
             newCursor += header.s_sp_size * frameNum;
-            newCursor += ServiceLocator.Platform.SizeOf<DataFileHeader>();
+			newCursor += DataFileHeader.Size;
 
             var mouseWidth = header.s_width;
             var mouseHeight = header.s_height;
@@ -185,11 +185,11 @@ namespace NScumm.Sky
             if (open)
                 cursor++;
 
-            var header = ServiceLocator.Platform.ToStructure<DataFileHeader>(_objectMouseData, 0);
+			var header = new DataFileHeader(_objectMouseData);
             int size = header.s_sp_size;
 
-            var srcData = size * cursor + ServiceLocator.Platform.SizeOf<DataFileHeader>();
-            var destData = ServiceLocator.Platform.SizeOf<DataFileHeader>();
+			var srcData = size * cursor + DataFileHeader.Size;
+			var destData = DataFileHeader.Size;
             Array.Copy(_objectMouseData, srcData, _miceData, destData, size);
             SpriteMouse(0, 5, 5);
         }

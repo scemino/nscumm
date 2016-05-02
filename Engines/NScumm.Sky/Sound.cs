@@ -110,7 +110,7 @@ namespace NScumm.Sky
         public SoundHandle PlaySound(int id, byte[] sound, int size)
         {
             var flags = AudioFlags.Unsigned;
-            var sizeOfDataFileHeader = ServiceLocator.Platform.SizeOf<DataFileHeader>();
+			var sizeOfDataFileHeader = DataFileHeader.Size;
             size -= sizeOfDataFileHeader;
             var buffer = new byte[size];
             Array.Copy(sound, sizeOfDataFileHeader, buffer, 0, size);
@@ -354,10 +354,10 @@ namespace NScumm.Sky
                 return false;
             }
 
-            var header = ServiceLocator.Platform.ToStructure<DataFileHeader>(speechData, 0);
-            var speechSize = header.s_tot_size - ServiceLocator.Platform.SizeOf<DataFileHeader>();
+			var header = new DataFileHeader(speechData);
+			var speechSize = header.s_tot_size - DataFileHeader.Size;
             var playBuffer = new byte[speechSize];
-            Array.Copy(speechData, ServiceLocator.Platform.SizeOf<DataFileHeader>(), playBuffer, 0, speechSize);
+			Array.Copy(speechData, DataFileHeader.Size, playBuffer, 0, speechSize);
 
             // Workaround for BASS bug #897775 - some voice-overs are played at
             // half speed in 0.0368 (the freeware CD version), in 0.0372 they sound

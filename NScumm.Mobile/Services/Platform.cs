@@ -26,28 +26,6 @@ using System.Reflection;
 
 namespace NScumm
 {
-    class WrappedObject : IWrappedObject
-    {
-        private GCHandle _handle;
-
-        public WrappedObject(GCHandle handle, object obj)
-        {
-            _handle = handle;
-            Object = obj;
-        }
-
-        public object Object
-        {
-            get; private set;
-        }
-
-        public void Dispose()
-        {
-            Marshal.StructureToPtr(Object, _handle.AddrOfPinnedObject(), false);
-            _handle.Free();
-        }
-    }
-
     public class Platform : IPlatform
     {
         public Assembly LoadAssembly(string dll)
@@ -58,28 +36,6 @@ namespace NScumm
         public void Sleep(int timeInMs)
         {
             Thread.Sleep(timeInMs);
-        }
-
-        public int SizeOf(Type type)
-        {
-            return Marshal.SizeOf(type);
-        }
-
-        public byte[] FromStructure(object obj)
-        {
-            var size = Marshal.SizeOf(obj);
-            var data = new byte[size];
-            var handle = Marshal.AllocHGlobal(size);
-            try
-            {
-                Marshal.StructureToPtr(obj, handle, true);
-            }
-            finally
-            {
-                Marshal.Copy(handle, data, 0, size);
-                Marshal.FreeHGlobal(handle);
-            }
-            return data;
         }
 
         public object ToStructure(byte[] data, int offset, Type type)
@@ -95,12 +51,6 @@ namespace NScumm
                 handle.Free();
             }
             return obj;
-        }
-
-        public IWrappedObject WriteStructure(byte[] data, int offset, Type type)
-        {
-            var handle = GCHandle.Alloc(data, GCHandleType.Pinned);
-            return new WrappedObject(handle, Marshal.PtrToStructure(handle.AddrOfPinnedObject() + offset, type));
         }
     }
 }

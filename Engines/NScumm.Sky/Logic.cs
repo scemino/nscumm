@@ -752,7 +752,7 @@ namespace NScumm.Sky
                 var textInfo = _skyText.LowTextManager(textNum, FIXED_TEXT_WIDTH, 0, (byte)target.Core.spColor, true);
                 var textCompact = _skyCompact.FetchCpt(textInfo.CompactNum);
                 target.Core.spTextId = textInfo.CompactNum; //So we know what text to kill
-                var textGfxHeader = ServiceLocator.Platform.ToStructure<DataFileHeader>(textInfo.TextData, 0);
+				var textGfxHeader = textInfo.TextData;
 
                 textCompact.Core.screen = target.Core.screen;   //put it on our screen
 
@@ -762,7 +762,7 @@ namespace NScumm.Sky
                   //create the x coordinate for the speech text
                   //we need the talkers sprite information
                     var targetGfx = SkyEngine.ItemList[target.Core.frame >> 6];
-                    var header = ServiceLocator.Platform.ToStructure<DataFileHeader>(targetGfx, 0);
+					var header = new DataFileHeader(targetGfx);
                     ushort xPos = (ushort)(target.Core.xcood + header.s_offset_x);
                     ushort width = (ushort)(header.s_width >> 1);
 

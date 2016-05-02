@@ -96,20 +96,22 @@ namespace NScumm.Sky
         private readonly byte[] _data;
         private readonly int _offset;
         private readonly int _size;
+		private readonly Func<byte[], int, T> _getObject;
 
         public T Value
         {
-            get { return ServiceLocator.Platform.ToStructure<T>(_data, _offset); }
+			get { return _getObject(_data, _offset); }
         }
 
         public T this[int index]
         {
-            get { return ServiceLocator.Platform.ToStructure<T>(_data, _offset + index * _size); }
+			get { return _getObject(_data, _offset + index * _size); }
         }
 
-        public StructAccess(byte[] data, int offset)
+		public StructAccess(byte[] data, int offset, int size, Func<byte[], int, T> getObject)
         {
-            _size = ServiceLocator.Platform.SizeOf<T>();
+            _size = size;
+			_getObject = getObject;
             _data = data;
             _offset = offset;
         }

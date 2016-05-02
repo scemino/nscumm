@@ -28,84 +28,89 @@ using NScumm.Sky.Music;
 
 namespace NScumm.Sky
 {
-    internal class Control
-    {
-        private const int MaxSaveGames = 999;
-        private const int MaxTextLen = 80;
+	internal class Control
+	{
+		private const int MaxSaveGames = 999;
+		private const int MaxTextLen = 80;
 
-        private const int PanLineWidth = 184;
+		private const int PanLineWidth = 184;
 
-        private const int SaveFileRevision = 6;
-        private const int OldSaveGameType = 5;
-        private const int PanCharHeight = 12;
+		private const int SaveFileRevision = 6;
+		private const int OldSaveGameType = 5;
+		private const int PanCharHeight = 12;
 
-        private const int Mainpanel = 0;
-        private const int Savepanel = 1;
+		private const int Mainpanel = 0;
+		private const int Savepanel = 1;
 
-        private const bool NoMask = false;
-        private const bool WithMask = true;
+		private const bool NoMask = false;
+		private const bool WithMask = true;
 
-        private const SystemFlags TextFlagMask = SystemFlags.AllowSpeech | SystemFlags.AllowText;
+		private const SystemFlags TextFlagMask = SystemFlags.AllowSpeech | SystemFlags.AllowText;
 
-        private const int GameNameX = SpnlX + 18; // x coordinate of game names
-        private const int GameNameY = SpnlY + SpTopGap; // start y coord of game names
-        private const int MaxOnScreen = (SpHeight - SpTopGap - SpBotGap) / PanCharHeight; // no of save games on screen
-        private const int CpPanel = 60400; // main panel sprite
-
-
-        private const int SpeedMultiply = 12;
-
-        // resource's onClick routines
-        private const int DoNothing = 0;
-        private const int RestGamePanel = 1;
-        private const int SaveGamePanel = 2;
-        private const int SaveAGame = 3;
-        private const int RestoreAGame = 4;
-        private const int SpCancel = 5;
-        private const int ShiftDownFast = 6;
-        private const int ShiftDownSlow = 7;
-        private const int ShiftUpFast = 8;
-        private const int ShiftUpSlow = 9;
-        private const int SpeedSlide = 10;
-        private const int MusicSlide = 11;
-        private const int ToggleFx = 12;
-        private const int ToggleMs = 13;
-        private const int ToggleText = 14;
-        private const int Exit = 15;
-        private const int Restart = 16;
-        private const int QuitToDos = 17;
-        private const int RestoreAuto = 18;
-
-        // onClick return codes
-        private const int CancelPressed = 100;
-        private const int NameTooShort = 101;
-        private const int GameSaved = 102;
-        private const int Shifted = 103;
-        private const int Toggled = 104;
-        private const int Restarted = 105;
-        public const int GameRestored = 106;
-        private const int RestoreFailed = 107;
-        private const int NoDiskSpace = 108;
-        private const int SpeedChanged = 109;
-        private const int QuitPanel = 110;
-
-        private const int Slow = 0;
-        private const int Fast = 1;
-
-        private const int MpnlX = 60; // Main Panel
-        private const int MpnlY = 10;
-
-        private const int SpnlX = 20; // Save Panel
-        private const int SpnlY = 20;
-        private const int SpHeight = 149;
-        private const int SpTopGap = 12;
-        private const int SpBotGap = 27;
-        private const int CrossSzX = 27;
-        private const int CrossSzY = 22;
+		private const int GameNameX = SpnlX + 18;
+		// x coordinate of game names
+		private const int GameNameY = SpnlY + SpTopGap;
+		// start y coord of game names
+		private const int MaxOnScreen = (SpHeight - SpTopGap - SpBotGap) / PanCharHeight;
+		// no of save games on screen
+		private const int CpPanel = 60400;
+		// main panel sprite
 
 
-        private static readonly string[] QuitTexts =
-        {
+		private const int SpeedMultiply = 12;
+
+		// resource's onClick routines
+		private const int DoNothing = 0;
+		private const int RestGamePanel = 1;
+		private const int SaveGamePanel = 2;
+		private const int SaveAGame = 3;
+		private const int RestoreAGame = 4;
+		private const int SpCancel = 5;
+		private const int ShiftDownFast = 6;
+		private const int ShiftDownSlow = 7;
+		private const int ShiftUpFast = 8;
+		private const int ShiftUpSlow = 9;
+		private const int SpeedSlide = 10;
+		private const int MusicSlide = 11;
+		private const int ToggleFx = 12;
+		private const int ToggleMs = 13;
+		private const int ToggleText = 14;
+		private const int Exit = 15;
+		private const int Restart = 16;
+		private const int QuitToDos = 17;
+		private const int RestoreAuto = 18;
+
+		// onClick return codes
+		private const int CancelPressed = 100;
+		private const int NameTooShort = 101;
+		private const int GameSaved = 102;
+		private const int Shifted = 103;
+		private const int Toggled = 104;
+		private const int Restarted = 105;
+		public const int GameRestored = 106;
+		private const int RestoreFailed = 107;
+		private const int NoDiskSpace = 108;
+		private const int SpeedChanged = 109;
+		private const int QuitPanel = 110;
+
+		private const int Slow = 0;
+		private const int Fast = 1;
+
+		private const int MpnlX = 60;
+		// Main Panel
+		private const int MpnlY = 10;
+
+		private const int SpnlX = 20;
+		// Save Panel
+		private const int SpnlY = 20;
+		private const int SpHeight = 149;
+		private const int SpTopGap = 12;
+		private const int SpBotGap = 27;
+		private const int CrossSzX = 27;
+		private const int CrossSzY = 22;
+
+
+		private static readonly string[] QuitTexts = {
             "Game over player one",
             "BE VIGILANT",
             "Das Spiel ist aus.",
@@ -210,7 +215,7 @@ namespace NScumm.Sky
         private Sprites _sprites;
         private ControlStatus _statusBar;
         private TextResource _text;
-        private byte[] _textSprite;
+		private DataFileHeader _textSprite;
         private ConResource _upFastButton;
         private ConResource _upSlowButton;
         private ConResource _yesNo;
@@ -255,9 +260,8 @@ namespace NScumm.Sky
         public void ShowGameQuitMsg()
         {
             _skyText.FnSetFont(0);
-            var sizeofDataFileHeader = ServiceLocator.Platform.SizeOf<DataFileHeader>();
-            var textBuf1 = new byte[Screen.GameScreenWidth * 14 + sizeofDataFileHeader];
-            var textBuf2 = new byte[Screen.GameScreenWidth * 14 + sizeofDataFileHeader];
+			var textBuf1 = new byte[Screen.GameScreenWidth * 14 + DataFileHeader.Size];
+			var textBuf2 = new byte[Screen.GameScreenWidth * 14 + DataFileHeader.Size];
             if (_skyScreen.SequenceRunning())
                 _skyScreen.StopSequence();
 
@@ -265,8 +269,8 @@ namespace NScumm.Sky
 
             _skyText.DisplayText(QuitTexts[SystemVars.Instance.Language * 2 + 0], textBuf1, true, 320, 255);
             _skyText.DisplayText(QuitTexts[SystemVars.Instance.Language * 2 + 1], textBuf2, true, 320, 255);
-            var curLine1 = sizeofDataFileHeader;
-            var curLine2 = sizeofDataFileHeader;
+			var curLine1 = DataFileHeader.Size;
+			var curLine2 = DataFileHeader.Size;
             var targetLine = Screen.GameScreenWidth * 80;
             for (byte cnty = 0; cnty < PanCharHeight; cnty++)
             {
@@ -927,23 +931,22 @@ namespace NScumm.Sky
             byte mouseType = Logic.MOUSE_NORMAL;
             byte wantMouse = Logic.MOUSE_NORMAL;
             ushort textY = MpnlY;
-            byte[] dlgTextDat;
+			DataFileHeader dlgTextDat;
 
             _yesNo.DrawToScreen(WithMask);
             if (text != null)
             {
-                var dlgLtm = _skyText.DisplayText(text, null, true,
-                    (ushort)(ServiceLocator.Platform.ToStructure<DataFileHeader>(_yesNo.SpriteData, 0).s_width - 8), 37);
-                dlgTextDat = dlgLtm.TextData;
+                var dlgLtm = _skyText.DisplayText(text, null, true,(ushort)(_yesNo.SpriteData.s_width - 8), 37);
+				dlgTextDat = dlgLtm.TextData;
                 textY =
                     (ushort)
                         (MpnlY + 44 +
-                         (28 - ServiceLocator.Platform.ToStructure<DataFileHeader>(dlgTextDat, 0).s_height) / 2);
+                         (28 - dlgTextDat.s_height) / 2);
             }
             else
                 dlgTextDat = null;
 
-            var dlgText = new TextResource(dlgTextDat, 1, 0, MpnlX + 2, textY, 0, DoNothing, _system, _screenBuf);
+			var dlgText = new TextResource(dlgTextDat.Data, 1, 0, MpnlX + 2, textY, 0, DoNothing, _system, _screenBuf);
             dlgText.DrawToScreen(WithMask);
 
             while (!quitPanel)
@@ -1150,7 +1153,7 @@ namespace NScumm.Sky
             }
             bool withAutoSave = lookListLen == 7;
 
-            var textSprites = new byte[MaxOnScreen + 1][];
+			var textSprites = new DataFileHeader[MaxOnScreen + 1];
             _firstText = 0;
 
             var saveGameTexts = LoadDescriptions().Select(s => new StringBuilder(s)).ToArray();
@@ -1355,14 +1358,14 @@ namespace NScumm.Sky
             }
         }
 
-        private void ShowSprites(byte[][] nameSprites, bool allowSave)
+		private void ShowSprites(DataFileHeader[] nameSprites, bool allowSave)
         {
             var drawResource = new ConResource(null, 1, 0, 0, 0, 0, 0, _system, _screenBuf);
             for (ushort cnt = 0; cnt < MaxOnScreen; cnt++)
             {
                 drawResource.SetSprite(nameSprites[cnt]);
                 drawResource.SetXy(GameNameX, (ushort)(GameNameY + cnt * PanCharHeight));
-                if (ServiceLocator.Platform.ToStructure<DataFileHeader>(nameSprites[cnt], 0).flag != 0)
+                if (nameSprites[cnt].flag != 0)
                 { // name is highlighted
                     for (ushort cnty = (ushort)(GameNameY + cnt * PanCharHeight); cnty < GameNameY + (cnt + 1) * PanCharHeight - 1; cnty++)
                     {
@@ -1382,7 +1385,7 @@ namespace NScumm.Sky
             }
         }
 
-        private void SetUpGameSprites(StringBuilder[] saveGameNames, byte[][] nameSprites, ushort firstNum, ushort selectedGame)
+		private void SetUpGameSprites(StringBuilder[] saveGameNames, DataFileHeader[] nameSprites, ushort firstNum, ushort selectedGame)
         {
             DisplayedText textSpr;
             if (nameSprites[MaxOnScreen] == null)
@@ -1401,12 +1404,12 @@ namespace NScumm.Sky
                 nameSprites[cnt] = textSpr.TextData;
                 if (firstNum + cnt == selectedGame)
                 {
-                    ServiceLocator.Platform.WriteStructure<DataFileHeader>(nameSprites[cnt], 0, h => h.flag = 1);
+					nameSprites[cnt].flag = 1;
                     _enteredTextWidth = (ushort)textSpr.TextWidth;
                 }
                 else
                 {
-                    ServiceLocator.Platform.WriteStructure<DataFileHeader>(nameSprites[cnt], 0, h => h.flag = 0);
+                    nameSprites[cnt].flag = 0;
                 }
             }
         }
@@ -1641,14 +1644,14 @@ namespace NScumm.Sky
             public readonly ISystem System;
             public uint CurSprite;
 
-            public byte[] SpriteData;
+			public DataFileHeader SpriteData;
             public uint Text;
             public ushort X, Y;
 
             public ConResource(byte[] pSpData, uint pNSprites, uint pCurSprite, ushort pX, ushort pY, uint pText,
                 byte pOnClick, ISystem system, byte[] screen)
             {
-                SpriteData = pSpData;
+				SpriteData = new DataFileHeader(pSpData);
                 NumSprites = pNSprites;
                 CurSprite = pCurSprite;
                 X = pX;
@@ -1659,9 +1662,9 @@ namespace NScumm.Sky
                 Screen = screen;
             }
 
-            public void SetSprite(byte[] pSpData)
+			public void SetSprite(DataFileHeader pSpData)
             {
-                SpriteData = pSpData;
+				SpriteData = pSpData;
             }
 
             public void SetText(uint pText)
@@ -1678,9 +1681,8 @@ namespace NScumm.Sky
 
             public bool IsMouseOver(uint mouseX, uint mouseY)
             {
-                var header = ServiceLocator.Platform.ToStructure<DataFileHeader>(SpriteData, 0);
-                return (mouseX >= X) && (mouseY >= Y) && ((ushort)mouseX <= X + header.s_width) &&
-                       ((ushort)mouseY <= Y + header.s_height);
+                return (mouseX >= X) && (mouseY >= Y) && ((ushort)mouseX <= X + SpriteData.s_width) &&
+					((ushort)mouseY <= Y + SpriteData.s_height);
             }
 
             public virtual void DrawToScreen(bool doMask)
@@ -1691,33 +1693,32 @@ namespace NScumm.Sky
                 if (SpriteData == null)
                     return;
 
-                var spriteDataPos = ServiceLocator.Platform.SizeOf<DataFileHeader>();
-                var header = ServiceLocator.Platform.ToStructure<DataFileHeader>(SpriteData, 0);
-                spriteDataPos += (int)(header.s_sp_size * CurSprite);
+				var spriteDataPos = DataFileHeader.Size;
+				spriteDataPos += (int)(SpriteData.s_sp_size * CurSprite);
                 if (doMask)
                 {
-                    for (ushort cnty = 0; cnty < header.s_height; cnty++)
+					for (ushort cnty = 0; cnty < SpriteData.s_height; cnty++)
                     {
-                        for (ushort cntx = 0; cntx < header.s_width; cntx++)
+						for (ushort cntx = 0; cntx < SpriteData.s_width; cntx++)
                         {
-                            if (SpriteData[spriteDataPos + cntx] != 0)
-                                Screen[screenPos + cntx] = SpriteData[spriteDataPos + cntx];
+							if (SpriteData.Data[spriteDataPos + cntx] != 0)
+								Screen[screenPos + cntx] = SpriteData.Data[spriteDataPos + cntx];
                         }
                         screenPos += Sky.Screen.GameScreenWidth;
-                        spriteDataPos += header.s_width;
+						spriteDataPos += SpriteData.s_width;
                     }
                 }
                 else
                 {
-                    for (ushort cnty = 0; cnty < header.s_height; cnty++)
+					for (ushort cnty = 0; cnty < SpriteData.s_height; cnty++)
                     {
-                        Array.Copy(SpriteData, spriteDataPos, Screen, screenPos, header.s_width);
+						Array.Copy(SpriteData.Data, spriteDataPos, Screen, screenPos, SpriteData.s_width);
                         screenPos += Sky.Screen.GameScreenWidth;
-                        spriteDataPos += header.s_width;
+						spriteDataPos += SpriteData.s_width;
                     }
                 }
                 System.GraphicsManager.CopyRectToScreen(Screen, updatePos, Sky.Screen.GameScreenWidth, X, Y,
-                    header.s_width, header.s_height);
+					SpriteData.s_width, SpriteData.s_height);
             }
         }
 
@@ -1744,9 +1745,7 @@ namespace NScumm.Sky
                 ushort cpWidth, cpHeight;
                 if ((_oldX == X) && (_oldY == Y) && SpriteData != null)
                     return;
-                var spriteData = SpriteData != null
-                    ? ServiceLocator.Platform.ToStructure<DataFileHeader>(SpriteData, 0)
-                    : null;
+                var spriteData = SpriteData;
                 if (_oldX < Sky.Screen.GameScreenWidth)
                 {
                     cpWidth =
@@ -1792,15 +1791,15 @@ namespace NScumm.Sky
 
                 var screenPos = Y * Sky.Screen.GameScreenWidth + X;
                 var copyDest = 0;
-                var copySrc = ServiceLocator.Platform.SizeOf<DataFileHeader>();
+				var copySrc = DataFileHeader.Size;
                 for (cnty = 0; cnty < cpHeight; cnty++)
                 {
                     Array.Copy(Screen, screenPos, _oldScreen, copyDest, cpWidth);
                     for (ushort cntx = 0; cntx < cpWidth; cntx++)
                     {
-                        if (SpriteData[copySrc + cntx] != 0)
+						if (SpriteData.Data[copySrc + cntx] != 0)
                         {
-                            Screen[screenPos + cntx] = SpriteData[copySrc + cntx];
+							Screen[screenPos + cntx] = SpriteData.Data[copySrc + cntx];
                         }
                     }
                     copySrc += spriteData.s_width;
@@ -1840,7 +1839,7 @@ namespace NScumm.Sky
 
             private readonly TextResource _statusText;
             private readonly ISystem _system;
-            private byte[] _textData;
+			private DataFileHeader _textData;
 
             public ControlStatus(Text skyText, ISystem system, byte[] scrBuf)
             {

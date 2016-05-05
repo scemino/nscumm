@@ -150,24 +150,5 @@ namespace NScumm.Scumm.IO
             }
             return -1;
         }
-
-        public static T ReadData<T>(byte[] input, string tag)
-        {
-            return (T)ReadData(input, tag, typeof(T));
-        }
-
-        public static object ReadData(byte[] input, string tag, Type type)
-        {
-            var data = ReadData(input, tag);
-            if (data == null)
-                return null;
-
-            return ServiceLocator.Platform.ToStructure(data, 0, type);
-        }
-
-        public static T ToStructure<T>(byte[] data, int offset)
-        {
-            return (T)ServiceLocator.Platform.ToStructure(data, offset, typeof(T));
-        }
     }
 }

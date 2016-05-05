@@ -16,14 +16,10 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using System;
-
 namespace NScumm.Core
 {
     public interface IPlatform
     {
         void Sleep(int timeInMs);
-
-        object ToStructure(byte[] data, int offset, Type type);
     }
 }

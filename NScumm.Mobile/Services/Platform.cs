@@ -18,40 +18,18 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-using System;
+
 using System.Threading;
 using NScumm.Core;
-using System.Runtime.InteropServices;
-using System.Reflection;
 
 namespace NScumm
 {
     public class Platform : IPlatform
     {
-        public Assembly LoadAssembly(string dll)
-        {
-            return Assembly.LoadFile(dll);
-        }
-
         public void Sleep(int timeInMs)
         {
             Thread.Sleep(timeInMs);
         }
-
-        public object ToStructure(byte[] data, int offset, Type type)
-        {
-            object obj;
-            GCHandle handle = GCHandle.Alloc(data, GCHandleType.Pinned);
-            try
-            {
-                obj = Marshal.PtrToStructure(handle.AddrOfPinnedObject() + offset, type);
-            }
-            finally
-            {
-                handle.Free();
-            }
-            return obj;
-        }
-    }
+	}
 }
 

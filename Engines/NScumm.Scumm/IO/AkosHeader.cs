@@ -18,29 +18,83 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-using System.Runtime.InteropServices;
+
+using NScumm.Core;
 
 namespace NScumm.Scumm.IO
 {
-    struct AkosHeader
-    {
-        public ushort unk_1;
-        public byte flags;
-        public byte unk_2;
-        public ushort num_anims;
-        public ushort unk_3;
-        public ushort codec;
-    }
+	struct AkosHeader
+	{
+		public ushort unk_1 {
+			get { return Data.ToUInt16 (Offset); }
+			set { Data.WriteUInt16 (Offset, value); }
+		}
 
-    [StructLayout(LayoutKind.Explicit)]
-    struct AkosOffset
-    {
-        [FieldOffset(0)]
-        public uint akcd;
-        // offset into the akcd data
-        [FieldOffset(4)]
-        public ushort akci;
-        // offset into the akci data
-    }
+		public byte flags {
+			get { return Data [Offset + 2]; }
+			set { Data [Offset + 2] = value; }
+		}
+
+		public byte unk_2 {
+			get { return Data [Offset + 3]; }
+			set { Data [Offset + 3] = value; }
+		}
+
+		public ushort num_anims {
+			get { return Data.ToUInt16 (Offset + 4); }
+			set { Data.WriteUInt16 (Offset + 4, value); }
+		}
+
+		public ushort unk_3 {
+			get { return Data.ToUInt16 (Offset + 6); }
+			set { Data.WriteUInt16 (Offset + 6, value); }
+		}
+
+		public ushort codec {
+			get { return Data.ToUInt16 (Offset + 8); }
+			set { Data.WriteUInt16 (Offset + 8, value); }
+		}
+
+		public byte[] Data { get; }
+
+		public int Offset { get; }
+
+		public AkosHeader (byte[] data, int offset = 0)
+		{
+			Data = data;
+			Offset = offset;
+		}
+	}
+
+	struct AkosOffset
+	{
+		/// <summary>
+		/// Gets or sets the offset into the akcd data.
+		/// </summary>
+		/// <value>The offset into the akcd data.</value>
+		public uint akcd {
+			get { return Data.ToUInt32 (Offset); }
+			set { Data.WriteUInt32 (Offset, value); }
+		}
+
+		/// <summary>
+		/// Gets or sets the offset into the akci data.
+		/// </summary>
+		/// <value>The offset into the akci data.</value>
+		public ushort akci {
+			get { return Data.ToUInt16 (Offset + 4); }
+			set { Data.WriteUInt16 (Offset + 4, value); }
+		}
+
+		public byte[] Data { get; }
+
+		public int Offset { get; }
+
+		public AkosOffset (byte[] data, int offset)
+		{
+			Data = data;
+			Offset = offset;
+		}
+	}
 }
 

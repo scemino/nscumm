@@ -95,9 +95,45 @@ namespace NScumm.Scumm.Graphics
 
     struct CostumeInfo
     {
-        public ushort width, height;
-        public short rel_x, rel_y;
-        public short move_x, move_y;
+		public ushort width  {
+			get { return Data.ToUInt16 (Offset); }
+			set { Data.WriteUInt16 (Offset, value); }
+		}
+
+		public ushort height  {
+			get { return Data.ToUInt16 (Offset + 2); }
+			set { Data.WriteUInt16 (Offset + 2, value); }
+		}
+
+		public short rel_x {
+			get { return Data.ToInt16 (Offset + 4); }
+			set { Data.WriteInt16 (Offset + 4, value); }
+		}
+
+		public short rel_y {
+			get { return Data.ToInt16 (Offset + 6); }
+			set { Data.WriteInt16 (Offset + 6, value); }
+		}
+
+		public short move_x {
+			get { return Data.ToInt16 (Offset + 8); }
+			set { Data.WriteInt16 (Offset + 8, value); }
+		}
+
+		public short move_y {
+			get { return Data.ToInt16 (Offset + 10); }
+			set { Data.WriteInt16 (Offset + 10, value); }
+		}
+
+		public byte[] Data { get; }
+
+		public int Offset { get; }
+
+		public CostumeInfo (byte[] data, int offset)
+		{
+			Data = data;
+			Offset = offset;
+		}
     }
 
     class AkosRenderer: ICostumeRenderer
@@ -173,7 +209,7 @@ namespace NScumm.Scumm.Graphics
             akos = _vm.ResourceManager.GetCostumeData(costume);
             Debug.Assert(akos != null);
 
-            akhd = ResourceFile7.ReadData<AkosHeader>(akos, "AKHD");
+			akhd = new AkosHeader(ResourceFile7.ReadData(akos, "AKHD"));
             akof = ResourceFile7.FindOffset(akos, "AKOF");
             akci = ResourceFile7.FindOffset(akos, "AKCI");
             aksq = ResourceFile7.ReadData(akos, "AKSQ");
@@ -282,14 +318,14 @@ namespace NScumm.Scumm.Graphics
 
             if (code != AkosOpcode.ComplexChan && code != AkosOpcode.ComplexChan2)
             {
-                var off = ResourceFile7.ToStructure<AkosOffset>(akos, (int)(akof + 6 * ((ushort)code & 0xFFF)));
+                var off = new AkosOffset(akos, (int)(akof + 6 * ((ushort)code & 0xFFF)));
 
                 Debug.Assert(((ushort)code & 0xFFF) * 6 < ScummHelper.SwapBytes(BitConverter.ToUInt32(akos, (int)(akof - 4))) - 8);
                 Debug.Assert(((ushort)code & 0x7000) == 0);
 
                 _srcptr = (int)off.akcd;
                 Debug.Assert(_srcptr < akcd.Length);
-                var costumeInfo = ResourceFile7.ToStructure<CostumeInfo>(akos, (int)(akci + off.akci));
+                var costumeInfo = new CostumeInfo(akos, (int)(akci + off.akci));
 
                 _width = costumeInfo.width;
                 _height = costumeInfo.height;
@@ -330,10 +366,10 @@ namespace NScumm.Scumm.Graphics
                     code = (AkosOpcode)aksq[p + 4];
                     if (((ushort)code & 0x80) != 0)
                         code = (AkosOpcode)ScummHelper.SwapBytes(BitConverter.ToUInt16(aksq, p + 4));
-                    var off = ResourceFile7.ToStructure<AkosOffset>(akos, (int)(akof + 6 * ((ushort)code & 0xFFF)));
+					var off = new AkosOffset(akos, (int)(akof + 6 * ((ushort)code & 0xFFF)));
 
                     _srcptr = (int)off.akcd;
-                    var costumeInfo = ResourceFile7.ToStructure<CostumeInfo>(akos, (int)(akci + off.akci));
+					var costumeInfo = new CostumeInfo(akos, (int)(akci + off.akci));
 
                     _width = costumeInfo.width;
                     _height = costumeInfo.height;

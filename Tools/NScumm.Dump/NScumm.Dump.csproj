@@ -121,11 +121,11 @@
       <Name>NScumm.Core</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Engines\NScumm.Scumm\NScumm.Scumm.csproj">
-      <Project>{97342112-448a-4636-827f-8d47b226d86f}</Project>
+      <Project>{97342112-448A-4636-827F-8D47B226D86F}</Project>
       <Name>NScumm.Scumm</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Platforms\NScumm.Platform_Desktop\NScumm.Platform_Desktop.csproj">
-      <Project>{d42434c7-459d-461a-8b1d-1451f7ff4b13}</Project>
+      <Project>{D42434C7-459D-461A-8B1D-1451F7FF4B13}</Project>
       <Name>NScumm.Platform_Desktop</Name>
     </ProjectReference>
   </ItemGroup>

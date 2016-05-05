@@ -139,7 +139,8 @@ namespace NScumm
 
         public Stream OpenContent(string path)
         {
-            var dir = new Uri(Path.GetDirectoryName(Assembly.GetExecutingAssembly().GetName().CodeBase)).AbsolutePath;
+			var exe=Environment.GetCommandLineArgs ()[0];
+            var dir = Path.GetDirectoryName(exe);
             var fullPath = ScummHelper.LocatePath(dir, path);
             return OpenFileRead(fullPath);
         }

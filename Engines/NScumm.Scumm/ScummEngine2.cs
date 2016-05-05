@@ -988,7 +988,7 @@ namespace NScumm.Scumm
                         {
                             // use name entered by the user
                             var firstSlot = StringIdSavename1;
-                            name = Encoding.UTF8.GetString(_strings[slot + firstSlot - 1]);
+							name = _strings[slot + firstSlot - 1].GetText();
                         }
 
                         if (SavePreparedSavegame(slot, name))
@@ -2477,7 +2477,7 @@ namespace NScumm.Scumm
                 return;
 
             if (Verbs[slot] != null && Verbs[slot].Text != null)
-                _sentenceBuf = Encoding.UTF8.GetString(Verbs[slot].Text);
+				_sentenceBuf = Verbs[slot].Text.GetText();
             else
                 return;
 
@@ -2487,7 +2487,7 @@ namespace NScumm.Scumm
                 if (temp != null)
                 {
                     _sentenceBuf += " ";
-                    _sentenceBuf += Encoding.UTF8.GetString(temp);
+					_sentenceBuf += temp.GetText();
                 }
 
                 //                 For V1 games, the engine must compute the preposition.
@@ -2515,7 +2515,7 @@ namespace NScumm.Scumm
                 if (temp != null)
                 {
                     _sentenceBuf += " ";
-                    _sentenceBuf += Encoding.UTF8.GetString(temp);
+					_sentenceBuf += temp.GetText();
                 }
             }
 

@@ -108,7 +108,7 @@ namespace NScumm.Scumm.IO
                                 AudioNames = new string[num];
                                 for (int i = 0; i < num; i++)
                                 {
-                                    AudioNames[i] = System.Text.Encoding.UTF8.GetString(br.ReadBytes(9));
+									AudioNames[i] = br.ReadBytes(9).GetText();
                                 }
                             }
                             break;

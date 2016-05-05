@@ -93,7 +93,7 @@ namespace NScumm.Scumm
 
             if ((buffer[0] != 0xFF))
             {
-                Debug.WriteLine("DEBUG: {0}", Encoding.UTF8.GetString(buffer));
+				Debug.WriteLine("DEBUG: {0}", buffer.GetText());
                 return;
             }
 

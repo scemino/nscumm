@@ -1,0 +1,148 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <ProjectGuid>{B1F1416B-C52A-4CE5-AF06-C960F5165784}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>NScumm.MonoGame</RootNamespace>
+    <AssemblyName>NScumm.MonoGame</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug</OutputPath>
+    <DefineConstants>DEBUG;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+    <PlatformTarget>x86</PlatformTarget>
+    <Commandlineparameters>/Users/valery/Games/ft/FT.LA0</Commandlineparameters>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <DebugType>full</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+    <PlatformTarget>x86</PlatformTarget>
+    <Commandlineparameters>/home/scemino/Games/comi/COMI.LA0</Commandlineparameters>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>App.ico</ApplicationIcon>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\x64\Debug\</OutputPath>
+    <DefineConstants>DEBUG;</DefineConstants>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>true</Prefer32Bit>
+    <WarningLevel>4</WarningLevel>
+    <Optimize>false</Optimize>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <OutputPath>bin\x64\Release\</OutputPath>
+    <Optimize>true</Optimize>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>true</Prefer32Bit>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <Compile Include="..\..\OpenALDriver.cs" />
+    <Compile Include="..\..\ScummGame.cs" />
+    <Compile Include="..\..\Services\IMenuService.cs">
+      <Link>Services\IMenuService.cs</Link>
+    </Compile>
+    <Compile Include="..\..\XnaGraphicsManager.cs" />
+    <Compile Include="..\..\XnaInputManager.cs" />
+    <Compile Include="..\..\Program.cs" />
+    <Compile Include="..\..\ScreenManager\GameScreen.cs">
+      <Link>ScreenManager\GameScreen.cs</Link>
+    </Compile>
+    <Compile Include="..\..\ScreenManager\ScreenManager.cs">
+      <Link>ScreenManager\ScreenManager.cs</Link>
+    </Compile>
+    <Compile Include="..\..\ScreenManager\MenuScreen.cs">
+      <Link>ScreenManager\MenuScreen.cs</Link>
+    </Compile>
+    <Compile Include="..\..\ScreenManager\InputState.cs">
+      <Link>ScreenManager\InputState.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Screens\BackgroundScreen.cs">
+      <Link>Screens\BackgroundScreen.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Screens\MainMenuScreen.cs">
+      <Link>Screens\MainMenuScreen.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Screens\ScummScreen.cs">
+      <Link>Screens\ScummScreen.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Mono.Options\Options.cs" />
+    <Compile Include="..\..\DynamicSoundEffectInstance.cs" />
+    <Compile Include="GameDetectorExtension.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Services\MenuService.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\Content\Fonts\MenuFont.xnb">
+      <Link>Content\Fonts\MenuFont.xnb</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Generator>MonoGameContentReference</Generator>
+    </None>
+    <None Include="..\..\Content\Fonts\SpriteFont.xnb">
+      <Link>Content\Fonts\MenuFont.xnb</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Generator>MonoGameContentReference</Generator>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\Content\Textures\blank.xnb">
+      <Link>Content\Textures\blank.xnb</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="packages.config" />
+    <None Include="OpenTK.dll.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Tao.Sdl.dll.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System.Drawing" />
+    <Reference Include="System" />
+    <Reference Include="MonoGame.Framework, Version=3.4.0.459, Culture=neutral, PublicKeyToken=null">
+      <HintPath>..\..\..\packages\MonoGame.Framework.WindowsGL.3.4.0.459\lib\net40\MonoGame.Framework.dll</HintPath>
+    </Reference>
+    <Reference Include="OpenTK, Version=1.1.0.0, Culture=neutral, PublicKeyToken=bad199fe84eb3df4">
+      <HintPath>..\..\..\packages\MonoGame.Framework.WindowsGL.3.4.0.459\lib\net40\OpenTK.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="App.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\NScumm.Core\NScumm.Core.csproj">
+      <Project>{8E7A9E5B-D7EB-4DA1-8EE7-A5D8DE202372}</Project>
+      <Name>NScumm.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\Platforms\NScumm.Platform_Desktop\NScumm.Platform_Desktop.csproj">
+      <Project>{D42434C7-459D-461A-8B1D-1451F7FF4B13}</Project>
+      <Name>NScumm.Platform_Desktop</Name>
+    </ProjectReference>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,110 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <ProjectGuid>{B1F1416B-C52A-4CE5-AF06-C960F5165784}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>NScumm.MonoGame</RootNamespace>
+    <AssemblyName>NScumm.MonoGame</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug</OutputPath>
+    <DefineConstants>DEBUG;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+    <PlatformTarget>x86</PlatformTarget>
+    <Commandlineparameters>/media/scemino/1678-DDD2/Games/comi/COMI.LA0</Commandlineparameters>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <DebugType>full</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+    <PlatformTarget>x86</PlatformTarget>
+    <Commandlineparameters>/home/scemino/Games/comi/COMI.LA0</Commandlineparameters>
+  </PropertyGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <Compile Include="..\..\OpenALDriver.cs" />
+    <Compile Include="..\..\ScummGame.cs" />
+    <Compile Include="..\..\XnaGraphicsManager.cs" />
+    <Compile Include="..\..\XnaInputManager.cs" />
+    <Compile Include="..\..\Program.cs" />
+    <Compile Include="..\..\ScreenManager\GameScreen.cs">
+      <Link>ScreenManager\GameScreen.cs</Link>
+    </Compile>
+    <Compile Include="..\..\ScreenManager\ScreenManager.cs">
+      <Link>ScreenManager\ScreenManager.cs</Link>
+    </Compile>
+    <Compile Include="..\..\ScreenManager\MenuScreen.cs">
+      <Link>ScreenManager\MenuScreen.cs</Link>
+    </Compile>
+    <Compile Include="..\..\ScreenManager\InputState.cs">
+      <Link>ScreenManager\InputState.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Screens\BackgroundScreen.cs">
+      <Link>Screens\BackgroundScreen.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Screens\MainMenuScreen.cs">
+      <Link>Screens\MainMenuScreen.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Screens\ScummScreen.cs">
+      <Link>Screens\ScummScreen.cs</Link>
+    </Compile>
+    <Compile Include="..\..\Mono.Options\Options.cs" />
+    <Compile Include="..\..\DynamicSoundEffectInstance.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+    <None Include="..\..\Content\Textures\blank.png">
+      <Link>Content\Textures\blank.png</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\..\Content\Fonts\MenuFont.xnb">
+      <Link>Content\Fonts\MenuFont.xnb</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\..\Content\Fonts\SpriteFont.xnb">
+      <Link>Content\Fonts\MenuFont.xnb</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="OpenTK.dll.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Tao.Sdl.dll.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System.Drawing" />
+    <Reference Include="System" />
+    <Reference Include="MonoGame.Framework">
+      <HintPath>..\..\..\packages\MonoGame.Framework.Linux.3.4.0.459\lib\net40\MonoGame.Framework.dll</HintPath>
+    </Reference>
+    <Reference Include="OpenTK">
+      <HintPath>..\..\..\packages\MonoGame.Framework.Linux.3.4.0.459\lib\net40\OpenTK.dll</HintPath>
+    </Reference>
+    <Reference Include="Tao.Sdl">
+      <HintPath>..\..\..\packages\MonoGame.Framework.Linux.3.4.0.459\lib\net40\Tao.Sdl.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\NScumm.Core\NScumm.Core.csproj">
+      <Project>{8E7A9E5B-D7EB-4DA1-8EE7-A5D8DE202372}</Project>
+      <Name>NScumm.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\Platforms\NScumm.Platform_Desktop\NScumm.Platform_Desktop.csproj">
+      <Project>{D42434C7-459D-461A-8B1D-1451F7FF4B13}</Project>
+      <Name>NScumm.Platform_Desktop</Name>
+    </ProjectReference>
+  </ItemGroup>
+</Project>

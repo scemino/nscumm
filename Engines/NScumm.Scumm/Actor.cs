@@ -102,7 +102,7 @@ namespace NScumm.Scumm
         {
             get
             { 
-                return string.Format("Name: {0}, IsInCurrentRoom: {1}, Visible: {2}", Name != null ? System.Text.Encoding.UTF8.GetString(Name) : null, IsInCurrentRoom, IsVisible);
+				return string.Format("Name: {0}, IsInCurrentRoom: {1}, Visible: {2}", Name != null ? Name.GetText() : null, IsInCurrentRoom, IsVisible);
             }    
         }
 

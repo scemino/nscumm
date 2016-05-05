@@ -340,7 +340,7 @@ namespace NScumm.Scumm.IO
                         _stream.Seek(_resLists[i][j].nameOffset + _mapOffset + _resMap.nameOffset, SeekOrigin.Begin);
 
                         byte len = br.ReadByte();
-                        _resLists[i][j].name = System.Text.Encoding.UTF8.GetString(br.ReadBytes(len));
+						_resLists[i][j].name = br.ReadBytes(len).GetText();
                     }
                 }
             }

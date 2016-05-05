@@ -84,7 +84,7 @@ namespace NScumm.Scumm.Audio.IMuse.IMuseDigital
 
                     if (tag == "LB23")
                     {
-                        _budleDirCache[freeSlot].BundleTable[i].Filename = Encoding.UTF8.GetString(file.ReadBytes(24));
+						_budleDirCache[freeSlot].BundleTable[i].Filename = file.ReadBytes(24).GetText();
                     }
                     else
                     {
@@ -96,7 +96,7 @@ namespace NScumm.Scumm.Audio.IMuse.IMuseDigital
                             if ((c = file.ReadByte()) != 0)
                                 name.Add(c);
 
-                        _budleDirCache[freeSlot].BundleTable[i].Filename = Encoding.UTF8.GetString(name.ToArray());
+						_budleDirCache[freeSlot].BundleTable[i].Filename = name.ToArray().GetText();
                     }
                     _budleDirCache[freeSlot].BundleTable[i].Offset = (int)file.ReadUInt32BigEndian();
                     _budleDirCache[freeSlot].BundleTable[i].Size = (int)file.ReadUInt32BigEndian();

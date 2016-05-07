@@ -103,7 +103,7 @@
       <Name>NScumm.Core</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\..\Platforms\NScumm.Platform_Desktop\NScumm.Platform_Desktop.csproj">
-      <Project>{d42434c7-459d-461a-8b1d-1451f7ff4b13}</Project>
+      <Project>{D42434C7-459D-461A-8B1D-1451F7FF4B13}</Project>
       <Name>NScumm.Platform_Desktop</Name>
     </ProjectReference>
   </ItemGroup>

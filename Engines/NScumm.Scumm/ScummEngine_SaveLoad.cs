@@ -1463,7 +1463,7 @@ namespace NScumm.Scumm
                 throw new NotSupportedException("Invalid version");
             }
 
-            hdr.Name = Encoding.UTF8.GetString(reader.ReadBytes(32));
+			hdr.Name = reader.ReadBytes(32).GetText();
 
             // Since version 52 a thumbnail is saved directly after the header.
             if (hdr.Version >= 52)

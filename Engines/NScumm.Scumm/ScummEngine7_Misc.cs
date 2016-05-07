@@ -55,7 +55,7 @@ namespace NScumm.Scumm
                         // SMUSH movie playback
                         if (args[1] == 0 && !_skipVideo)
                         {
-                            var videoname = System.Text.Encoding.UTF8.GetString(GetStringAddressVar(VariableVideoName));
+						var videoname = GetStringAddressVar (VariableVideoName).GetText ();
                             // TODO: vs
                             // Correct incorrect smush filename in Macintosh FT demo
 //                            if ((_game.id == GID_FT) && (_game.features & GF_DEMO) && (_game.platform == Common::kPlatformMacintosh) &&
@@ -880,7 +880,7 @@ namespace NScumm.Scumm
                 var count = Array.IndexOf(ptr, (byte)0);
                 if (count < 0)
                     count = ptr.Length - 1;
-                var pointer = System.Text.Encoding.UTF8.GetString(ptr, 0, count);
+				var pointer = ptr.GetText(0, count);
 
                 // Play speech
                 if (!Game.Features.HasFlag(GameFeatures.Demo) && Game.GameId == GameId.CurseOfMonkeyIsland) // CMI demo does not have .IMX for voice

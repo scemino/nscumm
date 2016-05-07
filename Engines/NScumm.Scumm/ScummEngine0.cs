@@ -883,7 +883,7 @@ namespace NScumm.Scumm
             if (temp != null)
             {
                 _sentenceBuf += " ";
-                _sentenceBuf += System.Text.Encoding.UTF8.GetString(temp);
+				_sentenceBuf += temp.GetText();
             }
         }
 
@@ -911,7 +911,7 @@ namespace NScumm.Scumm
                     else
                     {
                         var a = Actors[actorId];
-                        actorName = System.Text.Encoding.UTF8.GetString(a.Name);
+						actorName = a.Name.GetText();
                     }
                     _sentenceBuf += string.Format("{0,-13}", actorName);
                 }
@@ -924,7 +924,7 @@ namespace NScumm.Scumm
                 _activeVerb = VerbsV0.WalkTo;
 
             var verbName = Verbs[(int)_activeVerb].Text;
-            _sentenceBuf = System.Text.Encoding.UTF8.GetString(verbName);
+			_sentenceBuf = verbName.GetText();
 
             if (_activeObject != 0)
             {

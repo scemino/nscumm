@@ -292,7 +292,7 @@ namespace NScumm.Scumm.IO
         {
             // image header
             var name = _reader.ReadBytes(40);
-            var text = ResourceIndex8.DataToString(name);
+			var text = name.GetText();
             var id = ResourceIndex.ObjectIDMap[text];
             var od = new ObjectData((ushort)id);
 

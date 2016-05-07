@@ -28,13 +28,12 @@
     <ConsolePause>false</ConsolePause>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="FlacBox.Portable, Version=1.0.1.0, Culture=neutral, PublicKeyToken=4fc09ef1349866ee, processorArchitecture=MSIL">
-      <HintPath>..\packages\FlacBox.Portable.1.0.1\lib\portable-net4+sl5+wp8+win8\FlacBox.Portable.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="System" />
-    <Reference Include="System.XML" />
     <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Xml" />
+    <Reference Include="FlacBox">
+      <HintPath>..\..\packages\FlacBox.1.0.1\lib\net35\FlacBox.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AudioManager.cs" />

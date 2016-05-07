@@ -107,7 +107,7 @@ namespace NScumm.Scumm.IO
                                 AudioNames = new string[num];
                                 for (int i = 0; i < num; i++)
                                 {
-                                    AudioNames[i] = System.Text.Encoding.UTF8.GetString(br.ReadBytes(9));
+									AudioNames[i] = br.ReadBytes(9).GetText();
                                 }
                             }
                             break;
@@ -157,7 +157,7 @@ namespace NScumm.Scumm.IO
             for (var i = 0; i < num; i++)
             {
                 // Add to object name-to-id map
-                var name = DataToString(br.ReadBytes(40));
+				var name = br.ReadBytes(40).GetText();
                 ObjectIDMap[name] = i;
 
                 ObjectStateTable[i] = br.ReadByte();
@@ -165,18 +165,6 @@ namespace NScumm.Scumm.IO
                 ClassData[i] = br.ReadUInt32();
                 ObjectOwnerTable[i] = 0xFF;
             }
-        }
-
-        public static string DataToString(byte[] data)
-        {
-            var sb = new List<byte>();
-            int i = 0;
-            while (i < data.Length && data[i] != 0)
-            {
-                sb.Add(data[i]);
-                i++;
-            }
-            return System.Text.Encoding.UTF8.GetString(sb.ToArray());
         }
 
         protected override Resource[] ReadResTypeList(BinaryReader br)

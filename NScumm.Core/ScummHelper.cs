@@ -587,10 +587,11 @@ namespace NScumm.Core
             return System.Text.Encoding.UTF8.GetString(reader.ReadBytes(4), 0, 4);
         }
 
-        public static string GetText(this byte[] value, int startIndex = 0)
+		public static string GetText(this byte[] value, int startIndex = 0, int count = -1)
         {
             var data = new List<byte>();
-            for (int i = startIndex; i < value.Length && value[i] != 0; i++)
+			count = count < 0 ? value.Length : count;
+            for (int i = startIndex; i < count && value[i] != 0; i++)
             {
                 data.Add(value[i]);
             }

@@ -139,7 +139,7 @@ namespace NScumm.Scumm
         {
             get
             {
-                return Number != 0 ? string.Format("(Number: {0}, Name = {1})", Number, System.Text.Encoding.UTF8.GetString(Name)) : "Number 0";
+				return Number != 0 ? string.Format("(Number: {0}, Name = {1})", Number, Name.GetText()) : "Number 0";
             }
         }
     }

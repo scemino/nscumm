@@ -143,6 +143,7 @@
   <ItemGroup>
     <AndroidAsset Include="Assets\AboutAssets.txt" />
     <AndroidAsset Include="Assets\sky.cpt" />
+    <AndroidAsset Include="Assets\Nscumm.xml" />
   </ItemGroup>
   <ItemGroup>
     <MonoGameContentReference Include="Assets\Content\Content.mgcb" />

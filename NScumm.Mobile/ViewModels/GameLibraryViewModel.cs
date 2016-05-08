@@ -34,6 +34,7 @@ using NScumm.Mobile.Services;
 using Newtonsoft.Json;
 using System.Reactive.Disposables;
 using System.Collections.Generic;
+using NScumm.Scumm.IO;
 
 namespace NScumm.Mobile.ViewModels
 {
@@ -209,7 +210,7 @@ namespace NScumm.Mobile.ViewModels
         {
             var gd = new GameDetector();
             gd.Add(new SkyMetaEngine());
-            //          gd.Add (new ScummMetaEngine ());
+            gd.Add (new ScummMetaEngine ());
             gd.Add(new Sword1MetaEngine());
             return gd;
         }

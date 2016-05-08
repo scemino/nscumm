@@ -140,6 +140,7 @@
   <ItemGroup>
     <BundleResource Include="Default.png" />
     <BundleResource Include="Resources\sky.cpt" />
+    <BundleResource Include="Resources\Nscumm.xml" />
   </ItemGroup>
   <ItemGroup>
     <MonoGameContentReference Include="Content\Content.mgcb" />

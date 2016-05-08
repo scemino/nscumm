@@ -32,10 +32,11 @@ using NScumm.Sky;
 using NScumm.Core;
 using NScumm.Services;
 using NScumm.Sword1;
+using NScumm.Scumm.IO;
 
 namespace NScumm.Mobile.Droid
 {
-	[Activity (Label = "nScumm", 
+	[Activity (Label = "@string/app_name", 
 		Icon = "@drawable/icon",
 		Theme = "@style/Theme.Splash",
 		AlwaysRetainTaskState = true,
@@ -60,7 +61,8 @@ namespace NScumm.Mobile.Droid
 			}
 
 			var gd = new GameDetector ();
-			gd.Add(new SkyMetaEngine());
+            gd.Add(new SkyMetaEngine());
+            gd.Add(new ScummMetaEngine());
 			gd.Add(new Sword1MetaEngine());
 
 			var info = gd.DetectGame (path);

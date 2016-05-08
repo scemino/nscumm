@@ -35,7 +35,7 @@ namespace NScumm.Mobile.Droid
 	{
 		protected override void OnCreate (Bundle bundle)
 		{
-			base.OnCreate (bundle);
+ 			base.OnCreate (bundle);
 			Xamarin.Forms.Forms.Init (this, bundle);
 
 			var view = RxApp.SuspensionHost.GetAppState<AppBootstrapper> ().CreateMainView ();

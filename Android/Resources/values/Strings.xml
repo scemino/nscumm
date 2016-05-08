@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <resources>
-	<string name="app_name">nScumm</string>
+	<string name="app_name">nSCUMM</string>
 	<string name="app_desc">Graphic adventure game engine</string>
 	<string name="quit">Quit</string>
 	<string name="no_sdcard_title">No SD card detected</string>

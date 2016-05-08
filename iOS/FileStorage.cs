@@ -30,16 +30,6 @@ namespace NScumm
 {
 	public class FileStorage: IFileStorage
 	{
-		public System.Collections.Generic.IEnumerable<string> EnumerateFiles (string path)
-		{
-			return Directory.EnumerateFiles (path);
-		}
-
-		public System.Collections.Generic.IEnumerable<string> EnumerateFiles (string path, string searchPattern)
-		{
-			return Directory.EnumerateFiles (path, searchPattern);
-		}
-
 		public System.Collections.Generic.IEnumerable<string> EnumerateFiles (string path, string searchPattern, NScumm.Core.SearchOption option)
 		{
 			System.IO.SearchOption sysOption = System.IO.SearchOption.TopDirectoryOnly;
@@ -87,11 +77,6 @@ namespace NScumm
 		public bool FileExists (string path)
 		{
 			return File.Exists (path);
-		}
-
-		public bool DirectoryExists (string path)
-		{
-			return Directory.Exists (path);
 		}
 
 		public Stream OpenFileRead (string path)

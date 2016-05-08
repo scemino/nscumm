@@ -30,7 +30,7 @@ namespace NScumm
     {
         public static void AddPluginsFromDirectory(this GameDetector gameDetector, string engineDirectory)
         {
-            if (ServiceLocator.FileStorage.DirectoryExists(engineDirectory))
+            if (System.IO.Directory.Exists(engineDirectory))
             {
                 var dlls = ServiceLocator.FileStorage.EnumerateFiles(engineDirectory, "*.dll");
                 foreach (var dll in dlls)

@@ -30,11 +30,7 @@ namespace NScumm.Core
 
     public interface IFileStorage
     {
-        IEnumerable<string> EnumerateFiles(string path);
-
-        IEnumerable<string> EnumerateFiles(string path, string searchPattern);
-
-        IEnumerable<string> EnumerateFiles(string path, string searchPattern, SearchOption option);
+        IEnumerable<string> EnumerateFiles(string path, string searchPattern = "*", SearchOption option = SearchOption.TopDirectoryOnly);
 
         string Combine(string path1, string path2);
 
@@ -49,8 +45,6 @@ namespace NScumm.Core
         string ChangeExtension(string path, string newExtension);
 
         bool FileExists(string path);
-
-        bool DirectoryExists(string path);
 
         Stream OpenFileRead(string path);
 

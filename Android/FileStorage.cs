@@ -36,16 +36,6 @@ namespace NScumm
 			_assets = assets;
 		}
 
-		public System.Collections.Generic.IEnumerable<string> EnumerateFiles (string path)
-		{
-			return Directory.EnumerateFiles (path);
-		}
-
-		public System.Collections.Generic.IEnumerable<string> EnumerateFiles (string path, string searchPattern)
-		{
-			return Directory.EnumerateFiles (path, searchPattern);
-		}
-
 		public System.Collections.Generic.IEnumerable<string> EnumerateFiles (string path, string searchPattern, NScumm.Core.SearchOption option)
 		{
 			System.IO.SearchOption sysOption = System.IO.SearchOption.TopDirectoryOnly;

@@ -122,7 +122,7 @@ namespace NScumm.Sky
 
 		public DataFileHeader (byte[] data)
 		{
-			Data = data;
+			Data = data ?? new byte[Size];
 		}
 	}
 

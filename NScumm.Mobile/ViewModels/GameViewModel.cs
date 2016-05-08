@@ -19,8 +19,6 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using ReactiveUI;
-
 namespace NScumm.Mobile.ViewModels
 {
 	public class GameLibrary
@@ -41,16 +39,16 @@ namespace NScumm.Mobile.ViewModels
 		}
 	}
 
-	public class GameViewModel: ReactiveObject
+	public class GameViewModel
 	{
 		public string Description {
 			get;
-			set;
+			private set;
 		}
 
 		public string Path {
 			get;
-			set;
+			private set;
 		}
 
 		public GameViewModel (string description = null, string path = null)

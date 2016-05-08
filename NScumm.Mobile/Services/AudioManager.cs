@@ -22,6 +22,7 @@ using NScumm.Core.Audio;
 using System.IO;
 using System.Linq;
 using System;
+using FlacBox;
 
 namespace NScumm
 {
@@ -45,7 +46,7 @@ namespace NScumm
 
         public IAudioStream MakeFlacStream(Stream stream)
         {
-			return null;
+			return new WaveAudioStream(new WaveOverFlacStream(stream, WaveOverFlacStreamMode.Decode));
         }
 
         public IAudioStream MakeVorbisStream(Stream stream)

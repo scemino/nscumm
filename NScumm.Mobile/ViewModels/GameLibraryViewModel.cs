@@ -35,6 +35,7 @@ using Newtonsoft.Json;
 using System.Reactive.Disposables;
 using System.Collections.Generic;
 using NScumm.Scumm.IO;
+using NScumm.Mobile.Resx;
 
 namespace NScumm.Mobile.ViewModels
 {
@@ -46,12 +47,12 @@ namespace NScumm.Mobile.ViewModels
 
         public string UrlPathSegment
         {
-            get { return "GameLibrary"; }
+            get { return AppResources.GameLibrary_Title; }
         }
 
         public IScreen HostScreen { get; protected set; }
 
-        public IReactiveCommand<IList<string>> Scan { get; private set; }
+        public IReactiveCommand<IList<GameViewModel>> Scan { get; private set; }
         public IReactiveCommand<object> Delete { get; private set; }
 
         public IReactiveCommand LaunchGame { get; private set; }
@@ -84,13 +85,7 @@ namespace NScumm.Mobile.ViewModels
 
             LaunchGame = ReactiveCommand.CreateAsyncObservable(LaunchGameImpl, RxApp.MainThreadScheduler);
 
-            var gd = CreateGameDetector();
-            Scan
-                .Select(files => files.Select(gd.DetectGame)
-                        .Where(g => g != null)
-                        .Select(g => CreateGameViewModel(g.Game))
-                        .ToList())
-                .ObserveOn(RxApp.MainThreadScheduler)
+            Scan.ObserveOn(RxApp.MainThreadScheduler)
                 .Subscribe(games =>
                 {
                     using (_games.SuppressChangeNotifications())
@@ -126,10 +121,17 @@ namespace NScumm.Mobile.ViewModels
             _games.Remove(gameToRemove);
         }
 
-        private IObservable<IList<string>> ScanImpl(object parameter)
+        private IObservable<IList<GameViewModel>> ScanImpl(object parameter)
         {
             var directory = _gameService.GetDirectory();
-            return GetFilesAsync(directory);
+            var gd = CreateGameDetector();
+
+            return GetFilesAsync(directory)
+                .Select(files => files.Select(gd.DetectGame)
+                        .Where(g => g != null)
+                        .Select(g => CreateGameViewModel(g.Game))
+                        .OrderBy(g => g.Description)
+                        .ToList());
         }
 
         private IObservable<GameLibrary> LoadGamesAsync()
@@ -210,7 +212,7 @@ namespace NScumm.Mobile.ViewModels
         {
             var gd = new GameDetector();
             gd.Add(new SkyMetaEngine());
-            gd.Add (new ScummMetaEngine ());
+            gd.Add(new ScummMetaEngine());
             gd.Add(new Sword1MetaEngine());
             return gd;
         }

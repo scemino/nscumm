@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
-<ContentPage xmlns="http://xamarin.com/schemas/2014/forms" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" x:Class="NScumm.Mobile.Views.GameLibraryView" xmlns:views="clr-namespace:NScumm.Mobile.Views">
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" x:Class="NScumm.Mobile.Views.GameLibraryView" xmlns:views="clr-namespace:NScumm.Mobile.Views"
+		xmlns:i18n="clr-namespace:NScumm.Mobile.Resx;assembly=NScumm.Mobile.Resx">
 	<ContentPage.Content>
 		<StackLayout HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand">
 			<ListView x:Name="FileLisView" VerticalOptions="Fill">
@@ -7,7 +8,8 @@
 					<DataTemplate>
 						<TextCell Text="{Binding Description}">
 							<TextCell.ContextActions>
-								<MenuItem Clicked="OnDelete" CommandParameter="{Binding}" Text="Delete" IsDestructive="True" />
+								<MenuItem Clicked="OnDelete" CommandParameter="{Binding}" 
+										  Text="{i18n:Translate ButtonDelete.Text}" IsDestructive="True" />
 							</TextCell.ContextActions>
 						</TextCell>
 					</DataTemplate>
@@ -16,6 +18,6 @@
 		</StackLayout>
 	</ContentPage.Content>
 	<ContentPage.ToolbarItems>
-		<ToolbarItem x:Name="ScanToolbarItem" Text="Scan" />
+		<ToolbarItem x:Name="ScanToolbarItem" Text="{i18n:Translate ButtonScan.Text}" />
 	</ContentPage.ToolbarItems>
 </ContentPage>

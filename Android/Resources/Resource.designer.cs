@@ -3001,9 +3001,6 @@ namespace NScumm.Mobile.Droid
 			// aapt resource value: 0x7f0b0002
 			public const int character_counter_pattern = 2131427330;
 			
-			// aapt resource value: 0x7f0b002d
-			public const int game_not_supported = 2131427373;
-			
 			// aapt resource value: 0x7f0b0026
 			public const int library_name = 2131427366;
 			
@@ -3051,18 +3048,6 @@ namespace NScumm.Mobile.Droid
 			
 			// aapt resource value: 0x7f0b0011
 			public const int mr_user_route_category_name = 2131427345;
-			
-			// aapt resource value: 0x7f0b002c
-			public const int no_game_selected = 2131427372;
-			
-			// aapt resource value: 0x7f0b002b
-			public const int no_sdcard = 2131427371;
-			
-			// aapt resource value: 0x7f0b002a
-			public const int no_sdcard_title = 2131427370;
-			
-			// aapt resource value: 0x7f0b0029
-			public const int quit = 2131427369;
 			
 			// aapt resource value: 0x7f0b0025
 			public const int status_bar_notification_info_overflow = 2131427365;

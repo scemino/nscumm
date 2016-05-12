@@ -28,27 +28,28 @@ using NScumm.Mobile.ViewModels;
 
 namespace NScumm.Mobile.Droid
 {
-	[Application (Label = "@string/app_name")]
-	public class App : Application
-	{
-		App (IntPtr handle, JniHandleOwnership owner) : base (handle, owner)
-		{ 
-		}
+    [Application(Label = "@string/app_name")]
+    public class App : Application
+    {
+        App(IntPtr handle, JniHandleOwnership owner) : base(handle, owner)
+        {
+        }
 
-		public override void OnCreate ()
-		{
-			base.OnCreate ();
+        public override void OnCreate()
+        {
+            base.OnCreate();
 
-			ServiceLocator.FileStorage = new FileStorage (Assets);
+            ServiceLocator.FileStorage = new FileStorage(Assets);
 
-			var suspendHelper = new AutoSuspendHelper (this);
+            var suspendHelper = new AutoSuspendHelper(this);
 
-			RxApp.SuspensionHost.CreateNewAppState = () => {
-				Console.WriteLine ("Creating app state");
-				return new AppBootstrapper ();
-			};
+            RxApp.SuspensionHost.CreateNewAppState = () =>
+            {
+                Console.WriteLine("Creating app state");
+                return new AppBootstrapper();
+            };
 
-			RxApp.SuspensionHost.SetupDefaultSuspendResume ();
-		}
-	}
+            RxApp.SuspensionHost.SetupDefaultSuspendResume();
+        }
+    }
 }

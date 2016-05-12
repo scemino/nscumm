@@ -25,6 +25,7 @@ using NScumm.Mobile.ViewModels;
 using System;
 using System.Reactive.Threading.Tasks;
 using System.Reactive.Linq;
+using NScumm.Mobile.Resx;
 
 namespace NScumm.Mobile.Views
 {
@@ -48,8 +49,8 @@ namespace NScumm.Mobile.Views
 		{
 			var menuItem = (MenuItem)sender;
 			var game = (GameViewModel)menuItem.CommandParameter;
-			string msg = $"The Game '{game.Description}' will be removed.";
-			DisplayAlert ("Remove game", msg, "OK", "Cancel")
+            string msg = string.Format(AppResources.RemoveGame_Message, game.Description);
+            DisplayAlert (AppResources.RemoveGame_Title, msg, AppResources.DialogBox_OK, AppResources.DialogBox_Cancel)
 				.ToObservable ()
 				.Where (o => o)
 				.Subscribe (result => {

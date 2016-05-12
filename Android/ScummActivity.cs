@@ -33,6 +33,7 @@ using NScumm.Core;
 using NScumm.Services;
 using NScumm.Sword1;
 using NScumm.Scumm.IO;
+using NScumm.Mobile.Resx;
 
 namespace NScumm.Mobile.Droid
 {
@@ -56,7 +57,7 @@ namespace NScumm.Mobile.Droid
 
 			var path = Intent.GetStringExtra ("Game");
 			if (path == null) {
-				Toast.MakeText (this, Resource.String.no_game_selected, ToastLength.Short).Show ();
+                Toast.MakeText (this, AppResources.Error_NoGameSelected, ToastLength.Short).Show ();
 				return;
 			}
 
@@ -67,7 +68,7 @@ namespace NScumm.Mobile.Droid
 
 			var info = gd.DetectGame (path);
 			if (info == null) {
-				Toast.MakeText (this, Resource.String.game_not_supported, ToastLength.Short).Show ();
+                Toast.MakeText (this, AppResources.Error_GameNotSupported, ToastLength.Short).Show ();
 				return;
 			}
 

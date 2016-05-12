@@ -19,6 +19,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NScumm.Mobile.iOS", "iOS\NS
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NScumm.Mobile.Droid", "Android\NScumm.Mobile.Droid.csproj", "{E39704F3-00C1-4BB2-8E74-0D50C94F6EEA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NScumm.Mobile.Resx", "NScumm.Mobile.Resx\NScumm.Mobile.Resx.csproj", "{91B0F650-90F1-4166-9934-0CF9289F61EC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
@@ -128,6 +130,20 @@ Global
 		{EF539A3F-0672-412C-B9D0-38DCD3622D99}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
 		{EF539A3F-0672-412C-B9D0-38DCD3622D99}.Release|x86.ActiveCfg = Release|Any CPU
 		{EF539A3F-0672-412C-B9D0-38DCD3622D99}.Release|x86.Build.0 = Release|Any CPU
+		{91B0F650-90F1-4166-9934-0CF9289F61EC}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{91B0F650-90F1-4166-9934-0CF9289F61EC}.Debug|x86.Build.0 = Debug|Any CPU
+		{91B0F650-90F1-4166-9934-0CF9289F61EC}.Release|x86.ActiveCfg = Release|Any CPU
+		{91B0F650-90F1-4166-9934-0CF9289F61EC}.Release|x86.Build.0 = Release|Any CPU
+		{91B0F650-90F1-4166-9934-0CF9289F61EC}.Debug .NET Native|Any CPU.ActiveCfg = Debug|Any CPU
+		{91B0F650-90F1-4166-9934-0CF9289F61EC}.Debug .NET Native|Any CPU.Build.0 = Debug|Any CPU
+		{91B0F650-90F1-4166-9934-0CF9289F61EC}.Debug|iPhoneSimulator.ActiveCfg = Debug|Any CPU
+		{91B0F650-90F1-4166-9934-0CF9289F61EC}.Debug|iPhoneSimulator.Build.0 = Debug|Any CPU
+		{91B0F650-90F1-4166-9934-0CF9289F61EC}.Release|iPhone.ActiveCfg = Release|Any CPU
+		{91B0F650-90F1-4166-9934-0CF9289F61EC}.Release|iPhone.Build.0 = Release|Any CPU
+		{91B0F650-90F1-4166-9934-0CF9289F61EC}.Release|iPhoneSimulator.ActiveCfg = Release|Any CPU
+		{91B0F650-90F1-4166-9934-0CF9289F61EC}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
+		{91B0F650-90F1-4166-9934-0CF9289F61EC}.Debug|iPhone.ActiveCfg = Debug|Any CPU
+		{91B0F650-90F1-4166-9934-0CF9289F61EC}.Debug|iPhone.Build.0 = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{8740A0CD-2613-4354-9506-35035A735962} = {A243840C-CF70-4BA3-BA0E-69BB0C8E68B4}

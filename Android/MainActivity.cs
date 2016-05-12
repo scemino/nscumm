@@ -19,39 +19,41 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 using Android.App;
 using Android.OS;
 using ReactiveUI;
 using Xamarin.Forms.Platform.Android;
 using Android.Content.PM;
 using NScumm.Mobile.ViewModels;
+using NScumm.Mobile.Resx;
 
 namespace NScumm.Mobile.Droid
 {
-	[Activity (Label = "@string/app_name", Icon = "@drawable/icon", MainLauncher = true,
-		ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation)]
-	public class MainActivity : AndroidActivity
-	{
-		protected override void OnCreate (Bundle bundle)
-		{
- 			base.OnCreate (bundle);
-			Xamarin.Forms.Forms.Init (this, bundle);
+    [Activity(Label = "@string/app_name", Icon = "@drawable/icon", MainLauncher = true,
+        ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation)]
+    public class MainActivity : AndroidActivity
+    {
+        protected override void OnCreate(Bundle bundle)
+        {
+            base.OnCreate(bundle);
+            Xamarin.Forms.Forms.Init(this, bundle);
 
-			var view = RxApp.SuspensionHost.GetAppState<AppBootstrapper> ().CreateMainView ();
-			SetPage (view);
+            var view = RxApp.SuspensionHost.GetAppState<AppBootstrapper>().CreateMainView();
+            SetPage(view);
 
-			// This is a common enough error that we should warn about it
-			// explicitly.
-			if (!Environment.ExternalStorageDirectory.CanRead ()) {
-				new AlertDialog.Builder (this)
-					.SetTitle (Resource.String.no_sdcard_title)
-					.SetIcon (Android.Resource.Drawable.IcDialogAlert)
-					.SetMessage (Resource.String.no_sdcard)
-					.SetNegativeButton (Resource.String.quit, (o, e) => {
-					Finish ();
-				}).Show ();
-			}
-		}
-	}
+            // This is a common enough error that we should warn about it
+            // explicitly.
+            if (!Environment.ExternalStorageDirectory.CanRead())
+            {
+                new AlertDialog.Builder(this)
+                    .SetTitle(AppResources.Error_NoSdcardTitle)
+                    .SetIcon(Android.Resource.Drawable.IcDialogAlert)
+                    .SetMessage(AppResources.Error_NoSdcard)
+                    .SetNegativeButton(AppResources.Quit, (o, e) =>
+                    {
+                        Finish();
+                    }).Show();
+            }
+        }
+    }
 }

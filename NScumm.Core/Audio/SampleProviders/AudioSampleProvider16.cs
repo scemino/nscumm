@@ -23,23 +23,32 @@
 namespace NScumm.Core.Audio.SampleProviders
 {
     public abstract class AudioSampleProvider16 : IAudioSampleProvider
-    {
+    {        private short[] _buffer;
+
         public abstract AudioFormat AudioFormat
         {
             get;
+        }
+
+        protected AudioSampleProvider16()
+        {
+            _buffer = new short[4096];
         }
 
         public abstract int Read(short[] samples, int count);
 
         public int Read(byte[] samples, int count)
         {
-            var buffer = new short[count / 2];
-            var numRead = Read(buffer, count / 2);
+            if (_buffer.Length < count)
+            {
+                _buffer = new short[count / 2];
+            }
+            var numRead = Read(_buffer, count / 2);
             var offs = 0;
             for (int i = 0; i < numRead; i++)
             {
-                samples[offs++] = (byte)(buffer[i] & 0xFF);
-                samples[offs++] = (byte)((buffer[i] >> 8) & 0xFF);
+                samples[offs++] = (byte)(_buffer[i] & 0xFF);
+                samples[offs++] = (byte)((_buffer[i] >> 8) & 0xFF);
             }
             return numRead * 2;
         }

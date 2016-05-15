@@ -25,8 +25,9 @@ namespace NScumm.Core.Audio.SampleProviders
 {
     public class AudioSampleProviderToAudioStream : IAudioStream
     {
-        readonly AudioFormat _format;
+        private readonly AudioFormat _format;
         private IAudioSampleProvider _audioSampleProvider;
+        private byte[] _buffer;
 
         public AudioFormat AudioFormat
         {
@@ -69,16 +70,20 @@ namespace NScumm.Core.Audio.SampleProviders
         {
             _audioSampleProvider = audioSampleProvider;
             _format = _audioSampleProvider.AudioFormat;
+            _buffer = new byte[4096];
         }
 
         public int ReadBuffer(short[] samples, int numSamples)
         {
-            var buffer = new byte[numSamples * 2];
-            var numBytes = _audioSampleProvider.Read(buffer, buffer.Length);
+            if (_buffer.Length < numSamples)
+            {
+                _buffer = new byte[numSamples * 2];
+            }
+            var numBytes = _audioSampleProvider.Read(_buffer, numSamples * 2);
             var numSamplesRead = numBytes / 2;
             for (int i = 0; i < numSamplesRead; i++)
             {
-                samples[i] = buffer.ToInt16(i * 2);
+                samples[i] = _buffer.ToInt16(i * 2);
             }
             return numSamplesRead;
         }

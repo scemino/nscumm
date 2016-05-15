@@ -27,6 +27,7 @@ namespace NScumm.Core.Audio.SampleProviders
     {
         private AudioFormat _audioFormat;
         private IAudioSampleProvider _audioSampleProvider;
+        private byte[] _buffer;
 
         public MonoToStereoAudioSampleProvider16(IAudioSampleProvider audioSampleProvider)
         {
@@ -41,6 +42,7 @@ namespace NScumm.Core.Audio.SampleProviders
 
             _audioSampleProvider = audioSampleProvider;
             _audioFormat = new AudioFormat(_audioSampleProvider.AudioFormat.SampleRate, 2, _audioSampleProvider.AudioFormat.BitsPerSample);
+            _buffer = new byte[4096];
         }
 
         public AudioFormat AudioFormat
@@ -51,12 +53,15 @@ namespace NScumm.Core.Audio.SampleProviders
         public int Read(byte[] samples, int count)
         {
             var numSamples = count / 2;
-            var monoBuffer = new byte[numSamples];
-            var numBytes = _audioSampleProvider.Read(monoBuffer, numSamples);
+            if (_buffer.Length < numSamples)
+            {
+                _buffer = new byte[numSamples];
+            }
+            var numBytes = _audioSampleProvider.Read(_buffer, numSamples);
             int offs = 0;
             for (int i = 0; i < numBytes; i += 2)
             {
-                var value = monoBuffer.ToInt16(i);
+                var value = _buffer.ToInt16(i);
                 samples.WriteInt16(offs += 2, value);
                 samples.WriteInt16(offs += 2, value);
             }

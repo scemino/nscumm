@@ -384,7 +384,7 @@ namespace NScumm.Scumm.Smush
 
             while (frameSize > 0)
             {
-                var subType = _base.ReadBytes(4).ToText();
+                var subType = b.ReadBytes(4).ToText();
                 var subSize = b.ReadUInt32BigEndian();
                 var subOffset = b.BaseStream.Position;
                 switch (subType)
@@ -484,7 +484,7 @@ namespace NScumm.Scumm.Smush
                 {
                     _deltaPal[i] = b.ReadInt16();
                 }
-                _pal = ReadPalette(b);
+                ReadPalette(b);
                 SetDirtyColors(0, 255);
             }
             else if (subSize == 6)
@@ -882,7 +882,7 @@ namespace NScumm.Scumm.Smush
             if (_skipPalette)
                 return;
 
-            _pal = ReadPalette(b);
+            ReadPalette(b);
             SetDirtyColors(0, 255);
         }
 
@@ -1035,18 +1035,17 @@ namespace NScumm.Scumm.Smush
             if (_skipPalette)
                 return;
 
-            _pal = ReadPalette(b);
+            ReadPalette(b);
             SetDirtyColors(0, 255);
         }
 
-        Palette ReadPalette(BinaryReader b)
+        void ReadPalette(BinaryReader b)
         {
-            var colors = new Color[256];
+            var colors = _pal.Colors;
             for (int i = 0; i < 256; i++)
             {
                 colors[i] = Color.FromRgb(b.ReadByte(), b.ReadByte(), b.ReadByte());
             }
-            return new Palette(colors);
         }
 
         void SetDirtyColors(int min, int max)
@@ -1134,7 +1133,7 @@ namespace NScumm.Scumm.Smush
 
         int _nbframes;
         short[] _deltaPal = new short[0x300];
-        Palette _pal;
+        Palette _pal = new Palette();
         SmushFont[] _sf = new SmushFont[5];
         TrsFile _strings;
         Codec37Decoder _codec37;

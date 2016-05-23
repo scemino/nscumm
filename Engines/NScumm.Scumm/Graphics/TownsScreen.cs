@@ -38,7 +38,10 @@ namespace NScumm.Scumm.Graphics
             _width = width;
             _height = height;
             _pixelFormat = format;
-            _pitch = width * Surface.GetBytesPerPixel(format);
+            // just get that bytes per pixel once, it cannot change in this instance
+            // much less method calls in the loops 
+            _bytesPerPixel = Surface.GetBytesPerPixel(format);
+            _pitch = width * _bytesPerPixel;
 
             _outBuffer = new byte[_pitch * _height];
             for (int i = 0; i < _layers.Length; i++)
@@ -119,6 +122,7 @@ namespace NScumm.Scumm.Graphics
 
         public void SetupLayer(int layer, int width, int height, int numCol, byte[] pal = null)
         {
+            int bytesPerPixel = _bytesPerPixel;
             if (layer < 0 || layer > 1)
                 return;
 
@@ -145,7 +149,7 @@ namespace NScumm.Scumm.Graphics
             l.pitch = width * l.bpp;
             l.palette = pal;
 
-            if ((l.palette != null) && Surface.GetBytesPerPixel(_pixelFormat) == 1)
+            if ((l.palette != null) && bytesPerPixel == 1)
                 Debug.WriteLine("TownsScreen::setupLayer(): Layer palette usage requires 16 bit graphics setting.\nLayer palette will be ignored.");
 
             l.pixels = new byte[l.pitch * l.height];
@@ -159,7 +163,7 @@ namespace NScumm.Scumm.Graphics
             for (int i = 0; i < _height; ++i)
                 l.bltInternY[i] = (i / l.scaleH) * l.pitch;
 
-            l.bltTmpPal = (l.bpp == 1 && Surface.GetBytesPerPixel(_pixelFormat) == 2) ? new ushort[l.numCol] : null;
+            l.bltTmpPal = (l.bpp == 1 && bytesPerPixel == 2) ? new ushort[l.numCol] : null;
 
             l.enabled = true;
             _layers[0].onBottom = true;
@@ -289,19 +293,28 @@ namespace NScumm.Scumm.Graphics
 
         void UpdateOutputBuffer()
         {
+            // just define the variables before the loops, better for GC and better for memory usage
+            int bytesPerPixel = _bytesPerPixel;
+            TownsScreenLayer l;
+            Rect r;
+            int dst;
+            int ptch;
+            int src;
+            int col;
+            byte smallCol;
             for (var j = 0; j < _dirtyRects.Count; j++)
             {
-                var r = _dirtyRects[j];
+                r = _dirtyRects[j];
                 for (int i = 0; i < 2; i++)
                 {
-                    var l = _layers[i];
+                    l = _layers[i];
                     if (!l.enabled || !l.ready)
                         continue;
 
-                    var dst = r.Top * _pitch + r.Left * Surface.GetBytesPerPixel(_pixelFormat);
-                    int ptch = _pitch - (r.Right - r.Left + 1) * Surface.GetBytesPerPixel(_pixelFormat);
+                    dst = r.Top * _pitch + r.Left * bytesPerPixel;
+                    ptch = _pitch - (r.Right - r.Left + 1) * bytesPerPixel;
 
-                    if (Surface.GetBytesPerPixel(_pixelFormat) == 2 && l.bpp == 1)
+                    if (bytesPerPixel == 2 && l.bpp == 1)
                     {
                         if (l.palette == null)
                             throw new InvalidOperationException(string.Format("void TownsScreen::updateOutputBuffer(): No palette assigned to 8 bit layer {0}", i));
@@ -311,25 +324,25 @@ namespace NScumm.Scumm.Graphics
 
                     for (int y = r.Top; y <= r.Bottom; ++y)
                     {
-                        if (l.bpp == Surface.GetBytesPerPixel(_pixelFormat) && l.scaleW == 1 && l.onBottom && ((l.numCol & 0xff00) != 0))
+                        if (l.bpp == bytesPerPixel && l.scaleW == 1 && l.onBottom && ((l.numCol & 0xff00) != 0))
                         {
-                            Array.Copy(l.pixels, l.bltInternY[y] + l.bltInternX[r.Left], _outBuffer, dst, (r.Right + 1 - r.Left) * Surface.GetBytesPerPixel(_pixelFormat));
+                            Array.Copy(l.pixels, l.bltInternY[y] + l.bltInternX[r.Left], _outBuffer, dst, (r.Right + 1 - r.Left) * bytesPerPixel);
                             dst += _pitch;
 
                         }
-                        else if (Surface.GetBytesPerPixel(_pixelFormat) == 2)
+                        else if (bytesPerPixel == 2)
                         {
                             for (int x = r.Left; x <= r.Right; ++x)
                             {
-                                var src = l.bltInternY[y] + l.bltInternX[x];
+                                src = l.bltInternY[y] + l.bltInternX[x];
                                 if (l.bpp == 1)
                                 {
-                                    var col = l.pixels[src];
-                                    if (col != 0 || l.onBottom)
+                                    smallCol = l.pixels[src];
+                                    if (smallCol != 0 || l.onBottom)
                                     {
                                         if (l.numCol == 16)
-                                            col = (byte)((col >> 4) & (col & 0x0f));
-                                        _outBuffer.WriteUInt16(dst, l.bltTmpPal[col]);
+                                            smallCol = (byte)((smallCol >> 4) & (smallCol & 0x0f));
+                                        _outBuffer.WriteUInt16(dst, l.bltTmpPal[smallCol]);
                                     }
                                 }
                                 else
@@ -345,7 +358,7 @@ namespace NScumm.Scumm.Graphics
                         {
                             for (int x = r.Left; x <= r.Right; ++x)
                             {
-                                var col = l.bltInternY[y] + l.bltInternX[x];
+                                col = l.bltInternY[y] + l.bltInternX[x];
                                 if (col != 0 || l.onBottom)
                                 {
                                     if (l.numCol == 16)
@@ -363,9 +376,10 @@ namespace NScumm.Scumm.Graphics
 
         void OutputToScreen()
         {
+            Rect r;
             for (var j = 0; j < _dirtyRects.Count; j++)
             {
-                var r = _dirtyRects[j];
+                r = _dirtyRects[j];
                 _gfx.CopyRectToScreen(_outBuffer, _pitch, r.Left, r.Top, r.Left, r.Top, r.Right - r.Left + 1, r.Bottom - r.Top + 1);
             }
             _dirtyRects.Clear();
@@ -406,6 +420,7 @@ namespace NScumm.Scumm.Graphics
         int _width;
         int _pitch;
         PixelFormat _pixelFormat;
+        int _bytesPerPixel;
 
         int _numDirtyRects;
         List<Rect> _dirtyRects = new List<Rect>();

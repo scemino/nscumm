@@ -24,7 +24,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)XnaAudioDriver.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ViewModels\AppBootstrapper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ViewModels\GameLibraryViewModel.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)App.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ViewModels\GameViewModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Views\GameLibraryView.xaml.cs">
       <DependentUpon>GameLibraryView.xaml</DependentUpon>

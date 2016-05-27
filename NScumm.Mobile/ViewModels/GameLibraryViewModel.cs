@@ -32,207 +32,197 @@ using NScumm.Sword1;
 using System.IO;
 using NScumm.Mobile.Services;
 using Newtonsoft.Json;
-using System.Reactive.Disposables;
 using System.Collections.Generic;
 using NScumm.Scumm.IO;
 using NScumm.Mobile.Resx;
 
 namespace NScumm.Mobile.ViewModels
 {
-    [DataContract]
-    public class GameLibraryViewModel : ReactiveObject, IRoutableViewModel
-    {
-        ReactiveList<GameViewModel> _games;
-        IGameService _gameService;
+	[DataContract]
+	public class GameLibraryViewModel : ReactiveObject, IRoutableViewModel
+	{
+		[IgnoreDataMember]
+		ReactiveList<GameViewModel> _games;
 
-        public string UrlPathSegment
-        {
-            get { return AppResources.GameLibrary_Title; }
-        }
+		[IgnoreDataMember]
+		IGameService _gameService;
 
-        public IScreen HostScreen { get; protected set; }
+		[IgnoreDataMember]
+		public string UrlPathSegment {
+			get { return AppResources.GameLibrary_Title; }
+		}
 
-        public IReactiveCommand<IList<GameViewModel>> Scan { get; private set; }
-        public IReactiveCommand<object> Delete { get; private set; }
+		[IgnoreDataMember]
+		public IScreen HostScreen { get; protected set; }
 
-        public IReactiveCommand LaunchGame { get; private set; }
+		[IgnoreDataMember]
+		public IReactiveCommand<IList<GameViewModel>> Scan { get; private set; }
 
-        public IReactiveList<GameViewModel> Games
-        {
-            get { return _games; }
-        }
+		[IgnoreDataMember]
+		public IReactiveCommand<object> Delete { get; private set; }
 
-        public GameLibraryViewModel(IScreen hostScreen = null)
-        {
-            _gameService = new GameService();
-            HostScreen = hostScreen ?? Locator.Current.GetService<IScreen>();
-            _games = new ReactiveList<GameViewModel>();
+		[IgnoreDataMember]
+		public IReactiveCommand LaunchGame { get; private set; }
 
-            var gamesLibrary = LoadGamesAsync()
-                .Select(o => o.Games.Select(g => new GameViewModel(g.Description, g.Path)))
-                .ObserveOn(RxApp.MainThreadScheduler)
-                .Subscribe(games => _games.AddRange(games));
+		[DataMember]
+		public IReactiveList<GameViewModel> Games {
+			get { return _games; }
+		}
 
-            // create commands
-            Delete = ReactiveCommand.Create(scheduler: RxApp.MainThreadScheduler);
-            Delete.Subscribe(DeleteImpl);
+		public GameLibraryViewModel (IScreen hostScreen = null)
+		{
+			_gameService = new GameService ();
+			HostScreen = hostScreen ?? Locator.Current.GetService<IScreen> ();
+			_games = new ReactiveList<GameViewModel> ();
 
-            Scan = ReactiveCommand.CreateAsyncObservable(ScanImpl, RxApp.MainThreadScheduler);
-            Scan.ThrownExceptions.ObserveOn(RxApp.MainThreadScheduler).Subscribe(e =>
-            {
-                this.Log().ErrorException("Scan error", e);
-            });
+			LoadGamesAsync ()
+                .Select (o => o.Games.Select (g => new GameViewModel (g.Description, g.Path)))
+                .ObserveOn (RxApp.MainThreadScheduler)
+                .Subscribe (games => _games.AddRange (games));
 
-            LaunchGame = ReactiveCommand.CreateAsyncObservable(LaunchGameImpl, RxApp.MainThreadScheduler);
+			// create commands
+			Delete = ReactiveCommand.Create ();
+			Delete.Subscribe (DeleteImpl);
 
-            Scan.ObserveOn(RxApp.MainThreadScheduler)
-                .Subscribe(games =>
-                {
-                    using (_games.SuppressChangeNotifications())
-                    {
-                        _games.Clear();
-                        _games.AddRange(games);
-                    }
-                });
+			Scan = ReactiveCommand.CreateAsyncObservable (ScanImpl);
+			Scan.ThrownExceptions.ObserveOn (RxApp.MainThreadScheduler).Subscribe (e => {
+				this.Log ().ErrorException ("Scan error", e);
+			});
 
-            // auto save
-            this.AutoPersist(x =>
-            {
-                var library = new GameLibrary
-                {
-                    Games = x.Games.Select(g => new Game { Description = g.Description, Path = g.Path }).ToArray()
-                };
-                return SaveGamesAsync(library);
-            }, _games.Changed);
-        }
+			LaunchGame = ReactiveCommand.CreateAsyncObservable (LaunchGameImpl);
 
-        private IObservable<Unit> LaunchGameImpl(object parameter)
-        {
-            var game = (GameViewModel)parameter;
-            _gameService.StartGame(game.Path);
-            return Observable.Return(Unit.Default);
-        }
+			Scan.ObserveOn (RxApp.MainThreadScheduler)
+                .Subscribe (games => {
+				using (_games.SuppressChangeNotifications ()) {
+					_games.Clear ();
+					_games.AddRange (games);
+				}
+			});
 
-        private void DeleteImpl(object parameter)
-        {
-            var game = (GameViewModel)parameter;
-            var gameToRemove = _games.FirstOrDefault(g => g.Path == game.Path);
-            if (gameToRemove == null) return;
-            _games.Remove(gameToRemove);
-        }
+			// auto save
+			this.AutoPersist (x => {
+				var library = new GameLibrary {
+					Games = x.Games.Select (g => new Game { Description = g.Description, Path = g.Path }).ToArray ()
+				};
+				return SaveGamesAsync (library);
+			}, _games.Changed);
+		}
 
-        private IObservable<IList<GameViewModel>> ScanImpl(object parameter)
-        {
-            var directory = _gameService.GetDirectory();
-            var gd = CreateGameDetector();
+		private IObservable<Unit> LaunchGameImpl (object parameter)
+		{
+			var game = (GameViewModel)parameter;
+			_gameService.StartGame (game.Path);
+			return Observable.Return (Unit.Default);
+		}
 
-            return GetFilesAsync(directory)
-                .Select(files => files.Select(gd.DetectGame)
-                        .Where(g => g != null)
-                        .Select(g => CreateGameViewModel(g.Game))
-                        .OrderBy(g => g.Description)
-                        .ToList());
-        }
+		private void DeleteImpl (object parameter)
+		{
+			var game = (GameViewModel)parameter;
+			var gameToRemove = _games.FirstOrDefault (g => g.Path == game.Path);
+			if (gameToRemove == null)
+				return;
+			_games.Remove (gameToRemove);
+		}
 
-        private IObservable<GameLibrary> LoadGamesAsync()
-        {
-            var path = GetGameLibraryPath();
-            if (!File.Exists(path))
-                return Observable.Return(CreateEmptyLibrary());
+		private IObservable<IList<GameViewModel>> ScanImpl (object parameter)
+		{
+			var directory = _gameService.GetDirectory ();
+			var gd = CreateGameDetector ();
+			var games = new List<GameViewModel> ();
+			return Observable.Create<IList<GameViewModel>> (observer => {
 
-            using (var fs = File.OpenRead(path))
-            {
-                var reader = new StreamReader(fs);
-                var json = reader.ReadToEnd();
-                var gameLibrary = JsonConvert.DeserializeObject<GameLibrary>(json);
-                return Observable.Return(gameLibrary ?? CreateEmptyLibrary());
-            }
-        }
+				return GetFilesAsync (directory)
+					.Select (file => gd.DetectGame (file))
+	                        .Where (g => g != null)
+					.Select (g => CreateGameViewModel (g.Game))
+					.Subscribe (games.Add,
+					() => {
+						observer.OnNext (games);
+						observer.OnCompleted ();
+					});
+			});
+		}
 
-        private IObservable<Unit> SaveGamesAsync(GameLibrary library)
-        {
-            var path = GetGameLibraryPath();
-            var serializer = new JsonSerializer();
-            using (var fs = new StreamWriter(path))
-            using (var writer = new JsonTextWriter(fs))
-            {
-                serializer.Serialize(writer, library);
-            }
-            return Observable.Return(Unit.Default);
-        }
+		private IObservable<GameLibrary> LoadGamesAsync ()
+		{
+			var path = GetGameLibraryPath ();
+			if (!File.Exists (path))
+				return Observable.Return (CreateEmptyLibrary ());
 
-        private IObservable<IList<string>> GetFilesAsync(string directory)
-        {
-            return Observable.Create<IList<string>>(observer =>
-            {
-                var entries = new List<string>();
-                Observable.Start(() =>
-                {
-                    try
-                    {
-                        ScanDirectory(directory, entries);
-                        observer.OnNext(entries);
-                        observer.OnCompleted();
-                    }
-                    catch (Exception e)
-                    {
-                        observer.OnError(e);
-                    }
-                }, RxApp.TaskpoolScheduler);
-                return Disposable.Empty;
-            });
-        }
+			return Observable.Start (() => {
+				using (var fs = File.OpenRead (path)) {
+					var reader = new StreamReader (fs);
+					var json = reader.ReadToEnd ();
+					var gameLibrary = JsonConvert.DeserializeObject<GameLibrary> (json);
+					return gameLibrary ?? CreateEmptyLibrary ();
+				}
+			});
+		}
 
-        private void ScanDirectory(string directory, List<string> files)
-        {
-            try
-            {
-                this.Log().Info($"Scan Directory {directory}");
-                var entries = Directory.EnumerateFileSystemEntries(directory, "*", SearchOption.TopDirectoryOnly);
-                foreach (var entry in entries)
-                {
-                    if (Directory.Exists(entry))
-                    {
-                        ScanDirectory(entry, files);
-                    }
-                    else
-                    {
-                        this.Log().Info($"Scan {entry}");
-                        files.Add(entry);
-                    }
-                }
-            }
-            catch (UnauthorizedAccessException)
-            {
-                // ignore exception
-            }
-        }
+		private IObservable<Unit> SaveGamesAsync (GameLibrary library)
+		{
+			var path = GetGameLibraryPath ();
+			var serializer = new JsonSerializer ();
+			using (var fs = new StreamWriter (path))
+			using (var writer = new JsonTextWriter (fs)) {
+				serializer.Serialize (writer, library);
+			}
+			return Observable.Return (Unit.Default);
+		}
 
-        private static GameDetector CreateGameDetector()
-        {
-            var gd = new GameDetector();
-            gd.Add(new SkyMetaEngine());
-            gd.Add(new ScummMetaEngine());
-            gd.Add(new Sword1MetaEngine());
-            return gd;
-        }
+		private IObservable<string> GetFilesAsync (string directory)
+		{
+			return Observable.Create<string> (observer => {
+				return Observable.Start (() => {
+					ScanDirectory (directory, observer);
+					observer.OnCompleted ();
+				}, RxApp.TaskpoolScheduler).Subscribe();
+			});
+		}
 
-        private static GameViewModel CreateGameViewModel(IGameDescriptor game)
-        {
-            return new GameViewModel(game.Description, game.Path);
-        }
+		private void ScanDirectory (string directory, IObserver<string> files)
+		{
+			try {
+				this.Log ().Info ($"Scan Directory {directory}");
+				var entries = Directory.EnumerateFileSystemEntries (directory, "*", SearchOption.TopDirectoryOnly);
+				foreach (var entry in entries) {
+					if (Directory.Exists (entry)) {
+						ScanDirectory (entry, files);
+					} else {
+						this.Log ().Info ($"Scan {entry}");
+						files.OnNext (entry);
+					}
+				}
+			} catch (UnauthorizedAccessException) {
+				// ignore exception
+			}
+		}
 
-        private static string GetGameLibraryPath()
-        {
-            var documents = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-            var path = Path.Combine(documents, "games.json");
-            return path;
-        }
+		private static GameDetector CreateGameDetector ()
+		{
+			var gd = new GameDetector ();
+			gd.Add (new SkyMetaEngine ());
+			gd.Add (new ScummMetaEngine ());
+			gd.Add (new Sword1MetaEngine ());
+			return gd;
+		}
 
-        private static GameLibrary CreateEmptyLibrary()
-        {
-            return new GameLibrary { Games = new Game[0] };
-        }
-    }
+		private static GameViewModel CreateGameViewModel (IGameDescriptor game)
+		{
+			return new GameViewModel (game.Description, game.Path);
+		}
+
+		private static string GetGameLibraryPath ()
+		{
+			var documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
+			var path = Path.Combine (documents, "games.json");
+			return path;
+		}
+
+		private static GameLibrary CreateEmptyLibrary ()
+		{
+			return new GameLibrary { Games = new Game[0] };
+		}
+	}
 }
 

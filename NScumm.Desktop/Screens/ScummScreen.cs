@@ -71,7 +71,7 @@ namespace NScumm
 
 				// init engines
 				engine = info.MetaEngine.Create (info, gfx, inputManager, audioDriver, saveFileManager);
-				engine.ShowMenuDialogRequested += OnShowMenuDialogRequested;
+					engine.ShowMenuDialogRequested += OnShowMenuDialogRequested;
 				game.Services.AddService (engine);
 
 				Task.Factory.StartNew (() => {

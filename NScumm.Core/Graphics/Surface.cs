@@ -80,7 +80,7 @@ namespace NScumm.Core.Graphics
         /// <param name="width">Width of the surface object.</param>
         /// <param name="height">Height of the surface objec.t</param>
         /// <param name="format">The pixel format the surface should use.</param>
-        public Surface(int width, int height, PixelFormat format, bool trick)
+        public Surface(int width, int height, PixelFormat format, bool trick=false)
         {
             if (width < 0)
                 throw new ArgumentOutOfRangeException("width", "Width should be positive");

@@ -1,0 +1,1028 @@
+//
+//  QueenEngine.cs
+//
+//  Author:
+//       scemino <scemino74@gmail.com>
+//
+//  Copyright (c) 2016 scemino
+//
+//  This program is free software: you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation, either version 3 of the License, or
+//  (at your option) any later version.
+//
+//  This program is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+//
+//  You should have received a copy of the GNU General Public License
+//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+using NScumm.Core.IO;
+using NScumm.Core;
+using System;
+using System.Collections.Generic;
+
+namespace NScumm.Queen
+{
+	public class AnimFrame
+	{
+		public ushort frame;
+		public ushort speed;
+	}
+
+	public class Person
+	{
+		//! actor settings to use
+		public ActorData actor;
+		//! actor name
+		public string name;
+		//! animation string
+		public string anim;
+		//! current frame
+		public ushort bobFrame;
+	}
+
+	public class BobSlot
+	{
+		public bool active;
+		//! current position
+		public short x, y;
+		//! bounding box
+		public Box box;
+		public bool xflip;
+		//! shrinking percentage
+		public ushort scale;
+		//! associated BobFrame
+		public ushort frameNum;
+		//! 'direction' for the next frame (-1, 1)
+		public int frameDir;
+
+		//! animation stuff
+		public bool animating;
+
+		public class Anim
+		{
+			public short speed, speedBak;
+
+			public class AnimFramePtr
+			{
+				AnimFrame[] _anims;
+
+				public int Pos;
+
+				public AnimFrame CurrentFrame { get { return _anims [Pos]; } }
+
+				public AnimFramePtr (AnimFrame[] anims)
+				{
+					_anims = anims;
+				}
+			}
+
+			//! string based animation
+			public class StringAnim
+			{
+				public AnimFramePtr buffer;
+				public AnimFramePtr curPos;
+			}
+
+			public StringAnim @string = new StringAnim ();
+
+			//! normal moving animation
+			public class NormalAnim
+			{
+				public bool rebound;
+				public ushort firstFrame, lastFrame;
+			}
+
+			public NormalAnim normal = new NormalAnim ();
+
+		}
+
+		public Anim anim = new Anim ();
+
+		public bool moving;
+		//! moving speed
+		public short speed;
+		//! move along x axis instead of y
+		public bool xmajor;
+		//! moving direction
+		public sbyte xdir, ydir;
+		//! destination point
+		public short endx, endy;
+		public ushort dx, dy;
+		public ushort total;
+
+		public void MoveOneStep ()
+		{
+			throw new NotImplementedException ();
+		}
+
+		public void AnimOneStep ()
+		{
+			if (anim.@string.buffer != null) {
+				--anim.speed;
+				if (anim.speed <= 0) {
+					// jump to next entry
+					++anim.@string.curPos.Pos;
+					ushort nextFrame = anim.@string.curPos.CurrentFrame.frame;
+					if (nextFrame == 0) {
+						anim.@string.curPos = anim.@string.buffer;
+						frameNum = anim.@string.curPos.CurrentFrame.frame;
+					} else {
+						frameNum = nextFrame;
+					}
+					anim.speed = (short)(anim.@string.curPos.CurrentFrame.speed / 4);
+				}
+			} else {
+				// normal looping animation
+				--anim.speed;
+				if (anim.speed == 0) {
+					anim.speed = anim.speedBak;
+
+					short nextFrame = (short)(frameNum + frameDir);
+					if (nextFrame > anim.normal.lastFrame || nextFrame < anim.normal.firstFrame) {
+						if (anim.normal.rebound) {
+							frameDir *= -1;
+						} else {
+							frameNum = (ushort)(anim.normal.firstFrame - 1);
+						}
+					}
+					frameNum = (ushort)(frameNum + frameDir);
+				}
+			}
+		}
+
+		public void Clear (Box defaultBox)
+		{
+			active = false;
+			xflip = false;
+			animating = false;
+			anim.@string.buffer = null;
+			moving = false;
+			scale = 100;
+			box = defaultBox;
+		}
+
+		public void CurPos (ushort xx, ushort yy)
+		{
+			active = true;
+			x = (short)xx;
+			y = (short)yy;
+		}
+
+		public void AnimNormal (ushort firstFrame, ushort lastFrame, ushort spd, bool rebound, bool flip)
+		{
+			active = true;
+			animating = true;
+			frameNum = firstFrame;
+			anim.speed = (short)spd;
+			anim.speedBak = (short)spd;
+			anim.@string.buffer = null;
+			anim.normal.firstFrame = firstFrame;
+			anim.normal.lastFrame = lastFrame;
+			anim.normal.rebound = rebound;
+			frameDir = 1;
+			xflip = flip;
+		}
+
+		public void AnimString (AnimFrame[] animBuf)
+		{
+			active = true;
+			animating = true;
+			anim.@string.buffer = new Anim.AnimFramePtr (animBuf);
+			anim.@string.curPos = new Anim.AnimFramePtr (animBuf);
+			;
+			frameNum = animBuf [0].frame;
+			anim.speed = (short)(animBuf [0].speed / 4);
+		}
+
+	}
+
+	public class BobFrame
+	{
+		public ushort width, height;
+		public ushort xhotspot, yhotspot;
+		public byte[] data;
+
+		public void Reset ()
+		{
+			width = 0;
+			height = 0;
+			xhotspot = 0;
+			yhotspot = 0;
+			if (data != null)
+				Array.Clear (data, 0, data.Length);
+		}
+	}
+
+	public class Graphics
+	{
+		private const int ARROW_BOB_UP = 62;
+		private const int ARROW_BOB_DOWN = 63;
+		private const int MAX_BOBS_NUMBER = 64;
+		private const int MAX_STRING_LENGTH = 255;
+		private const int MAX_STRING_SIZE = (MAX_STRING_LENGTH + 1);
+		private const int BOB_SHRINK_BUF_SIZE = 60000;
+
+		QueenEngine _vm;
+		Box _defaultBox;
+		Box _gameScreenBox;
+		Box _fullScreenBox;
+		/// <summary>
+		/// used to scale a BobFrame
+		/// </summary>
+		BobFrame _shrinkBuffer;
+		ushort[] _personFrames = new ushort[4];
+		/// <summary>
+		/// In-game objects/persons animations.
+		/// </summary>
+		AnimFrame[][] _newAnim;
+		/// <summary>
+		/// Cutaway objects/persons animations.
+		/// </summary>
+		AnimFrame[,] _cutAnim;
+
+		/// <summary>
+		/// Current number of frames unpacked.
+		/// </summary>
+		ushort _numFrames;
+
+		/// <summary>
+		/// Bob number followed by camera.
+		/// </summary>
+		int _cameraBob;
+
+		/// <summary>
+		/// Number of static furniture in current room.
+		/// </summary>
+		ushort _numFurnitureStatic;
+
+		/// <summary>
+		/// Number of animated furniture in current room
+		/// </summary>
+		ushort _numFurnitureAnimated;
+
+		/// <summary>
+		/// Total number of frames for the animated furniture
+		/// </summary>
+		ushort _numFurnitureAnimatedLen;
+
+		/// <summary>
+		/// Number of bobs to display.
+		/// </summary>
+		ushort _sortedBobsCount;
+		BobSlot[] _sortedBobs = new BobSlot[MAX_BOBS_NUMBER];
+
+		public BobSlot[] Bobs { get; private set; }
+
+		static readonly byte[] defaultAmigaCursor = {
+			0x00, 0x00, 0xFF, 0xC0,
+			0x7F, 0x80, 0x80, 0x40,
+			0x7F, 0x00, 0x80, 0x80,
+			0x7E, 0x00, 0x81, 0x00,
+			0x7F, 0x00, 0x80, 0x80,
+			0x7F, 0x80, 0x80, 0x40,
+			0x7F, 0xC0, 0x80, 0x20,
+			0x6F, 0xE0, 0x90, 0x10,
+			0x47, 0xF0, 0xA8, 0x08,
+			0x03, 0xF8, 0xC4, 0x04,
+			0x01, 0xFC, 0x02, 0x02,
+			0x00, 0xF8, 0x01, 0x04,
+			0x00, 0x70, 0x00, 0x88,
+			0x00, 0x20, 0x00, 0x50,
+			0x00, 0x00, 0x00, 0x20
+		};
+
+		public Graphics (QueenEngine vm)
+		{
+			_vm = vm;
+			_defaultBox = new Box (-1, -1, -1, -1);
+			_gameScreenBox = new Box (0, 0, Defines.GAME_SCREEN_WIDTH - 1, Defines.ROOM_ZONE_HEIGHT - 1);
+			_fullScreenBox = new Box (0, 0, Defines.GAME_SCREEN_WIDTH - 1, Defines.GAME_SCREEN_HEIGHT - 1);
+
+			_shrinkBuffer = new BobFrame ();
+			_shrinkBuffer.data = new byte[ BOB_SHRINK_BUF_SIZE ];
+			Bobs = new BobSlot [MAX_BOBS_NUMBER];
+			for (var i = 0; i < Bobs.Length; ++i) {
+				Bobs [i] = new BobSlot ();
+			}
+			_newAnim = new AnimFrame[17][];
+			for (int i = 0; i < 17; i++) {
+				_newAnim [i] = new AnimFrame[30];
+				for (int j = 0; j < 30; j++) {
+					_newAnim [i] [j] = new AnimFrame ();
+				}
+			}
+			_cutAnim = new AnimFrame[21, 30];
+			for (int i = 0; i < 21; i++) {
+				for (int j = 0; j < 30; j++) {
+					_cutAnim [i, j] = new AnimFrame ();
+				}
+			}
+		}
+
+		public void Update (ushort room)
+		{
+			SortBobs ();
+			if (_cameraBob >= 0) {
+				_vm.Display.HorizontalScrollUpdate (Bobs [_cameraBob].x);
+			}
+			HandleParallax (room);
+			_vm.Display.PrepareUpdate ();
+			DrawBobs ();
+		}
+
+		void DrawBobs ()
+		{
+			Box bobBox = _vm.Display.Fullscreen ? _fullScreenBox : _gameScreenBox;
+			for (int i = 0; i < _sortedBobsCount; ++i) {
+				BobSlot pbs = _sortedBobs [i];
+				if (pbs.active) {
+
+					BobFrame pbf = _vm.BankMan.FetchFrame (pbs.frameNum);
+					ushort xh, yh, x, y;
+
+					xh = pbf.xhotspot;
+					yh = pbf.yhotspot;
+
+					if (pbs.xflip) {
+						xh = (ushort)(pbf.width - xh);
+					}
+
+					// adjusts hot spots when object is scaled
+					if (pbs.scale != 100) {
+						xh = (ushort)((xh * pbs.scale) / 100);
+						yh = (ushort)((yh * pbs.scale) / 100);
+					}
+
+					// adjusts position to hot-spot and screen scroll
+					x = (ushort)(pbs.x - xh - _vm.Display.HorizontalScroll);
+					y = (ushort)(pbs.y - yh);
+
+					DrawBob (pbs, pbf, bobBox, (short)x, (short)y);
+				}
+			}
+		}
+
+		void DrawBob (BobSlot bs, BobFrame bf, Box bbox, short x, short y)
+		{
+			// TODO: debug(9, "Graphics::drawBob(%d, %d, %d)", bs.frameNum, x, y);
+
+			ushort w, h;
+			if (bs.scale < 100) {
+				ShrinkFrame (bf, bs.scale);
+				bf = _shrinkBuffer;
+			}
+			w = bf.width;
+			h = bf.height;
+
+			Box box = (bs.box == _defaultBox) ? bbox : bs.box;
+
+			if (w != 0 && h != 0 && box.Intersects (x, y, w, h)) {
+				var src = bf.data;
+				var s = 0;
+				ushort x_skip = 0;
+				ushort y_skip = 0;
+				ushort w_new = w;
+				ushort h_new = h;
+
+				// compute bounding box intersection with frame
+				if (x < box.x1) {
+					x_skip = (ushort)(box.x1 - x);
+					w_new -= x_skip;
+					x = box.x1;
+				}
+
+				if (y < box.y1) {
+					y_skip = (ushort)(box.y1 - y);
+					h_new -= y_skip;
+					y = box.y1;
+				}
+
+				if (x + w_new > box.x2 + 1) {
+					w_new = (ushort)(box.x2 - x + 1);
+				}
+
+				if (y + h_new > box.y2 + 1) {
+					h_new = (ushort)(box.y2 - y + 1);
+				}
+
+				s += w * y_skip;
+				if (!bs.xflip) {
+					s += x_skip;
+				} else {
+					s += w - w_new - x_skip;
+					x = (short)(x + w_new - 1);
+				}
+				_vm.Display.DrawBobSprite (src, s, x, y, w_new, h_new, w, bs.xflip);
+			}
+
+		}
+
+		void ShrinkFrame (BobFrame bf, ushort scale)
+		{
+			throw new NotImplementedException ();
+		}
+
+		void HandleParallax (ushort roomNum)
+		{
+			var screenScroll = _vm.Display.HorizontalScroll;
+			switch (roomNum) {
+			case Defines.ROOM_AMAZON_HIDEOUT:
+				Bobs [8].x = (short)(250 - screenScroll / 2);
+				break;
+			case Defines.ROOM_TEMPLE_MAZE_5:
+				Bobs [5].x = (short)(410 - screenScroll / 2);
+				Bobs [6].x = (short)(790 - screenScroll / 2);
+				break;
+			case Defines.ROOM_TEMPLE_OUTSIDE:
+				Bobs [5].x = (short)(320 - screenScroll / 2);
+				break;
+			case Defines.ROOM_TEMPLE_TREE:
+				Bobs [5].x = (short)(280 - screenScroll / 2);
+				break;
+			case Defines.ROOM_VALLEY_CARCASS:
+				Bobs [5].x = (short)(600 - screenScroll / 2);
+				break;
+			case Defines.ROOM_UNUSED_INTRO_1:
+				Bobs [5].x = (short)(340 - screenScroll / 2);
+				Bobs [6].x = (short)(50 - screenScroll / 2);
+				Bobs [7].x = (short)(79 - screenScroll / 2);
+				break;
+			case Defines.ROOM_CAR_CHASE:
+				_vm.Bam.UpdateCarAnimation ();
+				break;
+			case Defines.ROOM_FINAL_FIGHT:
+				_vm.Bam.UpdateFightAnimation ();
+				break;
+			case Defines.ROOM_INTRO_RITA_JOE_HEADS:
+				_cameraBob = -1;
+				if (screenScroll < 80) {
+					_vm.Display.HorizontalScroll = (short)(screenScroll + 4);
+					// Joe's body and head
+					Bobs [1].x += 4;
+					Bobs [20].x += 4;
+					// Rita's body and head
+					Bobs [2].x -= 2;
+					Bobs [21].x -= 2;
+				}
+				break;
+			case Defines.ROOM_INTRO_EXPLOSION:
+				Bobs [21].x += 2;
+				Bobs [21].y += 2;
+				break;
+			}
+		}
+
+		void SortBobs ()
+		{
+			_sortedBobsCount = 0;
+
+			// animate/move the bobs
+			for (var i = 0; i < Bobs.Length; ++i) {
+				BobSlot pbs = Bobs [i];
+				if (pbs.active) {
+					_sortedBobs [_sortedBobsCount] = pbs;
+					++_sortedBobsCount;
+
+					if (pbs.animating) {
+						pbs.AnimOneStep ();
+						if (pbs.frameNum > 500) { // SFX frame
+							// TODO: 
+//							_vm.Sound ().PlaySfx (_vm.logic ().currentRoomSfx ());
+							pbs.frameNum -= 500;
+						}
+					}
+					if (pbs.moving) {
+						int j;
+						for (j = 0; pbs.moving && j < pbs.speed; ++j) {
+							pbs.MoveOneStep ();
+						}
+					}
+				}
+			}
+			Array.Sort (_sortedBobs, 0, _sortedBobsCount, BobSlotComparer.Instance);
+		}
+
+		class BobSlotComparer: Comparer<BobSlot>
+		{
+			public static readonly BobSlotComparer Instance = new BobSlotComparer ();
+
+			public override int Compare (BobSlot x, BobSlot y)
+			{
+				int d = x.y - y.y;
+				// As the qsort() function may reorder "equal" elements,
+				// we use the bob slot number when needed. This is required
+				// during the introduction, to hide a crate behind the clock.
+				if (d == 0) {
+					d = -1;
+				}
+				return d;
+			}
+		}
+
+		public void DrawInventoryItem (uint frameNum, ushort x, ushort y)
+		{
+			if (frameNum != 0) {
+				var bf = _vm.BankMan.FetchFrame (frameNum);
+				_vm.Display.DrawInventoryItem (bf.data, x, y, bf.width, bf.height);
+			} else {
+				_vm.Display.DrawInventoryItem (null, x, y, 32, 32);
+			}
+		}
+
+		public void EraseAllAnims ()
+		{
+			for (int i = 1; i <= 16; ++i) {
+				_newAnim [i] [0].frame = 0;
+			}
+		}
+
+		public void ClearPersonFrames ()
+		{
+			Array.Clear (_personFrames, 0, _personFrames.Length);
+		}
+
+		public void SetupNewRoom (string room, ushort roomNum, short[] furniture, ushort furnitureCount)
+		{
+			// reset sprites table
+			ClearBobs ();
+
+			// load/setup objects associated to this room
+			string filename = $"{room}.BBK";
+			_vm.BankMan.Load (filename, 15);
+
+			_numFrames = Defines.FRAMES_JOE + 1;
+			SetupRoomFurniture (furniture, furnitureCount);
+			SetupRoomObjects ();
+
+			if (roomNum >= 90) {
+				PutCameraOnBob (0);
+			}
+		}
+
+		public void PutCameraOnBob (int bobNum)
+		{
+			_cameraBob = bobNum;
+		}
+
+		void SetupRoomObjects ()
+		{
+			ushort i;
+			// furniture frames are reserved in ::setupRoomFurniture(), we append objects
+			// frames after the furniture ones.
+			ushort curImage = (ushort)(Defines.FRAMES_JOE + _numFurnitureStatic + _numFurnitureAnimatedLen);
+			ushort firstRoomObj = (ushort)(_vm.Logic.CurrentRoomData + 1);
+			ushort lastRoomObj = _vm.Logic.RoomData [_vm.Logic.CurrentRoom + 1];
+			ushort numObjectStatic = 0;
+			ushort numObjectAnimated = 0;
+			ushort curBob;
+
+			// invalidates all Bobs for persons (except Joe's one)
+			for (i = 1; i <= 3; ++i) {
+				Bobs [i].active = false;
+			}
+
+			// static/animated Bobs
+			for (i = firstRoomObj; i <= lastRoomObj; ++i) {
+				ObjectData pod = _vm.Logic.ObjectData [i];
+				// setup blanks bobs for turned off objects (in case
+				// you turn them on again)
+				if (pod.image == -1) {
+					// static OFF Bob
+					curBob = (ushort)(20 + _numFurnitureStatic + numObjectStatic);
+					++numObjectStatic;
+					// create a blank frame for the OFF object
+					++_numFrames;
+					++curImage;
+				} else if (pod.image == -2) {
+					// animated OFF Bob
+					curBob = (ushort)(5 + _numFurnitureAnimated + numObjectAnimated);
+					++numObjectAnimated;
+				} else if (pod.image > 0 && pod.image < 5000) {
+					GraphicData pgd = _vm.Logic.GraphicData [pod.image];
+					short lastFrame = pgd.lastFrame;
+					bool rebound = false;
+					if (lastFrame < 0) {
+						lastFrame = (short)-lastFrame;
+						rebound = true;
+					}
+					if (pgd.firstFrame < 0) {
+						curBob = (ushort)(5 + _numFurnitureAnimated);
+						SetupObjectAnim (pgd, (ushort)(curImage + 1), (ushort)(curBob + numObjectAnimated), pod.name > 0);
+						curImage = (ushort)(curImage + pgd.lastFrame);
+						++numObjectAnimated;
+					} else if (lastFrame != 0) {
+						// animated objects
+						ushort j;
+						ushort firstFrame = (ushort)(curImage + 1);
+						for (j = (ushort)pgd.firstFrame; j <= lastFrame; ++j) {
+							++curImage;
+							_vm.BankMan.Unpack (j, curImage, 15);
+							++_numFrames;
+						}
+						curBob = (ushort)(5 + _numFurnitureAnimated + numObjectAnimated);
+						if (pod.name > 0) {
+							BobSlot pbs = Bobs [curBob];
+							pbs.CurPos (pgd.x, pgd.y);
+							pbs.frameNum = firstFrame;
+							if (pgd.speed > 0) {
+								pbs.AnimNormal (firstFrame, curImage, (ushort)(pgd.speed / 4), rebound, false);
+							}
+						}
+						++numObjectAnimated;
+					} else {
+						// static objects
+						curBob = (ushort)(20 + _numFurnitureStatic + numObjectStatic);
+						++curImage;
+						Bobs [curBob].Clear (_defaultBox);
+						_vm.BankMan.Unpack ((uint)pgd.firstFrame, curImage, 15);
+						++_numFrames;
+						if (pod.name > 0) {
+							BobSlot pbs = Bobs [curBob];
+							pbs.CurPos (pgd.x, pgd.y);
+							pbs.frameNum = curImage;
+						}
+						++numObjectStatic;
+					}
+				}
+			}
+
+			// persons Bobs
+			for (i = firstRoomObj; i <= lastRoomObj; ++i) {
+				ObjectData pod = _vm.Logic.ObjectData [i];
+				if (pod.image == -3 || pod.image == -4) {
+					// TODO: debug(6, "Graphics::setupRoomObjects() - Setting up person %X, name=%X", i, pod.name);
+					ushort noun = (ushort)(i - _vm.Logic.CurrentRoomData);
+					if (pod.name > 0) {
+						curImage = SetupPerson (noun, curImage);
+					} else {
+						curImage = AllocPerson (noun, curImage);
+					}
+				}
+			}
+
+			// paste downs list
+			++curImage;
+			_numFrames = curImage;
+			for (i = firstRoomObj; i <= lastRoomObj; ++i) {
+				ObjectData pod = _vm.Logic.ObjectData [i];
+				if (pod.name > 0 && pod.image > 5000) {
+					PasteBob ((ushort)(pod.image - 5000), curImage);
+				}
+			}
+
+		}
+
+		ushort AllocPerson (ushort noun, ushort curImage)
+		{
+			Person p;
+			if (_vm.Logic.InitPerson (noun, "", false, out p) && p.anim != null) {
+				curImage += CountAnimFrames (p.anim);
+				_personFrames [p.actor.bobNum] = (ushort)(curImage + 1);
+			}
+			return curImage;
+		}
+
+		ushort CountAnimFrames (string anim)
+		{
+			var afbuf = new AnimFrame[30];
+			FillAnimBuffer (anim, afbuf);
+
+			var frames = new bool[256];
+			ushort count = 0;
+			var af = 0;
+			for (; afbuf [af].frame != 0; ++af) {
+				ushort frameNum = afbuf [af].frame;
+				if (frameNum > 500) {
+					frameNum -= 500;
+				}
+				if (!frames [frameNum]) {
+					frames [frameNum] = true;
+					++count;
+				}
+			}
+			return count;
+		}
+
+		ushort SetupPerson (ushort noun, ushort curImage)
+		{
+			if (noun == 0) {
+				// TODO: warning("Trying to setup person 0");
+				return curImage;
+			}
+
+			Person p;
+			if (!_vm.Logic.InitPerson (noun, "", true, out p)) {
+				return curImage;
+			}
+
+			ActorData pad = p.actor;
+			ushort scale = 100;
+			ushort a = _vm.Grid.FindAreaForPos (GridScreen.ROOM, pad.x, pad.y);
+			if (a != 0) {
+				// person is not standing in the area box, scale it accordingly
+				scale = _vm.Grid.Areas [_vm.Logic.CurrentRoom, a].CalcScale ((short)pad.y);
+			}
+
+			_vm.BankMan.Unpack (pad.bobFrameStanding, p.bobFrame, p.actor.bankNum);
+			ushort obj = (ushort)(_vm.Logic.CurrentRoomData + noun);
+			BobSlot pbs = Bobs [pad.bobNum];
+			pbs.CurPos (pad.x, pad.y);
+			pbs.scale = scale;
+			pbs.frameNum = p.bobFrame;
+			pbs.xflip = (_vm.Logic.ObjectData [obj].image == -3); // person is facing left
+
+			// TODO: debug(6, "Graphics::setupPerson(%d, %d) - bob = %d name = %s", noun, curImage, pad.bobNum, p.name);
+
+			if (p.anim != null) {
+				curImage = SetupPersonAnim (pad, p.anim, curImage);
+			} else {
+				ErasePersonAnim ((ushort)pad.bobNum);
+			}
+			return curImage;
+		}
+
+		void ErasePersonAnim (ushort bobNum)
+		{
+			_newAnim [bobNum] [0].frame = 0;
+			BobSlot pbs = Bobs [bobNum];
+			pbs.animating = false;
+			pbs.anim.@string.buffer = null;
+		}
+
+		ushort SetupPersonAnim (ActorData ad, string anim, ushort curImage)
+		{
+			// TODO: debug(9, "Graphics::setupPersonAnim(%s, %d)", anim, curImage);
+			_personFrames [ad.bobNum] = (ushort)(curImage + 1);
+
+			var animFrames = _newAnim [ad.bobNum];
+			FillAnimBuffer (anim, animFrames);
+			ushort[] frameCount = new ushort[256];
+			AnimFrame[] af = animFrames;
+			var a = 0;
+			for (; af [a].frame != 0; ++a) {
+				ushort frameNum = af [a].frame;
+				if (frameNum > 500) {
+					frameNum -= 500;
+				}
+				if (frameCount [frameNum] == 0) {
+					frameCount [frameNum] = 1;
+				}
+			}
+			ushort i, n = 1;
+			for (i = 1; i < 256; ++i) {
+				if (frameCount [i] != 0) {
+					frameCount [i] = n;
+					++n;
+				}
+			}
+			a = 0;
+			for (; af [a].frame != 0; ++a) {
+				if (af [a].frame > 500) {
+					af [a].frame = (ushort)(curImage + frameCount [af [a].frame - 500] + 500);
+				} else {
+					af [a].frame = (ushort)(curImage + frameCount [af [a].frame]);
+				}
+			}
+
+			// unpack necessary frames
+			for (i = 1; i < 256; ++i) {
+				if (frameCount [i] != 0) {
+					++curImage;
+					_vm.BankMan.Unpack (i, curImage, ad.bankNum);
+				}
+			}
+
+			// start animation
+			Bobs [ad.bobNum].AnimString (af);
+			return curImage;
+		}
+
+		void FillAnimBuffer (string anim, AnimFrame[] af)
+		{
+			var i = 0;
+			for (;;) {
+				// anim frame format is "%3hu,%3hu," (frame number, frame speed)
+				af [i].frame = ushort.Parse (anim);
+				anim += 4;
+				af [i].speed = ushort.Parse (anim);
+				anim += 4;
+				if (af [i].frame == 0)
+					break;
+				++i;
+			}
+		}
+
+		void SetupObjectAnim (GraphicData gd, ushort firstImage, ushort bobNum, bool visible)
+		{
+			short[] tempFrames = new short[20];
+			ushort numTempFrames = 0;
+			ushort i, j;
+			for (i = 1; i <= _vm.Logic.GraphicAnimCount; ++i) {
+				GraphicAnim pga = _vm.Logic.GraphicAnim [i];
+				if (pga.keyFrame == gd.firstFrame) {
+					short frame = pga.frame;
+					if (frame > 500) { // SFX
+						frame -= 500;
+					}
+					bool foundMatchingFrame = false;
+					for (j = 0; j < numTempFrames; ++j) {
+						if (tempFrames [j] == frame) {
+							foundMatchingFrame = true;
+							break;
+						}
+					}
+					if (!foundMatchingFrame) {
+						// TODO: assert (numTempFrames < 20);
+						tempFrames [numTempFrames] = frame;
+						++numTempFrames;
+					}
+				}
+			}
+
+			// sort found frames ascending
+			bool swap = true;
+			while (swap) {
+				swap = false;
+				for (i = 0; i < numTempFrames - 1; ++i) {
+					if (tempFrames [i] > tempFrames [i + 1]) {
+						ScummHelper.Swap (ref tempFrames [i], ref tempFrames [i + 1]);
+						swap = true;
+					}
+				}
+			}
+
+			// queen.c l.962-980 / l.1269-1294
+			for (i = 0; i < gd.lastFrame; ++i) {
+				_vm.BankMan.Unpack ((uint)Math.Abs (tempFrames [i]), (uint)(firstImage + i), 15);
+			}
+			BobSlot pbs = Bobs [bobNum];
+			pbs.animating = false;
+			if (visible) {
+				pbs.CurPos (gd.x, gd.y);
+				if (tempFrames [0] < 0) {
+					pbs.xflip = true;
+				}
+				var paf = _newAnim [bobNum];
+				var p = 0;
+				for (i = 1; i <= _vm.Logic.GraphicAnimCount; ++i) {
+					GraphicAnim pga = _vm.Logic.GraphicAnim [i];
+					if (pga.keyFrame == gd.firstFrame) {
+						ushort frameNr = 0;
+						for (j = 1; j <= gd.lastFrame; ++j) {
+							if (pga.frame > 500) {
+								if (pga.frame - 500 == tempFrames [j - 1]) {
+									frameNr = (ushort)(j + firstImage - 1 + 500);
+								}
+							} else if (pga.frame == tempFrames [j - 1]) {
+								frameNr = (ushort)(j + firstImage - 1);
+							}
+						}
+						paf [p].frame = frameNr;
+						paf [p].speed = pga.speed;
+						++p;
+					}
+				}
+				paf [p].frame = 0;
+				paf [p].speed = 0;
+				pbs.AnimString (_newAnim [bobNum]);
+			}
+		}
+
+		void SetupRoomFurniture (short[] furniture, ushort furnitureCount)
+		{
+			ushort i;
+			ushort curImage = Defines.FRAMES_JOE;
+
+			// unpack the static bobs
+			_numFurnitureStatic = 0;
+			for (i = 1; i <= furnitureCount; ++i) {
+				var obj = furniture [i];
+				if (obj > 0 && obj <= 5000) {
+					GraphicData pgd = _vm.Logic.GraphicData [obj];
+					if (pgd.lastFrame == 0) {
+						++_numFurnitureStatic;
+						++curImage;
+						_vm.BankMan.Unpack ((uint)pgd.firstFrame, curImage, 15);
+						++_numFrames;
+						BobSlot pbs = Bobs [19 + _numFurnitureStatic];
+						pbs.CurPos (pgd.x, pgd.y);
+						pbs.frameNum = curImage;
+					}
+				}
+			}
+
+			// unpack the animated bobs
+			_numFurnitureAnimated = 0;
+			_numFurnitureAnimatedLen = 0;
+			ushort curBob = 0;
+			for (i = 1; i <= furnitureCount; ++i) {
+				ushort obj = (ushort)furniture [i];
+				if (obj > 0 && obj <= 5000) {
+					GraphicData pgd = _vm.Logic.GraphicData [obj];
+
+					bool rebound = false;
+					short lastFrame = pgd.lastFrame;
+					if (lastFrame < 0) {
+						rebound = true;
+						lastFrame = (short)-lastFrame;
+					}
+
+					if (lastFrame > 0) {
+						_numFurnitureAnimatedLen = (ushort)(_numFurnitureAnimatedLen + lastFrame - pgd.firstFrame + 1);
+						++_numFurnitureAnimated;
+						ushort image = (ushort)(curImage + 1);
+						int k;
+						for (k = pgd.firstFrame; k <= lastFrame; ++k) {
+							++curImage;
+							_vm.BankMan.Unpack ((uint)k, curImage, 15);
+							++_numFrames;
+						}
+						BobSlot pbs = Bobs [5 + curBob];
+						pbs.AnimNormal (image, curImage, (ushort)(pgd.speed / 4), rebound, false);
+						pbs.CurPos (pgd.x, pgd.y);
+						++curBob;
+					}
+				}
+			}
+
+			// unpack the paste downs
+			for (i = 1; i <= furnitureCount; ++i) {
+				if (furniture [i] > 5000) {
+					PasteBob ((ushort)(furniture [i] - 5000), (ushort)(curImage + 1));
+				}
+			}
+
+		}
+
+		void PasteBob (ushort objNum, ushort image)
+		{
+			GraphicData pgd = _vm.Logic.GraphicData [objNum];
+			_vm.BankMan.Unpack ((uint)pgd.firstFrame, image, 15);
+			BobFrame bf = _vm.BankMan.FetchFrame (image);
+			_vm.Display.DrawBobPasteDown (bf.data, pgd.x, pgd.y, bf.width, bf.height);
+			_vm.BankMan.EraseFrame (image);
+		}
+
+		private void ClearBobs ()
+		{
+			for (var i = 0; i < Bobs.Length; ++i) {
+				Bobs [i].Clear (_defaultBox);
+			}
+		}
+
+		public void UnpackControlBank ()
+		{
+			if (_vm.Resource.Platform == Platform.DOS) {
+				_vm.BankMan.Load ("CONTROL.BBK", 17);
+
+				// unpack mouse pointer frame
+				_vm.BankMan.Unpack (1, 1, 17);
+
+				// unpack arrows frames and change hotspot to be always on top
+				_vm.BankMan.Unpack (3, 3, 17);
+				_vm.BankMan.FetchFrame (3).yhotspot += 200;
+				_vm.BankMan.Unpack (4, 4, 17);
+				_vm.BankMan.FetchFrame (4).yhotspot += 200;
+
+				_vm.BankMan.Close (17);
+			}
+		}
+
+		public void SetupMouseCursor ()
+		{
+			if (_vm.Resource.Platform == Platform.Amiga) {
+					
+				byte[] cursorData = new byte[16 * 15];
+				var src = defaultAmigaCursor;
+				var srcPos = 0;
+				int i = 0;
+				for (int h = 0; h < 15; ++h) {
+					for (int b = 0; b < 16; ++b) {
+						ushort mask = (ushort)(1 << (15 - b));
+						byte color = 0;
+						if ((src.ToUInt16BigEndian (srcPos) & mask) != 0) {
+							color |= 2;
+						}
+						if ((src.ToUInt16BigEndian (srcPos + 2) & mask) != 0) {
+							color |= 1;
+						}
+						if (color != 0) {
+							cursorData [i] = (byte)(0x90 + color - 1);
+						}
+						++i;
+					}
+					srcPos += 4;
+				}
+				_vm.Display.SetMouseCursor (cursorData, 16, 15);
+			} else {
+				BobFrame bf = _vm.BankMan.FetchFrame (1);
+				_vm.Display.SetMouseCursor (bf.data, bf.width, bf.height);
+			}
+		}
+
+	}
+}
+

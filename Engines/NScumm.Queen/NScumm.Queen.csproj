@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectTypeGuids>{786C830F-07A1-408B-BD7F-6EE04809D6DB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <ProjectGuid>{E10DD77E-F6F2-4F3B-AD40-A7A27FC96C7B}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>NScumm.Queen</RootNamespace>
+    <AssemblyName>NScumm.Queen</AssemblyName>
+    <TargetFrameworkProfile>Profile344</TargetFrameworkProfile>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\..\NScumm.Desktop\bin\Debug\plugins</OutputPath>
+    <DefineConstants>DEBUG;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>full</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\..\NScumm.Desktop\bin\Debug\plugins</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="QueenMetaEngine.cs" />
+    <Compile Include="Resource.cs" />
+    <Compile Include="Defines.cs" />
+    <Compile Include="Resource.Table.cs" />
+    <Compile Include="QueenEngine.cs" />
+    <Compile Include="BamScene.cs" />
+    <Compile Include="BankManager.cs" />
+    <Compile Include="Command.cs" />
+    <Compile Include="Display.cs" />
+    <Compile Include="Graphics.cs" />
+    <Compile Include="Box.cs" />
+    <Compile Include="Grid.cs" />
+    <Compile Include="Input.cs" />
+    <Compile Include="LogicGame.cs" />
+    <Compile Include="Journal.cs" />
+    <Compile Include="ObjectData.cs" />
+    <Compile Include="ItemData.cs" />
+    <Compile Include="GraphicData.cs" />
+    <Compile Include="WalkOffData.cs" />
+    <Compile Include="ObjectDescription.cs" />
+    <Compile Include="FurnitureData.cs" />
+    <Compile Include="ActorData.cs" />
+    <Compile Include="GraphicAnim.cs" />
+    <Compile Include="Area.cs" />
+    <Compile Include="CmdListData.cs" />
+    <Compile Include="CmdObject.cs" />
+    <Compile Include="CmdArea.cs" />
+    <Compile Include="CmdInventory.cs" />
+    <Compile Include="CmdGameState.cs" />
+    <Compile Include="Walk.cs" />
+    <Compile Include="Credits.cs" />
+    <Compile Include="Cutaway.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
+  <ItemGroup>
+    <ProjectReference Include="..\..\NScumm.Core\NScumm.Core.csproj">
+      <Project>{8E7A9E5B-D7EB-4DA1-8EE7-A5D8DE202372}</Project>
+      <Name>NScumm.Core</Name>
+    </ProjectReference>
+  </ItemGroup>
+</Project>

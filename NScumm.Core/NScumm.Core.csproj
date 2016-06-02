@@ -167,6 +167,9 @@
     <Compile Include="Video\Track.cs" />
     <Compile Include="Video\VideoDecoder.cs" />
     <Compile Include="Video\VideoTrack.cs" />
+    <Compile Include="Common\Language.cs" />
+    <Compile Include="Common\SeekableSubReadStream.cs" />
+    <Compile Include="Image\PCXDecoder.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <ItemGroup>
@@ -174,5 +177,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Video\PsxStreamDecoder.Video.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Image\" />
   </ItemGroup>
 </Project>

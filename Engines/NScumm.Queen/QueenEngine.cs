@@ -52,6 +52,7 @@ namespace NScumm.Queen
         QueenSystem _system;
 
         int _lastUpdateTime, _lastSaveTime;
+        Mixer _mixer;
 
         public Logic Logic { get; private set; }
 
@@ -75,6 +76,8 @@ namespace NScumm.Queen
 
         public Random Randomizer { get; private set; }
 
+        public Sound Sound { get; private set; }
+
         public bool HasToQuit { get; set; }
 
         public bool IsPaused { get; set; }
@@ -90,6 +93,8 @@ namespace NScumm.Queen
             Randomizer = new Random();
 			_settings = settings;
 			_system = new QueenSystem (gfxManager, inputManager, saveFileManager);
+            _mixer = new Mixer(44100);
+            output.SetSampleProvider(_mixer);
 		}
 
 		public event EventHandler ShowMenuDialogRequested;
@@ -168,7 +173,7 @@ namespace NScumm.Queen
 			Logic = new LogicGame (this);
 //			}
 
-			// TODO: _sound = Sound::makeSoundInstance(_mixer, this, _resource.getCompression());
+            Sound = Sound.MakeSoundInstance(_mixer, this, Resource.Compression);
 
 			Walk = new Walk(this);
 			//_talkspeedScale = (MAX_TEXT_SPEED - MIN_TEXT_SPEED) / 255.0;

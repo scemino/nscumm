@@ -118,6 +118,8 @@ namespace NScumm.Queen
 
         public short[] GameState { get; private set; }
 
+        public ushort CurrentRoomSfx { get { return _sfxName[CurrentRoom]; }}
+
         public ushort NewRoom
         {
             get;
@@ -261,11 +263,15 @@ namespace NScumm.Queen
             }
         }
 
-        public void JoeWalk(JoeWalkMode walking)
+        public JoeWalkMode JoeWalk
         {
-            _joe.walk = walking;
-            // Do this so that Input doesn't need to know the walk value
-            _vm.Input.DialogueRunning(JoeWalkMode.SPEAK == walking);
+            set
+            {
+                _joe.walk = value;
+                // Do this so that Input doesn't need to know the walk value
+                _vm.Input.DialogueRunning(JoeWalkMode.SPEAK == value);
+            }
+            get { return _joe.walk; }
         }
 
         public void StartDialogue(string dlgFile, int personInRoom, out string cutaway)
@@ -414,9 +420,10 @@ namespace NScumm.Queen
             return framenum;
         }
 
-        public void StartCredits(string str)
+        public void StartCredits(string filename)
         {
-            throw new NotImplementedException();
+            StopCredits();
+            // TODO: _credits = new Credits(_vm, filename);
         }
 
         public ushort FindBob(short obj)
@@ -524,6 +531,29 @@ namespace NScumm.Queen
             return bobnum;
         }
 
+        public ushort ObjectForPerson(ushort bobNum)
+        {
+            ushort bobcur = 0;
+            // first object number in the room
+            ushort cur = (ushort)(CurrentRoomData + 1);
+            // last object number in the room
+            ushort last = _roomData[CurrentRoom + 1];
+            for (; cur <= last; ++cur)
+            {
+                short image = ObjectData[cur].image;
+                if (image == -3 || image == -4)
+                {
+                    // the object is a bob
+                    ++bobcur;
+                }
+                if (bobcur == bobNum)
+                {
+                    return cur;
+                }
+            }
+            return 0;
+        }
+
         public void ObjectCopy(short dummyObjectIndex, short realObjectIndex)
         {
             // copy data from dummy object to real object, if COPY_FROM object
@@ -586,12 +616,66 @@ namespace NScumm.Queen
 
         public void RemoveHotelItemsFromInventory()
         {
-            throw new NotImplementedException();
+            if (CurrentRoom == 1 && GameState[Defines.VAR_HOTEL_ITEMS_REMOVED] == 0)
+            {
+                InventoryDeleteItem(Item.ITEM_CROWBAR, false);
+                InventoryDeleteItem(Item.ITEM_DRESS, false);
+                InventoryDeleteItem(Item.ITEM_CLOTHES, false);
+                InventoryDeleteItem(Item.ITEM_HAY, false);
+                InventoryDeleteItem(Item.ITEM_OIL, false);
+                InventoryDeleteItem(Item.ITEM_CHICKEN, false);
+                GameState[Defines.VAR_HOTEL_ITEMS_REMOVED] = 1;
+                InventoryRefresh();
+            }
+        }
+
+        private void InventoryDeleteItem(Item itemNum, bool refresh = true)
+        {
+            Item item = itemNum;
+            _itemData[(int)itemNum].name = (short)-Math.Abs(_itemData[(int)itemNum].name);    //set invisible
+            for (int i = 0; i < 4; i++)
+            {
+                item = NextInventoryItem(item);
+                _inventoryItem[i] = item;
+                RemoveDuplicateItems();
+            }
+
+            if (refresh)
+                InventoryRefresh();
+        }
+
+        private void RemoveDuplicateItems()
+        {
+            for (int i = 0; i < 4; i++)
+                for (int j = i + 1; j < 4; j++)
+                    if (_inventoryItem[i] == _inventoryItem[j])
+                        _inventoryItem[j] = Item.ITEM_NONE;
+        }
+
+        private Item NextInventoryItem(Item first)
+        {
+            short i;
+            for (i = (short)(first + 1); i < _numItems; i++)
+                if (_itemData[i].name > 0)
+                    return (Item)i;
+            for (i = 1; i < (int)first; i++)
+                if (_itemData[i].name > 0)
+                    return (Item)i;
+
+            return 0;   //nothing found
         }
 
         public void SceneStop()
         {
-            throw new NotImplementedException();
+            D.Debug(6, $"[Logic::sceneStop] _scene = {_scene}");
+            _scene--;
+
+            if (_scene > 0)
+                return;
+
+            _vm.Display.PalSetAllDirty();
+            _vm.Display.ShowMouseCursor(true);
+            _vm.Grid.SetupPanel();
         }
 
         public void ExecuteSpecialMove(short sm)
@@ -1444,19 +1528,63 @@ namespace NScumm.Queen
         }
 
 
-        void JoeUseDress(bool v)
+        void JoeUseDress(bool showCut)
         {
-            throw new NotImplementedException();
+            if (showCut)
+            {
+                JoeFacing = Direction.FRONT;
+                JoeFace();
+                if (GameState[Defines.VAR_JOE_DRESSING_MODE] == 0)
+                {
+                    PlayCutaway("CDRES.CUT");
+                    InventoryInsertItem(Item.ITEM_CLOTHES);
+                }
+                else
+                {
+                    PlayCutaway("CUDRS.CUT");
+                }
+            }
+            _vm.Display.PalSetJoeDress();
+            LoadJoeBanks("JOED_A.BBK", "JOED_B.BBK");
+            InventoryDeleteItem(Item.ITEM_DRESS);
+            GameState[Defines.VAR_JOE_DRESSING_MODE] = 2;
         }
 
-        void JoeUseClothes(bool v)
+        private void InventoryInsertItem(Item itemNum, bool refresh = true)
         {
-            throw new NotImplementedException();
+            Item item = _inventoryItem[0] = itemNum;
+            _itemData[(int)itemNum].name = Math.Abs(_itemData[(int)itemNum].name); //set visible
+            for (int i = 1; i < 4; i++)
+            {
+                item = NextInventoryItem(item);
+                _inventoryItem[i] = item;
+                RemoveDuplicateItems();
+            }
+
+            if (refresh)
+                InventoryRefresh();
         }
 
-        void JoeUseUnderwear()
+        private void JoeUseClothes(bool showCut)
         {
-            throw new NotImplementedException();
+            if (showCut)
+            {
+                JoeFacing = Direction.FRONT;
+                JoeFace();
+                PlayCutaway("CDCLO.CUT");
+                InventoryInsertItem(Item.ITEM_DRESS);
+            }
+            _vm.Display.PalSetJoeNormal();
+            LoadJoeBanks("JOE_A.BBK", "JOE_B.BBK");
+            InventoryDeleteItem(Item.ITEM_CLOTHES);
+            GameState[Defines.VAR_JOE_DRESSING_MODE] = 0;
+        }
+
+        private void JoeUseUnderwear()
+        {
+            _vm.Display.PalSetJoeNormal();
+            LoadJoeBanks("JOEU_A.BBK", "JOEU_B.BBK");
+            GameState[Defines.VAR_JOE_DRESSING_MODE] = 1;
         }
     }
 

@@ -315,6 +315,10 @@ namespace NScumm.Queen
 
     public class Graphics
     {
+        public const int BOB_OBJ1 = 5;
+        public const int BOB_OBJ2 = 6;
+        public const int BOB_FX = 7;
+            
         private const int ARROW_BOB_UP = 62;
         private const int ARROW_BOB_DOWN = 63;
         private const int MAX_BOBS_NUMBER = 64;
@@ -450,18 +454,18 @@ namespace NScumm.Queen
             // to lines in reverse
             if (_vm.Resource.Language == Language.HE_ISR)
             {
-            //    for (i = length - 1; i >= 0; i--)
-            //    {
-            //        lineLength++;
+                //    for (i = length - 1; i >= 0; i--)
+                //    {
+                //        lineLength++;
 
-            //        if ((lineLength > 20 && textCopy[i] == ' ') || i == 0)
-            //        {
-            //            memcpy(lines[lineCount], textCopy + i, lineLength);
-            //            lines[lineCount][lineLength] = '\0';
-            //            lineCount++;
-            //            lineLength = 0;
-            //        }
-            //    }
+                //        if ((lineLength > 20 && textCopy[i] == ' ') || i == 0)
+                //        {
+                //            memcpy(lines[lineCount], textCopy + i, lineLength);
+                //            lines[lineCount][lineLength] = '\0';
+                //            lineCount++;
+                //            lineLength = 0;
+                //        }
+                //    }
             }
             else
             {
@@ -492,7 +496,7 @@ namespace NScumm.Queen
 
             short x, y, width;
 
-            if (flags!=0)
+            if (flags != 0)
             {
                 if (flags == 2)
                     x = (short)(160 - maxLineWidth / 2);
@@ -527,7 +531,7 @@ namespace NScumm.Queen
                 else
                     x = (short)(x - width / 2 + maxLineWidth);
             }
-            else if (flags==0)
+            else if (flags == 0)
                 x = (short)(x - maxLineWidth / 2);
 
             if (x < 0)
@@ -792,9 +796,35 @@ namespace NScumm.Queen
 
         }
 
-        void ShrinkFrame(BobFrame bf, ushort scale)
+        void ShrinkFrame(BobFrame bf, ushort percentage)
         {
-            throw new NotImplementedException();
+            // computing new size, rounding to upper value
+            ushort new_w = (ushort)((bf.width * percentage + 50) / 100);
+            ushort new_h = (ushort)((bf.height * percentage + 50) / 100);
+            // TODO: assert(new_w * new_h < BOB_SHRINK_BUF_SIZE);
+
+            if (new_w != 0 && new_h != 0)
+            {
+                _shrinkBuffer.width = new_w;
+                _shrinkBuffer.height = new_h;
+
+                ushort x, y;
+                ushort[] sh = new ushort[Defines.GAME_SCREEN_WIDTH];
+                for (x = 0; x < Math.Max(new_h, new_w); ++x)
+                {
+                    sh[x] = (ushort)(x * 100 / percentage);
+                }
+                var dst = _shrinkBuffer.data;
+                var d = 0;
+                for (y = 0; y < new_h; ++y)
+                {
+                    var p = sh[y] * bf.width;
+                    for (x = 0; x < new_w; ++x)
+                    {
+                        dst[d++] = bf.data[p + sh[x]];
+                    }
+                }
+            }
         }
 
         void HandleParallax(ushort roomNum)

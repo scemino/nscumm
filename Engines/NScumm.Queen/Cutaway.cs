@@ -1203,10 +1203,7 @@ namespace NScumm.Queen
 
         }
 
-        bool InRange(short image, int i, int i2)
-        {
-            throw new NotImplementedException();
-        }
+        public bool InRange(short x, short l, short h) { return (x <= h && x >= l); }
 
         void ChangeRooms(CutawayObject @object)
         {

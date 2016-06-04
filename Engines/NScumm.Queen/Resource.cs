@@ -137,7 +137,9 @@ namespace NScumm.Queen
 		public bool IsFloppy { get {return _version.features.HasFlag(GameFeatures.FLOPPY); }}
 		public bool IsCD { get {return _version.features.HasFlag(GameFeatures.TALKIE); }}
 
-		BinaryReader _resourceFile;
+        public byte Compression { get { return _version.compression;} }
+
+        BinaryReader _resourceFile;
 		int _currentResourceFileNum;
 		DetectedGameVersion _version;
 		ushort _resourceEntries;

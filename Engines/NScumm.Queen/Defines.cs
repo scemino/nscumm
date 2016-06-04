@@ -27,6 +27,7 @@ using System.Globalization;
 
 namespace NScumm.Queen
 {
+    
 	static class Defines
 	{
 		public const int GAME_SCREEN_WIDTH = 320;

@@ -208,7 +208,7 @@ namespace NScumm.Queen
             D.Debug(9, $"BankManager::fetchFrame({index})");
             // TODO: assert(index < MAX_FRAMES_NUMBER);
             BobFrame bf = _frames[index];
-            // TODO: assert((bf->width == 0 && bf->height == 0) || bf->data != 0);
+            // TODO: assert((bf.width == 0 && bf.height == 0) || bf.data != 0);
             return bf;
         }
 
@@ -270,7 +270,53 @@ namespace NScumm.Queen
             var bank = _banks[bankslot];
             bank.Reset();
         }
-    }
 
+        internal void Overpack(uint srcframe, uint dstframe, uint bankslot)
+        {
+            D.Debug(9, $"BankManager::overpack({srcframe}, {dstframe}, {bankslot})");
+
+            PackedBank bank = _banks[bankslot];
+            BobFrame bf = _frames[dstframe];
+
+            var ptr = bank.data;
+            int p = bank.indexes[srcframe];
+
+            if (_res.Platform == Platform.Amiga)
+            {
+                ushort w = ptr.ToUInt16BigEndian(p + 0); p += 2;
+                ushort h = ptr.ToUInt16BigEndian(p + 2); p += 2;
+                ushort plane = ptr.ToUInt16BigEndian(p + 4); p += 2;
+                ushort src_w = (ushort)(w * 16);
+                ushort src_h = h;
+
+                if (bf.width < src_w || bf.height < src_h)
+                {
+                    Unpack(srcframe, dstframe, bankslot);
+                }
+                else
+                {
+                    ConvertPlanarBitmap(bf.data, bf.width, ptr, p + 12, w, h, plane);
+                }
+            }
+            else
+            {
+                ushort src_w = ptr.ToUInt16(p + 0); p += 2;
+                ushort src_h = ptr.ToUInt16(p + 2); p += 2;
+
+                // unpack if destination frame is smaller than source
+                if (bf.width < src_w || bf.height < src_h)
+                {
+                    Unpack(srcframe, dstframe, bankslot);
+                }
+                else
+                {
+                    // copy data 'over' destination frame (without updating frame header)
+                    Array.Copy(ptr, p + 8, bf.data, 0, src_w * src_h);
+                }
+            }
+        }
+
+    }
 }
+
 

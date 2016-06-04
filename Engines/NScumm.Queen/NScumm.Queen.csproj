@@ -66,6 +66,8 @@
     <Compile Include="Talk.cs" />
     <Compile Include="State.cs" />
     <Compile Include="Logic.cs" />
+    <Compile Include="Sound.cs" />
+    <Compile Include="PCSound.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <ItemGroup>

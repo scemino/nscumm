@@ -1102,6 +1102,6 @@ namespace NScumm.Queen
 			new ResourceEntry( "ZOMBIE1.DOG", 1, 0x0159ecef, 0x00000f6a),
 			new ResourceEntry( "ZOMBIE2.DOG", 1, 0x0159fc59, 0x00000c40)
 		};
-	}
+    }
 }
 

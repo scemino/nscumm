@@ -114,6 +114,18 @@ namespace NScumm.Queen
 
         Random _rnd;
 
+        private static readonly byte[] _palJoeClothes = {
+            0x00, 0x00, 0x00, 0x60, 0x60, 0x60, 0x87, 0x87, 0x87, 0xB0, 0xB0, 0xB0, 0xDA, 0xDA, 0xDA, 0x43,
+            0x34, 0x20, 0x77, 0x33, 0x1F, 0xA3, 0x43, 0x27, 0x80, 0x45, 0x45, 0x9E, 0x5D, 0x5B, 0xB9, 0x78,
+            0x75, 0xDF, 0x97, 0x91, 0x17, 0x27, 0x63, 0x1F, 0x3F, 0x83, 0x27, 0x5B, 0xA7, 0x98, 0xD4, 0xFF
+        };
+
+        private static readonly byte[] _palJoeDress = {
+            0x00, 0x00, 0x00, 0x50, 0x50, 0x50, 0x70, 0x70, 0x70, 0x90, 0x90, 0x90, 0xC6, 0xC6, 0xC6, 0xFF,
+            0xFF, 0xFF, 0x30, 0x30, 0x90, 0x47, 0x49, 0xD0, 0x40, 0x24, 0x00, 0x79, 0x34, 0x0B, 0xB2, 0x3D,
+            0x22, 0xED, 0x42, 0x42, 0x80, 0x45, 0x45, 0xA3, 0x5F, 0x5F, 0xC8, 0x7C, 0x7C, 0xEC, 0x9C, 0x9C
+        };
+
         public short HorizontalScroll
         {
             get { return _horizontalScroll; }
@@ -196,6 +208,19 @@ namespace NScumm.Queen
             SetupInkColors();
         }
 
+        /// <summary>
+        /// Mark all palette entries as dirty.
+        /// </summary>
+        /// <returns>The set all dirty.</returns>
+        public void PalSetAllDirty()
+        {
+            _pal.dirtyMin = 0; _pal.dirtyMax = 255;
+        }
+
+        /// <summary>
+        /// Grey the panel area (used when panel is disabled)
+        /// </summary>
+        /// <returns>The grey panel.</returns>
         public void PalGreyPanel()
         {
             D.Debug(9, "Display::palGreyPanel()");
@@ -210,11 +235,19 @@ namespace NScumm.Queen
 
         public void DrawBobSprite(ByteAccess data, ushort x, ushort y, ushort w, ushort h, ushort pitch, bool xflip)
         {
-            Blit(_screenBuf, SCREEN_W, x, y, data, pitch, w, h, xflip, true);
+            Blit(_screenBuf, SCREEN_W, x, y, data.Data, data.Offset, pitch, w, h, xflip, true);
             SetDirtyBlock((ushort)(xflip ? (x - w + 1) : x), y, w, h);
         }
 
-        void SetDirtyBlock(ushort x, ushort y, ushort w, ushort h)
+        /// <summary>
+        /// Mark the specified block as dirty.
+        /// </summary>
+        /// <returns>The dirty block.</returns>
+        /// <param name="x">The x coordinate.</param>
+        /// <param name="y">The y coordinate.</param>
+        /// <param name="w">The width.</param>
+        /// <param name="h">The height.</param>
+        private void SetDirtyBlock(ushort x, ushort y, ushort w, ushort h)
         {
             if (_fullRefresh < 2)
             {
@@ -246,7 +279,6 @@ namespace NScumm.Queen
                 }
             }
         }
-
 
         public void BlankScreen()
         {
@@ -419,7 +451,18 @@ namespace NScumm.Queen
             }
         }
 
-        void DynalumUpdate(short x, short y)
+        public void SetFocusRect(Rect focus)
+        {
+            // TODO: _system.SetFocusRectangle(rect);
+        }
+
+        /// <summary>
+        /// Update dynalum for the current room.
+        /// </summary>
+        /// <returns>The update.</returns>
+        /// <param name="x">The x coordinate.</param>
+        /// <param name="y">The y coordinate.</param>
+        private void DynalumUpdate(short x, short y)
         {
             if (!_dynalum.valid)
                 return;
@@ -464,7 +507,11 @@ namespace NScumm.Queen
             }
         }
 
-        void DrawTexts()
+        /// <summary>
+        /// Draw the text lists.
+        /// </summary>
+        /// <returns>The texts.</returns>
+        private void DrawTexts()
         {
             for (int y = Defines.GAME_SCREEN_HEIGHT - 1; y > 0; --y)
             {
@@ -491,6 +538,11 @@ namespace NScumm.Queen
             return width;
         }
 
+        /// <summary>
+        /// Change the current text color.
+        /// </summary>
+        /// <returns>The current color.</returns>
+        /// <param name="color">Color.</param>
         public void TextCurrentColor(byte color)
         {
             _curTextColor = color;
@@ -570,6 +622,11 @@ namespace NScumm.Queen
         static short scrollx = 0;
         static short j = 0, jdir = 2;
 
+        /// <summary>
+        /// Custom palette scroll for the specified room.
+        /// </summary>
+        /// <returns>The custom scroll.</returns>
+        /// <param name="roomNum">Room number.</param>
         public void PalCustomScroll(ushort roomNum)
         {
             D.Debug(9, $"Display::palCustomScroll({roomNum})");
@@ -832,6 +889,12 @@ namespace NScumm.Queen
             _pal.dirtyMax = Math.Max(_pal.dirtyMax, hiPal);
         }
 
+        /// <summary>
+        /// Scroll some palette colors.
+        /// </summary>
+        /// <returns>The scroll.</returns>
+        /// <param name="start">Start.</param>
+        /// <param name="end">End.</param>
         private void PalScroll(int start, int end)
         {
             D.Debug(9, $"Display::palScroll({start}, {end})");
@@ -897,20 +960,19 @@ namespace NScumm.Queen
 
         public void DrawBobPasteDown(byte[] data, ushort x, ushort y, ushort w, ushort h)
         {
-            Blit(_backdropBuf, BACKDROP_W, x, y, new ByteAccess(data), w, w, h, false, true);
+            Blit(_backdropBuf, BACKDROP_W, x, y, data, 0, w, w, h, false, true);
         }
 
-        void Blit(byte[] dstBuf, ushort dstPitch, ushort x, ushort y, ByteAccess srcBuf, ushort srcPitch, ushort w, ushort h, bool xflip, bool masked)
+        void Blit(byte[] dstBuf, ushort dstPitch, ushort x, ushort y, byte[] srcBuf, int src, ushort srcPitch, ushort w, ushort h, bool xflip, bool masked)
         {
             // TODO: assert(w <= dstPitch);
-            var src = 0;
             var dst = dstPitch * y + x;
 
             if (!masked)
             { // Unmasked always unflipped
                 while ((h--) != 0)
                 {
-                    Array.Copy(srcBuf.Data, srcBuf.Offset + src, dstBuf, dst, w);
+                    Array.Copy(srcBuf, src, dstBuf, dst, w);
                     src += srcPitch;
                     dst += dstPitch;
                 }
@@ -949,11 +1011,52 @@ namespace NScumm.Queen
             }
         }
 
-        public void DrawInventoryItem(byte[] data, ushort x, ushort y, ushort width, ushort height)
+        public void DrawInventoryItem(byte[] data, ushort x, ushort y, ushort w, ushort h)
         {
-            throw new NotImplementedException();
+            if (data != null)
+            {
+                if (_vm.Resource.Platform == Platform.Amiga)
+                {
+                    var dst = _panelBuf;
+                    var d = y * PANEL_W + x;
+                    var s = 0;
+                    for (int j = 0; j < h; ++j)
+                    {
+                        for (int i = 0; i < w; ++i)
+                        {
+                            dst[d + i] = (byte)(144 + data[s++]);
+                        }
+                        d += PANEL_W;
+                    }
+                }
+                else
+                {
+                    Blit(_panelBuf, PANEL_W, x, y, data, 0, w, w, h, false, false);
+                }
+            }
+            else
+            {
+                Fill(_panelBuf, PANEL_W, x, y, w, h, GetInkColor(InkColor.INK_BG_PANEL));
+            }
+            SetDirtyBlock(x, (ushort)(150 + y), w, h);
         }
 
+        private void Fill(byte[] dstBuf, ushort dstPitch, ushort x, ushort y, ushort w, ushort h, byte color)
+        {
+            // TODO: assert(w <= dstPitch);
+            var d = dstPitch * y + x;
+            while ((h--) != 0)
+            {
+                dstBuf.Set(d, color, w);
+                d += dstPitch;
+            }
+        }
+
+        /// <summary>
+        /// Fade the current palette out.
+        /// </summary>
+        /// <returns>The fade out.</returns>
+        /// <param name="roomNum">Room number.</param>
         public void PalFadeOut(ushort roomNum)
         {
             D.Debug(9, $"Display::palFadeOut({roomNum})");
@@ -1001,6 +1104,11 @@ namespace NScumm.Queen
             }
         }
 
+        /// <summary>
+        /// Gets the number of colors used by the room.
+        /// </summary>
+        /// <returns>The number colors for room.</returns>
+        /// <param name="room">Room.</param>
         private int GetNumColorsForRoom(ushort room)
         {
             int n = 224;
@@ -1011,13 +1119,21 @@ namespace NScumm.Queen
             return n;
         }
 
+        /// <summary>
+        /// Gets true if we shouldn't fade the palette in the specified room.
+        /// </summary>
+        /// <returns>The pal fading disabled.</returns>
+        /// <param name="room">Room.</param>
         private bool IsPalFadingDisabled(ushort room)
         {
             // introduction rooms don't fade palette
             return (room >= 90 && room <= 94) || (room >= 115 && room <= 125);
         }
 
-        public void PalFadeIn(ushort roomNum, bool dynalum, short dynaX, short dynaY)
+        /// <summary>
+        /// Fade the current palette in.
+        /// </summary>
+        public void PalFadeIn(ushort roomNum, bool dynalum = false, short dynaX = 0, short dynaY = 0)
         {
             D.Debug(9, $"Display::palFadeIn({roomNum})");
             int n = GetNumColorsForRoom(roomNum);
@@ -1081,6 +1197,11 @@ namespace NScumm.Queen
             ForceFullRefresh();
         }
 
+        /// <summary>
+        /// Custom palette effect for the specified room.
+        /// </summary>
+        /// <returns>The custom colors.</returns>
+        /// <param name="roomNum">Room number.</param>
         private void PalCustomColors(ushort roomNum)
         {
             D.Debug(9, $"Display::palCustomColors({roomNum})");
@@ -1156,6 +1277,10 @@ namespace NScumm.Queen
             }
         }
 
+        /// <summary>
+        /// Process a 'palette flash' effect.
+        /// </summary>
+        /// <returns>The custom flash.</returns>
         public void PalCustomFlash()
         {
             Color[] tempPal = new Color[256];
@@ -1173,6 +1298,12 @@ namespace NScumm.Queen
             throw new NotImplementedException();
         }
 
+        /// <summary>
+        /// Initialize dynalum for the specified room.
+        /// </summary>
+        /// <returns>The init.</returns>
+        /// <param name="roomName">Room name.</param>
+        /// <param name="roomNum">Room number.</param>
         private void DynalumInit(string roomName, ushort roomNum)
         {
             D.Debug(9, $"Display::dynalumInit({roomName}, {roomNum})");
@@ -1198,6 +1329,12 @@ namespace NScumm.Queen
             }
         }
 
+        /// <summary>
+        /// Change fullscreen/panel mode.
+        /// </summary>
+        /// <returns>The mode.</returns>
+        /// <param name="comPanel">COM panel.</param>
+        /// <param name="inCutaway">In cutaway.</param>
         public void ScreenMode(int comPanel, bool inCutaway)
         {
             D.Debug(6, $"Display::screenMode({comPanel}, {inCutaway})");
@@ -1212,6 +1349,11 @@ namespace NScumm.Queen
             }
         }
 
+        /// <summary>
+        /// Show/hide mouse cursor.
+        /// </summary>
+        /// <returns>The mouse cursor.</returns>
+        /// <param name="show">Show.</param>
         public void ShowMouseCursor(bool show)
         {
             _system.GraphicsManager.IsCursorVisible = show;
@@ -1237,6 +1379,12 @@ namespace NScumm.Queen
             PalSetPanel();
         }
 
+        /// <summary>
+        /// Remove entries from the texts list.
+        /// </summary>
+        /// <returns>The texts.</returns>
+        /// <param name="y1">The first y value.</param>
+        /// <param name="y2">The second y value.</param>
         public void ClearTexts(ushort y1, ushort y2)
         {
             if (y1 > y2)
@@ -1250,27 +1398,66 @@ namespace NScumm.Queen
             }
         }
 
+        /// <summary>
+        /// Change mouse cursor bitmap.
+        /// </summary>
+        /// <returns>The mouse cursor.</returns>
+        /// <param name="cursorData">Cursor data.</param>
+        /// <param name="width">Width.</param>
+        /// <param name="height">Height.</param>
         public void SetMouseCursor(byte[] cursorData, ushort width, ushort height)
         {
             _system.GraphicsManager.SetCursor(cursorData, width, height, new Point(1, 1));
         }
 
+        /// <summary>
+        /// Setup palette for panel and inventory objects.
+        /// </summary>
+        /// <returns>The set panel.</returns>
         public void PalSetPanel()
         {
             Array.Copy(_pal.panel, 0, _pal.room, 144, (256 - 144));
             Array.Copy(_pal.panel, 0, _pal.screen, 144, (256 - 144));
         }
 
+        /// <summary>
+        /// Decode IFF picture data.
+        /// </summary>
+        /// <returns>The iff.</returns>
+        /// <param name="src">Source.</param>
+        /// <param name="srcSize">Source size.</param>
+        /// <param name="dst">Dst.</param>
+        /// <param name="dstPitch">Dst pitch.</param>
+        /// <param name="w">The width.</param>
+        /// <param name="h">The height.</param>
+        /// <param name="pal">Pal.</param>
+        /// <param name="palStart">Pal start.</param>
+        /// <param name="palEnd">Pal end.</param>
+        /// <param name="colorBase">Color base.</param>
         private void DecodeIFF(byte[] src, uint srcSize, byte[] dst, ushort dstPitch, out ushort w, out ushort h, Color[] pal, ushort palStart, ushort palEnd, byte colorBase = 0)
         {
             throw new NotImplementedException();
         }
 
-        public int TextCenterX(string sentence)
+        public int TextCenterX(string text)
         {
-            throw new NotImplementedException();
+            return (Defines.GAME_SCREEN_WIDTH - TextWidth(text)) / 2;
         }
 
+        /// <summary>
+        /// Decode PCX picture data.
+        /// </summary>
+        /// <returns>The pcx.</returns>
+        /// <param name="src">Source.</param>
+        /// <param name="srcSize">Source size.</param>
+        /// <param name="dst">Dst.</param>
+        /// <param name="dstPos">Dst position.</param>
+        /// <param name="dstPitch">Dst pitch.</param>
+        /// <param name="w">The width.</param>
+        /// <param name="h">The height.</param>
+        /// <param name="pal">Pal.</param>
+        /// <param name="palStart">Pal start.</param>
+        /// <param name="palEnd">Pal end.</param>
         private void DecodePCX(byte[] src, uint srcSize, byte[] dst, int dstPos, ushort dstPitch, out ushort w, out ushort h, Color[] pal, ushort palStart, ushort palEnd)
         {
             using (var str = new MemoryStream(src, 0, (int)srcSize))
@@ -1292,16 +1479,38 @@ namespace NScumm.Queen
             }
         }
 
-        internal void PalSetJoeNormal()
+        /// <summary>
+        /// Setup palette for Joe's normal clothes.
+        /// </summary>
+        /// <returns>The set joe normal.</returns>
+        public void PalSetJoeNormal()
         {
-            throw new NotImplementedException();
+            if (_vm.Resource.Platform == Platform.DOS)
+            {
+                Array.Copy(_palJoeClothes, 0, _pal.room, 144, 16);
+                Array.Copy(_palJoeClothes, 0, _pal.screen, 144, 16);
+                PalSet(_pal.screen, 144, 159, true);
+            }
         }
 
-        internal void PalSetJoeDress()
+        /// <summary>
+        /// Setup palette for Joe's dress.
+        /// </summary>
+        /// <returns>The set joe dress.</returns>
+        public void PalSetJoeDress()
         {
-            throw new NotImplementedException();
+            if (_vm.Resource.Platform == Platform.DOS)
+            {
+                Array.Copy(_palJoeDress, 0, _pal.room, 144, 16);
+                Array.Copy(_palJoeDress, 0, _pal.screen, 144, 16);
+                PalSet(_pal.screen, 144, 159, true);
+            }
         }
 
+        /// <summary>
+        /// Initialize font, compute justification sizes.
+        /// </summary>
+        /// <returns>The font.</returns>
         private void InitFont()
         {
             switch (_vm.Resource.Language)

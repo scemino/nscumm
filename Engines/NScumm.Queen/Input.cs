@@ -184,13 +184,10 @@ namespace NScumm.Queen
 			} while (Environment.TickCount < end);
 		}
 
-        internal void ClearKeyVerb()
+        public void ClearKeyVerb()
         {
-            throw new NotImplementedException();
+            _keyVerb = Verb.NONE;
         }
     }
-
-
-	
 }
 

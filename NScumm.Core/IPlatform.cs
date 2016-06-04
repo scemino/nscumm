@@ -21,5 +21,7 @@ namespace NScumm.Core
     public interface IPlatform
     {
         void Sleep(int timeInMs);
+
+        void LogMessage(string format, params object[] args);
     }
 }

@@ -27,53 +27,67 @@ using NScumm.Core.Audio;
 
 namespace NScumm.Queen
 {
-	class QueenSystem : ISystem
-	{
-		public IGraphicsManager GraphicsManager { get; }
+    class QueenSystem : ISystem
+    {
+        public IGraphicsManager GraphicsManager { get; }
 
-		public IInputManager InputManager { get; }
+        public IInputManager InputManager { get; }
 
-		public ISaveFileManager SaveFileManager { get; }
+        public ISaveFileManager SaveFileManager { get; }
 
-		public QueenSystem (IGraphicsManager graphicsManager, IInputManager inputManager, ISaveFileManager saveFileManager)
-		{
-			GraphicsManager = graphicsManager;
-			InputManager = inputManager;
-			SaveFileManager = saveFileManager;
-		}
-	}
+        public QueenSystem(IGraphicsManager graphicsManager, IInputManager inputManager, ISaveFileManager saveFileManager)
+        {
+            GraphicsManager = graphicsManager;
+            InputManager = inputManager;
+            SaveFileManager = saveFileManager;
+        }
+    }
 
-	public class QueenEngine: IEngine
-	{
-		GameSettings _settings;
-		QueenSystem _system;
-		bool _subtitles;
+    public class QueenEngine : IEngine
+    {
+        const int MIN_TEXT_SPEED = 4;
+        const int MAX_TEXT_SPEED = 100;
+            
+        GameSettings _settings;
+        QueenSystem _system;
 
-		int _lastUpdateTime, _lastSaveTime;
+        int _lastUpdateTime, _lastSaveTime;
 
-		public Logic Logic { get; private set; }
+        public Logic Logic { get; private set; }
 
-		public Input Input { get; private set; }
+        public Input Input { get; private set; }
 
-		public Walk Walk { get; private set; }
+        public Walk Walk { get; private set; }
 
-		public BamScene Bam { get; private set; }
+        public BamScene Bam { get; private set; }
 
-		public BankManager BankMan { get; private set; }
+        public BankManager BankMan { get; private set; }
 
-		public Command Command { get; private set; }
+        public Command Command { get; private set; }
 
-		public Display Display { get; private set; }
+        public Display Display { get; private set; }
 
-		public Graphics Graphics { get; private set; }
+        public Graphics Graphics { get; private set; }
 
-		public Grid Grid { get; private set; }
+        public Grid Grid { get; private set; }
 
-		public Resource Resource { get; private set; }
+        public Resource Resource { get; private set; }
+
+        public Random Randomizer { get; private set; }
+
+        public bool HasToQuit { get; set; }
+
+        public bool IsPaused { get; set; }
+
+        public int TalkSpeed { get; set; }
+
+        public bool Subtitles { get; private set; }
+
 
 		public QueenEngine (GameSettings settings, IGraphicsManager gfxManager, IInputManager inputManager,
 		                    IAudioOutput output, ISaveFileManager saveFileManager, bool debugMode)
 		{
+            Randomizer = new Random();
 			_settings = settings;
 			_system = new QueenSystem (gfxManager, inputManager, saveFileManager);
 		}
@@ -162,7 +176,7 @@ namespace NScumm.Queen
 			RegisterDefaultSettings();
 
 			// Setup mixer
-			// TODO: SyncSoundSettings();
+            SyncSoundSettings();
 
 			Logic.Start();
 
@@ -183,9 +197,51 @@ namespace NScumm.Queen
 			}
 		}
 
-		void IEngine.Load (string filename)
+        private void SyncSoundSettings()
+        {
+            // TODO: Engine::syncSoundSettings();
+
+            ReadOptionSettings();
+        }
+
+        void ReadOptionSettings()
+        {
+            bool mute = false;
+            // TODO:
+            //if (ConfMan.hasKey("mute"))
+            //    mute = ConfMan.getBool("mute");
+
+            //Sound.setVolume(ConfMan.getInt("music_volume"));
+            //Sound.musicToggle(!(mute || ConfMan.getBool("music_mute")));
+            //Sound.sfxToggle(!(mute || ConfMan.getBool("sfx_mute")));
+            //Sound.speechToggle(!(mute || ConfMan.getBool("speech_mute")));
+            //TalkSpeed = (ConfMan.getInt("talkspeed") * (MAX_TEXT_SPEED - MIN_TEXT_SPEED) + 255 / 2) / 255 + MIN_TEXT_SPEED;
+            TalkSpeed = 50;
+            //Subtitles = ConfMan.getBool("subtitles");
+            Subtitles = true;
+            CheckOptionSettings();
+        }
+
+        void CheckOptionSettings()
+        {
+            ScummHelper.Clip(TalkSpeed, MIN_TEXT_SPEED, MAX_TEXT_SPEED);
+
+            // TODO: demo and interview versions don't have speech at all
+            //if (_sound.SpeechOn && (Resource.IsDemo() || Resource.IsInterview))
+            //{
+            //    _sound.SpeechToggle(false);
+            //}
+
+            // TODO: ensure text is always on when voice is off
+            //if (!Sound.SpeechOn)
+            {
+                Subtitles = true;
+            }
+        }
+
+        void IEngine.Load (string filename)
 		{
-			throw new NotImplementedException ();
+            throw new NotImplementedException ();
 		}
 
 		void IEngine.Save (string filename)
@@ -193,14 +249,11 @@ namespace NScumm.Queen
 			throw new NotImplementedException ();
 		}
 
-		public bool HasToQuit { get; set; }
-
-		public bool IsPaused { get; set; }
-
 		private void RegisterDefaultSettings() {
+            // TODO:
 			// ConfMan.registerDefault("talkspeed", Logic::DEFAULT_TALK_SPEED);
 			// ConfMan.registerDefault("subtitles", true);
-			_subtitles = true;
+			Subtitles = true;
 		}
 	}
 }

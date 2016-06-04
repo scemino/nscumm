@@ -20,10 +20,11 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using NScumm.Core;
 using System;
+using D = NScumm.Core.DebugHelper;
 
 namespace NScumm.Queen
 {
-	enum Verb
+	public enum Verb
 	{
 		NONE = 0,
 
@@ -280,7 +281,7 @@ namespace NScumm.Queen
 
 		public void Clear (bool clearTexts)
 		{
-			// TODO: debug(6, "Command::clear(%d)", clearTexts);
+            D.Debug(6, $"Command::clear({clearTexts})");
 			_cmdText.Clear ();
 			if (clearTexts) {
 				_vm.Display.ClearTexts (CmdText.COMMAND_Y_POS, CmdText.COMMAND_Y_POS);

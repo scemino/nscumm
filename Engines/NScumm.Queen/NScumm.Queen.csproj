@@ -63,6 +63,9 @@
     <Compile Include="Walk.cs" />
     <Compile Include="Credits.cs" />
     <Compile Include="Cutaway.cs" />
+    <Compile Include="Talk.cs" />
+    <Compile Include="State.cs" />
+    <Compile Include="Logic.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <ItemGroup>

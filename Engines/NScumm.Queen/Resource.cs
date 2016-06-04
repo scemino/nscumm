@@ -24,6 +24,7 @@ using NScumm.Core;
 using System.IO;
 using NScumm.Core.IO;
 using System.Collections.Generic;
+using D = NScumm.Core.DebugHelper;
 
 namespace NScumm.Queen
 {
@@ -180,7 +181,7 @@ namespace NScumm.Queen
 				ReadTableFile (_version.queenTblVersion, _version.queenTblOffset);
 			}
 			CheckJASVersion ();
-			// TODO: Debug (5, "Detected game version: %s, which has %d resource entries", _version.str, _resourceEntries);
+			D.Debug (5, $"Detected game version: {_version.str}, which has {_resourceEntries} resource entries");
 		}
 
 		public void Dispose ()
@@ -196,7 +197,7 @@ namespace NScumm.Queen
 
 		public byte[] LoadFile(string filename, uint skipBytes, out uint size)
 		{
-			// TODO: debug(7, "Resource::loadFile('%s')", filename);
+            D.Debug(7, $"Resource::loadFile('{filename}')");
 			var re = ResourceEntry(filename);
 			var sz = re.size - skipBytes;
 			size = sz;
@@ -208,7 +209,7 @@ namespace NScumm.Queen
 		public List<string> LoadTextFile(string filename) 
 		{
 			var stringList=new List<string>();
-			//TODO: debug(7, "Resource::loadTextFile('%s')", filename);
+            D.Debug(7, $"Resource::loadTextFile('{filename}')");
 			ResourceEntry re = ResourceEntry(filename);
 			SeekResourceFile(re.bundle, re.offset);
 			var stream = new StreamReader (new SeekableSubReadStream (_resourceFile.BaseStream, re.offset, re.offset + re.size));
@@ -262,7 +263,7 @@ namespace NScumm.Queen
 
 		private void SeekResourceFile(int num, uint offset) {
 			if (_currentResourceFileNum != num) {
-				// TODO: Debug(7, "Opening resource file %d, current %d", num, _currentResourceFileNum);
+				D.Debug(7, $"Opening resource file {num}, current {_currentResourceFileNum}");
 				_resourceFile.Dispose();
 				string name=$"queen.{num}";
 				var filename = ScummHelper.LocatePath (ServiceLocator.FileStorage.GetDirectoryName (_path), name);

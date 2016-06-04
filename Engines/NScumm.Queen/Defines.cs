@@ -39,11 +39,6 @@ namespace NScumm.Queen
 		public const int COMPRESSION_OGG = 2;
 		public const int COMPRESSION_FLAC = 3;
 
-		public const int DIR_LEFT = 1;
-		public const int DIR_RIGHT = 2;
-		public const int DIR_FRONT = 3;
-		public const int DIR_BACK = 4;
-
 		public const int FRAMES_JOE = 38;
 		public const int FRAMES_JOURNAL = 40;
 

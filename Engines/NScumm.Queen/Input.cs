@@ -35,14 +35,17 @@ namespace NScumm.Queen
 
 		private string _currentCommandKeys;
 
-		/// <summary>
-		/// Some cutaways require update() run faster.
-		/// </summary>
-		bool _fastMode;
-
 		ISystem _system;
 
-		bool _cutawayQuit;
+		bool _quickSave;
+		bool _quickLoad;
+		bool _dialogueRunning;
+		bool _talkQuit;
+
+        /// <summary>
+        /// the current verb received from keyboard.
+        /// </summary>
+        Verb _keyVerb;
 
 		private static readonly string[] _commandKeys = {
 			"ocmglptu", // English
@@ -52,6 +55,12 @@ namespace NScumm.Queen
 			"ocmglptu", // Hebrew
 			"acodmthu"  // Spanish
 		};
+
+		public bool CutawayQuit { get; private set;}
+
+		public bool CanQuit { get; set; }
+
+		public bool TalkQuit { get{ return _talkQuit; } }
 
 		/// <summary>
 		/// Gets user idle time.
@@ -64,7 +73,14 @@ namespace NScumm.Queen
 		/// <value><c>true</c> if a cutaway is running; otherwise, <c>false</c>.</value>
 		public bool CutawayRunning { get; set; }
 
-		public Input (Language language, ISystem system)
+        /// <summary>
+        /// Some cutaways require update() run faster.
+        /// </summary>
+        public bool FastMode { get; set; }
+
+        public Verb KeyVerb { get { return _keyVerb;} }
+
+        public Input (Language language, ISystem system)
 		{
 			_system = system;
 			switch (language) {
@@ -93,9 +109,21 @@ namespace NScumm.Queen
 			}
 		}
 
+		public void DialogueRunning(bool running) { _dialogueRunning = running; }
+
+		public void QuickSaveReset ()
+		{
+			_quickSave = false;
+		}
+
+		public void QuickLoadReset ()
+		{
+			_quickLoad = false;
+		}
+
 		public void CutawayQuitReset ()
 		{
-			_cutawayQuit = false;
+			CutawayQuit = false;
 		}
 
 		public void CheckKeys ()
@@ -105,7 +133,7 @@ namespace NScumm.Queen
 
 		public void Delay (int amount)
 		{
-			if (_fastMode && amount > DELAY_SHORT) {
+			if (FastMode && amount > DELAY_SHORT) {
 				amount = DELAY_SHORT;
 			}
 			if (IdleTime < DELAY_SCREEN_BLANKER) {
@@ -155,7 +183,12 @@ namespace NScumm.Queen
 				ServiceLocator.Platform.Sleep ((amount > 10) ? 10 : amount);
 			} while (Environment.TickCount < end);
 		}
-	}
+
+        internal void ClearKeyVerb()
+        {
+            throw new NotImplementedException();
+        }
+    }
 
 
 	

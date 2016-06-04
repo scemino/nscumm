@@ -117,7 +117,16 @@ namespace NScumm
 
 		private void UpdateGame ()
 		{
-			engine.Run ();
+            try
+            {
+                engine.Run();
+            }
+            catch (Exception e)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.Error.WriteLine(e);
+                Console.ResetColor();
+            }
 			ScreenManager.Game.Exit ();
 		}
 

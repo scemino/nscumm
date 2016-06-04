@@ -170,6 +170,7 @@
     <Compile Include="Common\Language.cs" />
     <Compile Include="Common\SeekableSubReadStream.cs" />
     <Compile Include="Image\PCXDecoder.cs" />
+    <Compile Include="Common\RawAccess.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <ItemGroup>

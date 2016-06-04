@@ -19,6 +19,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using NScumm.Core;
+using D = NScumm.Core.DebugHelper;
 
 namespace NScumm.Queen
 {
@@ -53,6 +54,10 @@ namespace NScumm.Queen
 			get{ return _area; }
 		}
 
+		public short[] ObjMax {
+			get{ return _objMax; }
+		}
+
 		public Grid (QueenEngine vm)
 		{
 			_vm = vm;
@@ -76,9 +81,20 @@ namespace NScumm.Queen
 			return zoneNum;
 		}
 
+		public ushort FindScale (ushort x, ushort y)
+		{
+			ushort room = _vm.Logic.CurrentRoom;
+			ushort scale = 100;
+			ushort areaNum = FindAreaForPos (GridScreen.ROOM, x, y);
+			if (areaNum != 0) {
+				scale = _area [room, areaNum].CalcScale ((short)y);
+			}
+			return scale;
+		}
+
 		ushort FindZoneForPos (GridScreen screen, ushort x, ushort y)
 		{
-			// TODO: debug(9, "Logic::findZoneForPos(%d, (%d,%d))", screen, x, y);
+			D.Debug(9, $"Logic::findZoneForPos({screen}, ({x},{y}))");
 			int i;
 			if (screen == GridScreen.PANEL) {
 				y -= Defines.ROOM_ZONE_HEIGHT;
@@ -94,7 +110,7 @@ namespace NScumm.Queen
 
 		public void SetupNewRoom (ushort room, ushort firstRoomObjNum)
 		{
-			// TODO: debug (9, "Grid::setupNewRoom()");
+			D.Debug (9, "Grid::setupNewRoom()");
 			Clear (GridScreen.ROOM);
 
 			// setup objects zones
@@ -129,7 +145,7 @@ namespace NScumm.Queen
 
 		private void Clear (GridScreen screen)
 		{
-			// TODO: debug(9, "Grid::clear(%d)", screen);
+			D.Debug(9, $"Grid::clear({screen})");
 			for (int i = 1; i < MAX_ZONES_NUMBER; ++i) {
 				_zones [(int)screen, i].valid = false;
 			}
@@ -184,7 +200,7 @@ namespace NScumm.Queen
 
 		private void SetZone (GridScreen screen, short zoneNum, short x1, short y1, short x2, short y2)
 		{
-			// TODO: debug(9, "Grid::setZone(%d, %d, (%d,%d), (%d,%d))", screen, zoneNum, x1, y1, x2, y2);
+			D.Debug(9, $"Grid::setZone({screen}, {zoneNum}, ({x1},{y1}), ({x2},{y2}))");
 			// TODO: assert(zoneNum < MAX_ZONES_NUMBER);
 			var pzs = _zones [(int)screen, zoneNum] = new ZoneSlot ();
 			pzs.valid = true;
@@ -193,7 +209,7 @@ namespace NScumm.Queen
 
 		private void SetZone (GridScreen screen, short zoneNum, Box box)
 		{
-			// TODO: debug(9, "Grid::setZone(%d, %d, (%d,%d), (%d,%d))", screen, zoneNum, box.x1, box.y1, box.x2, box.y2);
+			D.Debug(9, $"Grid::setZone({screen}, {zoneNum}, ({box.x1},{box.y1}), ({box.x2},{box.y2}))");
 			// TODO: assert(zoneNum < MAX_ZONES_NUMBER);
 			var pzs = _zones [(int)screen, zoneNum];
 			pzs.valid = true;

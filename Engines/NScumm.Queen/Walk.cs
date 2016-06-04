@@ -36,6 +36,11 @@ namespace NScumm.Queen
 			_vm = vm;
 		}
 
+		public void MovePerson (Person p, short moveToX, short moveToY, int i, short image)
+		{
+			throw new NotImplementedException ();
+		}
+
 		public void MoveJoe (int i, ushort jx, ushort jy, bool inCutaway)
 		{
 			throw new NotImplementedException ();

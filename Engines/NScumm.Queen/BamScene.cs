@@ -27,7 +27,7 @@ using NScumm.Core.Audio;
 
 namespace NScumm.Queen
 {
-	enum BamFlags
+	public enum BamFlags
 	{
 		F_STOP = 0,
 		F_PLAY = 1,
@@ -75,7 +75,7 @@ namespace NScumm.Queen
 
 	public class BamScene
 	{
-		private BamFlags _flag;
+		public BamFlags _flag;
 		private ushort _index;
 		private QueenEngine _vm;
 		private BamDataBlock[] _fightData;
@@ -202,7 +202,12 @@ namespace NScumm.Queen
 		{
 			throw new NotImplementedException ();
 		}
-	}
+
+        internal void PrepareAnimation()
+        {
+            throw new NotImplementedException();
+        }
+    }
 
 }
 

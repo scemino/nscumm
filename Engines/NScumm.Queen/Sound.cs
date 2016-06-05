@@ -20,11 +20,26 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
 using System.IO;
+using NScumm.Core;
 using NScumm.Core.Audio;
 using NScumm.Core.IO;
 
 namespace NScumm.Queen
 {
+    class Mp3Sound : PCSound
+    {
+        public Mp3Sound(IMixer mixer, QueenEngine vm) 
+            : base(mixer, vm) 
+        {
+        }
+
+        protected override void PlaySoundData(Stream f, uint size, ref SoundHandle soundHandle)
+        {
+            var mp3Stream = ServiceLocator.AudioManager.MakeMp3Stream(f);
+            soundHandle = _mixer.PlayStream(SoundType.SFX, mp3Stream);
+        }
+    }
+
     class SilentSound : PCSound
     {
         public SilentSound(IMixer mixer, QueenEngine vm)
@@ -47,17 +62,19 @@ namespace NScumm.Queen
         }
     }
 
-    public abstract class Sound
+    public abstract partial class Sound
     {
         protected IMixer _mixer;
         protected QueenEngine _vm;
         bool _sfxToggle;
         bool _musicToggle;
         protected bool _speechSfxExists;
+        protected short _lastOverride;
 
         public bool SpeechOn { get; set; }
         public bool SpeechSfxExists { get { return _speechSfxExists; } }
         public virtual bool IsSpeechActive { get { return false; } }
+        public bool MusicOn { get { return _musicToggle; } }
 
         protected Sound(IMixer mixer, QueenEngine vm)
         {
@@ -78,12 +95,7 @@ namespace NScumm.Queen
                 case Defines.COMPRESSION_NONE:
                     return new SBSound(mixer, vm);
                 case Defines.COMPRESSION_MP3:
-#if !USE_MAD
-                    // TODO: warning("Using MP3 compressed datafile, but MP3 support not compiled in");
-                    return new SilentSound(mixer, vm);
-#else
-                    return new MP3Sound(mixer, vm);
-#endif
+                    return new Mp3Sound(mixer, vm);
                 case Defines.COMPRESSION_OGG:
 #if !USE_VORBIS
                     // TODO: warning("Using OGG compressed datafile, but OGG support not compiled in");
@@ -104,9 +116,15 @@ namespace NScumm.Queen
             }
         }
 
-        public virtual void PlaySpeech(string @base) {}
-        public virtual void StopSpeech() {}
         public virtual void PlaySfx(ushort sfx) { }
+        public virtual void PlaySong(short songNum) { }
+        public virtual void PlaySpeech(string @base) {}
+
+        public virtual void StopSfx() { }
+        public virtual void StopSong() { }
+        public virtual void StopSpeech() {}
+
+        public virtual void UpdateMusic() { }
     }
 }
 

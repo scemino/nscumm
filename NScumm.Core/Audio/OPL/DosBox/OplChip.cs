@@ -31,6 +31,14 @@ namespace NScumm.Core.Audio.OPL.DosBox
         //Last selected register
         readonly OplTimer[] timer = new OplTimer[2];
 
+        public OplChip()
+        {
+            for (int i = 0; i < timer.Length; i++)
+            {
+                timer[i] = new OplTimer();
+            }
+        }
+
         //Check for it being a write to the timer
         public bool Write(uint reg, byte val)
         {

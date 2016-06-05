@@ -23,7 +23,6 @@ using NScumm.Core;
 using System;
 using System.Collections.Generic;
 using D = NScumm.Core.DebugHelper;
-using System.Text;
 
 namespace NScumm.Queen
 {
@@ -73,7 +72,14 @@ namespace NScumm.Queen
 
                 public int Pos;
 
-                public AnimFrame CurrentFrame { get { return _anims[Pos]; } }
+                public AnimFrame CurrentFrame
+                {
+                    get
+                    {
+                        Pos = ScummHelper.Clip(Pos, 0, _anims.Length - 1);
+                        return _anims[Pos];
+                    }
+                }
 
                 public AnimFramePtr(AnimFrame[] anims)
                 {
@@ -318,7 +324,7 @@ namespace NScumm.Queen
         public const int BOB_OBJ1 = 5;
         public const int BOB_OBJ2 = 6;
         public const int BOB_FX = 7;
-            
+
         private const int ARROW_BOB_UP = 62;
         private const int ARROW_BOB_DOWN = 63;
         private const int MAX_BOBS_NUMBER = 64;
@@ -897,8 +903,7 @@ namespace NScumm.Queen
                         pbs.AnimOneStep();
                         if (pbs.frameNum > 500)
                         { // SFX frame
-                          // TODO: 
-                          //							_vm.Sound ().PlaySfx (_vm.logic ().currentRoomSfx ());
+                            _vm.Sound.PlaySfx(_vm.Logic.CurrentRoomSfx);
                             pbs.frameNum -= 500;
                         }
                     }
@@ -1170,7 +1175,7 @@ namespace NScumm.Queen
             if (a != 0)
             {
                 // person is not standing in the area box, scale it accordingly
-                scale = _vm.Grid.Areas[_vm.Logic.CurrentRoom, a].CalcScale((short)pad.y);
+                scale = _vm.Grid.Areas[_vm.Logic.CurrentRoom][a].CalcScale((short)pad.y);
             }
 
             _vm.BankMan.Unpack(pad.bobFrameStanding, p.bobFrame, p.actor.bankNum);

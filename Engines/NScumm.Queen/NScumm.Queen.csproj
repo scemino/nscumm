@@ -68,6 +68,10 @@
     <Compile Include="Logic.cs" />
     <Compile Include="Sound.cs" />
     <Compile Include="PCSound.cs" />
+    <Compile Include="MidiMusic.cs" />
+    <Compile Include="Sound.Table.cs" />
+    <Compile Include="SongData.cs" />
+    <Compile Include="AdLibMidiDriver.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <ItemGroup>

@@ -24,12 +24,11 @@ using NScumm.Core.Audio;
 
 namespace NScumm.Queen
 {
-
     abstract class PCSound : Sound
     {
         SoundHandle _sfxHandle;
         SoundHandle _speechHandle;
-        //MidiMusic* _music;
+        MidiMusic _music;
 
         public override bool IsSpeechActive
         {
@@ -42,7 +41,58 @@ namespace NScumm.Queen
         public PCSound(IMixer mixer, QueenEngine vm)
             : base(mixer, vm)
         {
-            // TODO: _music = new MidiMusic(vm);
+            _music = new MidiMusic(vm);
+        }
+
+        public override void PlaySong(short songNum)
+        {
+            if (songNum <= 0)
+            {
+                _music.StopSong();
+                return;
+            }
+            short newTune;
+            if (_vm.Resource.IsDemo)
+            {
+                if (songNum == 17)
+                {
+                    _music.StopSong();
+                    return;
+                }
+                newTune = (short)(_songDemo[songNum - 1].tuneList[0] - 1);
+            }
+            else
+            {
+                newTune = (short)(_song[songNum - 1].tuneList[0] - 1);
+            }
+
+            if (_tune[newTune].sfx[0]!=0)
+            {
+                PlaySfx((ushort)_tune[newTune].sfx[0]);
+                return;
+            }
+
+            if (!MusicOn)
+                return;
+
+            int overrideCmd = (_vm.Resource.IsDemo) ? _songDemo[songNum - 1].overrideCmd : _song[songNum - 1].overrideCmd;
+            switch (overrideCmd)
+            {
+                // Override all songs
+                case 1:
+                    break;
+                // Alter song settings (such as volume) and exit
+                case 2:
+                    _music.ToggleVChange();
+                    return;
+                default:
+                    return;
+            }
+
+            _lastOverride = songNum;
+
+            _music.QueueTuneList(newTune);
+            _music.PlayMusic();
         }
 
         public override void PlaySpeech(string @base)

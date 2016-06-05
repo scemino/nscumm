@@ -48,7 +48,7 @@ namespace NScumm.Queen
                     return true;
                 if (_vm.Resource.Platform != Platform.Amiga)
                 {
-                    // TODO:
+                    // TODO: conf
                     //					if (ConfMan.getBool("alt_intro") && _vm.Resource.IsCD) {
                     //						PlayCutaway("CINTR.CUT");
                     //					} else {
@@ -80,7 +80,7 @@ namespace NScumm.Queen
 
         protected override void SetupSpecialMoveTable()
         {
-            // TODO: 
+            // TODO: special move
             			_specialMoves[2] = AsmMakeJoeUseDress;
             			_specialMoves[3] = AsmMakeJoeUseNormalClothes;
             			_specialMoves[4] = AsmMakeJoeUseUnderwear;

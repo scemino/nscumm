@@ -1,10 +1,10 @@
 //
-//  SoundHandle.cs
+//  SongData.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
 //
-//  Copyright (c) 2014 
+//  Copyright (c) 2016 scemino
 //
 //  This program is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -19,15 +19,26 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace NScumm.Core.Audio
+namespace NScumm.Queen
 {
-    public class SoundHandle
+    public class SongData
     {
-        public int Value;
+        public short[] tuneList=new short[5];
+        public short volume;
+        public short tempo;
+        public short reverb;
+        public short overrideCmd;
+        public short ignore;
 
-        public SoundHandle()
+        public SongData(short[] tuneList, short volume,short tempo,short reverb,short overrideCmd, short ignore)
         {
-            Value = int.MaxValue;
+            this.tuneList = tuneList;
+            this.volume = volume;
+            this.tempo = tempo;
+            this.reverb = reverb;
+            this.overrideCmd = overrideCmd;
+            this.ignore = ignore;
         }
     }
+    
 }

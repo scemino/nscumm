@@ -48,11 +48,12 @@ namespace NScumm.Queen
         const int MIN_TEXT_SPEED = 4;
         const int MAX_TEXT_SPEED = 100;
             
-        GameSettings _settings;
         QueenSystem _system;
+        Mixer _mixer;
 
         int _lastUpdateTime, _lastSaveTime;
-        Mixer _mixer;
+
+        public GameSettings Settings { get; private set; }
 
         public Logic Logic { get; private set; }
 
@@ -86,14 +87,17 @@ namespace NScumm.Queen
 
         public bool Subtitles { get; private set; }
 
+        public IMixer Mixer { get { return _mixer;} }
+
 
 		public QueenEngine (GameSettings settings, IGraphicsManager gfxManager, IInputManager inputManager,
 		                    IAudioOutput output, ISaveFileManager saveFileManager, bool debugMode)
 		{
             Randomizer = new Random();
-			_settings = settings;
+			Settings = settings;
 			_system = new QueenSystem (gfxManager, inputManager, saveFileManager);
             _mixer = new Mixer(44100);
+            _mixer.Read(new short[0], 0);
             output.SetSampleProvider(_mixer);
 		}
 
@@ -124,7 +128,7 @@ namespace NScumm.Queen
 //				Input.DebuggerReset();
 //				Debugger.Attach();
 //			}
-			// TODO:
+			// TODO: save
 //			if (CanLoadOrSave()) {
 //				if (Input.QuickSave()) {
 //					Input.QuickSaveReset();
@@ -147,14 +151,13 @@ namespace NScumm.Queen
 					Display.BlankScreen();
 				}
 			}
-			// TODO:
-			//Sound.updateMusic();
+			Sound.UpdateMusic();
 
 		}
 
 		public void Run ()
 		{
-			Resource = new Resource (_settings.Game.Path);
+			Resource = new Resource (Settings.Game.Path);
 			Bam = new BamScene (this);
 			BankMan = new BankManager (Resource);
 			Command = new Command (this);
@@ -164,7 +167,7 @@ namespace NScumm.Queen
 			Grid = new Grid (this);
 			Input = new Input (Resource.Language, _system);
 
-			// TODO:
+			// TODO: demo/interview
 //			if (Resource.IsDemo) {
 //				_logic = new LogicDemo(this);
 //			} else if (Resource.IsInterview) {
@@ -185,7 +188,7 @@ namespace NScumm.Queen
 
 			Logic.Start();
 
-			// TODO: 
+			// TODO: save
 //			if (ConfMan.hasKey("save_slot") && canLoadOrSave()) {
 //				loadGameState(ConfMan.getInt("save_slot"));
 //			}
@@ -212,7 +215,7 @@ namespace NScumm.Queen
         void ReadOptionSettings()
         {
             bool mute = false;
-            // TODO:
+            // TODO: conf
             //if (ConfMan.hasKey("mute"))
             //    mute = ConfMan.getBool("mute");
 
@@ -255,7 +258,7 @@ namespace NScumm.Queen
 		}
 
 		private void RegisterDefaultSettings() {
-            // TODO:
+            // TODO: conf
 			// ConfMan.registerDefault("talkspeed", Logic::DEFAULT_TALK_SPEED);
 			// ConfMan.registerDefault("subtitles", true);
 			Subtitles = true;

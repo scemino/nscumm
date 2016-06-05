@@ -251,7 +251,7 @@ namespace NScumm.Queen
                         int x = int.Parse(sentence + index + 5);
                         int y = int.Parse(sentence + index + 9);
                         if (string.Equals(person.name, "JOE"))
-                            _vm.Walk.MoveJoe(0, (ushort)x, (ushort)y, _vm.Input.CutawayRunning);
+                            _vm.Walk.MoveJoe(0, (short)x, (short)y, _vm.Input.CutawayRunning);
                         else
                             _vm.Walk.MovePerson(person, (short)x, (short)y, _vm.Graphics.NumFrames, 0);
                         index += 11;

@@ -127,6 +127,7 @@ namespace NScumm.Core.Audio
         {
             lock (_gate)
             {
+                if (handle == null) return false;
                 var index = handle.Value % NumChannels;
                 return _channels[index] != null && _channels[index].Handle.Value == handle.Value;
             }

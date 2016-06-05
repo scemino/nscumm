@@ -176,7 +176,7 @@ namespace NScumm.Core
         /// <remarks>We refer to "pulses" as "ticks".</remarks>
         public int PulsesPerQuarterNote { get; set; }
 
-        public abstract void LoadMusic(byte[] data);
+        public abstract void LoadMusic(byte[] data, int offset, int length);
 
         public void UnloadMusic()
         {

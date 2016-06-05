@@ -33,9 +33,13 @@ namespace NScumm.Core.Audio.Midi
 
         MemoryStream input;
 
-        public override void LoadMusic(byte[] data)
+        public override void LoadMusic(byte[] data, int offset, int length)
         {
-            input = new MemoryStream(data);
+            if (offset + length > data.Length)
+            {
+                throw new InvalidOperationException();
+            }
+            input = new MemoryStream(data,offset,length);
             UnloadMusic();
 
             int midiType;

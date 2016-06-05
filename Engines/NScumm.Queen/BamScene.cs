@@ -432,11 +432,10 @@ namespace NScumm.Queen
                 _objfx.CurPos((ushort)bdb.fx.x, (ushort)bdb.fx.y);
                 _objfx.frameNum = (ushort)(41 + bdb.fx.frame);
 
-                // TODO: sound
-                //if (bdb.sfx < 0)
-                //{
-                //    _vm.Sound.PlaySong(-bdb.sfx);
-                //}
+                if (bdb.sfx < 0)
+                {
+                    _vm.Sound.PlaySong((short)-bdb.sfx);
+                }
 
                 if (bdb.sfx == 99)
                 {
@@ -447,11 +446,10 @@ namespace NScumm.Queen
                     ++_index;
                 }
 
-                // TODO: sound
-                //if (bdb.sfx == 2)
-                //{
-                //    PlaySfx();
-                //}
+                if (bdb.sfx == 2)
+                {
+                    PlaySfx();
+                }
             }
         }
 
@@ -483,11 +481,10 @@ namespace NScumm.Queen
                 _objfx.frameNum = (ushort)(40 + Math.Abs(bdb.fx.frame));
                 _objfx.xflip = (bdb.fx.frame < 0);
 
-                // TODO: sound
-                //if (bdb.sfx < 0)
-                //{
-                //    _vm.Sound().PlaySong(-bdb.sfx);
-                //}
+                if (bdb.sfx < 0)
+                {
+                    _vm.Sound.PlaySong((short)-bdb.sfx);
+                }
 
                 ++_index;
                 switch (bdb.sfx)
@@ -503,11 +500,11 @@ namespace NScumm.Queen
                         _vm.Display.Shake = false;
                         _screenShaked = true;
                         break;
-                    case 2: // TODO: play background sfx
-                        //PlaySfx();
+                    case 2: // play background sfx
+                        PlaySfx();
                         break;
-                    case 3: // TODO: play background sfx and shake screen
-                        //PlaySfx();
+                    case 3: // play background sfx and shake screen
+                        PlaySfx();
                         _vm.Display.Shake = false;
                         _screenShaked = true;
                         break;
@@ -542,6 +539,12 @@ namespace NScumm.Queen
 
             _index = 0;
             _lastSoundIndex = 0;
+        }
+
+        private void PlaySfx()
+        {
+            _vm.Sound.PlaySfx(_vm.Logic.CurrentRoomSfx);
+            _lastSoundIndex = _index;
         }
     }
 

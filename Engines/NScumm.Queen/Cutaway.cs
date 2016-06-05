@@ -157,6 +157,11 @@ namespace NScumm.Queen
 
         bool _roomFade;
 
+        /// <summary>
+        /// Song played before running comic.cut.
+        /// </summary>
+        short _songBeforeComic;
+
         short _lastSong;
         /// <summary>
         /// Number of elements used in _personData array
@@ -267,9 +272,8 @@ namespace NScumm.Queen
 
                 ObjectType @objectType = GetObjectType(@object);
 
-                // TODO: 
-                //				if (@object.song!=0)
-                //					_vm.Sound.PlaySong (@object.song);
+                if (@object.song != 0)
+                    _vm.Sound.PlaySong((short)@object.song);
 
                 switch (objectType)
                 {
@@ -391,10 +395,9 @@ namespace NScumm.Queen
             // if the cutaway has been cancelled, we must stop the speech and the sfx as well
             if (_vm.Input.CutawayQuit)
             {
-                // TODO:
-                //				if (_vm.Sound.IsSpeechActive)
-                //					_vm.Sound.StopSpeech ();
-                //				_vm.Sound.StopSfx ();
+                if (_vm.Sound.IsSpeechActive)
+                    _vm.Sound.StopSpeech();
+                _vm.Sound.StopSfx();
             }
 
             _vm.Input.CutawayRunning = false;
@@ -402,11 +405,10 @@ namespace NScumm.Queen
             _vm.Input.QuickSaveReset();
             _vm.Input.QuickLoadReset();
 
-            // TODO:
-            //			if (_songBeforeComic > 0)
-            //				_vm.Sound.PlaySong (_songBeforeComic);
-            //			else if (_lastSong > 0)
-            //				_vm.Sound.PlaySong (_lastSong);
+            if (_songBeforeComic > 0)
+                _vm.Sound.PlaySong(_songBeforeComic);
+            else if (_lastSong > 0)
+                _vm.Sound.PlaySong(_lastSong);
         }
 
         void TalkCore(out string nextFilename)
@@ -457,18 +459,17 @@ namespace NScumm.Queen
 
             _vm.Graphics.SetBobText(bob, sentence, x, @object.bobStartY, @object.specialMove, flags);
 
-            // TODO: sound
-            //if (ObjectType.OBJECT_TYPE_TEXT_SPEAK == type || ObjectType.OBJECT_TYPE_TEXT_DISPLAY_AND_SPEAK == type)
-            //{
-            //    if (_vm.Sound.SpeechOn())
-            //    {
-            //        string voiceFileName=FindCdCut(_basename, index)+1;
-            //        _vm.Sound.PlaySpeech(voiceFileName);
-            //    }
+            if (ObjectType.OBJECT_TYPE_TEXT_SPEAK == type || ObjectType.OBJECT_TYPE_TEXT_DISPLAY_AND_SPEAK == type)
+            {
+                if (_vm.Sound.SpeechOn)
+                {
+                    string voiceFileName = FindCdCut(_basename, index) + 1;
+                    _vm.Sound.PlaySpeech(voiceFileName);
+                }
 
-            //    if (ObjectType.OBJECT_TYPE_TEXT_SPEAK == type && _vm.Sound.SpeechOn && !_vm.Subtitles)
-            //        _vm.Display.ClearTexts(0, 150);
-            //}
+                if (ObjectType.OBJECT_TYPE_TEXT_SPEAK == type && _vm.Sound.SpeechOn && !_vm.Subtitles)
+                    _vm.Display.ClearTexts(0, 150);
+            }
 
             while (true)
             {
@@ -483,15 +484,14 @@ namespace NScumm.Queen
                     break;
                 }
 
-                // TODO:
-                //if ((ObjectType.OBJECT_TYPE_TEXT_SPEAK == type || ObjectType.OBJECT_TYPE_TEXT_DISPLAY_AND_SPEAK == type) && _vm.Sound.SpeechOn && _vm.Sound.SpeechSfxExists)
-                //{
-                //    if (!_vm.Sound.IsSpeechActive)
-                //    {
-                //        break;
-                //    }
-                //}
-                //else
+                if ((ObjectType.OBJECT_TYPE_TEXT_SPEAK == type || ObjectType.OBJECT_TYPE_TEXT_DISPLAY_AND_SPEAK == type) && _vm.Sound.SpeechOn && _vm.Sound.SpeechSfxExists)
+                {
+                    if (!_vm.Sound.IsSpeechActive)
+                    {
+                        break;
+                    }
+                }
+                else
                 {
                     --spaces;
                     if (spaces <= 0)
@@ -531,7 +531,7 @@ namespace NScumm.Queen
             {
                 if (@object.moveToX != 0 || @object.moveToY != 0)
                 {
-                    _vm.Walk.MoveJoe(0, (ushort)@object.moveToX, (ushort)@object.moveToY, true);
+                    _vm.Walk.MoveJoe(0, @object.moveToX, @object.moveToY, true);
                 }
             }
             else
@@ -613,7 +613,7 @@ namespace NScumm.Queen
 
             if (@object.scale > 0)
                 scaling = @object.scale;
-            else if (@object.objectNumber==0)
+            else if (@object.objectNumber == 0)
             {
                 // Only scale Joe
                 int x, y;
@@ -633,7 +633,7 @@ namespace NScumm.Queen
                 int zone = _vm.Grid.FindAreaForPos(GridScreen.ROOM, (ushort)x, (ushort)y);
                 if (zone > 0)
                 {
-                    Area area = _vm.Grid.Areas[_vm.Logic.CurrentRoom, zone];
+                    Area area = _vm.Grid.Areas[_vm.Logic.CurrentRoom][zone];
                     scaling = area.CalcScale((short)y);
                 }
             }
@@ -797,9 +797,8 @@ namespace NScumm.Queen
                     if (_vm.Input.CutawayQuit)
                         return null;
 
-                    // TODO: sound
-                    //if (objAnim[i].song > 0)
-                    //    _vm.Sound.PlaySong(objAnim[i].song);
+                    if (objAnim[i].song > 0)
+                        _vm.Sound.PlaySong(objAnim[i].song);
 
                 } // for ()
             }
@@ -916,7 +915,7 @@ namespace NScumm.Queen
             return ptr;
         }
 
-        int MakeComplexAnimation(short currentImage, CutawayAnim[] objAnim, int frameCount)
+        private int MakeComplexAnimation(short currentImage, CutawayAnim[] objAnim, int frameCount)
         {
             int[] frameIndex = new int[256];
             int i;
@@ -1022,12 +1021,12 @@ namespace NScumm.Queen
 
                         if (areaSubIndex > 0)
                         {
-                            Area area = _vm.Grid.Areas[areaIndex, areaSubIndex];
+                            Area area = _vm.Grid.Areas[areaIndex][areaSubIndex];
                             area.mapNeighbors = Math.Abs(area.mapNeighbors);
                         }
                         else
                         {
-                            Area area = _vm.Grid.Areas[areaIndex, Math.Abs(areaSubIndex)];
+                            Area area = _vm.Grid.Areas[areaIndex][Math.Abs(areaSubIndex)];
                             area.mapNeighbors = (short)-Math.Abs(area.mapNeighbors);
                         }
                     }
@@ -1038,7 +1037,6 @@ namespace NScumm.Queen
 
         void Stop()
         {
-            // TODO:
             // Lines 1901-2032 in cutaway.c
             var ptr = _gameStatePtr;
             var p = 0;

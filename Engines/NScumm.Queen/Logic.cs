@@ -297,7 +297,7 @@ namespace NScumm.Queen
             }
         }
 
-        private void MakeJoeSpeak(ushort descNum, bool objectType = false)
+        public void MakeJoeSpeak(ushort descNum, bool objectType = false)
         {
             string text = objectType ? ObjectTextualDescription(descNum) : JoeResponse(descNum);
             if (objectType)
@@ -946,7 +946,7 @@ namespace NScumm.Queen
                 ushort jx = JoeX;
                 ushort jy = JoeY;
                 JoePos(0, 0);
-                _vm.Walk.MoveJoe(0, jx, jy, inCutaway);
+                _vm.Walk.MoveJoe(0, (short)jx, (short)jy, inCutaway);
             }
         }
 
@@ -996,7 +996,7 @@ namespace NScumm.Queen
                 ushort a = _vm.Grid.FindAreaForPos(GridScreen.ROOM, (ushort)oldx, (ushort)oldy);
                 if (a > 0)
                 {
-                    JoeScale = (_vm.Grid.Areas[CurrentRoom, a].CalcScale(oldy));
+                    JoeScale = (_vm.Grid.Areas[CurrentRoom][a].CalcScale(oldy));
                 }
                 else
                 {
@@ -1052,9 +1052,16 @@ namespace NScumm.Queen
             pbs.frameNum = 31;
         }
 
-        private WalkOffData WalkOffPointForObject(ushort entryObj)
+        private WalkOffData WalkOffPointForObject(ushort obj)
         {
-            throw new NotImplementedException();
+            for (ushort i = 1; i <= _numWalkOffs; ++i)
+            {
+                if (_walkOffData[i].entryObj == obj)
+                {
+                    return _walkOffData[i];
+                }
+            }
+            return null;
         }
 
         private string RoomName(ushort roomNum)

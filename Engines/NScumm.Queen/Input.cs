@@ -128,7 +128,7 @@ namespace NScumm.Queen
 
 		public void CheckKeys ()
 		{
-			// TODO: 
+			// TODO: checkkeys
 		}
 
 		public void Delay (int amount)

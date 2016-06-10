@@ -19,20 +19,16 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using System;
 using NScumm.Core;
-using NScumm.Core.IO;
-using NScumm.Core.Graphics;
-using NScumm.Core.Input;
-using NScumm.Core.Audio;
 
 namespace NScumm.Queen
 {
-	public class GraphicData {
-		//! coordinates of object
-		public ushort x, y;
-		//! bank bobframes
-		/*!
+    public class GraphicData
+    {
+        //! coordinates of object
+        public ushort x, y;
+        //! bank bobframes
+        /*!
 		<table>
 			<tr>
 				<td>lastFrame == 0</td>
@@ -52,17 +48,18 @@ namespace NScumm.Queen
 			</tr>
 		</table>
 	*/
-		public short firstFrame, lastFrame;
-		//! moving speed of object
-		public ushort speed;
+        public short firstFrame, lastFrame;
+        //! moving speed of object
+        public ushort speed;
 
-		public void ReadFromBE(byte[] data, ref int ptr) {
-			x = data.ToUInt16BigEndian(ptr); ptr += 2;
-			y = data.ToUInt16BigEndian(ptr); ptr += 2;
-			firstFrame = data.ToInt16BigEndian(ptr); ptr += 2;
-			lastFrame = data.ToInt16BigEndian(ptr); ptr += 2;
-			speed = data.ToUInt16BigEndian(ptr); ptr += 2;
-		}
-	}
-	
+        public void ReadFromBE(byte[] data, ref int ptr)
+        {
+            x = data.ToUInt16BigEndian(ptr); ptr += 2;
+            y = data.ToUInt16BigEndian(ptr); ptr += 2;
+            firstFrame = data.ToInt16BigEndian(ptr); ptr += 2;
+            lastFrame = data.ToInt16BigEndian(ptr); ptr += 2;
+            speed = data.ToUInt16BigEndian(ptr); ptr += 2;
+        }
+    }
+
 }

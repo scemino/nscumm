@@ -265,13 +265,13 @@ namespace NScumm.Queen
 
         private void Close(uint bankslot)
         {
-            D.Debug(9, "BankManager::close({bankslot})");
+            D.Debug(9, $"BankManager::close({bankslot})");
             // assert(bankslot < MAX_BANKS_NUMBER);
             var bank = _banks[bankslot];
             bank.Reset();
         }
 
-        internal void Overpack(uint srcframe, uint dstframe, uint bankslot)
+        public void Overpack(uint srcframe, uint dstframe, uint bankslot)
         {
             D.Debug(9, $"BankManager::overpack({srcframe}, {dstframe}, {bankslot})");
 

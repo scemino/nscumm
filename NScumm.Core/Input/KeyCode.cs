@@ -40,6 +40,7 @@ namespace NScumm.Core
         Return = 13,
         Escape = 27,
         Space = 32,
+        Comma = 44,
         OemPeriod = 46,
 
         F1 = 315,

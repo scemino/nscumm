@@ -81,47 +81,47 @@ namespace NScumm.Queen
         protected override void SetupSpecialMoveTable()
         {
             // TODO: special move
-            			_specialMoves[2] = AsmMakeJoeUseDress;
-            			_specialMoves[3] = AsmMakeJoeUseNormalClothes;
-            			_specialMoves[4] = AsmMakeJoeUseUnderwear;
-            			_specialMoves[7] = AsmStartCarAnimation;       // room 74
-            			_specialMoves[8] = AsmStopCarAnimation;        // room 74
-            			//_specialMoves[9] = AsmStartFightAnimation;     // room 69
-            			//_specialMoves[10] = AsmWaitForFrankPosition;   // c69e.cut
-            			//_specialMoves[11] = AsmMakeFrankGrowing;       // c69z.cut
-            			//_specialMoves[12] = AsmMakeRobotGrowing;       // c69z.cut
-            //			_specialMoves[14] = asmEndGame;
-            //			_specialMoves[15] = asmPutCameraOnDino;
-            //			_specialMoves[16] = asmPutCameraOnJoe;
-            //			_specialMoves[19] = asmSetAzuraInLove;
-            //			_specialMoves[20] = asmPanRightFromJoe;
-            //			_specialMoves[21] = asmSetLightsOff;
-            //			_specialMoves[22] = asmSetLightsOn;
-            //			_specialMoves[23] = asmSetManequinAreaOn;
-            //			_specialMoves[24] = asmPanToJoe;
-            //			_specialMoves[25] = asmTurnGuardOn;
-            //			_specialMoves[26] = asmPanLeft320To144;
-            //			_specialMoves[27] = asmSmoochNoScroll;
-            //			_specialMoves[28] = asmMakeLightningHitPlane;
-            //			_specialMoves[29] = asmScaleBlimp;
-            //			_specialMoves[30] = asmScaleEnding;
-            //			_specialMoves[31] = asmWaitForCarPosition;
-            //			_specialMoves[33] = asmAttemptPuzzle;
-            //			_specialMoves[34] = asmScrollTitle;
-            			if (_vm.Resource.Platform == Platform.DOS) {
-            //				_specialMoves[5]  = asmSwitchToDressPalette;
-            //				_specialMoves[6]  = asmSwitchToNormalPalette;
-            //				_specialMoves[13] = asmShrinkRobot;
-            //				_specialMoves[17] = asmAltIntroPanRight;      // cintr.cut
-            //				_specialMoves[18] = asmAltIntroPanLeft;       // cintr.cut
-            //				_specialMoves[27] = asmSmooch;
-            				_specialMoves[32] = AsmShakeScreen;
-            				_specialMoves[34] = AsmScaleTitle;
-            				_specialMoves[36] = AsmPanRightToHugh;
-            				_specialMoves[37] = AsmMakeWhiteFlash;
-            				_specialMoves[38] = AsmPanRightToJoeAndRita;
-            				_specialMoves[39] = AsmPanLeftToBomb;         // cdint.cut
-            			}
+			_specialMoves[2] = AsmMakeJoeUseDress;
+			_specialMoves[3] = AsmMakeJoeUseNormalClothes;
+			_specialMoves[4] = AsmMakeJoeUseUnderwear;
+			_specialMoves[7] = AsmStartCarAnimation;       // room 74
+			_specialMoves[8] = AsmStopCarAnimation;        // room 74
+    		_specialMoves[9] = AsmStartFightAnimation;     // room 69
+    		_specialMoves[10] = AsmWaitForFrankPosition;   // c69e.cut
+    		_specialMoves[11] = AsmMakeFrankGrowing;       // c69z.cut
+    		_specialMoves[12] = AsmMakeRobotGrowing;       // c69z.cut
+			//_specialMoves[14] = asmEndGame;
+			//_specialMoves[15] = asmPutCameraOnDino;
+			//_specialMoves[16] = asmPutCameraOnJoe;
+			//_specialMoves[19] = asmSetAzuraInLove;
+			//_specialMoves[20] = asmPanRightFromJoe;
+			//_specialMoves[21] = asmSetLightsOff;
+			//_specialMoves[22] = asmSetLightsOn;
+			//_specialMoves[23] = asmSetManequinAreaOn;
+			//_specialMoves[24] = asmPanToJoe;
+			//_specialMoves[25] = asmTurnGuardOn;
+			//_specialMoves[26] = asmPanLeft320To144;
+			//_specialMoves[27] = asmSmoochNoScroll;
+			//_specialMoves[28] = asmMakeLightningHitPlane;
+			//_specialMoves[29] = asmScaleBlimp;
+			//_specialMoves[30] = asmScaleEnding;
+			//_specialMoves[31] = asmWaitForCarPosition;
+			//_specialMoves[33] = asmAttemptPuzzle;
+			//_specialMoves[34] = asmScrollTitle;
+			if (_vm.Resource.Platform == Platform.DOS) {
+				_specialMoves[5]  = AsmSwitchToDressPalette;
+				_specialMoves[6]  = AsmSwitchToNormalPalette;
+				_specialMoves[13] = AsmShrinkRobot;
+				_specialMoves[17] = AsmAltIntroPanRight;      // cintr.cut
+				_specialMoves[18] = AsmAltIntroPanLeft;       // cintr.cut
+				_specialMoves[27] = AsmSmooch;
+				_specialMoves[32] = AsmShakeScreen;
+				_specialMoves[34] = AsmScaleTitle;
+				_specialMoves[36] = AsmPanRightToHugh;
+				_specialMoves[37] = AsmMakeWhiteFlash;
+				_specialMoves[38] = AsmPanRightToJoeAndRita;
+				_specialMoves[39] = AsmPanLeftToBomb;         // cdint.cut
+			}
         }
     }
 }

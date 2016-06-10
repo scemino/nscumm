@@ -118,7 +118,7 @@ namespace NScumm.Queen
 
         public short[] GameState { get; private set; }
 
-        public ushort CurrentRoomSfx { get { return _sfxName[CurrentRoom]; }}
+        public ushort CurrentRoomSfx { get { return _sfxName[CurrentRoom]; } }
 
         public ushort NewRoom
         {
@@ -420,10 +420,148 @@ namespace NScumm.Queen
             return framenum;
         }
 
+        public void HandleSpecialArea(Direction facing, ushort areaNum, ushort walkDataNum)
+        {
+            // queen.c l.2838-2911
+            D.Debug(9, $"handleSpecialArea({facing}, {areaNum}, {walkDataNum})");
+
+            // Stop animating Joe
+            _vm.Graphics.Bobs[0].animating = false;
+
+            // Make Joe face the right direction
+            JoeFacing = facing;
+            JoeFace();
+
+            NewRoom = 0;
+            EntryObj = 0;
+
+            string nextCut = string.Empty;
+
+            switch (CurrentRoom)
+            {
+                case Defines.ROOM_JUNGLE_BRIDGE:
+                    MakeJoeSpeak(16);
+                    break;
+                case Defines.ROOM_JUNGLE_GORILLA_1:
+                    PlayCutaway("C6C.CUT", out nextCut);
+                    break;
+                case Defines.ROOM_JUNGLE_GORILLA_2:
+                    PlayCutaway("C14B.CUT", out nextCut);
+                    break;
+                case Defines.ROOM_AMAZON_ENTRANCE:
+                    if (areaNum == 3)
+                    {
+                        PlayCutaway("C16A.CUT", out nextCut);
+                    }
+                    break;
+                case Defines.ROOM_AMAZON_HIDEOUT:
+                    if (walkDataNum == 4)
+                    {
+                        PlayCutaway("C17A.CUT", out nextCut);
+                    }
+                    else if (walkDataNum == 2)
+                    {
+                        PlayCutaway("C17B.CUT", out nextCut);
+                    }
+                    break;
+                case Defines.ROOM_FLODA_OUTSIDE:
+                    PlayCutaway("C22A.CUT", out nextCut);
+                    break;
+                case Defines.ROOM_FLODA_KITCHEN:
+                    PlayCutaway("C26B.CUT", out nextCut);
+                    break;
+                case Defines.ROOM_FLODA_KLUNK:
+                    PlayCutaway("C30A.CUT", out nextCut);
+                    break;
+                case Defines.ROOM_FLODA_HENRY:
+                    PlayCutaway("C32C.CUT", out nextCut);
+                    break;
+                case Defines.ROOM_TEMPLE_ZOMBIES:
+                    if (areaNum == 6)
+                    {
+                        switch (GameState[Defines.VAR_BYPASS_ZOMBIES])
+                        {
+                            case 0:
+                                PlayCutaway("C50D.CUT", out nextCut);
+                                while (nextCut[0] != '\0')
+                                {
+                                    PlayCutaway(nextCut, out nextCut);
+                                }
+                                GameState[Defines.VAR_BYPASS_ZOMBIES] = 1;
+                                break;
+                            case 1:
+                                PlayCutaway("C50H.CUT", out nextCut);
+                                break;
+                        }
+                    }
+                    break;
+                case Defines.ROOM_TEMPLE_SNAKE:
+                    PlayCutaway("C53B.CUT", out nextCut);
+                    break;
+                case Defines.ROOM_TEMPLE_LIZARD_LASER:
+                    MakeJoeSpeak(19);
+                    break;
+                case Defines.ROOM_HOTEL_DOWNSTAIRS:
+                    MakeJoeSpeak(21);
+                    break;
+                case Defines.ROOM_HOTEL_LOBBY:
+                    switch (GameState[Defines.VAR_HOTEL_ESCAPE_STATE])
+                    {
+                        case 0:
+                            PlayCutaway("C73A.CUT");
+                            JoeUseUnderwear();
+                            JoeFace();
+                            GameState[Defines.VAR_HOTEL_ESCAPE_STATE] = 1;
+                            break;
+                        case 1:
+                            PlayCutaway("C73B.CUT");
+                            GameState[Defines.VAR_HOTEL_ESCAPE_STATE] = 2;
+                            break;
+                        case 2:
+                            PlayCutaway("C73C.CUT");
+                            break;
+                    }
+                    break;
+                case Defines.ROOM_TEMPLE_MAZE_5:
+                    if (areaNum == 7)
+                    {
+                        MakeJoeSpeak(17);
+                    }
+                    break;
+                case Defines.ROOM_TEMPLE_MAZE_6:
+                    if (areaNum == 5 && GameState[187] == 0)
+                    {
+                        PlayCutaway("C101B.CUT", out nextCut);
+                    }
+                    break;
+                case Defines.ROOM_FLODA_FRONTDESK:
+                    if (areaNum == 3)
+                    {
+                        switch (GameState[Defines.VAR_BYPASS_FLODA_RECEPTIONIST])
+                        {
+                            case 0:
+                                PlayCutaway("C103B.CUT", out nextCut);
+                                GameState[Defines.VAR_BYPASS_FLODA_RECEPTIONIST] = 1;
+                                break;
+                            case 1:
+                                PlayCutaway("C103E.CUT", out nextCut);
+                                break;
+                        }
+                    }
+                    break;
+            }
+
+            while (nextCut.Length > 4 &&
+                   string.Compare(nextCut, nextCut.Length - 4, ".CUT", 0, 4, StringComparison.OrdinalIgnoreCase) == 0)
+            {
+                PlayCutaway(nextCut, out nextCut);
+            }
+        }
+
         public void StartCredits(string filename)
         {
             StopCredits();
-            // TODO: _credits = new Credits(_vm, filename);
+            _credits = new Credits(_vm, filename);
         }
 
         public ushort FindBob(short obj)
@@ -1048,7 +1186,7 @@ namespace NScumm.Queen
             }
 
             JoeFace();
-            pbs.CurPos((ushort)oldx, (ushort)oldy);
+            pbs.CurPos(oldx, oldy);
             pbs.frameNum = 31;
         }
 
@@ -1379,6 +1517,94 @@ namespace NScumm.Queen
             _vm.Graphics.Bobs[7].active = false; // gun shots
         }
 
+        protected void AsmStartFightAnimation()
+        {
+            _vm.Bam._flag = BamFlags.F_PLAY;
+            _vm.Bam.PrepareAnimation();
+            GameState[148] = 1;
+        }
+
+        protected void AsmWaitForFrankPosition()
+        {
+            _vm.Bam._flag = BamFlags.F_REQ_STOP;
+            while (_vm.Bam._flag != BamFlags.F_STOP)
+            {
+                _vm.Update();
+            }
+        }
+
+        protected void AsmMakeFrankGrowing()
+        {
+            _vm.BankMan.Unpack(1, 38, 15);
+            BobSlot bobFrank = _vm.Graphics.Bobs[5];
+            bobFrank.frameNum = 38;
+            if (_vm.Resource.Platform == Platform.Amiga)
+            {
+                bobFrank.active = true;
+                bobFrank.x = 160;
+                bobFrank.scale = 100;
+                for (int i = 350; i >= 200; i -= 5)
+                {
+                    bobFrank.y = (short)i;
+                    _vm.Update();
+                }
+            }
+            else
+            {
+                bobFrank.CurPos(160, 200);
+                for (int i = 10; i <= 100; i += 4)
+                {
+                    bobFrank.scale = (ushort)i;
+                    _vm.Update();
+                }
+            }
+            for (int i = 0; i <= 20; ++i)
+            {
+                _vm.Update();
+            }
+
+            ObjectData[521].name = Math.Abs(ObjectData[521].name); // Dinoray
+            ObjectData[526].name = Math.Abs(ObjectData[526].name); // Frank obj
+            ObjectData[522].name = (short)-Math.Abs(ObjectData[522].name); // TMPD object off
+            ObjectData[525].name = (short)-Math.Abs(ObjectData[525].name); // Floda guards off
+            ObjectData[523].name = (short)-Math.Abs(ObjectData[523].name); // Sparky object off
+            GameState[157] = 1; // No more Ironstein
+        }
+
+        protected void AsmMakeRobotGrowing()
+        {
+            _vm.BankMan.Unpack(1, 38, 15);
+            BobSlot bobRobot = _vm.Graphics.Bobs[5];
+            bobRobot.frameNum = 38;
+            if (_vm.Resource.Platform == Platform.Amiga)
+            {
+                bobRobot.active = true;
+                bobRobot.x = 160;
+                bobRobot.scale = 100;
+                for (int i = 350; i >= 200; i -= 5)
+                {
+                    bobRobot.y = (short)i;
+                    _vm.Update();
+                }
+            }
+            else
+            {
+                bobRobot.CurPos(160, 200);
+                for (int i = 10; i <= 100; i += 4)
+                {
+                    bobRobot.scale = (ushort)i;
+                    _vm.Update();
+                }
+            }
+            for (int i = 0; i <= 20; ++i)
+            {
+                _vm.Update();
+            }
+
+            ObjectData[524].name = (short)-Math.Abs(ObjectData[524].name); // Azura object off
+            ObjectData[526].name = (short)-Math.Abs(ObjectData[526].name); // Frank object off
+        }
+
         protected void AsmScaleTitle()
         {
             BobSlot bob = _vm.Graphics.Bobs[5];
@@ -1450,7 +1676,6 @@ namespace NScumm.Queen
             _vm.Input.FastMode = false;
         }
 
-
         protected void AsmPanRightToJoeAndRita()
         { // cdint.cut
             BobSlot bob_box = _vm.Graphics.Bobs[20];
@@ -1503,7 +1728,6 @@ namespace NScumm.Queen
             _vm.Update();
         }
 
-
         protected void AsmPanLeftToBomb()
         {
             BobSlot bob21 = _vm.Graphics.Bobs[21];
@@ -1534,8 +1758,90 @@ namespace NScumm.Queen
             _vm.Input.FastMode = false;
         }
 
+        protected void AsmShrinkRobot()
+        {
+            int i;
+            BobSlot robot = _vm.Graphics.Bobs[6];
+            for (i = 100; i >= 35; i -= 5)
+            {
+                robot.scale = (ushort)i;
+                _vm.Update();
+            }
+        }
 
-        void JoeUseDress(bool showCut)
+        protected void AsmAltIntroPanRight()
+        {
+            _vm.Graphics.PutCameraOnBob(-1);
+            _vm.Input.FastMode = true;
+            _vm.Update();
+            short scrollx = _vm.Display.HorizontalScroll;
+            while (scrollx < 285 && !_vm.Input.CutawayQuit)
+            {
+                ++scrollx;
+                if (scrollx > 285)
+                {
+                    scrollx = 285;
+                }
+                _vm.Display.HorizontalScroll = scrollx;
+                _vm.Update();
+            }
+            _vm.Input.FastMode = false;
+        }
+
+        protected void AsmAltIntroPanLeft()
+        {
+            _vm.Graphics.PutCameraOnBob(-1);
+            _vm.Input.FastMode = true;
+            short scrollx = _vm.Display.HorizontalScroll;
+            while (scrollx > 0 && !_vm.Input.CutawayQuit)
+            {
+                scrollx -= 4;
+                if (scrollx < 0)
+                {
+                    scrollx = 0;
+                }
+                _vm.Display.HorizontalScroll = scrollx;
+                _vm.Update();
+            }
+            _vm.Input.FastMode = false;
+        }
+
+        protected void AsmSmooch()
+        {
+            _vm.Graphics.PutCameraOnBob(-1);
+            BobSlot bobAzura = _vm.Graphics.Bobs[5];
+            BobSlot bobJoe = _vm.Graphics.Bobs[6];
+            short scrollx = _vm.Display.HorizontalScroll;
+            while (scrollx < 320)
+            {
+                scrollx += 8;
+                _vm.Display.HorizontalScroll = scrollx;
+                if (bobJoe.x - bobAzura.x > 128)
+                {
+                    bobAzura.x += 10;
+                    bobJoe.x += 6;
+                }
+                else
+                {
+                    bobAzura.x += 8;
+                    bobJoe.x += 8;
+                }
+                _vm.Update();
+            }
+        }
+
+        protected void AsmEndGame()
+        {
+            int n = 40;
+            while ((n--)!=0)
+            {
+                _vm.Update();
+            }
+            //  debug("Game completed.");
+            // TODO: _vm.QuitGame();
+        }
+
+        private void JoeUseDress(bool showCut)
         {
             if (showCut)
             {

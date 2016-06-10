@@ -227,7 +227,29 @@ namespace NScumm.Queen
 
         public void ToggleVChange()
         {
-            throw new NotImplementedException();
+            SetVolume(_vToggle ? (GetVolume() * 2) : (GetVolume() / 2));
+            _vToggle = !_vToggle;
+        }
+
+        public int GetVolume() { return _masterVolume; }
+
+        public void SetVolume(int volume)
+        {
+            if (volume < 0)
+                volume = 0;
+            else if (volume > 255)
+                volume = 255;
+
+            if (_masterVolume == volume)
+                return;
+
+            _masterVolume = (byte)volume;
+
+            for (int i = 0; i < 16; ++i)
+            {
+                if (_channelsTable[i]!=null)
+                    _channelsTable[i].Volume((byte)(_channelsVolume[i] * _masterVolume / 255));
+            }
         }
 
         public override void Send(int b)

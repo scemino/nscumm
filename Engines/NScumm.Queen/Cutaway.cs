@@ -76,7 +76,7 @@ namespace NScumm.Queen
         public int personCount;
     }
 
-    struct PersonFace
+    class PersonFace
     {
         public short index;
         public short image;
@@ -121,47 +121,29 @@ namespace NScumm.Queen
         const int BACK = 4;
 
         readonly QueenEngine _vm;
-
         byte[] _fileData;
-
         string _basename;
-
         ushort _comPanel;
-
         short _cutawayObjectCount;
-
         int _finalRoom;
-
         bool _anotherCutaway;
-
         ByteAccess _gameStatePtr;
-
         ushort _nextSentenceOff;
-
         ByteAccess _objectData;
-
         string _talkFile;
-
         short _talkTo;
-
         ushort _currentImage;
-
         ushort _temporaryRoom;
-
         ushort _initialRoom;
-
         /// <summary>
         /// Number of entries in _personFace array.
         /// </summary>
         int _personFaceCount;
-
         bool _roomFade;
-
         /// <summary>
         /// Song played before running comic.cut.
         /// </summary>
         short _songBeforeComic;
-
         short _lastSong;
         /// <summary>
         /// Number of elements used in _personData array
@@ -171,9 +153,7 @@ namespace NScumm.Queen
         /// Used by changeRooms.
         /// </summary>
         ObjectDataBackup[] _personData;
-
         PersonFace[] _personFace;
-
         readonly string[] _bankNames = new string[MAX_BANK_NAME_COUNT];
 
         public static void Run(string filename, out string nextFilename, QueenEngine vm)
@@ -191,8 +171,20 @@ namespace NScumm.Queen
                 _personData[i] = new ObjectDataBackup();
             }
             _personFace = new PersonFace[MAX_PERSON_FACE_COUNT];
+            for (int i = 0; i < _personFace.Length; i++)
+            {
+                _personFace[i] = new PersonFace();
+            }
             _vm.Input.CutawayQuitReset();
             Load(filename);
+        }
+
+        private void ClearPersonFace()
+        {
+            for (int i = 0; i < _personFace.Length; i++)
+            {
+                _personFace[i] = new PersonFace();
+            }
         }
 
         private void Run(out string nextFilename)
@@ -219,7 +211,7 @@ namespace NScumm.Queen
                 _vm.Logic.SceneStart();
             }
 
-            Array.Clear(_personFace, 0, _personFace.Length);
+            ClearPersonFace();
             _personFaceCount = 0;
 
             var ptr = new ByteAccess(_objectData);
@@ -411,7 +403,7 @@ namespace NScumm.Queen
                 _vm.Sound.PlaySong(_lastSong);
         }
 
-        void TalkCore(out string nextFilename)
+        private void TalkCore(out string nextFilename)
         {
             nextFilename = string.Empty;
             var p = ServiceLocator.FileStorage.GetExtension(_talkFile);
@@ -423,7 +415,7 @@ namespace NScumm.Queen
             }
         }
 
-        void RestorePersonData()
+        private void RestorePersonData()
         {
             for (int i = 0; i < _personDataCount; i++)
             {
@@ -434,7 +426,7 @@ namespace NScumm.Queen
             }
         }
 
-        void HandleText(int index, ObjectType type, CutawayObject @object, string sentence)
+        private void HandleText(int index, ObjectType type, CutawayObject @object, string sentence)
         {
             // lines 1776-1863 in cutaway.c
 
@@ -505,7 +497,7 @@ namespace NScumm.Queen
             _vm.Update();
         }
 
-        int CountSpaces(ObjectType type, string sentence)
+        private int CountSpaces(ObjectType type, string sentence)
         {
             int tmp = 0;
 
@@ -521,7 +513,7 @@ namespace NScumm.Queen
             return (tmp * 2) / (_vm.TalkSpeed / 3);
         }
 
-        void HandlePersonRecord(int index, CutawayObject @object, string sentence)
+        private void HandlePersonRecord(int index, CutawayObject @object, string sentence)
         {
             // Lines 1455-1516 in cutaway.c
 
@@ -549,12 +541,8 @@ namespace NScumm.Queen
                 }
 
                 if (@object.moveToX != 0 || @object.moveToY != 0)
-                    _vm.Walk.MovePerson(
-                        p,
-                        @object.moveToX, @object.moveToY,
-                        _currentImage + 1,
-                        _vm.Logic.ObjectData[@object.objectNumber].image
-                    );
+                    _vm.Walk.MovePerson(p, @object.moveToX, @object.moveToY, (ushort)(_currentImage + 1),
+                    _vm.Logic.ObjectData[@object.objectNumber].image);
             }
 
             if (_vm.Input.CutawayQuit)
@@ -565,7 +553,7 @@ namespace NScumm.Queen
                 if (sentence[0] == '#')
                 {
                     D.Debug(4, $"Starting credits '{sentence.Substring(1)}'");
-                    _vm.Logic.StartCredits(sentence + 1);
+                    _vm.Logic.StartCredits(sentence.Substring(1));
                 }
                 else
                 {
@@ -601,13 +589,13 @@ namespace NScumm.Queen
                 return;
         }
 
-        static string FindCdCut(string basename, int index)
+        private static string FindCdCut(string basename, int index)
         {
             string result = basename.PadRight(5, '_');
             return $"{result}{index:D02}";
         }
 
-        int Scale(CutawayObject @object)
+        private int Scale(CutawayObject @object)
         {
             int scaling = 100;
 
@@ -641,7 +629,7 @@ namespace NScumm.Queen
             return scaling;
         }
 
-        ByteAccess HandleAnimation(ByteAccess ptr, CutawayObject @object)
+        private ByteAccess HandleAnimation(ByteAccess ptr, CutawayObject @object)
         {
             // lines 1517-1770 in cutaway.c
             int frameCount = 0;
@@ -732,7 +720,7 @@ namespace NScumm.Queen
 
                 for (i = 0; i < frameCount; i++)
                 {
-                    //debug(6, "===== Animating frame %i =====", i);
+                    D.Debug(6, $"===== Animating frame {i} =====");
                     //dumpCutawayAnim(objAnim[i]);
 
                     BobSlot bob = _vm.Graphics.Bobs[objAnim[i].@object];
@@ -789,8 +777,7 @@ namespace NScumm.Queen
                             bob.frameNum = (ushort)objAnim[i].originalFrame;
                         }
 
-                        int j;
-                        for (j = 0; j < objAnim[i].speed; j++)
+                        for (var j = 0; j < objAnim[i].speed; j++)
                             _vm.Update();
                     }
 
@@ -827,7 +814,7 @@ namespace NScumm.Queen
             return ptr;
         }
 
-        ByteAccess GetCutawayAnim(ByteAccess ptr, int header, CutawayAnim anim)
+        private ByteAccess GetCutawayAnim(ByteAccess ptr, int header, CutawayAnim anim)
         {
             // lines 1531-1607 in cutaway.c
             D.Debug(6, $"[Cutaway::getCutawayAnim] header={header}");
@@ -958,7 +945,7 @@ namespace NScumm.Queen
             return currentImage;
         }
 
-        void UpdateGameState()
+        private void UpdateGameState()
         {
             // Lines 2047-2115 in cutaway.c
             var ptr = _gameStatePtr;
@@ -1035,7 +1022,7 @@ namespace NScumm.Queen
             } // for ()
         }
 
-        void Stop()
+        private void Stop()
         {
             // Lines 1901-2032 in cutaway.c
             var ptr = _gameStatePtr;
@@ -1203,7 +1190,7 @@ namespace NScumm.Queen
 
         public bool InRange(short x, short l, short h) { return (x <= h && x >= l); }
 
-        void ChangeRooms(CutawayObject @object)
+        private void ChangeRooms(CutawayObject @object)
         {
             // Lines 1291-1385 in cutaway.c
 
@@ -1313,7 +1300,7 @@ namespace NScumm.Queen
             RestorePersonData();
         }
 
-        void LimitBob(CutawayObject @object)
+        private void LimitBob(CutawayObject @object)
         {
             if (@object.limitBobX1 != 0)
             {
@@ -1359,7 +1346,7 @@ namespace NScumm.Queen
             return ptr;
         }
 
-        ObjectType GetObjectType(CutawayObject @object)
+        private ObjectType GetObjectType(CutawayObject @object)
         {
             // Lines 1387-1449 in cutaway.c
 
@@ -1468,7 +1455,6 @@ namespace NScumm.Queen
             return ptr;
         }
 
-
         private void Load(string filename)
         {
             D.Debug(6, $"----- Cutaway::load(\"{filename}\") -----");
@@ -1476,9 +1462,8 @@ namespace NScumm.Queen
             var ptr = _fileData = _vm.Resource.LoadFile(filename, 20);
             var p = 0;
 
-            // TODO:
-            //			if (string.Equals(filename, "COMIC.CUT", StringComparison.OrdinalIgnoreCase))
-            //				_songBeforeComic = _vm.Sound.LastOverride;
+            if (string.Equals(filename, "COMIC.CUT", StringComparison.OrdinalIgnoreCase))
+                _songBeforeComic = _vm.Sound.LastOverride;
 
             _basename = filename.Substring(0, filename.Length - 4);
 
@@ -1566,7 +1551,7 @@ namespace NScumm.Queen
             }
         }
 
-        void LoadStrings(ushort offset)
+        private void LoadStrings(ushort offset)
         {
             int bankNameCount = _fileData.ToUInt16BigEndian(offset);
             offset += 2;

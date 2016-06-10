@@ -421,15 +421,15 @@ namespace NScumm.Queen
                 BamDataBlock bdb = _carData[_index];
 
                 // Truck
-                _obj1.CurPos((ushort)bdb.obj1.x, (ushort)bdb.obj1.y);
+                _obj1.CurPos(bdb.obj1.x, bdb.obj1.y);
                 _obj1.frameNum = (ushort)(40 + bdb.obj1.frame);
 
                 // Rico
-                _obj2.CurPos((ushort)bdb.obj2.x, (ushort)bdb.obj2.y);
+                _obj2.CurPos(bdb.obj2.x, bdb.obj2.y);
                 _obj2.frameNum = (ushort)(30 + bdb.obj2.frame);
 
                 // FX
-                _objfx.CurPos((ushort)bdb.fx.x, (ushort)bdb.fx.y);
+                _objfx.CurPos(bdb.fx.x, bdb.fx.y);
                 _objfx.frameNum = (ushort)(41 + bdb.fx.frame);
 
                 if (bdb.sfx < 0)
@@ -467,17 +467,17 @@ namespace NScumm.Queen
                 BamDataBlock bdb = _fightData[_index];
 
                 // Frank
-                _obj1.CurPos((ushort)bdb.obj1.x, (ushort)bdb.obj1.y);
+                _obj1.CurPos(bdb.obj1.x, bdb.obj1.y);
                 _obj1.frameNum = (ushort)(40 + Math.Abs(bdb.obj1.frame));
                 _obj1.xflip = (bdb.obj1.frame < 0);
 
                 // Robot
-                _obj2.CurPos((ushort)bdb.obj2.x, (ushort)bdb.obj2.y);
+                _obj2.CurPos(bdb.obj2.x, bdb.obj2.y);
                 _obj2.frameNum = (ushort)(40 + Math.Abs(bdb.obj2.frame));
                 _obj2.xflip = (bdb.obj2.frame < 0);
 
                 // FX
-                _objfx.CurPos((ushort)bdb.fx.x, (ushort)bdb.fx.y);
+                _objfx.CurPos(bdb.fx.x, bdb.fx.y);
                 _objfx.frameNum = (ushort)(40 + Math.Abs(bdb.fx.frame));
                 _objfx.xflip = (bdb.fx.frame < 0);
 

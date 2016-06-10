@@ -23,15 +23,15 @@ using NScumm.Core;
 
 namespace NScumm.Queen
 {
-	public class Box
+    public class Box
 	{
-		public short x1, y1, x2, y2;
+        public short x1, y1, x2, y2;
 
-		public Box ()
-		{
-		}
+        public Box()
+        {
+        }
 
-		public Box (short xx1, short yy1, short xx2, short yy2)
+        public Box (short xx1, short yy1, short xx2, short yy2)
 		{
 			x1 = xx1;
 			y1 = yy1;
@@ -92,10 +92,9 @@ namespace NScumm.Queen
 
 		public override bool Equals (object obj)
 		{
-			var box = obj as Box;
-			if (box == null)
-				return false;
+            if (!(obj is Box)) return false;
 
+            var box = (Box)obj;
 			return (x1 == box.x1) && (x2 == box.x2) && (y1 == box.y1) && (y2 == box.y2);
 		}
 

@@ -219,11 +219,11 @@ namespace NScumm.Queen
             box = defaultBox;
         }
 
-        public void CurPos(ushort xx, ushort yy)
+        public void CurPos(short xx, short yy)
         {
             active = true;
-            x = (short)xx;
-            y = (short)yy;
+            x = xx;
+            y = yy;
         }
 
         public void AnimNormal(ushort firstFrame, ushort lastFrame, ushort spd, bool rebound, bool flip)
@@ -300,6 +300,19 @@ namespace NScumm.Queen
             MoveOneStep();
 
         }
+
+        public void ScaleWalkSpeed(ushort ms)
+        {
+            if (!xmajor)
+            {
+                ms /= 2;
+            }
+            speed = (short)(scale * ms / 100);
+            if (speed == 0)
+            {
+                speed = 1;
+            }
+        }
     }
 
     public class BobFrame
@@ -319,6 +332,24 @@ namespace NScumm.Queen
         }
     }
 
+    class BobSlotComparer : Comparer<BobSlot>
+    {
+        public static readonly BobSlotComparer Instance = new BobSlotComparer();
+
+        public override int Compare(BobSlot x, BobSlot y)
+        {
+            int d = x.y - y.y;
+            // As the qsort() function may reorder "equal" elements,
+            // we use the bob slot number when needed. This is required
+            // during the introduction, to hide a crate behind the clock.
+            if (d == 0)
+            {
+                d = -1;
+            }
+            return d;
+        }
+    }
+
     public class Graphics
     {
         public const int BOB_OBJ1 = 5;
@@ -332,49 +363,49 @@ namespace NScumm.Queen
         private const int MAX_STRING_SIZE = (MAX_STRING_LENGTH + 1);
         private const int BOB_SHRINK_BUF_SIZE = 60000;
 
-        QueenEngine _vm;
-        Box _defaultBox;
-        Box _gameScreenBox;
-        Box _fullScreenBox;
+        private QueenEngine _vm;
+        private Box _defaultBox;
+        private Box _gameScreenBox;
+        private Box _fullScreenBox;
         /// <summary>
         /// used to scale a BobFrame
         /// </summary>
-        BobFrame _shrinkBuffer;
-        ushort[] _personFrames = new ushort[4];
+        private BobFrame _shrinkBuffer;
+        private ushort[] _personFrames = new ushort[4];
         /// <summary>
         /// In-game objects/persons animations.
         /// </summary>
-        AnimFrame[][] _newAnim;
+        private AnimFrame[][] _newAnim;
         /// <summary>
         /// Cutaway objects/persons animations.
         /// </summary>
-        AnimFrame[][] _cutAnim;
+        private AnimFrame[][] _cutAnim;
 
         /// <summary>
         /// Bob number followed by camera.
         /// </summary>
-        int _cameraBob;
+        private int _cameraBob;
 
         /// <summary>
         /// Number of static furniture in current room.
         /// </summary>
-        ushort _numFurnitureStatic;
+        private ushort _numFurnitureStatic;
 
         /// <summary>
         /// Number of animated furniture in current room
         /// </summary>
-        ushort _numFurnitureAnimated;
+        private ushort _numFurnitureAnimated;
 
         /// <summary>
         /// Total number of frames for the animated furniture
         /// </summary>
-        ushort _numFurnitureAnimatedLen;
+        private ushort _numFurnitureAnimatedLen;
 
         /// <summary>
         /// Number of bobs to display.
         /// </summary>
-        ushort _sortedBobsCount;
-        BobSlot[] _sortedBobs = new BobSlot[MAX_BOBS_NUMBER];
+        private ushort _sortedBobsCount;
+        private BobSlot[] _sortedBobs = new BobSlot[MAX_BOBS_NUMBER];
 
         public BobSlot[] Bobs { get; private set; }
         public short[] PersonFrames { get; private set; }
@@ -429,11 +460,19 @@ namespace NScumm.Queen
             for (int i = 0; i < 17; i++)
             {
                 _newAnim[i] = new AnimFrame[30];
+                for (int j = 0; j < 30; j++)
+                {
+                    _newAnim[i][j] = new AnimFrame();
+                }
             }
             _cutAnim = new AnimFrame[21][];
             for (int i = 0; i < 21; i++)
             {
                 _cutAnim[i] = new AnimFrame[30];
+                for (int j = 0; j < 30; j++)
+                {
+                    _cutAnim[i][j] = new AnimFrame();
+                }
             }
         }
 
@@ -673,7 +712,7 @@ namespace NScumm.Queen
                     ++curImage;
                     _vm.BankMan.Unpack(j, curImage, 15);
                 }
-                pbs.CurPos(pgd.x, pgd.y);
+                pbs.CurPos((short)pgd.x, (short)pgd.y);
                 pbs.frameNum = firstImage;
                 if (pgd.speed > 0)
                 {
@@ -683,7 +722,7 @@ namespace NScumm.Queen
             else
             {
                 _vm.BankMan.Unpack((uint)pgd.firstFrame, curImage, 15);
-                pbs.CurPos(pgd.x, pgd.y);
+                pbs.CurPos((short)pgd.x, (short)pgd.y);
                 pbs.frameNum = curImage;
             }
 
@@ -702,7 +741,116 @@ namespace NScumm.Queen
             DrawBobs();
         }
 
-        void DrawBobs()
+        public void DrawInventoryItem(uint frameNum, ushort x, ushort y)
+        {
+            if (frameNum != 0)
+            {
+                var bf = _vm.BankMan.FetchFrame(frameNum);
+                _vm.Display.DrawInventoryItem(bf.data, x, y, bf.width, bf.height);
+            }
+            else
+            {
+                _vm.Display.DrawInventoryItem(null, x, y, 32, 32);
+            }
+        }
+
+        public void EraseAllAnims()
+        {
+            for (int i = 1; i <= 16; ++i)
+            {
+                _newAnim[i][0].frame = 0;
+            }
+        }
+
+        public void ClearPersonFrames()
+        {
+            Array.Clear(_personFrames, 0, _personFrames.Length);
+        }
+
+        public void SetupNewRoom(string room, ushort roomNum, short[] furniture, ushort furnitureCount)
+        {
+            // reset sprites table
+            ClearBobs();
+
+            // load/setup objects associated to this room
+            string filename = $"{room}.BBK";
+            _vm.BankMan.Load(filename, 15);
+
+            NumFrames = Defines.FRAMES_JOE + 1;
+            SetupRoomFurniture(furniture, furnitureCount);
+            SetupRoomObjects();
+
+            if (roomNum >= 90)
+            {
+                PutCameraOnBob(0);
+            }
+        }
+
+        public void PutCameraOnBob(int bobNum)
+        {
+            _cameraBob = bobNum;
+        }
+
+        public void UnpackControlBank()
+        {
+            if (_vm.Resource.Platform == Platform.DOS)
+            {
+                _vm.BankMan.Load("CONTROL.BBK", 17);
+
+                // unpack mouse pointer frame
+                _vm.BankMan.Unpack(1, 1, 17);
+
+                // unpack arrows frames and change hotspot to be always on top
+                _vm.BankMan.Unpack(3, 3, 17);
+                _vm.BankMan.FetchFrame(3).yhotspot += 200;
+                _vm.BankMan.Unpack(4, 4, 17);
+                _vm.BankMan.FetchFrame(4).yhotspot += 200;
+
+                _vm.BankMan.Close(17);
+            }
+        }
+
+        public void SetupMouseCursor()
+        {
+            if (_vm.Resource.Platform == Platform.Amiga)
+            {
+
+                byte[] cursorData = new byte[16 * 15];
+                var src = defaultAmigaCursor;
+                var srcPos = 0;
+                int i = 0;
+                for (int h = 0; h < 15; ++h)
+                {
+                    for (int b = 0; b < 16; ++b)
+                    {
+                        ushort mask = (ushort)(1 << (15 - b));
+                        byte color = 0;
+                        if ((src.ToUInt16BigEndian(srcPos) & mask) != 0)
+                        {
+                            color |= 2;
+                        }
+                        if ((src.ToUInt16BigEndian(srcPos + 2) & mask) != 0)
+                        {
+                            color |= 1;
+                        }
+                        if (color != 0)
+                        {
+                            cursorData[i] = (byte)(0x90 + color - 1);
+                        }
+                        ++i;
+                    }
+                    srcPos += 4;
+                }
+                _vm.Display.SetMouseCursor(cursorData, 16, 15);
+            }
+            else
+            {
+                BobFrame bf = _vm.BankMan.FetchFrame(1);
+                _vm.Display.SetMouseCursor(bf.data, bf.width, bf.height);
+            }
+        }
+
+        private void DrawBobs()
         {
             Box bobBox = _vm.Display.Fullscreen ? _fullScreenBox : _gameScreenBox;
             for (int i = 0; i < _sortedBobsCount; ++i)
@@ -710,12 +858,10 @@ namespace NScumm.Queen
                 BobSlot pbs = _sortedBobs[i];
                 if (pbs.active)
                 {
-
                     BobFrame pbf = _vm.BankMan.FetchFrame(pbs.frameNum);
-                    ushort xh, yh, x, y;
 
-                    xh = pbf.xhotspot;
-                    yh = pbf.yhotspot;
+                    ushort xh = pbf.xhotspot;
+                    ushort yh = pbf.yhotspot;
 
                     if (pbs.xflip)
                     {
@@ -730,15 +876,15 @@ namespace NScumm.Queen
                     }
 
                     // adjusts position to hot-spot and screen scroll
-                    x = (ushort)(pbs.x - xh - _vm.Display.HorizontalScroll);
-                    y = (ushort)(pbs.y - yh);
+                    ushort x = (ushort)(pbs.x - xh - _vm.Display.HorizontalScroll);
+                    ushort y = (ushort)(pbs.y - yh);
 
                     DrawBob(pbs, pbf, bobBox, (short)x, (short)y);
                 }
             }
         }
 
-        void DrawBob(BobSlot bs, BobFrame bf, Box bbox, short x, short y)
+        private void DrawBob(BobSlot bs, BobFrame bf, Box bbox, short x, short y)
         {
             D.Debug(9, $"Graphics::drawBob({bs.frameNum}, {x}, {y})");
 
@@ -802,7 +948,7 @@ namespace NScumm.Queen
 
         }
 
-        void ShrinkFrame(BobFrame bf, ushort percentage)
+        private void ShrinkFrame(BobFrame bf, ushort percentage)
         {
             // computing new size, rounding to upper value
             ushort new_w = (ushort)((bf.width * percentage + 50) / 100);
@@ -833,7 +979,7 @@ namespace NScumm.Queen
             }
         }
 
-        void HandleParallax(ushort roomNum)
+        private void HandleParallax(ushort roomNum)
         {
             var screenScroll = _vm.Display.HorizontalScroll;
             switch (roomNum)
@@ -885,7 +1031,7 @@ namespace NScumm.Queen
             }
         }
 
-        void SortBobs()
+        private void SortBobs()
         {
             _sortedBobsCount = 0;
 
@@ -920,75 +1066,7 @@ namespace NScumm.Queen
             Array.Sort(_sortedBobs, 0, _sortedBobsCount, BobSlotComparer.Instance);
         }
 
-        class BobSlotComparer : Comparer<BobSlot>
-        {
-            public static readonly BobSlotComparer Instance = new BobSlotComparer();
-
-            public override int Compare(BobSlot x, BobSlot y)
-            {
-                int d = x.y - y.y;
-                // As the qsort() function may reorder "equal" elements,
-                // we use the bob slot number when needed. This is required
-                // during the introduction, to hide a crate behind the clock.
-                if (d == 0)
-                {
-                    d = -1;
-                }
-                return d;
-            }
-        }
-
-        public void DrawInventoryItem(uint frameNum, ushort x, ushort y)
-        {
-            if (frameNum != 0)
-            {
-                var bf = _vm.BankMan.FetchFrame(frameNum);
-                _vm.Display.DrawInventoryItem(bf.data, x, y, bf.width, bf.height);
-            }
-            else
-            {
-                _vm.Display.DrawInventoryItem(null, x, y, 32, 32);
-            }
-        }
-
-        public void EraseAllAnims()
-        {
-            for (int i = 1; i <= 16; ++i)
-            {
-                _newAnim[i][0].frame = 0;
-            }
-        }
-
-        public void ClearPersonFrames()
-        {
-            Array.Clear(_personFrames, 0, _personFrames.Length);
-        }
-
-        public void SetupNewRoom(string room, ushort roomNum, short[] furniture, ushort furnitureCount)
-        {
-            // reset sprites table
-            ClearBobs();
-
-            // load/setup objects associated to this room
-            string filename = $"{room}.BBK";
-            _vm.BankMan.Load(filename, 15);
-
-            NumFrames = Defines.FRAMES_JOE + 1;
-            SetupRoomFurniture(furniture, furnitureCount);
-            SetupRoomObjects();
-
-            if (roomNum >= 90)
-            {
-                PutCameraOnBob(0);
-            }
-        }
-
-        public void PutCameraOnBob(int bobNum)
-        {
-            _cameraBob = bobNum;
-        }
-
-        void SetupRoomObjects()
+        private void SetupRoomObjects()
         {
             ushort i;
             // furniture frames are reserved in ::setupRoomFurniture(), we append objects
@@ -1059,7 +1137,7 @@ namespace NScumm.Queen
                         if (pod.name > 0)
                         {
                             BobSlot pbs = Bobs[curBob];
-                            pbs.CurPos(pgd.x, pgd.y);
+                            pbs.CurPos((short)pgd.x, (short)pgd.y);
                             pbs.frameNum = firstFrame;
                             if (pgd.speed > 0)
                             {
@@ -1079,7 +1157,7 @@ namespace NScumm.Queen
                         if (pod.name > 0)
                         {
                             BobSlot pbs = Bobs[curBob];
-                            pbs.CurPos(pgd.x, pgd.y);
+                            pbs.CurPos((short)pgd.x, (short)pgd.y);
                             pbs.frameNum = curImage;
                         }
                         ++numObjectStatic;
@@ -1120,7 +1198,7 @@ namespace NScumm.Queen
 
         }
 
-        ushort AllocPerson(ushort noun, ushort curImage)
+        private ushort AllocPerson(ushort noun, ushort curImage)
         {
             Person p;
             if (_vm.Logic.InitPerson(noun, "", false, out p) && p.anim != null)
@@ -1131,7 +1209,7 @@ namespace NScumm.Queen
             return curImage;
         }
 
-        ushort CountAnimFrames(string anim)
+        private ushort CountAnimFrames(string anim)
         {
             var afbuf = new AnimFrame[30];
             FillAnimBuffer(anim, afbuf);
@@ -1155,7 +1233,7 @@ namespace NScumm.Queen
             return count;
         }
 
-        ushort SetupPerson(ushort noun, ushort curImage)
+        private ushort SetupPerson(ushort noun, ushort curImage)
         {
             if (noun == 0)
             {
@@ -1181,7 +1259,7 @@ namespace NScumm.Queen
             _vm.BankMan.Unpack(pad.bobFrameStanding, p.bobFrame, p.actor.bankNum);
             ushort obj = (ushort)(_vm.Logic.CurrentRoomData + noun);
             BobSlot pbs = Bobs[pad.bobNum];
-            pbs.CurPos(pad.x, pad.y);
+            pbs.CurPos((short)pad.x, (short)pad.y);
             pbs.scale = scale;
             pbs.frameNum = p.bobFrame;
             pbs.xflip = (_vm.Logic.ObjectData[obj].image == -3); // person is facing left
@@ -1199,7 +1277,7 @@ namespace NScumm.Queen
             return curImage;
         }
 
-        void ErasePersonAnim(ushort bobNum)
+        private void ErasePersonAnim(ushort bobNum)
         {
             _newAnim[bobNum][0].frame = 0;
             BobSlot pbs = Bobs[bobNum];
@@ -1207,7 +1285,7 @@ namespace NScumm.Queen
             pbs.anim.@string.buffer = null;
         }
 
-        ushort SetupPersonAnim(ActorData ad, string anim, ushort curImage)
+        private ushort SetupPersonAnim(ActorData ad, string anim, ushort curImage)
         {
             D.Debug(9, $"Graphics::setupPersonAnim({anim}, {curImage})");
             _personFrames[ad.bobNum] = (ushort)(curImage + 1);
@@ -1266,7 +1344,7 @@ namespace NScumm.Queen
             return curImage;
         }
 
-        void FillAnimBuffer(string anim, AnimFrame[] af)
+        private void FillAnimBuffer(string anim, AnimFrame[] af)
         {
             var i = 0;
             var o = 0;
@@ -1286,7 +1364,7 @@ namespace NScumm.Queen
             }
         }
 
-        void SetupObjectAnim(GraphicData gd, ushort firstImage, ushort bobNum, bool visible)
+        private void SetupObjectAnim(GraphicData gd, ushort firstImage, ushort bobNum, bool visible)
         {
             short[] tempFrames = new short[20];
             ushort numTempFrames = 0;
@@ -1343,7 +1421,7 @@ namespace NScumm.Queen
             pbs.animating = false;
             if (visible)
             {
-                pbs.CurPos(gd.x, gd.y);
+                pbs.CurPos((short)gd.x, (short)gd.y);
                 if (tempFrames[0] < 0)
                 {
                     pbs.xflip = true;
@@ -1381,7 +1459,7 @@ namespace NScumm.Queen
             }
         }
 
-        void SetupRoomFurniture(short[] furniture, ushort furnitureCount)
+        private void SetupRoomFurniture(short[] furniture, ushort furnitureCount)
         {
             ushort i;
             ushort curImage = Defines.FRAMES_JOE;
@@ -1401,7 +1479,7 @@ namespace NScumm.Queen
                         _vm.BankMan.Unpack((uint)pgd.firstFrame, curImage, 15);
                         ++NumFrames;
                         BobSlot pbs = Bobs[19 + _numFurnitureStatic];
-                        pbs.CurPos(pgd.x, pgd.y);
+                        pbs.CurPos((short)pgd.x, (short)pgd.y);
                         pbs.frameNum = curImage;
                     }
                 }
@@ -1440,7 +1518,7 @@ namespace NScumm.Queen
                         }
                         BobSlot pbs = Bobs[5 + curBob];
                         pbs.AnimNormal(image, curImage, (ushort)(pgd.speed / 4), rebound, false);
-                        pbs.CurPos(pgd.x, pgd.y);
+                        pbs.CurPos((short)pgd.x, (short)pgd.y);
                         ++curBob;
                     }
                 }
@@ -1457,7 +1535,7 @@ namespace NScumm.Queen
 
         }
 
-        void PasteBob(ushort objNum, ushort image)
+        private void PasteBob(ushort objNum, ushort image)
         {
             GraphicData pgd = _vm.Logic.GraphicData[objNum];
             _vm.BankMan.Unpack((uint)pgd.firstFrame, image, 15);
@@ -1473,66 +1551,6 @@ namespace NScumm.Queen
                 Bobs[i].Clear(_defaultBox);
             }
         }
-
-        public void UnpackControlBank()
-        {
-            if (_vm.Resource.Platform == Platform.DOS)
-            {
-                _vm.BankMan.Load("CONTROL.BBK", 17);
-
-                // unpack mouse pointer frame
-                _vm.BankMan.Unpack(1, 1, 17);
-
-                // unpack arrows frames and change hotspot to be always on top
-                _vm.BankMan.Unpack(3, 3, 17);
-                _vm.BankMan.FetchFrame(3).yhotspot += 200;
-                _vm.BankMan.Unpack(4, 4, 17);
-                _vm.BankMan.FetchFrame(4).yhotspot += 200;
-
-                _vm.BankMan.Close(17);
-            }
-        }
-
-        public void SetupMouseCursor()
-        {
-            if (_vm.Resource.Platform == Platform.Amiga)
-            {
-
-                byte[] cursorData = new byte[16 * 15];
-                var src = defaultAmigaCursor;
-                var srcPos = 0;
-                int i = 0;
-                for (int h = 0; h < 15; ++h)
-                {
-                    for (int b = 0; b < 16; ++b)
-                    {
-                        ushort mask = (ushort)(1 << (15 - b));
-                        byte color = 0;
-                        if ((src.ToUInt16BigEndian(srcPos) & mask) != 0)
-                        {
-                            color |= 2;
-                        }
-                        if ((src.ToUInt16BigEndian(srcPos + 2) & mask) != 0)
-                        {
-                            color |= 1;
-                        }
-                        if (color != 0)
-                        {
-                            cursorData[i] = (byte)(0x90 + color - 1);
-                        }
-                        ++i;
-                    }
-                    srcPos += 4;
-                }
-                _vm.Display.SetMouseCursor(cursorData, 16, 15);
-            }
-            else
-            {
-                BobFrame bf = _vm.BankMan.FetchFrame(1);
-                _vm.Display.SetMouseCursor(bf.data, bf.width, bf.height);
-            }
-        }
-
     }
 }
 

@@ -28,13 +28,18 @@ namespace NScumm.Queen
 		//! bitmask of connected areas
 		public short mapNeighbors;
 		//! coordinates defining area limits
-		public Box box = new Box ();
+		public Box box;
 		//! scaling factors for bobs actors
 		public ushort bottomScaleFactor, topScaleFactor;
 		//! entry in ObjectData, object lying in this area
 		public ushort @object;
 
-		public void ReadFromBE (byte[] data, ref int ptr)
+        public Area()
+        {
+            box = new Box();
+        }
+
+        public void ReadFromBE (byte[] data, ref int ptr)
 		{
 			mapNeighbors = data.ToInt16BigEndian (ptr);
 			ptr += 2;

@@ -20,35 +20,34 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
 using NScumm.Core;
-using NScumm.Core.IO;
-using NScumm.Core.Graphics;
-using NScumm.Core.Input;
-using NScumm.Core.Audio;
+using System.Linq;
+using D = NScumm.Core.DebugHelper;
 
 namespace NScumm.Queen
 {
-	public class Input
-	{
-		public const int DELAY_SHORT = 10;
-		public const int DELAY_NORMAL = 100;
-		public const int DELAY_SCREEN_BLANKER = 5 * 60 * 1000;
+    public class Input
+    {
+        public const int DELAY_SHORT = 10;
+        public const int DELAY_NORMAL = 100;
+        public const int DELAY_SCREEN_BLANKER = 5 * 60 * 1000;
 
-		private string _currentCommandKeys;
+        private string _currentCommandKeys;
 
-		ISystem _system;
+        ISystem _system;
 
-		bool _quickSave;
-		bool _quickLoad;
-		bool _dialogueRunning;
-		bool _talkQuit;
+        bool _quickSave;
+        bool _quickLoad;
+        bool _dialogueRunning;
+        bool _talkQuit;
 
         /// <summary>
         /// the current verb received from keyboard.
         /// </summary>
         Verb _keyVerb;
+        KeyCode _inKey;
 
-		private static readonly string[] _commandKeys = {
-			"ocmglptu", // English
+        private static readonly string[] _commandKeys = {
+            "ocmglptu", // English
 			"osbgpnre", // German
 			"ofdnepau", // French
 			"acsdgpqu", // Italian
@@ -56,133 +55,223 @@ namespace NScumm.Queen
 			"acodmthu"  // Spanish
 		};
 
-		public bool CutawayQuit { get; private set;}
+        private static readonly Verb[] _verbKeys = {
+            Verb.OPEN,
+            Verb.CLOSE,
+            Verb.MOVE,
+            Verb.GIVE,
+            Verb.LOOK_AT,
+            Verb.PICK_UP,
+            Verb.TALK_TO,
+            Verb.USE
+        };
 
-		public bool CanQuit { get; set; }
+        public bool CutawayQuit { get; private set; }
 
-		public bool TalkQuit { get{ return _talkQuit; } }
+        public bool CanQuit { get; set; }
 
-		/// <summary>
-		/// Gets user idle time.
-		/// </summary>
-		public int IdleTime { get; private set; }
+        public bool TalkQuit { get { return _talkQuit; } }
 
-		/// <summary>
-		/// Gets or sets a value indicating whether a cutaway is running.
-		/// </summary>
-		/// <value><c>true</c> if a cutaway is running; otherwise, <c>false</c>.</value>
-		public bool CutawayRunning { get; set; }
+        /// <summary>
+        /// Gets user idle time.
+        /// </summary>
+        public int IdleTime { get; private set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether a cutaway is running.
+        /// </summary>
+        /// <value><c>true</c> if a cutaway is running; otherwise, <c>false</c>.</value>
+        public bool CutawayRunning { get; set; }
 
         /// <summary>
         /// Some cutaways require update() run faster.
         /// </summary>
         public bool FastMode { get; set; }
 
-        public Verb KeyVerb { get { return _keyVerb;} }
+        public Verb KeyVerb { get { return _keyVerb; } }
 
-        public Input (Language language, ISystem system)
-		{
-			_system = system;
-			switch (language) {
-			case Language.EN_ANY:
-			case Language.GR_GRE:
-			case Language.RU_RUS:
-				_currentCommandKeys = _commandKeys [0];
-				break;
-			case Language.DE_DEU:
-				_currentCommandKeys = _commandKeys [1];
-				break;
-			case Language.FR_FRA:
-				_currentCommandKeys = _commandKeys [2];
-				break;
-			case Language.IT_ITA:
-				_currentCommandKeys = _commandKeys [3];
-				break;
-			case Language.HE_ISR:
-				_currentCommandKeys = _commandKeys [4];
-				break;
-			case Language.ES_ESP:
-				_currentCommandKeys = _commandKeys [5];
-				break;
-			default:
-				throw new InvalidOperationException ("Unknown language");
-			}
-		}
+        public Input(Language language, ISystem system)
+        {
+            _system = system;
+            switch (language)
+            {
+                case Language.EN_ANY:
+                case Language.GR_GRE:
+                case Language.RU_RUS:
+                    _currentCommandKeys = _commandKeys[0];
+                    break;
+                case Language.DE_DEU:
+                    _currentCommandKeys = _commandKeys[1];
+                    break;
+                case Language.FR_FRA:
+                    _currentCommandKeys = _commandKeys[2];
+                    break;
+                case Language.IT_ITA:
+                    _currentCommandKeys = _commandKeys[3];
+                    break;
+                case Language.HE_ISR:
+                    _currentCommandKeys = _commandKeys[4];
+                    break;
+                case Language.ES_ESP:
+                    _currentCommandKeys = _commandKeys[5];
+                    break;
+                default:
+                    throw new InvalidOperationException("Unknown language");
+            }
+        }
 
-		public void DialogueRunning(bool running) { _dialogueRunning = running; }
+        public void DialogueRunning(bool running) { _dialogueRunning = running; }
 
-		public void QuickSaveReset ()
-		{
-			_quickSave = false;
-		}
+        public void QuickSaveReset()
+        {
+            _quickSave = false;
+        }
 
-		public void QuickLoadReset ()
-		{
-			_quickLoad = false;
-		}
+        public void QuickLoadReset()
+        {
+            _quickLoad = false;
+        }
 
-		public void CutawayQuitReset ()
-		{
-			CutawayQuit = false;
-		}
+        public void CutawayQuitReset()
+        {
+            CutawayQuit = false;
+        }
 
-		public void CheckKeys ()
-		{
-			// TODO: checkkeys
-		}
+        public void CheckKeys()
+        {
+            if (_inKey != KeyCode.None)
+                D.Debug(6, "[Input::checkKeys] _inKey = {_inKey}");
 
-		public void Delay (int amount)
-		{
-			if (FastMode && amount > DELAY_SHORT) {
-				amount = DELAY_SHORT;
-			}
-			if (IdleTime < DELAY_SCREEN_BLANKER) {
-				IdleTime += amount;
-			}
-			var end = Environment.TickCount + amount;
-			do {
-//				Common::Event @event;
-//				while (_eventMan.pollEvent(@event)) {
-//					_idleTime = 0;
-//					switch (@event.type) {
-//					case Common::EVENT_KEYDOWN:
-//						if (@event.kbd.hasFlags(Common::KBD_CTRL)) {
-//							if (@event.kbd.keycode == Common::KEYCODE_d) {
-//								_debugger = true;
-//							} else if (@event.kbd.keycode == Common::KEYCODE_f) {
-//								_fastMode = !_fastMode;
-//							}
-//						} else {
-//							_inKey = @event.kbd.keycode;
-//						}
-//						break;
-//
-//					case Common::EVENT_LBUTTONDOWN:
-//						_mouseButton |= MOUSE_LBUTTON;
-//						break;
-//
-//					case Common::EVENT_RBUTTONDOWN:
-//						_mouseButton |= MOUSE_RBUTTON;
-//						break;
-//					case Common::EVENT_RTL:
-//					case Common::EVENT_QUIT:
-//						if (_cutawayRunning)
-//							_cutawayQuit = true;
-//						return;
-//
-//					default:
-//						break;
-//					}
-//				}
+            switch (_inKey)
+            {
+                case KeyCode.Space:
+                    _keyVerb = Verb.SKIP_TEXT;
+                    break;
+                case KeyCode.Comma:
+                    _keyVerb = Verb.SCROLL_UP;
+                    break;
+                case KeyCode.OemPeriod:
+                    _keyVerb = Verb.SCROLL_DOWN;
+                    break;
+                case KeyCode.D1:
+                    _keyVerb = Verb.DIGIT_1;
+                    break;
+                case KeyCode.D2:
+                    _keyVerb = Verb.DIGIT_2;
+                    break;
+                case KeyCode.D3:
+                    _keyVerb = Verb.DIGIT_3;
+                    break;
+                case KeyCode.D4:
+                    _keyVerb = Verb.DIGIT_4;
+                    break;
+                case KeyCode.Escape: // skip cutaway / dialogue
+                    if (CanQuit)
+                    {
+                        if (CutawayRunning)
+                        {
+                            D.Debug(6, "[Input::checkKeys] Setting _cutawayQuit to true");
+                            CutawayQuit = true;
+                        }
+                        if (_dialogueRunning)
+                            _talkQuit = true;
+                    }
+                    break;
+                case KeyCode.F1: // use Journal
+                case KeyCode.F5:
+                    if (CutawayRunning)
+                    {
+                        if (CanQuit)
+                        {
+                            _keyVerb = Verb.USE_JOURNAL;
+                            CutawayQuit = _talkQuit = true;
+                        }
+                    }
+                    else
+                    {
+                        _keyVerb = Verb.USE_JOURNAL;
+                        if (CanQuit)
+                            _talkQuit = true;
+                    }
+                    break;
+                case KeyCode.F11: // quicksave
+                    _quickSave = true;
+                    break;
+                case KeyCode.F12: // quickload
+                    _quickLoad = true;
+                    break;
+                default:
+                    for (int i = 0; i < _verbKeys.Length; ++i)
+                    {
+                        if (ToChar(_inKey) == _currentCommandKeys[i])
+                        {
+                            _keyVerb = _verbKeys[i];
+                            break;
+                        }
+                    }
+                    break;
+            }
 
-				_system.GraphicsManager.UpdateScreen ();
+            _inKey = KeyCode.None;   // reset
+        }
 
-				if (amount == 0)
-					break;
+        private char ToChar(KeyCode key)
+        {
+            return (char)('a'+(int)(key - KeyCode.A));
+        }
 
-				ServiceLocator.Platform.Sleep ((amount > 10) ? 10 : amount);
-			} while (Environment.TickCount < end);
-		}
+        public void Delay(int amount)
+        {
+            if (FastMode && amount > DELAY_SHORT)
+            {
+                amount = DELAY_SHORT;
+            }
+            if (IdleTime < DELAY_SCREEN_BLANKER)
+            {
+                IdleTime += amount;
+            }
+            var end = Environment.TickCount + amount;
+            do
+            {
+                var state = _system.InputManager.GetState();
+                var keys = state.GetKeys();
+
+                if (keys.Count > 0)
+                {
+                    if (keys.Contains(KeyCode.LeftControl))
+                    {
+                        if (keys.Contains(KeyCode.D))
+                        {
+                            //_debugger = true;
+                        }
+                        else if (keys.Contains(KeyCode.F))
+                        {
+                            FastMode = !FastMode;
+                        }
+                    }
+                    else
+                    {
+                        _inKey = keys.First();
+                    }
+
+                    if (keys.Contains(KeyCode.Escape) && CutawayRunning)
+                        CutawayQuit = true;
+                }
+
+                //          if(state.IsLeftButtonDown)
+                //_mouseButton |= MOUSE_LBUTTON;
+
+                //          if (state.IsRightButtonDown)
+                //_mouseButton |= MOUSE_RBUTTON;
+
+                _system.GraphicsManager.UpdateScreen();
+
+                if (amount == 0)
+                    break;
+
+                ServiceLocator.Platform.Sleep((amount > 10) ? 10 : amount);
+            } while (Environment.TickCount < end);
+        }
 
         public void ClearKeyVerb()
         {

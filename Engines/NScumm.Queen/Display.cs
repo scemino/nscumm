@@ -111,6 +111,8 @@ namespace NScumm.Queen
         short _horizontalScroll;
         Action[] _effects;
         int _current;
+        private short scrollx;
+        private short j, jdir = 2;
 
         Random _rnd;
 
@@ -125,6 +127,9 @@ namespace NScumm.Queen
             0xFF, 0xFF, 0x30, 0x30, 0x90, 0x47, 0x49, 0xD0, 0x40, 0x24, 0x00, 0x79, 0x34, 0x0B, 0xB2, 0x3D,
             0x22, 0xED, 0x42, 0x42, 0x80, 0x45, 0x45, 0xA3, 0x5F, 0x5F, 0xC8, 0x7C, 0x7C, 0xEC, 0x9C, 0x9C
         };
+
+        private static readonly int[] dx = { -1, 0, 1, 1, 1, 0, -1, -1 };
+        private static readonly int[] dy = { -1, -1, -1, 0, 1, 1, 1, 0 };
 
         public short HorizontalScroll
         {
@@ -287,100 +292,6 @@ namespace NScumm.Queen
             ForceFullRefresh();
         }
 
-        private void BlankScreenEffect1()
-        {
-            var buf = new byte[32 * 32];
-            while (_vm.Input.IdleTime >= Input.DELAY_SCREEN_BLANKER)
-            {
-                for (int i = 0; i < 2; ++i)
-                {
-                    // TODO: int x = _rnd.getRandomNumber(SCREEN_W - 32 - 2) + 1;
-                    int x = _rnd.Next(1 + (SCREEN_W - 32 - 2) + 1);
-                    int y = _rnd.Next(1 + SCREEN_H - 32 - 2) + 1;
-                    var p = SCREEN_W * y + x;
-                    for (int j = 0; j < 32; ++j)
-                    {
-                        Array.Copy(_screenBuf, p, buf, j * 32, 32);
-                        p += SCREEN_W;
-                    }
-                    if (_rnd.Next(1 + 1) != 0)
-                    {
-                        ++x;
-                    }
-                    else
-                    {
-                        --x;
-                    }
-                    if (_rnd.Next(1 + 1) != 0)
-                    {
-                        ++y;
-                    }
-                    else
-                    {
-                        --y;
-                    }
-                    _system.GraphicsManager.CopyRectToScreen(buf, 32, x, y, 32, 32);
-                    _vm.Input.Delay(10);
-                }
-            }
-        }
-
-        private void BlankScreenEffect2()
-        {
-            while (_vm.Input.IdleTime >= Input.DELAY_SCREEN_BLANKER)
-            {
-                int x = _rnd.Next(1 + SCREEN_W - 2);
-                int y = _rnd.Next(1 + SCREEN_H - 2);
-                var p = y * SCREEN_W + x;
-                byte c = 0;
-                switch (_rnd.Next(1 + 3))
-                {
-                    case 0:
-                        c = _screenBuf[p];
-                        break;
-                    case 1:
-                        c = _screenBuf[p + 1];
-                        break;
-                    case 2:
-                        c = _screenBuf[p + SCREEN_W];
-                        break;
-                    case 3:
-                        c = _screenBuf[p + SCREEN_W + 1];
-                        break;
-                }
-                _screenBuf.Set(p, c, 2);
-                _screenBuf.Set(p + SCREEN_W, c, 2);
-                _system.GraphicsManager.CopyRectToScreen(_screenBuf, p, SCREEN_W, x, y, 2, 2);
-                _vm.Input.Delay(10);
-            }
-        }
-
-        private void BlankScreenEffect3()
-        {
-            var i = 0;
-            while (_vm.Input.IdleTime >= Input.DELAY_SCREEN_BLANKER)
-            {
-                if (i > 4000000)
-                {
-                    Array.Clear(_screenBuf, 0, SCREEN_W * SCREEN_H);
-                    _system.GraphicsManager.CopyRectToScreen(_screenBuf, SCREEN_W, 0, 0, SCREEN_W, SCREEN_H);
-                }
-                else
-                {
-                    int x = _rnd.Next(1 + SCREEN_W - 2);
-                    int y = _rnd.Next(1 + SCREEN_H - 2);
-                    var p = SCREEN_W * y + x;
-                    int sum = _screenBuf[p] + _screenBuf[p + 1] + _screenBuf[p + SCREEN_W] + _screenBuf[p + SCREEN_W + 1];
-                    var c = (byte)(sum / 4);
-                    _screenBuf.Set(p, c, 2);
-                    _screenBuf.Set(p + SCREEN_W, c, 2);
-                    ++i;
-                    _system.GraphicsManager.CopyRectToScreen(_screenBuf, p, SCREEN_W, x, y, 2, 2);
-                }
-                _vm.Input.Delay(10);
-            }
-        }
-
         public byte GetInkColor(InkColor color) { return _inkColors[(int)color]; }
 
         public void Update(bool dynalum, short dynaX, short dynaY)
@@ -397,7 +308,7 @@ namespace NScumm.Queen
                 _pal.dirtyMax = 144;
             }
             // uncomment this line to disable the dirty blocks rendering
-            //	_fullRefresh = 1;
+            //  _fullRefresh = 1;
             if (_fullRefresh != 0)
             {
                 _system.GraphicsManager.CopyRectToScreen(_screenBuf, SCREEN_W, 0, 0, SCREEN_W, SCREEN_H);
@@ -456,73 +367,6 @@ namespace NScumm.Queen
             // TODO: _system.SetFocusRectangle(rect);
         }
 
-        /// <summary>
-        /// Update dynalum for the current room.
-        /// </summary>
-        /// <returns>The update.</returns>
-        /// <param name="x">The x coordinate.</param>
-        /// <param name="y">The y coordinate.</param>
-        private void DynalumUpdate(short x, short y)
-        {
-            if (!_dynalum.valid)
-                return;
-
-            if (x < 0)
-            {
-                x = 0;
-            }
-            else if (x > _bdWidth)
-            {
-                x = (short)_bdWidth;
-            }
-            if (y < 0)
-            {
-                y = 0;
-            }
-            else if (y > Defines.ROOM_ZONE_HEIGHT - 1)
-            {
-                y = Defines.ROOM_ZONE_HEIGHT - 1;
-            }
-
-            uint offset = (uint)((y / 4) * 160 + (x / 4));
-            // TODO: assert(offset < _dynalum.mskSize);
-
-            byte colMask = _dynalum.mskBuf[offset];
-            D.Debug(9, $"Display::dynalumUpdate({x}, {y}) - colMask = {colMask}");
-            if (colMask != _dynalum.prevColMask)
-            {
-                for (int i = 144; i < 160; ++i)
-                {
-                    short c = (short)(_pal.room[i].R + _dynalum.lumBuf[colMask + 0] * 4);
-                    short c1 = (short)(_pal.room[i].G + _dynalum.lumBuf[colMask + 1] * 4);
-                    short c2 = (short)(_pal.room[i].B + _dynalum.lumBuf[colMask + 2] * 4);
-                    _pal.screen[i] = Color.FromRgb(
-                        ScummHelper.Clip(c, 0, 255),
-                        ScummHelper.Clip(c1, 0, 255),
-                        ScummHelper.Clip(c2, 0, 255));
-                }
-                _pal.dirtyMin = Math.Min(_pal.dirtyMin, 144);
-                _pal.dirtyMax = Math.Max(_pal.dirtyMax, 159);
-                _dynalum.prevColMask = colMask;
-            }
-        }
-
-        /// <summary>
-        /// Draw the text lists.
-        /// </summary>
-        /// <returns>The texts.</returns>
-        private void DrawTexts()
-        {
-            for (int y = Defines.GAME_SCREEN_HEIGHT - 1; y > 0; --y)
-            {
-                var pts = _texts[y];
-                if (!string.IsNullOrEmpty(pts.text))
-                {
-                    DrawText(pts.x, (ushort)y, pts.color, pts.text, pts.outlined);
-                }
-            }
-        }
-
         public ushort TextWidth(string text)
         {
             return TextWidth(text, (ushort)text.Length);
@@ -548,9 +392,6 @@ namespace NScumm.Queen
             _curTextColor = color;
         }
 
-        static readonly int[] dx = { -1, 0, 1, 1, 1, 0, -1, -1 };
-        static readonly int[] dy = { -1, -1, -1, 0, 1, 1, 1, 0 };
-
         /// <summary>
         /// Add the specified text to the texts list.
         /// </summary>
@@ -572,55 +413,6 @@ namespace NScumm.Queen
                 pts.text = text;
             }
         }
-
-        void DrawText(ushort x, ushort y, byte color, string text, bool outlined)
-        {
-            int str = 0;
-            ushort xs = x;
-            while (str < text.Length && x < SCREEN_W)
-            {
-                var ch = text[str++];
-                var ftch = ch * 8;
-                if (outlined)
-                {
-                    for (int i = 0; i < 8; ++i)
-                    {
-                        DrawChar((ushort)(x + dx[i]), (ushort)(y + dy[i]), GetInkColor(InkColor.INK_OUTLINED_TEXT), _font, ftch);
-                    }
-                }
-                DrawChar(x, y, color, _font, ftch);
-                x += _charWidth[ch];
-            }
-            SetDirtyBlock((ushort)(xs - 1), (ushort)(y - 1), (ushort)(x - xs + 2), 8 + 2);
-        }
-
-        void DrawChar(ushort x, ushort y, byte color, byte[] chr, int offs)
-        {
-            var dstBuf = _screenBuf;
-            int d = SCREEN_W * y + x;
-            for (int j = 0; j < 8; ++j)
-            {
-                var p = dstBuf;
-                int pOffs = d;
-                var c = chr[offs++];
-                if (c != 0)
-                {
-                    for (int i = 0; i < 8; ++i)
-                    {
-                        if ((c & 0x80) != 0)
-                        {
-                            p[pOffs] = color;
-                        }
-                        ++pOffs;
-                        c <<= 1;
-                    }
-                }
-                d += SCREEN_W;
-            }
-        }
-
-        static short scrollx = 0;
-        static short j = 0, jdir = 2;
 
         /// <summary>
         /// Custom palette scroll for the specified room.
@@ -889,30 +681,6 @@ namespace NScumm.Queen
             _pal.dirtyMax = Math.Max(_pal.dirtyMax, hiPal);
         }
 
-        /// <summary>
-        /// Scroll some palette colors.
-        /// </summary>
-        /// <returns>The scroll.</returns>
-        /// <param name="start">Start.</param>
-        /// <param name="end">End.</param>
-        private void PalScroll(int start, int end)
-        {
-            D.Debug(9, $"Display::palScroll({start}, {end})");
-
-            var pal = _pal.screen;
-
-            var c = pal[end];
-
-            int n = (end - start);
-            while ((n--) != 0)
-            {
-                pal[end] = pal[end - 1];
-                --end;
-            }
-
-            pal[start] = c;
-        }
-
         public void PrepareUpdate()
         {
             int h = Defines.GAME_SCREEN_HEIGHT;
@@ -963,95 +731,6 @@ namespace NScumm.Queen
             Blit(_backdropBuf, BACKDROP_W, x, y, data, 0, w, w, h, false, true);
         }
 
-        void Blit(byte[] dstBuf, ushort dstPitch, ushort x, ushort y, byte[] srcBuf, int src, ushort srcPitch, ushort w, ushort h, bool xflip, bool masked)
-        {
-            // TODO: assert(w <= dstPitch);
-            var dst = dstPitch * y + x;
-
-            if (!masked)
-            { // Unmasked always unflipped
-                while ((h--) != 0)
-                {
-                    Array.Copy(srcBuf, src, dstBuf, dst, w);
-                    src += srcPitch;
-                    dst += dstPitch;
-                }
-            }
-            else if (!xflip)
-            { // Masked bitmap unflipped
-                while ((h--) != 0)
-                {
-                    for (int i = 0; i < w; ++i)
-                    {
-                        byte b = srcBuf[src + i];
-                        if (b != 0)
-                        {
-                            dstBuf[dst + i] = b;
-                        }
-                    }
-                    src += srcPitch;
-                    dst += dstPitch;
-                }
-            }
-            else
-            { // Masked bitmap flipped
-                while ((h--) != 0)
-                {
-                    for (int i = 0; i < w; ++i)
-                    {
-                        byte b = srcBuf[src + i];
-                        if (b != 0)
-                        {
-                            dstBuf[dst - i] = b;
-                        }
-                    }
-                    src += srcPitch;
-                    dst += dstPitch;
-                }
-            }
-        }
-
-        public void DrawInventoryItem(byte[] data, ushort x, ushort y, ushort w, ushort h)
-        {
-            if (data != null)
-            {
-                if (_vm.Resource.Platform == Platform.Amiga)
-                {
-                    var dst = _panelBuf;
-                    var d = y * PANEL_W + x;
-                    var s = 0;
-                    for (int j = 0; j < h; ++j)
-                    {
-                        for (int i = 0; i < w; ++i)
-                        {
-                            dst[d + i] = (byte)(144 + data[s++]);
-                        }
-                        d += PANEL_W;
-                    }
-                }
-                else
-                {
-                    Blit(_panelBuf, PANEL_W, x, y, data, 0, w, w, h, false, false);
-                }
-            }
-            else
-            {
-                Fill(_panelBuf, PANEL_W, x, y, w, h, GetInkColor(InkColor.INK_BG_PANEL));
-            }
-            SetDirtyBlock(x, (ushort)(150 + y), w, h);
-        }
-
-        private void Fill(byte[] dstBuf, ushort dstPitch, ushort x, ushort y, ushort w, ushort h, byte color)
-        {
-            // TODO: assert(w <= dstPitch);
-            var d = dstPitch * y + x;
-            while ((h--) != 0)
-            {
-                dstBuf.Set(d, color, w);
-                d += dstPitch;
-            }
-        }
-
         /// <summary>
         /// Fade the current palette out.
         /// </summary>
@@ -1085,49 +764,34 @@ namespace NScumm.Queen
             }
         }
 
-        /// <summary>
-        /// Update the palette.
-        /// </summary>
-        /// <param name="pal">Palette</param>
-        /// <param name="start">Start.</param>
-        /// <param name="end">End.</param>
-        /// <param name="updateScreen">If set to <c>true</c> update screen.</param>
-        private void PalSet(Color[] pal, int start, int end, bool updateScreen = false)
+        public void DrawInventoryItem(byte[] data, ushort x, ushort y, ushort w, ushort h)
         {
-            D.Debug(9, $"Display::palSet({start}, {end})");
-            int numColors = end - start + 1;
-            // TODO: assert(numColors <= 256);
-            _system.GraphicsManager.SetPalette(pal, start, numColors);
-            if (updateScreen)
+            if (data != null)
             {
-                _vm.Input.Delay(20);
+                if (_vm.Resource.Platform == Platform.Amiga)
+                {
+                    var dst = _panelBuf;
+                    var d = y * PANEL_W + x;
+                    var s = 0;
+                    for (int j = 0; j < h; ++j)
+                    {
+                        for (int i = 0; i < w; ++i)
+                        {
+                            dst[d + i] = (byte)(144 + data[s++]);
+                        }
+                        d += PANEL_W;
+                    }
+                }
+                else
+                {
+                    Blit(_panelBuf, PANEL_W, x, y, data, 0, w, w, h, false, false);
+                }
             }
-        }
-
-        /// <summary>
-        /// Gets the number of colors used by the room.
-        /// </summary>
-        /// <returns>The number colors for room.</returns>
-        /// <param name="room">Room.</param>
-        private int GetNumColorsForRoom(ushort room)
-        {
-            int n = 224;
-            if (room >= 114 && room <= 125)
+            else
             {
-                n = 256;
+                Fill(_panelBuf, PANEL_W, x, y, w, h, GetInkColor(InkColor.INK_BG_PANEL));
             }
-            return n;
-        }
-
-        /// <summary>
-        /// Gets true if we shouldn't fade the palette in the specified room.
-        /// </summary>
-        /// <returns>The pal fading disabled.</returns>
-        /// <param name="room">Room.</param>
-        private bool IsPalFadingDisabled(ushort room)
-        {
-            // introduction rooms don't fade palette
-            return (room >= 90 && room <= 94) || (room >= 115 && room <= 125);
+            SetDirtyBlock(x, (ushort)(150 + y), w, h);
         }
 
         /// <summary>
@@ -1198,86 +862,6 @@ namespace NScumm.Queen
         }
 
         /// <summary>
-        /// Custom palette effect for the specified room.
-        /// </summary>
-        /// <returns>The custom colors.</returns>
-        /// <param name="roomNum">Room number.</param>
-        private void PalCustomColors(ushort roomNum)
-        {
-            D.Debug(9, $"Display::palCustomColors({roomNum})");
-            if (_vm.Resource.Platform == Platform.Amiga)
-            {
-                switch (roomNum)
-                {
-                    case 28:
-                        PalSetAmigaColor(27, 0xC60);
-                        PalSetAmigaColor(28, 0xA30);
-                        PalSetAmigaColor(29, 0x810);
-                        PalSetAmigaColor(30, 0x600);
-                        break;
-                    case 29:
-                        PalSetAmigaColor(27, 0x58B);
-                        PalSetAmigaColor(28, 0x369);
-                        PalSetAmigaColor(29, 0x158);
-                        PalSetAmigaColor(30, 0x046);
-                        break;
-                    case 30:
-                        PalSetAmigaColor(27, 0x5A4);
-                        PalSetAmigaColor(28, 0x384);
-                        PalSetAmigaColor(29, 0x171);
-                        PalSetAmigaColor(30, 0x056);
-                        break;
-                    case 31:
-                        PalSetAmigaColor(27, 0xDA4);
-                        PalSetAmigaColor(28, 0xB83);
-                        PalSetAmigaColor(29, 0x873);
-                        PalSetAmigaColor(30, 0x652);
-                        break;
-                    case 45:
-                        PalSetAmigaColor(20, 0xA58);
-                        PalSetAmigaColor(21, 0x845);
-                        break;
-                }
-                return;
-            }
-            switch (roomNum)
-            {
-                case 31:
-                    for (int i = 72; i < 84; i++)
-                    {
-                        _pal.room[i] = Color.FromRgb(_pal.room[i].R,
-                            _pal.room[i].G * 90 / 100,
-                            _pal.room[i].B * 70 / 100);
-                    }
-                    break;
-                case 29:
-                    for (int i = 72; i < 84; i++)
-                    {
-                        _pal.room[i] = Color.FromRgb(_pal.room[i].R,
-                            _pal.room[i].G * 60 / 100,
-                            _pal.room[i].B * 60 / 100);
-                    }
-                    break;
-                case 30:
-                    for (int i = 72; i < 84; i++)
-                    {
-                        _pal.room[i] = Color.FromRgb(_pal.room[i].R * 60 / 100,
-                            _pal.room[i].G * 80 / 100,
-                            _pal.room[i].B);
-                    }
-                    break;
-                case 28:
-                    for (int i = 72; i < 84; i++)
-                    {
-                        _pal.room[i] = Color.FromRgb(_pal.room[i].R * 80 / 100,
-                            _pal.room[i].G,
-                            _pal.room[i].G * 60 / 100);
-                    }
-                    break;
-            }
-        }
-
-        /// <summary>
         /// Process a 'palette flash' effect.
         /// </summary>
         /// <returns>The custom flash.</returns>
@@ -1291,42 +875,6 @@ namespace NScumm.Queen
             PalSet(tempPal, 0, 255, true);
             // restore original palette
             PalSet(_pal.screen, 0, 255, true);
-        }
-
-        private void PalSetAmigaColor(int i, int i2)
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
-        /// Initialize dynalum for the specified room.
-        /// </summary>
-        /// <returns>The init.</returns>
-        /// <param name="roomName">Room name.</param>
-        /// <param name="roomNum">Room number.</param>
-        private void DynalumInit(string roomName, ushort roomNum)
-        {
-            D.Debug(9, $"Display::dynalumInit({roomName}, {roomNum})");
-
-            _dynalum.valid = false;
-            _dynalum.mskBuf = null;
-            _dynalum.lumBuf = null;
-
-            if (!IsPalFadingDisabled(roomNum))
-            {
-                string filename = $"{roomName}.MSK";
-                if (_vm.Resource.FileExists(filename))
-                {
-                    _dynalum.mskBuf = _vm.Resource.LoadFile(filename, 0, out _dynalum.mskSize);
-                    filename = "{roomName}.LUM";
-                    if (_vm.Resource.FileExists(filename))
-                    {
-                        _dynalum.lumBuf = _vm.Resource.LoadFile(filename, 0, out _dynalum.lumSize);
-                        _dynalum.valid = true;
-                        _dynalum.prevColMask = 0xFF;
-                    }
-                }
-            }
         }
 
         /// <summary>
@@ -1420,6 +968,494 @@ namespace NScumm.Queen
             Array.Copy(_pal.panel, 0, _pal.screen, 144, (256 - 144));
         }
 
+        public int TextCenterX(string text)
+        {
+            return (Defines.GAME_SCREEN_WIDTH - TextWidth(text)) / 2;
+        }
+
+        /// <summary>
+        /// Setup palette for Joe's normal clothes.
+        /// </summary>
+        /// <returns>The set joe normal.</returns>
+        public void PalSetJoeNormal()
+        {
+            if (_vm.Resource.Platform == Platform.DOS)
+            {
+                Array.Copy(_palJoeClothes, 0, _pal.room, 144, 16);
+                Array.Copy(_palJoeClothes, 0, _pal.screen, 144, 16);
+                PalSet(_pal.screen, 144, 159, true);
+            }
+        }
+
+        /// <summary>
+        /// Setup palette for Joe's dress.
+        /// </summary>
+        /// <returns>The set joe dress.</returns>
+        public void PalSetJoeDress()
+        {
+            if (_vm.Resource.Platform == Platform.DOS)
+            {
+                Array.Copy(_palJoeDress, 0, _pal.room, 144, 16);
+                Array.Copy(_palJoeDress, 0, _pal.screen, 144, 16);
+                PalSet(_pal.screen, 144, 159, true);
+            }
+        }
+
+
+        private void BlankScreenEffect1()
+        {
+            var buf = new byte[32 * 32];
+            while (_vm.Input.IdleTime >= Input.DELAY_SCREEN_BLANKER)
+            {
+                for (int i = 0; i < 2; ++i)
+                {
+                    // TODO: int x = _rnd.getRandomNumber(SCREEN_W - 32 - 2) + 1;
+                    int x = _rnd.Next(1 + (SCREEN_W - 32 - 2) + 1);
+                    int y = _rnd.Next(1 + SCREEN_H - 32 - 2) + 1;
+                    var p = SCREEN_W * y + x;
+                    for (int j = 0; j < 32; ++j)
+                    {
+                        Array.Copy(_screenBuf, p, buf, j * 32, 32);
+                        p += SCREEN_W;
+                    }
+                    if (_rnd.Next(1 + 1) != 0)
+                    {
+                        ++x;
+                    }
+                    else
+                    {
+                        --x;
+                    }
+                    if (_rnd.Next(1 + 1) != 0)
+                    {
+                        ++y;
+                    }
+                    else
+                    {
+                        --y;
+                    }
+                    _system.GraphicsManager.CopyRectToScreen(buf, 32, x, y, 32, 32);
+                    _vm.Input.Delay(10);
+                }
+            }
+        }
+
+        private void BlankScreenEffect2()
+        {
+            while (_vm.Input.IdleTime >= Input.DELAY_SCREEN_BLANKER)
+            {
+                int x = _rnd.Next(1 + SCREEN_W - 2);
+                int y = _rnd.Next(1 + SCREEN_H - 2);
+                var p = y * SCREEN_W + x;
+                byte c = 0;
+                switch (_rnd.Next(1 + 3))
+                {
+                    case 0:
+                        c = _screenBuf[p];
+                        break;
+                    case 1:
+                        c = _screenBuf[p + 1];
+                        break;
+                    case 2:
+                        c = _screenBuf[p + SCREEN_W];
+                        break;
+                    case 3:
+                        c = _screenBuf[p + SCREEN_W + 1];
+                        break;
+                }
+                _screenBuf.Set(p, c, 2);
+                _screenBuf.Set(p + SCREEN_W, c, 2);
+                _system.GraphicsManager.CopyRectToScreen(_screenBuf, p, SCREEN_W, x, y, 2, 2);
+                _vm.Input.Delay(10);
+            }
+        }
+
+        private void BlankScreenEffect3()
+        {
+            var i = 0;
+            while (_vm.Input.IdleTime >= Input.DELAY_SCREEN_BLANKER)
+            {
+                if (i > 4000000)
+                {
+                    Array.Clear(_screenBuf, 0, SCREEN_W * SCREEN_H);
+                    _system.GraphicsManager.CopyRectToScreen(_screenBuf, SCREEN_W, 0, 0, SCREEN_W, SCREEN_H);
+                }
+                else
+                {
+                    int x = _rnd.Next(1 + SCREEN_W - 2);
+                    int y = _rnd.Next(1 + SCREEN_H - 2);
+                    var p = SCREEN_W * y + x;
+                    int sum = _screenBuf[p] + _screenBuf[p + 1] + _screenBuf[p + SCREEN_W] + _screenBuf[p + SCREEN_W + 1];
+                    var c = (byte)(sum / 4);
+                    _screenBuf.Set(p, c, 2);
+                    _screenBuf.Set(p + SCREEN_W, c, 2);
+                    ++i;
+                    _system.GraphicsManager.CopyRectToScreen(_screenBuf, p, SCREEN_W, x, y, 2, 2);
+                }
+                _vm.Input.Delay(10);
+            }
+        }
+
+        /// <summary>
+        /// Update dynalum for the current room.
+        /// </summary>
+        /// <returns>The update.</returns>
+        /// <param name="x">The x coordinate.</param>
+        /// <param name="y">The y coordinate.</param>
+        private void DynalumUpdate(short x, short y)
+        {
+            if (!_dynalum.valid)
+                return;
+
+            if (x < 0)
+            {
+                x = 0;
+            }
+            else if (x > _bdWidth)
+            {
+                x = (short)_bdWidth;
+            }
+            if (y < 0)
+            {
+                y = 0;
+            }
+            else if (y > Defines.ROOM_ZONE_HEIGHT - 1)
+            {
+                y = Defines.ROOM_ZONE_HEIGHT - 1;
+            }
+
+            uint offset = (uint)((y / 4) * 160 + (x / 4));
+            // TODO: assert(offset < _dynalum.mskSize);
+
+            byte colMask = _dynalum.mskBuf[offset];
+            D.Debug(9, $"Display::dynalumUpdate({x}, {y}) - colMask = {colMask}");
+            if (colMask != _dynalum.prevColMask)
+            {
+                for (int i = 144; i < 160; ++i)
+                {
+                    short c = (short)(_pal.room[i].R + _dynalum.lumBuf[colMask + 0] * 4);
+                    short c1 = (short)(_pal.room[i].G + _dynalum.lumBuf[colMask + 1] * 4);
+                    short c2 = (short)(_pal.room[i].B + _dynalum.lumBuf[colMask + 2] * 4);
+                    _pal.screen[i] = Color.FromRgb(
+                        ScummHelper.Clip(c, 0, 255),
+                        ScummHelper.Clip(c1, 0, 255),
+                        ScummHelper.Clip(c2, 0, 255));
+                }
+                _pal.dirtyMin = Math.Min(_pal.dirtyMin, 144);
+                _pal.dirtyMax = Math.Max(_pal.dirtyMax, 159);
+                _dynalum.prevColMask = colMask;
+            }
+        }
+
+        /// <summary>
+        /// Draw the text lists.
+        /// </summary>
+        /// <returns>The texts.</returns>
+        private void DrawTexts()
+        {
+            for (int y = Defines.GAME_SCREEN_HEIGHT - 1; y > 0; --y)
+            {
+                var pts = _texts[y];
+                if (!string.IsNullOrEmpty(pts.text))
+                {
+                    DrawText(pts.x, (ushort)y, pts.color, pts.text, pts.outlined);
+                }
+            }
+        }
+
+        private void DrawText(ushort x, ushort y, byte color, string text, bool outlined)
+        {
+            int str = 0;
+            ushort xs = x;
+            while (str < text.Length && x < SCREEN_W)
+            {
+                var ch = text[str++];
+                var ftch = ch * 8;
+                if (outlined)
+                {
+                    for (int i = 0; i < 8; ++i)
+                    {
+                        DrawChar((ushort)(x + dx[i]), (ushort)(y + dy[i]), GetInkColor(InkColor.INK_OUTLINED_TEXT), _font, ftch);
+                    }
+                }
+                DrawChar(x, y, color, _font, ftch);
+                x += _charWidth[ch];
+            }
+            SetDirtyBlock((ushort)(xs - 1), (ushort)(y - 1), (ushort)(x - xs + 2), 8 + 2);
+        }
+
+        private void DrawChar(ushort x, ushort y, byte color, byte[] chr, int offs)
+        {
+            var dstBuf = _screenBuf;
+            int d = SCREEN_W * y + x;
+            for (int j = 0; j < 8; ++j)
+            {
+                var p = dstBuf;
+                int pOffs = d;
+                var c = chr[offs++];
+                if (c != 0)
+                {
+                    for (int i = 0; i < 8; ++i)
+                    {
+                        if ((c & 0x80) != 0)
+                        {
+                            p[pOffs] = color;
+                        }
+                        ++pOffs;
+                        c <<= 1;
+                    }
+                }
+                d += SCREEN_W;
+            }
+        }
+
+        /// <summary>
+        /// Scroll some palette colors.
+        /// </summary>
+        /// <returns>The scroll.</returns>
+        /// <param name="start">Start.</param>
+        /// <param name="end">End.</param>
+        private void PalScroll(int start, int end)
+        {
+            D.Debug(9, $"Display::palScroll({start}, {end})");
+
+            var pal = _pal.screen;
+
+            var c = pal[end];
+
+            int n = (end - start);
+            while ((n--) != 0)
+            {
+                pal[end] = pal[end - 1];
+                --end;
+            }
+
+            pal[start] = c;
+        }
+
+        private void Blit(byte[] dstBuf, ushort dstPitch, ushort x, ushort y, byte[] srcBuf, int src, ushort srcPitch, ushort w, ushort h, bool xflip, bool masked)
+        {
+            // TODO: assert(w <= dstPitch);
+            var dst = dstPitch * y + x;
+
+            if (!masked)
+            { // Unmasked always unflipped
+                while ((h--) != 0)
+                {
+                    Array.Copy(srcBuf, src, dstBuf, dst, w);
+                    src += srcPitch;
+                    dst += dstPitch;
+                }
+            }
+            else if (!xflip)
+            { // Masked bitmap unflipped
+                while ((h--) != 0)
+                {
+                    for (int i = 0; i < w; ++i)
+                    {
+                        byte b = srcBuf[src + i];
+                        if (b != 0)
+                        {
+                            dstBuf[dst + i] = b;
+                        }
+                    }
+                    src += srcPitch;
+                    dst += dstPitch;
+                }
+            }
+            else
+            { // Masked bitmap flipped
+                while ((h--) != 0)
+                {
+                    for (int i = 0; i < w; ++i)
+                    {
+                        byte b = srcBuf[src + i];
+                        if (b != 0)
+                        {
+                            dstBuf[dst - i] = b;
+                        }
+                    }
+                    src += srcPitch;
+                    dst += dstPitch;
+                }
+            }
+        }
+
+        private void Fill(byte[] dstBuf, ushort dstPitch, ushort x, ushort y, ushort w, ushort h, byte color)
+        {
+            // TODO: assert(w <= dstPitch);
+            var d = dstPitch * y + x;
+            while ((h--) != 0)
+            {
+                dstBuf.Set(d, color, w);
+                d += dstPitch;
+            }
+        }
+
+        /// <summary>
+        /// Update the palette.
+        /// </summary>
+        /// <param name="pal">Palette</param>
+        /// <param name="start">Start.</param>
+        /// <param name="end">End.</param>
+        /// <param name="updateScreen">If set to <c>true</c> update screen.</param>
+        private void PalSet(Color[] pal, int start, int end, bool updateScreen = false)
+        {
+            D.Debug(9, $"Display::palSet({start}, {end})");
+            int numColors = end - start + 1;
+            // TODO: assert(numColors <= 256);
+            _system.GraphicsManager.SetPalette(pal, start, numColors);
+            if (updateScreen)
+            {
+                _vm.Input.Delay(20);
+            }
+        }
+
+        /// <summary>
+        /// Gets the number of colors used by the room.
+        /// </summary>
+        /// <returns>The number colors for room.</returns>
+        /// <param name="room">Room.</param>
+        private int GetNumColorsForRoom(ushort room)
+        {
+            int n = 224;
+            if (room >= 114 && room <= 125)
+            {
+                n = 256;
+            }
+            return n;
+        }
+
+        /// <summary>
+        /// Gets true if we shouldn't fade the palette in the specified room.
+        /// </summary>
+        /// <returns>The pal fading disabled.</returns>
+        /// <param name="room">Room.</param>
+        private bool IsPalFadingDisabled(ushort room)
+        {
+            // introduction rooms don't fade palette
+            return (room >= 90 && room <= 94) || (room >= 115 && room <= 125);
+        }
+
+        /// <summary>
+        /// Custom palette effect for the specified room.
+        /// </summary>
+        /// <returns>The custom colors.</returns>
+        /// <param name="roomNum">Room number.</param>
+        private void PalCustomColors(ushort roomNum)
+        {
+            D.Debug(9, $"Display::palCustomColors({roomNum})");
+            if (_vm.Resource.Platform == Platform.Amiga)
+            {
+                switch (roomNum)
+                {
+                    case 28:
+                        PalSetAmigaColor(27, 0xC60);
+                        PalSetAmigaColor(28, 0xA30);
+                        PalSetAmigaColor(29, 0x810);
+                        PalSetAmigaColor(30, 0x600);
+                        break;
+                    case 29:
+                        PalSetAmigaColor(27, 0x58B);
+                        PalSetAmigaColor(28, 0x369);
+                        PalSetAmigaColor(29, 0x158);
+                        PalSetAmigaColor(30, 0x046);
+                        break;
+                    case 30:
+                        PalSetAmigaColor(27, 0x5A4);
+                        PalSetAmigaColor(28, 0x384);
+                        PalSetAmigaColor(29, 0x171);
+                        PalSetAmigaColor(30, 0x056);
+                        break;
+                    case 31:
+                        PalSetAmigaColor(27, 0xDA4);
+                        PalSetAmigaColor(28, 0xB83);
+                        PalSetAmigaColor(29, 0x873);
+                        PalSetAmigaColor(30, 0x652);
+                        break;
+                    case 45:
+                        PalSetAmigaColor(20, 0xA58);
+                        PalSetAmigaColor(21, 0x845);
+                        break;
+                }
+                return;
+            }
+            switch (roomNum)
+            {
+                case 31:
+                    for (int i = 72; i < 84; i++)
+                    {
+                        _pal.room[i] = Color.FromRgb(_pal.room[i].R,
+                            _pal.room[i].G * 90 / 100,
+                            _pal.room[i].B * 70 / 100);
+                    }
+                    break;
+                case 29:
+                    for (int i = 72; i < 84; i++)
+                    {
+                        _pal.room[i] = Color.FromRgb(_pal.room[i].R,
+                            _pal.room[i].G * 60 / 100,
+                            _pal.room[i].B * 60 / 100);
+                    }
+                    break;
+                case 30:
+                    for (int i = 72; i < 84; i++)
+                    {
+                        _pal.room[i] = Color.FromRgb(_pal.room[i].R * 60 / 100,
+                            _pal.room[i].G * 80 / 100,
+                            _pal.room[i].B);
+                    }
+                    break;
+                case 28:
+                    for (int i = 72; i < 84; i++)
+                    {
+                        _pal.room[i] = Color.FromRgb(_pal.room[i].R * 80 / 100,
+                            _pal.room[i].G,
+                            _pal.room[i].G * 60 / 100);
+                    }
+                    break;
+            }
+        }
+
+        private void PalSetAmigaColor(byte color, ushort rgb)
+        {
+            byte b = (byte)(rgb & 0xF); rgb >>= 4;
+            byte g = (byte)(rgb & 0xF); rgb >>= 4;
+            byte r = (byte)(rgb & 0xF);
+            _pal.room[color] = Color.FromRgb((r << 4) | r, (g << 4) | g, (b << 4) | b);
+        }
+
+        /// <summary>
+        /// Initialize dynalum for the specified room.
+        /// </summary>
+        /// <returns>The init.</returns>
+        /// <param name="roomName">Room name.</param>
+        /// <param name="roomNum">Room number.</param>
+        private void DynalumInit(string roomName, ushort roomNum)
+        {
+            D.Debug(9, $"Display::dynalumInit({roomName}, {roomNum})");
+
+            _dynalum.valid = false;
+            _dynalum.mskBuf = null;
+            _dynalum.lumBuf = null;
+
+            if (!IsPalFadingDisabled(roomNum))
+            {
+                string filename = $"{roomName}.MSK";
+                if (_vm.Resource.FileExists(filename))
+                {
+                    _dynalum.mskBuf = _vm.Resource.LoadFile(filename, 0, out _dynalum.mskSize);
+                    filename = "{roomName}.LUM";
+                    if (_vm.Resource.FileExists(filename))
+                    {
+                        _dynalum.lumBuf = _vm.Resource.LoadFile(filename, 0, out _dynalum.lumSize);
+                        _dynalum.valid = true;
+                        _dynalum.prevColMask = 0xFF;
+                    }
+                }
+            }
+        }
+
         /// <summary>
         /// Decode IFF picture data.
         /// </summary>
@@ -1437,11 +1473,6 @@ namespace NScumm.Queen
         private void DecodeIFF(byte[] src, uint srcSize, byte[] dst, ushort dstPitch, out ushort w, out ushort h, Color[] pal, ushort palStart, ushort palEnd, byte colorBase = 0)
         {
             throw new NotImplementedException();
-        }
-
-        public int TextCenterX(string text)
-        {
-            return (Defines.GAME_SCREEN_WIDTH - TextWidth(text)) / 2;
         }
 
         /// <summary>
@@ -1476,34 +1507,6 @@ namespace NScumm.Queen
                 Array.Copy(pcx.Palette, palStart, pal, 0, (palEnd - palStart));
                 for (var y = 0; y < pcxSurface.Height; y++)
                     Array.Copy(pcxSurface.Pixels, y * pcxSurface.Pitch, dst, y * dstPitch, pcxSurface.Width);
-            }
-        }
-
-        /// <summary>
-        /// Setup palette for Joe's normal clothes.
-        /// </summary>
-        /// <returns>The set joe normal.</returns>
-        public void PalSetJoeNormal()
-        {
-            if (_vm.Resource.Platform == Platform.DOS)
-            {
-                Array.Copy(_palJoeClothes, 0, _pal.room, 144, 16);
-                Array.Copy(_palJoeClothes, 0, _pal.screen, 144, 16);
-                PalSet(_pal.screen, 144, 159, true);
-            }
-        }
-
-        /// <summary>
-        /// Setup palette for Joe's dress.
-        /// </summary>
-        /// <returns>The set joe dress.</returns>
-        public void PalSetJoeDress()
-        {
-            if (_vm.Resource.Platform == Platform.DOS)
-            {
-                Array.Copy(_palJoeDress, 0, _pal.room, 144, 16);
-                Array.Copy(_palJoeDress, 0, _pal.screen, 144, 16);
-                PalSet(_pal.screen, 144, 159, true);
             }
         }
 

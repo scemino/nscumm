@@ -1477,7 +1477,7 @@
         new TuneData(new short[] {77, 1017, 0}, new short[] {0, 0}, 1, 0)
       };
 
-        public static short[] _jungleList = { 15, 16, 17, 18, 7, 8, 9, 10, 11, 12, 13, 14, 0 };
+        public static readonly short[] _jungleList = { 15, 16, 17, 18, 7, 8, 9, 10, 11, 12, 13, 14, 0 };
     }
 }
 

@@ -75,6 +75,7 @@ namespace NScumm.Queen
         public bool SpeechSfxExists { get { return _speechSfxExists; } }
         public virtual bool IsSpeechActive { get { return false; } }
         public bool MusicOn { get { return _musicToggle; } }
+        public short LastOverride { get { return _lastOverride; } }
 
         protected Sound(IMixer mixer, QueenEngine vm)
         {

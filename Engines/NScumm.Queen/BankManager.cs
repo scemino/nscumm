@@ -283,9 +283,9 @@ namespace NScumm.Queen
 
             if (_res.Platform == Platform.Amiga)
             {
-                ushort w = ptr.ToUInt16BigEndian(p + 0); p += 2;
-                ushort h = ptr.ToUInt16BigEndian(p + 2); p += 2;
-                ushort plane = ptr.ToUInt16BigEndian(p + 4); p += 2;
+                ushort w = ptr.ToUInt16BigEndian(p + 0);
+                ushort h = ptr.ToUInt16BigEndian(p + 2);
+                ushort plane = ptr.ToUInt16BigEndian(p + 4);
                 ushort src_w = (ushort)(w * 16);
                 ushort src_h = h;
 
@@ -300,8 +300,8 @@ namespace NScumm.Queen
             }
             else
             {
-                ushort src_w = ptr.ToUInt16(p + 0); p += 2;
-                ushort src_h = ptr.ToUInt16(p + 2); p += 2;
+                ushort src_w = ptr.ToUInt16(p + 0);
+                ushort src_h = ptr.ToUInt16(p + 2);
 
                 // unpack if destination frame is smaller than source
                 if (bf.width < src_w || bf.height < src_h)

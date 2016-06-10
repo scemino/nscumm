@@ -19,23 +19,22 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using System;
 using NScumm.Core;
-using NScumm.Core.IO;
 
 namespace NScumm.Queen
 {
-	public class GraphicAnim {
-		public short keyFrame;
-		public short frame;
-		public ushort speed;
+    public class GraphicAnim
+    {
+        public short keyFrame;
+        public short frame;
+        public ushort speed;
 
-		public void ReadFromBE(byte[] data, ref int ptr) 
-		{
-			keyFrame = data.ToInt16BigEndian(ptr); ptr += 2;
-			frame = data.ToInt16BigEndian(ptr); ptr += 2;
-			speed = data.ToUInt16BigEndian(ptr); ptr += 2;
-		}
-	}
-	
+        public void ReadFromBE(byte[] data, ref int ptr)
+        {
+            keyFrame = data.ToInt16BigEndian(ptr); ptr += 2;
+            frame = data.ToInt16BigEndian(ptr); ptr += 2;
+            speed = data.ToUInt16BigEndian(ptr); ptr += 2;
+        }
+    }
+
 }

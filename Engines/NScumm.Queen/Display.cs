@@ -1001,6 +1001,44 @@ namespace NScumm.Queen
             }
         }
 
+        public void PalCustomLightsOff(ushort roomNum)
+        {
+            if (_vm.Resource.Platform == Platform.Amiga)
+            {
+                Array.Clear(_pal.screen, 0, 31);
+                _pal.screen[31] = Color.FromRgb(15, 15, 0);
+                PalSet(_pal.screen, 0, 31, true);
+            }
+            else
+            {
+                const int end = 223;
+                int start = (roomNum == Defines.ROOM_FLODA_FRONTDESK) ? 32 : 16;
+                int n = end - start + 1;
+                Array.Clear(_pal.screen, start, n);
+                PalSet(_pal.screen, start, end, true);
+            }
+            _pal.scrollable = false;
+        }
+
+        public void PalCustomLightsOn(ushort roomNum)
+        {
+            if (_vm.Resource.Platform == Platform.Amiga)
+            {
+                Array.Copy(_pal.room,_pal.screen, 32);
+                PalSet(_pal.screen, 0, 31, true);
+            }
+            else
+            {
+                const int end = 223;
+                int start = (roomNum == Defines.ROOM_FLODA_FRONTDESK) ? 32 : 0;
+                int n = end - start + 1;
+                Array.Copy(_pal.room, start, _pal.screen, start, n);
+                PalSet(_pal.screen, start, end, true);
+            }
+            _pal.dirtyMin = 0;
+            _pal.dirtyMax = 223;
+            _pal.scrollable = true;
+        }
 
         private void BlankScreenEffect1()
         {

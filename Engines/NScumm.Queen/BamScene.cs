@@ -72,7 +72,7 @@ namespace NScumm.Queen
     public class BamScene
     {
         public BamFlags _flag;
-        private ushort _index;
+        public ushort _index;
         private QueenEngine _vm;
         private BamDataBlock[] _fightData;
         private BobSlot _obj1;

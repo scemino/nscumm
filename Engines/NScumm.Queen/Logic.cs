@@ -1833,12 +1833,318 @@ namespace NScumm.Queen
         protected void AsmEndGame()
         {
             int n = 40;
-            while ((n--)!=0)
+            while ((n--) != 0)
             {
                 _vm.Update();
             }
             //  debug("Game completed.");
             // TODO: _vm.QuitGame();
+        }
+
+        protected void AsmPutCameraOnDino()
+        {
+            _vm.Graphics.PutCameraOnBob(-1);
+            short scrollx = _vm.Display.HorizontalScroll;
+            while (scrollx < 320)
+            {
+                scrollx += 16;
+                if (scrollx > 320)
+                {
+                    scrollx = 320;
+                }
+                _vm.Display.HorizontalScroll = scrollx;
+                _vm.Update();
+            }
+            _vm.Graphics.PutCameraOnBob(1);
+        }
+
+        protected void AsmPutCameraOnJoe()
+        {
+            _vm.Graphics.PutCameraOnBob(0);
+        }
+
+        protected void AsmSetAzuraInLove()
+        {
+            GameState[Defines.VAR_AZURA_IN_LOVE] = 1;
+        }
+
+        protected void AsmPanRightFromJoe()
+        {
+            _vm.Graphics.PutCameraOnBob(-1);
+            short scrollx = _vm.Display.HorizontalScroll;
+            while (scrollx < 320)
+            {
+                scrollx += 16;
+                if (scrollx > 320)
+                {
+                    scrollx = 320;
+                }
+                _vm.Display.HorizontalScroll = scrollx;
+                _vm.Update();
+            }
+        }
+
+        protected void AsmSetLightsOff()
+        {
+            _vm.Display.PalCustomLightsOff(CurrentRoom);
+        }
+
+        protected void AsmSetLightsOn()
+        {
+            _vm.Display.PalCustomLightsOn(CurrentRoom);
+        }
+
+        protected void AsmSetManequinAreaOn()
+        {
+            Area a = _vm.Grid.Areas[Defines.ROOM_FLODA_FRONTDESK][7];
+            a.mapNeighbors = Math.Abs(a.mapNeighbors);
+        }
+
+        protected void AsmPanToJoe()
+        {
+            int i = _vm.Graphics.Bobs[0].x - 160;
+            if (i < 0)
+            {
+                i = 0;
+            }
+            else if (i > 320)
+            {
+                i = 320;
+            }
+            _vm.Graphics.PutCameraOnBob(-1);
+            short scrollx = _vm.Display.HorizontalScroll;
+            if (i < scrollx)
+            {
+                while (scrollx > i)
+                {
+                    scrollx -= 16;
+                    if (scrollx < i)
+                    {
+                        scrollx = (short)i;
+                    }
+                    _vm.Display.HorizontalScroll = scrollx;
+                    _vm.Update();
+                }
+            }
+            else
+            {
+                while (scrollx < i)
+                {
+                    scrollx += 16;
+                    if (scrollx > i)
+                    {
+                        scrollx = (short)i;
+                    }
+                    _vm.Display.HorizontalScroll = scrollx;
+                    _vm.Update();
+                }
+                _vm.Update();
+            }
+            _vm.Graphics.PutCameraOnBob(0);
+        }
+
+        protected void AsmTurnGuardOn()
+        {
+            GameState[Defines.VAR_GUARDS_TURNED_ON] = 1;
+        }
+
+        protected void AsmPanLeft320To144()
+        {
+            _vm.Graphics.PutCameraOnBob(-1);
+            short scrollx = _vm.Display.HorizontalScroll;
+            while (scrollx > 144)
+            {
+                scrollx -= 8;
+                if (scrollx < 144)
+                {
+                    scrollx = 144;
+                }
+                _vm.Display.HorizontalScroll = scrollx;
+                _vm.Update();
+            }
+        }
+
+        protected void AsmSmoochNoScroll()
+        {
+            _vm.Graphics.PutCameraOnBob(-1);
+            BobSlot bobAzura = _vm.Graphics.Bobs[5];
+            BobSlot bobJoe = _vm.Graphics.Bobs[6];
+            for (int i = 0; i < 320; i += 8)
+            {
+                if (bobJoe.x - bobAzura.x > 128)
+                {
+                    bobAzura.x += 2;
+                    bobJoe.x -= 2;
+                }
+                _vm.Update();
+            }
+        }
+
+        protected void AsmMakeLightningHitPlane()
+        {
+            _vm.Graphics.PutCameraOnBob(-1);
+            short iy = 0, x, ydir = -1, j, k;
+
+            BobSlot planeBob = _vm.Graphics.Bobs[5];
+            BobSlot lightningBob = _vm.Graphics.Bobs[20];
+
+            planeBob.y = 135;
+
+            if (_vm.Resource.Platform == Platform.Amiga)
+            {
+                planeBob.scale = 100;
+            }
+            else
+            {
+                planeBob.scale = 20;
+            }
+
+            for (x = 660; x > 163; x -= 6)
+            {
+                planeBob.x = x;
+                planeBob.y = (short)(135 + iy);
+
+                iy -= ydir;
+                if (iy < -9 || iy > 9)
+                    ydir = (short)-ydir;
+
+                planeBob.scale++;
+                if (planeBob.scale > 100)
+                    planeBob.scale = 100;
+
+                int scrollX = x - 163;
+                if (scrollX > 320)
+                    scrollX = 320;
+                _vm.Display.HorizontalScroll = (short)scrollX;
+                _vm.Update();
+            }
+
+            planeBob.scale = 100;
+            _vm.Display.HorizontalScroll = 0;
+
+            planeBob.x += 8;
+            planeBob.y += 6;
+
+            lightningBob.x = 160;
+            lightningBob.y = 0;
+
+            _vm.Sound.PlaySfx(CurrentRoomSfx);
+
+            _vm.BankMan.Unpack(18, lightningBob.frameNum, 15);
+            _vm.BankMan.Unpack(4, planeBob.frameNum, 15);
+
+            // Plane plunges into the jungle!
+            BobSlot fireBob = _vm.Graphics.Bobs[6];
+
+            fireBob.animating = true;
+            fireBob.x = planeBob.x;
+            fireBob.y = (short)(planeBob.y + 10);
+
+            _vm.BankMan.Unpack(19, fireBob.frameNum, 15);
+            _vm.Update();
+
+            k = 20;
+            j = 1;
+
+            for (x = 163; x > -30; x -= 10)
+            {
+                planeBob.y += 4;
+                fireBob.y += 4;
+                planeBob.x = fireBob.x = x;
+
+                if (k < 40)
+                {
+                    _vm.BankMan.Unpack((uint)j, planeBob.frameNum, 15);
+                    _vm.BankMan.Unpack((uint)k, fireBob.frameNum, 15);
+                    k++;
+                    j++;
+
+                    if (j == 4)
+                        j = 1;
+                }
+
+                _vm.Update();
+            }
+
+            _vm.Graphics.PutCameraOnBob(0);
+        }
+
+        protected void AsmScaleBlimp()
+        {
+            short z = 256;
+            BobSlot bob = _vm.Graphics.Bobs[7];
+            short x = bob.x;
+            short y = bob.y;
+            bob.scale = 100;
+            while (bob.x > 150 && !_vm.HasToQuit)
+            {
+                bob.x = (short)(x * 256 / z + 150);
+                bob.y = (short)(y * 256 / z + 112);
+                if (_vm.Resource.Platform != Platform.Amiga)
+                {
+                    bob.scale = (ushort)(100 * 256 / z);
+                }
+                ++z;
+                if (z % 6 == 0)
+                {
+                    --x;
+                }
+
+                _vm.Update();
+            }
+        }
+
+        protected void AsmScaleEnding()
+        {
+            _vm.Graphics.Bobs[7].active = false; // Turn off blimp
+            BobSlot b = _vm.Graphics.Bobs[20];
+            b.CurPos(160, 100);
+            if (_vm.Resource.Platform != Platform.Amiga)
+            {
+                for (int i = 5; i <= 100; i += 5)
+                {
+                    b.scale = (ushort)i;
+                    _vm.Update();
+                }
+            }
+            for (int i = 0; i < 50; ++i)
+            {
+                _vm.Update();
+            }
+            _vm.Display.PalFadeOut(CurrentRoom);
+        }
+
+        protected void AsmWaitForCarPosition()
+        {
+            // Wait for car to reach correct position before pouring oil
+            while (_vm.Bam._index != 60)
+            {
+                _vm.Update();
+            }
+        }
+
+        protected void AsmAttemptPuzzle()
+        {
+            ++_puzzleAttemptCount;
+            if (_puzzleAttemptCount == 4)
+            {
+                MakeJoeSpeak(226, true);
+                _puzzleAttemptCount = 0;
+            }
+        }
+
+        protected void AsmScrollTitle()
+        {
+            BobSlot bob = _vm.Graphics.Bobs[5];
+            bob.animating = false;
+            bob.x = 161;
+            bob.y = 300;
+            bob.scale = 100;
+            while (bob.y >= 120)
+            {
+                _vm.Update();
+                bob.y -= 4;
+            }
         }
 
         private void JoeUseDress(bool showCut)

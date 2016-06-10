@@ -73,14 +73,17 @@ namespace NScumm.Queen
             return false;
         }
 
-        void HandlePinnacleRoom()
+        /// <summary>
+        /// handle the pinnacle room (== room chooser in the jungle).
+        /// </summary>
+        /// <returns>The pinnacle room.</returns>
+        private void HandlePinnacleRoom()
         {
             throw new NotImplementedException();
         }
 
         protected override void SetupSpecialMoveTable()
         {
-            // TODO: special move
 			_specialMoves[2] = AsmMakeJoeUseDress;
 			_specialMoves[3] = AsmMakeJoeUseNormalClothes;
 			_specialMoves[4] = AsmMakeJoeUseUnderwear;
@@ -90,24 +93,24 @@ namespace NScumm.Queen
     		_specialMoves[10] = AsmWaitForFrankPosition;   // c69e.cut
     		_specialMoves[11] = AsmMakeFrankGrowing;       // c69z.cut
     		_specialMoves[12] = AsmMakeRobotGrowing;       // c69z.cut
-			//_specialMoves[14] = asmEndGame;
-			//_specialMoves[15] = asmPutCameraOnDino;
-			//_specialMoves[16] = asmPutCameraOnJoe;
-			//_specialMoves[19] = asmSetAzuraInLove;
-			//_specialMoves[20] = asmPanRightFromJoe;
-			//_specialMoves[21] = asmSetLightsOff;
-			//_specialMoves[22] = asmSetLightsOn;
-			//_specialMoves[23] = asmSetManequinAreaOn;
-			//_specialMoves[24] = asmPanToJoe;
-			//_specialMoves[25] = asmTurnGuardOn;
-			//_specialMoves[26] = asmPanLeft320To144;
-			//_specialMoves[27] = asmSmoochNoScroll;
-			//_specialMoves[28] = asmMakeLightningHitPlane;
-			//_specialMoves[29] = asmScaleBlimp;
-			//_specialMoves[30] = asmScaleEnding;
-			//_specialMoves[31] = asmWaitForCarPosition;
-			//_specialMoves[33] = asmAttemptPuzzle;
-			//_specialMoves[34] = asmScrollTitle;
+			_specialMoves[14] = AsmEndGame;
+			_specialMoves[15] = AsmPutCameraOnDino;
+			_specialMoves[16] = AsmPutCameraOnJoe;
+			_specialMoves[19] = AsmSetAzuraInLove;
+			_specialMoves[20] = AsmPanRightFromJoe;
+			_specialMoves[21] = AsmSetLightsOff;
+			_specialMoves[22] = AsmSetLightsOn;
+			_specialMoves[23] = AsmSetManequinAreaOn;
+			_specialMoves[24] = AsmPanToJoe;
+			_specialMoves[25] = AsmTurnGuardOn;
+			_specialMoves[26] = AsmPanLeft320To144;
+			_specialMoves[27] = AsmSmoochNoScroll;
+			_specialMoves[28] = AsmMakeLightningHitPlane;
+			_specialMoves[29] = AsmScaleBlimp;
+			_specialMoves[30] = AsmScaleEnding;
+			_specialMoves[31] = AsmWaitForCarPosition;
+			_specialMoves[33] = AsmAttemptPuzzle;
+			_specialMoves[34] = AsmScrollTitle;
 			if (_vm.Resource.Platform == Platform.DOS) {
 				_specialMoves[5]  = AsmSwitchToDressPalette;
 				_specialMoves[6]  = AsmSwitchToNormalPalette;

@@ -95,7 +95,7 @@ namespace NScumm.Queen
         ushort _numAAnim;
         ushort _numAName;
         ushort _numAFile;
-        ActorData[] _actorData;
+        ActorData[] _actorData; 
         ushort _numGraphicAnim;
         GraphicAnim[] _graphicAnim;
         System.Collections.Generic.List<string> _jasStringList;
@@ -316,6 +316,15 @@ namespace NScumm.Queen
                 _vm.Input.DialogueRunning(JoeWalkMode.SPEAK == value);
             }
             get { return _joe.walk; }
+        }
+
+        /// <summary>
+        /// handle the pinnacle room (== room chooser in the jungle).
+        /// </summary>
+        /// <returns>The pinnacle room.</returns>
+        public void HandlePinnacleRoom()
+        {
+            throw new NotImplementedException();
         }
 
         public void InventoryScroll(ushort count, bool up)

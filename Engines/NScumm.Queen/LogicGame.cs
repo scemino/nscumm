@@ -87,15 +87,6 @@ namespace NScumm.Queen
             return false;
         }
 
-        /// <summary>
-        /// handle the pinnacle room (== room chooser in the jungle).
-        /// </summary>
-        /// <returns>The pinnacle room.</returns>
-        private void HandlePinnacleRoom()
-        {
-            throw new NotImplementedException();
-        }
-
         protected override void SetupSpecialMoveTable()
         {
 			_specialMoves[2] = AsmMakeJoeUseDress;

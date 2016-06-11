@@ -23,10 +23,11 @@ using NScumm.Core;
 using System;
 using System.Collections.Generic;
 using D = NScumm.Core.DebugHelper;
+using System.Diagnostics;
 
 namespace NScumm.Queen
 {
-    public struct AnimFrame
+    public class AnimFrame
     {
         public ushort frame;
         public ushort speed;
@@ -66,9 +67,9 @@ namespace NScumm.Queen
         {
             public short speed, speedBak;
 
-            public class AnimFramePtr
+            public struct AnimFramePtr
             {
-                AnimFrame[] _anims;
+                public AnimFrame[] _anims;
 
                 public int Pos;
 
@@ -76,14 +77,8 @@ namespace NScumm.Queen
                 {
                     get
                     {
-                        Pos = ScummHelper.Clip(Pos, 0, _anims.Length - 1);
                         return _anims[Pos];
                     }
-                }
-
-                public AnimFramePtr(AnimFrame[] anims)
-                {
-                    _anims = anims;
                 }
             }
 
@@ -163,7 +158,7 @@ namespace NScumm.Queen
 
         public void AnimOneStep()
         {
-            if (anim.@string.buffer != null)
+            if (anim.@string.buffer._anims != null)
             {
                 --anim.speed;
                 if (anim.speed <= 0)
@@ -213,7 +208,7 @@ namespace NScumm.Queen
             active = false;
             xflip = false;
             animating = false;
-            anim.@string.buffer = null;
+            anim.@string.buffer = new Anim.AnimFramePtr();
             moving = false;
             scale = 100;
             box = defaultBox;
@@ -233,7 +228,7 @@ namespace NScumm.Queen
             frameNum = firstFrame;
             anim.speed = (short)spd;
             anim.speedBak = (short)spd;
-            anim.@string.buffer = null;
+            anim.@string.buffer = new Anim.AnimFramePtr();
             anim.normal.firstFrame = firstFrame;
             anim.normal.lastFrame = lastFrame;
             anim.normal.rebound = rebound;
@@ -245,8 +240,8 @@ namespace NScumm.Queen
         {
             active = true;
             animating = true;
-            anim.@string.buffer = new Anim.AnimFramePtr(animBuf);
-            anim.@string.curPos = new Anim.AnimFramePtr(animBuf);
+            anim.@string.buffer = new Anim.AnimFramePtr { _anims = animBuf };
+            anim.@string.curPos = new Anim.AnimFramePtr { _anims = animBuf };
 
             frameNum = animBuf[0].frame;
             anim.speed = (short)(animBuf[0].speed / 4);
@@ -327,8 +322,7 @@ namespace NScumm.Queen
             height = 0;
             xhotspot = 0;
             yhotspot = 0;
-            if (data != null)
-                Array.Clear(data, 0, data.Length);
+            data = null;
         }
     }
 
@@ -478,7 +472,7 @@ namespace NScumm.Queen
 
         public void SetBobCutawayAnim(ushort bobNum, bool xflip, AnimFrame[] af, byte frameCount)
         {
-            // TODO: assert(bobNum < 21 && frameCount < 30);
+            Debug.Assert(bobNum < 21 && frameCount < 30);
             Array.Copy(af, _cutAnim[bobNum], frameCount);
             Bobs[bobNum].xflip = xflip;
             Bobs[bobNum].AnimString(_cutAnim[bobNum]);
@@ -943,7 +937,7 @@ namespace NScumm.Queen
                     s += w - w_new - x_skip;
                     x = (short)(x + w_new - 1);
                 }
-                _vm.Display.DrawBobSprite(new ByteAccess(src, s), (ushort)x, (ushort)y, w_new, h_new, w, bs.xflip);
+                _vm.Display.DrawBobSprite(src, s, (ushort)x, (ushort)y, w_new, h_new, w, bs.xflip);
             }
 
         }
@@ -953,7 +947,7 @@ namespace NScumm.Queen
             // computing new size, rounding to upper value
             ushort new_w = (ushort)((bf.width * percentage + 50) / 100);
             ushort new_h = (ushort)((bf.height * percentage + 50) / 100);
-            // TODO: assert(new_w * new_h < BOB_SHRINK_BUF_SIZE);
+            Debug.Assert(new_w * new_h < BOB_SHRINK_BUF_SIZE);
 
             if (new_w != 0 && new_h != 0)
             {
@@ -1282,7 +1276,7 @@ namespace NScumm.Queen
             _newAnim[bobNum][0].frame = 0;
             BobSlot pbs = Bobs[bobNum];
             pbs.animating = false;
-            pbs.anim.@string.buffer = null;
+            pbs.anim.@string.buffer = new BobSlot.Anim.AnimFramePtr();
         }
 
         private ushort SetupPersonAnim(ActorData ad, string anim, ushort curImage)
@@ -1390,7 +1384,7 @@ namespace NScumm.Queen
                     }
                     if (!foundMatchingFrame)
                     {
-                        // TODO: assert (numTempFrames < 20);
+                        Debug.Assert(numTempFrames < 20);
                         tempFrames[numTempFrames] = frame;
                         ++numTempFrames;
                     }

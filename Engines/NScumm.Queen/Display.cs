@@ -974,7 +974,7 @@ namespace NScumm.Queen
         /// <param name="height">Height.</param>
         public void SetMouseCursor(byte[] cursorData, ushort width, ushort height)
         {
-            _system.GraphicsManager.SetCursor(cursorData, width, height, new Point(1, 1));
+            _system.GraphicsManager.SetCursor(cursorData, 0, width, height, new Point(1, 1), keyColor: 0);
         }
 
         /// <summary>

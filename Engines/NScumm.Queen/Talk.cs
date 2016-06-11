@@ -266,7 +266,7 @@ namespace NScumm.Queen
                     }
                     else
                     {
-                        // TODO: warning ("Unknown command string: '%2s'", sentence + index);
+                        D.Warning ($"Unknown command string: '{sentence.Substring(index)}'");
                     }
                     break;
             }

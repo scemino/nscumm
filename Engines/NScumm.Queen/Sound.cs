@@ -23,6 +23,7 @@ using System.IO;
 using NScumm.Core;
 using NScumm.Core.Audio;
 using NScumm.Core.IO;
+using D = NScumm.Core.DebugHelper;
 
 namespace NScumm.Queen
 {
@@ -82,7 +83,7 @@ namespace NScumm.Queen
             _mixer = mixer;
             _vm = vm;
             _sfxToggle = true;
-            SpeechOn = true;
+            SpeechOn = false;
             _musicToggle = true;
         }
 
@@ -99,20 +100,20 @@ namespace NScumm.Queen
                     return new Mp3Sound(mixer, vm);
                 case Defines.COMPRESSION_OGG:
 #if !USE_VORBIS
-                    // TODO: warning("Using OGG compressed datafile, but OGG support not compiled in");
+                    D.Warning("Using OGG compressed datafile, but OGG support not compiled in");
                     return new SilentSound(mixer, vm);
 #else
                     return new OGGSound(mixer, vm);
 #endif
                 case Defines.COMPRESSION_FLAC:
 #if !USE_FLAC
-                    // TODO: warning("Using FLAC compressed datafile, but FLAC support not compiled in");
+                    D.Warning("Using FLAC compressed datafile, but FLAC support not compiled in");
                     return new SilentSound(mixer, vm);
 #else
                     return new FLACSound(mixer, vm);
 #endif
                 default:
-                    // TODO: warning("Unknown compression type");
+                    D.Warning("Unknown compression type");
                     return new SilentSound(mixer, vm);
             }
         }

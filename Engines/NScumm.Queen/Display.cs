@@ -85,6 +85,25 @@ namespace NScumm.Queen
         ISystem _system;
         bool _fullscreen;
         byte[] _font;
+
+        public void SetTextCentered(ushort y, string text, bool outlined)
+        {
+            int len = string.IsNullOrEmpty(text)?0: text.Length;
+            int t = 0;
+            int x;
+            while ((x = (short)((Defines.GAME_SCREEN_WIDTH - TextWidth(text, t, (ushort)len)) / 2)) <= 0)
+            {
+                ++t;
+                len -= 2;
+            }
+            //assert(y < GAME_SCREEN_HEIGHT);
+            TextSlot pts = _texts[y];
+            pts.x = (ushort)x;
+            pts.color = (byte)_curTextColor;
+            pts.outlined = outlined;
+            pts.text = text?.Substring(0, len);
+        }
+
         /// <summary>
         /// Font justification sizes.
         /// </summary>
@@ -367,15 +386,15 @@ namespace NScumm.Queen
             // TODO: _system.SetFocusRectangle(rect);
         }
 
-        public ushort TextWidth(string text)
+        public ushort TextWidth(string text, int offset = 0)
         {
-            return TextWidth(text, (ushort)text.Length);
+            return TextWidth(text, offset, (ushort)text.Length);
         }
 
-        public ushort TextWidth(string text, ushort len)
+        public ushort TextWidth(string text, int offset, ushort len)
         {
             ushort width = 0;
-            for (ushort i = 0; i < len; ++i)
+            for (var i = offset; i < offset + len; ++i)
             {
                 width += _charWidth[(byte)text[i]];
             }
@@ -1024,7 +1043,7 @@ namespace NScumm.Queen
         {
             if (_vm.Resource.Platform == Platform.Amiga)
             {
-                Array.Copy(_pal.room,_pal.screen, 32);
+                Array.Copy(_pal.room, _pal.screen, 32);
                 PalSet(_pal.screen, 0, 31, true);
             }
             else

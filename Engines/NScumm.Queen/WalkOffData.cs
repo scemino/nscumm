@@ -28,7 +28,7 @@ using NScumm.Core.Audio;
 
 namespace NScumm.Queen
 {
-	class WalkOffData 
+	public class WalkOffData 
 	{
 		/// <summary>
 		/// Entry in ObjectData.
@@ -39,7 +39,7 @@ namespace NScumm.Queen
 		/// </summary>
 		public ushort x, y;
 
-		public void readFromBE(byte[] data, ref int ptr) 
+		public void ReadFromBE(byte[] data, ref int ptr) 
 		{
 			entryObj = data.ToInt16BigEndian(ptr); ptr += 2;
 			x = data.ToUInt16BigEndian(ptr); ptr += 2;

@@ -22,6 +22,7 @@ using System;
 using NScumm.Core;
 using System.Linq;
 using D = NScumm.Core.DebugHelper;
+using NScumm.Core.Graphics;
 
 namespace NScumm.Queen
 {
@@ -30,6 +31,9 @@ namespace NScumm.Queen
         public const int DELAY_SHORT = 10;
         public const int DELAY_NORMAL = 100;
         public const int DELAY_SCREEN_BLANKER = 5 * 60 * 1000;
+
+        public const int MOUSE_LBUTTON = 1;
+        public const int MOUSE_RBUTTON = 2;
 
         private string _currentCommandKeys;
 
@@ -45,6 +49,8 @@ namespace NScumm.Queen
         /// </summary>
         Verb _keyVerb;
         KeyCode _inKey;
+
+        int _mouseButton;
 
         private static readonly string[] _commandKeys = {
             "ocmglptu", // English
@@ -90,6 +96,10 @@ namespace NScumm.Queen
 
         public Verb KeyVerb { get { return _keyVerb; } }
 
+        public Point MousePos { get { return _system.InputManager.GetMousePosition(); } }
+
+        public int MouseButton { get { return _mouseButton; } }
+
         public Input(Language language, ISystem system)
         {
             _system = system;
@@ -120,6 +130,8 @@ namespace NScumm.Queen
             }
         }
 
+        public void ClearMouseButton() { _mouseButton = 0; }
+
         public void DialogueRunning(bool running) { _dialogueRunning = running; }
 
         public void QuickSaveReset()
@@ -140,7 +152,7 @@ namespace NScumm.Queen
         public void CheckKeys()
         {
             if (_inKey != KeyCode.None)
-                D.Debug(6, "[Input::checkKeys] _inKey = {_inKey}");
+                D.Debug(6, $"[Input::checkKeys] _inKey = {_inKey}");
 
             switch (_inKey)
             {
@@ -217,7 +229,7 @@ namespace NScumm.Queen
 
         private char ToChar(KeyCode key)
         {
-            return (char)('a'+(int)(key - KeyCode.A));
+            return (char)('a' + (int)(key - KeyCode.A));
         }
 
         public void Delay(int amount)
@@ -258,11 +270,11 @@ namespace NScumm.Queen
                         CutawayQuit = true;
                 }
 
-                //          if(state.IsLeftButtonDown)
-                //_mouseButton |= MOUSE_LBUTTON;
+                if (state.IsLeftButtonDown)
+                    _mouseButton |= MOUSE_LBUTTON;
 
-                //          if (state.IsRightButtonDown)
-                //_mouseButton |= MOUSE_RBUTTON;
+                if (state.IsRightButtonDown)
+                    _mouseButton |= MOUSE_RBUTTON;
 
                 _system.GraphicsManager.UpdateScreen();
 

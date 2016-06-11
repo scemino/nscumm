@@ -47,7 +47,7 @@ namespace NScumm.Queen
     {
         const int MIN_TEXT_SPEED = 4;
         const int MAX_TEXT_SPEED = 100;
-            
+
         QueenSystem _system;
         Mixer _mixer;
 
@@ -87,123 +87,144 @@ namespace NScumm.Queen
 
         public bool Subtitles { get; private set; }
 
-        public IMixer Mixer { get { return _mixer;} }
+        public IMixer Mixer { get { return _mixer; } }
 
 
-		public QueenEngine (GameSettings settings, IGraphicsManager gfxManager, IInputManager inputManager,
-		                    IAudioOutput output, ISaveFileManager saveFileManager, bool debugMode)
-		{
+        public QueenEngine(GameSettings settings, IGraphicsManager gfxManager, IInputManager inputManager,
+                            IAudioOutput output, ISaveFileManager saveFileManager, bool debugMode)
+        {
             Randomizer = new Random();
-			Settings = settings;
-			_system = new QueenSystem (gfxManager, inputManager, saveFileManager);
+            Settings = settings;
+            _system = new QueenSystem(gfxManager, inputManager, saveFileManager);
             _mixer = new Mixer(44100);
             _mixer.Read(new short[0], 0);
             output.SetSampleProvider(_mixer);
-		}
+        }
 
-		public event EventHandler ShowMenuDialogRequested;
+        public event EventHandler ShowMenuDialogRequested;
 
-		public void Update (bool checkPlayerInput= false)
-		{
-			//_debugger.onFrame();
+        public void Update(bool checkPlayerInput = false)
+        {
+            //_debugger.onFrame();
 
-			Graphics.Update(Logic.CurrentRoom);
-			Logic.Update();
+            Graphics.Update(Logic.CurrentRoom);
+            Logic.Update();
 
-			int frameDelay = (_lastUpdateTime + Input.DELAY_NORMAL - Environment.TickCount);
-			if (frameDelay <= 0) {
-				frameDelay = 1;
-			}
-			Input.Delay(frameDelay);
-			_lastUpdateTime = Environment.TickCount;
+            int frameDelay = (_lastUpdateTime + Input.DELAY_NORMAL - Environment.TickCount);
+            if (frameDelay <= 0)
+            {
+                frameDelay = 1;
+            }
+            Input.Delay(frameDelay);
+            _lastUpdateTime = Environment.TickCount;
 
-			if (!Resource.IsInterview) {
-				Display.PalCustomScroll(Logic.CurrentRoom);
-			}
-			BobSlot joe = Graphics.Bobs[0];
-			Display.Update(joe.active, joe.x, joe.y);
+            if (!Resource.IsInterview)
+            {
+                Display.PalCustomScroll(Logic.CurrentRoom);
+            }
+            BobSlot joe = Graphics.Bobs[0];
+            Display.Update(joe.active, joe.x, joe.y);
 
-			Input.CheckKeys();
-//			if (Input.Debugger()) {
-//				Input.DebuggerReset();
-//				Debugger.Attach();
-//			}
-			// TODO: save
-//			if (CanLoadOrSave()) {
-//				if (Input.QuickSave()) {
-//					Input.QuickSaveReset();
-//					SaveGameState(SLOT_QUICKSAVE, "Quicksave");
-//				}
-//				if (Input.QuickLoad()) {
-//					Input.QuickLoadReset();
-//					LoadGameState(SLOT_QUICKSAVE);
-//				}
-//				if (ShouldPerformAutoSave(_lastSaveTime)) {
-//					SaveGameState(SLOT_AUTOSAVE, "Autosave");
-//					_lastSaveTime = _system.getMillis();
-//				}
-//			}
-			if (!Input.CutawayRunning) {
-				if (checkPlayerInput) {
-					Command.UpdatePlayer();
-				}
-				if (Input.IdleTime >= Input.DELAY_SCREEN_BLANKER) {
-					Display.BlankScreen();
-				}
-			}
-			Sound.UpdateMusic();
+            Input.CheckKeys();
+            //			if (Input.Debugger()) {
+            //				Input.DebuggerReset();
+            //				Debugger.Attach();
+            //			}
+            // TODO: save
+            //			if (CanLoadOrSave()) {
+            //				if (Input.QuickSave()) {
+            //					Input.QuickSaveReset();
+            //					SaveGameState(SLOT_QUICKSAVE, "Quicksave");
+            //				}
+            //				if (Input.QuickLoad()) {
+            //					Input.QuickLoadReset();
+            //					LoadGameState(SLOT_QUICKSAVE);
+            //				}
+            //				if (ShouldPerformAutoSave(_lastSaveTime)) {
+            //					SaveGameState(SLOT_AUTOSAVE, "Autosave");
+            //					_lastSaveTime = _system.getMillis();
+            //				}
+            //			}
+            if (!Input.CutawayRunning)
+            {
+                if (checkPlayerInput)
+                {
+                    Command.UpdatePlayer();
+                }
+                if (Input.IdleTime >= Input.DELAY_SCREEN_BLANKER)
+                {
+                    Display.BlankScreen();
+                }
+            }
+            Sound.UpdateMusic();
 
-		}
+        }
 
-		public void Run ()
-		{
-			Resource = new Resource (Settings.Game.Path);
-			Bam = new BamScene (this);
-			BankMan = new BankManager (Resource);
-			Command = new Command (this);
-			//_debugger = new Debugger(this);
-			Display = new Display (this, _system);
-			Graphics = new Graphics (this);
-			Grid = new Grid (this);
-			Input = new Input (Resource.Language, _system);
+        public void Run()
+        {
+            Resource = new Resource(Settings.Game.Path);
+            Bam = new BamScene(this);
+            BankMan = new BankManager(Resource);
+            Command = new Command(this);
+            //_debugger = new Debugger(this);
+            Display = new Display(this, _system);
+            Graphics = new Graphics(this);
+            Grid = new Grid(this);
+            Input = new Input(Resource.Language, _system);
 
-			// TODO: demo/interview
-//			if (Resource.IsDemo) {
-//				_logic = new LogicDemo(this);
-//			} else if (Resource.IsInterview) {
-//				_logic = new LogicInterview(this);
-//			} else {
-			Logic = new LogicGame (this);
-//			}
+            // TODO: demo/interview
+            //			if (Resource.IsDemo) {
+            //				_logic = new LogicDemo(this);
+            //			} else if (Resource.IsInterview) {
+            //				_logic = new LogicInterview(this);
+            //			} else {
+            Logic = new LogicGame(this);
+            //			}
 
             Sound = Sound.MakeSoundInstance(_mixer, this, Resource.Compression);
 
-			Walk = new Walk(this);
-			//_talkspeedScale = (MAX_TEXT_SPEED - MIN_TEXT_SPEED) / 255.0;
+            Walk = new Walk(this);
+            //_talkspeedScale = (MAX_TEXT_SPEED - MIN_TEXT_SPEED) / 255.0;
 
-			RegisterDefaultSettings();
+            RegisterDefaultSettings();
 
-			// Setup mixer
+            // Setup mixer
             SyncSoundSettings();
 
-			Logic.Start();
+            Logic.Start();
 
-			// TODO: save
-//			if (ConfMan.hasKey("save_slot") && canLoadOrSave()) {
-//				loadGameState(ConfMan.getInt("save_slot"));
-//			}
-			_lastSaveTime = _lastUpdateTime = Environment.TickCount;
+            // TODO: save
+            //			if (ConfMan.hasKey("save_slot") && canLoadOrSave()) {
+            //				loadGameState(ConfMan.getInt("save_slot"));
+            //			}
+            _lastSaveTime = _lastUpdateTime = Environment.TickCount;
 
-			while (!HasToQuit) {
-				if (Logic.NewRoom > 0) {
-					Logic.Update();
-					Logic.OldRoom = Logic.CurrentRoom;
-					Logic.CurrentRoom = Logic.NewRoom;
-					Logic.ChangeRoom();
-					Display.Fullscreen=false;
-				}
-			}
-		}
+            while (!HasToQuit)
+            {
+                if (Logic.NewRoom > 0)
+                {
+                    Logic.Update();
+                    Logic.OldRoom = Logic.CurrentRoom;
+                    Logic.CurrentRoom = Logic.NewRoom;
+                    Logic.ChangeRoom();
+                    Display.Fullscreen = false;
+                    if (Logic.CurrentRoom == Logic.NewRoom)
+                    {
+                        Logic.NewRoom = 0;
+                    }
+                }
+                else if (Logic.JoeWalk == JoeWalkMode.EXECUTE)
+                {
+                    Logic.JoeWalk = JoeWalkMode.NORMAL;
+                    Command.ExecuteCurrentAction();
+                }
+                else
+                {
+                    Logic.JoeWalk = JoeWalkMode.NORMAL;
+                    Update(true);
+                }
+            }
+        }
 
         private void SyncSoundSettings()
         {
@@ -247,22 +268,23 @@ namespace NScumm.Queen
             }
         }
 
-        void IEngine.Load (string filename)
-		{
-            throw new NotImplementedException ();
-		}
+        void IEngine.Load(string filename)
+        {
+            throw new NotImplementedException();
+        }
 
-		void IEngine.Save (string filename)
-		{
-			throw new NotImplementedException ();
-		}
+        void IEngine.Save(string filename)
+        {
+            throw new NotImplementedException();
+        }
 
-		private void RegisterDefaultSettings() {
+        private void RegisterDefaultSettings()
+        {
             // TODO: conf
-			// ConfMan.registerDefault("talkspeed", Logic::DEFAULT_TALK_SPEED);
-			// ConfMan.registerDefault("subtitles", true);
-			Subtitles = true;
-		}
+            // ConfMan.registerDefault("talkspeed", Logic::DEFAULT_TALK_SPEED);
+            // ConfMan.registerDefault("subtitles", true);
+            Subtitles = true;
+        }
     }
 }
 

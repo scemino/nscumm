@@ -354,7 +354,7 @@ namespace NScumm.Queen
                 var gameVersion = DetectGameVersionFromSize(file.Length);
                 if (Equals(gameVersion, default(RetailGameVersion)))
                 {
-                    // TODO: warning("Unknown/unsupported FOTAQ version");
+                    D.Warning("Unknown/unsupported FOTAQ version");
                     return null;
                 }
                 ver.str = gameVersion.str;

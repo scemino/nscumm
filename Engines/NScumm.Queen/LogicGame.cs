@@ -20,6 +20,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
 using NScumm.Core.IO;
+using D = NScumm.Core.DebugHelper;
 
 namespace NScumm.Queen
 {
@@ -28,6 +29,19 @@ namespace NScumm.Queen
         public LogicGame(QueenEngine vm)
             : base(vm)
         {
+        }
+
+        public override void UseJournal()
+        {
+            _vm.Input.ClearKeyVerb();
+            _vm.Input.ClearMouseButton();
+
+            _vm.Command.Clear(false);
+            _journal.Use();
+            _vm.Walk.StopJoe();
+
+            _vm.Input.ClearKeyVerb();
+            _vm.Input.ClearMouseButton();
         }
 
         protected override bool ChangeToSpecialRoom()

@@ -19,15 +19,13 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using System;
 using NScumm.Core;
-using NScumm.Core.IO;
 
 namespace NScumm.Queen
 {
-	class ObjectDescription {
+	public class ObjectDescription {
 		//! entry in ObjectData or ItemData
-		ushort @object;
+		public ushort @object;
 		//! type of the description
 		/*!
 		refer to select.c l.75-101
@@ -53,11 +51,11 @@ namespace NScumm.Queen
 			</tr>
 		</table>
 	*/
-		ushort type;
+		public ushort type;
 		//! last entry possible in OBJECT_DESCR for this object
-		ushort lastDescription;
+		public ushort lastDescription;
 		//! last description number used (in order to avoid re-using it)
-		ushort lastSeenNumber;
+		public ushort lastSeenNumber;
 
 		public void ReadFromBE(byte[] data, ref int ptr) 
 		{

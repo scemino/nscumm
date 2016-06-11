@@ -132,7 +132,7 @@ namespace NScumm.Queen
 		public const int VAR_AZURA_IN_LOVE = 167;
 	}
 
-	enum Item
+	public enum Item
 	{
 		ITEM_NONE = 0,
 		ITEM_BAT,

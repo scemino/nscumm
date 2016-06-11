@@ -284,7 +284,7 @@ namespace NScumm.Queen
                         HandleText(i + 1, @objectType, @object, sentence);
                         break;
                     default:
-                        // TODO: warning("Unhandled @object type: %i", @objectType);
+                        D.Warning($"Unhandled object type: {@objectType}");
                         break;
                 }
 
@@ -1307,7 +1307,7 @@ namespace NScumm.Queen
 
                 if (@object.objectNumber < 0)
                 {
-                    // TODO: warning("QueenCutaway::limitBob called with @objectNumber = %i", @object.objectNumber);
+                    D.Warning($"QueenCutaway::limitBob called with @objectNumber = {@object.objectNumber}");
                     return;
                 }
 
@@ -1316,7 +1316,7 @@ namespace NScumm.Queen
 
                 if (bob == null)
                 {
-                    // TODO: warning("Failed to find bob");
+                    D.Warning("Failed to find bob");
                     return;
                 }
 

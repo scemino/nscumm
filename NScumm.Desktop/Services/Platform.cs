@@ -27,7 +27,7 @@ namespace NScumm
 {
     public class Platform : IPlatform
     {
-        public void LogMessage(string format, params object[] args)
+        public void LogMessage(LogMessageType type, string format, params object[] args)
         {
             Console.WriteLine(format, args);
         }

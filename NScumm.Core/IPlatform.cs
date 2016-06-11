@@ -18,10 +18,18 @@
 
 namespace NScumm.Core
 {
+    public enum LogMessageType
+    {
+        Info,
+        Error,
+        Warning,
+        Debug
+    }
+
     public interface IPlatform
     {
         void Sleep(int timeInMs);
 
-        void LogMessage(string format, params object[] args);
+        void LogMessage(LogMessageType type, string format, params object[] args);
     }
 }

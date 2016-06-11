@@ -74,7 +74,7 @@ namespace NScumm.Queen
         protected QueenEngine _vm;
         Joe _joe;
         int _puzzleAttemptCount;
-        Journal _journal;
+        protected Journal _journal;
         ushort _numRooms;
         ushort _numNames;
         ushort _numObjects;
@@ -114,6 +114,8 @@ namespace NScumm.Queen
 
         public ObjectData[] ObjectData { get; private set; }
 
+        public ItemData[] ItemData { get { return _itemData; } }
+
         public ushort EntryObj { get; set; }
 
         public short[] GameState { get; private set; }
@@ -143,6 +145,10 @@ namespace NScumm.Queen
         public ushort CurrentRoomData { get { return _roomData[CurrentRoom]; } }
 
         public GraphicAnim[] GraphicAnim { get { return _graphicAnim; } }
+
+        public ObjectDescription[] ObjectDescription { get { return _objectDescription; } }
+
+        public int ObjectDescriptionCount { get { return _numObjDesc; } }
 
         public ushort GraphicAnimCount { get { return _numGraphicAnim; } }
 
@@ -185,6 +191,19 @@ namespace NScumm.Queen
             get { return _graphicData; }
         }
 
+        public ushort NumItemsInventory
+        {
+            get
+            {
+                ushort count = 0;
+                for (int i = 1; i < _numItems; i++)
+                    if (_itemData[i].name > 0)
+                        count++;
+
+                return count;
+            }
+        }
+
         protected Logic(QueenEngine vm)
         {
             _vm = vm;
@@ -196,6 +215,31 @@ namespace NScumm.Queen
             _journal = new Journal(vm);
             _specialMoves = new Action[40];
             ReadQueenJas();
+        }
+
+        public string VerbName(Verb v)
+        {
+            if (v == 0)
+            {
+                return string.Empty;
+            }
+            return _jasStringList[_jasStringOffset[Jso.JSO_VERB_NAME] + (int)v - 1];
+        }
+
+        public string ObjectName(ushort objNum)
+        {
+            //assert(objNum >= 1 && objNum <= _numNames);
+            return _jasStringList[_jasStringOffset[Jso.JSO_OBJECT_NAME] + objNum - 1];
+        }
+
+        public ushort FindInventoryItem(int invSlot)
+        {
+            // queen.c l.3894-3898
+            if (invSlot >= 0 && invSlot < 4)
+            {
+                return (ushort)_inventoryItem[invSlot];
+            }
+            return 0;
         }
 
         public void JoeGrab(StateGrab grabState)
@@ -274,6 +318,29 @@ namespace NScumm.Queen
             get { return _joe.walk; }
         }
 
+        public void InventoryScroll(ushort count, bool up)
+        {
+            if (!(NumItemsInventory > 4))
+                return;
+            while ((count--) != 0)
+            {
+                if (up)
+                {
+                    for (int i = 3; i > 0; i--)
+                        _inventoryItem[i] = _inventoryItem[i - 1];
+                    _inventoryItem[0] = (NScumm.Queen.Item)PreviousInventoryItem((short)_inventoryItem[0]);
+                }
+                else
+                {
+                    for (int i = 0; i < 3; i++)
+                        _inventoryItem[i] = _inventoryItem[i + 1];
+                    _inventoryItem[3] = NextInventoryItem(_inventoryItem[3]);
+                }
+            }
+
+            InventoryRefresh();
+        }
+
         public void StartDialogue(string dlgFile, int personInRoom, out string cutaway)
         {
             cutaway = null;
@@ -308,7 +375,7 @@ namespace NScumm.Queen
             MakePersonSpeak(text, null, descFilePrefix);
         }
 
-        private string ObjectTextualDescription(ushort objNum)
+        public string ObjectTextualDescription(ushort objNum)
         {
             return _jasStringList[_jasStringOffset[Jso.JSO_OBJECT_DESCRIPTION] + objNum - 1];
         }
@@ -558,6 +625,8 @@ namespace NScumm.Queen
             }
         }
 
+        public abstract void UseJournal();
+
         public void StartCredits(string filename)
         {
             StopCredits();
@@ -767,7 +836,7 @@ namespace NScumm.Queen
             }
         }
 
-        private void InventoryDeleteItem(Item itemNum, bool refresh = true)
+        public void InventoryDeleteItem(Item itemNum, bool refresh = true)
         {
             Item item = itemNum;
             _itemData[(int)itemNum].name = (short)-Math.Abs(_itemData[(int)itemNum].name);    //set invisible
@@ -960,7 +1029,7 @@ namespace NScumm.Queen
             short img = ObjectData[obj].image;
             if (img != -3 && img != -4)
             {
-                // TODO: warning("Logic::findActor() - Object %d is not a person", obj);
+                D.Warning($"Logic::findActor() - Object {obj} is not a person");
                 return null;
             }
 
@@ -1190,7 +1259,7 @@ namespace NScumm.Queen
             pbs.frameNum = 31;
         }
 
-        private WalkOffData WalkOffPointForObject(ushort obj)
+        public WalkOffData WalkOffPointForObject(ushort obj)
         {
             for (ushort i = 1; i <= _numWalkOffs; ++i)
             {
@@ -1390,7 +1459,7 @@ namespace NScumm.Queen
             for (i = 1; i <= _numWalkOffs; i++)
             {
                 _walkOffData[i] = new WalkOffData();
-                _walkOffData[i].readFromBE(jas, ref ptr);
+                _walkOffData[i].ReadFromBE(jas, ref ptr);
             }
 
             _numObjDesc = jas.ToUInt16BigEndian(ptr);
@@ -1456,7 +1525,7 @@ namespace NScumm.Queen
 
             if (System.Text.Encoding.UTF8.GetString(jas, ptr, 5) != _vm.Resource.JASVersion)
             {
-                // TODO: warning ("Unexpected queen.jas file format");
+                D.Warning("Unexpected queen.jas file format");
             }
 
             _jasStringList = _vm.Resource.LoadTextFile("QUEEN2.JAS");
@@ -1475,6 +1544,19 @@ namespace NScumm.Queen
             {
                 _jasStringList[_jasStringOffset[Jso.JSO_OBJECT_DESCRIPTION] + 296 - 1] = "Es bringt nicht viel, das festzubinden.";
             }
+        }
+
+        private short PreviousInventoryItem(short first)
+        {
+            int i;
+            for (i = first - 1; i >= 1; i--)
+                if (_itemData[i].name > 0)
+                    return (short)i;
+            for (i = _numItems; i > first; i--)
+                if (_itemData[i].name > 0)
+                    return (short)i;
+
+            return 0;   //nothing found
         }
 
         protected abstract void SetupSpecialMoveTable();
@@ -2147,7 +2229,7 @@ namespace NScumm.Queen
             }
         }
 
-        private void JoeUseDress(bool showCut)
+        public void JoeUseDress(bool showCut)
         {
             if (showCut)
             {
@@ -2169,7 +2251,7 @@ namespace NScumm.Queen
             GameState[Defines.VAR_JOE_DRESSING_MODE] = 2;
         }
 
-        private void InventoryInsertItem(Item itemNum, bool refresh = true)
+        public void InventoryInsertItem(Item itemNum, bool refresh = true)
         {
             Item item = _inventoryItem[0] = itemNum;
             _itemData[(int)itemNum].name = Math.Abs(_itemData[(int)itemNum].name); //set visible
@@ -2184,7 +2266,7 @@ namespace NScumm.Queen
                 InventoryRefresh();
         }
 
-        private void JoeUseClothes(bool showCut)
+        public void JoeUseClothes(bool showCut)
         {
             if (showCut)
             {
@@ -2199,7 +2281,7 @@ namespace NScumm.Queen
             GameState[Defines.VAR_JOE_DRESSING_MODE] = 0;
         }
 
-        private void JoeUseUnderwear()
+        public void JoeUseUnderwear()
         {
             _vm.Display.PalSetJoeNormal();
             LoadJoeBanks("JOEU_A.BBK", "JOEU_B.BBK");

@@ -27,25 +27,25 @@ namespace NScumm.Queen
 	class CmdListData
 	{
 		//! action to perform
-		Verb verb;
+		public Verb verb;
 		//! first object used in the action
-		short nounObj1;
+		public short nounObj1;
 		//! second object used in the action
-		short nounObj2;
+		public short nounObj2;
 		//! song to play (>0: playbefore, <0: playafter)
-		short song;
+		public short song;
 		//! if set, P2_SET_AREAS must be called (using CmdArea)
-		bool setAreas;
+		public bool setAreas;
 		//! if set, P3_SET_OBJECTS must be called (using CmdObject)
-		bool setObjects;
+		public bool setObjects;
 		//! if set, P4_SET_ITEMS must be called (using CmdInventory)
-		bool setItems;
+		public bool setItems;
 		//! if set, P1_SET_CONDITIONS must be called (using CmdGameState)
-		bool setConditions;
+		public bool setConditions;
 		//! graphic image order
-		short imageOrder;
+		public short imageOrder;
 		//! special section to execute (refer to execute.c l.423-451)
-		short specialSection;
+		public short specialSection;
 
 		public void ReadFromBE (byte[] data, ref int ptr)
 		{

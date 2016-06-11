@@ -18,6 +18,7 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+using System;
 using NScumm.Core;
 using D = NScumm.Core.DebugHelper;
 
@@ -40,6 +41,24 @@ namespace NScumm.Queen
     {
         const int MAX_ZONES_NUMBER = 32;
         const int MAX_AREAS_NUMBER = 11;
+
+        private static readonly Verb[] pv = {
+            Verb.NONE,
+            Verb.OPEN,
+            Verb.CLOSE,
+            Verb.MOVE,
+            Verb.GIVE,
+            Verb.LOOK_AT,
+            Verb.PICK_UP,
+            Verb.TALK_TO,
+            Verb.USE,
+            Verb.SCROLL_UP,
+            Verb.SCROLL_DOWN,
+            Verb.INV_1,
+            Verb.INV_2,
+            Verb.INV_3,
+            Verb.INV_4,
+        };
 
         QueenEngine _vm;
         ushort _numRoomAreas;
@@ -224,7 +243,7 @@ namespace NScumm.Queen
             }
         }
 
-        private void SetZone(GridScreen screen, short zoneNum, short x1, short y1, short x2, short y2)
+        public void SetZone(GridScreen screen, short zoneNum, short x1, short y1, short x2, short y2)
         {
             D.Debug(9, $"Grid::setZone({screen}, {zoneNum}, ({x1},{y1}), ({x2},{y2}))");
             // TODO: assert(zoneNum < MAX_ZONES_NUMBER);
@@ -240,6 +259,42 @@ namespace NScumm.Queen
             var pzs = _zones[(int)screen, zoneNum];
             pzs.valid = true;
             pzs.box = box;
+        }
+
+        public ushort FindObjectUnderCursor(short cursorx, short cursory)
+        {
+            ushort roomObj = 0;
+            if (cursory < Defines.ROOM_ZONE_HEIGHT)
+            {
+                short x = (short)(cursorx + _vm.Display.HorizontalScroll);
+                roomObj = FindZoneForPos(GridScreen.ROOM, (ushort)x, (ushort)cursory);
+            }
+            return roomObj;
+        }
+
+        public ushort FindObjectNumber(ushort zoneNum)
+        {
+            // l.316-327 select.c
+            ushort room = _vm.Logic.CurrentRoom;
+            ushort obj = zoneNum;
+            ushort objectMax = (ushort)_objMax[room];
+            D.Debug(9, $"Grid::findObjectNumber({zoneNum:X}, {objectMax:X})");
+            if (zoneNum > objectMax)
+            {
+                // this is an area box, check for associated object
+                obj = _area[room][zoneNum - objectMax].@object;
+                if (obj != 0)
+                {
+                    // there is an object, get its number
+                    obj -= _vm.Logic.CurrentRoomData;
+                }
+            }
+            return obj;
+        }
+
+        public Verb FindVerbUnderCursor(short cursorx, short cursory)
+        {
+            return pv[FindZoneForPos(GridScreen.PANEL, (ushort)cursorx, (ushort)cursory)];
         }
     }
 }

@@ -24,12 +24,21 @@ using D = NScumm.Core.DebugHelper;
 
 namespace NScumm.Queen
 {
-    struct WalkData
+    class WalkData
     {
         public short dx, dy;
-        public Area area;
+        public Area area = new Area();
         public ushort areaNum;
         public MovePersonAnim anim;
+
+        public void Reset()
+        {
+            dx = 0;
+            dy = 0;
+            area = new Area();
+            areaNum = 0;
+            anim = new MovePersonAnim();
+        }
     }
 
     struct MovePersonData
@@ -113,7 +122,7 @@ namespace NScumm.Queen
         ushort[] _areaList = new ushort[MAX_WALK_DATA];
         ushort _areaListCount;
 
-        WalkData[] _walkData = new WalkData[MAX_WALK_DATA];
+        WalkData[] _walkData;
 
         private static readonly MovePersonData[] _moveData =
         {
@@ -143,13 +152,18 @@ namespace NScumm.Queen
         public Walk(QueenEngine vm)
         {
             _vm = vm;
+            _walkData = new WalkData[MAX_WALK_DATA];
+            for (int i = 0; i < _walkData.Length; i++)
+            {
+                _walkData[i] = new WalkData();
+            }
         }
 
         public short MovePerson(Person pp, short endx, short endy, ushort curImage, int direction)
         {
             if (endx == 0 && endy == 0)
             {
-                // TODO: warning("Walk::movePerson() - endx == 0 && endy == 0");
+                D.Warning("Walk::movePerson() - endx == 0 && endy == 0");
                 return 0;
             }
 
@@ -685,7 +699,7 @@ namespace NScumm.Queen
             _vm.Logic.JoeFacing = lastDirection;
         }
 
-        private void StopJoe()
+        public void StopJoe()
         {
             BobSlot pbs = _vm.Graphics.Bobs[0];
             pbs.moving = false;
@@ -765,7 +779,10 @@ namespace NScumm.Queen
             _roomAreaCount = (ushort)_vm.Grid.AreaMax[curRoom];
 
             _walkDataCount = 0;
-            Array.Clear(_walkData, 0, _walkData.Length);
+            foreach (var walkData in _walkData)
+            {
+                walkData.Reset();
+            }
             _areaStrikeCount = 0;
             Array.Clear(_areaStrike, 0, _areaStrike.Length);
             _areaListCount = 0;

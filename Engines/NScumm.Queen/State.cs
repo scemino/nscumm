@@ -36,6 +36,18 @@ namespace NScumm.Queen
         MUTE
     }
 
+    public enum StateUse
+    {
+        STATE_USE,
+        STATE_USE_ON
+    }
+
+    public enum StateOn
+    {
+        STATE_ON_ON,
+        STATE_ON_OFF
+    }
+
     public static class State
     {
         private static readonly Direction[] sd = {
@@ -43,6 +55,35 @@ namespace NScumm.Queen
             Direction.RIGHT,
             Direction.LEFT,
             Direction.FRONT
+        };
+
+        private static readonly Verb[] sdv = {
+            Verb.NONE,
+            Verb.OPEN,
+            Verb.NONE,
+            Verb.CLOSE,
+
+            Verb.NONE,
+            Verb.NONE,
+            Verb.LOOK_AT,
+            Verb.MOVE,
+
+            Verb.GIVE,
+            Verb.TALK_TO,
+            Verb.NONE,
+            Verb.NONE,
+
+            Verb.USE,
+            Verb.NONE,
+            Verb.PICK_UP,
+            Verb.NONE
+        };
+
+        static readonly StateGrab[] sg = {
+            StateGrab.NONE,
+            StateGrab.DOWN,
+            StateGrab.UP,
+            StateGrab.MID
         };
 
         public static Direction FindDirection(ushort state)
@@ -54,6 +95,76 @@ namespace NScumm.Queen
         {
             return (state & (1 << 9)) != 0 ? StateTalk.TALK : StateTalk.MUTE;
         }
-    }
+
+        public static Verb FindDefaultVerb(ushort state)
+        {
+            return sdv[(state >> 4) & 0xF];
+        }
+
+        public static StateUse FindUse(ushort state)
+        {
+            return ((state & (1 << 10))!=0) ? StateUse.STATE_USE : StateUse.STATE_USE_ON;
+        }
+
+        public static StateGrab FindGrab(ushort state)
+        {
+            return sg[state & 3];
+        }
+
+        public static void AlterDefaultVerb(ref ushort objState, Verb v)
+        {
+            ushort val;
+            switch (v)
+            {
+                case Verb.OPEN:
+                    val = 1;
+                    break;
+                case Verb.CLOSE:
+                    val = 3;
+                    break;
+                case Verb.MOVE:
+                    val = 7;
+                    break;
+                case Verb.GIVE:
+                    val = 8;
+                    break;
+                case Verb.USE:
+                    val = 12;
+                    break;
+                case Verb.PICK_UP:
+                    val = 14;
+                    break;
+                case Verb.TALK_TO:
+                    val = 9;
+                    break;
+                case Verb.LOOK_AT:
+                    val = 6;
+                    break;
+                default:
+                    val = 0;
+                    break;
+            }
+            objState = (ushort)((objState & ~0xF0) | (val << 4));
+        }
+
+        public static StateOn FindOn(ushort state)
+        {
+            return ((state & (1 << 8))!=0) ? StateOn.STATE_ON_ON : StateOn.STATE_ON_OFF;
+        }
+
+        public static void AlterOn(ref ushort objState, StateOn state)
+        {
+            switch (state)
+            {
+                case StateOn.STATE_ON_ON:
+                    objState |= (1 << 8);
+                    break;
+                case StateOn.STATE_ON_OFF:
+                    objState = ((ushort)(objState & ~(1 << 8)));
+                    break;
+            }
+        }
+
+   }
 }
 

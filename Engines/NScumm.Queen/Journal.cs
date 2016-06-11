@@ -18,23 +18,24 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 using System;
-using NScumm.Core;
-using NScumm.Core.IO;
-using NScumm.Core.Graphics;
-using NScumm.Core.Input;
-using NScumm.Core.Audio;
 
 namespace NScumm.Queen
 {
-	public class Journal
-	{
-		QueenEngine _vm;
+    public class Journal
+    {
+        QueenEngine _vm;
 
-		public Journal (QueenEngine vm)
-		{
-			_vm = vm;
-		}
-	}
+        public Journal(QueenEngine vm)
+        {
+            _vm = vm;
+        }
+
+        public void Use()
+        {
+            throw new NotImplementedException();
+        }
+    }
 }
 

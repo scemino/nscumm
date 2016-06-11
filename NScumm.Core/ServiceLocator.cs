@@ -40,12 +40,18 @@ namespace NScumm.Core
             if (level > DebugLevel)
                 return;
             
-            ServiceLocator.Platform.LogMessage(format, args);
+            ServiceLocator.Platform.LogMessage( LogMessageType.Debug, format, args);
         }
 
         public static void Debug(string format, params object[] args)
         {
-            ServiceLocator.Platform.LogMessage(format, args);
+            ServiceLocator.Platform.LogMessage(LogMessageType.Debug, format, args);
+        }
+
+        public static void Warning(string format, params object[] args)
+        {
+            var output = $"WARNING: {string.Format(format,args)} !";
+            ServiceLocator.Platform.LogMessage(LogMessageType.Warning, output);
         }
     }
 }

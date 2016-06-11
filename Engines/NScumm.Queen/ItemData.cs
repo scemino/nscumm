@@ -19,35 +19,31 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using System;
 using NScumm.Core;
-using NScumm.Core.IO;
-using NScumm.Core.Graphics;
-using NScumm.Core.Input;
-using NScumm.Core.Audio;
 
 namespace NScumm.Queen
 {
-	class ItemData {
-		//! entry in OBJECT_NAME
-		public short name;
-		//! entry in OBJECT_DESCR
-		public ushort description;
-		//! state of the object
-		public ushort state;
-		//! bank bobframe
-		public ushort frame;
-		//! entry in OBJECT_DESCR (>0 if available)
-		public short sfxDescription;
+    public class ItemData
+    {
+        //! entry in OBJECT_NAME
+        public short name;
+        //! entry in OBJECT_DESCR
+        public ushort description;
+        //! state of the object
+        public ushort state;
+        //! bank bobframe
+        public ushort frame;
+        //! entry in OBJECT_DESCR (>0 if available)
+        public short sfxDescription;
 
-		public void ReadFromBE (byte[] data, ref int ptr)
-		{
-			name = data.ToInt16BigEndian(ptr); ptr += 2;
-			description = data.ToUInt16BigEndian(ptr); ptr += 2;
-			state = data.ToUInt16BigEndian(ptr); ptr += 2;
-			frame = data.ToUInt16BigEndian(ptr); ptr += 2;
-			sfxDescription = data.ToInt16BigEndian(ptr); ptr += 2;
-		}
-	}
-	
+        public void ReadFromBE(byte[] data, ref int ptr)
+        {
+            name = data.ToInt16BigEndian(ptr); ptr += 2;
+            description = data.ToUInt16BigEndian(ptr); ptr += 2;
+            state = data.ToUInt16BigEndian(ptr); ptr += 2;
+            frame = data.ToUInt16BigEndian(ptr); ptr += 2;
+            sfxDescription = data.ToInt16BigEndian(ptr); ptr += 2;
+        }
+    }
+
 }

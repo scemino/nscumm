@@ -1237,7 +1237,7 @@ namespace NScumm.Queen
         {
             if (noun == 0)
             {
-                // TODO: warning("Trying to setup person 0");
+                D.Warning("Trying to setup person 0");
                 return curImage;
             }
 

@@ -172,14 +172,18 @@ namespace NScumm.Queen
             Grid = new Grid(this);
             Input = new Input(Resource.Language, _system);
 
-            // TODO: demo/interview
-            //			if (Resource.IsDemo) {
-            //				_logic = new LogicDemo(this);
-            //			} else if (Resource.IsInterview) {
-            //				_logic = new LogicInterview(this);
-            //			} else {
-            Logic = new LogicGame(this);
-            //			}
+            if (Resource.IsDemo)
+            {
+                Logic = new LogicDemo(this);
+            }
+            else if (Resource.IsInterview)
+            {
+                Logic = new LogicInterview(this);
+            }
+            else
+            {
+                Logic = new LogicGame(this);
+            }
 
             Sound = Sound.MakeSoundInstance(_mixer, this, Resource.Compression);
 
@@ -255,14 +259,14 @@ namespace NScumm.Queen
         {
             ScummHelper.Clip(TalkSpeed, MIN_TEXT_SPEED, MAX_TEXT_SPEED);
 
-            // TODO: demo and interview versions don't have speech at all
-            //if (_sound.SpeechOn && (Resource.IsDemo() || Resource.IsInterview))
-            //{
-            //    _sound.SpeechToggle(false);
-            //}
+            // demo and interview versions don't have speech at all
+            if (Sound.SpeechOn && (Resource.IsDemo || Resource.IsInterview))
+            {
+                Sound.SpeechOn = false;
+            }
 
-            // TODO: ensure text is always on when voice is off
-            //if (!Sound.SpeechOn)
+            // ensure text is always on when voice is off
+            if (!Sound.SpeechOn)
             {
                 Subtitles = true;
             }

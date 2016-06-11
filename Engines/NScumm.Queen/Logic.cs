@@ -1932,6 +1932,12 @@ namespace NScumm.Queen
             // TODO: _vm.QuitGame();
         }
 
+        protected void AsmEndDemo()
+        {
+            //  debug("Flight of the Amazon Queen, released January 95.");
+            // TODO: _vm.QuitGame();
+        }
+
         protected void AsmPutCameraOnDino()
         {
             _vm.Graphics.PutCameraOnBob(-1);
@@ -2236,6 +2242,58 @@ namespace NScumm.Queen
                 _vm.Update();
                 bob.y -= 4;
             }
+        }
+
+        protected void AsmInterviewIntro()
+        {
+            // put camera on airship
+            _vm.Graphics.PutCameraOnBob(5);
+            BobSlot bas = _vm.Graphics.Bobs[5];
+
+            bas.CurPos(-30, 40);
+
+            bas.Move(700, 10, 3);
+            int scale = 450;
+            while (bas.moving && !_vm.Input.CutawayQuit)
+            {
+                bas.scale = (ushort)(256 * 100 / scale);
+                --scale;
+                if (scale < 256)
+                {
+                    scale = 256;
+                }
+                _vm.Update();
+            }
+
+            bas.scale = 90;
+            bas.xflip = true;
+
+            bas.Move(560, 25, 4);
+            while (bas.moving && !_vm.Input.CutawayQuit)
+            {
+                _vm.Update();
+            }
+
+            bas.Move(545, 65, 2);
+            while (bas.moving && !_vm.Input.CutawayQuit)
+            {
+                _vm.Update();
+            }
+
+            bas.Move(540, 75, 2);
+            while (bas.moving && !_vm.Input.CutawayQuit)
+            {
+                _vm.Update();
+            }
+
+            // put camera on Joe
+            _vm.Graphics.PutCameraOnBob(0);
+        }
+
+        protected void AsmEndInterview()
+        {
+            //  debug("Interactive Interview copyright (c) 1995, IBI.");
+            // TODO: _vm.QuitGame();
         }
 
         public void JoeUseDress(bool showCut)

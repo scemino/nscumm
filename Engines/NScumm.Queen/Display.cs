@@ -1563,7 +1563,7 @@ namespace NScumm.Queen
                 System.Diagnostics.Debug.Assert(palStart <= palEnd && palEnd <= 256);
                 Array.Copy(pcx.Palette, palStart, pal, 0, (palEnd - palStart));
                 for (var y = 0; y < pcxSurface.Height; y++)
-                    Array.Copy(pcxSurface.Pixels, y * pcxSurface.Pitch, dst, y * dstPitch, pcxSurface.Width);
+                    Array.Copy(pcxSurface.Pixels, y * pcxSurface.Pitch, dst, dstPos + y * dstPitch, pcxSurface.Width);
             }
         }
 

@@ -19,6 +19,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
+using System.Diagnostics;
 using NScumm.Core;
 using NScumm.Core.IO;
 using D = NScumm.Core.DebugHelper;
@@ -644,10 +645,10 @@ namespace NScumm.Queen
 
         public ushort FindBob(short obj)
         {
-            // TODO: assert(obj <= _numObjects);
+            Debug.Assert(obj <= _numObjects);
 
             ushort room = ObjectData[obj].room;
-            //TODO: assert(room <= _numRooms);
+            Debug.Assert(room <= _numRooms);
 
             ushort bobnum = 0;
             short img = ObjectData[obj].image;
@@ -706,7 +707,7 @@ namespace NScumm.Queen
                                 img -= 5000;
                             }
 
-                            // TODO: assert(img <= _numGraphics);
+                            Debug.Assert(img <= _numGraphics);
 
                             if (_graphicData[img].lastFrame != 0)
                             {

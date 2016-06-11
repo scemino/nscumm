@@ -19,6 +19,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
+using System.Diagnostics;
 using NScumm.Core;
 using NScumm.Core.IO;
 using D = NScumm.Core.DebugHelper;
@@ -27,7 +28,7 @@ namespace NScumm.Queen
 {
     class PackedBank
     {
-        private const int MAX_BANK_SIZE = 110;
+        public const int MAX_BANK_SIZE = 110;
 
         public int[] indexes = new int[MAX_BANK_SIZE];
         public byte[] data;
@@ -69,7 +70,7 @@ namespace NScumm.Queen
         public void EraseFrame(ushort index)
         {
             D.Debug(9, $"BankManager::eraseFrame({index})");
-            // TODO: assert(index < MAX_FRAMES_NUMBER);
+            Debug.Assert(index < MAX_FRAMES_NUMBER);
             BobFrame bf = _frames[index];
             bf.Reset();
         }
@@ -85,7 +86,7 @@ namespace NScumm.Queen
         private void EraseFrame(int index)
         {
             D.Debug(9, $"BankManager::eraseFrame({index})");
-            // TODO: assert(index < MAX_FRAMES_NUMBER);
+            Debug.Assert(index < MAX_FRAMES_NUMBER);
             BobFrame bf = _frames[index];
             bf.Reset();
         }
@@ -94,7 +95,7 @@ namespace NScumm.Queen
         {
             D.Debug(9, $"BankManager::load({bankname}, {bankslot})");
 
-            // assert(bankslot < MAX_BANKS_NUMBER);
+            Debug.Assert(bankslot < MAX_BANKS_NUMBER);
             PackedBank bank = _banks[bankslot];
 
             if (string.Equals(bankname, bank.name, StringComparison.OrdinalIgnoreCase))
@@ -118,7 +119,7 @@ namespace NScumm.Queen
                 ushort entries = bank.data.ToUInt16BigEndian(4);
 
                 D.Debug(9, $"BankManager::load() entries = {entries}");
-                // TODO: assert(entries < MAX_BANK_SIZE);
+                Debug.Assert(entries < PackedBank.MAX_BANK_SIZE);
                 int offset = 6;
                 _banks[bankslot].indexes[0] = offset;
                 for (ushort i = 1; i <= entries; ++i)
@@ -132,7 +133,7 @@ namespace NScumm.Queen
             {
                 ushort entries = bank.data.ToUInt16();
                 D.Debug(9, $"BankManager::load() entries = {entries}");
-                // TODO: assert(entries < MAX_BANK_SIZE);
+                Debug.Assert(entries < PackedBank.MAX_BANK_SIZE);
                 int offset = 2;
                 _banks[bankslot].indexes[0] = offset;
                 for (ushort i = 1; i <= entries; ++i)
@@ -151,7 +152,7 @@ namespace NScumm.Queen
         public void Close(int bankslot)
         {
             D.Debug(9, $"BankManager::close({bankslot})");
-            // TODO: assert(bankslot < MAX_BANKS_NUMBER);
+            Debug.Assert(bankslot < MAX_BANKS_NUMBER);
             var bank = _banks[bankslot];
             bank.Reset();
         }
@@ -206,9 +207,9 @@ namespace NScumm.Queen
         public BobFrame FetchFrame(uint index)
         {
             D.Debug(9, $"BankManager::fetchFrame({index})");
-            // TODO: assert(index < MAX_FRAMES_NUMBER);
+            Debug.Assert(index < MAX_FRAMES_NUMBER);
             BobFrame bf = _frames[index];
-            // TODO: assert((bf.width == 0 && bf.height == 0) || bf.data != 0);
+            Debug.Assert((bf.width == 0 && bf.height == 0) || bf.data != null);
             return bf;
         }
 
@@ -236,7 +237,6 @@ namespace NScumm.Queen
             }
 
             src = planarBuf;
-            srcPos = 0;
             var dstPos = 0;
             int i = 0;
             int planeSize = h * w * 2;

@@ -18,7 +18,7 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-using System;
+using System.Diagnostics;
 using NScumm.Core;
 using D = NScumm.Core.DebugHelper;
 
@@ -246,7 +246,7 @@ namespace NScumm.Queen
         public void SetZone(GridScreen screen, short zoneNum, short x1, short y1, short x2, short y2)
         {
             D.Debug(9, $"Grid::setZone({screen}, {zoneNum}, ({x1},{y1}), ({x2},{y2}))");
-            // TODO: assert(zoneNum < MAX_ZONES_NUMBER);
+            Debug.Assert(zoneNum < MAX_ZONES_NUMBER);
             var pzs = _zones[(int)screen, zoneNum] = new ZoneSlot();
             pzs.valid = true;
             pzs.box = new Box(x1, y1, x2, y2);
@@ -255,7 +255,7 @@ namespace NScumm.Queen
         private void SetZone(GridScreen screen, short zoneNum, Box box)
         {
             D.Debug(9, $"Grid::setZone({screen}, {zoneNum}, ({box.x1},{box.y1}), ({box.x2},{box.y2}))");
-            // TODO: assert(zoneNum < MAX_ZONES_NUMBER);
+            Debug.Assert(zoneNum < MAX_ZONES_NUMBER);
             var pzs = _zones[(int)screen, zoneNum];
             pzs.valid = true;
             pzs.box = box;

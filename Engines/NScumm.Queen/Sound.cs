@@ -29,8 +29,8 @@ namespace NScumm.Queen
 {
     class Mp3Sound : PCSound
     {
-        public Mp3Sound(IMixer mixer, QueenEngine vm) 
-            : base(mixer, vm) 
+        public Mp3Sound(IMixer mixer, QueenEngine vm)
+            : base(mixer, vm)
         {
         }
 
@@ -120,11 +120,11 @@ namespace NScumm.Queen
 
         public virtual void PlaySfx(ushort sfx) { }
         public virtual void PlaySong(short songNum) { }
-        public virtual void PlaySpeech(string @base) {}
+        public virtual void PlaySpeech(string @base) { }
 
         public virtual void StopSfx() { }
         public virtual void StopSong() { }
-        public virtual void StopSpeech() {}
+        public virtual void StopSpeech() { }
 
         public virtual void UpdateMusic() { }
     }

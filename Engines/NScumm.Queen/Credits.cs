@@ -20,6 +20,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using NScumm.Core;
 using NScumm.Core.IO;
 
@@ -162,7 +163,7 @@ namespace NScumm.Queen
                 }
                 else
                 {
-                    // TODO: assert(_count < ARRAYSIZE(_list));
+                    Debug.Assert(_count < _list.Length);
                     _list[_count].text = line;
                     _list[_count].color = (short)_color;
                     _list[_count].fontSize = (short)_fontSize;

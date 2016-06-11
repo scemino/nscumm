@@ -19,6 +19,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
+using System.Diagnostics;
 using NScumm.Core;
 using NScumm.Core.IO;
 using D = NScumm.Core.DebugHelper;
@@ -409,7 +410,7 @@ namespace NScumm.Queen
             var p = ServiceLocator.FileStorage.GetExtension(_talkFile);
             if (string.Equals(p, ".DOG", StringComparison.OrdinalIgnoreCase))
             {
-                // TODO: assert(_talkTo > 0);
+                Debug.Assert(_talkTo > 0);
                 int personInRoom = _talkTo - _vm.Logic.RoomData[_vm.Logic.CurrentRoom];
                 _vm.Logic.StartDialogue(_talkFile, personInRoom, out nextFilename);
             }
@@ -573,7 +574,7 @@ namespace NScumm.Queen
                         if (!foundPerson)
                         {
                             _personFaceCount++;
-                            // TODO: assert (_personFaceCount < MAX_PERSON_FACE_COUNT);
+                            Debug.Assert(_personFaceCount < MAX_PERSON_FACE_COUNT);
                             _personFace[_personFaceCount].index = @object.objectNumber;
                             _personFace[_personFaceCount].image = _vm.Logic.ObjectData[@object.objectNumber].image;
                         }
@@ -853,7 +854,7 @@ namespace NScumm.Queen
             {
                 if (anim.bank != 13)
                 {
-                    // TODO: assert(anim.bank - 1 < MAX_BANK_NAME_COUNT);
+                    Debug.Assert(anim.bank - 1 < MAX_BANK_NAME_COUNT);
                     _vm.BankMan.Load(_bankNames[anim.bank - 1], CUTAWAY_BANK);
                     anim.bank = 8;
                 }
@@ -906,9 +907,12 @@ namespace NScumm.Queen
         {
             int[] frameIndex = new int[256];
             int i;
-            // TODO: assert(frameCount < 30);
+            Debug.Assert(frameCount < 30);
             AnimFrame[] cutAnim = new AnimFrame[30];
-
+            for (i = 0; i < cutAnim.Length; i++)
+            {
+                cutAnim[i] = new AnimFrame();
+            }
             D.Debug(6, $"[Cutaway::makeComplexAnimation] currentImage = {currentImage}");
 
             for (i = 0; i < frameCount; i++)
@@ -1211,7 +1215,7 @@ namespace NScumm.Queen
                     if (objectData.image == -3 || @objectData.image == -4)
                     {
 
-                        // TODO: assert(_personDataCount < MAX_PERSON_COUNT);
+                        Debug.Assert(_personDataCount < MAX_PERSON_COUNT);
                         //  The @object is a person! So record the details...
                         _personData[_personDataCount].index = i;
                         _personData[_personDataCount].name = @objectData.name;

@@ -20,6 +20,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
+using System.Diagnostics;
 using System.IO;
 using NScumm.Core;
 using NScumm.Core.Audio;
@@ -116,7 +117,7 @@ namespace NScumm.Queen
             }
 
             MidiDriverError ret = _driver.Open();
-            //assert(ret == 0);
+            Debug.Assert(ret == 0);
             _driver.SetTimerCallback(this, (object param) => OnTimer());
 
             if (_nativeMT32)

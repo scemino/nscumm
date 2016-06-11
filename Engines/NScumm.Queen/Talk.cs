@@ -20,6 +20,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
+using System.Diagnostics;
 using NScumm.Core;
 using NScumm.Core.Graphics;
 using NScumm.Core.IO;
@@ -91,7 +92,7 @@ namespace NScumm.Queen
         /// <param name="align">Align.</param>
         public static void GetString(byte[] ptr, ref ushort offset, out string str, int maxLength, int align = 2)
         {
-            // TODO: assert((align & 1) == 0);
+            Debug.Assert((align & 1) == 0);
             str = string.Empty;
             int length = ptr[offset];
             ++offset;

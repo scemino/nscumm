@@ -65,7 +65,7 @@ namespace NScumm.Queen
 			lastSeenNumber = data.ToUInt16BigEndian(ptr); ptr += 2;
 		}
 
-		public void writeToBE(byte[] data, ref int ptr) 
+		public void WriteToBE(byte[] data, ref int ptr) 
 		{
 			data.WriteUInt16BigEndian(ptr, @object); ptr += 2;
 			data.WriteUInt16BigEndian(ptr, type); ptr += 2;

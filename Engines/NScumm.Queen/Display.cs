@@ -24,6 +24,7 @@ using NScumm.Core.IO;
 using NScumm.Core.Graphics;
 using System.IO;
 using D = NScumm.Core.DebugHelper;
+using System.Diagnostics;
 
 namespace NScumm.Queen
 {
@@ -257,9 +258,9 @@ namespace NScumm.Queen
             PalSet(tempPal, 224, 255, true);
         }
 
-        public void DrawBobSprite(ByteAccess data, ushort x, ushort y, ushort w, ushort h, ushort pitch, bool xflip)
+        public void DrawBobSprite(byte[] data, int offset, ushort x, ushort y, ushort w, ushort h, ushort pitch, bool xflip)
         {
-            Blit(_screenBuf, SCREEN_W, x, y, data.Data, data.Offset, pitch, w, h, xflip, true);
+            Blit(_screenBuf, SCREEN_W, x, y, data, offset, pitch, w, h, xflip, true);
             SetDirtyBlock((ushort)(xflip ? (x - w + 1) : x), y, w, h);
         }
 
@@ -1066,7 +1067,6 @@ namespace NScumm.Queen
             {
                 for (int i = 0; i < 2; ++i)
                 {
-                    // TODO: int x = _rnd.getRandomNumber(SCREEN_W - 32 - 2) + 1;
                     int x = _rnd.Next(1 + (SCREEN_W - 32 - 2) + 1);
                     int y = _rnd.Next(1 + SCREEN_H - 32 - 2) + 1;
                     var p = SCREEN_W * y + x;
@@ -1182,7 +1182,7 @@ namespace NScumm.Queen
             }
 
             uint offset = (uint)((y / 4) * 160 + (x / 4));
-            // TODO: assert(offset < _dynalum.mskSize);
+            Debug.Assert(offset < _dynalum.mskSize);
 
             byte colMask = _dynalum.mskBuf[offset];
             D.Debug(9, $"Display::dynalumUpdate({x}, {y}) - colMask = {colMask}");
@@ -1292,7 +1292,7 @@ namespace NScumm.Queen
 
         private void Blit(byte[] dstBuf, ushort dstPitch, ushort x, ushort y, byte[] srcBuf, int src, ushort srcPitch, ushort w, ushort h, bool xflip, bool masked)
         {
-            // TODO: assert(w <= dstPitch);
+            Debug.Assert(w <= dstPitch);
             var dst = dstPitch * y + x;
 
             if (!masked)
@@ -1340,7 +1340,7 @@ namespace NScumm.Queen
 
         private void Fill(byte[] dstBuf, ushort dstPitch, ushort x, ushort y, ushort w, ushort h, byte color)
         {
-            // TODO: assert(w <= dstPitch);
+            Debug.Assert(w <= dstPitch);
             var d = dstPitch * y + x;
             while ((h--) != 0)
             {
@@ -1360,7 +1360,7 @@ namespace NScumm.Queen
         {
             D.Debug(9, $"Display::palSet({start}, {end})");
             int numColors = end - start + 1;
-            // TODO: assert(numColors <= 256);
+            Debug.Assert(numColors <= 256);
             _system.GraphicsManager.SetPalette(pal, start, numColors);
             if (updateScreen)
             {

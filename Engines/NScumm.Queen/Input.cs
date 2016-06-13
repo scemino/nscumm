@@ -227,7 +227,7 @@ namespace NScumm.Queen
             _inKey = KeyCode.None;   // reset
         }
 
-        private char ToChar(KeyCode key)
+        public static char ToChar(KeyCode key)
         {
             return (char)('a' + (int)(key - KeyCode.A));
         }
@@ -275,6 +275,8 @@ namespace NScumm.Queen
 
                 if (state.IsRightButtonDown)
                     _mouseButton |= MOUSE_RBUTTON;
+
+                _system.InputManager.ResetKeys();
 
                 _system.GraphicsManager.UpdateScreen();
 

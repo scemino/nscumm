@@ -69,14 +69,26 @@ namespace NScumm.Queen
         protected QueenEngine _vm;
         bool _sfxToggle;
         bool _musicToggle;
+        bool _speechToggle;
         protected bool _speechSfxExists;
         protected short _lastOverride;
+        protected int _musicVolume;
 
-        public bool SpeechOn { get; set; }
+        public bool SfxOn { get { return _sfxToggle; } }
+        public bool SpeechOn
+        {
+            get { return _speechToggle; }
+            set { _speechToggle = value; }
+        }
         public bool SpeechSfxExists { get { return _speechSfxExists; } }
         public virtual bool IsSpeechActive { get { return false; } }
         public bool MusicOn { get { return _musicToggle; } }
         public short LastOverride { get { return _lastOverride; } }
+        public virtual int Volume
+        {
+            get { return _musicVolume; }
+            set { _musicVolume = value; }
+        }
 
         protected Sound(IMixer mixer, QueenEngine vm)
         {
@@ -85,6 +97,36 @@ namespace NScumm.Queen
             _sfxToggle = true;
             SpeechOn = false;
             _musicToggle = true;
+        }
+
+        public void LoadState(uint version, byte[] data, ref int ptr)
+        {
+            _lastOverride = data.ToInt16BigEndian(ptr); ptr += 2;
+        }
+
+        public void PlayLastSong()
+        {
+            PlaySong(_lastOverride);
+        }
+
+        public void ToggleSfx()
+        {
+            _sfxToggle = !_sfxToggle;
+        }
+
+        public void ToggleMusic()
+        {
+            _musicToggle = !_musicToggle;
+        }
+
+        public void ToggleSpeech()
+        {
+            _speechToggle = !_speechToggle;
+        }
+
+        public void SaveState(byte[] data, ref int ptr)
+        {
+            data.WriteInt16BigEndian(ptr, _lastOverride); ptr += 2;
         }
 
         public static Sound MakeSoundInstance(IMixer mixer, QueenEngine vm, byte compression)

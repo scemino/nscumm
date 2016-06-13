@@ -67,14 +67,39 @@ namespace NScumm.Queen
         public const int JSO_COUNT = 8;
     }
 
+    class TalkSelected
+    {
+        public bool hasTalkedTo;
+        public short[] values = new short[4];
+
+        public void ReadFromBE(byte[] data, ref int ptr)
+        {
+            hasTalkedTo = data.ToUInt16BigEndian(ptr) != 0; ptr += 2;
+            for (int i = 0; i < 4; i++)
+            {
+                values[i] = data.ToInt16BigEndian(ptr); ptr += 2;
+            }
+        }
+
+        public void WriteToBE(byte[] data, ref int ptr)
+        {
+            data.WriteInt16BigEndian(ptr, (short)(hasTalkedTo ? 1 : 0)); ptr += 2;
+            for (int i = 0; i < 4; i++)
+            {
+                data.WriteInt16BigEndian(ptr, values[i]); ptr += 2;
+            }
+        }
+    }
+
     public abstract class Logic
     {
         const int JOE_RESPONSE_MAX = 40;
         const int GAME_STATE_COUNT = 211;
+        const int TALK_SELECTED_COUNT = 86;
 
         protected QueenEngine _vm;
         Joe _joe;
-        int _puzzleAttemptCount;
+        byte _puzzleAttemptCount;
         protected Journal _journal;
         ushort _numRooms;
         ushort _numNames;
@@ -96,7 +121,7 @@ namespace NScumm.Queen
         ushort _numAAnim;
         ushort _numAName;
         ushort _numAFile;
-        ActorData[] _actorData; 
+        ActorData[] _actorData;
         ushort _numGraphicAnim;
         GraphicAnim[] _graphicAnim;
         System.Collections.Generic.List<string> _jasStringList;
@@ -112,6 +137,7 @@ namespace NScumm.Queen
         int _scene;
 
         protected Action[] _specialMoves;
+        TalkSelected[] _talkSelected;
 
         public ObjectData[] ObjectData { get; private set; }
 
@@ -215,6 +241,11 @@ namespace NScumm.Queen
             _puzzleAttemptCount = 0;
             _journal = new Journal(vm);
             _specialMoves = new Action[40];
+            _talkSelected = new TalkSelected[TALK_SELECTED_COUNT];
+            for (int i = 0; i < _talkSelected.Length; i++)
+            {
+                _talkSelected[i] = new TalkSelected();
+            }
             ReadQueenJas();
         }
 
@@ -385,12 +416,144 @@ namespace NScumm.Queen
             MakePersonSpeak(text, null, descFilePrefix);
         }
 
+        public void LoadState(uint ver, byte[] data, ref int ptr)
+        {
+            int i;
+            for (i = 0; i < 4; i++)
+            {
+                _inventoryItem[i] = (Item)data.ToInt16BigEndian(ptr); ptr += 2;
+            }
+
+            _joe.x = data.ToUInt16BigEndian(ptr); ptr += 2;
+            _joe.y = data.ToUInt16BigEndian(ptr); ptr += 2;
+
+            CurrentRoom = data.ToUInt16BigEndian(ptr); ptr += 2;
+
+            for (i = 1; i <= _numObjects; i++)
+                ObjectData[i].ReadFromBE(data, ref ptr);
+
+            for (i = 1; i <= _numItems; i++)
+                _itemData[i].ReadFromBE(data, ref ptr);
+
+            for (i = 0; i < GAME_STATE_COUNT; i++)
+            {
+                GameState[i] = data.ToInt16BigEndian(ptr); ptr += 2;
+            }
+
+            for (i = 0; i < TALK_SELECTED_COUNT; i++)
+                _talkSelected[i].ReadFromBE(data, ref ptr);
+
+            for (i = 1; i <= _numWalkOffs; i++)
+                _walkOffData[i].ReadFromBE(data, ref ptr);
+
+            _joe.facing = (Direction)data.ToUInt16BigEndian(ptr); ptr += 2;
+
+            if (ver >= 1)
+            {
+                _puzzleAttemptCount = (byte)data.ToUInt16BigEndian(ptr); ptr += 2;
+
+                for (i = 1; i <= _numObjDesc; i++)
+                    _objectDescription[i].ReadFromBE(data, ref ptr);
+            }
+
+        }
+
+        public void SaveState(byte[] data, ref int ptr)
+        {
+            ushort i;
+            for (i = 0; i < 4; i++)
+            {
+                data.WriteInt16BigEndian(ptr, (short)_inventoryItem[i]); ptr += 2;
+            }
+
+            data.WriteInt16BigEndian(ptr, _vm.Graphics.Bobs[0].x); ptr += 2;
+            data.WriteInt16BigEndian(ptr, _vm.Graphics.Bobs[0].y); ptr += 2;
+
+            data.WriteUInt16BigEndian(ptr, CurrentRoom); ptr += 2;
+
+            for (i = 1; i <= _numObjects; i++)
+                ObjectData[i].WriteToBE(data, ref ptr);
+
+            for (i = 1; i <= _numItems; i++)
+                _itemData[i].WriteToBE(data, ref ptr);
+
+            for (i = 0; i < GAME_STATE_COUNT; i++)
+            {
+                data.WriteInt16BigEndian(ptr, GameState[i]); ptr += 2;
+            }
+
+            for (i = 0; i < TALK_SELECTED_COUNT; i++)
+                _talkSelected[i].WriteToBE(data, ref ptr);
+
+            for (i = 1; i <= _numWalkOffs; i++)
+                _walkOffData[i].WriteToBE(data, ref ptr);
+
+            data.WriteInt16BigEndian(ptr, (short)_joe.facing); ptr += 2;
+
+            // V1
+            data.WriteInt16BigEndian(ptr, _puzzleAttemptCount); ptr += 2;
+            for (i = 1; i <= _numObjDesc; i++)
+                _objectDescription[i].WriteToBE(data, ref ptr);
+        }
+
+        public void SetupRestoredGame()
+        {
+            _vm.Sound.PlayLastSong();
+
+            switch (GameState[Defines.VAR_JOE_DRESSING_MODE])
+            {
+                case 0:
+                    _vm.Display.PalSetJoeNormal();
+                    LoadJoeBanks("JOE_A.BBK", "JOE_B.BBK");
+                    break;
+                case 1:
+                    _vm.Display.PalSetJoeNormal();
+                    LoadJoeBanks("JOEU_A.BBK", "JOEU_B.BBK");
+                    break;
+                case 2:
+                    _vm.Display.PalSetJoeDress();
+                    LoadJoeBanks("JOED_A.BBK", "JOED_B.BBK");
+                    break;
+            }
+
+            BobSlot pbs = _vm.Graphics.Bobs[0];
+            pbs.xflip = (JoeFacing == Direction.LEFT);
+            JoePrevFacing=JoeFacing;
+            JoeCutFacing = JoeFacing;
+            switch (JoeFacing)
+            {
+                case Direction.FRONT:
+                    pbs.frameNum = 36;
+                    _vm.BankMan.Unpack(3, 31, 7);
+                    break;
+                case Direction.BACK:
+                    pbs.frameNum = 37;
+                    _vm.BankMan.Unpack(5, 31, 7);
+                    break;
+                default:
+                    pbs.frameNum = 35;
+                    _vm.BankMan.Unpack(1, 31, 7);
+                    break;
+            }
+
+            OldRoom = 0;
+            NewRoom = CurrentRoom;
+            EntryObj = 0;
+
+            if (_vm.Bam._flag != BamFlags.F_STOP)
+            {
+                _vm.Bam.PrepareAnimation();
+            }
+
+            InventoryRefresh();
+        }
+
         public string ObjectTextualDescription(ushort objNum)
         {
             return _jasStringList[_jasStringOffset[Jso.JSO_OBJECT_DESCRIPTION] + objNum - 1];
         }
 
-        private string JoeResponse(int i)
+        public string JoeResponse(int i)
         {
             return _jasStringList[_jasStringOffset[Jso.JSO_JOE_RESPONSE] + i - 1];
         }

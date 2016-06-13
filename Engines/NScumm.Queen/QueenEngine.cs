@@ -24,9 +24,20 @@ using NScumm.Core.IO;
 using NScumm.Core.Graphics;
 using NScumm.Core.Input;
 using NScumm.Core.Audio;
+using System.Diagnostics;
+using System.IO;
+using D = NScumm.Core.DebugHelper;
 
 namespace NScumm.Queen
 {
+    class GameStateHeader
+    {
+        public uint version;
+        public uint flags;
+        public uint dataSize;
+        public string description;
+    }
+
     class QueenSystem : ISystem
     {
         public IGraphicsManager GraphicsManager { get; }
@@ -46,12 +57,22 @@ namespace NScumm.Queen
     public class QueenEngine : IEngine
     {
         const int MIN_TEXT_SPEED = 4;
-        const int MAX_TEXT_SPEED = 100;
+        public const int MAX_TEXT_SPEED = 100;
+
+        const int SAVESTATE_CUR_VER = 1;
+        const int SAVESTATE_MAX_NUM = 100;
+        const int SAVESTATE_MAX_SIZE = 30000;
+
+        const int SLOT_LISTPREFIX = -2;
+        const int SLOT_AUTOSAVE = -1;
+        const int SLOT_QUICKSAVE = 0;
 
         QueenSystem _system;
         Mixer _mixer;
 
         int _lastUpdateTime, _lastSaveTime;
+
+        public ISystem System { get { return _system; } }
 
         public GameSettings Settings { get; private set; }
 
@@ -85,10 +106,9 @@ namespace NScumm.Queen
 
         public int TalkSpeed { get; set; }
 
-        public bool Subtitles { get; private set; }
+        public bool Subtitles { get; set; }
 
         public IMixer Mixer { get { return _mixer; } }
-
 
         public QueenEngine(GameSettings settings, IGraphicsManager gfxManager, IInputManager inputManager,
                             IAudioOutput output, ISaveFileManager saveFileManager, bool debugMode)
@@ -102,6 +122,80 @@ namespace NScumm.Queen
         }
 
         public event EventHandler ShowMenuDialogRequested;
+
+        public void FindGameStateDescriptions(string[] descriptions)
+        {
+            var prefix = MakeGameStateName(SLOT_LISTPREFIX);
+            string[] filenames = _system.SaveFileManager.ListSavefiles(prefix);
+            foreach (var filename in filenames)
+            {
+                int i = GetGameStateSlot(filename);
+                if (i >= 0 && i < SAVESTATE_MAX_NUM)
+                {
+                    GameStateHeader header = new GameStateHeader();
+                    var f = ReadGameStateHeader(i, header);
+                    descriptions[i] = header.description;
+                }
+            }
+        }
+
+        private string MakeGameStateName(int slot)
+        {
+            string buf;
+            if (slot == SLOT_LISTPREFIX)
+            {
+                buf = "queen.s??";
+            }
+            else if (slot == SLOT_AUTOSAVE)
+            {
+                buf = "queen.asd";
+            }
+            else
+            {
+                Debug.Assert(slot >= 0);
+                buf = $"queen.s{slot:D2}";
+            }
+            return buf;
+        }
+
+        private int GetGameStateSlot(string filename)
+        {
+            if (filename == null) return -1;
+            int i = -1;
+            var dot = filename.IndexOf('.');
+            if (dot != -1 && (filename[dot + 1] == 's' || filename[dot + 1] == 'S'))
+            {
+                i = int.Parse(filename.Substring(dot + 2, 2));
+            }
+            return i;
+        }
+
+        private Stream ReadGameStateHeader(int slot, GameStateHeader gsh)
+        {
+            var name = MakeGameStateName(slot);
+            var file = _system.SaveFileManager.OpenForLoading(name);
+            var br = new BinaryReader(file);
+            if (file != null && br.ReadUInt32BigEndian() == ScummHelper.MakeTag('S', 'C', 'V', 'M'))
+            {
+                gsh.version = br.ReadUInt32BigEndian();
+                gsh.flags = br.ReadUInt32BigEndian();
+                gsh.dataSize = br.ReadUInt32BigEndian();
+                gsh.description = ScummHelper.GetText(br.ReadBytes(32));
+            }
+            return file;
+        }
+
+        public void WriteOptionSettings()
+        {
+            // TODO: conf
+            //ConfMan.setInt("music_volume", _sound.getVolume());
+            //ConfMan.setBool("music_mute", !_sound.musicOn());
+            //ConfMan.setBool("sfx_mute", !_sound.sfxOn());
+            //ConfMan.setInt("talkspeed", ((_talkSpeed - MIN_TEXT_SPEED) * 255 + (MAX_TEXT_SPEED - MIN_TEXT_SPEED) / 2) / (MAX_TEXT_SPEED - MIN_TEXT_SPEED));
+            //ConfMan.setBool("speech_mute", !_sound.speechOn());
+            //ConfMan.setBool("subtitles", _subtitles);
+            //ConfMan.flushToDisk();
+        }
 
         public void Update(bool checkPlayerInput = false)
         {
@@ -230,6 +324,33 @@ namespace NScumm.Queen
             }
         }
 
+        public void LoadGameState(int slot)
+        {
+            D.Debug(3, $"Loading game from slot {slot}");
+            GameStateHeader header = new GameStateHeader();
+            using (var file = ReadGameStateHeader(slot, header))
+            {
+                var br = new BinaryReader(file);
+                if (file != null && header.dataSize != 0)
+                {
+                    byte[] saveData = br.ReadBytes((int)header.dataSize);
+                    int p = 0;
+                    Bam.LoadState(header.version, saveData, ref p);
+                    Grid.LoadState(header.version, saveData, ref p);
+                    Logic.LoadState(header.version, saveData, ref p);
+                    Sound.LoadState(header.version, saveData, ref p);
+                    if (header.dataSize != p)
+                    {
+                        D.Warning("Corrupted savegame file");
+                    }
+                    else
+                    {
+                        Logic.SetupRestoredGame();
+                    }
+                }
+            }
+        }
+
         private void SyncSoundSettings()
         {
             // TODO: Engine::syncSoundSettings();
@@ -237,7 +358,7 @@ namespace NScumm.Queen
             ReadOptionSettings();
         }
 
-        void ReadOptionSettings()
+        private void ReadOptionSettings()
         {
             bool mute = false;
             // TODO: conf
@@ -255,7 +376,44 @@ namespace NScumm.Queen
             CheckOptionSettings();
         }
 
-        void CheckOptionSettings()
+        internal void QuitGame()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void SaveGameState(int slot, string desc)
+        {
+            D.Debug(3, $"Saving game to slot {slot}");
+            var name = MakeGameStateName(slot);
+            using (var file = System.SaveFileManager.OpenForSaving(name))
+            {
+                var bw = new BinaryWriter(file);
+                // save data
+                byte[] saveData = new byte[SAVESTATE_MAX_SIZE];
+                int p = 0;
+                Bam.SaveState(saveData, ref p);
+                Grid.SaveState(saveData, ref p);
+                Logic.SaveState(saveData, ref p);
+                Sound.SaveState(saveData, ref p);
+                uint dataSize = (uint)p;
+                Debug.Assert(dataSize < SAVESTATE_MAX_SIZE);
+
+                // write header
+                bw.WriteUInt32BigEndian(ScummHelper.MakeTag('S', 'C', 'V', 'M'));
+                bw.WriteUInt32BigEndian(SAVESTATE_CUR_VER);
+                bw.WriteUInt32BigEndian(0);
+                bw.WriteUInt32BigEndian(dataSize);
+                byte[] d = new byte[32];
+                var descBytes = global::System.Text.Encoding.UTF8.GetBytes(desc);
+                Array.Copy(descBytes, d, Math.Min(32, descBytes.Length));
+                bw.WriteBytes(d, d.Length);
+
+                //bwwrite save data
+                bw.WriteBytes(saveData, (int)dataSize);
+            }
+        }
+
+        public void CheckOptionSettings()
         {
             ScummHelper.Clip(TalkSpeed, MIN_TEXT_SPEED, MAX_TEXT_SPEED);
 

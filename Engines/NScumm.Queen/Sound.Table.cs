@@ -1,4 +1,6 @@
-﻿namespace NScumm.Queen
+﻿using System;
+
+namespace NScumm.Queen
 {
     partial class Sound
     {
@@ -728,8 +730,7 @@
         new SongData(new short[] {212, 0}, 128, 128, 128, 1, 0)
       };
 
-
-      public static readonly TuneData[] _tuneDemo =
+        public static readonly TuneData[] _tuneDemo =
       {
         /* 1 - Hotel Gangsters */
         new TuneData(new short[] {32, 0}, new short[] {0, 0}, 1, 0),

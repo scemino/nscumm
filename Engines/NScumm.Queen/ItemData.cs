@@ -19,6 +19,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using System;
 using NScumm.Core;
 
 namespace NScumm.Queen
@@ -43,6 +44,15 @@ namespace NScumm.Queen
             state = data.ToUInt16BigEndian(ptr); ptr += 2;
             frame = data.ToUInt16BigEndian(ptr); ptr += 2;
             sfxDescription = data.ToInt16BigEndian(ptr); ptr += 2;
+        }
+
+        public void WriteToBE(byte[] data, ref int ptr)
+        {
+            data.WriteInt16BigEndian(ptr, name); ptr += 2;
+            data.WriteUInt16BigEndian(ptr, description); ptr += 2;
+            data.WriteUInt16BigEndian(ptr, state); ptr += 2;
+            data.WriteUInt16BigEndian(ptr, frame); ptr += 2;
+            data.WriteInt16BigEndian(ptr, sfxDescription); ptr += 2;
         }
     }
 

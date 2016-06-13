@@ -237,8 +237,6 @@ namespace NScumm.Queen
         public Command(QueenEngine vm)
         {
             _vm = vm;
-
-            int _mouseKey;
             _cmdText = CmdText.MakeCmdTextInstance(CmdText.COMMAND_Y_POS, vm);
         }
 

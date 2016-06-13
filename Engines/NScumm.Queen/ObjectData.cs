@@ -54,6 +54,18 @@ namespace NScumm.Queen
 			state = data.ToUInt16BigEndian(ptr); ptr += 2;
 			image = data.ToInt16BigEndian(ptr); ptr += 2;
 		}
+
+        public void WriteToBE(byte[] data, ref int ptr)
+        {
+            data.WriteInt16BigEndian(ptr, name); ptr += 2;
+            data.WriteUInt16BigEndian(ptr, x); ptr += 2;
+            data.WriteUInt16BigEndian(ptr, y); ptr += 2;
+            data.WriteUInt16BigEndian(ptr, description); ptr += 2;
+            data.WriteInt16BigEndian(ptr, entryObj); ptr += 2;
+            data.WriteUInt16BigEndian(ptr, room); ptr += 2;
+            data.WriteUInt16BigEndian(ptr, state); ptr += 2;
+            data.WriteInt16BigEndian(ptr, image); ptr += 2;
+        }
 	}
 	
 }

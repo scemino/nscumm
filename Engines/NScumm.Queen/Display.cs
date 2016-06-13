@@ -89,7 +89,7 @@ namespace NScumm.Queen
 
         public void SetTextCentered(ushort y, string text, bool outlined)
         {
-            int len = string.IsNullOrEmpty(text)?0: text.Length;
+            int len = string.IsNullOrEmpty(text) ? 0 : text.Length;
             int t = 0;
             int x;
             while ((x = (short)((Defines.GAME_SCREEN_WIDTH - TextWidth(text, t, (ushort)len)) / 2)) <= 0)
@@ -136,16 +136,16 @@ namespace NScumm.Queen
 
         Random _rnd;
 
-        private static readonly byte[] _palJoeClothes = {
-            0x00, 0x00, 0x00, 0x60, 0x60, 0x60, 0x87, 0x87, 0x87, 0xB0, 0xB0, 0xB0, 0xDA, 0xDA, 0xDA, 0x43,
-            0x34, 0x20, 0x77, 0x33, 0x1F, 0xA3, 0x43, 0x27, 0x80, 0x45, 0x45, 0x9E, 0x5D, 0x5B, 0xB9, 0x78,
-            0x75, 0xDF, 0x97, 0x91, 0x17, 0x27, 0x63, 0x1F, 0x3F, 0x83, 0x27, 0x5B, 0xA7, 0x98, 0xD4, 0xFF
+        private static readonly Color[] _palJoeClothes = {
+                 Color.FromRgb(0x00, 0x00, 0x00), Color.FromRgb(0x60, 0x60, 0x60), Color.FromRgb(0x87, 0x87, 0x87), Color.FromRgb(0xB0, 0xB0, 0xB0), Color.FromRgb(0xDA, 0xDA, 0xDA),
+                 Color.FromRgb(0x43, 0x34, 0x20), Color.FromRgb(0x77, 0x33, 0x1F), Color.FromRgb(0xA3, 0x43, 0x27), Color.FromRgb(0x80, 0x45, 0x45), Color.FromRgb(0x9E, 0x5D, 0x5B), 
+                 Color.FromRgb(0xB9, 0x78, 0x75), Color.FromRgb(0xDF, 0x97, 0x91), Color.FromRgb(0x17, 0x27, 0x63), Color.FromRgb(0x1F, 0x3F, 0x83), Color.FromRgb(0x27, 0x5B, 0xA7), Color.FromRgb(0x98, 0xD4, 0xFF)
         };
 
-        private static readonly byte[] _palJoeDress = {
-            0x00, 0x00, 0x00, 0x50, 0x50, 0x50, 0x70, 0x70, 0x70, 0x90, 0x90, 0x90, 0xC6, 0xC6, 0xC6, 0xFF,
-            0xFF, 0xFF, 0x30, 0x30, 0x90, 0x47, 0x49, 0xD0, 0x40, 0x24, 0x00, 0x79, 0x34, 0x0B, 0xB2, 0x3D,
-            0x22, 0xED, 0x42, 0x42, 0x80, 0x45, 0x45, 0xA3, 0x5F, 0x5F, 0xC8, 0x7C, 0x7C, 0xEC, 0x9C, 0x9C
+        private static readonly Color[] _palJoeDress = {
+                 Color.FromRgb(0x00, 0x00, 0x00), Color.FromRgb(0x50, 0x50, 0x50), Color.FromRgb(0x70, 0x70, 0x70), Color.FromRgb(0x90, 0x90, 0x90), Color.FromRgb(0xC6, 0xC6, 0xC6), 
+                 Color.FromRgb(0xFF, 0xFF, 0xFF), Color.FromRgb(0x30, 0x30, 0x90), Color.FromRgb(0x47, 0x49, 0xD0), Color.FromRgb(0x40, 0x24, 0x00), Color.FromRgb(0x79, 0x34, 0x0B), 
+                 Color.FromRgb(0xB2, 0x3D,0x22), Color.FromRgb(0xED, 0x42, 0x42), Color.FromRgb(0x80, 0x45, 0x45), Color.FromRgb(0xA3, 0x5F, 0x5F), Color.FromRgb(0xC8, 0x7C, 0x7C), Color.FromRgb(0xEC, 0x9C, 0x9C)
         };
 
         private static readonly int[] dx = { -1, 0, 1, 1, 1, 0, -1, -1 };
@@ -314,7 +314,7 @@ namespace NScumm.Queen
 
         public byte GetInkColor(InkColor color) { return _inkColors[(int)color]; }
 
-        public void Update(bool dynalum, short dynaX, short dynaY)
+        public void Update(bool dynalum = false, short dynaX = 0, short dynaY = 0)
         {
             DrawTexts();
             if (_pal.scrollable && dynalum)
@@ -380,6 +380,23 @@ namespace NScumm.Queen
                 }
                 D.Debug(9, $"Display::update() - Dirtyblocks blit ({count})");
             }
+        }
+
+        public void DrawBox(short x1, short y1, short x2, short y2, byte col)
+        {
+            int i;
+            for (i = y1; i <= y2; ++i)
+            {
+                _screenBuf[i * SCREEN_W + x1] = _screenBuf[i * SCREEN_W + x2] = col;
+            }
+            SetDirtyBlock((ushort)x1, (ushort)y1, 1, (ushort)(y2 - y1));
+            SetDirtyBlock((ushort)x2, (ushort)y1, 1, (ushort)(y2 - y1));
+            for (i = x1; i <= x2; ++i)
+            {
+                _screenBuf[y1 * SCREEN_W + i] = _screenBuf[y2 * SCREEN_W + i] = col;
+            }
+            SetDirtyBlock((ushort)x1, (ushort)y1, (ushort)(x2 - x1), 1);
+            SetDirtyBlock((ushort)x1, (ushort)y2, (ushort)(x2 - x1), 1);
         }
 
         public void SetFocusRect(Rect focus)

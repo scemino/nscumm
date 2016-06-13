@@ -18,7 +18,9 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+using System;
 using System.Diagnostics;
+using System.IO;
 using NScumm.Core;
 using D = NScumm.Core.DebugHelper;
 
@@ -124,7 +126,7 @@ namespace NScumm.Queen
             return scale;
         }
 
-        ushort FindZoneForPos(GridScreen screen, ushort x, ushort y)
+        public ushort FindZoneForPos(GridScreen screen, ushort x, ushort y)
         {
             D.Debug(9, $"Logic::findZoneForPos({screen}, ({x},{y}))");
             int i;
@@ -184,7 +186,7 @@ namespace NScumm.Queen
             }
         }
 
-        private void Clear(GridScreen screen)
+        public void Clear(GridScreen screen)
         {
             D.Debug(9, $"Grid::clear({screen})");
             for (int i = 1; i < MAX_ZONES_NUMBER; ++i)
@@ -229,7 +231,7 @@ namespace NScumm.Queen
                 _areaMax[i] = data.ToInt16BigEndian(ptr); ptr += 2;
                 for (j = 1; j <= _areaMax[i]; j++)
                 {
-                    //assert(j < MAX_AREAS_NUMBER);
+                    Debug.Assert(j < MAX_AREAS_NUMBER);
                     _area[i][j] = new Area();
                     _area[i][j].ReadFromBE(data, ref ptr);
                 }
@@ -295,6 +297,29 @@ namespace NScumm.Queen
         public Verb FindVerbUnderCursor(short cursorx, short cursory)
         {
             return pv[FindZoneForPos(GridScreen.PANEL, (ushort)cursorx, (ushort)cursory)];
+        }
+
+        public void LoadState(uint version, byte[] data, ref int ptr)
+        {
+            for (var i = 1; i <= _numRoomAreas; ++i)
+            {
+                for (var j = 1; j <= _areaMax[i]; ++j)
+                {
+                    _area[i][j].ReadFromBE(data, ref ptr);
+                }
+            }
+        }
+
+        public void SaveState(byte[] data, ref int ptr)
+        {
+            short i, j;
+            for (i = 1; i <= _numRoomAreas; ++i)
+            {
+                for (j = 1; j <= _areaMax[i]; ++j)
+                {
+                    _area[i][j].WriteToBE(data, ref ptr);
+                }
+            }
         }
     }
 }

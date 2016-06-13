@@ -844,7 +844,7 @@ namespace NScumm.Queen
             }
         }
 
-        private void DrawBobs()
+        public void DrawBobs()
         {
             Box bobBox = _vm.Display.Fullscreen ? _fullScreenBox : _gameScreenBox;
             for (int i = 0; i < _sortedBobsCount; ++i)
@@ -1025,7 +1025,7 @@ namespace NScumm.Queen
             }
         }
 
-        private void SortBobs()
+        public void SortBobs()
         {
             _sortedBobsCount = 0;
 
@@ -1538,7 +1538,7 @@ namespace NScumm.Queen
             _vm.BankMan.EraseFrame(image);
         }
 
-        private void ClearBobs()
+        public void ClearBobs()
         {
             for (var i = 0; i < Bobs.Length; ++i)
             {

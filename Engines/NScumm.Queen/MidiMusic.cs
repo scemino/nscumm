@@ -442,7 +442,7 @@ namespace NScumm.Queen
                     }
                     break;
                 default:
-                    D.Warning($"Unhandled meta event: {type:X2}");
+                    //D.Warning($"Unhandled meta event: {type:X2}");
                     break;
             }
         }

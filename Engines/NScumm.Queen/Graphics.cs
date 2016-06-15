@@ -27,7 +27,7 @@ using System.Diagnostics;
 
 namespace NScumm.Queen
 {
-    public class AnimFrame
+    public struct AnimFrame
     {
         public ushort frame;
         public ushort speed;
@@ -63,7 +63,7 @@ namespace NScumm.Queen
         //! animation stuff
         public bool animating;
 
-        public class Anim
+        public struct Anim
         {
             public short speed, speedBak;
 
@@ -83,22 +83,22 @@ namespace NScumm.Queen
             }
 
             //! string based animation
-            public class StringAnim
+            public struct StringAnim
             {
                 public AnimFramePtr buffer;
                 public AnimFramePtr curPos;
             }
 
-            public StringAnim @string = new StringAnim();
+            public StringAnim @string;
 
             //! normal moving animation
-            public class NormalAnim
+            public struct NormalAnim
             {
                 public bool rebound;
                 public ushort firstFrame, lastFrame;
             }
 
-            public NormalAnim normal = new NormalAnim();
+            public NormalAnim normal;
 
         }
 
@@ -211,7 +211,7 @@ namespace NScumm.Queen
             anim.@string.buffer = new Anim.AnimFramePtr();
             moving = false;
             scale = 100;
-            box = defaultBox;
+            box = new Box(defaultBox);
         }
 
         public void CurPos(short xx, short yy)
@@ -625,7 +625,7 @@ namespace NScumm.Queen
 
         public ushort RefreshObject(ushort obj)
         {
-            D.Debug(6, $"Graphics::refreshObject({obj})");
+            D.Debug(6, $"Graphics::refreshObject({obj:X})");
             ushort curImage = NumFrames;
 
             ObjectData pod = _vm.Logic.ObjectData[obj];

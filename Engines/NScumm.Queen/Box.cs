@@ -31,6 +31,11 @@ namespace NScumm.Queen
         {
         }
 
+        public Box(Box copy)
+            :this(copy.x1,copy.y1,copy.x2,copy.y2)
+        {
+        }
+
         public Box (short xx1, short yy1, short xx2, short yy2)
 		{
 			x1 = xx1;

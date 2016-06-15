@@ -264,7 +264,7 @@ namespace NScumm.Queen
                 offset += JAS_VERSION_OFFSET_PC;
             SeekResourceFile(re.bundle, offset);
 
-            string versionStr = _resourceFile.ReadBytes(6).ToText(0, 6);
+            string versionStr = ScummHelper.GetText(_resourceFile.ReadBytes(6));
             if (_version.str != versionStr)
                 throw new NotSupportedException($"Verifying game version failed! (expected: '{_version.str}', found: '{versionStr}')");
         }
@@ -342,7 +342,7 @@ namespace NScumm.Queen
             var reader = new BinaryReader(file);
             if (reader.ReadTag() == "QTBL")
             {
-                ver.str = reader.ReadBytes(6).ToText(0, 6);
+                ver.str = ScummHelper.GetText(reader.ReadBytes(6));
                 file.Seek(2, SeekOrigin.Current);
                 ver.compression = reader.ReadByte();
                 ver.features = GameFeatures.REBUILT;

@@ -1696,7 +1696,7 @@ namespace NScumm.Queen
             CurrentRoom = ObjectData[EntryObj].room;
             EntryObj = 0;
 
-            if (System.Text.Encoding.UTF8.GetString(jas, ptr, 5) != _vm.Resource.JASVersion)
+            if (ScummHelper.GetText(jas, ptr, 5) != _vm.Resource.JASVersion)
             {
                 D.Warning("Unexpected queen.jas file format");
             }

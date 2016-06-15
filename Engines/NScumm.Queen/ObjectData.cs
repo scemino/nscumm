@@ -19,41 +19,37 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using System;
 using NScumm.Core;
-using NScumm.Core.IO;
-using NScumm.Core.Graphics;
-using NScumm.Core.Input;
-using NScumm.Core.Audio;
 
 namespace NScumm.Queen
 {
-	public class ObjectData {
-		//! entry in OBJECT_NAME (<0: object is hidden, 0: object has been deleted)
-		public short name;
-		//! coordinates of object
-		public ushort x, y;
-		//! entry in OBJECT_DESCR
-		public ushort description;
-		//! associated object
-		public short entryObj;
-		//! room in which this object is available
-		public ushort room;
-		//! state of the object (grab direction, on/off, default command...)
-		public ushort state;
-		public short image;
+    public class ObjectData
+    {
+        //! entry in OBJECT_NAME (<0: object is hidden, 0: object has been deleted)
+        public short name;
+        //! coordinates of object
+        public ushort x, y;
+        //! entry in OBJECT_DESCR
+        public ushort description;
+        //! associated object
+        public short entryObj;
+        //! room in which this object is available
+        public ushort room;
+        //! state of the object (grab direction, on/off, default command...)
+        public ushort state;
+        public short image;
 
-		public void ReadFromBE (byte[] data, ref int ptr)
-		{
-			name = data.ToInt16BigEndian(ptr); ptr += 2;
-			x = data.ToUInt16BigEndian(ptr); ptr += 2;
-			y = data.ToUInt16BigEndian(ptr); ptr += 2;
-			description = data.ToUInt16BigEndian(ptr); ptr += 2;
-			entryObj = data.ToInt16BigEndian(ptr); ptr += 2;
-			room = data.ToUInt16BigEndian(ptr); ptr += 2;
-			state = data.ToUInt16BigEndian(ptr); ptr += 2;
-			image = data.ToInt16BigEndian(ptr); ptr += 2;
-		}
+        public void ReadFromBE(byte[] data, ref int ptr)
+        {
+            name = data.ToInt16BigEndian(ptr); ptr += 2;
+            x = data.ToUInt16BigEndian(ptr); ptr += 2;
+            y = data.ToUInt16BigEndian(ptr); ptr += 2;
+            description = data.ToUInt16BigEndian(ptr); ptr += 2;
+            entryObj = data.ToInt16BigEndian(ptr); ptr += 2;
+            room = data.ToUInt16BigEndian(ptr); ptr += 2;
+            state = data.ToUInt16BigEndian(ptr); ptr += 2;
+            image = data.ToInt16BigEndian(ptr); ptr += 2;
+        }
 
         public void WriteToBE(byte[] data, ref int ptr)
         {
@@ -66,6 +62,6 @@ namespace NScumm.Queen
             data.WriteUInt16BigEndian(ptr, state); ptr += 2;
             data.WriteInt16BigEndian(ptr, image); ptr += 2;
         }
-	}
-	
+    }
+
 }

@@ -523,11 +523,11 @@ namespace NScumm.Core
             Array.Copy(data, 0, array, startIndex, 2);
         }
 
-		public static void WriteInt16BigEndian(this byte[] array, int startIndex, short value)
-		{
-			var data = BitConverter.GetBytes(SwapBytes(value));
-			Array.Copy(data, 0, array, startIndex, 2);
-		}
+        public static void WriteInt16BigEndian(this byte[] array, int startIndex, short value)
+        {
+            var data = BitConverter.GetBytes(SwapBytes(value));
+            Array.Copy(data, 0, array, startIndex, 2);
+        }
 
         public static void WriteUInt16BigEndian(this byte[] array, int startIndex, ushort value)
         {
@@ -593,11 +593,11 @@ namespace NScumm.Core
             return System.Text.Encoding.UTF8.GetString(reader.ReadBytes(4), 0, 4);
         }
 
-		public static string GetText(this byte[] value, int startIndex = 0, int count = -1)
+        public static string GetText(this byte[] value, int startIndex = 0, int count = -1)
         {
             var data = new List<byte>();
-			count = count < 0 ? value.Length : count;
-            for (int i = startIndex; i < count && value[i] != 0; i++)
+            count = count < 0 ? value.Length : count;
+            for (int i = startIndex; i < (startIndex + count) && value[i] != 0; i++)
             {
                 data.Add(value[i]);
             }

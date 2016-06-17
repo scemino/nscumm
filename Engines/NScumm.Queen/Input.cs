@@ -100,6 +100,10 @@ namespace NScumm.Queen
 
         public int MouseButton { get { return _mouseButton; } }
 
+        public bool QuickSave { get { return _quickSave; } }
+
+        public bool QuickLoad { get { return _quickLoad; } }
+
         public Input(Language language, ISystem system)
         {
             _system = system;
@@ -225,6 +229,11 @@ namespace NScumm.Queen
             }
 
             _inKey = KeyCode.None;   // reset
+        }
+
+        public void TalkQuitReset()
+        {
+            _talkQuit = false;
         }
 
         public static char ToChar(KeyCode key)

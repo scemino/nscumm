@@ -80,6 +80,7 @@ namespace NScumm.Queen
         private Talk(QueenEngine vm)
         {
             _vm = vm;
+            _vm.Input.TalkQuitReset();
         }
 
         /// <summary>
@@ -150,7 +151,7 @@ namespace NScumm.Queen
 
             D.Debug(6, $"Sentence '{sentence}' is said by person '{person.name}' and voice files with prefix '{voiceFilePrefix}' played");
 
-            if (sentence[0] == '\0')
+            if (sentence.Length == 0)
             {
                 return personWalking;
             }

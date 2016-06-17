@@ -603,11 +603,6 @@ namespace NScumm.Queen
             return null;
         }
 
-        public override int Property(int prop, int param)
-        {
-            throw new NotImplementedException();
-        }
-
         public override void Send(int b)
         {
             int channel = b & 15;

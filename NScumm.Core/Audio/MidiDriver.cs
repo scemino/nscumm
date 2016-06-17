@@ -333,7 +333,10 @@ namespace NScumm.Core.Audio
         /// </summary>
         /// <param name="prop">Property.</param>
         /// <param name="param">Parameter.</param>
-        public abstract int Property(int prop, int param);
+        public virtual int Property(int prop, int param)
+        {
+            return 0;
+        }
 
         /// <summary>
         /// Gets a text representation of an error code.

@@ -140,9 +140,11 @@ namespace NScumm.Queen
                 int i = GetGameStateSlot(filename);
                 if (i >= 0 && i < SAVESTATE_MAX_NUM)
                 {
-                    GameStateHeader header = new GameStateHeader();
-                    var f = ReadGameStateHeader(i, header);
-                    descriptions[i] = header.description;
+                    var header = new GameStateHeader();
+                    using (var f = ReadGameStateHeader(i, header))
+                    {
+                        descriptions[i] = header.description;
+                    }
                 }
             }
         }
@@ -465,7 +467,7 @@ namespace NScumm.Queen
             int diff = Environment.TickCount - lastSaveTime;
             // TODO: conf
             //int autosavePeriod = ConfMan.getInt("autosave_period");
-            int autosavePeriod = 5*60;
+            int autosavePeriod = 5 * 60;
             return autosavePeriod != 0 && diff > autosavePeriod * 1000;
         }
     }

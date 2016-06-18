@@ -92,6 +92,12 @@ namespace NScumm.Queen
         }
     }
 
+    struct Cmd
+    {
+        public ushort obj;
+        public short song;
+    }
+
     public abstract class Logic
     {
         const int JOE_RESPONSE_MAX = 40;
@@ -365,7 +371,100 @@ namespace NScumm.Queen
         /// <returns>The pinnacle room.</returns>
         public void HandlePinnacleRoom()
         {
-            throw new NotImplementedException();
+            // camera does not follow Joe anymore
+            _vm.Graphics.PutCameraOnBob(-1);
+            DisplayRoom(Defines.ROOM_JUNGLE_PINNACLE, RoomDisplayMode.RDM_NOFADE_JOE, 100, 2, true);
+
+            BobSlot joe = _vm.Graphics.Bobs[6];
+            BobSlot piton = _vm.Graphics.Bobs[7];
+
+            // set scrolling value to mouse position to avoid glitch
+            var mouse = _vm.Input.MousePos;
+            _vm.Display.HorizontalScroll = (short)mouse.X;
+
+            joe.x = piton.x = (short)(3 * mouse.X / 4 + 200);
+            joe.frameNum = (ushort)(mouse.X / 36 + 45);
+
+            // bobs have been unpacked from animating objects, we don't need them
+            // to animate anymore ; so turn animation off
+            joe.animating = piton.animating = false;
+
+            _vm.Update();
+            _vm.Display.PalFadeIn(Defines.ROOM_JUNGLE_PINNACLE, joe.active, joe.x, joe.y);
+
+            EntryObj = 0;
+            ushort prevObj = 0;
+            CmdText cmdText = CmdText.MakeCmdTextInstance(5, _vm);
+            cmdText.SetVerb(Verb.WALK_TO);
+            while (!_vm.HasToQuit && (_vm.Input.MouseButton == 0 || EntryObj == 0))
+            {
+
+                _vm.Update();
+                mouse = _vm.Input.MousePos;
+
+                // update bobs position / frame
+                joe.x = piton.x = (short)(3 * mouse.X / 4 + 200);
+                joe.frameNum = (ushort)(mouse.X / 36 + 45);
+
+                _vm.Display.ClearTexts(5, 5);
+
+                ushort curObj = _vm.Grid.FindObjectUnderCursor((short)mouse.X, (short)mouse.Y);
+                if (curObj != 0 && curObj != prevObj)
+                {
+                    EntryObj = 0;
+                    curObj += CurrentRoomData; // global object number
+                    ObjectData objData = ObjectData[curObj];
+                    if (objData.name > 0)
+                    {
+                        EntryObj = (ushort)objData.entryObj;
+                        cmdText.DisplayTemp(InkColor.INK_PINNACLE_ROOM, ObjectName((ushort)objData.name), true);
+                    }
+                    prevObj = curObj;
+                }
+
+                // update screen scrolling
+                _vm.Display.HorizontalScroll = (short)mouse.X;
+            }
+            _vm.Input.ClearMouseButton();
+
+            NewRoom = ObjectData[EntryObj].room;
+
+            // Only a few commands can be triggered from this room :
+            // piton . crash  : 0x216 (obj1=0x2a, song=3)
+            // piton . floda  : 0x217 (obj1=0x29, song=16)
+            // piton . bob    : 0x219 (obj1=0x2f, song=6)
+            // piton . embark : 0x218 (obj1=0x2c, song=7)
+            // piton . jungle : 0x20B (obj1=0x2b, song=3)
+            // piton . amazon : 0x21A (obj1=0x30, song=3)
+            //
+            // Because none of these update objects/areas/gamestate, the EXECUTE_ACTION()
+            // call, as the original does, is useless. All we have to do is the playsong
+            // call (all songs have the PLAY_BEFORE type). This way we could get rid of
+            // the hack described in execute.c l.334-339.
+            Cmd[] cmds = new Cmd[]{
+                new Cmd { obj = 0x2A, song = 3 },
+                new Cmd { obj =  0x29, song = 16 },
+                new Cmd { obj =  0x2F,  song = 6 },
+                new Cmd { obj =  0x2C,  song = 7 },
+                new Cmd { obj =  0x2B,  song = 3 },
+                new Cmd { obj =  0x30, song =  3 }
+            };
+            for (int i = 0; i < cmds.Length; ++i)
+            {
+                if (cmds[i].obj == prevObj)
+                {
+                    _vm.Sound.PlaySong(cmds[i].song);
+                    break;
+                }
+            }
+
+            joe.active = piton.active = false;
+            _vm.Display.ClearTexts(5, 5);
+
+            // camera follows Joe again
+            _vm.Graphics.PutCameraOnBob(0);
+
+            _vm.Display.PalFadeOut(Defines.ROOM_JUNGLE_PINNACLE);
         }
 
         public void InventoryScroll(ushort count, bool up)

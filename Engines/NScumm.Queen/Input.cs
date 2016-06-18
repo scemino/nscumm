@@ -236,6 +236,12 @@ namespace NScumm.Queen
             _talkQuit = false;
         }
 
+        public static bool IsLetterOrDigit(KeyCode key)
+        {
+            return (key >= KeyCode.A && key <= KeyCode.Z) ||
+               (key >= KeyCode.D0 && key <= KeyCode.D0);
+        }
+
         public static char ToChar(KeyCode key)
         {
             return (char)('a' + (int)(key - KeyCode.A));

@@ -345,11 +345,12 @@ namespace NScumm.Queen
         public const int BOB_OBJ2 = 6;
         public const int BOB_FX = 7;
 
-        private const int ARROW_BOB_UP = 62;
-        private const int ARROW_BOB_DOWN = 63;
+        public const int ARROW_BOB_UP = 62;
+        public const int ARROW_BOB_DOWN = 63;
         private const int MAX_BOBS_NUMBER = 64;
         private const int MAX_STRING_LENGTH = 255;
         private const int MAX_STRING_SIZE = (MAX_STRING_LENGTH + 1);
+
         private const int BOB_SHRINK_BUF_SIZE = 60000;
 
         private QueenEngine _vm;
@@ -454,6 +455,21 @@ namespace NScumm.Queen
             for (int i = 0; i < 21; i++)
             {
                 _cutAnim[i] = new AnimFrame[30];
+            }
+        }
+
+        public void SetupArrows()
+        {
+            if (_vm.Resource.Platform == Platform.DOS)
+            {
+                int scrollX = _vm.Display.HorizontalScroll;
+                BobSlot arrow;
+                arrow = Bobs[ARROW_BOB_UP];
+                arrow.CurPos((short)(303 + 8 + scrollX), 150 + 1 + 200);
+                arrow.frameNum = 3;
+                arrow = Bobs[ARROW_BOB_DOWN];
+                arrow.CurPos((short)(303 + scrollX), 175 + 200);
+                arrow.frameNum = 4;
             }
         }
 

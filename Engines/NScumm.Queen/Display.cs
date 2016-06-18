@@ -87,24 +87,6 @@ namespace NScumm.Queen
         bool _fullscreen;
         byte[] _font;
 
-        public void SetTextCentered(ushort y, string text, bool outlined)
-        {
-            int len = string.IsNullOrEmpty(text) ? 0 : text.Length;
-            int t = 0;
-            int x;
-            while ((x = (short)((Defines.GAME_SCREEN_WIDTH - TextWidth(text, t, (ushort)len)) / 2)) <= 0)
-            {
-                ++t;
-                len -= 2;
-            }
-            //assert(y < GAME_SCREEN_HEIGHT);
-            TextSlot pts = _texts[y];
-            pts.x = (ushort)x;
-            pts.color = (byte)_curTextColor;
-            pts.outlined = outlined;
-            pts.text = text?.Substring(0, len);
-        }
-
         /// <summary>
         /// Font justification sizes.
         /// </summary>
@@ -138,13 +120,13 @@ namespace NScumm.Queen
 
         private static readonly Color[] _palJoeClothes = {
                  Color.FromRgb(0x00, 0x00, 0x00), Color.FromRgb(0x60, 0x60, 0x60), Color.FromRgb(0x87, 0x87, 0x87), Color.FromRgb(0xB0, 0xB0, 0xB0), Color.FromRgb(0xDA, 0xDA, 0xDA),
-                 Color.FromRgb(0x43, 0x34, 0x20), Color.FromRgb(0x77, 0x33, 0x1F), Color.FromRgb(0xA3, 0x43, 0x27), Color.FromRgb(0x80, 0x45, 0x45), Color.FromRgb(0x9E, 0x5D, 0x5B), 
+                 Color.FromRgb(0x43, 0x34, 0x20), Color.FromRgb(0x77, 0x33, 0x1F), Color.FromRgb(0xA3, 0x43, 0x27), Color.FromRgb(0x80, 0x45, 0x45), Color.FromRgb(0x9E, 0x5D, 0x5B),
                  Color.FromRgb(0xB9, 0x78, 0x75), Color.FromRgb(0xDF, 0x97, 0x91), Color.FromRgb(0x17, 0x27, 0x63), Color.FromRgb(0x1F, 0x3F, 0x83), Color.FromRgb(0x27, 0x5B, 0xA7), Color.FromRgb(0x98, 0xD4, 0xFF)
         };
 
         private static readonly Color[] _palJoeDress = {
-                 Color.FromRgb(0x00, 0x00, 0x00), Color.FromRgb(0x50, 0x50, 0x50), Color.FromRgb(0x70, 0x70, 0x70), Color.FromRgb(0x90, 0x90, 0x90), Color.FromRgb(0xC6, 0xC6, 0xC6), 
-                 Color.FromRgb(0xFF, 0xFF, 0xFF), Color.FromRgb(0x30, 0x30, 0x90), Color.FromRgb(0x47, 0x49, 0xD0), Color.FromRgb(0x40, 0x24, 0x00), Color.FromRgb(0x79, 0x34, 0x0B), 
+                 Color.FromRgb(0x00, 0x00, 0x00), Color.FromRgb(0x50, 0x50, 0x50), Color.FromRgb(0x70, 0x70, 0x70), Color.FromRgb(0x90, 0x90, 0x90), Color.FromRgb(0xC6, 0xC6, 0xC6),
+                 Color.FromRgb(0xFF, 0xFF, 0xFF), Color.FromRgb(0x30, 0x30, 0x90), Color.FromRgb(0x47, 0x49, 0xD0), Color.FromRgb(0x40, 0x24, 0x00), Color.FromRgb(0x79, 0x34, 0x0B),
                  Color.FromRgb(0xB2, 0x3D,0x22), Color.FromRgb(0xED, 0x42, 0x42), Color.FromRgb(0x80, 0x45, 0x45), Color.FromRgb(0xA3, 0x5F, 0x5F), Color.FromRgb(0xC8, 0x7C, 0x7C), Color.FromRgb(0xEC, 0x9C, 0x9C)
         };
 
@@ -231,6 +213,29 @@ namespace NScumm.Queen
             _curTextColor = 0;
 
             SetupInkColors();
+        }
+
+        public void SetTextCentered(ushort y, string text, bool outlined)
+        {
+            int len = string.IsNullOrEmpty(text) ? 0 : text.Length;
+            int t = 0;
+            int x;
+            while ((x = (short)((Defines.GAME_SCREEN_WIDTH - TextWidth(text, t, (ushort)len)) / 2)) <= 0)
+            {
+                ++t;
+                len -= 2;
+            }
+            //assert(y < GAME_SCREEN_HEIGHT);
+            TextSlot pts = _texts[y];
+            pts.x = (ushort)x;
+            pts.color = (byte)_curTextColor;
+            pts.outlined = outlined;
+            pts.text = text?.Substring(0, len);
+        }
+
+        public void TextColor(ushort y, byte color)
+        {
+            _texts[y].color = color;
         }
 
         /// <summary>
@@ -1266,9 +1271,9 @@ namespace NScumm.Queen
             {
                 var p = dstBuf;
                 int pOffs = d;
-                var c = chr[offs++];
-                if (c != 0)
+                if (offs < chr.Length)
                 {
+                    var c = chr[offs++];
                     for (int i = 0; i < 8; ++i)
                     {
                         if ((c & 0x80) != 0)

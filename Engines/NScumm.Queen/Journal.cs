@@ -50,7 +50,7 @@ namespace NScumm.Queen
         }
     }
 
-    struct Zone
+    public struct Zone
     {
         public int num;
         public short x1, y1, x2, y2;
@@ -279,7 +279,7 @@ namespace NScumm.Queen
                         switch (_prevZoneNum)
                         {
                             case ZN_REVIEW_ENTRY:
-                                if (_saveDescriptions[currentSlot].Length > 0)
+                                if (!string.IsNullOrEmpty(_saveDescriptions[currentSlot]))
                                 {
                                     _vm.Graphics.ClearBobs();
                                     _vm.Display.PalFadeOut(Defines.ROOM_JOURNAL);
@@ -537,10 +537,10 @@ namespace NScumm.Queen
                     }
                     break;
                 default:
-                    char ascii = Input.ToChar(keycode);
-                    if (char.IsLetterOrDigit(ascii) &&
+                    if (Input.IsLetterOrDigit(keycode) &&
                         _vm.Display.TextWidth(_textField.text) < _textField.w)
                     {
+                        char ascii = Input.ToChar(keycode);
                         _textField.text = _textField.text + ascii;
                         ++_textField.textCharsCount;
                         dirty = true;

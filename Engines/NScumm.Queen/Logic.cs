@@ -68,7 +68,7 @@ namespace NScumm.Queen
         public const int JSO_COUNT = 8;
     }
 
-    class TalkSelected
+    public class TalkSelected
     {
         public bool hasTalkedTo;
         public short[] values = new short[4];
@@ -149,6 +149,14 @@ namespace NScumm.Queen
         public IList<short> GameState { get; private set; }
 
         public ushort CurrentRoomSfx { get { return _sfxName[CurrentRoom]; } }
+
+        public TalkSelected[] TalkSelected
+        {
+            get
+            {
+                return _talkSelected;
+            }
+        }
 
         public ushort NewRoom
         {

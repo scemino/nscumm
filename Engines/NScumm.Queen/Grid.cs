@@ -99,6 +99,13 @@ namespace NScumm.Queen
             }
         }
 
+        public Box Zone(GridScreen screen, ushort index)
+        {
+            var zone = _zones[(int)screen, index];
+            Debug.Assert(zone.valid);
+            return zone.box;
+        }
+
         public ushort FindAreaForPos(GridScreen screen, ushort x, ushort y)
         {
             ushort room = _vm.Logic.CurrentRoom;

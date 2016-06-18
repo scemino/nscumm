@@ -55,7 +55,7 @@ namespace NScumm.Queen
         bool _adlib;
         bool _nativeMT32;
         object _mutex = new object();
-        Random _rnd;
+        Random _rnd = new Random();
 
         bool _isPlaying;
         bool _isLooping;

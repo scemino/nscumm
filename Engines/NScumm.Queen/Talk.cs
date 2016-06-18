@@ -61,6 +61,14 @@ namespace NScumm.Queen
         }
     }
 
+    struct DialogueNode
+    {
+        public short head;
+        public short dialogueNodeValue1;
+        public short gameStateIndex;
+        public short gameStateValue;
+    }
+
     class Talk
     {
         const int SPEAK_DEFAULT = 0;
@@ -74,12 +82,79 @@ namespace NScumm.Queen
         const int SPEAK_PAUSE = -8;
         const int SPEAK_NONE = -9;
 
+        const int LINE_HEIGHT = 10;
+        const int MAX_STRING_LENGTH = 255;
+        const int MAX_TEXT_WIDTH = (320 - 18);
+        const int PUSHUP = 4;
+        const int ARROW_ZONE_UP = 5;
+        const int ARROW_ZONE_DOWN = 6;
+        const int DOG_HEADER_SIZE = 20;
+        const int OPTION_TEXT_MARGIN = 24;
+
         QueenEngine _vm;
         bool _talkHead;
+        int _oldSelectedSentenceIndex;
+        int _oldSelectedSentenceValue;
+        /// <summary>
+        /// IDs for sentences.
+        /// </summary>
+        DialogueNode[][] _dialogueTree = new DialogueNode[18][];
+        string[] _talkString = new string[5];
+        string[] _joeVoiceFilePrefix = new string[5];
+        //! String data
+        ushort _person1PtrOff;
+
+        //! Cutaway data
+        ushort _cutawayPtrOff;
+
+        //! Data used if we have talked to the person before
+        ushort _person2PtrOff;
+
+        //! Data used if we haven't talked to the person before
+        ushort _joePtrOff;
+
+        //! Greeting from person Joe has talked to before
+        string _person2String;
+
+        //! Number of dialogue levels
+        short _levelMax;
+
+        //! Unique key for this dialogue
+        short _uniqueKey;
+
+        //! Used to select voice files
+        short _talkKey;
+
+        short _jMax;
+
+        //! Used by findDialogueString
+        short _pMax;
+
+        // Update game state efter dialogue
+        short[] _gameState = new short[2];
+        short[] _testValue = new short[2];
+        short[] _itemNumber = new short[2];
+
+        //! Raw .dog file data (without 20 byte header)
+        byte[] _fileData;
+
+        public TalkSelected TalkSelected
+        {
+            get
+            {
+                return _vm.Logic.TalkSelected[_uniqueKey];
+            }
+        }
+
+        public bool HasTalkedTo { get { return TalkSelected.hasTalkedTo; } }
 
         private Talk(QueenEngine vm)
         {
             _vm = vm;
+            for (int i = 0; i < 18; i++)
+            {
+                _dialogueTree[i] = new DialogueNode[6];
+            }
             _vm.Input.TalkQuitReset();
         }
 
@@ -268,7 +343,7 @@ namespace NScumm.Queen
                     }
                     else
                     {
-                        D.Warning ($"Unknown command string: '{sentence.Substring(index)}'");
+                        D.Warning($"Unknown command string: '{sentence.Substring(index)}'");
                     }
                     break;
             }
@@ -286,7 +361,692 @@ namespace NScumm.Queen
 
         private void DoTalk(string filename, int personInRoom, out string cutawayFilename)
         {
+            int i;
+            _oldSelectedSentenceIndex = 0;
+            _oldSelectedSentenceValue = 0;
+
+            D.Debug(6, $"----- talk(\"{filename}\") -----");
+
+            cutawayFilename = string.Empty;
+
+            Load(filename);
+
+            Person person = new Person();
+            _vm.Logic.InitPerson((ushort)personInRoom, "", false, out person);
+
+            if (null == person.name)
+            {
+                throw new InvalidOperationException("Invalid person object");
+            }
+
+            short oldLevel = 0;
+
+            // Lines 828-846 in talk.c
+            for (i = 1; i <= 4; i++)
+            {
+                if (SelectedValue(i) > 0)
+                {
+                    // This option has been redefined so display new dialogue option
+                    _dialogueTree[1][i].head = SelectedValue(i);
+                }
+                else if (SelectedValue(i) == -1)
+                {
+                    // Already selected so don't redisplay
+                    if (_dialogueTree[1][i].gameStateIndex >= 0)
+                    {
+                        _dialogueTree[1][i].head = -1;
+                        _dialogueTree[1][i].dialogueNodeValue1 = -1;
+                        _dialogueTree[1][i].gameStateIndex = -1;
+                        _dialogueTree[1][i].gameStateValue = -1;
+                    }
+                }
+            }
+
+            InitialTalk();
+
+            // Lines 906-? in talk.c
+            _vm.Display.ShowMouseCursor(true);
+
+            short level = 1, retval = 0;
+            short head = _dialogueTree[level][0].head;
+            short index;
+
+            // TODO: split this loop in several functions
+            while (retval != -1)
+            {
+                string otherVoiceFilePrefix;
+
+                _talkString[0] = string.Empty;
+
+                if (HasTalkedTo && head == 1)
+                    _talkString[0] = _person2String;
+                else
+                    FindDialogueString(_person1PtrOff, head, _pMax, out _talkString[0]);
+
+                if (HasTalkedTo && head == 1)
+                    otherVoiceFilePrefix = $"{_talkKey:D2}XXXXP";
+                else
+                    otherVoiceFilePrefix = $"{_talkKey:D2}{head:x4}P";
+
+                if (_talkString[0].Length == 0 && retval > 1)
+                {
+                    FindDialogueString(_person1PtrOff, retval, _pMax, out _talkString[0]);
+                    otherVoiceFilePrefix = $"{_talkKey:D2}{retval:x4}P";
+                }
+
+                // Joe dialogue
+                for (i = 1; i <= 4; i++)
+                {
+                    FindDialogueString(_joePtrOff, _dialogueTree[level][i].head, _jMax, out _talkString[i]);
+
+                    index = _dialogueTree[level][i].gameStateIndex;
+
+                    if (index < 0 && _vm.Logic.GameState[Math.Abs(index)] != _dialogueTree[level][i].gameStateValue)
+                        _talkString[i] = string.Empty;
+
+                    _joeVoiceFilePrefix[i] = $"{_talkKey:D2}{_dialogueTree[level][i].head:x4}J";
+                }
+
+                // Check to see if (all the dialogue options have been selected.
+                // if this is the case, and the last one left is the exit option,
+                // then automatically set S to that and exit.
+
+                int choicesLeft = 0;
+                int selectedSentence = 0;
+
+                for (i = 1; i <= 4; i++)
+                {
+                    if (_talkString[i].Length != 0)
+                    {
+                        choicesLeft++;
+                        selectedSentence = i;
+                    }
+                }
+
+                D.Debug(6, $"choicesLeft = {choicesLeft}");
+
+                if (1 == choicesLeft)
+                {
+                    // Automatically run the final dialogue option
+                    Speak(_talkString[0], person, otherVoiceFilePrefix);
+
+                    if (_vm.Input.TalkQuit)
+                        break;
+
+                    Speak(_talkString[selectedSentence], null, _joeVoiceFilePrefix[selectedSentence]);
+                }
+                else
+                {
+                    if (person.actor.bobNum > 0)
+                    {
+                        Speak(_talkString[0], person, otherVoiceFilePrefix);
+                        selectedSentence = SelectSentence();
+                    }
+                    else
+                    {
+                        D.Warning("bobBum is %i", person.actor.bobNum);
+                        selectedSentence = 0;
+                    }
+                }
+
+                if (_vm.Input.TalkQuit || _vm.HasToQuit)
+                    break;
+
+                retval = _dialogueTree[level][selectedSentence].dialogueNodeValue1;
+                head = _dialogueTree[level][selectedSentence].head;
+                oldLevel = level;
+                level = 0;
+
+                // Set LEVEL to the selected child in dialogue tree
+
+                for (i = 1; i <= _levelMax; i++)
+                    if (_dialogueTree[i][0].head == head)
+                        level = (short)i;
+
+                if (0 == level)
+                {
+                    // No new level has been selected, so lets set LEVEL to the
+                    // tree path pointed to by the RETVAL
+
+                    for (i = 1; i <= _levelMax; i++)
+                        for (int j = 0; j <= 5; j++)
+                            if (_dialogueTree[i][j].head == retval)
+                                level = (short)i;
+
+                    DisableSentence(oldLevel, selectedSentence);
+                }
+                else
+                { // 0 != level
+                  // Check to see if Person Return value is positive, if it is, then
+                  // change the selected dialogue option to the Return value
+
+                    if (_dialogueTree[level][0].dialogueNodeValue1 > 0)
+                    {
+                        if (1 == oldLevel)
+                        {
+                            _oldSelectedSentenceIndex = selectedSentence;
+                            _oldSelectedSentenceValue = SelectedValue(selectedSentence);
+                            SelectedValue(selectedSentence, _dialogueTree[level][0].dialogueNodeValue1);
+                        }
+
+                        _dialogueTree[oldLevel][selectedSentence].head = _dialogueTree[level][0].dialogueNodeValue1;
+                        _dialogueTree[level][0].dialogueNodeValue1 = -1;
+                    }
+                    else
+                    {
+                        DisableSentence(oldLevel, selectedSentence);
+                    }
+                }
+
+                // Check selected person to see if any Gamestates need setting
+
+                index = _dialogueTree[level][0].gameStateIndex;
+                if (index > 0)
+                    _vm.Logic.GameState[index] = _dialogueTree[level][0].gameStateValue;
+
+                // if the selected dialogue line has a POSITIVE game state value
+                // then set gamestate to Value = TALK(OLDLEVEL,S,3)
+
+                index = _dialogueTree[oldLevel][selectedSentence].gameStateIndex;
+                if (index > 0)
+                    _vm.Logic.GameState[index] = _dialogueTree[oldLevel][selectedSentence].gameStateValue;
+
+                // check to see if person has something final to say
+                if (-1 == retval)
+                {
+                    FindDialogueString(_person1PtrOff, head, _pMax, out _talkString[0]);
+                    if (_talkString[0].Length != 0)
+                    {
+                        otherVoiceFilePrefix = $"{_talkKey:D2}{head:x4}P";
+                        Speak(_talkString[0], person, otherVoiceFilePrefix);
+                    }
+                }
+            }
+
+            cutawayFilename = string.Empty;
+
+            for (i = 0; i < 2; i++)
+            {
+                if (_gameState[i] > 0)
+                {
+                    if (_vm.Logic.GameState[_gameState[i]] == _testValue[i])
+                    {
+                        if (_itemNumber[i] > 0)
+                            _vm.Logic.InventoryInsertItem((NScumm.Queen.Item)_itemNumber[i]);
+                        else
+                            _vm.Logic.InventoryDeleteItem((NScumm.Queen.Item)Math.Abs(_itemNumber[i]));
+                    }
+                }
+            }
+
+            _vm.Grid.SetupPanel();
+
+            ushort offset = _cutawayPtrOff;
+
+            short cutawayGameState = _fileData.ToInt16BigEndian(offset); offset += 2;
+            short cutawayTestValue = _fileData.ToInt16BigEndian(offset); offset += 2;
+
+            if (_vm.Logic.GameState[cutawayGameState] == cutawayTestValue)
+            {
+                GetString(_fileData, ref offset, out cutawayFilename, 20);
+                if (cutawayFilename.Length > 0)
+                {
+                    //CR 2 - 7/3/95, If we're executing a cutaway scene, then make sure
+                    // Joe can talk, so set TALKQUIT to 0 just in case we exit on the
+                    // line that set's the cutaway game states.
+                    _vm.Input.TalkQuitReset();
+                }
+            }
+            if (_vm.Input.TalkQuit)
+            {
+                if (_oldSelectedSentenceIndex > 0)
+                    SelectedValue(_oldSelectedSentenceIndex, (short)_oldSelectedSentenceValue);
+                _vm.Input.TalkQuitReset();
+                _vm.Display.ClearTexts(0, 198);
+                _vm.Logic.MakeJoeSpeak(15, false);
+            }
+            else
+            {
+                SetHasTalkedTo();
+            }
+
+            _vm.Logic.JoeFace();
+
+            if (cutawayFilename.Length == 0)
+            {
+                BobSlot pbs = _vm.Graphics.Bobs[person.actor.bobNum];
+
+                pbs.x = (short)person.actor.x;
+                pbs.y = (short)person.actor.y;
+
+                // Better kick start the persons anim sequence
+                _vm.Graphics.ResetPersonAnim((ushort)person.actor.bobNum);
+            }
+
+            _vm.Logic.JoeWalk = JoeWalkMode.NORMAL;
+        }
+
+        short SelectSentence()
+        {
+            int selectedSentence = 0;
+
+            int startOption = 1;
+            int optionLines = 0;
+            string[] optionText = new string[5];
+            int[] talkZone = new int[5];
+            int i;
+
+            _vm.Display.TextCurrentColor(_vm.Display.GetInkColor(InkColor.INK_TALK_NORMAL));
+
+            _vm.Graphics.SetupArrows();
+            BobSlot arrowBobUp = _vm.Graphics.Bobs[Graphics.ARROW_BOB_UP];
+            arrowBobUp.active = false;
+            BobSlot arrowBobDown = _vm.Graphics.Bobs[Graphics.ARROW_BOB_DOWN];
+            arrowBobDown.active = false;
+
+            bool rezone = true;
+
+            while (rezone)
+            {
+                rezone = false;
+
+                // Set zones for UP/DOWN text arrows when not English version
+
+                _vm.Grid.Clear(GridScreen.PANEL);
+
+                if (_vm.Resource.Language != Language.EN_ANY)
+                {
+                    _vm.Grid.SetZone(GridScreen.PANEL, ARROW_ZONE_UP, MAX_TEXT_WIDTH + 1, 0, 319, 24);
+                    _vm.Grid.SetZone(GridScreen.PANEL, ARROW_ZONE_DOWN, MAX_TEXT_WIDTH + 1, 25, 319, 49);
+                }
+
+                _vm.Display.ClearTexts(151, 199);
+
+                int sentenceCount = 0;
+                int yOffset = 1;
+
+                for (i = startOption; i <= 4; i++)
+                {
+                    talkZone[i] = 0;
+
+                    if (_talkString[i].Length != 0)
+                    {
+                        sentenceCount++;
+                        optionLines = SplitOption(_talkString[i], optionText);
+
+                        if (yOffset < 5)
+                        {
+                            _vm.Grid.SetZone(
+                                GridScreen.PANEL,
+                                (short)i,
+                                    0,
+                                (short)(yOffset * LINE_HEIGHT - PUSHUP),
+                                (short)((_vm.Resource.Language == Language.EN_ANY) ? 319 : MAX_TEXT_WIDTH),
+                                (short)((yOffset + optionLines) * LINE_HEIGHT - PUSHUP));
+                        }
+
+                        int j;
+                        for (j = 0; j < optionLines; j++)
+                        {
+                            if (yOffset < 5)
+                            {
+                                _vm.Display.SetText(
+                                    (ushort)((j == 0) ? 0 : OPTION_TEXT_MARGIN),
+                                    (ushort)(150 - PUSHUP + yOffset * LINE_HEIGHT),
+                                        optionText[j]);
+                            }
+                            yOffset++;
+                        }
+
+                        talkZone[i] = sentenceCount;
+                    }
+                }
+
+                yOffset--;
+
+                // Up and down dialogue arrows
+
+                if (_vm.Resource.Language != Language.EN_ANY)
+                {
+                    arrowBobUp.active = (startOption > 1);
+                    arrowBobDown.active = (yOffset > 4);
+                }
+
+                _vm.Input.ClearKeyVerb();
+                _vm.Input.ClearMouseButton();
+
+                if (sentenceCount > 0)
+                {
+                    int oldZone = 0;
+
+                    while (0 == selectedSentence && !_vm.Input.TalkQuit && !_vm.HasToQuit)
+                    {
+                        _vm.Update();
+
+                        Point mouse = _vm.Input.MousePos;
+                        int zone = _vm.Grid.FindZoneForPos(GridScreen.PANEL, (ushort)mouse.X, (ushort)mouse.Y);
+
+                        int mouseButton = _vm.Input.MouseButton;
+                        _vm.Input.ClearMouseButton();
+
+                        if (ARROW_ZONE_UP == zone || ARROW_ZONE_DOWN == zone)
+                        {
+                            if (oldZone > 0)
+                            {
+                                short y;
+                                Box b = _vm.Grid.Zone(GridScreen.PANEL, (ushort)oldZone);
+                                for (y = b.y1; y < b.y2; y += 10)
+                                    _vm.Display.TextColor((ushort)(150 + y), _vm.Display.GetInkColor(InkColor.INK_TALK_NORMAL));
+                                oldZone = 0;
+                            }
+                            if (mouseButton != 0)
+                            {
+                                if (zone == ARROW_ZONE_UP && arrowBobUp.active)
+                                {
+                                    startOption--;
+                                }
+                                else if (zone == ARROW_ZONE_DOWN && arrowBobDown.active)
+                                {
+                                    startOption++;
+                                }
+                            }
+                            rezone = true;
+                            break;
+                        }
+                        else
+                        {
+                            if (oldZone != zone)
+                            {
+                                // Changed zone, change text colors
+                                int y;
+
+                                D.Debug(6, "Changed zone. oldZone = %i, zone = %i",
+                                        oldZone, zone);
+
+                                if (zone > 0)
+                                {
+                                    Box b = _vm.Grid.Zone(GridScreen.PANEL, (ushort)zone);
+                                    for (y = b.y1; y < b.y2; y += 10)
+                                        _vm.Display.TextColor((ushort)(150 + y), _vm.Display.GetInkColor(InkColor.INK_JOE));
+                                }
+
+                                if (oldZone > 0)
+                                {
+                                    Box b = _vm.Grid.Zone(GridScreen.PANEL, (ushort)oldZone);
+                                    for (y = b.y1; y < b.y2; y += 10)
+                                        _vm.Display.TextColor((ushort)(150 + y), _vm.Display.GetInkColor(InkColor.INK_TALK_NORMAL));
+                                }
+
+                                oldZone = zone;
+                            }
+
+                        }
+
+                        Verb v = _vm.Input.KeyVerb;
+                        if (v >= Verb.DIGIT_FIRST && v <= Verb.DIGIT_LAST)
+                        {
+                            int n = v - Verb.DIGIT_FIRST + 1;
+                            for (i = 1; i <= 4; i++)
+                            {
+                                if (talkZone[i] == n)
+                                {
+                                    selectedSentence = i;
+                                    break;
+                                }
+                            }
+
+                            _vm.Input.ClearKeyVerb();
+                        }
+                        else if (mouseButton != 0)
+                        {
+                            selectedSentence = zone;
+                        }
+
+                    } // while ()
+                }
+            }
+
+            _vm.Input.ClearKeyVerb();
+            _vm.Input.ClearMouseButton();
+
+            D.Debug(6, $"Selected sentence {selectedSentence}");
+
+            arrowBobUp.active = false;
+            arrowBobDown.active = false;
+
+            if (selectedSentence > 0)
+            {
+                _vm.Display.ClearTexts(0, 198);
+
+                Speak(_talkString[selectedSentence], null, _joeVoiceFilePrefix[selectedSentence]);
+            }
+
+            _vm.Display.ClearTexts(151, 151);
+
+            return (short)selectedSentence;
+        }
+
+        int SplitOption(string str, string[] optionText)
+        {
+            string option = str;
+            // option text ends at '*' char
+            var p = option.IndexOf('*');
+            if (p != -1)
+            {
+                option = option.Substring(0, p);
+            }
+            int lines;
+            if (_vm.Resource.Language == Language.EN_ANY || _vm.Display.TextWidth(option) <= MAX_TEXT_WIDTH)
+            {
+                optionText[0] = option;
+                lines = 1;
+            }
+            else if (_vm.Resource.Language == Language.HE_ISR)
+            {
+                lines = SplitOptionHebrew(option, optionText);
+            }
+            else
+            {
+                lines = SplitOptionDefault(option, optionText);
+            }
+            return lines;
+        }
+
+        int SplitOptionDefault(string option, string[] optionText)
+        {
             throw new NotImplementedException();
+        }
+
+        int SplitOptionHebrew(string option, string[] optionText)
+        {
+            throw new NotImplementedException();
+        }
+
+        void DisableSentence(short oldLevel, int selectedSentence)
+        {
+            // Mark off selected option
+
+            if (1 == oldLevel)
+            {
+                if (_dialogueTree[oldLevel][selectedSentence].dialogueNodeValue1 != -1)
+                {
+                    // Make sure choice is not exit option
+                    _oldSelectedSentenceIndex = selectedSentence;
+                    _oldSelectedSentenceValue = SelectedValue(selectedSentence);
+                    SelectedValue(selectedSentence, -1);
+                }
+            }
+
+            // Cancel selected dialogue line, so that its no longer displayed
+            _dialogueTree[oldLevel][selectedSentence].head = -1;
+            _dialogueTree[oldLevel][selectedSentence].dialogueNodeValue1 = -1;
+        }
+
+        void FindDialogueString(ushort offset, short id, short max, out string str)
+        {
+            str = string.Empty;
+            for (int i = 1; i <= max; i++)
+            {
+                offset += 2;
+                short currentId = _fileData.ToInt16BigEndian(offset);
+                offset += 2;
+                if (id == currentId)
+                {
+                    GetString(_fileData, ref offset, out str, MAX_STRING_LENGTH, 4);
+                    break;
+                }
+                else
+                {
+                    string tmp;
+                    GetString(_fileData, ref offset, out tmp, MAX_STRING_LENGTH, 4);
+                }
+            }
+        }
+
+        void SetHasTalkedTo()
+        {
+            TalkSelected.hasTalkedTo = true;
+        }
+
+        void InitialTalk()
+        {
+            // Lines 848-903 in talk.c
+
+            ushort offset = (ushort)(_joePtrOff + 2);
+            ushort hasNotString = _fileData.ToUInt16BigEndian(offset); offset += 2;
+
+            string joeString;
+            if (hasNotString == 0)
+            {
+                GetString(_fileData, ref offset, out joeString, MAX_STRING_LENGTH);
+            }
+            else
+            {
+                joeString = string.Empty;
+            }
+
+            offset = _person2PtrOff;
+            string joe2String;
+            GetString(_fileData, ref offset, out _person2String, MAX_STRING_LENGTH);
+            GetString(_fileData, ref offset, out joe2String, MAX_STRING_LENGTH);
+
+            if (!HasTalkedTo)
+            {
+                // Not yet talked to this person
+                if (joeString[0] != '0')
+                {
+                    string voiceFilePrefix = $"{_talkKey:D2}SSSSJ";
+                    Speak(joeString, null, voiceFilePrefix);
+                }
+            }
+            else
+            {
+                // Already spoken to them, choose second response
+                if (joe2String[0] != '0')
+                {
+                    string voiceFilePrefix = $"{_talkKey:D2}XXXXJ";
+                    Speak(joe2String, null, voiceFilePrefix);
+                }
+            }
+        }
+
+        short SelectedValue(int index)
+        {
+            return TalkSelected.values[index - 1];
+        }
+
+        void SelectedValue(int index, short value)
+        {
+            TalkSelected.values[index - 1] = value;
+        }
+
+        void Load(string filename)
+        {
+            int i;
+            _fileData = LoadDialogFile(filename);
+            int ptr = 0;
+
+            // Load talk header
+
+            _levelMax = _fileData.ToInt16BigEndian(ptr); ptr += 2;
+
+            if (_levelMax < 0)
+            {
+                _levelMax = (short)-_levelMax;
+                _vm.Input.CanQuit = false;
+            }
+            else
+            {
+                _vm.Input.CanQuit = true;
+            }
+
+            _uniqueKey = _fileData.ToInt16BigEndian(ptr); ptr += 2;
+            _talkKey = _fileData.ToInt16BigEndian(ptr); ptr += 2;
+            _jMax = _fileData.ToInt16BigEndian(ptr); ptr += 2;
+            _pMax = _fileData.ToInt16BigEndian(ptr); ptr += 2;
+
+            for (i = 0; i < 2; i++)
+            {
+                _gameState[i] = _fileData.ToInt16BigEndian(ptr); ptr += 2;
+                _testValue[i] = _fileData.ToInt16BigEndian(ptr); ptr += 2;
+                _itemNumber[i] = _fileData.ToInt16BigEndian(ptr); ptr += 2;
+            }
+
+            _person1PtrOff = _fileData.ToUInt16BigEndian(ptr); ptr += 2;
+            _cutawayPtrOff = _fileData.ToUInt16BigEndian(ptr); ptr += 2;
+            _person2PtrOff = _fileData.ToUInt16BigEndian(ptr); ptr += 2;
+            _joePtrOff = (ushort)(32 + _levelMax * 96);
+
+            // Load dialogue tree
+            ptr = 32;
+            _dialogueTree[0][0] = new DialogueNode();
+            for (i = 1; i <= _levelMax; i++)
+                for (int j = 0; j <= 5; j++)
+                {
+                    ptr += 2;
+                    _dialogueTree[i][j].head = _fileData.ToInt16BigEndian(ptr); ptr += 2;
+                    ptr += 2;
+                    _dialogueTree[i][j].dialogueNodeValue1 = _fileData.ToInt16BigEndian(ptr); ptr += 2;
+                    ptr += 2;
+                    _dialogueTree[i][j].gameStateIndex = _fileData.ToInt16BigEndian(ptr); ptr += 2;
+                    ptr += 2;
+                    _dialogueTree[i][j].gameStateValue = _fileData.ToInt16BigEndian(ptr); ptr += 2;
+                }
+        }
+
+        struct DogFile
+        {
+            public string filename;
+            public Language language;
+        }
+
+        private static readonly DogFile[] dogFiles = {
+            new DogFile { filename = "CHIEF1.DOG", language = Language.FR_FRA},
+            new DogFile { filename = "CHIEF2.DOG", language = Language.FR_FRA },
+            new DogFile { filename = "BUD1.DOG",   language = Language.IT_ITA }
+        };
+
+        byte[] LoadDialogFile(string filename)
+        {
+            for (int i = 0; i < dogFiles.Length; ++i)
+            {
+                if (string.Equals(filename, dogFiles[i].filename, StringComparison.OrdinalIgnoreCase) &&
+                    _vm.Resource.Language == dogFiles[i].language)
+                {
+                    var path = ScummHelper.LocatePath(ServiceLocator.FileStorage.GetDirectoryName(_vm.Settings.Game.Path), filename);
+                    if (path != null)
+                    {
+                        var fdog = ServiceLocator.FileStorage.OpenFileRead(path);
+                        D.Debug(6, $"Loading dog file '{filename}' from game data path");
+                        int size = (int)(fdog.Length - DOG_HEADER_SIZE);
+                        byte[] buf = new byte[size];
+                        fdog.Seek(DOG_HEADER_SIZE, System.IO.SeekOrigin.Begin);
+                        fdog.Read(buf, 0, size);
+                        return buf;
+                    }
+                }
+            }
+            return _vm.Resource.LoadFile(filename, DOG_HEADER_SIZE);
         }
 
         private void SpeakSegment(

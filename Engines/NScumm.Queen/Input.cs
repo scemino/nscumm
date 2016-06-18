@@ -256,6 +256,7 @@ namespace NScumm.Queen
             {
                 var state = _system.InputManager.GetState();
                 var keys = state.GetKeys();
+                IdleTime = 0;
 
                 if (keys.Count > 0)
                 {

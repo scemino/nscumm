@@ -110,6 +110,14 @@ namespace NScumm.Queen
 
         public IMixer Mixer { get { return _mixer; } }
 
+        private bool CanLoadOrSave
+        {
+            get
+            {
+                return !Input.CutawayRunning && !(Resource.IsDemo || Resource.IsInterview);
+            }
+        }
+
         public QueenEngine(GameSettings settings, IGraphicsManager gfxManager, IInputManager inputManager,
                             IAudioOutput output, ISaveFileManager saveFileManager, bool debugMode)
         {
@@ -224,21 +232,24 @@ namespace NScumm.Queen
             //				Input.DebuggerReset();
             //				Debugger.Attach();
             //			}
-            // TODO: save
-            //			if (CanLoadOrSave()) {
-            //				if (Input.QuickSave()) {
-            //					Input.QuickSaveReset();
-            //					SaveGameState(SLOT_QUICKSAVE, "Quicksave");
-            //				}
-            //				if (Input.QuickLoad()) {
-            //					Input.QuickLoadReset();
-            //					LoadGameState(SLOT_QUICKSAVE);
-            //				}
-            //				if (ShouldPerformAutoSave(_lastSaveTime)) {
-            //					SaveGameState(SLOT_AUTOSAVE, "Autosave");
-            //					_lastSaveTime = _system.getMillis();
-            //				}
-            //			}
+            if (CanLoadOrSave)
+            {
+                if (Input.QuickSave)
+                {
+                    Input.QuickSaveReset();
+                    SaveGameState(SLOT_QUICKSAVE, "Quicksave");
+                }
+                if (Input.QuickLoad)
+                {
+                    Input.QuickLoadReset();
+                    LoadGameState(SLOT_QUICKSAVE);
+                }
+                if (ShouldPerformAutoSave(_lastSaveTime))
+                {
+                    SaveGameState(SLOT_AUTOSAVE, "Autosave");
+                    _lastSaveTime = Environment.TickCount;
+                }
+            }
             if (!Input.CutawayRunning)
             {
                 if (checkPlayerInput)
@@ -446,6 +457,16 @@ namespace NScumm.Queen
             // ConfMan.registerDefault("talkspeed", Logic::DEFAULT_TALK_SPEED);
             // ConfMan.registerDefault("subtitles", true);
             Subtitles = true;
+        }
+
+        // TODO: move this in Engine base class
+        private bool ShouldPerformAutoSave(int lastSaveTime)
+        {
+            int diff = Environment.TickCount - lastSaveTime;
+            // TODO: conf
+            //int autosavePeriod = ConfMan.getInt("autosave_period");
+            int autosavePeriod = 5*60;
+            return autosavePeriod != 0 && diff > autosavePeriod * 1000;
         }
     }
 }

@@ -834,7 +834,7 @@ namespace NScumm.Queen
             else
             {
                 anim.@object = (short)_vm.Logic.FindBob((short)header);
-                anim.originalFrame = (short)_vm.Logic.FindFrame((short)header);
+                anim.originalFrame = (short)_vm.Logic.FindFrame((ushort)header);
             }
 
             anim.unpackFrame = ptr.ToInt16BigEndian();
@@ -1149,7 +1149,7 @@ namespace NScumm.Queen
                                 bank = 8;
                             }
 
-                            int @objectFrame = _vm.Logic.FindFrame(objectIndex);
+                            int @objectFrame = _vm.Logic.FindFrame((ushort)objectIndex);
 
                             if (objectFrame == 1000)
                             {

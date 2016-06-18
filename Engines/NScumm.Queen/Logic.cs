@@ -19,6 +19,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using NScumm.Core;
 using NScumm.Core.IO;
@@ -94,7 +95,7 @@ namespace NScumm.Queen
     public abstract class Logic
     {
         const int JOE_RESPONSE_MAX = 40;
-        const int GAME_STATE_COUNT = 211;
+        public const int GAME_STATE_COUNT = 211;
         const int TALK_SELECTED_COUNT = 86;
 
         protected QueenEngine _vm;
@@ -145,7 +146,7 @@ namespace NScumm.Queen
 
         public ushort EntryObj { get; set; }
 
-        public short[] GameState { get; private set; }
+        public IList<short> GameState { get; private set; }
 
         public ushort CurrentRoomSfx { get { return _sfxName[CurrentRoom]; } }
 
@@ -237,7 +238,7 @@ namespace NScumm.Queen
             _joe = new Joe();
             _joe.scale = 100;
             _joe.walk = JoeWalkMode.NORMAL;
-            GameState = new short[GAME_STATE_COUNT];
+            GameState = new GameStates();
             _puzzleAttemptCount = 0;
             _journal = new Journal(vm);
             _specialMoves = new Action[40];
@@ -518,7 +519,7 @@ namespace NScumm.Queen
 
             BobSlot pbs = _vm.Graphics.Bobs[0];
             pbs.xflip = (JoeFacing == Direction.LEFT);
-            JoePrevFacing=JoeFacing;
+            JoePrevFacing = JoeFacing;
             JoeCutFacing = JoeFacing;
             switch (JoeFacing)
             {
@@ -573,14 +574,14 @@ namespace NScumm.Queen
             Talk.Speak(sentence, person, voiceFilePrefix, _vm);
         }
 
-        public int FindFrame(short obj)
+        public ushort FindFrame(ushort obj)
         {
             ushort framenum = 0;
             ushort room = ObjectData[obj].room;
             short img = ObjectData[obj].image;
             if (img == -3 || img == -4)
             {
-                ushort bobnum = FindPersonNumber((ushort)obj, room);
+                ushort bobnum = FindPersonNumber(obj, room);
                 if (bobnum <= 3)
                 {
                     framenum = (ushort)(31 + bobnum);
@@ -971,11 +972,11 @@ namespace NScumm.Queen
                 }
             }
 
-            ObjectData temp = realObject;
-            realObject = dummyObject;
+            ObjectData temp = new ObjectData().CopyFrom(realObject);
+            realObject.CopyFrom(dummyObject);
 
             if (frameCountDummy > frameCountReal)
-                dummyObject = temp;
+                dummyObject.CopyFrom(temp);
 
             realObject.name = Math.Abs(realObject.name);
 
@@ -985,13 +986,12 @@ namespace NScumm.Queen
             for (int i = 1; i <= _numWalkOffs; i++)
             {
                 WalkOffData walkOff = _walkOffData[i];
-                if (walkOff.entryObj == (short)dummyObjectIndex)
+                if (walkOff.entryObj == dummyObjectIndex)
                 {
-                    walkOff.entryObj = (short)realObjectIndex;
+                    walkOff.entryObj = realObjectIndex;
                     break;
                 }
             }
-
         }
 
         public void RemoveHotelItemsFromInventory()
@@ -2093,13 +2093,13 @@ namespace NScumm.Queen
                 _vm.Update();
             }
             //  debug("Game completed.");
-            // TODO: _vm.QuitGame();
+            _vm.QuitGame();
         }
 
         protected void AsmEndDemo()
         {
             //  debug("Flight of the Amazon Queen, released January 95.");
-            // TODO: _vm.QuitGame();
+            _vm.QuitGame();
         }
 
         protected void AsmPutCameraOnDino()
@@ -2457,7 +2457,7 @@ namespace NScumm.Queen
         protected void AsmEndInterview()
         {
             //  debug("Interactive Interview copyright (c) 1995, IBI.");
-            // TODO: _vm.QuitGame();
+            _vm.QuitGame();
         }
 
         public void JoeUseDress(bool showCut)

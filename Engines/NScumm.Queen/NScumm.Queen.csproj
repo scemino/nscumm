@@ -72,6 +72,7 @@
     <Compile Include="Sound.Table.cs" />
     <Compile Include="SongData.cs" />
     <Compile Include="AdLibMidiDriver.cs" />
+    <Compile Include="GameStates.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <ItemGroup>

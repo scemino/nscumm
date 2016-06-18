@@ -39,6 +39,19 @@ namespace NScumm.Queen
         public ushort state;
         public short image;
 
+        public ObjectData CopyFrom(ObjectData copy)
+        {
+            name = copy.name;
+            x = copy.x;
+            y = copy.y;
+            description = copy.description;
+            entryObj = copy.entryObj;
+            room = copy.room;
+            state = copy.state;
+            image = copy.image;
+            return this;
+        }
+
         public void ReadFromBE(byte[] data, ref int ptr)
         {
             name = data.ToInt16BigEndian(ptr); ptr += 2;

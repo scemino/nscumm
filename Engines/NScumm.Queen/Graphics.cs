@@ -332,15 +332,10 @@ namespace NScumm.Queen
 
         public override int Compare(BobSlot x, BobSlot y)
         {
-            int d = x.y - y.y;
-            // As the qsort() function may reorder "equal" elements,
-            // we use the bob slot number when needed. This is required
-            // during the introduction, to hide a crate behind the clock.
-            if (d == 0)
-            {
-                d = -1;
-            }
-            return d;
+            //// As the qsort() function may reorder "equal" elements,
+            //// we use the bob slot number when needed. This is required
+            //// during the introduction, to hide a crate behind the clock.
+            return x.y.CompareTo(y.y);
         }
     }
 
@@ -454,19 +449,11 @@ namespace NScumm.Queen
             for (int i = 0; i < 17; i++)
             {
                 _newAnim[i] = new AnimFrame[30];
-                for (int j = 0; j < 30; j++)
-                {
-                    _newAnim[i][j] = new AnimFrame();
-                }
             }
             _cutAnim = new AnimFrame[21][];
             for (int i = 0; i < 21; i++)
             {
                 _cutAnim[i] = new AnimFrame[30];
-                for (int j = 0; j < 30; j++)
-                {
-                    _cutAnim[i][j] = new AnimFrame();
-                }
             }
         }
 
@@ -666,7 +653,7 @@ namespace NScumm.Queen
             }
 
             // find frame used for object
-            curImage = (ushort)_vm.Logic.FindFrame((short)obj);
+            curImage = _vm.Logic.FindFrame(obj);
 
             if (pod.name < 0 || pod.image < 0)
             {

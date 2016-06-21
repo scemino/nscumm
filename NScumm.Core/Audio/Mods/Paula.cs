@@ -350,7 +350,7 @@ namespace NScumm.Core.Audio
             }
         }
 
-        void ClearVoice(int voice)
+        protected void ClearVoice(int voice)
         {
             Debug.Assert(voice < NUM_VOICES);
             _voice[voice].data = null;
@@ -363,7 +363,7 @@ namespace NScumm.Core.Audio
             _voice[voice].dmaCount = 0;
         }
 
-        void SetChannelPanning(int channel, byte panning)
+        private void SetChannelPanning(int channel, byte panning)
         {
             Debug.Assert(channel < NUM_VOICES);
             _voice[channel].panning = panning;

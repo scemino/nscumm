@@ -114,6 +114,7 @@ namespace NScumm.Core.Audio
         {
             lock (_gate)
             {
+                if (handle == null) return;
                 // Simply ignore stop requests for handles of sounds that already terminated
                 var index = handle.Value % NumChannels;
                 if (_channels[index] == null || _channels[index].Handle.Value != handle.Value)

@@ -26,8 +26,8 @@ namespace NScumm.Queen
 {
     abstract class PCSound : Sound
     {
-        SoundHandle _sfxHandle;
-        SoundHandle _speechHandle;
+        protected SoundHandle _sfxHandle;
+        protected SoundHandle _speechHandle;
         MidiMusic _music;
 
         public override bool IsSpeechActive

@@ -69,16 +69,15 @@ namespace NScumm.Sword1
         public static bool ShouldQuit { get; set; }
 
 
-        public SwordEngine(GameSettings settings, IGraphicsManager gfxManager, IInputManager inputManager,
-            IAudioOutput output, ISaveFileManager saveFileManager, bool debugMode)
+        public SwordEngine(GameSettings settings, ISystem system)
         {
             Settings = settings;
-            GraphicsManager = gfxManager;
+            GraphicsManager = system.GraphicsManager;
             _mixer = new Mixer(44100);
             // HACK:
             _mixer.Read(new byte[0], 0);
-            output.SetSampleProvider(_mixer);
-            System = new SwordSystem(gfxManager, inputManager, saveFileManager);
+            system.AudioOutput.SetSampleProvider(_mixer);
+            System = system;
 
             var gameId = ((SwordGameDescriptor)settings.Game).GameId;
             _features = gameId == SwordGameId.Sword1Demo || gameId == SwordGameId.Sword1MacDemo ||
@@ -158,7 +157,7 @@ namespace NScumm.Sword1
             _logic.Initialize();
             _objectMan.Initialize();
             _mouse.Initialize();
-            _control = new Control(saveFileManager, _resMan, _objectMan, System, _mouse, _sound, _music);
+            _control = new Control(system.SaveFileManager, _resMan, _objectMan, System, _mouse, _sound, _music);
         }
 
         public void Run()

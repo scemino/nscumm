@@ -110,8 +110,8 @@ namespace NScumm.Scumm
 
         V2MouseoverBox[] _mouseOverBoxesV2 = new V2MouseoverBox[7];
 
-        public ScummEngine2(GameSettings game, IGraphicsManager graphicsManager, IInputManager inputManager, IMixer mixer)
-            : base(game, graphicsManager, inputManager, mixer)
+        public ScummEngine2(GameSettings game, ISystem system, IMixer mixer)
+            : base(game, system, mixer)
         {
             _flashlight.XStrips = 7;
             _flashlight.YStrips = 7;
@@ -2579,18 +2579,18 @@ namespace NScumm.Scumm
                 { " ", " en", " con", " en", " a" },     // Spanish
             };
             int lang;
-            switch (Game.Culture.TwoLetterISOLanguageName)
+            switch (Game.Language)
             {
-                case "de":
+                case Language.DE_DEU:
                     lang = 1;
                     break;
-                case "fr":
+                case Language.FR_FRA:
                     lang = 2;
                     break;
-                case "it":
+                case Language.IT_ITA:
                     lang = 3;
                     break;
-                case "es":
+                case Language.ES_ESP:
                     lang = 4;
                     break;
                 default:

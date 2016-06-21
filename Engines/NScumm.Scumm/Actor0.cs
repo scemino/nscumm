@@ -81,9 +81,9 @@ namespace NScumm.Scumm
 
             if (Number != 0)
             {
-                switch (_scumm.Game.Culture.TwoLetterISOLanguageName)
+                switch (_scumm.Game.Language)
                 {
-                    case "de":
+                    case Language.DE_DEU:
                         Name = System.Text.Encoding.UTF8.GetBytes(v0ActorNames_German[Number - 1]);
                         break;
                     default:

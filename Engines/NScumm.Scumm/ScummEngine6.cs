@@ -51,8 +51,8 @@ namespace NScumm.Scumm
         protected int? VariableBlastAboveText;
         protected int? VariableCharsetMask;
 
-        public ScummEngine6(GameSettings game, IGraphicsManager graphicsManager, IInputManager inputManager, IMixer mixer)
-            : base(game, graphicsManager, inputManager, mixer)
+        public ScummEngine6(GameSettings game, ISystem system, IMixer mixer)
+            : base(game, system, mixer)
         {
         }
 

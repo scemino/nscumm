@@ -852,9 +852,50 @@ namespace NScumm.Queen
             return lines;
         }
 
-        int SplitOptionDefault(string option, string[] optionText)
+        int SplitOptionDefault(string str, string[] optionText)
         {
-            throw new NotImplementedException();
+            // Split up multiple line option at closest space character
+            ushort spaceCharWidth = _vm.Display.TextWidth(" ");
+            ushort width = 0;
+            ushort optionLines = 0;
+            ushort maxTextLen = MAX_TEXT_WIDTH;
+            int p = 0;
+            while (p < str.Length)
+            {
+                p = str.IndexOf(' ');
+                if (p != -1)
+                {
+                    ushort len = (ushort)p;
+                    ushort wordWidth = _vm.Display.TextWidth(str, len);
+                    width += wordWidth;
+                    if (width > maxTextLen)
+                    {
+                        ++optionLines;
+                        optionText[optionLines] = str.Substring(0, len + 1);
+                        width = wordWidth;
+                        maxTextLen = MAX_TEXT_WIDTH - OPTION_TEXT_MARGIN;
+                    }
+                    else
+                    {
+                        optionText[optionLines] += str.Substring(0, len + 1);
+                    }
+                    width += spaceCharWidth;
+                    str = str.Substring(p + 1);
+                }
+                else
+                {
+                    if (str.Length > 0)
+                    {
+                        if (width + _vm.Display.TextWidth(str) > maxTextLen)
+                        {
+                            ++optionLines;
+                        }
+                        optionText[optionLines] += str;
+                    }
+                    ++optionLines;
+                }
+            }
+            return optionLines;
         }
 
         int SplitOptionHebrew(string option, string[] optionText)

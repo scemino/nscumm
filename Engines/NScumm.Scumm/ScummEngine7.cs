@@ -19,9 +19,8 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using NScumm.Core;
 using NScumm.Core.Audio;
-using NScumm.Core.Graphics;
-using NScumm.Core.Input;
 using NScumm.Core.IO;
 using NScumm.Scumm.Audio.IMuse.IMuseDigital;
 using NScumm.Scumm.IO;
@@ -29,7 +28,7 @@ using NScumm.Scumm.Smush;
 
 namespace NScumm.Scumm
 {
-    partial class ScummEngine7: ScummEngine6
+    partial class ScummEngine7 : ScummEngine6
     {
         protected int VariableNumGlobalObjs;
         protected int VariableCameraDestX;
@@ -55,8 +54,8 @@ namespace NScumm.Scumm
 
         internal IMuseDigital IMuseDigital { get; private set; }
 
-        public ScummEngine7(GameSettings game, IGraphicsManager graphicsManager, IInputManager inputManager, IMixer mixer)
-            : base(game, graphicsManager, inputManager, mixer)
+        public ScummEngine7(GameSettings game, ISystem system, IMixer mixer)
+            : base(game, system, mixer)
         {
             if (Game.GameId == GameId.Dig && (Game.Features.HasFlag(GameFeatures.Demo)))
                 _smushFrameRate = 15;

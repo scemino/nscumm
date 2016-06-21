@@ -34,9 +34,9 @@ namespace NScumm.Scumm
 
             VerbSettings[] vtable;
 
-            switch (Game.Culture.TwoLetterISOLanguageName)
+            switch (Game.Language)
             {
-                case "de":
+                case Core.Language.DE_DEU:
                     vtable = v0VerbTable_German;
                     break;
                 default:

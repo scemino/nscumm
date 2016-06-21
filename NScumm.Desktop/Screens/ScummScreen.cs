@@ -70,7 +70,7 @@ namespace NScumm
 				audioDriver.Play ();
 
 				// init engines
-				engine = info.MetaEngine.Create (info, gfx, inputManager, audioDriver, saveFileManager);
+                engine = info.MetaEngine.Create (info, new OSystem(gfx, inputManager, saveFileManager, audioDriver));
 					engine.ShowMenuDialogRequested += OnShowMenuDialogRequested;
 				game.Services.AddService (engine);
 

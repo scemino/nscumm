@@ -173,47 +173,47 @@ namespace NScumm.Scumm
 
         #region Constructor
 
-        public static ScummEngine Create(GameSettings settings, IGraphicsManager gfxManager, IInputManager inputManager, IAudioOutput output, bool debugMode = false)
+        public static ScummEngine Create(GameSettings settings, ISystem system)
         {
             ScummEngine engine = null;
             var game = (GameInfo)settings.Game;
             var mixer = new Mixer(44100);
-            output.SetSampleProvider(mixer);
+            system.AudioOutput.SetSampleProvider(mixer);
 
             if (game.Version == 0)
             {
-                engine = new ScummEngine0(settings, gfxManager, inputManager, mixer);
+                engine = new ScummEngine0(settings, system, mixer);
             }
             else if ((game.Version == 1) || (game.Version == 2))
             {
-                engine = new ScummEngine2(settings, gfxManager, inputManager, mixer);
+                engine = new ScummEngine2(settings, system, mixer);
             }
             else if (game.Version == 3)
             {
-                engine = new ScummEngine3(settings, gfxManager, inputManager, mixer);
+                engine = new ScummEngine3(settings, system, mixer);
             }
             else if (game.Version == 4)
             {
-                engine = new ScummEngine4(settings, gfxManager, inputManager, mixer);
+                engine = new ScummEngine4(settings, system, mixer);
             }
             else if (game.Version == 5)
             {
-                engine = new ScummEngine5(settings, gfxManager, inputManager, mixer);
+                engine = new ScummEngine5(settings, system, mixer);
             }
             else if (game.Version == 6)
             {
-                engine = new ScummEngine6(settings, gfxManager, inputManager, mixer);
+                engine = new ScummEngine6(settings, system, mixer);
             }
             else if (game.Version == 7)
             {
-                engine = new ScummEngine7(settings, gfxManager, inputManager, mixer);
+                engine = new ScummEngine7(settings, system, mixer);
             }
             else if (game.Version == 8)
             {
-                engine = new ScummEngine8(settings, gfxManager, inputManager, mixer);
+                engine = new ScummEngine8(settings, system, mixer);
             }
             Instance = engine;
-            engine.DebugMode = debugMode;
+            //engine.DebugMode = debugMode;
             engine.InitOpCodes();
             engine.SetupVars();
             engine.ResetScummVars();
@@ -231,7 +231,7 @@ namespace NScumm.Scumm
             return sig;
         }
 
-        protected ScummEngine(GameSettings settings, IGraphicsManager gfxManager, IInputManager inputManager, IMixer mixer)
+        protected ScummEngine(GameSettings settings, ISystem system, IMixer mixer)
         {
             Settings = settings;
             var game = (GameInfo)settings.Game;
@@ -240,9 +240,9 @@ namespace NScumm.Scumm
             _game = game;
             InvalidBox = _game.Version < 5 ? (byte)255 : (byte)0;
             _gameMD5 = ToMd5Bytes(game.MD5);
-            _gfxManager = gfxManager;
-            _inputManager = inputManager;
-            _inputState = inputManager.GetState();
+            _gfxManager = system.GraphicsManager;
+            _inputManager = system.InputManager;
+            _inputState = system.InputManager.GetState();
             _strings = new byte[_resManager.NumArray][];
             _inventory = new ushort[_resManager.NumInventory];
             _invData = new ObjectData[_resManager.NumInventory];

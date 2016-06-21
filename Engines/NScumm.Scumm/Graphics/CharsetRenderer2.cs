@@ -34,9 +34,9 @@ namespace NScumm.Scumm.Graphics
             byte[] replacementData = null;
             int replacementChars = 0;
 
-            switch (vm.Game.Culture.TwoLetterISOLanguageName)
+            switch (vm.Game.Language)
             {
-                case "de":
+                case Core.Language.DE_DEU:
                     if (vm.Game.Version == 0)
                     {
                         replacementData = germanCharsetDataV0;
@@ -48,19 +48,19 @@ namespace NScumm.Scumm.Graphics
                         replacementChars = germanCharsetDataV2.Length / 2;
                     }
                     break;
-                case "fr":
+                case Core.Language.FR_FRA:
                     replacementData = frenchCharsetDataV2;
                     replacementChars = frenchCharsetDataV2.Length / 2;
                     break;
-                case "it":
+                case Core.Language.IT_ITA:
                     replacementData = italianCharsetDataV2;
                     replacementChars = italianCharsetDataV2.Length / 2;
                     break;
-                case "es":
+                case Core.Language.ES_ESP:
                     replacementData = spanishCharsetDataV2;
                     replacementChars = spanishCharsetDataV2.Length / 2;
                     break;
-                case "ru":
+                case Core.Language.RU_RUS:
                     _fontPtr = russianCharsetDataV2;
                     break;
                 default:

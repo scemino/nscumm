@@ -68,7 +68,7 @@ namespace NScumm
         /// </summary>
         protected override void Initialize()
         {
-            Window.Title = string.Format("nSCUMM - {0} [{1}]", Settings.Game.Description, Settings.Game.Culture.NativeName);
+            Window.Title = string.Format("nSCUMM - {0} [{1}]", Settings.Game.Description, Settings.Game.Language);
             _screenManager.AddScreen(new BackgroundScreen());
             _screenManager.AddScreen(new ScummScreen(this, Settings));
 

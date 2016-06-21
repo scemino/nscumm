@@ -16,6 +16,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using NScumm.Core.Audio;
 using NScumm.Core.Graphics;
 using NScumm.Core.Input;
 
@@ -26,5 +27,25 @@ namespace NScumm.Core
         IGraphicsManager GraphicsManager { get; }
         IInputManager InputManager { get; }
         ISaveFileManager SaveFileManager { get; }
+        IAudioOutput AudioOutput { get; }
+    }
+
+    public class OSystem : ISystem
+    {
+        public IGraphicsManager GraphicsManager { get; }
+
+        public IInputManager InputManager { get; }
+
+        public ISaveFileManager SaveFileManager { get; }
+
+        public IAudioOutput AudioOutput { get; }
+
+        public OSystem(IGraphicsManager graphicsManager, IInputManager inputManager, ISaveFileManager saveFileManager, IAudioOutput audioOutput)
+        {
+            GraphicsManager = graphicsManager;
+            InputManager = inputManager;
+            SaveFileManager = saveFileManager;
+            AudioOutput = audioOutput;
+        }
     }
 }

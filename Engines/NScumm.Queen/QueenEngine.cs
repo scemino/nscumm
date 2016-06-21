@@ -38,22 +38,6 @@ namespace NScumm.Queen
         public string description;
     }
 
-    class QueenSystem : ISystem
-    {
-        public IGraphicsManager GraphicsManager { get; }
-
-        public IInputManager InputManager { get; }
-
-        public ISaveFileManager SaveFileManager { get; }
-
-        public QueenSystem(IGraphicsManager graphicsManager, IInputManager inputManager, ISaveFileManager saveFileManager)
-        {
-            GraphicsManager = graphicsManager;
-            InputManager = inputManager;
-            SaveFileManager = saveFileManager;
-        }
-    }
-
     public class QueenEngine : IEngine
     {
         const int MIN_TEXT_SPEED = 4;
@@ -67,7 +51,7 @@ namespace NScumm.Queen
         const int SLOT_AUTOSAVE = -1;
         const int SLOT_QUICKSAVE = 0;
 
-        QueenSystem _system;
+        ISystem _system;
         Mixer _mixer;
 
         int _lastUpdateTime, _lastSaveTime;
@@ -118,15 +102,14 @@ namespace NScumm.Queen
             }
         }
 
-        public QueenEngine(GameSettings settings, IGraphicsManager gfxManager, IInputManager inputManager,
-                            IAudioOutput output, ISaveFileManager saveFileManager, bool debugMode)
+        public QueenEngine(GameSettings settings, ISystem system)
         {
             Randomizer = new Random();
             Settings = settings;
-            _system = new QueenSystem(gfxManager, inputManager, saveFileManager);
+            _system = system;
             _mixer = new Mixer(44100);
             _mixer.Read(new short[0], 0);
-            output.SetSampleProvider(_mixer);
+            _system.AudioOutput.SetSampleProvider(_mixer);
         }
 
         public event EventHandler ShowMenuDialogRequested;

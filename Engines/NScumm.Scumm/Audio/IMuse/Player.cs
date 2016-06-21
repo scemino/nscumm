@@ -375,7 +375,7 @@ namespace NScumm.Scumm.Audio.IMuse
 
             _parser.MidiDriver = this;
             _parser.Property(MidiParserProperty.SmartJump, 1);
-            _parser.LoadMusic(ptr);
+            _parser.LoadMusic(ptr, 0, ptr.Length);
             _parser.ActiveTrack = _track_index;
 
             ptr = _se.FindStartOfSound(sound, IMuseInternal.ChunkType.MDhd);

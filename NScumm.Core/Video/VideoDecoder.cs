@@ -23,6 +23,7 @@ using System.Linq;
 using NScumm.Core.Audio;
 using NScumm.Core.Graphics;
 using System.IO;
+using D = NScumm.Core.DebugHelper;
 
 namespace NScumm.Core.Video
 {
@@ -376,7 +377,7 @@ namespace NScumm.Core.Video
             if (!SetReverse(rate < 0))
             {
                 Debug.Assert(rate < 0); // We shouldn't fail for forward.
-                                        //TODO: warning("Cannot set custom rate to backwards");
+                D.Warning("Cannot set custom rate to backwards");
                 SetReverse(false);
                 targetRate = new Rational(1);
 

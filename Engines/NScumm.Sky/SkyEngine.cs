@@ -69,14 +69,14 @@ namespace NScumm.Sky
         public event EventHandler ShowMenuDialogRequested;
 
 
-        public SkyEngine(GameSettings settings, IGraphicsManager gfxManager, IInputManager inputManager, IAudioOutput output, ISaveFileManager saveFileManager, bool debugMode = false)
+        public SkyEngine(GameSettings settings, ISystem system)
         {
-            _system = new SkySystem(gfxManager, inputManager, saveFileManager);
+            _system = system;
 
             _mixer = new Mixer(44100);
             // HACK:
             _mixer.Read(new byte[0], 0);
-            output.SetSampleProvider(_mixer);
+            _system.AudioOutput.SetSampleProvider(_mixer);
 
             var directory = ServiceLocator.FileStorage.GetDirectoryName(settings.Game.Path);
             _skyDisk = new Disk(directory);
@@ -427,7 +427,7 @@ namespace NScumm.Sky
         private Disk _skyDisk;
         private readonly SkyCompact _skyCompact;
         private readonly Screen _skyScreen;
-        private readonly SkySystem _system;
+        private readonly ISystem _system;
         private readonly Text _skyText;
         private MusicBase _skyMusic;
         private readonly Mixer _mixer;

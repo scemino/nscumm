@@ -1551,7 +1551,22 @@ namespace NScumm.Queen
         /// <param name="colorBase">Color base.</param>
         private void DecodeIFF(byte[] src, uint srcSize, byte[] dst, ushort dstPitch, out ushort w, out ushort h, Color[] pal, ushort palStart, ushort palEnd, byte colorBase = 0)
         {
-            throw new NotImplementedException();
+            using (var str = new MemoryStream(src, 0, (int)srcSize))
+            {
+                IFFDecoder iff = new IFFDecoder();
+                if (!iff.LoadStream(str))
+                    throw new InvalidOperationException("Error while reading IFF image");
+
+                Surface iffSurface = iff.Surface;
+                w = (ushort)iffSurface.Width;
+                h = (ushort)iffSurface.Height;
+
+                Debug.Assert(palStart <= palEnd && palEnd <= 256);
+                Array.Copy(iff.Palette, palStart, pal, 0, (palEnd - palStart));
+                for (ushort y = 0; y < iffSurface.Height; y++)
+                    for (ushort x = 0; x < iffSurface.Width; x++)
+                        dst[(y * dstPitch) + x] = (byte)(iffSurface.Pixels[x + y * iffSurface.Pitch] + colorBase);
+            }
         }
 
         /// <summary>
@@ -1582,7 +1597,7 @@ namespace NScumm.Queen
                 w = (ushort)pcxSurface.Width;
                 h = (ushort)pcxSurface.Height;
 
-                System.Diagnostics.Debug.Assert(palStart <= palEnd && palEnd <= 256);
+                Debug.Assert(palStart <= palEnd && palEnd <= 256);
                 Array.Copy(pcx.Palette, palStart, pal, 0, (palEnd - palStart));
                 for (var y = 0; y < pcxSurface.Height; y++)
                     Array.Copy(pcxSurface.Pixels, y * pcxSurface.Pitch, dst, dstPos + y * dstPitch, pcxSurface.Width);

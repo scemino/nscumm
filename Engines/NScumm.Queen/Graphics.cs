@@ -1345,20 +1345,33 @@ namespace NScumm.Queen
         {
             var i = 0;
             var o = 0;
-            string tmp;
             for (;;)
             {
                 // anim frame format is "%3hu,%3hu," (frame number, frame speed)
-                tmp = anim.Substring(o, 3);
-                af[i].frame = ushort.Parse(tmp);
-                o += 4;
-                tmp = anim.Substring(o, 3);
-                af[i].speed = (ushort)int.Parse(tmp);
-                o += 4;
+                af[i].frame = Parse(anim, ref o);
+                af[i].speed = Parse(anim, ref o);
                 if (af[i].frame == 0)
                     break;
                 ++i;
             }
+        }
+
+        private ushort Parse(string anim, ref int off)
+        {
+            ushort result;
+            var index = anim.IndexOfAny(new char[] { ',', '.' }, off);
+            if (index == -1)
+            {
+                result = ushort.Parse(anim.Substring(off));
+                off = anim.Length;
+            }
+            else
+            {
+                int len = index - off;
+                result = ushort.Parse(anim.Substring(off, len));
+                off += len + 1;
+            }
+            return result;
         }
 
         private void SetupObjectAnim(GraphicData gd, ushort firstImage, ushort bobNum, bool visible)

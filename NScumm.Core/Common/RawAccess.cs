@@ -69,6 +69,16 @@ namespace NScumm.Core
 		{
 			return value.Data.ToUInt16BigEndian(value.Offset + startIndex);
 		}
+
+        public static int ToInt32BigEndian(this ByteAccess value, int startIndex = 0)
+        {
+            return value.Data.ToInt32BigEndian(value.Offset + startIndex);
+        }
+
+        public static uint ToUInt32BigEndian(this ByteAccess value, int startIndex = 0)
+        {
+            return value.Data.ToUInt32BigEndian(value.Offset + startIndex);
+        }
 	}
 
 	public class UShortAccess

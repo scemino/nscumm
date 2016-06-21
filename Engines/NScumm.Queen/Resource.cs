@@ -264,7 +264,7 @@ namespace NScumm.Queen
                 offset += JAS_VERSION_OFFSET_PC;
             SeekResourceFile(re.bundle, offset);
 
-            string versionStr = ScummHelper.GetText(_resourceFile.ReadBytes(6));
+            string versionStr = _resourceFile.ReadBytes(6).GetText();
             if (_version.str != versionStr)
                 throw new NotSupportedException($"Verifying game version failed! (expected: '{_version.str}', found: '{versionStr}')");
         }
@@ -307,32 +307,34 @@ namespace NScumm.Queen
         private void ReadTableFile(byte version, uint offset)
         {
             var tableFilename = ScummHelper.LocatePath(ServiceLocator.FileStorage.GetDirectoryName(_path), TableFilename);
-            using (var tableFile = new BinaryReader(ServiceLocator.FileStorage.OpenFileRead(tableFilename)))
+            if (tableFilename != null)
             {
-                if (tableFile.ReadTag() == "QTBL")
+                using (var tableFile = new BinaryReader(ServiceLocator.FileStorage.OpenFileRead(tableFilename)))
                 {
-                    uint tableVersion = tableFile.ReadUInt32BigEndian();
-                    if (version > tableVersion)
+                    if (tableFile.ReadTag() == "QTBL")
                     {
-                        throw new NotSupportedException($"The game you are trying to play requires version {version} of queen.tbl, " +
-                            $"you have version {tableVersion} ; please update it");
-                    }
-                    tableFile.BaseStream.Seek(offset, SeekOrigin.Current);
-                    ReadTableEntries(tableFile);
-                }
-                else
-                {
-                    // check if it is the english floppy version, for which we have a hardcoded version of the table
-                    if (_version.str == _gameVersions[VER_ENG_FLOPPY].str)
-                    {
-                        _resourceEntries = 1076;
-                        _resourceTable = _resourceTablePEM10;
-                    }
-                    else
-                    {
-                        throw new NotSupportedException($"Could not find tablefile '{TableFilename}'");
+                        uint tableVersion = tableFile.ReadUInt32BigEndian();
+                        if (version > tableVersion)
+                        {
+                            throw new NotSupportedException($"The game you are trying to play requires version {version} of queen.tbl, " +
+                                $"you have version {tableVersion} ; please update it");
+                        }
+                        tableFile.BaseStream.Seek(offset, SeekOrigin.Begin);
+                        ReadTableEntries(tableFile);
+                        return;
                     }
                 }
+            }
+
+            // check if it is the english floppy version, for which we have a hardcoded version of the table
+            if (_version.str == _gameVersions[VER_ENG_FLOPPY].str)
+            {
+                _resourceEntries = 1076;
+                _resourceTable = _resourceTablePEM10;
+            }
+            else
+            {
+                throw new NotSupportedException($"Could not find tablefile '{TableFilename}'");
             }
         }
 

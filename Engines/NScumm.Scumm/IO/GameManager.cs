@@ -53,7 +53,7 @@ namespace NScumm.Scumm.IO
                     Variant = (string)game.Attribute("variant"),
                     Description = desc,
                     Version = (int)game.Attribute("version"),
-                    Culture = new CultureInfo((string)gameMd5.Attribute("language")),
+                    Language = (Language)Enum.Parse(typeof(Language), (string)gameMd5.Attribute("language"), true),
                     Features = features,
                     Music = music
                 };

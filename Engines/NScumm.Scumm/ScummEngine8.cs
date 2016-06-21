@@ -24,7 +24,6 @@ using System.Diagnostics;
 using NScumm.Core;
 using NScumm.Core.Audio;
 using NScumm.Core.Graphics;
-using NScumm.Core.Input;
 using NScumm.Core.IO;
 
 namespace NScumm.Scumm
@@ -36,8 +35,8 @@ namespace NScumm.Scumm
         int VariableSync;
         int VariableLanguage;
 
-        public ScummEngine8(GameSettings game, IGraphicsManager graphicsManager, IInputManager inputManager, IMixer mixer)
-            : base(game, graphicsManager, inputManager, mixer)
+        public ScummEngine8(GameSettings game, ISystem system, IMixer mixer)
+            : base(game, system, mixer)
         {
         }
 

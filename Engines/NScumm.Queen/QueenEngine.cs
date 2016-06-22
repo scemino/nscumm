@@ -180,14 +180,13 @@ namespace NScumm.Queen
 
         public void WriteOptionSettings()
         {
-            // TODO: conf
-            //ConfMan.setInt("music_volume", _sound.getVolume());
-            //ConfMan.setBool("music_mute", !_sound.musicOn());
-            //ConfMan.setBool("sfx_mute", !_sound.sfxOn());
-            //ConfMan.setInt("talkspeed", ((_talkSpeed - MIN_TEXT_SPEED) * 255 + (MAX_TEXT_SPEED - MIN_TEXT_SPEED) / 2) / (MAX_TEXT_SPEED - MIN_TEXT_SPEED));
-            //ConfMan.setBool("speech_mute", !_sound.speechOn());
-            //ConfMan.setBool("subtitles", _subtitles);
-            //ConfMan.flushToDisk();
+            ConfigManager.Instance.Set("music_volume", Sound.Volume);
+            ConfigManager.Instance.Set("music_mute", !Sound.MusicOn);
+            ConfigManager.Instance.Set("sfx_mute", !Sound.SfxOn);
+            ConfigManager.Instance.Set("talkspeed", ((TalkSpeed - MIN_TEXT_SPEED) * 255 + (MAX_TEXT_SPEED - MIN_TEXT_SPEED) / 2) / (MAX_TEXT_SPEED - MIN_TEXT_SPEED));
+            ConfigManager.Instance.Set("speech_mute", !Sound.SpeechOn);
+            ConfigManager.Instance.Set("subtitles", Subtitles);
+            // TODO: ConfigManager.Instance.FlushToDisk();
         }
 
         public void Update(bool checkPlayerInput = false)
@@ -287,10 +286,10 @@ namespace NScumm.Queen
 
             Logic.Start();
 
-            // TODO: save
-            //			if (ConfMan.hasKey("save_slot") && canLoadOrSave()) {
-            //				loadGameState(ConfMan.getInt("save_slot"));
-            //			}
+            if (ConfigManager.Instance.HasKey("save_slot") && CanLoadOrSave)
+            {
+                LoadGameState(ConfigManager.Instance.Get<int>("save_slot"));
+            }
             _lastSaveTime = _lastUpdateTime = Environment.TickCount;
 
             while (!HasToQuit)
@@ -357,18 +356,15 @@ namespace NScumm.Queen
         private void ReadOptionSettings()
         {
             bool mute = false;
-            // TODO: conf
-            //if (ConfMan.hasKey("mute"))
-            //    mute = ConfMan.getBool("mute");
+            if (ConfigManager.Instance.HasKey("mute"))
+                mute = ConfigManager.Instance.Get<bool>("mute");
 
-            //Sound.setVolume(ConfMan.getInt("music_volume"));
-            //Sound.musicToggle(!(mute || ConfMan.getBool("music_mute")));
-            //Sound.sfxToggle(!(mute || ConfMan.getBool("sfx_mute")));
-            //Sound.speechToggle(!(mute || ConfMan.getBool("speech_mute")));
-            //TalkSpeed = (ConfMan.getInt("talkspeed") * (MAX_TEXT_SPEED - MIN_TEXT_SPEED) + 255 / 2) / 255 + MIN_TEXT_SPEED;
-            TalkSpeed = 50;
-            //Subtitles = ConfMan.getBool("subtitles");
-            Subtitles = true;
+            Sound.Volume = ConfigManager.Instance.Get<int>("music_volume");
+            Sound.MusicOn = !(mute || ConfigManager.Instance.Get<bool>("music_mute"));
+            Sound.SfxOn = !(mute || ConfigManager.Instance.Get<bool>("sfx_mute"));
+            Sound.SpeechOn = !(mute || ConfigManager.Instance.Get<bool>("speech_mute"));
+            TalkSpeed = (ConfigManager.Instance.Get<int>("talkspeed") * (MAX_TEXT_SPEED - MIN_TEXT_SPEED) + 255 / 2) / 255 + MIN_TEXT_SPEED;
+            Subtitles = ConfigManager.Instance.Get<bool>("subtitles");
             CheckOptionSettings();
         }
 
@@ -438,19 +434,15 @@ namespace NScumm.Queen
 
         private void RegisterDefaultSettings()
         {
-            // TODO: conf
-            // ConfMan.registerDefault("talkspeed", Logic::DEFAULT_TALK_SPEED);
-            // ConfMan.registerDefault("subtitles", true);
-            Subtitles = true;
+            ConfigManager.Instance.RegisterDefault("talkspeed", Logic.DEFAULT_TALK_SPEED);
+            ConfigManager.Instance.RegisterDefault("subtitles", true);
         }
 
         // TODO: move this in Engine base class
         private bool ShouldPerformAutoSave(int lastSaveTime)
         {
             int diff = Environment.TickCount - lastSaveTime;
-            // TODO: conf
-            //int autosavePeriod = ConfMan.getInt("autosave_period");
-            int autosavePeriod = 5 * 60;
+            int autosavePeriod = ConfigManager.Instance.Get<int>("autosave_period");
             return autosavePeriod != 0 && diff > autosavePeriod * 1000;
         }
     }

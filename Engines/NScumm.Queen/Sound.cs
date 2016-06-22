@@ -611,7 +611,11 @@ namespace NScumm.Queen
         protected short _lastOverride;
         protected int _musicVolume;
 
-        public bool SfxOn { get { return _sfxToggle; } }
+        public bool SfxOn
+        {
+            get { return _sfxToggle; }
+            set { _sfxToggle = value; }
+        }
         public bool SpeechOn
         {
             get { return _speechToggle; }
@@ -619,7 +623,11 @@ namespace NScumm.Queen
         }
         public bool SpeechSfxExists { get { return _speechSfxExists; } }
         public virtual bool IsSpeechActive { get { return false; } }
-        public bool MusicOn { get { return _musicToggle; } }
+        public bool MusicOn
+        {
+            get { return _musicToggle; }
+            set { _musicToggle = value; }
+        }
         public short LastOverride { get { return _lastOverride; } }
         public virtual int Volume
         {

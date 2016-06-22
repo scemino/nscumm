@@ -101,6 +101,7 @@ namespace NScumm.Queen
     public abstract class Logic
     {
         const int JOE_RESPONSE_MAX = 40;
+        public const int DEFAULT_TALK_SPEED  = 7 * 3;
         public const int GAME_STATE_COUNT = 211;
         const int TALK_SELECTED_COUNT = 86;
 

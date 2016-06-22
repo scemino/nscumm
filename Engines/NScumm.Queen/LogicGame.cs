@@ -18,6 +18,7 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+using NScumm.Core;
 using NScumm.Core.IO;
 
 namespace NScumm.Queen
@@ -60,12 +61,14 @@ namespace NScumm.Queen
                     return true;
                 if (_vm.Resource.Platform != Platform.Amiga)
                 {
-                    // TODO: conf
-                    //					if (ConfMan.getBool("alt_intro") && _vm.Resource.IsCD) {
-                    //						PlayCutaway("CINTR.CUT");
-                    //					} else {
-                    PlayCutaway("CDINT.CUT");
-                    //					}
+                    if (ConfigManager.Instance.Get<bool>("alt_intro") && _vm.Resource.IsCD)
+                    {
+                        PlayCutaway("CINTR.CUT");
+                    }
+                    else
+                    {
+                        PlayCutaway("CDINT.CUT");
+                    }
                 }
                 if (_vm.HasToQuit)
                     return true;

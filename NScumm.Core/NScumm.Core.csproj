@@ -175,6 +175,7 @@
     <Compile Include="IO\AdvancedMetaEngine.cs" />
     <Compile Include="Image\IFFDecoder.cs" />
     <Compile Include="Image\PackBitsReadStream.cs" />
+    <Compile Include="Common\ConfigManager.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <ItemGroup>

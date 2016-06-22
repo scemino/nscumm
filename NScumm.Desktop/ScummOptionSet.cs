@@ -52,6 +52,7 @@ namespace NScumm
             Add("b|boot-param=", "Pass number to the boot script (boot param)", (int b) => BootParam = b);
             Add("d|debuglevel=", "Set debug verbosity level", (int lvl) => DebugHelper.DebugLevel = lvl);
             Add("debugflags=", "Enable engine specific debug flags (separated by commas)", d => Switches = d);
+            Add("alt-intro", "Use alternative intro for CD versions of Beneath a Steel Sky and Flight of the Amazon Queen", b => ConfigManager.Instance.Set("alt_intro", b != null));
             Add("copy_protection", "Enable copy protection in SCUMM games, when NScumm disables it by default.", b => CopyProtection = b != null);
         }
 

@@ -385,12 +385,15 @@ namespace NScumm.Queen
             switch (ver.str[1])
             {
                 case 'E':
-                    // TODO: vs
-                    //				if (LanguageHelper.ParseLanguage(ConfMan.get("language")) == Language.RU_RUS) {
-                    //					ver.language = Language.RU_RUS;
-                    //				} else if (LanguageHelper.ParseLanguage(ConfMan.get("language")) == Language.GR_GRE) {
-                    //					ver.language = Language.GR_GRE;
-                    //				} else 
+                    if (LanguageHelper.ParseLanguage(ConfigManager.Instance.Get<string>("language")) == Language.RU_RUS)
+                    {
+                        ver.language = Language.RU_RUS;
+                    }
+                    else if (LanguageHelper.ParseLanguage(ConfigManager.Instance.Get<string>("language")) == Language.GR_GRE)
+                    {
+                        ver.language = Language.GR_GRE;
+                    }
+                    else 
                     {
                         ver.language = Language.EN_ANY;
                     }

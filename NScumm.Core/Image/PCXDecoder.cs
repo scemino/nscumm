@@ -21,6 +21,7 @@
 using System;
 using NScumm.Core.Graphics;
 using System.IO;
+using D = NScumm.Core.DebugHelper;
 
 namespace NScumm.Core
 {
@@ -54,7 +55,7 @@ namespace NScumm.Core
 			ushort height = (ushort)(yMax - yMin + 1);
 
 			if (xMax < xMin || yMax < yMin) {
-				// TODO: warning("Invalid PCX image dimensions");
+				D.Warning("Invalid PCX image dimensions");
 				return false;
 			}
 
@@ -74,7 +75,7 @@ namespace NScumm.Core
 			ushort bytesPerscanLine = (ushort)(nPlanes * bytesPerLine);
 
 			if (bytesPerscanLine < width * bitsPerPixel * nPlanes / 8) {
-				// TODO: warning("PCX data is corrupted");
+				D.Warning("PCX data is corrupted");
 				return false;
 			}
 
@@ -115,7 +116,7 @@ namespace NScumm.Core
 
 				if (version == 5) {
 					if (stream.ReadByte () != 12) {
-						// TODO: warning("Expected a palette after the PCX image data");
+						D.Warning("Expected a palette after the PCX image data");
 						return false;
 					}
 
@@ -146,7 +147,7 @@ namespace NScumm.Core
 				}
 			} else {
 				// Known unsupported case: 1 plane and bpp < 8 (1, 2 or 4)
-				// TODO: warning("Invalid PCX file (%d planes, %d bpp)", nPlanes, bitsPerPixel);
+				D.Warning("Invalid PCX file (%d planes, %d bpp)", nPlanes, bitsPerPixel);
 				return false;
 			}
 

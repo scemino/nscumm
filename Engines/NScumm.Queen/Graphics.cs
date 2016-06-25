@@ -492,22 +492,20 @@ namespace NScumm.Queen
             int lineLength = 0;
             int i;
 
-            // TODO: Hebrew strings are written from right to left and should be cut
+            // Hebrew strings are written from right to left and should be cut
             // to lines in reverse
             if (_vm.Resource.Language == Language.HE_ISR)
             {
-                //    for (i = length - 1; i >= 0; i--)
-                //    {
-                //        lineLength++;
+                for (i = text.Length - 1; i >= 0; i--)
+                {
+                    lineLength++;
 
-                //        if ((lineLength > 20 && textCopy[i] == ' ') || i == 0)
-                //        {
-                //            memcpy(lines[lineCount], textCopy + i, lineLength);
-                //            lines[lineCount][lineLength] = '\0';
-                //            lineCount++;
-                //            lineLength = 0;
-                //        }
-                //    }
+                    if ((lineLength > 20 && text[i] == ' ') || i == 0)
+                    {
+                        lines.Add(text.Substring(i, lineLength));
+                        lineLength = 0;
+                    }
+                }
             }
             else
             {

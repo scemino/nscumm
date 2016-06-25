@@ -47,7 +47,7 @@ namespace NScumm.Queen
         public SpeechParameters(string name, sbyte state, sbyte faceDirection, sbyte body, sbyte bf, sbyte rf, sbyte af, string animation, sbyte ff)
         {
             if (animation.Contains(" "))
-                throw new ArgumentException(nameof(animation), "Invalid anim");
+                throw new ArgumentException("Invalid anim", nameof(animation));
 
             this.name = name;
             this.state = state;
@@ -626,7 +626,7 @@ namespace NScumm.Queen
             _vm.Logic.JoeWalk = JoeWalkMode.NORMAL;
         }
 
-        short SelectSentence()
+        private short SelectSentence()
         {
             int selectedSentence = 0;
 
@@ -826,7 +826,7 @@ namespace NScumm.Queen
             return (short)selectedSentence;
         }
 
-        int SplitOption(string str, string[] optionText)
+        private int SplitOption(string str, string[] optionText)
         {
             string option = str;
             // option text ends at '*' char
@@ -852,7 +852,7 @@ namespace NScumm.Queen
             return lines;
         }
 
-        int SplitOptionDefault(string str, string[] optionText)
+        private int SplitOptionDefault(string str, string[] optionText)
         {
             // Split up multiple line option at closest space character
             ushort spaceCharWidth = _vm.Display.TextWidth(" ");
@@ -898,12 +898,62 @@ namespace NScumm.Queen
             return optionLines;
         }
 
-        int SplitOptionHebrew(string option, string[] optionText)
+        private int SplitOptionHebrew(string str, string[] optionText)
         {
-            throw new NotImplementedException();
+            string tmpString;
+            ushort len = 0;
+            ushort spaceCharWidth = _vm.Display.TextWidth(" ");
+            ushort width = 0;
+            ushort optionLines = 0;
+            ushort maxTextLen = MAX_TEXT_WIDTH;
+            var p = str.Length - 1;
+            while (p != -1)
+            {
+                while (p != -1 && str[p] != ' ')
+                {
+                    --p;
+                    ++len;
+                }
+                if (p != -1)
+                {
+                    ushort wordWidth = _vm.Display.TextWidth(str, p, len);
+                    width += wordWidth;
+                    if (width > maxTextLen)
+                    {
+                        ++optionLines;
+                        optionText[optionLines] = str.Substring(p, len);
+                        width = wordWidth;
+                        maxTextLen = MAX_TEXT_WIDTH - OPTION_TEXT_MARGIN;
+                    }
+                    else
+                    {
+                        tmpString = optionText[optionLines];
+                        optionText[optionLines] = str.Substring(p, len);
+                        optionText[optionLines] += tmpString;
+                    }
+                    --p;
+                    len = 1;
+                    width += spaceCharWidth;
+                }
+                else
+                {
+                    if (len > 1)
+                    {
+                        if (width + _vm.Display.TextWidth(str, p + 1, len) > maxTextLen)
+                        {
+                            ++optionLines;
+                        }
+                        tmpString = optionText[optionLines];
+                        optionText[optionLines] = str.Substring(p + 1, len);
+                        optionText[optionLines] += tmpString;
+                    }
+                    ++optionLines;
+                }
+            }
+            return optionLines;
         }
 
-        void DisableSentence(short oldLevel, int selectedSentence)
+        private void DisableSentence(short oldLevel, int selectedSentence)
         {
             // Mark off selected option
 
@@ -923,7 +973,7 @@ namespace NScumm.Queen
             _dialogueTree[oldLevel][selectedSentence].dialogueNodeValue1 = -1;
         }
 
-        void FindDialogueString(ushort offset, short id, short max, out string str)
+        private void FindDialogueString(ushort offset, short id, short max, out string str)
         {
             str = string.Empty;
             for (int i = 1; i <= max; i++)
@@ -944,12 +994,12 @@ namespace NScumm.Queen
             }
         }
 
-        void SetHasTalkedTo()
+        private void SetHasTalkedTo()
         {
             TalkSelected.hasTalkedTo = true;
         }
 
-        void InitialTalk()
+        private void InitialTalk()
         {
             // Lines 848-903 in talk.c
 
@@ -991,17 +1041,17 @@ namespace NScumm.Queen
             }
         }
 
-        short SelectedValue(int index)
+        private short SelectedValue(int index)
         {
             return TalkSelected.values[index - 1];
         }
 
-        void SelectedValue(int index, short value)
+        private void SelectedValue(int index, short value)
         {
             TalkSelected.values[index - 1] = value;
         }
 
-        void Load(string filename)
+        private void Load(string filename)
         {
             int i;
             _fileData = LoadDialogFile(filename);
@@ -1067,7 +1117,7 @@ namespace NScumm.Queen
             new DogFile { filename = "BUD1.DOG",   language = Language.IT_ITA }
         };
 
-        byte[] LoadDialogFile(string filename)
+        private byte[] LoadDialogFile(string filename)
         {
             for (int i = 0; i < dogFiles.Length; ++i)
             {

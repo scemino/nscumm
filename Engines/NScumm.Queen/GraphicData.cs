@@ -23,7 +23,7 @@ using NScumm.Core;
 
 namespace NScumm.Queen
 {
-    public class GraphicData
+    public struct GraphicData
     {
         //! coordinates of object
         public ushort x, y;

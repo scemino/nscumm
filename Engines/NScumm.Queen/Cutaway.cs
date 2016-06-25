@@ -551,7 +551,7 @@ namespace NScumm.Queen
 
             if (sentence != "*")
             {
-                if (sentence[0] == '#')
+                if (sentence.Length > 0 && sentence[0] == '#')
                 {
                     D.Debug(4, $"Starting credits '{sentence.Substring(1)}'");
                     _vm.Logic.StartCredits(sentence.Substring(1));
@@ -1520,7 +1520,7 @@ namespace NScumm.Queen
 
             LoadStrings(bankNamesOff);
 
-            if (_bankNames[0].Length > 0)
+            if (!string.IsNullOrEmpty(_bankNames[0]))
             {
                 D.Debug(6, $"Loading bank '{_bankNames[0]}'");
                 _vm.BankMan.Load(_bankNames[0], CUTAWAY_BANK);

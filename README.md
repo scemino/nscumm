@@ -28,6 +28,7 @@ Copy the original files of the game you want to play in a directory.
 ### Others
     Beneath a Steel Sky by Revolution Software
     Broken Sword: The Shadow of the Templars by Revolution Software
+    Flight of the Amazon Queen by Interactive Binary Illusions
 
 ## Hotkeys
 
@@ -39,9 +40,15 @@ Copy the original files of the game you want to play in a directory.
     F5                     - Displays a save/load box
     Escape                 - Skips the game intro
     p                      - Pauses the game
-
 ### Broken Sword
     F5 or Escape           - Displays a save/load box
+### Flight of the Amazon Queen
+    Ctrl-f                 - Toggle fast mode
+    F1                     - Use Journal (saving/loading)
+    F11                    - Quicksave
+    F12                    - Quickload
+    Escape                 - Skips cutscenes
+    Space                  - Skips current line of text
 
 ## Contact
 

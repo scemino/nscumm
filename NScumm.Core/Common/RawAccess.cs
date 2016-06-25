@@ -16,8 +16,6 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using NScumm.Core;
-
 namespace NScumm.Core
 {
     public class ByteAccess
@@ -35,10 +33,11 @@ namespace NScumm.Core
             get { return _data; }
         }
 
-        public int Offset {
-			get;
-			set;
-		}
+        public int Offset
+        {
+            get;
+            set;
+        }
 
         public byte this[int index]
         {
@@ -46,8 +45,8 @@ namespace NScumm.Core
             set { _data[Offset + index] = value; }
         }
 
-        public ByteAccess(ByteAccess data)
-            : this(data.Data, data.Offset)
+        public ByteAccess(ByteAccess data, int offset = 0)
+            : this(data.Data, data.Offset + offset)
         {
         }
 
@@ -58,17 +57,17 @@ namespace NScumm.Core
         }
     }
 
-	public static class ByteAccessExtension
-	{
-		public static short ToInt16BigEndian(this ByteAccess value, int startIndex = 0)
-		{
-			return (short)value.Data.ToUInt16BigEndian(value.Offset + startIndex);
-		}
+    public static class ByteAccessExtension
+    {
+        public static short ToInt16BigEndian(this ByteAccess value, int startIndex = 0)
+        {
+            return (short)value.Data.ToUInt16BigEndian(value.Offset + startIndex);
+        }
 
-		public static ushort ToUInt16BigEndian(this ByteAccess value, int startIndex = 0)
-		{
-			return value.Data.ToUInt16BigEndian(value.Offset + startIndex);
-		}
+        public static ushort ToUInt16BigEndian(this ByteAccess value, int startIndex = 0)
+        {
+            return value.Data.ToUInt16BigEndian(value.Offset + startIndex);
+        }
 
         public static int ToInt32BigEndian(this ByteAccess value, int startIndex = 0)
         {
@@ -79,9 +78,9 @@ namespace NScumm.Core
         {
             return value.Data.ToUInt32BigEndian(value.Offset + startIndex);
         }
-	}
+    }
 
-	public class UShortAccess
+    public class UShortAccess
     {
         private readonly byte[] _data;
 
@@ -96,10 +95,11 @@ namespace NScumm.Core
             set { _data.WriteUInt16(Offset, value); }
         }
 
-        public int Offset {
-			get;
-			set;
-		}
+        public int Offset
+        {
+            get;
+            set;
+        }
 
         public ushort this[int index]
         {
@@ -114,7 +114,7 @@ namespace NScumm.Core
         }
     }
 
-	public class UIntAccess
+    public class UIntAccess
     {
         private readonly byte[] _data;
 
@@ -129,10 +129,11 @@ namespace NScumm.Core
             set { _data.WriteUInt32(Offset, value); }
         }
 
-        public int Offset {
-			get;
-			set;
-		}
+        public int Offset
+        {
+            get;
+            set;
+        }
 
         public uint this[int index]
         {

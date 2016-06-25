@@ -521,10 +521,7 @@ namespace NScumm.Queen
                 byte[] insData = _vm.Resource.LoadFile(name, 0, out insDataSize);
                 using (var insStr = new MemoryStream(insData, 0, (int)insDataSize))
                 {
-                    // TODO: MakeRjp1Stream
-                    //IAudioStream stream = Rjp1.MakeRjp1Stream(sngStr, insStr, num, _mixer.OutputRate);
-                    IAudioStream stream = null;
-                    return stream;
+                    return Rjp1.MakeRjp1Stream(sngStr, insStr, num, _mixer.OutputRate);
                 }
             }
         }

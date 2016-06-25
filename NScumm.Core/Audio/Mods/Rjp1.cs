@@ -27,10 +27,10 @@ namespace NScumm.Core.Audio
     class Rjp1Channel
     {
         public byte index;
-        public ByteAccess waveData;
-        public ByteAccess modulatePeriodData;
-        public ByteAccess modulateVolumeData;
-        public ByteAccess envelopeData;
+        public BytePtr waveData;
+        public BytePtr modulatePeriodData;
+        public BytePtr modulateVolumeData;
+        public BytePtr envelopeData;
         public ushort volumeScale;
         public short volume;
         public ushort modulatePeriodBase;
@@ -42,9 +42,9 @@ namespace NScumm.Core.Audio
         public byte freqStep;
         public uint freqInc;
         public uint freqInit;
-        public ByteAccess noteData;
-        public ByteAccess sequenceOffsets;
-        public ByteAccess sequenceData;
+        public BytePtr noteData;
+        public BytePtr sequenceOffsets;
+        public BytePtr sequenceData;
         public byte loopSeqCount;
         public byte loopSeqCur;
         public byte loopSeq2Count;
@@ -60,7 +60,7 @@ namespace NScumm.Core.Audio
         public sbyte envelopeStart;
         public sbyte envelopeVolume;
         public byte currentInstrument;
-        public ByteAccess data;
+        public BytePtr data;
         public ushort pos;
         public ushort len;
         public ushort repeatPos;
@@ -217,7 +217,7 @@ namespace NScumm.Core.Audio
             if (channel.active)
             {
                 TurnOnChannel(channel);
-                if (channel.sequenceData != null)
+                if (channel.sequenceData != BytePtr.Null)
                 {
                     PlaySongSequence(channel);
                 }
@@ -235,7 +235,7 @@ namespace NScumm.Core.Audio
             }
         }
 
-        bool ExecuteSfxSequenceOp(Rjp1Channel channel, byte code, ByteAccess p)
+        private bool ExecuteSfxSequenceOp(Rjp1Channel channel, byte code, ref BytePtr p)
         {
             bool loop = true;
             switch (code & 7)
@@ -269,10 +269,10 @@ namespace NScumm.Core.Audio
             return loop;
         }
 
-        private bool ExecuteSongSequenceOp(Rjp1Channel channel, byte code, ByteAccess p)
+        private bool ExecuteSongSequenceOp(Rjp1Channel channel, byte code, ref BytePtr p)
         {
             bool loop = true;
-            ByteAccess offs;
+            BytePtr offs;
             switch (code & 7)
             {
                 case 0:
@@ -292,7 +292,7 @@ namespace NScumm.Core.Audio
                             code = offs[0];
                             if (code == 0)
                             {
-                                p = null;
+                                p = BytePtr.Null;
                                 channel.active = false;
                                 _vars.activeChannelsMask &= (byte)(~(1 << _vars.currentChannel));
                                 loop = false;
@@ -331,9 +331,9 @@ namespace NScumm.Core.Audio
                     channel.volumeScale = p.Value; p.Offset++;
                     break;
                 case 6:
-                    p.ToUInt16BigEndian();
+                    ((ByteAccess)p).ToUInt16BigEndian();
                     channel.freqStep = p.Value; p.Offset++;
-                    channel.freqInc = p.ToUInt32BigEndian(); p.Offset += 4;
+                    channel.freqInc = ((ByteAccess)p).ToUInt32BigEndian(); p.Offset += 4;
                     channel.freqInit = 0;
                     break;
                 case 7:
@@ -345,7 +345,7 @@ namespace NScumm.Core.Audio
 
         private void PlaySongSequence(Rjp1Channel channel)
         {
-            var p = new ByteAccess(channel.sequenceData);
+            var p = channel.sequenceData;
             --channel.loopSeqCur;
             if (channel.loopSeqCur == 0)
             {
@@ -360,11 +360,11 @@ namespace NScumm.Core.Audio
                         {
                             if (channel.isSfx)
                             {
-                                loop = ExecuteSfxSequenceOp(channel, code, p);
+                                loop = ExecuteSfxSequenceOp(channel, code, ref p);
                             }
                             else
                             {
-                                loop = ExecuteSongSequenceOp(channel, code, p);
+                                loop = ExecuteSongSequenceOp(channel, code, ref p);
                             }
                         }
                         else
@@ -377,7 +377,7 @@ namespace NScumm.Core.Audio
                             loop = false;
                         }
                     } while (loop);
-                    channel.sequenceData = p;
+                    channel.sequenceData = new ByteAccess(p);
                     channel.loopSeq2Cur = channel.loopSeq2Count;
                 }
                 channel.loopSeqCur = channel.loopSeqCount;
@@ -393,7 +393,7 @@ namespace NScumm.Core.Audio
 
         private void ModulatePeriod(Rjp1Channel channel)
         {
-            if (channel.modulatePeriodData != null)
+            if (channel.modulatePeriodData != BytePtr.Null)
             {
                 uint per = channel.modulatePeriodIndex;
                 int period = (channel.modulatePeriodData[(int)per] * channel.modulatePeriodInit) / 128;
@@ -421,25 +421,25 @@ namespace NScumm.Core.Audio
         private void SetupNote(Rjp1Channel channel, short period)
         {
             var note = channel.noteData;
-            if (note != null)
+            if (note != BytePtr.Null)
             {
                 channel.modulatePeriodInit = channel.modulatePeriodNext = period;
                 channel.freqInit = 0;
-                var e = new ByteAccess(_vars.songData[1], note.ToUInt16BigEndian(12));
+                var e = new ByteAccess(_vars.songData[1], ((ByteAccess)note).ToUInt16BigEndian(12));
                 channel.envelopeData = e;
                 channel.envelopeStart = (sbyte)e[1];
-                channel.envelopeScale = (sbyte)(e[1] - e[0]);
+                channel.envelopeScale = (sbyte)((sbyte)e[1] - (sbyte)e[0]);
                 channel.envelopeEnd2 = (sbyte)e[2];
                 channel.envelopeEnd1 = (sbyte)e[2];
                 channel.envelopeMode = 4;
-                channel.data = channel.waveData;
-                channel.pos = note.ToUInt16BigEndian(16);
-                channel.len = (ushort)(channel.pos + note.ToUInt16BigEndian(18));
+                channel.data = new ByteAccess(channel.waveData);
+                channel.pos = ((ByteAccess)note).ToUInt16BigEndian(16);
+                channel.len = (ushort)(channel.pos + ((ByteAccess)note).ToUInt16BigEndian(18));
                 channel.setupNewNote = true;
             }
         }
 
-        void SetupInstrument(Rjp1Channel channel, byte num)
+        private void SetupInstrument(Rjp1Channel channel, byte num)
         {
             if (channel.currentInstrument != num)
             {
@@ -471,8 +471,8 @@ namespace NScumm.Core.Audio
 
         private void SetRelease(Rjp1Channel channel)
         {
-            var e = new ByteAccess(channel.envelopeData);
-            if (e != null)
+            var e = channel.envelopeData;
+            if (e != BytePtr.Null)
             {
                 channel.envelopeStart = 0;
                 channel.envelopeScale = (sbyte)-channel.envelopeVolume;
@@ -534,18 +534,18 @@ namespace NScumm.Core.Audio
             channel.volume = channel.envelopeVolume;
         }
 
-        void SetSustain(Rjp1Channel channel)
+        private void SetSustain(Rjp1Channel channel)
         {
             channel.envelopeMode = 0;
         }
 
-        void SetDecay(Rjp1Channel channel)
+        private void SetDecay(Rjp1Channel channel)
         {
-            if (channel.envelopeData != null)
+            var e = channel.envelopeData;
+            if (e != BytePtr.Null)
             {
-                var e = new ByteAccess(channel.envelopeData);
                 channel.envelopeStart = (sbyte)e[3];
-                channel.envelopeScale = (sbyte)(e[3] - e[1]);
+                channel.envelopeScale = (sbyte)((sbyte)e[3] - (sbyte)e[1]);
                 channel.envelopeEnd2 = (sbyte)e[4];
                 channel.envelopeEnd1 = (sbyte)e[4];
                 channel.envelopeMode = 2;
@@ -554,7 +554,7 @@ namespace NScumm.Core.Audio
 
         private void ModulateVolumeWaveform(Rjp1Channel channel)
         {
-            if (channel.modulateVolumeData != null)
+            if (channel.modulateVolumeData != BytePtr.Null)
             {
                 uint i = channel.modulateVolumeIndex;
                 channel.volume = (short)(channel.volume + channel.modulateVolumeData[(int)i] * channel.volume / 128);
@@ -579,11 +579,11 @@ namespace NScumm.Core.Audio
             ClearVoice(channel);
         }
 
-        private void SetupPaulaChannel(byte channel, ByteAccess waveData, ushort offset, ushort len, ushort repeatPos, ushort repeatLen)
+        private void SetupPaulaChannel(byte channel, BytePtr waveData, ushort offset, ushort len, ushort repeatPos, ushort repeatLen)
         {
-            if (waveData != null)
+            if (waveData != BytePtr.Null)
             {
-                // TODO: SetChannelData(channel, waveData, waveData + repeatPos * 2, len * 2, repeatLen * 2, offset * 2);
+                SetChannelData(channel, waveData, new BytePtr(waveData, repeatPos * 2), len * 2, repeatLen * 2, offset * 2);
             }
         }
 

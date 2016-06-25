@@ -25,6 +25,7 @@ using System.IO;
 using NScumm.Core.IO;
 using System.Collections.Generic;
 using D = NScumm.Core.DebugHelper;
+using System.Linq;
 
 namespace NScumm.Queen
 {
@@ -217,17 +218,34 @@ namespace NScumm.Queen
             D.Debug(7, $"Resource::loadTextFile('{filename}')");
             ResourceEntry re = ResourceEntry(filename);
             SeekResourceFile(re.bundle, re.offset);
-            var stream = new StreamReader(new SeekableSubReadStream(_resourceFile.BaseStream, re.offset, re.offset + re.size));
+            var stream = new SeekableSubReadStream(_resourceFile.BaseStream, re.offset, re.offset + re.size);
 
             while (true)
             {
-                string tmp = stream.ReadLine();
+                string tmp = ReadLine(stream);
                 if (tmp == null)
                     break;
                 stringList.Add(tmp);
             }
 
             return stringList;
+        }
+
+        private static string ReadLine(Stream stream)
+        {
+            if (stream.Position == stream.Length) return null;
+
+            var br = new BinaryReader(stream);
+            var chars = new List<char>();
+            byte b;
+            while (stream.Position != stream.Length && ((b = br.ReadByte()) != '\r'))
+            {
+                chars.Add((char)b);
+            }
+            if (br.PeekChar() == '\n')
+                br.ReadByte();
+            
+            return new string(chars.ToArray());
         }
 
         public bool FileExists(string filename) { return ResourceEntry(filename) != null; }
@@ -393,7 +411,7 @@ namespace NScumm.Queen
                     {
                         ver.language = Language.GR_GRE;
                     }
-                    else 
+                    else
                     {
                         ver.language = Language.EN_ANY;
                     }

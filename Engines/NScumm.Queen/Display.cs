@@ -1237,7 +1237,13 @@ namespace NScumm.Queen
                 var pts = _texts[y];
                 if (!string.IsNullOrEmpty(pts.text))
                 {
-                    DrawText(pts.x, (ushort)y, pts.color, pts.text, pts.outlined);
+                    try
+                    {
+                        DrawText(pts.x, (ushort)y, pts.color, pts.text, pts.outlined);
+                    }
+                    catch (IndexOutOfRangeException e) {
+                        int tmp = 42;
+                    }
                 }
             }
         }

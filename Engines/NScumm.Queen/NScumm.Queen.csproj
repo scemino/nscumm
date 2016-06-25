@@ -73,6 +73,13 @@
     <Compile Include="SongData.cs" />
     <Compile Include="AdLibMidiDriver.cs" />
     <Compile Include="GameStates.cs" />
+    <Compile Include="SBSound.cs" />
+    <Compile Include="SilentSound.cs" />
+    <Compile Include="Mp3Sound.cs" />
+    <Compile Include="AmigaSound.cs" />
+    <Compile Include="AudioStreamWrapper.cs" />
+    <Compile Include="OggSound.cs" />
+    <Compile Include="FlacSound.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <ItemGroup>

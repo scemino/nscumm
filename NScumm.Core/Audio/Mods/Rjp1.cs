@@ -596,7 +596,7 @@ namespace NScumm.Core.Audio
             }
         }
 
-        public static IAudioStream MakeRjp1Stream(Stream songData, Stream instrumentsData, int num, int rate, bool stereo)
+        public static IAudioStream MakeRjp1Stream(Stream songData, Stream instrumentsData, int num, int rate = 44100, bool stereo = true)
         {
             using (Rjp1 stream = new Rjp1(rate, stereo))
             {

@@ -91,7 +91,7 @@ namespace NScumm.Core.Audio
         {
             if (channels < 1)
             {
-                throw new ArgumentOutOfRangeException("channels", "Channels must be 1 or greater");
+                throw new ArgumentOutOfRangeException(nameof(channels), "Channels must be 1 or greater");
             }
             _channels = channels;
             _sampleRate = rate;

@@ -20,14 +20,13 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System.IO;
+using NScumm.Core;
 using NScumm.Core.Audio;
 
 namespace NScumm.Queen
 {
     abstract class PCSound : Sound
     {
-        protected SoundHandle _sfxHandle;
-        protected SoundHandle _speechHandle;
         MidiMusic _music;
 
         public override bool IsSpeechActive
@@ -38,10 +37,29 @@ namespace NScumm.Queen
             }
         }
 
-        public PCSound(IMixer mixer, QueenEngine vm)
+        public override int Volume
+        {
+            get
+            {
+                return base.Volume;
+            }
+            set
+            {
+                base.Volume = value;
+                _music.SetVolume(value);
+            }
+        }
+
+        protected PCSound(IMixer mixer, QueenEngine vm)
             : base(mixer, vm)
         {
             _music = new MidiMusic(vm);
+        }
+
+        public override void PlaySfx(ushort sfx)
+        {
+            if (SfxOn && sfx != 0)
+                PlaySound(_sfxName[sfx - 1], false);
         }
 
         public override void PlaySong(short songNum)
@@ -66,7 +84,7 @@ namespace NScumm.Queen
                 newTune = (short)(_song[songNum - 1].tuneList[0] - 1);
             }
 
-            if (_tune[newTune].sfx[0]!=0)
+            if (_tune[newTune].sfx[0] != 0)
             {
                 PlaySfx((ushort)_tune[newTune].sfx[0]);
                 return;
@@ -95,6 +113,11 @@ namespace NScumm.Queen
             _music.PlayMusic();
         }
 
+        public override void StopSong()
+        {
+            _music.StopSong();
+        }
+
         public override void PlaySpeech(string @base)
         {
             if (SpeechOn)
@@ -103,7 +126,10 @@ namespace NScumm.Queen
             }
         }
 
-        public override void StopSpeech() { _mixer.StopHandle(_speechHandle); }
+        public override void StopSpeech()
+        {
+            _mixer.StopHandle(_speechHandle);
+        }
 
         protected void PlaySound(string @base, bool isSpeech)
         {
@@ -124,10 +150,11 @@ namespace NScumm.Queen
             var f = _vm.Resource.FindSound(name, out size);
             if (f != null)
             {
+                var subStream = new SeekableSubReadStream(f, f.Position, f.Position + size);
                 if (isSpeech)
-                    PlaySoundData(f, size, ref _speechHandle);
+                    PlaySoundData(subStream, ref _speechHandle);
                 else
-                    PlaySoundData(f, size, ref _sfxHandle);
+                    PlaySoundData(subStream, ref _sfxHandle);
                 _speechSfxExists = isSpeech;
             }
             else
@@ -136,8 +163,7 @@ namespace NScumm.Queen
             }
         }
 
-        protected abstract void PlaySoundData(Stream f, uint size, ref SoundHandle soundHandle);
-
+        protected abstract void PlaySoundData(Stream f, ref SoundHandle soundHandle);
     }
 
 }

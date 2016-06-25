@@ -609,6 +609,17 @@ namespace NScumm.Core
             return System.Text.Encoding.UTF8.GetString(data.ToArray());
         }
 
+        public static string GetRawText(this byte[] value, int startIndex = 0, int count = -1)
+        {
+            var data = new List<char>();
+            count = count < 0 ? value.Length : count;
+            for (int i = startIndex; i < (startIndex + count) && value[i] != 0; i++)
+            {
+                data.Add((char)value[i]);
+            }
+            return new string(data.ToArray());
+        }
+
         public static int GetTextLength(this byte[] value, int startIndex = 0)
         {
             int length = 0;

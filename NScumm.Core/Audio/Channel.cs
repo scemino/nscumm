@@ -88,7 +88,7 @@ namespace NScumm.Core.Audio
         /**
          * Queries whether the channel is still playing or not.
          */
-        public bool IsFinished{ get { return _stream.IsEndOfStream; } }
+        public bool IsFinished { get { return _stream.IsEndOfStream; } }
 
         /**
          * Queries whether the channel is a permanent channel.
@@ -112,15 +112,19 @@ namespace NScumm.Core.Audio
          */
         public void Pause(bool paused)
         {
-            if (paused) {
+            if (paused)
+            {
                 _pauseLevel++;
 
                 if (_pauseLevel == 1)
                     _pauseStartTime = Environment.TickCount;
-            } else if (_pauseLevel > 0) {
+            }
+            else if (_pauseLevel > 0)
+            {
                 _pauseLevel--;
 
-                if (_pauseLevel==0) {
+                if (_pauseLevel == 0)
+                {
                     _pauseTime = (Environment.TickCount - _pauseStartTime);
                     _pauseStartTime = 0;
                 }
@@ -135,7 +139,7 @@ namespace NScumm.Core.Audio
 
         public int Volume
         {
-            get{ return _volume; }
+            get { return _volume; }
             set
             {
                 _volume = value;
@@ -145,7 +149,7 @@ namespace NScumm.Core.Audio
 
         public int Balance
         {
-            get{ return _balance; }
+            get { return _balance; }
             set
             {
                 _balance = value;
@@ -153,13 +157,14 @@ namespace NScumm.Core.Audio
             }
         }
 
-        public SoundHandle Handle{ get; set; }
+        public SoundHandle Handle { get; set; }
 
-        public Timestamp GetElapsedTime() {
+        public Timestamp GetElapsedTime()
+        {
             int rate = _mixer.OutputRate;
             int delta = 0;
 
-            var ts=new Timestamp(0, rate);
+            var ts = new Timestamp(0, rate);
 
             if (_mixerTimeStamp == 0)
                 return ts;
@@ -183,7 +188,16 @@ namespace NScumm.Core.Audio
             return ts;
         }
 
-        void UpdateChannelVolumes()
+        /// <summary>
+        /// Notifies the channel that the global sound type
+        /// volume settings changed.
+        /// </summary>
+        public void NotifyGlobalVolChange()
+        {
+            UpdateChannelVolumes();
+        }
+
+        private void UpdateChannelVolumes()
         {
             // From the channel balance/volume and the global volume, we compute
             // the effective volume for the left and right channel. Note the
@@ -217,7 +231,7 @@ namespace NScumm.Core.Audio
             {
                 _volL = _volR = 0;
             }
-        }        
+        }
     }
-    
+
 }

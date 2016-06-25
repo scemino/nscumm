@@ -4,8 +4,8 @@ namespace NScumm.Queen
 {
     partial class Sound
     {
-      protected static readonly SongData[] _songDemo =
-      {
+        protected static readonly SongData[] _songDemo =
+        {
         /* 1 - Hotel Gangsters */
         new SongData(new short[] {1, 0}, 128, 128, 128, 1, 0),
 
@@ -100,8 +100,8 @@ namespace NScumm.Queen
         new SongData(new short[] {34, 0}, 128, 128, 128, 1, 1)
       };
 
-      protected static readonly SongData[] _song =
-      {
+        protected static readonly SongData[] _song =
+        {
         /* 1 - Hotel Gangsters */
         new SongData(new short[] {1, 0}, 128, 180, 0, 1, 0),
 
@@ -838,8 +838,8 @@ namespace NScumm.Queen
         new TuneData(new short[] {46, 0}, new short[] {0, 0}, 1, 0)
       };
 
-      public static readonly TuneData[] _tune =
-      {
+        public static readonly TuneData[] _tune =
+        {
         /* 1 - Hotel Gangsters */
         new TuneData(new short[] {32, 0}, new short[] {0, 0}, 1, 0),
 
@@ -1461,7 +1461,6 @@ namespace NScumm.Queen
         /* 207 - Frank Destroyed */
         new TuneData(new short[] {25, 1044, 0}, new short[] {0, 0}, 1, 0),
 
-
         /* 208 - Jaspar Eats */
         new TuneData(new short[] {0, 0}, new short[] {134, 0}, 2, 0),
 
@@ -1477,6 +1476,417 @@ namespace NScumm.Queen
         /* 212 - Talk Frank */
         new TuneData(new short[] {77, 1017, 0}, new short[] {0, 0}, 1, 0)
       };
+
+        protected static readonly string[] _sfxName = {
+    /* 1 - Door Open (standard) */
+    "116Bssss",
+
+    /* 2 - Door Close (standard) */
+    "105assss",
+
+    /* 3 - Pour Liquid */
+    "133sssss",
+
+    /* 4 - Light Switch */
+    "27ssssss",
+
+    /* 5 - Scissor Snip */
+    "15ssssss",
+
+    /* 6 - Pick up Sticky */
+    "79ssssss",
+
+    /* 7 - Hydraulic Doors Open */
+    "96ssssss",
+
+    /* 8 - Hydraulic Doors Close */
+    "97ssssss",
+
+    /* 9 - Metallic Door Slams */
+    "105sssss",
+
+    /* 10 - Small Hatch Close */
+    "106sssss",
+
+    /* 11 - Oracle Rezzes In */
+    "132sssss",
+
+    /* 12 - Polish Sparkle */
+    "132Cssss",
+
+    /* 13 - Splorch! */
+    "137Bssss",
+
+    /* 14 - Dino Ray Gun */
+    "138sssss",
+
+    /* 15 - Squish! */
+    "137Assss",
+
+    /* 16 - Robot Laser */
+    "61ssssss",
+
+    /* 17 - Thud wood light */
+    "109sssss",
+
+    /* 18 - Thud wood deep */
+    "110sssss",
+
+    /* 19 - Thud metallic */
+    "111sssss",
+
+    /* 20 - Zombies Rez Out */
+    "77ssssss",
+
+    /* 21 - Sarc Door Closes  */
+    "58ssssss",
+
+    /* 22 - Thud breadboard fruit/Coconut */
+    "131Assss",
+
+    /* 23 - Thud stone */
+    "75ssssss",
+
+    /* 24 - Cloth Slide 1 */
+    "135sssss",
+
+    /* 25 - Open Chest */
+    "112sssss",
+
+    /* 26 - Close Chest */
+    "121sssss",
+
+    /* 27 - Open Drawer */
+    "120sssss",
+
+    /* 28 - Truck door closes */
+    "122sssss",
+
+    /* 29 - Truck Starts */
+    "123Assss",
+
+    /* 30 - Truck Drives Off */
+    "123Bssss",
+
+    /* 31 - Fish Splash */
+    "18ssssss",
+
+    /* 32 - Agression Enhancer */
+    "138Bssss",
+
+    /* 33 - Close Drawer/Push Ladder */
+    "113sssss",
+
+    /* 34 - *Stamp Sound */
+    "40ssssss",
+
+    /* 35 - plane hatch open */
+    "3sssssss",
+
+    /* 36 - plane hatch close */
+    "4sssssss",
+
+    /* 37 - tie vines */
+    "11ssssss",
+
+    /* 38 - Pterodactyl */
+    "10ssssss",
+
+    /* 39 - Beef Jerky Splash */
+    "6sssssss",
+
+    /* 40 - Piranha Burp */
+    "7sssssss",
+
+    /* 41 - Falling Vine */
+    "13ssssss",
+
+    /* 42 - Sproing! */
+    "29ssssss",
+
+    /* 43 - Prison/Dungeon Door */
+    "33ssssss",
+
+    /* 44 - Ape takes off mask */
+    "24ssssss",
+
+    /* 45 - Bark breaks */
+    "25ssssss",
+
+    /* 46 - Stone Click */
+    "136sssss",
+
+    /* 47 - Rocket Pack Zoom */
+    "1006ssss",
+
+    /* 48 - Cash Register */
+    "36ssssss",
+
+    /* 49 - Squeaky Toy */
+    "37ssssss",
+
+    /* 50 - Falling Chains */
+    "38ssssss",
+
+    /* 51 - Cloth Unravels */
+    "64ssssss",
+
+    /* 52 - Open Locker Door */
+    "48ssssss",
+
+    /* 53 - Close Locker Door */
+    "49ssssss",
+
+    /* 54 - Rub Pencil on Pad */
+    "50ssssss",
+
+    /* 55 - Open Safe */
+    "51ssssss",
+
+    /* 56 - Close Safe */
+    "52ssssss",
+
+    /* 57 - Push Chair */
+    "59ssssss",
+
+    /* 58 - Snake Hiss */
+    "83ssssss",
+
+    /* 59 - Oracle Rezzes Out */
+    "70ssssss",
+
+    /* 60 - Wall Crumbles */
+    "73Asssss",
+
+    /* 61 - Crypt Crumbles */
+    "76ssssss",
+
+    /* 62 - Creaking Stick */
+    "74Asssss",
+
+    /* 63 - Joe Sucked Up */
+    "80ssssss",
+
+    /* 64 - Slide Chute */
+    "114assss",
+
+    /* 65 - Press Button */
+    "1007ssss",
+
+    /* 66 - Snap Branch */
+    "101sssss",
+
+    /* 67 - Dino Horn */
+    "103sssss",
+
+    /* 68 - Tire Screech */
+    "125sssss",
+
+    /* 69 - Chicken */
+    "126sssss",
+
+    /* 70 - Oil Splat */
+    "127sssss",
+
+    /* 71 - Punch */
+    "128sssss",
+
+    /* 72 - Body Hits Ground */
+    "129sssss",
+
+    /* 73 - Pick Hits Stone */
+    "71ssssss",
+
+    /* 74 - Stalactite Crumbles */
+    "119sssss",
+
+    /* 75 - *Drip */
+    "93ssssss",
+
+    /* 76 - Tic-Toc */
+    "42Bsssss",
+
+    /* 77 - Explosion */
+    "88ssssss",
+
+    /* 78 - Stone Door Grind 1 */
+    "1001ssss",
+
+    /* 79 - Stone Door Grind 2 */
+    "1002ssss",
+
+    /* 80 - *Fight Explosion */
+    "1000ssss",
+
+    /* 81 - Stone Grind (heavy) */
+    "1003ssss",
+
+    /* 82 - Stone Grind (light) */
+    "89ssssss",
+
+    /* 83 - Piranha Splash */
+    "5sssssss",
+
+    /* 84 - Cloth Slide 2 */
+    "1005ssss",
+
+    /* 85 - Temple Laser */
+    "87ssssss",
+
+    /* 86 - Dino Transformation */
+    "55Bsssss",
+
+    /* 87 - Experimental Laser */
+    "55ssssss",
+
+    /* 88 - Stone Grind (medium) */
+    "134sssss",
+
+    /* 89 - Weeping God Grind */
+    "94ssssss",
+
+    /* 90 - Alien Hum */
+    "95ssssss",
+
+    /* 91 - Alien Puzzle */
+    "103Assss",
+
+    /* 92 - Vacuum On */
+    "21ssssss",
+
+    /* 93 - Vacuum Off */
+    "21Csssss",
+
+    /* 94 - Elevator Starts */
+    "44ssssss",
+
+    /* 95 - Mummy Crumbles */
+    "68ssssss",
+
+    /* 96 - Temple Green Circle */
+    "60Bsssss",
+
+    /* 97 - Rattle Bars */
+    "115sssss",
+
+    /* 98 - Door Dissolves */
+    "56ssssss",
+
+    /* 99 - Altar Slides */
+    "85ssssss",
+
+    /* 100 - Light Torch */
+    "81ssssss",
+
+    /* 101 - Plane Flyby */
+    "1027ssss",
+
+    /* 102 - Plaster Loud */
+    "41Bsssss",
+
+    /* 103 - Sparky Bathtub */
+    "73ssssss",
+
+    /* 104 - Ape Rezzes Out */
+    "14ssssss",
+
+    /* 105 - Piranhas Swim */
+    "17ssssss",
+
+    /* 106 - *Gun Shot */
+    "1004ssss",
+
+    /* 107 - Pull Lever */
+    "1008ssss",
+
+    /* 108 - Wrong Code */
+    "1009ssss",
+
+    /* 109 - Correct Code */
+    "1010ssss",
+
+    /* 110 - Sizzle */
+    "1011ssss",
+
+    /* 111 - Money In Slot */
+    "1012ssss",
+
+    /* 112 - Lightning */
+    "1013ssss",
+
+    /* 113 - Machine Gun Fire */
+    "1014ssss",
+
+    /* 114 - Cage Descends */
+    "1015ssss",
+
+    /* 115 - Temple Chair Activates */
+    "1016ssss",
+
+    /* 116 - Robot Powers On */
+    "1017ssss",
+
+    /* 117 - Grow Big */
+    "1018ssss",
+
+    /* 118 - Eat Food */
+    "1019ssss",
+
+    /* 119 - Head Shrink */
+    "1020ssss",
+
+    /* 120 - Grinding Gears */
+    "84ssssss",
+
+    /* 121 - Wave Torch */
+    "1021ssss",
+
+    /* 122 - Snake Slithers Off */
+    "1022ssss",
+
+    /* 123 - Chair Splash */
+    "26ssssss",
+
+    /* 124 - Deflect Laser */
+    "60ssssss",
+
+    /* 125 - Zap Frank */
+    "1023ssss",
+
+    /* 126 - Frank Transforms */
+    "1024ssss",
+
+    /* 127 - Alarm Clock */
+    "1025ssss",
+
+    /* 128 - Puff */
+    "35ssssss",
+
+    /* 129 - Bite */
+    "1026ssss",
+
+    /* 130 - Plane Engine 1 */
+    "1028ssss",
+
+    /* 131 - Plane Engine 2 */
+    "1029ssss",
+
+    /* 132 - Boat In */
+    "1030ssss",
+
+    /* 133 - Boat Out */
+    "1031ssss",
+
+    /* 134 - Jaspar Eats */
+    "1032ssss",
+
+    /* 135 - Compy Scream 1 */
+    "1033ssss",
+
+    /* 136 - Compy Scream 2 */
+    "1034ssss"
+};
+
 
         public static readonly short[] _jungleList = { 15, 16, 17, 18, 7, 8, 9, 10, 11, 12, 13, 14, 0 };
     }

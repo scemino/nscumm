@@ -162,6 +162,31 @@ namespace NScumm.Core.Audio
             return soundTypeSettings[(int)type].Volume;
         }
 
+        public void SetVolumeForSoundType(SoundType type, int volume)
+        {
+            Debug.Assert(0 <= (int)type && (int)type < soundTypeSettings.Length);
+
+            // Check range
+            if (volume > MaxMixerVolume)
+                volume = MaxMixerVolume;
+            else if (volume < 0)
+                volume = 0;
+
+            // TODO: Maybe we should do logarithmic (not linear) volume
+            // scaling? See also Player_V2::setMasterVolume
+
+            lock (_gate)
+            {
+                soundTypeSettings[(int)type].Volume = volume;
+
+                for (int i = 0; i != _channels.Length; ++i)
+                {
+                    if (_channels[i] != null && _channels[i].Type == type)
+                        _channels[i].NotifyGlobalVolChange();
+                }
+            }
+        }
+
         public void PauseHandle(SoundHandle handle, bool paused)
         {
             lock (_gate)
@@ -352,7 +377,7 @@ namespace NScumm.Core.Audio
             }
 
             public bool Mute;
-            public readonly int Volume;
+            public int Volume;
         }
     }
 }

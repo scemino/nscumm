@@ -23,160 +23,189 @@ using System.IO;
 
 namespace NScumm.Core
 {
-	public class SeekableSubReadStream:Stream
-	{
-		long _begin;
-		long _end;
-		readonly Stream _parentStream;
+    public class SeekableSubReadStream : Stream
+    {
+        long _begin;
+        long _end;
+        readonly Stream _parentStream;
 
-		public override bool CanRead {
-			get {
-				return _parentStream.CanRead;
-			}
-		}
+        public override bool CanRead
+        {
+            get
+            {
+                return _parentStream.CanRead;
+            }
+        }
 
-		public override bool CanSeek {
-			get {
-				return _parentStream.CanSeek;
-			}
-		}
+        public override bool CanSeek
+        {
+            get
+            {
+                return _parentStream.CanSeek;
+            }
+        }
 
-		public override bool CanTimeout {
-			get {
-				return _parentStream.CanTimeout;
-			}
-		}
+        public override bool CanTimeout
+        {
+            get
+            {
+                return _parentStream.CanTimeout;
+            }
+        }
 
-		public override bool CanWrite {
-			get {
-				return _parentStream.CanWrite;
-			}
-		}
+        public override bool CanWrite
+        {
+            get
+            {
+                return _parentStream.CanWrite;
+            }
+        }
 
-		public override long Position {
-			get {
-				return _parentStream.Position;
-			}
-			set {
-				_parentStream.Position = value;
-			}
-		}
+        public override long Position
+        {
+            get
+            {
+                return _parentStream.Position - _begin;
+            }
+            set
+            {
+                _parentStream.Position = value + _begin;
+            }
+        }
 
-		public override long Length {
-			get {
-				return _end-_begin;
-			}
-		}
+        public override long Length
+        {
+            get
+            {
+                return _end - _begin;
+            }
+        }
 
-		public override int ReadTimeout {
-			get {
-				return _parentStream.ReadTimeout;
-			}
-			set {
-				_parentStream.ReadTimeout = value;
-			}
-		}
+        public override int ReadTimeout
+        {
+            get
+            {
+                return _parentStream.ReadTimeout;
+            }
+            set
+            {
+                _parentStream.ReadTimeout = value;
+            }
+        }
 
-		public override int WriteTimeout {
-			get {
-				return _parentStream.WriteTimeout;
-			}
-			set {
-				_parentStream.WriteTimeout = value;
-			}
-		}
+        public override int WriteTimeout
+        {
+            get
+            {
+                return _parentStream.WriteTimeout;
+            }
+            set
+            {
+                _parentStream.WriteTimeout = value;
+            }
+        }
 
-		public SeekableSubReadStream (Stream parentStream, long begin, long end)
-		{
-			_parentStream = parentStream;
-			_begin = begin;
-			_end = end;
-			_parentStream.Seek(_begin, SeekOrigin.Begin);
-		}
+        public SeekableSubReadStream(Stream parentStream, long begin, long end)
+        {
+            _parentStream = parentStream;
+            _begin = begin;
+            _end = end;
+            _parentStream.Seek(_begin, SeekOrigin.Begin);
+        }
 
-		protected override void Dispose (bool disposing)
-		{
-			_parentStream.Dispose ();
-		}
+        protected override void Dispose(bool disposing)
+        {
+            _parentStream.Dispose();
+        }
 
-		public override void Flush ()
-		{
-			_parentStream.Flush ();
-		}
+        public override void Flush()
+        {
+            _parentStream.Flush();
+        }
 
-		public override long Seek (long offset, SeekOrigin origin)
-		{
-			switch (origin) {
-			case SeekOrigin.Begin:
-				if (_begin + offset > _end) {
-					return _parentStream.Seek (_end, SeekOrigin.Begin);
-				} else {
-					return _parentStream.Seek (_begin + offset, SeekOrigin.Begin);
-				}
-			case SeekOrigin.Current:
-				if (_begin + offset > _end) {
-					return _parentStream.Seek (_end, SeekOrigin.Begin);
-				} else {
-					return _parentStream.Seek (offset, SeekOrigin.Current);
-				}
-			case SeekOrigin.End:
-				return _parentStream.Seek (_end, SeekOrigin.Begin);
-			}
-			return 0;
-		}
+        public override long Seek(long offset, SeekOrigin origin)
+        {
+            switch (origin)
+            {
+                case SeekOrigin.Begin:
+                    if (_begin + offset > _end)
+                    {
+                        return _parentStream.Seek(_end, SeekOrigin.Begin);
+                    }
+                    else
+                    {
+                        return _parentStream.Seek(_begin + offset, SeekOrigin.Begin);
+                    }
+                case SeekOrigin.Current:
+                    if (_begin + offset > _end)
+                    {
+                        return _parentStream.Seek(_end, SeekOrigin.Begin);
+                    }
+                    else
+                    {
+                        return _parentStream.Seek(offset, SeekOrigin.Current);
+                    }
+                case SeekOrigin.End:
+                    return _parentStream.Seek(_end, SeekOrigin.Begin);
+            }
+            return 0;
+        }
 
-		public override IAsyncResult BeginRead (byte[] buffer, int offset, int count, AsyncCallback callback, object state)
-		{
-			return _parentStream.BeginRead (buffer, offset, count, callback, state);
-		}
+        public override IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
+        {
+            return _parentStream.BeginRead(buffer, offset, count, callback, state);
+        }
 
-		public override int EndRead (IAsyncResult asyncResult)
-		{
-			return _parentStream.EndRead (asyncResult);
-		}
+        public override int EndRead(IAsyncResult asyncResult)
+        {
+            return _parentStream.EndRead(asyncResult);
+        }
 
-		public override int ReadByte ()
-		{
-			return _parentStream.ReadByte ();
-		}
+        public override int ReadByte()
+        {
+            return _parentStream.ReadByte();
+        }
 
-		public override int Read (byte[] buffer, int offset, int count)
-		{
-			if ((_begin + offset + count) > _end) {
-				count = (int)(_end - (_begin + offset));
-			}
-			return _parentStream.Read (buffer, offset, count);
-		}
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            if ((Position + offset + count) > Length)
+            {
+                count = (int)(Length - (Position + offset));
+            }
+            return _parentStream.Read(buffer, offset, count);
+        }
 
-		public override void Write (byte[] buffer, int offset, int count)
-		{
-			if ((_begin + offset + count) > _end) {
-				count = (int)(_end - (_begin + offset));
-			}
-			_parentStream.Write (buffer, offset, count);
-		}
+        public override void Write(byte[] buffer, int offset, int count)
+        {
+            if ((Position + offset + count) > Length)
+            {
+                count = (int)(Length - (Position + offset));
+            }
+            _parentStream.Write(buffer, offset, count);
+        }
 
-		public override void WriteByte (byte value)
-		{
-			if (Position < _end) {
-				_parentStream.WriteByte (value);
-			}
-		}
+        public override void WriteByte(byte value)
+        {
+            if (Position < _end)
+            {
+                _parentStream.WriteByte(value);
+            }
+        }
 
-		public override IAsyncResult BeginWrite (byte[] buffer, int offset, int count, AsyncCallback callback, object state)
-		{
-			return _parentStream.BeginWrite (buffer, offset, count, callback, state);
-		}
+        public override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
+        {
+            return _parentStream.BeginWrite(buffer, offset, count, callback, state);
+        }
 
-		public override void EndWrite (IAsyncResult asyncResult)
-		{
-			_parentStream.EndWrite (asyncResult);
-		}
+        public override void EndWrite(IAsyncResult asyncResult)
+        {
+            _parentStream.EndWrite(asyncResult);
+        }
 
-		public override void SetLength (long value)
-		{
-			_parentStream.SetLength (value);
-		}
-	}
+        public override void SetLength(long value)
+        {
+            _parentStream.SetLength(value);
+        }
+    }
 }
 

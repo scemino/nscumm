@@ -179,7 +179,7 @@ namespace NScumm.Queen
             }
             else if (length != 0)
             {
-                str = System.Text.Encoding.UTF8.GetString(ptr, offset, length);
+                str = ptr.GetRawText(offset, length);
                 offset = (ushort)((offset + length + (align - 1)) & ~(align - 1));
             }
         }

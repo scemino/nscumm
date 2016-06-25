@@ -23,6 +23,7 @@ using System.IO;
 using System.Linq;
 using System;
 using FlacBox;
+using System.Collections.Generic;
 
 namespace NScumm
 {
@@ -51,11 +52,19 @@ namespace NScumm
 
         public IAudioStream MakeVorbisStream(Stream stream)
         {
-            return null;
+            try
+            {
+                return new WaveAudioStream(new FlacOverOggStream(stream, FlacOverOggStreamMode.Decode));
+            }
+            catch (OggStreamException e)
+            {
+                return null;
+            }
         }
 
         public IAudioStream MakeMp3Stream(Stream stream)
         {
+            //return new AudioSampleProviderToAudioStream(new Mp3AudioSampleProvider(stream));
             return null;
         }
 

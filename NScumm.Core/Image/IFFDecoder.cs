@@ -93,7 +93,6 @@ namespace NScumm.Core
         private Header _header;
         private List<PaletteRange> _paletteRanges;
         private Type _type;
-        private ushort _paletteColorCount;
         private byte _numRelevantPlanes;
         private bool _pixelPacking;
 
@@ -196,7 +195,6 @@ namespace NScumm.Core
             {
                 Palette[i] = Color.FromRgb(stream.ReadByte(), stream.ReadByte(), stream.ReadByte());
             }
-            _paletteColorCount = (ushort)(size / 3);
         }
 
         private void LoadPaletteRange(Stream stream, uint size)

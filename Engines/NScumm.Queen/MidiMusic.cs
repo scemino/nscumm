@@ -265,8 +265,8 @@ namespace NScumm.Queen
             if ((b & 0xFFF0) == 0x07B0)
             {
                 // Adjust volume changes by master volume
-                byte volume = (byte)((b >> 16) & 0x7F);
-                _channelsVolume[channel] = volume;
+                uint volume = (byte)((b >> 16) & 0x7F);
+                _channelsVolume[channel] = (byte)volume;
                 volume = (byte)(volume * _masterVolume / 255);
                 b = (int)((b & 0xFF00FFFF) | (volume << 16));
             }

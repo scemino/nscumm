@@ -260,7 +260,7 @@ namespace NScumm.Sky
             var inputMan = _system.InputManager;
             while (mousePressed || Environment.TickCount < now + minDelay)
             {
-                if (SkyEngine.ShouldQuit)
+                if (Engine.Instance.HasToQuit)
                 {
                     minDelay = 0;
                     mousePressed = false;

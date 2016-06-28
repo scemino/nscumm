@@ -328,7 +328,7 @@ namespace NScumm.Sky
         {
             if (SkyEngine.IsDemo)
             {
-                SkyEngine.QuitGame();
+                SkyEngine.Instance.QuitGame();
             }
 
             if (sectionNo == 5) //linc section - has different mouse icons

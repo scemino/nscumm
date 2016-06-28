@@ -51,10 +51,10 @@ namespace NScumm.Core.Video
         private uint _pauseStartTime;
         private bool _endTimeSet;
         private Timestamp _endTime;
-        private bool _dirtyPalette;
-        private byte[] _palette;
 
         public bool IsPaused { get { return _pauseLevel != 0; } }
+
+        public bool HasDirtyPalette { get; private set; }
 
         public bool IsPlaying
         {
@@ -95,8 +95,6 @@ namespace NScumm.Core.Video
         }
 
         public byte[] Palette { get; private set; }
-
-        public bool HasDirtyPalette { get; private set; }
 
         public bool IsRewindable
         {
@@ -155,8 +153,8 @@ namespace NScumm.Core.Video
             _tracks.Clear();
             _internalTracks.Clear();
             _externalTracks.Clear();
-            _dirtyPalette = false;
-            _palette = null;
+            HasDirtyPalette = false;
+            Palette = null;
             _startTime = 0;
             _audioVolume = Mixer.MaxChannelVolume;
             _audioBalance = 0;

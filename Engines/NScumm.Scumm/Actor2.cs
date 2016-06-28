@@ -201,7 +201,7 @@ namespace NScumm.Scumm
 
         static int CheckXYInBoxBounds(int boxnum, Point p, out Point dest)
         {
-            BoxCoords box = ScummEngine.Instance.GetBoxCoordinates(boxnum);
+            BoxCoords box = ((ScummEngine)Core.Engine.Instance).GetBoxCoordinates(boxnum);
             int xmin, xmax;
 
             // We are supposed to determine the point (destX,destY) contained in
@@ -294,7 +294,7 @@ namespace NScumm.Scumm
             int yDist = Math.Abs(p.Y - dest.Y) / 4;
             int dist;
 
-            if (ScummEngine.Instance.Game.Version == 0)
+            if (((ScummEngine)Core.Engine.Instance).Game.Version == 0)
                 xDist *= 2;
 
             if (xDist < yDist)

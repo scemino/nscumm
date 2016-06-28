@@ -21,9 +21,6 @@
 using System;
 using NScumm.Core;
 using NScumm.Core.IO;
-using NScumm.Core.Graphics;
-using NScumm.Core.Input;
-using NScumm.Core.Audio;
 using System.Diagnostics;
 using System.IO;
 using D = NScumm.Core.DebugHelper;
@@ -38,7 +35,7 @@ namespace NScumm.Queen
         public string description;
     }
 
-    public class QueenEngine : IEngine
+    public class QueenEngine : Engine
     {
         const int MIN_TEXT_SPEED = 4;
         public const int MAX_TEXT_SPEED = 100;
@@ -52,7 +49,6 @@ namespace NScumm.Queen
         const int SLOT_QUICKSAVE = 0;
 
         ISystem _system;
-        Mixer _mixer;
 
         int _lastUpdateTime, _lastSaveTime;
 
@@ -84,15 +80,9 @@ namespace NScumm.Queen
 
         public Sound Sound { get; private set; }
 
-        public bool HasToQuit { get; set; }
-
-        public bool IsPaused { get; set; }
-
         public int TalkSpeed { get; set; }
 
         public bool Subtitles { get; set; }
-
-        public IMixer Mixer { get { return _mixer; } }
 
         private bool CanLoadOrSave
         {
@@ -103,16 +93,13 @@ namespace NScumm.Queen
         }
 
         public QueenEngine(GameSettings settings, ISystem system)
+            : base(system)
         {
             Randomizer = new Random();
             Settings = settings;
             _system = system;
-            _mixer = new Mixer(44100);
-            _mixer.Read(new short[0], 0);
-            _system.AudioOutput.SetSampleProvider(_mixer);
         }
 
-        public event EventHandler ShowMenuDialogRequested;
 
         public void FindGameStateDescriptions(string[] descriptions)
         {
@@ -249,7 +236,7 @@ namespace NScumm.Queen
 
         }
 
-        public void Run()
+        public override void Run()
         {
             Resource = new Resource(Settings.Game.Path);
             Bam = new BamScene(this);
@@ -274,7 +261,7 @@ namespace NScumm.Queen
                 Logic = new LogicGame(this);
             }
 
-            Sound = Sound.MakeSoundInstance(_mixer, this, Resource.Compression);
+            Sound = Sound.MakeSoundInstance(Mixer, this, Resource.Compression);
 
             Walk = new Walk(this);
             //_talkspeedScale = (MAX_TEXT_SPEED - MIN_TEXT_SPEED) / 255.0;
@@ -319,10 +306,10 @@ namespace NScumm.Queen
             }
         }
 
-        public void LoadGameState(int slot)
+        public override void LoadGameState(int slot)
         {
             D.Debug(3, $"Loading game from slot {slot}");
-            GameStateHeader header = new GameStateHeader();
+            var header = new GameStateHeader();
             using (var file = ReadGameStateHeader(slot, header))
             {
                 var br = new BinaryReader(file);
@@ -346,9 +333,9 @@ namespace NScumm.Queen
             }
         }
 
-        private void SyncSoundSettings()
+        public override void SyncSoundSettings()
         {
-            // TODO: Engine::syncSoundSettings();
+            base.SyncSoundSettings();
 
             ReadOptionSettings();
         }
@@ -368,12 +355,7 @@ namespace NScumm.Queen
             CheckOptionSettings();
         }
 
-        internal void QuitGame()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void SaveGameState(int slot, string desc)
+        public override void SaveGameState(int slot, string desc)
         {
             D.Debug(3, $"Saving game to slot {slot}");
             var name = MakeGameStateName(slot);
@@ -422,28 +404,10 @@ namespace NScumm.Queen
             }
         }
 
-        void IEngine.Load(string filename)
-        {
-            throw new NotImplementedException();
-        }
-
-        void IEngine.Save(string filename)
-        {
-            throw new NotImplementedException();
-        }
-
         private void RegisterDefaultSettings()
         {
             ConfigManager.Instance.RegisterDefault("talkspeed", Logic.DEFAULT_TALK_SPEED);
             ConfigManager.Instance.RegisterDefault("subtitles", true);
-        }
-
-        // TODO: move this in Engine base class
-        private bool ShouldPerformAutoSave(int lastSaveTime)
-        {
-            int diff = Environment.TickCount - lastSaveTime;
-            int autosavePeriod = ConfigManager.Instance.Get<int>("autosave_period");
-            return autosavePeriod != 0 && diff > autosavePeriod * 1000;
         }
     }
 }

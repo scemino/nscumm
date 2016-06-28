@@ -30,7 +30,6 @@ namespace NScumm.Core
 		public Surface Surface { get; private set;}
 
 		public Color[] Palette { get; private set;}
-		ushort _paletteColorCount;
 
 		public bool LoadStream (Stream stream)
 		{
@@ -89,7 +88,6 @@ namespace NScumm.Core
 			if (nPlanes == 3 && bitsPerPixel == 8) {	// 24bpp
 				Surface = new Surface (width, height, PixelFormat.Rgb24);
 				dst = Surface.Pixels;
-				_paletteColorCount = 0;
 
 				for (y = 0; y < height; y++) {
 					DecodeRLE (br, scanLine, bytesPerscanLine, compressed);
@@ -107,7 +105,6 @@ namespace NScumm.Core
 			} else if (nPlanes == 1 && bitsPerPixel == 8) {	// 8bpp indexed
 				Surface = new Surface (width, height, PixelFormat.Indexed8);
 				dst = Surface.Pixels;
-				_paletteColorCount = 16;
 
 				for (y = 0; y < height; y++, dstPos += Surface.Pitch) {
 					DecodeRLE (br, scanLine, bytesPerscanLine, compressed);
@@ -125,13 +122,10 @@ namespace NScumm.Core
 					for (var i = 0; i < 256; i++) {
 						Palette [i] = Color.FromRgb(br.ReadByte(),br.ReadByte(), br.ReadByte ());
 					}
-
-					_paletteColorCount = 256;
 				}
 			} else if ((nPlanes == 2 || nPlanes == 3 || nPlanes == 4) && bitsPerPixel == 1) {	// planar, 4, 8 or 16 colors
 				Surface = new Surface (width, height, PixelFormat.Indexed8);
 				dst = Surface.Pixels;
-				_paletteColorCount = 16;
 
 				for (y = 0; y < height; y++, dstPos += Surface.Pitch) {
 					DecodeRLE (br, scanLine, bytesPerscanLine, compressed);

@@ -1102,7 +1102,7 @@ namespace NScumm.Sword1
             {
                 // TODO:GUI::MessageDialog dialog(_("This is the end of the Broken Sword 1 Demo"), _("OK"), NULL);
                 //dialog.runModal();
-                SwordEngine.ShouldQuit = true;
+                NScumm.Core.Engine.Instance.HasToQuit = true;
             }
             else
                 throw new InvalidOperationException("fnQuitGame() called");

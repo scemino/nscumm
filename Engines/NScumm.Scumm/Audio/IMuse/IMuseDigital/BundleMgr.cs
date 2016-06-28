@@ -50,7 +50,7 @@ namespace NScumm.Scumm.Audio.IMuse.IMuseDigital
             if (_file != null)
                 return true;
 
-            filename = ScummHelper.LocatePath(ServiceLocator.FileStorage.GetDirectoryName(ScummEngine.Instance.Game.Path), filename);
+            filename = ScummHelper.LocatePath(ServiceLocator.FileStorage.GetDirectoryName(((ScummEngine)Engine.Instance).Game.Path), filename);
             _file = new BinaryReader(ServiceLocator.FileStorage.OpenFileRead(filename));
 
             int slot = _cache.MatchFile(filename);

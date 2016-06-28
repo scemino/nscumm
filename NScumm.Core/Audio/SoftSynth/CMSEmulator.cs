@@ -57,7 +57,6 @@ namespace NScumm.Core.Audio.SoftSynth
     /* this structure defines a SAA1099 chip */
     class SAA1099
     {
-        public int stream;
         /* our stream */
         public int[] noise_params = new int[2];
         /* noise generators parameters */

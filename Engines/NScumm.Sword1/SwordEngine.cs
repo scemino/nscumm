@@ -23,10 +23,11 @@ using NScumm.Core.Audio;
 using NScumm.Core.Graphics;
 using NScumm.Core.Input;
 using NScumm.Core.IO;
+using D = NScumm.Core.DebugHelper;
 
 namespace NScumm.Sword1
 {
-    class SwordEngine : IEngine
+    class SwordEngine : Engine
     {
         // number of frames per second (max rate)
         public const int FRAME_RATE = 12;
@@ -35,7 +36,6 @@ namespace NScumm.Sword1
         private ResMan _resMan;
         private Logic _logic;
         private ushort _mouseState;
-        private Mixer _mixer;
         private Screen _screen;
         private Sound _sound;
         private Mouse _mouse;
@@ -48,35 +48,13 @@ namespace NScumm.Sword1
         public GameSettings Settings { get; }
         public IGraphicsManager GraphicsManager { get; }
 
-        event EventHandler IEngine.ShowMenuDialogRequested
-        {
-            add { }
-            remove { }
-        }
-
-        bool IEngine.HasToQuit
-        {
-            get { return ShouldQuit; }
-            set { ShouldQuit = value; }
-        }
-
-        public IMixer Mixer => _mixer;
-        
-        public bool IsPaused { get; set; }
-
         public ISystem System { get; private set; }
 
-        public static bool ShouldQuit { get; set; }
-
-
         public SwordEngine(GameSettings settings, ISystem system)
+            : base(system)
         {
             Settings = settings;
             GraphicsManager = system.GraphicsManager;
-            _mixer = new Mixer(44100);
-            // HACK:
-            _mixer.Read(new byte[0], 0);
-            system.AudioOutput.SetSampleProvider(_mixer);
             System = system;
 
             var gameId = ((SwordGameDescriptor)settings.Game).GameId;
@@ -93,23 +71,22 @@ namespace NScumm.Sword1
             // TODO:
             // CheckCdFiles();
 
-            // TODO: debug(5, "Starting resource manager");
+            D.Debug(5, "Starting resource manager");
             var directory = ServiceLocator.FileStorage.GetDirectoryName(settings.Game.Path);
             var path = ServiceLocator.FileStorage.Combine(directory, "swordres.rif");
             _resMan = new ResMan(directory, path, SystemVars.Platform == Platform.Macintosh);
-            // TODO: debug(5, "Starting object manager");
 
+            D.Debug(5, "Starting object manager");
             _objectMan = new ObjectMan(_resMan);
             _mouse = new Mouse(System, _resMan, _objectMan);
             _screen = new Screen(directory, System, _resMan, _objectMan);
             _music = new Music(Mixer, directory);
-            _sound = new Sound(settings, _mixer, _resMan);
+            _sound = new Sound(settings, Mixer, _resMan);
             _menu = new Menu(_screen, _mouse);
             _logic = new Logic(this, _objectMan, _resMan, _screen, _mouse, _sound, _music, _menu, Mixer);
             _mouse.UseLogicAndMenu(_logic, _menu);
 
-            // TODO:
-            //SyncSoundSettings();
+            SyncSoundSettings();
 
             SystemVars.JustRestoredGame = 0;
             SystemVars.CurrentCd = 0;
@@ -144,8 +121,7 @@ namespace NScumm.Sword1
             //        break;
             //}
 
-            // TODO:
-            //_systemVars.showText = ConfMan.getBool("subtitles");
+            SystemVars.ShowText = (byte)(ConfigManager.Instance.Get<bool>("subtitles") ? 1 : 0);
 
             SystemVars.PlaySpeech = 1;
             _mouseState = 0;
@@ -160,15 +136,13 @@ namespace NScumm.Sword1
             _control = new Control(system.SaveFileManager, _resMan, _objectMan, System, _mouse, _sound, _music);
         }
 
-        public void Run()
+        public override void Run()
         {
             // TODO: run
             //_control.CheckForOldSaveGames();
-            //SetTotalPlayTime(0);
+            TotalPlayTime = 0;
 
-            // TODO: configuration
-            //uint16 startPos = ConfMan.getInt("boot_param");
-            ushort startPos = 0;
+            ushort startPos = (ushort)ConfigManager.Instance.Get<int>("boot_param");
             _control.ReadSavegameDescriptions();
             if (startPos != 0)
             {
@@ -176,9 +150,7 @@ namespace NScumm.Sword1
             }
             else
             {
-                // TODO: configuration
-                //int saveSlot = ConfMan.getInt("save_slot");
-                int saveSlot = -1;
+                int saveSlot = ConfigManager.Instance.Get<int>("save_slot");
                 // Savegames are numbered starting from 1 in the dialog window,
                 // but their filenames are numbered starting from 0.
                 if (saveSlot >= 0 && _control.SavegamesExist() && _control.RestoreGameFromFile((byte)saveSlot))
@@ -190,7 +162,7 @@ namespace NScumm.Sword1
                     SystemVars.ControlPanelMode = ControlPanelMode.CP_NEWGAME;
                     if (_control.RunPanel() == Control.CONTROL_GAME_RESTORED)
                         _control.DoRestore();
-                    else if (!ShouldQuit)
+                    else if (!HasToQuit)
                         _logic.StartPositions(0);
                 }
                 else
@@ -201,11 +173,11 @@ namespace NScumm.Sword1
             }
             SystemVars.ControlPanelMode = ControlPanelMode.CP_NORMAL;
 
-            while (!ShouldQuit)
+            while (!HasToQuit)
             {
                 byte action = MainLoop();
 
-                if (!ShouldQuit)
+                if (!HasToQuit)
                 {
                     // the mainloop was left, we have to reinitialize.
                     Reinitialize();
@@ -219,17 +191,6 @@ namespace NScumm.Sword1
             }
         }
 
-        public void Load(string filename)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Save(string filename)
-        {
-            throw new NotImplementedException();
-        }
-
-
         private void Reinitialize()
         {
             _sound.QuitScreen();
@@ -238,7 +199,7 @@ namespace NScumm.Sword1
             _logic.Initialize();     // now reinitialize these objects as they (may) have locked
             _objectMan.Initialize(); // resources which have just been wiped.
             _mouse.Initialize();
-            // TODO: _system.WwarpMouse(320, 240);
+            // TODO: _system.WarpMouse(320, 240);
             SystemVars.WantFade = true;
         }
 
@@ -247,7 +208,7 @@ namespace NScumm.Sword1
             byte retCode = 0;
             System.InputManager.ResetKeys();
 
-            while ((retCode == 0) && !ShouldQuit)
+            while ((retCode == 0) && !HasToQuit)
             {
                 // do we need the section45-hack from sword.c here?
                 CheckCd();
@@ -308,9 +269,9 @@ namespace NScumm.Sword1
 
                     _mouseState = 0;
                     _keyPressed = new ScummInputState();
-                } while ((Logic.ScriptVars[(int)ScriptVariableNames.SCREEN] == Logic.ScriptVars[(int)ScriptVariableNames.NEW_SCREEN]) && (retCode == 0) && !ShouldQuit);
+                } while ((Logic.ScriptVars[(int)ScriptVariableNames.SCREEN] == Logic.ScriptVars[(int)ScriptVariableNames.NEW_SCREEN]) && (retCode == 0) && !HasToQuit);
 
-                if ((retCode == 0) && (Logic.ScriptVars[(int)ScriptVariableNames.SCREEN] != 53) && SystemVars.WantFade && !ShouldQuit)
+                if ((retCode == 0) && (Logic.ScriptVars[(int)ScriptVariableNames.SCREEN] != 53) && SystemVars.WantFade && !HasToQuit)
                 {
                     _screen.FadeDownPalette();
                     int relDelay = Environment.TickCount;
@@ -546,7 +507,7 @@ namespace NScumm.Sword1
 	        0,		// 143
 	        0,		// 144
 	        1,		// 145	MOUE'S TEXT		- on CD1
-	        1,		// 146	ALBERT'S TEXT	- on CD1
-        };        
+	        1		// 146	ALBERT'S TEXT	- on CD1
+        };
     }
 }

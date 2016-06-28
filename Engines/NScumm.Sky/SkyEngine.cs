@@ -18,35 +18,16 @@
 
 using NScumm.Core;
 using NScumm.Core.Audio;
-using NScumm.Core.Graphics;
 using NScumm.Core.Input;
 using NScumm.Sky.Music;
 using System;
 using NScumm.Core.IO;
+using D = NScumm.Core.DebugHelper;
 
 namespace NScumm.Sky
 {
-    class SkyEngine : IEngine, IDisposable
+    class SkyEngine : Engine
     {
-        static bool _hasToQuit;
-
-        public bool HasToQuit
-        {
-            get { return _hasToQuit; }
-            set { _hasToQuit = value; }
-        }
-
-        public static bool ShouldQuit
-        {
-            get { return _hasToQuit; }
-        }
-
-        public bool IsPaused
-        {
-            get;
-            set;
-        }
-
         public static bool IsDemo
         {
             get
@@ -66,21 +47,14 @@ namespace NScumm.Sky
             get { return SystemVars.Instance.GameVersion.Type.HasFlag(SkyGameType.Cd); }
         }
 
-        public event EventHandler ShowMenuDialogRequested;
-
-
         public SkyEngine(GameSettings settings, ISystem system)
+            : base(system)
         {
             _system = system;
 
-            _mixer = new Mixer(44100);
-            // HACK:
-            _mixer.Read(new byte[0], 0);
-            _system.AudioOutput.SetSampleProvider(_mixer);
-
             var directory = ServiceLocator.FileStorage.GetDirectoryName(settings.Game.Path);
             _skyDisk = new Disk(directory);
-            _skySound = new Sound(_mixer, _skyDisk, Mixer.MaxChannelVolume);
+            _skySound = new Sound(_mixer, _skyDisk, Core.Audio.Mixer.MaxChannelVolume);
 
             SystemVars.Instance.GameVersion = _skyDisk.DetermineGameVersion();
 
@@ -102,19 +76,18 @@ namespace NScumm.Sky
 
             if (IsCDVersion)
             {
-                // TODO: configuration
-                //if (ConfMan.hasKey("nosubtitles"))
-                //{
-                //    warning("Configuration key 'nosubtitles' is deprecated. Use 'subtitles' instead");
-                //    if (!ConfMan.getBool("nosubtitles"))
-                //        _systemVars.systemFlags |= SF_ALLOW_TEXT;
-                //}
+                if (ConfigManager.Instance.HasKey("nosubtitles"))
+                {
+                    D.Warning("Configuration key 'nosubtitles' is deprecated. Use 'subtitles' instead");
+                    if (!ConfigManager.Instance.Get<bool>("nosubtitles"))
+                        SystemVars.Instance.SystemFlags |= SystemFlags.AllowText;
+                }
 
-                //if (ConfMan.getBool("subtitles"))
-                //    _systemVars.systemFlags |= SF_ALLOW_TEXT;
+                if (ConfigManager.Instance.Get<bool>("subtitles"))
+                    SystemVars.Instance.SystemFlags |= SystemFlags.AllowText;
 
-                //if (!ConfMan.getBool("speech_mute"))
-                //    _systemVars.systemFlags |= SF_ALLOW_SPEECH;
+                if (!ConfigManager.Instance.Get<bool>("speech_mute"))
+                    SystemVars.Instance.SystemFlags |= SystemFlags.AllowSpeech;
 
             }
             else
@@ -142,24 +115,13 @@ namespace NScumm.Sky
 
             // TODO: language
 
-            // TODO: Setup mixer
-            //SyncSoundSettings();
+            SyncSoundSettings();
 
             // TODO: debugger
             //_debugger = new Debugger(_skyLogic, _skyMouse, _skyScreen, _skyCompact);
         }
 
-        ~SkyEngine()
-        {
-            Dispose();
-        }
-
-        public static void QuitGame()
-        {
-            _hasToQuit = true;
-        }
-
-        public void Dispose()
+        protected override void Dispose(bool disposing)
         {
             if (_skyMusic != null)
             {
@@ -171,19 +133,21 @@ namespace NScumm.Sky
                 _skyDisk.Dispose();
                 _skyDisk = null;
             }
+
+            base.Dispose(disposing);
         }
 
-        public void Run()
+        public override void Run()
         {
             _keyPressed = new ScummInputState();
 
             ushort result = 0;
             // TODO: configuration
-            //if (ConfMan.hasKey("save_slot"))
+            //if (ConfigManager.Instance.HasKey("save_slot"))
             //{
-            //    var saveSlot = (int)ConfigurationManager["save_slot"];
+            //    var saveSlot = ConfigManager.Instance.Get<int>("save_slot");
             //    if (saveSlot >= 0 && saveSlot <= 999)
-            //        result = _skyControl.QuickXRestore((int)ConfigurationManager["save_slot"]);
+            //        result = _skyControl.QuickXRestore((int)ConfigManager.Instance.Get<int>("save_slot"));
             //}
 
             if (result != Control.GameRestored)
@@ -194,9 +158,7 @@ namespace NScumm.Sky
                     // don't do intro for floppydemos
                     using (var skyIntro = new Intro(_skyDisk, _skyScreen, _skyMusic, _skySound, _skyText, _mixer, _system))
                     {
-                        // TODO: configuration
-                        //var floppyIntro = (bool)ConfigurationManager["alt_intro"];
-                        var floppyIntro = false;
+                        var floppyIntro = ConfigManager.Instance.Get<bool>("alt_intro");
                         introSkipped = !skyIntro.DoIntro(floppyIntro);
                     }
                 }
@@ -286,14 +248,6 @@ namespace NScumm.Sky
             Delay(1500);
         }
 
-        private bool ShouldPerformAutoSave(int lastSaveTime)
-        {
-            int diff = Environment.TickCount - lastSaveTime;
-            // TODO: configuration: int autosavePeriod = ConfMan.getInt("autosave_period");
-            var autosavePeriod = 300;
-            return autosavePeriod != 0 && diff > autosavePeriod * 1000;
-        }
-
         private void Delay(int amount)
         {
             int start = Environment.TickCount;
@@ -376,17 +330,6 @@ namespace NScumm.Sky
             _keyPressed = new ScummInputState();
             _system.InputManager.ResetKeys();
         }
-
-        public void Load(string filename)
-        {
-            // TODO: remove this
-        }
-
-        public void Save(string filename)
-        {
-            // TODO: remove this
-        }
-
 
         private void InitVirgin()
         {

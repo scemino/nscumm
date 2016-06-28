@@ -19,8 +19,10 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using D = NScumm.Core.DebugHelper;
 
 namespace NScumm.Core.IO
@@ -191,16 +193,38 @@ namespace NScumm.Core.IO
             // We didn't find a match
             if (matched.Count == 0)
             {
-                // TODO: 
-                //if (!filesProps.empty() && gotAnyMatchesWithAllFiles)
-                //{
-                //    reportUnknown(parent, filesProps);
-                //}
+                if (files.Count != 0 && gotAnyMatchesWithAllFiles)
+                {
+                    ReportUnknown(path, files);
+                }
 
                 // Filename based fallback
             }
 
             return new GameDetected(matched.First(), this);
+        }
+
+        private void ReportUnknown(string path, Dictionary<string, string> files)
+        {
+            // TODO: This message should be cleaned up / made more specific.
+            // For example, we should specify at least which engine triggered this.
+            //
+            // Might also be helpful to display the full path (for when this is used
+            // from the mass detector).
+            var report = new StringBuilder($"The game in '{path}' seems to be unknown.\n");
+            report.AppendLine("Please, report the following data to the ScummVM team along with name");
+            report.AppendLine("of the game you tried to add and its version/language/etc.:");
+
+            foreach (var file in files)
+            {
+                var md5 = ServiceLocator.FileStorage.GetSignature(file.Value, 5000);
+                var size = ServiceLocator.FileStorage.GetSize(file.Value);
+                report.AppendLine($"  \"{file.Key}\", 0, \"{md5}\", {size}");
+            }
+
+            report.AppendLine();
+
+            ServiceLocator.Platform.LogMessage(LogMessageType.Info, report.ToString());
         }
     }
 }

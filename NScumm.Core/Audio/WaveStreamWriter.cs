@@ -112,7 +112,7 @@ namespace NScumm.Core.Audio
             _state = AudioOutputState.Stopped;
         }
 
-        void WriteJob()
+        private void WriteJob()
         {
             _state = AudioOutputState.Playing;
             var data = new byte[_audioSampleProvider.AudioFormat.AverageBytesPerSecond];
@@ -130,19 +130,19 @@ namespace NScumm.Core.Audio
             UpdateHeader();
         }
 
-        void UpdateHeader()
+        private void UpdateHeader()
         {
             UpdateRiffChunk();
             UpdateDataChunk();
         }
 
-        void UpdateDataChunk()
+        private void UpdateDataChunk()
         {
             _writer.Seek((int)_dataSizePos, SeekOrigin.Begin);
             _writer.Write((uint)_dataChunkSize);
         }
 
-        void UpdateRiffChunk()
+        private void UpdateRiffChunk()
         {
             _writer.Seek(4, SeekOrigin.Begin);
             _writer.Write((uint)(_writer.BaseStream.Length - 8));

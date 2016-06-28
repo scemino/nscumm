@@ -28,7 +28,6 @@ using NScumm.Core;
 using NScumm.Core.Audio;
 using NScumm.Core.Audio.SoftSynth;
 using NScumm.Core.Graphics;
-using NScumm.Core.Input;
 using NScumm.Core.IO;
 using NScumm.Scumm.Audio;
 using NScumm.Scumm.Audio.IMuse;
@@ -45,7 +44,7 @@ namespace NScumm.Scumm
         Param3 = 0x20,
     }
 
-    public abstract partial class ScummEngine : IEnableTrace, IEngine
+    public abstract partial class ScummEngine : Engine, IEnableTrace
     {
         #region Constants
 
@@ -62,13 +61,7 @@ namespace NScumm.Scumm
         protected const int MaxScriptNesting = 15;
         protected const int MaxCutsceneNum = 5;
 
-        #endregion Constants
-
-        #region Events
-
-        public event EventHandler ShowMenuDialogRequested;
-
-        #endregion Events
+        #endregion
 
         #region Fields
 
@@ -129,8 +122,6 @@ namespace NScumm.Scumm
 
         public byte InvalidBox { get; private set; }
 
-        public bool HasToQuit { get; set; }
-
         internal int ScreenStartStrip
         {
             get { return _screenStartStrip; }
@@ -157,8 +148,6 @@ namespace NScumm.Scumm
 
         internal Player_Towns TownsPlayer { get; private set; }
 
-        public static ScummEngine Instance { get; private set; }
-
         public GameSettings Settings { get; private set; }
 
         public IAudioCDManager AudioCDManager
@@ -166,10 +155,7 @@ namespace NScumm.Scumm
             get;
             private set;
         }
-
-        public bool IsPaused { get; set; }
-
-        #endregion Properties
+        #endregion
 
         #region Constructor
 
@@ -232,6 +218,7 @@ namespace NScumm.Scumm
         }
 
         protected ScummEngine(GameSettings settings, ISystem system, IMixer mixer)
+            : base(system)
         {
             Settings = settings;
             var game = (GameInfo)settings.Game;
@@ -559,7 +546,7 @@ namespace NScumm.Scumm
             Gdi.Init();
         }
 
-        #endregion Constructor
+        #endregion
 
         #region Execution
 
@@ -603,9 +590,9 @@ namespace NScumm.Scumm
             }
         }
 
-        #endregion Execution
+        #endregion
 
-        public void Run()
+        public override void Run()
         {
             var tsToWait = RunBootScript(Settings.BootParam);
             while (!HasToQuit)
@@ -620,9 +607,27 @@ namespace NScumm.Scumm
             }
         }
 
+        public override void LoadGameState(int slot)
+        {
+            Load(GetSaveGamePath(slot));
+        }
+
+        public override void SaveGameState(int slot, string desc)
+        {
+            Save(GetSaveGamePath(slot));
+        }
+
+        private string GetSaveGamePath(int index)
+        {
+            var game = Settings.Game;
+            var dir = ServiceLocator.FileStorage.GetDirectoryName(game.Path);
+            var filename = ServiceLocator.FileStorage.Combine(dir, string.Format("{0}{1}.sav", game.Id, (index + 1)));
+            return filename;
+        }
+
         protected abstract void InitOpCodes();
 
-        TimeSpan GetTimeToWaitBeforeLoop(TimeSpan lastTimeLoop)
+        private TimeSpan GetTimeToWaitBeforeLoop(TimeSpan lastTimeLoop)
         {
             var numTicks = ScummHelper.ToTicks(timeToWait);
 
@@ -805,7 +810,7 @@ namespace NScumm.Scumm
             Sound.ProcessSound();
         }
 
-        void UpdateTalkDelay(int delta)
+        private void UpdateTalkDelay(int delta)
         {
             _talkDelay -= delta;
             if (_talkDelay < 0)
@@ -915,7 +920,7 @@ namespace NScumm.Scumm
             }
         }
 
-        bool IsCostumeInUse(int cost)
+        private bool IsCostumeInUse(int cost)
         {
             int i;
             Actor a;

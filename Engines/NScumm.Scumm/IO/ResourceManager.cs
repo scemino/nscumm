@@ -401,7 +401,7 @@ namespace NScumm.Scumm.IO
                     {
                         var counter = pair.Value;
 
-                        if (!typeLock.Contains(pair.Key) && counter >= best_counter && (ScummEngine.Instance != null && !ScummEngine.Instance.IsResourceInUse(type, pair.Key)) /*&& !tmp.isOffHeap()*/)
+                        if (!typeLock.Contains(pair.Key) && counter >= best_counter && (Engine.Instance != null && !((ScummEngine)Engine.Instance).IsResourceInUse(type, pair.Key)) /*&& !tmp.isOffHeap()*/)
                         {
                             best_counter = counter;
                             best_type = type;

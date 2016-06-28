@@ -27,8 +27,6 @@ namespace NScumm
 {
     public class MainMenuScreen : MenuScreen
     {
-        private ScummScreen _screen;
-
         enum MenuState
         {
             Main,
@@ -55,7 +53,6 @@ namespace NScumm
         /// </summary>
         public MainMenuScreen(ScummScreen screen)
         {
-            this._screen = screen;
             // set the transition times
             TransitionOnTime = TimeSpan.FromSeconds(1.0);
             TransitionOffTime = TimeSpan.FromSeconds(1.0);
@@ -216,23 +213,13 @@ namespace NScumm
         private void LoadGame(int index)
         {
             var engine = GetEngine();
-            var filename = GetSaveGamePath(index);
-            engine.Load(filename);
+            engine.LoadGameState(index);
         }
 
         private void SaveGame(int index)
         {
             var engine = GetEngine();
-            var filename = GetSaveGamePath(index);
-            engine.Save(filename);
-        }
-
-        private string GetSaveGamePath(int index)
-        {
-            var game = GetGame();
-            var dir = Path.GetDirectoryName(game.Path);
-            var filename = Path.Combine(dir, string.Format("{0}{1}.sav", game.Id, (index + 1)));
-            return filename;
+            engine.SaveGameState(index);
         }
     }
 }

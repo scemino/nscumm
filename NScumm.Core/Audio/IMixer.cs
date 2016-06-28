@@ -88,6 +88,8 @@ namespace NScumm.Core.Audio
         /// <param name="handle">Compressed file sound handle.</param>
         int GetSoundElapsedTime(SoundHandle handle);
 
+        void MuteSoundType(SoundType type, bool mute);
+
         /// <summary>
         /// Set the channel volume for the given handle.
         /// </summary>

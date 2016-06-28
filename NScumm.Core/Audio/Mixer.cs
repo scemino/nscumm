@@ -156,6 +156,18 @@ namespace NScumm.Core.Audio
             }
         }
 
+        public void MuteSoundType(SoundType type, bool mute)
+        {
+            Debug.Assert(0 <= type && (int)type < soundTypeSettings.Length);
+            soundTypeSettings[(int)type].Mute = mute;
+
+            for (int i = 0; i != _channels.Length; ++i)
+            {
+                if (_channels[i] != null && _channels[i].Type == type)
+                    _channels[i].NotifyGlobalVolChange();
+            }
+        }
+
         public int GetVolumeForSoundType(SoundType type)
         {
             Debug.Assert(0 <= type && (int)type < soundTypeSettings.Length);

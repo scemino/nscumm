@@ -24,16 +24,16 @@ using System;
 
 namespace NScumm.Core.Audio
 {
-    public class PCSpeakerDriver: EmulatedMidiDriver
+    public class PCSpeakerDriver : EmulatedMidiDriver
     {
         public override bool IsStereo
         {
-            get{ return _pcSpk.IsStereo; }
+            get { return _pcSpk.IsStereo; }
         }
 
         public override int Rate
         {
-            get{ return _pcSpk.Rate; }
+            get { return _pcSpk.Rate; }
         }
 
         public PCSpeakerDriver(IMixer mixer)
@@ -116,7 +116,158 @@ namespace NScumm.Core.Audio
             return null;
         }
 
-        void UpdateNote()
+        protected override void OnTimer()
+        {
+            if (_activeChannel == null)
+                return;
+
+            for (uint i = 0; i < 6; ++i)
+            {
+                OutputChannel @out = _channels[i]._out;
+
+                if (@out.active == 0)
+                    continue;
+
+                if (@out.length == 0 || --@out.length != 0)
+                {
+                    if (@out.unkB != 0 && @out.unkC != 0)
+                    {
+                        @out.unkA += @out.unkB;
+                        if (@out.instrument != null)
+                            @out.unkE = (short)(((sbyte)@out.instrument[@out.unkA] * @out.unkC) >> 4);
+                    }
+
+                    ++_effectTimer;
+                    if (_effectTimer > 3)
+                    {
+                        _effectTimer = 0;
+
+                        if (@out.effectEnvelopeA.state != 0)
+                            UpdateEffectGenerator(_channels[i], @out.effectEnvelopeA, @out.effectDefA);
+                        if (@out.effectEnvelopeB.state != 0)
+                            UpdateEffectGenerator(_channels[i], @out.effectEnvelopeB, @out.effectDefB);
+                    }
+                }
+                else
+                {
+                    @out.active = 0;
+                    UpdateNote();
+                    return;
+                }
+            }
+
+            if (_activeChannel._tl != 0)
+            {
+                Output((ushort)((_activeChannel._out.note << 7) + _activeChannel._pitchBend + _activeChannel._out.unk60 + _activeChannel._out.unkE));
+            }
+            else
+            {
+                _pcSpk.Stop();
+                _lastActiveChannel = null;
+                _lastActiveOut = 0;
+            }
+        }
+
+        private void UpdateEffectGenerator(MidiChannelPcSpk chan, EffectEnvelope env, EffectDefinition def)
+        {
+            if ((AdvanceEffectEnvelope(env, def) & 1) != 0)
+            {
+                switch (def.type)
+                {
+                    case 0:
+                    case 1:
+                        chan._out.unk60 = (short)(def.phase << 4);
+                        break;
+
+                    case 2:
+                        chan._out.unkB = (byte)((def.phase & 0xFF) + chan._instrument[1]);
+                        break;
+
+                    case 3:
+                        chan._out.unkC = (byte)((def.phase & 0xFF) + chan._instrument[2]);
+                        break;
+
+                    case 4:
+                        if ((chan._instrument[4] + (def.phase & 0xFF)) < _outInstrumentData.Length)
+                            chan._out.instrument = _outInstrumentData[chan._instrument[4] + (def.phase & 0xFF)];
+                        else
+                            chan._out.instrument = null;
+                        break;
+
+                    case 5:
+                        env.modWheelState = ((byte)(def.phase & 0xFF));
+                        break;
+
+                    case 6:
+                        env.modWheelSensitivity = ((byte)(def.phase & 0xFF));
+                        break;
+
+                    default:
+                        break;
+                }
+            }
+        }
+
+        private byte AdvanceEffectEnvelope(EffectEnvelope env, EffectDefinition def)
+        {
+            if (env.duration != 0)
+            {
+                env.duration -= 17;
+                if (env.duration <= 0)
+                {
+                    env.state = 0;
+                    return 0;
+                }
+            }
+
+            byte changedFlags = 0;
+            short newLevel = (short)(env.currentLevel + env.changePerStep);
+            env.changeCountRem += env.changePerStepRem;
+            if (env.changeCountRem >= env.stateNumSteps)
+            {
+                env.changeCountRem -= env.stateNumSteps;
+                newLevel += env.dir;
+            }
+
+            if (env.currentLevel != newLevel || env.modWheelLast != env.modWheelState)
+            {
+                env.currentLevel = newLevel;
+                env.modWheelLast = env.modWheelState;
+
+                short newPhase = GetEffectModLevel(newLevel, (sbyte)env.modWheelState);
+                if (def.phase != newPhase)
+                {
+                    changedFlags |= 1;
+                    def.phase = newPhase;
+                }
+            }
+
+            --env.stateStepCounter;
+            if (env.stateStepCounter == 0)
+            {
+                ++env.state;
+                if (env.state > 4)
+                {
+                    if (env.loop != 0)
+                    {
+                        env.state = 1;
+                        changedFlags |= 2;
+                    }
+                    else
+                    {
+                        env.state = 0;
+                        return changedFlags;
+                    }
+                }
+
+                InitNextEnvelopeState(env);
+            }
+
+            return changedFlags;
+
+        }
+
+        private void UpdateNote()
         {
             int priority = 0;
             _activeChannel = null;
@@ -141,7 +292,7 @@ namespace NScumm.Core.Audio
             }
         }
 
-        void Output(ushort output)
+        private void Output(ushort output)
         {
             byte v1 = (byte)((output >> 7) & 0xFF);
             byte v2 = (byte)((output >> 2) & 0x1E);
@@ -161,7 +312,7 @@ namespace NScumm.Core.Audio
             }
         }
 
-        static byte GetEffectModifier(ushort level)
+        private static byte GetEffectModifier(ushort level)
         {
             byte b = (byte)(level / 32);
             byte index = (byte)(level % 32);
@@ -172,7 +323,7 @@ namespace NScumm.Core.Audio
             return (byte)((b * (index + 1)) >> 5);
         }
 
-        void SetupEffects(MidiChannelPcSpk chan, EffectEnvelope env, EffectDefinition def, byte flags, byte[] data, int offset)
+        private void SetupEffects(MidiChannelPcSpk chan, EffectEnvelope env, EffectDefinition def, byte flags, byte[] data, int offset)
         {
             def.phase = 0;
             def.useModWheel = (byte)(flags & 0x40);
@@ -228,7 +379,7 @@ namespace NScumm.Core.Audio
             StartEffect(env, data, offset);
         }
 
-        void StartEffect(EffectEnvelope env, byte[] data, int offset)
+        private void StartEffect(EffectEnvelope env, byte[] data, int offset)
         {
             env.state = 1;
             env.currentLevel = 0;
@@ -248,7 +399,7 @@ namespace NScumm.Core.Audio
             InitNextEnvelopeState(env);
         }
 
-        void InitNextEnvelopeState(EffectEnvelope env)
+        private void InitNextEnvelopeState(EffectEnvelope env)
         {
             byte lastState = (byte)(env.state - 1);
 
@@ -289,7 +440,7 @@ namespace NScumm.Core.Audio
             env.changeCountRem = 0;
         }
 
-        short GetRandScale(short input)
+        private short GetRandScale(short input)
         {
             if ((_randBase & 1) != 0)
                 _randBase = (_randBase >> 1) ^ 0xB8;
@@ -299,7 +450,7 @@ namespace NScumm.Core.Audio
             return (short)((_randBase * input) >> 8);
         }
 
-        short GetEffectModLevel(short level, sbyte mod)
+        private short GetEffectModLevel(short level, sbyte mod)
         {
             if (mod == 0)
             {
@@ -527,7 +678,7 @@ namespace NScumm.Core.Audio
 
             public override byte Number
             {
-                get{ return (byte)_channel; }
+                get { return (byte)_channel; }
             }
 
             internal byte[] _instrument;
@@ -692,7 +843,7 @@ namespace NScumm.Core.Audio
                     0x88, 0x88, 0x88, 0x88, 0x88, 0x88, 0x88, 0x88,
                     0x88, 0x88, 0x88, 0x88, 0x88, 0x88, 0x88, 0x88,
                     0x88, 0x88, 0x88, 0x88, 0x88, 0x88, 0x88, 0x88,
-                
+
                     0x78, 0x78, 0x78, 0x78, 0x78, 0x78, 0x78, 0x78,
                     0x78, 0x78, 0x78, 0x78, 0x78, 0x78, 0x78, 0x78,
                     0x78, 0x78, 0x78, 0x78, 0x78, 0x78, 0x78, 0x78,

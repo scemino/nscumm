@@ -16,16 +16,12 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using NScumm.Core.Audio;
-using NScumm.Core.Graphics;
-using NScumm.Core.Input;
-
 namespace NScumm.Core.IO
 {
     public interface IMetaEngine
     {
         GameDetected DetectGame(string path);
 
-        IEngine Create(GameSettings settings, IGraphicsManager gfxManager, IInputManager inputManager, IAudioOutput output, ISaveFileManager saveFileManager, bool debugMode = false);
+        IEngine Create(GameSettings settings, ISystem system);
     }
 }

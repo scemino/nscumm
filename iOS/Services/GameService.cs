@@ -27,6 +27,7 @@ using NScumm.Sky;
 using NScumm.Sword1;
 using System.Linq;
 using System.IO;
+using NScumm.Queen;
 using NScumm.Scumm.IO;
 
 namespace NScumm.Mobile.Services
@@ -46,7 +47,8 @@ namespace NScumm.Mobile.Services
 			var gd = new GameDetector ();
             gd.Add(new SkyMetaEngine());
             gd.Add (new ScummMetaEngine ());
-			gd.Add (new Sword1MetaEngine ());
+            gd.Add(new Sword1MetaEngine());
+            gd.Add (new QueenMetaEngine ());
 
 			var info = gd.DetectGame (path);
 			if (info == null) {

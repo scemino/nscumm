@@ -28,7 +28,7 @@ namespace NScumm.Core.Audio
     /// The interrupt frequency specifies the number of mixed wavesamples between
     /// calls of the interrupt method
     /// </summary>
-    public abstract class Paula: IAudioStream
+    public abstract class Paula : IAudioStream
     {
         public int Rate { get; private set; }
 
@@ -47,7 +47,7 @@ namespace NScumm.Core.Audio
         public uint SingleInterruptUnscaled
         {
             get
-            { 
+            {
                 return (uint)((((double)SingleInterrupt) * TimerBase) / Rate);
             }
             set
@@ -58,7 +58,7 @@ namespace NScumm.Core.Audio
 
         public uint InterruptFreq
         {
-            get{ return _intFreq; }
+            get { return _intFreq; }
             set
             {
                 _intFreq = value;
@@ -69,7 +69,7 @@ namespace NScumm.Core.Audio
         public uint InterruptFreqUnscaled
         {
             get
-            { 
+            {
                 return (uint)((((double)InterruptFreq) * TimerBase) / Rate);
             }
             set
@@ -125,10 +125,7 @@ namespace NScumm.Core.Audio
                     return count;
                 }
 
-                if (_stereo)
-                    return ReadBufferIntern(true, buffer, count);
-                else
-                    return ReadBufferIntern(false, buffer, count);
+                return ReadBufferIntern(_stereo, buffer, count);
             }
         }
 
@@ -164,7 +161,7 @@ namespace NScumm.Core.Audio
         protected void DisableChannel(int channel)
         {
             Debug.Assert(channel < NUM_VOICES);
-            _voice[channel].data = null;
+            _voice[channel].data = BytePtr.Null;
         }
 
         protected void EnableChannel(int channel)
@@ -220,7 +217,7 @@ namespace NScumm.Core.Audio
             // TODO: implement
         }
 
-        int ReadBufferIntern(bool stereo, short[] buffer, int count)
+        private int ReadBufferIntern(bool stereo, short[] buffer, int count)
         {
             var bufOffset = 0;
             var numSamples = count;
@@ -243,7 +240,7 @@ namespace NScumm.Core.Audio
                 for (int voice = 0; voice < NUM_VOICES; voice++)
                 {
                     // No data, or paused -> skip channel
-                    if (_voice[voice].data == null || (_voice[voice].period <= 0))
+                    if (_voice[voice].data == BytePtr.Null || (_voice[voice].period <= 0))
                         continue;
 
                     // The Paula chip apparently run at 7.0937892 MHz in the PAL
@@ -271,7 +268,7 @@ namespace NScumm.Core.Audio
                     // by the OS/2 version of Hopkins FBI.
 
                     // Mix the generated samples into the output buffer
-                    neededSamples -= MixBuffer(stereo, p, ref pOff, ch.data, ch.offset, rate, neededSamples, ch.length, ch.volume, ch.panning);
+                    neededSamples -= MixBuffer(stereo, p, ref pOff, ch.data, ref ch.offset, rate, neededSamples, ch.length, ch.volume, ch.panning);
 
                     // Wrap around if necessary
                     if (ch.offset.int_off >= ch.length)
@@ -296,7 +293,7 @@ namespace NScumm.Core.Audio
                         while (neededSamples > 0)
                         {
                             // Mix the generated samples into the output buffer
-                            neededSamples -= MixBuffer(stereo, p, ref pOff, ch.data, ch.offset, rate, neededSamples, ch.length, ch.volume, ch.panning);
+                            neededSamples -= MixBuffer(stereo, p, ref pOff, ch.data, ref ch.offset, rate, neededSamples, ch.length, ch.volume, ch.panning);
 
                             if (ch.offset.int_off >= ch.length)
                             {
@@ -315,7 +312,7 @@ namespace NScumm.Core.Audio
             return numSamples;
         }
 
-        int MixBuffer(bool stereo, short[] buf, ref int bufOffset, byte[] data, Offset offset, int rate, int neededSamples, int bufSize, byte volume, byte panning)
+        private int MixBuffer(bool stereo, short[] buf, ref int bufOffset, BytePtr data, ref Offset offset, int rate, int neededSamples, int bufSize, byte volume, byte panning)
         {
             int samples;
             for (samples = 0; samples < neededSamples && offset.int_off < bufSize; ++samples)
@@ -342,19 +339,19 @@ namespace NScumm.Core.Audio
             return samples;
         }
 
-        void ClearVoices()
-        { 
+        private void ClearVoices()
+        {
             for (int i = 0; i < NUM_VOICES; ++i)
             {
                 ClearVoice(i);
             }
         }
 
-        void ClearVoice(int voice)
+        protected void ClearVoice(int voice)
         {
             Debug.Assert(voice < NUM_VOICES);
-            _voice[voice].data = null;
-            _voice[voice].dataRepeat = null;
+            _voice[voice].data = BytePtr.Null;
+            _voice[voice].dataRepeat = BytePtr.Null;
             _voice[voice].length = 0;
             _voice[voice].lengthRepeat = 0;
             _voice[voice].period = 0;
@@ -363,34 +360,34 @@ namespace NScumm.Core.Audio
             _voice[voice].dmaCount = 0;
         }
 
-        void SetChannelPanning(int channel, byte panning)
+        private void SetChannelPanning(int channel, byte panning)
         {
             Debug.Assert(channel < NUM_VOICES);
             _voice[channel].panning = panning;
         }
 
-        void SetChannelData(int channel, byte[] data, byte[] dataRepeat, int length, int lengthRepeat, int offset = 0)
+        protected void SetChannelData(int channel, ByteAccess data, ByteAccess dataRepeat, int length, int lengthRepeat, int offset = 0)
         {
             Debug.Assert(channel < NUM_VOICES);
 
             Channel ch = _voice[channel];
 
-            ch.dataRepeat = data;
+            ch.dataRepeat = new ByteAccess(data);
             ch.lengthRepeat = length;
             EnableChannel(channel);
             ch.offset = new Offset(offset);
 
-            ch.dataRepeat = dataRepeat;
+            ch.dataRepeat = new ByteAccess(dataRepeat);
             ch.lengthRepeat = lengthRepeat;
         }
 
-        void SetChannelOffset(int channel, Offset offset)
+        private void SetChannelOffset(int channel, Offset offset)
         {
             Debug.Assert(channel < NUM_VOICES);
             _voice[channel].offset = offset;
         }
 
-        Offset GetChannelOffset(int channel)
+        private Offset GetChannelOffset(int channel)
         {
             Debug.Assert(channel < NUM_VOICES);
             return _voice[channel].offset;
@@ -425,8 +422,8 @@ namespace NScumm.Core.Audio
 
         class Channel
         {
-            public byte[] data;
-            public byte[] dataRepeat;
+            public BytePtr data;
+            public BytePtr dataRepeat;
             public int length;
             public int lengthRepeat;
             public short period;
@@ -438,7 +435,7 @@ namespace NScumm.Core.Audio
         }
 
         /* TODO: Document this */
-        class Offset
+        struct Offset
         {
             public int int_off;
             // integral part of the offset

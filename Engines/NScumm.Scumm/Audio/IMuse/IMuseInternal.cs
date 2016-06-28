@@ -221,7 +221,7 @@ namespace NScumm.Scumm.Audio.IMuse
         {
             int size, pos;
 
-            var ptr = ScummEngine.Instance.ResourceManager.GetSound(ScummEngine.Instance.Sound.MusicType, sound);
+            var ptr = ((ScummEngine)Engine.Instance).ResourceManager.GetSound(((ScummEngine)Engine.Instance).Sound.MusicType, sound);
 
             if (ptr == null)
             {
@@ -288,7 +288,7 @@ namespace NScumm.Scumm.Audio.IMuse
 
         internal protected bool IsMT32(int sound)
         {
-            var ptr = ScummEngine.Instance.ResourceManager.GetSound(ScummEngine.Instance.Sound.MusicType, sound);
+            var ptr = ((ScummEngine)Engine.Instance).ResourceManager.GetSound(((ScummEngine)Engine.Instance).Sound.MusicType, sound);
             if (ptr == null)
                 return false;
 
@@ -332,7 +332,7 @@ namespace NScumm.Scumm.Audio.IMuse
 
         internal protected bool IsMIDI(int sound)
         {
-            var ptr = ScummEngine.Instance.ResourceManager.GetSound(ScummEngine.Instance.Sound.MusicType, sound);
+            var ptr = ((ScummEngine)Engine.Instance).ResourceManager.GetSound(((ScummEngine)Engine.Instance).Sound.MusicType, sound);
             if (ptr == null)
                 return false;
 
@@ -371,7 +371,7 @@ namespace NScumm.Scumm.Audio.IMuse
 
         internal protected bool SupportsPercussion(int sound)
         {
-            var ptr = ScummEngine.Instance.ResourceManager.GetSound(ScummEngine.Instance.Sound.MusicType, sound);
+            var ptr = ((ScummEngine)Engine.Instance).ResourceManager.GetSound(((ScummEngine)Engine.Instance).Sound.MusicType, sound);
             if (ptr == null)
                 return false;
 

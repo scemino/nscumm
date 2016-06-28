@@ -28,7 +28,7 @@ namespace NScumm.Sky
 {
     class SkyGameDescriptor : IGameDescriptor
     {
-        private readonly CultureInfo _culture;
+        private readonly Language _language;
         private string _path;
 
         public string Description
@@ -47,11 +47,11 @@ namespace NScumm.Sky
             }
         }
 
-        public CultureInfo Culture
+        public Language Language
         {
             get
             {
-                return _culture;
+                return _language;
             }
         }
 
@@ -100,15 +100,15 @@ namespace NScumm.Sky
             _path = path;
             // The game detector uses US English by default. We want British
             // English to match the recorded voices better.
-            _culture = new CultureInfo("en-GB");
+            _language = Language.UNK_LANG;
         }
     }
 
     public class SkyMetaEngine : IMetaEngine
     {
-        public IEngine Create(GameSettings settings, IGraphicsManager gfxManager, IInputManager inputManager, IAudioOutput output, ISaveFileManager saveFileManager, bool debugMode = false)
+        public IEngine Create(GameSettings settings, ISystem system)
         {
-            return new SkyEngine(settings, gfxManager, inputManager, output, saveFileManager, debugMode);
+            return new SkyEngine(settings, system);
         }
 
         public GameDetected DetectGame(string path)

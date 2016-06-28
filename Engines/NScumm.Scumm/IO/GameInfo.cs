@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using NScumm.Core;
 using NScumm.Core.Audio;
 using NScumm.Core.Graphics;
 using NScumm.Core.IO;
@@ -55,7 +56,7 @@ namespace NScumm.Scumm.IO
 
         public int Version { get; set; }
 
-        public CultureInfo Culture { get; set; }
+        public Language Language { get; set; }
 
         public GameFeatures Features { get; set; }
 

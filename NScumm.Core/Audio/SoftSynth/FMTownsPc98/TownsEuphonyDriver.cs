@@ -19,7 +19,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
-using System.Diagnostics;
+using D = NScumm.Core.DebugHelper;
 
 namespace NScumm.Core.Audio.SoftSynth
 {
@@ -713,7 +713,7 @@ namespace NScumm.Core.Audio.SoftSynth
             }
             else if (mode == 0x10)
             {
-                Debug.WriteLine("TownsEuphonyDriver: Mode 0x10 not implemented");
+                D.Warning("TownsEuphonyDriver: Mode 0x10 not implemented");
 
             }
             else if (mode == 0xff)

@@ -28,7 +28,6 @@ using NScumm.Core;
 using NScumm.Core.Audio;
 using NScumm.Core.Audio.SoftSynth;
 using NScumm.Core.Graphics;
-using NScumm.Core.Input;
 using NScumm.Core.IO;
 using NScumm.Scumm.Audio;
 using NScumm.Scumm.Audio.IMuse;
@@ -45,7 +44,7 @@ namespace NScumm.Scumm
         Param3 = 0x20,
     }
 
-    public abstract partial class ScummEngine : IEnableTrace, IEngine
+    public abstract partial class ScummEngine : Engine, IEnableTrace
     {
         #region Constants
 
@@ -62,13 +61,7 @@ namespace NScumm.Scumm
         protected const int MaxScriptNesting = 15;
         protected const int MaxCutsceneNum = 5;
 
-        #endregion Constants
-
-        #region Events
-
-        public event EventHandler ShowMenuDialogRequested;
-
-        #endregion Events
+        #endregion
 
         #region Fields
 
@@ -129,8 +122,6 @@ namespace NScumm.Scumm
 
         public byte InvalidBox { get; private set; }
 
-        public bool HasToQuit { get; set; }
-
         internal int ScreenStartStrip
         {
             get { return _screenStartStrip; }
@@ -157,8 +148,6 @@ namespace NScumm.Scumm
 
         internal Player_Towns TownsPlayer { get; private set; }
 
-        public static ScummEngine Instance { get; private set; }
-
         public GameSettings Settings { get; private set; }
 
         public IAudioCDManager AudioCDManager
@@ -166,54 +155,51 @@ namespace NScumm.Scumm
             get;
             private set;
         }
-
-        public bool IsPaused { get; set; }
-
-        #endregion Properties
+        #endregion
 
         #region Constructor
 
-        public static ScummEngine Create(GameSettings settings, IGraphicsManager gfxManager, IInputManager inputManager, IAudioOutput output, bool debugMode = false)
+        public static ScummEngine Create(GameSettings settings, ISystem system)
         {
             ScummEngine engine = null;
             var game = (GameInfo)settings.Game;
             var mixer = new Mixer(44100);
-            output.SetSampleProvider(mixer);
+            system.AudioOutput.SetSampleProvider(mixer);
 
             if (game.Version == 0)
             {
-                engine = new ScummEngine0(settings, gfxManager, inputManager, mixer);
+                engine = new ScummEngine0(settings, system, mixer);
             }
             else if ((game.Version == 1) || (game.Version == 2))
             {
-                engine = new ScummEngine2(settings, gfxManager, inputManager, mixer);
+                engine = new ScummEngine2(settings, system, mixer);
             }
             else if (game.Version == 3)
             {
-                engine = new ScummEngine3(settings, gfxManager, inputManager, mixer);
+                engine = new ScummEngine3(settings, system, mixer);
             }
             else if (game.Version == 4)
             {
-                engine = new ScummEngine4(settings, gfxManager, inputManager, mixer);
+                engine = new ScummEngine4(settings, system, mixer);
             }
             else if (game.Version == 5)
             {
-                engine = new ScummEngine5(settings, gfxManager, inputManager, mixer);
+                engine = new ScummEngine5(settings, system, mixer);
             }
             else if (game.Version == 6)
             {
-                engine = new ScummEngine6(settings, gfxManager, inputManager, mixer);
+                engine = new ScummEngine6(settings, system, mixer);
             }
             else if (game.Version == 7)
             {
-                engine = new ScummEngine7(settings, gfxManager, inputManager, mixer);
+                engine = new ScummEngine7(settings, system, mixer);
             }
             else if (game.Version == 8)
             {
-                engine = new ScummEngine8(settings, gfxManager, inputManager, mixer);
+                engine = new ScummEngine8(settings, system, mixer);
             }
             Instance = engine;
-            engine.DebugMode = debugMode;
+            //engine.DebugMode = debugMode;
             engine.InitOpCodes();
             engine.SetupVars();
             engine.ResetScummVars();
@@ -231,7 +217,8 @@ namespace NScumm.Scumm
             return sig;
         }
 
-        protected ScummEngine(GameSettings settings, IGraphicsManager gfxManager, IInputManager inputManager, IMixer mixer)
+        protected ScummEngine(GameSettings settings, ISystem system, IMixer mixer)
+            : base(system)
         {
             Settings = settings;
             var game = (GameInfo)settings.Game;
@@ -240,9 +227,9 @@ namespace NScumm.Scumm
             _game = game;
             InvalidBox = _game.Version < 5 ? (byte)255 : (byte)0;
             _gameMD5 = ToMd5Bytes(game.MD5);
-            _gfxManager = gfxManager;
-            _inputManager = inputManager;
-            _inputState = inputManager.GetState();
+            _gfxManager = system.GraphicsManager;
+            _inputManager = system.InputManager;
+            _inputState = system.InputManager.GetState();
             _strings = new byte[_resManager.NumArray][];
             _inventory = new ushort[_resManager.NumInventory];
             _invData = new ObjectData[_resManager.NumInventory];
@@ -559,7 +546,7 @@ namespace NScumm.Scumm
             Gdi.Init();
         }
 
-        #endregion Constructor
+        #endregion
 
         #region Execution
 
@@ -603,9 +590,9 @@ namespace NScumm.Scumm
             }
         }
 
-        #endregion Execution
+        #endregion
 
-        public void Run()
+        public override void Run()
         {
             var tsToWait = RunBootScript(Settings.BootParam);
             while (!HasToQuit)
@@ -620,9 +607,27 @@ namespace NScumm.Scumm
             }
         }
 
+        public override void LoadGameState(int slot)
+        {
+            Load(GetSaveGamePath(slot));
+        }
+
+        public override void SaveGameState(int slot, string desc)
+        {
+            Save(GetSaveGamePath(slot));
+        }
+
+        private string GetSaveGamePath(int index)
+        {
+            var game = Settings.Game;
+            var dir = ServiceLocator.FileStorage.GetDirectoryName(game.Path);
+            var filename = ServiceLocator.FileStorage.Combine(dir, string.Format("{0}{1}.sav", game.Id, (index + 1)));
+            return filename;
+        }
+
         protected abstract void InitOpCodes();
 
-        TimeSpan GetTimeToWaitBeforeLoop(TimeSpan lastTimeLoop)
+        private TimeSpan GetTimeToWaitBeforeLoop(TimeSpan lastTimeLoop)
         {
             var numTicks = ScummHelper.ToTicks(timeToWait);
 
@@ -805,7 +810,7 @@ namespace NScumm.Scumm
             Sound.ProcessSound();
         }
 
-        void UpdateTalkDelay(int delta)
+        private void UpdateTalkDelay(int delta)
         {
             _talkDelay -= delta;
             if (_talkDelay < 0)
@@ -915,7 +920,7 @@ namespace NScumm.Scumm
             }
         }
 
-        bool IsCostumeInUse(int cost)
+        private bool IsCostumeInUse(int cost)
         {
             int i;
             Actor a;

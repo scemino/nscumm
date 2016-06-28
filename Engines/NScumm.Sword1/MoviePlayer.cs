@@ -105,7 +105,7 @@ namespace NScumm.Sword1
             ushort x = (ushort)((_vm.Settings.Game.Width - _decoder.GetWidth()) / 2);
             ushort y = (ushort)((_vm.Settings.Game.Height - _decoder.GetHeight()) / 2);
 
-            while (!SwordEngine.ShouldQuit && !_decoder.EndOfVideo && !skipped)
+            while (!Engine.Instance.HasToQuit && !_decoder.EndOfVideo && !skipped)
             {
                 if (_decoder.NeedsUpdate)
                 {

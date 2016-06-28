@@ -100,7 +100,7 @@ namespace NScumm.Sword1
         private ushort _waveVolPos;
         private bool[] _waveVolume = new bool[WAVE_VOL_TAB_LENGTH];
 
-        public Sound(GameSettings settings, Mixer mixer, ResMan resMan)
+        public Sound(GameSettings settings, IMixer mixer, ResMan resMan)
         {
             _mixer = mixer;
             _resMan = resMan;
@@ -974,7 +974,7 @@ namespace NScumm.Sword1
         };
 
         private readonly GameSettings _settings;
-        private readonly Mixer _mixer;
+        private readonly IMixer _mixer;
         private readonly ResMan _resMan;
         private byte _sfxVolL;
         private byte _sfxVolR;

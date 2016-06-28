@@ -42,8 +42,6 @@ namespace NScumm.Core.Audio.SoftSynth
             mixer_DC = (-0xfff * 0xff / 18) >> 7;
 
             f0 = f0_6581;
-            f0_points = f0_points_6581;
-            f0_count = f0_points_6581.GetLength(0);
 
             set_w0();
             set_Q();
@@ -463,10 +461,6 @@ namespace NScumm.Core.Audio.SoftSynth
             // shifting 20 times (2 ^ 20 = 1048576).
             w0 = (int)(2 * Math.PI * f0[fc] * 1.048576);
 
-            // Limit f0 to 16kHz to keep 1 cycle filter stable.
-            const int w0_max_1 = (int)(2 * Math.PI * 16000 * 1.048576);
-            w0_ceil_1 = w0 <= w0_max_1 ? w0 : w0_max_1;
-
             // Limit f0 to 4kHz to keep delta_t cycle filter stable.
             const int w0_max_dt = (int)(2 * Math.PI * 4000 * 1.048576);
             w0_ceil_dt = w0 <= w0_max_dt ? w0 : w0_max_dt;
@@ -518,7 +512,7 @@ namespace NScumm.Core.Audio.SoftSynth
         // not filtered
 
         // Cutoff frequency, resonance.
-        int w0, w0_ceil_1, w0_ceil_dt;
+        int w0, w0_ceil_dt;
         int _1024_div_Q;
 
         // Cutoff frequency tables.
@@ -561,8 +555,6 @@ namespace NScumm.Core.Audio.SoftSynth
                 { 2047, 18000 },   // 0xff 0x07
                 { 2047, 18000 }    // 0xff 0x07 - repeated end point
             };
-        int[,] f0_points;
-        int f0_count;
     }
     
 }

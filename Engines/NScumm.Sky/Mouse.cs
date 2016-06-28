@@ -88,9 +88,9 @@ namespace NScumm.Sky
         private ushort _mouseB;
         private byte[] _objectMouseData;
         private readonly Disk _skyDisk;
-        private readonly SkySystem _system;
+        private readonly ISystem _system;
 
-        public Mouse(SkySystem system, Disk skyDisk, SkyCompact skyCompact)
+        public Mouse(ISystem system, Disk skyDisk, SkyCompact skyCompact)
         {
             _system = system;
             _skyDisk = skyDisk;
@@ -260,7 +260,7 @@ namespace NScumm.Sky
             var inputMan = _system.InputManager;
             while (mousePressed || Environment.TickCount < now + minDelay)
             {
-                if (SkyEngine.ShouldQuit)
+                if (Engine.Instance.HasToQuit)
                 {
                     minDelay = 0;
                     mousePressed = false;

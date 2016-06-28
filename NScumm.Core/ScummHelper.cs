@@ -200,6 +200,11 @@ namespace NScumm.Core
             return SwapBytes(reader.ReadUInt16());
         }
 
+        public static short ReadInt16BigEndian(this BinaryReader reader)
+        {
+            return SwapBytes(reader.ReadInt16());
+        }
+
         public static uint ReadUInt32BigEndian(this BinaryReader reader)
         {
             return SwapBytes(reader.ReadUInt32());
@@ -523,6 +528,12 @@ namespace NScumm.Core
             Array.Copy(data, 0, array, startIndex, 2);
         }
 
+        public static void WriteInt16BigEndian(this byte[] array, int startIndex, short value)
+        {
+            var data = BitConverter.GetBytes(SwapBytes(value));
+            Array.Copy(data, 0, array, startIndex, 2);
+        }
+
         public static void WriteUInt16BigEndian(this byte[] array, int startIndex, ushort value)
         {
             var data = BitConverter.GetBytes(SwapBytes(value));
@@ -587,15 +598,26 @@ namespace NScumm.Core
             return System.Text.Encoding.UTF8.GetString(reader.ReadBytes(4), 0, 4);
         }
 
-		public static string GetText(this byte[] value, int startIndex = 0, int count = -1)
+        public static string GetText(this byte[] value, int startIndex = 0, int count = -1)
         {
             var data = new List<byte>();
-			count = count < 0 ? value.Length : count;
-            for (int i = startIndex; i < count && value[i] != 0; i++)
+            count = count < 0 ? value.Length : count;
+            for (int i = startIndex; i < (startIndex + count) && value[i] != 0; i++)
             {
                 data.Add(value[i]);
             }
             return System.Text.Encoding.UTF8.GetString(data.ToArray());
+        }
+
+        public static string GetRawText(this byte[] value, int startIndex = 0, int count = -1)
+        {
+            var data = new List<char>();
+            count = count < 0 ? value.Length : count;
+            for (int i = startIndex; i < (startIndex + count) && value[i] != 0; i++)
+            {
+                data.Add((char)value[i]);
+            }
+            return new string(data.ToArray());
         }
 
         public static int GetTextLength(this byte[] value, int startIndex = 0)

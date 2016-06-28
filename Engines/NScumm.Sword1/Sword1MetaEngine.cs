@@ -17,8 +17,6 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
-using System.Globalization;
-using System.Linq;
 using NScumm.Core;
 using NScumm.Core.Audio;
 using NScumm.Core.Graphics;
@@ -39,7 +37,7 @@ namespace NScumm.Sword1
 
     class SwordGameDescriptor : IGameDescriptor
     {
-        private readonly CultureInfo _culture;
+        private readonly NScumm.Core.Language _language;
         private readonly string _path;
 
         public string Description
@@ -54,11 +52,11 @@ namespace NScumm.Sword1
             get;
         }
 
-        public CultureInfo Culture
+        public NScumm.Core.Language Language
         {
             get
             {
-                return _culture;
+                return _language;
             }
         }
 
@@ -106,7 +104,7 @@ namespace NScumm.Sword1
             Id = gameId.ToString().ToLowerInvariant();
             // The game detector uses US English by default. We want British
             // English to match the recorded voices better.
-            _culture = new CultureInfo("en-GB");
+            _language = NScumm.Core.Language.UNK_LANG;
             switch (gameId)
             {
                 case SwordGameId.Sword1:
@@ -141,9 +139,9 @@ namespace NScumm.Sword1
 
     public class Sword1MetaEngine : IMetaEngine
     {
-        public IEngine Create(GameSettings settings, IGraphicsManager gfxManager, IInputManager inputManager, IAudioOutput output, ISaveFileManager saveFileManager, bool debugMode = false)
+        public IEngine Create(GameSettings settings, ISystem system)
         {
-            return new SwordEngine(settings, gfxManager, inputManager, output, saveFileManager, debugMode);
+            return new SwordEngine(settings, system);
         }
 
         public GameDetected DetectGame(string path)

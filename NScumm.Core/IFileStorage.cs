@@ -52,7 +52,9 @@ namespace NScumm.Core
 
         byte[] ReadAllBytes(string filename);
 
-        string GetSignature(string path);
+        long GetSize(string filePath);
+
+        string GetSignature(string path, int size = 1024 * 1024);
 
         Stream OpenContent(string path);
 

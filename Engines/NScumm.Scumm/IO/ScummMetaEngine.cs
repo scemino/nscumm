@@ -21,9 +21,9 @@ namespace NScumm.Scumm.IO
             _gm = GameManager.Create(stream);
         }
 
-        public IEngine Create(GameSettings settings, IGraphicsManager gfxManager, IInputManager inputManager, IAudioOutput output, ISaveFileManager saveFileManager, bool debugMode = false)
+        public IEngine Create(GameSettings settings, ISystem system)
         {
-            return ScummEngine.Create(settings, gfxManager, inputManager, output, debugMode);
+            return ScummEngine.Create(settings, system);
         }
 
         public GameDetected DetectGame(string path)

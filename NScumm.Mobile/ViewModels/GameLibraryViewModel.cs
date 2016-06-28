@@ -33,8 +33,8 @@ using System.IO;
 using NScumm.Mobile.Services;
 using Newtonsoft.Json;
 using System.Collections.Generic;
-using NScumm.Scumm.IO;
 using NScumm.Mobile.Resx;
+using NScumm.Scumm.IO;
 
 namespace NScumm.Mobile.ViewModels
 {

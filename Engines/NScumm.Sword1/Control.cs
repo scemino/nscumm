@@ -254,7 +254,7 @@ namespace NScumm.Sword1
                 }
                 Delay(1000 / 12);
                 newMode = GetClicks(mode, out retVal);
-            } while ((newMode != ButtonIds.BUTTON_DONE) && (retVal == 0) && (!SwordEngine.ShouldQuit));
+            } while ((newMode != ButtonIds.BUTTON_DONE) && (retVal == 0) && (!Engine.Instance.HasToQuit));
 
             if (SystemVars.ControlPanelMode == ControlPanelMode.CP_NORMAL)
             {
@@ -338,7 +338,7 @@ namespace NScumm.Sword1
                         notAccepted = false;
                     }
                 }
-            } while (notAccepted && (!SwordEngine.ShouldQuit));
+            } while (notAccepted && (!Engine.Instance.HasToQuit));
 
             _resMan.ResClose(fontId);
             _screenBuf = null;
@@ -582,7 +582,7 @@ namespace NScumm.Sword1
                     else if (id == ButtonIds.BUTTON_QUIT)
                     {
                         if (GetConfirm(_lStrings[(int)LangStrings.STR_QUIT]))
-                            SwordEngine.ShouldQuit = true;
+                            Engine.Instance.HasToQuit = true;
                         return mode;
                     }
                     break;

@@ -26,10 +26,9 @@ namespace NScumm.Core
         bool HasToQuit { get; set; }
         bool IsPaused { get; set; }
 
-        void Run();
+        void LoadGameState(int slot);
+        void SaveGameState(int slot, string description = null);
 
-        // TODO: remove this
-        void Load(string filename);
-        void Save(string filename);
+        void Run();
     }
 }

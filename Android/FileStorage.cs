@@ -105,14 +105,14 @@ namespace NScumm
 			return File.ReadAllBytes (path);
 		}
 
-		public string GetSignature (string path)
+		public string GetSignature (string path, int size)
 		{
 			string signature;
 			using (var md5 = System.Security.Cryptography.MD5.Create ()) {
 
 				using (var file = File.OpenRead (path)) {
 					var br = new BinaryReader (file);
-					var data = br.ReadBytes (1024 * 1024);
+					var data = br.ReadBytes (size);
 					var md5Key = md5.ComputeHash (data, 0, data.Length);
 					var md5Text = new StringBuilder ();
 					for (int i = 0; i < 16; i++) {
@@ -138,6 +138,11 @@ namespace NScumm
 			}
 			return ms;
 		}
-	}
+
+        public long GetSize(string filePath)
+        {
+            return new FileInfo(filePath).Length;
+        }
+    }
 }
 

@@ -70,8 +70,8 @@ namespace NScumm
 				audioDriver.Play ();
 
 				// init engines
-				engine = info.MetaEngine.Create (info, gfx, inputManager, audioDriver, saveFileManager);
-				engine.ShowMenuDialogRequested += OnShowMenuDialogRequested;
+                engine = info.MetaEngine.Create (info, new OSystem(gfx, inputManager, saveFileManager, audioDriver));
+					engine.ShowMenuDialogRequested += OnShowMenuDialogRequested;
 				game.Services.AddService (engine);
 
 				Task.Factory.StartNew (() => {
@@ -117,7 +117,16 @@ namespace NScumm
 
 		private void UpdateGame ()
 		{
-			engine.Run ();
+            try
+            {
+                engine.Run();
+            }
+            catch (Exception e)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.Error.WriteLine(e);
+                Console.ResetColor();
+            }
 			ScreenManager.Game.Exit ();
 		}
 

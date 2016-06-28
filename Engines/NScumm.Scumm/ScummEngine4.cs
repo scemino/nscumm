@@ -20,18 +20,17 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System.Collections.Generic;
+using NScumm.Core;
 using NScumm.Core.Audio;
-using NScumm.Core.Graphics;
-using NScumm.Core.Input;
 using NScumm.Core.IO;
 using NScumm.Scumm.IO;
 
 namespace NScumm.Scumm
 {
-    public class ScummEngine4: ScummEngine3
+    public class ScummEngine4 : ScummEngine3
     {
-        public ScummEngine4(GameSettings game, IGraphicsManager graphicsManager, IInputManager inputManager, IMixer mixer)
-            : base(game, graphicsManager, inputManager, mixer)
+        public ScummEngine4(GameSettings game, ISystem system, IMixer mixer)
+            : base(game, system, mixer)
         {
         }
 

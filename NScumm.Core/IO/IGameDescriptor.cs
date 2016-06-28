@@ -16,7 +16,6 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using System.Globalization;
 using NScumm.Core.Graphics;
 
 namespace NScumm.Core.IO
@@ -25,7 +24,7 @@ namespace NScumm.Core.IO
     {
         string Id { get; }
         string Description { get; }
-        CultureInfo Culture { get; }
+        Language Language { get; }
         Platform Platform { get; }
         int Width { get; }
         int Height { get; }

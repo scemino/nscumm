@@ -299,15 +299,6 @@ namespace NScumm.Scumm
             _rightBtnPressed &= ~MouseButtonStatus.Clicked;
         }
 
-        protected void ShowMenu()
-        {
-            var eh = ShowMenuDialogRequested;
-            if (eh != null)
-            {
-                eh(this, EventArgs.Empty);
-            }
-        }
-
         public bool GetKeyState(int key)
         {
             switch (key)

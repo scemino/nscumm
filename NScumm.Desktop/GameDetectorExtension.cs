@@ -49,6 +49,7 @@ namespace NScumm
                     }
                     catch (BadImageFormatException)
                     {
+						int tmp = 42;
                     }
                     catch (Exception)
                     {

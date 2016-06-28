@@ -113,13 +113,11 @@ namespace NScumm.Core.Audio.SoftSynth
 
             // Set the external filter to the pass freq
             extfilt.SetSamplingParameter(pass_freq);
-            clock_frequency = clock_freq;
 
             cycles_per_sample =
                 (int)(clock_freq / sample_freq * (1 << FIXP_SHIFT) + 0.5);
 
             sample_offset = 0;
-            sample_prev = 0;
 
             return true;
         }
@@ -387,12 +385,9 @@ namespace NScumm.Core.Audio.SoftSynth
         int bus_value;
         int bus_value_ttl;
 
-        double clock_frequency;
-
         // Sampling variables.
         int cycles_per_sample;
         int sample_offset;
-        short sample_prev;
     }
 }
 

@@ -236,6 +236,8 @@ namespace NScumm
                 _keysPressed.Clear();
                 _virtualKeysDown.Clear();
                 _virtualKeysUp.Clear();
+                _leftButtonPressed = false;
+                _rightButtonPressed = false;
             }
         }
 

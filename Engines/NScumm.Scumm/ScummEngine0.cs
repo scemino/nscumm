@@ -173,8 +173,8 @@ namespace NScumm.Scumm
 
         int? VariableIsSoundRunning;
 
-        public ScummEngine0(GameSettings game, IGraphicsManager graphicsManager, IInputManager inputManager, IMixer mixer)
-            : base(game, graphicsManager, inputManager, mixer)
+        public ScummEngine0(GameSettings game, ISystem system, IMixer mixer)
+            : base(game, system, mixer)
         {
             VariableActiveObject2 = null;
             VariableIsSoundRunning = null;

@@ -69,7 +69,6 @@
     </Compile>
     <Compile Include="Sword1MetaEngine.cs" />
     <Compile Include="SwordEngine.cs" />
-    <Compile Include="SwordSystem.cs" />
     <Compile Include="SystemVars.cs" />
     <Compile Include="Text.cs" />
   </ItemGroup>

@@ -325,7 +325,7 @@ namespace NScumm.Sky
             var quitPanel = false;
             _curButtonText = 0;
 
-            while (!quitPanel && !SkyEngine.ShouldQuit)
+            while (!quitPanel && !Engine.Instance.HasToQuit)
             {
                 _text.DrawToScreen(WithMask);
                 _system.GraphicsManager.UpdateScreen();
@@ -368,7 +368,7 @@ namespace NScumm.Sky
             Array.Clear(_screenBuf, 0, Screen.GameScreenWidth * Screen.FullScreenHeight);
             _system.GraphicsManager.CopyRectToScreen(_screenBuf, Screen.GameScreenWidth, 0, 0, Screen.GameScreenWidth,
                 Screen.FullScreenHeight);
-            if (!SkyEngine.ShouldQuit)
+            if (!Engine.Instance.HasToQuit)
                 _system.GraphicsManager.UpdateScreen();
             _skyScreen.ForceRefresh();
             _skyScreen.SetPaletteEndian(_skyCompact.FetchCptRaw((ushort)SystemVars.Instance.CurrentPalette));
@@ -616,7 +616,7 @@ namespace NScumm.Sky
                 case QuitToDos:
                     AnimClick(pButton);
                     if (GetYesNo("Quit to DOS?"))
-                        SkyEngine.QuitGame();
+                        SkyEngine.Instance.QuitGame();
                     return 0;
                 default:
                     throw new InvalidOperationException(string.Format("Control::handleClick: unknown routine: {0:X2}",
@@ -1163,7 +1163,7 @@ namespace NScumm.Sky
             bool refreshNames = true;
             bool refreshAll = true;
             ushort clickRes = 0;
-            while (!quitPanel && !SkyEngine.ShouldQuit)
+            while (!quitPanel && !Engine.Instance.HasToQuit)
             {
                 clickRes = 0;
                 if (refreshNames || refreshAll)

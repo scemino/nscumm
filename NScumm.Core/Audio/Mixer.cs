@@ -114,6 +114,7 @@ namespace NScumm.Core.Audio
         {
             lock (_gate)
             {
+                if (handle == null) return;
                 // Simply ignore stop requests for handles of sounds that already terminated
                 var index = handle.Value % NumChannels;
                 if (_channels[index] == null || _channels[index].Handle.Value != handle.Value)
@@ -127,6 +128,7 @@ namespace NScumm.Core.Audio
         {
             lock (_gate)
             {
+                if (handle == null) return false;
                 var index = handle.Value % NumChannels;
                 return _channels[index] != null && _channels[index].Handle.Value == handle.Value;
             }
@@ -154,10 +156,47 @@ namespace NScumm.Core.Audio
             }
         }
 
+        public void MuteSoundType(SoundType type, bool mute)
+        {
+            Debug.Assert(0 <= type && (int)type < soundTypeSettings.Length);
+            soundTypeSettings[(int)type].Mute = mute;
+
+            for (int i = 0; i != _channels.Length; ++i)
+            {
+                if (_channels[i] != null && _channels[i].Type == type)
+                    _channels[i].NotifyGlobalVolChange();
+            }
+        }
+
         public int GetVolumeForSoundType(SoundType type)
         {
             Debug.Assert(0 <= type && (int)type < soundTypeSettings.Length);
             return soundTypeSettings[(int)type].Volume;
+        }
+
+        public void SetVolumeForSoundType(SoundType type, int volume)
+        {
+            Debug.Assert(0 <= (int)type && (int)type < soundTypeSettings.Length);
+
+            // Check range
+            if (volume > MaxMixerVolume)
+                volume = MaxMixerVolume;
+            else if (volume < 0)
+                volume = 0;
+
+            // TODO: Maybe we should do logarithmic (not linear) volume
+            // scaling? See also Player_V2::setMasterVolume
+
+            lock (_gate)
+            {
+                soundTypeSettings[(int)type].Volume = volume;
+
+                for (int i = 0; i != _channels.Length; ++i)
+                {
+                    if (_channels[i] != null && _channels[i].Type == type)
+                        _channels[i].NotifyGlobalVolChange();
+                }
+            }
         }
 
         public void PauseHandle(SoundHandle handle, bool paused)
@@ -350,7 +389,7 @@ namespace NScumm.Core.Audio
             }
 
             public bool Mute;
-            public readonly int Volume;
+            public int Volume;
         }
     }
 }

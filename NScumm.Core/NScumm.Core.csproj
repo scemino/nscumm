@@ -167,6 +167,17 @@
     <Compile Include="Video\Track.cs" />
     <Compile Include="Video\VideoDecoder.cs" />
     <Compile Include="Video\VideoTrack.cs" />
+    <Compile Include="Common\Language.cs" />
+    <Compile Include="Common\SeekableSubReadStream.cs" />
+    <Compile Include="Image\PCXDecoder.cs" />
+    <Compile Include="Common\RawAccess.cs" />
+    <Compile Include="Audio\Mods\Rjp1.cs" />
+    <Compile Include="IO\AdvancedMetaEngine.cs" />
+    <Compile Include="Image\IFFDecoder.cs" />
+    <Compile Include="Image\PackBitsReadStream.cs" />
+    <Compile Include="Common\ConfigManager.cs" />
+    <Compile Include="Common\BytePtr.cs" />
+    <Compile Include="Engine.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <ItemGroup>
@@ -174,5 +185,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Video\PsxStreamDecoder.Video.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Image\" />
   </ItemGroup>
 </Project>

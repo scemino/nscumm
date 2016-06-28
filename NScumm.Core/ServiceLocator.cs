@@ -30,5 +30,29 @@ namespace NScumm.Core
 
         public static IAudioManager AudioManager { get; set; }
     }
+
+    public static class DebugHelper
+    {
+        public static int DebugLevel { get; set; }
+
+        public static void Debug(int level, string format, params object[] args)
+        {
+            if (level > DebugLevel)
+                return;
+            
+            ServiceLocator.Platform.LogMessage( LogMessageType.Debug, format, args);
+        }
+
+        public static void Debug(string format, params object[] args)
+        {
+            ServiceLocator.Platform.LogMessage(LogMessageType.Debug, format, args);
+        }
+
+        public static void Warning(string format, params object[] args)
+        {
+            var output = $"WARNING: {string.Format(format,args)} !";
+            ServiceLocator.Platform.LogMessage(LogMessageType.Warning, output);
+        }
+    }
 }
 

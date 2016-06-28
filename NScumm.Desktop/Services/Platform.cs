@@ -19,6 +19,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using System;
 using System.Threading;
 using NScumm.Core;
 
@@ -26,6 +27,11 @@ namespace NScumm
 {
     public class Platform : IPlatform
     {
+        public void LogMessage(LogMessageType type, string format, params object[] args)
+        {
+            Console.WriteLine(format, args);
+        }
+
         public void Sleep(int timeInMs)
         {
             Thread.Sleep(timeInMs);

@@ -39,6 +39,16 @@ namespace NScumm.Core.Graphics
                 return string.Format("({0}, {1}, {2})", R, G, B);
             }    
         }
+
+		public static Color operator *(Color color, int value)
+		{
+			return FromRgb (color.R * value, color.G * value, color.B * value);
+		}
+
+		public static Color operator /(Color color, int value)
+		{
+			return FromRgb (color.R / value, color.G / value, color.B / value);
+		}
     }
 
     public static class ColorHelper
@@ -48,6 +58,11 @@ namespace NScumm.Core.Graphics
             return
                 (ushort)(((0xFF >> 8) << 0) | ((r >> 3) << 10) | ((g >> 3) << 5) | ((b >> 3) << 0));
         }
+
+		public static uint RGBToColor24(byte r, byte g, byte b) 
+		{
+			return (uint)(0xFF | (r << 24) | (g << 16) | (b << 8));
+		}
 
         public static void ColorToRGB(ushort color, out byte r, out byte g, out byte b)
         {

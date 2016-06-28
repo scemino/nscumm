@@ -22,6 +22,7 @@ using System.Linq;
 using NScumm.Core.Audio;
 using NScumm.Core.Graphics;
 using System.Diagnostics;
+using D = NScumm.Core.DebugHelper;
 
 namespace NScumm.Core.Video
 {
@@ -175,13 +176,13 @@ namespace NScumm.Core.Video
                             _audioTrack.QueueAudioFromSector(sector);
                         }
                         else {
-                            // TODO: warning("Unhandled multi-track audio");
+                            D.Warning("Unhandled multi-track audio");
                         }
                         break;
                     default:
                         // This shows up way too often, but the other sectors
                         // are safe to ignore
-                        //TODO: warning("Unknown PSX sector type 0x%x", sectorType);
+                        D.Warning("Unknown PSX sector type 0x%x", sectorType);
                         break;
                 }
 

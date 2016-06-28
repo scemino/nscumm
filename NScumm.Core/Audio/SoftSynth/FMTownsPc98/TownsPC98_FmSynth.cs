@@ -407,6 +407,8 @@ namespace NScumm.Core.Audio.SoftSynth
 
         public virtual  void Dispose()
         {
+            if (_ready)
+                Deinit();
         }
 
         public abstract void TimerCallbackA();
@@ -453,6 +455,16 @@ namespace NScumm.Core.Audio.SoftSynth
             _ready = true;
 
             return true;
+        }
+
+        private void Deinit()
+        {
+            _ready = false;
+            _mixer.StopHandle(_soundHandle);
+            lock (_mutex)
+            {
+                _timers[0].cb = _timers[1].cb = IdleTimerCallback;
+            }
         }
 
         // Implement this in your inherited class if your driver generates

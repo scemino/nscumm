@@ -21,8 +21,13 @@
 
 namespace NScumm.Core.Audio
 {
-    public struct SoundHandle
+    public class SoundHandle
     {
         public int Value;
+
+        public SoundHandle()
+        {
+            Value = int.MaxValue;
+        }
     }
 }

@@ -114,7 +114,7 @@ namespace NScumm.Core.Audio.SoftSynth
             get{ return false; }
         }
 
-        public virtual void Dispose()
+        public override void Dispose()
         {
         }
 

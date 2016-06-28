@@ -1457,7 +1457,9 @@ namespace NScumm.Queen
 
             for (;;)
             {
-                ushort frame = ushort.Parse(parameters.animation.Substring(offset, 3));
+                var index = parameters.animation.IndexOf(',', offset);
+                if (index == -1) index = parameters.animation.Length;
+                ushort frame = ushort.Parse(parameters.animation.Substring(offset, index - offset));
                 if (frame == 0)
                     break;
 

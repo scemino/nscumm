@@ -47,7 +47,10 @@
     <Reference Include="System.Xml" />
     <Reference Include="System.Core" />
     <Reference Include="Mono.Android" />
-    <Reference Include="OpenTK-1.0" />
+    <Reference Include="OpenTK-1.0">
+      <HintPath>$(MonoGameInstallDirectory)\MonoGame\v3.0\Assemblies\DesktopGL\OpenTK.dll</HintPath>
+      <SpecificVersion>true</SpecificVersion>
+    </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="MonoGame.Framework">
       <HintPath>$(MonoGameInstallDirectory)\MonoGame\v3.0\Assemblies\Android\MonoGame.Framework.dll</HintPath>
@@ -173,13 +176,17 @@
       <Project>{EF539A3F-0672-412C-B9D0-38DCD3622D99}</Project>
       <Name>NScumm.Sword1</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Engines\NScumm.Scumm\NScumm.Scumm.csproj">
-      <Project>{97342112-448A-4636-827F-8D47B226D86F}</Project>
-      <Name>NScumm.Scumm</Name>
-    </ProjectReference>
     <ProjectReference Include="..\NScumm.Mobile.Resx\NScumm.Mobile.Resx.csproj">
       <Project>{91B0F650-90F1-4166-9934-0CF9289F61EC}</Project>
       <Name>NScumm.Mobile.Resx</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Engines\NScumm.Queen\NScumm.Queen.csproj">
+      <Project>{E10DD77E-F6F2-4F3B-AD40-A7A27FC96C7B}</Project>
+      <Name>NScumm.Queen</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Engines\NScumm.Scumm\NScumm.Scumm.csproj">
+      <Project>{97342112-448A-4636-827F-8D47B226D86F}</Project>
+      <Name>NScumm.Scumm</Name>
     </ProjectReference>
   </ItemGroup>
 </Project>

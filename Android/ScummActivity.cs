@@ -32,8 +32,9 @@ using NScumm.Sky;
 using NScumm.Core;
 using NScumm.Services;
 using NScumm.Sword1;
-using NScumm.Scumm.IO;
 using NScumm.Mobile.Resx;
+using NScumm.Queen;
+using NScumm.Scumm.IO;
 
 namespace NScumm.Mobile.Droid
 {
@@ -64,7 +65,8 @@ namespace NScumm.Mobile.Droid
 			var gd = new GameDetector ();
             gd.Add(new SkyMetaEngine());
             gd.Add(new ScummMetaEngine());
-			gd.Add(new Sword1MetaEngine());
+            gd.Add(new Sword1MetaEngine());
+            gd.Add(new QueenMetaEngine());
 
 			var info = gd.DetectGame (path);
 			if (info == null) {

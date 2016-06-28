@@ -26,6 +26,11 @@ namespace NScumm
 {
     public class Platform : IPlatform
     {
+        public void LogMessage(LogMessageType type, string format, params object[] args)
+        {
+            // TODO:
+        }
+
         public void Sleep(int timeInMs)
         {
             Thread.Sleep(timeInMs);

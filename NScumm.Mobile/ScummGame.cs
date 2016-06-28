@@ -78,7 +78,7 @@ namespace NScumm
 		/// </summary>
 		protected override void Initialize()
 		{
-			Window.Title = string.Format("nSCUMM - {0} [{1}]", Settings.Game.Description, Settings.Game.Culture.NativeName);
+            Window.Title = string.Format("nSCUMM - {0} [{1}]", Settings.Game.Description, Settings.Game.Language);
 			base.Initialize();
 
 			font = Content.Load<SpriteFont>("Fonts/MenuFont");
@@ -96,7 +96,7 @@ namespace NScumm
 			audioDriver.Play();
 
 			// init engines
-			engine = Settings.MetaEngine.Create(Settings, gfx, inputManager, audioDriver, saveFileManager);
+            engine = Settings.MetaEngine.Create(Settings, new OSystem(gfx, inputManager, saveFileManager, audioDriver));
 			engine.ShowMenuDialogRequested += OnShowMenuDialogRequested;
 			Services.AddService(engine);
 

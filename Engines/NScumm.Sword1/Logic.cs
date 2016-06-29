@@ -17,12 +17,11 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using NScumm.Core;
 using NScumm.Core.Audio;
 using NScumm.Core.IO;
+using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sword1
 {
@@ -349,7 +348,7 @@ namespace NScumm.Sword1
 
         public void Engine()
         {
-            // TODO: debug(8, "\n\nNext logic cycle");
+            Debug(8, "\n\nNext logic cycle");
             _eventMan.ServiceGlobalEventList();
 
             for (ushort sectCnt = 0; sectCnt < ObjectMan.TOTAL_SECTIONS; sectCnt++)
@@ -376,7 +375,7 @@ namespace NScumm.Sword1
                                         break;
                                 }
                             }
-                            // TODO: debug(7, "Logic::engine: handling compact %d (%X)", currentId, currentId);
+                            Debug(7, $"Logic::engine: handling compact {currentId} ({currentId:X})");
                             ProcessLogic(compact, currentId);
                             compact.sync = 0; // syncs are only available for 1 cycle.
                         }
@@ -553,7 +552,7 @@ namespace NScumm.Sword1
             // meantime, we don't want any looping sound effects still playing.
             _sound.QuitScreen();
 
-            var player = new MoviePlayer(_vm,_textMan,_resMan);
+            var player = new MoviePlayer(_vm, _textMan, _resMan);
             _screen.ClearScreen();
             player.Load(sequenceId);
             player.Play();
@@ -657,7 +656,7 @@ namespace NScumm.Sword1
 
         int LogicWaitTalk(SwordObject compact)
         {
-            var target = _objMan.FetchObject((uint) compact.down_flag);
+            var target = _objMan.FetchObject((uint)compact.down_flag);
 
             if ((target.status & STAT_TALK_WAIT) != 0)
             {
@@ -672,7 +671,7 @@ namespace NScumm.Sword1
 
         int LogicStartTalk(SwordObject compact)
         {
-            var target = _objMan.FetchObject((uint) compact.down_flag); //holds id of person we're waiting for
+            var target = _objMan.FetchObject((uint)compact.down_flag); //holds id of person we're waiting for
             if ((target.status & STAT_TALK_WAIT) != 0)
             { //response?
                 compact.logic = LOGIC_script; //back to script again
@@ -907,7 +906,7 @@ namespace NScumm.Sword1
             uint varNum = 0;
             while (true)
             {
-                Debug.Assert((stackIdx >= 0) && (stackIdx <= MAX_STACK_SIZE));
+                System.Diagnostics.Debug.Assert((stackIdx >= 0) && (stackIdx <= MAX_STACK_SIZE));
                 switch (scriptCode[pc++])
                 {
                     case IT_MCODE:
@@ -953,7 +952,7 @@ namespace NScumm.Sword1
 
                                 break;
                             default:
-                                // TODO: warning("mcode[%d]: too many arguments(%d)", mCodeNumber, mCodeArguments);
+                                Warning($"mcode[{mCodeNumber}]: too many arguments({mCodeArguments})");
                                 break;
                         }
                         // TODO: System.Diagnostics.Debug::callMCode(mCodeNumber, mCodeArguments, a, b, c, d, e, f);
@@ -962,13 +961,13 @@ namespace NScumm.Sword1
                             return pc;
                         break;
                     case IT_PUSHNUMBER:
-                        // TODO: debug(9, "IT_PUSH: %d", scriptCode[pc]);
+                        Debug(9, $"IT_PUSH: {scriptCode[pc]}");
                         stack[stackIdx++] = (int)scriptCode[pc++];
                         break;
                     case IT_PUSHVARIABLE:
-                        // TODO: debug(9, "IT_PUSHVARIABLE: ScriptVar[%d] => %d", scriptCode[pc], _scriptVars[scriptCode[pc]]);
+                        Debug(9, $"IT_PUSHVARIABLE: ScriptVar[{scriptCode[pc]}] => {ScriptVars[scriptCode[pc]]}");
                         varNum = scriptCode[pc++];
-                        if (Sword1.SystemVars.IsDemo && SystemVars.Platform == Platform.Windows)
+                        if (SystemVars.IsDemo && SystemVars.Platform == Platform.Windows)
                         {
                             if (varNum >= 397) // BS1 Demo has different number of script variables
                                 varNum++;
@@ -979,41 +978,41 @@ namespace NScumm.Sword1
                         break;
                     case IT_NOTEQUAL:
                         stackIdx--;
-                        // TODO:debug(9, "IT_NOTEQUAL: RESULT = %d", stack[stackIdx - 1] != stack[stackIdx]);
+                        Debug(9, $"IT_NOTEQUAL: RESULT = {stack[stackIdx - 1] != stack[stackIdx]}");
                         stack[stackIdx - 1] = stack[stackIdx - 1] != stack[stackIdx] ? 1 : 0;
                         break;
                     case IT_ISEQUAL:
                         stackIdx--;
-                        // TODO:debug(9, "IT_ISEQUAL: RESULT = %d", stack[stackIdx - 1] == stack[stackIdx]);
+                        Debug(9, $"IT_ISEQUAL: RESULT = {stack[stackIdx - 1] == stack[stackIdx]}");
                         stack[stackIdx - 1] = stack[stackIdx - 1] == stack[stackIdx] ? 1 : 0;
                         break;
                     case IT_PLUS:
                         stackIdx--;
-                        // TODO:debug(9, "IT_PLUS: RESULT = %d", stack[stackIdx - 1] + stack[stackIdx]);
+                        Debug(9, $"IT_PLUS: RESULT = {stack[stackIdx - 1] + stack[stackIdx]}");
                         stack[stackIdx - 1] = stack[stackIdx - 1] + stack[stackIdx];
                         break;
                     case IT_TIMES:
                         stackIdx--;
-                        // TODO: debug(9, "IT_TIMES: RESULT = %d", stack[stackIdx - 1] * stack[stackIdx]);
+                        Debug(9, $"IT_TIMES: RESULT = {stack[stackIdx - 1] * stack[stackIdx]}");
                         stack[stackIdx - 1] = (stack[stackIdx - 1] * stack[stackIdx]);
                         break;
                     case IT_ANDAND:
                         stackIdx--;
-                        // TODO: debug(9, "IT_ANDAND: RESULT = %d", stack[stackIdx - 1] && stack[stackIdx]);
+                        Debug(9, $"IT_ANDAND: RESULT = {stack[stackIdx - 1] != 0 && stack[stackIdx] != 0}");
                         stack[stackIdx - 1] = (stack[stackIdx - 1] != 0 && stack[stackIdx] != 0) ? 1 : 0;
                         break;
                     case IT_OROR:           // ||
                         stackIdx--;
-                        // TODO: debug(9, "IT_OROR: RESULT = %d", stack[stackIdx - 1] || stack[stackIdx]);
+                        Debug(9, $"IT_OROR: RESULT = {stack[stackIdx - 1] != 0 || stack[stackIdx] != 0}");
                         stack[stackIdx - 1] = (stack[stackIdx - 1] != 0 || stack[stackIdx] != 0) ? 1 : 0;
                         break;
                     case IT_LESSTHAN:
                         stackIdx--;
-                        // TODO: debug(9, "IT_LESSTHAN: RESULT = %d", stack[stackIdx - 1] < stack[stackIdx]);
+                        Debug(9, $"IT_LESSTHAN: RESULT = {stack[stackIdx - 1] < stack[stackIdx]}");
                         stack[stackIdx - 1] = (stack[stackIdx - 1] < stack[stackIdx]) ? 1 : 0;
                         break;
                     case IT_NOT:
-                        // TODO: debug(9, "IT_NOT: RESULT = %d", stack[stackIdx - 1] ? 0 : 1);
+                        Debug(9, $"IT_NOT: RESULT = {stack[stackIdx - 1] != 0 ? 0 : 1}");
                         if (stack[stackIdx - 1] != 0)
                             stack[stackIdx - 1] = 0;
                         else
@@ -1021,44 +1020,44 @@ namespace NScumm.Sword1
                         break;
                     case IT_MINUS:
                         stackIdx--;
-                        // TODO: debug(9, "IT_MINUS: RESULT = %d", stack[stackIdx - 1] - stack[stackIdx]);
+                        Debug(9, $"IT_MINUS: RESULT = {stack[stackIdx - 1] - stack[stackIdx]}");
                         stack[stackIdx - 1] = (stack[stackIdx - 1] - stack[stackIdx]);
                         break;
                     case IT_AND:
                         stackIdx--;
-                        // TODO: debug(9, "IT_AND: RESULT = %d", stack[stackIdx - 1] & stack[stackIdx]);
+                        Debug(9, $"IT_AND: RESULT = {stack[stackIdx - 1] & stack[stackIdx]}");
                         stack[stackIdx - 1] = (stack[stackIdx - 1] & stack[stackIdx]);
                         break;
                     case IT_OR:
                         stackIdx--;
-                        // TODO: debug(9, "IT_OR: RESULT = %d", stack[stackIdx - 1] | stack[stackIdx]);
+                        Debug(9, $"IT_OR: RESULT = {stack[stackIdx - 1] | stack[stackIdx]}");
                         stack[stackIdx - 1] = (stack[stackIdx - 1] | stack[stackIdx]);
                         break;
                     case IT_GTE:
                         stackIdx--;
-                        // TODO: debug(9, "IT_GTE: RESULT = %d", stack[stackIdx - 1] >= stack[stackIdx]);
+                        Debug(9, $"IT_GTE: RESULT = {stack[stackIdx - 1] >= stack[stackIdx]}");
                         stack[stackIdx - 1] = (stack[stackIdx - 1] >= stack[stackIdx]) ? 1 : 0;
                         break;
                     case IT_LTE:
                         stackIdx--;
-                        // TODO: debug(9, "IT_LTE: RESULT = %d", stack[stackIdx - 1] <= stack[stackIdx]);
+                        Debug(9, $"IT_LTE: RESULT = {stack[stackIdx - 1] <= stack[stackIdx]}");
                         stack[stackIdx - 1] = (stack[stackIdx - 1] <= stack[stackIdx]) ? 1 : 0;
                         break;
                     case IT_DEVIDE:
                         stackIdx--;
-                        // TODO: debug(9, "IT_DEVIDE: RESULT = %d", stack[stackIdx - 1] / stack[stackIdx]);
+                        Debug(9, $"IT_DEVIDE: RESULT = {stack[stackIdx - 1] / stack[stackIdx]}");
                         stack[stackIdx - 1] = (stack[stackIdx - 1] / stack[stackIdx]);
                         break;
                     case IT_GT:
                         stackIdx--;
-                        // TODO: debug(9, "IT_GT: RESULT = %d", stack[stackIdx - 1] > stack[stackIdx]);
+                        Debug(9, $"IT_GT: RESULT = {stack[stackIdx - 1] > stack[stackIdx]}");
                         stack[stackIdx - 1] = (stack[stackIdx - 1] > stack[stackIdx]) ? 1 : 0;
                         break;
                     case IT_SCRIPTEND:
-                        // TODO: debug(9, "IT_SCRIPTEND");
+                        Debug(9, "IT_SCRIPTEND");
                         return 0;
                     case IT_POPVAR:         // pop a variable
-                        // TODO: debug(9, "IT_POPVAR: ScriptVars[%d] = %d", scriptCode[pc], stack[stackIdx - 1]);
+                        Debug(9, $"IT_POPVAR: ScriptVars[{scriptCode[pc]}] = {stack[stackIdx - 1]}");
                         varNum = scriptCode[pc++];
                         if (SystemVars.IsDemo && SystemVars.Platform == Platform.Windows)
                         {
@@ -1071,27 +1070,27 @@ namespace NScumm.Sword1
                         break;
                     case IT_POPLONGOFFSET:
                         offset = (int)scriptCode[pc++];
-                        // TODO: debug(9, "IT_POPLONGOFFSET: Cpt[%d] = %d", offset, stack[stackIdx - 1]);
+                        Debug(9, $"IT_POPLONGOFFSET: Cpt[{offset}] = {stack[stackIdx - 1]}");
                         compact.Data.WriteUInt32(compact.Offset + offset, (uint)stack[--stackIdx]);
                         break;
                     case IT_PUSHLONGOFFSET:
                         offset = (int)scriptCode[pc++];
-                        // TODO: debug(9, "IT_PUSHLONGOFFSET: PUSH Cpt[%d] (==%d)", offset, *((int32*)((uint8*)compact + offset)));
+                        Debug(9, $"IT_PUSHLONGOFFSET: PUSH Cpt[{offset}] (=={compact.Data.ToInt32(compact.Offset + offset)})");
                         stack[stackIdx++] = (int)compact.Data.ToUInt32(compact.Offset + offset);
                         break;
                     case IT_SKIPONFALSE:
-                        // TODO: debug(9, "IT_SKIPONFALSE: %d (%s)", scriptCode[pc], (stack[stackIdx - 1] ? "IS TRUE (NOT SKIPPED)" : "IS FALSE (SKIPPED)"));
+                        Debug(9, $"IT_SKIPONFALSE: {scriptCode[pc]} ({(stack[stackIdx - 1] != 0 ? "IS TRUE (NOT SKIPPED)" : "IS FALSE (SKIPPED)")})");
                         if (stack[--stackIdx] != 0)
                             pc++;
                         else
                             pc = (int)(pc + scriptCode[pc]);
                         break;
                     case IT_SKIP:
-                        // TODO: debug(9, "IT_SKIP: %d", scriptCode[pc]);
+                        Debug(9, $"IT_SKIP: {scriptCode[pc]}");
                         pc = (int)(pc + scriptCode[pc]);
                         break;
                     case IT_SWITCH:         // The mega switch statement
-                        // TODO: debug(9, "IT_SWITCH: [SORRY, NO DEBUG INFO]");
+                        Debug(9, "IT_SWITCH: [SORRY, NO DEBUG INFO]");
                         {
                             int switchValue = stack[--stackIdx];
                             int switchCount = (int)scriptCode[pc++];
@@ -1112,7 +1111,7 @@ namespace NScumm.Sword1
                         }
                         break;
                     case IT_SKIPONTRUE:     // skip if expression true
-                        // TODO: debug(9, "IT_SKIPONTRUE: %d (%s)", scriptCode[pc], (stack[stackIdx - 1] ? "IS TRUE (SKIPPED)" : "IS FALSE (NOT SKIPPED)"));
+                        Debug(9, $"IT_SKIPONTRUE: {scriptCode[pc]} ({(stack[stackIdx - 1] != 0 ? "IS TRUE (SKIPPED)" : "IS FALSE (NOT SKIPPED)")})");
                         stackIdx--;
                         if (stack[stackIdx] != 0)
                             pc = (int)(pc + scriptCode[pc]);
@@ -1120,20 +1119,20 @@ namespace NScumm.Sword1
                             pc++;
                         break;
                     case IT_PRINTF:
-                        // TODO: debug(0, "IT_PRINTF(%d)", stack[stackIdx]);
+                        Debug(0, $"IT_PRINTF({stack[stackIdx]})");
                         break;
                     case IT_RESTARTSCRIPT:
-                        // TODO: debug(9, "IT_RESTARTSCRIPT");
+                        Debug(9, "IT_RESTARTSCRIPT");
                         pc = startOfScript;
                         break;
                     case IT_POPWORDOFFSET:
                         offset = (int)scriptCode[pc++];
-                        // TODO: debug(9, "IT_POPWORDOFFSET: Cpt[%d] = %d", offset, stack[stackIdx - 1] & 0xFFFF);
+                        Debug(9, $"IT_POPWORDOFFSET: Cpt[{offset}] = {stack[stackIdx - 1] & 0xFFFF}");
                         compact.Data.WriteUInt32(compact.Offset + offset, (uint)(stack[--stackIdx] & 0xffff));
                         break;
                     case IT_PUSHWORDOFFSET:
                         offset = (int)scriptCode[pc++];
-                        // TODO: debug(9, "IT_PUSHWORDOFFSET: PUSH Cpt[%d] == %d", offset, (*((int32*)((uint8*)compact + offset))) & 0xffff);
+                        Debug(9, $"IT_PUSHWORDOFFSET: PUSH Cpt[{offset}] == {compact.Data.ToInt32(compact.Offset + offset) & 0xffff}");
                         stack[stackIdx++] = compact.Data.ToInt32(compact.Offset + offset) & 0xffff;
                         break;
                     default:
@@ -1162,7 +1161,7 @@ namespace NScumm.Sword1
         {
             if ((dir < 0) || (dir > 8))
             {
-                // TODO: warning("fnStandAt:: invalid direction %d", dir);
+                Warning($"fnStandAt:: invalid direction {dir}");
                 return SCRIPT_CONT;
             }
             if (dir == 8)
@@ -1176,7 +1175,7 @@ namespace NScumm.Sword1
         {
             if ((dir < 0) || (dir > 8))
             {
-                // TODO: warning("fnStand:: invalid direction %d", dir);
+                Warning($"fnStand:: invalid direction {dir}");
                 return SCRIPT_CONT;
             }
             if (dir == 8)
@@ -1237,7 +1236,7 @@ namespace NScumm.Sword1
         public void RunMouseScript(SwordObject cpt, int scriptId)
         {
             Header script = _resMan.LockScript((uint)scriptId);
-            // TODO: debug(9, "running mouse script %d", scriptId);
+            Debug(9, $"running mouse script {scriptId}");
             InterpretScript(cpt, ScriptVars[(int)ScriptVariableNames.SPECIAL_ITEM], script, (uint)scriptId, scriptId);
             _resMan.UnlockScript((uint)scriptId);
         }

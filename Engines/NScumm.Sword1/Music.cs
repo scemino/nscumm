@@ -21,6 +21,7 @@ using NScumm.Core.Audio;
 using NScumm.Core.Audio.Decoders;
 using System;
 using System.IO;
+using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sword1
 {
@@ -63,7 +64,7 @@ namespace NScumm.Sword1
                 expectedSamples -= samplesReturned;
                 if ((expectedSamples > 0) && _audioSource.IsEndOfData)
                 {
-                    // TODO: debug(2, "Music reached EOF");
+                    Debug(2, "Music reached EOF");
                     Stop();
                 }
             }
@@ -327,9 +328,8 @@ namespace NScumm.Sword1
                     }
                 }
                 else {
-                    // TODO:
-                    //if (tuneId != 81) // file 81 was apparently removed from BS.
-                    //    warning("Can't find music file %s", _tuneList[tuneId]);
+                    if (tuneId != 81) // file 81 was apparently removed from BS.
+                        Warning($"Can't find music file {_tuneList[tuneId]}");
                 }
             }
             else {

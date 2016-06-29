@@ -21,6 +21,7 @@ using System.IO;
 using NScumm.Core;
 using NScumm.Core.Audio;
 using NScumm.Core.Audio.Decoders;
+using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sky
 {
@@ -130,15 +131,13 @@ namespace NScumm.Sky
 
             if (_soundData == null)
             {
-                // TODO: warning
-                //warning("Sound::playSound(%04X, %04X) called with a section having been loaded", sound, volume);
+                Warning($"Sound::playSound({sound:X4}, {volume:X4}) called with a section having been loaded");
                 return;
             }
 
             if (sound > _soundsTotal)
             {
-                // TODO: debug
-                //debug(5, "Sound::playSound %d ignored, only %d sfx in file", sound, _soundsTotal);
+                Debug(5, $"Sound::playSound {sound} ignored, only {_soundsTotal} sfx in file");
                 return;
             }
 
@@ -350,7 +349,7 @@ namespace NScumm.Sky
             var speechData = _skyDisk.LoadFile(speechFileNum + 50000);
             if (speechData == null)
             {
-                // TODO: debug(9, "File %d (speechFile %d from section %d) wasn't found", speechFileNum + 50000, textNum & 0xFFF, textNum >> 12);
+                Debug(9, $"File {speechFileNum + 50000} (speechFile {textNum & 0xFFF} from section {textNum >> 12}) wasn't found");
                 return false;
             }
 

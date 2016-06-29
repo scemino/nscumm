@@ -17,12 +17,12 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
-using System.Diagnostics;
 using System.Linq;
 using NScumm.Core;
 using NScumm.Core.Graphics;
 using NScumm.Core.IO;
 using System.IO;
+using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sword1
 {
@@ -615,7 +615,7 @@ namespace NScumm.Sword1
         {
             byte cnt;
 
-            // TODO: debug(8, "Screen::draw() . _currentScreen %u", _currentScreen);
+            Debug(8, "Screen::draw() . _currentScreen {_currentScreen}");
 
             if (_currentScreen == 54)
             {
@@ -727,12 +727,12 @@ namespace NScumm.Sword1
         {
             if (listId == 0)
             {
-                Debug.Assert(_foreLength < MAX_FORE);
+                System.Diagnostics.Debug.Assert(_foreLength < MAX_FORE);
                 _foreList[_foreLength++] = objId;
             }
             if (listId == 1)
             {
-                Debug.Assert(_sortLength < MAX_SORT);
+                System.Diagnostics.Debug.Assert(_sortLength < MAX_SORT);
                 var cpt = _objMan.FetchObject(objId);
                 _sortList[_sortLength].id = (int)objId;
                 _sortList[_sortLength].y = cpt.anim_y; // gives feet coords if boxed mega, otherwise top of sprite box
@@ -747,7 +747,7 @@ namespace NScumm.Sword1
             }
             if (listId == 2)
             {
-                Debug.Assert(_backLength < MAX_BACK);
+                System.Diagnostics.Debug.Assert(_backLength < MAX_BACK);
                 _backList[_backLength++] = objId;
             }
         }
@@ -759,7 +759,7 @@ namespace NScumm.Sword1
 
         public void FnFlash(byte color)
         {
-            // TODO: warning("stub: Screen::fnFlash(%d)", color);
+            Warning($"stub: Screen::fnFlash({color})");
         }
 
         public void ShowFrame(ushort x, ushort y, uint resId, uint frameNo, byte[] fadeMask = null, sbyte fadeStatus = 0)
@@ -1313,7 +1313,7 @@ namespace NScumm.Sword1
                 paraSizeY = _resMan.ReadUInt16(header.sizeY);
             }
 
-            Debug.Assert((paraSizeX >= SCREEN_WIDTH) && (paraSizeY >= SCREEN_DEPTH));
+            System.Diagnostics.Debug.Assert((paraSizeX >= SCREEN_WIDTH) && (paraSizeY >= SCREEN_DEPTH));
 
             // we have to render more than the visible screen part for displaying scroll frames
             scrnScrlX = (ushort)Math.Min((uint)_oldScrollX, Logic.ScriptVars[(int)ScriptVariableNames.SCROLL_OFFSET_X]);

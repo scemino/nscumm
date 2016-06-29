@@ -18,6 +18,7 @@
 
 using System;
 using NScumm.Core;
+using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sword1
 {
@@ -279,9 +280,8 @@ namespace NScumm.Sword1
                 if (lang != Language.BS1_ENGLISH)
                 {
                     text = LockText(textId, Language.BS1_ENGLISH);
-                    // TODO:
-                    //if (text != 0)
-                    //    warning("Missing translation for textId %u (\"%s\")", textId, text);
+                    if (text != null)
+                        Warning($"Missing translation for textId {textId} (\"{text}\")");
                     UnlockText(textId, Language.BS1_ENGLISH);
                 }
 
@@ -347,7 +347,7 @@ namespace NScumm.Sword1
                 //if (textId == 2950145)
                 //    return const_cast<char*>(_translationId2950145[lang]);
 
-                // TODO: warning("ObjectMan::lockText(%d): text number has no text lines", textId);
+                Warning($"ObjectMan::lockText({textId}): text number has no text lines");
                 return null;
             }
             return new ByteAccess(addr, (int)(addrOff + offset));

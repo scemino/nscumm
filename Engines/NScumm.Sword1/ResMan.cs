@@ -19,8 +19,8 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using NScumm.Core;
+using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sword1
 {
@@ -134,7 +134,7 @@ const int MAX_OPEN_CLUS =4; // the PSP can't have more than 8 files open simulta
                 uint size = ResLength(id);
                 _memMan.Alloc(memHandle, size);
                 var clusFile = ResFile(id);
-                Debug.Assert(clusFile != null);
+                System.Diagnostics.Debug.Assert(clusFile != null);
                 clusFile.Seek(ResOffset(id), SeekOrigin.Begin);
                 clusFile.Read(memHandle.data, 0, (int)size);
             }
@@ -144,7 +144,7 @@ const int MAX_OPEN_CLUS =4; // the PSP can't have more than 8 files open simulta
             memHandle.refCount++;
             if (memHandle.refCount > 20)
             {
-                // TODO: debug(1, "%d references to id %d. Guess there's something wrong.", memHandle.refCount, id);
+                Debug(1, $"{memHandle.refCount} references to id {id}. Guess there's something wrong.");
             }
         }
 
@@ -166,7 +166,7 @@ const int MAX_OPEN_CLUS =4; // the PSP can't have more than 8 files open simulta
                 return;
             if (handle.refCount == 0)
             {
-                // TODO: warning("Resource Manager fail: unlocking object with refCount 0. Id: %d", id);
+                Warning($"Resource Manager fail: unlocking object with refCount 0. Id: {id}");
             }
             else
             {
@@ -368,7 +368,7 @@ const int MAX_OPEN_CLUS =4; // the PSP can't have more than 8 files open simulta
             MemHandle memHandle = ResHandle(id);
             if (memHandle == null)
             {
-                // TODO:warning("fetchRes:: resource %d out of bounds", id);
+                Warning($"fetchRes:: resource {id} out of bounds");
                 return null;
             }
             if (memHandle.data == null)
@@ -445,7 +445,7 @@ const int MAX_OPEN_CLUS =4; // the PSP can't have more than 8 files open simulta
 
                 while (_openClus > MAX_OPEN_CLUS)
                 {
-                    Debug.Assert(_openCluStart != null);
+                    System.Diagnostics.Debug.Assert(_openCluStart != null);
                     Clu closeClu = _openCluStart;
                     _openCluStart = _openCluStart.nextOpen;
 

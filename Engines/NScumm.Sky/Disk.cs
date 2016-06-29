@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using NScumm.Core;
+using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sky
 {
@@ -357,7 +358,7 @@ namespace NScumm.Sky
 				_loadedFilesList [targCnt] = 0;
 				SkyEngine.ItemList [_buildList [bCnt] & 2047] = LoadFile (_buildList [bCnt] & 0x7FFF);
 				if (SkyEngine.ItemList [_buildList [bCnt] & 2047] == null) {
-					// TODO: warning("fnCacheFiles: Disk::loadFile() returned null for file {0}", _buildList[bCnt] & 0x7FFF);
+					Warning($"fnCacheFiles: Disk::loadFile() returned null for file {_buildList[bCnt] & 0x7FFF}");
 				}
 				bCnt++;
 			}

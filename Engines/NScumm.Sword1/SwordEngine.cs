@@ -19,11 +19,10 @@
 using System;
 using System.Globalization;
 using NScumm.Core;
-using NScumm.Core.Audio;
 using NScumm.Core.Graphics;
 using NScumm.Core.Input;
 using NScumm.Core.IO;
-using D = NScumm.Core.DebugHelper;
+using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sword1
 {
@@ -71,12 +70,12 @@ namespace NScumm.Sword1
             // TODO:
             // CheckCdFiles();
 
-            D.Debug(5, "Starting resource manager");
+            Debug(5, "Starting resource manager");
             var directory = ServiceLocator.FileStorage.GetDirectoryName(settings.Game.Path);
             var path = ServiceLocator.FileStorage.Combine(directory, "swordres.rif");
             _resMan = new ResMan(directory, path, SystemVars.Platform == Platform.Macintosh);
 
-            D.Debug(5, "Starting object manager");
+            Debug(5, "Starting object manager");
             _objectMan = new ObjectMan(_resMan);
             _mouse = new Mouse(System, _resMan, _objectMan);
             _screen = new Screen(directory, System, _resMan, _objectMan);

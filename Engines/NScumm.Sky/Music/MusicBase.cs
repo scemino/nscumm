@@ -18,7 +18,6 @@
 
 using System;
 using NScumm.Core.Audio;
-using NScumm.Core.Audio.Decoders;
 using NScumm.Core;
 
 namespace NScumm.Sky.Music

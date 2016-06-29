@@ -19,6 +19,7 @@
 using System;
 using NScumm.Core;
 using NScumm.Core.Graphics;
+using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sky
 {
@@ -704,7 +705,7 @@ namespace NScumm.Sky
                                 var spriteData = SkyEngine.ItemList[spriteComp.Core.frame >> 6];
                                 if (spriteData == null)
                                 {
-                                    // TODO: debug(9, "Missing file %d", spriteComp.frame >> 6);
+                                    // TODO: Debug(9, $"Missing file {spriteComp.frame >> 6}");
                                     spriteComp.Core.status = 0;
                                 }
                                 else
@@ -892,7 +893,7 @@ namespace NScumm.Sky
             }
             if ((_sprX + _sprWidth > 320) || (_sprY + _sprHeight > 192))
             {
-                // TODO: warning("Screen::drawSprite fatal error: got x = %d, y = %d, w = %d, h = %d", _sprX, _sprY, _sprWidth, _sprHeight);
+                Warning($"Screen::drawSprite fatal error: got x = {_sprX}, y = {_sprY}, w = {_sprWidth}, h = {_sprHeight}");
                 _sprWidth = 0;
                 return;
             }

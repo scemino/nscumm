@@ -18,8 +18,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -27,6 +25,7 @@ using NScumm.Core;
 using NScumm.Core.Graphics;
 using NScumm.Core.Input;
 using NScumm.Core.IO;
+using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sword1
 {
@@ -86,6 +85,7 @@ namespace NScumm.Sword1
         CONFIRM_CANCEL
     }
 
+    [Flags]
     enum TextModes
     {
         TEXT_LEFT_ALIGN = 0,
@@ -260,21 +260,19 @@ namespace NScumm.Sword1
             {
                 byte volL, volR;
                 _music.GiveVolume(out volL, out volR);
-                // TODO:
-                //ConfMan.setInt("music_volume", (int)((volR + volL) / 2));
-                //ConfMan.setInt("music_balance", volToBalance(volL, volR));
+                ConfigManager.Instance.Set<int>("music_volume", (volR + volL) / 2);
+                ConfigManager.Instance.Set<int>("music_balance", VolToBalance(volL, volR));
 
                 _sound.GiveSpeechVol(out volL, out volR);
-                // TODO:
-                //ConfMan.setInt("speech_volume", (int)((volR + volL) / 2));
-                //ConfMan.setInt("speech_balance", volToBalance(volL, volR));
+                ConfigManager.Instance.Set<int>("speech_volume", (volR + volL) / 2);
+                ConfigManager.Instance.Set<int>("speech_balance", VolToBalance(volL, volR));
 
                 _sound.GiveSfxVol(out volL, out volR);
-                // TODO:
-                //ConfMan.setInt("sfx_volume", (int)((volR + volL) / 2));
-                //ConfMan.setInt("sfx_balance", volToBalance(volL, volR));
+                ConfigManager.Instance.Set<int>("sfx_volume", ((volR + volL) / 2));
+                ConfigManager.Instance.Set<int>("sfx_balance", VolToBalance(volL, volR));
 
-                //ConfMan.setBool("subtitles", SystemVars.ShowText == 1);
+                ConfigManager.Instance.Set<bool>("subtitles", SystemVars.ShowText == 1);
+                // TODO: conf
                 //ConfMan.flushToDisk();
             }
 
@@ -296,7 +294,7 @@ namespace NScumm.Sword1
         {
             _screenBuf = new byte[640 * 480];
             uint fontId = SwordRes.SR_FONT;
-            if (Sword1.SystemVars.Language == Language.BS1_CZECH)
+            if (SystemVars.Language == Language.BS1_CZECH)
                 fontId = SwordRes.CZECH_SR_FONT;
             _font = _resMan.OpenFetchRes(fontId);
             var pal = _resMan.OpenFetchRes(SwordRes.SR_PALETTE);
@@ -309,8 +307,8 @@ namespace NScumm.Sword1
             _resMan.ResClose(SwordRes.SR_PALETTE);
             _system.GraphicsManager.SetPalette(palOut, 0, 256);
 
-            var fName = $"cd{Sword1.SystemVars.CurrentCd}.id";
-            var textA = $"{_lStrings[(int)LangStrings.STR_INSERT_CD_A]}{Sword1.SystemVars.CurrentCd}";
+            var fName = $"cd{SystemVars.CurrentCd}.id";
+            var textA = $"{_lStrings[(int)LangStrings.STR_INSERT_CD_A]}{SystemVars.CurrentCd}";
             bool notAccepted = true;
             bool refreshText = true;
             do
@@ -342,6 +340,15 @@ namespace NScumm.Sword1
 
             _resMan.ResClose(fontId);
             _screenBuf = null;
+        }
+
+        static int VolToBalance(int volL, int volR)
+        {
+            if (volL + volR == 0)
+            {
+                return 50;
+            }
+            return (100 * volL / (volL + volR));
         }
 
         private ButtonIds GetClicks(ButtonIds mode, out byte retVal)
@@ -401,13 +408,13 @@ namespace NScumm.Sword1
             if ((_mouseState & Mouse.BS1_WHEEL_UP) != 0)
             {
                 for (var cnt = 0; cnt < checkButtons; cnt++)
-                    if (_buttons[cnt]._id == (ButtonIds)ButtonIds.BUTTON_SCROLL_UP_SLOW)
+                    if (_buttons[cnt]._id == ButtonIds.BUTTON_SCROLL_UP_SLOW)
                         return HandleButtonClick(_buttons[cnt]._id, mode, out retVal);
             }
             if ((_mouseState & Mouse.BS1_WHEEL_DOWN) != 0)
             {
                 for (var cnt = 0; cnt < checkButtons; cnt++)
-                    if (_buttons[cnt]._id == (ButtonIds)ButtonIds.BUTTON_SCROLL_DOWN_SLOW)
+                    if (_buttons[cnt]._id == ButtonIds.BUTTON_SCROLL_DOWN_SLOW)
                         return HandleButtonClick(_buttons[cnt]._id, mode, out retVal);
             }
             return 0;
@@ -426,7 +433,7 @@ namespace NScumm.Sword1
                     byte clickDest = 0;
                     short mouseDiffX = (short)(_mouseCoord.X - (_volumeButtons[clickedId].x + 48));
                     short mouseDiffY = (short)(_mouseCoord.Y - (_volumeButtons[clickedId].y + 48));
-                    short mouseOffs = (short)Math.Sqrt((double)(mouseDiffX * mouseDiffX + mouseDiffY * mouseDiffY));
+                    short mouseOffs = (short)Math.Sqrt((mouseDiffX * mouseDiffX + mouseDiffY * mouseDiffY));
                     // check if the player really hit the button (but not the center).
                     if ((mouseOffs <= 42) && (mouseOffs >= 8))
                     {
@@ -540,7 +547,7 @@ namespace NScumm.Sword1
                     Array.Copy(srcMem.Data, srcMem.Offset, destMem.Data, destMem.Offset, _resMan.ReadUInt16(frHead.width));
 
                     if (SystemVars.Platform == Platform.PSX)
-                    { 
+                    {
                         //linedoubling
                         destMem.Offset += Screen.SCREEN_WIDTH;
                         Array.ConstrainedCopy(srcMem.Data, srcMem.Offset, destMem.Data, destMem.Offset, _resMan.ReadUInt16(frHead.width));
@@ -632,7 +639,6 @@ namespace NScumm.Sword1
 
         public bool RestoreGameFromFile(byte slot)
         {
-
             ushort cnt;
             var fName = $"sword1.{slot:D3}";
             using (var inf = new BinaryReader(_saveFileMan.OpenForLoading(fName)))
@@ -658,7 +664,7 @@ namespace NScumm.Sword1
 
                 if (saveVersion > SAVEGAME_VERSION)
                 {
-                    // TODO: warning("Different save game version");
+                    Warning("Different save game version");
                     return false;
                 }
 
@@ -673,12 +679,12 @@ namespace NScumm.Sword1
                 if (saveVersion < 2)
                 {
                     // Before version 2 we didn't had play time feature
-                    // TODO: g_engine.setTotalPlayTime(0);
+                    Engine.Instance.TotalPlayTime = 0;
                 }
                 else
                 {
                     var time = inf.ReadUInt32BigEndian();
-                    // TODO: g_engine.setTotalPlayTime(time * 1000);
+                    Engine.Instance.TotalPlayTime = ((int)(time * 1000));
                 }
 
                 _restoreBuf = new byte[
@@ -796,7 +802,7 @@ namespace NScumm.Sword1
             var bpp = Surface.GetBytesPerPixel(thumb.PixelFormat);
             if (bpp != 2 && bpp != 4)
             {
-                // TODO: warning("trying to save thumbnail with bpp %u", bpp);
+                Warning($"trying to save thumbnail with bpp {bpp}");
                 return;
             }
 
@@ -868,8 +874,8 @@ namespace NScumm.Sword1
             Surface screen = _system.GraphicsManager.Capture();
 
             var bpp = Surface.GetBytesPerPixel(screen.PixelFormat);
-            Debug.Assert(bpp == 1 || bpp == 2);
-            Debug.Assert(screen.Pixels != null);
+            System.Diagnostics.Debug.Assert(bpp == 1 || bpp == 2);
+            System.Diagnostics.Debug.Assert(screen.Pixels != null);
 
             PixelFormat screenFormat = _system.GraphicsManager.PixelFormat;
             var screenBpp = Surface.GetBytesPerPixel(screenFormat);
@@ -1067,8 +1073,7 @@ namespace NScumm.Sword1
                 outf.WriteUInt32BigEndian(saveDate);
                 outf.WriteUInt16BigEndian(saveTime);
 
-                // TODO: outf.WriteUInt32BigEndian(g_engine.getTotalPlayTime() / 1000); replaced by 0
-                outf.WriteUInt32BigEndian(0);
+                outf.WriteUInt32BigEndian((uint)(Engine.Instance.TotalPlayTime / 1000));
 
                 _objMan.SaveLiveList(liveBuf);
                 for (cnt = 0; cnt < ObjectMan.TOTAL_SECTIONS; cnt++)
@@ -1082,7 +1087,7 @@ namespace NScumm.Sword1
                 Logic.ScriptVars[(int)ScriptVariableNames.CHANGE_PLACE] = (uint)cpt.place;
 
                 for (cnt = 0; cnt < Logic.NUM_SCRIPT_VARS; cnt++)
-                    outf.WriteUInt32(Sword1.Logic.ScriptVars[cnt]);
+                    outf.WriteUInt32(Logic.ScriptVars[cnt]);
 
                 uint playerSize = (SwordObject.Size - 12000) / 4;
                 var playerRaw = new UIntAccess(cpt.Data, cpt.Offset);
@@ -1222,7 +1227,7 @@ namespace NScumm.Sword1
             var font = _font;
             if (mode.HasFlag(TextModes.TEXT_RED_FONT))
             {
-                mode &= ~TextModes.TEXT_RED_FONT;
+                mode = (mode & ~TextModes.TEXT_RED_FONT);
                 font = _redFont;
             }
 

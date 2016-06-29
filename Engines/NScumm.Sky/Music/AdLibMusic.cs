@@ -151,8 +151,7 @@ namespace NScumm.Sky.Music
         protected override void SetVolume(ushort param)
         {
             _musicVolume = param;
-            // TODO:
-            //_mixer.SetVolumeForSoundType(SoundType.Music, 2 * param);
+            _mixer.SetVolumeForSoundType(SoundType.Music, 2 * param);
         }
 
         protected override void StartDriver()

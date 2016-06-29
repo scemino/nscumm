@@ -17,6 +17,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
+using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sword1
 {
@@ -46,7 +47,7 @@ namespace NScumm.Sword1
             bsMem.size = pSize;
             if (pCond == MEM_CAN_FREE)
             {
-                // TODO: warning("%d Bytes alloced as FREEABLE.", pSize); // why should one want to alloc mem if it can be freed?
+                Warning($"{pSize} Bytes alloced as FREEABLE."); // why should one want to alloc mem if it can be freed?
                 AddToFreeList(bsMem);
             }
             else if (bsMem.next != null || bsMem.prev != null) // it's in our _freeAble list, remove it from there
@@ -72,7 +73,7 @@ namespace NScumm.Sword1
         {
             if (bsMem.next != null || bsMem.prev != null)
             {
-                // TODO: warning("addToFreeList: mem block is already in freeList");
+                Warning("addToFreeList: mem block is already in freeList");
                 return;
             }
             bsMem.prev = null;
@@ -118,8 +119,8 @@ namespace NScumm.Sword1
                 _alloced -= _memListFreeEnd.size;
                 RemoveFromFreeList(_memListFreeEnd);
             }
-            //TODO: if (_alloced!=0)
-                // TODO: warning("MemMan::flush: Something's wrong: still %d bytes alloced", _alloced);
+            if (_alloced!=0)
+                Warning($"MemMan::flush: Something's wrong: still {_alloced} bytes alloced");
         }
     }
 }

@@ -18,6 +18,7 @@
 
 using System;
 using NScumm.Core;
+using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sword1
 {
@@ -840,7 +841,7 @@ namespace NScumm.Sword1
         {
             if ((dir < 0) || (dir > 8))
             {
-                // TODO: warning("fnStand:: invalid direction %d", dir);
+                Warning($"fnStand:: invalid direction {dir}");
                 return SCRIPT_CONT;
             }
             if (dir == 8)
@@ -858,7 +859,7 @@ namespace NScumm.Sword1
         {
             if ((dir < 0) || (dir > 8))
             {
-                // TODO: warning("fnStandAt:: invalid direction %d", dir);
+                Warning($"fnStandAt:: invalid direction {dir}");
                 return SCRIPT_CONT;
             }
             if (dir == 8)
@@ -981,7 +982,7 @@ namespace NScumm.Sword1
 
         private int fnGetToError(SwordObject cpt, int id, int a, int b, int c, int d, int z, int x)
         {
-            // TODO: debug(1, "fnGetToError: compact %d at place %d no get-to for target %d, click_id %d\n", id, cpt.o_place, cpt.o_target, ScriptVars[(int) ScriptVariableNames.CLICK_ID]);
+            Debug(1, $"fnGetToError: compact {id} at place {cpt.place} no get-to for target {cpt.target}, click_id {ScriptVars[(int)ScriptVariableNames.CLICK_ID]}\n");
             return SCRIPT_CONT;
         }
 
@@ -1129,7 +1130,7 @@ namespace NScumm.Sword1
 
         private int fnTdebug(SwordObject cpt, int id, int a, int b, int c, int d, int z, int x)
         {
-            // TODO: debug(1, "Script TDebug id %d code %d, %d", id, a, b);
+            Debug(1, $"Script TDebug id {id} code {a}, {b}");
             return SCRIPT_CONT;
         }
 

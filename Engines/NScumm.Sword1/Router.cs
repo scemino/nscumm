@@ -17,8 +17,8 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
-using System.Diagnostics;
 using NScumm.Core;
+using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sword1
 {
@@ -28,7 +28,7 @@ namespace NScumm.Sword1
         public int y;
         public int dirS;
         public int dirD;
-    };
+    }
 
     struct PathData
     {
@@ -714,7 +714,7 @@ namespace NScumm.Sword1
             // NO END TURNS
             //****************************************************************************
 
-            // TODO: debug(5, "routeFinder RouteSize is %d", stepCount);
+            Debug(5, $"routeFinder RouteSize is {stepCount}");
             // now check the route
 
             for (int i = 0; i < p - 1; ++i)
@@ -730,7 +730,7 @@ namespace NScumm.Sword1
                 {
                     // new target on a line
                     p = 0;
-                    // TODO: debug(5, "Solid walk target was on a line %d %d", moduleX, moduleY);
+                    Debug(5, $"Solid walk target was on a line {moduleX} {moduleY}");
                 }
             }
 
@@ -922,7 +922,7 @@ namespace NScumm.Sword1
 
                 int options = NewCheck(1, _route[p].x, _route[p].y, _route[p + 1].x, _route[p + 1].y);
 
-                Debug.Assert(options != 0);
+                System.Diagnostics.Debug.Assert(options != 0);
 
                 for (i = 0; i < 4; ++i)
                 {
@@ -934,7 +934,7 @@ namespace NScumm.Sword1
                     }
                 }
 
-                Debug.Assert(i < 4);
+                System.Diagnostics.Debug.Assert(i < 4);
 
                 // route.X route.Y route.dir and bestTurns start at far end
             }
@@ -2105,7 +2105,7 @@ namespace NScumm.Sword1
                     {
                         // target on a line so drop out
                         onLine = 3;
-                        // TODO: debug(5, "RouteFail due to target on a line %d %d", x, y);
+                        Debug(5, $"RouteFail due to target on a line {x} {y}");
                     }
                     else
                     {
@@ -2123,7 +2123,7 @@ namespace NScumm.Sword1
                         {
                             // target on a line so drop out
                             onLine = 3;
-                            // TODO: debug(5, "RouteFail due to target on a line %d %d", x, y);
+                            Debug(5, $"RouteFail due to target on a line {x}, {y}");
                         }
                     }
                 }

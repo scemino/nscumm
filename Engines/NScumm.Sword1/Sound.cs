@@ -17,12 +17,12 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
-using System.Diagnostics;
 using System.IO;
 using NScumm.Core;
 using NScumm.Core.Audio;
 using NScumm.Core.Audio.Decoders;
 using NScumm.Core.IO;
+using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sword1
 {
@@ -281,13 +281,13 @@ namespace NScumm.Sword1
                 _bigEndianSpeech = (be_diff < le_diff);
                 if (_bigEndianSpeech)
                 {
-                    // TODO: debug(6, "Mac version: using big endian speech file");
+                    Debug(6, "Mac version: using big endian speech file");
                 }
                 else
                 {
-                    // TODO: debug(6, "Mac version: using little endian speech file");
+                    Debug(6, "Mac version: using little endian speech file");
                 }
-                // TODO: debug(8, "Speech endianness heuristic: average = %f for BE and %f for LE (%d samples)", be_diff, le_diff, maxSamples);
+                Debug(8, "Speech endianness heuristic: average = %f for BE and %f for LE (%d samples)", be_diff, le_diff, maxSamples);
             }
         }
 
@@ -295,7 +295,7 @@ namespace NScumm.Sword1
         {
             if (_cowHeader == null || ServiceLocator.AudioManager == null)
             {
-                // TODO: warning("Sound::startSpeech: COW file isn't open");
+                Warning("Sound::startSpeech: COW file isn't open");
                 return false;
             }
 
@@ -461,7 +461,7 @@ namespace NScumm.Sword1
             {
                 if (_endOfQueue == MAX_FXQ_LENGTH)
                 {
-                    // TODO: warning("Sound queue overflow");
+                    Warning("Sound queue overflow");
                     return 0;
                 }
                 uint sampleId = GetSampleId(fxNo);
@@ -494,7 +494,7 @@ namespace NScumm.Sword1
                     _endOfQueue--;
                     return;
                 }
-            // TODO: debug(8, "fnStopFx: id not found in queue");
+            Debug(8, "fnStopFx: id not found in queue");
         }
 
         public bool SpeechFinished()
@@ -602,7 +602,7 @@ namespace NScumm.Sword1
                         }
                     }
                 }
-                Debug.Assert((headerPos & 1) == 0);
+                System.Diagnostics.Debug.Assert((headerPos & 1) == 0);
                 srcData = new UShortAccess(fBuf);
                 srcPos = headerPos >> 1;
                 uint dstPos = 0;
@@ -662,7 +662,7 @@ namespace NScumm.Sword1
             }
             else
             {
-                // TODO: warning("Sound::uncompressSpeech(): DATA tag not found in wave header");
+                Warning("Sound::uncompressSpeech(): DATA tag not found in wave header");
                 size = 0;
                 return null;
             }
@@ -679,7 +679,7 @@ namespace NScumm.Sword1
             {
                 if (blkCnt >= WAVE_VOL_TAB_LENGTH)
                 {
-                    // TODO: warning("Wave vol tab too small");
+                    Warning("Wave vol tab too small");
                     return;
                 }
                 int average = 0;
@@ -791,7 +791,7 @@ namespace NScumm.Sword1
                 //{
                 //    _cowFile.open("speech.clu");
                 //}
-                // TODO: debug(1, "Using uncompressed Speech Cluster");
+                Debug(1, "Using uncompressed Speech Cluster");
                 _cowMode = CowMode.CowWave;
             }
 
@@ -843,7 +843,7 @@ namespace NScumm.Sword1
             }
             else
             {
-                // TODO: warning($"Sound::initCowSystem: Can't open SPEECH{SystemVars.CurrentCd}.CLU");
+                Warning($"Sound::initCowSystem: Can't open SPEECH{SystemVars.CurrentCd}.CLU");
             }
         }
         //--------------------------------------------------------------------------------------
@@ -851,8 +851,7 @@ namespace NScumm.Sword1
 
         // NB. There must be a list for each room number, even if location doesn't exist in game
 
-        private static readonly ushort[][] _roomsFixedFx = new ushort[TOTAL_ROOMS][]
-        {
+        private static readonly ushort[][] _roomsFixedFx = {
             new ushort[] {0}, // 0
 
             // PARIS 1

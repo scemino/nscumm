@@ -18,7 +18,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -645,9 +644,8 @@ namespace NScumm.Sky
                 _statusBar.SetToText(0x7000 + 35); // text only
             }
 
-            // TODO: configuration
-            //ConfMan.setBool("subtitles", (flags & SystemFlags.AllowText) != 0);
-            //ConfMan.setBool("speech_mute", (flags & SystemFlags.ALLOW_SPEECH) == 0);
+            ConfigManager.Instance.Set<bool>("subtitles", (flags & SystemFlags.AllowText) != 0);
+            ConfigManager.Instance.Set<bool>("speech_mute", (flags & SystemFlags.AllowSpeech) == 0);
 
             SystemVars.Instance.SystemFlags |= flags;
 
@@ -671,8 +669,7 @@ namespace NScumm.Sky
                 _statusBar.SetToText(0x7000 + 86);
             }
 
-            // TODO: configuration
-            //ConfMan.setBool("sfx_mute", SystemVars.SystemFlags.HasFlag(SystemFlags.FX_OFF) != 0);
+            ConfigManager.Instance.Set<bool>("sfx_mute", SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.FxOff));
 
             pButton.DrawToScreen(WithMask);
             _system.GraphicsManager.UpdateScreen();
@@ -694,8 +691,7 @@ namespace NScumm.Sky
                 _statusBar.SetToText(0x7000 + 88);
             }
 
-            // TODO: configuration 
-            // ConfMan.setBool("music_mute", (SkyEngine::_systemVars.systemFlags & SF_MUS_OFF) != 0);
+            ConfigManager.Instance.Set<bool>("music_mute", (SystemVars.Instance.SystemFlags.HasFlag(SystemFlags.MusOff)));
 
             pButton.DrawToScreen(WithMask);
             _system.GraphicsManager.UpdateScreen();

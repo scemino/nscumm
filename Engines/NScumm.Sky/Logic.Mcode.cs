@@ -17,6 +17,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
+using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sky
 {
@@ -159,7 +160,7 @@ namespace NScumm.Sky
 
         private bool FnDrawScreen(uint a, uint b, uint c)
         {
-            //TODO:debug(5, "Call: fnDrawScreen(%X, %X)", a, b);
+            Debug(5, $"Call: fnDrawScreen({a:X}, {b:X})");
             SystemVars.Instance.CurrentPalette = a;
             _skyScreen.FnDrawScreen(a, b);
 
@@ -175,7 +176,7 @@ namespace NScumm.Sky
                     we enter the screen. If he isn't stuck (and thus not waiting for sync)
                     it will be ignored anyways */
 
-                // TODO: debug(1, "sending gardener sync");
+                Debug(1, "sending gardener sync");
                 FnSendSync(ID_SC32_GARDENER, 1, 0);
             }
             return true;
@@ -318,13 +319,13 @@ namespace NScumm.Sky
             Compact cpt = _skyCompact.FetchCpt(_compact.Core.place);
             if (cpt == null)
             {
-                // TODO: warning("can't find _compact's getToTable. Place compact is NULL");
+                Warning("can't find _compact's getToTable. Place compact is NULL");
                 return false;
             }
             var raw = _skyCompact.FetchCptRaw(cpt.Core.getToTableId);
             if (raw == null)
             {
-                //TODO:  warning("Place compact's getToTable is NULL");
+                Warning("Place compact's getToTable is NULL");
                 return false;
             }
 
@@ -883,13 +884,13 @@ namespace NScumm.Sky
 
             if (cpt == null)
             {
-                // TODO: warning("fnResetId(): Compact %d (id) == NULL", id);
+                Warning($"fnResetId(): Compact {id} (id) == NULL");
                 return true;
             }
 
             if (rst == null)
             {
-                // TODO: warning("fnResetId(): Compact %d (resetBlock) == NULL", resetBlock);
+                Warning($"fnResetId(): Compact {resetBlock} (resetBlock) == NULL");
                 return true;
             }
 
@@ -1201,7 +1202,7 @@ namespace NScumm.Sky
             }
             else
             {
-                // TODO: Debug(1, "fnNewSwingSeq: ignored seq %d", a);
+                Debug(1, $"fnNewSwingSeq: ignored seq {a}");
             }
             return true;
         }
@@ -1286,7 +1287,7 @@ namespace NScumm.Sky
             }
             else
             {
-                //TODO:  warning("::fnLincTextModule: textPos == 20");
+                Warning("::fnLincTextModule: textPos == 20");
             }
             textCpt.Core.getToFlag = (ushort)textNo;
             return true;
@@ -1373,7 +1374,7 @@ namespace NScumm.Sky
 
         private bool FnPrintf(uint a, uint b, uint c)
         {
-            // TODO: debug("fnPrintf(%d, %d, %d)", a, b, c);
+            Debug($"fnPrintf({a}, {b}, {c})");
             return true;
         }
     }

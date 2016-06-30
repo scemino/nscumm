@@ -39,7 +39,7 @@ namespace NScumm.Mobile.Droid
         {
             base.OnCreate();
 
-            ServiceLocator.FileStorage = new FileStorage(Assets);
+            ServiceLocator.FileStorage = new FileStorage();
 
             var suspendHelper = new AutoSuspendHelper(this);
 

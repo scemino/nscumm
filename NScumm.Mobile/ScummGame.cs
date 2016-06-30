@@ -25,7 +25,7 @@ using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Graphics;
 using NScumm.Core;
 
-namespace NScumm
+namespace NScumm 
 {
 	/// <summary>
 	/// This is the main type for your game

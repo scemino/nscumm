@@ -91,7 +91,7 @@ namespace NScumm.Mobile.Droid
 		private void Initialize ()
 		{
 			ServiceLocator.Platform = new Platform ();
-			ServiceLocator.FileStorage = new FileStorage (Assets);
+			ServiceLocator.FileStorage = new FileStorage ();
 			ServiceLocator.SaveFileManager = new SaveFileManager ();
 			ServiceLocator.AudioManager = new AudioManager ();
 			ServiceLocator.TraceFatory = new TraceFactory ();

@@ -198,7 +198,8 @@ namespace NScumm.Core.IO
                     ReportUnknown(path, files);
                 }
 
-                // Filename based fallback
+                // TODO:Filename based fallback
+                return null;
             }
 
             return new GameDetected(matched.First(), this);

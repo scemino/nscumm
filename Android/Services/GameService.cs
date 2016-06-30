@@ -32,7 +32,7 @@ namespace NScumm.Mobile.Services
 
 		public void StartGame (string path)
 		{
-			var intent = new Android.Content.Intent (Xamarin.Forms.Forms.Context, typeof(NScumm.Mobile.Droid.ScummActivity));
+			var intent = new Android.Content.Intent (Xamarin.Forms.Forms.Context, typeof(Droid.ScummActivity));
 			intent.PutExtra ("Game", path);
 			Xamarin.Forms.Forms.Context.StartActivity (intent);
 		}

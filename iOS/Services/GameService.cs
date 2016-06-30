@@ -25,57 +25,57 @@ using NScumm.Services;
 using NScumm.Core.IO;
 using NScumm.Sky;
 using NScumm.Sword1;
-using System.Linq;
 using System.IO;
 using NScumm.Queen;
 using NScumm.Scumm.IO;
 
 namespace NScumm.Mobile.Services
 {
-	public class GameService: IGameService
-	{
-		public string GetDirectory ()
-		{
-			var directory = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
-			return directory;
-		}
+    public class GameService : IGameService
+    {
+        public string GetDirectory()
+        {
+            var directory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            return directory;
+        }
 
-		public void StartGame (string path)
-		{
-			Initialize ();
+        public void StartGame(string path)
+        {
+            Initialize();
 
-			var gd = new GameDetector ();
+            var gd = new GameDetector();
             gd.Add(new SkyMetaEngine());
-            gd.Add (new ScummMetaEngine ());
+            gd.Add(new ScummMetaEngine());
             gd.Add(new Sword1MetaEngine());
-            gd.Add (new QueenMetaEngine ());
+            gd.Add(new QueenMetaEngine());
 
-			var info = gd.DetectGame (path);
-			if (info == null) {
-				//Toast.MakeText (this, Resources.GetText (Resource.String.game_not_supported), ToastLength.Short).Show ();
-				return;
-			}
+            var info = gd.DetectGame(path);
+            if (info == null)
+            {
+                //Toast.MakeText (this, Resources.GetText (Resource.String.game_not_supported), ToastLength.Short).Show ();
+                return;
+            }
 
-			((AudioManager)ServiceLocator.AudioManager).Directory = Path.GetDirectoryName (info.Game.Path);
-			var settings = new GameSettings (info.Game, info.Engine) {
-				AudioDevice = "adlib",
-				CopyProtection = false
-			};
+            ((AudioManager)ServiceLocator.AudioManager).Directory = Path.GetDirectoryName(info.Game.Path);
+            var settings = new GameSettings(info.Game, info.Engine)
+            {
+                AudioDevice = "adlib",
+                CopyProtection = false
+            };
 
-			// Create our OpenGL view, and display it
-			var game = new ScummGame (settings);
-			game.Services.AddService<IMenuService> (new MenuService (game));
-			game.Run ();
-		}
+            // Create our OpenGL view, and display it
+            var game = new ScummGame(settings);
+            game.Services.AddService<IMenuService>(new MenuService(game));
+            game.Run();
+        }
 
-		private static void Initialize ()
-		{
-			ServiceLocator.Platform = new Platform ();
-			ServiceLocator.FileStorage = new FileStorage ();
-			ServiceLocator.SaveFileManager = new SaveFileManager ();
-			ServiceLocator.AudioManager = new AudioManager ();
-			var switches = Enumerable.Empty<string> ();
-			ServiceLocator.TraceFatory = new TraceFactory (switches);
-		}
-	}
+        private static void Initialize()
+        {
+            ServiceLocator.Platform = new Platform();
+            ServiceLocator.FileStorage = new FileStorage();
+            ServiceLocator.SaveFileManager = new SaveFileManager();
+            ServiceLocator.AudioManager = new AudioManager();
+            ServiceLocator.TraceFatory = new TraceFactory();
+        }
+    }
 }

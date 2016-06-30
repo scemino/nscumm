@@ -1,5 +1,4 @@
-﻿using System;
-using NScumm.Mobile.Resx;
+﻿using NScumm.Mobile.Resx;
 using Xamarin.Forms;
 
 [assembly: Dependency(typeof(NScumm.Mobile.Droid.Localize))]

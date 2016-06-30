@@ -381,13 +381,13 @@ namespace NScumm.Core.Audio
             ch.lengthRepeat = lengthRepeat;
         }
 
-        private void SetChannelOffset(int channel, Offset offset)
+        protected void SetChannelOffset(int channel, Offset offset)
         {
             Debug.Assert(channel < NUM_VOICES);
             _voice[channel].offset = offset;
         }
 
-        private Offset GetChannelOffset(int channel)
+        protected Offset GetChannelOffset(int channel)
         {
             Debug.Assert(channel < NUM_VOICES);
             return _voice[channel].offset;
@@ -435,7 +435,7 @@ namespace NScumm.Core.Audio
         }
 
         /* TODO: Document this */
-        struct Offset
+        public struct Offset
         {
             public int int_off;
             // integral part of the offset

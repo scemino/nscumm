@@ -42,7 +42,7 @@ namespace NScumm.Mobile.ViewModels
 
 		public Page CreateMainView ()
 		{
-			return new ReactiveUI.XamForms.RoutedViewHost ();
+            return new ReactiveUI.XamForms.RoutedViewHost ();
 		}
 	}
 }

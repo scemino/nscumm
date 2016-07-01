@@ -127,6 +127,18 @@ namespace NScumm.Core.Audio
         int GetVolumeForSoundType(SoundType type);
         void SetVolumeForSoundType(SoundType type, int volume);
 
+        /// <summary>
+        /// Pause/unpause the sound with the given ID.
+        /// </summary>
+        /// <param name="id">The ID of the sound to affect.</param>
+        /// <param name="paused">true to pause the sound, false to unpause it.</param>
+        void PauseId(int id, bool paused);
+
+        /// <summary>
+        /// Pause/unpause the sound corresponding to the given handle.
+        /// </summary>
+        /// <param name="handle">The sound to affect.</param>
+        /// <param name="pause">true to pause the sound, false to unpause it.</param>
         void PauseHandle(SoundHandle handle, bool pause);
     }
 }

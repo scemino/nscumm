@@ -28,7 +28,7 @@ using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input.Touch;
 using NScumm.Core.Graphics;
-using NScumm.Services;
+using NScumm.Mobile.Services;
 
 #if WINDOWS_UWP
 using Windows.UI.ViewManagement;

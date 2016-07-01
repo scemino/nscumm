@@ -49,7 +49,7 @@ namespace NScumm.Sky
         private static readonly SfxQueue[] SfxQueue = new SfxQueue[MaxQueuedFx];
 
         private readonly byte _mainSfxVolume;
-        private readonly Mixer _mixer;
+        private readonly IMixer _mixer;
         private readonly Disk _skyDisk;
 
         private readonly ushort[] _speechConvertTable =
@@ -76,7 +76,7 @@ namespace NScumm.Sky
         private byte[] _soundData;
         private byte _soundsTotal;
 
-        public Sound(Mixer mixer, Disk disk, byte volume)
+        public Sound(IMixer mixer, Disk disk, byte volume)
         {
             _skyDisk = disk;
             _mixer = mixer;

@@ -23,7 +23,7 @@ using System;
 using NScumm.Core;
 using System.Collections.Generic;
 
-namespace NScumm
+namespace NScumm.Mobile.Services
 {
 	class Trace: ITrace
 	{

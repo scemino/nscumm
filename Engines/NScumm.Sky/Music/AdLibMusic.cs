@@ -26,7 +26,7 @@ namespace NScumm.Sky.Music
 {
     class AdLibMusic : MusicBase, IAudioStream
     {
-        public AdLibMusic(Mixer mixer, Disk disk)
+        public AdLibMusic(IMixer mixer, Disk disk)
             : base(mixer, disk)
         {
             _driverFileBase = 60202;

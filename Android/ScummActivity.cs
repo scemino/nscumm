@@ -30,7 +30,7 @@ using System.IO;
 using NScumm.Core.IO;
 using NScumm.Sky;
 using NScumm.Core;
-using NScumm.Services;
+using NScumm.Mobile.Services;
 using NScumm.Sword1;
 using NScumm.Mobile.Resx;
 using NScumm.Queen;
@@ -90,7 +90,7 @@ namespace NScumm.Mobile.Droid
 
 		private void Initialize ()
 		{
-			ServiceLocator.Platform = new Platform ();
+			ServiceLocator.Platform = new Services.Platform();
 			ServiceLocator.FileStorage = new FileStorage ();
 			ServiceLocator.SaveFileManager = new SaveFileManager ();
 			ServiceLocator.AudioManager = new AudioManager ();

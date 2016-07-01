@@ -30,7 +30,7 @@ namespace NScumm.Sky
 		const int FrameSize = Screen.GameScreenWidth * Screen.GameScreenHeight;
 		const int IntroTextWidth = 128;
 
-        public Intro (Disk disk, Screen screen, MusicBase music, Sound sound, Text skyText, Mixer mixer, ISystem system)
+        public Intro (Disk disk, Screen screen, MusicBase music, Sound sound, Text skyText, IMixer mixer, ISystem system)
 		{
 			_skyDisk = disk;
 			_skyScreen = screen;
@@ -342,7 +342,7 @@ namespace NScumm.Sky
 		private readonly Text _skyText;
 		private readonly MusicBase _skyMusic;
 		private readonly Sound _skySound;
-		private readonly Mixer _mixer;
+		private readonly IMixer _mixer;
 		private SoundHandle _voice;
 		private byte[] _bgBuf;
 		private SoundHandle _bgSfx;

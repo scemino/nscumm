@@ -31,7 +31,7 @@ namespace NScumm.Sky.Music
         private int _timerCount;
         private ByteAccess _sysExSequence;
 
-        public GmMusic(MidiDriver midiDrv, Mixer mixer, Disk disk) : base(mixer, disk)
+        public GmMusic(MidiDriver midiDrv, IMixer mixer, Disk disk) : base(mixer, disk)
         {
             _driverFileBase = 60200;
             _midiDrv = midiDrv;

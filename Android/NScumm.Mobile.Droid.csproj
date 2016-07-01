@@ -132,7 +132,6 @@
     <Compile Include="ScummActivity.cs" />
     <Compile Include="App.cs" />
     <Compile Include="MainActivity.cs" />
-    <Compile Include="Services\GameService.cs" />
     <Compile Include="Localize.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -158,7 +157,6 @@
   <Import Project="..\packages\Xamarin.Forms.2.3.0.107\build\portable-win+net45+wp80+win81+wpa81+MonoAndroid10+MonoTouch10+Xamarin.iOS10\Xamarin.Forms.targets" Condition="Exists('..\packages\Xamarin.Forms.2.3.0.107\build\portable-win+net45+wp80+win81+wpa81+MonoAndroid10+MonoTouch10+Xamarin.iOS10\Xamarin.Forms.targets')" />
   <ItemGroup>
     <Folder Include="Resources\layout\" />
-    <Folder Include="Services\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NScumm.Core\NScumm.Core.csproj">

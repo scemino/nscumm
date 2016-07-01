@@ -19,11 +19,10 @@ using Microsoft.Xna.Framework;
 using NScumm.Core.IO;
 using NScumm.Core;
 using System.Threading.Tasks;
-using NScumm.Services;
+using NScumm.Mobile.Services;
 using System;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Graphics;
-using NScumm.Core;
 
 namespace NScumm 
 {

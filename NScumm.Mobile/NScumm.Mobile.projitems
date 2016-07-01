@@ -29,15 +29,20 @@
       <DependentUpon>GameLibraryView.xaml</DependentUpon>
     </Compile>
     <Compile Include="$(MSBuildThisFileDirectory)Services\IGameService.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Services\FileStorage.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Services\GameService.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="$(MSBuildThisFileDirectory)Services\" />
     <Folder Include="$(MSBuildThisFileDirectory)ViewModels\" />
     <Folder Include="$(MSBuildThisFileDirectory)Views\" />
+    <Folder Include="$(MSBuildThisFileDirectory)Resources\" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="$(MSBuildThisFileDirectory)Views\GameLibraryView.xaml">
       <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
     </EmbeddedResource>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)Resources\Nscumm.xml" />
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)Resources\sky.cpt" />
   </ItemGroup>
 </Project>

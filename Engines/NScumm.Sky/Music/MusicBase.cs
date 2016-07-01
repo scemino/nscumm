@@ -38,7 +38,7 @@ namespace NScumm.Sky.Music
     {
         const int FILES_PER_SECTION = 4;
 
-        protected MusicBase(Mixer mixer, Disk disk)
+        protected MusicBase(IMixer mixer, Disk disk)
         {
             _mixer = mixer;
             _skyDisk = disk;
@@ -232,7 +232,7 @@ namespace NScumm.Sky.Music
             }
         }
 
-        protected Mixer _mixer;
+        protected IMixer _mixer;
         Disk _skyDisk;
         protected byte[] _musicData;
 

@@ -20,6 +20,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using UIKit;
 using NScumm.Core;
+using NScumm.Mobile.Services;
 
 namespace NScumm.Mobile.iOS
 {

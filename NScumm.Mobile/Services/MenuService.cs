@@ -20,7 +20,7 @@
 using System;
 using System.Linq;
 
-namespace NScumm.Services
+namespace NScumm.Mobile.Services
 {
     class MenuService : IMenuService
     {

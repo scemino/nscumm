@@ -22,7 +22,7 @@ using System.IO;
 using System.Linq;
 using NScumm.Core;
 
-namespace NScumm
+namespace NScumm.Mobile.Services
 {
     public class SaveFileManager: ISaveFileManager
     {
@@ -37,7 +37,7 @@ namespace NScumm
         {
             var path = GetSavePath();
             EnsureSavePathExists(path);
-            return File.OpenWrite(Path.Combine(path,fileName));
+            return File.Create(Path.Combine(path,fileName));
         }
 
         public string[] ListSavefiles(string pattern)

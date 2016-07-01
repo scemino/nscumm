@@ -54,7 +54,7 @@ namespace NScumm.Sky
 
             var directory = ServiceLocator.FileStorage.GetDirectoryName(settings.Game.Path);
             _skyDisk = new Disk(directory);
-            _skySound = new Sound(_mixer, _skyDisk, Core.Audio.Mixer.MaxChannelVolume);
+            _skySound = new Sound(Mixer, _skyDisk, Core.Audio.Mixer.MaxChannelVolume);
 
             SystemVars.Instance.GameVersion = _skyDisk.DetermineGameVersion();
 
@@ -63,15 +63,15 @@ namespace NScumm.Sky
             if (MidiDriver.GetMusicType(dev) == MusicType.AdLib)
             {
                 SystemVars.Instance.SystemFlags |= SystemFlags.Sblaster;
-                _skyMusic = new AdLibMusic(_mixer, _skyDisk);
+                _skyMusic = new AdLibMusic(Mixer, _skyDisk);
             }
             else
             {
                 SystemVars.Instance.SystemFlags |= SystemFlags.Roland;
                 if ((MidiDriver.GetMusicType(dev) == MusicType.MT32)/* || ConfMan.getBool("native_mt32")*/)
-                    _skyMusic = new Mt32Music((MidiDriver)MidiDriver.CreateMidi(_mixer, dev), _mixer, _skyDisk);
+                    _skyMusic = new Mt32Music((MidiDriver)MidiDriver.CreateMidi(Mixer, dev), Mixer, _skyDisk);
                 else
-                    _skyMusic = new GmMusic((MidiDriver)MidiDriver.CreateMidi(_mixer, dev), _mixer, _skyDisk);
+                    _skyMusic = new GmMusic((MidiDriver)MidiDriver.CreateMidi(Mixer, dev), Mixer, _skyDisk);
             }
 
             if (IsCDVersion)
@@ -156,7 +156,7 @@ namespace NScumm.Sky
                 if (SystemVars.Instance.GameVersion.Version.Minor > 272)
                 {
                     // don't do intro for floppydemos
-                    using (var skyIntro = new Intro(_skyDisk, _skyScreen, _skyMusic, _skySound, _skyText, _mixer, _system))
+                    using (var skyIntro = new Intro(_skyDisk, _skyScreen, _skyMusic, _skySound, _skyText, Mixer, _system))
                     {
                         var floppyIntro = ConfigManager.Instance.Get<bool>("alt_intro");
                         introSkipped = !skyIntro.DoIntro(floppyIntro);
@@ -373,7 +373,6 @@ namespace NScumm.Sky
         private readonly ISystem _system;
         private readonly Text _skyText;
         private MusicBase _skyMusic;
-        private readonly Mixer _mixer;
         private readonly Sound _skySound;
         private readonly Control _skyControl;
         private readonly Logic _skyLogic;

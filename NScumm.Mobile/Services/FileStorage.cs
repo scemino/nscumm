@@ -23,7 +23,7 @@ using System.Text;
 using System.Xml.Linq;
 using NScumm.Core;
 
-namespace NScumm.Mobile
+namespace NScumm.Mobile.Services
 {
     public class FileStorage : IFileStorage
     {

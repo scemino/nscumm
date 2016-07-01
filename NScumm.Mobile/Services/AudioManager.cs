@@ -24,7 +24,7 @@ using System.Linq;
 using System;
 using FlacBox;
 
-namespace NScumm
+namespace NScumm.Mobile.Services
 {
     public class AudioManager : IAudioManager
     {

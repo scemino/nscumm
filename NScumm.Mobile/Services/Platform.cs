@@ -22,7 +22,7 @@
 using System.Threading;
 using NScumm.Core;
 
-namespace NScumm
+namespace NScumm.Mobile.Services
 {
     public class Platform : IPlatform
     {

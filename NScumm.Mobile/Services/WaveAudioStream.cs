@@ -22,7 +22,7 @@ using System.IO;
 using System;
 using NScumm.Core;
 
-namespace NScumm
+namespace NScumm.Mobile.Services
 {
     class WaveAudioStream : IRewindableAudioStream
     {

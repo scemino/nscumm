@@ -16,15 +16,42 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using System;
 using System.IO;
 
 namespace NScumm.Core
 {
     public interface ISaveFileManager
     {
+        /// <summary>
+        /// Open the file with the specified name in the given directory for loading.
+        /// </summary>
+        /// <returns>A stream, or null if an error occurred.</returns>
+        /// <param name="fileName">The name of the savefile.</param>
         Stream OpenForLoading(string fileName);
+
+        /// <summary>
+        /// Open the savefile with the specified name in the given directory for
+        /// saving.
+        /// </summary>
+        /// <returns>The for saving.</returns>
+        /// <param name="fileName">The name of the savefile.</param>
+        /// <param name="compress">toggles whether to compress the resulting save file 
+        /// (default) or not.</param>
         Stream OpenForSaving(string fileName, bool compress = true);
+
+        /// <summary>
+        /// Request a list of available savegames with a given DOS-style pattern,
+        /// also known as "glob" in the POSIX world. Refer to the Common::matchString()
+        /// function to learn about the precise pattern format.
+        /// </summary>
+        /// <returns>List of strings for all present file names.</returns>
+        /// <param name="pattern">Pattern to match. Wildcards like * or ? are available.</param>
         string[] ListSavefiles(string pattern);
+
+        /// <summary>
+        /// Removes the given savefile from the system.
+        /// </summary>
+        /// <param name="name">Name the name of the savefile to be removed..</param>
+        void RemoveSavefile(string name);
     }
 }

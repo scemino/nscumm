@@ -83,7 +83,7 @@ namespace NScumm.Core.IO
         }
     }
 
-    public abstract class AdvancedMetaEngine : IMetaEngine
+        public abstract class AdvancedMetaEngine : MetaEngine
     {
         ADGameDescription[] _gameDescriptors;
 
@@ -92,11 +92,9 @@ namespace NScumm.Core.IO
             _gameDescriptors = descs;
         }
 
-        public abstract IEngine Create(GameSettings settings, ISystem system);
-
         protected abstract IGameDescriptor CreateGameDescriptor(string path, ADGameDescription desc);
 
-        public virtual GameDetected DetectGame(string path)
+        public override GameDetected DetectGame(string path)
         {
             var dir = ServiceLocator.FileStorage.GetDirectoryName(path);
             D.Debug(3, $"Starting detection in dir '{path}'");

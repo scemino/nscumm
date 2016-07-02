@@ -21,6 +21,8 @@
 using System;
 using NScumm.Core.IO;
 using NScumm.Core;
+using System.IO;
+using System.Collections.Generic;
 
 namespace NScumm.Queen
 {
@@ -75,7 +77,7 @@ namespace NScumm.Queen
 
     public class QueenMetaEngine : AdvancedMetaEngine
     {
-        public string OriginalCopyright { get { return "Flight of the Amazon Queen (C) John Passfield and Steve Stamatiadis"; } }
+        public override string OriginalCopyright { get { return "Flight of the Amazon Queen (C) John Passfield and Steve Stamatiadis"; } }
 
         public QueenMetaEngine()
             : base(gameDescriptions)
@@ -91,6 +93,47 @@ namespace NScumm.Queen
         public override IEngine Create(GameSettings settings, ISystem system)
         {
             return new QueenEngine(settings, system);
+        }
+
+        public override IList<SaveStateDescriptor> ListSaves(string target)
+        {
+            var saveList = new List<SaveStateDescriptor>();
+            var saveFileMan = ServiceLocator.SaveFileManager;
+            const string pattern = "queen.s??";
+            var filenames = saveFileMan.ListSavefiles(pattern);
+            // Sort (hopefully ensuring we are sorted numerically..)
+            Array.Sort(filenames);
+
+            foreach (var filename in filenames)
+            {
+                int slotNum = int.Parse(filename.Substring(filename.Length - 3, 2));
+                if (slotNum >= 0 && slotNum <= 99)
+                {
+                    var @in = saveFileMan.OpenForLoading(filename);
+                    var br = new BinaryReader(@in);
+                    for (int i = 0; i < 4; i++)
+                    {
+                        br.ReadUInt32BigEndian();
+                        var saveDesc = br.ReadBytes(32).GetRawText();
+                        saveList.Add(new SaveStateDescriptor(slotNum, saveDesc));
+                    }
+                }
+            }
+            return saveList;
+        }
+
+        public override void RemoveSaveState(string target, int slot)
+        {
+            var filename = $"queen.s{slot:D2}";
+            ServiceLocator.SaveFileManager.RemoveSavefile(filename);
+        }
+
+        public override bool HasFeature(MetaEngineFeature f)
+        {
+            return
+                (f == MetaEngineFeature.SupportsListSaves) ||
+                (f == MetaEngineFeature.SupportsLoadingDuringStartup) ||
+                (f == MetaEngineFeature.SupportsDeleteSave);
         }
 
         protected override IGameDescriptor CreateGameDescriptor(string path, ADGameDescription desc)

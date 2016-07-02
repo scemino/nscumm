@@ -17,10 +17,10 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
+using System.Collections.Generic;
+using System.IO;
 using NScumm.Core;
-using NScumm.Core.Audio;
 using NScumm.Core.Graphics;
-using NScumm.Core.Input;
 using NScumm.Core.IO;
 
 namespace NScumm.Sword1
@@ -37,7 +37,7 @@ namespace NScumm.Sword1
 
     class SwordGameDescriptor : IGameDescriptor
     {
-        private readonly NScumm.Core.Language _language;
+        private readonly Core.Language _language;
         private readonly string _path;
 
         public string Description
@@ -52,7 +52,7 @@ namespace NScumm.Sword1
             get;
         }
 
-        public NScumm.Core.Language Language
+        public Core.Language Language
         {
             get
             {
@@ -104,7 +104,7 @@ namespace NScumm.Sword1
             Id = gameId.ToString().ToLowerInvariant();
             // The game detector uses US English by default. We want British
             // English to match the recorded voices better.
-            _language = NScumm.Core.Language.UNK_LANG;
+            _language = Core.Language.UNK_LANG;
             switch (gameId)
             {
                 case SwordGameId.Sword1:
@@ -137,14 +137,22 @@ namespace NScumm.Sword1
         }
     }
 
-    public class Sword1MetaEngine : IMetaEngine
+    public class Sword1MetaEngine : MetaEngine
     {
-        public IEngine Create(GameSettings settings, ISystem system)
+        public override string OriginalCopyright
+        {
+            get
+            {
+                return "Broken Sword Games (C) Revolution";
+            }
+        }
+
+        public override IEngine Create(GameSettings settings, ISystem system)
         {
             return new SwordEngine(settings, system);
         }
 
-        public GameDetected DetectGame(string path)
+        public override GameDetected DetectGame(string path)
         {
             var fileName = ServiceLocator.FileStorage.GetFileName(path);
             if (string.Equals(fileName, "swordres.rif", StringComparison.OrdinalIgnoreCase))
@@ -204,6 +212,52 @@ namespace NScumm.Sword1
                 return gameId.HasValue ? new GameDetected(new SwordGameDescriptor(path, gameId.Value), this) : null;
             }
             return null;
+        }
+
+        public override IList<SaveStateDescriptor> ListSaves(string target)
+        {
+            var saveFileMan = ServiceLocator.SaveFileManager;
+            var saveList = new List<SaveStateDescriptor>();
+
+            var filenames = saveFileMan.ListSavefiles("sword1.???");
+            Array.Sort(filenames);   // Sort (hopefully ensuring we are sorted numerically..)
+
+            int slotNum = 0;
+            foreach (var file in filenames)
+            {
+                // Obtain the last 3 digits of the filename, since they correspond to the save slot
+                slotNum = int.Parse(ServiceLocator.FileStorage.GetExtension(file).Remove(0, 1));
+
+                if (slotNum >= 0 && slotNum <= 999)
+                {
+                    using (var @in = saveFileMan.OpenForLoading(file))
+                    {
+                        var br = new BinaryReader(@in);
+                        br.ReadUInt32(); // header
+                        var saveName = br.ReadBytes(40).GetRawText();
+                        saveList.Add(new SaveStateDescriptor(slotNum, saveName));
+                    }
+                }
+            }
+
+            return saveList;
+        }
+
+        public override void RemoveSaveState(string target, int slot)
+        {
+            ServiceLocator.SaveFileManager.RemoveSavefile($"sword1.{slot:D3}");
+        }
+
+        public override bool HasFeature(MetaEngineFeature f)
+        {
+            return
+                (f == MetaEngineFeature.SupportsListSaves) ||
+                (f == MetaEngineFeature.SupportsLoadingDuringStartup) ||
+                (f == MetaEngineFeature.SupportsDeleteSave) ||
+                (f == MetaEngineFeature.SavesSupportMetaInfo) ||
+                (f == MetaEngineFeature.SavesSupportThumbnail) ||
+                (f == MetaEngineFeature.SavesSupportCreationDate) ||
+                (f == MetaEngineFeature.SavesSupportPlayTime);
         }
 
         const int NUM_COMMON_FILES_TO_CHECK = 1;

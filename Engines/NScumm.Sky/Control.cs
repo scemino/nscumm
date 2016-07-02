@@ -29,8 +29,8 @@ namespace NScumm.Sky
 {
 	internal class Control
 	{
-		private const int MaxSaveGames = 999;
-		private const int MaxTextLen = 80;
+        public const int MaxSaveGames = 999;
+		public const int MaxTextLen = 80;
 
 		private const int PanLineWidth = 184;
 

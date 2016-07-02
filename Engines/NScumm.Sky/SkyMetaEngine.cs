@@ -18,11 +18,11 @@
 
 using NScumm.Core;
 using System;
-using System.Globalization;
 using NScumm.Core.Graphics;
-using NScumm.Core.Audio;
-using NScumm.Core.Input;
 using NScumm.Core.IO;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 
 namespace NScumm.Sky
 {
@@ -104,14 +104,22 @@ namespace NScumm.Sky
         }
     }
 
-    public class SkyMetaEngine : IMetaEngine
+    public class SkyMetaEngine : MetaEngine
     {
-        public IEngine Create(GameSettings settings, ISystem system)
+        public override string OriginalCopyright
+        {
+            get
+            {
+                return "Beneath a Steel Sky (C) Revolution";
+            }
+        }
+
+        public override IEngine Create(GameSettings settings, ISystem system)
         {
             return new SkyEngine(settings, system);
         }
 
-        public GameDetected DetectGame(string path)
+        public override GameDetected DetectGame(string path)
         {
             var fileName = ServiceLocator.FileStorage.GetFileName(path);
             if (string.Equals(fileName, "sky.dnr", StringComparison.OrdinalIgnoreCase))
@@ -124,6 +132,96 @@ namespace NScumm.Sky
                 }
             }
             return null;
+        }
+
+        public override IList<SaveStateDescriptor> ListSaves(string target)
+        {
+            var saveFileMan = ServiceLocator.SaveFileManager;
+            var saveList = new List<SaveStateDescriptor>();
+
+            // Load the descriptions
+            var savenames = new string[Control.MaxSaveGames];
+            using (var inf = saveFileMan.OpenForLoading("SKY-VM.SAV"))
+            {
+                var br = new BinaryReader(inf);
+                for (int i = 0; i < Control.MaxSaveGames; ++i)
+                {
+                    savenames[i] = br.ReadBytes(Control.MaxTextLen).GetRawText();
+                }
+            }
+
+            // Find all saves
+            var filenames = saveFileMan.ListSavefiles("SKY-VM.???");
+            Array.Sort(filenames);   // Sort (hopefully ensuring we are sorted numerically..)
+
+            // Slot 0 is the autosave, if it exists.
+            // TODO: Check for the existence of the autosave -- but this require us
+            // to know which SKY variant we are looking at.
+            saveList.Insert(0, new SaveStateDescriptor(0, "*AUTOSAVE*"));
+
+            // Prepare the list of savestates by looping over all matching savefiles
+            foreach (var file in filenames)
+            {
+                // Extract the extension
+                var ext = file.Substring(file.Length - 4, 3);
+                if (char.IsDigit(ext[0]) && char.IsDigit(ext[1]) && char.IsDigit(ext[2]))
+                {
+                    int slotNum = int.Parse(ext);
+                    using (var @in = saveFileMan.OpenForLoading(file))
+                    {
+                        saveList.Add(new SaveStateDescriptor(slotNum + 1, savenames[slotNum]));
+                    }
+                }
+            }
+
+            return saveList;
+        }
+
+        public override void RemoveSaveState(string target, int slot)
+        {
+            if (slot == 0)  // do not delete the auto save
+                return;
+
+            var saveFileMan = ServiceLocator.SaveFileManager;
+            var fName = $"SKY-VM.{slot - 1}";
+            saveFileMan.RemoveSavefile(fName);
+
+            // Load current save game descriptions
+            var savenames = new string[Control.MaxSaveGames];
+            using (var inf = saveFileMan.OpenForLoading("SKY-VM.SAV"))
+            {
+                var br = new BinaryReader(inf);
+                for (int i = 0; i < Control.MaxSaveGames; ++i)
+                {
+                    savenames[i] = br.ReadBytes(Control.MaxTextLen).GetRawText();
+                }
+            }
+            // Update the save game description at the given slot
+            savenames[slot - 1] = string.Empty;
+
+            // Save the updated descriptions
+            using (var outf = saveFileMan.OpenForSaving("SKY-VM.SAV"))
+            {
+                var bw = new BinaryWriter(outf);
+                for (ushort cnt = 0; cnt < Control.MaxSaveGames; cnt++)
+                {
+                    var tmp = savenames[cnt].ToCharArray().Select(c => (byte)c).ToArray();
+                    bw.WriteBytes(tmp, tmp.Length);
+                    var len = Control.MaxTextLen + 1 - tmp.Length;
+                    if (len > 0)
+                    {
+                        bw.WriteBytes(new byte[len], len);
+                    }
+                }
+            }
+        }
+
+        public override bool HasFeature(MetaEngineFeature f)
+        {
+            return
+                (f == MetaEngineFeature.SupportsListSaves) ||
+                (f == MetaEngineFeature.SupportsLoadingDuringStartup) ||
+                (f == MetaEngineFeature.SupportsDeleteSave);
         }
     }
 }

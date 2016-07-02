@@ -60,5 +60,10 @@ namespace NScumm.Mobile.Services
             return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "nScumm",
                 "SaveGames");
         }
+
+        public void RemoveSavefile(string name)
+        {
+            File.Delete(Path.Combine(GetSavePath(), name));
+        }
     }
 }

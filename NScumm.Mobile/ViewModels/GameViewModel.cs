@@ -21,24 +21,6 @@
 
 namespace NScumm.Mobile.ViewModels
 {
-	public class GameLibrary
-	{
-		public Game[] Games { get; set; }
-	}
-
-	public class Game
-	{
-		public string Description {
-			get;
-			set;
-		}
-
-		public string Path {
-			get;
-			set;
-		}
-	}
-
 	public class GameViewModel
 	{
 		public string Description {

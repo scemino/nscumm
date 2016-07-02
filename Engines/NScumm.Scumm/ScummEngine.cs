@@ -52,7 +52,7 @@ namespace NScumm.Scumm
         protected const int StringIdIqSeries = 9;
         protected const int StringIdSavename1 = 10;
 
-        const uint CurrentVersion = 94;
+        public const uint CurrentVersion = 94;
 
         protected int OwnerRoom { get; private set; }
 

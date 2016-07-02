@@ -24,7 +24,7 @@ using NScumm.Core;
 
 namespace NScumm
 {
-    public class SaveFileManager: ISaveFileManager
+    public class SaveFileManager : ISaveFileManager
     {
         private IFileStorage _fileStorage;
 
@@ -44,7 +44,7 @@ namespace NScumm
         {
             var path = GetSavePath();
             EnsureSavePathExists(path);
-            return File.OpenWrite(Path.Combine(path,fileName));
+            return File.OpenWrite(Path.Combine(path, fileName));
         }
 
         public string[] ListSavefiles(string pattern)
@@ -66,6 +66,13 @@ namespace NScumm
         {
             return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "nScumm",
                 "SaveGames");
+        }
+
+        public void RemoveSavefile(string name)
+        {
+            var savePathName = GetSavePath();
+            var saveFilename = Path.Combine(savePathName, name);
+            File.Delete(saveFilename);
         }
     }
 }

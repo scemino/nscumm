@@ -16,6 +16,8 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using System;
+
 namespace NScumm.Core.Graphics
 {
     [System.Diagnostics.DebuggerDisplay("{DebuggerDisplay,nq}")]
@@ -37,7 +39,7 @@ namespace NScumm.Core.Graphics
         internal string DebuggerDisplay
         {
             get
-            { 
+            {
                 return string.Format("[{0},{1},{2},{3}]", Left, Top, Right, Bottom);
             }
         }
@@ -47,6 +49,14 @@ namespace NScumm.Core.Graphics
             get
             {
                 return (Left <= Right && Top <= Bottom);
+            }
+        }
+
+        public bool IsEmpty
+        {
+            get
+            {
+                return (Left >= Right || Top >= Bottom);
             }
         }
 
@@ -64,6 +74,14 @@ namespace NScumm.Core.Graphics
             Left = x1;
             Bottom = y2;
             Right = x2;
+        }
+
+        public void Extend(ref Rect r)
+        {
+            Left = Math.Min(Left, r.Left);
+            Right = Math.Max(Right, r.Right);
+            Top = Math.Min(Top, r.Top);
+            Bottom = Math.Max(Bottom, r.Bottom);
         }
 
         public void Clip(int maxw, int maxh)

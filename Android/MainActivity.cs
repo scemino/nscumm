@@ -38,7 +38,9 @@ namespace NScumm.Mobile.Droid
             base.OnCreate(bundle);
             Xamarin.Forms.Forms.Init(this, bundle);
 
-            var view = RxApp.SuspensionHost.GetAppState<AppBootstrapper>().CreateMainView();
+            var bootstrapper = RxApp.SuspensionHost.GetAppState<AppBootstrapper>();
+            var view = bootstrapper.CreateMainView();
+            view.InputTransparent = false;
             SetPage(view);
 
             // This is a common enough error that we should warn about it

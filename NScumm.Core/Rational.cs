@@ -32,12 +32,9 @@ namespace NScumm.Core
         private int _numerator;
         private int _denominator;
 
-        public int Numerator
-        {
-            get { return _numerator; }
-        }
+        public int Numerator => _numerator;
 
-        public int Denominator { get { return _denominator; } }
+        public int Denominator => _denominator;
 
         public Rational(Rational rational)
             : this(rational.Numerator, rational.Denominator)

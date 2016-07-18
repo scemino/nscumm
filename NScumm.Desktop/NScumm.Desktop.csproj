@@ -7,7 +7,7 @@
     <ProjectGuid>{299B5353-0FA3-40D4-82E3-81FAEAABE65E}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <RootNamespace>NScumm.Desktop</RootNamespace>
-    <AssemblyName>NScumm.Desktop</AssemblyName>
+    <AssemblyName>nSCUMM</AssemblyName>
     <MonoGamePlatform>DesktopGL</MonoGamePlatform>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
   </PropertyGroup>

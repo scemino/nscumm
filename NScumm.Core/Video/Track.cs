@@ -28,17 +28,14 @@ namespace NScumm.Core.Video
 
         public abstract bool EndOfTrack { get; }
 
-        public virtual bool IsRewindable { get { return IsSeekable; } }
+        public virtual bool IsRewindable => IsSeekable;
 
         public virtual bool Rewind()
         {
             return Seek(new Timestamp(0, 1000));
         }
 
-        public virtual bool IsSeekable
-        {
-            get { return false; }
-        }
+        public virtual bool IsSeekable => false;
 
         public virtual bool Seek(Timestamp time)
         {
@@ -51,15 +48,9 @@ namespace NScumm.Core.Video
             PauseIntern(shouldPause);
         }
 
-        public bool IsPaused { get { return _paused; } }
+        public bool IsPaused => _paused;
 
-        public virtual Timestamp Duration
-        {
-            get
-            {
-                return new Timestamp(0, 1000);
-            }
-        }
+        public virtual Timestamp Duration => new Timestamp(0, 1000);
 
         protected virtual void PauseIntern(bool shouldPause) { }
     }

@@ -213,7 +213,7 @@ namespace NScumm.Core.Audio
                 if (maxpattern < songpos[i])
                     maxpattern = songpos[i];
 
-            pattern = new note_t[64, 4, maxpattern + 1];
+            pattern = new note_t[maxpattern + 1, 64, 4];
 
             for (int i = 0; i <= maxpattern; ++i)
             {

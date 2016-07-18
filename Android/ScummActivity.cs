@@ -44,8 +44,9 @@ namespace NScumm.Mobile.Droid
 		AlwaysRetainTaskState = true,
 		LaunchMode = LaunchMode.SingleInstance,
 		ConfigurationChanges = ConfigChanges.Orientation |
-		ConfigChanges.KeyboardHidden |
-		ConfigChanges.Keyboard)]
+        	ConfigChanges.KeyboardHidden |
+            ConfigChanges.Keyboard, 
+        WindowSoftInputMode = SoftInput.StateVisible)]
 	public class ScummActivity : AndroidGameActivity
 	{
 		ScummGame game;

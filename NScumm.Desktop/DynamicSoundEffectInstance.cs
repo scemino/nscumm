@@ -11,6 +11,19 @@ using System.Threading;
 
 namespace Microsoft.Xna.Framework.Audio
 {
+    public enum AudioChannels
+    {
+        Mono,
+        Stereo
+    }
+
+    public enum SoundState
+    {
+        Stopped,
+        Playing,
+        Paused
+    }
+
     public sealed class DynamicSoundEffectInstance : IDisposable
     {
         private const int BUFFERCOUNT = 2;
@@ -117,7 +130,7 @@ namespace Microsoft.Xna.Framework.Audio
                 if (hasSourceId)
                 {
                     // Volume
-                    AL.Source(sourceId, ALSourcef.Gain, volume * SoundEffect.MasterVolume);
+                    AL.Source(sourceId, ALSourcef.Gain, volume);
                 }
 
             }
@@ -160,11 +173,6 @@ namespace Microsoft.Xna.Framework.Audio
             AL.SourcePlay(sourceId);
         }
 
-        public void Apply3D(AudioListener listener, AudioEmitter emitter)
-        {
-            Apply3D(new AudioListener[] { listener }, emitter);
-        }
-
         public void Pause()
         {
             if (hasSourceId)
@@ -173,34 +181,6 @@ namespace Microsoft.Xna.Framework.Audio
                 soundState = SoundState.Paused;
             }
         }
-
-
-        public void Apply3D(AudioListener[] listeners, AudioEmitter emitter)
-        {
-            // get AL's listener position
-            float x, y, z;
-            AL.GetListener(ALListener3f.Position, out x, out y, out z);
-
-            for (int i = 0; i < listeners.Length; i++)
-            {
-                AudioListener listener = listeners[i];
-
-                // get the emitter offset from origin
-                Vector3 posOffset = emitter.Position - listener.Position;
-                // set up orientation matrix
-                Matrix orientation = Matrix.CreateWorld(Vector3.Zero, listener.Forward, listener.Up);
-                // set up our final position and velocity according to orientation of listener
-                Vector3 finalPos = new Vector3(x + posOffset.X, y + posOffset.Y, z + posOffset.Z);
-                finalPos = Vector3.Transform(finalPos, orientation);
-                Vector3 finalVel = emitter.Velocity;
-                finalVel = Vector3.Transform(finalVel, orientation);
-
-                // set the position based on relative positon
-                AL.Source(sourceId, ALSource3f.Position, finalPos.X, finalPos.Y, finalPos.Z);
-                AL.Source(sourceId, ALSource3f.Velocity, finalVel.X, finalVel.Y, finalVel.Z);
-            }
-        }
-
 
         public void Dispose()
         {

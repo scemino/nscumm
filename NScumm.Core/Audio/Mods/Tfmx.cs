@@ -20,26 +20,29 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System.Diagnostics;
 using System;
+using System.Dynamic;
 using System.IO;
 
 namespace NScumm.Core.Audio
 {
-    public class Tfmx: Paula
+    public class Tfmx : Paula
     {
-        public int Ticks { get { return _playerCtx.tickCount; } }
+        public int Ticks { get { return _playerCtx.TickCount; } }
 
-        public int SongIndex { get { return _playerCtx.song; } }
+        public int SongIndex { get { return _playerCtx.Song; } }
+
+        public int NumSubsongs { get; private set;}
 
         public Tfmx(int rate, bool stereo)
             : base(stereo, rate)
         {
-            _playerCtx.stopWithLastPattern = false;
+            _playerCtx.StopWithLastPattern = false;
 
             for (int i = 0; i < NumVoices; ++i)
                 _channelCtx[i].paulaChannel = (byte)i;
 
-            _playerCtx.volume = 0x40;
-            _playerCtx.patternSkip = 6;
+            _playerCtx.Volume = 0x40;
+            _playerCtx.PatternSkip = 6;
             StopSongImpl();
 
             TimerBase = PalCiaClock;
@@ -63,7 +66,7 @@ namespace NScumm.Core.Audio
                     SetModuleData(mdat, sampleDat, autoDelete);
                     return true;
                 }
-                mdat.mdatAlloc = null;
+                mdat.MdatAlloc = null;
             }
             return false;
         }
@@ -73,7 +76,7 @@ namespace NScumm.Core.Audio
         /// </summary>
         /// <param name="stopAudio">If set to <c>true</c> stops player and audio output.</param>
         public void StopSong(bool stopAudio = true)
-        { 
+        {
             lock (_mutex)
             {
                 StopSongImpl(stopAudio);
@@ -85,7 +88,7 @@ namespace NScumm.Core.Audio
             SetModuleData(otherPlayer._resource, otherPlayer._resourceSample, false);
         }
 
-        void SetModuleData(MdatResource resource, byte[] sampleData, bool autoDelete)
+        private void SetModuleData(MdatResource resource, byte[] sampleData, bool autoDelete)
         {
             lock (_mutex)
             {
@@ -116,7 +119,7 @@ namespace NScumm.Core.Audio
         /// <param name="stopAudio">If set to <c>true</c> stops player and audio output.</param>
         public void DoSong(int songPos, bool stopAudio = false)
         {
-            Debug.Assert(0 <= songPos && songPos < NumSubsongs);
+            Debug.Assert(0 <= songPos && songPos < MaxNumSubsongs);
             lock (_mutex)
             {
                 StopSongImpl(stopAudio);
@@ -127,25 +130,25 @@ namespace NScumm.Core.Audio
                 _trackCtx.loopCount = -1;
                 _trackCtx.startInd = _trackCtx.posInd = _resource.subsong[songPos].songstart;
                 _trackCtx.stopInd = _resource.subsong[songPos].songend;
-                _playerCtx.song = (sbyte)songPos;
+                _playerCtx.Song = (sbyte)songPos;
 
-                var palFlag = (_resource.headerFlags & 2) != 0;
+                var palFlag = (_resource.HeaderFlags & 2) != 0;
                 var tempo = _resource.subsong[songPos].tempo;
                 ushort ciaIntervall;
                 if (tempo >= 0x10)
                 {
                     ciaIntervall = (ushort)(CiaBaseInterval / tempo);
-                    _playerCtx.patternSkip = 0;
+                    _playerCtx.PatternSkip = 0;
                 }
                 else
                 {
                     ciaIntervall = palFlag ? (ushort)PalDefaultCiaVal : (ushort)NtscDefaultCiaVal;
-                    _playerCtx.patternSkip = tempo;
+                    _playerCtx.PatternSkip = tempo;
                 }
                 InterruptFreqUnscaled = ciaIntervall;
                 SetAudioFilter(true);
 
-                _playerCtx.patternCount = 0;
+                _playerCtx.PatternCount = 0;
                 if (TrackRun())
                     StartPaula();
             }
@@ -166,8 +169,8 @@ namespace NScumm.Core.Audio
 
                 if (!HasResources())
                     return -1;
-                var sfxEntryOff = (int)(_resource.sfxTableOffset + sfxIndex * 8) - _resource.mdatOffset;
-                if (_resource.mdatAlloc[sfxEntryOff] == 0xFB)
+                var sfxEntryOff = (int)(_resource.SfxTableOffset + sfxIndex * 8) - _resource.MdatOffset;
+                if (_resource.MdatAlloc[sfxEntryOff] == 0xFB)
                 {
                     Debug.WriteLine("Tfmx: custom patterns are not supported");
                     // custompattern
@@ -177,8 +180,8 @@ namespace NScumm.Core.Audio
                 else
                 {
                     // custommacro
-                    var channelNo = ((_playerCtx.song >= 0) ? _resource.mdatAlloc[sfxEntryOff + 2] : _resource.mdatAlloc[sfxEntryOff + 4]) & (NumVoices - 1);
-                    var priority = _resource.mdatAlloc[sfxEntryOff + 5] & 0x7F;
+                    var channelNo = ((_playerCtx.Song >= 0) ? _resource.MdatAlloc[sfxEntryOff + 2] : _resource.MdatAlloc[sfxEntryOff + 4]) & (NumVoices - 1);
+                    var priority = _resource.MdatAlloc[sfxEntryOff + 5] & 0x7F;
 
                     var channel = _channelCtx[channelNo];
                     if (unlockChannel)
@@ -187,9 +190,9 @@ namespace NScumm.Core.Audio
                     var sfxLocktime = channel.sfxLockTime;
                     if (priority >= channel.customMacroPrio || sfxLocktime < 0)
                     {
-                        if (sfxIndex != channel.customMacroIndex || sfxLocktime < 0 || (_resource.mdatAlloc[sfxEntryOff + 5] < 0x80))
+                        if (sfxIndex != channel.customMacroIndex || sfxLocktime < 0 || (_resource.MdatAlloc[sfxEntryOff + 5] < 0x80))
                         {
-                            channel.customMacro = BitConverter.ToUInt32(_resource.mdatAlloc, sfxEntryOff); // intentionally not "endian-correct"
+                            channel.customMacro = BitConverter.ToUInt32(_resource.MdatAlloc, sfxEntryOff); // intentionally not "endian-correct"
                             channel.customMacroPrio = (byte)priority;
                             channel.customMacroIndex = (byte)sfxIndex;
                             Debug.WriteLine("Tfmx: running Macro {0:X8} on channel {1} - priority: {2:X2}",
@@ -202,15 +205,15 @@ namespace NScumm.Core.Audio
             }
         }
 
-        public void SetSignalAction(Action<int,ushort> action)
+        public void SetSignalAction(Action<int, ushort> action)
         {
-            _playerCtx.signal = action;
+            _playerCtx.Signal = action;
         }
 
         protected override void Interrupt()
         {
             Debug.Assert(!IsEndOfData);
-            ++_playerCtx.tickCount;
+            ++_playerCtx.TickCount;
 
             for (int i = 0; i < NumVoices; ++i)
             {
@@ -269,20 +272,21 @@ namespace NScumm.Core.Audio
             }
 
             // Patterns are only processed each _playerCtx.timerCount + 1 tick
-            if (_playerCtx.song >= 0 && _playerCtx.patternCount-- == 0)
+            if (_playerCtx.Song >= 0 && _playerCtx.PatternCount-- == 0)
             {
-                _playerCtx.patternCount = _playerCtx.patternSkip;
+                _playerCtx.PatternCount = _playerCtx.PatternSkip;
                 AdvancePatterns();
             }
         }
 
-        bool HasResources()
+        private bool HasResources()
         {
-            return _resource != null && _resource.mdatLen != 0 && _resourceSample != null;
+            return _resource != null && _resource.MdatLen != 0 && _resourceSample != null;
         }
 
-        MdatResource LoadMdatFile(Stream musicData)
+        private MdatResource LoadMdatFile(Stream musicData)
         {
+            NumSubsongs = 0;
             var br = new BinaryReader(musicData);
             bool hasHeader = false;
             var mdatSize = musicData.Length;
@@ -302,25 +306,27 @@ namespace NScumm.Core.Audio
 
             var resource = new MdatResource();
 
-            resource.mdatAlloc = null;
-            resource.mdatOffset = 0;
-            resource.mdatLen = 0;
+            resource.MdatAlloc = null;
+            resource.MdatOffset = 0;
+            resource.MdatLen = 0;
 
             // 0x000A: int16 flags
-            resource.headerFlags = br.ReadUInt16BigEndian();
+            resource.HeaderFlags = br.ReadUInt16BigEndian();
             // 0x000C: int32 ?
             // 0x0010: 6*40 Textfield
             musicData.Seek(4 + 6 * 40, SeekOrigin.Current);
 
             /* 0x0100: Songstart x 32*/
-            for (int i = 0; i < NumSubsongs; ++i)
+            for (int i = 0; i < MaxNumSubsongs; ++i)
                 resource.subsong[i].songstart = br.ReadUInt16BigEndian();
             /* 0x0140: Songend x 32*/
-            for (int i = 0; i < NumSubsongs; ++i)
+            for (int i = 0; i < MaxNumSubsongs; ++i)
                 resource.subsong[i].songend = br.ReadUInt16BigEndian();
             /* 0x0180: Tempo x 32*/
-            for (int i = 0; i < NumSubsongs; ++i)
+            for (int i = 0; i < MaxNumSubsongs; ++i)
                 resource.subsong[i].tempo = br.ReadUInt16BigEndian();
+            for (int i = 0; i < MaxNumSubsongs && resource.subsong[i].songend > resource.subsong[i].songstart; ++i)
+                NumSubsongs++;
 
             /* 0x01c0: unused ? */
             musicData.Seek(16, SeekOrigin.Current);
@@ -332,13 +338,13 @@ namespace NScumm.Core.Audio
             // This is how MI`s TFMX-Player tests for unpacked Modules.
             if (offTrackstep == 0)
             { // unpacked File
-                resource.trackstepOffset = 0x600 + 0x200;
+                resource.TrackstepOffset = 0x600 + 0x200;
                 offPatternP = 0x200 + 0x200;
                 offMacroP = 0x400 + 0x200;
             }
             else
             { // packed File
-                resource.trackstepOffset = offTrackstep;
+                resource.TrackstepOffset = offTrackstep;
                 offPatternP = br.ReadUInt32BigEndian();
                 offMacroP = br.ReadUInt32BigEndian();
             }
@@ -352,17 +358,17 @@ namespace NScumm.Core.Audio
 
             // Read in pattern starting offsets
             musicData.Seek(offPatternP, SeekOrigin.Begin);
-            for (int i = 0; i < MaxPatternOffsets; ++i)
-                resource.patternOffset[i] = br.ReadUInt32BigEndian();
+            for (int i = 0; i < MaxPatternOffsets && br.BaseStream.Position < br.BaseStream.Length; ++i)
+                resource.PatternOffset[i] = br.ReadUInt32BigEndian();
 
             // use last PatternOffset (stored at 0x5FC in mdat) if unpacked File
             // or fixed offset 0x200 if packed
-            resource.sfxTableOffset = offTrackstep != 0 ? 0x200 : resource.patternOffset[127];
+            resource.SfxTableOffset = offTrackstep != 0 ? 0x200 : resource.PatternOffset[127];
 
             // Read in macro starting offsets
             musicData.Seek(offMacroP, SeekOrigin.Begin);
-            for (int i = 0; i < MaxMacroOffsets; ++i)
-                resource.macroOffset[i] = br.ReadUInt32BigEndian();
+            for (int i = 0; i < MaxMacroOffsets && br.BaseStream.Position < br.BaseStream.Length; ++i)
+                resource.MacroOffset[i] = br.ReadUInt32BigEndian();
 
             // Read in mdat-file
             // TODO: we can skip everything thats already stored in the resource-structure.
@@ -372,13 +378,13 @@ namespace NScumm.Core.Audio
             musicData.Seek(mdatOffset, SeekOrigin.Begin);
             var mdatAlloc = br.ReadBytes((int)allocSize);
 
-            resource.mdatAlloc = mdatAlloc;
-            resource.mdatOffset = mdatOffset;
-            resource.mdatLen = (int)mdatSize;
+            resource.MdatAlloc = mdatAlloc;
+            resource.MdatOffset = mdatOffset;
+            resource.MdatLen = (int)mdatSize;
             return resource;
         }
 
-        byte[] LoadSampleFile(Stream sampleStream)
+        private static byte[] LoadSampleFile(Stream sampleStream)
         {
             var br = new BinaryReader(sampleStream);
 
@@ -394,19 +400,19 @@ namespace NScumm.Core.Audio
             return sampleAlloc;
         }
 
-        void FreeResources()
-        { 
-            _deleteResource = true; 
-            FreeResourceDataImpl(); 
+        private void FreeResources()
+        {
+            _deleteResource = true;
+            FreeResourceDataImpl();
         }
 
-        void FreeResourceDataImpl()
+        private void FreeResourceDataImpl()
         {
             if (_deleteResource)
             {
                 if (_resource != null)
                 {
-                    _resource.mdatAlloc = null;
+                    _resource.MdatAlloc = null;
                     _resource = null;
                 }
                 _resourceSample = null;
@@ -416,9 +422,9 @@ namespace NScumm.Core.Audio
             _deleteResource = false;
         }
 
-        void AdvancePatterns()
+        private void AdvancePatterns()
         {
-            startPatterns:
+        startPatterns:
             int runningPatterns = 0;
 
             for (int i = 0; i < NumChannels; ++i)
@@ -456,25 +462,25 @@ namespace NScumm.Core.Audio
                     }
                 } // else this pattern-Channel is stopped
             }
-            if (_playerCtx.stopWithLastPattern && runningPatterns == 0)
+            if (_playerCtx.StopWithLastPattern && runningPatterns == 0)
             {
                 StopPaula();
             }
         }
 
-        bool PatternRun(PatternContext pattern)
+        private bool PatternRun(PatternContext pattern)
         {
             for (;;)
             {
-                var patternPtrOff = (int)(pattern.offset + 4 * pattern.step - _resource.mdatOffset);
+                var patternPtrOff = (int)(pattern.offset + 4 * pattern.step - _resource.MdatOffset);
                 ++pattern.step;
-                byte pattCmd = _resource.mdatAlloc[patternPtrOff];
+                byte pattCmd = _resource.MdatAlloc[patternPtrOff];
 
                 if (pattCmd < 0xF0)
                 { // Playnote
                     bool doWait = false;
                     byte noteCmd = (byte)(pattCmd + pattern.expose);
-                    byte param3 = _resource.mdatAlloc[patternPtrOff + 3];
+                    byte param3 = _resource.MdatAlloc[patternPtrOff + 3];
                     if (pattCmd < 0xC0)
                     {   // Note
                         if (pattCmd >= 0x80)
@@ -485,7 +491,7 @@ namespace NScumm.Core.Audio
                         }
                         noteCmd &= 0x3F;
                     }   // else Portamento
-                    NoteCommand(noteCmd, _resource.mdatAlloc[patternPtrOff + 1], _resource.mdatAlloc[patternPtrOff + 2], param3);
+                    NoteCommand(noteCmd, _resource.MdatAlloc[patternPtrOff + 1], _resource.MdatAlloc[patternPtrOff + 2], param3);
                     if (doWait)
                         return false;
 
@@ -503,19 +509,19 @@ namespace NScumm.Core.Audio
                             if (pattern.loopCount != 0)
                             {
                                 if (pattern.loopCount == 0xFF)
-                                    pattern.loopCount = _resource.mdatAlloc[patternPtrOff + 1];
-                                pattern.step = _resource.mdatAlloc.ToUInt16BigEndian(patternPtrOff + 2);
+                                    pattern.loopCount = _resource.MdatAlloc[patternPtrOff + 1];
+                                pattern.step = _resource.MdatAlloc.ToUInt16BigEndian(patternPtrOff + 2);
                             }
                             --pattern.loopCount;
                             continue;
 
                         case 2:     // Jump. Parameters: PatternIndex, PatternStep(W)
-                            pattern.offset = _resource.patternOffset[_resource.mdatAlloc[patternPtrOff + 1] & (MaxPatternOffsets - 1)];
-                            pattern.step = _resource.mdatAlloc.ToUInt16BigEndian(patternPtrOff + 2);
+                            pattern.offset = _resource.PatternOffset[_resource.MdatAlloc[patternPtrOff + 1] & (MaxPatternOffsets - 1)];
+                            pattern.step = _resource.MdatAlloc.ToUInt16BigEndian(patternPtrOff + 2);
                             continue;
 
                         case 3:     // Wait. Paramters: ticks to wait
-                            pattern.wait = _resource.mdatAlloc[patternPtrOff + 1];
+                            pattern.wait = _resource.MdatAlloc[patternPtrOff + 1];
                             return false;
 
                         case 14:    // Stop custompattern
@@ -525,7 +531,7 @@ namespace NScumm.Core.Audio
                             pattern.command = 0xFF;
                             --pattern.step;
                             break;
-                    // FT
+                        // FT
                         case 4:     // Stop this pattern
                             pattern.command = 0xFF;
                             --pattern.step;
@@ -533,21 +539,21 @@ namespace NScumm.Core.Audio
                             return false;
 
                         case 5:     // Key Up Signal. Paramters: channel
-                            if (!_channelCtx[_resource.mdatAlloc[patternPtrOff + 2] & (NumVoices - 1)].sfxLocked)
-                                _channelCtx[_resource.mdatAlloc[patternPtrOff + 2] & (NumVoices - 1)].keyUp = true;
+                            if (!_channelCtx[_resource.MdatAlloc[patternPtrOff + 2] & (NumVoices - 1)].sfxLocked)
+                                _channelCtx[_resource.MdatAlloc[patternPtrOff + 2] & (NumVoices - 1)].keyUp = true;
                             continue;
 
                         case 6:     // Vibrato. Parameters: length, channel, rate
                         case 7:     // Envelope. Parameters: rate, tempo | channel, endVol
-                            NoteCommand(pattCmd, _resource.mdatAlloc[patternPtrOff + 1], _resource.mdatAlloc[patternPtrOff + 2], _resource.mdatAlloc[patternPtrOff + 3]);
+                            NoteCommand(pattCmd, _resource.MdatAlloc[patternPtrOff + 1], _resource.MdatAlloc[patternPtrOff + 2], _resource.MdatAlloc[patternPtrOff + 3]);
                             continue;
 
                         case 8:     // Subroutine. Parameters: pattern, patternstep(W)
                             pattern.savedOffset = pattern.offset;
                             pattern.savedStep = pattern.step;
 
-                            pattern.offset = _resource.patternOffset[_resource.mdatAlloc[patternPtrOff + 1] & (MaxPatternOffsets - 1)];
-                            pattern.step = _resource.mdatAlloc.ToUInt16BigEndian(patternPtrOff + 2);
+                            pattern.offset = _resource.PatternOffset[_resource.MdatAlloc[patternPtrOff + 1] & (MaxPatternOffsets - 1)];
+                            pattern.step = _resource.MdatAlloc.ToUInt16BigEndian(patternPtrOff + 2);
                             continue;
 
                         case 9:     // Return from Subroutine
@@ -556,24 +562,24 @@ namespace NScumm.Core.Audio
                             continue;
 
                         case 10:    // fade. Parameters: tempo, endVol
-                            InitFadeCommand(_resource.mdatAlloc[patternPtrOff + 1], (sbyte)_resource.mdatAlloc[patternPtrOff + 3]);
+                            InitFadeCommand(_resource.MdatAlloc[patternPtrOff + 1], (sbyte)_resource.MdatAlloc[patternPtrOff + 3]);
                             continue;
 
                         case 11:    // play pattern. Parameters: patternCmd, channel, expose
-                            InitPattern(_patternCtx[_resource.mdatAlloc[patternPtrOff + 2] & (NumChannels - 1)], 
-                                _resource.mdatAlloc[patternPtrOff + 1], 
-                                (sbyte)_resource.mdatAlloc[patternPtrOff + 3], 
-                                _resource.patternOffset[_resource.mdatAlloc[patternPtrOff + 1] & (MaxPatternOffsets - 1)]);
+                            InitPattern(_patternCtx[_resource.MdatAlloc[patternPtrOff + 2] & (NumChannels - 1)],
+                                _resource.MdatAlloc[patternPtrOff + 1],
+                                (sbyte)_resource.MdatAlloc[patternPtrOff + 3],
+                                _resource.PatternOffset[_resource.MdatAlloc[patternPtrOff + 1] & (MaxPatternOffsets - 1)]);
                             continue;
 
                         case 12:    // Lock. Parameters: lockFlag, channel, lockTime
-                            _channelCtx[_resource.mdatAlloc[patternPtrOff + 2] & (NumVoices - 1)].sfxLocked = (_resource.mdatAlloc[patternPtrOff + 1] != 0);
-                            _channelCtx[_resource.mdatAlloc[patternPtrOff + 2] & (NumVoices - 1)].sfxLockTime = _resource.mdatAlloc[patternPtrOff + 3];
+                            _channelCtx[_resource.MdatAlloc[patternPtrOff + 2] & (NumVoices - 1)].sfxLocked = (_resource.MdatAlloc[patternPtrOff + 1] != 0);
+                            _channelCtx[_resource.MdatAlloc[patternPtrOff + 2] & (NumVoices - 1)].sfxLockTime = _resource.MdatAlloc[patternPtrOff + 3];
                             continue;
 
                         case 13:    // Cue. Parameters: signalnumber, value(W)
-                            if (_playerCtx.signal != null)
-                                _playerCtx.signal(_resource.mdatAlloc[patternPtrOff + 1], _resource.mdatAlloc.ToUInt16BigEndian(patternPtrOff + 2));
+                            if (_playerCtx.Signal != null)
+                                _playerCtx.Signal(_resource.MdatAlloc[patternPtrOff + 1], _resource.MdatAlloc.ToUInt16BigEndian(patternPtrOff + 2));
                             continue;
 
                         case 15:    // NOP
@@ -583,7 +589,7 @@ namespace NScumm.Core.Audio
             }
         }
 
-        void InitPattern(PatternContext pattern, byte cmd, sbyte expose, uint offset)
+        private void InitPattern(PatternContext pattern, byte cmd, sbyte expose, uint offset)
         {
             pattern.command = cmd;
             pattern.offset = offset;
@@ -596,9 +602,9 @@ namespace NScumm.Core.Audio
             pattern.savedStep = 0;
         }
 
-        bool TrackRun(bool incStep = false)
+        private bool TrackRun(bool incStep = false)
         {
-            Debug.Assert(_playerCtx.song >= 0);
+            Debug.Assert(_playerCtx.Song >= 0);
             if (incStep)
             {
                 // TODO Optionally disable looping
@@ -609,25 +615,25 @@ namespace NScumm.Core.Audio
             }
             for (;;)
             {
-                var trackDataOff = (int)(_resource.trackstepOffset + 16 * _trackCtx.posInd - _resource.mdatOffset);
+                var trackDataOff = (int)(_resource.TrackstepOffset + 16 * _trackCtx.posInd - _resource.MdatOffset);
 
-                if (BitConverter.ToUInt16(_resource.mdatAlloc, trackDataOff) != ScummHelper.SwapBytes(0xEFFE))
+                if (BitConverter.ToUInt16(_resource.MdatAlloc, trackDataOff) != ScummHelper.SwapBytes(0xEFFE))
                 {
                     // 8 commands for Patterns
                     for (int i = 0; i < 8; ++i)
                     {
                         var patCmdOff = trackDataOff + i * 2;
                         // First byte is pattern number
-                        var patNum = _resource.mdatAlloc[patCmdOff];
+                        var patNum = _resource.MdatAlloc[patCmdOff];
                         // if highest bit is set then keep previous pattern
                         if (patNum < 0x80)
                         {
-                            InitPattern(_patternCtx[i], patNum, (sbyte)_resource.mdatAlloc[patCmdOff + 1], _resource.patternOffset[patNum]);
+                            InitPattern(_patternCtx[i], patNum, (sbyte)_resource.MdatAlloc[patCmdOff + 1], _resource.PatternOffset[patNum]);
                         }
                         else
                         {
                             _patternCtx[i].command = patNum;
-                            _patternCtx[i].expose = (sbyte)_resource.mdatAlloc[patCmdOff + 1];
+                            _patternCtx[i].expose = (sbyte)_resource.MdatAlloc[patCmdOff + 1];
                         }
                     }
                     return true;
@@ -636,7 +642,7 @@ namespace NScumm.Core.Audio
                 else
                 {
                     // 16 byte Trackstep Command
-                    switch (_resource.mdatAlloc.ToUInt16BigEndian(trackDataOff + 2 * 1))
+                    switch (_resource.MdatAlloc.ToUInt16BigEndian(trackDataOff + 2 * 1))
                     {
                         case 0: // Stop Player. No Parameters
                             StopPaula();
@@ -646,8 +652,8 @@ namespace NScumm.Core.Audio
                             if (_trackCtx.loopCount != 0)
                             {
                                 if (_trackCtx.loopCount < 0)
-                                    _trackCtx.loopCount = _resource.mdatAlloc.ToInt16BigEndian(trackDataOff + 2 * 3);
-                                _trackCtx.posInd = _resource.mdatAlloc.ToUInt16BigEndian(trackDataOff + 2 * 2);
+                                    _trackCtx.loopCount = _resource.MdatAlloc.ToInt16BigEndian(trackDataOff + 2 * 3);
+                                _trackCtx.posInd = _resource.MdatAlloc.ToUInt16BigEndian(trackDataOff + 2 * 2);
                                 continue;
                             }
                             --_trackCtx.loopCount;
@@ -655,8 +661,8 @@ namespace NScumm.Core.Audio
 
                         case 2:
                             { // Set Tempo. Parameters: tempo, divisor
-                                _playerCtx.patternCount = _playerCtx.patternSkip = _resource.mdatAlloc.ToUInt16BigEndian(trackDataOff + 2 * 2); // tempo
-                                var temp = _resource.mdatAlloc.ToUInt16BigEndian(trackDataOff + 2 * 3); // divisor
+                                _playerCtx.PatternCount = _playerCtx.PatternSkip = _resource.MdatAlloc.ToUInt16BigEndian(trackDataOff + 2 * 2); // tempo
+                                var temp = _resource.MdatAlloc.ToUInt16BigEndian(trackDataOff + 2 * 3); // divisor
 
                                 if (((temp & 0x8000) == 0) && ((temp & 0x1FF) != 0))
                                     InterruptFreqUnscaled = (uint)(temp & 0x1FF);
@@ -664,14 +670,14 @@ namespace NScumm.Core.Audio
                             }
                         case 4: // Fade. Parameters: tempo, endVol
                             // load the LSB of the 16bit words
-                            InitFadeCommand(_resource.mdatAlloc[trackDataOff + 2 * 2 + 1], (sbyte)_resource.mdatAlloc[trackDataOff + 2 * 3 + 1]);
+                            InitFadeCommand(_resource.MdatAlloc[trackDataOff + 2 * 2 + 1], (sbyte)_resource.MdatAlloc[trackDataOff + 2 * 3 + 1]);
                             break;
 
                         case 3: // Unknown, stops player aswell
                         default:
-                            Debug.WriteLine("Tfmx: Unknown Trackstep Command: {0:X2}", _resource.mdatAlloc.ToUInt16BigEndian(trackDataOff + 2 * 1));
+                            Debug.WriteLine("Tfmx: Unknown Trackstep Command: {0:X2}", _resource.MdatAlloc.ToUInt16BigEndian(trackDataOff + 2 * 1));
                             break;
-                    // MI-Player handles this by stopping the player, we just continue
+                            // MI-Player handles this by stopping the player, we just continue
                     }
                 }
 
@@ -684,22 +690,22 @@ namespace NScumm.Core.Audio
             }
         }
 
-        void MacroRun(ChannelContext channel)
+        private void MacroRun(ChannelContext channel)
         {
             bool deferWait = channel.deferWait;
             for (;;)
             {
-                var macroPtrOff = (int)(channel.macroOffset + 4 * channel.macroStep - _resource.mdatOffset);
+                var macroPtrOff = (int)(channel.macroOffset + 4 * channel.macroStep - _resource.MdatOffset);
                 ++channel.macroStep;
 
-                switch (_resource.mdatAlloc[macroPtrOff])
+                switch (_resource.MdatAlloc[macroPtrOff])
                 {
                     case 0x00:  // Reset + DMA Off. Parameters: deferWait, addset, vol
                         ClearEffects(channel);
                         // same as 0x13
                         // TODO: implement PArameters
                         DisableChannel(channel.paulaChannel);
-                        channel.deferWait = deferWait = (_resource.mdatAlloc[macroPtrOff + 1] != 0);
+                        channel.deferWait = deferWait = (_resource.MdatAlloc[macroPtrOff + 1] != 0);
                         if (deferWait)
                         {
                             // if set, then we expect a DMA On in the same tick.
@@ -713,17 +719,17 @@ namespace NScumm.Core.Audio
                             // TODO remember time disabled, remember pending dmaoff?.
                         }
 
-                        if (_resource.mdatAlloc[macroPtrOff + 2] != 0 || _resource.mdatAlloc[macroPtrOff + 3] != 0)
+                        if (_resource.MdatAlloc[macroPtrOff + 2] != 0 || _resource.MdatAlloc[macroPtrOff + 3] != 0)
                         {
-                            channel.volume = (sbyte)((_resource.mdatAlloc[macroPtrOff + 2] != 0 ? 0 : channel.relVol * 3) + _resource.mdatAlloc[macroPtrOff + 3]);
+                            channel.volume = (sbyte)((_resource.MdatAlloc[macroPtrOff + 2] != 0 ? 0 : channel.relVol * 3) + _resource.MdatAlloc[macroPtrOff + 3]);
                             SetChannelVolume(channel.paulaChannel, (byte)channel.volume);
                         }
                         continue;
-                // FT
+                    // FT
                     case 0x13:  // DMA Off. Parameters:  deferWait, addset, vol
                         // TODO: implement PArameters
                         DisableChannel(channel.paulaChannel);
-                        channel.deferWait = deferWait = (_resource.mdatAlloc[macroPtrOff + 1] != 0);
+                        channel.deferWait = deferWait = (_resource.MdatAlloc[macroPtrOff + 1] != 0);
                         if (deferWait)
                         {
                             // if set, then we expect a DMA On in the same tick.
@@ -737,9 +743,9 @@ namespace NScumm.Core.Audio
                             // TODO remember time disabled, remember pending dmaoff?.
                         }
 
-                        if (_resource.mdatAlloc[macroPtrOff + 2] != 0 || _resource.mdatAlloc[macroPtrOff + 3] != 0)
+                        if (_resource.MdatAlloc[macroPtrOff + 2] != 0 || _resource.MdatAlloc[macroPtrOff + 3] != 0)
                         {
-                            channel.volume = (sbyte)((_resource.mdatAlloc[macroPtrOff + 2] != 0 ? 0 : channel.relVol * 3) + _resource.mdatAlloc[macroPtrOff + 3]);
+                            channel.volume = (sbyte)((_resource.MdatAlloc[macroPtrOff + 2] != 0 ? 0 : channel.relVol * 3) + _resource.MdatAlloc[macroPtrOff + 3]);
                             SetChannelVolume(channel.paulaChannel, (byte)channel.volume);
                         }
                         continue;
@@ -760,18 +766,18 @@ namespace NScumm.Core.Audio
 
                     case 0x02:  // Set Beginn. Parameters: SampleOffset(L)
                         channel.addBeginLength = 0;
-                        channel.sampleStart = _resource.mdatAlloc.ToInt32BigEndian(macroPtrOff) & 0xFFFFFF;
+                        channel.sampleStart = _resource.MdatAlloc.ToInt32BigEndian(macroPtrOff) & 0xFFFFFF;
                         SetChannelSampleStart(channel.paulaChannel, GetSamplePtr(channel.sampleStart));
                         continue;
 
                     case 0x03:  // SetLength. Parameters: SampleLength(W)
-                        channel.sampleLen = _resource.mdatAlloc.ToUInt16BigEndian(macroPtrOff + 2);
+                        channel.sampleLen = _resource.MdatAlloc.ToUInt16BigEndian(macroPtrOff + 2);
                         SetChannelSampleLen(channel.paulaChannel, channel.sampleLen);
                         continue;
 
                     case 0x04:  // Wait. Parameters: Ticks to wait(W).
                         // TODO: some unknown Parameter? (macroPtr[1] & 1)
-                        channel.macroWait = _resource.mdatAlloc.ToUInt16BigEndian(macroPtrOff + 2);
+                        channel.macroWait = _resource.MdatAlloc.ToUInt16BigEndian(macroPtrOff + 2);
                         break;
 
                     case 0x10:  // Loop Key Up. Parameters: Loopcount, MacroStep(W)
@@ -781,26 +787,26 @@ namespace NScumm.Core.Audio
                         if (channel.macroLoopCount != 0)
                         {
                             if (channel.macroLoopCount == 0xFF)
-                                channel.macroLoopCount = _resource.mdatAlloc[macroPtrOff + 1];
-                            channel.macroStep = _resource.mdatAlloc.ToUInt16BigEndian(macroPtrOff + 2);
+                                channel.macroLoopCount = _resource.MdatAlloc[macroPtrOff + 1];
+                            channel.macroStep = _resource.MdatAlloc.ToUInt16BigEndian(macroPtrOff + 2);
                         }
                         --channel.macroLoopCount;
                         continue;
-                // FT
+                    // FT
                     case 0x05:  // Loop. Parameters: Loopcount, MacroStep(W)
                         if (channel.macroLoopCount != 0)
                         {
                             if (channel.macroLoopCount == 0xFF)
-                                channel.macroLoopCount = _resource.mdatAlloc[macroPtrOff + 1];
-                            channel.macroStep = _resource.mdatAlloc.ToUInt16BigEndian(macroPtrOff + 2);
+                                channel.macroLoopCount = _resource.MdatAlloc[macroPtrOff + 1];
+                            channel.macroStep = _resource.MdatAlloc.ToUInt16BigEndian(macroPtrOff + 2);
                         }
                         --channel.macroLoopCount;
                         continue;
 
                     case 0x06:  // Jump. Parameters: MacroIndex, MacroStep(W)
                         // channel.macroIndex = macroPtr[1] & (kMaxMacroOffsets - 1);
-                        channel.macroOffset = _resource.macroOffset[_resource.mdatAlloc[macroPtrOff + 1] & (MaxMacroOffsets - 1)];
-                        channel.macroStep = _resource.mdatAlloc.ToUInt16BigEndian(macroPtrOff + 2);
+                        channel.macroOffset = _resource.MacroOffset[_resource.MdatAlloc[macroPtrOff + 1] & (MaxMacroOffsets - 1)];
+                        channel.macroStep = _resource.MdatAlloc.ToUInt16BigEndian(macroPtrOff + 2);
                         channel.macroLoopCount = 0xFF;
                         continue;
 
@@ -810,11 +816,11 @@ namespace NScumm.Core.Audio
                         return;
 
                     case 0x08:  // AddNote. Parameters: Note, Finetune(W)
-                        SetNoteMacro(channel, channel.note + _resource.mdatAlloc[macroPtrOff + 1], _resource.mdatAlloc.ToUInt16BigEndian(macroPtrOff + 2));
+                        SetNoteMacro(channel, channel.note + _resource.MdatAlloc[macroPtrOff + 1], _resource.MdatAlloc.ToUInt16BigEndian(macroPtrOff + 2));
                         break;
 
                     case 0x09:  // SetNote. Parameters: Note, Finetune(W)
-                        SetNoteMacro(channel, _resource.mdatAlloc[macroPtrOff + 1], _resource.mdatAlloc.ToUInt16BigEndian(macroPtrOff + 2));
+                        SetNoteMacro(channel, _resource.MdatAlloc[macroPtrOff + 1], _resource.MdatAlloc.ToUInt16BigEndian(macroPtrOff + 2));
                         break;
 
                     case 0x0A:  // Clear Effects
@@ -822,18 +828,18 @@ namespace NScumm.Core.Audio
                         continue;
 
                     case 0x0B:  // Portamento. Parameters: count, speed
-                        channel.portaSkip = _resource.mdatAlloc[macroPtrOff + 1];
+                        channel.portaSkip = _resource.MdatAlloc[macroPtrOff + 1];
                         channel.portaCount = 1;
                         // if porta is already running, then keep using old value
                         if (channel.portaDelta == 0)
                             channel.portaValue = channel.refPeriod;
-                        channel.portaDelta = _resource.mdatAlloc.ToUInt16BigEndian(macroPtrOff + 2);
+                        channel.portaDelta = _resource.MdatAlloc.ToUInt16BigEndian(macroPtrOff + 2);
                         continue;
 
                     case 0x0C:  // Vibrato. Parameters: Speed, intensity
-                        channel.vibLength = _resource.mdatAlloc[macroPtrOff + 1];
-                        channel.vibCount = (byte)(_resource.mdatAlloc[macroPtrOff + 1] / 2);
-                        channel.vibDelta = (sbyte)_resource.mdatAlloc[macroPtrOff + 3];
+                        channel.vibLength = _resource.MdatAlloc[macroPtrOff + 1];
+                        channel.vibCount = (byte)(_resource.MdatAlloc[macroPtrOff + 1] / 2);
+                        channel.vibDelta = (sbyte)_resource.MdatAlloc[macroPtrOff + 3];
                         // TODO: Perhaps a bug, vibValue could be left uninitialized
                         if (channel.portaDelta == 0)
                         {
@@ -843,36 +849,36 @@ namespace NScumm.Core.Audio
                         continue;
 
                     case 0x0D:  // Add Volume. Parameters: note, addNoteFlag, volume
-                        if (_resource.mdatAlloc[macroPtrOff + 2] == 0xFE)
+                        if (_resource.MdatAlloc[macroPtrOff + 2] == 0xFE)
                         {
-                            SetNoteMacro(channel, channel.note + _resource.mdatAlloc[macroPtrOff + 1], 0);
+                            SetNoteMacro(channel, channel.note + _resource.MdatAlloc[macroPtrOff + 1], 0);
                         }
-                        channel.volume = (sbyte)(channel.relVol * 3 + _resource.mdatAlloc[macroPtrOff + 3]);
+                        channel.volume = (sbyte)(channel.relVol * 3 + _resource.MdatAlloc[macroPtrOff + 3]);
                         continue;
 
                     case 0x0E:  // Set Volume. Parameters: note, addNoteFlag, volume
-                        if (_resource.mdatAlloc[macroPtrOff + 2] == 0xFE)
+                        if (_resource.MdatAlloc[macroPtrOff + 2] == 0xFE)
                         {
-                            SetNoteMacro(channel, channel.note + _resource.mdatAlloc[macroPtrOff + 1], 0);
+                            SetNoteMacro(channel, channel.note + _resource.MdatAlloc[macroPtrOff + 1], 0);
                         }
-                        channel.volume = (sbyte)_resource.mdatAlloc[macroPtrOff + 3];
+                        channel.volume = (sbyte)_resource.MdatAlloc[macroPtrOff + 3];
                         continue;
 
                     case 0x0F:  // Envelope. Parameters: speed, count, endvol
-                        channel.envDelta = _resource.mdatAlloc[macroPtrOff + 1];
-                        channel.envCount = channel.envSkip = _resource.mdatAlloc[macroPtrOff + 2];
-                        channel.envEndVolume = (sbyte)_resource.mdatAlloc[macroPtrOff + 3];
+                        channel.envDelta = _resource.MdatAlloc[macroPtrOff + 1];
+                        channel.envCount = channel.envSkip = _resource.MdatAlloc[macroPtrOff + 2];
+                        channel.envEndVolume = (sbyte)_resource.MdatAlloc[macroPtrOff + 3];
                         continue;
 
                     case 0x11:  // Add Beginn. Parameters: times, Offset(W)
-                        channel.addBeginLength = channel.addBeginCount = _resource.mdatAlloc[macroPtrOff + 1];
-                        channel.addBeginDelta = _resource.mdatAlloc.ToInt16BigEndian(macroPtrOff + 2);
+                        channel.addBeginLength = channel.addBeginCount = _resource.MdatAlloc[macroPtrOff + 1];
+                        channel.addBeginDelta = _resource.MdatAlloc.ToInt16BigEndian(macroPtrOff + 2);
                         channel.sampleStart += channel.addBeginDelta;
                         SetChannelSampleStart(channel.paulaChannel, GetSamplePtr(channel.sampleStart));
                         continue;
 
                     case 0x12:  // Add Length. Parameters: added Length(W)
-                        channel.sampleLen = (ushort)(channel.sampleLen + _resource.mdatAlloc.ToInt16BigEndian(macroPtrOff + 2));
+                        channel.sampleLen = (ushort)(channel.sampleLen + _resource.MdatAlloc.ToInt16BigEndian(macroPtrOff + 2));
                         SetChannelSampleLen(channel.paulaChannel, channel.sampleLen);
                         continue;
 
@@ -883,7 +889,7 @@ namespace NScumm.Core.Audio
                             continue;
                         }
                         else if (channel.macroLoopCount == 0xFF)
-                            channel.macroLoopCount = _resource.mdatAlloc[macroPtrOff + 3];
+                            channel.macroLoopCount = _resource.MdatAlloc[macroPtrOff + 3];
                         --channel.macroLoopCount;
                         --channel.macroStep;
                         return;
@@ -892,8 +898,8 @@ namespace NScumm.Core.Audio
                         channel.macroReturnOffset = channel.macroOffset;
                         channel.macroReturnStep = channel.macroStep;
 
-                        channel.macroOffset = (_resource.macroOffset[_resource.mdatAlloc[macroPtrOff + 1] & (MaxMacroOffsets - 1)]);
-                        channel.macroStep = _resource.mdatAlloc.ToUInt16BigEndian(macroPtrOff + 2);
+                        channel.macroOffset = (_resource.MacroOffset[_resource.MdatAlloc[macroPtrOff + 1] & (MaxMacroOffsets - 1)]);
+                        channel.macroStep = _resource.MdatAlloc.ToUInt16BigEndian(macroPtrOff + 2);
                         // TODO: MI does some weird stuff there. Figure out which varioables need to be set
                         continue;
 
@@ -903,7 +909,7 @@ namespace NScumm.Core.Audio
                         continue;
 
                     case 0x17:  // Set Period. Parameters: Period(W)
-                        channel.refPeriod = _resource.mdatAlloc.ToUInt16BigEndian(macroPtrOff + 2);
+                        channel.refPeriod = _resource.MdatAlloc.ToUInt16BigEndian(macroPtrOff + 2);
                         if (channel.portaDelta == 0)
                         {
                             channel.period = channel.refPeriod;
@@ -914,9 +920,9 @@ namespace NScumm.Core.Audio
                     case 0x18:
                         {    // Sampleloop. Parameters: Offset from Samplestart(W)
                             // TODO: MI loads 24 bit, but thats useless?
-                            ushort temp = /* ((int8)macroPtr[1] << 16) | */ _resource.mdatAlloc.ToUInt16BigEndian(macroPtrOff + 2);
-                            if (_resource.mdatAlloc[macroPtrOff + 1] != 0 || ((temp & 1) != 0))
-                                Debug.WriteLine("Tfmx: Problematic value for sampleloop: {0:X6}", (_resource.mdatAlloc[macroPtrOff + 1] << 16) | temp);
+                            ushort temp = /* ((int8)macroPtr[1] << 16) | */ _resource.MdatAlloc.ToUInt16BigEndian(macroPtrOff + 2);
+                            if (_resource.MdatAlloc[macroPtrOff + 1] != 0 || ((temp & 1) != 0))
+                                Debug.WriteLine("Tfmx: Problematic value for sampleloop: {0:X6}", (_resource.MdatAlloc[macroPtrOff + 1] << 16) | temp);
                             channel.sampleStart += temp & 0xFFFE;
                             channel.sampleLen -= (ushort)(temp / 2) /* & 0x7FFF */;
                             SetChannelSampleStart(channel.paulaChannel, GetSamplePtr(channel.sampleStart));
@@ -932,49 +938,49 @@ namespace NScumm.Core.Audio
                         continue;
 
                     case 0x1A:  // Wait on DMA. Parameters: Cycles-1(W) to wait
-                        channel.dmaIntCount = (ushort)(_resource.mdatAlloc.ToUInt16BigEndian(macroPtrOff + 2) + 1);
+                        channel.dmaIntCount = (ushort)(_resource.MdatAlloc.ToUInt16BigEndian(macroPtrOff + 2) + 1);
                         channel.macroRun = false;
                         SetChannelDmaCount(channel.paulaChannel);
                         break;
 
-                /*      case 0x1B:  // Random play. Parameters: macro/speed/mode
-            warnMacroUnimplemented(macroPtr, 0);
-            continue;*/
+                    /*      case 0x1B:  // Random play. Parameters: macro/speed/mode
+                warnMacroUnimplemented(macroPtr, 0);
+                continue;*/
 
                     case 0x1C:  // Branch on Note. Parameters: note/macrostep(W)
-                        if (channel.note > _resource.mdatAlloc[macroPtrOff + 1])
-                            channel.macroStep = _resource.mdatAlloc.ToUInt16BigEndian(macroPtrOff + 2);
+                        if (channel.note > _resource.MdatAlloc[macroPtrOff + 1])
+                            channel.macroStep = _resource.MdatAlloc.ToUInt16BigEndian(macroPtrOff + 2);
                         continue;
 
                     case 0x1D:  // Branch on Volume. Parameters: volume/macrostep(W)
-                        if (channel.volume > _resource.mdatAlloc[macroPtrOff + 1])
-                            channel.macroStep = _resource.mdatAlloc.ToUInt16BigEndian(macroPtrOff + 2);
+                        if (channel.volume > _resource.MdatAlloc[macroPtrOff + 1])
+                            channel.macroStep = _resource.MdatAlloc.ToUInt16BigEndian(macroPtrOff + 2);
                         continue;
 
-                /*      case 0x1E:  // Addvol+note. Parameters: note/CONST./volume
-            warnMacroUnimplemented(macroPtr, 0);
-            continue;*/
+                    /*      case 0x1E:  // Addvol+note. Parameters: note/CONST./volume
+                warnMacroUnimplemented(macroPtr, 0);
+                continue;*/
 
                     case 0x1F:  // AddPrevNote. Parameters: Note, Finetune(W)
-                        SetNoteMacro(channel, channel.prevNote + _resource.mdatAlloc[macroPtrOff + 1], _resource.mdatAlloc.ToUInt16BigEndian(macroPtrOff + 2));
+                        SetNoteMacro(channel, channel.prevNote + _resource.MdatAlloc[macroPtrOff + 1], _resource.MdatAlloc.ToUInt16BigEndian(macroPtrOff + 2));
                         break;
 
                     case 0x20:  // Signal. Parameters: signalnumber, value(W)
-                        if (_playerCtx.signal != null)
-                            _playerCtx.signal(_resource.mdatAlloc[macroPtrOff + 1], _resource.mdatAlloc.ToUInt16BigEndian(macroPtrOff + 2));
+                        if (_playerCtx.Signal != null)
+                            _playerCtx.Signal(_resource.MdatAlloc[macroPtrOff + 1], _resource.MdatAlloc.ToUInt16BigEndian(macroPtrOff + 2));
                         continue;
 
                     case 0x21:  // Play macro. Parameters: macro, chan, detune
-                        NoteCommand(channel.note, _resource.mdatAlloc[macroPtrOff + 1], 
-                            (byte)((channel.relVol << 4) | _resource.mdatAlloc[macroPtrOff + 2]), 
-                            _resource.mdatAlloc[macroPtrOff + 3]);
+                        NoteCommand(channel.note, _resource.MdatAlloc[macroPtrOff + 1],
+                            (byte)((channel.relVol << 4) | _resource.MdatAlloc[macroPtrOff + 2]),
+                            _resource.MdatAlloc[macroPtrOff + 3]);
                         continue;
 
-                // 0x22 - 0x29 are used by Gem`X
-                // 0x30 - 0x34 are used by Carribean Disaster
+                    // 0x22 - 0x29 are used by Gem`X
+                    // 0x30 - 0x34 are used by Carribean Disaster
 
                     default:
-                        Debug.WriteLine("Tfmx: Macro {0:XX} not supported", _resource.mdatAlloc[macroPtrOff]);
+                        Debug.WriteLine("Tfmx: Macro {0:XX} not supported", _resource.MdatAlloc[macroPtrOff]);
                         break;
                 }
                 if (!deferWait)
@@ -982,23 +988,23 @@ namespace NScumm.Core.Audio
             }
         }
 
-        byte[] GetSamplePtr(int offset)
+        private byte[] GetSamplePtr(int offset)
         {
             var tmp = new byte[_resourceSample.Length - offset];
             Array.Copy(_resourceSample, offset, tmp, 0, tmp.Length);
             return tmp;
         }
 
-        void SetNoteMacro(ChannelContext channel, int note, int fineTune)
+        private void SetNoteMacro(ChannelContext channel, int note, int fineTune)
         {
-            var noteInt = noteIntervalls[note & 0x3F];
+            var noteInt = NoteIntervalls[note & 0x3F];
             var finetune = (ushort)(fineTune + channel.fineTune + (1 << 8));
             channel.refPeriod = (ushort)((uint)noteInt * finetune >> 8);
             if (channel.portaDelta == 0)
                 channel.period = channel.refPeriod;
         }
 
-        void Effects(ChannelContext channel)
+        private void Effects(ChannelContext channel)
         {
             // addBegin
             if (channel.addBeginLength != 0)
@@ -1087,38 +1093,38 @@ namespace NScumm.Core.Audio
             }
 
             // Fade
-            if (_playerCtx.fadeDelta != 0 && (--_playerCtx.fadeCount) == 0)
+            if (_playerCtx.FadeDelta != 0 && (--_playerCtx.FadeCount) == 0)
             {
-                _playerCtx.fadeCount = _playerCtx.fadeSkip;
+                _playerCtx.FadeCount = _playerCtx.FadeSkip;
 
-                _playerCtx.volume += _playerCtx.fadeDelta;
-                if (_playerCtx.volume == _playerCtx.fadeEndVolume)
-                    _playerCtx.fadeDelta = 0;
+                _playerCtx.Volume += _playerCtx.FadeDelta;
+                if (_playerCtx.Volume == _playerCtx.FadeEndVolume)
+                    _playerCtx.FadeDelta = 0;
             }
 
             // Volume
-            var finVol = (byte)(_playerCtx.volume * channel.volume >> 6);
+            var finVol = (byte)(_playerCtx.Volume * channel.volume >> 6);
             SetChannelVolume(channel.paulaChannel, finVol);
         }
 
-        void InitFadeCommand(byte fadeTempo, sbyte endVol)
+        private void InitFadeCommand(byte fadeTempo, sbyte endVol)
         {
-            _playerCtx.fadeCount = _playerCtx.fadeSkip = fadeTempo;
-            _playerCtx.fadeEndVolume = endVol;
+            _playerCtx.FadeCount = _playerCtx.FadeSkip = fadeTempo;
+            _playerCtx.FadeEndVolume = endVol;
 
             if (fadeTempo != 0)
             {
-                int diff = _playerCtx.fadeEndVolume - _playerCtx.volume;
-                _playerCtx.fadeDelta = (sbyte)((diff != 0) ? ((diff > 0) ? 1 : -1) : 0);
+                int diff = _playerCtx.FadeEndVolume - _playerCtx.Volume;
+                _playerCtx.FadeDelta = (sbyte)((diff != 0) ? ((diff > 0) ? 1 : -1) : 0);
             }
             else
             {
-                _playerCtx.volume = endVol;
-                _playerCtx.fadeDelta = 0;
+                _playerCtx.Volume = endVol;
+                _playerCtx.FadeDelta = 0;
             }
         }
 
-        void NoteCommand(byte note, byte param1, byte param2, byte param3)
+        private void NoteCommand(byte note, byte param1, byte param2, byte param3)
         {
             var channel = _channelCtx[param2 & (NumVoices - 1)];
 
@@ -1138,7 +1144,7 @@ namespace NScumm.Core.Audio
                 channel.prevNote = channel.note;
                 channel.note = note;
                 // channel.macroIndex = param1 & (MaxMacroOffsets - 1);
-                channel.macroOffset = (_resource.macroOffset[param1 & (MaxMacroOffsets - 1)]);
+                channel.macroOffset = (_resource.MacroOffset[param1 & (MaxMacroOffsets - 1)]);
                 channel.relVol = (byte)(param2 >> 4);
                 channel.fineTune = (sbyte)param3;
 
@@ -1156,7 +1162,7 @@ namespace NScumm.Core.Audio
                 channel.portaDelta = param3;
 
                 channel.note = (byte)(note & 0x3F);
-                channel.refPeriod = noteIntervalls[channel.note];
+                channel.refPeriod = NoteIntervalls[channel.note];
 
             }
             else
@@ -1182,9 +1188,9 @@ namespace NScumm.Core.Audio
                 }
         }
 
-        void StopSongImpl(bool stopAudio = true)
+        private void StopSongImpl(bool stopAudio = true)
         {
-            _playerCtx.song = -1;
+            _playerCtx.Song = -1;
             for (int i = 0; i < NumChannels; ++i)
             {
                 _patternCtx[i].command = 0xFF;
@@ -1212,7 +1218,7 @@ namespace NScumm.Core.Audio
             }
         }
 
-        static void InitMacroProgramm(ChannelContext channel)
+        private static void InitMacroProgramm(ChannelContext channel)
         {
             channel.macroStep = 0;
             channel.macroWait = 0;
@@ -1226,7 +1232,7 @@ namespace NScumm.Core.Audio
             channel.macroReturnStep = 0;
         }
 
-        static void ClearEffects(ChannelContext channel)
+        private static void ClearEffects(ChannelContext channel)
         {
             channel.addBeginLength = 0;
             channel.envSkip = 0;
@@ -1234,13 +1240,13 @@ namespace NScumm.Core.Audio
             channel.portaDelta = 0;
         }
 
-        static void HaltMacroProgramm(ChannelContext channel)
+        private static void HaltMacroProgramm(ChannelContext channel)
         {
             channel.macroRun = false;
             channel.dmaIntCount = 0;
         }
 
-        static void UnlockMacroChannel(ChannelContext channel)
+        private static void UnlockMacroChannel(ChannelContext channel)
         {
             channel.customMacro = 0;
             channel.customMacroIndex = 0;
@@ -1249,34 +1255,34 @@ namespace NScumm.Core.Audio
             channel.sfxLockTime = -1;
         }
 
-        const int PalDefaultCiaVal = 11822;
-        const int NtscDefaultCiaVal = 14320;
-        const int CiaBaseInterval = 0x1B51F8;
-        const int NumVoices = 4;
-        const int NumChannels = 8;
-        const int NumSubsongs = 32;
-        const int MaxPatternOffsets = 128;
-        const int MaxMacroOffsets = 128;
+        private const int PalDefaultCiaVal = 11822;
+        private const int NtscDefaultCiaVal = 14320;
+        private const int CiaBaseInterval = 0x1B51F8;
+        private const int NumVoices = 4;
+        private const int NumChannels = 8;
+        private const int MaxNumSubsongs = 32;
+        private const int MaxPatternOffsets = 128;
+        private const int MaxMacroOffsets = 128;
 
-        byte[] _resourceSample;
+        private byte[] _resourceSample;
 
-        bool _deleteResource;
+        private bool _deleteResource;
 
-        class MdatResource
+        private class MdatResource
         {
             /// <summary>
             /// allocated Block of Memory
             /// </summary>
-            public byte[] mdatAlloc;
+            public byte[] MdatAlloc;
 
             /// <summary>
             /// Start of mdat-File, might point before mdatAlloc to correct Offset
             /// </summary>
-            public int mdatOffset;
+            public int MdatOffset;
 
-            public int mdatLen;
+            public int MdatLen;
 
-            public ushort headerFlags;
+            public ushort HeaderFlags;
             //      uint32 headerUnknown;
             //      char textField[6 * 40];
 
@@ -1289,21 +1295,21 @@ namespace NScumm.Core.Audio
                 public ushort tempo;
             }
 
-            public Subsong[] subsong;
+            public readonly Subsong[] subsong;
 
-            public uint trackstepOffset;
+            public uint TrackstepOffset;
             ///< Offset in mdat
-            public uint sfxTableOffset;
+            public uint SfxTableOffset;
 
-            public uint[] patternOffset = new uint[MaxPatternOffsets];
+            public readonly uint[] PatternOffset = new uint[MaxPatternOffsets];
             ///< Offset in mdat
-            public uint[] macroOffset = new uint[MaxMacroOffsets];
+            public readonly uint[] MacroOffset = new uint[MaxMacroOffsets];
 
             ///< Offset in mdat
 
             public MdatResource()
             {
-                subsong = new Subsong[NumSubsongs];
+                subsong = new Subsong[MaxNumSubsongs];
                 for (int i = 0; i < subsong.Length; i++)
                 {
                     subsong[i] = new Subsong();
@@ -1311,9 +1317,9 @@ namespace NScumm.Core.Audio
             }
         }
 
-        MdatResource _resource;
+        private MdatResource _resource;
 
-        class PatternContext
+        private class PatternContext
         {
             /// <summary>
             /// patternStart, Offset from mdat
@@ -1338,9 +1344,9 @@ namespace NScumm.Core.Audio
             public byte wait;
         }
 
-        PatternContext[] _patternCtx = CreatePatternContext();
+        private readonly PatternContext[] _patternCtx = CreatePatternContext();
 
-        static PatternContext[] CreatePatternContext()
+        private static PatternContext[] CreatePatternContext()
         {
             var patternCtx = new PatternContext[NumChannels];
             for (int i = 0; i < patternCtx.Length; i++)
@@ -1350,7 +1356,7 @@ namespace NScumm.Core.Audio
             return patternCtx;
         }
 
-        class ChannelContext
+        private class ChannelContext
         {
             public byte paulaChannel;
 
@@ -1413,9 +1419,9 @@ namespace NScumm.Core.Audio
             public int addBeginDelta;
         }
 
-        ChannelContext[] _channelCtx = CreateChannelContexts();
+        private readonly ChannelContext[] _channelCtx = CreateChannelContexts();
 
-        static ChannelContext[] CreateChannelContexts()
+        private static ChannelContext[] CreateChannelContexts()
         {
             var channelCtx = new ChannelContext[NumVoices];
             for (int i = 0; i < channelCtx.Length; i++)
@@ -1425,7 +1431,7 @@ namespace NScumm.Core.Audio
             return channelCtx;
         }
 
-        class TrackStepContext
+        private class TrackStepContext
         {
             public ushort startInd;
             public ushort stopInd;
@@ -1433,44 +1439,44 @@ namespace NScumm.Core.Audio
             public short loopCount;
         }
 
-        TrackStepContext _trackCtx = new TrackStepContext();
+        private readonly TrackStepContext _trackCtx = new TrackStepContext();
 
-        class PlayerContext
+        private class PlayerContext
         {
             /// <summary>
             /// <>= 0 if Song is running (means process Patterns)
             /// </summary>
-            public sbyte song;
+            public sbyte Song;
 
-            public ushort patternCount;
+            public ushort PatternCount;
             /// <summary>
             /// skip that amount of CIA-Interrupts
             /// </summary>
-            public ushort patternSkip;
+            public ushort PatternSkip;
 
             /// <summary>
             /// Master Volume
             /// </summary>
-            public sbyte volume;
+            public sbyte Volume;
 
-            public byte fadeSkip;
-            public byte fadeCount;
-            public sbyte fadeEndVolume;
-            public sbyte fadeDelta;
+            public byte FadeSkip;
+            public byte FadeCount;
+            public sbyte FadeEndVolume;
+            public sbyte FadeDelta;
 
-            public int tickCount;
+            public int TickCount;
 
-            public Action<int,ushort> signal;
+            public Action<int, ushort> Signal;
 
             /// <summary>
             /// hack to automatically stop the whole player if no Pattern is running
             /// </summary>
-            public bool stopWithLastPattern;
+            public bool StopWithLastPattern;
         }
 
-        PlayerContext _playerCtx = new PlayerContext();
+        private readonly PlayerContext _playerCtx = new PlayerContext();
 
-        static readonly ushort[] noteIntervalls =
+        private static readonly ushort[] NoteIntervalls =
             {
                 1710, 1614, 1524, 1438, 1357, 1281, 1209, 1141, 1077, 1017,  960,  908,
                 856,  810,  764,  720,  680,  642,  606,  571,  539,  509,  480,  454,

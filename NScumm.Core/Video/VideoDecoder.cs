@@ -52,27 +52,15 @@ namespace NScumm.Core.Video
         private bool _endTimeSet;
         private Timestamp _endTime;
 
-        public bool IsPaused { get { return _pauseLevel != 0; } }
+        public bool IsPaused => _pauseLevel != 0;
 
         public bool HasDirtyPalette { get; private set; }
 
-        public bool IsPlaying
-        {
-            get
-            {
-                return _playbackRate != 0;
-            }
-        }
+        public bool IsPlaying => _playbackRate != 0;
 
-        public bool IsVideoLoaded
-        {
-            get { return _tracks.Count != 0; }
-        }
+        public bool IsVideoLoaded => _tracks.Count != 0;
 
-        public virtual bool UseAudioSync
-        {
-            get { return true; }
-        }
+        public virtual bool UseAudioSync => true;
 
         public bool EndOfVideo
         {
@@ -89,10 +77,7 @@ namespace NScumm.Core.Video
             }
         }
 
-        public bool NeedsUpdate
-        {
-            get { return HasFramesLeft() && GetTimeToNextFrame() == 0; }
-        }
+        public bool NeedsUpdate => HasFramesLeft() && GetTimeToNextFrame() == 0;
 
         public byte[] Palette { get; private set; }
 

@@ -21,7 +21,7 @@
 
 namespace NScumm.Core.Audio.Decoders
 {
-    public class Ima_ADPCMStream
+    public static class Ima_ADPCMStream
     {
         /// <summary>
         /// This table is used by decodeIMA.

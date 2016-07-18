@@ -22,17 +22,11 @@ namespace NScumm.Core.Video
 {
     internal abstract class VideoTrack : Track
     {
-        public override TrackType TrackType { get { return TrackType.Video; } }
+        public override TrackType TrackType => TrackType.Video;
 
         public abstract uint GetNextFrameStartTime();
 
-        public override bool EndOfTrack
-        {
-            get
-            {
-                return CurrentFrame >= FrameCount - 1;
-            }
-        }
+        public override bool EndOfTrack => CurrentFrame >= FrameCount - 1;
 
         public abstract ushort Width { get; }
 

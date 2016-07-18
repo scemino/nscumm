@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of NScumm.
  * 
  * NScumm is free software: you can redistribute it and/or modify
@@ -22,12 +22,12 @@ using NScumm.Core.Audio.SampleProviders;
 
 namespace NScumm
 {
-    class XnaAudioDriver : IAudioOutput
+    internal class XnaAudioDriver : IAudioOutput
     {
-        readonly DynamicSoundEffectInstance _dsei;
-        readonly byte[] _buffer;
-        IAudioSampleProvider _audioSampleProvider;
-        AudioFormat _audioFormat;
+        private readonly DynamicSoundEffectInstance _dsei;
+        private readonly byte[] _buffer;
+        private IAudioSampleProvider _audioSampleProvider;
+        private AudioFormat _audioFormat;
 
         public XnaAudioDriver()
         {
@@ -74,9 +74,8 @@ namespace NScumm
         private void OnBufferNeeded(object sender, EventArgs e)
         {
             Array.Clear(_buffer, 0, _buffer.Length);
-			if (_audioSampleProvider != null)
-				_audioSampleProvider.Read (_buffer, _buffer.Length);
-			_dsei.SubmitBuffer(_buffer, _buffer.Length);
+            _audioSampleProvider?.Read (_buffer, _buffer.Length);
+            _dsei.SubmitBuffer(_buffer, _buffer.Length);
         }
     }
 }

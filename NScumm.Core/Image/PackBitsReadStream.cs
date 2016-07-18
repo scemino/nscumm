@@ -32,25 +32,13 @@ namespace NScumm.Core
     {
         Stream _input;
 
-        public override bool CanRead
-        {
-            get { return _input.CanRead; }
-        }
+        public override bool CanRead => _input.CanRead;
 
-        public override bool CanWrite
-        {
-            get { return _input.CanWrite; }
-        }
+        public override bool CanWrite => _input.CanWrite;
 
-        public override bool CanSeek
-        {
-            get { return _input.CanSeek; }
-        }
+        public override bool CanSeek => _input.CanSeek;
 
-        public override long Length
-        {
-            get { return _input.Length; }
-        }
+        public override long Length => _input.Length;
 
         public override long Position
         {

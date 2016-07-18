@@ -81,9 +81,10 @@ namespace NScumm.Core.Audio
             public byte delaySampleTick;
         }
 
-        public ProtrackerStream(Stream stream, int offs, int rate, bool stereo)
+        public ProtrackerStream(Stream stream, int offs = 0, int rate = 44100, bool stereo = true)
             : base(stereo, rate, (uint)(rate / 50))
         {
+            _module = new Module();
             bool result = _module.Load(stream, offs);
             System.Diagnostics.Debug.Assert(result);
 

@@ -377,7 +377,7 @@ namespace NScumm.Core.Audio
             EnableChannel(channel);
             ch.offset = new Offset(offset);
 
-            ch.dataRepeat = new ByteAccess(dataRepeat);
+            ch.dataRepeat = dataRepeat != null ? new BytePtr(dataRepeat.Data, dataRepeat.Offset) : BytePtr.Null;
             ch.lengthRepeat = lengthRepeat;
         }
 

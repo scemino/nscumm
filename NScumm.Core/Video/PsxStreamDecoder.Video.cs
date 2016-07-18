@@ -88,35 +88,17 @@ namespace NScumm.Core.Video
                 _dcHuffmanLuma = new Huffman(0, DC_CODE_COUNT, s_huffmanDCLumaCodes, s_huffmanDCLumaLengths, s_huffmanDCSymbols);
             }
 
-            public override ushort Width
-            {
-                get { return _width; }
-            }
+            public override ushort Width => _width;
 
-            public override ushort Height
-            {
-                get { return _height; }
-            }
+            public override ushort Height => _height;
 
-            public override PixelFormat PixelFormat
-            {
-                get { return _surface.PixelFormat; }
-            }
+            public override PixelFormat PixelFormat => _surface.PixelFormat;
 
-            public override int CurrentFrame
-            {
-                get { return _curFrame; }
-            }
+            public override int CurrentFrame => _curFrame;
 
-            public override int FrameCount
-            {
-                get { return (int)_frameCount; }
-            }
+            public override int FrameCount => (int)_frameCount;
 
-            public override bool EndOfTrack
-            {
-                get { return _endOfTrack; }
-            }
+            public override bool EndOfTrack => _endOfTrack;
 
 
             public void SetEndOfTrack()

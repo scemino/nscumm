@@ -51,15 +51,9 @@ namespace NScumm.Core.Video
             private byte[] _dst;
             private byte[] _buf;
 
-            public override IAudioStream AudioStream
-            {
-                get { return _audStream; }
-            }
+            public override IAudioStream AudioStream => _audStream;
 
-            public override IMixer Mixer
-            {
-                get { return _mixer; }
-            }
+            public override IMixer Mixer => _mixer;
 
             public PsxAudioTrack(IMixer mixer, Stream sector)
             {
@@ -85,10 +79,7 @@ namespace NScumm.Core.Video
                 _audStream.Dispose();
             }
 
-            public override bool EndOfTrack
-            {
-                get { return base.EndOfTrack && _endOfTrack; }
-            }
+            public override bool EndOfTrack => base.EndOfTrack && _endOfTrack;
 
             public void SetEndOfTrack()
             {

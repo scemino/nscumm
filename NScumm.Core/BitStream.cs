@@ -49,10 +49,7 @@ namespace NScumm.Core
 
         private readonly int _valueBits;
 
-        public uint Size
-        {
-            get { return (uint)((_br.BaseStream.Length & ~((_valueBits >> 3) - 1)) * 8); }
-        }
+        public uint Size => (uint)((_br.BaseStream.Length & ~((_valueBits >> 3) - 1)) * 8);
 
         public uint Position
         {
@@ -68,13 +65,7 @@ namespace NScumm.Core
             }
         }
 
-        public bool IsEndOfStream
-        {
-            get
-            {
-                return _br.BaseStream.Position >= _br.BaseStream.Length || (Position >= Size);
-            }
-        }
+        public bool IsEndOfStream => _br.BaseStream.Position >= _br.BaseStream.Length || (Position >= Size);
 
         public BitStream(Stream stream, BitStreamType type, bool isLittleEdian, bool isMsb2Lsb)
         {

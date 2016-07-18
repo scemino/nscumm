@@ -54,19 +54,13 @@ namespace NScumm.Core.Video
             _palette = new byte[3 * 256];
         }
 
-        public override ushort Width { get { return (ushort)_surface.Width; } }
+        public override ushort Width => (ushort)_surface.Width;
 
-        public override ushort Height { get { return (ushort)_surface.Height; } }
+        public override ushort Height => (ushort)_surface.Height;
 
-        public override PixelFormat PixelFormat
-        {
-            get { return _surface.PixelFormat; }
-        }
+        public override PixelFormat PixelFormat => _surface.PixelFormat;
 
-        public override bool IsRewindable
-        {
-            get { return true; }
-        }
+        public override bool IsRewindable => true;
 
         public override bool Rewind()
         {
@@ -74,12 +68,9 @@ namespace NScumm.Core.Video
             return true;
         }
 
-        public override int CurrentFrame
-        {
-            get { return _curFrame; }
-        }
+        public override int CurrentFrame => _curFrame;
 
-        public override int FrameCount { get { return (int)_frameCount; } }
+        public override int FrameCount => (int)_frameCount;
 
         public override Surface DecodeNextFrame()
         {
@@ -97,7 +88,7 @@ namespace NScumm.Core.Video
             return _dirtyPalette;
         }
 
-        protected override Rational FrameRate { get { return _frameRate; } }
+        protected override Rational FrameRate => _frameRate;
 
         public void ReadTrees(BitStream bs, int mMapSize, int mClrSize, int fullSize, int typeSize)
         {

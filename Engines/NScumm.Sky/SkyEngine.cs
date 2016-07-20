@@ -48,7 +48,7 @@ namespace NScumm.Sky
         }
 
         public SkyEngine(GameSettings settings, ISystem system)
-            : base(system)
+            : base(system, settings)
         {
             _system = system;
 

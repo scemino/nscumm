@@ -218,7 +218,7 @@ namespace NScumm.Scumm
         }
 
         protected ScummEngine(GameSettings settings, ISystem system, IMixer mixer)
-            : base(system)
+            : base(system, settings)
         {
             Settings = settings;
             var game = (GameInfo)settings.Game;

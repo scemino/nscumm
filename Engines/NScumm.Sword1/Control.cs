@@ -797,7 +797,7 @@ namespace NScumm.Sword1
         const int ThumbnailHeaderSize = (4 + 4 + 1 + 2 + 2 + (1 + 4 + 4));
         const int THMB_VERSION = 2;
 
-        void SaveThumbnail(BinaryWriter output, Surface thumb)
+        static void SaveThumbnail(BinaryWriter output, Surface thumb)
         {
             var bpp = Surface.GetBytesPerPixel(thumb.PixelFormat);
             if (bpp != 2 && bpp != 4)

@@ -29,11 +29,13 @@ namespace NScumm.Core.Graphics
         public int Height
         {
             get { return Bottom - Top; }
+            set { Bottom = Top + value; }
         }
 
         public int Width
         {
             get { return Right - Left; }
+            set { Right = Left + value; }
         }
 
         internal string DebuggerDisplay
@@ -57,6 +59,14 @@ namespace NScumm.Core.Graphics
             get
             {
                 return (Left >= Right || Top >= Bottom);
+            }
+        }
+
+        public bool IsValidRect
+        {
+            get
+            {
+                return (Left <= Right && Top <= Bottom);
             }
         }
 
@@ -131,6 +141,44 @@ namespace NScumm.Core.Graphics
         public override string ToString()
         {
             return DebuggerDisplay;
+        }
+
+        public void MoveTo(int x, int y)
+        {
+            Bottom += y - Top;
+            Right += x - Left;
+            Top = y;
+            Left = x;
+        }
+
+        /// <summary>
+        /// Extend this rectangle in all four directions by the given number of pixels
+        /// </summary>
+        /// <param name="offset">the size to grow by</param>
+        public void Grow(int offset)
+        {
+            Top -= offset;
+            Left -= offset;
+            Bottom += offset;
+            Right += offset;
+        }
+
+        public void Translate(int dx, int dy)
+        {
+            Left += dx; Right += dx;
+            Top += dy; Bottom += dy;
+        }
+
+        /// <summary>
+        /// Extend this rectangle so that it contains r
+        /// </summary>
+        /// <param name="r">the rectangle to extend by</param>
+        public void Extend(Rect r)
+        {
+            Left = Math.Min(Left, r.Left);
+            Right = Math.Max(Right, r.Right);
+            Top = Math.Min(Top, r.Top);
+            Bottom = Math.Max(Bottom, r.Bottom);
         }
     }
 }

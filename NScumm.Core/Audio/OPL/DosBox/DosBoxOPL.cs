@@ -221,7 +221,7 @@ namespace NScumm.Core.Audio.OPL.DosBox
             return 0;
         }
 
-        private void Write(int port, int val)
+        public void Write(int port, int val)
         {
             if ((port & 1) != 0)
             {

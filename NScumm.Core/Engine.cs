@@ -23,6 +23,8 @@ using System;
 using NScumm.Core.Audio;
 using System.Diagnostics;
 using D = NScumm.Core.DebugHelper;
+using System.IO;
+using NScumm.Core.IO;
 
 namespace NScumm.Core
 {
@@ -31,6 +33,14 @@ namespace NScumm.Core
         public event EventHandler ShowMenuDialogRequested;
 
         public static Engine Instance;
+
+        public static Stream OpenFileRead(string filename)
+        {
+            var dir = ServiceLocator.FileStorage.GetDirectoryName(Instance.Settings.Game.Path);
+            var path = ScummHelper.LocatePath(dir, filename);
+            if (path == null) return null;
+            return ServiceLocator.FileStorage.OpenFileRead(path);
+        }
 
         public bool IsPaused
         {
@@ -82,6 +92,7 @@ namespace NScumm.Core
         }
 
         public bool HasToQuit { get; set; }
+        public GameSettings Settings { get; private set; }
 
         /// <summary>
         /// The pause level, 0 means 'running', a positive value indicates
@@ -104,9 +115,10 @@ namespace NScumm.Core
         /// All Engine subclasses should consider overloading some or all of the following methods.
         /// </summary>
         /// <param name="system">System.</param>
-        protected Engine(ISystem system)
+        protected Engine(ISystem system, GameSettings settings)
         {
             Instance = this;
+            Settings = settings;
             Mixer = new Mixer(44100);
             // HACK:
             ((Mixer)Mixer).Read(new byte[0], 0);

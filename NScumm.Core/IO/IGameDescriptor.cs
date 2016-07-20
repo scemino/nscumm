@@ -30,5 +30,5 @@ namespace NScumm.Core.IO
         int Height { get; }
         PixelFormat PixelFormat { get; }
         string Path { get; }
-    }
+    }    
 }

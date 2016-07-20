@@ -47,6 +47,11 @@ namespace NScumm.Droid.Services
             return Path.Combine(path1, path2);
         }
 
+        public string GetPath(Stream stream)
+        {
+            return ((FileStream)stream).Name;
+        }
+
         public string GetDirectoryName(string path)
         {
             return Path.GetDirectoryName(path);

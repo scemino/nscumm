@@ -59,9 +59,34 @@ namespace NScumm.Core
 
     public static class ByteAccessExtension
     {
+        public static void WriteInt16(this ByteAccess data, int startIndex, short value)
+        {
+            data.Data.WriteInt16(data.Offset + startIndex, value);
+        }
+
+        public static void WriteInt16BigEndian(this ByteAccess data, int startIndex, short value)
+        {
+            data.Data.WriteInt16BigEndian(data.Offset + startIndex, value);
+        }
+
+        public static void WriteUInt16(this ByteAccess data, int startIndex, ushort value)
+        {
+            data.Data.WriteUInt16(data.Offset + startIndex, value);
+        }
+
+        public static void WriteUInt16BigEndian(this ByteAccess data, int startIndex, ushort value)
+        {
+            data.Data.WriteUInt16BigEndian(data.Offset + startIndex, value);
+        }
+
         public static short ToInt16BigEndian(this ByteAccess value, int startIndex = 0)
         {
             return (short)value.Data.ToUInt16BigEndian(value.Offset + startIndex);
+        }
+
+        public static short ToInt16(this ByteAccess value, int startIndex = 0)
+        {
+            return (short)value.Data.ToUInt16(value.Offset + startIndex);
         }
 
         public static ushort ToUInt16BigEndian(this ByteAccess value, int startIndex = 0)
@@ -69,14 +94,47 @@ namespace NScumm.Core
             return value.Data.ToUInt16BigEndian(value.Offset + startIndex);
         }
 
+        public static ushort ToUInt16(this ByteAccess value, int startIndex = 0)
+        {
+            return value.Data.ToUInt16(value.Offset + startIndex);
+        }
+
         public static int ToInt32BigEndian(this ByteAccess value, int startIndex = 0)
         {
             return value.Data.ToInt32BigEndian(value.Offset + startIndex);
         }
 
+        public static int ToInt32(this ByteAccess value, int startIndex = 0)
+        {
+            return value.Data.ToInt32(value.Offset + startIndex);
+        }
+
         public static uint ToUInt32BigEndian(this ByteAccess value, int startIndex = 0)
         {
             return value.Data.ToUInt32BigEndian(value.Offset + startIndex);
+        }
+
+        public static uint ToUInt32(this ByteAccess value, int startIndex = 0)
+        {
+            return value.Data.ToUInt32(value.Offset + startIndex);
+        }
+
+        public static byte Increment(this ByteAccess data)
+        {
+            var value = data.Value;
+            data.Offset++;
+            return value;
+        }
+
+        public static ByteAccess ToByteAccess(this UShortAccess data, int startIndex = 0)
+        {
+            return new ByteAccess(data.Data, data.Offset + startIndex);
+        }
+
+        public static UShortAccess ToUShortAccess(this ByteAccess data, int startIndex = 0)
+        {
+            if (data == null) return null;
+            return new UShortAccess(data.Data, data.Offset + startIndex);
         }
     }
 
@@ -111,6 +169,18 @@ namespace NScumm.Core
         {
             _data = data;
             Offset = offset;
+        }
+
+        public UShortAccess(UShortAccess data, int offset = 0)
+        {
+            _data = data.Data;
+            Offset = data.Offset + offset;
+        }
+
+        public UShortAccess(ByteAccess data, int offset = 0)
+        {
+            _data = data.Data;
+            Offset = data.Offset + offset;
         }
     }
 

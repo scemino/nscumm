@@ -26,6 +26,7 @@ using System.IO;
 using System.Linq;
 using NScumm.Core.IO;
 using NScumm.Services;
+using NScumm.Sci;
 
 namespace NScumm
 {
@@ -61,7 +62,8 @@ namespace NScumm
 
             var pluginsdDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "plugins");
             var gd = new GameDetector();
-            gd.AddPluginsFromDirectory(pluginsdDirectory);
+            gd.Add(new SciMetaEngine());
+            //gd.AddPluginsFromDirectory(pluginsdDirectory);
 
             var info = gd.DetectGame(path);
             if (info == null)

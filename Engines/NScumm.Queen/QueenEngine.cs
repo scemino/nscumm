@@ -93,7 +93,7 @@ namespace NScumm.Queen
         }
 
         public QueenEngine(GameSettings settings, ISystem system)
-            : base(system)
+            : base(system,settings)
         {
             Randomizer = new Random();
             Settings = settings;

@@ -660,5 +660,15 @@ namespace NScumm.Core
                 array[i] = value;
             }
         }
+
+        public static bool ArrayEquals(byte[] src, int srcOffset, byte[] dst, int dstOffset, int count)
+        {
+            for (var i = 0; i < count; i++)
+            {
+                if (src[srcOffset + i] != dst[dstOffset + i])
+                    return false;
+            }
+            return true;
+        }
     }
 }

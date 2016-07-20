@@ -34,6 +34,8 @@ namespace NScumm.Core
 
         string Combine(string path1, string path2);
 
+        string GetPath(Stream file);
+
         string GetDirectoryName(string path);
 
         string GetFileName(string path);

@@ -37,7 +37,10 @@ namespace NScumm
         {
             var path = GetSavePath();
             EnsureSavePathExists(path);
-            return File.OpenRead(Path.Combine(path, fileName));
+            var fullpath = Path.Combine(path, fileName);
+            if (!File.Exists(fullpath))
+                return null;
+            return File.OpenRead(fullpath);
         }
 
         public Stream OpenForSaving(string fileName, bool compress = true)

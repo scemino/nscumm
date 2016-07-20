@@ -20,6 +20,8 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+using NScumm.Core.Common;
+
 namespace NScumm.Core.Audio.Midi
 {
     public interface IMidiDriver

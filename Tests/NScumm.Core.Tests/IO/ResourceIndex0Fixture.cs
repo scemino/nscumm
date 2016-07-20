@@ -70,9 +70,24 @@ namespace NScumm.Core.Tests.IO
                 throw new NotImplementedException();
             }
 
+            public string GetPath(Stream file)
+            {
+                throw new NotImplementedException();
+            }
+
             public string GetSignature(string path)
             {
                 return "942398bfac774bd3f0830ff614b46db9";
+            }
+
+            public string GetSignature(string path, int size = 1048576)
+            {
+                throw new NotImplementedException();
+            }
+
+            public int GetSize(string p)
+            {
+                throw new NotImplementedException();
             }
 
             public XDocument LoadDocument(Stream stream)

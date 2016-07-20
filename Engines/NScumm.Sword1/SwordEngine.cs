@@ -50,7 +50,7 @@ namespace NScumm.Sword1
         public ISystem System { get; private set; }
 
         public SwordEngine(GameSettings settings, ISystem system)
-            : base(system)
+            : base(system, settings)
         {
             Settings = settings;
             GraphicsManager = system.GraphicsManager;

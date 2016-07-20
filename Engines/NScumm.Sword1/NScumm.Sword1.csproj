@@ -38,6 +38,7 @@
     <ProjectReference Include="..\..\NScumm.Core\NScumm.Core.csproj">
       <Project>{8E7A9E5B-D7EB-4DA1-8EE7-A5D8DE202372}</Project>
       <Name>NScumm.Core</Name>
+      <Private>False</Private>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

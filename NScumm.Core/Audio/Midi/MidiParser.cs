@@ -178,7 +178,7 @@ namespace NScumm.Core
 
         public abstract void LoadMusic(byte[] data, int offset, int length);
 
-        public void UnloadMusic()
+        public virtual void UnloadMusic()
         {
             ResetTracking();
             AllNotesOff();
@@ -381,7 +381,7 @@ namespace NScumm.Core
             return true;
         }
 
-        bool ProcessEvent(EventInfo info, bool fireEvents = true)
+        protected virtual bool ProcessEvent(EventInfo info, bool fireEvents = true)
         {
             if (info.Event == 0xF0)
             {

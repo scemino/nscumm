@@ -53,6 +53,12 @@ namespace NScumm.Core
             var output = $"WARNING: {string.Format(format,args)} !";
             ServiceLocator.Platform.LogMessage(LogMessageType.Warning, output);
         }
+
+        public static void Error(string format, params object[] args)
+        {
+            var output = $"Error: {string.Format(format, args)} !";
+            ServiceLocator.Platform.LogMessage(LogMessageType.Error, output);
+        }
     }
 }
 

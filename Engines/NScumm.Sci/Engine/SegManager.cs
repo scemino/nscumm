@@ -250,7 +250,7 @@ namespace NScumm.Sci.Engine
 
         public ByteAccess DerefBulkPtr(Register pointer, int entries)
         {
-            return (ByteAccess)DerefPtr(this, pointer, entries, true);
+            return (BytePtr)DerefPtr(this, pointer, entries, true);
         }
 
         public void UninstantiateScript(int script_nr)
@@ -826,7 +826,7 @@ namespace NScumm.Sci.Engine
         /// <returns>A physical reference to the address pointed to, or NULL on error or if not enough entries were available.</returns>
         public string DerefString(Register pointer, int entries = 0)
         {
-            var data = (ByteAccess)DerefPtr(this, pointer, entries, true);
+            var data = (BytePtr)DerefPtr(this, pointer, entries, true);
             return ScummHelper.GetText(data.Data, data.Offset);
         }
 
@@ -854,10 +854,9 @@ namespace NScumm.Sci.Engine
 
             if (ret.isRaw != wantRaw)
             {
-                // TODO: warning("Dereferencing pointer %04x:%04x (type %d) which is %s, but expected %s", PRINT_REG(pointer),
-                //segMan.getSegmentType(pointer.getSegment()),
-                //ret.isRaw ? "raw" : "not raw",
-                //wantRaw ? "raw" : "not raw");
+                var isRaw = ret.isRaw ? "raw" : "not raw";
+                var wr = wantRaw ? "raw" : "not raw";
+                Warning($"Dereferencing pointer {pointer} (type {segMan.GetSegmentType(pointer.Segment)}) which is {isRaw}, but expected {wr}");
             }
 
             if (!wantRaw && ret.skipByte)
@@ -1001,25 +1000,31 @@ namespace NScumm.Sci.Engine
                 return;
             }
 
-
             if (dest_r.isRaw)
             {
                 // raw . raw
                 if (n == 0xFFFFFFFFU)
                 {
                     Array.Copy(src.ToCharArray().Select(c => (byte)c).ToArray(), 0, dest_r.raw.Data, dest_r.raw.Offset, src.Length);
+                    dest_r.raw.Data[dest_r.raw.Offset + src.Length] = 0;
                 }
                 else {
                     Array.Copy(src.ToCharArray().Select(c => (byte)c).ToArray(), 0, dest_r.raw.Data, dest_r.raw.Offset, (int)n);
+                    dest_r.raw.Data[dest_r.raw.Offset + n] = 0;
                 }
             }
             else {
+                int i;
                 // raw . non-raw
-                for (var i = 0; i < n && i < src.Length; i++)
+                for (i = 0; i < n && i < src.Length; i++)
                 {
                     SetChar(dest_r, (uint)i, (byte)src[i]);
                     if (src[i] == 0)
                         break;
+                }
+                if (i == src.Length)
+                {
+                    SetChar(dest_r, (uint)i, 0);
                 }
                 // Put an ending NUL to terminate the string
                 if (dest_r.maxSize > n)
@@ -1091,15 +1096,14 @@ namespace NScumm.Sci.Engine
             if (@ref.skipByte)
                 offset++;
 
-            Register val = @ref.reg[offset / 2];
+            Register val = @ref.reg.Value[offset / 2];
 
             // segment 0xFFFF means that the scripts are using uninitialized temp-variable space
             //  we can safely ignore this, if it isn't one of the first 2 chars.
             //  foreign lsl3 uses kFileIO(readraw) and then immediately uses kReadNumber right at the start
-            // TODO: warning
-            //if (val.Segment != 0)
-            //    if (!((val.Segment == 0xFFFF) && (offset > 1)))
-            //        warning("Attempt to read character from non-raw data");
+            if (val.Segment != 0)
+                if (!((val.Segment == 0xFFFF) && (offset > 1)))
+                    Warning("Attempt to read character from non-raw data");
 
             bool oddOffset = (offset & 1) != 0;
             if (SciEngine.Instance.IsBE)
@@ -1113,7 +1117,7 @@ namespace NScumm.Sci.Engine
             if (@ref.skipByte)
                 offset++;
 
-            StackPtr val = @ref.reg + (int)offset / 2;
+            StackPtr val = @ref.reg.Value + (int)offset / 2;
 
             val[0] = Register.SetSegment(val[0], 0);
 
@@ -1204,7 +1208,7 @@ namespace NScumm.Sci.Engine
 
                     i++;
                     ret += c;
-                };
+                }
             }
             return ret;
         }
@@ -1259,7 +1263,7 @@ namespace NScumm.Sci.Engine
         private void Deallocate(ushort seg)
         {
             if (seg < 1 || seg >= _heap.Count)
-                throw new ArgumentOutOfRangeException("seg", "Attempt to deallocate an invalid segment ID");
+                throw new ArgumentOutOfRangeException(nameof(seg), "Attempt to deallocate an invalid segment ID");
 
             SegmentObj mobj = _heap[seg];
             if (mobj == null)

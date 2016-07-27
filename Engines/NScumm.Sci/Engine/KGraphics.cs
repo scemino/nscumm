@@ -66,7 +66,7 @@ namespace NScumm.Sci.Engine
         private static Register kAnimate(EngineState s, int argc, StackPtr? argv)
         {
             Register castListReference = (argc > 0) ? argv.Value[0] : Register.NULL_REG;
-            bool cycle = (argc > 1) && ((argv.Value [1].ToUInt16 () != 0));
+            bool cycle = (argc > 1) && ((argv.Value[1].ToUInt16() != 0));
 
             SciEngine.Instance._gfxAnimate.KernelAnimate(castListReference, cycle, argc, argv);
 
@@ -151,7 +151,8 @@ namespace NScumm.Sci.Engine
             {
                 return Register.Make(0, (ushort)SciEngine.Instance._gfxPorts.KernelCoordinateToPriority(y));
             }
-            else {
+            else
+            {
                 short priority = argv.Value[1].ToInt16();
                 return Register.Make(0, (ushort)SciEngine.Instance._gfxPorts.KernelPriorityToCoordinate((byte)priority));
             }
@@ -176,7 +177,8 @@ namespace NScumm.Sci.Engine
                 argc--; argv++;
                 text = s._segMan.GetString(textp);
             }
-            else {
+            else
+            {
                 argc--; argc--; argv++; argv++;
                 text = SciEngine.Instance.Kernel.LookupText(textp, index);
             }
@@ -222,7 +224,8 @@ namespace NScumm.Sci.Engine
                     scaleY = argv.Value[7].ToUInt16();
                     paletteNo = 0;
                 }
-                else {
+                else
+                {
                     // KQ6 hires
                     hiresMode = true;
                     upscaledHiresHandle = argv.Value[7];
@@ -287,7 +290,7 @@ namespace NScumm.Sci.Engine
                 }
 
                 // For the SCI32 version of this, check kListAt().
-				s._chosenQfGImportItem = (int)SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.mark);
+                s._chosenQfGImportItem = (int)SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.mark);
             }
 
             _k_GenericDrawControl(s, controlObject, false);
@@ -324,7 +327,6 @@ namespace NScumm.Sci.Engine
                 EGApaletteNo = argv.Value[3].ToInt16();
 
             SciEngine.Instance._gfxPaint16.KernelDrawPicture(pictureId, animationNr, animationBlackoutFlag, mirroredFlag, addToFlag, EGApaletteNo);
-
             return s.r_acc;
         }
 
@@ -531,7 +533,8 @@ namespace NScumm.Sci.Engine
             {
                 screenMask = GfxScreenMasks.CONTROL;
             }
-            else {
+            else
+            {
                 screenMask = (GfxScreenMasks)argv.Value[0].ToUInt16();
                 argBase = 1;
             }
@@ -542,7 +545,8 @@ namespace NScumm.Sci.Engine
                 rect.Right = argv.Value[argBase + 2].ToInt16();
                 rect.Bottom = argv.Value[argBase + 3].ToInt16();
             }
-            else {
+            else
+            {
                 rect.Right = rect.Left + 1;
                 rect.Bottom = rect.Top + 1;
             }
@@ -921,7 +925,7 @@ namespace NScumm.Sci.Engine
             int maxwidth = (argc > 3) ? argv.Value[3].ToUInt16() : 0;
             int font_nr = argv.Value[2].ToUInt16();
 
-			if (dest == StackPtr.Null)
+            if (dest == StackPtr.Null)
             {
                 // TODO: debugC(kDebugLevelStrings, "GetTextSize: Empty destination");
                 return s.r_acc;
@@ -982,7 +986,8 @@ namespace NScumm.Sci.Engine
                 dest[2] = Register.Make(0, (ushort)textHeight);
                 dest[3] = Register.Make(0, (ushort)textWidth);
             }
-            else {
+            else
+            {
                 dest[2] = Register.Make(0, (ushort)textWidth);
                 dest[3] = Register.Make(0, (ushort)textHeight);
             }
@@ -1020,7 +1025,8 @@ namespace NScumm.Sci.Engine
                     useLoop = 2;
                 }
             }
-            else {
+            else
+            {
                 // SCI0EARLY
                 if ((angle > 330) || (angle < 30))
                 {
@@ -1037,11 +1043,13 @@ namespace NScumm.Sci.Engine
                 {
                     useLoop = 1;
                 }
-                else {
+                else
+                {
                     useLoop = 0;
                 }
             }
-            else {
+            else
+            {
                 short loopCount = SciEngine.Instance._gfxCache.KernelViewGetLoopCount(viewId);
                 if (loopCount < 4)
                     return;
@@ -1180,7 +1188,8 @@ namespace NScumm.Sci.Engine
                         // Games from early SCI1 onwards use topString
                         upperOffset = (ushort)SciEngine.ReadSelectorValue(s._segMan, controlObject, o => o.topString);
                     }
-                    else {
+                    else
+                    {
                         // Earlier games use lsTop or brTop
                         Register tmp;
                         if (SciEngine.LookupSelector(s._segMan, controlObject, o => o.brTop, null, out tmp) == SelectorType.Variable)

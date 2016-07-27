@@ -55,6 +55,21 @@ namespace NScumm.Core
             _data = data;
             Offset = offset;
         }
+
+        public void CopyTo(ByteAccess data, int length)
+        {
+            System.Array.Copy(_data, Offset, data.Data, data.Offset, length);
+        }
+
+        public void CopyTo(byte[] dest, int destIndex, int length)
+        {
+            System.Array.Copy(_data, Offset, dest, destIndex, length);
+        }
+
+        public void CopyFrom(byte[] data, int offset, int length)
+        {
+            System.Array.Copy(data, offset, Data, Offset, length);
+        }
     }
 
     public static class ByteAccessExtension
@@ -77,6 +92,11 @@ namespace NScumm.Core
         public static void WriteUInt16BigEndian(this ByteAccess data, int startIndex, ushort value)
         {
             data.Data.WriteUInt16BigEndian(data.Offset + startIndex, value);
+        }
+
+        public static void WriteUInt32(this ByteAccess data, int startIndex, uint value)
+        {
+            data.Data.WriteUInt32(data.Offset + startIndex, value);
         }
 
         public static short ToInt16BigEndian(this ByteAccess value, int startIndex = 0)
@@ -112,6 +132,11 @@ namespace NScumm.Core
         public static uint ToUInt32BigEndian(this ByteAccess value, int startIndex = 0)
         {
             return value.Data.ToUInt32BigEndian(value.Offset + startIndex);
+        }
+
+        public static uint ToUInt24(this ByteAccess value, int startIndex = 0)
+        {
+            return value.Data.ToUInt24(value.Offset + startIndex);
         }
 
         public static uint ToUInt32(this ByteAccess value, int startIndex = 0)

@@ -225,6 +225,26 @@ namespace NScumm.Sci
                     new ADGameFileDescription { fileName = "resource.0 00", fileType = 0, md5 = "96b07e9b914dba1c8dc6c78a176326df", fileSize = 5233230},
                     new ADGameFileDescription { fileName = "resource.msg",  fileType = 0, md5 = "554f65315d851184f6e38211489fdd8f", fileSize = -1},
             },Core.Language.EN_ANY, Platform.DOS),
+
+            // Larry 1 VGA Remake - English DOS (from spookypeanut)
+            // Executable scanning reports "1.000.577", VERSION file reports "2.1"
+            new ADGameDescription("lsl1sci", "SCI",
+                 new [] {
+                    new ADGameFileDescription { fileName = "resource.map", fileType = 0, md5 = "6d04d26466337a1a64b8c6c0eb65c9a9", fileSize = 3222},
+                    new ADGameFileDescription { fileName = "resource.000", fileType = 0, md5 = "d3bceaebef3f7be941c2038b3565161e", fileSize = 922406},
+                    new ADGameFileDescription { fileName = "resource.001", fileType = 0, md5 = "ec20246209d7b19f38989261e5c8f5b8", fileSize = 1111226},
+                    new ADGameFileDescription { fileName = "resource.002", fileType = 0, md5 = "85d6935ef77e6b0e16bc307640a0d913", fileSize = 1088312},
+            }, Core.Language.EN_ANY, Platform.DOS),
+
+            // Larry 1 VGA Remake - English DOS (from FRG)
+            // SCI interpreter version 1.000.510
+            new ADGameDescription("lsl1sci", "SCI",
+                new [] {
+                    new ADGameFileDescription { fileName = "resource.map", fileType = 0, md5 = "8606b083b011a0cc4a1fbfc2198a0a77", fileSize = 3198},
+                    new ADGameFileDescription { fileName = "resource.000", fileType = 0, md5 = "d3bceaebef3f7be941c2038b3565161e", fileSize = 918242},
+                    new ADGameFileDescription { fileName = "resource.001", fileType = 0, md5 = "d34cadb11e1aefbb497cf91bc1d3baa7", fileSize = 1114688},
+                    new ADGameFileDescription { fileName = "resource.002", fileType = 0, md5 = "85b030bb66d5342b0a068f1208c431a8", fileSize = 1078443},
+                }, Core.Language.EN_ANY, Platform.DOS),
         };
 
         static readonly Dictionary<string, SciGameId> s_gameIdStrToEnum = new Dictionary<string, SciGameId>

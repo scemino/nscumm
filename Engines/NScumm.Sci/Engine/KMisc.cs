@@ -209,7 +209,8 @@ namespace NScumm.Sci.Engine
                         {
                             // Ignore script bug in QFG1VGA, when closing any conversation dialog with esc
                         }
-                        else {
+                        else
+                        {
                             // Usually, the result of a script bug. Non-critical
                             Warning($"Attempt to kMemory::free() non-dynmem pointer {argv.Value[1]}");
                         }
@@ -238,10 +239,11 @@ namespace NScumm.Sci.Engine
                         }
                         if (@ref.isRaw)
                             return Register.Make(0, @ref.raw.Data.ReadSciEndianUInt16(@ref.raw.Offset));
-                        else {
+                        else
+                        {
                             if (@ref.skipByte)
                                 throw new InvalidOperationException($"Attempt to peek memory at odd offset {argv.Value[1]}");
-                            return @ref.reg[0];
+                            return @ref.reg.Value[0];
                         }
                     }
                 case MemoryFunction.POKE:
@@ -261,10 +263,11 @@ namespace NScumm.Sci.Engine
                             }
                             @ref.raw.Data.WriteSciEndianUInt16(@ref.raw.Offset, (ushort)argv.Value[2].Offset);       // Amiga versions are BE
                         }
-                        else {
+                        else
+                        {
                             if (@ref.skipByte)
                                 throw new InvalidOperationException($"Attempt to poke memory at odd offset {argv.Value[1]}");
-                            @ref.reg[0] = argv.Value[2];
+                            @ref.reg = new StackPtr(argv.Value, 2);
                         }
                         break;
                     }
@@ -517,7 +520,7 @@ namespace NScumm.Sci.Engine
                     throw new InvalidOperationException($"Attempt to use unknown GetTime mode {mode}");
             }
 
-            Debug($"GetTime=>{retval}");
+            //Debug($"GetTime=>{retval}");
             return Register.Make(0, (ushort)retval);
         }
 

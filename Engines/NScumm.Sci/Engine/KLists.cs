@@ -58,7 +58,7 @@ namespace NScumm.Sci.Engine
             Register key = argv.Value[1];
             Register list_pos = argv.Value[0];
 
-            Debug($"Looking for key {key} in list {list_pos}");
+            //Debug($"Looking for key {key} in list {list_pos}");
 
 # if CHECK_LISTS
             checkListPointer(s._segMan, argv[0]);
@@ -66,22 +66,22 @@ namespace NScumm.Sci.Engine
 
             node_pos = s._segMan.LookupList(list_pos).first;
 
-            Debug($"First node at {node_pos}");
+            //Debug($"First node at {node_pos}");
 
             while (!node_pos.IsNull)
             {
                 Node n = s._segMan.LookupNode(node_pos);
                 if (n.key == key)
                 {
-                    Debug($" Found key at {node_pos}");
+                    // Debug($" Found key at {node_pos}");
                     return node_pos;
                 }
 
                 node_pos = n.succ;
-                Debug($"NextNode at {node_pos}");
+                //Debug($"NextNode at {node_pos}");
             }
 
-            Debug($"Looking for key without success");
+            //Debug($"Looking for key without success");
             return Register.NULL_REG;
         }
 

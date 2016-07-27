@@ -20,21 +20,52 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using NScumm.Core;
+using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sci
 {
     enum ResSourceType
     {
-        Directory = 0,   ///< Directories containing game resources/patches
-        Patch,           ///< External resource patches
-        Volume,          ///< Game resources (resource.* or ressci.*)
-        ExtMap,          ///< Non-audio resource maps
-        IntMap,          ///< SCI1.1 and later audio resource maps
-        AudioVolume,     ///< Audio resources - resource.sfx / resource.aud
-        ExtAudioMap,     ///< SCI1 audio resource maps
-        Wave,            ///< External WAVE files, patched in as sound resources
-        MacResourceFork, ///< Mac SCI1.1 and later resource forks
-        Chunk            ///< Script chunk resources (*.chk)
+        /// <summary>
+        /// Directories containing game resources/patches.
+        /// </summary>
+        Directory = 0,
+        /// <summary>
+        /// External resource patches.
+        /// </summary>
+        Patch,
+        /// <summary>
+        /// Game resources (resource.* or ressci.*).
+        /// </summary>
+        Volume,
+        /// <summary>
+        /// Non-audio resource maps.
+        /// </summary>
+        ExtMap,
+        /// <summary>
+        /// SCI1.1 and later audio resource maps.
+        /// </summary>
+        IntMap,
+        /// <summary>
+        /// Audio resources - resource.sfx / resource.aud.
+        /// </summary>
+        AudioVolume,
+        /// <summary>
+        /// SCI1 audio resource maps.
+        /// </summary>
+        ExtAudioMap,
+        /// <summary>
+        /// External WAVE files, patched in as sound resources.
+        /// </summary>
+        Wave,
+        /// <summary>
+        /// Mac SCI1.1 and later resource forks.
+        /// </summary>
+        MacResourceFork,
+        /// <summary>
+        /// Script chunk resources (*.chk).
+        /// </summary>
+        Chunk
     }
 
     /// <summary>
@@ -70,9 +101,10 @@ namespace NScumm.Sci
                 internal const int MAX_MEMORY = 256 * 1024;	// 256KB
 
                 internal ResourceId _id; // TODO: _id could almost be made const, only readResourceInfo() modifies it...
-                                         /// <summary>
-                                         /// Offset in file
-                                         /// </summary>
+              
+                /// <summary>
+                /// Offset in file
+                /// </summary>
                 internal int _fileOffset;
                 internal ResourceSource _source;
                 protected ResourceManager _resMan;
@@ -86,6 +118,8 @@ namespace NScumm.Sci
                 // public visibility to let the rest of the engine compile without changes.
                 public int size;
                 public byte[] data;
+                public int _headerSize;
+                public byte[] _header;
 
                 public ResourceType ResourceType { get { return _id.Type; } }
                 public ushort Number { get { return _id.Number; } }
@@ -143,7 +177,7 @@ namespace NScumm.Sci
 #if ENABLE_SCI32
                         case ResVersion.Sci2:
                         case ResVersion.Sci3:
-                            type = _resMan.ConvertResType(file->readByte());
+                            type = _resMan.ConvertResType(file.readByte());
                             number = br.ReadUInt16();
                             szPacked = br.ReadUInt32();
                             szUnpacked = br.ReadUInt32();
@@ -212,6 +246,57 @@ namespace NScumm.Sci
                     _status = ResourceStatus.NoMalloc;
                 }
 
+                public bool LoadFromPatchFile()
+                {
+                    string filename = _source.LocationName;
+                    var file = Core.Engine.OpenFileRead(filename);
+                    if (file == null)
+                    {
+                        Warning($"Failed to open patch file {filename}");
+                        Unalloc();
+                        return false;
+                    }
+                    // Skip resourceid and header size byte
+                    file.Seek(2, SeekOrigin.Begin);
+                    return LoadPatch(file);
+                }
+
+                // Resource manager constructors and operations
+
+                private bool LoadPatch(Stream file)
+                {
+                    Resource res = this;
+
+                    // We assume that the resource type matches res.type
+                    //  We also assume that the current file position is right at the actual data (behind resourceid/headersize byte)
+
+                    res.data = new byte[res.size];
+
+                    if (res._headerSize > 0)
+                        res._header = new byte[res._headerSize];
+
+                    if ((res.data == null) || ((res._headerSize > 0) && (res._header == null)))
+                    {
+                        Error($"Can't allocate {res.size + res._headerSize} bytes needed for loading {res._id}");
+                    }
+
+                    int really_read;
+                    if (res._headerSize > 0)
+                    {
+                        really_read = file.Read(res._header, 0, (int)res._headerSize);
+                        if (really_read != res._headerSize)
+                            Error($"Read {really_read} bytes from {res._id} but expected {res._headerSize}");
+                    }
+
+                    really_read = file.Read(res.data, 0, (int)res.size);
+                    if (really_read != res.size)
+                        Error($"Read {really_read} bytes from {res._id} but expected {res.size}");
+
+                    res._status = ResourceStatus.Allocated;
+                    return true;
+                }
+
+
                 internal ResourceErrorCodes Decompress(ResVersion volVersion, Stream file)
                 {
                     int szPacked = 0;
@@ -239,8 +324,7 @@ namespace NScumm.Sci
                             dec = new DecompressorLZW(compression);
                             break;
                         case ResourceCompression.DCL:
-                            throw new NotImplementedException();
-                            //dec = new DecompressorDCL();
+                            dec = new DecompressorDCL();
                             break;
 #if ENABLE_SCI32
                         case ResourceCompression.STACpack:
@@ -248,7 +332,7 @@ namespace NScumm.Sci
                             break;
 #endif
                         default:
-                            // TODO: error("Resource %s: Compression method %d not supported", _id.toString().c_str(), compression);
+                            Error($"Resource {_id}: Compression method {compression} not supported");
                             return ResourceErrorCodes.UNKNOWN_COMPRESSION;
                     }
 
@@ -299,7 +383,7 @@ namespace NScumm.Sci
                 var fileStream = resMan.GetVolumeFile(this);
                 if (fileStream == null)
                 {
-                    // TODO/ warning("Failed to open %s", getLocationName().c_str());
+                    Warning($"Failed to open {LocationName}");
                     if (res != null)
                         res.Unalloc();
                 }
@@ -323,8 +407,8 @@ namespace NScumm.Sci
                 var error = res.Decompress(resMan._volVersion, fileStream);
                 if (error != ResourceErrorCodes.NONE)
                 {
-                    // TODO: warning("Error %d occurred while reading %s from resource file %s: %s",
-                    //error, res->_id.toString().c_str(), res->getResourceLocation().c_str(),
+                    //Warning($"Error {error} occurred while reading {res._id} from resource file %s: %s",
+                    //res.ResourceLocation,
                     //s_errorDescriptions[error]);
                     res.Unalloc();
                 }
@@ -378,6 +462,23 @@ namespace NScumm.Sci
             }
         }
 
+        class PatchResourceSource : ResourceSource
+        {
+            public PatchResourceSource(string name) : base(ResSourceType.Patch, name) { }
+
+            public override void LoadResource(ResourceManager resMan, Resource res)
+            {
+                bool result = res.LoadFromPatchFile();
+                if (!result)
+                {
+                    // TODO: We used to fallback to the "default" code here if loadFromPatchFile
+                    // failed, but I am not sure whether that is really appropriate.
+                    // In fact it looks like a bug to me, so I commented this out for now.
+                    //ResourceSource::loadResource(res);
+                }
+            }
+        }
+
         class ExtMapResourceSource : ResourceSource
         {
             public ExtMapResourceSource(string name, int volNum, object resFile = null)
@@ -426,38 +527,38 @@ namespace NScumm.Sci
                  * table for later usage.
                  */
 
-                //throw new NotImplementedException();
-                //var fileStream = getVolumeFile(resMan, 0);
-                //if (!fileStream)
-                //    return;
+                var fileStream = GetVolumeFile(resMan, null);
+                var br = new BinaryReader(fileStream);
+                if (fileStream == null)
+                    return;
 
-                //fileStream->seek(0, SEEK_SET);
-                //uint32 compressionType = fileStream->readUint32BE();
-                //switch (compressionType)
-                //{
-                //    case MKTAG('M', 'P', '3', ' '):
-                //    case MKTAG('O', 'G', 'G', ' '):
-                //    case MKTAG('F', 'L', 'A', 'C'):
-                //        // Detected a compressed audio volume
-                //        _audioCompressionType = compressionType;
-                //        // Now read the whole offset mapping table for later usage
-                //        int32 recordCount = fileStream->readUint32LE();
-                //        if (!recordCount)
-                //            error("compressed audio volume doesn't contain any entries");
-                //        int32* offsetMapping = new int32[(recordCount + 1) * 2];
-                //        _audioCompressionOffsetMapping = offsetMapping;
-                //        for (int recordNo = 0; recordNo < recordCount; recordNo++)
-                //        {
-                //            *offsetMapping++ = fileStream->readUint32LE();
-                //            *offsetMapping++ = fileStream->readUint32LE();
-                //        }
-                //        // Put ending zero
-                //        *offsetMapping++ = 0;
-                //        *offsetMapping++ = fileStream->size();
-                //}
+                fileStream.Seek(0, SeekOrigin.Begin);
+                uint compressionType = br.ReadUInt32BigEndian();
+                if (compressionType == ScummHelper.MakeTag('M', 'P', '3', ' ') ||
+                    compressionType == ScummHelper.MakeTag('O', 'G', 'G', ' ') ||
+                    compressionType == ScummHelper.MakeTag('F', 'L', 'A', 'C'))
+                {
+                    // Detected a compressed audio volume
+                    _audioCompressionType = compressionType;
+                    // Now read the whole offset mapping table for later usage
+                    int recordCount = br.ReadInt32();
+                    if (recordCount == 0)
+                        Error("compressed audio volume doesn't contain any entries");
+                    var offsetMapping = new int[(recordCount + 1) * 2];
+                    var i = 0;
+                    _audioCompressionOffsetMapping = offsetMapping;
+                    for (int recordNo = 0; recordNo < recordCount; recordNo++)
+                    {
+                        offsetMapping[i++] = br.ReadInt32();
+                        offsetMapping[i++] = br.ReadInt32();
+                    }
+                    // Put ending zero
+                    offsetMapping[i++] = 0;
+                    offsetMapping[i++] = (int)fileStream.Length;
+                }
 
-                //if (_resourceFile)
-                //    delete fileStream;
+                if (_resourceFile != null)
+                    fileStream.Dispose();
             }
 
             public override void LoadResource(ResourceManager resMan, Resource res)

@@ -24,6 +24,7 @@ using System.IO;
 using NScumm.Core;
 using System.Text;
 using System.Xml.Linq;
+using System.Linq;
 
 namespace NScumm
 {
@@ -31,6 +32,7 @@ namespace NScumm
     {
         public System.Collections.Generic.IEnumerable<string> EnumerateFiles(string path, string searchPattern, NScumm.Core.SearchOption option)
         {
+            var regex = new System.Text.RegularExpressions.Regex(WildcardToRegex(searchPattern), System.Text.RegularExpressions.RegexOptions.IgnoreCase);
             System.IO.SearchOption sysOption = System.IO.SearchOption.TopDirectoryOnly;
             switch (option)
             {
@@ -41,7 +43,8 @@ namespace NScumm
                     sysOption = System.IO.SearchOption.AllDirectories;
                     break;
             }
-            return Directory.EnumerateFiles(path, searchPattern, sysOption);
+            return Directory.EnumerateFiles(path, "*", sysOption)
+                            .Where(o => regex.IsMatch(Path.GetFileName(o)));
         }
 
         public string Combine(string path1, string path2)
@@ -135,6 +138,13 @@ namespace NScumm
 			var dir = AppDomain.CurrentDomain.BaseDirectory;
             var fullPath = ScummHelper.LocatePath(dir, path);
             return OpenFileRead(fullPath);
+        }
+
+        private static string WildcardToRegex(string pattern)
+        {
+            return "^" + System.Text.RegularExpressions.Regex.Escape(pattern).
+            Replace("\\*", ".*").
+            Replace("\\?", ".") + "$";
         }
     }
 }

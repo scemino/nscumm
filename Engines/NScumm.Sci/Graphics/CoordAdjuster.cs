@@ -49,6 +49,8 @@ namespace NScumm.Sci.Graphics
         public virtual void MoveCursor(ref Point pos)
         {
         }
+
+        public virtual Rect PictureGetDisplayArea() { return new Rect(0, 0); }
     }
 
     internal class GfxCoordAdjuster16 : GfxCoordAdjuster
@@ -98,6 +100,13 @@ namespace NScumm.Sci.Graphics
 
             pos.Y = ScummHelper.Clip(pos.Y, _ports._picWind.rect.Top, _ports._picWind.rect.Bottom - 1);
             pos.X = ScummHelper.Clip(pos.X, _ports._picWind.rect.Left, _ports._picWind.rect.Right - 1);
+        }
+
+        public override Rect PictureGetDisplayArea()
+        {
+            var displayArea = new Rect(_ports.Port.rect.Right, _ports.Port.rect.Bottom);
+            displayArea.MoveTo(_ports.Port.left, _ports.Port.top);
+            return displayArea;
         }
     }
 }

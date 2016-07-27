@@ -776,7 +776,7 @@ namespace NScumm.Sci.Engine
         /// <summary>
         /// Gets a value indicationg whether the script is marked as being deleted.
         /// </summary>
-        public bool IsMarkedAsDeleted { get; private set; }
+        public bool IsMarkedAsDeleted { get { return _markedAsDeleted; }}
 
         /// <summary>
         /// Retrieves the number of exports of script.

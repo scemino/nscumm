@@ -527,7 +527,8 @@ namespace NScumm.Sci.Engine
                     {
                         throw new InvalidOperationException($"Could not find local script from segment {s.xs.local_segment:X}");
                     }
-                    else {
+                    else
+                    {
                         s.variablesSegment[VAR_LOCAL] = local_script.LocalsSegment;
                         s.variablesBase[VAR_LOCAL] = s.variables[VAR_LOCAL] = local_script.LocalsBegin;
                         s.variablesMax[VAR_LOCAL] = local_script.LocalsCount;
@@ -692,7 +693,7 @@ namespace NScumm.Sci.Engine
                                   // < (unsigned)
                         s.r_prev = s.r_acc;
                         var t = POP32();
-                        Debug($"op_ult: {t} < {s.r_acc} = {t.LowerThanUnsigned(s.r_acc)}");
+                        //Debug($"op_ult: {t} < {s.r_acc} = {t.LowerThanUnsigned(s.r_acc)}");
                         s.r_acc = Register.Make(0, t.LowerThanUnsigned(s.r_acc));
                         break;
 
@@ -924,8 +925,8 @@ namespace NScumm.Sci.Engine
                                 PUSH32(obj.InfoSelector);
                             else if (extOpcode == 0x4e)
                                 s.r_acc = obj.SuperClassSelector;    // TODO: is this correct?
-                                                                                    // TODO: There are also opcodes in
-                                                                                    // here to get the superclass, and possibly the species too.
+                                                                     // TODO: There are also opcodes in
+                                                                     // here to get the superclass, and possibly the species too.
                             else
                                 throw new InvalidOperationException($"Dummy opcode 0x{opcode:X} called");  // should never happen
                         }
@@ -963,7 +964,8 @@ namespace NScumm.Sci.Engine
 
                         if (!r_temp.IsPointer)
                             throw new InvalidOperationException("[VM]: Invalid superclass in object");
-                        else {
+                        else
+                        {
                             s_temp = s.xs.sp;
                             s.xs.sp -= ((opparams[1] >> 1) + s.r_rest); // Adjust stack
 
@@ -1126,7 +1128,8 @@ namespace NScumm.Sci.Engine
                         {
                             PUSH32(s.xs.objp);
                         }
-                        else {
+                        else
+                        {
                             // Debug opcode op_file
                         }
                         break;
@@ -1333,7 +1336,8 @@ namespace NScumm.Sci.Engine
                         {
                             opparams[i] = src[offset++];
                         }
-                        else {
+                        else
+                        {
                             opparams[i] = (short)src.Data.ReadSci11EndianUInt16(src.Offset + offset);
                             offset += 2;
                         }
@@ -1345,7 +1349,8 @@ namespace NScumm.Sci.Engine
                         {
                             opparams[i] = (sbyte)src[offset++];
                         }
-                        else {
+                        else
+                        {
                             opparams[i] = (short)src.Data.ReadSci11EndianUInt16(src.Offset + offset);
                             offset += 2;
                         }
@@ -1374,7 +1379,8 @@ namespace NScumm.Sci.Engine
                 {
                     // op_pushSelf: no adjustment necessary
                 }
-                else {
+                else
+                {
                     // Debug opcode op_file, skip null-terminated string (file name)
                     while (src[offset++] != 0) { }
                 }
@@ -1433,7 +1439,8 @@ namespace NScumm.Sci.Engine
                     SciEngine.Instance._debugState.breakpointWasHit = true;
                 }
             }
-            else {
+            else
+            {
                 // Sub-functions available, check signature and call that one directly
                 if (argc < 1)
                     throw new InvalidOperationException($"[VM] k{kernelCall.name}[{kernelCallNr:X}]: no subfunction ID parameter given");
@@ -1526,21 +1533,19 @@ namespace NScumm.Sci.Engine
                                 // Uninitialized read on a temp
                                 //  We need to find correct replacements for each situation manually
                                 SciTrackOriginReply originReply;
-                                // TODO: SciWorkaroundSolution solution = Workarounds.TrackOriginAndFindWorkaround(index, Workarounds.uninitializedReadWorkarounds, out originReply);
-                                throw new NotImplementedException();
-                                SciWorkaroundSolution solution;
+                                SciWorkaroundSolution solution = Workarounds.TrackOriginAndFindWorkaround(index, Workarounds.UninitializedReadWorkarounds, out originReply);
                                 if (solution.type == SciWorkaroundType.NONE)
                                 {
 # if RELEASE_BUILD
                                     // If we are running an official ScummVM release . fake 0 in unknown cases
-                                    warning("Uninitialized read for temp %d from method %s::%s (room %d, script %d, localCall %x)",
+                                    Warning("Uninitialized read for temp %d from method %s::%s (room %d, script %d, localCall %x)",
                                     index, originReply.objectName.c_str(), originReply.methodName.c_str(), s.currentRoomNumber(),
                                     originReply.scriptNr, originReply.localCallOffset);
 
-                                    s.variables[type][index] = NULL_REG;
+                                    s.variables[type][index] = Resgister.NULL_REG;
                                     break;
 #else
-                                    throw new InvalidOperationException("Uninitialized read for temp {index} from method {originReply.objectName}::{originReply.methodName} (room {s.CurrentRoomNumber}, script {originReply.scriptNr}, localCall {originReply.localCallOffset:X})");
+                                    throw new InvalidOperationException($"Uninitialized read for temp {index} from method {originReply.objectName}::{originReply.methodName} (room {s.CurrentRoomNumber}, script {originReply.scriptNr}, localCall {originReply.localCallOffset:X})");
 #endif
                                 }
                                 //assert(solution.type == WORKAROUND_FAKE);
@@ -1552,14 +1557,11 @@ namespace NScumm.Sci.Engine
                             //  We return 0 currently in that case
                             // TODO: debugC(kDebugLevelVM, "[VM] Read for a parameter goes out-of-bounds, onto the stack and gets uninitialized temp");
                             return Register.NULL_REG;
-                        default:
-                            break;
                     }
                 }
                 return s.variables[type][index];
             }
-            else
-                return s.r_acc;
+            return s.r_acc;
         }
 
         private static void write_var(EngineState s, int type, int index, Register value)
@@ -1620,7 +1622,8 @@ namespace NScumm.Sci.Engine
                         // TODO: SciEngine.Instance.SyncIngameAudioOptions();
                         SciEngine.Instance.EngineState._syncedAudioOptions = true;
                     }
-                    else {
+                    else
+                    {
                         // Update ScummVM's audio options
                         // TODO: SciEngine.Instance.UpdateScummVMAudioOptions();
                     }
@@ -1648,7 +1651,8 @@ namespace NScumm.Sci.Engine
                         // Fatal, as the game is trying to do an OOB access
                         throw new InvalidOperationException($"{txt}. [VM] Access would be outside even of the stack ({total_offset}); access denied");
                     }
-                    else {
+                    else
+                    {
                         // TODO: debugC(kDebugLevelVM, "%s", txt.c_str());
                         // TODO: debugC(kDebugLevelVM, "[VM] Access within stack boundaries; access granted.");
                         return true;
@@ -1671,7 +1675,8 @@ namespace NScumm.Sci.Engine
                 {
                     throw new InvalidOperationException("Invalid varselector exec stack entry");
                 }
-                else {
+                else
+                {
                     // varselector access?
                     if (xs.argc != 0)
                     { // write?

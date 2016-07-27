@@ -183,6 +183,7 @@
     <Compile Include="Audio\Mods\ProtrackerStream.cs" />
     <Compile Include="Audio\Mods\Module.cs" />
     <Compile Include="IO\SaveStateDescriptor.cs" />
+    <Compile Include="Common\Dcl.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <ItemGroup>

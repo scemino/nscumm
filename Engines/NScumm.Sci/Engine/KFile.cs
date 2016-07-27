@@ -21,6 +21,7 @@ using NScumm.Core;
 using System;
 using System.IO;
 using static NScumm.Core.DebugHelper;
+using System.Linq;
 
 namespace NScumm.Sci.Engine
 {
@@ -221,6 +222,11 @@ namespace NScumm.Sci.Engine
             //	warning("kGetSaveDir called with %d parameter(s): %04x:%04x", argc, PRINT_REG(argv[0]));
 #endif
             return s._segMan.SaveDirPtr;
+        }
+
+        private static Register kGetSaveFiles(EngineState s, int argc, StackPtr? argv)
+        {
+            throw new NotImplementedException();
         }
 
         private static Register kRestoreGame(EngineState s, int argc, StackPtr? argv)
@@ -641,13 +647,11 @@ namespace NScumm.Sci.Engine
                 // file
                 if (inFile == null)
                 {
-                    var path = ScummHelper.LocatePath(SciEngine.Instance.Directory, englishName);
-                    inFile = ServiceLocator.FileStorage.OpenFileRead(path);
+                    inFile = Core.Engine.OpenFileRead(englishName);
                 }
 
-                // TODO:
-                //if (inFile == null)
-                //    debugC(kDebugLevelFile, "  . file_open(_K_FILE_MODE_OPEN_OR_FAIL): failed to open file '%s'", englishName.c_str());
+                // TODO: if (inFile == null)
+                // TODO: debugC(kDebugLevelFile, "  . file_open(_K_FILE_MODE_OPEN_OR_FAIL): failed to open file '%s'", englishName.c_str());
             }
             else if (mode == _K_FILE_MODE_CREATE)
             {
@@ -711,11 +715,11 @@ namespace NScumm.Sci.Engine
             ushort handle = argv.Value[0].ToUInt16();
 
 #if ENABLE_SCI32
-                        if (handle == VIRTUALFILE_HANDLE)
-                        {
-                            s._virtualIndexFile.close();
-                            return SIGNAL_REG;
-                        }
+            if (handle == VIRTUALFILE_HANDLE)
+            {
+                s._virtualIndexFile.close();
+                return SIGNAL_REG;
+            }
 #endif
 
             FileHandle f = GetFileFromHandle(s, handle);
@@ -873,69 +877,104 @@ namespace NScumm.Sci.Engine
 
         private static Register kFileIOReadString(EngineState s, int argc, StackPtr? argv)
         {
-            throw new NotImplementedException();
-            //            uint16 maxsize = argv[1].toUint16();
-            //            char* buf = new char[maxsize];
-            //            uint16 handle = argv[2].toUint16();
-            //            debugC(kDebugLevelFile, "kFileIO(readString): %d, %d", handle, maxsize);
-            //            uint32 bytesRead;
+            ushort maxsize = argv.Value[1].ToUInt16();
+            var buf = new byte[maxsize];
+            ushort handle = argv.Value[2].ToUInt16();
+            // TODO:      debugC(kDebugLevelFile, "kFileIO(readString): %d, %d", handle, maxsize);
+            uint bytesRead;
 
-            //# if ENABLE_SCI32
-            //            if (handle == VIRTUALFILE_HANDLE)
-            //                bytesRead = s._virtualIndexFile.readLine(buf, maxsize);
-            //            else
-            //#endif
-            //                bytesRead = fgets_wrapper(s, buf, maxsize, handle);
+#if ENABLE_SCI32
+                        if (handle == VIRTUALFILE_HANDLE)
+                            bytesRead = s._virtualIndexFile.readLine(buf, maxsize);
+                        else
+#endif
+            bytesRead = (uint)fgets_wrapper(s, buf, maxsize, handle);
 
-            //            s._segMan.memcpy(argv[0], (const byte*)buf, maxsize);
-            //            delete[] buf;
-            //            return bytesRead ? argv[0] : NULL_REG;
+            s._segMan.Memcpy(argv.Value[0], new ByteAccess(buf), maxsize);
+            return bytesRead != 0 ? argv.Value[0] : Register.NULL_REG;
         }
+
+        private static int fgets_wrapper(EngineState s, byte[] dest, int maxsize, int handle)
+        {
+            FileHandle f = GetFileFromHandle(s, (uint)handle);
+            if (f == null)
+                return 0;
+
+            if (f._in == null)
+            {
+                throw new InvalidOperationException($"fgets_wrapper: Trying to read from file '{f._name}' opened for writing");
+            }
+
+            var @in = new StreamReader(f._in);
+            int readBytes = 0;
+            if (maxsize > 1)
+            {
+                var dst = @in.ReadLine();
+                readBytes = dst.Length; // FIXME: sierra sci returned byte count and didn't react on NUL characters
+                                        // The returned string must not have an ending LF
+                if (readBytes > 0)
+                {
+                    dst = dst + "\xA";
+                }
+                var data = dst.ToCharArray().Select(c => (byte)c).ToArray();
+                Array.Copy(data, dest, data.Length);
+            }
+            else
+            {
+                dest[0] = 0;
+            }
+
+            // TODO: debugC(kDebugLevelFile, "  . FGets'ed \"%s\"", dest);
+            return readBytes;
+        }
+
 
         private static Register kFileIOWriteString(EngineState s, int argc, StackPtr? argv)
         {
-            throw new NotImplementedException();
-            //            int handle = argv[0].toUint16();
-            //            Common::String str = s._segMan.getString(argv[1]);
-            //            debugC(kDebugLevelFile, "kFileIO(writeString): %d", handle);
+            int handle = argv.Value[0].ToUInt16();
+            var str = s._segMan.GetString(argv.Value[1]);
+            // TODO: DebugC(kDebugLevelFile, "kFileIO(writeString): %d", handle);
 
-            //            // Handle sciAudio calls in fanmade games here. sciAudio is an
-            //            // external .NET library for playing MP3 files in fanmade games.
-            //            // It runs in the background, and obtains sound commands from the
-            //            // currently running game via text files (called "conductor files").
-            //            // We skip creating these files, and instead handle the calls
-            //            // directly. Since the sciAudio calls are only creating text files,
-            //            // this is probably the most straightforward place to handle them.
-            //            if (handle == 0xFFFF && str.hasPrefix("(sciAudio"))
-            //            {
-            //                Common::List<ExecStack>::const_iterator iter = s._executionStack.reverse_begin();
-            //                iter--; // sciAudio
-            //                iter--; // sciAudio child
-            //                SciEngine.Instance._audio.handleFanmadeSciAudio(iter.sendp, s._segMan);
-            //                return NULL_REG;
-            //            }
+            // Handle sciAudio calls in fanmade games here. sciAudio is an
+            // external .NET library for playing MP3 files in fanmade games.
+            // It runs in the background, and obtains sound commands from the
+            // currently running game via text files (called "conductor files").
+            // We skip creating these files, and instead handle the calls
+            // directly. Since the sciAudio calls are only creating text files,
+            // this is probably the most straightforward place to handle them.
+            if (handle == 0xFFFF && str.StartsWith("(sciAudio"))
+            {
+                throw new NotImplementedException();
+                //List<ExecStack>::const_iterator iter = s._executionStack.reverse_begin();
+                //iter--; // sciAudio
+                //iter--; // sciAudio child
+                //SciEngine.Instance._audio.handleFanmadeSciAudio(iter.sendp, s._segMan);
+                //return NULL_REG;
+            }
 
-            //# if ENABLE_SCI32
-            //            if (handle == VIRTUALFILE_HANDLE)
-            //            {
-            //                s._virtualIndexFile.write(str.c_str(), str.size());
-            //                return NULL_REG;
-            //            }
-            //#endif
+#if ENABLE_SCI32
+                        if (handle == VIRTUALFILE_HANDLE)
+                        {
+                            s._virtualIndexFile.write(str.c_str(), str.size());
+                            return NULL_REG;
+                        }
+#endif
 
-            //            FileHandle* f = getFileFromHandle(s, handle);
+            FileHandle f = GetFileFromHandle(s, (uint)handle);
 
-            //            if (f)
-            //            {
-            //                f._out.write(str.c_str(), str.size());
-            //                if (getSciVersion() <= SCI_VERSION_0_LATE)
-            //                    return s.r_acc;    // SCI0 semantics: no value returned
-            //                return NULL_REG;
-            //            }
+            if (f != null)
+            {
+                var sw = new StreamWriter(f._out);
+                sw.Write(str);
+                sw.Flush();
+                if (ResourceManager.GetSciVersion() <= SciVersion.V0_LATE)
+                    return s.r_acc;    // SCI0 semantics: no value returned
+                return Register.NULL_REG;
+            }
 
-            //            if (getSciVersion() <= SCI_VERSION_0_LATE)
-            //                return s.r_acc;    // SCI0 semantics: no value returned
-            //            return make_reg(0, 6); // DOS - invalid handle
+            if (ResourceManager.GetSciVersion() <= SciVersion.V0_LATE)
+                return s.r_acc;    // SCI0 semantics: no value returned
+            return Register.Make(0, 6); // DOS - invalid handle
         }
 
         private static Register kFileIOSeek(EngineState s, int argc, StackPtr? argv)
@@ -996,78 +1035,80 @@ namespace NScumm.Sci.Engine
 
         private static Register kFileIOExists(EngineState s, int argc, StackPtr? argv)
         {
-            throw new NotImplementedException();
-            //            Common::String name = s._segMan.getString(argv[0]);
+            var name = s._segMan.GetString(argv.Value[0]);
 
-            //# if ENABLE_SCI32
-            //            // Cache the file existence result for the Phantasmagoria
-            //            // save index file, as the game scripts keep checking for
-            //            // its existence.
-            //            if (name == PHANTASMAGORIA_SAVEGAME_INDEX && s._virtualIndexFile)
-            //                return TRUE_REG;
-            //#endif
+#if ENABLE_SCI32
+                        // Cache the file existence result for the Phantasmagoria
+                        // save index file, as the game scripts keep checking for
+                        // its existence.
+                        if (name == PHANTASMAGORIA_SAVEGAME_INDEX && s._virtualIndexFile)
+                            return TRUE_REG;
+#endif
 
-            //            bool exists = false;
+            bool exists = false;
 
-            //            // Check for regular file
-            //            exists = Common::File::exists(name);
+            // Check for regular file
+            exists = ServiceLocator.FileStorage.FileExists(name);
 
-            //            // Check for a savegame with the name
-            //            Common::SaveFileManager* saveFileMan = SciEngine.Instance.getSaveFileManager();
-            //            if (!exists)
-            //                exists = !saveFileMan.listSavefiles(name).empty();
+            // Check for a savegame with the name
+            var saveFileMan = SciEngine.Instance.SaveFileManager;
+            if (!exists)
+                exists = saveFileMan.ListSavefiles(name).Length > 0;
 
-            //            // Try searching for the file prepending "target-"
-            //            const Common::String wrappedName = SciEngine.Instance.wrapFilename(name);
-            //            if (!exists)
-            //            {
-            //                exists = !saveFileMan.listSavefiles(wrappedName).empty();
-            //            }
+            // Try searching for the file prepending "target-"
+            var wrappedName = SciEngine.Instance.WrapFilename(name);
+            if (!exists)
+            {
+                exists = saveFileMan.ListSavefiles(wrappedName).Length > 0;
+            }
 
-            //            // SCI2+ debug mode
-            //            if (DebugMan.isDebugChannelEnabled(kDebugLevelDebugMode))
-            //            {
-            //                if (!exists && name == "1.scr")     // PQ4
-            //                    exists = true;
-            //                if (!exists && name == "18.scr")    // QFG4
-            //                    exists = true;
-            //                if (!exists && name == "99.scr")    // GK1, KQ7
-            //                    exists = true;
-            //                if (!exists && name == "classes")   // GK2, SQ6, LSL7
-            //                    exists = true;
-            //            }
+            // SCI2+ debug mode
+            // TODO: if (DebugMan.isDebugChannelEnabled(kDebugLevelDebugMode))
+            //{
+            //    if (!exists && name == "1.scr")     // PQ4
+            //        exists = true;
+            //    if (!exists && name == "18.scr")    // QFG4
+            //        exists = true;
+            //    if (!exists && name == "99.scr")    // GK1, KQ7
+            //        exists = true;
+            //    if (!exists && name == "classes")   // GK2, SQ6, LSL7
+            //        exists = true;
+            //}
 
-            //            // Special case for non-English versions of LSL5: The English version of
-            //            // LSL5 calls kFileIO(), case K_FILEIO_OPEN for reading to check if
-            //            // memory.drv exists (which is where the game's password is stored). If
-            //            // it's not found, it calls kFileIO() again, case K_FILEIO_OPEN for
-            //            // writing and creates a new file. Non-English versions call kFileIO(),
-            //            // case K_FILEIO_FILE_EXISTS instead, and fail if memory.drv can't be
-            //            // found. We create a default memory.drv file with no password, so that
-            //            // the game can continue.
-            //            if (!exists && name == "memory.drv")
-            //            {
-            //                // Create a new file, and write the bytes for the empty password
-            //                // string inside
-            //                byte defaultContent[] = { 0xE9, 0xE9, 0xEB, 0xE1, 0x0D, 0x0A, 0x31, 0x30, 0x30, 0x30 };
-            //                Common::WriteStream* outFile = saveFileMan.openForSaving(wrappedName);
-            //                for (int i = 0; i < 10; i++)
-            //                    outFile.writeByte(defaultContent[i]);
-            //                outFile.finalize();
-            //                exists = !outFile.err();   // check whether we managed to create the file.
-            //                delete outFile;
-            //            }
+            // Special case for non-English versions of LSL5: The English version of
+            // LSL5 calls kFileIO(), case K_FILEIO_OPEN for reading to check if
+            // memory.drv exists (which is where the game's password is stored). If
+            // it's not found, it calls kFileIO() again, case K_FILEIO_OPEN for
+            // writing and creates a new file. Non-English versions call kFileIO(),
+            // case K_FILEIO_FILE_EXISTS instead, and fail if memory.drv can't be
+            // found. We create a default memory.drv file with no password, so that
+            // the game can continue.
+            if (!exists && name == "memory.drv")
+            {
+                // Create a new file, and write the bytes for the empty password
+                // string inside
+                byte[] defaultContent = { 0xE9, 0xE9, 0xEB, 0xE1, 0x0D, 0x0A, 0x31, 0x30, 0x30, 0x30 };
+                using (var outFile = saveFileMan.OpenForSaving(wrappedName))
+                {
+                    for (int i = 0; i < 10; i++)
+                        outFile.WriteByte(defaultContent[i]);
+                    exists = true;   // check whether we managed to create the file.
+                }
+            }
 
-            //            // Special case for KQ6 Mac: The game checks for two video files to see
-            //            // if they exist before it plays them. Since we support multiple naming
-            //            // schemes for resource fork files, we also need to support that here in
-            //            // case someone has a "HalfDome.bin" file, etc.
-            //            if (!exists && SciEngine.Instance.getGameId() == SciGameId.KQ6 && SciEngine.Instance.getPlatform() == Common::kPlatformMacintosh &&
-            //                    (name == "HalfDome" || name == "Kq6Movie"))
-            //                exists = Common::MacResManager::exists(name);
+            // Special case for KQ6 Mac: The game checks for two video files to see
+            // if they exist before it plays them. Since we support multiple naming
+            // schemes for resource fork files, we also need to support that here in
+            // case someone has a "HalfDome.bin" file, etc.
+            if (!exists && SciEngine.Instance.GameId == SciGameId.KQ6 && SciEngine.Instance.Platform == Core.IO.Platform.Macintosh &&
+                (name == "HalfDome" || name == "Kq6Movie"))
+            {
+                throw new NotImplementedException();
+                //TODO: exists = Common::MacResManager::exists(name);
+            }
 
-            //            debugC(kDebugLevelFile, "kFileIO(fileExists) %s . %d", name.c_str(), exists);
-            //            return make_reg(0, exists);
+            // TODO: debugC(kDebugLevelFile, "kFileIO(fileExists) %s . %d", name.c_str(), exists);
+            return Register.Make(0, exists);
         }
 
         private static Register kFileIORename(EngineState s, int argc, StackPtr? argv)

@@ -26,6 +26,10 @@ namespace NScumm.Sci
 {
     internal class Decompressor
     {
+        public const int PIC_OPX_EMBEDDED_VIEW = 1;
+        public const int PIC_OPX_SET_PALETTE = 2;
+        public const int PIC_OP_OPX = 0xfe;
+
         /// <summary>
         /// bits buffer
         /// </summary>
@@ -161,9 +165,20 @@ namespace NScumm.Sci
     /// <remarks>TODO: Needs clean-up of post-processing fncs</remarks>
     internal class DecompressorLZW : Decompressor
     {
+        const int PAL_SIZE = 1284;
+        const int EXTRA_MAGIC_SIZE = 15;
+        const int VIEW_HEADER_COLORS_8BIT = 0x80;
+
         ushort _numbits;
         ushort _curtoken, _endtoken;
         ResourceCompression _compression;
+
+        // decompressor data
+        class Tokenlist
+        {
+            public byte data;
+            public ushort next;
+        }
 
         public DecompressorLZW(ResourceCompression nCompression)
         {
@@ -195,19 +210,375 @@ namespace NScumm.Sci
             return ResourceErrorCodes.NONE;
         }
 
-        private void ReorderPic(byte[] buffer, byte[] dest, int nUnpacked)
+        private void ReorderPic(byte[] src, byte[] dest, int dsize)
         {
-            throw new NotImplementedException();
+            ushort view_size, view_start, cdata_size;
+            int i;
+            var seeker = new ByteAccess(src);
+            var writer = new ByteAccess(dest);
+
+            writer.Value = PIC_OP_OPX; writer.Offset++;
+            writer.Value = PIC_OPX_SET_PALETTE; writer.Offset++;
+
+            for (i = 0; i < 256; i++) /* Palette translation map */
+            {
+                writer.Value = (byte)i;
+                writer.Offset++;
+            }
+
+            writer.WriteUInt32(0, 0); /* Palette stamp */
+            writer.Offset += 4;
+
+            view_size = seeker.ToUInt16();
+            seeker.Offset += 2;
+            view_start = seeker.ToUInt16();
+            seeker.Offset += 2;
+            cdata_size = seeker.ToUInt16();
+            seeker.Offset += 2;
+
+            var viewdata = new byte[7];
+            seeker.CopyTo(viewdata, 0, viewdata.Length);
+            seeker.Offset += viewdata.Length;
+
+            seeker.CopyTo(writer, 4 * 256);/* Palette */
+            seeker.Offset += 4 * 256;
+            writer.Offset += 4 * 256;
+
+            if (view_start != PAL_SIZE + 2)
+            { /* +2 for the opcode */
+                seeker.CopyTo(writer, view_start - PAL_SIZE - 2);
+                seeker.Offset += view_start - PAL_SIZE - 2;
+                writer.Offset += view_start - PAL_SIZE - 2;
+            }
+
+            if (dsize != view_start + EXTRA_MAGIC_SIZE + view_size)
+            {
+                seeker.CopyTo(dest, view_size + view_start + EXTRA_MAGIC_SIZE, dsize - view_size - view_start - EXTRA_MAGIC_SIZE);
+                seeker.Offset += dsize - view_size - view_start - EXTRA_MAGIC_SIZE;
+            }
+
+            byte[] cdata = new byte[cdata_size];
+            seeker.CopyTo(cdata, 0, cdata_size);
+            seeker.Offset += cdata_size;
+
+            writer = new ByteAccess(dest, view_start);
+            writer.Value = PIC_OP_OPX; writer.Offset++;
+            writer.Value = PIC_OPX_EMBEDDED_VIEW; writer.Offset++;
+            writer.Value = 0; writer.Offset++;
+            writer.Value = 0; writer.Offset++;
+            writer.Value = 0; writer.Offset++;
+            writer.WriteUInt16(0, (ushort)(view_size + 8));
+            writer.Offset += 2;
+
+            writer.CopyFrom(viewdata, 0, viewdata.Length);
+            writer.Offset += viewdata.Length;
+
+            writer.Value = 0; writer.Offset++;
+
+            DecodeRLE(seeker, new ByteAccess(cdata), writer, view_size);
         }
 
-        private void ReorderView(byte[] buffer, byte[] dest)
+        private void ReorderView(byte[] src, byte[] dest)
         {
-            throw new NotImplementedException();
+            var seeker = new ByteAccess(src);
+            var writer = new ByteAccess(dest);
+            int l, lb, c, celindex, lh_last = -1;
+            int chptr;
+            int w;
+
+            /* Parse the main header */
+            var cellengths = new ByteAccess(src, seeker.ToUInt16() + 2);
+            seeker.Offset += 2;
+            int loopheaders = seeker.Increment();
+            int lh_present = seeker.Increment();
+            int lh_mask = seeker.ToUInt16();
+            seeker.Offset += 2;
+            int unknown = seeker.ToUInt16();
+            seeker.Offset += 2;
+            int pal_offset = seeker.ToUInt16();
+            seeker.Offset += 2;
+            int cel_total = seeker.ToUInt16();
+            seeker.Offset += 2;
+
+            var cc_pos = new ByteAccess[cel_total];
+            var cc_lengths = new int[cel_total];
+
+            for (c = 0; c < cel_total; c++)
+                cc_lengths[c] = cellengths.ToUInt16(2 * c);
+
+            writer.Value = (byte)loopheaders; writer.Offset++;
+            writer.Value = VIEW_HEADER_COLORS_8BIT; writer.Offset++;
+            writer.WriteUInt16(0, (ushort)lh_mask);
+            writer.Offset += 2;
+            writer.WriteUInt16(0, (ushort)unknown);
+            writer.Offset += 2;
+            writer.WriteUInt16(0, (ushort)pal_offset);
+            writer.Offset += 2;
+
+            var lh_ptr = new ByteAccess(writer);
+            writer.Offset += 2 * loopheaders; /* Make room for the loop offset table */
+
+            var pix_ptr = new ByteAccess(writer);
+
+            byte[] celcounts = new byte[100];
+            Array.Copy(seeker.Data, seeker.Offset, celcounts, 0, lh_present);
+            seeker.Offset += lh_present;
+
+            lb = 1;
+            celindex = 0;
+
+            pix_ptr = new ByteAccess(cellengths, (2 * cel_total));
+            var rle_ptr = new ByteAccess(pix_ptr);
+            w = 0;
+
+            for (l = 0; l < loopheaders; l++)
+            {
+                if ((lh_mask & lb) != 0)
+                { /* The loop is _not_ present */
+                    if (lh_last == -1)
+                    {
+                        Warning("Error: While reordering view: Loop not present, but can't re-use last loop");
+                        lh_last = 0;
+                    }
+                    lh_ptr.WriteUInt16(0, (ushort)lh_last);
+                    lh_ptr.Offset += 2;
+                }
+                else
+                {
+                    lh_last = writer.Offset;
+                    lh_ptr.WriteUInt16(0, (ushort)lh_last);
+                    lh_ptr.Offset += 2;
+                    writer.WriteUInt16(0, celcounts[w]);
+                    writer.Offset += 2;
+                    writer.WriteUInt16(0, 0);
+                    writer.Offset += 2;
+
+                    /* Now, build the cel offset table */
+                    chptr = writer.Offset + (2 * celcounts[w]);
+
+                    for (c = 0; c < celcounts[w]; c++)
+                    {
+                        writer.WriteUInt16(0, (ushort)chptr);
+                        writer.Offset += 2;
+                        cc_pos[celindex + c] = new ByteAccess(dest, chptr);
+                        chptr += 8 + cellengths.ToUInt16(2 * (celindex + c));
+                    }
+
+                    BuildCelHeaders(seeker, writer, celindex, cc_lengths, celcounts[w]);
+
+                    celindex += celcounts[w];
+                    w++;
+                }
+
+                lb = lb << 1;
+            }
+
+            if (celindex < cel_total)
+            {
+                Warning("View decompression generated too few (%d / %d) headers", celindex, cel_total);
+                return;
+            }
+
+            /* Figure out where the pixel data begins. */
+            for (c = 0; c < cel_total; c++)
+                pix_ptr.Offset += GetRLEsize(pix_ptr.Data, pix_ptr.Offset, cc_lengths[c]);
+
+            rle_ptr = new ByteAccess(cellengths, (2 * cel_total));
+            for (c = 0; c < cel_total; c++)
+                DecodeRLE(rle_ptr, pix_ptr, new ByteAccess(cc_pos[c], 8), cc_lengths[c]);
+
+            if (pal_offset != 0)
+            {
+                writer.Value = (byte)'P'; writer.Offset++;
+                writer.Value = (byte)'A'; writer.Offset++;
+                writer.Value = (byte)'L'; writer.Offset++;
+
+                for (c = 0; c < 256; c++)
+                {
+                    writer.Value = (byte)c;
+                    writer.Offset++;
+                }
+
+                seeker.Offset -= 4; /* The missing four. Don't ask why. */
+                Array.Copy(seeker.Data, seeker.Offset, writer.Data, writer.Offset, 4 * 256 + 4);
+            }
+        }
+
+        private void DecodeRLE(ByteAccess rledata, ByteAccess pixeldata, ByteAccess outbuffer, int size)
+        {
+            int pos = 0;
+            byte nextbyte;
+            var rd = rledata;
+            var ob = new ByteAccess(outbuffer);
+            var pd = pixeldata;
+
+            while (pos < size)
+            {
+                nextbyte = rd.Increment();
+                ob.Value = nextbyte; ob.Offset++;
+                pos++;
+                switch (nextbyte & 0xC0)
+                {
+                    case 0x40:
+                    case 0x00:
+                        pd.CopyTo(ob, nextbyte);
+                        pd.Offset += nextbyte;
+                        ob.Offset += nextbyte;
+                        pos += nextbyte;
+                        break;
+                    case 0xC0:
+                        break;
+                    case 0x80:
+                        nextbyte = pd.Increment();
+                        ob.Value = nextbyte; ob.Offset++;
+                        pos++;
+                        break;
+                }
+            }
+        }
+
+        private void BuildCelHeaders(ByteAccess seeker, ByteAccess writer, int celindex, int[] cc_lengths, int max)
+        {
+            for (int c = 0; c < max; c++)
+            {
+                Array.Copy(seeker.Data, seeker.Offset, writer.Data, writer.Offset, 6);
+                seeker.Offset += 6;
+                writer.Offset += 6;
+                seeker.Offset++;
+                ushort w = seeker.Value;
+                writer.WriteUInt16(0, w); /* Zero extension */
+                writer.Offset += 2;
+
+                writer.Offset += cc_lengths[celindex];
+                celindex++;
+            }
+        }
+
+        /// <summary>
+        /// Does the same this as decodeRLE, only to determine the length of the
+        /// compressed source data.
+        /// </summary>
+        /// <returns>The RLE size.</returns>
+        /// <param name="rledata">Rledata.</param>
+        /// <param name="dsize">Dsize.</param>
+        private int GetRLEsize(byte[] rledata, int offset, int dsize)
+        {
+            int pos = 0;
+            byte nextbyte;
+            int size = 0;
+
+            while (pos < dsize)
+            {
+                nextbyte = rledata[offset++];
+                pos++;
+                size++;
+
+                switch (nextbyte & 0xC0)
+                {
+                    case 0x40:
+                    case 0x00:
+                        pos += nextbyte;
+                        break;
+                    case 0xC0:
+                        break;
+                    case 0x80:
+                        pos++;
+                        break;
+                }
+            }
+
+            return size;
         }
 
         private ResourceErrorCodes UnpackLZW1(Stream src, byte[] dest, int nPacked, int nUnpacked)
         {
-            throw new NotImplementedException();
+            Init(src, dest, nPacked, nUnpacked);
+
+            byte[] stak = new byte[0x1014];
+            var tokens = new Tokenlist[0x10004];
+
+            byte lastchar = 0;
+            ushort stakptr = 0, lastbits = 0;
+
+            byte decryptstart = 0;
+            ushort bitstring;
+            ushort token;
+            bool bExit = false;
+
+            while (!IsFinished && !bExit)
+            {
+                switch (decryptstart)
+                {
+                    case 0:
+                        bitstring = (ushort)GetBitsMSB(_numbits);
+                        if (bitstring == 0x101)
+                        {// found end-of-data signal
+                            bExit = true;
+                            continue;
+                        }
+                        PutByte((byte)bitstring);
+                        lastbits = bitstring;
+                        lastchar = (byte)(bitstring & 0xff);
+                        decryptstart = 1;
+                        break;
+
+                    case 1:
+                        bitstring = (ushort)GetBitsMSB(_numbits);
+                        if (bitstring == 0x101)
+                        { // found end-of-data signal
+                            bExit = true;
+                            continue;
+                        }
+                        if (bitstring == 0x100)
+                        { // start-over signal
+                            _numbits = 9;
+                            _curtoken = 0x102;
+                            _endtoken = 0x1ff;
+                            decryptstart = 0;
+                            continue;
+                        }
+
+                        token = bitstring;
+                        if (token >= _curtoken)
+                        { // index past current point
+                            token = lastbits;
+                            stak[stakptr++] = lastchar;
+                        }
+                        while ((token > 0xff) && (token < 0x1004))
+                        { // follow links back in data
+                            stak[stakptr++] = tokens[token].data;
+                            token = tokens[token].next;
+                        }
+                        lastchar = stak[stakptr++] = (byte)(token & 0xff);
+                        // put stack in buffer
+                        while (stakptr > 0)
+                        {
+                            PutByte(stak[--stakptr]);
+                            if (_dwWrote == _szUnpacked)
+                            {
+                                bExit = true;
+                                continue;
+                            }
+                        }
+                        // put token into record
+                        if (_curtoken <= _endtoken)
+                        {
+                            tokens[_curtoken] = new Tokenlist();
+                            tokens[_curtoken].data = lastchar;
+                            tokens[_curtoken].next = lastbits;
+                            _curtoken++;
+                            if (_curtoken == _endtoken && _numbits < 12)
+                            {
+                                _numbits++;
+                                _endtoken = (ushort)((_endtoken << 1) + 1);
+                            }
+                        }
+                        lastbits = bitstring;
+                        break;
+                }
+            }
+
+            return _dwWrote == _szUnpacked ? 0 : ResourceErrorCodes.DECOMPRESSION_ERROR;
         }
 
         private ResourceErrorCodes UnpackLZW(Stream src, byte[] dest, int nPacked, int nUnpacked)
@@ -235,7 +606,8 @@ namespace NScumm.Sci
                     _endtoken = 0x1FF;
                     _curtoken = 0x0102;
                 }
-                else {
+                else
+                {
                     if (token > 0xff)
                     {
                         if (token >= _curtoken)
@@ -255,7 +627,8 @@ namespace NScumm.Sci
                             for (int i = 0; i < tokenlastlength; i++)
                                 PutByte(dest[tokenlist[token] + i]);
                     }
-                    else {
+                    else
+                    {
                         tokenlastlength = 1;
                         if (_dwWrote >= _szUnpacked)
                         {
@@ -335,6 +708,14 @@ namespace NScumm.Sci
                 node.Offset += next << 1;
             }
             return (short)(node.Value | (node[1] << 8));
+        }
+    }
+
+    internal class DecompressorDCL : Decompressor
+    {
+        public override ResourceErrorCodes Unpack(Stream src, byte[] dest, int nPacked, int nUnpacked)
+        {
+            return base.Unpack(src, dest, nPacked, nUnpacked);
         }
     }
 }

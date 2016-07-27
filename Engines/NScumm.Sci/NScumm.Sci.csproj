@@ -114,6 +114,8 @@
     <Compile Include="Sound\Music.cs" />
     <Compile Include="Sound\SoundCommandParser.cs" />
     <Compile Include="Util.cs" />
+    <Compile Include="..\..\NScumm.Desktop\bin\Debug\plugins\KPathing.cs" />
+    <Compile Include="..\..\NScumm.Desktop\bin\Debug\plugins\KVideo.cs" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />

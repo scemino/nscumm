@@ -526,12 +526,12 @@ namespace NScumm.Sci.Engine
         /// true if data is raw, false if it is a reg_t sequence
         /// </summary>
         public bool isRaw;
-        public ByteAccess raw;
+        public BytePtr raw;
         /// <summary>
         /// number of available bytes
         /// </summary>
         public int maxSize;
-        public StackPtr reg;
+        public StackPtr? reg;
         // FIXME: Perhaps a generic 'offset' is more appropriate here
         /// <summary>
         /// true if referencing the 2nd data byte of *reg, false otherwise
@@ -541,13 +541,13 @@ namespace NScumm.Sci.Engine
         public SegmentRef()
         {
             isRaw = true;
-            raw = null;
+            raw = BytePtr.Null;
             maxSize = 0;
         }
 
         public bool IsValid
         {
-            get { return (isRaw ? raw != null : !reg[0].IsNull); }
+            get { return (isRaw ? raw != BytePtr.Null : reg.HasValue); }
         }
     }
 }

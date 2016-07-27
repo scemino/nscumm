@@ -99,9 +99,8 @@ namespace NScumm.Sci
         private SciGameId _gameId;
         public SoundCommandParser _soundCmd;
         private Register _gameObjectAddress;
-        private ScriptPatcher _scriptPatcher;
         private Kernel _kernel;
-        private GameFeatures _features;
+        public GameFeatures _features;
         private Vocabulary _vocabulary;
         private EngineState _gamestate;
         private EventManager _eventMan;
@@ -549,6 +548,8 @@ namespace NScumm.Sci
 
         public string SavegamePattern { get { return _gameDescription.gameid + ".???"; } }
 
+        public ScriptPatcher ScriptPatcher { get; private set; }
+
         public string WrapFilename(string name)
         {
             return FilePrefix + "-" + name;
@@ -576,8 +577,8 @@ namespace NScumm.Sci
             _resMan.AddNewGMPatch(_gameId);
             _gameObjectAddress = _resMan.FindGameObject();
 
-            _scriptPatcher = new ScriptPatcher();
-            SegManager segMan = new SegManager(_resMan, _scriptPatcher);
+            ScriptPatcher = new ScriptPatcher();
+            SegManager segMan = new SegManager(_resMan, ScriptPatcher);
 
             // Initialize the game screen
             _gfxScreen = new GfxScreen(_resMan);
@@ -626,7 +627,7 @@ namespace NScumm.Sci
             _kernel.LoadKernelNames(_features);
             _soundCmd = new SoundCommandParser(_resMan, segMan, _audio, _features.DetectDoSoundType());
 
-            // TODO: SyncSoundSettings();
+            SyncSoundSettings();
             _soundCmd.SetMasterVolume(11);
             // TODO: SyncIngameAudioOptions();
 
@@ -776,12 +777,10 @@ namespace NScumm.Sci
                 case SciGameId.PHANTASMAGORIA: // has custom save/load code
                 case SciGameId.SHIVERS: // has custom save/load code
                     return;
-                default:
-                    break;
             }
 
-            // TODO: if (ConfMan.getBool("originalsaveload"))
-            //return;
+            //TODO: if (ConfigManager.Instance.Get<bool>("originalsaveload"))
+            //    return;
 
             ushort kernelNamesSize = (ushort)_kernel.KernelNamesSize;
             for (ushort kernelNr = 0; kernelNr < kernelNamesSize; kernelNr++)
@@ -967,7 +966,7 @@ namespace NScumm.Sci
                     _gamestate.ShrinkStackToBase();
                     _gamestate.abortScriptProcessing = AbortGameState.None;
 
-                    // TODO: SyncSoundSettings();
+                    SyncSoundSettings();
                     // TODO: SyncIngameAudioOptions();
                     // Games do not set their audio settings when loading
                 }
@@ -1150,7 +1149,7 @@ namespace NScumm.Sci
             // Script 0 should always be at segment 1
             if (script0Segment != 1)
             {
-                // TODO: debug(2, "Failed to instantiate script 0");
+                Debug(2, "Failed to instantiate script 0");
                 return false;
             }
 

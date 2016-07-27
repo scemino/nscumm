@@ -820,7 +820,218 @@ namespace NScumm.Sci
 
         private void ReadResourcePatchesBase36()
         {
-            // TODO: throw new NotImplementedException();
+            // The base36 encoded audio36 and sync36 resources use a different naming scheme, because they
+            // cannot be described with a single resource number, but are a result of a
+            // <number, noun, verb, cond, seq> tuple. Please don't be confused with the normal audio patches
+            // (*.aud) and normal sync patches (*.syn). audio36 patches can be seen for example in the AUD
+            // folder of GK1CD, and are like this file: @0CS0M00.0X1. GK1CD is the first game where these
+            // have been observed. The actual audio36 and sync36 resources exist in SCI1.1 as well, but the
+            // first game where external patch files for them have been found is GK1CD. The names of these
+            // files are base36 encoded, and we handle their decoding here. audio36 files start with a '@',
+            // whereas sync36 start with a '#'. Mac versions begin with 'A' (probably meaning AIFF). Torin
+            // has several that begin with 'B'.
+
+            ResourceSource psrcPatch;
+            var files = new List<string>();
+
+            for (ResourceType i = ResourceType.Audio36; i <= ResourceType.Sync36; ++i)
+            {
+                files.Clear();
+
+                // audio36 resources start with a @, A, or B
+                // sync36 resources start with a #, S, or T
+                if (i == ResourceType.Audio36)
+                {
+                    files.AddRange(Core.Engine.EnumerateFiles("@???????.???"));
+                    files.AddRange(Core.Engine.EnumerateFiles("A???????.???"));
+                    files.AddRange(Core.Engine.EnumerateFiles("B???????.???"));
+                }
+                else
+                {
+                    files.AddRange(Core.Engine.EnumerateFiles("#???????.???"));
+#if ENABLE_SCI32
+                    files.AddRange(Core.Engine.EnumerateFiles("S???????.???"));
+                    files.AddRange(Core.Engine.EnumerateFiles("T???????.???"));
+#endif
+                }
+
+                foreach (var name in files)
+                {
+                    ResourceId resource36 = ConvertPatchNameBase36(i, name);
+
+                    /*
+                    if (i == kResourceTypeAudio36)
+                        debug("audio36 patch: %s => %s. tuple:%d, %s\n", name.c_str(), inputName.c_str(), resource36.tuple, resource36.toString().c_str());
+                    else
+                        debug("sync36 patch: %s => %s. tuple:%d, %s\n", name.c_str(), inputName.c_str(), resource36.tuple, resource36.toString().c_str());
+                    */
+
+                    // Make sure that the audio patch is a valid resource
+                    if (i == ResourceType.Audio36)
+                    {
+                        var stream = ServiceLocator.FileStorage.OpenFileRead(name);
+                        var br = new BinaryReader(stream);
+                        var tag = br.ReadUInt32();
+
+                        if (tag == ScummHelper.MakeTag('R', 'I', 'F', 'F') || tag == ScummHelper.MakeTag('F', 'O', 'R', 'M'))
+                        {
+                            stream.Dispose();
+                            ProcessWavePatch(resource36, name);
+                            continue;
+                        }
+
+                        // Check for SOL as well
+                        tag = (tag << 16) | br.ReadUInt16BigEndian();
+
+                        if (tag != ScummHelper.MakeTag('S', 'O', 'L', '\0'))
+                        {
+                            stream.Dispose();
+                            continue;
+                        }
+
+                        stream.Dispose();
+                    }
+
+                    psrcPatch = new PatchResourceSource(name);
+                    ProcessPatch(psrcPatch, i, resource36.Number, resource36.Tuple);
+                }
+            }
+        }
+
+        private static ResourceId ConvertPatchNameBase36(ResourceType type, string filename)
+        {
+            // The base36 encoded resource contains the following:
+            // uint16 resourceId, byte noun, byte verb, byte cond, byte seq
+
+            // Skip patch type character
+            try
+            {
+                int resourceNr = Convert.ToInt32(filename.Substring(1, 3), 36); // 3 characters
+                int noun = Convert.ToInt32(filename.Substring(4, 2), 36);       // 2 characters
+                int verb = Convert.ToInt32(filename.Substring(6, 2), 36);       // 2 characters
+                                                                                // Skip '.'
+                int cond = Convert.ToInt32(filename.Substring(9, 2), 36);       // 2 characters
+                int seq = Convert.ToInt32(filename.Substring(11, 1), 36);       // 1 character
+
+                return new ResourceId(type, (ushort)resourceNr, (byte)noun, (byte)verb, (byte)cond, (byte)seq);
+            }
+            catch (ArgumentException)
+            {
+                return new ResourceId(type, 0, 0, 0, 0, 0);
+            }
+        }
+
+
+        // version-agnostic patch application
+        private void ProcessPatch(ResourceSource source, ResourceType resourceType, ushort resourceNr, uint tuple)
+        {
+            Stream fileStream = null;
+            ResourceSource.Resource newrsc = null;
+            ResourceId resId = new ResourceId(resourceType, resourceNr, tuple);
+            ResourceType checkForType = resourceType;
+
+            // base36 encoded patches (i.e. audio36 and sync36) have the same type as their non-base36 encoded counterparts
+            if (checkForType == ResourceType.Audio36)
+                checkForType = ResourceType.Audio;
+            else if (checkForType == ResourceType.Sync36)
+                checkForType = ResourceType.Sync;
+
+            if (source._resourceFile != null)
+            {
+                throw new NotImplementedException();
+                // TODO: fileStream = source._resourceFile.CreateReadStream();
+            }
+            else
+            {
+                var file = Core.Engine.OpenFileRead(source.LocationName);
+                if (file == null)
+                {
+                    Warning($"ResourceManager::processPatch(): failed to open {source.LocationName}");
+                    //source.Dispose();
+                    return;
+                }
+                fileStream = file;
+            }
+
+            var br = new BinaryReader(fileStream);
+            var fsize = fileStream.Length;
+            if (fsize < 3)
+            {
+                Debug($"Patching {source.LocationName} failed - file too small");
+                //delete source;
+                return;
+            }
+
+            var patchType = ConvertResType(br.ReadByte());
+            byte patchDataOffset = br.ReadByte();
+
+            fileStream.Dispose();
+
+            if (patchType != checkForType)
+            {
+                Debug("Patching %s failed - resource type mismatch", source.LocationName);
+                //delete source;
+                return;
+            }
+
+            // Fixes SQ5/German, patch file special case logic taken from SCI View disassembly
+            if ((patchDataOffset & 0x80) != 0)
+            {
+                switch (patchDataOffset & 0x7F)
+                {
+                    case 0:
+                        patchDataOffset = 24;
+                        break;
+                    case 1:
+                        patchDataOffset = 2;
+                        break;
+                    case 4:
+                        patchDataOffset = 8;
+                        break;
+                    default:
+                        //TODO: error("Resource patch unsupported special case %X", patchDataOffset & 0x7F);
+                        return;
+                }
+            }
+
+            if (patchDataOffset + 2 >= fsize)
+            {
+                Debug("Patching %s failed - patch starting at offset %d can't be in file of size %d",
+                      source.LocationName, patchDataOffset + 2, fsize);
+                //delete source;
+                return;
+            }
+
+            // Overwrite everything, because we're patching
+            newrsc = UpdateResource(resId, source, (int)(fsize - patchDataOffset - 2));
+            newrsc._headerSize = patchDataOffset;
+            newrsc._fileOffset = 0;
+
+
+            // TODO: debugC(1, kDebugLevelResMan, "Patching %s - OK", source.getLocationName().c_str());
+        }
+
+        private ResourceSource.Resource UpdateResource(ResourceId resId, ResourceSource src, int size)
+        {
+            // Update a patched resource, whether it exists or not
+            ResourceSource.Resource res = null;
+
+            if (_resMap.ContainsKey(resId))
+            {
+                _resMap.TryGetValue(resId, out res);
+            }
+            else
+            {
+                res = new ResourceSource.Resource(this, resId);
+                _resMap[resId] = res;
+            }
+
+            res._status = ResourceStatus.NoMalloc;
+            res._source = src;
+            res._headerSize = 0;
+            res.size = size;
+
+            return res;
         }
 
         private ResourceErrorCodes ReadAudioMapSCI11(IntMapResourceSource map)
@@ -832,161 +1043,163 @@ namespace NScumm.Sci
                 return ResourceErrorCodes.RESMAP_NOT_FOUND;
 #endif
 
-            throw new InvalidOperationException();
+            uint offset = 0;
+            var mapRes = FindResource(new ResourceId(ResourceType.Map, (ushort)map._volumeNumber), false);
 
-            //uint offset = 0;
-            //ResourceSource.Resource mapRes = FindResource(new ResourceId( ResourceType.Map, map._volumeNumber), false);
+            if (mapRes == null)
+            {
+                Warning($"Failed to open {map._volumeNumber}.MAP");
+                return ResourceErrorCodes.RESMAP_NOT_FOUND;
+            }
 
-            //if (!mapRes)
-            //{
-            //    Warning($"Failed to open {map._volumeNumber}.MAP");
-            //    return ResourceErrorCodes.RESMAP_NOT_FOUND;
-            //}
+            ResourceSource src = FindVolume(map, 0);
 
-            //ResourceSource src = FindVolume(map, 0);
+            if (src==null)
+                return ResourceErrorCodes.NO_RESOURCE_FILES_FOUND;
 
-            //if (src==null)
-            //    return ResourceErrorCodes.NO_RESOURCE_FILES_FOUND;
+            var ptr = new ByteAccess(mapRes.data);
 
-            //byte[] ptr = mapRes.Data;
+            // Heuristic to detect entry size
+            uint entrySize = 0;
+            for (int i = mapRes.size - 1; i >= 0; --i)
+            {
+                if (ptr[i] == 0xff)
+                    entrySize++;
+                else
+                    break;
+            }
 
-            //// Heuristic to detect entry size
-            //uint entrySize = 0;
-            //for (int i = mapRes.size - 1; i >= 0; --i)
-            //{
-            //    if (ptr[i] == 0xff)
-            //        entrySize++;
-            //    else
-            //        break;
-            //}
+            if (map._volumeNumber == 65535)
+            {
+                var ba = new ByteAccess(mapRes.data, mapRes.size);
+                while (ptr.Offset < ba.Offset)
+                {
+                    ushort n = ptr.ToUInt16();
+                    ptr.Offset += 2;
 
-            //if (map._volumeNumber == 65535)
-            //{
-            //    while (ptr < mapRes.data + mapRes.size)
-            //    {
-            //        ushort n = READ_LE_UINT16(ptr);
-            //        ptr += 2;
+                    if (n == 0xffff)
+                        break;
 
-            //        if (n == 0xffff)
-            //            break;
+                    if (entrySize == 6)
+                    {
+                        offset = ptr.ToUInt32();
+                        ptr.Offset += 4;
+                    }
+                    else {
+                        offset += ptr.ToUInt24();
+                        ptr.Offset += 3;
+                    }
 
-            //        if (entrySize == 6)
-            //        {
-            //            offset = READ_LE_UINT32(ptr);
-            //            ptr += 4;
-            //        }
-            //        else {
-            //            offset += READ_LE_UINT24(ptr);
-            //            ptr += 3;
-            //        }
+                    AddResource(new ResourceId(ResourceType.Audio, n), src, offset);
+                }
+            }
+            else if (map._volumeNumber == 0 && entrySize == 10 && ptr[3] == 0)
+            {
+                // QFG3 demo format
+                // ptr[3] would be 'seq' in the normal format and cannot possibly be 0
+                var ba = new ByteAccess(mapRes.data, mapRes.size);
+                while (ptr.Offset < ba.Offset)
+                {
+                    ushort n = ptr.ToUInt16BigEndian();
+                    ptr.Offset += 2;
 
-            //        addResource(ResourceId(kResourceTypeAudio, n), src, offset);
-            //    }
-            //}
-            //else if (map._volumeNumber == 0 && entrySize == 10 && ptr[3] == 0)
-            //{
-            //    // QFG3 demo format
-            //    // ptr[3] would be 'seq' in the normal format and cannot possibly be 0
-            //    while (ptr < mapRes.data + mapRes.size)
-            //    {
-            //        uint16 n = READ_BE_UINT16(ptr);
-            //        ptr += 2;
+                    if (n == 0xffff)
+                        break;
 
-            //        if (n == 0xffff)
-            //            break;
+                    offset = ptr.ToUInt32();
+                    ptr.Offset += 4;
+                    uint size = ptr.ToUInt32();
+                    ptr.Offset += 4;
 
-            //        offset = READ_LE_UINT32(ptr);
-            //        ptr += 4;
-            //        uint32 size = READ_LE_UINT32(ptr);
-            //        ptr += 4;
+                    AddResource(new ResourceId(ResourceType.Audio, n), src, offset, (int)size);
+                }
+            }
+            else if (map._volumeNumber == 0 && entrySize == 8 && ptr.ToUInt16(2) == 0xffff)
+            {
+                // LB2 Floppy/Mother Goose SCI1.1 format
+                var stream = GetVolumeFile(src);
+                var br = new BinaryReader(stream);
+                var ba = new ByteAccess(mapRes.data, mapRes.size);
+                while (ptr.Offset < ba.Offset)
+                {
+                    ushort n = ptr.ToUInt16();
+                    ptr.Offset += 4;
 
-            //        addResource(ResourceId(kResourceTypeAudio, n), src, offset, size);
-            //    }
-            //}
-            //else if (map._volumeNumber == 0 && entrySize == 8 && READ_LE_UINT16(ptr + 2) == 0xffff)
-            //{
-            //    // LB2 Floppy/Mother Goose SCI1.1 format
-            //    Common::SeekableReadStream* stream = getVolumeFile(src);
+                    if (n == 0xffff)
+                        break;
 
-            //    while (ptr < mapRes.data + mapRes.size)
-            //    {
-            //        uint16 n = READ_LE_UINT16(ptr);
-            //        ptr += 4;
+                    offset = ptr.ToUInt32();
+                    ptr.Offset += 4;
 
-            //        if (n == 0xffff)
-            //            break;
+                    // The size is not stored in the map and the entries have no order.
+                    // We need to dig into the audio resource in the volume to get the size.
+                    stream.Seek(offset + 1, SeekOrigin.Begin);
+                    byte headerSize = br.ReadByte();
+                    System.Diagnostics.Debug.Assert(headerSize == 11 || headerSize == 12);
 
-            //        offset = READ_LE_UINT32(ptr);
-            //        ptr += 4;
+                    stream.Seek(5, SeekOrigin.Begin);
+                    uint size = br.ReadUInt32() + headerSize + 2;
 
-            //        // The size is not stored in the map and the entries have no order.
-            //        // We need to dig into the audio resource in the volume to get the size.
-            //        stream.seek(offset + 1);
-            //        byte headerSize = stream.readByte();
-            //        assert(headerSize == 11 || headerSize == 12);
+                    AddResource(new ResourceId(ResourceType.Audio, n), src, offset, (int)size);
+                }
+            }
+            else {
+                bool isEarly = (entrySize != 11);
 
-            //        stream.skip(5);
-            //        uint32 size = stream.readUint32LE() + headerSize + 2;
+                if (!isEarly)
+                {
+                    offset = ptr.ToUInt32();
+                    ptr.Offset += 4;
+                }
 
-            //        addResource(ResourceId(kResourceTypeAudio, n), src, offset, size);
-            //    }
-            //}
-            //else {
-            //    bool isEarly = (entrySize != 11);
+                var ba = new ByteAccess(mapRes.data, mapRes.size);
+                while (ptr.Offset < ba.Offset)
+                {
+                    uint n = ptr.ToUInt32();
+                    int syncSize = 0;
+                    ptr.Offset += 4;
 
-            //    if (!isEarly)
-            //    {
-            //        offset = READ_LE_UINT32(ptr);
-            //        ptr += 4;
-            //    }
+                    if (n == 0xffffffff)
+                        break;
 
-            //    while (ptr < mapRes.data + mapRes.size)
-            //    {
-            //        uint32 n = READ_BE_UINT32(ptr);
-            //        int syncSize = 0;
-            //        ptr += 4;
+                    if (isEarly)
+                    {
+                        offset = ptr.ToUInt32();
+                        ptr.Offset += 4;
+                    }
+                    else {
+                        offset += ptr.ToUInt24();
+                        ptr.Offset += 3;
+                    }
 
-            //        if (n == 0xffffffff)
-            //            break;
+                    if (isEarly || ((n & 0x80)!=0))
+                    {
+                        syncSize = ptr.ToUInt16();
+                        ptr.Offset += 2;
 
-            //        if (isEarly)
-            //        {
-            //            offset = READ_LE_UINT32(ptr);
-            //            ptr += 4;
-            //        }
-            //        else {
-            //            offset += READ_LE_UINT24(ptr);
-            //            ptr += 3;
-            //        }
+                        // FIXME: The sync36 resource seems to be two bytes too big in KQ6CD
+                        // (bytes taken from the RAVE resource right after it)
+                        if (syncSize > 0)
+                            AddResource(new ResourceId(ResourceType.Sync36, (ushort)map._volumeNumber, n & 0xffffff3f), src, offset, syncSize);
+                    }
 
-            //        if (isEarly || (n & 0x80))
-            //        {
-            //            syncSize = READ_LE_UINT16(ptr);
-            //            ptr += 2;
+                    if ((n & 0x40)!=0)
+                    {
+                        // This seems to define the size of raw lipsync data (at least
+                        // in KQ6 CD Windows).
+                        int kq6HiresSyncSize = ptr.ToUInt16();
+                        ptr.Offset += 2;
 
-            //            // FIXME: The sync36 resource seems to be two bytes too big in KQ6CD
-            //            // (bytes taken from the RAVE resource right after it)
-            //            if (syncSize > 0)
-            //                addResource(ResourceId(kResourceTypeSync36, map._volumeNumber, n & 0xffffff3f), src, offset, syncSize);
-            //        }
+                        if (kq6HiresSyncSize > 0)
+                        {
+                            AddResource(new ResourceId(ResourceType.Rave, (ushort)map._volumeNumber, n & 0xffffff3f), src, (uint)(offset + syncSize), kq6HiresSyncSize);
+                            syncSize += kq6HiresSyncSize;
+                        }
+                    }
 
-            //        if (n & 0x40)
-            //        {
-            //            // This seems to define the size of raw lipsync data (at least
-            //            // in KQ6 CD Windows).
-            //            int kq6HiresSyncSize = READ_LE_UINT16(ptr);
-            //            ptr += 2;
-
-            //            if (kq6HiresSyncSize > 0)
-            //            {
-            //                addResource(ResourceId(kResourceTypeRave, map._volumeNumber, n & 0xffffff3f), src, offset + syncSize, kq6HiresSyncSize);
-            //                syncSize += kq6HiresSyncSize;
-            //            }
-            //        }
-
-            //        addResource(ResourceId(kResourceTypeAudio36, map._volumeNumber, n & 0xffffff3f), src, offset + syncSize);
-            //    }
-            //}
+                    AddResource(new ResourceId(ResourceType.Audio36, (ushort)map._volumeNumber, n & 0xffffff3f), src, (uint)(offset + syncSize));
+                }
+            }
 
             return 0;
         }
@@ -1010,7 +1223,7 @@ namespace NScumm.Sci
             }
 
             var br = new BinaryReader(fileStream);
-            ResourceIndex[] resMap=new ResourceIndex[32];
+            var resMap = new ResourceIndex[32];
             byte type = 0, prevtype = 0;
             int nEntrySize = _mapVersion == ResVersion.Sci11 ? SCI11_RESMAP_ENTRIES_SIZE : SCI1_RESMAP_ENTRIES_SIZE;
             ResourceId resId;
@@ -1024,8 +1237,7 @@ namespace NScumm.Sci
                 if (fileStream.Position == fileStream.Length)
                     return ResourceErrorCodes.RESMAP_NOT_FOUND;
 
-                resMap[prevtype].wSize = (ushort)((resMap[type].wOffset
-                                          - resMap[prevtype].wOffset) / nEntrySize);
+                resMap[prevtype].wSize = (ushort)((resMap[type].wOffset - resMap[prevtype].wOffset) / nEntrySize);
                 prevtype = type;
             } while (type != 0x1F); // the last entry is FF
 
@@ -2258,6 +2470,10 @@ namespace NScumm.Sci
                         data.Offset++;
                     }
                     _tracks = new Track[_trackCount];
+                    for (int i = 0; i < _tracks.Length; i++)
+                    {
+                        _tracks[i] = new Track();
+                    }
                     data = new ByteAccess(resource.data);
 
                     byte channelCount;
@@ -2280,6 +2496,10 @@ namespace NScumm.Sci
                             _tracks[trackNr].channelCount++;
                         }
                         _tracks[trackNr].channels = new Channel[channelCount];
+                        for (int i = 0; i < _tracks[trackNr].channels.Length; i++)
+                        {
+                            _tracks[trackNr].channels[i] = new Channel();
+                        }
                         _tracks[trackNr].channelCount = 0;
                         _tracks[trackNr].digitalChannelNr = -1; // No digital sound associated
                         _tracks[trackNr].digitalSampleRate = 0;

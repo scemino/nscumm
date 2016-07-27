@@ -95,10 +95,10 @@ namespace NScumm.Sci.Graphics
             _windowList = new List<Port>();
         }
 
-		public void SaveLoadWithSerializer (Serializer ser)
-		{
-			throw new NotImplementedException ();
-		}
+        public void SaveLoadWithSerializer(Serializer ser)
+        {
+            throw new NotImplementedException();
+        }
 
         public void BackColor(short color)
         {
@@ -180,7 +180,8 @@ namespace NScumm.Sci.Graphics
                 SetOrigin(0, offTop);
                 _wmgrPort.rect.Bottom = _screen.Height - offTop;
             }
-            else {
+            else
+            {
                 _wmgrPort.rect.Bottom = _screen.Height;
             }
             _wmgrPort.rect.Right = _screen.ScriptWidth;
@@ -201,17 +202,19 @@ namespace NScumm.Sci.Graphics
         public void KernelDisposeWindow(ushort windowId, bool reanimate)
         {
             Window wnd = (Window)GetPortById(windowId);
-            if (wnd!=null)
+            if (wnd != null)
             {
-                if (wnd.counterTillFree==0)
+                if (wnd.counterTillFree == 0)
                 {
                     RemoveWindow(wnd, reanimate);
                 }
-                else {
+                else
+                {
                     throw new InvalidOperationException($"kDisposeWindow: used already disposed window id {windowId}");
                 }
             }
-            else {
+            else
+            {
                 throw new InvalidOperationException($"kDisposeWindow: used unknown window id {windowId}");
             }
         }
@@ -254,14 +257,44 @@ namespace NScumm.Sci.Graphics
             throw new NotImplementedException();
         }
 
-        internal void BeginUpdate(Window _picWind)
+        public void BeginUpdate(Window wnd)
         {
-            throw new NotImplementedException();
+            Port oldPort = SetPort(_wmgrPort);
+            var index = _windowList.IndexOf(wnd);
+            for (var i = _windowList.Count - 1; i != index; i--)
+            {
+                var port = _windowList[i];
+                // We also store Port objects in the window list, but they
+                // shouldn't be encountered during this iteration.
+                System.Diagnostics.Debug.Assert(port.IsWindow);
+
+                UpdateWindow((Window)port);
+            }
+            SetPort(oldPort);
         }
 
-        internal void EndUpdate(Window _picWind)
+        public void EndUpdate(Window wnd)
         {
-            throw new NotImplementedException();
+            Port oldPort = SetPort(_wmgrPort);
+            var index = _windowList.IndexOf(wnd);
+
+            // wnd has to be in _windowList
+            System.Diagnostics.Debug.Assert(index!=-1);
+
+            for (var i = _windowList.Count - 1; i != index; i--)
+            {
+                var port = _windowList[i];
+                // We also store Port objects in the window list, but they
+                // shouldn't be encountered during this iteration.
+                System.Diagnostics.Debug.Assert(port.IsWindow);
+
+                UpdateWindow((Window)port);
+            }
+
+            if (ResourceManager.GetSciVersion() < SciVersion.V1_EGA_ONLY)
+                SciEngine.Instance._gfxPaint16.KernelGraphRedrawBox(_curPort.rect);
+
+            SetPort(oldPort);
         }
 
         public Register KernelGetActive()
@@ -275,7 +308,8 @@ namespace NScumm.Sci.Graphics
             {
                 PriorityBandsInit(15, (short)top, (short)bottom);
             }
-            else {
+            else
+            {
                 PriorityBandsInit(14, (short)top, (short)bottom);
             }
         }
@@ -313,7 +347,8 @@ namespace NScumm.Sci.Graphics
             {
                 PriorityBandsInit(15, 42, 200);
             }
-            else {
+            else
+            {
                 if (ResourceManager.GetSciVersion() >= SciVersion.V1_1)
                     PriorityBandsInit(14, 0, 190);
                 else
@@ -763,6 +798,24 @@ namespace NScumm.Sci.Graphics
             Port oldPort = _curPort;
             _curPort = newPort;
             return oldPort;
+        }
+
+        private void UpdateWindow(Window wnd)
+        {
+            Register handle;
+
+            if (wnd.saveScreenMask != 0 && wnd.bDrawn)
+            {
+                handle = _paint16.BitsSave(wnd.restoreRect, GfxScreenMasks.VISUAL);
+                _paint16.BitsRestore(wnd.hSaved1);
+                wnd.hSaved1 = handle;
+                if (wnd.saveScreenMask.HasFlag(GfxScreenMasks.PRIORITY))
+                {
+                    handle = _paint16.BitsSave(wnd.restoreRect, GfxScreenMasks.PRIORITY);
+                    _paint16.BitsRestore(wnd.hSaved2);
+                    wnd.hSaved2 = handle;
+                }
+            }
         }
 
         private void OpenPort(Port port)

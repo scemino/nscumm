@@ -24,7 +24,7 @@ namespace NScumm.Core
     public struct BytePtr
     {
         public int Offset;
-        public byte[] Data;
+        public readonly byte[] Data;
 
         public static readonly BytePtr Null = new BytePtr(null);
 
@@ -89,5 +89,77 @@ namespace NScumm.Core
             return Data == null ? 0 : Data.GetHashCode() ^ Offset ;
         }
     }
-    
+
+    public static class BytePtrExtension
+    {
+        public static void WriteInt16(this BytePtr data, int startIndex, short value)
+        {
+            data.Data.WriteInt16(data.Offset + startIndex, value);
+        }
+
+        public static void WriteInt16BigEndian(this BytePtr data, int startIndex, short value)
+        {
+            data.Data.WriteInt16BigEndian(data.Offset + startIndex, value);
+        }
+
+        public static void WriteUInt16(this BytePtr data, int startIndex, ushort value)
+        {
+            data.Data.WriteUInt16(data.Offset + startIndex, value);
+        }
+
+        public static void WriteUInt16BigEndian(this BytePtr data, int startIndex, ushort value)
+        {
+            data.Data.WriteUInt16BigEndian(data.Offset + startIndex, value);
+        }
+
+        public static void WriteUInt32(this BytePtr data, int startIndex, uint value)
+        {
+            data.Data.WriteUInt32(data.Offset + startIndex, value);
+        }
+
+        public static short ToInt16BigEndian(this BytePtr value, int startIndex = 0)
+        {
+            return (short)value.Data.ToUInt16BigEndian(value.Offset + startIndex);
+        }
+
+        public static short ToInt16(this BytePtr value, int startIndex = 0)
+        {
+            return (short)value.Data.ToUInt16(value.Offset + startIndex);
+        }
+
+        public static ushort ToUInt16BigEndian(this BytePtr value, int startIndex = 0)
+        {
+            return value.Data.ToUInt16BigEndian(value.Offset + startIndex);
+        }
+
+        public static ushort ToUInt16(this BytePtr value, int startIndex = 0)
+        {
+            return value.Data.ToUInt16(value.Offset + startIndex);
+        }
+
+        public static int ToInt32BigEndian(this BytePtr value, int startIndex = 0)
+        {
+            return value.Data.ToInt32BigEndian(value.Offset + startIndex);
+        }
+
+        public static int ToInt32(this BytePtr value, int startIndex = 0)
+        {
+            return value.Data.ToInt32(value.Offset + startIndex);
+        }
+
+        public static uint ToUInt32BigEndian(this BytePtr value, int startIndex = 0)
+        {
+            return value.Data.ToUInt32BigEndian(value.Offset + startIndex);
+        }
+
+        public static uint ToUInt24(this BytePtr value, int startIndex = 0)
+        {
+            return value.Data.ToUInt24(value.Offset + startIndex);
+        }
+
+        public static uint ToUInt32(this BytePtr value, int startIndex = 0)
+        {
+            return value.Data.ToUInt32(value.Offset + startIndex);
+        }
+    }
 }

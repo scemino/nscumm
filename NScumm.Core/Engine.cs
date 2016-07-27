@@ -25,6 +25,7 @@ using System.Diagnostics;
 using D = NScumm.Core.DebugHelper;
 using System.IO;
 using NScumm.Core.IO;
+using System.Collections.Generic;
 
 namespace NScumm.Core
 {
@@ -40,6 +41,13 @@ namespace NScumm.Core
             var path = ScummHelper.LocatePath(dir, filename);
             if (path == null) return null;
             return ServiceLocator.FileStorage.OpenFileRead(path);
+        }
+
+        public static IEnumerable<string> EnumerateFiles(string pattern)
+        {
+            var files = ServiceLocator.FileStorage.EnumerateFiles(
+                ServiceLocator.FileStorage.GetDirectoryName(Instance.Settings.Game.Path), pattern);
+            return files;
         }
 
         public bool IsPaused

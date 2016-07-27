@@ -19,7 +19,7 @@
 using System;
 using NScumm.Core.Graphics;
 using NScumm.Core;
-using NScumm.Core.Common;
+using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sci.Graphics
 {
@@ -191,13 +191,15 @@ namespace NScumm.Sci.Graphics
                                     {
                                         _screen.PutPixel((short)x2, (short)y2, drawMask, palette.mapping[color], priority, 0);
                                     }
-                                    else {
+                                    else
+                                    {
                                         byte remappedColor = _palette.RemapColor(palette.mapping[color], _screen.GetVisual((short)x2, (short)y2));
                                         _screen.PutPixel((short)x2, (short)y2, drawMask, remappedColor, priority, 0);
                                     }
                                 }
                             }
-                            else {
+                            else
+                            {
                                 // UpscaledHires means view is hires and is supposed to
                                 // get drawn onto lowres screen.
                                 // FIXME(?): we can't read priority directly with the
@@ -210,7 +212,8 @@ namespace NScumm.Sci.Graphics
                     }
                 }
             }
-            else {
+            else
+            {
                 ByteAccess EGAmapping = new ByteAccess(_EGAmapping, (EGAmappingNr * SCI_VIEW_EGAMAPPING_SIZE));
                 for (y = 0; y < height; y++, bitmap.Offset += celWidth)
                 {
@@ -340,7 +343,8 @@ namespace NScumm.Sci.Graphics
                 {
                     curViewType = ViewType.Vga;
                 }
-                else {
+                else
+                {
                     if (_resourceData.ToUInt16(4) == 1)
                         curViewType = ViewType.Vga11;
                 }
@@ -374,7 +378,8 @@ namespace NScumm.Sci.Graphics
                             _viewPalette = _palette.CreateFromData(new Core.ByteAccess(_resourceData, palOffset), _resourceSize - palOffset);
                             _embeddedPal = true;
                         }
-                        else {
+                        else
+                        {
                             // Only use the EGA-mapping, when being SCI1 EGA
                             //  SCI1 VGA conversion games (which will get detected as SCI1EARLY/MIDDLE/LATE) have some views
                             //  with broken mapping tables. I guess those games won't use the mapping, so I rather disable it
@@ -447,14 +452,16 @@ namespace NScumm.Sci.Graphics
                                 cel.offsetRLE = 0;
                                 cel.offsetLiteral = 0;
                             }
-                            else {
+                            else
+                            {
                                 cel.offsetEGA = 0;
                                 if (isCompressed)
                                 {
                                     cel.offsetRLE = (uint)(celOffset + 8);
                                     cel.offsetLiteral = 0;
                                 }
-                                else {
+                                else
+                                {
                                     cel.offsetRLE = 0;
                                     cel.offsetLiteral = (uint)(celOffset + 8);
                                 }
@@ -530,7 +537,8 @@ namespace NScumm.Sci.Graphics
                             _loop[loopNo].mirrorFlag = true;
                             loopData = new ByteAccess(_resourceData, headerSize + (seekEntry * loopSize));
                         }
-                        else {
+                        else
+                        {
                             _loop[loopNo].mirrorFlag = false;
                         }
 
@@ -807,9 +815,10 @@ namespace NScumm.Sci.Graphics
             if (celInfo.offsetEGA != 0)
             {
                 // decompression for EGA views
-                UnpackCelData(_resourceData, outPtr, 0, pixelCount, celInfo.offsetEGA, 0, _resMan.ViewType, (ushort)celInfo.width, false);
+                UnpackCelData(_resourceData, 0, outPtr, 0, pixelCount, celInfo.offsetEGA, 0, _resMan.ViewType, (ushort)celInfo.width, false);
             }
-            else {
+            else
+            {
                 // We fill the buffer with transparent pixels, so that we can later skip
                 //  over pixels to automatically have them transparent
                 // Also some RLE compressed cels are possibly ending with the last
@@ -833,7 +842,7 @@ namespace NScumm.Sci.Graphics
                 }
 
                 bool isMacSci11ViewData = SciEngine.Instance.Platform == Core.IO.Platform.Macintosh && ResourceManager.GetSciVersion() == SciVersion.V1_1;
-                UnpackCelData(_resourceData, outPtr, clearColor, pixelCount, (int)celInfo.offsetRLE, (int)celInfo.offsetLiteral, _resMan.ViewType, (ushort)celInfo.width, isMacSci11ViewData);
+                UnpackCelData(_resourceData, 0, outPtr, clearColor, pixelCount, (int)celInfo.offsetRLE, (int)celInfo.offsetLiteral, _resMan.ViewType, (ushort)celInfo.width, isMacSci11ViewData);
 
                 // Swap 0 and 0xff pixels for Mac SCI1.1+ games (see above)
                 if (SciEngine.Instance.Platform == Core.IO.Platform.Macintosh && ResourceManager.GetSciVersion() >= SciVersion.V1_1)
@@ -849,14 +858,14 @@ namespace NScumm.Sci.Graphics
             }
         }
 
-        private void UnpackCelData(byte[] inBuffer, byte[] celBitmap, byte clearColor, int pixelCount, int rlePos, int literalPos, ViewType viewType, ushort width, bool isMacSci11ViewData)
+        internal static void UnpackCelData(byte[] inBuffer, int inBufferOffset, byte[] celBitmap, byte clearColor, int pixelCount, int rlePos, int literalPos, ViewType viewType, ushort width, bool isMacSci11ViewData)
         {
             var outPtr = new ByteAccess(celBitmap);
-            byte curByte, runLength;
-            var rlePtr = new ByteAccess(inBuffer, rlePos);
+            byte curByte = 0, runLength;
+            var rlePtr = new ByteAccess(inBuffer, inBufferOffset + rlePos);
             // The existence of a literal position pointer signifies data with two
             // separate streams, most likely a SCI1.1 view
-            var literalPtr = new ByteAccess(inBuffer, literalPos);
+            var literalPtr = new ByteAccess(inBuffer, inBufferOffset + literalPos);
             int pixelNr = 0;
 
             celBitmap.Set(0, clearColor, pixelCount);
@@ -910,13 +919,14 @@ namespace NScumm.Sci.Graphics
                         pixelNr += rlePtr.Increment();
                         runLength = rlePtr.Increment();
                     }
-                    else {
+                    else
+                    {
                         pixelNr += rlePtr.ToUInt16BigEndian();
                         runLength = (byte)rlePtr.ToUInt16BigEndian(2);
                         rlePtr.Offset += 4;
                     }
 
-                    while (runLength-- != 0 && pixelNr < pixelCount)
+                    while ((runLength-- != 0) && pixelNr < pixelCount)
                         outPtr[pixelNr++] = literalPtr.Increment();
 
                     pixelNr = pixelLine + width;
@@ -945,7 +955,8 @@ namespace NScumm.Sci.Graphics
                             curByte = (byte)(curByte >> 3);
                             outPtr.Data.Set(outPtr.Offset + pixelNr, curByte, Math.Min(runLength, pixelCount - pixelNr));
                         }
-                        else { // skip the next pixels (transparency)
+                        else
+                        { // skip the next pixels (transparency)
                             runLength = (byte)(curByte >> 3);
                         }
                         pixelNr += runLength;
@@ -961,7 +972,8 @@ namespace NScumm.Sci.Graphics
                             curByte = (byte)(curByte & 0x3F);
                             outPtr.Data.Set(outPtr.Offset + pixelNr, curByte, Math.Min(runLength, pixelCount - pixelNr));
                         }
-                        else { // skip the next pixels (transparency)
+                        else
+                        { // skip the next pixels (transparency)
                             runLength = (byte)(curByte & 0x3F);
                         }
                         pixelNr += runLength;
@@ -994,7 +1006,8 @@ namespace NScumm.Sci.Graphics
                                     Array.Copy(rlePtr.Data, rlePtr.Offset, outPtr.Data, outPtr.Offset + pixelNr, Math.Min(runLength, pixelCount - pixelNr));
                                     rlePtr.Offset += runLength;
                                 }
-                                else {
+                                else
+                                {
                                     Array.Copy(literalPtr.Data, literalPtr.Offset, outPtr.Data, outPtr.Offset + pixelNr, Math.Min(runLength, pixelCount - pixelNr));
                                     literalPtr.Offset += runLength;
                                 }
@@ -1004,7 +1017,8 @@ namespace NScumm.Sci.Graphics
                                 {
                                     outPtr.Data.Set(outPtr.Offset + pixelNr, rlePtr.Increment(), Math.Min(runLength, pixelCount - pixelNr));
                                 }
-                                else {
+                                else
+                                {
                                     outPtr.Data.Set(outPtr.Offset + pixelNr, literalPtr.Increment(), Math.Min(runLength, pixelCount - pixelNr));
                                 }
                                 break;
@@ -1028,14 +1042,14 @@ namespace NScumm.Sci.Graphics
             return _loop[loopNo].cel[celNo];
         }
 
-		public void AdjustToUpscaledCoordinates(ref int y, ref int x)
+        public void AdjustToUpscaledCoordinates(ref int y, ref int x)
         {
-			_screen.AdjustToUpscaledCoordinates(ref y, ref x, _sci2ScaleRes);
+            _screen.AdjustToUpscaledCoordinates(ref y, ref x, _sci2ScaleRes);
         }
 
-		public void AdjustBackUpscaledCoordinates(ref int y, ref int x)
+        public void AdjustBackUpscaledCoordinates(ref int y, ref int x)
         {
-			_screen.AdjustBackUpscaledCoordinates(ref y, ref x, _sci2ScaleRes);
+            _screen.AdjustBackUpscaledCoordinates(ref y, ref x, _sci2ScaleRes);
         }
     }
 }

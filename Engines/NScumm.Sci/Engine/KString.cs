@@ -59,7 +59,8 @@ namespace NScumm.Sci.Engine
 
             if (position.Segment != 0)
                 startarg = 2;
-            else {
+            else
+            {
                 // WORKAROUND: QFG1 VGA Mac calls this without the first parameter (dest). It then
                 // treats the source as the dest and overwrites the source string with an empty string.
                 if (argc < 3)
@@ -90,7 +91,8 @@ namespace NScumm.Sci.Engine
                         targetbuf[target++] = '%'; /* Literal % by using "%%" */
                         mode = 0;
                     }
-                    else {
+                    else
+                    {
                         mode = 1;
                         strLength = 0;
                     }
@@ -278,17 +280,19 @@ namespace NScumm.Sci.Engine
                         {
                             if (align > 0)
                             {
-								Array.Copy (targetbuf, writestart, targetbuf, writestart + padding, written);
-								targetbuf.Set (writestart, fillchar, padding);
+                                Array.Copy(targetbuf, writestart, targetbuf, writestart + padding, written);
+                                targetbuf.Set(writestart, fillchar, padding);
                             }
-                            else {
-                                targetbuf.Set (target, ' ', padding);
+                            else
+                            {
+                                targetbuf.Set(target, ' ', padding);
                             }
                             target += padding;
                         }
                     }
                 }
-                else { /* mode != 1 */
+                else
+                { /* mode != 1 */
                     targetbuf[target] = xfer;
                     target++;
                 }
@@ -327,7 +331,8 @@ namespace NScumm.Sci.Engine
             while ((counter--) != 0)
             {
                 while (seeker.Increment() != 0)
-                    ;
+                {
+                }
             }
 
             // If the third argument is NULL, allocate memory for the destination. This
@@ -459,10 +464,11 @@ namespace NScumm.Sci.Engine
                                 buffer.WriteUInt16(8, msg.seq);
                             }
                         }
-                        else {
+                        else
+                        {
                             var buffer = s._segMan.DerefRegPtr(argv.Value[1], 5);
 
-						if (buffer != StackPtr.Null)
+                            if (buffer != StackPtr.Null)
                             {
                                 ok = true;
                                 buffer[0] = Register.Make(0, (ushort)lastModule);
@@ -530,14 +536,16 @@ namespace NScumm.Sci.Engine
                     result += x;
                 }
             }
-            else {
+            else
+            {
                 // Decimal input. We can not use strtol/atoi in here, because while
                 // Sierra used atoi, it was a non standard compliant atoi, that didn't
                 // do clipping. In SQ4 we get the door code in here and that's even
                 // larger than uint32!
                 char c;
-                while ((c = source_str[source++]) != 0)
+                for (int i = source; i < source_str.Length; i++)
                 {
+                    c = source_str[i];
                     if ((c < '0') || (c > '9'))
                         // Stop if we encounter anything other than a digit (like atoi)
                         break;
@@ -594,11 +602,12 @@ namespace NScumm.Sci.Engine
                 if (argc > 2) /* Request to modify this char */
                     dest_r.raw[offset] = newvalue;
             }
-            else {
+            else
+            {
                 if (dest_r.skipByte)
                     offset++;
 
-                var tmp = new StackPtr(dest_r.reg, offset / 2);
+                var tmp = new StackPtr(dest_r.reg.Value, offset / 2);
 
                 bool oddOffset = (offset & 1) != 0;
                 if (SciEngine.Instance.IsBE)
@@ -616,7 +625,8 @@ namespace NScumm.Sci.Engine
                         tmp[0] = Register.SetSegment(tmp[0], 0);
                     }
                 }
-                else {
+                else
+                {
                     value = (byte)(tmp[0].Offset >> 8);
                     if (argc > 2)
                     { /* Request to modify this char */
@@ -676,7 +686,8 @@ namespace NScumm.Sci.Engine
                 else
                     s._segMan.Memcpy(argv.Value[0], argv.Value[1], -length);
             }
-            else {
+            else
+            {
                 s._segMan.Strcpy(argv.Value[0], argv.Value[1]);
             }
 

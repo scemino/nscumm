@@ -39,7 +39,7 @@ namespace NScumm.Sci.Engine
 
         public static SciKernelMapSubEntry Make(SciVersionRange range, int id, KernelFunctionCall call, string signature, SciWorkaroundEntry[] workarounds)
         {
-            return new SciKernelMapSubEntry { fromVersion = range.fromVersion, toVersion = range.toVersion, id = (ushort)id, function = call, signature = signature, workarounds = workarounds };
+            return new SciKernelMapSubEntry { name = call.Method.Name.Remove(0, 1), fromVersion = range.fromVersion, toVersion = range.toVersion, id = (ushort)id, function = call, signature = signature, workarounds = workarounds };
         }
     }
 
@@ -620,6 +620,7 @@ namespace NScumm.Sci.Engine
             SciKernelMapEntry.Make(kGetPort,SciVersionRange.SIG_EVERYWHERE,"",null,null),
             SciKernelMapEntry.Make(kGetSaveDir,SciVersionRange.SIG_SCI32(SIGFOR_ALL),"(r*)",null,null),
             SciKernelMapEntry.Make(kGetSaveDir,SciVersionRange.SIG_EVERYWHERE,"",null,null),
+            SciKernelMapEntry.Make(kGetSaveFiles,SciVersionRange.SIG_EVERYWHERE,"rrr",null,null),
             SciKernelMapEntry.Make(kGetTime,SciVersionRange.SIG_EVERYWHERE,"(i)",null,null),
             SciKernelMapEntry.Make(kGlobalToLocal,SciVersionRange.SIG_SCI32(SIGFOR_ALL),"oo",null,null),
             SciKernelMapEntry.Make(kGlobalToLocal,SciVersionRange.SIG_EVERYWHERE,"o", null, null),
@@ -641,7 +642,7 @@ namespace NScumm.Sci.Engine
             SciKernelMapEntry.Make(kMemoryInfo,SciVersionRange.SIG_EVERYWHERE,"i",null,null),
             SciKernelMapEntry.Make(kMemorySegment,SciVersionRange.SIG_EVERYWHERE,"ir(i)",null,null), // subop
 	        SciKernelMapEntry.Make(kMenuSelect,SciVersionRange. SIG_EVERYWHERE,"o(i)",null,null),
-            //SciKernelMapEntry.Make(kMergePoly,SciVersionRange.  SIG_EVERYWHERE,           "rli",                   NULL,            NULL },
+            SciKernelMapEntry.Make(kMergePoly,SciVersionRange.  SIG_EVERYWHERE,"rli",null,null),
             SciKernelMapEntry.Make(kMessage,SciVersionRange.SIG_EVERYWHERE,"i(.*)",null,null), // subop
 	        SciKernelMapEntry.Make(kMoveCursor,SciVersionRange.SIG_EVERYWHERE,"ii",null,Workarounds.kMoveCursor_workarounds),
             SciKernelMapEntry.Make(kNewList,SciVersionRange.SIG_EVERYWHERE,"",null,null),
@@ -689,7 +690,7 @@ namespace NScumm.Sci.Engine
             SciKernelMapEntry.Make(kSetSynonyms,SciVersionRange.SIG_EVERYWHERE,"o",null,null),
             SciKernelMapEntry.Make(kSetVideoMode,SciVersionRange.SIG_EVERYWHERE,"i",null,null),
             SciKernelMapEntry.Make(kShakeScreen,SciVersionRange.SIG_EVERYWHERE,"(i)(i)",null,null),
-            //SciKernelMapEntry.Make(kShowMovie,SciVersionRange.SIG_EVERYWHERE,           "(.*)",                  NULL,            NULL },
+            SciKernelMapEntry.Make(kShowMovie,SciVersionRange.SIG_EVERYWHERE,"(.*)",null,null),
             SciKernelMapEntry.Make(kShow,SciVersionRange.SIG_EVERYWHERE,"i",null,null),
             SciKernelMapEntry.Make(kSinDiv,SciVersionRange.SIG_EVERYWHERE,"ii",null,null),
             SciKernelMapEntry.Make(kSort,SciVersionRange.SIG_EVERYWHERE,"ooo",null,null),
@@ -737,6 +738,14 @@ namespace NScumm.Sci.Engine
         public int SelectorNamesSize { get { return _selectorNames.Count; } }
 
         public int KernelNamesSize { get { return _kernelNames.Count; } }
+
+        public bool SelectorNamesAvailable
+        {
+            get
+            {
+                return _selectorNames.Count > 0;
+            }
+        }
 
         public Kernel(ResourceManager resMan, SegManager segMan)
         {
@@ -1230,7 +1239,7 @@ namespace NScumm.Sci.Engine
             bool hadOptional = false;
 
             // No signature given? no signature out
-            if (string.IsNullOrEmpty(writtenSig))
+            if (writtenSig==null)
                 return null;
 
             // First, we check how many bytes the result will be

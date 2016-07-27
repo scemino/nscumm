@@ -22,7 +22,7 @@ using System;
 
 namespace NScumm.Sci.Graphics
 {
-    public class Color : IEquatable<Color>
+    public struct Color : IEquatable<Color>
     {
         public byte used;
         public byte r, g, b;

@@ -56,6 +56,7 @@ namespace NScumm.Sci.Engine
             }
             if (_out != null)
             {
+                _out.Flush();
                 _out.Dispose();
                 _out = null;
             }

@@ -788,7 +788,7 @@ namespace NScumm.Sci.Sound
             if (_soundVersion <= SciVersion.V0_LATE)
                 return;
 
-            throw new NotImplementedException();
+//            throw new NotImplementedException();
             // TODO:RemapChannels
         }
 

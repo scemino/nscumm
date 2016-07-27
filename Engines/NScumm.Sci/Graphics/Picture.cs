@@ -344,12 +344,246 @@ namespace NScumm.Sci.Graphics
             _ports.PriorityBandsInitSci11(new ByteAccess(inbuffer, 40));
         }
 
-        private void DrawCelData(ByteAccess inbuffer, int size, int cel_headerPos, int cel_RlePos, int cel_LiteralPos, int v1, int v2, int v3, int v4, bool v5)
+        private void DrawCelData(BytePtr inbuffer, int size, int headerPos, int rlePos, int literalPos, int drawX, int drawY, int pictureX, int pictureY, bool isEGA)
         {
-            throw new NotImplementedException();
+            byte[] celBitmap = null;
+            var headerPtr = new ByteAccess(inbuffer, headerPos);
+            var rlePtr = new ByteAccess(inbuffer, rlePos);
+            // displaceX, displaceY fields are ignored, and may contain garbage
+            // (e.g. pic 261 in Dr. Brain 1 Spanish - bug #3614914)
+            //int16 displaceX, displaceY;
+            byte priority = _priority;
+            byte clearColor;
+            bool compression = true;
+            byte curByte;
+            short y, lastY, x, leftX, rightX;
+            int pixelCount;
+            ushort width, height;
+
+            // if the picture is not an overlay and we are also not in EGA mode, use priority 0
+            if (!isEGA && !_addToFlag)
+                priority = 0;
+
+#if ENABLE_SCI32
+            if (_resourceType != SCI_PICTURE_TYPE_SCI32)
+            {
+#endif
+            // Width/height here are always LE, even in Mac versions
+            width = headerPtr.ToUInt16(0);
+            height = headerPtr.ToUInt16(2);
+            //displaceX = (signed char)headerPtr[4];
+            //displaceY = (unsigned char)headerPtr[5];
+            if (_resourceType == PictureType.SCI11)
+                // SCI1.1 uses hardcoded clearcolor for pictures, even if cel header specifies otherwise
+                clearColor = _screen.ColorWhite;
+            else
+                clearColor = headerPtr[6];
+# if ENABLE_SCI32
+            }
+            else
+            {
+                width = READ_SCI11ENDIAN_UINT16(headerPtr + 0);
+                height = READ_SCI11ENDIAN_UINT16(headerPtr + 2);
+                //displaceX = READ_SCI11ENDIAN_UINT16(headerPtr + 4); // probably signed?!?
+                //displaceY = READ_SCI11ENDIAN_UINT16(headerPtr + 6); // probably signed?!?
+                clearColor = headerPtr[8];
+                if (headerPtr[9] == 0)
+                    compression = false;
+            }
+#endif
+
+            //if (displaceX || displaceY)
+            //  error("unsupported embedded cel-data in picture");
+
+            // We will unpack cel-data into a temporary buffer and then plot it to screen
+            //  That needs to be done cause a mirrored picture may be requested
+            pixelCount = width * height;
+            celBitmap = new byte[pixelCount];
+
+            if (SciEngine.Instance.Platform == Core.IO.Platform.Macintosh && ResourceManager.GetSciVersion() >= SciVersion.V2)
+            {
+                // See GfxView::unpackCel() for why this black/white swap is done
+                // This picture swap is only needed in SCI32, not SCI1.1
+                if (clearColor == 0)
+                    clearColor = 0xff;
+                else if (clearColor == 0xff)
+                    clearColor = 0;
+            }
+
+            if (compression)
+            {
+                GfxView.UnpackCelData(inbuffer.Data, inbuffer.Offset, celBitmap, clearColor, pixelCount, rlePos, literalPos, _resMan.ViewType, width, false);
+            }
+            else
+            {
+                // No compression (some SCI32 pictures)
+                rlePtr.CopyTo(celBitmap, 0, pixelCount);
+            }
+
+            if (SciEngine.Instance.Platform == Core.IO.Platform.Macintosh && ResourceManager.GetSciVersion() >= SciVersion.V2)
+            {
+                // See GfxView::unpackCel() for why this black/white swap is done
+                // This picture swap is only needed in SCI32, not SCI1.1
+                for (int i = 0; i < pixelCount; i++)
+                {
+                    if (celBitmap[i] == 0)
+                        celBitmap[i] = 0xff;
+                    else if (celBitmap[i] == 0xff)
+                        celBitmap[i] = 0;
+                }
+            }
+
+            var displayArea = _coordAdjuster.PictureGetDisplayArea();
+
+            // Horizontal clipping
+            ushort skipCelBitmapPixels = 0;
+            short displayWidth = (short)width;
+            if (pictureX != 0)
+            {
+                // horizontal scroll position for picture active, we need to adjust drawX accordingly
+                drawX -= pictureX;
+                if (drawX < 0)
+                {
+                    skipCelBitmapPixels = (ushort)-drawX;
+                    displayWidth = (short)(displayWidth - skipCelBitmapPixels);
+                    drawX = 0;
+                }
+            }
+
+            // Vertical clipping
+            ushort skipCelBitmapLines = 0;
+            short displayHeight = (short)height;
+            if (pictureY != 0)
+            {
+                // vertical scroll position for picture active, we need to adjust drawY accordingly
+                // TODO: Finish this
+                /*drawY -= pictureY;
+                if (drawY < 0) {
+                    skipCelBitmapLines = -drawY;
+                    displayHeight -= skipCelBitmapLines;
+                    drawY = 0;
+                }*/
+            }
+
+            if (displayWidth > 0 && displayHeight > 0)
+            {
+                y = (short)(displayArea.Top + drawY);
+                lastY = (short)Math.Min(height + y, displayArea.Bottom);
+                leftX = (short)(displayArea.Left + drawX);
+                rightX = (short)Math.Min(displayWidth + leftX, displayArea.Right);
+
+                ushort sourcePixelSkipPerRow = 0;
+                if (width > rightX - leftX)
+                    sourcePixelSkipPerRow = (ushort)(width - (rightX - leftX));
+
+                // Change clearcolor to white, if we dont add to an existing picture. That way we will paint everything on screen
+                // but white and that won't matter because the screen is supposed to be already white. It seems that most (if not all)
+                // SCI1.1 games use color 0 as transparency and SCI1 games use color 255 as transparency. Sierra SCI seems to paint
+                // the whole data to screen and wont skip over transparent pixels. So this will actually make it work like Sierra.
+                // SCI32 doesn't use _addToFlag at all.
+                if (!_addToFlag && _resourceType != PictureType.SCI32)
+                    clearColor = _screen.ColorWhite;
+
+                GfxScreenMasks drawMask = priority > 15 ? GfxScreenMasks.VISUAL : GfxScreenMasks.VISUAL | GfxScreenMasks.PRIORITY;
+
+                var ptr = new ByteAccess(celBitmap);
+                ptr.Offset += skipCelBitmapPixels;
+                ptr.Offset += skipCelBitmapLines * width;
+
+                if ((!isEGA) || (priority < 16))
+                {
+                    // VGA + EGA, EGA only checks priority, when given priority is below 16
+                    if (!_mirroredFlag)
+                    {
+                        // Draw bitmap to screen
+                        x = leftX;
+                        while (y < lastY)
+                        {
+                            curByte = ptr.Increment();
+                            if ((curByte != clearColor) && (priority >= _screen.GetPriority(x, y)))
+                                _screen.PutPixel(x, y, drawMask, curByte, priority, 0);
+
+                            x++;
+
+                            if (x >= rightX)
+                            {
+                                ptr.Offset += sourcePixelSkipPerRow;
+                                x = leftX;
+                                y++;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // Draw bitmap to screen (mirrored)
+                        x = (short)(rightX - 1);
+                        while (y < lastY)
+                        {
+                            curByte = ptr.Increment();
+                            if ((curByte != clearColor) && (priority >= _screen.GetPriority(x, y)))
+                                _screen.PutPixel(x, y, drawMask, curByte, priority, 0);
+
+                            if (x == leftX)
+                            {
+                                ptr.Offset += sourcePixelSkipPerRow;
+                                x = rightX;
+                                y++;
+                            }
+
+                            x--;
+                        }
+                    }
+                }
+                else
+                {
+                    // EGA, when priority is above 15
+                    //  we don't check priority and also won't set priority at all
+                    //  fixes picture 48 of kq5 (island overview). Bug #5182
+                    if (!_mirroredFlag)
+                    {
+                        // EGA+priority>15: Draw bitmap to screen
+                        x = leftX;
+                        while (y < lastY)
+                        {
+                            curByte = ptr.Increment();
+                            if (curByte != clearColor)
+                                _screen.PutPixel(x, y, GfxScreenMasks.VISUAL, curByte, 0, 0);
+
+                            x++;
+
+                            if (x >= rightX)
+                            {
+                                ptr.Offset += sourcePixelSkipPerRow;
+                                x = leftX;
+                                y++;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // EGA+priority>15: Draw bitmap to screen (mirrored)
+                        x = (short)(rightX - 1);
+                        while (y < lastY)
+                        {
+                            curByte = ptr.Increment();
+                            if (curByte != clearColor)
+                                _screen.PutPixel(x, y, GfxScreenMasks.VISUAL, curByte, 0, 0);
+
+                            if (x == leftX)
+                            {
+                                ptr.Offset += sourcePixelSkipPerRow;
+                                x = rightX;
+                                y++;
+                            }
+
+                            x--;
+                        }
+                    }
+                }
+            }
         }
 
-        private void DrawVectorData(ByteAccess data, int dataSize)
+        private void DrawVectorData(BytePtr data, int dataSize)
         {
             byte pic_color = _screen.ColorDefaultVectorData;
             byte pic_priority = 255, pic_control = 255;
@@ -608,7 +842,8 @@ namespace NScumm.Sci.Graphics
                                     {
                                         _priority = 16;
                                     }
-                                    else {
+                                    else
+                                    {
                                         _priority = 0;
                                     }
                                     DrawCelData(data, _resource.size, curPos, curPos + 8, 0, x, y, 0, 0, true);
@@ -622,7 +857,8 @@ namespace NScumm.Sci.Graphics
                                     throw new InvalidOperationException($"Unsupported sci1 extended pic-operation {pic_op2}");
                             }
                         }
-                        else {
+                        else
+                        {
 # if DEBUG_PICTURE_DRAW
                             debug("* Picture ex op: %X (%s) at %d", data[curPos], picExOpcodeNamesVGA[data[curPos]], curPos);
 #endif
@@ -643,13 +879,15 @@ namespace NScumm.Sci.Graphics
                                             // Left-Over VGA palette, we simply ignore it
                                             curPos += 256 + 4 + 1024;
                                         }
-                                        else {
+                                        else
+                                        {
                                             // Setting half of the Amiga palette
                                             _palette.ModifyAmigaPalette(new ByteAccess(data, curPos));
                                             curPos += 32;
                                         }
                                     }
-                                    else {
+                                    else
+                                    {
                                         curPos += 256 + 4; // Skip over mapping and timestamp
                                         for (i = 0; i < 256; i++)
                                         {
@@ -668,7 +906,8 @@ namespace NScumm.Sci.Graphics
                                         //  fixes Space Quest 4 orange ship lifting off (bug #6446)
                                         _priority = 0;
                                     }
-                                    else {
+                                    else
+                                    {
                                         _priority = pic_priority; // set global priority so the cel gets drawn using current priority as well
                                     }
                                     DrawCelData(data, _resource.size, curPos, curPos + 8, 0, x, y, 0, 0, false);
@@ -725,7 +964,9 @@ namespace NScumm.Sci.Graphics
 
         private void VectorGetAbsCoordsNoMirror(ByteAccess data, ref int curPos, ref short x, ref short y)
         {
-            throw new NotImplementedException();
+            byte pixel = data[curPos++];
+            x = (short)(data[curPos++] + ((pixel & 0xF0) << 4));
+            y = (short)(data[curPos++] + ((pixel & 0x0F) << 8));
         }
 
         private void VectorPattern(short x, short y, byte color, byte priority, byte control, short code, short texture)
@@ -752,18 +993,21 @@ namespace NScumm.Sci.Graphics
                 {
                     VectorPatternTexturedBox(rect, color, priority, control, texture);
                 }
-                else {
+                else
+                {
                     VectorPatternBox(rect, color, priority, control);
                 }
 
             }
-            else {
+            else
+            {
                 // Circle
                 if ((code & SCI_PATTERN_CODE_USE_TEXTURE) != 0)
                 {
                     VectorPatternTexturedCircle(rect, size, color, priority, control, texture);
                 }
-                else {
+                else
+                {
                     VectorPatternCircle(rect, size, color, priority, control);
                 }
             }
@@ -790,7 +1034,8 @@ namespace NScumm.Sci.Graphics
                     {
                         circleData.Offset++; bitmap = circleData.Value; bitNo = 0;
                     }
-                    else {
+                    else
+                    {
                         bitmap = (byte)(bitmap >> 1);
                     }
                 }
@@ -823,7 +1068,8 @@ namespace NScumm.Sci.Graphics
                     {
                         circleData.Offset++; bitmap = circleData.Value; bitNo = 0;
                     }
-                    else {
+                    else
+                    {
                         bitmap = (byte)(bitmap >> 1);
                     }
                 }
@@ -942,7 +1188,8 @@ namespace NScumm.Sci.Graphics
             {
                 matchMask = GfxScreenMasks.PRIORITY;
             }
-            else {
+            else
+            {
                 matchMask = GfxScreenMasks.CONTROL;
             }
 
@@ -1020,7 +1267,8 @@ namespace NScumm.Sci.Graphics
             {
                 y -= (short)(pixel & 0x7F);
             }
-            else {
+            else
+            {
                 y += pixel;
             }
             pixel = data[curPos++];
@@ -1028,7 +1276,8 @@ namespace NScumm.Sci.Graphics
             {
                 x -= (short)((128 - (pixel & 0x7F)) * (_mirroredFlag ? -1 : 1));
             }
-            else {
+            else
+            {
                 x += (short)(pixel * (_mirroredFlag ? -1 : 1));
             }
         }
@@ -1040,14 +1289,16 @@ namespace NScumm.Sci.Graphics
             {
                 x -= (short)(((pixel >> 4) & 7) * (_mirroredFlag ? -1 : 1));
             }
-            else {
+            else
+            {
                 x += (short)((pixel >> 4) * (_mirroredFlag ? -1 : 1));
             }
             if ((pixel & 0x08) != 0)
             {
                 y -= (short)(pixel & 7);
             }
-            else {
+            else
+            {
                 y += (short)(pixel & 7);
             }
         }

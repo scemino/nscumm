@@ -20,6 +20,9 @@
 using NScumm.Core;
 using System;
 using static NScumm.Core.DebugHelper;
+using NScumm.Core.Graphics;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace NScumm.Sci.Engine
 {
@@ -72,6 +75,7 @@ namespace NScumm.Sci.Engine
     {
         private const int SciPlatformDOS = 1;
         private const int SciPlatformWindows = 2;
+        private const string AVOIDPATH_DYNMEM_STRING = "AvoidPath polyline";
 
         private static Register kEmpty(EngineState s, int argc, StackPtr? argv)
         {
@@ -560,7 +564,414 @@ namespace NScumm.Sci.Engine
 
         private static Register kAvoidPath(EngineState s, int argc, StackPtr? argv)
         {
-            throw new NotImplementedException();
+            var start = new Point(argv.Value[0].ToInt16(), argv.Value[1].ToInt16());
+
+            switch (argc)
+            {
+
+                case 3:
+                    {
+                        Register retval;
+                        Polygon polygon = ConvertPolygon(s, argv.Value[2]);
+
+                        if (polygon == null)
+                            return Register.NULL_REG;
+
+                        // Override polygon type to prevent inverted result for contained access polygons
+                        polygon.Type = PolygonType.BARRED_ACCESS;
+
+                        retval = Register.Make(0, Contained(start, polygon) != PolygonContainmentType.OUTSIDE);
+                        return retval;
+                    }
+                case 6:
+                case 7:
+                case 8:
+                    {
+                        var end = new Point(argv.Value[2].ToInt16(), argv.Value[3].ToInt16());
+                        Register poly_list, output;
+                        int width, height, opt = 1;
+
+                        if (ResourceManager.GetSciVersion() >= SciVersion.V2)
+                        {
+                            if (argc < 7)
+                                Error("[avoidpath] Not enough arguments");
+
+                            poly_list = (!argv.Value[4].IsNull ? SciEngine.ReadSelector(s._segMan, argv.Value[4], o => o.elements) : Register.NULL_REG);
+                            width = argv.Value[5].ToUInt16();
+                            height = argv.Value[6].ToUInt16();
+                            if (argc > 7)
+                                opt = argv.Value[7].ToUInt16();
+                        }
+                        else
+                        {
+                            // SCI1.1 and older games always ran with an internal resolution of 320x200
+                            poly_list = argv.Value[4];
+                            width = 320;
+                            height = 190;
+                            if (argc > 6)
+                                opt = argv.Value[6].ToUInt16();
+                        }
+
+                        //TODO: if (DebugMan.isDebugChannelEnabled(kDebugLevelAvoidPath))
+                        //{
+                        //    Debug("[avoidpath] Pathfinding input:");
+                        //    DrawPoint(s, start, 1, width, height);
+                        //    DrawPoint(s, end, 0, width, height);
+
+                        //    if (poly_list.Segment)
+                        //    {
+                        //        PrintInput(s, poly_list, start, end, opt);
+                        //        DrawInput(s, poly_list, start, end, opt, width, height);
+                        //    }
+
+                        //    // Update the whole screen
+                        //    SciEngine.Instance._gfxScreen.CopyToScreen();
+                        //    SciEngine.Instance.System.GraphicsManager.UpdateScreen();
+                        //    if (SciEngine.Instance._gfxPaint16==null)
+                        //        SciEngine.Instance.System.DelayMillis(2500);
+                        //}
+
+                        PathfindingState p = ConvertPolygonSet(s, poly_list, start, end, width, height, opt);
+
+                        if (p == null)
+                        {
+                            Warning("[avoidpath] Error: pathfinding failed for following input:\n");
+                            PrintInput(s, poly_list, start, end, opt);
+                            Warning("[avoidpath] Returning direct path from start point to end point\n");
+                            output = AllocateOutputArray(s._segMan, 3);
+                            SegmentRef arrayRef = s._segMan.Dereference(output);
+                            System.Diagnostics.Debug.Assert(arrayRef.IsValid && !arrayRef.skipByte);
+
+                            WritePoint(arrayRef, 0, start);
+                            WritePoint(arrayRef, 1, end);
+                            WritePoint(arrayRef, 2, new Point(POLY_LAST_POINT, POLY_LAST_POINT));
+
+                            return output;
+                        }
+
+                        // Apply Dijkstra
+                        AStar(p);
+
+                        output = OutputPath(p, s);
+
+                        // Memory is freed by explicit calls to Memory
+                        return output;
+                    }
+
+                default:
+                    Warning($"Unknown AvoidPath subfunction {argc}");
+                    return Register.NULL_REG;
+            }
+        }
+
+        private static void AStar(PathfindingState s)
+        {
+            // Vertices of which the shortest path is known
+            var closedSet = new List<Vertex>();
+
+            // The remaining vertices
+            var openSet = new List<Vertex>();
+            openSet.Add(s.vertex_start);
+            s.vertex_start.costG = 0;
+            s.vertex_start.costF = (uint)Math.Sqrt((float)s.vertex_start.v.SquareDistance(s.vertex_end.v));
+
+            while (openSet.Count != 0)
+            {
+                // Find vertex in open set with lowest F cost
+                var vertex_min_it = openSet.Last();
+                Vertex vertex_min = null;
+                uint min = Vertex.HUGE_DISTANCE;
+
+                foreach (var vertex in openSet)
+                {
+                    if (vertex.costF < min)
+                    {
+                        vertex_min_it = vertex;
+                        vertex_min = vertex_min_it;
+                        min = vertex.costF;
+                    }
+                }
+
+                System.Diagnostics.Debug.Assert(vertex_min != null);    // the vertex cost should never be bigger than HUGE_DISTANCE
+
+                // Check if we are done
+                if (vertex_min == s.vertex_end)
+                    break;
+
+                // Move vertex from set open to set closed
+                closedSet.Add(vertex_min);
+                openSet.Remove(vertex_min_it);
+
+                var visVerts = VisibleVertices(s, vertex_min);
+
+                foreach (var vertex in visVerts)
+                {
+                    uint new_dist;
+
+                    if (closedSet.Contains(vertex))
+                        continue;
+
+                    if (!openSet.Contains(vertex))
+                        openSet.Insert(0, vertex);
+
+                    new_dist = vertex_min.costG + (uint)Math.Sqrt((float)vertex_min.v.SquareDistance(vertex.v));
+
+                    // When travelling to a vertex on the screen edge, we
+                    // add a penalty score to make this path less appealing.
+                    // NOTE: If an obstacle has only one vertex on a screen edge,
+                    // later SSCI pathfinders will treat that vertex like any
+                    // other, while we apply a penalty to paths traversing it.
+                    // This difference might lead to problems, but none are
+                    // known at the time of writing.
+
+                    // WORKAROUND: This check fails in QFG1VGA, room 81 (bug report #3568452).
+                    // However, it is needed in other SCI1.1 games, such as LB2. Therefore, we
+                    // add this workaround for that scene in QFG1VGA, until our algorithm matches
+                    // better what SSCI is doing. With this workaround, QFG1VGA no longer freezes
+                    // in that scene.
+                    bool qfg1VgaWorkaround = (SciEngine.Instance.GameId == SciGameId.QFG1VGA &&
+                                              SciEngine.Instance.EngineState.CurrentRoomNumber == 81);
+
+                    if (s.PointOnScreenBorder(vertex.v) && !qfg1VgaWorkaround)
+                        new_dist += 10000;
+
+                    if (new_dist < vertex.costG)
+                    {
+                        vertex.costG = new_dist;
+                        vertex.costF = vertex.costG + (uint)Math.Sqrt((float)vertex.v.SquareDistance(s.vertex_end.v));
+                        vertex.path_prev = vertex_min;
+                    }
+                }
+            }
+
+            //TODO: if (openSet.Count==0)
+            //    debugC(kDebugLevelAvoidPath, "AvoidPath: End point (%i, %i) is unreachable", s.vertex_end.v.x, s.vertex_end.v.y);
+        }
+
+        private static List<Vertex> VisibleVertices(PathfindingState s, Vertex vertex_cur)
+        {
+            List<Vertex> visVerts = new List<Vertex>();
+
+            for (int i = 0; i < s.vertices; i++)
+            {
+                Vertex vertex = s.vertex_index[i];
+
+                // Make sure we don't intersect a polygon locally at the vertices
+                if ((vertex == vertex_cur) || (Inside(vertex.v, vertex_cur)) || (Inside(vertex_cur.v, vertex)))
+                    continue;
+
+                // Check for intersecting edges
+                int j;
+                for (j = 0; j < s.vertices; j++)
+                {
+                    Vertex edge = s.vertex_index[j];
+                    if (VertexHasEdges(edge))
+                    {
+                        if (Between(vertex_cur.v, vertex.v, edge.v))
+                        {
+                            // If we hit a vertex, make sure we can pass through it without intersecting its polygon
+                            if ((Inside(vertex_cur.v, edge)) || (Inside(vertex.v, edge)))
+                                break;
+
+                            // This edge won't properly intersect, so we continue
+                            continue;
+                        }
+
+                        if (IntersectProper(vertex_cur.v, vertex.v, edge.v, edge._next.v))
+                            break;
+                    }
+                }
+
+                if (j == s.vertices)
+                    visVerts.Insert(0, vertex);
+            }
+
+            return visVerts;
+        }
+
+        private static bool IntersectProper(Point a, Point b, Point c, Point d)
+        {
+            bool ab = (Left(a, b, c) && Left(b, a, d)) || (Left(a, b, d) && Left(b, a, c));
+            bool cd = (Left(c, d, a) && Left(d, c, b)) || (Left(c, d, b) && Left(d, c, a));
+
+            return ab && cd;
+        }
+
+        private static Register OutputPath(PathfindingState p, EngineState s)
+        {
+            int path_len = 0;
+            Register output;
+            Vertex vertex = p.vertex_end;
+            bool unreachable = vertex.path_prev == null;
+
+            if (!unreachable)
+            {
+                while (vertex != null)
+                {
+                    // Compute path length
+                    path_len++;
+                    vertex = vertex.path_prev;
+                }
+            }
+
+            // Allocate memory for path, plus 3 extra for appended point, prepended point and sentinel
+            output = AllocateOutputArray(s._segMan, path_len + 3);
+            SegmentRef arrayRef = s._segMan.Dereference(output);
+            System.Diagnostics.Debug.Assert(arrayRef.IsValid && !arrayRef.skipByte);
+
+            if (unreachable)
+            {
+                // If pathfinding failed we only return the path up to vertex_start
+
+                if (p._prependPoint != null)
+                    WritePoint(arrayRef, 0, p._prependPoint.Value);
+                else
+                    WritePoint(arrayRef, 0, p.vertex_start.v);
+
+                WritePoint(arrayRef, 1, p.vertex_start.v);
+                WritePoint(arrayRef, 2, new Point(POLY_LAST_POINT, POLY_LAST_POINT));
+
+                return output;
+            }
+
+            int offset = 0;
+
+            if (p._prependPoint != null)
+                WritePoint(arrayRef, offset++, p._prependPoint.Value);
+
+            vertex = p.vertex_end;
+            for (int i = path_len - 1; i >= 0; i--)
+            {
+                WritePoint(arrayRef, offset + i, vertex.v);
+                vertex = vertex.path_prev;
+            }
+            offset += path_len;
+
+            if (p._appendPoint != null)
+                WritePoint(arrayRef, offset++, p._appendPoint.Value);
+
+            // Sentinel
+            WritePoint(arrayRef, offset, new Point(POLY_LAST_POINT, POLY_LAST_POINT));
+
+            //if (DebugMan.isDebugChannelEnabled(kDebugLevelAvoidPath))
+            //{
+            //    Debug("\nReturning path:");
+
+            //    SegmentRef outputList = s._segMan.Dereference(output);
+            //    if (!outputList.IsValid || outputList.skipByte)
+            //    {
+            //        Warning("output_path: Polygon data pointer is invalid, skipping polygon");
+            //        return output;
+            //    }
+
+            //    for (int i = 0; i < offset; i++)
+            //    {
+            //        Point pt = ReadPoint(outputList, i);
+            //        // debugN(-1, " (%i, %i)", pt.x, pt.y);
+            //    }
+            //    Debug(";\n");
+            //}
+
+            return output;
+        }
+
+
+        private static void WritePoint(SegmentRef @ref, int offset, Point point)
+        {
+            if (@ref.isRaw)
+            {    // dynmem blocks are raw
+                @ref.raw.Data.WriteSciEndianUInt16(@ref.raw.Offset + offset * POLY_POINT_SIZE, (ushort)point.X);
+                @ref.raw.Data.WriteSciEndianUInt16(@ref.raw.Offset + offset * POLY_POINT_SIZE + 2, (ushort)point.Y);
+            }
+            else
+            {
+                var reg = @ref.reg.Value;
+                reg[offset * 2] = Register.Make(0, (ushort)point.X);
+                reg[offset * 2 + 1] = Register.Make(0, (ushort)point.Y);
+            }
+        }
+
+        private static Register AllocateOutputArray(SegManager segMan, int size)
+        {
+            Register addr;
+
+# if ENABLE_SCI32
+            if (getSciVersion() >= SCI_VERSION_2)
+            {
+                SciArray<reg_t>* array = segMan.allocateArray(&addr);
+                assert(array);
+                array.setType(0);
+                array.setSize(size * 2);
+                return addr;
+            }
+#endif
+
+            segMan.AllocDynmem(POLY_POINT_SIZE * size, AVOIDPATH_DYNMEM_STRING, out addr);
+            return addr;
+        }
+
+        private static void PrintPolygon(SegManager segMan, Register polygon)
+        {
+            Register points = SciEngine.ReadSelector(segMan, polygon, o => o.points);
+
+# if ENABLE_SCI32
+            if (segMan.isHeapObject(points))
+                points = readSelector(segMan, points, SELECTOR(data));
+#endif
+
+            int size = (int)SciEngine.ReadSelectorValue(segMan, polygon, o => o.size);
+            int type = (int)SciEngine.ReadSelectorValue(segMan, polygon, o => o.type);
+            int i;
+            Point point;
+
+            // TODO: debugN(-1, "%i:", type);
+
+            SegmentRef pointList = segMan.Dereference(points);
+            if (!pointList.IsValid || pointList.skipByte)
+            {
+                Warning("print_polygon: Polygon data pointer is invalid, skipping polygon");
+                return;
+            }
+
+            for (i = 0; i < size; i++)
+            {
+                point = ReadPoint(pointList, i);
+                // TODO: debugN(-1, " (%i, %i)", point.x, point.y);
+            }
+
+            point = ReadPoint(pointList, 0);
+            Debug($" ({point.X}, {point.Y})");
+        }
+
+        private static void PrintInput(EngineState s, Register poly_list, Point start, Point end, int opt)
+        {
+            List list;
+            Node node;
+
+            Debug($"Start point: ({start.X}, {start.Y})");
+            Debug($"End point: ({end.X}, {end.Y})");
+            Debug($"Optimization level: {opt}");
+
+            if (poly_list.Segment == 0)
+                return;
+
+            list = s._segMan.LookupList(poly_list);
+
+            if (list == null)
+            {
+                Warning("[avoidpath] Could not obtain polygon list");
+                return;
+            }
+
+            Debug("Polygons:");
+            node = s._segMan.LookupNode(list.first);
+
+            while (node != null)
+            {
+                PrintPolygon(s._segMan, node.value);
+                node = s._segMan.LookupNode(node.succ);
+            }
+
         }
     }
 }

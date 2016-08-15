@@ -107,6 +107,24 @@ namespace NScumm.Sci.Engine
         }
     }
 
+    struct ClassReference
+    {
+        public int script;
+        public string className;
+        public string selectorName;
+        public SelectorType selectorType;
+        public uint selectorOffset;
+
+        public ClassReference(int script,string className,string selectorName,SelectorType selectorType,uint selectorOffset)
+        {
+            this.script = script;
+            this.className = className;
+            this.selectorName = selectorName;
+            this.selectorType = selectorType;
+            this.selectorOffset = selectorOffset;
+        }
+    }
+
     class SciKernelMapEntry
     {
         public string name;
@@ -146,7 +164,7 @@ namespace NScumm.Sci.Engine
         public bool debugBreakpoint;
     }
 
-    delegate Register KernelFunctionCall(EngineState s, int argc, StackPtr? argv);
+    delegate Register KernelFunctionCall(EngineState s, int argc, StackPtr argv);
 
     class KernelFunction
     {
@@ -733,6 +751,18 @@ namespace NScumm.Sci.Engine
             new SciKernelMapEntry()
         };
 
+        private static readonly ClassReference[] classReferences = {
+            new ClassReference(   0, "Character",         "say", SelectorType.Method,  5 ), // Crazy Nick's Soft Picks
+            new ClassReference( 928,  "Narrator",         "say",   SelectorType.Method,  4 ),
+            new ClassReference( 928,  "Narrator",   "startText",   SelectorType.Method,  5 ),
+            new ClassReference( 929,      "Sync",    "syncTime", SelectorType.Variable,  1 ),
+            new ClassReference( 929,      "Sync",     "syncCue", SelectorType.Variable,  2 ),
+            new ClassReference( 981, "SysWindow",        "open",   SelectorType.Method,  1 ),
+            new ClassReference( 999,    "Script",        "init",   SelectorType.Method,  0 ),
+            new ClassReference( 999,    "Script",     "dispose",   SelectorType.Method,  2 ),
+            new ClassReference( 999,    "Script", "changeState",   SelectorType.Method,  3 )
+        };
+
         public KernelFunction[] _kernelFuncs;
 
         public int SelectorNamesSize { get { return _selectorNames.Count; } }
@@ -1130,7 +1160,7 @@ namespace NScumm.Sci.Engine
                     if (kernelMap.subFunctions != null)
                     {
                         // Get version for subfunction identification
-                        SciVersion mySubVersion = (SciVersion)kernelMap.function(null, 0, null).Offset;
+                        SciVersion mySubVersion = (SciVersion)kernelMap.function(null, 0, StackPtr.Null).Offset;
                         // Now check whats the highest subfunction-id for this version
                         SciKernelMapSubEntry kernelSubMap;
                         ushort subFunctionCount = 0;
@@ -1610,104 +1640,102 @@ namespace NScumm.Sci.Engine
 
         private void FindSpecificSelectors(string[] selectorNames)
         {
-            throw new NotImplementedException();
+            // Now, we need to find out selectors which keep changing place...
+            // We do that by dissecting game objects, and looking for selectors at
+            // specified locations.
 
-            //// Now, we need to find out selectors which keep changing place...
-            //// We do that by dissecting game objects, and looking for selectors at
-            //// specified locations.
+            // We need to initialize script 0 here, to make sure that it's always
+            // located at segment 1.
+            _segMan.InstantiateScript(0);
+            ushort sci2Offset = (ushort)((ResourceManager.GetSciVersion() >= SciVersion.V2) ? 64000 : 0);
 
-            //// We need to initialize script 0 here, to make sure that it's always
-            //// located at segment 1.
-            //_segMan.InstantiateScript(0);
-            //ushort sci2Offset = (ushort)((ResourceManager.GetSciVersion() >= SciVersion.V2) ? 64000 : 0);
+            // The Actor class contains the init, xLast and yLast selectors, which
+            // we reference directly. It's always in script 998, so we need to
+            // explicitly load it here.
+            if ((ResourceManager.GetSciVersion() >= SciVersion.V1_EGA_ONLY))
+            {
+                ushort actorScript = 998;
 
-            //// The Actor class contains the init, xLast and yLast selectors, which
-            //// we reference directly. It's always in script 998, so we need to
-            //// explicitly load it here.
-            //if ((ResourceManager.GetSciVersion() >= SciVersion.V1_EGA_ONLY))
-            //{
-            //    ushort actorScript = 998;
+                if (_resMan.TestResource(new ResourceId(ResourceType.Script, (ushort)(actorScript + sci2Offset)))!=null)
+                {
+                    _segMan.InstantiateScript(actorScript + sci2Offset);
 
-            //    if (_resMan.TestResource(new ResourceId(ResourceType.Script, (ushort)(actorScript + sci2Offset)))!=null)
-            //    {
-            //        _segMan.InstantiateScript(actorScript + sci2Offset);
+                    var actorClass = _segMan.GetObject(_segMan.FindObjectByName("Actor"));
 
-            //        var actorClass = _segMan.GetObject(_segMan.FindObjectByName("Actor"));
+                    if (actorClass != null)
+                    {
+                        // Find the xLast and yLast selectors, used in kDoBresen
 
-            //        if (actorClass != null)
-            //        {
-            //            // Find the xLast and yLast selectors, used in kDoBresen
+                        int offset = (ResourceManager.GetSciVersion() < SciVersion.V1_1) ? 3 : 0;
+                        int offset2 = (ResourceManager.GetSciVersion() >= SciVersion.V2) ? 12 : 0;
+                        // xLast and yLast always come between illegalBits and xStep
+                        int illegalBitsSelectorPos = actorClass.LocateVarSelector(_segMan, 15 + offset + offset2); // illegalBits
+                        int xStepSelectorPos = actorClass.LocateVarSelector(_segMan, 51 + offset + offset2);   // xStep
+                        if (xStepSelectorPos - illegalBitsSelectorPos != 3)
+                        {
+                            throw new InvalidOperationException($"illegalBits and xStep selectors aren't found in known locations. illegalBits = {illegalBitsSelectorPos}, xStep = {xStepSelectorPos}");
+                        }
 
-            //            int offset = (ResourceManager.GetSciVersion() < SciVersion.V1_1) ? 3 : 0;
-            //            int offset2 = (ResourceManager.GetSciVersion() >= SciVersion.V2) ? 12 : 0;
-            //            // xLast and yLast always come between illegalBits and xStep
-            //            int illegalBitsSelectorPos = actorClass.LocateVarSelector(_segMan, 15 + offset + offset2); // illegalBits
-            //            int xStepSelectorPos = actorClass.LocateVarSelector(_segMan, 51 + offset + offset2);   // xStep
-            //            if (xStepSelectorPos - illegalBitsSelectorPos != 3)
-            //            {
-            //                throw new InvalidOperationException($"illegalBits and xStep selectors aren't found in known locations. illegalBits = {illegalBitsSelectorPos}, xStep = {xStepSelectorPos}");
-            //            }
+                        int xLastSelectorPos = actorClass.GetVarSelector((ushort)(illegalBitsSelectorPos + 1));
+                        int yLastSelectorPos = actorClass.GetVarSelector((ushort)(illegalBitsSelectorPos + 2));
 
-            //            int xLastSelectorPos = actorClass.GetVarSelector(illegalBitsSelectorPos + 1);
-            //            int yLastSelectorPos = actorClass.GetVarSelector(illegalBitsSelectorPos + 2);
+                        if (selectorNames.Length < (uint)yLastSelectorPos + 1)
+                            selectorNames = new string[(int)yLastSelectorPos + 1];
 
-            //            if (selectorNames.Length < (uint)yLastSelectorPos + 1)
-            //                selectorNames.resize((uint)yLastSelectorPos + 1);
+                        selectorNames[xLastSelectorPos] = "xLast";
+                        selectorNames[yLastSelectorPos] = "yLast";
+                    }   // if (actorClass)
 
-            //            selectorNames[xLastSelectorPos] = "xLast";
-            //            selectorNames[yLastSelectorPos] = "yLast";
-            //        }   // if (actorClass)
+                    _segMan.UninstantiateScript(998);
+                }   // if (_resMan.testResource(ResourceId(kResourceTypeScript, 998)))
+            }   // if ((ResourceManager.GetSciVersion() >= SCI_VERSION_1_EGA_ONLY))
 
-            //        _segMan.UninstantiateScript(998);
-            //    }   // if (_resMan.testResource(ResourceId(kResourceTypeScript, 998)))
-            //}   // if ((ResourceManager.GetSciVersion() >= SCI_VERSION_1_EGA_ONLY))
+            // Find selectors from specific classes
 
-            //// Find selectors from specific classes
+            for (int i = 0; i < classReferences.Length; i++)
+            {
+                if (_resMan.TestResource(new ResourceId(ResourceType.Script, (ushort)(classReferences[i].script + sci2Offset)))==null)
+                    continue;
 
-            //for (int i = 0; i < classReferences.Length; i++)
-            //{
-            //    if (!_resMan.TestResource(new ResourceId(ResourceType.Script, classReferences[i].script + sci2Offset)))
-            //        continue;
+                _segMan.InstantiateScript(classReferences[i].script + sci2Offset);
 
-            //    _segMan.InstantiateScript(classReferences[i].script + sci2Offset);
+                var targetClass = _segMan.GetObject(_segMan.FindObjectByName(classReferences[i].className));
+                int targetSelectorPos = 0;
+                uint selectorOffset = classReferences[i].selectorOffset;
 
-            //    var targetClass = _segMan.GetObject(_segMan.FindObjectByName(classReferences[i].className));
-            //    int targetSelectorPos = 0;
-            //    uint selectorOffset = classReferences[i].selectorOffset;
+                if (targetClass!=null)
+                {
+                    if (classReferences[i].selectorType == SelectorType.Method)
+                    {
+                        if (targetClass.MethodCount < selectorOffset + 1)
+                            Error("The {0} class has less than {1} methods ({2})",
+                                    classReferences[i].className, selectorOffset + 1,
+                                    targetClass.MethodCount);
 
-            //    if (targetClass)
-            //    {
-            //        if (classReferences[i].selectorType == kSelectorMethod)
-            //        {
-            //            if (targetClass.getMethodCount() < selectorOffset + 1)
-            //                error("The %s class has less than %d methods (%d)",
-            //                        classReferences[i].className, selectorOffset + 1,
-            //                        targetClass.getMethodCount());
+                        targetSelectorPos = targetClass.GetFuncSelector((int)selectorOffset);
+                    }
+                    else {
+                        // Add the global selectors to the selector ID
+                        selectorOffset = (uint)(selectorOffset + ((ResourceManager.GetSciVersion() <= SciVersion.V1_LATE) ? 3 : 8));
 
-            //            targetSelectorPos = targetClass.getFuncSelector(selectorOffset);
-            //        }
-            //        else {
-            //            // Add the global selectors to the selector ID
-            //            selectorOffset += (ResourceManager.GetSciVersion() <= SCI_VERSION_1_LATE) ? 3 : 8;
+                        if (targetClass.VarCount < selectorOffset + 1)
+                            Error("The {0} class has less than {1} variables ({2})",
+                                    classReferences[i].className, selectorOffset + 1,
+                                    targetClass.VarCount);
 
-            //            if (targetClass.getVarCount() < selectorOffset + 1)
-            //                error("The %s class has less than %d variables (%d)",
-            //                        classReferences[i].className, selectorOffset + 1,
-            //                        targetClass.getVarCount());
+                        targetSelectorPos = targetClass.GetVarSelector((ushort)selectorOffset);
+                    }
 
-            //            targetSelectorPos = targetClass.getVarSelector(selectorOffset);
-            //        }
-
-            //        if (selectorNames.size() < (uint32)targetSelectorPos + 1)
-            //            selectorNames.resize((uint32)targetSelectorPos + 1);
+                    if (selectorNames.Length < (uint)targetSelectorPos + 1)
+                        selectorNames=new string[((int)targetSelectorPos + 1)];
 
 
-            //        selectorNames[targetSelectorPos] = classReferences[i].selectorName;
-            //    }
-            //}
+                    selectorNames[targetSelectorPos] = classReferences[i].selectorName;
+                }
+            }
 
-            //// Reset the segment manager
-            //_segMan.ResetSegMan();
+            // Reset the segment manager
+            _segMan.ResetSegMan();
         }
 
         private string LookupText(Register address, int index)

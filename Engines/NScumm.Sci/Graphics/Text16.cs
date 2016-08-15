@@ -1,4 +1,4 @@
-﻿//  Author:
+//  Author:
 //       scemino <scemino74@gmail.com>
 //
 //  Copyright (c) 2015 
@@ -418,7 +418,16 @@ namespace NScumm.Sci.Graphics
 
         private bool SwitchToFont900OnSjis(string text, int offset, ushort languageSplitter)
         {
-            throw new NotImplementedException();
+            if (languageSplitter != 0x6a23)
+            { // #j prefix as language splitter
+                byte firstChar = (byte)text[0];
+                if (((firstChar >= 0x81) && (firstChar <= 0x9F)) || ((firstChar >= 0xE0) && (firstChar <= 0xEF)))
+                {
+                    SetFont(900);
+                    return true;
+                }
+            }
+            return false;
         }
 
         public void Box(string text, bool show, Rect rect, short alignment, int fontId)
@@ -686,24 +695,24 @@ namespace NScumm.Sci.Graphics
         }
 
         // Used SCI1+ for text codes
-        public void KernelTextFonts(int argc, StackPtr? argv)
+        public void KernelTextFonts(int argc, StackPtr argv)
         {
             _codeFontsCount = argc;
             _codeFonts = new int[argc];
             for (var i = 0; i < argc; i++)
             {
-                _codeFonts[i] = argv.Value[i].ToUInt16();
+                _codeFonts[i] = argv[i].ToUInt16();
             }
         }
 
         // Used SCI1+ for text codes
-        public void KernelTextColors(int argc, StackPtr? argv)
+        public void KernelTextColors(int argc, StackPtr argv)
         {
             _codeColorsCount = argc;
             _codeColors = new ushort[argc];
             for (var i = 0; i < argc; i++)
             {
-                _codeColors[i] = argv.Value[i].ToUInt16();
+                _codeColors[i] = argv[i].ToUInt16();
             }
         }
     }

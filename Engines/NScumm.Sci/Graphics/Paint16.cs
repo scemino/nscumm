@@ -1,4 +1,4 @@
-﻿//  Author:
+//  Author:
 //       scemino <scemino74@gmail.com>
 //
 //  Copyright (c) 2015 
@@ -340,7 +340,7 @@ namespace NScumm.Sci.Graphics
             }
         }
 
-        public Register KernelDisplay(string text, ushort languageSplitter, int argc, StackPtr? argv)
+        public Register KernelDisplay(string text, ushort languageSplitter, int argc, StackPtr argv)
         {
             Register displayArg;
             short alignment = GfxText16.SCI_TEXT16_ALIGNMENT_LEFT;
@@ -360,48 +360,48 @@ namespace NScumm.Sci.Graphics
             // processing codes in argv
             while (argc > 0)
             {
-                displayArg = argv.Value[0];
+                displayArg = argv[0];
                 if (displayArg.Segment != 0)
                     displayArg= Register.SetOffset(displayArg, 0xFFFF);
                 argc--; argv++;
                 switch (displayArg.Offset)
                 {
                     case SCI_DISPLAY_MOVEPEN:
-                        _ports.MoveTo(argv.Value[0].ToInt16(), argv.Value[1].ToInt16());
+                        _ports.MoveTo(argv[0].ToInt16(), argv[1].ToInt16());
                         argc -= 2; argv += 2;
                         break;
                     case SCI_DISPLAY_SETALIGNMENT:
-                        alignment = argv.Value[0].ToInt16();
+                        alignment = argv[0].ToInt16();
                         argc--; argv++;
                         break;
                     case SCI_DISPLAY_SETPENCOLOR:
-                        colorPen = argv.Value[0].ToInt16();
+                        colorPen = argv[0].ToInt16();
                         _ports.PenColor(colorPen);
                         argc--; argv++;
                         break;
                     case SCI_DISPLAY_SETBACKGROUNDCOLOR:
-                        colorBack = argv.Value[0].ToInt16();
+                        colorBack = argv[0].ToInt16();
                         argc--; argv++;
                         break;
                     case SCI_DISPLAY_SETGREYEDOUTPUT:
-                        _ports.TextGreyedOutput(!argv.Value[0].IsNull);
+                        _ports.TextGreyedOutput(!argv[0].IsNull);
                         argc--; argv++;
                         break;
                     case SCI_DISPLAY_SETFONT:
-                        _text16.SetFont(argv.Value[0].ToUInt16());
+                        _text16.SetFont(argv[0].ToUInt16());
                         argc--; argv++;
                         break;
                     case SCI_DISPLAY_WIDTH:
-                        width = argv.Value[0].ToInt16();
+                        width = argv[0].ToInt16();
                         argc--; argv++;
                         break;
                     case SCI_DISPLAY_SAVEUNDER:
                         doSaveUnder = true;
                         break;
                     case SCI_DISPLAY_RESTOREUNDER:
-                        rect = BitsGetRect(argv.Value[0]);
+                        rect = BitsGetRect(argv[0]);
                         rect.Translate(-_ports.Port.left, -_ports.Port.top);
-                        BitsRestore(argv.Value[0]);
+                        BitsRestore(argv[0]);
                         KernelGraphRedrawBox(rect);
                         // finishing loop
                         argc = 0;
@@ -674,7 +674,7 @@ namespace NScumm.Sci.Graphics
             if (scaleX == 128 && scaleY == 128)
                 view.Draw(celRect, clipRect, clipRectTranslated, loopNo, celNo, priority, paletteNo, false);
             else
-                view.DrawScaled(celRect, clipRect, clipRectTranslated, loopNo, celNo, priority, scaleX, scaleY);
+                view.DrawScaled(celRect, clipRect, clipRectTranslated, loopNo, celNo, priority, (short)scaleX, (short)scaleY);
         }
 
         private void ClearScreen(byte color)

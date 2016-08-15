@@ -44,6 +44,16 @@ namespace NScumm.Core.Graphics
             Y = pos.Y;
         }
 
+        public static Point operator -(Point pos1, Point pos2)
+        {
+            return new Point(pos1.X - pos2.X, pos1.Y - pos2.Y);
+        }
+
+        public static Point operator +(Point pos1, Point pos2)
+        {
+            return new Point(pos1.X + pos2.X, pos1.Y + pos2.Y);
+        }
+
         public static bool operator ==(Point pos1, Point pos2)
         {
             return pos1.X == pos2.X && pos1.Y == pos2.Y;

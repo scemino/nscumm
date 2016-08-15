@@ -22,6 +22,7 @@ using NScumm.Core.Graphics;
 using NScumm.Sci.Graphics;
 using System;
 using static NScumm.Core.DebugHelper;
+using NScumm.Core.IO;
 
 namespace NScumm.Sci.Engine
 {
@@ -30,7 +31,7 @@ namespace NScumm.Sci.Engine
         const int K_DRAWPIC_FLAGS_MIRRORED = (1 << 14);
         const int K_DRAWPIC_FLAGS_ANIMATIONBLACKOUT = (1 << 15);
 
-        private static Register kAddToPic(EngineState s, int argc, StackPtr? argv)
+        private static Register kAddToPic(EngineState s, int argc, StackPtr argv)
         {
             int viewId;
             short loopNo;
@@ -43,18 +44,18 @@ namespace NScumm.Sci.Engine
                 //case 0:
                 //	break;
                 case 1:
-                    if (argv.Value[0].IsNull)
+                    if (argv[0].IsNull)
                         return s.r_acc;
-                    SciEngine.Instance._gfxAnimate.KernelAddToPicList(argv.Value[0], argc, argv);
+                    SciEngine.Instance._gfxAnimate.KernelAddToPicList(argv[0], argc, argv);
                     break;
                 case 7:
-                    viewId = argv.Value[0].ToUInt16();
-                    loopNo = argv.Value[1].ToInt16();
-                    celNo = argv.Value[2].ToInt16();
-                    leftPos = argv.Value[3].ToInt16();
-                    topPos = argv.Value[4].ToInt16();
-                    priority = argv.Value[5].ToInt16();
-                    control = argv.Value[6].ToInt16();
+                    viewId = argv[0].ToUInt16();
+                    loopNo = argv[1].ToInt16();
+                    celNo = argv[2].ToInt16();
+                    leftPos = argv[3].ToInt16();
+                    topPos = argv[4].ToInt16();
+                    priority = argv[5].ToInt16();
+                    control = argv[6].ToInt16();
                     SciEngine.Instance._gfxAnimate.KernelAddToPicView(viewId, loopNo, celNo, leftPos, topPos, priority, control);
                     break;
                 default:
@@ -63,10 +64,10 @@ namespace NScumm.Sci.Engine
             return s.r_acc;
         }
 
-        private static Register kAnimate(EngineState s, int argc, StackPtr? argv)
+        private static Register kAnimate(EngineState s, int argc, StackPtr argv)
         {
-            Register castListReference = (argc > 0) ? argv.Value[0] : Register.NULL_REG;
-            bool cycle = (argc > 1) && ((argv.Value[1].ToUInt16() != 0));
+            Register castListReference = (argc > 0) ? argv[0] : Register.NULL_REG;
+            bool cycle = (argc > 1) && ((argv[1].ToUInt16() != 0));
 
             SciEngine.Instance._gfxAnimate.KernelAnimate(castListReference, cycle, argc, argv);
 
@@ -81,47 +82,47 @@ namespace NScumm.Sci.Engine
             return s.r_acc;
         }
 
-        private static Register kAssertPalette(EngineState s, int argc, StackPtr? argv)
+        private static Register kAssertPalette(EngineState s, int argc, StackPtr argv)
         {
-            int paletteId = argv.Value[0].ToUInt16();
+            int paletteId = argv[0].ToUInt16();
 
             SciEngine.Instance._gfxPalette.KernelAssertPalette(paletteId);
             return s.r_acc;
         }
 
-        private static Register kBaseSetter(EngineState s, int argc, StackPtr? argv)
+        private static Register kBaseSetter(EngineState s, int argc, StackPtr argv)
         {
-            Register @object = argv.Value[0];
+            Register @object = argv[0];
 
             SciEngine.Instance._gfxCompare.KernelBaseSetter(@object);
             return s.r_acc;
         }
 
-        private static Register kCanBeHere(EngineState s, int argc, StackPtr? argv)
+        private static Register kCanBeHere(EngineState s, int argc, StackPtr argv)
         {
-            Register curObject = argv.Value[0];
-            Register listReference = (argc > 1) ? argv.Value[1] : Register.NULL_REG;
+            Register curObject = argv[0];
+            Register listReference = (argc > 1) ? argv[1] : Register.NULL_REG;
 
             Register canBeHere = SciEngine.Instance._gfxCompare.KernelCanBeHere(curObject, listReference);
             return Register.Make(0, (ushort)(canBeHere.IsNull ? 1 : 0));
         }
 
-        private static Register kCantBeHere(EngineState s, int argc, StackPtr? argv)
+        private static Register kCantBeHere(EngineState s, int argc, StackPtr argv)
         {
-            Register curObject = argv.Value[0];
-            Register listReference = (argc > 1) ? argv.Value[1] : Register.NULL_REG;
+            Register curObject = argv[0];
+            Register listReference = (argc > 1) ? argv[1] : Register.NULL_REG;
 
             Register canBeHere = SciEngine.Instance._gfxCompare.KernelCanBeHere(curObject, listReference);
             return canBeHere;
         }
 
-        private static Register kCelHigh(EngineState s, int argc, StackPtr? argv)
+        private static Register kCelHigh(EngineState s, int argc, StackPtr argv)
         {
-            int viewId = argv.Value[0].ToInt16();
+            int viewId = argv[0].ToInt16();
             if (viewId == -1)   // Happens in SCI32
                 return Register.NULL_REG;
-            short loopNo = argv.Value[1].ToInt16();
-            var celNo = (short)((argc >= 3) ? argv.Value[2].ToInt16() : 0);
+            short loopNo = argv[1].ToInt16();
+            var celNo = (short)((argc >= 3) ? argv[2].ToInt16() : 0);
             short celHeight;
 
             celHeight = SciEngine.Instance._gfxCache.KernelViewGetCelHeight(viewId, loopNo, celNo);
@@ -129,13 +130,13 @@ namespace NScumm.Sci.Engine
             return Register.Make(0, (ushort)celHeight);
         }
 
-        private static Register kCelWide(EngineState s, int argc, StackPtr? argv)
+        private static Register kCelWide(EngineState s, int argc, StackPtr argv)
         {
-            int viewId = argv.Value[0].ToInt16();
+            int viewId = argv[0].ToInt16();
             if (viewId == -1)   // Happens in SCI32
                 return Register.NULL_REG;
-            short loopNo = argv.Value[1].ToInt16();
-            var celNo = (short)((argc >= 3) ? argv.Value[2].ToInt16() : 0);
+            short loopNo = argv[1].ToInt16();
+            var celNo = (short)((argc >= 3) ? argv[2].ToInt16() : 0);
             short celWidth;
 
             celWidth = SciEngine.Instance._gfxCache.KernelViewGetCelWidth(viewId, loopNo, celNo);
@@ -143,9 +144,9 @@ namespace NScumm.Sci.Engine
             return Register.Make(0, (ushort)celWidth);
         }
 
-        private static Register kCoordPri(EngineState s, int argc, StackPtr? argv)
+        private static Register kCoordPri(EngineState s, int argc, StackPtr argv)
         {
-            short y = argv.Value[0].ToInt16();
+            short y = argv[0].ToInt16();
 
             if ((argc < 2) || (y != 1))
             {
@@ -153,22 +154,22 @@ namespace NScumm.Sci.Engine
             }
             else
             {
-                short priority = argv.Value[1].ToInt16();
+                short priority = argv[1].ToInt16();
                 return Register.Make(0, (ushort)SciEngine.Instance._gfxPorts.KernelPriorityToCoordinate((byte)priority));
             }
         }
 
-        private static Register kDirLoop(EngineState s, int argc, StackPtr? argv)
+        private static Register kDirLoop(EngineState s, int argc, StackPtr argv)
         {
-            kDirLoopWorker(argv.Value[0], argv.Value[1].ToUInt16(), s, argc, argv);
+            kDirLoopWorker(argv[0], argv[1].ToUInt16(), s, argc, argv);
 
             return s.r_acc;
         }
 
-        private static Register kDisplay(EngineState s, int argc, StackPtr? argv)
+        private static Register kDisplay(EngineState s, int argc, StackPtr argv)
         {
-            Register textp = argv.Value[0];
-            int index = (argc > 1) ? argv.Value[1].ToUInt16() : 0;
+            Register textp = argv[0];
+            int index = (argc > 1) ? argv[1].ToUInt16() : 0;
 
             string text;
 
@@ -189,26 +190,26 @@ namespace NScumm.Sci.Engine
             return SciEngine.Instance._gfxPaint16.KernelDisplay(splitText, languageSplitter, argc, argv);
         }
 
-        private static Register kDisposeWindow(EngineState s, int argc, StackPtr? argv)
+        private static Register kDisposeWindow(EngineState s, int argc, StackPtr argv)
         {
-            int windowId = argv.Value[0].ToInt16();
+            int windowId = argv[0].ToInt16();
             bool reanimate = false;
-            if ((argc != 2) || (argv.Value[1].IsNull))
+            if ((argc != 2) || (argv[1].IsNull))
                 reanimate = true;
 
             SciEngine.Instance._gfxPorts.KernelDisposeWindow((ushort)windowId, reanimate);
             return s.r_acc;
         }
 
-        private static Register kDrawCel(EngineState s, int argc, StackPtr? argv)
+        private static Register kDrawCel(EngineState s, int argc, StackPtr argv)
         {
-            int viewId = argv.Value[0].ToInt16();
-            short loopNo = argv.Value[1].ToInt16();
-            short celNo = argv.Value[2].ToInt16();
-            ushort x = argv.Value[3].ToUInt16();
-            ushort y = argv.Value[4].ToUInt16();
-            var priority = (short)((argc > 5) ? argv.Value[5].ToInt16() : -1);
-            var paletteNo = (ushort)((argc > 6) ? argv.Value[6].ToUInt16() : 0);
+            int viewId = argv[0].ToInt16();
+            short loopNo = argv[1].ToInt16();
+            short celNo = argv[2].ToInt16();
+            ushort x = argv[3].ToUInt16();
+            ushort y = argv[4].ToUInt16();
+            var priority = (short)((argc > 5) ? argv[5].ToInt16() : -1);
+            var paletteNo = (ushort)((argc > 6) ? argv[6].ToUInt16() : 0);
             bool hiresMode = false;
             Register upscaledHiresHandle = Register.NULL_REG;
             ushort scaleX = 128;
@@ -220,15 +221,15 @@ namespace NScumm.Sci.Engine
                 if (paletteNo > 0)
                 {
                     // it's scaling
-                    scaleX = argv.Value[6].ToUInt16();
-                    scaleY = argv.Value[7].ToUInt16();
+                    scaleX = argv[6].ToUInt16();
+                    scaleY = argv[7].ToUInt16();
                     paletteNo = 0;
                 }
                 else
                 {
                     // KQ6 hires
                     hiresMode = true;
-                    upscaledHiresHandle = argv.Value[7];
+                    upscaledHiresHandle = argv[7];
                 }
             }
 
@@ -237,9 +238,9 @@ namespace NScumm.Sci.Engine
             return s.r_acc;
         }
 
-        private static Register kDrawControl(EngineState s, int argc, StackPtr? argv)
+        private static Register kDrawControl(EngineState s, int argc, StackPtr argv)
         {
-            Register controlObject = argv.Value[0];
+            Register controlObject = argv[0];
             string objName = s._segMan.GetObjectName(controlObject);
 
             // Most of the time, we won't return anything to the caller
@@ -297,9 +298,9 @@ namespace NScumm.Sci.Engine
             return s.r_acc;
         }
 
-        private static Register kDrawPic(EngineState s, int argc, StackPtr? argv)
+        private static Register kDrawPic(EngineState s, int argc, StackPtr argv)
         {
-            int pictureId = argv.Value[0].ToUInt16();
+            int pictureId = argv[0].ToUInt16();
             ushort flags = 0;
             short animationNr = -1;
             bool animationBlackoutFlag = false;
@@ -309,7 +310,7 @@ namespace NScumm.Sci.Engine
 
             if (argc >= 2)
             {
-                flags = argv.Value[1].ToUInt16();
+                flags = argv[1].ToUInt16();
                 if ((flags & K_DRAWPIC_FLAGS_ANIMATIONBLACKOUT) != 0)
                     animationBlackoutFlag = true;
                 animationNr = (short)(flags & 0xFF);
@@ -318,22 +319,22 @@ namespace NScumm.Sci.Engine
             }
             if (argc >= 3)
             {
-                if (!argv.Value[2].IsNull)
+                if (!argv[2].IsNull)
                     addToFlag = true;
                 if (!SciEngine.Instance.Features.UsesOldGfxFunctions())
                     addToFlag = !addToFlag;
             }
             if (argc >= 4)
-                EGApaletteNo = argv.Value[3].ToInt16();
+                EGApaletteNo = argv[3].ToInt16();
 
             SciEngine.Instance._gfxPaint16.KernelDrawPicture(pictureId, animationNr, animationBlackoutFlag, mirroredFlag, addToFlag, EGApaletteNo);
             return s.r_acc;
         }
 
-        private static Register kEditControl(EngineState s, int argc, StackPtr? argv)
+        private static Register kEditControl(EngineState s, int argc, StackPtr argv)
         {
-            Register controlObject = argv.Value[0];
-            Register eventObject = argv.Value[1];
+            Register controlObject = argv[0];
+            Register eventObject = argv[1];
 
             if (!controlObject.IsNull)
             {
@@ -352,12 +353,12 @@ namespace NScumm.Sci.Engine
             return s.r_acc;
         }
 
-        private static Register kGetPort(EngineState s, int argc, StackPtr? argv)
+        private static Register kGetPort(EngineState s, int argc, StackPtr argv)
         {
             return SciEngine.Instance._gfxPorts.KernelGetActive();
         }
 
-        private static Register kGraph(EngineState s, int argc, StackPtr? argv)
+        private static Register kGraph(EngineState s, int argc, StackPtr argv)
         {
             if (s == null)
                 return Register.Make(0, (ushort)ResourceManager.GetSciVersion());
@@ -365,83 +366,83 @@ namespace NScumm.Sci.Engine
         }
 
         // Seems to be only implemented for SCI0/SCI01 games
-        private static Register kGraphAdjustPriority(EngineState s, int argc, StackPtr? argv)
+        private static Register kGraphAdjustPriority(EngineState s, int argc, StackPtr argv)
         {
-            SciEngine.Instance._gfxPorts.KernelGraphAdjustPriority(argv.Value[0].ToUInt16(), argv.Value[1].ToUInt16());
+            SciEngine.Instance._gfxPorts.KernelGraphAdjustPriority(argv[0].ToUInt16(), argv[1].ToUInt16());
             return s.r_acc;
         }
 
-        private static Register kGraphDrawLine(EngineState s, int argc, StackPtr? argv)
+        private static Register kGraphDrawLine(EngineState s, int argc, StackPtr argv)
         {
-            short color = AdjustGraphColor(argv.Value[4].ToInt16());
-            short priority = (argc > 5) ? argv.Value[5].ToInt16() : (short)-1;
-            short control = (argc > 6) ? argv.Value[6].ToInt16() : (short)-1;
+            short color = AdjustGraphColor(argv[4].ToInt16());
+            short priority = (argc > 5) ? argv[5].ToInt16() : (short)-1;
+            short control = (argc > 6) ? argv[6].ToInt16() : (short)-1;
 
-            SciEngine.Instance._gfxPaint16.KernelGraphDrawLine(GetGraphPoint(argv.Value), GetGraphPoint(argv.Value + 2), color, priority, control);
+            SciEngine.Instance._gfxPaint16.KernelGraphDrawLine(GetGraphPoint(argv), GetGraphPoint(argv + 2), color, priority, control);
             return s.r_acc;
         }
 
-        private static Register kGraphFillBoxAny(EngineState s, int argc, StackPtr? argv)
+        private static Register kGraphFillBoxAny(EngineState s, int argc, StackPtr argv)
         {
-            Rect rect = GetGraphRect(argv.Value);
-            short colorMask = argv.Value[4].ToInt16();
-            short color = AdjustGraphColor(argv.Value[5].ToInt16());
-            short priority = argv.Value[6].ToInt16(); // yes, we may read from stack sometimes here
-            short control = argv.Value[7].ToInt16(); // sierra did the same
+            Rect rect = GetGraphRect(argv);
+            short colorMask = argv[4].ToInt16();
+            short color = AdjustGraphColor(argv[5].ToInt16());
+            short priority = argv[6].ToInt16(); // yes, we may read from stack sometimes here
+            short control = argv[7].ToInt16(); // sierra did the same
 
             SciEngine.Instance._gfxPaint16.KernelGraphFillBox(rect, colorMask, color, priority, control);
             return s.r_acc;
         }
 
-        private static Register kGraphFillBoxBackground(EngineState s, int argc, StackPtr? argv)
+        private static Register kGraphFillBoxBackground(EngineState s, int argc, StackPtr argv)
         {
-            Rect rect = GetGraphRect(argv.Value);
+            Rect rect = GetGraphRect(argv);
             SciEngine.Instance._gfxPaint16.KernelGraphFillBoxBackground(rect);
             return s.r_acc;
         }
 
-        private static Register kGraphFillBoxForeground(EngineState s, int argc, StackPtr? argv)
+        private static Register kGraphFillBoxForeground(EngineState s, int argc, StackPtr argv)
         {
-            Rect rect = GetGraphRect(argv.Value);
+            Rect rect = GetGraphRect(argv);
             SciEngine.Instance._gfxPaint16.KernelGraphFillBoxForeground(rect);
             return s.r_acc;
         }
 
-        private static Register kGraphGetColorCount(EngineState s, int argc, StackPtr? argv)
+        private static Register kGraphGetColorCount(EngineState s, int argc, StackPtr argv)
         {
             return Register.Make(0, SciEngine.Instance._gfxPalette.TotalColorCount);
         }
 
-        private static Register kGraphRedrawBox(EngineState s, int argc, StackPtr? argv)
+        private static Register kGraphRedrawBox(EngineState s, int argc, StackPtr argv)
         {
-            Rect rect = GetGraphRect(argv.Value);
+            Rect rect = GetGraphRect(argv);
             SciEngine.Instance._gfxPaint16.KernelGraphRedrawBox(rect);
             return s.r_acc;
         }
 
-        private static Register kGraphRestoreBox(EngineState s, int argc, StackPtr? argv)
+        private static Register kGraphRestoreBox(EngineState s, int argc, StackPtr argv)
         {
             // This may be called with a memoryhandle from SAVE_BOX or SAVE_UPSCALEDHIRES_BOX
-            SciEngine.Instance._gfxPaint16.KernelGraphRestoreBox(argv.Value[0]);
+            SciEngine.Instance._gfxPaint16.KernelGraphRestoreBox(argv[0]);
             return s.r_acc;
         }
 
-        private static Register kGraphSaveBox(EngineState s, int argc, StackPtr? argv)
+        private static Register kGraphSaveBox(EngineState s, int argc, StackPtr argv)
         {
-            Rect rect = GetGraphRect(argv.Value);
-            var screenMask = (ushort)(argv.Value[4].ToUInt16() & (ushort)(GfxScreenMasks.ALL));
+            Rect rect = GetGraphRect(argv);
+            var screenMask = (ushort)(argv[4].ToUInt16() & (ushort)(GfxScreenMasks.ALL));
             return SciEngine.Instance._gfxPaint16.KernelGraphSaveBox(rect, screenMask);
         }
 
-        private static Register kGraphSaveUpscaledHiresBox(EngineState s, int argc, StackPtr? argv)
+        private static Register kGraphSaveUpscaledHiresBox(EngineState s, int argc, StackPtr argv)
         {
-            Rect rect = GetGraphRect(argv.Value);
+            Rect rect = GetGraphRect(argv);
             return SciEngine.Instance._gfxPaint16.KernelGraphSaveUpscaledHiresBox(rect);
         }
 
-        private static Register kGraphUpdateBox(EngineState s, int argc, StackPtr? argv)
+        private static Register kGraphUpdateBox(EngineState s, int argc, StackPtr argv)
         {
-            Rect rect = GetGraphRect(argv.Value);
+            Rect rect = GetGraphRect(argv);
             // argv[4] is the map (1 for visual, etc.)
             // argc == 6 on upscaled hires
             bool hiresMode = (argc > 5);
@@ -449,58 +450,58 @@ namespace NScumm.Sci.Engine
             return s.r_acc;
         }
 
-        private static Register kHiliteControl(EngineState s, int argc, StackPtr? argv)
+        private static Register kHiliteControl(EngineState s, int argc, StackPtr argv)
         {
-            Register controlObject = argv.Value[0];
+            Register controlObject = argv[0];
             _k_GenericDrawControl(s, controlObject, true);
             return s.r_acc;
         }
 
-        private static Register kIsItSkip(EngineState s, int argc, StackPtr? argv)
+        private static Register kIsItSkip(EngineState s, int argc, StackPtr argv)
         {
-            int viewId = argv.Value[0].ToInt16();
-            short loopNo = argv.Value[1].ToInt16();
-            short celNo = argv.Value[2].ToInt16();
-            var position = new Point(argv.Value[4].ToUInt16(), argv.Value[3].ToUInt16());
+            int viewId = argv[0].ToInt16();
+            short loopNo = argv[1].ToInt16();
+            short celNo = argv[2].ToInt16();
+            var position = new Point(argv[4].ToUInt16(), argv[3].ToUInt16());
 
             bool result = SciEngine.Instance._gfxCompare.KernelIsItSkip(viewId, loopNo, celNo, position);
             return Register.Make(0, result);
         }
 
-        private static Register kMoveCursor(EngineState s, int argc, StackPtr? argv)
+        private static Register kMoveCursor(EngineState s, int argc, StackPtr argv)
         {
-            SciEngine.Instance._gfxCursor.KernelSetPos(new Point(argv.Value[0].ToInt16(), argv.Value[1].ToInt16()));
+            SciEngine.Instance._gfxCursor.KernelSetPos(new Point(argv[0].ToInt16(), argv[1].ToInt16()));
             return s.r_acc;
         }
 
-        private static Register kNewWindow(EngineState s, int argc, StackPtr? argv)
+        private static Register kNewWindow(EngineState s, int argc, StackPtr argv)
         {
-            var rect1 = new Rect(argv.Value[1].ToInt16(), argv.Value[0].ToInt16(), argv.Value[3].ToInt16(), argv.Value[2].ToInt16());
+            var rect1 = new Rect(argv[1].ToInt16(), argv[0].ToInt16(), argv[3].ToInt16(), argv[2].ToInt16());
             var rect2 = new Rect();
             int argextra = argc >= 13 ? 4 : 0; // Triggers in PQ3 and SCI1.1 games, argc 13 for DOS argc 15 for mac
-            int style = argv.Value[5 + argextra].ToInt16();
-            int priority = (argc > 6 + argextra) ? argv.Value[6 + argextra].ToInt16() : -1;
-            int colorPen = AdjustGraphColor((short)((argc > 7 + argextra) ? argv.Value[7 + argextra].ToInt16() : 0));
-            int colorBack = AdjustGraphColor((short)((argc > 8 + argextra) ? argv.Value[8 + argextra].ToInt16() : 255));
+            int style = argv[5 + argextra].ToInt16();
+            int priority = (argc > 6 + argextra) ? argv[6 + argextra].ToInt16() : -1;
+            int colorPen = AdjustGraphColor((short)((argc > 7 + argextra) ? argv[7 + argextra].ToInt16() : 0));
+            int colorBack = AdjustGraphColor((short)((argc > 8 + argextra) ? argv[8 + argextra].ToInt16() : 255));
 
             if (argc >= 13)
-                rect2 = new Rect(argv.Value[5].ToInt16(), argv.Value[4].ToInt16(), argv.Value[7].ToInt16(), argv.Value[6].ToInt16());
+                rect2 = new Rect(argv[5].ToInt16(), argv[4].ToInt16(), argv[7].ToInt16(), argv[6].ToInt16());
 
             string title = string.Empty;
-            if (argv.Value[4 + argextra].Segment != 0)
+            if (argv[4 + argextra].Segment != 0)
             {
-                title = s._segMan.GetString(argv.Value[4 + argextra]);
+                title = s._segMan.GetString(argv[4 + argextra]);
                 title = SciEngine.Instance.StrSplit(title, null);
             }
 
             return SciEngine.Instance._gfxPorts.KernelNewWindow(rect1, rect2, (ushort)style, (short)priority, (short)colorPen, (short)colorBack, title);
         }
 
-        private static Register kNumCels(EngineState s, int argc, StackPtr? argv)
+        private static Register kNumCels(EngineState s, int argc, StackPtr argv)
         {
-            Register @object = argv.Value[0];
-            var viewId = (int)SciEngine.ReadSelectorValue(s._segMan, @object, SciEngine.Selector(o => o.view));
-            var loopNo = (short)SciEngine.ReadSelectorValue(s._segMan, @object, SciEngine.Selector(o => o.loop));
+            Register @object = argv[0];
+            var viewId = (int)SciEngine.ReadSelectorValue(s._segMan, @object, o => o.view);
+            var loopNo = (short)SciEngine.ReadSelectorValue(s._segMan, @object, o => o.loop);
             short celCount;
 
             celCount = SciEngine.Instance._gfxCache.KernelViewGetCelCount(viewId, loopNo);
@@ -510,9 +511,9 @@ namespace NScumm.Sci.Engine
             return Register.Make(0, (ushort)celCount);
         }
 
-        private static Register kNumLoops(EngineState s, int argc, StackPtr? argv)
+        private static Register kNumLoops(EngineState s, int argc, StackPtr argv)
         {
-            Register @object = argv.Value[0];
+            Register @object = argv[0];
             var viewId = (int)SciEngine.ReadSelectorValue(s._segMan, @object, o => o.view);
             short loopCount;
 
@@ -523,7 +524,7 @@ namespace NScumm.Sci.Engine
             return Register.Make(0, (ushort)loopCount);
         }
 
-        private static Register kOnControl(EngineState s, int argc, StackPtr? argv)
+        private static Register kOnControl(EngineState s, int argc, StackPtr argv)
         {
             Rect rect;
             GfxScreenMasks screenMask;
@@ -535,15 +536,15 @@ namespace NScumm.Sci.Engine
             }
             else
             {
-                screenMask = (GfxScreenMasks)argv.Value[0].ToUInt16();
+                screenMask = (GfxScreenMasks)argv[0].ToUInt16();
                 argBase = 1;
             }
-            rect.Left = argv.Value[argBase].ToInt16();
-            rect.Top = argv.Value[argBase + 1].ToInt16();
+            rect.Left = argv[argBase].ToInt16();
+            rect.Top = argv[argBase + 1].ToInt16();
             if (argc > 3)
             {
-                rect.Right = argv.Value[argBase + 2].ToInt16();
-                rect.Bottom = argv.Value[argBase + 3].ToInt16();
+                rect.Right = argv[argBase + 2].ToInt16();
+                rect.Bottom = argv[argBase + 3].ToInt16();
             }
             else
             {
@@ -554,19 +555,19 @@ namespace NScumm.Sci.Engine
             return Register.Make(0, result);
         }
 
-        private static Register kPalette(EngineState s, int argc, StackPtr? argv)
+        private static Register kPalette(EngineState s, int argc, StackPtr argv)
         {
             if (s == null)
                 return Register.Make(0, (ushort)ResourceManager.GetSciVersion());
             throw new InvalidOperationException("not supposed to call this");
         }
 
-        private static Register kPaletteSetFromResource(EngineState s, int argc, StackPtr? argv)
+        private static Register kPaletteSetFromResource(EngineState s, int argc, StackPtr argv)
         {
-            int resourceId = argv.Value[0].ToUInt16();
+            int resourceId = argv[0].ToUInt16();
             bool force = false;
             if (argc == 2)
-                force = argv.Value[1].ToUInt16() == 2;
+                force = argv[1].ToUInt16() == 2;
 
             // Non-VGA games don't use palette resources.
             // This has been changed to 64 colors because Longbow Amiga does have
@@ -578,30 +579,30 @@ namespace NScumm.Sci.Engine
             return s.r_acc;
         }
 
-        private static Register kPaletteSetFlag(EngineState s, int argc, StackPtr? argv)
+        private static Register kPaletteSetFlag(EngineState s, int argc, StackPtr argv)
         {
-            var fromColor = (ushort)ScummHelper.Clip(argv.Value[0].ToUInt16(), 1, 255);
-            var toColor = (ushort)ScummHelper.Clip(argv.Value[1].ToUInt16(), 1, 255);
-            ushort flags = argv.Value[2].ToUInt16();
+            var fromColor = (ushort)ScummHelper.Clip(argv[0].ToUInt16(), 1, 255);
+            var toColor = (ushort)ScummHelper.Clip(argv[1].ToUInt16(), 1, 255);
+            ushort flags = argv[2].ToUInt16();
             SciEngine.Instance._gfxPalette.KernelSetFlag(fromColor, toColor, flags);
             return s.r_acc;
         }
 
-        private static Register kPaletteUnsetFlag(EngineState s, int argc, StackPtr? argv)
+        private static Register kPaletteUnsetFlag(EngineState s, int argc, StackPtr argv)
         {
-            var fromColor = (ushort)ScummHelper.Clip(argv.Value[0].ToUInt16(), 1, 255);
-            var toColor = (ushort)ScummHelper.Clip(argv.Value[1].ToUInt16(), 1, 255);
-            ushort flags = argv.Value[2].ToUInt16();
+            var fromColor = (ushort)ScummHelper.Clip(argv[0].ToUInt16(), 1, 255);
+            var toColor = (ushort)ScummHelper.Clip(argv[1].ToUInt16(), 1, 255);
+            ushort flags = argv[2].ToUInt16();
             SciEngine.Instance._gfxPalette.KernelUnsetFlag(fromColor, toColor, flags);
             return s.r_acc;
         }
 
-        private static Register kPaletteSetIntensity(EngineState s, int argc, StackPtr? argv)
+        private static Register kPaletteSetIntensity(EngineState s, int argc, StackPtr argv)
         {
-            var fromColor = (ushort)ScummHelper.Clip(argv.Value[0].ToUInt16(), 1, 255);
-            var toColor = (ushort)ScummHelper.Clip(argv.Value[1].ToUInt16(), 1, 255);
-            ushort intensity = argv.Value[2].ToUInt16();
-            bool setPalette = (argc < 4) ? true : (argv.Value[3].IsNull);
+            var fromColor = (ushort)ScummHelper.Clip(argv[0].ToUInt16(), 1, 255);
+            var toColor = (ushort)ScummHelper.Clip(argv[1].ToUInt16(), 1, 255);
+            ushort intensity = argv[2].ToUInt16();
+            bool setPalette = (argc < 4) ? true : (argv[3].IsNull);
 
             // Palette intensity in non-VGA SCI1 games has been removed
             if (SciEngine.Instance._gfxPalette.TotalColorCount < 256)
@@ -611,15 +612,15 @@ namespace NScumm.Sci.Engine
             return s.r_acc;
         }
 
-        private static Register kPaletteFindColor(EngineState s, int argc, StackPtr? argv)
+        private static Register kPaletteFindColor(EngineState s, int argc, StackPtr argv)
         {
-            ushort r = argv.Value[0].ToUInt16();
-            ushort g = argv.Value[1].ToUInt16();
-            ushort b = argv.Value[2].ToUInt16();
+            ushort r = argv[0].ToUInt16();
+            ushort g = argv[1].ToUInt16();
+            ushort b = argv[2].ToUInt16();
             return Register.Make(0, (ushort)SciEngine.Instance._gfxPalette.KernelFindColor(r, g, b));
         }
 
-        private static Register kPaletteAnimate(EngineState s, int argc, StackPtr? argv)
+        private static Register kPaletteAnimate(EngineState s, int argc, StackPtr argv)
         {
             short argNr;
             bool paletteChanged = false;
@@ -630,10 +631,10 @@ namespace NScumm.Sci.Engine
 
             for (argNr = 0; argNr < argc; argNr += 3)
             {
-                ushort fromColor = argv.Value[argNr].ToUInt16();
-                ushort toColor = argv.Value[argNr + 1].ToUInt16();
-                short speed = argv.Value[argNr + 2].ToInt16();
-                if (SciEngine.Instance._gfxPalette.KernelAnimate(fromColor, toColor, speed))
+                ushort fromColor = argv[argNr].ToUInt16();
+                ushort toColor = argv[argNr + 1].ToUInt16();
+                short speed = argv[argNr + 2].ToInt16();
+                if (SciEngine.Instance._gfxPalette.KernelAnimate((byte)fromColor, (byte)toColor, speed))
                     paletteChanged = true;
             }
             if (paletteChanged)
@@ -656,109 +657,109 @@ namespace NScumm.Sci.Engine
             return s.r_acc;
         }
 
-        private static Register kPaletteSave(EngineState s, int argc, StackPtr? argv)
+        private static Register kPaletteSave(EngineState s, int argc, StackPtr argv)
         {
             return SciEngine.Instance._gfxPalette.KernelSave();
         }
 
-        private static Register kPaletteRestore(EngineState s, int argc, StackPtr? argv)
+        private static Register kPaletteRestore(EngineState s, int argc, StackPtr argv)
         {
-            SciEngine.Instance._gfxPalette.KernelRestore(argv.Value[0]);
-            return argv.Value[0];
+            SciEngine.Instance._gfxPalette.KernelRestore(argv[0]);
+            return argv[0];
         }
 
-        private static Register kPalVary(EngineState s, int argc, StackPtr? argv)
+        private static Register kPalVary(EngineState s, int argc, StackPtr argv)
         {
             if (s == null)
                 return Register.Make(0, (ushort)ResourceManager.GetSciVersion());
             throw new InvalidOperationException("not supposed to call this");
         }
 
-        private static Register kPalVaryInit(EngineState s, int argc, StackPtr? argv)
+        private static Register kPalVaryInit(EngineState s, int argc, StackPtr argv)
         {
-            int paletteId = argv.Value[0].ToUInt16();
-            ushort ticks = argv.Value[1].ToUInt16();
-            var stepStop = (ushort)(argc >= 3 ? argv.Value[2].ToUInt16() : 64);
-            var direction = (ushort)(argc >= 4 ? argv.Value[3].ToUInt16() : 1);
+            int paletteId = argv[0].ToUInt16();
+            ushort ticks = argv[1].ToUInt16();
+            var stepStop = (ushort)(argc >= 3 ? argv[2].ToUInt16() : 64);
+            var direction = (ushort)(argc >= 4 ? argv[3].ToUInt16() : 1);
             if (SciEngine.Instance._gfxPalette.KernelPalVaryInit(paletteId, ticks, stepStop, direction))
                 return Register.SIGNAL_REG;
             return Register.NULL_REG;
         }
 
-        private static Register kPalVaryReverse(EngineState s, int argc, StackPtr? argv)
+        private static Register kPalVaryReverse(EngineState s, int argc, StackPtr argv)
         {
-            var ticks = (short)(argc >= 1 ? argv.Value[0].ToUInt16() : -1);
-            var stepStop = (short)(argc >= 2 ? argv.Value[1].ToUInt16() : 0);
-            var direction = (short)(argc >= 3 ? argv.Value[2].ToInt16() : -1);
+            var ticks = (short)(argc >= 1 ? argv[0].ToUInt16() : -1);
+            var stepStop = (short)(argc >= 2 ? argv[1].ToUInt16() : 0);
+            var direction = (short)(argc >= 3 ? argv[2].ToInt16() : -1);
 
             return Register.Make(0, (ushort)SciEngine.Instance._gfxPalette.KernelPalVaryReverse(ticks, stepStop, direction));
         }
 
-        private static Register kPalVaryGetCurrentStep(EngineState s, int argc, StackPtr? argv)
+        private static Register kPalVaryGetCurrentStep(EngineState s, int argc, StackPtr argv)
         {
             return Register.Make(0, (ushort)SciEngine.Instance._gfxPalette.KernelPalVaryGetCurrentStep());
         }
 
-        private static Register kPalVaryDeinit(EngineState s, int argc, StackPtr? argv)
+        private static Register kPalVaryDeinit(EngineState s, int argc, StackPtr argv)
         {
             SciEngine.Instance._gfxPalette.KernelPalVaryDeinit();
             return Register.NULL_REG;
         }
 
-        private static Register kPalVaryChangeTarget(EngineState s, int argc, StackPtr? argv)
+        private static Register kPalVaryChangeTarget(EngineState s, int argc, StackPtr argv)
         {
-            int paletteId = argv.Value[0].ToUInt16();
+            int paletteId = argv[0].ToUInt16();
             short currentStep = SciEngine.Instance._gfxPalette.KernelPalVaryChangeTarget(paletteId);
             return Register.Make(0, (ushort)currentStep);
         }
 
-        private static Register kPalVaryChangeTicks(EngineState s, int argc, StackPtr? argv)
+        private static Register kPalVaryChangeTicks(EngineState s, int argc, StackPtr argv)
         {
-            ushort ticks = argv.Value[0].ToUInt16();
+            ushort ticks = argv[0].ToUInt16();
             SciEngine.Instance._gfxPalette.KernelPalVaryChangeTicks(ticks);
             return Register.NULL_REG;
         }
 
-        private static Register kPalVaryPauseResume(EngineState s, int argc, StackPtr? argv)
+        private static Register kPalVaryPauseResume(EngineState s, int argc, StackPtr argv)
         {
-            bool pauseState = !argv.Value[0].IsNull;
+            bool pauseState = !argv[0].IsNull;
             SciEngine.Instance._gfxPalette.KernelPalVaryPause(pauseState);
             return Register.NULL_REG;
         }
 
-        private static Register kPicNotValid(EngineState s, int argc, StackPtr? argv)
+        private static Register kPicNotValid(EngineState s, int argc, StackPtr argv)
         {
-            var newPicNotValid = (short)((argc > 0) ? argv.Value[0].ToInt16() : -1);
+            var newPicNotValid = (short)((argc > 0) ? argv[0].ToInt16() : -1);
 
             return Register.Make(0, (ushort)SciEngine.Instance._gfxScreen.KernelPicNotValid(newPicNotValid));
         }
 
-        private static Register kPriCoord(EngineState s, int argc, StackPtr? argv)
+        private static Register kPriCoord(EngineState s, int argc, StackPtr argv)
         {
-            short priority = argv.Value[0].ToInt16();
+            short priority = argv[0].ToInt16();
 
             return Register.Make(0, (ushort)SciEngine.Instance._gfxPorts.KernelPriorityToCoordinate((byte)priority));
         }
 
         // Early variant of the SCI32 kRemapColors kernel function, used in the demo of QFG4
-        private static Register kRemapColors(EngineState s, int argc, StackPtr? argv)
+        private static Register kRemapColors(EngineState s, int argc, StackPtr argv)
         {
-            ushort operation = argv.Value[0].ToUInt16();
+            ushort operation = argv[0].ToUInt16();
 
             switch (operation)
             {
                 case 0:
                     { // remap by percent
-                        ushort percent = argv.Value[1].ToUInt16();
+                        ushort percent = argv[1].ToUInt16();
                         SciEngine.Instance._gfxPalette.ResetRemapping();
                         SciEngine.Instance._gfxPalette.SetRemappingPercent(254, (byte)percent);
                     }
                     break;
                 case 1:
                     { // remap by range
-                        ushort from = argv.Value[1].ToUInt16();
-                        ushort to = argv.Value[2].ToUInt16();
-                        ushort @base = argv.Value[3].ToUInt16();
+                        ushort from = argv[1].ToUInt16();
+                        ushort to = argv[2].ToUInt16();
+                        ushort @base = argv[3].ToUInt16();
                         SciEngine.Instance._gfxPalette.ResetRemapping();
                         SciEngine.Instance._gfxPalette.SetRemappingRange(254, (byte)from, (byte)to, (byte)@base);
                     }
@@ -770,7 +771,7 @@ namespace NScumm.Sci.Engine
             return s.r_acc;
         }
 
-        private static Register kSetCursor(EngineState s, int argc, StackPtr? argv)
+        private static Register kSetCursor(EngineState s, int argc, StackPtr argv)
         {
             switch (SciEngine.Instance.Features.DetectSetCursorType())
             {
@@ -783,20 +784,20 @@ namespace NScumm.Sci.Engine
             }
         }
 
-        private static Register kSetCursorSci0(EngineState s, int argc, StackPtr? argv)
+        private static Register kSetCursorSci0(EngineState s, int argc, StackPtr argv)
         {
             var pos = new Point();
-            int cursorId = argv.Value[0].ToInt16();
+            int cursorId = argv[0].ToInt16();
 
             // Set pointer position, if requested
             if (argc >= 4)
             {
-                pos.Y = argv.Value[3].ToInt16();
-                pos.X = argv.Value[2].ToInt16();
+                pos.Y = argv[3].ToInt16();
+                pos.X = argv[2].ToInt16();
                 SciEngine.Instance._gfxCursor.KernelSetPos(pos);
             }
 
-            if ((argc >= 2) && (argv.Value[1].ToInt16() == 0))
+            if ((argc >= 2) && (argv[1].ToInt16() == 0))
             {
                 cursorId = -1;
             }
@@ -805,18 +806,109 @@ namespace NScumm.Sci.Engine
             return s.r_acc;
         }
 
-        private static Register kSetCursorSci11(EngineState s, int argc, StackPtr? argv)
+        private static Register kSetCursorSci11(EngineState s, int argc, StackPtr argv)
         {
-            throw new NotImplementedException();
-        }
+            Point pos;
+            Point hotspot = new Point();
 
-        private static Register kSetNowSeen(EngineState s, int argc, StackPtr? argv)
-        {
-            SciEngine.Instance._gfxCompare.KernelSetNowSeen(argv.Value[0]);
+            switch (argc)
+            {
+                case 1:
+                    switch (argv[0].ToInt16())
+                    {
+                        case 0:
+                            SciEngine.Instance._gfxCursor.KernelHide();
+                            break;
+                        case -1:
+                            SciEngine.Instance._gfxCursor.KernelClearZoomZone();
+                            break;
+                        case -2:
+                            SciEngine.Instance._gfxCursor.KernelResetMoveZone();
+                            break;
+                        default:
+                            SciEngine.Instance._gfxCursor.KernelShow();
+                            break;
+                    }
+                    break;
+                case 2:
+                    pos.Y = argv[1].ToInt16();
+                    pos.X = argv[0].ToInt16();
+
+                    SciEngine.Instance._gfxCursor.KernelSetPos(pos);
+                    break;
+                case 4:
+                    {
+                        short top, left, bottom, right;
+
+                        if (ResourceManager.GetSciVersion() >= SciVersion.V2)
+                        {
+                            top = argv[1].ToInt16();
+                            left = argv[0].ToInt16();
+                            bottom = argv[3].ToInt16();
+                            right = argv[2].ToInt16();
+                        }
+                        else
+                        {
+                            top = argv[0].ToInt16();
+                            left = argv[1].ToInt16();
+                            bottom = argv[2].ToInt16();
+                            right = argv[3].ToInt16();
+                        }
+                        // bottom/right needs to be included into our movezone, because we compare it like any regular Common::Rect
+                        bottom++;
+                        right++;
+
+                        if ((right >= left) && (bottom >= top))
+                        {
+                            Rect rect = new Rect(left, top, right, bottom);
+                            SciEngine.Instance._gfxCursor.KernelSetMoveZone(rect);
+                        }
+                        else
+                        {
+                            Warning("kSetCursor: Ignoring invalid mouse zone (%i, %i)-(%i, %i)", left, top, right, bottom);
+                        }
+                        break;
+                    }
+                case 9: // case for kq5cd, we are getting calling with 4 additional 900d parameters
+                case 5:
+                // Fallthrough
+                case 3:
+                    if (argc == 5 || argc == 9)
+                    {
+                        hotspot = new Point(argv[3].ToInt16(), argv[4].ToInt16());
+                    }
+                    if (SciEngine.Instance.Platform == Platform.Macintosh && SciEngine.Instance.GameId != SciGameId.TORIN)
+                    {
+                        // Torin Mac seems to be the only game that uses view cursors
+                        // Mac cursors have their own hotspot, so ignore any we get here
+                        SciEngine.Instance._gfxCursor.KernelSetMacCursor(argv[0].ToUInt16(), argv[1].ToUInt16(), argv[2].ToUInt16());
+                    }
+                    else
+                    {
+                        SciEngine.Instance._gfxCursor.KernelSetView(argv[0].ToUInt16(), argv[1].ToUInt16(), argv[2].ToUInt16(), ref hotspot);
+                    }
+                    break;
+                case 10:
+                    // Freddy pharkas, when using the whiskey glass to read the prescription (bug #3034973)
+                    SciEngine.Instance._gfxCursor.KernelSetZoomZone((byte)argv[0].ToUInt16(),
+                        new Rect(argv[1].ToUInt16(), argv[2].ToUInt16(), argv[3].ToUInt16(), argv[4].ToUInt16()),
+                        argv[5].ToUInt16(), argv[6].ToUInt16(), argv[7].ToUInt16(),
+                        argv[8].ToUInt16(), (byte)argv[9].ToUInt16());
+                    break;
+                default:
+                    Error("kSetCursor: Unhandled case: %d arguments given", argc);
+                    break;
+            }
             return s.r_acc;
         }
 
-        private static Register kSetPort(EngineState s, int argc, StackPtr? argv)
+        private static Register kSetNowSeen(EngineState s, int argc, StackPtr argv)
+        {
+            SciEngine.Instance._gfxCompare.KernelSetNowSeen(argv[0]);
+            return s.r_acc;
+        }
+
+        private static Register kSetPort(EngineState s, int argc, StackPtr argv)
         {
             ushort portId;
             Rect picRect;
@@ -826,19 +918,19 @@ namespace NScumm.Sci.Engine
             switch (argc)
             {
                 case 1:
-                    portId = argv.Value[0].ToUInt16();
+                    portId = argv[0].ToUInt16();
                     SciEngine.Instance._gfxPorts.KernelSetActive(portId);
                     break;
 
                 case 6:
                 case 7:
                     initPriorityBandsFlag = argc == 7;
-                    picRect.Top = argv.Value[0].ToInt16();
-                    picRect.Left = argv.Value[1].ToInt16();
-                    picRect.Bottom = argv.Value[2].ToInt16();
-                    picRect.Right = argv.Value[3].ToInt16();
-                    picTop = argv.Value[4].ToInt16();
-                    picLeft = argv.Value[5].ToInt16();
+                    picRect.Top = argv[0].ToInt16();
+                    picRect.Left = argv[1].ToInt16();
+                    picRect.Bottom = argv[2].ToInt16();
+                    picRect.Right = argv[3].ToInt16();
+                    picTop = argv[4].ToInt16();
+                    picLeft = argv[5].ToInt16();
                     SciEngine.Instance._gfxPorts.KernelSetPicWindow(picRect, picTop, picLeft, initPriorityBandsFlag);
                     break;
 
@@ -848,7 +940,7 @@ namespace NScumm.Sci.Engine
             return Register.NULL_REG;
         }
 
-        private static Register kSetVideoMode(EngineState s, int argc, StackPtr? argv)
+        private static Register kSetVideoMode(EngineState s, int argc, StackPtr argv)
         {
             // This call is used for KQ6's intro. It has one parameter, which is 1 when
             // the intro begins, and 0 when it ends. It is suspected that this is
@@ -862,10 +954,10 @@ namespace NScumm.Sci.Engine
             return s.r_acc;
         }
 
-        private static Register kShakeScreen(EngineState s, int argc, StackPtr? argv)
+        private static Register kShakeScreen(EngineState s, int argc, StackPtr argv)
         {
-            var shakeCount = (short)((argc > 0) ? argv.Value[0].ToUInt16() : 1);
-            var directions = (short)((argc > 1) ? argv.Value[1].ToUInt16() : 1);
+            var shakeCount = (short)((argc > 0) ? argv[0].ToUInt16() : 1);
+            var directions = (short)((argc > 1) ? argv[1].ToUInt16() : 1);
 
             SciEngine.Instance._gfxScreen.KernelShakeScreen(shakeCount, directions);
             return s.r_acc;
@@ -878,9 +970,9 @@ namespace NScumm.Sci.Engine
         /// <param name="argc"></param>
         /// <param name="argv"></param>
         /// <returns></returns>
-        private static Register kShow(EngineState s, int argc, StackPtr? argv)
+        private static Register kShow(EngineState s, int argc, StackPtr argv)
         {
-            ushort map = argv.Value[0].ToUInt16();
+            ushort map = argv[0].ToUInt16();
 
             switch (map)
             {
@@ -902,7 +994,7 @@ namespace NScumm.Sci.Engine
             return s.r_acc;
         }
 
-        private static Register kTextColors(EngineState s, int argc, StackPtr? argv)
+        private static Register kTextColors(EngineState s, int argc, StackPtr argv)
         {
             SciEngine.Instance._gfxText16.KernelTextColors(argc, argv);
             return s.r_acc;
@@ -911,19 +1003,19 @@ namespace NScumm.Sci.Engine
         // New calls for SCI11. Using those is only needed when using text-codes so that
         // one is able to change font and/or color multiple times during kDisplay and
         // kDrawControl
-        private static Register kTextFonts(EngineState s, int argc, StackPtr? argv)
+        private static Register kTextFonts(EngineState s, int argc, StackPtr argv)
         {
             SciEngine.Instance._gfxText16.KernelTextFonts(argc, argv);
             return s.r_acc;
         }
 
-        private static Register kTextSize(EngineState s, int argc, StackPtr? argv)
+        private static Register kTextSize(EngineState s, int argc, StackPtr argv)
         {
             short textWidth, textHeight;
-            string text = s._segMan.GetString(argv.Value[1]);
-            StackPtr dest = s._segMan.DerefRegPtr(argv.Value[0], 4);
-            int maxwidth = (argc > 3) ? argv.Value[3].ToUInt16() : 0;
-            int font_nr = argv.Value[2].ToUInt16();
+            string text = s._segMan.GetString(argv[1]);
+            StackPtr dest = (StackPtr)s._segMan.DerefRegPtr(argv[0], 4);
+            int maxwidth = (argc > 3) ? argv[3].ToUInt16() : 0;
+            int font_nr = argv[2].ToUInt16();
 
             if (dest == StackPtr.Null)
             {
@@ -933,9 +1025,9 @@ namespace NScumm.Sci.Engine
 
             string sep_str;
             string sep = null;
-            if ((argc > 4) && (argv.Value[4].Segment != 0))
+            if ((argc > 4) && (argv[4].Segment != 0))
             {
-                sep_str = s._segMan.GetString(argv.Value[4]);
+                sep_str = s._segMan.GetString(argv[4]);
                 sep = sep_str;
             }
 
@@ -974,7 +1066,7 @@ namespace NScumm.Sci.Engine
                     Warning("kTextSize: string would be too big to fit on screen. Trimming it");
                     text = text.Trim();
                     // Copy over the trimmed string...
-                    s._segMan.Strcpy(argv.Value[1], text);
+                    s._segMan.Strcpy(argv[1], text);
                     // ...and recalculate bounding box dimensions
                     SciEngine.Instance._gfxText16.KernelTextSize(splitText, languageSplitter, (short)font_nr, (short)maxwidth, out textWidth, out textHeight);
                 }
@@ -995,9 +1087,9 @@ namespace NScumm.Sci.Engine
             return s.r_acc;
         }
 
-        private static Register kWait(EngineState s, int argc, StackPtr? argv)
+        private static Register kWait(EngineState s, int argc, StackPtr argv)
         {
-            int sleep_time = argv.Value[0].ToUInt16();
+            int sleep_time = argv[0].ToUInt16();
 
             s.Wait(sleep_time);
 
@@ -1005,10 +1097,10 @@ namespace NScumm.Sci.Engine
         }
 
 
-        private static void kDirLoopWorker(Register @object, ushort angle, EngineState s, int argc, StackPtr? argv)
+        private static void kDirLoopWorker(Register @object, ushort angle, EngineState s, int argc, StackPtr argv)
         {
-            var viewId = (int)SciEngine.ReadSelectorValue(s._segMan, @object, SciEngine.Selector(o => o.view));
-            var signal = (ViewSignals)SciEngine.ReadSelectorValue(s._segMan, @object, SciEngine.Selector(o => o.signal));
+            var viewId = (int)SciEngine.ReadSelectorValue(s._segMan, @object, o => o.view);
+            var signal = (ViewSignals)SciEngine.ReadSelectorValue(s._segMan, @object, o => o.signal);
 
             if (signal.HasFlag(ViewSignals.DoesntTurn))
                 return;

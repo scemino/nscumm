@@ -31,11 +31,11 @@ namespace NScumm.Core.Audio.SoftSynth
         {
         }
 
-        void IMidiDriver.SysEx(byte[] msg, ushort length)
+        void IMidiDriver.SysEx(BytePtr msg, ushort length)
         {
         }
 
-        void IMidiDriver.MetaEvent(byte type, byte[] data, ushort length)
+        void IMidiDriver.MetaEvent(byte type, BytePtr data, ushort length)
         {
         }
     }

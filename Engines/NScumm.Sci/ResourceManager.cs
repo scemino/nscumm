@@ -776,8 +776,8 @@ namespace NScumm.Sci
 
                     //if (bAdd)
                     //{
-                    //    psrcPatch = new PatchResourceSource(name);
-                    //    processPatch(psrcPatch, (ResourceType)i, resourceNr);
+                    //    var psrcPatch = new PatchResourceSource(name);
+                    //    ProcessPatch(psrcPatch, (ResourceType)i, resourceNr);
                     //}
                 }
             }
@@ -1741,7 +1741,31 @@ namespace NScumm.Sci
 
         private bool HasSci1Voc900()
         {
-            throw new NotImplementedException();
+            var res = FindResource(new ResourceId(ResourceType.Vocab, 900), false);
+
+            if (res==null)
+                return false;
+
+            if (res.size < 0x1fe)
+                return false;
+
+            ushort offset = 0x1fe;
+
+            while (offset < res.size)
+            {
+                offset++;
+                do
+                {
+                    if (offset >= res.size)
+                    {
+                        // Out of bounds;
+                        return false;
+                    }
+                } while (res.data[offset++]!=0);
+                offset += 3;
+            }
+
+            return offset == res.size;
         }
 
         private bool HasSci0Voc999()

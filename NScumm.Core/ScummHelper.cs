@@ -620,6 +620,11 @@ namespace NScumm.Core
             return new string(data.ToArray());
         }
 
+        public static byte[] GetBytes(this string value)
+        {
+            return value.ToCharArray().Select(c => (byte)c).ToArray();
+        }
+
         public static int GetTextLength(this byte[] value, int startIndex = 0)
         {
             int length = 0;

@@ -18,11 +18,11 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-using System;
+
 using System.IO;
 using static NScumm.Core.DebugHelper;
 
-namespace NScumm.Core
+namespace NScumm.Core.Common
 {
     public class DecompressorDCL
     {
@@ -143,7 +143,7 @@ namespace NScumm.Core
         				tokenOffset = (ushort)((value << dictionaryType) | GetBitsLSB(dictionaryType));
         			tokenOffset++;
 
-        			Debug(8, "\nCOPY(%d from %d)\n", tokenLength, tokenOffset);
+                    Debug(8, $"\nCOPY({tokenLength} from {tokenOffset})\n");
 
         			if (_targetFixedSize) {
         				if (tokenLength + _bytesWritten > _targetSize) {

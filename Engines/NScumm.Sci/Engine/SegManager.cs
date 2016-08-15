@@ -22,6 +22,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using static NScumm.Core.DebugHelper;
+using NScumm.Sci.Engine;
 
 namespace NScumm.Sci.Engine
 {
@@ -232,11 +233,13 @@ namespace NScumm.Sci.Engine
                     scr.IncrementLockers();
                     return segmentId;
                 }
-                else {
+                else
+                {
                     scr.FreeScript();
                 }
             }
-            else {
+            else
+            {
                 scr = AllocateScript(scriptNum, out segmentId);
             }
 
@@ -285,6 +288,146 @@ namespace NScumm.Sci.Engine
                 scr.MarkDeleted();
                 // TODO: debugC(kDebugLevelScripts, "Unloaded script 0x%x.", script_nr);
             }
+        }
+
+        public void SaveLoadWithSerializer(Serializer s)
+        {
+            throw new NotImplementedException();
+//            if (s.IsLoading)
+//            {
+//                ResetSegMan();
+
+//                // Reset _scriptSegMap, to be restored below
+//                _scriptSegMap.Clear();
+//            }
+
+//            s.Skip(4, 14, 18);        // OBSOLETE: Used to be _exportsAreWide
+
+//            uint sync_heap_size = (uint)_heap.Count;
+//            s.SyncAsUint32LE(ref sync_heap_size);
+//            _heap.Resize(sync_heap_size);
+//            for (uint i = 0; i < sync_heap_size; ++i)
+//            {
+//                SegmentObj mobj = _heap[i];
+
+//                // Sync the segment type
+//                uint type = (uint)((s.IsSaving && mobj!=null) ? mobj.Type : SegmentType.INVALID);
+//                s.SyncAsUint32LE(ref type);
+
+//                if (type == (uint)SegmentType.HUNK)
+//                {
+//                    // Don't save or load HunkTable segments
+//                    continue;
+//                }
+//                else if (type == (uint)SegmentType.INVALID)
+//                {
+//                    // If we were saving and mobj == 0, or if we are loading and this is an
+//                    // entry marked as empty . skip to next
+//                    continue;
+//                }
+//                else if (type == 5)
+//                {
+//                    // Don't save or load the obsolete system string segments
+//                    if (s.IsSaving)
+//                    {
+//                        continue;
+//                    }
+//                    else
+//                    {
+//                        // Old saved game. Skip the data.
+//                        string tmp;
+//                        for (int j = 0; j < 4; j++)
+//                        {
+//                            s.SyncString(tmp);  // OBSOLETE: name
+//                            s.Skip(4);          // OBSOLETE: maxSize
+//                            s.SyncString(tmp);  // OBSOLETE: value
+//                        }
+//                        _heap[i] = null;    // set as freed
+//                        continue;
+//                    }
+//# if ENABLE_SCI32
+//                }
+//                else if (type == SEG_TYPE_ARRAY)
+//                {
+//                    // Set the correct segment for SCI32 arrays
+//                    _arraysSegId = i;
+//                }
+//                else if (type == SEG_TYPE_STRING)
+//                {
+//                    // Set the correct segment for SCI32 strings
+//                    _stringSegId = i;
+//#endif
+//                }
+
+//                if (s.IsLoading)
+//                    mobj = SegmentObj.CreateSegmentObj(type);
+
+//                //assert(mobj);
+
+//                // Let the object sync custom data. Scripts are loaded at this point.
+//                mobj.SaveLoadWithSerializer(s);
+
+//                if (type == (uint)SegmentType.SCRIPT)
+//                {
+//                    Script scr = (Script)mobj;
+
+//                    // If we are loading a script, perform some extra steps
+//                    if (s.IsLoading)
+//                    {
+//                        // Hook the script up in the script.segment map
+//                        _scriptSegMap[scr.ScriptNumber] = (ushort)i;
+
+//                        ObjMap objects = scr.GetObjectMap();
+//                        for (ObjMap::iterator it = objects.begin(); it != objects.end(); ++it)
+//                            it._value.syncBaseObject(scr.getBuf(it._value.getPos().getOffset()));
+
+//                    }
+
+//                    // Sync the script's string heap
+//                    if (s.Version >= 28)
+//                        scr.SyncStringHeap(s);
+//                }
+//            }
+
+//            s.SyncAsSint32LE(_clonesSegId);
+//            s.SyncAsSint32LE(_listsSegId);
+//            s.SyncAsSint32LE(_nodesSegId);
+
+//            syncArray<Class>(s, _classTable);
+
+//            // Now that all scripts are loaded, init their objects.
+//            // Just like in Script::initializeObjectsSci0, we do two passes
+//            // in case an object is loaded before its base.
+//            int passes = ResourceManager.GetSciVersion() < SciVersion.V1_1 ? 2 : 1;
+//            for (int pass = 1; pass <= passes; ++pass)
+//            {
+//                for (uint i = 0; i < _heap.size(); i++)
+//                {
+//                    if (!_heap[i] || _heap[i].getType() != SegmentType.SCRIPT)
+//                        continue;
+
+//                    Script scr = (Script)_heap[i];
+//                    scr.SyncLocalsBlock(this);
+
+//                    ObjMap objects = scr.GetObjectMap();
+//                    for (ObjMap::iterator it = objects.begin(); it != objects.end(); ++it)
+//                    {
+//                        reg_t addr = it._value.getPos();
+//                        Object* obj = scr.scriptObjInit(addr, false);
+
+//                        if (pass == 2)
+//                        {
+//                            if (!obj.InitBaseObject(this, addr, false))
+//                            {
+//                                // TODO/FIXME: This should not be happening at all. It might indicate a possible issue
+//                                // with the garbage collector. It happens for example in LSL5 (German, perhaps English too).
+//                                Warning("Failed to locate base object for object at %04X:%04X; skipping", PRINT_REG(addr));
+//                                objects.erase(addr.toUint16());
+//                            }
+//                        }
+//                    }
+//                }
+//            }
         }
 
         public bool FreeDynmem(Register addr)
@@ -365,7 +508,8 @@ namespace NScumm.Sci.Engine
                             if (scr.Lockers != 0)
                                 scr.DecrementLockers();  // Decrease lockers if this is us ourselves
                         }
-                        else {
+                        else
+                        {
                             UninstantiateScript(superclass_script);
                         }
                         // Recurse to assure that the superclass lockers number gets decreased
@@ -466,9 +610,9 @@ namespace NScumm.Sci.Engine
             _classTable[index].reg = offset;
         }
 
-        public StackPtr DerefRegPtr(Register pointer, int entries)
+        public StackPtr? DerefRegPtr(Register pointer, int entries)
         {
-            return (StackPtr)DerefPtr(this, pointer, 2 * entries, false);
+            return (StackPtr?)DerefPtr(this, pointer, 2 * entries, false);
         }
 
         public Register GetClassAddress(ushort classnr, ScriptLoadType loadType, ushort callerSegment)
@@ -480,7 +624,8 @@ namespace NScumm.Sci.Engine
             {
                 throw new InvalidOperationException($"[VM] Attempt to dereference class {classnr:x}, which doesn't exist (max {_classTable.Length:x})");
             }
-            else {
+            else
+            {
                 Class the_class = _classTable[classnr];
                 if (the_class.reg.Segment == 0)
                 {
@@ -549,9 +694,33 @@ namespace NScumm.Sci.Engine
             _resMan.UnlockResource(vocab996);
         }
 
-        internal void ResetSegMan()
+        public void ResetSegMan()
         {
-            throw new NotImplementedException();
+            // Free memory
+            for (int i = 0; i < _heap.Count; i++)
+            {
+                if (_heap[i] != null)
+                    Deallocate((ushort)i);
+            }
+
+            _heap.Clear();
+
+            // And reinitialize
+            _heap.Add(null);
+
+            _clonesSegId = 0;
+            _listsSegId = 0;
+            _nodesSegId = 0;
+            _hunksSegId = 0;
+
+# if ENABLE_SCI32
+            _arraysSegId = 0;
+            _stringSegId = 0;
+#endif
+
+            // Reinitialize class table
+            Array.Clear(_classTable, 0, _classTable.Length);
+            CreateClassTable();
         }
 
         /// <summary>
@@ -668,16 +837,17 @@ namespace NScumm.Sci.Engine
 
             if (src_r.isRaw)
             {
-                // raw -> *
+                // raw . *
                 Memcpy(dest, src_r.raw, n);
             }
             else if (dest_r.isRaw)
             {
-                // * -> raw
+                // * . raw
                 Memcpy(dest_r.raw, src, n);
             }
-            else {
-                // non-raw -> non-raw
+            else
+            {
+                // non-raw . non-raw
                 for (var i = 0; i < n; i++)
                 {
                     char c = GetChar(src_r, i);
@@ -705,7 +875,8 @@ namespace NScumm.Sci.Engine
                 // raw . raw
                 Array.Copy(src.Data, src.Offset, dest_r.raw.Data, dest_r.raw.Offset, n);
             }
-            else {
+            else
+            {
                 // raw . non-raw
                 for (var i = 0; i < n; i++)
                     SetChar(dest_r, (uint)i, src[i]);
@@ -728,12 +899,13 @@ namespace NScumm.Sci.Engine
 
             if (src_r.isRaw)
             {
-                // raw -> raw
+                // raw . raw
                 //::memcpy(dest, src_r.raw, n);
                 Array.Copy(src_r.raw.Data, src_r.raw.Offset, dest.Data, dest.Offset, n);
             }
-            else {
-                // non-raw -> raw
+            else
+            {
+                // non-raw . raw
                 for (var i = 0; i < n; i++)
                 {
                     char c = GetChar(src_r, i);
@@ -908,7 +1080,8 @@ namespace NScumm.Sci.Engine
                     var ct = (CloneTable)mobj;
                     if (ct.IsValidEntry((int)pos.Offset))
                         obj = ct._table[(int)pos.Offset].Item;
-                    else {
+                    else
+                    {
                         Warning("getObject(): Trying to get an invalid object");
                     }
                 }
@@ -1008,12 +1181,14 @@ namespace NScumm.Sci.Engine
                     Array.Copy(src.ToCharArray().Select(c => (byte)c).ToArray(), 0, dest_r.raw.Data, dest_r.raw.Offset, src.Length);
                     dest_r.raw.Data[dest_r.raw.Offset + src.Length] = 0;
                 }
-                else {
+                else
+                {
                     Array.Copy(src.ToCharArray().Select(c => (byte)c).ToArray(), 0, dest_r.raw.Data, dest_r.raw.Offset, (int)n);
                     dest_r.raw.Data[dest_r.raw.Offset + n] = 0;
                 }
             }
-            else {
+            else
+            {
                 int i;
                 // raw . non-raw
                 for (i = 0; i < n && i < src.Length; i++)
@@ -1078,7 +1253,8 @@ namespace NScumm.Sci.Engine
                         break;
                 }
             }
-            else {
+            else
+            {
                 // non-raw . non-raw
                 for (var i = 0; i < n; i++)
                 {
@@ -1162,7 +1338,8 @@ namespace NScumm.Sci.Engine
             {
                 return ScummHelper.GetTextLength(str_r.raw.Data, str_r.raw.Offset);
             }
-            else {
+            else
+            {
                 int i = 0;
                 while (GetChar(str_r, i) != 0)
                     i++;
@@ -1197,7 +1374,8 @@ namespace NScumm.Sci.Engine
             }
             if (src_r.isRaw)
                 ret = ScummHelper.GetText(src_r.raw.Data, src_r.raw.Offset);
-            else {
+            else
+            {
                 var i = 0;
                 for (;;)
                 {

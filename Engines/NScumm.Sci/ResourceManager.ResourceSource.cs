@@ -338,7 +338,7 @@ namespace NScumm.Sci
 
                     data = new byte[size];
                     _status = ResourceStatus.Allocated;
-                    errorNum = data != null ? dec.Unpack(file, data, szPacked, size) : ResourceErrorCodes.RESOURCE_TOO_BIG;
+                    errorNum = dec.Unpack(file, data, szPacked, size);
                     if (errorNum != ResourceErrorCodes.NONE)
                         Unalloc();
 
@@ -417,6 +417,11 @@ namespace NScumm.Sci
                     fileStream.Dispose();
             }
 
+        }
+
+        internal void SetAudioLanguage(short language)
+        {
+            throw new NotImplementedException();
         }
 
         class DirectoryResourceSource : ResourceSource

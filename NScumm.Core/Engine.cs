@@ -126,6 +126,7 @@ namespace NScumm.Core
         protected Engine(ISystem system, GameSettings settings)
         {
             Instance = this;
+            _engineStartTime = Environment.TickCount;
             Settings = settings;
             Mixer = new Mixer(44100);
             // HACK:

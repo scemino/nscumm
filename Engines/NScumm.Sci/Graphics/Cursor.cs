@@ -30,6 +30,7 @@ namespace NScumm.Sci.Graphics
         private const int SCI_CURSOR_SCI0_HEIGHTWIDTH = 16;
         private const int SCI_CURSOR_SCI0_RESOURCESIZE = 68;
         private const int SCI_CURSOR_SCI0_TRANSPARENCYCOLOR = 1;
+        private const int MAX_CACHED_CURSORS = 10;
 
         struct SciCursorSetPositionWorkarounds
         {
@@ -62,7 +63,7 @@ namespace NScumm.Sci.Graphics
         private byte _zoomColor;
         private byte _zoomMultiplier;
         private byte[] _cursorSurface;
-        //private CursorCache _cachedCursors;
+        private HashMap<int, GfxView> _cachedCursors;
         private bool _isVisible;
 
         // KQ6 Windows has different black and white cursors. If this is true (set
@@ -112,6 +113,7 @@ namespace NScumm.Sci.Graphics
             _palette = palette;
             _screen = screen;
             _macCursorRemap = new List<ushort>();
+            _cachedCursors = new HashMap<int, GfxView>();
 
             _upscaledHires = _screen.UpscaledHires;
             _isVisible = true;
@@ -135,7 +137,8 @@ namespace NScumm.Sci.Graphics
                 // TODO: _useOriginalKQ6WinCursors = ConfMan.getBool("windows_cursors");
                 _useOriginalKQ6WinCursors = true;
             }
-            else {
+            else
+            {
                 _useOriginalKQ6WinCursors = false;
             }
 
@@ -144,7 +147,8 @@ namespace NScumm.Sci.Graphics
                 // TODO: _useSilverSQ4CDCursors = ConfMan.getBool("silver_cursors");
                 _useSilverSQ4CDCursors = true;
             }
-            else {
+            else
+            {
                 _useSilverSQ4CDCursors = false;
             }
 
@@ -211,7 +215,8 @@ namespace NScumm.Sci.Graphics
                 // otherwise it's in the top left of the mouse cursor.
                 hotspot.X = hotspot.Y = resourceData[3] != 0 ? SCI_CURSOR_SCI0_HEIGHTWIDTH / 2 : 0;
             }
-            else {
+            else
+            {
                 // Cursors in newer SCI versions contain actual hotspot coordinates.
                 hotspot.X = resourceData.ToUInt16();
                 hotspot.Y = resourceData.ToUInt16(2);
@@ -346,7 +351,8 @@ namespace NScumm.Sci.Graphics
                                 int rawPos = picCelInfo.width * rawY + rawX;
                                 _cursorSurface[curPos] = rawPicBitmap[rawPos];
                             }
-                            else {
+                            else
+                            {
                                 _cursorSurface[curPos] = rawPicBitmap[0]; // use left and upmost pixel color
                             }
                         }
@@ -369,10 +375,164 @@ namespace NScumm.Sci.Graphics
             _isVisible = false;
         }
 
+        public void KernelClearZoomZone()
+        {
+            KernelResetMoveZone();
+            _zoomZone = new Rect();
+            _zoomColor = 0;
+            _zoomMultiplier = 0;
+            _zoomZoneActive = false;
+            _zoomCursorView = null;
+            _zoomPicView = null;
+            _cursorSurface = null;
+        }
+
+        public void KernelResetMoveZone()
+        {
+            _moveZoneActive = false;
+        }
+
+        public void KernelSetView(int viewNum, int loopNum, int celNum, ref Point hotspot)
+        {
+            if (_cachedCursors.Count >= MAX_CACHED_CURSORS)
+                PurgeCache();
+
+            // Use the original Windows cursors in KQ6, if requested
+            if (_useOriginalKQ6WinCursors)
+                viewNum += 2000;        // Windows cursors
+
+            if (SciEngine.Instance.GameId == SciGameId.PHANTASMAGORIA2)
+            {
+                // HACK: Ignore cursor views for Phantasmagoria 2. They've got
+                // differences from other SCI32 views, thus we skip them for
+                // now, otherwise our view decoding code will crash.
+                // The view code will crash with *any* view in P2, but this hack
+                // allows the game to start and show the menu.
+                // TODO: Remove once the view code is updated to handle
+                // Phantasmagoria 2 views.
+                Warning("TODO: Cursor views for Phantasmagoria 2");
+                return;
+            }
+
+            // Use the alternate silver cursors in SQ4 CD, if requested
+            if (_useSilverSQ4CDCursors)
+            {
+                switch (viewNum)
+                {
+                    case 850:
+                    case 852:
+                    case 854:
+                    case 856:
+                        celNum = 3;
+                        break;
+                    case 851:
+                    case 853:
+                    case 855:
+                    case 999:
+                        celNum = 2;
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            if (!_cachedCursors.ContainsKey(viewNum))
+                _cachedCursors[viewNum] = new GfxView(_resMan, _screen, _palette, viewNum);
+
+            GfxView cursorView = _cachedCursors[viewNum];
+
+            CelInfo celInfo = cursorView.GetCelInfo((short)loopNum, (short)celNum);
+            short width = celInfo.width;
+            short height = celInfo.height;
+            byte clearKey = celInfo.clearKey;
+            Point cursorHotspot = hotspot;
+
+            if (cursorHotspot != new Point())
+                // Compute hotspot from xoffset/yoffset
+                cursorHotspot = new Point((celInfo.width >> 1) - celInfo.displaceX, celInfo.height - celInfo.displaceY - 1);
+
+            // Eco Quest 1 uses a 1x1 transparent cursor to hide the cursor from the
+            // user. Some scalers don't seem to support this
+            if (width < 2 || height < 2)
+            {
+                KernelHide();
+                return;
+            }
+
+            byte[] rawBitmap = cursorView.GetBitmap((short)loopNum, (short)celNum);
+            if (_upscaledHires != GfxScreenUpscaledMode.DISABLED && !_useOriginalKQ6WinCursors)
+            {
+                // Scale cursor by 2x - note: sierra didn't do this, but it looks much better
+                width *= 2;
+                height *= 2;
+                cursorHotspot.X *= 2;
+                cursorHotspot.Y *= 2;
+                byte[] cursorBitmap = new byte[width * height];
+                _screen.Scale2x(rawBitmap, cursorBitmap, celInfo.width, celInfo.height);
+                SciEngine.Instance.System.GraphicsManager.SetCursor(cursorBitmap, 0, width, height, cursorHotspot, clearKey);
+            }
+            else
+            {
+                SciEngine.Instance.System.GraphicsManager.SetCursor(rawBitmap, 0, width, height, cursorHotspot, clearKey);
+            }
+
+            KernelShow();
+        }
+
+        public void KernelSetMoveZone(Rect zone)
+        {
+            _moveZone = zone;
+            _moveZoneActive = true;
+        }
+
+        public void KernelSetZoomZone(byte multiplier, Rect zone, int viewNum, int loopNum, int celNum, int picNum, byte zoomColor)
+        {
+            KernelClearZoomZone();
+
+            // This function is a stub in the Mac version of Freddy Pharkas.
+            // This function was only used in two games (LB2 and Pharkas), but there
+            // was no version of LB2 for the Macintosh platform.
+            // CHECKME: This wasn't verified against disassembly, one might want
+            // to check against it, in case there's some leftover code in the stubbed
+            // function (although it does seem that this was completely removed).
+            if (SciEngine.Instance.Platform == Core.IO.Platform.Macintosh)
+                return;
+
+            _zoomMultiplier = multiplier;
+
+            if (_zoomMultiplier != 1 && _zoomMultiplier != 2 && _zoomMultiplier != 4)
+                Error("Unexpected zoom multiplier (expected 1, 2 or 4)");
+
+            _zoomCursorView = new GfxView(_resMan, _screen, _palette, viewNum);
+            _zoomCursorLoop = (byte)loopNum;
+            _zoomCursorCel = (byte)celNum;
+            _zoomPicView = new GfxView(_resMan, _screen, _palette, picNum);
+            CelInfo cursorCelInfo = _zoomCursorView.GetCelInfo(_zoomCursorLoop, _zoomCursorCel);
+            byte[] cursorBitmap = _zoomCursorView.GetBitmap(_zoomCursorLoop, _zoomCursorCel);
+            _cursorSurface = new byte[cursorCelInfo.width * cursorCelInfo.height];
+            Array.Copy(cursorBitmap,_cursorSurface, cursorCelInfo.width * cursorCelInfo.height);
+
+            _zoomZone = zone;
+            KernelSetMoveZone(_zoomZone);
+
+            _zoomColor = zoomColor;
+            _zoomZoneActive = true;
+        }
+
+        public void KernelSetMacCursor(int viewNum, int loopNum, int celNum)
+        {
+            throw new NotImplementedException();
+        }
+
         public void Init(GfxCoordAdjuster coordAdjuster, EventManager eventMan)
         {
             _coordAdjuster = coordAdjuster;
             _event = eventMan;
+        }
+
+        private void PurgeCache()
+        {
+            _cachedCursors.Clear();
         }
 
         private void SetPosition(Point pos)
@@ -390,7 +550,8 @@ namespace NScumm.Sci.Graphics
             {
                 // TODO: _system.GraphicsManager.WarpMouse(pos.x, pos.y);
             }
-            else {
+            else
+            {
                 _screen.AdjustToUpscaledCoordinates(ref pos.Y, ref pos.X);
                 // TODO: g_system.warpMouse(pos.x, pos.y);
             }

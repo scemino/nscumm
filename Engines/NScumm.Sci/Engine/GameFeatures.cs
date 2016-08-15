@@ -40,6 +40,8 @@ namespace NScumm.Sci.Engine
         private bool _usesCdTrack;
         private bool _forceDOSTracks;
 
+        public bool UsesCdTrack { get { return _usesCdTrack; } }
+
         public bool UseAltWinGMSound
         {
             get
@@ -53,7 +55,8 @@ namespace NScumm.Sci.Engine
                             //id == SciGameId.FREDDYPHARKAS ||	// Has alternate tracks, but handles them differently
                             id == SciGameId.SQ4);
                 }
-                else {
+                else
+                {
                     return false;
                 }
             }
@@ -75,7 +78,8 @@ namespace NScumm.Sci.Engine
                     // SCI1.1 and newer games always ignore move count
                     _moveCountType = MoveCountType.Ignore;
                 }
-                else {
+                else
+                {
                     if (!AutoDetectMoveCountType())
                     {
                         throw new InvalidOperationException("Move count autodetection failed");
@@ -159,7 +163,8 @@ namespace NScumm.Sci.Engine
                     // All SCI1 late games use the newer doSound semantics
                     _doSoundType = SciVersion.V1_LATE;
                 }
-                else {
+                else
+                {
                     if (!AutoDetectSoundType())
                     {
                         Warning("DoSound detection failed, taking an educated guess");
@@ -177,9 +182,14 @@ namespace NScumm.Sci.Engine
             return _doSoundType;
         }
 
-        internal void ForceDOSTracks()
+        /// <summary>
+        /// Forces DOS soundtracks in Windows CD versions when the user hasn't
+        /// selected a MIDI output device
+        /// </summary>
+        /// <returns>The DOS tracks.</returns>
+        public void ForceDOSTracks()
         {
-            throw new NotImplementedException();
+            _forceDOSTracks = true;
         }
 
         private bool AutoDetectSoundType()
@@ -321,7 +331,8 @@ namespace NScumm.Sci.Engine
                             break;
                     }
                 }
-                else {
+                else
+                {
                     Warning("detectLofsType(): Could not find superclass of game object");
                 }
 
@@ -412,7 +423,8 @@ namespace NScumm.Sci.Engine
                     throw new InvalidOperationException($"getDetectionAddr: target selector is not a method of object {objName}");
                 }
             }
-            else {
+            else
+            {
                 addr = _segMan.GetObject(objAddr).GetFunction(methodNum);
             }
 
@@ -478,8 +490,9 @@ namespace NScumm.Sci.Engine
                     // SCI01 and newer games always used new graphics functions
                     _gfxFunctionsType = SciVersion.V0_LATE;
                 }
-                else {  // SCI0 late
-                        // Check if the game is using an overlay
+                else
+                {  // SCI0 late
+                   // Check if the game is using an overlay
                     bool searchRoomObj = false;
                     Register rmObjAddr = _segMan.FindObjectByName("Rm");
 
@@ -488,7 +501,7 @@ namespace NScumm.Sci.Engine
                         // The game has an overlay selector, check how it calls kDrawPic
                         // to determine the graphics functions type used
                         Register tmp;
-                        if (SciEngine.LookupSelector(_segMan, rmObjAddr, SciEngine.Selector(s => s.overlay), null, out tmp) == SelectorType.Method)
+                        if (SciEngine.LookupSelector(_segMan, rmObjAddr, s => s.overlay, null, out tmp) == SelectorType.Method)
                         {
                             if (!AutoDetectGfxFunctionsType())
                             {
@@ -503,14 +516,16 @@ namespace NScumm.Sci.Engine
                                     _gfxFunctionsType = SciVersion.V0_EARLY;
                             }
                         }
-                        else {
+                        else
+                        {
                             // The game has an overlay selector, but it's not a method
                             // of the Rm object (like in Hoyle 1 and 2), so search for
                             // other methods
                             searchRoomObj = true;
                         }
                     }
-                    else {
+                    else
+                    {
                         // The game doesn't have an overlay selector, so search for it
                         // manually
                         searchRoomObj = true;
@@ -603,9 +618,10 @@ namespace NScumm.Sci.Engine
                     // SCI1.1 games always use cursor views
                     _setCursorType = SciVersion.V1_1;
                 }
-                else {  // SCI1 late game, detect cursor semantics
-                        // If the Cursor object doesn't exist, we're using the SCI0 early
-                        // kSetCursor semantics.
+                else
+                {  // SCI1 late game, detect cursor semantics
+                   // If the Cursor object doesn't exist, we're using the SCI0 early
+                   // kSetCursor semantics.
                     if (_segMan.FindObjectByName("Cursor") == Register.NULL_REG)
                     {
                         _setCursorType = SciVersion.V0_EARLY;
@@ -627,7 +643,7 @@ namespace NScumm.Sci.Engine
 
                     // Now we check what the number variable holds in the handCursor
                     // object.
-                    ushort number = (ushort)SciEngine.ReadSelectorValue(_segMan, objAddr, SciEngine.Selector(s => s.number));
+                    ushort number = (ushort)SciEngine.ReadSelectorValue(_segMan, objAddr, s => s.number);
 
                     // If the number is 0, it uses views and therefore the SCI1.1
                     // kSetCursor semantics, otherwise it uses the SCI0 early kSetCursor

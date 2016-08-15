@@ -186,7 +186,7 @@ namespace NScumm.Queen
             return 0;
         }
 
-        public override void MetaEvent(byte type, byte[] data, ushort length)
+        public override void MetaEvent(byte type, BytePtr data, ushort length)
         {
             int @event = 0;
             if (length > 4 && data.ToUInt32BigEndian() == 0x3F00)
@@ -220,7 +220,7 @@ namespace NScumm.Queen
             D.Warning($"Unhandled meta event {@event} len {length}");
         }
 
-        void HandleSequencerSpecificMetaEvent1(int channel, byte[] data, int o)
+        void HandleSequencerSpecificMetaEvent1(int channel, BytePtr data, int o)
         {
             for (int i = 0; i < 28; ++i)
             {

@@ -195,7 +195,7 @@ namespace NScumm.Sci.Graphics
                                 continue;
                             }
 
-                            if (Said(saidSpec, 0) != Vocabulary.SAID_NO_MATCH)
+                            if (Said.said(saidSpec, false) != Vocabulary.SAID_NO_MATCH)
                                 break;
                         }
                     }
@@ -248,10 +248,7 @@ namespace NScumm.Sci.Graphics
             return Register.NULL_REG;
         }
 
-        private int Said(ByteAccess saidSpec, int v)
-        {
-            throw new NotImplementedException();
-        }
+
 
         /// <summary>
         /// Mouse button is currently pressed - we are now interpreting mouse coordinates

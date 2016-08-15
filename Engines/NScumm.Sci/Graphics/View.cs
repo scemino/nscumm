@@ -134,9 +134,96 @@ namespace NScumm.Sci.Graphics
             0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10
         };
 
-        internal void DrawScaled(Rect celRect, Rect clipRect, Rect clipRectTranslated, short loopNo, short celNo, byte priority, ushort scaleX, ushort scaleY)
+        public void DrawScaled(Rect rect, Rect clipRect, Rect clipRectTranslated, short loopNo, short celNo, byte priority, short scaleX, short scaleY)
         {
-            throw new NotImplementedException();
+            Palette palette = _embeddedPal ? _viewPalette : _palette._sysPalette;
+            CelInfo celInfo = GetCelInfo(loopNo, celNo);
+            byte[] bitmap = GetBitmap(loopNo, celNo);
+            short celHeight = celInfo.height;
+            short celWidth = celInfo.width;
+            byte clearKey = celInfo.clearKey;
+            GfxScreenMasks drawMask = priority > 15 ? GfxScreenMasks.VISUAL : GfxScreenMasks.VISUAL | GfxScreenMasks.PRIORITY;
+            ushort[] scalingX = new ushort[640];
+            ushort[] scalingY = new ushort[480];
+            short scaledWidth, scaledHeight;
+            int pixelNo, scaledPixel, scaledPixelNo, prevScaledPixelNo;
+
+            if (_embeddedPal)
+                // Merge view palette in...
+                _palette.Set(_viewPalette, false);
+
+            scaledWidth = (short)((celInfo.width * scaleX) >> 7);
+            scaledHeight = (short)((celInfo.height * scaleY) >> 7);
+            scaledWidth = (short)ScummHelper.Clip(scaledWidth, 0, _screen.Width);
+            scaledHeight = (short)ScummHelper.Clip(scaledHeight, 0, _screen.Height);
+
+            // Do we really need to do this?!
+            //memset(scalingX, 0, sizeof(scalingX));
+            //memset(scalingY, 0, sizeof(scalingY));
+
+            // Create height scaling table
+            pixelNo = 0;
+            scaledPixel = scaledPixelNo = prevScaledPixelNo = 0;
+            while (pixelNo < celHeight)
+            {
+                scaledPixelNo = scaledPixel >> 7;
+                System.Diagnostics.Debug.Assert(scaledPixelNo < scalingY.Length);
+                for (; prevScaledPixelNo <= scaledPixelNo; prevScaledPixelNo++)
+                    scalingY[prevScaledPixelNo] = (ushort)pixelNo;
+                pixelNo++;
+                scaledPixel += scaleY;
+            }
+            pixelNo--;
+            scaledPixelNo++;
+            for (; scaledPixelNo < scaledHeight; scaledPixelNo++)
+                scalingY[scaledPixelNo] = (ushort)pixelNo;
+
+            // Create width scaling table
+            pixelNo = 0;
+            scaledPixel = scaledPixelNo = prevScaledPixelNo = 0;
+            while (pixelNo < celWidth)
+            {
+                scaledPixelNo = scaledPixel >> 7;
+                System.Diagnostics.Debug.Assert(scaledPixelNo < scalingX.Length);
+                for (; prevScaledPixelNo <= scaledPixelNo; prevScaledPixelNo++)
+                    scalingX[prevScaledPixelNo] = (ushort)pixelNo;
+                pixelNo++;
+                scaledPixel += scaleX;
+            }
+            pixelNo--;
+            scaledPixelNo++;
+            for (; scaledPixelNo < scaledWidth; scaledPixelNo++)
+                scalingX[scaledPixelNo] = (ushort)pixelNo;
+
+            scaledWidth = (short)Math.Min(clipRect.Width, scaledWidth);
+            scaledHeight = (short)Math.Min(clipRect.Height, scaledHeight);
+
+            short offsetY = (short)(clipRect.Top - rect.Top);
+            short offsetX = (short)(clipRect.Left - rect.Left);
+
+            // Happens in SQ6, first room
+            if (offsetX < 0 || offsetY < 0)
+                return;
+
+            System.Diagnostics.Debug.Assert(scaledHeight + offsetY <= scalingY.Length);
+            System.Diagnostics.Debug.Assert(scaledWidth + offsetX <= scalingX.Length);
+            for (int y = 0; y < scaledHeight; y++)
+            {
+                for (int x = 0; x < scaledWidth; x++)
+                {
+                    byte color = bitmap[scalingY[y + offsetY] * celWidth + scalingX[x + offsetX]];
+                    int x2 = clipRectTranslated.Left + x;
+                    int y2 = clipRectTranslated.Top + y;
+                    if (color != clearKey && priority >= _screen.GetPriority((short)x2, (short)y2))
+                    {
+                        byte outputColor = palette.mapping[color];
+                        // TODO: SCI16 remapping (QFG4 demo)
+                        //if (SciEngine.Instance._gfxRemap16 && SciEngine.Instance._gfxRemap16.isRemapped(outputColor))
+                        //    outputColor = SciEngine.Instance._gfxRemap16.remapColor(outputColor, _screen.GetVisual(x2, y2));
+                        _screen.PutPixel((short)x2, (short)y2, drawMask, outputColor, priority, 0);
+                    }
+                }
+            }
         }
 
         public void Draw(Rect rect, Rect clipRect, Rect clipRectTranslated, short loopNo, short celNo, byte priority, ushort EGAmappingNr, bool upscaledHires)
@@ -527,6 +614,7 @@ namespace NScumm.Sci.Graphics
                     _loop = new LoopInfo[_loopCount];
                     for (loopNo = 0; loopNo < _loopCount; loopNo++)
                     {
+                        _loop[loopNo] = new LoopInfo();
                         loopData = new ByteAccess(_resourceData, headerSize + (loopNo * loopSize));
 
                         seekEntry = loopData[0];
@@ -551,7 +639,7 @@ namespace NScumm.Sci.Graphics
                         _loop[loopNo].cel = new CelInfo[celCount];
                         for (celNo = 0; celNo < celCount; celNo++)
                         {
-                            cel = _loop[loopNo].cel[celNo];
+                            cel = _loop[loopNo].cel[celNo] = new CelInfo();
                             cel.scriptWidth = cel.width = (short)celData.Data.ReadSci11EndianUInt16(celData.Offset);
                             cel.scriptHeight = cel.height = (short)celData.Data.ReadSci11EndianUInt16(celData.Offset + 2);
                             cel.displaceX = (short)celData.Data.ReadSci11EndianUInt16(celData.Offset + 4);

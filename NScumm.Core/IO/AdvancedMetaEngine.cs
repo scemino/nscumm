@@ -46,7 +46,7 @@ namespace NScumm.Core.IO
         /// </summary>
         public int fileSize;
 
-        public ADGameFileDescription(string fileName, string md5 = null, int fileSize = -1, ushort fileType = 0)
+        public ADGameFileDescription(string fileName, ushort fileType = 0, string md5 = null, int fileSize = -1)
         {
             this.fileName = fileName;
             this.md5 = md5;

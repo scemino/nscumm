@@ -27,6 +27,7 @@ using System.Linq;
 using NScumm.Core.IO;
 using NScumm.Services;
 using NScumm.Sci;
+using NScumm.Queen;
 
 namespace NScumm
 {
@@ -60,9 +61,12 @@ namespace NScumm
                 return 1;
             }
 
-            var pluginsdDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "plugins");
+            //var pluginsdDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "plugins");
             var gd = new GameDetector();
             gd.Add(new SciMetaEngine());
+            gd.Add(new QueenMetaEngine());
+            gd.Add(new Sky.SkyMetaEngine());
+            gd.Add(new Sword1.Sword1MetaEngine());
             //gd.AddPluginsFromDirectory(pluginsdDirectory);
 
             var info = gd.DetectGame(path);
@@ -91,7 +95,7 @@ namespace NScumm
         {
             ServiceLocator.Platform = new Platform();
             ServiceLocator.FileStorage = new FileStorage();
-            ServiceLocator.SaveFileManager = new SaveFileManager(ServiceLocator.FileStorage);
+            ServiceLocator.SaveFileManager = new SaveFileManager();
             ServiceLocator.AudioManager = new AudioManager();
             var switches = string.IsNullOrEmpty(options.Switches) ? Enumerable.Empty<string>() : options.Switches.Split(',');
             ServiceLocator.TraceFatory = new TraceFactory(switches);

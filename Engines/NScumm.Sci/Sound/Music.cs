@@ -16,7 +16,6 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using NScumm.Core;
 using NScumm.Core.Audio;
 using System;
 using System.Linq;
@@ -27,9 +26,77 @@ using NScumm.Core.Audio.Decoders;
 using System.IO;
 using System.Threading;
 using NScumm.Core.Common;
+using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sci.Sound
 {
+    class ChannelRemapping
+    {
+        public DeviceChannelUsage[] _map = new DeviceChannelUsage[16];
+        public int[] _prio = new int[16];
+        public int[] _voices = new int[16];
+        public bool[] _dontRemap = new bool[16];
+        public int _freeVoices;
+
+        public ChannelRemapping()
+        {
+            for (int i = 0; i < 16; ++i)
+            {
+                _map[i] = new DeviceChannelUsage();
+            }
+        }
+
+        public void Clear()
+        {
+            for (int i = 0; i < 16; ++i)
+            {
+                _map[i]._song = null;
+                _map[i]._channel = -1;
+                _prio[i] = 0;
+                _voices[i] = 0;
+                _dontRemap[i] = false;
+            }
+        }
+
+        public void Swap(int i, int j)
+        {
+            DeviceChannelUsage t1;
+            int t2;
+            bool t3;
+
+            t1 = _map[i]; _map[i] = _map[j]; _map[j] = t1;
+            t2 = _prio[i]; _prio[i] = _prio[j]; _prio[j] = t2;
+            t2 = _voices[i]; _voices[i] = _voices[j]; _voices[j] = t2;
+            t3 = _dontRemap[i]; _dontRemap[i] = _dontRemap[j]; _dontRemap[j] = t3;
+        }
+
+        public void Evict(int i)
+        {
+            _freeVoices += _voices[i];
+
+            _map[i]._song = null;
+            _map[i]._channel = -1;
+            _prio[i] = 0;
+            _voices[i] = 0;
+            _dontRemap[i] = false;
+        }
+
+        public int LowestPrio()
+        {
+            int max = 0;
+            int channel = -1;
+            for (int i = 0; i < 16; ++i)
+            {
+                if (_prio[i] > max)
+                {
+                    max = _prio[i];
+                    channel = i;
+                }
+            }
+            return channel;
+        }
+    }
+
     class MusicEntryChannel
     {
         // Channel info
@@ -141,7 +208,8 @@ namespace NScumm.Sci.Sound
         {
             if (fadeTicker != 0)
                 fadeTicker--;
-            else {
+            else
+            {
                 fadeTicker = fadeTickerStep;
                 volume += fadeStep;
                 if (((fadeStep > 0) && (volume >= fadeTo)) || ((fadeStep < 0) && (volume <= fadeTo)))
@@ -173,12 +241,14 @@ namespace NScumm.Sci.Sound
                 {
                     signal = (ushort)newSignal;
                 }
-                else {
+                else
+                {
                     // signal already set and waiting for getting to scripts, queue new one
                     signalQueue.Add((ushort)newSignal);
                 }
             }
-            else {
+            else
+            {
                 // Set the signal directly for newer games, otherwise the sound
                 // object might be deleted already later on (refer to bug #3045913)
                 signal = (ushort)newSignal;
@@ -186,7 +256,7 @@ namespace NScumm.Sci.Sound
         }
     }
 
-    class DeviceChannelUsage
+    struct DeviceChannelUsage
     {
         public MusicEntry _song;
         public int _channel;
@@ -230,9 +300,22 @@ namespace NScumm.Sci.Sound
             }
         }
 
-        internal void SendMidiCommand(MusicEntry musicSlot, uint midiCommand)
+        internal void SaveLoadWithSerializer(Serializer s)
         {
             throw new NotImplementedException();
+        }
+
+        public void SendMidiCommand(MusicEntry pSnd, uint cmd)
+        {
+            lock (_mutex)
+            {
+                if (pSnd.pMidiParser == null)
+                    Error($"tried to cmdSendMidi on non midi slot ({pSnd.soundObj})");
+
+                pSnd.pMidiParser.MainThreadBegin();
+                pSnd.pMidiParser.SendFromScriptToDriver(cmd);
+                pSnd.pMidiParser.MainThreadEnd();
+            }
         }
 
         public IList<MusicEntry> PlayList { get { return _playList; } }
@@ -260,7 +343,8 @@ namespace NScumm.Sci.Sound
                             }
                         }
                     }
-                    else {
+                    else
+                    {
                         // Set reverb of the active song
                         foreach (var item in _playList)
                         {
@@ -358,7 +442,7 @@ namespace NScumm.Sci.Sound
 
             if (SciEngine.Instance.Features.UseAltWinGMSound && _musicType != MusicType.GeneralMidi)
             {
-                // TODO: warning("A Windows CD version with an alternate MIDI soundtrack has been chosen, but no MIDI music device has been selected. Reverting to the DOS soundtrack");
+                Warning("A Windows CD version with an alternate MIDI soundtrack has been chosen, but no MIDI music device has been selected. Reverting to the DOS soundtrack");
                 SciEngine.Instance.Features.ForceDOSTracks();
             }
 
@@ -398,14 +482,16 @@ namespace NScumm.Sci.Sound
                 _pMidiDrv.SetTimerCallback(this, MiditimerCallback);
                 _dwTempo = _pMidiDrv.BaseTempo;
             }
-            else {
+            else
+            {
                 if (SciEngine.Instance.GameId == SciGameId.FUNSEEKER)
                 {
                     // HACK: The Fun Seeker's Guide demo doesn't have patch 3 and the version
                     // of the Adlib driver (adl.drv) that it includes is unsupported. That demo
                     // doesn't have any sound anyway, so this shouldn't be fatal.
                 }
-                else {
+                else
+                {
                     throw new InvalidOperationException("Failed to initialize sound driver");
                 }
             }
@@ -576,7 +662,8 @@ namespace NScumm.Sci.Sound
                         SoundPause(alreadyPlaying);
                         alreadyPlaying.isQueued = true;
                     }
-                    else {
+                    else
+                    {
                         // And new priority equal or lower? queue up music and play it afterwards done by
                         //  SoundCommandParser::updateSci0Cues()
                         // Example of such case: iceman room 14
@@ -601,7 +688,7 @@ namespace NScumm.Sci.Sound
                         // TODO: SSCI actually calls kDoAudio(play) internally, which stops other samples from being played
                         //        but such a change isn't trivial, because we also handle Sound resources in here, that contain samples
                         _mixer.StopHandle(_currentlyPlayingSample.hCurrentAud);
-                        // TODO: warning("kDoSound: sample already playing, old resource %d, new resource %d", _currentlyPlayingSample.resourceId, pSnd.resourceId);
+                        Warning("kDoSound: sample already playing, old resource {0}, new resource {1}", _currentlyPlayingSample.resourceId, pSnd.resourceId);
                     }
                     // Sierra SCI ignores volume set when playing samples via kDoSound
                     //  At least freddy pharkas/CD has a script bug that sets volume to 0
@@ -613,7 +700,8 @@ namespace NScumm.Sci.Sound
                                                 pSnd.pLoopStream, -1, Mixer.MaxChannelVolume, 0,
                                                 false);
                     }
-                    else {
+                    else
+                    {
                         // Rewind in case we play the same sample multiple times
                         // (non-looped) like in pharkas right at the start
                         pSnd.pStreamAud.Rewind();
@@ -625,7 +713,8 @@ namespace NScumm.Sci.Sound
                     _currentlyPlayingSample = pSnd;
                 }
             }
-            else {
+            else
+            {
                 if (pSnd.pMidiParser != null)
                 {
                     lock (_mutex)
@@ -648,7 +737,8 @@ namespace NScumm.Sci.Sound
 
                         if (pSnd.status == SoundStatus.Stopped)
                             pSnd.pMidiParser.JumpToTick(0);
-                        else {
+                        else
+                        {
                             // Fast forward to the last position and perform associated events when loading
                             pSnd.pMidiParser.JumpToTick(pSnd.ticker, true, true, true);
                         }
@@ -710,7 +800,8 @@ namespace NScumm.Sci.Sound
             {
                 _mixer.PauseHandle(pSnd.hCurrentAud, true);
             }
-            else {
+            else
+            {
                 if (pSnd.pMidiParser != null)
                 {
                     lock (_mutex)
@@ -788,9 +879,444 @@ namespace NScumm.Sci.Sound
             if (_soundVersion <= SciVersion.V0_LATE)
                 return;
 
-//            throw new NotImplementedException();
-            // TODO:RemapChannels
+            // NB: This function should only be called with _mutex locked
+            // Make sure to set the mainThread argument correctly.
+
+
+            ChannelRemapping map = DetermineChannelMap();
+
+            DeviceChannelUsage[] currentMap = new DeviceChannelUsage[16];
+
+#if DEBUG_REMAP
+            debug("Remap results:");
+#endif
+
+            // Save current map, and then start from an empty map
+            for (int i = 0; i < 16; ++i)
+            {
+                currentMap[i] = _channelMap[i];
+                _channelMap[i]._song = null;
+                _channelMap[i]._channel = -1;
+            }
+
+            // Inform MidiParsers of any unmapped channels
+            int songIndex = -1;
+            foreach (var song in _playList)
+            {
+                songIndex++;
+
+                if (song == null || song.pMidiParser == null)
+                    continue;
+
+                bool[] channelMapped = new bool[16];
+#if DEBUG_REMAP
+                bool channelUsed[16];
+#endif
+
+                for (int j = 0; j < 16; ++j)
+                {
+                    if (map._map[j]._song == song)
+                    {
+                        int channel = map._map[j]._channel;
+                        System.Diagnostics.Debug.Assert(channel >= 0 && channel <= 0x0F);
+                        channelMapped[channel] = true;
+                    }
+#if DEBUG_REMAP
+                    if (song._usedChannels[j] <= 0x0F)
+                        channelUsed[song._usedChannels[j]] = true;
+#endif
+                }
+
+                for (int j = 0; j < 16; ++j)
+                {
+                    if (!channelMapped[j])
+                    {
+                        if (mainThread) song.pMidiParser.MainThreadBegin();
+                        song.pMidiParser.RemapChannel(j, -1);
+                        if (mainThread) song.pMidiParser.MainThreadEnd();
+#if DEBUG_REMAP
+                        if (channelUsed[j])
+                            debug(" Unmapping song %d, channel %d", songIndex, j);
+#endif
+                    }
+                }
+            }
+
+            // Now reshuffle the channels on the device.
+
+            // First, set up any dontRemap channels
+            for (int i = 0; i < 16; ++i)
+            {
+
+                if (map._map[i]._song == null || map._map[i]._song.pMidiParser == null || !map._dontRemap[i])
+                    continue;
+
+                songIndex = -1;
+                foreach (var song in _playList)
+                {
+                    songIndex++;
+                    if (map._map[i]._song == song)
+                        break;
+                }
+
+                _channelMap[i] = map._map[i];
+                map._map[i]._song = null; // mark as done
+
+                // If this channel was not yet mapped to the device, reset it
+                if (!Equals(currentMap[i], _channelMap[i]))
+                {
+#if DEBUG_REMAP
+                    debug(" Mapping (dontRemap) song %d, channel %d to device channel %d", songIndex, _channelMap[i]._channel, i);
+#endif
+                    if (mainThread) _channelMap[i]._song.pMidiParser.MainThreadBegin();
+                    _channelMap[i]._song.pMidiParser.RemapChannel(_channelMap[i]._channel, i);
+                    if (mainThread) _channelMap[i]._song.pMidiParser.MainThreadEnd();
+                }
+
+            }
+
+            // Next, we look for channels which were already playing.
+            // We keep those on the same device channel as before.
+            for (int i = 0; i < 16; ++i)
+            {
+
+                if (map._map[i]._song == null)
+                    continue;
+
+                songIndex = -1;
+                foreach (var song in _playList)
+                {
+                    songIndex++;
+                    if (map._map[i]._song == song)
+                        break;
+                }
+
+
+                for (int j = 0; j < 16; ++j)
+                {
+                    if (Equals(map._map[i], currentMap[j]))
+                    {
+                        // found it
+                        _channelMap[j] = map._map[i];
+                        map._map[i]._song = null; // mark as done
+#if DEBUG_REMAP
+                        debug(" Keeping song %d, channel %d on device channel %d", songIndex, _channelMap[j]._channel, j);
+#endif
+                        break;
+                    }
+                }
+            }
+
+            // Then, remap the rest.
+            for (int i = 0; i < 16; ++i)
+            {
+                if (map._map[i]._song == null || map._map[i]._song.pMidiParser == null)
+                    continue;
+
+                songIndex = -1;
+                foreach (var song in _playList)
+                {
+                    songIndex++;
+                    if (map._map[i]._song == song)
+                        break;
+                }
+
+                for (int j = _driverLastChannel; j >= _driverFirstChannel; --j)
+                {
+                    if (_channelMap[j]._song == null)
+                    {
+                        _channelMap[j] = map._map[i];
+                        map._map[i]._song = null;
+#if DEBUG_REMAP
+                        debug(" Mapping song %d, channel %d to device channel %d", songIndex, _channelMap[j]._channel, j);
+#endif
+                        if (mainThread) _channelMap[j]._song.pMidiParser.MainThreadBegin();
+                        _channelMap[j]._song.pMidiParser.RemapChannel(_channelMap[j]._channel, j);
+                        if (mainThread) _channelMap[j]._song.pMidiParser.MainThreadEnd();
+                        break;
+                    }
+                }
+
+            }
+
+            // And finally, stop any empty channels
+            for (int i = _driverLastChannel; i >= _driverFirstChannel; --i)
+            {
+                if (_channelMap[i]._song == null && currentMap[i]._song != null)
+                    ResetDeviceChannel(i, mainThread);
+            }
         }
+
+        private void ResetDeviceChannel(int devChannel, bool mainThread)
+        {
+            System.Diagnostics.Debug.Assert(devChannel >= 0 && devChannel <= 0x0F);
+
+            if (mainThread)
+            {
+                PutMidiCommandInQueue(0x0040B0 | devChannel); // sustain off
+                PutMidiCommandInQueue(0x007BB0 | devChannel); // notes off
+                PutMidiCommandInQueue(0x004BB0 | devChannel); // release voices
+            }
+            else
+            {
+                _pMidiDrv.Send(0x0040B0 | devChannel); // sustain off
+                _pMidiDrv.Send(0x007BB0 | devChannel); // notes off
+                _pMidiDrv.Send(0x004BB0 | devChannel); // release voices
+            }
+        }
+
+        private ChannelRemapping DetermineChannelMap()
+        {
+# if DEBUG_REMAP
+            debug("Remap: avail chans: %d-%d", _driverFirstChannel, _driverLastChannel);
+#endif
+
+            ChannelRemapping map = new ChannelRemapping();
+            ChannelRemapping backupMap;
+            map.Clear();
+            map._freeVoices = _pMidiDrv.Polyphony;
+
+            if (_playList.Count == 0)
+                return map;
+
+            // TODO: set reverb, either from first song, or from global???
+
+            int songIndex = -1;
+            foreach (var song in _playList)
+            {
+                songIndex++;
+                if (song.status != SoundStatus.Playing)
+                    continue;
+
+                // If song is digital, skip.
+                // CHECKME: Is this condition correct?
+                if (song.pMidiParser == null)
+                {
+# if DEBUG_REMAP
+                    debug(" Song %d (%p), digital?", songIndex, (void*)song);
+#endif
+                    continue;
+                }
+
+
+# if DEBUG_REMAP
+                const char* name = g_sci.getEngineState()._segMan.getObjectName(song.soundObj);
+                debug(" Song %d (%p) [%s], prio %d%s", songIndex, (void*)song, name, song.priority, song.playBed ? ", bed" : "");
+#endif
+
+                // Store backup. If we fail to map this song, we will revert to this.
+                backupMap = map;
+
+                bool songMapped = true;
+
+                for (int i = 0; i < 16; ++i)
+                {
+                    int c = song._usedChannels[i];
+                    if (c == 0xFF || c == 0xFE || c == 0x0F)
+                        continue;
+                    MusicEntryChannel channel = song._chan[c];
+                    if (channel._dontMap)
+                    {
+# if DEBUG_REMAP
+                        debug("  Channel %d dontMap, skipping", c);
+#endif
+                        continue;
+                    }
+                    if (channel._mute)
+                    {
+# if DEBUG_REMAP
+                        debug("  Channel %d muted, skipping", c);
+#endif
+                        continue;
+                    }
+
+                    bool dontRemap = channel._dontRemap || song.playBed;
+
+# if DEBUG_REMAP
+                    debug("  Channel %d: prio %d, %d voice%s%s", c, channel._prio, channel._voices, channel._voices == 1 ? "" : "s", dontRemap ? ", dontRemap" : "");
+#endif
+
+                    DeviceChannelUsage dc = new DeviceChannelUsage { _song = song, _channel = c };
+
+                    // our target
+                    int devChannel = -1;
+
+                    if (dontRemap && map._map[c]._song == null)
+                    {
+                        // unremappable channel, with channel still free
+                        devChannel = c;
+                    }
+
+                    // try to find a free channel
+                    if (devChannel == -1)
+                    {
+                        for (int j = 0; j < 16; ++j)
+                        {
+                            if (Equals(map._map[j], dc))
+                            {
+                                // already mapped?! (Can this happen?)
+                                devChannel = j;
+                                break;
+                            }
+                            if (map._map[j]._song != null)
+                                continue;
+
+                            if (j >= _driverFirstChannel && j <= _driverLastChannel)
+                                devChannel = j;
+                        }
+                    }
+
+                    int prio = channel._prio;
+                    if (prio > 0)
+                    {
+                        // prio > 0 means non-essential
+                        prio = (16 - prio) + 16 * songIndex;
+                    }
+
+                    if (devChannel == -1 && prio > 0)
+                    {
+                        // no empty channel, but this isn't an essential channel,
+                        // so we just skip it.
+# if DEBUG_REMAP
+                        debug("   skipping non-essential");
+#endif
+                        continue;
+                    }
+
+                    // try to empty a previous channel if this is an essential channel
+                    if (devChannel == -1)
+                    {
+                        devChannel = map.LowestPrio();
+                        if (devChannel != -1)
+                            map.Evict(devChannel);
+                    }
+
+                    if (devChannel == -1)
+                    {
+                        // failed to map this song.
+# if DEBUG_REMAP
+                        debug("   no free (or lower priority) channel found");
+#endif
+                        songMapped = false;
+                        break;
+                    }
+
+                    if (Equals(map._map[devChannel], dc))
+                    {
+                        // already mapped?! (Can this happen?)
+                        continue;
+                    }
+
+                    int neededVoices = channel._voices;
+                    // do we have enough free voices?
+                    if (map._freeVoices < neededVoices)
+                    {
+                        // We only care for essential channels.
+                        // Note: In early SCI1 interpreters, a song started by 'playBed'
+                        // would not be skipped even if some channels couldn't be
+                        // mapped due to voice limits. So, we treat all channels as
+                        // non-essential here for playBed songs.
+                        if (prio > 0 || (song.playBed && _soundVersion <= SciVersion.V1_EARLY))
+                        {
+# if DEBUG_REMAP
+                            debug("   not enough voices; need %d, have %d. Skipping this channel.", neededVoices, map._freeVoices);
+#endif
+                            continue;
+                        }
+                        do
+                        {
+                            int j = map.LowestPrio();
+                            if (j == -1)
+                            {
+# if DEBUG_REMAP
+                                debug("   not enough voices; need %d, have %d", neededVoices, map._freeVoices);
+#endif
+                                // failed to free enough voices.
+                                songMapped = false;
+                                break;
+                            }
+# if DEBUG_REMAP
+                            debug("   creating room for voices; evict %d", j);
+#endif
+                            map.Evict(j);
+                        } while (map._freeVoices < neededVoices);
+
+                        if (!songMapped)
+                        {
+                            // failed to map this song.
+                            break;
+                        }
+                    }
+
+                    // We have a channel and enough free voices now.
+# if DEBUG_REMAP
+                    debug("   trying to map to %d", devChannel);
+#endif
+
+                    map._map[devChannel] = dc;
+                    map._voices[devChannel] = neededVoices;
+                    map._prio[devChannel] = prio;
+                    map._dontRemap[devChannel] = dontRemap;
+                    map._freeVoices -= neededVoices;
+
+                    if (!dontRemap || devChannel == c)
+                    {
+                        // If this channel fits here, we're done.
+# if DEBUG_REMAP
+                        debug("    OK");
+#endif
+                        continue;
+                    }
+
+                    // If this channel can't be remapped, we need to move it or fail.
+
+                    if (!map._dontRemap[c])
+                    {
+                        // Target channel can be remapped, so just swap
+                        map.Swap(devChannel, c);
+                        continue;
+                    }
+# if DEBUG_REMAP
+                    debug("    but %d is already dontRemap", c);
+#endif
+
+                    if (prio > 0)
+                    {
+                        // Channel collision, but this channel is non-essential,
+                        // so drop it.
+                        // TODO: Maybe we should have checked this before making room?
+                        map.Evict(devChannel);
+                        continue;
+                    }
+
+                    if (map._prio[c] > 0)
+                    {
+                        // Channel collision, but the other channel is non-essential,
+                        // so we take its place.
+                        map.Evict(c);
+                        map.Swap(devChannel, c);
+                        continue;
+                    }
+
+                    // Otherwise, we have two essential channels claiming the same
+                    // device channel.
+                    songMapped = false;
+                    break;
+                }
+
+                if (!songMapped)
+                {
+                    // We failed to map this song, so unmap all its channels.
+# if DEBUG_REMAP
+                    debug(" Failed song");
+#endif
+                    map = backupMap;
+                }
+            }
+
+            return map;
+        }
+
 
         // This sends the stored commands from queue to driver (is supposed to get
         // called only during onTimer()). At least mt32 emulation doesn't like getting
@@ -883,7 +1409,8 @@ namespace NScumm.Sci.Sound
                     pSnd.playBed = false;
                     pSnd.overridePriority = false;
                 }
-                else {
+                else
+                {
                     // play MIDI track
                     lock (_mutex)
                     {
@@ -975,7 +1502,8 @@ namespace NScumm.Sci.Sound
                 _mixer.PauseHandle(pSnd.hCurrentAud, false);
                 pSnd.status = SoundStatus.Playing;
             }
-            else {
+            else
+            {
                 SoundPlay(pSnd);
             }
         }

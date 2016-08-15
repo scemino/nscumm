@@ -128,12 +128,12 @@ namespace NScumm.Core.Audio
         /// is 264 bytes. Passing longer buffers can lead to
         /// undefined behavior (most likely, a crash).
         /// </summary>
-        public virtual void SysEx(byte[] msg, ushort length)
+        public virtual void SysEx(BytePtr msg, ushort length)
         {
         }
 
         // TODO: Document this.
-        public virtual void MetaEvent(byte type, byte[] data, ushort length)
+        public virtual void MetaEvent(byte type, BytePtr data, ushort length)
         {
         }
     }

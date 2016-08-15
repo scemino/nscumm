@@ -1,4 +1,4 @@
-﻿//  Author:
+//  Author:
 //       scemino <scemino74@gmail.com>
 //
 //  Copyright (c) 2015 
@@ -77,7 +77,7 @@ namespace NScumm.Sci.Engine
         private const int SciPlatformWindows = 2;
         private const string AVOIDPATH_DYNMEM_STRING = "AvoidPath polyline";
 
-        private static Register kEmpty(EngineState s, int argc, StackPtr? argv)
+        private static Register kEmpty(EngineState s, int argc, StackPtr argv)
         {
             // Placeholder for empty kernel functions which are still called from the
             // engine scripts (like the empty kSetSynonyms function in SCI1.1). This
@@ -94,13 +94,13 @@ namespace NScumm.Sci.Engine
         /// <param name="argc"></param>
         /// <param name="argv"></param>
         /// <returns></returns>
-        private static Register kGameIsRestarting(EngineState s, int argc, StackPtr? argv)
+        private static Register kGameIsRestarting(EngineState s, int argc, StackPtr argv)
         {
             s.r_acc = Register.Make(0, (ushort)s.gameIsRestarting);
 
             if (argc != 0)
             { // Only happens during replay
-                if (argv.Value[0].ToUInt16() == 0) // Set restarting flag
+                if (argv[0].ToUInt16() == 0) // Set restarting flag
                     s.gameIsRestarting = GameIsRestarting.NONE;
             }
 
@@ -166,25 +166,25 @@ namespace NScumm.Sci.Engine
             return s.r_acc;
         }
 
-        private static Register kHaveMouse(EngineState s, int argc, StackPtr? argv)
+        private static Register kHaveMouse(EngineState s, int argc, StackPtr argv)
         {
             return Register.SIGNAL_REG;
         }
 
-        private static Register kFlushResources(EngineState s, int argc, StackPtr? argv)
+        private static Register kFlushResources(EngineState s, int argc, StackPtr argv)
         {
             Gc.Run(s);
             // TODO: debugC(kDebugLevelRoom, "Entering room number %d", argv[0].toUint16());
             return s.r_acc;
         }
 
-        private static Register kMemory(EngineState s, int argc, StackPtr? argv)
+        private static Register kMemory(EngineState s, int argc, StackPtr argv)
         {
-            switch ((MemoryFunction)argv.Value[0].ToUInt16())
+            switch ((MemoryFunction)argv[0].ToUInt16())
             {
                 case MemoryFunction.ALLOCATE_CRITICAL:
                     {
-                        int byteCount = argv.Value[1].ToUInt16();
+                        int byteCount = argv[1].ToUInt16();
                         // WORKAROUND:
                         //  - pq3 (multilingual) room 202
                         //     when plotting crimes, allocates the returned bytes from kStrLen
@@ -204,10 +204,10 @@ namespace NScumm.Sci.Engine
                         break;
                     }
                 case MemoryFunction.ALLOCATE_NONCRITICAL:
-                    s._segMan.AllocDynmem(argv.Value[1].ToUInt16(), "kMemory() non-critical", out s.r_acc);
+                    s._segMan.AllocDynmem(argv[1].ToUInt16(), "kMemory() non-critical", out s.r_acc);
                     break;
                 case MemoryFunction.FREE:
-                    if (!s._segMan.FreeDynmem(argv.Value[1]))
+                    if (!s._segMan.FreeDynmem(argv[1]))
                     {
                         if (SciEngine.Instance.GameId == SciGameId.QFG1VGA)
                         {
@@ -216,62 +216,62 @@ namespace NScumm.Sci.Engine
                         else
                         {
                             // Usually, the result of a script bug. Non-critical
-                            Warning($"Attempt to kMemory::free() non-dynmem pointer {argv.Value[1]}");
+                            Warning($"Attempt to kMemory::free() non-dynmem pointer {argv[1]}");
                         }
                     }
                     break;
                 case MemoryFunction.MEMCPY:
                     {
-                        int size = argv.Value[3].ToUInt16();
-                        s._segMan.Memcpy(argv.Value[1], argv.Value[2], size);
+                        int size = argv[3].ToUInt16();
+                        s._segMan.Memcpy(argv[1], argv[2], size);
                         break;
                     }
                 case MemoryFunction.PEEK:
                     {
-                        if (argv.Value[1].Segment == 0)
+                        if (argv[1].Segment == 0)
                         {
                             // This occurs in KQ5CD when interacting with certain objects
-                            Warning($"Attempt to peek invalid memory at {argv.Value[1]}");
+                            Warning($"Attempt to peek invalid memory at {argv[1]}");
                             return s.r_acc;
                         }
 
-                        SegmentRef @ref = s._segMan.Dereference(argv.Value[1]);
+                        SegmentRef @ref = s._segMan.Dereference(argv[1]);
 
                         if (!@ref.IsValid || @ref.maxSize < 2)
                         {
-                            throw new InvalidOperationException($"Attempt to peek invalid memory at {argv.Value[1]}");
+                            throw new InvalidOperationException($"Attempt to peek invalid memory at {argv[1]}");
                         }
                         if (@ref.isRaw)
                             return Register.Make(0, @ref.raw.Data.ReadSciEndianUInt16(@ref.raw.Offset));
                         else
                         {
                             if (@ref.skipByte)
-                                throw new InvalidOperationException($"Attempt to peek memory at odd offset {argv.Value[1]}");
+                                throw new InvalidOperationException($"Attempt to peek memory at odd offset {argv[1]}");
                             return @ref.reg.Value[0];
                         }
                     }
                 case MemoryFunction.POKE:
                     {
-                        SegmentRef @ref = s._segMan.Dereference(argv.Value[1]);
+                        SegmentRef @ref = s._segMan.Dereference(argv[1]);
 
                         if (!@ref.IsValid || @ref.maxSize < 2)
                         {
-                            throw new InvalidOperationException($"Attempt to poke invalid memory at {argv.Value[1]}");
+                            throw new InvalidOperationException($"Attempt to poke invalid memory at {argv[1]}");
                         }
 
                         if (@ref.isRaw)
                         {
-                            if (argv.Value[2].Segment != 0)
+                            if (argv[2].Segment != 0)
                             {
-                                throw new InvalidOperationException($"Attempt to poke memory reference {argv.Value[2]} to {argv.Value[1]}");
+                                throw new InvalidOperationException($"Attempt to poke memory reference {argv[2]} to {argv[1]}");
                             }
-                            @ref.raw.Data.WriteSciEndianUInt16(@ref.raw.Offset, (ushort)argv.Value[2].Offset);       // Amiga versions are BE
+                            @ref.raw.Data.WriteSciEndianUInt16(@ref.raw.Offset, (ushort)argv[2].Offset);       // Amiga versions are BE
                         }
                         else
                         {
                             if (@ref.skipByte)
-                                throw new InvalidOperationException($"Attempt to poke memory at odd offset {argv.Value[1]}");
-                            @ref.reg = new StackPtr(argv.Value, 2);
+                                throw new InvalidOperationException($"Attempt to poke memory at odd offset {argv[1]}");
+                            @ref.reg = new StackPtr(argv, 2);
                         }
                         break;
                     }
@@ -280,7 +280,7 @@ namespace NScumm.Sci.Engine
             return s.r_acc;
         }
 
-        private static Register kMemoryInfo(EngineState s, int argc, StackPtr? argv)
+        private static Register kMemoryInfo(EngineState s, int argc, StackPtr argv)
         {
             // The free heap size returned must not be 0xffff, or some memory
             // calculations will overflow. Crazy Nick's games handle up to 32746
@@ -288,7 +288,7 @@ namespace NScumm.Sci.Engine
             // fragmented
             const ushort size = 0x7fea;
 
-            switch ((kMemoryInfoFunc)argv.Value[0].Offset)
+            switch ((kMemoryInfoFunc)argv[0].Offset)
             {
                 case kMemoryInfoFunc.LARGEST_HEAP_BLOCK:
                     // In order to prevent "Memory fragmented" dialogs from
@@ -301,25 +301,25 @@ namespace NScumm.Sci.Engine
                     return Register.Make(0, size);
 
                 default:
-                    throw new InvalidOperationException($"Unknown MemoryInfo operation: {argv.Value[0].Offset:X4}");
+                    throw new InvalidOperationException($"Unknown MemoryInfo operation: {argv[0].Offset:X4}");
             }
         }
 
-        private static Register kMemorySegment(EngineState s, int argc, StackPtr? argv)
+        private static Register kMemorySegment(EngineState s, int argc, StackPtr argv)
         {
             // MemorySegment provides access to a 256-byte block of memory that remains
             // intact across restarts and restores
 
-            switch ((MemorySegmentFunction)argv.Value[0].ToUInt16())
+            switch ((MemorySegmentFunction)argv[0].ToUInt16())
             {
                 case MemorySegmentFunction.SAVE_DATA:
                     {
                         if (argc < 3)
                             throw new InvalidOperationException("Insufficient number of arguments passed to MemorySegment");
-                        ushort size = argv.Value[2].ToUInt16();
+                        ushort size = argv[2].ToUInt16();
 
                         if (size == 0)
-                            size = (ushort)(s._segMan.Strlen(argv.Value[1]) + 1);
+                            size = (ushort)(s._segMan.Strlen(argv[1]) + 1);
 
                         if (size > EngineState.MemorySegmentMax)
                         {
@@ -333,20 +333,20 @@ namespace NScumm.Sci.Engine
                         s._memorySegmentSize = size;
 
                         // We assume that this won't be called on pointers
-                        s._segMan.Memcpy(new ByteAccess(s._memorySegment), argv.Value[1], size);
+                        s._segMan.Memcpy(new ByteAccess(s._memorySegment), argv[1], size);
                         break;
                     }
                 case MemorySegmentFunction.RESTORE_DATA:
-                    s._segMan.Memcpy(argv.Value[1], new ByteAccess(s._memorySegment), s._memorySegmentSize);
+                    s._segMan.Memcpy(argv[1], new ByteAccess(s._memorySegment), s._memorySegmentSize);
                     break;
                 default:
-                    throw new InvalidOperationException($"Unknown MemorySegment operation {argv.Value[0].ToUInt16():X4}");
+                    throw new InvalidOperationException($"Unknown MemorySegment operation {argv[0].ToUInt16():X4}");
             }
 
-            return argv.Value[1];
+            return argv[1];
         }
 
-        private static Register kPlatform(EngineState s, int argc, StackPtr? argv)
+        private static Register kPlatform(EngineState s, int argc, StackPtr argv)
         {
             bool isWindows = SciEngine.Instance.Platform == Core.IO.Platform.Windows;
 
@@ -361,7 +361,7 @@ namespace NScumm.Sci.Engine
                 return Register.NULL_REG;
             }
 
-            PlatformOps operation = (PlatformOps)((argc == 0) ? 0 : argv.Value[0].ToUInt16());
+            PlatformOps operation = (PlatformOps)((argc == 0) ? 0 : argv[0].ToUInt16());
 
             switch (operation)
             {
@@ -396,7 +396,7 @@ namespace NScumm.Sci.Engine
             return Register.NULL_REG;
         }
 
-        private static Register kRestartGame(EngineState s, int argc, StackPtr? argv)
+        private static Register kRestartGame(EngineState s, int argc, StackPtr argv)
         {
             s.ShrinkStackToBase();
 
@@ -405,13 +405,13 @@ namespace NScumm.Sci.Engine
         }
 
         // kMacPlatform is really a subop of kPlatform for SCI1.1+ Mac
-        private static Register kMacPlatform(EngineState s, int argc, StackPtr? argv)
+        private static Register kMacPlatform(EngineState s, int argc, StackPtr argv)
         {
             // Mac versions use their own secondary platform functions
             // to do various things. Why didn't they just declare a new
             // kernel function?
 
-            switch (argv.Value[0].ToUInt16())
+            switch (argv[0].ToUInt16())
             {
                 case 0:
                     // Subop 0 has changed a few times
@@ -419,7 +419,7 @@ namespace NScumm.Sci.Engine
                     // In SCI1.1, it's NOP
                     // In SCI32, it's used for remapping cursor ID's
                     if (ResourceManager.GetSciVersion() >= SciVersion.V2_1) // Set Mac cursor remap
-                        SciEngine.Instance._gfxCursor.SetMacCursorRemapList(argc - 1, argv.Value + 1);
+                        SciEngine.Instance._gfxCursor.SetMacCursorRemapList(argc - 1, argv + 1);
                     else if (ResourceManager.GetSciVersion() != SciVersion.V1_1)
                     {
                         Warning("Unknown SCI1 kMacPlatform(0) call");
@@ -435,17 +435,17 @@ namespace NScumm.Sci.Engine
                 case 3: // Unknown, "ProcessOpenDocuments" (Various)
                 case 5: // Unknown, plays a sound (KQ7)
                 case 6: // Unknown, menu-related (Unused?)
-                    Warning($"Unhandled kMacPlatform({argv.Value[0].ToUInt16()})");
+                    Warning($"Unhandled kMacPlatform({argv[0].ToUInt16()})");
                     break;
                 default:
-                    throw new InvalidOperationException($"Unknown kMacPlatform({argv.Value[0].ToUInt16()})");
+                    throw new InvalidOperationException($"Unknown kMacPlatform({argv[0].ToUInt16()})");
             }
 
             return s.r_acc;
         }
 
         // kIconBar is really a subop of kMacPlatform for SCI1.1 Mac
-        private static Register kIconBar(EngineState s, int argc, StackPtr? argv)
+        private static Register kIconBar(EngineState s, int argc, StackPtr argv)
         {
             // Mac versions use their own tertiary platform functions
             // to handle the outside-of-the-screen icon bar.
@@ -456,30 +456,30 @@ namespace NScumm.Sci.Engine
             if (!SciEngine.Instance.HasMacIconBar)
                 return Register.NULL_REG;
 
-            switch (argv.Value[0].ToUInt16())
+            switch (argv[0].ToUInt16())
             {
                 case 0: // InitIconBar
-                    for (int i = 0; i < argv.Value[1].ToUInt16(); i++)
-                        SciEngine.Instance._gfxMacIconBar.AddIcon(argv.Value[i + 2]);
+                    for (int i = 0; i < argv[1].ToUInt16(); i++)
+                        SciEngine.Instance._gfxMacIconBar.AddIcon(argv[i + 2]);
                     break;
                 case 1: // DisposeIconBar
                     Warning("kIconBar(Dispose)");
                     break;
                 case 2: // EnableIconBar (-1 = all)
-                    Debug(0, $"kIconBar(Enable, {argv.Value[1].ToInt16()})");
-                    SciEngine.Instance._gfxMacIconBar.SetIconEnabled(argv.Value[1].ToInt16(), true);
+                    Debug(0, $"kIconBar(Enable, {argv[1].ToInt16()})");
+                    SciEngine.Instance._gfxMacIconBar.SetIconEnabled(argv[1].ToInt16(), true);
                     break;
                 case 3: // DisableIconBar (-1 = all)
-                    Debug(0, $"kIconBar(Disable, {argv.Value[1].ToInt16()})");
-                    SciEngine.Instance._gfxMacIconBar.SetIconEnabled(argv.Value[1].ToInt16(), false);
+                    Debug(0, $"kIconBar(Disable, {argv[1].ToInt16()})");
+                    SciEngine.Instance._gfxMacIconBar.SetIconEnabled(argv[1].ToInt16(), false);
                     break;
                 case 4: // SetIconBarIcon
-                    Debug(0, $"kIconBar(SetIcon, {argv.Value[1].ToUInt16()}, {argv.Value[2].ToUInt16()})");
-                    if (argv.Value[2].ToInt16() == -1)
-                        SciEngine.Instance._gfxMacIconBar.SetInventoryIcon(argv.Value[2].ToInt16());
+                    Debug(0, $"kIconBar(SetIcon, {argv[1].ToUInt16()}, {argv[2].ToUInt16()})");
+                    if (argv[2].ToInt16() == -1)
+                        SciEngine.Instance._gfxMacIconBar.SetInventoryIcon(argv[2].ToInt16());
                     break;
                 default:
-                    throw new InvalidOperationException($"Unknown kIconBar({argv.Value[0].ToUInt16()})");
+                    throw new InvalidOperationException($"Unknown kIconBar({argv[0].ToUInt16()})");
             }
 
             SciEngine.Instance._gfxMacIconBar.DrawIcons();
@@ -487,14 +487,14 @@ namespace NScumm.Sci.Engine
             return Register.NULL_REG;
         }
 
-        private static Register kGetTime(EngineState s, int argc, StackPtr? argv)
+        private static Register kGetTime(EngineState s, int argc, StackPtr argv)
         {
-            long elapsedTime = SciEngine.Instance.TotalPlaytime;
+            long elapsedTime = SciEngine.Instance.TotalPlayTime;
             int retval = 0; // Avoid spurious warning
 
             var loc_time = DateTime.Now;
 
-            GetTimeMode mode = (argc > 0) ? (GetTimeMode)argv.Value[0].ToUInt16() : 0;
+            GetTimeMode mode = (argc > 0) ? (GetTimeMode)argv[0].ToUInt16() : 0;
 
             // Modes 2 and 3 are supported since 0.629.
             // This condition doesn't check that exactly, but close enough.
@@ -528,24 +528,24 @@ namespace NScumm.Sci.Engine
             return Register.Make(0, (ushort)retval);
         }
 
-        private static Register kStub(EngineState s, int argc, StackPtr? argv)
+        private static Register kStub(EngineState s, int argc, StackPtr argv)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException("kStub");
         }
 
-        private static Register kStubNull(EngineState s, int argc, StackPtr? argv)
+        private static Register kStubNull(EngineState s, int argc, StackPtr argv)
         {
             kStub(s, argc, argv);
             return Register.NULL_REG;
         }
 
-        internal static Register kDummy(EngineState s, int argc, StackPtr? argv)
+        internal static Register kDummy(EngineState s, int argc, StackPtr argv)
         {
             kStub(s, argc, argv);
             throw new InvalidOperationException("Kernel function was called, which was considered to be unused - see log for details");
         }
 
-        private static Register kSetDebug(EngineState s, int argc, StackPtr? argv)
+        private static Register kSetDebug(EngineState s, int argc, StackPtr argv)
         {
             // WORKAROUND: For some reason, GK1 calls this unconditionally when
             // watching the intro. Older (SCI0) games call it on room change if
@@ -562,9 +562,9 @@ namespace NScumm.Sci.Engine
             return s.r_acc;
         }
 
-        private static Register kAvoidPath(EngineState s, int argc, StackPtr? argv)
+        private static Register kAvoidPath(EngineState s, int argc, StackPtr argv)
         {
-            var start = new Point(argv.Value[0].ToInt16(), argv.Value[1].ToInt16());
+            var start = new Point(argv[0].ToInt16(), argv[1].ToInt16());
 
             switch (argc)
             {
@@ -572,7 +572,7 @@ namespace NScumm.Sci.Engine
                 case 3:
                     {
                         Register retval;
-                        Polygon polygon = ConvertPolygon(s, argv.Value[2]);
+                        Polygon polygon = ConvertPolygon(s, argv[2]);
 
                         if (polygon == null)
                             return Register.NULL_REG;
@@ -587,7 +587,7 @@ namespace NScumm.Sci.Engine
                 case 7:
                 case 8:
                     {
-                        var end = new Point(argv.Value[2].ToInt16(), argv.Value[3].ToInt16());
+                        var end = new Point(argv[2].ToInt16(), argv[3].ToInt16());
                         Register poly_list, output;
                         int width, height, opt = 1;
 
@@ -596,20 +596,20 @@ namespace NScumm.Sci.Engine
                             if (argc < 7)
                                 Error("[avoidpath] Not enough arguments");
 
-                            poly_list = (!argv.Value[4].IsNull ? SciEngine.ReadSelector(s._segMan, argv.Value[4], o => o.elements) : Register.NULL_REG);
-                            width = argv.Value[5].ToUInt16();
-                            height = argv.Value[6].ToUInt16();
+                            poly_list = (!argv[4].IsNull ? SciEngine.ReadSelector(s._segMan, argv[4], o => o.elements) : Register.NULL_REG);
+                            width = argv[5].ToUInt16();
+                            height = argv[6].ToUInt16();
                             if (argc > 7)
-                                opt = argv.Value[7].ToUInt16();
+                                opt = argv[7].ToUInt16();
                         }
                         else
                         {
                             // SCI1.1 and older games always ran with an internal resolution of 320x200
-                            poly_list = argv.Value[4];
+                            poly_list = argv[4];
                             width = 320;
                             height = 190;
                             if (argc > 6)
-                                opt = argv.Value[6].ToUInt16();
+                                opt = argv[6].ToUInt16();
                         }
 
                         //TODO: if (DebugMan.isDebugChannelEnabled(kDebugLevelAvoidPath))

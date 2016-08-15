@@ -339,7 +339,7 @@ namespace NScumm.Sci.Sound.Drivers
 
             _stereo = STEREO;
 
-            // TODO: debug(3, "ADLIB: Starting driver in %s mode", (isSCI0 ? "SCI0" : "SCI1"));
+            Debug(3, "ADLIB: Starting driver in {0} mode", (isSCI0 ? "SCI0" : "SCI1"));
             _isSCI0 = isSCI0;
 
             _opl = new DosBoxOPL(IsStereo ? OplType.DualOpl2 : OplType.Opl2);
@@ -660,12 +660,12 @@ namespace NScumm.Sci.Sound.Drivers
 
             if (curVoices < voices)
             {
-                // TODO: debug(3, "ADLIB: assigning %i additional voices to channel %i", voices - curVoices, channel);
+                Debug(3, "ADLIB: assigning {0} additional voices to channel {1}", voices - curVoices, channel);
                 AssignVoices(channel, voices - curVoices);
             }
             else if (curVoices > voices)
             {
-                // TODO: debug(3, "ADLIB: releasing %i voices from channel %i", curVoices - voices, channel);
+                Debug(3, "ADLIB: releasing {0} voices from channel {1}", curVoices - voices, channel);
                 ReleaseVoices(channel, curVoices - voices);
                 DonateVoices();
             }

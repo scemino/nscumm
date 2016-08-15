@@ -24,7 +24,7 @@ using NScumm.Core;
 
 namespace NScumm.Droid.Services
 {
-    internal class SaveFileManager: ISaveFileManager
+    internal class SaveFileManager : ISaveFileManager
     {
         public Stream OpenForLoading(string fileName)
         {
@@ -37,7 +37,7 @@ namespace NScumm.Droid.Services
         {
             var path = GetSavePath();
             EnsureSavePathExists(path);
-            return File.Create(Path.Combine(path,fileName));
+            return File.Create(Path.Combine(path, fileName));
         }
 
         public string[] ListSavefiles(string pattern)
@@ -64,6 +64,13 @@ namespace NScumm.Droid.Services
         public void RemoveSavefile(string name)
         {
             File.Delete(Path.Combine(GetSavePath(), name));
+        }
+
+        public bool RenameSavefile(string oldName, string newName)
+        {
+            var savePath = GetSavePath();
+            File.Move(Path.Combine(savePath, oldName), Path.Combine(savePath, newName));
+            return true;
         }
     }
 }

@@ -1177,14 +1177,14 @@ namespace NScumm.Scumm.Audio.IMuse
         const int IMuseSysExId = 0x7D;
         const int RolandSysExId = 0x41;
 
-        static byte[] Extract(byte[] msg, int offset)
+        static byte[] Extract(BytePtr msg, int offset, int length)
         {
-            var tmp = new byte[msg.Length - offset];
-            Array.Copy(msg, offset, tmp, 0, tmp.Length);
+            var tmp = new byte[length - offset];
+            Array.Copy(msg.Data, msg.Offset + offset, tmp, 0, tmp.Length);
             return tmp;
         }
 
-        public override void SysEx(byte[] msg, ushort length)
+        public override void SysEx(BytePtr msg, ushort length)
         {
             int p = 0;
             byte a;
@@ -1204,7 +1204,7 @@ namespace NScumm.Scumm.Audio.IMuse
                         part = GetPart((byte)(msg[p] & 0x0F));
                         if (part != null)
                         {
-                            part.Instrument.Roland(Extract(msg, p - 1));
+                            part.Instrument.Roland(Extract(msg, p - 1, length));
                             if (part.ClearToTransmit())
                                 part.Instrument.Send(part.MidiChannel);
                         }
@@ -1213,7 +1213,7 @@ namespace NScumm.Scumm.Audio.IMuse
                 else if (a == YM2612SysExId)
                 {
                     // FM-TOWNS custom instrument definition
-                    _midi.SysExCustomInstrument(msg[p], NScumm.Core.Audio.SoftSynth.AdlibMidiDriver.ToType("EUP "), Extract(msg, p + 1));
+                    _midi.SysExCustomInstrument(msg[p], NScumm.Core.Audio.SoftSynth.AdlibMidiDriver.ToType("EUP "), Extract(msg, p + 1, length));
                 }
                 else
                 {
@@ -1236,10 +1236,10 @@ namespace NScumm.Scumm.Audio.IMuse
                 return;
 
             if (_se.Sysex != null)
-                _se.Sysex(this, Extract(msg, p), length);
+                _se.Sysex(this, Extract(msg, p, length), length);
         }
 
-        public override void MetaEvent(byte type, byte[] data, ushort length)
+        public override void MetaEvent(byte type, BytePtr data, ushort length)
         {
             if (type == 0x2F)
                 Clear();

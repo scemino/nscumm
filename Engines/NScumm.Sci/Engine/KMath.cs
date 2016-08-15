@@ -1,4 +1,4 @@
-﻿//  Author:
+//  Author:
 //       scemino <scemino74@gmail.com>
 //
 //  Copyright (c) 2015 
@@ -22,15 +22,15 @@ namespace NScumm.Sci.Engine
 {
     partial class Kernel
     {
-        private static Register kAbs(EngineState s, int argc, StackPtr? argv)
+        private static Register kAbs(EngineState s, int argc, StackPtr argv)
         {
-            return Register.Make(0, (ushort)Math.Abs(argv.Value[0].ToInt16()));
+            return Register.Make(0, (ushort)Math.Abs(argv[0].ToInt16()));
         }
 
-        private static Register kCosDiv(EngineState s, int argc, StackPtr? argv)
+        private static Register kCosDiv(EngineState s, int argc, StackPtr argv)
         {
-            int angle = argv.Value[0].ToInt16();
-            int value = argv.Value[1].ToInt16();
+            int angle = argv[0].ToInt16();
+            int value = argv[1].ToInt16();
             double cosval = Math.Cos(angle * Math.PI / 180.0);
 
             if ((cosval < 0.0001) && (cosval > -0.0001))
@@ -41,29 +41,29 @@ namespace NScumm.Sci.Engine
                 return Register.Make(0, (ushort)(value / cosval));
         }
 
-        private static Register kGetAngle(EngineState s, int argc, StackPtr? argv)
+        private static Register kGetAngle(EngineState s, int argc, StackPtr argv)
         {
             // Based on behavior observed with a test program created with
             // SCI Studio.
-            short x1 = argv.Value[0].ToInt16();
-            short y1 = argv.Value[1].ToInt16();
-            short x2 = argv.Value[2].ToInt16();
-            short y2 = argv.Value[3].ToInt16();
+            short x1 = argv[0].ToInt16();
+            short y1 = argv[1].ToInt16();
+            short x2 = argv[2].ToInt16();
+            short y2 = argv[3].ToInt16();
 
             return Register.Make(0, kGetAngleWorker(x1, y1, x2, y2));
         }
 
-        private static Register kGetDistance(EngineState s, int argc, StackPtr? argv)
+        private static Register kGetDistance(EngineState s, int argc, StackPtr argv)
         {
-            int xdiff = (argc > 3) ? argv.Value[3].ToInt16() : 0;
-            int ydiff = (argc > 2) ? argv.Value[2].ToInt16() : 0;
-            int angle = (argc > 5) ? argv.Value[5].ToInt16() : 0;
-            int xrel = (int)(((float)argv.Value[1].ToInt16() - xdiff) / Math.Cos(angle * Math.PI / 180.0)); // This works because cos(0)==1
-            int yrel = argv.Value[0].ToInt16() - ydiff;
+            int xdiff = (argc > 3) ? argv[3].ToInt16() : 0;
+            int ydiff = (argc > 2) ? argv[2].ToInt16() : 0;
+            int angle = (argc > 5) ? argv[5].ToInt16() : 0;
+            int xrel = (int)(((float)argv[1].ToInt16() - xdiff) / Math.Cos(angle * Math.PI / 180.0)); // This works because cos(0)==1
+            int yrel = argv[0].ToInt16() - ydiff;
             return Register.Make(0, (ushort)(short)Math.Sqrt((float)xrel * xrel + yrel * yrel));
         }
 
-        private static Register kRandom(EngineState s, int argc, StackPtr? argv)
+        private static Register kRandom(EngineState s, int argc, StackPtr argv)
         {
             switch (argc)
             {
@@ -76,8 +76,8 @@ namespace NScumm.Sci.Engine
                       // numbers are definitely unsigned, for example lsl5 door code in k rap radio is random
                       //  and 5-digit - we get called kRandom(10000, 65000)
                       //  some codes in sq4 are also random and 5 digit (if i remember correctly)
-                        ushort fromNumber = argv.Value[0].ToUInt16();
-                        ushort toNumber = argv.Value[1].ToUInt16();
+                        ushort fromNumber = argv[0].ToUInt16();
+                        ushort toNumber = argv[1].ToUInt16();
                         // Some scripts may request a range in the reverse order (from largest
                         // to smallest). An example can be found in Longbow, room 710, where a
                         // random number is requested from 119 to 83. In this case, we're
@@ -109,10 +109,10 @@ namespace NScumm.Sci.Engine
             }
         }
 
-        private static Register kSinDiv(EngineState s, int argc, StackPtr? argv)
+        private static Register kSinDiv(EngineState s, int argc, StackPtr argv)
         {
-            int angle = argv.Value[0].ToInt16();
-            int value = argv.Value[1].ToInt16();
+            int angle = argv[0].ToInt16();
+            int value = argv[1].ToInt16();
             double sinval = Math.Sin(angle * Math.PI / 180.0);
 
             if ((sinval < 0.0001) && (sinval > -0.0001))
@@ -123,23 +123,23 @@ namespace NScumm.Sci.Engine
                 return Register.Make(0, (ushort)(value / sinval));
         }
 
-        private static Register kSqrt(EngineState s, int argc, StackPtr? argv)
+        private static Register kSqrt(EngineState s, int argc, StackPtr argv)
         {
-            return Register.Make(0, (ushort)Math.Sqrt(Math.Abs(argv.Value[0].ToInt16())));
+            return Register.Make(0, (ushort)Math.Sqrt(Math.Abs(argv[0].ToInt16())));
         }
 
-        private static Register kTimesCos(EngineState s, int argc, StackPtr? argv)
+        private static Register kTimesCos(EngineState s, int argc, StackPtr argv)
         {
-            int angle = argv.Value[0].ToInt16();
-            int factor = argv.Value[1].ToInt16();
+            int angle = argv[0].ToInt16();
+            int factor = argv[1].ToInt16();
 
             return Register.Make(0, (ushort)(factor * Math.Cos(angle * Math.PI / 180.0)));
         }
 
-        private static Register kTimesCot(EngineState s, int argc, StackPtr? argv)
+        private static Register kTimesCot(EngineState s, int argc, StackPtr argv)
         {
-            int param = argv.Value[0].ToInt16();
-            int scale = (argc > 1) ? argv.Value[1].ToInt16() : 1;
+            int param = argv[0].ToInt16();
+            int scale = (argc > 1) ? argv[1].ToInt16() : 1;
 
             if ((param % 90) == 0)
             {
@@ -149,18 +149,18 @@ namespace NScumm.Sci.Engine
                 return Register.Make(0, (ushort)(Math.Tan(param * Math.PI / 180.0) * scale));
         }
 
-        private static Register kTimesSin(EngineState s, int argc, StackPtr? argv)
+        private static Register kTimesSin(EngineState s, int argc, StackPtr argv)
         {
-            int angle = argv.Value[0].ToInt16();
-            int factor = argv.Value[1].ToInt16();
+            int angle = argv[0].ToInt16();
+            int factor = argv[1].ToInt16();
 
             return Register.Make(0, (ushort)(factor * Math.Sin(angle * Math.PI / 180.0)));
         }
 
-        private static Register kTimesTan(EngineState s, int argc, StackPtr? argv)
+        private static Register kTimesTan(EngineState s, int argc, StackPtr argv)
         {
-            int param = argv.Value[0].ToInt16();
-            int scale = (argc > 1) ? argv.Value[1].ToInt16() : 1;
+            int param = argv[0].ToInt16();
+            int scale = (argc > 1) ? argv[1].ToInt16() : 1;
 
             param -= 90;
             if ((param % 90) == 0)
@@ -279,7 +279,7 @@ namespace NScumm.Sci.Engine
             }
         }
 
-        public bool SignatureMatch(ushort[] signature, int argc, StackPtr? argv)
+        public bool SignatureMatch(ushort[] signature, int argc, StackPtr argv)
         {
             var sig = 0;
             var nextSig = 0;
@@ -287,7 +287,7 @@ namespace NScumm.Sci.Engine
             while (nextSig < signature.Length && argc != 0)
             {
                 curSig = nextSig;
-                int type = FindRegType(argv.Value[0]);
+                int type = FindRegType(argv[0]);
 
                 if ((type & SIG_IS_INVALID) != 0 && (0 == (signature[curSig] & SIG_IS_INVALID)))
                     return false; // pointer is invalid and signature doesn't allow that?

@@ -31,5 +31,7 @@ namespace NScumm.Core
         void Sleep(int timeInMs);
 
         void LogMessage(LogMessageType type, string format, params object[] args);
+
+        int GetMilliseconds();
     }
 }

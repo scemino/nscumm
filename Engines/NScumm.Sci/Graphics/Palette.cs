@@ -1,4 +1,4 @@
-﻿//  Author:
+//  Author:
 //       scemino <scemino74@gmail.com>
 //
 //  Copyright (c) 2015 
@@ -21,6 +21,8 @@ using System;
 using System.Threading;
 using NScumm.Sci.Engine;
 using static NScumm.Core.DebugHelper;
+using System.Collections.Generic;
+using System.IO;
 
 namespace NScumm.Sci.Graphics
 {
@@ -29,6 +31,12 @@ namespace NScumm.Sci.Graphics
         None = 0,
         ByRange = 1,
         ByPercent = 2
+    }
+
+    class PalSchedule
+    {
+        public byte from;
+        public uint schedule;
     }
 
     /// <summary>
@@ -51,7 +59,7 @@ namespace NScumm.Sci.Graphics
         private bool _useMerging;
         private bool _use16bitColorMatch;
 
-        //private PalSchedule[] _schedules;
+        private List<PalSchedule> _schedules;
 
         private int _palVaryResourceId;
         private Palette _palVaryOriginPalette;
@@ -81,6 +89,7 @@ namespace NScumm.Sci.Graphics
             _resMan = resMan;
             _screen = screen;
 
+            _schedules = new List<PalSchedule>();
             _sysPalette = new Palette();
             _sysPalette.timestamp = 0;
             for (var color = 0; color < 256; color++)
@@ -122,7 +131,8 @@ namespace NScumm.Sci.Graphics
                 // Note: Laura Bow 2 floppy uses the new palette format and is detected
                 //        as 8 bit color matching because of that.
             }
-            else {
+            else
+            {
                 // SCI32
                 _useMerging = false;
                 _use16bitColorMatch = false; // not verified that SCI32 uses 8-bit color matching
@@ -216,7 +226,8 @@ namespace NScumm.Sci.Graphics
                 if (_palVaryStep > _palVaryStepStop)
                     _palVaryStep = _palVaryStepStop;
             }
-            else {
+            else
+            {
                 if (_palVaryStep < _palVaryStepStop)
                 {
                     if (signal != 0)
@@ -243,14 +254,14 @@ namespace NScumm.Sci.Graphics
                 color = (short)(_palVaryTargetPalette.colors[colorNr].b - _palVaryOriginPalette.colors[colorNr].b);
                 inbetween.b = (byte)(((color * _palVaryStep) / 64) + _palVaryOriginPalette.colors[colorNr].b);
 
-                if (inbetween == _sysPalette.colors[colorNr])
+                if (inbetween != _sysPalette.colors[colorNr])
                 {
                     _sysPalette.colors[colorNr] = inbetween;
                     _sysPaletteChanged = true;
                 }
             }
 
-            if ((_sysPaletteChanged) && (setPalette) && (_screen._picNotValid == 0))
+            if (_sysPaletteChanged && setPalette && (_screen._picNotValid == 0))
             {
                 SetOnScreen();
                 _sysPaletteChanged = false;
@@ -259,7 +270,10 @@ namespace NScumm.Sci.Graphics
 
         private void PalVaryRemoveTimer()
         {
-            _timerPalette.Change(0, 0);
+            if (_timerPalette != null)
+            {
+                _timerPalette.Change(0, 0);
+            }
         }
 
         private bool Insert(Palette newPalette, Palette destPalette)
@@ -361,7 +375,7 @@ namespace NScumm.Sci.Graphics
             }
 
             if (!forceRealMerge)
-                _sysPalette.timestamp = Environment.TickCount * 60 / 1000;
+                _sysPalette.timestamp = ServiceLocator.Platform.GetMilliseconds() * 60 / 1000;
 
             return paletteChanged;
         }
@@ -445,7 +459,8 @@ namespace NScumm.Sci.Graphics
                 palColorStart = 0; palColorCount = 256;
                 //memcpy(&paletteOut.mapping, data, 256);
             }
-            else {
+            else
+            {
                 // SCI1.1 palette
                 palFormat = data[32];
                 palOffset = 37;
@@ -583,9 +598,42 @@ namespace NScumm.Sci.Graphics
                 KernelSetFromResource(999, true);
         }
 
-        private void SetAmiga()
+        /// <summary>
+        /// Will try to set amiga palette by using "spal" file. If not found, we return false.
+        /// </summary>
+        /// <returns>The amiga.</returns>
+        private bool SetAmiga()
         {
-            throw new NotImplementedException();
+            var file = Core.Engine.OpenFileRead("spal");
+            if (file != null)
+            {
+                var br = new BinaryReader(file);
+                for (int curColor = 0; curColor < 32; curColor++)
+                {
+                    byte byte1 = br.ReadByte();
+                    byte byte2 = br.ReadByte();
+
+                    _sysPalette.colors[curColor].used = 1;
+                    _sysPalette.colors[curColor].r = (byte)((byte1 & 0x0F) * 0x11);
+                    _sysPalette.colors[curColor].g = (byte)(((byte2 & 0xF0) >> 4) * 0x11);
+                    _sysPalette.colors[curColor].b = (byte)((byte2 & 0x0F) * 0x11);
+
+                    if (_totalScreenColors == 64)
+                    {
+                        // Set the associated color from the Amiga halfbrite colors
+                        _sysPalette.colors[curColor + 32].used = 1;
+                        _sysPalette.colors[curColor + 32].r = (byte)(_sysPalette.colors[curColor].r >> 1);
+                        _sysPalette.colors[curColor + 32].g = (byte)(_sysPalette.colors[curColor].g >> 1);
+                        _sysPalette.colors[curColor + 32].b = (byte)(_sysPalette.colors[curColor].b >> 1);
+                    }
+                }
+
+                // Directly set the palette, because setOnScreen() wont do a thing for amiga
+                CopySysPaletteToScreen();
+                return true;
+            }
+
+            return false;
         }
 
         private void SetEGA()
@@ -684,7 +732,8 @@ namespace NScumm.Sci.Graphics
             {
                 _palVaryPaused++;
             }
-            else {
+            else
+            {
                 if (_palVaryPaused != 0)
                     _palVaryPaused--;
             }
@@ -722,14 +771,77 @@ namespace NScumm.Sci.Graphics
             return KernelPalVaryGetCurrentStep();
         }
 
-        internal bool KernelAnimate(ushort fromColor, ushort toColor, short speed)
+        // Returns true, if palette got changed
+        public bool KernelAnimate(byte fromColor, byte toColor, int speed)
         {
-            throw new NotImplementedException();
+            Color col;
+            //byte colorNr;
+            short colorCount;
+            uint now = SciEngine.Instance.TickCount;
+
+            // search for sheduled animations with the same 'from' value
+            // schedule animation...
+            int scheduleCount = _schedules.Count;
+            int scheduleNr;
+            for (scheduleNr = 0; scheduleNr < scheduleCount; scheduleNr++)
+            {
+                if (_schedules[scheduleNr].from == fromColor)
+                    break;
+            }
+            if (scheduleNr == scheduleCount)
+            {
+                // adding a new schedule
+                PalSchedule newSchedule = new PalSchedule();
+                newSchedule.from = fromColor;
+                newSchedule.schedule = (uint)(now + Math.Abs(speed));
+                _schedules.Add(newSchedule);
+                scheduleCount++;
+            }
+
+            SciEngine.Instance.EngineState._throttleTrigger = true;
+
+            for (scheduleNr = 0; scheduleNr < scheduleCount; scheduleNr++)
+            {
+                if (_schedules[scheduleNr].from == fromColor)
+                {
+                    if (_schedules[scheduleNr].schedule <= now)
+                    {
+                        if (speed > 0)
+                        {
+                            // TODO: Not really sure about this, sierra sci seems to do exactly this here
+                            col = _sysPalette.colors[fromColor];
+                            if (fromColor < toColor)
+                            {
+                                colorCount = (short)(toColor - fromColor - 1);
+                                Array.Copy(_sysPalette.colors, fromColor + 1, _sysPalette.colors, fromColor, colorCount);
+                            }
+                            _sysPalette.colors[toColor - 1] = col;
+                        }
+                        else
+                        {
+                            col = _sysPalette.colors[toColor - 1];
+                            if (fromColor < toColor)
+                            {
+                                colorCount = (short)(toColor - fromColor - 1);
+                                Array.Copy(_sysPalette.colors, fromColor, _sysPalette.colors, fromColor + 1, colorCount);
+                            }
+                            _sysPalette.colors[fromColor] = col;
+                        }
+                        // removing schedule
+                        _schedules[scheduleNr].schedule = (uint)(now + Math.Abs(speed));
+                        // TODO: Not sure when sierra actually removes a schedule
+                        //_schedules.remove_at(scheduleNr);
+                        return true;
+                    }
+                    return false;
+                }
+            }
+            return false;
         }
 
-        internal void KernelAnimateSet()
+        public void KernelAnimateSet()
         {
-            throw new NotImplementedException();
+            SetOnScreen();
         }
 
         public void KernelPalVaryDeinit()
@@ -765,20 +877,53 @@ namespace NScumm.Sci.Graphics
                 //  just in case
                 PalVaryProcess(1, true);
             }
-            else {
+            else
+            {
                 PalVaryInstallTimer();
             }
             return KernelPalVaryGetCurrentStep();
         }
 
-        internal Register KernelSave()
+        public Register KernelSave()
         {
-            throw new NotImplementedException();
+            SegManager segMan = SciEngine.Instance.EngineState._segMan;
+            Register memoryId = segMan.AllocateHunkEntry("kPalette(save)", 1024);
+            byte[] memoryPtr = segMan.GetHunkPointer(memoryId);
+            if (memoryPtr != null)
+            {
+                for (int colorNr = 0; colorNr < 256; colorNr++)
+                {
+                    memoryPtr[colorNr * 4] = _sysPalette.colors[colorNr].used;
+                    memoryPtr[colorNr * 4 + 1] = _sysPalette.colors[colorNr].r;
+                    memoryPtr[colorNr * 4 + 2] = _sysPalette.colors[colorNr].g;
+                    memoryPtr[colorNr * 4 + 3] = _sysPalette.colors[colorNr].b;
+                }
+            }
+            return memoryId;
         }
 
-        internal void KernelRestore(Register register)
+        public void KernelRestore(Register memoryHandle)
         {
-            throw new NotImplementedException();
+            SegManager segMan = SciEngine.Instance.EngineState._segMan;
+            if (!memoryHandle.IsNull)
+            {
+                byte[] memoryPtr = segMan.GetHunkPointer(memoryHandle);
+                if (memoryPtr == null)
+                    Error("Bad handle used for kPalette(restore)");
+
+                Palette restoredPalette = new Palette();
+
+                restoredPalette.timestamp = 0;
+                for (int colorNr = 0; colorNr < 256; colorNr++)
+                {
+                    restoredPalette.colors[colorNr].used = memoryPtr[colorNr * 4];
+                    restoredPalette.colors[colorNr].r = memoryPtr[colorNr * 4 + 1];
+                    restoredPalette.colors[colorNr].g = memoryPtr[colorNr * 4 + 2];
+                    restoredPalette.colors[colorNr].b = memoryPtr[colorNr * 4 + 3];
+                }
+
+                Set(restoredPalette, true);
+            }
         }
 
         public bool KernelPalVaryInit(int resourceId, ushort ticks, ushort stepStop, ushort direction)
@@ -789,7 +934,7 @@ namespace NScumm.Sci.Graphics
             if (PalVaryLoadTargetPalette(resourceId))
             {
                 // Save current palette
-                _palVaryOriginPalette = _sysPalette;
+                _palVaryOriginPalette = new Palette(_sysPalette);
 
                 _palVarySignal = 0;
                 _palVaryTicks = ticks;
@@ -808,7 +953,8 @@ namespace NScumm.Sci.Graphics
                     //  being daytime instead of nighttime during the transition.
                     PalVaryProcess(1, true);
                 }
-                else {
+                else
+                {
                     PalVaryInstallTimer();
                 }
                 return true;
@@ -860,7 +1006,7 @@ namespace NScumm.Sci.Graphics
 
             short ticks = (short)(_palVaryTicks > 0 ? _palVaryTicks : 1);
             // Call signal increase every [ticks]
-            _timerPalette = new Timer(PalVaryCallback, this, 0, 1000000 / 60 * ticks);
+            _timerPalette = new Timer(PalVaryCallback, this, 0, 1000 / 60 * ticks);
         }
 
         private void PalVaryCallback(object state)
@@ -885,9 +1031,28 @@ namespace NScumm.Sci.Graphics
             return (byte)(0.5 + (Math.Pow(0.5 * t / 255.0, 1.0 / 2.2) * 255.0));
         }
 
-        internal void ModifyAmigaPalette(ByteAccess byteAccess)
+        public void ModifyAmigaPalette(ByteAccess data)
         {
-            throw new NotImplementedException();
+            short curPos = 0;
+
+            for (int curColor = 0; curColor < 16; curColor++)
+            {
+                byte byte1 = data[curPos++];
+                byte byte2 = data[curPos++];
+                _sysPalette.colors[curColor].r = (byte)((byte1 & 0x0F) * 0x11);
+                _sysPalette.colors[curColor].g = (byte)(((byte2 & 0xF0) >> 4) * 0x11);
+                _sysPalette.colors[curColor].b = (byte)((byte2 & 0x0F) * 0x11);
+
+                if (_totalScreenColors == 64)
+                {
+                    // Set the associated color from the Amiga halfbrite colors
+                    _sysPalette.colors[curColor + 32].r = (byte)(_sysPalette.colors[curColor].r >> 1);
+                    _sysPalette.colors[curColor + 32].g = (byte)(_sysPalette.colors[curColor].g >> 1);
+                    _sysPalette.colors[curColor + 32].b = (byte)(_sysPalette.colors[curColor].b >> 1);
+                }
+            }
+
+            CopySysPaletteToScreen();
         }
 
         public void SetOnScreen()
@@ -962,7 +1127,8 @@ namespace NScumm.Sci.Graphics
                     }
                 }
             }
-            else {
+            else
+            {
                 // SCI1.1, starting with QfG3 introduced a bug in the matching code
                 // we have to implement it as well, otherwise some colors will be "wrong" in comparison to the original interpreter
                 //  See Space Quest 5 bug #6455

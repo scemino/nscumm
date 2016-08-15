@@ -17,7 +17,6 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using NScumm.Core;
-using NScumm.Core.Common;
 using System;
 using System.Collections.Generic;
 
@@ -168,7 +167,7 @@ namespace NScumm.Sci.Engine
                 if (!relocSci3)
                     offset = (uint)(_exportTable.Data.ReadSci11EndianUInt16(_exportTable.Offset + pubfunct * 2) + CodeBlockOffsetSci3);
                 else
-                    offset = RelocateOffsetSci3(pubfunct * 2 + 22);
+                    offset = (uint)RelocateOffsetSci3((uint)(pubfunct * 2 + 22));
             }
 
             // Check if the offset found points to a second export table (e.g. script 912
@@ -301,7 +300,7 @@ namespace NScumm.Sci.Engine
                         throw new InvalidOperationException($"Invalid species {species}(0x{species:X}) unknown max {segMan.ClassTableSize}(0x{segMan.ClassTableSize:X}) while instantiating script {_nr}");
 
                     var segmentId = segMan.GetScriptSegment(_nr);
-                    segMan.SetClassOffset(species, Register.Make((ushort)segmentId, (ushort)classpos));
+                    segMan.SetClassOffset(species, Register.Make(segmentId, (ushort)classpos));
                 }
 
                 seeker.Offset += seeker.Data.ReadSci11EndianUInt16(seeker.Offset + 2) * mult;
@@ -340,14 +339,81 @@ namespace NScumm.Sci.Engine
                 InitializeObjectsSci3(segMan, segmentId);
         }
 
-        private void InitializeObjectsSci3(object segMan, ushort segmentId)
+        private void InitializeObjectsSci3(SegManager segMan, ushort segmentId)
         {
-            throw new NotImplementedException();
+            BytePtr seeker = GetSci3ObjectsPointer();
+
+            while (seeker.Data.ReadSci11EndianUInt16(seeker.Offset) == SCRIPT_OBJECT_MAGIC_NUMBER)
+            {
+                // We call setSegment and setOffset directly here, instead of using
+                // make_reg, as in large scripts, seeker - _buf can be larger than
+                // a 16-bit integer
+                Register reg = Register.Make(segmentId, (ushort)seeker.Offset);
+
+                var obj = ScriptObjInit(reg);
+                obj.SuperClassSelector = segMan.GetClassAddress((ushort)obj.SuperClassSelector.Offset, ScriptLoadType.LOCK, 0);
+                seeker.Offset += seeker.Data.ReadSci11EndianUInt16(seeker.Offset + 2);
+            }
+
+            RelocateSci3(Register.Make(segmentId, 0));
         }
 
-        private void InitializeObjectsSci11(object segMan, ushort segmentId)
+        private void RelocateSci3(Register block)
         {
-            throw new NotImplementedException();
+            var relocStart = new BytePtr(_buf, (int)_buf.ReadSci11EndianUInt32(8));
+            //int count = _bufSize - READ_SCI11ENDIAN_UINT32(_buf + 8);
+
+            foreach (var it in _objects)
+            {
+                var seeker = relocStart;
+                while (seeker.Offset < _bufSize)
+                {
+                    // TODO: Find out what UINT16 at (seeker + 8) means
+                    it.Value.RelocateSci3(block.Segment,
+                                    seeker.Data.ReadSci11EndianUInt32(seeker.Offset),(int)seeker.Data.ReadSci11EndianUInt32(seeker.Offset + 4),
+                                _scriptSize);
+                    seeker.Offset += 10;
+                }
+            }
+        }
+
+
+        private void InitializeObjectsSci11(SegManager segMan, ushort segmentId)
+        {
+            var seeker = new ByteAccess(_heapStart, 4 + _heapStart.Data.ReadSci11EndianUInt16(_heapStart.Offset + 2) * 2);
+
+            while (seeker.Data.ReadSci11EndianUInt16(seeker.Offset) == SCRIPT_OBJECT_MAGIC_NUMBER)
+            {
+                Register reg = Register.Make(segmentId, (ushort)seeker.Offset);
+                var obj = ScriptObjInit(reg);
+
+                // Copy base from species class, as we need its selector IDs
+                obj.SuperClassSelector =
+                       segMan.GetClassAddress((ushort)obj.SuperClassSelector.Offset, ScriptLoadType.LOCK, 0);
+
+                // If object is instance, get -propDict- from class and set it for this
+                // object. This is needed for ::isMemberOf() to work.
+                // Example test case - room 381 of sq4cd - if isMemberOf() doesn't work,
+                // talk-clicks on the robot will act like clicking on ego
+                if (!obj.IsClass)
+                {
+                    Register classObject = obj.SuperClassSelector;
+                    var classObj = segMan.GetObject(classObject);
+                    obj.PropDictSelector = classObj.PropDictSelector;
+                }
+
+                // Set the -classScript- selector to the script number.
+                // FIXME: As this selector is filled in at run-time, it is likely
+                // that it is supposed to hold a pointer. The Obj::isKindOf method
+                // uses this selector together with -propDict- to compare classes.
+                // For the purpose of Obj::isKindOf, using the script number appears
+                // to be sufficient.
+                obj.ClassScriptSelector = Register.Make(0, (ushort)_nr);
+
+                seeker.Offset += seeker.Data.ReadSci11EndianUInt16(seeker.Offset + 2) * 2;
+            }
+
+            RelocateSci0Sci21(Register.Make(segmentId, _heapStart.Data.ReadSci11EndianUInt16(_heapStart.Offset)));
         }
 
         private void InitializeObjectsSci0(SegManager segMan, ushort segmentId)
@@ -613,7 +679,7 @@ namespace NScumm.Sci.Engine
                 if (_buf.ToUInt16(1 + 5) > 0)
                 {   // does the script have an export table?
                     _exportTable = new UShortAccess(_buf, 1 + 5 + 2);
-                    _numExports = _exportTable.Data.ReadSci11EndianUInt16(-1 * 2);
+                    _numExports = _exportTable.Data.ReadSci11EndianUInt16(_exportTable.Offset - 2);
                 }
                 _localsOffset = _scriptSize + 4;
                 _localsCount = _buf.ReadSci11EndianUInt16(_localsOffset - 2);
@@ -776,7 +842,7 @@ namespace NScumm.Sci.Engine
         /// <summary>
         /// Gets a value indicationg whether the script is marked as being deleted.
         /// </summary>
-        public bool IsMarkedAsDeleted { get { return _markedAsDeleted; }}
+        public bool IsMarkedAsDeleted { get { return _markedAsDeleted; } }
 
         /// <summary>
         /// Retrieves the number of exports of script.
@@ -923,9 +989,24 @@ namespace NScumm.Sci.Engine
                 segMan.DeallocateScript(_nr);
         }
 
-        internal ushort RelocateOffsetSci3(int v)
+        public int RelocateOffsetSci3(uint offset)
         {
-            throw new NotImplementedException();
+            int relocStart = _buf.ToInt32(8);
+            int relocCount = _buf.ToUInt16(18);
+            var seeker = new BytePtr(_buf, relocStart);
+
+            for (int i = 0; i < relocCount; ++i)
+            {
+                if (seeker.Data.ReadSci11EndianUInt32(seeker.Offset) == offset)
+                {
+                    // TODO: Find out what UINT16 at (seeker + 8) means
+                    return (int)(seeker.Data.ReadSci11EndianUInt16((int)(seeker.Offset + offset)) +
+                                 seeker.Data.ReadSci11EndianUInt32((int)(seeker.Offset + 4)));
+                }
+                seeker.Offset += 10;
+            }
+
+            return -1;
         }
     }
 }

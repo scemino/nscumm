@@ -74,8 +74,12 @@ namespace NScumm
         private void OnBufferNeeded(object sender, EventArgs e)
         {
             Array.Clear(_buffer, 0, _buffer.Length);
-            _audioSampleProvider?.Read (_buffer, _buffer.Length);
-            _dsei.SubmitBuffer(_buffer, _buffer.Length);
+            try
+            {
+                _audioSampleProvider?.Read(_buffer, _buffer.Length);
+                _dsei.SubmitBuffer(_buffer, _buffer.Length);
+            }
+            catch (Exception){}
         }
     }
 }

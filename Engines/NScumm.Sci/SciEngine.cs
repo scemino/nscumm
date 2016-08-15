@@ -1,4 +1,4 @@
-﻿//  Author:
+//  Author:
 //       scemino <scemino74@gmail.com>
 //
 //  Copyright (c) 2015 
@@ -189,10 +189,17 @@ namespace NScumm.Sci
 			0x48,              // ret
 		};
 
+        public uint TickCount
+        {
+            get
+            {
+                return (uint)(TotalPlayTime * 60 / 1000);
+            }
+        }
+
         public SciEngine(ISystem system, GameSettings settings, SciGameDescriptor desc, SciGameId id)
             : base(system, settings)
         {
-            _engineStartTime = Environment.TickCount;
             _system = system;
             _instance = this;
             _rng = new RandomSource("sci");
@@ -232,7 +239,7 @@ namespace NScumm.Sci
             Language subtitleLanguage = Sci.Language.NONE;
 
             if (Selector(s => s.subtitleLang) != -1)
-                subtitleLanguage = (Language)ReadSelectorValue(_gamestate._segMan, _gameObjectAddress, Selector(s => s.subtitleLang));
+                subtitleLanguage = (Language)ReadSelectorValue(_gamestate._segMan, _gameObjectAddress, s => s.subtitleLang);
 
             Language foundLanguage;
             string retval = GetSciLanguageString(str, activeLanguage, out foundLanguage, out languageSplitter);
@@ -370,13 +377,13 @@ namespace NScumm.Sci
         public void Sleep(int msecs)
         {
             int time;
-            int wakeup_time = Environment.TickCount + msecs;
+            int wakeup_time = ServiceLocator.Platform.GetMilliseconds() + msecs;
 
             while (true)
             {
                 // let backend process events and update the screen
                 _eventMan.GetSciEvent(SciEvent.SCI_EVENT_PEEK);
-                time = Environment.TickCount;
+                time = ServiceLocator.Platform.GetMilliseconds();
                 if (time + 10 < wakeup_time)
                 {
                     ServiceLocator.Platform.Sleep(10);
@@ -429,6 +436,7 @@ namespace NScumm.Sci
         public Core.Language Language
         {
             get { return _gameDescription.language; }
+
         }
 
         public Platform Platform { get { return _gameDescription.platform; } }
@@ -521,34 +529,67 @@ namespace NScumm.Sci
 
         public Vocabulary Vocabulary { get { return _vocabulary; } }
 
-        /// <summary>
-        /// Gets or sets the total play time.
-        /// </summary>
-        public int TotalPlaytime
-        {
-            get
-            {
-                if (_pauseLevel == 0)
-                    return Environment.TickCount - _engineStartTime;
-                else
-                    return _pauseStartTime - _engineStartTime;
-            }
-            set
-            {
-                var currentTime = Environment.TickCount;
-
-                // We need to reset the pause start time here in case the engine is already
-                // paused to avoid any incorrect play time counting.
-                if (_pauseLevel > 0)
-                    _pauseStartTime = currentTime;
-
-                _engineStartTime = currentTime - value;
-            }
-        }
-
         public string SavegamePattern { get { return _gameDescription.gameid + ".???"; } }
 
         public ScriptPatcher ScriptPatcher { get; private set; }
+
+        public Language GetSciLanguage()
+        {
+            Language lang = (Language)_resMan.GetAudioLanguage();
+            if (lang != Sci.Language.NONE)
+                return lang;
+
+            lang = Sci.Language.ENGLISH;
+
+            if (Selector(o=>o.printLang) != -1)
+            {
+                lang = (Language)ReadSelectorValue(_gamestate._segMan, _gameObjectAddress, o=>o.printLang);
+
+                if ((ResourceManager.GetSciVersion() >= SciVersion.V1_1) || (lang == Sci.Language.NONE))
+                {
+                    // If language is set to none, we use the language from the game detector.
+                    // SSCI reads this from resource.cfg (early games do not have a language
+                    // setting in resource.cfg, but instead have the secondary language number
+                    // hardcoded in the game script).
+                    // SCI1.1 games always use the language setting from the config file
+                    // (essentially disabling runtime language switching).
+                    // Note: only a limited number of multilanguage games have been tested
+                    // so far, so this information may not be 100% accurate.
+                    switch (Language)
+                    {
+                        case Core.Language.FR_FRA:
+                            lang = Sci.Language.FRENCH;
+                            break;
+                        case Core.Language.ES_ESP:
+                            lang = Sci.Language.SPANISH;
+                            break;
+                        case Core.Language.IT_ITA:
+                            lang = Sci.Language.ITALIAN;
+                            break;
+                        case Core.Language.DE_DEU:
+                            lang = Sci.Language.GERMAN;
+                            break;
+                        case Core.Language.JA_JPN:
+                            lang = Sci.Language.JAPANESE;
+                            break;
+                        case Core.Language.PT_BRA:
+                            lang = Sci.Language.PORTUGUESE;
+                            break;
+                        default:
+                            lang = Sci.Language.ENGLISH;
+                            break;
+                    }
+                }
+            }
+
+            return lang;
+        }
+
+        public void SetSciLanguage(Language lang)
+        {
+            if (Selector(o => o.printLang) != -1)
+                WriteSelectorValue(_gamestate._segMan, _gameObjectAddress, o => o.printLang, (ushort)lang);
+        }
 
         public string WrapFilename(string name)
         {
@@ -680,6 +721,7 @@ namespace NScumm.Sci
 
                 if (buggyScript != null && (buggyScript.size == 12354 || buggyScript.size == 12362))
                 {
+                    throw new NotImplementedException();
                     // TODO: showScummVMDialog("A known buggy game script has been detected, which could "
 
                     //"prevent you from progressing later on in the game, during "
@@ -854,7 +896,7 @@ namespace NScumm.Sci
 
                 if (Instance.IsBE)
                 {
-                    // LE -> BE
+                    // LE . BE
                     patchPtr[9] = 0x00;
                     patchPtr[10] = 0x06;
                 }
@@ -874,7 +916,7 @@ namespace NScumm.Sci
 
             if (Instance.IsBE)
             {
-                // LE -> BE
+                // LE . BE
                 patchPtr[10] = 0x00;
                 patchPtr[11] = 0x08;
             }
@@ -902,7 +944,7 @@ namespace NScumm.Sci
             Language subtitleLanguage = Sci.Language.NONE;
 
             if (Selector(s => s.subtitleLang) != -1)
-                subtitleLanguage = (Language)ReadSelectorValue(_gamestate._segMan, _gameObjectAddress, Selector(s => s.subtitleLang));
+                subtitleLanguage = (Language)ReadSelectorValue(_gamestate._segMan, _gameObjectAddress, s => s.subtitleLang);
 
             Language foundLanguage;
             string retval = GetSciLanguageString(str, activeLanguage, out foundLanguage, out languageSplitter);
@@ -924,7 +966,7 @@ namespace NScumm.Sci
 
         private void RunGame()
         {
-            TotalPlaytime = 0;
+            TotalPlayTime = 0;
 
             InitStackBaseWithSelector(Selector(s => s.play)); // Call the play selector
 
@@ -1178,7 +1220,7 @@ namespace NScumm.Sci
             if (_vocabulary != null)
                 _vocabulary.Reset();
 
-            _gamestate.lastWaitTime = _gamestate._screenUpdateTime = Environment.TickCount;
+            _gamestate.lastWaitTime = _gamestate._screenUpdateTime = ServiceLocator.Platform.GetMilliseconds();
 
             // Load game language into printLang property of game object
             SetSciLanguage();
@@ -1196,63 +1238,6 @@ namespace NScumm.Sci
             return func(Instance._kernel._selectorCache);
         }
 
-        private Language GetSciLanguage()
-        {
-            Language lang = (Language)_resMan.GetAudioLanguage();
-            if (lang != Sci.Language.NONE)
-                return lang;
-
-            lang = Sci.Language.ENGLISH;
-
-            if (Selector(s => s.printLang) != -1)
-            {
-                lang = (Language)ReadSelectorValue(_gamestate._segMan, _gameObjectAddress, Selector(s => s.printLang));
-
-                if ((ResourceManager.GetSciVersion() >= SciVersion.V1_1) || (lang == Sci.Language.NONE))
-                {
-                    // If language is set to none, we use the language from the game detector.
-                    // SSCI reads this from resource.cfg (early games do not have a language
-                    // setting in resource.cfg, but instead have the secondary language number
-                    // hardcoded in the game script).
-                    // SCI1.1 games always use the language setting from the config file
-                    // (essentially disabling runtime language switching).
-                    // Note: only a limited number of multilanguage games have been tested
-                    // so far, so this information may not be 100% accurate.
-                    switch (Language)
-                    {
-                        case Core.Language.FR_FRA:
-                            lang = Sci.Language.FRENCH;
-                            break;
-                        case Core.Language.ES_ESP:
-                            lang = Sci.Language.SPANISH;
-                            break;
-                        case Core.Language.IT_ITA:
-                            lang = Sci.Language.ITALIAN;
-                            break;
-                        case Core.Language.DE_DEU:
-                            lang = Sci.Language.GERMAN;
-                            break;
-                        case Core.Language.JA_JPN:
-                            lang = Sci.Language.JAPANESE;
-                            break;
-                        case Core.Language.PT_BRA:
-                            lang = Sci.Language.PORTUGUESE;
-                            break;
-                        default:
-                            lang = Sci.Language.ENGLISH;
-                            break;
-                    }
-                }
-            }
-
-            return lang;
-        }
-
-        public static uint ReadSelectorValue(SegManager segMan, Register obj, int selectorId)
-        {
-            return ReadSelector(segMan, obj, selectorId).Offset;
-        }
-
         public static uint ReadSelectorValue(SegManager segMan, Register obj, Func<SelectorCache, int> func)
         {
             return ReadSelector(segMan, obj, Selector(func)).Offset;
@@ -1263,7 +1248,7 @@ namespace NScumm.Sci
             return ReadSelector(segMan, obj, Selector(func));
         }
 
-        public static Register ReadSelector(SegManager segMan, Register obj, int selectorId)
+        private static Register ReadSelector(SegManager segMan, Register obj, int selectorId)
         {
             ObjVarRef address = new ObjVarRef();
             Register fptr;
@@ -1331,12 +1316,17 @@ namespace NScumm.Sci
             //	return _lookupSelector_function(segMan, obj, selectorId, fptr);
         }
 
-        public static void InvokeSelector(EngineState s, Register @object, Func<SelectorCache, int> func, int k_argc, StackPtr? k_argp, int argc = 0, StackPtr? argv = null)
+        public static void InvokeSelector(EngineState s, Register @object, Func<SelectorCache, int> func, int k_argc, StackPtr? k_argp)
+        {
+            InvokeSelector(s, @object, func, k_argc, k_argp, 0, StackPtr.Null);
+        }
+
+        public static void InvokeSelector(EngineState s, Register @object, Func<SelectorCache, int> func, int k_argc, StackPtr? k_argp, int argc, StackPtr argv)
         {
             InvokeSelector(s, @object, Selector(func), k_argc, k_argp, argc, argv);
         }
 
-        public static void InvokeSelector(EngineState s, Register @object, int selectorId, int k_argc, StackPtr? k_argp, int argc = 0, StackPtr? argv = null)
+        public static void InvokeSelector(EngineState s, Register @object, int selectorId, int k_argc, StackPtr? k_argp, int argc, StackPtr argv)
         {
             int i;
             int framesize = 2 + 1 * argc;
@@ -1358,7 +1348,7 @@ namespace NScumm.Sci
             }
 
             for (i = 0; i < argc; i++)
-                stackframe[2 + i] = argv.Value[i]; // Write each argument
+                stackframe[2 + i] = argv[i]; // Write each argument
 
             ExecStack xstack;
 
@@ -1372,19 +1362,12 @@ namespace NScumm.Sci
             Vm.Run(s); // Start a new vm
         }
 
-
-        private void SetSciLanguage(Language lang)
-        {
-            if (Selector(s => s.printLang) != -1)
-                WriteSelectorValue(_gamestate._segMan, _gameObjectAddress, Selector(s => s.printLang), (ushort)lang);
-        }
-
         public static void WriteSelectorValue(SegManager segMan, Register obj, Func<SelectorCache, int> func, ushort value)
         {
             WriteSelectorValue(segMan, obj, Selector(func), value);
         }
 
-        public static void WriteSelectorValue(SegManager segMan, Register obj, int selectorId, ushort value)
+        private static void WriteSelectorValue(SegManager segMan, Register obj, int selectorId, ushort value)
         {
             WriteSelector(segMan, obj, selectorId, Register.Make(0, value));
         }
@@ -1499,27 +1482,9 @@ namespace NScumm.Sci
 	        // 7C - 7F / minussgi, minussli, minussti, minusspi
 	        new opcode_format[]{opcode_format.Script_Global}, new opcode_format[]{opcode_format.Script_Local}, new opcode_format[]{opcode_format.Script_Temp}, new opcode_format[]{opcode_format.Script_Param}
         };
+
         public AudioPlayer _audio;
         private ISystem _system;
-
-        /// <summary>
-        /// The pause level, 0 means 'running', a positive value indicates
-        /// how often the engine has been paused (and hence how often it has
-        /// to be un-paused before it resumes running). This makes it possible
-        /// to nest code which pauses the engine.
-        /// </summary>
-        private int _pauseLevel;
-
-        /// <summary>
-        /// The time when the engine was started. This value is used to calculate
-        /// the current play time of the game running.
-        /// </summary>
-        private int _engineStartTime;
-
-        /// <summary>
-        /// The time when the pause was started.
-        /// </summary>
-        private int _pauseStartTime;
         private ushort _vocabularyLanguage;
     }
 }

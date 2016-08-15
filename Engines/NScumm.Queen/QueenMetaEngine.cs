@@ -151,7 +151,7 @@ namespace NScumm.Queen
             new ADGameDescription(
                 "queen",
                 "Demo",
-                new []{new ADGameFileDescription("queen.1", "f7a1a37ac93bf763b1569231237cb4d8", 563335)},
+                new []{new ADGameFileDescription("queen.1", 0, "f7a1a37ac93bf763b1569231237cb4d8", 563335)},
                 Language.EN_ANY,
                 Platform.Amiga),
 
@@ -159,7 +159,7 @@ namespace NScumm.Queen
             new ADGameDescription(
                 "queen",
                 "Interview",
-                new []{new ADGameFileDescription("queen.1", "f5d42a18d8f5689480413871410663d7", 597032)},
+                new []{new ADGameFileDescription("queen.1", 0,"f5d42a18d8f5689480413871410663d7", 597032)},
                 Language.EN_ANY,
                 Platform.Amiga),
 
@@ -167,7 +167,7 @@ namespace NScumm.Queen
             new ADGameDescription(
                 "queen",
                 "Demo",
-                    new []{new ADGameFileDescription("queen.1", "f39334d8133840aa3bcbd733c12937cf", 3732177)},
+                    new []{new ADGameFileDescription("queen.1", 0, "f39334d8133840aa3bcbd733c12937cf", 3732177)},
                 Language.EN_ANY,
                 Platform.DOS),
 
@@ -175,7 +175,7 @@ namespace NScumm.Queen
             new ADGameDescription(
                 "queen",
                 "Interview",
-                new []{new ADGameFileDescription("queen.1", "30b3291f37665bf24d9482b183cb2f67", 1915913)},
+                new []{new ADGameFileDescription("queen.1", 0, "30b3291f37665bf24d9482b183cb2f67", 1915913)},
                 Language.EN_ANY,
                 Platform.DOS),
 
@@ -183,7 +183,7 @@ namespace NScumm.Queen
             new ADGameDescription(
                 "queen",
                 "Demo",
-                new []{new ADGameFileDescription("queen.1", "f39334d8133840aa3bcbd733c12937cf", 3724538)},
+                new []{new ADGameFileDescription("queen.1", 0, "f39334d8133840aa3bcbd733c12937cf", 3724538)},
                 Language.EN_ANY,
                 Platform.DOS),
 
@@ -191,7 +191,7 @@ namespace NScumm.Queen
             new ADGameDescription(
                 "queen",
                 "Floppy",
-                new []{new ADGameFileDescription("queen.1", "9c209c2cbc1730e3138663c4fd29c2e8", 351775)}, // TODO: Fill in correct MD5
+                new []{new ADGameFileDescription("queen.1", 0, "9c209c2cbc1730e3138663c4fd29c2e8", 351775)}, // TODO: Fill in correct MD5
                 Language.EN_ANY,
                 Platform.Amiga),
 
@@ -199,7 +199,7 @@ namespace NScumm.Queen
             new ADGameDescription(
                 "queen",
                 "Floppy",
-                new []{new ADGameFileDescription("queen.1", "f5e827645d3c887be3bdf4729d847756", 22677657)},
+                new []{new ADGameFileDescription("queen.1", 0, "f5e827645d3c887be3bdf4729d847756", 22677657)},
                 Language.EN_ANY,
                 Platform.DOS),
 
@@ -207,7 +207,7 @@ namespace NScumm.Queen
             new ADGameDescription(
                 "queen",
                 "Talkie",
-                new []{new ADGameFileDescription("queen.1", "b6302bccf70463de3d5faf0f0628f742", 190787021)},
+                new []{new ADGameFileDescription("queen.1", 0, "b6302bccf70463de3d5faf0f0628f742", 190787021)},
                 Language.EN_ANY,
                 Platform.DOS),
 
@@ -215,7 +215,7 @@ namespace NScumm.Queen
             new ADGameDescription(
                 "queen",
                 "Floppy",
-                new []{new ADGameFileDescription("queen.1", "f5e827645d3c887be3bdf4729d847756", 22157304)},
+                new []{new ADGameFileDescription("queen.1", 0, "f5e827645d3c887be3bdf4729d847756", 22157304)},
                 Language.FR_FRA,
                 Platform.DOS),
 
@@ -223,7 +223,7 @@ namespace NScumm.Queen
             new ADGameDescription(
                 "queen",
                 "Talkie",
-                new []{new ADGameFileDescription("queen.1", "6fd5486a0db75bae2e023b575c3d6a5d", 186689095)},
+                new []{new ADGameFileDescription("queen.1", 0, "6fd5486a0db75bae2e023b575c3d6a5d", 186689095)},
                 Language.FR_FRA,
                 Platform.DOS),
     
@@ -271,7 +271,7 @@ namespace NScumm.Queen
             new ADGameDescription(
                 "queen",
                 "Talkie",
-                new []{new ADGameFileDescription("queen.1", "b6302bccf70463de3d5faf0f0628f742", 190795582)},
+                new []{new ADGameFileDescription("queen.1", 0, "b6302bccf70463de3d5faf0f0628f742", 190795582)},
                 Language.IT_ITA,
                 Platform.DOS),
 
@@ -289,7 +289,7 @@ namespace NScumm.Queen
             new ADGameDescription(
                 "queen",
                 "Talkie",
-                new []{new ADGameFileDescription("queen.1c", "a0749bb8b72e537ead1a63a3dde1443d", 54108887)},
+                new []{new ADGameFileDescription("queen.1c", 0, "a0749bb8b72e537ead1a63a3dde1443d", 54108887)},
                 Language.EN_ANY,
                 Platform.DOS),
 
@@ -297,7 +297,7 @@ namespace NScumm.Queen
             new ADGameDescription(
                 "queen",
                 "Talkie",
-                new []{new ADGameFileDescription("queen.1c", "21fd690b372f8a6289f6f33bc986276c", 51222412)},
+                new []{new ADGameFileDescription("queen.1c", 0, "21fd690b372f8a6289f6f33bc986276c", 51222412)},
                 Language.EN_ANY,
                 Platform.DOS),
 
@@ -305,7 +305,7 @@ namespace NScumm.Queen
             new ADGameDescription(
                 "queen",
                 "Talkie",
-                new []{new ADGameFileDescription("queen.1c", "67e3020f8a35e1df7b1c753b5aaa71e1", 97382620)},
+                new []{new ADGameFileDescription("queen.1c", 0, "67e3020f8a35e1df7b1c753b5aaa71e1", 97382620)},
                 Language.FR_FRA,
                 Platform.DOS),
 
@@ -313,7 +313,7 @@ namespace NScumm.Queen
             new ADGameDescription(
                 "queen",
                 "Talkie",
-                new []{new ADGameFileDescription("queen.1c", "28f78dbec7e20f603a10c2f8ea889a5c", 108738717)},
+                new []{new ADGameFileDescription("queen.1c", 0, "28f78dbec7e20f603a10c2f8ea889a5c", 108738717)},
                 Language.DE_DEU,
                 Platform.DOS),
 
@@ -321,7 +321,7 @@ namespace NScumm.Queen
             new ADGameDescription(
                 "queen",
                 "Talkie",
-                new []{new ADGameFileDescription("queen.1c", "4d52d8780613ef27a2b779caecb20a21", 99391805)},
+                new []{new ADGameFileDescription("queen.1c", 0, "4d52d8780613ef27a2b779caecb20a21", 99391805)},
                 Language.HE_ISR,
                 Platform.DOS),
 
@@ -329,7 +329,7 @@ namespace NScumm.Queen
             new ADGameDescription(
                 "queen",
                 "Talkie",
-                new []{new ADGameFileDescription("queen.1c", "2f72b715ed753cf905a37cdcc7ea611e", 98327801)},
+                new []{new ADGameFileDescription("queen.1c", 0, "2f72b715ed753cf905a37cdcc7ea611e", 98327801)},
                 Language.IT_ITA,
                 Platform.DOS),
 

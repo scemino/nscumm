@@ -107,6 +107,18 @@
       <Project>{FEF9CB20-5EBA-4FEC-9998-75FFCE0EAEE4}</Project>
       <Name>NScumm.Sci</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Engines\NScumm.Queen\NScumm.Queen.csproj">
+      <Project>{E10DD77E-F6F2-4F3B-AD40-A7A27FC96C7B}</Project>
+      <Name>NScumm.Queen</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Engines\NScumm.Sky\NScumm.Sky.csproj">
+      <Project>{8740A0CD-2613-4354-9506-35035A735962}</Project>
+      <Name>NScumm.Sky</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Engines\NScumm.Sword1\NScumm.Sword1.csproj">
+      <Project>{EF539A3F-0672-412C-B9D0-38DCD3622D99}</Project>
+      <Name>NScumm.Sword1</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Services\" />

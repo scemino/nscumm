@@ -20,6 +20,8 @@ using NScumm.Core;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using static NScumm.Core.DebugHelper;
+using System.Linq;
 
 namespace NScumm.Sci.Engine
 {
@@ -71,46 +73,128 @@ namespace NScumm.Sci.Engine
 
     internal class DirSeeker
     {
-		protected Register _outbuffer;
-		protected List<string> _files;
-		protected List<string> _virtualFiles;
-		protected int _iter;
+        protected Register _outbuffer;
+        protected List<string> _files;
+        protected List<string> _virtualFiles;
+        protected int _iter;
 
-		public DirSeeker ()
-		{
-			_outbuffer = Register.NULL_REG;
-			_files = new List<string> ();
-			_virtualFiles = new List<string> ();
-		}
+        public DirSeeker()
+        {
+            _outbuffer = Register.NULL_REG;
+            _files = new List<string>();
+            _virtualFiles = new List<string>();
+        }
 
         public Register NextFile(SegManager segMan)
         {
-			if (_iter == _files.Count) {
-				return Register.NULL_REG;
-			}
+            if (_iter == _files.Count)
+            {
+                return Register.NULL_REG;
+            }
 
-			string @string;
+            string @string;
 
-			if (_virtualFiles.Count==0) {
-				// Strip the prefix, if we don't got a virtual filelisting
-				string wrappedString = _files[_iter];
-				@string = SciEngine.Instance.UnwrapFilename(wrappedString);
-			} else {
-				@string = _files[_iter];
-			}
+            if (_virtualFiles.Count == 0)
+            {
+                // Strip the prefix, if we don't got a virtual filelisting
+                string wrappedString = _files[_iter];
+                @string = SciEngine.Instance.UnwrapFilename(wrappedString);
+            }
+            else
+            {
+                @string = _files[_iter];
+            }
 
-			if (@string.Length > 12)
-				@string = @string.Substring(0,12);
-			segMan.Strcpy(_outbuffer, @string);
+            if (@string.Length > 12)
+                @string = @string.Substring(0, 12);
+            segMan.Strcpy(_outbuffer, @string);
 
-			// Return the result and advance the list iterator :)
-			++_iter;
-			return _outbuffer;
+            // Return the result and advance the list iterator :)
+            ++_iter;
+            return _outbuffer;
         }
 
-		public string GetVirtualFilename(int fileNumber)
+        public Register FirstFile(string mask, Register buffer, SegManager segMan)
         {
-			return _virtualFiles[fileNumber];
+            // Verify that we are given a valid buffer
+            if (buffer.Segment == 0)
+            {
+                Error($"DirSeeker::firstFile('{mask}') invoked with invalid buffer");
+                return Register.NULL_REG;
+            }
+            _outbuffer = buffer;
+            _files.Clear();
+            _virtualFiles.Clear();
+
+            int QfGImport = SciEngine.Instance.InQfGImportRoom;
+            if (QfGImport != 0)
+            {
+                _files.Clear();
+                AddAsVirtualFiles("-QfG1-", "qfg1-*");
+                AddAsVirtualFiles("-QfG1VGA-", "qfg1vga-*");
+                if (QfGImport > 2)
+                    AddAsVirtualFiles("-QfG2-", "qfg2-*");
+                if (QfGImport > 3)
+                    AddAsVirtualFiles("-QfG3-", "qfg3-*");
+
+                if (QfGImport == 3)
+                {
+                    // QfG3 sorts the filelisting itself, we can't let that happen otherwise our
+                    //  virtual list would go out-of-sync
+                    Register savedHeros = segMan.FindObjectByName("savedHeros");
+                    if (!savedHeros.IsNull)
+                        SciEngine.WriteSelectorValue(segMan, savedHeros, o => o.sort, 0);
+                }
+
+            }
+            else
+            {
+                // Prefix the mask
+                string wrappedMask = SciEngine.Instance.WrapFilename(mask);
+
+                // Obtain a list of all files matching the given mask
+                var saveFileMan = SciEngine.Instance.SaveFileManager;
+                _files = saveFileMan.ListSavefiles(wrappedMask).ToList();
+            }
+
+            // Reset the list iterator and write the first match to the output buffer,
+            // if any.
+            _iter = 0;
+            return NextFile(segMan);
+        }
+
+        private void AddAsVirtualFiles(string title, string fileMask)
+        {
+            var saveFileMan = SciEngine.Instance.SaveFileManager;
+            var foundFiles = saveFileMan.ListSavefiles(fileMask);
+            if (foundFiles.Length > 0)
+            {
+                // Sort all filenames alphabetically
+                Array.Sort(foundFiles, 0, foundFiles.Length);
+
+                _files.Add(title);
+                _virtualFiles.Add("");
+
+                foreach (var regularFilename in foundFiles)
+                {
+                    string wrappedFilename = regularFilename.Substring(fileMask.Length - 1);
+
+                    var testfile = saveFileMan.OpenForLoading(regularFilename);
+                    int testfileSize = (int)testfile.Length;
+                    if (testfileSize > 1024) // check, if larger than 1k. in that case its a saved game.
+                        continue; // and we dont want to have those in the list
+                                  // We need to remove the prefix for display purposes
+                    _files.Add(wrappedFilename);
+                    // but remember the actual name as well
+                    _virtualFiles.Add(regularFilename);
+                }
+            }
+        }
+
+
+        public string GetVirtualFilename(int fileNumber)
+        {
+            return _virtualFiles[fileNumber];
         }
     }
 
@@ -151,7 +235,7 @@ namespace NScumm.Sci.Engine
 
                 desc.name = meta.name;
 
-                // TODO: debug(3, "Savegame in file %s ok, id %d", filename.c_str(), desc.id);
+                Debug(3, $"Savegame in file {filename} ok, id {desc.id}");
 
                 saves.Add(desc);
             }

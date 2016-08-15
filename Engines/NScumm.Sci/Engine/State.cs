@@ -1,4 +1,4 @@
-﻿//  Author:
+//  Author:
 //       scemino <scemino74@gmail.com>
 //
 //  Copyright (c) 2015 
@@ -226,24 +226,62 @@ namespace NScumm.Sci.Engine
             Reset(false);
         }
 
-		public void SaveLoadWithSerializer (Serializer ser)
-		{
-			throw new NotImplementedException ();
-		}
+        public void SaveLoadWithSerializer(Serializer s)
+        {
+            System.Text.StringBuilder tmp = new System.Text.StringBuilder();
+            s.SyncString(tmp, 14, 23);            // OBSOLETE: Used to be gameVersion
+
+            if (ResourceManager.GetSciVersion() <= SciVersion.V1_1)
+            {
+                // Save/Load picPort as well for SCI0-SCI1.1. Necessary for Castle of Dr. Brain,
+                // as the picPort has been changed when loading during the intro
+                short picPortTop = 0;
+                short picPortLeft = 0;
+                var picPortRect = new Rect();
+
+                if (s.IsSaving)
+                    picPortRect = SciEngine.Instance._gfxPorts.KernelGetPicWindow(out picPortTop, out picPortLeft);
+
+                s.SyncAsInt16LE(ref picPortRect.Top);
+                s.SyncAsInt16LE(ref picPortRect.Left);
+                s.SyncAsInt16LE(ref picPortRect.Bottom);
+                s.SyncAsInt16LE(ref picPortRect.Right);
+                s.SyncAsInt16LE(ref picPortTop);
+                s.SyncAsInt16LE(ref picPortLeft);
+
+                if (s.IsLoading)
+                    SciEngine.Instance._gfxPorts.KernelSetPicWindow(picPortRect, picPortTop, picPortLeft, false);
+            }
+
+            _segMan.SaveLoadWithSerializer(s);
+
+            SciEngine.Instance._soundCmd.SyncPlayList(s);
+
+# if ENABLE_SCI32
+            if (getSciVersion() >= SCI_VERSION_2)
+            {
+                g_sci._gfxPalette32.saveLoadWithSerializer(s);
+            }
+            else
+#endif
+            // TODO: SciEngine.Instance._gfxPalette16.SaveLoadWithSerializer(s);
+
+        }
 
         public void SpeedThrottler(int neededSleep)
         {
             if (_throttleTrigger)
             {
-                var curTime = Environment.TickCount;
+                var curTime = ServiceLocator.Platform.GetMilliseconds() & Int32.MaxValue;
                 var duration = curTime - _throttleLastTime;
 
                 if (duration < neededSleep)
                 {
                     ServiceLocator.Platform.Sleep(neededSleep - duration);
-                    _throttleLastTime = Environment.TickCount;
+                    _throttleLastTime = ServiceLocator.Platform.GetMilliseconds() & Int32.MaxValue;
                 }
-                else {
+                else
+                {
                     _throttleLastTime = curTime;
                 }
                 _throttleTrigger = false;
@@ -319,7 +357,7 @@ namespace NScumm.Sci.Engine
 
         public void Wait(int ticks)
         {
-            var time = Environment.TickCount;
+            var time = ServiceLocator.Platform.GetMilliseconds();
             r_acc = Register.Make(0, (ushort)((((long)time) - ((long)lastWaitTime)) * 60 / 1000));
             lastWaitTime = time;
 

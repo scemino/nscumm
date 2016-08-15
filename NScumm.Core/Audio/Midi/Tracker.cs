@@ -21,37 +21,37 @@
 
 namespace NScumm.Core.Audio.Midi
 {
-    class Tracker
+    public class Tracker
     {
         /// <summary>
         /// A pointer to the next event to be parsed
         /// </summary>
-        public long PlayPos { get; set; }
+        public BytePtr PlayPos;
 
         /// <summary>
         /// Current time in microseconds; may be in between event times
         /// </summary>
-        public int PlayTime { get; set; }
+        public int PlayTime;
 
         /// <summary>
         /// Current MIDI tick; may be in between event ticks
         /// </summary>
-        public int PlayTick { get; set; }
+        public int PlayTick;
 
         /// <summary>
         /// The time, in microseconds, of the last event that was parsed
         /// </summary>
-        public int LastEventTime{ get; set; }
+        public int LastEventTime;
 
         /// <summary>
         /// The tick at which the last parsed event occurs
         /// </summary>
-        public long LastEventTick { get; set; }
+        public long LastEventTick;
 
         /// <summary>
         /// Cached MIDI command, for MIDI streams that rely on implied event codes
         /// </summary>
-        public int RunningStatus { get; set; }
+        public int RunningStatus;
 
         public Tracker()
         {
@@ -72,7 +72,7 @@ namespace NScumm.Core.Audio.Midi
         /// Clears all data; used by the constructor for initialization.
         public void Clear()
         {
-            PlayPos = 0;
+            PlayPos = BytePtr.Null;
             PlayTime = 0;
             PlayTick = 0;
             LastEventTime = 0;

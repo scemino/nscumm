@@ -1,4 +1,4 @@
-﻿//  Author:
+//  Author:
 //       scemino <scemino74@gmail.com>
 //
 //  Copyright (c) 2015 
@@ -124,7 +124,7 @@ namespace NScumm.Sci.Graphics
             }
         }
 
-        public void KernelAnimate(Register listReference, bool cycle, int argc, StackPtr? argv)
+        public void KernelAnimate(Register listReference, bool cycle, int argc, StackPtr argv)
         {
             byte old_picNotValid = (byte)_screen._picNotValid;
 
@@ -215,7 +215,7 @@ namespace NScumm.Sci.Graphics
             }
         }
 
-        private void RestoreAndDelete(int argc, StackPtr? argv)
+        private void RestoreAndDelete(int argc, StackPtr argv)
         {
             // This has to be done in a separate loop. At least in sq1 some .dispose
             // modifies FIXEDLOOP flag in signal for another object. In that case we
@@ -223,7 +223,7 @@ namespace NScumm.Sci.Graphics
             foreach (var it in _list)
             {
                 // Finally update signal
-                SciEngine.WriteSelectorValue(_s._segMan, it.@object, SciEngine.Selector(s => s.signal), (ushort)it.signal);
+                SciEngine.WriteSelectorValue(_s._segMan, it.@object, s => s.signal, (ushort)it.signal);
             }
 
             for (int i = _list.Count - 1; i >= 0; i--)
@@ -231,7 +231,7 @@ namespace NScumm.Sci.Graphics
                 var it = _list[i];
                 // We read out signal here again, this is not by accident but to ensure
                 // that we got an up-to-date signal
-                it.signal = (ViewSignals)SciEngine.ReadSelectorValue(_s._segMan, it.@object, SciEngine.Selector(s => s.signal));
+                it.signal = (ViewSignals)SciEngine.ReadSelectorValue(_s._segMan, it.@object, s => s.signal);
 
                 if ((it.signal & (ViewSignals.NoUpdate | ViewSignals.RemoveView)) == 0)
                 {
@@ -242,7 +242,7 @@ namespace NScumm.Sci.Graphics
                 if ((it.signal & ViewSignals.DisposeMe) != 0)
                 {
                     // Call .delete_ method of that object
-                    SciEngine.InvokeSelector(_s, it.@object, s => s.delete_, argc, argv, 0);
+                    SciEngine.InvokeSelector(_s, it.@object, s => s.delete_, argc, argv);
                 }
             }
         }
@@ -258,10 +258,10 @@ namespace NScumm.Sci.Graphics
                 if (it.showBitsFlag || !(it.signal.HasFlag((ViewSignals.RemoveView | ViewSignals.NoUpdate)) ||
                                                 (!(it.signal.HasFlag(ViewSignals.RemoveView)) && (it.signal.HasFlag(ViewSignals.NoUpdate)) && oldPicNotValid != 0)))
                 {
-                    lsRect.Left = (int)SciEngine.ReadSelectorValue(_s._segMan, it.@object, SciEngine.Selector(s => s.lsLeft));
-                    lsRect.Top = (int)SciEngine.ReadSelectorValue(_s._segMan, it.@object, SciEngine.Selector(s => s.lsTop));
-                    lsRect.Right = (int)SciEngine.ReadSelectorValue(_s._segMan, it.@object, SciEngine.Selector(s => s.lsRight));
-                    lsRect.Bottom = (int)SciEngine.ReadSelectorValue(_s._segMan, it.@object, SciEngine.Selector(s => s.lsBottom));
+                    lsRect.Left = (int)SciEngine.ReadSelectorValue(_s._segMan, it.@object, s => s.lsLeft);
+                    lsRect.Top = (int)SciEngine.ReadSelectorValue(_s._segMan, it.@object, s => s.lsTop);
+                    lsRect.Right = (int)SciEngine.ReadSelectorValue(_s._segMan, it.@object, s => s.lsRight);
+                    lsRect.Bottom = (int)SciEngine.ReadSelectorValue(_s._segMan, it.@object, s => s.lsBottom);
 
                     workerRect = lsRect;
                     workerRect.Clip(it.celRect);
@@ -275,10 +275,10 @@ namespace NScumm.Sci.Graphics
                         _paint16.BitsShow(lsRect);
                         workerRect = it.celRect;
                     }
-                    SciEngine.WriteSelectorValue(_s._segMan, it.@object, SciEngine.Selector(s => s.lsLeft), (ushort)it.celRect.Left);
-                    SciEngine.WriteSelectorValue(_s._segMan, it.@object, SciEngine.Selector(s => s.lsTop), (ushort)it.celRect.Top);
-                    SciEngine.WriteSelectorValue(_s._segMan, it.@object, SciEngine.Selector(s => s.lsRight), (ushort)it.celRect.Right);
-                    SciEngine.WriteSelectorValue(_s._segMan, it.@object, SciEngine.Selector(s => s.lsBottom), (ushort)it.celRect.Bottom);
+                    SciEngine.WriteSelectorValue(_s._segMan, it.@object, s => s.lsLeft, (ushort)it.celRect.Left);
+                    SciEngine.WriteSelectorValue(_s._segMan, it.@object, s => s.lsTop, (ushort)it.celRect.Top);
+                    SciEngine.WriteSelectorValue(_s._segMan, it.@object, s => s.lsRight, (ushort)it.celRect.Right);
+                    SciEngine.WriteSelectorValue(_s._segMan, it.@object, s => s.lsBottom, (ushort)it.celRect.Bottom);
                     // may get used for debugging
                     //_paint16.frameRect(workerRect);
                     _paint16.BitsShow(workerRect);
@@ -357,7 +357,7 @@ namespace NScumm.Sci.Graphics
                 {
                     if (!it.signal.HasFlag(ViewSignals.RemoveView))
                     {
-                        bitsHandle = SciEngine.ReadSelector(_s._segMan, it.@object, SciEngine.Selector(s => s.underBits));
+                        bitsHandle = SciEngine.ReadSelector(_s._segMan, it.@object, s => s.underBits);
                         if (_screen._picNotValid != 1)
                         {
                             _paint16.BitsRestore(bitsHandle);
@@ -366,7 +366,7 @@ namespace NScumm.Sci.Graphics
                         else {
                             _paint16.BitsFree(bitsHandle);
                         }
-                        SciEngine.WriteSelectorValue(_s._segMan, it.@object, SciEngine.Selector(s => s.underBits), 0);
+                        SciEngine.WriteSelectorValue(_s._segMan, it.@object, s => s.underBits, 0);
                     }
                     it.signal &= ~ViewSignals.ForceUpdate;
                     if (it.signal.HasFlag(ViewSignals.ViewUpdated))
@@ -415,7 +415,7 @@ namespace NScumm.Sci.Graphics
                             bitsHandle = _paint16.BitsSave(it.celRect, GfxScreenMasks.VISUAL | GfxScreenMasks.PRIORITY);
                         else
                             bitsHandle = _paint16.BitsSave(it.celRect, GfxScreenMasks.ALL);
-                        SciEngine.WriteSelector(_s._segMan, it.@object, SciEngine.Selector(s => s.underBits), bitsHandle);
+                        SciEngine.WriteSelector(_s._segMan, it.@object, s => s.underBits, bitsHandle);
                     }
                 }
             }
@@ -561,11 +561,11 @@ namespace NScumm.Sci.Graphics
         private void ApplyGlobalScaling(AnimateEntry entry, GfxView view)
         {
             // Global scaling uses global var 2 and some other stuff to calculate scaleX/scaleY
-            short maxScale = (short)SciEngine.ReadSelectorValue(_s._segMan, entry.@object, SciEngine.Selector(s => s.maxScale));
+            short maxScale = (short)SciEngine.ReadSelectorValue(_s._segMan, entry.@object, s => s.maxScale);
             short celHeight = view.GetHeight(entry.loopNo, entry.celNo);
             short maxCelHeight = (short)((maxScale * celHeight) >> 7);
             Register globalVar2 = _s.variables[Vm.VAR_GLOBAL][2]; // current room object
-            short vanishingY = (short)SciEngine.ReadSelectorValue(_s._segMan, globalVar2, SciEngine.Selector(s => s.vanishingY));
+            short vanishingY = (short)SciEngine.ReadSelectorValue(_s._segMan, globalVar2, s => s.vanishingY);
 
             short fixedPortY = (short)(_ports.Port.rect.Bottom - vanishingY);
             short fixedEntryY = (short)(entry.y - vanishingY);
@@ -581,8 +581,8 @@ namespace NScumm.Sci.Graphics
             entry.scaleX = entry.scaleY;
 
             // and set objects scale selectors
-            SciEngine.WriteSelectorValue(_s._segMan, entry.@object, SciEngine.Selector(s => s.scaleX), (ushort)entry.scaleX);
-            SciEngine.WriteSelectorValue(_s._segMan, entry.@object, SciEngine.Selector(s => s.scaleY), (ushort)entry.scaleY);
+            SciEngine.WriteSelectorValue(_s._segMan, entry.@object, s => s.scaleX, (ushort)entry.scaleX);
+            SciEngine.WriteSelectorValue(_s._segMan, entry.@object, s => s.scaleY, (ushort)entry.scaleY);
         }
 
         private void AdjustInvalidCels(GfxView view, AnimateEntry it)
@@ -703,7 +703,7 @@ namespace NScumm.Sci.Graphics
             return entry2.y.CompareTo(entry1.y);
         }
 
-        private bool Invoke(List list, int argc, StackPtr? argv)
+        private bool Invoke(List list, int argc, StackPtr argv)
         {
             Register curAddress = list.first;
             Node curNode = _s._segMan.LookupNode(curAddress);
@@ -725,11 +725,11 @@ namespace NScumm.Sci.Graphics
                     }
                 }
 
-                signal = (ViewSignals)SciEngine.ReadSelectorValue(_s._segMan, curObject, SciEngine.Selector(s => s.signal));
+                signal = (ViewSignals)SciEngine.ReadSelectorValue(_s._segMan, curObject, s => s.signal);
                 if ((signal & ViewSignals.Frozen) == 0)
                 {
                     // Call .doit method of that object
-                    SciEngine.InvokeSelector(_s, curObject, SciEngine.Selector(s => s.doit), argc, argv, 0);
+                    SciEngine.InvokeSelector(_s, curObject, s => s.doit, argc, argv);
 
                     // If a game is being loaded, stop processing
                     if (_s.abortScriptProcessing != AbortGameState.None)
@@ -772,7 +772,7 @@ namespace NScumm.Sci.Graphics
             _lastCastData.Clear();
         }
 
-        public void KernelAddToPicList(Register listReference, int argc, StackPtr? argv)
+        public void KernelAddToPicList(Register listReference, int argc, StackPtr argv)
         {
             _ports.SetPort(_ports._picWind);
 

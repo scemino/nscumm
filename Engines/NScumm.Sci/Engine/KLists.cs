@@ -1,4 +1,4 @@
-﻿//  Author:
+//  Author:
 //       scemino <scemino74@gmail.com>
 //
 //  Copyright (c) 2015 
@@ -30,19 +30,19 @@ namespace NScumm.Sci.Engine
 
     partial class Kernel
     {
-        private static Register kEmptyList(EngineState s, int argc, StackPtr? argv)
+        private static Register kEmptyList(EngineState s, int argc, StackPtr argv)
         {
-            if (argv.Value[0].IsNull)
+            if (argv[0].IsNull)
                 return Register.NULL_REG;
 
-            List list = s._segMan.LookupList(argv.Value[0]);
+            List list = s._segMan.LookupList(argv[0]);
 # if CHECK_LISTS
-            checkListPointer(s._segMan, argv.Value[0]);
+            checkListPointer(s._segMan, argv[0]);
 #endif
             return Register.Make(0, ((list != null) ? list.first.IsNull : false));
         }
 
-        private static Register kNewList(EngineState s, int argc, StackPtr? argv)
+        private static Register kNewList(EngineState s, int argc, StackPtr argv)
         {
             Register listRef;
             var list = s._segMan.AllocateList(out listRef);
@@ -52,11 +52,11 @@ namespace NScumm.Sci.Engine
             return listRef; // Return list base address
         }
 
-        private static Register kFindKey(EngineState s, int argc, StackPtr? argv)
+        private static Register kFindKey(EngineState s, int argc, StackPtr argv)
         {
             Register node_pos;
-            Register key = argv.Value[1];
-            Register list_pos = argv.Value[0];
+            Register key = argv[1];
+            Register list_pos = argv[0];
 
             //Debug($"Looking for key {key} in list {list_pos}");
 
@@ -85,12 +85,12 @@ namespace NScumm.Sci.Engine
             return Register.NULL_REG;
         }
 
-        private static Register kNewNode(EngineState s, int argc, StackPtr? argv)
+        private static Register kNewNode(EngineState s, int argc, StackPtr argv)
         {
-            Register nodeValue = argv.Value[0];
+            Register nodeValue = argv[0];
             // Some SCI32 games call this with 1 parameter (e.g. the demo of Phantasmagoria).
             // Set the key to be the same as the value in this case
-            Register nodeKey = (argc == 2) ? argv.Value[1] : argv.Value[0];
+            Register nodeKey = (argc == 2) ? argv[1] : argv[0];
             s.r_acc = s._segMan.NewNode(nodeValue, nodeKey);
 
             // TODO: debugC(kDebugLevelNodes, "New nodeRef at {s.r_acc}");
@@ -98,19 +98,19 @@ namespace NScumm.Sci.Engine
             return s.r_acc;
         }
 
-        private static Register kAddAfter(EngineState s, int argc, StackPtr? argv)
+        private static Register kAddAfter(EngineState s, int argc, StackPtr argv)
         {
-            List list = s._segMan.LookupList(argv.Value[0]);
-            Node firstnode = argv.Value[1].IsNull ? null : s._segMan.LookupNode(argv.Value[1]);
-            Node newnode = s._segMan.LookupNode(argv.Value[2]);
+            List list = s._segMan.LookupList(argv[0]);
+            Node firstnode = argv[1].IsNull ? null : s._segMan.LookupNode(argv[1]);
+            Node newnode = s._segMan.LookupNode(argv[2]);
 
 # if CHECK_LISTS
-            checkListPointer(s._segMan, argv.Value[0]);
+            checkListPointer(s._segMan, argv[0]);
 #endif
 
             if (newnode == null)
             {
-                throw new InvalidOperationException($"New 'node' {argv.Value[2]} is not a node");
+                throw new InvalidOperationException($"New 'node' {argv[2]} is not a node");
             }
 
             if (argc != 3 && argc != 4)
@@ -119,56 +119,56 @@ namespace NScumm.Sci.Engine
             }
 
             if (argc == 4)
-                newnode.key = argv.Value[3];
+                newnode.key = argv[3];
 
             if (firstnode != null)
             { // We're really appending after
                 Register oldnext = firstnode.succ;
 
-                newnode.pred = argv.Value[1];
-                firstnode.succ = argv.Value[2];
+                newnode.pred = argv[1];
+                firstnode.succ = argv[2];
                 newnode.succ = oldnext;
 
                 if (oldnext.IsNull)  // Appended after last node?
                                      // Set new node as last list node
-                    list.last = argv.Value[2];
+                    list.last = argv[2];
                 else
-                    s._segMan.LookupNode(oldnext).pred = argv.Value[2];
+                    s._segMan.LookupNode(oldnext).pred = argv[2];
 
             }
             else { // !firstnode
-                AddToFront(s, argv.Value[0], argv.Value[2]); // Set as initial list node
+                AddToFront(s, argv[0], argv[2]); // Set as initial list node
             }
 
             return s.r_acc;
         }
 
-        private static Register kAddToEnd(EngineState s, int argc, StackPtr? argv)
+        private static Register kAddToEnd(EngineState s, int argc, StackPtr argv)
         {
-            AddToEnd(s, argv.Value[0], argv.Value[1]);
+            AddToEnd(s, argv[0], argv[1]);
 
             if (argc == 3)
-                s._segMan.LookupNode(argv.Value[1]).key = argv.Value[2];
+                s._segMan.LookupNode(argv[1]).key = argv[2];
 
             return s.r_acc;
         }
 
-        private static Register kAddToFront(EngineState s, int argc, StackPtr? argv)
+        private static Register kAddToFront(EngineState s, int argc, StackPtr argv)
         {
-            AddToFront(s, argv.Value[0], argv.Value[1]);
+            AddToFront(s, argv[0], argv[1]);
 
             if (argc == 3)
-                s._segMan.LookupNode(argv.Value[1]).key = argv.Value[2];
+                s._segMan.LookupNode(argv[1]).key = argv[2];
 
             return s.r_acc;
         }
 
-        private static Register kFirstNode(EngineState s, int argc, StackPtr? argv)
+        private static Register kFirstNode(EngineState s, int argc, StackPtr argv)
         {
-            if (argv.Value[0].IsNull)
+            if (argv[0].IsNull)
                 return Register.NULL_REG;
 
-            List list = s._segMan.LookupList(argv.Value[0]);
+            List list = s._segMan.LookupList(argv[0]);
 
             if (list != null)
             {
@@ -182,12 +182,12 @@ namespace NScumm.Sci.Engine
             }
         }
 
-        private static Register kLastNode(EngineState s, int argc, StackPtr? argv)
+        private static Register kLastNode(EngineState s, int argc, StackPtr argv)
         {
-            if (argv.Value[0].IsNull)
+            if (argv[0].IsNull)
                 return Register.NULL_REG;
 
-            List list = s._segMan.LookupList(argv.Value[0]);
+            List list = s._segMan.LookupList(argv[0]);
 
             if (list != null)
             {
@@ -201,7 +201,7 @@ namespace NScumm.Sci.Engine
             }
         }
 
-        private static Register kDisposeList(EngineState s, int argc, StackPtr? argv)
+        private static Register kDisposeList(EngineState s, int argc, StackPtr argv)
         {
             // This function is not needed in ScummVM. The garbage collector
             // cleans up unused objects automatically
@@ -209,9 +209,9 @@ namespace NScumm.Sci.Engine
             return s.r_acc;
         }
 
-        private static Register kNextNode(EngineState s, int argc, StackPtr? argv)
+        private static Register kNextNode(EngineState s, int argc, StackPtr argv)
         {
-            Node n = s._segMan.LookupNode(argv.Value[0]);
+            Node n = s._segMan.LookupNode(argv[0]);
 
 # if CHECK_LISTS
             if (!isSaneNodePointer(s._segMan, argv[0]))
@@ -221,9 +221,9 @@ namespace NScumm.Sci.Engine
             return n.succ;
         }
 
-        private static Register kPrevNode(EngineState s, int argc, StackPtr? argv)
+        private static Register kPrevNode(EngineState s, int argc, StackPtr argv)
         {
-            Node n = s._segMan.LookupNode(argv.Value[0]);
+            Node n = s._segMan.LookupNode(argv[0]);
 
 # if CHECK_LISTS
             if (!isSaneNodePointer(s._segMan, argv[0]))
@@ -233,9 +233,9 @@ namespace NScumm.Sci.Engine
             return n.pred;
         }
 
-        private static Register kNodeValue(EngineState s, int argc, StackPtr? argv)
+        private static Register kNodeValue(EngineState s, int argc, StackPtr argv)
         {
-            Node n = s._segMan.LookupNode(argv.Value[0]);
+            Node n = s._segMan.LookupNode(argv[0]);
 
 # if CHECK_LISTS
             if (!isSaneNodePointer(s._segMan, argv[0]))
@@ -247,10 +247,10 @@ namespace NScumm.Sci.Engine
             return n != null ? n.value : Register.NULL_REG;
         }
 
-        private static Register kDeleteKey(EngineState s, int argc, StackPtr? argv)
+        private static Register kDeleteKey(EngineState s, int argc, StackPtr argv)
         {
             Register node_pos = kFindKey(s, 2, argv);
-            List list = s._segMan.LookupList(argv.Value[0]);
+            List list = s._segMan.LookupList(argv[0]);
 
             if (node_pos.IsNull)
                 return Register.NULL_REG; // Signal failure
@@ -275,12 +275,12 @@ namespace NScumm.Sci.Engine
             return Register.Make(0, 1); // Signal success
         }
 
-        private static Register kSort(EngineState s, int argc, StackPtr? argv)
+        private static Register kSort(EngineState s, int argc, StackPtr argv)
         {
             SegManager segMan = s._segMan;
-            Register source = argv.Value[0];
-            Register dest = argv.Value[1];
-            Register order_func = argv.Value[2];
+            Register source = argv[0];
+            Register dest = argv[1];
+            Register order_func = argv[2];
 
             int input_size = (short)SciEngine.ReadSelectorValue(segMan, source, o => o.size);
             Register input_data = SciEngine.ReadSelector(segMan, source, o => o.elements);
@@ -311,7 +311,7 @@ namespace NScumm.Sci.Engine
             {
                 Register[] @params = { node.value };
 
-                SciEngine.InvokeSelector(s, order_func, o => o.doit, argc, argv.Value, 1, new StackPtr(@params, 0));
+                SciEngine.InvokeSelector(s, order_func, o => o.doit, argc, argv, 1, new StackPtr(@params, 0));
                 temp_array[i].key = node.key;
                 temp_array[i].value = node.value;
                 temp_array[i].order = s.r_acc;

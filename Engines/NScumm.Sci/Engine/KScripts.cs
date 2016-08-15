@@ -1,4 +1,4 @@
-﻿//  Author:
+//  Author:
 //       scemino <scemino74@gmail.com>
 //
 //  Copyright (c) 2015 
@@ -28,10 +28,10 @@ namespace NScumm.Sci.Engine
     {
         // Loads arbitrary resources of type 'restype' with resource numbers 'resnrs'
         // This implementation ignores all resource numbers except the first one.
-        private static Register kLoad(EngineState s, int argc, StackPtr? argv)
+        private static Register kLoad(EngineState s, int argc, StackPtr argv)
         {
-            ResourceType restype = SciEngine.Instance.ResMan.ConvertResType(argv.Value[0].ToUInt16());
-            int resnr = argv.Value[1].ToUInt16();
+            ResourceType restype = SciEngine.Instance.ResMan.ConvertResType(argv[0].ToUInt16());
+            int resnr = argv[1].ToUInt16();
 
             // Request to dynamically allocate hunk memory for later use
             if (restype == ResourceType.Memory)
@@ -43,12 +43,12 @@ namespace NScumm.Sci.Engine
         // Unloads an arbitrary resource of type 'restype' with resource numbber 'resnr'
         //  behavior of this call didn't change between sci0.sci1.1 parameter wise, which means getting called with
         //  1 or 3+ parameters is not right according to sierra sci
-        private static Register kUnLoad(EngineState s, int argc, StackPtr? argv)
+        private static Register kUnLoad(EngineState s, int argc, StackPtr argv)
         {
             if (argc >= 2)
             {
-                ResourceType restype = SciEngine.Instance.ResMan.ConvertResType(argv.Value[0].ToUInt16());
-                Register resnr = argv.Value[1];
+                ResourceType restype = SciEngine.Instance.ResMan.ConvertResType(argv[0].ToUInt16());
+                Register resnr = argv[1];
 
                 if (restype == ResourceType.Memory)
                     s._segMan.FreeHunkEntry(resnr);
@@ -58,13 +58,13 @@ namespace NScumm.Sci.Engine
         }
 
         // Returns script dispatch address index in the supplied script
-        private static Register kScriptID(EngineState s, int argc, StackPtr? argv)
+        private static Register kScriptID(EngineState s, int argc, StackPtr argv)
         {
-            int script = argv.Value[0].ToUInt16();
-            ushort index = (argc > 1) ? argv.Value[1].ToUInt16() : (ushort)0;
+            int script = argv[0].ToUInt16();
+            ushort index = (argc > 1) ? argv[1].ToUInt16() : (ushort)0;
 
-            if (argv.Value[0].Segment != 0)
-                return argv.Value[0];
+            if (argv[0].Segment != 0)
+                return argv[0];
 
             var scriptSeg = s._segMan.GetScriptSegment(script, ScriptLoadType.LOAD);
 
@@ -82,7 +82,7 @@ namespace NScumm.Sci.Engine
                 // as no return value is expected. If an export is requested, then
                 // it will most certainly fail with OOB access.
                 if (argc == 2)
-                    throw new NotImplementedException($"Script 0x{script:X} does not have a dispatch table and export {index} was requested from it");
+                    Error($"Script 0x{script:X} does not have a dispatch table and export {index} was requested from it");
                 return Register.NULL_REG;
             }
 
@@ -105,9 +105,9 @@ namespace NScumm.Sci.Engine
             return Register.Make(scriptSeg, address);
         }
 
-        private static Register kDisposeClone(EngineState s, int argc, StackPtr? argv)
+        private static Register kDisposeClone(EngineState s, int argc, StackPtr argv)
         {
-            Register obj = argv.Value[0];
+            Register obj = argv[0];
             var @object = s._segMan.GetObject(obj);
 
             if (@object == null)
@@ -126,9 +126,9 @@ namespace NScumm.Sci.Engine
             return s.r_acc;
         }
 
-        private static Register kDisposeScript(EngineState s, int argc, StackPtr? argv)
+        private static Register kDisposeScript(EngineState s, int argc, StackPtr argv)
         {
-            int script = (int)argv.Value[0].Offset;
+            int script = (int)argv[0].Offset;
 
             ushort id = s._segMan.GetScriptSegment(script);
             Script scr = s._segMan.GetScriptIfLoaded(id);
@@ -148,21 +148,21 @@ namespace NScumm.Sci.Engine
                 // This exists in the KQ5CD and GK1 interpreter. We know it is used
                 // when GK1 starts up, before the Sierra logo.
                 Warning("kDisposeScript called with 2 parameters, still untested");
-                return argv.Value[1];
+                return argv[1];
             }
         }
 
-        private static Register kIsObject(EngineState s, int argc, StackPtr? argv)
+        private static Register kIsObject(EngineState s, int argc, StackPtr argv)
         {
-            if (argv.Value[0].Offset == Register.SIGNAL_OFFSET) // Treated specially
+            if (argv[0].Offset == Register.SIGNAL_OFFSET) // Treated specially
                 return Register.NULL_REG;
             else
-                return Register.Make(0, s._segMan.IsHeapObject(argv.Value[0]));
+                return Register.Make(0, s._segMan.IsHeapObject(argv[0]));
         }
 
-        private static Register kClone(EngineState s, int argc, StackPtr? argv)
+        private static Register kClone(EngineState s, int argc, StackPtr argv)
         {
-            Register parentAddr = argv.Value[0];
+            Register parentAddr = argv[0];
             SciObject parentObj = s._segMan.GetObject(parentAddr);
             Register cloneAddr;
 
@@ -211,11 +211,11 @@ namespace NScumm.Sci.Engine
             return cloneAddr;
         }
 
-        private static Register kLock(EngineState s, int argc, StackPtr? argv)
+        private static Register kLock(EngineState s, int argc, StackPtr argv)
         {
-            int state = argc > 2 ? argv.Value[2].ToUInt16() : 1;
-            ResourceType type = SciEngine.Instance.ResMan.ConvertResType(argv.Value[0].ToUInt16());
-            ResourceId id = new ResourceId(type, argv.Value[1].ToUInt16());
+            int state = argc > 2 ? argv[2].ToUInt16() : 1;
+            ResourceType type = SciEngine.Instance.ResMan.ConvertResType(argv[0].ToUInt16());
+            ResourceId id = new ResourceId(type, argv[1].ToUInt16());
 
             ResourceManager.ResourceSource.Resource which;
 
@@ -244,7 +244,7 @@ namespace NScumm.Sci.Engine
                         else {
                             if (id.Type == ResourceType.Invalid)
                             {
-                                Warning($"[resMan] Attempt to unlock resource {id.Number} of invalid type {argv.Value[0].ToUInt16()}");
+                                Warning($"[resMan] Attempt to unlock resource {id.Number} of invalid type {argv[0].ToUInt16()}");
                             }
                             else {
                                 // Happens in CD games (e.g. LSL6CD) with the message
@@ -259,14 +259,14 @@ namespace NScumm.Sci.Engine
             return s.r_acc;
         }
 
-        private static Register kResCheck(EngineState s, int argc, StackPtr? argv)
+        private static Register kResCheck(EngineState s, int argc, StackPtr argv)
         {
             ResourceManager.ResourceSource.Resource res = null;
-            ResourceType restype = SciEngine.Instance.ResMan.ConvertResType(argv.Value[0].ToUInt16());
+            ResourceType restype = SciEngine.Instance.ResMan.ConvertResType(argv[0].ToUInt16());
 
             if (restype == ResourceType.VMD)
             {
-                var fileName = $"{argv.Value[1].ToUInt16()}.vmd";
+                var fileName = $"{argv[1].ToUInt16()}.vmd";
                 return Register.Make(0, ScummHelper.LocatePath(SciEngine.Instance.Directory, fileName) != null);
             }
 
@@ -274,31 +274,31 @@ namespace NScumm.Sci.Engine
             {
                 if (argc >= 6)
                 {
-                    uint noun = (uint)(argv.Value[2].ToUInt16() & 0xff);
-                    uint verb = (uint)(argv.Value[3].ToUInt16() & 0xff);
-                    uint cond = (uint)(argv.Value[4].ToUInt16() & 0xff);
-                    uint seq = (uint)(argv.Value[5].ToUInt16() & 0xff);
+                    uint noun = (uint)(argv[2].ToUInt16() & 0xff);
+                    uint verb = (uint)(argv[3].ToUInt16() & 0xff);
+                    uint cond = (uint)(argv[4].ToUInt16() & 0xff);
+                    uint seq = (uint)(argv[5].ToUInt16() & 0xff);
 
-                    res = SciEngine.Instance.ResMan.TestResource(new ResourceId(restype, argv.Value[1].ToUInt16(), (byte)noun, (byte)verb, (byte)cond, (byte)seq));
+                    res = SciEngine.Instance.ResMan.TestResource(new ResourceId(restype, argv[1].ToUInt16(), (byte)noun, (byte)verb, (byte)cond, (byte)seq));
                 }
             }
             else {
-                res = SciEngine.Instance.ResMan.TestResource(new ResourceId(restype, argv.Value[1].ToUInt16()));
+                res = SciEngine.Instance.ResMan.TestResource(new ResourceId(restype, argv[1].ToUInt16()));
             }
 
             return Register.Make(0, res != null);
         }
 
-        private static Register kRespondsTo(EngineState s, int argc, StackPtr? argv)
+        private static Register kRespondsTo(EngineState s, int argc, StackPtr argv)
         {
-            Register obj = argv.Value[0];
-            int selector = argv.Value[1].ToUInt16();
+            Register obj = argv[0];
+            int selector = argv[1].ToUInt16();
 
             Register tmp;
             return Register.Make(0, s._segMan.IsHeapObject(obj) && SciEngine.LookupSelector(s._segMan, obj, selector, null, out tmp) != SelectorType.None);
         }
 
-        internal void SignatureDebug(ushort[] signature, int argc, StackPtr? argv)
+        internal void SignatureDebug(ushort[] signature, int argc, StackPtr argv)
         {
             throw new NotImplementedException();
         }

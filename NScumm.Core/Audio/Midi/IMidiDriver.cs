@@ -28,8 +28,8 @@ namespace NScumm.Core.Audio.Midi
     {
         void Send(int data);
 
-        void SysEx(byte[] msg, ushort length);
+        void SysEx(BytePtr msg, ushort length);
 
-        void MetaEvent(byte type, byte[] data, ushort length);
+        void MetaEvent(byte type, BytePtr data, ushort length);
     }
 }

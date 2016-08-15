@@ -1,4 +1,4 @@
-﻿//  Author:
+//  Author:
 //       scemino <scemino74@gmail.com>
 //
 //  Copyright (c) 2015 
@@ -197,7 +197,7 @@ namespace NScumm.Sci.Graphics
                 SetNewPalette(blackoutFlag);
             }
 
-            _transitionStartTime = Environment.TickCount;
+            _transitionStartTime = ServiceLocator.Platform.GetMilliseconds();
             switch ((SciTransition)number)
             {
                 case SciTransition.VERTICALROLL_FROMCENTER:
@@ -377,7 +377,7 @@ namespace NScumm.Sci.Graphics
 
         private bool DoCreateFrame(int shouldBeAtMsec)
         {
-            var msecPos = Environment.TickCount - _transitionStartTime;
+            var msecPos = ServiceLocator.Platform.GetMilliseconds() - _transitionStartTime;
 
             if (shouldBeAtMsec > msecPos)
                 return true;
@@ -432,8 +432,8 @@ namespace NScumm.Sci.Graphics
                     else {
                         workPalette[colorNr] = Core.Graphics.Color.FromRgb(
                             oldPalette[colorNr].R * stepNr / 100,
-                            oldPalette[colorNr + 1].G * stepNr / 100,
-                            oldPalette[colorNr + 2].B * stepNr / 100);
+                            oldPalette[colorNr].G * stepNr / 100,
+                            oldPalette[colorNr].B * stepNr / 100);
                     }
                 }
                 SciEngine.Instance.System.GraphicsManager.SetPalette(workPalette, 1, tillColorNr);
@@ -628,7 +628,7 @@ namespace NScumm.Sci.Graphics
 
             SciEngine.Instance.System.GraphicsManager.UpdateScreen();
             // if we have still some time left, delay accordingly
-            int msecPos = Environment.TickCount - _transitionStartTime;
+            int msecPos = ServiceLocator.Platform.GetMilliseconds() - _transitionStartTime;
             if (shouldBeAtMsec > msecPos)
                 ServiceLocator.Platform.Sleep(shouldBeAtMsec - msecPos);
         }

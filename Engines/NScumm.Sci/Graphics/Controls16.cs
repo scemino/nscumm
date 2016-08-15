@@ -1,4 +1,4 @@
-﻿//  Author:
+//  Author:
 //       scemino <scemino74@gmail.com>
 //
 //  Copyright (c) 2015 
@@ -195,7 +195,7 @@ namespace NScumm.Sci.Graphics
                 _texteditCursorRect.Left = rect.Left + textWidth;
                 _texteditCursorRect.Top = rect.Top;
                 _texteditCursorRect.Bottom = _texteditCursorRect.Top + _text16._font.Height;
-                _texteditCursorRect.Right = _texteditCursorRect.Left + (text[curPos] == 0 ? 1 : _text16._font.GetCharWidth(text[curPos]));
+                _texteditCursorRect.Right = _texteditCursorRect.Left + (text.Length == curPos ? 1 : _text16._font.GetCharWidth(text[curPos]));
                 _paint16.InvertRect(_texteditCursorRect);
                 _paint16.BitsShow(_texteditCursorRect);
                 _texteditCursorVisible = true;
@@ -206,7 +206,7 @@ namespace NScumm.Sci.Graphics
 
         private void TexteditSetBlinkTime()
         {
-            _texteditBlinkTime = Environment.TickCount + (30 * 1000 / 60);
+            _texteditBlinkTime = NScumm.Core.ServiceLocator.Platform.GetMilliseconds() + (30 * 1000 / 60);
         }
 
         public void KernelDrawIcon(Rect rect, Register controlObject, int viewId, short loopNo, short celNo, short priority, short style, bool hilite)
@@ -443,7 +443,7 @@ namespace NScumm.Sci.Graphics
                 _segMan.Strcpy(textReference, text);
             }
             else {
-                if (Environment.TickCount >= _texteditBlinkTime)
+                if (NScumm.Core.ServiceLocator.Platform.GetMilliseconds() >= _texteditBlinkTime)
                 {
                     _paint16.InvertRect(_texteditCursorRect);
                     _paint16.BitsShow(_texteditCursorRect);

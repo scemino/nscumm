@@ -421,7 +421,7 @@ namespace NScumm.Queen
             }
         }
 
-        public override void MetaEvent(byte type, byte[] data, ushort length)
+        public override void MetaEvent(byte type, BytePtr data, ushort length)
         {
             switch (type)
             {

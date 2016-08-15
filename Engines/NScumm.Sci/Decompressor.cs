@@ -715,7 +715,8 @@ namespace NScumm.Sci
     {
         public override ResourceErrorCodes Unpack(Stream src, byte[] dest, int nPacked, int nUnpacked)
         {
-            return base.Unpack(src, dest, nPacked, nUnpacked);
+            return Core.Common.DecompressorDCL.Decompress(src, dest, (uint)nPacked, (uint)nUnpacked)? 
+                       ResourceErrorCodes.NONE :  ResourceErrorCodes.DECOMPRESSION_ERROR;
         }
     }
 }

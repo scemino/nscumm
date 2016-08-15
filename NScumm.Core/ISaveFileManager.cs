@@ -53,5 +53,7 @@ namespace NScumm.Core
         /// </summary>
         /// <param name="name">Name the name of the savefile to be removed..</param>
         void RemoveSavefile(string name);
+
+        bool RenameSavefile(string oldName, string newName);
     }
 }

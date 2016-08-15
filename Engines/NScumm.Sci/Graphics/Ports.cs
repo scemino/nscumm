@@ -199,6 +199,13 @@ namespace NScumm.Sci.Graphics
             KernelInitPriorityBands();
         }
 
+        public Rect KernelGetPicWindow(out short picTop, out short picLeft)
+        {
+            picTop = _picWind.top;
+            picLeft = _picWind.left;
+            return _picWind.rect;
+        }
+
         public void KernelDisposeWindow(ushort windowId, bool reanimate)
         {
             Window wnd = (Window)GetPortById(windowId);
@@ -252,9 +259,15 @@ namespace NScumm.Sci.Graphics
             end.X = ScummHelper.Clip(end.X, _curPort.rect.Left, _curPort.rect.Right - 1);
         }
 
-        internal void PriorityBandsInitSci11(ByteAccess byteAccess)
+        public void PriorityBandsInitSci11(ByteAccess data)
         {
-            throw new NotImplementedException();
+            byte[] priorityBands = new byte[14];
+            for (int bandNo = 0; bandNo < 14; bandNo++)
+            {
+                priorityBands[bandNo] = (byte)data.ToUInt16();
+                data.Offset += 2;
+            }
+            PriorityBandsInit(new ByteAccess(priorityBands));
         }
 
         public void BeginUpdate(Window wnd)
@@ -279,7 +292,7 @@ namespace NScumm.Sci.Graphics
             var index = _windowList.IndexOf(wnd);
 
             // wnd has to be in _windowList
-            System.Diagnostics.Debug.Assert(index!=-1);
+            System.Diagnostics.Debug.Assert(index != -1);
 
             for (var i = _windowList.Count - 1; i != index; i--)
             {

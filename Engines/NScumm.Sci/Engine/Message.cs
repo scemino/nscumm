@@ -21,6 +21,7 @@ using NScumm.Core;
 using System;
 using System.Collections.Generic;
 using static NScumm.Core.DebugHelper;
+using System.Text;
 
 namespace NScumm.Sci.Engine
 {
@@ -199,6 +200,7 @@ namespace NScumm.Sci.Engine
         public MessageState(SegManager _segMan)
         {
             this._segMan = _segMan;
+            _cursorStack = new CursorStack();
         }
 
         public int GetMessage(int module, MessageTuple t, Register buf)
@@ -207,14 +209,171 @@ namespace NScumm.Sci.Engine
             return NextMessage(buf);
         }
 
-        private void OutputString(Register buf, string v)
+        private void OutputString(Register buf, string str)
         {
-            throw new NotImplementedException();
+#if ENABLE_SCI32
+            if (getSciVersion() >= SCI_VERSION_2)
+            {
+                if (_segMan.getSegmentType(buf.getSegment()) == SEG_TYPE_STRING)
+                {
+                    SciString* sciString = _segMan.lookupString(buf);
+                    sciString.setSize(str.size() + 1);
+                    for (uint32 i = 0; i < str.size(); i++)
+                        sciString.setValue(i, str.c_str()[i]);
+                    sciString.setValue(str.size(), 0);
+                }
+                else if (_segMan.getSegmentType(buf.getSegment()) == SEG_TYPE_ARRAY)
+                {
+                    // Happens in the intro of LSL6, we are asked to write the string
+                    // into an array
+                    SciArray<reg_t>* sciString = _segMan.lookupArray(buf);
+                    sciString.setSize(str.size() + 1);
+                    for (uint32 i = 0; i < str.size(); i++)
+                        sciString.setValue(i, make_reg(0, str.c_str()[i]));
+                    sciString.setValue(str.size(), NULL_REG);
+                }
+            }
+            else
+            {
+#endif
+            SegmentRef buffer_r = _segMan.Dereference(buf);
+
+            if (buffer_r.maxSize >= str.Length + 1)
+            {
+                _segMan.Strcpy(buf, str);
+            }
+            else
+            {
+                // LSL6 sets an exit text here, but the buffer size allocated
+                // is too small. Don't display a warning in this case, as we
+                // don't use the exit text anyway - bug report #3035533
+                if (SciEngine.Instance.GameId == SciGameId.LSL6 && str.StartsWith("\r\n(c) 1993 Sierra On-Line, Inc"))
+                {
+                    // LSL6 buggy exit text, don't show warning
+                }
+                else
+                {
+                    Warning("Message: buffer {0} invalid or too small to hold the following text of {1} bytes: '{2}'", buf, str.Length + 1, str);
+                }
+
+                // Set buffer to empty string if possible
+                if (buffer_r.maxSize > 0)
+                    _segMan.Strcpy(buf, "");
+            }
+# if ENABLE_SCI32
+            }
+#endif
         }
 
-        private string ProcessString(string s)
+        private string ProcessString(string inStr)
         {
-            throw new NotImplementedException();
+            var outStr = new System.Text.StringBuilder();
+
+            int index = 0;
+
+            while (index < inStr.Length)
+            {
+                // Check for hex escape sequence
+                if (StringHex(outStr, inStr, ref index))
+                    continue;
+
+                // Check for literal escape sequence
+                if (StringLit(outStr, inStr, ref index))
+                    continue;
+
+                // Check for stage direction
+                if (StringStage(outStr, inStr, ref index))
+                    continue;
+
+                // None of the above, copy char
+                outStr.Append(inStr[index++]);
+            }
+
+            return outStr.ToString();
+        }
+
+        private bool StringHex(StringBuilder outStr, string inStr, ref int index)
+        {
+            // Hex escape sequences of the form \nn, where n is a hex digit
+            if (inStr[index] != '\\')
+                return false;
+
+            // Check for enough room for a hex escape sequence
+            if (index + 2 >= inStr.Length)
+                return false;
+
+            int digit1 = HexDigitToInt(inStr[index + 1]);
+            int digit2 = HexDigitToInt(inStr[index + 2]);
+
+            // Check for hex
+            if ((digit1 == -1) || (digit2 == -1))
+                return false;
+
+            outStr.Append(digit1 * 16 + digit2);
+            index += 3;
+
+            return true;
+        }
+
+        private bool StringLit(StringBuilder outStr, string inStr, ref int index)
+        {
+            // Literal escape sequences of the form \n
+            if (inStr[index] != '\\')
+                return false;
+
+            // Check for enough room for a literal escape sequence
+            if (index + 1 >= inStr.Length)
+                return false;
+
+            outStr.Append(inStr[index + 1]);
+            index += 2;
+
+            return true;
+        }
+
+        private bool StringStage(StringBuilder outstr, string inStr, ref int index)
+        {
+            // Stage directions of the form (n *), where n is anything but a digit or a lowercase character
+            if (inStr[index] != '(')
+                return false;
+
+            for (int i = index + 1; i < inStr.Length; i++)
+            {
+                if (inStr[i] == ')')
+                {
+                    // Stage direction found, skip it
+                    index = i + 1;
+
+                    // Skip trailing white space
+                    while ((index < inStr.Length) && ((inStr[index] == '\n') || (inStr[index] == '\r') || (inStr[index] == ' ')))
+                        index++;
+
+                    return true;
+                }
+
+                // If we find a lowercase character or a digit, it's not a stage direction
+                // SCI32 seems to support having digits in stage directions
+                if (((inStr[i] >= 'a') && (inStr[i] <= 'z')) || ((inStr[i] >= '0') && (inStr[i] <= '9') && (ResourceManager.GetSciVersion() < SciVersion.V2)))
+                    return false;
+            }
+
+            // We ran into the end of the string without finding a closing bracket
+            return false;
+        }
+
+
+        private int HexDigitToInt(char h)
+        {
+            if ((h >= 'A') && (h <= 'F'))
+                return h - 'A' + 10;
+
+            if ((h >= 'a') && (h <= 'f'))
+                return h - 'a' + 10;
+
+            if ((h >= '0') && (h <= '9'))
+                return h - '0';
+
+            return -1;
         }
 
         private MessageRecord GetRecord(CursorStack stack, bool recurse)
@@ -345,13 +504,15 @@ namespace NScumm.Sci.Engine
                     _cursorStack.Peek().seq++;
                     return record.talker;
                 }
-                else {
+                else
+                {
                     MessageTuple t = _cursorStack.Peek();
                     OutputString(buf, $"Msg {_cursorStack.Module}: {t.noun} {t.verb} {t.cond} {t.seq} not found");
                     return 0;
                 }
             }
-            else {
+            else
+            {
                 CursorStack stack = _cursorStack;
 
                 if ((record = GetRecord(stack, true)) != null)
@@ -401,7 +562,7 @@ namespace NScumm.Sci.Engine
 
         public void PopCursorStack()
         {
-            if (_cursorStackStack.Count!=0)
+            if (_cursorStackStack.Count != 0)
                 _cursorStack = _cursorStackStack.Pop();
             else
                 throw new InvalidOperationException("Message: attempt to pop from empty stack");

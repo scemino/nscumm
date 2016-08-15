@@ -16,11 +16,11 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using NScumm.Core.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using NScumm.Core;
+using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sci.Engine
 {
@@ -40,6 +40,8 @@ namespace NScumm.Sci.Engine
         public const int OffsetNamePointerSci11 = 16;
 
         private const int OBJECT_FLAG_FREED = (1 << 0);
+
+        private const int EXTRA_GROUPS = 3;
 
         /// <summary>
         /// Object offset within its script; for clones, this is their base
@@ -72,7 +74,12 @@ namespace NScumm.Sci.Engine
         /// Pointer to the method selector area for this object
         /// </summary>
         private List<ushort> _baseMethod;
+        /// <summary>
+        /// This is used to enable relocation of property valuesa in SCI3.
+        /// </summary>
+        private uint[] _propertyOffsetsSci3;
         private int _flags;
+        private bool[] _mustSetViewVisible;
 
         public Register Pos { get { return _pos; } }
 
@@ -109,6 +116,46 @@ namespace NScumm.Sci.Engine
                     _variables[_offset + 1] = value;
                 else    // SCI3
                     _superClassPosSci3 = value;
+            }
+        }
+
+        public Register ClassScriptSelector
+        {
+            get
+            {
+                if (ResourceManager.GetSciVersion() < SciVersion.V3)
+                    return _variables[4];
+                else    // SCI3
+                    return Register.Make(0, _baseObj.Data.ReadSci11EndianUInt16(_baseObj.Offset + 6));
+            }
+            set
+            {
+                if (ResourceManager.GetSciVersion() < SciVersion.V3)
+                    _variables[4] = value;
+                else    // SCI3
+                        // This should never occur, this is called from a SCI1.1 - SCI2.1 only function
+                    Error("setClassScriptSelector called for SCI3");
+            }
+        }
+
+        public Register PropDictSelector
+        {
+            get
+            {
+                if (ResourceManager.GetSciVersion() < SciVersion.V3)
+                    return _variables[2];
+                else
+                    // This should never occur, this is called from a SCI1.1 - SCI2.1 only function
+                    Error("getPropDictSelector called for SCI3");
+                return Register.NULL_REG;
+            }
+            set
+            {
+                if (ResourceManager.GetSciVersion() < SciVersion.V3)
+                    _variables[2] = value;
+                else
+                    // This should never occur, this is called from a SCI1.1 - SCI2.1 only function
+                    Error("setPropDictSelector called for SCI3");
             }
         }
 
@@ -157,9 +204,31 @@ namespace NScumm.Sci.Engine
             _baseMethod = new List<ushort>();
         }
 
+        public bool RelocateSci3(int segment, uint location, int offset, int scriptSize)
+        {
+            System.Diagnostics.Debug.Assert(_propertyOffsetsSci3 != null);
+
+            for (int i = 0; i < _variables.Length; ++i)
+            {
+                if (location == _propertyOffsetsSci3[i])
+                {
+                    Register.SetSegment(_variables[i], (ushort)segment);
+                    Register.IncOffset(_variables[i], (short)offset);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public int GetVarSelector(ushort i)
+        {
+            return _baseVars.Data.ReadSci11EndianUInt16(_baseVars.Offset + i);
+        }
+
         public void MarkAsFreed()
         {
-            _flags |= SciObject.OBJECT_FLAG_FREED;
+            _flags |= OBJECT_FLAG_FREED;
         }
 
         public Register GetVariable(int var) { return _variables[var]; }
@@ -236,7 +305,8 @@ namespace NScumm.Sci.Engine
                     for (var i = 0; i < _variables.Length; i++)
                         _variables[i] = Register.Make(0, data.Data.ReadSci11EndianUInt16(data.Offset + (i * 2)));
                 }
-                else {
+                else
+                {
                     _infoSelectorSci3 = Register.Make(0, _baseObj.Data.ReadSci11EndianUInt16(_baseObj.Offset + 10));
                 }
             }
@@ -263,7 +333,117 @@ namespace NScumm.Sci.Engine
 
         private void InitSelectorsSci3(byte[] buf)
         {
-            throw new NotImplementedException();
+            BytePtr groupInfo = new BytePtr(_baseObj, 16);
+            BytePtr selectorBase = new BytePtr(groupInfo, EXTRA_GROUPS * 32 * 2);
+            int groups = SciEngine.Instance.Kernel.SelectorNamesSize / 32;
+            int methods, properties;
+
+            if ((SciEngine.Instance.Kernel.SelectorNamesSize % 32) != 0)
+                ++groups;
+
+            _mustSetViewVisible = new bool[groups];
+
+            methods = properties = 0;
+
+            // Selectors are divided into groups of 32, of which the first
+            // two selectors are always reserved (because their storage
+            // space is used by the typeMask).
+            // We don't know beforehand how many methods and properties
+            // there are, so we count them first.
+            for (int groupNr = 0; groupNr < groups; ++groupNr)
+            {
+                byte groupLocation = groupInfo[groupNr];
+                BytePtr seeker = new BytePtr(selectorBase, groupLocation * 32 * 2);
+
+                if (groupLocation != 0)
+                {
+                    // This object actually has selectors belonging to this group
+                    int typeMask = (int)seeker.Data.ReadSci11EndianUInt32(seeker.Offset);
+
+                    _mustSetViewVisible[groupNr] = (typeMask & 1) != 0;
+
+                    for (int bit = 2; bit < 32; ++bit)
+                    {
+                        int value = seeker.Data.ReadSci11EndianUInt16(seeker.Offset + bit * 2);
+                        if ((typeMask & (1 << bit)) != 0)
+                        { // Property
+                            ++properties;
+                        }
+                        else if (value != 0xffff)
+                        { // Method
+                            ++methods;
+                        }
+                        else {
+                            // Undefined selector
+                        }
+
+                    }
+                }
+                else
+                    _mustSetViewVisible[groupNr] = false;
+            }
+
+            _variables = new Register[properties];
+            byte[] propertyIds = new byte[properties * sizeof(ushort)];
+            //  uint16 *methodOffsets = (uint16 *)malloc(sizeof(uint16) * 2 * methods);
+            uint[] propertyOffsets = new uint[properties];
+            int propertyCounter = 0;
+            int methodCounter = 0;
+
+            // Go through the whole thing again to get the property values
+            // and method pointers
+            for (int groupNr = 0; groupNr < groups; ++groupNr)
+            {
+                byte groupLocation = groupInfo[groupNr];
+                BytePtr seeker = new BytePtr(selectorBase, groupLocation * 32 * 2);
+
+                if (groupLocation != 0)
+                {
+                    // This object actually has selectors belonging to this group
+                    int typeMask = (int)seeker.Data.ReadSci11EndianUInt32(seeker.Offset);
+                    int groupBaseId = groupNr * 32;
+
+                    for (int bit = 2; bit < 32; ++bit)
+                    {
+                        int value = seeker.Data.ReadSci11EndianUInt16(seeker.Offset + bit * 2);
+                        if ((typeMask & (1 << bit)) != 0)
+                        { // Property
+
+                            // FIXME: We really shouldn't be doing endianness
+                            // conversion here; instead, propertyIds should be converted
+                            // to a Common::Array, like _baseMethod already is
+                            // This interim solution fixes playing SCI3 PC games
+                            // on Big Endian platforms
+
+                            propertyIds.WriteSci11EndianUInt16(propertyCounter * sizeof(ushort), (ushort)(groupBaseId + bit));
+                            _variables[propertyCounter] = Register.Make(0, (ushort)value);
+                            uint propertyOffset = ((uint)(seeker.Offset + bit * 2));
+                            propertyOffsets[propertyCounter] = propertyOffset;
+                            ++propertyCounter;
+                        }
+                        else if (value != 0xffff)
+                        { // Method
+                            _baseMethod.Add((ushort)(groupBaseId + bit));
+                            _baseMethod.Add((ushort)(value + buf.ReadSci11EndianUInt32()));
+                            //                  methodOffsets[methodCounter] = (seeker + bit * 2) - buf;
+                            ++methodCounter;
+                        }
+                        else {
+                            // Undefined selector
+                        }
+
+                    }
+                }
+            }
+
+            _speciesSelectorSci3 = Register.Make(0, _baseObj.Data.ReadSci11EndianUInt16(_baseObj.Offset + 4));
+            _superClassPosSci3 = Register.Make(0, _baseObj.Data.ReadSci11EndianUInt16(_baseObj.Offset + 8));
+
+            _baseVars = new UShortAccess(propertyIds);
+            _methodCount = (ushort)methods;
+            _propertyOffsetsSci3 = propertyOffsets;
+            //_methodOffsetsSci3 = methodOffsets;
+
         }
 
         public void InitSpecies(SegManager segMan, Register addr)
@@ -311,7 +491,8 @@ namespace NScumm.Sci.Engine
                     {
                         name = "<no name>";
                     }
-                    else {
+                    else
+                    {
                         nameReg = Register.SetSegment(nameReg, _pos.Segment);
                         name = segMan.DerefString(nameReg);
                         if (name == null)
@@ -392,7 +573,7 @@ namespace NScumm.Sci.Engine
             {
                 throw new InvalidOperationException($"Attempt to relocate odd variable #{idx}.5e (relative to {block_location:X4})");
             }
-            block[idx]= Register.SetSegment(block[idx], segment); // Perform relocation
+            block[idx] = Register.SetSegment(block[idx], segment); // Perform relocation
             if (ResourceManager.GetSciVersion() >= SciVersion.V1_1 && ResourceManager.GetSciVersion() <= SciVersion.V2_1)
                 block[idx] = Register.IncOffset(block[idx], (short)scriptSize);
 
@@ -424,7 +605,7 @@ namespace NScumm.Sci.Engine
             return -1;
         }
 
-		public int GetFuncSelector(int i)
+        public int GetFuncSelector(int i)
         {
             int offset = (ResourceManager.GetSciVersion() < SciVersion.V1_1) ? i : i * 2 + 1;
             if (ResourceManager.GetSciVersion() == SciVersion.V3)

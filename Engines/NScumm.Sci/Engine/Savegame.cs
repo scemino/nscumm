@@ -114,7 +114,7 @@ namespace NScumm.Sci.Engine
 				if (s.Version >= 26)
 					s.SyncAsInt32LE (ref obj.playTime);
 			} else {
-				obj.playTime = SciEngine.Instance.TotalPlaytime / 1000;
+				obj.playTime = SciEngine.Instance.TotalPlayTime / 1000;
 				s.SyncAsInt32LE (ref obj.playTime);
 			}
 		}
@@ -260,5 +260,31 @@ namespace NScumm.Sci.Engine
 			}
 			_bytesSynced += 4;
 		}
+
+        public void SyncAsInt16LE(ref short val, int minVersion = 0, int maxVersion = LastVersion)
+        {
+            if (_version < minVersion || _version > maxVersion)
+                return;
+            if (IsLoading)
+                val = _loadStream.ReadInt16();
+            else
+            {
+                _saveStream.Write(val);
+            }
+            _bytesSynced += 4;
+        }
+
+        public void SyncAsInt16LE(ref int val, int minVersion = 0, int maxVersion = LastVersion)
+        {
+            if (_version < minVersion || _version > maxVersion)
+                return;
+            if (IsLoading)
+                val = _loadStream.ReadInt16();
+            else
+            {
+                _saveStream.Write(val);
+            }
+            _bytesSynced += 4;
+        }
 	}
 }

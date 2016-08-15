@@ -17,9 +17,8 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-using System;
 using NScumm.Core;
-using NScumm.Core.Common;
+using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sci.Parser
 {
@@ -141,7 +140,8 @@ namespace NScumm.Sci.Parser
             {
                 if (rbranch.type == ParseTypes.BranchNode)
                     _vocab_recursive_ptree_dump(rbranch, blanks);
-                else {
+                else
+                {
                     //debugN("%x", rbranch.value);
                     while (rbranch.right != null)
                     {
@@ -227,7 +227,8 @@ namespace NScumm.Sci.Parser
                 {
                     ret = 1;
                 }
-                else {
+                else
+                {
                     ret = -1;
 
                     // scan through the word group ids in the parse tree leaf to see if
@@ -284,7 +285,8 @@ namespace NScumm.Sci.Parser
                 ret = scanParseChildren(parseT.right.right, saidT);
 
             }
-            else {
+            else
+            {
 
                 // parseT and saidT are both not terminals,
                 // said major 0x141 or 0x152 or equal to parse major
@@ -376,7 +378,8 @@ namespace NScumm.Sci.Parser
                 // ELSE: 0
 
             }
-            else {
+            else
+            {
 
                 ret = matchTrees(parseT, saidT);
 
@@ -410,7 +413,7 @@ namespace NScumm.Sci.Parser
 
             //assert(!(type == SCAN_SAID_OR && !saidT));
 
-            while (saidT!=null)
+            while (saidT != null)
             {
                 //assert(saidT.type == kParseTreeBranchNode);
 
@@ -498,13 +501,13 @@ namespace NScumm.Sci.Parser
 
             if (nextitem != Vocabulary.SAID_TERM)
             {
-                // TODO: warning("SAID spec is too long");
+                Warning("SAID spec is too long");
                 return 1;
             }
 
             if (!buildSaidTree())
             {
-                // TODO: warning("Error while parsing SAID spec");
+                Warning("Error while parsing SAID spec");
                 return 1;
             }
 

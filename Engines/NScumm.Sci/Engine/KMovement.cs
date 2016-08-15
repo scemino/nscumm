@@ -1,4 +1,4 @@
-﻿//  Author:
+//  Author:
 //       scemino <scemino74@gmail.com>
 //
 //  Copyright (c) 2015 
@@ -24,14 +24,14 @@ namespace NScumm.Sci.Engine
 {
     partial class Kernel
     {
-        private static Register kSetJump(EngineState s, int argc, StackPtr? argv)
+        private static Register kSetJump(EngineState s, int argc, StackPtr argv)
         {
             SegManager segMan = s._segMan;
             // Input data
-            Register @object = argv.Value[0];
-            int dx = argv.Value[1].ToInt16();
-            int dy = argv.Value[2].ToInt16();
-            int gy = argv.Value[3].ToInt16();
+            Register @object = argv[0];
+            int dx = argv[1].ToInt16();
+            int dy = argv[2].ToInt16();
+            int gy = argv[3].ToInt16();
 
             // Derived data
             int c;
@@ -129,16 +129,16 @@ namespace NScumm.Sci.Engine
             return s.r_acc;
         }
 
-        private static Register kInitBresen(EngineState s, int argc, StackPtr? argv)
+        private static Register kInitBresen(EngineState s, int argc, StackPtr argv)
         {
             SegManager segMan = s._segMan;
-            Register mover = argv.Value[0];
-            Register client = SciEngine.ReadSelector(segMan, mover, SciEngine.Selector(o => o.client));
-            short stepFactor = (argc >= 2) ? argv.Value[1].ToInt16() : (short)1;
-            short mover_x = (short)SciEngine.ReadSelectorValue(segMan, mover, SciEngine.Selector(o => o.x));
-            short mover_y = (short)SciEngine.ReadSelectorValue(segMan, mover, SciEngine.Selector(o => o.y));
-            short client_xStep = (short)(SciEngine.ReadSelectorValue(segMan, client, SciEngine.Selector(o => o.xStep)) * stepFactor);
-            short client_yStep = (short)(SciEngine.ReadSelectorValue(segMan, client, SciEngine.Selector(o => o.yStep)) * stepFactor);
+            Register mover = argv[0];
+            Register client = SciEngine.ReadSelector(segMan, mover, o => o.client);
+            short stepFactor = (argc >= 2) ? argv[1].ToInt16() : (short)1;
+            short mover_x = (short)SciEngine.ReadSelectorValue(segMan, mover, o => o.x);
+            short mover_y = (short)SciEngine.ReadSelectorValue(segMan, mover, o => o.y);
+            short client_xStep = (short)(SciEngine.ReadSelectorValue(segMan, client, o => o.xStep) * stepFactor);
+            short client_yStep = (short)(SciEngine.ReadSelectorValue(segMan, client, o => o.yStep) * stepFactor);
 
             short client_step;
             if (client_xStep < client_yStep)
@@ -146,8 +146,8 @@ namespace NScumm.Sci.Engine
             else
                 client_step = (short)(client_xStep * 2);
 
-            short deltaX = (short)(mover_x - SciEngine.ReadSelectorValue(segMan, client, SciEngine.Selector(o => o.x)));
-            short deltaY = (short)(mover_y - SciEngine.ReadSelectorValue(segMan, client, SciEngine.Selector(o => o.y)));
+            short deltaX = (short)(mover_x - SciEngine.ReadSelectorValue(segMan, client, o => o.x));
+            short deltaY = (short)(mover_y - SciEngine.ReadSelectorValue(segMan, client, o => o.y));
             short mover_dx = 0;
             short mover_dy = 0;
             short mover_i1 = 0;
@@ -218,53 +218,53 @@ namespace NScumm.Sci.Engine
             }
 
             // set mover
-            SciEngine.WriteSelectorValue(segMan, mover, SciEngine.Selector(o => o.dx), (ushort)mover_dx);
-            SciEngine.WriteSelectorValue(segMan, mover, SciEngine.Selector(o => o.dy), (ushort)mover_dy);
-            SciEngine.WriteSelectorValue(segMan, mover, SciEngine.Selector(o => o.b_i1), (ushort)mover_i1);
-            SciEngine.WriteSelectorValue(segMan, mover, SciEngine.Selector(o => o.b_i2), (ushort)mover_i2);
-            SciEngine.WriteSelectorValue(segMan, mover, SciEngine.Selector(o => o.b_di), (ushort)mover_di);
-            SciEngine.WriteSelectorValue(segMan, mover, SciEngine.Selector(o => o.b_incr), (ushort)mover_incr);
-            SciEngine.WriteSelectorValue(segMan, mover, SciEngine.Selector(o => o.b_xAxis), (ushort)mover_xAxis);
+            SciEngine.WriteSelectorValue(segMan, mover, o => o.dx, (ushort)mover_dx);
+            SciEngine.WriteSelectorValue(segMan, mover, o => o.dy, (ushort)mover_dy);
+            SciEngine.WriteSelectorValue(segMan, mover, o => o.b_i1, (ushort)mover_i1);
+            SciEngine.WriteSelectorValue(segMan, mover, o => o.b_i2, (ushort)mover_i2);
+            SciEngine.WriteSelectorValue(segMan, mover, o => o.b_di, (ushort)mover_di);
+            SciEngine.WriteSelectorValue(segMan, mover, o => o.b_incr, (ushort)mover_incr);
+            SciEngine.WriteSelectorValue(segMan, mover, o => o.b_xAxis, (ushort)mover_xAxis);
             return s.r_acc;
         }
 
-        private static Register kDoBresen(EngineState s, int argc, StackPtr? argv)
+        private static Register kDoBresen(EngineState s, int argc, StackPtr argv)
         {
             SegManager segMan = s._segMan;
-            Register mover = argv.Value[0];
-            Register client = SciEngine.ReadSelector(segMan, mover, SciEngine.Selector(o => o.client));
+            Register mover = argv[0];
+            Register client = SciEngine.ReadSelector(segMan, mover, o => o.client);
             bool completed = false;
             bool handleMoveCount = SciEngine.Instance.Features.HandleMoveCount;
 
             if (ResourceManager.GetSciVersion() >= SciVersion.V1_EGA_ONLY)
             {
-                var client_signal = (ViewSignals)SciEngine.ReadSelectorValue(segMan, client, SciEngine.Selector(o => o.signal));
-                SciEngine.WriteSelectorValue(segMan, client, SciEngine.Selector(o => o.signal), (ushort)(client_signal & ~ViewSignals.HitObstacle));
+                var client_signal = (ViewSignals)SciEngine.ReadSelectorValue(segMan, client, o => o.signal);
+                SciEngine.WriteSelectorValue(segMan, client, o => o.signal, (ushort)(client_signal & ~ViewSignals.HitObstacle));
             }
 
             short mover_moveCnt = 1;
             short client_moveSpeed = 0;
             if (handleMoveCount)
             {
-                mover_moveCnt = (short)SciEngine.ReadSelectorValue(segMan, mover, SciEngine.Selector(o => o.b_movCnt));
-                client_moveSpeed = (short)SciEngine.ReadSelectorValue(segMan, client, SciEngine.Selector(o => o.moveSpeed));
+                mover_moveCnt = (short)SciEngine.ReadSelectorValue(segMan, mover, o => o.b_movCnt);
+                client_moveSpeed = (short)SciEngine.ReadSelectorValue(segMan, client, o => o.moveSpeed);
                 mover_moveCnt++;
             }
 
             if (client_moveSpeed < mover_moveCnt)
             {
                 mover_moveCnt = 0;
-                short client_x = (short)SciEngine.ReadSelectorValue(segMan, client, SciEngine.Selector(o => o.x));
-                short client_y = (short)SciEngine.ReadSelectorValue(segMan, client, SciEngine.Selector(o => o.y));
-                short mover_x = (short)SciEngine.ReadSelectorValue(segMan, mover, SciEngine.Selector(o => o.x));
-                short mover_y = (short)SciEngine.ReadSelectorValue(segMan, mover, SciEngine.Selector(o => o.y));
-                short mover_xAxis = (short)SciEngine.ReadSelectorValue(segMan, mover, SciEngine.Selector(o => o.b_xAxis));
-                short mover_dx = (short)SciEngine.ReadSelectorValue(segMan, mover, SciEngine.Selector(o => o.dx));
-                short mover_dy = (short)SciEngine.ReadSelectorValue(segMan, mover, SciEngine.Selector(o => o.dy));
-                short mover_incr = (short)SciEngine.ReadSelectorValue(segMan, mover, SciEngine.Selector(o => o.b_incr));
-                short mover_i1 = (short)SciEngine.ReadSelectorValue(segMan, mover, SciEngine.Selector(o => o.b_i1));
-                short mover_i2 = (short)SciEngine.ReadSelectorValue(segMan, mover, SciEngine.Selector(o => o.b_i2));
-                short mover_di = (short)SciEngine.ReadSelectorValue(segMan, mover, SciEngine.Selector(o => o.b_di));
+                short client_x = (short)SciEngine.ReadSelectorValue(segMan, client, o => o.x);
+                short client_y = (short)SciEngine.ReadSelectorValue(segMan, client, o => o.y);
+                short mover_x = (short)SciEngine.ReadSelectorValue(segMan, mover, o => o.x);
+                short mover_y = (short)SciEngine.ReadSelectorValue(segMan, mover, o => o.y);
+                short mover_xAxis = (short)SciEngine.ReadSelectorValue(segMan, mover, o => o.b_xAxis);
+                short mover_dx = (short)SciEngine.ReadSelectorValue(segMan, mover, o => o.dx);
+                short mover_dy = (short)SciEngine.ReadSelectorValue(segMan, mover, o => o.dy);
+                short mover_incr = (short)SciEngine.ReadSelectorValue(segMan, mover, o => o.b_incr);
+                short mover_i1 = (short)SciEngine.ReadSelectorValue(segMan, mover, o => o.b_i1);
+                short mover_i2 = (short)SciEngine.ReadSelectorValue(segMan, mover, o => o.b_i2);
+                short mover_di = (short)SciEngine.ReadSelectorValue(segMan, mover, o => o.b_di);
                 short mover_org_i1 = mover_i1;
                 short mover_org_i2 = mover_i2;
                 short mover_org_di = mover_di;
@@ -272,8 +272,8 @@ namespace NScumm.Sci.Engine
                 if ((ResourceManager.GetSciVersion() >= SciVersion.V1_EGA_ONLY))
                 {
                     // save current position into mover
-                    SciEngine.WriteSelectorValue(segMan, mover, SciEngine.Selector(o => o.xLast), (ushort)client_x);
-                    SciEngine.WriteSelectorValue(segMan, mover, SciEngine.Selector(o => o.yLast), (ushort)client_y);
+                    SciEngine.WriteSelectorValue(segMan, mover, o => o.xLast, (ushort)client_x);
+                    SciEngine.WriteSelectorValue(segMan, mover, o => o.yLast, (ushort)client_y);
                 }
 
                 // Store backups of all client selector variables. We will restore them
@@ -316,8 +316,8 @@ namespace NScumm.Sci.Engine
                         }
                     }
                 }
-                SciEngine.WriteSelectorValue(segMan, client, SciEngine.Selector(o => o.x), (ushort)client_x);
-                SciEngine.WriteSelectorValue(segMan, client, SciEngine.Selector(o => o.y), (ushort)client_y);
+                SciEngine.WriteSelectorValue(segMan, client, o => o.x, (ushort)client_x);
+                SciEngine.WriteSelectorValue(segMan, client, o => o.y, (ushort)client_y);
 
                 // Now call client::canBeHere/client::cantBehere to check for collisions
                 bool collision = false;
@@ -328,13 +328,13 @@ namespace NScumm.Sci.Engine
                     // adding this here for hoyle 3 to get happy. CantBeHere is a dummy in hoyle 3 and acc is != 0 so we would
                     //  get a collision otherwise
                     s.r_acc = Register.NULL_REG;
-                    SciEngine.InvokeSelector(s, client, SciEngine.Selector(o => o.cantBeHere), argc, argv);
+                    SciEngine.InvokeSelector(s, client, o => o.cantBeHere, argc, argv);
                     if (!s.r_acc.IsNull)
                         collision = true;
                     cantBeHere = s.r_acc;
                 }
                 else {
-                    SciEngine.InvokeSelector(s, client, SciEngine.Selector(o => o.canBeHere), argc, argv);
+                    SciEngine.InvokeSelector(s, client, o => o.canBeHere, argc, argv);
                     if (s.r_acc.IsNull)
                         collision = true;
                 }
@@ -352,13 +352,13 @@ namespace NScumm.Sci.Engine
                     mover_i2 = mover_org_i2;
                     mover_di = mover_org_di;
 
-                    ViewSignals client_signal = (ViewSignals)SciEngine.ReadSelectorValue(segMan, client, SciEngine.Selector(o => o.signal));
-                    SciEngine.WriteSelectorValue(segMan, client, SciEngine.Selector(o => o.signal), (ushort)(client_signal | ViewSignals.HitObstacle));
+                    ViewSignals client_signal = (ViewSignals)SciEngine.ReadSelectorValue(segMan, client, o => o.signal);
+                    SciEngine.WriteSelectorValue(segMan, client, o => o.signal, (ushort)(client_signal | ViewSignals.HitObstacle));
                 }
 
-                SciEngine.WriteSelectorValue(segMan, mover, SciEngine.Selector(o => o.b_i1), (ushort)mover_i1);
-                SciEngine.WriteSelectorValue(segMan, mover, SciEngine.Selector(o => o.b_i2), (ushort)mover_i2);
-                SciEngine.WriteSelectorValue(segMan, mover, SciEngine.Selector(o => o.b_di), (ushort)mover_di);
+                SciEngine.WriteSelectorValue(segMan, mover, o => o.b_i1, (ushort)mover_i1);
+                SciEngine.WriteSelectorValue(segMan, mover, o => o.b_i2, (ushort)mover_i2);
+                SciEngine.WriteSelectorValue(segMan, mover, o => o.b_di, (ushort)mover_di);
 
                 if (ResourceManager.GetSciVersion() >= SciVersion.V1_EGA_ONLY)
                 {
@@ -366,17 +366,17 @@ namespace NScumm.Sci.Engine
                     // but client_x/client_y aren't set there, so it was an
                     // uninitialized read in SSCI. (This issue was fixed in sci1early.)
                     if (handleMoveCount)
-                        SciEngine.WriteSelectorValue(segMan, mover, SciEngine.Selector(o => o.b_movCnt), (ushort)mover_moveCnt);
+                        SciEngine.WriteSelectorValue(segMan, mover, o => o.b_movCnt, (ushort)mover_moveCnt);
                     // We need to compare directly in here, complete may have happened during
                     //  the current move
                     if ((client_x == mover_x) && (client_y == mover_y))
-                        SciEngine.InvokeSelector(s, mover, SciEngine.Selector(o => o.moveDone), argc, argv);
+                        SciEngine.InvokeSelector(s, mover, o => o.moveDone, argc, argv);
                     return s.r_acc;
                 }
             }
 
             if (handleMoveCount)
-                SciEngine.WriteSelectorValue(segMan, mover, SciEngine.Selector(o => o.b_movCnt), (ushort)mover_moveCnt);
+                SciEngine.WriteSelectorValue(segMan, mover, o => o.b_movCnt, (ushort)mover_moveCnt);
 
             return s.r_acc;
         }

@@ -188,8 +188,38 @@ namespace NScumm.Sci
                     new ADGameFileDescription { fileName = "resource.001", fileType = 0, md5 = "3fb02ce493f6eacdcc3713851024f80e", fileSize = 559540},
                     new ADGameFileDescription { fileName = "resource.002", fileType = 0, md5 = "d226d7d3b4f77c4a566913fc310487fc", fileSize = 792380},
                     new ADGameFileDescription { fileName = "resource.003", fileType = 0, md5 = "d226d7d3b4f77c4a566913fc310487fc", fileSize = 464348},
-                },
-                Core.Language.EN_ANY, Platform.Amiga),
+                }, Core.Language.EN_ANY, Platform.Amiga),
+
+            // Castle of Dr. Brain - German Amiga (from www.back2roots.org, also includes English language)
+            // Executable scanning reports "1.005.001"
+            // SCI interpreter version 1.000.510
+            new ADGameDescription("castlebrain", "",
+                new [] {
+                    new ADGameFileDescription("resource.map", 0, "8e60424682db52a982bcc3535a7e86f3", 2796),
+                    new ADGameFileDescription("resource.000", 0, "0efa8409c43d42b32642f96652d3230d", 332468),
+                    new ADGameFileDescription("resource.001", 0, "4e0836fadc324316c1a418125709ba45", 569057),
+                    new ADGameFileDescription("resource.002", 0, "85e51acb5f9c539d66e3c8fe40e17da5", 826309),
+                    new ADGameFileDescription("resource.003", 0, "85e51acb5f9c539d66e3c8fe40e17da5", 493638),
+                }, Core.Language.DE_DEU, Platform.Amiga),
+
+            // Castle of Dr. Brain Macintosh (from omer_mor, bug report #3328251)
+            new ADGameDescription("castlebrain", "",
+                new [] {
+                    new ADGameFileDescription("resource.map", 0, "75cb06a94d2e0641295edd043f26f3a8", 2763),
+                    new ADGameFileDescription("resource.000", 0, "27ec5fa09cd12a7fd16e86d96a2ed245", 476566),
+                    new ADGameFileDescription("resource.001", 0, "7f7da982f5cd868e1e608cd4f6515656", 400521),
+                    new ADGameFileDescription("resource.002", 0, "e1a6b6f1060f60be9dcb6d28ad7a2a20", 1168310),
+                    new ADGameFileDescription("resource.003", 0, "6c3d1bb26ad532c94046bc9ac49b5ff4", 891295),
+                }, Core.Language.EN_ANY, Platform.Macintosh),
+
+            // Castle of Dr. Brain - English DOS Non-Interactive Demo
+            // SCI interpreter version 1.000.005
+            new ADGameDescription("castlebrain", "Demo", new [] {
+                new ADGameFileDescription("resource.map", 0, "467bb5e3224bb54640c3280032aebff5", 633),
+                new ADGameFileDescription("resource.000", 0, "9780f040d58182994e22d2e34fab85b0", 67367),
+                new ADGameFileDescription("resource.001", 0, "2af49dbd8f2e1db4ab09f9310dc91259", 570553),
+            }, Core.Language.EN_ANY, Platform.DOS),
+
 
             // King's Quest 1 SCI Remake - English DOS (from the King's Quest Collection)
 	        // Executable scanning reports "S.old.010", VERSION file reports "1.000.051"
@@ -200,6 +230,20 @@ namespace NScumm.Sci
                     new ADGameFileDescription { fileName = "resource.001", fileType = 0, md5 = "fed9e0072ffd511d248674e60dee2099", fileSize = 555439},
                     new ADGameFileDescription { fileName = "resource.002", fileType = 0, md5 = "fed9e0072ffd511d248674e60dee2099", fileSize = 714062},
                     new ADGameFileDescription { fileName = "resource.003", fileType = 0, md5 = "fed9e0072ffd511d248674e60dee2099", fileSize = 717478},
+            }, Core.Language.EN_ANY, Platform.DOS),
+
+            // Laura Bow - English DOS (from FRG)
+            // SCI interpreter version 0.000.631
+            new ADGameDescription("laurabow", "",
+                new [] {
+                    new ADGameFileDescription { fileName = "resource.map", fileType = 0, md5 = "b1905f6aa68ff65a057b080b1eae954c", fileSize = 12030},
+                    new ADGameFileDescription { fileName = "resource.001", fileType = 0, md5 = "e45c888d9c7c04aec0a20e9f820b79ff", fileSize = 108032},
+                    new ADGameFileDescription { fileName = "resource.002", fileType = 0, md5 = "e45c888d9c7c04aec0a20e9f820b79ff", fileSize = 354680},
+                    new ADGameFileDescription { fileName = "resource.003", fileType = 0, md5 = "e45c888d9c7c04aec0a20e9f820b79ff", fileSize = 361815},
+                    new ADGameFileDescription { fileName = "resource.004", fileType = 0, md5 = "e45c888d9c7c04aec0a20e9f820b79ff", fileSize = 339714},
+                    new ADGameFileDescription { fileName = "resource.005", fileType = 0, md5 = "e45c888d9c7c04aec0a20e9f820b79ff", fileSize = 327465},
+                    new ADGameFileDescription { fileName = "resource.006", fileType = 0, md5 = "e45c888d9c7c04aec0a20e9f820b79ff", fileSize = 328390},
+                    new ADGameFileDescription { fileName = "resource.007", fileType = 0, md5 = "e45c888d9c7c04aec0a20e9f820b79ff", fileSize = 317687},
             }, Core.Language.EN_ANY, Platform.DOS),
 
             // Conquests of the Longbow - English DOS Floppy (from jvprat)
@@ -244,6 +288,34 @@ namespace NScumm.Sci
                     new ADGameFileDescription { fileName = "resource.000", fileType = 0, md5 = "d3bceaebef3f7be941c2038b3565161e", fileSize = 918242},
                     new ADGameFileDescription { fileName = "resource.001", fileType = 0, md5 = "d34cadb11e1aefbb497cf91bc1d3baa7", fileSize = 1114688},
                     new ADGameFileDescription { fileName = "resource.002", fileType = 0, md5 = "85b030bb66d5342b0a068f1208c431a8", fileSize = 1078443},
+                }, Core.Language.EN_ANY, Platform.DOS),
+
+            // Larry 2 - English DOS
+            // SCI interpreter version 0.000.409
+            new ADGameDescription("lsl2", "",
+                new[] {
+                new ADGameFileDescription { fileName = "resource.map", fileType = 0, md5 = "42258cf767a8ebaa9e66b6151a80e601", fileSize = 5628},
+                new ADGameFileDescription { fileName = "resource.001", fileType = 0, md5 = "4a24443a25e2b1492462a52809605dc2", fileSize = 143847},
+                new ADGameFileDescription { fileName = "resource.002", fileType = 0, md5 = "4a24443a25e2b1492462a52809605dc2", fileSize = 348331},
+                new ADGameFileDescription { fileName = "resource.003", fileType = 0, md5 = "4a24443a25e2b1492462a52809605dc2", fileSize = 236550},
+                new ADGameFileDescription { fileName = "resource.004", fileType = 0, md5 = "4a24443a25e2b1492462a52809605dc2", fileSize = 204861},
+                new ADGameFileDescription { fileName = "resource.005", fileType = 0, md5 = "4a24443a25e2b1492462a52809605dc2", fileSize = 277732},
+                new ADGameFileDescription { fileName = "resource.006", fileType = 0, md5 = "4a24443a25e2b1492462a52809605dc2", fileSize = 345683},
+            }, Core.Language.EN_ANY, Platform.DOS),
+
+            // Larry 5 - English DOS (from spookypeanut)
+            // SCI interpreter version 1.000.510
+            new ADGameDescription("lsl5", "",
+                new[] {
+                    new ADGameFileDescription { fileName = "resource.map", fileType = 0, md5 = "be00ef895197754ae4eab021ca44cbcd", fileSize = 6417},
+                    new ADGameFileDescription { fileName = "resource.000", fileType = 0, md5 = "f671ab479df0c661b19cd16237692846", fileSize = 726823},
+                    new ADGameFileDescription { fileName = "resource.001", fileType = 0, md5 = "db4a1381d88028876a99303bfaaba893", fileSize = 751296},
+                    new ADGameFileDescription { fileName = "resource.002", fileType = 0, md5 = "d39d8db1a1e7806e7ccbfea3ef22df44", fileSize = 1137646},
+                    new ADGameFileDescription { fileName = "resource.003",fileType =  0, md5 = "13fd4942bb818f9acd2970d66fca6509", fileSize = 768599},
+                    new ADGameFileDescription { fileName = "resource.004", fileType = 0, md5 = "999f407c9f38f937d4b8c4230ff5bb38", fileSize = 1024516},
+                    new ADGameFileDescription { fileName = "resource.005", fileType = 0, md5 = "0cc8d35a744031c772ca7cd21ae95273", fileSize = 1011944},
+                    new ADGameFileDescription { fileName = "resource.006",fileType =  0, md5 = "dda27ce00682aa76198dac124bbbe334", fileSize = 1024810},
+                    new ADGameFileDescription { fileName = "resource.007", fileType = 0, md5 = "ac443fae1285fb359bf2b2bc6a7301ae", fileSize = 1030656},
                 }, Core.Language.EN_ANY, Platform.DOS),
         };
 

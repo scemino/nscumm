@@ -26,13 +26,6 @@ namespace NScumm
 {
     public class SaveFileManager : ISaveFileManager
     {
-        private IFileStorage _fileStorage;
-
-        public SaveFileManager(IFileStorage fileStorage)
-        {
-            _fileStorage = fileStorage;
-        }
-
         public Stream OpenForLoading(string fileName)
         {
             var path = GetSavePath();
@@ -76,6 +69,12 @@ namespace NScumm
             var savePathName = GetSavePath();
             var saveFilename = Path.Combine(savePathName, name);
             File.Delete(saveFilename);
+        }
+
+        public bool RenameSavefile(string oldName, string newName)
+        {
+            File.Copy(oldName, newName);
+            return true;
         }
     }
 }

@@ -44,15 +44,15 @@ namespace NScumm.Sci.Graphics
         public void KernelBaseSetter(Register @object)
         {
             Register tmp;
-            if (SciEngine.LookupSelector(_segMan, @object, SciEngine.Selector(s => s.brLeft), null, out tmp) == SelectorType.Variable)
+            if (SciEngine.LookupSelector(_segMan, @object, s => s.brLeft, null, out tmp) == SelectorType.Variable)
             {
-                int x = (short)SciEngine.ReadSelectorValue(_segMan, @object, SciEngine.Selector(s => s.x));
-                int y = (short)SciEngine.ReadSelectorValue(_segMan, @object, SciEngine.Selector(s => s.y));
-                short z = (short)((SciEngine.Selector(s => s.z) > -1) ? SciEngine.ReadSelectorValue(_segMan, @object, SciEngine.Selector(s => s.z)) : 0);
-                short yStep = (short)SciEngine.ReadSelectorValue(_segMan, @object, SciEngine.Selector(s => s.yStep));
-                int viewId = (short)SciEngine.ReadSelectorValue(_segMan, @object, SciEngine.Selector(s => s.view));
-                short loopNo = (short)SciEngine.ReadSelectorValue(_segMan, @object, SciEngine.Selector(s => s.loop));
-                short celNo = (short)SciEngine.ReadSelectorValue(_segMan, @object, SciEngine.Selector(s => s.cel));
+                int x = (short)SciEngine.ReadSelectorValue(_segMan, @object, s => s.x);
+                int y = (short)SciEngine.ReadSelectorValue(_segMan, @object, s => s.y);
+                short z = (short)((SciEngine.Selector(s => s.z) > -1) ? SciEngine.ReadSelectorValue(_segMan, @object, s => s.z) : 0);
+                short yStep = (short)SciEngine.ReadSelectorValue(_segMan, @object, s => s.yStep);
+                int viewId = (short)SciEngine.ReadSelectorValue(_segMan, @object, s => s.view);
+                short loopNo = (short)SciEngine.ReadSelectorValue(_segMan, @object, s => s.loop);
+                short celNo = (short)SciEngine.ReadSelectorValue(_segMan, @object, s => s.cel);
 
                 // HACK: Ignore invalid views for now (perhaps unimplemented text views?)
                 if (viewId == 0xFFFF)   // invalid view
@@ -61,7 +61,7 @@ namespace NScumm.Sci.Graphics
                 ViewScaleSignals scaleSignal = 0;
                 if (ResourceManager.GetSciVersion() >= SciVersion.V1_1)
                 {
-                    scaleSignal = (ViewScaleSignals)SciEngine.ReadSelectorValue(_segMan, @object, SciEngine.Selector(s => s.scaleSignal));
+                    scaleSignal = (ViewScaleSignals)SciEngine.ReadSelectorValue(_segMan, @object, s => s.scaleSignal);
                 }
 
                 Rect celRect = new Rect();
@@ -90,10 +90,10 @@ namespace NScumm.Sci.Graphics
                 celRect.Bottom = y + 1;
                 celRect.Top = celRect.Bottom - yStep;
 
-                SciEngine.WriteSelectorValue(_segMan, @object, SciEngine.Selector(s => s.brLeft), (ushort)celRect.Left);
-                SciEngine.WriteSelectorValue(_segMan, @object, SciEngine.Selector(s => s.brRight), (ushort)celRect.Right);
-                SciEngine.WriteSelectorValue(_segMan, @object, SciEngine.Selector(s => s.brTop), (ushort)celRect.Top);
-                SciEngine.WriteSelectorValue(_segMan, @object, SciEngine.Selector(s => s.brBottom), (ushort)celRect.Bottom);
+                SciEngine.WriteSelectorValue(_segMan, @object, s => s.brLeft, (ushort)celRect.Left);
+                SciEngine.WriteSelectorValue(_segMan, @object, s => s.brRight, (ushort)celRect.Right);
+                SciEngine.WriteSelectorValue(_segMan, @object, s => s.brTop, (ushort)celRect.Top);
+                SciEngine.WriteSelectorValue(_segMan, @object, s => s.brBottom, (ushort)celRect.Bottom);
             }
         }
 
@@ -104,10 +104,10 @@ namespace NScumm.Sci.Graphics
             ushort controlMask;
             ushort result;
 
-            checkRect.Left = (int)SciEngine.ReadSelectorValue(_segMan, curObject, SciEngine.Selector(s => s.brLeft));
-            checkRect.Top = (int)SciEngine.ReadSelectorValue(_segMan, curObject, SciEngine.Selector(s => s.brTop));
-            checkRect.Right = (int)SciEngine.ReadSelectorValue(_segMan, curObject, SciEngine.Selector(s => s.brRight));
-            checkRect.Bottom = (int)SciEngine.ReadSelectorValue(_segMan, curObject, SciEngine.Selector(s => s.brBottom));
+            checkRect.Left = (int)SciEngine.ReadSelectorValue(_segMan, curObject, s => s.brLeft);
+            checkRect.Top = (int)SciEngine.ReadSelectorValue(_segMan, curObject, s => s.brTop);
+            checkRect.Right = (int)SciEngine.ReadSelectorValue(_segMan, curObject, s => s.brRight);
+            checkRect.Bottom = (int)SciEngine.ReadSelectorValue(_segMan, curObject, s => s.brBottom);
 
             if (!checkRect.IsValidRect)
             {   // can occur in Iceman and Mother Goose - HACK? TODO: is this really occuring in sierra sci? check this
@@ -117,8 +117,8 @@ namespace NScumm.Sci.Graphics
 
             adjustedRect = _coordAdjuster.OnControl(checkRect);
 
-            var signal = (ViewSignals)SciEngine.ReadSelectorValue(_segMan, curObject, SciEngine.Selector(s => s.signal));
-            controlMask = (ushort)SciEngine.ReadSelectorValue(_segMan, curObject, SciEngine.Selector(s => s.illegalBits));
+            var signal = (ViewSignals)SciEngine.ReadSelectorValue(_segMan, curObject, s => s.signal);
+            controlMask = (ushort)SciEngine.ReadSelectorValue(_segMan, curObject, s => s.illegalBits);
             result = (ushort)(IsOnControl(GfxScreenMasks.CONTROL, adjustedRect) & controlMask);
             if ((result == 0) && (signal & (ViewSignals.IgnoreActor | ViewSignals.RemoveView)) == 0)
             {
@@ -144,13 +144,13 @@ namespace NScumm.Sci.Graphics
                 curObject = curNode.value;
                 if (curObject != checkObject)
                 {
-                    signal = (ViewSignals)SciEngine.ReadSelectorValue(_segMan, curObject, SciEngine.Selector(s => s.signal));
+                    signal = (ViewSignals)SciEngine.ReadSelectorValue(_segMan, curObject, s => s.signal);
                     if ((signal & (ViewSignals.IgnoreActor | ViewSignals.RemoveView | ViewSignals.NoUpdate)) == 0)
                     {
-                        curRect.Left = (int)SciEngine.ReadSelectorValue(_segMan, curObject, SciEngine.Selector(s => s.brLeft));
-                        curRect.Top = (int)SciEngine.ReadSelectorValue(_segMan, curObject, SciEngine.Selector(s => s.brTop));
-                        curRect.Right = (int)SciEngine.ReadSelectorValue(_segMan, curObject, SciEngine.Selector(s => s.brRight));
-                        curRect.Bottom = (int)SciEngine.ReadSelectorValue(_segMan, curObject, SciEngine.Selector(s => s.brBottom));
+                        curRect.Left = (int)SciEngine.ReadSelectorValue(_segMan, curObject, s => s.brLeft);
+                        curRect.Top = (int)SciEngine.ReadSelectorValue(_segMan, curObject, s => s.brTop);
+                        curRect.Right = (int)SciEngine.ReadSelectorValue(_segMan, curObject, s => s.brRight);
+                        curRect.Bottom = (int)SciEngine.ReadSelectorValue(_segMan, curObject, s => s.brBottom);
                         // Check if curRect is within checkRect
                         // This behavior is slightly odd, but it's how the original SCI
                         // engine did it: a rect cannot be contained within itself
@@ -202,20 +202,20 @@ namespace NScumm.Sci.Graphics
         public Rect GetNSRect(Register @object)
         {
             Rect nsRect = new Rect();
-            nsRect.Top = (short)SciEngine.ReadSelectorValue(_segMan, @object, SciEngine.Selector(s => s.nsTop));
-            nsRect.Left = (short)SciEngine.ReadSelectorValue(_segMan, @object, SciEngine.Selector(s => s.nsLeft));
-            nsRect.Bottom = (short)SciEngine.ReadSelectorValue(_segMan, @object, SciEngine.Selector(s => s.nsBottom));
-            nsRect.Right = (short)SciEngine.ReadSelectorValue(_segMan, @object, SciEngine.Selector(s => s.nsRight));
+            nsRect.Top = (short)SciEngine.ReadSelectorValue(_segMan, @object, s => s.nsTop);
+            nsRect.Left = (short)SciEngine.ReadSelectorValue(_segMan, @object, s => s.nsLeft);
+            nsRect.Bottom = (short)SciEngine.ReadSelectorValue(_segMan, @object, s => s.nsBottom);
+            nsRect.Right = (short)SciEngine.ReadSelectorValue(_segMan, @object, s => s.nsRight);
 
             return nsRect;
         }
 
         public void SetNSRect(Register @object, Rect nsRect)
         {
-            SciEngine.WriteSelectorValue(_segMan, @object, SciEngine.Selector(s => s.nsLeft), (ushort)nsRect.Left);
-            SciEngine.WriteSelectorValue(_segMan, @object, SciEngine.Selector(s => s.nsTop), (ushort)nsRect.Top);
-            SciEngine.WriteSelectorValue(_segMan, @object, SciEngine.Selector(s => s.nsRight), (ushort)nsRect.Right);
-            SciEngine.WriteSelectorValue(_segMan, @object, SciEngine.Selector(s => s.nsBottom), (ushort)nsRect.Bottom);
+            SciEngine.WriteSelectorValue(_segMan, @object, s => s.nsLeft, (ushort)nsRect.Left);
+            SciEngine.WriteSelectorValue(_segMan, @object, s => s.nsTop, (ushort)nsRect.Top);
+            SciEngine.WriteSelectorValue(_segMan, @object, s => s.nsRight, (ushort)nsRect.Right);
+            SciEngine.WriteSelectorValue(_segMan, @object, s => s.nsBottom, (ushort)nsRect.Bottom);
         }
 
         public void KernelSetNowSeen(Register objectReference)
@@ -234,7 +234,7 @@ namespace NScumm.Sci.Graphics
             short y = (short)SciEngine.ReadSelectorValue(_segMan, objectReference, o => o.y);
             short z = 0;
             if (SciEngine.Selector(o => o.z) > -1)
-                z = (short)SciEngine.ReadSelectorValue(_segMan, objectReference, SciEngine.Selector(o => o.z));
+                z = (short)SciEngine.ReadSelectorValue(_segMan, objectReference, o => o.z);
 
             view = _cache.GetView(viewId);
 

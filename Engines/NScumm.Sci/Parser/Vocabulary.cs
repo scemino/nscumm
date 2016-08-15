@@ -378,7 +378,7 @@ namespace NScumm.Sci.Parser
 
             _synonyms = new List<Synonym>(); // No synonyms
 
-            // TODO: debug(2, "Initializing vocabulary");
+            Debug(2, "Initializing vocabulary");
             if (_resMan.TestResource(new ResourceId(ResourceType.Vocab, VOCAB_RESOURCE_SCI0_MAIN_VOCAB)) != null)
             {
                 _vocabVersion = VocabularyVersions.SCI0;
@@ -410,7 +410,7 @@ namespace NScumm.Sci.Parser
                 }
             }
             else {
-                // TODO: debug(2, "Assuming that this game does not use a parser.");
+                Debug(2, "Assuming that this game does not use a parser.");
                 _parserRules = null;
             }
 
@@ -420,10 +420,28 @@ namespace NScumm.Sci.Parser
             parserIsValid = false;
         }
 
-		public void SaveLoadWithSerializer (Serializer ser)
+		public void SaveLoadWithSerializer (Serializer s)
 		{
-			throw new NotImplementedException ();
-		}
+            var len = (uint)_synonyms.Count;
+            s.SyncAsUint32LE(ref len);
+
+            // Resize the array if loading.
+            if (s.IsLoading)
+            {
+                _synonyms = new List<Synonym>((int)len);
+                for (var i = 0; i < len; i++)
+                {
+                    _synonyms.Add(new Synonym());
+                }
+            }
+
+            for (var i = 0; i < len; i++)
+            {
+                var syn = _synonyms[i];
+                s.SyncAsUint16LE(ref syn.replaceant);
+                s.SyncAsUint16LE(ref syn.replacement);
+            }
+        }
 
         public static int SAID_LONG(int x)
         {
@@ -609,7 +627,9 @@ namespace NScumm.Sci.Parser
 
         public bool CheckAltInput(string text, ushort cursorPos)
         {
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
+            // TODO: CheckAltInput
+            return false;
         }
 
         private static int _vocab_rule_list_length(ParseRuleList list)
@@ -636,7 +656,7 @@ namespace NScumm.Sci.Parser
             if (rule._data.Count == 0)
             {
                 // Special case for qfg2 demo
-                // TODO: warning("no rule contents on _vocab_add_rule()");
+                Warning("no rule contents on _vocab_add_rule()");
                 return list;
             }
 
@@ -752,7 +772,7 @@ namespace NScumm.Sci.Parser
 
             if (branches_nr == 0)
             {
-                // TODO: warning("Parser tree data is empty");
+                Warning("Parser tree data is empty");
                 return false;
             }
 
@@ -847,7 +867,7 @@ namespace NScumm.Sci.Parser
                 // If all of them were empty, we are definitely seeing SCI01 vocab in disguise (e.g. pq2 japanese)
                 if (alphabetNr == 26)
                 {
-                    // TODO/ warning("SCI0: Found SCI01 vocabulary in disguise");
+                    Warning("SCI0: Found SCI01 vocabulary in disguise");
                     resourceType = VocabularyVersions.SCI1;
                 }
             }
@@ -860,7 +880,7 @@ namespace NScumm.Sci.Parser
 
             if (resource.size < seeker)
             {
-                // TODO: warning("Invalid main vocabulary encountered: Too small");
+                Warning("Invalid main vocabulary encountered: Too small");
                 return false;
                 // Now this ought to be critical, but it'll just cause parse() and said() not to work
             }
@@ -883,7 +903,7 @@ namespace NScumm.Sci.Parser
                     }
                     if (seeker == resource.size)
                     {
-                        // TODO: warning("SCI1: Vocabulary not usable, disabling");
+                        Warning("SCI1: Vocabulary not usable, disabling");
                         _parserWords.Clear();
                         return false;
                     }

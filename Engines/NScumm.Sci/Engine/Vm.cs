@@ -1090,7 +1090,7 @@ namespace NScumm.Sci.Engine
                             case SciVersion.V3:
                                 // In theory this can break if the variant with a one-byte argument is
                                 // used. For now, assume it doesn't happen.
-                                r_temp = Register.SetOffset(r_temp, local_script.RelocateOffsetSci3(s.xs.pc.Offset - 2));
+                                r_temp = Register.SetOffset(r_temp, (ushort)local_script.RelocateOffsetSci3((uint)(s.xs.pc.Offset - 2)));
                                 break;
                             default:
                                 throw new InvalidOperationException("Unknown lofs type");
@@ -1594,7 +1594,7 @@ namespace NScumm.Sci.Engine
                         // Find the "client" member variable of the stopGroop object, and update it
                         ObjVarRef varp = new ObjVarRef();
                         Register tmp;
-                        if (SciEngine.LookupSelector(s._segMan, stopGroopPos, SciEngine.Selector(o => o.client), varp, out tmp) == SelectorType.Variable)
+                        if (SciEngine.LookupSelector(s._segMan, stopGroopPos, o => o.client, varp, out tmp) == SelectorType.Variable)
                         {
                             StackPtr clientVar = varp.GetPointer(s._segMan);
                             clientVar[0] = value;

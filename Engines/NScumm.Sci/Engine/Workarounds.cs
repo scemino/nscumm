@@ -23,6 +23,35 @@ using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sci.Engine
 {
+    enum ScriptPatcherSelectors
+    {
+        SELECTOR_cycles = 0,
+        SELECTOR_seconds,
+        SELECTOR_init,
+        SELECTOR_dispose,
+        SELECTOR_new,
+        SELECTOR_curEvent,
+        SELECTOR_disable,
+        SELECTOR_doit,
+        SELECTOR_show,
+        SELECTOR_x,
+        SELECTOR_cel,
+        SELECTOR_setMotion,
+        SELECTOR_overlay,
+        SELECTOR_deskSarg,
+        SELECTOR_localize,
+        SELECTOR_put,
+        SELECTOR_say,
+        SELECTOR_contains,
+        SELECTOR_solvePuzzle,
+        SELECTOR_timesShownID,
+        SELECTOR_startText,
+        SELECTOR_startAudio,
+        SELECTOR_modNum,
+        SELECTOR_cycler,
+        SELECTOR_setLoop
+    }
+
     enum SciWorkaroundType
     {
         NONE,      // only used by terminator or when no workaround was fomethodName = und
@@ -75,18 +104,24 @@ namespace NScumm.Sci.Engine
         {
             return (ushort)(SIG_CODE_ADDTOOFFSET | offset);
         }
-        public const int PATCH_CODE_GETORIGINALBYTE = 0xD000;
+        public const ushort PATCH_CODE_GETORIGINALBYTE = 0xD000;
 
-        public static int PATCH_GETORIGINALBYTE(int offset)
+        public static ushort PATCH_GETORIGINALBYTE(int offset)
         {
-            return PATCH_CODE_GETORIGINALBYTE | offset;
+            return (ushort)(PATCH_CODE_GETORIGINALBYTE | offset);
         }
 
-        public const int PATCH_CODE_GETORIGINALBYTEADJUST = 0xC000;
+        public const ushort PATCH_CODE_GETORIGINALBYTEADJUST = 0xC000;
 
-        public const int PATCH_CODE_SELECTOR16 = SIG_CODE_SELECTOR16;
-        public const int PATCH_CODE_SELECTOR8 = SIG_CODE_SELECTOR8;
-        public const int PATCH_CODE_UINT16 = SIG_CODE_UINT16;
+        public const ushort PATCH_CODE_SELECTOR16 = SIG_CODE_SELECTOR16;
+        public const ushort PATCH_CODE_SELECTOR8 = SIG_CODE_SELECTOR8;
+
+        public static ushort PATCH_SELECTOR8(ScriptPatcherSelectors selector)
+        {
+            return (ushort)(SIG_CODE_SELECTOR8 | (ushort)selector);
+        }
+
+        public const ushort PATCH_CODE_UINT16 = SIG_CODE_UINT16;
 
         public static ushort PATCH_UINT16_1(int value)
         {
@@ -520,7 +555,15 @@ namespace NScumm.Sci.Engine
         public const ushort SIG_CODE_ADDTOOFFSET = 0xE000;
         public static ushort SIG_ADDTOOFFSET(ushort offset) { return (ushort)(SIG_CODE_ADDTOOFFSET | offset); }
         public const ushort SIG_CODE_SELECTOR16 = 0x9000;
+        public static ushort SIG_SELECTOR16(ScriptPatcherSelectors selector)
+        {
+            return (ushort)(SIG_CODE_SELECTOR16 | (ushort)selector);
+        }
         public const ushort SIG_CODE_SELECTOR8 = 0x8000;
+        public static ushort SIG_SELECTOR8(ScriptPatcherSelectors selector)
+        {
+            return (ushort)(SIG_CODE_SELECTOR8 | (ushort)selector);
+        }
         public const ushort SIG_CODE_UINT16 = 0x1000;
         public const ushort SIG_CODE_BYTE = 0x0000;
 

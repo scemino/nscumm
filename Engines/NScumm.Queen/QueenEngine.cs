@@ -54,8 +54,6 @@ namespace NScumm.Queen
 
         public ISystem System { get { return _system; } }
 
-        public GameSettings Settings { get; private set; }
-
         public Logic Logic { get; private set; }
 
         public Input Input { get; private set; }
@@ -96,7 +94,6 @@ namespace NScumm.Queen
             : base(system,settings)
         {
             Randomizer = new Random();
-            Settings = settings;
             _system = system;
         }
 

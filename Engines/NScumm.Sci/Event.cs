@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using System;
 using System.Linq;
 using NScumm.Core.Input;
+using NScumm.Core;
 
 namespace NScumm.Sci
 {
@@ -279,7 +280,20 @@ namespace NScumm.Sci
 
             //input.data = ev.kbd.keycode;
             //input.character = ev.kbd.ascii;
-            //input.type = SCI_EVENT_KEYBOARD;
+
+            var keys = state.GetKeys().ToList();
+            if (keys.Count != 0)
+            {
+                if (keys[0] >= KeyCode.D0 && keys[0] <= KeyCode.D9)
+                {
+                    input.character = (short)(keys[0] - KeyCode.D0 + '0');
+                }
+                else {
+                    input.character = (short)keys[0];
+                }
+            }
+            im.ResetKeys();
+            input.type = SciEvent.SCI_EVENT_KEYBOARD;
 
             //input.modifiers =
             //    ((modifiers & Common::KBD_ALT) ? SCI_KEYMOD_ALT : 0) |
@@ -363,10 +377,10 @@ namespace NScumm.Sci
             // Update the screen here, since it's called very often.
             // Throttle the screen update rate to 60fps.
             var s = SciEngine.Instance.EngineState;
-            if (Environment.TickCount - s._screenUpdateTime >= 1000 / 60)
+            if (ServiceLocator.Platform.GetMilliseconds() - s._screenUpdateTime >= 1000 / 60)
             {
                 SciEngine.Instance.System.GraphicsManager.UpdateScreen();
-                s._screenUpdateTime = Environment.TickCount;
+                s._screenUpdateTime = ServiceLocator.Platform.GetMilliseconds();
                 // Throttle the checking of shouldQuit() to 60fps as well, since
                 // Engine::shouldQuit() invokes 2 virtual functions
                 // (EventManager::shouldQuit() and EventManager::shouldRTL()),

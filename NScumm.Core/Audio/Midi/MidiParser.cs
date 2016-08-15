@@ -18,7 +18,6 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-using System.IO;
 using System;
 using System.Linq;
 using NScumm.Core.Audio.Midi;
@@ -65,23 +64,18 @@ namespace NScumm.Core
         SendSustainOffOnNotesOff = 5
     }
 
-    public class Track
-    {
-        public long Position { get; set; }
-    }
-
     public class EventInfo
     {
         /// <summary>
         /// Position in the MIDI stream where the event starts.
         /// For delta-based MIDI streams (e.g. SMF and XMIDI), this points to the delta.
         /// </summary>
-        public long Start { get; set; }
+        public BytePtr Start;
 
         /// <summary>
         /// The number of ticks after the previous event that this event should occur.
         /// </summary>
-        public long Delta { get; set; }
+        public int Delta;
 
         /// <summary>
         /// Gets or sets the event.
@@ -91,44 +85,52 @@ namespace NScumm.Core
         /// Upper 4 bits are the command code, lower 4 bits are the MIDI channel.
         /// For META, event == 0xFF. For SysEx, event == 0xF0.
         /// </remarks>
-        public int Event { get; set; }
+        public byte Event;
 
         /// <summary>
         /// Gets or sets the first parameter in a simple MIDI message.
         /// </summary>
         /// <value>The param1.</value>
-        public int Param1 { get; set; }
+        public byte Param1;
 
         /// <summary>
         /// Gets or sets the second parameter in a simple MIDI message.
         /// </summary>
         /// <value>The param2.</value>
-        public int Param2 { get; set; }
+        public byte Param2;
 
         /// <summary>
         /// Gets or sets the the META type.
         /// </summary>
         /// <value>The the META type.</value>
-        public int MetaType { get; set; }
+        public byte MetaType;
 
         /// <summary>
         /// Gets or sets the start of the data.
         /// </summary>
         /// <value>The data.</value>
         /// <remarks>For META and SysEx events, this points to the start of the data.</remarks>
-        public byte[] Data { get; set; }
+        public BytePtr Data;
+
+        /// <summary>
+        /// For META and SysEx blocks, this indicates the length of the data.
+        /// For Note On events, a non-zero value indicates that no Note Off event
+        /// will occur, and the MidiParser will have to generate one itself.
+        /// For all other events, this value should always be zero.
+        /// </summary>
+        public int Length;
 
         /// <summary>
         /// Gets the the MIDI channel.
         /// </summary>
         /// <value>The MIDI channel.</value>
-        public int Channel { get { return Event & 0x0F; } }
+        public byte Channel { get { return (byte)(Event & 0x0F); } }
 
         /// <summary>
         /// Gets the the command code.
         /// </summary>
         /// <value>The command.</value>
-        public int Command { get { return Event >> 4; } }
+        public byte Command { get { return (byte)(Event >> 4); } }
 
         public EventInfo()
         {
@@ -143,6 +145,7 @@ namespace NScumm.Core
             Param2 = info.Param2;
             MetaType = info.MetaType;
             Data = info.Data;
+            Length = info.Length;
         }
     }
 
@@ -232,7 +235,7 @@ namespace NScumm.Core
         /// <summary>
         /// True if currently inside jumpToTick.
         /// </summary>
-        bool _jumpingToTick;
+        protected bool _jumpingToTick;
 
         public int Tempo
         {
@@ -253,7 +256,7 @@ namespace NScumm.Core
             set;
         }
 
-        public bool IsPlaying { get { return (Position.PlayPos != 0); } }
+        public bool IsPlaying { get { return (Position.PlayPos != BytePtr.Null); } }
 
         public uint PPQN { get { return _ppqn; } }
 
@@ -296,7 +299,7 @@ namespace NScumm.Core
                 ResetTracking();
                 Array.Clear(ActiveNotes, 0, ActiveNotes.Length);
                 activeTrack = value;
-                Position.PlayPos = Tracks[value].Position;
+                Position.PlayPos = Tracks[value];
                 ParseNextEvent(NextEvent);
             }
         }
@@ -313,7 +316,7 @@ namespace NScumm.Core
             var currentEvent = new EventInfo(_nextEvent);
 
             ResetTracking();
-            Position.PlayPos = Tracks[ActiveTrack].Position;
+            Position.PlayPos = Tracks[ActiveTrack];
             ParseNextEvent(_nextEvent);
             if (tick > 0)
             {
@@ -328,7 +331,7 @@ namespace NScumm.Core
                     }
 
                     Position.LastEventTick += info.Delta;
-                    Position.LastEventTime += (int)info.Delta * _psecPerTick;
+                    Position.LastEventTime += info.Delta * _psecPerTick;
                     Position.PlayTick = (int)Position.LastEventTick;
                     Position.PlayTime = Position.LastEventTime;
 
@@ -358,7 +361,7 @@ namespace NScumm.Core
 
             if (stopNotes)
             {
-                if (_smartJump || currentPos.PlayPos == 0)
+                if (_smartJump || currentPos.PlayPos == BytePtr.Null)
                 {
                     AllNotesOff();
                 }
@@ -389,10 +392,10 @@ namespace NScumm.Core
                 // Check for trailing 0xF7 -- if present, remove it.
                 if (fireEvents)
                 {
-                    if (info.Data[info.Data.Length - 1] == 0xF7)
-                        MidiDriver.SysEx(info.Data, (ushort)(info.Data.Length - 1));
+                    if (info.Data[info.Length - 1] == 0xF7)
+                        MidiDriver.SysEx(info.Data, (ushort)(info.Length - 1));
                     else
-                        MidiDriver.SysEx(info.Data, (ushort)info.Data.Length);
+                        MidiDriver.SysEx(info.Data, (ushort)info.Length);
                 }
             }
             else if (info.Event == 0xFF)
@@ -411,19 +414,19 @@ namespace NScumm.Core
                     {
                         StopPlaying();
                         if (fireEvents)
-                            MidiDriver.MetaEvent((byte)info.MetaType, info.Data, (ushort)info.Data.Length);
+                            MidiDriver.MetaEvent(info.MetaType, info.Data, (ushort)info.Length);
                     }
                     return false;
                 }
                 else if (info.MetaType == 0x51)
                 {
-                    if (info.Data.Length >= 3)
+                    if (info.Length >= 3)
                     {
                         Tempo = (info.Data[0] << 16 | info.Data[1] << 8 | info.Data[2]);
                     }
                 }
                 if (fireEvents)
-                    MidiDriver.MetaEvent((byte)info.MetaType, info.Data, (ushort)info.Data.Length);
+                    MidiDriver.MetaEvent(info.MetaType, info.Data, (ushort)info.Length);
             }
             else
             {
@@ -572,7 +575,7 @@ namespace NScumm.Core
         }
 
         /// <summary>
-        /// Gets or sets a value indicating whether this <see cref="NScumm.Core.MidiParser"/> supports smart expiration of hanging notes when jumping.
+        /// Gets or sets a value indicating whether this <see cref="MidiParser"/> supports smart expiration of hanging notes when jumping.
         /// </summary>
         /// <value><c>true</c> if smart jump; otherwise, <c>false</c>.</value>
         protected bool SmartJump { get; set; }
@@ -594,7 +597,7 @@ namespace NScumm.Core
         protected int NumTracks { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether this <see cref="NScumm.Core.MidiParser"/> abort parse.
+        /// Gets or sets a value indicating whether this <see cref="MidiParser"/> abort parse.
         /// </summary>
         /// <value><c>true</c> if abort parse; otherwise, <c>false</c>.</value>
         protected bool AbortParse { get; set; }
@@ -605,14 +608,14 @@ namespace NScumm.Core
         /// <value><c>true</c> if center pitch wheel on unload; otherwise, <c>false</c>.</value>
         protected bool CenterPitchWheelOnUnload { get; set; }
 
-        internal Tracker Position { get; set; }
+        protected Tracker Position { get; set; }
 
         /// <summary>
         /// Each uint16 is a bit mask for channels that have that note on.
         /// </summary>
         protected ushort[] ActiveNotes { get; private set; }
 
-        internal NoteTimer[] HangingNotes { get; private set; }
+        protected NoteTimer[] HangingNotes { get; private set; }
 
         /// <summary>
         /// Gets or sets the count of hanging notes, used to optimize expiration.
@@ -626,7 +629,7 @@ namespace NScumm.Core
         /// <value><c>true</c> if send sustain off on notes off; otherwise, <c>false</c>.</value>
         protected bool SendSustainOffOnNotesOff { get; set; }
 
-        protected Track[] Tracks { get; private set; }
+        protected BytePtr[] Tracks;
 
         protected MidiParser()
         {
@@ -636,14 +639,14 @@ namespace NScumm.Core
             {
                 HangingNotes[i] = new NoteTimer();
             }
-            Tracks = new Track[120];
+            Tracks = new BytePtr[120];
 
             TimerRate = 0x4A0000;
             _ppqn = 96;
             tempo = 500000;
             _psecPerTick = 5208;// 500000 / 96
             _nextEvent = new EventInfo();
-            _nextEvent.Start = 0;
+            _nextEvent.Start = BytePtr.Null;
             _nextEvent.Delta = 0;
             _nextEvent.Event = 0;
             Position = new Tracker();
@@ -713,13 +716,14 @@ namespace NScumm.Core
             Array.Clear(ActiveNotes, 0, ActiveNotes.Length);
         }
 
-        protected static int ReadVLQ(Stream input)
+        protected static int ReadVLQ(ref BytePtr input)
         {
             int value = 0;
 
             for (var i = 0; i < 4; ++i)
             {
-                var str = input.ReadByte();
+                var str = input[0];
+                input.Offset++;
                 value = (value << 7) | (str & 0x7F);
                 if ((str & 0x80) == 0)
                     break;
@@ -732,7 +736,7 @@ namespace NScumm.Core
             uint endTime;
             uint eventTime;
 
-            if (Position.PlayPos == 0 || MidiDriver == null)
+            if (Position.PlayPos == BytePtr.Null || MidiDriver == null)
                 return;
 
             AbortParse = false;
@@ -773,7 +777,7 @@ namespace NScumm.Core
                 if (info.Event < 0x80)
                 {
 //                    Console.Error.WriteLine("Bad command or running status {0:X2}", info.Event);
-                    Position.PlayPos = 0;
+                    Position.PlayPos = BytePtr.Null;
                     return;
                 }
 
@@ -783,8 +787,8 @@ namespace NScumm.Core
                 }
                 else if (info.Command == 0x9)
                 {
-                    if (info.Data.Length > 0)
-                        HangingNote(info.Channel, info.Param1, (int)(info.Data.Length * _psecPerTick - (endTime - eventTime)));
+                    if (info.Length > 0)
+                        HangingNote(info.Channel, info.Param1, (int)(info.Length * _psecPerTick - (endTime - eventTime)));
                     else
                         ActiveNote(info.Channel, info.Param1, true);
                 }

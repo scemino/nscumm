@@ -59,6 +59,18 @@ namespace NScumm.Sci.Graphics
         public int timestamp;
         public Color[] colors = new Color[256];
         public byte[] intensity = new byte[256];
+
+        public Palette()
+        {
+        }
+
+        public Palette(Palette copy)
+        {
+            Array.Copy(copy.mapping, mapping, mapping.Length);
+            timestamp = copy.timestamp;
+            Array.Copy(copy.colors, colors, colors.Length);
+            Array.Copy(copy.intensity, intensity, intensity.Length);
+        }
     }
 
     internal class Port

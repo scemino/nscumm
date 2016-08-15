@@ -22,16 +22,15 @@
 using System;
 using System.IO;
 using System.Text;
+using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Core.Audio.Midi
 {
-    public class SmfMidiParser: MidiParser
+    public class SmfMidiParser : MidiParser
     {
         protected bool MalformedPitchBends { get; set; }
 
         #region implemented abstract members of MidiParser
-
-        MemoryStream input;
 
         public override void LoadMusic(byte[] data, int offset, int length)
         {
@@ -39,128 +38,135 @@ namespace NScumm.Core.Audio.Midi
             {
                 throw new InvalidOperationException();
             }
-            input = new MemoryStream(data,offset,length);
             UnloadMusic();
 
             int midiType;
             var isGmf = false;
-            var br = new BinaryReader(input);
-            var sig = br.ReadBytes(4);
-            input.Seek(0, SeekOrigin.Begin);
-
-            if (AreEquals(sig, "RIFF"))
+            using (var ms = new MemoryStream(data, offset, length))
             {
-                // Skip the outer RIFF header.
-                input.Seek(8, SeekOrigin.Current);
-            }
+                var br = new BinaryReader(ms);
+                var sig = br.ReadBytes(4);
+                ms.Seek(0, SeekOrigin.Begin);
 
-            if (AreEquals(sig, "MThd"))
-            {
-                // SMF with MTHd information.
-                input.Seek(4, SeekOrigin.Current);
-                var len = br.ReadUInt32BigEndian();
-                if (len != 6)
+                if (AreEquals(sig, "RIFF"))
                 {
-                    throw new InvalidOperationException(string.Format("MThd length 6 expected but found {0}", len));
-                }
-                br.ReadByte(); //?
-                midiType = br.ReadByte();
-                // Verify that this MIDI either is a Type 2
-                // or has only 1 track. We do not support
-                // multitrack Type 1 files.
-                NumTracks = br.ReadUInt16BigEndian();
-                
-                if (midiType > 2 /*|| (midiType < 2 && _numTracks > 1)*/)
-                {
-                    throw new InvalidOperationException(string.Format("No support for a Type {0} MIDI with {1} tracks", midiType, NumTracks));
-                }
-                PulsesPerQuarterNote = br.ReadUInt16BigEndian();
-            }
-            else if (AreEquals(sig, "GMF\x1"))
-            {
-                // Older GMD/MUS file with no header info.
-                // Assume 1 track, 192 PPQN, and no MTrk headers.
-                isGmf = true;
-                midiType = 0;
-                NumTracks = 1;
-                PulsesPerQuarterNote = 192;
-                // 'GMD\x1' + 3 bytes of useless (translate: unknown) information
-                input.Seek(7, SeekOrigin.Current);
-            }
-            else
-            {
-                throw new InvalidOperationException(string.Format("Expected MThd or GMD header but found '{0}{1}{2}{3}' instead", sig[0], sig[1], sig[2], sig[3]));
-            }
-
-            // Now we identify and store the location for each track.
-            if (NumTracks > Tracks.Length)
-            {
-                throw new InvalidOperationException(string.Format("Can only handle {0} tracks but was handed {1}", Tracks.Length, NumTracks));
-            }
-
-            uint totalSize = 0;
-            var tracksRead = 0;
-            while (tracksRead < NumTracks)
-            {
-                sig = br.ReadBytes(4);
-                if (!AreEquals(sig, "MTrk") && !isGmf)
-                {
-                    var msg = new StringBuilder();
-                    msg.AppendFormat("Position: {0} ('{1}')", input.Position - 4, (char)sig[0]).AppendLine();
-                    msg.AppendFormat("Hit invalid block '{0}{1}{2}{3}' while scanning for track locations", sig[0], sig[1], sig[2], sig[3]);
-                    throw new InvalidOperationException(msg.ToString());
+                    // Skip the outer RIFF header.
+                    ms.Seek(8, SeekOrigin.Current);
                 }
 
-                // If needed, skip the MTrk and length bytes
-                Tracks[tracksRead] = new Track{ Position = input.Position + (isGmf ? -4 : 4) };
-                if (!isGmf)
+                if (AreEquals(sig, "MThd"))
                 {
+                    // SMF with MTHd information.
+                    ms.Seek(4, SeekOrigin.Current);
                     var len = br.ReadUInt32BigEndian();
-                    totalSize += len;
-                    input.Seek(len, SeekOrigin.Current);
+                    if (len != 6)
+                    {
+                        throw new InvalidOperationException(string.Format("MThd length 6 expected but found {0}", len));
+                    }
+                    br.ReadByte(); //?
+                    midiType = br.ReadByte();
+                    // Verify that this MIDI either is a Type 2
+                    // or has only 1 track. We do not support
+                    // multitrack Type 1 files.
+                    NumTracks = br.ReadUInt16BigEndian();
+
+                    if (midiType > 2 /*|| (midiType < 2 && _numTracks > 1)*/)
+                    {
+                        throw new InvalidOperationException(string.Format("No support for a Type {0} MIDI with {1} tracks", midiType, NumTracks));
+                    }
+                    PulsesPerQuarterNote = br.ReadUInt16BigEndian();
+                }
+                else if (AreEquals(sig, "GMF\x1"))
+                {
+                    // Older GMD/MUS file with no header info.
+                    // Assume 1 track, 192 PPQN, and no MTrk headers.
+                    isGmf = true;
+                    midiType = 0;
+                    NumTracks = 1;
+                    PulsesPerQuarterNote = 192;
+                    // 'GMD\x1' + 3 bytes of useless (translate: unknown) information
+                    ms.Seek(7, SeekOrigin.Current);
                 }
                 else
                 {
-                    // TODO: vs An SMF End of Track meta event must be placed
-                    // at the end of the stream.
-//                    data[size++] = 0xFF;
-//                    data[size++] = 0x2F;
-//                    data[size++] = 0x00;
-//                    data[size++] = 0x00;
-                    throw new NotImplementedException("Gmf not implemented");
+                    throw new InvalidOperationException(string.Format("Expected MThd or GMD header but found '{0}{1}{2}{3}' instead", sig[0], sig[1], sig[2], sig[3]));
                 }
-                ++tracksRead;
+
+                // Now we identify and store the location for each track.
+                if (NumTracks > Tracks.Length)
+                {
+                    throw new InvalidOperationException(string.Format("Can only handle {0} tracks but was handed {1}", Tracks.Length, NumTracks));
+                }
+
+                uint totalSize = 0;
+                var tracksRead = 0;
+                while (tracksRead < NumTracks)
+                {
+                    sig = br.ReadBytes(4);
+                    if (!AreEquals(sig, "MTrk") && !isGmf)
+                    {
+                        var msg = new StringBuilder();
+                        msg.AppendFormat("Position: {0} ('{1}')", ms.Position - 4, (char)sig[0]).AppendLine();
+                        msg.AppendFormat("Hit invalid block '{0}{1}{2}{3}' while scanning for track locations", sig[0], sig[1], sig[2], sig[3]);
+                        throw new InvalidOperationException(msg.ToString());
+                    }
+
+                    // If needed, skip the MTrk and length bytes
+                    Tracks[tracksRead] = new BytePtr(data, (int)(offset + ms.Position + (isGmf ? -4 : 4)));
+                    if (!isGmf)
+                    {
+                        var len = br.ReadUInt32BigEndian();
+                        totalSize += len;
+                        ms.Seek(len, SeekOrigin.Current);
+                    }
+                    else
+                    {
+                        // TODO: vs An SMF End of Track meta event must be placed
+                        // at the end of the stream.
+                        //                    data[size++] = 0xFF;
+                        //                    data[size++] = 0x2F;
+                        //                    data[size++] = 0x00;
+                        //                    data[size++] = 0x00;
+                        throw new NotImplementedException("Gmf not implemented");
+                    }
+                    ++tracksRead;
+                }
+
+                // If this is a Type 1 MIDI, we need to now compress
+                // our tracks down into a single Type 0 track.
+                //_buffer = 0;
+
+                if (midiType == 1)
+                {
+                    // FIXME: Doubled the buffer size to prevent crashes with the
+                    // Inherit the Earth MIDIs. Jamieson630 said something about a
+                    // better fix, but this will have to do in the meantime.
+                    //                _buffer = (byte*)malloc(size * 2);
+                    //                compressToType0();
+                    //                _numTracks = 1;
+                    //                _tracks[0] = _buffer;
+                    throw new NotImplementedException("MidiType 1 not yet implemented.");
+                }
+
+                // Note that we assume the original data passed in
+                // will persist beyond this call, i.e. we do NOT
+                // copy the data to our own buffer. Take warning....
+                ResetTracking();
+                Tempo = 500000;
+                ActiveTrack = 0;
             }
+        }
 
-            // If this is a Type 1 MIDI, we need to now compress
-            // our tracks down into a single Type 0 track.
-            //_buffer = 0;
-
-            if (midiType == 1)
-            {
-                // FIXME: Doubled the buffer size to prevent crashes with the
-                // Inherit the Earth MIDIs. Jamieson630 said something about a
-                // better fix, but this will have to do in the meantime.
-//                _buffer = (byte*)malloc(size * 2);
-//                compressToType0();
-//                _numTracks = 1;
-//                _tracks[0] = _buffer;
-                throw new NotImplementedException("MidiType 1 not yet implemented.");
-            }
-
-            // Note that we assume the original data passed in
-            // will persist beyond this call, i.e. we do NOT
-            // copy the data to our own buffer. Take warning....
-            ResetTracking();
-            Tempo = 500000;
-            ActiveTrack = 0;
+        private bool MoveNext()
+        {
+            Position.PlayPos.Offset++;
+            return Position.PlayPos[-1] != 0;
         }
 
         protected override void ParseNextEvent(EventInfo info)
         {
             info.Start = Position.PlayPos;
-            input.Seek(Position.PlayPos, SeekOrigin.Begin);
-            info.Delta = ReadVLQ(input);
+            info.Delta = ReadVLQ(ref Position.PlayPos);
 
             // Process the next info. If mpMalformedPitchBends
             // was set, we must skip over any pitch bend events
@@ -169,17 +175,17 @@ namespace NScumm.Core.Audio.Midi
             // prefixes before the real info.
             do
             {
-                var data = input.ReadByte();
-                if ((data & 0xF0) >= 0x80)
-                {                    
-                    info.Event = data;
+                if ((Position.PlayPos[0] & 0xF0) >= 0x80)
+                {
+                    info.Event = Position.PlayPos[0];
+                    Position.PlayPos.Offset++;
                 }
                 else
                 {
-                    info.Event = Position.RunningStatus;
-                    input.Position--;
+                    info.Event = (byte)Position.RunningStatus;
                 }
-            } while (MalformedPitchBends && (info.Event & 0xF0) == 0xE0 && input.Position++ < input.Length);
+            } while (MalformedPitchBends && (info.Event & 0xF0) == 0xE0 && MoveNext());
+
             if (info.Event < 0x80)
                 return;
 
@@ -187,42 +193,44 @@ namespace NScumm.Core.Audio.Midi
             switch (info.Command)
             {
                 case 0x9: // Note On
-                    info.Param1 = input.ReadByte();
-                    info.Param2 = input.ReadByte();
+                    info.Param1 = Position.PlayPos[0]; Position.PlayPos.Offset++;
+                    info.Param2 = Position.PlayPos[0]; Position.PlayPos.Offset++;
                     if (info.Param2 == 0)
-                        info.Event = info.Channel | 0x80;
+                        info.Event = (byte)(info.Channel | 0x80);
                     info.Data = new byte[0];
-//                    Debug.WriteLine("MidiParser_SMF::ParseNextEvent NoteOn({0},{1},{2})", info.Event, info.Param1, info.Param2);
+                    info.Length = 0;
                     break;
 
                 case 0xC:
                 case 0xD:
-                    info.Param1 = input.ReadByte();
+                    info.Param1 = Position.PlayPos[0]; Position.PlayPos.Offset++;
                     info.Param2 = 0;
-//                    Debug.WriteLine("MidiParser_SMF::ParseNextEvent Param1 = {0}", info.Param1);
+                    info.Length = 0;
                     break;
 
                 case 0x8:
                 case 0xA:
                 case 0xB:
                 case 0xE:
-                    info.Param1 = input.ReadByte();
-                    info.Param2 = input.ReadByte();
+                    info.Param1 = Position.PlayPos[0]; Position.PlayPos.Offset++;
+                    info.Param2 = Position.PlayPos[0]; Position.PlayPos.Offset++;
                     info.Data = new byte[0];
-//                    Debug.WriteLine("MidiParser_SMF::ParseNextEvent Param1 = {0}, Param2 = {1}", info.Param1, info.Param2);
+                    info.Length = 0;
                     break;
 
                 case 0xF: // System Common, Meta or SysEx event
                     switch (info.Event & 0x0F)
                     {
                         case 0x2: // Song Position Pointer
-                            info.Param1 = input.ReadByte();
-                            info.Param2 = input.ReadByte();
+                            info.Param1 = Position.PlayPos[0]; Position.PlayPos.Offset++;
+                            info.Param2 = Position.PlayPos[0]; Position.PlayPos.Offset++;
+                            info.Length = 0;
                             break;
 
                         case 0x3: // Song Select
-                            info.Param1 = input.ReadByte();
+                            info.Param1 = Position.PlayPos[0]; Position.PlayPos.Offset++;
                             info.Param2 = 0;
+                            info.Length = 0;
                             break;
 
                         case 0x6:
@@ -232,32 +240,32 @@ namespace NScumm.Core.Audio.Midi
                         case 0xC:
                         case 0xE:
                             info.Param1 = info.Param2 = 0;
+                            info.Length = 0;
                             break;
 
                         case 0x0: // SysEx
                             {
-                                var len = ReadVLQ(input);
-                                var br = new BinaryReader(input);
-                                info.Data = br.ReadBytes(len);
+                                info.Length = ReadVLQ(ref Position.PlayPos);
+                                info.Data = Position.PlayPos;
+                                Position.PlayPos.Offset += info.Length;
                             }
                             break;
 
                         case 0xF: // META event
                             {
 
-                                var br = new BinaryReader(input);
-                                info.MetaType = input.ReadByte();
-                                var len = ReadVLQ(input);
-                                info.Data = br.ReadBytes(len);
+                                info.MetaType = Position.PlayPos[0]; Position.PlayPos.Offset++;
+                                info.Length = ReadVLQ(ref Position.PlayPos);
+                                info.Data = Position.PlayPos;
+                                Position.PlayPos.Offset += info.Length;
                             }
                             break;
                         default:
-//                            Console.Error.WriteLine("MidiParser_SMF::parseNextEvent: Unsupported event code {0:X}", info.Event);
+                            Warning("MidiParser_SMF::parseNextEvent: Unsupported event code {0:X}", info.Event);
                             break;
                     }
                     break;
             }
-            Position.PlayPos = input.Position;
         }
 
         #endregion

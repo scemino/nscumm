@@ -65,5 +65,12 @@ namespace NScumm.Mobile.Services
         {
             File.Delete(Path.Combine(GetSavePath(), name));
         }
+
+        public bool RenameSavefile(string oldName, string newName)
+        {
+            var savePath = GetSavePath();
+            File.Move(Path.Combine(savePath, oldName), Path.Combine(savePath, newName));
+            return true;
+        }
     }
 }

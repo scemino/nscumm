@@ -1,4 +1,4 @@
-﻿//  Author:
+//  Author:
 //       scemino <scemino74@gmail.com>
 //
 //  Copyright (c) 2015 
@@ -43,12 +43,12 @@ namespace NScumm.Sci.Engine
         private const int ALIGN_CENTER = 2;
 
 
-        private static Register kFormat(EngineState s, int argc, StackPtr? argv)
+        private static Register kFormat(EngineState s, int argc, StackPtr argv)
         {
-            Register dest = argv.Value[0];
+            Register dest = argv[0];
             char[] targetbuf = new char[4096];
             var target = 0;
-            Register position = argv.Value[1]; /* source */
+            Register position = argv[1]; /* source */
             int mode = 0;
             int paramindex = 0; /* Next parameter to evaluate */
             char xfer;
@@ -69,7 +69,7 @@ namespace NScumm.Sci.Engine
                 startarg = 3; /* First parameter to use for formatting */
             }
 
-            int index = (startarg == 3) ? argv.Value[2].ToUInt16() : 0;
+            int index = (startarg == 3) ? argv[2].ToUInt16() : 0;
             string source_str = SciEngine.Instance.Kernel.LookupText(position, index);
             var source = 0;
 
@@ -79,7 +79,7 @@ namespace NScumm.Sci.Engine
             var arguments = new ushort[argc];
 
             for (i = startarg; i < argc; i++)
-                arguments[i - startarg] = argv.Value[i].ToUInt16(); /* Parameters are copied to prevent overwriting */
+                arguments[i - startarg] = argv[i].ToUInt16(); /* Parameters are copied to prevent overwriting */
 
             while (source < source_str.Length && (xfer = source_str[source++]) != 0)
             {
@@ -148,7 +148,7 @@ namespace NScumm.Sci.Engine
                     {
                         case 's':
                             { /* Copy string */
-                                Register reg = argv.Value[startarg + paramindex];
+                                Register reg = argv[startarg + paramindex];
 
 # if ENABLE_SCI32
                                 // If the string is a string object, get to the actual string in the data selector
@@ -314,14 +314,14 @@ namespace NScumm.Sci.Engine
             return dest; /* Return target addr */
         }
 
-        private static Register kGetFarText(EngineState s, int argc, StackPtr? argv)
+        private static Register kGetFarText(EngineState s, int argc, StackPtr argv)
         {
-            var textres = SciEngine.Instance.ResMan.FindResource(new ResourceId(ResourceType.Text, argv.Value[0].ToUInt16()), false);
-            int counter = argv.Value[1].ToUInt16();
+            var textres = SciEngine.Instance.ResMan.FindResource(new ResourceId(ResourceType.Text, argv[0].ToUInt16()), false);
+            int counter = argv[1].ToUInt16();
 
             if (textres == null)
             {
-                throw new InvalidOperationException($"text.{argv.Value[0].ToUInt16()} does not exist");
+                throw new InvalidOperationException($"text.{argv[0].ToUInt16()} does not exist");
             }
 
             var seeker = new ByteAccess(textres.data);
@@ -338,31 +338,31 @@ namespace NScumm.Sci.Engine
             // If the third argument is NULL, allocate memory for the destination. This
             // occurs in SCI1 Mac games. The memory will later be freed by the game's
             // scripts.
-            if (argv.Value[2] == Register.NULL_REG)
+            if (argv[2] == Register.NULL_REG)
             {
                 Register temp;
                 s._segMan.AllocDynmem(ScummHelper.GetTextLength(seeker.Data, seeker.Offset) + 1, "Mac FarText", out temp);
-                StackPtr ptr = argv.Value;
+                StackPtr ptr = argv;
                 ptr[2] = temp;
             }
 
-            s._segMan.Strcpy(argv.Value[2], ScummHelper.GetText(seeker.Data, seeker.Offset)); // Copy the string and get return value
-            return argv.Value[2];
+            s._segMan.Strcpy(argv[2], ScummHelper.GetText(seeker.Data, seeker.Offset)); // Copy the string and get return value
+            return argv[2];
         }
 
-        private static Register kGetMessage(EngineState s, int argc, StackPtr? argv)
+        private static Register kGetMessage(EngineState s, int argc, StackPtr argv)
         {
-            var tuple = new MessageTuple((byte)argv.Value[0].ToUInt16(), (byte)argv.Value[2].ToUInt16());
+            var tuple = new MessageTuple((byte)argv[0].ToUInt16(), (byte)argv[2].ToUInt16());
 
-            s._msgState.GetMessage(argv.Value[1].ToUInt16(), tuple, argv.Value[3]);
+            s._msgState.GetMessage(argv[1].ToUInt16(), tuple, argv[3]);
 
-            return argv.Value[3];
+            return argv[3];
         }
 
-        private static Register kMessage(EngineState s, int argc, StackPtr? argv)
+        private static Register kMessage(EngineState s, int argc, StackPtr argv)
         {
-            uint func = argv.Value[0].ToUInt16();
-            ushort module = (ushort)((argc >= 2) ? argv.Value[1].ToUInt16() : 0);
+            uint func = argv[0].ToUInt16();
+            ushort module = (ushort)((argc >= 2) ? argv[1].ToUInt16() : 0);
 
 # if ENABLE_SCI32
             if (getSciVersion() >= SCI_VERSION_2)
@@ -385,7 +385,7 @@ namespace NScumm.Sci.Engine
             MessageTuple tuple = new MessageTuple();
 
             if (argc >= 6)
-                tuple = new MessageTuple((byte)argv.Value[2].ToUInt16(), (byte)argv.Value[3].ToUInt16(), (byte)argv.Value[4].ToUInt16(), (byte)argv.Value[5].ToUInt16());
+                tuple = new MessageTuple((byte)argv[2].ToUInt16(), (byte)argv[3].ToUInt16(), (byte)argv[4].ToUInt16(), (byte)argv[5].ToUInt16());
 
             // WORKAROUND for a script bug in Pepper. When using objects together,
             // there is code inside script 894 that shows appropriate messages.
@@ -415,9 +415,9 @@ namespace NScumm.Sci.Engine
             switch ((MessageFunction)func)
             {
                 case MessageFunction.GET:
-                    return Register.Make(0, (ushort)s._msgState.GetMessage(module, tuple, (argc == 7 ? argv.Value[6] : Register.NULL_REG)));
+                    return Register.Make(0, (ushort)s._msgState.GetMessage(module, tuple, (argc == 7 ? argv[6] : Register.NULL_REG)));
                 case MessageFunction.NEXT:
-                    return Register.Make(0, s._msgState.NextMessage((argc == 2 ? argv.Value[1] : Register.NULL_REG)));
+                    return Register.Make(0, s._msgState.NextMessage((argc == 2 ? argv[1] : Register.NULL_REG)));
                 case MessageFunction.SIZE:
                     return Register.Make(0, s._msgState.MessageSize(module, tuple));
                 case MessageFunction.REFCOND:
@@ -450,9 +450,9 @@ namespace NScumm.Sci.Engine
 
                         bool ok = false;
 
-                        if (s._segMan.Dereference(argv.Value[1]).isRaw)
+                        if (s._segMan.Dereference(argv[1]).isRaw)
                         {
-                            var buffer = s._segMan.DerefBulkPtr(argv.Value[1], 10);
+                            var buffer = s._segMan.DerefBulkPtr(argv[1], 10);
 
                             if (buffer != null)
                             {
@@ -466,7 +466,7 @@ namespace NScumm.Sci.Engine
                         }
                         else
                         {
-                            var buffer = s._segMan.DerefRegPtr(argv.Value[1], 5);
+                            var buffer = (StackPtr)s._segMan.DerefRegPtr(argv[1], 5);
 
                             if (buffer != StackPtr.Null)
                             {
@@ -479,9 +479,8 @@ namespace NScumm.Sci.Engine
                             }
                         }
 
-                        // TODO:
-                        //if (!ok)
-                        //    warning("Message: buffer %04x:%04x invalid or too small to hold the tuple", PRINT_REG(argv.Value[1]));
+                        if (!ok)
+                            Warning($"Message: buffer {argv[1]} invalid or too small to hold the tuple");
 
                         return Register.NULL_REG;
                     }
@@ -499,9 +498,9 @@ namespace NScumm.Sci.Engine
             return Register.NULL_REG;
         }
 
-        private static Register kReadNumber(EngineState s, int argc, StackPtr? argv)
+        private static Register kReadNumber(EngineState s, int argc, StackPtr argv)
         {
-            string source_str = s._segMan.GetString(argv.Value[0]);
+            string source_str = s._segMan.GetString(argv[0]);
             var source = 0;
 
             while (char.IsWhiteSpace(source_str[source]))
@@ -559,33 +558,33 @@ namespace NScumm.Sci.Engine
             return Register.Make(0, (ushort)result);
         }
 
-        private static Register kSetQuitStr(EngineState s, int argc, StackPtr? argv)
+        private static Register kSetQuitStr(EngineState s, int argc, StackPtr argv)
         {
             //Common::String quitStr = s._segMan.getString(argv[0]);
             //debug("Setting quit string to '%s'", quitStr.c_str());
             return s.r_acc;
         }
 
-        private static Register kStrAt(EngineState s, int argc, StackPtr? argv)
+        private static Register kStrAt(EngineState s, int argc, StackPtr argv)
         {
-            if (argv.Value[0] == Register.SIGNAL_REG)
+            if (argv[0] == Register.SIGNAL_REG)
             {
                 // TOO: warning("Attempt to perform kStrAt() on a signal reg");
                 return Register.NULL_REG;
             }
 
-            SegmentRef dest_r = s._segMan.Dereference(argv.Value[0]);
+            SegmentRef dest_r = s._segMan.Dereference(argv[0]);
             if (!dest_r.IsValid)
             {
-                Warning($"Attempt to StrAt at invalid pointer {argv.Value[0]}");
+                Warning($"Attempt to StrAt at invalid pointer {argv[0]}");
                 return Register.NULL_REG;
             }
 
             byte value;
             byte newvalue = 0;
-            ushort offset = argv.Value[1].ToUInt16();
+            ushort offset = argv[1].ToUInt16();
             if (argc > 2)
-                newvalue = (byte)argv.Value[2].ToInt16();
+                newvalue = (byte)argv[2].ToInt16();
 
             // in kq5 this here gets called with offset 0xFFFF
             //  (in the desert wheng getting the staff)
@@ -643,10 +642,10 @@ namespace NScumm.Sci.Engine
 
         }
 
-        private static Register kStrCat(EngineState s, int argc, StackPtr? argv)
+        private static Register kStrCat(EngineState s, int argc, StackPtr argv)
         {
-            string s1 = s._segMan.GetString(argv.Value[0]);
-            string s2 = s._segMan.GetString(argv.Value[1]);
+            string s1 = s._segMan.GetString(argv[0]);
+            string s2 = s._segMan.GetString(argv[1]);
 
             // Japanese PC-9801 interpreter splits strings here
             //  see bug #5834
@@ -660,73 +659,73 @@ namespace NScumm.Sci.Engine
             }
 
             s1 += s2;
-            s._segMan.Strcpy(argv.Value[0], s1);
-            return argv.Value[0];
+            s._segMan.Strcpy(argv[0], s1);
+            return argv[0];
         }
 
-        private static Register kStrCmp(EngineState s, int argc, StackPtr? argv)
+        private static Register kStrCmp(EngineState s, int argc, StackPtr argv)
         {
-            string s1 = s._segMan.GetString(argv.Value[0]);
-            string s2 = s._segMan.GetString(argv.Value[1]);
+            string s1 = s._segMan.GetString(argv[0]);
+            string s2 = s._segMan.GetString(argv[1]);
 
             if (argc > 2)
-                return Register.Make(0, (ushort)string.CompareOrdinal(s1, 0, s2, 0, argv.Value[2].ToUInt16()));
+                return Register.Make(0, (ushort)string.CompareOrdinal(s1, 0, s2, 0, argv[2].ToUInt16()));
             else
                 return Register.Make(0, (ushort)string.CompareOrdinal(s1, s2));
         }
 
-        private static Register kStrCpy(EngineState s, int argc, StackPtr? argv)
+        private static Register kStrCpy(EngineState s, int argc, StackPtr argv)
         {
             if (argc > 2)
             {
-                int length = argv.Value[2].ToInt16();
+                int length = argv[2].ToInt16();
 
                 if (length >= 0)
-                    s._segMan.Strncpy(argv.Value[0], argv.Value[1], (uint)length);
+                    s._segMan.Strncpy(argv[0], argv[1], (uint)length);
                 else
-                    s._segMan.Memcpy(argv.Value[0], argv.Value[1], -length);
+                    s._segMan.Memcpy(argv[0], argv[1], -length);
             }
             else
             {
-                s._segMan.Strcpy(argv.Value[0], argv.Value[1]);
+                s._segMan.Strcpy(argv[0], argv[1]);
             }
 
-            return argv.Value[0];
+            return argv[0];
         }
 
-        private static Register kStrEnd(EngineState s, int argc, StackPtr? argv)
+        private static Register kStrEnd(EngineState s, int argc, StackPtr argv)
         {
-            Register address = argv.Value[0];
+            Register address = argv[0];
             address = Register.IncOffset(address, (short)s._segMan.Strlen(address));
             return address;
         }
 
-        private static Register kStrLen(EngineState s, int argc, StackPtr? argv)
+        private static Register kStrLen(EngineState s, int argc, StackPtr argv)
         {
-            return Register.Make(0, (ushort)s._segMan.Strlen(argv.Value[0]));
+            return Register.Make(0, (ushort)s._segMan.Strlen(argv[0]));
         }
 
-        private static Register kStrSplit(EngineState s, int argc, StackPtr? argv)
+        private static Register kStrSplit(EngineState s, int argc, StackPtr argv)
         {
-            string format = s._segMan.GetString(argv.Value[1]);
+            string format = s._segMan.GetString(argv[1]);
             string sep_str;
             string sep = null;
-            if (!argv.Value[2].IsNull)
+            if (!argv[2].IsNull)
             {
-                sep_str = s._segMan.GetString(argv.Value[2]);
+                sep_str = s._segMan.GetString(argv[2]);
                 sep = sep_str;
             }
             string str = SciEngine.Instance.StrSplit(format, sep);
 
             // Make sure target buffer is large enough
-            SegmentRef buf_r = s._segMan.Dereference(argv.Value[0]);
+            SegmentRef buf_r = s._segMan.Dereference(argv[0]);
             if (!buf_r.IsValid || buf_r.maxSize < (int)str.Length + 1)
             {
-                Warning($"StrSplit: buffer {argv.Value[0]} invalid or too small to hold the following text of {str.Length + 1} bytes: '{str}'");
+                Warning($"StrSplit: buffer {argv[0]} invalid or too small to hold the following text of {str.Length + 1} bytes: '{str}'");
                 return Register.NULL_REG;
             }
-            s._segMan.Strcpy(argv.Value[0], str);
-            return argv.Value[0];
+            s._segMan.Strcpy(argv[0], str);
+            return argv[0];
         }
 
     }

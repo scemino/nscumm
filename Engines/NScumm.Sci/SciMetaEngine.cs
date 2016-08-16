@@ -303,6 +303,42 @@ namespace NScumm.Sci
                 new ADGameFileDescription { fileName = "resource.006", fileType = 0, md5 = "4a24443a25e2b1492462a52809605dc2", fileSize = 345683},
             }, Core.Language.EN_ANY, Platform.DOS),
 
+            // Larry 5 - English Amiga
+            // Executable scanning reports "1.004.023"
+            // SCI interpreter version 1.000.784
+            new ADGameDescription("lsl5", "", new[] {
+                new ADGameFileDescription("resource.map", 0, "e36052ae0c8b14d6f074bcb0aee50a38", 6096),
+                new ADGameFileDescription("resource.000", 0, "d8b58ce10de52aa16f8b2006838c4fcc", 310510),
+                new ADGameFileDescription("resource.001", 0, "8caa8fbb50ea43f3efdfb66f1e68998b", 800646),
+                new ADGameFileDescription("resource.002", 0, "abdaa299e00c908052d33cd82eb60e9b", 784576),
+                new ADGameFileDescription("resource.003", 0, "810ad1d61638c27a780576cb09f18ed7", 805941),
+                new ADGameFileDescription("resource.004", 0, "3ce5901f1bc171ac0274d99a4eeb9e57", 623022),
+                new ADGameFileDescription("resource.005", 0, "f8b2d1137bb767e5d232056b99dd69eb", 623621),
+                new ADGameFileDescription("resource.006", 0, "bafc64e3144f115dc58c6aee02de98fb", 715598),
+            }, Core.Language.EN_ANY, Platform.Amiga),
+
+            // Larry 5 - German Amiga (also includes english language)
+            // Executable scanning reports "1.004.024"
+            // SCI interpreter version 1.000.784
+            new ADGameDescription("lsl5", "", new[] {
+                new ADGameFileDescription("resource.map", 0, "863326c2eb5160f0b0960e159e8bf954", 6372),
+                new ADGameFileDescription("resource.000", 0, "5113d03db08e3da77a5b61294001331b", 357525),
+                new ADGameFileDescription("resource.001", 0, "59eba83ad465b08d763b44f86afa86f6", 837566),
+                new ADGameFileDescription("resource.002", 0, "59eba83ad465b08d763b44f86afa86f6", 622229),
+                new ADGameFileDescription("resource.003", 0, "59eba83ad465b08d763b44f86afa86f6", 383690),
+                new ADGameFileDescription("resource.004", 0, "59eba83ad465b08d763b44f86afa86f6", 654296),
+                new ADGameFileDescription("resource.005", 0, "59eba83ad465b08d763b44f86afa86f6", 664717),
+                new ADGameFileDescription("resource.006", 0, "bafc64e3144f115dc58c6aee02de98fb", 754966),
+                new ADGameFileDescription("resource.007", 0, "59eba83ad465b08d763b44f86afa86f6", 683135),
+            }, Core.Language.DE_DEU, Platform.Amiga),
+
+            // Larry 5 - English DOS Non-Interactive Demo (from FRG)
+            // SCI interpreter version 1.000.181
+            new ADGameDescription("lsl5", "Demo", new[] {
+                new ADGameFileDescription("resource.map", 0, "efe8d3f45ce4f6bd9a6643e0ac8d2a97", 504),
+                new ADGameFileDescription("resource.001", 0, "8bd8d9c0b5f455ee1269d63ce86c50dd", 531380),
+            }, Core.Language.EN_ANY, Platform.DOS),
+            
             // Larry 5 - English DOS (from spookypeanut)
             // SCI interpreter version 1.000.510
             new ADGameDescription("lsl5", "",
@@ -317,6 +353,19 @@ namespace NScumm.Sci
                     new ADGameFileDescription { fileName = "resource.006",fileType =  0, md5 = "dda27ce00682aa76198dac124bbbe334", fileSize = 1024810},
                     new ADGameFileDescription { fileName = "resource.007", fileType = 0, md5 = "ac443fae1285fb359bf2b2bc6a7301ae", fileSize = 1030656},
                 }, Core.Language.EN_ANY, Platform.DOS),
+
+            // Larry 5 - English Macintosh (from omer_mor, bug report #3328257)
+            new ADGameDescription("lsl5", "", new[] {
+                new ADGameFileDescription("resource.map", 0, "f12439da78b9878e16436661deb83f84", 6525),
+                new ADGameFileDescription("resource.000", 0, "f2537473213d70e7f4fc82e988ab90ca", 702403),
+                new ADGameFileDescription("resource.001", 0, "db4a1381d88028876a99303bfaaba893", 704679),
+                new ADGameFileDescription("resource.002", 0, "e86aeb27711f4a673e06ec32cfc84125", 1125854),
+                new ADGameFileDescription("resource.003", 0, "13fd4942bb818f9acd2970d66fca6509", 854733),
+                new ADGameFileDescription("resource.004", 0, "999f407c9f38f937d4b8c4230ff5bb38", 1046644),
+                new ADGameFileDescription("resource.005", 0, "0cc8d35a744031c772ca7cd21ae95273", 1008293),
+                new ADGameFileDescription("resource.006", 0, "dda27ce00682aa76198dac124bbbe334", 1110043),
+                new ADGameFileDescription("resource.007", 0, "ac443fae1285fb359bf2b2bc6a7301ae", 989801),
+            }, Core.Language.EN_ANY, Platform.Macintosh),
         };
 
         static readonly Dictionary<string, SciGameId> s_gameIdStrToEnum = new Dictionary<string, SciGameId>

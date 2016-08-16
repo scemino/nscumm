@@ -16,13 +16,16 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using System;
 using NScumm.Core.Audio;
 
 namespace NScumm.Sci.Sound.Drivers
 {
     abstract class MidiPlayer : MidiDriverBase
     {
+        public const int MIDI_PROP_MASTER_VOLUME = 0;
+        public const int SCI_MIDI_CHANNEL_SOUND_OFF = 0x78; /* all-sound-off for Bn */
+        public const int SCI_MIDI_CHANNEL_NOTES_OFF = 0x7B; /* all-notes-off for Bn */
+
         protected MidiDriver _driver;
         protected sbyte _reverb;
         protected SciVersion _version;
@@ -42,12 +45,12 @@ namespace NScumm.Sci.Sound.Drivers
         {
             get
             {
-                return _driver != null ? (byte)_driver.Property(MidiDriver_AdLib.MIDI_PROP_MASTER_VOLUME, 0xffff) : (byte)0;
+                return _driver != null ? (byte)_driver.Property(MIDI_PROP_MASTER_VOLUME, 0xffff) : (byte)0;
             }
             set
             {
                 if (_driver != null)
-                    _driver.Property(MidiDriver_AdLib.MIDI_PROP_MASTER_VOLUME, value);
+                    _driver.Property(MIDI_PROP_MASTER_VOLUME, value);
             }
         }
         public sbyte Reverb
@@ -91,7 +94,7 @@ namespace NScumm.Sci.Sound.Drivers
             {
                 // Send "All Sound Off" on all channels
                 for (int i = 0; i < MidiDriver_AdLib.MIDI_CHANNELS; ++i)
-                    _driver.Send((byte)(0xb0 + i), MidiDriver_AdLib.SCI_MIDI_CHANNEL_NOTES_OFF, 0);
+                    _driver.Send((byte)(0xb0 + i), SCI_MIDI_CHANNEL_NOTES_OFF, 0);
             }
         }
     }

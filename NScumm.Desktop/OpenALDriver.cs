@@ -79,7 +79,9 @@ namespace NScumm
                 _audioSampleProvider?.Read(_buffer, _buffer.Length);
                 _dsei.SubmitBuffer(_buffer, _buffer.Length);
             }
-            catch (Exception){}
+            catch (Exception ex){
+                Core.DebugHelper.Warning($"Audio error: {ex}");
+            }
         }
     }
 }

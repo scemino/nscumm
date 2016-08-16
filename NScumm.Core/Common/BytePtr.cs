@@ -40,7 +40,7 @@ namespace NScumm.Core
             set { Data[Offset + index] = value; }
         }
 
-        public BytePtr(BytePtr ptr, int offset)
+        public BytePtr(BytePtr ptr, int offset = 0)
         {
             Data = ptr.Data;
             Offset = ptr.Offset + offset;

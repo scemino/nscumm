@@ -20,6 +20,7 @@ using System;
 using NScumm.Sci.Sound.Drivers;
 using NScumm.Core;
 using NScumm.Sci.Engine;
+using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Sci.Sound
 {
@@ -119,6 +120,11 @@ namespace NScumm.Sci.Sound
             ResetStateTracking();
         }
 
+        /// <summary>
+        /// this is used for scripts sending midi commands to us. we verify in that case that the channel is actually
+        /// used, so that channel remapping will work as well and then send them on
+        /// </summary>
+        /// <param name="midi">Midi.</param>
         public void SendFromScriptToDriver(uint midi)
         {
             byte midiChannel = (byte)(midi & 0xf);
@@ -223,7 +229,8 @@ namespace NScumm.Sci.Sound
                     break;
 
                 default:
-                    throw new InvalidOperationException("MidiParser_SCI::setVolume: Unsupported soundVersion");
+                    Error("MidiParser_SCI::setVolume: Unsupported soundVersion");
+                    break;
             }
         }
 
@@ -242,7 +249,7 @@ namespace NScumm.Sci.Sound
 
         public void MainThreadBegin()
         {
-            //assert(!_mainThreadCalled);
+            System.Diagnostics.Debug.Assert(!_mainThreadCalled);
             _mainThreadCalled = true;
         }
 
@@ -304,15 +311,12 @@ namespace NScumm.Sci.Sound
             ActiveTrack = 255;
             _resetOnPause = false;
 
-            if (_mixedData != null)
-            {
-                _mixedData = null;
-            }
+            _mixedData = null;
         }
 
         public void MainThreadEnd()
         {
-            //assert(_mainThreadCalled);
+            System.Diagnostics.Debug.Assert(_mainThreadCalled);
             _mainThreadCalled = false;
         }
 
@@ -392,12 +396,10 @@ namespace NScumm.Sci.Sound
                 case 0xC:
                     info.Param1 = Position.PlayPos[0]; Position.PlayPos.Offset++;
                     info.Param2 = 0;
-                    info.Length = 0;
                     break;
                 case 0xD:
                     info.Param1 = Position.PlayPos[0]; Position.PlayPos.Offset++;
                     info.Param2 = 0;
-                    info.Length = 0;
                     break;
 
                 case 0xB:
@@ -426,13 +428,11 @@ namespace NScumm.Sci.Sound
                         case 0x2: // Song Position Pointer
                             info.Param1 = Position.PlayPos[0]; Position.PlayPos.Offset++;
                             info.Param2 = Position.PlayPos[0]; Position.PlayPos.Offset++;
-                            info.Length = 0;
                             break;
 
                         case 0x3: // Song Select
                             info.Param1 = Position.PlayPos[0]; Position.PlayPos.Offset++;
                             info.Param2 = 0;
-                            info.Length = 0;
                             break;
 
                         case 0x6:
@@ -442,7 +442,6 @@ namespace NScumm.Sci.Sound
                         case 0xC:
                         case 0xE:
                             info.Param1 = info.Param2 = 0;
-                            info.Length = 0;
                             break;
 
                         case 0x0: // SysEx
@@ -459,9 +458,7 @@ namespace NScumm.Sci.Sound
                             Position.PlayPos.Offset += info.Length;
                             break;
                         default:
-                            // TODO warning(
-                            //"MidiParser_SCI::parseNextEvent: Unsupported event code %x",
-                            //info.Event);
+                            Warning("MidiParser_SCI::parseNextEvent: Unsupported event code {0:X}", info.Event);
                             break;
                     } // // System Common, Meta or SysEx event
                     break;
@@ -515,8 +512,6 @@ namespace NScumm.Sci.Sound
                                             if (SciEngine.Instance.EngineState.CurrentRoomNumber == 530)
                                                 skipSignal = false;
                                             break;
-                                        default:
-                                            break;
                                     }
                                 }
                             }
@@ -553,8 +548,6 @@ namespace NScumm.Sci.Sound
                                 _pSnd.reverb = (sbyte)info.Param2;
 
                             ((MidiPlayer)MidiDriver).Reverb = _pSnd.reverb;
-                            break;
-                        default:
                             break;
                     }
 
@@ -623,10 +616,10 @@ namespace NScumm.Sci.Sound
                                 break;
                             case 0x4B:  // voice mapping
                                         // TODO: is any support for this needed at the MIDI parser level?
-                                        // TODO: warning("Unhanded SCI MIDI command 0x%x - voice mapping (parameter %d)", info.basic.param1, info.basic.param2);
+                                Warning("Unhanded SCI MIDI command 0x{0:X} - voice mapping (parameter {1})", info.Param1, info.Param2);
                                 return true;
                             default:
-                                // TODO: warning("Unhandled SCI MIDI command 0x%x (parameter %d)", info.basic.param1, info.basic.param2);
+                                Warning("Unhandled SCI MIDI command 0x{0:X} (parameter {1})", info.Param1, info.Param2);
                                 return true;
                         }
 
@@ -660,10 +653,6 @@ namespace NScumm.Sci.Sound
                         }
                     }
 
-                    // Break to let parent handle the rest.
-                    break;
-
-                default:
                     // Break to let parent handle the rest.
                     break;
             }
@@ -701,7 +690,7 @@ namespace NScumm.Sci.Sound
             if (realChannel == -1)
                 return;
 
-            midi = (int)((midi & 0xFFFFFFF0) | realChannel);
+            midi = (int)((midi & 0xFFFFFFF0) | (ushort)realChannel);
             SendToDriver_raw(midi);
         }
 
@@ -837,7 +826,7 @@ namespace NScumm.Sci.Sound
                         channel.time = -1;
                         break;
                     default: // MIDI command
-                        if ((midiCommand & 0x80)!=0)
+                        if ((midiCommand & 0x80) != 0)
                         {
                             midiParam = channel.data[channel.curPos++];
                         }
@@ -880,9 +869,8 @@ namespace NScumm.Sci.Sound
         private byte[] MidiFilterChannels(int channelMask)
         {
             SoundResource.Channel channel = _track.channels[0];
-            ByteAccess channelData = new ByteAccess(channel.data);
-            ByteAccess channelDataEnd = new ByteAccess(channel.data, channel.size);
-            ByteAccess outData = new ByteAccess(new byte[channel.size + 5]);
+            BytePtr channelData = new BytePtr(channel.data);
+            BytePtr outData = new BytePtr(new byte[channel.size + 5]);
             byte curChannel = 15, curByte, curDelta;
             byte command = 0, lastCommand = 0;
             int delta = 0;
@@ -891,16 +879,16 @@ namespace NScumm.Sci.Sound
 
             _mixedData = outData.Data;
 
-            while (channelData.Offset < channelDataEnd.Offset)
+            while (channelData.Offset < channel.size)
             {
-                curDelta = channelData.Increment();
+                curDelta = channelData.Value; channelData.Offset++;
                 if (curDelta == 0xF8)
                 {
                     delta += 240;
                     continue;
                 }
                 delta += curDelta;
-                curByte = channelData.Increment();
+                curByte = channelData.Value; channelData.Offset++;
 
                 switch (curByte)
                 {
@@ -942,7 +930,7 @@ namespace NScumm.Sci.Sound
                             outData.Offset++;
                             do
                             {
-                                curByte = channelData.Increment();
+                                curByte = channelData.Value; channelData.Offset++;
                                 outData.Value = curByte; // out
                                 outData.Offset++;
                             } while (curByte != 0xF7);
@@ -967,7 +955,7 @@ namespace NScumm.Sci.Sound
                             {
                                 if ((curByte & 0x80) != 0)
                                 {
-                                    outData.Value = channelData.Increment();
+                                    outData.Value = channelData.Value; channelData.Offset++;
                                     outData.Offset++;
                                 }
                                 else
@@ -978,7 +966,7 @@ namespace NScumm.Sci.Sound
                             }
                             if (midiParamCount > 1)
                             {
-                                outData.Value = channelData.Increment();
+                                outData.Value = channelData.Value; channelData.Offset++;
                                 outData.Offset++;
                             }
                             break;
@@ -1006,8 +994,8 @@ namespace NScumm.Sci.Sound
 
             // This occurs in the music tracks of LB1 Amiga, when using the MT-32
             // driver (bug #3297881)
-            //if (!containsMidiData)
-            //    warning("MIDI parser: the requested SCI0 sound has no MIDI note data for the currently selected sound driver");
+            if (!containsMidiData)
+                Warning("MIDI parser: the requested SCI0 sound has no MIDI note data for the currently selected sound driver");
 
             return _mixedData;
         }
@@ -1098,8 +1086,6 @@ namespace NScumm.Sci.Sound
                                 }
                             }
                             break;
-                        default:
-                            break;
                     }
                     break;
                 case 0xC0:
@@ -1109,8 +1095,6 @@ namespace NScumm.Sci.Sound
                 case 0xE0:
                     // pitchwheel
                     s._pitchWheel = (short)((op2 << 7) | op1);
-                    break;
-                default:
                     break;
             }
         }

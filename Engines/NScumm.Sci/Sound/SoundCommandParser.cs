@@ -294,7 +294,7 @@ namespace NScumm.Sci.Sound
             if (channel != 0)
                 channel--; // channel is given 1-based, we are using 0-based
 
-            uint midiCommand = (uint)((channel | midiCmd) | ((uint)controller << 8) | ((uint)param << 16));
+            uint midiCommand = (uint)(channel | midiCmd | (controller << 8) | (param << 16));
 
             MusicEntry musicSlot = _music.GetSlot(obj);
             if (musicSlot == null)

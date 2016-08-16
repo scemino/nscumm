@@ -30,7 +30,7 @@ namespace NScumm.Scumm.Audio.Players
     /// <summary>
     /// Scumm V2 CMS/Gameblaster MIDI driver.
     /// </summary>
-    class Player_V2CMS: Player_V2Base
+    class Player_V2CMS : Player_V2Base
     {
         public Player_V2CMS(ScummEngine scumm, IMixer mixer)
             : base(scumm, mixer, true)
@@ -246,7 +246,7 @@ namespace NScumm.Scumm.Audio.Players
                     if (step > (_next_tick >> FIXP_SHIFT))
                         step = (int)(_next_tick >> FIXP_SHIFT);
                     var tmp = new short[step * 2];
-                    _cmsEmu.ReadBuffer(tmp);
+                    _cmsEmu.ReadBuffer(tmp, 0, tmp.Length);
                     Array.Copy(tmp, 0, buffer, offset, tmp.Length);
                     offset += 2 * step;
                     _next_tick -= (uint)(step << FIXP_SHIFT);

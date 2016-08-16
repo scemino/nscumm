@@ -108,10 +108,10 @@ namespace NScumm.Core.Audio.SoftSynth
             SampleRate = sampleRate;
         }
 
-        public void ReadBuffer(short[] buffer)
+        public void ReadBuffer(short[] buffer, int offset, int length)
         {
-            Update(0, buffer);
-            Update(1, buffer);
+            Update(0, buffer, offset, length);
+            Update(1, buffer, offset, length);
         }
 
         public void PortWrite(int port, int val)
@@ -164,7 +164,7 @@ namespace NScumm.Core.Audio.SoftSynth
 
             switch (reg)
             {
-            /* channel i amplitude */
+                /* channel i amplitude */
                 case 0x00:
                 case 0x01:
                 case 0x02:
@@ -176,7 +176,7 @@ namespace NScumm.Core.Audio.SoftSynth
                     saa.channels[ch].amplitude[Right] = amplitude_lookup[(data >> 4) & 0x0f];
                     break;
 
-            /* channel i frequency */
+                /* channel i frequency */
                 case 0x08:
                 case 0x09:
                 case 0x0a:
@@ -187,7 +187,7 @@ namespace NScumm.Core.Audio.SoftSynth
                     saa.channels[ch].frequency = data & 0xff;
                     break;
 
-            /* channel i octave */
+                /* channel i octave */
                 case 0x10:
                 case 0x11:
                 case 0x12:
@@ -196,7 +196,7 @@ namespace NScumm.Core.Audio.SoftSynth
                     saa.channels[ch + 1].octave = (data >> 4) & 0x07;
                     break;
 
-            /* channel i frequency enable */
+                /* channel i frequency enable */
                 case 0x14:
                     saa.channels[0].freq_enable = data & 0x01;
                     saa.channels[1].freq_enable = data & 0x02;
@@ -206,7 +206,7 @@ namespace NScumm.Core.Audio.SoftSynth
                     saa.channels[5].freq_enable = data & 0x20;
                     break;
 
-            /* channel i noise enable */
+                /* channel i noise enable */
                 case 0x15:
                     saa.channels[0].noise_enable = data & 0x01;
                     saa.channels[1].noise_enable = data & 0x02;
@@ -216,13 +216,13 @@ namespace NScumm.Core.Audio.SoftSynth
                     saa.channels[5].noise_enable = data & 0x20;
                     break;
 
-            /* noise generators parameters */
+                /* noise generators parameters */
                 case 0x16:
                     saa.noise_params[0] = data & 0x03;
                     saa.noise_params[1] = (data >> 4) & 0x03;
                     break;
 
-            /* envelope generators parameters */
+                /* envelope generators parameters */
                 case 0x18:
                 case 0x19:
                     ch = reg - 0x18;
@@ -235,7 +235,7 @@ namespace NScumm.Core.Audio.SoftSynth
                     saa.env_step[ch] = 0;
                     break;
 
-            /* channels enable & reset generators */
+                /* channels enable & reset generators */
                 case 0x1c:
                     saa.all_ch_enable = data & 0x01;
                     saa.sync_state = data & 0x02;
@@ -301,14 +301,14 @@ namespace NScumm.Core.Audio.SoftSynth
             }
         }
 
-        void Update(int chip, short[] buffer)
+        void Update(int chip, short[] buffer, int offset, int length)
         {
             var saa = _saa1099[chip];
             int j, ch;
 
             if (chip == 0)
             {
-                Array.Clear(buffer, 0, buffer.Length);
+                Array.Clear(buffer, offset, length * 2);
             }
 
             /* if the channels are disabled we're done */
@@ -337,7 +337,7 @@ namespace NScumm.Core.Audio.SoftSynth
             }
 
             /* fill all data needed */
-            for (j = 0; j < buffer.Length / 2; ++j)
+            for (j = 0; j < length; ++j)
             {
                 int output_l = 0, output_r = 0;
 
@@ -345,16 +345,16 @@ namespace NScumm.Core.Audio.SoftSynth
                 for (ch = 0; ch < 6; ch++)
                 {
                     if (saa.channels[ch].freq == 0.0)
-                        saa.channels[ch].freq = (double)((2 * 15625) << saa.channels[ch].octave) /
-                        (511.0 - (double)saa.channels[ch].frequency);
+                        saa.channels[ch].freq = ((2 * 15625) << saa.channels[ch].octave) /
+                        (511.0 - saa.channels[ch].frequency);
 
                     /* check the actual position in the square wave */
                     saa.channels[ch].counter -= saa.channels[ch].freq;
                     while (saa.channels[ch].counter < 0)
                     {
                         /* calculate new frequency now after the half wave is updated */
-                        saa.channels[ch].freq = (double)((2 * 15625) << saa.channels[ch].octave) /
-                        (511.0 - (double)saa.channels[ch].frequency);
+                        saa.channels[ch].freq = ((2 * 15625) << saa.channels[ch].octave) /
+                        (511.0 - saa.channels[ch].frequency);
 
                         saa.channels[ch].counter += SampleRate;
                         saa.channels[ch].level ^= 1;
@@ -404,8 +404,8 @@ namespace NScumm.Core.Audio.SoftSynth
                     }
                 }
                 /* write sound data to the buffer */
-                buffer[j * 2 + 0] = (short)ScummHelper.Clip(buffer[j * 2 + 0] + output_l / 6, -32768, 32767);
-                buffer[j * 2 + 1] = (short)ScummHelper.Clip(buffer[j * 2 + 1] + output_r / 6, -32768, 32767);
+                buffer[offset + j * 2 + 0] = (short)ScummHelper.Clip(buffer[offset + j * 2 + 0] + output_l / 6, -32768, 32767);
+                buffer[offset + j * 2 + 1] = (short)ScummHelper.Clip(buffer[offset + j * 2 + 1] + output_r / 6, -32768, 32767);
             }
         }
 

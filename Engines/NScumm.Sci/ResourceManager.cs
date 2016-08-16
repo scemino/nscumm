@@ -2360,7 +2360,7 @@ namespace NScumm.Sci
             public byte poly;
             public ushort prio;
             public ushort size;
-            public ByteAccess data;
+            public BytePtr data;
             public ushort curPos;
             public long time;
             public byte prev;

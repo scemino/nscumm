@@ -437,7 +437,7 @@ namespace NScumm.Sci.Sound
                     deviceFlags |= MusicDriverTypes.FMTowns;
             }
 
-            var dev = MidiDriver.DetectDevice(deviceFlags, "auto");
+            var dev = MidiDriver.DetectDevice(deviceFlags, SciEngine.Instance.Settings.AudioDevice);
             _musicType = MidiDriver.GetMusicType(dev);
 
             if (SciEngine.Instance.Features.UseAltWinGMSound && _musicType != MusicType.GeneralMidi)
@@ -457,15 +457,15 @@ namespace NScumm.Sci.Sound
                     //else
                     _pMidiDrv = MidiPlayer_AdLib_create(_soundVersion);
                     break;
-                    //    case MusicType.PCjr:
-                    //        _pMidiDrv = MidiPlayer_PCJr_create(_soundVersion);
-                    //        break;
-                    //    case MusicType.PCSpeaker:
-                    //        _pMidiDrv = MidiPlayer_PCSpeaker_create(_soundVersion);
-                    //        break;
-                    //    case MusicType.CMS:
-                    //        _pMidiDrv = MidiPlayer_CMS_create(_soundVersion);
-                    //        break;
+                case MusicType.PCjr:
+                    _pMidiDrv = new MidiPlayer_PCJr(_soundVersion);
+                    break;
+                case MusicType.PCSpeaker:
+                    _pMidiDrv = new MidiPlayer_PCSpeaker(_soundVersion);
+                    break;
+                case MusicType.CMS:
+                    _pMidiDrv = new MidiPlayer_CMS(_soundVersion);
+                    break;
                     //    case MusicType.FMTowns:
                     //        _pMidiDrv = MidiPlayer_FMTowns_create(_soundVersion);
                     //        break;

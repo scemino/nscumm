@@ -236,6 +236,8 @@
     <Compile Include="Graphics\Screen.cs">
       <Link>Graphics\Screen.cs</Link>
     </Compile>
+    <Compile Include="..\..\NScumm.Desktop\bin\Debug\plugins\Sound\Drivers\MidiDriver_CMS.cs" />
+    <Compile Include="..\..\NScumm.Desktop\bin\Debug\plugins\Sound\Drivers\MidiDriver_PCJr.cs" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>

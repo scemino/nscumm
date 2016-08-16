@@ -35,7 +35,6 @@ namespace NScumm.Sci.Sound.Drivers
     {
         private const bool STEREO = true;
         public const int MIDI_CHANNELS = 16;
-        public const int MIDI_PROP_MASTER_VOLUME = 0;
 
         private const int LeftChannel = 1;
         private const int RightChannel = 2;
@@ -53,8 +52,6 @@ namespace NScumm.Sci.Sound.Drivers
         private const int SCI_MIDI_SET_REVERB = 0x50;
         private const int SCI_MIDI_HOLD = 0x52;
         private const int SCI_MIDI_CUMULATIVE_CUE = 0x60;
-        private const int SCI_MIDI_CHANNEL_SOUND_OFF = 0x78; /* all-sound-off for Bn */
-        public const int SCI_MIDI_CHANNEL_NOTES_OFF = 0x7B; /* all-notes-off for Bn */
 
         private const int SCI_MIDI_SET_SIGNAL_LOOP = 0x7F;
 
@@ -109,14 +106,9 @@ namespace NScumm.Sci.Sound.Drivers
 
             public Channel()
             {
-                patch = 0;
                 volume = 63;
                 pan = 64;
-                holdPedal = 0;
-                extraVoices = 0;
                 pitchWheel = 8192;
-                lastVoice = 0;
-                enableVelocity = false;
             }
         }
 
@@ -134,9 +126,6 @@ namespace NScumm.Sci.Sound.Drivers
                 channel = -1;
                 note = -1;
                 patch = -1;
-                velocity = 0;
-                isSustained = false;
-                age = 0;
             }
         }
 
@@ -148,8 +137,8 @@ namespace NScumm.Sci.Sound.Drivers
         private IOpl _opl;
         private bool _playSwitch;
         private int _masterVolume;
-        private Channel[] _channels;
-        private AdLibVoice[] _voices;
+        private readonly Channel[] _channels;
+        private readonly AdLibVoice[] _voices;
         private byte[] _rhythmKeyMap;
         private List<AdLibPatch> _patches;
 
@@ -203,11 +192,11 @@ namespace NScumm.Sci.Sound.Drivers
 
         public bool UseRhythmChannel { get { return _rhythmKeyMap != null; } }
 
-        protected override void GenerateSamples(short[] data, int pos, int len)
+        protected override void GenerateSamples(short[] buf, int pos, int len)
         {
             if (IsStereo)
                 len <<= 1;
-            _opl.ReadBuffer(data, pos, len);
+            _opl.ReadBuffer(buf, pos, len);
 
             // Increase the age of the notes
             for (int i = 0; i < Voices; i++)
@@ -221,12 +210,10 @@ namespace NScumm.Sci.Sound.Drivers
         {
             switch (prop)
             {
-                case MIDI_PROP_MASTER_VOLUME:
+                case MidiPlayer.MIDI_PROP_MASTER_VOLUME:
                     if (param != 0xffff)
                         _masterVolume = param;
                     return _masterVolume;
-                default:
-                    break;
             }
             return 0;
         }
@@ -287,13 +274,13 @@ namespace NScumm.Sci.Sound.Drivers
                         case 0x4e:
                             _channels[channel].enableVelocity = op2 != 0;
                             break;
-                        case SCI_MIDI_CHANNEL_NOTES_OFF:
+                        case MidiPlayer.SCI_MIDI_CHANNEL_NOTES_OFF:
                             for (int i = 0; i < Voices; i++)
                                 if ((_voices[i].channel == channel) && (_voices[i].note != -1))
                                     VoiceOff(i);
                             break;
                         default:
-                            //warning("ADLIB: ignoring MIDI command %02x %02x %02x", command | channel, op1, op2);
+                            Warning($"ADLIB: ignoring MIDI command {command|channel:X2} {op1:X2} {op2:X2}");
                             break;
                     }
                     break;
@@ -619,13 +606,13 @@ namespace NScumm.Sci.Sound.Drivers
 
         private void LoadInstrument(byte[] data, int offset)
         {
-            ByteAccess ins = new ByteAccess(data, offset);
+            BytePtr ins = new BytePtr(data, offset);
             AdLibPatch patch = new AdLibPatch();
 
             // Set data for the operators
             for (int i = 0; i < 2; i++)
             {
-                ByteAccess op = new ByteAccess(ins, i * 13);
+                BytePtr op = new BytePtr(ins, i * 13);
                 patch.op[i].kbScaleLevel = (byte)(op[0] & 0x3);
                 patch.op[i].frequencyMult = (byte)(op[1] & 0xf);
                 patch.op[i].attackRate = (byte)(op[3] & 0xf);
@@ -738,7 +725,7 @@ namespace NScumm.Sci.Sound.Drivers
                     _channels[i].extraVoices -= (byte)freeVoices;
                     return;
                 }
-                else if (_channels[i].extraVoices > 0)
+                if (_channels[i].extraVoices > 0)
                 {
                     AssignVoices(i, _channels[i].extraVoices);
                     freeVoices -= _channels[i].extraVoices;
@@ -792,7 +779,7 @@ namespace NScumm.Sci.Sound.Drivers
 
             if (voice == -1)
             {
-                // TODO: debug(3, "ADLIB: failed to find free voice assigned to channel %i", channel);
+                Debug(3, $"ADLIB: failed to find free voice assigned to channel {channel}");
                 return;
             }
 
@@ -955,7 +942,7 @@ namespace NScumm.Sci.Sound.Drivers
                 {
                     using (Stream f = ServiceLocator.FileStorage.OpenFileRead(path))
                     {
-                        int size = (int)f.Length;
+                        var size = (int)f.Length;
                         const int patchSize = 1344;
 
                         // Note: Funseeker's Guide also has another version of adl.drv, 8803 bytes.
@@ -976,7 +963,7 @@ namespace NScumm.Sci.Sound.Drivers
             if (!ok)
             {
                 Warning("ADLIB: Failed to load patch.003");
-                return (MidiDriverError)(int)-1;
+                return (MidiDriverError)(-1);
             }
 
             return (MidiDriverError)((MidiDriver_AdLib)_driver).OpenAdLib(_version <= SciVersion.V0_LATE);

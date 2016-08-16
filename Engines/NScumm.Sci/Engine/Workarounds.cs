@@ -112,8 +112,22 @@ namespace NScumm.Sci.Engine
         }
 
         public const ushort PATCH_CODE_GETORIGINALBYTEADJUST = 0xC000;
+        public static ushort PATCH_GETORIGINALBYTEADJUST_1(int offset)
+        {
+            return (ushort)(PATCH_CODE_GETORIGINALBYTEADJUST | offset);
+        }
+        public static ushort PATCH_GETORIGINALBYTEADJUST_2(short adjustValue)
+        {
+            return (ushort)adjustValue;
+        }
 
         public const ushort PATCH_CODE_SELECTOR16 = SIG_CODE_SELECTOR16;
+
+        public static ushort PATCH_SELECTOR16(ScriptPatcherSelectors selectorID)
+        {
+            return (ushort)(SIG_CODE_SELECTOR16 | (ushort)selectorID);
+        }
+
         public const ushort PATCH_CODE_SELECTOR8 = SIG_CODE_SELECTOR8;
 
         public static ushort PATCH_SELECTOR8(ScriptPatcherSelectors selector)
@@ -135,6 +149,7 @@ namespace NScumm.Sci.Engine
 
         public const int PATCH_CODE_BYTE = SIG_CODE_BYTE;
 
+        public const int SAVEGAMEID_OFFICIALRANGE_START = 100;
 
         public static SciWorkaroundSolution TrackOriginAndFindWorkaround(int index, SciWorkaroundEntry[] workaroundList, out SciTrackOriginReply trackOrigin)
         {
@@ -575,6 +590,16 @@ namespace NScumm.Sci.Engine
         public static ushort SIG_UINT16_2(ushort value)
         {
             return ((ushort)(value >> 8));
+        }
+
+        public static ushort PATCH_UINT16_1(ushort value)
+        {
+            return (ushort)(SIG_CODE_UINT16 | (value & 0xFF));
+        }
+
+        public static ushort PATCH_UINT16_2(ushort value)
+        {
+            return (ushort)(value >> 8);
         }
 
         internal static SciWorkaroundSolution TrackOriginAndFindWorkaround(int v, object kDisplay_workarounds, out SciTrackOriginReply originReply)

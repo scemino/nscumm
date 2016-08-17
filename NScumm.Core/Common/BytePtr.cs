@@ -90,6 +90,60 @@ namespace NScumm.Core
         }
     }
 
+    public struct Int32Ptr
+    {
+        public int Offset;
+        public readonly int[] Data;
+
+        public static readonly Int32Ptr Null = new Int32Ptr(null);
+
+        public int Value
+        {
+            get { return Data[Offset]; }
+            set { Data[Offset] = value; }
+        }
+
+        public int this[int index]
+        {
+            get { return Data[Offset + index]; }
+            set { Data[Offset + index] = value; }
+        }
+
+        public Int32Ptr(Int32Ptr ptr, int offset = 0)
+        {
+            Data = ptr.Data;
+            Offset = ptr.Offset + offset;
+        }
+
+        public Int32Ptr(int[] data, int offset = 0)
+        {
+            Data = data;
+            Offset = offset;
+        }
+
+        public static bool operator ==(Int32Ptr p1, Int32Ptr p2)
+        {
+            return p1.Data == p2.Data &&
+                     p1.Offset == p2.Offset;
+        }
+
+        public static bool operator !=(Int32Ptr p1, Int32Ptr p2)
+        {
+            return !(p1 == p2);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (!(obj is Int32Ptr)) return false;
+            return this == (Int32Ptr)obj;
+        }
+
+        public override int GetHashCode()
+        {
+            return Data == null ? 0 : Data.GetHashCode() ^ Offset;
+        }
+    }
+
     public static class BytePtrExtension
     {
         public static void WriteInt16(this BytePtr data, int startIndex, short value)

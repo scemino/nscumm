@@ -238,6 +238,7 @@
     </Compile>
     <Compile Include="..\..\NScumm.Desktop\bin\Debug\plugins\Sound\Drivers\MidiDriver_CMS.cs" />
     <Compile Include="..\..\NScumm.Desktop\bin\Debug\plugins\Sound\Drivers\MidiDriver_PCJr.cs" />
+    <Compile Include="..\..\NScumm.Desktop\bin\Debug\plugins\Sound\Drivers\MidiPlayer_Midi.cs" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>

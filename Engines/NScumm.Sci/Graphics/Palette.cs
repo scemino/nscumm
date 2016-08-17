@@ -550,7 +550,7 @@ namespace NScumm.Sci.Graphics
             if (!SciEngine.Instance.HasMacIconBar)
                 return;
 
-            throw new NotImplementedException();
+            throw new NotImplementedException("LoadMacIconBarPalette");
             //var clutStream = SciEngine.Instance.MacExecutable.GetResource(ScummHelper.MakeTag('c', 'l', 'u', 't'), 150);
 
             //if (!clutStream)

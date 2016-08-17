@@ -1165,7 +1165,7 @@ namespace NScumm.Sci.Engine
             if (!exists && SciEngine.Instance.GameId == SciGameId.KQ6 && SciEngine.Instance.Platform == Core.IO.Platform.Macintosh &&
                 (name == "HalfDome" || name == "Kq6Movie"))
             {
-                throw new NotImplementedException();
+                throw new NotImplementedException("kFileIOExists (mac)");
                 //TODO: exists = Common::MacResManager::exists(name);
             }
 

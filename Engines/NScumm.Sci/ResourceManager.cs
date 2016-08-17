@@ -251,6 +251,40 @@ namespace NScumm.Sci
 
         public ViewType ViewType { get { return _viewType; } }
 
+        public bool IsGMTrackIncluded()
+        {
+            // This check only makes sense for SCI1 and newer games
+            if (GetSciVersion() < SciVersion.V1_EARLY)
+                return false;
+
+            // SCI2 and newer games always have GM tracks
+            if (GetSciVersion() >= SciVersion.V2)
+                return true;
+
+            // For the leftover games, we can safely use SCI_VERSION_1_EARLY for the soundVersion
+            SciVersion soundVersion = SciVersion.V1_EARLY;
+
+            // Read the first song and check if it has a GM track
+            bool result = false;
+            var resources = ListResources(ResourceType.Sound, -1);
+            resources.Sort();
+            var itr = resources.First();
+            int firstSongId = itr.Number;
+
+            SoundResource song1 = new SoundResource((uint)firstSongId, this, soundVersion);
+            if (song1 == null)
+            {
+                Warning("ResourceManager::isGMTrackIncluded: track 1 not found");
+                return false;
+            }
+
+            var gmTrack = song1.GetTrackByType(0x07);
+            if (gmTrack != null)
+                result = true;
+
+            return result;
+        }
+
         public ResourceManager(string directory)
         {
             _directory = directory;
@@ -307,7 +341,7 @@ namespace NScumm.Sci
             }
             else
             {
-                throw new NotImplementedException();
+                throw new NotImplementedException("AddAppropriateSources");
             }
 
             AddPatchDir(".");
@@ -461,15 +495,12 @@ namespace NScumm.Sci
                 case SciGameId.FAIRYTALES:
                     gmPatchFile = "TALEGM.PAT";
                     break;
-                default:
-                    break;
             }
 
             if (gmPatchFile != null && ScummHelper.LocatePath(_directory, gmPatchFile) != null)
             {
-                throw new NotImplementedException();
-                //ResourceSource psrcPatch = new PatchResourceSource(gmPatchFile);
-                //ProcessPatch(psrcPatch, ResourceType.Patch, 4);
+                ResourceSource psrcPatch = new PatchResourceSource(gmPatchFile);
+                ProcessPatch(psrcPatch, ResourceType.Patch, 4);
             }
         }
 
@@ -755,7 +786,7 @@ namespace NScumm.Sci
                     bool bAdd = false;
                     var name = ServiceLocator.FileStorage.GetFileName(x);
 
-                    throw new NotImplementedException();
+                    throw new NotImplementedException("ReadResourcePatches");
                     //// SCI1 scheme
                     //if (char.IsDigit(name[0]))
                     //{
@@ -921,9 +952,8 @@ namespace NScumm.Sci
             }
         }
 
-
         // version-agnostic patch application
-        private void ProcessPatch(ResourceSource source, ResourceType resourceType, ushort resourceNr, uint tuple)
+        private void ProcessPatch(ResourceSource source, ResourceType resourceType, ushort resourceNr, uint tuple = 0)
         {
             Stream fileStream = null;
             ResourceSource.Resource newrsc = null;
@@ -1054,7 +1084,7 @@ namespace NScumm.Sci
 
             ResourceSource src = FindVolume(map, 0);
 
-            if (src==null)
+            if (src == null)
                 return ResourceErrorCodes.NO_RESOURCE_FILES_FOUND;
 
             var ptr = new ByteAccess(mapRes.data);
@@ -1172,7 +1202,7 @@ namespace NScumm.Sci
                         ptr.Offset += 3;
                     }
 
-                    if (isEarly || ((n & 0x80)!=0))
+                    if (isEarly || ((n & 0x80) != 0))
                     {
                         syncSize = ptr.ToUInt16();
                         ptr.Offset += 2;
@@ -1183,7 +1213,7 @@ namespace NScumm.Sci
                             AddResource(new ResourceId(ResourceType.Sync36, (ushort)map._volumeNumber, n & 0xffffff3f), src, offset, syncSize);
                     }
 
-                    if ((n & 0x40)!=0)
+                    if ((n & 0x40) != 0)
                     {
                         // This seems to define the size of raw lipsync data (at least
                         // in KQ6 CD Windows).
@@ -1743,7 +1773,7 @@ namespace NScumm.Sci
         {
             var res = FindResource(new ResourceId(ResourceType.Vocab, 900), false);
 
-            if (res==null)
+            if (res == null)
                 return false;
 
             if (res.size < 0x1fe)
@@ -1761,7 +1791,7 @@ namespace NScumm.Sci
                         // Out of bounds;
                         return false;
                     }
-                } while (res.data[offset++]!=0);
+                } while (res.data[offset++] != 0);
                 offset += 3;
             }
 

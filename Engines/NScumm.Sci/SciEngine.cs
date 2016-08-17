@@ -541,9 +541,9 @@ namespace NScumm.Sci
 
             lang = Sci.Language.ENGLISH;
 
-            if (Selector(o=>o.printLang) != -1)
+            if (Selector(o => o.printLang) != -1)
             {
-                lang = (Language)ReadSelectorValue(_gamestate._segMan, _gameObjectAddress, o=>o.printLang);
+                lang = (Language)ReadSelectorValue(_gamestate._segMan, _gameObjectAddress, o => o.printLang);
 
                 if ((ResourceManager.GetSciVersion() >= SciVersion.V1_1) || (lang == Sci.Language.NONE))
                 {
@@ -1292,25 +1292,19 @@ namespace NScumm.Sci
                 }
                 return SelectorType.Variable;
             }
-            else
+            // Check if it's a method, with recursive lookup in superclasses
+            while (obj != null)
             {
-                // Check if it's a method, with recursive lookup in superclasses
-                while (obj != null)
+                index = obj.FuncSelectorPosition(selectorId);
+                if (index >= 0)
                 {
-                    index = obj.FuncSelectorPosition(selectorId);
-                    if (index >= 0)
-                    {
-                        fptr = obj.GetFunction(index);
-                        return SelectorType.Method;
-                    }
-                    else
-                    {
-                        obj = segMan.GetObject(obj.SuperClassSelector);
-                    }
+                    fptr = obj.GetFunction(index);
+                    return SelectorType.Method;
                 }
-
-                return SelectorType.None;
+                obj = segMan.GetObject(obj.SuperClassSelector);
             }
+
+            return SelectorType.None;
 
 
             //	return _lookupSelector_function(segMan, obj, selectorId, fptr);

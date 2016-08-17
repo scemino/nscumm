@@ -53,7 +53,7 @@ namespace NScumm.Sci.Sound.Drivers
                     _driver.Property(MIDI_PROP_MASTER_VOLUME, value);
             }
         }
-        public sbyte Reverb
+        public virtual sbyte Reverb
         {
             get { return _reverb; }
             set { _reverb = value; }

@@ -27,6 +27,7 @@ using System.IO;
 using System.Threading;
 using NScumm.Core.Common;
 using static NScumm.Core.DebugHelper;
+using NScumm.Core;
 
 namespace NScumm.Sci.Sound
 {
@@ -466,15 +467,19 @@ namespace NScumm.Sci.Sound
                 case MusicType.CMS:
                     _pMidiDrv = new MidiPlayer_CMS(_soundVersion);
                     break;
-                    //    case MusicType.FMTowns:
-                    //        _pMidiDrv = MidiPlayer_FMTowns_create(_soundVersion);
-                    //        break;
-                    //    default:
-                    //        if (ConfMan.getBool("native_fb01"))
-                    //            _pMidiDrv = MidiPlayer_Fb01_create(_soundVersion);
-                    //        else
-                    //            _pMidiDrv = MidiPlayer_Midi_create(_soundVersion);
-                    //        break;
+                //    case MusicType.FMTowns:
+                //        _pMidiDrv = MidiPlayer_FMTowns_create(_soundVersion);
+                //        break;
+                default:
+                    if (ConfigManager.Instance.Get<bool>("native_fb01"))
+                    {
+                        //_pMidiDrv = MidiPlayer_Fb01_create(_soundVersion);
+                    }
+                    else
+                    {
+                        _pMidiDrv = new MidiPlayer_Midi(_soundVersion);
+                    }
+                    break;
             }
 
             if (_pMidiDrv != null && _pMidiDrv.Open() == 0)

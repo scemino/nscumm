@@ -62,7 +62,9 @@ namespace NScumm.Sci.Sound
             // resource number, but it's totally unrelated to the menu music).
             // The GK1 demo (very late SCI1.1) does the same thing
             // TODO: Check the QFG4 demo
-            _useDigitalSFX = (ResourceManager.GetSciVersion() >= SciVersion.V2 || SciEngine.Instance.GameId == SciGameId.GK1 /*|| ConfMan.getBool("prefer_digitalsfx")*/); //TODO: ConfMan
+            //_useDigitalSFX = (ResourceManager.GetSciVersion() >= SciVersion.V2 || SciEngine.Instance.GameId == SciGameId.GK1 || ConfigManager.Instance.Get<bool>("prefer_digitalsfx"));
+            // TODO: optionsList
+            _useDigitalSFX = true;
 
             _music = new SciMusic(_soundVersion, _useDigitalSFX);
             _music.Init();

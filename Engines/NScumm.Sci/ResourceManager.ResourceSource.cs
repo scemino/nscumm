@@ -101,7 +101,7 @@ namespace NScumm.Sci
                 internal const int MAX_MEMORY = 256 * 1024;	// 256KB
 
                 internal ResourceId _id; // TODO: _id could almost be made const, only readResourceInfo() modifies it...
-              
+
                 /// <summary>
                 /// Offset in file
                 /// </summary>
@@ -121,8 +121,18 @@ namespace NScumm.Sci
                 public int _headerSize;
                 public byte[] _header;
 
+                public uint AudioCompressionType
+                {
+                    get
+                    {
+                        return _source.AudioCompressionType;
+                    }
+                }
+
                 public ResourceType ResourceType { get { return _id.Type; } }
+
                 public ushort Number { get { return _id.Number; } }
+
                 public bool IsLocked { get { return _status == ResourceStatus.Locked; } }
 
                 public Resource(ResourceManager resMan, ResourceId id)
@@ -156,14 +166,14 @@ namespace NScumm.Sci
                             w = br.ReadUInt16();
                             type = _resMan.ConvertResType(w >> 11);
                             number = (ushort)(w & 0x7FF);
-                            szPacked = (int)br.ReadUInt16() - 4;
+                            szPacked = br.ReadUInt16() - 4;
                             szUnpacked = br.ReadUInt16();
                             wCompression = br.ReadUInt16();
                             break;
                         case ResVersion.Sci1Late:
                             type = _resMan.ConvertResType(file.ReadByte());
                             number = br.ReadUInt16();
-                            szPacked = (int)br.ReadUInt16() - 4;
+                            szPacked = br.ReadUInt16() - 4;
                             szUnpacked = br.ReadUInt16();
                             wCompression = br.ReadUInt16();
                             break;
@@ -246,6 +256,80 @@ namespace NScumm.Sci
                     _status = ResourceStatus.NoMalloc;
                 }
 
+                public bool LoadFromAudioVolumeSCI1(Stream stream)
+                {
+                    data = new byte[size];
+
+                    int really_read = stream.Read(data, 0, size);
+                    if (really_read != size)
+                        Warning("Read {0} bytes from {1} but expected {2}", really_read, _id, size);
+
+                    _status = ResourceStatus.Allocated;
+                    return true;
+                }
+
+                public bool LoadFromAudioVolumeSCI11(Stream stream)
+                {
+                    // Check for WAVE files here
+                    var br = new BinaryReader(stream);
+                    uint riffTag = br.ReadUInt32BigEndian();
+                    if (riffTag == ScummHelper.MakeTag('R', 'I', 'F', 'F'))
+                    {
+                        _headerSize = 0;
+                        size = br.ReadInt32() + 8;
+                        stream.Seek(-8, SeekOrigin.Current);
+                        return LoadFromWaveFile(stream);
+                    }
+                    stream.Seek(-4, SeekOrigin.Current);
+
+                    // Rave-resources (King's Quest 6) don't have any header at all
+                    if (ResourceType != ResourceType.Rave)
+                    {
+                        var type = _resMan.ConvertResType(br.ReadByte());
+                        if (((ResourceType == ResourceType.Audio || ResourceType == ResourceType.Audio36) && (type != ResourceType.Audio))
+                            || ((ResourceType == ResourceType.Sync || ResourceType == ResourceType.Sync36) && (type != ResourceType.Sync)))
+                        {
+                            Warning("Resource type mismatch loading {0}", _id);
+                            Unalloc();
+                            return false;
+                        }
+
+                        _headerSize = br.ReadByte();
+
+                        if (type == ResourceType.Audio)
+                        {
+                            if (_headerSize != 7 && _headerSize != 11 && _headerSize != 12)
+                            {
+                                Warning("Unsupported audio header");
+                                Unalloc();
+                                return false;
+                            }
+
+                            if (_headerSize != 7)
+                            { // Size is defined already from the map
+                              // Load sample size
+                                stream.Seek(7, SeekOrigin.Current);
+                                size = br.ReadInt32();
+                                // Adjust offset to point at the header data again
+                                stream.Seek(-11, SeekOrigin.Current);
+                            }
+                        }
+                    }
+                    return LoadPatch(stream);
+                }
+
+                private bool LoadFromWaveFile(Stream stream)
+                {
+                    data = new byte[size];
+
+                    int really_read = stream.Read(data, 0, size);
+                    if (really_read != size)
+                        Error("Read {0} bytes from {1} but expected {2}", really_read, _id, size);
+
+                    _status = ResourceStatus.Allocated;
+                    return true;
+                }
+
                 public bool LoadFromPatchFile()
                 {
                     string filename = _source.LocationName;
@@ -283,12 +367,12 @@ namespace NScumm.Sci
                     int really_read;
                     if (res._headerSize > 0)
                     {
-                        really_read = file.Read(res._header, 0, (int)res._headerSize);
+                        really_read = file.Read(res._header, 0, res._headerSize);
                         if (really_read != res._headerSize)
                             Error($"Read {really_read} bytes from {res._id} but expected {res._headerSize}");
                     }
 
-                    really_read = file.Read(res.data, 0, (int)res.size);
+                    really_read = file.Read(res.data, 0, res.size);
                     if (really_read != res.size)
                         Error($"Read {really_read} bytes from {res._id} but expected {res.size}");
 
@@ -344,6 +428,7 @@ namespace NScumm.Sci
 
                     return errorNum;
                 }
+
             }
 
             protected readonly ResSourceType _sourceType;
@@ -354,6 +439,11 @@ namespace NScumm.Sci
 
             public ResSourceType SourceType { get { return _sourceType; } }
             public string LocationName { get { return _name; } }
+
+            // FIXME: This audio specific method is a hack. After all, why should a
+            // ResourceSource or a Resource (which uses this method) have audio
+            // specific methods? But for now we keep this, as it eases transition.
+            public virtual uint AudioCompressionType { get { return 0; } }
 
             public ResourceSource(ResSourceType type, string name, int volNum = 0, object resFile = null)
             {
@@ -518,7 +608,7 @@ namespace NScumm.Sci
             protected uint _audioCompressionType;
             protected int[] _audioCompressionOffsetMapping;
 
-            public virtual uint AudioCompressionType { get { return _audioCompressionType; } }
+            public override uint AudioCompressionType { get { return _audioCompressionType; } }
 
             public AudioVolumeResourceSource(ResourceManager resMan, string name, ResourceSource map, int volNum)
                 : base(name, map, volNum, ResSourceType.AudioVolume)
@@ -568,7 +658,68 @@ namespace NScumm.Sci
 
             public override void LoadResource(ResourceManager resMan, Resource res)
             {
-                throw new NotImplementedException();
+                var fileStream = GetVolumeFile(resMan, res);
+                if (fileStream == null)
+                    return;
+
+                if (_audioCompressionType != 0)
+                {
+                    // this file is compressed, so lookup our offset in the offset-translation table and get the new offset
+                    //  also calculate the compressed size by using the next offset
+                    var mappingTable = new Int32Ptr(_audioCompressionOffsetMapping);
+                    var compressedOffset = 0;
+
+                    do
+                    {
+                        if (mappingTable.Value == res._fileOffset)
+                        {
+                            mappingTable.Offset++;
+                            compressedOffset = mappingTable.Value;
+                            // Go to next compressed offset and use that to calculate size of compressed sample
+                            switch (res.ResourceType)
+                            {
+                                case ResourceType.Sync:
+                                case ResourceType.Sync36:
+                                case ResourceType.Rave:
+                                    // we should already have a (valid) size
+                                    break;
+                                default:
+                                    mappingTable.Offset += 2;
+                                    res.size = mappingTable.Value - compressedOffset;
+                                    break;
+                            }
+                            break;
+                        }
+                        mappingTable.Offset += 2;
+                    } while (mappingTable.Value != 0);
+
+                    if (compressedOffset == 0)
+                        Error("could not translate offset to compressed offset in audio volume");
+                    fileStream.Seek(compressedOffset, SeekOrigin.Begin);
+
+                    switch (res.ResourceType)
+                    {
+                        case ResourceType.Audio:
+                        case ResourceType.Audio36:
+                            // Directly read the stream, compressed audio wont have resource type id and header size for SCI1.1
+                            res.LoadFromAudioVolumeSCI1(fileStream);
+                            if (_resourceFile != null)
+                                fileStream.Dispose();
+                            return;
+                    }
+                }
+                else {
+                    System.Diagnostics.Debug.Assert(fileStream.Length == -1 || res._fileOffset < fileStream.Length);
+                    // original file, directly seek to given offset and get SCI1/SCI1.1 audio resource
+                    fileStream.Seek(res._fileOffset, SeekOrigin.Begin);
+                }
+                if (GetSciVersion() < SciVersion.V1_1)
+                    res.LoadFromAudioVolumeSCI1(fileStream);
+                else
+                    res.LoadFromAudioVolumeSCI11(fileStream);
+
+                if (_resourceFile != null)
+                    fileStream.Dispose();
             }
         }
 

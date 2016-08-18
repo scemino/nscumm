@@ -186,6 +186,16 @@
     <Compile Include="Common\Dcl.cs" />
     <Compile Include="Common\MathHelper.cs" />
     <Compile Include="Audio\Decoders\Wave.cs" />
+    <Compile Include="Audio\SoftSynth\MT32EmuMusicPlugin.cs" />
+    <Compile Include="Audio\SoftSynth\MidiDriver_MT32.cs" />
+    <Compile Include="Audio\SoftSynth\Mt32\ROMImage.cs" />
+    <Compile Include="Audio\SoftSynth\Mt32\Synth.cs" />
+    <Compile Include="Audio\SoftSynth\Mt32\Analog.cs" />
+    <Compile Include="Audio\SoftSynth\Mt32\BReverbModel.cs" />
+    <Compile Include="Audio\SoftSynth\Mt32\Poly.cs" />
+    <Compile Include="Audio\SoftSynth\Mt32\PatchParam.cs" />
+    <Compile Include="Audio\SoftSynth\Mt32\ControlROMMap.cs" />
+    <Compile Include="Audio\SoftSynth\Mt32\MemoryRegion.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <ItemGroup>
@@ -196,5 +206,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Image\" />
+    <Folder Include="Audio\SoftSynth\Mt32\" />
   </ItemGroup>
 </Project>

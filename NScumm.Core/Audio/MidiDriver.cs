@@ -241,6 +241,12 @@ namespace NScumm.Core.Audio
                         result = handle;
                     }
                     break;
+                case MusicType.GeneralMidi:
+                case MusicType.RolandGS:
+                case MusicType.MT32:
+                    if (flags.HasFlag(MusicDriverTypes.Midi))
+                        result = handle;
+                    break;
                 case MusicType.Null:
                     result = handle;
                     break;

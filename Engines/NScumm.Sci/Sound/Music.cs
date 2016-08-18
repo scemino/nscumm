@@ -471,11 +471,11 @@ namespace NScumm.Sci.Sound
                 //        _pMidiDrv = MidiPlayer_FMTowns_create(_soundVersion);
                 //        break;
                 default:
-                    if (ConfigManager.Instance.Get<bool>("native_fb01"))
-                    {
+                    //if (ConfigManager.Instance.Get<bool>("native_fb01"))
+                    //{
                         //_pMidiDrv = MidiPlayer_Fb01_create(_soundVersion);
-                    }
-                    else
+                    //}
+                    //else
                     {
                         _pMidiDrv = new MidiPlayer_Midi(_soundVersion);
                     }

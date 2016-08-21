@@ -19,6 +19,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#define MT32EMU_MONITOR_SYSEX
 using System;
 
 namespace NScumm.Core.Audio.SoftSynth.Mt32
@@ -166,14 +167,14 @@ namespace NScumm.Core.Audio.SoftSynth.Mt32
             if (off > entrySize * entries - 1)
             {
 #if MT32EMU_MONITOR_SYSEX
-        synth->printDebug("read[%d]: parameters start out of bounds: entry=%d, off=%d, len=%d", type, entry, off, len);
+                synth.PrintDebug("read[{0}]: parameters start out of bounds: entry={1}, off={2}, len={3}", type, entry, off, len);
 #endif
                 return;
             }
             if (off + len > entrySize * entries)
             {
 #if MT32EMU_MONITOR_SYSEX
-        synth->printDebug("read[%d]: parameters end out of bounds: entry=%d, off=%d, len=%d", type, entry, off, len);
+                synth.PrintDebug("read[{0}]: parameters end out of bounds: entry={1}, off={2}, len={3}", type, entry, off, len);
 #endif
                 len = entrySize * entries - off;
             }
@@ -181,14 +182,14 @@ namespace NScumm.Core.Audio.SoftSynth.Mt32
             if (src == BytePtr.Null)
             {
 #if MT32EMU_MONITOR_SYSEX
-        synth->printDebug("read[%d]: unreadable region: entry=%d, off=%d, len=%d", type, entry, off, len);
+                synth.PrintDebug("read[{0}]: unreadable region: entry={1}, off={2}, len={3}", type, entry, off, len);
 #endif
                 return;
             }
             Array.Copy(src.Data, src.Offset + off, dst, 0, len);
         }
 
-        public void Write(int entry, int off, BytePtr src, int len, bool init)
+        public void Write(int entry, int off, BytePtr src, int len, bool init = false)
         {
             int memOff = entry * entrySize + off;
             // This method should never be called with out-of-bounds parameters,
@@ -196,14 +197,14 @@ namespace NScumm.Core.Audio.SoftSynth.Mt32
             if (off > entrySize * entries - 1)
             {
 #if MT32EMU_MONITOR_SYSEX
-        synth->printDebug("write[%d]: parameters start out of bounds: entry=%d, off=%d, len=%d", type, entry, off, len);
+                synth.PrintDebug("write[{0}]: parameters start out of bounds: entry={1}, off={2}, len={3}", type, entry, off, len);
 #endif
                 return;
             }
             if (off + len > entrySize * entries)
             {
 #if MT32EMU_MONITOR_SYSEX
-        synth->printDebug("write[%d]: parameters end out of bounds: entry=%d, off=%d, len=%d", type, entry, off, len);
+                synth.PrintDebug("write[{0}]: parameters end out of bounds: entry={1}, off={2}, len={3}", type, entry, off, len);
 #endif
                 len = entrySize * entries - off;
             }
@@ -211,7 +212,7 @@ namespace NScumm.Core.Audio.SoftSynth.Mt32
             if (dest == BytePtr.Null)
             {
 #if MT32EMU_MONITOR_SYSEX
-        synth->printDebug("write[%d]: unwritable region: entry=%d, off=%d, len=%d", type, entry, off, len);
+                synth.PrintDebug("write[{0}]: unwritable region: entry={1}, off={2}, len={3}", type, entry, off, len);
 #endif
             }
 
@@ -225,7 +226,7 @@ namespace NScumm.Core.Audio.SoftSynth.Mt32
                     if (desiredValue > maxValue)
                     {
 #if MT32EMU_MONITOR_SYSEX
-                synth->printDebug("write[%d]: Wanted 0x%02x at %d, but max 0x%02x", type, desiredValue, memOff, maxValue);
+                        synth.PrintDebug("write[{0}]: Wanted 0x{1:X2} at {2}, but max 0x{3:X2}", type, desiredValue, memOff, maxValue);
 #endif
                         desiredValue = maxValue;
                     }
@@ -234,8 +235,8 @@ namespace NScumm.Core.Audio.SoftSynth.Mt32
                 else if (desiredValue != 0)
                 {
 #if MT32EMU_MONITOR_SYSEX
-            // Only output debug info if they wanted to write non-zero, since a lot of things cause this to spit out a lot of debug info otherwise.
-            synth->printDebug("write[%d]: Wanted 0x%02x at %d, but write-protected", type, desiredValue, memOff);
+                    // Only output debug info if they wanted to write non-zero, since a lot of things cause this to spit out a lot of debug info otherwise.
+                    synth.PrintDebug("write[{0}]: Wanted 0x{1:X2} at {2}, but write-protected", type, desiredValue, memOff);
 #endif
                 }
                 memOff++;

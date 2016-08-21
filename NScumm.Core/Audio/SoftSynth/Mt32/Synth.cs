@@ -1,4 +1,4 @@
-﻿//
+//
 //  Synth.cs
 //
 //  Author:
@@ -19,7 +19,18 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#define MT32EMU_MONITOR_SYSEX
+#define MT32EMU_MONITOR_INIT
 using System;
+
+#if MT32EMU_USE_FLOAT_SAMPLES
+using Sample = System.Single;
+using SampleEx = System.Single;
+#else
+using Sample = System.Int16;
+using SampleEx = System.Int32;
+#endif
+using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Core.Audio.SoftSynth.Mt32
 {
@@ -38,6 +49,7 @@ namespace NScumm.Core.Audio.SoftSynth.Mt32
             public int Offset;
 
             public readonly BytePtr name;
+
             // 1 & 2  0-12 (1-13)
             public byte partialStructure12
             {
@@ -179,9 +191,9 @@ namespace NScumm.Core.Audio.SoftSynth.Mt32
                 }
 
                 // 0-100
-                public readonly BytePtr time;
+                public readonly BytePtr time; // [4]
                 // 0-100 (-50 - +50) // [3]: SUSTAIN LEVEL, [4]: END LEVEL
-                public readonly BytePtr level;
+                public readonly BytePtr level; // [5]
 
                 public PitchEnvParam(byte[] data, int offset)
                 {
@@ -308,7 +320,7 @@ namespace NScumm.Core.Audio.SoftSynth.Mt32
                     Data = data;
                     Offset = offset;
                     envTime = new BytePtr(Data, Offset + 9);
-                    envLevel = new BytePtr(Data, Offset + 5);
+                    envLevel = new BytePtr(Data, Offset + 9 + 5);
                 }
             }
 
@@ -383,7 +395,7 @@ namespace NScumm.Core.Audio.SoftSynth.Mt32
                     Data = data;
                     Offset = offset;
                     envTime = new BytePtr(Data, Offset + 8);
-                    envLevel = new BytePtr(Data, Offset + 8);
+                    envLevel = new BytePtr(Data, Offset + 8 + 5);
                 }
             }
 
@@ -392,6 +404,17 @@ namespace NScumm.Core.Audio.SoftSynth.Mt32
             public readonly PitchLFOParam pitchLFO;
             public readonly TVFParam tvf;
             public readonly TVAParam tva;
+
+            public PartialParam()
+                : this(new byte[Size], 0)
+            {
+            }
+
+            public PartialParam(PartialParam copy)
+                : this(new byte[Size], 0)
+            {
+                Array.Copy(copy.Data, copy.Offset, Data, Offset, Size);
+            }
 
             public PartialParam(byte[] data, int offset)
             {
@@ -438,7 +461,13 @@ namespace NScumm.Core.Audio.SoftSynth.Mt32
             public byte[] Data;
             public int Offset;
 
-            public PatchParam Patch { get; }
+            private PatchParam patch;
+            public PatchParam Patch
+            {
+                get { return patch; }
+                set { Array.Copy(value.Data, value.Offset, patch.Data, patch.Offset, PatchParam.Size); }
+            }
+
             /// <summary>
             /// OUTPUT LEVEL 0-100.
             /// </summary>
@@ -457,13 +486,13 @@ namespace NScumm.Core.Audio.SoftSynth.Mt32
                 set { Data[Offset + PatchParam.Size + 1] = value; }
             }
 
-            public BytePtr Dummy { get; }
+            public BytePtr Dummy;
 
             public PatchTemp(byte[] data, int offset)
             {
                 Data = data;
                 Offset = offset;
-                Patch = new PatchParam(Data, Offset);
+                patch = new PatchParam(Data, Offset);
                 Dummy = new BytePtr(Data, Offset + PatchParam.Size + 2);
             }
         }
@@ -513,8 +542,8 @@ namespace NScumm.Core.Audio.SoftSynth.Mt32
         {
             public const int Size = TimbreParam.Size + 10;
 
-            public byte[] Data;
-            public int Offset;
+            public readonly byte[] Data;
+            public readonly int Offset;
 
             public readonly TimbreParam timbre;
             public readonly BytePtr padding;
@@ -567,7 +596,7 @@ namespace NScumm.Core.Audio.SoftSynth.Mt32
             public readonly BytePtr reserveSettings;
 
             // MIDI CHANNEL (PART1) 0-16 (1-16,OFF)
-            public readonly BytePtr chanAssign;
+            public BytePtr chanAssign;
 
             // MASTER VOLUME 0-100
             public byte masterVol
@@ -578,6 +607,8 @@ namespace NScumm.Core.Audio.SoftSynth.Mt32
 
             public System(byte[] data, int offset)
             {
+                Data = data;
+                Offset = offset;
                 reserveSettings = new BytePtr(data, offset + 4);
                 chanAssign = new BytePtr(data, offset + 4 + 9);
             }
@@ -595,12 +626,19 @@ namespace NScumm.Core.Audio.SoftSynth.Mt32
 
         // NOTE: There are only 30 timbres in the "rhythm" bank for MT-32; the additional 34 are for LAPC-I and above
         public readonly PaddedTimbre[] timbres;
+        public readonly BytePtr timbresOffset;
 
         public readonly System system;
 
         public MemParams()
             : this(new byte[Size], 0)
         {
+        }
+
+        public MemParams(MemParams copy)
+            : this(new byte[Size], 0)
+        {
+            Array.Copy(copy.Data, copy.Offset, Data, Offset, Size);
         }
 
         public MemParams(byte[] data, int offset)
@@ -632,6 +670,7 @@ namespace NScumm.Core.Audio.SoftSynth.Mt32
                 patches[i] = new PatchParam(Data, offset);
                 offset += PatchParam.Size;
             }
+            timbresOffset = new BytePtr(data, offset);
             timbres = new PaddedTimbre[64 + 64 + 64 + 64]; // Group A, Group B, Memory, Rhythm
             for (int i = 0; i < timbres.Length; i++)
             {
@@ -706,10 +745,82 @@ namespace NScumm.Core.Audio.SoftSynth.Mt32
         RELEASE
     }
 
+    class ControlROMPCMStruct
+    {
+        public const int Size = 4;
+
+        public byte pos
+        {
+            get { return Data[Offset]; }
+            set { Data[Offset] = value; }
+        }
+        public byte len
+        {
+            get { return Data[Offset + 1]; }
+            set { Data[Offset + 1] = value; }
+        }
+        public byte pitchLSB
+        {
+            get { return Data[Offset + 2]; }
+            set { Data[Offset + 2] = value; }
+        }
+        public byte pitchMSB
+        {
+            get { return Data[Offset + 3]; }
+            set { Data[Offset + 3] = value; }
+        }
+
+        public readonly byte[] Data;
+        public readonly int Offset;
+
+        public ControlROMPCMStruct()
+            : this(new byte[Size], 0)
+        {
+        }
+
+        public ControlROMPCMStruct(byte[] data, int offset)
+        {
+            Data = data;
+            Offset = offset;
+        }
+    }
+
+    class PCMWaveEntry
+    {
+        public int addr;
+        public int len;
+        public bool loop;
+        public ControlROMPCMStruct controlROMPCMStruct = new ControlROMPCMStruct();
+    }
+
     class Synth
     {
         public const int MAX_SYSEX_SIZE = 512; // FIXME: Does this correspond to a real MIDI buffer used in h/w devices?
         private const int CONTROL_ROM_SIZE = 64 * 1024;
+        private const int SYSEX_MANUFACTURER_ROLAND = 0x41;
+
+        private const int SYSEX_MDL_MT32 = 0x16;
+        private const int SYSEX_MDL_D50 = 0x14;
+
+        private const int SYSEX_CMD_RQ1 = 0x11; // Request data #1
+        private const int SYSEX_CMD_DT1 = 0x12; // Data set 1
+        private const int SYSEX_CMD_WSD = 0x40; // Want to send data
+        private const int SYSEX_CMD_RQD = 0x41; // Request data
+        private const int SYSEX_CMD_DAT = 0x42; // Data set
+        private const int SYSEX_CMD_ACK = 0x43; // Acknowledge
+        private const int SYSEX_CMD_EOD = 0x45; // End of data
+        private const int SYSEX_CMD_ERR = 0x4E; // Communications error
+        private const int SYSEX_CMD_RJC = 0x4F; // Rejection
+
+        const int SYSTEM_MASTER_TUNE_OFF = 0;
+        const int SYSTEM_REVERB_MODE_OFF = 1;
+        const int SYSTEM_REVERB_TIME_OFF = 2;
+        const int SYSTEM_REVERB_LEVEL_OFF = 3;
+        const int SYSTEM_RESERVE_SETTINGS_START_OFF = 4;
+        const int SYSTEM_RESERVE_SETTINGS_END_OFF = 12;
+        const int SYSTEM_CHAN_ASSIGN_START_OFF = 13;
+        const int SYSTEM_CHAN_ASSIGN_END_OFF = 21;
+        const int SYSTEM_MASTER_VOL_OFF = 22;
 
         PatchTempMemoryRegion patchTempMemoryRegion;
         RhythmTempMemoryRegion rhythmTempMemoryRegion;
@@ -724,26 +835,26 @@ namespace NScumm.Core.Audio.SoftSynth.Mt32
 
         bool isEnabled;
 
-        //PCMWaveEntry pcmWaves; // Array
+        internal PCMWaveEntry[] pcmWaves;
 
         ControlROMFeatureSet controlROMFeatures;
-        ControlROMMap controlROMMap;
+        internal ControlROMMap controlROMMap;
         readonly byte[] controlROMData = new byte[CONTROL_ROM_SIZE];
-        short[] pcmROMData;
+        internal short[] pcmROMData;
         int pcmROMSize; // This is in 16-bit samples, therefore half the number of bytes in the ROM
 
-        uint partialCount;
+        int partialCount;
         sbyte[] chantable = new sbyte[32]; // FIXME: Need explanation why 32 is set, obviously it should be 16
 
-        //MidiEventQueue midiQueue;
-        volatile uint lastReceivedMIDIEventTimestamp;
-        volatile uint renderedSampleCount;
+        MidiEventQueue midiQueue;
+        volatile int lastReceivedMIDIEventTimestamp;
+        volatile int renderedSampleCount;
 
-        MemParams mt32ram = new MemParams();
+        public MemParams mt32ram = new MemParams();
         MemParams mt32default;
 
         BReverbModel[] reverbModels = new BReverbModel[4];
-        //BReverbModel reverbModel;
+        BReverbModel reverbModel;
         bool reverbOverridden;
 
         MIDIDelayMode midiDelayMode;
@@ -759,13 +870,13 @@ namespace NScumm.Core.Audio.SoftSynth.Mt32
         bool isDefaultReportHandler;
         //ReportHandler reportHandler;
 
-        //PartialManager partialManager;
-        //Part[] parts=new Part[9];
+        public PartialManager partialManager;
+        Part[] parts = new Part[9];
 
         // When a partial needs to be aborted to free it up for use by a new Poly,
         // the controller will busy-loop waiting for the sound to finish.
         // We emulate this by delaying new MIDI events processing until abortion finishes.
-        Poly abortingPoly;
+        internal Poly abortingPoly;
 
         Analog analog;
 
@@ -781,6 +892,13 @@ namespace NScumm.Core.Audio.SoftSynth.Mt32
         // (Note that all but CM-32L ROM actually have 86 entries for rhythmTemp)
         };
 
+        public int StereoOutputSampleRate
+        {
+            get
+            {
+                return (analog == null) ? Mt32Emu.SAMPLE_RATE : analog.OutputSampleRate;
+            }
+        }
 
         public DACInputMode DACInputMode
         {
@@ -839,38 +957,20 @@ namespace NScumm.Core.Audio.SoftSynth.Mt32
             get { return isOpen && (reverbModels[(int)ReverbMode.ROOM].IsMT32Compatible(ReverbMode.ROOM)); }
         }
 
-        public bool ReverbCompatibilityMode
+        public bool IsReverbEnabled
         {
-            get { throw new NotImplementedException(); }
-            private set
+            get { return reverbModel != null; }
+        }
+
+        public int PartialCount
+        {
+            get
             {
-                throw new NotImplementedException();
-                //if (reverbModels[(int)ReverbMode.ROOM] != null)
-                //{
-                //    if (IsMT32ReverbCompatibilityMode == value) return;
-                //    ReverbEnabled = false;
-                //    for (int i = 0; i < 4; i++)
-                //    {
-                //        delete reverbModels[i];
-                //    }
-                //}
-                //                reverbModels[(int)ReverbMode.ROOM] = new BReverbModel(ReverbMode.ROOM, value);
-                //                reverbModels[(int)ReverbMode.HALL] = new BReverbModel(ReverbMode.HALL, value);
-                //                reverbModels[(int)ReverbMode.PLATE] = new BReverbModel(ReverbMode.PLATE, value);
-                //                reverbModels[(int)ReverbMode.TAP_DELAY] = new BReverbModel(ReverbMode.TAP_DELAY, value);
-                //#if !MT32EMU_REDUCE_REVERB_MEMORY
-                //                for (int i = (int)ReverbMode.ROOM; i <= (int)ReverbMode.TAP_DELAY; i++)
-                //                {
-                //                    reverbModels[i].Open();
-                //                }
-                //#endif
-                //                if (isOpen)
-                //                {
-                //                    ReverbOutputGain = reverbOutputGain;
-                //                    ReverbEnabled = true;
-                //                }
+                return partialCount;
             }
         }
+
+        public bool IsAbortingPoly { get { return abortingPoly != null; } }
 
         public Synth()
         {
@@ -882,9 +982,864 @@ namespace NScumm.Core.Audio.SoftSynth.Mt32
             ReverbOutputGain = 1.0f;
         }
 
-        public static float ClipSampleEx(float sampleEx)
+        public Part GetPart(int partNum)
         {
+            if (partNum > 8)
+            {
+                return null;
+            }
+            return parts[partNum];
+        }
+
+        public void Render(short[] buf, int pos, int len)
+        {
+            if (!isEnabled)
+            {
+                renderedSampleCount += analog.GetDACStreamsLength(len);
+                analog.Process(null, 0, null, null, null, null, null, null, len);
+                MuteSampleBuffer(buf, pos, len << 1);
+                return;
+            }
+
+            // As in AnalogOutputMode_ACCURATE mode output is upsampled, buffer size MAX_SAMPLES_PER_RUN is more than enough.
+            Sample[] tmpNonReverbLeft = new Sample[Mt32Emu.MAX_SAMPLES_PER_RUN], tmpNonReverbRight = new Sample[Mt32Emu.MAX_SAMPLES_PER_RUN];
+            Sample[] tmpReverbDryLeft = new Sample[Mt32Emu.MAX_SAMPLES_PER_RUN], tmpReverbDryRight = new Sample[Mt32Emu.MAX_SAMPLES_PER_RUN];
+            Sample[] tmpReverbWetLeft = new Sample[Mt32Emu.MAX_SAMPLES_PER_RUN], tmpReverbWetRight = new Sample[Mt32Emu.MAX_SAMPLES_PER_RUN];
+
+            while (len > 0)
+            {
+                int thisPassLen = len > Mt32Emu.MAX_SAMPLES_PER_RUN ? Mt32Emu.MAX_SAMPLES_PER_RUN : len;
+                RenderStreams(tmpNonReverbLeft, tmpNonReverbRight, tmpReverbDryLeft, tmpReverbDryRight, tmpReverbWetLeft, tmpReverbWetRight, analog.GetDACStreamsLength(thisPassLen));
+                analog.Process(buf, pos, tmpNonReverbLeft, tmpNonReverbRight, tmpReverbDryLeft, tmpReverbDryRight, tmpReverbWetLeft, tmpReverbWetRight, thisPassLen);
+                len -= thisPassLen;
+            }
+        }
+
+        public void PlaySysexWithoutFraming(BytePtr sysex, ushort len)
+        {
+            if (len < 4)
+            {
+                PrintDebug("playSysexWithoutFraming: Message is too short (%d bytes)!", len);
+                return;
+            }
+            if (sysex[0] != SYSEX_MANUFACTURER_ROLAND)
+            {
+                PrintDebug("playSysexWithoutFraming: Header not intended for this device manufacturer: %02x %02x %02x %02x", (int)sysex[0], (int)sysex[1], (int)sysex[2], (int)sysex[3]);
+                return;
+            }
+            if (sysex[2] == SYSEX_MDL_D50)
+            {
+                PrintDebug("playSysexWithoutFraming: Header is intended for model D-50 (not yet supported): %02x %02x %02x %02x", (int)sysex[0], (int)sysex[1], (int)sysex[2], (int)sysex[3]);
+                return;
+            }
+            else if (sysex[2] != SYSEX_MDL_MT32)
+            {
+                PrintDebug("playSysexWithoutFraming: Header not intended for model MT-32: %02x %02x %02x %02x", (int)sysex[0], (int)sysex[1], (int)sysex[2], (int)sysex[3]);
+                return;
+            }
+            PlaySysexWithoutHeader(sysex[1], sysex[3], new BytePtr(sysex, 4), len - 4);
+        }
+
+        private void PlaySysexWithoutHeader(byte device, byte command, BytePtr sysex, int len)
+        {
+            if (device > 0x10)
+            {
+                // We have device ID 0x10 (default, but changeable, on real MT-32), < 0x10 is for channels
+                PrintDebug("playSysexWithoutHeader: Message is not intended for this device ID (provided: %02x, expected: 0x10 or channel)", (int)device);
+                return;
+            }
+            // This is checked early in the real devices (before any sysex length checks or further processing)
+            // FIXME: Response to SYSEX_CMD_DAT reset with partials active (and in general) is untested.
+            if ((command == SYSEX_CMD_DT1 || command == SYSEX_CMD_DAT) && sysex[0] == 0x7F)
+            {
+                Reset();
+                return;
+            }
+            if (len < 4)
+            {
+                PrintDebug("playSysexWithoutHeader: Message is too short (%d bytes)!", len);
+                return;
+            }
+            byte checksum = CalcSysexChecksum(sysex, len - 1);
+            if (checksum != sysex[len - 1])
+            {
+                PrintDebug("playSysexWithoutHeader: Message checksum is incorrect (provided: %02x, expected: %02x)!", sysex[len - 1], checksum);
+                return;
+            }
+            len -= 1; // Exclude checksum
+            switch (command)
+            {
+                case SYSEX_CMD_DAT:
+                case SYSEX_CMD_DT1:
+                    if (command == SYSEX_CMD_DAT && HasActivePartials())
+                    {
+                        PrintDebug("playSysexWithoutHeader: Got SYSEX_CMD_DAT but partials are active - ignoring");
+                        // FIXME: We should send SYSEX_CMD_RJC in this case
+                        break;
+                    }
+                    WriteSysex(device, sysex, len);
+                    break;
+                case SYSEX_CMD_RQD:
+                case SYSEX_CMD_RQ1:
+                    if (command == SYSEX_CMD_RQD && HasActivePartials())
+                    {
+                        PrintDebug("playSysexWithoutHeader: Got SYSEX_CMD_RQD but partials are active - ignoring");
+                        // FIXME: We should send SYSEX_CMD_RJC in this case
+                        break;
+                    }
+                    ReadSysex(device, sysex, len);
+                    break;
+                default:
+                    PrintDebug("playSysexWithoutHeader: Unsupported command %02x", command);
+                    return;
+            }
+        }
+
+        private bool HasActivePartials()
+        {
+            for (int partialNum = 0; partialNum < PartialCount; partialNum++)
+            {
+                if (partialManager.GetPartial(partialNum).IsActive)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private void WriteSysex(byte device, BytePtr sysex, int len)
+        {
+            //reportHandler.onMIDIMessagePlayed();
+            int addr = (sysex[0] << 16) | (sysex[1] << 8) | (sysex[2]);
+            addr = Mt32Emu.MT32EMU_MEMADDR(addr);
+            sysex.Offset += 3;
+            len -= 3;
+            //PrintDebug("Sysex addr: 0x{0}", Mt32Emu.MT32EMU_SYSEXMEMADDR(addr));
+            // NOTE: Please keep both lower and upper bounds in each check, for ease of reading
+
+            // Process channel-specific sysex by converting it to device-global
+            if (device < 0x10)
+            {
+#if MT32EMU_MONITOR_SYSEX
+                PrintDebug("WRITE-CHANNEL: Channel {0} temp area 0x{1:X}", device, Mt32Emu.MT32EMU_SYSEXMEMADDR(addr));
+#endif
+                if (/*addr >= MT32EMU_MEMADDR(0x000000) && */addr < Mt32Emu.MT32EMU_MEMADDR(0x010000))
+                {
+                    int offset;
+                    if (chantable[device] == -1)
+                    {
+#if MT32EMU_MONITOR_SYSEX
+                        PrintDebug(" (Channel not mapped to a part... 0 offset)");
+#endif
+                        offset = 0;
+                    }
+                    else if (chantable[device] == 8)
+                    {
+#if MT32EMU_MONITOR_SYSEX
+                        PrintDebug(" (Channel mapped to rhythm... 0 offset)");
+#endif
+                        offset = 0;
+                    }
+                    else {
+                        offset = chantable[device] * MemParams.PatchTemp.Size;
+#if MT32EMU_MONITOR_SYSEX
+                        PrintDebug(" (Setting extra offset to {0})", offset);
+#endif
+                    }
+                    addr += Mt32Emu.MT32EMU_MEMADDR(0x030000) + offset;
+                }
+                else if (/*addr >= MT32EMU_MEMADDR(0x010000) && */ addr < Mt32Emu.MT32EMU_MEMADDR(0x020000))
+                {
+                    addr += Mt32Emu.MT32EMU_MEMADDR(0x030110) - Mt32Emu.MT32EMU_MEMADDR(0x010000);
+                }
+                else if (/*addr >= MT32EMU_MEMADDR(0x020000) && */ addr < Mt32Emu.MT32EMU_MEMADDR(0x030000))
+                {
+                    int offset;
+                    if (chantable[device] == -1)
+                    {
+#if MT32EMU_MONITOR_SYSEX
+                        PrintDebug(" (Channel not mapped to a part... 0 offset)");
+#endif
+                        offset = 0;
+                    }
+                    else if (chantable[device] == 8)
+                    {
+#if MT32EMU_MONITOR_SYSEX
+                        PrintDebug(" (Channel mapped to rhythm... 0 offset)");
+#endif
+                        offset = 0;
+                    }
+                    else {
+                        offset = chantable[device] * TimbreParam.Size;
+#if MT32EMU_MONITOR_SYSEX
+                        PrintDebug(" (Setting extra offset to {0})", offset);
+#endif
+                    }
+                    addr += Mt32Emu.MT32EMU_MEMADDR(0x040000) - Mt32Emu.MT32EMU_MEMADDR(0x020000) + offset;
+                }
+                else {
+#if MT32EMU_MONITOR_SYSEX
+                    PrintDebug(" Invalid channel");
+#endif
+                    return;
+                }
+            }
+
+            // Process device-global sysex (possibly converted from channel-specific sysex above)
+            for (;;)
+            {
+                // Find the appropriate memory region
+                MemoryRegion region = FindMemoryRegion(addr);
+
+                if (region == null)
+                {
+                    PrintDebug("Sysex write to unrecognised address {0}, len {1}", Mt32Emu.MT32EMU_SYSEXMEMADDR(addr), len);
+                    break;
+                }
+                WriteMemoryRegion(region, addr, region.GetClampedLen(addr, len), sysex);
+
+                int next = region.Next(addr, len);
+                if (next == 0)
+                {
+                    break;
+                }
+                addr += next;
+                sysex.Offset += next;
+                len -= next;
+            }
+        }
+
+        private void WriteMemoryRegion(MemoryRegion region, int addr, int len, BytePtr data)
+        {
+            int first = region.FirstTouched(addr);
+            int last = region.LastTouched(addr, len);
+            int off = region.FirstTouchedOffset(addr);
+            switch (region.type)
+            {
+                case MemoryRegionType.MR_PatchTemp:
+                    region.Write(first, off, data, len);
+                    PrintDebug("Patch temp: Patch {0}, offset {1:X}, len {2}", off / 16, off % 16, len);
+
+                    for (int i = first; i <= last; i++)
+                    {
+                        int absTimbreNum = mt32ram.patchTemp[i].Patch.TimbreGroup * 64 + mt32ram.patchTemp[i].Patch.TimbreNum;
+                        string timbreName = mt32ram.timbres[absTimbreNum].timbre.common.name.GetRawText(0, 10);
+#if MT32EMU_MONITOR_SYSEX
+                        PrintDebug("WRITE-PARTPATCH ({0}-{1}..{2}): {3}; timbre={4} ({5}), outlevel={6}", first, last, off, off + len, i, absTimbreNum, timbreName, mt32ram.patchTemp[i].OutputLevel);
+#endif
+                        if (parts[i] != null)
+                        {
+                            if (i != 8)
+                            {
+                                // Note: Confirmed on CM-64 that we definitely *should* update the timbre here,
+                                // but only in the case that the sysex actually writes to those values
+                                if (i == first && off > 2)
+                                {
+#if MT32EMU_MONITOR_SYSEX
+                                    PrintDebug(" (Not updating timbre, since those values weren't touched)");
+#endif
+                                }
+                                else {
+                                    parts[i].SetTimbre(mt32ram.timbres[parts[i].AbsTimbreNum].timbre);
+                                }
+                            }
+                            parts[i].Refresh();
+                        }
+                    }
+                    break;
+                case MemoryRegionType.MR_RhythmTemp:
+                    region.Write(first, off, data, len);
+                    for (int i = first; i <= last; i++)
+                    {
+                        int timbreNum = mt32ram.rhythmTemp[i].timbre;
+                        string timbreName;
+                        if (timbreNum < 94)
+                        {
+                            timbreName = mt32ram.timbres[128 + timbreNum].timbre.common.name.GetRawText(0, 10);
+                        }
+                        else {
+                            timbreName = "[None]";
+                        }
+#if MT32EMU_MONITOR_SYSEX
+                        PrintDebug("WRITE-RHYTHM ({0}-{1}@{2}..{3}): {4}; level={5:X2}, panpot={6:X2}, reverb={7:X2}, timbre={8:X2} ({9})", first, last, off, off + len, i, mt32ram.rhythmTemp[i].OutputLevel, mt32ram.rhythmTemp[i].Panpot, mt32ram.rhythmTemp[i].ReverbSwitch, mt32ram.rhythmTemp[i].timbre, timbreName);
+#endif
+
+                    }
+                    if (parts[8] != null)
+                    {
+                        parts[8].Refresh();
+                    }
+                    break;
+                case MemoryRegionType.MR_TimbreTemp:
+                    region.Write(first, off, data, len);
+                    for (int i = first; i <= last; i++)
+                    {
+                        string instrumentName = mt32ram.timbreTemp[i].common.name.GetRawText();
+#if MT32EMU_MONITOR_SYSEX
+                        PrintDebug("WRITE-PARTTIMBRE ({0}-{1}@{2}..{3}): timbre={4} ({5})", first, last, off, off + len, i, instrumentName);
+#endif
+                        if (parts[i] != null)
+                        {
+                            parts[i].Refresh();
+                        }
+                    }
+                    break;
+                case MemoryRegionType.MR_Patches:
+                    region.Write(first, off, data, len);
+#if MT32EMU_MONITOR_SYSEX
+                    for (int i = first; i <= last; i++)
+                    {
+                        PatchParam patch = mt32ram.patches[i];
+                        int patchAbsTimbreNum = patch.TimbreGroup * 64 + patch.TimbreNum;
+                        var instrumentName = mt32ram.timbres[patchAbsTimbreNum].timbre.common.name.GetRawText(0, 10);
+                        var n = new BytePtr(patch.Data, patch.Offset);
+                        PrintDebug("WRITE-PATCH ({0}-{1}@{2}..{3}): {4}; timbre={5} ({6}) {7:X2}{8:X2}{9:X2}{10:X2}{11:X2}{12:X2}{13:X2}{14:X2}", first, last, off, off + len, i, patchAbsTimbreNum, instrumentName, n[0], n[1], n[2], n[3], n[4], n[5], n[6], n[7]);
+                    }
+#endif
+                    break;
+                case MemoryRegionType.MR_Timbres:
+                    // Timbres
+                    first += 128;
+                    last += 128;
+                    region.Write(first, off, data, len);
+                    for (int i = first; i <= last; i++)
+                    {
+                        // FIXME:KG: Not sure if the stuff below should be done (for rhythm and/or parts)...
+                        // Does the real MT-32 automatically do this?
+                        for (int part = 0; part < 9; part++)
+                        {
+                            if (parts[part] != null)
+                            {
+                                parts[part].RefreshTimbre(i);
+                            }
+                        }
+                    }
+                    break;
+                case MemoryRegionType.MR_System:
+                    region.Write(0, off, data, len);
+
+                    //reportHandler.onDeviceReconfig();
+                    // FIXME: We haven't properly confirmed any of this behaviour
+                    // In particular, we tend to reset things such as reverb even if the write contained
+                    // the same parameters as were already set, which may be wrong.
+                    // On the other hand, the real thing could be resetting things even when they aren't touched
+                    // by the write at all.
+#if MT32EMU_MONITOR_SYSEX
+                    PrintDebug("WRITE-SYSTEM:");
+#endif
+                    if (off <= SYSTEM_MASTER_TUNE_OFF && off + len > SYSTEM_MASTER_TUNE_OFF)
+                    {
+                        RefreshSystemMasterTune();
+                    }
+                    if (off <= SYSTEM_REVERB_LEVEL_OFF && off + len > SYSTEM_REVERB_MODE_OFF)
+                    {
+                        RefreshSystemReverbParameters();
+                    }
+                    if (off <= SYSTEM_RESERVE_SETTINGS_END_OFF && off + len > SYSTEM_RESERVE_SETTINGS_START_OFF)
+                    {
+                        RefreshSystemReserveSettings();
+                    }
+                    if (off <= SYSTEM_CHAN_ASSIGN_END_OFF && off + len > SYSTEM_CHAN_ASSIGN_START_OFF)
+                    {
+                        int firstPart = off - SYSTEM_CHAN_ASSIGN_START_OFF;
+                        if (firstPart < 0)
+                            firstPart = 0;
+                        int lastPart = off + len - SYSTEM_CHAN_ASSIGN_START_OFF;
+                        if (lastPart > 9)
+                            lastPart = 9;
+                        RefreshSystemChanAssign(firstPart, lastPart);
+                    }
+                    if (off <= SYSTEM_MASTER_VOL_OFF && off + len > SYSTEM_MASTER_VOL_OFF)
+                    {
+                        RefreshSystemMasterVol();
+                    }
+                    break;
+                case MemoryRegionType.MR_Display:
+#if MT32EMU_MONITOR_SYSEX
+                    var buf = data.GetRawText(0, len);
+                    PrintDebug("WRITE-LCD: {0}", buf);
+#endif
+                    //reportHandler.showLCDMessage(buf);
+                    break;
+                case MemoryRegionType.MR_Reset:
+                    Reset();
+                    break;
+            }
+
+        }
+
+        private void ReadSysex(byte device, BytePtr sysex, int len)
+        {
+            // NYI
+        }
+
+        private byte CalcSysexChecksum(BytePtr data, int len, int initChecksum = 0)
+        {
+            int checksum = -initChecksum;
+            for (int i = 0; i < len; i++)
+            {
+                checksum -= data[i];
+            }
+            return ((byte)(checksum & 0x7f));
+        }
+
+        private MemoryRegion FindMemoryRegion(int addr)
+        {
+            MemoryRegion[] regions = {
+                patchTempMemoryRegion,
+                rhythmTempMemoryRegion,
+                timbreTempMemoryRegion,
+                patchesMemoryRegion,
+                timbresMemoryRegion,
+                systemMemoryRegion,
+                displayMemoryRegion,
+                resetMemoryRegion,
+            };
+            foreach (var region in regions)
+            {
+                if (region.Contains(addr))
+                {
+                    return region;
+                }
+            }
+            return null;
+        }
+
+        private void Reset()
+        {
+#if MT32EMU_MONITOR_SYSEX
+            PrintDebug("RESET");
+#endif
+            //reportHandler.onDeviceReset();
+            partialManager.DeactivateAll();
+            Array.Copy(mt32default.Data, mt32default.Offset, mt32ram.Data, mt32ram.Offset, MemParams.Size);
+            for (int i = 0; i < 9; i++)
+            {
+                parts[i].Reset();
+                if (i != 8)
+                {
+                    parts[i].SetProgram(controlROMData[controlROMMap.programSettings + i]);
+                }
+                else {
+                    parts[8].Refresh();
+                }
+            }
+            RefreshSystem();
+            isEnabled = false;
+        }
+
+        public bool PlaySysex(BytePtr sysex, int len)
+        {
+            return PlaySysex(sysex, len, renderedSampleCount);
+        }
+
+        private bool PlaySysex(BytePtr sysex, int len, int timestamp)
+        {
+            if (midiQueue == null) return false;
+            if (midiDelayMode == MIDIDelayMode.DELAY_ALL)
+            {
+                timestamp = AddMidiInterfaceDelay(len, timestamp);
+            }
+            if (!isEnabled) isEnabled = true;
+            return midiQueue.PushSysex(sysex, len, timestamp);
+        }
+
+        public bool PlayMsg(int msg)
+        {
+            return PlayMsg(msg, renderedSampleCount);
+        }
+
+        private bool PlayMsg(int msg, int timestamp)
+        {
+            if (midiQueue == null) return false;
+            if (midiDelayMode != MIDIDelayMode.IMMEDIATE)
+            {
+                timestamp = AddMidiInterfaceDelay(GetShortMessageLength(msg), timestamp);
+            }
+            if (!isEnabled) isEnabled = true;
+            return midiQueue.PushShortMessage(msg, timestamp);
+        }
+
+        private int GetShortMessageLength(int msg)
+        {
+            if ((msg & 0xF0) == 0xF0)
+            {
+                switch (msg & 0xFF)
+                {
+                    case 0xF1:
+                    case 0xF3:
+                        return 2;
+                    case 0xF2:
+                        return 3;
+                    default:
+                        return 1;
+                }
+            }
+            // NOTE: This calculation isn't quite correct
+            // as it doesn't consider the running status byte
+            return ((msg & 0xE0) == 0xC0) ? 2 : 3;
+        }
+
+        private int AddMidiInterfaceDelay(int len, int timestamp)
+        {
+            int transferTime = (int)(len * Mt32Emu.MIDI_DATA_TRANSFER_RATE);
+            // Dealing with wrapping
+            if (timestamp - lastReceivedMIDIEventTimestamp < 0)
+            {
+                timestamp = lastReceivedMIDIEventTimestamp;
+            }
+            timestamp += transferTime;
+            lastReceivedMIDIEventTimestamp = timestamp;
+            return timestamp;
+        }
+
+        private void RenderStreams(Sample[] nonReverbLeft, Sample[] nonReverbRight, Sample[] reverbDryLeft, Sample[] reverbDryRight, Sample[] reverbWetLeft, Sample[] reverbWetRight, int len)
+        {
+            var nrl = new Ptr<Sample>(nonReverbLeft);
+            var nrr = new Ptr<Sample>(nonReverbRight);
+            var rdl = new Ptr<Sample>(reverbDryLeft);
+            var rdr = new Ptr<Sample>(reverbDryRight);
+            var rwl = new Ptr<Sample>(reverbWetLeft);
+            var rwr = new Ptr<Sample>(reverbWetRight);
+            while (len > 0)
+            {
+                // We need to ensure zero-duration notes will play so add minimum 1-sample delay.
+                int thisLen = 1;
+                if (!IsAbortingPoly)
+                {
+                    MidiEvent nextEvent = midiQueue.PeekMidiEvent();
+                    int samplesToNextEvent = (nextEvent != null) ? (nextEvent.timestamp - renderedSampleCount) : Mt32Emu.MAX_SAMPLES_PER_RUN;
+                    if (samplesToNextEvent > 0)
+                    {
+                        thisLen = len > Mt32Emu.MAX_SAMPLES_PER_RUN ? Mt32Emu.MAX_SAMPLES_PER_RUN : len;
+                        if (thisLen > samplesToNextEvent)
+                        {
+                            thisLen = samplesToNextEvent;
+                        }
+                    }
+                    else {
+                        if (nextEvent.sysexData == BytePtr.Null)
+                        {
+                            PlayMsgNow(nextEvent.shortMessageData);
+                            // If a poly is aborting we don't drop the event from the queue.
+                            // Instead, we'll return to it again when the abortion is done.
+                            if (!IsAbortingPoly)
+                            {
+                                midiQueue.DropMidiEvent();
+                            }
+                        }
+                        else {
+                            PlaySysexNow(nextEvent.sysexData, nextEvent.sysexLength);
+                            midiQueue.DropMidiEvent();
+                        }
+                    }
+                }
+                DoRenderStreams(nrl, nrr, rdl, rdr, rwl, rwr, thisLen);
+                AdvanceStreamPosition(ref nrl, thisLen);
+                AdvanceStreamPosition(ref nrr, thisLen);
+                AdvanceStreamPosition(ref rdl, thisLen);
+                AdvanceStreamPosition(ref rdr, thisLen);
+                AdvanceStreamPosition(ref rwl, thisLen);
+                AdvanceStreamPosition(ref rwr, thisLen);
+                len -= thisLen;
+            }
+        }
+
+        private void AdvanceStreamPosition(ref Ptr<Sample> stream, int posDelta)
+        {
+            if (stream != Ptr<Sample>.Null)
+            {
+                stream.Offset += posDelta;
+            }
+        }
+
+        private void DoRenderStreams(Ptr<Sample> nonReverbLeft, Ptr<Sample> nonReverbRight, Ptr<Sample> reverbDryLeft, Ptr<Sample> reverbDryRight, Ptr<Sample> reverbWetLeft, Ptr<Sample> reverbWetRight, int len)
+        {
+            // Even if LA32 output isn't desired, we proceed anyway with temp buffers
+            Sample[] tmpBufNonReverbLeft = new Sample[Mt32Emu.MAX_SAMPLES_PER_RUN], tmpBufNonReverbRight = new Sample[Mt32Emu.MAX_SAMPLES_PER_RUN];
+            if (nonReverbLeft == Ptr<Sample>.Null) nonReverbLeft = tmpBufNonReverbLeft;
+            if (nonReverbRight == Ptr<Sample>.Null) nonReverbRight = tmpBufNonReverbRight;
+
+            Sample[] tmpBufReverbDryLeft = new Sample[Mt32Emu.MAX_SAMPLES_PER_RUN], tmpBufReverbDryRight = new Sample[Mt32Emu.MAX_SAMPLES_PER_RUN];
+            if (reverbDryLeft == Ptr<Sample>.Null) reverbDryLeft = tmpBufReverbDryLeft;
+            if (reverbDryRight == Ptr<Sample>.Null) reverbDryRight = tmpBufReverbDryRight;
+
+            if (isEnabled)
+            {
+                MuteSampleBuffer(nonReverbLeft.Data, nonReverbLeft.Offset, len);
+                MuteSampleBuffer(nonReverbRight.Data, nonReverbRight.Offset, len);
+                MuteSampleBuffer(reverbDryLeft.Data, reverbDryLeft.Offset, len);
+                MuteSampleBuffer(reverbDryRight.Data, reverbDryRight.Offset, len);
+
+                for (int i = 0; i < PartialCount; i++)
+                {
+                    if (partialManager.ShouldReverb(i))
+                    {
+                        partialManager.ProduceOutput(i, reverbDryLeft, reverbDryRight, len);
+                    }
+                    else {
+                        partialManager.ProduceOutput(i, nonReverbLeft, nonReverbRight, len);
+                    }
+                }
+
+                ProduceLA32Output(reverbDryLeft, len);
+                ProduceLA32Output(reverbDryRight, len);
+
+                if (IsReverbEnabled)
+                {
+                    reverbModel.Process(reverbDryLeft, reverbDryRight, reverbWetLeft, reverbWetRight, len);
+                    if (reverbWetLeft != Ptr<Sample>.Null) ConvertSamplesToOutput(reverbWetLeft, len);
+                    if (reverbWetRight != Ptr<Sample>.Null) ConvertSamplesToOutput(reverbWetRight, len);
+                }
+                else {
+                    MuteSampleBuffer(reverbWetLeft.Data, reverbWetLeft.Offset, len);
+                    MuteSampleBuffer(reverbWetRight.Data, reverbWetRight.Offset, len);
+                }
+
+                // Don't bother with conversion if the output is going to be unused
+                if (nonReverbLeft != tmpBufNonReverbLeft)
+                {
+                    ProduceLA32Output(nonReverbLeft, len);
+                    ConvertSamplesToOutput(nonReverbLeft, len);
+                }
+                if (nonReverbRight != tmpBufNonReverbRight)
+                {
+                    ProduceLA32Output(nonReverbRight, len);
+                    ConvertSamplesToOutput(nonReverbRight, len);
+                }
+                if (reverbDryLeft != tmpBufReverbDryLeft) ConvertSamplesToOutput(reverbDryLeft, len);
+                if (reverbDryRight != tmpBufReverbDryRight) ConvertSamplesToOutput(reverbDryRight, len);
+            }
+            else {
+                // Avoid muting buffers that wasn't requested
+                if (nonReverbLeft != tmpBufNonReverbLeft) MuteSampleBuffer(nonReverbLeft.Data, nonReverbLeft.Offset, len);
+                if (nonReverbRight != tmpBufNonReverbRight) MuteSampleBuffer(nonReverbRight.Data, nonReverbRight.Offset, len);
+                if (reverbDryLeft != tmpBufReverbDryLeft) MuteSampleBuffer(reverbDryLeft.Data, reverbDryLeft.Offset, len);
+                if (reverbDryRight != tmpBufReverbDryRight) MuteSampleBuffer(reverbDryRight.Data, reverbDryRight.Offset, len);
+                MuteSampleBuffer(reverbWetLeft.Data, reverbWetLeft.Offset, len);
+                MuteSampleBuffer(reverbWetRight.Data, reverbWetRight.Offset, len);
+            }
+
+            partialManager.ClearAlreadyOutputed();
+            renderedSampleCount += len;
+        }
+
+        private void ConvertSamplesToOutput(Ptr<Sample> buffer, int len)
+        {
+#if MT32EMU_USE_FLOAT_SAMPLES
+#else
+            if (dacInputMode == DACInputMode.GENERATION1)
+            {
+                var b = 0;
+                while ((len--) != 0)
+                {
+                    buffer[b] = ((Sample)((buffer[b] & 0x8000) | ((buffer[b] << 1) & 0x7FFE)));
+                    ++b;
+                }
+            }
+#endif
+        }
+
+        // In GENERATION2 units, the output from LA32 goes to the Boss chip already bit-shifted.
+        // In NICE mode, it's also better to increase volume before the reverb processing to preserve accuracy.
+        private void ProduceLA32Output(Ptr<Sample> buffer, int len)
+        {
+#if MT32EMU_USE_FLOAT_SAMPLES
+#else
+            var b = 0;
+            switch (dacInputMode)
+            {
+                case DACInputMode.GENERATION2:
+                    while ((len--) != 0)
+                    {
+                        buffer[b] = (Sample)((buffer[b] & 0x8000) | ((buffer[b] << 1) & 0x7FFE) | ((buffer[b] >> 14) & 0x0001));
+                        ++b;
+                    }
+                    break;
+                case DACInputMode.NICE:
+                    while ((len--) != 0)
+                    {
+                        buffer[b] = ClipSampleEx((buffer[b]) << 1);
+                        ++b;
+                    }
+                    break;
+            }
+#endif
+        }
+
+        private void PlaySysexNow(BytePtr sysex, int len)
+        {
+            if (len < 2)
+            {
+                PrintDebug("playSysex: Message is too short for sysex (%d bytes)", len);
+            }
+            if (sysex[0] != 0xF0)
+            {
+                PrintDebug("playSysex: Message lacks start-of-sysex (0xF0)");
+                return;
+            }
+            // Due to some programs (e.g. Java) sending buffers with junk at the end, we have to go through and find the end marker rather than relying on len.
+            int endPos;
+            for (endPos = 1; endPos < len; endPos++)
+            {
+                if (sysex[endPos] == 0xF7)
+                {
+                    break;
+                }
+            }
+            if (endPos == len)
+            {
+                PrintDebug("playSysex: Message lacks end-of-sysex (0xf7)");
+                return;
+            }
+            PlaySysexWithoutFraming(new BytePtr(sysex, 1), (ushort)(endPos - 1));
+        }
+
+        private void PlayMsgNow(int msg)
+        {
+            // NOTE: Active sense IS implemented in real hardware. However, realtime processing is clearly out of the library scope.
+            //       It is assumed that realtime consumers of the library respond to these MIDI events as appropriate.
+
+            byte code = (byte)((msg & 0x0000F0) >> 4);
+            byte chan = (byte)(msg & 0x00000F);
+            byte note = (byte)((msg & 0x007F00) >> 8);
+            byte velocity = (byte)((msg & 0x7F0000) >> 16);
+            if (!isEnabled) isEnabled = true;
+
+            //PrintDebug("Playing chan {0}, code 0x{1:X1} note: 0x{2:X2}", chan, code, note);
+
+            var part = (byte)chantable[chan];
+            if (part < 0 || part > 8)
+            {
+#if MT32EMU_MONITOR_MIDI
+                PrintDebug("Play msg on unreg chan %d (%d): code=0x%01x, vel=%d", chan, part, code, velocity);
+#endif
+                return;
+            }
+            PlayMsgOnPart(part, code, note, velocity);
+        }
+
+        private void PlayMsgOnPart(byte part, byte code, byte note, byte velocity)
+        {
+            int bend;
+
+            //PrintDebug("Synth::playMsgOnPart({0:X2}, {1:X2}, {2:X2}, {3:X2})", part, code, note, velocity);
+            switch (code)
+            {
+                case 0x8:
+                    //PrintDebug("Note OFF - Part {0}", part);
+                    // The MT-32 ignores velocity for note off
+                    parts[part].NoteOff(note);
+                    break;
+                case 0x9:
+                    //PrintDebug("Note ON - Part {0}, Note {1} Vel {2}", part, note, velocity);
+                    if (velocity == 0)
+                    {
+                        // MIDI defines note-on with velocity 0 as being the same as note-off with velocity 40
+                        parts[part].NoteOff(note);
+                    }
+                    else {
+                        parts[part].NoteOn(note, velocity);
+                    }
+                    break;
+                case 0xB: // Control change
+                    switch (note)
+                    {
+                        case 0x01:  // Modulation
+                            //PrintDebug("Modulation: {0}", velocity);
+                            parts[part].SetModulation(velocity);
+                            break;
+                        case 0x06:
+                            parts[part].SetDataEntryMSB(velocity);
+                            break;
+                        case 0x07:  // Set volume
+                            //PrintDebug("Volume set: {0}", velocity);
+                            parts[part].SetVolume(velocity);
+                            break;
+                        case 0x0A:  // Pan
+                            //PrintDebug("Pan set: {0}", velocity);
+                            parts[part].SetPan(velocity);
+                            break;
+                        case 0x0B:
+                            //PrintDebug("Expression set: {0}", velocity);
+                            parts[part].SetExpression(velocity);
+                            break;
+                        case 0x40: // Hold (sustain) pedal
+                            //PrintDebug("Hold pedal set: {0}", velocity);
+                            parts[part].SetHoldPedal(velocity >= 64);
+                            break;
+
+                        case 0x62:
+                        case 0x63:
+                            parts[part].SetNRPN();
+                            break;
+                        case 0x64:
+                            parts[part].SetRPNLSB(velocity);
+                            break;
+                        case 0x65:
+                            parts[part].SetRPNMSB(velocity);
+                            break;
+
+                        case 0x79: // Reset all controllers
+                            //PrintDebug("Reset all controllers");
+                            parts[part].ResetAllControllers();
+                            break;
+
+                        case 0x7B: // All notes off
+                            //PrintDebug("All notes off");
+                            parts[part].AllNotesOff();
+                            break;
+
+                        case 0x7C:
+                        case 0x7D:
+                        case 0x7E:
+                        case 0x7F:
+                            // CONFIRMED:Mok: A real LAPC-I responds to these controllers as follows:
+                            parts[part].SetHoldPedal(false);
+                            parts[part].AllNotesOff();
+                            break;
+
+                        default:
+#if MT32EMU_MONITOR_MIDI
+                            PrintDebug("Unknown MIDI Control code: 0x%02x - vel 0x%02x", note, velocity);
+#endif
+                            return;
+                    }
+
+                    break;
+                case 0xC: // Program change
+                    //PrintDebug("Program change {0:X1}", note);
+                    parts[part].SetProgram(note);
+                    break;
+                case 0xE: // Pitch bender
+                    bend = (velocity << 7) | (note);
+                    //PrintDebug("Pitch bender {0:x2}", bend);
+                    parts[part].SetBend(bend);
+                    break;
+                default:
+#if MT32EMU_MONITOR_MIDI
+                    PrintDebug("Unknown Midi code: 0x%01x - %02x - %02x", code, note, velocity);
+#endif
+                    return;
+            }
+            //reportHandler.onMIDIMessagePlayed();
+        }
+
+        public void NewTimbreSet(int partNum, byte timbreGroup, byte[] patchName)
+        {
+            //reportHandler.OnProgramChanged(partNum, timbreGroup, patchName);
+        }
+
+        public static Sample ClipSampleEx(SampleEx sampleEx)
+        {
+#if MT32EMU_USE_FLOAT_SAMPLES
             return sampleEx;
+#else
+            // Clamp values above 32767 to 32767, and values below -32768 to -32768
+            // FIXME: Do we really need this stuff? I think these branches are very well predicted. Instead, this introduces a chain.
+            // The version below is actually a bit faster on my system...
+            return (Sample)(((-0x8000 <= sampleEx) && (sampleEx <= 0x7FFF)) ? (Sample)sampleEx : (sampleEx >> 31) ^ 0x7FFF);
+#endif
         }
 
         public bool Open(ROMImage controlROMImage, ROMImage pcmROMImage, AnalogOutputMode analogOutputMode)
@@ -892,7 +1847,7 @@ namespace NScumm.Core.Audio.SoftSynth.Mt32
             return Open(controlROMImage, pcmROMImage, Mt32Emu.DEFAULT_MAX_PARTIALS, analogOutputMode);
         }
 
-        public bool Open(ROMImage controlROMImage, ROMImage pcmROMImage, uint usePartialCount = Mt32Emu.DEFAULT_MAX_PARTIALS, AnalogOutputMode analogOutputMode = AnalogOutputMode.COARSE)
+        public bool Open(ROMImage controlROMImage, ROMImage pcmROMImage, int usePartialCount = Mt32Emu.DEFAULT_MAX_PARTIALS, AnalogOutputMode analogOutputMode = AnalogOutputMode.COARSE)
         {
             if (isOpen)
             {
@@ -905,7 +1860,7 @@ namespace NScumm.Core.Audio.SoftSynth.Mt32
             //memset(&mt32ram, '?', sizeof(mt32ram));
 
 #if MT32EMU_MONITOR_INIT
-    printDebug("Loading Control ROM");
+            PrintDebug("Loading Control ROM");
 #endif
             if (!LoadControlROM(controlROMImage))
             {
@@ -923,7 +1878,7 @@ namespace NScumm.Core.Audio.SoftSynth.Mt32
             pcmROMData = new short[pcmROMSize];
 
 #if MT32EMU_MONITOR_INIT
-    printDebug("Loading PCM ROM");
+            PrintDebug("Loading PCM ROM");
 #endif
             if (!LoadPCMROM(pcmROMImage))
             {
@@ -933,16 +1888,16 @@ namespace NScumm.Core.Audio.SoftSynth.Mt32
             }
 
 #if MT32EMU_MONITOR_INIT
-    printDebug("Initialising Reverb Models");
+            PrintDebug("Initialising Reverb Models");
 #endif
             bool mt32CompatibleReverb = controlROMFeatures.IsDefaultReverbMT32Compatible;
 #if MT32EMU_MONITOR_INIT
-    printDebug("Using %s Compatible Reverb Models", mt32CompatibleReverb ? "MT-32" : "CM-32L");
+            PrintDebug("Using %s Compatible Reverb Models", mt32CompatibleReverb ? "MT-32" : "CM-32L");
 #endif
-            ReverbCompatibilityMode = mt32CompatibleReverb;
+            SetReverbCompatibilityMode(mt32CompatibleReverb);
 
 #if MT32EMU_MONITOR_INIT
-    printDebug("Initialising Timbre Bank A");
+            PrintDebug("Initialising Timbre Bank A");
 #endif
             if (!InitTimbres(controlROMMap.timbreAMap, controlROMMap.timbreAOffset, 0x40, 0, controlROMMap.timbreACompressed))
             {
@@ -950,7 +1905,7 @@ namespace NScumm.Core.Audio.SoftSynth.Mt32
             }
 
 #if MT32EMU_MONITOR_INIT
-    printDebug("Initialising Timbre Bank B");
+            PrintDebug("Initialising Timbre Bank B");
 #endif
             if (!InitTimbres(controlROMMap.timbreBMap, controlROMMap.timbreBOffset, 0x40, 64, controlROMMap.timbreBCompressed))
             {
@@ -958,7 +1913,7 @@ namespace NScumm.Core.Audio.SoftSynth.Mt32
             }
 
 #if MT32EMU_MONITOR_INIT
-    printDebug("Initialising Timbre Bank R");
+            PrintDebug("Initialising Timbre Bank R");
 #endif
             if (!InitTimbres(controlROMMap.timbreRMap, 0, controlROMMap.timbreRCount, 192, true))
             {
@@ -966,115 +1921,293 @@ namespace NScumm.Core.Audio.SoftSynth.Mt32
             }
 
 #if MT32EMU_MONITOR_INIT
-    printDebug("Initialising Timbre Bank M");
+            PrintDebug("Initialising Timbre Bank M");
 #endif
-            // TODO: CM-64 seems to initialise all bytes in this bank to 0.
-            //            memset(&mt32ram.timbres[128], 0, sizeof(mt32ram.timbres[128]) * 64);
+            // CM-64 seems to initialise all bytes in this bank to 0.
+            Array.Clear(mt32ram.timbresOffset.Data, mt32ram.timbresOffset.Offset, 64);
 
-            //            partialManager = new PartialManager(this, parts);
+            partialManager = new PartialManager(this, parts);
 
-            //            pcmWaves = new PCMWaveEntry[controlROMMap.pcmCount];
+            pcmWaves = new PCMWaveEntry[controlROMMap.pcmCount];
+            for (int i = 0; i < pcmWaves.Length; i++)
+            {
+                pcmWaves[i] = new PCMWaveEntry();
+            }
 
-            //#if MT32EMU_MONITOR_INIT
-            //    printDebug("Initialising PCM List");
-            //#endif
-            //            InitPCMList(controlROMMap.pcmTable, controlROMMap.pcmCount);
+#if MT32EMU_MONITOR_INIT
+            PrintDebug("Initialising PCM List");
+#endif
+            InitPCMList(controlROMMap.pcmTable, controlROMMap.pcmCount);
 
-            //#if MT32EMU_MONITOR_INIT
-            //    printDebug("Initialising Rhythm Temp");
-            //#endif
-            //            memcpy(mt32ram.rhythmTemp, &controlROMData[controlROMMap.rhythmSettings], controlROMMap.rhythmSettingsCount * 4);
 
-            //#if MT32EMU_MONITOR_INIT
-            //    printDebug("Initialising Patches");
-            //#endif
-            //            for (byte i = 0; i < 128; i++)
-            //            {
-            //                PatchParam patch = mt32ram.patches[i];
-            //                patch.timbreGroup = i / 64;
-            //                patch.timbreNum = i % 64;
-            //                patch.keyShift = 24;
-            //                patch.fineTune = 50;
-            //                patch.benderRange = 12;
-            //                patch.assignMode = 0;
-            //                patch.reverbSwitch = 1;
-            //                patch.dummy = 0;
-            //            }
+#if MT32EMU_MONITOR_INIT
+            PrintDebug("Initialising Rhythm Temp");
+#endif
+            Array.Copy(controlROMData, controlROMMap.rhythmSettings, mt32ram.rhythmTemp[0].Data, mt32ram.rhythmTemp[0].Offset, controlROMMap.rhythmSettingsCount * 4);
 
-            //#if MT32EMU_MONITOR_INIT
-            //    printDebug("Initialising System");
-            //#endif
-            //            // The MT-32 manual claims that "Standard pitch" is 442Hz.
-            //            mt32ram.system.masterTune = 0x4A; // Confirmed on CM-64
-            //            mt32ram.system.reverbMode = 0; // Confirmed
-            //            mt32ram.system.reverbTime = 5; // Confirmed
-            //            mt32ram.system.reverbLevel = 3; // Confirmed
-            //            memcpy(mt32ram.system.reserveSettings, &controlROMData[controlROMMap.reserveSettings], 9); // Confirmed
-            //            for (byte i = 0; i < 9; i++)
-            //            {
-            //                // This is the default: {1, 2, 3, 4, 5, 6, 7, 8, 9}
-            //                // An alternative configuration can be selected by holding "Master Volume"
-            //                // and pressing "PART button 1" on the real MT-32's frontpanel.
-            //                // The channel assignment is then {0, 1, 2, 3, 4, 5, 6, 7, 9}
-            //                mt32ram.system.chanAssign[i] = i + 1;
-            //            }
-            //            mt32ram.system.masterVol = 100; // Confirmed
+#if MT32EMU_MONITOR_INIT
+            PrintDebug("Initialising Patches");
+#endif
+            for (var i = 0; i < 128; i++)
+            {
+                PatchParam patch = mt32ram.patches[i];
+                patch.TimbreGroup = (byte)(i / 64);
+                patch.TimbreNum = (byte)(i % 64);
+                patch.KeyShift = 24;
+                patch.FineTune = 50;
+                patch.BenderRange = 12;
+                patch.AssignMode = 0;
+                patch.ReverbSwitch = 1;
+                patch.Dummy = 0;
+            }
 
-            //            bool oldReverbOverridden = reverbOverridden;
-            //            reverbOverridden = false;
-            //            RefreshSystem();
-            //            reverbOverridden = oldReverbOverridden;
+#if MT32EMU_MONITOR_INIT
+            PrintDebug("Initialising System");
+#endif
+            // The MT-32 manual claims that "Standard pitch" is 442Hz.
+            mt32ram.system.masterTune = 0x4A; // Confirmed on CM-64
+            mt32ram.system.reverbMode = 0; // Confirmed
+            mt32ram.system.reverbTime = 5; // Confirmed
+            mt32ram.system.reverbLevel = 3; // Confirmed
+            Array.Copy(controlROMData, controlROMMap.reserveSettings, mt32ram.system.reserveSettings.Data, mt32ram.system.reserveSettings.Offset, 9);
+            for (byte i = 0; i < 9; i++)
+            {
+                // This is the default: {1, 2, 3, 4, 5, 6, 7, 8, 9}
+                // An alternative configuration can be selected by holding "Master Volume"
+                // and pressing "PART button 1" on the real MT-32's frontpanel.
+                // The channel assignment is then {0, 1, 2, 3, 4, 5, 6, 7, 9}
+                mt32ram.system.chanAssign[i] = (byte)(i + 1);
+            }
+            mt32ram.system.masterVol = 100; // Confirmed
 
-            //            for (int i = 0; i < 9; i++)
-            //            {
-            //                MemParams::PatchTemp* patchTemp = &mt32ram.patchTemp[i];
+            bool oldReverbOverridden = reverbOverridden;
+            reverbOverridden = false;
+            RefreshSystem();
+            reverbOverridden = oldReverbOverridden;
 
-            //                // Note that except for the rhythm part, these patch fields will be set in setProgram() below anyway.
-            //                patchTemp.patch.timbreGroup = 0;
-            //                patchTemp.patch.timbreNum = 0;
-            //                patchTemp.patch.keyShift = 24;
-            //                patchTemp.patch.fineTune = 50;
-            //                patchTemp.patch.benderRange = 12;
-            //                patchTemp.patch.assignMode = 0;
-            //                patchTemp.patch.reverbSwitch = 1;
-            //                patchTemp.patch.dummy = 0;
+            for (int i = 0; i < 9; i++)
+            {
+                MemParams.PatchTemp patchTemp = mt32ram.patchTemp[i];
 
-            //                patchTemp.outputLevel = 80;
-            //                patchTemp.panpot = controlROMData[controlROMMap.panSettings + i];
-            //                memset(patchTemp.dummyv, 0, sizeof(patchTemp.dummyv));
-            //                patchTemp.dummyv[1] = 127;
+                // Note that except for the rhythm part, these patch fields will be set in setProgram() below anyway.
+                patchTemp.Patch.TimbreGroup = 0;
+                patchTemp.Patch.TimbreNum = 0;
+                patchTemp.Patch.KeyShift = 24;
+                patchTemp.Patch.FineTune = 50;
+                patchTemp.Patch.BenderRange = 12;
+                patchTemp.Patch.AssignMode = 0;
+                patchTemp.Patch.ReverbSwitch = 1;
+                patchTemp.Patch.Dummy = 0;
 
-            //                if (i < 8)
-            //                {
-            //                    parts[i] = new Part(this, i);
-            //                    parts[i].setProgram(controlROMData[controlROMMap.programSettings + i]);
-            //                }
-            //                else {
-            //                    parts[i] = new RhythmPart(this, i);
-            //                }
-            //            }
+                patchTemp.OutputLevel = 80;
+                patchTemp.Panpot = controlROMData[controlROMMap.panSettings + i];
+                Array.Clear(patchTemp.Dummy.Data, patchTemp.Dummy.Offset, 6);
+                patchTemp.Dummy[1] = 127;
 
-            //            // For resetting mt32 mid-execution
-            //            mt32default = mt32ram;
+                if (i < 8)
+                {
+                    parts[i] = new Part(this, i);
+                    parts[i].SetProgram(controlROMData[controlROMMap.programSettings + i]);
+                }
+                else {
+                    parts[i] = new RhythmPart(this, i);
+                }
+            }
 
-            //            midiQueue = new MidiEventQueue();
+            // For resetting mt32 mid-execution
+            mt32default = new MemParams(mt32ram);
 
-            //            analog = new Analog(analogOutputMode, controlROMFeatures);
-            //            setOutputGain(outputGain);
-            //            setReverbOutputGain(reverbOutputGain);
+            midiQueue = new MidiEventQueue();
 
-            //            isOpen = true;
-            //            isEnabled = false;
+            analog = new Analog(analogOutputMode, controlROMFeatures);
+            OutputGain = outputGain;
+            ReverbOutputGain = reverbOutputGain;
 
-            //#if MT32EMU_MONITOR_INIT
-            //    printDebug("*** Initialisation complete ***");
-            //#endif
+            isOpen = true;
+            isEnabled = false;
+
+#if MT32EMU_MONITOR_INIT
+            PrintDebug("*** Initialisation complete ***");
+#endif
             return true;
         }
 
-        bool InitTimbres(ushort timbreAMap, ushort timbreAOffset, int v1, int v2, bool timbreACompressed)
+        private void RefreshSystem()
         {
-            throw new NotImplementedException();
+            RefreshSystemMasterTune();
+            RefreshSystemReverbParameters();
+            RefreshSystemReserveSettings();
+            RefreshSystemChanAssign(0, 8);
+            RefreshSystemMasterVol();
+        }
+
+        private void RefreshSystemMasterTune()
+        {
+#if MT32EMU_MONITOR_SYSEX
+            //FIXME:KG: This is just an educated guess.
+            // The LAPC-I documentation claims a range of 427.5Hz-452.6Hz (similar to what we have here)
+            // The MT-32 documentation claims a range of 432.1Hz-457.6Hz
+            float masterTune = 440.0f * MT32EmuMath.EXP2F((mt32ram.system.masterTune - 64.0f) / (128.0f * 12.0f));
+            PrintDebug(" Master Tune: {0}", masterTune);
+#endif
+        }
+
+        private void RefreshSystemReserveSettings()
+        {
+            var rset = mt32ram.system.reserveSettings;
+#if MT32EMU_MONITOR_SYSEX
+            PrintDebug(" Partial reserve: 1={0} 2={1} 3={2} 4={3} 5={4} 6={5} 7={6} 8={7} Rhythm={8}", rset[0], rset[1], rset[2], rset[3], rset[4], rset[5], rset[6], rset[7], rset[8]);
+#endif
+            partialManager.SetReserve(rset);
+        }
+
+        private void RefreshSystemChanAssign(int firstPart, int lastPart)
+        {
+            chantable.Set(0, (sbyte)-1, chantable.Length);
+
+            // CONFIRMED: In the case of assigning a channel to multiple parts, the lower part wins.
+            for (int i = 0; i <= 8; i++)
+            {
+                if (parts[i] != null && i >= firstPart && i <= lastPart)
+                {
+                    // CONFIRMED: Decay is started for all polys, and all controllers are reset, for every part whose assignment was touched by the sysex write.
+                    parts[i].AllSoundOff();
+                    parts[i].ResetAllControllers();
+                }
+                int chan = mt32ram.system.chanAssign[i];
+                if (chan != 16 && chantable[chan] == -1)
+                {
+                    chantable[chan] = (sbyte)i;
+                }
+            }
+
+#if MT32EMU_MONITOR_SYSEX
+            BytePtr rset = mt32ram.system.chanAssign;
+            PrintDebug(" Part assign:     1={0} 2={1} 3={2} 4={3} 5={4} 6={5} 7={6} 8={7} Rhythm={8}", rset[0], rset[1], rset[2], rset[3], rset[4], rset[5], rset[6], rset[7], rset[8]);
+#endif
+        }
+
+        private void RefreshSystemMasterVol()
+        {
+#if MT32EMU_MONITOR_SYSEX
+            PrintDebug(" Master volume: {0}", mt32ram.system.masterVol);
+#endif
+        }
+
+        private bool InitPCMList(ushort mapAddress, ushort count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                var tps = new ControlROMPCMStruct(controlROMData, mapAddress + i * ControlROMPCMStruct.Size);
+                int rAddr = tps.pos * 0x800;
+                int rLenExp = (tps.len & 0x70) >> 4;
+                int rLen = 0x800 << rLenExp;
+                if (rAddr + rLen > pcmROMSize)
+                {
+                    PrintDebug("Control ROM error: Wave map entry %d points to invalid PCM address 0x%04X, length 0x%04X", i, rAddr, rLen);
+                    return false;
+                }
+                pcmWaves[i].addr = rAddr;
+                pcmWaves[i].len = rLen;
+                pcmWaves[i].loop = (tps.len & 0x80) != 0;
+                pcmWaves[i].controlROMPCMStruct = tps;
+                int pitch = (tps.pitchMSB << 8) | tps.pitchLSB;
+                bool unaffectedByMasterTune = (tps.len & 0x01) == 0;
+                PrintDebug("PCM {0}: pos={1}, len={2}, pitch={3}, loop={4}, unaffectedByMasterTune={5}", i, rAddr, rLen, pitch, pcmWaves[i].loop ? "YES" : "NO", unaffectedByMasterTune ? "YES" : "NO");
+            }
+            return false;
+        }
+
+        private bool InitTimbres(ushort mapAddress, ushort offset, int count, int startTimbre, bool compressed)
+        {
+            var timbreMap = new BytePtr(controlROMData, mapAddress);
+            for (var i = 0; i < count * 2; i += 2)
+            {
+                ushort address = (ushort)((timbreMap[i + 1] << 8) | timbreMap[i]);
+                if (!compressed && (address + offset + TimbreParam.Size > CONTROL_ROM_SIZE))
+                {
+                    PrintDebug("Control ROM error: Timbre map entry 0x%04x for timbre %d points to invalid timbre address 0x%04x", i, startTimbre, address);
+                    return false;
+                }
+                address += offset;
+                if (compressed)
+                {
+                    if (!InitCompressedTimbre(startTimbre, new BytePtr(controlROMData, address), CONTROL_ROM_SIZE - address))
+                    {
+                        PrintDebug("Control ROM error: Timbre map entry 0x%04x for timbre %d points to invalid timbre at 0x%04x", i, startTimbre, address);
+                        return false;
+                    }
+                }
+                else {
+                    timbresMemoryRegion.Write(startTimbre, 0, new BytePtr(controlROMData, address), TimbreParam.Size, true);
+                }
+                startTimbre++;
+            }
+            return true;
+        }
+
+        private bool InitCompressedTimbre(int timbreNum, BytePtr src, int srcLen)
+        {
+            // "Compressed" here means that muted partials aren't present in ROM (except in the case of partial 0 being muted).
+            // Instead the data from the previous unmuted partial is used.
+            if (srcLen < TimbreParam.CommonParam.Size)
+            {
+                return false;
+            }
+            TimbreParam timbre = mt32ram.timbres[timbreNum].timbre;
+            timbresMemoryRegion.Write(timbreNum, 0, src, TimbreParam.CommonParam.Size, true);
+            int srcPos = TimbreParam.CommonParam.Size;
+            int memPos = TimbreParam.CommonParam.Size;
+            for (int t = 0; t < 4; t++)
+            {
+                if (t != 0 && ((timbre.common.partialMute >> t) & 0x1) == 0x00)
+                {
+                    // This partial is muted - we'll copy the previously copied partial, then
+                    srcPos -= TimbreParam.PartialParam.Size;
+                }
+                else if (srcPos + TimbreParam.PartialParam.Size >= srcLen)
+                {
+                    return false;
+                }
+                timbresMemoryRegion.Write(timbreNum, memPos, new BytePtr(src, srcPos), TimbreParam.PartialParam.Size);
+                srcPos += TimbreParam.PartialParam.Size;
+                memPos += TimbreParam.PartialParam.Size;
+            }
+            return true;
+        }
+
+        public void SetReverbCompatibilityMode(bool value)
+        {
+            if (reverbModels[(int)ReverbMode.ROOM] != null)
+            {
+                if (IsMT32ReverbCompatibilityMode == value) return;
+                SetReverbEnabled(false);
+                for (int i = 0; i < 4; i++)
+                {
+                    reverbModels[i] = null;
+                }
+            }
+            reverbModels[(int)ReverbMode.ROOM] = new BReverbModel(ReverbMode.ROOM, value);
+            reverbModels[(int)ReverbMode.HALL] = new BReverbModel(ReverbMode.HALL, value);
+            reverbModels[(int)ReverbMode.PLATE] = new BReverbModel(ReverbMode.PLATE, value);
+            reverbModels[(int)ReverbMode.TAP_DELAY] = new BReverbModel(ReverbMode.TAP_DELAY, value);
+#if !MT32EMU_REDUCE_REVERB_MEMORY
+            for (int i = (int)ReverbMode.ROOM; i <= (int)ReverbMode.TAP_DELAY; i++)
+            {
+                reverbModels[i].Open();
+            }
+#endif
+            if (isOpen)
+            {
+                ReverbOutputGain = reverbOutputGain;
+                SetReverbEnabled(true);
+            }
+        }
+
+        public static void MuteSampleBuffer(Sample[] buffer, int offset, int len)
+        {
+            if (buffer == null) return;
+            Array.Clear(buffer, offset, len);
         }
 
         private bool LoadPCMROM(ROMImage pcmROMImage)
@@ -1090,13 +2223,13 @@ namespace NScumm.Core.Audio.SoftSynth.Mt32
                 return false;
             }
 #if MT32EMU_MONITOR_INIT
-    printDebug("Found PCM ROM: %s, %s", pcmROMInfo.shortName, pcmROMInfo.description);
+            PrintDebug("Found PCM ROM: {0}, {1}", pcmROMInfo.ShortName, pcmROMInfo.Description);
 #endif
             var fileSize = file.Length;
             if (fileSize != (2 * pcmROMSize))
             {
 #if MT32EMU_MONITOR_INIT
-        printDebug("PCM ROM file has wrong size (expected %d, got %d)", 2 * pcmROMSize, fileSize);
+                PrintDebug("PCM ROM file has wrong size (expected {0}, got {1})", 2 * pcmROMSize, fileSize);
 #endif
                 return false;
             }
@@ -1149,19 +2282,85 @@ namespace NScumm.Core.Audio.SoftSynth.Mt32
             rhythmTempMemoryRegion = new RhythmTempMemoryRegion(this, new BytePtr(mt32ram.Data, off), new BytePtr(controlROMData, controlROMMap.rhythmMaxTable));
             off += MemParams.RhythmTemp.Size * mt32ram.rhythmTemp.Length;
             timbreTempMemoryRegion = new TimbreTempMemoryRegion(this, new BytePtr(mt32ram.Data, off), paddedTimbreMaxTable);
-            off += MemParams.RhythmTemp.Size * mt32ram.timbreTemp.Length;
+            off += TimbreParam.Size * mt32ram.timbreTemp.Length;
             patchesMemoryRegion = new PatchesMemoryRegion(this, new BytePtr(mt32ram.Data, off), new BytePtr(controlROMData, controlROMMap.patchMaxTable));
-            off += MemParams.RhythmTemp.Size * mt32ram.patches.Length;
+            off += PatchParam.Size * mt32ram.patches.Length;
             timbresMemoryRegion = new TimbresMemoryRegion(this, new BytePtr(mt32ram.Data, off), paddedTimbreMaxTable);
-            off += MemParams.RhythmTemp.Size * mt32ram.timbres.Length;
+            off += MemParams.PaddedTimbre.Size * mt32ram.timbres.Length;
             systemMemoryRegion = new SystemMemoryRegion(this, new BytePtr(mt32ram.Data, off), new BytePtr(controlROMData, controlROMMap.systemMaxTable));
             displayMemoryRegion = new DisplayMemoryRegion(this);
             resetMemoryRegion = new ResetMemoryRegion(this);
         }
 
-        void PrintDebug(string v)
+        private void SetReverbEnabled(bool newReverbEnabled)
         {
-            throw new NotImplementedException();
+            if (IsReverbEnabled == newReverbEnabled) return;
+            if (newReverbEnabled)
+            {
+                bool oldReverbOverridden = reverbOverridden;
+                reverbOverridden = false;
+                RefreshSystemReverbParameters();
+                reverbOverridden = oldReverbOverridden;
+            }
+            else {
+#if MT32EMU_REDUCE_REVERB_MEMORY
+        reverbModel.close();
+#endif
+                reverbModel = null;
+            }
+        }
+
+        private void RefreshSystemReverbParameters()
+        {
+#if MT32EMU_MONITOR_SYSEX
+            PrintDebug(" Reverb: mode={0}, time={1}, level={2}", mt32ram.system.reverbMode, mt32ram.system.reverbTime, mt32ram.system.reverbLevel);
+#endif
+            if (reverbOverridden)
+            {
+#if MT32EMU_MONITOR_SYSEX
+                PrintDebug(" (Reverb overridden - ignoring)");
+#endif
+                return;
+            }
+            //reportHandler.onNewReverbMode(mt32ram.system.reverbMode);
+            //reportHandler.onNewReverbTime(mt32ram.system.reverbTime);
+            //reportHandler.onNewReverbLevel(mt32ram.system.reverbLevel);
+
+            BReverbModel oldReverbModel = reverbModel;
+            if (mt32ram.system.reverbTime == 0 && mt32ram.system.reverbLevel == 0)
+            {
+                // Setting both time and level to 0 effectively disables wet reverb output on real devices.
+                // Take a shortcut in this case to reduce CPU load.
+                reverbModel = null;
+            }
+            else {
+                reverbModel = reverbModels[mt32ram.system.reverbMode];
+            }
+            if (reverbModel != oldReverbModel)
+            {
+#if MT32EMU_REDUCE_REVERB_MEMORY
+        if (oldReverbModel != null) {
+            oldReverbModel.close();
+        }
+        if (isReverbEnabled()) {
+            reverbModel.open();
+        }
+#else
+                if (IsReverbEnabled)
+                {
+                    reverbModel.Mute();
+                }
+#endif
+            }
+            if (IsReverbEnabled)
+            {
+                reverbModel.SetParameters(mt32ram.system.reverbTime, mt32ram.system.reverbLevel);
+            }
+        }
+
+        internal void PrintDebug(string format, params object[] args)
+        {
+            Debug(4, format, args);
         }
 
         private bool LoadControlROM(ROMImage controlROMImage)
@@ -1178,13 +2377,13 @@ namespace NScumm.Core.Audio.SoftSynth.Mt32
             if (controlROMFeatures == null)
             {
 #if MT32EMU_MONITOR_INIT
-        printDebug("Invalid Control ROM Info provided without feature set");
+                PrintDebug("Invalid Control ROM Info provided without feature set");
 #endif
                 return false;
             }
 
 #if MT32EMU_MONITOR_INIT
-    printDebug("Found Control ROM: %s, %s", controlROMInfo.shortName, controlROMInfo.description);
+            PrintDebug("Found Control ROM: %s, %s", controlROMInfo.ShortName, controlROMInfo.Description);
 #endif
             file.Read(controlROMData, 0, CONTROL_ROM_SIZE);
 
@@ -1199,9 +2398,14 @@ namespace NScumm.Core.Audio.SoftSynth.Mt32
                 }
             }
 #if MT32EMU_MONITOR_INIT
-    printDebug("Control ROM failed to load");
+            PrintDebug("Control ROM failed to load");
 #endif
             return false;
+        }
+
+        public void PolyStateChanged(int partNum)
+        {
+            //reportHandler.onPolyStateChanged(partNum);
         }
 
     }

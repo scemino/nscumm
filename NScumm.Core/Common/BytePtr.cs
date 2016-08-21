@@ -144,6 +144,65 @@ namespace NScumm.Core
         }
     }
 
+    public struct Ptr<T>
+    {
+        public int Offset;
+        public readonly T[] Data;
+
+        public static readonly Ptr<T> Null = new Ptr<T>(null);
+
+        public T Value
+        {
+            get { return Data[Offset]; }
+            set { Data[Offset] = value; }
+        }
+
+        public T this[int index]
+        {
+            get { return Data[Offset + index]; }
+            set { Data[Offset + index] = value; }
+        }
+
+        public Ptr(Ptr<T> ptr, int offset = 0)
+        {
+            Data = ptr.Data;
+            Offset = ptr.Offset + offset;
+        }
+
+        public Ptr(T[] data, int offset = 0)
+        {
+            Data = data;
+            Offset = offset;
+        }
+
+        public static implicit operator Ptr<T>(T[] ba)
+        {
+            return new Ptr<T>(ba);
+        }
+
+        public static bool operator ==(Ptr<T> p1, Ptr<T> p2)
+        {
+            return p1.Data == p2.Data &&
+                     p1.Offset == p2.Offset;
+        }
+
+        public static bool operator !=(Ptr<T> p1, Ptr<T> p2)
+        {
+            return !(p1 == p2);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (!(obj is Ptr<T>)) return false;
+            return this == (Ptr<T>)obj;
+        }
+
+        public override int GetHashCode()
+        {
+            return Data == null ? 0 : Data.GetHashCode() ^ Offset;
+        }
+    }
+
     public static class BytePtrExtension
     {
         public static void WriteInt16(this BytePtr data, int startIndex, short value)

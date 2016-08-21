@@ -598,6 +598,11 @@ namespace NScumm.Core
             return System.Text.Encoding.UTF8.GetString(reader.ReadBytes(4), 0, 4);
         }
 
+        public static string GetText(this BytePtr value, int startIndex = 0, int count = -1)
+        {
+            return GetText(value.Data, value.Offset + startIndex, count);
+        }
+
         public static string GetText(this byte[] value, int startIndex = 0, int count = -1)
         {
             var data = new List<byte>();
@@ -607,6 +612,11 @@ namespace NScumm.Core
                 data.Add(value[i]);
             }
             return System.Text.Encoding.UTF8.GetString(data.ToArray());
+        }
+
+        public static string GetRawText(this BytePtr value, int startIndex = 0, int count = -1)
+        {
+            return GetRawText(value.Data, value.Offset + startIndex, count);
         }
 
         public static string GetRawText(this byte[] value, int startIndex = 0, int count = -1)

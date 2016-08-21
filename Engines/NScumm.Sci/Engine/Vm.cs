@@ -566,7 +566,7 @@ namespace NScumm.Sci.Engine
                 byte opcode = (byte)(extOpcode >> 1);
 #if DEBUG
                 //var method = s.xs.debugSelector != -1 ? SciEngine.Instance.Kernel.GetSelectorName(s.xs.debugSelector) : "N/A";
-                Debug($"{opcodeNames[opcode]}: {opparams[0]}, {opparams[1]}, {opparams[2]}, {opparams[3]}, acc = {s.r_acc}, script {scr.ScriptNumber}, local script {local_script.ScriptNumber}");
+                //Debug($"{opcodeNames[opcode]}: {opparams[0]}, {opparams[1]}, {opparams[2]}, {opparams[3]}, acc = {s.r_acc}, script {scr.ScriptNumber}, local script {local_script.ScriptNumber}");
 #endif
 
 #if ABORT_ON_INFINITE_LOOP
@@ -1427,7 +1427,7 @@ namespace NScumm.Sci.Engine
             if (kernelCall.subFunctionCount == 0)
             {
                 AddKernelCallToExecStack(s, kernelCallNr, argc, argv);
-                Debug($"Call {kernelCall.name}");
+                //Debug($"Call {kernelCall.name}");
                 s.r_acc = kernelCall.function(s, argc, argv);
 
                 if (kernelCall.debugLogging)

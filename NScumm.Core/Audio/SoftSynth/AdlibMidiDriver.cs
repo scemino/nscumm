@@ -366,7 +366,7 @@ namespace NScumm.Core.Audio.SoftSynth
             }
         }
 
-        void Close()
+        private void Close()
         {
             if (!_isOpen)
                 return;
@@ -411,7 +411,7 @@ namespace NScumm.Core.Audio.SoftSynth
             return 0;
         }
 
-        void SetPitchBendRange(byte channel, uint range)
+        public override void SetPitchBendRange(byte channel, uint range)
         {
 #if ENABLE_OPL3
     // Not supported in OPL3 mode.
@@ -431,7 +431,7 @@ namespace NScumm.Core.Audio.SoftSynth
             }
         }
 
-        void PartKeyOff(AdLibPart part, byte note)
+        private void PartKeyOff(AdLibPart part, byte note)
         {
             for (var voice = part._voice; voice != null; voice = voice.Next)
             {
@@ -445,7 +445,7 @@ namespace NScumm.Core.Audio.SoftSynth
             }
         }
 
-        void PartKeyOn(AdLibPart part, AdLibInstrument instr, byte note, byte velocity, AdLibInstrument second, byte pan)
+        private void PartKeyOn(AdLibPart part, AdLibInstrument instr, byte note, byte velocity, AdLibInstrument second, byte pan)
         {
             var voice = AllocateVoice(part._priEff);
             if (voice == null)
@@ -455,7 +455,7 @@ namespace NScumm.Core.Audio.SoftSynth
             McKeyOn(voice, instr, note, velocity, second, pan);
         }
 
-        void McKeyOn(AdLibVoice voice, AdLibInstrument instr, byte note, byte velocity, AdLibInstrument second, byte pan)
+        private void McKeyOn(AdLibVoice voice, AdLibInstrument instr, byte note, byte velocity, AdLibInstrument second, byte pan)
         {
             AdLibPart part = voice.Part;
             byte vol1, vol2;
@@ -572,7 +572,7 @@ namespace NScumm.Core.Audio.SoftSynth
 #endif
         }
 
-        void McInitStuff(AdLibVoice voice, Struct10 s10, Struct11 s11, byte flags, InstrumentExtra ie)
+        private void McInitStuff(AdLibVoice voice, Struct10 s10, Struct11 s11, byte flags, InstrumentExtra ie)
         {
             var part = voice.Part;
             s11.ModifyVal = 0;
@@ -615,7 +615,7 @@ namespace NScumm.Core.Audio.SoftSynth
             Struct10Init(s10, ie);
         }
 
-        void Struct10Init(Struct10 s10, InstrumentExtra ie)
+        private void Struct10Init(Struct10 s10, InstrumentExtra ie)
         {
             s10.Active = 1;
             if (!_scummSmallHeader)
@@ -644,7 +644,7 @@ namespace NScumm.Core.Audio.SoftSynth
             Struct10Setup(s10);
         }
 
-        void Struct10Setup(Struct10 s10)
+        private void Struct10Setup(Struct10 s10)
         {
             int b, c, d, e, f, g, h;
             byte t;
@@ -705,7 +705,7 @@ namespace NScumm.Core.Audio.SoftSynth
             s10.SpeedLoCounter = 0;
         }
 
-        void AdlibSetParam(int channel, byte param, int value, bool primary = true)
+        private void AdlibSetParam(int channel, byte param, int value, bool primary = true)
         {
             byte reg;
 
@@ -759,7 +759,7 @@ namespace NScumm.Core.Audio.SoftSynth
 #endif
         }
 
-        void AdlibKeyOnOff(int channel)
+        private void AdlibKeyOnOff(int channel)
         {
 #if ENABLE_OPL3
             Debug.Assert(!_opl3Mode);
@@ -774,7 +774,7 @@ namespace NScumm.Core.Audio.SoftSynth
             AdlibWrite(reg, (byte)(val | 0x20));
         }
 
-        void AdlibNoteOn(int chan, byte note, int mod)
+        private void AdlibNoteOn(int chan, byte note, int mod)
         {
 #if ENABLE_OPL3
     if (_opl3Mode) {
@@ -789,7 +789,7 @@ namespace NScumm.Core.Audio.SoftSynth
             AdlibPlayNote(chan, (short)_channelTable2[chan] + code);
         }
 
-        void AdlibNoteOnEx(int chan, byte note, int mod)
+        private void AdlibNoteOnEx(int chan, byte note, int mod)
         {
             Debug.Assert(chan >= 0 && chan < 9);
 
@@ -813,7 +813,7 @@ namespace NScumm.Core.Audio.SoftSynth
 #endif
         }
 
-        void AdlibPlayNote(int channel, int note)
+        private void AdlibPlayNote(int channel, int note)
         {
             byte old, oct, notex;
             int note2;
@@ -856,7 +856,7 @@ namespace NScumm.Core.Audio.SoftSynth
             AdlibWrite((byte)(channel + 0xB0), (byte)(oct | 0x20));
         }
 
-        void AdlibSetupChannel(int chan, AdLibInstrument instr, byte vol1, byte vol2)
+        private void AdlibSetupChannel(int chan, AdLibInstrument instr, byte vol1, byte vol2)
         {
             Debug.Assert(chan >= 0 && chan < 9);
 
@@ -881,7 +881,7 @@ namespace NScumm.Core.Audio.SoftSynth
             );
         }
 
-        void LinkMc(AdLibPart part, AdLibVoice voice)
+        private void LinkMc(AdLibPart part, AdLibVoice voice)
         {
             voice.Part = part;
             voice.Next = part._voice;
@@ -892,7 +892,7 @@ namespace NScumm.Core.Audio.SoftSynth
                 voice.Next.Prev = voice;
         }
 
-        AdLibVoice AllocateVoice(byte pri)
+        private AdLibVoice AllocateVoice(byte pri)
         {
             AdLibVoice ac, best = null;
 
@@ -922,7 +922,7 @@ namespace NScumm.Core.Audio.SoftSynth
             return best;
         }
 
-        void McOff(AdLibVoice voice)
+        private void McOff(AdLibVoice voice)
         {
             AdlibKeyOff(voice.Channel);
 
@@ -937,7 +937,7 @@ namespace NScumm.Core.Audio.SoftSynth
             voice.Part = null;
         }
 
-        void McIncStuff(AdLibVoice voice, Struct10 s10, Struct11 s11)
+        private void McIncStuff(AdLibVoice voice, Struct10 s10, Struct11 s11)
         {
             byte code;
             AdLibPart part = voice.Part;
@@ -989,7 +989,7 @@ namespace NScumm.Core.Audio.SoftSynth
                 AdlibKeyOnOff(voice.Channel);
         }
 
-        byte Struct10OnTimer(Struct10 s10, Struct11 s11)
+        private byte Struct10OnTimer(Struct10 s10, Struct11 s11)
         {
             byte result = 0;
             int i;
@@ -1044,7 +1044,7 @@ namespace NScumm.Core.Audio.SoftSynth
             return result;
         }
 
-        void AdlibKeyOff(int chan)
+        private void AdlibKeyOff(int chan)
         {
             byte reg = (byte)(chan + 0xB0);
             AdlibWrite(reg, (byte)(AdlibGetRegValue(reg) & ~0x20));
@@ -1055,7 +1055,7 @@ namespace NScumm.Core.Audio.SoftSynth
 #endif
         }
 
-        int AdlibGetRegValueParam(int chan, byte param)
+        private int AdlibGetRegValueParam(int chan, byte param)
         {
             byte channel;
 
@@ -1098,12 +1098,12 @@ namespace NScumm.Core.Audio.SoftSynth
             return val;
         }
 
-        byte AdlibGetRegValue(byte reg)
+        private byte AdlibGetRegValue(byte reg)
         {
             return _regCache[reg];
         }
 
-        void AdlibWrite(byte reg, byte value)
+        private void AdlibWrite(byte reg, byte value)
         {
             if (_regCache[reg] == value)
             {
@@ -1117,7 +1117,7 @@ namespace NScumm.Core.Audio.SoftSynth
             _opl.WriteReg(reg, value);
         }
 
-        static int LookupVolume(int a, int b)
+        private static int LookupVolume(int a, int b)
         {
             if (b == 0)
                 return 0;
@@ -1154,7 +1154,7 @@ namespace NScumm.Core.Audio.SoftSynth
             }
         }
 
-        static int RandomNr(int a)
+        private static int RandomNr(int a)
         {
             if ((_randSeed & 1) != 0)
             {

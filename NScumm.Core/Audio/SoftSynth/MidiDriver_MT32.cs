@@ -19,15 +19,20 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using System;
 using System.IO;
 using static NScumm.Core.DebugHelper;
 
 namespace NScumm.Core.Audio.SoftSynth
 {
+    class MidiChannel_MT32 : MidiChannel_MPU401
+    {
+        public override void EffectLevel(byte value) { }
+        public override void ChorusLevel(byte value) { }
+    }
+
     class MidiDriver_MT32 : EmulatedMidiDriver
     {
-        //MidiChannel_MT32[] _midiChannels = new MidiChannel_MT32[16];
+        MidiChannel_MT32[] _midiChannels = new MidiChannel_MT32[16];
         ushort _channelMask;
         Mt32.Synth _synth = new Mt32.Synth();
         //MT32Emu::ReportHandlerScummV _reportHandler;
@@ -40,26 +45,21 @@ namespace NScumm.Core.Audio.SoftSynth
             : base(mixer)
         {
             _channelMask = 0xFFFF; // Permit all 16 channels by default
-            //for (var i = 0; i < _midiChannels.Length; ++i)
-            //{
-            //    _midiChannels[i].init(this, i);
-            //}
+            for (var i = 0; i < _midiChannels.Length; ++i)
+            {
+                _midiChannels[i] = new MidiChannel_MT32();
+                _midiChannels[i].Init(this, (byte)i);
+            }
         }
 
         public override bool IsStereo
         {
-            get
-            {
-                return true;
-            }
+            get { return true; }
         }
 
         public override int Rate
         {
-            get
-            {
-                return _outputRate;
-            }
+            get { return _outputRate; }
         }
 
         public override MidiDriverError Open()
@@ -101,20 +101,20 @@ namespace NScumm.Core.Audio.SoftSynth
             if (!_synth.Open(_controlROM, _pcmROM))
                 return MidiDriverError.DeviceNotAvailable;
 
-            //double gain = ConfigManager.Instance.Get<int>("midi_gain") / 100.0;
-            //_synth.setOutputGain(1.0f * gain);
-            //_synth.setReverbOutputGain(0.68f * gain);
+            double gain = ConfigManager.Instance.Get<int>("midi_gain") / 100.0;
+            _synth.OutputGain = (float)(1.0f * gain);
+            _synth.ReverbOutputGain = (float)(0.68f * gain);
             // We let the synthesizer play MIDI messages immediately. Our MIDI
             // handling is synchronous to sample generation. This makes delaying MIDI
             // events result in odd sound output in some cases. For example, the
             // shattering window in the Indiana Jones and the Fate of Atlantis intro
             // will sound like a bell if we use any delay here.
             // Bug #6242 "AUDIO: Built-In MT-32 MUNT Produces Wrong Sounds".
-            //_synth.setMIDIDelayMode(MT32Emu::MIDIDelayMode_IMMEDIATE);
+            _synth.MIDIDelayMode = Mt32.MIDIDelayMode.IMMEDIATE;
 
             // We need to report the sample rate MUNT renders at as sample rate of our
             // AudioStream.
-            //_outputRate = _synth.getStereoOutputSampleRate();
+            _outputRate = _synth.StereoOutputSampleRate;
             base.Open();
 
             _initializing = false;
@@ -134,22 +134,57 @@ namespace NScumm.Core.Audio.SoftSynth
 
         public override MidiChannel AllocateChannel()
         {
-            throw new NotImplementedException();
+            MidiChannel_MT32 chan;
+
+            for (var i = 0; i < _midiChannels.Length; ++i)
+            {
+                if (i == 9 || (_channelMask & (1 << i))==0)
+                    continue;
+                chan = _midiChannels[i];
+                if (chan.Allocate())
+                {
+                    return chan;
+                }
+            }
+            return null;
         }
 
         public override MidiChannel GetPercussionChannel()
         {
-            throw new NotImplementedException();
+            return _midiChannels[9];
         }
 
         public override void Send(int b)
         {
-            throw new NotImplementedException();
+            _synth.PlayMsg(b);
         }
 
         protected override void GenerateSamples(short[] buf, int pos, int len)
         {
-            throw new NotImplementedException();
+            _synth.Render(buf, pos, len);
+        }
+
+        public override void SysEx(BytePtr msg, ushort length)
+        {
+            if (msg[0] == 0xf0)
+            {
+                _synth.PlaySysex(msg, length);
+            }
+            else {
+                _synth.PlaySysexWithoutFraming(msg, length);
+            }
+        }
+
+        public override int Property(int prop, int param)
+        {
+            switch (prop)
+            {
+                case PROP_CHANNEL_MASK:
+                    _channelMask = (ushort)(param & 0xFFFF);
+                    return 1;
+            }
+
+            return 0;
         }
     }
 }

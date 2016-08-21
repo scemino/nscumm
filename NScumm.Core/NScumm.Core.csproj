@@ -196,6 +196,24 @@
     <Compile Include="Audio\SoftSynth\Mt32\PatchParam.cs" />
     <Compile Include="Audio\SoftSynth\Mt32\ControlROMMap.cs" />
     <Compile Include="Audio\SoftSynth\Mt32\MemoryRegion.cs" />
+    <Compile Include="Audio\SoftSynth\Mt32\RingBuffer.cs" />
+    <Compile Include="Audio\SoftSynth\Mt32\AllpassFilter.cs" />
+    <Compile Include="Audio\SoftSynth\Mt32\CombFilter.cs" />
+    <Compile Include="Audio\SoftSynth\Mt32\Part.cs" />
+    <Compile Include="Audio\SoftSynth\Mt32\PartialManager.cs" />
+    <Compile Include="Audio\SoftSynth\Mt32\RhythmPart.cs" />
+    <Compile Include="Audio\SoftSynth\Mt32\MidiEventQueue.cs" />
+    <Compile Include="Audio\SoftSynth\Mt32\Partial.cs" />
+    <Compile Include="Audio\SoftSynth\Mt32\TVA.cs" />
+    <Compile Include="Audio\SoftSynth\Mt32\LA32Ramp.cs" />
+    <Compile Include="Audio\SoftSynth\Mt32\Tables.cs" />
+    <Compile Include="Audio\SoftSynth\Mt32\TVP.cs" />
+    <Compile Include="Audio\SoftSynth\Mt32\TVF.cs" />
+    <Compile Include="Audio\SoftSynth\Mt32\AbstractLowPassFilter.cs" />
+    <Compile Include="Audio\SoftSynth\Mt32\LA32PartialPair.cs" />
+    <Compile Include="Audio\MidiChannel_MPU401.cs" />
+    <Compile Include="Audio\SoftSynth\Mt32\LA32WaveGenerator.cs" />
+    <Compile Include="Audio\SoftSynth\Mt32\MT32EmuMath.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <ItemGroup>

@@ -149,6 +149,11 @@ namespace NScumm.Core.Audio
 
     public abstract class MidiDriver : MidiDriverBase, IDisposable
     {
+        public const int PROP_OLD_ADLIB = 2;
+        public const int PROP_CHANNEL_MASK = 3;
+        // HACK: Not so nice, but our SCUMM AdLib code is in audio/
+        public const int PROP_SCUMM_OPL3 = 4;
+
         /// <summary>
         /// Create music driver matching the given device handle, or NULL if there is no match.
         /// </summary>
@@ -356,6 +361,17 @@ namespace NScumm.Core.Audio
 
         public virtual void SysExCustomInstrument(byte channel, uint type, byte[] instr)
         {
+        }
+
+        // HIGH-LEVEL SEMANTIC METHODS
+        public virtual void SetPitchBendRange(byte channel, uint range)
+        {
+            Send((byte)(0xB0 | channel), 101, 0);
+            Send((byte)(0xB0 | channel), 100, 0);
+            Send((byte)(0xB0 | channel), 6, (byte)range);
+            Send((byte)(0xB0 | channel), 38, 0);
+            Send((byte)(0xB0 | channel), 101, 127);
+            Send((byte)(0xB0 | channel), 100, 127);
         }
 
         public delegate void TimerProc(object param);

@@ -19,8 +19,6 @@
 using NScumm.Core;
 using NScumm.Core.Audio.OPL;
 using System;
-using System.Diagnostics;
-using System.Runtime.InteropServices;
 
 namespace NScumm.Sky.Music
 {

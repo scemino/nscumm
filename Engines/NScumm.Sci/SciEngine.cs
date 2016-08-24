@@ -723,13 +723,9 @@ namespace NScumm.Sci
                 {
                     throw new NotImplementedException();
                     // TODO: showScummVMDialog("A known buggy game script has been detected, which could "
-
                     //"prevent you from progressing later on in the game, during "
-
                     //"the sequence with the Green Man's riddles. Please, apply "
-
                     //"the latest patch for this game by Sierra to avoid possible "
-
                     //"problems");
                 }
             }

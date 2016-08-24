@@ -1057,13 +1057,13 @@ namespace NScumm.Core.Audio.SoftSynth.Mt32
             }
             if (len < 4)
             {
-                PrintDebug("playSysexWithoutHeader: Message is too short (%d bytes)!", len);
+                PrintDebug("playSysexWithoutHeader: Message is too short ({0} bytes)!", len);
                 return;
             }
             byte checksum = CalcSysexChecksum(sysex, len - 1);
             if (checksum != sysex[len - 1])
             {
-                PrintDebug("playSysexWithoutHeader: Message checksum is incorrect (provided: %02x, expected: %02x)!", sysex[len - 1], checksum);
+                PrintDebug("playSysexWithoutHeader: Message checksum is incorrect (provided: {0:X2}, expected: {1:X2})!", sysex[len - 1], checksum);
                 return;
             }
             len -= 1; // Exclude checksum
@@ -1090,7 +1090,7 @@ namespace NScumm.Core.Audio.SoftSynth.Mt32
                     ReadSysex(device, sysex, len);
                     break;
                 default:
-                    PrintDebug("playSysexWithoutHeader: Unsupported command %02x", command);
+                    PrintDebug("playSysexWithoutHeader: Unsupported command {0:X2}", command);
                     return;
             }
         }
@@ -1218,7 +1218,7 @@ namespace NScumm.Core.Audio.SoftSynth.Mt32
             {
                 case MemoryRegionType.MR_PatchTemp:
                     region.Write(first, off, data, len);
-                    PrintDebug("Patch temp: Patch {0}, offset {1:X}, len {2}", off / 16, off % 16, len);
+                    //PrintDebug("Patch temp: Patch {0}, offset {1:X}, len {2}", off / 16, off % 16, len);
 
                     for (int i = first; i <= last; i++)
                     {
@@ -1373,7 +1373,7 @@ namespace NScumm.Core.Audio.SoftSynth.Mt32
             // NYI
         }
 
-        private byte CalcSysexChecksum(BytePtr data, int len, int initChecksum = 0)
+        public static byte CalcSysexChecksum(BytePtr data, int len, byte initChecksum = 0)
         {
             int checksum = -initChecksum;
             for (int i = 0; i < len; i++)
@@ -1659,7 +1659,7 @@ namespace NScumm.Core.Audio.SoftSynth.Mt32
                 case DACInputMode.NICE:
                     while ((len--) != 0)
                     {
-                        buffer[b] = ClipSampleEx((buffer[b]) << 1);
+                        buffer[b] = ClipSampleEx(buffer[b] << 1);
                         ++b;
                     }
                     break;
@@ -2111,9 +2111,9 @@ namespace NScumm.Core.Audio.SoftSynth.Mt32
                 pcmWaves[i].len = rLen;
                 pcmWaves[i].loop = (tps.len & 0x80) != 0;
                 pcmWaves[i].controlROMPCMStruct = tps;
-                int pitch = (tps.pitchMSB << 8) | tps.pitchLSB;
-                bool unaffectedByMasterTune = (tps.len & 0x01) == 0;
-                PrintDebug("PCM {0}: pos={1}, len={2}, pitch={3}, loop={4}, unaffectedByMasterTune={5}", i, rAddr, rLen, pitch, pcmWaves[i].loop ? "YES" : "NO", unaffectedByMasterTune ? "YES" : "NO");
+                //int pitch = (tps.pitchMSB << 8) | tps.pitchLSB;
+                //bool unaffectedByMasterTune = (tps.len & 0x01) == 0;
+                //PrintDebug("PCM {0}: pos={1}, len={2}, pitch={3}, loop={4}, unaffectedByMasterTune={5}", i, rAddr, rLen, pitch, pcmWaves[i].loop ? "YES" : "NO", unaffectedByMasterTune ? "YES" : "NO");
             }
             return false;
         }
@@ -2243,7 +2243,6 @@ namespace NScumm.Core.Audio.SoftSynth.Mt32
                 byte s = fileData[f++];
                 byte c = fileData[f++];
 
-
                 short log = 0;
                 for (int u = 0; u < 15; u++)
                 {
@@ -2339,12 +2338,12 @@ namespace NScumm.Core.Audio.SoftSynth.Mt32
             if (reverbModel != oldReverbModel)
             {
 #if MT32EMU_REDUCE_REVERB_MEMORY
-        if (oldReverbModel != null) {
-            oldReverbModel.close();
-        }
-        if (isReverbEnabled()) {
-            reverbModel.open();
-        }
+                if (oldReverbModel != null) {
+                    oldReverbModel.close();
+                }
+                if (isReverbEnabled()) {
+                    reverbModel.open();
+                }
 #else
                 if (IsReverbEnabled)
                 {
@@ -2383,7 +2382,7 @@ namespace NScumm.Core.Audio.SoftSynth.Mt32
             }
 
 #if MT32EMU_MONITOR_INIT
-            PrintDebug("Found Control ROM: %s, %s", controlROMInfo.ShortName, controlROMInfo.Description);
+            PrintDebug("Found Control ROM: {0}, {1}", controlROMInfo.ShortName, controlROMInfo.Description);
 #endif
             file.Read(controlROMData, 0, CONTROL_ROM_SIZE);
 
@@ -2407,6 +2406,5 @@ namespace NScumm.Core.Audio.SoftSynth.Mt32
         {
             //reportHandler.onPolyStateChanged(partNum);
         }
-
     }
 }

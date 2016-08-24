@@ -128,7 +128,6 @@ namespace NScumm.Sky.Music
             ushort musicPos;
             if (_onNextPoll.MusicToProcess > _musicData[_musicDataLoc])
             {
-                // TODO: error
                 //error("Music %d requested but doesn't exist in file.", _onNextPoll.musicToProcess);
                 return;
             }

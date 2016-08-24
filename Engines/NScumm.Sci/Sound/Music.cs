@@ -447,7 +447,6 @@ namespace NScumm.Sci.Sound
                 SciEngine.Instance.Features.ForceDOSTracks();
             }
 
-            // TODO: 
             switch (_musicType)
             {
                 case MusicType.AdLib:

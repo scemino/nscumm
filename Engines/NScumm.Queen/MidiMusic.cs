@@ -21,7 +21,6 @@
 
 using System;
 using System.Diagnostics;
-using System.IO;
 using NScumm.Core;
 using NScumm.Core.Audio;
 using D = NScumm.Core.DebugHelper;
@@ -78,7 +77,7 @@ namespace NScumm.Queen
             _masterVolume = 192;
             var dev = MidiDriver.DetectDevice(MusicDriverTypes.Midi | MusicDriverTypes.AdLib, vm.Settings.AudioDevice);
             _adlib = (MidiDriver.GetMusicType(dev) == MusicType.AdLib);
-            // TODO: _nativeMT32 = ((MidiDriver::getMusicType(dev) == MT_MT32) || ConfMan.getBool("native_mt32"));
+            _nativeMT32 = ((MidiDriver.GetMusicType(dev) == MusicType.MT32) || ConfigManager.Instance.Get<bool>("native_mt32"));
 
             string musicDataFile;
             if (vm.Resource.IsDemo)
@@ -108,12 +107,11 @@ namespace NScumm.Queen
             }
             else
             {
-                throw new NotImplementedException();
-                //_driver = MidiDriver.CreateMidi(dev);
-                //if (_nativeMT32)
-                //{
-                //    _driver.Property(MidiDriver.PROP_CHANNEL_MASK, 0x03FE);
-                //}
+                _driver = (MidiDriver)MidiDriver.CreateMidi(vm.Mixer, dev);
+                if (_nativeMT32)
+                {
+                    _driver.Property(MidiDriver.PROP_CHANNEL_MASK, 0x03FE);
+                }
             }
 
             MidiDriverError ret = _driver.Open();

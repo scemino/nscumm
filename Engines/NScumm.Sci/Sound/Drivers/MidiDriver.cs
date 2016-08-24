@@ -30,7 +30,7 @@ namespace NScumm.Sci.Sound.Drivers
         protected sbyte _reverb;
         protected SciVersion _version;
 
-        public virtual uint BaseTempo { get { return _driver.BaseTempo; } }
+        public virtual uint BaseTempo => _driver.BaseTempo;
 
         public abstract bool HasRhythmChannel
         {
@@ -39,8 +39,9 @@ namespace NScumm.Sci.Sound.Drivers
 
         public abstract byte PlayId { get; }
         public abstract int Polyphony { get; }
-        public virtual int FirstChannel { get { return 0; } }
-        public virtual int LastChannel { get { return 15; } }
+        public virtual int FirstChannel => 0;
+        public virtual int LastChannel => 15;
+
         public virtual byte Volume
         {
             get
@@ -49,8 +50,7 @@ namespace NScumm.Sci.Sound.Drivers
             }
             set
             {
-                if (_driver != null)
-                    _driver.Property(MIDI_PROP_MASTER_VOLUME, value);
+                _driver?.Property(MIDI_PROP_MASTER_VOLUME, value);
             }
         }
         public virtual sbyte Reverb
@@ -83,9 +83,9 @@ namespace NScumm.Sci.Sound.Drivers
             _driver.Send(b);
         }
 
-        public virtual void SetTimerCallback(object timer_param, MidiDriver.TimerProc timer_proc)
+        public virtual void SetTimerCallback(object timerParam, MidiDriver.TimerProc timerProc)
         {
-            _driver.SetTimerCallback(timer_param, timer_proc);
+            _driver.SetTimerCallback(timerParam, timerProc);
         }
 
         public virtual void PlaySwitch(bool play)

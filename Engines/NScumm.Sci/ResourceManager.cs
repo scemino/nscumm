@@ -1725,7 +1725,7 @@ namespace NScumm.Sci
                             }
                         }
 
-                        // TODO: error("Failed to accurately determine SCI version");
+                        Error("Failed to accurately determine SCI version");
                         // No parser, we assume SciVersion.V01.
                         s_sciVersion = SciVersion.V01;
                         return;
@@ -1764,7 +1764,7 @@ namespace NScumm.Sci
                     return;
                 default:
                     s_sciVersion = SciVersion.NONE;
-                    // TODO: error("detectSciVersion(): Unable to detect the game's SCI version");
+                    Error("detectSciVersion(): Unable to detect the game's SCI version");
                     break;
             }
         }
@@ -2732,8 +2732,7 @@ namespace NScumm.Sci
 
             if (_soundVersion == SciVersion.V0_EARLY)
                 return (byte)(data[channel] >> 4);
-            else
-                return data[channel * 2];
+            return data[channel * 2];
         }
     }
 }

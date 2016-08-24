@@ -509,9 +509,140 @@ namespace NScumm.Sci
 
         }
 
-        internal void SetAudioLanguage(short language)
+        public void SetAudioLanguage(short language)
         {
             throw new NotImplementedException();
+            //if (_audioMapSCI1 != null)
+            //{
+            //    if (_audioMapSCI1._volumeNumber == language)
+            //    {
+            //        // This language is already loaded
+            //        return;
+            //    }
+
+            //    // We already have a map loaded, so we unload it first
+            //    ReadAudioMapSCI1(_audioMapSCI1, true);
+
+            //    // Remove all volumes that use this map from the source list
+            //    foreach (var it in _sources.ToList())
+            //    {
+            //        ResourceSource src = it;
+            //        if (src.FindVolume(_audioMapSCI1, src._volumeNumber) != null)
+            //        {
+            //            _sources.Remove(it);
+            //        }
+            //    }
+
+            //    // Remove the map itself from the source list
+            //    _sources.Remove(_audioMapSCI1);
+
+            //    _audioMapSCI1 = null;
+            //}
+
+            //string filename = $"AUDIO{language:D3}";
+
+            //string fullname = filename + ".MAP";
+            //var f = Core.Engine.OpenFileRead(fullname);
+            //if (f == null)
+            //{
+            //    Warning("No audio map found for language {0}", language);
+            //    return;
+            //}
+
+            //_audioMapSCI1 = AddSource(new ExtAudioMapResourceSource(fullname, language));
+
+            //// Search for audio volumes for this language and add them to the source list
+            //Common::ArchiveMemberList files;
+            //SearchMan.listMatchingMembers(files, filename + ".0??");
+            //foreach (var name in files)
+            //{
+            //    const char* dot = strrchr(name.c_str(), '.');
+            //    int number = atoi(dot + 1);
+
+            //    AddSource(new AudioVolumeResourceSource(this, name, _audioMapSCI1, number));
+            //}
+
+            //ScanNewSources();
+        }
+
+        private ResourceErrorCodes ReadAudioMapSCI1(ResourceSource map, bool unload)
+        {
+            Stream file = Core.Engine.OpenFileRead(map.LocationName);
+
+            if (file == null)
+                return ResourceErrorCodes.RESMAP_NOT_FOUND;
+
+            var br = new BinaryReader(file);
+            bool oldFormat = (br.ReadUInt16() >> 11) == (int)ResourceType.Audio;
+            file.Seek(0, SeekOrigin.Begin);
+
+            while (true)
+            {
+                ushort n = br.ReadUInt16();
+                uint offset = br.ReadUInt32();
+                int size = br.ReadInt32();
+
+                if (file.Position == file.Length)
+                {
+                    Warning("Error while reading {0}", map.LocationName);
+                    return ResourceErrorCodes.RESMAP_NOT_FOUND;
+                }
+
+                if (n == 0xffff)
+                    break;
+
+                byte volume_nr;
+
+                if (oldFormat)
+                {
+                    n &= 0x07ff; // Mask out resource type
+                    volume_nr = (byte)(offset >> 25); // most significant 7 bits
+                    offset &= 0x01ffffff; // least significant 25 bits
+                }
+                else {
+                    volume_nr = (byte)(offset >> 28); // most significant 4 bits
+                    offset &= 0x0fffffff; // least significant 28 bits
+                }
+
+                ResourceSource src = FindVolume(map, volume_nr);
+
+                if (src != null)
+                {
+                    if (unload)
+                        RemoveAudioResource(new ResourceId(ResourceType.Audio, n));
+                    else
+                        AddResource(new ResourceId(ResourceType.Audio, n), src, offset, size);
+                }
+                else {
+                    Warning("Failed to find audio volume %i", volume_nr);
+                }
+            }
+
+            return 0;
+
+        }
+
+        private void RemoveAudioResource(ResourceId resId)
+        {
+            // Remove resource, unless it was loaded from a patch
+            if (_resMap.ContainsKey(resId))
+            {
+                var res = _resMap[resId];
+
+                if (res._source.SourceType == ResSourceType.AudioVolume)
+                {
+                    if (res._status == ResourceStatus.Locked)
+                    {
+                        Warning("Failed to remove resource {0} (still in use)", resId);
+                    }
+                    else {
+                        if (res._status == ResourceStatus.Enqueued)
+                            RemoveFromLRU(res);
+
+                        _resMap.Remove(resId);
+                    }
+                }
+            }
         }
 
         class DirectoryResourceSource : ResourceSource

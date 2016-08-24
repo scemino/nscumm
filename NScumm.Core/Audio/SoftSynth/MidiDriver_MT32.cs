@@ -34,7 +34,7 @@ namespace NScumm.Core.Audio.SoftSynth
     {
         MidiChannel_MT32[] _midiChannels = new MidiChannel_MT32[16];
         ushort _channelMask;
-        Mt32.Synth _synth = new Mt32.Synth();
+        Mt32.Synth _synth;
         //MT32Emu::ReportHandlerScummV _reportHandler;
         Mt32.ROMImage _controlROM, _pcmROM;
         Stream _controlFile, _pcmFile;
@@ -70,6 +70,7 @@ namespace NScumm.Core.Audio.SoftSynth
             // TODO:
             //_reportHandler = new MT32Emu::ReportHandlerScummVM();
             //_synth = new MT32Emu::Synth(_reportHandler);
+            _synth = new Mt32.Synth();
 
             //    PixelFormat screenFormat = g_system.ScreenFormat;
 
@@ -138,7 +139,7 @@ namespace NScumm.Core.Audio.SoftSynth
 
             for (var i = 0; i < _midiChannels.Length; ++i)
             {
-                if (i == 9 || (_channelMask & (1 << i))==0)
+                if (i == 9 || (_channelMask & (1 << i)) == 0)
                     continue;
                 chan = _midiChannels[i];
                 if (chan.Allocate())
@@ -159,6 +160,25 @@ namespace NScumm.Core.Audio.SoftSynth
             _synth.PlayMsg(b);
         }
 
+        public override void SetPitchBendRange(byte channel, uint range)
+        {
+            if (range > 24)
+            {
+                Warning("setPitchBendRange() called with range > 24: %d", range);
+            }
+            byte[] benderRangeSysex = new byte[9];
+            benderRangeSysex[0] = 0x41; // Roland
+            benderRangeSysex[1] = channel;
+            benderRangeSysex[2] = 0x16; // MT-32
+            benderRangeSysex[3] = 0x12; // Write
+            benderRangeSysex[4] = 0x00;
+            benderRangeSysex[5] = 0x00;
+            benderRangeSysex[6] = 0x04;
+            benderRangeSysex[7] = (byte)range;
+            benderRangeSysex[8] = Mt32.Synth.CalcSysexChecksum(new BytePtr(benderRangeSysex, 4), 4, 0);
+            SysEx(benderRangeSysex, 9);
+        }
+
         protected override void GenerateSamples(short[] buf, int pos, int len)
         {
             _synth.Render(buf, pos, len);
@@ -170,7 +190,8 @@ namespace NScumm.Core.Audio.SoftSynth
             {
                 _synth.PlaySysex(msg, length);
             }
-            else {
+            else
+            {
                 _synth.PlaySysexWithoutFraming(msg, length);
             }
         }

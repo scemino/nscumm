@@ -1012,7 +1012,7 @@ namespace NScumm.Sword1
                         stack[stackIdx - 1] = (stack[stackIdx - 1] < stack[stackIdx]) ? 1 : 0;
                         break;
                     case IT_NOT:
-                        Debug(9, $"IT_NOT: RESULT = {stack[stackIdx - 1] != 0 ? 0 : 1}");
+                        Debug(9, $"IT_NOT: RESULT = {0}", stack[stackIdx - 1] != 0 ? 0 : 1);
                         if (stack[stackIdx - 1] != 0)
                             stack[stackIdx - 1] = 0;
                         else

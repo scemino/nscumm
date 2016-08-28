@@ -1619,13 +1619,13 @@ namespace NScumm.Sci.Engine
                         // ScummVM audio options haven't been applied yet, so apply them.
                         // We also force the ScummVM audio options when loading a game from
                         // the launcher.
-                        // TODO: SciEngine.Instance.SyncIngameAudioOptions();
+                        SciEngine.Instance.SyncIngameAudioOptions();
                         SciEngine.Instance.EngineState._syncedAudioOptions = true;
                     }
                     else
                     {
                         // Update ScummVM's audio options
-                        // TODO: SciEngine.Instance.UpdateScummVMAudioOptions();
+                        SciEngine.Instance.UpdateScummVMAudioOptions();
                     }
                 }
             }

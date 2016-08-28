@@ -666,7 +666,7 @@ namespace NScumm.Sci
 
             return false;
 #else
-            throw new NotImplementedException("no sci32 support");
+            Error("no sci32 support");
 #endif
         }
 
@@ -1019,7 +1019,7 @@ namespace NScumm.Sci
                         patchDataOffset = 8;
                         break;
                     default:
-                        //TODO: error("Resource patch unsupported special case %X", patchDataOffset & 0x7F);
+                        Error("Resource patch unsupported special case {0:X}", patchDataOffset & 0x7F);
                         return;
                 }
             }
@@ -1843,7 +1843,7 @@ namespace NScumm.Sci
 
             if (res == null)
             {
-                // TODO: error("resMan: Failed to find script.000");
+                Error("resMan: Failed to find script.000");
                 return false;
             }
 

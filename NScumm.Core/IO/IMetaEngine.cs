@@ -21,6 +21,80 @@ using System.Collections.Generic;
 
 namespace NScumm.Core.IO
 {
+    /// <summary>
+    /// Per-game extra GUI options structure.
+    /// Currently, this can only be used for options with checkboxes.
+    /// </summary>
+    public class ExtraGuiOption
+    {
+        public string Label; // option label, e.g. "Fullscreen mode"
+        public string Tooltip; // option tooltip (when the mouse hovers above it)
+        public string ConfigOption; // confMan key, e.g. "fullscreen"
+        public bool DefaultState; // the detault state of the checkbox (checked or not)
+
+        public ExtraGuiOption(string label, string tooltip, string configOption, bool defaultState)
+        {
+            Label = label;
+            Tooltip = tooltip;
+            ConfigOption = configOption;
+            DefaultState = defaultState;
+        }
+
+        public static GuiOptions ParseGameGuiOptions(string str)
+        {
+            var res = GuiOptions.NONE;
+
+            foreach (var option in GameOptions)
+                if (str.IndexOf(option.Key, StringComparison.Ordinal) != -1)
+                    res |= option.Value;
+
+            return res;
+        }
+
+        private static readonly Dictionary<string, GuiOptions> GameOptions = new Dictionary<string, GuiOptions>
+        {
+            {"sndNoSubs", GuiOptions.NOSUBTITLES},
+            {"sndNoMusic", GuiOptions.NOMUSIC},
+            {"sndNoSpeech", GuiOptions.NOSPEECH},
+            {"sndNoSFX", GuiOptions.NOSFX},
+            {"sndNoMIDI", GuiOptions.NOMIDI},
+            {"launchNoLoad", GuiOptions.NOLAUNCHLOAD},
+            {"midiPCSpk", GuiOptions.MIDIPCSPK},
+            {"midiCMS", GuiOptions.MIDICMS},
+            {"midiPCJr", GuiOptions.MIDIPCJR},
+            {"midiAdLib", GuiOptions.MIDIADLIB},
+            {"midiC64", GuiOptions.MIDIC64},
+            {"midiAmiga", GuiOptions.MIDIAMIGA},
+            {"midiAppleIIgs", GuiOptions.MIDIAPPLEIIGS},
+            {"midiTowns", GuiOptions.MIDITOWNS},
+            {"midiPC98", GuiOptions.MIDIPC98},
+            {"midiMt32", GuiOptions.MIDIMT32},
+            {"midiGM", GuiOptions.MIDIGM},
+            {"noAspect", GuiOptions.NOASPECT},
+            {"hercGreen", GuiOptions.RENDERHERCGREEN},
+            {"hercAmber", GuiOptions.RENDERHERCAMBER},
+            {"cga", GuiOptions.RENDERCGA},
+            {"ega", GuiOptions.RENDEREGA},
+            {"vga", GuiOptions.RENDERVGA},
+            {"amiga", GuiOptions.RENDERAMIGA},
+            {"fmtowns", GuiOptions.RENDERFMTOWNS},
+            {"pc9821", GuiOptions.RENDERPC9821},
+            {"pc9801", GuiOptions.RENDERPC9801},
+            {"2gs", GuiOptions.RENDERAPPLE2GS},
+            {"atari", GuiOptions.RENDERATARIST},
+            {"macintosh", GuiOptions.RENDERMACINTOSH},
+            {"gameOption1", GuiOptions.GAMEOPTIONS1},
+            {"gameOption2", GuiOptions.GAMEOPTIONS2},
+            {"gameOption3", GuiOptions.GAMEOPTIONS3},
+            {"gameOption4", GuiOptions.GAMEOPTIONS3},
+            {"gameOption5", GuiOptions.GAMEOPTIONS3},
+            {"gameOption6", GuiOptions.GAMEOPTIONS3},
+            {"gameOption7", GuiOptions.GAMEOPTIONS3},
+            {"gameOption8", GuiOptions.GAMEOPTIONS3},
+            {"gameOption9", GuiOptions.GAMEOPTIONS3},
+        };
+    }
+
     [Flags]
     public enum MetaEngineFeature
     {
@@ -105,6 +179,8 @@ namespace NScumm.Core.IO
         /// <returns>The feature.</returns>
         /// <param name="f">Feature.</param>
         bool HasFeature(MetaEngineFeature f);
+
+        List<ExtraGuiOption> GetExtraGuiOptions(string target);
     }
 
     public abstract class MetaEngine : IMetaEngine
@@ -154,6 +230,20 @@ namespace NScumm.Core.IO
         public virtual bool HasFeature(MetaEngineFeature f)
         {
             return false;
+        }
+
+        /// <summary>
+        /// Return a list of extra GUI options for the specified target.
+        /// If no target is specified, all of the available custom GUI options are
+        /// Returned for the plugin (used to set default values).
+        /// Currently, this only supports options with checkboxes.
+        /// The default implementation returns an empty list.
+        /// </summary>
+        /// <returns>A list of extra GUI options for an engine plugin and target.</returns>
+        /// <param name="target">name of a config manager target.</param>
+        public virtual List<ExtraGuiOption> GetExtraGuiOptions(string target)
+        {
+            return new List<ExtraGuiOption>();
         }
     }
 }

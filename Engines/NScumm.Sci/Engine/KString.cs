@@ -503,23 +503,23 @@ namespace NScumm.Sci.Engine
             string source_str = s._segMan.GetString(argv[0]);
             var source = 0;
 
-            while (char.IsWhiteSpace(source_str[source]))
+            while (source < source_str.Length && char.IsWhiteSpace(source_str[source]))
                 source++; /* Skip whitespace */
 
             short result = 0;
             short sign = 1;
 
-            if (source_str[source] == '-')
+            if (source < source_str.Length && source_str[source] == '-')
             {
                 sign = -1;
                 source++;
             }
-            if (source_str[source] == '$')
+            if (source < source_str.Length && source_str[source] == '$')
             {
                 // Hexadecimal input
                 source++;
                 char c;
-                while ((c = source_str[source++]) != 0)
+                while (source < source_str.Length && (c = source_str[source++]) != 0)
                 {
                     short x = 0;
                     if ((c >= '0') && (c <= '9'))

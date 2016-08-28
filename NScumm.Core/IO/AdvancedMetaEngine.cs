@@ -27,20 +27,130 @@ using D = NScumm.Core.DebugHelper;
 
 namespace NScumm.Core.IO
 {
+    [Flags]
+    public enum GuiOptions
+    {
+        NONE,
+        NOSUBTITLES,
+        NOMUSIC,
+        NOSPEECH,
+        NOSFX,
+        NOMIDI,
+        NOLAUNCHLOAD,
+
+        MIDIPCSPK,
+        MIDICMS,
+        MIDIPCJR,
+        MIDIADLIB,
+        MIDIC64,
+        MIDIAMIGA,
+        MIDIAPPLEIIGS,
+        MIDITOWNS,
+        MIDIPC98,
+        MIDIMT32,
+        MIDIGM,
+
+        NOASPECT,
+
+        RENDERHERCGREEN,
+        RENDERHERCAMBER,
+        RENDERCGA,
+        RENDEREGA,
+        RENDERVGA,
+        RENDERAMIGA,
+        RENDERFMTOWNS,
+        RENDERPC9821,
+        RENDERPC9801,
+        RENDERAPPLE2GS,
+        RENDERATARIST,
+        RENDERMACINTOSH,
+
+        // Special GUIO flags for the AdvancedDetector's caching of game specific
+        // options.
+        GAMEOPTIONS1,
+        GAMEOPTIONS2,
+        GAMEOPTIONS3,
+        GAMEOPTIONS4,
+        GAMEOPTIONS5,
+        GAMEOPTIONS6,
+        GAMEOPTIONS7,
+        GAMEOPTIONS8,
+        GAMEOPTIONS9,
+    }
+
+    [Flags]
+    public enum ADGameFlags
+    {
+        NO_FLAGS = 0,
+
+        /// <summary>
+        /// flag to designate not yet officially-supported games that are not fit for public testin
+        /// </summary>
+        UNSTABLE = 1 << 21,
+
+        /// <summary>
+        /// flag to designate not yet officially-supported games that are fit for public testing
+        /// </summary>
+        TESTING = 1 << 22,
+
+        /// <summary>
+        /// flag to designate well known pirated versions with cracks
+        /// </summary>
+        PIRATED = 1 << 23,
+
+        /// <summary>
+        /// always add English as language option
+        /// </summary>
+        ADDENGLISH = 1 << 24,
+
+        /// <summary>
+        /// the md5 for this entry will be calculated from the resource fork
+        /// </summary>
+        MACRESFORK = 1 << 25,
+
+        /// <summary>
+        /// Extra field value will be used as main game title, not gameid
+        /// </summary>
+        USEEXTRAASTITLE = 1 << 26,
+
+        /// <summary>
+        /// don't add language to gameid
+        /// </summary>
+        DROPLANGUAGE = 1 << 27,
+
+        /// <summary>
+        /// don't add platform to gameid
+        /// </summary>
+        DROPPLATFORM = 1 << 28,
+
+        /// <summary>
+        /// add "-cd" to gameid
+        /// </summary>
+        CD = 1 << 29,
+
+        /// <summary>
+        /// add "-demo" to gameid
+        /// </summary>
+        DEMO = 1 << 30
+    }
+
     public struct ADGameFileDescription
     {
         /// <summary>
         /// Name of described file.
         /// </summary>
         public string fileName;
+
         /// <summary>
         /// Optional. Not used during detection, only by engines.
         /// </summary>
         public ushort fileType;
+
         /// <summary>
         /// MD5 of (the beginning of) the described file. Optional. Set to NULL to ignore.
         /// </summary>
         public string md5;
+
         /// <summary>
         /// Size of the described file. Set to -1 to ignore.
         /// </summary>
@@ -68,28 +178,36 @@ namespace NScumm.Core.IO
          * defined in the ADGameFlags. This leaves 16 bits to be used by client
          * code.
          */
-        public uint flags;
+        public ADGameFlags flags;
 
-        public string guioptions;
+        public GuiOptions guioptions;
 
         public ADGameDescription(string gameid, string extra = null, ADGameFileDescription[] filesDescriptions = null,
-                                 Language language = Language.EN_ANY, Platform platform = Platform.DOS)
+            Language language = Language.EN_ANY, Platform platform = Platform.DOS,
+            ADGameFlags flags = ADGameFlags.NO_FLAGS, GuiOptions guiOptions = GuiOptions.NONE)
         {
             this.gameid = gameid;
             this.extra = extra;
             this.filesDescriptions = filesDescriptions;
             this.language = language;
             this.platform = platform;
+            this.flags = flags;
+            guioptions = guiOptions;
         }
     }
 
-        public abstract class AdvancedMetaEngine : MetaEngine
+    public abstract class AdvancedMetaEngine : MetaEngine
     {
-        ADGameDescription[] _gameDescriptors;
+        private readonly ADGameDescription[] _gameDescriptors;
+        private readonly IDictionary<GuiOptions, ExtraGuiOption> _extraGuiOptions;
 
-        protected AdvancedMetaEngine(ADGameDescription[] descs)
+        protected AdvancedMetaEngine(ADGameDescription[] descs,
+            IDictionary<GuiOptions, ExtraGuiOption> extraGuiOptions = null)
         {
+            if (descs == null) throw new ArgumentNullException(nameof(descs));
+
             _gameDescriptors = descs;
+            _extraGuiOptions = extraGuiOptions ?? new Dictionary<GuiOptions, ExtraGuiOption>();
         }
 
         protected abstract IGameDescriptor CreateGameDescriptor(string path, ADGameDescription desc);
@@ -168,7 +286,7 @@ namespace NScumm.Core.IO
                             D.Debug(2, " ... new best match, removing all previous candidates");
                             maxFilesMatched = curFilesMatched;
 
-                            matched.Clear();    // Remove any prior, lower ranked matches.
+                            matched.Clear(); // Remove any prior, lower ranked matches.
                             matched.Add(CreateGameDescriptor(path, g));
                         }
                         else if (curFilesMatched == maxFilesMatched)
@@ -179,7 +297,6 @@ namespace NScumm.Core.IO
                         {
                             D.Debug(2, " ... skipped");
                         }
-
                     }
                     else
                     {
@@ -201,6 +318,32 @@ namespace NScumm.Core.IO
             }
 
             return new GameDetected(matched.First(), this);
+        }
+
+        public override List<ExtraGuiOption> GetExtraGuiOptions(string target)
+        {
+            var options = new List<ExtraGuiOption>();
+
+            // If there isn't any target specified, return all available GUI options.
+            // Only used when an engine starts in order to set option defaults.
+            if (string.IsNullOrEmpty(target))
+            {
+                options.AddRange(_extraGuiOptions.Values);
+                return options;
+            }
+
+            // Query the GUI options
+            var guiOptionsString = ConfigManager.Instance.Get<string>("guioptions", target);
+            var guiOptions = ExtraGuiOption.ParseGameGuiOptions(guiOptionsString);
+
+            // Add all the applying extra GUI options.
+            foreach (var entry in _extraGuiOptions)
+            {
+                if (guiOptions.HasFlag(entry.Key))
+                    options.Add(entry.Value);
+            }
+
+            return options;
         }
 
         private void ReportUnknown(string path, Dictionary<string, string> files)
@@ -227,4 +370,3 @@ namespace NScumm.Core.IO
         }
     }
 }
-

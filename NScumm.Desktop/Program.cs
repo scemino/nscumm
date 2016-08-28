@@ -85,6 +85,16 @@ namespace NScumm
                 CopyProtection = options.CopyProtection,
                 BootParam = options.BootParam
             };
+
+            // Set default values for all of the custom engine options
+            // Appareantly some engines query them in their constructor, thus we
+            // need to set this up before instance creation.
+            var engineOptions = info.Engine.GetExtraGuiOptions(string.Empty);
+            foreach (var engineOption in engineOptions)
+            {
+                ConfigManager.Instance.RegisterDefault(engineOption.ConfigOption, engineOption.DefaultState);
+            }
+
             var game = new ScummGame(settings);
             game.Services.AddService<IMenuService>(new MenuService(game));
             game.Run();
